@@ -845,14 +845,42 @@ body.light-mode nav.scrolled .theme-switch {
   border-color: var(--red) !important;
   color: #FFFFFF !important;
 }
-/* ── TOP ANNOUNCEMENT BAR ── */
-.top-bar{position:fixed;top:0;left:0;right:0;z-index:1002;background:var(--red);height:34px;display:flex;align-items:center;overflow:hidden;border-bottom:1px solid rgba(245,184,0,.3);}
-.top-bar-track{display:flex;animation:marquee 28s linear infinite;white-space:nowrap;will-change:transform;}
-.top-bar-track:hover{animation-play-state:paused;}
-.top-bar-text{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.9);padding:0 60px;}
-.top-bar-dot{color:var(--gold);margin:0 8px;}
-@keyframes marquee{from{transform:translateX(0);}to{transform:translateX(-50%);}}
-body.light-mode .top-bar{background:var(--red);}
+/* ── NEW SPONSOR BAR ── */
+.top-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1002;
+  background: #FFFFFF; /* Pure white bar */
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid #E2E8F0;
+}
+.sponsor-container {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+.sponsor-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #1A202C;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.sponsor-logo {
+  height: 25px;
+  width: auto;
+  object-fit: contain;
+}
 /* ── WHATSAPP FLOAT ── */
 .wa-float{position:fixed;bottom:30px;right:30px;z-index:998;width:58px;height:58px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.45);text-decoration:none;transition:transform .2s,box-shadow .2s;animation:wa-pulse 2.5s ease infinite;}
 .wa-float:hover{transform:scale(1.12);box-shadow:0 6px 30px rgba(37,211,102,.65);}
@@ -917,28 +945,255 @@ body.light-mode #club-history {
   background-image: none;
   background-color: #F7FAFC;
 }
+/* ── MATCH ALBUM STYLES ── */
+.album-card {
+  position: relative;
+  background: var(--d3);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  flex-direction: column;
+}
+.album-card:hover {
+  transform: translateY(-8px);
+  border-color: var(--gold);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.album-cover {
+  height: 180px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.album-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: 0.5s;
+}
+.album-card:hover .album-cover img {
+  transform: scale(1.1);
+}
+.album-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  display: flex;
+  align-items: flex-end;
+  padding: 15px;
+}
+.album-badge {
+  background: var(--red);
+  color: white;
+  font-family: 'Barlow Condensed';
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+.album-info {
+  padding: 15px;
+  background: var(--d2);
+}
+.album-title {
+  font-family: 'Barlow Condensed';
+  font-weight: 700;
+  color: var(--white);
+  font-size: 16px;
+  margin-bottom: 5px;
+}
+.album-meta {
+  font-size: 11px;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+/* ─── PREMIUM BEAUTY UPGRADES ─── */
+
+/* 1. Background Texture (Grid Dots) */
+body {
+    background-image: radial-gradient(rgba(212, 32, 43, 0.1) 0.5px, transparent 0.5px);
+    background-size: 30px 30px;
+    background-attachment: fixed;
+}
+.light-mode {
+    background-image: radial-gradient(rgba(0, 0, 0, 0.05) 0.5px, transparent 0.5px);
+}
+
+/* 2. Glassmorphism for all Cards */
+.player-card, .album-card, .blog-card, .tcard, .mcard, .scard, .about-text {
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+}
+
+/* Glassmorphism for Light Mode */
+.light-mode .player-card, 
+.light-mode .album-card, 
+.light-mode .blog-card, 
+.light-mode .tcard,
+.light-mode .mcard,
+.light-mode .scard {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+}
+
+/* 3. Hover Effects */
+.player-card:hover, .album-card:hover, .blog-card:hover {
+    transform: translateY(-12px) scale(1.02) !important;
+    border-color: var(--gold) !important;
+    box-shadow: 0 15px 45px rgba(212, 32, 43, 0.2) !important;
+}
+
+/* 4. Professional Typography */
+h1, h2, h3, .stitle {
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 800;
+}
+
+/* 5. Nav Link Animated Underline */
+.nav-links a {
+    position: relative;
+    padding-bottom: 5px;
+}
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--gold);
+    transition: width 0.3s ease;
+}
+.nav-links a:hover::after {
+    width: 100%;
+}
+
+/* 6. Glowing Tagline Effect */
+/* 6. Glowing Tagline Effect (FIXED) */
+.glory-tagline {
+    font-weight: 700;
+    letter-spacing: 3px;
+    background: linear-gradient(to right, #fff 20%, var(--gold) 50%, #fff 80%);
+    background-size: 200% auto;
+    
+    /* ADD THESE TWO LINES TOGETHER */
+    -webkit-background-clip: text; 
+    background-clip: text; /* This is the "standard" property the error was asking for */
+    
+    -webkit-text-fill-color: transparent;
+    animation: shine 4s linear infinite;
+}
+@keyframes shine {
+    to { background-position: 200% center; }
+}
+/* 7. Enhanced Red & Gold Shimmer for the existing Hero Title */
+/* --- THE ULTIMATE SHIMMER FIX --- */
+.hero-title {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    text-align: center !important;
+    margin: 0 auto !important;
+}
+
+/* FORCES THE WORDS SIDE-BY-SIDE */
+.title-top-row {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 20px !important;
+    white-space: nowrap !important;
+    width: 100% !important;
+}
+
+.ht-lobi, .ht-stars {
+    font-family: 'Bebas Neue', sans-serif !important;
+    font-size: clamp(50px, 12vw, 135px) !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    text-transform: uppercase !important;
+    
+    /* THE GRADIENT: White -> Faint Red -> Champagne Gold -> White */
+    background: linear-gradient(
+        to right, 
+        #ffffff 0%, 
+        #ffffff 30%, 
+        #ffb3b3 45%,   /* Very faint soft red */
+        #fff4cc 50%,   /* Very faint soft gold */
+        #ffb3b3 55%,   /* Very faint soft red */
+        #ffffff 70%, 
+        #ffffff 100%
+    ) !important;
+    
+    background-size: 400% 100% !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    
+    /* THESE TWO LINES MAKE THE SHIMMER VISIBLE */
+    -webkit-text-fill-color: transparent !important;
+    color: transparent !important; 
+    
+    animation: elegantWash 10s ease-in-out infinite !important;
+}
+
+.ht-fc {
+    display: block !important;
+    font-size: clamp(15px, 3vw, 25px) !important;
+    letter-spacing: 12px !important;
+    margin-top: 15px !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    opacity: 0.8 !important;
+}
+
+/* THE ANIMATION */
+@keyframes elegantWash {
+    0% { background-position: 100% 50%; }
+    40% { background-position: 100% 50%; } /* Stays white longer */
+    75% { background-position: 0% 50%; }   /* Washes through */
+    100% { background-position: 100% 50%; } /* Returns to white */
+}
+
+/* Mobile Fix */
+@media (max-width: 768px) {
+    .title-top-row { gap: 10px !important; }
+}
 </style>
 </head>
 <body>
 
 <!-- NAV -->
  <!-- TOP BAR -->
+<!-- TOP BAR SPONSORS -->
 <div class="top-bar">
-  <div class="top-bar-track">
-    <span class="top-bar-text">
-      ⭐ Welcome to the Official Lobi Stars FC Website
-      <span class="top-bar-dot">★</span> The Pride of Benue
-      <span class="top-bar-dot">★</span> Makurdi, Nigeria
-      <span class="top-bar-dot">★</span> Red and Gold Forever
-      <span class="top-bar-dot">★</span> Home of Champions Since 1969
-    </span>
-    <span class="top-bar-text">
-      ⭐ Welcome to the Official Lobi Stars FC Website
-      <span class="top-bar-dot">★</span> The Pride of Benue
-      <span class="top-bar-dot">★</span> Makurdi, Nigeria
-      <span class="top-bar-dot">★</span> Red and Gold Forever
-      <span class="top-bar-dot">★</span> Home of Champions Since 1969
-    </span>
+  <div class="sponsor-container">
+    <span style="color: #718096; font-size: 10px; font-family: 'Barlow Condensed'; letter-spacing: 2px;">OFFICIAL PARTNERS:</span>
+    
+    <!-- Novus MFB (Clickable) -->
+    <a href="https://novusmfb.com" target="_blank" class="sponsor-item">
+      <img src="images/novus.jpg" alt="Novus MFB" class="sponsor-logo">
+      <span>Novus Microfinance Bank</span>
+    </a>
+
+    <!-- Konga (Not Clickable) -->
+    <div class="sponsor-item">
+      <img src="images/konga.jpg" alt="Konga" class="sponsor-logo">
+      <span>Konga</span>
+    </div>
   </div>
 </div>
 <nav id="mainNav">
@@ -979,16 +1234,29 @@ body.light-mode #club-history {
   <button class="sarrow" id="snext">&#8594;</button>
   <div class="hero-content">
     <div class="hero-eyebrow">Pride of Benue &middot; Makurdi, Nigeria</div>
-    <h1 class="hero-title">
-      <span class="ht-lobi">Lobi</span>
-      <span class="ht-stars">Stars</span>
-      <span class="ht-fc">Football Club</span>
-    </h1>
-    <p class="hero-tagline">We Are The Stars Of The North</p>
-    <div class="hero-actions">
-      <a href="#players" class="btn-p">Meet the Squad</a>
-      <a href="#tickets" class="btn-o">Buy Tickets</a>
+    <!-- THE CORRECT HTML STRUCTURE -->
+<h1 class="hero-title">
+    <div class="title-top-row">
+        <span class="ht-lobi">LOBI</span>
+        <span class="ht-stars">STARS</span>
     </div>
+    <span class="ht-fc">FOOTBALL CLUB</span>
+</h1>
+    <div class="glory-tagline" style="margin-bottom: 10px; font-size: 1.2rem;">GLORY TO GLORY</div>
+    <div class="hero-actions" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px;">
+  <a href="#players" class="btn-p">Meet the Squad</a>
+  <a href="#tickets" class="btn-o">Buy Tickets</a>
+  <a href="#merchandise" class="btn-o">Shop</a>
+  <a href="#membership" class="btn-o" id="newsletterBtn">Newsletter</a>
+  <a href="#membership" class="btn-p">Login / Sign Up</a>
+</div>
+
+<script>
+  // Logical redirect for Newsletter: If not "logged in", go to membership
+  document.getElementById('newsletterBtn').addEventListener('click', function(e) {
+      showToast("Access Restricted: Please Login or Sign Up to view the Newsletter.");
+  });
+</script>
   </div>
   <div class="slider-dots" id="sliderDots"></div>
   <div class="hero-stats-bar">
@@ -1004,54 +1272,66 @@ body.light-mode #club-history {
 </section>
 
 <!-- ABOUT -->
-<section id="about">
-  <div class="about-grid">
-    <div class="about-text fade-in">
-      <div class="stag">Our Story</div>
-      <h2 class="stitle">Built On <span class="r">Benue</span> Soil</h2>
-      <div class="divr"></div>
-      <p>Lobi Stars Football Club was founded in <strong>1969</strong> in Makurdi, the capital of Benue State. For over five decades, the club has stood as the heartbeat of football in North-Central Nigeria, earning a fierce and loyal following.</p>
-      <p>Playing their home matches at the iconic <strong>Aper Aku Stadium</strong>, the Red and Gold have competed at the highest levels of Nigerian football, winning the <strong>Nigerian Premier Football League</strong> title multiple times and representing the nation in continental competitions.</p>
-      <p>More than a football club — we are a <strong>community</strong>, a culture, and the enduring pride of Benue State.</p>
-      <div class="about-pillars">
-        <div class="pillar"><div class="pillar-title">Community</div><div class="pillar-desc">Rooted in Makurdi, serving Benue State and beyond.</div></div>
-        <div class="pillar"><div class="pillar-title">Excellence</div><div class="pillar-desc">Competing at the highest level of Nigerian football.</div></div>
-        <div class="pillar"><div class="pillar-title">Youth</div><div class="pillar-desc">Investing in the next generation of Nigerian stars.</div></div>
-        <div class="pillar"><div class="pillar-title">Passion</div><div class="pillar-desc">Red and Gold flows in the veins of our people.</div></div>
+<!-- ARCHIVES SECTION (Replaces About) -->
+<section id="archives" style="background: var(--d2);">
+  <div class="stag fade-in">Club Records</div>
+  <h2 class="stitle fade-in">The <span class="r">Archives</span></h2>
+  <div class="divr fade-in"></div>
+
+  <!-- Tab Buttons -->
+  <div class="ftabs fade-in" style="margin-bottom: 30px;">
+    <button class="ftab active" onclick="openArchiveTab(event, 'stories')">Stories & History</button>
+    <button class="ftab" onclick="openArchiveTab(event, 'media')">Media Vault</button>
+  </div>
+
+  <!-- Stories Tab -->
+  <div id="stories" class="archive-content fade-in" style="display: block;">
+    <div class="about-grid" style="grid-template-columns: 1fr 1fr; gap: 40px;">
+      <div class="about-text">
+        <p>Explore the deep history of Lobi Stars. From the early days in 1969 to our historic title wins, this is where we preserve the legends of the Red and Gold.</p>
+        <div class="pillar" style="margin-bottom: 15px;">
+            <div class="pillar-title">1999: The Golden Run</div>
+            <div class="pillar-desc">An in-depth look at the squad that brought the first NPFL trophy to Makurdi.</div>
+        </div>
+        <div class="pillar">
+            <div class="pillar-title">Interviews: Barnabas Imenger</div>
+            <div class="pillar-desc">Past legends speak on what it means to wear the Lobi Stars badge.</div>
+        </div>
+      </div>
+      <div class="about-visual">
+         <img src="images/club-history.jpg" style="border-radius: 8px; border: 1px solid var(--gold);" alt="History">
       </div>
     </div>
-    <div class="about-visual fade-in">
-  <!-- MAIN CLUB IMAGE -->
-  <div class="about-main-img">
-    <img src="images/about.jpg" alt="Lobi Stars" onload="this.nextElementSibling.style.display='none'"/>
-    <div class="about-img-fallback">LOBI STARS</div>
   </div>
 
-  <div class="about-banner">
-    <div><div class="abt">Aper Aku Stadium</div><div class="abs">Home Ground · Makurdi, Benue State</div></div>
-    <div><div class="fy">1969</div><div class="fyl">Est.</div></div>
+  <!-- Media Tab -->
+  <div id="media" class="archive-content fade-in" style="display: none;">
+    <p class="muted-p" style="margin-bottom: 20px;">Photos and videos from previous seasons (1969 — 2023).</p>
+    <div class="gallery-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+      <!-- Placeholder Past Season Photos -->
+      <div class="gallery-item" style="height: 150px;"><img src="images/stadium-1.jpg"></div>
+      <div class="gallery-item" style="height: 150px;"><img src="images/stadium-2.jpg"></div>
+      <div class="gallery-item" style="height: 150px;"><img src="images/stadium-3.jpg"></div>
+      <div class="gallery-item" style="height: 150px;"><img src="images/stadium-4.jpg"></div>
+    </div>
   </div>
+</section>
 
-  <!-- STADIUM PHOTO GRID -->
-  <div class="stadium-photos">
-    <div class="stadium-photo">
-      <img src="images/stadium-1.jpg" alt="Stadium 1" onload="this.nextElementSibling.style.display='none'"/>
-      <div class="sp-fallback">STADIUM</div>
-    </div>
-    <div class="stadium-photo">
-      <img src="images/stadium-2.jpg" alt="Stadium 2" onload="this.nextElementSibling.style.display='none'"/>
-      <div class="sp-fallback">STADIUM</div>
-    </div>
-    <div class="stadium-photo">
-      <img src="images/stadium-3.jpg" alt="Stadium 3" onload="this.nextElementSibling.style.display='none'"/>
-      <div class="sp-fallback">STADIUM</div>
-    </div>
-    <div class="stadium-photo">
-      <img src="images/stadium-4.jpg" alt="Stadium 4" onload="this.nextElementSibling.style.display='none'"/>
-      <div class="sp-fallback">STADIUM</div>
-    </div>
-  </div>
-</div>
+<script>
+function openArchiveTab(evt, tabName) {
+  var i, x, tablinks;
+  x = document.getElementsByClassName("archive-content");
+  for (i = 0; i < x.length; i++) {
+    x[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("ftab");
+  for (i = 0; i < x.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+</script>
 </section>
 
 <!-- PLAYERS -->
@@ -1112,6 +1392,188 @@ body.light-mode #club-history {
   </div>
   <div style="margin-top:52px;" class="fade-in">
     <div class="stag">NPFL 2024/25</div>
+ <!-- START OF LIGHT THEME MATCH HUB -->
+<style>
+    .match-hub-light {
+        background: #ffffff !important; /* Pure white background */
+        padding: 50px 20px !important;
+        font-family: 'Inter', sans-serif !important;
+        border-top: 4px solid #D4202B !important; /* Bold Red top border */
+    }
+
+    .hub-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 25px;
+        justify-content: center;
+    }
+
+    .hub-box {
+        background: #fdfdfd;
+        border: 2px solid #eeeeee;
+        border-radius: 12px;
+        padding: 25px;
+        flex: 1;
+        min-width: 320px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05); /* Soft professional shadow */
+    }
+
+    .hub-label {
+        color: #D4202B; /* Lobi Red */
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-size: 14px;
+        margin-bottom: 20px;
+        font-weight: 800;
+    }
+
+    .timer-flex {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .t-unit {
+        background: #ffffff;
+        padding: 10px;
+        border-radius: 8px;
+        min-width: 75px;
+        border: 1px solid #ddd;
+    }
+
+    .t-unit span {
+        display: block;
+        font-size: 36px;
+        font-weight: 900;
+        color: #111; /* Sharp black numbers */
+        font-family: 'Bebas Neue', sans-serif;
+        line-height: 1;
+    }
+
+    .t-unit small {
+        font-size: 11px;
+        color: #D4202B;
+        text-transform: uppercase;
+        font-weight: 700;
+    }
+
+    .match-flex {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        margin-bottom: 15px;
+    }
+
+    /* Logo Fix */
+    .t-logo { 
+        width: 75px; 
+        height: 75px; 
+        object-fit: contain; 
+        filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1));
+    }
+
+    .vs-circ {
+        background: #D4202B;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        line-height: 40px;
+        font-weight: 900;
+        font-size: 14px;
+        box-shadow: 0 4px 10px rgba(212, 32, 43, 0.3);
+    }
+
+    .match-info p { 
+        margin: 5px 0; 
+        font-size: 15px; 
+        color: #333 !important; /* Dark readable text */
+        font-weight: 500;
+    }
+
+    .tix-btn {
+        background: #FFD700; /* Bright Gold */
+        color: #000;
+        border: none;
+        padding: 12px 35px;
+        border-radius: 6px;
+        font-weight: 900;
+        cursor: pointer;
+        margin-top: 15px;
+        text-transform: uppercase;
+        transition: 0.3s;
+        box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+    }
+
+    .tix-btn:hover {
+        transform: translateY(-2px);
+        background: #000;
+        color: #FFD700;
+    }
+
+    /* HERO LINE FIX */
+    body .ht-lobi, body .ht-stars {
+        display: inline-block !important;
+        white-space: nowrap !important;
+    }
+</style>
+
+<section class="match-hub-light">
+    <div class="hub-container">
+        <!-- Countdown Box -->
+        <div class="hub-box">
+            <p class="hub-label"><i class="fas fa-clock"></i> Next Match Countdown</p>
+            <div class="timer-flex">
+                <div class="t-unit"><span id="d_val">02</span><small>Days</small></div>
+                <div class="t-unit"><span id="h_val">20</span><small>Hrs</small></div>
+                <div class="t-unit"><span id="m_val">14</span><small>Mins</small></div>
+                <div class="t-unit"><span id="s_val">23</span><small>Secs</small></div>
+            </div>
+        </div>
+
+        <!-- Match Card Box -->
+        <div class="hub-box">
+            <div class="match-flex">
+                <div class="t-col">
+                    <img src="images/hero-6.jpg" class="t-logo" alt="Lobi Stars">
+                    <p style="font-size:13px; font-weight:700; color:#111; margin-top:8px;">LOBI STARS</p>
+                </div>
+                <div class="vs-circ">VS</div>
+                <div class="t-col">
+                    <img src="images/enyimba.jpg" class="t-logo" alt="Enyimba">
+                    <p style="font-size:13px; font-weight:700; color:#111; margin-top:8px;">ENYIMBA FC</p>
+                </div>
+            </div>
+            <div class="match-info">
+                <p><strong>Sunday, May 17, 2026 • 4:00 PM</strong></p>
+                <p><i class="fas fa-map-marker-alt" style="color:#D4202B"></i> Aper Aku Stadium, Makurdi</p>
+                <button class="tix-btn">Get Tickets</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function startTimer() {
+        // Date set to May 17, 2026
+        const target = new Date("May 17, 2026 16:00:00").getTime();
+        setInterval(() => {
+            const now = new Date().getTime();
+            const d = target - now;
+            if (d > 0) {
+                document.getElementById("d_val").innerText = Math.floor(d / (1000 * 60 * 60 * 24));
+                document.getElementById("h_val").innerText = Math.floor((d % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                document.getElementById("m_val").innerText = Math.floor((d % (1000 * 60 * 60)) / (1000 * 60));
+                document.getElementById("s_val").innerText = Math.floor((d % (1000 * 60)) / 1000);
+            }
+        }, 1000);
+    }
+    startTimer();
+</script>
+<!-- END OF LIGHT THEME MATCH HUB -->
     <h3 class="stitle" style="font-size:36px;">League <span class="r">Table</span></h3>
     <div class="divr" style="margin-bottom:18px;"></div>
     <div class="table-wrap">
@@ -1201,32 +1663,22 @@ body.light-mode #club-history {
   <h2 class="stitle fade-in">Fan <span class="r">Membership</span></h2>
   <div class="divr fade-in"></div>
   <p style="color:rgba(255,255,255,.55);font-size:16px;max-width:580px;line-height:1.8;margin-bottom:46px;" class="fade-in">Become an official Lobi Stars member and enjoy exclusive benefits all season long.</p>
-  <div class="tier-cards fade-in">
-    <div class="tcard bronze" onclick="pickTier('Star Fan','₦5,000')">
-      <div class="tic">⭐</div>
-      <div class="tname bt">Star Fan</div>
-      <div class="tprice">₦5,000<span>/yr</span></div>
-      <div class="tperiod">Per Year</div>
-      <ul class="tbenefits"><li>Official membership card</li><li>10% discount on merchandise</li><li>Monthly club newsletter</li><li class="na">Priority ticket access</li><li class="na">VIP match-day lounge</li></ul>
-      <button class="tbtn">Join Now</button>
-    </div>
-    <div class="tcard silver pop" onclick="pickTier('Red &amp; Gold','₦15,000')">
-      <div class="tic">🔴</div>
-      <div class="tname st">Red &amp; Gold</div>
-      <div class="tprice">₦15,000<span>/yr</span></div>
-      <div class="tperiod">Per Year</div>
-      <ul class="tbenefits"><li>Official membership card</li><li>20% discount on merchandise</li><li>Monthly club newsletter</li><li>Priority ticket access</li><li>Signed club photo</li></ul>
-      <button class="tbtn">Join Now</button>
-    </div>
-    <div class="tcard gold" onclick="pickTier('Legend','₦30,000')">
-      <div class="tic">🏆</div>
-      <div class="tname gt">Legend</div>
-      <div class="tprice">₦30,000<span>/yr</span></div>
-      <div class="tperiod">Per Year</div>
-      <ul class="tbenefits"><li>Official membership card</li><li>30% discount on merchandise</li><li>Monthly club newsletter</li><li>Priority ticket access</li><li>VIP match-day lounge</li></ul>
-      <button class="tbtn">Join Now</button>
-    </div>
+  <!-- ONLY ONE MEMBERSHIP CARD -->
+<div class="tier-cards fade-in" style="grid-template-columns: 1fr; max-width: 500px; margin: 0 auto 54px;">
+  <div class="tcard silver" style="border-color: var(--gold); background: linear-gradient(160deg, #131313, var(--d3));">
+    <div class="tic">🔴</div>
+    <div class="tname st" style="color: var(--gold);">Red & Gold Membership</div>
+    <div class="tprice">₦15,000<span>/yr</span></div>
+    <div class="tperiod">Official Club Membership</div>
+    <ul class="tbenefits">
+      <li>Official membership card</li>
+      <li>20% discount on merchandise</li>
+      <li>Monthly Club Newsletter</li>
+      <li>Priority Ticket Access</li>
+    </ul>
+    <a href="#memFormWrap" class="tbtn" style="text-align: center; text-decoration: none; display: block;">Join Now</a>
   </div>
+</div>
   <div class="mem-form-wrap fade-in" id="memFormWrap">
     <h3>Register as a Member</h3>
     <p class="mem-sub">Fill in your details to complete your membership registration.</p>
@@ -1263,7 +1715,7 @@ body.light-mode #club-history {
     <div class="fade-in"><div class="stag">Moments</div><h2 class="stitle">Photo <span class="r">Gallery</span></h2></div>
     <a href="#" class="btn-o fade-in view-all-btn" style="padding:9px 20px;font-size:13px;">View All →</a>
   </div>
-  <div class="gallery-grid fade-in" id="galleryGrid"></div>
+  <div class="gallery-grid fade-in" id="galleryGrid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px;"></div>
 </section>
 
 <!-- CLUB HISTORY -->
@@ -1570,18 +2022,16 @@ body.light-mode #club-history {
   }
 </script>
 <!-- WHATSAPP FLOATING BUTTON -->
-<a href="https://wa.me/2347043477266?text=Hello%20Lobi%20Stars%20Management,%20I%20have%20an%20inquiry." target="_blank" class="wa-float" title="Chat on WhatsApp" style="display: flex; align-items: center; justify-content: center; text-decoration: none;">
-  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="white" viewBox="0 0 16 16">
+<!-- CLEAN WHATSAPP FLOATING BUTTON -->
+<a href="https://wa.me/2347043477266?text=Hello%20Lobi%20Stars%20Management,%20I%20have%20an%20inquiry." target="_blank" class="wa-float" title="Chat on WhatsApp">
+  <span class="wa-tooltip">Chat with us</span>
+  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="white" viewBox="0 0 16 16" style="display:block;">
     <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.06 3.973L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
   </svg>
 </a>
-</a>  <span class="wa-tooltip">Chat with us</span>
-  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-  </svg>
-</a>
 
-<script>  
+<script>
+// ── THEME TOGGLE ──
 const themeBtn = document.getElementById('themeToggle');
 const themeIcon = document.getElementById('themeIcon');
 const themeText = document.getElementById('themeText');
@@ -1598,16 +2048,13 @@ function applyTheme(theme) {
     themeText.textContent = 'DARK';
   }
 }
-
-const savedTheme = localStorage.getItem('ls_theme') || 'dark';
-applyTheme(savedTheme);
-
+applyTheme(localStorage.getItem('ls_theme') || 'dark');
 themeBtn.addEventListener('click', () => {
-  const isLight = body.classList.contains('light-mode');
-  const newTheme = isLight ? 'dark' : 'light';
+  const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
   localStorage.setItem('ls_theme', newTheme);
   applyTheme(newTheme);
 });
+
 // ── HERO SLIDER ──
 const slides = document.querySelectorAll('.hero-slide');
 const dotsWrap = document.getElementById('sliderDots');
@@ -1631,34 +2078,65 @@ document.getElementById('sprev').onclick = () => goSlide(cur-1);
 document.getElementById('snext').onclick = () => goSlide(cur+1);
 sliderTimer = setInterval(() => goSlide(cur+1), 5500);
 
-// ── NAV ──
+// ── NAV & TABS ──
 window.addEventListener('scroll', () => document.getElementById('mainNav').classList.toggle('scrolled', scrollY > 50));
 document.getElementById('menuToggle').addEventListener('click', function() {
   const L = document.getElementById('navLinks');
-  const o = L.style.display === 'flex';
-  Object.assign(L.style, o ? {display:'none'} : {display:'flex',flexDirection:'column',position:'absolute',top:'72px',left:'0',right:'0',background:'rgba(10,10,10,.98)',padding:'20px 5%',gap:'20px',borderBottom:'1px solid rgba(212,32,43,.3)'});
+  L.style.display = L.style.display === 'flex' ? 'none' : 'flex';
 });
 
-// ── FADE IN ──
-const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.1});
-document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+function openArchiveTab(evt, tabName) {
+  const contents = document.getElementsByClassName("archive-content");
+  for (let i = 0; i < contents.length; i++) contents[i].style.display = "none";
+  const tabs = document.querySelectorAll("#archives .ftab");
+  tabs.forEach(t => t.classList.remove("active"));
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.classList.add("active");
+}
 
-// ── GALLERY ──
-const galImgs = [
-  {src:'gallery-1.jpg',label:'Match Day'},{src:'gallery-2.jpg',label:'Action'},{src:'gallery-3.jpg',label:'Goal!'},{src:'gallery-4.jpg',label:'Team'},
-  {src:'gallery-5.jpg',label:'Fans'},{src:'gallery-6.jpg',label:'Training'},{src:'gallery-7.jpg',label:'Stadium'},{src:'gallery-8.jpg',label:'Dugout'},
-  {src:'gallery-9.jpg',label:'Warmup'},{src:'gallery-10.jpg',label:'Celebration'},{src:'gallery-11.jpg',label:'The Kit'},{src:'gallery-12.jpg',label:'Matchday'},
-  {src:'gallery-13.jpg',label:'Away Day'},{src:'gallery-14.jpg',label:'Corner'},{src:'gallery-15.jpg',label:'Press'},{src:'gallery-16.jpg',label:'Trophy'},
-  {src:'gallery-17.jpg',label:'Youth'},{src:'gallery-18.jpg',label:'Community'}
+// ── MATCH ALBUMS GALLERY ──
+const matchAlbums = [
+  { id: 'kano', title: 'Lobi Stars vs Kano Pillars', date: 'May 2025', cover: 'gallery-1.jpg', photos: ['gallery-1.jpg', 'gallery-2.jpg', 'gallery-3.jpg'] },
+  { id: 'plateau', title: 'Lobi Stars vs Plateau United', date: 'April 2025', cover: 'gallery-4.jpg', photos: ['gallery-4.jpg', 'gallery-5.jpg', 'gallery-6.jpg'] },
+  { id: 'enyimba', title: 'Lobi Stars vs Enyimba FC', date: 'March 2025', cover: 'gallery-7.jpg', photos: ['gallery-7.jpg', 'gallery-8.jpg', 'gallery-9.jpg'] },
+  { id: 'sunshine', title: 'Lobi Stars vs Sunshine Stars', date: 'Feb 2025', cover: 'gallery-10.jpg', photos: ['gallery-10.jpg', 'gallery-11.jpg', 'gallery-12.jpg'] },
+  { id: 'remo', title: 'Lobi Stars vs Remo Stars', date: 'Jan 2025', cover: 'gallery-13.jpg', photos: ['gallery-13.jpg', 'gallery-14.jpg', 'gallery-15.jpg'] },
+  { id: 'rivers', title: 'Lobi Stars vs Rivers United', date: 'Dec 2024', cover: 'gallery-16.jpg', photos: ['gallery-16.jpg', 'gallery-17.jpg', 'gallery-2.jpg'] },
+  { id: 'akwa', title: 'Lobi Stars vs Akwa United', date: 'Nov 2024', cover: 'gallery-18.jpg', photos: ['gallery-18.jpg', 'gallery-5.jpg', 'gallery-8.jpg'] }
 ];
-const gg = document.getElementById('galleryGrid');
-galImgs.forEach((g,i) => {
-  const el = document.createElement('div');
-  el.className = 'gallery-item' + (i===0||i===9?' lg':'');
-  if(i===0||i===9) el.style.gridRow='span 2';
-  el.innerHTML = `<img src="images/${g.src}" alt="${g.label}" loading="lazy" onerror="this.style.opacity=0"/><div class="gallery-item-bg" style="background:var(--d4)"></div><div class="gallery-overlay"><div class="gplus">+</div></div><div class="glabel">${g.label}</div>`;
-  gg.appendChild(el);
+
+const galleryGrid = document.getElementById('galleryGrid');
+matchAlbums.forEach(album => {
+  const card = document.createElement('div');
+  card.className = 'album-card';
+  card.onclick = () => openAlbum(album.id);
+  card.innerHTML = `
+    <div class="album-cover"><img src="images/${album.cover}" onerror="this.src='images/hero-1.jpg'"><div class="album-overlay"><span class="album-badge">Match Album</span></div></div>
+    <div class="album-info"><div class="album-title">${album.title}</div><div class="album-meta">${album.date} • ${album.photos.length} Photos</div></div>`;
+  galleryGrid.appendChild(card);
 });
+
+let activePhotos = [], photoIdx = 0, currentAlbumTitle = "";
+const galModal = document.getElementById('galleryModal');
+const galImg = document.getElementById('modalImg');
+const galCap = document.getElementById('modalCaption');
+
+function openAlbum(id) {
+  const album = matchAlbums.find(a => a.id === id);
+  activePhotos = album.photos; currentAlbumTitle = album.title; photoIdx = 0;
+  galModal.style.display = "flex";
+  updateGalUI();
+}
+
+function updateGalUI() {
+  galImg.src = `images/${activePhotos[photoIdx]}`;
+  galCap.textContent = `${currentAlbumTitle} (${photoIdx + 1}/${activePhotos.length})`;
+}
+
+document.querySelector('.next-photo').onclick = (e) => { e.stopPropagation(); photoIdx = (photoIdx + 1) % activePhotos.length; updateGalUI(); };
+document.querySelector('.prev-photo').onclick = (e) => { e.stopPropagation(); photoIdx = (photoIdx - 1 + activePhotos.length) % activePhotos.length; updateGalUI(); };
+document.querySelector('.close-modal').onclick = () => galModal.style.display = "none";
+galModal.onclick = (e) => { if(e.target === galModal) galModal.style.display = "none"; };
 
 // ── PLAYERS ──
 const players = [
@@ -1679,29 +2157,13 @@ function renderPlayers(f) {
   const list = f==='all'?players:players.filter(p=>p.pos===f);
   document.getElementById('playersGrid').innerHTML = list.map(p=>`
   <div class="player-card">
-    <div class="pct ${p.bg}">
-      <div class="pnum">${p.num}</div>
-      <div class="pav">
-        ${p.img 
-          ? `<img src="images/${p.img}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` 
-          : p.ini
-        }
-      </div>
-      <div class="ppb">${p.pos}</div>
-    </div>
-    <div class="pinfo">
-      <div class="pname">${p.name}</div><div class="pnat">${p.nat}</div>
-      <div class="pstats">
-        <div class="psi"><div class="psv">${p.apps}</div><div class="psk">Apps</div></div>
-        <div class="psi"><div class="psv">${p.goals}</div><div class="psk">Goals</div></div>
-        <div class="psi"><div class="psv">${p.s3}</div><div class="psk">${p.sk}</div></div>
-      </div>
-    </div>
-  </div>`).join('');
+    <div class="pct ${p.bg}"><div class="pnum">${p.num}</div><div class="pav">${p.img ? `<img src="images/${p.img}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : p.ini}</div><div class="ppb">${p.pos}</div></div>
+    <div class="pinfo"><div class="pname">${p.name}</div><div class="pnat">${p.nat}</div><div class="pstats">
+    <div class="psi"><div class="psv">${p.apps}</div><div class="psk">Apps</div></div><div class="psi"><div class="psv">${p.goals}</div><div class="psk">Goals</div></div><div class="psi"><div class="psv">${p.s3}</div><div class="psk">${p.sk}</div></div></div></div></div>`).join('');
 }
 renderPlayers('all');
-document.querySelectorAll('.ftab').forEach(t => t.addEventListener('click', function() {
-  document.querySelectorAll('.ftab').forEach(x=>x.classList.remove('active'));
+document.querySelectorAll('#players .ftab').forEach(t => t.addEventListener('click', function() {
+  document.querySelectorAll('#players .ftab').forEach(x=>x.classList.remove('active'));
   this.classList.add('active'); renderPlayers(this.dataset.pos);
 }));
 
@@ -1716,57 +2178,46 @@ function goStep(n){
     document.getElementById('tp'+i).classList.toggle('active',i===n);
     const sn=document.getElementById('sn'+i),sl=document.getElementById('sl'+i);
     sn.className='tsn'+(i<n?' done':i===n?' act':'');
-    sl.className='tsl'+(i===n?' act':'');
+    if(sl) sl.className='tsl'+(i===n?' act':'');
   });
   document.getElementById('tickets').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function confirmBk(){
   const ref='LS-'+Math.floor(100000+Math.random()*900000);
-  const fn=document.getElementById('t-fn').value||'Fan';
-  const ln=document.getElementById('t-ln').value||'';
   document.getElementById('bkRef').textContent=ref;
-  document.getElementById('bkDetails').innerHTML=`<div class="bk-row"><span class="bk-k">Name</span><span class="bk-v">${fn} ${ln}</span></div><div class="bk-row"><span class="bk-k">Match</span><span class="bk-v">${tM}</span></div><div class="bk-row"><span class="bk-k">Date</span><span class="bk-v">${tD}</span></div><div class="bk-row"><span class="bk-k">Category</span><span class="bk-v">${tS}</span></div><div class="bk-row"><span class="bk-k">Tickets</span><span class="bk-v">${tQ}</span></div><div class="bk-row"><span class="bk-k">Total</span><span class="bk-v">₦${(tP*tQ).toLocaleString()}</span></div>`;
+  document.getElementById('bkDetails').innerHTML=`<div class="bk-row"><span class="bk-k">Match</span><span class="bk-v">${tM}</span></div><div class="bk-row"><span class="bk-k">Tickets</span><span class="bk-v">${tQ}</span></div><div class="bk-row"><span class="bk-k">Total</span><span class="bk-v">₦${(tP*tQ).toLocaleString()}</span></div>`;
   goStep(4);
 }
-function resetTix(){tM='';tD='';tS='';tP=0;tQ=1;document.querySelectorAll('.mcard,.scard').forEach(c=>c.classList.remove('sel'));document.getElementById('qtyNum').textContent=1;updSum();goStep(1);}
+function resetTix(){ tM='';tD='';tS='';tP=0;tQ=1; updSum(); goStep(1); }
 
-// ── MEMBERSHIP ──
-let mTier='Star Fan',mTierP='₦5,000';
-function pickTier(t,p){mTier=t;mTierP=p;document.getElementById('selTierBadge').textContent=t+' — '+p+'/yr';document.getElementById('memFormWrap').scrollIntoView({behavior:'smooth'});}
-function regMember(){
-  const fn=document.getElementById('m-fn').value||'Member';
-  const ln=document.getElementById('m-ln').value||'';
-  const id='LS-MBR-'+Math.floor(100000+Math.random()*900000);
-  document.getElementById('memId').textContent=id;
-  document.getElementById('mcName').textContent=(fn+' '+ln).toUpperCase();
-  document.getElementById('mcTier').textContent=mTier.toUpperCase()+' MEMBER';
-  document.getElementById('mcId').textContent=id;
-  document.getElementById('memFields').style.display='none';
-  document.getElementById('memSuccess').style.display='block';
-}
-function resetMem(){document.getElementById('memFields').style.display='block';document.getElementById('memSuccess').style.display='none';}
-
+// ── MEMBERSHIP & NEWSLETTER ──
+function pickTier(t,p){ document.getElementById('selTierBadge').textContent=t+' — '+p+'/yr'; document.getElementById('memFormWrap').scrollIntoView({behavior:'smooth'});}
+document.getElementById('newsletterBtn').onclick = () => { showToast("Newsletter Restricted: Join Red & Gold Membership to access."); document.getElementById('membership').scrollIntoView({behavior:'smooth'}); };
+// Demonstration Login Logic
+document.querySelector('a[href="#membership"].btn-p').onclick = () => {
+    showToast("Login System: Database connection pending. Please use the Registration form below.");
+};
 // ── BLOG ──
+// ── BLOG (FULL VERSION) ──
 const defaultArts = [
-  {id:1,title:'Stars Demolish Enyimba 2–0 in Commanding Home Display',cat:'Match Report',date:'17 May 2025',excerpt:'A brilliant first-half brace sealed all three points at Aper Aku Stadium as Lobi Stars produced a disciplined and clinical performance.',body:'<p>Lobi Stars delivered one of their best home performances of the season, routing Enyimba FC 2–0. The hosts were electric from the first whistle, pressing high and disrupting Enyimba\'s build-up at every turn.</p><p>The opener came on the 23rd minute from a precise finish after a brilliant team move down the right flank. The second goal arrived shortly before the break. The second half was a composed, professional performance.</p><p>The three points lift Lobi Stars into 4th place with three games remaining.</p>',img:'images/news-1.jpg',color:'linear-gradient(135deg,#3a0008,#0a0a0a)'},
-  {id:2,title:'Club Confirms Signing of Promising Midfielder',cat:'Transfers',date:'14 May 2025',excerpt:'Lobi Stars have moved quickly in the market to bolster their options in the engine room ahead of the final stretch.',body:'<p>Lobi Stars Football Club have confirmed the signing of a promising midfielder on a two-year deal. The new arrival brings energy, technical quality, and competitive edge to the midfield.</p><p>The player expressed delight at joining, stating that Lobi Stars represents a genuine ambition to compete at the highest level of Nigerian football.</p>',img:'images/news-2.jpg',color:'linear-gradient(135deg,#001a00,#0a0a0a)'},
-  {id:3,title:'Chairman Outlines Ambitious Vision for 2025/26 Season',cat:'Club News',date:'10 May 2025',excerpt:'The club leadership has set its sights on a title challenge next season with new investment coming in.',body:'<p>The Lobi Stars chairman outlined a bold vision for the upcoming season at a press briefing held at Aper Aku Stadium. Announcements included increased budget for player recruitment, infrastructure upgrades, and academy expansion.</p><p>"We want to bring the NPFL title back to Makurdi," the chairman stated.</p>',img:'images/news-3.jpg',color:'linear-gradient(135deg,#1a1000,#0a0a0a)'},
-  {id:4,title:'Academy Stars Shine at North-Central Youth Tournament',cat:'Academy',date:'5 May 2025',excerpt:'Lobi Stars Academy players put in standout performances at the regional youth tournament in Jos.',body:'<p>Several Lobi Stars Academy graduates caught the eye at the North-Central Youth Tournament in Jos this weekend. Three academy players were named in the tournament\'s best XI after impressive displays across all age groups.</p><p>The Academy Director praised the players\' professionalism and technical quality, stating the future of the club is in safe hands.</p>',img:'images/news-1.jpg',color:'linear-gradient(135deg,#001a00,#0a0a0a)'},
-  {id:5,title:'Lobi Stars Open New Training Facility in Makurdi',cat:'Club News',date:'28 Apr 2025',excerpt:'The club has unveiled a brand new training ground on the outskirts of Makurdi, equipped with two full-size pitches.',body:'<p>Lobi Stars Football Club officially opened their new state-of-the-art training facility on the outskirts of Makurdi this week. The facility features two full-size pitches, a gymnasium, and a medical centre.</p><p>The chairman described the investment as a statement of the club\'s long-term ambitions to be the dominant force in Nigerian football.</p>',img:'images/news-2.jpg',color:'linear-gradient(135deg,#0a0a1a,#0a0a0a)'},
-  {id:6,title:'Match Preview: Lobi Stars vs Kano Pillars',cat:'Match Report',date:'22 Apr 2025',excerpt:'Everything you need to know ahead of Saturday\'s crucial NPFL clash at Aper Aku Stadium.',body:'<p>Lobi Stars welcome Kano Pillars to Aper Aku Stadium on Saturday in what promises to be one of the most exciting fixtures of the NPFL season. Both sides are chasing continental qualification spots with just a handful of games remaining.</p><p>The Red and Gold will be looking to make home advantage count in front of what is expected to be a packed stadium.</p>',img:'images/news-3.jpg',color:'linear-gradient(135deg,#1a0000,#0a0a0a)'},
+  {id:1,title:'Stars Demolish Enyimba 2–0 in Commanding Home Display',cat:'Match Report',date:'17 May 2025',excerpt:'A brilliant first-half brace sealed all three points at Aper Aku Stadium...',body:'<p>Full match report details...</p>',img:'images/news-1.jpg',color:'linear-gradient(135deg,#3a0008,#0a0a0a)'},
+  {id:2,title:'Club Confirms Signing of Promising Midfielder',cat:'Transfers',date:'14 May 2025',excerpt:'Lobi Stars have moved quickly in the market to bolster their options...',body:'<p>Transfer news details...</p>',img:'images/news-2.jpg',color:'linear-gradient(135deg,#001a00,#0a0a0a)'},
+  {id:3,title:'Chairman Outlines Ambitious Vision for 2025/26 Season',cat:'Club News',date:'10 May 2025',excerpt:'The club leadership has set its sights on a title challenge next season.',body:'<p>Vision details...</p>',img:'images/news-3.jpg',color:'linear-gradient(135deg,#1a1000,#0a0a0a)'},
+  {id:4,title:'Academy Stars Shine at North-Central Youth Tournament',cat:'Academy',date:'5 May 2025',excerpt:'Lobi Stars Academy players put in standout performances in Jos.',body:'<p>Academy details...</p>',img:'images/news-1.jpg',color:'linear-gradient(135deg,#001a00,#0a0a0a)'},
+  {id:5,title:'Lobi Stars Open New Training Facility in Makurdi',cat:'Club News',date:'28 Apr 2025',excerpt:'The club has unveiled a brand new state-of-the-art training ground.',body:'<p>Facility details...</p>',img:'images/news-2.jpg',color:'linear-gradient(135deg,#0a0a1a,#0a0a0a)'},
+  {id:6,title:'Match Preview: Lobi Stars vs Kano Pillars',cat:'Match Report',date:'22 Apr 2025',excerpt:'Everything you need to know ahead of Saturdays crucial NPFL clash.',body:'<p>Preview details...</p>',img:'images/news-3.jpg',color:'linear-gradient(135deg,#1a0000,#0a0a0a)'},
 ];
+
+let visibleCount = 3; 
+
 function getArts(){try{return JSON.parse(localStorage.getItem('lsArts')||'[]');}catch(e){return[];}}
-function saveArts(a){localStorage.setItem('lsArts',JSON.stringify(a));}
 function allArts(){return [...getArts(),...defaultArts];}
-let visibleCount = 3;
+
 function renderBlog(){
   const arts = allArts();
   const cont = document.getElementById('blogCont');
-  if(!arts.length){
-    cont.innerHTML='<div style="text-align:center;padding:60px;color:rgba(255,255,255,.3);">No articles yet.</div>';
-    return;
-  }
   const visible = arts.slice(0, visibleCount);
+  
   const feat = visible[0];
   const rest = visible.slice(1, 3);
   const extras = visible.slice(3);
@@ -1775,21 +2226,21 @@ function renderBlog(){
   cont.innerHTML = `
     <div class="blog-grid">
       <div><div class="blog-card" onclick="openArt(${feat.id})">
-        <div class="blog-img"><div class="blog-img-bg" style="background:${feat.color||'linear-gradient(135deg,#3a0008,#0a0a0a)'}"><img src="${feat.img||''}" alt="" loading="lazy" onerror="this.style.display='none'"/></div><div class="blog-img-placeholder">${feat.cat}</div><span class="bcat">${feat.cat}</span></div>
+        <div class="blog-img"><div class="blog-img-bg" style="background:${feat.color}"><img src="${feat.img}" onerror="this.style.display='none'"/></div><span class="bcat">${feat.cat}</span></div>
         <div class="blog-body"><div class="blog-date">${feat.date}</div><div class="blog-title">${feat.title}</div><div class="blog-excerpt">${feat.excerpt}</div><span class="blog-rm">Read Full Story →</span></div>
       </div></div>
       <div class="blog-side">${rest.map(a=>`<div class="blog-card" onclick="openArt(${a.id})">
-        <div class="blog-img blog-img-sm"><div class="blog-img-bg" style="background:${a.color||'linear-gradient(135deg,#0a0a0a,#1a1a1a)'}"><img src="${a.img||''}" alt="" loading="lazy" onerror="this.style.display='none'"/></div><div class="blog-img-placeholder">${a.cat}</div><span class="bcat">${a.cat}</span></div>
+        <div class="blog-img blog-img-sm"><div class="blog-img-bg" style="background:${a.color}"><img src="${a.img}" onerror="this.style.display='none'"/></div><span class="bcat">${a.cat}</span></div>
         <div class="blog-body blog-body-sm"><div class="blog-date">${a.date}</div><div class="blog-title blog-title-sm">${a.title}</div><span class="blog-rm">Read More →</span></div>
       </div>`).join('')}</div>
     </div>
     ${extras.length ? `<div class="extra-articles" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:20px;">
       ${extras.map(a=>`<div class="blog-card" onclick="openArt(${a.id})">
-        <div class="blog-img blog-img-sm"><div class="blog-img-bg" style="background:${a.color||'linear-gradient(135deg,#0a0a0a,#1a1a1a)'}"><img src="${a.img||''}" alt="" loading="lazy" onerror="this.style.display='none'"/></div><div class="blog-img-placeholder">${a.cat}</div><span class="bcat">${a.cat}</span></div>
+        <div class="blog-img blog-img-sm"><div class="blog-img-bg" style="background:${a.color}"><img src="${a.img}" onerror="this.style.display='none'"/></div><span class="bcat">${a.cat}</span></div>
         <div class="blog-body blog-body-sm"><div class="blog-date">${a.date}</div><div class="blog-title blog-title-sm">${a.title}</div><span class="blog-rm">Read More →</span></div>
       </div>`).join('')}
     </div>` : ''}
-    ${hasMore ? `<div style="text-align:center;margin-top:36px;"><button class="btn-o" onclick="loadMore()" style="padding:12px 36px;font-size:14px;">Load More Articles</button></div>` : ''}
+    ${hasMore ? `<div style="text-align:center;margin-top:36px;"><button class="btn-o" onclick="loadMore()" style="padding:12px 36px;font-size:14px;cursor:pointer;">Load More Articles</button></div>` : ''}
   `;
 }
 
@@ -1797,127 +2248,47 @@ function loadMore(){
   visibleCount += 3;
   renderBlog();
 }
+
 function openArt(id){
-  const a=allArts().find(x=>x.id==id);if(!a)return;
-  document.getElementById('modalHBg').style.cssText=`width:100%;height:100%;background:${a.color||'linear-gradient(135deg,#3a0008,#0a0a0a)'};position:relative;`;
-  document.getElementById('modalHBg').innerHTML=`<img src="${a.img||''}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" loading="lazy" onerror="this.style.display='none'"/>`;
-  document.getElementById('mCat').textContent=a.cat;
+  const a=allArts().find(x=>x.id==id); if(!a)return;
   document.getElementById('mTitle').textContent=a.title;
-  document.getElementById('mMeta').textContent=a.date+' · Lobi Stars FC';
   document.getElementById('mBody').innerHTML=a.body;
   document.getElementById('articleModal').classList.add('open');
 }
+
 renderBlog();
 
 // ── ADMIN ──
-let adminIn=false;
-const PASS='lobistars2025';
-function openAdmin(){document.getElementById('adminOv').classList.add('open');renderAdmin();}
-function renderAdmin(){
-  const body=document.getElementById('adminBody');
-  if(!adminIn){
-    body.innerHTML=`<div class="admin-login-box"><h3>Admin Login</h3><p>Enter the admin password to manage news.</p><div class="form-grp"><label class="form-lbl">Password</label><input type="password" class="form-inp" id="aPw" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()"/></div><button class="btn-p" style="width:100%;margin-top:8px;border:none;cursor:pointer;" onclick="doLogin()">Login</button><p style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.2);">Hint: lobistars2025</p></div>`;
-    return;
-  }
-  const arts=getArts();
-  body.innerHTML=`<div class="admin-tabs"><div class="atab active" onclick="swTab('pub',this)">Publish</div><div class="atab" onclick="swTab('mgr',this)">Manage (${arts.length})</div></div>
-  <div class="apanel active" id="ap-pub">
-    <div class="form-grp"><label class="form-lbl">Title</label><input type="text" class="form-inp" id="a-tt" placeholder="Article headline"/></div>
-    <div class="form-row"><div class="form-grp"><label class="form-lbl">Category</label><select class="form-sel" id="a-ct"><option>Match Report</option><option>Transfers</option><option>Club News</option><option>Academy</option><option>Community</option></select></div><div class="form-grp"><label class="form-lbl">Date</label><input type="text" class="form-inp" id="a-dt" placeholder="e.g. 20 May 2025"/></div></div>
-    <div class="form-grp"><label class="form-lbl">Image filename (e.g. images/news-4.jpg)</label><input type="text" class="form-inp" id="a-im" placeholder="images/news-4.jpg"/></div>
-    <div class="form-grp"><label class="form-lbl">Short Excerpt</label><textarea class="form-ta" id="a-ex" style="min-height:70px;" placeholder="2–3 sentence summary..."></textarea></div>
-    <div class="form-grp"><label class="form-lbl">Full Article Body (wrap paragraphs in &lt;p&gt; tags)</label><textarea class="form-ta" id="a-bd" style="min-height:130px;" placeholder="&lt;p&gt;Your article text here.&lt;/p&gt;"></textarea></div>
-    <button class="btn-p" style="border:none;cursor:pointer;" onclick="pubArt()">Publish Article</button>
-  </div>
-  <div class="apanel" id="ap-mgr">
-    ${arts.length===0?'<p style="color:rgba(255,255,255,.4);text-align:center;padding:28px;">No custom articles yet.</p>':arts.map(a=>`<div class="ali"><div><div class="ali-title">${a.title}</div><div class="ali-meta">${a.cat} · ${a.date}</div></div><button class="btn-del" onclick="delArt(${a.id})">Delete</button></div>`).join('')}
-  </div>`;
+function openAdmin(){document.getElementById('adminOv').classList.add('open'); document.getElementById('adminBody').innerHTML='<div class="admin-login-box"><h3>Admin Login</h3><input type="password" id="aPw" class="form-inp"><button class="btn-p" onclick="doLogin()">Login</button></div>';}
+function doLogin(){if(document.getElementById('aPw').value==='lobistars2025'){ document.getElementById('adminBody').innerHTML='<p style="color:white">Access Granted. Add articles coming soon.</p>'; } else showToast("Wrong password");}
+
+// ── UTILS ──
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.1});
+document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
+function updateCountdown() {
+    const matchDate = new Date("May 17, 2026 16:00:00").getTime();
+    const now = new Date().getTime();
+    const diff = matchDate - now;
+
+    // If match has passed
+    if (diff < 0) {
+        document.getElementById("countdown-timer").innerHTML = "MATCH IN PROGRESS";
+        return;
+    }
+
+    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+    document.getElementById("days").innerText = d;
+    document.getElementById("hours").innerText = h;
+    document.getElementById("mins").innerText = m;
+    document.getElementById("secs").innerText = s;
 }
-function doLogin(){if(document.getElementById('aPw').value===PASS){adminIn=true;renderAdmin();}else{showToast('Incorrect password');}}
-function swTab(w,el){document.querySelectorAll('.atab').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.querySelectorAll('.apanel').forEach(p=>p.classList.remove('active'));document.getElementById('ap-'+w).classList.add('active');}
-function pubArt(){
-  const t=document.getElementById('a-tt').value.trim();
-  if(!t){showToast('Please enter a title');return;}
-  const arts=getArts(),id=Date.now();
-  arts.unshift({id,title:t,cat:document.getElementById('a-ct').value,date:document.getElementById('a-dt').value||new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}),excerpt:document.getElementById('a-ex').value||'',body:document.getElementById('a-bd').value||'<p>'+document.getElementById('a-ex').value+'</p>',img:document.getElementById('a-im').value||'',color:'linear-gradient(135deg,#1a0000,#0a0a0a)'});
-  saveArts(arts);renderBlog();renderAdmin();document.getElementById('adminOv').classList.remove('open');showToast('Article published!');
-}
-function delArt(id){const arts=getArts().filter(a=>a.id!==id);saveArts(arts);renderBlog();renderAdmin();showToast('Article deleted.');}
-document.getElementById('adminOv').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
-document.getElementById('articleModal').addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');});
-
-// ── TOAST ──
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3200);}
-// ── CORRECTED LIGHTBOX LOGIC ──
-
-// This pulls the images directly from your galImgs list above
-const galleryImages = galImgs.map(img => `images/${img.src}`);
-let currentImgIdx = 0;
-const modalEl = document.getElementById("galleryModal");
-const modalImgEl = document.getElementById("modalImg");
-const modalCapEl = document.getElementById("modalCaption");
-
-function updateModal() {
-  modalImgEl.src = galleryImages[currentImgIdx];
-  // This pulls the label (like "Match Day") from your galImgs array
-  modalCapEl.textContent = galImgs[currentImgIdx].label;
-}
-
-// 1. Handle "VIEW ALL" button click
-document.querySelector('.view-all-btn').addEventListener('click', function(e) {
-  e.preventDefault(); // This stops the jump to the top!
-  modalEl.style.display = "flex";
-  currentImgIdx = 0;
-  updateModal();
-});
-
-// 2. Handle clicking individual gallery items (even though they are dynamic)
-document.getElementById('galleryGrid').addEventListener('click', function(e) {
-  const item = e.target.closest('.gallery-item');
-  if (item) {
-    const allItems = Array.from(document.querySelectorAll('.gallery-item'));
-    currentImgIdx = allItems.indexOf(item);
-    modalEl.style.display = "flex";
-    updateModal();
-  }
-});
-
-// 3. Navigation Controls
-document.querySelector('.next-photo').onclick = (e) => {
-  e.stopPropagation();
-  currentImgIdx = (currentImgIdx + 1) % galleryImages.length;
-  updateModal();
-};
-
-document.querySelector('.prev-photo').onclick = (e) => {
-  e.stopPropagation();
-  currentImgIdx = (currentImgIdx - 1 + galleryImages.length) % galleryImages.length;
-  updateModal();
-};
-
-document.querySelector('.close-modal').onclick = () => {
-  modalEl.style.display = "none";
-};
-
-// Close if user clicks background
-modalEl.onclick = (e) => {
-  if (e.target === modalEl) modalEl.style.display = "none";
-};
-// ── KEYBOARD NAVIGATION FOR GALLERY ──
-document.addEventListener('keydown', (e) => {
-  if (modalEl.style.display !== 'flex') return;
-  if (e.key === 'ArrowRight') {
-    currentImgIdx = (currentImgIdx + 1) % galleryImages.length;
-    updateModal();
-  }
-  if (e.key === 'ArrowLeft') {
-    currentImgIdx = (currentImgIdx - 1 + galleryImages.length) % galleryImages.length;
-    updateModal();
-  }
-  if (e.key === 'Escape') {
-    modalEl.style.display = 'none';
-  }
-});
+setInterval(updateCountdown, 1000);
+updateCountdown(); // Run once immediately
 </script>
 </body>
 </html>
