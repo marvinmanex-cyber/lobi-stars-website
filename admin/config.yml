@@ -1,0 +1,58 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "images"
+public_folder: "/images"
+
+collections:
+  - name: "news"
+    label: "News Articles"
+    folder: "_news"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - {label: "Title", name: "title", widget: "string"}
+      - {label: "Category", name: "category", widget: "select", options: ["Match Report", "Transfers", "Club News", "Academy", "Community"]}
+      - {label: "Date", name: "date", widget: "date"}
+      - {label: "Excerpt", name: "excerpt", widget: "text"}
+      - {label: "Featured Image", name: "image", widget: "image", required: false}
+      - {label: "Body", name: "body", widget: "markdown"}
+
+  - name: "players"
+    label: "Squad / Players"
+    folder: "_players"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - {label: "Name", name: "name", widget: "string"}
+      - {label: "Position", name: "position", widget: "select", options: ["GK", "DEF", "MID", "FWD"]}
+      - {label: "Jersey Number", name: "number", widget: "number"}
+      - {label: "Nationality", name: "nationality", widget: "string", default: "Nigeria"}
+      - {label: "Appearances", name: "apps", widget: "number"}
+      - {label: "Goals", name: "goals", widget: "number"}
+      - {label: "Photo", name: "photo", widget: "image", required: false}
+
+  - name: "gallery"
+    label: "Gallery Photos"
+    folder: "_gallery"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - {label: "Caption", name: "caption", widget: "string"}
+      - {label: "Photo", name: "photo", widget: "image"}
+
+  - name: "fixtures"
+    label: "Fixtures & Results"
+    folder: "_fixtures"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - {label: "Home Team", name: "home", widget: "string"}
+      - {label: "Away Team", name: "away", widget: "string"}
+      - {label: "Date", name: "date", widget: "datetime"}
+      - {label: "Venue", name: "venue", widget: "string"}
+      - {label: "Competition", name: "competition", widget: "string", default: "NPFL"}
+      - {label: "Home Score", name: "home_score", widget: "number", required: false}
+      - {label: "Away Score", name: "away_score", widget: "number", required: false}
+      - {label: "Status", name: "status", widget: "select", options: ["Upcoming", "Completed"]}

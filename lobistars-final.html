@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Lobi Stars Football Club | Pride of Benue</title>
+<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
@@ -1557,6 +1558,17 @@ body.light-mode #club-history {
 </div>
 
 <div class="toast" id="toast"></div>
+<script>
+  if (window.netlifyIdentity) {
+    window.netlifyIdentity.on("init", user => {
+      if (!user) {
+        window.netlifyIdentity.on("login", () => {
+          document.location.href = "/admin/";
+        });
+      }
+    });
+  }
+</script>
 <!-- WHATSAPP FLOATING BUTTON -->
 <a href="https://wa.me/2348000000000" target="_blank" class="wa-float" title="Chat on WhatsApp">
   <span class="wa-tooltip">Chat with us</span>
@@ -1778,6 +1790,7 @@ function renderBlog(){
     ${hasMore ? `<div style="text-align:center;margin-top:36px;"><button class="btn-o" onclick="loadMore()" style="padding:12px 36px;font-size:14px;">Load More Articles</button></div>` : ''}
   `;
 }
+
 function loadMore(){
   visibleCount += 3;
   renderBlog();
