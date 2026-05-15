@@ -254,7 +254,7 @@ img{display:block;width:100%;height:100%;object-fit:cover;}
 ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--black);}::-webkit-scrollbar-thumb{background:var(--red);border-radius:3px;}
 
 /* NAV */
-nav{position:fixed;top:34px;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:72px;background:transparent;transition:background .4s,box-shadow .4s;}
+nav{position:fixed;top:60px;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:72px;background:transparent;transition:background .4s,box-shadow .4s;}
 nav.scrolled{background:rgba(10,10,10,.97);box-shadow:0 2px 30px rgba(212,32,43,.2);border-bottom:1px solid rgba(245,184,0,.12);}
 .nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
 .nlb {
@@ -349,7 +349,7 @@ nav.scrolled{background:rgba(10,10,10,.97);box-shadow:0 2px 30px rgba(212,32,43,
 .hero-slide.active{animation:kb 7s ease forwards;}
 @keyframes kb{from{transform:scale(1);}to{transform:scale(1.06);}}
 /* Hero center content */
-.hero-content{position:relative;z-index:2;width:100%;padding:106px 4% 0;display:flex;flex-direction:column;align-items:center;text-align:center;}
+.hero-content{position:relative;z-index:2;width:100%;padding:132px 4% 0;display:flex;flex-direction:column;align-items:center;text-align:center;}
 .hero-eyebrow{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:6px;text-transform:uppercase;color:var(--gold);margin-bottom:22px;display:flex;align-items:center;justify-content:center;gap:16px;opacity:0;animation:fadeUp .8s .3s forwards;}
 .hero-eyebrow::before,.hero-eyebrow::after{content:'';display:block;width:50px;height:1px;background:rgba(245,184,0,.5);}
 .hero-title{font-family:'Bebas Neue',sans-serif;line-height:.85;letter-spacing:.06em;text-align:center;width:100%;opacity:0;animation:fadeUp .9s .5s forwards;}
@@ -853,7 +853,7 @@ body.light-mode nav.scrolled .theme-switch {
   right: 0;
   z-index: 1002;
   background: #FFFFFF; /* Pure white bar */
-  height: 45px;
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -872,12 +872,12 @@ body.light-mode nav.scrolled .theme-switch {
   color: #1A202C;
   font-family: 'Barlow Condensed', sans-serif;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 15px;
   letter-spacing: 1px;
   text-transform: uppercase;
 }
 .sponsor-logo {
-  height: 25px;
+  height: 40px;
   width: auto;
   object-fit: contain;
 }
@@ -1171,6 +1171,17 @@ h1, h2, h3, .stitle {
 /* Mobile Fix */
 @media (max-width: 768px) {
     .title-top-row { gap: 10px !important; }
+}
+@media(min-width:1001px){
+  #navLinks.mobile-open{
+    display:flex !important;
+    flex-direction:row !important;
+    position:static !important;
+    background:transparent !important;
+    padding:0 !important;
+    border:none !important;
+    max-height:none !important;
+  }
 }
 </style>
 </head>
@@ -2073,7 +2084,28 @@ sliderTimer = setInterval(() => goSlide(cur+1), 5500);
 window.addEventListener('scroll', () => document.getElementById('mainNav').classList.toggle('scrolled', scrollY > 50));
 document.getElementById('menuToggle').addEventListener('click', function() {
   const L = document.getElementById('navLinks');
-  L.style.display = L.style.display === 'flex' ? 'none' : 'flex';
+  const isOpen = L.classList.contains('mobile-open');
+  if (isOpen) {
+    L.classList.remove('mobile-open');
+    L.removeAttribute('style');
+  } else {
+    L.classList.add('mobile-open');
+    Object.assign(L.style, {
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'fixed',
+      top: '130px',
+      left: '0',
+      right: '0',
+      background: 'rgba(10,10,10,0.99)',
+      padding: '20px 5%',
+      gap: '18px',
+      borderBottom: '2px solid rgba(212,32,43,0.5)',
+      zIndex: '999',
+      overflowY: 'auto',
+      maxHeight: 'calc(100vh - 130px)'
+    });
+  }
 });
 
 function openArchiveTab(evt, tabName) {
