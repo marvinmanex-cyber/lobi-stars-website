@@ -1172,6 +1172,41 @@ h1, h2, h3, .stitle {
 @media (max-width: 768px) {
     .title-top-row { gap: 10px !important; }
 }
+/* ── IN-SEAT FOOD ORDER ── */
+.food-modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:4000;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px;}
+.food-modal-ov.open{display:flex;}
+.food-box{background:var(--d2);border-radius:12px;max-width:780px;width:100%;border:1px solid rgba(245,184,0,.25);position:relative;}
+.food-hd{background:linear-gradient(135deg,var(--red),var(--rd));padding:20px 26px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between;}
+.food-hd h3{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--white);}
+.food-hd p{font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;letter-spacing:1px;}
+.food-body{padding:26px;}
+.food-menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px;}
+.food-item{background:var(--d3);border-radius:8px;padding:18px;border:2px solid rgba(255,255,255,.07);transition:border-color .2s;}
+.food-item:hover{border-color:rgba(245,184,0,.4);}
+.food-emoji{font-size:36px;margin-bottom:10px;text-align:center;}
+.food-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:4px;}
+.food-price{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);margin-bottom:12px;}
+.food-qty{display:flex;align-items:center;gap:10px;justify-content:center;}
+.food-qty-btn{width:28px;height:28px;border-radius:50%;background:var(--red);border:none;color:var(--white);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;}
+.food-qty-btn:hover{background:var(--rd);}
+.food-qty-num{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);min-width:20px;text-align:center;}
+.food-seat-row{display:flex;gap:14px;align-items:flex-end;margin-bottom:22px;flex-wrap:wrap;}
+.food-seat-row .form-grp{flex:1;min-width:200px;}
+.food-summary{background:var(--d3);border-radius:8px;padding:18px;margin-bottom:22px;border:1px solid rgba(245,184,0,.15);}
+.food-summary-title{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
+.food-sum-item{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+.food-sum-item:last-child{border:none;font-weight:700;font-size:15px;color:var(--gold);}
+.food-sum-k{color:rgba(255,255,255,.6);}
+.food-sum-v{color:var(--white);}
+.food-confirm{text-align:center;padding:40px 20px;display:none;}
+.food-confirm-icon{font-size:60px;margin-bottom:14px;}
+.food-confirm-ref{font-family:'Bebas Neue',sans-serif;font-size:44px;color:var(--gold);letter-spacing:4px;}
+.food-confirm-msg{font-size:14px;color:rgba(255,255,255,.6);margin-top:10px;line-height:1.7;}
+body.light-mode .food-item{background:#fff;border-color:#E2E8F0;}
+body.light-mode .food-name{color:#1A202C;}
+body.light-mode .food-summary{background:#F7FAFC;border-color:#CBD5E0;}
+body.light-mode .food-sum-k{color:#4A5568;}
+body.light-mode .food-sum-v{color:#1A202C;}
 @media(min-width:1001px){
   #navLinks.mobile-open{
     display:flex !important;
@@ -1195,27 +1230,23 @@ h1, h2, h3, .stitle {
     <span style="color: #718096; font-size: 10px; font-family: 'Barlow Condensed'; letter-spacing: 2px;">OFFICIAL PARTNERS:</span>
     
     <!-- Novus MFB (Clickable) -->
-    <a href="https://novusmfb.com" target="_blank" class="sponsor-item">
-      <img src="images/novus.jpg" alt="Novus MFB" class="sponsor-logo">
-      <span>Novus Microfinance Bank</span>
-    </a>
+  <a href="https://novusmfb.com" target="_blank" class="sponsor-item">
+  <img src="images/novus-logo.png" alt="Novus MFB" class="sponsor-logo">
+  </a>
 
     <!-- Konga (Not Clickable) -->
     <div class="sponsor-item">
       <img src="images/konga.jpg" alt="Konga" class="sponsor-logo">
-      <span>Konga</span>
     </div>
 
     <!-- Jumia (Not Clickable) -->
     <div class="sponsor-item">
       <img src="images/jumia-logo.jpg" alt="Jumia" class="sponsor-logo">
-      <span>Jumia</span>
     </div>
 
     <!-- BIPC (Not Clickable) -->
     <div class="sponsor-item">
       <img src="images/bipc-logo.jpg" alt="BIPC" class="sponsor-logo">
-      <span>BIPC</span>
     </div>
   </div>
 </div>
@@ -1619,8 +1650,15 @@ function openArchiveTab(evt, tabName) {
 
 <!-- TICKETS -->
 <section id="tickets">
-  <div class="stag fade-in">Match Day</div>
-  <h2 class="stitle fade-in">Buy <span class="r">Tickets</span></h2>
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:0;">
+  <div>
+    <div class="stag fade-in">Match Day</div>
+    <h2 class="stitle fade-in">Buy <span class="r">Tickets</span></h2>
+  </div>
+  <button class="btn-p fade-in" onclick="openFoodOrder()" style="background:linear-gradient(135deg,var(--gold),var(--gd));color:var(--black);font-weight:900;display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+    🍔 In-Seat Food Order
+  </button>
+</div>
   <div class="divr fade-in"></div>
   <div class="tsteps fade-in">
     <div class="tstep"><div class="tsn act" id="sn1">1</div><div class="tsl act" id="sl1">Select Match</div></div>
@@ -2000,7 +2038,61 @@ function openArchiveTab(evt, tabName) {
     <span class="admin-link" onclick="openAdmin()">Admin</span>
   </div>
 </footer>
+<!-- FOOD ORDER MODAL -->
+<div class="food-modal-ov" id="foodModal">
+  <div class="food-box">
+    <div class="food-hd">
+      <div>
+        <h3>🍔 In-Seat Food Order</h3>
+        <p>Order food delivered straight to your seat</p>
+      </div>
+      <button class="modal-close" onclick="closeFoodModal()">×</button>
+    </div>
+    <div class="food-body">
 
+      <!-- FOOD FORM -->
+      <div id="foodForm">
+        <p style="color:rgba(255,255,255,.5);font-size:14px;margin-bottom:20px;">Select your items, enter your seat number and place your order.</p>
+
+        <!-- MENU GRID -->
+        <div class="food-menu" id="foodMenu"></div>
+
+        <!-- SEAT NUMBER + STAND -->
+        <div class="food-seat-row">
+          <div class="form-grp">
+            <label class="form-lbl">Your Seat Number</label>
+            <input type="text" class="form-inp" id="foodSeat" placeholder="e.g. A-14"/>
+          </div>
+          <div class="form-grp">
+            <label class="form-lbl">Stand / Section</label>
+            <input type="text" class="form-inp" id="foodStand" placeholder="e.g. North Stand"/>
+          </div>
+        </div>
+
+        <!-- ORDER SUMMARY -->
+        <div class="food-summary">
+          <div class="food-summary-title">Order Summary</div>
+          <div id="foodSummaryItems"><p style="color:rgba(255,255,255,.3);font-size:13px;">No items selected yet.</p></div>
+        </div>
+
+        <button class="btn-p" onclick="placeFoodOrder()" style="width:100%;border:none;cursor:pointer;font-size:15px;padding:15px;">
+          ✅ Place Order
+        </button>
+      </div>
+
+      <!-- CONFIRMATION -->
+      <div class="food-confirm" id="foodConfirm">
+        <div class="food-confirm-icon">🎉</div>
+        <p style="font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.4);text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;">Order Reference</p>
+        <div class="food-confirm-ref" id="foodRef">FD-000000</div>
+        <p class="food-confirm-msg">Your food order has been received!<br>It will be delivered to your seat within 15 minutes.</p>
+        <div class="bk-details" id="foodConfirmDetails" style="margin:20px auto;max-width:400px;text-align:left;"></div>
+        <button class="btn-p" onclick="resetFoodOrder()" style="margin-top:16px;border:none;cursor:pointer;">Order Again</button>
+      </div>
+
+    </div>
+  </div>
+</div>
 <!-- ARTICLE MODAL -->
 <div class="modal-ov" id="articleModal">
   <div class="modal-box">
@@ -2298,6 +2390,96 @@ function openAdmin(){document.getElementById('adminOv').classList.add('open'); d
 function doLogin(){if(document.getElementById('aPw').value==='lobistars2025'){ document.getElementById('adminBody').innerHTML='<p style="color:white">Access Granted. Add articles coming soon.</p>'; } else showToast("Wrong password");}
 
 // ── UTILS ──
+// ── IN-SEAT FOOD ORDER ──
+const foodMenu = [
+  {id:'suya',name:'Beef Suya',price:1500,emoji:'🍢'},
+  {id:'pepper',name:'Pepper Soup',price:2000,emoji:'🍲'},
+  {id:'chicken',name:'Grilled Chicken',price:2500,emoji:'🍗'},
+  {id:'water',name:'Bottled Water',price:300,emoji:'💧'},
+  {id:'malt',name:'Malt Drink',price:500,emoji:'🥤'},
+  {id:'puff',name:'Puff Puff (5 pcs)',price:500,emoji:'🍩'},
+  {id:'plantain',name:'Fried Plantain',price:800,emoji:'🍌'},
+  {id:'pie',name:'Meat Pie',price:700,emoji:'🥧'},
+];
+let foodQtys = {};
+foodMenu.forEach(f => foodQtys[f.id] = 0);
+
+function openFoodOrder(){
+  document.getElementById('foodModal').classList.add('open');
+  renderFoodMenu();
+  renderFoodSummary();
+  document.getElementById('foodForm').style.display='block';
+  document.getElementById('foodConfirm').style.display='none';
+}
+function closeFoodModal(){
+  document.getElementById('foodModal').classList.remove('open');
+}
+function renderFoodMenu(){
+  const grid = document.getElementById('foodMenu');
+  grid.innerHTML = foodMenu.map(f=>`
+    <div class="food-item">
+      <div class="food-emoji">${f.emoji}</div>
+      <div class="food-name">${f.name}</div>
+      <div class="food-price">₦${f.price.toLocaleString()}</div>
+      <div class="food-qty">
+        <button class="food-qty-btn" onclick="changeFoodQty('${f.id}',-1)">−</button>
+        <div class="food-qty-num" id="fq-${f.id}">${foodQtys[f.id]}</div>
+        <button class="food-qty-btn" onclick="changeFoodQty('${f.id}',1)">+</button>
+      </div>
+    </div>`).join('');
+}
+function changeFoodQty(id, delta){
+  foodQtys[id] = Math.max(0, (foodQtys[id]||0) + delta);
+  const el = document.getElementById('fq-'+id);
+  if(el) el.textContent = foodQtys[id];
+  renderFoodSummary();
+}
+function renderFoodSummary(){
+  const cont = document.getElementById('foodSummaryItems');
+  const selected = foodMenu.filter(f => foodQtys[f.id] > 0);
+  if(!selected.length){
+    cont.innerHTML='<p style="color:rgba(255,255,255,.3);font-size:13px;">No items selected yet.</p>';
+    return;
+  }
+  let total = 0;
+  let html = selected.map(f=>{
+    const subtotal = f.price * foodQtys[f.id];
+    total += subtotal;
+    return `<div class="food-sum-item"><span class="food-sum-k">${f.emoji} ${f.name} × ${foodQtys[f.id]}</span><span class="food-sum-v">₦${subtotal.toLocaleString()}</span></div>`;
+  }).join('');
+  html += `<div class="food-sum-item"><span class="food-sum-k">Total</span><span class="food-sum-v">₦${total.toLocaleString()}</span></div>`;
+  cont.innerHTML = html;
+}
+function placeFoodOrder(){
+  const seat = document.getElementById('foodSeat').value.trim();
+  const stand = document.getElementById('foodStand').value.trim();
+  const selected = foodMenu.filter(f => foodQtys[f.id] > 0);
+  if(!selected.length){ showToast('Please select at least one item.'); return; }
+  if(!seat){ showToast('Please enter your seat number.'); return; }
+  const ref = 'FD-'+Math.floor(100000+Math.random()*900000);
+  let total = 0;
+  selected.forEach(f => total += f.price * foodQtys[f.id]);
+  document.getElementById('foodRef').textContent = ref;
+  let details = `
+    <div class="bk-row"><span class="bk-k">Seat</span><span class="bk-v">${seat}${stand?' · '+stand:''}</span></div>
+    ${selected.map(f=>`<div class="bk-row"><span class="bk-k">${f.emoji} ${f.name}</span><span class="bk-v">× ${foodQtys[f.id]} — ₦${(f.price*foodQtys[f.id]).toLocaleString()}</span></div>`).join('')}
+    <div class="bk-row"><span class="bk-k">Total Paid</span><span class="bk-v">₦${total.toLocaleString()}</span></div>`;
+  document.getElementById('foodConfirmDetails').innerHTML = details;
+  document.getElementById('foodForm').style.display = 'none';
+  document.getElementById('foodConfirm').style.display = 'block';
+}
+function resetFoodOrder(){
+  foodMenu.forEach(f => foodQtys[f.id] = 0);
+  document.getElementById('foodSeat').value = '';
+  document.getElementById('foodStand').value = '';
+  document.getElementById('foodForm').style.display = 'block';
+  document.getElementById('foodConfirm').style.display = 'none';
+  renderFoodMenu();
+  renderFoodSummary();
+}
+document.getElementById('foodModal').addEventListener('click', function(e){
+  if(e.target === this) closeFoodModal();
+});
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.1});
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
