@@ -1181,7 +1181,7 @@ h1, h2, h3, .stitle {
 .food-hd p{font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;letter-spacing:1px;}
 .food-body{padding:26px;}
 .food-menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px;}
-.food-item{background:var(--d3);border-radius:8px;padding:18px;border:2px solid rgba(255,255,255,.07);transition:border-color .2s;}
+.food-item{background:var(--d3);border-radius:8px;padding:18px;border:2px solid rgba(255,255,255,.07);transition:border-color .2s;cursor:pointer;}
 .food-item:hover{border-color:rgba(245,184,0,.4);}
 .food-emoji{font-size:36px;margin-bottom:10px;text-align:center;}
 .food-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:4px;}
@@ -1191,7 +1191,7 @@ h1, h2, h3, .stitle {
 .food-qty-btn:hover{background:var(--rd);}
 .food-qty-num{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);min-width:20px;text-align:center;}
 .food-seat-row{display:flex;gap:14px;align-items:flex-end;margin-bottom:22px;flex-wrap:wrap;}
-.food-seat-row .form-grp{flex:1;min-width:200px;}
+.food-seat-row .form-grp{flex:1;min-width:160px;}
 .food-summary{background:var(--d3);border-radius:8px;padding:18px;margin-bottom:22px;border:1px solid rgba(245,184,0,.15);}
 .food-summary-title{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
 .food-sum-item{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);}
@@ -1234,20 +1234,20 @@ body.light-mode .food-sum-v{color:#1A202C;}
   <img src="images/novus.png" alt="Novus MFB" class="sponsor-logo">
   </a>
 
-    <!-- Konga (Not Clickable) -->
-    <div class="sponsor-item">
+    <!-- Konga (Clickable) -->
+    <a href="https://www.konga.com" target="_blank" class="sponsor-item">
       <img src="images/konga.jpg" alt="Konga" class="sponsor-logo">
-    </div>
+    </a>
 
-    <!-- Jumia (Not Clickable) -->
-    <div class="sponsor-item">
+    <!-- Jumia (Clickable) -->
+    <a href="https://jumia.com.ng" target="_blank" class="sponsor-item">
       <img src="images/jumia-logo.jpg" alt="Jumia" class="sponsor-logo">
-    </div>
+    </a>
 
-    <!-- BIPC (Not Clickable) -->
-    <div class="sponsor-item">
+    <!-- BIPC (Clickable) -->
+    <a href="https://bipc.benuestate.gov.ng" target="_blank" class="sponsor-item">
       <img src="images/bipc-logo.jpg" alt="BIPC" class="sponsor-logo">
-    </div>
+    </a>
   </div>
 </div>
 <nav id="mainNav">
@@ -1606,7 +1606,7 @@ function openArchiveTab(evt, tabName) {
             <div class="match-info">
                 <p><strong>Sunday, May 17, 2026 • 4:00 PM</strong></p>
                 <p><i class="fas fa-map-marker-alt" style="color:#D4202B"></i> Aper Aku Stadium, Makurdi</p>
-                <button class="tix-btn">Get Tickets</button>
+                <a href="#tickets" class="tix-btn" style="text-decoration:none;display:inline-block;">Get Tickets</a>
             </div>
         </div>
     </div>
@@ -2057,7 +2057,7 @@ function openArchiveTab(evt, tabName) {
         <!-- MENU GRID -->
         <div class="food-menu" id="foodMenu"></div>
 
-        <!-- SEAT NUMBER + STAND -->
+        <!-- SEAT NUMBER + STAND + PHONE -->
         <div class="food-seat-row">
           <div class="form-grp">
             <label class="form-lbl">Your Seat Number</label>
@@ -2066,6 +2066,10 @@ function openArchiveTab(evt, tabName) {
           <div class="form-grp">
             <label class="form-lbl">Stand / Section</label>
             <input type="text" class="form-inp" id="foodStand" placeholder="e.g. North Stand"/>
+          </div>
+          <div class="form-grp">
+            <label class="form-lbl">Phone Number</label>
+            <input type="tel" class="form-inp" id="foodPhone" placeholder="e.g. 08012345678"/>
           </div>
         </div>
 
@@ -2087,7 +2091,10 @@ function openArchiveTab(evt, tabName) {
         <div class="food-confirm-ref" id="foodRef">FD-000000</div>
         <p class="food-confirm-msg">Your food order has been received!<br>It will be delivered to your seat within 15 minutes.</p>
         <div class="bk-details" id="foodConfirmDetails" style="margin:20px auto;max-width:400px;text-align:left;"></div>
-        <button class="btn-p" onclick="resetFoodOrder()" style="margin-top:16px;border:none;cursor:pointer;">Order Again</button>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap;">
+          <button class="btn-p" onclick="resetFoodOrder()" style="border:none;cursor:pointer;">Order Again</button>
+          <button class="btn-p" onclick="cancelFoodOrder()" style="border:none;cursor:pointer;background:rgba(212,32,43,.3);color:#D4202B;">Cancel Order</button>
+        </div>
       </div>
 
     </div>
@@ -2417,14 +2424,14 @@ function closeFoodModal(){
 function renderFoodMenu(){
   const grid = document.getElementById('foodMenu');
   grid.innerHTML = foodMenu.map(f=>`
-    <div class="food-item">
+    <div class="food-item" onclick="changeFoodQty('${f.id}',1)">
       <div class="food-emoji">${f.emoji}</div>
       <div class="food-name">${f.name}</div>
       <div class="food-price">₦${f.price.toLocaleString()}</div>
       <div class="food-qty">
-        <button class="food-qty-btn" onclick="changeFoodQty('${f.id}',-1)">−</button>
+        <button class="food-qty-btn" onclick="event.stopPropagation();changeFoodQty('${f.id}',-1)">−</button>
         <div class="food-qty-num" id="fq-${f.id}">${foodQtys[f.id]}</div>
-        <button class="food-qty-btn" onclick="changeFoodQty('${f.id}',1)">+</button>
+        <button class="food-qty-btn" onclick="event.stopPropagation();changeFoodQty('${f.id}',1)">+</button>
       </div>
     </div>`).join('');
 }
