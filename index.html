@@ -2300,14 +2300,18 @@ function openArchiveTab(evt, tabName) {
 <style>
   /* Base Dark Mode Styles */
   #membership {
-    background-color: #0a0a0a;
-    transition: background-color 0.3s ease;
+  background-color: #0a0a0a;
+  transition: background-color 0.3s ease;
+  /* Add the line below */
+  border-top: 1px solid rgba(255, 255, 255, 0.07); 
   }
   #membership .stitle, #membership .stag { color: #fff; }
   
   /* LIGHT MODE ADAPTATION */
   body.light-mode #membership {
-    background-color: #e3f2fd !important; /* Sky Blue Background */
+  background-color: #e3f2fd !important; 
+  /* Add the line below */
+  border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
   }
   body.light-mode #membership .stitle,
   body.light-mode #membership .stag {
