@@ -733,20 +733,106 @@ table.st tr:hover td{background:rgba(255,255,255,.03);}
 .sl{width:40px;height:40px;border-radius:50%;background:var(--d3);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:12px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;transition:background .2s,border-color .2s,color .2s;}
 .sl:hover{background:var(--red);border-color:var(--red);color:var(--white);}
 
-/* FOOTER */
-footer{background:var(--d2);border-top:1px solid rgba(245,184,0,.1);padding:56px 5% 26px;}
-.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:44px;margin-bottom:40px;}
-.footer-brand p{font-size:14px;color:rgba(255,255,255,.36);line-height:1.8;margin-top:14px;max-width:255px;}
-.footer-title{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px;}
-.footer-links{list-style:none;}
-.footer-links li{margin-bottom:10px;}
-.footer-links a{font-size:14px;color:rgba(255,255,255,.4);text-decoration:none;transition:color .2s;}
-.footer-links a:hover{color:var(--white);}
-.footer-bottom{display:flex;align-items:center;justify-content:space-between;padding-top:20px;border-top:1px solid rgba(255,255,255,.07);flex-wrap:wrap;gap:12px;}
-.footer-copy{font-size:12px;color:rgba(255,255,255,.22);}
-.footer-copy a{color:var(--red);text-decoration:none;}
-.admin-link{font-size:11px;color:rgba(255,255,255,.12);font-family:'Barlow Condensed',sans-serif;letter-spacing:2px;text-transform:uppercase;transition:color .2s;cursor:pointer;}
-.admin-link:hover{color:rgba(255,255,255,.35);}
+/* FOOTER - PROFESSIONAL REDESIGN */
+footer {
+  background: var(--d2);
+  /* A thick red brand line to clearly end the page */
+  border-top: 5px solid var(--red); 
+  padding: 80px 5% 40px;
+  position: relative;
+}
+
+/* Ensure footer turns white in Light Mode */
+body.light-mode footer {
+  background: #FFFFFF !important;
+  border-top-color: var(--red) !important;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 60px;
+  margin-bottom: 60px;
+}
+
+/* Brand Text Styling */
+.footer-brand p {
+  font-size: 15px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.8;
+  margin-top: 20px;
+  max-width: 320px;
+}
+body.light-mode .footer-brand p { color: #4A5568 !important; }
+
+/* Bold, Athletic Titles */
+.footer-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 25px;
+  position: relative;
+}
+
+/* Small red underline for titles */
+.footer-title::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 30px;
+  height: 2px;
+  background: var(--red);
+}
+
+.footer-links { list-style: none; padding: 0; }
+.footer-links li { margin-bottom: 15px; }
+
+/* Interactive Hover Links */
+.footer-links a {
+  font-size: 15px;
+  color: rgba(255,255,255,0.5);
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+body.light-mode .footer-links a { color: #2D3748 !important; }
+
+.footer-links a:hover {
+  color: var(--red) !important;
+  transform: translateX(8px); /* Slides right slightly when hovered */
+}
+
+/* Bottom Bar Styling */
+.footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 30px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  flex-wrap: wrap;
+  gap: 20px;
+}
+body.light-mode .footer-bottom { border-top-color: #E2E8F0; }
+
+.footer-copy {
+  font-size: 13px;
+  color: rgba(255,255,255,0.3);
+}
+body.light-mode .footer-copy { color: #718096 !important; }
+
+.admin-link {
+  font-size: 11px;
+  color: rgba(255,255,255,0.2);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.admin-link:hover { color: var(--red); }
 
 /* MODALS */
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:2000;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:48px 20px;}
@@ -2551,46 +2637,68 @@ function openArchiveTab(evt, tabName) {
 <footer>
 <!-- ... Footer content ... -->
 <!-- FOOTER -->
+<!-- FOOTER -->
 <footer>
   <div class="footer-grid">
-    <div>
-      <a class="nav-logo" href="#hero"><div class="nlb">
-  <img src="images/hero-6.jpg" alt="Lobi Stars Badge">
-</div><div class="nlt">Lobi Stars<span>Football Club</span></div></a>
-      <p class="footer-brand">The Pride of Benue. Competing at the highest level of Nigerian football since 1969. Red and Gold forever.</p>
+    
+    <!-- BRAND COLUMN -->
+    <div class="footer-brand">
+      <a class="nav-logo" href="#hero" style="text-decoration:none; display: flex; align-items: center; gap: 15px;">
+        <div class="nlb" style="background:#fff; border: 2px solid var(--gold); width: 50px; height: 50px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <img src="images/hero-6.jpg" alt="Badge" style="width: 80%;">
+        </div>
+        <div class="nlt" style="display: flex; flex-direction: column;">
+            <span style="font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: #fff; line-height: 1;">LOBI STARS</span>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--gold); letter-spacing: 2px;">FOOTBALL CLUB</span>
+        </div>
+      </a>
+      <p>The Pride of Benue. Competing at the highest level of Nigerian football since 1969. Committed to excellence, community, and the spirit of the game. Red and Gold forever.</p>
     </div>
+
+    <!-- QUICK LINKS -->
     <div>
-      <div class="footer-title">Quick Links</div>
+      <div class="footer-title">Navigation</div>
       <ul class="footer-links">
         <li><a href="#about">About the Club</a></li>
-        <li><a href="#players">The Squad</a></li>
-        <li><a href="#fixtures">Fixtures</a></li>
-        <li><a href="#news">News</a></li>
-        <li><a href="#gallery">Gallery</a></li>
+        <li><a href="#players">Our Warriors</a></li>
+        <li><a href="#fixtures">Match Schedule</a></li>
+        <li><a href="#news">Latest News</a></li>
+        <li><a href="#gallery">Media Gallery</a></li>
       </ul>
     </div>
+
+    <!-- CLUB INFO -->
     <div>
       <div class="footer-title">The Club</div>
       <ul class="footer-links">
-        <li><a href="#club-history">Club History</a></li>
+        <li><a href="#history">Club History</a></li>
         <li><a href="#management">Management</a></li>
-        <li><a href="#stadium-section">Stadium</a></li>
-        <li><a href="#academy">Academy</a></li>
+        <li><a href="#stadium">Aper Aku Stadium</a></li>
+        <li><a href="#academy">Youth Academy</a></li>
       </ul>
     </div>
+
+    <!-- FAN SUPPORT -->
     <div>
       <div class="footer-title">Fan Zone</div>
       <ul class="footer-links">
         <li><a href="#tickets">Buy Tickets</a></li>
-        <li><a href="#merchandise">Merchandise</a></li>
+        <li><a href="#merchandise">Club Shop</a></li>
         <li><a href="#membership">Membership</a></li>
         <li><a href="#sponsor">Sponsor Us</a></li>
+        <li><a href="#contact">Help Center</a></li>
       </ul>
     </div>
   </div>
+
+  <!-- BOTTOM STRIP -->
   <div class="footer-bottom">
-    <div class="footer-copy">© 2025 Lobi Stars Football Club. All rights reserved. | <a href="#">Privacy Policy</a></div>
-    <span class="admin-link" onclick="openAdmin()">Admin</span>
+    <div class="footer-copy">
+        © 2026 Lobi Stars Football Club. All rights reserved. | <a href="#">Privacy Policy</a>
+    </div>
+    <div class="admin-link" onclick="openAdmin()">
+        STAFF ACCESS
+    </div>
   </div>
 </footer>
 <!-- FOOD ORDER MODAL -->
