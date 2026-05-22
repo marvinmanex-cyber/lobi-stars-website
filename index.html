@@ -1803,45 +1803,86 @@ function openArchiveTab(evt, tabName) {
   </div>
 </section>
 
-<!-- MEMBERSHIP -->
-<section id="membership">
-  <div class="stag fade-in">Join the Family</div>
-  <h2 class="stitle fade-in">Fan <span class="r">Membership</span></h2>
-  <div class="divr fade-in"></div>
-  <p style="color:rgba(255,255,255,.55);font-size:16px;max-width:580px;line-height:1.8;margin-bottom:46px;" class="fade-in">Become an official Lobi Stars member and enjoy exclusive benefits all season long.</p>
-  <!-- ONLY ONE MEMBERSHIP CARD -->
-<div class="tier-cards fade-in" style="grid-template-columns: 1fr; max-width: 500px; margin: 0 auto 54px;">
-  <div class="tcard silver" style="border-color: var(--gold); background: linear-gradient(160deg, #131313, var(--d3));">
-    <div class="tic">🔴</div>
-    <div class="tname st" style="color: var(--gold);">Club Membership</div>
-    <div class="tprice">₦15,000<span>/yr</span></div>
-    <div class="tperiod">Official Club Membership</div>
-    <ul class="tbenefits">
-      <li>Official membership card</li>
-      <li>Discount on merchandise</li>
-      <li>Weekly Club Newsletter</li>
-      <li>Priority Ticket Access</li>
-    </ul>
-    <a href="#memFormWrap" class="tbtn" style="text-align: center; text-decoration: none; display: block;">Join Now</a>
-  </div>
-</div>
-  <div class="mem-form-wrap fade-in" id="memFormWrap">
-    <h3>Register as a Member</h3>
-    <p class="mem-sub">Fill in your details to complete your membership registration.</p>
-    <div class="sel-tier-badge" id="selTierBadge">⭐ Star Fan — ₦5,000/yr</div>
-    <div id="memFields">
-      <div class="form-row"><div class="form-grp"><label class="form-lbl">First Name</label><input type="text" class="form-inp" id="m-fn" placeholder="First name"/></div><div class="form-grp"><label class="form-lbl">Last Name</label><input type="text" class="form-inp" id="m-ln" placeholder="Last name"/></div></div>
-      <div class="form-grp"><label class="form-lbl">Email Address</label><input type="email" class="form-inp" id="m-em" placeholder="you@example.com"/></div>
-      <div class="form-grp"><label class="form-lbl">Phone Number</label><input type="tel" class="form-inp" id="m-ph" placeholder="+234 800 000 0000"/></div>
-      <div class="form-grp"><label class="form-lbl">State</label><input type="text" class="form-inp" id="m-ad" placeholder="Your state of residence"/></div>
-      <button class="btn-p" onclick="regMember()" style="margin-top:6px;">Complete Registration</button>
+<!-- MEMBERSHIP SECTION -->
+<section id="membership" style="padding: 100px 0; background: #0a0a0a;">
+  <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+    
+    <!-- HEADERS (Now properly contained) -->
+    <div class="stag fade-in">Join the Family</div>
+    <h2 class="stitle fade-in">Fan <span class="r">Membership</span></h2>
+    <div class="divr fade-in" style="margin-bottom: 20px;"></div>
+    <p style="color:rgba(255,255,255,.55); font-size:18px; max-width:600px; line-height:1.8; margin-bottom:50px;" class="fade-in">
+      Become an official Lobi Stars member and enjoy exclusive benefits, priority tickets, and official merchandise discounts all season long.
+    </p>
+
+    <!-- CENTERED MEMBERSHIP CARD -->
+    <div class="tier-cards fade-in" style="display: flex; justify-content: center; margin-bottom: 60px;">
+      <div class="tcard silver" style="border: 2px solid var(--gold); background: linear-gradient(160deg, #131313, #1a1a1a); width: 100%; max-width: 450px; padding: 40px; border-radius: 15px; text-align: center;">
+        <div class="tic" style="font-size: 40px; margin-bottom: 10px;">🔴</div>
+        <div class="tname st" style="color: var(--gold); font-size: 24px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">Official Membership</div>
+        <div class="tprice" style="font-size: 48px; color: #fff; margin: 15px 0;">₦15,000<span style="font-size: 18px; opacity: 0.5;">/yr</span></div>
+        <ul class="tbenefits" style="list-style: none; padding: 0; margin: 25px 0; text-align: left; color: rgba(255,255,255,0.8); line-height: 2;">
+          <li>✅ Official 2025/26 Membership Card</li>
+          <li>✅ 10% Discount on Club Merchandise</li>
+          <li>✅ Weekly Exclusive Club Newsletter</li>
+          <li>✅ Priority Match Day Ticket Access</li>
+          <li>✅ Digital Match Day Programmes</li>
+        </ul>
+        <a href="#memFormWrap" class="tbtn" style="text-align: center; text-decoration: none; display: block; background: var(--gold); color: #000; padding: 15px; border-radius: 8px; font-weight: bold; text-transform: uppercase;">Join the Family</a>
+      </div>
     </div>
-    <div class="mem-success" id="memSuccess">
-      <p style="color:rgba(255,255,255,.4);font-size:11px;letter-spacing:3px;text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;margin-bottom:7px;">Your Membership ID</p>
-      <div class="mem-id" id="memId">LS-MBR-000000</div>
-      <div class="mem-card"><div class="mc-club">LOBI STARS FOOTBALL CLUB</div><div class="mc-name" id="mcName">—</div><div class="mc-tier" id="mcTier">—</div><div class="mc-id" id="mcId">—</div></div>
-      <p class="muted-p" style="font-size:14px;line-height:1.7;">Welcome to the Lobi Stars family!<br>Your membership card will be sent to your email.</p>
-      <button class="btn-p" onclick="resetMem()" style="margin-top:22px;">Register Another</button>
+
+    <!-- LARGE BEAUTIFIED SKY BLUE FORM -->
+    <div class="mem-form-wrap fade-in" id="memFormWrap" style="background: #e3f2fd; border-radius: 24px; padding: 60px; max-width: 900px; margin: 0 auto; box-shadow: 0 30px 60px rgba(0,0,0,0.3); color: #1a237e;">
+      
+      <div style="text-align: center; margin-bottom: 40px;">
+        <h3 style="font-size: 32px; font-weight: 800; color: #1a237e; margin-bottom: 10px;">Register as a Member</h3>
+        <p style="color: #5c6bc0; font-size: 16px;">Please provide your details below to activate your season membership.</p>
+        <div class="sel-tier-badge" id="selTierBadge" style="display: inline-block; background: #1a237e; color: #fff; padding: 8px 20px; border-radius: 50px; margin-top: 15px; font-weight: bold; font-size: 14px;">⭐ Official Fan — ₦15,000/yr</div>
+      </div>
+
+      <div id="memFields">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px;">
+          <div class="form-grp">
+            <label style="display: block; font-weight: bold; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; color: #1a237e;">First Name</label>
+            <input type="text" class="form-inp" id="m-fn" placeholder="e.g. Samuel" style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #bbdefb; background: #fff; font-size: 16px;"/>
+          </div>
+          <div class="form-grp">
+            <label style="display: block; font-weight: bold; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; color: #1a237e;">Last Name</label>
+            <input type="text" class="form-inp" id="m-ln" placeholder="e.g. Ortom" style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #bbdefb; background: #fff; font-size: 16px;"/>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 25px;">
+          <div class="form-grp">
+            <label style="display: block; font-weight: bold; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; color: #1a237e;">Email Address</label>
+            <input type="email" class="form-inp" id="m-em" placeholder="you@example.com" style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #bbdefb; background: #fff; font-size: 16px;"/>
+          </div>
+          <div class="form-grp">
+            <label style="display: block; font-weight: bold; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; color: #1a237e;">Phone Number</label>
+            <input type="tel" class="form-inp" id="m-ph" placeholder="+234..." style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #bbdefb; background: #fff; font-size: 16px;"/>
+          </div>
+        </div>
+
+        <div class="form-grp" style="margin-bottom: 35px;">
+          <label style="display: block; font-weight: bold; text-transform: uppercase; font-size: 12px; margin-bottom: 8px; color: #1a237e;">State of Residence</label>
+          <input type="text" class="form-inp" id="m-ad" placeholder="e.g. Benue State" style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #bbdefb; background: #fff; font-size: 16px;"/>
+        </div>
+
+        <button class="btn-p" onclick="regMember()" style="width: 100%; padding: 20px; background: #D4202B; color: #fff; border: none; border-radius: 12px; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: 0.3s;">
+          Complete Registration & Pay
+        </button>
+      </div>
+
+      <!-- SUCCESS STATE -->
+      <div class="mem-success" id="memSuccess" style="display: none; text-align: center; padding: 40px 0;">
+        <div style="background: #1a237e; color: #fff; padding: 40px; border-radius: 20px; margin-bottom: 30px;">
+          <p style="font-size:12px; letter-spacing:3px; text-transform:uppercase; margin-bottom:10px; opacity: 0.7;">Official Membership ID</p>
+          <div class="mem-id" id="memId" style="font-size: 32px; font-weight: bold; border: 2px dashed rgba(255,255,255,0.3); padding: 15px; display: inline-block; margin-bottom: 20px;">LS-MBR-672901</div>
+          <p style="font-size: 18px;">Welcome to the family, <span id="mcName" style="font-weight: bold;">Member</span>!</p>
+        </div>
+        <button class="btn-p" onclick="resetMem()" style="background: transparent; border: 2px solid #1a237e; color: #1a237e; padding: 12px 30px; border-radius: 8px; font-weight: bold;">Register Another Member</button>
+      </div>
     </div>
   </div>
 </section>
