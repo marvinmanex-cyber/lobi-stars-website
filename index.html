@@ -1563,7 +1563,7 @@ function openArchiveTab(evt, tabName) {
 </section>
 
 <!-- PLAYERS -->
-<section id="players">
+<section id="players" style="padding-bottom: 0; margin-bottom: 0;">
   <div class="players-hd fade-in">
     <div><div class="stag">The Squad</div><h2 class="stitle">Our <span class="r">Warriors</span></h2></div>
     <div class="ftabs">
@@ -1574,33 +1574,32 @@ function openArchiveTab(evt, tabName) {
       <div class="ftab" data-pos="FWD">FWD</div>
     </div>
   </div>
+
   <!-- TEAM PHOTOS STRIP -->
-<div class="team-photos-strip fade-in">
-  
-  <div class="tps-item">
-    <img src="images/team-photo1.jpg" alt="2024/25 Squad" onload="this.nextElementSibling.style.display='none'">
-    <div class="tps-fallback">TEAM PHOTO</div>
-    <div class="tps-label">2024/25 Squad</div>
+  <div class="team-photos-strip fade-in">
+    <div class="tps-item">
+      <img src="images/team-photo1.jpg" alt="2024/25 Squad" onload="this.nextElementSibling.style.display='none'">
+      <div class="tps-fallback">TEAM PHOTO</div>
+      <div class="tps-label">2024/25 Squad</div>
+    </div>
+    <div class="tps-item">
+      <img src="images/team-photo2.jpg" alt="Training Session" onload="this.nextElementSibling.style.display='none'">
+      <div class="tps-fallback">TEAM PHOTO</div>
+      <div class="tps-label">Training Session</div>
+    </div>
+    <div class="tps-item">
+      <img src="images/team-photo3.jpg" alt="Match Day" onload="this.nextElementSibling.style.display='none'">
+      <div class="tps-fallback">TEAM PHOTO</div>
+      <div class="tps-label">Match Day</div>
+    </div>
   </div>
 
-  <div class="tps-item">
-    <img src="images/team-photo2.jpg" alt="Training Session" onload="this.nextElementSibling.style.display='none'">
-    <div class="tps-fallback">TEAM PHOTO</div>
-    <div class="tps-label">Training Session</div>
-  </div>
-
-  <div class="tps-item">
-    <img src="images/team-photo3.jpg" alt="Match Day" onload="this.nextElementSibling.style.display='none'">
-    <div class="tps-fallback">TEAM PHOTO</div>
-    <div class="tps-label">Match Day</div>
-  </div>
-
-</div>
-  <div class="players-grid" id="playersGrid"></div>
+  <!-- This grid will now sit right at the bottom of the section -->
+  <div class="players-grid" id="playersGrid" style="margin-bottom: 0;"></div>
 </section>
 
 <!-- FIXTURES -->
-<section id="fixtures">
+<section id="fixtures" style="padding-top: 50px; margin-top: 0;">
   <div class="stag fade-in">Schedule &amp; Results</div>
   <h2 class="stitle fade-in">Fixtures &amp; <span class="r">Results</span></h2>
   <div class="divr fade-in"></div>
@@ -1618,8 +1617,7 @@ function openArchiveTab(evt, tabName) {
       <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 25</span><span class="fix-date">Sat 10 May</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-score">3 – 1</div><div class="fix-team a">Heartland FC</div></div><div class="fix-venue"><span class="rb w"></span> Win · Aper Aku Stadium</div></div>
     </div>
   </div>
-  <div style="margin-top:52px;" class="fade-in">
-    <div class="stag">NPFL 2024/25</div>
+</section>
  <!-- START OF LIGHT THEME MATCH HUB -->
 <style>
     .match-hub-light {
@@ -2946,10 +2944,9 @@ const players = [
   {name:'Godwin Agber',pos:'MID',bg:'mid',ini:'GA',num:6,nat:'Nigeria',apps:25,goals:4,s3:6,sk:'Ast', img:'godwin-agber.jpg'},
   {name:'Francis Orsar',pos:'MID',bg:'mid',ini:'FO',num:8,nat:'Nigeria',apps:23,goals:3,s3:5,sk:'Ast', img:'francis-orsar.jpg'},
   {name:'Barnabas Imenger',pos:'MID',bg:'mid',ini:'BI',num:14,nat:'Nigeria',apps:19,goals:2,s3:3,sk:'Ast', img:'barnabas-imenger.jpg'},
-  {name:'Terkura Ode',pos:'FWD',bg:'fwd',ini:'TO',num:9,nat:'Nigeria',apps:26,goals:12,s3:4,sk:'Ast', img:'terkura-ode.jpg'},
-  {name:'Kpengwa Tor',pos:'FWD',bg:'fwd',ini:'KT',num:10,nat:'Nigeria',apps:24,goals:9,s3:3,sk:'Ast', img:'kpengwa-tor.jpg'},
-  {name:'Moses Akor',pos:'FWD',bg:'fwd',ini:'MA',num:11,nat:'Nigeria',apps:20,goals:6,s3:2,sk:'Ast', img:'moses-akor.jpg'},
+  {name:'Terkura Ode',pos:'FWD',bg:'fwd',ini:'TO',num:9,nat:'Nigeria',apps:26,goals:12,s3:4,sk:'Ast', img:'terkura-ode.jpg'}
 ];
+
 function renderPlayers(f) {
   const list = f==='all'?players:players.filter(p=>p.pos===f);
   document.getElementById('playersGrid').innerHTML = list.map(p=>`
@@ -2958,7 +2955,9 @@ function renderPlayers(f) {
     <div class="pinfo"><div class="pname">${p.name}</div><div class="pnat">${p.nat}</div><div class="pstats">
     <div class="psi"><div class="psv">${p.apps}</div><div class="psk">Apps</div></div><div class="psi"><div class="psv">${p.goals}</div><div class="psk">Goals</div></div><div class="psi"><div class="psv">${p.s3}</div><div class="psk">${p.sk}</div></div></div></div></div>`).join('');
 }
+
 renderPlayers('all');
+
 document.querySelectorAll('#players .ftab').forEach(t => t.addEventListener('click', function() {
   document.querySelectorAll('#players .ftab').forEach(x=>x.classList.remove('active'));
   this.classList.add('active'); renderPlayers(this.dataset.pos);
