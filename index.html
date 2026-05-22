@@ -1898,82 +1898,83 @@ function openArchiveTab(evt, tabName) {
    <!-- Your Management content here... -->
 
 <!-- MANAGEMENT -->
-<section id="management">
+<section id="management" style="padding-bottom: 0 !important;">
   <div class="stag fade-in">Leadership</div>
   <h2 class="stitle fade-in">Club <span class="r">Management</span></h2>
   <div class="divr fade-in"></div>
-  <div class="mgmt-grid fade-in">
-  <!-- CHAIRMAN -->
-  <div class="staff-card">
-    <div class="staff-photo">
-      <img src="images/chairman.jpg" alt="Chairman" onload="this.nextElementSibling.style.display='none'">
-      <div class="staff-initials">CH</div>
+
+  <!-- Force 5 columns and tighten gaps -->
+  <div class="mgmt-grid fade-in" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
+    
+    <!-- CHAIRMAN -->
+    <div class="staff-card">
+      <div class="staff-photo" style="height: 160px;"> <!-- Reduced height to fit line -->
+        <img src="images/chairman.jpg" alt="Chairman" onload="this.nextElementSibling.style.display='none'">
+        <div class="staff-initials">CH</div>
+      </div>
+      <div class="staff-info" style="padding: 12px 8px;">
+        <div class="sname" style="font-size: 14px;">Club Chairman</div>
+        <div class="srole" style="font-size: 9px;">Chairman</div>
+        <div class="sbio" style="font-size: 11px; line-height: 1.3;">Strategic direction and investment.</div>
+      </div>
     </div>
-    <div class="staff-info">
-      <div class="sname">Club Chairman</div>
-      <div class="srole">Chairman</div>
-      <div class="sbio">Providing strategic direction and investment to drive Lobi Stars to new heights.</div>
+
+    <!-- HEAD COACH -->
+    <div class="staff-card">
+      <div class="staff-photo" style="height: 160px;">
+        <img src="images/head-coach.jpg" alt="Head Coach" onload="this.nextElementSibling.style.display='none'">
+        <div class="staff-initials">HC</div>
+      </div>
+      <div class="staff-info" style="padding: 12px 8px;">
+        <div class="sname" style="font-size: 14px;">Head Coach</div>
+        <div class="srole" style="font-size: 9px;">Head Coach</div>
+        <div class="sbio" style="font-size: 11px; line-height: 1.3;">Tactical discipline and motivation.</div>
+      </div>
+    </div>
+
+    <!-- ASSISTANT COACH -->
+    <div class="staff-card">
+      <div class="staff-photo" style="height: 160px;">
+        <img src="images/assistant-coach.jpg" alt="Assistant Coach" onload="this.nextElementSibling.style.display='none'">
+        <div class="staff-initials">AC</div>
+      </div>
+      <div class="staff-info" style="padding: 12px 8px;">
+        <div class="sname" style="font-size: 14px;">Asst. Coach</div>
+        <div class="srole" style="font-size: 9px;">Asst. Coach</div>
+        <div class="sbio" style="font-size: 11px; line-height: 1.3;">Training and match analysis.</div>
+      </div>
+    </div>
+
+    <!-- GK COACH -->
+    <div class="staff-card">
+      <div class="staff-photo" style="height: 160px;">
+        <img src="images/gk-coach.jpg" alt="GK Coach" onload="this.nextElementSibling.style.display='none'">
+        <div class="staff-initials">GK</div>
+      </div>
+      <div class="staff-info" style="padding: 12px 8px;">
+        <div class="sname" style="font-size: 14px;">GK Coach</div>
+        <div class="srole" style="font-size: 9px;">GK Coach</div>
+        <div class="sbio" style="font-size: 11px; line-height: 1.3;">Specialist keeper training.</div>
+      </div>
+    </div>
+
+    <!-- DOCTOR -->
+    <div class="staff-card">
+      <div class="staff-photo" style="height: 160px;">
+        <img src="images/club-doctor.jpg" alt="Club Doctor" onload="this.nextElementSibling.style.display='none'">
+        <div class="staff-initials">MD</div>
+      </div>
+      <div class="staff-info" style="padding: 12px 8px;">
+        <div class="sname" style="font-size: 14px;">Club Doctor</div>
+        <div class="srole" style="font-size: 9px;">Medical</div>
+        <div class="sbio" style="font-size: 11px; line-height: 1.3;">Health and injury management.</div>
+      </div>
     </div>
   </div>
-
-  <!-- HEAD COACH -->
-  <div class="staff-card">
-    <div class="staff-photo">
-      <img src="images/head-coach.jpg" alt="Head Coach" onload="this.nextElementSibling.style.display='none'">
-      <div class="staff-initials">HC</div>
-    </div>
-    <div class="staff-info">
-      <div class="sname">Head Coach</div>
-      <div class="srole">Head Coach</div>
-      <div class="sbio">Leading the team with tactical discipline and motivating players to peak performance.</div>
-    </div>
-  </div>
-
-  <!-- ASSISTANT COACH -->
-  <div class="staff-card">
-    <div class="staff-photo">
-      <img src="images/assistant-coach.jpg" alt="Assistant Coach" onload="this.nextElementSibling.style.display='none'">
-      <div class="staff-initials">AC</div>
-    </div>
-    <div class="staff-info">
-      <div class="sname">Assistant Coach</div>
-      <div class="srole">Assistant Coach</div>
-      <div class="sbio">Supporting the head coach with training organisation and match analysis.</div>
-    </div>
-  </div>
-
-  <!-- GK COACH -->
-  <div class="staff-card">
-    <div class="staff-photo">
-      <img src="images/gk-coach.jpg" alt="GK Coach" onload="this.nextElementSibling.style.display='none'">
-      <div class="staff-initials">GK</div>
-    </div>
-    <div class="staff-info">
-      <div class="sname">GK Coach</div>
-      <div class="srole">Goalkeeping Coach</div>
-      <div class="sbio">Specialist goalkeeper training across the first team and academy.</div>
-    </div>
-  </div>
-
-  <!-- DOCTOR -->
-  <div class="staff-card">
-    <div class="staff-photo">
-      <img src="images/club-doctor.jpg" alt="Club Doctor" onload="this.nextElementSibling.style.display='none'">
-      <div class="staff-initials">MD</div>
-    </div>
-    <div class="staff-info">
-      <div class="sname">Club Doctor</div>
-      <div class="srole">Medical Officer</div>
-      <div class="sbio">Overseeing health, fitness, and injury management of all playing staff.</div>
-    </div>
-  </div>
-
-  
-</div>
 </section>
 
-<!-- ACADEMY -->
-<section id="academy">
+<!-- ACADEMY (Brought up to cover the space) -->
+<section id="academy" style="padding-top: 20px !important;">
   <div class="academy-grid fade-in">
     <div>
       <div class="stag">Youth Development</div>
