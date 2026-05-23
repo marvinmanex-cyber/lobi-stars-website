@@ -766,6 +766,7 @@ body.light-mode footer {
 body.light-mode .footer-brand p { color: #4A5568 !important; }
 
 /* Bold, Athletic Titles (Red underline REMOVED as requested) */
+/* Bold, Athletic Titles - SECOND LINE REMOVED */
 .footer-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 19px;
@@ -775,6 +776,21 @@ body.light-mode .footer-brand p { color: #4A5568 !important; }
   color: var(--gold);
   margin-bottom: 25px;
   position: relative;
+  border-top: none !important; /* Forces no line on top */
+}
+
+/* This kills the red underline line */
+.footer-title::after {
+  display: none !important;
+  content: none !important;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 60px;
+  margin-bottom: 60px;
+  border-top: none !important; /* Forces no line here */
 }
 
 .footer-links { list-style: none; padding: 0; }
