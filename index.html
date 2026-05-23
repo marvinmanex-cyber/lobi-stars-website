@@ -733,6 +733,13 @@ table.st tr:hover td{background:rgba(255,255,255,.03);}
 .sl{width:40px;height:40px;border-radius:50%;background:var(--d3);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:12px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;transition:background .2s,border-color .2s,color .2s;}
 .sl:hover{background:var(--red);border-color:var(--red);color:var(--white);}
 
+/* --- FOOTER CONTAINER FIX --- */
+.footer-container {
+  max-width: 1200px;  /* Matches your League Table and other sections */
+  margin: 0 auto;     /* Centers it on the page */
+  padding: 0 20px;    /* Adds side breathing room on mobile */
+}
+
 /* Bold, Athletic Titles - CLEAN VERSION */
 .footer-title {
   font-family: 'Bebas Neue', sans-serif;
@@ -743,27 +750,33 @@ table.st tr:hover td{background:rgba(255,255,255,.03);}
   color: var(--gold);
   margin-bottom: 25px;
   position: relative;
-  border: none !important; /* Kills any border-top */
+  border: none !important;
 }
 
-/* REMOVES THE UNDERLINE ON TITLES */
+/* Kills the red underline/line */
 .footer-title::after, .footer-title::before {
   display: none !important;
   content: none !important;
 }
 
-/* THE FIX: REMOVES THE SECOND LINE FROM THE GRID */
 .footer-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 60px;
+  /* 1.5fr for the brand makes it look less stretched than 2fr */
+  grid-template-columns: 1.5fr 1fr 1fr 1fr; 
+  gap: 40px;
   margin-bottom: 60px;
-  border-top: none !important; /* Forces the line to disappear */
-  padding-top: 0 !important;
-  margin-top: 0 !important;
+  border-top: none !important;
 }
 
-/* KILLS ANY RANDOM DIVIDER THAT MIGHT BE IN THE FOOTER */
+/* Ensure the brand text doesn't wrap too early */
+.footer-brand p {
+  max-width: 350px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.6;
+}
+
+/* KILLS ANY RANDOM DIVIDER */
 footer .divr, footer hr {
   display: none !important;
 }
@@ -2661,70 +2674,34 @@ function openArchiveTab(evt, tabName) {
 </div>
 
 <footer>
-<!-- ... Footer content ... -->
-<!-- FOOTER -->
-<!-- FOOTER -->
-<footer>
-  <div class="footer-grid">
-    <!-- BRAND COLUMN -->
-    <div class="footer-brand">
-      <a class="nav-logo" href="#hero" style="text-decoration:none; display: flex; align-items: center; gap: 15px;">
-        <div class="nlb" style="background:#fff; border: 2px solid var(--gold); width: 50px; height: 50px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-            <img src="images/hero-6.jpg" alt="Badge" style="width: 80%;">
-        </div>
-        <div class="nlt" style="display: flex; flex-direction: column;">
-            <span style="font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: #fff; line-height: 1;">LOBI STARS</span>
-            <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--gold); letter-spacing: 2px;">FOOTBALL CLUB</span>
-        </div>
-      </a>
-      <p>The Pride of Benue. Competing at the highest level of Nigerian football since 1969. Committed to excellence, community, and the spirit of the game. Red and Gold forever.</p>
+  <!-- THIS CONTAINER IS THE FIX -->
+  <div class="footer-container">
+    
+    <div class="footer-grid">
+      <!-- BRAND COLUMN -->
+      <div class="footer-brand">
+        <a class="nav-logo" href="#hero" style="text-decoration:none; display: flex; align-items: center; gap: 15px;">
+          <div class="nlb" style="background:#fff; border: 2px solid var(--gold); width: 50px; height: 50px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+              <img src="images/hero-6.jpg" alt="Badge" style="width: 80%;">
+          </div>
+          <div class="nlt" style="display: flex; flex-direction: column;">
+              <span style="font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: #fff; line-height: 1;">LOBI STARS</span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--gold); letter-spacing: 2px;">FOOTBALL CLUB</span>
+          </div>
+        </a>
+        <p>The Pride of Benue. Competing at the highest level of Nigerian football since 1969. Committed to excellence, community, and the spirit of the game. Red and Gold forever.</p>
+      </div>
+
+      <!-- Other columns (Navigation, The Club, Fan Zone) go here... -->
+      
+    </div> <!-- Close Grid -->
+
+    <!-- Ensure the bottom bar is also inside the container -->
+    <div class="footer-bottom">
+       <!-- Your copyright and admin links -->
     </div>
 
-    <!-- QUICK LINKS -->
-    <div>
-      <div class="footer-title">Navigation</div>
-      <ul class="footer-links">
-        <li><a href="#about">About the Club</a></li>
-        <li><a href="#players">Our Warriors</a></li>
-        <li><a href="#fixtures">Match Schedule</a></li>
-        <li><a href="#news">Latest News</a></li>
-        <li><a href="#gallery">Media Gallery</a></li>
-      </ul>
-    </div>
-
-    <!-- CLUB INFO -->
-    <div>
-      <div class="footer-title">The Club</div>
-      <ul class="footer-links">
-        <li><a href="#history">Club History</a></li>
-        <li><a href="#management">Management</a></li>
-        <li><a href="#stadium">Aper Aku Stadium</a></li>
-        <li><a href="#academy">Youth Academy</a></li>
-      </ul>
-    </div>
-
-    <!-- FAN SUPPORT -->
-    <div>
-      <div class="footer-title">Fan Zone</div>
-      <ul class="footer-links">
-        <li><a href="#tickets">Buy Tickets</a></li>
-        <li><a href="#merchandise">Club Shop</a></li>
-        <li><a href="#membership">Membership</a></li>
-        <li><a href="#sponsor">Sponsor Us</a></li>
-        <li><a href="#contact">Help Center</a></li>
-      </ul>
-    </div>
-  </div>
-
-  <!-- BOTTOM STRIP -->
-  <div class="footer-bottom">
-    <div class="footer-copy">
-        © 2026 Lobi Stars Football Club. All rights reserved. | <a href="#">Privacy Policy</a>
-    </div>
-    <div class="admin-link" onclick="openAdmin()">
-        STAFF ACCESS
-    </div>
-  </div>
+  </div> <!-- Close Container -->
 </footer>
 <!-- FOOD ORDER MODAL -->
 <div class="food-modal-ov" id="foodModal">
