@@ -1800,22 +1800,49 @@ function openArchiveTab(evt, tabName) {
     startTimer();
 </script>
 <!-- END OF LIGHT THEME MATCH HUB -->
-    <h3 class="stitle" style="font-size:36px;">League <span class="r">Table</span></h3>
-    <div class="divr" style="margin-bottom:18px;"></div>
-    <div class="table-wrap">
-      <table class="st">
-        <thead><tr><th>#</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr></thead>
+    <!-- LEAGUE STANDINGS -->
+<section id="standings" style="padding: 80px 0; background: var(--d2);">
+  <!-- THIS DIV IS THE FIX: It centers the content and stops it from stretching -->
+  <div style="max-width: 1200px; margin: 0 auto; padding: 0 5%;">
+    
+    <div class="fade-in">
+      <div class="stag">Current Ranking</div>
+      <h3 class="stitle" style="font-size:36px;">League <span class="r">Table</span></h3>
+      <div class="divr" style="margin-bottom:30px;"></div>
+    </div>
+
+    <div class="table-wrap fade-in" style="border-radius: 12px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+      <table class="st" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background: var(--red); color: #fff;">
+            <th style="padding: 15px;">#</th>
+            <th style="padding: 15px;">Club</th>
+            <th style="padding: 15px; text-align: center;">P</th>
+            <th style="padding: 15px; text-align: center;">W</th>
+            <th style="padding: 15px; text-align: center;">D</th>
+            <th style="padding: 15px; text-align: center;">L</th>
+            <th style="padding: 15px; text-align: center;">GF</th>
+            <th style="padding: 15px; text-align: center;">GA</th>
+            <th style="padding: 15px; text-align: center;">GD</th>
+            <th style="padding: 15px; text-align: center;">Pts</th>
+          </tr>
+        </thead>
         <tbody>
           <tr><td><span class="pb top">1</span></td><td>Rivers United</td><td>27</td><td>18</td><td>5</td><td>4</td><td>48</td><td>20</td><td>+28</td><td><strong>59</strong></td></tr>
           <tr><td><span class="pb top">2</span></td><td>Remo Stars</td><td>27</td><td>16</td><td>6</td><td>5</td><td>42</td><td>24</td><td>+18</td><td><strong>54</strong></td></tr>
           <tr><td><span class="pb top">3</span></td><td>Sunshine Stars</td><td>27</td><td>14</td><td>7</td><td>6</td><td>38</td><td>28</td><td>+10</td><td><strong>49</strong></td></tr>
-          <tr class="hl"><td><span class="pb">4</span></td><td>⭐ Lobi Stars</td><td>27</td><td>13</td><td>6</td><td>8</td><td>35</td><td>29</td><td>+6</td><td><strong>45</strong></td></tr>
+          <!-- LOBI STARS HIGHLIGHT -->
+          <tr class="hl" style="background: rgba(245, 184, 0, 0.1);">
+            <td><span class="pb">4</span></td>
+            <td style="color: var(--gold); font-weight: 700;">⭐ Lobi Stars</td>
+            <td>27</td><td>13</td><td>6</td><td>8</td><td>35</td><td>29</td><td>+6</td><td><strong>45</strong></td></tr>
           <tr><td><span class="pb">5</span></td><td>Kano Pillars</td><td>27</td><td>12</td><td>7</td><td>8</td><td>32</td><td>27</td><td>+5</td><td><strong>43</strong></td></tr>
           <tr><td><span class="pb">6</span></td><td>Enyimba FC</td><td>27</td><td>11</td><td>8</td><td>8</td><td>33</td><td>31</td><td>+2</td><td><strong>41</strong></td></tr>
         </tbody>
       </table>
     </div>
-  </div>
+    
+  </div> <!-- Close Container -->
 </section>
 
 <!-- TICKETS -->
