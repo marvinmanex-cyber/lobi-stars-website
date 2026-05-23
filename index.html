@@ -736,7 +736,7 @@ table.st tr:hover td{background:rgba(255,255,255,.03);}
 /* FOOTER - PROFESSIONAL REDESIGN */
 footer {
   background: var(--d2);
-  /* A thick red brand line to clearly end the page */
+  /* The main thick red brand line */
   border-top: 5px solid var(--red); 
   padding: 80px 5% 40px;
   position: relative;
@@ -765,10 +765,10 @@ body.light-mode footer {
 }
 body.light-mode .footer-brand p { color: #4A5568 !important; }
 
-/* Bold, Athletic Titles */
+/* Bold, Athletic Titles (Red underline REMOVED as requested) */
 .footer-title {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 400;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -777,33 +777,44 @@ body.light-mode .footer-brand p { color: #4A5568 !important; }
   position: relative;
 }
 
-/* Small red underline for titles */
-.footer-title::after {
-  content: '';
-  position: absolute;
-  bottom: -8px;
-  left: 0;
-  width: 30px;
-  height: 2px;
-  background: var(--red);
-}
-
 .footer-links { list-style: none; padding: 0; }
-.footer-links li { margin-bottom: 15px; }
+.footer-links li { margin-bottom: 12px; } /* Space for buttons */
 
-/* Interactive Hover Links */
+/* NAVY PILL BUTTONS */
 .footer-links a {
-  font-size: 15px;
-  color: rgba(255,255,255,0.5);
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.7);
   text-decoration: none;
-  transition: all 0.3s ease;
   display: inline-block;
+  
+  /* Light Navy Tint Background */
+  background: rgba(30, 58, 138, 0.15); 
+  padding: 8px 18px;
+  border-radius: 50px; /* Pill shape */
+  border: 1px solid rgba(30, 58, 138, 0.2);
+  
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-body.light-mode .footer-links a { color: #2D3748 !important; }
 
+/* Hover Effect: More colorful Navy */
 .footer-links a:hover {
-  color: var(--red) !important;
-  transform: translateX(8px); /* Slides right slightly when hovered */
+  background: #1e3a8a; /* Rich Navy Blue */
+  color: #ffffff !important;
+  transform: translateX(10px); /* The slide interaction you like */
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  border-color: #3b82f6; /* Glow effect */
+}
+
+/* Light Mode Buttons */
+body.light-mode .footer-links a {
+  background: #f1f5f9;
+  color: #1e3a8a;
+  border-color: #e2e8f0;
+}
+body.light-mode .footer-links a:hover {
+  background: #1e3a8a;
+  color: #fff !important;
 }
 
 /* Bottom Bar Styling */
@@ -834,7 +845,7 @@ body.light-mode .footer-copy { color: #718096 !important; }
 }
 .admin-link:hover { color: var(--red); }
 
-/* MODALS */
+/* KEEPING YOUR MODAL & ADMIN STYLES BELOW */
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:2000;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:48px 20px;}
 .modal-ov.open{display:flex;}
 .modal-box{background:var(--d2);border-radius:10px;max-width:740px;width:100%;border:1px solid rgba(255,255,255,.08);position:relative;}
@@ -869,7 +880,6 @@ body.light-mode .footer-copy { color: #718096 !important; }
 .admin-login-box{max-width:340px;margin:0 auto;text-align:center;padding:36px 18px;}
 .admin-login-box h3{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--white);margin-bottom:7px;letter-spacing:1px;}
 .admin-login-box p{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:20px;}
-
 /* TOAST */
 .toast{position:fixed;bottom:28px;right:28px;background:var(--red);color:var(--white);padding:13px 22px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;z-index:5000;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;}
 .toast.show{opacity:1;transform:translateY(0);}
