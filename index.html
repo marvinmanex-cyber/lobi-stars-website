@@ -733,40 +733,7 @@ table.st tr:hover td{background:rgba(255,255,255,.03);}
 .sl{width:40px;height:40px;border-radius:50%;background:var(--d3);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.5);font-size:12px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-weight:700;transition:background .2s,border-color .2s,color .2s;}
 .sl:hover{background:var(--red);border-color:var(--red);color:var(--white);}
 
-/* FOOTER - PROFESSIONAL REDESIGN */
-footer {
-  background: var(--d2);
-  /* The main thick red brand line */
-  border-top: 5px solid var(--red); 
-  padding: 80px 5% 40px;
-  position: relative;
-}
-
-/* Ensure footer turns white in Light Mode */
-body.light-mode footer {
-  background: #FFFFFF !important;
-  border-top-color: var(--red) !important;
-}
-
-.footer-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 60px;
-  margin-bottom: 60px;
-}
-
-/* Brand Text Styling */
-.footer-brand p {
-  font-size: 15px;
-  color: rgba(255,255,255,0.6);
-  line-height: 1.8;
-  margin-top: 20px;
-  max-width: 320px;
-}
-body.light-mode .footer-brand p { color: #4A5568 !important; }
-
-/* Bold, Athletic Titles (Red underline REMOVED as requested) */
-/* Bold, Athletic Titles - SECOND LINE REMOVED */
+/* Bold, Athletic Titles - CLEAN VERSION */
 .footer-title {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 19px;
@@ -776,21 +743,29 @@ body.light-mode .footer-brand p { color: #4A5568 !important; }
   color: var(--gold);
   margin-bottom: 25px;
   position: relative;
-  border-top: none !important; /* Forces no line on top */
+  border: none !important; /* Kills any border-top */
 }
 
-/* This kills the red underline line */
-.footer-title::after {
+/* REMOVES THE UNDERLINE ON TITLES */
+.footer-title::after, .footer-title::before {
   display: none !important;
   content: none !important;
 }
 
+/* THE FIX: REMOVES THE SECOND LINE FROM THE GRID */
 .footer-grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 60px;
   margin-bottom: 60px;
-  border-top: none !important; /* Forces no line here */
+  border-top: none !important; /* Forces the line to disappear */
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* KILLS ANY RANDOM DIVIDER THAT MIGHT BE IN THE FOOTER */
+footer .divr, footer hr {
+  display: none !important;
 }
 
 .footer-links { list-style: none; padding: 0; }
@@ -2691,7 +2666,6 @@ function openArchiveTab(evt, tabName) {
 <!-- FOOTER -->
 <footer>
   <div class="footer-grid">
-    
     <!-- BRAND COLUMN -->
     <div class="footer-brand">
       <a class="nav-logo" href="#hero" style="text-decoration:none; display: flex; align-items: center; gap: 15px;">
