@@ -734,104 +734,73 @@ table.st tr:hover td{background:rgba(255,255,255,.03);}
 .sl:hover{background:var(--red);border-color:var(--red);color:var(--white);}
 
 /* --- FOOTER CONTAINER FIX --- */
+/* --- FOOTER MAIN STYLING --- */
+footer {
+  background: var(--d2);
+  border-top: 5px solid var(--red); 
+  padding: 80px 0 40px;
+}
+
 .footer-container {
-  max-width: 1200px;  /* Matches your League Table and other sections */
-  margin: 0 auto;     /* Centers it on the page */
-  padding: 0 20px;    /* Adds side breathing room on mobile */
-}
-
-/* Bold, Athletic Titles - CLEAN VERSION */
-.footer-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 19px;
-  font-weight: 400;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--gold);
-  margin-bottom: 25px;
-  position: relative;
-  border: none !important;
-}
-
-/* Kills the red underline/line */
-.footer-title::after, .footer-title::before {
-  display: none !important;
-  content: none !important;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 .footer-grid {
   display: grid;
-  /* 1.5fr for the brand makes it look less stretched than 2fr */
-  grid-template-columns: 1.5fr 1fr 1fr 1fr; 
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
   gap: 40px;
   margin-bottom: 60px;
-  border-top: none !important;
 }
 
-/* Ensure the brand text doesn't wrap too early */
-.footer-brand p {
-  max-width: 350px;
-  font-size: 14px;
-  color: rgba(255,255,255,0.6);
-  line-height: 1.6;
+.footer-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 19px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 25px;
+  border: none !important;
 }
 
-/* KILLS ANY RANDOM DIVIDER */
-footer .divr, footer hr {
-  display: none !important;
-}
+/* Kill all underlines */
+.footer-title::after { display: none !important; }
 
+/* --- NAVY PILL BUTTONS --- */
 .footer-links { list-style: none; padding: 0; }
-.footer-links li { margin-bottom: 12px; } /* Space for buttons */
+.footer-links li { margin-bottom: 12px; }
 
-/* NAVY PILL BUTTONS */
 .footer-links a {
   font-size: 14px;
   font-weight: 500;
   color: rgba(255,255,255,0.7);
   text-decoration: none;
   display: inline-block;
-  
-  /* Light Navy Tint Background */
-  background: rgba(30, 58, 138, 0.15); 
+  background: rgba(30, 58, 138, 0.15); /* Soft Navy */
   padding: 8px 18px;
-  border-radius: 50px; /* Pill shape */
+  border-radius: 50px;
   border: 1px solid rgba(30, 58, 138, 0.2);
-  
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Hover Effect: More colorful Navy */
 .footer-links a:hover {
-  background: #1e3a8a; /* Rich Navy Blue */
-  color: #ffffff !important;
-  transform: translateX(10px); /* The slide interaction you like */
-  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-  border-color: #3b82f6; /* Glow effect */
-}
-
-/* Light Mode Buttons */
-body.light-mode .footer-links a {
-  background: #f1f5f9;
-  color: #1e3a8a;
-  border-color: #e2e8f0;
-}
-body.light-mode .footer-links a:hover {
-  background: #1e3a8a;
+  background: #1e3a8a; /* Solid Navy */
   color: #fff !important;
+  transform: translateX(10px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
-/* Bottom Bar Styling */
-.footer-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 30px;
-  border-top: 1px solid rgba(255,255,255,0.08);
-  flex-wrap: wrap;
-  gap: 20px;
-}
-body.light-mode .footer-bottom { border-top-color: #E2E8F0; }
+/* Light Mode Support */
+body.light-mode footer { background: #fff !important; }
+body.light-mode .footer-links a { background: #f1f5f9; color: #1e3a8a; }
+body.light-mode .footer-links a:hover { background: #1e3a8a; color: #fff !important; }
+
+/* Brand Styling */
+.footer-brand p { max-width: 300px; font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.6; margin-top: 15px; }
+body.light-mode .footer-brand p { color: #444 !important; }
+
+.footer-bottom { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 30px; display: flex; justify-content: space-between; align-items: center; }
 
 .footer-copy {
   font-size: 13px;
@@ -2674,10 +2643,9 @@ function openArchiveTab(evt, tabName) {
 </div>
 
 <footer>
-  <!-- THIS CONTAINER IS THE FIX -->
   <div class="footer-container">
-    
     <div class="footer-grid">
+      
       <!-- BRAND COLUMN -->
       <div class="footer-brand">
         <a class="nav-logo" href="#hero" style="text-decoration:none; display: flex; align-items: center; gap: 15px;">
@@ -2689,19 +2657,50 @@ function openArchiveTab(evt, tabName) {
               <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--gold); letter-spacing: 2px;">FOOTBALL CLUB</span>
           </div>
         </a>
-        <p>The Pride of Benue. Competing at the highest level of Nigerian football since 1969. Committed to excellence, community, and the spirit of the game. Red and Gold forever.</p>
+        <p>The Pride of Benue. Competing at the highest level of Nigerian football since 1969. Committed to excellence, community, and the spirit of the game.</p>
       </div>
 
-      <!-- Other columns (Navigation, The Club, Fan Zone) go here... -->
-      
+      <!-- NAVIGATION -->
+      <div>
+        <h4 class="footer-title">Navigation</h4>
+        <ul class="footer-links">
+          <li><a href="#about">About the Club</a></li>
+          <li><a href="#players">Our Warriors</a></li>
+          <li><a href="#fixtures">Match Schedule</a></li>
+          <li><a href="#news">Latest News</a></li>
+          <li><a href="#gallery">Media Gallery</a></li>
+        </ul>
+      </div>
+
+      <!-- THE CLUB -->
+      <div>
+        <h4 class="footer-title">The Club</h4>
+        <ul class="footer-links">
+          <li><a href="#">Club History</a></li>
+          <li><a href="#">Management</a></li>
+          <li><a href="#">Aper Aku Stadium</a></li>
+          <li><a href="#">Youth Academy</a></li>
+        </ul>
+      </div>
+
+      <!-- FAN ZONE -->
+      <div>
+        <h4 class="footer-title">Fan Zone</h4>
+        <ul class="footer-links">
+          <li><a href="#">Buy Tickets</a></li>
+          <li><a href="#">Club Shop</a></li>
+          <li><a href="#">Membership</a></li>
+          <li><a href="#">Sponsor Us</a></li>
+        </ul>
+      </div>
+
     </div> <!-- Close Grid -->
 
-    <!-- Ensure the bottom bar is also inside the container -->
     <div class="footer-bottom">
-       <!-- Your copyright and admin links -->
+       <div class="footer-copy">© 2024 Lobi Stars FC. All Rights Reserved.</div>
+       <div class="admin-link">STAFF LOGIN</div>
     </div>
-
-  </div> <!-- Close Container -->
+  </div>
 </footer>
 <!-- FOOD ORDER MODAL -->
 <div class="food-modal-ov" id="foodModal">
