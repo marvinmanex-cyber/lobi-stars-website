@@ -1838,8 +1838,8 @@ function openArchiveTab(evt, tabName) {
   <button class="btn-p fade-in food-flash-btn" onclick="openFoodOrder()" style="margin-bottom:14px;">
   <span style="font-size:28px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));">🍔</span>
 <span style="display:flex;flex-direction:column;text-align:left;">
-  <span style="font-size:16px;font-weight:900;letter-spacing:1.5px;line-height:1.2;">IN-SEAT FOOD ORDER</span>
-  <span style="font-size:10px;font-weight:600;letter-spacing:2px;opacity:.8;">Hot food delivered to your seat</span>
+  <span style="font-size:16px;font-weight:900;letter-spacing:1.5px;line-height:1.2;">5 - MINUTES IN-SEAT FOOD ORDER AND DELIVERY</span>
+  <span style="font-size:10px;font-weight:600;letter-spacing:2px;opacity:.8;">Food delivered to straight to your seat</span>
 </span>
 </button>
 </div>
@@ -2706,11 +2706,16 @@ function openArchiveTab(evt, tabName) {
 <div class="food-modal-ov" id="foodModal">
   <div class="food-box">
     <div class="food-hd">
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <img src="fooddomain-logo.jpg" alt="Food Domain" style="width: 50px; height: 50px; object-fit: contain;">
       <div>
-        <h3>🍔 5 - Minutes In - Seat Food Order and Delivery</h3>
+        <h3>5 - Minutes In - Seat Food Order and Delivery</h3>
         <p>Order food delivered straight to your seat</p>
       </div>
       <button class="modal-close" onclick="closeFoodModal()">×</button>
+    </div>
+    <div style="margin-top: 15px; text-align: center;">
+      <img src="food-logo.jpg" alt="Food Logo" style="width: 150px; height: auto; object-fit: contain;">
     </div>
     <div class="food-body">
 
