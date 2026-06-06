@@ -254,7 +254,7 @@ img{display:block;width:100%;height:100%;object-fit:cover;}
 ::-webkit-scrollbar{width:5px;}::-webkit-scrollbar-track{background:var(--black);}::-webkit-scrollbar-thumb{background:var(--red);border-radius:3px;}
 
 /* NAV */
-nav{position:fixed;top:60px;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:72px;background:transparent;transition:background .4s,box-shadow .4s;}
+nav{position:fixed;top:85px;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:72px;background:transparent;transition:background .4s,box-shadow .4s;}
 nav.scrolled{background:rgba(10,10,10,.97);box-shadow:0 2px 30px rgba(212,32,43,.2);border-bottom:1px solid rgba(245,184,0,.12);}
 .nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
 .nlb {
@@ -349,7 +349,7 @@ nav.scrolled{background:rgba(10,10,10,.97);box-shadow:0 2px 30px rgba(212,32,43,
 .hero-slide.active{animation:kb 7s ease forwards;}
 @keyframes kb{from{transform:scale(1);}to{transform:scale(1.06);}}
 /* Hero center content */
-.hero-content{position:relative;z-index:2;width:100%;padding:132px 4% 0;display:flex;flex-direction:column;align-items:center;text-align:center;}
+.hero-content{position:relative;z-index:2;width:100%;padding:157px 4% 0;display:flex;flex-direction:column;align-items:center;text-align:center;}
 .hero-eyebrow{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:6px;text-transform:uppercase;color:var(--gold);margin-bottom:22px;display:flex;align-items:center;justify-content:center;gap:16px;opacity:0;animation:fadeUp .8s .3s forwards;}
 .hero-eyebrow::before,.hero-eyebrow::after{content:'';display:block;width:50px;height:1px;background:rgba(245,184,0,.5);}
 .hero-title{font-family:'Bebas Neue',sans-serif;line-height:.85;letter-spacing:.06em;text-align:center;width:100%;opacity:0;animation:fadeUp .9s .5s forwards;}
@@ -1373,9 +1373,10 @@ body.light-mode .food-sum-v{color:#1A202C;}
   </a>
 
     <!-- Benue Links (Clickable) -->
-    <a href="https://benuelinks.com/" target="_blank" class="sponsor-item">
-      <img src="images/benuelinks-logo.jpg" alt="Benue" class="sponsor-logo">
-    </a>
+    <!-- Benue Links -->
+<a href="https://benuelinks.com" target="_blank" class="sponsor-item">
+  <img src="images/benuelinks-logo.jpg" alt="Benue Links Nig. Ltd" class="sponsor-logo">
+</a>
 
     <!-- Jumia (Clickable) -->
     <a href="https://jumia.com.ng" target="_blank" class="sponsor-item">
@@ -1836,13 +1837,13 @@ function openArchiveTab(evt, tabName) {
     <h2 class="stitle fade-in">Buy <span class="r">Tickets</span></h2>
   </div>
   <button class="btn-p fade-in food-flash-btn" onclick="openFoodOrder()" style="margin-bottom:14px;">
-  <span style="display: inline-block; width: 35px; height: 35px; vertical-align: middle; filter: drop-shadow(0 2px 4px rgba(0,0,0,.3)); margin-right: 10px;">
-  <img src="images/fooddomain-logo.jpg" style="width: 100%; height: 100%; object-fit: contain;" alt="Food Domain Logo">
-</span>
-  <span style="font-size:16px;font-weight:900;letter-spacing:1.5px;line-height:1.2;">IN-SEAT FOOD ORDER</span>
-  <span style="font-size:10px;font-weight:600;letter-spacing:2px;opacity:.8;">Hot food delivered to your seat in 5 minutes</span>
+  <span style="width:44px;height:44px;flex-shrink:0;"><img src="images/fooddomain-logo.jpg" alt="Food" style="width:100%;height:100%;object-fit:contain;border-radius:4px;"/></span>
+  <span style="display:flex;flex-direction:column;text-align:left;">
+  <span style="font-size:14px;font-weight:900;letter-spacing:1px;line-height:1.2;">5-MINUTE IN-SEAT FOOD ORDER</span>
+  <span style="font-size:10px;font-weight:600;letter-spacing:2px;opacity:.8;">& Delivery</span>
 </span>
 </button>
+<img src="images/food-logo.jpg" alt="Food Partner" style="height:55px;width:auto;object-fit:contain;margin-bottom:14px;"/>
 </div>
   <div class="divr fade-in"></div>
   <div class="tsteps fade-in">
@@ -2870,7 +2871,7 @@ document.getElementById('menuToggle').addEventListener('click', function() {
       display: 'flex',
       flexDirection: 'column',
       position: 'fixed',
-      top: '130px',
+      top: '157px',
       left: '0',
       right: '0',
       background: 'rgba(10,10,10,0.99)',
