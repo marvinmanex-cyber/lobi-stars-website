@@ -858,23 +858,65 @@ body.light-mode .footer-copy { color: #718096 !important; }
 .toast.show{opacity:1;transform:translateY(0);}
 
 /* RESPONSIVE */
-@media(max-width:1000px){
-  .about-grid,.fix-grid,.contact-grid,.footer-grid,.stadium-layout,.academy-grid,.history-grid{grid-template-columns:1fr;}
-  .tier-cards,.spon-pkgs,.seat-cards{grid-template-columns:1fr;}
-  .blog-grid{grid-template-columns:1fr;}
-  .gallery-grid{grid-template-columns:repeat(2,1fr);}
-  .gallery-item.lg{grid-column:span 2;}
-  .form-row{grid-template-columns:1fr;}
-  .nav-links{display:none;}
-  .nav-toggle{display:block;}
-  .team-photos-strip{grid-template-columns:1fr;}
-}
 @media(max-width:600px){
   .ht-lobi,.ht-stars{font-size:clamp(70px,22vw,120px);}
   .hsb-item{padding:0 5px;}
   .hsb-num{font-size:22px;}
   .hsb-label{font-size:8px;letter-spacing:1px;}
   section{padding:72px 4%;}
+}
+@media(max-width:768px){
+  .top-bar{
+    height: auto !important;
+    padding: 10px 5px;
+  }
+  .sponsor-container{
+    gap: 12px !important;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .sponsor-logo{
+    height: 30px !important;
+    max-width: 80px !important;
+  }
+  nav{
+    top: 60px !important;
+  }
+  .hero-content{
+    padding: 130px 4% 0 !important;
+  }
+  #mgmtGrid{
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .membership-grid{
+    grid-template-columns: 1fr !important;
+  }
+  .contact-grid-main{
+    grid-template-columns: 1fr !important;
+    gap: 30px !important;
+  }
+}
+@media(max-width:768px){
+  .top-bar{
+    height: auto !important;
+    padding: 10px 5px;
+  }
+  .sponsor-container{
+    gap: 12px !important;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .sponsor-logo{
+    height: 30px !important;
+    max-width: 80px !important;
+  }
+  nav{
+    top: 60px !important;
+  }
+  .hero-content{
+    padding: 130px 4% 0 !important;
+  }
+  document.getElementById('menuToggle') top needs updating too — find in JS:
 }
 /* ── THEME TOGGLE BUTTON LOGIC ── */
 .theme-switch {
@@ -1991,7 +2033,7 @@ function openArchiveTab(evt, tabName) {
   <div class="divr fade-in"></div>
 
   <!-- Force 5 columns and tighten gaps -->
-  <div class="mgmt-grid fade-in" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;">
+  <div class="mgmt-grid fade-in" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;" id="mgmtGrid">
     
     <!-- CHAIRMAN -->
     <div class="staff-card">
@@ -2481,7 +2523,7 @@ function openArchiveTab(evt, tabName) {
     </p>
 
     <!-- SIDE-BY-SIDE GRID (UPDATED RATIO) -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: stretch;" class="fade-in">
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: stretch;" class="fade-in membership-grid">
       
       <!-- LEFT COLUMN: THE MEMBERSHIP CARD (WIDER) -->
       <div class="tier-cards" style="display: flex;">
@@ -2581,7 +2623,7 @@ function openArchiveTab(evt, tabName) {
 </style>
 
 <section id="contact" style="padding: 100px 5%; background: var(--black);">
-  <div class="contact-grid" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 80px; align-items: start; max-width: 1200px; margin: 0 auto;">
+  <div class="contact-grid contact-grid-main" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 30px; align-items: start; max-width: 1200px; margin: 0 auto;">
     
     <!-- LEFT SIDE: CONTACT INFO -->
     <div class="fade-in">
@@ -2904,7 +2946,7 @@ document.getElementById('menuToggle').addEventListener('click', function() {
       display: 'flex',
       flexDirection: 'column',
       position: 'fixed',
-      top: '157px',
+      top: '120px',
       left: '0',
       right: '0',
       background: 'rgba(10,10,10,0.99)',
