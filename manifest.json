@@ -1,0 +1,14 @@
+{
+  "name": "Lobi Stars Football Club",
+  "short_name": "Lobi Stars",
+  "description": "Official website of Lobi Stars Football Club - Pride of Benue",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#D4202B",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

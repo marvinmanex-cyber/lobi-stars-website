@@ -4,6 +4,11 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Lobi Stars Football Club | Pride of Benue</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#D4202B">
+<link rel="apple-touch-icon" href="images/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
@@ -895,6 +900,12 @@ body.light-mode .footer-copy { color: #718096 !important; }
     grid-template-columns: 1fr !important;
     gap: 30px !important;
   }
+  #moreStaff{
+  grid-template-columns: 1fr !important;
+}
+#galleryPreview{
+  height: 220px !important;
+}
 }
 @media(max-width:768px){
   .top-bar{
@@ -1636,18 +1647,25 @@ function openArchiveTab(evt, tabName) {
   <div class="stag fade-in">Schedule &amp; Results</div>
   <h2 class="stitle fade-in">Fixtures &amp; <span class="r">Results</span></h2>
   <div class="divr fade-in"></div>
-  <div class="fix-grid fade-in">
+
+<div class="fix-grid fade-in">
     <div>
       <div class="fix-col-title">Upcoming Fixtures</div>
       <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 28</span><span class="fix-date">Sat 24 May · 15:00</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-vs">VS</div><div class="fix-team a">Kano Pillars</div></div><div class="fix-venue">📍 Aper Aku Stadium, Makurdi</div></div>
-      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 29</span><span class="fix-date">Wed 28 May · 16:00</span></div><div class="fix-teams"><div class="fix-team h">Rivers United</div><div class="fix-vs">VS</div><div class="fix-team a">Lobi Stars</div></div><div class="fix-venue">📍 Adokiye Amiesimaka Stadium, PH</div></div>
+      <div id="moreUpcoming" style="display:none;">
+        <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 29</span><span class="fix-date">Wed 28 May · 16:00</span></div><div class="fix-teams"><div class="fix-team h">Rivers United</div><div class="fix-vs">VS</div><div class="fix-team a">Lobi Stars</div></div><div class="fix-venue">📍 Adokiye Amiesimaka Stadium, PH</div></div>
       <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 30</span><span class="fix-date">Sun 1 Jun · 15:00</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-vs">VS</div><div class="fix-team a">Plateau United</div></div><div class="fix-venue">📍 Aper Aku Stadium, Makurdi</div></div>
+      </div>
+      <button class="btn-o" id="upcomingBtn" data-label="View All Fixtures →" onclick="toggleFix('moreUpcoming','upcomingBtn')" style="width:100%;margin-top:8px;padding:10px;font-size:12px;">View All Fixtures →</button>
     </div>
     <div>
       <div class="fix-col-title">Recent Results</div>
       <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 27</span><span class="fix-date">Sat 17 May</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-score">2 – 0</div><div class="fix-team a">Enyimba FC</div></div><div class="fix-venue"><span class="rb w"></span> Win · Aper Aku Stadium</div></div>
-      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 26</span><span class="fix-date">Tue 13 May</span></div><div class="fix-teams"><div class="fix-team h">Shooting Stars</div><div class="fix-score">1 – 1</div><div class="fix-team a">Lobi Stars</div></div><div class="fix-venue"><span class="rb d"></span> Draw · Lekan Salami Stadium</div></div>
+      <div id="moreResults" style="display:none;">
+        <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 26</span><span class="fix-date">Tue 13 May</span></div><div class="fix-teams"><div class="fix-team h">Shooting Stars</div><div class="fix-score">1 – 1</div><div class="fix-team a">Lobi Stars</div></div><div class="fix-venue"><span class="rb d"></span> Draw · Lekan Salami Stadium</div></div>
       <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 25</span><span class="fix-date">Sat 10 May</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-score">3 – 1</div><div class="fix-team a">Heartland FC</div></div><div class="fix-venue"><span class="rb w"></span> Win · Aper Aku Stadium</div></div>
+      </div>
+      <button class="btn-o" id="resultsBtn" data-label="View All Results →" onclick="toggleFix('moreResults','resultsBtn')" style="width:100%;margin-top:8px;padding:10px;font-size:12px;">View All Results →</button>
     </div>
   </div>
 </section>
@@ -1969,12 +1987,21 @@ function openArchiveTab(evt, tabName) {
 </section>
 
 <!-- GALLERY -->
-<section id="gallery" style="padding-top: 60px;"> <!-- Reduced from 100px to 60px -->
+<section id="gallery" style="padding-top: 60px;">
   <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:42px;flex-wrap:wrap;gap:14px;">
     <div class="fade-in"><div class="stag">Moments</div><h2 class="stitle">Photo <span class="r">Gallery</span></h2></div>
-    <a href="#" class="btn-o fade-in view-all-btn" style="padding:9px 20px;font-size:13px;">View All →</a>
   </div>
-  <div class="gallery-grid fade-in" id="galleryGrid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px;"></div>
+
+  <!-- GALLERY PREVIEW TEASER -->
+  <div id="galleryPreview" class="fade-in" onclick="document.getElementById('galleryPreview').style.display='none';document.getElementById('galleryGrid').style.display='grid';" style="cursor:pointer;position:relative;border-radius:10px;overflow:hidden;height:320px;border:1px solid rgba(255,255,255,.08);">
+    <img src="images/gallery-1.jpg" style="width:100%;height:100%;object-fit:cover;" alt="Gallery preview"/>
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#fff;letter-spacing:2px;">📷 View Photo Gallery</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:8px;letter-spacing:1px;">Tap to browse all match albums</div>
+    </div>
+  </div>
+
+  <div class="gallery-grid fade-in" id="galleryGrid" style="display:none;grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px;"></div>
 </section>
 
 <!-- CLUB HISTORY -->
@@ -2035,7 +2062,7 @@ function openArchiveTab(evt, tabName) {
   <div class="divr fade-in"></div>
 
   <!-- Force 5 columns and tighten gaps -->
-  <div class="mgmt-grid fade-in" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;" id="mgmtGrid">
+  <div class="mgmt-grid fade-in" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width:500px;" id="mgmtGrid">
     
     <!-- CHAIRMAN -->
     <div class="staff-card">
@@ -2062,7 +2089,9 @@ function openArchiveTab(evt, tabName) {
         <div class="sbio" style="font-size: 11px; line-height: 1.3;">Tactical discipline and motivation.</div>
       </div>
     </div>
+    </div>
 
+<div id="moreStaff" style="display:none;grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top:12px;" class="mgmt-grid fade-in">
     <!-- ASSISTANT COACH -->
     <div class="staff-card">
       <div class="staff-photo" style="height: 160px;">
@@ -2101,6 +2130,11 @@ function openArchiveTab(evt, tabName) {
         <div class="sbio" style="font-size: 11px; line-height: 1.3;">Health and injury management.</div>
       </div>
     </div>
+    </div>
+
+<div style="text-align:center;margin-top:24px;">
+  <button class="btn-o" id="staffToggleBtn" onclick="toggleStaff()">View Full Team →</button>
+</div>
   </div>
 </section>
 
@@ -2843,6 +2877,23 @@ function openArchiveTab(evt, tabName) {
     </div>
   </div>
 </div>
+
+<!-- PLAYER MODAL -->
+<div class="modal-ov" id="playerModal">
+  <div class="modal-box" style="max-width:420px;text-align:center;">
+    <button class="modal-close" onclick="document.getElementById('playerModal').classList.remove('open')">×</button>
+    <div class="mcontent">
+      <div id="pmAvatar" style="width:110px;height:110px;border-radius:50%;background:var(--d4);border:3px solid var(--red);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--white);margin:0 auto 18px;overflow:hidden;"></div>
+      <div id="pmName" style="font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:700;color:var(--white);"></div>
+      <div style="font-size:12px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin:4px 0 18px;"><span id="pmPos"></span> &middot; <span id="pmNat"></span></div>
+      <div class="pstats" style="border-top:1px solid rgba(255,255,255,.08);padding-top:14px;">
+        <div class="psi"><div class="psv" id="pmApps"></div><div class="psk">Apps</div></div>
+        <div class="psi"><div class="psv" id="pmGoals"></div><div class="psk">Goals</div></div>
+        <div class="psi"><div class="psv" id="pmS3v"></div><div class="psk" id="pmS3k"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- ARTICLE MODAL -->
 <div class="modal-ov" id="articleModal">
   <div class="modal-box">
@@ -3032,10 +3083,22 @@ const players = [
 function renderPlayers(f) {
   const list = f==='all'?players:players.filter(p=>p.pos===f);
   document.getElementById('playersGrid').innerHTML = list.map(p=>`
-  <div class="player-card">
+  <div class="player-card" onclick="openPlayerModal('${p.name.replace(/'/g,"\\'")}')" style="cursor:pointer;">
     <div class="pct ${p.bg}"><div class="pnum">${p.num}</div><div class="pav">${p.img ? `<img src="images/${p.img}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : p.ini}</div><div class="ppb">${p.pos}</div></div>
-    <div class="pinfo"><div class="pname">${p.name}</div><div class="pnat">${p.nat}</div><div class="pstats">
-    <div class="psi"><div class="psv">${p.apps}</div><div class="psk">Apps</div></div><div class="psi"><div class="psv">${p.goals}</div><div class="psk">Goals</div></div><div class="psi"><div class="psv">${p.s3}</div><div class="psk">${p.sk}</div></div></div></div></div>`).join('');
+  </div>`).join('');
+}
+function openPlayerModal(name){
+  const p = players.find(x => x.name === name);
+  if(!p) return;
+  document.getElementById('pmAvatar').innerHTML = p.img ? `<img src="images/${p.img}" style="width:100%;height:100%;object-fit:cover;">` : p.ini;
+  document.getElementById('pmName').textContent = p.name;
+  document.getElementById('pmPos').textContent = p.pos;
+  document.getElementById('pmNat').textContent = p.nat;
+  document.getElementById('pmApps').textContent = p.apps;
+  document.getElementById('pmGoals').textContent = p.goals;
+  document.getElementById('pmS3v').textContent = p.s3;
+  document.getElementById('pmS3k').textContent = p.sk;
+  document.getElementById('playerModal').classList.add('open');
 }
 
 renderPlayers('all');
@@ -3231,6 +3294,22 @@ function resetFoodOrder(){
 document.getElementById('foodModal').addEventListener('click', function(e){
   if(e.target === this) closeFoodModal();
 });
+
+function toggleStaff(){
+  const more = document.getElementById('moreStaff');
+  const btn = document.getElementById('staffToggleBtn');
+  const opening = more.style.display === 'none' || more.style.display === '';
+  more.style.display = opening ? 'grid' : 'none';
+  btn.textContent = opening ? 'Show Less ←' : 'View Full Team →';
+}
+
+function toggleFix(id, btnId){
+  const el = document.getElementById(id);
+  const btn = document.getElementById(btnId);
+  const opening = el.style.display === 'none' || el.style.display === '';
+  el.style.display = opening ? 'block' : 'none';
+  btn.textContent = opening ? 'Show Less ←' : btn.dataset.label;
+}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.1});
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
@@ -3257,6 +3336,11 @@ function updateCountdown() {
 }
 setInterval(updateCountdown, 1000);
 updateCountdown(); // Run once immediately
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW failed', err));
+  });
+}
 </script>
 </body>
 </html>
