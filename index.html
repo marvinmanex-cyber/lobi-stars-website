@@ -1619,27 +1619,39 @@ function openArchiveTab(evt, tabName) {
     </div>
   </div>
 
-  <!-- TEAM PHOTOS STRIP -->
-  <div class="team-photos-strip fade-in">
-    <div class="tps-item">
-      <img src="images/team-photo1.jpg" alt="2024/25 Squad" onload="this.nextElementSibling.style.display='none'">
-      <div class="tps-fallback">TEAM PHOTO</div>
-      <div class="tps-label">2024/25 Squad</div>
-    </div>
-    <div class="tps-item">
-      <img src="images/team-photo2.jpg" alt="Training Session" onload="this.nextElementSibling.style.display='none'">
-      <div class="tps-fallback">TEAM PHOTO</div>
-      <div class="tps-label">Training Session</div>
-    </div>
-    <div class="tps-item">
-      <img src="images/team-photo3.jpg" alt="Match Day" onload="this.nextElementSibling.style.display='none'">
-      <div class="tps-fallback">TEAM PHOTO</div>
-      <div class="tps-label">Match Day</div>
+  <!-- TEASER: shown by default, hides when expanded -->
+  <div id="warriorsTeaser" class="fade-in" onclick="toggleWarriors()" style="cursor:pointer;position:relative;border-radius:10px;overflow:hidden;height:220px;border:1px solid rgba(255,255,255,.08);margin-bottom:0;">
+    <img src="images/team-photo1.jpg" style="width:100%;height:100%;object-fit:cover;" alt="Our Warriors"/>
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#fff;letter-spacing:2px;">⚽ Meet Our Warriors</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:8px;letter-spacing:1px;">Tap to view the full squad</div>
     </div>
   </div>
 
-  <!-- This grid will now sit right at the bottom of the section -->
-  <div class="players-grid" id="playersGrid" style="margin-bottom: 0;"></div>
+  <!-- FULL CONTENT: hidden by default -->
+  <div id="warriorsContent" style="display:none;">
+    <div class="team-photos-strip fade-in">
+      <div class="tps-item">
+        <img src="images/team-photo1.jpg" alt="2024/25 Squad" onload="this.nextElementSibling.style.display='none'">
+        <div class="tps-fallback">TEAM PHOTO</div>
+        <div class="tps-label">2024/25 Squad</div>
+      </div>
+      <div class="tps-item">
+        <img src="images/team-photo2.jpg" alt="Training Session" onload="this.nextElementSibling.style.display='none'">
+        <div class="tps-fallback">TEAM PHOTO</div>
+        <div class="tps-label">Training Session</div>
+      </div>
+      <div class="tps-item">
+        <img src="images/team-photo3.jpg" alt="Match Day" onload="this.nextElementSibling.style.display='none'">
+        <div class="tps-fallback">TEAM PHOTO</div>
+        <div class="tps-label">Match Day</div>
+      </div>
+    </div>
+    <div class="players-grid" id="playersGrid" style="margin-bottom:0;"></div>
+    <div style="text-align:center;margin-top:24px;">
+      <button class="btn-o" onclick="toggleWarriors()" style="padding:9px 24px;font-size:12px;cursor:pointer;">▲ Collapse Squad</button>
+    </div>
+  </div>
 </section>
 
 <!-- FIXTURES -->
@@ -1993,15 +2005,19 @@ function openArchiveTab(evt, tabName) {
   </div>
 
   <!-- GALLERY PREVIEW TEASER -->
-  <div id="galleryPreview" class="fade-in" onclick="document.getElementById('galleryPreview').style.display='none';document.getElementById('galleryGrid').style.display='grid';" style="cursor:pointer;position:relative;border-radius:10px;overflow:hidden;height:320px;border:1px solid rgba(255,255,255,.08);">
-    <img src="images/gallery-1.jpg" style="width:100%;height:100%;object-fit:cover;" alt="Gallery preview"/>
-    <div style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#fff;letter-spacing:2px;">📷 View Photo Gallery</div>
-      <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:8px;letter-spacing:1px;">Tap to browse all match albums</div>
-    </div>
+  <div id="galleryPreview" class="fade-in" onclick="toggleGallery()" style="cursor:pointer;position:relative;border-radius:10px;overflow:hidden;height:320px;border:1px solid rgba(255,255,255,.08);">
+  <img src="images/gallery-1.jpg" style="width:100%;height:100%;object-fit:cover;" alt="Gallery preview"/>
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;">
+    <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#fff;letter-spacing:2px;">📷 View Photo Gallery</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:8px;letter-spacing:1px;">Tap to browse all match albums</div>
   </div>
+</div>
 
-  <div class="gallery-grid fade-in" id="galleryGrid" style="display:none;grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px;"></div>
+<div style="text-align:center;display:none;" id="galleryCollapseBtn">
+  <button class="btn-o" onclick="toggleGallery()" style="margin-top:20px;padding:9px 24px;font-size:12px;cursor:pointer;">▲ Collapse Gallery</button>
+</div>
+
+<div class="gallery-grid fade-in" id="galleryGrid" style="display:none;grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px;"></div>
 </section>
 
 <!-- CLUB HISTORY -->
@@ -3049,6 +3065,16 @@ const galModal = document.getElementById('galleryModal');
 const galImg = document.getElementById('modalImg');
 const galCap = document.getElementById('modalCaption');
 
+function toggleGallery() {
+  const preview = document.getElementById('galleryPreview');
+  const grid = document.getElementById('galleryGrid');
+  const collapseBtn = document.getElementById('galleryCollapseBtn');
+  const isOpen = grid.style.display === 'grid';
+  preview.style.display = isOpen ? 'block' : 'none';
+  grid.style.display = isOpen ? 'none' : 'grid';
+  collapseBtn.style.display = isOpen ? 'none' : 'block';
+}
+
 function openAlbum(id) {
   const album = matchAlbums.find(a => a.id === id);
   activePhotos = album.photos; currentAlbumTitle = album.title; photoIdx = 0;
@@ -3294,6 +3320,14 @@ function resetFoodOrder(){
 document.getElementById('foodModal').addEventListener('click', function(e){
   if(e.target === this) closeFoodModal();
 });
+
+function toggleWarriors() {
+  const teaser = document.getElementById('warriorsTeaser');
+  const content = document.getElementById('warriorsContent');
+  const isOpen = content.style.display === 'block';
+  teaser.style.display = isOpen ? 'block' : 'none';
+  content.style.display = isOpen ? 'none' : 'block';
+}
 
 function toggleStaff(){
   const more = document.getElementById('moreStaff');
