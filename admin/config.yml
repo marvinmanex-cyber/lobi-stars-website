@@ -1,6 +1,10 @@
 backend:
-  name: git-gateway
+  name: github
+  repo: marvinmanex-cyber/lobi-stars-website
   branch: main
+  # No base_url needed: sign in via "Sign in with personal access token" on the
+  # /admin login screen (Sveltia CMS's built-in GitHub PAT flow). Only add a
+  # base_url + OAuth worker later if non-technical staff need a friendlier login.
 
 media_folder: "images"
 public_folder: "/images"
