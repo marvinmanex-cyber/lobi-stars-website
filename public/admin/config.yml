@@ -39,7 +39,7 @@ collections:
 
   - name: "gallery"
     label: "Gallery Photos"
-    folder: "_gallery"
+    folder: "src/content/gallery"
     create: true
     slug: "{{slug}}"
     fields:
@@ -48,7 +48,7 @@ collections:
 
   - name: "fixtures"
     label: "Fixtures & Results"
-    folder: "_fixtures"
+    folder: "src/content/fixtures"
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
@@ -60,3 +60,30 @@ collections:
       - {label: "Home Score", name: "home_score", widget: "number", required: false}
       - {label: "Away Score", name: "away_score", widget: "number", required: false}
       - {label: "Status", name: "status", widget: "select", options: ["Upcoming", "Completed"]}
+
+  - name: "staff"
+    label: "Club Management & Staff"
+    folder: "src/content/staff"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - {label: "Name", name: "name", widget: "string"}
+      - {label: "Role", name: "role", widget: "string"}
+      - {label: "Initials (shown if no photo)", name: "initials", widget: "string"}
+      - {label: "Photo", name: "photo", widget: "image", required: false}
+      - {label: "Display Order", name: "order", widget: "number", default: 10}
+      - {label: "Short Bio", name: "bio", widget: "text"}
+
+  - name: "merchandise"
+    label: "Club Shop / Merchandise"
+    folder: "src/content/merchandise"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - {label: "Product Name", name: "name", widget: "string"}
+      - {label: "Price (e.g. ₦15,000)", name: "price", widget: "string", default: "₦0"}
+      - {label: "Photo", name: "photo", widget: "image"}
+      - {label: "Badge (e.g. NEW, PREMIUM)", name: "badge", widget: "string", required: false}
+      - {label: "Badge Color", name: "badgeColor", widget: "string", default: "#D4202B"}
+      - {label: "Description", name: "description", widget: "text"}
+      - {label: "Shop Link", name: "shopUrl", widget: "string", default: "https://www.jumia.com.ng"}

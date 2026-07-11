@@ -1,3 +1,10 @@
+---
+import { getCollection } from 'astro:content';
+const staff = (await getCollection('staff')).sort((a, b) => a.data.order - b.data.order);
+const staffLead = staff.slice(0, 2);
+const staffMore = staff.slice(2);
+const merchandise = await getCollection('merchandise');
+---
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2162,74 +2169,36 @@ function openArchiveTab(evt, tabName) {
 
   <!-- Force 5 columns and tighten gaps -->
   <div class="mgmt-grid fade-in" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; max-width:500px;" id="mgmtGrid">
-    
-    <!-- CHAIRMAN -->
-    <div class="staff-card">
-      <div class="staff-photo" style="height: 160px;"> <!-- Reduced height to fit line -->
-        <img src="/images/chairman.jpg" alt="Chairman" onload="this.nextElementSibling.style.display='none'">
-        <div class="staff-initials">CH</div>
+    {staffLead.map(person => (
+      <div class="staff-card">
+        <div class="staff-photo" style="height: 160px;">
+          {person.data.photo && <img src={person.data.photo} alt={person.data.name} onload="this.nextElementSibling.style.display='none'">}
+          <div class="staff-initials">{person.data.initials}</div>
+        </div>
+        <div class="staff-info" style="padding: 12px 8px;">
+          <div class="sname" style="font-size: 14px;">{person.data.name}</div>
+          <div class="srole" style="font-size: 9px;">{person.data.role}</div>
+          <div class="sbio" style="font-size: 11px; line-height: 1.3;">{person.data.bio}</div>
+        </div>
       </div>
-      <div class="staff-info" style="padding: 12px 8px;">
-        <div class="sname" style="font-size: 14px;">Club Chairman</div>
-        <div class="srole" style="font-size: 9px;">Chairman</div>
-        <div class="sbio" style="font-size: 11px; line-height: 1.3;">Strategic direction and investment.</div>
-      </div>
-    </div>
-
-    <!-- HEAD COACH -->
-    <div class="staff-card">
-      <div class="staff-photo" style="height: 160px;">
-        <img src="/images/head-coach.jpg" alt="Head Coach" onload="this.nextElementSibling.style.display='none'">
-        <div class="staff-initials">HC</div>
-      </div>
-      <div class="staff-info" style="padding: 12px 8px;">
-        <div class="sname" style="font-size: 14px;">Head Coach</div>
-        <div class="srole" style="font-size: 9px;">Head Coach</div>
-        <div class="sbio" style="font-size: 11px; line-height: 1.3;">Tactical discipline and motivation.</div>
-      </div>
-    </div>
-    </div>
+    ))}
+  </div>
 
 <div id="moreStaff" style="display:none;grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top:12px;" class="mgmt-grid fade-in">
-    <!-- ASSISTANT COACH -->
-    <div class="staff-card">
-      <div class="staff-photo" style="height: 160px;">
-        <img src="/images/assistant-coach.jpg" alt="Assistant Coach" onload="this.nextElementSibling.style.display='none'">
-        <div class="staff-initials">AC</div>
+    {staffMore.map(person => (
+      <div class="staff-card">
+        <div class="staff-photo" style="height: 160px;">
+          {person.data.photo && <img src={person.data.photo} alt={person.data.name} onload="this.nextElementSibling.style.display='none'">}
+          <div class="staff-initials">{person.data.initials}</div>
+        </div>
+        <div class="staff-info" style="padding: 12px 8px;">
+          <div class="sname" style="font-size: 14px;">{person.data.name}</div>
+          <div class="srole" style="font-size: 9px;">{person.data.role}</div>
+          <div class="sbio" style="font-size: 11px; line-height: 1.3;">{person.data.bio}</div>
+        </div>
       </div>
-      <div class="staff-info" style="padding: 12px 8px;">
-        <div class="sname" style="font-size: 14px;">Asst. Coach</div>
-        <div class="srole" style="font-size: 9px;">Asst. Coach</div>
-        <div class="sbio" style="font-size: 11px; line-height: 1.3;">Training and match analysis.</div>
-      </div>
-    </div>
-
-    <!-- GK COACH -->
-    <div class="staff-card">
-      <div class="staff-photo" style="height: 160px;">
-        <img src="/images/gk-coach.jpg" alt="GK Coach" onload="this.nextElementSibling.style.display='none'">
-        <div class="staff-initials">GK</div>
-      </div>
-      <div class="staff-info" style="padding: 12px 8px;">
-        <div class="sname" style="font-size: 14px;">GK Coach</div>
-        <div class="srole" style="font-size: 9px;">GK Coach</div>
-        <div class="sbio" style="font-size: 11px; line-height: 1.3;">Specialist keeper training.</div>
-      </div>
-    </div>
-
-    <!-- DOCTOR -->
-    <div class="staff-card">
-      <div class="staff-photo" style="height: 160px;">
-        <img src="/images/club-doctor.jpg" alt="Club Doctor" onload="this.nextElementSibling.style.display='none'">
-        <div class="staff-initials">MD</div>
-      </div>
-      <div class="staff-info" style="padding: 12px 8px;">
-        <div class="sname" style="font-size: 14px;">Club Doctor</div>
-        <div class="srole" style="font-size: 9px;">Medical</div>
-        <div class="sbio" style="font-size: 11px; line-height: 1.3;">Health and injury management.</div>
-      </div>
-    </div>
-    </div>
+    ))}
+</div>
 
 <div style="text-align:center;margin-top:24px;">
   <button class="btn-o" id="staffToggleBtn" onclick="toggleStaff()">View Full Team →</button>
@@ -2276,217 +2245,20 @@ function openArchiveTab(evt, tabName) {
   <div class="divr fade-in" style="margin-bottom: 40px;"></div>
 
   <div class="merch-grid fade-in">
-    <!-- 1. HOME JERSEY -->
-    <div class="merch-card">
+    {merchandise.map(item => (
+      <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/lobihome-jersey.jpg" alt="Home Jersey" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-            <div class="merch-badge">HOME</div>
+          <img src={item.data.photo} alt={item.data.name} style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+          {item.data.badge && <div class="merch-badge" style={`background:${item.data.badgeColor}`}>{item.data.badge}</div>}
         </div>
         <div class="merch-info">
-            <div class="merch-name">2025/26 Home Jersey</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Official red and gold home kit. Available S–XXL.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
+          <div class="merch-name">{item.data.name}</div>
+          <div class="merch-price">{item.data.price}</div>
+          <div class="merch-desc">{item.data.description}</div>
+          <a href={item.data.shopUrl} target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
         </div>
-    </div>
-
-    <!-- 2. AWAY JERSEY -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/lobiaway-jersey.jpg" alt="Away Jersey" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-            <div class="merch-badge" style="background:#444;">AWAY</div>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">2025/26 Away Jersey</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Official white and gold away kit. All sizes available.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 3. CLUB JACKET (NEW) -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/club-jacket (1).jpg" alt="Club Jacket" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-            <div class="merch-badge" style="background:#D4202B;">PREMIUM</div>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Official Anthem Jacket</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Heavyweight branded jacket as worn by the first team.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 4. CLUB JOGGERS (NEW) -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/club-joggers.jpg" alt="Club Joggers" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Lobi Training Joggers</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Tapered fit training pants with embroidered crest.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 5. FOOTBALL BOOTS (NEW) -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/football-boots.jpg" alt="Pro Boots" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-            <div class="merch-badge" style="background:#000;">PRO GEAR</div>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Lobi Edition Pro Boots</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">High-performance pitch boots for serious players.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 6. MINI FOOTBALL (NEW) -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/minihome-football.jpg" alt="Mini Ball" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Mini Home Football</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Size 1 souvenir ball in official club colors.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 7. CLUB BACKPACK -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/lobi-bags.jpg" alt="Club Bag" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Official Lobi Backpack</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Durable branded travel and training backpack.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 8. FLIPSTRAW TUMBLER (NEW) -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/flipstraw-tumbler.jpg" alt="Tumbler" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Flip-straw Tumbler</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Insulated travel tumbler with flip-straw lid.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 9. COFFEE MUG (NEW) -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/coffee-mug.jpg" alt="Mug" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Club Coffee Mug</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Ceramic mug featuring the Lobi Stars crest.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 10. PINT GLASS (NEW) -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/legacypintglass.jpg" alt="Pint Glass" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Legacy Pint Glass</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Premium glassware for the ultimate fan.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 11. WALL CLOCK (NEW) -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/clock.jpg" alt="Wall Clock" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Lobi Stars Wall Clock</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Official club clock for your home or office.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 12. SUPPORTERS SCARF -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/lobi-scarfs.jpg" alt="Official Scarf" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Supporters Scarf</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Classic red and gold woven match day scarf.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 13. CLUB CAP -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/lobicap.jpg" alt="Lobi Stars Cap" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Lobi Stars Official Cap</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Embroidered snapback with official club crest.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 14. T-SHIRTS -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/lobi-kit.jpg" alt="Fancy T-Shirt" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Fans' Fancy T-Shirts</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Casual wear featuring modern Lobi Stars designs.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-  <!-- 15. PHONE CASE -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/lobiphone-case.jpeg" alt="Lobi Phone Case" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Lobi Phone Case</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Classic Lobi Stars Phone Case.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
-
-    <!-- 16. RETRO JERSEY -->
-    <div class="merch-card">
-        <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="/images/lobiretro-jersey.jpg" alt="Retro Jersey" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-        </div>
-        <div class="merch-info">
-            <div class="merch-name">Lobi Retro Jersey</div>
-            <div class="merch-price">₦0</div>
-            <div class="merch-desc">Classic Lobi Stars Retro Jersey.</div>
-            <a href="https://www.jumia.com.ng" target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
-        </div>
-    </div>
+      </div>
+    ))}
   </div>
 
   <div class="merch-note fade-in" style="margin-top: 30px;">

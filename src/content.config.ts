@@ -47,4 +47,29 @@ const fixtures = defineCollection({
   }),
 });
 
-export const collections = { news, players, gallery, fixtures };
+const staff = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/staff' }),
+  schema: z.object({
+    name: z.string(),
+    role: z.string(),
+    initials: z.string(),
+    bio: z.string(),
+    photo: z.string().optional(),
+    order: z.number().default(0),
+  }),
+});
+
+const merchandise = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/merchandise' }),
+  schema: z.object({
+    name: z.string(),
+    price: z.string().default('₦0'),
+    description: z.string(),
+    photo: z.string(),
+    badge: z.string().optional(),
+    badgeColor: z.string().default('#D4202B'),
+    shopUrl: z.string().default('https://www.jumia.com.ng'),
+  }),
+});
+
+export const collections = { news, players, gallery, fixtures, staff, merchandise };
