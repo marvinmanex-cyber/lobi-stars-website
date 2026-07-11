@@ -6,13 +6,13 @@ backend:
   # /admin login screen (Sveltia CMS's built-in GitHub PAT flow). Only add a
   # base_url + OAuth worker later if non-technical staff need a friendlier login.
 
-media_folder: "images"
+media_folder: "public/images"
 public_folder: "/images"
 
 collections:
   - name: "news"
     label: "News Articles"
-    folder: "_news"
+    folder: "src/content/news"
     create: true
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
     fields:
@@ -25,7 +25,7 @@ collections:
 
   - name: "players"
     label: "Squad / Players"
-    folder: "_players"
+    folder: "src/content/players"
     create: true
     slug: "{{slug}}"
     fields:
