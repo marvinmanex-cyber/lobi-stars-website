@@ -4,15 +4,14 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Lobi Stars Football Club | Pride of Benue</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#D4202B">
-<link rel="apple-touch-icon" href="images/icon-192.png">
+<link rel="apple-touch-icon" href="/images/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
-<style>
+<style is:global>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
   --red:#D4202B;--rd:#A8141D;--rdp:#6E0C12;
@@ -879,20 +878,27 @@ body.light-mode .footer-copy { color: #718096 !important; }
 }
 @media(max-width:768px){
   .top-bar{
-    height: auto !important;
-    padding: 10px 5px;
+    height: 56px !important;
+    padding: 0 5px;
   }
   .sponsor-container{
-    gap: 12px !important;
-    flex-wrap: wrap;
-    justify-content: center;
+    gap: 20px !important;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    width: 100%;
+    padding: 0 16px;
   }
+  .sponsor-container::-webkit-scrollbar{display:none;}
+  .sponsor-container > *{flex-shrink: 0;}
   .sponsor-logo{
     height: 30px !important;
     max-width: 80px !important;
   }
   nav{
-    top: 60px !important;
+    top: 56px !important;
   }
   .hero-content{
     padding: 130px 4% 0 !important;
@@ -916,20 +922,27 @@ body.light-mode .footer-copy { color: #718096 !important; }
 }
 @media(max-width:768px){
   .top-bar{
-    height: auto !important;
-    padding: 10px 5px;
+    height: 56px !important;
+    padding: 0 5px;
   }
   .sponsor-container{
-    gap: 12px !important;
-    flex-wrap: wrap;
-    justify-content: center;
+    gap: 20px !important;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    width: 100%;
+    padding: 0 16px;
   }
+  .sponsor-container::-webkit-scrollbar{display:none;}
+  .sponsor-container > *{flex-shrink: 0;}
   .sponsor-logo{
     height: 30px !important;
     max-width: 80px !important;
   }
   nav{
-    top: 60px !important;
+    top: 56px !important;
   }
   .hero-content{
     padding: 130px 4% 0 !important;
@@ -1496,29 +1509,29 @@ body.light-mode .food-sum-v{color:#1A202C;}
     
     <!-- Novus MFB (Clickable) -->
   <a href="https://novusmfb.com" target="_blank" class="sponsor-item">
-  <img src="images/novus.png" alt="Novus MFB" class="sponsor-logo">
+  <img src="/images/novus.png" alt="Novus MFB" class="sponsor-logo">
   </a>
 
     <!-- Benue Links (Clickable) -->
     <!-- Benue Links -->
 <a href="https://benuelinks.com" target="_blank" class="sponsor-item">
-  <img src="images/benuelinksnew-logo.png" alt="Benue Links Nig. Ltd" class="sponsor-logo">
+  <img src="/images/benuelinksnew-logo.png" alt="Benue Links Nig. Ltd" class="sponsor-logo">
 </a>
 
     <!-- Jumia (Clickable) -->
     <a href="https://jumia.com.ng" target="_blank" class="sponsor-item">
-      <img src="images/Jumia-Logo.jpg" alt="Jumia" class="sponsor-logo">
+      <img src="/images/Jumia-Logo.jpg" alt="Jumia" class="sponsor-logo">
     </a>
 
     <!-- BIPC (Clickable) -->
     <a href="https://bipc.benuestate.gov.ng" target="_blank" class="sponsor-item">
-      <img src="images/bipc-logo.jpg" alt="BIPC" class="sponsor-logo">
+      <img src="/images/bipc-logo.jpg" alt="BIPC" class="sponsor-logo">
     </a>
 
     <!-- Prime Beverages -->
     <a href="#" target="_blank" class="sponsor-item">
       <span style="display:flex;align-items:center;justify-content:center;height:55px;width:90px;overflow:hidden;">
-        <img src="images/prime-beverages2.jpg" alt="Prime Beverages" style="height:100%;width:auto;object-fit:contain;transform:scale(0.7);">
+        <img src="/images/prime-beverages2.jpg" alt="Prime Beverages" style="height:100%;width:auto;object-fit:contain;transform:scale(0.7);">
       </span>
     </a>
   </div>
@@ -1526,7 +1539,7 @@ body.light-mode .food-sum-v{color:#1A202C;}
 <nav id="mainNav">
   <a class="nav-logo" href="#hero">
     <div class="nlb">
-  <img src="images/hero-6.jpg" alt="Lobi Stars Badge">
+  <img src="/images/hero-6.jpg" alt="Lobi Stars Badge">
 </div>
     <div class="nlt">Lobi Stars<span>Football Club</span></div>
   </a>
@@ -1552,12 +1565,12 @@ body.light-mode .food-sum-v{color:#1A202C;}
 <!-- HERO -->
 <section id="hero">
   <div class="hero-slides" id="heroSlides">
-    <div class="hero-slide active" style="background-image:url('images/hero-1.jpg')"></div>
-    <div class="hero-slide" style="background-image:url('images/hero-2.jpg')"></div>
-    <div class="hero-slide" style="background-image:url('images/hero-3.jpg')"></div>
-    <div class="hero-slide" style="background-image:url('images/hero-4.jpg')"></div>
-    <div class="hero-slide" style="background-image:url('images/hero-5.jpg')"></div>
-    <div class="hero-slide" style="background-image:url('images/hero-7.jpg')"></div>
+    <div class="hero-slide active" style="background-image:url('/images/hero-1.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('/images/hero-2.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('/images/hero-3.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('/images/hero-4.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('/images/hero-5.jpg')"></div>
+    <div class="hero-slide" style="background-image:url('/images/hero-7.jpg')"></div>
   </div>
   <button class="sarrow" id="sprev">&#8592;</button>
   <button class="sarrow" id="snext">&#8594;</button>
@@ -1580,7 +1593,7 @@ body.light-mode .food-sum-v{color:#1A202C;}
   <a href="#membership" class="btn-p">Login / Sign Up</a>
 </div>
 
-<script>
+<script is:inline>
   // Logical redirect for Newsletter: If not "logged in", go to membership
   document.getElementById('newsletterBtn').addEventListener('click', function(e) {
       showToast("Access Restricted: Please Login or Sign Up to view the Newsletter.");
@@ -1645,7 +1658,7 @@ body.light-mode .food-sum-v{color:#1A202C;}
 
       <!-- RIGHT SIDE: SHORTER PHOTO -->
       <div class="about-visual">
-         <img src="images/club-history.jpg" 
+         <img src="/images/club-history.jpg" 
               style="border-radius: 8px; border: 1px solid var(--gold); width: 100%; height: 420px; object-fit: cover;" 
               alt="History">
       </div>
@@ -1656,15 +1669,15 @@ body.light-mode .food-sum-v{color:#1A202C;}
   <div id="media" class="archive-content fade-in" style="display: none;">
     <p class="muted-p" style="margin-bottom: 20px;">Photos and videos from previous seasons (1969 — 2023).</p>
     <div class="gallery-grid" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
-      <div class="gallery-item" style="height: 150px;"><img src="images/stadium-1.jpg"></div>
-      <div class="gallery-item" style="height: 150px;"><img src="images/stadium-2.jpg"></div>
-      <div class="gallery-item" style="height: 150px;"><img src="images/stadium-3.jpg"></div>
-      <div class="gallery-item" style="height: 150px;"><img src="images/stadium-4.jpg"></div>
+      <div class="gallery-item" style="height: 150px;"><img src="/images/stadium-1.jpg"></div>
+      <div class="gallery-item" style="height: 150px;"><img src="/images/stadium-2.jpg"></div>
+      <div class="gallery-item" style="height: 150px;"><img src="/images/stadium-3.jpg"></div>
+      <div class="gallery-item" style="height: 150px;"><img src="/images/stadium-4.jpg"></div>
     </div>
   </div>
 </section>
 
-<script>
+<script is:inline>
 function openArchiveTab(evt, tabName) {
   var i, x, tablinks;
   x = document.getElementsByClassName("archive-content");
@@ -1695,7 +1708,7 @@ function openArchiveTab(evt, tabName) {
 
   <!-- TEASER: shown by default, hides when expanded -->
   <div id="warriorsTeaser" class="fade-in" onclick="toggleWarriors()" style="cursor:pointer;position:relative;border-radius:10px;overflow:hidden;height:220px;border:1px solid rgba(255,255,255,.08);margin-bottom:0;">
-    <img src="images/team-photo1.jpg" style="width:100%;height:100%;object-fit:cover;" alt="Our Warriors"/>
+    <img src="/images/team-photo1.jpg" style="width:100%;height:100%;object-fit:cover;" alt="Our Warriors"/>
     <div style="position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;flex-direction:column;align-items:center;justify-content:center;">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#fff;letter-spacing:2px;">Meet Our Warriors</div>
       <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:8px;letter-spacing:1px;">Tap to view the full squad</div>
@@ -1706,17 +1719,17 @@ function openArchiveTab(evt, tabName) {
   <div id="warriorsContent" style="display:none;">
     <div class="team-photos-strip fade-in">
       <div class="tps-item">
-        <img src="images/team-photo1.jpg" alt="2024/25 Squad" onload="this.nextElementSibling.style.display='none'">
+        <img src="/images/team-photo1.jpg" alt="2024/25 Squad" onload="this.nextElementSibling.style.display='none'">
         <div class="tps-fallback">TEAM PHOTO</div>
         <div class="tps-label">2024/25 Squad</div>
       </div>
       <div class="tps-item">
-        <img src="images/team-photo2.jpg" alt="Training Session" onload="this.nextElementSibling.style.display='none'">
+        <img src="/images/team-photo2.jpg" alt="Training Session" onload="this.nextElementSibling.style.display='none'">
         <div class="tps-fallback">TEAM PHOTO</div>
         <div class="tps-label">Training Session</div>
       </div>
       <div class="tps-item">
-        <img src="images/team-photo3.jpg" alt="Match Day" onload="this.nextElementSibling.style.display='none'">
+        <img src="/images/team-photo3.jpg" alt="Match Day" onload="this.nextElementSibling.style.display='none'">
         <div class="tps-fallback">TEAM PHOTO</div>
         <div class="tps-label">Match Day</div>
       </div>
@@ -1756,7 +1769,7 @@ function openArchiveTab(evt, tabName) {
   </div>
 </section>
  <!-- START OF LIGHT THEME MATCH HUB -->
-<style>
+<style is:global>
     .match-hub-light {
         background: #ffffff !important; /* Pure white background */
         padding: 50px 20px !important;
@@ -1901,12 +1914,12 @@ function openArchiveTab(evt, tabName) {
         <div class="hub-box">
             <div class="match-flex">
                 <div class="t-col">
-                    <img src="images/hero-6.jpg" class="t-logo" alt="Lobi Stars">
+                    <img src="/images/hero-6.jpg" class="t-logo" alt="Lobi Stars">
                     <p style="font-size:13px; font-weight:700; color:#111; margin-top:8px;">LOBI STARS</p>
                 </div>
                 <div class="vs-circ">VS</div>
                 <div class="t-col">
-                    <img src="images/enyimba.jpg" class="t-logo" alt="Enyimba">
+                    <img src="/images/enyimba.jpg" class="t-logo" alt="Enyimba">
                     <p style="font-size:13px; font-weight:700; color:#111; margin-top:8px;">ENYIMBA FC</p>
                 </div>
             </div>
@@ -1919,7 +1932,7 @@ function openArchiveTab(evt, tabName) {
     </div>
 </section>
 
-<script>
+<script is:inline>
     function startTimer() {
         // Date set to May 17, 2026
         const target = new Date("May 17, 2026 16:00:00").getTime();
@@ -1991,13 +2004,13 @@ function openArchiveTab(evt, tabName) {
   </div>
   <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:14px;">
   <button class="btn-p fade-in food-flash-btn" onclick="openFoodOrder()">
-    <span style="width:44px;height:44px;flex-shrink:0;"><img src="images/fooddomain-logo.jpg" alt="Food" style="width:100%;height:100%;object-fit:contain;border-radius:4px;"/></span>
+    <span style="width:44px;height:44px;flex-shrink:0;"><img src="/images/fooddomain-logo.jpg" alt="Food" style="width:100%;height:100%;object-fit:contain;border-radius:4px;"/></span>
     <span style="display:flex;flex-direction:column;text-align:left;">
       <span style="font-size:14px;font-weight:900;letter-spacing:1px;line-height:1.2;">5-MINUTE IN-SEAT FOOD ORDER</span>
       <span style="font-size:10px;font-weight:600;letter-spacing:2px;opacity:.8;">& Delivery</span>
     </span>
   </button>
-  <img src="images/food-logo.jpg" alt="Food Partner" style="width:100%;max-width:100%;height:45px;object-fit:cover;display:block;margin-top:0;"/>
+  <img src="/images/food-logo.jpg" alt="Food Partner" style="width:100%;max-width:100%;height:45px;object-fit:cover;display:block;margin-top:0;"/>
 </div>
 </div>
   <div class="divr fade-in"></div>
@@ -2080,7 +2093,7 @@ function openArchiveTab(evt, tabName) {
 
   <!-- GALLERY PREVIEW TEASER -->
   <div id="galleryPreview" class="fade-in" onclick="toggleGallery()" style="cursor:pointer;position:relative;border-radius:10px;overflow:hidden;height:320px;border:1px solid rgba(255,255,255,.08);">
-  <img src="images/gallery-1.jpg" style="width:100%;height:100%;object-fit:cover;" alt="Gallery preview"/>
+  <img src="/images/gallery-1.jpg" style="width:100%;height:100%;object-fit:cover;" alt="Gallery preview"/>
   <div style="position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;justify-content:center;">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:30px;color:#fff;letter-spacing:2px;">View Photo Gallery</div>
     <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:8px;letter-spacing:1px;">Tap to browse all match albums</div>
@@ -2130,7 +2143,7 @@ function openArchiveTab(evt, tabName) {
 
     <div>
       <div class="history-img" style="height: 380px !important;">
-        <img src="images/club-history.jpg" alt="Lobi Stars History" onload="this.nextElementSibling.style.display='none'"/>
+        <img src="/images/club-history.jpg" alt="Lobi Stars History" onload="this.nextElementSibling.style.display='none'"/>
         <div class="history-img-fb">SINCE 1969</div>
       </div>
       <div class="history-stats">
@@ -2153,7 +2166,7 @@ function openArchiveTab(evt, tabName) {
     <!-- CHAIRMAN -->
     <div class="staff-card">
       <div class="staff-photo" style="height: 160px;"> <!-- Reduced height to fit line -->
-        <img src="images/chairman.jpg" alt="Chairman" onload="this.nextElementSibling.style.display='none'">
+        <img src="/images/chairman.jpg" alt="Chairman" onload="this.nextElementSibling.style.display='none'">
         <div class="staff-initials">CH</div>
       </div>
       <div class="staff-info" style="padding: 12px 8px;">
@@ -2166,7 +2179,7 @@ function openArchiveTab(evt, tabName) {
     <!-- HEAD COACH -->
     <div class="staff-card">
       <div class="staff-photo" style="height: 160px;">
-        <img src="images/head-coach.jpg" alt="Head Coach" onload="this.nextElementSibling.style.display='none'">
+        <img src="/images/head-coach.jpg" alt="Head Coach" onload="this.nextElementSibling.style.display='none'">
         <div class="staff-initials">HC</div>
       </div>
       <div class="staff-info" style="padding: 12px 8px;">
@@ -2181,7 +2194,7 @@ function openArchiveTab(evt, tabName) {
     <!-- ASSISTANT COACH -->
     <div class="staff-card">
       <div class="staff-photo" style="height: 160px;">
-        <img src="images/assistant-coach.jpg" alt="Assistant Coach" onload="this.nextElementSibling.style.display='none'">
+        <img src="/images/assistant-coach.jpg" alt="Assistant Coach" onload="this.nextElementSibling.style.display='none'">
         <div class="staff-initials">AC</div>
       </div>
       <div class="staff-info" style="padding: 12px 8px;">
@@ -2194,7 +2207,7 @@ function openArchiveTab(evt, tabName) {
     <!-- GK COACH -->
     <div class="staff-card">
       <div class="staff-photo" style="height: 160px;">
-        <img src="images/gk-coach.jpg" alt="GK Coach" onload="this.nextElementSibling.style.display='none'">
+        <img src="/images/gk-coach.jpg" alt="GK Coach" onload="this.nextElementSibling.style.display='none'">
         <div class="staff-initials">GK</div>
       </div>
       <div class="staff-info" style="padding: 12px 8px;">
@@ -2207,7 +2220,7 @@ function openArchiveTab(evt, tabName) {
     <!-- DOCTOR -->
     <div class="staff-card">
       <div class="staff-photo" style="height: 160px;">
-        <img src="images/club-doctor.jpg" alt="Club Doctor" onload="this.nextElementSibling.style.display='none'">
+        <img src="/images/club-doctor.jpg" alt="Club Doctor" onload="this.nextElementSibling.style.display='none'">
         <div class="staff-initials">MD</div>
       </div>
       <div class="staff-info" style="padding: 12px 8px;">
@@ -2267,7 +2280,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 1. HOME JERSEY -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/lobihome-jersey.jpg" alt="Home Jersey" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/lobihome-jersey.jpg" alt="Home Jersey" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
             <div class="merch-badge">HOME</div>
         </div>
         <div class="merch-info">
@@ -2281,7 +2294,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 2. AWAY JERSEY -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/lobiaway-jersey.jpg" alt="Away Jersey" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/lobiaway-jersey.jpg" alt="Away Jersey" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
             <div class="merch-badge" style="background:#444;">AWAY</div>
         </div>
         <div class="merch-info">
@@ -2295,7 +2308,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 3. CLUB JACKET (NEW) -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/club-jacket (1).jpg" alt="Club Jacket" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/club-jacket (1).jpg" alt="Club Jacket" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
             <div class="merch-badge" style="background:#D4202B;">PREMIUM</div>
         </div>
         <div class="merch-info">
@@ -2309,7 +2322,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 4. CLUB JOGGERS (NEW) -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/club-joggers.jpg" alt="Club Joggers" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/club-joggers.jpg" alt="Club Joggers" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Lobi Training Joggers</div>
@@ -2322,7 +2335,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 5. FOOTBALL BOOTS (NEW) -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/football-boots.jpg" alt="Pro Boots" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/football-boots.jpg" alt="Pro Boots" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
             <div class="merch-badge" style="background:#000;">PRO GEAR</div>
         </div>
         <div class="merch-info">
@@ -2336,7 +2349,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 6. MINI FOOTBALL (NEW) -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/minihome-football.jpg" alt="Mini Ball" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/minihome-football.jpg" alt="Mini Ball" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Mini Home Football</div>
@@ -2349,7 +2362,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 7. CLUB BACKPACK -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/lobi-bags.jpg" alt="Club Bag" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/lobi-bags.jpg" alt="Club Bag" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Official Lobi Backpack</div>
@@ -2362,7 +2375,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 8. FLIPSTRAW TUMBLER (NEW) -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/flipstraw-tumbler.jpg" alt="Tumbler" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/flipstraw-tumbler.jpg" alt="Tumbler" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Flip-straw Tumbler</div>
@@ -2375,7 +2388,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 9. COFFEE MUG (NEW) -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/coffee-mug.jpg" alt="Mug" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/coffee-mug.jpg" alt="Mug" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Club Coffee Mug</div>
@@ -2388,7 +2401,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 10. PINT GLASS (NEW) -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/legacypintglass.jpg" alt="Pint Glass" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/legacypintglass.jpg" alt="Pint Glass" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Legacy Pint Glass</div>
@@ -2401,7 +2414,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 11. WALL CLOCK (NEW) -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/clock.jpg" alt="Wall Clock" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/clock.jpg" alt="Wall Clock" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Lobi Stars Wall Clock</div>
@@ -2414,7 +2427,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 12. SUPPORTERS SCARF -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/lobi-scarfs.jpg" alt="Official Scarf" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/lobi-scarfs.jpg" alt="Official Scarf" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Supporters Scarf</div>
@@ -2427,7 +2440,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 13. CLUB CAP -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/lobicap.jpg" alt="Lobi Stars Cap" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/lobicap.jpg" alt="Lobi Stars Cap" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Lobi Stars Official Cap</div>
@@ -2440,7 +2453,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 14. T-SHIRTS -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/lobi-kit.jpg" alt="Fancy T-Shirt" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/lobi-kit.jpg" alt="Fancy T-Shirt" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Fans' Fancy T-Shirts</div>
@@ -2453,7 +2466,7 @@ function openArchiveTab(evt, tabName) {
   <!-- 15. PHONE CASE -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/lobiphone-case.jpeg" alt="Lobi Phone Case" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/lobiphone-case.jpeg" alt="Lobi Phone Case" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Lobi Phone Case</div>
@@ -2466,7 +2479,7 @@ function openArchiveTab(evt, tabName) {
     <!-- 16. RETRO JERSEY -->
     <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-            <img src="images/lobiretro-jersey.jpg" alt="Retro Jersey" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+            <img src="/images/lobiretro-jersey.jpg" alt="Retro Jersey" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
         </div>
         <div class="merch-info">
             <div class="merch-name">Lobi Retro Jersey</div>
@@ -2483,7 +2496,7 @@ function openArchiveTab(evt, tabName) {
 </section>
 
 <!-- SPONSOR SECTION -->
-<style>
+<style is:global>
   /* This handles the background change for Light/Dark mode */
   #sponsor {
     background-color: #0a0a0a; /* Default Dark */
@@ -2590,7 +2603,7 @@ function openArchiveTab(evt, tabName) {
   </div>
 </section>
 <!-- MEMBERSHIP SECTION -->
-<style>
+<style is:global>
   /* Base Dark Mode Styles */
   #membership {
   background-color: #0a0a0a;
@@ -2721,7 +2734,7 @@ function openArchiveTab(evt, tabName) {
   </div>
 </section>
 <!-- CONTACT SECTION -->
-<style>
+<style is:global>
   /* Fix for Light Mode visibility */
   body.light-mode #contact .contact-info,
   body.light-mode #contact .cdet-val,
@@ -2847,7 +2860,7 @@ function openArchiveTab(evt, tabName) {
       <div class="footer-brand">
         <a class="nav-logo" href="#hero" style="text-decoration:none; display: flex; align-items: center; gap: 15px;">
           <div class="nlb" style="background:#fff; border: 2px solid var(--gold); width: 50px; height: 50px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-              <img src="images/hero-6.jpg" alt="Badge" style="width: 80%;">
+              <img src="/images/hero-6.jpg" alt="Badge" style="width: 80%;">
           </div>
           <div class="nlt" style="display: flex; flex-direction: column;">
               <span style="font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: #fff; line-height: 1;">LOBI STARS</span>
@@ -3001,7 +3014,7 @@ function openArchiveTab(evt, tabName) {
 </div>
 
 <div class="toast" id="toast"></div>
-<script>
+<script is:inline>
   if (window.netlifyIdentity) {
     window.netlifyIdentity.on("init", user => {
       if (!user) {
@@ -3021,7 +3034,7 @@ function openArchiveTab(evt, tabName) {
   </svg>
 </a>
 
-<script>
+<script is:inline>
 // ── THEME TOGGLE ──
 const themeBtn = document.getElementById('themeToggle');
 const themeIcon = document.getElementById('themeIcon');
@@ -3130,7 +3143,7 @@ matchAlbums.forEach(album => {
   card.className = 'album-card';
   card.onclick = () => openAlbum(album.id);
   card.innerHTML = `
-    <div class="album-cover"><img src="images/${album.cover}" onerror="this.src='images/hero-1.jpg'"><div class="album-overlay"><span class="album-badge">Match Album</span></div></div>
+    <div class="album-cover"><img src="/images/${album.cover}" onerror="this.src='images/hero-1.jpg'"><div class="album-overlay"><span class="album-badge">Match Album</span></div></div>
     <div class="album-info"><div class="album-title">${album.title}</div><div class="album-meta">${album.date} • ${album.photos.length} Photos</div></div>`;
   galleryGrid.appendChild(card);
 });
@@ -3158,7 +3171,7 @@ function openAlbum(id) {
 }
 
 function updateGalUI() {
-  galImg.src = `images/${activePhotos[photoIdx]}`;
+  galImg.src = `/images/${activePhotos[photoIdx]}`;
   galCap.textContent = `${currentAlbumTitle} (${photoIdx + 1}/${activePhotos.length})`;
 }
 
@@ -3185,13 +3198,13 @@ function renderPlayers(f) {
   const list = f==='all'?players:players.filter(p=>p.pos===f);
   document.getElementById('playersGrid').innerHTML = list.map(p=>`
   <div class="player-card" onclick="openPlayerModal('${p.name.replace(/'/g,"\\'")}')" style="cursor:pointer;">
-    <div class="pct ${p.bg}"><div class="pnum">${p.num}</div><div class="pav">${p.img ? `<img src="images/${p.img}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : p.ini}</div><div class="ppb">${p.pos}</div></div>
+    <div class="pct ${p.bg}"><div class="pnum">${p.num}</div><div class="pav">${p.img ? `<img src="/images/${p.img}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : p.ini}</div><div class="ppb">${p.pos}</div></div>
   </div>`).join('');
 }
 function openPlayerModal(name){
   const p = players.find(x => x.name === name);
   if(!p) return;
-  document.getElementById('pmAvatar').innerHTML = p.img ? `<img src="images/${p.img}" style="width:100%;height:100%;object-fit:cover;">` : p.ini;
+  document.getElementById('pmAvatar').innerHTML = p.img ? `<img src="/images/${p.img}" style="width:100%;height:100%;object-fit:cover;">` : p.ini;
   document.getElementById('pmName').textContent = p.name;
   document.getElementById('pmPos').textContent = p.pos;
   document.getElementById('pmNat').textContent = p.nat;
