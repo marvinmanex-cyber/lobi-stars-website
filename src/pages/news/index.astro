@@ -1,0 +1,43 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const articles = (await getCollection('news')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+---
+<Layout title="Club News | Lobi Stars Football Club">
+  <div class="page-hero wrap">
+    <div class="stag">Latest Updates</div>
+    <h1 class="stitle">Club <span class="r">News</span></h1>
+    <div class="divr"></div>
+  </div>
+
+  <div class="page-content wrap">
+    {articles.length === 0 && (
+      <div class="empty-state">
+        No articles yet &mdash; check back soon, or sign in at <a href="/admin" style="color:var(--gold);">/admin</a> to post the first one.
+      </div>
+    )}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;">
+      {articles.map(article => (
+        <a href={`/news/${article.id}`} class="card" style="text-decoration:none;display:block;">
+          {article.data.image && (
+            <div style="height:180px;overflow:hidden;">
+              <img src={article.data.image} alt={article.data.title} style="width:100%;height:100%;object-fit:cover;"/>
+            </div>
+          )}
+          <div style="padding:18px;">
+            <div style="font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;font-family:'Barlow Condensed',sans-serif;">
+              {article.data.category} &middot; {article.data.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--white);line-height:1.3;margin-bottom:8px;">
+              {article.data.title}
+            </div>
+            <div class="muted" style="font-size:13px;line-height:1.6;">{article.data.excerpt}</div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</Layout>

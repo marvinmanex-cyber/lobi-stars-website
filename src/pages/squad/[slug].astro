@@ -1,0 +1,39 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const players = await getCollection('players');
+  return players.map(player => ({
+    params: { slug: player.id },
+    props: { player },
+  }));
+}
+
+const { player } = Astro.props;
+const { Content } = await render(player);
+---
+<Layout title={`${player.data.name} | Lobi Stars Squad`}>
+  <div class="page-content wrap" style="max-width:700px;padding-top:150px;">
+    <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:24px;">
+      {player.data.photo && (
+        <img src={player.data.photo} alt={player.data.name} style="width:140px;height:140px;border-radius:50%;object-fit:cover;border:3px solid var(--red);"/>
+      )}
+      <div>
+        <div class="stag">{player.data.position} &middot; #{player.data.number}</div>
+        <h1 class="stitle" style="font-size:clamp(28px,4vw,44px);">{player.data.name}</h1>
+        <div class="muted">{player.data.nationality}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:30px;margin-bottom:30px;">
+      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);">{player.data.apps}</div><div class="muted" style="font-size:11px;letter-spacing:2px;text-transform:uppercase;">Appearances</div></div>
+      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);">{player.data.goals}</div><div class="muted" style="font-size:11px;letter-spacing:2px;text-transform:uppercase;">Goals</div></div>
+    </div>
+    <div style="font-size:15px;line-height:1.8;opacity:.85;">
+      <Content />
+    </div>
+    <div style="margin-top:40px;">
+      <a href="/squad" class="btn-o">&larr; Back to Squad</a>
+    </div>
+  </div>
+</Layout>
