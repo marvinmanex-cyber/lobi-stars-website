@@ -1,0 +1,35 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const articles = await getCollection('news');
+  return articles.map(article => ({
+    params: { slug: article.id },
+    props: { article },
+  }));
+}
+
+const { article } = Astro.props;
+const { Content } = await render(article);
+---
+<Layout title={`${article.data.title} | Lobi Stars Football Club`} description={article.data.excerpt}>
+  <div class="page-hero wrap" style="max-width:800px;">
+    <div class="stag">{article.data.category}</div>
+    <h1 class="stitle" style="font-size:clamp(30px,4.5vw,48px);">{article.data.title}</h1>
+    <div class="muted" style="font-size:13px;letter-spacing:1px;margin-bottom:20px;">
+      {article.data.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+    </div>
+  </div>
+  <div class="page-content wrap" style="max-width:800px;">
+    {article.data.image && (
+      <img src={article.data.image} alt={article.data.title} style="width:100%;border-radius:10px;margin-bottom:30px;"/>
+    )}
+    <div style="font-size:16px;line-height:1.9;color:var(--white);opacity:.85;">
+      <Content />
+    </div>
+    <div style="margin-top:40px;">
+      <a href="/news" class="btn-o">&larr; Back to News</a>
+    </div>
+  </div>
+</Layout>

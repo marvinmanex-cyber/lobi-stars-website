@@ -1,1 +1,4 @@
 _originals_backup/
+node_modules/
+dist/
+.astro/

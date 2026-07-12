@@ -1,0 +1,66 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const all = (await getCollection('fixtures')).sort((a, b) => a.data.date.valueOf() - b.data.date.valueOf());
+const upcoming = all.filter(f => f.data.status === 'Upcoming');
+const results = all.filter(f => f.data.status === 'Completed').reverse();
+
+function fmtDate(d: Date) {
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+---
+<Layout title="Fixtures & Results | Lobi Stars Football Club">
+  <div class="page-hero wrap">
+    <div class="stag">Schedule &amp; Results</div>
+    <h1 class="stitle">Fixtures &amp; <span class="r">Results</span></h1>
+    <div class="divr"></div>
+  </div>
+
+  <div class="page-content wrap">
+    {all.length === 0 && (
+      <div class="empty-state">
+        No fixtures added yet &mdash; add matches via <a href="/admin" style="color:var(--gold);">/admin</a>.
+      </div>
+    )}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;" class="fixtures-cols">
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);">Upcoming Fixtures</div>
+        {upcoming.length === 0 && <p class="muted">No upcoming fixtures scheduled.</p>}
+        {upcoming.map(f => (
+          <div class="card" style="padding:18px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:11px;" class="muted">
+              <span>{f.data.competition}</span><span style="color:var(--gold);">{fmtDate(f.data.date)}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;">
+              <div style="text-align:right;">{f.data.home}</div>
+              <div class="muted" style="font-family:'Bebas Neue',sans-serif;">VS</div>
+              <div>{f.data.away}</div>
+            </div>
+            <div class="muted" style="margin-top:10px;font-size:11px;">&#128205; {f.data.venue}</div>
+          </div>
+        ))}
+      </div>
+      <div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);">Recent Results</div>
+        {results.length === 0 && <p class="muted">No results recorded yet.</p>}
+        {results.map(f => (
+          <div class="card" style="padding:18px;margin-bottom:12px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:11px;" class="muted">
+              <span>{f.data.competition}</span><span>{fmtDate(f.data.date)}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;font-family:'Barlow Condensed',sans-serif;font-weight:700;">
+              <div style="text-align:right;">{f.data.home}</div>
+              <div style="background:var(--red);color:#fff;padding:5px 12px;border-radius:3px;font-family:'Bebas Neue',sans-serif;font-size:18px;text-align:center;">{f.data.home_score} &ndash; {f.data.away_score}</div>
+              <div>{f.data.away}</div>
+            </div>
+            <div class="muted" style="margin-top:10px;font-size:11px;">&#128205; {f.data.venue}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+  <style>
+    @media(max-width:768px){ .fixtures-cols{ grid-template-columns:1fr!important; } }
+  </style>
+</Layout>

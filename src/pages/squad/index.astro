@@ -1,0 +1,52 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const players = (await getCollection('players')).sort((a, b) => a.data.number - b.data.number);
+---
+<Layout title="Squad | Lobi Stars Football Club">
+  <div class="page-hero wrap">
+    <div class="stag">The Squad</div>
+    <h1 class="stitle">Our <span class="r">Warriors</span></h1>
+    <div class="divr"></div>
+  </div>
+
+  <div class="page-content wrap">
+    {players.length === 0 && (
+      <div class="empty-state">
+        No player profiles yet &mdash; add the squad via <a href="/admin" style="color:var(--gold);">/admin</a>.
+      </div>
+    )}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px;">
+      {players.map(player => (
+        <a href={`/squad/${player.id}`} class="card" style="text-decoration:none;display:block;">
+          <div style="height:170px;position:relative;overflow:hidden;background:var(--d3);">
+            {player.data.photo && (
+              <img src={player.data.photo} alt={player.data.name} style="width:100%;height:100%;object-fit:cover;"/>
+            )}
+            <div style="position:absolute;top:11px;left:11px;background:var(--red);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:2px;">
+              {player.data.position}
+            </div>
+            <div style="position:absolute;bottom:-10px;right:6px;font-family:'Bebas Neue',sans-serif;font-size:80px;color:rgba(255,255,255,.06);line-height:1;">
+              {player.data.number}
+            </div>
+          </div>
+          <div style="padding:15px;">
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:3px;">{player.data.name}</div>
+            <div class="muted" style="font-size:12px;letter-spacing:1px;">{player.data.nationality}</div>
+            <div style="display:flex;margin-top:12px;border-top:1px solid rgba(255,255,255,.07);padding-top:10px;">
+              <div style="flex:1;text-align:center;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);">{player.data.apps}</div>
+                <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;" class="muted">Apps</div>
+              </div>
+              <div style="flex:1;text-align:center;">
+                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);">{player.data.goals}</div>
+                <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;" class="muted">Goals</div>
+              </div>
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+  </div>
+</Layout>
