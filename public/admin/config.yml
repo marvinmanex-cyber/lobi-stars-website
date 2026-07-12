@@ -18,7 +18,7 @@ collections:
     fields:
       - {label: "Title", name: "title", widget: "string"}
       - {label: "Category", name: "category", widget: "select", options: ["Match Report", "Transfers", "Club News", "Academy", "Community"]}
-      - {label: "Date", name: "date", widget: "date"}
+      - {label: "Date", name: "date", widget: "datetime", type: "date", time_format: false}
       - {label: "Excerpt", name: "excerpt", widget: "text"}
       - {label: "Featured Image", name: "image", widget: "image", required: false}
       - {label: "Body", name: "body", widget: "markdown"}
