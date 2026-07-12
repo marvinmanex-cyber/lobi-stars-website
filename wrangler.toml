@@ -1,0 +1,10 @@
+name = "lobi-stars-website"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-01-01"
+
+# Local dev only (`wrangler pages dev`). The production D1 binding is
+# configured in the Cloudflare Pages dashboard instead -- see DEPLOYMENT.md.
+[[d1_databases]]
+binding = "DB"
+database_name = "lobi-stars-tickets"
+database_id = "REPLACE_AFTER_WRANGLER_D1_CREATE"

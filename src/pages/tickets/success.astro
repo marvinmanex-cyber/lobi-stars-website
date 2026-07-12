@@ -1,0 +1,96 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Your Tickets | Lobi Stars Football Club">
+  <div class="page-content wrap" style="max-width:640px;padding-top:150px;min-height:50vh;">
+    <div id="state-loading">
+      <div class="stag">Please Wait</div>
+      <h1 class="stitle">Confirming <span class="r">Payment</span></h1>
+      <p class="muted">This usually takes a few seconds...</p>
+    </div>
+
+    <div id="state-success" style="display:none;">
+      <div class="stag">Booking Confirmed</div>
+      <h1 class="stitle">Your <span class="r">Tickets</span></h1>
+      <p id="summary" class="muted" style="margin-bottom:24px;"></p>
+      <div id="ticket-list"></div>
+      <p class="muted" style="margin-top:24px;font-size:13px;">
+        A copy with QR codes has also been emailed to you. Present each code once at the gate &mdash; one scan per ticket.
+      </p>
+      <a href="/" class="btn-o" style="margin-top:20px;display:inline-block;">&larr; Back to Home</a>
+    </div>
+
+    <div id="state-error" style="display:none;">
+      <div class="stag">Something's Not Right</div>
+      <h1 class="stitle">Payment Not <span class="r">Confirmed</span></h1>
+      <p id="error-msg" class="muted"></p>
+      <a href="/#tickets" class="btn-o" style="margin-top:20px;display:inline-block;">&larr; Back to Tickets</a>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline>
+(async function () {
+  const params = new URLSearchParams(window.location.search);
+  const reference = params.get('reference') || params.get('trxref');
+  const loading = document.getElementById('state-loading');
+  const success = document.getElementById('state-success');
+  const errorState = document.getElementById('state-error');
+  const errorMsg = document.getElementById('error-msg');
+
+  if (!reference) {
+    loading.style.display = 'none';
+    errorState.style.display = 'block';
+    errorMsg.textContent = 'No payment reference was provided.';
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/verify?reference=${encodeURIComponent(reference)}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error || data.status !== 'success') {
+      loading.style.display = 'none';
+      errorState.style.display = 'block';
+      errorMsg.textContent = data.error || 'Payment could not be confirmed. If you were charged, contact us with your reference: ' + reference;
+      return;
+    }
+
+    document.getElementById('summary').textContent =
+      `${data.event.home_team} vs ${data.event.away_team} — ${data.order.tier} × ${data.order.quantity} — Order ${data.order.id}`;
+
+    const list = document.getElementById('ticket-list');
+    data.tickets.forEach((ticketId, i) => {
+      const card = document.createElement('div');
+      card.style.cssText = 'border:2px solid #D4202B;border-radius:10px;padding:20px;margin-bottom:14px;text-align:center;';
+      card.innerHTML = `
+        <div class="muted" style="font-size:11px;letter-spacing:2px;text-transform:uppercase;">Ticket ${i + 1} of ${data.tickets.length}</div>
+        <div id="qr-${i}" style="margin:14px auto;width:200px;height:200px;"></div>
+        <div style="font-family:monospace;font-size:15px;letter-spacing:1px;">${ticketId}</div>
+      `;
+      list.appendChild(card);
+    });
+
+    loading.style.display = 'none';
+    success.style.display = 'block';
+
+    // Render QR codes client-side via a lightweight CDN script (no ticket
+    // data ever leaves the browser -- this only draws what's already here).
+    const qrScript = document.createElement('script');
+    qrScript.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js';
+    qrScript.onload = () => {
+      data.tickets.forEach((ticketId, i) => {
+        const qr = qrcode(0, 'M');
+        qr.addData(ticketId);
+        qr.make();
+        document.getElementById(`qr-${i}`).innerHTML = qr.createSvgTag({ scalable: true });
+      });
+    };
+    document.body.appendChild(qrScript);
+  } catch (err) {
+    loading.style.display = 'none';
+    errorState.style.display = 'block';
+    errorMsg.textContent = 'Network error while confirming payment. Please refresh this page.';
+  }
+})();
+</script>
