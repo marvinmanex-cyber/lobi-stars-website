@@ -989,6 +989,59 @@ body.light-mode .footer-copy { color: #718096 !important; }
   .nav-toggle{display:block;position:relative;z-index:1;}
 }
 
+/* ── PHONE BOTTOM TAB BAR ── */
+/* Below tablet width, the hamburger dropdown is replaced entirely by a
+   native-app-style bottom tab bar -- one navigation system, not two. */
+.tabbar{display:none;}
+.more-sheet-ov{display:none;}
+@media(max-width:768px){
+  .nav-toggle,.nav-links{display:none!important;}
+  body{padding-bottom:64px;}
+  .tabbar{
+    display:flex;
+    position:fixed;
+    left:0;right:0;bottom:0;
+    z-index:1500;
+    background:rgba(10,10,10,.98);
+    backdrop-filter:blur(14px);
+    border-top:1px solid rgba(245,184,0,.15);
+    padding:6px 2px calc(6px + env(safe-area-inset-bottom,0px));
+  }
+  body.light-mode .tabbar{background:rgba(255,255,255,.98);border-top-color:rgba(0,0,0,.08);}
+  .tabbar-item{
+    flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+    background:none;border:none;cursor:pointer;
+    color:rgba(255,255,255,.45);text-decoration:none;
+    font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
+    padding:6px 2px;
+  }
+  body.light-mode .tabbar-item{color:rgba(0,0,0,.4);}
+  .tabbar-item svg{width:22px;height:22px;}
+  .tabbar-item.active{color:var(--gold);}
+
+  .more-sheet-ov{
+    position:fixed;inset:0;z-index:1600;
+    background:rgba(0,0,0,.55);
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  .more-sheet-ov.open{display:flex;}
+  .more-sheet{
+    width:100%;background:var(--d2);border-radius:18px 18px 0 0;
+    padding:10px 20px calc(20px + env(safe-area-inset-bottom,0px));
+    box-shadow:0 -12px 30px rgba(0,0,0,.35);
+  }
+  .more-sheet-handle{width:40px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:6px auto 18px;}
+  .more-sheet-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px;margin-bottom:18px;}
+  .more-item{
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    color:var(--white);text-decoration:none;
+    font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:.5px;
+  }
+  .more-ic{font-size:26px;width:52px;height:52px;display:flex;align-items:center;justify-content:center;background:var(--d3);border-radius:14px;}
+  .wa-float{bottom:calc(76px + env(safe-area-inset-bottom,0px));width:50px;height:50px;}
+  .wa-float svg{width:26px;height:26px;}
+}
+
 /* ── MOBILE CONTENT GRIDS ── */
 /* These sections render as fixed 2/3-column grids with no fallback, so
    they overflowed or squeezed unreadably narrow on phones. */
@@ -1547,6 +1600,48 @@ body.light-mode .food-sum-v{color:#1A202C;}
   </ul>
   <button class="nav-toggle" id="menuToggle"><span></span><span></span><span></span></button>
 </nav>
+
+<!-- MOBILE BOTTOM TAB BAR (native-app style, phones only) -->
+<nav class="tabbar" id="tabbar">
+  <a href="#hero" class="tabbar-item active" data-tab="home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-9"/><path d="M9.5 20v-6h5v6"/></svg>
+    <span>Home</span>
+  </a>
+  <a href="#fixtures" class="tabbar-item" data-tab="matches">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 3v3.5M16 3v3.5"/></svg>
+    <span>Matches</span>
+  </a>
+  <a href="#players" class="tabbar-item" data-tab="team">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3.3 2.9-6 6.5-6s6.5 2.7 6.5 6"/><circle cx="17" cy="7" r="2.4"/><path d="M15.5 12.3c2.9.5 5 2.7 5 5.7"/></svg>
+    <span>Team</span>
+  </a>
+  <a href="#membership" class="tabbar-item" data-tab="profile" id="profileTab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>
+    <span id="profileTabLabel">Profile</span>
+  </a>
+  <button class="tabbar-item" id="moreTab" data-tab="more">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>
+    <span>More</span>
+  </button>
+</nav>
+
+<!-- MORE SHEET -->
+<div class="more-sheet-ov" id="moreSheetOv">
+  <div class="more-sheet">
+    <div class="more-sheet-handle"></div>
+    <div class="more-sheet-grid">
+      <a href="#tickets" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">🎟️</span>Tickets</a>
+      <a href="#news" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">📰</span>News</a>
+      <a href="#gallery" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">📷</span>Gallery</a>
+      <a href="#merchandise" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">🛍️</span>Shop</a>
+      <a href="#about" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">📖</span>About</a>
+      <a href="#club-history" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">🏆</span>History</a>
+      <a href="#academy" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">🎓</span>Academy</a>
+      <a href="#contact" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">✉️</span>Contact</a>
+    </div>
+    <button class="btn-o" onclick="closeMoreSheet()" style="width:100%;margin-top:6px;">Close</button>
+  </div>
+</div>
 
 <!-- HERO -->
 <section id="hero">
@@ -2890,6 +2985,21 @@ document.querySelectorAll('#navLinks a').forEach(a => a.addEventListener('click'
   L.removeAttribute('style');
 }));
 
+// ── BOTTOM TAB BAR (phones) ──
+function openMoreSheet(){ document.getElementById('moreSheetOv').classList.add('open'); }
+function closeMoreSheet(){ document.getElementById('moreSheetOv').classList.remove('open'); }
+document.getElementById('moreSheetOv').addEventListener('click', function(e){ if(e.target === this) closeMoreSheet(); });
+document.getElementById('moreTab').addEventListener('click', openMoreSheet);
+document.getElementById('profileTab').addEventListener('click', function(e){
+  if(!currentMember){ e.preventDefault(); openLoginModal(); }
+});
+document.querySelectorAll('.tabbar-item[href]').forEach(item => {
+  item.addEventListener('click', function(){
+    document.querySelectorAll('.tabbar-item').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
 function openArchiveTab(evt, tabName) {
   const contents = document.getElementsByClassName("archive-content");
   for (let i = 0; i < contents.length; i++) contents[i].style.display = "none";
@@ -3088,14 +3198,17 @@ let currentMember = null;
 
 function renderMemberNav(){
   const btn = document.getElementById('loginNavBtn');
+  const tabLabel = document.getElementById('profileTabLabel');
   if(currentMember){
     btn.textContent = `Hi, ${currentMember.firstName} (Log Out)`;
     btn.href = '#';
     btn.onclick = (e) => { e.preventDefault(); doMemberLogout(); };
+    tabLabel.textContent = currentMember.firstName;
   } else {
     btn.textContent = 'Login / Sign Up';
     btn.href = '#membership';
     btn.onclick = null;
+    tabLabel.textContent = 'Profile';
   }
 }
 
