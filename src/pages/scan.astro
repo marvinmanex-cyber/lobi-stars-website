@@ -1,0 +1,157 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Gate Scanner | Lobi Stars Football Club">
+  <div class="wrap" style="max-width:520px;padding-top:150px;padding-bottom:60px;min-height:70vh;">
+    <div class="stag">Match Day</div>
+    <h1 class="stitle">Gate <span class="r">Scanner</span></h1>
+
+    <div id="gate-login" class="card" style="padding:24px;margin-top:20px;">
+      <label class="muted" style="display:block;margin-bottom:8px;font-size:13px;">Staff Code</label>
+      <input id="staff-code" type="password" inputmode="numeric" placeholder="Enter staff code" style="width:100%;padding:12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:var(--d3);color:var(--white);font-size:16px;margin-bottom:12px;"/>
+      <button id="unlock-btn" class="btn-p" style="width:100%;">Start Scanning</button>
+    </div>
+
+    <div id="scan-ui" style="display:none;margin-top:20px;">
+      <div class="card" style="padding:18px;margin-bottom:16px;">
+        <label class="muted" style="display:block;margin-bottom:8px;font-size:13px;">
+          Scan with a physical barcode scanner, or type a ticket code and press Enter:
+        </label>
+        <input id="ticket-input" type="text" placeholder="LS-TIX-..." autofocus autocomplete="off"
+          style="width:100%;padding:14px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:var(--d3);color:var(--white);font-size:18px;font-family:monospace;"/>
+      </div>
+
+      <button id="camera-toggle" class="btn-o" style="width:100%;margin-bottom:16px;">📷 Use Camera Instead</button>
+      <div id="camera-box" style="display:none;margin-bottom:16px;"></div>
+
+      <div id="result" style="display:none;padding:28px;border-radius:10px;text-align:center;">
+        <div id="result-icon" style="font-size:48px;margin-bottom:10px;"></div>
+        <div id="result-title" style="font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;"></div>
+        <div id="result-detail" style="margin-top:8px;font-size:14px;"></div>
+      </div>
+
+      <div class="muted" id="scan-count" style="margin-top:20px;font-size:12px;text-align:center;">0 tickets scanned this session</div>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline>
+(function () {
+  let staffCode = sessionStorage.getItem('ls_staff_code') || '';
+  let scanCount = 0;
+  let html5QrCode = null;
+
+  const gateLogin = document.getElementById('gate-login');
+  const scanUi = document.getElementById('scan-ui');
+  const ticketInput = document.getElementById('ticket-input');
+  const result = document.getElementById('result');
+  const resultIcon = document.getElementById('result-icon');
+  const resultTitle = document.getElementById('result-title');
+  const resultDetail = document.getElementById('result-detail');
+  const scanCountEl = document.getElementById('scan-count');
+  const cameraToggle = document.getElementById('camera-toggle');
+  const cameraBox = document.getElementById('camera-box');
+
+  function unlock() {
+    const code = document.getElementById('staff-code').value.trim();
+    if (!code) return;
+    staffCode = code;
+    sessionStorage.setItem('ls_staff_code', code);
+    gateLogin.style.display = 'none';
+    scanUi.style.display = 'block';
+    ticketInput.focus();
+  }
+  document.getElementById('unlock-btn').addEventListener('click', unlock);
+  document.getElementById('staff-code').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+
+  if (staffCode) {
+    gateLogin.style.display = 'none';
+    scanUi.style.display = 'block';
+  }
+
+  async function validateTicket(ticketId) {
+    ticketInput.value = '';
+    result.style.display = 'block';
+    resultIcon.textContent = '⏳';
+    resultTitle.textContent = 'Checking...';
+    resultDetail.textContent = '';
+    result.style.background = 'rgba(255,255,255,.05)';
+
+    try {
+      const res = await fetch('/api/validate-ticket', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ticketId, staffCode, station: navigator.userAgent.slice(0, 40) }),
+      });
+      const data = await res.json();
+
+      if (res.status === 401) {
+        sessionStorage.removeItem('ls_staff_code');
+        alert('Staff code rejected. Please re-enter it.');
+        location.reload();
+        return;
+      }
+
+      if (data.valid) {
+        scanCount++;
+        scanCountEl.textContent = `${scanCount} ticket${scanCount === 1 ? '' : 's'} scanned this session`;
+        result.style.background = 'rgba(76,175,80,.15)';
+        resultIcon.textContent = '✅';
+        resultTitle.textContent = 'ADMIT';
+        resultDetail.innerHTML = `${data.ticket.buyer_name} &middot; ${data.ticket.tier}<br/>${data.ticket.home_team} vs ${data.ticket.away_team}`;
+      } else {
+        result.style.background = 'rgba(212,32,43,.15)';
+        resultIcon.textContent = '⛔';
+        resultTitle.textContent = 'DO NOT ADMIT';
+        resultDetail.textContent = data.reason || 'Invalid ticket';
+      }
+    } catch (err) {
+      result.style.background = 'rgba(212,32,43,.15)';
+      resultIcon.textContent = '⚠️';
+      resultTitle.textContent = 'Connection Error';
+      resultDetail.textContent = 'Check your network and try again.';
+    }
+
+    setTimeout(() => { ticketInput.focus(); }, 150);
+  }
+
+  ticketInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && ticketInput.value.trim()) {
+      validateTicket(ticketInput.value.trim());
+    }
+  });
+  // Physical barcode scanners emulate typing + Enter, but some emulate just
+  // rapid keystrokes without a final Enter -- refocus keeps the field ready.
+  document.addEventListener('click', () => { if (scanUi.style.display !== 'none') ticketInput.focus(); });
+
+  cameraToggle.addEventListener('click', async () => {
+    if (html5QrCode) {
+      await html5QrCode.stop().catch(() => {});
+      html5QrCode = null;
+      cameraBox.style.display = 'none';
+      cameraBox.innerHTML = '';
+      cameraToggle.textContent = '📷 Use Camera Instead';
+      ticketInput.focus();
+      return;
+    }
+    cameraBox.style.display = 'block';
+    cameraBox.innerHTML = '<div id="qr-reader" style="width:100%;"></div>';
+    cameraToggle.textContent = '⌨️ Use Keyboard/Scanner Instead';
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
+    script.onload = () => {
+      html5QrCode = new Html5Qrcode('qr-reader');
+      html5QrCode.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: 220 },
+        decodedText => validateTicket(decodedText.trim())
+      ).catch(() => {
+        resultDetail.textContent = '';
+        alert('Could not access the camera. Use the keyboard/scanner input instead.');
+      });
+    };
+    document.body.appendChild(script);
+  });
+})();
+</script>

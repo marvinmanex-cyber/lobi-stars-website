@@ -2008,20 +2008,14 @@ function openArchiveTab(evt, tabName) {
   </div>
   <div class="tpanel active" id="tp1">
     <p class="muted-p" style="margin-bottom:22px;font-size:15px;">Select a home match to purchase tickets for:</p>
-    <div class="match-cards">
-      <div class="mcard" onclick="selMatch(this,'Lobi Stars vs Kano Pillars','Sat 24 May 2025')"><span class="home-badge">HOME</span><div class="mcomp">NPFL · Matchday 28</div><div class="mteams"><span>Lobi Stars</span> vs Kano Pillars</div><div class="mdate">Saturday, 24 May 2025 · 15:00</div><div class="mvenue">📍 Aper Aku Stadium</div></div>
-      <div class="mcard" onclick="selMatch(this,'Lobi Stars vs Plateau United','Sun 1 Jun 2025')"><span class="home-badge">HOME</span><div class="mcomp">NPFL · Matchday 30</div><div class="mteams"><span>Lobi Stars</span> vs Plateau United</div><div class="mdate">Sunday, 1 June 2025 · 15:00</div><div class="mvenue">📍 Aper Aku Stadium</div></div>
-      <div class="mcard" onclick="selMatch(this,'Lobi Stars vs Enyimba FC','Sat 14 Jun 2025')"><span class="home-badge">HOME</span><div class="mcomp">NPFL · Matchday 32</div><div class="mteams"><span>Lobi Stars</span> vs Enyimba FC</div><div class="mdate">Saturday, 14 June 2025 · 15:00</div><div class="mvenue">📍 Aper Aku Stadium</div></div>
+    <div class="match-cards" id="matchCardsList">
+      <p class="muted-p">Loading fixtures...</p>
     </div>
     <div class="tnav"><button class="btn-p" onclick="goStep(2)">Continue →</button></div>
   </div>
   <div class="tpanel" id="tp2">
     <p class="muted-p" style="margin-bottom:22px;font-size:15px;">Choose your seat category:</p>
-    <div class="seat-cards">
-      <div class="scard" onclick="selSeat(this,'VIP',5000)"><div class="stier vip">VIP</div><div class="sprice">₦<span>5,000</span></div><div class="sperk">✦ Premium covered stand</div><div class="sperk">✦ Refreshments included</div><div class="sperk">✦ Priority entry</div></div>
-      <div class="scard" onclick="selSeat(this,'Premium',2500)"><div class="stier prem">Premium</div><div class="sprice">₦<span>2,500</span></div><div class="sperk">✦ Covered stand</div><div class="sperk">✦ Good sightlines</div></div>
-      <div class="scard" onclick="selSeat(this,'Regular',1000)"><div class="stier reg">Regular</div><div class="sprice">₦<span>1,000</span></div><div class="sperk">✦ General admission</div><div class="sperk">✦ Open terrace</div></div>
-    </div>
+    <div class="seat-cards" id="seatCardsList"></div>
     <div class="qty-ctrl">
       <span class="qty-lbl">Tickets:</span>
       <button class="qty-btn" onclick="chgQty(-1)">−</button>
@@ -2043,17 +2037,8 @@ function openArchiveTab(evt, tabName) {
       <div class="form-grp"><label class="form-lbl">Email Address</label><input type="email" class="form-inp" id="t-em" placeholder="you@example.com"/></div>
       <div class="form-grp"><label class="form-lbl">Phone Number</label><input type="tel" class="form-inp" id="t-ph" placeholder="+234 800 000 0000"/></div>
     </div>
-    <div class="tnav"><button class="btn-back" onclick="goStep(2)">← Back</button><button class="btn-p" onclick="confirmBk()">Confirm Booking →</button></div>
-  </div>
-  <div class="tpanel" id="tp4">
-    <div class="bk-confirm">
-      <div class="bk-icon">🎉</div>
-      <p style="font-size:12px;letter-spacing:3px;color:rgba(255,255,255,.4);text-transform:uppercase;font-family:'Barlow Condensed',sans-serif;">Booking Reference</p>
-      <div class="bk-ref" id="bkRef">LS-000000</div>
-      <p class="bk-msg">Your booking is confirmed!<br>A confirmation will be sent to your email address.</p>
-      <div class="bk-details" id="bkDetails"></div>
-      <button class="btn-p" onclick="resetTix()">Book More Tickets</button>
-    </div>
+    <p id="tix-error" class="muted-p" style="display:none;color:var(--red);margin-top:10px;"></p>
+    <div class="tnav"><button class="btn-back" onclick="goStep(2)">← Back</button><button class="btn-p" id="confirmBkBtn" onclick="confirmBk()">Confirm &amp; Pay →</button></div>
   </div>
 </section>
 
@@ -2970,13 +2955,50 @@ document.querySelectorAll('#players .ftab').forEach(t => t.addEventListener('cli
 }));
 
 // ── TICKETS ──
-let tM='',tD='',tS='',tP=0,tQ=1;
-function selMatch(el,m,d){document.querySelectorAll('.mcard').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');tM=m;tD=d;updSum();}
-function selSeat(el,s,p){document.querySelectorAll('.scard').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');tS=s;tP=p;updSum();}
+let ticketEvents=[], tEventId='', tM='', tS='', tPKobo=0, tQ=1;
+
+async function loadTicketEvents(){
+  const list=document.getElementById('matchCardsList');
+  try{
+    const res=await fetch('/api/events');
+    const data=await res.json();
+    ticketEvents=data.events||[];
+    if(!ticketEvents.length){
+      list.innerHTML='<p class="muted-p">No matches are currently on sale. Check back soon.</p>';
+      return;
+    }
+    list.innerHTML=ticketEvents.map(ev=>{
+      const d=new Date(ev.event_date);
+      const dateStr=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      const timeStr=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+      return `<div class="mcard" onclick="selMatch('${ev.id}',this)"><span class="home-badge">HOME</span><div class="mcomp">${ev.competition}</div><div class="mteams"><span>${ev.home_team}</span> vs ${ev.away_team}</div><div class="mdate">${dateStr} · ${timeStr}</div><div class="mvenue">📍 ${ev.venue}</div></div>`;
+    }).join('');
+  }catch(err){
+    list.innerHTML='<p class="muted-p">Could not load fixtures. Please refresh the page.</p>';
+  }
+}
+loadTicketEvents();
+
+function selMatch(eventId,el){
+  document.querySelectorAll('.mcard').forEach(c=>c.classList.remove('sel'));
+  if(el) el.classList.add('sel');
+  tEventId=eventId;
+  const ev=ticketEvents.find(e=>e.id===eventId);
+  if(!ev) return;
+  tM=`${ev.home_team} vs ${ev.away_team}`;
+  tS='';tPKobo=0;
+  document.getElementById('seatCardsList').innerHTML=`
+    <div class="scard" onclick="selSeat('VIP',${ev.vip_price_kobo},this)"><div class="stier vip">VIP</div><div class="sprice">₦<span>${(ev.vip_price_kobo/100).toLocaleString()}</span></div><div class="sperk">✦ Premium covered stand</div><div class="sperk">✦ Refreshments included</div><div class="sperk">✦ Priority entry</div></div>
+    <div class="scard" onclick="selSeat('Premium',${ev.premium_price_kobo},this)"><div class="stier prem">Premium</div><div class="sprice">₦<span>${(ev.premium_price_kobo/100).toLocaleString()}</span></div><div class="sperk">✦ Covered stand</div><div class="sperk">✦ Good sightlines</div></div>
+    <div class="scard" onclick="selSeat('Regular',${ev.regular_price_kobo},this)"><div class="stier reg">Regular</div><div class="sprice">₦<span>${(ev.regular_price_kobo/100).toLocaleString()}</span></div><div class="sperk">✦ General admission</div><div class="sperk">✦ Open terrace</div></div>
+  `;
+  updSum();
+}
+function selSeat(s,pKobo,el){document.querySelectorAll('.scard').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');tS=s;tPKobo=pKobo;updSum();}
 function chgQty(d){tQ=Math.max(1,Math.min(10,tQ+d));document.getElementById('qtyNum').textContent=tQ;updSum();}
-function updSum(){document.getElementById('sumMatch').textContent=tM||'—';document.getElementById('sumSeat').textContent=tS||'—';document.getElementById('sumQty').textContent=tQ;document.getElementById('sumTotal').textContent=tP?'₦'+(tP*tQ).toLocaleString():'₦ —';}
+function updSum(){document.getElementById('sumMatch').textContent=tM||'—';document.getElementById('sumSeat').textContent=tS||'—';document.getElementById('sumQty').textContent=tQ;document.getElementById('sumTotal').textContent=tPKobo?'₦'+((tPKobo/100)*tQ).toLocaleString():'₦ —';}
 function goStep(n){
-  [1,2,3,4].forEach(i=>{
+  [1,2,3].forEach(i=>{
     document.getElementById('tp'+i).classList.toggle('active',i===n);
     const sn=document.getElementById('sn'+i),sl=document.getElementById('sl'+i);
     sn.className='tsn'+(i<n?' done':i===n?' act':'');
@@ -2984,13 +3006,37 @@ function goStep(n){
   });
   document.getElementById('tickets').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function confirmBk(){
-  const ref='LS-'+Math.floor(100000+Math.random()*900000);
-  document.getElementById('bkRef').textContent=ref;
-  document.getElementById('bkDetails').innerHTML=`<div class="bk-row"><span class="bk-k">Match</span><span class="bk-v">${tM}</span></div><div class="bk-row"><span class="bk-k">Tickets</span><span class="bk-v">${tQ}</span></div><div class="bk-row"><span class="bk-k">Total</span><span class="bk-v">₦${(tP*tQ).toLocaleString()}</span></div>`;
-  goStep(4);
+async function confirmBk(){
+  const errEl=document.getElementById('tix-error');
+  const btn=document.getElementById('confirmBkBtn');
+  errEl.style.display='none';
+
+  const fn=document.getElementById('t-fn').value.trim();
+  const ln=document.getElementById('t-ln').value.trim();
+  const email=document.getElementById('t-em').value.trim();
+  const phone=document.getElementById('t-ph').value.trim();
+
+  if(!tEventId||!tS){ errEl.textContent='Please select a match and seat category.'; errEl.style.display='block'; return; }
+  if(!fn||!ln||!email||!phone){ errEl.textContent='Please fill in all of your details.'; errEl.style.display='block'; return; }
+
+  btn.disabled=true; btn.textContent='Redirecting to payment...';
+  try{
+    const res=await fetch('/api/checkout',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({eventId:tEventId,tier:tS,quantity:tQ,buyerName:`${fn} ${ln}`,buyerEmail:email,buyerPhone:phone}),
+    });
+    const data=await res.json();
+    if(!res.ok||!data.authorizationUrl){
+      throw new Error(data.error||'Could not start payment.');
+    }
+    window.location.href=data.authorizationUrl;
+  }catch(err){
+    errEl.textContent=err.message||'Something went wrong. Please try again.';
+    errEl.style.display='block';
+    btn.disabled=false; btn.textContent='Confirm & Pay →';
+  }
 }
-function resetTix(){ tM='';tD='';tS='';tP=0;tQ=1; updSum(); goStep(1); }
 
 // ── MEMBERSHIP & NEWSLETTER ──
 function pickTier(t,p){ document.getElementById('selTierBadge').textContent=t+' — '+p+'/yr'; document.getElementById('memFormWrap').scrollIntoView({behavior:'smooth'});}

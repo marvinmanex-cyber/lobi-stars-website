@@ -1,0 +1,9 @@
+name = "lobi-stars-website"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-01-01"
+
+# The D1 binding is configured in the Cloudflare Pages dashboard
+# (Settings -> Functions -> D1 database bindings), not here. Cloudflare
+# reads this file during deployment too, so declaring a [[d1_databases]]
+# block with a placeholder database_id here breaks the deploy -- it tries
+# to validate/attach a database that doesn't actually exist under that ID.
