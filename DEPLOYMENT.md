@@ -67,10 +67,24 @@ There's no admin UI for events yet — manage them from this same D1 Console.
 
 ### 2. Bind the D1 database to the Pages project
 
-In the Cloudflare dashboard: this Pages project → **Settings → Functions →
-D1 database bindings** → Add binding:
-- **Variable name:** `DB`
-- **D1 database:** `lobi-stars-tickets`
+Because `wrangler.toml` exists in this repo, Cloudflare Pages manages
+bindings from that file instead of the dashboard -- the dashboard's own
+Settings → Functions → Bindings UI is disabled for this project (it'll
+show "Bindings for this project are being managed through wrangler.toml").
+
+The binding is already declared in `wrangler.toml`:
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "lobi-stars-tickets"
+database_id = "d91166bc-53f5-4363-a44c-0f41ba01a1d6"
+```
+
+If you ever recreate the D1 database, get its real ID from the database's
+own Settings page (or the URL when viewing it) and update `database_id`
+here -- a placeholder or wrong ID fails the entire deployment, not just
+the ticketing endpoints.
 
 ### 3. Set secrets
 

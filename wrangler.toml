@@ -2,8 +2,11 @@ name = "lobi-stars-website"
 pages_build_output_dir = "dist"
 compatibility_date = "2026-01-01"
 
-# The D1 binding is configured in the Cloudflare Pages dashboard
-# (Settings -> Functions -> D1 database bindings), not here. Cloudflare
-# reads this file during deployment too, so declaring a [[d1_databases]]
-# block with a placeholder database_id here breaks the deploy -- it tries
-# to validate/attach a database that doesn't actually exist under that ID.
+# Since this file exists, Cloudflare Pages manages bindings from here
+# instead of the dashboard (the dashboard's own Bindings UI is disabled
+# as a result). This is the actual D1 database created for this project --
+# database_id must be the real UUID, not a placeholder.
+[[d1_databases]]
+binding = "DB"
+database_name = "lobi-stars-tickets"
+database_id = "d91166bc-53f5-4363-a44c-0f41ba01a1d6"
