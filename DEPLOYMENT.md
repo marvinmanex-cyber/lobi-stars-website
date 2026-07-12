@@ -42,51 +42,37 @@ password — only accounts with write access to this repo can sign in at
 
 This is new infrastructure, separate from the static site. You'll need
 accounts with **Cloudflare** (you have this), **Paystack**, and **Resend**
-(for sending ticket emails), plus the `wrangler` CLI logged in
-(`npx wrangler login`).
+(for sending ticket emails). Everything below is done through the Cloudflare
+dashboard directly — no `wrangler` CLI required.
 
-### 1. Create the D1 database
+### 1. Create the D1 database and apply the schema
 
-```
-npx wrangler d1 create lobi-stars-tickets
-```
+Cloudflare dashboard → **Storage & Databases → D1 SQL Database → Create
+Database**, name it exactly `lobi-stars-tickets`. Open its **Console** tab and
+paste in the contents of `schema.sql` (repo root), then Execute. That creates
+the `events`, `orders`, and `tickets` tables and seeds two placeholder
+fixtures so `/api/events` isn't empty at first.
 
-This prints a `database_id` — paste it into `wrangler.toml` in place of
-`REPLACE_AFTER_WRANGLER_D1_CREATE` (used for local dev only; production uses
-the dashboard binding in step 3).
+To replace the placeholders with real fixtures, run in the same console
+(dates in ISO 8601 UTC, prices in **kobo**, i.e. ₦5,000 = `500000`):
 
-### 2. Apply the schema
+```sql
+DELETE FROM events WHERE id LIKE 'evt-sample-%';
 
-```
-npx wrangler d1 execute lobi-stars-tickets --remote --file=./schema.sql
-```
-
-This creates the `events`, `orders`, and `tickets` tables, and seeds two
-placeholder fixtures so `/api/events` isn't empty. Edit or replace them:
-
-```
-npx wrangler d1 execute lobi-stars-tickets --remote --command="DELETE FROM events WHERE id LIKE 'evt-sample-%'"
+INSERT INTO events (id, home_team, away_team, competition, event_date, venue, vip_price_kobo, premium_price_kobo, regular_price_kobo)
+VALUES ('evt-2026-08-15', 'Lobi Stars', 'Kano Pillars', 'NPFL', '2026-08-15T15:00:00Z', 'Aper Aku Stadium, Makurdi', 500000, 250000, 100000);
 ```
 
-Then insert real fixtures (dates in ISO 8601 UTC, prices in **kobo**, i.e.
-₦5,000 = `500000`):
+There's no admin UI for events yet — manage them from this same D1 Console.
 
-```
-npx wrangler d1 execute lobi-stars-tickets --remote --command="INSERT INTO events (id, home_team, away_team, competition, event_date, venue, vip_price_kobo, premium_price_kobo, regular_price_kobo) VALUES ('evt-2026-08-15', 'Lobi Stars', 'Kano Pillars', 'NPFL', '2026-08-15T15:00:00Z', 'Aper Aku Stadium, Makurdi', 500000, 250000, 100000)"
-```
-
-There's no admin UI for events yet — manage them via `wrangler d1 execute`
-commands like the one above, or the D1 console in the Cloudflare dashboard
-(Workers & Pages → D1 → lobi-stars-tickets → Console).
-
-### 3. Bind the D1 database to the Pages project
+### 2. Bind the D1 database to the Pages project
 
 In the Cloudflare dashboard: this Pages project → **Settings → Functions →
 D1 database bindings** → Add binding:
 - **Variable name:** `DB`
 - **D1 database:** `lobi-stars-tickets`
 
-### 4. Set secrets
+### 3. Set secrets
 
 In **Settings → Environment variables** (mark each as "Encrypt" / secret, not
 plaintext), for the **Production** environment:
@@ -95,10 +81,10 @@ plaintext), for the **Production** environment:
 |---|---|
 | `PAYSTACK_SECRET_KEY` | From Paystack dashboard → Settings → API Keys & Webhooks |
 | `RESEND_API_KEY` | From Resend dashboard → API Keys |
-| `RESEND_FROM` | e.g. `Lobi Stars FC <tickets@lobistarsfc.com>` (domain must be verified in Resend) |
+| `RESEND_FROM` | `Lobi Stars FC <info@lobistarsfc.com>` (domain must be verified in Resend) |
 | `STAFF_SCAN_CODE` | A short PIN you choose — gate staff enter this at `/scan` before scanning |
 
-### 5. Register the Paystack webhook
+### 4. Register the Paystack webhook
 
 Paystack dashboard → Settings → API Keys & Webhooks → Webhook URL:
 
@@ -111,7 +97,7 @@ the `/tickets/success` page also double-checks directly with Paystack as a
 fallback, but the webhook is what makes it reliable if a buyer closes their
 browser mid-redirect.
 
-### 6. Test it end to end
+### 5. Test it end to end
 
 1. Go to `/#tickets` on the live site, pick a match, seat tier, and enter
    your own email — you'll land on Paystack's real checkout (use a
