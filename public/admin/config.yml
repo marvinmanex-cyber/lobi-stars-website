@@ -87,3 +87,23 @@ collections:
       - {label: "Badge Color", name: "badgeColor", widget: "string", default: "#D4202B"}
       - {label: "Description", name: "description", widget: "text"}
       - {label: "Shop Link", name: "shopUrl", widget: "string", default: "https://www.jumia.com.ng"}
+
+  - name: "heroSlides"
+    label: "Homepage Hero Slides"
+    folder: "src/content/hero-slides"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - {label: "Photo", name: "photo", widget: "image"}
+      - {label: "Display Order", name: "order", widget: "number", default: 10}
+
+  - name: "sponsors"
+    label: "Sponsor Logos (Top Bar)"
+    folder: "src/content/sponsors"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - {label: "Sponsor Name", name: "name", widget: "string"}
+      - {label: "Logo", name: "logo", widget: "image"}
+      - {label: "Website Link", name: "url", widget: "string", default: "#"}
+      - {label: "Display Order", name: "order", widget: "number", default: 10}

@@ -72,4 +72,22 @@ const merchandise = defineCollection({
   }),
 });
 
-export const collections = { news, players, gallery, fixtures, staff, merchandise };
+const heroSlides = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/hero-slides' }),
+  schema: z.object({
+    photo: z.string(),
+    order: z.number().default(0),
+  }),
+});
+
+const sponsors = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/sponsors' }),
+  schema: z.object({
+    name: z.string(),
+    logo: z.string(),
+    url: z.string().default('#'),
+    order: z.number().default(0),
+  }),
+});
+
+export const collections = { news, players, gallery, fixtures, staff, merchandise, heroSlides, sponsors };

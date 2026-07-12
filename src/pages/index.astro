@@ -4,6 +4,8 @@ const staff = (await getCollection('staff')).sort((a, b) => a.data.order - b.dat
 const staffLead = staff.slice(0, 2);
 const staffMore = staff.slice(2);
 const merchandise = await getCollection('merchandise');
+const heroSlides = (await getCollection('heroSlides')).sort((a, b) => a.data.order - b.data.order);
+const sponsors = (await getCollection('sponsors')).sort((a, b) => a.data.order - b.data.order);
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -1513,34 +1515,11 @@ body.light-mode .food-sum-v{color:#1A202C;}
 <div class="top-bar">
   <div class="sponsor-container">
     <span style="color: #718096; font-size: 10px; font-family: 'Barlow Condensed'; letter-spacing: 2px;">OFFICIAL PARTNERS:</span>
-    
-    <!-- Novus MFB (Clickable) -->
-  <a href="https://novusmfb.com" target="_blank" class="sponsor-item">
-  <img src="/images/novus.png" alt="Novus MFB" class="sponsor-logo">
-  </a>
-
-    <!-- Benue Links (Clickable) -->
-    <!-- Benue Links -->
-<a href="https://benuelinks.com" target="_blank" class="sponsor-item">
-  <img src="/images/benuelinksnew-logo.png" alt="Benue Links Nig. Ltd" class="sponsor-logo">
-</a>
-
-    <!-- Jumia (Clickable) -->
-    <a href="https://jumia.com.ng" target="_blank" class="sponsor-item">
-      <img src="/images/Jumia-Logo.jpg" alt="Jumia" class="sponsor-logo">
-    </a>
-
-    <!-- BIPC (Clickable) -->
-    <a href="https://bipc.benuestate.gov.ng" target="_blank" class="sponsor-item">
-      <img src="/images/bipc-logo.jpg" alt="BIPC" class="sponsor-logo">
-    </a>
-
-    <!-- Prime Beverages -->
-    <a href="#" target="_blank" class="sponsor-item">
-      <span style="display:flex;align-items:center;justify-content:center;height:55px;width:90px;overflow:hidden;">
-        <img src="/images/prime-beverages2.jpg" alt="Prime Beverages" style="height:100%;width:auto;object-fit:contain;transform:scale(0.7);">
-      </span>
-    </a>
+    {sponsors.map(sponsor => (
+      <a href={sponsor.data.url} target="_blank" class="sponsor-item">
+        <img src={sponsor.data.logo} alt={sponsor.data.name} class="sponsor-logo">
+      </a>
+    ))}
   </div>
 </div>
 <nav id="mainNav">
@@ -1572,12 +1551,9 @@ body.light-mode .food-sum-v{color:#1A202C;}
 <!-- HERO -->
 <section id="hero">
   <div class="hero-slides" id="heroSlides">
-    <div class="hero-slide active" style="background-image:url('/images/hero-1.jpg')"></div>
-    <div class="hero-slide" style="background-image:url('/images/hero-2.jpg')"></div>
-    <div class="hero-slide" style="background-image:url('/images/hero-3.jpg')"></div>
-    <div class="hero-slide" style="background-image:url('/images/hero-4.jpg')"></div>
-    <div class="hero-slide" style="background-image:url('/images/hero-5.jpg')"></div>
-    <div class="hero-slide" style="background-image:url('/images/hero-7.jpg')"></div>
+    {heroSlides.map((slide, i) => (
+      <div class:list={['hero-slide', { active: i === 0 }]} style={`background-image:url('${slide.data.photo}')`}></div>
+    ))}
   </div>
   <button class="sarrow" id="sprev">&#8592;</button>
   <button class="sarrow" id="snext">&#8594;</button>
