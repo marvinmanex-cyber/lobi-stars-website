@@ -3537,11 +3537,10 @@ function updateCountdown() {
 }
 setInterval(updateCountdown, 1000);
 updateCountdown(); // Run once immediately
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW failed', err));
-  });
-}
+// Not registering a new service worker (see public/sw.js for why -- it was
+// silently freezing the page for anyone who had the old one installed).
+// Browsers that already have it will pick up the new self-unregistering
+// version automatically and clean themselves up.
 </script>
 </body>
 </html>
