@@ -2677,7 +2677,12 @@ function openArchiveTab(evt, tabName) {
             <label class="form-lbl">Phone Number</label>
             <input type="tel" class="form-inp" id="foodPhone" placeholder="e.g. 08012345678"/>
           </div>
+          <div class="form-grp">
+            <label class="form-lbl">Email Address</label>
+            <input type="email" class="form-inp" id="foodEmail" placeholder="you@example.com"/>
+          </div>
         </div>
+        <p id="food-error" class="muted" style="display:none;color:#ff6b6b;margin-bottom:14px;"></p>
 
         <!-- ORDER SUMMARY -->
         <div class="food-summary">
@@ -2685,7 +2690,7 @@ function openArchiveTab(evt, tabName) {
           <div id="foodSummaryItems"><p style="color:rgba(255,255,255,.3);font-size:13px;">No items selected yet.</p></div>
         </div>
 
-        <button class="btn-p" onclick="placeFoodOrder()" style="width:100%;border:none;cursor:pointer;font-size:15px;padding:15px;">
+        <button class="btn-p" id="placeFoodBtn" onclick="placeFoodOrder()" style="width:100%;border:none;cursor:pointer;font-size:15px;padding:15px;">
           ✅ Place Order
         </button>
       </div>
@@ -3171,28 +3176,48 @@ function renderFoodSummary(){
   html += `<div class="food-sum-item"><span class="food-sum-k">Total</span><span class="food-sum-v">₦${total.toLocaleString()}</span></div>`;
   cont.innerHTML = html;
 }
-function placeFoodOrder(){
+async function placeFoodOrder(){
+  const errEl = document.getElementById('food-error');
+  const btn = document.getElementById('placeFoodBtn');
+  errEl.style.display = 'none';
+
   const seat = document.getElementById('foodSeat').value.trim();
   const stand = document.getElementById('foodStand').value.trim();
+  const phone = document.getElementById('foodPhone').value.trim();
+  const email = document.getElementById('foodEmail').value.trim();
   const selected = foodMenu.filter(f => foodQtys[f.id] > 0);
-  if(!selected.length){ showToast('Please select at least one item.'); return; }
-  if(!seat){ showToast('Please enter your seat number.'); return; }
-  const ref = 'FD-'+Math.floor(100000+Math.random()*900000);
-  let total = 0;
-  selected.forEach(f => total += f.price * foodQtys[f.id]);
-  document.getElementById('foodRef').textContent = ref;
-  let details = `
-    <div class="bk-row"><span class="bk-k">Seat</span><span class="bk-v">${seat}${stand?' · '+stand:''}</span></div>
-    ${selected.map(f=>`<div class="bk-row"><span class="bk-k">${f.emoji} ${f.name}</span><span class="bk-v">× ${foodQtys[f.id]} — ₦${(f.price*foodQtys[f.id]).toLocaleString()}</span></div>`).join('')}
-    <div class="bk-row"><span class="bk-k">Total Paid</span><span class="bk-v">₦${total.toLocaleString()}</span></div>`;
-  document.getElementById('foodConfirmDetails').innerHTML = details;
-  document.getElementById('foodForm').style.display = 'none';
-  document.getElementById('foodConfirm').style.display = 'block';
+
+  if(!selected.length){ errEl.textContent = 'Please select at least one item.'; errEl.style.display = 'block'; return; }
+  if(!seat){ errEl.textContent = 'Please enter your seat number.'; errEl.style.display = 'block'; return; }
+  if(!phone || !email){ errEl.textContent = 'Please enter your phone number and email.'; errEl.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = 'Redirecting to payment...';
+  try{
+    const res = await fetch('/api/food-checkout', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        seat, stand, phone, email,
+        items: selected.map(f => ({ id: f.id, qty: foodQtys[f.id] })),
+      }),
+    });
+    const data = await res.json();
+    if(!res.ok || !data.authorizationUrl){
+      throw new Error(data.error || 'Could not start payment.');
+    }
+    window.location.href = data.authorizationUrl;
+  }catch(err){
+    errEl.textContent = err.message || 'Something went wrong. Please try again.';
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = '✅ Place Order';
+  }
 }
 function resetFoodOrder(){
   foodMenu.forEach(f => foodQtys[f.id] = 0);
   document.getElementById('foodSeat').value = '';
   document.getElementById('foodStand').value = '';
+  document.getElementById('foodPhone').value = '';
+  document.getElementById('foodEmail').value = '';
   document.getElementById('foodForm').style.display = 'block';
   document.getElementById('foodConfirm').style.display = 'none';
   renderFoodMenu();

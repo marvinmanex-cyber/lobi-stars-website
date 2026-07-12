@@ -46,3 +46,30 @@ export function ticketEmailHtml({ order, event, tickets, qrSvgDataUri }) {
     <p style="font-size:12px;color:#888;">Pride of Benue &middot; Lobi Stars Football Club</p>
   </div>`;
 }
+
+export function foodOrderEmailHtml({ order, items }) {
+  const itemRows = items.map(i => `
+    <tr>
+      <td style="padding:6px 0;">${i.name} &times; ${i.qty}</td>
+      <td style="padding:6px 0;text-align:right;">&#8358;${((i.priceKobo * i.qty) / 100).toLocaleString()}</td>
+    </tr>
+  `).join('');
+
+  return `
+  <div style="max-width:520px;margin:0 auto;font-family:Arial,sans-serif;color:#111;">
+    <h2 style="color:#D4202B;">Lobi Stars FC &mdash; Food Order Confirmed</h2>
+    <p>Your in-seat order has been received and will be delivered within 15 minutes.</p>
+    <p>
+      <strong>Seat:</strong> ${order.seat}${order.stand ? ' &middot; ' + order.stand : ''}<br/>
+      <strong>Order Reference:</strong> ${order.id}
+    </p>
+    <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+      ${itemRows}
+      <tr style="border-top:1px solid #ddd;font-weight:bold;">
+        <td style="padding:8px 0;">Total</td>
+        <td style="padding:8px 0;text-align:right;">&#8358;${(order.total_kobo / 100).toLocaleString()}</td>
+      </tr>
+    </table>
+    <p style="font-size:12px;color:#888;margin-top:20px;">Pride of Benue &middot; Lobi Stars Football Club</p>
+  </div>`;
+}

@@ -42,6 +42,20 @@ CREATE TABLE IF NOT EXISTS tickets (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS food_orders (
+  id TEXT PRIMARY KEY,           -- e.g. LS-FOOD-XXXXXXXX
+  seat TEXT NOT NULL,
+  stand TEXT,
+  phone TEXT NOT NULL,
+  email TEXT NOT NULL,
+  items_json TEXT NOT NULL,      -- JSON array of {id, name, priceKobo, qty}
+  total_kobo INTEGER NOT NULL,
+  paystack_reference TEXT UNIQUE NOT NULL,
+  payment_status TEXT NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'failed')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  paid_at TEXT
+);
+
 CREATE INDEX IF NOT EXISTS idx_orders_event ON orders(event_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_order ON tickets(order_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_event ON tickets(event_id);

@@ -1,0 +1,84 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Your Food Order | Lobi Stars Football Club">
+  <div class="page-content wrap" style="max-width:640px;padding-top:150px;min-height:50vh;">
+    <div id="state-loading">
+      <div class="stag">Please Wait</div>
+      <h1 class="stitle">Confirming <span class="r">Payment</span></h1>
+      <p class="muted">This usually takes a few seconds...</p>
+    </div>
+
+    <div id="state-success" style="display:none;">
+      <div class="stag">Order Confirmed</div>
+      <h1 class="stitle">Food's On The <span class="r">Way</span></h1>
+      <p id="summary" class="muted" style="margin-bottom:24px;"></p>
+      <div id="item-list" style="border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:18px 20px;"></div>
+      <p class="muted" style="margin-top:24px;font-size:13px;">
+        A receipt has also been emailed to you. Your order will be delivered to your seat within 15 minutes.
+      </p>
+      <a href="/" class="btn-o" style="margin-top:20px;display:inline-block;">&larr; Back to Home</a>
+    </div>
+
+    <div id="state-error" style="display:none;">
+      <div class="stag">Something's Not Right</div>
+      <h1 class="stitle">Payment Not <span class="r">Confirmed</span></h1>
+      <p id="error-msg" class="muted"></p>
+      <a href="/#tickets" class="btn-o" style="margin-top:20px;display:inline-block;">&larr; Back to Home</a>
+    </div>
+  </div>
+</Layout>
+
+<script is:inline>
+(async function () {
+  const params = new URLSearchParams(window.location.search);
+  const reference = params.get('reference') || params.get('trxref');
+  const loading = document.getElementById('state-loading');
+  const success = document.getElementById('state-success');
+  const errorState = document.getElementById('state-error');
+  const errorMsg = document.getElementById('error-msg');
+
+  if (!reference) {
+    loading.style.display = 'none';
+    errorState.style.display = 'block';
+    errorMsg.textContent = 'No payment reference was provided.';
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/food-verify?reference=${encodeURIComponent(reference)}`);
+    const data = await res.json();
+
+    if (!res.ok || data.error || data.status !== 'success') {
+      loading.style.display = 'none';
+      errorState.style.display = 'block';
+      errorMsg.textContent = data.error || 'Payment could not be confirmed. If you were charged, contact us with your reference: ' + reference;
+      return;
+    }
+
+    document.getElementById('summary').textContent =
+      `Seat ${data.order.seat}${data.order.stand ? ' · ' + data.order.stand : ''} — Order ${data.order.id}`;
+
+    const list = document.getElementById('item-list');
+    let rows = data.items.map(i => `
+      <div style="display:flex;justify-content:space-between;padding:6px 0;">
+        <span>${i.name} &times; ${i.qty}</span>
+        <span>&#8358;${((i.priceKobo * i.qty) / 100).toLocaleString()}</span>
+      </div>
+    `).join('');
+    rows += `
+      <div style="display:flex;justify-content:space-between;padding:10px 0 0;margin-top:8px;border-top:1px solid rgba(255,255,255,.1);font-weight:700;">
+        <span>Total</span>
+        <span>&#8358;${(data.order.totalKobo / 100).toLocaleString()}</span>
+      </div>`;
+    list.innerHTML = rows;
+
+    loading.style.display = 'none';
+    success.style.display = 'block';
+  } catch (err) {
+    loading.style.display = 'none';
+    errorState.style.display = 'block';
+    errorMsg.textContent = 'Network error while confirming payment. Please refresh this page.';
+  }
+})();
+</script>
