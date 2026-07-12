@@ -1573,7 +1573,7 @@ body.light-mode .food-sum-v{color:#1A202C;}
   <a href="#tickets" class="btn-o">Buy Tickets</a>
   <a href="#merchandise" class="btn-o">Shop</a>
   <a href="#membership" class="btn-o" id="newsletterBtn">Newsletter</a>
-  <a href="#membership" class="btn-p">Login / Sign Up</a>
+  <a href="#membership" class="btn-p" id="loginNavBtn">Login / Sign Up</a>
 </div>
 
 <script is:inline>
@@ -2448,9 +2448,20 @@ function openArchiveTab(evt, tabName) {
             <input type="text" class="form-inp" id="m-ad" placeholder="e.g. Benue State" style="width: 100%; padding: 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: inherit; outline: none;"/>
           </div>
 
-          <button class="btn-p" onclick="regMember()" style="width: 100%; padding: 20px; background: #D4202B; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 800; text-transform: uppercase; cursor: pointer; letter-spacing: 2px;">
+          <div class="form-grp" style="margin-bottom: 25px;">
+            <label style="display: block; font-weight: bold; text-transform: uppercase; font-size: 11px; margin-bottom: 8px; color: var(--gold); letter-spacing: 1px;">Create a Password</label>
+            <input type="password" class="form-inp" id="m-pw" placeholder="At least 8 characters" style="width: 100%; padding: 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: inherit; outline: none;"/>
+          </div>
+
+          <p id="mem-error" class="muted" style="display:none;color:#ff6b6b;margin-bottom:14px;"></p>
+
+          <button class="btn-p" onclick="regMember()" id="regMemberBtn" style="width: 100%; padding: 20px; background: #D4202B; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 800; text-transform: uppercase; cursor: pointer; letter-spacing: 2px;">
             Activate My Membership
           </button>
+
+          <p class="muted" style="text-align:center;margin-top:16px;font-size:13px;">
+            Already a member? <a href="#" onclick="openLoginModal();return false;" style="color:var(--gold);">Log in</a>
+          </p>
         </div>
 
         <!-- SUCCESS STATE -->
@@ -2574,6 +2585,31 @@ function openArchiveTab(evt, tabName) {
     </div>
   </div>
 </section>
+
+<!-- MEMBER LOGIN MODAL -->
+<div class="modal-ov" id="loginOv">
+  <div class="modal-box" style="max-width:420px;">
+    <button class="modal-close" onclick="closeLoginModal()">×</button>
+    <div class="mcontent">
+      <h3 class="mtitle">Member Login</h3>
+      <p class="mmeta" style="margin-bottom:22px;">Log in to your Lobi Stars membership account.</p>
+
+      <div class="form-grp" style="margin-bottom:15px;">
+        <label class="form-lbl">Email Address</label>
+        <input type="email" class="form-inp" id="login-em" placeholder="you@example.com"/>
+      </div>
+      <div class="form-grp" style="margin-bottom:20px;">
+        <label class="form-lbl">Password</label>
+        <input type="password" class="form-inp" id="login-pw" placeholder="Your password"/>
+      </div>
+      <p id="login-error" class="muted" style="display:none;color:#ff6b6b;margin-bottom:14px;"></p>
+      <button class="btn-p" onclick="doMemberLogin()" id="loginBtn" style="width:100%;border:none;cursor:pointer;padding:15px;">Log In</button>
+      <p class="muted" style="text-align:center;margin-top:16px;font-size:13px;">
+        Not a member yet? <a href="#membership" onclick="closeLoginModal()" style="color:var(--gold);">Register here</a>
+      </p>
+    </div>
+  </div>
+</div>
 
 <!-- PHOTO LIGHTBOX MODAL (MOVE HERE) -->
 <div id="galleryModal" class="modal">
@@ -3046,10 +3082,122 @@ async function confirmBk(){
 // ── MEMBERSHIP & NEWSLETTER ──
 function pickTier(t,p){ document.getElementById('selTierBadge').textContent=t+' — '+p+'/yr'; document.getElementById('memFormWrap').scrollIntoView({behavior:'smooth'});}
 document.getElementById('newsletterBtn').onclick = () => { showToast("Newsletter Restricted: Join Red & Gold Membership to access."); document.getElementById('membership').scrollIntoView({behavior:'smooth'}); };
-// Demonstration Login Logic
-document.querySelector('a[href="#membership"].btn-p').onclick = () => {
-    showToast("Login System: Database connection pending. Please use the Registration form below.");
-};
+
+// ── MEMBER AUTH ──
+let currentMember = null;
+
+function renderMemberNav(){
+  const btn = document.getElementById('loginNavBtn');
+  if(currentMember){
+    btn.textContent = `Hi, ${currentMember.firstName} (Log Out)`;
+    btn.href = '#';
+    btn.onclick = (e) => { e.preventDefault(); doMemberLogout(); };
+  } else {
+    btn.textContent = 'Login / Sign Up';
+    btn.href = '#membership';
+    btn.onclick = null;
+  }
+}
+
+async function checkMemberSession(){
+  try{
+    const res = await fetch('/api/auth/me');
+    const data = await res.json();
+    currentMember = data.member;
+    renderMemberNav();
+  }catch(err){ /* not logged in / network issue -- treat as logged out */ }
+}
+checkMemberSession();
+
+function openLoginModal(){ document.getElementById('loginOv').classList.add('open'); }
+function closeLoginModal(){ document.getElementById('loginOv').classList.remove('open'); }
+document.getElementById('loginOv').addEventListener('click', function(e){ if(e.target === this) closeLoginModal(); });
+
+async function doMemberLogin(){
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('loginBtn');
+  errEl.style.display = 'none';
+
+  const email = document.getElementById('login-em').value.trim();
+  const password = document.getElementById('login-pw').value;
+  if(!email || !password){ errEl.textContent = 'Please enter your email and password.'; errEl.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = 'Logging in...';
+  try{
+    const res = await fetch('/api/auth/login', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await res.json();
+    if(!res.ok){ throw new Error(data.error || 'Login failed.'); }
+    currentMember = data.member;
+    renderMemberNav();
+    closeLoginModal();
+    showToast(`Welcome back, ${data.member.firstName}!`);
+  }catch(err){
+    errEl.textContent = err.message; errEl.style.display = 'block';
+  }finally{
+    btn.disabled = false; btn.textContent = 'Log In';
+  }
+}
+
+async function doMemberLogout(){
+  await fetch('/api/auth/logout', { method: 'POST' }).catch(()=>{});
+  currentMember = null;
+  renderMemberNav();
+  showToast('Logged out.');
+}
+
+async function regMember(){
+  const errEl = document.getElementById('mem-error');
+  const btn = document.getElementById('regMemberBtn');
+  errEl.style.display = 'none';
+
+  const firstName = document.getElementById('m-fn').value.trim();
+  const lastName = document.getElementById('m-ln').value.trim();
+  const email = document.getElementById('m-em').value.trim();
+  const phone = document.getElementById('m-ph').value.trim();
+  const state = document.getElementById('m-ad').value.trim();
+  const password = document.getElementById('m-pw').value;
+
+  if(!firstName || !lastName || !email || !password){
+    errEl.textContent = 'Please fill in your name, email, and password.'; errEl.style.display = 'block'; return;
+  }
+  if(password.length < 8){
+    errEl.textContent = 'Password must be at least 8 characters.'; errEl.style.display = 'block'; return;
+  }
+
+  btn.disabled = true; btn.textContent = 'Activating...';
+  try{
+    const res = await fetch('/api/auth/signup', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ firstName, lastName, email, phone, state, password }),
+    });
+    const data = await res.json();
+    if(!res.ok){ throw new Error(data.error || 'Registration failed.'); }
+
+    currentMember = data.member;
+    renderMemberNav();
+    document.getElementById('memId').textContent = data.member.id;
+    document.getElementById('memFields').style.display = 'none';
+    document.getElementById('memSuccess').style.display = 'block';
+  }catch(err){
+    errEl.textContent = err.message; errEl.style.display = 'block';
+  }finally{
+    btn.disabled = false; btn.textContent = 'Activate My Membership';
+  }
+}
+
+function resetMem(){
+  document.getElementById('m-fn').value = '';
+  document.getElementById('m-ln').value = '';
+  document.getElementById('m-em').value = '';
+  document.getElementById('m-ph').value = '';
+  document.getElementById('m-ad').value = '';
+  document.getElementById('m-pw').value = '';
+  document.getElementById('memFields').style.display = 'block';
+  document.getElementById('memSuccess').style.display = 'none';
+}
 // ── BLOG ──
 // ── BLOG (FULL VERSION) ──
 const defaultArts = [

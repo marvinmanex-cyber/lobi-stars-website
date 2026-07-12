@@ -56,6 +56,19 @@ CREATE TABLE IF NOT EXISTS food_orders (
   paid_at TEXT
 );
 
+CREATE TABLE IF NOT EXISTS members (
+  id TEXT PRIMARY KEY,           -- e.g. LS-MBR-XXXXXX
+  first_name TEXT NOT NULL,
+  last_name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  phone TEXT,
+  state TEXT,
+  tier TEXT NOT NULL DEFAULT 'Official',
+  password_hash TEXT NOT NULL,   -- PBKDF2-SHA256, format: iterations:saltHex:hashHex
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_members_email ON members(email);
 CREATE INDEX IF NOT EXISTS idx_orders_event ON orders(event_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_order ON tickets(order_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_event ON tickets(event_id);

@@ -1,30 +1,27 @@
 # Deployment & operations notes
 
-## ⚠️ Action needed: add the food_orders table
+## ⚠️ Action needed: two new tables + one new secret
 
-The in-seat food order button now takes real payment (same Paystack account
-as tickets), but it needs one new table that the live D1 database doesn't
-have yet. In the D1 database's **Console** tab, run:
+Two features were added that need setup on the already-live database and
+Pages project before they'll work: real payment for in-seat food orders, and
+real member login/signup.
 
-```sql
-CREATE TABLE IF NOT EXISTS food_orders (
-  id TEXT PRIMARY KEY,
-  seat TEXT NOT NULL,
-  stand TEXT,
-  phone TEXT NOT NULL,
-  email TEXT NOT NULL,
-  items_json TEXT NOT NULL,
-  total_kobo INTEGER NOT NULL,
-  paystack_reference TEXT UNIQUE NOT NULL,
-  payment_status TEXT NOT NULL DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'failed')),
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  paid_at TEXT
-);
-```
+**1. Add the new tables.** In the D1 database's **Console** tab, re-paste
+and run the whole updated `schema.sql` -- every statement in it uses
+`IF NOT EXISTS`, so re-running it against a database that already has the
+events/orders/tickets tables only creates the two new ones (`food_orders`
+and `members`).
 
-(Or just re-paste and run the whole updated `schema.sql` -- every statement
-in it uses `IF NOT EXISTS`, so re-running it against a database that already
-has the events/orders/tickets tables only creates this new one.)
+**2. Add a new secret.** Member login sessions are signed with a secret the
+same way ticket QR codes are. In **Settings → Variables and secrets** for
+the Production environment, add:
+
+| Variable | Value |
+|---|---|
+| `SESSION_SECRET` | Any long random string (e.g. generate one at [1password.com/password-generator](https://1password.com/password-generator/) or similar, 32+ characters) -- mark it Encrypt |
+
+Then trigger a fresh deployment (a new commit, not "Retry" on an old one --
+see the note further down about why retrying doesn't pick up new config).
 
 ## Site (Astro + Cloudflare Pages)
 
