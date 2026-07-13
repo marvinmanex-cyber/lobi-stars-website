@@ -23,8 +23,8 @@ const sponsors = (await getCollection('sponsors')).sort((a, b) => a.data.order -
 <style is:global>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --red:#D4202B;--rd:#A8141D;--rdp:#6E0C12;
-  --gold:#F5B800;--gd:#C9960A;
+  --red:#E31E24;--rd:#C11A1F;--rdp:#4D0B0D;
+  --gold:#FFC72C;--gd:#E0A61F;
   --black:#0A0A0A;--dark:#111;--d2:#1A1A1A;--d3:#222;--d4:#2E2E2E;
   --white:#FFF;--lt:#AAA;
 }
@@ -64,6 +64,12 @@ body.light-mode {
   --d4: #CBD5E0; /* Darker borders for lines/tables */
   --white: #1A202C; /* Main text is now Charcoal */
   --lt: #4A5568;    /* Faded text is now Slate Grey */
+  /* The brand gold (#FFC72C) reads at ~1.6:1 contrast on a white/near-white
+     background -- fine on the always-dark hero, unreadable everywhere else
+     in light mode. Every var(--gold) usage picks up this darker, still-gold
+     value automatically here instead. */
+  --gold: #9C6B0A;
+  --gd: #7A540A;
 }
 
 /* ── 1. BULLETPROOF TEXT FIX (THE "FORCE-READ" SECTION) ── */
