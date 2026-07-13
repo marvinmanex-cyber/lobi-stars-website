@@ -1,5 +1,16 @@
 # Deployment & operations notes
 
+## ⚠️ Action needed: drop ticket prices to ₦100 for testing
+
+Run this in the D1 database's **Console** tab to set every seat tier on the
+existing sample matches to ₦100 (10000 kobo) while testing real payments:
+
+```sql
+UPDATE events SET vip_price_kobo = 10000, premium_price_kobo = 10000, regular_price_kobo = 10000;
+```
+
+Raise these back to real prices the same way once you're ready.
+
 ## ⚠️ Action needed: two new tables + one new secret
 
 Two features were added that need setup on the already-live database and

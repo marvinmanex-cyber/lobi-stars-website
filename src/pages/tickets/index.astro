@@ -1,0 +1,218 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Buy Tickets | Lobi Stars Football Club">
+  <div class="wrap" style="padding-top:150px;padding-bottom:90px;">
+    <div class="stag">Match Day</div>
+    <h1 class="stitle">Buy <span class="r">Tickets</span></h1>
+    <div class="divr"></div>
+
+    <div class="tsteps" id="tsteps">
+      <div class="tstep"><div class="tsn act" id="sn1">1</div><div class="tsl act" id="sl1">Select Match</div></div>
+      <div class="tconn"></div>
+      <div class="tstep"><div class="tsn" id="sn2">2</div><div class="tsl" id="sl2">Choose Seat</div></div>
+      <div class="tconn"></div>
+      <div class="tstep"><div class="tsn" id="sn3">3</div><div class="tsl" id="sl3">Your Details</div></div>
+    </div>
+
+    <div class="tpanel active" id="tp1">
+      <p class="muted" style="margin-bottom:22px;font-size:15px;">Select a home match to purchase tickets for:</p>
+      <div class="match-cards" id="matchCardsList">
+        <p class="muted">Loading fixtures...</p>
+      </div>
+      <div class="tnav"><button class="btn-p" onclick="goStep(2)">Continue &rarr;</button></div>
+    </div>
+
+    <div class="tpanel" id="tp2">
+      <p class="muted" style="margin-bottom:22px;font-size:15px;">Choose your seat category:</p>
+      <div class="seat-cards" id="seatCardsList"></div>
+      <div class="qty-ctrl">
+        <span class="qty-lbl">Tickets:</span>
+        <button class="qty-btn" onclick="chgQty(-1)">&minus;</button>
+        <div class="qty-num" id="qtyNum">1</div>
+        <button class="qty-btn" onclick="chgQty(1)">+</button>
+      </div>
+      <div class="tsum-bar">
+        <div><div class="tsum-val" id="sumMatch">&mdash;</div><div class="tsum-key">Match</div></div>
+        <div><div class="tsum-val" id="sumSeat">&mdash;</div><div class="tsum-key">Category</div></div>
+        <div><div class="tsum-val" id="sumQty">&mdash;</div><div class="tsum-key">Tickets</div></div>
+        <div><div class="tsum-val" id="sumTotal">&#8358; &mdash;</div><div class="tsum-key">Total</div></div>
+      </div>
+      <div class="tnav"><button class="btn-back" onclick="goStep(1)">&larr; Back</button><button class="btn-p" onclick="goStep(3)">Continue &rarr;</button></div>
+    </div>
+
+    <div class="tpanel" id="tp3">
+      <p class="muted" style="margin-bottom:22px;font-size:15px;">Enter your details to complete your booking:</p>
+      <div style="max-width:580px;">
+        <div class="form-row"><div class="form-grp"><label class="form-lbl">First Name</label><input type="text" class="form-inp" id="t-fn" placeholder="First name"/></div><div class="form-grp"><label class="form-lbl">Last Name</label><input type="text" class="form-inp" id="t-ln" placeholder="Last name"/></div></div>
+        <div class="form-grp"><label class="form-lbl">Email Address</label><input type="email" class="form-inp" id="t-em" placeholder="you@example.com"/></div>
+        <div class="form-grp"><label class="form-lbl">Phone Number</label><input type="tel" class="form-inp" id="t-ph" placeholder="+234 800 000 0000"/></div>
+      </div>
+      <p id="tix-error" class="muted" style="display:none;color:var(--red);margin-top:10px;font-weight:600;"></p>
+      <div class="tnav"><button class="btn-back" type="button" onclick="goStep(2)">&larr; Back</button><button class="btn-p" type="button" id="confirmBkBtn" onclick="confirmBk()">Confirm &amp; Pay &rarr;</button></div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .tsteps{display:flex;align-items:center;margin:36px 0 40px;overflow-x:auto;padding-bottom:4px;}
+  .tstep{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .tsn{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:rgba(255,255,255,.3);transition:all .3s;flex-shrink:0;}
+  .tsn.act{border-color:var(--red);background:var(--red);color:#fff;}
+  .tsn.done{border-color:var(--gold);background:var(--gold);color:var(--black);}
+  .tsl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.3);white-space:nowrap;}
+  .tsl.act{color:var(--white);}
+  .tconn{flex:1;height:1px;background:rgba(255,255,255,.1);margin:0 12px;min-width:20px;}
+  .tpanel{display:none;}.tpanel.active{display:block;}
+
+  .match-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+  .mcard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:22px;cursor:pointer;transition:all .25s;position:relative;}
+  .mcard:hover{border-color:var(--red);transform:translateY(-3px);}
+  .mcard.sel{border-color:var(--red);background:rgba(212,32,43,.08);}
+  .home-badge{position:absolute;top:12px;right:12px;background:var(--gold);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:2px;}
+  .mcomp{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;}
+  .mteams{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);letter-spacing:1px;margin-bottom:6px;}
+  .mteams span{color:var(--red);}
+  .mdate{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:3px;}
+  .mvenue{font-size:11px;color:rgba(255,255,255,.3);}
+
+  .seat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px;}
+  .scard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:26px 18px;text-align:center;cursor:pointer;transition:all .25s;}
+  .scard:hover{border-color:var(--gold);}.scard.sel{border-color:var(--gold);background:rgba(245,184,0,.07);}
+  .stier{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:5px;}
+  .stier.vip{color:var(--gold);}.stier.prem{color:#C0C0C0;}.stier.reg{color:rgba(255,255,255,.55);}
+  .sprice{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--white);letter-spacing:1px;}
+  .sprice span{font-size:14px;color:rgba(255,255,255,.4);}
+  .sperk{font-size:12px;color:rgba(255,255,255,.4);margin-top:5px;}
+
+  .qty-ctrl{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+  .qty-lbl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);}
+  .qty-btn{width:36px;height:36px;border-radius:50%;background:var(--d3);border:1px solid rgba(255,255,255,.15);color:var(--white);font-size:20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
+  .qty-btn:hover{background:var(--red);border-color:var(--red);}
+  .qty-num{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--white);min-width:28px;text-align:center;}
+
+  .tsum-bar{background:var(--d3);border:1px solid rgba(245,184,0,.2);border-radius:6px;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px;}
+  .tsum-val{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--gold);}
+  .tsum-key{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:1px;margin-top:2px;text-transform:uppercase;}
+  .tnav{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;}
+  .btn-back{background:transparent;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6);padding:12px 26px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+  .btn-back:hover{border-color:var(--white);color:var(--white);}
+
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .form-grp{margin-bottom:18px;}
+  .form-lbl{display:block;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:7px;}
+  .form-inp{width:100%;background:var(--d3);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:13px 15px;color:var(--white);font-family:'Barlow',sans-serif;font-size:15px;transition:border-color .2s;outline:none;}
+  .form-inp:focus{border-color:var(--red);}
+
+  @media(max-width:600px){
+    .seat-cards{grid-template-columns:1fr;}
+    .form-row{grid-template-columns:1fr;}
+  }
+</style>
+
+<script is:inline>
+let ticketEvents = [], tEventId = '', tM = '', tS = '', tPKobo = 0, tQ = 1;
+const preselectEventId = new URLSearchParams(window.location.search).get('event');
+
+async function loadTicketEvents(){
+  const list = document.getElementById('matchCardsList');
+  try{
+    const res = await fetch('/api/events');
+    const data = await res.json();
+    ticketEvents = data.events || [];
+    if(!ticketEvents.length){
+      list.innerHTML = '<p class="muted">No matches are currently on sale. Check back soon.</p>';
+      return;
+    }
+    list.innerHTML = ticketEvents.map(ev => {
+      const d = new Date(ev.event_date);
+      const dateStr = d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+      const timeStr = d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+      return `<div class="mcard" data-event-id="${ev.id}" onclick="selMatch('${ev.id}',this)"><span class="home-badge">HOME</span><div class="mcomp">${ev.competition}</div><div class="mteams"><span>${ev.home_team}</span> vs ${ev.away_team}</div><div class="mdate">${dateStr} &middot; ${timeStr}</div><div class="mvenue">&#128205; ${ev.venue}</div></div>`;
+    }).join('');
+
+    if(preselectEventId && ticketEvents.some(e => e.id === preselectEventId)){
+      const card = list.querySelector(`[data-event-id="${preselectEventId}"]`);
+      selMatch(preselectEventId, card);
+      goStep(2);
+    }
+  }catch(err){
+    list.innerHTML = '<p class="muted">Could not load fixtures. Please refresh the page.</p>';
+  }
+}
+loadTicketEvents();
+
+function selMatch(eventId, el){
+  document.querySelectorAll('.mcard').forEach(c => c.classList.remove('sel'));
+  if(el) el.classList.add('sel');
+  tEventId = eventId;
+  const ev = ticketEvents.find(e => e.id === eventId);
+  if(!ev) return;
+  tM = `${ev.home_team} vs ${ev.away_team}`;
+  tS = ''; tPKobo = 0;
+  document.getElementById('seatCardsList').innerHTML = `
+    <div class="scard" onclick="selSeat('VIP',${ev.vip_price_kobo},this)"><div class="stier vip">VIP</div><div class="sprice">&#8358;<span>${(ev.vip_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Premium covered stand</div><div class="sperk">&#10022; Refreshments included</div><div class="sperk">&#10022; Priority entry</div></div>
+    <div class="scard" onclick="selSeat('Premium',${ev.premium_price_kobo},this)"><div class="stier prem">Premium</div><div class="sprice">&#8358;<span>${(ev.premium_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Covered stand</div><div class="sperk">&#10022; Good sightlines</div></div>
+    <div class="scard" onclick="selSeat('Regular',${ev.regular_price_kobo},this)"><div class="stier reg">Regular</div><div class="sprice">&#8358;<span>${(ev.regular_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; General admission</div><div class="sperk">&#10022; Open terrace</div></div>
+  `;
+  updSum();
+}
+function selSeat(s, pKobo, el){
+  document.querySelectorAll('.scard').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  tS = s; tPKobo = pKobo;
+  updSum();
+}
+function chgQty(d){
+  tQ = Math.max(1, Math.min(10, tQ + d));
+  document.getElementById('qtyNum').textContent = tQ;
+  updSum();
+}
+function updSum(){
+  document.getElementById('sumMatch').textContent = tM || '—';
+  document.getElementById('sumSeat').textContent = tS || '—';
+  document.getElementById('sumQty').textContent = tQ;
+  document.getElementById('sumTotal').textContent = tPKobo ? '₦' + ((tPKobo/100) * tQ).toLocaleString() : '₦ —';
+}
+function goStep(n){
+  [1, 2, 3].forEach(i => {
+    document.getElementById('tp' + i).classList.toggle('active', i === n);
+    const sn = document.getElementById('sn' + i), sl = document.getElementById('sl' + i);
+    sn.className = 'tsn' + (i < n ? ' done' : i === n ? ' act' : '');
+    if(sl) sl.className = 'tsl' + (i === n ? ' act' : '');
+  });
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+async function confirmBk(){
+  const errEl = document.getElementById('tix-error');
+  const btn = document.getElementById('confirmBkBtn');
+  errEl.style.display = 'none';
+
+  const fn = document.getElementById('t-fn').value.trim();
+  const ln = document.getElementById('t-ln').value.trim();
+  const email = document.getElementById('t-em').value.trim();
+  const phone = document.getElementById('t-ph').value.trim();
+
+  if(!tEventId || !tS){ errEl.textContent = 'Please select a match and seat category.'; errEl.style.display = 'block'; return; }
+  if(!fn || !ln || !email || !phone){ errEl.textContent = 'Please fill in all of your details.'; errEl.style.display = 'block'; return; }
+
+  btn.disabled = true; btn.textContent = 'Redirecting to payment...';
+  try{
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({eventId: tEventId, tier: tS, quantity: tQ, buyerName: `${fn} ${ln}`, buyerEmail: email, buyerPhone: phone}),
+    });
+    const data = await res.json();
+    if(!res.ok || !data.authorizationUrl){
+      throw new Error(data.error || 'Could not start payment.');
+    }
+    window.location.href = data.authorizationUrl;
+  }catch(err){
+    console.error('Checkout failed:', err);
+    errEl.textContent = err.message || 'Something went wrong. Please try again.';
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Confirm & Pay →';
+  }
+}
+</script>

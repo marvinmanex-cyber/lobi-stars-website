@@ -524,46 +524,8 @@ table.st tr:hover td{background:rgba(255,255,255,.03);}
 .pb{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.1);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
 .pb.top{background:rgba(76,175,80,.25);color:#4CAF50;}
 
-/* TICKETS */
+/* TICKETS (lightweight teaser -- the full booking flow lives on /tickets) */
 #tickets{background:var(--black);}
-.tsteps{display:flex;align-items:center;margin-bottom:40px;overflow-x:auto;padding-bottom:4px;}
-.tstep{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-.tsn{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:rgba(255,255,255,.3);transition:all .3s;flex-shrink:0;}
-.tsn.act{border-color:var(--red);background:var(--red);color:var(--white);}
-.tsn.done{border-color:var(--gold);background:var(--gold);color:var(--black);}
-.tsl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.3);white-space:nowrap;}
-.tsl.act{color:var(--white);}
-.tconn{flex:1;height:1px;background:rgba(255,255,255,.1);margin:0 12px;min-width:20px;}
-.tpanel{display:none;}.tpanel.active{display:block;}
-.match-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
-.mcard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:22px;cursor:pointer;transition:all .25s;position:relative;}
-.mcard:hover{border-color:var(--red);transform:translateY(-3px);}
-.mcard.sel{border-color:var(--red);background:rgba(212,32,43,.08);}
-.home-badge{position:absolute;top:12px;right:12px;background:var(--gold);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:2px;}
-.mcomp{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;}
-.mteams{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);letter-spacing:1px;margin-bottom:6px;}
-.mteams span{color:var(--red);}
-.mdate{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:3px;}
-.mvenue{font-size:11px;color:rgba(255,255,255,.3);}
-.seat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px;}
-.scard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:26px 18px;text-align:center;cursor:pointer;transition:all .25s;}
-.scard:hover{border-color:var(--gold);}.scard.sel{border-color:var(--gold);background:rgba(245,184,0,.07);}
-.stier{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:5px;}
-.stier.vip{color:var(--gold);}.stier.prem{color:#C0C0C0;}.stier.reg{color:rgba(255,255,255,.55);}
-.sprice{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--white);letter-spacing:1px;}
-.sprice span{font-size:14px;color:rgba(255,255,255,.4);}
-.sperk{font-size:12px;color:rgba(255,255,255,.4);margin-top:5px;}
-.qty-ctrl{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
-.qty-lbl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);}
-.qty-btn{width:36px;height:36px;border-radius:50%;background:var(--d3);border:1px solid rgba(255,255,255,.15);color:var(--white);font-size:20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
-.qty-btn:hover{background:var(--red);border-color:var(--red);}
-.qty-num{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--white);min-width:28px;text-align:center;}
-.tsum-bar{background:var(--d3);border:1px solid rgba(245,184,0,.2);border-radius:6px;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px;}
-.tsum-val{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--gold);}
-.tsum-key{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:1px;margin-top:2px;text-transform:uppercase;}
-.tnav{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;}
-.btn-back{background:transparent;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6);padding:12px 26px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
-.btn-back:hover{border-color:var(--white);color:var(--white);}
 .bk-confirm{text-align:center;padding:56px 20px;}
 .bk-icon{font-size:64px;margin-bottom:16px;}
 .bk-ref{font-family:'Bebas Neue',sans-serif;font-size:48px;color:var(--gold);letter-spacing:4px;}
@@ -890,18 +852,22 @@ body.light-mode .footer-copy { color: #718096 !important; }
     height: 56px !important;
     padding: 0 5px;
   }
+  .sponsor-label{display:none;}
   .sponsor-container{
-    gap: 20px !important;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
     width: 100%;
-    padding: 0 16px;
+    padding: 0;
+    overflow: hidden;
   }
-  .sponsor-container::-webkit-scrollbar{display:none;}
-  .sponsor-container > *{flex-shrink: 0;}
+  .sponsor-track{
+    display: flex !important;
+    gap: 26px;
+    align-items: center;
+    width: max-content;
+    padding-left: 16px;
+    animation: sponsor-scroll 20s linear infinite;
+  }
+  .sponsor-track > *{flex-shrink: 0;}
+  .sponsor-item[aria-hidden="true"]{display:flex;}
   .sponsor-logo{
     height: 30px !important;
     max-width: 80px !important;
@@ -934,18 +900,22 @@ body.light-mode .footer-copy { color: #718096 !important; }
     height: 56px !important;
     padding: 0 5px;
   }
+  .sponsor-label{display:none;}
   .sponsor-container{
-    gap: 20px !important;
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
     width: 100%;
-    padding: 0 16px;
+    padding: 0;
+    overflow: hidden;
   }
-  .sponsor-container::-webkit-scrollbar{display:none;}
-  .sponsor-container > *{flex-shrink: 0;}
+  .sponsor-track{
+    display: flex !important;
+    gap: 26px;
+    align-items: center;
+    width: max-content;
+    padding-left: 16px;
+    animation: sponsor-scroll 20s linear infinite;
+  }
+  .sponsor-track > *{flex-shrink: 0;}
+  .sponsor-item[aria-hidden="true"]{display:flex;}
   .sponsor-logo{
     height: 30px !important;
     max-width: 80px !important;
@@ -1137,6 +1107,13 @@ body.light-mode nav.scrolled .theme-switch {
   gap: 50px; /* More space between logos */
 }
 
+/* On desktop the track is just a pass-through -- the mobile media query
+   below turns it into an auto-scrolling marquee instead. The sponsor list
+   is rendered twice in the markup so that marquee can loop seamlessly;
+   the second copy stays hidden except in that mobile marquee mode. */
+.sponsor-track{display:contents;}
+.sponsor-item[aria-hidden="true"]{display:none;}
+
 .sponsor-item {
   display: flex;
   align-items: center;
@@ -1162,6 +1139,11 @@ body.light-mode nav.scrolled .theme-switch {
 .wa-tooltip{position:absolute;right:68px;background:rgba(0,0,0,.8);color:white;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;white-space:nowrap;padding:6px 12px;border-radius:4px;opacity:0;transition:opacity .2s;pointer-events:none;}
 .wa-float:hover .wa-tooltip{opacity:1;}
 @keyframes wa-pulse{0%,100%{box-shadow:0 4px 20px rgba(37,211,102,.45);}50%{box-shadow:0 4px 36px rgba(37,211,102,.75);}}
+@keyframes sponsor-scroll{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+@media(max-width:768px) and (prefers-reduced-motion:reduce){
+  .sponsor-track{animation:none!important;}
+  .sponsor-container{overflow-x:auto!important;-webkit-overflow-scrolling:touch;}
+}
 /* ── SECTION BACKGROUND VARIETY ── */
 #players{
   background: var(--black);
@@ -1567,12 +1549,16 @@ body.light-mode .food-sum-v{color:#1A202C;}
 <!-- TOP BAR SPONSORS -->
 <div class="top-bar">
   <div class="sponsor-container">
-    <span style="color: #718096; font-size: 10px; font-family: 'Barlow Condensed'; letter-spacing: 2px;">OFFICIAL PARTNERS:</span>
-    {sponsors.map(sponsor => (
-      <a href={sponsor.data.url} target="_blank" class="sponsor-item">
-        <img src={sponsor.data.logo} alt={sponsor.data.name} class="sponsor-logo">
-      </a>
-    ))}
+    <span class="sponsor-label" style="color: #718096; font-size: 10px; font-family: 'Barlow Condensed'; letter-spacing: 2px;">OFFICIAL PARTNERS:</span>
+    <div class="sponsor-track">
+      {[0, 1].map(copyIndex => (
+        sponsors.map(sponsor => (
+          <a href={sponsor.data.url} target="_blank" class="sponsor-item" aria-hidden={copyIndex === 1 ? 'true' : undefined} tabindex={copyIndex === 1 ? -1 : undefined}>
+            <img src={sponsor.data.logo} alt={sponsor.data.name} class="sponsor-logo">
+          </a>
+        ))
+      ))}
+    </div>
   </div>
 </div>
 <nav id="mainNav">
@@ -1586,7 +1572,7 @@ body.light-mode .food-sum-v{color:#1A202C;}
     <li><a href="#about">About</a></li>
     <li><a href="#players">Squad</a></li>
     <li><a href="#fixtures">Fixtures</a></li>
-    <li><a href="#tickets">Tickets</a></li>
+    <li><a href="/tickets">Tickets</a></li>
     <li><a href="#membership">Members</a></li>
     <li><a href="#news">News</a></li>
 <li><a href="#podcasts">Podcasts</a></li>
@@ -1630,7 +1616,7 @@ body.light-mode .food-sum-v{color:#1A202C;}
   <div class="more-sheet">
     <div class="more-sheet-handle"></div>
     <div class="more-sheet-grid">
-      <a href="#tickets" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">🎟️</span>Tickets</a>
+      <a href="/tickets" class="more-item"><span class="more-ic">🎟️</span>Tickets</a>
       <a href="#news" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">📰</span>News</a>
       <a href="#gallery" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">📷</span>Gallery</a>
       <a href="#merchandise" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">🛍️</span>Shop</a>
@@ -1638,6 +1624,9 @@ body.light-mode .food-sum-v{color:#1A202C;}
       <a href="#club-history" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">🏆</span>History</a>
       <a href="#academy" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">🎓</span>Academy</a>
       <a href="#contact" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">✉️</span>Contact</a>
+      <button class="more-item" id="moreThemeToggle" style="background:none;border:none;cursor:pointer;font-family:inherit;">
+        <span class="more-ic" id="moreThemeIcon">🌙</span><span id="moreThemeLabel">Dark Mode</span>
+      </button>
     </div>
     <button class="btn-o" onclick="closeMoreSheet()" style="width:100%;margin-top:6px;">Close</button>
   </div>
@@ -1665,7 +1654,7 @@ body.light-mode .food-sum-v{color:#1A202C;}
     <div class="glory-tagline" style="margin-bottom: 10px; font-size: 1.2rem;">GLORY TO GLORY</div>
     <div class="hero-actions" style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px;">
   <a href="#players" class="btn-p">Meet the Squad</a>
-  <a href="#tickets" class="btn-o">Buy Tickets</a>
+  <a href="/tickets" class="btn-o">Buy Tickets</a>
   <a href="#merchandise" class="btn-o">Shop</a>
   <a href="#membership" class="btn-o" id="newsletterBtn">Newsletter</a>
   <a href="#membership" class="btn-p" id="loginNavBtn">Login / Sign Up</a>
@@ -1975,16 +1964,16 @@ function openArchiveTab(evt, tabName) {
     }
 </style>
 
-<section class="match-hub-light">
+<section class="match-hub-light" id="nextMatchHub" style="display:none;">
     <div class="hub-container">
         <!-- Countdown Box -->
         <div class="hub-box">
             <p class="hub-label"><i class="fas fa-clock"></i> Next Match Countdown</p>
             <div class="timer-flex">
-                <div class="t-unit"><span id="d_val">02</span><small>Days</small></div>
-                <div class="t-unit"><span id="h_val">20</span><small>Hrs</small></div>
-                <div class="t-unit"><span id="m_val">14</span><small>Mins</small></div>
-                <div class="t-unit"><span id="s_val">23</span><small>Secs</small></div>
+                <div class="t-unit"><span id="d_val">00</span><small>Days</small></div>
+                <div class="t-unit"><span id="h_val">00</span><small>Hrs</small></div>
+                <div class="t-unit"><span id="m_val">00</span><small>Mins</small></div>
+                <div class="t-unit"><span id="s_val">00</span><small>Secs</small></div>
             </div>
         </div>
 
@@ -1997,24 +1986,48 @@ function openArchiveTab(evt, tabName) {
                 </div>
                 <div class="vs-circ">VS</div>
                 <div class="t-col">
-                    <img src="/images/enyimba.jpg" class="t-logo" alt="Enyimba">
-                    <p style="font-size:13px; font-weight:700; color:#111; margin-top:8px;">ENYIMBA FC</p>
+                    <div class="t-logo" style="display:flex;align-items:center;justify-content:center;background:#eee;border-radius:50%;font-family:'Bebas Neue',sans-serif;font-size:22px;color:#666;" id="nextMatchAwayInitial">?</div>
+                    <p style="font-size:13px; font-weight:700; color:#111; margin-top:8px;" id="nextMatchAwayName">&mdash;</p>
                 </div>
             </div>
             <div class="match-info">
-                <p><strong>Sunday, May 17, 2026 • 4:00 PM</strong></p>
-                <p><i class="fas fa-map-marker-alt" style="color:#D4202B"></i> Aper Aku Stadium, Makurdi</p>
-                <a href="#tickets" class="tix-btn" style="text-decoration:none;display:inline-block;">Get Tickets</a>
+                <p><strong id="nextMatchDate">&mdash;</strong></p>
+                <p><i class="fas fa-map-marker-alt" style="color:#D4202B"></i> <span id="nextMatchVenue">&mdash;</span></p>
+                <a href="/tickets" class="tix-btn" id="nextMatchTicketLink" style="text-decoration:none;display:inline-block;">Get Tickets</a>
             </div>
         </div>
     </div>
 </section>
 
 <script is:inline>
-    function startTimer() {
-        // Date set to May 17, 2026
-        const target = new Date("May 17, 2026 16:00:00").getTime();
-        setInterval(() => {
+    let matchHubTimer;
+    async function loadNextMatch() {
+        try {
+            const res = await fetch('/api/events');
+            const data = await res.json();
+            const events = (data.events || []).slice().sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
+            const next = events[0];
+            if (!next) return; // no upcoming matches -- leave the hub hidden
+
+            document.getElementById('nextMatchAwayInitial').textContent = next.away_team.charAt(0);
+            document.getElementById('nextMatchAwayName').textContent = next.away_team.toUpperCase();
+            document.getElementById('nextMatchVenue').textContent = next.venue;
+            document.getElementById('nextMatchTicketLink').href = `/tickets?event=${encodeURIComponent(next.id)}`;
+
+            const d = new Date(next.event_date);
+            document.getElementById('nextMatchDate').textContent =
+                d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'}) +
+                ' • ' + d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+
+            document.getElementById('nextMatchHub').style.display = '';
+            startTimer(d.getTime());
+        } catch (err) {
+            // Leave the hub hidden if fixtures can't load -- no fake countdown.
+        }
+    }
+    function startTimer(target) {
+        clearInterval(matchHubTimer);
+        matchHubTimer = setInterval(() => {
             const now = new Date().getTime();
             const d = target - now;
             if (d > 0) {
@@ -2022,10 +2035,12 @@ function openArchiveTab(evt, tabName) {
                 document.getElementById("h_val").innerText = Math.floor((d % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 document.getElementById("m_val").innerText = Math.floor((d % (1000 * 60 * 60)) / (1000 * 60));
                 document.getElementById("s_val").innerText = Math.floor((d % (1000 * 60)) / 1000);
+            } else {
+                clearInterval(matchHubTimer);
             }
         }, 1000);
     }
-    startTimer();
+    loadNextMatch();
 </script>
 <!-- END OF LIGHT THEME MATCH HUB -->
     <!-- LEAGUE STANDINGS -->
@@ -2092,49 +2107,8 @@ function openArchiveTab(evt, tabName) {
 </div>
 </div>
   <div class="divr fade-in"></div>
-  <div class="tsteps fade-in">
-    <div class="tstep"><div class="tsn act" id="sn1">1</div><div class="tsl act" id="sl1">Select Match</div></div>
-    <div class="tconn"></div>
-    <div class="tstep"><div class="tsn" id="sn2">2</div><div class="tsl" id="sl2">Choose Seat</div></div>
-    <div class="tconn"></div>
-    <div class="tstep"><div class="tsn" id="sn3">3</div><div class="tsl" id="sl3">Your Details</div></div>
-    <div class="tconn"></div>
-    <div class="tstep"><div class="tsn" id="sn4">4</div><div class="tsl" id="sl4">Confirmation</div></div>
-  </div>
-  <div class="tpanel active" id="tp1">
-    <p class="muted-p" style="margin-bottom:22px;font-size:15px;">Select a home match to purchase tickets for:</p>
-    <div class="match-cards" id="matchCardsList">
-      <p class="muted-p">Loading fixtures...</p>
-    </div>
-    <div class="tnav"><button class="btn-p" onclick="goStep(2)">Continue →</button></div>
-  </div>
-  <div class="tpanel" id="tp2">
-    <p class="muted-p" style="margin-bottom:22px;font-size:15px;">Choose your seat category:</p>
-    <div class="seat-cards" id="seatCardsList"></div>
-    <div class="qty-ctrl">
-      <span class="qty-lbl">Tickets:</span>
-      <button class="qty-btn" onclick="chgQty(-1)">−</button>
-      <div class="qty-num" id="qtyNum">1</div>
-      <button class="qty-btn" onclick="chgQty(1)">+</button>
-    </div>
-    <div class="tsum-bar">
-      <div><div class="tsum-val" id="sumMatch">—</div><div class="tsum-key">Match</div></div>
-      <div><div class="tsum-val" id="sumSeat">—</div><div class="tsum-key">Category</div></div>
-      <div><div class="tsum-val" id="sumQty">—</div><div class="tsum-key">Tickets</div></div>
-      <div><div class="tsum-val" id="sumTotal">₦ —</div><div class="tsum-key">Total</div></div>
-    </div>
-    <div class="tnav"><button class="btn-back" onclick="goStep(1)">← Back</button><button class="btn-p" onclick="goStep(3)">Continue →</button></div>
-  </div>
-  <div class="tpanel" id="tp3">
-    <p class="muted-p" style="margin-bottom:22px;font-size:15px;">Enter your details to complete your booking:</p>
-    <div style="max-width:580px;">
-      <div class="form-row"><div class="form-grp"><label class="form-lbl">First Name</label><input type="text" class="form-inp" id="t-fn" placeholder="First name"/></div><div class="form-grp"><label class="form-lbl">Last Name</label><input type="text" class="form-inp" id="t-ln" placeholder="Last name"/></div></div>
-      <div class="form-grp"><label class="form-lbl">Email Address</label><input type="email" class="form-inp" id="t-em" placeholder="you@example.com"/></div>
-      <div class="form-grp"><label class="form-lbl">Phone Number</label><input type="tel" class="form-inp" id="t-ph" placeholder="+234 800 000 0000"/></div>
-    </div>
-    <p id="tix-error" class="muted-p" style="display:none;color:var(--red);margin-top:10px;"></p>
-    <div class="tnav"><button class="btn-back" onclick="goStep(2)">← Back</button><button class="btn-p" id="confirmBkBtn" onclick="confirmBk()">Confirm &amp; Pay →</button></div>
-  </div>
+  <p class="muted-p fade-in" style="font-size:15px;max-width:520px;margin-bottom:26px;">Pick a match, choose your seat, and pay securely with Paystack -- your tickets (with QR codes) are emailed straight to you.</p>
+  <a href="/tickets" class="btn-p fade-in" style="padding:16px 36px;font-size:15px;">Buy Tickets →</a>
 </section>
 
 
@@ -2909,19 +2883,31 @@ const themeIcon = document.getElementById('themeIcon');
 const themeText = document.getElementById('themeText');
 const body = document.body;
 
+const moreThemeIcon = document.getElementById('moreThemeIcon');
+const moreThemeLabel = document.getElementById('moreThemeLabel');
+
 function applyTheme(theme) {
   if (theme === 'light') {
     body.classList.add('light-mode');
     themeIcon.textContent = '☀️';
     themeText.textContent = 'LIGHT';
+    moreThemeIcon.textContent = '☀️';
+    moreThemeLabel.textContent = 'Light Mode';
   } else {
     body.classList.remove('light-mode');
     themeIcon.textContent = '🌙';
     themeText.textContent = 'DARK';
+    moreThemeIcon.textContent = '🌙';
+    moreThemeLabel.textContent = 'Dark Mode';
   }
 }
 applyTheme(localStorage.getItem('ls_theme') || 'dark');
 themeBtn.addEventListener('click', () => {
+  const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
+  localStorage.setItem('ls_theme', newTheme);
+  applyTheme(newTheme);
+});
+document.getElementById('moreThemeToggle').addEventListener('click', () => {
   const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
   localStorage.setItem('ls_theme', newTheme);
   applyTheme(newTheme);
@@ -3104,90 +3090,6 @@ document.querySelectorAll('#players .ftab').forEach(t => t.addEventListener('cli
   document.querySelectorAll('#players .ftab').forEach(x=>x.classList.remove('active'));
   this.classList.add('active'); renderPlayers(this.dataset.pos);
 }));
-
-// ── TICKETS ──
-let ticketEvents=[], tEventId='', tM='', tS='', tPKobo=0, tQ=1;
-
-async function loadTicketEvents(){
-  const list=document.getElementById('matchCardsList');
-  try{
-    const res=await fetch('/api/events');
-    const data=await res.json();
-    ticketEvents=data.events||[];
-    if(!ticketEvents.length){
-      list.innerHTML='<p class="muted-p">No matches are currently on sale. Check back soon.</p>';
-      return;
-    }
-    list.innerHTML=ticketEvents.map(ev=>{
-      const d=new Date(ev.event_date);
-      const dateStr=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-      const timeStr=d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-      return `<div class="mcard" onclick="selMatch('${ev.id}',this)"><span class="home-badge">HOME</span><div class="mcomp">${ev.competition}</div><div class="mteams"><span>${ev.home_team}</span> vs ${ev.away_team}</div><div class="mdate">${dateStr} · ${timeStr}</div><div class="mvenue">📍 ${ev.venue}</div></div>`;
-    }).join('');
-  }catch(err){
-    list.innerHTML='<p class="muted-p">Could not load fixtures. Please refresh the page.</p>';
-  }
-}
-loadTicketEvents();
-
-function selMatch(eventId,el){
-  document.querySelectorAll('.mcard').forEach(c=>c.classList.remove('sel'));
-  if(el) el.classList.add('sel');
-  tEventId=eventId;
-  const ev=ticketEvents.find(e=>e.id===eventId);
-  if(!ev) return;
-  tM=`${ev.home_team} vs ${ev.away_team}`;
-  tS='';tPKobo=0;
-  document.getElementById('seatCardsList').innerHTML=`
-    <div class="scard" onclick="selSeat('VIP',${ev.vip_price_kobo},this)"><div class="stier vip">VIP</div><div class="sprice">₦<span>${(ev.vip_price_kobo/100).toLocaleString()}</span></div><div class="sperk">✦ Premium covered stand</div><div class="sperk">✦ Refreshments included</div><div class="sperk">✦ Priority entry</div></div>
-    <div class="scard" onclick="selSeat('Premium',${ev.premium_price_kobo},this)"><div class="stier prem">Premium</div><div class="sprice">₦<span>${(ev.premium_price_kobo/100).toLocaleString()}</span></div><div class="sperk">✦ Covered stand</div><div class="sperk">✦ Good sightlines</div></div>
-    <div class="scard" onclick="selSeat('Regular',${ev.regular_price_kobo},this)"><div class="stier reg">Regular</div><div class="sprice">₦<span>${(ev.regular_price_kobo/100).toLocaleString()}</span></div><div class="sperk">✦ General admission</div><div class="sperk">✦ Open terrace</div></div>
-  `;
-  updSum();
-}
-function selSeat(s,pKobo,el){document.querySelectorAll('.scard').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');tS=s;tPKobo=pKobo;updSum();}
-function chgQty(d){tQ=Math.max(1,Math.min(10,tQ+d));document.getElementById('qtyNum').textContent=tQ;updSum();}
-function updSum(){document.getElementById('sumMatch').textContent=tM||'—';document.getElementById('sumSeat').textContent=tS||'—';document.getElementById('sumQty').textContent=tQ;document.getElementById('sumTotal').textContent=tPKobo?'₦'+((tPKobo/100)*tQ).toLocaleString():'₦ —';}
-function goStep(n){
-  [1,2,3].forEach(i=>{
-    document.getElementById('tp'+i).classList.toggle('active',i===n);
-    const sn=document.getElementById('sn'+i),sl=document.getElementById('sl'+i);
-    sn.className='tsn'+(i<n?' done':i===n?' act':'');
-    if(sl) sl.className='tsl'+(i===n?' act':'');
-  });
-  document.getElementById('tickets').scrollIntoView({behavior:'smooth',block:'start'});
-}
-async function confirmBk(){
-  const errEl=document.getElementById('tix-error');
-  const btn=document.getElementById('confirmBkBtn');
-  errEl.style.display='none';
-
-  const fn=document.getElementById('t-fn').value.trim();
-  const ln=document.getElementById('t-ln').value.trim();
-  const email=document.getElementById('t-em').value.trim();
-  const phone=document.getElementById('t-ph').value.trim();
-
-  if(!tEventId||!tS){ errEl.textContent='Please select a match and seat category.'; errEl.style.display='block'; return; }
-  if(!fn||!ln||!email||!phone){ errEl.textContent='Please fill in all of your details.'; errEl.style.display='block'; return; }
-
-  btn.disabled=true; btn.textContent='Redirecting to payment...';
-  try{
-    const res=await fetch('/api/checkout',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({eventId:tEventId,tier:tS,quantity:tQ,buyerName:`${fn} ${ln}`,buyerEmail:email,buyerPhone:phone}),
-    });
-    const data=await res.json();
-    if(!res.ok||!data.authorizationUrl){
-      throw new Error(data.error||'Could not start payment.');
-    }
-    window.location.href=data.authorizationUrl;
-  }catch(err){
-    errEl.textContent=err.message||'Something went wrong. Please try again.';
-    errEl.style.display='block';
-    btn.disabled=false; btn.textContent='Confirm & Pay →';
-  }
-}
 
 // ── MEMBERSHIP & NEWSLETTER ──
 function pickTier(t,p){ document.getElementById('selTierBadge').textContent=t+' — '+p+'/yr'; document.getElementById('memFormWrap').scrollIntoView({behavior:'smooth'});}
