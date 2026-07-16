@@ -54,13 +54,13 @@ import Layout from '../../layouts/Layout.astro';
   </div>
 </Layout>
 
-<style>
+<style is:global>
   .tsteps{display:flex;align-items:center;margin:36px 0 40px;overflow-x:auto;padding-bottom:4px;}
   .tstep{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-  .tsn{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:rgba(255,255,255,.3);transition:all .3s;flex-shrink:0;}
+  .tsn{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--lt);transition:all .3s;flex-shrink:0;}
   .tsn.act{border-color:var(--red);background:var(--red);color:#fff;}
   .tsn.done{border-color:var(--gold);background:var(--gold);color:var(--black);}
-  .tsl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.3);white-space:nowrap;}
+  .tsl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--lt);white-space:nowrap;}
   .tsl.act{color:var(--white);}
   .tconn{flex:1;height:1px;background:rgba(255,255,255,.1);margin:0 12px;min-width:20px;}
   .tpanel{display:none;}.tpanel.active{display:block;}
@@ -73,11 +73,11 @@ import Layout from '../../layouts/Layout.astro';
   .home-badge{position:absolute;top:12px;right:12px;background:var(--gold);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:2px;}
   @keyframes cardPop{0%{transform:scale(.97);}60%{transform:scale(1.015);}100%{transform:scale(1);}}
   @keyframes badgeIn{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
-  .mcomp{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;}
+  .mcomp{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--lt);margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;}
   .mteams{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);letter-spacing:1px;margin-bottom:6px;}
   .mteams span{color:var(--red);}
-  .mdate{font-size:12px;color:rgba(255,255,255,.5);margin-bottom:3px;}
-  .mvenue{font-size:11px;color:rgba(255,255,255,.3);}
+  .mdate{font-size:12px;color:var(--lt);margin-bottom:3px;}
+  .mvenue{font-size:11px;color:var(--lt);}
 
   .seat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px;}
   .scard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:26px 18px;text-align:center;cursor:pointer;user-select:none;transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;}
@@ -88,27 +88,27 @@ import Layout from '../../layouts/Layout.astro';
   .spop-tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;}
   .stic{font-size:28px;margin-bottom:8px;}
   .stier{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:5px;}
-  .stier.vip{color:var(--gold);}.stier.prem{color:#C0C0C0;}.stier.reg{color:rgba(255,255,255,.55);}
+  .stier.vip{color:var(--gold);}.stier.prem{color:#C0C0C0;}.stier.reg{color:var(--lt);}
   .sprice{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--white);letter-spacing:1px;}
-  .sprice span{font-size:14px;color:rgba(255,255,255,.4);}
-  .sperk{font-size:12px;color:rgba(255,255,255,.4);margin-top:5px;}
+  .sprice span{font-size:14px;color:var(--lt);}
+  .sperk{font-size:12px;color:var(--lt);margin-top:5px;}
 
   .qty-ctrl{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
-  .qty-lbl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);}
+  .qty-lbl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--lt);}
   .qty-btn{width:36px;height:36px;border-radius:50%;background:var(--d3);border:1px solid rgba(255,255,255,.15);color:var(--white);font-size:20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
-  .qty-btn:hover{background:var(--red);border-color:var(--red);}
+  .qty-btn:hover{background:var(--red);border-color:var(--red);color:#fff;}
   .qty-num{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--white);min-width:28px;text-align:center;}
 
   .tsum-bar{background:var(--d3);border:1px solid rgba(245,184,0,.2);border-radius:6px;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px;}
   .tsum-val{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--gold);}
-  .tsum-key{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:1px;margin-top:2px;text-transform:uppercase;}
+  .tsum-key{font-size:10px;color:var(--lt);letter-spacing:1px;margin-top:2px;text-transform:uppercase;}
   .tnav{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;}
-  .btn-back{background:transparent;border:1.5px solid rgba(255,255,255,.2);color:rgba(255,255,255,.6);padding:12px 26px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+  .btn-back{background:transparent;border:1.5px solid rgba(255,255,255,.2);color:var(--lt);padding:12px 26px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
   .btn-back:hover{border-color:var(--white);color:var(--white);}
 
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   .form-grp{margin-bottom:18px;}
-  .form-lbl{display:block;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:7px;}
+  .form-lbl{display:block;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--lt);margin-bottom:7px;}
   .form-inp{width:100%;background:var(--d3);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:13px 15px;color:var(--white);font-family:'Barlow',sans-serif;font-size:15px;transition:border-color .2s;outline:none;}
   .form-inp:focus{border-color:var(--red);}
 
@@ -116,6 +116,22 @@ import Layout from '../../layouts/Layout.astro';
     .seat-cards{grid-template-columns:1fr;}
     .form-row{grid-template-columns:1fr;}
   }
+
+  /* Card/input borders below use a translucent white tint, which is
+     correctly subtle against the always-dark card backgrounds -- but in
+     light mode those same card backgrounds turn white, so the border
+     needs to flip to a translucent black tint to stay visible at all. */
+  body.light-mode .tsn,
+  body.light-mode .tconn,
+  body.light-mode .mcard,
+  body.light-mode .scard,
+  body.light-mode .qty-btn,
+  body.light-mode .btn-back,
+  body.light-mode .form-inp{
+    border-color: rgba(0,0,0,.12);
+  }
+  body.light-mode .tconn{ background: rgba(0,0,0,.12); }
+  body.light-mode .btn-back:hover{ border-color: var(--white); }
 </style>
 
 <script is:inline>
