@@ -853,7 +853,11 @@ body.light-mode .footer-copy { color: #718096 !important; }
   .hsb-label{font-size:8px;letter-spacing:1px;}
   section{padding:72px 4%;}
 }
-@media(max-width:768px){
+/* Sponsor/top-bar treatment: phones AND tablets (iPad landscape is 1024px
+   wide) both need the label hidden and the auto-scrolling track -- this
+   used to cut off at 768px, so tablets still showed the cramped, non-
+   scrolling desktop version. */
+@media(max-width:1024px){
   .top-bar{
     height: 56px !important;
     padding: 0 5px;
@@ -881,6 +885,8 @@ body.light-mode .footer-copy { color: #718096 !important; }
   nav{
     top: 56px !important;
   }
+}
+@media(max-width:768px){
   .hero-content{
     padding: 130px 4% 0 !important;
   }
@@ -900,38 +906,6 @@ body.light-mode .footer-copy { color: #718096 !important; }
 #galleryPreview{
   height: 220px !important;
 }
-}
-@media(max-width:768px){
-  .top-bar{
-    height: 56px !important;
-    padding: 0 5px;
-  }
-  .sponsor-label{display:none;}
-  .sponsor-container{
-    width: 100%;
-    padding: 0;
-    overflow: hidden;
-  }
-  .sponsor-track{
-    display: flex !important;
-    gap: 26px;
-    align-items: center;
-    width: max-content;
-    padding-left: 16px;
-    animation: sponsor-scroll 20s linear infinite;
-  }
-  .sponsor-track > *{flex-shrink: 0;}
-  .sponsor-item[aria-hidden="true"]{display:flex;}
-  .sponsor-logo{
-    height: 30px !important;
-    max-width: 80px !important;
-  }
-  nav{
-    top: 56px !important;
-  }
-  .hero-content{
-    padding: 130px 4% 0 !important;
-  }
 }
 
 /* ── MOBILE NAV MENU ── */

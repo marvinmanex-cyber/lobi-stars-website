@@ -66,7 +66,7 @@ import Layout from '../../layouts/Layout.astro';
   .tpanel{display:none;}.tpanel.active{display:block;}
 
   .match-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
-  .mcard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:22px;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;}
+  .mcard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:22px;cursor:pointer;user-select:none;transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;}
   .mcard:hover{border-color:var(--red);transform:translateY(-3px);}
   .mcard.sel{border-color:var(--red);background:rgba(212,32,43,.1);box-shadow:0 0 0 3px rgba(212,32,43,.18),0 10px 24px -8px rgba(212,32,43,.35);animation:cardPop .3s ease;}
   .mcard.sel::after{content:'✓';position:absolute;top:-10px;left:-10px;width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:badgeIn .25s ease;}
@@ -80,7 +80,7 @@ import Layout from '../../layouts/Layout.astro';
   .mvenue{font-size:11px;color:rgba(255,255,255,.3);}
 
   .seat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px;}
-  .scard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:26px 18px;text-align:center;cursor:pointer;transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;}
+  .scard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:26px 18px;text-align:center;cursor:pointer;user-select:none;transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;}
   .scard:hover{border-color:var(--gold);transform:translateY(-2px);}
   .scard.sel{border-color:var(--gold);background:rgba(245,184,0,.1);box-shadow:0 0 0 3px rgba(245,184,0,.2),0 10px 24px -8px rgba(245,184,0,.4);animation:cardPop .3s ease;}
   .scard.sel::after{content:'✓';position:absolute;top:-10px;right:-10px;width:26px;height:26px;border-radius:50%;background:var(--gold);color:var(--black);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:badgeIn .25s ease;}
