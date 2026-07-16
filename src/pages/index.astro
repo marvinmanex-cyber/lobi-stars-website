@@ -14,7 +14,7 @@ const sponsors = (await getCollection('sponsors')).sort((a, b) => a.data.order -
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Lobi Stars Football Club | Pride of Benue</title>
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#D4202B">
+<meta name="theme-color" content="#E31E24">
 <link rel="apple-touch-icon" href="/images/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -23,8 +23,8 @@ const sponsors = (await getCollection('sponsors')).sort((a, b) => a.data.order -
 <style is:global>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --red:#D4202B;--rd:#A8141D;--rdp:#6E0C12;
-  --gold:#F5B800;--gd:#C9960A;
+  --red:#E31E24;--rd:#C11A1F;--rdp:#4D0B0D;
+  --gold:#FFC72C;--gd:#E0A61F;
   --black:#0A0A0A;--dark:#111;--d2:#1A1A1A;--d3:#222;--d4:#2E2E2E;
   --white:#FFF;--lt:#AAA;
 }
@@ -64,6 +64,12 @@ body.light-mode {
   --d4: #CBD5E0; /* Darker borders for lines/tables */
   --white: #1A202C; /* Main text is now Charcoal */
   --lt: #4A5568;    /* Faded text is now Slate Grey */
+  /* The brand gold (#FFC72C) reads at ~1.6:1 contrast on a white/near-white
+     background -- fine on the always-dark hero, unreadable everywhere else
+     in light mode. Every var(--gold) usage picks up this darker, still-gold
+     value automatically here instead. */
+  --gold: #9C6B0A;
+  --gd: #7A540A;
 }
 
 /* ── 1. BULLETPROOF TEXT FIX (THE "FORCE-READ" SECTION) ── */
@@ -847,7 +853,11 @@ body.light-mode .footer-copy { color: #718096 !important; }
   .hsb-label{font-size:8px;letter-spacing:1px;}
   section{padding:72px 4%;}
 }
-@media(max-width:768px){
+/* Sponsor/top-bar treatment: phones AND tablets (iPad landscape is 1024px
+   wide) both need the label hidden and the auto-scrolling track -- this
+   used to cut off at 768px, so tablets still showed the cramped, non-
+   scrolling desktop version. */
+@media(max-width:1024px){
   .top-bar{
     height: 56px !important;
     padding: 0 5px;
@@ -875,6 +885,8 @@ body.light-mode .footer-copy { color: #718096 !important; }
   nav{
     top: 56px !important;
   }
+}
+@media(max-width:768px){
   .hero-content{
     padding: 130px 4% 0 !important;
   }
@@ -894,38 +906,6 @@ body.light-mode .footer-copy { color: #718096 !important; }
 #galleryPreview{
   height: 220px !important;
 }
-}
-@media(max-width:768px){
-  .top-bar{
-    height: 56px !important;
-    padding: 0 5px;
-  }
-  .sponsor-label{display:none;}
-  .sponsor-container{
-    width: 100%;
-    padding: 0;
-    overflow: hidden;
-  }
-  .sponsor-track{
-    display: flex !important;
-    gap: 26px;
-    align-items: center;
-    width: max-content;
-    padding-left: 16px;
-    animation: sponsor-scroll 20s linear infinite;
-  }
-  .sponsor-track > *{flex-shrink: 0;}
-  .sponsor-item[aria-hidden="true"]{display:flex;}
-  .sponsor-logo{
-    height: 30px !important;
-    max-width: 80px !important;
-  }
-  nav{
-    top: 56px !important;
-  }
-  .hero-content{
-    padding: 130px 4% 0 !important;
-  }
 }
 
 /* ── MOBILE NAV MENU ── */
@@ -1431,7 +1411,7 @@ h1, h2, h3, .stitle {
 /* ── IN-SEAT FOOD ORDER ── */
 /* ── FOOD BUTTON FLASH ── */
 .food-flash-btn{
-  background: linear-gradient(135deg, #F5B800, #C9960A) !important;
+  background: linear-gradient(135deg, var(--gold), var(--gd)) !important;
   color: var(--black) !important;
   font-weight: 900 !important;
   font-size: 15px !important;
@@ -1490,7 +1470,7 @@ h1, h2, h3, .stitle {
   50%    { opacity: 0.4; transform: scale(1.04); }
 }
 .food-flash-btn:hover{
-  background: linear-gradient(135deg,#FFD347,#F5B800) !important;
+  background: linear-gradient(135deg,#FFD347,var(--gold)) !important;
   transform: translateY(-4px) scale(1.04) !important;
   box-shadow: 0 8px 30px rgba(245,184,0,.5) !important;
   animation: none !important;
@@ -1841,7 +1821,7 @@ function openArchiveTab(evt, tabName) {
         background: #ffffff !important; /* Pure white background */
         padding: 50px 20px !important;
         font-family: 'Inter', sans-serif !important;
-        border-top: 4px solid #D4202B !important; /* Bold Red top border */
+        border-top: 4px solid var(--red) !important; /* Bold Red top border */
     }
 
     .hub-container {
@@ -1865,7 +1845,7 @@ function openArchiveTab(evt, tabName) {
     }
 
     .hub-label {
-        color: #D4202B; /* Lobi Red */
+        color: var(--red); /* Lobi Red */
         text-transform: uppercase;
         letter-spacing: 2px;
         font-size: 14px;
@@ -1898,7 +1878,7 @@ function openArchiveTab(evt, tabName) {
 
     .t-unit small {
         font-size: 11px;
-        color: #D4202B;
+        color: var(--red);
         text-transform: uppercase;
         font-weight: 700;
     }
@@ -1919,7 +1899,7 @@ function openArchiveTab(evt, tabName) {
     }
 
     .vs-circ {
-        background: #D4202B;
+        background: var(--red);
         color: white;
         width: 40px;
         height: 40px;
@@ -1992,7 +1972,7 @@ function openArchiveTab(evt, tabName) {
             </div>
             <div class="match-info">
                 <p><strong id="nextMatchDate">&mdash;</strong></p>
-                <p><i class="fas fa-map-marker-alt" style="color:#D4202B"></i> <span id="nextMatchVenue">&mdash;</span></p>
+                <p><i class="fas fa-map-marker-alt" style="color:var(--red)"></i> <span id="nextMatchVenue">&mdash;</span></p>
                 <a href="/tickets" class="tix-btn" id="nextMatchTicketLink" style="text-decoration:none;display:inline-block;">Get Tickets</a>
             </div>
         </div>
@@ -2354,7 +2334,7 @@ function openArchiveTab(evt, tabName) {
       <div class="spon-form-wrap" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); backdrop-filter: blur(10px); text-align: left;">
         
         <h3 style="color: #fff; font-size: 26px; margin-bottom: 5px; font-weight: 700;">Partnership Enquiry</h3>
-        <p style="color: #D4202B; font-weight: 600; margin-bottom: 30px; letter-spacing: 1px; text-transform: uppercase; font-size: 12px;">Our commercial team will reach out within 48 hours</p>
+        <p style="color: var(--red); font-weight: 600; margin-bottom: 30px; letter-spacing: 1px; text-transform: uppercase; font-size: 12px;">Our commercial team will reach out within 48 hours</p>
 
         <!-- FORM FIELDS -->
         <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
@@ -2395,7 +2375,7 @@ function openArchiveTab(evt, tabName) {
           <textarea class="form-ta" placeholder="How would you like to work with Lobi Stars?" style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 6px; color: #fff; outline: none; min-height: 80px;"></textarea>
         </div>
 
-        <button class="btn-p" style="width: 100%; padding: 15px; font-size: 14px; font-weight: bold; text-transform: uppercase; border-radius: 6px; border: none; background: #D4202B; color: #fff; cursor: pointer;" 
+        <button class="btn-p" style="width: 100%; padding: 15px; font-size: 14px; font-weight: bold; text-transform: uppercase; border-radius: 6px; border: none; background: var(--red); color: #fff; cursor: pointer;" 
           onclick="showToast('Thank you! Our commercial team will contact you shortly.')">
           Send Partnership Request
         </button>
@@ -2486,7 +2466,7 @@ function openArchiveTab(evt, tabName) {
         <div style="margin-bottom: 35px;">
           <h3 class="mem-card-h3" style="font-size: 32px; font-weight: 800; color: inherit; margin-bottom: 10px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px;">Register as a Member</h3>
           <p class="mem-card-sub" style="opacity: 0.6; font-size: 15px;">Complete the form below to activate your season membership.</p>
-          <div class="sel-tier-badge" id="selTierBadge" style="display: inline-block; background: #D4202B; color: #fff; padding: 8px 20px; border-radius: 50px; margin-top: 15px; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">⭐ Official Member — ₦10,000/yr</div>
+          <div class="sel-tier-badge" id="selTierBadge" style="display: inline-block; background: var(--red); color: #fff; padding: 8px 20px; border-radius: 50px; margin-top: 15px; font-weight: bold; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">⭐ Official Member — ₦10,000/yr</div>
         </div>
 
         <div id="memFields">
@@ -2524,7 +2504,7 @@ function openArchiveTab(evt, tabName) {
 
           <p id="mem-error" class="muted" style="display:none;color:#ff6b6b;margin-bottom:14px;"></p>
 
-          <button class="btn-p" onclick="regMember()" id="regMemberBtn" style="width: 100%; padding: 20px; background: #D4202B; color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 800; text-transform: uppercase; cursor: pointer; letter-spacing: 2px;">
+          <button class="btn-p" onclick="regMember()" id="regMemberBtn" style="width: 100%; padding: 20px; background: var(--red); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 800; text-transform: uppercase; cursor: pointer; letter-spacing: 2px;">
             Activate My Membership
           </button>
 
@@ -2809,7 +2789,7 @@ function openArchiveTab(evt, tabName) {
         <div class="bk-details" id="foodConfirmDetails" style="margin:20px auto;max-width:400px;text-align:left;"></div>
         <div style="display:flex;gap:12px;justify-content:center;margin-top:16px;flex-wrap:wrap;">
           <button class="btn-p" onclick="resetFoodOrder()" style="border:none;cursor:pointer;">Order Again</button>
-          <button class="btn-p" onclick="cancelFoodOrder()" style="border:none;cursor:pointer;background:rgba(212,32,43,.3);color:#D4202B;">Cancel Order</button>
+          <button class="btn-p" onclick="cancelFoodOrder()" style="border:none;cursor:pointer;background:rgba(212,32,43,.3);color:var(--red);">Cancel Order</button>
         </div>
       </div>
 

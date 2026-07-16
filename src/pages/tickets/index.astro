@@ -66,10 +66,13 @@ import Layout from '../../layouts/Layout.astro';
   .tpanel{display:none;}.tpanel.active{display:block;}
 
   .match-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
-  .mcard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:22px;cursor:pointer;transition:all .25s;position:relative;}
+  .mcard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:22px;cursor:pointer;user-select:none;transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;}
   .mcard:hover{border-color:var(--red);transform:translateY(-3px);}
-  .mcard.sel{border-color:var(--red);background:rgba(212,32,43,.08);}
+  .mcard.sel{border-color:var(--red);background:rgba(212,32,43,.1);box-shadow:0 0 0 3px rgba(212,32,43,.18),0 10px 24px -8px rgba(212,32,43,.35);animation:cardPop .3s ease;}
+  .mcard.sel::after{content:'✓';position:absolute;top:-10px;left:-10px;width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:badgeIn .25s ease;}
   .home-badge{position:absolute;top:12px;right:12px;background:var(--gold);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:2px;}
+  @keyframes cardPop{0%{transform:scale(.97);}60%{transform:scale(1.015);}100%{transform:scale(1);}}
+  @keyframes badgeIn{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
   .mcomp{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;}
   .mteams{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);letter-spacing:1px;margin-bottom:6px;}
   .mteams span{color:var(--red);}
@@ -77,8 +80,13 @@ import Layout from '../../layouts/Layout.astro';
   .mvenue{font-size:11px;color:rgba(255,255,255,.3);}
 
   .seat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px;}
-  .scard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:26px 18px;text-align:center;cursor:pointer;transition:all .25s;}
-  .scard:hover{border-color:var(--gold);}.scard.sel{border-color:var(--gold);background:rgba(245,184,0,.07);}
+  .scard{background:var(--d2);border:2px solid rgba(255,255,255,.07);border-radius:8px;padding:26px 18px;text-align:center;cursor:pointer;user-select:none;transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;}
+  .scard:hover{border-color:var(--gold);transform:translateY(-2px);}
+  .scard.sel{border-color:var(--gold);background:rgba(245,184,0,.1);box-shadow:0 0 0 3px rgba(245,184,0,.2),0 10px 24px -8px rgba(245,184,0,.4);animation:cardPop .3s ease;}
+  .scard.sel::after{content:'✓';position:absolute;top:-10px;right:-10px;width:26px;height:26px;border-radius:50%;background:var(--gold);color:var(--black);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:badgeIn .25s ease;}
+  .scard.pop{border-color:rgba(245,184,0,.35);}
+  .spop-tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;}
+  .stic{font-size:28px;margin-bottom:8px;}
   .stier{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:5px;}
   .stier.vip{color:var(--gold);}.stier.prem{color:#C0C0C0;}.stier.reg{color:rgba(255,255,255,.55);}
   .sprice{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--white);letter-spacing:1px;}
@@ -151,9 +159,9 @@ function selMatch(eventId, el){
   tM = `${ev.home_team} vs ${ev.away_team}`;
   tS = ''; tPKobo = 0;
   document.getElementById('seatCardsList').innerHTML = `
-    <div class="scard" onclick="selSeat('VIP',${ev.vip_price_kobo},this)"><div class="stier vip">VIP</div><div class="sprice">&#8358;<span>${(ev.vip_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Premium covered stand</div><div class="sperk">&#10022; Refreshments included</div><div class="sperk">&#10022; Priority entry</div></div>
-    <div class="scard" onclick="selSeat('Premium',${ev.premium_price_kobo},this)"><div class="stier prem">Premium</div><div class="sprice">&#8358;<span>${(ev.premium_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Covered stand</div><div class="sperk">&#10022; Good sightlines</div></div>
-    <div class="scard" onclick="selSeat('Regular',${ev.regular_price_kobo},this)"><div class="stier reg">Regular</div><div class="sprice">&#8358;<span>${(ev.regular_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; General admission</div><div class="sperk">&#10022; Open terrace</div></div>
+    <div class="scard" onclick="selSeat('VIP',${ev.vip_price_kobo},this)"><div class="stic">&#128081;</div><div class="stier vip">VIP</div><div class="sprice">&#8358;<span>${(ev.vip_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Premium covered stand</div><div class="sperk">&#10022; Refreshments included</div><div class="sperk">&#10022; Priority entry</div></div>
+    <div class="scard pop" onclick="selSeat('Premium',${ev.premium_price_kobo},this)"><div class="spop-tag">Most Popular</div><div class="stic">&#127903;</div><div class="stier prem">Premium</div><div class="sprice">&#8358;<span>${(ev.premium_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Covered stand</div><div class="sperk">&#10022; Good sightlines</div></div>
+    <div class="scard" onclick="selSeat('Regular',${ev.regular_price_kobo},this)"><div class="stic">&#127946;</div><div class="stier reg">Regular</div><div class="sprice">&#8358;<span>${(ev.regular_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; General admission</div><div class="sperk">&#10022; Open terrace</div></div>
   `;
   updSum();
 }
