@@ -38,7 +38,7 @@ import Layout from '../../layouts/Layout.astro';
         <div><div class="tsum-val" id="sumQty">&mdash;</div><div class="tsum-key">Tickets</div></div>
         <div><div class="tsum-val" id="sumTotal">&#8358; &mdash;</div><div class="tsum-key">Total</div></div>
       </div>
-      <div class="tnav"><button class="btn-back" onclick="goStep(1)">&larr; Back</button><button class="btn-p" onclick="goStep(3)">Continue &rarr;</button></div>
+      <div class="tnav"><button class="btn-back" onclick="goStep(1)">&larr; Back</button></div>
     </div>
 
     <div class="tpanel" id="tp3">
@@ -200,6 +200,10 @@ function selSeat(s, pKobo, el){
   el.classList.add('sel');
   tS = s; tPKobo = pKobo;
   updSum();
+  // Brief pause so the selected checkmark/highlight is visible before the
+  // page advances on its own -- picking a seat category is now enough to
+  // move on, no separate "Continue" click required for this step.
+  setTimeout(() => goStep(3), 400);
 }
 function chgQty(d){
   tQ = Math.max(1, Math.min(10, tQ + d));
