@@ -4,7 +4,7 @@
 import { TEAM_LOGOS } from './teamLogos.js';
 
 const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' };
-const TIER_BADGES = { VIP: '/images/vip-siting.jpg', Premium: '/images/cover-stand.jpg', Regular: '/images/popular-stand.jpg' };
+const TIER_BADGES = { VIP: '/images/vip-siting.png', Premium: '/images/cover-stand.png', Regular: '/images/popular-stand.png' };
 const SITE_ORIGIN = 'https://lobistarsfc.com';
 
 export async function sendEmail(env, { to, subject, html }) {
@@ -28,7 +28,7 @@ export async function sendEmail(env, { to, subject, html }) {
   return res.json();
 }
 
-export function ticketEmailHtml({ order, event, tickets, qrSvgDataUri }) {
+export function ticketEmailHtml({ order, event, tickets }) {
   const dateStr = new Date(event.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const timeStr = new Date(event.event_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   const tierLabel = TIER_LABELS[order.tier] || order.tier;
@@ -79,7 +79,7 @@ export function ticketEmailHtml({ order, event, tickets, qrSvgDataUri }) {
       <tr>
         <td style="background:rgba(255,255,255,.94);padding:20px;text-align:center;">
           <div style="color:#0d1a33;font-family:Arial,sans-serif;font-size:12px;letter-spacing:2px;font-weight:bold;margin-bottom:10px;">MATCH TICKET</div>
-          <img src="${qrSvgDataUri(`${SITE_ORIGIN}/verify/${t.id}`)}" width="150" height="150" alt="QR code for ticket ${t.id}" style="background:#fff;border:1px solid #e2e6ed;padding:6px;border-radius:6px;"/>
+          <img src="${SITE_ORIGIN}/api/qr/${t.id}" width="150" height="150" alt="QR code for ticket ${t.id}" style="background:#fff;border:1px solid #e2e6ed;padding:6px;border-radius:6px;"/>
           <div style="color:#5a6270;font-size:10px;line-height:1.5;margin:10px 0;">
             <strong style="display:block;color:#0d1a33;font-size:10px;letter-spacing:1px;text-transform:uppercase;">&#128274; Verify Ticket</strong>
             Scan the QR code to confirm this ticket is genuine.

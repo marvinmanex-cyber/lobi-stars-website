@@ -93,7 +93,7 @@ import Layout from '../../layouts/Layout.astro';
   .stier{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:5px;}
   .stier.vip{color:var(--gold);}.stier.prem{color:#C0C0C0;}.stier.reg{color:var(--lt);}
   .sprice{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--white);letter-spacing:1px;}
-  .sprice span{font-size:14px;color:var(--lt);}
+  .sprice span{font-size:32px;color:var(--white);}
   .sperk{font-size:12px;color:var(--lt);margin-top:5px;}
 
   .qty-ctrl{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
@@ -139,8 +139,8 @@ import Layout from '../../layouts/Layout.astro';
 
 <script is:inline>
 const TEAM_LOGOS = {
-  'Lobi Stars': '/images/hero-6.jpg',
-  'Kano Pillars': '/images/kano-pillars-logo.jpeg',
+  'Lobi Stars': '/images/lobi-stars-crest.png',
+  'Kano Pillars': '/images/kano-pillars-logo.png',
 };
 function teamBadge(name){
   const logo = TEAM_LOGOS[name];
@@ -189,9 +189,9 @@ function selMatch(eventId, el){
   tM = `${ev.home_team} vs ${ev.away_team}`;
   tS = ''; tPKobo = 0;
   document.getElementById('seatCardsList').innerHTML = `
-    <div class="scard" onclick="selSeat('VIP',${ev.vip_price_kobo},this)"><img class="stic-img" src="/images/vip-siting.jpg" alt="VIP Sitting"/><div class="stier vip">VIP Sitting</div><div class="sprice">&#8358;<span>${(ev.vip_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Premium covered stand</div><div class="sperk">&#10022; Refreshments included</div><div class="sperk">&#10022; Priority entry</div></div>
-    <div class="scard pop" onclick="selSeat('Premium',${ev.premium_price_kobo},this)"><div class="spop-tag">Most Popular</div><img class="stic-img" src="/images/cover-stand.jpg" alt="Cover Stand"/><div class="stier prem">Cover Stand</div><div class="sprice">&#8358;<span>${(ev.premium_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Covered stand</div><div class="sperk">&#10022; Good sightlines</div></div>
-    <div class="scard" onclick="selSeat('Regular',${ev.regular_price_kobo},this)"><img class="stic-img" src="/images/popular-stand.jpg" alt="Popular Stand"/><div class="stier reg">Popular Stand</div><div class="sprice">&#8358;<span>${(ev.regular_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; General admission</div><div class="sperk">&#10022; Open terrace</div></div>
+    <div class="scard" onclick="selSeat('VIP',${ev.vip_price_kobo},this)"><img class="stic-img" src="/images/vip-siting.png" alt="VIP Sitting"/><div class="stier vip">VIP Sitting</div><div class="sprice">&#8358;<span>${(ev.vip_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Premium covered stand</div><div class="sperk">&#10022; Refreshments included</div><div class="sperk">&#10022; Priority entry</div></div>
+    <div class="scard pop" onclick="selSeat('Premium',${ev.premium_price_kobo},this)"><div class="spop-tag">Most Popular</div><img class="stic-img" src="/images/cover-stand.png" alt="Cover Stand"/><div class="stier prem">Cover Stand</div><div class="sprice">&#8358;<span>${(ev.premium_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Covered stand</div><div class="sperk">&#10022; Good sightlines</div></div>
+    <div class="scard" onclick="selSeat('Regular',${ev.regular_price_kobo},this)"><img class="stic-img" src="/images/popular-stand.png" alt="Popular Stand"/><div class="stier reg">Popular Stand</div><div class="sprice">&#8358;<span>${(ev.regular_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; General admission</div><div class="sperk">&#10022; Open terrace</div></div>
   `;
   updSum();
 }

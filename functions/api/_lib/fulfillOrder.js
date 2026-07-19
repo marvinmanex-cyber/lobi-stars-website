@@ -1,6 +1,5 @@
 import { randomId } from './crypto.js';
 import { sendEmail, ticketEmailHtml } from './email.js';
-import { qrSvgDataUri } from './qrcode.js';
 
 // Marks an order paid and issues its tickets. Safe to call more than once
 // for the same order (e.g. from both the webhook and the success-page
@@ -43,7 +42,7 @@ export async function fulfillOrder(env, order, waitUntil) {
     sendEmail(env, {
       to: order.buyer_email,
       subject: `Your Lobi Stars tickets -- ${eventRow.home_team} vs ${eventRow.away_team}`,
-      html: ticketEmailHtml({ order, event: eventRow, tickets, qrSvgDataUri }),
+      html: ticketEmailHtml({ order, event: eventRow, tickets }),
     }).catch(err => console.error('Ticket email failed:', err));
 
   if (waitUntil) {

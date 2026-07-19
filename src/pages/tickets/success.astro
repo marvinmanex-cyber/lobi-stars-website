@@ -124,11 +124,11 @@ import Layout from '../../layouts/Layout.astro';
     }
 
     const TEAM_LOGOS = {
-      'Lobi Stars': '/images/hero-6.jpg',
-      'Kano Pillars': '/images/kano-pillars-logo.jpeg',
+      'Lobi Stars': '/images/lobi-stars-crest.png',
+      'Kano Pillars': '/images/kano-pillars-logo.png',
     };
     const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' };
-    const TIER_BADGES = { VIP: '/images/vip-siting.jpg', Premium: '/images/cover-stand.jpg', Regular: '/images/popular-stand.jpg' };
+    const TIER_BADGES = { VIP: '/images/vip-siting.png', Premium: '/images/cover-stand.png', Regular: '/images/popular-stand.png' };
     function crestImg(name) {
       const src = TEAM_LOGOS[name];
       return src
@@ -198,22 +198,46 @@ import Layout from '../../layouts/Layout.astro';
     };
     document.body.appendChild(qrScript);
 
-    const html2canvasScript = document.createElement('script');
-    html2canvasScript.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-    document.body.appendChild(html2canvasScript);
+    // Loaded lazily from a CDN, so the click handler below must wait for it
+    // rather than assume it's ready -- a fast tap on "Download Ticket" right
+    // after the page renders can otherwise fire before the script arrives,
+    // throwing before any .then/.catch exists to recover and leaving the
+    // button stuck on "Generating..." forever.
+    let html2canvasReady = null;
+    function loadHtml2Canvas() {
+      if (!html2canvasReady) {
+        html2canvasReady = new Promise((resolve, reject) => {
+          if (window.html2canvas) { resolve(window.html2canvas); return; }
+          const s = document.createElement('script');
+          s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+          s.onload = () => resolve(window.html2canvas);
+          s.onerror = () => reject(new Error('Could not load the ticket image generator.'));
+          document.body.appendChild(s);
+        });
+      }
+      return html2canvasReady;
+    }
+    loadHtml2Canvas().catch(() => {}); // start loading eagerly; errors surface on actual download attempts
 
-    window.downloadTicket = function (i) {
+    window.downloadTicket = async function (i) {
       const el = document.getElementById(`tix-card-${i}`);
       const btn = el.querySelector('.tix-download');
       const originalText = btn.textContent;
+      btn.disabled = true;
       btn.textContent = 'Generating...';
-      html2canvas(el, { backgroundColor: null, scale: 2 }).then(canvas => {
+      try {
+        const html2canvasFn = await loadHtml2Canvas();
+        const canvas = await html2canvasFn(el, { backgroundColor: null, scale: 2, useCORS: true });
         const link = document.createElement('a');
         link.download = `lobi-stars-ticket-${data.tickets[i]}.png`;
         link.href = canvas.toDataURL('image/png');
         link.click();
+      } catch (err) {
+        alert('Could not generate the ticket image. Please check your connection and try again, or take a screenshot of the ticket instead.');
+      } finally {
+        btn.disabled = false;
         btn.textContent = originalText;
-      }).catch(() => { btn.textContent = originalText; });
+      }
     };
   } catch (err) {
     loading.style.display = 'none';

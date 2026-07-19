@@ -4,8 +4,8 @@
 // -- keep all three in sync. Unmapped teams fall back to an initial-letter
 // circle in the UI.
 export const TEAM_LOGOS = {
-  'Lobi Stars': '/images/hero-6.jpg',
-  'Kano Pillars': '/images/kano-pillars-logo.jpeg',
+  'Lobi Stars': '/images/lobi-stars-crest.png',
+  'Kano Pillars': '/images/kano-pillars-logo.png',
 };
 
 export function teamLogo(name) {
