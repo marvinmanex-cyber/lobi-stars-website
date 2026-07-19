@@ -46,6 +46,7 @@ import Layout from '../../layouts/Layout.astro';
       <div style="max-width:580px;">
         <div class="form-row"><div class="form-grp"><label class="form-lbl">First Name</label><input type="text" class="form-inp" id="t-fn" placeholder="First name"/></div><div class="form-grp"><label class="form-lbl">Last Name</label><input type="text" class="form-inp" id="t-ln" placeholder="Last name"/></div></div>
         <div class="form-grp"><label class="form-lbl">Email Address</label><input type="email" class="form-inp" id="t-em" placeholder="you@example.com"/></div>
+        <div class="form-grp"><label class="form-lbl">Confirm Email Address</label><input type="email" class="form-inp" id="t-em2" placeholder="you@example.com" onpaste="return false" oncopy="return false" autocomplete="off"/></div>
         <div class="form-grp"><label class="form-lbl">Phone Number</label><input type="tel" class="form-inp" id="t-ph" placeholder="+234 800 000 0000"/></div>
       </div>
       <p id="tix-error" class="muted" style="display:none;color:var(--red);margin-top:10px;font-weight:600;"></p>
@@ -234,10 +235,12 @@ async function confirmBk(){
   const fn = document.getElementById('t-fn').value.trim();
   const ln = document.getElementById('t-ln').value.trim();
   const email = document.getElementById('t-em').value.trim();
+  const emailConfirm = document.getElementById('t-em2').value.trim();
   const phone = document.getElementById('t-ph').value.trim();
 
   if(!tEventId || !tS){ errEl.textContent = 'Please select a match and seat category.'; errEl.style.display = 'block'; return; }
-  if(!fn || !ln || !email || !phone){ errEl.textContent = 'Please fill in all of your details.'; errEl.style.display = 'block'; return; }
+  if(!fn || !ln || !email || !emailConfirm || !phone){ errEl.textContent = 'Please fill in all of your details.'; errEl.style.display = 'block'; return; }
+  if(email.toLowerCase() !== emailConfirm.toLowerCase()){ errEl.textContent = 'Your email addresses do not match. Please check and try again.'; errEl.style.display = 'block'; return; }
 
   btn.disabled = true; btn.textContent = 'Redirecting to payment...';
   try{
