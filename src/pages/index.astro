@@ -1797,19 +1797,19 @@ function openArchiveTab(evt, tabName) {
 <div class="fix-grid fade-in">
     <div>
       <div class="fix-col-title">Upcoming Fixtures</div>
-      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 28</span><span class="fix-date">Sat 24 May · 15:00</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-vs">VS</div><div class="fix-team a">Kano Pillars</div></div><div class="fix-venue">📍 Aper Aku Stadium, Makurdi</div></div>
+      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 28</span><span class="fix-date">Sat 24 May · 15:00</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-vs">VS</div><div class="fix-team a">Kano Pillars</div></div><div class="fix-venue">📍 McCarthy Stadium, Makurdi</div></div>
       <div id="moreUpcoming" style="display:none;">
         <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 29</span><span class="fix-date">Wed 28 May · 16:00</span></div><div class="fix-teams"><div class="fix-team h">Rivers United</div><div class="fix-vs">VS</div><div class="fix-team a">Lobi Stars</div></div><div class="fix-venue">📍 Adokiye Amiesimaka Stadium, PH</div></div>
-      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 30</span><span class="fix-date">Sun 1 Jun · 15:00</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-vs">VS</div><div class="fix-team a">Plateau United</div></div><div class="fix-venue">📍 Aper Aku Stadium, Makurdi</div></div>
+      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 30</span><span class="fix-date">Sun 1 Jun · 15:00</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-vs">VS</div><div class="fix-team a">Plateau United</div></div><div class="fix-venue">📍 McCarthy Stadium, Makurdi</div></div>
       </div>
       <button class="btn-o" id="upcomingBtn" data-label="View All Fixtures →" onclick="toggleFix('moreUpcoming','upcomingBtn')" style="width:100%;margin-top:8px;padding:10px;font-size:12px;">View All Fixtures →</button>
     </div>
     <div>
       <div class="fix-col-title">Recent Results</div>
-      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 27</span><span class="fix-date">Sat 17 May</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-score">2 – 0</div><div class="fix-team a">Enyimba FC</div></div><div class="fix-venue"><span class="rb w"></span> Win · Aper Aku Stadium</div></div>
+      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 27</span><span class="fix-date">Sat 17 May</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-score">2 – 0</div><div class="fix-team a">Enyimba FC</div></div><div class="fix-venue"><span class="rb w"></span> Win · McCarthy Stadium</div></div>
       <div id="moreResults" style="display:none;">
         <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 26</span><span class="fix-date">Tue 13 May</span></div><div class="fix-teams"><div class="fix-team h">Shooting Stars</div><div class="fix-score">1 – 1</div><div class="fix-team a">Lobi Stars</div></div><div class="fix-venue"><span class="rb d"></span> Draw · Lekan Salami Stadium</div></div>
-      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 25</span><span class="fix-date">Sat 10 May</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-score">3 – 1</div><div class="fix-team a">Heartland FC</div></div><div class="fix-venue"><span class="rb w"></span> Win · Aper Aku Stadium</div></div>
+      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 25</span><span class="fix-date">Sat 10 May</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-score">3 – 1</div><div class="fix-team a">Heartland FC</div></div><div class="fix-venue"><span class="rb w"></span> Win · McCarthy Stadium</div></div>
       </div>
       <button class="btn-o" id="resultsBtn" data-label="View All Results →" onclick="toggleFix('moreResults','resultsBtn')" style="width:100%;margin-top:8px;padding:10px;font-size:12px;">View All Results →</button>
     </div>
@@ -1966,6 +1966,7 @@ function openArchiveTab(evt, tabName) {
                 </div>
                 <div class="vs-circ">VS</div>
                 <div class="t-col">
+                    <img class="t-logo" id="nextMatchAwayLogo" style="display:none;" alt="">
                     <div class="t-logo" style="display:flex;align-items:center;justify-content:center;background:#eee;border-radius:50%;font-family:'Bebas Neue',sans-serif;font-size:22px;color:#666;" id="nextMatchAwayInitial">?</div>
                     <p style="font-size:13px; font-weight:700; color:#111; margin-top:8px;" id="nextMatchAwayName">&mdash;</p>
                 </div>
@@ -1980,6 +1981,10 @@ function openArchiveTab(evt, tabName) {
 </section>
 
 <script is:inline>
+    const TEAM_LOGOS = {
+      'Lobi Stars': '/images/hero-6.jpg',
+      'Kano Pillars': '/images/kano-pillars-logo.jpeg',
+    };
     let matchHubTimer;
     async function loadNextMatch() {
         try {
@@ -1989,7 +1994,19 @@ function openArchiveTab(evt, tabName) {
             const next = events[0];
             if (!next) return; // no upcoming matches -- leave the hub hidden
 
-            document.getElementById('nextMatchAwayInitial').textContent = next.away_team.charAt(0);
+            const awayLogo = TEAM_LOGOS[next.away_team];
+            const logoImg = document.getElementById('nextMatchAwayLogo');
+            const logoFallback = document.getElementById('nextMatchAwayInitial');
+            if (awayLogo) {
+                logoImg.src = awayLogo;
+                logoImg.alt = next.away_team;
+                logoImg.style.display = '';
+                logoFallback.style.display = 'none';
+            } else {
+                logoImg.style.display = 'none';
+                logoFallback.style.display = '';
+                logoFallback.textContent = next.away_team.charAt(0);
+            }
             document.getElementById('nextMatchAwayName').textContent = next.away_team.toUpperCase();
             document.getElementById('nextMatchVenue').textContent = next.venue;
             document.getElementById('nextMatchTicketLink').href = `/tickets?event=${encodeURIComponent(next.id)}`;
@@ -1997,7 +2014,7 @@ function openArchiveTab(evt, tabName) {
             const d = new Date(next.event_date);
             document.getElementById('nextMatchDate').textContent =
                 d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'}) +
-                ' • ' + d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+                ' • ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
 
             document.getElementById('nextMatchHub').style.display = '';
             startTimer(d.getTime());
@@ -2240,7 +2257,7 @@ function openArchiveTab(evt, tabName) {
       <p>Are you a talented footballer aged 12–20? Lobi Stars Academy invites you to showcase your talent at our annual open trials. All positions open. Entry is free.</p>
       <div class="trials-grid">
         <div><div class="tg-val">July 2025</div><div class="tg-key">Date</div></div>
-        <div><div class="tg-val">Aper Aku</div><div class="tg-key">Venue</div></div>
+        <div><div class="tg-val">McCarthy</div><div class="tg-key">Venue</div></div>
         <div><div class="tg-val">8:00 AM</div><div class="tg-key">Time</div></div>
         <div><div class="tg-val">Free</div><div class="tg-key">Entry</div></div>
       </div>
@@ -2705,7 +2722,7 @@ function openArchiveTab(evt, tabName) {
         <ul class="footer-links">
           <li><a href="#">Club History</a></li>
           <li><a href="#">Management</a></li>
-          <li><a href="#">Aper Aku Stadium</a></li>
+          <li><a href="#">McCarthy Stadium</a></li>
           <li><a href="#">Youth Academy</a></li>
         </ul>
       </div>
@@ -3196,7 +3213,7 @@ function resetMem(){
 // ── BLOG ──
 // ── BLOG (FULL VERSION) ──
 const defaultArts = [
-  {id:1,title:'Stars Demolish Enyimba 2–0 in Commanding Home Display',cat:'Match Report',date:'17 May 2025',excerpt:'A brilliant first-half brace sealed all three points at Aper Aku Stadium...',body:'<p>Full match report details...</p>',img:'images/news-1.jpg',color:'linear-gradient(135deg,#3a0008,#0a0a0a)'},
+  {id:1,title:'Stars Demolish Enyimba 2–0 in Commanding Home Display',cat:'Match Report',date:'17 May 2025',excerpt:'A brilliant first-half brace sealed all three points at McCarthy Stadium...',body:'<p>Full match report details...</p>',img:'images/news-1.jpg',color:'linear-gradient(135deg,#3a0008,#0a0a0a)'},
   {id:2,title:'Club Confirms Signing of Promising Midfielder',cat:'Transfers',date:'14 May 2025',excerpt:'Lobi Stars have moved quickly in the market to bolster their options...',body:'<p>Transfer news details...</p>',img:'images/news-2.jpg',color:'linear-gradient(135deg,#001a00,#0a0a0a)'},
   {id:3,title:'Chairman Outlines Ambitious Vision for 2025/26 Season',cat:'Club News',date:'10 May 2025',excerpt:'The club leadership has set its sights on a title challenge next season.',body:'<p>Vision details...</p>',img:'images/news-3.jpg',color:'linear-gradient(135deg,#1a1000,#0a0a0a)'},
   {id:4,title:'Academy Stars Shine at North-Central Youth Tournament',cat:'Academy',date:'5 May 2025',excerpt:'Lobi Stars Academy players put in standout performances in Jos.',body:'<p>Academy details...</p>',img:'images/news-1.jpg',color:'linear-gradient(135deg,#001a00,#0a0a0a)'},

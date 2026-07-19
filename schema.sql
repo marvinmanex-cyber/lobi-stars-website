@@ -78,5 +78,5 @@ CREATE INDEX IF NOT EXISTS idx_tickets_event ON tickets(event_id);
 -- All tiers priced at 100 naira (10000 kobo) for now -- easy to raise once
 -- real pricing is decided; see DEPLOYMENT.md for the live-database update.
 INSERT OR IGNORE INTO events (id, home_team, away_team, competition, event_date, venue, vip_price_kobo, premium_price_kobo, regular_price_kobo, active) VALUES
-  ('evt-sample-1', 'Lobi Stars', 'Kano Pillars', 'NPFL', '2026-08-15T15:00:00Z', 'Aper Aku Stadium, Makurdi', 10000, 10000, 10000, 1),
-  ('evt-sample-2', 'Lobi Stars', 'Plateau United', 'NPFL', '2026-08-29T15:00:00Z', 'Aper Aku Stadium, Makurdi', 10000, 10000, 10000, 1);
+  ('evt-sample-1', 'Lobi Stars', 'Kano Pillars', 'NPFL', '2026-08-15T15:00:00Z', 'McCarthy Stadium, Makurdi', 10000, 10000, 10000, 1),
+  ('evt-sample-2', 'Lobi Stars', 'Plateau United', 'NPFL', '2026-08-29T15:00:00Z', 'McCarthy Stadium, Makurdi', 10000, 10000, 10000, 1);

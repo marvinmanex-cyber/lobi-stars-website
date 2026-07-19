@@ -34,32 +34,35 @@ import Layout from '../../layouts/Layout.astro';
 
 <style is:global>
   .tix-card{
-    display:flex;background:linear-gradient(135deg,#7a0f14,#3a0708);
+    display:flex;background:linear-gradient(160deg,#0d1a33,#0a1226);
     border-radius:14px;overflow:hidden;margin-bottom:22px;
     box-shadow:0 16px 40px -12px rgba(0,0,0,.5);
-    border:2px solid var(--gold);
+    border:2px solid #C9A227;
   }
-  .tix-main{flex:1;padding:24px 22px;color:#fff;position:relative;min-width:0;}
+  .tix-main{flex:1;padding:22px 22px 18px;color:#fff;position:relative;min-width:0;}
   .tix-main::after{
-    content:'';position:absolute;inset:6px;border:1px solid rgba(255,199,44,.35);
+    content:'';position:absolute;inset:6px;border:1px solid rgba(201,162,39,.35);
     border-radius:8px;pointer-events:none;
   }
-  .tix-brand{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
-  .tix-brand img{width:34px;height:34px;border-radius:50%;border:1.5px solid var(--gold);background:#fff;}
-  .tix-brand-name{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--gold);}
-  .tix-tagline{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:14px;}
-  .tix-teams{font-family:'Bebas Neue',sans-serif;font-size:clamp(22px,5vw,30px);line-height:1.05;letter-spacing:1px;margin-bottom:12px;text-wrap:balance;}
-  .tix-teams .vs{color:var(--gold);font-size:14px;margin:0 6px;}
-  .tix-meta{font-size:13px;line-height:1.7;color:rgba(255,255,255,.85);margin-bottom:14px;}
-  .tix-meta strong{color:#fff;}
-  .tix-id{font-family:ui-monospace,monospace;font-size:12px;letter-spacing:.5px;color:rgba(255,255,255,.6);}
+  .tix-league{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.55);text-align:center;margin-bottom:4px;}
+  .tix-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#C9A227;text-align:center;margin-bottom:16px;}
+  .tix-crests{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:10px;}
+  .tix-crests img{width:52px;height:52px;object-fit:contain;background:#fff;border-radius:50%;padding:4px;}
+  .tix-vs{font-family:'Bebas Neue',sans-serif;font-size:16px;color:#C9A227;}
+  .tix-teams{font-family:'Bebas Neue',sans-serif;font-size:clamp(18px,4.5vw,24px);line-height:1.1;letter-spacing:1px;margin-bottom:14px;text-align:center;text-wrap:balance;}
+  .tix-teams .vs{color:#C9A227;font-size:13px;margin:0 6px;}
+  .tix-infobar{background:rgba(255,255,255,.92);border-radius:8px;padding:12px 14px;margin-bottom:12px;display:flex;justify-content:space-around;gap:8px;flex-wrap:wrap;text-align:center;}
+  .tix-infobar div{flex:1;min-width:90px;}
+  .tix-infobar .k{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#5a6270;margin-bottom:3px;}
+  .tix-infobar .v{font-family:'Barlow',sans-serif;font-weight:700;font-size:12px;color:#0d1a33;}
+  .tix-id{font-family:ui-monospace,monospace;font-size:11px;letter-spacing:.5px;color:rgba(255,255,255,.5);text-align:center;}
   .tix-stub{
-    width:150px;flex-shrink:0;background:rgba(0,0,0,.22);padding:22px 16px;
+    width:160px;flex-shrink:0;background:rgba(255,255,255,.94);color:#0d1a33;padding:18px 14px;
     display:flex;flex-direction:column;align-items:center;text-align:center;
     position:relative;
   }
   .tix-perf{
-    width:1px;position:relative;background:repeating-linear-gradient(to bottom,rgba(255,199,44,.5) 0 6px,transparent 6px 12px);
+    width:1px;position:relative;background:repeating-linear-gradient(to bottom,rgba(201,162,39,.6) 0 6px,transparent 6px 12px);
   }
   .tix-perf::before,.tix-perf::after{
     content:'';position:absolute;left:50%;transform:translateX(-50%);width:16px;height:16px;
@@ -67,21 +70,26 @@ import Layout from '../../layouts/Layout.astro';
   }
   .tix-perf::before{top:-8px;}
   .tix-perf::after{bottom:-8px;}
-  .tix-admit{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--gold);margin-bottom:10px;}
-  .tix-qr{background:#fff;padding:8px;border-radius:6px;margin-bottom:10px;}
-  .tix-qr svg{display:block;width:110px;height:110px;}
-  .tix-tier{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff;margin-bottom:2px;}
-  .tix-price{font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gold);}
+  .tix-stub-label{font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:2px;color:#0d1a33;margin-bottom:10px;}
+  .tix-qr{background:#fff;padding:6px;border:1px solid #e2e6ed;border-radius:6px;margin-bottom:8px;}
+  .tix-qr svg{display:block;width:100px;height:100px;}
+  .tix-verify{font-size:9px;color:#5a6270;line-height:1.5;margin-bottom:12px;}
+  .tix-verify strong{display:block;color:#0d1a33;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:2px;}
+  .tix-tier-badge{width:44px;height:44px;object-fit:contain;margin-bottom:4px;}
+  .tix-tier{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#0d1a33;margin-bottom:2px;}
+  .tix-price{font-family:'Bebas Neue',sans-serif;font-size:18px;color:#0d1a33;margin-bottom:10px;}
+  .tix-barcode{width:100%;height:28px;background:repeating-linear-gradient(90deg,#0d1a33 0,#0d1a33 2px,transparent 2px,transparent 4px,#0d1a33 4px,#0d1a33 5px,transparent 5px,transparent 8px);margin-bottom:4px;}
+  .tix-bcid{font-family:ui-monospace,monospace;font-size:8px;letter-spacing:1px;color:#5a6270;margin-bottom:12px;word-break:break-all;}
   .tix-download{
-    margin-top:12px;background:rgba(255,199,44,.15);border:1px solid var(--gold);color:var(--gold);
+    background:#0d1a33;border:1px solid #0d1a33;color:#C9A227;
     font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
     padding:8px 14px;border-radius:5px;cursor:pointer;width:100%;
   }
-  .tix-download:hover{background:var(--gold);color:#1a0a00;}
+  .tix-download:hover{background:#C9A227;color:#0d1a33;border-color:#C9A227;}
   @media(max-width:520px){
     .tix-card{flex-direction:column;}
     .tix-stub{width:100%;flex-direction:row;flex-wrap:wrap;justify-content:center;padding:18px;}
-    .tix-perf{width:100%;height:1px;background:repeating-linear-gradient(to right,rgba(255,199,44,.5) 0 6px,transparent 6px 12px);}
+    .tix-perf{width:100%;height:1px;background:repeating-linear-gradient(to right,rgba(201,162,39,.6) 0 6px,transparent 6px 12px);}
     .tix-perf::before,.tix-perf::after{top:50%;transform:translateY(-50%);}
     .tix-perf::before{left:-8px;}
     .tix-perf::after{left:auto;right:-8px;}
@@ -115,14 +123,29 @@ import Layout from '../../layouts/Layout.astro';
       return;
     }
 
+    const TEAM_LOGOS = {
+      'Lobi Stars': '/images/hero-6.jpg',
+      'Kano Pillars': '/images/kano-pillars-logo.jpeg',
+    };
+    const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' };
+    const TIER_BADGES = { VIP: '/images/vip-siting.jpg', Premium: '/images/cover-stand.jpg', Regular: '/images/popular-stand.jpg' };
+    function crestImg(name) {
+      const src = TEAM_LOGOS[name];
+      return src
+        ? `<img src="${src}" alt="${name}"/>`
+        : `<div style="width:52px;height:52px;border-radius:50%;background:#1e2f52;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:20px;">${name.charAt(0)}</div>`;
+    }
+
     const ev = data.event;
     const dateObj = new Date(ev.event_date);
     const dateStr = dateObj.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-    const timeStr = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const timeStr = dateObj.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    const tierLabel = TIER_LABELS[data.order.tier] || data.order.tier;
+    const tierBadge = TIER_BADGES[data.order.tier];
     const tierPriceKobo = data.order.totalKobo / data.order.quantity;
 
     document.getElementById('summary').textContent =
-      `${ev.home_team} vs ${ev.away_team} — ${data.order.tier} × ${data.order.quantity} — Order ${data.order.id}`;
+      `${ev.home_team} vs ${ev.away_team} — ${tierLabel} × ${data.order.quantity} — Order ${data.order.id}`;
 
     const list = document.getElementById('ticket-list');
     data.tickets.forEach((ticketId, i) => {
@@ -131,22 +154,27 @@ import Layout from '../../layouts/Layout.astro';
       card.id = `tix-card-${i}`;
       card.innerHTML = `
         <div class="tix-main">
-          <div class="tix-brand"><img src="/images/hero-6.jpg" alt="Lobi Stars Badge"/><span class="tix-brand-name">LOBI STARS FOOTBALL CLUB</span></div>
-          <div class="tix-tagline">Glory to Glory</div>
+          <div class="tix-league">Nigeria Professional Football League</div>
+          <div class="tix-title">Official Match Ticket</div>
+          <div class="tix-crests">${crestImg(ev.home_team)}<span class="tix-vs">VS</span>${crestImg(ev.away_team)}</div>
           <div class="tix-teams">${ev.home_team}<span class="vs">VS</span>${ev.away_team}</div>
-          <div class="tix-meta">
-            <strong>${dateStr}</strong><br/>
-            Kick-off: <strong>${timeStr}</strong><br/>
-            Venue: <strong>${ev.venue}</strong>
+          <div class="tix-infobar">
+            <div><div class="k">Date</div><div class="v">${dateStr}</div></div>
+            <div><div class="k">Kick-off</div><div class="v">${timeStr}</div></div>
+            <div><div class="k">Venue</div><div class="v">${ev.venue}</div></div>
           </div>
           <div class="tix-id">TICKET NO: ${ticketId}</div>
         </div>
         <div class="tix-perf"></div>
         <div class="tix-stub">
-          <div class="tix-admit">ADMIT ONE</div>
+          <div class="tix-stub-label">MATCH TICKET</div>
           <div class="tix-qr" id="qr-${i}"></div>
-          <div class="tix-tier">${data.order.tier}</div>
+          <div class="tix-verify"><strong>&#128274; Verify Ticket</strong>Scan the QR code to confirm this ticket is genuine.</div>
+          ${tierBadge ? `<img class="tix-tier-badge" src="${tierBadge}" alt="${tierLabel}"/>` : ''}
+          <div class="tix-tier">${tierLabel}</div>
           <div class="tix-price">&#8358;${(tierPriceKobo / 100).toLocaleString()}</div>
+          <div class="tix-barcode"></div>
+          <div class="tix-bcid">${ticketId}</div>
           <button class="tix-download" onclick="downloadTicket(${i})">&#8681; Download Ticket</button>
         </div>
       `;
@@ -163,7 +191,7 @@ import Layout from '../../layouts/Layout.astro';
     qrScript.onload = () => {
       data.tickets.forEach((ticketId, i) => {
         const qr = qrcode(0, 'M');
-        qr.addData(ticketId);
+        qr.addData(`${location.origin}/verify/${ticketId}`);
         qr.make();
         document.getElementById(`qr-${i}`).innerHTML = qr.createSvgTag({ scalable: true });
       });

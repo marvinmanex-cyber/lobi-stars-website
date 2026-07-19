@@ -74,7 +74,10 @@ import Layout from '../../layouts/Layout.astro';
   @keyframes cardPop{0%{transform:scale(.97);}60%{transform:scale(1.015);}100%{transform:scale(1);}}
   @keyframes badgeIn{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
   .mcomp{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--lt);margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;}
-  .mteams{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--white);letter-spacing:1px;margin-bottom:6px;}
+  .mteams-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .mteam-logo{width:32px;height:32px;object-fit:contain;flex-shrink:0;}
+  .mteam-fallback{display:flex;align-items:center;justify-content:center;background:var(--d3);border-radius:50%;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--lt);}
+  .mteams{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);letter-spacing:1px;flex:1;min-width:0;}
   .mteams span{color:var(--red);}
   .mdate{font-size:12px;color:var(--lt);margin-bottom:3px;}
   .mvenue{font-size:11px;color:var(--lt);}
@@ -86,7 +89,7 @@ import Layout from '../../layouts/Layout.astro';
   .scard.sel::after{content:'✓';position:absolute;top:-10px;right:-10px;width:26px;height:26px;border-radius:50%;background:var(--gold);color:var(--black);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:badgeIn .25s ease;}
   .scard.pop{border-color:rgba(245,184,0,.35);}
   .spop-tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;}
-  .stic{font-size:28px;margin-bottom:8px;}
+  .stic-img{width:64px;height:64px;object-fit:contain;margin-bottom:8px;}
   .stier{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:5px;}
   .stier.vip{color:var(--gold);}.stier.prem{color:#C0C0C0;}.stier.reg{color:var(--lt);}
   .sprice{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--white);letter-spacing:1px;}
@@ -135,6 +138,17 @@ import Layout from '../../layouts/Layout.astro';
 </style>
 
 <script is:inline>
+const TEAM_LOGOS = {
+  'Lobi Stars': '/images/hero-6.jpg',
+  'Kano Pillars': '/images/kano-pillars-logo.jpeg',
+};
+function teamBadge(name){
+  const logo = TEAM_LOGOS[name];
+  return logo
+    ? `<img src="${logo}" alt="${name}" class="mteam-logo"/>`
+    : `<span class="mteam-logo mteam-fallback">${name.charAt(0)}</span>`;
+}
+
 let ticketEvents = [], tEventId = '', tM = '', tS = '', tPKobo = 0, tQ = 1;
 const preselectEventId = new URLSearchParams(window.location.search).get('event');
 
@@ -151,8 +165,8 @@ async function loadTicketEvents(){
     list.innerHTML = ticketEvents.map(ev => {
       const d = new Date(ev.event_date);
       const dateStr = d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-      const timeStr = d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
-      return `<div class="mcard" data-event-id="${ev.id}" onclick="selMatch('${ev.id}',this)"><span class="home-badge">HOME</span><div class="mcomp">${ev.competition}</div><div class="mteams"><span>${ev.home_team}</span> vs ${ev.away_team}</div><div class="mdate">${dateStr} &middot; ${timeStr}</div><div class="mvenue">&#128205; ${ev.venue}</div></div>`;
+      const timeStr = d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
+      return `<div class="mcard" data-event-id="${ev.id}" onclick="selMatch('${ev.id}',this)"><span class="home-badge">HOME</span><div class="mcomp">${ev.competition}</div><div class="mteams-row">${teamBadge(ev.home_team)}<div class="mteams"><span>${ev.home_team}</span> vs ${ev.away_team}</div>${teamBadge(ev.away_team)}</div><div class="mdate">${dateStr} &middot; ${timeStr}</div><div class="mvenue">&#128205; ${ev.venue}</div></div>`;
     }).join('');
 
     if(preselectEventId && ticketEvents.some(e => e.id === preselectEventId)){
@@ -175,9 +189,9 @@ function selMatch(eventId, el){
   tM = `${ev.home_team} vs ${ev.away_team}`;
   tS = ''; tPKobo = 0;
   document.getElementById('seatCardsList').innerHTML = `
-    <div class="scard" onclick="selSeat('VIP',${ev.vip_price_kobo},this)"><div class="stic">&#128081;</div><div class="stier vip">VIP</div><div class="sprice">&#8358;<span>${(ev.vip_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Premium covered stand</div><div class="sperk">&#10022; Refreshments included</div><div class="sperk">&#10022; Priority entry</div></div>
-    <div class="scard pop" onclick="selSeat('Premium',${ev.premium_price_kobo},this)"><div class="spop-tag">Most Popular</div><div class="stic">&#127903;</div><div class="stier prem">Premium</div><div class="sprice">&#8358;<span>${(ev.premium_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Covered stand</div><div class="sperk">&#10022; Good sightlines</div></div>
-    <div class="scard" onclick="selSeat('Regular',${ev.regular_price_kobo},this)"><div class="stic">&#127946;</div><div class="stier reg">Regular</div><div class="sprice">&#8358;<span>${(ev.regular_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; General admission</div><div class="sperk">&#10022; Open terrace</div></div>
+    <div class="scard" onclick="selSeat('VIP',${ev.vip_price_kobo},this)"><img class="stic-img" src="/images/vip-siting.jpg" alt="VIP Sitting"/><div class="stier vip">VIP Sitting</div><div class="sprice">&#8358;<span>${(ev.vip_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Premium covered stand</div><div class="sperk">&#10022; Refreshments included</div><div class="sperk">&#10022; Priority entry</div></div>
+    <div class="scard pop" onclick="selSeat('Premium',${ev.premium_price_kobo},this)"><div class="spop-tag">Most Popular</div><img class="stic-img" src="/images/cover-stand.jpg" alt="Cover Stand"/><div class="stier prem">Cover Stand</div><div class="sprice">&#8358;<span>${(ev.premium_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Covered stand</div><div class="sperk">&#10022; Good sightlines</div></div>
+    <div class="scard" onclick="selSeat('Regular',${ev.regular_price_kobo},this)"><img class="stic-img" src="/images/popular-stand.jpg" alt="Popular Stand"/><div class="stier reg">Popular Stand</div><div class="sprice">&#8358;<span>${(ev.regular_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; General admission</div><div class="sperk">&#10022; Open terrace</div></div>
   `;
   updSum();
 }
@@ -192,9 +206,10 @@ function chgQty(d){
   document.getElementById('qtyNum').textContent = tQ;
   updSum();
 }
+const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' };
 function updSum(){
   document.getElementById('sumMatch').textContent = tM || '—';
-  document.getElementById('sumSeat').textContent = tS || '—';
+  document.getElementById('sumSeat').textContent = tS ? TIER_LABELS[tS] : '—';
   document.getElementById('sumQty').textContent = tQ;
   document.getElementById('sumTotal').textContent = tPKobo ? '₦' + ((tPKobo/100) * tQ).toLocaleString() : '₦ —';
 }

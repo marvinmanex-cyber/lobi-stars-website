@@ -69,7 +69,18 @@ import Layout from '../layouts/Layout.astro';
     scanUi.style.display = 'block';
   }
 
-  async function validateTicket(ticketId) {
+  async function validateTicket(rawInput) {
+    // The QR now encodes a public verify URL (https://lobistarsfc.com/verify/<id>)
+    // so a normal phone camera shows something meaningful, not a bare code --
+    // pull the ticket ID back out of it here. Manual typing and physical
+    // barcode scanners still send the bare ID directly, unaffected.
+    let ticketId = rawInput;
+    if (/^https?:\/\//i.test(rawInput)) {
+      try {
+        const parts = new URL(rawInput).pathname.split('/').filter(Boolean);
+        ticketId = parts[parts.length - 1] || rawInput;
+      } catch { /* fall through and try the raw input as-is */ }
+    }
     ticketInput.value = '';
     result.style.display = 'block';
     resultIcon.textContent = '⏳';
