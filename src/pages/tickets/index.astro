@@ -107,8 +107,8 @@ import Layout from '../../layouts/Layout.astro';
   .tsum-val{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--gold);}
   .tsum-key{font-size:10px;color:var(--lt);letter-spacing:1px;margin-top:2px;text-transform:uppercase;}
   .tnav{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;}
-  .btn-back{background:transparent;border:1.5px solid rgba(255,255,255,.2);color:var(--lt);padding:12px 26px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
-  .btn-back:hover{border-color:var(--white);color:var(--white);}
+  .btn-back{background:transparent;border:1.5px solid var(--red);color:var(--red);padding:12px 26px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+  .btn-back:hover{background:var(--red);color:#fff;}
 
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
   .form-grp{margin-bottom:18px;}
@@ -130,12 +130,10 @@ import Layout from '../../layouts/Layout.astro';
   body.light-mode .mcard,
   body.light-mode .scard,
   body.light-mode .qty-btn,
-  body.light-mode .btn-back,
   body.light-mode .form-inp{
     border-color: rgba(0,0,0,.12);
   }
   body.light-mode .tconn{ background: rgba(0,0,0,.12); }
-  body.light-mode .btn-back:hover{ border-color: var(--white); }
 </style>
 
 <script is:inline>
