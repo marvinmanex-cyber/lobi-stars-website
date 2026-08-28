@@ -2,3 +2,9 @@ _originals_backup/
 node_modules/
 dist/
 .astro/
+
+# Word temp lock files
+~$*
+
+# Local dev secrets (Wrangler)
+.dev.vars

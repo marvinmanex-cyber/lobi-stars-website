@@ -529,6 +529,8 @@ table.st tr.hl td{color:var(--gold);background:rgba(245,184,0,.06);}
 table.st tr:hover td{background:rgba(255,255,255,.03);}
 .pb{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.1);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
 .pb.top{background:rgba(76,175,80,.25);color:#4CAF50;}
+.club-cell{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;}
+.club-badge{width:26px;height:26px;flex-shrink:0;border-radius:50%;object-fit:contain;background:#fff;padding:2px;box-shadow:0 0 0 1px rgba(0,0,0,.08);}
 
 /* TICKETS (lightweight teaser -- the full booking flow lives on /tickets) */
 #tickets{background:var(--black);}
@@ -1983,7 +1985,16 @@ function openArchiveTab(evt, tabName) {
 <script is:inline>
     const TEAM_LOGOS = {
       'Lobi Stars': '/images/lobi-stars-crest.png',
+      'Lobi Stars FC': '/images/lobi-stars-fc.jpg',
       'Kano Pillars': '/images/kano-pillars-logo.png',
+      'ABS FC': '/images/abs-illorin.jpg',
+      'Bichi First FC': '/images/bichi-first.jpg',
+      'Kada Warriors FC': '/images/kadawarriors-kaduna.jpg',
+      'Mighty Jets': '/images/mighty-jets-jos.jpg',
+      'Mighty Jets Feeder / Bida Lions': '/images/mighty-jets-jos.jpg',
+      'Sokoto United FC': '/images/sokoto-united.jpg',
+      'Wikki Tourists FC': '/images/wikki-tourists.jpg',
+      'Yobe Desert Stars FC': '/images/yobe-desert-stars.jpg',
     };
     let matchHubTimer;
     async function loadNextMatch() {
@@ -2046,8 +2057,8 @@ function openArchiveTab(evt, tabName) {
   <div style="max-width: 1200px; margin: 0 auto; padding: 0 5%;">
     
     <div class="fade-in">
-      <div class="stag">Current Ranking</div>
-      <h3 class="stitle" style="font-size:36px;">League <span class="r">Table</span></h3>
+      <div class="stag">2026/27 NNL Season</div>
+      <h3 class="stitle" style="font-size:36px;">Conference D <span class="r">Table</span></h3>
       <div class="divr" style="margin-bottom:30px;"></div>
     </div>
 
@@ -2068,16 +2079,18 @@ function openArchiveTab(evt, tabName) {
           </tr>
         </thead>
         <tbody>
-          <tr><td><span class="pb top">1</span></td><td>Rivers United</td><td>27</td><td>18</td><td>5</td><td>4</td><td>48</td><td>20</td><td>+28</td><td><strong>59</strong></td></tr>
-          <tr><td><span class="pb top">2</span></td><td>Remo Stars</td><td>27</td><td>16</td><td>6</td><td>5</td><td>42</td><td>24</td><td>+18</td><td><strong>54</strong></td></tr>
-          <tr><td><span class="pb top">3</span></td><td>Sunshine Stars</td><td>27</td><td>14</td><td>7</td><td>6</td><td>38</td><td>28</td><td>+10</td><td><strong>49</strong></td></tr>
+          <tr><td><span class="pb">1</span></td><td><span class="club-cell"><img src="/images/abs-illorin.jpg" alt="ABS FC" class="club-badge"/>ABS FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
+          <tr><td><span class="pb">2</span></td><td><span class="club-cell"><img src="/images/bichi-first.jpg" alt="Bichi First FC" class="club-badge"/>Bichi First FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
+          <tr><td><span class="pb">3</span></td><td><span class="club-cell"><img src="/images/kadawarriors-kaduna.jpg" alt="Kada Warriors FC" class="club-badge"/>Kada Warriors FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
           <!-- LOBI STARS HIGHLIGHT -->
           <tr class="hl" style="background: rgba(245, 184, 0, 0.1);">
             <td><span class="pb">4</span></td>
-            <td style="color: var(--gold); font-weight: 700;">⭐ Lobi Stars</td>
-            <td>27</td><td>13</td><td>6</td><td>8</td><td>35</td><td>29</td><td>+6</td><td><strong>45</strong></td></tr>
-          <tr><td><span class="pb">5</span></td><td>Kano Pillars</td><td>27</td><td>12</td><td>7</td><td>8</td><td>32</td><td>27</td><td>+5</td><td><strong>43</strong></td></tr>
-          <tr><td><span class="pb">6</span></td><td>Enyimba FC</td><td>27</td><td>11</td><td>8</td><td>8</td><td>33</td><td>31</td><td>+2</td><td><strong>41</strong></td></tr>
+            <td style="color: var(--gold); font-weight: 700;"><span class="club-cell"><img src="/images/lobi-stars-fc.jpg" alt="Lobi Stars FC" class="club-badge"/>⭐ Lobi Stars FC</span></td>
+            <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
+          <tr><td><span class="pb">5</span></td><td><span class="club-cell"><img src="/images/mighty-jets-jos.jpg" alt="Mighty Jets" class="club-badge"/>Mighty Jets Feeder / Bida Lions</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
+          <tr><td><span class="pb">6</span></td><td><span class="club-cell"><img src="/images/sokoto-united.jpg" alt="Sokoto United FC" class="club-badge"/>Sokoto United FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
+          <tr><td><span class="pb">7</span></td><td><span class="club-cell"><img src="/images/wikki-tourists.jpg" alt="Wikki Tourists FC" class="club-badge"/>Wikki Tourists FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
+          <tr><td><span class="pb">8</span></td><td><span class="club-cell"><img src="/images/yobe-desert-stars.jpg" alt="Yobe Desert Stars FC" class="club-badge"/>Yobe Desert Stars FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
         </tbody>
       </table>
     </div>
