@@ -2,89 +2,174 @@
 import Layout from '../../layouts/Layout.astro';
 ---
 <Layout title="Manage Matches | Lobi Stars Admin">
-  <div class="wrap" style="max-width:1000px;padding-top:120px;padding-bottom:80px;min-height:75vh;">
-    <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:13px;margin-bottom:20px;">
-      <a href="/" style="color:var(--gold);text-decoration:none;">&larr; Back to site</a>
-      <a href="/admin/" style="color:var(--lt);text-decoration:none;">Content CMS</a>
-      <a href="/admin/analytics" style="color:var(--lt);text-decoration:none;">Analytics</a>
+  <div class="wrap admin-wrap">
+    <div class="admin-nav">
+      <a href="/" class="an-back">&larr; Back to site</a>
+      <a href="/admin/">Content CMS</a>
+      <a href="/admin/analytics">Analytics</a>
     </div>
     <div class="stag">Admin</div>
     <h1 class="stitle">Manage <span class="r">Matches</span></h1>
-    <p class="muted" style="max-width:620px;margin-bottom:8px;font-size:14px;">
-      These are the ticketed matches that power the homepage countdown and the
-      <a href="/tickets" style="color:var(--gold);">Buy Tickets</a> page. Changes go live immediately.
-    </p>
-    <p class="muted" style="font-size:12px;margin-bottom:24px;">
-      Content like news, squad and photos is managed separately in
-      <a href="/admin/" style="color:var(--gold);">the content CMS</a>.
+    <p class="admin-lede">
+      These fixtures power the homepage countdown and the
+      <a href="/tickets">Buy Tickets</a> page. Changes go live immediately.
+      News, squad and photos are handled in <a href="/admin/">the content CMS</a>.
     </p>
 
     <!-- Passcode gate -->
-    <div id="gate" class="card" style="padding:24px;max-width:420px;">
-      <label class="muted" style="display:block;margin-bottom:8px;font-size:13px;">Admin code</label>
-      <input id="code" type="password" placeholder="Enter admin code" autocomplete="off"
-        style="width:100%;padding:12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:var(--d3);color:var(--white);font-size:16px;margin-bottom:12px;"/>
-      <button id="unlock" class="btn-p" style="width:100%;">Unlock</button>
-      <div id="gate-err" class="muted" style="display:none;margin-top:10px;font-size:13px;color:var(--red);"></div>
+    <div id="gate" class="gate-card">
+      <div class="gate-icon">&#128274;</div>
+      <h2>Admin access</h2>
+      <p class="muted">Enter the admin code to manage fixtures.</p>
+      <input id="code" type="password" placeholder="Admin code" autocomplete="off" />
+      <button id="unlock" class="btn-p">Unlock</button>
+      <div id="gate-err" class="gate-err"></div>
     </div>
 
     <!-- Manager -->
-    <div id="manager" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
-        <button id="new-btn" class="btn-p" style="padding:11px 24px;">＋ New Match</button>
-        <button id="lock-btn" class="btn-o" style="padding:11px 24px;">Lock</button>
+    <div id="manager" hidden>
+      <div class="dash-bar">
+        <button id="new-btn" class="btn-p">&#43;&nbsp; New match</button>
+        <div class="dash-bar-actions">
+          <button id="refresh" class="btn-o sm">Refresh</button>
+          <button id="lock-btn" class="btn-o sm">Lock</button>
+        </div>
       </div>
 
-      <div id="msg" style="display:none;padding:12px 16px;border-radius:6px;margin-bottom:16px;font-size:14px;"></div>
+      <div id="msg" class="dash-msg" hidden></div>
 
       <!-- Add / edit form -->
-      <form id="form" class="card" style="display:none;padding:22px;margin-bottom:24px;">
-        <input type="hidden" id="f-id"/>
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:16px;" id="f-title">New Match</div>
-        <div class="f-grid">
-          <label>Home team<input id="f-home" type="text" value="Lobi Stars FC" required/></label>
-          <label>Away team<input id="f-away" type="text" placeholder="e.g. Kada Warriors FC" required/></label>
-          <label>Competition<input id="f-comp" type="text" value="NNL Conference D" required/></label>
-          <label>Venue<input id="f-venue" type="text" value="McCarthy Stadium, Makurdi" required/></label>
-          <label>Kick-off<input id="f-date" type="datetime-local" required/></label>
-          <label class="f-check"><input id="f-active" type="checkbox" checked/> Show on site (active)</label>
-          <label>VIP price (₦)<input id="f-vip" type="number" min="0" step="50" value="0" required/></label>
-          <label>Premium price (₦)<input id="f-prem" type="number" min="0" step="50" value="0" required/></label>
-          <label>Regular price (₦)<input id="f-reg" type="number" min="0" step="50" value="0" required/></label>
+      <form id="form" class="panel form-panel" hidden>
+        <div class="form-title" id="f-title">New match</div>
+
+        <div class="fset">
+          <div class="fset-label">Match details</div>
+          <div class="f-grid">
+            <label>Home team<input id="f-home" type="text" value="Lobi Stars FC" required/></label>
+            <label>Away team<input id="f-away" type="text" placeholder="e.g. Kada Warriors FC" required/></label>
+            <label>Competition<input id="f-comp" type="text" value="NNL Conference D" required/></label>
+            <label>Venue<input id="f-venue" type="text" value="McCarthy Stadium, Makurdi" required/></label>
+            <label class="span2">Kick-off<input id="f-date" type="datetime-local" required/></label>
+          </div>
+          <p class="fhint">Kick-off is your device's local time (WAT on a Nigeria-set device).</p>
         </div>
-        <p class="muted" style="font-size:12px;margin:12px 0 16px;">
-          Kick-off is entered in your device's local time (West Africa Time on a Nigeria-set device).
-        </p>
-        <div style="display:flex;gap:10px;">
-          <button type="submit" class="btn-p" id="f-save" style="padding:11px 26px;">Save</button>
-          <button type="button" class="btn-o" id="f-cancel" style="padding:11px 26px;">Cancel</button>
+
+        <div class="fset">
+          <div class="fset-label">Ticket pricing (&#8358;)</div>
+          <div class="f-grid f-grid-3">
+            <label>VIP<input id="f-vip" type="number" min="0" step="50" value="0" required/></label>
+            <label>Premium<input id="f-prem" type="number" min="0" step="50" value="0" required/></label>
+            <label>Regular<input id="f-reg" type="number" min="0" step="50" value="0" required/></label>
+          </div>
+        </div>
+
+        <div class="fset">
+          <label class="f-check"><input id="f-active" type="checkbox" checked/> <span>Visible on the site</span></label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn-p" id="f-save">Save match</button>
+          <button type="button" class="btn-o" id="f-cancel">Cancel</button>
         </div>
       </form>
 
-      <div id="list"></div>
+      <div id="list" class="mlist"></div>
     </div>
   </div>
 
   <style>
+    .admin-wrap{max-width:940px;padding-top:112px;padding-bottom:90px;min-height:78vh;}
+    .admin-nav{display:flex;gap:20px;flex-wrap:wrap;font-family:'Barlow Condensed',sans-serif;
+      font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:26px;}
+    .admin-nav a{color:var(--lt);text-decoration:none;transition:color .15s;}
+    .admin-nav a:hover{color:var(--gold);}
+    .admin-nav .an-back{color:var(--gold);}
+    .admin-lede{max-width:640px;margin:6px 0 28px;font-size:14px;line-height:1.6;color:var(--lt);}
+    .admin-lede a{color:var(--gold);}
+
+    /* ---- gate ---- */
+    .gate-card{max-width:400px;margin:10px 0;padding:32px 28px;text-align:center;
+      background:var(--d2);border:1px solid var(--d4);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.14);}
+    .gate-icon{font-size:30px;margin-bottom:8px;}
+    .gate-card h2{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:var(--white);}
+    .gate-card p{font-size:13px;margin:4px 0 18px;}
+    .gate-card input{width:100%;padding:13px 14px;border-radius:8px;border:1px solid var(--d4);
+      background:var(--d3);color:var(--white);font-size:16px;margin-bottom:14px;text-align:center;letter-spacing:2px;}
+    .gate-card input:focus{outline:none;border-color:var(--gold);}
+    .gate-card .btn-p{width:100%;}
+    .gate-err{display:none;margin-top:12px;font-size:13px;color:var(--red);}
+    .gate-err.show{display:block;}
+
+    /* ---- chrome ---- */
+    .dash-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:20px;}
+    .dash-bar-actions{display:flex;align-items:center;gap:10px;}
+    .btn-p, .btn-o{border-radius:6px;}
+    .btn-o.sm{padding:9px 16px;font-size:12px;}
+    #new-btn{padding:11px 22px;font-size:13px;}
+    .dash-msg{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px;}
+    .dash-msg.ok{background:rgba(76,175,80,.15);color:#3fae44;}
+    .dash-msg.bad{background:rgba(212,32,43,.14);color:var(--red);}
+
+    /* ---- panel / form ---- */
+    .panel{background:var(--d2);border:1px solid var(--d4);border-radius:14px;}
+    .form-panel{padding:24px;margin-bottom:26px;}
+    .form-title{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;color:var(--white);margin-bottom:18px;}
+    .fset{padding:16px 0;border-top:1px solid var(--d4);}
+    .fset:first-of-type{border-top:none;padding-top:0;}
+    .fset-label{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;
+      text-transform:uppercase;color:var(--gold);margin-bottom:12px;}
     .f-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-    .f-grid label{display:flex;flex-direction:column;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--lt);gap:6px;}
-    .f-grid input[type=text],.f-grid input[type=number],.f-grid input[type=datetime-local]{
-      padding:10px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:var(--d3);color:var(--white);font-size:15px;text-transform:none;letter-spacing:0;
-    }
-    .f-grid label.f-check{flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--white);}
-    .f-grid label.f-check input{width:16px;height:16px;}
-    .m-row{border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px;margin-bottom:12px;background:var(--d2);}
-    .m-row.inactive{opacity:.55;}
-    .m-teams{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:.5px;}
-    .m-meta{font-size:12px;color:var(--lt);margin-top:4px;}
-    .m-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
-    .m-actions button{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:7px 14px;border-radius:4px;cursor:pointer;border:1px solid rgba(255,255,255,.25);background:transparent;color:var(--white);}
+    .f-grid-3{grid-template-columns:1fr 1fr 1fr;}
+    .f-grid label{display:flex;flex-direction:column;font-size:11px;letter-spacing:1px;text-transform:uppercase;
+      color:var(--lt);gap:6px;}
+    .f-grid label.span2{grid-column:1/-1;}
+    .f-grid input{padding:11px 12px;border-radius:8px;border:1px solid var(--d4);background:var(--d3);
+      color:var(--white);font-size:15px;text-transform:none;letter-spacing:0;}
+    .f-grid input:focus{outline:none;border-color:var(--gold);}
+    .fhint{font-size:12px;color:var(--lt);margin-top:10px;}
+    .f-check{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--white);cursor:pointer;}
+    .f-check input{width:18px;height:18px;accent-color:var(--red);}
+    .form-actions{display:flex;gap:10px;padding-top:18px;border-top:1px solid var(--d4);}
+    .form-actions .btn-p{padding:11px 26px;}
+    .form-actions .btn-o{padding:11px 22px;}
+
+    /* ---- match list ---- */
+    .mlist{display:flex;flex-direction:column;gap:14px;}
+    .m-card{background:var(--d2);border:1px solid var(--d4);border-radius:14px;padding:18px 20px;
+      display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:start;}
+    .m-card.inactive{opacity:.6;}
+    .m-crest{width:46px;height:46px;border-radius:50%;object-fit:contain;background:#fff;
+      padding:3px;box-shadow:0 0 0 1px var(--d4);flex-shrink:0;}
+    .m-crest.ph{display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;
+      font-size:20px;color:#8a8a8a;padding:0;}
+    .m-main{min-width:0;}
+    .m-teams{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:19px;letter-spacing:.3px;
+      color:var(--white);line-height:1.2;}
+    .m-when{font-size:13px;color:var(--white);margin-top:5px;}
+    .m-sub{font-size:12px;color:var(--lt);margin-top:3px;}
+    .m-prices{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+    .chip{font-size:11px;letter-spacing:.5px;padding:3px 9px;border-radius:20px;background:var(--d3);
+      color:var(--lt);border:1px solid var(--d4);}
+    .m-side{display:flex;flex-direction:column;align-items:flex-end;gap:10px;}
+    .pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+    .pill{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:20px;}
+    .pill.on{background:rgba(76,175,80,.2);color:#3fae44;}
+    .pill.off{background:var(--d3);color:var(--lt);}
+    .pill.past{background:rgba(255,199,44,.16);color:var(--gold);}
+    .pill.sold{background:rgba(212,32,43,.14);color:var(--red);}
+    .m-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+    .m-actions button{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;
+      text-transform:uppercase;padding:7px 14px;border-radius:6px;cursor:pointer;border:1px solid var(--d4);
+      background:transparent;color:var(--white);transition:border-color .15s,color .15s;}
     .m-actions button:hover{border-color:var(--gold);color:var(--gold);}
     .m-actions button.danger:hover{border-color:var(--red);color:var(--red);}
-    .m-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;margin-left:8px;}
-    .m-badge.on{background:rgba(76,175,80,.2);color:#4CAF50;}
-    .m-badge.off{background:rgba(255,255,255,.1);color:var(--lt);}
-    @media(max-width:640px){ .f-grid{grid-template-columns:1fr;} }
+
+    @media(max-width:640px){
+      .f-grid,.f-grid-3{grid-template-columns:1fr;}
+      .m-card{grid-template-columns:auto 1fr;}
+      .m-side{grid-column:1/-1;align-items:stretch;}
+      .pills,.m-actions{justify-content:flex-start;}
+    }
   </style>
 
   <script is:inline>
@@ -95,12 +180,37 @@ import Layout from '../../layouts/Layout.astro';
     const gate = $('gate'), manager = $('manager'), gateErr = $('gate-err');
     const form = $('form'), list = $('list'), msg = $('msg');
 
+    // Opponent crests already in /public/images, keyed by a normalised name.
+    const CRESTS = {
+      'abs fc': '/images/abs-illorin.jpg',
+      'bichi first fc': '/images/bichi-first.jpg',
+      'bichi first': '/images/bichi-first.jpg',
+      'kada warriors fc': '/images/kadawarriors-kaduna.jpg',
+      'kada warriors': '/images/kadawarriors-kaduna.jpg',
+      'lobi stars fc': '/images/lobi-stars-fc.jpg',
+      'lobi stars': '/images/lobi-stars-fc.jpg',
+      'mighty jets': '/images/mighty-jets-jos.jpg',
+      'mighty jets feeder / bida lions': '/images/mighty-jets-jos.jpg',
+      'sokoto united fc': '/images/sokoto-united.jpg',
+      'sokoto united': '/images/sokoto-united.jpg',
+      'wikki tourists fc': '/images/wikki-tourists.jpg',
+      'wikki tourists': '/images/wikki-tourists.jpg',
+      'yobe desert stars fc': '/images/yobe-desert-stars.jpg',
+      'yobe desert stars': '/images/yobe-desert-stars.jpg',
+      'kano pillars': '/images/kano-pillars-logo.png',
+    };
+    const crestFor = name => CRESTS[String(name || '').trim().toLowerCase()] || null;
+    // The "opponent" is whichever side isn't Lobi Stars.
+    function opponent(e) {
+      const h = String(e.home_team || '').toLowerCase();
+      return h.indexOf('lobi') === 0 ? e.away_team : e.home_team;
+    }
+
     function showMsg(text, ok) {
       msg.textContent = text;
-      msg.style.display = 'block';
-      msg.style.background = ok ? 'rgba(76,175,80,.15)' : 'rgba(212,32,43,.15)';
-      msg.style.color = ok ? '#4CAF50' : 'var(--red)';
-      if (ok) setTimeout(() => { msg.style.display = 'none'; }, 3500);
+      msg.hidden = false;
+      msg.className = 'dash-msg ' + (ok ? 'ok' : 'bad');
+      if (ok) setTimeout(() => { msg.hidden = true; }, 3500);
     }
 
     async function api(path, opts = {}) {
@@ -111,10 +221,10 @@ import Layout from '../../layouts/Layout.astro';
       if (res.status === 401) {
         sessionStorage.removeItem('ls_admin_code');
         code = '';
-        manager.style.display = 'none';
-        gate.style.display = 'block';
+        manager.hidden = true;
+        gate.style.display = '';
         gateErr.textContent = 'Code rejected — enter it again.';
-        gateErr.style.display = 'block';
+        gateErr.classList.add('show');
         throw new Error('unauthorised');
       }
       const data = await res.json().catch(() => ({}));
@@ -135,41 +245,58 @@ import Layout from '../../layouts/Layout.astro';
       return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) +
         ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
     }
-
-    function rowHtml(e) {
-      const when = fmtWhen(e.event_date);
-      const past = new Date(e.event_date).getTime() < Date.now();
-      return '<div class="m-row ' + (e.active ? '' : 'inactive') + '" data-id="' + e.id + '">' +
-        '<div class="m-teams">' + esc(e.home_team) + ' vs ' + esc(e.away_team) +
-          '<span class="m-badge ' + (e.active ? 'on' : 'off') + '">' + (e.active ? 'Active' : 'Hidden') + '</span>' +
-          (past ? '<span class="m-badge off">Past</span>' : '') + '</div>' +
-        '<div class="m-meta">' + esc(e.competition) + ' &nbsp;•&nbsp; ' + when + ' &nbsp;•&nbsp; ' + esc(e.venue) + '</div>' +
-        '<div class="m-meta">VIP ' + naira(e.vip_price_kobo) + ' &nbsp;·&nbsp; Premium ' + naira(e.premium_price_kobo) +
-          ' &nbsp;·&nbsp; Regular ' + naira(e.regular_price_kobo) +
-          ' &nbsp;•&nbsp; ' + (e.paid_orders || 0) + ' paid order' + ((e.paid_orders || 0) === 1 ? '' : 's') + '</div>' +
-        '<div class="m-actions">' +
-          '<button data-act="edit">Edit</button>' +
-          '<button data-act="toggle">' + (e.active ? 'Hide' : 'Show') + '</button>' +
-          '<button data-act="delete" class="danger">Delete</button>' +
-        '</div></div>';
-    }
     function esc(s) {
-      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function cardHtml(e) {
+      const past = new Date(e.event_date).getTime() < Date.now();
+      const opp = opponent(e);
+      const crest = crestFor(opp);
+      const orders = e.paid_orders || 0;
+      const crestEl = crest
+        ? '<img class="m-crest" src="' + crest + '" alt="" onerror="this.style.visibility=\'hidden\'"/>'
+        : '<div class="m-crest ph">' + esc(String(opp || '?').charAt(0).toUpperCase()) + '</div>';
+      return '<div class="m-card ' + (e.active ? '' : 'inactive') + '" data-id="' + esc(e.id) + '">' +
+        crestEl +
+        '<div class="m-main">' +
+          '<div class="m-teams">' + esc(e.home_team) + '  vs  ' + esc(e.away_team) + '</div>' +
+          '<div class="m-when">' + fmtWhen(e.event_date) + '</div>' +
+          '<div class="m-sub">' + esc(e.competition) + ' &nbsp;•&nbsp; ' + esc(e.venue) + '</div>' +
+          '<div class="m-prices">' +
+            '<span class="chip">VIP ' + naira(e.vip_price_kobo) + '</span>' +
+            '<span class="chip">Premium ' + naira(e.premium_price_kobo) + '</span>' +
+            '<span class="chip">Regular ' + naira(e.regular_price_kobo) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="m-side">' +
+          '<div class="pills">' +
+            '<span class="pill ' + (e.active ? 'on' : 'off') + '">' + (e.active ? 'Live' : 'Hidden') + '</span>' +
+            (past ? '<span class="pill past">Past</span>' : '') +
+            (orders ? '<span class="pill sold">' + orders + ' sold</span>' : '') +
+          '</div>' +
+          '<div class="m-actions">' +
+            '<button data-act="edit">Edit</button>' +
+            '<button data-act="toggle">' + (e.active ? 'Hide' : 'Show') + '</button>' +
+            '<button data-act="delete" class="danger">Delete</button>' +
+          '</div>' +
+        '</div>' +
+        '</div>';
     }
 
     let cache = [];
     async function load() {
       const data = await api('/api/admin/events');
       cache = data.events || [];
-      list.innerHTML = cache.length ? cache.map(rowHtml).join('') :
-        '<div class="empty-state">No matches yet. Add the first one.</div>';
+      list.innerHTML = cache.length ? cache.map(cardHtml).join('') :
+        '<div class="empty-state">No matches yet — add the first one.</div>';
     }
 
-    // --- form handling ---
     function openForm(e) {
-      form.style.display = 'block';
-      $('f-title').textContent = e ? 'Edit Match' : 'New Match';
-      $('f-id').value = e ? e.id : '';
+      form.hidden = false;
+      $('f-title').textContent = e ? 'Edit match' : 'New match';
+      $('f-id') && ($('f-id').value = e ? e.id : '');
       $('f-home').value = e ? e.home_team : 'Lobi Stars FC';
       $('f-away').value = e ? e.away_team : '';
       $('f-comp').value = e ? e.competition : 'NNL Conference D';
@@ -179,9 +306,10 @@ import Layout from '../../layouts/Layout.astro';
       $('f-vip').value = e ? e.vip_price_kobo / 100 : 0;
       $('f-prem').value = e ? e.premium_price_kobo / 100 : 0;
       $('f-reg').value = e ? e.regular_price_kobo / 100 : 0;
+      form._editId = e ? e.id : '';
       form.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-    function closeForm() { form.style.display = 'none'; }
+    function closeForm() { form.hidden = true; form._editId = ''; }
 
     form.addEventListener('submit', async ev => {
       ev.preventDefault();
@@ -198,7 +326,7 @@ import Layout from '../../layouts/Layout.astro';
         premium_price_kobo: Math.round(Number($('f-prem').value) * 100),
         regular_price_kobo: Math.round(Number($('f-reg').value) * 100),
       };
-      const id = $('f-id').value;
+      const id = form._editId || '';
       $('f-save').disabled = true;
       try {
         await api(id ? '/api/admin/events/' + id : '/api/admin/events', {
@@ -217,11 +345,12 @@ import Layout from '../../layouts/Layout.astro';
 
     $('f-cancel').addEventListener('click', closeForm);
     $('new-btn').addEventListener('click', () => openForm(null));
+    $('refresh').addEventListener('click', () => load().catch(err => showMsg(err.message, false)));
 
     list.addEventListener('click', async ev => {
       const btn = ev.target.closest('button[data-act]');
       if (!btn) return;
-      const id = btn.closest('.m-row').dataset.id;
+      const id = btn.closest('.m-card').dataset.id;
       const e = cache.find(x => x.id === id);
       if (!e) return;
       const act = btn.dataset.act;
@@ -254,22 +383,21 @@ import Layout from '../../layouts/Layout.astro';
       }
     });
 
-    // --- gate ---
     async function unlock() {
       const entered = $('code').value.trim();
       if (!entered) return;
       code = entered;
       try {
-        await api('/api/admin/events');           // probes auth + primes cache
+        await api('/api/admin/events');
         sessionStorage.setItem('ls_admin_code', code);
         gate.style.display = 'none';
-        manager.style.display = 'block';
-        gateErr.style.display = 'none';
+        manager.hidden = false;
+        gateErr.classList.remove('show');
         await load();
       } catch (err) {
         if (err.message !== 'unauthorised') {
           gateErr.textContent = err.message;
-          gateErr.style.display = 'block';
+          gateErr.classList.add('show');
         }
       }
     }
@@ -282,7 +410,7 @@ import Layout from '../../layouts/Layout.astro';
 
     if (code) {
       gate.style.display = 'none';
-      manager.style.display = 'block';
+      manager.hidden = false;
       load().catch(() => {});
     }
   })();
