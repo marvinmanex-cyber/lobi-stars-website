@@ -16,7 +16,7 @@ const articles = (await getCollection('news')).sort(
   <div class="page-content wrap">
     {articles.length === 0 && (
       <div class="empty-state">
-        No articles yet &mdash; check back soon, or sign in at <a href="/admin" style="color:var(--gold);">/admin</a> to post the first one.
+        No articles yet &mdash; check back soon.
       </div>
     )}
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;">

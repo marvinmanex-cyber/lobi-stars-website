@@ -14,7 +14,7 @@ const players = (await getCollection('players')).sort((a, b) => a.data.number - 
   <div class="page-content wrap">
     {players.length === 0 && (
       <div class="empty-state">
-        No player profiles yet &mdash; add the squad via <a href="/admin" style="color:var(--gold);">/admin</a>.
+        Squad profiles are coming soon &mdash; check back shortly.
       </div>
     )}
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px;">

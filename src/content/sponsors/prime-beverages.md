@@ -1,6 +1,6 @@
 ---
 name: "Prime Beverages"
 logo: "/images/prime-beverages2.jpg"
-url: "#"
+url: "https://primebeverages.com.ng/"
 order: 5
 ---

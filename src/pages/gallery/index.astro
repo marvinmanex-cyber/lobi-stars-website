@@ -16,7 +16,7 @@ const photos = (await getCollection('gallery')).sort(
   <div class="page-content wrap">
     {photos.length === 0 && (
       <div class="empty-state">
-        No photos added yet &mdash; upload match albums via <a href="/admin" style="color:var(--gold);">/admin</a>.
+        No photos have been added yet &mdash; check back soon.
       </div>
     )}
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;">

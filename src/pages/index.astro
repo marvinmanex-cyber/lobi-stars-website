@@ -529,8 +529,21 @@ table.st tr.hl td{color:var(--gold);background:rgba(245,184,0,.06);}
 table.st tr:hover td{background:rgba(255,255,255,.03);}
 .pb{width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.1);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
 .pb.top{background:rgba(76,175,80,.25);color:#4CAF50;}
-.club-cell{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;}
+.club-cell{display:inline-flex;align-items:center;gap:10px;text-align:left;}
 .club-badge{width:26px;height:26px;flex-shrink:0;border-radius:50%;object-fit:contain;background:#fff;padding:2px;box-shadow:0 0 0 1px rgba(0,0,0,.08);}
+/* Standings: every column centred except the club name */
+table.st th,table.st td{text-align:center;vertical-align:middle;}
+table.st th:nth-child(2),table.st td:nth-child(2){text-align:left;}
+@media(max-width:600px){
+  table.st{font-size:11px;}
+  table.st th,table.st td{padding:8px 5px;}
+  table.st th{font-size:9px;letter-spacing:1px;}
+  .club-cell{gap:6px;}
+  .club-badge{width:20px;height:20px;}
+  /* Drop GF / GA on phones so P W D L GD Pts all stay on screen */
+  table.st th:nth-child(7),table.st td:nth-child(7),
+  table.st th:nth-child(8),table.st td:nth-child(8){display:none;}
+}
 
 /* TICKETS (lightweight teaser -- the full booking flow lives on /tickets) */
 #tickets{background:var(--black);}
@@ -2065,17 +2078,17 @@ function openArchiveTab(evt, tabName) {
     <div class="table-wrap fade-in" style="border-radius: 12px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
       <table class="st" style="width: 100%; border-collapse: collapse;">
         <thead>
-          <tr style="background: var(--red); color: #fff;">
-            <th style="padding: 15px;">#</th>
-            <th style="padding: 15px;">Club</th>
-            <th style="padding: 15px; text-align: center;">P</th>
-            <th style="padding: 15px; text-align: center;">W</th>
-            <th style="padding: 15px; text-align: center;">D</th>
-            <th style="padding: 15px; text-align: center;">L</th>
-            <th style="padding: 15px; text-align: center;">GF</th>
-            <th style="padding: 15px; text-align: center;">GA</th>
-            <th style="padding: 15px; text-align: center;">GD</th>
-            <th style="padding: 15px; text-align: center;">Pts</th>
+          <tr>
+            <th>#</th>
+            <th>Club</th>
+            <th>P</th>
+            <th>W</th>
+            <th>D</th>
+            <th>L</th>
+            <th>GF</th>
+            <th>GA</th>
+            <th>GD</th>
+            <th>Pts</th>
           </tr>
         </thead>
         <tbody>
