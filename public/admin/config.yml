@@ -8,6 +8,12 @@ backend:
   # Netlify and has no OAuth worker configured.
   auth_methods: ["token"]
 
+# Puts a clickable link back to the live site in the CMS header, and uses
+# the club badge as the CMS logo.
+site_url: "https://lobistarsfc.com"
+display_url: "https://lobistarsfc.com"
+logo_url: "https://lobistarsfc.com/images/hero-6.jpg"
+
 media_folder: "public/images"
 public_folder: "/images"
 
