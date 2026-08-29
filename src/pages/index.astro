@@ -818,6 +818,8 @@ body.light-mode .footer-copy { color: #718096 !important; }
   text-transform: uppercase;
   cursor: pointer;
   transition: color 0.2s;
+  text-decoration: none;
+  display: inline-block;
 }
 .admin-link:hover { color: var(--red); }
 
@@ -1812,12 +1814,8 @@ function openArchiveTab(evt, tabName) {
 <div class="fix-grid fade-in">
     <div>
       <div class="fix-col-title">Upcoming Fixtures</div>
-      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 28</span><span class="fix-date">Sat 24 May · 15:00</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-vs">VS</div><div class="fix-team a">Kano Pillars</div></div><div class="fix-venue">📍 McCarthy Stadium, Makurdi</div></div>
-      <div id="moreUpcoming" style="display:none;">
-        <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 29</span><span class="fix-date">Wed 28 May · 16:00</span></div><div class="fix-teams"><div class="fix-team h">Rivers United</div><div class="fix-vs">VS</div><div class="fix-team a">Lobi Stars</div></div><div class="fix-venue">📍 Adokiye Amiesimaka Stadium, PH</div></div>
-      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 30</span><span class="fix-date">Sun 1 Jun · 15:00</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-vs">VS</div><div class="fix-team a">Plateau United</div></div><div class="fix-venue">📍 McCarthy Stadium, Makurdi</div></div>
-      </div>
-      <button class="btn-o" id="upcomingBtn" data-label="View All Fixtures →" onclick="toggleFix('moreUpcoming','upcomingBtn')" style="width:100%;margin-top:8px;padding:10px;font-size:12px;">View All Fixtures →</button>
+      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NNL Conference D</span><span class="fix-date">Sat 29 Aug · 16:30</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars FC</div><div class="fix-vs">VS</div><div class="fix-team a">Kada Warriors FC</div></div><div class="fix-venue">📍 McCarthy Stadium, Makurdi</div></div>
+      <a class="btn-o" href="/fixtures" style="display:block;width:100%;margin-top:8px;padding:10px;font-size:12px;text-align:center;text-decoration:none;">View All Fixtures →</a>
     </div>
     <div>
       <div class="fix-col-title">Recent Results</div>
@@ -2768,7 +2766,7 @@ function openArchiveTab(evt, tabName) {
 
     <div class="footer-bottom">
        <div class="footer-copy">© 2026 Lobi Stars FC. All Rights Reserved.</div>
-       <div class="admin-link">STAFF LOGIN</div>
+       <a href="/admin/" class="admin-link">STAFF LOGIN</a>
     </div>
   </div>
 </footer>
