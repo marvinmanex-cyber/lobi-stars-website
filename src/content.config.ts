@@ -41,8 +41,10 @@ const fixtures = defineCollection({
     date: z.date(),
     venue: z.string(),
     competition: z.string().default('NPFL'),
-    home_score: z.number().optional(),
-    away_score: z.number().optional(),
+    // Sveltia CMS writes `null` (not omitted) for empty number fields, so
+    // accept null as well as a missing value.
+    home_score: z.number().nullable().optional(),
+    away_score: z.number().nullable().optional(),
     status: z.enum(['Upcoming', 'Completed']),
   }),
 });

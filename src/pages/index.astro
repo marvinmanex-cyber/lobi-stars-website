@@ -1819,12 +1819,10 @@ function openArchiveTab(evt, tabName) {
     </div>
     <div>
       <div class="fix-col-title">Recent Results</div>
-      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 27</span><span class="fix-date">Sat 17 May</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-score">2 – 0</div><div class="fix-team a">Enyimba FC</div></div><div class="fix-venue"><span class="rb w"></span> Win · McCarthy Stadium</div></div>
-      <div id="moreResults" style="display:none;">
-        <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 26</span><span class="fix-date">Tue 13 May</span></div><div class="fix-teams"><div class="fix-team h">Shooting Stars</div><div class="fix-score">1 – 1</div><div class="fix-team a">Lobi Stars</div></div><div class="fix-venue"><span class="rb d"></span> Draw · Lekan Salami Stadium</div></div>
-      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NPFL MD 25</span><span class="fix-date">Sat 10 May</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars</div><div class="fix-score">3 – 1</div><div class="fix-team a">Heartland FC</div></div><div class="fix-venue"><span class="rb w"></span> Win · McCarthy Stadium</div></div>
+      <div class="fix-card" style="text-align:center;color:var(--lt);">
+        No results yet this season — the Conference D campaign is just getting underway.
       </div>
-      <button class="btn-o" id="resultsBtn" data-label="View All Results →" onclick="toggleFix('moreResults','resultsBtn')" style="width:100%;margin-top:8px;padding:10px;font-size:12px;">View All Results →</button>
+      <a class="btn-o" href="/fixtures" style="display:block;width:100%;margin-top:8px;padding:10px;font-size:12px;text-align:center;text-decoration:none;">View All Results →</a>
     </div>
   </div>
 </section>
@@ -2766,7 +2764,7 @@ function openArchiveTab(evt, tabName) {
 
     <div class="footer-bottom">
        <div class="footer-copy">© 2026 Lobi Stars FC. All Rights Reserved.</div>
-       <a href="/admin/" class="admin-link">STAFF LOGIN</a>
+       <span class="admin-link"><a href="/admin/" class="admin-link">STAFF LOGIN</a> &nbsp;·&nbsp; <a href="/admin/matches" class="admin-link">MANAGE MATCHES</a></span>
     </div>
   </div>
 </footer>
@@ -3427,13 +3425,6 @@ function toggleStaff(){
   btn.textContent = opening ? 'Show Less ←' : 'View Full Team →';
 }
 
-function toggleFix(id, btnId){
-  const el = document.getElementById(id);
-  const btn = document.getElementById(btnId);
-  const opening = el.style.display === 'none' || el.style.display === '';
-  el.style.display = opening ? 'block' : 'none';
-  btn.textContent = opening ? 'Show Less ←' : btn.dataset.label;
-}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.1});
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));

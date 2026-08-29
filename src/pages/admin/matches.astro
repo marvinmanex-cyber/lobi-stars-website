@@ -1,0 +1,285 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Manage Matches | Lobi Stars Admin">
+  <div class="wrap" style="max-width:1000px;padding-top:120px;padding-bottom:80px;min-height:75vh;">
+    <div class="stag">Admin</div>
+    <h1 class="stitle">Manage <span class="r">Matches</span></h1>
+    <p class="muted" style="max-width:620px;margin-bottom:8px;font-size:14px;">
+      These are the ticketed matches that power the homepage countdown and the
+      <a href="/tickets" style="color:var(--gold);">Buy Tickets</a> page. Changes go live immediately.
+    </p>
+    <p class="muted" style="font-size:12px;margin-bottom:24px;">
+      Content like news, squad and photos is managed separately in
+      <a href="/admin/" style="color:var(--gold);">the content CMS</a>.
+    </p>
+
+    <!-- Passcode gate -->
+    <div id="gate" class="card" style="padding:24px;max-width:420px;">
+      <label class="muted" style="display:block;margin-bottom:8px;font-size:13px;">Admin code</label>
+      <input id="code" type="password" placeholder="Enter admin code" autocomplete="off"
+        style="width:100%;padding:12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:var(--d3);color:var(--white);font-size:16px;margin-bottom:12px;"/>
+      <button id="unlock" class="btn-p" style="width:100%;">Unlock</button>
+      <div id="gate-err" class="muted" style="display:none;margin-top:10px;font-size:13px;color:var(--red);"></div>
+    </div>
+
+    <!-- Manager -->
+    <div id="manager" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;">
+        <button id="new-btn" class="btn-p" style="padding:11px 24px;">＋ New Match</button>
+        <button id="lock-btn" class="btn-o" style="padding:11px 24px;">Lock</button>
+      </div>
+
+      <div id="msg" style="display:none;padding:12px 16px;border-radius:6px;margin-bottom:16px;font-size:14px;"></div>
+
+      <!-- Add / edit form -->
+      <form id="form" class="card" style="display:none;padding:22px;margin-bottom:24px;">
+        <input type="hidden" id="f-id"/>
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:16px;" id="f-title">New Match</div>
+        <div class="f-grid">
+          <label>Home team<input id="f-home" type="text" value="Lobi Stars FC" required/></label>
+          <label>Away team<input id="f-away" type="text" placeholder="e.g. Kada Warriors FC" required/></label>
+          <label>Competition<input id="f-comp" type="text" value="NNL Conference D" required/></label>
+          <label>Venue<input id="f-venue" type="text" value="McCarthy Stadium, Makurdi" required/></label>
+          <label>Kick-off<input id="f-date" type="datetime-local" required/></label>
+          <label class="f-check"><input id="f-active" type="checkbox" checked/> Show on site (active)</label>
+          <label>VIP price (₦)<input id="f-vip" type="number" min="0" step="50" value="0" required/></label>
+          <label>Premium price (₦)<input id="f-prem" type="number" min="0" step="50" value="0" required/></label>
+          <label>Regular price (₦)<input id="f-reg" type="number" min="0" step="50" value="0" required/></label>
+        </div>
+        <p class="muted" style="font-size:12px;margin:12px 0 16px;">
+          Kick-off is entered in your device's local time (West Africa Time on a Nigeria-set device).
+        </p>
+        <div style="display:flex;gap:10px;">
+          <button type="submit" class="btn-p" id="f-save" style="padding:11px 26px;">Save</button>
+          <button type="button" class="btn-o" id="f-cancel" style="padding:11px 26px;">Cancel</button>
+        </div>
+      </form>
+
+      <div id="list"></div>
+    </div>
+  </div>
+
+  <style>
+    .f-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .f-grid label{display:flex;flex-direction:column;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--lt);gap:6px;}
+    .f-grid input[type=text],.f-grid input[type=number],.f-grid input[type=datetime-local]{
+      padding:10px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:var(--d3);color:var(--white);font-size:15px;text-transform:none;letter-spacing:0;
+    }
+    .f-grid label.f-check{flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--white);}
+    .f-grid label.f-check input{width:16px;height:16px;}
+    .m-row{border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px;margin-bottom:12px;background:var(--d2);}
+    .m-row.inactive{opacity:.55;}
+    .m-teams{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:18px;letter-spacing:.5px;}
+    .m-meta{font-size:12px;color:var(--lt);margin-top:4px;}
+    .m-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+    .m-actions button{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:7px 14px;border-radius:4px;cursor:pointer;border:1px solid rgba(255,255,255,.25);background:transparent;color:var(--white);}
+    .m-actions button:hover{border-color:var(--gold);color:var(--gold);}
+    .m-actions button.danger:hover{border-color:var(--red);color:var(--red);}
+    .m-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;margin-left:8px;}
+    .m-badge.on{background:rgba(76,175,80,.2);color:#4CAF50;}
+    .m-badge.off{background:rgba(255,255,255,.1);color:var(--lt);}
+    @media(max-width:640px){ .f-grid{grid-template-columns:1fr;} }
+  </style>
+
+  <script is:inline>
+  (function () {
+    let code = sessionStorage.getItem('ls_admin_code') || '';
+
+    const $ = id => document.getElementById(id);
+    const gate = $('gate'), manager = $('manager'), gateErr = $('gate-err');
+    const form = $('form'), list = $('list'), msg = $('msg');
+
+    function showMsg(text, ok) {
+      msg.textContent = text;
+      msg.style.display = 'block';
+      msg.style.background = ok ? 'rgba(76,175,80,.15)' : 'rgba(212,32,43,.15)';
+      msg.style.color = ok ? '#4CAF50' : 'var(--red)';
+      if (ok) setTimeout(() => { msg.style.display = 'none'; }, 3500);
+    }
+
+    async function api(path, opts = {}) {
+      const res = await fetch(path, {
+        ...opts,
+        headers: { 'Content-Type': 'application/json', 'x-admin-code': code, ...(opts.headers || {}) },
+      });
+      if (res.status === 401) {
+        sessionStorage.removeItem('ls_admin_code');
+        code = '';
+        manager.style.display = 'none';
+        gate.style.display = 'block';
+        gateErr.textContent = 'Code rejected — enter it again.';
+        gateErr.style.display = 'block';
+        throw new Error('unauthorised');
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || ('Request failed (' + res.status + ')'));
+      return data;
+    }
+
+    const naira = kobo => '₦' + (Number(kobo) / 100).toLocaleString();
+    const pad = n => String(n).padStart(2, '0');
+
+    function isoToLocalInput(iso) {
+      const d = new Date(iso);
+      return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+        'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+    function fmtWhen(iso) {
+      const d = new Date(iso);
+      return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) +
+        ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    }
+
+    function rowHtml(e) {
+      const when = fmtWhen(e.event_date);
+      const past = new Date(e.event_date).getTime() < Date.now();
+      return '<div class="m-row ' + (e.active ? '' : 'inactive') + '" data-id="' + e.id + '">' +
+        '<div class="m-teams">' + esc(e.home_team) + ' vs ' + esc(e.away_team) +
+          '<span class="m-badge ' + (e.active ? 'on' : 'off') + '">' + (e.active ? 'Active' : 'Hidden') + '</span>' +
+          (past ? '<span class="m-badge off">Past</span>' : '') + '</div>' +
+        '<div class="m-meta">' + esc(e.competition) + ' &nbsp;•&nbsp; ' + when + ' &nbsp;•&nbsp; ' + esc(e.venue) + '</div>' +
+        '<div class="m-meta">VIP ' + naira(e.vip_price_kobo) + ' &nbsp;·&nbsp; Premium ' + naira(e.premium_price_kobo) +
+          ' &nbsp;·&nbsp; Regular ' + naira(e.regular_price_kobo) +
+          ' &nbsp;•&nbsp; ' + (e.paid_orders || 0) + ' paid order' + ((e.paid_orders || 0) === 1 ? '' : 's') + '</div>' +
+        '<div class="m-actions">' +
+          '<button data-act="edit">Edit</button>' +
+          '<button data-act="toggle">' + (e.active ? 'Hide' : 'Show') + '</button>' +
+          '<button data-act="delete" class="danger">Delete</button>' +
+        '</div></div>';
+    }
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    let cache = [];
+    async function load() {
+      const data = await api('/api/admin/events');
+      cache = data.events || [];
+      list.innerHTML = cache.length ? cache.map(rowHtml).join('') :
+        '<div class="empty-state">No matches yet. Add the first one.</div>';
+    }
+
+    // --- form handling ---
+    function openForm(e) {
+      form.style.display = 'block';
+      $('f-title').textContent = e ? 'Edit Match' : 'New Match';
+      $('f-id').value = e ? e.id : '';
+      $('f-home').value = e ? e.home_team : 'Lobi Stars FC';
+      $('f-away').value = e ? e.away_team : '';
+      $('f-comp').value = e ? e.competition : 'NNL Conference D';
+      $('f-venue').value = e ? e.venue : 'McCarthy Stadium, Makurdi';
+      $('f-date').value = e ? isoToLocalInput(e.event_date) : '';
+      $('f-active').checked = e ? !!e.active : true;
+      $('f-vip').value = e ? e.vip_price_kobo / 100 : 0;
+      $('f-prem').value = e ? e.premium_price_kobo / 100 : 0;
+      $('f-reg').value = e ? e.regular_price_kobo / 100 : 0;
+      form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    function closeForm() { form.style.display = 'none'; }
+
+    form.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const localDate = $('f-date').value;
+      if (!localDate) return;
+      const payload = {
+        home_team: $('f-home').value,
+        away_team: $('f-away').value,
+        competition: $('f-comp').value,
+        venue: $('f-venue').value,
+        event_date: new Date(localDate).toISOString(),
+        active: $('f-active').checked,
+        vip_price_kobo: Math.round(Number($('f-vip').value) * 100),
+        premium_price_kobo: Math.round(Number($('f-prem').value) * 100),
+        regular_price_kobo: Math.round(Number($('f-reg').value) * 100),
+      };
+      const id = $('f-id').value;
+      $('f-save').disabled = true;
+      try {
+        await api(id ? '/api/admin/events/' + id : '/api/admin/events', {
+          method: id ? 'PUT' : 'POST',
+          body: JSON.stringify(payload),
+        });
+        closeForm();
+        await load();
+        showMsg(id ? 'Match updated.' : 'Match created.', true);
+      } catch (err) {
+        showMsg(err.message, false);
+      } finally {
+        $('f-save').disabled = false;
+      }
+    });
+
+    $('f-cancel').addEventListener('click', closeForm);
+    $('new-btn').addEventListener('click', () => openForm(null));
+
+    list.addEventListener('click', async ev => {
+      const btn = ev.target.closest('button[data-act]');
+      if (!btn) return;
+      const id = btn.closest('.m-row').dataset.id;
+      const e = cache.find(x => x.id === id);
+      if (!e) return;
+      const act = btn.dataset.act;
+
+      if (act === 'edit') { openForm(e); return; }
+
+      if (act === 'toggle') {
+        try {
+          await api('/api/admin/events/' + id, {
+            method: 'PUT',
+            body: JSON.stringify({
+              home_team: e.home_team, away_team: e.away_team, competition: e.competition,
+              venue: e.venue, event_date: e.event_date, active: !e.active,
+              vip_price_kobo: e.vip_price_kobo, premium_price_kobo: e.premium_price_kobo,
+              regular_price_kobo: e.regular_price_kobo,
+            }),
+          });
+          await load();
+        } catch (err) { showMsg(err.message, false); }
+        return;
+      }
+
+      if (act === 'delete') {
+        if (!confirm('Delete ' + e.home_team + ' vs ' + e.away_team + '? This cannot be undone.')) return;
+        try {
+          await api('/api/admin/events/' + id, { method: 'DELETE' });
+          await load();
+          showMsg('Match deleted.', true);
+        } catch (err) { showMsg(err.message, false); }
+      }
+    });
+
+    // --- gate ---
+    async function unlock() {
+      const entered = $('code').value.trim();
+      if (!entered) return;
+      code = entered;
+      try {
+        await api('/api/admin/events');           // probes auth + primes cache
+        sessionStorage.setItem('ls_admin_code', code);
+        gate.style.display = 'none';
+        manager.style.display = 'block';
+        gateErr.style.display = 'none';
+        await load();
+      } catch (err) {
+        if (err.message !== 'unauthorised') {
+          gateErr.textContent = err.message;
+          gateErr.style.display = 'block';
+        }
+      }
+    }
+    $('unlock').addEventListener('click', unlock);
+    $('code').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+    $('lock-btn').addEventListener('click', () => {
+      sessionStorage.removeItem('ls_admin_code');
+      location.reload();
+    });
+
+    if (code) {
+      gate.style.display = 'none';
+      manager.style.display = 'block';
+      load().catch(() => {});
+    }
+  })();
+  </script>
+</Layout>

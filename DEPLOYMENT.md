@@ -97,7 +97,10 @@ INSERT INTO events (id, home_team, away_team, competition, event_date, venue, vi
 VALUES ('evt-2026-08-15', 'Lobi Stars', 'Kano Pillars', 'NPFL', '2026-08-15T15:00:00Z', 'Aper Aku Stadium, Makurdi', 500000, 250000, 100000);
 ```
 
-There's no admin UI for events yet — manage them from this same D1 Console.
+Or manage matches from the built-in UI at **`/admin/matches`** (enter the
+`ADMIN_CODE` passcode) — it can create, edit, hide/show and delete fixtures
+without touching SQL. A match that already has orders can't be deleted; hide
+it instead. The D1 Console remains available for bulk edits.
 
 ### 2. Bind the D1 database to the Pages project
 
@@ -131,6 +134,7 @@ plaintext), for the **Production** environment:
 | `RESEND_API_KEY` | From Resend dashboard → API Keys |
 | `RESEND_FROM` | `Lobi Stars FC <info@lobistarsfc.com>` (domain must be verified in Resend) |
 | `STAFF_SCAN_CODE` | A short PIN you choose — gate staff enter this at `/scan` before scanning |
+| `ADMIN_CODE` | A separate passcode for managing ticketed matches at `/admin/matches` (create/edit/hide/delete fixtures). Keep it different from `STAFF_SCAN_CODE`. |
 
 ### 4. Register the Paystack webhook
 
