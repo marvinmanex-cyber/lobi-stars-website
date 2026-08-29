@@ -20,8 +20,8 @@ real member login/signup.
 **1. Add the new tables.** In the D1 database's **Console** tab, re-paste
 and run the whole updated `schema.sql` -- every statement in it uses
 `IF NOT EXISTS`, so re-running it against a database that already has the
-events/orders/tickets tables only creates the two new ones (`food_orders`
-and `members`).
+events/orders/tickets tables only creates the missing ones (`food_orders`,
+`members`, and `pageviews` for the `/admin/analytics` visitor dashboard).
 
 **2. Add a new secret.** Member login sessions are signed with a secret the
 same way ticket QR codes are. In **Settings → Variables and secrets** for
@@ -134,7 +134,7 @@ plaintext), for the **Production** environment:
 | `RESEND_API_KEY` | From Resend dashboard → API Keys |
 | `RESEND_FROM` | `Lobi Stars FC <info@lobistarsfc.com>` (domain must be verified in Resend) |
 | `STAFF_SCAN_CODE` | A short PIN you choose — gate staff enter this at `/scan` before scanning |
-| `ADMIN_CODE` | A separate passcode for managing ticketed matches at `/admin/matches` (create/edit/hide/delete fixtures). Keep it different from `STAFF_SCAN_CODE`. |
+| `ADMIN_CODE` | A separate passcode for the staff tools at `/admin/matches` (manage ticketed fixtures) and `/admin/analytics` (visitor dashboard). Keep it different from `STAFF_SCAN_CODE`. |
 
 ### 4. Register the Paystack webhook
 

@@ -1,0 +1,213 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Visitor Analytics | Lobi Stars Admin">
+  <div class="wrap" style="max-width:1040px;padding-top:120px;padding-bottom:80px;min-height:75vh;">
+    <div class="stag">Admin</div>
+    <h1 class="stitle">Visitor <span class="r">Analytics</span></h1>
+    <p class="muted" style="max-width:640px;margin-bottom:24px;font-size:14px;">
+      First-party traffic stats collected on this site. No IP addresses or personal
+      data are stored &mdash; visitors are counted with a random id kept in their browser.
+      Staff pages (<code>/admin</code>, <code>/scan</code>) are not tracked.
+    </p>
+
+    <!-- Passcode gate -->
+    <div id="gate" class="card" style="padding:24px;max-width:420px;">
+      <label class="muted" style="display:block;margin-bottom:8px;font-size:13px;">Admin code</label>
+      <input id="code" type="password" placeholder="Enter admin code" autocomplete="off"
+        style="width:100%;padding:12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:var(--d3);color:var(--white);font-size:16px;margin-bottom:12px;"/>
+      <button id="unlock" class="btn-p" style="width:100%;">Unlock</button>
+      <div id="gate-err" style="display:none;margin-top:10px;font-size:13px;color:var(--red);"></div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dash" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+        <div class="range" role="group" aria-label="Date range">
+          <button data-days="7">7 days</button>
+          <button data-days="30" class="on">30 days</button>
+          <button data-days="90">90 days</button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <a class="btn-o" href="/admin/matches" style="padding:9px 18px;font-size:12px;">Matches</a>
+          <button id="lock-btn" class="btn-o" style="padding:9px 18px;font-size:12px;">Lock</button>
+        </div>
+      </div>
+
+      <div id="err" style="display:none;padding:12px 16px;border-radius:6px;margin-bottom:16px;font-size:14px;background:rgba(212,32,43,.15);color:var(--red);"></div>
+
+      <div id="cards" class="cards"></div>
+
+      <h3 class="sec">Page views per day</h3>
+      <div id="chart" class="chart card"></div>
+
+      <div class="two-col">
+        <div>
+          <h3 class="sec">Top pages</h3>
+          <div id="pages" class="card tablewrap"></div>
+        </div>
+        <div>
+          <h3 class="sec">Traffic sources</h3>
+          <div id="refs" class="card tablewrap"></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <h3 class="sec">Countries</h3>
+          <div id="countries" class="card tablewrap"></div>
+        </div>
+        <div>
+          <h3 class="sec">Devices</h3>
+          <div id="devices" class="card tablewrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    .range button{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:8px 16px;border:1px solid rgba(255,255,255,.25);background:transparent;color:var(--white);cursor:pointer;}
+    .range button:first-child{border-radius:4px 0 0 4px;}
+    .range button:last-child{border-radius:0 4px 4px 0;}
+    .range button + button{border-left:none;}
+    .range button.on{background:var(--red);border-color:var(--red);color:#fff;}
+    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:8px;}
+    .stat{background:var(--d2);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px 18px;}
+    .stat .n{font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1;color:var(--white);}
+    .stat .l{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lt);margin-top:6px;}
+    .sec{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin:30px 0 12px;}
+    .chart{padding:18px;display:flex;align-items:flex-end;gap:3px;height:180px;overflow-x:auto;}
+    .bar{flex:1 0 6px;min-width:6px;background:linear-gradient(var(--red),rgba(227,30,36,.35));border-radius:2px 2px 0 0;position:relative;}
+    .bar:hover{background:var(--gold);}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    .tablewrap{padding:6px 0;overflow-x:auto;}
+    table.a{width:100%;border-collapse:collapse;font-size:13px;}
+    table.a td{padding:9px 16px;border-bottom:1px solid rgba(255,255,255,.06);color:var(--lt);}
+    table.a td:last-child{text-align:right;color:var(--white);font-weight:600;white-space:nowrap;}
+    table.a tr:last-child td{border-bottom:none;}
+    .barcell{position:relative;}
+    .barcell .fill{position:absolute;left:0;top:0;bottom:0;background:rgba(227,30,36,.14);z-index:0;}
+    .barcell span{position:relative;z-index:1;}
+    @media(max-width:760px){ .two-col{grid-template-columns:1fr;} }
+  </style>
+
+  <script is:inline>
+  (function () {
+    let code = sessionStorage.getItem('ls_admin_code') || '';
+    let days = 30;
+
+    const $ = id => document.getElementById(id);
+    const gate = $('gate'), dash = $('dash'), gateErr = $('gate-err'), err = $('err');
+
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    const num = n => Number(n || 0).toLocaleString();
+
+    async function api(path) {
+      const res = await fetch(path, { headers: { 'x-admin-code': code } });
+      if (res.status === 401) {
+        sessionStorage.removeItem('ls_admin_code');
+        code = '';
+        dash.style.display = 'none';
+        gate.style.display = 'block';
+        gateErr.textContent = 'Code rejected — enter it again.';
+        gateErr.style.display = 'block';
+        throw new Error('unauthorised');
+      }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || ('Request failed (' + res.status + ')'));
+      return data;
+    }
+
+    function statCard(n, l) {
+      return '<div class="stat"><div class="n">' + num(n) + '</div><div class="l">' + l + '</div></div>';
+    }
+
+    function renderTable(rows, label, keyFn, valFn) {
+      if (!rows || !rows.length) return '<p class="muted" style="padding:16px;">No data yet.</p>';
+      const max = Math.max.apply(null, rows.map(valFn));
+      return '<table class="a"><tbody>' + rows.map(r => {
+        const v = valFn(r);
+        const pct = max ? (v / max * 100).toFixed(1) : 0;
+        return '<tr><td class="barcell"><span>' + esc(keyFn(r)) + '</span>' +
+          '<span class="fill" style="width:' + pct + '%"></span></td><td>' + num(v) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    }
+
+    function renderChart(daily) {
+      if (!daily || !daily.length) { $('chart').innerHTML = '<p class="muted">No data yet.</p>'; return; }
+      const max = Math.max.apply(null, daily.map(d => d.views)) || 1;
+      $('chart').innerHTML = daily.map(d => {
+        const h = Math.max(2, Math.round(d.views / max * 150));
+        return '<div class="bar" style="height:' + h + 'px" title="' + esc(d.day) + ': ' +
+          num(d.views) + ' views, ' + num(d.visitors) + ' visitors"></div>';
+      }).join('');
+    }
+
+    async function load() {
+      err.style.display = 'none';
+      try {
+        const d = await api('/api/admin/analytics?days=' + days);
+        $('cards').innerHTML =
+          statCard(d.totals.visitors, 'Unique visitors') +
+          statCard(d.totals.views, 'Page views') +
+          statCard(d.totals.sessions, 'Sessions') +
+          statCard(d.today.visitors, 'Visitors today') +
+          statCard(d.today.views, 'Views today') +
+          statCard(d.newReturning.new_views, 'First-time views') +
+          statCard(d.newReturning.returning_views, 'Returning views');
+        renderChart(d.daily);
+        $('pages').innerHTML = renderTable(d.topPages, 'Page',
+          r => r.path, r => r.views);
+        $('refs').innerHTML = renderTable(d.referrers, 'Source',
+          r => r.host, r => r.views);
+        $('countries').innerHTML = renderTable(d.countries, 'Country',
+          r => r.country, r => r.views);
+        $('devices').innerHTML = renderTable(d.devices, 'Device',
+          r => r.device, r => r.views);
+      } catch (e) {
+        if (e.message !== 'unauthorised') { err.textContent = e.message; err.style.display = 'block'; }
+      }
+    }
+
+    document.querySelectorAll('.range button').forEach(b => {
+      b.addEventListener('click', () => {
+        document.querySelectorAll('.range button').forEach(x => x.classList.remove('on'));
+        b.classList.add('on');
+        days = parseInt(b.dataset.days, 10);
+        load();
+      });
+    });
+
+    async function unlock() {
+      const entered = $('code').value.trim();
+      if (!entered) return;
+      code = entered;
+      try {
+        await api('/api/admin/analytics?days=7');
+        sessionStorage.setItem('ls_admin_code', code);
+        gate.style.display = 'none';
+        dash.style.display = 'block';
+        gateErr.style.display = 'none';
+        load();
+      } catch (e) {
+        if (e.message !== 'unauthorised') { gateErr.textContent = e.message; gateErr.style.display = 'block'; }
+      }
+    }
+    $('unlock').addEventListener('click', unlock);
+    $('code').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
+    $('lock-btn').addEventListener('click', () => {
+      sessionStorage.removeItem('ls_admin_code');
+      location.reload();
+    });
+
+    if (code) {
+      gate.style.display = 'none';
+      dash.style.display = 'block';
+      load();
+    }
+  })();
+  </script>
+</Layout>

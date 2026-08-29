@@ -68,10 +68,30 @@ CREATE TABLE IF NOT EXISTS members (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- First-party visitor analytics. No IP address or personal data is stored:
+-- visitor_id / session_id are random ids generated in the browser, and the
+-- geo/device columns come from what Cloudflare already attaches to the edge
+-- request. Feeds /api/track (write) and /admin/analytics (read).
+CREATE TABLE IF NOT EXISTS pageviews (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts TEXT NOT NULL DEFAULT (datetime('now')),
+  visitor_id TEXT NOT NULL,
+  session_id TEXT NOT NULL,
+  path TEXT NOT NULL,
+  referrer_host TEXT,
+  country TEXT,
+  city TEXT,
+  device TEXT,                        -- 'mobile' | 'tablet' | 'desktop'
+  is_new_visitor INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE INDEX IF NOT EXISTS idx_members_email ON members(email);
 CREATE INDEX IF NOT EXISTS idx_orders_event ON orders(event_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_order ON tickets(order_id);
 CREATE INDEX IF NOT EXISTS idx_tickets_event ON tickets(event_id);
+CREATE INDEX IF NOT EXISTS idx_pageviews_ts ON pageviews(ts);
+CREATE INDEX IF NOT EXISTS idx_pageviews_path ON pageviews(path);
+CREATE INDEX IF NOT EXISTS idx_pageviews_visitor ON pageviews(visitor_id);
 
 -- Seed a couple of example events so /api/events isn't empty on first deploy.
 -- Edit dates/teams/prices to match real fixtures, or delete these rows.
