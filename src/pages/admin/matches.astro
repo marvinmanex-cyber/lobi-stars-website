@@ -77,7 +77,7 @@ import Layout from '../../layouts/Layout.astro';
     </div>
   </div>
 
-  <style>
+  <style is:global>
     .admin-wrap{max-width:940px;padding-top:112px;padding-bottom:90px;min-height:78vh;}
     .admin-nav{display:flex;gap:20px;flex-wrap:wrap;font-family:'Barlow Condensed',sans-serif;
       font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:26px;}
@@ -256,7 +256,7 @@ import Layout from '../../layouts/Layout.astro';
       const crest = crestFor(opp);
       const orders = e.paid_orders || 0;
       const crestEl = crest
-        ? '<img class="m-crest" src="' + crest + '" alt="" onerror="this.style.visibility=\'hidden\'"/>'
+        ? '<img class="m-crest" width="46" height="46" src="' + crest + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"/>'
         : '<div class="m-crest ph">' + esc(String(opp || '?').charAt(0).toUpperCase()) + '</div>';
       return '<div class="m-card ' + (e.active ? '' : 'inactive') + '" data-id="' + esc(e.id) + '">' +
         crestEl +
