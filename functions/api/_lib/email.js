@@ -37,7 +37,7 @@ export function ticketEmailHtml({ order, event, tickets }) {
   const homeCrest = TEAM_LOGOS[event.home_team];
   const awayCrest = TEAM_LOGOS[event.away_team];
   const crestCell = (name, src) => src
-    ? `<img src="${SITE_ORIGIN}${src}" width="48" height="48" alt="${name}" style="border-radius:50%;background:#fff;padding:4px;"/>`
+    ? `<img src="${SITE_ORIGIN}${src}" width="48" height="48" alt="${name}" style="border-radius:50%;background:#fff;padding:4px;object-fit:contain;"/>`
     : `<span style="display:inline-block;width:48px;height:48px;line-height:48px;border-radius:50%;background:#1e2f52;color:#fff;font-size:18px;font-weight:bold;">${name.charAt(0)}</span>`;
 
   // Table-based layout throughout -- flexbox/grid is unreliable in Outlook
