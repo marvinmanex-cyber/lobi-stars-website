@@ -49,42 +49,57 @@ nav.scrolled{box-shadow:0 6px 24px rgba(15,17,21,.07);}
 .nlt{font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--white);letter-spacing:1.5px;line-height:1.05;}
 .nlt span{display:block;font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:3px;color:var(--red);text-transform:uppercase;}
 
+.nav-left{display:flex;align-items:center;gap:16px;}
+
+/* Hamburger -- always visible, opens the full menu panel. Only a
+   handful of "very important" destinations stay as flat links next to
+   it; everything else lives behind it. */
+.hamburger{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
+  width:38px;height:38px;border-radius:10px;border:1px solid var(--d4);background:#fff;cursor:pointer;
+  padding:0;flex-shrink:0;transition:border-color .15s,background .15s;}
+.hamburger:hover{border-color:var(--red);}
+.hamburger span{display:block;width:16px;height:2px;background:var(--white);transition:transform .2s,opacity .2s;}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.open span:nth-child(2){opacity:0;}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
 .nav-links{display:flex;align-items:center;gap:2px;list-style:none;}
-.nav-links > li{position:relative;}
 .nav-links a{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
   color:var(--white);text-decoration:none;padding:10px 13px;display:flex;align-items:center;
   border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
 .nav-links a:hover,.nav-links a.active{color:var(--red);border-color:var(--red);}
 .nav-cta{background:var(--red)!important;color:#fff!important;border-radius:24px;padding:9px 20px!important;
-  border-bottom:none!important;margin-left:8px;}
+  border-bottom:none!important;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:13px;
+  font-weight:700;letter-spacing:1.2px;text-transform:uppercase;}
 .nav-cta:hover{background:var(--rd)!important;color:#fff!important;}
 
-.nav-drop > a::after{content:'';display:inline-block;width:6px;height:6px;border-right:1.5px solid currentColor;
-  border-bottom:1.5px solid currentColor;transform:rotate(45deg);margin-left:7px;}
-.drop-panel{position:absolute;top:100%;left:0;min-width:230px;background:#fff;border:1px solid var(--d4);
-  border-radius:10px;box-shadow:0 20px 44px rgba(15,17,21,.14);padding:8px;list-style:none;
-  opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .15s,transform .15s,visibility .15s;}
-.nav-drop:hover .drop-panel,.nav-drop:focus-within .drop-panel{opacity:1;visibility:visible;transform:translateY(0);}
-.drop-panel a{padding:10px 12px;border-radius:6px;border-bottom:none!important;font-size:12px;}
-.drop-panel a:hover{background:var(--d3);color:var(--red);}
+/* Off-canvas menu -- holds every secondary destination, grouped. */
+.menu-ov{position:fixed;inset:0;background:rgba(15,17,21,.5);z-index:1990;
+  opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;}
+.menu-ov.open{opacity:1;visibility:visible;}
+.menu-panel{position:fixed;top:0;left:0;bottom:0;width:320px;max-width:86vw;background:#fff;z-index:2000;
+  box-shadow:16px 0 44px rgba(15,17,21,.18);transform:translateX(-104%);
+  transition:transform .3s cubic-bezier(.22,.85,.32,1);display:flex;flex-direction:column;overflow-y:auto;}
+.menu-panel.open{transform:translateX(0);}
+.menu-panel-head{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;
+  border-bottom:1px solid var(--d4);flex-shrink:0;}
+.menu-close{background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:var(--lt);padding:4px 8px;}
+.menu-close:hover{color:var(--red);}
+.menu-panel-body{padding:10px 12px 30px;}
+.menu-group{padding:16px 12px;border-top:1px solid var(--d4);}
+.menu-group:first-child{border-top:none;}
+.menu-group h4{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--red);margin-bottom:8px;}
+.menu-group a{display:block;padding:10px 8px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;
+  color:var(--white);text-decoration:none;border-radius:6px;transition:background .15s,color .15s,padding-left .15s;}
+.menu-group a:hover{background:var(--d3);color:var(--red);padding-left:14px;}
 
-.nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:8px;}
-.nav-toggle span{display:block;width:22px;height:2px;background:var(--white);margin:5px 0;}
 @media(max-width:1000px){
   .nav-inner{height:68px;}
-  .nav-links{
-    display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;
-    background:#fff;border-top:1px solid var(--d4);box-shadow:0 16px 30px rgba(15,17,21,.1);
-    max-height:calc(100vh - 68px);overflow-y:auto;padding:6px 0;
-  }
-  .nav-links.mobile-open{display:flex;}
-  .nav-links li{width:100%;}
-  .nav-links a{padding:14px 6%;border-bottom:1px solid var(--d4)!important;}
-  .nav-drop .drop-panel{position:static;opacity:1;visibility:visible;transform:none;box-shadow:none;
-    border:none;border-radius:0;padding:0;background:var(--d3);}
-  .nav-drop .drop-panel a{padding:12px 6% 12px 12%;border-radius:0;font-size:12px;border-bottom:1px solid var(--d4)!important;}
-  .nav-cta{margin:12px 6% 6px;justify-content:center;}
-  .nav-toggle{display:block;}
+  .nlt{display:none;}
+}
+@media(max-width:680px){
+  .nav-links{display:none;}
 }
 
 /* SHARED headings/buttons used by all pages */
@@ -134,32 +149,54 @@ footer{background:var(--dark);border-top:1px solid var(--d4);padding:64px 0 26px
 
 <nav id="mainNav">
   <div class="nav-inner">
-    <a class="nav-logo" href="/#hero">
-      <div class="nlb"><img src="/images/hero-6.jpg" alt="Lobi Stars Badge"></div>
-      <div class="nlt">Lobi Stars<span>Football Club</span></div>
-    </a>
-    <ul class="nav-links" id="navLinks">
-      <li class="nav-drop">
-        <a href="/#club-history">Club</a>
-        <ul class="drop-panel">
-          <li><a href="/#club-history">About &amp; History</a></li>
-          <li><a href="/#management">Management</a></li>
-          <li><a href="/#academy">Academy</a></li>
-          <li><a href="/#membership">Membership</a></li>
-          <li><a href="/#merchandise">Shop</a></li>
-        </ul>
-      </li>
-      <li><a href="/squad">Squad</a></li>
+    <div class="nav-left">
+      <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="menuPanel">
+        <span></span><span></span><span></span>
+      </button>
+      <a class="nav-logo" href="/#hero">
+        <div class="nlb"><img src="/images/hero-6.jpg" alt="Lobi Stars Badge"></div>
+        <div class="nlt">Lobi Stars<span>Football Club</span></div>
+      </a>
+    </div>
+    <ul class="nav-links">
       <li><a href="/fixtures">Fixtures</a></li>
-      <li><a href="/programme">Programme</a></li>
+      <li><a href="/squad">Squad</a></li>
       <li><a href="/tickets">Tickets</a></li>
-      <li><a href="/news">News</a></li>
-      <li><a href="/gallery">Gallery</a></li>
-      <li><a href="/#contact" class="nav-cta">Contact</a></li>
     </ul>
-    <button class="nav-toggle" id="menuToggle"><span></span><span></span><span></span></button>
+    <a href="/#contact" class="nav-cta">Contact</a>
   </div>
 </nav>
+
+<div class="menu-ov" id="menuOv"></div>
+<div class="menu-panel" id="menuPanel" role="dialog" aria-modal="true" aria-label="Site menu">
+  <div class="menu-panel-head">
+    <div class="nlt">Menu</div>
+    <button class="menu-close" id="menuClose" aria-label="Close menu">&times;</button>
+  </div>
+  <div class="menu-panel-body" id="menuLinks">
+    <div class="menu-group">
+      <h4>Matchday</h4>
+      <a href="/fixtures">Fixtures &amp; Results</a>
+      <a href="/squad">Squad</a>
+      <a href="/programme">Matchday Programme</a>
+      <a href="/tickets">Buy Tickets</a>
+    </div>
+    <div class="menu-group">
+      <h4>Club</h4>
+      <a href="/#club-history">About &amp; History</a>
+      <a href="/#management">Management</a>
+      <a href="/#academy">Academy</a>
+      <a href="/#membership">Membership</a>
+    </div>
+    <div class="menu-group">
+      <h4>More</h4>
+      <a href="/news">News</a>
+      <a href="/gallery">Gallery</a>
+      <a href="/#merchandise">Shop</a>
+      <a href="/#contact">Contact</a>
+    </div>
+  </div>
+</div>
 
 <main>
   <slot />
@@ -234,10 +271,33 @@ footer{background:var(--dark);border-top:1px solid var(--d4);padding:64px 0 26px
   onScroll();
   window.addEventListener('scroll', onScroll, { passive: true });
 
-  const menuToggle = document.getElementById('menuToggle');
-  const navLinks = document.getElementById('navLinks');
-  menuToggle.addEventListener('click', () => navLinks.classList.toggle('mobile-open'));
-  navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => navLinks.classList.remove('mobile-open')));
+  const hamburger = document.getElementById('hamburgerBtn');
+  const menuOv = document.getElementById('menuOv');
+  const menuPanel = document.getElementById('menuPanel');
+  const menuClose = document.getElementById('menuClose');
+  const menuLinks = document.getElementById('menuLinks');
+
+  function openMenu() {
+    hamburger.classList.add('open');
+    hamburger.setAttribute('aria-expanded', 'true');
+    menuOv.classList.add('open');
+    menuPanel.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeMenu() {
+    hamburger.classList.remove('open');
+    hamburger.setAttribute('aria-expanded', 'false');
+    menuOv.classList.remove('open');
+    menuPanel.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.contains('open') ? closeMenu() : openMenu();
+  });
+  menuClose.addEventListener('click', closeMenu);
+  menuOv.addEventListener('click', closeMenu);
+  menuLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 })();
 </script>
 <script is:inline src="/track.js"></script>
