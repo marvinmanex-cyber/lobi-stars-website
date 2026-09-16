@@ -388,9 +388,22 @@ section{padding:60px 5%;}
 .about-text p{font-size:16px;line-height:1.85;color:rgba(255,255,255,.63);margin-bottom:18px;}
 .about-text p strong{color:var(--gold);}
 .about-pillars{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px;}
-.pillar{background:var(--d3);border-left:3px solid var(--red);padding:18px;border-radius:0 4px 4px 0;}
-.pillar-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);margin-bottom:5px;}
-.pillar-desc{font-size:13px;color:rgba(255,255,255,.45);line-height:1.55;}
+.pillar{
+  background:#fff;
+  border:1px solid var(--d4);
+  border-left:3px solid var(--red);
+  border-radius:4px 10px 10px 4px;
+  padding:20px 22px;
+  box-shadow:0 4px 16px rgba(15,17,21,.05);
+  transition:transform .2s ease,box-shadow .2s ease,border-left-color .2s ease;
+}
+.pillar:hover{
+  transform:translateY(-3px);
+  box-shadow:0 14px 30px rgba(15,17,21,.09);
+  border-left-color:var(--gold);
+}
+.pillar-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--white);margin-bottom:6px;}
+.pillar-desc{font-size:13px;color:#4A5568;line-height:1.6;}
 .about-visual{display:flex;flex-direction:column;gap:16px;}
 .about-main-img{height:320px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.08);position:relative;}
 .about-main-img img{position:absolute;inset:0;}
@@ -410,7 +423,7 @@ section{padding:60px 5%;}
 .players-hd{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:44px;flex-wrap:wrap;gap:18px;}
 .ftabs{display:flex;gap:8px;flex-wrap:wrap;}
 .ftab{padding:7px 18px;border-radius:3px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;border:1.5px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);background:transparent;transition:all .2s;user-select:none;}
-.ftab.active{background:var(--red);border-color:var(--red);color:var(--white);}
+.ftab.active{background:var(--red);border-color:var(--red);color:#fff!important;}
 .ftab:hover:not(.active){border-color:rgba(255,255,255,.4);color:var(--white);}
 .team-photos-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:40px;}
 .tps-item{height:200px;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.08);position:relative;}
