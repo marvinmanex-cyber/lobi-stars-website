@@ -387,6 +387,41 @@ section{padding:60px 5%;}
 .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:72px;align-items:start;}
 .about-text p{font-size:16px;line-height:1.85;color:rgba(255,255,255,.63);margin-bottom:18px;}
 .about-text p strong{color:var(--gold);}
+.lead-para{
+  position:relative;
+  background:linear-gradient(135deg,#fff,var(--d3));
+  border-left:4px solid var(--gold);
+  border-radius:4px 14px 14px 4px;
+  padding:28px 26px 28px 62px;
+  margin-bottom:30px;
+  box-shadow:0 8px 22px rgba(15,17,21,.06);
+  overflow:hidden;
+}
+.lead-mark{
+  position:absolute;
+  top:-6px;left:14px;
+  font-family:'Bebas Neue',sans-serif;
+  font-size:76px;
+  line-height:1;
+  color:var(--gold);
+  opacity:.3;
+  pointer-events:none;
+}
+.lead-para p{
+  position:relative;
+  font-family:'Barlow Condensed',sans-serif;
+  font-size:19px;
+  font-weight:600;
+  line-height:1.5;
+  letter-spacing:.2px;
+  color:var(--white)!important;
+  margin-bottom:0!important;
+}
+@media(max-width:600px){
+  .lead-para{padding:24px 20px 24px 50px;}
+  .lead-mark{font-size:60px;left:10px;}
+  .lead-para p{font-size:17px;}
+}
 .about-pillars{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:34px;}
 .pillar{
   background:#fff;
@@ -1175,7 +1210,7 @@ body {
 
 /* 2. Cards -- soft translucent panels with a subtle border/shadow for
    definition on a light page, rather than a hard fill. */
-.player-card, .album-card, .blog-card, .tcard, .mcard, .scard, .about-text {
+.player-card, .album-card, .blog-card, .tcard, .mcard, .scard {
     background: rgba(255, 255, 255, 0.7) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -1567,8 +1602,11 @@ h1, h2, h3, .stitle {
       
       <!-- LEFT SIDE: MORE STORIES TO FILL SPACE -->
       <div class="about-text">
-        <p style="margin-bottom: 25px;">Explore the deep history of Lobi Stars. From the early days in 1969 to our historic title wins, this is where we preserve the legends of the Red and Gold.</p>
-        
+        <div class="lead-para">
+          <span class="lead-mark" aria-hidden="true">&#8220;</span>
+          <p>Explore the deep history of Lobi Stars. From the early days in 1969 to our historic title wins, this is where we preserve the legends of the Red and Gold.</p>
+        </div>
+
         <div class="pillar" style="margin-bottom: 15px;">
             <div class="pillar-title">1999: The Golden Run</div>
             <div class="pillar-desc">An in-depth look at the squad that brought the first NPFL trophy to Makurdi.</div>
