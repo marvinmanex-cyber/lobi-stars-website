@@ -1,0 +1,143 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Matchday Programme | Lobi Stars Football Club">
+  <div class="page-hero wrap">
+    <div class="stag">Ahead of Kick-off</div>
+    <h1 class="stitle">Matchday <span class="r">Programme</span></h1>
+    <div class="divr"></div>
+  </div>
+
+  <div class="page-content wrap">
+    <div id="prog-loading" class="muted">Loading the next matchday programme&hellip;</div>
+    <div id="prog-empty" class="empty-state" hidden></div>
+
+    <div id="prog-body" hidden>
+      <div class="prog-header">
+        <div class="prog-team">
+          <img id="prog-home-logo" class="prog-crest" alt="" />
+          <span id="prog-home-name"></span>
+        </div>
+        <div class="prog-vs">VS</div>
+        <div class="prog-team">
+          <img id="prog-away-logo" class="prog-crest" alt="" />
+          <span id="prog-away-name"></span>
+        </div>
+      </div>
+      <p id="prog-meta" class="muted prog-meta"></p>
+
+      <div class="prog-cover-wrap">
+        <a id="prog-cover-link" href="#" target="_blank" rel="noopener">
+          <img id="prog-cover-img" class="prog-cover" alt="Matchday programme cover" />
+        </a>
+      </div>
+
+      <div class="prog-actions">
+        <a id="prog-download" href="#" download class="prog-dl-btn">
+          <img src="/images/matchdayprogramme-beside-fixture-click.png" alt="Download matchday programme" />
+        </a>
+        <a href="/tickets" class="btn-p">Buy Tickets for This Match &rarr;</a>
+      </div>
+    </div>
+  </div>
+
+  <style is:global>
+    .prog-header{display:flex;align-items:center;justify-content:center;gap:24px;margin-bottom:10px;flex-wrap:wrap;}
+    .prog-team{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:110px;}
+    .prog-crest{width:64px;height:64px;object-fit:contain;background:#fff;border-radius:50%;
+      box-shadow:0 0 0 1px var(--d4);padding:4px;}
+    .prog-team span{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;
+      letter-spacing:.5px;color:var(--white);text-align:center;}
+    .prog-vs{font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--red);}
+    .prog-meta{text-align:center;font-size:13px;margin-bottom:34px;}
+    .prog-cover-wrap{display:flex;justify-content:center;margin-bottom:26px;}
+    .prog-cover{max-width:100%;width:420px;border-radius:12px;box-shadow:0 22px 50px rgba(15,17,21,.16);
+      border:1px solid var(--d4);cursor:zoom-in;transition:transform .2s;}
+    .prog-cover:hover{transform:translateY(-3px);}
+    .prog-actions{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;}
+    .prog-dl-btn{display:inline-block;line-height:0;border-radius:10px;overflow:hidden;
+      box-shadow:0 10px 26px rgba(15,17,21,.12);transition:transform .2s;}
+    .prog-dl-btn:hover{transform:translateY(-2px);}
+    .prog-dl-btn img{display:block;width:280px;max-width:70vw;height:auto;}
+  </style>
+
+  <script is:inline>
+  (function () {
+    const TEAM_LOGOS = {
+      'Lobi Stars FC': '/images/lobi-stars-fc.jpg',
+      'Lobi Stars': '/images/lobi-stars-crest.png',
+      'ABS FC': '/images/abs-illorin.jpg',
+      'Bichi First FC': '/images/bichi-first.jpg',
+      'Bichi First': '/images/bichi-first.jpg',
+      'Kada Warriors FC': '/images/kadawarriors-kaduna.jpg',
+      'Kada Warriors': '/images/kadawarriors-kaduna.jpg',
+      'Mighty Jets': '/images/mighty-jets-jos.jpg',
+      'Mighty Jets Feeder / Bida Lions': '/images/mighty-jets-jos.jpg',
+      'Sokoto United FC': '/images/sokoto-united.jpg',
+      'Sokoto United': '/images/sokoto-united.jpg',
+      'Wikki Tourists FC': '/images/wikki-tourists.jpg',
+      'Wikki Tourists': '/images/wikki-tourists.jpg',
+      'Yobe Desert Stars FC': '/images/yobe-desert-stars.jpg',
+      'Yobe Desert Stars': '/images/yobe-desert-stars.jpg',
+      'Kano Pillars': '/images/kano-pillars-logo.png',
+    };
+
+    function showEmpty(msg) {
+      document.getElementById('prog-loading').hidden = true;
+      const empty = document.getElementById('prog-empty');
+      empty.textContent = msg;
+      empty.hidden = false;
+    }
+
+    async function load() {
+      let events;
+      try {
+        const res = await fetch('/api/events');
+        const data = await res.json();
+        events = (data.events || []).slice().sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
+      } catch {
+        showEmpty('Could not load fixtures right now — please try again shortly.');
+        return;
+      }
+
+      const next = events[0];
+      if (!next) {
+        showEmpty('No upcoming matches are scheduled yet — check back soon.');
+        return;
+      }
+      if (!next.programme_url) {
+        showEmpty('The programme for ' + next.home_team + ' vs ' + next.away_team +
+          ' hasn\'t been uploaded yet — check back closer to kickoff.');
+        return;
+      }
+
+      const setLogo = (imgId, name) => {
+        const img = document.getElementById(imgId);
+        const src = TEAM_LOGOS[name];
+        if (src) { img.src = src; img.alt = name; } else { img.style.visibility = 'hidden'; }
+      };
+      setLogo('prog-home-logo', next.home_team);
+      setLogo('prog-away-logo', next.away_team);
+      document.getElementById('prog-home-name').textContent = next.home_team;
+      document.getElementById('prog-away-name').textContent = next.away_team;
+
+      const d = new Date(next.event_date);
+      document.getElementById('prog-meta').textContent = next.competition + ' — ' +
+        d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) +
+        ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) +
+        ' — ' + next.venue;
+
+      document.getElementById('prog-cover-img').src = next.programme_url;
+      document.getElementById('prog-cover-link').href = next.programme_url;
+      const dl = document.getElementById('prog-download');
+      dl.href = next.programme_url;
+      dl.download = 'lobi-stars-matchday-programme.jpg';
+
+      document.getElementById('prog-loading').hidden = true;
+      document.getElementById('prog-body').hidden = false;
+    }
+
+    load();
+  })();
+  </script>
+</Layout>

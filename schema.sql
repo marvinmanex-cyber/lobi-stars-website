@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS events (
   premium_price_kobo INTEGER NOT NULL,
   regular_price_kobo INTEGER NOT NULL,
   active INTEGER NOT NULL DEFAULT 1,  -- 0 to hide from /api/events without deleting
+  programme_url TEXT,            -- e.g. /images/matchday-programme.jpeg, set from Manage Matches
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

@@ -38,11 +38,11 @@ export async function onRequestPost({ request, env }) {
   await env.DB.prepare(
     `INSERT INTO events
        (id, home_team, away_team, competition, event_date, venue,
-        vip_price_kobo, premium_price_kobo, regular_price_kobo, active)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        vip_price_kobo, premium_price_kobo, regular_price_kobo, active, programme_url)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, e.home_team, e.away_team, e.competition, e.event_date, e.venue,
-    e.vip_price_kobo, e.premium_price_kobo, e.regular_price_kobo, e.active
+    e.vip_price_kobo, e.premium_price_kobo, e.regular_price_kobo, e.active, e.programme_url
   ).run();
 
   return Response.json({ ok: true, id });

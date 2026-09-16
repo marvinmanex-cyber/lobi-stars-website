@@ -1,8 +1,9 @@
 // Team name -> crest image lookup, used wherever a team is shown (match
 // countdown, ticket cards, ticket stub, verification page, ticket email).
 // Mirrors the client-side copies in src/pages/index.astro,
-// src/pages/tickets/index.astro and src/pages/tickets/success.astro --
-// keep them in sync. Unmapped teams fall back to an initial-letter circle.
+// src/pages/tickets/index.astro, src/pages/tickets/success.astro and
+// src/pages/programme/index.astro -- keep them in sync. Unmapped teams
+// fall back to an initial-letter circle.
 export const TEAM_LOGOS = {
   // Lobi Stars
   'Lobi Stars FC': '/images/lobi-stars-fc.jpg',

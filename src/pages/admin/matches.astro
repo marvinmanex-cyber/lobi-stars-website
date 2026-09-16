@@ -64,6 +64,17 @@ import Layout from '../../layouts/Layout.astro';
         </div>
 
         <div class="fset">
+          <div class="fset-label">Matchday programme (optional)</div>
+          <div class="f-grid">
+            <label class="span2">Image path
+              <input id="f-prog" type="text" placeholder="/images/matchday-programme.jpeg"/>
+            </label>
+          </div>
+          <p class="fhint">Path to an already-uploaded image in /public/images (give the file to your developer
+            first). Leave blank to hide the programme button for this match on the site.</p>
+        </div>
+
+        <div class="fset">
           <label class="f-check"><input id="f-active" type="checkbox" checked/> <span>Visible on the site</span></label>
         </div>
 
@@ -268,6 +279,7 @@ import Layout from '../../layouts/Layout.astro';
             '<span class="chip">VIP ' + naira(e.vip_price_kobo) + '</span>' +
             '<span class="chip">Premium ' + naira(e.premium_price_kobo) + '</span>' +
             '<span class="chip">Regular ' + naira(e.regular_price_kobo) + '</span>' +
+            (e.programme_url ? '<span class="chip">&#128196; Programme attached</span>' : '') +
           '</div>' +
         '</div>' +
         '<div class="m-side">' +
@@ -306,6 +318,7 @@ import Layout from '../../layouts/Layout.astro';
       $('f-vip').value = e ? e.vip_price_kobo / 100 : 0;
       $('f-prem').value = e ? e.premium_price_kobo / 100 : 0;
       $('f-reg').value = e ? e.regular_price_kobo / 100 : 0;
+      $('f-prog').value = e ? (e.programme_url || '') : '';
       form._editId = e ? e.id : '';
       form.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -325,6 +338,7 @@ import Layout from '../../layouts/Layout.astro';
         vip_price_kobo: Math.round(Number($('f-vip').value) * 100),
         premium_price_kobo: Math.round(Number($('f-prem').value) * 100),
         regular_price_kobo: Math.round(Number($('f-reg').value) * 100),
+        programme_url: $('f-prog').value.trim(),
       };
       const id = form._editId || '';
       $('f-save').disabled = true;
@@ -365,7 +379,7 @@ import Layout from '../../layouts/Layout.astro';
               home_team: e.home_team, away_team: e.away_team, competition: e.competition,
               venue: e.venue, event_date: e.event_date, active: !e.active,
               vip_price_kobo: e.vip_price_kobo, premium_price_kobo: e.premium_price_kobo,
-              regular_price_kobo: e.regular_price_kobo,
+              regular_price_kobo: e.regular_price_kobo, programme_url: e.programme_url || '',
             }),
           });
           await load();

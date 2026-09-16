@@ -32,6 +32,7 @@ export function parseEventPayload(body) {
   const competition = str(b.competition) || 'NNL Conference D';
   const venue = str(b.venue);
   const event_date = str(b.event_date);
+  const programme_url = str(b.programme_url).slice(0, 300) || null;
 
   if (!home_team || !away_team || !venue || !event_date) {
     return { error: 'Home team, away team, venue and date are all required.' };
@@ -60,6 +61,7 @@ export function parseEventPayload(body) {
       event_date: parsed.toISOString(),
       ...prices,
       active: b.active ? 1 : 0,
+      programme_url,
     },
   };
 }

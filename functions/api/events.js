@@ -2,7 +2,7 @@
 export async function onRequestGet({ env }) {
   const { results } = await env.DB.prepare(
     `SELECT id, home_team, away_team, competition, event_date, venue,
-            vip_price_kobo, premium_price_kobo, regular_price_kobo
+            vip_price_kobo, premium_price_kobo, regular_price_kobo, programme_url
      FROM events
      WHERE active = 1 AND event_date >= datetime('now')
      ORDER BY event_date ASC`
