@@ -25,7 +25,7 @@ function fmtDate(d: Date) {
     )}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;" class="fixtures-cols">
       <div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);">Upcoming Fixtures</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--d4);">Upcoming Fixtures</div>
         {upcoming.length === 0 && <p class="muted">No upcoming fixtures scheduled.</p>}
         {upcoming.map(f => (
           <div class="card" style="padding:18px;margin-bottom:12px;">
@@ -42,7 +42,7 @@ function fmtDate(d: Date) {
         ))}
       </div>
       <div>
-        <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);">Recent Results</div>
+        <div style="font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--gold);margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--d4);">Recent Results</div>
         {results.length === 0 && <p class="muted">No results recorded yet.</p>}
         {results.map(f => (
           <div class="card" style="padding:18px;margin-bottom:12px;">

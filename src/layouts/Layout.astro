@@ -13,7 +13,7 @@ const { title, description = "Official website of Lobi Stars Football Club - Pri
 <title>{title}</title>
 <meta name="description" content={description}/>
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#E31E24">
+<meta name="theme-color" content="#FFFFFF">
 <link rel="apple-touch-icon" href="/images/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -23,79 +23,106 @@ const { title, description = "Official website of Lobi Stars Football Club - Pri
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
   --red:#E31E24;--rd:#C11A1F;--rdp:#4D0B0D;
-  --gold:#FFC72C;--gd:#E0A61F;
-  --black:#0A0A0A;--dark:#111;--d2:#1A1A1A;--d3:#222;--d4:#2E2E2E;
-  --white:#FFF;--lt:#AAA;
+  --gold:#9C6B0A;--gd:#7A540A;
+  --black:#FFFFFF;   /* page background */
+  --dark:#F7F8FA;    /* secondary / band background */
+  --d2:#FFFFFF;      /* card background */
+  --d3:#F1F3F5;      /* input / chip fill */
+  --d4:#E3E6EA;      /* hairline borders */
+  --white:#15181D;   /* primary text (ink) */
+  --lt:#5B6472;       /* secondary text */
 }
 body{
   font-family:'Barlow',sans-serif;background:var(--black);color:var(--white);
-  transition:background .4s ease,color .4s ease;
-}
-body.light-mode{
-  --black:#EDF2F7;--dark:#F7FAFC;--d2:#FFFFFF;--d3:#E2E8F0;--d4:#CBD5E0;
-  --white:#1A202C;--lt:#4A5568;
-  --gold:#9C6B0A;--gd:#7A540A;
 }
 a{color:inherit;}
 .wrap{max-width:1200px;margin:0 auto;padding:0 5%;}
 
 /* NAV (shared across pages) */
-nav{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:72px;background:rgba(10,10,10,.97);box-shadow:0 2px 30px rgba(212,32,43,.15);border-bottom:1px solid rgba(245,184,0,.12);}
-body.light-mode nav{background:rgba(255,255,255,.97);border-bottom:1px solid rgba(0,0,0,.08);}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(255,255,255,.98);
+  border-bottom:1px solid var(--d4);backdrop-filter:blur(8px);transition:box-shadow .2s;}
+nav.scrolled{box-shadow:0 6px 24px rgba(15,17,21,.07);}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 5%;height:76px;display:flex;align-items:center;justify-content:space-between;}
 .nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
-.nlb{width:44px;height:44px;border-radius:50%;border:1.5px solid var(--gold);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background:white;}
-.nlb img{width:100%;height:100%;object-fit:contain;padding:2px;}
-.nlt{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);letter-spacing:2px;line-height:1.1;}
-.nlt span{display:block;font-family:'Barlow',sans-serif;font-size:10px;font-weight:300;letter-spacing:4px;color:var(--gold);text-transform:uppercase;}
-.nav-links{display:flex;align-items:center;gap:22px;list-style:none;}
-.nav-links a{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--white);opacity:.8;text-decoration:none;transition:opacity .2s;}
-.nav-links a:hover,.nav-links a.active{opacity:1;color:var(--gold);}
+.nlb{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--d4);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background:#fff;}
+.nlb img{width:100%;height:100%;object-fit:contain;padding:3px;}
+.nlt{font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--white);letter-spacing:1.5px;line-height:1.05;}
+.nlt span{display:block;font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:3px;color:var(--red);text-transform:uppercase;}
+
+.nav-links{display:flex;align-items:center;gap:2px;list-style:none;}
+.nav-links > li{position:relative;}
+.nav-links a{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--white);text-decoration:none;padding:10px 13px;display:flex;align-items:center;
+  border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
+.nav-links a:hover,.nav-links a.active{color:var(--red);border-color:var(--red);}
+.nav-cta{background:var(--red)!important;color:#fff!important;border-radius:24px;padding:9px 20px!important;
+  border-bottom:none!important;margin-left:8px;}
+.nav-cta:hover{background:var(--rd)!important;color:#fff!important;}
+
+.nav-drop > a::after{content:'';display:inline-block;width:6px;height:6px;border-right:1.5px solid currentColor;
+  border-bottom:1.5px solid currentColor;transform:rotate(45deg);margin-left:7px;}
+.drop-panel{position:absolute;top:100%;left:0;min-width:230px;background:#fff;border:1px solid var(--d4);
+  border-radius:10px;box-shadow:0 20px 44px rgba(15,17,21,.14);padding:8px;list-style:none;
+  opacity:0;visibility:hidden;transform:translateY(6px);transition:opacity .15s,transform .15s,visibility .15s;}
+.nav-drop:hover .drop-panel,.nav-drop:focus-within .drop-panel{opacity:1;visibility:visible;transform:translateY(0);}
+.drop-panel a{padding:10px 12px;border-radius:6px;border-bottom:none!important;font-size:12px;}
+.drop-panel a:hover{background:var(--d3);color:var(--red);}
+
 .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:8px;}
-.nav-toggle span{display:block;width:24px;height:2px;background:var(--white);margin:5px 0;}
-.theme-switch{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:var(--white);padding:8px 12px;border-radius:20px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;display:flex;align-items:center;gap:8px;}
-body.light-mode .theme-switch{background:rgba(0,0,0,.05);border-color:rgba(0,0,0,.15);color:var(--white);}
-.theme-switch:hover{background:var(--red)!important;border-color:var(--red)!important;color:#fff!important;}
+.nav-toggle span{display:block;width:22px;height:2px;background:var(--white);margin:5px 0;}
 @media(max-width:1000px){
+  .nav-inner{height:68px;}
   .nav-links{
     display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:stretch;gap:0;
-    background:rgba(255,247,219,.94);backdrop-filter:blur(14px);border-top:1px solid rgba(245,184,0,.4);
-    box-shadow:0 12px 30px rgba(0,0,0,.25);max-height:calc(100vh - 72px);overflow-y:auto;padding:6px 0;
+    background:#fff;border-top:1px solid var(--d4);box-shadow:0 16px 30px rgba(15,17,21,.1);
+    max-height:calc(100vh - 68px);overflow-y:auto;padding:6px 0;
   }
   .nav-links.mobile-open{display:flex;}
   .nav-links li{width:100%;}
-  .nav-links a{display:block;padding:14px 6%;color:#1A202C;opacity:1;}
-  .nav-links li:last-child{padding:10px 6% 14px;}
-  .nav-links .theme-switch{color:#1A202C!important;border-color:rgba(0,0,0,.15)!important;background:rgba(0,0,0,.05)!important;}
+  .nav-links a{padding:14px 6%;border-bottom:1px solid var(--d4)!important;}
+  .nav-drop .drop-panel{position:static;opacity:1;visibility:visible;transform:none;box-shadow:none;
+    border:none;border-radius:0;padding:0;background:var(--d3);}
+  .nav-drop .drop-panel a{padding:12px 6% 12px 12%;border-radius:0;font-size:12px;border-bottom:1px solid var(--d4)!important;}
+  .nav-cta{margin:12px 6% 6px;justify-content:center;}
   .nav-toggle{display:block;}
 }
 
 /* SHARED headings/buttons used by all pages */
-main{padding-top:72px;min-height:60vh;}
+main{padding-top:76px;min-height:60vh;}
+@media(max-width:1000px){ main{padding-top:68px;} }
 .stag{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:10px;}
 .stag::before{content:'';display:block;width:22px;height:2px;background:var(--gold);flex-shrink:0;}
-.stitle{font-family:'Bebas Neue',sans-serif;font-size:clamp(34px,5vw,58px);line-height:.95;letter-spacing:2px;color:var(--white);margin-bottom:14px;}
+.stitle{font-family:'Bebas Neue',sans-serif;font-size:clamp(34px,5vw,58px);line-height:.95;letter-spacing:1px;color:var(--white);margin-bottom:14px;}
 .stitle .r{color:var(--red);}
 .divr{width:56px;height:3px;background:var(--red);margin:14px 0 34px;}
 .btn-p{background:var(--red);color:#fff;padding:13px 32px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border-radius:3px;transition:background .2s,transform .15s;display:inline-block;border:none;cursor:pointer;}
 .btn-p:hover{background:var(--rd);transform:translateY(-2px);}
-.btn-o{background:transparent;color:var(--white);padding:13px 32px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border-radius:3px;border:1.5px solid rgba(255,255,255,.3);transition:border-color .2s,color .2s;display:inline-block;cursor:pointer;}
-.btn-o:hover{border-color:var(--gold);color:var(--gold);}
-.card{background:var(--d2);border:1px solid rgba(255,255,255,.07);border-radius:8px;overflow:hidden;transition:transform .25s,border-color .25s;}
-body.light-mode .card{border-color:#E2E8F0;}
-.card:hover{transform:translateY(-4px);border-color:rgba(212,32,43,.4);}
+.btn-o{background:transparent;color:var(--white);padding:13px 32px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border-radius:3px;border:1.5px solid var(--d4);transition:border-color .2s,color .2s;display:inline-block;cursor:pointer;}
+.btn-o:hover{border-color:var(--red);color:var(--red);}
+.card{background:var(--d2);border:1px solid var(--d4);border-radius:8px;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s;}
+.card:hover{transform:translateY(-4px);border-color:rgba(212,32,43,.35);box-shadow:0 16px 32px rgba(15,17,21,.08);}
 .muted{color:var(--lt);}
 .page-hero{padding:150px 5% 50px;}
 .page-content{padding:0 5% 90px;}
-.empty-state{padding:60px 20px;text-align:center;color:var(--lt);border:1px dashed rgba(255,255,255,.15);border-radius:10px;}
+.empty-state{padding:60px 20px;text-align:center;color:var(--lt);border:1px dashed var(--d4);border-radius:10px;}
 
 /* FOOTER (shared) */
-footer{background:var(--d2);border-top:5px solid var(--red);padding:60px 0 30px;margin-top:60px;}
+footer{background:var(--dark);border-top:1px solid var(--d4);padding:64px 0 26px;margin-top:70px;}
 .footer-container{max-width:1200px;margin:0 auto;padding:0 20px;}
-.footer-bottom{border-top:1px solid rgba(255,255,255,.05);padding-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
-.footer-copy{font-size:13px;color:rgba(255,255,255,.3);}
-body.light-mode .footer-copy{color:#718096;}
-.footer-brand p{max-width:420px;font-size:14px;color:rgba(255,255,255,.5);line-height:1.6;margin-top:15px;}
-body.light-mode .footer-brand p{color:#444;}
+.footer-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:40px;padding-bottom:44px;}
+.footer-brand p{max-width:320px;font-size:14px;color:var(--lt);line-height:1.7;margin-top:16px;}
+.footer-social{display:flex;gap:10px;margin-top:20px;}
+.footer-social a{width:38px;height:38px;border-radius:50%;border:1px solid var(--d4);display:flex;align-items:center;
+  justify-content:center;color:var(--white);text-decoration:none;font-size:12px;font-weight:700;transition:.2s;}
+.footer-social a:hover{background:var(--red);border-color:var(--red);color:#fff;}
+.footer-col h4{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:16px;}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:11px;}
+.footer-col a{font-size:13.5px;color:var(--lt);text-decoration:none;transition:color .15s;}
+.footer-col a:hover{color:var(--white);}
+.footer-bottom{border-top:1px solid var(--d4);padding-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.footer-copy{font-size:12.5px;color:var(--lt);}
+@media(max-width:900px){ .footer-grid{grid-template-columns:1fr 1fr;} }
+@media(max-width:560px){ .footer-grid{grid-template-columns:1fr;} }
 
 /* WHATSAPP FLOAT */
 .wa-float{position:fixed;bottom:30px;right:30px;z-index:998;width:58px;height:58px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.45);text-decoration:none;transition:transform .2s;}
@@ -106,25 +133,31 @@ body.light-mode .footer-brand p{color:#444;}
 <body>
 
 <nav id="mainNav">
-  <a class="nav-logo" href="/#hero">
-    <div class="nlb"><img src="/images/hero-6.jpg" alt="Lobi Stars Badge"></div>
-    <div class="nlt">Lobi Stars<span>Football Club</span></div>
-  </a>
-  <ul class="nav-links" id="navLinks">
-    <li><a href="/#about">About</a></li>
-    <li><a href="/squad">Squad</a></li>
-    <li><a href="/fixtures">Fixtures</a></li>
-    <li><a href="/tickets">Tickets</a></li>
-    <li><a href="/news">News</a></li>
-    <li><a href="/gallery">Gallery</a></li>
-    <li><a href="/#contact" class="btn-p" style="padding:7px 16px;">Contact</a></li>
-    <li>
-      <button class="theme-switch" id="themeToggle">
-        <span id="themeIcon">🌙</span> <span id="themeText">DARK</span>
-      </button>
-    </li>
-  </ul>
-  <button class="nav-toggle" id="menuToggle"><span></span><span></span><span></span></button>
+  <div class="nav-inner">
+    <a class="nav-logo" href="/#hero">
+      <div class="nlb"><img src="/images/hero-6.jpg" alt="Lobi Stars Badge"></div>
+      <div class="nlt">Lobi Stars<span>Football Club</span></div>
+    </a>
+    <ul class="nav-links" id="navLinks">
+      <li class="nav-drop">
+        <a href="/#club-history">Club</a>
+        <ul class="drop-panel">
+          <li><a href="/#club-history">About &amp; History</a></li>
+          <li><a href="/#management">Management</a></li>
+          <li><a href="/#academy">Academy</a></li>
+          <li><a href="/#membership">Membership</a></li>
+        </ul>
+      </li>
+      <li><a href="/squad">Squad</a></li>
+      <li><a href="/fixtures">Fixtures</a></li>
+      <li><a href="/tickets">Tickets</a></li>
+      <li><a href="/news">News</a></li>
+      <li><a href="/gallery">Gallery</a></li>
+      <li><a href="/#merchandise">Shop</a></li>
+      <li><a href="/#contact" class="nav-cta">Contact</a></li>
+    </ul>
+    <button class="nav-toggle" id="menuToggle"><span></span><span></span><span></span></button>
+  </div>
 </nav>
 
 <main>
@@ -133,21 +166,55 @@ body.light-mode .footer-brand p{color:#444;}
 
 <footer>
   <div class="footer-container">
-    <div class="footer-brand" style="margin-bottom:30px;">
-      <a class="nav-logo" href="/#hero" style="text-decoration:none;display:flex;align-items:center;gap:15px;">
-        <div class="nlb" style="background:#fff;border:2px solid var(--gold);width:50px;height:50px;">
-          <img src="/images/hero-6.jpg" alt="Badge" style="width:80%;">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a class="nav-logo" href="/#hero" style="text-decoration:none;">
+          <div class="nlb" style="width:50px;height:50px;">
+            <img src="/images/hero-6.jpg" alt="Badge">
+          </div>
+          <div style="display:flex;flex-direction:column;">
+            <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);line-height:1;">LOBI STARS</span>
+            <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--red);letter-spacing:2px;">FOOTBALL CLUB</span>
+          </div>
+        </a>
+        <p>The Pride of Benue. Competing at the highest level of Nigerian football since 1969.</p>
+        <div class="footer-social">
+          <a href="https://www.facebook.com/LobiStars" target="_blank" rel="noopener" aria-label="Facebook">FB</a>
+          <a href="https://x.com/LobiStars?s=20" target="_blank" rel="noopener" aria-label="X">𝕏</a>
+          <a href="https://www.instagram.com/lobistarsfc" target="_blank" rel="noopener" aria-label="Instagram">IG</a>
         </div>
-        <div class="nlt" style="display:flex;flex-direction:column;">
-          <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);line-height:1;">LOBI STARS</span>
-          <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--gold);letter-spacing:2px;">FOOTBALL CLUB</span>
-        </div>
-      </a>
-      <p>The Pride of Benue. Competing at the highest level of Nigerian football since 1969.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Club</h4>
+        <ul>
+          <li><a href="/#club-history">About &amp; History</a></li>
+          <li><a href="/#management">Management</a></li>
+          <li><a href="/#academy">Academy</a></li>
+          <li><a href="/#membership">Membership</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Matches</h4>
+        <ul>
+          <li><a href="/fixtures">Fixtures &amp; Results</a></li>
+          <li><a href="/tickets">Buy Tickets</a></li>
+          <li><a href="/squad">Squad</a></li>
+          <li><a href="/#standings">League Table</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <ul>
+          <li><a href="/news">News</a></li>
+          <li><a href="/gallery">Gallery</a></li>
+          <li><a href="/#merchandise">Club Shop</a></li>
+          <li><a href="/#contact">Contact</a></li>
+        </ul>
+      </div>
     </div>
     <div class="footer-bottom">
       <div class="footer-copy">&copy; 2026 Lobi Stars Football Club. All rights reserved.</div>
-      <a href="/" style="font-size:13px;color:var(--gold);text-decoration:none;">&larr; Back to Home</a>
+      <a href="/" style="font-size:13px;color:var(--red);text-decoration:none;font-weight:600;">&larr; Back to Home</a>
     </div>
   </div>
 </footer>
@@ -160,20 +227,10 @@ body.light-mode .footer-brand p{color:#444;}
 
 <script is:inline>
 (function(){
-  const themeBtn = document.getElementById('themeToggle');
-  const themeIcon = document.getElementById('themeIcon');
-  const themeText = document.getElementById('themeText');
-  const body = document.body;
-  function applyTheme(theme){
-    if (theme === 'light'){ body.classList.add('light-mode'); themeIcon.textContent='☀️'; themeText.textContent='LIGHT'; }
-    else { body.classList.remove('light-mode'); themeIcon.textContent='🌙'; themeText.textContent='DARK'; }
-  }
-  applyTheme(localStorage.getItem('ls_theme') || 'dark');
-  themeBtn.addEventListener('click', () => {
-    const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
-    localStorage.setItem('ls_theme', newTheme);
-    applyTheme(newTheme);
-  });
+  const nav = document.getElementById('mainNav');
+  function onScroll(){ nav.classList.toggle('scrolled', window.scrollY > 8); }
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
 
   const menuToggle = document.getElementById('menuToggle');
   const navLinks = document.getElementById('navLinks');
