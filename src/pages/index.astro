@@ -24,252 +24,184 @@ const sponsors = (await getCollection('sponsors')).sort((a, b) => a.data.order -
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
   --red:#E31E24;--rd:#C11A1F;--rdp:#4D0B0D;
-  --gold:#FFC72C;--gd:#E0A61F;
-  --black:#0A0A0A;--dark:#111;--d2:#1A1A1A;--d3:#222;--d4:#2E2E2E;
-  --white:#FFF;--lt:#AAA;
+  --gold:#9C6B0A;--gd:#7A540A;
+  --black:#EDF2F7;--dark:#F7FAFC;--d2:#FFFFFF;--d3:#E2E8F0;--d4:#CBD5E0;
+  --white:#1A202C;--lt:#4A5568;
 }
-/* ── SMOOTH TRANSITION ── */
 body {
   transition: background 0.4s ease, color 0.4s ease;
 }
 
-/* ── THEME TOGGLE STYLING ── */
-.theme-switch {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: var(--white);
-  padding: 8px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1px;
-  transition: 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* ── HERO STAYS AS BEFORE ── */
+/* #hero keeps its original always-dark, photo-backed look regardless of
+   the light palette below -- these are the only rules scoped to it.
+   Everything else on the page is the rebuilt light/editorial system. */
+#hero{ background:#0A0A0A; }
+#hero .ht-stars,
+#hero .ht-lobi,
+#hero .ht-fc,
+#hero .glory-tagline,
+#hero .hero-eyebrow,
+#hero .btn-o,
+#hero .hero-scroll {
+  color: #FFFFFF !important;
+  border-color: rgba(255,255,255,0.3) !important;
 }
-.theme-switch:hover {
-  background: var(--red);
-  border-color: var(--red);
-  color: white;
-}
-/* ── SOFT LIGHT THEME (SLATE) ── */
-body.light-mode {
-  --black: #EDF2F7;
-  --dark: #F7FAFC;
-  --d2: #FFFFFF;
-  --d3: #E2E8F0;
-  --d4: #CBD5E0; /* Darker borders for lines/tables */
-  --white: #1A202C; /* Main text is now Charcoal */
-  --lt: #4A5568;    /* Faded text is now Slate Grey */
-  /* The brand gold (#FFC72C) reads at ~1.6:1 contrast on a white/near-white
-     background -- fine on the always-dark hero, unreadable everywhere else
-     in light mode. Every var(--gold) usage picks up this darker, still-gold
-     value automatically here instead. */
-  --gold: #9C6B0A;
-  --gd: #7A540A;
-}
+#hero .hsb-num { color: #FFC72C !important; }
+#hero .sarrow { color: #FFFFFF !important; }
+#hero .glory-tagline { background: linear-gradient(to right, #fff 20%, #FFC72C 50%, #fff 80%) !important; }
 
 /* ── 1. BULLETPROOF TEXT FIX (THE "FORCE-READ" SECTION) ── */
 /* This targets everything that used to be "faded white" or rgba white */
-/* Body text that uses hardcoded rgba white */
-body.light-mode .about-text p,
-body.light-mode .stadium-text p,
-body.light-mode .academy-text p,
-body.light-mode .trials-box p,
-body.light-mode .contact-info p,
-body.light-mode .tl-desc,
-body.light-mode .pillar-desc,
-body.light-mode .sbio,
-body.light-mode .blog-excerpt,
-body.light-mode .merch-note,
-body.light-mode .hstat-label { color: #4A5568 !important; opacity: 1 !important; }
+.about-text p,
+.stadium-text p,
+.academy-text p,
+.trials-box p,
+.contact-info p,
+.tl-desc,
+.pillar-desc,
+.sbio,
+.blog-excerpt,
+.merch-note,
+.hstat-label { color: #4A5568 !important; opacity: 1 !important; }
 
 /* Small faded labels */
-body.light-mode .fix-comp,
-body.light-mode .fix-venue,
-body.light-mode .fix-vs,
-body.light-mode .mcomp,
-body.light-mode .mdate,
-body.light-mode .mvenue,
-body.light-mode .sperk,
-body.light-mode .qty-lbl,
-body.light-mode .tsum-key,
-body.light-mode .bk-k,
-body.light-mode .bk-msg,
-body.light-mode .tperiod,
-body.light-mode .pkg-period,
-body.light-mode .pkg-ben li,
-body.light-mode .cdet-val,
-body.light-mode .mbody,
-body.light-mode .stier.reg { color: #718096 !important; opacity: 1 !important; }
+.fix-comp,
+.fix-venue,
+.fix-vs,
+.mcomp,
+.mdate,
+.mvenue,
+.sperk,
+.qty-lbl,
+.tsum-key,
+.bk-k,
+.bk-msg,
+.tperiod,
+.pkg-period,
+.pkg-ben li,
+.cdet-val,
+.mbody,
+.stier.reg { color: #718096 !important; opacity: 1 !important; }
 
 /* Table cells */
-body.light-mode table.st td { color: #2D3748 !important; }
+table.st td { color: #2D3748 !important; }
 
 /* Form elements */
-body.light-mode .form-lbl { color: #4A5568 !important; }
-body.light-mode .form-inp,
-body.light-mode .form-ta,
-body.light-mode .form-sel {
+.form-lbl { color: #4A5568 !important; }
+.form-inp,
+.form-ta,
+.form-sel {
   background: #FFFFFF !important;
   border-color: #CBD5E0 !important;
   color: #1A202C !important;
 }
 
 /* Cards */
-body.light-mode .player-card,
-body.light-mode .merch-card,
-body.light-mode .blog-card,
-body.light-mode .staff-card,
-body.light-mode .mem-form-wrap,
-body.light-mode .spon-form-wrap,
-body.light-mode .bk-details {
+.player-card,
+.merch-card,
+.blog-card,
+.staff-card,
+.mem-form-wrap,
+.spon-form-wrap,
+.bk-details {
   background: #FFFFFF !important;
   border-color: #E2E8F0 !important;
 }
 
 /* Social links */
-body.light-mode .sl {
+.sl {
   background: #E2E8F0 !important;
   border-color: #CBD5E0 !important;
   color: #4A5568 !important;
 }
 
-/* Nav toggle icon */
-body.light-mode .nav-toggle span { background: #1A202C; }
-body.light-mode p, 
-body.light-mode span, 
-body.light-mode li, 
-body.light-mode small, 
-body.light-mode label,
-body.light-mode .meta,
-body.light-mode .date,
-body.light-mode .desc,
-body.light-mode .sub,
-body.light-mode .venue {
+.nav-toggle span { background: #1A202C; }
+p, span, li, small, label,
+.meta,
+.date,
+.desc,
+.sub,
+.venue {
   color: #1A202C; /* Default all text to dark */
 }
+#hero p, #hero span, #hero li, #hero small, #hero label { color: inherit; }
 
-/* This specifically targets the "Faded/Transparent" text you mentioned */
-body.light-mode .footer-links a,
-body.light-mode .footer-copy,
-body.light-mode .footer-brand,
-body.light-mode .admin-link,
-body.light-mode .hsb-label,
-body.light-mode .mmeta,
-body.light-mode .blog-date,
-body.light-mode .fix-meta,
-body.light-mode .pnat,
-body.light-mode .psk,
-body.light-mode .sf-key,
-body.light-mode .tg-key,
-body.light-mode .merch-desc,
-body.light-mode .spon-sub,
-body.light-mode .mem-sub,
-body.light-mode .tbenefits li,
-body.light-mode .hero-scroll {
-    color: #718096 !important; /* Forces a readable Slate Grey */
-    opacity: 1 !important;     /* Removes any transparency from Dark Mode */
+/* "Faded/Transparent" secondary text */
+.footer-links a,
+.footer-copy,
+.footer-brand,
+.admin-link,
+.hsb-label,
+.mmeta,
+.blog-date,
+.fix-meta,
+.pnat,
+.psk,
+.sf-key,
+.tg-key,
+.merch-desc,
+.spon-sub,
+.mem-sub,
+.tbenefits li {
+    color: #718096 !important;
+    opacity: 1 !important;
 }
-
-/* ── 2. HERO SECTION (RESTORE BEAUTY) ── */
-/* Keep Hero text white because the images are dark */
-body.light-mode #hero .ht-stars,
-body.light-mode #hero .ht-lobi,
-body.light-mode #hero .ht-fc,
-body.light-mode #hero .hero-tagline,
-body.light-mode #hero .hero-eyebrow,
-body.light-mode #hero .btn-o,
-body.light-mode #hero .hero-scroll {
-  color: #FFFFFF !important;
-  border-color: rgba(255,255,255,0.3) !important;
-}
-
-/* Hero stat numbers (3X NPFL Champions, 1969, 30K+, CAF) sit on the same
-   always-dark hero backdrop in both themes, so keep them gold like dark mode
-   instead of falling back to the generic light-mode dark text color. */
-body.light-mode .hsb-num {
-  color: var(--gold) !important;
-}
+#hero .hero-scroll, #hero .hsb-label { color: rgba(255,255,255,.4) !important; }
 
 /* ── 3. TABLES & LINES (Visibility Fix) ── */
-body.light-mode .fix-card, 
-body.light-mode .mcard, 
-body.light-mode .tcard, 
-body.light-mode .scard {
+.fix-card,
+.mcard,
+.tcard,
+.scard {
   background: #FFFFFF !important;
   border: 1px solid #CBD5E0 !important;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
-/* Force Table Lines and Membership Dividers to show */
-body.light-mode table.st td,
-body.light-mode .tbenefits li,
-body.light-mode .form-inp,
-body.light-mode .form-ta,
-body.light-mode .divr,
-body.light-mode .hsb-div,
-body.light-mode .footer-copy {
-  border-color: #CBD5E0 !important; /* Solid Grey lines */
+/* Force table lines and membership dividers to show */
+table.st td,
+.tbenefits li,
+.form-inp,
+.form-ta,
+.divr,
+.hsb-div,
+.footer-copy {
+  border-color: #CBD5E0 !important;
 }
+#hero .divr, #hero .hsb-div { border-color: rgba(255,255,255,.1) !important; background: rgba(255,255,255,.1) !important; }
 
-/* ── 4. NAVIGATION FIX ── */
-body.light-mode nav.scrolled { background: #FFFFFF; border-bottom: 2px solid var(--red); }
-body.light-mode nav.scrolled .nav-links a,
-body.light-mode nav.scrolled .nlt { color: #1A202C !important; }
-/* ── THEME TOGGLE BUTTON ── */
-.theme-switch {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #FFF;
-  padding: 8px 15px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: 0.3s;
-}
-body.light-mode .theme-switch {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.1);
-  color: #1A202C;
-}
-.theme-switch:hover { background: var(--red) !important; color: white !important; }
+/* ── 4. NAVIGATION ── */
+nav.scrolled { background: #FFFFFF; border-bottom: 2px solid var(--red); }
+nav.scrolled .nav-links a,
+nav.scrolled .nlt { color: #1A202C !important; }
 
 /* ── MUTED TEXT UTILITY ── */
-/* ── MUTED TEXT UTILITY ── */
-.muted-p { color: rgba(255,255,255,.5); }
-body.light-mode .muted-p { color: #718096 !important; }
+.muted-p { color: #718096 !important; }
+#hero .muted-p { color: rgba(255,255,255,.5) !important; }
 
 /* ── FILTER TABS ── */
-body.light-mode .ftab {
+.ftab {
   color: #4A5568 !important;
   border-color: #CBD5E0 !important;
 }
-body.light-mode .ftab:hover:not(.active) {
+.ftab:hover:not(.active) {
   border-color: #A8141D !important;
   color: #A8141D !important;
 }
 
 /* ── SPONSOR PACKAGES ── */
-body.light-mode .spon-pkg {
+.spon-pkg {
   background: #FFFFFF !important;
   border-color: #E2E8F0 !important;
 }
-body.light-mode .pkg-price {
+.pkg-price {
   color: #1A202C !important;
 }
-body.light-mode .pkg-period {
+.pkg-period {
   color: #718096 !important;
 }
-body.light-mode .pkg-ben li {
+.pkg-ben li {
   color: #4A5568 !important;
   border-bottom-color: #E2E8F0 !important;
 }
@@ -281,7 +213,7 @@ img{display:block;width:100%;height:100%;object-fit:cover;}
 
 /* NAV */
 nav{position:fixed;top:85px;left:0;right:0;z-index:1000;display:flex;align-items:center;justify-content:space-between;padding:0 5%;height:72px;background:transparent;transition:background .4s,box-shadow .4s;}
-nav.scrolled{background:rgba(10,10,10,.97);box-shadow:0 2px 30px rgba(212,32,43,.2);border-bottom:1px solid rgba(245,184,0,.12);}
+nav.scrolled{background:#FFFFFF;box-shadow:0 2px 24px rgba(15,17,21,.08);border-bottom:1px solid var(--d4);}
 .nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
 .nlb {
   width: 44px;
@@ -302,14 +234,16 @@ nav.scrolled{background:rgba(10,10,10,.97);box-shadow:0 2px 30px rgba(212,32,43,
   object-fit: contain; /* 'contain' ensures the whole logo is visible without cropping */
   padding: 2px; /* Adds a tiny bit of breathing room inside the circle */
 }
-.nlt{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);letter-spacing:2px;line-height:1.1;}
-.nlt span{display:block;font-family:'Barlow',sans-serif;font-size:10px;font-weight:300;letter-spacing:4px;color:var(--gold);text-transform:uppercase;}
+.nlt{font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff;letter-spacing:2px;line-height:1.1;}
+.nlt span{display:block;font-family:'Barlow',sans-serif;font-size:10px;font-weight:300;letter-spacing:4px;color:#FFC72C;text-transform:uppercase;}
 .nav-links{display:flex;align-items:center;gap:22px;list-style:none;}
 .nav-links a{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.75);text-decoration:none;transition:color .2s;position:relative;}
 .nav-links a::after{content:'';position:absolute;bottom:-4px;left:0;width:0;height:2px;background:var(--gold);transition:width .25s;}
-.nav-links a:hover{color:var(--white);}
+.nav-links a:hover{color:#fff;}
+nav.scrolled .nlt span{color:var(--gold)!important;}
+nav.scrolled .nav-links a:hover{color:var(--red)!important;}
 .nav-links a:hover::after{width:100%;}
-.nav-cta{background:var(--red)!important;color:var(--white)!important;padding:7px 16px;border-radius:3px;}
+.nav-cta{background:var(--red)!important;color:#fff!important;padding:7px 16px;border-radius:3px;}
 .nav-cta::after{display:none!important;}
 .nav-cta:hover{background:var(--rd)!important;}
 .nav-toggle{display:none;background:none;border:none;cursor:pointer;padding:8px;}
@@ -436,9 +370,9 @@ section{padding:60px 5%;}
 .divr.g{background:var(--gold);}
 .fade-in{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;}
 .fade-in.visible{opacity:1;transform:translateY(0);}
-.btn-p{background:var(--red);color:var(--white);padding:13px 32px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border-radius:3px;transition:background .2s,transform .15s;display:inline-block;border:none;cursor:pointer;}
+.btn-p{background:var(--red);color:#fff;padding:13px 32px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border-radius:3px;transition:background .2s,transform .15s;display:inline-block;border:none;cursor:pointer;}
 .btn-p:hover{background:var(--rd);transform:translateY(-2px);}
-.btn-o{background:transparent;color:var(--white);padding:13px 32px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border-radius:3px;border:1.5px solid rgba(255,255,255,.3);transition:border-color .2s,color .2s;display:inline-block;cursor:pointer;}
+.btn-o{background:transparent;color:var(--white);padding:13px 32px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border-radius:3px;border:1.5px solid var(--d4);transition:border-color .2s,color .2s;display:inline-block;cursor:pointer;}
 .btn-o:hover{border-color:var(--gold);color:var(--gold);}
 .form-grp{margin-bottom:18px;}
 .form-lbl{display:block;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:7px;}
@@ -489,7 +423,7 @@ section{padding:60px 5%;}
 .pct{height:170px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;}
 .pnum{font-family:'Bebas Neue',sans-serif;font-size:100px;color:rgba(255,255,255,.04);line-height:1;position:absolute;bottom:-10px;right:6px;user-select:none;}
 .pav{width:84px;height:84px;border-radius:50%;background:var(--d4);border:3px solid var(--red);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--white);position:relative;z-index:1;}
-.ppb{position:absolute;top:11px;left:11px;background:var(--red);color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:2px;}
+.ppb{position:absolute;top:11px;left:11px;background:var(--red);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:2px;}
 .gk{background:linear-gradient(135deg,#1a1a2e,#0d0d0d);}
 .def{background:linear-gradient(135deg,#0d1a0d,#0a0a0a);}
 .mid{background:linear-gradient(135deg,#1a0d00,#0a0a0a);}
@@ -516,7 +450,7 @@ section{padding:60px 5%;}
 .fix-team{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--white);}
 .fix-team.h{text-align:right;}.fix-team.a{text-align:left;}
 .fix-vs{text-align:center;font-family:'Bebas Neue',sans-serif;font-size:13px;color:rgba(255,255,255,.25);}
-.fix-score{background:var(--red);color:var(--white);padding:5px 12px;border-radius:3px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;}
+.fix-score{background:var(--red);color:#fff;padding:5px 12px;border-radius:3px;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;}
 .fix-venue{margin-top:10px;font-size:11px;color:rgba(255,255,255,.3);display:flex;align-items:center;gap:5px;}
 .rb{display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 .rb.w{background:#4CAF50;}.rb.l{background:var(--red);}.rb.d{background:var(--gold);}
@@ -564,7 +498,7 @@ table.st th:nth-child(2),table.st td:nth-child(2){text-align:left;}
 .tcard.bronze{background:linear-gradient(160deg,#1a1200,var(--d3));}
 .tcard.silver{background:linear-gradient(160deg,#131313,var(--d3));border-color:rgba(192,192,192,.22);}
 .tcard.gold{background:linear-gradient(160deg,#1a1000,var(--d3));border-color:rgba(245,184,0,.28);}
-.tcard.pop::before{content:'MOST POPULAR';position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--red);color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;padding:3px 14px;border-radius:20px;white-space:nowrap;}
+.tcard.pop::before{content:'MOST POPULAR';position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--red);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;padding:3px 14px;border-radius:20px;white-space:nowrap;}
 .tic{font-size:32px;margin-bottom:12px;}
 .tname{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;margin-bottom:5px;}
 .tname.bt{color:#CD7F32;}.tname.st{color:#C0C0C0;}.tname.gt{color:var(--gold);}
@@ -602,7 +536,7 @@ table.st th:nth-child(2),table.st td:nth-child(2){text-align:left;}
 .blog-card:hover .blog-img-bg{transform:scale(1.04);}
 .blog-img-bg img{position:absolute;inset:0;}
 .blog-img-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;letter-spacing:4px;text-transform:uppercase;opacity:.1;font-size:16px;text-align:center;padding:16px;pointer-events:none;}
-.bcat{position:absolute;top:12px;left:12px;background:var(--red);color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:3px 11px;border-radius:2px;z-index:1;}
+.bcat{position:absolute;top:12px;left:12px;background:var(--red);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:3px 11px;border-radius:2px;z-index:1;}
 .blog-body{padding:18px;}
 .blog-body-sm{padding:13px 15px;}
 .blog-date{font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;font-family:'Barlow Condensed',sans-serif;}
@@ -642,14 +576,14 @@ table.st th:nth-child(2),table.st td:nth-child(2){text-align:left;}
 .hstat.g{border-bottom-color:var(--gold);}
 .hstat-num{font-family:'Bebas Neue',sans-serif;font-size:44px;color:var(--gold);line-height:1;}
 .hstat-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:4px;}
-.history-img{height:280px;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.08);position:relative;margin-bottom:16px;}
+.history-img{height:280px;border-radius:8px;overflow:hidden;border:1px solid var(--d4);position:relative;margin-bottom:16px;}
 .history-img img{position:absolute;inset:0;}
 .history-img-fb{position:absolute;inset:0;background:linear-gradient(135deg,var(--rdp),var(--d3));display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:50px;color:rgba(255,255,255,.05);letter-spacing:4px;}
 
 /* MANAGEMENT */
 #management{background:var(--d2);}
 .mgmt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:24px;}
-.staff-card{background:var(--d3);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.06);text-align:center;transition:transform .25s;}
+.staff-card{background:var(--d3);border-radius:8px;overflow:hidden;border:1px solid var(--d4);text-align:center;transition:transform .25s;}
 .staff-card:hover{transform:translateY(-5px);}
 .staff-photo{height:190px;position:relative;overflow:hidden;background:var(--d4);}
 .staff-photo img{position:absolute;inset:0;}
@@ -668,7 +602,7 @@ table.st th:nth-child(2),table.st td:nth-child(2){text-align:left;}
 .sf-val{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--gold);line-height:1;}
 .sf-key{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:3px;}
 .stadium-photos-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.sp2{border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.08);position:relative;height:180px;}
+.sp2{border-radius:6px;overflow:hidden;border:1px solid var(--d4);position:relative;height:180px;}
 .sp2 img{position:absolute;inset:0;}
 .sp2:first-child{grid-column:span 2;height:240px;}
 .sp2-fb{position:absolute;inset:0;background:var(--d4);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:rgba(255,255,255,.06);letter-spacing:2px;}
@@ -691,12 +625,12 @@ table.st th:nth-child(2),table.st td:nth-child(2){text-align:left;}
 /* MERCHANDISE */
 #merchandise{background:var(--black);}
 .merch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:22px;}
-.merch-card{background:var(--d2);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,.06);transition:transform .25s,box-shadow .25s;cursor:pointer;}
+.merch-card{background:var(--d2);border-radius:8px;overflow:hidden;border:1px solid var(--d4);transition:transform .25s,box-shadow .25s;cursor:pointer;}
 .merch-card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.4);}
 .merch-img{height:210px;position:relative;overflow:hidden;background:var(--d3);}
 .merch-img img{position:absolute;inset:0;}
 .merch-placeholder{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;}
-.merch-badge{position:absolute;top:11px;right:11px;background:var(--red);color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;padding:3px 9px;border-radius:2px;text-transform:uppercase;}
+.merch-badge{position:absolute;top:11px;right:11px;background:var(--red);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;padding:3px 9px;border-radius:2px;text-transform:uppercase;}
 .merch-info{padding:18px;}
 .merch-name{font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;color:var(--white);margin-bottom:5px;}
 .merch-price{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--gold);letter-spacing:1px;}
@@ -777,7 +711,7 @@ footer {
 .footer-links a {
   font-size: 14px;
   font-weight: 500;
-  color: rgba(255,255,255,0.7);
+  color: #1e3a8a;
   text-decoration: none;
   display: inline-block;
   background: rgba(30, 58, 138, 0.15); /* Soft Navy */
@@ -794,22 +728,15 @@ footer {
   box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
-/* Light Mode Support */
-body.light-mode footer { background: #fff !important; }
-body.light-mode .footer-links a { background: #f1f5f9; color: #1e3a8a; }
-body.light-mode .footer-links a:hover { background: #1e3a8a; color: #fff !important; }
-
 /* Brand Styling */
-.footer-brand p { max-width: 300px; font-size: 14px; color: rgba(255,255,255,0.5); line-height: 1.6; margin-top: 15px; }
-body.light-mode .footer-brand p { color: #444 !important; }
+.footer-brand p { max-width: 300px; font-size: 14px; color: #444; line-height: 1.6; margin-top: 15px; }
 
-.footer-bottom { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 30px; display: flex; justify-content: space-between; align-items: center; }
+.footer-bottom { border-top: 1px solid var(--d4); padding-top: 30px; display: flex; justify-content: space-between; align-items: center; }
 
 .footer-copy {
   font-size: 13px;
   color: rgba(255,255,255,0.3);
 }
-body.light-mode .footer-copy { color: #718096 !important; }
 
 .admin-link {
   font-size: 11px;
@@ -826,14 +753,14 @@ body.light-mode .footer-copy { color: #718096 !important; }
 /* KEEPING YOUR MODAL & ADMIN STYLES BELOW */
 .modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:2000;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:48px 20px;}
 .modal-ov.open{display:flex;}
-.modal-box{background:var(--d2);border-radius:10px;max-width:740px;width:100%;border:1px solid rgba(255,255,255,.08);position:relative;}
-.modal-close{position:absolute;top:13px;right:13px;background:rgba(255,255,255,.1);border:none;color:var(--white);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background .2s;z-index:10;}
+.modal-box{background:var(--d2);border-radius:10px;max-width:740px;width:100%;border:1px solid var(--d4);position:relative;}
+.modal-close{position:absolute;top:13px;right:13px;background:rgba(255,255,255,.15);border:none;color:#fff;width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background .2s;z-index:10;}
 .modal-close:hover{background:var(--red);}
 .modal-himg{height:260px;border-radius:10px 10px 0 0;overflow:hidden;background:var(--d3);position:relative;}
 .modal-himg img{position:absolute;inset:0;}
 .modal-hbg{position:absolute;inset:0;}
 .mcontent{padding:30px;}
-.mcat{display:inline-block;background:var(--red);color:var(--white);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:3px 11px;border-radius:2px;margin-bottom:12px;}
+.mcat{display:inline-block;background:var(--red);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:3px 11px;border-radius:2px;margin-bottom:12px;}
 .mtitle{font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;color:var(--white);line-height:1.25;margin-bottom:10px;}
 .mmeta{font-size:12px;color:rgba(255,255,255,.35);margin-bottom:22px;letter-spacing:1px;}
 .mbody{font-size:14px;color:rgba(255,255,255,.62);line-height:1.9;}
@@ -854,12 +781,12 @@ body.light-mode .footer-copy { color: #718096 !important; }
 .ali-title{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--white);}
 .ali-meta{font-size:11px;color:rgba(255,255,255,.35);margin-top:2px;}
 .btn-del{background:rgba(212,32,43,.15);border:1px solid rgba(212,32,43,.4);color:var(--red);padding:5px 12px;border-radius:3px;cursor:pointer;font-size:11px;font-family:'Barlow Condensed',sans-serif;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .2s;flex-shrink:0;}
-.btn-del:hover{background:var(--red);color:var(--white);}
+.btn-del:hover{background:var(--red);color:#fff;}
 .admin-login-box{max-width:340px;margin:0 auto;text-align:center;padding:36px 18px;}
 .admin-login-box h3{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--white);margin-bottom:7px;letter-spacing:1px;}
 .admin-login-box p{font-size:13px;color:rgba(255,255,255,.4);margin-bottom:20px;}
 /* TOAST */
-.toast{position:fixed;bottom:28px;right:28px;background:var(--red);color:var(--white);padding:13px 22px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;z-index:5000;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;}
+.toast{position:fixed;bottom:28px;right:28px;background:var(--red);color:#fff;padding:13px 22px;border-radius:6px;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;z-index:5000;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;}
 .toast.show{opacity:1;transform:translateY(0);}
 
 /* RESPONSIVE */
@@ -952,7 +879,6 @@ body.light-mode .footer-copy { color: #718096 !important; }
   .nav-links a::after{display:none;}
   .nav-cta{display:block;margin:8px 6%;text-align:center;border-radius:3px;}
   .nav-links li:last-child{padding:10px 6% 14px;}
-  .nav-links .theme-switch{color:#1A202C!important;border-color:rgba(0,0,0,.15)!important;background:rgba(0,0,0,.05)!important;}
   .nav-toggle{display:block;position:relative;z-index:1;}
 }
 
@@ -969,22 +895,20 @@ body.light-mode .footer-copy { color: #718096 !important; }
     position:fixed;
     left:0;right:0;bottom:0;
     z-index:1500;
-    background:rgba(10,10,10,.98);
+    background:rgba(255,255,255,.98);
     backdrop-filter:blur(14px);
-    border-top:1px solid rgba(245,184,0,.15);
+    border-top:1px solid var(--d4);
     padding:6px 2px calc(6px + env(safe-area-inset-bottom,0px));
   }
-  body.light-mode .tabbar{background:rgba(255,255,255,.98);border-top-color:rgba(0,0,0,.08);}
   .tabbar-item{
     flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
     background:none;border:none;cursor:pointer;
-    color:rgba(255,255,255,.45);text-decoration:none;
+    color:rgba(0,0,0,.4);text-decoration:none;
     font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
     padding:6px 2px;
   }
-  body.light-mode .tabbar-item{color:rgba(0,0,0,.4);}
   .tabbar-item svg{width:22px;height:22px;}
-  .tabbar-item.active{color:var(--gold);}
+  .tabbar-item.active{color:var(--red);}
 
   .more-sheet-ov{
     position:fixed;inset:0;z-index:1600;
@@ -997,7 +921,7 @@ body.light-mode .footer-copy { color: #718096 !important; }
     padding:10px 20px calc(20px + env(safe-area-inset-bottom,0px));
     box-shadow:0 -12px 30px rgba(0,0,0,.35);
   }
-  .more-sheet-handle{width:40px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:6px auto 18px;}
+  .more-sheet-handle{width:40px;height:4px;background:var(--d4);border-radius:2px;margin:6px auto 18px;}
   .more-sheet-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px;margin-bottom:18px;}
   .more-item{
     display:flex;flex-direction:column;align-items:center;gap:8px;
@@ -1045,44 +969,6 @@ body.light-mode .footer-copy { color: #718096 !important; }
   }
 }
 
-/* ── THEME TOGGLE BUTTON LOGIC ── */
-.theme-switch {
-  background: rgba(255, 255, 255, 0.15); /* Semi-transparent white for dark mode */
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #FFFFFF !important;
-  padding: 8px 15px;
-  border-radius: 20px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  z-index: 1001; /* Keeps it above everything */
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  transition: 0.3s;
-}
-
-/* In Light Mode, when you haven't scrolled yet (Over the Dark Hero) */
-body.light-mode nav:not(.scrolled) .theme-switch {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: #FFFFFF !important;
-}
-
-/* In Light Mode, AFTER you scroll down (Over the Light Background) */
-body.light-mode nav.scrolled .theme-switch {
-  background: rgba(0, 0, 0, 0.05); /* Soft dark grey background */
-  border-color: rgba(0, 0, 0, 0.2); /* Darker border */
-  color: #1A202C !important; /* Charcoal black text */
-}
-
-/* Hover effect works for both modes */
-.theme-switch:hover {
-  background: var(--red) !important;
-  border-color: var(--red) !important;
-  color: #FFFFFF !important;
-}
 /* ── NEW SPONSOR BAR ── */
 .top-bar {
   position: fixed;
@@ -1189,12 +1075,12 @@ body.light-mode nav.scrolled .theme-switch {
   );
 }
 
-/* Light mode — keep these sections clean white, no patterns */
-body.light-mode #players,
-body.light-mode #tickets,
-body.light-mode #news,
-body.light-mode #contact,
-body.light-mode #club-history {
+/* Keep these sections clean white, no patterns */
+#players,
+#tickets,
+#news,
+#contact,
+#club-history {
   background-image: none;
   background-color: #F7FAFC;
 }
@@ -1269,34 +1155,20 @@ body.light-mode #club-history {
 
 /* 1. Background Texture (Grid Dots) */
 body {
-    background-image: radial-gradient(rgba(212, 32, 43, 0.1) 0.5px, transparent 0.5px);
+    background-image: radial-gradient(rgba(0, 0, 0, 0.05) 0.5px, transparent 0.5px);
     background-size: 30px 30px;
     background-attachment: fixed;
 }
-.light-mode {
-    background-image: radial-gradient(rgba(0, 0, 0, 0.05) 0.5px, transparent 0.5px);
-}
 
-/* 2. Glassmorphism for all Cards */
+/* 2. Cards -- soft translucent panels with a subtle border/shadow for
+   definition on a light page, rather than a hard fill. */
 .player-card, .album-card, .blog-card, .tcard, .mcard, .scard, .about-text {
-    background: rgba(255, 255, 255, 0.03) !important;
+    background: rgba(255, 255, 255, 0.7) !important;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-}
-
-/* Glassmorphism for Light Mode */
-.light-mode .player-card, 
-.light-mode .album-card, 
-.light-mode .blog-card, 
-.light-mode .tcard,
-.light-mode .mcard,
-.light-mode .scard {
-    background: rgba(255, 255, 255, 0.7) !important;
     border: 1px solid rgba(0, 0, 0, 0.05) !important;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
 }
 
 /* 3. Hover Effects */
@@ -1500,32 +1372,27 @@ h1, h2, h3, .stitle {
 .food-hd p{font-size:12px;color:rgba(255,255,255,.7);margin-top:2px;letter-spacing:1px;}
 .food-body{padding:26px;}
 .food-menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-bottom:28px;}
-.food-item{background:var(--d3);border-radius:8px;padding:18px;border:2px solid rgba(255,255,255,.07);transition:border-color .2s;cursor:pointer;}
+.food-item{background:#fff;border-radius:8px;padding:18px;border:2px solid #E2E8F0;transition:border-color .2s;cursor:pointer;}
 .food-item:hover{border-color:rgba(245,184,0,.4);}
 .food-emoji{font-size:36px;margin-bottom:10px;text-align:center;}
 .food-name{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--white);margin-bottom:4px;}
 .food-price{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);margin-bottom:12px;}
 .food-qty{display:flex;align-items:center;gap:10px;justify-content:center;}
-.food-qty-btn{width:28px;height:28px;border-radius:50%;background:var(--red);border:none;color:var(--white);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;}
+.food-qty-btn{width:28px;height:28px;border-radius:50%;background:var(--red);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;}
 .food-qty-btn:hover{background:var(--rd);}
 .food-qty-num{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);min-width:20px;text-align:center;}
 .food-seat-row{display:flex;gap:14px;align-items:flex-end;margin-bottom:22px;flex-wrap:wrap;}
 .food-seat-row .form-grp{flex:1;min-width:160px;}
-.food-summary{background:var(--d3);border-radius:8px;padding:18px;margin-bottom:22px;border:1px solid rgba(245,184,0,.15);}
+.food-summary{background:#F7FAFC;border-radius:8px;padding:18px;margin-bottom:22px;border:1px solid #CBD5E0;}
 .food-summary-title{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:14px;}
-.food-sum-item{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+.food-sum-item{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid #E2E8F0;}
 .food-sum-item:last-child{border:none;font-weight:700;font-size:15px;color:var(--gold);}
-.food-sum-k{color:rgba(255,255,255,.6);}
+.food-sum-k{color:#4A5568;}
 .food-sum-v{color:var(--white);}
 .food-confirm{text-align:center;padding:40px 20px;display:none;}
 .food-confirm-icon{font-size:60px;margin-bottom:14px;}
 .food-confirm-ref{font-family:'Bebas Neue',sans-serif;font-size:44px;color:var(--gold);letter-spacing:4px;}
-.food-confirm-msg{font-size:14px;color:rgba(255,255,255,.6);margin-top:10px;line-height:1.7;}
-body.light-mode .food-item{background:#fff;border-color:#E2E8F0;}
-body.light-mode .food-name{color:#1A202C;}
-body.light-mode .food-summary{background:#F7FAFC;border-color:#CBD5E0;}
-body.light-mode .food-sum-k{color:#4A5568;}
-body.light-mode .food-sum-v{color:#1A202C;}
+.food-confirm-msg{font-size:14px;color:#4A5568;margin-top:10px;line-height:1.7;}
 @media(min-width:1001px){
   #navLinks.mobile-open{
     display:flex !important;
@@ -1566,20 +1433,15 @@ body.light-mode .food-sum-v{color:#1A202C;}
     <div class="nlt">Lobi Stars<span>Football Club</span></div>
   </a>
   <ul class="nav-links" id="navLinks">
-    <li><a href="#about">About</a></li>
+    <li><a href="#club-history">About</a></li>
     <li><a href="#players">Squad</a></li>
     <li><a href="#fixtures">Fixtures</a></li>
+    <li><a href="/programme">Programme</a></li>
     <li><a href="/tickets">Tickets</a></li>
     <li><a href="#membership">Members</a></li>
     <li><a href="#news">News</a></li>
-<li><a href="#podcasts">Podcasts</a></li>
     <li><a href="#gallery">Gallery</a></li>
     <li><a href="#contact" class="nav-cta">Contact</a></li>
-  <li>
-  <button class="theme-switch" id="themeToggle">
-    <span id="themeIcon">🌙</span> <span id="themeText">DARK</span>
-  </button>
-</li>
   </ul>
   <button class="nav-toggle" id="menuToggle"><span></span><span></span><span></span></button>
 </nav>
@@ -1617,13 +1479,10 @@ body.light-mode .food-sum-v{color:#1A202C;}
       <a href="#news" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">📰</span>News</a>
       <a href="#gallery" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">📷</span>Gallery</a>
       <a href="#merchandise" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">🛍️</span>Shop</a>
-      <a href="#about" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">📖</span>About</a>
       <a href="#club-history" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">🏆</span>History</a>
       <a href="#academy" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">🎓</span>Academy</a>
+      <a href="/programme" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">📋</span>Programme</a>
       <a href="#contact" class="more-item" onclick="closeMoreSheet()"><span class="more-ic">✉️</span>Contact</a>
-      <button class="more-item" id="moreThemeToggle" style="background:none;border:none;cursor:pointer;font-family:inherit;">
-        <span class="more-ic" id="moreThemeIcon">🌙</span><span id="moreThemeLabel">Dark Mode</span>
-      </button>
     </div>
     <button class="btn-o" onclick="closeMoreSheet()" style="width:100%;margin-top:6px;">Close</button>
   </div>
@@ -2324,13 +2183,7 @@ function openArchiveTab(evt, tabName) {
 <style is:global>
   /* This handles the background change for Light/Dark mode */
   #sponsor {
-    background-color: #0a0a0a; /* Default Dark */
-    transition: background-color 0.3s ease;
-  }
-  
-  /* If your body has a 'light-mode' class or if the user preferences change */
-  body.light-mode #sponsor {
-    background-color: #e3f2fd !important; /* Sky Blue for Light Mode */
+    background-color: #e3f2fd;
   }
 
   /* Containment fix for the headers */
@@ -2341,21 +2194,20 @@ function openArchiveTab(evt, tabName) {
     text-align: left;
   }
 
-  /* Form styling adjustment for Light Mode visibility */
-  body.light-mode .spon-form-wrap {
+  .spon-form-wrap {
     background: white !important;
     border: 1px solid #bbdefb !important;
     box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important;
   }
-  
-  body.light-mode .spon-form-wrap h3, 
-  body.light-mode .form-lbl {
+
+  .spon-form-wrap h3,
+  .form-lbl {
     color: #1a237e !important;
   }
 
-  body.light-mode .form-inp, 
-  body.light-mode .form-sel, 
-  body.light-mode .form-ta {
+  .form-inp,
+  .form-sel,
+  .form-ta {
     background: #f5f9ff !important;
     border: 1px solid #ced4da !important;
     color: #333 !important;
@@ -2431,39 +2283,29 @@ function openArchiveTab(evt, tabName) {
 <style is:global>
   /* Base Dark Mode Styles */
   #membership {
-  background-color: #0a0a0a;
-  transition: background-color 0.3s ease;
-  /* Add the line below */
-  border-top: 1px solid rgba(255, 255, 255, 0.07); 
+  background-color: #e3f2fd;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
   }
-  #membership .stitle, #membership .stag { color: #fff; }
-  
-  /* LIGHT MODE ADAPTATION */
-  body.light-mode #membership {
-  background-color: #e3f2fd !important; 
-  /* Add the line below */
-  border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+  #membership .stitle,
+  #membership .stag {
+    color: #1a237e !important;
   }
-  body.light-mode #membership .stitle,
-  body.light-mode #membership .stag {
-    color: #1a237e !important; /* Dark Navy for headers */
-  }
-  body.light-mode #membership .tcard,
-  body.light-mode #membership .mem-form-wrap {
+  #membership .tcard,
+  #membership .mem-form-wrap {
     background: #ffffff !important;
     border-color: #bbdefb !important;
     box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important;
   }
-  body.light-mode #membership .tname,
-  body.light-mode #membership .tprice,
-  body.light-mode #membership .tbenefits li,
-  body.light-mode #membership .form-grp label,
-  body.light-mode #membership .mem-card-h3,
-  body.light-mode #membership .mem-card-sub {
+  #membership .tname,
+  #membership .tprice,
+  #membership .tbenefits li,
+  #membership .form-grp label,
+  #membership .mem-card-h3,
+  #membership .mem-card-sub {
     color: #1a237e !important;
     opacity: 1 !important;
   }
-  body.light-mode #membership .form-inp {
+  #membership .form-inp {
     background: #f5f9ff !important;
     border: 1px solid #ced4da !important;
     color: #1a237e !important;
@@ -2560,9 +2402,9 @@ function openArchiveTab(evt, tabName) {
         <!-- SUCCESS STATE -->
         <div class="mem-success" id="memSuccess" style="display: none; text-align: center;">
           <div style="font-size: 50px; margin-bottom: 15px;">🏆</div>
-          <p style="color:rgba(255,255,255,.4); font-size:11px; letter-spacing:3px; text-transform:uppercase; margin-bottom:10px;">Registration Successful</p>
+          <p style="color:#718096; font-size:11px; letter-spacing:3px; text-transform:uppercase; margin-bottom:10px;">Registration Successful</p>
           <div class="mem-id" id="memId" style="font-size: 32px; font-weight: bold; color: var(--gold); margin-bottom: 20px; font-family: 'Bebas Neue', sans-serif;">LS-MBR-000000</div>
-          <button class="btn-p" onclick="resetMem()" style="background: transparent; border: 1px solid #fff; color: #fff; padding: 10px 25px; border-radius: 6px;">Register Another</button>
+          <button class="btn-p" onclick="resetMem()" style="background: transparent; border: 1px solid var(--red); color: var(--red); padding: 10px 25px; border-radius: 6px;">Register Another</button>
         </div>
       </div>
 
@@ -2571,22 +2413,21 @@ function openArchiveTab(evt, tabName) {
 </section>
 <!-- CONTACT SECTION -->
 <style is:global>
-  /* Fix for Light Mode visibility */
-  body.light-mode #contact .contact-info,
-  body.light-mode #contact .cdet-val,
-  body.light-mode #contact .form-card-h3,
-  body.light-mode #contact .form-card-sub {
-    color: #1A202C !important; /* Charcoal Black */
+  #contact .contact-info,
+  #contact .cdet-val,
+  #contact .form-card-h3,
+  #contact .form-card-sub {
+    color: #1A202C !important;
   }
-  
-  body.light-mode #contact .contact-card {
+
+  #contact .contact-card {
     background: #FFFFFF !important;
     border: 1px solid #E2E8F0 !important;
     box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important;
   }
 
-  body.light-mode #contact .form-inp,
-  body.light-mode #contact .form-ta {
+  #contact .form-inp,
+  #contact .form-ta {
     background: #F7FAFC !important;
     border: 1px solid #CBD5E0 !important;
     color: #1A202C !important;
@@ -2901,42 +2742,6 @@ function openArchiveTab(evt, tabName) {
 </a>
 
 <script is:inline>
-// ── THEME TOGGLE ──
-const themeBtn = document.getElementById('themeToggle');
-const themeIcon = document.getElementById('themeIcon');
-const themeText = document.getElementById('themeText');
-const body = document.body;
-
-const moreThemeIcon = document.getElementById('moreThemeIcon');
-const moreThemeLabel = document.getElementById('moreThemeLabel');
-
-function applyTheme(theme) {
-  if (theme === 'light') {
-    body.classList.add('light-mode');
-    themeIcon.textContent = '☀️';
-    themeText.textContent = 'LIGHT';
-    moreThemeIcon.textContent = '☀️';
-    moreThemeLabel.textContent = 'Light Mode';
-  } else {
-    body.classList.remove('light-mode');
-    themeIcon.textContent = '🌙';
-    themeText.textContent = 'DARK';
-    moreThemeIcon.textContent = '🌙';
-    moreThemeLabel.textContent = 'Dark Mode';
-  }
-}
-applyTheme(localStorage.getItem('ls_theme') || 'dark');
-themeBtn.addEventListener('click', () => {
-  const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
-  localStorage.setItem('ls_theme', newTheme);
-  applyTheme(newTheme);
-});
-document.getElementById('moreThemeToggle').addEventListener('click', () => {
-  const newTheme = body.classList.contains('light-mode') ? 'dark' : 'light';
-  localStorage.setItem('ls_theme', newTheme);
-  applyTheme(newTheme);
-});
-
 // ── HERO SLIDER ──
 const slides = document.querySelectorAll('.hero-slide');
 const dotsWrap = document.getElementById('sliderDots');
