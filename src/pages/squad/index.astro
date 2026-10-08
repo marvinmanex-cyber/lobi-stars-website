@@ -4,7 +4,7 @@ import { getCollection } from 'astro:content';
 
 const players = (await getCollection('players')).sort((a, b) => a.data.number - b.data.number);
 ---
-<Layout title="Squad | Lobi Stars Football Club">
+<Layout title="Squad | Lobi Stars Football Club" description="Meet the Lobi Stars FC First Team squad: goalkeepers, defenders, midfielders and forwards.">
   <div class="page-hero wrap">
     <div class="stag">The Squad</div>
     <h1 class="stitle">Our <span class="r">Warriors</span></h1>

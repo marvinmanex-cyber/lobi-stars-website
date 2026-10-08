@@ -1,3 +1,6 @@
 User-agent: *
 Disallow: /admin
 Disallow: /api/
+Disallow: /scan
+
+Sitemap: https://lobistarsfc.com/sitemap.xml

@@ -1,0 +1,71 @@
+---
+// Cookie banner. Essential storage (log-in session, basket) always works;
+// the visitor-analytics beacon (/track.js) only loads after "Accept".
+// The choice is remembered in localStorage. Any element with
+// [data-cookie-settings] reopens the banner.
+---
+<div class="cc" id="cookieBanner" role="dialog" aria-live="polite" aria-label="Cookie preferences" hidden>
+  <p class="cc-text">
+    We use essential cookies to keep the site working (like staying logged in). With your permission we'd also
+    like to count visits so we can improve the site. No advertising cookies.
+  </p>
+  <div class="cc-actions">
+    <button type="button" class="cc-btn cc-reject" data-consent="rejected">Reject non-essential</button>
+    <button type="button" class="cc-btn cc-accept" data-consent="accepted">Accept</button>
+  </div>
+</div>
+
+<style>
+  .cc {
+    position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 3000; max-width: 560px; margin: 0 auto;
+    background: #15181D; color: #fff; border-radius: 12px; padding: 16px 18px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .3); display: flex; flex-direction: column; gap: 12px;
+  }
+  .cc[hidden] { display: none; }
+  .cc-text { margin: 0; font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, .88); }
+  .cc-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  .cc-btn {
+    border-radius: 6px; padding: 10px 16px; cursor: pointer; border: 1.5px solid rgba(255, 255, 255, .35);
+    font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase;
+  }
+  .cc-reject { background: transparent; color: #fff; }
+  .cc-accept { background: #E31E24; border-color: #E31E24; color: #fff; }
+  .cc-btn:focus-visible { outline: 3px solid #FFC72C; outline-offset: 2px; }
+  /* Sit above the homepage's mobile tab bar. */
+  @media (max-width: 768px) { :global(body:has(#tabbar)) .cc { bottom: calc(76px + env(safe-area-inset-bottom)); } }
+  @media (max-width: 420px) { .cc-btn { flex: 1; } }
+</style>
+
+<script is:inline>
+(function () {
+  var KEY = 'ls_consent';
+  var banner = document.getElementById('cookieBanner');
+  function get() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function set(v) { try { localStorage.setItem(KEY, v); } catch (e) {} }
+  function loadAnalytics() {
+    if (document.getElementById('lsTrack')) return;
+    var s = document.createElement('script');
+    s.id = 'lsTrack'; s.src = '/track.js'; s.defer = true;
+    document.body.appendChild(s);
+  }
+  function apply(v) {
+    if (v === 'accepted') loadAnalytics();
+    if (v === 'rejected') { try { localStorage.removeItem('ls_vid'); sessionStorage.removeItem('ls_sid'); } catch (e) {} }
+  }
+  banner.querySelectorAll('[data-consent]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var v = b.getAttribute('data-consent');
+      set(v); apply(v); banner.hidden = true;
+    });
+  });
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest && e.target.closest('[data-cookie-settings]');
+    if (!t) return;
+    e.preventDefault();
+    banner.hidden = false;
+    banner.querySelector('.cc-accept').focus();
+  });
+  var choice = get();
+  if (choice) apply(choice); else banner.hidden = false;
+})();
+</script>

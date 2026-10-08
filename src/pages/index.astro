@@ -5,6 +5,9 @@ import NextMatches from '../components/news/NextMatches.astro';
 import NewsCarousel from '../components/news/NewsCarousel.astro';
 import FeatureBanner from '../components/news/FeatureBanner.astro';
 import { getSortedNews } from '../lib/news';
+import HeadMeta from '../components/HeadMeta.astro';
+import CookieConsent from '../components/CookieConsent.astro';
+import { existsSync } from 'node:fs';
 import FixturesBoard from '../components/FixturesBoard.astro';
 import LeagueTable from '../components/LeagueTable.astro';
 import shop from '../data/shop.json';
@@ -12,7 +15,31 @@ import { CURRENT_SEASON, FOOTER_TAGLINE, HERO_STATS, withSeason, formatNaira } f
 const staff = (await getCollection('staff')).sort((a, b) => a.data.order - b.data.order);
 const staffLead = staff.slice(0, 2);
 const staffMore = staff.slice(2);
-const heroSlides = (await getCollection('heroSlides')).sort((a, b) => a.data.order - b.data.order);
+const heroSlides = (await getCollection('heroSlides')).sort((a, b) => a.data.order - b.data.order).map(slide => {
+  const webp = slide.data.photo.replace(/\.(jpe?g|png)$/i, '.webp');
+  return { photo: slide.data.photo, webp: webp !== slide.data.photo && existsSync(`public${webp}`) ? webp : '' };
+});
+const slideBg = (s: { photo: string; webp: string }) =>
+  `background-image:url('${s.photo}')` +
+  (s.webp ? `;background-image:image-set(url('${s.webp}') type('image/webp'), url('${s.photo}') type('image/jpeg'))` : '');
+
+const site = Astro.site!.toString().replace(/\/$/, '');
+const teamJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'SportsTeam',
+  name: 'Lobi Stars Football Club',
+  alternateName: 'Lobi Stars FC',
+  sport: 'Soccer',
+  url: `${site}/`,
+  logo: `${site}/images/lobi-stars-fc.jpg`,
+  image: `${site}/images/og-default.jpg`,
+  location: {
+    '@type': 'StadiumOrArena',
+    name: 'McCarthy Stadium',
+    address: { '@type': 'PostalAddress', addressLocality: 'Makurdi', addressRegion: 'Benue', addressCountry: 'NG' },
+  },
+  sameAs: ['https://www.facebook.com/LobiStars', 'https://x.com/LobiStars', 'https://www.instagram.com/lobistarsfc'],
+};
 const sponsors = (await getCollection('sponsors')).sort((a, b) => a.data.order - b.data.order);
 
 const news = await getSortedNews();
@@ -28,12 +55,12 @@ const products = shop.products.map(p => ({ ...p, name: withSeason(p.name), price
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Lobi Stars Football Club | Pride of Benue</title>
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#E31E24">
-<link rel="apple-touch-icon" href="/images/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
+<HeadMeta
+  title="Lobi Stars Football Club | Pride of Benue"
+  description="Official website of Lobi Stars FC of Makurdi, Benue State: fixtures, results, news, tickets, membership and the club shop."
+  jsonLd={[teamJsonLd]}
+/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style is:global>
@@ -1567,7 +1594,9 @@ h1, h2, h3, .stitle {
 <section id="hero">
   <div class="hero-slides" id="heroSlides">
     {heroSlides.map((slide, i) => (
-      <div class:list={['hero-slide', { active: i === 0 }]} style={`background-image:url('${slide.data.photo}')`}></div>
+      i === 0
+        ? <div class="hero-slide active" style={slideBg(slide)}></div>
+        : <div class="hero-slide" data-bg={slide.photo} data-bg-webp={slide.webp || undefined}></div>
     ))}
   </div>
   <button class="sarrow" id="sprev">&#8592;</button>
@@ -2375,7 +2404,7 @@ h1, h2, h3, .stitle {
     </div> <!-- Close Grid -->
 
     <div class="footer-bottom">
-       <div class="footer-copy">© 2026 Lobi Stars FC. All Rights Reserved.</div>
+       <div class="footer-copy">© 2026 Lobi Stars FC. All Rights Reserved. · <button type="button" data-cookie-settings style="background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer;">Cookie settings</button></div>
     </div>
   </div>
 </footer>
@@ -2511,6 +2540,16 @@ h1, h2, h3, .stitle {
 const slides = document.querySelectorAll('.hero-slide');
 const dotsWrap = document.getElementById('sliderDots');
 let cur = 0, sliderTimer;
+// Slides after the first load their photo only when they're next up.
+const webpBg = window.CSS && CSS.supports && CSS.supports('background-image', 'image-set(url("a.webp") type("image/webp"))');
+function loadSlide(el) {
+  if (!el || !el.dataset.bg) return;
+  el.style.backgroundImage = webpBg && el.dataset.bgWebp
+    ? `image-set(url("${el.dataset.bgWebp}") type("image/webp"), url("${el.dataset.bg}") type("image/jpeg"))`
+    : `url("${el.dataset.bg}")`;
+  delete el.dataset.bg;
+}
+window.addEventListener('load', () => setTimeout(() => loadSlide(slides[1]), 3000));
 slides.forEach((_,i) => {
   const d = document.createElement('div');
   d.className = 'sdot' + (i===0?' active':'');
@@ -2521,6 +2560,8 @@ function goSlide(n) {
   slides[cur].classList.remove('active');
   document.querySelectorAll('.sdot')[cur].classList.remove('active');
   cur = (n + slides.length) % slides.length;
+  loadSlide(slides[cur]);
+  loadSlide(slides[(cur + 1) % slides.length]);
   slides[cur].classList.add('active');
   document.querySelectorAll('.sdot')[cur].classList.add('active');
   clearInterval(sliderTimer);
@@ -2945,6 +2986,6 @@ document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
 // Browsers that already have it will pick up the new self-unregistering
 // version automatically and clean themselves up.
 </script>
-<script is:inline src="/track.js"></script>
+<CookieConsent />
 </body>
 </html>

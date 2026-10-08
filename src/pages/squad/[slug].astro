@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 const { player } = Astro.props;
 const { Content } = await render(player);
 ---
-<Layout title={`${player.data.name} | Lobi Stars Squad`}>
+<Layout title={`${player.data.name} | Lobi Stars Squad`} description={`${player.data.name}, ${player.data.position} for Lobi Stars FC: profile, appearances and goals.`} image={player.data.photo}>
   <div class="page-content wrap" style="max-width:700px;padding-top:150px;">
     <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:24px;">
       {player.data.photo && (

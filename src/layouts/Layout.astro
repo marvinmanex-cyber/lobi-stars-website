@@ -1,49 +1,37 @@
 ---
 import { FOOTER_TAGLINE } from '../lib/site';
+import HeadMeta from '../components/HeadMeta.astro';
+import CookieConsent from '../components/CookieConsent.astro';
 
 export interface Props {
   title: string;
   description?: string;
   image?: string;
+  imageAlt?: string;
   type?: 'website' | 'article';
-  /** Keep the page out of search engines (admin pages). */
+  /** Keep the page out of search engines (admin and transaction pages). */
   noindex?: boolean;
+  /** Extra JSON-LD structured data for this page. */
+  jsonLd?: Record<string, unknown>[];
 }
 const {
   title,
   description = "Official website of Lobi Stars Football Club - Pride of Benue",
-  image = '/images/lobi-stars-fc.jpg',
+  image,
+  imageAlt,
   type = 'website',
   noindex = false,
+  jsonLd = [],
 } = Astro.props;
-const canonical = new URL(Astro.url.pathname, Astro.site);
-const ogImage = new URL(image, Astro.site);
 ---
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>{title}</title>
-<meta name="description" content={description}/>
-{noindex && <meta name="robots" content="noindex, nofollow"/>}
-<link rel="canonical" href={canonical}/>
-<meta property="og:site_name" content="Lobi Stars FC"/>
-<meta property="og:type" content={type}/>
-<meta property="og:title" content={title}/>
-<meta property="og:description" content={description}/>
-<meta property="og:url" content={canonical}/>
-<meta property="og:image" content={ogImage}/>
-<meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:title" content={title}/>
-<meta name="twitter:description" content={description}/>
-<meta name="twitter:image" content={ogImage}/>
+<HeadMeta title={title} description={description} image={image} imageAlt={imageAlt} type={type} noindex={noindex} jsonLd={jsonLd} />
 <slot name="head" />
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#E31E24">
-<link rel="apple-touch-icon" href="/images/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style is:global>
@@ -273,7 +261,7 @@ footer{background:var(--dark);border-top:1px solid var(--d4);padding:64px 0 26px
       </div>
     </div>
     <div class="footer-bottom">
-      <div class="footer-copy">&copy; 2026 Lobi Stars Football Club. All rights reserved.</div>
+      <div class="footer-copy">&copy; 2026 Lobi Stars Football Club. All rights reserved. &middot; <button type="button" data-cookie-settings style="background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer;">Cookie settings</button></div>
       <a href="/" style="font-size:13px;color:var(--red);text-decoration:none;font-weight:600;">&larr; Back to Home</a>
     </div>
   </div>
@@ -321,6 +309,6 @@ footer{background:var(--dark);border-top:1px solid var(--d4);padding:64px 0 26px
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 })();
 </script>
-<script is:inline src="/track.js"></script>
+<CookieConsent />
 </body>
 </html>

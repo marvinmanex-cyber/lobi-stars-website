@@ -2,10 +2,10 @@
 // Simple holding page for club sections that haven't been written yet.
 import Layout from '../layouts/Layout.astro';
 
-interface Props { title: string; tag?: string }
-const { title, tag = 'The Club' } = Astro.props;
+interface Props { title: string; description: string; tag?: string }
+const { title, description, tag = 'The Club' } = Astro.props;
 ---
-<Layout title={`${title} | Lobi Stars Football Club`} description={`${title} - coming soon to the official Lobi Stars FC website.`}>
+<Layout title={`${title} | Lobi Stars Football Club`} description={description}>
   <div class="page-hero wrap">
     <div class="stag">{tag}</div>
     <h1 class="stitle">{title}</h1>

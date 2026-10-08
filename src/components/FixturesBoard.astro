@@ -10,8 +10,10 @@ interface Props {
   upcomingLimit?: number;
   resultsLimit?: number;
   showMoreLinks?: boolean;
+  /** Emit schema.org SportsEvent data for each match (use on one page only). */
+  structuredData?: boolean;
 }
-const { upcomingLimit = 0, resultsLimit = 0, showMoreLinks = false } = Astro.props;
+const { upcomingLimit = 0, resultsLimit = 0, showMoreLinks = false, structuredData = false } = Astro.props;
 
 // The CMS saves kick-off as Nigerian wall-clock time with no timezone, which
 // gets read as UTC; shift it back by WAT's +1h so 16:30 stays 16:30.
@@ -27,8 +29,29 @@ const cms = (await getCollection('fixtures')).map(f => ({
   awayScore: f.data.away_score ?? null,
   completed: f.data.status === 'Completed',
 }));
+
+type Fx = (typeof cms)[number];
+function sportsEvent(f: Fx) {
+  const team = (name: string) => ({ '@type': 'SportsTeam', name });
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SportsEvent',
+    name: `${f.home} vs ${f.away}`,
+    description: `${f.competition}: ${f.home} vs ${f.away} at ${f.venue}.`,
+    sport: 'Soccer',
+    startDate: f.date,
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+    location: { '@type': 'Place', name: f.venue, address: { '@type': 'PostalAddress', addressCountry: 'NG', streetAddress: f.venue } },
+    homeTeam: team(f.home),
+    awayTeam: team(f.away),
+    competitor: [team(f.home), team(f.away)],
+    organizer: { '@type': 'SportsOrganization', name: f.competition },
+  };
+}
 ---
-<div class="fxb" data-fixtures-board data-fixtures={JSON.stringify(cms)}
+{structuredData && cms.map(f => <script type="application/ld+json" set:html={JSON.stringify(sportsEvent(f))} />)}
+<div class="fxb" data-fixtures-board data-structured={structuredData ? '1' : undefined} data-fixtures={JSON.stringify(cms)}
      data-upcoming-limit={upcomingLimit} data-results-limit={resultsLimit}>
   <div>
     <h3 class="fxb-title">Upcoming Fixtures</h3>
@@ -182,6 +205,26 @@ const cms = (await getCollection('fixtures')).map(f => ({
 
     // Live (ticketed) matches win over a CMS entry for the same game.
     const merged = [...live, ...cms.filter(c => !live.some(l => sameMatch(l, c)))];
+
+    // Structured data for live matches the build didn't already describe.
+    if (board.dataset.structured) {
+      live.filter(l => !cms.some(c => sameMatch(l, c))).forEach(f => {
+        const s = document.createElement('script');
+        s.type = 'application/ld+json';
+        const team = (name: string) => ({ '@type': 'SportsTeam', name });
+        s.textContent = JSON.stringify({
+          '@context': 'https://schema.org', '@type': 'SportsEvent', name: `${f.home} vs ${f.away}`,
+          description: `${f.competition}: ${f.home} vs ${f.away} at ${f.venue}.`, sport: 'Soccer', startDate: f.date,
+          eventStatus: 'https://schema.org/EventScheduled',
+          eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+          location: { '@type': 'Place', name: f.venue, address: { '@type': 'PostalAddress', addressCountry: 'NG', streetAddress: f.venue } },
+          homeTeam: team(f.home), awayTeam: team(f.away), competitor: [team(f.home), team(f.away)],
+          organizer: { '@type': 'SportsOrganization', name: f.competition },
+          offers: { '@type': 'Offer', url: `${location.origin}/tickets`, availability: 'https://schema.org/InStock' },
+        });
+        document.head.append(s);
+      });
+    }
     const upcoming = merged.filter(f => !isPast(f))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const results = merged.filter(isPast)

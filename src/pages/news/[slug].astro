@@ -29,10 +29,28 @@ const share = {
   x: `https://x.com/intent/post?url=${enc(pageUrl)}&text=${enc(a.title)}`,
   whatsapp: `https://wa.me/?text=${enc(`${a.title} ${pageUrl}`)}`,
 };
+const site = Astro.site!.toString().replace(/\/$/, '');
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'NewsArticle',
+  headline: a.title,
+  description: a.summary,
+  image: [new URL(a.coverImage, Astro.site).toString()],
+  datePublished: a.publishedAt.toISOString(),
+  dateModified: a.publishedAt.toISOString(),
+  articleSection: a.category,
+  mainEntityOfPage: pageUrl,
+  author: { '@type': 'Organization', name: 'Lobi Stars FC', url: `${site}/` },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Lobi Stars Football Club',
+    logo: { '@type': 'ImageObject', url: `${site}/images/icon-512.png` },
+  },
+};
 const embed = a.isVideo ? videoEmbedUrl(a.videoUrl) : null;
 const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.test(a.videoUrl) ? a.videoUrl : null;
 ---
-<Layout title={`${a.title} | Lobi Stars FC News`} description={a.summary} image={a.coverImage} type="article">
+<Layout title={`${a.title} | Lobi Stars FC News`} description={a.summary} image={a.coverImage} imageAlt={a.imageAlt} type="article" jsonLd={[articleJsonLd]}>
   <Fragment slot="head">
     <meta property="article:published_time" content={a.publishedAt.toISOString()} />
     <meta property="article:section" content={a.category} />

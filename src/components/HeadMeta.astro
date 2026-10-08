@@ -1,0 +1,92 @@
+---
+// Everything that belongs in <head> on every page: title, description,
+// canonical URL, social-share (Open Graph / Twitter) tags, icons, manifest
+// and structured data. Used by Layout.astro and the homepage.
+interface Props {
+  title: string;
+  description: string;
+  image?: string;
+  imageAlt?: string;
+  type?: 'website' | 'article';
+  noindex?: boolean;
+  /** Extra JSON-LD objects for this page. */
+  jsonLd?: Record<string, unknown>[];
+}
+const {
+  title,
+  description,
+  image,
+  imageAlt,
+  type = 'website',
+  noindex = false,
+  jsonLd = [],
+} = Astro.props;
+
+const SITE_NAME = 'Lobi Stars FC';
+const DEFAULT_IMAGE = '/images/og-default.jpg';
+const canonical = new URL(Astro.url.pathname, Astro.site).toString();
+const ogImage = new URL(image || DEFAULT_IMAGE, Astro.site).toString();
+
+// Breadcrumbs from the URL, e.g. /news/some-story -> Home > News > Story.
+const SECTION_NAMES: Record<string, string> = {
+  news: 'News', club: 'The Club', fixtures: 'Fixtures & Results', squad: 'Squad', gallery: 'Gallery',
+  tickets: 'Tickets', programme: 'Matchday Programme', food: 'Food Orders',
+};
+const segments = Astro.url.pathname.split('/').filter(Boolean);
+const pageName = title.split(' | ')[0];
+const breadcrumbs = segments.map((seg, i) => ({
+  name: i === segments.length - 1 ? pageName : (SECTION_NAMES[seg] ?? pageName),
+  url: new URL('/' + segments.slice(0, i + 1).join('/') + '/', Astro.site).toString(),
+}));
+const structured = [...jsonLd];
+if (!noindex && breadcrumbs.length) {
+  structured.push({
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [{ name: 'Home', url: new URL('/', Astro.site).toString() }, ...breadcrumbs].map((b, i) => ({
+      '@type': 'ListItem', position: i + 1, name: b.name, item: b.url,
+    })),
+  });
+}
+---
+<title>{title}</title>
+<meta name="description" content={description}/>
+{noindex && <meta name="robots" content="noindex, nofollow"/>}
+<link rel="canonical" href={canonical}/>
+
+<meta property="og:site_name" content={SITE_NAME}/>
+<meta property="og:locale" content="en_NG"/>
+<meta property="og:type" content={type}/>
+<meta property="og:title" content={title}/>
+<meta property="og:description" content={description}/>
+<meta property="og:url" content={canonical}/>
+<meta property="og:image" content={ogImage}/>
+{!image && <meta property="og:image:width" content="1200"/>}
+{!image && <meta property="og:image:height" content="630"/>}
+<meta property="og:image:alt" content={imageAlt || `${SITE_NAME} - The Pride of Benue`}/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:site" content="@LobiStars"/>
+<meta name="twitter:title" content={title}/>
+<meta name="twitter:description" content={description}/>
+<meta name="twitter:image" content={ogImage}/>
+
+<meta name="theme-color" content="#E31E24"/>
+<link rel="icon" href="/favicon.ico" sizes="48x48"/>
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png"/>
+<link rel="manifest" href="/manifest.json"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Lobi Stars"/>
+<meta name="application-name" content="Lobi Stars"/>
+
+{structured.map(data => <script type="application/ld+json" set:html={JSON.stringify(data)} />)}
+
+<style is:global>
+  /* Images get width/height attributes at build time for layout stability;
+     keep their aspect ratio unless page CSS sets a height. */
+  :where(img[width][height]) { height: auto; }
+  /* WebP <picture> wrappers shouldn't affect layout. */
+  picture { display: contents; }
+</style>
