@@ -1,11 +1,22 @@
 ---
 import { getCollection } from 'astro:content';
+import NewsHero from '../components/news/NewsHero.astro';
+import NextMatches from '../components/news/NextMatches.astro';
+import NewsCarousel from '../components/news/NewsCarousel.astro';
+import FeatureBanner from '../components/news/FeatureBanner.astro';
+import { getSortedNews } from '../lib/news';
 const staff = (await getCollection('staff')).sort((a, b) => a.data.order - b.data.order);
 const staffLead = staff.slice(0, 2);
 const staffMore = staff.slice(2);
 const merchandise = await getCollection('merchandise');
 const heroSlides = (await getCollection('heroSlides')).sort((a, b) => a.data.order - b.data.order);
 const sponsors = (await getCollection('sponsors')).sort((a, b) => a.data.order - b.data.order);
+
+const news = await getSortedNews();
+const featuredNews = news.filter(a => a.data.isFeatured).slice(0, 5);
+const bannerNews = news.find(a => a.data.isBanner) ?? news.find(a => !featuredNews.includes(a));
+const clubNews = news.filter(a => a.data.category === 'Club').slice(0, 12);
+const videoNews = news.filter(a => a.data.isVideo).slice(0, 12);
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -55,7 +66,6 @@ body {
 /* This targets everything that used to be "faded white" or rgba white */
 .about-text p,
 .stadium-text p,
-.academy-text p,
 .trials-box p,
 .contact-info p,
 .tl-desc,
@@ -688,10 +698,6 @@ table.st th:nth-child(2),table.st td:nth-child(2){text-align:left;}
 .sp2:first-child{grid-column:span 2;height:240px;}
 .sp2-fb{position:absolute;inset:0;background:var(--d4);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:18px;color:rgba(255,255,255,.06);letter-spacing:2px;}
 
-/* ACADEMY */
-#academy{background:var(--d2);}
-.academy-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start;}
-.academy-text p{font-size:15px;color:rgba(255,255,255,.6);line-height:1.8;margin-bottom:14px;}
 .age-groups{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:26px;}
 .ag{background:var(--d3);border-radius:6px;padding:16px;text-align:center;border-bottom:3px solid var(--red);}
 .ag-name{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);letter-spacing:1px;}
@@ -990,7 +996,6 @@ footer {
 @media(max-width:860px){
   .about-grid,
   .history-grid,
-  .academy-grid,
   .fix-grid,
   .blog-grid{
     grid-template-columns:1fr !important;
@@ -1601,6 +1606,16 @@ h1, h2, h3, .stitle {
   <div class="hero-scroll"><div class="sline"></div>Scroll</div>
 </section>
 
+<!-- NEWS -->
+<div id="news">
+  <NewsHero articles={featuredNews} />
+  <NextMatches />
+  <NewsCarousel title="Latest News" articles={news.slice(0, 12)} viewAllHref="/news" />
+  <FeatureBanner article={bannerNews} />
+  <NewsCarousel title="Across the Club" articles={clubNews} viewAllHref="/news?category=club" viewAllLabel="More club news" tone="band" />
+  <NewsCarousel title="Watch" articles={videoNews} viewAllHref="/news?category=media-watch" viewAllLabel="More videos" />
+</div>
+
 <!-- FIXTURES -->
 <section id="fixtures" style="padding-top: 50px; margin-top: 0;">
   <div class="stag fade-in">Schedule &amp; Results</div>
@@ -2043,7 +2058,7 @@ h1, h2, h3, .stitle {
             <option>Jersey / Kit Sponsorship</option>
             <option>Stadium & Pitchside Advertising</option>
             <option>Digital & Social Media Partner</option>
-            <option>Youth Academy Support</option>
+            <option>Community Programmes Support</option>
             <option>Custom Strategic Partnership</option>
           </select>
         </div>
@@ -2373,7 +2388,6 @@ h1, h2, h3, .stitle {
           <li><a href="#">Club History</a></li>
           <li><a href="#">Management</a></li>
           <li><a href="#">McCarthy Stadium</a></li>
-          <li><a href="#">Youth Academy</a></li>
         </ul>
       </div>
 
@@ -2822,67 +2836,6 @@ function resetMem(){
   document.getElementById('memFields').style.display = 'block';
   document.getElementById('memSuccess').style.display = 'none';
 }
-// ── BLOG ──
-// ── BLOG (FULL VERSION) ──
-const defaultArts = [
-  {id:1,title:'Stars Demolish Enyimba 2–0 in Commanding Home Display',cat:'Match Report',date:'17 May 2025',excerpt:'A brilliant first-half brace sealed all three points at McCarthy Stadium...',body:'<p>Full match report details...</p>',img:'images/news-1.jpg',color:'linear-gradient(135deg,#3a0008,#0a0a0a)'},
-  {id:2,title:'Club Confirms Signing of Promising Midfielder',cat:'Transfers',date:'14 May 2025',excerpt:'Lobi Stars have moved quickly in the market to bolster their options...',body:'<p>Transfer news details...</p>',img:'images/news-2.jpg',color:'linear-gradient(135deg,#001a00,#0a0a0a)'},
-  {id:3,title:'Chairman Outlines Ambitious Vision for 2025/26 Season',cat:'Club News',date:'10 May 2025',excerpt:'The club leadership has set its sights on a title challenge next season.',body:'<p>Vision details...</p>',img:'images/news-3.jpg',color:'linear-gradient(135deg,#1a1000,#0a0a0a)'},
-  {id:4,title:'Academy Stars Shine at North-Central Youth Tournament',cat:'Academy',date:'5 May 2025',excerpt:'Lobi Stars Academy players put in standout performances in Jos.',body:'<p>Academy details...</p>',img:'images/news-1.jpg',color:'linear-gradient(135deg,#001a00,#0a0a0a)'},
-  {id:5,title:'Lobi Stars Open New Training Facility in Makurdi',cat:'Club News',date:'28 Apr 2025',excerpt:'The club has unveiled a brand new state-of-the-art training ground.',body:'<p>Facility details...</p>',img:'images/news-2.jpg',color:'linear-gradient(135deg,#0a0a1a,#0a0a0a)'},
-  {id:6,title:'Match Preview: Lobi Stars vs Kano Pillars',cat:'Match Report',date:'22 Apr 2025',excerpt:'Everything you need to know ahead of Saturdays crucial NPFL clash.',body:'<p>Preview details...</p>',img:'images/news-3.jpg',color:'linear-gradient(135deg,#1a0000,#0a0a0a)'},
-];
-
-let visibleCount = 3; 
-
-function getArts(){try{return JSON.parse(localStorage.getItem('lsArts')||'[]');}catch(e){return[];}}
-function allArts(){return [...getArts(),...defaultArts];}
-
-function renderBlog(){
-  const arts = allArts();
-  const cont = document.getElementById('blogCont'); if (!cont) return;
-  const visible = arts.slice(0, visibleCount);
-  
-  const feat = visible[0];
-  const rest = visible.slice(1, 3);
-  const extras = visible.slice(3);
-  const hasMore = arts.length > visibleCount;
-
-  cont.innerHTML = `
-    <div class="blog-grid">
-      <div><div class="blog-card" onclick="openArt(${feat.id})">
-        <div class="blog-img"><div class="blog-img-bg" style="background:${feat.color}"><img src="${feat.img}" onerror="this.style.display='none'"/></div><span class="bcat">${feat.cat}</span></div>
-        <div class="blog-body"><div class="blog-date">${feat.date}</div><div class="blog-title">${feat.title}</div><div class="blog-excerpt">${feat.excerpt}</div><span class="blog-rm">Read Full Story →</span></div>
-      </div></div>
-      <div class="blog-side">${rest.map(a=>`<div class="blog-card" onclick="openArt(${a.id})">
-        <div class="blog-img blog-img-sm"><div class="blog-img-bg" style="background:${a.color}"><img src="${a.img}" onerror="this.style.display='none'"/></div><span class="bcat">${a.cat}</span></div>
-        <div class="blog-body blog-body-sm"><div class="blog-date">${a.date}</div><div class="blog-title blog-title-sm">${a.title}</div><span class="blog-rm">Read More →</span></div>
-      </div>`).join('')}</div>
-    </div>
-    ${extras.length ? `<div class="extra-articles" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:20px;">
-      ${extras.map(a=>`<div class="blog-card" onclick="openArt(${a.id})">
-        <div class="blog-img blog-img-sm"><div class="blog-img-bg" style="background:${a.color}"><img src="${a.img}" onerror="this.style.display='none'"/></div><span class="bcat">${a.cat}</span></div>
-        <div class="blog-body blog-body-sm"><div class="blog-date">${a.date}</div><div class="blog-title blog-title-sm">${a.title}</div><span class="blog-rm">Read More →</span></div>
-      </div>`).join('')}
-    </div>` : ''}
-    ${hasMore ? `<div style="text-align:center;margin-top:36px;"><button class="btn-o" onclick="loadMore()" style="padding:12px 36px;font-size:14px;cursor:pointer;">Load More Articles</button></div>` : ''}
-  `;
-}
-
-function loadMore(){
-  visibleCount += 3;
-  renderBlog();
-}
-
-function openArt(id){
-  const a=allArts().find(x=>x.id==id); if(!a)return;
-  document.getElementById('mTitle').textContent=a.title;
-  document.getElementById('mBody').innerHTML=a.body;
-  document.getElementById('articleModal').classList.add('open');
-}
-
-renderBlog();
-
 // ── ADMIN ──
 function openAdmin(){document.getElementById('adminOv').classList.add('open'); document.getElementById('adminBody').innerHTML='<div class="admin-login-box"><h3>Admin Login</h3><input type="password" id="aPw" class="form-inp"><button class="btn-p" onclick="doLogin()">Login</button></div>';}
 function doLogin(){if(document.getElementById('aPw').value==='L0b!St@rs#2025FC'){ document.getElementById('adminBody').innerHTML='<p style="color:white">Access Granted. Add articles coming soon.</p>'; } else showToast("Wrong password");}

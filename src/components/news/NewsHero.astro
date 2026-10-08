@@ -1,0 +1,148 @@
+---
+// Big lead story with a row of thumbnails; clicking a thumbnail swaps the
+// lead story. The thumbnail of the story currently shown is hidden, so the
+// row always lists the *other* featured stories.
+import type { Article } from '../../lib/news';
+import { categoryHref } from '../../lib/news';
+import RelativeTime from './RelativeTime.astro';
+
+interface Props { articles: Article[] }
+const { articles } = Astro.props;
+---
+{articles.length > 0 && (
+  <section class="nh" aria-label="Top stories" data-news-hero>
+    <div class="nh-stage">
+      {articles.map((article, i) => {
+        const a = article.data;
+        return (
+          <article class="nh-slide" data-slide={i} hidden={i !== 0}>
+            <img src={a.coverImage} alt={a.imageAlt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" width="1600" height="900" />
+            <div class="nh-grad" aria-hidden="true"></div>
+            <div class="nh-body">
+              <div class="nh-meta">
+                <a class="nh-cat" href={categoryHref(a.category)}>{a.category}</a>
+                <RelativeTime date={a.publishedAt} class="nh-time" />
+                {a.isVideo && a.videoDuration && <span class="nh-dur">{a.videoDuration}</span>}
+              </div>
+              <h2 class="nh-title"><a href={`/news/${article.id}`}>{a.title}</a></h2>
+              <a class="nh-btn" href={`/news/${article.id}`} aria-label={`${a.isVideo ? 'Watch' : 'Read'}: ${a.title}`}>
+                {a.isVideo && <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>}
+                {a.isVideo ? 'Watch' : 'Read'}
+              </a>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+
+    {articles.length > 1 && (
+      <div class="nh-thumbs-wrap">
+        <ul class="nh-thumbs" aria-label="More top stories">
+          {articles.map((article, i) => (
+            <li class="nh-thumb-item" data-thumb-item={i} hidden={i === 0}>
+              <button type="button" class="nh-thumb" data-thumb={i} aria-label={`Show story: ${article.data.title}`}>
+                <span class="nh-thumb-img">
+                  <img src={article.data.coverImage} alt="" loading="lazy" decoding="async" width="320" height="180" />
+                  {article.data.isVideo && (
+                    <span class="nh-thumb-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" /></svg></span>
+                  )}
+                </span>
+                <span class="nh-thumb-text">
+                  <span class="nh-thumb-cat">{article.data.category}</span>
+                  <span class="nh-thumb-title">{article.data.title}</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+  </section>
+)}
+
+<style>
+  .nh { background: #0F1115; }
+  .nh-stage { position: relative; height: clamp(420px, 52vw, 640px); overflow: hidden; }
+  .nh-slide { position: absolute; inset: 0; }
+  .nh-slide[hidden] { display: none; }
+  .nh-slide > img { display: block; width: 100%; height: 100%; object-fit: cover; animation: nh-in .45s ease; }
+  @keyframes nh-in { from { opacity: .3; transform: scale(1.02); } to { opacity: 1; transform: none; } }
+  .nh-grad {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(10, 11, 14, .95) 0%, rgba(10, 11, 14, .6) 35%, rgba(10, 11, 14, 0) 70%);
+  }
+  .nh-body {
+    position: absolute; left: 0; right: 0; bottom: 0; max-width: 1280px; margin: 0 auto;
+    padding: 0 5% clamp(28px, 4vw, 48px);
+  }
+  .nh-meta {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    font: 600 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase;
+  }
+  .nh-cat { color: #fff; background: var(--red); padding: 5px 10px; border-radius: 3px; text-decoration: none; font-weight: 700; }
+  .nh-cat:hover, .nh-cat:focus-visible { background: var(--rd); }
+  .nh-time, .nh-dur { color: rgba(255, 255, 255, .8); }
+  .nh-title {
+    margin: 14px 0 22px; max-width: 860px; color: #fff;
+    font: 400 clamp(34px, 5.2vw, 64px)/.98 'Bebas Neue', sans-serif; letter-spacing: 1px; text-transform: uppercase;
+  }
+  .nh-title a { color: inherit; text-decoration: none; }
+  .nh-title a:hover, .nh-title a:focus-visible { text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; }
+  .nh-btn {
+    display: inline-flex; align-items: center; gap: 8px; background: #fff; color: #15181D;
+    padding: 12px 28px; border-radius: 3px; text-decoration: none;
+    font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase;
+    transition: background .2s, color .2s;
+  }
+  .nh-btn svg { width: 16px; height: 16px; fill: currentColor; }
+  .nh-btn:hover, .nh-btn:focus-visible { background: var(--red); color: #fff; }
+  .nh a:focus-visible, .nh button:focus-visible { outline: 3px solid #FFC72C; outline-offset: 3px; }
+
+  .nh-thumbs-wrap { max-width: 1280px; margin: 0 auto; padding: 18px 5% 26px; }
+  .nh-thumbs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .nh-thumb-item[hidden] { display: none; }
+  .nh-thumb {
+    display: flex; gap: 12px; width: 100%; text-align: left; background: none; border: 0; padding: 0;
+    cursor: pointer; color: #fff; align-items: flex-start;
+  }
+  .nh-thumb-img { position: relative; flex: 0 0 42%; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; display: block; }
+  .nh-thumb-img img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; }
+  .nh-thumb:hover .nh-thumb-img img { transform: scale(1.05); }
+  .nh-thumb-play {
+    position: absolute; left: 6px; bottom: 6px; width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(15, 17, 21, .8); display: flex; align-items: center; justify-content: center;
+  }
+  .nh-thumb-play svg { width: 12px; height: 12px; fill: #fff; }
+  .nh-thumb-text { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .nh-thumb-cat {
+    color: #FFC72C; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase;
+  }
+  .nh-thumb-title {
+    color: #fff; font: 700 15px/1.25 'Barlow Condensed', sans-serif;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    transition: color .3s;
+  }
+  .nh-thumb:hover .nh-thumb-title { color: #FFC72C; }
+
+  @media (max-width: 900px) {
+    .nh-thumbs { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+    .nh-thumbs::-webkit-scrollbar { display: none; }
+    .nh-thumb-item { flex: 0 0 min(300px, 78%); scroll-snap-align: start; }
+  }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-news-hero]').forEach(hero => {
+    const slides = hero.querySelectorAll<HTMLElement>('[data-slide]');
+    const items = hero.querySelectorAll<HTMLElement>('[data-thumb-item]');
+    hero.querySelectorAll<HTMLButtonElement>('[data-thumb]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = btn.dataset.thumb;
+        slides.forEach(s => { s.hidden = s.dataset.slide !== idx; });
+        items.forEach(it => { it.hidden = it.dataset.thumbItem === idx; });
+        // The clicked thumbnail is now hidden; move focus to the new lead story.
+        hero.querySelector<HTMLElement>(`[data-slide="${idx}"] .nh-title a`)?.focus({ preventScroll: true });
+      });
+    });
+  });
+</script>

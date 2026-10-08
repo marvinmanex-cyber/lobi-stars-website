@@ -1,0 +1,21 @@
+---
+// Renders "3 hours ago" etc. The text is computed at build time and then
+// refreshed in the browser, since the site is static.
+import { relativeTime, formatDate } from '../../lib/news';
+
+interface Props { date: Date; class?: string }
+const { date, class: className } = Astro.props;
+---
+<time class={className} datetime={date.toISOString()} title={formatDate(date)} data-reltime>{relativeTime(date)}</time>
+
+<script>
+  import { relativeTime } from '../../lib/newsUtils';
+
+  function refresh() {
+    document.querySelectorAll<HTMLTimeElement>('time[data-reltime]').forEach(t => {
+      t.textContent = relativeTime(new Date(t.dateTime));
+    });
+  }
+  refresh();
+  setInterval(refresh, 60_000);
+</script>

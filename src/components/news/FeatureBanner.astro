@@ -1,0 +1,65 @@
+---
+import type { Article } from '../../lib/news';
+import { categoryHref } from '../../lib/news';
+
+interface Props { article?: Article }
+const { article } = Astro.props;
+const a = article?.data;
+---
+{article && a && (
+  <section class="fb-wrap" aria-label="Featured story">
+    <div class="fb">
+      <a class="fb-media" href={`/news/${article.id}`} tabindex="-1" aria-hidden="true">
+        <img src={a.coverImage} alt="" loading="lazy" decoding="async" width="1200" height="675" />
+      </a>
+      <div class="fb-body">
+        <a class="fb-cat" href={categoryHref(a.category)}>{a.category}</a>
+        <h2 class="fb-title">{a.title}</h2>
+        <p class="fb-summary">{a.summary}</p>
+        <a class="fb-btn" href={`/news/${article.id}`} aria-label={`${a.isVideo ? 'Watch' : 'Read'}: ${a.title}`}>
+          {a.isVideo ? 'Watch' : 'Read'} <span aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+    </div>
+  </section>
+)}
+
+<style>
+  .fb-wrap { max-width: 1280px; margin: 0 auto; padding: 48px 5%; }
+  .fb {
+    display: grid; grid-template-columns: 1.35fr 1fr; border-radius: 12px; overflow: hidden;
+    background: var(--rdp); min-height: 340px;
+  }
+  .fb-media { display: block; overflow: hidden; position: relative; }
+  .fb-media img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease; position: absolute; inset: 0; }
+  .fb:hover .fb-media img { transform: scale(1.05); }
+  .fb-body { padding: clamp(28px, 4vw, 52px); display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+  .fb-cat {
+    color: #FFC72C; text-decoration: none; font: 700 13px/1 'Barlow Condensed', sans-serif;
+    letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .fb-cat:hover, .fb-cat:focus-visible { text-decoration: underline; }
+  .fb-title {
+    margin: 14px 0 12px; color: #fff; font: 400 clamp(30px, 3.6vw, 46px)/1 'Bebas Neue', sans-serif;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .fb-summary {
+    margin: 0 0 26px; color: rgba(255, 255, 255, .82); font-size: 16px; line-height: 1.6;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .fb-btn {
+    display: inline-flex; gap: 8px; background: var(--red); color: #fff; padding: 13px 30px; border-radius: 3px;
+    text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase;
+    transition: background .2s;
+  }
+  .fb-btn span { color: #fff; }
+  .fb-btn:hover { background: #fff; color: var(--rdp); }
+  .fb-btn:hover span { color: var(--rdp); }
+  .fb a:focus-visible { outline: 3px solid #FFC72C; outline-offset: 3px; }
+
+  @media (max-width: 800px) {
+    .fb { grid-template-columns: 1fr; }
+    .fb-media { aspect-ratio: 16 / 9; }
+    .fb-wrap { padding: 36px 5%; }
+  }
+</style>

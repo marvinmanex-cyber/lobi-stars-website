@@ -3,12 +3,21 @@ import { glob } from 'astro/loaders';
 
 const news = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/news' }),
+  // The file name is the article's id and URL slug (/news/<file-name>).
   schema: z.object({
     title: z.string(),
-    category: z.enum(['Match Report', 'Transfers', 'Club News', 'Academy', 'Community']),
-    date: z.date(),
-    excerpt: z.string(),
-    image: z.string().optional(),
+    summary: z.string(),
+    category: z.enum(['First Team', 'Club', 'Tickets', 'Media Watch']),
+    coverImage: z.string(),
+    imageAlt: z.string(),
+    publishedAt: z.coerce.date(),
+    isVideo: z.boolean().default(false),
+    // Sveltia CMS writes `null`/"" for empty optional fields.
+    videoUrl: z.string().nullable().optional(),
+    videoDuration: z.string().nullable().optional(),
+    isFeatured: z.boolean().default(false),
+    // Shown in the wide promo banner on the homepage (newest one wins).
+    isBanner: z.boolean().default(false),
   }),
 });
 

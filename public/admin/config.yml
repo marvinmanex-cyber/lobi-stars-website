@@ -22,13 +22,21 @@ collections:
     label: "News Articles"
     folder: "src/content/news"
     create: true
+    # The file name becomes the article URL: /news/<file-name>
     slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    sortable_fields: ["publishedAt", "title", "category"]
     fields:
       - {label: "Title", name: "title", widget: "string"}
-      - {label: "Category", name: "category", widget: "select", options: ["Match Report", "Transfers", "Club News", "Academy", "Community"]}
-      - {label: "Date", name: "date", widget: "datetime", type: "date", time_format: false}
-      - {label: "Excerpt", name: "excerpt", widget: "text"}
-      - {label: "Featured Image", name: "image", widget: "image", required: false}
+      - {label: "Summary (1-2 sentences, shown on cards and banners)", name: "summary", widget: "text"}
+      - {label: "Category", name: "category", widget: "select", options: ["First Team", "Club", "Tickets", "Media Watch"], default: "First Team"}
+      - {label: "Cover Image (16:9 works best)", name: "coverImage", widget: "image"}
+      - {label: "Cover Image Description (for screen readers)", name: "imageAlt", widget: "string"}
+      - {label: "Published At", name: "publishedAt", widget: "datetime"}
+      - {label: "Is this a video?", name: "isVideo", widget: "boolean", default: false}
+      - {label: "Video Link (YouTube, Vimeo or .mp4)", name: "videoUrl", widget: "string", required: false}
+      - {label: "Video Duration (e.g. 06:02)", name: "videoDuration", widget: "string", required: false}
+      - {label: "Featured (top story on the homepage)", name: "isFeatured", widget: "boolean", default: false}
+      - {label: "Homepage Promo Banner", name: "isBanner", widget: "boolean", default: false}
       - {label: "Body", name: "body", widget: "markdown"}
 
   - name: "players"

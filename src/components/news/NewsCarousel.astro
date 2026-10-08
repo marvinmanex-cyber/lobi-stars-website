@@ -1,0 +1,100 @@
+---
+// Horizontally scrolling row of news cards. Arrow buttons on desktop,
+// native swipe on touch screens.
+import type { Article } from '../../lib/news';
+import NewsCard from './NewsCard.astro';
+
+interface Props {
+  title: string;
+  articles: Article[];
+  viewAllHref?: string;
+  viewAllLabel?: string;
+  tone?: 'light' | 'band';
+}
+const { title, articles, viewAllHref, viewAllLabel = 'View all news', tone = 'light' } = Astro.props;
+const headingId = `car-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+---
+{articles.length > 0 && (
+  <section class:list={['ncar', `ncar--${tone}`]} aria-labelledby={headingId} data-carousel>
+    <div class="ncar-inner">
+      <div class="ncar-head">
+        <h2 class="ncar-title" id={headingId}>{title}</h2>
+        <div class="ncar-ctrl">
+          {viewAllHref && <a class="ncar-all" href={viewAllHref}>{viewAllLabel} <span aria-hidden="true">&rarr;</span></a>}
+          <button type="button" class="ncar-btn" data-dir="-1" aria-label={`Scroll ${title} left`} disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+          </button>
+          <button type="button" class="ncar-btn" data-dir="1" aria-label={`Scroll ${title} right`}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
+      </div>
+      <ul class="ncar-track" data-track>
+        {articles.map(article => <li class="ncar-item"><NewsCard article={article} /></li>)}
+      </ul>
+    </div>
+  </section>
+)}
+
+<style>
+  .ncar { padding: 48px 0; }
+  .ncar--band { background: var(--dark); }
+  .ncar-inner { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
+  .ncar-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+  .ncar-title {
+    margin: 0; font: 400 clamp(30px, 4vw, 42px)/1 'Bebas Neue', sans-serif;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--white);
+  }
+  .ncar-ctrl { display: flex; align-items: center; gap: 8px; }
+  .ncar-all {
+    font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--red); text-decoration: none; margin-right: 8px; white-space: nowrap;
+  }
+  .ncar-all:hover, .ncar-all:focus-visible { text-decoration: underline; }
+  .ncar-btn {
+    width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--d4); background: var(--d2);
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+    transition: border-color .2s, background .2s;
+  }
+  .ncar-btn svg { width: 18px; height: 18px; fill: none; stroke: var(--white); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .ncar-btn:hover:not(:disabled), .ncar-btn:focus-visible { border-color: var(--red); }
+  .ncar-btn:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .ncar-btn:disabled { opacity: .35; cursor: default; }
+
+  .ncar-track {
+    list-style: none; margin: 0; padding: 4px 2px 8px; display: flex; gap: 24px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth;
+    overscroll-behavior-x: contain; scrollbar-width: none;
+  }
+  .ncar-track::-webkit-scrollbar { display: none; }
+  .ncar-item { flex: 0 0 calc((100% - 72px) / 4); scroll-snap-align: start; min-width: 0; }
+
+  @media (max-width: 1100px) { .ncar-item { flex-basis: calc((100% - 48px) / 3); } }
+  @media (max-width: 768px) {
+    .ncar { padding: 36px 0; }
+    .ncar-btn { display: none; }
+    .ncar-all { margin-right: 0; }
+    .ncar-track { gap: 16px; }
+    .ncar-item { flex-basis: 72%; }
+  }
+  @media (max-width: 480px) { .ncar-item { flex-basis: 84%; } }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-carousel]').forEach(car => {
+    const track = car.querySelector<HTMLElement>('[data-track]')!;
+    const [prev, next] = car.querySelectorAll<HTMLButtonElement>('.ncar-btn');
+    const update = () => {
+      prev.disabled = track.scrollLeft <= 4;
+      next.disabled = track.scrollLeft + track.clientWidth >= track.scrollWidth - 4;
+    };
+    car.querySelectorAll<HTMLButtonElement>('.ncar-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        track.scrollBy({ left: Number(btn.dataset.dir) * track.clientWidth * 0.9 });
+      });
+    });
+    track.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  });
+</script>

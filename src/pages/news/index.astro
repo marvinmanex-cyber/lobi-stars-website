@@ -1,43 +1,237 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { getCollection } from 'astro:content';
+import NewsCard from '../../components/news/NewsCard.astro';
+import { getSortedNews, NEWS_CATEGORIES, categorySlug } from '../../lib/news';
 
-const articles = (await getCollection('news')).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-);
+const articles = await getSortedNews();
+const tabs = [{ name: 'All', slug: 'all' }, ...NEWS_CATEGORIES];
 ---
-<Layout title="Club News | Lobi Stars Football Club">
-  <div class="page-hero wrap">
-    <div class="stag">Latest Updates</div>
-    <h1 class="stitle">Club <span class="r">News</span></h1>
-    <div class="divr"></div>
-  </div>
-
-  <div class="page-content wrap">
-    {articles.length === 0 && (
-      <div class="empty-state">
-        No articles yet &mdash; check back soon.
-      </div>
-    )}
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;">
-      {articles.map(article => (
-        <a href={`/news/${article.id}`} class="card" style="text-decoration:none;display:block;">
-          {article.data.image && (
-            <div style="height:180px;overflow:hidden;">
-              <img src={article.data.image} alt={article.data.title} style="width:100%;height:100%;object-fit:cover;"/>
-            </div>
-          )}
-          <div style="padding:18px;">
-            <div style="font-size:10px;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px;font-family:'Barlow Condensed',sans-serif;">
-              {article.data.category} &middot; {article.data.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-            </div>
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:19px;font-weight:700;color:var(--white);line-height:1.3;margin-bottom:8px;">
-              {article.data.title}
-            </div>
-            <div class="muted" style="font-size:13px;line-height:1.6;">{article.data.excerpt}</div>
-          </div>
-        </a>
-      ))}
+<Layout
+  title="News | Lobi Stars Football Club"
+  description="The latest Lobi Stars FC news: First Team updates, tickets, club stories and Media Watch from the Pride of Benue."
+  image={articles[0]?.data.coverImage}
+>
+  <div class="nl-banner">
+    <div class="nl-banner-inner">
+      <h1 class="nl-h1">News</h1>
+      <p class="nl-sub">The latest from the Pride of Benue</p>
     </div>
   </div>
+
+  <nav class="nl-tabs" aria-label="News categories">
+    <div class="nl-tabs-inner">
+      <button type="button" class="nl-tab-arrow" data-tab-scroll="-1" aria-label="Previous categories">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+      </button>
+      <ul class="nl-tab-list" data-tab-list>
+        {tabs.map(t => (
+          <li>
+            <a class="nl-tab" href={t.slug === 'all' ? '/news' : `/news?category=${t.slug}`} data-tab={t.slug}
+               aria-current={t.slug === 'all' ? 'page' : undefined}>{t.name}</a>
+          </li>
+        ))}
+      </ul>
+      <button type="button" class="nl-tab-arrow" data-tab-scroll="1" aria-label="Next categories">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="nl-body" id="latest">
+    <div class="nl-head">
+      <h2 class="nl-h2">Latest News</h2>
+      <span class="nl-count" data-count aria-live="polite"></span>
+    </div>
+
+    <ul class="nl-grid" data-grid>
+      {articles.map(article => (
+        <li data-cat={categorySlug(article.data.category)}><NewsCard article={article} /></li>
+      ))}
+    </ul>
+    <p class="nl-empty" data-empty hidden>There are no stories in this category yet. <a href="/news">See all news</a></p>
+
+    <nav class="nl-pages" aria-label="News pages" data-pages></nav>
+  </div>
 </Layout>
+
+<style>
+  .nl-banner {
+    background: linear-gradient(120deg, var(--rdp) 0%, var(--red) 70%, var(--rd) 100%);
+    position: relative; overflow: hidden;
+  }
+  .nl-banner::after {
+    content: ''; position: absolute; right: -60px; top: -60px; width: 320px; height: 320px; border-radius: 50%;
+    border: 40px solid rgba(255, 199, 44, .18);
+  }
+  .nl-banner-inner { max-width: 1280px; margin: 0 auto; padding: 56px 5% 48px; position: relative; z-index: 1; }
+  .nl-h1 { margin: 0; color: #fff; font: 400 clamp(56px, 9vw, 104px)/.9 'Bebas Neue', sans-serif; letter-spacing: 2px; }
+  .nl-sub { margin: 10px 0 0; color: rgba(255, 255, 255, .85); font: 600 16px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
+
+  .nl-tabs { background: #fff; border-bottom: 1px solid var(--d4); position: sticky; top: 76px; z-index: 50; }
+  .nl-tabs-inner { max-width: 1280px; margin: 0 auto; padding: 0 5%; display: flex; align-items: center; gap: 6px; }
+  .nl-tab-list { position: relative; list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; scroll-behavior: smooth; flex: 1; }
+  .nl-tab-list::-webkit-scrollbar { display: none; }
+  .nl-tab {
+    display: block; white-space: nowrap; padding: 18px 16px 15px; text-decoration: none; color: var(--lt);
+    font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase;
+    border-bottom: 3px solid transparent; transition: color .2s, border-color .2s;
+  }
+  .nl-tab:hover { color: var(--white); }
+  .nl-tab[aria-current='page'] { color: var(--red); border-bottom-color: var(--red); }
+  .nl-tab:focus-visible { outline: 3px solid var(--red); outline-offset: -3px; }
+  .nl-tab-arrow {
+    display: none; flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--d4);
+    background: #fff; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+  }
+  .nl-tab-arrow svg { width: 16px; height: 16px; fill: none; stroke: var(--white); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .nl-tab-arrow:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+
+  .nl-body { max-width: 1280px; margin: 0 auto; padding: 44px 5% 20px; }
+  .nl-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+  .nl-h2 { margin: 0; font: 400 clamp(30px, 4vw, 42px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .nl-count { color: var(--lt); font-size: 14px; }
+  .nl-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 36px 24px; }
+  .nl-grid > li[hidden] { display: none; }
+  .nl-empty { padding: 50px 20px; text-align: center; color: var(--lt); border: 1px dashed var(--d4); border-radius: 10px; }
+  .nl-empty a { color: var(--red); font-weight: 600; }
+
+  .nl-pages { display: flex; justify-content: center; margin-top: 48px; }
+  .nl-pages :global(ol) { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .nl-pages :global(a), .nl-pages :global(span) {
+    min-width: 42px; height: 42px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 6px; border: 1px solid var(--d4); text-decoration: none; color: var(--white);
+    font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: .5px;
+  }
+  .nl-pages :global(span) { border-color: transparent; color: var(--lt); }
+  .nl-pages :global(a:hover) { border-color: var(--red); color: var(--red); }
+  .nl-pages :global(a[aria-current='page']) { background: var(--red); border-color: var(--red); color: #fff; }
+  .nl-pages :global(a:focus-visible) { outline: 3px solid var(--red); outline-offset: 2px; }
+
+  @media (max-width: 1200px) { .nl-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 1000px) { .nl-tabs { top: 68px; } }
+  @media (max-width: 900px) { .nl-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 768px) {
+    .nl-tab-arrow { display: inline-flex; }
+    .nl-tabs-inner { padding: 0 12px; }
+  }
+  @media (max-width: 600px) {
+    .nl-grid { grid-template-columns: 1fr; gap: 30px; }
+    .nl-banner-inner { padding: 40px 5% 34px; }
+  }
+</style>
+
+<script>
+  import { NEWS_CATEGORIES } from '../../lib/newsUtils';
+
+  const PER_PAGE = 12;
+  const valid = new Set(['all', ...NEWS_CATEGORIES.map(c => c.slug)]);
+  const names: Record<string, string> = Object.fromEntries(NEWS_CATEGORIES.map(c => [c.slug, c.name]));
+
+  const grid = document.querySelector<HTMLElement>('[data-grid]')!;
+  const items = Array.from(grid.children) as HTMLElement[];
+  const pagesNav = document.querySelector<HTMLElement>('[data-pages]')!;
+  const empty = document.querySelector<HTMLElement>('[data-empty]')!;
+  const count = document.querySelector<HTMLElement>('[data-count]')!;
+  const tabList = document.querySelector<HTMLElement>('[data-tab-list]')!;
+
+  function readState() {
+    const p = new URLSearchParams(location.search);
+    const cat = valid.has(p.get('category') || '') ? p.get('category')! : 'all';
+    const page = Math.max(1, parseInt(p.get('page') || '1', 10) || 1);
+    return { cat, page };
+  }
+
+  function urlFor(cat: string, page: number) {
+    const p = new URLSearchParams();
+    if (cat !== 'all') p.set('category', cat);
+    if (page > 1) p.set('page', String(page));
+    const q = p.toString();
+    return q ? `/news?${q}` : '/news';
+  }
+
+  // 1 2 3 4 5 6 … 20  /  1 … 7 8 9 10 11 … 20
+  function pageList(cur: number, total: number): (number | '…')[] {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const start = Math.max(2, Math.min(cur - 2, total - 5));
+    const end = Math.min(total - 1, start + 4);
+    const out: (number | '…')[] = [1];
+    if (start > 2) out.push('…');
+    for (let n = start; n <= end; n++) out.push(n);
+    if (end < total - 1) out.push('…');
+    out.push(total);
+    return out;
+  }
+
+  function render() {
+    const { cat, page: wanted } = readState();
+    const matches = items.filter(li => cat === 'all' || li.dataset.cat === cat);
+    const total = Math.max(1, Math.ceil(matches.length / PER_PAGE));
+    const page = Math.min(wanted, total);
+    const shown = new Set(matches.slice((page - 1) * PER_PAGE, page * PER_PAGE));
+    items.forEach(li => { li.hidden = !shown.has(li); });
+
+    empty.hidden = matches.length > 0;
+    count.textContent = matches.length
+      ? `${matches.length} ${matches.length === 1 ? 'story' : 'stories'}${cat !== 'all' ? ` in ${names[cat]}` : ''}`
+      : '';
+
+    tabList.querySelectorAll<HTMLAnchorElement>('[data-tab]').forEach(a => {
+      if (a.dataset.tab === cat) {
+        a.setAttribute('aria-current', 'page');
+        const li = a.parentElement!;
+        if (li.offsetLeft < tabList.scrollLeft || li.offsetLeft + li.offsetWidth > tabList.scrollLeft + tabList.clientWidth) {
+          tabList.scrollTo({ left: li.offsetLeft - 20 });
+        }
+      } else a.removeAttribute('aria-current');
+    });
+
+    document.title = cat === 'all' ? 'News | Lobi Stars Football Club' : `${names[cat]} News | Lobi Stars Football Club`;
+
+    pagesNav.replaceChildren();
+    if (total > 1) {
+      const ol = document.createElement('ol');
+      const add = (label: string, target: number | null, opts: { current?: boolean; aria?: string } = {}) => {
+        const li = document.createElement('li');
+        if (target === null) {
+          const s = document.createElement('span');
+          s.textContent = label;
+          li.append(s);
+        } else {
+          const a = document.createElement('a');
+          a.href = urlFor(cat, target);
+          a.textContent = label;
+          if (opts.current) a.setAttribute('aria-current', 'page');
+          if (opts.aria) a.setAttribute('aria-label', opts.aria);
+          li.append(a);
+        }
+        ol.append(li);
+      };
+      if (page > 1) add('‹', page - 1, { aria: 'Previous page' });
+      pageList(page, total).forEach(n =>
+        n === '…' ? add('…', null) : add(String(n), n, { current: n === page, aria: `Page ${n}` })
+      );
+      if (page < total) add('›', page + 1, { aria: 'Next page' });
+      pagesNav.append(ol);
+    }
+  }
+
+  // Tabs, pagination and category tags all navigate within this page.
+  document.querySelector('main')!.addEventListener('click', e => {
+    const a = (e.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="/news"]');
+    if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+    const url = new URL(a.href);
+    if (url.pathname !== '/news' && url.pathname !== '/news/') return;
+    e.preventDefault();
+    history.pushState(null, '', url.pathname + url.search);
+    render();
+    const top = document.getElementById('latest')!.getBoundingClientRect().top + scrollY - 140;
+    if (scrollY > top) scrollTo({ top, behavior: 'smooth' });
+  });
+  window.addEventListener('popstate', render);
+
+  document.querySelectorAll<HTMLButtonElement>('[data-tab-scroll]').forEach(btn => {
+    btn.addEventListener('click', () => tabList.scrollBy({ left: Number(btn.dataset.tabScroll) * 160, behavior: 'smooth' }));
+  });
+
+  render();
+</script>

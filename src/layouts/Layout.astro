@@ -2,8 +2,17 @@
 export interface Props {
   title: string;
   description?: string;
+  image?: string;
+  type?: 'website' | 'article';
 }
-const { title, description = "Official website of Lobi Stars Football Club - Pride of Benue" } = Astro.props;
+const {
+  title,
+  description = "Official website of Lobi Stars Football Club - Pride of Benue",
+  image = '/images/lobi-stars-fc.jpg',
+  type = 'website',
+} = Astro.props;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL(image, Astro.site);
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -12,6 +21,18 @@ const { title, description = "Official website of Lobi Stars Football Club - Pri
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>{title}</title>
 <meta name="description" content={description}/>
+<link rel="canonical" href={canonical}/>
+<meta property="og:site_name" content="Lobi Stars FC"/>
+<meta property="og:type" content={type}/>
+<meta property="og:title" content={title}/>
+<meta property="og:description" content={description}/>
+<meta property="og:url" content={canonical}/>
+<meta property="og:image" content={ogImage}/>
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:title" content={title}/>
+<meta name="twitter:description" content={description}/>
+<meta name="twitter:image" content={ogImage}/>
+<slot name="head" />
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#FFFFFF">
 <link rel="apple-touch-icon" href="/images/icon-192.png">
