@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 ---
-<Layout title="Visitor Analytics | Lobi Stars Admin">
+<Layout title="Visitor Analytics | Lobi Stars Admin" noindex>
   <div class="wrap admin-wrap">
     <div class="admin-nav">
       <a href="/" class="an-back">&larr; Back to site</a>
@@ -359,7 +359,7 @@ import Layout from '../../layouts/Layout.astro';
     $('code').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
     $('lock-btn').addEventListener('click', () => {
       sessionStorage.removeItem('ls_admin_code');
-      location.reload();
+      fetch('/api/admin/logout', { method: 'POST' }).finally(() => { location.href = '/admin/login/'; });
     });
 
     if (code) {

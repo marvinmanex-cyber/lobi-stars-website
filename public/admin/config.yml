@@ -90,20 +90,6 @@ collections:
       - {label: "Display Order", name: "order", widget: "number", default: 10}
       - {label: "Short Bio", name: "bio", widget: "text"}
 
-  - name: "merchandise"
-    label: "Club Shop / Merchandise"
-    folder: "src/content/merchandise"
-    create: true
-    slug: "{{slug}}"
-    fields:
-      - {label: "Product Name", name: "name", widget: "string"}
-      - {label: "Price (e.g. ₦15,000)", name: "price", widget: "string", default: "₦0"}
-      - {label: "Photo", name: "photo", widget: "image"}
-      - {label: "Badge (e.g. NEW, PREMIUM)", name: "badge", widget: "string", required: false}
-      - {label: "Badge Color", name: "badgeColor", widget: "string", default: "#D4202B"}
-      - {label: "Description", name: "description", widget: "text"}
-      - {label: "Shop Link", name: "shopUrl", widget: "string", default: "https://www.jumia.com.ng"}
-
   - name: "heroSlides"
     label: "Homepage Hero Slides"
     folder: "src/content/hero-slides"
@@ -123,3 +109,60 @@ collections:
       - {label: "Logo", name: "logo", widget: "image"}
       - {label: "Website Link", name: "url", widget: "string", default: "#"}
       - {label: "Display Order", name: "order", widget: "number", default: 10}
+
+  # Single data files (src/data/*.json) -- one entry each, edited in place.
+  - name: "settings"
+    label: "Site Settings, League Table & Shop"
+    files:
+      - name: "site"
+        label: "Season, Homepage Stats & Footer Text"
+        file: "src/data/site.json"
+        fields:
+          - {label: "Current Season (e.g. 2026/27)", name: "currentSeason", widget: "string"}
+          - {label: "Footer Tagline", name: "footerTagline", widget: "text"}
+          - label: "Homepage Stats Bar"
+            name: "stats"
+            widget: "list"
+            fields:
+              - {label: "Value (e.g. 1969)", name: "value", widget: "string"}
+              - {label: "Label (e.g. Year Founded)", name: "label", widget: "string"}
+
+      - name: "leagueTable"
+        label: "League Table"
+        file: "src/data/league-table.json"
+        fields:
+          - {label: "Competition", name: "competition", widget: "string"}
+          - {label: "Last Updated (YYYY-MM-DD)", name: "lastUpdated", widget: "string", required: false}
+          - label: "Clubs"
+            name: "rows"
+            widget: "list"
+            summary: "{{fields.club}}"
+            fields:
+              - {label: "Club", name: "club", widget: "string"}
+              - {label: "Crest", name: "crest", widget: "image", required: false}
+              - {label: "Played", name: "played", widget: "number", value_type: "int", default: 0}
+              - {label: "Won", name: "won", widget: "number", value_type: "int", default: 0}
+              - {label: "Drawn", name: "drawn", widget: "number", value_type: "int", default: 0}
+              - {label: "Lost", name: "lost", widget: "number", value_type: "int", default: 0}
+              - {label: "Goals For", name: "goalsFor", widget: "number", value_type: "int", default: 0}
+              - {label: "Goals Against", name: "goalsAgainst", widget: "number", value_type: "int", default: 0}
+              - {label: "Points Adjustment (e.g. -3 for a deduction)", name: "pointsAdjustment", widget: "number", value_type: "int", default: 0}
+
+      - name: "shop"
+        label: "Club Shop Products"
+        file: "src/data/shop.json"
+        fields:
+          - label: "Products"
+            name: "products"
+            widget: "list"
+            summary: "{{fields.name}}"
+            fields:
+              - {label: "ID (no spaces)", name: "id", widget: "string"}
+              - {label: "Name ({season} is replaced with the current season)", name: "name", widget: "string"}
+              - {label: "Description", name: "description", widget: "text"}
+              - {label: "Price in Naira (leave empty if not known yet)", name: "price", widget: "number", value_type: "int", required: false}
+              - {label: "Photo", name: "image", widget: "image"}
+              - {label: "Jumia Product Link", name: "jumiaUrl", widget: "string", required: false}
+              - {label: "Badge (e.g. NEW)", name: "badge", widget: "string", required: false}
+              - {label: "Badge Colour", name: "badgeColor", widget: "string", default: "#E31E24"}
+              - {label: "In Stock", name: "inStock", widget: "boolean", default: true}

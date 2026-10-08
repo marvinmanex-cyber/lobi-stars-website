@@ -1,0 +1,23 @@
+{
+  "_todo": "TODO: confirm every stat below and the footer tagline before relying on them.",
+  "currentSeason": "2026/27",
+  "footerTagline": "The Pride of Benue. Proudly representing Makurdi and Benue State since 1969.",
+  "stats": [
+    {
+      "value": "3×",
+      "label": "NPFL Champions"
+    },
+    {
+      "value": "1969",
+      "label": "Year Founded"
+    },
+    {
+      "value": "30K+",
+      "label": "Loyal Fans"
+    },
+    {
+      "value": "CAF",
+      "label": "Continental"
+    }
+  ]
+}

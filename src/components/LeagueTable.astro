@@ -1,0 +1,68 @@
+---
+import table from '../data/league-table.json';
+import { CURRENT_SEASON, teamInitials } from '../lib/site';
+
+const rows = table.rows
+  .map(r => {
+    const gd = r.goalsFor - r.goalsAgainst;
+    const pts = r.won * 3 + r.drawn + (r.pointsAdjustment || 0);
+    return { ...r, gd, pts };
+  })
+  .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.goalsFor - a.goalsFor || a.club.localeCompare(b.club));
+
+const started = rows.some(r => r.played > 0);
+const lastUpdated = table.lastUpdated
+  ? new Date(`${table.lastUpdated}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+  : null;
+const isLobi = (club: string) => /lobi stars/i.test(club);
+---
+<div class="fade-in">
+  <div class="stag">{CURRENT_SEASON} NNL Season</div>
+  <h3 class="stitle" style="font-size:36px;">{table.competition.replace(/^NNL\s+/, '')} <span class="r">Table</span></h3>
+  <div class="divr" style="margin-bottom:30px;"></div>
+</div>
+
+{started ? (
+  <div class="table-wrap fade-in" style="border-radius: 12px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+    <table class="st" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr><th>#</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>
+      </thead>
+      <tbody>
+        {rows.map((r, i) => (
+          <tr class={isLobi(r.club) ? 'hl' : undefined} style={isLobi(r.club) ? 'background: rgba(245, 184, 0, 0.1);' : undefined}>
+            <td><span class="pb">{i + 1}</span></td>
+            <td style={isLobi(r.club) ? 'color: var(--gold); font-weight: 700;' : undefined}>
+              <span class="club-cell">
+                {r.crest
+                  ? <img src={r.crest} alt={`${r.club} crest`} class="club-badge" loading="lazy" />
+                  : <span class="club-badge lt-initials" aria-hidden="true">{teamInitials(r.club)}</span>}
+                {isLobi(r.club) && '⭐ '}{r.club}
+              </span>
+            </td>
+            <td>{r.played}</td><td>{r.won}</td><td>{r.drawn}</td><td>{r.lost}</td>
+            <td>{r.goalsFor}</td><td>{r.goalsAgainst}</td><td>{r.gd > 0 ? `+${r.gd}` : r.gd}</td>
+            <td><strong>{r.pts}</strong></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+) : (
+  <div class="lt-empty fade-in">
+    The {CURRENT_SEASON} season table will appear after Matchday 1.
+  </div>
+)}
+{lastUpdated && <p class="lt-updated">Last updated: {lastUpdated}</p>}
+
+<style>
+  .lt-empty {
+    padding: 36px 24px; text-align: center; border: 1px dashed var(--d4); border-radius: 12px;
+    color: var(--lt); font-size: 16px; background: var(--dark);
+  }
+  .lt-updated { margin-top: 12px; font-size: 13px; color: var(--lt); }
+  .lt-initials {
+    display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
+    background: var(--d3); color: var(--lt); font: 700 11px/1 'Barlow Condensed', sans-serif;
+  }
+</style>

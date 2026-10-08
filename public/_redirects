@@ -1,0 +1,5 @@
+# Until these get their own pages (Phase 5), send visitors to the
+# matching homepage section.
+/shop        /#merchandise  302
+/membership  /#membership   302
+/partners    /#sponsor      302

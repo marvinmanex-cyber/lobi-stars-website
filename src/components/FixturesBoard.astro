@@ -1,0 +1,199 @@
+---
+// Upcoming fixtures and recent results, shared by the homepage and /fixtures.
+// The site is static, so whether a match is "upcoming" is decided in the
+// browser against the current time: a match whose kick-off has passed is
+// never shown as upcoming. Sources: the CMS fixtures collection (results and
+// scores) plus the live ticketed matches from /api/events.
+import { getCollection } from 'astro:content';
+
+interface Props {
+  upcomingLimit?: number;
+  resultsLimit?: number;
+  showMoreLinks?: boolean;
+}
+const { upcomingLimit = 0, resultsLimit = 0, showMoreLinks = false } = Astro.props;
+
+// The CMS saves kick-off as Nigerian wall-clock time with no timezone, which
+// gets read as UTC; shift it back by WAT's +1h so 16:30 stays 16:30.
+const WAT_OFFSET_MS = 60 * 60 * 1000;
+
+const cms = (await getCollection('fixtures')).map(f => ({
+  home: f.data.home,
+  away: f.data.away,
+  date: new Date(f.data.date.getTime() - WAT_OFFSET_MS).toISOString(),
+  venue: f.data.venue,
+  competition: f.data.competition,
+  homeScore: f.data.home_score ?? null,
+  awayScore: f.data.away_score ?? null,
+  completed: f.data.status === 'Completed',
+}));
+---
+<div class="fxb" data-fixtures-board data-fixtures={JSON.stringify(cms)}
+     data-upcoming-limit={upcomingLimit} data-results-limit={resultsLimit}>
+  <div>
+    <h3 class="fxb-title">Upcoming Fixtures</h3>
+    <div class="fxb-list" data-upcoming><p class="fxb-empty">Loading fixtures&hellip;</p></div>
+    {showMoreLinks && <a class="btn-o fxb-more" href="/fixtures">View All Fixtures &rarr;</a>}
+  </div>
+  <div>
+    <h3 class="fxb-title">Recent Results</h3>
+    <div class="fxb-list" data-results><p class="fxb-empty">Loading results&hellip;</p></div>
+    {showMoreLinks && <a class="btn-o fxb-more" href="/fixtures#results">View All Results &rarr;</a>}
+  </div>
+</div>
+
+<style>
+  .fxb { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  .fxb-title {
+    font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 4px; text-transform: uppercase;
+    color: var(--gold); margin: 0 0 20px; padding-bottom: 10px; border-bottom: 1px solid var(--d4);
+  }
+  .fxb-list { display: flex; flex-direction: column; gap: 12px; }
+  .fxb-empty {
+    padding: 22px 18px; text-align: center; color: var(--lt); font-size: 14px;
+    border: 1px dashed var(--d4); border-radius: 8px; margin: 0;
+  }
+  .fxb-more { display: block; width: 100%; margin-top: 12px; padding: 10px; font-size: 12px; text-align: center; text-decoration: none; }
+
+  .fxb :global(.fxc) { background: var(--d2); border: 1px solid var(--d4); border-radius: 8px; padding: 16px 18px; }
+  .fxb :global(.fxc-meta) {
+    display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px;
+    font-size: 11px; color: var(--lt); letter-spacing: .5px;
+  }
+  .fxb :global(.fxc-date) { color: var(--gold); font-weight: 600; text-align: right; }
+  .fxb :global(.fxc-teams) {
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center;
+    font: 700 15px/1.2 'Barlow Condensed', sans-serif; color: var(--white);
+  }
+  .fxb :global(.fxc-team) { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .fxb :global(.fxc-team.h) { justify-content: flex-end; text-align: right; }
+  .fxb :global(.fxc-crest) {
+    width: 30px; height: 30px; border-radius: 50%; object-fit: contain; background: #fff;
+    border: 1px solid var(--d4); flex-shrink: 0;
+  }
+  .fxb :global(.fxc-initials) {
+    display: inline-flex; align-items: center; justify-content: center; background: var(--d3);
+    color: var(--lt); font: 700 11px/1 'Barlow Condensed', sans-serif;
+  }
+  .fxb :global(.fxc-mid) { font: 400 16px/1 'Bebas Neue', sans-serif; color: var(--lt); text-align: center; }
+  .fxb :global(.fxc-score) {
+    background: var(--red); color: #fff; padding: 5px 12px; border-radius: 3px;
+    font: 400 18px/1 'Bebas Neue', sans-serif; white-space: nowrap;
+  }
+  .fxb :global(.fxc-pending) {
+    background: var(--d3); color: var(--lt); padding: 5px 8px; border-radius: 3px;
+    font: 700 10px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .8px; text-transform: uppercase; text-align: center;
+  }
+  .fxb :global(.fxc-venue) { margin-top: 10px; font-size: 11px; color: var(--lt); }
+
+  @media (max-width: 768px) { .fxb { grid-template-columns: 1fr; gap: 32px; } }
+</style>
+
+<script>
+  import { TEAM_LOGOS } from '../../functions/api/_lib/teamLogos.js';
+  import { teamInitials } from '../lib/site';
+
+  type Fixture = {
+    home: string; away: string; date: string; venue: string; competition: string;
+    homeScore: number | null; awayScore: number | null; completed: boolean;
+  };
+  type ApiEvent = { home_team: string; away_team: string; competition?: string; event_date: string; venue: string };
+
+  const DAY = 86_400_000;
+  const norm = (s: string) => s.toLowerCase().replace(/\bfc\b|[^a-z]/g, '');
+  const sameMatch = (a: Fixture, b: Fixture) =>
+    norm(a.home) === norm(b.home) && norm(a.away) === norm(b.away) &&
+    Math.abs(new Date(a.date).getTime() - new Date(b.date).getTime()) < 3 * DAY;
+
+  function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, text?: string) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  function crest(name: string) {
+    const src = (TEAM_LOGOS as Record<string, string>)[name];
+    if (src) {
+      const img = el('img', 'fxc-crest') as HTMLImageElement;
+      img.src = src; img.alt = `${name} crest`; img.loading = 'lazy'; img.width = 30; img.height = 30;
+      img.onerror = () => img.replaceWith(initials(name));
+      return img;
+    }
+    return initials(name);
+  }
+  function initials(name: string) {
+    const s = el('span', 'fxc-crest fxc-initials', teamInitials(name));
+    s.setAttribute('aria-hidden', 'true');
+    return s;
+  }
+
+  function fmt(iso: string) {
+    const d = new Date(iso);
+    const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' });
+    const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
+    return `${date} · ${time}`;
+  }
+
+  function card(f: Fixture, isResult: boolean) {
+    const c = el('div', 'fxc');
+    const meta = el('div', 'fxc-meta');
+    meta.append(el('span', '', f.competition), el('span', 'fxc-date', fmt(f.date)));
+
+    const teams = el('div', 'fxc-teams');
+    const home = el('div', 'fxc-team h');
+    home.append(el('span', '', f.home), crest(f.home));
+    const away = el('div', 'fxc-team a');
+    away.append(crest(f.away), el('span', '', f.away));
+
+    let mid: HTMLElement;
+    if (!isResult) mid = el('div', 'fxc-mid', 'VS');
+    else if (f.homeScore !== null && f.awayScore !== null) mid = el('div', 'fxc-score', `${f.homeScore} – ${f.awayScore}`);
+    else mid = el('div', 'fxc-pending', 'Result pending');
+    teams.append(home, mid, away);
+
+    c.append(meta, teams, el('div', 'fxc-venue', `📍 ${f.venue}`));
+    return c;
+  }
+
+  function fill(list: HTMLElement, items: Fixture[], isResult: boolean, emptyText: string) {
+    list.replaceChildren();
+    if (!items.length) { list.append(el('p', 'fxb-empty', emptyText)); return; }
+    items.forEach(f => list.append(card(f, isResult)));
+  }
+
+  async function init(board: HTMLElement) {
+    const cms: Fixture[] = JSON.parse(board.dataset.fixtures || '[]');
+    let live: Fixture[] = [];
+    try {
+      const res = await fetch('/api/events');
+      if (res.ok) {
+        const events: ApiEvent[] = (await res.json()).events || [];
+        live = events.map(e => ({
+          home: e.home_team, away: e.away_team, date: new Date(e.event_date).toISOString(), venue: e.venue,
+          competition: e.competition || 'NNL', homeScore: null, awayScore: null, completed: false,
+        }));
+      }
+    } catch { /* fall back to CMS fixtures only */ }
+
+    const now = Date.now();
+    const hasScore = (f: Fixture) => f.homeScore !== null && f.awayScore !== null;
+    const isPast = (f: Fixture) => f.completed || hasScore(f) || new Date(f.date).getTime() <= now;
+
+    // Live (ticketed) matches win over a CMS entry for the same game.
+    const merged = [...live, ...cms.filter(c => !live.some(l => sameMatch(l, c)))];
+    const upcoming = merged.filter(f => !isPast(f))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const results = merged.filter(isPast)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const upLimit = Number(board.dataset.upcomingLimit) || upcoming.length;
+    const resLimit = Number(board.dataset.resultsLimit) || results.length;
+    fill(board.querySelector('[data-upcoming]')!, upcoming.slice(0, upLimit), false,
+      'No upcoming fixtures have been announced yet. Check back soon.');
+    fill(board.querySelector('[data-results]')!, results.slice(0, resLimit), true,
+      'No results yet this season.');
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-fixtures-board]').forEach(init);
+</script>

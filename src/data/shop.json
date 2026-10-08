@@ -1,0 +1,181 @@
+{
+  "_todo": "TODO: add each product's real price in naira (a number, e.g. 25000) and its own Jumia product link. Products without a price show 'Price coming soon'; without a link the buy button is disabled.",
+  "products": [
+    {
+      "id": "anthem-jacket",
+      "name": "Official Anthem Jacket",
+      "description": "Heavyweight branded jacket as worn by the first team.",
+      "price": null,
+      "image": "/images/club-jacket (1).jpg",
+      "jumiaUrl": "",
+      "badge": "PREMIUM",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "away-jersey",
+      "name": "{season} Away Jersey",
+      "description": "Official white and gold away kit. All sizes available.",
+      "price": null,
+      "image": "/images/lobiaway-jersey.jpg",
+      "jumiaUrl": "",
+      "badge": "AWAY",
+      "badgeColor": "#444444",
+      "inStock": true
+    },
+    {
+      "id": "backpack",
+      "name": "Official Lobi Backpack",
+      "description": "Durable branded travel and training backpack.",
+      "price": null,
+      "image": "/images/lobi-bags.jpg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "club-cap",
+      "name": "Lobi Stars Official Cap",
+      "description": "Embroidered snapback with official club crest.",
+      "price": null,
+      "image": "/images/lobicap.jpg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "coffee-mug",
+      "name": "Club Coffee Mug",
+      "description": "Ceramic mug featuring the Lobi Stars crest.",
+      "price": null,
+      "image": "/images/coffee-mug.jpg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "fancy-tshirts",
+      "name": "Fans' Fancy T-Shirts",
+      "description": "Casual wear featuring modern Lobi Stars designs.",
+      "price": null,
+      "image": "/images/lobi-kit.jpg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "flipstraw-tumbler",
+      "name": "Flip-straw Tumbler",
+      "description": "Insulated travel tumbler with flip-straw lid.",
+      "price": null,
+      "image": "/images/flipstraw-tumbler.jpg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "home-jersey",
+      "name": "{season} Home Jersey",
+      "description": "Official red and gold home kit. Available S–XXL.",
+      "price": null,
+      "image": "/images/lobihome-jersey.jpg",
+      "jumiaUrl": "",
+      "badge": "HOME",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "mini-football",
+      "name": "Mini Home Football",
+      "description": "Size 1 souvenir ball in official club colors.",
+      "price": null,
+      "image": "/images/minihome-football.jpg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "phone-case",
+      "name": "Lobi Phone Case",
+      "description": "Classic Lobi Stars Phone Case.",
+      "price": null,
+      "image": "/images/lobiphone-case.jpeg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "pint-glass",
+      "name": "Legacy Pint Glass",
+      "description": "Premium glassware for the ultimate fan.",
+      "price": null,
+      "image": "/images/legacypintglass.jpg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "pro-boots",
+      "name": "Lobi Edition Pro Boots",
+      "description": "High-performance pitch boots for serious players.",
+      "price": null,
+      "image": "/images/football-boots.jpg",
+      "jumiaUrl": "",
+      "badge": "PRO GEAR",
+      "badgeColor": "#000000",
+      "inStock": true
+    },
+    {
+      "id": "retro-jersey",
+      "name": "Lobi Retro Jersey",
+      "description": "Classic Lobi Stars Retro Jersey.",
+      "price": null,
+      "image": "/images/lobiretro-jersey.jpg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "supporters-scarf",
+      "name": "Supporters Scarf",
+      "description": "Classic red and gold woven match day scarf.",
+      "price": null,
+      "image": "/images/lobi-scarfs.jpg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "training-joggers",
+      "name": "Lobi Training Joggers",
+      "description": "Tapered fit training pants with embroidered crest.",
+      "price": null,
+      "image": "/images/club-joggers.jpg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    },
+    {
+      "id": "wall-clock",
+      "name": "Lobi Stars Wall Clock",
+      "description": "Official club clock for your home or office.",
+      "price": null,
+      "image": "/images/clock.jpg",
+      "jumiaUrl": "",
+      "badge": "",
+      "badgeColor": "#D4202B",
+      "inStock": true
+    }
+  ]
+}

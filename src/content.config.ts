@@ -70,19 +70,6 @@ const staff = defineCollection({
   }),
 });
 
-const merchandise = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/merchandise' }),
-  schema: z.object({
-    name: z.string(),
-    price: z.string().default('₦0'),
-    description: z.string(),
-    photo: z.string(),
-    badge: z.string().optional(),
-    badgeColor: z.string().default('#D4202B'),
-    shopUrl: z.string().default('https://www.jumia.com.ng'),
-  }),
-});
-
 const heroSlides = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/hero-slides' }),
   schema: z.object({
@@ -101,4 +88,4 @@ const sponsors = defineCollection({
   }),
 });
 
-export const collections = { news, players, gallery, fixtures, staff, merchandise, heroSlides, sponsors };
+export const collections = { news, players, gallery, fixtures, staff, heroSlides, sponsors };

@@ -5,10 +5,13 @@ import NextMatches from '../components/news/NextMatches.astro';
 import NewsCarousel from '../components/news/NewsCarousel.astro';
 import FeatureBanner from '../components/news/FeatureBanner.astro';
 import { getSortedNews } from '../lib/news';
+import FixturesBoard from '../components/FixturesBoard.astro';
+import LeagueTable from '../components/LeagueTable.astro';
+import shop from '../data/shop.json';
+import { CURRENT_SEASON, FOOTER_TAGLINE, HERO_STATS, withSeason, formatNaira } from '../lib/site';
 const staff = (await getCollection('staff')).sort((a, b) => a.data.order - b.data.order);
 const staffLead = staff.slice(0, 2);
 const staffMore = staff.slice(2);
-const merchandise = await getCollection('merchandise');
 const heroSlides = (await getCollection('heroSlides')).sort((a, b) => a.data.order - b.data.order);
 const sponsors = (await getCollection('sponsors')).sort((a, b) => a.data.order - b.data.order);
 
@@ -17,6 +20,8 @@ const featuredNews = news.filter(a => a.data.isFeatured).slice(0, 5);
 const bannerNews = news.find(a => a.data.isBanner) ?? news.find(a => !featuredNews.includes(a));
 const clubNews = news.filter(a => a.data.category === 'Club').slice(0, 12);
 const videoNews = news.filter(a => a.data.isVideo).slice(0, 12);
+
+const products = shop.products.map(p => ({ ...p, name: withSeason(p.name), priceText: formatNaira(p.price) }));
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -1595,13 +1600,12 @@ h1, h2, h3, .stitle {
   </div>
   <div class="slider-dots" id="sliderDots"></div>
   <div class="hero-stats-bar">
-    <div class="hsb-item"><span class="hsb-num">3×</span><span class="hsb-label">NPFL Champions</span></div>
-    <div class="hsb-div"></div>
-    <div class="hsb-item"><span class="hsb-num">1969</span><span class="hsb-label">Year Founded</span></div>
-    <div class="hsb-div"></div>
-    <div class="hsb-item"><span class="hsb-num">30K+</span><span class="hsb-label">Loyal Fans</span></div>
-    <div class="hsb-div"></div>
-    <div class="hsb-item"><span class="hsb-num">CAF</span><span class="hsb-label">Continental</span></div>
+    {HERO_STATS.map((stat, i) => (
+      <Fragment>
+        {i > 0 && <div class="hsb-div"></div>}
+        <div class="hsb-item"><span class="hsb-num">{stat.value}</span><span class="hsb-label">{stat.label}</span></div>
+      </Fragment>
+    ))}
   </div>
   <div class="hero-scroll"><div class="sline"></div>Scroll</div>
 </section>
@@ -1622,20 +1626,9 @@ h1, h2, h3, .stitle {
   <h2 class="stitle fade-in">Fixtures &amp; <span class="r">Results</span></h2>
   <div class="divr fade-in"></div>
 
-<div class="fix-grid fade-in">
-    <div>
-      <div class="fix-col-title">Upcoming Fixtures</div>
-      <div class="fix-card"><div class="fix-meta"><span class="fix-comp">NNL Conference D</span><span class="fix-date">Sat 29 Aug · 16:30</span></div><div class="fix-teams"><div class="fix-team h">Lobi Stars FC</div><div class="fix-vs">VS</div><div class="fix-team a">Kada Warriors FC</div></div><div class="fix-venue">📍 McCarthy Stadium, Makurdi</div></div>
-      <a class="btn-o" href="/fixtures" style="display:block;width:100%;margin-top:8px;padding:10px;font-size:12px;text-align:center;text-decoration:none;">View All Fixtures →</a>
-    </div>
-    <div>
-      <div class="fix-col-title">Recent Results</div>
-      <div class="fix-card" style="text-align:center;color:var(--lt);">
-        No results yet this season — the Conference D campaign is just getting underway.
-      </div>
-      <a class="btn-o" href="/fixtures" style="display:block;width:100%;margin-top:8px;padding:10px;font-size:12px;text-align:center;text-decoration:none;">View All Results →</a>
-    </div>
-  </div>
+<div class="fade-in">
+  <FixturesBoard upcomingLimit={3} resultsLimit={3} showMoreLinks />
+</div>
 </section>
  <!-- START OF LIGHT THEME MATCH HUB -->
 <style is:global>
@@ -1789,7 +1782,7 @@ h1, h2, h3, .stitle {
                 <div class="vs-circ">VS</div>
                 <div class="t-col">
                     <img class="t-logo" id="nextMatchAwayLogo" style="display:none;" alt="">
-                    <div class="t-logo" style="display:flex;align-items:center;justify-content:center;background:#eee;border-radius:50%;font-family:'Bebas Neue',sans-serif;font-size:22px;color:#666;" id="nextMatchAwayInitial">?</div>
+                    <div class="t-logo" style="display:flex;align-items:center;justify-content:center;background:#eee;border-radius:50%;font-family:'Bebas Neue',sans-serif;font-size:22px;color:#666;" id="nextMatchAwayInitial"></div>
                     <p style="font-size:13px; font-weight:700; color:#111; margin-top:8px;" id="nextMatchAwayName">&mdash;</p>
                 </div>
             </div>
@@ -1826,9 +1819,15 @@ h1, h2, h3, .stitle {
         try {
             const res = await fetch('/api/events');
             const data = await res.json();
-            const events = (data.events || []).slice().sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
+            const now = Date.now();
+            const events = (data.events || [])
+                .filter(e => new Date(e.event_date).getTime() > now)
+                .sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
             const next = events[0];
-            if (!next) return; // no upcoming matches -- leave the hub hidden
+            if (!next) { // no future match -- keep the whole countdown hidden
+                document.getElementById('nextMatchHub').style.display = 'none';
+                return;
+            }
 
             const awayLogo = TEAM_LOGOS[next.away_team];
             const logoImg = document.getElementById('nextMatchAwayLogo');
@@ -1841,7 +1840,8 @@ h1, h2, h3, .stitle {
             } else {
                 logoImg.style.display = 'none';
                 logoFallback.style.display = '';
-                logoFallback.textContent = next.away_team.charAt(0);
+                logoFallback.textContent = next.away_team.replace(/\b(FC|United)\b/gi, '').trim()
+                    .split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
             }
             document.getElementById('nextMatchAwayName').textContent = next.away_team.toUpperCase();
             document.getElementById('nextMatchVenue').textContent = next.venue;
@@ -1852,26 +1852,31 @@ h1, h2, h3, .stitle {
                 d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'}) +
                 ' • ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
 
-            document.getElementById('nextMatchHub').style.display = '';
             startTimer(d.getTime());
+            document.getElementById('nextMatchHub').style.display = '';
         } catch (err) {
             // Leave the hub hidden if fixtures can't load -- no fake countdown.
         }
     }
     function startTimer(target) {
         clearInterval(matchHubTimer);
-        matchHubTimer = setInterval(() => {
-            const now = new Date().getTime();
-            const d = target - now;
+        const tick = () => {
+            const d = target - Date.now();
             if (d > 0) {
                 document.getElementById("d_val").innerText = Math.floor(d / (1000 * 60 * 60 * 24));
                 document.getElementById("h_val").innerText = Math.floor((d % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 document.getElementById("m_val").innerText = Math.floor((d % (1000 * 60 * 60)) / (1000 * 60));
                 document.getElementById("s_val").innerText = Math.floor((d % (1000 * 60)) / 1000);
             } else {
+                // Kick-off reached: hide the countdown rather than show
+                // 00:00:00:00, then look for the next fixture.
                 clearInterval(matchHubTimer);
+                document.getElementById('nextMatchHub').style.display = 'none';
+                loadNextMatch();
             }
-        }, 1000);
+        };
+        tick();
+        matchHubTimer = setInterval(tick, 1000);
     }
     loadNextMatch();
 </script>
@@ -1880,46 +1885,7 @@ h1, h2, h3, .stitle {
 <section id="standings" style="padding: 56px 0; background: var(--d2);">
   <!-- THIS DIV IS THE FIX: It centers the content and stops it from stretching -->
   <div style="max-width: 1200px; margin: 0 auto; padding: 0 5%;">
-    
-    <div class="fade-in">
-      <div class="stag">2026/27 NNL Season</div>
-      <h3 class="stitle" style="font-size:36px;">Conference D <span class="r">Table</span></h3>
-      <div class="divr" style="margin-bottom:30px;"></div>
-    </div>
-
-    <div class="table-wrap fade-in" style="border-radius: 12px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
-      <table class="st" style="width: 100%; border-collapse: collapse;">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Club</th>
-            <th>P</th>
-            <th>W</th>
-            <th>D</th>
-            <th>L</th>
-            <th>GF</th>
-            <th>GA</th>
-            <th>GD</th>
-            <th>Pts</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td><span class="pb">1</span></td><td><span class="club-cell"><img src="/images/abs-illorin.jpg" alt="ABS FC" class="club-badge"/>ABS FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
-          <tr><td><span class="pb">2</span></td><td><span class="club-cell"><img src="/images/bichi-first.jpg" alt="Bichi First FC" class="club-badge"/>Bichi First FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
-          <tr><td><span class="pb">3</span></td><td><span class="club-cell"><img src="/images/kadawarriors-kaduna.jpg" alt="Kada Warriors FC" class="club-badge"/>Kada Warriors FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
-          <!-- LOBI STARS HIGHLIGHT -->
-          <tr class="hl" style="background: rgba(245, 184, 0, 0.1);">
-            <td><span class="pb">4</span></td>
-            <td style="color: var(--gold); font-weight: 700;"><span class="club-cell"><img src="/images/lobi-stars-fc.jpg" alt="Lobi Stars FC" class="club-badge"/>⭐ Lobi Stars FC</span></td>
-            <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
-          <tr><td><span class="pb">5</span></td><td><span class="club-cell"><img src="/images/mighty-jets-jos.jpg" alt="Mighty Jets" class="club-badge"/>Mighty Jets Feeder / Bida Lions</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
-          <tr><td><span class="pb">6</span></td><td><span class="club-cell"><img src="/images/sokoto-united.jpg" alt="Sokoto United FC" class="club-badge"/>Sokoto United FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
-          <tr><td><span class="pb">7</span></td><td><span class="club-cell"><img src="/images/wikki-tourists.jpg" alt="Wikki Tourists FC" class="club-badge"/>Wikki Tourists FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
-          <tr><td><span class="pb">8</span></td><td><span class="club-cell"><img src="/images/yobe-desert-stars.jpg" alt="Yobe Desert Stars FC" class="club-badge"/>Yobe Desert Stars FC</span></td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td><strong>0</strong></td></tr>
-        </tbody>
-      </table>
-    </div>
-    
+    <LeagueTable />
   </div> <!-- Close Container -->
 </section>
 
@@ -1955,17 +1921,21 @@ h1, h2, h3, .stitle {
   <div class="divr fade-in" style="margin-bottom: 40px;"></div>
 
   <div class="merch-grid fade-in">
-    {merchandise.map(item => (
+    {products.map(item => (
       <div class="merch-card">
         <div class="merch-img" style="background: #f9f9f9; position: relative; height: 250px;">
-          <img src={item.data.photo} alt={item.data.name} style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
-          {item.data.badge && <div class="merch-badge" style={`background:${item.data.badgeColor}`}>{item.data.badge}</div>}
+          <img src={item.image} alt={item.name} loading="lazy" style="position:absolute; inset:0; width:100%; height:100%; object-fit:contain; padding:10px;"/>
+          {item.badge && <div class="merch-badge" style={`background:${item.badgeColor}`}>{item.badge}</div>}
         </div>
         <div class="merch-info">
-          <div class="merch-name">{item.data.name}</div>
-          <div class="merch-price">{item.data.price}</div>
-          <div class="merch-desc">{item.data.description}</div>
-          <a href={item.data.shopUrl} target="_blank" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
+          <div class="merch-name">{item.name}</div>
+          <div class="merch-price">{item.priceText ?? 'Price coming soon'}</div>
+          <div class="merch-desc">{item.description}</div>
+          {item.inStock && item.priceText && item.jumiaUrl ? (
+            <a href={item.jumiaUrl} target="_blank" rel="noopener" class="merch-btn" style="text-align:center;text-decoration:none;background:#f68b1e;color:white;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;">Shop on Jumia</a>
+          ) : (
+            <button type="button" class="merch-btn" disabled aria-disabled="true" style="width:100%;text-align:center;background:#d5d9de;color:#5B6472;display:block;margin-top:10px;font-weight:bold;border:none;padding:10px;border-radius:4px;cursor:not-allowed;">{item.inStock ? 'Coming soon' : 'Out of stock'}</button>
+          )}
         </div>
       </div>
     ))}
@@ -2132,7 +2102,7 @@ h1, h2, h3, .stitle {
           <div class="tprice" style="font-size: 56px; color: #fff; margin: 20px 0; font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px;">₦10,000<span style="font-size: 20px; opacity: 0.5;">/yr</span></div>
           
           <ul class="tbenefits" style="list-style: none; padding: 0; margin: 30px auto; text-align: left; color: rgba(255,255,255,0.8); line-height: 2.5; font-size: 15px; max-width: 320px;">
-            <li>✅ Official 2025/26 Membership Card</li>
+            <li>✅ Official {CURRENT_SEASON} Membership Card</li>
             <li>✅ 10% Discount on Club Merchandise</li>
             <li>✅ Weekly Exclusive Club Newsletter</li>
             <li>✅ Priority Match Day Ticket Access</li>
@@ -2192,7 +2162,7 @@ h1, h2, h3, .stitle {
           </button>
 
           <p class="muted" style="text-align:center;margin-top:16px;font-size:13px;">
-            Already a member? <a href="#" onclick="openLoginModal();return false;" style="color:var(--gold);">Log in</a>
+            Already a member? <a href="#membership" role="button" onclick="openLoginModal();return false;" style="color:var(--gold);">Log in</a>
           </p>
         </div>
 
@@ -2366,14 +2336,14 @@ h1, h2, h3, .stitle {
               <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 11px; color: var(--gold); letter-spacing: 2px;">FOOTBALL CLUB</span>
           </div>
         </a>
-        <p>The Pride of Benue. Competing at the highest level of Nigerian football since 1969. Committed to excellence, community, and the spirit of the game.</p>
+        <p>{FOOTER_TAGLINE}</p>
       </div>
 
       <!-- NAVIGATION -->
       <div>
         <h4 class="footer-title">Navigation</h4>
         <ul class="footer-links">
-          <li><a href="#about">About the Club</a></li>
+          <li><a href="/club">About the Club</a></li>
           <li><a href="/squad">Our Warriors</a></li>
           <li><a href="#fixtures">Match Schedule</a></li>
           <li><a href="/news">Latest News</a></li>
@@ -2385,9 +2355,9 @@ h1, h2, h3, .stitle {
       <div>
         <h4 class="footer-title">The Club</h4>
         <ul class="footer-links">
-          <li><a href="#">Club History</a></li>
-          <li><a href="#">Management</a></li>
-          <li><a href="#">McCarthy Stadium</a></li>
+          <li><a href="/club/history">Club History</a></li>
+          <li><a href="/club/management">Management</a></li>
+          <li><a href="/club/stadium">McCarthy Stadium</a></li>
         </ul>
       </div>
 
@@ -2395,10 +2365,10 @@ h1, h2, h3, .stitle {
       <div>
         <h4 class="footer-title">Fan Zone</h4>
         <ul class="footer-links">
-          <li><a href="#">Buy Tickets</a></li>
-          <li><a href="#">Club Shop</a></li>
-          <li><a href="#">Membership</a></li>
-          <li><a href="#">Sponsor Us</a></li>
+          <li><a href="/tickets">Buy Tickets</a></li>
+          <li><a href="/shop">Club Shop</a></li>
+          <li><a href="/membership">Membership</a></li>
+          <li><a href="/partners">Sponsor Us</a></li>
         </ul>
       </div>
 
@@ -2406,7 +2376,6 @@ h1, h2, h3, .stitle {
 
     <div class="footer-bottom">
        <div class="footer-copy">© 2026 Lobi Stars FC. All Rights Reserved.</div>
-       <span class="admin-link"><a href="/admin/" class="admin-link">STAFF LOGIN</a> &nbsp;·&nbsp; <a href="/admin/matches" class="admin-link">MANAGE MATCHES</a> &nbsp;·&nbsp; <a href="/admin/analytics" class="admin-link">ANALYTICS</a></span>
     </div>
   </div>
 </footer>
@@ -2971,29 +2940,6 @@ function toggleStaff(){
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
 const obs = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); }), {threshold:0.1});
 document.querySelectorAll('.fade-in').forEach(el => obs.observe(el));
-function updateCountdown() {
-    const matchDate = new Date("May 17, 2026 16:00:00").getTime();
-    const now = new Date().getTime();
-    const diff = matchDate - now;
-
-    // If match has passed
-    if (diff < 0) {
-        document.getElementById("countdown-timer").innerHTML = "MATCH IN PROGRESS";
-        return;
-    }
-
-    const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const s = Math.floor((diff % (1000 * 60)) / 1000);
-
-    document.getElementById("days").innerText = d;
-    document.getElementById("hours").innerText = h;
-    document.getElementById("mins").innerText = m;
-    document.getElementById("secs").innerText = s;
-}
-setInterval(updateCountdown, 1000);
-updateCountdown(); // Run once immediately
 // Not registering a new service worker (see public/sw.js for why -- it was
 // silently freezing the page for anyone who had the old one installed).
 // Browsers that already have it will pick up the new self-unregistering

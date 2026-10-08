@@ -1,0 +1,95 @@
+{
+  "_todo": "TODO: update after every matchday and set lastUpdated (YYYY-MM-DD). Points are worked out as 3 per win + 1 per draw, plus pointsAdjustment for any deduction.",
+  "competition": "NNL Conference D",
+  "lastUpdated": "",
+  "rows": [
+    {
+      "club": "ABS FC",
+      "crest": "/images/abs-illorin.jpg",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "pointsAdjustment": 0
+    },
+    {
+      "club": "Bichi First FC",
+      "crest": "/images/bichi-first.jpg",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "pointsAdjustment": 0
+    },
+    {
+      "club": "Kada Warriors FC",
+      "crest": "/images/kadawarriors-kaduna.jpg",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "pointsAdjustment": 0
+    },
+    {
+      "club": "Lobi Stars FC",
+      "crest": "/images/lobi-stars-fc.jpg",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "pointsAdjustment": 0
+    },
+    {
+      "club": "Mighty Jets Feeder / Bida Lions",
+      "crest": "/images/mighty-jets-jos.jpg",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "pointsAdjustment": 0
+    },
+    {
+      "club": "Sokoto United FC",
+      "crest": "/images/sokoto-united.jpg",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "pointsAdjustment": 0
+    },
+    {
+      "club": "Wikki Tourists FC",
+      "crest": "/images/wikki-tourists.jpg",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "pointsAdjustment": 0
+    },
+    {
+      "club": "Yobe Desert Stars FC",
+      "crest": "/images/yobe-desert-stars.jpg",
+      "played": 0,
+      "won": 0,
+      "drawn": 0,
+      "lost": 0,
+      "goalsFor": 0,
+      "goalsAgainst": 0,
+      "pointsAdjustment": 0
+    }
+  ]
+}

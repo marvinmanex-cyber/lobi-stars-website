@@ -1,15 +1,20 @@
 ---
+import { FOOTER_TAGLINE } from '../lib/site';
+
 export interface Props {
   title: string;
   description?: string;
   image?: string;
   type?: 'website' | 'article';
+  /** Keep the page out of search engines (admin pages). */
+  noindex?: boolean;
 }
 const {
   title,
   description = "Official website of Lobi Stars Football Club - Pride of Benue",
   image = '/images/lobi-stars-fc.jpg',
   type = 'website',
+  noindex = false,
 } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
 const ogImage = new URL(image, Astro.site);
@@ -21,6 +26,7 @@ const ogImage = new URL(image, Astro.site);
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>{title}</title>
 <meta name="description" content={description}/>
+{noindex && <meta name="robots" content="noindex, nofollow"/>}
 <link rel="canonical" href={canonical}/>
 <meta property="og:site_name" content="Lobi Stars FC"/>
 <meta property="og:type" content={type}/>
@@ -34,7 +40,7 @@ const ogImage = new URL(image, Astro.site);
 <meta name="twitter:image" content={ogImage}/>
 <slot name="head" />
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#FFFFFF">
+<meta name="theme-color" content="#E31E24">
 <link rel="apple-touch-icon" href="/images/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -204,13 +210,13 @@ footer{background:var(--dark);border-top:1px solid var(--d4);padding:64px 0 26px
     </div>
     <div class="menu-group">
       <h4>Club</h4>
-      <a href="/#membership">Membership</a>
+      <a href="/membership">Membership</a>
     </div>
     <div class="menu-group">
       <h4>More</h4>
       <a href="/news">News</a>
       <a href="/gallery">Gallery</a>
-      <a href="/#merchandise">Shop</a>
+      <a href="/shop">Shop</a>
       <a href="/#contact">Contact</a>
     </div>
   </div>
@@ -233,7 +239,7 @@ footer{background:var(--dark);border-top:1px solid var(--d4);padding:64px 0 26px
             <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--red);letter-spacing:2px;">FOOTBALL CLUB</span>
           </div>
         </a>
-        <p>The Pride of Benue. Competing at the highest level of Nigerian football since 1969.</p>
+        <p>{FOOTER_TAGLINE}</p>
         <div class="footer-social">
           <a href="https://www.facebook.com/LobiStars" target="_blank" rel="noopener" aria-label="Facebook">FB</a>
           <a href="https://x.com/LobiStars?s=20" target="_blank" rel="noopener" aria-label="X">𝕏</a>
@@ -243,7 +249,7 @@ footer{background:var(--dark);border-top:1px solid var(--d4);padding:64px 0 26px
       <div class="footer-col">
         <h4>Club</h4>
         <ul>
-          <li><a href="/#membership">Membership</a></li>
+          <li><a href="/membership">Membership</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -261,7 +267,7 @@ footer{background:var(--dark);border-top:1px solid var(--d4);padding:64px 0 26px
           <li><a href="/squad">Squad</a></li>
           <li><a href="/news">News</a></li>
           <li><a href="/gallery">Gallery</a></li>
-          <li><a href="/#merchandise">Club Shop</a></li>
+          <li><a href="/shop">Club Shop</a></li>
           <li><a href="/#contact">Contact</a></li>
         </ul>
       </div>
