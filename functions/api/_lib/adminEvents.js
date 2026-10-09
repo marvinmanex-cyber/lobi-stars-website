@@ -62,6 +62,8 @@ export function parseEventPayload(body) {
       ...prices,
       active: b.active ? 1 : 0,
       programme_url,
+      // null = decide from the home team name; true/false = set by staff.
+      is_home: b.is_home === true ? 1 : b.is_home === false ? 0 : null,
     },
   };
 }

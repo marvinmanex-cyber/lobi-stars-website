@@ -1,5 +1,11 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+// Lobi Stars players for the matchday squad picker (MOTM voting uses only these).
+const roster = (await getCollection('players'))
+  .sort((a, b) => a.data.number - b.data.number)
+  .map(p => ({ slug: p.id, name: p.data.name, number: p.data.number, position: p.data.position, isSample: p.data.isSample }));
 ---
 <Layout title="Match Centre Editor | Lobi Stars Admin" description="Update Lobi Stars FC Match Centre pages." noindex>
   <div class="wrap mce">
@@ -20,6 +26,44 @@ import Layout from '../../layouts/Layout.astro';
       <select class="form-sel" id="matchSel"><option value="">Loading matches…</option></select>
       <a id="viewLink" class="mce-view" target="_blank" rel="noopener" hidden>View public page &rarr;</a>
     </div>
+
+    <section class="mce-control" id="control" hidden aria-labelledby="ctl-h">
+      <div class="ctl-head">
+        <h2 id="ctl-h">Match control</h2>
+        <span class="ctl-badge" id="ctlBadge">Upcoming</span>
+      </div>
+      <p class="ctl-away" id="ctlAway" hidden>This is an away game: Matchday Live features (voting, predictions, stream, commentary) are switched off. Use the form below for the score and report.</p>
+      <div id="ctlHome">
+        <dl class="ctl-facts">
+          <div><dt>Scheduled kick-off</dt><dd id="ctlSched">–</dd></div>
+          <div><dt>Kick-off recorded</dt><dd id="ctlKick">Not started</dd></div>
+          <div><dt>Full-time recorded</dt><dd id="ctlEnd">–</dd></div>
+        </dl>
+        <p class="ctl-auto" id="ctlAuto" hidden></p>
+        <div class="ctl-buttons">
+          <button type="button" class="ctl-btn start" id="kickoffBtn">▶ Start Match (Kick-off)</button>
+          <button type="button" class="ctl-btn end" id="fulltimeBtn">■ End Match (Full-time)</button>
+        </div>
+        <p class="muted ctl-note">Press <strong>Start Match</strong> at kick-off: Man of the Match voting opens. Press <strong>End Match</strong> at the final whistle and enter the score: voting closes and results are calculated. If nobody presses End Match, the match closes automatically 2 hours 15 minutes after kick-off (you can still add the final score afterwards). All times use the server clock in Nigerian time (WAT).</p>
+      </div>
+    </section>
+
+    <dialog class="ctl-dialog" id="ftDialog" aria-labelledby="ft-h">
+      <form id="ftForm" method="dialog">
+        <h2 id="ft-h">Final score</h2>
+        <p class="muted">Enter the full-time score. This ends the match, closes voting and calculates results.</p>
+        <div class="ft-score">
+          <label><span data-home>Home</span><input class="form-inp" id="ftHome" type="number" min="0" max="99" required /></label>
+          <span class="ft-dash">–</span>
+          <label><span data-away>Away</span><input class="form-inp" id="ftAway" type="number" min="0" max="99" required /></label>
+        </div>
+        <p class="form-error" id="ftErr" hidden></p>
+        <div class="ft-actions">
+          <button type="button" class="btn-o" id="ftCancel">Cancel</button>
+          <button type="submit" class="btn-p" id="ftConfirm">Confirm full-time</button>
+        </div>
+      </form>
+    </dialog>
 
     <form id="mcForm" hidden>
       <fieldset class="mce-set">
@@ -46,6 +90,26 @@ import Layout from '../../layouts/Layout.astro';
           <button type="button" class="btn-o" data-add="sub">+ Sub</button>
           <button type="button" class="btn-o" data-add="note">+ Note</button>
         </div>
+      </fieldset>
+
+      <fieldset class="mce-set" id="squadSet">
+        <legend>Matchday squad (Lobi Stars players for Man of the Match)</legend>
+        <p class="muted mce-hint">Choose who is in the starting XI and on the bench. Only these players appear in Man of the Match voting. Press <strong>Save Match Centre</strong> when done. <span id="squadCount"></span></p>
+        {roster.length === 0 ? <p class="muted">No players yet. Add the squad in the Content CMS (Squad / Players) first.</p> : (
+          <div class="sq-scroll"><table class="sq-table">
+            <thead><tr><th scope="col">Player</th><th scope="col">Not selected</th><th scope="col">Starting XI</th><th scope="col">Bench</th></tr></thead>
+            <tbody>
+              {roster.map(p => (
+                <tr>
+                  <th scope="row">#{p.number} {p.name} <span class="muted">({p.position}){p.isSample && ' – sample'}</span></th>
+                  <td><input type="radio" name={`sq-${p.slug}`} value="" data-squad={p.slug} checked aria-label={`${p.name}: not selected`} /></td>
+                  <td><input type="radio" name={`sq-${p.slug}`} value="starting" data-squad={p.slug} aria-label={`${p.name}: starting XI`} /></td>
+                  <td><input type="radio" name={`sq-${p.slug}`} value="bench" data-squad={p.slug} aria-label={`${p.name}: bench`} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        )}
       </fieldset>
 
       <fieldset class="mce-set">
@@ -92,7 +156,39 @@ import Layout from '../../layouts/Layout.astro';
   .mce-msg.err { background: #FDECEC; color: #A3161B; }
   .mce-pick { max-width: 640px; }
   .mce-view { display: inline-block; margin-top: 8px; color: var(--red-text); font-weight: 700; }
-  .mce-set { border: 1px solid var(--d4); border-radius: 12px; padding: 18px 20px 6px; margin: 0 0 18px; }
+  .mce-control { border: 2px solid var(--d4); border-radius: 14px; padding: 18px 20px; margin: 0 0 20px; background: var(--dark); }
+  .ctl-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .ctl-head h2 { margin: 0; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ctl-badge { padding: 5px 10px; border-radius: 20px; background: var(--d3); font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .ctl-badge.live { background: var(--red); color: #fff; }
+  .ctl-badge.ft { background: #15181D; color: #fff; }
+  .ctl-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 0 0 12px; }
+  .ctl-facts dt { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); margin-bottom: 4px; }
+  .ctl-facts dd { margin: 0; font-weight: 700; }
+  .ctl-auto, .ctl-away { padding: 10px 12px; border-radius: 8px; background: #FFF6D6; color: #5C4300; margin: 0 0 12px; }
+  .ctl-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ctl-btn { padding: 20px 14px; border-radius: 10px; border: 0; cursor: pointer; color: #fff; font: 700 18px/1.1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .ctl-btn.start { background: #17803D; }
+  .ctl-btn.end { background: var(--red); }
+  .ctl-btn:disabled { background: #C9CED6; color: #5B6472; cursor: not-allowed; }
+  .ctl-btn:focus-visible { outline: 3px solid #15181D; outline-offset: 2px; }
+  .ctl-note { margin: 12px 0 0; font-size: 14px; line-height: 1.6; }
+  .ctl-dialog { border: 0; border-radius: 14px; padding: 26px; width: min(440px, 92vw); box-shadow: 0 30px 80px rgba(0, 0, 0, .35); }
+  .ctl-dialog::backdrop { background: rgba(15, 17, 21, .6); }
+  .ctl-dialog h2 { margin: 0 0 6px; font: 400 30px/1 'Bebas Neue', sans-serif; }
+  .ft-score { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: end; margin: 16px 0; }
+  .ft-score label { display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: 14px; }
+  .ft-score .form-inp { font-size: 28px; text-align: center; }
+  .ft-dash { font-size: 28px; padding-bottom: 10px; }
+  .ft-actions { display: flex; justify-content: flex-end; gap: 10px; }
+  .sq-scroll { overflow-x: auto; position: relative; margin-bottom: 12px; }
+  .sq-table { width: 100%; border-collapse: collapse; min-width: 480px; font-size: 15px; }
+  .sq-table th, .sq-table td { padding: 8px 10px; border-bottom: 1px solid var(--d4); text-align: center; }
+  .sq-table th[scope='row'] { text-align: left; font-weight: 600; }
+  .sq-table thead th { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .sq-table input { width: 18px; height: 18px; accent-color: var(--red); }
+  @media (max-width: 600px) { .ctl-buttons { grid-template-columns: 1fr; } }
+  .mce-set { min-width: 0; border: 1px solid var(--d4); border-radius: 12px; padding: 18px 20px 6px; margin: 0 0 18px; }
   .mce-set legend { padding: 0 8px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-text); }
   .mce-hint { margin: 0 0 12px; font-size: 14px; }
   .mce-row3 { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 14px; }
@@ -181,10 +277,84 @@ import Layout from '../../layouts/Layout.astro';
     $('gallery').value = (m.gallery || []).map(g => g.caption ? `${g.url} | ${g.caption}` : g.url).join('\n');
     $('timeline').innerHTML = '';
     (m.timeline || []).forEach(addRow);
+    // Squad radios
+    const pos = {};
+    (m.squad?.starting || []).forEach(p => { pos[p.slug] = 'starting'; });
+    (m.squad?.bench || []).forEach(p => { pos[p.slug] = 'bench'; });
+    document.querySelectorAll('input[data-squad]').forEach(r => { r.checked = (pos[r.dataset.squad] || '') === r.value; });
+    countSquad();
+    renderControl(m);
     $('viewLink').href = `/matches/${m.slug}/`;
     $('viewLink').hidden = false;
     $('mcForm').hidden = false;
   }
+
+  function squadSelection() {
+    const out = { starting: [], bench: [] };
+    document.querySelectorAll('input[data-squad]:checked').forEach(r => { if (r.value) out[r.value].push(r.dataset.squad); });
+    return out;
+  }
+  function countSquad() {
+    const s = squadSelection();
+    const el = $('squadCount');
+    if (el) el.textContent = `Selected: ${s.starting.length} starting, ${s.bench.length} on the bench.`;
+  }
+  document.querySelectorAll('input[data-squad]').forEach(r => r.addEventListener('change', countSquad));
+
+  const fmtWat = iso => iso ? new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) + ' WAT' : '–';
+  function renderControl(m) {
+    $('control').hidden = false;
+    const home = !!m.is_home;
+    $('ctlAway').hidden = home;
+    $('ctlHome').hidden = !home;
+    $('squadSet').hidden = !home;
+    const badge = $('ctlBadge');
+    const live = m.status === 'live' || m.status === 'half-time';
+    badge.textContent = live ? 'Live' : m.status === 'full-time' ? 'Full time' : m.status === 'postponed' ? 'Postponed' : m.status === 'cancelled' ? 'Cancelled' : 'Upcoming';
+    badge.className = 'ctl-badge' + (live ? ' live' : m.status === 'full-time' ? ' ft' : '');
+    $('ctlSched').textContent = fmtWat(m.event_date);
+    $('ctlKick').textContent = m.kickoff_at ? fmtWat(m.kickoff_at) : 'Not started';
+    $('ctlEnd').textContent = m.ended_at ? fmtWat(m.ended_at) : '–';
+    const auto = $('ctlAuto');
+    auto.hidden = !m.auto_closed;
+    if (m.auto_closed) auto.textContent = m.home_score === null
+      ? 'This match closed automatically 2h15 after kick-off. Press "End Match" to enter the final score.'
+      : 'This match closed automatically 2h15 after kick-off.';
+    $('kickoffBtn').disabled = live || m.status === 'full-time' || m.status === 'cancelled';
+    $('fulltimeBtn').disabled = !(live || (m.status === 'full-time' && m.home_score === null));
+    if (m.status === 'full-time' && m.home_score !== null) $('fulltimeBtn').textContent = '✓ Full-time recorded';
+    else $('fulltimeBtn').textContent = '■ End Match (Full-time)';
+  }
+
+  $('kickoffBtn').addEventListener('click', async () => {
+    if (!current || !confirm(`Start ${current.home_team} vs ${current.away_team} now? This opens Man of the Match voting.`)) return;
+    try {
+      await api(`/api/admin/match-centre/${encodeURIComponent(current.id)}`, { method: 'POST', body: JSON.stringify({ action: 'kickoff' }) });
+      show('Kick-off recorded. The match is LIVE and voting is open.', true);
+      await open(current.id);
+    } catch (err) { show(err.message, false); }
+  });
+  const ftDialog = $('ftDialog');
+  $('fulltimeBtn').addEventListener('click', () => {
+    if (!current) return;
+    $('ftHome').value = current.home_score ?? ''; $('ftAway').value = current.away_score ?? '';
+    $('ftErr').hidden = true;
+    ftDialog.showModal(); $('ftHome').focus();
+  });
+  $('ftCancel').addEventListener('click', () => ftDialog.close());
+  $('ftForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const h = $('ftHome').value, a = $('ftAway').value;
+    if (h === '' || a === '') { $('ftErr').textContent = 'Please enter both scores.'; $('ftErr').hidden = false; return; }
+    $('ftConfirm').disabled = true;
+    try {
+      await api(`/api/admin/match-centre/${encodeURIComponent(current.id)}`, { method: 'POST', body: JSON.stringify({ action: 'fulltime', home_score: Number(h), away_score: Number(a) }) });
+      ftDialog.close();
+      show(`Full-time recorded: ${current.home_team} ${h} – ${a} ${current.away_team}. Voting is closed.`, true);
+      await open(current.id);
+    } catch (err) { $('ftErr').textContent = err.message; $('ftErr').hidden = false; }
+    finally { $('ftConfirm').disabled = false; }
+  });
 
   async function open(id) {
     msg.hidden = true;
@@ -214,12 +384,14 @@ import Layout from '../../layouts/Layout.astro';
       })),
       stats,
       gallery: lines($('gallery').value).map(l => { const [url, ...cap] = l.split('|'); return { url: url.trim(), caption: cap.join('|').trim() }; }),
+      squad: squadSelection(),
     };
     const btn = $('saveBtn');
     btn.disabled = true; btn.textContent = 'Saving…';
     try {
       await api(`/api/admin/match-centre/${encodeURIComponent(current.id)}`, { method: 'PUT', body: JSON.stringify(body) });
       show('Saved. The public Match Centre is updated.', true);
+      await open(current.id);
     } catch (err) { show(err.message, false); }
     finally { btn.disabled = false; btn.textContent = 'Save Match Centre'; }
   });

@@ -1,10 +1,12 @@
 import { requireAdmin, parseEventPayload } from '../../_lib/adminEvents.js';
+import { ensureTable } from '../../_lib/matchCentre.js';
 
 // PUT /api/admin/events/:id -- overwrite a match's details.
 export async function onRequestPut({ request, env, params }) {
   const denied = requireAdmin(request, env);
   if (denied) return denied;
 
+  await ensureTable(env.DB);
   const id = (params.id || '').trim();
   const existing = await env.DB.prepare(`SELECT id FROM events WHERE id = ?`).bind(id).first();
   if (!existing) return Response.json({ error: 'Match not found' }, { status: 404 });
@@ -24,11 +26,11 @@ export async function onRequestPut({ request, env, params }) {
     `UPDATE events SET
        home_team = ?, away_team = ?, competition = ?, event_date = ?, venue = ?,
        vip_price_kobo = ?, premium_price_kobo = ?, regular_price_kobo = ?, active = ?,
-       programme_url = ?
+       programme_url = ?, is_home = ?
      WHERE id = ?`
   ).bind(
     e.home_team, e.away_team, e.competition, e.event_date, e.venue,
-    e.vip_price_kobo, e.premium_price_kobo, e.regular_price_kobo, e.active, e.programme_url, id
+    e.vip_price_kobo, e.premium_price_kobo, e.regular_price_kobo, e.active, e.programme_url, e.is_home, id
   ).run();
 
   return Response.json({ ok: true });

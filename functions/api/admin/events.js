@@ -1,5 +1,6 @@
 import { randomId } from '../_lib/crypto.js';
 import { requireAdmin, parseEventPayload } from '../_lib/adminEvents.js';
+import { ensureTable } from '../_lib/matchCentre.js';
 
 // GET /api/admin/events -- every match, past and future, active or not,
 // with a sold-ticket count so the UI can warn before deleting. Auth: the
@@ -7,6 +8,7 @@ import { requireAdmin, parseEventPayload } from '../_lib/adminEvents.js';
 export async function onRequestGet({ request, env }) {
   const denied = requireAdmin(request, env);
   if (denied) return denied;
+  await ensureTable(env.DB);
 
   const { results } = await env.DB.prepare(
     `SELECT e.*,
@@ -34,15 +36,16 @@ export async function onRequestPost({ request, env }) {
   if (parsed.error) return Response.json({ error: parsed.error }, { status: 400 });
   const e = parsed.value;
 
+  await ensureTable(env.DB);
   const id = randomId('evt', 10);
   await env.DB.prepare(
     `INSERT INTO events
        (id, home_team, away_team, competition, event_date, venue,
-        vip_price_kobo, premium_price_kobo, regular_price_kobo, active, programme_url)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        vip_price_kobo, premium_price_kobo, regular_price_kobo, active, programme_url, is_home)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(
     id, e.home_team, e.away_team, e.competition, e.event_date, e.venue,
-    e.vip_price_kobo, e.premium_price_kobo, e.regular_price_kobo, e.active, e.programme_url
+    e.vip_price_kobo, e.premium_price_kobo, e.regular_price_kobo, e.active, e.programme_url, e.is_home
   ).run();
 
   return Response.json({ ok: true, id });

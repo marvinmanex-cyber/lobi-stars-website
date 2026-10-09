@@ -79,6 +79,7 @@ import Layout from '../../layouts/Layout.astro';
 
         <div class="fset">
           <label class="f-check"><input id="f-active" type="checkbox" checked/> <span>Visible on the site</span></label>
+          <label class="f-check"><input id="f-ishome" type="checkbox" checked/> <span>Lobi Stars home game (turns on Matchday Live: voting, predictions, stream, commentary)</span></label>
         </div>
 
         <div class="form-actions">
@@ -292,6 +293,7 @@ import Layout from '../../layouts/Layout.astro';
           '<div class="pills">' +
             '<span class="pill ' + (e.active ? 'on' : 'off') + '">' + (e.active ? 'Live' : 'Hidden') + '</span>' +
             (past ? '<span class="pill past">Past</span>' : '') +
+            ((e.is_home === 1 || (e.is_home === null && /lobi stars/i.test(e.home_team))) ? '<span class="pill on">Home game</span>' : '<span class="pill">Away</span>') +
             (orders ? '<span class="pill sold">' + orders + ' sold</span>' : '') +
           '</div>' +
           '<div class="m-actions">' +
@@ -322,6 +324,7 @@ import Layout from '../../layouts/Layout.astro';
       $('f-venue').value = e ? e.venue : 'McCarthy Stadium, Makurdi';
       $('f-date').value = e ? isoToLocalInput(e.event_date) : '';
       $('f-active').checked = e ? !!e.active : true;
+      $('f-ishome').checked = e ? (e.is_home === null || e.is_home === undefined ? /lobi stars/i.test(e.home_team) : e.is_home === 1) : true;
       $('f-vip').value = e ? e.vip_price_kobo / 100 : 0;
       $('f-prem').value = e ? e.premium_price_kobo / 100 : 0;
       $('f-reg').value = e ? e.regular_price_kobo / 100 : 0;
@@ -342,6 +345,7 @@ import Layout from '../../layouts/Layout.astro';
         venue: $('f-venue').value,
         event_date: new Date(localDate).toISOString(),
         active: $('f-active').checked,
+        is_home: $('f-ishome').checked,
         vip_price_kobo: Math.round(Number($('f-vip').value) * 100),
         premium_price_kobo: Math.round(Number($('f-prem').value) * 100),
         regular_price_kobo: Math.round(Number($('f-reg').value) * 100),
@@ -387,6 +391,7 @@ import Layout from '../../layouts/Layout.astro';
               venue: e.venue, event_date: e.event_date, active: !e.active,
               vip_price_kobo: e.vip_price_kobo, premium_price_kobo: e.premium_price_kobo,
               regular_price_kobo: e.regular_price_kobo, programme_url: e.programme_url || '',
+              is_home: e.is_home === null || e.is_home === undefined ? undefined : e.is_home === 1,
             }),
           });
           await load();

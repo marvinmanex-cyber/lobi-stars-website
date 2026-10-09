@@ -87,7 +87,7 @@ const cms = (await getCollection('fixtures')).map(f => ({
 
   function card(m: Match, upcoming: boolean) {
     const c = el('article', 'fx');
-    const lobiHome = isLobi(m.home_team);
+    const lobiHome = typeof (m as any).is_home === 'boolean' ? (m as any).is_home : isLobi(m.home_team);
     const lobiInvolved = lobiHome || isLobi(m.away_team);
 
     const meta = el('div', 'fx-meta');
