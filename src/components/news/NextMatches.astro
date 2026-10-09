@@ -1,8 +1,9 @@
 ---
 // Upcoming First Team fixtures, loaded in the browser from /api/events
 // (the same source as the ticket shop and match countdown).
+import matchday from '../../data/matchday.json';
 ---
-<section class="nm" aria-labelledby="nm-title" data-next-matches>
+<section class="nm" aria-labelledby="nm-title" data-next-matches data-commentary={matchday.commentaryUrl}>
   <div class="nm-inner">
     <div class="nm-head">
       <h2 class="nm-title" id="nm-title">Next Matches</h2>
@@ -76,6 +77,7 @@
   .nm-track :global(.nm-links) { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--d4); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .nm-track :global(.nm-links .nm-link) { margin: 0; padding: 0; border: 0; }
   .nm-track :global(.nm-link--live) { color: #fff; background: var(--red); padding: 5px 9px !important; border-radius: 4px; }
+  .nm-track :global(.nm-link--listen) { color: var(--white); border: 1px solid var(--d4) !important; padding: 4px 8px !important; border-radius: 4px; }
   .nm-track :global(.nm-live-badge) { display: inline-block; background: var(--red); color: #fff; padding: 4px 8px; border-radius: 3px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
 </style>
 
@@ -106,6 +108,8 @@
     if (text !== undefined) e.textContent = text;
     return e;
   }
+
+  const commentaryUrl = document.querySelector<HTMLElement>('[data-next-matches]')?.dataset.commentary || '';
 
   function card(ev: ClubEvent) {
     const home = typeof ev.is_home === 'boolean' ? ev.is_home : isLobi(ev.home_team);
@@ -153,6 +157,14 @@
       ml.href = `/matches/${slug}/live/`;
       ml.setAttribute('aria-label', `Matchday Live: Lobi Stars FC vs ${opponent}`);
       links.append(ml);
+      if (commentaryUrl) {
+        // Live commentary on Aeson Sports Radio (opens in a new tab).
+        const ll = el('a', 'nm-link nm-link--listen', '🎧 Listen Live') as HTMLAnchorElement;
+        ll.href = commentaryUrl; ll.target = '_blank'; ll.rel = 'noopener';
+        ll.dataset.track = 'commentary_click'; ll.dataset.trackLabel = slug;
+        ll.setAttribute('aria-label', `Listen to live commentary: Lobi Stars FC vs ${opponent} (opens in a new tab)`);
+        links.append(ll);
+      }
     }
 
     li.append(top, when, opp, links);

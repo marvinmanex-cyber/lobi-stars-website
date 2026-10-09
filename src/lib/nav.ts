@@ -1,6 +1,9 @@
 // Main navigation, used by the header (desktop + mobile menu) and the search
 // page's list of site pages.
-export type NavLink = { label: string; href: string; description?: string };
+import matchday from '../data/matchday.json';
+
+// external: opens in a new tab (e.g. the commentary on Aeson Sports Radio).
+export type NavLink = { label: string; href: string; description?: string; external?: boolean };
 export type NavItem = NavLink & { children?: NavLink[] };
 
 export const MAIN_NAV: NavItem[] = [
@@ -12,6 +15,7 @@ export const MAIN_NAV: NavItem[] = [
       { label: 'Results', href: '/results', description: 'Recent First Team results' },
       { label: 'Table', href: '/table', description: 'The league table' },
       { label: 'Watch Live', href: '/watch', description: 'Live streams and full match replays of home games' },
+      { label: 'Match Commentary', href: matchday.commentaryUrl, external: true, description: `Live match commentary on ${matchday.commentaryProvider}` },
       { label: 'Man of the Match', href: '/man-of-the-match', description: 'Vote for the Man of the Match at home games' },
       { label: 'Predict & Win', href: '/predict-and-win', description: 'Predict the score of home games for the chance to win' },
     ],

@@ -32,7 +32,9 @@ const isActive = (href: string) => {
                 </button>
                 <ul class="sh-sub" id={`sub-${i}`}>
                   {item.children.map(c => (
-                    <li><a href={c.href} aria-current={isActive(c.href) ? 'page' : undefined}>{c.label}</a></li>
+                    <li>{c.external
+                      ? <a href={c.href} target="_blank" rel="noopener">{c.label} <span aria-hidden="true">&#8599;</span><span class="sr-only"> (opens in a new tab)</span></a>
+                      : <a href={c.href} aria-current={isActive(c.href) ? 'page' : undefined}>{c.label}</a>}</li>
                   ))}
                 </ul>
               </>
@@ -86,7 +88,9 @@ const isActive = (href: string) => {
         <a class="mm-link" href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
         {item.children && (
           <ul class="mm-sub">
-            {item.children.map(c => <li><a href={c.href} aria-current={isActive(c.href) ? 'page' : undefined}>{c.label}</a></li>)}
+            {item.children.map(c => <li>{c.external
+              ? <a href={c.href} target="_blank" rel="noopener">{c.label} <span aria-hidden="true">&#8599;</span><span class="sr-only"> (opens in a new tab)</span></a>
+              : <a href={c.href} aria-current={isActive(c.href) ? 'page' : undefined}>{c.label}</a>}</li>)}
           </ul>
         )}
       </li>

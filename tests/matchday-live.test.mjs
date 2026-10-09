@@ -100,3 +100,11 @@ test('/watch page is served', async () => {
   assert.equal(res.status, 200);
   assert.match(await res.text(), /<title>Watch Live \| Lobi Stars Football Club<\/title>/);
 });
+
+// Phase 5: Match Commentary
+test('Match Commentary is in the menu and footer and opens in a new tab', async () => {
+  const html = await fetch(`${BASE}/`).then(r => r.text());
+  const links = [...html.matchAll(/<a href="https:\/\/www\.aesonsports\.com\/podcast" target="_blank" rel="noopener"[^>]*>Match Commentary/g)];
+  assert.ok(links.length >= 3, `desktop menu, mobile menu and footer (found ${links.length})`);
+  assert.match(html, /data-commentary="https:\/\/www\.aesonsports\.com\/podcast"/, 'homepage fixture cards get the Listen Live link');
+});

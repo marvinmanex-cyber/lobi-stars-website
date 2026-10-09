@@ -2,6 +2,7 @@
 import { FOOTER_TAGLINE, SOCIAL_LINKS } from '../lib/site';
 import PartnerLogo from './partners/PartnerLogo.astro';
 import { getPartners } from '../lib/partners';
+import matchday from '../data/matchday.json';
 
 const partners = await getPartners();
 
@@ -12,7 +13,7 @@ const columns = [
   ] },
   { title: 'Matches', links: [
     ['Fixtures', '/fixtures'], ['Results', '/results'], ['League Table', '/table'],
-    ['Buy Tickets', '/tickets'], ['Watch Live', '/watch'], ['Man of the Match', '/man-of-the-match'], ['Predict & Win', '/predict-and-win'], ['Matchday Programme', '/programme'], ['In-Seat Food', '/food'],
+    ['Buy Tickets', '/tickets'], ['Watch Live', '/watch'], ['Match Commentary', matchday.commentaryUrl, 'external'], ['Man of the Match', '/man-of-the-match'], ['Predict & Win', '/predict-and-win'], ['Matchday Programme', '/programme'], ['In-Seat Food', '/food'],
   ] },
   { title: 'Fans', links: [
     ['News', '/news'], ['Video', '/video'], ['Squad', '/squad'], ['Gallery', '/gallery'],
@@ -70,7 +71,9 @@ const year = new Date().getFullYear();
       {columns.map(col => (
         <nav class="sf-col" aria-label={col.title}>
           <h2>{col.title}</h2>
-          <ul>{col.links.map(([label, href]) => <li><a href={href}>{label}</a></li>)}</ul>
+          <ul>{col.links.map(([label, href, ext]) => <li>{ext
+            ? <a href={href} target="_blank" rel="noopener">{label} <span aria-hidden="true">&#8599;</span><span class="sr-only"> (opens in a new tab)</span></a>
+            : <a href={href}>{label}</a>}</li>)}</ul>
         </nav>
       ))}
     </div>

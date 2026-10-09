@@ -54,6 +54,41 @@ import settings from '../data/matchday.json';
   .ml :global(.ml-actions) { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
   .ml :global(.ml-note) { margin-top: 14px; font-size: 13px; color: var(--lt); }
   .ml :global(.ml-note a) { color: var(--red-text); font-weight: 600; }
+  .ml :global(.ml-card--bare) { border: 0; padding: 0; background: none; }
+  .ml :global(.ml-radio) {
+    display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: 'play body bars' 'btn btn btn'; align-items: center; gap: 16px 18px;
+    padding: 22px; border-radius: 16px; text-decoration: none; color: #fff; text-align: left;
+    background: radial-gradient(130% 160% at 0% 0%, #7A0F12 0%, #2A0507 55%, #15181D 100%); border: 1px solid rgba(255, 255, 255, .1);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .ml :global(.ml-radio:hover), .ml :global(.ml-radio:focus-visible) { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0, 0, 0, .25); outline: none; }
+  .ml :global(.ml-radio:focus-visible) { outline: 3px solid #FFC72C; outline-offset: 3px; }
+  .ml :global(.ml-radio-play) { grid-area: play; width: 72px; height: 72px; border-radius: 50%; background: var(--red); position: relative; box-shadow: 0 0 0 8px rgba(227, 30, 36, .25); }
+  .ml :global(.ml-radio-play::after) { content: ''; position: absolute; left: 29px; top: 21px; border-style: solid; border-width: 15px 0 15px 24px; border-color: transparent transparent transparent #fff; }
+  .ml :global(.ml-radio.is-live .ml-radio-play) { animation: mlring 1.6s infinite; }
+  @keyframes mlring { 0% { box-shadow: 0 0 0 0 rgba(227, 30, 36, .6); } 100% { box-shadow: 0 0 0 18px rgba(227, 30, 36, 0); } }
+  .ml :global(.ml-radio-body) { grid-area: body; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .ml :global(.ml-radio-top) { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ml :global(.ml-radio-k) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: #FFC72C; }
+  .ml :global(.ml-radio-t) { font: 400 clamp(26px, 4vw, 34px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ml :global(.ml-radio-p) { color: rgba(255, 255, 255, .85); font-size: 15px; }
+  .ml :global(.ml-radio-by) { display: flex; align-items: center; gap: 10px; font-size: 13px; color: rgba(255, 255, 255, .8); }
+  .ml :global(.ml-radio-logo) { width: 72px; height: auto; border-radius: 6px; background: #000; }
+  .ml :global(.ml-radio-bars) { grid-area: bars; display: flex; align-items: flex-end; gap: 4px; height: 40px; }
+  .ml :global(.ml-radio-bars i) { width: 6px; height: 30%; border-radius: 3px; background: rgba(255, 255, 255, .35); }
+  .ml :global(.ml-radio.is-live .ml-radio-bars i) { background: #FFC72C; animation: mlbar 1s ease-in-out infinite; }
+  .ml :global(.ml-radio.is-live .ml-radio-bars i:nth-child(2)) { animation-delay: .2s; }
+  .ml :global(.ml-radio.is-live .ml-radio-bars i:nth-child(3)) { animation-delay: .4s; }
+  .ml :global(.ml-radio.is-live .ml-radio-bars i:nth-child(4)) { animation-delay: .1s; }
+  .ml :global(.ml-radio.is-live .ml-radio-bars i:nth-child(5)) { animation-delay: .3s; }
+  @keyframes mlbar { 0%, 100% { height: 25%; } 50% { height: 100%; } }
+  .ml :global(.ml-radio-btn) { grid-area: btn; justify-self: start; }
+  @media (prefers-reduced-motion: reduce) { .ml :global(.ml-radio *) { animation: none !important; } }
+  @media (max-width: 520px) {
+    .ml :global(.ml-radio) { grid-template-columns: auto 1fr; grid-template-areas: 'play bars' 'body body' 'btn btn'; padding: 18px; }
+    .ml :global(.ml-radio-bars) { justify-self: end; }
+    .ml :global(.ml-radio-btn) { justify-self: stretch; text-align: center; }
+  }
   .ml :global(.ml-src) { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--d3); margin: 0 0 16px; }
   .ml :global(.ml-src-btn) { border: 0; border-radius: 999px; padding: 8px 18px; background: transparent; cursor: pointer; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--white); }
   .ml :global(.ml-src-btn[aria-pressed='true']) { background: var(--red); color: #fff; }
@@ -175,17 +210,9 @@ import settings from '../data/matchday.json';
 
   // Tab content. Watch, Vote and Predict get their full features in the next phases.
   function panel(id: string, m: M) {
-    const card = el('div', 'ml-card');
+    const card = el('div', id === 'commentary' ? 'ml-card ml-card--bare' : 'ml-card');
     if (id === 'watch') card.append(...watchPanel(m));
-    if (id === 'commentary') {
-      card.append(el('h2', '', 'Live Match Commentary'));
-      card.append(el('p', '', `Listen to live commentary from ${settings.commentaryProvider || 'our commentary partner'}.`));
-      const a = el('div', 'ml-actions');
-      const listen = link(settings.commentaryUrl, '🎧 Listen Live', 'btn-p', true);
-      listen.dataset.track = 'commentary_click'; listen.dataset.trackLabel = m.slug;
-      a.append(listen);
-      card.append(a);
-    }
+    if (id === 'commentary') card.append(commentaryCard(m));
     if (id === 'vote') {
       card.append(el('h2', '', 'Vote for Man of the Match'));
       card.append(el('p', '', isOver(m) ? 'Voting has closed for this match.'
@@ -201,6 +228,32 @@ import settings from '../data/matchday.json';
       card.append(el('p', '', 'Predict the final score of Lobi Stars home games for the chance to win. Coming soon to Matchday Live.'));
     }
     return card;
+  }
+
+  // Match Commentary: a radio-player style card. The whole card (and its
+  // Listen Live button) opens the commentary in a new tab.
+  function commentaryCard(m: M) {
+    const provider = settings.commentaryProvider || 'Aeson Sports Radio';
+    const a = link(settings.commentaryUrl, '', 'ml-radio', true);
+    a.dataset.track = 'commentary_click'; a.dataset.trackLabel = m.slug;
+    a.setAttribute('aria-label', `Listen to live match commentary on ${provider} (opens in a new tab)`);
+    const play = el('span', 'ml-radio-play'); play.setAttribute('aria-hidden', 'true');
+    const bars = el('span', 'ml-radio-bars'); bars.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 5; i++) bars.append(el('i'));
+    const body = el('span', 'ml-radio-body');
+    const top = el('span', 'ml-radio-top');
+    if (isLive(m)) top.append(el('span', 'ml-badge live', 'Live'));
+    top.append(el('span', 'ml-radio-k', isLive(m) ? 'On air now' : isOver(m) ? 'Full time' : `From kick-off · ${fmtTime(m.event_date)}`));
+    const by = el('span', 'ml-radio-by');
+    const logo = el('img', 'ml-radio-logo') as HTMLImageElement;
+    logo.src = '/images/aeson-sports-management.png'; logo.alt = ''; logo.width = 96; logo.height = 50; logo.loading = 'lazy';
+    by.append(logo, `Powered by ${provider}`);
+    body.append(top, el('span', 'ml-radio-t', 'Live Match Commentary'),
+      el('span', 'ml-radio-p', `${m.home_team} vs ${m.away_team}`), by);
+    const btn = el('span', 'btn-p ml-radio-btn', isOver(m) ? '🎧 Listen' : '🎧 Listen Live');
+    a.append(play, body, bars, btn);
+    if (isLive(m)) a.classList.add('is-live');
+    return a;
   }
 
   // Watch Live: the video player loads only when the fan presses Play (saves mobile data).
