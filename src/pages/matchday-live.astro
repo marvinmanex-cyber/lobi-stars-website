@@ -54,6 +54,26 @@ import settings from '../data/matchday.json';
   .ml :global(.ml-actions) { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
   .ml :global(.ml-note) { margin-top: 14px; font-size: 13px; color: var(--lt); }
   .ml :global(.ml-note a) { color: var(--red-text); font-weight: 600; }
+  .ml :global(.pw-cd) { margin: 0 0 16px; font: 400 clamp(24px, 4vw, 32px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--red-text); font-variant-numeric: tabular-nums; }
+  .ml :global(.pw-mine) { margin: 0 0 12px; padding: 16px; border-radius: 12px; background: #E8F7EE; color: #17643A; font-weight: 700; line-height: 1.5; }
+  .ml :global(.pw-form) { margin: 8px 0 14px; }
+  .ml :global(.pw-row) { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 12px; max-width: 520px; margin: 0 auto 16px; }
+  .ml :global(.pw-side) { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+  .ml :global(.pw-crest) { width: 64px; height: 64px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--d4); }
+  .ml :global(.pw-crest--initials) { display: inline-flex; align-items: center; justify-content: center; font: 400 22px/1 'Bebas Neue', sans-serif; color: var(--white); background: var(--d3); }
+  .ml :global(.pw-team) { font: 700 15px/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; text-align: center; overflow-wrap: anywhere; }
+  .ml :global(.pw-inp) { width: 88px; padding: 10px 6px; text-align: center; font: 400 44px/1 'Bebas Neue', sans-serif; border: 2px solid var(--d4); border-radius: 12px; color: var(--white); background: #fff; }
+  .ml :global(.pw-inp:focus) { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rgba(227, 30, 36, .2); }
+  .ml :global(.pw-dash) { font: 400 44px/1 'Bebas Neue', sans-serif; padding-bottom: 14px; }
+  .ml :global(.pw-submit) { min-width: 220px; }
+  .ml :global(.mv-err) { color: #A3161B; margin: 8px 0; }
+  .ml :global(.pw-result) { display: flex; flex-direction: column; gap: 6px; align-items: center; padding: 22px; border-radius: 14px; color: #fff; margin-bottom: 14px; background: radial-gradient(130% 160% at 0% 0%, #7A0F12 0%, #2A0507 60%, #15181D 100%); }
+  .ml :global(.pw-k) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: #FFC72C; }
+  .ml :global(.pw-score) { font: 400 clamp(28px, 5vw, 40px)/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ml :global(.pw-result p) { margin: 0; color: #fff; }
+  .ml :global(.pw-winner) { font-weight: 700; font-size: 17px; }
+  .ml :global(.pw-stats) { opacity: .8; font-size: 14px; }
+  .ml :global(.pw-own) { font-weight: 600; }
   .ml :global(.ml-card--wide) { max-width: 1000px; }
   .ml :global(.mv-msg) { margin: 0 0 14px; color: var(--lt); line-height: 1.6; }
   .ml :global(.mv-msg a), .ml :global(.mv-mine) { color: var(--red-text); font-weight: 600; }
@@ -247,10 +267,7 @@ import settings from '../data/matchday.json';
     if (id === 'watch') card.append(...watchPanel(m));
     if (id === 'commentary') card.append(commentaryCard(m));
     if (id === 'vote') { card.classList.add('ml-card--wide'); card.append(el('h2', '', 'Vote for Man of the Match')); const box = el('div', 'mv'); card.append(box); loadVote(box, m); }
-    if (id === 'predict') {
-      card.append(el('h2', '', 'Predict & Win'));
-      card.append(el('p', '', 'Predict the final score of Lobi Stars home games for the chance to win. Coming soon to Matchday Live.'));
-    }
+    if (id === 'predict') { const box = el('div', 'pw'); card.append(box); loadPredict(box, m); }
     return card;
   }
 
@@ -385,6 +402,140 @@ import settings from '../data/matchday.json';
       });
     }
     out.push(grid, confirmBar);
+    box.replaceChildren(...out);
+  }
+
+  // ── Predict & Win. Opening/closing times come from the server clock. ──
+  type Predict = { state: 'notyet' | 'open' | 'closed' | 'result' | 'off'; prize: number; maxGoals: number; opensAt: string; closesAt: string | null;
+    count: number; fan: { firstName: string; verified: boolean } | null; mine: { home: number; away: number; at: string; disqualified: boolean } | null;
+    result: { home: number; away: number; winner: string | null; correct: number; total: number; prize: number; youWon: boolean; claim: string | null } | null;
+    serverTime: string };
+  const naira = (n: number) => `₦${n.toLocaleString('en-NG')}`;
+  const predicted = (n: number) => `${n.toLocaleString('en-NG')} fan${n === 1 ? ' has' : 's have'} predicted`;
+  const fmtAt = (iso: string) => `${fmtDate(iso)}, ${new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Lagos' })} WAT`;
+
+  function countdown(target: number, prefix: string, onDone: () => void) {
+    const c = el('p', 'pw-cd');
+    const tick = () => {
+      const left = target - serverNow();
+      if (left <= 0) { onDone(); return; }
+      const d = Math.floor(left / 864e5), h = Math.floor(left / 36e5) % 24, mi = Math.floor(left / 6e4) % 60, se = Math.floor(left / 1e3) % 60;
+      c.textContent = `${prefix} ${d ? `${d}d ` : ''}${String(h).padStart(2, '0')}h ${String(mi).padStart(2, '0')}m ${String(se).padStart(2, '0')}s`;
+    };
+    tick(); timers.push(window.setInterval(tick, 1000));
+    return c;
+  }
+
+  async function loadPredict(box: HTMLElement, m: M) {
+    box.replaceChildren(el('p', 'mv-msg', 'Loading Predict & Win…'));
+    let d: Predict;
+    try {
+      const res = await fetch(`/api/matches/${encodeURIComponent(m.slug)}/predict`, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error();
+      d = await res.json();
+      clockOffset = new Date(d.serverTime).getTime() - Date.now();
+    } catch { box.replaceChildren(el('p', 'mv-msg', 'Predict & Win could not be loaded. Please refresh the page.')); return; }
+    renderPredict(box, m, d);
+  }
+
+  function renderPredict(box: HTMLElement, m: M, d: Predict) {
+    const out: Node[] = [el('h2', '', `Predict & Win ${naira(d.prize)}`)];
+    const reload = () => { timers.forEach(clearInterval); timers = []; if (match) render(match, true); };
+    const next = encodeURIComponent(`/matches/${m.slug}/live/#predict`);
+    const auth = () => { const a = el('div', 'ml-actions'); a.append(link(`/fans/register/?next=${next}`, 'Register to play', 'btn-p'), link(`/fans/login/?next=${next}`, 'Log in', 'btn-o')); return a; };
+    const myLine = () => d.mine ? el('div', 'pw-mine', `Your prediction: ${m.home_team} ${d.mine.home} – ${d.mine.away} ${m.away_team}, submitted at ${fmtAt(d.mine.at)}`) : null;
+
+    if (d.state === 'off') { out.push(el('p', 'mv-msg', 'There is no Predict & Win for this match.')); box.replaceChildren(...out); return; }
+
+    if (d.state === 'result' && d.result) {
+      const r = d.result;
+      const panel = el('div', 'pw-result');
+      panel.append(el('span', 'pw-k', 'Final score'), el('strong', 'pw-score', `${m.home_team} ${r.home} – ${r.away} ${m.away_team}`));
+      panel.append(el('p', 'pw-winner', r.winner ? `🏆 Winner: ${r.winner} (${naira(r.prize)})` : 'No correct prediction this time.'));
+      panel.append(el('p', 'pw-stats', `${r.correct} correct prediction${r.correct === 1 ? '' : 's'} · ${r.total} total`));
+      out.push(panel);
+      if (r.youWon) {
+        const won = el('div', 'mv-thanks');
+        won.append(el('strong', '', `🎉 Congratulations, you won ${naira(r.prize)}!`), el('span', '', r.claim || ''));
+        out.push(won);
+      } else if (d.mine) {
+        out.push(el('p', 'pw-own', d.mine.disqualified ? 'Your entry for this match was disqualified.'
+          : d.mine.home === r.home && d.mine.away === r.away ? `You predicted ${d.mine.home} – ${d.mine.away}: correct, but another fan got there first. So close!`
+          : `You predicted ${d.mine.home} – ${d.mine.away}. Better luck next time!`));
+      }
+      box.replaceChildren(...out); return;
+    }
+
+    if (d.state === 'closed') {
+      out.push(el('p', 'mv-msg', 'Predictions for this match have closed. The winner is announced at full time.'));
+      const mine = myLine(); if (mine) out.push(mine);
+      out.push(el('p', 'mv-count', predicted(d.count)));
+      box.replaceChildren(...out); return;
+    }
+
+    if (d.state === 'notyet') {
+      out.push(el('p', 'mv-msg', `Predict the final score of ${m.home_team} vs ${m.away_team}. The earliest exact prediction wins ${naira(d.prize)}. Predictions open 24 hours before kick-off and close at kick-off.`));
+      out.push(countdown(new Date(d.opensAt).getTime(), 'Predictions open in', reload));
+      if (!d.fan) out.push(auth());
+      box.replaceChildren(...out); return;
+    }
+
+    // Open
+    const closes = d.closesAt ? countdown(new Date(d.closesAt).getTime(), 'Predictions close in', reload) : null;
+    if (d.mine) {
+      out.push(myLine()!, el('p', 'mv-msg', "Predictions can't be changed. Good luck!"));
+      if (closes) out.push(closes);
+      out.push(el('p', 'mv-count', predicted(d.count)));
+      box.replaceChildren(...out); return;
+    }
+    out.push(el('p', 'mv-msg', `Predict the exact final score. The earliest correct prediction wins ${naira(d.prize)}. One prediction per fan, and it can't be changed.`));
+    if (closes) out.push(closes);
+    if (!d.fan) { out.push(auth(), el('p', 'mv-count', predicted(d.count))); box.replaceChildren(...out); return; }
+    if (!d.fan.verified) {
+      const p = el('p', 'mv-msg', 'Please confirm your email address to play. ');
+      p.append(link(`/fans/login/?next=${next}`, 'Resend the confirmation email', ''));
+      out.push(p); box.replaceChildren(...out); return;
+    }
+
+    const form = el('form', 'pw-form') as HTMLFormElement;
+    form.noValidate = true;
+    const side = (team: string, name: string) => {
+      const w = el('label', 'pw-side');
+      const inp = el('input', 'pw-inp') as HTMLInputElement;
+      inp.type = 'number'; inp.name = name; inp.min = '0'; inp.max = String(d.maxGoals); inp.step = '1'; inp.inputMode = 'numeric'; inp.required = true; inp.value = '0';
+      inp.setAttribute('aria-label', `${team} goals`);
+      w.append(crest(team, 64, 'pw-crest'), el('span', 'pw-team', team), inp);
+      return { w, inp };
+    };
+    const h = side(m.home_team, 'home'), a = side(m.away_team, 'away');
+    const row = el('div', 'pw-row'); row.append(h.w, el('span', 'pw-dash', '–'), a.w);
+    const err = el('p', 'mv-err'); err.hidden = true; err.setAttribute('role', 'alert');
+    const submit = el('button', 'btn-p pw-submit', 'Submit Prediction') as HTMLButtonElement; submit.type = 'submit';
+    const confirmBox = el('div', 'mv-confirm'); confirmBox.hidden = true;
+    form.append(row, err, submit, confirmBox);
+    const goals = (i: HTMLInputElement) => { const n = Number(i.value); return i.value.trim() !== '' && Number.isInteger(n) && n >= 0 && n <= d.maxGoals ? n : null; };
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const hg = goals(h.inp), ag = goals(a.inp);
+      if (hg === null || ag === null) { err.textContent = `Enter a whole number from 0 to ${d.maxGoals} for both teams.`; err.hidden = false; return; }
+      err.hidden = true;
+      const yes = el('button', 'btn-p', 'Submit') as HTMLButtonElement, no = el('button', 'btn-o', 'Change') as HTMLButtonElement;
+      yes.type = no.type = 'button';
+      const cErr = el('p', 'mv-err'); cErr.hidden = true;
+      confirmBox.replaceChildren(el('p', '', `You predicted ${m.home_team} ${hg} – ${ag} ${m.away_team}. Submit? This cannot be changed.`), yes, no, cErr);
+      confirmBox.hidden = false; yes.focus();
+      no.addEventListener('click', () => { confirmBox.hidden = true; h.inp.focus(); });
+      yes.addEventListener('click', async () => {
+        yes.disabled = true; yes.textContent = 'Submitting…';
+        try {
+          const res = await fetch(`/api/matches/${encodeURIComponent(m.slug)}/predict`, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ home: hg, away: ag }) });
+          const r = await res.json().catch(() => ({}));
+          if (!res.ok && r.code !== 'predicted') throw new Error(r.error || 'Your prediction could not be saved. Please try again.');
+          reload();
+        } catch (e2) { cErr.textContent = (e2 as Error).message; cErr.hidden = false; yes.disabled = false; yes.textContent = 'Submit'; }
+      });
+    });
+    out.push(form, el('p', 'mv-count', predicted(d.count)));
     box.replaceChildren(...out);
   }
 

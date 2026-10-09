@@ -1,5 +1,6 @@
 import { requireAdmin } from '../../_lib/adminEvents.js';
 import { parseStreams } from '../../_lib/streams.js';
+import { settlePredictions } from '../../_lib/predict.js';
 import { loadMatch, toPublic, parseCentrePayload, parseSquad, scoreInt, isHomeGame, LIVE_STATUSES } from '../../_lib/matchCentre.js';
 
 async function roster(request, env) {
@@ -69,6 +70,8 @@ export async function onRequestPut({ request, env, params }) {
     v.lineups_json, v.timeline_json, v.stats_json, v.gallery_json, JSON.stringify(squad), kickoffAt, endedAt, s.youtube_url, s.facebook_url
   ).run();
 
+  // A corrected final score recalculates the Predict & Win winner.
+  if (v.status === 'full-time' && isHomeGame(m.event)) await settlePredictions(env, { ...toPublic(m.event, m.centre), home_score: v.home_score, away_score: v.away_score });
   return Response.json({ ok: true, squad });
 }
 
@@ -110,7 +113,9 @@ export async function onRequestPost({ request, env, params }) {
       `UPDATE match_centre SET status = 'full-time', home_score = ?, away_score = ?, ended_at = ?, updated_at = datetime('now')
        WHERE event_id = ?`
     ).bind(home, away, endedAt, params.id).run();
-    return Response.json({ ok: true, status: 'full-time', ended_at: endedAt, home_score: home, away_score: away });
+    // Predict & Win: the winner is worked out as soon as the final score is in.
+    const prediction = isHomeGame(m.event) ? await settlePredictions(env, { ...toPublic(m.event, m.centre), home_score: home, away_score: away }) : null;
+    return Response.json({ ok: true, status: 'full-time', ended_at: endedAt, home_score: home, away_score: away, predictionWinner: !!prediction?.winner, correctPredictions: prediction?.correct ?? 0 });
   }
 
   return Response.json({ error: 'Unknown action.' }, { status: 400 });

@@ -115,7 +115,7 @@ const live = kind === 'vote' ? settings.motmLive === true : settings.predictLive
         : `The match is live now. ${notYet}`;
       a.append(btn(tab, live && kind === 'vote' ? 'Vote now' : 'Go to Matchday Live'));
     } else {
-      const rule = kind === 'vote' ? 'Voting opens at kick-off and closes at full time.' : 'Predictions close at kick-off.';
+      const rule = kind === 'vote' ? 'Voting opens at kick-off and closes at full time.' : 'Predictions open 24 hours before kick-off and close at kick-off.';
       p.textContent = `Kick-off ${when(m.event_date)}. ${live ? rule : notYet}`;
       a.append(btn(tab, live && kind === 'predict' ? 'Make your prediction' : 'Go to Matchday Live'));
     }

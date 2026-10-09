@@ -3,6 +3,7 @@
 // +234 phone numbers, one-time email links, rate limiting, the Turnstile
 // human check and branded emails.
 import { sendEmail } from './email.js';
+import { PRIZE_AMOUNT, CLAIM_INSTRUCTIONS, formatNaira } from './predictSettings.js';
 
 const SITE = 'https://lobistarsfc.com';
 let schemaReady = false;
@@ -200,3 +201,15 @@ ${button(link, 'CHOOSE A NEW PASSWORD')}
 
 export const VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
 export const RESET_TTL_MS = 60 * 60 * 1000;
+
+/** Congratulations email to the Predict & Win winner (no bank details are ever requested). */
+export async function sendPrizeWinnerEmail(env, member, match, prediction) {
+  const html = layout('You won Predict &amp; Win!', `
+<p style="font-size:15px;line-height:1.6;">Hi ${esc(member.first_name)},</p>
+<p style="font-size:15px;line-height:1.6;">Congratulations! You were the first fan to predict the exact score of
+<strong>${esc(match.home_team)} ${match.home_score} – ${match.away_score} ${esc(match.away_team)}</strong>
+(your prediction: ${prediction.home_goals} – ${prediction.away_goals}). You have won <strong>${formatNaira(PRIZE_AMOUNT)}</strong>.</p>
+<p style="font-size:15px;line-height:1.6;">${esc(CLAIM_INSTRUCTIONS)}</p>
+${button(`${SITE}/contact`, 'CONTACT THE CLUB')}`);
+  return sendFanEmail(env, member.email, `You won ${formatNaira(PRIZE_AMOUNT)} with Lobi Stars Predict & Win`, html, `${SITE}/contact`);
+}

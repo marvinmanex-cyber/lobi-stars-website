@@ -17,7 +17,7 @@ export const MAIN_NAV: NavItem[] = [
       { label: 'Watch Live', href: '/watch', description: 'Live streams and full match replays of home games' },
       { label: 'Match Commentary', href: matchday.commentaryUrl, external: true, description: `Live match commentary on ${matchday.commentaryProvider}` },
       { label: 'Man of the Match', href: '/man-of-the-match', description: 'Vote for the Man of the Match at home games' },
-      { label: 'Predict & Win', href: '/predict-and-win', description: 'Predict the score of home games for the chance to win' },
+      { label: 'Predict & Win', href: '/predict-and-win', description: 'Predict the exact score of home games for free to win ₦10,000' },
     ],
   },
   { label: 'Squad', href: '/squad', description: 'The First Team squad' },

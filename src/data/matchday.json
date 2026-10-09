@@ -6,5 +6,5 @@
   "facebookPage": "https://www.facebook.com/AesonFootballPodcast",
   "_live": "motmLive / predictLive: set to true once Man of the Match voting / Predict & Win are switched on.",
   "motmLive": true,
-  "predictLive": false
+  "predictLive": true
 }

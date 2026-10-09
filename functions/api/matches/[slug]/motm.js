@@ -1,28 +1,9 @@
-import { ensureTable, loadMatch, toPublic, isHomeGame } from '../../_lib/matchCentre.js';
-import { matchSlug } from '../../_lib/matchSlug.js';
-import { readSession } from '../../_lib/session.js';
-import { ensureFanSchema, rateLimit, tooMany, clientIp } from '../../_lib/fans.js';
+import { findHomeMatch, currentFan } from '../../_lib/matchdayFan.js';
+import { rateLimit, tooMany, clientIp } from '../../_lib/fans.js';
 import { ensureMotmSchema, votingState, squadPlayers, totalVoters, leaderboard } from '../../_lib/motm.js';
 import { recordServerEvent } from '../../_lib/analytics.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
-
-async function findHomeMatch(env, slug) {
-  await ensureTable(env.DB);
-  const key = String(slug || '').toLowerCase();
-  const { results } = await env.DB.prepare(`SELECT * FROM events WHERE active = 1`).all();
-  const event = results.find(e => e.id.toLowerCase() === key || matchSlug(e) === key);
-  if (!event || !isHomeGame(event)) return null;
-  const m = await loadMatch(env.DB, event.id); // also applies the 2h15 auto-close
-  return toPublic(m.event, m.centre);
-}
-
-async function currentFan(request, env) {
-  const id = await readSession(request, env.SESSION_SECRET);
-  if (!id) return null;
-  await ensureFanSchema(env.DB);
-  return env.DB.prepare(`SELECT id, first_name, email_verified FROM members WHERE id = ?`).bind(id).first();
-}
 
 // GET /api/matches/:slug/motm -- voting state, squad, the fan's own vote,
 // the number of voters and (only after full time) the leaderboard.

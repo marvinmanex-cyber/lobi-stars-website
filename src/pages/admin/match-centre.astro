@@ -385,10 +385,13 @@ const roster = (await getCollection('players'))
     if (h === '' || a === '') { $('ftErr').textContent = 'Please enter both scores.'; $('ftErr').hidden = false; return; }
     $('ftConfirm').disabled = true;
     try {
-      await api(`/api/admin/match-centre/${encodeURIComponent(current.id)}`, { method: 'POST', body: JSON.stringify({ action: 'fulltime', home_score: Number(h), away_score: Number(a) }) });
+      const r = await api(`/api/admin/match-centre/${encodeURIComponent(current.id)}`, { method: 'POST', body: JSON.stringify({ action: 'fulltime', home_score: Number(h), away_score: Number(a) }) });
       ftDialog.close();
-      show(`Full-time recorded: ${current.home_team} ${h} – ${a} ${current.away_team}. Voting is closed.`, true);
+      const done = `Full-time recorded: ${current.home_team} ${h} – ${a} ${current.away_team}. Voting is closed.`;
+      const pw = !current.is_home ? '' : r.predictionWinner ? ' Predict & Win: we have a winner (see the Predict & Win page).' : ' Predict & Win: no correct prediction this time.';
+      // open() clears the message, so show it afterwards.
       await open(current.id);
+      show(done + pw, true);
     } catch (err) { $('ftErr').textContent = err.message; $('ftErr').hidden = false; }
     finally { $('ftConfirm').disabled = false; }
   });

@@ -1,25 +1,28 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import MatchdayGamePage from '../components/fans/MatchdayGamePage.astro';
+import { PRIZE_AMOUNT, PREDICTION_OPENS_HOURS_BEFORE, formatNaira } from '../../functions/api/_lib/predictSettings.js';
+const prize = formatNaira(PRIZE_AMOUNT);
 ---
-<Layout title="Predict & Win | Lobi Stars Football Club" description="Predict the final score of Lobi Stars home games with a free fan account for the chance to win.">
+<Layout title="Predict & Win | Lobi Stars Football Club" description={`Predict the exact final score of Lobi Stars home games for free. The earliest correct prediction wins ${prize}.`}>
   <MatchdayGamePage
     kind="predict"
     kicker="Matchday Live"
     title="Predict &"
-    highlight="Win"
-    intro="Think you know how the game will finish? Predict the final score of every Lobi Stars home game for the chance to win."
+    highlight={`Win ${prize}`}
+    intro={`Think you know how the game will finish? Predict the exact final score of every Lobi Stars home game. It's free, and the earliest correct prediction wins ${prize}.`}
     steps={[
       { title: 'Create a fan account', text: 'It is free. You must be 18 or over and confirm your email address.' },
-      { title: 'Make your prediction', text: 'Before kick-off, open the game on Matchday Live, choose the Predict tab and enter the final score.' },
+      { title: 'Make your prediction', text: `Predictions open ${PREDICTION_OPENS_HOURS_BEFORE} hours before kick-off. Open the game on Matchday Live, choose the Predict tab and enter the final score.` },
       { title: 'Watch the match', text: 'Follow the game live and see how your prediction holds up.' },
-      { title: 'Win', text: 'Correct predictions are in with a chance to win. Winners are contacted by the club.' },
+      { title: 'Win', text: `The fan who predicted the exact score first wins ${prize}. The winner is announced at full time and contacted by the club.` },
     ]}
     rules={[
       'Open to fans aged 18 and over. Club staff and players cannot win.',
       'Lobi Stars home games only. One prediction per fan account per match.',
       'Predictions close at kick-off (official club clock, Nigerian time).',
-      'Prizes and full terms will be announced before launch. The club will never ask for your bank details through the website.',
+      `Prize: ${prize} per home game. If several fans predict the exact score, the earliest submission wins. If nobody gets it exactly right, there is no winner for that game.`,
+      'The club will never ask for your bank details through the website.',
     ]}
   />
 </Layout>

@@ -1,0 +1,159 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+import { PRIZE_AMOUNT, formatNaira } from '../../../functions/api/_lib/predictSettings.js';
+---
+<Layout title="Predict & Win | Lobi Stars Admin" description="Predict & Win entries, winners and prize payments." noindex>
+  <div class="wrap pw">
+    <AdminNav current="predictions" />
+    <div class="stag">Admin</div>
+    <h1 class="stitle">Predict &amp; <span class="r">Win</span></h1>
+    <p class="muted pw-lede">
+      {formatNaira(PRIZE_AMOUNT)} per home game to the fan who predicted the exact score first. The winner is worked out
+      automatically when you press <strong>End Match</strong> and enter the final score in Match Centre.
+      Disqualifying an entry or flagging an account as club staff/player recalculates the winner.
+    </p>
+    <p class="pw-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <div class="pw-pick">
+      <label class="form-lbl" for="matchSel">Home game</label>
+      <select class="form-sel" id="matchSel"><option value="">Loading matches…</option></select>
+    </div>
+
+    <div id="view" hidden>
+      <section class="panel pw-result" id="result"></section>
+      <section class="panel">
+        <div class="pw-head">
+          <h2>Entries <span class="muted" id="count"></span></h2>
+          <a class="btn-o sm" id="csv" href="#" hidden>Export predictions (CSV)</a>
+        </div>
+        <p class="muted small">Earliest first. Times are Nigerian time to the millisecond (server clock).</p>
+        <div class="scroll" id="entries"></div>
+      </section>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .pw { max-width: 1200px; padding-top: 40px; padding-bottom: 90px; }
+  .pw-lede { max-width: 820px; margin-bottom: 18px; }
+  .pw-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
+  .pw-msg.ok { background: #E8F7EE; color: #17643A; } .pw-msg.err { background: #FDECEC; color: #A3161B; }
+  .pw-pick { max-width: 520px; margin-bottom: 20px; }
+  .panel { margin-bottom: 20px; min-width: 0; }
+  .panel h2 { margin: 0; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .pw-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .small { font-size: 14px; margin: 0 0 10px; }
+  .sm { padding: 8px 14px; font-size: 13px; }
+  .scroll { overflow-x: auto; position: relative; }
+  .pw :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .pw :global(th), .pw :global(td) { padding: 8px 10px; border-bottom: 1px solid var(--d4); text-align: left; white-space: nowrap; vertical-align: middle; }
+  .pw :global(th) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .pw :global(tr.win td) { background: #FFF8E1; font-weight: 700; }
+  .pw :global(tr.dq td) { opacity: .55; text-decoration: line-through; }
+  .pw :global(tr.dq td:last-child), .pw :global(tr.dq td.reason) { text-decoration: none; opacity: 1; }
+  .pw :global(.tag) { display: inline-block; border-radius: 4px; padding: 2px 6px; font-size: 12px; background: #F1F2F4; margin-right: 4px; }
+  .pw :global(.tag.ok) { background: #E8F7EE; color: #17643A; } .pw :global(.tag.win) { background: #FFC72C; color: #15181D; }
+  .pw :global(td button) { margin: 2px 4px 2px 0; padding: 5px 9px; border-radius: 6px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-size: 12px; }
+  .pw :global(.pw-win) { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 20px; margin: 12px 0; }
+  .pw :global(.pw-win dt) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .pw :global(.pw-win dd) { margin: 4px 0 0; font-size: 16px; word-break: break-word; }
+  .pw :global(.pw-paid) { display: flex; align-items: center; gap: 10px; font-weight: 700; margin-top: 8px; }
+  .pw :global(.pw-paid input) { width: 20px; height: 20px; accent-color: var(--red); }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const wat = iso => iso ? new Date(new Date(iso).getTime() + 3600000).toISOString().replace('T', ' ').slice(0, 23) : '';
+  const naira = n => '₦' + Number(n).toLocaleString('en-NG');
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'pw-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
+  let current = '';
+  async function api(path, opts = {}) {
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code } });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/predictions';
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  }
+  const STATE = { notyet: 'Not open yet', open: 'Open now', closed: 'Closed (waiting for the final score)', result: 'Result calculated', off: 'Postponed / cancelled' };
+
+  async function open(id) {
+    current = id; $('msg').hidden = true;
+    if (!id) { $('view').hidden = true; return; }
+    const d = await api('/api/admin/predictions/' + encodeURIComponent(id));
+    $('view').hidden = false;
+    $('csv').hidden = !d.canExport;
+    $('csv').href = `/api/admin/predictions/${encodeURIComponent(id)}?format=csv`;
+    const r = d.result;
+    let html = `<h2>${esc(d.match.home_team)} vs ${esc(d.match.away_team)}</h2>` +
+      `<p class="muted small">Predictions open ${esc(wat(d.opensAt).slice(0, 16))} &middot; close ${esc(d.closesAt ? wat(d.closesAt).slice(0, 16) : '–')} (WAT) &middot; <strong>${esc(STATE[d.state] || d.state)}</strong></p>`;
+    if (!r) html += '<p class="muted">The result appears here when you enter the final score (Match Centre &rarr; End Match).</p>';
+    else if (!r.winner) html += `<p><strong>Final score ${r.home} – ${r.away}.</strong> No correct prediction this time (${r.total} entries).</p>`;
+    else html += `<p><strong>Final score ${r.home} – ${r.away}.</strong> ${r.correct} correct out of ${r.total} entries. Prize: ${naira(r.prize)}.</p>` +
+      `<dl class="pw-win"><div><dt>Winner</dt><dd>${esc(r.winner.name)}</dd></div><div><dt>Phone</dt><dd>${esc(r.winner.phone || '–')}</dd></div>` +
+      `<div><dt>Email</dt><dd>${esc(r.winner.email || '–')}</dd></div><div><dt>Prediction</dt><dd>${esc(r.winner.prediction)} at ${esc(wat(r.winner.at))}</dd></div>` +
+      `<div><dt>Winner email</dt><dd>${r.emailed ? 'Sent' : 'Not sent (email not set up?)'}</dd></div></dl>` +
+      `<label class="pw-paid"><input type="checkbox" id="paidBox" ${r.paid ? 'checked' : ''}/> Prize paid</label>` +
+      (r.paid ? `<p class="muted small">Marked paid by ${esc(r.paidBy)} on ${esc(wat(r.paidAt).slice(0, 16))} WAT.</p>` : '<p class="muted small">Tick when the prize has been handed over. Never ask the winner for bank details through the website.</p>');
+    $('result').innerHTML = html;
+    $('paidBox')?.addEventListener('change', async e => {
+      try { await api('/api/admin/predictions/' + encodeURIComponent(current), { method: 'POST', body: JSON.stringify({ action: 'paid', paid: e.target.checked }) }); msg('Saved.', true); open(current); }
+      catch (err) { msg(err.message, false); e.target.checked = !e.target.checked; }
+    });
+    $('count').textContent = `(${d.entries.length})`;
+    $('entries').innerHTML = d.entries.length ? '<table><thead><tr><th>#</th><th>Submitted (WAT)</th><th>Fan</th><th>Phone</th><th>Prediction</th><th>Status</th><th>Reason</th><th></th></tr></thead><tbody>' +
+      d.entries.map((p, i) => `<tr class="${p.winner ? 'win' : ''} ${p.disqualified ? 'dq' : ''}" data-id="${p.id}" data-member="${esc(p.memberId)}">` +
+        `<td>${i + 1}</td><td>${esc(wat(p.at))}</td><td>${esc(p.name)}</td><td>${esc(p.phone)}</td><td>${p.home} – ${p.away}</td><td>` +
+        (p.winner ? '<span class="tag win">Winner</span>' : '') + (p.correct ? '<span class="tag ok">Correct</span>' : '') +
+        (p.staff ? '<span class="tag">Club staff/player</span>' : '') + (p.disqualified ? `<span class="tag">Disqualified by ${esc(p.dqBy)}</span>` : '') +
+        `</td><td class="reason">${esc(p.reason)}</td><td>` +
+        (p.disqualified ? '<button data-act="reinstate">Reinstate</button>' : '<button data-act="disqualify">Disqualify</button>') +
+        `<button data-act="staff" data-on="${p.staff ? '0' : '1'}">${p.staff ? 'Not staff' : 'Mark club staff/player'}</button></td></tr>`).join('') +
+      '</tbody></table>' : '<p class="muted">No predictions yet.</p>';
+  }
+
+  $('entries').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const tr = b.closest('tr'); const body = { action: b.dataset.act };
+    if (body.action === 'disqualify') {
+      const reason = prompt('Reason for disqualifying this entry (e.g. duplicate account):');
+      if (!reason) return;
+      body.predictionId = +tr.dataset.id; body.reason = reason;
+    } else if (body.action === 'reinstate') body.predictionId = +tr.dataset.id;
+    else { body.memberId = tr.dataset.member; body.isStaff = b.dataset.on === '1'; }
+    try { await api('/api/admin/predictions/' + encodeURIComponent(current), { method: 'POST', body: JSON.stringify(body) }); msg('Saved. The winner has been recalculated where needed.', true); open(current); }
+    catch (err) { msg(err.message, false); }
+  });
+  $('csv').addEventListener('click', async e => {
+    e.preventDefault();
+    try {
+      const res = await fetch($('csv').href, { headers: { 'x-admin-code': code } });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Download failed');
+      const name = (res.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'predictions.csv';
+      const url = URL.createObjectURL(await res.blob());
+      const a = Object.assign(document.createElement('a'), { href: url, download: name });
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (err) { msg(err.message, false); }
+  });
+  $('matchSel').addEventListener('change', e => {
+    history.replaceState(null, '', e.target.value ? `?id=${encodeURIComponent(e.target.value)}` : location.pathname);
+    open(e.target.value).catch(err => msg(err.message, false));
+  });
+
+  (async () => {
+    try {
+      const { events } = await api('/api/admin/events');
+      const home = events.filter(e => e.is_home === 1 || (e.is_home == null && /lobi stars/i.test(e.home_team)));
+      $('matchSel').innerHTML = '<option value="">Choose a home game…</option>' + home.map(e => {
+        const d = new Date(e.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' });
+        return `<option value="${esc(e.id)}">${esc(`${d} — ${e.home_team} vs ${e.away_team}`)}</option>`;
+      }).join('');
+      const want = new URLSearchParams(location.search).get('id');
+      if (want) { $('matchSel').value = want; await open(want); }
+    } catch (err) { msg(err.message, false); }
+  })();
+})();
+</script>

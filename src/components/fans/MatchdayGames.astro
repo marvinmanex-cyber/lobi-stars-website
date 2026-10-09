@@ -1,5 +1,6 @@
 ---
 // Homepage promo for the two Matchday Live fan games.
+import { PRIZE_AMOUNT, formatNaira } from '../../../functions/api/_lib/predictSettings.js';
 ---
 <section class="mgs" aria-labelledby="mgs-title">
   <div class="mgs-inner">
@@ -13,8 +14,8 @@
       </a>
       <a class="mgs-card" href="/predict-and-win/">
         <span class="mgs-ic" aria-hidden="true">&#127919;</span>
-        <span class="mgs-h">Predict &amp; Win</span>
-        <span class="mgs-p">Predict the final score of home games for the chance to win.</span>
+        <span class="mgs-h">Predict &amp; Win {formatNaira(PRIZE_AMOUNT)}</span>
+        <span class="mgs-p">Predict the exact score of home games for free. The earliest correct prediction wins.</span>
         <span class="mgs-go">Find out more &rarr;</span>
       </a>
     </div>
