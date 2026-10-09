@@ -1,0 +1,87 @@
+---
+import FanAuthShell from '../../components/fans/FanAuthShell.astro';
+---
+<FanAuthShell title="Fan Log In" heading="Fan log in" description="Log in to your Lobi Stars FC fan account."
+  intro="Log in to vote for Man of the Match and play Predict & Win.">
+  <p class="fa-note ok" id="msgConfirmed" role="status" hidden>Email confirmed. Please log in.</p>
+  <p class="fa-note ok" id="msgReset" role="status" hidden>Your password has been changed. Please log in.</p>
+  <p class="fa-note err" id="msgExpired" role="alert" hidden>That confirmation link is invalid or has expired. Log in below to get a new one, or use "Resend confirmation".</p>
+
+  <div id="loggedIn" hidden>
+    <p class="fa-note info">You're already logged in as <strong id="whoName"></strong>.</p>
+    <a class="btn-p fa-submit" id="continueBtn" href="/" style="display:block;text-align:center;">Continue</a>
+    <p class="fa-alt"><button type="button" class="fa-link" id="logoutBtn">Log out</button></p>
+  </div>
+
+  <form id="loginForm" novalidate>
+    <div class="fa-field"><label class="form-lbl" for="email">Email Address</label>
+      <input class="form-inp" id="email" type="email" autocomplete="email" required /></div>
+    <div class="fa-field"><label class="form-lbl" for="password">Password</label>
+      <input class="form-inp" id="password" type="password" autocomplete="current-password" required /></div>
+    <p class="fa-note err" id="loginError" role="alert" hidden></p>
+    <div id="unverifiedBox" hidden>
+      <p class="fa-note info">Your email address isn't confirmed yet. Check your inbox (and spam folder) for the confirmation link.</p>
+      <button type="button" class="btn-o fa-submit" id="resendBtn">Resend confirmation email</button>
+      <p class="fa-note ok" id="resendMsg" role="status" hidden>If your account still needs confirming, a new link is on its way.</p>
+    </div>
+    <button type="submit" class="btn-p fa-submit" id="loginBtn">Log in</button>
+    <p class="fa-alt"><a href="/fans/forgot/">Forgot your password?</a></p>
+    <p class="fa-alt">New here? <a href="/fans/register/" id="registerLink">Create a free fan account</a></p>
+  </form>
+</FanAuthShell>
+
+<script>
+  const params = new URLSearchParams(location.search);
+  const rawNext = params.get('next') || '';
+  const next = /^\/(?!\/)/.test(rawNext) && !rawNext.startsWith('/api/') ? rawNext : '/';
+  if (params.get('confirmed')) document.getElementById('msgConfirmed')!.hidden = false;
+  if (params.get('reset')) document.getElementById('msgReset')!.hidden = false;
+  if (params.get('verify') === 'expired') document.getElementById('msgExpired')!.hidden = false;
+  if (next !== '/') (document.getElementById('registerLink') as HTMLAnchorElement).href = `/fans/register/?next=${encodeURIComponent(next)}`;
+
+  const form = document.getElementById('loginForm') as HTMLFormElement;
+  const err = document.getElementById('loginError')!;
+  const btn = document.getElementById('loginBtn') as HTMLButtonElement;
+  const unverified = document.getElementById('unverifiedBox')!;
+  const email = () => (document.getElementById('email') as HTMLInputElement).value.trim();
+
+  // Already logged in? Offer to continue.
+  fetch('/api/auth/me').then(r => r.json()).then(d => {
+    if (d.member && d.member.emailVerified) {
+      document.getElementById('whoName')!.textContent = `${d.member.firstName} ${d.member.lastName}`;
+      (document.getElementById('continueBtn') as HTMLAnchorElement).href = next;
+      document.getElementById('loggedIn')!.hidden = false;
+      form.hidden = true;
+    }
+  }).catch(() => {});
+  document.getElementById('logoutBtn')!.addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    location.reload();
+  });
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    err.hidden = true; unverified.hidden = true;
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+    if (!email() || !password) { err.textContent = 'Please enter your email and password.'; err.hidden = false; return; }
+    btn.disabled = true; btn.textContent = 'Logging in…';
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email(), password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 403 && data.code === 'unverified') { unverified.hidden = false; return; }
+      if (!res.ok) throw new Error(data.error || 'Login failed. Please try again.');
+      location.href = next;
+    } catch (ex) {
+      err.textContent = (ex as Error).message; err.hidden = false;
+    } finally {
+      btn.disabled = false; btn.textContent = 'Log in';
+    }
+  });
+
+  document.getElementById('resendBtn')!.addEventListener('click', async () => {
+    await fetch('/api/fans/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email(), next }) }).catch(() => {});
+    document.getElementById('resendMsg')!.hidden = false;
+  });
+</script>

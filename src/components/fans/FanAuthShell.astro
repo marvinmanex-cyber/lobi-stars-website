@@ -1,0 +1,44 @@
+---
+// Shared frame and form styles for the /fans pages.
+import Layout from '../../layouts/Layout.astro';
+
+interface Props { title: string; heading: string; intro?: string; description: string }
+const { title, heading, intro, description } = Astro.props;
+---
+<Layout title={`${title} | Lobi Stars Football Club`} description={description} noindex>
+  <div class="fa-wrap">
+    <div class="fa-card">
+      <img class="fa-badge" src="/images/lobi-stars-fc.jpg" alt="" width="64" height="64" />
+      <h1 class="fa-h1">{heading}</h1>
+      {intro && <p class="fa-intro">{intro}</p>}
+      <slot />
+    </div>
+  </div>
+</Layout>
+
+<style is:global>
+  .fa-wrap { padding: 40px 16px 70px; display: flex; justify-content: center; background: linear-gradient(180deg, var(--dark), #fff 60%); }
+  .fa-card { width: 100%; max-width: 520px; background: #fff; border: 1px solid var(--d4); border-radius: 16px; padding: clamp(22px, 5vw, 38px); box-shadow: 0 18px 44px rgba(15, 17, 21, .07); }
+  .fa-badge { display: block; width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; object-fit: contain; }
+  .fa-h1 { margin: 0 0 6px; text-align: center; font: 400 38px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .fa-intro { margin: 0 0 22px; text-align: center; color: var(--lt); line-height: 1.6; }
+  .fa-field { margin-bottom: 14px; }
+  .fa-field .form-inp[aria-invalid='true'] { border-color: #C11A1F; background: #FFF6F6; }
+  .fa-err { margin: 6px 0 0; color: #A3161B; font-size: 14px; }
+  .fa-err:empty { display: none; }
+  .fa-hint { margin: 6px 0 0; color: var(--lt); font-size: 13px; }
+  .fa-check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: var(--white); cursor: pointer; }
+  .fa-check input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--red); }
+  .fa-check a { color: var(--red-text); font-weight: 600; }
+  .fa-submit { width: 100%; padding: 15px; font-size: 15px; margin-top: 6px; }
+  .fa-alt { margin: 16px 0 0; text-align: center; color: var(--lt); font-size: 14px; }
+  .fa-alt a, .fa-link { color: var(--red-text); font-weight: 700; }
+  .fa-link { background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; }
+  .fa-note { padding: 12px 14px; border-radius: 8px; margin: 0 0 16px; font-size: 15px; line-height: 1.5; }
+  .fa-note.ok { background: #E8F7EE; color: #17643A; }
+  .fa-note.err { background: #FDECEC; color: #A3161B; }
+  .fa-note.info { background: #FFF6D6; color: #5C4300; }
+  .fa-done { text-align: center; }
+  .fa-done-icon { font-size: 46px; }
+  .fa-turnstile { margin: 8px 0 14px; min-height: 0; }
+</style>

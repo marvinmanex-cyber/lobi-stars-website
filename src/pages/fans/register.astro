@@ -1,0 +1,143 @@
+---
+import FanAuthShell from '../../components/fans/FanAuthShell.astro';
+import settings from '../../data/fan-settings.json';
+const siteKey = settings.turnstileSiteKey;
+---
+<FanAuthShell title="Create a Fan Account" heading="Join the Lobi Stars family" description="Create a free Lobi Stars FC fan account."
+  intro="Create a free fan account to vote for Man of the Match, play Predict & Win and more.">
+  <form id="regForm" novalidate>
+    <div class="form-row">
+      <div class="fa-field"><label class="form-lbl" for="firstName">First Name</label>
+        <input class="form-inp" id="firstName" name="firstName" autocomplete="given-name" required aria-describedby="err-firstName" />
+        <p class="fa-err" id="err-firstName" role="alert"></p></div>
+      <div class="fa-field"><label class="form-lbl" for="surname">Surname</label>
+        <input class="form-inp" id="surname" name="surname" autocomplete="family-name" required aria-describedby="err-surname" />
+        <p class="fa-err" id="err-surname" role="alert"></p></div>
+    </div>
+    <div class="fa-field"><label class="form-lbl" for="email">Email Address</label>
+      <input class="form-inp" id="email" name="email" type="email" autocomplete="email" required aria-describedby="err-email" />
+      <p class="fa-err" id="err-email" role="alert"></p></div>
+    <div class="fa-field"><label class="form-lbl" for="confirmEmail">Confirm Email Address</label>
+      <input class="form-inp" id="confirmEmail" name="confirmEmail" type="email" autocomplete="off" required aria-describedby="err-confirmEmail" />
+      <p class="fa-err" id="err-confirmEmail" role="alert"></p></div>
+    <div class="fa-field"><label class="form-lbl" for="phone">Phone Number</label>
+      <input class="form-inp" id="phone" name="phone" type="tel" autocomplete="tel" placeholder="0803 123 4567" required aria-describedby="hint-phone err-phone" />
+      <p class="fa-hint" id="hint-phone">Nigerian mobile number, e.g. 0803…, 0703…, 0813…, 0903… or +234…</p>
+      <p class="fa-err" id="err-phone" role="alert"></p></div>
+    <div class="form-row">
+      <div class="fa-field"><label class="form-lbl" for="password">Password</label>
+        <input class="form-inp" id="password" name="password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="hint-password err-password" />
+        <p class="fa-hint" id="hint-password">At least 8 characters.</p>
+        <p class="fa-err" id="err-password" role="alert"></p></div>
+      <div class="fa-field"><label class="form-lbl" for="confirmPassword">Confirm Password</label>
+        <input class="form-inp" id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" required aria-describedby="err-confirmPassword" />
+        <p class="fa-err" id="err-confirmPassword" role="alert"></p></div>
+    </div>
+    <div class="fa-field">
+      <label class="fa-check"><input type="checkbox" id="agree" name="agree" required aria-describedby="err-agree" />
+        <span>I am 18 or older and agree to the <a href="/terms/" target="_blank">Terms &amp; Conditions</a> and <a href="/privacy/" target="_blank">Privacy Policy</a>.</span></label>
+      <p class="fa-err" id="err-agree" role="alert"></p>
+    </div>
+    <div class="fa-field">
+      <label class="fa-check"><input type="checkbox" id="marketing" name="marketing" /><span>Send me Lobi Stars news and offers (optional).</span></label>
+    </div>
+    {siteKey && <div class="cf-turnstile fa-turnstile" data-sitekey={siteKey}></div>}
+    <p class="fa-err" id="err-human" role="alert"></p>
+    <p class="fa-note err" id="formError" role="alert" hidden></p>
+    <button type="submit" class="btn-p fa-submit" id="regBtn">Create my account</button>
+    <p class="fa-alt">Already have an account? <a href="/fans/login/" id="loginLink">Log in</a></p>
+  </form>
+
+  <div class="fa-done" id="regDone" hidden>
+    <div class="fa-done-icon" aria-hidden="true">📧</div>
+    <h2 class="fa-h1" style="font-size:30px;">Check your email</h2>
+    <p class="fa-intro">We've sent a confirmation link to <strong id="doneEmail"></strong>. Click it to activate your account. The link expires in 24 hours.</p>
+    <p class="fa-note info" id="emailFailed" hidden>We couldn't send the email just now. Please use "Resend confirmation email" below in a few minutes.</p>
+    <p class="fa-alt">Didn't get it? Check your spam folder, or <button type="button" class="fa-link" id="resendBtn">resend confirmation email</button>.</p>
+    <p class="fa-note ok" id="resendMsg" role="status" hidden>If your account still needs confirming, a new link is on its way.</p>
+    <p class="fa-alt"><a href="/fans/login/" id="doneLogin">Go to log in</a></p>
+  </div>
+</FanAuthShell>
+
+{siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+
+<script>
+  const form = document.getElementById('regForm') as HTMLFormElement;
+  const btn = document.getElementById('regBtn') as HTMLButtonElement;
+  const formError = document.getElementById('formError')!;
+  const next = new URLSearchParams(location.search).get('next') || '';
+  const safeNext = /^\/(?!\/)/.test(next) ? next : '';
+  if (safeNext) {
+    (document.getElementById('loginLink') as HTMLAnchorElement).href = `/fans/login/?next=${encodeURIComponent(safeNext)}`;
+    (document.getElementById('doneLogin') as HTMLAnchorElement).href = `/fans/login/?next=${encodeURIComponent(safeNext)}`;
+  }
+
+  const FIELDS = ['firstName', 'surname', 'email', 'confirmEmail', 'phone', 'password', 'confirmPassword', 'agree', 'human'];
+  const val = (id: string) => (document.getElementById(id) as HTMLInputElement).value.trim();
+  const checked = (id: string) => (document.getElementById(id) as HTMLInputElement).checked;
+  const phoneOk = (p: string) => /^(0(70|80|81|90|91)\d{8}|\+?234(70|80|81|90|91)\d{8})$/.test(p.replace(/[\s\-().]/g, ''));
+
+  function showErrors(errors: Record<string, string>) {
+    FIELDS.forEach(f => {
+      const el = document.getElementById(`err-${f}`);
+      const input = document.getElementById(f);
+      if (el) el.textContent = errors[f] || '';
+      if (input) input.setAttribute('aria-invalid', errors[f] ? 'true' : 'false');
+    });
+    const first = FIELDS.find(f => errors[f]);
+    if (first) document.getElementById(first)?.focus();
+  }
+
+  function clientCheck() {
+    const e: Record<string, string> = {};
+    if (!val('firstName')) e.firstName = 'Please enter your first name.';
+    if (!val('surname')) e.surname = 'Please enter your surname.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val('email'))) e.email = 'Please enter a valid email address.';
+    else if (val('email').toLowerCase() !== val('confirmEmail').toLowerCase()) e.confirmEmail = 'The email addresses do not match.';
+    if (!phoneOk(val('phone'))) e.phone = 'Please enter a valid Nigerian mobile number, e.g. 0803 123 4567 or +234 803 123 4567.';
+    const pw = (document.getElementById('password') as HTMLInputElement).value;
+    if (pw.length < 8) e.password = 'Password must be at least 8 characters.';
+    else if (pw !== (document.getElementById('confirmPassword') as HTMLInputElement).value) e.confirmPassword = 'The passwords do not match.';
+    if (!checked('agree')) e.agree = 'Please confirm you are 18 or older and agree to the Terms & Conditions and Privacy Policy.';
+    return e;
+  }
+
+  form.addEventListener('submit', async ev => {
+    ev.preventDefault();
+    formError.hidden = true;
+    const local = clientCheck();
+    showErrors(local);
+    if (Object.keys(local).length) return;
+
+    btn.disabled = true; btn.textContent = 'Creating account…';
+    const turnstile = (form.querySelector('[name="cf-turnstile-response"]') as HTMLInputElement | null)?.value;
+    try {
+      const res = await fetch('/api/fans/register', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          firstName: val('firstName'), surname: val('surname'), email: val('email'), confirmEmail: val('confirmEmail'),
+          phone: val('phone'), password: (document.getElementById('password') as HTMLInputElement).value,
+          confirmPassword: (document.getElementById('confirmPassword') as HTMLInputElement).value,
+          agree: checked('agree'), marketing: checked('marketing'), turnstileToken: turnstile, next: safeNext,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 400 && data.errors) { showErrors(data.errors); (window as any).turnstile?.reset?.(); return; }
+      if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+      document.getElementById('doneEmail')!.textContent = val('email');
+      document.getElementById('emailFailed')!.hidden = !data.emailFailed;
+      form.hidden = true;
+      document.getElementById('regDone')!.hidden = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      formError.textContent = (err as Error).message; formError.hidden = false;
+    } finally {
+      btn.disabled = false; btn.textContent = 'Create my account';
+    }
+  });
+
+  document.getElementById('resendBtn')!.addEventListener('click', async () => {
+    await fetch('/api/fans/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: val('email'), next: safeNext }) }).catch(() => {});
+    document.getElementById('resendMsg')!.hidden = false;
+  });
+</script>

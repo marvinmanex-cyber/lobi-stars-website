@@ -64,6 +64,7 @@ const benefits = [
           <div class="mem-success-icon" aria-hidden="true">🏆</div>
           <p class="mem-success-k">Registration Successful</p>
           <div class="mem-id" id="memId"></div>
+          <p class="mem-check">📧 <strong>Check your email to confirm your account.</strong> Click the link we've sent you (it expires in 24 hours), then log in.</p>
           <button type="button" class="btn-o" id="resetMemBtn">Register Another</button>
         </div>
       </div>
@@ -79,6 +80,7 @@ const benefits = [
       <div class="form-grp"><label class="form-lbl" for="login-pw">Password</label><input class="form-inp" id="login-pw" type="password" autocomplete="current-password" placeholder="Your password" /></div>
       <p class="form-error" id="login-error" role="alert" hidden></p>
       <button type="submit" class="btn-p mem-submit" id="loginBtn">Log In</button>
+      <p class="muted mem-alt"><a href="/fans/forgot/" style="color:var(--red-text);font-weight:700;">Forgot your password?</a></p>
       <p class="muted mem-alt">Not a member yet? <button type="button" class="link-btn" data-close-login>Register here</button></p>
     </form>
   </dialog>
@@ -105,6 +107,7 @@ const benefits = [
   .link-btn { background: none; border: 0; padding: 0; color: var(--red-text); font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
   .mem-success { text-align: center; padding: 20px 0; }
   .mem-success-icon { font-size: 48px; }
+  .mem-check { margin: 0 auto 20px; max-width: 420px; color: var(--lt); line-height: 1.6; }
   .mem-success-k { margin: 10px 0; color: var(--lt); font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
   .mem-id { font: 400 36px/1 'Bebas Neue', sans-serif; color: var(--gold-text); letter-spacing: 3px; margin-bottom: 20px; }
   #memLoggedIn .btn-o { margin-top: 18px; }
@@ -159,6 +162,18 @@ const benefits = [
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
+      if (res.status === 403 && data.code === 'unverified') {
+        errEl.innerHTML = '';
+        const resend = document.createElement('button');
+        resend.type = 'button'; resend.className = 'link-btn'; resend.textContent = 'Resend confirmation email';
+        resend.addEventListener('click', async () => {
+          await fetch('/api/fans/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, next: '/membership' }) }).catch(() => {});
+          errEl.textContent = 'If your account still needs confirming, a new link is on its way. Please check your email.';
+        });
+        errEl.append(data.error + ' ', resend);
+        errEl.hidden = false;
+        return;
+      }
       if (!res.ok) throw new Error(data.error || 'Login failed.');
       currentMember = data.member;
       render();

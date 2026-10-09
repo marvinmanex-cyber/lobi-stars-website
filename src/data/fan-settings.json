@@ -1,0 +1,4 @@
+{
+  "_todo": "TODO: add the Cloudflare Turnstile SITE key here (public). The SECRET key goes in the Cloudflare Pages environment as TURNSTILE_SECRET_KEY. Until both are set, the human check is skipped.",
+  "turnstileSiteKey": ""
+}

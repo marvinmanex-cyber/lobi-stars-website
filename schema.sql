@@ -126,3 +126,28 @@ CREATE TABLE IF NOT EXISTS match_centre (
   gallery_json TEXT,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Fan accounts reuse the members table. These columns/tables are added
+-- automatically by functions/api/_lib/fans.js (ensureFanSchema):
+--   ALTER TABLE members ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 1;  -- existing members count as verified
+--   ALTER TABLE members ADD COLUMN email_verified_at TEXT;
+--   ALTER TABLE members ADD COLUMN phone_e164 TEXT;                             -- +234 format, unique
+--   ALTER TABLE members ADD COLUMN marketing_opt_in INTEGER NOT NULL DEFAULT 0;
+--   ALTER TABLE members ADD COLUMN age_confirmed_at TEXT;
+--   ALTER TABLE members ADD COLUMN is_staff INTEGER NOT NULL DEFAULT 0;        -- club staff/players can't win prizes
+CREATE UNIQUE INDEX IF NOT EXISTS idx_members_phone_e164 ON members(phone_e164) WHERE phone_e164 IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS auth_tokens (
+  token_hash TEXT PRIMARY KEY,     -- SHA-256 of the one-time link token
+  member_id TEXT NOT NULL REFERENCES members(id),
+  purpose TEXT NOT NULL CHECK (purpose IN ('verify', 'reset')),
+  expires_at INTEGER NOT NULL,     -- ms since epoch
+  used_at INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key TEXT PRIMARY KEY,
+  window_start INTEGER NOT NULL,
+  count INTEGER NOT NULL
+);

@@ -1,0 +1,36 @@
+---
+import FanAuthShell from '../../components/fans/FanAuthShell.astro';
+---
+<FanAuthShell title="Forgot Password" heading="Forgot your password?" description="Reset your Lobi Stars FC account password."
+  intro="Enter your email address and we'll send you a link to choose a new password.">
+  <form id="forgotForm" novalidate>
+    <div class="fa-field"><label class="form-lbl" for="email">Email Address</label>
+      <input class="form-inp" id="email" type="email" autocomplete="email" required /></div>
+    <p class="fa-note err" id="err" role="alert" hidden></p>
+    <button type="submit" class="btn-p fa-submit" id="btn">Send reset link</button>
+  </form>
+  <p class="fa-note ok" id="done" role="status" hidden>If an account exists for that email, we've sent a password reset link. It expires in 1 hour. Check your spam folder if you can't see it.</p>
+  <p class="fa-alt"><a href="/fans/login/">Back to log in</a></p>
+</FanAuthShell>
+
+<script>
+  const form = document.getElementById('forgotForm') as HTMLFormElement;
+  const err = document.getElementById('err')!;
+  const btn = document.getElementById('btn') as HTMLButtonElement;
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    err.hidden = true;
+    const email = (document.getElementById('email') as HTMLInputElement).value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { err.textContent = 'Please enter a valid email address.'; err.hidden = false; return; }
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/fans/forgot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+      form.hidden = true;
+      document.getElementById('done')!.hidden = false;
+    } catch (ex) {
+      err.textContent = (ex as Error).message; err.hidden = false;
+    } finally { btn.disabled = false; }
+  });
+</script>

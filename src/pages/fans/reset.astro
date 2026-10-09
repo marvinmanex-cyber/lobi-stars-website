@@ -1,0 +1,48 @@
+---
+import FanAuthShell from '../../components/fans/FanAuthShell.astro';
+---
+<FanAuthShell title="Choose a New Password" heading="Choose a new password" description="Set a new password for your Lobi Stars FC account.">
+  <p class="fa-note err" id="noToken" role="alert" hidden>This reset link is incomplete. Please <a href="/fans/forgot/">request a new one</a>.</p>
+  <form id="resetForm" novalidate>
+    <div class="fa-field"><label class="form-lbl" for="password">New Password</label>
+      <input class="form-inp" id="password" type="password" autocomplete="new-password" minlength="8" required aria-describedby="err-password" />
+      <p class="fa-hint">At least 8 characters.</p>
+      <p class="fa-err" id="err-password" role="alert"></p></div>
+    <div class="fa-field"><label class="form-lbl" for="confirmPassword">Confirm New Password</label>
+      <input class="form-inp" id="confirmPassword" type="password" autocomplete="new-password" required aria-describedby="err-confirmPassword" />
+      <p class="fa-err" id="err-confirmPassword" role="alert"></p></div>
+    <p class="fa-note err" id="err" role="alert" hidden></p>
+    <button type="submit" class="btn-p fa-submit" id="btn">Save new password</button>
+  </form>
+</FanAuthShell>
+
+<script>
+  const token = new URLSearchParams(location.search).get('token') || '';
+  const form = document.getElementById('resetForm') as HTMLFormElement;
+  if (!/^[a-f0-9]{64}$/.test(token)) { form.hidden = true; document.getElementById('noToken')!.hidden = false; }
+  const err = document.getElementById('err')!;
+  const btn = document.getElementById('btn') as HTMLButtonElement;
+  const setErr = (f: string, m: string) => { document.getElementById(`err-${f}`)!.textContent = m; document.getElementById(f)!.setAttribute('aria-invalid', m ? 'true' : 'false'); };
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    err.hidden = true; setErr('password', ''); setErr('confirmPassword', '');
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+    const confirmPassword = (document.getElementById('confirmPassword') as HTMLInputElement).value;
+    if (password.length < 8) return setErr('password', 'Password must be at least 8 characters.');
+    if (password !== confirmPassword) return setErr('confirmPassword', 'The passwords do not match.');
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/fans/reset', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token, password, confirmPassword }) });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 400 && data.errors) { Object.entries(data.errors).forEach(([f, m]) => setErr(f, m as string)); return; }
+      if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+      location.href = '/fans/login/?reset=1';
+    } catch (ex) {
+      err.innerHTML = '';
+      err.append((ex as Error).message + ' ');
+      const a = document.createElement('a'); a.href = '/fans/forgot/'; a.textContent = 'Request a new link';
+      err.append(a); err.hidden = false;
+    } finally { btn.disabled = false; }
+  });
+</script>
