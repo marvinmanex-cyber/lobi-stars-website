@@ -2,47 +2,116 @@
 import Layout from '../layouts/Layout.astro';
 import { CONTACT } from '../lib/site';
 
-const topics = [
-  { title: 'Tickets', text: 'Buy match tickets online, pay with Paystack and get QR-code tickets by email.', href: '/tickets', cta: 'Buy tickets' },
-  { title: 'Lost your ticket email?', text: 'Check your spam or promotions folder first. Still missing? Contact us with your payment reference.', href: '/contact', cta: 'Contact us' },
-  { title: 'Membership', text: 'Join as an official member, or log in to your existing membership account.', href: '/membership', cta: 'Membership' },
-  { title: 'In-seat food ordering', text: 'Order food and drinks to your seat at McCarthy Stadium on matchday.', href: '/food', cta: 'Order food' },
-  { title: 'Club shop', text: 'Official merchandise is sold through Jumia Nigeria.', href: '/shop', cta: 'Visit the shop' },
-  { title: 'Sponsorship & partnerships', text: 'Interested in partnering with the club? Send us a partnership enquiry.', href: '/partners', cta: 'Partner with us' },
+const wa = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Hello Lobi Stars, I need help with...')}`;
+
+// Answers only describe how the site actually works. Club policies that
+// haven't been confirmed (e.g. refunds) point fans to the club instead.
+const faqs: { group: string; items: { q: string; a: string }[] }[] = [
+  { group: 'Tickets', items: [
+    { q: 'How do I buy a match ticket?',
+      a: `Go to <a href="/tickets">Buy Tickets</a>, choose the match, pick your seating area (Regular, Premium or VIP) and the number of tickets, enter your name, email and phone number, then pay securely with Paystack. Your tickets are emailed to you straight away.` },
+    { q: 'How does the ticket QR code work?',
+      a: 'Every ticket has its own QR code. Show it on your phone (or a printed copy) at the stadium gate, where stewards scan it. Each code can only be used once, so please don\'t share or post it online.' },
+    { q: "I paid but didn't get my ticket email",
+      a: `First check your spam, junk or promotions folder. If it still isn't there, <a href="/contact">contact us</a> or message us on WhatsApp with the email address you used and your payment reference, and we'll help.` },
+    { q: 'Can I get a refund?',
+      a: `If a match is postponed or cancelled, the club will announce what happens to tickets on this website and our social channels. For any other ticket problem, please <a href="/contact">contact us</a> with your order reference.` },
+  ] },
+  { group: 'Membership', items: [
+    { q: 'How do I become a member?',
+      a: `Sign up on the <a href="/membership">Membership page</a>. Official membership is ₦10,000 a year and includes a membership card, merchandise discount, the club newsletter and priority ticket access.` },
+    { q: 'How do I log in to my membership account?',
+      a: `Go to <a href="/membership">Membership</a> and press <strong>Log in</strong>, then enter the email and password you registered with.` },
+  ] },
+  { group: 'Matchday', items: [
+    { q: 'How does in-seat food ordering work?',
+      a: `On matchday, open <a href="/food">In-Seat Food Ordering</a>, choose your food and drinks, enter your seat number, stand, phone and email, and pay with Paystack. Your order is delivered to your seat.` },
+    { q: 'How do I get to the stadium?',
+      a: `Home matches are played at McCarthy Stadium, Makurdi. See the <a href="/club/stadium">stadium page</a> for a map, directions and matchday tips.` },
+    { q: 'Where can I see fixtures and results?',
+      a: `See <a href="/fixtures">Fixtures</a>, <a href="/results">Results</a> and the <a href="/table">League Table</a>. Each match has a Match Centre with line-ups, live updates and the report. You can also add matches to your phone's calendar from the Fixtures page.` },
+  ] },
+  { group: 'Club Shop', items: [
+    { q: 'How do I buy club merchandise?',
+      a: `Browse the <a href="/shop">Club Shop</a> and press <strong>Shop on Jumia</strong> on the item you want. Official merchandise is sold through Jumia Nigeria.` },
+    { q: 'Who handles delivery and returns for shop orders?',
+      a: 'Orders placed on Jumia are paid for, delivered and returned through Jumia, so delivery times, fees and returns follow Jumia\'s policies. Contact Jumia customer service about an existing order.' },
+  ] },
+  { group: 'Contact', items: [
+    { q: 'How do I contact the club?',
+      a: `Email <a href="mailto:${CONTACT.email}">${CONTACT.email}</a>, call ${CONTACT.phone}, <a href="${wa}" target="_blank" rel="noopener">chat with us on WhatsApp</a>, or use the <a href="/contact">contact form</a>. For sponsorship, see <a href="/partners">Partners</a>.` },
+  ] },
 ];
+
+const strip = (html: string) => html.replace(/<[^>]+>/g, '');
+const faqJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: faqs.flatMap(g => g.items).map(f => ({
+    '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: strip(f.a) },
+  })),
+};
 ---
-<Layout title="Help | Lobi Stars Football Club" description="Help with Lobi Stars FC tickets, membership, in-seat food ordering, the club shop and how to contact the club.">
+<Layout title="Help & FAQs | Lobi Stars Football Club" description="Answers to common questions about Lobi Stars FC tickets, QR codes, refunds, membership, in-seat food, the club shop, getting to the stadium and contacting the club." jsonLd={[faqJsonLd]}>
   <div class="page-hero wrap">
     <div class="stag">Fan Help</div>
-    <h1 class="stitle">How can we <span class="r">help?</span></h1>
+    <h1 class="stitle">Help &amp; <span class="r">FAQs</span></h1>
     <div class="divr"></div>
+    <p class="hf-lede">Can't find what you need? <a href={wa} target="_blank" rel="noopener">Chat with us on WhatsApp</a> or <a href="/contact">send us a message</a>.</p>
   </div>
-  <div class="page-content wrap">
-    <ul class="hl-grid">
-      {topics.map(t => (
-        <li class="hl-card">
-          <h2>{t.title}</h2>
-          <p>{t.text}</p>
-          <a href={t.href}>{t.cta} <span aria-hidden="true">&rarr;</span></a>
-        </li>
-      ))}
-    </ul>
-    <section class="panel hl-contact" aria-labelledby="still">
+
+  <div class="page-content wrap hf">
+    <nav class="hf-jump" aria-label="FAQ topics">
+      {faqs.map(g => <a href={`#${g.group.toLowerCase().replace(/\s+/g, '-')}`}>{g.group}</a>)}
+    </nav>
+
+    {faqs.map(g => (
+      <section class="hf-group" id={g.group.toLowerCase().replace(/\s+/g, '-')} aria-labelledby={`h-${g.group.toLowerCase().replace(/\s+/g, '-')}`}>
+        <h2 class="hf-h2" id={`h-${g.group.toLowerCase().replace(/\s+/g, '-')}`}>{g.group}</h2>
+        {g.items.map(f => (
+          <details class="hf-item">
+            <summary>{f.q}</summary>
+            <div class="hf-a" set:html={f.a} />
+          </details>
+        ))}
+      </section>
+    ))}
+
+    <section class="panel hf-wa" aria-labelledby="still">
       <h2 id="still">Still need help?</h2>
-      <p>Email <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>, call {CONTACT.phone}, message us on
-        <a href={`https://wa.me/${CONTACT.whatsapp}`} target="_blank" rel="noopener">WhatsApp</a>, or use the
-        <a href="/contact">contact form</a>.</p>
+      <p>Our team is on WhatsApp. Send us a message and we'll get back to you.</p>
+      <a class="hf-wa-btn" href={wa} target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 2.3A7.9 7.9 0 0 0 8 0C3.6 0 .1 3.6.1 7.9c0 1.4.4 2.8 1 4L0 16l4.2-1.1a7.9 7.9 0 0 0 3.8 1C12.4 15.9 16 12.3 16 7.9a7.9 7.9 0 0 0-2.4-5.6zM8 14.5a6.6 6.6 0 0 1-3.4-.9l-.2-.1-2.5.6.7-2.4-.2-.3A6.6 6.6 0 1 1 8 14.5zm3.6-4.9c-.2-.1-1.2-.6-1.4-.6-.2-.1-.3-.1-.4.1l-.6.8c-.1.1-.2.1-.4 0-.2-.1-.8-.3-1.6-1-.6-.5-1-1.2-1.1-1.4-.1-.2 0-.3.1-.4l.3-.3.2-.3v-.4l-.6-1.5c-.2-.4-.3-.3-.4-.3h-.4c-.1 0-.4 0-.5.2-.2.2-.7.7-.7 1.7s.7 1.9.8 2c.1.1 1.4 2.1 3.4 3l1.1.4c.5.2.9.1 1.2.1.4-.1 1.2-.5 1.3-.9.2-.5.2-.9.1-.9l-.4-.3z"/></svg>
+        Chat on WhatsApp
+      </a>
     </section>
   </div>
 </Layout>
 
 <style>
-  .hl-grid { list-style: none; margin: 0 0 32px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
-  .hl-card { border: 1px solid var(--d4); border-radius: 12px; padding: 22px; background: #fff; display: flex; flex-direction: column; }
-  .hl-card h2 { margin: 0 0 8px; font: 700 21px/1.2 'Barlow Condensed', sans-serif; }
-  .hl-card p { margin: 0 0 14px; color: var(--lt); line-height: 1.6; flex: 1; }
-  .hl-card a, .hl-contact a { color: var(--red); font-weight: 700; text-decoration: none; }
-  .hl-card a:hover, .hl-contact a:hover { text-decoration: underline; }
-  .hl-contact h2 { margin: 0 0 8px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .hl-contact p { margin: 0; line-height: 1.7; }
+  .hf-lede { font-size: 17px; color: var(--lt); }
+  .hf-lede a { color: var(--red); font-weight: 700; }
+  .hf { max-width: 860px; }
+  .hf-jump { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; }
+  .hf-jump a { padding: 9px 14px; border-radius: 30px; border: 1px solid var(--d4); text-decoration: none; color: var(--white); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .hf-jump a:hover, .hf-jump a:focus-visible { border-color: var(--red); color: var(--red); }
+  .hf-group { margin-bottom: 34px; scroll-margin-top: 90px; }
+  .hf-h2 { margin: 0 0 12px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .hf-item { border: 1px solid var(--d4); border-radius: 10px; margin-bottom: 10px; background: #fff; }
+  .hf-item summary {
+    cursor: pointer; list-style: none; padding: 16px 48px 16px 18px; position: relative;
+    font: 700 18px/1.3 'Barlow Condensed', sans-serif; color: var(--white);
+  }
+  .hf-item summary::-webkit-details-marker { display: none; }
+  .hf-item summary::after { content: '+'; position: absolute; right: 18px; top: 50%; transform: translateY(-50%); font-size: 24px; color: var(--red); transition: transform .2s; }
+  .hf-item[open] summary::after { content: '−'; }
+  .hf-item summary:focus-visible { outline: 3px solid var(--red); outline-offset: -3px; border-radius: 10px; }
+  .hf-item[open] { border-color: rgba(227, 30, 36, .4); }
+  .hf-a { padding: 0 18px 18px; color: var(--lt); line-height: 1.7; font-size: 16px; }
+  .hf-a :global(a) { color: var(--red); font-weight: 600; }
+  .hf-wa h2 { margin: 0 0 8px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .hf-wa p { margin: 0 0 16px; color: var(--lt); }
+  .hf-wa-btn { display: inline-flex; align-items: center; gap: 10px; background: #1DA851; color: #fff; padding: 13px 22px; border-radius: 6px; text-decoration: none; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .hf-wa-btn:hover { background: #178A43; }
+  .hf-wa-btn svg { width: 20px; height: 20px; fill: #fff; }
 </style>

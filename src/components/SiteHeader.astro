@@ -104,9 +104,11 @@ const isActive = (href: string) => {
   .sh-sub {
     list-style: none; margin: 0; padding: 8px; position: absolute; top: calc(100% + 4px); left: -8px; min-width: 200px;
     background: #fff; border: 1px solid var(--d4); border-radius: 10px; box-shadow: 0 18px 40px rgba(15, 17, 21, .12);
-    opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .15s, transform .15s, visibility .15s;
+    opacity: 0; visibility: hidden; transform: translateY(-4px);
+    /* Hide only after the fade-out, but show instantly so keyboard users can Tab straight in. */
+    transition: opacity .15s, transform .15s, visibility 0s linear .15s;
   }
-  .sh-item:hover .sh-sub, .sh-link[aria-expanded='true'] + .sh-sub { opacity: 1; visibility: visible; transform: none; }
+  .sh-item:hover .sh-sub, .sh-link[aria-expanded='true'] + .sh-sub { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
   .sh-sub a {
     display: block; padding: 10px 12px; border-radius: 6px; text-decoration: none; color: var(--white);
     font: 600 15px/1.2 'Barlow Condensed', sans-serif;
