@@ -101,3 +101,11 @@ CREATE INDEX IF NOT EXISTS idx_pageviews_visitor ON pageviews(visitor_id);
 INSERT OR IGNORE INTO events (id, home_team, away_team, competition, event_date, venue, vip_price_kobo, premium_price_kobo, regular_price_kobo, active) VALUES
   ('evt-sample-1', 'Lobi Stars FC', 'Kada Warriors FC', 'NNL Conference D', '2026-08-29T15:30:00Z', 'McCarthy Stadium, Makurdi', 10000, 10000, 10000, 1),
   ('evt-sample-2', 'Lobi Stars FC', 'Wikki Tourists FC', 'NNL Conference D', '2026-09-06T15:30:00Z', 'McCarthy Stadium, Makurdi', 10000, 10000, 10000, 1);
+
+-- Newsletter sign-ups from the site footer (separate from membership).
+-- /api/newsletter also creates this table on first use.
+CREATE TABLE IF NOT EXISTS newsletter_subscribers (
+  email TEXT PRIMARY KEY,
+  source TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

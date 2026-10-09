@@ -1,0 +1,17 @@
+---
+import Layout from '../layouts/Layout.astro';
+import LeagueTable from '../components/LeagueTable.astro';
+import MatchesTabs from '../components/MatchesTabs.astro';
+import table from '../data/league-table.json';
+import { CURRENT_SEASON } from '../lib/site';
+---
+<Layout title="League Table | Lobi Stars Football Club" description={`The ${table.competition} ${CURRENT_SEASON} league table, with Lobi Stars FC highlighted.`}>
+  <div class="page-hero wrap">
+    <div class="stag">{CURRENT_SEASON} {table.competition}</div>
+    <h1 class="stitle">League <span class="r">Table</span></h1>
+    <MatchesTabs current="table" />
+  </div>
+  <div class="page-content wrap">
+    <LeagueTable showHeading={false} />
+  </div>
+</Layout>

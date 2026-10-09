@@ -1,7 +1,9 @@
 ---
-import { FOOTER_TAGLINE } from '../lib/site';
 import HeadMeta from '../components/HeadMeta.astro';
 import CookieConsent from '../components/CookieConsent.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import { CONTACT } from '../lib/site';
 
 export interface Props {
   title: string;
@@ -23,6 +25,7 @@ const {
   noindex = false,
   jsonLd = [],
 } = Astro.props;
+const waLink = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Hello Lobi Stars Management, I have an inquiry.')}`;
 ---
 <!DOCTYPE html>
 <html lang="en">
@@ -47,267 +50,75 @@ const {
   --white:#15181D;   /* primary text (ink) */
   --lt:#5B6472;       /* secondary text */
 }
-body{
-  font-family:'Barlow',sans-serif;background:var(--black);color:var(--white);
-}
+html{scroll-behavior:smooth;}
+body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--white);overflow-x:hidden;}
 a{color:inherit;}
 .wrap{max-width:1200px;margin:0 auto;padding:0 5%;}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 
-/* NAV (shared across pages) */
-nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(255,255,255,.98);
-  border-bottom:1px solid var(--d4);backdrop-filter:blur(8px);transition:box-shadow .2s;}
-nav.scrolled{box-shadow:0 6px 24px rgba(15,17,21,.07);}
-.nav-inner{max-width:1280px;margin:0 auto;padding:0 5%;height:76px;display:flex;align-items:center;justify-content:space-between;}
-.nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none;}
-.nlb{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--d4);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background:#fff;}
-.nlb img{width:100%;height:100%;object-fit:contain;padding:3px;}
-.nlt{font-family:'Bebas Neue',sans-serif;font-size:19px;color:var(--white);letter-spacing:1.5px;line-height:1.05;}
-.nlt span{display:block;font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:600;letter-spacing:3px;color:var(--red);text-transform:uppercase;}
-
-.nav-left{display:flex;align-items:center;gap:16px;}
-
-/* Hamburger -- always visible, opens the full menu panel. Only a
-   handful of "very important" destinations stay as flat links next to
-   it; everything else lives behind it. */
-.hamburger{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;
-  width:38px;height:38px;border-radius:10px;border:1px solid var(--d4);background:#fff;cursor:pointer;
-  padding:0;flex-shrink:0;transition:border-color .15s,background .15s;}
-.hamburger:hover{border-color:var(--red);}
-.hamburger span{display:block;width:16px;height:2px;background:var(--white);transition:transform .2s,opacity .2s;}
-.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
-.hamburger.open span:nth-child(2){opacity:0;}
-.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
-
-.nav-links{display:flex;align-items:center;gap:2px;list-style:none;}
-.nav-links a{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
-  color:var(--white);text-decoration:none;padding:10px 13px;display:flex;align-items:center;
-  border-bottom:2px solid transparent;transition:color .15s,border-color .15s;}
-.nav-links a:hover,.nav-links a.active{color:var(--red);border-color:var(--red);}
-.nav-cta{background:var(--red)!important;color:#fff!important;border-radius:24px;padding:9px 20px!important;
-  border-bottom:none!important;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:13px;
-  font-weight:700;letter-spacing:1.2px;text-transform:uppercase;}
-.nav-cta:hover{background:var(--rd)!important;color:#fff!important;}
-
-/* Off-canvas menu -- holds every secondary destination, grouped. */
-.menu-ov{position:fixed;inset:0;background:rgba(15,17,21,.5);z-index:1990;
-  opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;}
-.menu-ov.open{opacity:1;visibility:visible;}
-.menu-panel{position:fixed;top:0;left:0;bottom:0;width:320px;max-width:86vw;background:#fff;z-index:2000;
-  box-shadow:16px 0 44px rgba(15,17,21,.18);transform:translateX(-104%);
-  transition:transform .3s cubic-bezier(.22,.85,.32,1);display:flex;flex-direction:column;overflow-y:auto;}
-.menu-panel.open{transform:translateX(0);}
-.menu-panel-head{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;
-  border-bottom:1px solid var(--d4);flex-shrink:0;}
-.menu-close{background:none;border:none;font-size:26px;line-height:1;cursor:pointer;color:var(--lt);padding:4px 8px;}
-.menu-close:hover{color:var(--red);}
-.menu-panel-body{padding:10px 12px 30px;}
-.menu-group{padding:16px 12px;border-top:1px solid var(--d4);}
-.menu-group:first-child{border-top:none;}
-.menu-group h4{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:700;letter-spacing:2px;
-  text-transform:uppercase;color:var(--red);margin-bottom:8px;}
-.menu-group a{display:block;padding:10px 8px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:600;
-  color:var(--white);text-decoration:none;border-radius:6px;transition:background .15s,color .15s,padding-left .15s;}
-.menu-group a:hover{background:var(--d3);color:var(--red);padding-left:14px;}
-
-@media(max-width:1000px){
-  .nav-inner{height:68px;}
-  .nlt{display:none;}
-}
-@media(max-width:680px){
-  .nav-links{display:none;}
-}
+main{padding-top:72px;min-height:60vh;}
+.skip-link{position:fixed;top:-60px;left:12px;z-index:3000;background:var(--red);color:#fff;padding:10px 16px;border-radius:6px;font-weight:700;text-decoration:none;}
+.skip-link:focus{top:12px;}
 
 /* SHARED headings/buttons used by all pages */
-main{padding-top:76px;min-height:60vh;}
-@media(max-width:1000px){ main{padding-top:68px;} }
 .stag{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:10px;}
 .stag::before{content:'';display:block;width:22px;height:2px;background:var(--gold);flex-shrink:0;}
-.stitle{font-family:'Bebas Neue',sans-serif;font-size:clamp(34px,5vw,58px);line-height:.95;letter-spacing:1px;color:var(--white);margin-bottom:14px;}
+.stitle{font-family:'Bebas Neue',sans-serif;font-size:clamp(34px,5vw,58px);line-height:.95;letter-spacing:1px;color:var(--white);margin-bottom:14px;font-weight:400;}
 .stitle .r{color:var(--red);}
 .divr{width:56px;height:3px;background:var(--red);margin:14px 0 34px;}
 .btn-p{background:var(--red);color:#fff;padding:13px 32px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border-radius:3px;transition:background .2s,transform .15s;display:inline-block;border:none;cursor:pointer;}
 .btn-p:hover{background:var(--rd);transform:translateY(-2px);}
+.btn-p:disabled{opacity:.6;cursor:default;transform:none;}
 .btn-o{background:transparent;color:var(--white);padding:13px 32px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border-radius:3px;border:1.5px solid var(--d4);transition:border-color .2s,color .2s;display:inline-block;cursor:pointer;}
 .btn-o:hover{border-color:var(--red);color:var(--red);}
+.btn-p:focus-visible,.btn-o:focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
 .card{background:var(--d2);border:1px solid var(--d4);border-radius:8px;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s;}
 .card:hover{transform:translateY(-4px);border-color:rgba(212,32,43,.35);box-shadow:0 16px 32px rgba(15,17,21,.08);}
 .muted{color:var(--lt);}
-.page-hero{padding:150px 5% 50px;}
+.page-hero{padding:70px 5% 40px;}
 .page-content{padding:0 5% 90px;}
 .empty-state{padding:60px 20px;text-align:center;color:var(--lt);border:1px dashed var(--d4);border-radius:10px;}
 
-/* FOOTER (shared) */
-footer{background:var(--dark);border-top:1px solid var(--d4);padding:64px 0 26px;margin-top:70px;}
-.footer-container{max-width:1200px;margin:0 auto;padding:0 20px;}
-.footer-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:40px;padding-bottom:44px;}
-.footer-brand p{max-width:320px;font-size:14px;color:var(--lt);line-height:1.7;margin-top:16px;}
-.footer-social{display:flex;gap:10px;margin-top:20px;}
-.footer-social a{width:38px;height:38px;border-radius:50%;border:1px solid var(--d4);display:flex;align-items:center;
-  justify-content:center;color:var(--white);text-decoration:none;font-size:12px;font-weight:700;transition:.2s;}
-.footer-social a:hover{background:var(--red);border-color:var(--red);color:#fff;}
-.footer-col h4{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--red);margin-bottom:16px;}
-.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:11px;}
-.footer-col a{font-size:13.5px;color:var(--lt);text-decoration:none;transition:color .15s;}
-.footer-col a:hover{color:var(--white);}
-.footer-bottom{border-top:1px solid var(--d4);padding-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
-.footer-copy{font-size:12.5px;color:var(--lt);}
-@media(max-width:900px){ .footer-grid{grid-template-columns:1fr 1fr;} }
-@media(max-width:560px){ .footer-grid{grid-template-columns:1fr;} }
+/* FORMS (membership, contact, partners, food) */
+.form-grp{margin-bottom:16px;}
+.form-lbl{display:block;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--lt);margin-bottom:7px;}
+.form-inp,.form-ta,.form-sel{width:100%;background:var(--d3);border:1px solid var(--d4);border-radius:6px;padding:13px 14px;color:var(--white);font-family:'Barlow',sans-serif;font-size:16px;transition:border-color .2s;}
+.form-inp:focus,.form-ta:focus,.form-sel:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(227,30,36,.15);}
+.form-ta{min-height:130px;resize:vertical;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-error{color:#C11A1F;font-size:14px;margin:0 0 14px;}
+.panel{background:var(--d2);border:1px solid var(--d4);border-radius:14px;padding:clamp(22px,4vw,40px);box-shadow:0 16px 40px rgba(15,17,21,.06);}
+@media(max-width:600px){ .form-row{grid-template-columns:1fr;gap:0;} }
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;left:50%;transform:translate(-50%,10px);background:#15181D;color:#fff;padding:13px 22px;border-radius:8px;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;letter-spacing:.5px;z-index:5000;opacity:0;transition:opacity .3s,transform .3s;pointer-events:none;max-width:90vw;text-align:center;}
+.toast.show{opacity:1;transform:translate(-50%,0);}
 
 /* WHATSAPP FLOAT */
-.wa-float{position:fixed;bottom:30px;right:30px;z-index:998;width:58px;height:58px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.45);text-decoration:none;transition:transform .2s;}
-.wa-float:hover{transform:scale(1.12);}
+.wa-float{position:fixed;bottom:24px;right:24px;z-index:998;width:56px;height:56px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.45);text-decoration:none;transition:transform .2s;}
+.wa-float:hover{transform:scale(1.1);}
 .wa-float svg{width:30px;height:30px;fill:white;}
 </style>
 </head>
 <body>
+<a href="#main" class="skip-link">Skip to content</a>
+<SiteHeader />
 
-<nav id="mainNav">
-  <div class="nav-inner">
-    <div class="nav-left">
-      <button class="hamburger" id="hamburgerBtn" aria-label="Open menu" aria-expanded="false" aria-controls="menuPanel">
-        <span></span><span></span><span></span>
-      </button>
-      <a class="nav-logo" href="/#hero">
-        <div class="nlb"><img src="/images/hero-6.jpg" alt="Lobi Stars Badge"></div>
-        <div class="nlt">Lobi Stars<span>Football Club</span></div>
-      </a>
-    </div>
-    <ul class="nav-links">
-      <li><a href="/fixtures">Fixtures</a></li>
-      <li><a href="/squad">Squad</a></li>
-      <li><a href="/tickets">Tickets</a></li>
-    </ul>
-    <a href="/#contact" class="nav-cta">Contact</a>
-  </div>
-</nav>
-
-<div class="menu-ov" id="menuOv"></div>
-<div class="menu-panel" id="menuPanel" role="dialog" aria-modal="true" aria-label="Site menu">
-  <div class="menu-panel-head">
-    <div class="nlt">Menu</div>
-    <button class="menu-close" id="menuClose" aria-label="Close menu">&times;</button>
-  </div>
-  <div class="menu-panel-body" id="menuLinks">
-    <div class="menu-group">
-      <h4>Matchday</h4>
-      <a href="/fixtures">Fixtures &amp; Results</a>
-      <a href="/squad">Squad</a>
-      <a href="/programme">Matchday Programme</a>
-      <a href="/tickets">Buy Tickets</a>
-    </div>
-    <div class="menu-group">
-      <h4>Club</h4>
-      <a href="/membership">Membership</a>
-    </div>
-    <div class="menu-group">
-      <h4>More</h4>
-      <a href="/news">News</a>
-      <a href="/gallery">Gallery</a>
-      <a href="/shop">Shop</a>
-      <a href="/#contact">Contact</a>
-    </div>
-  </div>
-</div>
-
-<main>
+<main id="main">
   <slot />
 </main>
 
-<footer>
-  <div class="footer-container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <a class="nav-logo" href="/#hero" style="text-decoration:none;">
-          <div class="nlb" style="width:50px;height:50px;">
-            <img src="/images/hero-6.jpg" alt="Badge">
-          </div>
-          <div style="display:flex;flex-direction:column;">
-            <span style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);line-height:1;">LOBI STARS</span>
-            <span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;color:var(--red);letter-spacing:2px;">FOOTBALL CLUB</span>
-          </div>
-        </a>
-        <p>{FOOTER_TAGLINE}</p>
-        <div class="footer-social">
-          <a href="https://www.facebook.com/LobiStars" target="_blank" rel="noopener" aria-label="Facebook">FB</a>
-          <a href="https://x.com/LobiStars?s=20" target="_blank" rel="noopener" aria-label="X">𝕏</a>
-          <a href="https://www.instagram.com/lobistarsfc" target="_blank" rel="noopener" aria-label="Instagram">IG</a>
-        </div>
-      </div>
-      <div class="footer-col">
-        <h4>Club</h4>
-        <ul>
-          <li><a href="/membership">Membership</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Matches</h4>
-        <ul>
-          <li><a href="/fixtures">Fixtures &amp; Results</a></li>
-          <li><a href="/programme">Matchday Programme</a></li>
-          <li><a href="/tickets">Buy Tickets</a></li>
-          <li><a href="/#standings">League Table</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>More</h4>
-        <ul>
-          <li><a href="/squad">Squad</a></li>
-          <li><a href="/news">News</a></li>
-          <li><a href="/gallery">Gallery</a></li>
-          <li><a href="/shop">Club Shop</a></li>
-          <li><a href="/#contact">Contact</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <div class="footer-copy">&copy; 2026 Lobi Stars Football Club. All rights reserved. &middot; <button type="button" data-cookie-settings style="background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer;">Cookie settings</button></div>
-      <a href="/" style="font-size:13px;color:var(--red);text-decoration:none;font-weight:600;">&larr; Back to Home</a>
-    </div>
-  </div>
-</footer>
+<SiteFooter />
 
-<a href="https://wa.me/2349030399416?text=Hello%20Lobi%20Stars%20Management,%20I%20have%20an%20inquiry." target="_blank" class="wa-float" title="Chat on WhatsApp">
-  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="white" viewBox="0 0 16 16" style="display:block;">
+<a href={waLink} target="_blank" rel="noopener" class="wa-float" aria-label="Chat with Lobi Stars FC on WhatsApp">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true">
     <path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.06 3.973L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/>
   </svg>
 </a>
 
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script is:inline>
-(function(){
-  const nav = document.getElementById('mainNav');
-  function onScroll(){ nav.classList.toggle('scrolled', window.scrollY > 8); }
-  onScroll();
-  window.addEventListener('scroll', onScroll, { passive: true });
-
-  const hamburger = document.getElementById('hamburgerBtn');
-  const menuOv = document.getElementById('menuOv');
-  const menuPanel = document.getElementById('menuPanel');
-  const menuClose = document.getElementById('menuClose');
-  const menuLinks = document.getElementById('menuLinks');
-
-  function openMenu() {
-    hamburger.classList.add('open');
-    hamburger.setAttribute('aria-expanded', 'true');
-    menuOv.classList.add('open');
-    menuPanel.classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeMenu() {
-    hamburger.classList.remove('open');
-    hamburger.setAttribute('aria-expanded', 'false');
-    menuOv.classList.remove('open');
-    menuPanel.classList.remove('open');
-    document.body.style.overflow = '';
-  }
-  hamburger.addEventListener('click', () => {
-    hamburger.classList.contains('open') ? closeMenu() : openMenu();
-  });
-  menuClose.addEventListener('click', closeMenu);
-  menuOv.addEventListener('click', closeMenu);
-  menuLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
-})();
+  function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove('show');},3200);}
 </script>
 <CookieConsent />
 </body>

@@ -1,0 +1,91 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Search | Lobi Stars Football Club" description="Search Lobi Stars FC news, players and pages.">
+  <div class="page-hero wrap">
+    <div class="stag">Search</div>
+    <h1 class="stitle">Search the <span class="r">site</span></h1>
+    <form class="sr-form" role="search" action="/search" method="get" id="searchForm">
+      <label class="sr-only" for="q">Search news, players and pages</label>
+      <input class="form-inp" id="q" name="q" type="search" placeholder="Search news, players and pages" autocomplete="off" autofocus />
+      <button class="btn-p" type="submit">Search</button>
+    </form>
+  </div>
+  <div class="page-content wrap">
+    <p class="muted" id="srStatus" role="status" aria-live="polite"></p>
+    <ul class="sr-list" id="srResults"></ul>
+  </div>
+</Layout>
+
+<style>
+  .sr-form { display: flex; gap: 10px; max-width: 720px; margin-top: 12px; }
+  .sr-form .form-inp { font-size: 18px; }
+  .sr-list { list-style: none; margin: 10px 0 0; padding: 0; max-width: 760px; display: flex; flex-direction: column; gap: 4px; }
+  .sr-list :global(a) { display: block; padding: 16px 0; border-bottom: 1px solid var(--d4); text-decoration: none; }
+  .sr-list :global(.sr-type) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--red); }
+  .sr-list :global(.sr-title) { display: block; margin: 6px 0 4px; font: 700 20px/1.25 'Barlow Condensed', sans-serif; color: var(--white); }
+  .sr-list :global(a:hover .sr-title) { color: var(--red); text-decoration: underline; }
+  .sr-list :global(.sr-text) { color: var(--lt); font-size: 14px; }
+  @media (max-width: 520px) { .sr-form { flex-direction: column; } }
+</style>
+
+<script>
+  type Entry = { type: string; title: string; text: string; url: string; date?: string };
+  const input = document.getElementById('q') as HTMLInputElement;
+  const list = document.getElementById('srResults')!;
+  const status = document.getElementById('srStatus')!;
+  let index: Entry[] | null = null;
+
+  const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+  async function load() {
+    if (!index) index = await (await fetch('/search-index.json')).json();
+    return index!;
+  }
+
+  async function run(q: string) {
+    const terms = norm(q).split(/\s+/).filter(Boolean);
+    list.replaceChildren();
+    if (!terms.length) { status.textContent = ''; return; }
+    const data = await load();
+    const scored = data
+      .map(e => {
+        const title = norm(e.title), text = norm(e.text);
+        if (!terms.every(t => title.includes(t) || text.includes(t))) return null;
+        const score = terms.reduce((s, t) => s + (title.includes(t) ? 3 : 1), 0) + (e.type === 'Page' ? 1 : 0);
+        return { e, score };
+      })
+      .filter((x): x is { e: Entry; score: number } => !!x)
+      .sort((a, b) => b.score - a.score);
+
+    status.textContent = scored.length
+      ? `${scored.length} result${scored.length === 1 ? '' : 's'} for "${q}"`
+      : `No results for "${q}". Try another word, or browse the menu.`;
+    scored.slice(0, 50).forEach(({ e }) => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = e.url;
+      const type = document.createElement('span'); type.className = 'sr-type'; type.textContent = e.date ? `${e.type} · ${e.date}` : e.type;
+      const title = document.createElement('span'); title.className = 'sr-title'; title.textContent = e.title;
+      const text = document.createElement('span'); text.className = 'sr-text'; text.textContent = e.text;
+      a.append(type, title, text);
+      li.append(a);
+      list.append(li);
+    });
+  }
+
+  const initial = new URLSearchParams(location.search).get('q') || '';
+  input.value = initial;
+  if (initial) run(initial);
+
+  let timer: number | undefined;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      const q = input.value.trim();
+      history.replaceState(null, '', q ? `/search?q=${encodeURIComponent(q)}` : '/search');
+      run(q);
+    }, 150);
+  });
+  document.getElementById('searchForm')!.addEventListener('submit', e => { e.preventDefault(); run(input.value.trim()); });
+</script>

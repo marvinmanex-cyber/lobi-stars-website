@@ -1,5 +1,5 @@
 // Server-side source of truth for in-seat food menu prices. Mirrors the
-// client-side list in src/pages/index.astro -- keep both in sync. Never
+// client-side list in src/pages/food/index.astro -- keep both in sync. Never
 // trust a price submitted by the browser; only id/qty are taken from the
 // request, the price is always looked up here.
 export const FOOD_MENU = {

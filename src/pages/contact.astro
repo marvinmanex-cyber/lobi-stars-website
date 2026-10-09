@@ -1,0 +1,68 @@
+---
+import Layout from '../layouts/Layout.astro';
+import EnquiryForm from '../components/EnquiryForm.astro';
+import { CONTACT, SOCIAL_LINKS } from '../lib/site';
+
+const telHref = 'tel:+234' + CONTACT.phone.replace(/\D/g, '').replace(/^0/, '');
+const mapQuery = encodeURIComponent('McCarthy Stadium, Makurdi, Benue State, Nigeria');
+---
+<Layout
+  title="Contact Us | Lobi Stars Football Club"
+  description="Contact Lobi Stars FC: address, phone, email and WhatsApp, a map of McCarthy Stadium in Makurdi, and an enquiry form."
+>
+  <div class="page-hero wrap">
+    <div class="stag">Get In Touch</div>
+    <h1 class="stitle">Contact <span class="r">Us</span></h1>
+    <div class="divr"></div>
+    <p class="muted ct-lede">Whether you're a fan with a question, a potential sponsor, or a member of the press, we're here to help.</p>
+  </div>
+
+  <div class="page-content wrap ct-grid">
+    <div>
+      <ul class="ct-list">
+        <li><span class="ct-ic" aria-hidden="true">📍</span><div><h2>Headquarters</h2><p>{CONTACT.address}</p></div></li>
+        <li><span class="ct-ic" aria-hidden="true">📧</span><div><h2>Email</h2><p><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></p></div></li>
+        <li><span class="ct-ic" aria-hidden="true">📞</span><div><h2>Phone</h2><p><a href={telHref}>{CONTACT.phone}</a></p></div></li>
+        <li><span class="ct-ic" aria-hidden="true">💬</span><div><h2>WhatsApp</h2><p><a href={`https://wa.me/${CONTACT.whatsapp}`} target="_blank" rel="noopener">Chat with us on WhatsApp</a></p></div></li>
+      </ul>
+      {SOCIAL_LINKS.length > 0 && (
+        <p class="ct-social">Follow us:
+          {SOCIAL_LINKS.map((s, i) => <>{i > 0 && ' · '}<a href={s.url} target="_blank" rel="noopener">{s.label}</a></>)}
+        </p>
+      )}
+      <div class="ct-map">
+        <iframe
+          title="Map of McCarthy Stadium, Makurdi"
+          src={`https://www.google.com/maps?q=${mapQuery}&output=embed`}
+          loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+      </div>
+      <p class="ct-map-link"><a href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`} target="_blank" rel="noopener">Open in Google Maps &rarr;</a></p>
+    </div>
+
+    <section class="panel" aria-labelledby="msg-title">
+      <h2 class="ct-h2" id="msg-title">Send a Message</h2>
+      <p class="muted" style="margin-bottom:22px;">Complete the form below and a representative will get back to you shortly.</p>
+      <EnquiryForm kind="contact" />
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .ct-lede { max-width: 640px; font-size: 17px; line-height: 1.7; }
+  .ct-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 36px; align-items: start; }
+  .ct-list { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-direction: column; gap: 20px; }
+  .ct-list li { display: flex; gap: 16px; align-items: flex-start; }
+  .ct-ic {
+    width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; background: rgba(227, 30, 36, .08); border: 1px solid var(--red);
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .ct-list h2 { margin: 2px 0 4px; color: var(--gold); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
+  .ct-list p { margin: 0; font-size: 16px; line-height: 1.5; }
+  .ct-list a, .ct-social a, .ct-map-link a { color: var(--red); font-weight: 600; }
+  .ct-social { margin: 0 0 22px; color: var(--lt); }
+  .ct-map { position: relative; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; border: 1px solid var(--d4); background: var(--d3); }
+  .ct-map iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .ct-map-link { margin-top: 10px; font-size: 14px; }
+  .ct-h2 { margin: 0 0 6px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  @media (max-width: 900px) { .ct-grid { grid-template-columns: 1fr; } }
+</style>

@@ -1,0 +1,25 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NewsCard from '../components/news/NewsCard.astro';
+import { getSortedNews } from '../lib/news';
+
+const videos = (await getSortedNews()).filter(a => a.data.isVideo);
+---
+<Layout title="Video | Lobi Stars Football Club" description="Lobi Stars FC videos: press conferences, behind-the-scenes training and match highlights.">
+  <div class="page-hero wrap">
+    <div class="stag">Lobi Stars TV</div>
+    <h1 class="stitle"><span class="r">Video</span></h1>
+    <div class="divr"></div>
+  </div>
+  <div class="page-content wrap">
+    {videos.length ? (
+      <ul class="vid-grid">{videos.map(v => <li><NewsCard article={v} /></li>)}</ul>
+    ) : (
+      <div class="empty-state">No videos yet &mdash; check back soon.</div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .vid-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 32px 24px; }
+</style>

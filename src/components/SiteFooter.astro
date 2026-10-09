@@ -1,0 +1,172 @@
+---
+import { FOOTER_TAGLINE, SOCIAL_LINKS } from '../lib/site';
+
+const columns = [
+  { title: 'Club', links: [
+    ['History', '/club/history'], ['Honours', '/club/honours'], ['Stadium', '/club/stadium'],
+    ['Management', '/club/management'], ['Partners', '/partners'], ['Fan Clubs', '/club/fan-clubs'],
+  ] },
+  { title: 'Matches', links: [
+    ['Fixtures', '/fixtures'], ['Results', '/results'], ['League Table', '/table'],
+    ['Buy Tickets', '/tickets'], ['Matchday Programme', '/programme'], ['In-Seat Food', '/food'],
+  ] },
+  { title: 'Fans', links: [
+    ['News', '/news'], ['Video', '/video'], ['Squad', '/squad'], ['Gallery', '/gallery'],
+    ['Club Shop', '/shop'], ['Membership', '/membership'],
+  ] },
+  { title: 'Help', links: [
+    ['Help Centre', '/help'], ['Contact Us', '/contact'], ['Search', '/search'],
+  ] },
+];
+
+// Simple-icons style glyphs (24x24).
+const ICONS: Record<string, string> = {
+  facebook: 'M14 8.5V6.8c0-.8.5-1 1-1h2.4V2.1L14.1 2C10.6 2 9.8 4.6 9.8 6.3v2.2H7.5v3.9h2.3V22H14v-9.6h3l.5-3.9H14z',
+  x: 'M17.8 3h3.1l-6.8 7.7 8 10.3h-6.3l-4.9-6.4L5.3 21H2.2l7.3-8.3L1.9 3h6.4l4.4 5.9L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z',
+  instagram: 'M12 7.4A4.6 4.6 0 1 0 12 16.6 4.6 4.6 0 0 0 12 7.4zm0 7.6a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm5.9-7.8a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0zM21.9 8.2c-.1-1.6-.4-3-1.6-4.2S17.4 2.4 15.8 2.3C14.2 2.2 9.8 2.2 8.2 2.3 6.6 2.4 5.2 2.7 4 3.9S2.4 6.6 2.3 8.2c-.1 1.6-.1 6 0 7.6.1 1.6.4 3 1.6 4.2s2.6 1.5 4.2 1.6c1.6.1 6 .1 7.6 0 1.6-.1 3-.4 4.2-1.6s1.5-2.6 1.6-4.2c.1-1.6.1-6 0-7.6zm-2.1 9.4a3 3 0 0 1-1.7 1.7c-1.2.5-4 .4-5.3.4s-4.1.1-5.3-.4a3 3 0 0 1-1.7-1.7c-.5-1.2-.4-4-.4-5.3s-.1-4.1.4-5.3a3 3 0 0 1 1.7-1.7c1.2-.5 4-.4 5.3-.4s4.1-.1 5.3.4a3 3 0 0 1 1.7 1.7c.5 1.2.4 4 .4 5.3s.1 4.1-.4 5.3z',
+  youtube: 'M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12a31 31 0 0 0 .5 4.8 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.8 31 31 0 0 0-.5-4.8zM9.7 15V9l5.8 3-5.8 3z',
+  tiktok: 'M16.6 5.8A4.3 4.3 0 0 1 15.5 3h-3.1v12.4a2.6 2.6 0 1 1-2.6-2.6c.3 0 .5 0 .8.1V9.7a5.7 5.7 0 1 0 4.9 5.7V9.1a7.3 7.3 0 0 0 4.3 1.4V7.4a4.3 4.3 0 0 1-3.2-1.6z',
+  whatsappChannel: 'M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.6.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2s.2-1.1.2-1.2l-.5-.3z',
+};
+const year = new Date().getFullYear();
+---
+<footer class="sf">
+  <div class="sf-inner">
+    <div class="sf-top">
+      <div class="sf-brand">
+        <a class="sf-logo" href="/">
+          <img src="/images/lobi-stars-fc.jpg" alt="" width="52" height="52" loading="lazy" />
+          <span>Lobi Stars<small>Football Club</small></span>
+        </a>
+        <p>{FOOTER_TAGLINE}</p>
+        {SOCIAL_LINKS.length > 0 && (
+          <ul class="sf-social">
+            {SOCIAL_LINKS.map(s => (
+              <li><a href={s.url} target="_blank" rel="noopener" aria-label={`Lobi Stars FC on ${s.label}`}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d={ICONS[s.key]} /></svg>
+              </a></li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <form class="sf-news" id="newsletterForm" novalidate>
+        <h2 class="sf-news-title">Club Newsletter</h2>
+        <p>Get club news, ticket releases and matchday updates by email.</p>
+        <label class="sr-only" for="newsletterEmail">Email address</label>
+        <div class="sf-news-row">
+          <input id="newsletterEmail" name="email" type="email" placeholder="Your email address" autocomplete="email" required />
+          <button type="submit" class="btn-p">Sign up</button>
+        </div>
+        <p class="sf-news-msg" id="newsletterMsg" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+
+    <div class="sf-cols">
+      {columns.map(col => (
+        <nav class="sf-col" aria-label={col.title}>
+          <h2>{col.title}</h2>
+          <ul>{col.links.map(([label, href]) => <li><a href={href}>{label}</a></li>)}</ul>
+        </nav>
+      ))}
+    </div>
+
+    <div class="sf-bottom">
+      <div>&copy; <span data-year>{year}</span> Lobi Stars Football Club. All rights reserved.</div>
+      <ul class="sf-legal">
+        <li><a href="/privacy">Privacy Policy</a></li>
+        <li><a href="/terms">Terms of Use</a></li>
+        <li><button type="button" data-cookie-settings>Cookie settings</button></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .sf { background: #15181D; color: rgba(255, 255, 255, .78); margin-top: 70px; padding: 56px 0 24px; }
+  .sf-inner { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
+  .sf-top { display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; padding-bottom: 40px; border-bottom: 1px solid rgba(255, 255, 255, .12); }
+  .sf-logo { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
+  .sf-logo img { width: 52px; height: 52px; border-radius: 50%; background: #fff; object-fit: contain; }
+  .sf-logo span { font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1.5px; color: #fff; }
+  .sf-logo small { display: block; font: 600 10px/1.6 'Barlow Condensed', sans-serif; letter-spacing: 3px; color: #FFC72C; text-transform: uppercase; }
+  .sf-brand p { margin: 16px 0 0; max-width: 420px; font-size: 14px; line-height: 1.7; color: rgba(255, 255, 255, .7); }
+  .sf-social { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 0; padding: 0; }
+  .sf-social a {
+    width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .22);
+    display: flex; align-items: center; justify-content: center; transition: background .2s, border-color .2s;
+  }
+  .sf-social svg { width: 18px; height: 18px; fill: #fff; }
+  .sf-social a:hover, .sf-social a:focus-visible { background: var(--red); border-color: var(--red); }
+
+  .sf-news-title { margin: 0; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; }
+  .sf-news p { margin: 8px 0 14px; font-size: 14px; color: rgba(255, 255, 255, .7); }
+  .sf-news-row { display: flex; gap: 8px; }
+  .sf-news input {
+    flex: 1; min-width: 0; padding: 12px 14px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, .25);
+    background: rgba(255, 255, 255, .06); color: #fff; font-size: 15px;
+  }
+  .sf-news input::placeholder { color: rgba(255, 255, 255, .5); }
+  .sf-news input:focus { outline: 2px solid #FFC72C; outline-offset: 1px; }
+  .sf-news .btn-p { padding: 12px 22px; }
+  .sf-news-msg { min-height: 1.2em; margin: 10px 0 0 !important; }
+  .sf-news-msg.ok { color: #7BE495 !important; }
+  .sf-news-msg.err { color: #FF8A8E !important; }
+
+  .sf-cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px; padding: 40px 0; }
+  .sf-col h2 { margin: 0 0 14px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .sf-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+  .sf-col a { color: rgba(255, 255, 255, .75); text-decoration: none; font-size: 14px; }
+  .sf-col a:hover, .sf-col a:focus-visible { color: #fff; text-decoration: underline; }
+
+  .sf-bottom {
+    border-top: 1px solid rgba(255, 255, 255, .12); padding-top: 20px; display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 12px; font-size: 13px; color: rgba(255, 255, 255, .6);
+  }
+  .sf-legal { list-style: none; display: flex; flex-wrap: wrap; gap: 18px; margin: 0; padding: 0; }
+  .sf-legal a, .sf-legal button {
+    color: rgba(255, 255, 255, .75); text-decoration: none; background: none; border: 0; padding: 0; font: inherit; cursor: pointer;
+  }
+  .sf-legal a:hover, .sf-legal button:hover { color: #fff; text-decoration: underline; }
+  .sf a:focus-visible, .sf button:focus-visible { outline: 2px solid #FFC72C; outline-offset: 2px; }
+
+  @media (max-width: 860px) {
+    .sf-top { grid-template-columns: 1fr; gap: 32px; }
+    .sf-cols { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 420px) { .sf-news-row { flex-direction: column; } }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-year]').forEach(el => { el.textContent = String(new Date().getFullYear()); });
+
+  const form = document.getElementById('newsletterForm') as HTMLFormElement | null;
+  if (form) {
+    const input = form.querySelector('input') as HTMLInputElement;
+    const msg = document.getElementById('newsletterMsg')!;
+    const btn = form.querySelector('button') as HTMLButtonElement;
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      msg.className = 'sf-news-msg';
+      const email = input.value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        msg.textContent = 'Please enter a valid email address.'; msg.classList.add('err'); return;
+      }
+      btn.disabled = true;
+      try {
+        const res = await fetch('/api/newsletter', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, source: location.pathname }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || 'Could not sign you up. Please try again.');
+        msg.textContent = "Thanks! You're on the list."; msg.classList.add('ok');
+        form.reset();
+      } catch (err) {
+        msg.textContent = (err as Error).message; msg.classList.add('err');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  }
+</script>

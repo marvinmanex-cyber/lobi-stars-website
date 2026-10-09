@@ -1,16 +1,16 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import FixturesBoard from '../../components/FixturesBoard.astro';
+import MatchesTabs from '../../components/MatchesTabs.astro';
 import { CURRENT_SEASON } from '../../lib/site';
 ---
-<Layout title="Fixtures & Results | Lobi Stars Football Club" description={`Lobi Stars FC fixtures and results for the ${CURRENT_SEASON} season.`}>
+<Layout title="Fixtures | Lobi Stars Football Club" description={`Upcoming Lobi Stars FC First Team fixtures for the ${CURRENT_SEASON} season, with dates, kick-off times and venues.`}>
   <div class="page-hero wrap">
-    <div class="stag">{CURRENT_SEASON} Schedule &amp; Results</div>
-    <h1 class="stitle">Fixtures &amp; <span class="r">Results</span></h1>
-    <div class="divr"></div>
+    <div class="stag">{CURRENT_SEASON} Season</div>
+    <h1 class="stitle">Fix<span class="r">tures</span></h1>
+    <MatchesTabs current="fixtures" />
   </div>
-
-  <div class="page-content wrap" id="results">
-    <FixturesBoard structuredData />
+  <div class="page-content wrap">
+    <FixturesBoard show="upcoming" structuredData />
   </div>
 </Layout>

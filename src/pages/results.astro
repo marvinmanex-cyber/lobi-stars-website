@@ -1,0 +1,16 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FixturesBoard from '../components/FixturesBoard.astro';
+import MatchesTabs from '../components/MatchesTabs.astro';
+import { CURRENT_SEASON } from '../lib/site';
+---
+<Layout title="Results | Lobi Stars Football Club" description={`Lobi Stars FC First Team results and scores from the ${CURRENT_SEASON} season.`}>
+  <div class="page-hero wrap">
+    <div class="stag">{CURRENT_SEASON} Season</div>
+    <h1 class="stitle">Res<span class="r">ults</span></h1>
+    <MatchesTabs current="results" />
+  </div>
+  <div class="page-content wrap">
+    <FixturesBoard show="results" />
+  </div>
+</Layout>

@@ -1,0 +1,24 @@
+---
+interface Props { current: 'fixtures' | 'results' | 'table' }
+const { current } = Astro.props;
+const tabs = [
+  { id: 'fixtures', label: 'Fixtures', href: '/fixtures' },
+  { id: 'results', label: 'Results', href: '/results' },
+  { id: 'table', label: 'Table', href: '/table' },
+];
+---
+<nav class="mt" aria-label="Matches">
+  {tabs.map(t => <a href={t.href} aria-current={t.id === current ? 'page' : undefined}>{t.label}</a>)}
+</nav>
+
+<style>
+  .mt { display: flex; gap: 4px; margin: 8px 0 0; border-bottom: 1px solid var(--d4); overflow-x: auto; }
+  .mt a {
+    padding: 14px 18px 12px; text-decoration: none; color: var(--lt); white-space: nowrap;
+    font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase;
+    border-bottom: 3px solid transparent;
+  }
+  .mt a:hover { color: var(--white); }
+  .mt a[aria-current='page'] { color: var(--red); border-bottom-color: var(--red); }
+  .mt a:focus-visible { outline: 3px solid var(--red); outline-offset: -3px; }
+</style>

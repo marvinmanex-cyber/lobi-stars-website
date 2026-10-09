@@ -21,3 +21,19 @@ export function teamInitials(name: string): string {
   const words = name.replace(/\b(FC|F\.C\.|United)\b/gi, '').trim().split(/\s+/).filter(Boolean);
   return (words.slice(0, 2).map(w => w[0]).join('') || name.charAt(0)).toUpperCase();
 }
+
+export const CONTACT: { address: string; email: string; phone: string; whatsapp: string } = site.contact;
+
+/** Social links; entries with an empty URL are hidden. */
+export const SOCIAL_LINKS = (
+  [
+    { key: 'facebook', label: 'Facebook' },
+    { key: 'x', label: 'X' },
+    { key: 'instagram', label: 'Instagram' },
+    { key: 'youtube', label: 'YouTube' },
+    { key: 'tiktok', label: 'TikTok' },
+    { key: 'whatsappChannel', label: 'WhatsApp Channel' },
+  ] as const
+)
+  .map(s => ({ ...s, url: (site.social as Record<string, string>)[s.key] || '' }))
+  .filter(s => s.url);

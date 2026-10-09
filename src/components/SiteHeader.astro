@@ -1,0 +1,200 @@
+---
+import { MAIN_NAV } from '../lib/nav';
+
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isActive = (href: string) => {
+  const h = href.replace(/\/$/, '') || '/';
+  return h !== '/' && (path === h || path.startsWith(h + '/'));
+};
+---
+<header class="sh" id="siteHeader">
+  <div class="sh-inner">
+    <a class="sh-logo" href="/" aria-label="Lobi Stars FC home">
+      <img src="/images/lobi-stars-fc.jpg" alt="" width="44" height="44" />
+      <span class="sh-name">Lobi Stars<span>Football Club</span></span>
+    </a>
+
+    <nav class="sh-nav" aria-label="Main">
+      <ul class="sh-list">
+        {MAIN_NAV.map((item, i) => (
+          <li class:list={['sh-item', { 'has-sub': item.children }]}>
+            {item.children ? (
+              <>
+                <button type="button" class:list={['sh-link', { active: item.children.some(c => isActive(c.href)) || isActive(item.href) }]}
+                  aria-expanded="false" aria-controls={`sub-${i}`} data-sub-toggle>
+                  {item.label}
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                </button>
+                <ul class="sh-sub" id={`sub-${i}`}>
+                  {item.children.map(c => (
+                    <li><a href={c.href} aria-current={isActive(c.href) ? 'page' : undefined}>{c.label}</a></li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <a class:list={['sh-link', { active: isActive(item.href) }]} href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+    <div class="sh-actions">
+      <a class="sh-icon" href="/search" aria-label="Search the site">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>
+      </a>
+      <button type="button" class="sh-icon sh-burger" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="mm-ov" id="mobileMenuOv" hidden></div>
+<div class="mm" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Site menu" hidden>
+  <div class="mm-head">
+    <span class="sh-name">Menu</span>
+    <button type="button" class="sh-icon" id="menuClose" aria-label="Close menu">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+    </button>
+  </div>
+  <a class="mm-search" href="/search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>
+    Search news, players and pages
+  </a>
+  <ul class="mm-list">
+    {MAIN_NAV.map(item => (
+      <li>
+        <a class="mm-link" href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
+        {item.children && (
+          <ul class="mm-sub">
+            {item.children.map(c => <li><a href={c.href} aria-current={isActive(c.href) ? 'page' : undefined}>{c.label}</a></li>)}
+          </ul>
+        )}
+      </li>
+    ))}
+  </ul>
+</div>
+
+<style>
+  .sh {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(255, 255, 255, .98);
+    border-bottom: 1px solid var(--d4); backdrop-filter: blur(8px); transition: box-shadow .2s;
+  }
+  .sh.scrolled { box-shadow: 0 6px 24px rgba(15, 17, 21, .07); }
+  .sh-inner { max-width: 1320px; margin: 0 auto; padding: 0 3%; height: 72px; display: flex; align-items: center; gap: 18px; }
+  .sh-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
+  .sh-logo img { width: 44px; height: 44px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--d4); }
+  .sh-name { font: 400 19px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1.5px; color: var(--white); }
+  .sh-name span { display: block; font: 600 9px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 3px; color: var(--red); text-transform: uppercase; }
+
+  .sh-nav { flex: 1; display: flex; justify-content: center; min-width: 0; }
+  .sh-list { list-style: none; display: flex; align-items: center; gap: 2px; margin: 0; padding: 0; }
+  .sh-item { position: relative; }
+  .sh-link {
+    display: flex; align-items: center; gap: 4px; padding: 10px 11px; background: none; border: 0; cursor: pointer;
+    font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.1px; text-transform: uppercase;
+    color: var(--white); text-decoration: none; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+  }
+  .sh-link svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; transition: transform .2s; }
+  .sh-link:hover, .sh-link.active, .sh-link[aria-expanded='true'] { color: var(--red); border-bottom-color: var(--red); }
+  .sh-link[aria-expanded='true'] svg { transform: rotate(180deg); }
+  .sh-link:focus-visible, .sh-icon:focus-visible, .sh-logo:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; border-radius: 4px; }
+
+  .sh-sub {
+    list-style: none; margin: 0; padding: 8px; position: absolute; top: calc(100% + 4px); left: -8px; min-width: 200px;
+    background: #fff; border: 1px solid var(--d4); border-radius: 10px; box-shadow: 0 18px 40px rgba(15, 17, 21, .12);
+    opacity: 0; visibility: hidden; transform: translateY(-4px); transition: opacity .15s, transform .15s, visibility .15s;
+  }
+  .sh-item:hover .sh-sub, .sh-link[aria-expanded='true'] + .sh-sub { opacity: 1; visibility: visible; transform: none; }
+  .sh-sub a {
+    display: block; padding: 10px 12px; border-radius: 6px; text-decoration: none; color: var(--white);
+    font: 600 15px/1.2 'Barlow Condensed', sans-serif;
+  }
+  .sh-sub a:hover, .sh-sub a:focus-visible, .sh-sub a[aria-current='page'] { background: var(--d3); color: var(--red); outline: none; }
+
+  .sh-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .sh-icon {
+    width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--d4); background: #fff; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; color: var(--white); padding: 0;
+  }
+  .sh-icon:hover { border-color: var(--red); color: var(--red); }
+  .sh-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+  .sh-burger { display: none; }
+
+  .mm-ov { position: fixed; inset: 0; background: rgba(15, 17, 21, .5); z-index: 1990; }
+  .mm {
+    position: fixed; top: 0; right: 0; bottom: 0; width: 340px; max-width: 88vw; background: #fff; z-index: 2000;
+    overflow-y: auto; box-shadow: -16px 0 44px rgba(15, 17, 21, .18); padding-bottom: 30px;
+  }
+  .mm-ov[hidden], .mm[hidden] { display: none; }
+  .mm-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--d4); }
+  .mm-search {
+    display: flex; align-items: center; gap: 10px; margin: 16px 20px; padding: 12px 14px; border-radius: 8px;
+    background: var(--d3); color: var(--lt); text-decoration: none; font-size: 15px;
+  }
+  .mm-search svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
+  .mm-list, .mm-sub { list-style: none; margin: 0; padding: 0; }
+  .mm-list > li { border-bottom: 1px solid var(--d4); }
+  .mm-link {
+    display: block; padding: 14px 20px; text-decoration: none; color: var(--white);
+    font: 700 17px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase;
+  }
+  .mm-sub { padding: 0 0 10px 20px; }
+  .mm-sub a { display: block; padding: 9px 20px; text-decoration: none; color: var(--lt); font: 600 15px/1.2 'Barlow Condensed', sans-serif; }
+  .mm a[aria-current='page'], .mm a:hover { color: var(--red); }
+
+  @media (max-width: 1180px) {
+    .sh-nav { display: none; }
+    .sh-burger { display: inline-flex; }
+  }
+  @media (max-width: 420px) { .sh-name { font-size: 17px; } }
+</style>
+
+<script>
+  const header = document.getElementById('siteHeader')!;
+  const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 8);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+
+  // Desktop dropdowns: hover opens them; click/Enter toggles for touch and keyboard.
+  const toggles = document.querySelectorAll<HTMLButtonElement>('[data-sub-toggle]');
+  const closeAll = (except?: HTMLButtonElement) =>
+    toggles.forEach(t => { if (t !== except) t.setAttribute('aria-expanded', 'false'); });
+  toggles.forEach(t => {
+    t.addEventListener('click', () => {
+      const open = t.getAttribute('aria-expanded') === 'true';
+      closeAll(t);
+      t.setAttribute('aria-expanded', String(!open));
+    });
+    t.parentElement!.addEventListener('focusout', e => {
+      if (!t.parentElement!.contains(e.relatedTarget as Node)) t.setAttribute('aria-expanded', 'false');
+    });
+  });
+  document.addEventListener('click', e => {
+    if (!(e.target as HTMLElement).closest('.has-sub')) closeAll();
+  });
+
+  // Mobile menu
+  const btn = document.getElementById('menuBtn') as HTMLButtonElement;
+  const menu = document.getElementById('mobileMenu')!;
+  const ov = document.getElementById('mobileMenuOv')!;
+  const closeBtn = document.getElementById('menuClose') as HTMLButtonElement;
+  const open = () => {
+    menu.hidden = false; ov.hidden = false; btn.setAttribute('aria-expanded', 'true');
+    document.body.style.overflow = 'hidden'; closeBtn.focus();
+  };
+  const close = () => {
+    menu.hidden = true; ov.hidden = true; btn.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = '';
+  };
+  btn.addEventListener('click', open);
+  closeBtn.addEventListener('click', () => { close(); btn.focus(); });
+  ov.addEventListener('click', close);
+  menu.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    closeAll();
+    if (!menu.hidden) { close(); btn.focus(); }
+  });
+</script>

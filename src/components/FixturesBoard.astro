@@ -12,8 +12,10 @@ interface Props {
   showMoreLinks?: boolean;
   /** Emit schema.org SportsEvent data for each match (use on one page only). */
   structuredData?: boolean;
+  /** Which lists to show. */
+  show?: 'both' | 'upcoming' | 'results';
 }
-const { upcomingLimit = 0, resultsLimit = 0, showMoreLinks = false, structuredData = false } = Astro.props;
+const { upcomingLimit = 0, resultsLimit = 0, showMoreLinks = false, structuredData = false, show = 'both' } = Astro.props;
 
 // The CMS saves kick-off as Nigerian wall-clock time with no timezone, which
 // gets read as UTC; shift it back by WAT's +1h so 16:30 stays 16:30.
@@ -51,22 +53,24 @@ function sportsEvent(f: Fx) {
 }
 ---
 {structuredData && cms.map(f => <script type="application/ld+json" set:html={JSON.stringify(sportsEvent(f))} />)}
-<div class="fxb" data-fixtures-board data-structured={structuredData ? '1' : undefined} data-fixtures={JSON.stringify(cms)}
+<div class:list={['fxb', `fxb--${show}`]} data-fixtures-board data-structured={structuredData ? '1' : undefined} data-fixtures={JSON.stringify(cms)}
      data-upcoming-limit={upcomingLimit} data-results-limit={resultsLimit}>
-  <div>
+  <div hidden={show === 'results'}>
     <h3 class="fxb-title">Upcoming Fixtures</h3>
     <div class="fxb-list" data-upcoming><p class="fxb-empty">Loading fixtures&hellip;</p></div>
     {showMoreLinks && <a class="btn-o fxb-more" href="/fixtures">View All Fixtures &rarr;</a>}
   </div>
-  <div>
+  <div hidden={show === 'upcoming'}>
     <h3 class="fxb-title">Recent Results</h3>
     <div class="fxb-list" data-results><p class="fxb-empty">Loading results&hellip;</p></div>
-    {showMoreLinks && <a class="btn-o fxb-more" href="/fixtures#results">View All Results &rarr;</a>}
+    {showMoreLinks && <a class="btn-o fxb-more" href="/results">View All Results &rarr;</a>}
   </div>
 </div>
 
 <style>
   .fxb { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  .fxb--upcoming, .fxb--results { grid-template-columns: 1fr; max-width: 760px; }
+  .fxb > [hidden] { display: none; }
   .fxb-title {
     font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 4px; text-transform: uppercase;
     color: var(--gold); margin: 0 0 20px; padding-bottom: 10px; border-bottom: 1px solid var(--d4);

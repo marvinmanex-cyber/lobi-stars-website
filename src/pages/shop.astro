@@ -1,0 +1,26 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ShopCard from '../components/ShopCard.astro';
+import shop from '../data/shop.json';
+---
+<Layout title="Club Shop | Lobi Stars Football Club" description="Official Lobi Stars FC merchandise: jerseys, jackets, scarves, caps and gifts, sold through Jumia Nigeria.">
+  <div class="page-hero wrap">
+    <div class="stag">Official Gear</div>
+    <h1 class="stitle">Club <span class="r">Shop</span></h1>
+    <div class="divr"></div>
+  </div>
+  <div class="page-content wrap">
+    <div class="shop-grid">
+      {shop.products.map(p => <ShopCard product={p} />)}
+    </div>
+    <p class="shop-note"><strong>Note:</strong> Official sales are powered by Jumia Nigeria. Members get 10% off club merchandise &mdash; <a href="/membership">join here</a>.</p>
+  </div>
+</Layout>
+
+<style>
+  .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; }
+  .shop-note { margin-top: 32px; padding: 16px 20px; border-left: 3px solid var(--gold); background: var(--dark); border-radius: 6px; color: var(--lt); font-size: 14px; }
+  .shop-note strong { color: var(--gold); }
+  .shop-note a { color: var(--red); font-weight: 600; }
+  @media (max-width: 520px) { .shop-grid { grid-template-columns: 1fr 1fr; gap: 12px; } }
+</style>

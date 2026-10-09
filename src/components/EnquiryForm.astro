@@ -1,0 +1,85 @@
+---
+// Contact / partnership form. Posts to the club's Formspree inbox (same
+// endpoint the original homepage contact form used). Works without
+// JavaScript; with JavaScript it submits in place and shows a message.
+interface Props {
+  kind: 'contact' | 'partnership';
+  submitLabel?: string;
+}
+const { kind, submitLabel = kind === 'partnership' ? 'Send Partnership Request' : 'Send Message' } = Astro.props;
+const FORMSPREE = 'https://formspree.io/f/xbdwbyaz';
+const interests = [
+  'Jersey / Kit Sponsorship',
+  'Stadium & Pitchside Advertising',
+  'Digital & Social Media Partner',
+  'Community Programmes Support',
+  'Custom Strategic Partnership',
+];
+---
+<form class="eq" action={FORMSPREE} method="POST" data-enquiry>
+  <input type="hidden" name="_subject" value={kind === 'partnership' ? 'Partnership enquiry - lobistarsfc.com' : 'Contact form - lobistarsfc.com'} />
+  <input type="hidden" name="form" value={kind} />
+  <div class="form-row">
+    <div class="form-grp"><label class="form-lbl" for={`${kind}-fn`}>{kind === 'partnership' ? 'Full Name' : 'First Name'}</label>
+      <input class="form-inp" id={`${kind}-fn`} name={kind === 'partnership' ? 'name' : 'first_name'} autocomplete={kind === 'partnership' ? 'name' : 'given-name'} required /></div>
+    {kind === 'partnership' ? (
+      <div class="form-grp"><label class="form-lbl" for="partnership-co">Company</label>
+        <input class="form-inp" id="partnership-co" name="company" autocomplete="organization" placeholder="Your organisation" required /></div>
+    ) : (
+      <div class="form-grp"><label class="form-lbl" for="contact-ln">Last Name</label>
+        <input class="form-inp" id="contact-ln" name="last_name" autocomplete="family-name" required /></div>
+    )}
+  </div>
+  <div class="form-row">
+    <div class="form-grp"><label class="form-lbl" for={`${kind}-em`}>{kind === 'partnership' ? 'Work Email' : 'Email Address'}</label>
+      <input class="form-inp" id={`${kind}-em`} name="email" type="email" autocomplete="email" required /></div>
+    <div class="form-grp"><label class="form-lbl" for={`${kind}-ph`}>Phone {kind === 'contact' && <span>(optional)</span>}</label>
+      <input class="form-inp" id={`${kind}-ph`} name="phone" type="tel" autocomplete="tel" placeholder="+234..." required={kind === 'partnership'} /></div>
+  </div>
+  {kind === 'partnership' ? (
+    <div class="form-grp"><label class="form-lbl" for="partnership-in">Interest</label>
+      <select class="form-sel" id="partnership-in" name="interest">{interests.map(i => <option>{i}</option>)}</select></div>
+  ) : (
+    <div class="form-grp"><label class="form-lbl" for="contact-sub">Subject</label>
+      <input class="form-inp" id="contact-sub" name="subject" placeholder="How can we help?" required /></div>
+  )}
+  <div class="form-grp"><label class="form-lbl" for={`${kind}-msg`}>Message</label>
+    <textarea class="form-ta" id={`${kind}-msg`} name="message" required
+      placeholder={kind === 'partnership' ? 'How would you like to work with Lobi Stars?' : 'Write your message here...'}></textarea></div>
+  <p class="eq-status" role="status" aria-live="polite" hidden></p>
+  <button type="submit" class="btn-p eq-submit">{submitLabel}</button>
+</form>
+
+<style>
+  .eq-submit { width: 100%; padding: 15px; font-size: 15px; }
+  .eq-status { padding: 12px 14px; border-radius: 8px; font-size: 15px; margin: 0 0 14px; }
+  .eq-status.ok { background: #E8F7EE; color: #17643A; }
+  .eq-status.err { background: #FDECEC; color: #A3161B; }
+  .form-lbl span { text-transform: none; letter-spacing: 0; font-weight: 400; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLFormElement>('[data-enquiry]').forEach(form => {
+    const status = form.querySelector<HTMLElement>('.eq-status')!;
+    const btn = form.querySelector<HTMLButtonElement>('.eq-submit')!;
+    const label = btn.textContent;
+    form.addEventListener('submit', async e => {
+      if (!form.checkValidity()) return; // let the browser show what's missing
+      e.preventDefault();
+      btn.disabled = true; btn.textContent = 'Sending...';
+      status.hidden = true; status.className = 'eq-status';
+      try {
+        const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
+        if (!res.ok) throw new Error();
+        form.reset();
+        status.textContent = 'Thank you! Your message has been sent. We will get back to you shortly.';
+        status.classList.add('ok');
+      } catch {
+        status.textContent = 'Sorry, your message could not be sent. Please try again or email us directly.';
+        status.classList.add('err');
+      } finally {
+        status.hidden = false; btn.disabled = false; btn.textContent = label;
+      }
+    });
+  });
+</script>

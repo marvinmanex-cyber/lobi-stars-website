@@ -1,0 +1,143 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout
+  title="In-Seat Food Ordering | Lobi Stars Football Club"
+  description="Order food and drinks to your seat at McCarthy Stadium on matchday and pay securely with Paystack."
+>
+  <div class="page-hero wrap">
+    <div class="stag">Match Day</div>
+    <h1 class="stitle">In-Seat Food <span class="r">Ordering</span></h1>
+    <div class="divr"></div>
+    <div class="fd-brand">
+      <img src="/images/fooddomain-logo.jpg" alt="" width="56" height="56" />
+      <p class="muted">5-minute in-seat food order &amp; delivery. Select your items, enter your seat number and pay securely with Paystack.</p>
+    </div>
+  </div>
+
+  <div class="page-content wrap fd-grid">
+    <section aria-labelledby="menu-title">
+      <h2 class="fd-h2" id="menu-title">Menu</h2>
+      <ul class="fd-menu" id="foodMenu"></ul>
+    </section>
+
+    <form class="panel fd-order" id="foodForm" novalidate>
+      <h2 class="fd-h2">Your Order</h2>
+      <div class="fd-summary" id="foodSummaryItems" aria-live="polite"><p class="muted">No items selected yet.</p></div>
+      <div class="form-row">
+        <div class="form-grp"><label class="form-lbl" for="foodSeat">Seat Number</label><input class="form-inp" id="foodSeat" placeholder="e.g. A-14" required /></div>
+        <div class="form-grp"><label class="form-lbl" for="foodStand">Stand / Section</label><input class="form-inp" id="foodStand" placeholder="e.g. North Stand" /></div>
+      </div>
+      <div class="form-grp"><label class="form-lbl" for="foodPhone">Phone Number</label><input class="form-inp" id="foodPhone" type="tel" autocomplete="tel" placeholder="e.g. 08012345678" required /></div>
+      <div class="form-grp"><label class="form-lbl" for="foodEmail">Email Address</label><input class="form-inp" id="foodEmail" type="email" autocomplete="email" placeholder="you@example.com" required /></div>
+      <p class="form-error" id="food-error" role="alert" hidden></p>
+      <button type="submit" class="btn-p fd-submit" id="placeFoodBtn">Place Order &amp; Pay</button>
+      <img class="fd-partner" src="/images/food-logo.jpg" alt="Matchday food partner" loading="lazy" />
+    </form>
+  </div>
+</Layout>
+
+<style>
+  .fd-brand { display: flex; align-items: center; gap: 14px; max-width: 640px; }
+  .fd-brand img { width: 56px; height: 56px; border-radius: 8px; object-fit: contain; flex-shrink: 0; }
+  .fd-brand p { margin: 0; font-size: 16px; line-height: 1.6; }
+  .fd-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 28px; align-items: start; }
+  .fd-h2 { margin: 0 0 16px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fd-menu { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+  .fd-menu :global(.fd-item) { border: 1px solid var(--d4); border-radius: 12px; padding: 16px; background: #fff; text-align: center; }
+  .fd-menu :global(.fd-item.picked) { border-color: var(--red); box-shadow: 0 0 0 2px rgba(227, 30, 36, .15); }
+  .fd-menu :global(.fd-emoji) { font-size: 34px; }
+  .fd-menu :global(.fd-name) { margin: 8px 0 4px; font: 700 16px/1.2 'Barlow Condensed', sans-serif; }
+  .fd-menu :global(.fd-price) { color: var(--gold); font: 400 20px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fd-menu :global(.fd-qty) { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
+  .fd-menu :global(.fd-qty button) {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--d4); background: var(--d3); font-size: 18px; cursor: pointer;
+  }
+  .fd-menu :global(.fd-qty button:hover) { border-color: var(--red); color: var(--red); }
+  .fd-menu :global(.fd-qty output) { min-width: 20px; font-weight: 700; }
+  .fd-summary { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--d4); }
+  .fd-summary :global(.fd-sum) { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: 15px; }
+  .fd-summary :global(.fd-sum.total) { font-weight: 700; border-top: 1px solid var(--d4); margin-top: 6px; padding-top: 10px; }
+  .fd-submit { width: 100%; padding: 15px; font-size: 15px; }
+  .fd-partner { width: 100%; height: 45px; object-fit: cover; margin-top: 14px; border-radius: 6px; }
+  @media (max-width: 900px) { .fd-grid { grid-template-columns: 1fr; } }
+</style>
+
+<script is:inline>
+(function () {
+  // Item ids must match the server-side menu in functions/api/_lib/foodMenu.js.
+  const foodMenu = [
+    { id: 'suya', name: 'Beef Suya', price: 1500, emoji: '🍢' },
+    { id: 'pepper', name: 'Pepper Soup', price: 2000, emoji: '🍲' },
+    { id: 'chicken', name: 'Grilled Chicken', price: 2500, emoji: '🍗' },
+    { id: 'water', name: 'Bottled Water', price: 300, emoji: '💧' },
+    { id: 'malt', name: 'Malt Drink', price: 500, emoji: '🥤' },
+    { id: 'puff', name: 'Puff Puff (5 pcs)', price: 500, emoji: '🍩' },
+    { id: 'plantain', name: 'Fried Plantain', price: 800, emoji: '🍌' },
+    { id: 'pie', name: 'Meat Pie', price: 700, emoji: '🥧' },
+  ];
+  const qty = Object.fromEntries(foodMenu.map(f => [f.id, 0]));
+  const naira = n => '₦' + n.toLocaleString('en-NG');
+  const $ = id => document.getElementById(id);
+
+  function renderMenu() {
+    $('foodMenu').innerHTML = foodMenu.map(f => `
+      <li class="fd-item${qty[f.id] ? ' picked' : ''}">
+        <div class="fd-emoji" aria-hidden="true">${f.emoji}</div>
+        <div class="fd-name">${f.name}</div>
+        <div class="fd-price">${naira(f.price)}</div>
+        <div class="fd-qty">
+          <button type="button" data-id="${f.id}" data-d="-1" aria-label="Remove one ${f.name}">−</button>
+          <output aria-label="${f.name} quantity">${qty[f.id]}</output>
+          <button type="button" data-id="${f.id}" data-d="1" aria-label="Add one ${f.name}">+</button>
+        </div>
+      </li>`).join('');
+  }
+  function renderSummary() {
+    const picked = foodMenu.filter(f => qty[f.id] > 0);
+    if (!picked.length) { $('foodSummaryItems').innerHTML = '<p class="muted">No items selected yet.</p>'; return; }
+    let total = 0;
+    $('foodSummaryItems').innerHTML = picked.map(f => {
+      const sub = f.price * qty[f.id]; total += sub;
+      return `<div class="fd-sum"><span>${f.emoji} ${f.name} × ${qty[f.id]}</span><span>${naira(sub)}</span></div>`;
+    }).join('') + `<div class="fd-sum total"><span>Total</span><span>${naira(total)}</span></div>`;
+  }
+  $('foodMenu').addEventListener('click', e => {
+    const b = e.target.closest('button[data-id]');
+    if (!b) return;
+    qty[b.dataset.id] = Math.max(0, qty[b.dataset.id] + Number(b.dataset.d));
+    renderMenu(); renderSummary();
+    $('foodMenu').querySelector(`button[data-id="${b.dataset.id}"][data-d="${b.dataset.d}"]`).focus();
+  });
+
+  $('foodForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const errEl = $('food-error'), btn = $('placeFoodBtn');
+    const fail = msg => { errEl.textContent = msg; errEl.hidden = false; };
+    errEl.hidden = true;
+    const seat = $('foodSeat').value.trim();
+    const stand = $('foodStand').value.trim();
+    const phone = $('foodPhone').value.trim();
+    const email = $('foodEmail').value.trim();
+    const picked = foodMenu.filter(f => qty[f.id] > 0);
+    if (!picked.length) return fail('Please select at least one item.');
+    if (!seat) return fail('Please enter your seat number.');
+    if (!phone || !email) return fail('Please enter your phone number and email.');
+    btn.disabled = true; btn.textContent = 'Redirecting to payment...';
+    try {
+      const res = await fetch('/api/food-checkout', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seat, stand, phone, email, items: picked.map(f => ({ id: f.id, qty: qty[f.id] })) }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.authorizationUrl) throw new Error(data.error || 'Could not start payment.');
+      window.location.href = data.authorizationUrl;
+    } catch (err) {
+      fail(err.message || 'Something went wrong. Please try again.');
+      btn.disabled = false; btn.textContent = 'Place Order & Pay';
+    }
+  });
+
+  renderMenu(); renderSummary();
+})();
+</script>

@@ -1,0 +1,220 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { CURRENT_SEASON } from '../lib/site';
+
+const benefits = [
+  `Official ${CURRENT_SEASON} Membership Card`,
+  '10% Discount on Club Merchandise',
+  'Weekly Exclusive Club Newsletter',
+  'Priority Match Day Ticket Access',
+  'Digital Match Day Programmes',
+];
+---
+<Layout
+  title="Membership | Lobi Stars Football Club"
+  description={`Become an official Lobi Stars FC member for the ${CURRENT_SEASON} season: membership card, merchandise discounts and priority ticket access.`}
+>
+  <div class="page-hero wrap">
+    <div class="stag">Join the Family</div>
+    <h1 class="stitle">Fan <span class="r">Membership</span></h1>
+    <div class="divr"></div>
+    <p class="muted mem-lede">Become an official Lobi Stars member and enjoy exclusive benefits and official merchandise discounts all season long.</p>
+  </div>
+
+  <div class="page-content wrap mem-grid">
+    <aside class="mem-card" aria-labelledby="tier-title">
+      <p class="mem-card-kicker">Official Membership</p>
+      <h2 class="mem-card-price" id="tier-title">₦10,000<span>/yr</span></h2>
+      <ul class="mem-benefits">
+        {benefits.map(b => <li>{b}</li>)}
+      </ul>
+      <p class="mem-card-foot">Pride of Benue &bull; Red &amp; Gold</p>
+    </aside>
+
+    <section class="panel" aria-labelledby="mem-form-title">
+      <!-- Shown when a member is already logged in -->
+      <div id="memLoggedIn" hidden>
+        <h2 class="mem-h2" id="mem-welcome">Welcome back</h2>
+        <p class="muted">You're logged in to your Lobi Stars membership account.</p>
+        <button type="button" class="btn-o" id="logoutBtn">Log out</button>
+      </div>
+
+      <div id="memRegister">
+        <h2 class="mem-h2" id="mem-form-title">Register as a Member</h2>
+        <p class="muted" style="margin-bottom:18px;">Complete the form below to activate your season membership.</p>
+        <p class="mem-tier">⭐ Official Member &mdash; ₦10,000/yr</p>
+
+        <form id="memFields" novalidate>
+          <div class="form-row">
+            <div class="form-grp"><label class="form-lbl" for="m-fn">First Name</label><input class="form-inp" id="m-fn" autocomplete="given-name" placeholder="e.g. Samuel" required /></div>
+            <div class="form-grp"><label class="form-lbl" for="m-ln">Last Name</label><input class="form-inp" id="m-ln" autocomplete="family-name" placeholder="e.g. Ortom" required /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-grp"><label class="form-lbl" for="m-em">Email Address</label><input class="form-inp" id="m-em" type="email" autocomplete="email" placeholder="you@example.com" required /></div>
+            <div class="form-grp"><label class="form-lbl" for="m-ph">Phone Number</label><input class="form-inp" id="m-ph" type="tel" autocomplete="tel" placeholder="+234..." /></div>
+          </div>
+          <div class="form-grp"><label class="form-lbl" for="m-ad">State of Residence</label><input class="form-inp" id="m-ad" autocomplete="address-level1" placeholder="e.g. Benue State" /></div>
+          <div class="form-grp"><label class="form-lbl" for="m-pw">Create a Password</label><input class="form-inp" id="m-pw" type="password" autocomplete="new-password" placeholder="At least 8 characters" required /></div>
+          <p class="form-error" id="mem-error" role="alert" hidden></p>
+          <button type="submit" class="btn-p mem-submit" id="regMemberBtn">Activate My Membership</button>
+          <p class="muted mem-alt">Already a member? <button type="button" class="link-btn" data-open-login>Log in</button></p>
+        </form>
+
+        <div class="mem-success" id="memSuccess" hidden>
+          <div class="mem-success-icon" aria-hidden="true">🏆</div>
+          <p class="mem-success-k">Registration Successful</p>
+          <div class="mem-id" id="memId"></div>
+          <button type="button" class="btn-o" id="resetMemBtn">Register Another</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <dialog class="login-dlg" id="loginDialog" aria-labelledby="login-title">
+    <form method="dialog" class="login-close-form"><button class="login-x" aria-label="Close">&times;</button></form>
+    <h2 class="mem-h2" id="login-title">Member Login</h2>
+    <p class="muted" style="margin-bottom:18px;">Log in to your Lobi Stars membership account.</p>
+    <form id="loginForm" novalidate>
+      <div class="form-grp"><label class="form-lbl" for="login-em">Email Address</label><input class="form-inp" id="login-em" type="email" autocomplete="email" placeholder="you@example.com" /></div>
+      <div class="form-grp"><label class="form-lbl" for="login-pw">Password</label><input class="form-inp" id="login-pw" type="password" autocomplete="current-password" placeholder="Your password" /></div>
+      <p class="form-error" id="login-error" role="alert" hidden></p>
+      <button type="submit" class="btn-p mem-submit" id="loginBtn">Log In</button>
+      <p class="muted mem-alt">Not a member yet? <button type="button" class="link-btn" data-close-login>Register here</button></p>
+    </form>
+  </dialog>
+</Layout>
+
+<style>
+  .mem-lede { max-width: 620px; font-size: 17px; line-height: 1.7; }
+  .mem-grid { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 28px; align-items: start; }
+  .mem-card {
+    background: linear-gradient(160deg, #15181D, #2A0507); color: #fff; border-radius: 16px; padding: 36px 30px;
+    border: 2px solid #C9A227; text-align: center;
+  }
+  .mem-card-kicker { margin: 0; color: #FFC72C; font: 700 16px/1 'Barlow Condensed', sans-serif; letter-spacing: 3px; text-transform: uppercase; }
+  .mem-card-price { margin: 18px 0; font: 400 56px/1 'Bebas Neue', sans-serif; letter-spacing: 2px; color: #fff; }
+  .mem-card-price span { font-size: 22px; opacity: .6; }
+  .mem-benefits { list-style: none; margin: 0 auto 24px; padding: 0; text-align: left; max-width: 320px; display: flex; flex-direction: column; gap: 12px; }
+  .mem-benefits li { padding-left: 30px; position: relative; color: rgba(255, 255, 255, .88); line-height: 1.4; }
+  .mem-benefits li::before { content: '✓'; position: absolute; left: 0; top: -1px; width: 20px; height: 20px; border-radius: 50%; background: var(--red); color: #fff; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+  .mem-card-foot { margin: 0; padding: 12px; border-radius: 8px; background: rgba(227, 30, 36, .18); color: #FF9A9D; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
+  .mem-h2 { margin: 0 0 6px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .mem-tier { display: inline-block; margin: 0 0 22px; background: var(--red); color: #fff; padding: 8px 18px; border-radius: 50px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .mem-submit { width: 100%; padding: 16px; font-size: 15px; }
+  .mem-alt { text-align: center; margin-top: 16px; font-size: 14px; }
+  .link-btn { background: none; border: 0; padding: 0; color: var(--red); font: inherit; font-weight: 700; cursor: pointer; text-decoration: underline; }
+  .mem-success { text-align: center; padding: 20px 0; }
+  .mem-success-icon { font-size: 48px; }
+  .mem-success-k { margin: 10px 0; color: var(--lt); font-size: 12px; letter-spacing: 3px; text-transform: uppercase; }
+  .mem-id { font: 400 36px/1 'Bebas Neue', sans-serif; color: var(--gold); letter-spacing: 3px; margin-bottom: 20px; }
+  #memLoggedIn .btn-o { margin-top: 18px; }
+
+  .login-dlg { border: 0; border-radius: 14px; padding: 32px 28px; width: min(420px, 92vw); box-shadow: 0 30px 80px rgba(0, 0, 0, .35); margin: auto; }
+  .login-dlg::backdrop { background: rgba(15, 17, 21, .6); }
+  .login-close-form { position: absolute; top: 10px; right: 10px; }
+  .login-x { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--d4); background: #fff; font-size: 22px; cursor: pointer; line-height: 1; }
+
+  @media (max-width: 860px) { .mem-grid { grid-template-columns: 1fr; } }
+</style>
+
+<script is:inline>
+(function () {
+  const $ = id => document.getElementById(id);
+  const toast = msg => window.showToast ? window.showToast(msg) : alert(msg);
+  const showErr = (el, msg) => { el.textContent = msg; el.hidden = false; };
+  let currentMember = null;
+
+  function render() {
+    $('memLoggedIn').hidden = !currentMember;
+    $('memRegister').hidden = !!currentMember;
+    if (currentMember) $('mem-welcome').textContent = `Welcome back, ${currentMember.firstName}`;
+  }
+
+  async function checkSession() {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      currentMember = data.member || null;
+      render();
+    } catch (e) { /* not logged in / offline -- treat as logged out */ }
+  }
+
+  const dlg = $('loginDialog');
+  const openLogin = () => { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); $('login-em').focus(); };
+  document.querySelectorAll('[data-open-login]').forEach(b => b.addEventListener('click', openLogin));
+  document.querySelectorAll('[data-close-login]').forEach(b => b.addEventListener('click', () => { dlg.close(); $('m-fn').focus(); }));
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+  if (location.hash === '#login') openLogin();
+
+  $('loginForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const errEl = $('login-error'), btn = $('loginBtn');
+    errEl.hidden = true;
+    const email = $('login-em').value.trim();
+    const password = $('login-pw').value;
+    if (!email || !password) return showErr(errEl, 'Please enter your email and password.');
+    btn.disabled = true; btn.textContent = 'Logging in...';
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed.');
+      currentMember = data.member;
+      render();
+      dlg.close();
+      toast(`Welcome back, ${data.member.firstName}!`);
+    } catch (err) {
+      showErr(errEl, err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Log In';
+    }
+  });
+
+  $('logoutBtn').addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    currentMember = null;
+    render();
+    toast('Logged out.');
+  });
+
+  $('memFields').addEventListener('submit', async e => {
+    e.preventDefault();
+    const errEl = $('mem-error'), btn = $('regMemberBtn');
+    errEl.hidden = true;
+    const firstName = $('m-fn').value.trim();
+    const lastName = $('m-ln').value.trim();
+    const email = $('m-em').value.trim();
+    const phone = $('m-ph').value.trim();
+    const state = $('m-ad').value.trim();
+    const password = $('m-pw').value;
+    if (!firstName || !lastName || !email || !password) return showErr(errEl, 'Please fill in your name, email, and password.');
+    if (password.length < 8) return showErr(errEl, 'Password must be at least 8 characters.');
+    btn.disabled = true; btn.textContent = 'Activating...';
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ firstName, lastName, email, phone, state, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Registration failed.');
+      $('memId').textContent = data.member.id;
+      $('memFields').hidden = true;
+      $('memSuccess').hidden = false;
+      currentMember = null; // keep the success message visible until reload
+    } catch (err) {
+      showErr(errEl, err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Activate My Membership';
+    }
+  });
+
+  $('resetMemBtn').addEventListener('click', () => {
+    $('memFields').reset();
+    $('memFields').hidden = false;
+    $('memSuccess').hidden = true;
+  });
+
+  checkSession();
+})();
+</script>

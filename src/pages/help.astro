@@ -1,0 +1,48 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { CONTACT } from '../lib/site';
+
+const topics = [
+  { title: 'Tickets', text: 'Buy match tickets online, pay with Paystack and get QR-code tickets by email.', href: '/tickets', cta: 'Buy tickets' },
+  { title: 'Lost your ticket email?', text: 'Check your spam or promotions folder first. Still missing? Contact us with your payment reference.', href: '/contact', cta: 'Contact us' },
+  { title: 'Membership', text: 'Join as an official member, or log in to your existing membership account.', href: '/membership', cta: 'Membership' },
+  { title: 'In-seat food ordering', text: 'Order food and drinks to your seat at McCarthy Stadium on matchday.', href: '/food', cta: 'Order food' },
+  { title: 'Club shop', text: 'Official merchandise is sold through Jumia Nigeria.', href: '/shop', cta: 'Visit the shop' },
+  { title: 'Sponsorship & partnerships', text: 'Interested in partnering with the club? Send us a partnership enquiry.', href: '/partners', cta: 'Partner with us' },
+];
+---
+<Layout title="Help | Lobi Stars Football Club" description="Help with Lobi Stars FC tickets, membership, in-seat food ordering, the club shop and how to contact the club.">
+  <div class="page-hero wrap">
+    <div class="stag">Fan Help</div>
+    <h1 class="stitle">How can we <span class="r">help?</span></h1>
+    <div class="divr"></div>
+  </div>
+  <div class="page-content wrap">
+    <ul class="hl-grid">
+      {topics.map(t => (
+        <li class="hl-card">
+          <h2>{t.title}</h2>
+          <p>{t.text}</p>
+          <a href={t.href}>{t.cta} <span aria-hidden="true">&rarr;</span></a>
+        </li>
+      ))}
+    </ul>
+    <section class="panel hl-contact" aria-labelledby="still">
+      <h2 id="still">Still need help?</h2>
+      <p>Email <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>, call {CONTACT.phone}, message us on
+        <a href={`https://wa.me/${CONTACT.whatsapp}`} target="_blank" rel="noopener">WhatsApp</a>, or use the
+        <a href="/contact">contact form</a>.</p>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .hl-grid { list-style: none; margin: 0 0 32px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+  .hl-card { border: 1px solid var(--d4); border-radius: 12px; padding: 22px; background: #fff; display: flex; flex-direction: column; }
+  .hl-card h2 { margin: 0 0 8px; font: 700 21px/1.2 'Barlow Condensed', sans-serif; }
+  .hl-card p { margin: 0 0 14px; color: var(--lt); line-height: 1.6; flex: 1; }
+  .hl-card a, .hl-contact a { color: var(--red); font-weight: 700; text-decoration: none; }
+  .hl-card a:hover, .hl-contact a:hover { text-decoration: underline; }
+  .hl-contact h2 { margin: 0 0 8px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .hl-contact p { margin: 0; line-height: 1.7; }
+</style>

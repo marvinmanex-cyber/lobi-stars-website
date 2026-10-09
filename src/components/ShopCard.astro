@@ -1,0 +1,52 @@
+---
+import { withSeason, formatNaira } from '../lib/site';
+
+interface Props {
+  product: {
+    name: string; description: string; price: number | null; image: string; jumiaUrl: string;
+    badge: string; badgeColor: string; inStock: boolean;
+  };
+}
+const p = Astro.props.product;
+const name = withSeason(p.name);
+const price = formatNaira(p.price);
+const canBuy = p.inStock && !!price && !!p.jumiaUrl;
+---
+<article class="pc">
+  <div class="pc-img">
+    <img src={p.image} alt={name} loading="lazy" />
+    {p.badge && <span class="pc-badge" style={`background:${p.badgeColor}`}>{p.badge}</span>}
+  </div>
+  <div class="pc-body">
+    <h3 class="pc-name">{name}</h3>
+    <p class="pc-price">{price ?? 'Price coming soon'}</p>
+    <p class="pc-desc">{p.description}</p>
+    {canBuy ? (
+      <a class="pc-btn" href={p.jumiaUrl} target="_blank" rel="noopener" aria-label={`Shop on Jumia: ${name} (opens in a new tab)`}>Shop on Jumia</a>
+    ) : (
+      <button type="button" class="pc-btn" disabled>{p.inStock ? 'Coming soon' : 'Out of stock'}</button>
+    )}
+  </div>
+</article>
+
+<style>
+  .pc { background: var(--d2); border: 1px solid var(--d4); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; transition: transform .25s, box-shadow .25s; }
+  .pc:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(15, 17, 21, .08); }
+  .pc-img { position: relative; aspect-ratio: 1 / 1; background: #F9F9F9; }
+  .pc-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; padding: 12px; }
+  .pc-badge {
+    position: absolute; top: 10px; right: 10px; color: #fff; padding: 4px 9px; border-radius: 3px;
+    font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .pc-body { padding: 16px 18px 18px; display: flex; flex-direction: column; flex: 1; }
+  .pc-name { margin: 0; font: 700 18px/1.2 'Barlow Condensed', sans-serif; color: var(--white); }
+  .pc-price { margin: 6px 0 0; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--gold); }
+  .pc-desc { margin: 8px 0 14px; font-size: 13px; line-height: 1.5; color: var(--lt); flex: 1; }
+  .pc-btn {
+    display: block; text-align: center; padding: 11px; border-radius: 4px; border: 0; text-decoration: none;
+    background: #F68B1E; color: #fff; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .pc-btn:hover { background: #E07A10; }
+  .pc-btn:disabled { background: #D5D9DE; color: #5B6472; cursor: not-allowed; }
+  .pc-btn:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+</style>

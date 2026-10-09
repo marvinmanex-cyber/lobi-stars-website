@@ -2,6 +2,9 @@
 import table from '../data/league-table.json';
 import { CURRENT_SEASON, teamInitials } from '../lib/site';
 
+interface Props { showHeading?: boolean }
+const { showHeading = true } = Astro.props;
+
 const rows = table.rows
   .map(r => {
     const gd = r.goalsFor - r.goalsAgainst;
@@ -16,53 +19,79 @@ const lastUpdated = table.lastUpdated
   : null;
 const isLobi = (club: string) => /lobi stars/i.test(club);
 ---
-<div class="fade-in">
-  <div class="stag">{CURRENT_SEASON} NNL Season</div>
-  <h3 class="stitle" style="font-size:36px;">{table.competition.replace(/^NNL\s+/, '')} <span class="r">Table</span></h3>
-  <div class="divr" style="margin-bottom:30px;"></div>
-</div>
+{showHeading && (
+  <div>
+    <div class="stag">{CURRENT_SEASON} NNL Season</div>
+    <h2 class="stitle">{table.competition.replace(/^NNL\s+/, '')} <span class="r">Table</span></h2>
+    <div class="divr"></div>
+  </div>
+)}
 
 {started ? (
-  <div class="table-wrap fade-in" style="border-radius: 12px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
-    <table class="st" style="width: 100%; border-collapse: collapse;">
+  <div class="lt-wrap">
+    <table class="lt">
+      <caption class="sr-only">{table.competition} {CURRENT_SEASON} league table</caption>
       <thead>
-        <tr><th>#</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th></tr>
+        <tr>
+          <th scope="col">#</th><th scope="col" class="lt-club">Club</th>
+          <th scope="col"><abbr title="Played">P</abbr></th><th scope="col"><abbr title="Won">W</abbr></th>
+          <th scope="col"><abbr title="Drawn">D</abbr></th><th scope="col"><abbr title="Lost">L</abbr></th>
+          <th scope="col" class="lt-opt"><abbr title="Goals for">GF</abbr></th><th scope="col" class="lt-opt"><abbr title="Goals against">GA</abbr></th>
+          <th scope="col"><abbr title="Goal difference">GD</abbr></th><th scope="col"><abbr title="Points">Pts</abbr></th>
+        </tr>
       </thead>
       <tbody>
         {rows.map((r, i) => (
-          <tr class={isLobi(r.club) ? 'hl' : undefined} style={isLobi(r.club) ? 'background: rgba(245, 184, 0, 0.1);' : undefined}>
-            <td><span class="pb">{i + 1}</span></td>
-            <td style={isLobi(r.club) ? 'color: var(--gold); font-weight: 700;' : undefined}>
-              <span class="club-cell">
+          <tr class:list={{ 'lt-lobi': isLobi(r.club) }}>
+            <td class="lt-pos">{i + 1}</td>
+            <th scope="row" class="lt-club">
+              <span class="lt-team">
                 {r.crest
-                  ? <img src={r.crest} alt={`${r.club} crest`} class="club-badge" loading="lazy" />
-                  : <span class="club-badge lt-initials" aria-hidden="true">{teamInitials(r.club)}</span>}
-                {isLobi(r.club) && '⭐ '}{r.club}
+                  ? <img src={r.crest} alt="" width="26" height="26" loading="lazy" />
+                  : <span class="lt-initials" aria-hidden="true">{teamInitials(r.club)}</span>}
+                {r.club}
               </span>
-            </td>
+            </th>
             <td>{r.played}</td><td>{r.won}</td><td>{r.drawn}</td><td>{r.lost}</td>
-            <td>{r.goalsFor}</td><td>{r.goalsAgainst}</td><td>{r.gd > 0 ? `+${r.gd}` : r.gd}</td>
-            <td><strong>{r.pts}</strong></td>
+            <td class="lt-opt">{r.goalsFor}</td><td class="lt-opt">{r.goalsAgainst}</td>
+            <td>{r.gd > 0 ? `+${r.gd}` : r.gd}</td>
+            <td class="lt-pts">{r.pts}</td>
           </tr>
         ))}
       </tbody>
     </table>
   </div>
 ) : (
-  <div class="lt-empty fade-in">
+  <div class="lt-empty">
     The {CURRENT_SEASON} season table will appear after Matchday 1.
   </div>
 )}
 {lastUpdated && <p class="lt-updated">Last updated: {lastUpdated}</p>}
 
 <style>
+  .lt-wrap { overflow-x: auto; border: 1px solid var(--d4); border-radius: 12px; background: var(--d2); }
+  .lt { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .lt th, .lt td { padding: 12px 10px; text-align: center; border-bottom: 1px solid var(--d4); white-space: nowrap; }
+  .lt thead th {
+    background: #15181D; color: #fff; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .lt abbr { text-decoration: none; }
+  .lt .lt-club { text-align: left; font-weight: 600; }
+  .lt-team { display: inline-flex; align-items: center; gap: 10px; }
+  .lt-team img { width: 26px; height: 26px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--d4); }
+  .lt-initials {
+    width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    background: var(--d3); color: var(--lt); font: 700 10px/1 'Barlow Condensed', sans-serif;
+  }
+  .lt-pos { color: var(--lt); width: 40px; }
+  .lt-pts { font-weight: 700; }
+  .lt tbody tr:last-child th, .lt tbody tr:last-child td { border-bottom: 0; }
+  .lt-lobi th, .lt-lobi td { background: rgba(227, 30, 36, .07); color: var(--rd); font-weight: 700; }
+  .lt-lobi .lt-club { box-shadow: inset 4px 0 0 var(--red); }
   .lt-empty {
     padding: 36px 24px; text-align: center; border: 1px dashed var(--d4); border-radius: 12px;
     color: var(--lt); font-size: 16px; background: var(--dark);
   }
   .lt-updated { margin-top: 12px; font-size: 13px; color: var(--lt); }
-  .lt-initials {
-    display: inline-flex; align-items: center; justify-content: center; border-radius: 50%;
-    background: var(--d3); color: var(--lt); font: 700 11px/1 'Barlow Condensed', sans-serif;
-  }
+  @media (max-width: 600px) { .lt-opt { display: none; } .lt th, .lt td { padding: 10px 6px; } }
 </style>
