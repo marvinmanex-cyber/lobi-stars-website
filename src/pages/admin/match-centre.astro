@@ -27,7 +27,7 @@ const roster = (await getCollection('players'))
         <h2 id="ctl-h">Match control</h2>
         <span class="ctl-badge" id="ctlBadge">Upcoming</span>
       </div>
-      <p class="ctl-away" id="ctlAway" hidden>This is an away game: Matchday Live features (voting, predictions, stream, commentary) are switched off. Use the form below for the score and report.</p>
+      <p class="ctl-away" id="ctlAway" hidden>This is an away game: Matchday Live features (voting, predictions and the stream) are switched off. Fans still get the live commentary link. Use the form below for the score and report.</p>
       <div id="ctlHome">
         <dl class="ctl-facts">
           <div><dt>Scheduled kick-off</dt><dd id="ctlSched">–</dd></div>
@@ -40,6 +40,14 @@ const roster = (await getCollection('players'))
           <button type="button" class="ctl-btn end" id="fulltimeBtn">■ End Match (Full-time)</button>
         </div>
         <p class="muted ctl-note">Press <strong>Start Match</strong> at kick-off: Man of the Match voting opens. Press <strong>End Match</strong> at the final whistle and enter the score: voting closes and results are calculated. If nobody presses End Match, the match closes automatically 2 hours 15 minutes after kick-off (you can still add the final score afterwards). All times use the server clock in Nigerian time (WAT).</p>
+        <div class="ctl-motm">
+          <div class="ctl-motm-head">
+            <h3>Man of the Match votes</h3>
+            <a class="btn-o" id="motmCsv" href="#">Export votes (CSV)</a>
+          </div>
+          <p class="muted ctl-note">Staff can see the votes at any time. Fans only see the totals after full time.</p>
+          <div id="motmBox"><p class="muted">Loading…</p></div>
+        </div>
       </div>
     </section>
 
@@ -192,6 +200,13 @@ const roster = (await getCollection('players'))
   .sq-table thead th { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
   .sq-table input { width: 18px; height: 18px; accent-color: var(--red); }
   @media (max-width: 600px) { .ctl-buttons { grid-template-columns: 1fr; } }
+  .ctl-motm { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--d4); }
+  .ctl-motm-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ctl-motm h3 { margin: 0; font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ctl-motm :global(.motm-table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .ctl-motm :global(.motm-table th), .ctl-motm :global(.motm-table td) { padding: 7px 8px; border-bottom: 1px solid var(--d4); text-align: left; }
+  .ctl-motm :global(.motm-table tr.win td) { font-weight: 700; color: var(--red-text); }
+  .ctl-motm :global(.motm-bar) { display: inline-block; width: 80px; height: 8px; margin-right: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--red) var(--w), var(--d3) var(--w)); vertical-align: middle; }
   .mce-set { min-width: 0; border: 1px solid var(--d4); border-radius: 12px; padding: 18px 20px 6px; margin: 0 0 18px; }
   .mce-set legend { padding: 0 8px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-text); }
   .mce-hint { margin: 0 0 12px; font-size: 14px; }
@@ -329,8 +344,23 @@ const roster = (await getCollection('players'))
       : 'This match closed automatically 2h15 after kick-off.';
     $('kickoffBtn').disabled = live || m.status === 'full-time' || m.status === 'cancelled';
     $('fulltimeBtn').disabled = !(live || (m.status === 'full-time' && m.home_score === null));
+    if (home) loadMotm(m);
     if (m.status === 'full-time' && m.home_score !== null) $('fulltimeBtn').textContent = '✓ Full-time recorded';
     else $('fulltimeBtn').textContent = '■ End Match (Full-time)';
+  }
+
+  async function loadMotm(m) {
+    $('motmCsv').href = `/api/admin/motm/${encodeURIComponent(m.id)}?format=csv`;
+    const box = $('motmBox');
+    try {
+      const d = await api(`/api/admin/motm/${encodeURIComponent(m.id)}`);
+      if (!d.rows.length) { box.innerHTML = '<p class="muted">No squad picked and no votes yet.</p>'; return; }
+      const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      box.innerHTML = `<p><strong>${d.total}</strong> vote${d.total === 1 ? '' : 's'}${d.winners.length ? ` &middot; Leading: ${esc(d.rows.filter(r => r.winner).map(r => r.name).join(' & '))}` : ''}</p>` +
+        '<div class="sq-scroll"><table class="motm-table"><thead><tr><th>Player</th><th>Votes</th><th>%</th></tr></thead><tbody>' +
+        d.rows.map(r => `<tr${r.winner ? ' class="win"' : ''}><td>${r.number != null ? '#' + esc(r.number) + ' ' : ''}${esc(r.name)}</td><td>${r.votes}</td><td><span class="motm-bar" style="--w:${r.pct}%"></span>${r.pct}%</td></tr>`).join('') +
+        '</tbody></table></div>';
+    } catch (err) { box.innerHTML = `<p class="muted">${err.message}</p>`; }
   }
 
   $('kickoffBtn').addEventListener('click', async () => {

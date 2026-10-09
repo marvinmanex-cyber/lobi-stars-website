@@ -3,9 +3,10 @@
 // functions/matches/[slug].js; the match itself is loaded from
 // /api/matches/<slug> in the browser.
 import Layout from '../layouts/Layout.astro';
+import matchday from '../data/matchday.json';
 ---
 <Layout title="Match Centre | Lobi Stars Football Club" description="Lobi Stars FC Match Centre: preview, line-ups, live updates, match report, stats and photos." noindex>
-  <div id="mc" class="mc" aria-live="polite">
+  <div id="mc" class="mc" aria-live="polite" data-commentary={matchday.commentaryUrl}>
     <div class="wrap mc-loading" id="mcStatus">Loading match&hellip;</div>
   </div>
 </Layout>
@@ -40,6 +41,8 @@ import Layout from '../layouts/Layout.astro';
   .mc :global(.mc-actions .btn-p) { padding: 11px 18px; font-size: 13px; }
 
   .mc :global(.mc-live-wrap) { display: flex; justify-content: center; margin-top: 14px; }
+  .mc :global(.mc-motm) { text-align: center; margin: 14px 0 0; color: #FFC72C; font: 700 16px/1.4 'Barlow Condensed', sans-serif; letter-spacing: .6px; text-transform: uppercase; }
+  .mc :global(.mc-motm a) { color: #fff; }
   .mc :global(.mc-live-btn) { padding: 11px 18px; font-size: 13px; }
   .mc :global(.mc-tabs) { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--d4); background: #fff; position: sticky; top: 72px; z-index: 20; scrollbar-width: none; }
   .mc :global(.mc-tabs::-webkit-scrollbar) { display: none; }
@@ -148,6 +151,29 @@ import Layout from '../layouts/Layout.astro';
       const ml = el('a', 'btn-p mc-live-btn', '● Matchday Live: watch, listen, vote, predict') as HTMLAnchorElement;
       ml.href = `/matches/${m.slug}/live/`;
       const wrapLive = el('div', 'mc-live-wrap'); wrapLive.append(ml);
+      inner.append(wrapLive);
+      if (m.status === 'full-time') {
+        const motm = el('p', 'mc-motm'); motm.hidden = true;
+        inner.append(motm);
+        fetch(`/api/matches/${encodeURIComponent(m.slug)}/motm`).then(r => r.json()).then(d => {
+          const wins = (d.results?.rows || []).filter((r: { winner: boolean }) => r.winner);
+          if (!wins.length) return;
+          motm.append(`⭐ ${wins.length > 1 ? 'Joint Man of the Match' : 'Man of the Match'}: `);
+          wins.forEach((w: { slug: string; name: string }, i: number) => {
+            if (i) motm.append(' & ');
+            const a = el('a', '', w.name) as HTMLAnchorElement; a.href = `/squad/${w.slug}/`; motm.append(a);
+          });
+          motm.append(` (${wins[0].pct}% of ${d.results.total} votes)`);
+          motm.hidden = false;
+        }).catch(() => {});
+      }
+    } else if (root.dataset.commentary && !['full-time', 'cancelled', 'postponed'].includes(m.status)) {
+      // Away games: live commentary only (no stream, voting or predictions).
+      const cm = el('a', 'btn-p mc-live-btn', '🎧 Listen to live commentary') as HTMLAnchorElement;
+      cm.href = root.dataset.commentary; cm.target = '_blank'; cm.rel = 'noopener';
+      cm.dataset.track = 'commentary_click'; cm.dataset.trackLabel = m.slug;
+      cm.setAttribute('aria-label', 'Listen to live commentary (opens in a new tab)');
+      const wrapLive = el('div', 'mc-live-wrap'); wrapLive.append(cm);
       inner.append(wrapLive);
     }
 

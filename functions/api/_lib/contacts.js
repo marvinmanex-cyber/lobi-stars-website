@@ -250,6 +250,8 @@ export async function deleteContactEverywhere(db, contactId) {
     if (s.ref_table === 'food_orders') stmts.push(db.prepare(`UPDATE food_orders SET email = 'deleted@deleted.invalid', phone = '', seat = '', stand = '' WHERE id = ?`).bind(s.ref_id));
     if (s.ref_table === 'members') {
       if (await tableExists(db, 'auth_tokens')) stmts.push(db.prepare(`DELETE FROM auth_tokens WHERE member_id = ?`).bind(s.ref_id));
+      // Keep the vote counted for the match result but unlink it from the person.
+      if (await tableExists(db, 'motm_votes')) stmts.push(db.prepare(`UPDATE motm_votes SET member_id = 'deleted-' || id WHERE member_id = ?`).bind(s.ref_id));
       stmts.push(db.prepare(`DELETE FROM members WHERE id = ?`).bind(s.ref_id));
     }
   }

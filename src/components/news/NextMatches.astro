@@ -157,14 +157,14 @@ import matchday from '../../data/matchday.json';
       ml.href = `/matches/${slug}/live/`;
       ml.setAttribute('aria-label', `Matchday Live: Lobi Stars FC vs ${opponent}`);
       links.append(ml);
-      if (commentaryUrl) {
-        // Live commentary on Aeson Sports Radio (opens in a new tab).
-        const ll = el('a', 'nm-link nm-link--listen', '🎧 Listen Live') as HTMLAnchorElement;
-        ll.href = commentaryUrl; ll.target = '_blank'; ll.rel = 'noopener';
-        ll.dataset.track = 'commentary_click'; ll.dataset.trackLabel = slug;
-        ll.setAttribute('aria-label', `Listen to live commentary: Lobi Stars FC vs ${opponent} (opens in a new tab)`);
-        links.append(ll);
-      }
+    }
+    if (commentaryUrl) {
+      // Live commentary (home AND away games) on Aeson Sports Radio (opens in a new tab).
+      const ll = el('a', 'nm-link nm-link--listen', '🎧 Listen Live') as HTMLAnchorElement;
+      ll.href = commentaryUrl; ll.target = '_blank'; ll.rel = 'noopener';
+      ll.dataset.track = 'commentary_click'; ll.dataset.trackLabel = slug;
+      ll.setAttribute('aria-label', `Listen to live commentary: Lobi Stars FC vs ${opponent} (opens in a new tab)`);
+      links.append(ll);
     }
 
     li.append(top, when, opp, links);

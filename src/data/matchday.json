@@ -1,10 +1,10 @@
 {
-  "_todo": "TODO: confirm these are the right channels for Lobi Stars match streams and commentary.",
+  "_todo": "TODO: confirm the YouTube/Facebook channels for Lobi Stars match streams. (Commentary link confirmed by the club, 9 Oct 2026.)",
   "commentaryUrl": "https://www.aesonsports.com/podcast",
   "commentaryProvider": "Aeson Sports Radio",
   "youtubeChannel": "https://www.youtube.com/@aesonfootballpodcast",
   "facebookPage": "https://www.facebook.com/AesonFootballPodcast",
   "_live": "motmLive / predictLive: set to true once Man of the Match voting / Predict & Win are switched on.",
-  "motmLive": false,
+  "motmLive": true,
   "predictLive": false
 }

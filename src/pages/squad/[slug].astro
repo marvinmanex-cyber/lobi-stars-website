@@ -63,6 +63,7 @@ const hasStats = stats.some(([, v]) => (v ?? 0) > 0);
         <h1 class="stitle">{p.name}</h1>
         <dl class="pl-facts">
           {facts.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+          <div data-motm-awards={player.id} hidden><dt>Man of the Match awards</dt><dd>&#11088; <span></span></dd></div>
         </dl>
       </div>
     </div>
@@ -110,3 +111,12 @@ const hasStats = stats.some(([, v]) => (v ?? 0) > 0);
   .pl-bio :global(p) { margin: 0 0 1.2em; }
   @media (max-width: 760px) { .pl-top { grid-template-columns: 1fr; } .pl-photo { max-width: 360px; } }
 </style>
+
+<script>
+  // Man of the Match awards come from fans' votes (server), so they're loaded live.
+  const awardsBox = document.querySelector<HTMLElement>('[data-motm-awards]');
+  if (awardsBox) fetch('/api/motm/awards').then(r => r.json()).then(({ awards }) => {
+    const n = awards?.[awardsBox.dataset.motmAwards!] || 0;
+    if (n > 0) { awardsBox.querySelector('span')!.textContent = String(n); awardsBox.hidden = false; }
+  }).catch(() => {});
+</script>

@@ -54,6 +54,39 @@ import settings from '../data/matchday.json';
   .ml :global(.ml-actions) { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
   .ml :global(.ml-note) { margin-top: 14px; font-size: 13px; color: var(--lt); }
   .ml :global(.ml-note a) { color: var(--red-text); font-weight: 600; }
+  .ml :global(.ml-card--wide) { max-width: 1000px; }
+  .ml :global(.mv-msg) { margin: 0 0 14px; color: var(--lt); line-height: 1.6; }
+  .ml :global(.mv-msg a), .ml :global(.mv-mine) { color: var(--red-text); font-weight: 600; }
+  .ml :global(.mv-count) { margin: 0 0 18px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--gold-text); }
+  .ml :global(.mv-grid) { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+  .ml :global(.mv-card) { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 16px 10px 14px; border: 1px solid var(--d4); border-radius: 12px; background: #fff; min-width: 0; }
+  .ml :global(.mv-face) { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; background: var(--d3); margin-bottom: 6px; }
+  .ml :global(.mv-face--n), .ml :global(.mv-win-face--n) { display: inline-flex; align-items: center; justify-content: center; font: 400 34px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .ml :global(.mv-num) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; color: var(--lt); }
+  .ml :global(.mv-pname) { font: 700 16px/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; text-align: center; overflow-wrap: anywhere; }
+  .ml :global(.mv-pos) { font-size: 12px; color: var(--lt); text-align: center; }
+  .ml :global(.mv-vote) { margin-top: 8px; width: 100%; padding: 9px 10px; }
+  .ml :global(.mv-confirm) { position: sticky; bottom: 12px; margin-top: 16px; padding: 16px; border-radius: 12px; background: #15181D; color: #fff; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+  .ml :global(.mv-confirm[hidden]) { display: none; }
+  .ml :global(.mv-confirm p) { margin: 0; width: 100%; text-align: center; color: #fff; }
+  .ml :global(.mv-confirm .btn-o) { color: #fff; border-color: rgba(255,255,255,.6); }
+  .ml :global(.mv-confirm .mv-err) { color: #FFB4B4; }
+  .ml :global(.mv-thanks) { display: flex; flex-direction: column; gap: 6px; padding: 20px; border-radius: 12px; background: #E8F7EE; color: #17643A; margin-bottom: 14px; }
+  .ml :global(.mv-thanks strong) { font: 400 26px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .ml :global(.mv-winners) { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .ml :global(.mv-win) { display: flex; align-items: center; gap: 18px; padding: 20px; border-radius: 14px; text-align: left; color: #fff; background: radial-gradient(130% 160% at 0% 0%, #7A0F12 0%, #2A0507 60%, #15181D 100%); }
+  .ml :global(.mv-win-face) { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; background: #fff; border: 4px solid #FFC72C; flex-shrink: 0; }
+  .ml :global(.mv-win-t) { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .ml :global(.mv-win-t strong) { font: 400 clamp(28px, 4vw, 38px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ml :global(.mv-win-k) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: #FFC72C; }
+  .ml :global(.mv-win-v) { font-weight: 700; }
+  .ml :global(.mv-board) { list-style: none; margin: 0; padding: 0; text-align: left; }
+  .ml :global(.mv-board li) { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--d4); }
+  .ml :global(.mv-board li.win .mv-name) { color: var(--red-text); font-weight: 700; }
+  .ml :global(.mv-name) { overflow-wrap: anywhere; }
+  .ml :global(.mv-pct) { font-variant-numeric: tabular-nums; color: var(--lt); }
+  .ml :global(.mv-bar) { grid-column: 1 / -1; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--red) var(--w), var(--d3) var(--w)); }
+  @media (max-width: 420px) { .ml :global(.mv-grid) { grid-template-columns: 1fr 1fr; gap: 8px; } .ml :global(.mv-win) { flex-direction: column; text-align: center; } .ml :global(.mv-win-t) { align-items: center; } }
   .ml :global(.ml-card--bare) { border: 0; padding: 0; background: none; }
   .ml :global(.ml-radio) {
     display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: 'play body bars' 'btn btn btn'; align-items: center; gap: 16px 18px;
@@ -213,21 +246,146 @@ import settings from '../data/matchday.json';
     const card = el('div', id === 'commentary' ? 'ml-card ml-card--bare' : 'ml-card');
     if (id === 'watch') card.append(...watchPanel(m));
     if (id === 'commentary') card.append(commentaryCard(m));
-    if (id === 'vote') {
-      card.append(el('h2', '', 'Vote for Man of the Match'));
-      card.append(el('p', '', isOver(m) ? 'Voting has closed for this match.'
-        : isLive(m) ? 'Man of the Match voting is coming soon to Matchday Live.'
-        : 'Voting opens at kick-off. You\'ll need a free, email-verified fan account.'));
-      const a = el('div', 'ml-actions');
-      a.append(link(`/fans/register/?next=${encodeURIComponent(location.pathname + '#vote')}`, 'Create a fan account', 'btn-p'),
-               link(`/fans/login/?next=${encodeURIComponent(location.pathname + '#vote')}`, 'Log in', 'btn-o'));
-      card.append(a);
-    }
+    if (id === 'vote') { card.classList.add('ml-card--wide'); card.append(el('h2', '', 'Vote for Man of the Match')); const box = el('div', 'mv'); card.append(box); loadVote(box, m); }
     if (id === 'predict') {
       card.append(el('h2', '', 'Predict & Win'));
       card.append(el('p', '', 'Predict the final score of Lobi Stars home games for the chance to win. Coming soon to Matchday Live.'));
     }
     return card;
+  }
+
+  // ── Man of the Match voting. Every rule is checked again on the server. ──
+  type Player = { slug: string; name: string; number: number | null; position: string; photo: string | null; role?: string };
+  type Row = Player & { votes: number; pct: number; winner: boolean };
+  type Motm = { state: 'before' | 'open' | 'closed' | 'off'; players: Player[]; totalVoters: number;
+    fan: { firstName: string; verified: boolean } | null; myVote: { slug: string; name: string; at: string } | null;
+    results: { total: number; rows: Row[]; winners: string[] } | null };
+
+  const POS: Record<string, string> = { GK: 'Goalkeeper', DEF: 'Defender', MID: 'Midfielder', FWD: 'Forward' };
+  const voters = (n: number) => `${n.toLocaleString('en-NG')} fan${n === 1 ? ' has' : 's have'} voted`;
+  function face(p: Player, cls = 'mv-face') {
+    if (p.photo) {
+      const img = el('img', cls) as HTMLImageElement;
+      img.src = p.photo; img.alt = ''; img.loading = 'lazy'; img.width = 120; img.height = 120;
+      img.onerror = () => img.replaceWith(face({ ...p, photo: null }, cls));
+      return img;
+    }
+    const f = el('span', `${cls} ${cls}--n`, p.number != null ? String(p.number) : p.name.charAt(0));
+    f.setAttribute('aria-hidden', 'true');
+    return f;
+  }
+  function authButtons(m: M) {
+    const next = encodeURIComponent(`/matches/${m.slug}/live/#vote`);
+    const a = el('div', 'ml-actions');
+    a.append(link(`/fans/register/?next=${next}`, 'Register to vote', 'btn-p'), link(`/fans/login/?next=${next}`, 'Log in', 'btn-o'));
+    return a;
+  }
+
+  async function loadVote(box: HTMLElement, m: M) {
+    box.replaceChildren(el('p', 'mv-msg', 'Loading the matchday squad…'));
+    let d: Motm;
+    try {
+      const res = await fetch(`/api/matches/${encodeURIComponent(m.slug)}/motm`, { credentials: 'same-origin' });
+      if (!res.ok) throw new Error();
+      d = await res.json();
+    } catch { box.replaceChildren(el('p', 'mv-msg', 'Voting could not be loaded. Please refresh the page.')); return; }
+    renderVote(box, m, d);
+    // While voting is open, keep the "fans have voted" number fresh.
+    if (d.state === 'open') timers.push(window.setInterval(async () => {
+      try { const r = await fetch(`/api/matches/${encodeURIComponent(m.slug)}/motm`).then(x => x.json()); const t = box.querySelector('[data-voters]'); if (t) t.textContent = voters(r.totalVoters); } catch {}
+    }, 30_000));
+  }
+
+  function renderVote(box: HTMLElement, m: M, d: Motm) {
+    const out: Node[] = [];
+    const count = el('p', 'mv-count', voters(d.totalVoters)); count.dataset.voters = '';
+
+    if (d.state === 'off') { box.replaceChildren(el('p', 'mv-msg', 'There is no Man of the Match vote for this match.')); return; }
+
+    if (d.state === 'closed') {
+      const r = d.results!;
+      if (!r.total) { out.push(el('p', 'mv-msg', 'Voting has closed. No votes were cast for this match.')); box.replaceChildren(...out); return; }
+      const winners = r.rows.filter(x => x.winner);
+      const wins = el('div', 'mv-winners');
+      winners.forEach(w => {
+        const c = el('div', 'mv-win');
+        c.append(face(w, 'mv-win-face'));
+        const t = el('div', 'mv-win-t');
+        t.append(el('span', 'mv-win-k', winners.length > 1 ? '⭐ Joint Man of the Match' : '⭐ Man of the Match'), el('strong', '', w.name),
+          el('span', '', `${w.number != null ? `#${w.number} · ` : ''}${POS[w.position] || w.position || ''}`), el('span', 'mv-win-v', `${w.votes} vote${w.votes === 1 ? '' : 's'} · ${w.pct}%`));
+        c.append(t); wins.append(c);
+      });
+      out.push(wins);
+      out.push(el('p', 'mv-msg', `Voting closed · ${r.total.toLocaleString('en-NG')} fan${r.total === 1 ? '' : 's'} voted`));
+      if (d.myVote) out.push(el('p', 'mv-mine', `You voted for ${d.myVote.name}.`));
+      const list = el('ol', 'mv-board');
+      list.setAttribute('aria-label', 'Final vote results');
+      r.rows.forEach(x => {
+        const li = el('li', x.winner ? 'win' : '');
+        const bar = el('span', 'mv-bar'); bar.style.setProperty('--w', `${x.pct}%`); bar.setAttribute('aria-hidden', 'true');
+        li.append(el('span', 'mv-name', `${x.number != null ? `#${x.number} ` : ''}${x.name}`), el('span', 'mv-pct', `${x.votes} · ${x.pct}%`), bar);
+        list.append(li);
+      });
+      out.push(list);
+      box.replaceChildren(...out);
+      return;
+    }
+
+    if (d.state === 'before') out.push(el('p', 'mv-msg', `Voting opens at kick-off (${fmtTime(m.event_date)}). Only fans with a free, email-confirmed account can vote, one vote per match.`));
+    if (d.state === 'open') {
+      if (d.myVote) {
+        const t = el('div', 'mv-thanks');
+        t.append(el('strong', '', `Thanks! You voted for ${d.myVote.name}.`), el('span', '', 'Results are revealed at full time.'));
+        box.replaceChildren(t, count);
+        return;
+      }
+      if (!d.fan) out.push(el('p', 'mv-msg', 'Voting is open! Register or log in to vote for your Man of the Match.'), authButtons(m));
+      else if (!d.fan.verified) {
+        const p = el('p', 'mv-msg', 'Please confirm your email address to vote. ');
+        p.append(link(`/fans/login/?next=${encodeURIComponent(`/matches/${m.slug}/live/#vote`)}`, 'Resend the confirmation email', ''));
+        out.push(p);
+      } else out.push(el('p', 'mv-msg', `Voting is open, ${d.fan.firstName}! Pick one player. Your vote can't be changed.`));
+      out.push(count);
+    } else if (!d.fan) out.push(authButtons(m));
+
+    if (!d.players.length) { out.push(el('p', 'mv-msg', 'The matchday squad will appear here before kick-off.')); box.replaceChildren(...out); return; }
+
+    const canVote = d.state === 'open' && !!d.fan?.verified && !d.myVote;
+    const grid = el('ul', 'mv-grid');
+    const confirmBar = el('div', 'mv-confirm'); confirmBar.hidden = true; confirmBar.setAttribute('role', 'alertdialog'); confirmBar.setAttribute('aria-live', 'assertive');
+    d.players.forEach(p => {
+      const li = el('li', 'mv-card');
+      li.append(face(p), el('span', 'mv-num', p.number != null ? `#${p.number}` : ''), el('span', 'mv-pname', p.name), el('span', 'mv-pos', `${POS[p.position] || p.position || ''}${p.role ? ` · ${p.role}` : ''}`));
+      if (canVote) {
+        const b = el('button', 'btn-p mv-vote', 'Vote') as HTMLButtonElement;
+        b.type = 'button';
+        b.setAttribute('aria-label', `Vote for ${p.name}`);
+        b.addEventListener('click', () => askConfirm(p));
+        li.append(b);
+      }
+      grid.append(li);
+    });
+
+    function askConfirm(p: Player) {
+      const yes = el('button', 'btn-p', `Confirm vote for ${p.name}`) as HTMLButtonElement;
+      const no = el('button', 'btn-o', 'Cancel') as HTMLButtonElement;
+      yes.type = no.type = 'button';
+      const err = el('p', 'mv-err'); err.hidden = true;
+      confirmBar.replaceChildren(el('p', '', `You're voting for ${p.name}. This can't be changed.`), yes, no, err);
+      confirmBar.hidden = false; yes.focus();
+      no.addEventListener('click', () => { confirmBar.hidden = true; });
+      yes.addEventListener('click', async () => {
+        yes.disabled = true; yes.textContent = 'Sending…';
+        try {
+          const res = await fetch(`/api/matches/${encodeURIComponent(m.slug)}/motm`, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ player: p.slug }) });
+          const r = await res.json().catch(() => ({}));
+          if (!res.ok && r.code !== 'voted') throw new Error(r.error || 'Your vote could not be saved. Please try again.');
+          loadVote(box, m);
+        } catch (e) { err.textContent = (e as Error).message; err.hidden = false; yes.disabled = false; yes.textContent = `Confirm vote for ${p.name}`; }
+      });
+    }
+    out.push(grid, confirmBar);
+    box.replaceChildren(...out);
   }
 
   // Match Commentary: a radio-player style card. The whole card (and its
