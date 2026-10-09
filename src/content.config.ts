@@ -25,14 +25,22 @@ const news = defineCollection({
 
 const players = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/players' }),
+  // The file name is the profile URL: /squad/<file-name>. The body is the bio.
   schema: z.object({
     name: z.string(),
     position: z.enum(['GK', 'DEF', 'MID', 'FWD']),
     number: z.number(),
     nationality: z.string().default('Nigeria'),
-    apps: z.number().default(0),
-    goals: z.number().default(0),
-    photo: z.string().optional(),
+    stateOfOrigin: z.string().nullable().optional(),
+    dateOfBirth: z.coerce.date().nullable().optional(),
+    height: z.string().nullable().optional(),
+    preferredFoot: z.enum(['Left', 'Right', 'Both']).nullable().optional(),
+    apps: z.number().nullable().default(0),
+    goals: z.number().nullable().default(0),
+    assists: z.number().nullable().default(0),
+    cleanSheets: z.number().nullable().default(0),
+    photo: z.string().nullable().optional(),
+    isSample: z.boolean().default(false),
   }),
 });
 
@@ -69,6 +77,8 @@ const staff = defineCollection({
     bio: z.string(),
     photo: z.string().optional(),
     order: z.number().default(0),
+    // Management appear on /club/management; Coaching Staff also on /squad.
+    group: z.enum(['Management', 'Coaching Staff']).default('Management'),
   }),
 });
 

@@ -1,0 +1,46 @@
+---
+// Squad / staff card: photo (or silhouette), shirt number, name, position or role.
+interface Props {
+  name: string;
+  subtitle: string;
+  photo?: string | null;
+  number?: number;
+  href?: string;
+  sample?: boolean;
+}
+const { name, subtitle, photo, number, href, sample = false } = Astro.props;
+const Tag = href ? 'a' : 'div';
+---
+<Tag class="pcd" href={href}>
+  <div class="pcd-photo">
+    {photo
+      ? <img src={photo} alt={name} loading="lazy" />
+      : (
+        <svg class="pcd-sil" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="36" r="18" /><path d="M14 100c0-22 16-36 36-36s36 14 36 36z" />
+        </svg>
+      )}
+    {number !== undefined && <span class="pcd-num" aria-hidden="true">{number}</span>}
+    {sample && <span class="pcd-sample">Sample</span>}
+  </div>
+  <div class="pcd-body">
+    {number !== undefined && <span class="sr-only">Number {number},</span>}
+    <span class="pcd-name">{name}</span>
+    <span class="pcd-sub">{subtitle}</span>
+  </div>
+</Tag>
+
+<style>
+  .pcd { display: block; border-radius: 12px; overflow: hidden; background: var(--d2); border: 1px solid var(--d4); text-decoration: none; color: inherit; transition: transform .25s, box-shadow .25s, border-color .25s; }
+  a.pcd:hover { transform: translateY(-4px); box-shadow: 0 16px 32px rgba(15, 17, 21, .08); border-color: rgba(227, 30, 36, .35); }
+  a.pcd:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .pcd-photo { position: relative; aspect-ratio: 4 / 5; background: linear-gradient(160deg, #F1F3F5, #E3E6EA); overflow: hidden; }
+  .pcd-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; transition: transform .3s; }
+  a.pcd:hover .pcd-photo img { transform: scale(1.04); }
+  .pcd-sil { position: absolute; left: 15%; bottom: 0; width: 70%; height: auto; fill: #C9CED6; }
+  .pcd-num { position: absolute; right: 12px; bottom: 4px; font: 400 64px/1 'Bebas Neue', sans-serif; color: var(--red); opacity: .9; text-shadow: 0 2px 10px rgba(255, 255, 255, .6); }
+  .pcd-sample { position: absolute; top: 10px; left: 10px; background: #FFC72C; color: #15181D; padding: 4px 8px; border-radius: 3px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .pcd-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .pcd-name { font: 700 18px/1.2 'Barlow Condensed', sans-serif; color: var(--white); }
+  .pcd-sub { font: 600 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--red); }
+</style>

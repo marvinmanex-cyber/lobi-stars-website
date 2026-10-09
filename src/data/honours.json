@@ -1,0 +1,20 @@
+{
+  "_todo": "TODO: check each competition and its winning years, then set \"verified\": true. Only verified honours are shown on /club/honours.",
+  "honours": [
+    {
+      "competition": "Nigerian Premier League / NPFL",
+      "years": [
+        "1998/99",
+        "2017/18"
+      ],
+      "verified": false
+    },
+    {
+      "competition": "Nigerian FA Cup (Federation Cup)",
+      "years": [
+        "2003"
+      ],
+      "verified": false
+    }
+  ]
+}

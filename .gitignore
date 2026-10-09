@@ -8,3 +8,6 @@ dist/
 
 # Local dev secrets (Wrangler)
 .dev.vars
+
+# Local Cloudflare dev state (wrangler pages dev / local D1)
+.wrangler/

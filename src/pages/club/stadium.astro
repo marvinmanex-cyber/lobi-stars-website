@@ -1,4 +1,59 @@
 ---
-import ComingSoon from '../../components/ComingSoon.astro';
+import Layout from '../../layouts/Layout.astro';
+import stadium from '../../data/stadium.json';
+
+const q = encodeURIComponent(stadium.address);
+const facts = [
+  ['Address', stadium.address],
+  ['Capacity', stadium.capacity],
+  ['Opened', stadium.opened],
+].filter(([, v]) => v);
 ---
-<ComingSoon title="McCarthy Stadium" description="McCarthy Stadium in Makurdi, the home of Lobi Stars FC: location, seating and matchday information." />
+<Layout title={`${stadium.name} | Lobi Stars Football Club`} description={`${stadium.name}, the home of Lobi Stars FC in Makurdi: address, map, how to get there and matchday tips.`}>
+  <div class="page-hero wrap">
+    <div class="stag">Our Home</div>
+    <h1 class="stitle">{stadium.name.split(' ')[0]} <span class="r">{stadium.name.split(' ').slice(1).join(' ')}</span></h1>
+    <div class="divr"></div>
+    {stadium.about && <p class="st-about">{stadium.about}</p>}
+  </div>
+
+  <div class="page-content wrap st-grid">
+    <div>
+      <dl class="st-facts">
+        {facts.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+      </dl>
+
+      <section class="st-sec" aria-labelledby="getting-there">
+        <h2 class="st-h2" id="getting-there">How to get there</h2>
+        {stadium.directions.length > 0 && <ul class="st-list">{stadium.directions.map(d => <li>{d}</li>)}</ul>}
+        <a class="btn-p" href={`https://www.google.com/maps/dir/?api=1&destination=${q}`} target="_blank" rel="noopener">Get directions</a>
+      </section>
+
+      <section class="st-sec" aria-labelledby="tips">
+        <h2 class="st-h2" id="tips">Matchday tips</h2>
+        <ul class="st-list">{stadium.tips.map(t => <li>{t}</li>)}</ul>
+        <p class="st-links"><a href="/tickets">Buy tickets</a> · <a href="/food">In-seat food ordering</a> · <a href="/fixtures">Fixtures</a></p>
+      </section>
+    </div>
+
+    <div class="st-map">
+      <iframe title={`Map of ${stadium.name}`} src={`https://www.google.com/maps?q=${q}&output=embed`} loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .st-about { max-width: 720px; font-size: 17px; line-height: 1.7; color: var(--lt); }
+  .st-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: start; }
+  .st-facts { margin: 0 0 8px; border-top: 1px solid var(--d4); }
+  .st-facts div { padding: 14px 0; border-bottom: 1px solid var(--d4); }
+  .st-facts dt { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); margin-bottom: 6px; }
+  .st-facts dd { margin: 0; font-size: 17px; font-weight: 600; }
+  .st-sec { margin-top: 30px; }
+  .st-h2 { margin: 0 0 14px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .st-list { margin: 0 0 18px 20px; line-height: 1.8; }
+  .st-links a { color: var(--red); font-weight: 700; }
+  .st-map { position: relative; aspect-ratio: 1 / 1; border-radius: 14px; overflow: hidden; border: 1px solid var(--d4); background: var(--d3); position: sticky; top: 90px; }
+  .st-map iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  @media (max-width: 860px) { .st-grid { grid-template-columns: 1fr; } .st-map { position: relative; top: 0; aspect-ratio: 4 / 3; } }
+</style>

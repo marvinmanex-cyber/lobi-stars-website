@@ -1,0 +1,304 @@
+---
+// Match Centre page. Served for every /matches/<slug> URL by
+// functions/matches/[slug].js; the match itself is loaded from
+// /api/matches/<slug> in the browser.
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Match Centre | Lobi Stars Football Club" description="Lobi Stars FC Match Centre: preview, line-ups, live updates, match report, stats and photos." noindex>
+  <div id="mc" class="mc" aria-live="polite">
+    <div class="wrap mc-loading" id="mcStatus">Loading match&hellip;</div>
+  </div>
+</Layout>
+
+<style>
+  .mc-loading { padding: 80px 5%; text-align: center; color: var(--lt); }
+  .mc :global(.mc-head) { background: linear-gradient(140deg, #15181D 0%, #2A0507 100%); color: #fff; padding: 34px 0 30px; }
+  .mc :global(.mc-inner) { max-width: 1000px; margin: 0 auto; padding: 0 5%; }
+  .mc :global(.mc-crumb) { display: inline-block; margin-bottom: 16px; color: #FFC72C; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; text-decoration: none; }
+  .mc :global(.mc-comp) { text-align: center; color: rgba(255, 255, 255, .8); font: 700 13px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
+  .mc :global(.mc-board) { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 18px; margin: 22px 0 16px; }
+  .mc :global(.mc-team) { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; font: 400 clamp(20px, 3vw, 30px)/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .mc :global(.mc-crest) { width: clamp(64px, 10vw, 96px); height: clamp(64px, 10vw, 96px); border-radius: 50%; object-fit: contain; background: #fff; padding: 4px; }
+  .mc :global(.mc-crest--initials) { display: inline-flex; align-items: center; justify-content: center; color: #15181D; font-size: 28px; }
+  .mc :global(.mc-score) { font: 400 clamp(44px, 8vw, 72px)/1 'Bebas Neue', sans-serif; letter-spacing: 3px; white-space: nowrap; }
+  .mc :global(.mc-ko) { font: 400 clamp(28px, 5vw, 44px)/1 'Bebas Neue', sans-serif; color: #FFC72C; text-align: center; }
+  .mc :global(.mc-pill) { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 5px 10px; border-radius: 20px; background: rgba(255, 255, 255, .14); font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .mc :global(.mc-pill.live) { background: var(--red); }
+  .mc :global(.mc-pill.live::before) { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: mcpulse 1.2s infinite; }
+  @keyframes mcpulse { 50% { opacity: .2; } }
+  .mc :global(.mc-mid) { display: flex; flex-direction: column; align-items: center; }
+  .mc :global(.mc-info) { text-align: center; color: rgba(255, 255, 255, .85); font-size: 15px; line-height: 1.6; }
+
+  .mc :global(.mc-pre) { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 16px; margin-top: 22px; }
+  .mc :global(.mc-count) { display: flex; gap: 8px; }
+  .mc :global(.mc-count div) { min-width: 64px; padding: 10px 8px; border-radius: 8px; background: rgba(255, 255, 255, .1); text-align: center; }
+  .mc :global(.mc-count b) { display: block; font: 400 30px/1 'Bebas Neue', sans-serif; color: #fff; }
+  .mc :global(.mc-count span) { font: 700 10px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255, 255, 255, .7); }
+  .mc :global(.mc-actions) { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .mc :global(.mc-actions .btn-o) { color: #fff; border-color: rgba(255, 255, 255, .4); padding: 11px 16px; font-size: 13px; }
+  .mc :global(.mc-actions .btn-o:hover) { border-color: #FFC72C; color: #FFC72C; }
+  .mc :global(.mc-actions .btn-p) { padding: 11px 18px; font-size: 13px; }
+
+  .mc :global(.mc-tabs) { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--d4); background: #fff; position: sticky; top: 72px; z-index: 20; scrollbar-width: none; }
+  .mc :global(.mc-tabs::-webkit-scrollbar) { display: none; }
+  .mc :global(.mc-tab) { padding: 16px 16px 13px; background: none; border: 0; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; color: var(--lt); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .mc :global(.mc-tab[aria-selected='true']) { color: var(--red); border-bottom-color: var(--red); }
+  .mc :global(.mc-tab:focus-visible) { outline: 3px solid var(--red); outline-offset: -3px; }
+  .mc :global(.mc-panel) { padding: 30px 0 20px; }
+  .mc :global(.mc-text) { max-width: 720px; font-size: 17px; line-height: 1.8; }
+  .mc :global(.mc-text p) { margin: 0 0 1.1em; }
+  .mc :global(.mc-empty) { padding: 30px 18px; text-align: center; color: var(--lt); border: 1px dashed var(--d4); border-radius: 10px; }
+
+  .mc :global(.mc-lineups) { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .mc :global(.mc-lu) { border: 1px solid var(--d4); border-radius: 12px; padding: 18px 20px; }
+  .mc :global(.mc-lu h3) { margin: 0 0 12px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .mc :global(.mc-lu h4) { margin: 16px 0 8px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); }
+  .mc :global(.mc-lu ol) { margin: 0; padding-left: 0; list-style: none; }
+  .mc :global(.mc-lu li) { padding: 7px 0; border-bottom: 1px solid var(--d3); }
+
+  .mc :global(.mc-tl) { list-style: none; margin: 0; padding: 0; max-width: 720px; }
+  .mc :global(.mc-tl li) { display: grid; grid-template-columns: 56px 34px 1fr; gap: 10px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--d4); }
+  .mc :global(.mc-min) { font: 400 22px/1.1 'Bebas Neue', sans-serif; color: var(--red); }
+  .mc :global(.mc-ico) { font-size: 20px; line-height: 1.2; }
+  .mc :global(.mc-ev b) { display: block; font: 700 16px/1.3 'Barlow Condensed', sans-serif; }
+  .mc :global(.mc-ev span) { color: var(--lt); font-size: 14px; }
+  .mc :global(.mc-refresh) { color: var(--lt); font-size: 13px; margin-bottom: 14px; }
+
+  .mc :global(.mc-stats) { max-width: 720px; }
+  .mc :global(.mc-stat) { margin-bottom: 18px; }
+  .mc :global(.mc-stat-row) { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px; }
+  .mc :global(.mc-stat-row span:nth-child(2)) { font: 700 13px/1.5 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .mc :global(.mc-bar) { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--d3); }
+  .mc :global(.mc-bar i) { display: block; }
+  .mc :global(.mc-bar .h) { background: var(--red); }
+  .mc :global(.mc-bar .a) { background: #15181D; }
+
+  .mc :global(.mc-gallery) { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .mc :global(.mc-gallery a) { display: block; border-radius: 10px; overflow: hidden; aspect-ratio: 4 / 3; background: var(--d3); }
+  .mc :global(.mc-gallery img) { width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
+  .mc :global(.mc-gallery a:hover img) { transform: scale(1.05); }
+  .mc :global(.mc-gallery figcaption) { margin-top: 6px; font-size: 13px; color: var(--lt); }
+
+  @media (max-width: 640px) {
+    .mc :global(.mc-lineups) { grid-template-columns: 1fr; }
+    .mc :global(.mc-board) { gap: 8px; }
+    .mc :global(.mc-tabs) { top: 72px; }
+  }
+</style>
+
+<script>
+  import { crest, fmtDate, fmtTime, isLobi, hasScore, downloadIcs, googleCalUrl, STATUS_LABELS } from '../lib/matchUi';
+
+  type Line = { starting: string[]; subs: string[] };
+  type Full = {
+    id: string; slug: string; home_team: string; away_team: string; competition: string; event_date: string; venue: string;
+    status: string; home_score: number | null; away_score: number | null; preview: string; report: string;
+    lineups: { home: Line; away: Line }; timeline: { minute: string; type: string; team: string; player: string; detail: string }[];
+    stats: Record<string, [number, number]>; gallery: { url: string; caption: string }[];
+  };
+
+  const root = document.getElementById('mc')!;
+  const slug = location.pathname.replace(/^\/matches\//, '').replace(/\/$/, '') || new URLSearchParams(location.search).get('m') || '';
+  let match: Full | null = null;
+  let activeTab = '';
+  let timers: number[] = [];
+
+  const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: string) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  const paragraphs = (text: string) => {
+    const box = el('div', 'mc-text');
+    text.split(/\n\s*\n/).map(t => t.trim()).filter(Boolean).forEach(t => box.append(el('p', '', t)));
+    return box;
+  };
+  const empty = (msg: string) => el('p', 'mc-empty', msg);
+
+  const ICONS: Record<string, string> = { goal: '⚽', 'own-goal': '⚽', penalty: '⚽', yellow: '🟨', red: '🟥', sub: '🔄', note: '📝' };
+  const TYPE_LABEL: Record<string, string> = { goal: 'Goal', 'own-goal': 'Own goal', penalty: 'Penalty goal', yellow: 'Yellow card', red: 'Red card', sub: 'Substitution', note: 'Update' };
+  const STAT_LABEL: Record<string, string> = { possession: 'Possession (%)', shots: 'Shots', shotsOnTarget: 'Shots on target', corners: 'Corners', fouls: 'Fouls', yellowCards: 'Yellow cards', redCards: 'Red cards' };
+
+  function header(m: Full) {
+    const head = el('section', 'mc-head');
+    const inner = el('div', 'mc-inner');
+    const back = el('a', 'mc-crumb', '← Fixtures & results') as HTMLAnchorElement;
+    back.href = new Date(m.event_date).getTime() > Date.now() ? '/fixtures' : '/results';
+    inner.append(back, el('div', 'mc-comp', m.competition));
+
+    const board = el('div', 'mc-board');
+    const team = (name: string) => { const t = el('div', 'mc-team'); t.append(crest(name, 96, 'mc-crest'), el('span', '', name)); return t; };
+    const mid = el('div', 'mc-mid');
+    const started = ['live', 'half-time', 'full-time'].includes(m.status) || hasScore(m);
+    if (started && hasScore(m)) mid.append(el('div', 'mc-score', `${m.home_score} – ${m.away_score}`));
+    else mid.append(el('div', 'mc-ko', fmtTime(m.event_date).replace(' WAT', '')));
+    const pill = el('span', `mc-pill${m.status === 'live' ? ' live' : ''}`, STATUS_LABELS[m.status] || 'Upcoming');
+    mid.append(pill);
+    board.append(team(m.home_team), mid, team(m.away_team));
+
+    const h1 = el('h1', 'sr-only', `${m.home_team} vs ${m.away_team}`);
+    const info = el('p', 'mc-info');
+    info.append(`${fmtDate(m.event_date, true)} · Kick-off ${fmtTime(m.event_date)}`, el('br'), `📍 ${m.venue}`);
+    inner.append(h1, board, info);
+
+    const start = new Date(m.event_date).getTime();
+    if (start > Date.now() && m.status === 'scheduled') {
+      const pre = el('div', 'mc-pre');
+      const count = el('div', 'mc-count');
+      count.setAttribute('aria-label', 'Time to kick-off');
+      const units = ['Days', 'Hrs', 'Mins', 'Secs'].map(u => { const d = el('div'); const b = el('b', '', '–'); d.append(b, el('span', '', u)); count.append(d); return b; });
+      const tick = () => {
+        const left = start - Date.now();
+        if (left <= 0) { load(); return; }
+        const v = [Math.floor(left / 864e5), Math.floor(left / 36e5) % 24, Math.floor(left / 6e4) % 60, Math.floor(left / 1e3) % 60];
+        units.forEach((u, i) => { u.textContent = String(v[i]).padStart(2, '0'); });
+      };
+      tick();
+      timers.push(window.setInterval(tick, 1000));
+
+      const actions = el('div', 'mc-actions');
+      if (isLobi(m.home_team)) {
+        const t = el('a', 'btn-p', 'Buy Tickets') as HTMLAnchorElement;
+        t.href = `/tickets?event=${encodeURIComponent(m.id)}`;
+        actions.append(t);
+      }
+      const ics = el('button', 'btn-o', '📅 Add to calendar') as HTMLButtonElement;
+      ics.type = 'button'; ics.addEventListener('click', () => downloadIcs(m));
+      const g = el('a', 'btn-o', 'Google Calendar') as HTMLAnchorElement;
+      g.href = googleCalUrl(m); g.target = '_blank'; g.rel = 'noopener';
+      actions.append(ics, g);
+      pre.append(count, actions);
+      inner.append(pre);
+    }
+    head.append(inner);
+    return head;
+  }
+
+  function panel(id: string, m: Full): HTMLElement {
+    const p = el('div');
+    if (id === 'preview') p.append(m.preview ? paragraphs(m.preview) : empty('The match preview will appear here before kick-off.'));
+    if (id === 'lineups') {
+      const any = [m.lineups.home, m.lineups.away].some(l => l.starting.length);
+      if (!any) p.append(empty('Line-ups are usually announced about an hour before kick-off.'));
+      else {
+        const grid = el('div', 'mc-lineups');
+        ([['home', m.home_team], ['away', m.away_team]] as const).forEach(([k, name]) => {
+          const box = el('div', 'mc-lu');
+          box.append(el('h3', '', name), el('h4', '', 'Starting XI'));
+          const ol = el('ol'); m.lineups[k].starting.forEach(n => ol.append(el('li', '', n))); box.append(ol);
+          if (m.lineups[k].subs.length) {
+            box.append(el('h4', '', 'Substitutes'));
+            const ul = el('ol'); m.lineups[k].subs.forEach(n => ul.append(el('li', '', n))); box.append(ul);
+          }
+          grid.append(box);
+        });
+        p.append(grid);
+      }
+    }
+    if (id === 'live') {
+      if (m.status === 'live' || m.status === 'half-time') p.append(el('p', 'mc-refresh', 'Updates automatically every 30 seconds.'));
+      if (!m.timeline.length) p.append(empty(new Date(m.event_date).getTime() > Date.now() ? 'Live updates will appear here during the match.' : 'No live updates were recorded for this match.'));
+      else {
+        const ol = el('ol', 'mc-tl');
+        // "45+2" sorts just after "45".
+        const minute = (s: string) => { const [a, b] = s.split('+').map(x => parseInt(x, 10) || 0); return a + (b || 0) / 100; };
+        [...m.timeline].sort((a, b) => minute(b.minute) - minute(a.minute)).forEach(e => {
+          const li = el('li');
+          const team = e.team === 'home' ? m.home_team : e.team === 'away' ? m.away_team : '';
+          const ev = el('div', 'mc-ev');
+          ev.append(el('b', '', [TYPE_LABEL[e.type], e.player].filter(Boolean).join(': ')), el('span', '', [team, e.detail].filter(Boolean).join(' · ')));
+          const ico = el('span', 'mc-ico', ICONS[e.type] || '•'); ico.setAttribute('aria-hidden', 'true');
+          li.append(el('span', 'mc-min', e.minute ? `${e.minute}'` : ''), ico, ev);
+          ol.append(li);
+        });
+        p.append(ol);
+      }
+    }
+    if (id === 'report') p.append(m.report ? paragraphs(m.report) : empty('The match report will be published after the final whistle.'));
+    if (id === 'stats') {
+      const keys = Object.keys(STAT_LABEL).filter(k => m.stats[k]);
+      if (!keys.length) p.append(empty('Match stats will appear here during and after the match.'));
+      else {
+        const box = el('div', 'mc-stats');
+        const names = el('div', 'mc-stat-row'); names.append(el('span', '', m.home_team), el('span', '', ''), el('span', '', m.away_team));
+        box.append(names);
+        keys.forEach(k => {
+          const [h, a] = m.stats[k]; const total = h + a || 1;
+          const row = el('div', 'mc-stat');
+          const top = el('div', 'mc-stat-row'); top.append(el('span', '', String(h)), el('span', '', STAT_LABEL[k]), el('span', '', String(a)));
+          const bar = el('div', 'mc-bar');
+          const hb = el('i', 'h'); hb.style.width = `${(h / total) * 100}%`;
+          const ab = el('i', 'a'); ab.style.width = `${(a / total) * 100}%`;
+          bar.append(hb, ab); row.append(top, bar); box.append(row);
+        });
+        p.append(box);
+      }
+    }
+    if (id === 'gallery') {
+      if (!m.gallery.length) p.append(empty('Match photos will appear here after the game.'));
+      else {
+        const ul = el('ul', 'mc-gallery');
+        m.gallery.forEach(g => {
+          const li = el('li'); const fig = el('figure');
+          const a = el('a') as HTMLAnchorElement; a.href = g.url; a.target = '_blank'; a.rel = 'noopener';
+          const img = el('img') as HTMLImageElement; img.src = g.url; img.alt = g.caption || `${m.home_team} vs ${m.away_team} photo`; img.loading = 'lazy';
+          a.append(img); fig.append(a); if (g.caption) fig.append(el('figcaption', '', g.caption));
+          li.append(fig); ul.append(li);
+        });
+        p.append(ul);
+      }
+    }
+    return p;
+  }
+
+  const TABS = [['preview', 'Preview'], ['lineups', 'Line-ups'], ['live', 'Live'], ['report', 'Report'], ['stats', 'Stats'], ['gallery', 'Gallery']];
+
+  function render(m: Full) {
+    timers.forEach(clearInterval); timers = [];
+    if (!activeTab) {
+      activeTab = (m.status === 'live' || m.status === 'half-time') ? 'live'
+        : (m.status === 'full-time' && m.report) ? 'report' : 'preview';
+    }
+    const body = el('div', 'mc-inner');
+    const tabs = el('div', 'mc-tabs'); tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Match Centre');
+    const panelBox = el('div', 'mc-panel'); panelBox.setAttribute('role', 'tabpanel'); panelBox.tabIndex = 0;
+    TABS.forEach(([id, label]) => {
+      const b = el('button', 'mc-tab', label) as HTMLButtonElement;
+      b.type = 'button'; b.id = `tab-${id}`; b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(id === activeTab)); b.tabIndex = id === activeTab ? 0 : -1;
+      b.addEventListener('click', () => { activeTab = id; render(m); document.getElementById(`tab-${id}`)?.focus(); });
+      b.addEventListener('keydown', e => {
+        const i = TABS.findIndex(t => t[0] === id);
+        const next = e.key === 'ArrowRight' ? (i + 1) % TABS.length : e.key === 'ArrowLeft' ? (i - 1 + TABS.length) % TABS.length : -1;
+        if (next >= 0) { activeTab = TABS[next][0]; render(m); document.getElementById(`tab-${activeTab}`)?.focus(); }
+      });
+      tabs.append(b);
+    });
+    panelBox.setAttribute('aria-labelledby', `tab-${activeTab}`);
+    panelBox.append(panel(activeTab, m));
+    body.append(tabs, panelBox);
+    root.replaceChildren(header(m), body);
+    document.title = `${m.home_team} vs ${m.away_team} | Match Centre | Lobi Stars FC`;
+    if (m.status === 'live' || m.status === 'half-time') timers.push(window.setInterval(load, 30_000));
+  }
+
+  async function load() {
+    if (!slug) { root.replaceChildren(el('div', 'wrap mc-loading', 'Match not found.')); return; }
+    try {
+      const res = await fetch(`/api/matches/${encodeURIComponent(slug)}`);
+      if (res.status === 404) throw new Error('notfound');
+      if (!res.ok) throw new Error('error');
+      match = (await res.json()).match;
+      render(match!);
+    } catch (err) {
+      if (match) return; // keep showing the last good data
+      const box = el('div', 'wrap mc-loading');
+      box.append((err as Error).message === 'notfound' ? 'Sorry, we could not find that match. ' : 'The Match Centre could not be loaded. ');
+      const a = el('a', '', 'See all fixtures') as HTMLAnchorElement; a.href = '/fixtures'; a.style.color = 'var(--red)';
+      box.append(a);
+      root.replaceChildren(box);
+    }
+  }
+  load();
+</script>

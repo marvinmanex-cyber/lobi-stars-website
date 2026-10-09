@@ -8,6 +8,7 @@ import Layout from '../../layouts/Layout.astro';
       <a href="/admin/">Content CMS</a>
       <a href="/admin/analytics">Analytics</a>
       <a href="/admin/news">Manage news</a>
+      <a href="/admin/match-centre">Match Centre</a>
     </div>
     <div class="stag">Admin</div>
     <h1 class="stitle">Manage <span class="r">Matches</span></h1>
@@ -96,6 +97,9 @@ import Layout from '../../layouts/Layout.astro';
     .admin-nav a{color:var(--lt);text-decoration:none;transition:color .15s;}
     .admin-nav a:hover{color:var(--gold);}
     .admin-nav .an-back{color:var(--gold);}
+    .m-actions .mc-link{display:inline-block;font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;
+      text-transform:uppercase;padding:7px 14px;border-radius:6px;border:1px solid var(--red);color:var(--red);text-decoration:none;}
+    .m-actions .mc-link:hover{background:var(--red);color:#fff;}
     .admin-lede{max-width:640px;margin:6px 0 28px;font-size:14px;line-height:1.6;color:var(--lt);}
     .admin-lede a{color:var(--gold);}
 
@@ -290,6 +294,7 @@ import Layout from '../../layouts/Layout.astro';
             (orders ? '<span class="pill sold">' + orders + ' sold</span>' : '') +
           '</div>' +
           '<div class="m-actions">' +
+            '<a class="mc-link" href="/admin/match-centre?id=' + encodeURIComponent(e.id) + '">Match Centre</a>' +
             '<button data-act="edit">Edit</button>' +
             '<button data-act="toggle">' + (e.active ? 'Hide' : 'Show') + '</button>' +
             '<button data-act="delete" class="danger">Delete</button>' +

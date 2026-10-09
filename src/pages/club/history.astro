@@ -1,4 +1,50 @@
 ---
-import ComingSoon from '../../components/ComingSoon.astro';
+import Layout from '../../layouts/Layout.astro';
+import history from '../../data/history.json';
+
+// Only entries the club has checked ("verified": true) are published.
+const events = history.events.filter(e => e.verified);
 ---
-<ComingSoon title="Club History" description="The history of Lobi Stars FC, from Makurdi to the top of Nigerian football." />
+<Layout title="Club History | Lobi Stars Football Club" description="The history of Lobi Stars FC, the Pride of Benue: key moments, titles and milestones.">
+  <div class="page-hero wrap">
+    <div class="stag">The Club</div>
+    <h1 class="stitle">Club <span class="r">History</span></h1>
+    <div class="divr"></div>
+    {history.intro && <p class="hs-intro">{history.intro}</p>}
+  </div>
+  <div class="page-content wrap">
+    {events.length ? (
+      <ol class="tl">
+        {events.map(e => (
+          <li class="tl-item">
+            <span class="tl-year">{e.year}</span>
+            <div class="tl-card">
+              <h2>{e.title}</h2>
+              <p>{e.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+    ) : (
+      <div class="empty-state">Our club history timeline is being prepared &mdash; check back soon.</div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .hs-intro { max-width: 720px; font-size: 17px; line-height: 1.7; color: var(--lt); }
+  .tl { list-style: none; margin: 0; padding: 0; position: relative; max-width: 860px; }
+  .tl::before { content: ''; position: absolute; left: 70px; top: 0; bottom: 0; width: 3px; background: var(--d4); }
+  .tl-item { display: grid; grid-template-columns: 70px 1fr; gap: 34px; position: relative; margin-bottom: 28px; }
+  .tl-item::before { content: ''; position: absolute; left: 63px; top: 10px; width: 17px; height: 17px; border-radius: 50%; background: var(--red); border: 3px solid #fff; box-shadow: 0 0 0 2px var(--red); }
+  .tl-year { font: 400 30px/1.2 'Bebas Neue', sans-serif; color: var(--red); text-align: right; padding-right: 8px; }
+  .tl-card { background: var(--d2); border: 1px solid var(--d4); border-radius: 12px; padding: 18px 22px; }
+  .tl-card h2 { margin: 0 0 6px; font: 700 21px/1.2 'Barlow Condensed', sans-serif; }
+  .tl-card p { margin: 0; color: var(--lt); line-height: 1.7; }
+  @media (max-width: 560px) {
+    .tl::before { left: 8px; }
+    .tl-item { grid-template-columns: 1fr; gap: 8px; padding-left: 34px; }
+    .tl-item::before { left: 1px; top: 6px; }
+    .tl-year { text-align: left; }
+  }
+</style>

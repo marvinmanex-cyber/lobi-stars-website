@@ -1,0 +1,15 @@
+{
+  "_todo": "TODO: add the stadium capacity, opening year and directions. Empty fields are hidden.",
+  "name": "McCarthy Stadium",
+  "address": "McCarthy Stadium, Makurdi, Benue State, Nigeria",
+  "capacity": "",
+  "opened": "",
+  "about": "",
+  "directions": [],
+  "tips": [
+    "Buy your ticket online before matchday and keep the QR code ready on your phone.",
+    "Arrive early to avoid queues at the gates.",
+    "Order food and drinks to your seat with in-seat food ordering.",
+    "Check the latest fixture details on the website or our social channels before you travel."
+  ]
+}

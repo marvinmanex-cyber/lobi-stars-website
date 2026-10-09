@@ -1,52 +1,64 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import PersonCard from '../../components/PersonCard.astro';
 import { getCollection } from 'astro:content';
+import { CURRENT_SEASON } from '../../lib/site';
 
 const players = (await getCollection('players')).sort((a, b) => a.data.number - b.data.number);
+const coaches = (await getCollection('staff'))
+  .filter(s => s.data.group === 'Coaching Staff')
+  .sort((a, b) => a.data.order - b.data.order);
+
+const GROUPS = [
+  { pos: 'GK', title: 'Goalkeepers', label: 'Goalkeeper' },
+  { pos: 'DEF', title: 'Defenders', label: 'Defender' },
+  { pos: 'MID', title: 'Midfielders', label: 'Midfielder' },
+  { pos: 'FWD', title: 'Forwards', label: 'Forward' },
+] as const;
 ---
-<Layout title="Squad | Lobi Stars Football Club" description="Meet the Lobi Stars FC First Team squad: goalkeepers, defenders, midfielders and forwards.">
+<Layout title="Squad | Lobi Stars Football Club" description={`Meet the Lobi Stars FC First Team squad for ${CURRENT_SEASON}: goalkeepers, defenders, midfielders, forwards and coaching staff.`}>
   <div class="page-hero wrap">
-    <div class="stag">The Squad</div>
-    <h1 class="stitle">Our <span class="r">Warriors</span></h1>
+    <div class="stag">{CURRENT_SEASON} First Team</div>
+    <h1 class="stitle">The <span class="r">Squad</span></h1>
     <div class="divr"></div>
   </div>
 
   <div class="page-content wrap">
     {players.length === 0 && (
-      <div class="empty-state">
-        Squad profiles are coming soon &mdash; check back shortly.
-      </div>
+      <div class="empty-state">The {CURRENT_SEASON} squad will be announced soon.</div>
     )}
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:18px;">
-      {players.map(player => (
-        <a href={`/squad/${player.id}`} class="card" style="text-decoration:none;display:block;">
-          <div style="height:170px;position:relative;overflow:hidden;background:var(--d3);">
-            {player.data.photo && (
-              <img src={player.data.photo} alt={player.data.name} style="width:100%;height:100%;object-fit:cover;"/>
-            )}
-            <div style="position:absolute;top:11px;left:11px;background:var(--red);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:2px;">
-              {player.data.position}
-            </div>
-            <div style="position:absolute;bottom:-10px;right:6px;font-family:'Bebas Neue',sans-serif;font-size:80px;color:rgba(0,0,0,.08);line-height:1;">
-              {player.data.number}
-            </div>
-          </div>
-          <div style="padding:15px;">
-            <div style="font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--white);margin-bottom:3px;">{player.data.name}</div>
-            <div class="muted" style="font-size:12px;letter-spacing:1px;">{player.data.nationality}</div>
-            <div style="display:flex;margin-top:12px;border-top:1px solid var(--d4);padding-top:10px;">
-              <div style="flex:1;text-align:center;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);">{player.data.apps}</div>
-                <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;" class="muted">Apps</div>
-              </div>
-              <div style="flex:1;text-align:center;">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--gold);">{player.data.goals}</div>
-                <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;" class="muted">Goals</div>
-              </div>
-            </div>
-          </div>
-        </a>
-      ))}
-    </div>
+
+    {GROUPS.map(g => {
+      const list = players.filter(p => p.data.position === g.pos);
+      return list.length > 0 && (
+        <section class="sq-group" aria-labelledby={`g-${g.pos}`}>
+          <h2 class="sq-title" id={`g-${g.pos}`}>{g.title}</h2>
+          <ul class="sq-grid">
+            {list.map(p => (
+              <li><PersonCard name={p.data.name} subtitle={g.label} photo={p.data.photo} number={p.data.number}
+                href={`/squad/${p.id}`} sample={p.data.isSample} /></li>
+            ))}
+          </ul>
+        </section>
+      );
+    })}
+
+    {coaches.length > 0 && (
+      <section class="sq-group" aria-labelledby="g-staff">
+        <h2 class="sq-title" id="g-staff">Coaching Staff</h2>
+        <ul class="sq-grid">
+          {coaches.map(c => (
+            <li><PersonCard name={c.data.name} subtitle={c.data.role} photo={c.data.photo} /></li>
+          ))}
+        </ul>
+      </section>
+    )}
   </div>
 </Layout>
+
+<style>
+  .sq-group { margin-bottom: 44px; }
+  .sq-title { margin: 0 0 18px; padding-bottom: 10px; border-bottom: 2px solid var(--d4); font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .sq-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 18px; }
+  @media (max-width: 480px) { .sq-grid { grid-template-columns: 1fr 1fr; gap: 12px; } }
+</style>

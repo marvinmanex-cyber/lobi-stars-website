@@ -1,39 +1,112 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import NewsCarousel from '../../components/news/NewsCarousel.astro';
 import { getCollection, render } from 'astro:content';
+import { getSortedNews } from '../../lib/news';
 
 export async function getStaticPaths() {
   const players = await getCollection('players');
-  return players.map(player => ({
-    params: { slug: player.id },
-    props: { player },
-  }));
+  const news = await getSortedNews();
+  return players.map(player => {
+    // Related news: stories that mention the player's name.
+    const name = player.data.name.toLowerCase();
+    const related = player.data.isSample ? [] : news.filter(a =>
+      `${a.data.title} ${a.data.summary} ${a.body ?? ''}`.toLowerCase().includes(name)).slice(0, 8);
+    return { params: { slug: player.id }, props: { player, related } };
+  });
 }
 
-const { player } = Astro.props;
+const { player, related } = Astro.props;
+const p = player.data;
 const { Content } = await render(player);
+
+const POSITIONS = { GK: 'Goalkeeper', DEF: 'Defender', MID: 'Midfielder', FWD: 'Forward' } as const;
+const position = POSITIONS[p.position];
+
+function age(dob: Date) {
+  const now = new Date();
+  let a = now.getFullYear() - dob.getFullYear();
+  if (now < new Date(now.getFullYear(), dob.getMonth(), dob.getDate())) a--;
+  return a;
+}
+const facts = [
+  ['Position', position],
+  ['Shirt number', String(p.number)],
+  ['Date of birth', p.dateOfBirth ? `${p.dateOfBirth.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })} (age ${age(p.dateOfBirth)})` : null],
+  ['State / country', [p.stateOfOrigin, p.nationality].filter(Boolean).join(', ') || null],
+  ['Height', p.height || null],
+  ['Preferred foot', p.preferredFoot || null],
+].filter((f): f is [string, string] => !!f[1]);
+
+const stats = [
+  ['Appearances', p.apps],
+  ['Goals', p.goals],
+  ['Assists', p.assists],
+  ...(p.position === 'GK' ? [['Clean sheets', p.cleanSheets]] : []),
+] as [string, number | null][];
+const hasStats = stats.some(([, v]) => (v ?? 0) > 0);
 ---
-<Layout title={`${player.data.name} | Lobi Stars Squad`} description={`${player.data.name}, ${player.data.position} for Lobi Stars FC: profile, appearances and goals.`} image={player.data.photo}>
-  <div class="page-content wrap" style="max-width:700px;padding-top:60px;">
-    <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap;margin-bottom:24px;">
-      {player.data.photo && (
-        <img src={player.data.photo} alt={player.data.name} style="width:140px;height:140px;border-radius:50%;object-fit:cover;border:3px solid var(--red);"/>
-      )}
+<Layout title={`${p.name} | Lobi Stars Squad`} description={`${p.name}, ${position} (#${p.number}) for Lobi Stars FC: profile, appearances, goals and news.`} image={p.photo || undefined}>
+  <div class="wrap pl">
+    <a class="pl-back" href="/squad">&larr; Back to the squad</a>
+    {p.isSample && <p class="pl-sample" role="note"><strong>Sample profile.</strong> This shows how a player page will look and will be replaced with a real player.</p>}
+
+    <div class="pl-top">
+      <div class="pl-photo">
+        {p.photo
+          ? <img src={p.photo} alt={p.name} width="600" height="750" />
+          : <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="36" r="18" /><path d="M14 100c0-22 16-36 36-36s36 14 36 36z" /></svg>}
+        <span class="pl-num" aria-hidden="true">{p.number}</span>
+      </div>
       <div>
-        <div class="stag">{player.data.position} &middot; #{player.data.number}</div>
-        <h1 class="stitle" style="font-size:clamp(28px,4vw,44px);">{player.data.name}</h1>
-        <div class="muted">{player.data.nationality}</div>
+        <div class="stag">{position}</div>
+        <h1 class="stitle">{p.name}</h1>
+        <dl class="pl-facts">
+          {facts.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+        </dl>
       </div>
     </div>
-    <div style="display:flex;gap:30px;margin-bottom:30px;">
-      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);">{player.data.apps}</div><div class="muted" style="font-size:11px;letter-spacing:2px;text-transform:uppercase;">Appearances</div></div>
-      <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);">{player.data.goals}</div><div class="muted" style="font-size:11px;letter-spacing:2px;text-transform:uppercase;">Goals</div></div>
-    </div>
-    <div style="font-size:15px;line-height:1.8;opacity:.85;">
-      <Content />
-    </div>
-    <div style="margin-top:40px;">
-      <a href="/squad" class="btn-o">&larr; Back to Squad</a>
-    </div>
+
+    {hasStats && (
+      <section class="pl-sec" aria-labelledby="stats-h">
+        <h2 class="pl-h2" id="stats-h">Season stats</h2>
+        <ul class="pl-stats">
+          {stats.map(([k, v]) => <li><span class="pl-stat-v">{v ?? 0}</span><span class="pl-stat-k">{k}</span></li>)}
+        </ul>
+      </section>
+    )}
+
+    {(player.body ?? '').trim() && (
+      <section class="pl-sec pl-bio" aria-labelledby="bio-h">
+        <h2 class="pl-h2" id="bio-h">Biography</h2>
+        <Content />
+      </section>
+    )}
   </div>
+
+  {related.length > 0 && <NewsCarousel title="Related news" articles={related} viewAllHref="/news" tone="band" />}
 </Layout>
+
+<style>
+  .pl { padding-top: 32px; padding-bottom: 40px; }
+  .pl-back { display: inline-block; margin-bottom: 18px; color: var(--red); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; }
+  .pl-sample { margin: 0 0 20px; padding: 12px 16px; border-radius: 8px; background: #FFF6D6; border: 1px solid #F2D27A; color: #5C4300; }
+  .pl-top { display: grid; grid-template-columns: minmax(220px, 360px) 1fr; gap: 36px; align-items: start; }
+  .pl-photo { position: relative; aspect-ratio: 4 / 5; border-radius: 14px; overflow: hidden; background: linear-gradient(160deg, #F1F3F5, #E3E6EA); }
+  .pl-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  .pl-photo svg { position: absolute; left: 15%; bottom: 0; width: 70%; fill: #C9CED6; }
+  .pl-num { position: absolute; right: 14px; bottom: 4px; font: 400 96px/1 'Bebas Neue', sans-serif; color: var(--red); }
+  .pl-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0; margin: 10px 0 0; border-top: 1px solid var(--d4); }
+  .pl-facts div { padding: 14px 0; border-bottom: 1px solid var(--d4); }
+  .pl-facts dt { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); margin-bottom: 6px; }
+  .pl-facts dd { margin: 0; font-size: 17px; font-weight: 600; }
+  .pl-sec { margin-top: 40px; }
+  .pl-h2 { margin: 0 0 16px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .pl-stats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
+  .pl-stats li { background: #15181D; color: #fff; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
+  .pl-stat-v { font: 400 44px/1 'Bebas Neue', sans-serif; color: #FFC72C; }
+  .pl-stat-k { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255, 255, 255, .8); }
+  .pl-bio { max-width: 720px; font-size: 17px; line-height: 1.8; }
+  .pl-bio :global(p) { margin: 0 0 1.2em; }
+  @media (max-width: 760px) { .pl-top { grid-template-columns: 1fr; } .pl-photo { max-width: 360px; } }
+</style>

@@ -1,4 +1,45 @@
 ---
-import ComingSoon from '../../components/ComingSoon.astro';
+import Layout from '../../layouts/Layout.astro';
+import data from '../../data/honours.json';
+
+// Only competitions the club has checked ("verified": true) are published.
+const honours = data.honours.filter(h => h.verified && h.years.length);
+const total = honours.reduce((n, h) => n + h.years.length, 0);
 ---
-<ComingSoon title="Honours" description="The trophies and titles won by Lobi Stars FC." />
+<Layout title="Honours | Lobi Stars Football Club" description="The Lobi Stars FC trophy cabinet: titles and cups won by the Pride of Benue.">
+  <div class="page-hero wrap">
+    <div class="stag">The Club</div>
+    <h1 class="stitle">Trophy <span class="r">Cabinet</span></h1>
+    <div class="divr"></div>
+    {total > 0 && <p class="hn-total">{total} major {total === 1 ? 'honour' : 'honours'}</p>}
+  </div>
+  <div class="page-content wrap">
+    {honours.length ? (
+      <ul class="hn-grid">
+        {honours.map(h => (
+          <li class="hn-card">
+            <span class="hn-icon" aria-hidden="true">🏆</span>
+            <span class="hn-count">{h.years.length}<span class="sr-only"> times</span></span>
+            <h2>{h.competition}</h2>
+            <p class="hn-years">{h.years.join(' · ')}</p>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <div class="empty-state">The full honours list is being confirmed &mdash; check back soon.</div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .hn-total { font: 700 16px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); }
+  .hn-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+  .hn-card {
+    background: linear-gradient(160deg, #15181D, #2A0507); color: #fff; border-radius: 14px; padding: 26px 24px;
+    border: 1px solid rgba(255, 199, 44, .35); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px;
+  }
+  .hn-icon { font-size: 40px; }
+  .hn-count { font: 400 64px/1 'Bebas Neue', sans-serif; color: #FFC72C; }
+  .hn-card h2 { margin: 0; font: 700 19px/1.25 'Barlow Condensed', sans-serif; color: #fff; }
+  .hn-years { margin: 6px 0 0; color: rgba(255, 255, 255, .8); font-size: 15px; }
+</style>

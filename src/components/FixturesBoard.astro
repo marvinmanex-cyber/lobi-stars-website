@@ -1,245 +1,188 @@
 ---
-// Upcoming fixtures and recent results, shared by the homepage and /fixtures.
-// The site is static, so whether a match is "upcoming" is decided in the
-// browser against the current time: a match whose kick-off has passed is
-// never shown as upcoming. Sources: the CMS fixtures collection (results and
-// scores) plus the live ticketed matches from /api/events.
+// Fixtures or results, grouped by month. Matches come from the database
+// (/api/matches -- managed in Admin > Manage Matches, with Match Centre
+// scores) plus any fixtures entered in the content CMS. Whether a match is
+// upcoming is decided in the browser against the current time, so a match
+// whose kick-off has passed never shows as upcoming.
 import { getCollection } from 'astro:content';
 
 interface Props {
-  upcomingLimit?: number;
-  resultsLimit?: number;
-  showMoreLinks?: boolean;
-  /** Emit schema.org SportsEvent data for each match (use on one page only). */
+  show: 'upcoming' | 'results';
+  /** Emit schema.org SportsEvent data for each match. */
   structuredData?: boolean;
-  /** Which lists to show. */
-  show?: 'both' | 'upcoming' | 'results';
 }
-const { upcomingLimit = 0, resultsLimit = 0, showMoreLinks = false, structuredData = false, show = 'both' } = Astro.props;
+const { show, structuredData = false } = Astro.props;
 
 // The CMS saves kick-off as Nigerian wall-clock time with no timezone, which
 // gets read as UTC; shift it back by WAT's +1h so 16:30 stays 16:30.
 const WAT_OFFSET_MS = 60 * 60 * 1000;
-
 const cms = (await getCollection('fixtures')).map(f => ({
-  home: f.data.home,
-  away: f.data.away,
-  date: new Date(f.data.date.getTime() - WAT_OFFSET_MS).toISOString(),
+  home_team: f.data.home,
+  away_team: f.data.away,
+  event_date: new Date(f.data.date.getTime() - WAT_OFFSET_MS).toISOString(),
   venue: f.data.venue,
   competition: f.data.competition,
-  homeScore: f.data.home_score ?? null,
-  awayScore: f.data.away_score ?? null,
-  completed: f.data.status === 'Completed',
+  home_score: f.data.home_score ?? null,
+  away_score: f.data.away_score ?? null,
+  status: f.data.status === 'Completed' ? 'full-time' : 'scheduled',
 }));
-
-type Fx = (typeof cms)[number];
-function sportsEvent(f: Fx) {
-  const team = (name: string) => ({ '@type': 'SportsTeam', name });
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'SportsEvent',
-    name: `${f.home} vs ${f.away}`,
-    description: `${f.competition}: ${f.home} vs ${f.away} at ${f.venue}.`,
-    sport: 'Soccer',
-    startDate: f.date,
-    eventStatus: 'https://schema.org/EventScheduled',
-    eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-    location: { '@type': 'Place', name: f.venue, address: { '@type': 'PostalAddress', addressCountry: 'NG', streetAddress: f.venue } },
-    homeTeam: team(f.home),
-    awayTeam: team(f.away),
-    competitor: [team(f.home), team(f.away)],
-    organizer: { '@type': 'SportsOrganization', name: f.competition },
-  };
-}
 ---
-{structuredData && cms.map(f => <script type="application/ld+json" set:html={JSON.stringify(sportsEvent(f))} />)}
-<div class:list={['fxb', `fxb--${show}`]} data-fixtures-board data-structured={structuredData ? '1' : undefined} data-fixtures={JSON.stringify(cms)}
-     data-upcoming-limit={upcomingLimit} data-results-limit={resultsLimit}>
-  <div hidden={show === 'results'}>
-    <h3 class="fxb-title">Upcoming Fixtures</h3>
-    <div class="fxb-list" data-upcoming><p class="fxb-empty">Loading fixtures&hellip;</p></div>
-    {showMoreLinks && <a class="btn-o fxb-more" href="/fixtures">View All Fixtures &rarr;</a>}
-  </div>
-  <div hidden={show === 'upcoming'}>
-    <h3 class="fxb-title">Recent Results</h3>
-    <div class="fxb-list" data-results><p class="fxb-empty">Loading results&hellip;</p></div>
-    {showMoreLinks && <a class="btn-o fxb-more" href="/results">View All Results &rarr;</a>}
-  </div>
+<div class="fxb" data-fixtures-board data-show={show} data-structured={structuredData ? '1' : undefined} data-cms={JSON.stringify(cms)}>
+  <p class="fxb-empty" data-status>Loading {show === 'upcoming' ? 'fixtures' : 'results'}&hellip;</p>
+  <div data-list></div>
 </div>
 
 <style>
-  .fxb { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-  .fxb--upcoming, .fxb--results { grid-template-columns: 1fr; max-width: 760px; }
-  .fxb > [hidden] { display: none; }
-  .fxb-title {
-    font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 4px; text-transform: uppercase;
-    color: var(--gold); margin: 0 0 20px; padding-bottom: 10px; border-bottom: 1px solid var(--d4);
+  .fxb { max-width: 900px; }
+  .fxb-empty { padding: 26px 18px; text-align: center; color: var(--lt); border: 1px dashed var(--d4); border-radius: 10px; margin: 0; }
+  .fxb-empty[hidden] { display: none; }
+  .fxb :global(.fx-month) { margin: 30px 0 12px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .fxb :global(.fx-month:first-child) { margin-top: 0; }
+  .fxb :global(.fx) { background: var(--d2); border: 1px solid var(--d4); border-radius: 12px; padding: 16px 18px; margin-bottom: 12px; }
+  .fxb :global(.fx-meta) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 13px; color: var(--lt); margin-bottom: 14px; }
+  .fxb :global(.fx-comp) { font-weight: 700; color: var(--white); }
+  .fxb :global(.fx-ha) { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; padding: 4px 7px; border-radius: 3px; background: var(--d3); color: var(--white); }
+  .fxb :global(.fx-ha.home) { background: var(--red); color: #fff; }
+  .fxb :global(.fx-when) { margin-left: auto; color: var(--gold); font-weight: 700; }
+  .fxb :global(.fx-teams) { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; font: 700 17px/1.2 'Barlow Condensed', sans-serif; }
+  .fxb :global(.fx-team) { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .fxb :global(.fx-team.h) { justify-content: flex-end; text-align: right; }
+  .fxb :global(.crest) { width: 34px; height: 34px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--d4); flex-shrink: 0; }
+  .fxb :global(.crest--initials) { display: inline-flex; align-items: center; justify-content: center; background: var(--d3); color: var(--lt); font: 700 12px/1 'Barlow Condensed', sans-serif; }
+  .fxb :global(.fx-mid) { font: 400 18px/1 'Bebas Neue', sans-serif; color: var(--lt); text-align: center; }
+  .fxb :global(.fx-score) { background: #15181D; color: #fff; padding: 6px 12px; border-radius: 4px; font: 400 22px/1 'Bebas Neue', sans-serif; white-space: nowrap; }
+  .fxb :global(.fx-pending) { background: var(--d3); color: var(--lt); padding: 6px 8px; border-radius: 4px; font: 700 11px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .8px; text-transform: uppercase; text-align: center; }
+  .fxb :global(.fx-venue) { margin-top: 12px; font-size: 13px; color: var(--lt); }
+  .fxb :global(.fx-actions) { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--d4); }
+  .fxb :global(.fx-btn) {
+    display: inline-flex; align-items: center; gap: 6px; padding: 9px 14px; border-radius: 4px; border: 1.5px solid var(--d4);
+    background: #fff; color: var(--white); text-decoration: none; cursor: pointer;
+    font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase;
   }
-  .fxb-list { display: flex; flex-direction: column; gap: 12px; }
-  .fxb-empty {
-    padding: 22px 18px; text-align: center; color: var(--lt); font-size: 14px;
-    border: 1px dashed var(--d4); border-radius: 8px; margin: 0;
+  .fxb :global(.fx-btn:hover) { border-color: var(--red); color: var(--red); }
+  .fxb :global(.fx-btn.primary) { background: var(--red); border-color: var(--red); color: #fff; }
+  .fxb :global(.fx-btn.primary:hover) { background: var(--rd); color: #fff; }
+  .fxb :global(.fx-btn:focus-visible) { outline: 3px solid var(--red); outline-offset: 2px; }
+  @media (max-width: 560px) {
+    .fxb :global(.fx-when) { margin-left: 0; width: 100%; }
+    .fxb :global(.fx-teams) { font-size: 15px; }
+    .fxb :global(.crest) { width: 28px; height: 28px; }
   }
-  .fxb-more { display: block; width: 100%; margin-top: 12px; padding: 10px; font-size: 12px; text-align: center; text-decoration: none; }
-
-  .fxb :global(.fxc) { background: var(--d2); border: 1px solid var(--d4); border-radius: 8px; padding: 16px 18px; }
-  .fxb :global(.fxc-meta) {
-    display: flex; justify-content: space-between; gap: 10px; margin-bottom: 12px;
-    font-size: 11px; color: var(--lt); letter-spacing: .5px;
-  }
-  .fxb :global(.fxc-date) { color: var(--gold); font-weight: 600; text-align: right; }
-  .fxb :global(.fxc-teams) {
-    display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center;
-    font: 700 15px/1.2 'Barlow Condensed', sans-serif; color: var(--white);
-  }
-  .fxb :global(.fxc-team) { display: flex; align-items: center; gap: 8px; min-width: 0; }
-  .fxb :global(.fxc-team.h) { justify-content: flex-end; text-align: right; }
-  .fxb :global(.fxc-crest) {
-    width: 30px; height: 30px; border-radius: 50%; object-fit: contain; background: #fff;
-    border: 1px solid var(--d4); flex-shrink: 0;
-  }
-  .fxb :global(.fxc-initials) {
-    display: inline-flex; align-items: center; justify-content: center; background: var(--d3);
-    color: var(--lt); font: 700 11px/1 'Barlow Condensed', sans-serif;
-  }
-  .fxb :global(.fxc-mid) { font: 400 16px/1 'Bebas Neue', sans-serif; color: var(--lt); text-align: center; }
-  .fxb :global(.fxc-score) {
-    background: var(--red); color: #fff; padding: 5px 12px; border-radius: 3px;
-    font: 400 18px/1 'Bebas Neue', sans-serif; white-space: nowrap;
-  }
-  .fxb :global(.fxc-pending) {
-    background: var(--d3); color: var(--lt); padding: 5px 8px; border-radius: 3px;
-    font: 700 10px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .8px; text-transform: uppercase; text-align: center;
-  }
-  .fxb :global(.fxc-venue) { margin-top: 10px; font-size: 11px; color: var(--lt); }
-
-  @media (max-width: 768px) { .fxb { grid-template-columns: 1fr; gap: 32px; } }
 </style>
 
 <script>
-  import { TEAM_LOGOS } from '../../functions/api/_lib/teamLogos.js';
-  import { teamInitials } from '../lib/site';
-
-  type Fixture = {
-    home: string; away: string; date: string; venue: string; competition: string;
-    homeScore: number | null; awayScore: number | null; completed: boolean;
-  };
-  type ApiEvent = { home_team: string; away_team: string; competition?: string; event_date: string; venue: string };
+  import { crest, fmtDate, fmtTime, monthKey, isLobi, hasScore, downloadIcs, googleCalUrl, STATUS_LABELS, type Match } from '../lib/matchUi';
 
   const DAY = 86_400_000;
   const norm = (s: string) => s.toLowerCase().replace(/\bfc\b|[^a-z]/g, '');
-  const sameMatch = (a: Fixture, b: Fixture) =>
-    norm(a.home) === norm(b.home) && norm(a.away) === norm(b.away) &&
-    Math.abs(new Date(a.date).getTime() - new Date(b.date).getTime()) < 3 * DAY;
+  const same = (a: Match, b: Match) => norm(a.home_team) === norm(b.home_team) && norm(a.away_team) === norm(b.away_team)
+    && Math.abs(new Date(a.event_date).getTime() - new Date(b.event_date).getTime()) < 3 * DAY;
 
-  function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls: string, text?: string) {
+  function el<K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: string) {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
     if (text !== undefined) e.textContent = text;
     return e;
   }
 
-  function crest(name: string) {
-    const src = (TEAM_LOGOS as Record<string, string>)[name];
-    if (src) {
-      const img = el('img', 'fxc-crest') as HTMLImageElement;
-      img.src = src; img.alt = `${name} crest`; img.loading = 'lazy'; img.width = 30; img.height = 30;
-      img.onerror = () => img.replaceWith(initials(name));
-      return img;
-    }
-    return initials(name);
-  }
-  function initials(name: string) {
-    const s = el('span', 'fxc-crest fxc-initials', teamInitials(name));
-    s.setAttribute('aria-hidden', 'true');
-    return s;
-  }
+  function card(m: Match, upcoming: boolean) {
+    const c = el('article', 'fx');
+    const lobiHome = isLobi(m.home_team);
+    const lobiInvolved = lobiHome || isLobi(m.away_team);
 
-  function fmt(iso: string) {
-    const d = new Date(iso);
-    const date = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' });
-    const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
-    return `${date} · ${time}`;
-  }
+    const meta = el('div', 'fx-meta');
+    meta.append(el('span', 'fx-comp', m.competition));
+    if (lobiInvolved) meta.append(el('span', `fx-ha ${lobiHome ? 'home' : 'away'}`, lobiHome ? 'Home' : 'Away'));
+    meta.append(el('span', 'fx-when', `${fmtDate(m.event_date)} · ${fmtTime(m.event_date)}`));
 
-  function card(f: Fixture, isResult: boolean) {
-    const c = el('div', 'fxc');
-    const meta = el('div', 'fxc-meta');
-    meta.append(el('span', '', f.competition), el('span', 'fxc-date', fmt(f.date)));
-
-    const teams = el('div', 'fxc-teams');
-    const home = el('div', 'fxc-team h');
-    home.append(el('span', '', f.home), crest(f.home));
-    const away = el('div', 'fxc-team a');
-    away.append(crest(f.away), el('span', '', f.away));
-
+    const teams = el('div', 'fx-teams');
+    const h = el('div', 'fx-team h'); h.append(el('span', '', m.home_team), crest(m.home_team, 34));
+    const a = el('div', 'fx-team'); a.append(crest(m.away_team, 34), el('span', '', m.away_team));
     let mid: HTMLElement;
-    if (!isResult) mid = el('div', 'fxc-mid', 'VS');
-    else if (f.homeScore !== null && f.awayScore !== null) mid = el('div', 'fxc-score', `${f.homeScore} – ${f.awayScore}`);
-    else mid = el('div', 'fxc-pending', 'Result pending');
-    teams.append(home, mid, away);
+    if (upcoming) mid = el('div', 'fx-mid', m.status === 'postponed' ? 'P–P' : 'VS');
+    else if (hasScore(m)) mid = el('div', 'fx-score', `${m.home_score} – ${m.away_score}`);
+    else mid = el('div', 'fx-pending', m.status && m.status !== 'scheduled' && m.status !== 'full-time' ? STATUS_LABELS[m.status] : 'Result pending');
+    teams.append(h, mid, a);
 
-    c.append(meta, teams, el('div', 'fxc-venue', `📍 ${f.venue}`));
+    const venue = el('div', 'fx-venue', `📍 ${m.venue}`);
+    const actions = el('div', 'fx-actions');
+    if (m.slug) {
+      const mc = el('a', 'fx-btn', 'Match Centre') as HTMLAnchorElement;
+      mc.href = `/matches/${m.slug}/`;
+      mc.setAttribute('aria-label', `Match Centre: ${m.home_team} vs ${m.away_team}`);
+      actions.append(mc);
+    }
+    if (upcoming && lobiHome && m.id) {
+      const t = el('a', 'fx-btn primary', 'Buy Tickets') as HTMLAnchorElement;
+      t.href = `/tickets?event=${encodeURIComponent(m.id)}`;
+      t.setAttribute('aria-label', `Buy tickets: ${m.home_team} vs ${m.away_team}`);
+      actions.append(t);
+    }
+    if (upcoming) {
+      const ics = el('button', 'fx-btn', '📅 Add to calendar (.ics)') as HTMLButtonElement;
+      ics.type = 'button';
+      ics.addEventListener('click', () => downloadIcs(m));
+      const g = el('a', 'fx-btn', 'Google Calendar') as HTMLAnchorElement;
+      g.href = googleCalUrl(m); g.target = '_blank'; g.rel = 'noopener';
+      actions.append(ics, g);
+    }
+
+    c.append(meta, teams, venue);
+    if (actions.childElementCount) c.append(actions);
     return c;
   }
 
-  function fill(list: HTMLElement, items: Fixture[], isResult: boolean, emptyText: string) {
-    list.replaceChildren();
-    if (!items.length) { list.append(el('p', 'fxb-empty', emptyText)); return; }
-    items.forEach(f => list.append(card(f, isResult)));
+  function sportsEventLd(m: Match) {
+    const team = (name: string) => ({ '@type': 'SportsTeam', name });
+    const s = document.createElement('script');
+    s.type = 'application/ld+json';
+    s.textContent = JSON.stringify({
+      '@context': 'https://schema.org', '@type': 'SportsEvent', name: `${m.home_team} vs ${m.away_team}`,
+      description: `${m.competition}: ${m.home_team} vs ${m.away_team} at ${m.venue}.`, sport: 'Soccer', startDate: m.event_date,
+      eventStatus: m.status === 'postponed' ? 'https://schema.org/EventPostponed' : m.status === 'cancelled' ? 'https://schema.org/EventCancelled' : 'https://schema.org/EventScheduled',
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      location: { '@type': 'Place', name: m.venue, address: { '@type': 'PostalAddress', addressCountry: 'NG', streetAddress: m.venue } },
+      homeTeam: team(m.home_team), awayTeam: team(m.away_team), competitor: [team(m.home_team), team(m.away_team)],
+      organizer: { '@type': 'SportsOrganization', name: m.competition },
+      ...(m.slug ? { url: `${location.origin}/matches/${m.slug}/` } : {}),
+    });
+    document.head.append(s);
   }
 
   async function init(board: HTMLElement) {
-    const cms: Fixture[] = JSON.parse(board.dataset.fixtures || '[]');
-    let live: Fixture[] = [];
+    const show = board.dataset.show;
+    const status = board.querySelector<HTMLElement>('[data-status]')!;
+    const list = board.querySelector<HTMLElement>('[data-list]')!;
+    const cms: Match[] = JSON.parse(board.dataset.cms || '[]');
+
+    let db: Match[] = [];
     try {
-      const res = await fetch('/api/events');
-      if (res.ok) {
-        const events: ApiEvent[] = (await res.json()).events || [];
-        live = events.map(e => ({
-          home: e.home_team, away: e.away_team, date: new Date(e.event_date).toISOString(), venue: e.venue,
-          competition: e.competition || 'NNL', homeScore: null, awayScore: null, completed: false,
-        }));
-      }
-    } catch { /* fall back to CMS fixtures only */ }
+      const res = await fetch('/api/matches');
+      if (res.ok) db = (await res.json()).matches || [];
+    } catch { /* show CMS fixtures only */ }
 
     const now = Date.now();
-    const hasScore = (f: Fixture) => f.homeScore !== null && f.awayScore !== null;
-    const isPast = (f: Fixture) => f.completed || hasScore(f) || new Date(f.date).getTime() <= now;
+    const merged = [...db, ...cms.filter(c => !db.some(d => same(d, c)))]
+      .filter(m => m.status !== 'cancelled');
+    const isPast = (m: Match) => m.status === 'full-time' || (hasScore(m) && m.status !== 'live') || new Date(m.event_date).getTime() <= now;
+    const upcoming = show === 'upcoming';
+    const items = merged
+      .filter(m => upcoming ? !isPast(m) : isPast(m))
+      .sort((x, y) => (new Date(x.event_date).getTime() - new Date(y.event_date).getTime()) * (upcoming ? 1 : -1));
 
-    // Live (ticketed) matches win over a CMS entry for the same game.
-    const merged = [...live, ...cms.filter(c => !live.some(l => sameMatch(l, c)))];
-
-    // Structured data for live matches the build didn't already describe.
-    if (board.dataset.structured) {
-      live.filter(l => !cms.some(c => sameMatch(l, c))).forEach(f => {
-        const s = document.createElement('script');
-        s.type = 'application/ld+json';
-        const team = (name: string) => ({ '@type': 'SportsTeam', name });
-        s.textContent = JSON.stringify({
-          '@context': 'https://schema.org', '@type': 'SportsEvent', name: `${f.home} vs ${f.away}`,
-          description: `${f.competition}: ${f.home} vs ${f.away} at ${f.venue}.`, sport: 'Soccer', startDate: f.date,
-          eventStatus: 'https://schema.org/EventScheduled',
-          eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-          location: { '@type': 'Place', name: f.venue, address: { '@type': 'PostalAddress', addressCountry: 'NG', streetAddress: f.venue } },
-          homeTeam: team(f.home), awayTeam: team(f.away), competitor: [team(f.home), team(f.away)],
-          organizer: { '@type': 'SportsOrganization', name: f.competition },
-          offers: { '@type': 'Offer', url: `${location.origin}/tickets`, availability: 'https://schema.org/InStock' },
-        });
-        document.head.append(s);
-      });
+    list.replaceChildren();
+    if (!items.length) {
+      status.textContent = upcoming ? 'No upcoming fixtures have been announced yet. Check back soon.' : 'No results yet this season.';
+      return;
     }
-    const upcoming = merged.filter(f => !isPast(f))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    const results = merged.filter(isPast)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    const upLimit = Number(board.dataset.upcomingLimit) || upcoming.length;
-    const resLimit = Number(board.dataset.resultsLimit) || results.length;
-    fill(board.querySelector('[data-upcoming]')!, upcoming.slice(0, upLimit), false,
-      'No upcoming fixtures have been announced yet. Check back soon.');
-    fill(board.querySelector('[data-results]')!, results.slice(0, resLimit), true,
-      'No results yet this season.');
+    status.hidden = true;
+    let month = '';
+    for (const m of items) {
+      const k = monthKey(m.event_date);
+      if (k !== month) { month = k; list.append(el('h2', 'fx-month', k)); }
+      list.append(card(m, upcoming));
+      if (board.dataset.structured) sportsEventLd(m);
+    }
   }
 
   document.querySelectorAll<HTMLElement>('[data-fixtures-board]').forEach(init);

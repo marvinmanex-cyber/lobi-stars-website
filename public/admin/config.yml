@@ -44,15 +44,24 @@ collections:
     label: "Squad / Players"
     folder: "src/content/players"
     create: true
+    # The file name becomes the profile URL: /squad/<file-name>
     slug: "{{slug}}"
     fields:
       - {label: "Name", name: "name", widget: "string"}
-      - {label: "Position", name: "position", widget: "select", options: ["GK", "DEF", "MID", "FWD"]}
-      - {label: "Jersey Number", name: "number", widget: "number"}
-      - {label: "Nationality", name: "nationality", widget: "string", default: "Nigeria"}
-      - {label: "Appearances", name: "apps", widget: "number"}
-      - {label: "Goals", name: "goals", widget: "number"}
+      - {label: "Position", name: "position", widget: "select", options: [{label: "Goalkeeper", value: "GK"}, {label: "Defender", value: "DEF"}, {label: "Midfielder", value: "MID"}, {label: "Forward", value: "FWD"}]}
+      - {label: "Shirt Number", name: "number", widget: "number", value_type: "int"}
       - {label: "Photo", name: "photo", widget: "image", required: false}
+      - {label: "Date of Birth", name: "dateOfBirth", widget: "datetime", type: "date", time_format: false, required: false}
+      - {label: "State of Origin", name: "stateOfOrigin", widget: "string", required: false}
+      - {label: "Nationality", name: "nationality", widget: "string", default: "Nigeria"}
+      - {label: "Height (e.g. 1.85 m)", name: "height", widget: "string", required: false}
+      - {label: "Preferred Foot", name: "preferredFoot", widget: "select", options: ["Left", "Right", "Both"], required: false}
+      - {label: "Appearances", name: "apps", widget: "number", value_type: "int", default: 0}
+      - {label: "Goals", name: "goals", widget: "number", value_type: "int", default: 0}
+      - {label: "Assists", name: "assists", widget: "number", value_type: "int", default: 0}
+      - {label: "Clean Sheets (goalkeepers)", name: "cleanSheets", widget: "number", value_type: "int", default: 0}
+      - {label: "Sample player (shows a SAMPLE label; untick for real players)", name: "isSample", widget: "boolean", default: false}
+      - {label: "Short Bio", name: "body", widget: "markdown", required: false}
 
   - name: "gallery"
     label: "Gallery Photos"
@@ -89,6 +98,7 @@ collections:
       - {label: "Initials (shown if no photo)", name: "initials", widget: "string"}
       - {label: "Photo", name: "photo", widget: "image", required: false}
       - {label: "Display Order", name: "order", widget: "number", default: 10}
+      - {label: "Group", name: "group", widget: "select", options: ["Management", "Coaching Staff"], default: "Management"}
       - {label: "Short Bio", name: "bio", widget: "text"}
 
   - name: "heroSlides"
@@ -167,3 +177,73 @@ collections:
               - {label: "Badge (e.g. NEW)", name: "badge", widget: "string", required: false}
               - {label: "Badge Colour", name: "badgeColor", widget: "string", default: "#E31E24"}
               - {label: "In Stock", name: "inStock", widget: "boolean", default: true}
+
+      - name: "videos"
+        label: "Video Library (YouTube)"
+        file: "src/data/videos.json"
+        fields:
+          - label: "Videos"
+            name: "videos"
+            widget: "list"
+            summary: "{{fields.title}}"
+            fields:
+              - {label: "YouTube ID (11 characters after watch?v=)", name: "id", widget: "string"}
+              - {label: "Title", name: "title", widget: "string"}
+              - {label: "Category", name: "category", widget: "select", options: ["Highlights", "Goals", "Interviews", "Press Conferences", "Behind the Scenes"]}
+              - {label: "Duration (e.g. 06:02)", name: "duration", widget: "string", required: false}
+              - {label: "Date (YYYY-MM-DD)", name: "date", widget: "string", required: false}
+
+      - name: "history"
+        label: "Club History Timeline"
+        file: "src/data/history.json"
+        fields:
+          - {label: "Introduction", name: "intro", widget: "text", required: false}
+          - label: "Timeline"
+            name: "events"
+            widget: "list"
+            summary: "{{fields.year}} - {{fields.title}}"
+            fields:
+              - {label: "Year", name: "year", widget: "string"}
+              - {label: "Title", name: "title", widget: "string"}
+              - {label: "Text", name: "text", widget: "text"}
+              - {label: "Verified (show on the site)", name: "verified", widget: "boolean", default: false}
+
+      - name: "honours"
+        label: "Honours / Trophy Cabinet"
+        file: "src/data/honours.json"
+        fields:
+          - label: "Honours"
+            name: "honours"
+            widget: "list"
+            summary: "{{fields.competition}}"
+            fields:
+              - {label: "Competition", name: "competition", widget: "string"}
+              - {label: "Winning seasons / years", name: "years", widget: "list"}
+              - {label: "Verified (show on the site)", name: "verified", widget: "boolean", default: false}
+
+      - name: "stadium"
+        label: "Stadium Information"
+        file: "src/data/stadium.json"
+        fields:
+          - {label: "Stadium Name", name: "name", widget: "string"}
+          - {label: "Address", name: "address", widget: "string"}
+          - {label: "Capacity", name: "capacity", widget: "string", required: false}
+          - {label: "Opened", name: "opened", widget: "string", required: false}
+          - {label: "About the stadium", name: "about", widget: "text", required: false}
+          - {label: "How to get there", name: "directions", widget: "list", required: false}
+          - {label: "Matchday tips", name: "tips", widget: "list", required: false}
+
+      - name: "fanClubs"
+        label: "Supporters Clubs"
+        file: "src/data/fan-clubs.json"
+        fields:
+          - label: "Clubs"
+            name: "clubs"
+            widget: "list"
+            summary: "{{fields.city}} - {{fields.name}}"
+            fields:
+              - {label: "City", name: "city", widget: "string"}
+              - {label: "Club Name", name: "name", widget: "string"}
+              - {label: "Contact Person", name: "contact", widget: "string"}
+              - {label: "Phone", name: "phone", widget: "string", required: false}
+              - {label: "Social Link", name: "social", widget: "string", required: false}

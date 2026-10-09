@@ -1,0 +1,30 @@
+{
+  "_todo": "TODO: check every entry, correct it, then set \"verified\": true. Only verified entries are shown on /club/history. The site currently says the club was founded in 1969; some sources give a different year - please confirm.",
+  "intro": "",
+  "events": [
+    {
+      "year": "1999",
+      "title": "First league title",
+      "text": "Lobi Stars win the Nigerian Premier League for the first time.",
+      "verified": false
+    },
+    {
+      "year": "2003",
+      "title": "FA Cup winners",
+      "text": "Lobi Stars lift the Nigerian FA Cup.",
+      "verified": false
+    },
+    {
+      "year": "2018",
+      "title": "Champions again",
+      "text": "Lobi Stars win the Nigeria Professional Football League for a second time.",
+      "verified": false
+    },
+    {
+      "year": "2019",
+      "title": "CAF Champions League",
+      "text": "The club represents Nigeria in the CAF Champions League.",
+      "verified": false
+    }
+  ]
+}

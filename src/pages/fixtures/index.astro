@@ -3,14 +3,45 @@ import Layout from '../../layouts/Layout.astro';
 import FixturesBoard from '../../components/FixturesBoard.astro';
 import MatchesTabs from '../../components/MatchesTabs.astro';
 import { CURRENT_SEASON } from '../../lib/site';
+
+const FEED = 'https://lobistarsfc.com/api/calendar';
+const WEBCAL = 'webcal://lobistarsfc.com/api/calendar';
 ---
-<Layout title="Fixtures | Lobi Stars Football Club" description={`Upcoming Lobi Stars FC First Team fixtures for the ${CURRENT_SEASON} season, with dates, kick-off times and venues.`}>
+<Layout title="Fixtures | Lobi Stars Football Club" description={`Upcoming Lobi Stars FC First Team fixtures for the ${CURRENT_SEASON} season, with dates, kick-off times, venues and calendar downloads.`}>
   <div class="page-hero wrap">
     <div class="stag">{CURRENT_SEASON} Season</div>
     <h1 class="stitle">Fix<span class="r">tures</span></h1>
     <MatchesTabs current="fixtures" />
   </div>
   <div class="page-content wrap">
+    <aside class="sub" aria-labelledby="sub-h">
+      <div>
+        <h2 id="sub-h">Never miss a match</h2>
+        <p>Subscribe to all Lobi Stars fixtures. New matches and kick-off changes appear in your calendar automatically.</p>
+      </div>
+      <div class="sub-actions">
+        <a class="btn-p" href={WEBCAL}>Subscribe (Apple / Outlook)</a>
+        <a class="btn-o" href={`https://calendar.google.com/calendar/r?cid=${encodeURIComponent(WEBCAL)}`} target="_blank" rel="noopener">Add to Google Calendar</a>
+        <button type="button" class="btn-o" id="copyFeed" data-url={FEED}>Copy feed link</button>
+      </div>
+    </aside>
     <FixturesBoard show="upcoming" structuredData />
   </div>
 </Layout>
+
+<style>
+  .sub { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; max-width: 900px; margin-bottom: 30px; padding: 18px 22px; border-radius: 12px; background: var(--dark); border: 1px solid var(--d4); }
+  .sub h2 { margin: 0 0 4px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .sub p { margin: 0; color: var(--lt); max-width: 460px; }
+  .sub-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sub-actions .btn-p, .sub-actions .btn-o { padding: 11px 16px; font-size: 13px; }
+</style>
+
+<script>
+  const btn = document.getElementById('copyFeed') as HTMLButtonElement;
+  btn.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(btn.dataset.url!); btn.textContent = 'Link copied'; }
+    catch { btn.textContent = btn.dataset.url!; }
+    setTimeout(() => { btn.textContent = 'Copy feed link'; }, 2500);
+  });
+</script>

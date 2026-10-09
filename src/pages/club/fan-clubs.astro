@@ -1,4 +1,52 @@
 ---
-import ComingSoon from '../../components/ComingSoon.astro';
+import Layout from '../../layouts/Layout.astro';
+import data from '../../data/fan-clubs.json';
+
+type FanClub = { city: string; name: string; contact: string; phone?: string; social?: string };
+const clubs = (data.clubs as FanClub[]).slice().sort((a, b) => a.city.localeCompare(b.city) || a.name.localeCompare(b.name));
+const cities = [...new Set(clubs.map(c => c.city))];
 ---
-<ComingSoon title="Fan Clubs" description="Lobi Stars FC supporters clubs in Nigeria and around the world." />
+<Layout title="Supporters' Clubs | Lobi Stars Football Club" description="Find an official Lobi Stars FC supporters' club near you, listed by city with contact details.">
+  <div class="page-hero wrap">
+    <div class="stag">The Fans</div>
+    <h1 class="stitle">Supporters' <span class="r">Clubs</span></h1>
+    <div class="divr"></div>
+  </div>
+  <div class="page-content wrap">
+    {cities.length ? cities.map(city => (
+      <section class="fc-city" aria-labelledby={`c-${city}`}>
+        <h2 class="fc-h2" id={`c-${city}`}>{city}</h2>
+        <ul class="fc-grid">
+          {clubs.filter(c => c.city === city).map(c => (
+            <li class="fc-card">
+              <h3>{c.name}</h3>
+              <p>Contact: {c.contact}{c.phone && <> &middot; <a href={`tel:${c.phone.replace(/\s/g, '')}`}>{c.phone}</a></>}</p>
+              {c.social && <a href={c.social} target="_blank" rel="noopener">Follow {c.name} &rarr;</a>}
+            </li>
+          ))}
+        </ul>
+      </section>
+    )) : (
+      <div class="empty-state">Our list of official supporters' clubs is coming soon.</div>
+    )}
+
+    <section class="panel fc-join" aria-labelledby="join">
+      <h2 id="join">Run a Lobi Stars supporters' club?</h2>
+      <p>Get your club listed here: send us its name, city, contact person and social link.</p>
+      <a class="btn-p" href="/contact">Get listed</a>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .fc-city { margin-bottom: 36px; }
+  .fc-h2 { margin: 0 0 14px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fc-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .fc-card { border: 1px solid var(--d4); border-radius: 12px; padding: 18px; background: #fff; }
+  .fc-card h3 { margin: 0 0 6px; font: 700 19px/1.2 'Barlow Condensed', sans-serif; }
+  .fc-card p { margin: 0 0 8px; color: var(--lt); }
+  .fc-card a { color: var(--red); font-weight: 700; }
+  .fc-join { margin-top: 30px; max-width: 760px; }
+  .fc-join h2 { margin: 0 0 8px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fc-join p { margin: 0 0 16px; color: var(--lt); }
+</style>

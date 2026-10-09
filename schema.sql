@@ -109,3 +109,20 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
   source TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Match Centre details for a match (preview, line-ups, live timeline,
+-- report, stats, gallery, score). Edited at /admin/match-centre; the API
+-- also creates this table on first use.
+CREATE TABLE IF NOT EXISTS match_centre (
+  event_id TEXT PRIMARY KEY REFERENCES events(id),
+  status TEXT NOT NULL DEFAULT 'scheduled',
+  home_score INTEGER,
+  away_score INTEGER,
+  preview TEXT,
+  report TEXT,
+  lineups_json TEXT,
+  timeline_json TEXT,
+  stats_json TEXT,
+  gallery_json TEXT,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

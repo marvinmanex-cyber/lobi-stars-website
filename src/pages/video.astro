@@ -2,24 +2,102 @@
 import Layout from '../layouts/Layout.astro';
 import NewsCard from '../components/news/NewsCard.astro';
 import { getSortedNews } from '../lib/news';
+import data from '../data/videos.json';
 
-const videos = (await getSortedNews()).filter(a => a.data.isVideo);
+type Video = { id: string; title: string; category: string; duration?: string; date?: string };
+const CATEGORIES = ['Highlights', 'Goals', 'Interviews', 'Press Conferences', 'Behind the Scenes'];
+const slug = (c: string) => c.toLowerCase().replace(/\s+/g, '-');
+
+// Only valid 11-character YouTube ids are shown.
+const videos = (data.videos as Video[]).filter(v => /^[\w-]{11}$/.test(v.id) && v.title);
+const videoNews = (await getSortedNews()).filter(a => a.data.isVideo);
 ---
-<Layout title="Video | Lobi Stars Football Club" description="Lobi Stars FC videos: press conferences, behind-the-scenes training and match highlights.">
+<Layout title="Video | Lobi Stars Football Club" description="Lobi Stars FC videos: match highlights, goals, interviews, press conferences and behind the scenes.">
   <div class="page-hero wrap">
     <div class="stag">Lobi Stars TV</div>
     <h1 class="stitle"><span class="r">Video</span></h1>
     <div class="divr"></div>
   </div>
+
   <div class="page-content wrap">
-    {videos.length ? (
-      <ul class="vid-grid">{videos.map(v => <li><NewsCard article={v} /></li>)}</ul>
+    {videos.length > 0 ? (
+      <>
+        <nav class="vd-tabs" aria-label="Video categories">
+          <button type="button" class="vd-tab" aria-pressed="true" data-filter="all">All</button>
+          {CATEGORIES.map(c => <button type="button" class="vd-tab" aria-pressed="false" data-filter={slug(c)}>{c}</button>)}
+        </nav>
+        <ul class="vd-grid" id="videoGrid">
+          {videos.map(v => (
+            <li class="vd-item" data-cat={slug(v.category)}>
+              <button type="button" class="vd-player" data-yt={v.id} aria-label={`Play video: ${v.title}`}>
+                <img src={`https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`} alt="" loading="lazy" width="480" height="360" />
+                <span class="vd-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" /></svg></span>
+                {v.duration && <span class="vd-dur">{v.duration}</span>}
+              </button>
+              <p class="vd-cat">{v.category}</p>
+              <h2 class="vd-title">{v.title}</h2>
+            </li>
+          ))}
+        </ul>
+        <p class="vd-empty" id="videoEmpty" hidden>No videos in this category yet.</p>
+      </>
     ) : (
-      <div class="empty-state">No videos yet &mdash; check back soon.</div>
+      <div class="empty-state">Our video library is on its way &mdash; check back soon.</div>
+    )}
+
+    {videoNews.length > 0 && (
+      <section class="vd-news" aria-labelledby="vn">
+        <h2 class="vd-h2" id="vn">Video stories</h2>
+        <ul class="vd-news-grid">{videoNews.map(a => <li><NewsCard article={a} /></li>)}</ul>
+      </section>
     )}
   </div>
 </Layout>
 
 <style>
-  .vid-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 32px 24px; }
+  .vd-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+  .vd-tab { padding: 10px 16px; border-radius: 30px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .vd-tab[aria-pressed='true'] { background: var(--red); border-color: var(--red); color: #fff; }
+  .vd-tab:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .vd-grid, .vd-news-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 28px 22px; }
+  .vd-item[hidden] { display: none; }
+  .vd-player { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; padding: 0; border-radius: 10px; overflow: hidden; background: #000; cursor: pointer; }
+  .vd-player img { width: 100%; height: 100%; object-fit: cover; transition: transform .3s, opacity .3s; }
+  .vd-player:hover img { transform: scale(1.04); opacity: .85; }
+  .vd-player:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+  .vd-play { position: absolute; inset: 0; margin: auto; width: 64px; height: 64px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 20px rgba(0, 0, 0, .35); }
+  .vd-play svg { width: 28px; height: 28px; fill: #fff; margin-left: 3px; }
+  .vd-dur { position: absolute; left: 10px; bottom: 10px; background: rgba(15, 17, 21, .85); color: #fff; padding: 4px 8px; border-radius: 4px; font: 700 12px/1 'Barlow Condensed', sans-serif; }
+  .vd-item :global(iframe) { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 10px; display: block; }
+  .vd-cat { margin: 12px 0 4px; color: var(--red); font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .vd-title { margin: 0; font: 700 19px/1.25 'Barlow Condensed', sans-serif; }
+  .vd-empty { color: var(--lt); padding: 20px 0; }
+  .vd-news { margin-top: 56px; }
+  .vd-h2 { margin: 0 0 18px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
 </style>
+
+<script>
+  // Click-to-load: the YouTube player (and its ~1 MB of scripts) only loads
+  // after the visitor taps a video.
+  document.querySelectorAll<HTMLButtonElement>('[data-yt]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube-nocookie.com/embed/${btn.dataset.yt}?autoplay=1&rel=0`;
+      iframe.title = btn.getAttribute('aria-label')?.replace('Play video: ', '') || 'Video';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      iframe.allowFullscreen = true;
+      btn.replaceWith(iframe);
+    });
+  });
+
+  const tabs = document.querySelectorAll<HTMLButtonElement>('.vd-tab');
+  const items = document.querySelectorAll<HTMLElement>('.vd-item');
+  const empty = document.getElementById('videoEmpty');
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    const f = tab.dataset.filter;
+    tabs.forEach(t => t.setAttribute('aria-pressed', String(t === tab)));
+    let shown = 0;
+    items.forEach(it => { it.hidden = f !== 'all' && it.dataset.cat !== f; if (!it.hidden) shown++; });
+    if (empty) empty.hidden = shown > 0;
+  }));
+</script>

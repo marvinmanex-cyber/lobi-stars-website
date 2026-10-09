@@ -1,4 +1,28 @@
 ---
-import ComingSoon from '../../components/ComingSoon.astro';
+import Layout from '../../layouts/Layout.astro';
+import { MAIN_NAV } from '../../lib/nav';
+
+const sections = MAIN_NAV.find(i => i.label === 'Club')?.children ?? [];
 ---
-<ComingSoon title="About the Club" description="About Lobi Stars Football Club, the Pride of Benue, based in Makurdi, Benue State." />
+<Layout title="The Club | Lobi Stars Football Club" description="About Lobi Stars Football Club, the Pride of Benue: history, honours, McCarthy Stadium, management, partners and supporters' clubs.">
+  <div class="page-hero wrap">
+    <div class="stag">Pride of Benue</div>
+    <h1 class="stitle">The <span class="r">Club</span></h1>
+    <div class="divr"></div>
+  </div>
+  <div class="page-content wrap">
+    <ul class="cl-grid">
+      {sections.map(s => (
+        <li><a class="cl-card" href={s.href}><span class="cl-title">{s.label}</span><span class="cl-text">{s.description}</span></a></li>
+      ))}
+    </ul>
+  </div>
+</Layout>
+
+<style>
+  .cl-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .cl-card { display: flex; flex-direction: column; gap: 8px; height: 100%; padding: 24px; border-radius: 12px; border: 1px solid var(--d4); background: #fff; text-decoration: none; transition: border-color .2s, box-shadow .2s; }
+  .cl-card:hover, .cl-card:focus-visible { border-color: var(--red); box-shadow: 0 12px 28px rgba(15, 17, 21, .08); }
+  .cl-title { font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .cl-text { color: var(--lt); }
+</style>

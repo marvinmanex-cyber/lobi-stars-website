@@ -77,6 +77,7 @@
 
 <script>
   import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
+  import { matchSlug } from '../../../functions/api/_lib/matchSlug.js';
 
   type ClubEvent = { id: string; home_team: string; away_team: string; competition?: string; event_date: string; venue: string };
 
@@ -135,7 +136,7 @@
     opp.append(el('span', 'nm-opp-name', opponent), el('span', `nm-ha ${home ? 'home' : 'away'}`, home ? 'Home' : 'Away'));
 
     const link = el('a', 'nm-link', 'Match Centre →') as HTMLAnchorElement;
-    link.href = '/fixtures';
+    link.href = ev.id.startsWith('sample-') ? '/fixtures' : `/matches/${matchSlug(ev)}/`;
     link.setAttribute('aria-label', `Match Centre: Lobi Stars FC vs ${opponent}`);
 
     li.append(top, when, opp, link);
