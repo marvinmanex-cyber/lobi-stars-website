@@ -1,0 +1,25 @@
+---
+// Cloudflare Pages serves this (with a real 404 status) for any address
+// that doesn't exist. Without it, unknown URLs would show the homepage.
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Page not found | Lobi Stars Football Club" description="Sorry, that page could not be found." noindex>
+  <div class="page-hero wrap nf">
+    <div class="stag">Error 404</div>
+    <h1 class="stitle">Page not <span class="r">found</span></h1>
+    <div class="divr"></div>
+    <p class="muted nf-text">Sorry, we couldn't find that page. It may have moved or no longer exists.</p>
+    <div class="nf-actions">
+      <a class="btn-p" href="/">Back to home</a>
+      <a class="btn-o" href="/news">Latest news</a>
+      <a class="btn-o" href="/fixtures">Fixtures</a>
+      <a class="btn-o" href="/search">Search the site</a>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .nf { padding-bottom: 80px; }
+  .nf-text { max-width: 560px; font-size: 17px; line-height: 1.7; margin-bottom: 24px; }
+  .nf-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+</style>
