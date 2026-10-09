@@ -9,6 +9,7 @@ isVideo: false
 videoUrl: ""
 videoDuration: ""
 isFeatured: true
+isSample: true
 isBanner: false
 ---
 

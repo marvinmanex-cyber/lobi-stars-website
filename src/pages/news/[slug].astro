@@ -78,6 +78,9 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
     </div>
 
     <div class="art-col">
+      {a.isSample && (
+        <p class="art-sample" role="note"><strong>Sample article.</strong> This is placeholder content for the new news section and will be replaced with real club news.</p>
+      )}
       <div class="art-meta">
         <a class="art-cat" href={categoryHref(a.category)}>{a.category}</a>
         <span class="art-date">{formatDate(a.publishedAt)}</span>
@@ -129,6 +132,7 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
   .art-play { width: 32px; height: 32px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; }
   .art-play svg { width: 16px; height: 16px; fill: #fff; }
 
+  .art-sample { margin: 0 0 20px; padding: 12px 16px; border-radius: 8px; background: #FFF6D6; border: 1px solid #F2D27A; color: #5C4300; font-size: 15px; line-height: 1.5; }
   .art-col { max-width: 720px; margin: 0 auto; padding: 32px 5% 20px; box-sizing: content-box; }
   .art-meta {
     display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--lt);

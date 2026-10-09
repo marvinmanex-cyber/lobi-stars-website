@@ -11,6 +11,7 @@ const href = `/news/${article.id}`;
 <article class="nc" data-cat={a.category}>
   <div class="nc-media">
     <img src={a.coverImage} alt={a.imageAlt} loading="lazy" decoding="async" width="640" height="360" />
+    {a.isSample && <span class="nc-sample">Sample</span>}
     {a.isVideo && (
       <span class="nc-badge">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>
@@ -44,6 +45,10 @@ const href = `/news/${article.id}`;
     font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .5px;
   }
   .nc-badge span { color: #fff; }
+  .nc-sample {
+    position: absolute; top: 10px; left: 10px; background: #FFC72C; color: #15181D; border-radius: 3px; padding: 4px 8px;
+    font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase;
+  }
   .nc-badge svg { width: 14px; height: 14px; fill: #fff; flex-shrink: 0; }
 
   .nc-meta {

@@ -18,6 +18,8 @@ const news = defineCollection({
     isFeatured: z.boolean().default(false),
     // Shown in the wide promo banner on the homepage (newest one wins).
     isBanner: z.boolean().default(false),
+    // Placeholder content: shown with a "SAMPLE" label until replaced.
+    isSample: z.boolean().default(false),
   }),
 });
 

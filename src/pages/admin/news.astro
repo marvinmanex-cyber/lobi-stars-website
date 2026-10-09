@@ -1,0 +1,91 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getSortedNews, formatDate } from '../../lib/news';
+
+// Articles are edited in the content CMS (Sveltia, at /admin/), which saves
+// them to src/content/news and uploads images to public/images. This screen
+// lists what's published and jumps straight to the right CMS editor.
+const articles = await getSortedNews();
+const CMS = '/admin/#/collections/news';
+---
+<Layout title="Manage News | Lobi Stars Admin" description="Manage Lobi Stars FC news articles." noindex>
+  <div class="wrap mn-wrap">
+    <div class="mn-nav">
+      <a href="/" class="mn-back">&larr; Back to site</a>
+      <a href="/admin/">Content CMS</a>
+      <a href="/admin/matches">Manage matches</a>
+      <a href="/admin/analytics">Analytics</a>
+    </div>
+    <div class="stag">Admin</div>
+    <h1 class="stitle">Manage <span class="r">News</span></h1>
+
+    <div class="mn-bar">
+      <a class="btn-p" href={`${CMS}/new`}>+ New article</a>
+      <a class="btn-o" href={CMS}>Open news in the CMS</a>
+    </div>
+
+    <details class="mn-help">
+      <summary>How to add, edit or delete an article</summary>
+      <ol>
+        <li><strong>New article:</strong> press <em>+ New article</em>, fill in the title, summary, category, cover image (upload from your computer), image description and the story, then press <em>Save</em>.</li>
+        <li><strong>Edit:</strong> press <em>Edit</em> next to the article below, change what you need and press <em>Save</em>.</li>
+        <li><strong>Delete:</strong> press <em>Edit</em>, then use the <em>Delete</em> option in the editor's menu.</li>
+        <li><strong>Videos:</strong> tick <em>Is this a video?</em>, paste the YouTube/Vimeo link and the duration (e.g. 06:02).</li>
+        <li><strong>Homepage:</strong> tick <em>Featured</em> to put the story in the big top section.</li>
+        <li>Untick <em>Sample article</em> on real stories. Changes appear on the website about a minute after saving.</li>
+      </ol>
+      <p class="muted">The CMS asks for a GitHub access token the first time you use it on a device.</p>
+    </details>
+
+    <p class="muted mn-count">{articles.length} published {articles.length === 1 ? 'article' : 'articles'} ({articles.filter(a => a.data.isSample).length} samples)</p>
+    <div class="mn-table-wrap">
+      <table class="mn-table">
+        <thead><tr><th scope="col">Article</th><th scope="col">Category</th><th scope="col">Published</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody>
+          {articles.map(a => (
+            <tr>
+              <th scope="row">
+                <span class="mn-title">{a.data.title}</span>
+                <span class="mn-flags">
+                  {a.data.isSample && <span class="mn-flag sample">Sample</span>}
+                  {a.data.isFeatured && <span class="mn-flag">Featured</span>}
+                  {a.data.isVideo && <span class="mn-flag">Video</span>}
+                </span>
+              </th>
+              <td>{a.data.category}</td>
+              <td>{formatDate(a.data.publishedAt)}</td>
+              <td class="mn-actions">
+                <a href={`${CMS}/entries/${a.id}`}>Edit</a>
+                <a href={`/news/${a.id}`} target="_blank" rel="noopener">View</a>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .mn-wrap { max-width: 1000px; padding-top: 40px; padding-bottom: 90px; }
+  .mn-nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 28px; font: 600 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .mn-nav a { color: var(--lt); text-decoration: none; }
+  .mn-nav a:hover { color: var(--gold); }
+  .mn-nav .mn-back { color: var(--gold); }
+  .mn-bar { display: flex; gap: 12px; flex-wrap: wrap; margin: 6px 0 18px; }
+  .mn-help { border: 1px solid var(--d4); border-radius: 10px; padding: 14px 18px; background: var(--dark); margin-bottom: 22px; }
+  .mn-help summary { cursor: pointer; font-weight: 700; }
+  .mn-help ol { margin: 12px 0 8px 20px; line-height: 1.7; }
+  .mn-count { margin-bottom: 10px; }
+  .mn-table-wrap { overflow-x: auto; border: 1px solid var(--d4); border-radius: 10px; }
+  .mn-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .mn-table th, .mn-table td { padding: 12px 14px; border-bottom: 1px solid var(--d4); text-align: left; vertical-align: top; }
+  .mn-table thead th { background: #15181D; color: #fff; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .mn-table tbody tr:last-child th, .mn-table tbody tr:last-child td { border-bottom: 0; }
+  .mn-title { display: block; font-weight: 600; }
+  .mn-flags { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+  .mn-flag { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; padding: 3px 7px; border-radius: 3px; background: var(--d3); color: var(--lt); }
+  .mn-flag.sample { background: #FFC72C; color: #15181D; }
+  .mn-actions { white-space: nowrap; }
+  .mn-actions a { color: var(--red); font-weight: 700; margin-right: 12px; }
+</style>
