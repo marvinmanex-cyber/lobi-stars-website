@@ -1,0 +1,90 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Staff Accounts | Lobi Stars Admin" description="Manage Lobi Stars FC staff accounts." noindex>
+  <div class="wrap st">
+    <AdminNav current="staff" />
+    <div class="stag">Admin</div>
+    <h1 class="stitle">Staff <span class="r">Accounts</span></h1>
+    <p class="muted st-lede">Only the owner (signed in with the admin code) can manage staff. Give <strong>Can export fan data</strong> only to people who need to download the fan database.</p>
+    <p class="st-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <form class="panel st-form" id="newForm">
+      <h2>Add a staff account</h2>
+      <div class="form-row">
+        <div class="form-grp"><label class="form-lbl" for="n-name">Name</label><input class="form-inp" id="n-name" required /></div>
+        <div class="form-grp"><label class="form-lbl" for="n-email">Email</label><input class="form-inp" id="n-email" type="email" required /></div>
+      </div>
+      <div class="form-grp"><label class="form-lbl" for="n-pass">Temporary password (10+ characters)</label><input class="form-inp" id="n-pass" type="text" minlength="10" required autocomplete="off" /></div>
+      <label class="st-check"><input type="checkbox" id="n-export" /> Can export fan data (download the fan database)</label>
+      <button type="submit" class="btn-p">Add staff account</button>
+    </form>
+
+    <div class="st-list" id="list"><p class="muted">Loading…</p></div>
+  </div>
+</Layout>
+
+<style>
+  .st { max-width: 980px; padding-top: 40px; padding-bottom: 90px; }
+  .st-lede { max-width: 700px; margin-bottom: 20px; }
+  .st-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
+  .st-msg.ok { background: #E8F7EE; color: #17643A; } .st-msg.err { background: #FDECEC; color: #A3161B; }
+  .st-form { margin-bottom: 26px; }
+  .st-form h2 { margin: 0 0 14px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .st-check { display: flex; gap: 10px; align-items: center; margin: 6px 0 16px; font-weight: 600; }
+  .st-check input { width: 18px; height: 18px; accent-color: var(--red); }
+  .st-list :global(table) { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .st-list :global(th), .st-list :global(td) { padding: 10px 12px; border-bottom: 1px solid var(--d4); text-align: left; vertical-align: middle; }
+  .st-list :global(thead th) { background: #15181D; color: #fff; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .st-list :global(.inactive) { opacity: .55; }
+  .st-list :global(button) { margin: 2px 6px 2px 0; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-size: 13px; }
+  .st-list :global(.scroll) { overflow-x: auto; position: relative; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const msg = $('msg');
+  const show = (t, ok) => { msg.textContent = t; msg.className = 'st-msg ' + (ok ? 'ok' : 'err'); msg.hidden = false; };
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  async function api(path, opts = {}) {
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code } });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  }
+  async function load() {
+    try {
+      const { staff } = await api('/api/admin/staff');
+      $('list').innerHTML = staff.length ? '<div class="scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Can export</th><th>Last login</th><th></th></tr></thead><tbody>' +
+        staff.map(s => `<tr class="${s.active ? '' : 'inactive'}" data-id="${esc(s.id)}"><td>${esc(s.name)}${s.active ? '' : ' (deactivated)'}</td><td>${esc(s.email)}</td>` +
+          `<td>${s.can_export_fan_data ? 'Yes' : 'No'}</td><td>${s.last_login_at ? esc(s.last_login_at) + ' UTC' : 'Never'}</td><td>` +
+          `<button data-act="export">${s.can_export_fan_data ? 'Remove export' : 'Allow export'}</button>` +
+          `<button data-act="active">${s.active ? 'Deactivate' : 'Reactivate'}</button><button data-act="password">Reset password</button></td></tr>`).join('') +
+        '</tbody></table></div>' : '<p class="muted">No staff accounts yet.</p>';
+      $('list')._staff = staff;
+    } catch (e) { $('list').innerHTML = `<p class="muted">${esc(e.message)}</p>`; }
+  }
+  $('list').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const id = b.closest('tr').dataset.id; const s = $('list')._staff.find(x => x.id === id);
+    const body = {};
+    if (b.dataset.act === 'export') body.canExport = !s.can_export_fan_data;
+    if (b.dataset.act === 'active') { if (s.active && !confirm(`Deactivate ${s.name}? They will be signed out.`)) return; body.active = !s.active; }
+    if (b.dataset.act === 'password') { const p = prompt(`New password for ${s.name} (10+ characters):`); if (!p) return; body.password = p; }
+    try { await api(`/api/admin/staff/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(body) }); show('Saved.', true); load(); }
+    catch (err) { show(err.message, false); }
+  });
+  $('newForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      await api('/api/admin/staff', { method: 'POST', body: JSON.stringify({ name: $('n-name').value, email: $('n-email').value, password: $('n-pass').value, canExport: $('n-export').checked }) });
+      show('Staff account created. Share the email and temporary password with them privately.', true);
+      e.target.reset(); load();
+    } catch (err) { show(err.message, false); }
+  });
+  load();
+})();
+</script>

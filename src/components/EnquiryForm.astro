@@ -119,6 +119,10 @@ const interests = [
       btn.disabled = true; btn.textContent = 'Sending...';
       status.hidden = true; status.className = 'eq-status';
       try {
+        // Save to the club's own database (fan database), then send to the Formspree inbox as before.
+        const data: Record<string, unknown> = Object.fromEntries(new FormData(form).entries());
+        data.privacy_consent = !!data.privacy_consent;
+        await fetch('/api/enquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).catch(() => {});
         const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
         if (!res.ok) throw new Error();
         form.reset();

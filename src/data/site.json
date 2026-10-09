@@ -1,5 +1,5 @@
 {
-  "_todo": "TODO: confirm every stat and the footer tagline. Add the YouTube, TikTok and WhatsApp Channel links under 'social' (icons with an empty link are hidden).",
+  "_todo": "TODO: confirm every stat and the footer tagline. Add the YouTube, TikTok and WhatsApp Channel links under 'social' (icons with an empty link are hidden). Confirm seasonStart (first day of the season, YYYY-MM-DD) used by the analytics \"This season\" filter.",
   "currentSeason": "2026/27",
   "footerTagline": "The Pride of Benue. Proudly representing Makurdi and Benue State since 1969.",
   "stats": [
@@ -33,5 +33,6 @@
     "youtube": "",
     "tiktok": "",
     "whatsappChannel": ""
-  }
+  },
+  "seasonStart": "2026-08-01"
 }

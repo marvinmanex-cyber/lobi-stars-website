@@ -1,0 +1,31 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Unsubscribe | Lobi Stars Football Club" description="Unsubscribe from Lobi Stars FC marketing emails." noindex>
+  <div class="page-hero wrap us">
+    <div class="stag">Email preferences</div>
+    <h1 class="stitle">Unsubscribe</h1>
+    <p class="us-msg" id="msg" role="status" aria-live="polite">Updating your preferences&hellip;</p>
+    <a class="btn-o" href="/">Back to home</a>
+  </div>
+</Layout>
+
+<style>
+  .us { padding-bottom: 80px; }
+  .us-msg { max-width: 560px; font-size: 17px; line-height: 1.7; margin: 0 0 24px; }
+</style>
+
+<script>
+  // Runs in the browser (not when an email app pre-fetches the link), then
+  // switches marketing consent off on the server.
+  const msg = document.getElementById('msg')!;
+  const t = new URLSearchParams(location.search).get('t') || '';
+  fetch('/api/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t }) })
+    .then(async r => {
+      const d = await r.json().catch(() => ({}));
+      msg.textContent = r.ok
+        ? "You've been unsubscribed. You won't receive Lobi Stars marketing emails or SMS any more. Important account and ticket emails will still be sent."
+        : d.error || 'Sorry, something went wrong. Please contact us to unsubscribe.';
+    })
+    .catch(() => { msg.textContent = 'Sorry, something went wrong. Please contact us to unsubscribe.'; });
+</script>

@@ -3,7 +3,7 @@ import { ensureTable } from '../../_lib/matchCentre.js';
 
 // PUT /api/admin/events/:id -- overwrite a match's details.
 export async function onRequestPut({ request, env, params }) {
-  const denied = requireAdmin(request, env);
+  const denied = await requireAdmin(request, env);
   if (denied) return denied;
 
   await ensureTable(env.DB);
@@ -40,7 +40,7 @@ export async function onRequestPut({ request, env, params }) {
 // sold. Once there are paid orders the match must stay for ticket lookups
 // and gate scans, so callers should set it inactive instead.
 export async function onRequestDelete({ request, env, params }) {
-  const denied = requireAdmin(request, env);
+  const denied = await requireAdmin(request, env);
   if (denied) return denied;
 
   const id = (params.id || '').trim();

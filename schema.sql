@@ -151,3 +151,85 @@ CREATE TABLE IF NOT EXISTS rate_limits (
   window_start INTEGER NOT NULL,
   count INTEGER NOT NULL
 );
+
+-- ---------------------------------------------------------------------------
+-- Staff accounts + audit log (functions/api/_lib/adminSession.js).
+-- The owner signs in with ADMIN_CODE; everyone else has a row here.
+CREATE TABLE IF NOT EXISTS admin_users (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'staff',
+  can_export_fan_data INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  last_login_at TEXT
+);
+CREATE TABLE IF NOT EXISTS admin_log (       -- every export, deletion and unsubscribe
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  staff_id TEXT NOT NULL,
+  staff_name TEXT NOT NULL,
+  action TEXT NOT NULL,
+  detail TEXT
+);
+
+-- Analytics (functions/api/_lib/analytics.js). pageviews gains:
+--   visitor_hash (salted daily hash, no IPs), consent, region, browser,
+--   utm_source, utm_medium, utm_campaign
+CREATE TABLE IF NOT EXISTS track_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts TEXT NOT NULL DEFAULT (datetime('now')),
+  name TEXT NOT NULL,              -- partner_click, watch_play, brochure_download, ...
+  label TEXT,                      -- partner slug, match slug, ...
+  path TEXT,
+  visitor_key TEXT,
+  device TEXT,
+  country TEXT,
+  region TEXT
+);
+
+-- Fan database (functions/api/_lib/contacts.js): one row per person,
+-- merged by email or +234 phone, linked to every original record.
+CREATE TABLE IF NOT EXISTS contacts (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE,
+  phone TEXT UNIQUE,
+  first_name TEXT,
+  surname TEXT,
+  state TEXT,
+  first_source TEXT,
+  first_seen TEXT,
+  last_seen TEXT,
+  marketing_consent INTEGER NOT NULL DEFAULT 0,
+  unsubscribed_at TEXT,
+  unsub_token TEXT UNIQUE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE TABLE IF NOT EXISTS contact_sources (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  contact_id TEXT NOT NULL REFERENCES contacts(id),
+  source TEXT NOT NULL,
+  ref_table TEXT NOT NULL,
+  ref_id TEXT NOT NULL,
+  seen_at TEXT NOT NULL,
+  label TEXT,
+  UNIQUE (source, ref_table, ref_id)
+);
+CREATE TABLE IF NOT EXISTS enquiries (       -- also still sent to Formspree
+  id TEXT PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('contact', 'partnership')),
+  first_name TEXT, surname TEXT, company TEXT,
+  email TEXT NOT NULL, phone TEXT, subject TEXT, interest TEXT, category TEXT, message TEXT,
+  privacy_consent INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+CREATE TABLE IF NOT EXISTS download_leads (
+  id TEXT PRIMARY KEY,
+  file TEXT NOT NULL,
+  first_name TEXT, surname TEXT, company TEXT,
+  email TEXT NOT NULL, phone TEXT,
+  marketing_consent INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);

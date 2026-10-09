@@ -12,7 +12,7 @@ async function roster(request, env) {
 
 // GET /api/admin/match-centre/:id -- the match plus its Match Centre data.
 export async function onRequestGet({ request, env, params }) {
-  const denied = requireAdmin(request, env);
+  const denied = await requireAdmin(request, env);
   if (denied) return denied;
   const m = await loadMatch(env.DB, params.id);
   if (!m) return Response.json({ error: 'Match not found' }, { status: 404 });
@@ -22,7 +22,7 @@ export async function onRequestGet({ request, env, params }) {
 // PUT /api/admin/match-centre/:id -- save status, score, preview, line-ups,
 // timeline, report, stats, gallery and the matchday squad.
 export async function onRequestPut({ request, env, params }) {
-  const denied = requireAdmin(request, env);
+  const denied = await requireAdmin(request, env);
   if (denied) return denied;
   const m = await loadMatch(env.DB, params.id);
   if (!m) return Response.json({ error: 'Match not found' }, { status: 404 });
@@ -64,7 +64,7 @@ export async function onRequestPut({ request, env, params }) {
 // { action: 'fulltime', home_score, away_score } -- the big match-control
 // buttons. Times are recorded from the server clock.
 export async function onRequestPost({ request, env, params }) {
-  const denied = requireAdmin(request, env);
+  const denied = await requireAdmin(request, env);
   if (denied) return denied;
   const m = await loadMatch(env.DB, params.id);
   if (!m) return Response.json({ error: 'Match not found' }, { status: 404 });

@@ -1,0 +1,44 @@
+---
+// Shared navigation for admin pages, plus who is signed in and a log-out button.
+interface Props { current?: string }
+const { current = '' } = Astro.props;
+const links = [
+  ['analytics', 'Analytics', '/admin/analytics'],
+  ['fans', 'Fan database', '/admin/fans'],
+  ['matches', 'Manage matches', '/admin/matches'],
+  ['match-centre', 'Match Centre', '/admin/match-centre'],
+  ['news', 'Manage news', '/admin/news'],
+  ['partners', 'Partners', '/admin/partners'],
+  ['staff', 'Staff', '/admin/staff'],
+  ['cms', 'Content CMS', '/admin/'],
+];
+---
+<nav class="an" aria-label="Admin">
+  <a href="/" class="an-back">&larr; Site</a>
+  {links.map(([id, label, href]) => <a href={href} aria-current={id === current ? 'page' : undefined} data-an={id}>{label}</a>)}
+  <span class="an-who" id="anWho"></span>
+  <button type="button" class="an-out" id="anOut">Log out</button>
+</nav>
+
+<style>
+  .an { display: flex; gap: 6px 18px; flex-wrap: wrap; align-items: center; margin-bottom: 26px; font: 600 14px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .an a { color: var(--lt); text-decoration: none; }
+  .an a:hover, .an a[aria-current='page'] { color: var(--red-text); }
+  .an .an-back { color: var(--gold-text); }
+  .an-who { margin-left: auto; color: var(--lt); text-transform: none; letter-spacing: 0; font: 400 13px/1.3 'Barlow', sans-serif; }
+  .an-out { border: 1px solid var(--d4); background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; color: var(--white); }
+</style>
+
+<script>
+  fetch('/api/admin/me', { headers: { 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' } })
+    .then(r => r.json()).then(d => {
+      if (!d.admin) return;
+      document.getElementById('anWho')!.textContent = `Signed in as ${d.admin.name}`;
+      if (d.admin.role !== 'owner') document.querySelector<HTMLElement>('[data-an="staff"]')?.remove();
+    }).catch(() => {});
+  document.getElementById('anOut')!.addEventListener('click', async () => {
+    sessionStorage.removeItem('ls_admin_code');
+    await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {});
+    location.href = '/admin/login/';
+  });
+</script>

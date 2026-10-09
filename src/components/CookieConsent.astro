@@ -1,13 +1,14 @@
 ---
 // Cookie banner. Essential storage (log-in session, basket) always works;
-// the visitor-analytics beacon (/track.js) only loads after "Accept".
+// /track.js counts anonymous page views for everyone and only adds a
+// visitor id after "Accept".
 // The choice is remembered in localStorage. Any element with
 // [data-cookie-settings] reopens the banner.
 ---
 <div class="cc" id="cookieBanner" role="dialog" aria-live="polite" aria-label="Cookie preferences" hidden>
   <p class="cc-text">
-    We use essential cookies to keep the site working (like staying logged in). With your permission we'd also
-    like to count visits so we can improve the site. No advertising cookies.
+    We use essential cookies to keep the site working (like staying logged in) and count page views anonymously.
+    With your permission we'd also recognise returning visitors so we can improve the site. No advertising cookies.
   </p>
   <div class="cc-actions">
     <button type="button" class="cc-btn cc-reject" data-consent="rejected">Reject non-essential</button>
@@ -42,14 +43,9 @@
   var banner = document.getElementById('cookieBanner');
   function get() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
   function set(v) { try { localStorage.setItem(KEY, v); } catch (e) {} }
-  function loadAnalytics() {
-    if (document.getElementById('lsTrack')) return;
-    var s = document.createElement('script');
-    s.id = 'lsTrack'; s.src = '/track.js'; s.defer = true;
-    document.body.appendChild(s);
-  }
+  // /track.js always counts an anonymous page view; it only adds a visitor
+  // id once ls_consent is "accepted".
   function apply(v) {
-    if (v === 'accepted') loadAnalytics();
     if (v === 'rejected') { try { localStorage.removeItem('ls_vid'); sessionStorage.removeItem('ls_sid'); } catch (e) {} }
   }
   banner.querySelectorAll('[data-consent]').forEach(function (b) {

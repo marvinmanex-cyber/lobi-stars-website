@@ -3,67 +3,99 @@ import Layout from '../../layouts/Layout.astro';
 ---
 <Layout title="Staff Login | Lobi Stars Admin" description="Lobi Stars FC staff login." noindex>
   <div class="wrap login-wrap">
-    <form class="login-card" id="loginForm">
+    <div class="login-card">
       <div class="login-icon" aria-hidden="true">&#128274;</div>
       <h1 class="login-title">Staff login</h1>
-      <p class="muted">Enter the admin code to open the club admin area.</p>
-      <label class="login-label" for="code">Admin code</label>
-      <input id="code" name="code" type="password" autocomplete="current-password" required />
-      <button type="submit" class="btn-p" id="submit">Log in</button>
+
+      <div class="login-tabs" role="tablist" aria-label="Login type">
+        <button type="button" role="tab" id="tabStaff" aria-selected="true" aria-controls="staffForm">Staff account</button>
+        <button type="button" role="tab" id="tabOwner" aria-selected="false" aria-controls="ownerForm">Admin code (owner)</button>
+      </div>
+
+      <form id="staffForm" role="tabpanel" aria-labelledby="tabStaff">
+        <label class="login-label" for="email">Email</label>
+        <input id="email" type="email" autocomplete="username" required />
+        <label class="login-label" for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" required />
+        <button type="submit" class="btn-p">Log in</button>
+      </form>
+
+      <form id="ownerForm" role="tabpanel" aria-labelledby="tabOwner" hidden>
+        <p class="muted">The owner signs in with the club's admin code and can create staff accounts.</p>
+        <label class="login-label" for="code">Admin code</label>
+        <input id="code" name="code" type="password" autocomplete="current-password" required />
+        <button type="submit" class="btn-p" id="submit">Log in</button>
+      </form>
+
       <p class="login-err" id="err" role="alert" hidden></p>
-    </form>
+    </div>
   </div>
 </Layout>
 
 <style>
-  .login-wrap { padding-top: 110px; padding-bottom: 60px; display: flex; justify-content: center; }
+  .login-wrap { padding-top: 60px; padding-bottom: 60px; display: flex; justify-content: center; }
   .login-card {
-    width: 100%; max-width: 400px; background: var(--d2); border: 1px solid var(--d4); border-radius: 12px;
-    padding: 36px 30px; box-shadow: 0 16px 40px rgba(15, 17, 21, .08); display: flex; flex-direction: column; gap: 12px;
+    width: 100%; max-width: 420px; background: var(--d2); border: 1px solid var(--d4); border-radius: 12px;
+    padding: 32px 28px; box-shadow: 0 16px 40px rgba(15, 17, 21, .08); display: flex; flex-direction: column; gap: 12px;
   }
+  .login-card form { display: flex; flex-direction: column; gap: 10px; }
   .login-icon { font-size: 34px; }
   .login-title { font: 400 38px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; margin: 0; }
-  .login-label { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: var(--lt); margin-top: 8px; }
+  .login-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--d3); padding: 4px; border-radius: 8px; }
+  .login-tabs button { border: 0; background: none; padding: 10px 6px; border-radius: 6px; cursor: pointer; font: 700 13px/1.1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .login-tabs button[aria-selected='true'] { background: #fff; color: var(--red-text); box-shadow: 0 1px 4px rgba(0, 0, 0, .08); }
+  .login-label { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: var(--lt); margin-top: 6px; }
   .login-card input {
     padding: 13px 14px; border: 1px solid var(--d4); border-radius: 6px; font-size: 16px; background: var(--d3); color: var(--white);
   }
   .login-card input:focus { outline: 2px solid var(--red); outline-offset: 1px; }
-  .login-card .btn-p { width: 100%; margin-top: 6px; }
+  .login-card .btn-p { width: 100%; margin-top: 8px; }
   .login-err { color: #C11A1F; font-size: 14px; margin: 0; }
 </style>
 
 <script>
-  const form = document.getElementById('loginForm') as HTMLFormElement;
-  const input = document.getElementById('code') as HTMLInputElement;
   const err = document.getElementById('err')!;
-  const btn = document.getElementById('submit') as HTMLButtonElement;
-
-  // Only ever send people back to an /admin page after logging in.
   const next = new URLSearchParams(location.search).get('next') || '';
   const target = /^\/admin(\/|$)/.test(next) && !next.startsWith('/admin/login') ? next : '/admin/matches';
+  const tabs = { staff: document.getElementById('tabStaff')!, owner: document.getElementById('tabOwner')! };
+  const forms = { staff: document.getElementById('staffForm') as HTMLFormElement, owner: document.getElementById('ownerForm') as HTMLFormElement };
 
-  form.addEventListener('submit', async e => {
-    e.preventDefault();
-    const code = input.value.trim();
-    if (!code) return;
-    btn.disabled = true;
+  function show(which: 'staff' | 'owner') {
+    (['staff', 'owner'] as const).forEach(k => {
+      tabs[k].setAttribute('aria-selected', String(k === which));
+      forms[k].hidden = k !== which;
+    });
     err.hidden = true;
+  }
+  tabs.staff.addEventListener('click', () => show('staff'));
+  tabs.owner.addEventListener('click', () => show('owner'));
+
+  async function login(body: Record<string, string>, marker: string, btn: HTMLButtonElement) {
+    btn.disabled = true; err.hidden = true;
     try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-      });
+      const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || 'Login failed. Please try again.');
-      // The Manage Matches and Analytics pages read the code from here, so
-      // staff aren't asked for it a second time.
-      sessionStorage.setItem('ls_admin_code', code);
+      if (!res.ok) throw new Error(data.error === 'Invalid admin code' ? 'That code is not correct.' : data.error || 'Login failed. Please try again.');
+      // Admin pages send this with each request: the owner's code, or a
+      // marker meaning "use my staff session cookie".
+      sessionStorage.setItem('ls_admin_code', marker);
       location.href = target;
     } catch (ex) {
-      err.textContent = (ex as Error).message === 'Invalid admin code' ? 'That code is not correct.' : (ex as Error).message;
-      err.hidden = false;
-      btn.disabled = false;
-    }
+      err.textContent = (ex as Error).message; err.hidden = false;
+    } finally { btn.disabled = false; }
+  }
+
+  forms.staff.addEventListener('submit', e => {
+    e.preventDefault();
+    const email = (document.getElementById('email') as HTMLInputElement).value.trim();
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+    if (!email || !password) return;
+    login({ email, password }, '__session__', forms.staff.querySelector('button')!);
+  });
+  forms.owner.addEventListener('submit', e => {
+    e.preventDefault();
+    const code = (document.getElementById('code') as HTMLInputElement).value.trim();
+    if (!code) return;
+    login({ code }, code, forms.owner.querySelector('button')!);
   });
 </script>

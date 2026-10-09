@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
 import { getCollection } from 'astro:content';
 
 // Lobi Stars players for the matchday squad picker (MOTM voting uses only these).
@@ -9,13 +10,7 @@ const roster = (await getCollection('players'))
 ---
 <Layout title="Match Centre Editor | Lobi Stars Admin" description="Update Lobi Stars FC Match Centre pages." noindex>
   <div class="wrap mce">
-    <div class="mce-nav">
-      <a href="/" class="mce-back">&larr; Back to site</a>
-      <a href="/admin/matches">Manage matches</a>
-      <a href="/admin/news">Manage news</a>
-      <a href="/admin/partners">Partners</a>
-      <a href="/admin/">Content CMS</a>
-    </div>
+    <AdminNav current="match-centre" />
     <div class="stag">Admin</div>
     <h1 class="stitle">Match <span class="r">Centre</span></h1>
 

@@ -1,24 +1,28 @@
-// Shared helpers for the protected match-management endpoints under
-// /api/admin/events. Access is gated by a single shared passcode kept in
-// the ADMIN_CODE server secret -- the same lightweight pattern the gate
-// scanner uses with STAFF_SCAN_CODE, but a separate code so match editing
-// and ticket scanning can be handed to different people.
+// Shared helpers for the protected admin endpoints.
+import { getAdmin } from './adminSession.js';
 
-export function requireAdmin(request, env) {
+/**
+ * Returns null when the request comes from a signed-in admin (the owner's
+ * ADMIN_CODE in the x-admin-code header, or a valid staff cookie), otherwise
+ * an error Response. Use requireAdminUser() when you need to know who it is.
+ */
+export async function requireAdmin(request, env) {
+  const r = await requireAdminUser(request, env);
+  return r.denied || null;
+}
+
+export async function requireAdminUser(request, env, { needExport = false, ownerOnly = false } = {}) {
   if (!env.ADMIN_CODE) {
-    return Response.json(
+    return { denied: Response.json(
       { error: 'Admin access is not configured. Set ADMIN_CODE in the server environment.' },
       { status: 503 }
-    );
+    ) };
   }
-  const code = request.headers.get('x-admin-code') || '';
-  // Length check first so the comparison below isn't the only gate; still
-  // not truly constant-time, but the codebase treats these codes as
-  // low-value shared secrets rather than password hashes.
-  if (code.length !== env.ADMIN_CODE.length || code !== env.ADMIN_CODE) {
-    return Response.json({ error: 'Invalid admin code' }, { status: 401 });
-  }
-  return null;
+  const admin = await getAdmin(request, env);
+  if (!admin) return { denied: Response.json({ error: 'Invalid admin code' }, { status: 401 }) };
+  if (ownerOnly && admin.role !== 'owner') return { denied: Response.json({ error: 'Only the owner account can do this.' }, { status: 403 }) };
+  if (needExport && !admin.canExport) return { denied: Response.json({ error: 'You do not have permission to export fan data.' }, { status: 403 }) };
+  return { admin };
 }
 
 // Validates and normalises a match payload from the admin UI. Returns

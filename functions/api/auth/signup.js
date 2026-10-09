@@ -4,6 +4,7 @@ import {
   ensureFanSchema, EMAIL_RE, normalizeNigerianPhone, clientIp, rateLimit, tooMany,
   createToken, sendVerificationEmail, VERIFY_TTL_MS,
 } from '../_lib/fans.js';
+import { captureContact } from '../_lib/contacts.js';
 
 // POST /api/auth/signup -- membership sign-up from the /membership page.
 // Creates the same kind of account as fan registration and, like it, needs
@@ -49,6 +50,8 @@ export async function onRequestPost({ request, env }) {
     `INSERT INTO members (id, first_name, last_name, email, phone, state, password_hash, email_verified, phone_e164)
      VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)`
   ).bind(memberId, firstName, lastName, normalizedEmail, phone || null, state || null, passwordHash, phoneE164).run();
+
+  await captureContact(env, { source: 'membership', refTable: 'members', refId: memberId, email: normalizedEmail, phone, firstName, surname: lastName, state });
 
   const token = await createToken(env.DB, memberId, 'verify', VERIFY_TTL_MS);
   try {

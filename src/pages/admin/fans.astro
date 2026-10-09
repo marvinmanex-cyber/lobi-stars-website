@@ -1,0 +1,214 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Fan Database | Lobi Stars Admin" description="Lobi Stars FC fan database." noindex>
+  <div class="wrap fd">
+    <AdminNav current="fans" />
+    <div class="stag">Admin</div>
+    <h1 class="stitle">Fan <span class="r">Database</span></h1>
+    <p class="muted fd-lede">
+      Everyone who has given us their details (newsletter, contact form, fan accounts, membership, tickets, partnership
+      enquiries, food orders and downloads), merged into one row per person by email or phone number.
+      This is personal data protected by the Nigeria Data Protection Act 2023: only download it when you need it and never share it outside the club.
+    </p>
+    <p class="fd-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <div class="panel fd-exports" id="exports" hidden>
+      <h2>Downloads</h2>
+      <div class="fd-btns">
+        <a class="btn-p sm" href="/api/admin/fans/export?type=xlsx" data-export>Full fan database (.xlsx)</a>
+        <a class="btn-o sm" href="/api/admin/fans/export?type=sources" data-export>Source breakdown (CSV)</a>
+        <a class="btn-o sm" href="/api/admin/fans/export?type=marketing" data-export>Marketing list, consent = Y only (CSV)</a>
+        <button type="button" class="btn-o sm" id="backfill" hidden>Import existing records</button>
+      </div>
+      <p class="muted small">Every download is recorded with your name and the time.</p>
+    </div>
+    <p class="muted small" id="noExport" hidden>Emails and phone numbers are partly hidden because your account can't export fan data. Ask the owner if you need this.</p>
+
+    <form class="fd-filters" id="filters">
+      <label class="wide">Search <input type="search" name="q" placeholder="Name, email or phone" /></label>
+      <label>Source <select name="source"><option value="">All sources</option></select></label>
+      <label>Marketing consent <select name="consent"><option value="">Any</option><option value="Y">Y</option><option value="N">N</option></select></label>
+      <label>State <select name="state"><option value="">All states</option></select></label>
+      <label>Last seen from <input type="date" name="from" /></label>
+      <label>to <input type="date" name="to" /></label>
+      <button type="submit" class="btn-p sm">Filter</button>
+    </form>
+
+    <p class="fd-count" id="count"></p>
+    <div class="panel fd-table"><div class="scroll" id="table"><p class="muted">Loading…</p></div></div>
+    <div class="fd-pager" id="pager"></div>
+
+    <section class="panel">
+      <h2>Download &amp; privacy log</h2>
+      <div class="scroll" id="log"></div>
+    </section>
+  </div>
+
+  <dialog class="fd-dlg" id="dlg" aria-labelledby="dlgTitle">
+    <div class="fd-dlg-in">
+      <button type="button" class="fd-x" id="dlgClose" aria-label="Close">&times;</button>
+      <h2 id="dlgTitle">Contact</h2>
+      <div id="dlgBody"></div>
+      <div class="fd-dlg-acts">
+        <button type="button" class="btn-o sm" id="unsub">Unsubscribe from marketing</button>
+        <button type="button" class="btn-o sm danger" id="del" hidden>Delete this person everywhere</button>
+      </div>
+    </div>
+  </dialog>
+</Layout>
+
+<style>
+  .fd { max-width: 1280px; padding-top: 40px; padding-bottom: 90px; }
+  .fd-lede { max-width: 820px; margin-bottom: 18px; }
+  .fd-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
+  .fd-msg.ok { background: #E8F7EE; color: #17643A; } .fd-msg.err { background: #FDECEC; color: #A3161B; }
+  .panel { margin-bottom: 20px; min-width: 0; }
+  .panel h2, .fd-dlg h2 { margin: 0 0 12px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fd-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .small { font-size: 14px; margin: 10px 0 0; }
+  .sm { padding: 9px 14px; font-size: 13px; }
+  .danger { color: #A3161B; border-color: #A3161B; }
+  .fd-filters { display: grid; grid-template-columns: 2fr repeat(5, 1fr) auto; gap: 10px; align-items: end; margin: 18px 0 10px; }
+  .fd-filters label { display: flex; flex-direction: column; gap: 4px; font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); min-width: 0; }
+  .fd-filters input, .fd-filters select { padding: 9px 10px; border: 1px solid var(--d4); border-radius: 6px; font: 400 15px 'Barlow', sans-serif; color: var(--white); background: #fff; min-width: 0; width: 100%; }
+  .fd-count { color: var(--lt); font-size: 14px; margin: 6px 0 10px; }
+  .scroll { overflow-x: auto; position: relative; }
+  .fd-table { padding: 0; }
+  .panel :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .panel :global(th), .panel :global(td) { padding: 9px 10px; border-bottom: 1px solid var(--d4); text-align: left; white-space: nowrap; }
+  .panel :global(th) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .panel :global(th button) { all: unset; cursor: pointer; }
+  .panel :global(th button:focus-visible) { outline: 2px solid var(--red); }
+  .panel :global(tbody tr[data-id]) { cursor: pointer; }
+  .panel :global(tbody tr[data-id]:hover) { background: #FFF5F5; }
+  .panel :global(td.n) { text-align: right; }
+  .panel :global(.tag) { display: inline-block; background: #F1F2F4; border-radius: 4px; padding: 2px 6px; margin: 1px 2px; font-size: 12px; }
+  .fd-pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-bottom: 26px; }
+  .fd-pager button { border: 1px solid var(--d4); background: #fff; border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+  .fd-pager button:disabled { opacity: .4; cursor: default; }
+  .fd-dlg { border: 0; border-radius: 14px; padding: 0; width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 40px); }
+  .fd-dlg::backdrop { background: rgba(0,0,0,.5); }
+  .fd-dlg-in { padding: 24px; position: relative; }
+  .fd-x { position: absolute; top: 10px; right: 12px; border: 0; background: none; font-size: 28px; cursor: pointer; line-height: 1; }
+  .fd-dlg :global(dl) { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 0 0 16px; font-size: 15px; }
+  .fd-dlg :global(dt) { font-weight: 700; } .fd-dlg :global(dd) { margin: 0; word-break: break-word; }
+  .fd-dlg :global(ol) { padding-left: 18px; margin: 0 0 16px; font-size: 14px; }
+  .fd-dlg-acts { display: flex; flex-wrap: wrap; gap: 10px; }
+  @media (max-width: 1000px) { .fd-filters { grid-template-columns: 1fr 1fr 1fr; } .fd-filters .wide { grid-column: 1 / -1; } }
+  @media (max-width: 560px) { .fd-filters { grid-template-columns: 1fr 1fr; } }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const wat = iso => iso ? new Date(new Date(iso).getTime() + 3600000).toISOString().slice(0, 16).replace('T', ' ') : '';
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'fd-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
+  async function api(path, opts = {}) {
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code } });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/fans';
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  }
+  let state = { page: 1, sort: 'last_seen', dir: 'desc' }, sources = {}, filled = false, current = null, canExport = false;
+  const COLS = [
+    ['name', 'Name'], [null, 'Email'], [null, 'Phone'], ['state', 'State'], [null, 'Sources'],
+    ['first_seen', 'First seen'], ['last_seen', 'Last seen'], ['interactions', 'Interactions'], [null, 'Consent'], [null, 'Member'],
+  ];
+
+  async function load() {
+    const q = new URLSearchParams(new FormData($('filters')));
+    for (const [k, v] of [...q]) if (!v) q.delete(k);
+    q.set('page', state.page); q.set('sort', state.sort); q.set('dir', state.dir);
+    let d;
+    try { d = await api('/api/admin/fans?' + q); } catch (e) { $('table').innerHTML = `<p class="muted">${esc(e.message)}</p>`; return; }
+    canExport = d.canExport; sources = d.sources;
+    $('exports').hidden = !canExport; $('noExport').hidden = canExport; $('del').hidden = !canExport;
+    if (!filled) {
+      const sel = $('filters').elements.source, st = $('filters').elements.state;
+      Object.entries(sources).forEach(([k, v]) => sel.add(new Option(v, k)));
+      d.states.forEach(s => st.add(new Option(s, s)));
+      filled = true;
+      fetch('/api/admin/me', { headers: { 'x-admin-code': code } }).then(r => r.json()).then(m => { if (m.admin?.role === 'owner') $('backfill').hidden = false; }).catch(() => {});
+    }
+    $('count').textContent = `${d.total.toLocaleString('en-NG')} ${d.total === 1 ? 'person' : 'people'}`;
+    const head = COLS.map(([k, l]) => k
+      ? `<th><button type="button" data-sort="${k}">${l}${state.sort === k ? (state.dir === 'asc' ? ' &#9650;' : ' &#9660;') : ''}</button></th>`
+      : `<th>${l}</th>`).join('');
+    $('table').innerHTML = d.rows.length ? `<table><thead><tr>${head}</tr></thead><tbody>` + d.rows.map(r =>
+      `<tr data-id="${esc(r.id)}" tabindex="0"><td>${esc([r.firstName, r.surname].filter(Boolean).join(' ') || '(no name)')}</td><td>${esc(r.email)}</td><td>${esc(r.phone)}</td><td>${esc(r.state)}</td>` +
+      `<td>${r.sources.map(s => `<span class="tag">${esc(sources[s] || s)}</span>`).join('')}</td><td>${esc(wat(r.firstSeen))}</td><td>${esc(wat(r.lastSeen))}</td>` +
+      `<td class="n">${r.interactions}</td><td>${r.marketingConsent ? 'Y' : 'N'}</td><td>${r.member ? 'Y' : 'N'}</td></tr>`).join('') + '</tbody></table>'
+      : '<p class="muted" style="padding:16px">Nobody matches these filters.</p>';
+    const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
+    $('pager').innerHTML = `<button type="button" data-p="${state.page - 1}" ${state.page <= 1 ? 'disabled' : ''}>&larr; Previous</button><span>Page ${state.page} of ${pages}</span><button type="button" data-p="${state.page + 1}" ${state.page >= pages ? 'disabled' : ''}>Next &rarr;</button>`;
+  }
+  async function loadLog() {
+    try {
+      const { log } = await api('/api/admin/export-log');
+      const names = { export_xlsx: 'Downloaded fan database (.xlsx)', export_sources_csv: 'Downloaded source breakdown', export_marketing_csv: 'Downloaded marketing list', fan_deleted: 'Deleted a person', fan_unsubscribed: 'Unsubscribed a person', fan_backfill: 'Imported existing records', partner_report: 'Downloaded partner report' };
+      $('log').innerHTML = log.length ? '<table><thead><tr><th>When (WAT)</th><th>Staff</th><th>Action</th><th>Detail</th></tr></thead><tbody>' +
+        log.map(l => `<tr><td>${esc(wat(l.ts))}</td><td>${esc(l.staff_name)}</td><td>${esc(names[l.action] || l.action)}</td><td>${esc(l.detail)}</td></tr>`).join('') + '</tbody></table>'
+        : '<p class="muted">Nothing yet.</p>';
+    } catch (e) { $('log').innerHTML = `<p class="muted">${esc(e.message)}</p>`; }
+  }
+  async function open(id) {
+    try {
+      const d = await api('/api/admin/fans/' + encodeURIComponent(id));
+      current = d.contact;
+      const c = d.contact;
+      $('dlgTitle').textContent = [c.firstName, c.surname].filter(Boolean).join(' ') || '(no name)';
+      $('dlgBody').innerHTML = `<dl><dt>Email</dt><dd>${esc(c.email) || '&ndash;'}</dd><dt>Phone</dt><dd>${esc(c.phone) || '&ndash;'}</dd><dt>State</dt><dd>${esc(c.state) || '&ndash;'}</dd>` +
+        `<dt>First source</dt><dd>${esc(c.firstSource)}</dd><dt>First seen</dt><dd>${esc(wat(c.firstSeen))}</dd><dt>Last seen</dt><dd>${esc(wat(c.lastSeen))}</dd>` +
+        `<dt>Marketing consent</dt><dd>${c.marketingConsent ? 'Y' : 'N'}${c.unsubscribedAt ? ` (unsubscribed ${esc(wat(c.unsubscribedAt))})` : ''}</dd></dl>` +
+        `<h3>History</h3><ol>${d.history.map(h => `<li>${esc(wat(h.at))} &middot; ${esc(h.source)}${h.detail ? ` &middot; ${esc(h.detail)}` : ''}</li>`).join('')}</ol>`;
+      $('unsub').disabled = !c.marketingConsent;
+      $('dlg').showModal();
+    } catch (e) { msg(e.message, false); }
+  }
+
+  $('filters').addEventListener('submit', e => { e.preventDefault(); state.page = 1; load(); });
+  $('table').addEventListener('click', e => {
+    const s = e.target.closest('[data-sort]');
+    if (s) { state.dir = state.sort === s.dataset.sort && state.dir === 'desc' ? 'asc' : 'desc'; state.sort = s.dataset.sort; load(); return; }
+    const tr = e.target.closest('tr[data-id]'); if (tr) open(tr.dataset.id);
+  });
+  $('table').addEventListener('keydown', e => { const tr = e.target.closest('tr[data-id]'); if (tr && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); open(tr.dataset.id); } });
+  $('pager').addEventListener('click', e => { const b = e.target.closest('[data-p]'); if (b && !b.disabled) { state.page = +b.dataset.p; load(); } });
+  $('dlgClose').addEventListener('click', () => $('dlg').close());
+  $('unsub').addEventListener('click', async () => {
+    try { await api(`/api/admin/fans/${encodeURIComponent(current.id)}`, { method: 'POST', body: JSON.stringify({ action: 'unsubscribe' }) }); $('dlg').close(); msg('Unsubscribed from marketing.', true); load(); loadLog(); }
+    catch (e) { msg(e.message, false); }
+  });
+  $('del').addEventListener('click', async () => {
+    if (!confirm('Delete this person from the fan database AND every original record (newsletter, account, enquiries)? Ticket and food payments are kept for accounting with the name and contact details removed. This cannot be undone.')) return;
+    try { await api(`/api/admin/fans/${encodeURIComponent(current.id)}`, { method: 'DELETE' }); $('dlg').close(); msg('Deleted everywhere.', true); load(); loadLog(); }
+    catch (e) { msg(e.message, false); }
+  });
+  $('backfill').addEventListener('click', async () => {
+    $('backfill').disabled = true;
+    try { const r = await api('/api/admin/fans/backfill', { method: 'POST' }); msg(`Imported ${r.added} new records (checked ${r.records}).`, true); load(); loadLog(); }
+    catch (e) { msg(e.message, false); }
+    $('backfill').disabled = false;
+  });
+  // Downloads go through fetch so the admin-code header is sent, then save as a file.
+  document.querySelectorAll('[data-export]').forEach(a => a.addEventListener('click', async e => {
+    e.preventDefault();
+    try {
+      const res = await fetch(a.href, { headers: { 'x-admin-code': code } });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Download failed');
+      const name = (res.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'export';
+      const url = URL.createObjectURL(await res.blob());
+      const link = Object.assign(document.createElement('a'), { href: url, download: name });
+      document.body.appendChild(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      loadLog();
+    } catch (err) { msg(err.message, false); }
+  }));
+  load(); loadLog();
+})();
+</script>

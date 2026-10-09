@@ -4,6 +4,7 @@ import {
   ensureFanSchema, EMAIL_RE, normalizeNigerianPhone, safeNext, clientIp, rateLimit, tooMany,
   checkTurnstile, createToken, sendVerificationEmail, VERIFY_TTL_MS,
 } from '../_lib/fans.js';
+import { captureContact } from '../_lib/contacts.js';
 
 // POST /api/fans/register -- create a fan account and email a confirmation
 // link. Returns { errors: { field: message } } (400) when validation fails.
@@ -57,6 +58,8 @@ export async function onRequestPost({ request, env }) {
     // Unique constraint race (same email/phone submitted twice at once).
     return Response.json({ errors: { email: 'An account with this email or phone already exists.' } }, { status: 400 });
   }
+
+  await captureContact(env, { source: 'fan_account', refTable: 'members', refId: id, email, phone, firstName, surname: surname, consent: b.marketing === true });
 
   const token = await createToken(env.DB, id, 'verify', VERIFY_TTL_MS);
   try {

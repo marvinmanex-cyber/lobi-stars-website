@@ -1,5 +1,7 @@
 import { randomId } from './crypto.js';
 import { sendEmail, ticketEmailHtml } from './email.js';
+import { captureContact, splitName } from './contacts.js';
+import { recordServerEvent } from './analytics.js';
 
 // Marks an order paid and issues its tickets. Safe to call more than once
 // for the same order (e.g. from both the webhook and the success-page
@@ -36,6 +38,11 @@ export async function fulfillOrder(env, order, waitUntil) {
   await env.DB.batch(ticketIds.map(id => insertTicket.bind(id, order.id, order.event_id, order.tier)));
 
   const tickets = ticketIds.map(id => ({ id }));
+
+  // Analytics + fan database (never blocks ticket issuing).
+  const name = splitName(order.buyer_name);
+  await captureContact(env, { source: 'ticket_buyer', refTable: 'orders', refId: order.id, email: order.buyer_email, phone: order.buyer_phone, firstName: name.firstName, surname: name.surname, label: order.event_id });
+  await recordServerEvent(env, 'ticket_purchase', order.event_id);
   const eventRow = await env.DB.prepare(`SELECT * FROM events WHERE id = ?`).bind(order.event_id).first();
 
   const sendConfirmation = () =>

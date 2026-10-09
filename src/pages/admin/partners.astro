@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
 import { getCollection } from 'astro:content';
 import { TIERS, partnerWarnings, openCategories, logoSrc, website, PARTNERSHIP } from '../../lib/partners';
 
@@ -20,13 +21,7 @@ const groups = TIERS.map(t => ({
 ---
 <Layout title="Partners | Lobi Stars Admin" description="Manage Lobi Stars FC partners." noindex>
   <div class="wrap ap">
-    <div class="ap-nav">
-      <a href="/" class="ap-back">&larr; Back to site</a>
-      <a href="/admin/matches">Manage matches</a>
-      <a href="/admin/match-centre">Match Centre</a>
-      <a href="/admin/news">Manage news</a>
-      <a href="/admin/">Content CMS</a>
-    </div>
+    <AdminNav current="partners" />
     <div class="stag">Admin</div>
     <h1 class="stitle">Manage <span class="r">Partners</span></h1>
 

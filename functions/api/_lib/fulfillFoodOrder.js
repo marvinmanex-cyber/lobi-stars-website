@@ -1,4 +1,5 @@
 import { sendEmail, foodOrderEmailHtml } from './email.js';
+import { captureContact } from './contacts.js';
 
 // Marks a food order paid and sends the confirmation email. Safe to call
 // more than once for the same order (webhook + success-page verify can
@@ -17,6 +18,8 @@ export async function fulfillFoodOrder(env, order, waitUntil) {
     // Someone else just won the race -- their email send is in flight.
     return { ...order, payment_status: 'paid' };
   }
+
+  await captureContact(env, { source: 'food_order', refTable: 'food_orders', refId: order.id, email: order.email, phone: order.phone });
 
   const items = JSON.parse(order.items_json);
 

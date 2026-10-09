@@ -160,15 +160,18 @@ import settings from '../data/matchday.json';
         : isOver(m) ? 'Catch up on the action on our official channels.'
         : `The live stream starts at kick-off, ${fmtTime(m.event_date)}.`));
       const a = el('div', 'ml-actions');
-      if (settings.youtubeChannel) a.append(link(settings.youtubeChannel, '▶ YouTube', 'btn-p', true));
-      if (settings.facebookPage) a.append(link(settings.facebookPage, 'Facebook', 'btn-o', true));
+      const tag = (x: HTMLAnchorElement, name: string) => { x.dataset.track = name; x.dataset.trackLabel = m.slug; return x; };
+      if (settings.youtubeChannel) a.append(tag(link(settings.youtubeChannel, '▶ YouTube', 'btn-p', true), 'watch_play'));
+      if (settings.facebookPage) a.append(tag(link(settings.facebookPage, 'Facebook', 'btn-o', true), 'watch_play'));
       card.append(a);
     }
     if (id === 'commentary') {
       card.append(el('h2', '', 'Live Match Commentary'));
       card.append(el('p', '', `Listen to live commentary from ${settings.commentaryProvider || 'our commentary partner'}.`));
       const a = el('div', 'ml-actions');
-      a.append(link(settings.commentaryUrl, '🎧 Listen Live', 'btn-p', true));
+      const listen = link(settings.commentaryUrl, '🎧 Listen Live', 'btn-p', true);
+      listen.dataset.track = 'commentary_click'; listen.dataset.trackLabel = m.slug;
+      a.append(listen);
       card.append(a);
     }
     if (id === 'vote') {

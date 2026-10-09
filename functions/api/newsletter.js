@@ -1,3 +1,5 @@
+import { captureContact } from './_lib/contacts.js';
+
 // POST /api/newsletter { email, source? } -- newsletter sign-up, separate
 // from club membership. Stored in the newsletter_subscribers table (created
 // on first use; also listed in schema.sql).
@@ -28,5 +30,6 @@ export async function onRequestPost({ request, env }) {
     return Response.json({ error: 'Sign-up is temporarily unavailable. Please try again later.' }, { status: 500 });
   }
 
+  await captureContact(env, { source: 'newsletter', refTable: 'newsletter_subscribers', refId: email, email, consent: true, label: source });
   return Response.json({ ok: true });
 }

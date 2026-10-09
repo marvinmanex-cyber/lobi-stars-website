@@ -15,10 +15,12 @@ There are two places where you make changes:
 | News, players, league table, shop, videos, club pages | **Content CMS** | About 1–2 minutes after you press Save |
 
 1. Go to **https://lobistarsfc.com/admin/login**.
-2. Type the **admin code** and press **Log in**. (Ask the club's website
-   manager for the code. Never share it publicly.)
-3. You'll see links at the top of every admin page: **Manage matches**,
-   **Match Centre**, **Manage news**, **Analytics** and **Content CMS**.
+2. Sign in with **your own staff email and password** (the owner creates
+   your account under **Staff**). The owner can instead use the
+   **Admin code (owner)** tab. Never share your password or the code.
+3. You'll see links at the top of every admin page: **Analytics**,
+   **Fan database**, **Manage matches**, **Match Centre**, **Manage news**,
+   **Partners** and **Content CMS** (plus **Staff** for the owner).
 
 **The first time you open the Content CMS** on a computer or phone, it asks for
 a **GitHub access token**. This is a long password-like code that the website
@@ -200,6 +202,96 @@ add an active Official Club Partner, their category disappears from the
 opportunities list automatically. The same screen holds the audience figures
 for "Why partner with Lobi Stars" (empty figures are hidden) and the
 partnership brochure PDF (the download button only shows once a file is added).
+
+---
+
+## 8. How to read the analytics dashboard and export the fan database
+
+### The analytics dashboard (Admin → Analytics)
+
+**Choose a period** at the top: Today, 7 days, 30 days, This season (from the
+season start date in Site Settings) or Custom. All times are Nigerian time.
+Every number is compared with the period of the same length just before it:
+a green ▲ means up, a red ▼ means down.
+
+| Card | What it means |
+|---|---|
+| **Page views** | Pages opened on the website (everyone, including people who rejected cookies). |
+| **Unique visitors** | Different people, counted only for visitors who accepted cookies, so it is lower than the real number. |
+| **Downloads** | Matchday programme and partnership brochure downloads. |
+| **Enquiries** | Contact Us and partnership forms sent. |
+| **Total contacts / New contacts** | People in the fan database at the end of the period / who joined during it. |
+
+- **Where our contacts come from:** the share of all contacts who came through
+  each source. One person can come through several (e.g. bought a ticket *and*
+  joined the newsletter), so these can add up to **more than 100%**.
+  **First source** shows how each person *first* reached us and always adds up
+  to 100%.
+- **Traffic sources:** where visitors clicked from (WhatsApp, Facebook,
+  Instagram, X, Google, Direct = typed the address or used a bookmark).
+  Tip: add `?utm_source=whatsapp` to links you share so they are counted
+  correctly, e.g. `https://lobistarsfc.com/tickets/?utm_source=whatsapp`.
+- **Top states:** where visitors are, from their internet connection (no IP
+  addresses are stored).
+- **Latest sign-ups:** first name and source only. Full details are only in
+  the Fan database.
+- **Matchday:** for each home game, visitors to its live page and clicks on
+  Watch Live and commentary. MOTM votes and predictions appear once those
+  features are switched on.
+- **Partners:** impressions (page views, because every page shows every
+  partner logo in the footer), clicks to each partner's website and click
+  rate. Press **Export Partner Report (CSV)** to get a file to send to
+  sponsors for the chosen period.
+
+Signed-in staff, search engines and other robots are never counted.
+
+### The fan database (Admin → Fan database)
+
+One row per person, merged from the newsletter, Contact Us, fan accounts
+(Predict & Win), membership, ticket purchases, partnership enquiries, food
+orders and brochure downloads. People are matched by email address **or**
+phone number, and the newest name and state are kept.
+
+- **Search** by name, email or phone, and **filter** by source, marketing
+  consent, state or the date they were last seen. Click a column heading to
+  sort. Click a person to see everything they've done.
+- If your account doesn't have **Can export fan data**, emails and phone
+  numbers are partly hidden and the download buttons don't appear. Ask the
+  owner if you need it.
+
+**Downloads** (only for staff with export permission):
+
+| Button | What you get |
+|---|---|
+| **Full fan database (.xlsx)** | An Excel file: *All Contacts*, a *Summary* sheet and one sheet per source. |
+| **Source breakdown (CSV)** | How many contacts came from each source. |
+| **Marketing list (CSV)** | **Only** people with Marketing Consent = Y, with each person's unsubscribe link. Use only this list for marketing emails or SMS. |
+
+Files are named with today's date, e.g. `lobi-stars-fan-database-2026-10-09.xlsx`.
+
+### Privacy rules (Nigeria Data Protection Act 2023)
+
+- **Every download is logged** with your name and the time (see *Download &
+  privacy log* at the bottom of the page).
+- Only download when you need to, keep files on club devices and delete them
+  when you're done. Never share them outside the club.
+- **Only send marketing to the Marketing list**, and include each person's
+  unsubscribe link in every marketing email.
+- **Someone asks to stop marketing:** open them and press **Unsubscribe from
+  marketing**.
+- **Someone asks to be deleted:** open them and press **Delete this person
+  everywhere**. This removes them from the fan database, the newsletter,
+  their fan account and their enquiries. Ticket and food payments are kept
+  for the accounts, with their name and contact details removed. It cannot
+  be undone.
+
+### Staff accounts (owner only)
+
+Under **Staff**, the owner adds an account for each person (name, email,
+temporary password), turns **Can export fan data** on or off, resets
+passwords and deactivates people who leave. **Import existing records** (on
+the Fan database page) pulls older records into the database; it is safe to
+press again.
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
 import { getSortedNews, formatDate } from '../../lib/news';
 
 // Articles are edited in the content CMS (Sveltia, at /admin/), which saves
@@ -10,14 +11,7 @@ const CMS = '/admin/#/collections/news';
 ---
 <Layout title="Manage News | Lobi Stars Admin" description="Manage Lobi Stars FC news articles." noindex>
   <div class="wrap mn-wrap">
-    <div class="mn-nav">
-      <a href="/" class="mn-back">&larr; Back to site</a>
-      <a href="/admin/">Content CMS</a>
-      <a href="/admin/matches">Manage matches</a>
-      <a href="/admin/match-centre">Match Centre</a>
-      <a href="/admin/partners">Partners</a>
-      <a href="/admin/analytics">Analytics</a>
-    </div>
+    <AdminNav current="news" />
     <div class="stag">Admin</div>
     <h1 class="stitle">Manage <span class="r">News</span></h1>
 

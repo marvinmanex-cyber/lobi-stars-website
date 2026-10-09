@@ -1,375 +1,232 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
 ---
-<Layout title="Visitor Analytics | Lobi Stars Admin" description="Lobi Stars FC visitor analytics." noindex>
-  <div class="wrap admin-wrap">
-    <div class="admin-nav">
-      <a href="/" class="an-back">&larr; Back to site</a>
-      <a href="/admin/">Content CMS</a>
-      <a href="/admin/matches">Manage matches</a>
-      <a href="/admin/news">Manage news</a>
-      <a href="/admin/match-centre">Match Centre</a>
-      <a href="/admin/partners">Partners</a>
-    </div>
+<Layout title="Analytics | Lobi Stars Admin" description="Lobi Stars FC website analytics." noindex>
+  <div class="wrap ad">
+    <AdminNav current="analytics" />
     <div class="stag">Admin</div>
-    <h1 class="stitle">Visitor <span class="r">Analytics</span></h1>
-    <p class="admin-lede">
-      First-party traffic for this site. No IP addresses or personal data are stored &mdash;
-      visitors are counted with a random id kept in their own browser. Staff areas
-      (<code>/admin</code>, <code>/scan</code>) are never tracked.
+    <h1 class="stitle">Website <span class="r">Analytics</span></h1>
+    <p class="muted ad-lede">
+      All times are Nigerian time (WAT). No IP addresses are stored. Visitors who reject cookies are counted as
+      page views only, and staff who are signed in are never counted.
     </p>
 
-    <!-- Passcode gate -->
-    <div id="gate" class="gate-card">
-      <div class="gate-icon">&#128274;</div>
-      <h2>Admin access</h2>
-      <p class="muted">Enter the admin code to view analytics.</p>
-      <input id="code" type="password" placeholder="Admin code" autocomplete="off" />
-      <button id="unlock" class="btn-p">Unlock</button>
-      <div id="gate-err" class="gate-err"></div>
+    <div class="ad-bar">
+      <div class="ad-range" role="group" aria-label="Date range">
+        <button type="button" data-range="today">Today</button>
+        <button type="button" data-range="7d">7 days</button>
+        <button type="button" data-range="30d" class="on">30 days</button>
+        <button type="button" data-range="season">This season</button>
+        <button type="button" data-range="custom">Custom</button>
+      </div>
+      <form class="ad-custom" id="customForm" hidden>
+        <label>From <input type="date" id="from" required /></label>
+        <label>To <input type="date" id="to" required /></label>
+        <button type="submit" class="btn-o sm">Apply</button>
+      </form>
+      <span class="ad-label" id="rangeLabel"></span>
+    </div>
+    <p class="ad-err" id="err" role="alert" hidden></p>
+
+    <section class="kpis" id="kpis" aria-label="Key figures"></section>
+
+    <section class="panel">
+      <div class="ph"><h2>Where our contacts come from</h2></div>
+      <p class="muted small">Share of all contacts in the fan database that came through each source. One person can come through several sources (for example, a ticket buyer who also joined the newsletter), so these can add up to more than 100%.</p>
+      <div class="src-cards" id="srcCards"></div>
+      <div class="two">
+        <div>
+          <h3>First source</h3>
+          <p class="muted small">How each person first reached us. This one always adds up to 100%.</p>
+          <div class="chart sq"><canvas id="firstTouch" aria-label="First source chart"></canvas></div>
+        </div>
+        <div>
+          <h3>Devices</h3>
+          <p class="muted small">Page views by device type.</p>
+          <div class="chart sq"><canvas id="devices" aria-label="Devices chart"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="ph"><h2>Page views and visitors</h2></div>
+      <div class="chart"><canvas id="daily" aria-label="Page views and visitors per day"></canvas></div>
+    </section>
+
+    <section class="panel">
+      <div class="ph"><h2>Traffic sources</h2></div>
+      <p class="muted small">Where visitors clicked from (page views).</p>
+      <div class="chart"><canvas id="traffic" aria-label="Traffic sources chart"></canvas></div>
+    </section>
+
+    <div class="two">
+      <section class="panel"><div class="ph"><h2>Top 10 pages</h2></div><div id="topPages"></div></section>
+      <section class="panel"><div class="ph"><h2>Top states</h2></div><div id="locations"></div></section>
     </div>
 
-    <!-- Dashboard -->
-    <div id="dash" hidden>
-      <div class="dash-bar">
-        <div class="range" role="group" aria-label="Date range">
-          <button data-days="7">7 days</button>
-          <button data-days="30" class="on">30 days</button>
-          <button data-days="90">90 days</button>
-        </div>
-        <div class="dash-bar-actions">
-          <span id="updated" class="updated"></span>
-          <button id="refresh" class="btn-o sm">Refresh</button>
-          <button id="lock-btn" class="btn-o sm">Lock</button>
-        </div>
-      </div>
+    <section class="panel">
+      <div class="ph"><h2>Latest sign-ups</h2><a class="btn-o sm" href="/admin/fans">Open fan database</a></div>
+      <div id="recent"></div>
+    </section>
 
-      <div id="err" class="dash-err" hidden></div>
+    <section class="panel">
+      <div class="ph"><h2>Matchday</h2></div>
+      <p class="muted small">Lobi Stars home games. MOTM votes and predictions appear once those features are switched on.</p>
+      <div id="matchday"></div>
+    </section>
 
-      <div id="cards" class="cards"></div>
-
-      <section class="panel">
-        <div class="panel-head">
-          <h3>Page views per day</h3>
-          <div id="chart-legend" class="legend"></div>
-        </div>
-        <div id="chart" class="chart"></div>
-      </section>
-
-      <div class="two-col">
-        <section class="panel">
-          <div class="panel-head"><h3>Top pages</h3></div>
-          <div id="pages"></div>
-        </section>
-        <section class="panel">
-          <div class="panel-head"><h3>Traffic sources</h3></div>
-          <div id="refs"></div>
-        </section>
-      </div>
-
-      <div class="two-col">
-        <section class="panel">
-          <div class="panel-head"><h3>Countries</h3></div>
-          <div id="countries"></div>
-        </section>
-        <section class="panel">
-          <div class="panel-head"><h3>Devices</h3></div>
-          <div id="devices"></div>
-        </section>
-      </div>
-    </div>
+    <section class="panel">
+      <div class="ph"><h2>Partners</h2><a class="btn-p sm" id="partnerCsv" href="#">Export Partner Report (CSV)</a></div>
+      <p class="muted small">Impressions = page views in the period (every page shows every partner's logo in the footer). Clicks = visits to the partner's website from ours.</p>
+      <div id="partners"></div>
+    </section>
   </div>
-
-  <style is:global>
-    .admin-wrap{max-width:1060px;padding-top:40px;padding-bottom:90px;min-height:78vh;}
-    .admin-nav{display:flex;gap:20px;flex-wrap:wrap;font-family:'Barlow Condensed',sans-serif;
-      font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:26px;}
-    .admin-nav a{color:var(--lt);text-decoration:none;transition:color .15s;}
-    .admin-nav a:hover{color: var(--gold-text);}
-    .admin-nav .an-back{color: var(--gold-text);}
-    .admin-lede{max-width:660px;margin:6px 0 28px;font-size:14px;line-height:1.6;color:var(--lt);}
-    .admin-lede code{background:var(--d3);padding:1px 6px;border-radius:4px;font-size:12px;}
-
-    /* ---- gate ---- */
-    .gate-card{max-width:400px;margin:10px 0;padding:32px 28px;text-align:center;
-      background:var(--d2);border:1px solid var(--d4);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.14);}
-    .gate-icon{font-size:30px;margin-bottom:8px;}
-    .gate-card h2{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:var(--white);}
-    .gate-card p{font-size:13px;margin:4px 0 18px;}
-    .gate-card input{width:100%;padding:13px 14px;border-radius:8px;border:1px solid var(--d4);
-      background:var(--d3);color:var(--white);font-size:16px;margin-bottom:14px;text-align:center;letter-spacing:2px;}
-    .gate-card input:focus{outline:none;border-color:var(--gold);}
-    .gate-card .btn-p{width:100%;}
-    .gate-err{display:none;margin-top:12px;font-size:13px;color: var(--red-text);}
-    .gate-err.show{display:block;}
-
-    /* ---- dashboard chrome ---- */
-    .dash-bar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-bottom:22px;}
-    .dash-bar-actions{display:flex;align-items:center;gap:10px;}
-    .updated{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--lt);}
-    .range button{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;
-      text-transform:uppercase;padding:9px 18px;border:1px solid var(--d4);background:transparent;color:var(--white);cursor:pointer;}
-    .range button:first-child{border-radius:6px 0 0 6px;}
-    .range button:last-child{border-radius:0 6px 6px 0;}
-    .range button + button{border-left:none;}
-    .range button.on{background:var(--red);border-color:var(--red);color:#fff;}
-    .btn-o.sm{padding:9px 16px;font-size:12px;}
-    .dash-err{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px;
-      background:rgba(212,32,43,.14);color: var(--red-text);}
-
-    /* ---- stat cards ---- */
-    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:26px;}
-    .stat{background:var(--d2);border:1px solid var(--d4);border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;}
-    .stat::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold);opacity:.5;}
-    .stat.accent::before{background:var(--red);opacity:1;}
-    .stat .n{font-family:'Bebas Neue',sans-serif;font-size:36px;line-height:1;color:var(--white);}
-    .stat .l{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lt);margin-top:8px;}
-    .stat .sub{font-size:11px;color:var(--lt);margin-top:4px;}
-
-    /* ---- panels ---- */
-    .panel{background:var(--d2);border:1px solid var(--d4);border-radius:14px;padding:20px 22px;margin-bottom:20px;}
-    .panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
-    .panel-head h3{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;
-      letter-spacing:3px;text-transform:uppercase;color: var(--gold-text);}
-    .legend{font-size:11px;color:var(--lt);letter-spacing:.5px;}
-
-    /* ---- chart ---- */
-    .chart{width:100%;}
-    .chart svg{width:100%;height:auto;max-height:300px;display:block;overflow:visible;}
-    .chart .grid line{stroke:var(--d4);stroke-width:1;}
-    .chart .ylab{fill:var(--lt);font-size:10px;font-family:'Barlow',sans-serif;}
-    .chart .xlab{fill:var(--lt);font-size:10px;font-family:'Barlow',sans-serif;text-anchor:middle;}
-    .chart .bar{fill:var(--red);}
-    .chart .bar:hover{fill:var(--gold);}
-    .chart .area{fill:rgba(227,30,36,.12);}
-    .chart .line{fill:none;stroke:var(--red);stroke-width:2;}
-    .chart .empty{fill:var(--lt);font-size:12px;font-family:'Barlow',sans-serif;text-anchor:middle;}
-
-    /* ---- data tables ---- */
-    .dtable{width:100%;border-collapse:collapse;font-size:13px;}
-    .dtable th{text-align:left;font-family:'Barlow Condensed',sans-serif;font-size:10px;letter-spacing:1.5px;
-      text-transform:uppercase;color:var(--lt);padding:0 12px 8px;font-weight:700;}
-    .dtable th:last-child{text-align:right;}
-    .dtable td{padding:10px 12px;border-top:1px solid var(--d4);color:var(--white);vertical-align:middle;}
-    .dtable td.rank{color:var(--lt);width:22px;font-family:'Bebas Neue',sans-serif;font-size:15px;}
-    .dtable td.key{max-width:1px;width:100%;}
-    .dtable td.key .kbar{position:relative;display:block;border-radius:4px;overflow:hidden;padding:6px 8px;}
-    .dtable td.key .kbar .fill{position:absolute;left:0;top:0;bottom:0;background:rgba(227,30,36,.14);}
-    .dtable td.key .kbar span{position:relative;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
-    .dtable td.val{text-align:right;font-weight:700;white-space:nowrap;color:var(--white);}
-    .dtable td.val small{color:var(--lt);font-weight:400;margin-left:6px;}
-    .dt-empty{padding:18px 12px;font-size:13px;color:var(--lt);}
-
-    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-    @media(max-width:820px){ .two-col{grid-template-columns:1fr;} }
-    @media(max-width:520px){ .cards{grid-template-columns:1fr 1fr;} }
-  </style>
-
-  <script is:inline>
-  (function () {
-    let code = sessionStorage.getItem('ls_admin_code') || '';
-    let days = 30;
-
-    const $ = id => document.getElementById(id);
-    const gate = $('gate'), dash = $('dash'), gateErr = $('gate-err'), err = $('err');
-
-    function esc(s) {
-      return String(s == null ? '' : s).replace(/[&<>"']/g, c =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    }
-    const num = n => Number(n || 0).toLocaleString();
-
-    async function api(path) {
-      const res = await fetch(path, { headers: { 'x-admin-code': code } });
-      if (res.status === 401) {
-        sessionStorage.removeItem('ls_admin_code');
-        code = '';
-        dash.hidden = true;
-        gate.style.display = '';
-        gateErr.textContent = 'Code rejected — enter it again.';
-        gateErr.classList.add('show');
-        throw new Error('unauthorised');
-      }
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || ('Request failed (' + res.status + ')'));
-      return data;
-    }
-
-    function statCard(n, l, opts) {
-      opts = opts || {};
-      return '<div class="stat' + (opts.accent ? ' accent' : '') + '">' +
-        '<div class="n">' + num(n) + '</div>' +
-        '<div class="l">' + esc(l) + '</div>' +
-        (opts.sub ? '<div class="sub">' + esc(opts.sub) + '</div>' : '') +
-        '</div>';
-    }
-
-    function renderTable(rows, head, keyFn, valFn, subFn) {
-      const el = rows.el;
-      if (!rows.data || !rows.data.length) {
-        el.innerHTML = '<div class="dt-empty">No data in this period yet.</div>';
-        return;
-      }
-      const max = Math.max.apply(null, rows.data.map(valFn)) || 1;
-      const body = rows.data.map((r, i) => {
-        const v = valFn(r);
-        const pct = (v / max * 100).toFixed(1);
-        const sub = subFn ? subFn(r) : null;
-        return '<tr>' +
-          '<td class="rank">' + (i + 1) + '</td>' +
-          '<td class="key"><span class="kbar"><span class="fill" style="width:' + pct + '%"></span>' +
-            '<span title="' + esc(keyFn(r)) + '">' + esc(keyFn(r)) + '</span></span></td>' +
-          '<td class="val">' + num(v) + (sub != null ? '<small>' + esc(sub) + '</small>' : '') + '</td>' +
-          '</tr>';
-      }).join('');
-      el.innerHTML = '<table class="dtable"><thead><tr><th></th><th>' + esc(head[0]) +
-        '</th><th>' + esc(head[1]) + '</th></tr></thead><tbody>' + body + '</tbody></table>';
-    }
-
-    // Build a continuous day series (fills gaps with zeros) so the chart
-    // always reads as a real timeline, even with one day of data.
-    function fillDays(daily, n) {
-      const byDay = {};
-      (daily || []).forEach(d => { byDay[d.day] = d; });
-      const out = [];
-      const today = new Date();
-      for (let i = n - 1; i >= 0; i--) {
-        const dt = new Date(today.getTime() - i * 86400000);
-        const key = dt.toISOString().slice(0, 10);
-        const hit = byDay[key];
-        out.push({ day: key, views: hit ? +hit.views : 0, visitors: hit ? +hit.visitors : 0 });
-      }
-      return out;
-    }
-
-    function renderChart(daily) {
-      const series = fillDays(daily, days);
-      const W = 1000, H = 235, padL = 34, padB = 22, padT = 10;
-      const plotW = W - padL, plotH = H - padB - padT;
-      const max = Math.max.apply(null, series.map(d => d.views)) || 1;
-      const niceMax = max <= 4 ? max : Math.ceil(max / 5) * 5;
-      const totalViews = series.reduce((s, d) => s + d.views, 0);
-
-      if (!totalViews) {
-        $('chart').innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">' +
-          '<text class="empty" x="' + (W / 2) + '" y="' + (H / 2) + '">No page views recorded yet in this period.</text></svg>';
-        $('chart-legend').textContent = '';
-        return;
-      }
-
-      const x = i => padL + (series.length === 1 ? plotW / 2 : i * plotW / (series.length - 1));
-      const y = v => padT + plotH - (v / niceMax) * plotH;
-      const bw = Math.max(2, Math.min(26, plotW / series.length - 3));
-
-      let grid = '', ylabs = '';
-      const steps = niceMax <= 4 ? niceMax : 4;
-      for (let s = 0; s <= steps; s++) {
-        const val = Math.round(niceMax * s / steps);
-        const yy = y(val);
-        grid += '<line x1="' + padL + '" y1="' + yy + '" x2="' + W + '" y2="' + yy + '"/>';
-        ylabs += '<text class="ylab" x="' + (padL - 8) + '" y="' + (yy + 3) + '" text-anchor="end">' + val + '</text>';
-      }
-
-      const bars = series.map((d, i) => {
-        const bx = x(i) - bw / 2, by = y(d.views), bh = padT + plotH - by;
-        return '<rect class="bar" x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + bw.toFixed(1) +
-          '" height="' + Math.max(0, bh).toFixed(1) + '" rx="2"><title>' + esc(d.day) + ' ' +
-          num(d.views) + ' views · ' + num(d.visitors) + ' visitors</title></rect>';
-      }).join('');
-
-      const line = series.map((d, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(d.views).toFixed(1)).join(' ');
-      const area = 'M' + x(0).toFixed(1) + ' ' + (padT + plotH) + ' ' + line.replace(/^M/, 'L') +
-        ' L' + x(series.length - 1).toFixed(1) + ' ' + (padT + plotH) + ' Z';
-
-      const nLab = Math.min(series.length, days <= 7 ? 7 : days <= 30 ? 6 : 6);
-      let xlabs = '';
-      for (let k = 0; k < nLab; k++) {
-        const idx = Math.round(k * (series.length - 1) / (nLab - 1 || 1));
-        const dt = new Date(series[idx].day + 'T00:00:00');
-        const lab = dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-        xlabs += '<text class="xlab" x="' + x(idx).toFixed(1) + '" y="' + (H - 4) + '">' + lab + '</text>';
-      }
-
-      $('chart').innerHTML =
-        '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Page views per day">' +
-        '<g class="grid">' + grid + '</g>' + ylabs +
-        '<path class="area" d="' + area + '"/>' +
-        bars +
-        '<path class="line" d="' + line + '"/>' +
-        xlabs +
-        '</svg>';
-      $('chart-legend').textContent = num(totalViews) + ' views over ' + days + ' days';
-    }
-
-    async function load() {
-      err.hidden = true;
-      try {
-        const d = await api('/api/admin/analytics?days=' + days);
-        const avgPages = d.totals.sessions ? (d.totals.views / d.totals.sessions).toFixed(1) : '0';
-        $('cards').innerHTML =
-          statCard(d.totals.visitors, 'Unique visitors') +
-          statCard(d.totals.views, 'Page views') +
-          statCard(d.totals.sessions, 'Sessions', { sub: avgPages + ' pages / session' }) +
-          statCard(d.today.visitors, 'Visitors today', { accent: true }) +
-          statCard(d.today.views, 'Views today', { accent: true }) +
-          statCard(d.newReturning.new_views, 'First-time views') +
-          statCard(d.newReturning.returning_views, 'Returning views');
-
-        renderChart(d.daily);
-
-        renderTable({ el: $('pages'), data: d.topPages }, ['Page', 'Views'],
-          r => r.path, r => r.views, r => r.visitors + ' v');
-        renderTable({ el: $('refs'), data: d.referrers }, ['Source', 'Views'],
-          r => r.host, r => r.views);
-        renderTable({ el: $('countries'), data: d.countries }, ['Country', 'Views'],
-          r => r.country, r => r.views, r => r.visitors + ' v');
-        renderTable({ el: $('devices'), data: d.devices }, ['Device', 'Views'],
-          r => r.device, r => r.views);
-
-        $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-US',
-          { hour: 'numeric', minute: '2-digit' });
-      } catch (e) {
-        if (e.message !== 'unauthorised') { err.textContent = e.message; err.hidden = false; }
-      }
-    }
-
-    document.querySelectorAll('.range button').forEach(b => {
-      b.addEventListener('click', () => {
-        document.querySelectorAll('.range button').forEach(x => x.classList.remove('on'));
-        b.classList.add('on');
-        days = parseInt(b.dataset.days, 10);
-        load();
-      });
-    });
-    $('refresh').addEventListener('click', load);
-
-    async function unlock() {
-      const entered = $('code').value.trim();
-      if (!entered) return;
-      code = entered;
-      try {
-        await api('/api/admin/analytics?days=7');
-        sessionStorage.setItem('ls_admin_code', code);
-        gate.style.display = 'none';
-        dash.hidden = false;
-        gateErr.classList.remove('show');
-        load();
-      } catch (e) {
-        if (e.message !== 'unauthorised') { gateErr.textContent = e.message; gateErr.classList.add('show'); }
-      }
-    }
-    $('unlock').addEventListener('click', unlock);
-    $('code').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
-    $('lock-btn').addEventListener('click', () => {
-      sessionStorage.removeItem('ls_admin_code');
-      fetch('/api/admin/logout', { method: 'POST' }).finally(() => { location.href = '/admin/login/'; });
-    });
-
-    if (code) {
-      gate.style.display = 'none';
-      dash.hidden = false;
-      load();
-    }
-  })();
-  </script>
 </Layout>
+
+<style>
+  .ad { max-width: 1200px; padding-top: 40px; padding-bottom: 90px; }
+  .ad-lede { max-width: 760px; margin-bottom: 22px; }
+  .ad-bar { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; margin-bottom: 20px; }
+  .ad-range { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ad-range button { border: 1px solid var(--d4); background: #fff; border-radius: 999px; padding: 8px 14px; cursor: pointer; font: 600 14px/1 'Barlow', sans-serif; color: var(--white); }
+  .ad-range button.on { background: var(--red); border-color: var(--red); color: #fff; }
+  .ad-custom { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
+  .ad-custom input { padding: 6px 8px; border: 1px solid var(--d4); border-radius: 6px; font: inherit; }
+  .ad-label { color: var(--lt); font-size: 14px; }
+  .ad-err { background: #FDECEC; color: #A3161B; padding: 12px 16px; border-radius: 8px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin-bottom: 22px; }
+  .kpis :global(.kpi) { background: #fff; border: 1px solid var(--d4); border-radius: 12px; padding: 16px 18px; min-width: 0; }
+  .kpis :global(.kpi-l) { font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); }
+  .kpis :global(.kpi-v) { font: 400 40px/1.1 'Bebas Neue', sans-serif; margin: 6px 0 2px; }
+  :global(.chg) { font-size: 13px; font-weight: 700; }
+  :global(.chg.up) { color: #17643A; } :global(.chg.down) { color: #A3161B; } :global(.chg.flat) { color: var(--lt); }
+  .panel { margin-bottom: 22px; min-width: 0; }
+  .ph { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .ph h2 { margin: 0; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .panel h3 { margin: 18px 0 4px; font: 700 15px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .small { font-size: 14px; margin: 0 0 12px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .two > * { min-width: 0; }
+  .chart { position: relative; height: 300px; }
+  .chart.sq { height: 280px; max-width: 420px; }
+  .src-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+  .src-cards :global(.sc) { border: 1px solid var(--d4); border-left: 4px solid var(--red); border-radius: 8px; padding: 10px 12px; }
+  .src-cards :global(.sc b) { display: block; font: 400 30px/1 'Bebas Neue', sans-serif; }
+  .src-cards :global(.sc span) { font-size: 13px; color: var(--lt); }
+  .panel :global(.scroll) { overflow-x: auto; position: relative; }
+  .panel :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .panel :global(th), .panel :global(td) { padding: 9px 10px; border-bottom: 1px solid var(--d4); text-align: left; }
+  .panel :global(th) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .panel :global(td.n), .panel :global(th.n) { text-align: right; font-variant-numeric: tabular-nums; }
+  .panel :global(td.path) { word-break: break-all; }
+  .sm { padding: 8px 14px; font-size: 13px; }
+  @media (max-width: 760px) {
+    .two { grid-template-columns: 1fr; }
+    .chart { height: 240px; }
+    .kpis { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .kpis :global(.kpi) { padding: 12px; }
+    .kpis :global(.kpi-v) { font-size: 32px; }
+  }
+</style>
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const fmt = n => Number(n || 0).toLocaleString('en-NG');
+  const COLORS = ['#E31E24', '#15181D', '#865C08', '#2F6FDE', '#17A05D', '#8A55D6', '#F08C1A', '#7A8088'];
+  const charts = {};
+  let saved = null;
+  try { saved = localStorage.getItem('ls_an_range'); } catch {}
+  let range = ['today', '7d', '30d', 'season'].includes(saved) ? saved : '30d', from = '', to = '';
+
+  function change(now, prev) {
+    if (!prev && !now) return '<span class="chg flat">No change</span>';
+    if (!prev) return '<span class="chg up">&#9650; New</span>';
+    const p = Math.round(((now - prev) / prev) * 1000) / 10;
+    if (p === 0) return '<span class="chg flat">0% vs previous</span>';
+    return `<span class="chg ${p > 0 ? 'up' : 'down'}">${p > 0 ? '&#9650;' : '&#9660;'} ${Math.abs(p)}% vs previous</span>`;
+  }
+  const table = (head, rows, empty) => rows.length
+    ? `<div class="scroll"><table><thead><tr>${head.map(h => `<th class="${h.n ? 'n' : ''}">${esc(h.t)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`
+    : `<p class="muted">${esc(empty)}</p>`;
+  function draw(id, config) {
+    if (!window.Chart) return;
+    charts[id]?.destroy();
+    config.options = Object.assign({ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }, config.options || {});
+    charts[id] = new Chart($(id), config);
+  }
+  const fmtWat = iso => iso ? new Date(new Date(iso).getTime() + 3600000).toISOString().slice(0, 16).replace('T', ' ') : '';
+
+  async function load() {
+    const q = new URLSearchParams({ range });
+    if (range === 'custom') { q.set('from', from); q.set('to', to); }
+    $('partnerCsv').href = '/api/admin/partner-report?' + q;
+    $('err').hidden = true;
+    let d;
+    try {
+      const res = await fetch('/api/admin/analytics?' + q, { headers: { 'x-admin-code': code } });
+      d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Could not load analytics');
+    } catch (e) {
+      $('err').textContent = e.message; $('err').hidden = false;
+      if (/admin code/i.test(e.message)) location.href = '/admin/login/?next=/admin/analytics';
+      return;
+    }
+    $('rangeLabel').textContent = `${d.range.label} (compared with the ${d.range.days} day${d.range.days === 1 ? '' : 's'} before)`;
+
+    const K = d.kpis;
+    $('kpis').innerHTML = [
+      ['Page views', K.pageViews], ['Unique visitors', K.uniqueVisitors], ['Downloads', K.downloads],
+      ['Enquiries', K.enquiries], ['Total contacts', K.totalContacts], ['New contacts', K.newContacts],
+    ].map(([l, k]) => `<div class="kpi"><div class="kpi-l">${l}</div><div class="kpi-v">${fmt(k.value)}</div>${change(k.value, k.previous)}</div>`).join('');
+
+    $('srcCards').innerHTML = d.sources.map(s => `<div class="sc"><b>${s.pct}%</b><span>${esc(s.label)} &middot; ${fmt(s.contacts)}</span></div>`).join('')
+      + `<div class="sc"><b>${fmt(d.totalContacts)}</b><span>Total contacts</span></div>`;
+
+    const ft = d.firstTouch.filter(f => f.contacts > 0);
+    draw('firstTouch', { type: 'doughnut', data: { labels: ft.length ? ft.map(f => f.source) : ['No contacts yet'], datasets: [{ data: ft.length ? ft.map(f => f.contacts) : [1], backgroundColor: ft.length ? COLORS : ['#E5E7EB'] }] } });
+    draw('devices', { type: 'doughnut', data: { labels: d.devices.length ? d.devices.map(x => x.device) : ['No visits yet'], datasets: [{ data: d.devices.length ? d.devices.map(x => x.views) : [1], backgroundColor: d.devices.length ? COLORS : ['#E5E7EB'] }] } });
+    draw('daily', {
+      type: 'line',
+      data: { labels: d.daily.map(x => x.day), datasets: [
+        { label: 'Page views', data: d.daily.map(x => x.views), borderColor: '#E31E24', backgroundColor: 'rgba(227,30,36,.12)', fill: true, tension: .3 },
+        { label: 'Unique visitors', data: d.daily.map(x => x.visitors), borderColor: '#15181D', tension: .3 },
+      ] },
+      options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
+    });
+    const tk = Object.keys(d.traffic);
+    draw('traffic', {
+      type: 'bar',
+      data: { labels: tk, datasets: [{ label: 'Page views', data: tk.map(k => d.traffic[k]), backgroundColor: ['#25D366', '#1877F2', '#C13584', '#15181D', '#F4B400', '#7A8088', '#865C08'] }] },
+      options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
+    });
+
+    $('topPages').innerHTML = table([{ t: 'Page' }, { t: 'Views', n: 1 }, { t: 'Visitors', n: 1 }],
+      d.topPages.map(p => `<tr><td class="path">${esc(p.path)}</td><td class="n">${fmt(p.views)}</td><td class="n">${fmt(p.visitors)}</td></tr>`), 'No page views in this period.');
+    $('locations').innerHTML = table([{ t: 'State' }, { t: 'Country' }, { t: 'Views', n: 1 }],
+      d.locations.map(l => `<tr><td>${esc(l.region)}</td><td>${esc(l.country)}</td><td class="n">${fmt(l.views)}</td></tr>`), 'No page views in this period.');
+    $('recent').innerHTML = table([{ t: 'Name' }, { t: 'Source' }, { t: 'When (WAT)' }],
+      d.recentSignups.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.source)}</td><td>${esc(fmtWat(s.at))}</td></tr>`), 'No contacts yet.');
+    $('matchday').innerHTML = table([{ t: 'Match' }, { t: 'Date' }, { t: 'Live page visitors', n: 1 }, { t: 'Watch clicks', n: 1 }, { t: 'Commentary clicks', n: 1 }, { t: 'MOTM votes', n: 1 }, { t: 'Predictions', n: 1 }],
+      d.matchday.map(m => `<tr><td>${esc(m.match)}</td><td>${esc(fmtWat(m.date))}</td><td class="n">${fmt(m.liveViewers)}</td><td class="n">${fmt(m.watchPlays)}</td><td class="n">${fmt(m.commentaryClicks)}</td><td class="n">${fmt(m.votes)}</td><td class="n">${fmt(m.predictions)}</td></tr>`), 'No home games yet.');
+    $('partners').innerHTML = table([{ t: 'Partner' }, { t: 'Tier' }, { t: 'Impressions', n: 1 }, { t: 'Clicks', n: 1 }, { t: 'Click rate', n: 1 }],
+      d.partners.map(p => `<tr><td>${esc(p.name)}</td><td>${esc(p.tier)}</td><td class="n">${fmt(d.partnerImpressions)}</td><td class="n">${fmt(p.clicks)}</td><td class="n">${d.partnerImpressions ? ((p.clicks / d.partnerImpressions) * 100).toFixed(2) : '0.00'}%</td></tr>`), 'No partners found.');
+  }
+
+  document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x === b));
+    $('customForm').hidden = b.dataset.range !== 'custom';
+    if (b.dataset.range === 'custom') { $('from').focus(); return; }
+    range = b.dataset.range;
+    try { localStorage.setItem('ls_an_range', range); } catch {}
+    load();
+  }));
+  $('customForm').addEventListener('submit', e => { e.preventDefault(); range = 'custom'; from = $('from').value; to = $('to').value; load(); });
+  document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x.dataset.range === range));
+  load();
+})();
+</script>

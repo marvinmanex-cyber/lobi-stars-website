@@ -6,7 +6,7 @@ import { ensureTable } from '../_lib/matchCentre.js';
 // with a sold-ticket count so the UI can warn before deleting. Auth: the
 // x-admin-code header must match the ADMIN_CODE secret.
 export async function onRequestGet({ request, env }) {
-  const denied = requireAdmin(request, env);
+  const denied = await requireAdmin(request, env);
   if (denied) return denied;
   await ensureTable(env.DB);
 
@@ -22,7 +22,7 @@ export async function onRequestGet({ request, env }) {
 
 // POST /api/admin/events -- create a new match.
 export async function onRequestPost({ request, env }) {
-  const denied = requireAdmin(request, env);
+  const denied = await requireAdmin(request, env);
   if (denied) return denied;
 
   let body;

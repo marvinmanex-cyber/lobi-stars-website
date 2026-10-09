@@ -1,16 +1,10 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
 ---
 <Layout title="Manage Matches | Lobi Stars Admin" description="Manage Lobi Stars FC fixtures." noindex>
   <div class="wrap admin-wrap">
-    <div class="admin-nav">
-      <a href="/" class="an-back">&larr; Back to site</a>
-      <a href="/admin/">Content CMS</a>
-      <a href="/admin/analytics">Analytics</a>
-      <a href="/admin/news">Manage news</a>
-      <a href="/admin/match-centre">Match Centre</a>
-      <a href="/admin/partners">Partners</a>
-    </div>
+    <AdminNav current="matches" />
     <div class="stag">Admin</div>
     <h1 class="stitle">Manage <span class="r">Matches</span></h1>
     <p class="admin-lede">
