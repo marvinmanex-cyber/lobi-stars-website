@@ -1,0 +1,25 @@
+---
+import Layout from '../layouts/Layout.astro';
+import MatchdayGamePage from '../components/fans/MatchdayGamePage.astro';
+---
+<Layout title="Vote for Man of the Match | Lobi Stars Football Club" description="Vote for the Lobi Stars Man of the Match at every home game with a free fan account.">
+  <MatchdayGamePage
+    kind="vote"
+    kicker="Matchday Live"
+    title="Man of the"
+    highlight="Match"
+    intro="Who was the best Lobi Stars player on the day? At every Lobi Stars home game, fans choose the Man of the Match."
+    steps={[
+      { title: 'Create a fan account', text: 'It is free. Confirm your email address so your vote counts.' },
+      { title: 'Open Matchday Live', text: 'On matchday, open the game from Fixtures or this page and choose the Vote tab.' },
+      { title: 'Pick your player', text: 'Choose one Lobi Stars player from the matchday squad. One vote per fan per match.' },
+      { title: 'See the winner', text: 'The Man of the Match is announced after the final whistle.' },
+    ]}
+    rules={[
+      'Voting is for Lobi Stars home games only.',
+      'You can vote for any Lobi Stars player in the matchday squad (starting XI and substitutes).',
+      'One vote per verified fan account per match.',
+      'All voting times use the official club clock (Nigerian time, WAT).',
+    ]}
+  />
+</Layout>

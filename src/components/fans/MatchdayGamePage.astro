@@ -1,0 +1,127 @@
+---
+// Permanent landing page for a Matchday Live fan game (Man of the Match
+// voting or Predict & Win). Always reachable from the menu, even when no
+// match is on. The status card asks the SERVER (/api/matches) for the
+// current/next Lobi Stars home game and links to its Matchday Live tab.
+import settings from '../../data/matchday.json';
+
+interface Props {
+  kind: 'vote' | 'predict';
+  kicker: string;
+  title: string;
+  highlight: string;
+  intro: string;
+  steps: { title: string; text: string }[];
+  rules: string[];
+}
+const { kind, kicker, title, highlight, intro, steps, rules } = Astro.props;
+const live = kind === 'vote' ? settings.motmLive === true : settings.predictLive === true;
+---
+<section class="mg-hero">
+  <div class="mg-inner">
+    <p class="mg-kicker">{kicker}</p>
+    <h1 class="mg-title">{title} <span>{highlight}</span></h1>
+    <p class="mg-intro">{intro}</p>
+    <div class="mg-acts">
+      <a class="btn-p mg-btn" href={`/fans/register/?next=${kind === 'vote' ? '/man-of-the-match/' : '/predict-and-win/'}`}>Create a free fan account</a>
+      <a class="btn-o mg-btn-o" href={`/fans/login/?next=${kind === 'vote' ? '/man-of-the-match/' : '/predict-and-win/'}`}>Log in</a>
+    </div>
+  </div>
+</section>
+
+<div class="mg-inner mg-body">
+  <section class="mg-status" id="mgStatus" data-kind={kind} data-live={live ? '1' : '0'} aria-live="polite">
+    <p class="mg-status-k">{live ? 'This matchday' : 'Launching soon'}</p>
+    <h2 class="mg-status-t" id="mgStatusT">Loading the next home game&hellip;</h2>
+    <p class="mg-status-p" id="mgStatusP"></p>
+    <div class="mg-acts" id="mgStatusA"></div>
+  </section>
+
+  <section aria-labelledby="mg-how">
+    <h2 class="mg-h2" id="mg-how">How it works</h2>
+    <ol class="mg-steps">
+      {steps.map((s, i) => (
+        <li><span class="mg-n">{i + 1}</span><div><h3>{s.title}</h3><p>{s.text}</p></div></li>
+      ))}
+    </ol>
+  </section>
+
+  <section aria-labelledby="mg-rules">
+    <h2 class="mg-h2" id="mg-rules">Good to know</h2>
+    <ul class="mg-rules">{rules.map(r => <li>{r}</li>)}</ul>
+  </section>
+
+  <p class="mg-other">
+    {kind === 'vote'
+      ? <>Also on matchday: <a href="/predict-and-win/">Predict &amp; Win</a> &middot; <a href="/fixtures/">Fixtures</a></>
+      : <>Also on matchday: <a href="/man-of-the-match/">Vote for Man of the Match</a> &middot; <a href="/fixtures/">Fixtures</a></>}
+  </p>
+</div>
+
+<style>
+  .mg-hero { background: radial-gradient(120% 140% at 50% 0%, #7A0F12 0%, #2A0507 55%, #15181D 100%); color: #fff; padding: 56px 0 50px; }
+  .mg-inner { max-width: 1000px; margin: 0 auto; padding: 0 5%; }
+  .mg-kicker { margin: 0; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .mg-title { margin: 12px 0 14px; font: 400 clamp(42px, 7vw, 72px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; }
+  .mg-title span { color: #FFC72C; }
+  .mg-intro { max-width: 640px; margin: 0 0 24px; font-size: 17px; line-height: 1.65; color: rgba(255, 255, 255, .9); }
+  .mg-acts { display: flex; flex-wrap: wrap; gap: 10px; }
+  .mg-btn-o { color: #fff; border-color: rgba(255, 255, 255, .7); }
+  .mg-btn-o:hover { background: #fff; color: var(--rdp); }
+  .mg-body { padding-top: 36px; padding-bottom: 70px; }
+  .mg-status { border: 1px solid var(--d4); border-left: 5px solid var(--red); border-radius: 14px; padding: 22px 24px; background: #fff; margin-bottom: 40px; }
+  .mg-status-k { margin: 0; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: var(--red-text); }
+  .mg-status-t { margin: 8px 0 6px; font: 400 clamp(24px, 3.4vw, 32px)/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .mg-status-p { margin: 0 0 14px; color: var(--lt); line-height: 1.6; }
+  .mg-status-p:empty { display: none; }
+  .mg-h2 { margin: 0 0 16px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .mg-steps { list-style: none; padding: 0; margin: 0 0 40px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .mg-steps li { display: flex; gap: 14px; align-items: flex-start; border: 1px solid var(--d4); border-radius: 12px; padding: 18px; background: #fff; }
+  .mg-n { flex: 0 0 38px; height: 38px; border-radius: 50%; background: var(--red); color: #fff; display: inline-flex; align-items: center; justify-content: center; font: 400 22px/1 'Bebas Neue', sans-serif; }
+  .mg-steps h3 { margin: 4px 0 6px; font: 700 17px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .5px; text-transform: uppercase; }
+  .mg-steps p { margin: 0; color: var(--lt); line-height: 1.55; font-size: 15px; }
+  .mg-rules { margin: 0 0 32px; padding-left: 20px; line-height: 1.7; }
+  .mg-other { color: var(--lt); }
+  .mg-other a { color: var(--red-text); font-weight: 600; }
+</style>
+
+<script>
+  type M = { slug: string; home_team: string; away_team: string; event_date: string; is_home: boolean; status: string };
+  const box = document.getElementById('mgStatus')!;
+  const kind = box.dataset.kind as 'vote' | 'predict';
+  const live = box.dataset.live === '1';
+  const t = document.getElementById('mgStatusT')!, p = document.getElementById('mgStatusP')!, a = document.getElementById('mgStatusA')!;
+  const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' (WAT)';
+  const btn = (href: string, text: string, cls = 'btn-p') => Object.assign(document.createElement('a'), { href, textContent: text, className: cls });
+  const notYet = 'This feature is launching soon on Matchday Live. Create your free fan account now so you are ready.';
+
+  fetch('/api/matches').then(r => r.json()).then(({ matches }: { matches: M[] }) => {
+    const home = matches.filter(m => m.is_home);
+    // Status comes from the server (scheduled / live / finished).
+    const now = home.find(m => m.status === 'live');
+    const next = home.find(m => m.status === 'scheduled');
+    const m = now || next;
+    if (!m) {
+      t.textContent = 'No home game scheduled yet';
+      p.textContent = live ? 'Check back when the next Lobi Stars home game is announced.' : notYet;
+      a.append(btn('/fixtures/', 'See fixtures', 'btn-o'));
+      return;
+    }
+    const tab = `/matches/${m.slug}/live#${kind}`;
+    t.textContent = `${m.home_team} vs ${m.away_team}`;
+    if (now) {
+      p.textContent = live
+        ? (kind === 'vote' ? 'The match is live: Man of the Match voting is open now.' : 'The match is live: predictions have closed for this game.')
+        : `The match is live now. ${notYet}`;
+      a.append(btn(tab, live && kind === 'vote' ? 'Vote now' : 'Go to Matchday Live'));
+    } else {
+      const rule = kind === 'vote' ? 'Voting opens at kick-off and closes at full time.' : 'Predictions close at kick-off.';
+      p.textContent = `Kick-off ${when(m.event_date)}. ${live ? rule : notYet}`;
+      a.append(btn(tab, live && kind === 'predict' ? 'Make your prediction' : 'Go to Matchday Live'));
+    }
+  }).catch(() => {
+    t.textContent = 'Every Lobi Stars home game';
+    p.textContent = live ? '' : notYet;
+    a.append(btn('/fixtures/', 'See fixtures', 'btn-o'));
+  });
+</script>

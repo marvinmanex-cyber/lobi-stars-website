@@ -3,5 +3,8 @@
   "commentaryUrl": "https://www.aesonsports.com/podcast",
   "commentaryProvider": "Aeson Sports Radio",
   "youtubeChannel": "https://www.youtube.com/@aesonfootballpodcast",
-  "facebookPage": "https://www.facebook.com/AesonFootballPodcast"
+  "facebookPage": "https://www.facebook.com/AesonFootballPodcast",
+  "_live": "motmLive / predictLive: set to true once Man of the Match voting / Predict & Win are switched on.",
+  "motmLive": false,
+  "predictLive": false
 }

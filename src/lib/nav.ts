@@ -11,6 +11,8 @@ export const MAIN_NAV: NavItem[] = [
       { label: 'Fixtures', href: '/fixtures', description: 'Upcoming First Team matches' },
       { label: 'Results', href: '/results', description: 'Recent First Team results' },
       { label: 'Table', href: '/table', description: 'The league table' },
+      { label: 'Man of the Match', href: '/man-of-the-match', description: 'Vote for the Man of the Match at home games' },
+      { label: 'Predict & Win', href: '/predict-and-win', description: 'Predict the score of home games for the chance to win' },
     ],
   },
   { label: 'Squad', href: '/squad', description: 'The First Team squad' },
