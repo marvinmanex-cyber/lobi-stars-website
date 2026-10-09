@@ -36,7 +36,9 @@ const waLink = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Hel
 <slot name="head" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" media="print" onload="this.media='all'"/>
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap"/></noscript>
 <style is:global>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -49,6 +51,10 @@ const waLink = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Hel
   --d4:#E3E6EA;      /* hairline borders */
   --white:#15181D;   /* primary text (ink) */
   --lt:#5B6472;       /* secondary text */
+  /* Darker red/gold for text, so small text passes WCAG AA contrast on the
+     light grey section backgrounds too. Buttons keep the brand red. */
+  --red-text:#C11A1F;
+  --gold-text:#865C08;
 }
 html{scroll-behavior:smooth;}
 body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--white);overflow-x:hidden;}
@@ -62,16 +68,16 @@ main{padding-top:72px;min-height:60vh;}
 .skip-link:focus{top:12px;}
 
 /* SHARED headings/buttons used by all pages */
-.stag{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:5px;text-transform:uppercase;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:10px;}
+.stag{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:5px;text-transform:uppercase;color: var(--gold-text);margin-bottom:10px;display:flex;align-items:center;gap:10px;}
 .stag::before{content:'';display:block;width:22px;height:2px;background:var(--gold);flex-shrink:0;}
 .stitle{font-family:'Bebas Neue',sans-serif;font-size:clamp(34px,5vw,58px);line-height:.95;letter-spacing:1px;color:var(--white);margin-bottom:14px;font-weight:400;}
-.stitle .r{color:var(--red);}
+.stitle .r{color: var(--red-text);}
 .divr{width:56px;height:3px;background:var(--red);margin:14px 0 34px;}
 .btn-p{background:var(--red);color:#fff;padding:13px 32px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border-radius:3px;transition:background .2s,transform .15s;display:inline-block;border:none;cursor:pointer;}
 .btn-p:hover{background:var(--rd);transform:translateY(-2px);}
 .btn-p:disabled{opacity:.6;cursor:default;transform:none;}
 .btn-o{background:transparent;color:var(--white);padding:13px 32px;text-decoration:none;font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;border-radius:3px;border:1.5px solid var(--d4);transition:border-color .2s,color .2s;display:inline-block;cursor:pointer;}
-.btn-o:hover{border-color:var(--red);color:var(--red);}
+.btn-o:hover{border-color:var(--red);color: var(--red-text);}
 .btn-p:focus-visible,.btn-o:focus-visible{outline:3px solid var(--gold);outline-offset:2px;}
 .card{background:var(--d2);border:1px solid var(--d4);border-radius:8px;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s;}
 .card:hover{transform:translateY(-4px);border-color:rgba(212,32,43,.35);box-shadow:0 16px 32px rgba(15,17,21,.08);}

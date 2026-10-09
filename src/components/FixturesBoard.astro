@@ -43,7 +43,7 @@ const cms = (await getCollection('fixtures')).map(f => ({
   .fxb :global(.fx-comp) { font-weight: 700; color: var(--white); }
   .fxb :global(.fx-ha) { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; padding: 4px 7px; border-radius: 3px; background: var(--d3); color: var(--white); }
   .fxb :global(.fx-ha.home) { background: var(--red); color: #fff; }
-  .fxb :global(.fx-when) { margin-left: auto; color: var(--gold); font-weight: 700; }
+  .fxb :global(.fx-when) { margin-left: auto; color: var(--gold-text); font-weight: 700; }
   .fxb :global(.fx-teams) { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; font: 700 17px/1.2 'Barlow Condensed', sans-serif; }
   .fxb :global(.fx-team) { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .fxb :global(.fx-team.h) { justify-content: flex-end; text-align: right; }
@@ -59,7 +59,7 @@ const cms = (await getCollection('fixtures')).map(f => ({
     background: #fff; color: var(--white); text-decoration: none; cursor: pointer;
     font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase;
   }
-  .fxb :global(.fx-btn:hover) { border-color: var(--red); color: var(--red); }
+  .fxb :global(.fx-btn:hover) { border-color: var(--red); color: var(--red-text); }
   .fxb :global(.fx-btn.primary) { background: var(--red); border-color: var(--red); color: #fff; }
   .fxb :global(.fx-btn.primary:hover) { background: var(--rd); color: #fff; }
   .fxb :global(.fx-btn:focus-visible) { outline: 3px solid var(--red); outline-offset: 2px; }

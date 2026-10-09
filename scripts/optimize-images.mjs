@@ -15,6 +15,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const IMAGES = path.join(ROOT, 'public', 'images');
 const PUBLIC = path.join(ROOT, 'public');
 const MAX_WIDTH = 1600;
+const VARIANT_WIDTHS = [480, 960];
 const BADGE = path.join(IMAGES, 'lobi-stars-fc.jpg');
 const RED = '#E31E24', DEEP = '#4D0B0D', GOLD = '#FFC72C';
 
@@ -54,6 +55,14 @@ async function optimisePhotos() {
       if (webp.length < current * 0.9) {
         await writeFile(webpPath, webp);
         webpTotal += webp.length;
+        // Smaller WebP versions for phones (used in srcset at build time).
+        const width = (await sharp(full).metadata()).width;
+        for (const w of VARIANT_WIDTHS) {
+          if (width <= w * 1.25) continue;
+          const v = await sharp(full).resize({ width: w }).webp({ quality: 72, effort: 6 }).toBuffer();
+          await writeFile(webpPath.replace(/\.webp$/, `-${w}w.webp`), v);
+          webpTotal += v.length;
+        }
       }
     }
 

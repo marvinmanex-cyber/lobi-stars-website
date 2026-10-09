@@ -9,7 +9,7 @@ const isActive = (href: string) => {
 ---
 <header class="sh" id="siteHeader">
   <div class="sh-inner">
-    <a class="sh-logo" href="/" aria-label="Lobi Stars FC home">
+    <a class="sh-logo" href="/">
       <img src="/images/lobi-stars-fc.jpg" alt="" width="44" height="44" />
       <span class="sh-name">Lobi Stars<span>Football Club</span></span>
     </a>
@@ -86,7 +86,7 @@ const isActive = (href: string) => {
   .sh-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
   .sh-logo img { width: 44px; height: 44px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--d4); }
   .sh-name { font: 400 19px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1.5px; color: var(--white); }
-  .sh-name span { display: block; font: 600 9px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 3px; color: var(--red); text-transform: uppercase; }
+  .sh-name span { display: block; font: 600 9px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 3px; color: var(--red-text); text-transform: uppercase; }
 
   .sh-nav { flex: 1; display: flex; justify-content: center; min-width: 0; }
   .sh-list { list-style: none; display: flex; align-items: center; gap: 2px; margin: 0; padding: 0; }
@@ -97,7 +97,7 @@ const isActive = (href: string) => {
     color: var(--white); text-decoration: none; border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
   }
   .sh-link svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; transition: transform .2s; }
-  .sh-link:hover, .sh-link.active, .sh-link[aria-expanded='true'] { color: var(--red); border-bottom-color: var(--red); }
+  .sh-link:hover, .sh-link.active, .sh-link[aria-expanded='true'] { color: var(--red-text); border-bottom-color: var(--red); }
   .sh-link[aria-expanded='true'] svg { transform: rotate(180deg); }
   .sh-link:focus-visible, .sh-icon:focus-visible, .sh-logo:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; border-radius: 4px; }
 
@@ -113,14 +113,14 @@ const isActive = (href: string) => {
     display: block; padding: 10px 12px; border-radius: 6px; text-decoration: none; color: var(--white);
     font: 600 15px/1.2 'Barlow Condensed', sans-serif;
   }
-  .sh-sub a:hover, .sh-sub a:focus-visible, .sh-sub a[aria-current='page'] { background: var(--d3); color: var(--red); outline: none; }
+  .sh-sub a:hover, .sh-sub a:focus-visible, .sh-sub a[aria-current='page'] { background: var(--d3); color: var(--red-text); outline: none; }
 
   .sh-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
   .sh-icon {
     width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--d4); background: #fff; cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; color: var(--white); padding: 0;
   }
-  .sh-icon:hover { border-color: var(--red); color: var(--red); }
+  .sh-icon:hover { border-color: var(--red); color: var(--red-text); }
   .sh-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
   .sh-burger { display: none; }
 
@@ -144,7 +144,7 @@ const isActive = (href: string) => {
   }
   .mm-sub { padding: 0 0 10px 20px; }
   .mm-sub a { display: block; padding: 9px 20px; text-decoration: none; color: var(--lt); font: 600 15px/1.2 'Barlow Condensed', sans-serif; }
-  .mm a[aria-current='page'], .mm a:hover { color: var(--red); }
+  .mm a[aria-current='page'], .mm a:hover { color: var(--red-text); }
 
   @media (max-width: 1180px) {
     .sh-nav { display: none; }

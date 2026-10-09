@@ -10,7 +10,7 @@ const href = `/news/${article.id}`;
 ---
 <article class="nc" data-cat={a.category}>
   <div class="nc-media">
-    <img src={a.coverImage} alt={a.imageAlt} loading="lazy" decoding="async" width="640" height="360" />
+    <img src={a.coverImage} alt={a.imageAlt} loading="lazy" decoding="async" sizes="(max-width: 480px) 84vw, (max-width: 768px) 72vw, (max-width: 1100px) 33vw, 320px" />
     {a.isSample && <span class="nc-sample">Sample</span>}
     {a.isVideo && (
       <span class="nc-badge">
@@ -56,7 +56,7 @@ const href = `/news/${article.id}`;
     font: 600 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase;
   }
   .nc-cat {
-    position: relative; z-index: 2; color: var(--red); font-weight: 700; text-decoration: none;
+    position: relative; z-index: 2; color: var(--red-text); font-weight: 700; text-decoration: none;
   }
   .nc-cat:hover, .nc-cat:focus-visible { text-decoration: underline; }
   .nc-time { color: var(--lt); }
@@ -74,7 +74,7 @@ const href = `/news/${article.id}`;
   .nc-link::after { content: ''; position: absolute; inset: 0; z-index: 1; border-radius: 10px; }
   .nc-link:focus-visible { outline: none; }
   .nc-link:focus-visible::after { outline: 3px solid var(--red); outline-offset: 4px; }
-  .nc:hover .nc-link, .nc-link:focus-visible { color: var(--red); text-decoration-color: currentColor; }
+  .nc:hover .nc-link, .nc-link:focus-visible { color: var(--red-text); text-decoration-color: currentColor; }
 
   .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;

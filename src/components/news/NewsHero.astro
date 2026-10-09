@@ -16,7 +16,7 @@ const { articles } = Astro.props;
         const a = article.data;
         return (
           <article class="nh-slide" data-slide={i} hidden={i !== 0}>
-            <img src={a.coverImage} alt={a.imageAlt} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" width="1600" height="900" />
+            <img src={a.coverImage} alt={a.imageAlt} loading={i === 0 ? 'eager' : 'lazy'} fetchpriority={i === 0 ? 'high' : undefined} decoding={i === 0 ? 'sync' : 'async'} sizes="100vw" />
             <div class="nh-grad" aria-hidden="true"></div>
             <div class="nh-body">
               <div class="nh-meta">
@@ -41,9 +41,9 @@ const { articles } = Astro.props;
         <ul class="nh-thumbs" aria-label="More top stories">
           {articles.map((article, i) => (
             <li class="nh-thumb-item" data-thumb-item={i} hidden={i === 0}>
-              <button type="button" class="nh-thumb" data-thumb={i} aria-label={`Show story: ${article.data.title}`}>
+              <button type="button" class="nh-thumb" data-thumb={i}>
                 <span class="nh-thumb-img">
-                  <img src={article.data.coverImage} alt="" loading="lazy" decoding="async" width="320" height="180" />
+                  <img src={article.data.coverImage} alt="" loading="lazy" decoding="async" sizes="200px" />
                   {article.data.isVideo && (
                     <span class="nh-thumb-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" /></svg></span>
                   )}

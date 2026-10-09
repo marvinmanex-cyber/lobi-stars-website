@@ -77,7 +77,7 @@ const tabs = [{ name: 'All', slug: 'all' }, ...NEWS_CATEGORIES];
     border-bottom: 3px solid transparent; transition: color .2s, border-color .2s;
   }
   .nl-tab:hover { color: var(--white); }
-  .nl-tab[aria-current='page'] { color: var(--red); border-bottom-color: var(--red); }
+  .nl-tab[aria-current='page'] { color: var(--red-text); border-bottom-color: var(--red); }
   .nl-tab:focus-visible { outline: 3px solid var(--red); outline-offset: -3px; }
   .nl-tab-arrow {
     display: none; flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--d4);
@@ -93,7 +93,7 @@ const tabs = [{ name: 'All', slug: 'all' }, ...NEWS_CATEGORIES];
   .nl-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 36px 24px; }
   .nl-grid > li[hidden] { display: none; }
   .nl-empty { padding: 50px 20px; text-align: center; color: var(--lt); border: 1px dashed var(--d4); border-radius: 10px; }
-  .nl-empty a { color: var(--red); font-weight: 600; }
+  .nl-empty a { color: var(--red-text); font-weight: 600; }
 
   .nl-pages { display: flex; justify-content: center; margin-top: 48px; }
   .nl-pages :global(ol) { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
@@ -103,7 +103,7 @@ const tabs = [{ name: 'All', slug: 'all' }, ...NEWS_CATEGORIES];
     font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: .5px;
   }
   .nl-pages :global(span) { border-color: transparent; color: var(--lt); }
-  .nl-pages :global(a:hover) { border-color: var(--red); color: var(--red); }
+  .nl-pages :global(a:hover) { border-color: var(--red); color: var(--red-text); }
   .nl-pages :global(a[aria-current='page']) { background: var(--red); border-color: var(--red); color: #fff; }
   .nl-pages :global(a:focus-visible) { outline: 3px solid var(--red); outline-offset: 2px; }
 

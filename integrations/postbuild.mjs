@@ -64,6 +64,15 @@ function rewriteImages(html, dist, sizes) {
     if (!canWrap) return out;
     // srcset is space-separated, so spaces in file names must be encoded.
     const webpSrc = ((src.startsWith('/') ? '' : '/') + src.replace(/\.(jpe?g|png)$/i, '.webp')).replace(/ /g, '%20');
+    // Offer the smaller -480w / -960w versions (made by optimize-images) so
+    // phones don't download desktop-sized photos.
+    const candidates = [480, 960]
+      .filter(w => existsSync(path.join(dist, ...webpKey.replace(/\.webp$/, `-${w}w.webp`).split('/'))))
+      .map(w => `${webpSrc.replace(/\.webp$/, `-${w}w.webp`)} ${w}w`);
+    if (candidates.length && dims) {
+      const sizes = attr(tag, 'sizes') || '100vw';
+      return `<picture><source srcset="${[...candidates, `${webpSrc} ${dims[0]}w`].join(', ')}" sizes="${sizes}" type="image/webp">${out}</picture>`;
+    }
     return `<picture><source srcset="${webpSrc}" type="image/webp">${out}</picture>`;
   });
   return { html: result, changed };

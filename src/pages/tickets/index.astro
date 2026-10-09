@@ -13,7 +13,7 @@ import Layout from '../../layouts/Layout.astro';
       </a>
     </div>
     <div class="divr"></div>
-    <p style="margin:-14px 0 28px;font-size:15px;color:var(--lt);">Going to the match? <a href="/food" style="color:var(--red);font-weight:700;">Order food to your seat &rarr;</a></p>
+    <p style="margin:-14px 0 28px;font-size:15px;color:var(--lt);">Going to the match? <a href="/food" style="color: var(--red-text);font-weight:700;">Order food to your seat &rarr;</a></p>
 
     <div class="tsteps" id="tsteps">
       <div class="tstep"><div class="tsn act" id="sn1">1</div><div class="tsl act" id="sl1">Select Match</div></div>
@@ -57,7 +57,7 @@ import Layout from '../../layouts/Layout.astro';
         <div class="form-grp"><label class="form-lbl">Confirm Email Address</label><input type="email" class="form-inp" id="t-em2" placeholder="you@example.com" onpaste="return false" oncopy="return false" autocomplete="off"/></div>
         <div class="form-grp"><label class="form-lbl">Phone Number</label><input type="tel" class="form-inp" id="t-ph" placeholder="+234 800 000 0000"/></div>
       </div>
-      <p id="tix-error" class="muted" style="display:none;color:var(--red);margin-top:10px;font-weight:600;"></p>
+      <p id="tix-error" class="muted" style="display:none;color: var(--red-text);margin-top:10px;font-weight:600;"></p>
       <div class="tnav"><button class="btn-back" type="button" onclick="goStep(2)">&larr; Back</button><button class="btn-p" type="button" id="confirmBkBtn" onclick="confirmBk()">Confirm &amp; Pay &rarr;</button></div>
     </div>
   </div>
@@ -87,7 +87,7 @@ import Layout from '../../layouts/Layout.astro';
   .mteam-logo{width:32px;height:32px;object-fit:contain;flex-shrink:0;}
   .mteam-fallback{display:flex;align-items:center;justify-content:center;background:var(--d3);border-radius:50%;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--lt);}
   .mteams{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);letter-spacing:1px;flex:1;min-width:0;}
-  .mteams span{color:var(--red);}
+  .mteams span{color: var(--red-text);}
   .mdate{font-size:12px;color:var(--lt);margin-bottom:3px;}
   .mvenue{font-size:11px;color:var(--lt);}
 
@@ -100,7 +100,7 @@ import Layout from '../../layouts/Layout.astro';
   .spop-tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;}
   .stic-img{width:64px;height:64px;object-fit:contain;margin-bottom:8px;}
   .stier{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:5px;}
-  .stier.vip{color:var(--gold);}.stier.prem{color:#6B7280;}.stier.reg{color:var(--lt);}
+  .stier.vip{color: var(--gold-text);}.stier.prem{color:#6B7280;}.stier.reg{color:var(--lt);}
   .sprice{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--white);letter-spacing:1px;}
   .sprice span{font-size:32px;color:var(--white);}
   .sperk{font-size:12px;color:var(--lt);margin-top:5px;}
@@ -112,10 +112,10 @@ import Layout from '../../layouts/Layout.astro';
   .qty-num{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--white);min-width:28px;text-align:center;}
 
   .tsum-bar{background:var(--d3);border:1px solid rgba(245,184,0,.2);border-radius:6px;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px;}
-  .tsum-val{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color:var(--gold);}
+  .tsum-val{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color: var(--gold-text);}
   .tsum-key{font-size:10px;color:var(--lt);letter-spacing:1px;margin-top:2px;text-transform:uppercase;}
   .tnav{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;}
-  .btn-back{background:transparent;border:1.5px solid var(--red);color:var(--red);padding:12px 26px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+  .btn-back{background:transparent;border:1.5px solid var(--red);color: var(--red-text);padding:12px 26px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
   .btn-back:hover{background:var(--red);color:#fff;}
 
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
