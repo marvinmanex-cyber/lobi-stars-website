@@ -107,6 +107,15 @@ const roster = (await getCollection('players'))
         )}
       </fieldset>
 
+      <fieldset class="mce-set" id="streamSet">
+        <legend>Live stream (Watch Live)</legend>
+        <p class="muted mce-hint" id="streamHint">Paste the YouTube and/or Facebook link for this game's live stream. Fans see it on Matchday Live; after the match it stays there as the full match replay. Leave blank to show links to the official channels instead.</p>
+        <div class="form-row">
+          <div class="form-grp"><label class="form-lbl" for="ytUrl">YouTube live link</label><input class="form-inp" id="ytUrl" type="url" inputmode="url" placeholder="https://www.youtube.com/live/..." /></div>
+          <div class="form-grp"><label class="form-lbl" for="fbUrl">Facebook live link</label><input class="form-inp" id="fbUrl" type="url" inputmode="url" placeholder="https://www.facebook.com/.../videos/..." /></div>
+        </div>
+      </fieldset>
+
       <fieldset class="mce-set">
         <legend>Preview &amp; report</legend>
         <div class="form-grp"><label class="form-lbl" for="preview">Match preview (blank line between paragraphs)</label><textarea class="form-ta" id="preview" rows="6"></textarea></div>
@@ -263,6 +272,9 @@ const roster = (await getCollection('players'))
     $('homeScore').value = m.home_score ?? '';
     $('awayScore').value = m.away_score ?? '';
     $('preview').value = m.preview || '';
+    $('ytUrl').value = m.youtube_url || '';
+    $('fbUrl').value = m.facebook_url || '';
+    $('streamSet').hidden = !m.is_home;
     $('report').value = m.report || '';
     $('homeXI').value = m.lineups.home.starting.join('\n');
     $('awayXI').value = m.lineups.away.starting.join('\n');
@@ -370,6 +382,7 @@ const roster = (await getCollection('players'))
       status: $('status').value,
       home_score: num($('homeScore').value), away_score: num($('awayScore').value),
       preview: $('preview').value, report: $('report').value,
+      youtube_url: $('ytUrl').value.trim(), facebook_url: $('fbUrl').value.trim(),
       lineups: { home: { starting: lines($('homeXI').value), subs: lines($('homeSubs').value) },
                  away: { starting: lines($('awayXI').value), subs: lines($('awaySubs').value) } },
       timeline: [...document.querySelectorAll('.tl-row')].map(r => ({

@@ -1,4 +1,5 @@
 import { requireAdmin } from '../../_lib/adminEvents.js';
+import { parseStreams } from '../../_lib/streams.js';
 import { loadMatch, toPublic, parseCentrePayload, parseSquad, scoreInt, isHomeGame, LIVE_STATUSES } from '../../_lib/matchCentre.js';
 
 async function roster(request, env) {
@@ -16,7 +17,13 @@ export async function onRequestGet({ request, env, params }) {
   if (denied) return denied;
   const m = await loadMatch(env.DB, params.id);
   if (!m) return Response.json({ error: 'Match not found' }, { status: 404 });
-  return Response.json({ match: { ...toPublic(m.event, m.centre), auto_closed: !!m.centre?.auto_closed }, serverTime: new Date().toISOString() });
+  return Response.json({
+    match: {
+      ...toPublic(m.event, m.centre), auto_closed: !!m.centre?.auto_closed,
+      youtube_url: m.centre?.youtube_url || '', facebook_url: m.centre?.facebook_url || '',
+    },
+    serverTime: new Date().toISOString(),
+  });
 }
 
 // PUT /api/admin/match-centre/:id -- save status, score, preview, line-ups,
@@ -30,6 +37,10 @@ export async function onRequestPut({ request, env, params }) {
   let body;
   try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON body' }, { status: 400 }); }
   const { value: v } = parseCentrePayload(body);
+  const streams = parseStreams(body);
+  if (streams.error) return Response.json({ error: streams.error }, { status: 400 });
+  // Stream links only apply to home games.
+  const s = isHomeGame(m.event) ? streams.value : { youtube_url: null, facebook_url: null };
   const squad = parseSquad(body.squad, await roster(request, env));
 
   // Keep the recorded kick-off / end times consistent with a status chosen
@@ -42,19 +53,20 @@ export async function onRequestPut({ request, env, params }) {
   await env.DB.prepare(
     `INSERT INTO match_centre
        (event_id, status, home_score, away_score, preview, report, lineups_json, timeline_json, stats_json, gallery_json,
-        squad_json, kickoff_at, ended_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        squad_json, kickoff_at, ended_at, youtube_url, facebook_url, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
      ON CONFLICT(event_id) DO UPDATE SET
        status = excluded.status, home_score = excluded.home_score, away_score = excluded.away_score,
        preview = excluded.preview, report = excluded.report, lineups_json = excluded.lineups_json,
        timeline_json = excluded.timeline_json, stats_json = excluded.stats_json,
        gallery_json = excluded.gallery_json, squad_json = excluded.squad_json,
        kickoff_at = excluded.kickoff_at, ended_at = excluded.ended_at,
+       youtube_url = excluded.youtube_url, facebook_url = excluded.facebook_url,
        auto_closed = CASE WHEN excluded.status = 'full-time' THEN match_centre.auto_closed ELSE 0 END,
        updated_at = excluded.updated_at`
   ).bind(
     params.id, v.status, v.home_score, v.away_score, v.preview, v.report,
-    v.lineups_json, v.timeline_json, v.stats_json, v.gallery_json, JSON.stringify(squad), kickoffAt, endedAt
+    v.lineups_json, v.timeline_json, v.stats_json, v.gallery_json, JSON.stringify(squad), kickoffAt, endedAt, s.youtube_url, s.facebook_url
   ).run();
 
   return Response.json({ ok: true, squad });

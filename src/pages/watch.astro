@@ -1,0 +1,91 @@
+---
+// /watch -- live streams of upcoming Lobi Stars home games and full match
+// replays. Each match links to its Matchday Live "Watch" tab. Match status
+// comes from the server (/api/matches).
+import Layout from '../layouts/Layout.astro';
+import settings from '../data/matchday.json';
+---
+<Layout title="Watch Live | Lobi Stars Football Club" description="Watch Lobi Stars home games live and catch up on full match replays.">
+  <div class="page-hero wrap">
+    <div class="stag">Lobi Stars TV</div>
+    <h1 class="stitle">Watch <span class="r">Live</span></h1>
+    <div class="divr"></div>
+    <p class="wl-lede">Lobi Stars home games streamed live, then kept here as full match replays. The video only loads when you press play, to save your data.</p>
+  </div>
+
+  <div class="page-content wrap wl" id="wl">
+    <section aria-labelledby="wl-up">
+      <h2 class="wl-h" id="wl-up">Live &amp; upcoming</h2>
+      <div class="wl-grid" id="wlUp"><p class="muted">Loading&hellip;</p></div>
+    </section>
+    <section aria-labelledby="wl-rp">
+      <h2 class="wl-h" id="wl-rp">Full match replays</h2>
+      <div class="wl-grid" id="wlRp"><p class="muted">Loading&hellip;</p></div>
+    </section>
+    <section class="wl-ch" aria-labelledby="wl-ch">
+      <h2 class="wl-h" id="wl-ch">Official channels</h2>
+      <p class="muted">Subscribe so you never miss a stream.</p>
+      <div class="wl-acts">
+        {settings.youtubeChannel && <a class="btn-p" href={settings.youtubeChannel} target="_blank" rel="noopener" data-track="watch_play" data-track-label="channel-youtube">YouTube</a>}
+        {settings.facebookPage && <a class="btn-o" href={settings.facebookPage} target="_blank" rel="noopener" data-track="watch_play" data-track-label="channel-facebook">Facebook</a>}
+        <a class="btn-o" href="/video">More club videos</a>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .wl-lede { max-width: 640px; color: var(--lt); line-height: 1.65; margin: 14px 0 0; }
+  .wl { padding-bottom: 80px; }
+  .wl section { margin-bottom: 40px; }
+  .wl-h { margin: 0 0 16px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .wl-grid :global(.wl-card) { display: flex; flex-direction: column; gap: 10px; padding: 20px; border: 1px solid var(--d4); border-radius: 14px; background: #fff; text-decoration: none; color: var(--white); transition: border-color .15s, transform .15s; }
+  .wl-grid :global(.wl-card:hover), .wl-grid :global(.wl-card:focus-visible) { border-color: var(--red); transform: translateY(-2px); outline: none; }
+  .wl-grid :global(.wl-top) { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); }
+  .wl-grid :global(.wl-badge) { padding: 5px 9px; border-radius: 20px; background: var(--d3); color: var(--white); }
+  .wl-grid :global(.wl-badge.live) { background: var(--red); color: #fff; }
+  .wl-grid :global(.wl-teams) { display: flex; align-items: center; gap: 10px; font: 400 24px/1.05 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .wl-grid :global(.wl-teams .crest), .wl-grid :global(.wl-teams .crest--initials) { width: 36px; height: 36px; border-radius: 50%; object-fit: contain; flex: 0 0 36px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; background: var(--d3); }
+  .wl-grid :global(.wl-when) { color: var(--lt); font-size: 15px; }
+  .wl-grid :global(.wl-go) { margin-top: auto; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--red-text); }
+  .wl-ch p { margin: 0 0 16px; }
+  .wl-acts { display: flex; flex-wrap: wrap; gap: 10px; }
+</style>
+
+<script>
+  import { crest, fmtDate, fmtTime, hasScore } from '../lib/matchUi';
+  type M = { slug: string; home_team: string; away_team: string; event_date: string; is_home: boolean; status: string;
+    home_score: number | null; away_score: number | null; has_stream: boolean };
+
+  const up = document.getElementById('wlUp')!, rp = document.getElementById('wlRp')!;
+  const card = (m: M, kind: 'up' | 'replay') => {
+    const a = document.createElement('a');
+    a.className = 'wl-card';
+    a.href = `/matches/${m.slug}/live#watch`;
+    const live = m.status === 'live' || m.status === 'half-time';
+    const top = document.createElement('div'); top.className = 'wl-top';
+    const badge = document.createElement('span');
+    badge.className = `wl-badge${live ? ' live' : ''}`;
+    badge.textContent = live ? '● Live now' : kind === 'replay' ? 'Replay' : m.has_stream ? 'Stream ready' : 'Upcoming';
+    top.append(fmtDate(m.event_date), badge);
+    const teams = document.createElement('div'); teams.className = 'wl-teams';
+    const score = kind === 'replay' && hasScore(m) ? ` ${m.home_score}–${m.away_score} ` : ' vs ';
+    teams.append(crest(m.home_team, 36), `${m.home_team}${score}${m.away_team}`);
+    const when = document.createElement('div'); when.className = 'wl-when';
+    when.textContent = kind === 'replay' ? 'Full match replay' : live ? 'Streaming now' : `Live stream from kick-off, ${fmtTime(m.event_date)}`;
+    const go = document.createElement('span'); go.className = 'wl-go';
+    go.textContent = kind === 'replay' ? 'Watch replay →' : live ? 'Watch live →' : 'Go to Matchday Live →';
+    a.append(top, teams, when, go);
+    return a;
+  };
+  const empty = (box: HTMLElement, text: string) => { const p = document.createElement('p'); p.className = 'muted'; p.textContent = text; box.replaceChildren(p); };
+
+  fetch('/api/matches').then(r => r.json()).then(({ matches }: { matches: M[] }) => {
+    const home = matches.filter(m => m.is_home);
+    const upcoming = home.filter(m => ['scheduled', 'live', 'half-time'].includes(m.status)).slice(0, 6);
+    const replays = home.filter(m => m.status === 'full-time' && m.has_stream).reverse().slice(0, 12);
+    upcoming.length ? up.replaceChildren(...upcoming.map(m => card(m, 'up'))) : empty(up, 'No home games scheduled at the moment. Check the fixtures for the next one.');
+    replays.length ? rp.replaceChildren(...replays.map(m => card(m, 'replay'))) : empty(rp, 'Full match replays will appear here after each home game.');
+  }).catch(() => { empty(up, 'Streams could not be loaded. Please try again.'); rp.replaceChildren(); });
+</script>

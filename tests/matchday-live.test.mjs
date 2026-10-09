@@ -57,3 +57,46 @@ test('a live home game is flagged live in /api/matches (drives the homepage bann
   assert.equal(row.is_home, true);
   await fetch(`${BASE}/api/admin/match-centre/${m.id}`, { method: 'POST', headers: ADMIN, body: JSON.stringify({ action: 'fulltime', home_score: 1, away_score: 0 }) });
 });
+
+// Phase 4: Watch Live
+const saveStreams = (id, body) => fetch(`${BASE}/api/admin/match-centre/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ status: 'scheduled', ...body }) });
+
+test('stream links: YouTube and Facebook links are accepted and turned into safe embeds', async () => {
+  const m = await createMatch();
+  for (const yt of ['https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=5', 'https://youtu.be/dQw4w9WgXcQ', 'https://www.youtube.com/live/dQw4w9WgXcQ?si=abc']) {
+    const r = await saveStreams(m.id, { youtube_url: yt, facebook_url: 'https://www.facebook.com/LobiStars/videos/123456789/' });
+    assert.equal(r.status, 200, yt);
+    const { match } = await fetch(`${BASE}/api/matches/${m.slug}`).then(r => r.json());
+    assert.equal(match.stream.youtube.url, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
+    assert.match(match.stream.youtube.embed, /^https:\/\/www\.youtube-nocookie\.com\/embed\/dQw4w9WgXcQ\?/);
+    assert.match(match.stream.facebook.embed, /^https:\/\/www\.facebook\.com\/plugins\/video\.php\?href=https%3A%2F%2Fwww\.facebook\.com%2FLobiStars%2Fvideos%2F123456789%2F/);
+  }
+  const { matches } = await fetch(`${BASE}/api/matches`).then(r => r.json());
+  assert.equal(matches.find(x => x.id === m.id).has_stream, true);
+  // Clearing the links falls back to the official channels.
+  assert.equal((await saveStreams(m.id, { youtube_url: '', facebook_url: '' })).status, 200);
+  const after = await fetch(`${BASE}/api/matches/${m.slug}`).then(r => r.json());
+  assert.deepEqual(after.match.stream, { youtube: null, facebook: null });
+});
+
+test('stream links: other websites and scripts are rejected', async () => {
+  const m = await createMatch();
+  for (const bad of [{ youtube_url: 'https://evil.example.com/watch?v=dQw4w9WgXcQ' }, { youtube_url: 'javascript:alert(1)' },
+    { facebook_url: 'https://facebook.com.evil.example/videos/1' }, { facebook_url: 'not a link' }]) {
+    const r = await saveStreams(m.id, bad);
+    assert.equal(r.status, 400, JSON.stringify(bad));
+  }
+});
+
+test('away games never expose a stream', async () => {
+  const m = await createMatch({ home_team: 'Sokoto United FC', away_team: 'Lobi Stars FC' });
+  assert.equal((await saveStreams(m.id, { youtube_url: 'https://youtu.be/dQw4w9WgXcQ' })).status, 200);
+  const { match } = await fetch(`${BASE}/api/matches/${m.slug}`).then(r => r.json());
+  assert.deepEqual(match.stream, { youtube: null, facebook: null });
+});
+
+test('/watch page is served', async () => {
+  const res = await fetch(`${BASE}/watch/`);
+  assert.equal(res.status, 200);
+  assert.match(await res.text(), /<title>Watch Live \| Lobi Stars Football Club<\/title>/);
+});

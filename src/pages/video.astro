@@ -17,6 +17,7 @@ const videoNews = (await getSortedNews()).filter(a => a.data.isVideo);
     <div class="stag">Lobi Stars TV</div>
     <h1 class="stitle"><span class="r">Video</span></h1>
     <div class="divr"></div>
+    <p class="vd-live"><a class="btn-p" href="/watch">&#9654; Watch home games live &amp; full match replays</a></p>
   </div>
 
   <div class="page-content wrap">
@@ -55,6 +56,7 @@ const videoNews = (await getSortedNews()).filter(a => a.data.isVideo);
 </Layout>
 
 <style>
+  .vd-live { margin: 16px 0 0; }
   .vd-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
   .vd-tab { padding: 10px 16px; border-radius: 30px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
   .vd-tab[aria-pressed='true'] { background: var(--red); border-color: var(--red); color: #fff; }

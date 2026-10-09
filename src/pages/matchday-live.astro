@@ -53,6 +53,26 @@ import settings from '../data/matchday.json';
   .ml :global(.ml-card p) { margin: 0 0 16px; color: var(--lt); line-height: 1.6; }
   .ml :global(.ml-actions) { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
   .ml :global(.ml-note) { margin-top: 14px; font-size: 13px; color: var(--lt); }
+  .ml :global(.ml-note a) { color: var(--red-text); font-weight: 600; }
+  .ml :global(.ml-src) { display: inline-flex; gap: 4px; padding: 4px; border-radius: 999px; background: var(--d3); margin: 0 0 16px; }
+  .ml :global(.ml-src-btn) { border: 0; border-radius: 999px; padding: 8px 18px; background: transparent; cursor: pointer; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--white); }
+  .ml :global(.ml-src-btn[aria-pressed='true']) { background: var(--red); color: #fff; }
+  .ml :global(.ml-src-btn:focus-visible) { outline: 3px solid #FFC72C; outline-offset: 2px; }
+  .ml :global(.ml-player) { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #000; }
+  .ml :global(.ml-player iframe) { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .ml :global(.ml-poster) {
+    position: absolute; inset: 0; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+    border: 0; cursor: pointer; color: #fff; padding: 16px; text-align: center;
+    background: radial-gradient(120% 140% at 50% 0%, #7A0F12 0%, #2A0507 60%, #15181D 100%);
+  }
+  .ml :global(.ml-play) { width: 74px; height: 74px; border-radius: 50%; background: var(--red); position: relative; box-shadow: 0 0 0 8px rgba(227, 30, 36, .25); transition: transform .15s; }
+  .ml :global(.ml-play::after) { content: ''; position: absolute; left: 30px; top: 22px; border-style: solid; border-width: 15px 0 15px 24px; border-color: transparent transparent transparent #fff; }
+  .ml :global(.ml-poster:hover .ml-play), .ml :global(.ml-poster:focus-visible .ml-play) { transform: scale(1.08); }
+  .ml :global(.ml-poster:focus-visible) { outline: 3px solid #FFC72C; outline-offset: -3px; }
+  .ml :global(.ml-poster-t) { font: 400 clamp(22px, 4vw, 32px)/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ml :global(.ml-poster-cd) { font: 400 clamp(26px, 5vw, 40px)/1 'Bebas Neue', sans-serif; letter-spacing: 2px; color: #FFC72C; font-variant-numeric: tabular-nums; }
+  .ml :global(.ml-poster-s) { font-size: 13px; color: rgba(255, 255, 255, .75); }
+  @media (max-width: 420px) { .ml :global(.ml-play) { width: 56px; height: 56px; } .ml :global(.ml-play::after) { left: 22px; top: 16px; border-width: 12px 0 12px 19px; } .ml :global(.ml-card) { padding: 18px 14px; } }
   @media (max-width: 520px) {
     .ml :global(.ml-tab) { font-size: 12px; padding: 10px 2px 12px; }
     .ml :global(.ml-tab span) { font-size: 18px; }
@@ -63,7 +83,8 @@ import settings from '../data/matchday.json';
   import { crest, fmtDate, fmtTime, hasScore } from '../lib/matchUi';
 
   type M = { id: string; slug: string; home_team: string; away_team: string; competition: string; event_date: string; venue: string;
-    status: string; home_score: number | null; away_score: number | null; is_home: boolean; kickoff_at: string | null };
+    status: string; home_score: number | null; away_score: number | null; is_home: boolean; kickoff_at: string | null;
+    stream?: { youtube: { url: string; embed: string } | null; facebook: { url: string; embed: string } | null } };
 
   const root = document.getElementById('ml')!;
   const settings = JSON.parse(root.dataset.settings || '{}');
@@ -78,6 +99,7 @@ import settings from '../data/matchday.json';
   let clockOffset = 0; // server time - device time, so countdowns follow the server clock
   let active = TABS.some(t => `#${t.id}` === location.hash) ? location.hash.slice(1) : '';
   let timers: number[] = [];
+  let source: 'youtube' | 'facebook' | '' = '';
   const serverNow = () => Date.now() + clockOffset;
 
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: string) => {
@@ -154,17 +176,7 @@ import settings from '../data/matchday.json';
   // Tab content. Watch, Vote and Predict get their full features in the next phases.
   function panel(id: string, m: M) {
     const card = el('div', 'ml-card');
-    if (id === 'watch') {
-      card.append(el('h2', '', isOver(m) ? 'Match replay' : 'Watch live'));
-      card.append(el('p', '', isLive(m) ? 'Follow the live stream on our official channels.'
-        : isOver(m) ? 'Catch up on the action on our official channels.'
-        : `The live stream starts at kick-off, ${fmtTime(m.event_date)}.`));
-      const a = el('div', 'ml-actions');
-      const tag = (x: HTMLAnchorElement, name: string) => { x.dataset.track = name; x.dataset.trackLabel = m.slug; return x; };
-      if (settings.youtubeChannel) a.append(tag(link(settings.youtubeChannel, '▶ YouTube', 'btn-p', true), 'watch_play'));
-      if (settings.facebookPage) a.append(tag(link(settings.facebookPage, 'Facebook', 'btn-o', true), 'watch_play'));
-      card.append(a);
-    }
+    if (id === 'watch') card.append(...watchPanel(m));
     if (id === 'commentary') {
       card.append(el('h2', '', 'Live Match Commentary'));
       card.append(el('p', '', `Listen to live commentary from ${settings.commentaryProvider || 'our commentary partner'}.`));
@@ -191,13 +203,93 @@ import settings from '../data/matchday.json';
     return card;
   }
 
+  // Watch Live: the video player loads only when the fan presses Play (saves mobile data).
+  function watchPanel(m: M): Node[] {
+    const st = m.stream || { youtube: null, facebook: null };
+    const sources = (['youtube', 'facebook'] as const).filter(k => st[k]);
+    const start = new Date(m.event_date).getTime();
+    const before = !isLive(m) && !isOver(m);
+    const title = el('h2', '', isOver(m) ? 'Full match replay' : 'Watch live');
+    const out: Node[] = [title];
+
+    if (!sources.length) {
+      out.push(el('p', '', isLive(m) ? 'Follow the live stream on our official channels.'
+        : isOver(m) ? 'Catch up on the action on our official channels.'
+        : `The live stream starts at kick-off, ${fmtTime(m.event_date)}. Watch it on our official channels.`));
+      const a = el('div', 'ml-actions');
+      const tag = (x: HTMLAnchorElement) => { x.dataset.track = 'watch_play'; x.dataset.trackLabel = m.slug; return x; };
+      if (settings.youtubeChannel) a.append(tag(link(settings.youtubeChannel, '▶ YouTube channel', 'btn-p', true)));
+      if (settings.facebookPage) a.append(tag(link(settings.facebookPage, 'Facebook page', 'btn-o', true)));
+      out.push(a);
+      return out;
+    }
+
+    if (!source || !st[source]) source = sources[0];
+    if (sources.length > 1) {
+      const sw = el('div', 'ml-src');
+      sw.setAttribute('role', 'group'); sw.setAttribute('aria-label', 'Choose where to watch');
+      sources.forEach(k => {
+        const b = el('button', 'ml-src-btn', k === 'youtube' ? 'YouTube' : 'Facebook') as HTMLButtonElement;
+        b.type = 'button'; b.setAttribute('aria-pressed', String(k === source));
+        b.addEventListener('click', () => { source = k; if (match) render(match, true); });
+        sw.append(b);
+      });
+      out.push(sw);
+    }
+
+    const player = el('div', 'ml-player');
+    const poster = el('button', 'ml-poster') as HTMLButtonElement;
+    poster.type = 'button';
+    const playIcon = el('span', 'ml-play'); playIcon.setAttribute('aria-hidden', 'true');
+    const label = el('span', 'ml-poster-t', isOver(m) ? 'Play full match replay' : isLive(m) ? 'Play live stream' : `Live stream starts at ${fmtTime(m.event_date)}`);
+    const sub = el('span', 'ml-poster-s', `${source === 'youtube' ? 'YouTube' : 'Facebook'} · the video loads only when you press play`);
+    poster.append(playIcon, label);
+    if (before && start > serverNow()) {
+      const cd = el('span', 'ml-poster-cd');
+      const tick = () => {
+        const left = Math.max(0, start - serverNow());
+        const d = Math.floor(left / 864e5), h = Math.floor(left / 36e5) % 24, mi = Math.floor(left / 6e4) % 60, se = Math.floor(left / 1e3) % 60;
+        cd.textContent = `${d ? `${d}d ` : ''}${String(h).padStart(2, '0')}:${String(mi).padStart(2, '0')}:${String(se).padStart(2, '0')}`;
+      };
+      tick(); timers.push(window.setInterval(tick, 1000));
+      poster.append(cd);
+    }
+    poster.append(sub);
+    poster.setAttribute('aria-label', `${label.textContent} on ${source === 'youtube' ? 'YouTube' : 'Facebook'}`);
+    poster.addEventListener('click', () => {
+      const s = st[source as 'youtube' | 'facebook']!;
+      const f = document.createElement('iframe');
+      f.src = s.embed;
+      f.title = `${m.home_team} vs ${m.away_team} – ${isOver(m) ? 'full match replay' : 'live stream'}`;
+      f.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+      f.allowFullscreen = true;
+      f.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+      player.replaceChildren(f);
+      player.dataset.playing = '1';
+      (window as any).lsTrack?.('watch_play', m.slug);
+    });
+    player.append(poster);
+    out.push(player);
+
+    const note = el('p', 'ml-note');
+    note.append('Trouble playing? ', link(st[source]!.url, `Open on ${source === 'youtube' ? 'YouTube' : 'Facebook'}`, '', true));
+    out.push(note);
+    return out;
+  }
+
   function select(id: string) {
     active = id;
     history.replaceState(null, '', `#${id}`);
     if (match) render(match);
   }
 
-  function render(m: M) {
+  function render(m: M, force = false) {
+    const playing = document.querySelector('#mlpanel .ml-player[data-playing]');
+    if (!force && playing && active === 'watch') {
+      // Only refresh the scoreboard so the video keeps playing.
+      const head = root.querySelector('.ml-head');
+      if (head) { timers.forEach(clearInterval); timers = []; head.replaceWith(header(m)); return; }
+    }
     timers.forEach(clearInterval); timers = [];
     if (!active) active = isLive(m) ? 'watch' : isOver(m) ? 'vote' : 'predict';
     const body = el('div', 'ml-inner');
@@ -217,9 +309,10 @@ import settings from '../data/matchday.json';
       const data = await res.json();
       if (data.serverTime) clockOffset = new Date(data.serverTime).getTime() - Date.now();
       if (!data.match.is_home) { location.replace(`/matches/${data.match.slug}/`); return; }
-      const before = match ? `${match.status}${match.home_score}${match.away_score}` : '';
+      const key = (x: M) => `${x.status}${x.home_score}${x.away_score}${JSON.stringify(x.stream || {})}`;
+      const before = match ? key(match) : '';
       match = data.match;
-      if (!before || before !== `${match!.status}${match!.home_score}${match!.away_score}`) render(match!);
+      if (!before || before !== key(match!)) render(match!);
     } catch (err) {
       if (match) return;
       const box = el('div', 'wrap ml-loading');

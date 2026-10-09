@@ -6,6 +6,7 @@
 // Match status is always decided on the SERVER (Cloudflare's clock, shown in
 // Nigerian time). Never trust the browser's clock for anything that matters.
 import { matchSlug } from './matchSlug.js';
+import { publicStream } from './streams.js';
 
 export const STATUSES = ['scheduled', 'live', 'half-time', 'full-time', 'postponed', 'cancelled'];
 export const LIVE_STATUSES = ['live', 'half-time'];
@@ -45,6 +46,8 @@ export async function ensureTable(db) {
     ['ended_at', 'TEXT'],       // when staff pressed "End Match" or the match auto-closed
     ['auto_closed', 'INTEGER NOT NULL DEFAULT 0'],
     ['squad_json', 'TEXT'],     // Lobi Stars matchday squad (starting XI + bench) for MOTM voting
+    ['youtube_url', 'TEXT'],    // Watch Live: YouTube live/replay link (home games only)
+    ['facebook_url', 'TEXT'],   // Watch Live: Facebook live/replay link (home games only)
   ]);
   // NULL = work it out from the home team name; 1/0 = set explicitly by staff.
   await addMissing('events', [['is_home', 'INTEGER']]);
@@ -116,6 +119,8 @@ export function toPublic(event, centre) {
     stats: json(c.stats_json, {}),
     gallery: json(c.gallery_json, []),
     squad: json(c.squad_json, { starting: [], bench: [] }),
+    // Streams are a Matchday Live feature, so away games never get one.
+    stream: isHomeGame(event) ? publicStream(c) : { youtube: null, facebook: null },
     updated_at: c.updated_at || null,
   };
 }
@@ -127,13 +132,14 @@ export function toSummary(event, centre) {
     id: p.id, slug: p.slug, home_team: p.home_team, away_team: p.away_team, competition: p.competition,
     event_date: p.event_date, venue: p.venue, is_home: p.is_home, status: p.status,
     home_score: p.home_score, away_score: p.away_score, kickoff_at: p.kickoff_at,
+    has_stream: !!(p.stream.youtube || p.stream.facebook),
   };
 }
 
 export async function listMatches(db) {
   await ensureTable(db);
   const { results } = await db.prepare(
-    `SELECT e.*, m.event_id, m.status, m.home_score, m.away_score, m.kickoff_at, m.ended_at, m.updated_at
+    `SELECT e.*, m.event_id, m.status, m.home_score, m.away_score, m.kickoff_at, m.ended_at, m.updated_at, m.youtube_url, m.facebook_url
      FROM events e LEFT JOIN match_centre m ON m.event_id = e.id
      WHERE e.active = 1
      ORDER BY e.event_date ASC`
