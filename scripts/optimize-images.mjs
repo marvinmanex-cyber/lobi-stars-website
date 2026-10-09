@@ -7,7 +7,7 @@
 // (needs sharp; on Windows first run:
 //  npm install --no-save @img/sharp-win32-x64@<sharp version>)
 import sharp from 'sharp';
-import { readdir, stat, writeFile, rename } from 'node:fs/promises';
+import { readdir, stat, writeFile, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -28,6 +28,11 @@ async function optimisePhotos() {
   const sizes = {};
   let before = 0, after = 0, webpTotal = 0;
   const files = (await readdir(IMAGES)).filter(f => /\.(jpe?g|png)$/i.test(f));
+  // Two originals with the same name (e.g. novus.png and novus.jpg) would
+  // both write novus.webp, so those get no WebP copy at all.
+  const baseOf = f => f.replace(/\.(jpe?g|png)$/i, '').toLowerCase();
+  const counts = files.reduce((m, f) => m.set(baseOf(f), (m.get(baseOf(f)) || 0) + 1), new Map());
+  const clash = f => counts.get(baseOf(f)) > 1;
 
   for (const file of files) {
     const full = path.join(IMAGES, file);
@@ -50,6 +55,15 @@ async function optimisePhotos() {
       }
 
       const webpPath = full.replace(/\.(jpe?g|png)$/i, '.webp');
+      if (clash(file)) {
+        for (const extra of ['', ...VARIANT_WIDTHS.map(w => `-${w}w`)]) {
+          await rm(webpPath.replace(/\.webp$/, `${extra}.webp`), { force: true });
+        }
+        const m2 = await sharp(full).metadata();
+        sizes[`/images/${file}`] = [m2.width, m2.height];
+        after += (await stat(full)).size;
+        continue;
+      }
       const webp = await sharp(full).webp({ quality: 74, effort: 6 }).toBuffer();
       const current = (await stat(full)).size;
       if (webp.length < current * 0.9) {

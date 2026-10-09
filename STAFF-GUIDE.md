@@ -126,8 +126,9 @@ To update a player's stats later, open them in **Squad / Players**, change the
 numbers and save. **Delete the three "Sample" players** once real players are
 added.
 
-Coaching staff and management are under **Club Management & Staff**. Set
-**Group** to "Coaching Staff" for coaches, so they also appear on the Squad page.
+Coaches are under **Coaching Staff** in the CMS. Add the coach's real name,
+role (e.g. Head Coach) and photo, and set **Group** to "Coaching Staff" so they
+appear on the Squad page.
 
 ---
 

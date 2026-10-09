@@ -8,7 +8,7 @@ const partners = await getPartners();
 const columns = [
   { title: 'Club', links: [
     ['History', '/club/history'], ['Honours', '/club/honours'], ['Stadium', '/club/stadium'],
-    ['Management', '/club/management'], ['Partners', '/partners'], ['Fan Clubs', '/club/fan-clubs'],
+    ['Partners', '/partners'], ['Fan Clubs', '/club/fan-clubs'],
   ] },
   { title: 'Matches', links: [
     ['Fixtures', '/fixtures'], ['Results', '/results'], ['League Table', '/table'],
@@ -82,7 +82,7 @@ const year = new Date().getFullYear();
           <a href="/partners">All partners &rarr;</a>
         </div>
         <ul>
-          {partners.map(p => <li><PartnerLogo partner={p} size="xs" mono={false} /></li>)}
+          {partners.map(p => <li><PartnerLogo partner={p} size="tiny" /></li>)}
         </ul>
       </div>
     )}
@@ -136,11 +136,11 @@ const year = new Date().getFullYear();
   .sf-col a:hover, .sf-col a:focus-visible { color: #fff; text-decoration: underline; }
 
   .sf-partners { padding: 0 0 32px; }
-  .sf-partners-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; }
+  .sf-partners-head { display: flex; justify-content: center; align-items: baseline; gap: 18px; margin-bottom: 16px; }
   .sf-partners-head h2 { margin: 0; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
   .sf-partners-head a { color: rgba(255, 255, 255, .8); font-size: 14px; text-decoration: none; }
   .sf-partners-head a:hover { color: #fff; text-decoration: underline; }
-  .sf-partners ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; align-items: start; }
+  .sf-partners ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 14px; }
   .sf-partners :global(.pl-age) { color: rgba(255, 255, 255, .75); font-size: 10px; }
   .sf-bottom {
     border-top: 1px solid rgba(255, 255, 255, .12); padding-top: 20px; display: flex; justify-content: space-between;

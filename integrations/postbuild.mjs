@@ -58,7 +58,10 @@ function rewriteImages(html, dist, sizes) {
     // Script-controlled images (id / onerror) keep a plain <img> so changing
     // their src still works.
     const webpKey = key.replace(/\.(jpe?g|png)$/i, '.webp');
-    const canWrap = webpKey !== key && !hasAttr(tag, 'id') && !hasAttr(tag, 'onerror') && !inside(pos, pictures)
+    // Skip when another image shares the base name (its .webp would be ambiguous).
+    const base = key.replace(/\.(jpe?g|png)$/i, '').toLowerCase();
+    const clash = Object.keys(sizes).filter(k => k.replace(/\.(jpe?g|png)$/i, '').toLowerCase() === base).length > 1;
+    const canWrap = !clash && webpKey !== key && !hasAttr(tag, 'id') && !hasAttr(tag, 'onerror') && !inside(pos, pictures)
       && existsSync(path.join(dist, ...webpKey.split('/')));
     if (out !== tag || canWrap) changed++;
     if (!canWrap) return out;

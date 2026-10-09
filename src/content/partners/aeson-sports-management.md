@@ -10,4 +10,5 @@ since: null
 displayOrder: 1
 active: true
 ageRestricted: false
+cardColor: "#000000"
 ---

@@ -1,28 +1,33 @@
 ---
-// A partner logo in a fixed-size white box (object-fit: contain, so logos
-// never stretch). Falls back to the partner's name as text if the logo file
-// is missing. Shows the "18+ | Drink Responsibly" line for age-restricted
-// partners. Greyscale until hover on desktop; always in colour on touch screens.
+// A partner logo in a fixed-size white rounded card. Logos always show in
+// full colour and are never stretched or cropped (object-fit: contain).
+// Falls back to the partner's name as text if the logo file is missing.
+// Shows "18+ | Drink Responsibly" for age-restricted partners.
+//
+// Card sizes by tier (desktop / mobile):
+//   principal 260x130 / 200x100   kit   220x110 / 170x85
+//   club      180x90  / 140x70    small 150x75  / 120x60   tiny 110x55 / 96x48
 import { logoSrc, logoAlt, website, type Partner } from '../../lib/partners';
 
 interface Props {
   partner: Partner;
-  size?: 'xl' | 'lg' | 'md' | 'sm' | 'xs';
+  size?: 'principal' | 'kit' | 'club' | 'small' | 'tiny';
   /** Link to the partner's detail page ('page'), their website ('site') or nothing. */
   link?: 'page' | 'site' | 'none';
   label?: string;
-  mono?: boolean;
 }
-const { partner, size = 'md', link = 'page', label, mono = true } = Astro.props;
+const { partner, size = 'club', link = 'page', label } = Astro.props;
 const src = logoSrc(partner);
 const site = website(partner);
 const href = link === 'page' ? `/partners/${partner.id}/` : link === 'site' ? site : null;
 const external = link === 'site' && !!site;
 const Tag = href ? 'a' : 'div';
+const card = partner.data.cardColor ? `background:${partner.data.cardColor};border-color:${partner.data.cardColor};` : undefined;
 ---
 <div class:list={['pl', `pl--${size}`]}>
   <Tag
-    class:list={['pl-box', { 'pl-mono': mono }]}
+    class="pl-box"
+    style={card}
     href={href ?? undefined}
     target={external ? '_blank' : undefined}
     rel={external ? 'sponsored noopener' : undefined}
@@ -37,29 +42,42 @@ const Tag = href ? 'a' : 'div';
 </div>
 
 <style>
-  .pl { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; min-width: 0; }
+  .pl { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; flex: 0 0 auto; }
   .pl-box {
-    display: flex; align-items: center; justify-content: center; width: 100%; background: #fff;
-    border: 1px solid var(--d4); border-radius: 12px; padding: 12px; text-decoration: none;
-    transition: border-color .2s, box-shadow .2s;
+    display: flex; align-items: center; justify-content: center; box-sizing: border-box;
+    background: #fff; border: 1px solid var(--d4); border-radius: 12px; padding: 12px;
+    box-shadow: 0 2px 8px rgba(15, 17, 21, .05); text-decoration: none;
+    transition: transform .2s ease, box-shadow .2s ease;
   }
-  a.pl-box:hover, a.pl-box:focus-visible { border-color: var(--red); box-shadow: 0 10px 24px rgba(15, 17, 21, .08); }
+  a.pl-box:hover, a.pl-box:focus-visible { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(15, 17, 21, .12); }
   a.pl-box:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
-  .pl-box img { width: 100%; height: 100%; object-fit: contain; transition: filter .25s, opacity .25s; }
-  .pl-name { font: 400 22px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); overflow-wrap: anywhere; }
-  .pl--xl .pl-box { height: 150px; max-width: 360px; }
-  .pl--xl .pl-name { font-size: 40px; }
-  .pl--lg .pl-box { height: 120px; max-width: 300px; }
-  .pl--lg .pl-name { font-size: 32px; }
-  .pl--md .pl-box { height: 96px; }
-  .pl--sm .pl-box { height: 76px; }
-  .pl--sm .pl-name { font-size: 18px; }
-  .pl--xs .pl-box { height: 48px; padding: 6px 8px; border-radius: 8px; }
-  .pl--xs .pl-name { font-size: 13px; }
-  .pl-label { font: 700 12px/1.25 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .pl-box img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .pl-name { font: 400 18px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); overflow-wrap: anywhere; }
+
+  .pl--principal .pl-box { width: 260px; height: 130px; padding: 14px; }
+  .pl--principal .pl-name { font-size: 34px; }
+  .pl--kit .pl-box { width: 220px; height: 110px; padding: 14px; }
+  .pl--kit .pl-name { font-size: 28px; }
+  .pl--club .pl-box { width: 180px; height: 90px; }
+  .pl--club .pl-name { font-size: 20px; }
+  .pl--small .pl-box { width: 150px; height: 75px; padding: 10px; }
+  .pl--small .pl-name { font-size: 15px; }
+  .pl--tiny .pl-box { width: 110px; height: 55px; padding: 6px 8px; border-radius: 10px; }
+  .pl--tiny .pl-name { font-size: 12px; }
+
+  .pl-label { max-width: 220px; font: 700 12px/1.25 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
   .pl-age { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; color: var(--lt); }
-  @media (hover: hover) and (pointer: fine) {
-    .pl-mono img { filter: grayscale(1); opacity: .85; }
-    .pl-mono:hover img, .pl-mono:focus-visible img { filter: none; opacity: 1; }
+
+  @media (max-width: 600px) {
+    .pl--principal .pl-box { width: 200px; height: 100px; }
+    .pl--principal .pl-name { font-size: 28px; }
+    .pl--kit .pl-box { width: 170px; height: 85px; padding: 10px; }
+    .pl--kit .pl-name { font-size: 22px; }
+    .pl--club .pl-box { width: 140px; height: 70px; padding: 10px; }
+    .pl--club .pl-name { font-size: 16px; }
+    .pl--small .pl-box { width: 120px; height: 60px; padding: 8px; }
+    .pl--small .pl-name { font-size: 13px; }
+    .pl--tiny .pl-box { width: 96px; height: 48px; }
+    .pl-label { max-width: 160px; font-size: 11px; }
   }
 </style>

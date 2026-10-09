@@ -23,7 +23,6 @@ export const MAIN_NAV: NavItem[] = [
       { label: 'History', href: '/club/history', description: 'The story of Lobi Stars FC' },
       { label: 'Honours', href: '/club/honours', description: 'Trophies and titles' },
       { label: 'Stadium', href: '/club/stadium', description: 'McCarthy Stadium, Makurdi' },
-      { label: 'Management', href: '/club/management', description: 'The people who run the club' },
       { label: 'Partners', href: '/partners', description: 'Our sponsors and partnership enquiries' },
       { label: 'Fan Clubs', href: '/club/fan-clubs', description: 'Supporters clubs' },
     ],

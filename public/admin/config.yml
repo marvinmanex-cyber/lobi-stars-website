@@ -88,7 +88,7 @@ collections:
       - {label: "Status", name: "status", widget: "select", options: ["Upcoming", "Completed"]}
 
   - name: "staff"
-    label: "Club Management & Staff"
+    label: "Coaching Staff"
     folder: "src/content/staff"
     create: true
     slug: "{{slug}}"
@@ -125,6 +125,7 @@ collections:
       - {label: "Official Title (e.g. Official Banking Partner)", name: "officialTitle", widget: "string"}
       - {label: "Logo (transparent PNG or SVG is best)", name: "logo", widget: "image", required: false}
       - {label: "Logo for dark backgrounds (optional)", name: "logoDark", widget: "image", required: false}
+      - {label: "Card colour behind the logo (only for logos on a dark background, e.g. #000000)", name: "cardColor", widget: "string", required: false}
       - {label: "Website (full link, starting https://)", name: "website", widget: "string", required: false}
       - {label: "Short Description (one sentence)", name: "shortDescription", widget: "text", required: false}
       - {label: "Partner Since (year)", name: "since", widget: "number", value_type: "int", required: false}
