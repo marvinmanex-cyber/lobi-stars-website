@@ -73,13 +73,18 @@
     font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase;
   }
   .nm-track :global(.nm-link:hover), .nm-track :global(.nm-link:focus-visible) { text-decoration: underline; }
+  .nm-track :global(.nm-links) { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--d4); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .nm-track :global(.nm-links .nm-link) { margin: 0; padding: 0; border: 0; }
+  .nm-track :global(.nm-link--live) { color: #fff; background: var(--red); padding: 5px 9px !important; border-radius: 4px; }
+  .nm-track :global(.nm-live-badge) { display: inline-block; background: var(--red); color: #fff; padding: 4px 8px; border-radius: 3px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
 </style>
 
 <script>
   import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
   import { matchSlug } from '../../../functions/api/_lib/matchSlug.js';
 
-  type ClubEvent = { id: string; home_team: string; away_team: string; competition?: string; event_date: string; venue: string };
+  type ClubEvent = { id: string; home_team: string; away_team: string; competition?: string; event_date: string; venue: string;
+    slug?: string; is_home?: boolean; status?: string };
 
   // Only used by `astro dev`, where the Cloudflare /api functions don't run.
   const DEV_SAMPLE: ClubEvent[] = [
@@ -103,7 +108,8 @@
   }
 
   function card(ev: ClubEvent) {
-    const home = isLobi(ev.home_team);
+    const home = typeof ev.is_home === 'boolean' ? ev.is_home : isLobi(ev.home_team);
+    const live = ev.status === 'live' || ev.status === 'half-time';
     const opponent = home ? ev.away_team : ev.home_team;
     const comp = ev.competition || 'NPFL';
     const d = new Date(ev.event_date);
@@ -120,7 +126,8 @@
     top.append(logo, compBox);
 
     const when = el('div', 'nm-when');
-    when.append(`${date} · `, el('b', '', `${time} WAT`));
+    if (live) when.append(el('span', 'nm-live-badge', 'Live now'));
+    else when.append(`${date} · `, el('b', '', `${time} WAT`));
 
     const opp = el('div', 'nm-opp');
     const crestSrc = (TEAM_LOGOS as Record<string, string>)[opponent];
@@ -135,11 +142,20 @@
     }
     opp.append(el('span', 'nm-opp-name', opponent), el('span', `nm-ha ${home ? 'home' : 'away'}`, home ? 'Home' : 'Away'));
 
+    const slug = ev.slug || matchSlug(ev);
+    const links = el('div', 'nm-links');
     const link = el('a', 'nm-link', 'Match Centre →') as HTMLAnchorElement;
-    link.href = ev.id.startsWith('sample-') ? '/fixtures' : `/matches/${matchSlug(ev)}/`;
+    link.href = ev.id.startsWith('sample-') ? '/fixtures' : `/matches/${slug}/`;
     link.setAttribute('aria-label', `Match Centre: Lobi Stars FC vs ${opponent}`);
+    links.append(link);
+    if (home && !ev.id.startsWith('sample-')) {
+      const ml = el('a', 'nm-link nm-link--live', '● Matchday Live') as HTMLAnchorElement;
+      ml.href = `/matches/${slug}/live/`;
+      ml.setAttribute('aria-label', `Matchday Live: Lobi Stars FC vs ${opponent}`);
+      links.append(ml);
+    }
 
-    li.append(top, when, opp, link);
+    li.append(top, when, opp, links);
     return li;
   }
 
@@ -147,15 +163,16 @@
     const track = section.querySelector<HTMLElement>('[data-nm-track]')!;
     let events: ClubEvent[] = [];
     try {
-      const res = await fetch('/api/events');
+      const res = await fetch('/api/matches');
       if (!res.ok) throw new Error(String(res.status));
-      events = (await res.json()).events || [];
+      events = (await res.json()).matches || [];
     } catch {
       if (import.meta.env.DEV) events = DEV_SAMPLE;
     }
     const now = Date.now();
     const upcoming = events
-      .filter(ev => (isLobi(ev.home_team) || isLobi(ev.away_team)) && new Date(ev.event_date).getTime() > now)
+      .filter(ev => (isLobi(ev.home_team) || isLobi(ev.away_team)) && ev.status !== 'full-time' && ev.status !== 'cancelled'
+        && (ev.status === 'live' || ev.status === 'half-time' || new Date(ev.event_date).getTime() > now))
       .sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime());
 
     track.replaceChildren();

@@ -112,6 +112,12 @@ const cms = (await getCollection('fixtures')).map(f => ({
       mc.setAttribute('aria-label', `Match Centre: ${m.home_team} vs ${m.away_team}`);
       actions.append(mc);
     }
+    if (lobiHome && m.slug) {
+      const ml = el('a', 'fx-btn primary', '● Matchday Live') as HTMLAnchorElement;
+      ml.href = `/matches/${m.slug}/live/`;
+      ml.setAttribute('aria-label', `Matchday Live: ${m.home_team} vs ${m.away_team}`);
+      actions.append(ml);
+    }
     if (upcoming && lobiHome && m.id) {
       const t = el('a', 'fx-btn primary', 'Buy Tickets') as HTMLAnchorElement;
       t.href = `/tickets?event=${encodeURIComponent(m.id)}`;

@@ -39,6 +39,8 @@ import Layout from '../layouts/Layout.astro';
   .mc :global(.mc-actions .btn-o:hover) { border-color: #FFC72C; color: #FFC72C; }
   .mc :global(.mc-actions .btn-p) { padding: 11px 18px; font-size: 13px; }
 
+  .mc :global(.mc-live-wrap) { display: flex; justify-content: center; margin-top: 14px; }
+  .mc :global(.mc-live-btn) { padding: 11px 18px; font-size: 13px; }
   .mc :global(.mc-tabs) { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--d4); background: #fff; position: sticky; top: 72px; z-index: 20; scrollbar-width: none; }
   .mc :global(.mc-tabs::-webkit-scrollbar) { display: none; }
   .mc :global(.mc-tab) { padding: 16px 16px 13px; background: none; border: 0; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; color: var(--lt); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
@@ -91,6 +93,7 @@ import Layout from '../layouts/Layout.astro';
 
   type Line = { starting: string[]; subs: string[] };
   type Full = {
+    is_home?: boolean;
     id: string; slug: string; home_team: string; away_team: string; competition: string; event_date: string; venue: string;
     status: string; home_score: number | null; away_score: number | null; preview: string; report: string;
     lineups: { home: Line; away: Line }; timeline: { minute: string; type: string; team: string; player: string; detail: string }[];
@@ -141,6 +144,12 @@ import Layout from '../layouts/Layout.astro';
     const info = el('p', 'mc-info');
     info.append(`${fmtDate(m.event_date, true)} · Kick-off ${fmtTime(m.event_date)}`, el('br'), `📍 ${m.venue}`);
     inner.append(h1, board, info);
+    if (m.is_home) {
+      const ml = el('a', 'btn-p mc-live-btn', '● Matchday Live: watch, listen, vote, predict') as HTMLAnchorElement;
+      ml.href = `/matches/${m.slug}/live/`;
+      const wrapLive = el('div', 'mc-live-wrap'); wrapLive.append(ml);
+      inner.append(wrapLive);
+    }
 
     const start = new Date(m.event_date).getTime();
     if (start > Date.now() && m.status === 'scheduled') {

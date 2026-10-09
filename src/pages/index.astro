@@ -5,6 +5,7 @@ import NextMatches from '../components/news/NextMatches.astro';
 import NewsCarousel from '../components/news/NewsCarousel.astro';
 import ShopCard from '../components/ShopCard.astro';
 import PartnersShowcase from '../components/partners/PartnersShowcase.astro';
+import LiveBanner from '../components/LiveBanner.astro';
 import { getSortedNews } from '../lib/news';
 import shop from '../data/shop.json';
 import { CURRENT_SEASON } from '../lib/site';
@@ -37,6 +38,7 @@ const teamJsonLd = {
   description="Official website of Lobi Stars FC of Makurdi, Benue State: fixtures, results, news, tickets, membership and the club shop."
   jsonLd={[teamJsonLd]}
 >
+  <LiveBanner />
   <h1 class="sr-only">Lobi Stars Football Club &ndash; official website</h1>
 
   <NewsHero articles={featuredNews} />

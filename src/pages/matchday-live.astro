@@ -1,0 +1,231 @@
+---
+// Matchday Live page. Served for every /matches/<slug>/live URL (home games
+// only) by functions/matches/[slug]/live.js; the match is loaded from
+// /api/matches/<slug>. Countdowns use the SERVER time returned by the API,
+// not the visitor's clock.
+import Layout from '../layouts/Layout.astro';
+import settings from '../data/matchday.json';
+---
+<Layout title="Matchday Live | Lobi Stars Football Club" description="Matchday Live: watch Lobi Stars home games, listen to live commentary, vote for Man of the Match and play Predict & Win." noindex>
+  <div id="ml" class="ml" data-settings={JSON.stringify(settings)}>
+    <div class="wrap ml-loading" id="mlStatus" aria-live="polite">Loading Matchday Live&hellip;</div>
+  </div>
+</Layout>
+
+<style>
+  .ml-loading { padding: 80px 5%; text-align: center; color: var(--lt); }
+  .ml :global(.ml-head) { background: radial-gradient(120% 140% at 50% 0%, #7A0F12 0%, #2A0507 55%, #15181D 100%); color: #fff; padding: 26px 0 0; }
+  .ml :global(.ml-inner) { max-width: 1000px; margin: 0 auto; padding: 0 5%; }
+  .ml :global(.ml-top) { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .ml :global(.ml-brand) { font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: 2px; color: #FFC72C; }
+  .ml :global(.ml-crumb) { color: rgba(255, 255, 255, .85); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; text-decoration: none; }
+  .ml :global(.ml-crumb:hover) { color: #fff; text-decoration: underline; }
+  .ml :global(.ml-comp) { margin-top: 18px; text-align: center; color: rgba(255, 255, 255, .8); font: 700 13px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
+  .ml :global(.ml-board) { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; margin: 18px 0 12px; }
+  .ml :global(.ml-team) { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; font: 400 clamp(19px, 3vw, 30px)/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ml :global(.ml-crest) { width: clamp(64px, 11vw, 100px); height: clamp(64px, 11vw, 100px); border-radius: 50%; object-fit: contain; background: #fff; padding: 4px; }
+  .ml :global(.ml-crest--initials) { display: inline-flex; align-items: center; justify-content: center; color: #15181D; font-size: 28px; }
+  .ml :global(.ml-mid) { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .ml :global(.ml-score) { font: 400 clamp(46px, 9vw, 76px)/1 'Bebas Neue', sans-serif; letter-spacing: 3px; white-space: nowrap; }
+  .ml :global(.ml-ko) { font: 400 clamp(30px, 6vw, 48px)/1 'Bebas Neue', sans-serif; color: #FFC72C; }
+  .ml :global(.ml-badge) { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; background: rgba(255, 255, 255, .16); font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
+  .ml :global(.ml-badge.live) { background: var(--red); }
+  .ml :global(.ml-badge.live::before) { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: mlpulse 1.2s infinite; }
+  .ml :global(.ml-badge.ft) { background: #fff; color: #15181D; }
+  @keyframes mlpulse { 50% { opacity: .2; } }
+  .ml :global(.ml-info) { text-align: center; color: rgba(255, 255, 255, .88); font-size: 15px; line-height: 1.6; margin: 0; }
+  .ml :global(.ml-count) { display: flex; justify-content: center; gap: 8px; margin: 16px 0 0; }
+  .ml :global(.ml-count div) { min-width: 62px; padding: 10px 6px; border-radius: 8px; background: rgba(255, 255, 255, .1); text-align: center; }
+  .ml :global(.ml-count b) { display: block; font: 400 28px/1 'Bebas Neue', sans-serif; }
+  .ml :global(.ml-count span) { font: 700 10px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255, 255, 255, .7); }
+  .ml :global(.ml-tabs) { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 24px; }
+  .ml :global(.ml-tab) {
+    display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 6px 14px; border: 0; cursor: pointer;
+    background: rgba(255, 255, 255, .08); color: rgba(255, 255, 255, .85); border-radius: 10px 10px 0 0;
+    font: 700 14px/1.1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase;
+  }
+  .ml :global(.ml-tab span) { font-size: 20px; }
+  .ml :global(.ml-tab[aria-selected='true']) { background: #fff; color: var(--red-text); }
+  .ml :global(.ml-tab:focus-visible) { outline: 3px solid #FFC72C; outline-offset: -3px; }
+  .ml :global(.ml-panel) { padding: 30px 0 40px; min-height: 260px; }
+  .ml :global(.ml-card) { border: 1px solid var(--d4); border-radius: 14px; padding: 26px; background: #fff; text-align: center; max-width: 720px; margin: 0 auto; }
+  .ml :global(.ml-card h2) { margin: 0 0 8px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ml :global(.ml-card p) { margin: 0 0 16px; color: var(--lt); line-height: 1.6; }
+  .ml :global(.ml-actions) { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+  .ml :global(.ml-note) { margin-top: 14px; font-size: 13px; color: var(--lt); }
+  @media (max-width: 520px) {
+    .ml :global(.ml-tab) { font-size: 12px; padding: 10px 2px 12px; }
+    .ml :global(.ml-tab span) { font-size: 18px; }
+  }
+</style>
+
+<script>
+  import { crest, fmtDate, fmtTime, hasScore } from '../lib/matchUi';
+
+  type M = { id: string; slug: string; home_team: string; away_team: string; competition: string; event_date: string; venue: string;
+    status: string; home_score: number | null; away_score: number | null; is_home: boolean; kickoff_at: string | null };
+
+  const root = document.getElementById('ml')!;
+  const settings = JSON.parse(root.dataset.settings || '{}');
+  const slug = location.pathname.replace(/^\/matches\//, '').replace(/\/live\/?$/, '').replace(/\/$/, '') || new URLSearchParams(location.search).get('m') || '';
+  const TABS = [
+    { id: 'watch', label: 'Watch Live', icon: '📺' },
+    { id: 'commentary', label: 'Commentary', icon: '🎙️' },
+    { id: 'vote', label: 'Vote MOTM', icon: '⭐' },
+    { id: 'predict', label: 'Predict & Win', icon: '🎯' },
+  ];
+  let match: M | null = null;
+  let clockOffset = 0; // server time - device time, so countdowns follow the server clock
+  let active = TABS.some(t => `#${t.id}` === location.hash) ? location.hash.slice(1) : '';
+  let timers: number[] = [];
+  const serverNow = () => Date.now() + clockOffset;
+
+  const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: string) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  };
+  const link = (href: string, text: string, cls: string, external = false) => {
+    const a = el('a', cls, text) as HTMLAnchorElement;
+    a.href = href;
+    if (external) { a.target = '_blank'; a.rel = 'noopener'; }
+    return a;
+  };
+  const isLive = (m: M) => m.status === 'live' || m.status === 'half-time';
+  const isOver = (m: M) => m.status === 'full-time';
+
+  function header(m: M) {
+    const head = el('section', 'ml-head');
+    const inner = el('div', 'ml-inner');
+    const top = el('div', 'ml-top');
+    top.append(el('span', 'ml-brand', 'Matchday Live'), link(`/matches/${m.slug}/`, 'Match Centre →', 'ml-crumb'));
+    inner.append(top, el('div', 'ml-comp', m.competition));
+
+    const board = el('div', 'ml-board');
+    const team = (name: string) => { const t = el('div', 'ml-team'); t.append(crest(name, 100, 'ml-crest'), el('span', '', name)); return t; };
+    const mid = el('div', 'ml-mid');
+    if ((isLive(m) || isOver(m)) && hasScore(m)) mid.append(el('div', 'ml-score', `${m.home_score} – ${m.away_score}`));
+    else if (isLive(m) || isOver(m)) mid.append(el('div', 'ml-ko', 'VS'));
+    else mid.append(el('div', 'ml-ko', fmtTime(m.event_date).replace(' WAT', '')));
+    const label = isLive(m) ? (m.status === 'half-time' ? 'Half-time' : 'Live') : isOver(m) ? 'Full time' : m.status === 'postponed' ? 'Postponed' : m.status === 'cancelled' ? 'Cancelled' : 'Upcoming';
+    mid.append(el('span', `ml-badge${isLive(m) ? ' live' : isOver(m) ? ' ft' : ''}`, label));
+    board.append(team(m.home_team), mid, team(m.away_team));
+
+    const info = el('p', 'ml-info');
+    info.append(`${fmtDate(m.event_date, true)} · Kick-off ${fmtTime(m.event_date)}`, el('br'), `📍 ${m.venue}`);
+    inner.append(el('h1', 'sr-only', `Matchday Live: ${m.home_team} vs ${m.away_team}`), board, info);
+
+    const start = new Date(m.event_date).getTime();
+    if (m.status === 'scheduled' && start > serverNow()) {
+      const count = el('div', 'ml-count');
+      count.setAttribute('aria-label', 'Time to kick-off');
+      const parts = ['Days', 'Hrs', 'Mins', 'Secs'].map(u => { const d = el('div'); const b = el('b', '', '–'); d.append(b, el('span', '', u)); count.append(d); return b; });
+      const tick = () => {
+        const left = Math.max(0, start - serverNow());
+        const v = [Math.floor(left / 864e5), Math.floor(left / 36e5) % 24, Math.floor(left / 6e4) % 60, Math.floor(left / 1e3) % 60];
+        parts.forEach((p, i) => { p.textContent = String(v[i]).padStart(2, '0'); });
+      };
+      tick(); timers.push(window.setInterval(tick, 1000));
+      inner.append(count);
+    }
+
+    const tabs = el('div', 'ml-tabs');
+    tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Matchday Live');
+    TABS.forEach((t, i) => {
+      const b = el('button', 'ml-tab') as HTMLButtonElement;
+      b.type = 'button'; b.id = `mltab-${t.id}`; b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(t.id === active)); b.setAttribute('aria-controls', 'mlpanel');
+      b.tabIndex = t.id === active ? 0 : -1;
+      const icon = el('span', '', t.icon); icon.setAttribute('aria-hidden', 'true');
+      b.append(icon, t.label);
+      b.addEventListener('click', () => select(t.id));
+      b.addEventListener('keydown', e => {
+        const n = e.key === 'ArrowRight' ? (i + 1) % TABS.length : e.key === 'ArrowLeft' ? (i - 1 + TABS.length) % TABS.length : -1;
+        if (n >= 0) { e.preventDefault(); select(TABS[n].id); document.getElementById(`mltab-${TABS[n].id}`)?.focus(); }
+      });
+      tabs.append(b);
+    });
+    inner.append(tabs);
+    head.append(inner);
+    return head;
+  }
+
+  // Tab content. Watch, Vote and Predict get their full features in the next phases.
+  function panel(id: string, m: M) {
+    const card = el('div', 'ml-card');
+    if (id === 'watch') {
+      card.append(el('h2', '', isOver(m) ? 'Match replay' : 'Watch live'));
+      card.append(el('p', '', isLive(m) ? 'Follow the live stream on our official channels.'
+        : isOver(m) ? 'Catch up on the action on our official channels.'
+        : `The live stream starts at kick-off, ${fmtTime(m.event_date)}.`));
+      const a = el('div', 'ml-actions');
+      if (settings.youtubeChannel) a.append(link(settings.youtubeChannel, '▶ YouTube', 'btn-p', true));
+      if (settings.facebookPage) a.append(link(settings.facebookPage, 'Facebook', 'btn-o', true));
+      card.append(a);
+    }
+    if (id === 'commentary') {
+      card.append(el('h2', '', 'Live Match Commentary'));
+      card.append(el('p', '', `Listen to live commentary from ${settings.commentaryProvider || 'our commentary partner'}.`));
+      const a = el('div', 'ml-actions');
+      a.append(link(settings.commentaryUrl, '🎧 Listen Live', 'btn-p', true));
+      card.append(a);
+    }
+    if (id === 'vote') {
+      card.append(el('h2', '', 'Vote for Man of the Match'));
+      card.append(el('p', '', isOver(m) ? 'Voting has closed for this match.'
+        : isLive(m) ? 'Man of the Match voting is coming soon to Matchday Live.'
+        : 'Voting opens at kick-off. You\'ll need a free, email-verified fan account.'));
+      const a = el('div', 'ml-actions');
+      a.append(link(`/fans/register/?next=${encodeURIComponent(location.pathname + '#vote')}`, 'Create a fan account', 'btn-p'),
+               link(`/fans/login/?next=${encodeURIComponent(location.pathname + '#vote')}`, 'Log in', 'btn-o'));
+      card.append(a);
+    }
+    if (id === 'predict') {
+      card.append(el('h2', '', 'Predict & Win'));
+      card.append(el('p', '', 'Predict the final score of Lobi Stars home games for the chance to win a cash prize. Coming soon to Matchday Live.'));
+    }
+    return card;
+  }
+
+  function select(id: string) {
+    active = id;
+    history.replaceState(null, '', `#${id}`);
+    if (match) render(match);
+  }
+
+  function render(m: M) {
+    timers.forEach(clearInterval); timers = [];
+    if (!active) active = isLive(m) ? 'watch' : isOver(m) ? 'vote' : 'predict';
+    const body = el('div', 'ml-inner');
+    const p = el('div', 'ml-panel');
+    p.id = 'mlpanel'; p.setAttribute('role', 'tabpanel'); p.setAttribute('aria-labelledby', `mltab-${active}`); p.tabIndex = 0;
+    p.append(panel(active, m));
+    body.append(p);
+    root.replaceChildren(header(m), body);
+    document.title = `${m.home_team} vs ${m.away_team} | Matchday Live | Lobi Stars FC`;
+  }
+
+  async function load() {
+    try {
+      const res = await fetch(`/api/matches/${encodeURIComponent(slug)}`);
+      if (res.status === 404) throw new Error('notfound');
+      if (!res.ok) throw new Error('error');
+      const data = await res.json();
+      if (data.serverTime) clockOffset = new Date(data.serverTime).getTime() - Date.now();
+      if (!data.match.is_home) { location.replace(`/matches/${data.match.slug}/`); return; }
+      const before = match ? `${match.status}${match.home_score}${match.away_score}` : '';
+      match = data.match;
+      if (!before || before !== `${match!.status}${match!.home_score}${match!.away_score}`) render(match!);
+    } catch (err) {
+      if (match) return;
+      const box = el('div', 'wrap ml-loading');
+      box.append((err as Error).message === 'notfound' ? 'Sorry, we could not find that match. ' : 'Matchday Live could not be loaded. ');
+      box.append(link('/fixtures', 'See all fixtures', ''));
+      root.replaceChildren(box);
+    }
+  }
+  load();
+  // Keep status and score up to date.
+  window.setInterval(load, 30_000);
+</script>
