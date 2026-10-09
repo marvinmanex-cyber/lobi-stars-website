@@ -15,13 +15,13 @@ const prize = formatNaira(PRIZE_AMOUNT);
       { title: 'Create a fan account', text: 'It is free. You must be 18 or over and confirm your email address.' },
       { title: 'Make your prediction', text: `Predictions open ${PREDICTION_OPENS_HOURS_BEFORE} hours before kick-off. Open the game on Matchday Live, choose the Predict tab and enter the final score.` },
       { title: 'Watch the match', text: 'Follow the game live and see how your prediction holds up.' },
-      { title: 'Win', text: `The fan who predicted the exact score first wins ${prize}. The winner is announced at full time and contacted by the club.` },
+      { title: 'Win', text: `The fan who predicted the exact score first wins ${prize}. The winner is announced at full time, and the club calls and emails them to come and collect the prize.` },
     ]}
     rules={[
       'Open to fans aged 18 and over. Club staff and players cannot win.',
       'Lobi Stars home games only. One prediction per fan account per match.',
       'Predictions close at kick-off (official club clock, Nigerian time).',
-      `Prize: ${prize} per home game. If several fans predict the exact score, the earliest submission wins. If nobody gets it exactly right, there is no winner for that game.`,
+      `Prize: ${prize} per home game. If several fans predict the exact score, the earliest submission wins. If nobody predicts the exact score, nobody wins and the prize is not given out for that game.`,
       'The club will never ask for your bank details through the website.',
     ]}
   />

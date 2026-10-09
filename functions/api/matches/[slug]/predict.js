@@ -1,7 +1,7 @@
 import { findHomeMatch, currentFan } from '../../_lib/matchdayFan.js';
 import { rateLimit, tooMany, clientIp } from '../../_lib/fans.js';
 import { ensurePredictSchema, predictState, predictionWindow, parseGoals, countPredictions, publicName } from '../../_lib/predict.js';
-import { PRIZE_AMOUNT, MAX_GOALS, CLAIM_INSTRUCTIONS } from '../../_lib/predictSettings.js';
+import { PRIZE_AMOUNT, MAX_GOALS, CLAIM_INSTRUCTIONS, NO_WINNER_TEXT } from '../../_lib/predictSettings.js';
 import { recordServerEvent } from '../../_lib/analytics.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
@@ -28,6 +28,7 @@ export async function onRequestGet({ request, env, params }) {
     outcome = {
       home: result.home_score, away: result.away_score,
       winner: w ? publicName(w) : null,
+      noWinnerText: w ? null : NO_WINNER_TEXT,
       correct: result.correct_count, total: result.total_count, prize: result.prize_amount,
       youWon: !!(mine && mine.is_winner),
       claim: mine && mine.is_winner ? CLAIM_INSTRUCTIONS : null,

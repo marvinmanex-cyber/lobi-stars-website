@@ -210,6 +210,6 @@ export async function sendPrizeWinnerEmail(env, member, match, prediction) {
 <strong>${esc(match.home_team)} ${match.home_score} – ${match.away_score} ${esc(match.away_team)}</strong>
 (your prediction: ${prediction.home_goals} – ${prediction.away_goals}). You have won <strong>${formatNaira(PRIZE_AMOUNT)}</strong>.</p>
 <p style="font-size:15px;line-height:1.6;">${esc(CLAIM_INSTRUCTIONS)}</p>
-${button(`${SITE}/contact`, 'CONTACT THE CLUB')}`);
+<p style="font-size:13px;color:#5B6472;">Please keep your phone on: we will call the number on your fan account.</p>`);
   return sendFanEmail(env, member.email, `You won ${formatNaira(PRIZE_AMOUNT)} with Lobi Stars Predict & Win`, html, `${SITE}/contact`);
 }

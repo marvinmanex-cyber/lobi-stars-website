@@ -22,11 +22,18 @@ export const PREDICTION_CLOSES_AT = 'kickoff';
 export const MAX_GOALS = 20;
 
 /**
- * Shown to the winner (email and website). TODO (club): replace with the
- * real claim process and contact, e.g. who to call and what ID to bring.
+ * Shown to the winner (email and website). Confirmed by the club: winners
+ * are called on their registered phone number and emailed, then come to the
+ * club to collect the prize.
  */
 export const CLAIM_INSTRUCTIONS =
-  'The club will contact you to arrange your prize. You can also reach us through the Contact page on lobistarsfc.com. ' +
+  'The club will call you on your registered phone number and email you to arrange collecting your prize from the club. ' +
   'We will never ask for your password or card PIN, and we never collect bank details through the website.';
+
+/**
+ * Confirmed by the club: if nobody predicts the exact score there is no
+ * winner and the prize is not given out (it does not roll over).
+ */
+export const NO_WINNER_TEXT = 'Nobody predicted the exact score, so nobody has won and the prize is not given out for this match.';
 
 export const formatNaira = n => `₦${Number(n).toLocaleString('en-NG')}`;

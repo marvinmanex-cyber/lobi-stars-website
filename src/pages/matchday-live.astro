@@ -408,7 +408,7 @@ import settings from '../data/matchday.json';
   // ── Predict & Win. Opening/closing times come from the server clock. ──
   type Predict = { state: 'notyet' | 'open' | 'closed' | 'result' | 'off'; prize: number; maxGoals: number; opensAt: string; closesAt: string | null;
     count: number; fan: { firstName: string; verified: boolean } | null; mine: { home: number; away: number; at: string; disqualified: boolean } | null;
-    result: { home: number; away: number; winner: string | null; correct: number; total: number; prize: number; youWon: boolean; claim: string | null } | null;
+    result: { home: number; away: number; winner: string | null; noWinnerText: string | null; correct: number; total: number; prize: number; youWon: boolean; claim: string | null } | null;
     serverTime: string };
   const naira = (n: number) => `₦${n.toLocaleString('en-NG')}`;
   const predicted = (n: number) => `${n.toLocaleString('en-NG')} fan${n === 1 ? ' has' : 's have'} predicted`;
@@ -451,7 +451,7 @@ import settings from '../data/matchday.json';
       const r = d.result;
       const panel = el('div', 'pw-result');
       panel.append(el('span', 'pw-k', 'Final score'), el('strong', 'pw-score', `${m.home_team} ${r.home} – ${r.away} ${m.away_team}`));
-      panel.append(el('p', 'pw-winner', r.winner ? `🏆 Winner: ${r.winner} (${naira(r.prize)})` : 'No correct prediction this time.'));
+      panel.append(el('p', 'pw-winner', r.winner ? `🏆 Winner: ${r.winner} (${naira(r.prize)})` : (r.noWinnerText || 'No correct prediction this time.')));
       panel.append(el('p', 'pw-stats', `${r.correct} correct prediction${r.correct === 1 ? '' : 's'} · ${r.total} total`));
       out.push(panel);
       if (r.youWon) {

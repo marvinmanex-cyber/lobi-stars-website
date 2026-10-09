@@ -154,6 +154,7 @@ test('no exact score means no winner', async () => {
   const pub = await get(`/api/matches/${m.slug}/predict`);
   assert.equal(pub.data.result.winner, null);
   assert.equal(pub.data.result.correct, 0);
+  assert.match(pub.data.result.noWinnerText, /nobody has won and the prize is not given out/);
 });
 
 test('away games have no Predict & Win', async () => {

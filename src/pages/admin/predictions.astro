@@ -91,13 +91,13 @@ import { PRIZE_AMOUNT, formatNaira } from '../../../functions/api/_lib/predictSe
     let html = `<h2>${esc(d.match.home_team)} vs ${esc(d.match.away_team)}</h2>` +
       `<p class="muted small">Predictions open ${esc(wat(d.opensAt).slice(0, 16))} &middot; close ${esc(d.closesAt ? wat(d.closesAt).slice(0, 16) : '–')} (WAT) &middot; <strong>${esc(STATE[d.state] || d.state)}</strong></p>`;
     if (!r) html += '<p class="muted">The result appears here when you enter the final score (Match Centre &rarr; End Match).</p>';
-    else if (!r.winner) html += `<p><strong>Final score ${r.home} – ${r.away}.</strong> No correct prediction this time (${r.total} entries).</p>`;
+    else if (!r.winner) html += `<p><strong>Final score ${r.home} – ${r.away}.</strong> No correct prediction this time (${r.total} entries): nobody has won and no prize is given out.</p>`;
     else html += `<p><strong>Final score ${r.home} – ${r.away}.</strong> ${r.correct} correct out of ${r.total} entries. Prize: ${naira(r.prize)}.</p>` +
       `<dl class="pw-win"><div><dt>Winner</dt><dd>${esc(r.winner.name)}</dd></div><div><dt>Phone</dt><dd>${esc(r.winner.phone || '–')}</dd></div>` +
       `<div><dt>Email</dt><dd>${esc(r.winner.email || '–')}</dd></div><div><dt>Prediction</dt><dd>${esc(r.winner.prediction)} at ${esc(wat(r.winner.at))}</dd></div>` +
       `<div><dt>Winner email</dt><dd>${r.emailed ? 'Sent' : 'Not sent (email not set up?)'}</dd></div></dl>` +
       `<label class="pw-paid"><input type="checkbox" id="paidBox" ${r.paid ? 'checked' : ''}/> Prize paid</label>` +
-      (r.paid ? `<p class="muted small">Marked paid by ${esc(r.paidBy)} on ${esc(wat(r.paidAt).slice(0, 16))} WAT.</p>` : '<p class="muted small">Tick when the prize has been handed over. Never ask the winner for bank details through the website.</p>');
+      (r.paid ? `<p class="muted small">Marked paid by ${esc(r.paidBy)} on ${esc(wat(r.paidAt).slice(0, 16))} WAT.</p>` : '<p class="muted small">Call the winner on the phone number above (they have also been emailed) to arrange collection at the club. Tick when the prize has been handed over. Never ask for bank details through the website.</p>');
     $('result').innerHTML = html;
     $('paidBox')?.addEventListener('change', async e => {
       try { await api('/api/admin/predictions/' + encodeURIComponent(current), { method: 'POST', body: JSON.stringify({ action: 'paid', paid: e.target.checked }) }); msg('Saved.', true); open(current); }
