@@ -165,6 +165,43 @@ and a Jumia link. Otherwise it shows "Coming soon".
 
 ---
 
+## 7. Add or change a partner (sponsor)
+
+1. Log in and click **Partners** in the admin links. This page lists every
+   partner by tier and warns you about any problems, such as a missing logo or
+   two partners in the same category.
+2. Click **+ Add partner** (or **Edit** next to an existing one). The editor
+   opens.
+3. Fill in:
+   - **Partner Name** and **Tier**: Principal Partner, Official Kit Partner,
+     Official Club Partners, Official Suppliers, Media & Broadcast Partners, or
+     Institutional & Community Partners.
+   - **Category** (e.g. Telecom) and **Official Title** (e.g. Official Telecom
+     Partner). Only **one** active Official Club Partner is allowed per
+     category.
+   - **Logo**: upload the partner's logo. A transparent PNG or SVG looks best.
+     If there's no logo yet, the site shows the partner's name in the box
+     instead.
+   - **Website** (starting with https://), a one-line **Short Description**
+     and **Partner Since** (the year).
+   - **Display Order**: 1 shows first within its tier.
+   - **Age restricted**: tick this for alcohol brands. The site then shows
+     "18+ | Drink Responsibly" next to their logo everywhere.
+4. Make sure **Active** is ticked and click **Save**. The partner appears on
+   the home page, in the footer, on /partners and on their own partner page in
+   about 1–2 minutes.
+
+**To remove a partner** without deleting them, untick **Active**.
+
+**Partnership Opportunities:** the categories you're offering to new sponsors
+are under **Site Settings… › Partnership Opportunities & Benefits**. When you
+add an active Official Club Partner, their category disappears from the
+opportunities list automatically. The same screen holds the audience figures
+for "Why partner with Lobi Stars" (empty figures are hidden) and the
+partnership brochure PDF (the download button only shows once a file is added).
+
+---
+
 ## Other things you can update in the CMS
 
 All of these are under **Site Settings, League Table & Shop**:
@@ -176,7 +213,7 @@ All of these are under **Site Settings, League Table & Shop**:
 - **Stadium Information**: capacity, directions and matchday tips.
 - **Supporters' Clubs**: fan clubs by city with a contact person.
 
-Also in the CMS: **Sponsor Logos** (the Partners section) and **Gallery Photos**.
+Also in the CMS: **Gallery Photos**.
 
 ---
 

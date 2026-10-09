@@ -110,16 +110,28 @@ collections:
       - {label: "Photo", name: "photo", widget: "image"}
       - {label: "Display Order", name: "order", widget: "number", default: 10}
 
-  - name: "sponsors"
-    label: "Sponsor Logos (Top Bar)"
-    folder: "src/content/sponsors"
+  - name: "partners"
+    label: "Partners"
+    folder: "src/content/partners"
     create: true
+    # The file name becomes the partner page: /partners/<file-name>
     slug: "{{slug}}"
+    sortable_fields: ["tier", "displayOrder", "name"]
+    summary: "{{name}} - {{officialTitle}}"
     fields:
-      - {label: "Sponsor Name", name: "name", widget: "string"}
-      - {label: "Logo", name: "logo", widget: "image"}
-      - {label: "Website Link", name: "url", widget: "string", default: "#"}
-      - {label: "Display Order", name: "order", widget: "number", default: 10}
+      - {label: "Partner Name", name: "name", widget: "string"}
+      - {label: "Tier", name: "tier", widget: "select", options: ["Principal Partner", "Official Kit Partner", "Official Club Partners", "Official Suppliers", "Media & Broadcast Partners", "Institutional & Community Partners"]}
+      - {label: "Category (e.g. Banking, Telecom). Only one active Official Club Partner per category.", name: "category", widget: "string"}
+      - {label: "Official Title (e.g. Official Banking Partner)", name: "officialTitle", widget: "string"}
+      - {label: "Logo (transparent PNG or SVG is best)", name: "logo", widget: "image", required: false}
+      - {label: "Logo for dark backgrounds (optional)", name: "logoDark", widget: "image", required: false}
+      - {label: "Website (full link, starting https://)", name: "website", widget: "string", required: false}
+      - {label: "Short Description (one sentence)", name: "shortDescription", widget: "text", required: false}
+      - {label: "Partner Since (year)", name: "since", widget: "number", value_type: "int", required: false}
+      - {label: "Display Order (1 shows first within its tier)", name: "displayOrder", widget: "number", value_type: "int", default: 10}
+      - {label: "Active (shown on the site)", name: "active", widget: "boolean", default: true}
+      - {label: "Age restricted (alcohol brand - shows 18+ | Drink Responsibly)", name: "ageRestricted", widget: "boolean", default: false}
+      - {label: "Longer description (partner page)", name: "body", widget: "markdown", required: false}
 
   # Single data files (src/data/*.json) -- one entry each, edited in place.
   - name: "settings"
@@ -247,3 +259,20 @@ collections:
               - {label: "Contact Person", name: "contact", widget: "string"}
               - {label: "Phone", name: "phone", widget: "string", required: false}
               - {label: "Social Link", name: "social", widget: "string", required: false}
+
+      - name: "partnership"
+        label: "Partnership Opportunities & Benefits"
+        file: "src/data/partnership.json"
+        fields:
+          - {label: "Intro line (partners page banner)", name: "intro", widget: "text"}
+          - {label: "Open Official Club Partner categories (filled ones are hidden automatically)", name: "openCategories", widget: "list"}
+          - label: "Why partner with Lobi Stars"
+            name: "benefits"
+            widget: "list"
+            summary: "{{fields.title}}"
+            fields:
+              - {label: "Title", name: "title", widget: "string"}
+              - {label: "Text", name: "text", widget: "text"}
+              - {label: "Figure (e.g. 15,000) - leave empty to hide", name: "figure", widget: "string", required: false}
+              - {label: "Figure label (e.g. matchday fans)", name: "figureLabel", widget: "string", required: false}
+          - {label: "Partnership brochure PDF (leave empty to hide the button)", name: "brochureUrl", widget: "file", required: false}

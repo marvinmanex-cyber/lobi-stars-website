@@ -1,0 +1,64 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PartnerLogo from '../../components/partners/PartnerLogo.astro';
+import NewsCarousel from '../../components/news/NewsCarousel.astro';
+import { render } from 'astro:content';
+import { getPartners, logoSrc, logoAlt, website, type Partner } from '../../lib/partners';
+import { getSortedNews } from '../../lib/news';
+
+export async function getStaticPaths() {
+  const partners = await getPartners();
+  const news = await getSortedNews();
+  return partners.map(partner => {
+    // Related news: stories that mention the partner by name as a whole word.
+    // Short names (e.g. "Play") must match exactly, including capitals.
+    const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const short = partner.data.name.replace(/\b(Nig|Ltd|Limited|Plc)\b\.?/gi, '').trim();
+    const re = new RegExp(`\\b(${esc(partner.data.name)}|${esc(short)})\\b`, short.length > 4 ? 'i' : '');
+    const related = news.filter(a => re.test(`${a.data.title} ${a.data.summary} ${a.body ?? ''}`)).slice(0, 8);
+    return { params: { slug: partner.id }, props: { partner, related } };
+  });
+}
+
+interface Props { partner: Partner; related: Awaited<ReturnType<typeof getSortedNews>> }
+const { partner, related } = Astro.props;
+const p = partner.data;
+const { Content } = await render(partner);
+const site = website(partner);
+const hasBody = (partner.body ?? '').trim().length > 0;
+---
+<Layout
+  title={`${p.name} – ${p.officialTitle} | Lobi Stars FC`}
+  description={p.shortDescription || `${p.name} is the ${p.officialTitle} of Lobi Stars Football Club.`}
+  image={logoSrc(partner) ?? undefined}
+  imageAlt={logoAlt(partner)}
+>
+  <div class="wrap pd">
+    <a class="pd-back" href="/partners">&larr; All partners</a>
+    <div class="pd-top">
+      <PartnerLogo partner={partner} size="xl" link="none" mono={false} />
+      <div>
+        <p class="stag">{p.tier}</p>
+        <h1 class="stitle">{p.name}</h1>
+        <p class="pd-title">{p.officialTitle}</p>
+        {p.since && <p class="pd-since">Partner since {p.since}</p>}
+        {p.shortDescription && <p class="pd-desc">{p.shortDescription}</p>}
+        {site && <a class="btn-p" href={site} target="_blank" rel="sponsored noopener">Visit website<span class="sr-only"> (opens in a new tab)</span></a>}
+      </div>
+    </div>
+    {hasBody && <div class="pd-body"><Content /></div>}
+  </div>
+  {related.length > 0 && <NewsCarousel title="Related news" articles={related} viewAllHref="/news" tone="band" />}
+</Layout>
+
+<style>
+  .pd { padding-top: 32px; padding-bottom: 50px; }
+  .pd-back { display: inline-block; margin-bottom: 22px; color: var(--red-text); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; }
+  .pd-top { display: grid; grid-template-columns: minmax(240px, 380px) 1fr; gap: 40px; align-items: center; }
+  .pd-title { margin: 0 0 6px; font: 700 20px/1.2 'Barlow Condensed', sans-serif; color: var(--red-text); }
+  .pd-since { margin: 0 0 10px; color: var(--gold-text); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .pd-desc { margin: 0 0 22px; max-width: 620px; font-size: 17px; line-height: 1.7; color: var(--lt); }
+  .pd-body { max-width: 720px; margin-top: 36px; font-size: 17px; line-height: 1.8; }
+  .pd-body :global(p) { margin: 0 0 1.2em; }
+  @media (max-width: 760px) { .pd-top { grid-template-columns: 1fr; gap: 24px; } }
+</style>

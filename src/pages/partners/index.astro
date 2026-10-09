@@ -1,0 +1,127 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import EnquiryForm from '../../components/EnquiryForm.astro';
+import PartnerLogo from '../../components/partners/PartnerLogo.astro';
+import { getPartners, byTier, openCategories, website, PARTNERSHIP } from '../../lib/partners';
+
+const partners = await getPartners();
+const tiers = byTier(partners);
+const open = openCategories(partners);
+const LOGO_SIZE: Record<string, 'xl' | 'lg' | 'md' | 'sm'> = {
+  'Principal Partner': 'xl', 'Official Kit Partner': 'lg', 'Official Club Partners': 'md',
+  'Official Suppliers': 'md', 'Media & Broadcast Partners': 'sm', 'Institutional & Community Partners': 'sm',
+};
+const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+---
+<Layout
+  title="Our Official Partners | Lobi Stars Football Club"
+  description="Meet the official partners of Lobi Stars FC, the Pride of Benue, and find out about partnership opportunities: club partner categories, stadium branding, activations and media."
+>
+  <div class="pp-banner">
+    <div class="pp-banner-inner">
+      <h1 class="pp-h1">Our Official Partners</h1>
+      <p>{PARTNERSHIP.intro}</p>
+    </div>
+  </div>
+
+  <div class="page-content wrap pp">
+    {tiers.map(g => (
+      <section class="pp-tier" aria-labelledby={`t-${slugify(g.tier)}`}>
+        <h2 class="pp-h2" id={`t-${slugify(g.tier)}`}>{g.tier}</h2>
+        <ul class:list={['pp-grid', `pp-grid--${LOGO_SIZE[g.tier]}`]}>
+          {g.partners.map(p => {
+            const site = website(p);
+            return (
+              <li class="pp-card">
+                <PartnerLogo partner={p} size={LOGO_SIZE[g.tier]} />
+                <h3 class="pp-title"><a href={`/partners/${p.id}/`}>{p.data.officialTitle}</a></h3>
+                <p class="pp-name">{p.data.name}</p>
+                {p.data.since && <p class="pp-since">Partner since {p.data.since}</p>}
+                {p.data.shortDescription && <p class="pp-desc">{p.data.shortDescription}</p>}
+                {site && <a class="pp-site" href={site} target="_blank" rel="sponsored noopener">Visit website <span aria-hidden="true">&nearr;</span><span class="sr-only"> (opens in a new tab)</span></a>}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    ))}
+
+    {open.length > 0 && (
+      <section class="pp-sec" aria-labelledby="opps">
+        <h2 class="pp-h2" id="opps">Partnership Opportunities</h2>
+        <p class="pp-lede">These Official Club Partner categories are available now.</p>
+        <ul class="pp-opps">
+          {open.map(c => (
+            <li class="pp-opp">
+              <span class="pp-opp-title">Official {c} Partner</span>
+              <span class="pp-opp-status">Available</span>
+              <a class="btn-p" href="#enquiry" data-enquire={c}>Enquire</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+
+    <section class="pp-sec" aria-labelledby="why">
+      <h2 class="pp-h2" id="why">Why partner with Lobi Stars</h2>
+      <ul class="pp-why">
+        {PARTNERSHIP.benefits.map(b => (
+          <li>
+            {b.figure && <span class="pp-fig">{b.figure}<small>{b.figureLabel}</small></span>}
+            <h3>{b.title}</h3>
+            <p>{b.text}</p>
+          </li>
+        ))}
+      </ul>
+      {PARTNERSHIP.brochureUrl && (
+        <a class="btn-o pp-brochure" href={PARTNERSHIP.brochureUrl} download>Download Partnership Brochure (PDF)</a>
+      )}
+    </section>
+
+    <section class="panel pp-form" id="enquiry" aria-labelledby="enquiry-title">
+      <h2 class="pp-h2" id="enquiry-title">Partnership Enquiry</h2>
+      <p class="pp-note">Our commercial team will reach out within 48 hours.</p>
+      <EnquiryForm kind="partnership" openCategories={open} />
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .pp-banner { background: linear-gradient(120deg, var(--rdp) 0%, var(--red) 75%); }
+  .pp-banner-inner { max-width: 1200px; margin: 0 auto; padding: 56px 5% 48px; }
+  .pp-h1 { margin: 0; color: #fff; font: 400 clamp(44px, 7vw, 84px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1.5px; }
+  .pp-banner p { margin: 14px 0 0; max-width: 680px; color: rgba(255, 255, 255, .9); font-size: 17px; line-height: 1.6; }
+  .pp { padding-top: 44px; }
+  .pp-tier, .pp-sec { margin-bottom: 52px; }
+  .pp-h2 { margin: 0 0 20px; padding-bottom: 10px; border-bottom: 2px solid var(--d4); font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .pp-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 22px; }
+  .pp-grid--xl, .pp-grid--lg { grid-template-columns: minmax(0, 420px); justify-content: center; }
+  .pp-grid--md { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .pp-grid--sm { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .pp-card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 18px; border: 1px solid var(--d4); border-radius: 14px; background: var(--d2); }
+  .pp-card :global(.pl) { width: 100%; margin-bottom: 8px; }
+  .pp-title { margin: 6px 0 0; font: 700 19px/1.2 'Barlow Condensed', sans-serif; }
+  .pp-title a { color: var(--white); text-decoration: none; }
+  .pp-title a:hover, .pp-title a:focus-visible { color: var(--red-text); text-decoration: underline; }
+  .pp-name { margin: 0; color: var(--lt); font-weight: 600; }
+  .pp-since { margin: 2px 0 0; color: var(--gold-text); font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .pp-desc { margin: 8px 0 0; color: var(--lt); font-size: 14px; line-height: 1.6; }
+  .pp-site { margin-top: 10px; color: var(--red-text); font-weight: 700; text-decoration: none; }
+  .pp-site:hover { text-decoration: underline; }
+  .pp-lede { margin: -6px 0 18px; color: var(--lt); }
+  .pp-opps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+  .pp-opp { display: flex; flex-direction: column; gap: 8px; padding: 20px; border-radius: 12px; border: 1px dashed rgba(227, 30, 36, .45); background: #fff; }
+  .pp-opp-title { font: 700 19px/1.2 'Barlow Condensed', sans-serif; }
+  .pp-opp-status { align-self: flex-start; padding: 4px 8px; border-radius: 3px; background: #E8F7EE; color: #17643A; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .pp-opp .btn-p { margin-top: 6px; padding: 11px 18px; text-align: center; }
+  .pp-why { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .pp-why li { padding: 22px; border-radius: 12px; background: #15181D; color: #fff; }
+  .pp-why h3 { margin: 0 0 8px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #FFC72C; }
+  .pp-why p { margin: 0; color: rgba(255, 255, 255, .85); line-height: 1.6; font-size: 15px; }
+  .pp-fig { display: block; margin-bottom: 8px; font: 400 40px/1 'Bebas Neue', sans-serif; color: #fff; }
+  .pp-fig small { display: block; font: 700 11px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: rgba(255, 255, 255, .7); }
+  .pp-brochure { margin-top: 20px; }
+  .pp-form { max-width: 820px; scroll-margin-top: 90px; }
+  .pp-form .pp-h2 { border: 0; padding: 0; margin-bottom: 6px; }
+  .pp-note { margin: 0 0 22px; color: var(--red-text); font: 700 13px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+</style>

@@ -1,0 +1,39 @@
+{
+  "_todo": "TODO: add audience figures (leave a figure empty to hide it) and the brochure PDF path once uploaded (e.g. /images/lobi-stars-partnership-brochure.pdf).",
+  "intro": "Partner with the Pride of Benue and put your brand in front of the passionate Lobi Stars family in Makurdi and across Nigeria.",
+  "openCategories": [
+    "Telecom",
+    "Hotel",
+    "Energy",
+    "Health",
+    "Water",
+    "Airline"
+  ],
+  "benefits": [
+    {
+      "title": "Stadium branding",
+      "text": "Pitchside boards, stand branding and matchday signage at McCarthy Stadium, Makurdi.",
+      "figure": "",
+      "figureLabel": ""
+    },
+    {
+      "title": "Matchday & community activations",
+      "text": "Fan zones, sampling, competitions and community programmes on matchdays and across Benue State.",
+      "figure": "",
+      "figureLabel": ""
+    },
+    {
+      "title": "Digital & social media reach",
+      "text": "Branded content on the official website and the club's social media channels.",
+      "figure": "",
+      "figureLabel": ""
+    },
+    {
+      "title": "Media coverage",
+      "text": "Visibility in match broadcasts and club media with our Official Media & Broadcast Partner, Aeson Sports Management.",
+      "figure": "",
+      "figureLabel": ""
+    }
+  ],
+  "brochureUrl": ""
+}

@@ -5,15 +5,20 @@
 interface Props {
   kind: 'contact' | 'partnership';
   submitLabel?: string;
+  /** Partnership form: Official Club Partner categories still available. */
+  openCategories?: string[];
 }
-const { kind, submitLabel = kind === 'partnership' ? 'Send Partnership Request' : 'Send Message' } = Astro.props;
+const { kind, submitLabel = kind === 'partnership' ? 'Send Partnership Request' : 'Send Message', openCategories = [] } = Astro.props;
 const FORMSPREE = 'https://formspree.io/f/xbdwbyaz';
+// Principal and Kit partnerships are taken, so they're not offered.
 const interests = [
-  'Jersey / Kit Sponsorship',
+  'Official Club Partner (category)',
+  'Official Supplier',
+  'Media & Broadcast Partner',
+  'Institutional & Community Partner',
   'Stadium & Pitchside Advertising',
-  'Digital & Social Media Partner',
-  'Community Programmes Support',
-  'Custom Strategic Partnership',
+  'Digital & Social Media Activation',
+  'Other',
 ];
 ---
 <form class="eq" action={FORMSPREE} method="POST" data-enquiry>
@@ -37,8 +42,18 @@ const interests = [
       <input class="form-inp" id={`${kind}-ph`} name="phone" type="tel" autocomplete="tel" placeholder="+234..." required={kind === 'partnership'} /></div>
   </div>
   {kind === 'partnership' ? (
-    <div class="form-grp"><label class="form-lbl" for="partnership-in">Interest</label>
-      <select class="form-sel" id="partnership-in" name="interest">{interests.map(i => <option>{i}</option>)}</select></div>
+    <div class="form-row">
+      <div class="form-grp"><label class="form-lbl" for="partnership-in">Interest</label>
+        <select class="form-sel" id="partnership-in" name="interest" data-interest>{interests.map(i => <option>{i}</option>)}</select></div>
+      <div class="form-grp" data-category-wrap>
+        <label class="form-lbl" for="partnership-cat">Partner category</label>
+        <select class="form-sel" id="partnership-cat" name="category" data-category>
+          {openCategories.length
+            ? openCategories.map(c => <option value={c}>Official {c} Partner</option>)
+            : <option value="Other">Tell us in your message</option>}
+        </select>
+      </div>
+    </div>
   ) : (
     <div class="form-grp"><label class="form-lbl" for="contact-sub">Subject</label>
       <input class="form-inp" id="contact-sub" name="subject" placeholder="How can we help?" required /></div>
@@ -46,6 +61,12 @@ const interests = [
   <div class="form-grp"><label class="form-lbl" for={`${kind}-msg`}>Message</label>
     <textarea class="form-ta" id={`${kind}-msg`} name="message" required
       placeholder={kind === 'partnership' ? 'How would you like to work with Lobi Stars?' : 'Write your message here...'}></textarea></div>
+  {kind === 'partnership' && (
+    <div class="form-grp eq-consent">
+      <label><input type="checkbox" name="privacy_consent" value="yes" required />
+        I agree that Lobi Stars FC may use these details to respond to my enquiry, as described in the <a href="/privacy" target="_blank">Privacy Policy</a>.</label>
+    </div>
+  )}
   <p class="eq-status" role="status" aria-live="polite" hidden></p>
   <button type="submit" class="btn-p eq-submit">{submitLabel}</button>
 </form>
@@ -56,9 +77,38 @@ const interests = [
   .eq-status.ok { background: #E8F7EE; color: #17643A; }
   .eq-status.err { background: #FDECEC; color: #A3161B; }
   .form-lbl span { text-transform: none; letter-spacing: 0; font-weight: 400; }
+  .eq-consent label { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: var(--lt); cursor: pointer; }
+  .eq-consent input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--red); }
+  .eq-consent a { color: var(--red-text); font-weight: 600; }
 </style>
 
 <script>
+  // Partnership form: the category list only applies to Official Club Partner.
+  document.querySelectorAll<HTMLSelectElement>('[data-interest]').forEach(sel => {
+    const wrap = sel.form?.querySelector<HTMLElement>('[data-category-wrap]');
+    const cat = wrap?.querySelector('select');
+    const sync = () => {
+      const on = sel.selectedIndex === 0;
+      if (wrap) wrap.hidden = !on;
+      if (cat) cat.disabled = !on;
+    };
+    sel.addEventListener('change', sync);
+    sync();
+  });
+  // "Enquire" buttons pre-select a category and jump to the form.
+  document.querySelectorAll<HTMLElement>('[data-enquire]').forEach(btn => btn.addEventListener('click', e => {
+    const form = document.querySelector<HTMLFormElement>('[data-enquiry]');
+    const interest = form?.querySelector<HTMLSelectElement>('[data-interest]');
+    const cat = form?.querySelector<HTMLSelectElement>('[data-category]');
+    if (!form || !interest || !cat) return;
+    e.preventDefault();
+    interest.selectedIndex = 0;
+    interest.dispatchEvent(new Event('change'));
+    cat.value = btn.dataset.enquire!;
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    form.querySelector<HTMLInputElement>('input:not([type=hidden])')?.focus({ preventScroll: true });
+  }));
+
   document.querySelectorAll<HTMLFormElement>('[data-enquiry]').forEach(form => {
     const status = form.querySelector<HTMLElement>('.eq-status')!;
     const btn = form.querySelector<HTMLButtonElement>('.eq-submit')!;

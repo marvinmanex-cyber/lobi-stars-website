@@ -1,0 +1,69 @@
+---
+// Homepage "Our Official Partners": tiered, biggest logos for the most
+// important partners. Tiers with no active partners are not shown.
+import PartnerLogo from './PartnerLogo.astro';
+import { getPartners } from '../../lib/partners';
+
+const all = await getPartners();
+const tier = (t: string) => all.filter(p => p.data.tier === t);
+const principal = tier('Principal Partner');
+const kit = tier('Official Kit Partner');
+const club = tier('Official Club Partners');
+const suppliers = tier('Official Suppliers');
+const smaller = [...tier('Media & Broadcast Partners'), ...tier('Institutional & Community Partners')];
+---
+{all.length > 0 && (
+  <section class="ps" aria-labelledby="ps-title">
+    <div class="ps-inner">
+      <h2 class="ps-title" id="ps-title">Our Official Partners</h2>
+
+      {principal.length > 0 && (
+        <div class="ps-row ps-row--principal">
+          {principal.map(p => <PartnerLogo partner={p} size="xl" label="Principal Partner" />)}
+        </div>
+      )}
+      {kit.length > 0 && (
+        <div class="ps-row ps-row--kit">
+          {kit.map(p => <PartnerLogo partner={p} size="lg" label="Official Kit Partner" />)}
+        </div>
+      )}
+      {club.length > 0 && (
+        <div class="ps-group">
+          <h3 class="ps-h3">Official Club Partners</h3>
+          <div class="ps-grid">{club.map(p => <PartnerLogo partner={p} size="md" label={p.data.officialTitle} />)}</div>
+        </div>
+      )}
+      {suppliers.length > 0 && (
+        <div class="ps-group">
+          <h3 class="ps-h3">Official Suppliers</h3>
+          <div class="ps-grid">{suppliers.map(p => <PartnerLogo partner={p} size="md" label={p.data.officialTitle} />)}</div>
+        </div>
+      )}
+      {smaller.length > 0 && (
+        <div class="ps-group">
+          <h3 class="ps-h3">Media, Institutional &amp; Community Partners</h3>
+          <div class="ps-grid ps-grid--sm">{smaller.map(p => <PartnerLogo partner={p} size="sm" label={p.data.officialTitle} />)}</div>
+        </div>
+      )}
+
+      <div class="ps-cta"><a class="btn-o" href="/partners">View all partners</a></div>
+    </div>
+  </section>
+)}
+
+<style>
+  .ps { padding: 56px 0; background: var(--dark); border-top: 1px solid var(--d4); }
+  .ps-inner { max-width: 1100px; margin: 0 auto; padding: 0 5%; }
+  .ps-title { margin: 0 0 30px; text-align: center; font: 400 clamp(30px, 4vw, 42px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--white); }
+  .ps-row { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; margin-bottom: 26px; }
+  .ps-row > :global(*) { width: min(360px, 100%); }
+  .ps-row--kit > :global(*) { width: min(300px, 100%); }
+  .ps-group { margin-top: 30px; }
+  .ps-h3 { margin: 0 0 16px; text-align: center; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold-text); }
+  .ps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 220px)); justify-content: center; gap: 20px; }
+  .ps-grid--sm { grid-template-columns: repeat(auto-fit, minmax(150px, 190px)); }
+  .ps-cta { text-align: center; margin-top: 36px; }
+  @media (max-width: 480px) {
+    .ps-grid, .ps-grid--sm { grid-template-columns: 1fr 1fr; gap: 14px; }
+  }
+</style>

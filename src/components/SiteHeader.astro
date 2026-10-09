@@ -1,5 +1,10 @@
 ---
 import { MAIN_NAV } from '../lib/nav';
+import { getPartners, logoSrc, logoAlt } from '../lib/partners';
+
+// Principal partner shown next to the search icon; hidden if there isn't one.
+const principal = (await getPartners()).find(p => p.data.tier === 'Principal Partner');
+const principalLogo = principal ? logoSrc(principal) : null;
 
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
 const isActive = (href: string) => {
@@ -40,6 +45,19 @@ const isActive = (href: string) => {
     </nav>
 
     <div class="sh-actions">
+      {principal && (
+        <a class="sh-pp" href={`/partners/${principal.id}/`}>
+          <span class="sh-pp-logo">
+            {principalLogo
+              ? <img src={principalLogo} alt={logoAlt(principal)} />
+              : <span class="sh-pp-name">{principal.data.name}</span>}
+          </span>
+          <span class="sh-pp-text">
+            Principal Partner
+            {principal.data.ageRestricted && <small>18+ | Drink Responsibly</small>}
+          </span>
+        </a>
+      )}
       <a class="sh-icon" href="/search" aria-label="Search the site">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>
       </a>
@@ -123,6 +141,29 @@ const isActive = (href: string) => {
   .sh-icon:hover { border-color: var(--red); color: var(--red-text); }
   .sh-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
   .sh-burger { display: none; }
+
+  .sh-pp { display: flex; align-items: center; gap: 8px; text-decoration: none; margin-right: 6px; padding: 4px 6px; border-radius: 8px; }
+  .sh-pp:hover, .sh-pp:focus-visible { background: var(--d3); }
+  .sh-pp:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .sh-pp-logo { display: flex; align-items: center; justify-content: center; height: 36px; max-width: 84px; }
+  .sh-pp-logo img { height: 36px; width: auto; max-width: 84px; object-fit: contain; }
+  .sh-pp-name { font: 400 15px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: var(--white); white-space: nowrap; }
+  .sh-pp-text { display: flex; flex-direction: column; font: 700 10px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); white-space: nowrap; }
+  .sh-pp-text small { font-size: 9px; letter-spacing: .5px; text-transform: none; }
+  /* Keep the 18+ line visible at every width; only the label shrinks. */
+  @media (min-width: 1181px) and (max-width: 1440px) { .sh-link { padding: 10px 8px; letter-spacing: .8px; } .sh-inner { gap: 12px; } }
+  /* Small phones: badge only, plus a compact principal-partner block. */
+  @media (max-width: 640px) {
+    .sh-logo .sh-name { display: none; }
+    .sh-inner { gap: 10px; }
+    .sh-actions { gap: 4px; }
+    .sh-pp { margin-right: 2px; padding: 2px 4px; gap: 6px; }
+    .sh-pp-logo { max-width: 70px; height: 30px; }
+    .sh-pp-logo img { height: 30px; max-width: 70px; }
+    .sh-pp-name { font-size: 13px; white-space: normal; line-height: 1; max-width: 70px; }
+    .sh-pp-text { font-size: 9px; }
+    .sh-pp-text small { font-size: 8px; }
+  }
 
   .mm-ov { position: fixed; inset: 0; background: rgba(15, 17, 21, .5); z-index: 1990; }
   .mm {

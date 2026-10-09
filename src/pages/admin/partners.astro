@@ -1,0 +1,120 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { TIERS, partnerWarnings, openCategories, logoSrc, website, PARTNERSHIP } from '../../lib/partners';
+
+// Partners are edited in the content CMS (Partners collection, logos upload
+// to the media library). This screen lists them by tier, flags problems and
+// jumps straight to the right editor.
+const all = await getCollection('partners');
+const active = all.filter(p => p.data.active);
+const warnings = partnerWarnings(active);
+const open = openCategories(active);
+const filled = PARTNERSHIP.openCategories.filter(c => !open.includes(c));
+const CMS = '/admin/#/collections/partners';
+const SETTINGS = '/admin/#/collections/settings/entries/partnership';
+const groups = TIERS.map(t => ({
+  tier: t,
+  list: all.filter(p => p.data.tier === t).sort((a, b) => Number(b.data.active) - Number(a.data.active) || a.data.displayOrder - b.data.displayOrder),
+}));
+---
+<Layout title="Partners | Lobi Stars Admin" description="Manage Lobi Stars FC partners." noindex>
+  <div class="wrap ap">
+    <div class="ap-nav">
+      <a href="/" class="ap-back">&larr; Back to site</a>
+      <a href="/admin/matches">Manage matches</a>
+      <a href="/admin/match-centre">Match Centre</a>
+      <a href="/admin/news">Manage news</a>
+      <a href="/admin/">Content CMS</a>
+    </div>
+    <div class="stag">Admin</div>
+    <h1 class="stitle">Manage <span class="r">Partners</span></h1>
+
+    {warnings.length > 0 && (
+      <div class="ap-warn" role="alert">
+        <strong>Please fix:</strong>
+        <ul>{warnings.map(w => <li>{w}</li>)}</ul>
+      </div>
+    )}
+
+    <div class="ap-bar">
+      <a class="btn-p" href={`${CMS}/new`}>+ Add partner</a>
+      <a class="btn-o" href={SETTINGS}>Edit open categories &amp; benefits</a>
+    </div>
+
+    <details class="ap-help">
+      <summary>How to add, edit, hide or reorder a partner</summary>
+      <ol>
+        <li><strong>Add:</strong> press <em>+ Add partner</em>. Fill in the name, choose the <em>Tier</em>, type the <em>Category</em> (e.g. Telecom) and the official title (e.g. Official Telecom Partner), upload the logo (transparent PNG or SVG is best), add the website and a one-line description, then <em>Save</em>.</li>
+        <li><strong>Alcohol brands:</strong> tick <em>Age restricted</em> so the "18+ | Drink Responsibly" line shows next to their logo everywhere.</li>
+        <li><strong>Hide a partner:</strong> open them and untick <em>Active</em>. They disappear from the site but stay in the CMS.</li>
+        <li><strong>Reorder:</strong> change <em>Display order</em> (1 shows first within its tier).</li>
+        <li><strong>Open categories:</strong> when you add an active Official Club Partner, their category is removed from "Partnership Opportunities" automatically. Edit the list of categories you're selling with <em>Edit open categories</em>.</li>
+        <li>Only <strong>one</strong> active Official Club Partner is allowed per category. If two share a category, a warning appears at the top of this page.</li>
+      </ol>
+      <p class="muted">Changes appear on the website about 1–2 minutes after saving.</p>
+    </details>
+
+    {groups.map(g => (
+      <section class="ap-tier">
+        <h2>{g.tier} <span>({g.list.filter(p => p.data.active).length} active)</span></h2>
+        {g.list.length === 0 ? <p class="muted">No partners in this tier.</p> : (
+          <div class="ap-scroll"><table class="ap-table">
+            <thead><tr><th scope="col">Partner</th><th scope="col">Category / title</th><th scope="col">Order</th><th scope="col">Checks</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+            <tbody>
+              {g.list.map(p => {
+                const issues = [
+                  !logoSrc(p) && 'Logo file missing',
+                  !website(p) && 'No website',
+                  !p.data.since && 'Start year not set',
+                ].filter(Boolean);
+                return (
+                  <tr class:list={{ inactive: !p.data.active }}>
+                    <th scope="row">{p.data.name}{!p.data.active && <span class="ap-flag">Hidden</span>}{p.data.ageRestricted && <span class="ap-flag age">18+</span>}</th>
+                    <td>{p.data.category}<br /><span class="muted">{p.data.officialTitle}</span></td>
+                    <td>{p.data.displayOrder}</td>
+                    <td>{issues.length ? issues.map(i => <span class="ap-issue">{i}</span>) : <span class="ap-ok">OK</span>}</td>
+                    <td class="ap-actions"><a href={`${CMS}/entries/${p.id}`}>Edit</a>{p.data.active && <a href={`/partners/${p.id}/`} target="_blank" rel="noopener">View</a>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table></div>
+        )}
+      </section>
+    ))}
+
+    <section class="ap-tier">
+      <h2>Official Club Partner categories</h2>
+      <p><strong>Open:</strong> {open.length ? open.join(', ') : 'none'}</p>
+      {filled.length > 0 && <p><strong>Filled (hidden from opportunities):</strong> {filled.join(', ')}</p>}
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .ap { max-width: 1040px; padding-top: 40px; padding-bottom: 90px; }
+  .ap-nav { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 28px; font: 600 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .ap-nav a { color: var(--lt); text-decoration: none; }
+  .ap-nav .ap-back { color: var(--gold-text); }
+  .ap-warn { padding: 14px 18px; border-radius: 10px; background: #FDECEC; color: #A3161B; border: 1px solid #F5B5B7; margin-bottom: 18px; }
+  .ap-warn ul { margin: 6px 0 0 18px; }
+  .ap-bar { display: flex; gap: 12px; flex-wrap: wrap; margin: 6px 0 18px; }
+  .ap-help { border: 1px solid var(--d4); border-radius: 10px; padding: 14px 18px; background: var(--dark); margin-bottom: 24px; }
+  .ap-help summary { cursor: pointer; font-weight: 700; }
+  .ap-help ol { margin: 12px 0 8px 20px; line-height: 1.7; }
+  .ap-tier { margin-bottom: 30px; }
+  .ap-tier h2 { margin: 0 0 12px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ap-tier h2 span { font: 600 14px/1 'Barlow', sans-serif; color: var(--lt); letter-spacing: 0; }
+  .ap-scroll { overflow-x: auto; position: relative; }
+  .ap-table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: 15px; border: 1px solid var(--d4); }
+  .ap-table th, .ap-table td { padding: 10px 12px; border-bottom: 1px solid var(--d4); text-align: left; vertical-align: top; }
+  .ap-table thead th { background: #15181D; color: #fff; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .ap-table tr.inactive { opacity: .6; }
+  .ap-flag { margin-left: 8px; padding: 2px 6px; border-radius: 3px; background: var(--d3); font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .ap-flag.age { background: #FFF6D6; color: #5C4300; }
+  .ap-issue { display: inline-block; margin: 0 6px 4px 0; padding: 3px 7px; border-radius: 3px; background: #FFF6D6; color: #5C4300; font-size: 12px; }
+  .ap-ok { color: #17643A; font-weight: 700; }
+  .ap-actions { white-space: nowrap; }
+  .ap-actions a { color: var(--red-text); font-weight: 700; margin-right: 12px; }
+</style>

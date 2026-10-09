@@ -4,7 +4,7 @@ import NewsHero from '../components/news/NewsHero.astro';
 import NextMatches from '../components/news/NextMatches.astro';
 import NewsCarousel from '../components/news/NewsCarousel.astro';
 import ShopCard from '../components/ShopCard.astro';
-import { getCollection } from 'astro:content';
+import PartnersShowcase from '../components/partners/PartnersShowcase.astro';
 import { getSortedNews } from '../lib/news';
 import shop from '../data/shop.json';
 import { CURRENT_SEASON } from '../lib/site';
@@ -13,7 +13,6 @@ const news = await getSortedNews();
 const featuredNews = news.filter(a => a.data.isFeatured).slice(0, 5);
 const videoNews = news.filter(a => a.data.isVideo).slice(0, 12);
 const shopHighlights = shop.products.filter(p => p.inStock).slice(0, 4);
-const sponsors = (await getCollection('sponsors')).sort((a, b) => a.data.order - b.data.order);
 
 const site = Astro.site!.toString().replace(/\/$/, '');
 const teamJsonLd = {
@@ -68,27 +67,7 @@ const teamJsonLd = {
     </div>
   </section>
 
-  <section class="hp-sec" aria-labelledby="partners-title">
-    <div class="hp-inner">
-      <div class="hp-head">
-        <h2 class="hp-title" id="partners-title">Our Partners</h2>
-        <a class="hp-more" href="/partners">Become a partner <span aria-hidden="true">&rarr;</span></a>
-      </div>
-      {sponsors.length > 0 ? (
-        <ul class="hp-partners">
-          {sponsors.map(s => (
-            <li>
-              <a href={s.data.url !== '#' ? s.data.url : '/partners'} target={s.data.url !== '#' ? '_blank' : undefined} rel="noopener" aria-label={s.data.name}>
-                <img src={s.data.logo} alt={s.data.name} loading="lazy" />
-              </a>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p class="muted">Partner with the Pride of Benue &mdash; <a href="/partners">find out more</a>.</p>
-      )}
-    </div>
-  </section>
+  <PartnersShowcase />
 </Layout>
 
 <style>
@@ -108,13 +87,9 @@ const teamJsonLd = {
   .hp-member-btn { background: #fff; color: var(--rdp); }
   .hp-member-btn:hover { background: #FFC72C; color: #15181D; }
 
-  .hp-partners { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
-  .hp-partners a {
     display: flex; align-items: center; justify-content: center; height: 96px; padding: 14px; border: 1px solid var(--d4);
     border-radius: 10px; background: #fff; transition: border-color .2s, box-shadow .2s;
   }
-  .hp-partners a:hover, .hp-partners a:focus-visible { border-color: var(--red); box-shadow: 0 10px 24px rgba(15, 17, 21, .08); }
-  .hp-partners img { max-width: 100%; max-height: 64px; object-fit: contain; }
 
   @media (max-width: 1000px) { .hp-shop { grid-template-columns: repeat(2, 1fr); } }
   @media (max-width: 480px) { .hp-shop { gap: 12px; } }

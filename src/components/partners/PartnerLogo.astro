@@ -1,0 +1,65 @@
+---
+// A partner logo in a fixed-size white box (object-fit: contain, so logos
+// never stretch). Falls back to the partner's name as text if the logo file
+// is missing. Shows the "18+ | Drink Responsibly" line for age-restricted
+// partners. Greyscale until hover on desktop; always in colour on touch screens.
+import { logoSrc, logoAlt, website, type Partner } from '../../lib/partners';
+
+interface Props {
+  partner: Partner;
+  size?: 'xl' | 'lg' | 'md' | 'sm' | 'xs';
+  /** Link to the partner's detail page ('page'), their website ('site') or nothing. */
+  link?: 'page' | 'site' | 'none';
+  label?: string;
+  mono?: boolean;
+}
+const { partner, size = 'md', link = 'page', label, mono = true } = Astro.props;
+const src = logoSrc(partner);
+const site = website(partner);
+const href = link === 'page' ? `/partners/${partner.id}/` : link === 'site' ? site : null;
+const external = link === 'site' && !!site;
+const Tag = href ? 'a' : 'div';
+---
+<div class:list={['pl', `pl--${size}`]}>
+  <Tag
+    class:list={['pl-box', { 'pl-mono': mono }]}
+    href={href ?? undefined}
+    target={external ? '_blank' : undefined}
+    rel={external ? 'sponsored noopener' : undefined}
+    aria-label={href && !src ? logoAlt(partner) : undefined}
+  >
+    {src
+      ? <img src={src} alt={logoAlt(partner)} loading="lazy" decoding="async" />
+      : <span class="pl-name">{partner.data.name}</span>}
+  </Tag>
+  {label && <span class="pl-label">{label}</span>}
+  {partner.data.ageRestricted && <span class="pl-age">18+ | Drink Responsibly</span>}
+</div>
+
+<style>
+  .pl { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; min-width: 0; }
+  .pl-box {
+    display: flex; align-items: center; justify-content: center; width: 100%; background: #fff;
+    border: 1px solid var(--d4); border-radius: 12px; padding: 12px; text-decoration: none;
+    transition: border-color .2s, box-shadow .2s;
+  }
+  a.pl-box:hover, a.pl-box:focus-visible { border-color: var(--red); box-shadow: 0 10px 24px rgba(15, 17, 21, .08); }
+  a.pl-box:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .pl-box img { width: 100%; height: 100%; object-fit: contain; transition: filter .25s, opacity .25s; }
+  .pl-name { font: 400 22px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); overflow-wrap: anywhere; }
+  .pl--xl .pl-box { height: 150px; max-width: 360px; }
+  .pl--xl .pl-name { font-size: 40px; }
+  .pl--lg .pl-box { height: 120px; max-width: 300px; }
+  .pl--lg .pl-name { font-size: 32px; }
+  .pl--md .pl-box { height: 96px; }
+  .pl--sm .pl-box { height: 76px; }
+  .pl--sm .pl-name { font-size: 18px; }
+  .pl--xs .pl-box { height: 48px; padding: 6px 8px; border-radius: 8px; }
+  .pl--xs .pl-name { font-size: 13px; }
+  .pl-label { font: 700 12px/1.25 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .pl-age { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; color: var(--lt); }
+  @media (hover: hover) and (pointer: fine) {
+    .pl-mono img { filter: grayscale(1); opacity: .85; }
+    .pl-mono:hover img, .pl-mono:focus-visible img { filter: none; opacity: 1; }
+  }
+</style>

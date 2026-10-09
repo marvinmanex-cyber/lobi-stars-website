@@ -90,14 +90,33 @@ const heroSlides = defineCollection({
   }),
 });
 
-const sponsors = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/sponsors' }),
+export const PARTNER_TIERS = [
+  'Principal Partner',
+  'Official Kit Partner',
+  'Official Club Partners',
+  'Official Suppliers',
+  'Media & Broadcast Partners',
+  'Institutional & Community Partners',
+] as const;
+
+const partners = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/partners' }),
+  // The file name is the partner's slug: /partners/<file-name>. The body is
+  // the longer description shown on the detail page.
   schema: z.object({
     name: z.string(),
-    logo: z.string(),
-    url: z.string().default('#'),
-    order: z.number().default(0),
+    tier: z.enum(PARTNER_TIERS),
+    category: z.string(),
+    officialTitle: z.string(),
+    logo: z.string().nullable().optional(),
+    logoDark: z.string().nullable().optional(),
+    website: z.string().nullable().optional(),
+    shortDescription: z.string().default(''),
+    since: z.coerce.number().int().nullable().optional(),
+    displayOrder: z.number().default(10),
+    active: z.boolean().default(true),
+    ageRestricted: z.boolean().default(false),
   }),
 });
 
-export const collections = { news, players, gallery, fixtures, staff, heroSlides, sponsors };
+export const collections = { news, players, gallery, fixtures, staff, heroSlides, partners };
