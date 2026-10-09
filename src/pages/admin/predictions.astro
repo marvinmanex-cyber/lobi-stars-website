@@ -98,6 +98,11 @@ import { PRIZE_AMOUNT, formatNaira } from '../../../functions/api/_lib/predictSe
       `<div><dt>Winner email</dt><dd>${r.emailed ? 'Sent' : 'Not sent (email not set up?)'}</dd></div></dl>` +
       `<label class="pw-paid"><input type="checkbox" id="paidBox" ${r.paid ? 'checked' : ''}/> Prize paid</label>` +
       (r.paid ? `<p class="muted small">Marked paid by ${esc(r.paidBy)} on ${esc(wat(r.paidAt).slice(0, 16))} WAT.</p>` : '<p class="muted small">Call the winner on the phone number above (they have also been emailed) to arrange collection at the club. Tick when the prize has been handed over. Never ask for bank details through the website.</p>');
+    const NOTE = { predictions_open: '"Predictions are now open"', kickoff: '"Kick-off! Vote for Man of the Match"' };
+    const ST = { sent: 'sent to', dev: 'test mode, would go to', 'no-email-service': 'not sent (email service not set up) –', failed: 'partly failed, sent to', sending: 'sending to' };
+    html += '<p class="muted small">Reminder emails (fans who said yes to news): ' + (d.notifications.length
+      ? d.notifications.map(n => `${NOTE[n.kind] || n.kind} ${ST[n.status] || n.status} ${n.recipients} fan${n.recipients === 1 ? '' : 's'}`).join('; ')
+      : 'none yet') + '.</p>';
     $('result').innerHTML = html;
     $('paidBox')?.addEventListener('change', async e => {
       try { await api('/api/admin/predictions/' + encodeURIComponent(current), { method: 'POST', body: JSON.stringify({ action: 'paid', paid: e.target.checked }) }); msg('Saved.', true); open(current); }

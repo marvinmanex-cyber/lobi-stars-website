@@ -213,3 +213,20 @@ export async function sendPrizeWinnerEmail(env, member, match, prediction) {
 <p style="font-size:13px;color:#5B6472;">Please keep your phone on: we will call the number on your fan account.</p>`);
   return sendFanEmail(env, member.email, `You won ${formatNaira(PRIZE_AMOUNT)} with Lobi Stars Predict & Win`, html, `${SITE}/contact`);
 }
+
+/**
+ * Optional matchday reminder (marketing) for fans who said yes to news and
+ * offers. Always includes the fan's unsubscribe link.
+ */
+export function matchdayReminderEmail({ firstName, kind, match, url, unsubUrl }) {
+  const vs = `${esc(match.home_team)} vs ${esc(match.away_team)}`;
+  const isOpen = kind === 'predictions_open';
+  const html = layout(isOpen ? 'Predictions are now open' : 'Kick-off! Vote for Man of the Match', `
+<p style="font-size:15px;line-height:1.6;">Hi ${esc(firstName || 'there')},</p>
+<p style="font-size:15px;line-height:1.6;">${isOpen
+    ? `Predict &amp; Win is open for <strong>${vs}</strong>. Predict the exact final score before kick-off: the earliest correct prediction wins <strong>${formatNaira(PRIZE_AMOUNT)}</strong>.`
+    : `<strong>${vs}</strong> has kicked off! Man of the Match voting is open until full time.`}</p>
+${button(url, isOpen ? 'MAKE MY PREDICTION' : 'VOTE NOW')}
+<p style="font-size:12px;color:#5B6472;">You're receiving this because you said yes to Lobi Stars news and offers. <a href="${unsubUrl}" style="color:#5B6472;">Unsubscribe</a>.</p>`);
+  return { subject: isOpen ? `Predict & Win is open: ${match.home_team} vs ${match.away_team}` : `Kick-off! Vote for Man of the Match: ${match.home_team} vs ${match.away_team}`, html };
+}

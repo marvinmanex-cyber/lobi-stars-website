@@ -1,0 +1,60 @@
+---
+import LegalPage from '../../components/LegalPage.astro';
+import { PRIZE_AMOUNT, PREDICTION_OPENS_HOURS_BEFORE, MAX_GOALS, formatNaira } from '../../../functions/api/_lib/predictSettings.js';
+import site from '../../data/site.json';
+const prize = formatNaira(PRIZE_AMOUNT);
+---
+<LegalPage
+  title="Predict & Win: Terms & Conditions"
+  tag="Predict & Win"
+  description={`Terms and conditions for Lobi Stars FC Predict & Win (${prize} per home game).`}
+  updated="9 October 2026"
+  draft="to be reviewed by the club's legal adviser before launch (cash prize promotions may require regulatory approval)."
+>
+  <h2>1. The promoter</h2>
+  <p>Predict &amp; Win is run by Lobi Stars Football Club ("the club"), {site.contact.address}. Contact: <a href={`mailto:${site.contact.email}`}>{site.contact.email}</a>, {site.contact.phone}.</p>
+
+  <h2>2. Who can enter</h2>
+  <ol>
+    <li>Entry is <strong>free</strong>. No purchase is necessary.</li>
+    <li>You must be <strong>18 or older</strong> and <strong>resident in Nigeria</strong>.</li>
+    <li>You need a free Lobi Stars fan account with a confirmed email address. Each person may have only one account.</li>
+    <li>Club staff, players and members of their families cannot win. Accounts flagged by the club as staff or players are excluded from winning.</li>
+  </ol>
+
+  <h2>3. How to enter</h2>
+  <ol>
+    <li>Predict &amp; Win runs for <strong>Lobi Stars home games only</strong>.</li>
+    <li>Predictions open <strong>{PREDICTION_OPENS_HOURS_BEFORE} hours before the scheduled kick-off</strong> and close <strong>at kick-off</strong> (or earlier if the match kicks off early). All times are taken from the club's server clock in Nigerian time (WAT); the time shown on your own device does not count.</li>
+    <li>Enter the exact final score for both teams (0 to {MAX_GOALS} goals each) on the match's Matchday Live page and confirm it.</li>
+    <li><strong>One entry per person per home game.</strong> Once submitted, a prediction cannot be changed or withdrawn.</li>
+    <li>The club records the exact time each prediction is received, to the millisecond.</li>
+  </ol>
+
+  <h2>4. Winning</h2>
+  <ol>
+    <li>The final score is the score at the end of normal time as entered by the club after the final whistle (extra time and penalties, if any, do not count).</li>
+    <li>The winner is the entrant who predicted the <strong>exact final score</strong>. If more than one entrant predicted it, the one whose prediction was <strong>received first</strong> wins.</li>
+    <li>The prize is <strong>{prize} per home game</strong>, for one winner.</li>
+    <li>If nobody predicts the exact score, <strong>nobody wins and the prize is not given out</strong> for that game. It does not roll over to another game.</li>
+    <li>If a match is postponed, abandoned or cancelled, the club may void predictions for that match.</li>
+  </ol>
+
+  <h2>5. Announcing and collecting the prize</h2>
+  <ol>
+    <li>The winner is shown on the match's Matchday Live page after full time as their first name, the initial of their surname and a partly hidden phone number (for example "Terna A. &ndash; 0803****21"). Full email addresses and phone numbers are never published.</li>
+    <li>The club will call the winner on the phone number registered on their fan account and email them to arrange collecting the prize from the club. The winner may be asked to show identification matching their account.</li>
+    <li>The club will never ask for your password, card PIN or bank details through the website.</li>
+  </ol>
+
+  <h2>6. Disqualification</h2>
+  <p>The club may disqualify any entry it reasonably believes involves fraud, more than one account per person, false details, automated entries or any breach of these terms. If a winning entry is disqualified, the next earliest correct entry wins.</p>
+
+  <h2>7. General</h2>
+  <ol>
+    <li>The club's decision on all matters relating to Predict &amp; Win is final.</li>
+    <li>The club may change, suspend or end Predict &amp; Win at any time, for example for legal or technical reasons. Changes do not affect entries already made for a match unless required by law.</li>
+    <li>Your personal data is used as described in our <a href="/privacy/">Privacy Policy</a>.</li>
+  </ol>
+  <p><a href="/predict-and-win/">&larr; Back to Predict &amp; Win</a></p>
+</LegalPage>

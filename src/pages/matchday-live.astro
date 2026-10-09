@@ -54,6 +54,13 @@ import settings from '../data/matchday.json';
   .ml :global(.ml-actions) { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
   .ml :global(.ml-note) { margin-top: 14px; font-size: 13px; color: var(--lt); }
   .ml :global(.ml-note a) { color: var(--red-text); font-weight: 600; }
+  .ml :global(.ml-share) { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 16px 0 4px; }
+  .ml :global(.ml-share-k) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); }
+  .ml :global(.ml-share-btn) { padding: 8px 14px; border-radius: 999px; color: #fff; text-decoration: none; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .ml :global(.ml-share-btn.wa) { background: #1B8A4B; } .ml :global(.ml-share-btn.x) { background: #15181D; } .ml :global(.ml-share-btn.fb) { background: #1565D8; }
+  .ml :global(.ml-share-btn:hover), .ml :global(.ml-share-btn:focus-visible) { filter: brightness(1.12); outline: 3px solid #FFC72C; outline-offset: 2px; }
+  .ml :global(.ml-rules) { margin: 18px 0 0; font-size: 14px; }
+  .ml :global(.ml-rules a) { color: var(--red-text); font-weight: 600; }
   .ml :global(.pw-cd) { margin: 0 0 16px; font: 400 clamp(24px, 4vw, 32px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--red-text); font-variant-numeric: tabular-nums; }
   .ml :global(.pw-mine) { margin: 0 0 12px; padding: 16px; border-radius: 12px; background: #E8F7EE; color: #17643A; font-weight: 700; line-height: 1.5; }
   .ml :global(.pw-form) { margin: 8px 0 14px; }
@@ -271,6 +278,19 @@ import settings from '../data/matchday.json';
     return card;
   }
 
+  // Share buttons (WhatsApp, X, Facebook) for vote and prediction results.
+  function shareRow(text: string, m: M) {
+    const url = `${location.origin}/matches/${m.slug}/live/`;
+    const row = el('div', 'ml-share');
+    row.append(el('span', 'ml-share-k', 'Share'));
+    const add = (label: string, href: string, cls: string) => { const a = link(href, label, `ml-share-btn ${cls}`, true); a.setAttribute('aria-label', `Share on ${label} (opens in a new tab)`); row.append(a); };
+    add('WhatsApp', `https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, 'wa');
+    add('X', `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, 'x');
+    add('Facebook', `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, 'fb');
+    return row;
+  }
+  const rulesLink = (href: string, text: string) => { const p = el('p', 'ml-rules'); p.append(link(href, text, '')); return p; };
+
   // ── Man of the Match voting. Every rule is checked again on the server. ──
   type Player = { slug: string; name: string; number: number | null; position: string; photo: string | null; role?: string };
   type Row = Player & { votes: number; pct: number; winner: boolean };
@@ -307,6 +327,7 @@ import settings from '../data/matchday.json';
       d = await res.json();
     } catch { box.replaceChildren(el('p', 'mv-msg', 'Voting could not be loaded. Please refresh the page.')); return; }
     renderVote(box, m, d);
+    box.append(rulesLink('/motm/rules/', 'Man of the Match voting rules'));
     // While voting is open, keep the "fans have voted" number fresh.
     if (d.state === 'open') timers.push(window.setInterval(async () => {
       try { const r = await fetch(`/api/matches/${encodeURIComponent(m.slug)}/motm`).then(x => x.json()); const t = box.querySelector('[data-voters]'); if (t) t.textContent = voters(r.totalVoters); } catch {}
@@ -344,6 +365,7 @@ import settings from '../data/matchday.json';
         list.append(li);
       });
       out.push(list);
+      out.push(shareRow(`⭐ ${winners.map(w => w.name).join(' & ')} ${winners.length > 1 ? 'are joint Lobi Stars Men' : 'is the Lobi Stars Man'} of the Match vs ${m.away_team}, voted by the fans!`, m));
       box.replaceChildren(...out);
       return;
     }
@@ -353,7 +375,7 @@ import settings from '../data/matchday.json';
       if (d.myVote) {
         const t = el('div', 'mv-thanks');
         t.append(el('strong', '', `Thanks! You voted for ${d.myVote.name}.`), el('span', '', 'Results are revealed at full time.'));
-        box.replaceChildren(t, count);
+        box.replaceChildren(t, count, shareRow(`I voted for ${d.myVote.name} as Lobi Stars Man of the Match vs ${m.away_team}. Have your say:`, m));
         return;
       }
       if (!d.fan) out.push(el('p', 'mv-msg', 'Voting is open! Register or log in to vote for your Man of the Match.'), authButtons(m));
@@ -436,6 +458,7 @@ import settings from '../data/matchday.json';
       clockOffset = new Date(d.serverTime).getTime() - Date.now();
     } catch { box.replaceChildren(el('p', 'mv-msg', 'Predict & Win could not be loaded. Please refresh the page.')); return; }
     renderPredict(box, m, d);
+    box.append(rulesLink('/predict-and-win/terms/', 'Predict & Win terms & conditions'));
   }
 
   function renderPredict(box: HTMLElement, m: M, d: Predict) {
@@ -454,6 +477,7 @@ import settings from '../data/matchday.json';
       panel.append(el('p', 'pw-winner', r.winner ? `🏆 Winner: ${r.winner} (${naira(r.prize)})` : (r.noWinnerText || 'No correct prediction this time.')));
       panel.append(el('p', 'pw-stats', `${r.correct} correct prediction${r.correct === 1 ? '' : 's'} · ${r.total} total`));
       out.push(panel);
+      out.push(shareRow(r.winner ? `🏆 ${m.home_team} ${r.home} – ${r.away} ${m.away_team}: someone predicted it exactly and won ${naira(r.prize)} on Lobi Stars Predict & Win!` : `${m.home_team} ${r.home} – ${r.away} ${m.away_team}. Nobody predicted it exactly on Lobi Stars Predict & Win this time. Try next home game!`, m));
       if (r.youWon) {
         const won = el('div', 'mv-thanks');
         won.append(el('strong', '', `🎉 Congratulations, you won ${naira(r.prize)}!`), el('span', '', r.claim || ''));
@@ -483,7 +507,7 @@ import settings from '../data/matchday.json';
     // Open
     const closes = d.closesAt ? countdown(new Date(d.closesAt).getTime(), 'Predictions close in', reload) : null;
     if (d.mine) {
-      out.push(myLine()!, el('p', 'mv-msg', "Predictions can't be changed. Good luck!"));
+      out.push(myLine()!, el('p', 'mv-msg', "Predictions can't be changed. Good luck!"), shareRow(`I predicted ${m.home_team} ${d.mine.home} – ${d.mine.away} ${m.away_team} on Lobi Stars Predict & Win ${naira(d.prize)}. Make yours:`, m));
       if (closes) out.push(closes);
       out.push(el('p', 'mv-count', predicted(d.count)));
       box.replaceChildren(...out); return;

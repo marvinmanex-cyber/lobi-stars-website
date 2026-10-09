@@ -49,6 +49,9 @@ const live = kind === 'vote' ? settings.motmLive === true : settings.predictLive
   <section aria-labelledby="mg-rules">
     <h2 class="mg-h2" id="mg-rules">Good to know</h2>
     <ul class="mg-rules">{rules.map(r => <li>{r}</li>)}</ul>
+    <p class="mg-full">{kind === 'vote'
+      ? <a href="/motm/rules/">Read the full voting rules &rarr;</a>
+      : <a href="/predict-and-win/terms/">Read the full terms &amp; conditions &rarr;</a>}</p>
   </section>
 
   <p class="mg-other">
@@ -81,6 +84,8 @@ const live = kind === 'vote' ? settings.motmLive === true : settings.predictLive
   .mg-steps h3 { margin: 4px 0 6px; font: 700 17px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .5px; text-transform: uppercase; }
   .mg-steps p { margin: 0; color: var(--lt); line-height: 1.55; font-size: 15px; }
   .mg-rules { margin: 0 0 32px; padding-left: 20px; line-height: 1.7; }
+  .mg-full { margin: -18px 0 32px; }
+  .mg-full a { color: var(--red-text); font-weight: 700; }
   .mg-other { color: var(--lt); }
   .mg-other a { color: var(--red-text); font-weight: 600; }
 </style>

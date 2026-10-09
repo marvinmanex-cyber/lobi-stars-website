@@ -1,6 +1,7 @@
 import { requireAdmin } from '../../_lib/adminEvents.js';
 import { parseStreams } from '../../_lib/streams.js';
 import { settlePredictions } from '../../_lib/predict.js';
+import { notifyFans } from '../../_lib/notify.js';
 import { loadMatch, toPublic, parseCentrePayload, parseSquad, scoreInt, isHomeGame, LIVE_STATUSES } from '../../_lib/matchCentre.js';
 
 async function roster(request, env) {
@@ -78,7 +79,7 @@ export async function onRequestPut({ request, env, params }) {
 // POST /api/admin/match-centre/:id { action: 'kickoff' } or
 // { action: 'fulltime', home_score, away_score } -- the big match-control
 // buttons. Times are recorded from the server clock.
-export async function onRequestPost({ request, env, params }) {
+export async function onRequestPost({ request, env, params, waitUntil }) {
   const denied = await requireAdmin(request, env);
   if (denied) return denied;
   const m = await loadMatch(env.DB, params.id);
@@ -98,6 +99,8 @@ export async function onRequestPost({ request, env, params }) {
        ON CONFLICT(event_id) DO UPDATE SET status = 'live', kickoff_at = excluded.kickoff_at, ended_at = NULL,
          auto_closed = 0, updated_at = excluded.updated_at`
     ).bind(params.id, now).run();
+    // "Kick-off! Vote for Man of the Match" reminder for fans who opted in.
+    waitUntil(notifyFans(env, m.event, 'kickoff'));
     return Response.json({ ok: true, status: 'live', kickoff_at: now });
   }
 

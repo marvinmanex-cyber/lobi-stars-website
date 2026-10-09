@@ -1,4 +1,69 @@
 ---
-import ComingSoon from '../components/ComingSoon.astro';
+import LegalPage from '../components/LegalPage.astro';
+import site from '../data/site.json';
+const { email, phone, address } = site.contact;
 ---
-<ComingSoon title="Privacy Policy" tag="Legal" description="How Lobi Stars FC collects and uses personal data on this website." />
+<LegalPage
+  title="Privacy Policy"
+  description="How Lobi Stars FC collects and uses personal data on this website."
+  updated="9 October 2026"
+  draft="this policy describes what the website actually does today, but it must be reviewed by the club's legal adviser / Data Protection Officer before it is final."
+>
+  <p>This policy explains what personal data Lobi Stars Football Club ("the club", "we") collects through lobistarsfc.com, why, and your rights under the Nigeria Data Protection Act 2023 (NDPA).</p>
+
+  <h2>1. Who we are</h2>
+  <p>Lobi Stars Football Club, {address}. Email <a href={`mailto:${email}`}>{email}</a>, phone {phone}. Contact us at these details for any privacy question or request.</p>
+
+  <h2>2. What we collect and why</h2>
+  <div class="lg-scroll"><table>
+    <thead><tr><th>When you…</th><th>We collect</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Create a fan account</td><td>First name, surname, email, phone number, password (stored only in scrambled/hashed form), confirmation that you are 18+, and whether you want news and offers</td><td>To run your account, confirm your email, and let you vote and play Predict &amp; Win</td></tr>
+      <tr><td>Vote for Man of the Match</td><td>Which player you voted for, for which match, and when</td><td>To count votes fairly (one per fan) and show the results</td></tr>
+      <tr><td>Play Predict &amp; Win</td><td>Your predicted score, the match, and the exact time we received it</td><td>To find the winner (earliest exact prediction), contact them and prevent fraud. The winner's first name, surname initial and a partly hidden phone number are shown publicly on the match page</td></tr>
+      <tr><td>Become a member</td><td>The details on the membership form</td><td>To manage your membership</td></tr>
+      <tr><td>Buy tickets or order food</td><td>Name, email, phone, order and seat details. Card payments are handled by Paystack; we never see your card details</td><td>To issue tickets, deliver orders and keep accounting records</td></tr>
+      <tr><td>Join the newsletter</td><td>Email address</td><td>To send club news (you can unsubscribe at any time)</td></tr>
+      <tr><td>Contact us or send a partnership enquiry</td><td>Name, email, phone, company and your message</td><td>To reply to you</td></tr>
+      <tr><td>Download the partnership brochure</td><td>Name, email, company and phone (optional), and whether you want updates</td><td>To follow up on partnership interest</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Our fan database</h3>
+  <p>To avoid contacting the same person twice, we combine records that share the same email address or phone number into one contact record, showing how you have engaged with the club (for example newsletter, tickets, Predict &amp; Win). Only authorised club staff can see it; downloads are restricted and every download is logged.</p>
+
+  <h2>3. Marketing</h2>
+  <p>We only send news and offers by email or SMS if you have said yes. Every marketing email has an unsubscribe link, and you can also ask us to stop at any time. Important messages about your account, tickets, orders or a prize are still sent.</p>
+  <p>If you said yes to news and offers on your fan account, this can include reminders such as "Predictions are now open" and "Kick-off: vote for Man of the Match" for home games.</p>
+
+  <h2>4. Cookies and website statistics</h2>
+  <ul>
+    <li><strong>Essential:</strong> a login cookie keeps you signed in to your fan account (up to 30 days), and your cookie choice is remembered in your browser. These are needed for the site to work.</li>
+    <li><strong>Statistics:</strong> we count page views to improve the site. If you <em>reject</em> non-essential cookies we only count anonymous page views. If you <em>accept</em>, a random ID in your browser lets us recognise returning visitors. We do not store IP addresses, and we use no advertising cookies.</li>
+    <li>Change your choice any time with <strong>Cookie settings</strong> at the bottom of every page.</li>
+  </ul>
+
+  <h2>5. Who we share data with</h2>
+  <p>We do not sell your data. We use trusted service providers who process data for us:</p>
+  <ul>
+    <li><strong>Cloudflare</strong>: website hosting and database, and the optional "human check" on forms.</li>
+    <li><strong>Resend</strong>: sending emails.</li>
+    <li><strong>Paystack</strong>: card payments.</li>
+    <li><strong>Formspree</strong>: delivering contact and partnership form messages to the club's inbox.</li>
+    <li><strong>YouTube / Facebook</strong>: live streams. The video player only loads when you press play, and those sites' own privacy policies then apply.</li>
+    <li><strong>Google Fonts</strong>: the website's fonts.</li>
+  </ul>
+  <p>Some of these providers may process data outside Nigeria; we rely on appropriate safeguards as required by the NDPA.</p>
+
+  <h2>6. How long we keep data</h2>
+  <p>We keep personal data only as long as needed for the purposes above: account data while your account is open, Predict &amp; Win and payment records as long as needed for accounting and to resolve disputes, and marketing data until you unsubscribe. When you ask us to delete your data we delete it everywhere, except payment records, which we keep for accounting with your name and contact details removed.</p>
+
+  <h2>7. Your rights</h2>
+  <p>Under the NDPA you can ask us to: give you a copy of your data; correct it; delete it; stop marketing to you; restrict or object to how we use it; and withdraw any consent you gave. Contact us at <a href={`mailto:${email}`}>{email}</a>. If you are unhappy with how we handled your data you can complain to the Nigeria Data Protection Commission (NDPC).</p>
+
+  <h2>8. Security and children</h2>
+  <p>Passwords are stored only in hashed form, the site uses HTTPS, and staff access is restricted by individual logins. Fan accounts, voting and Predict &amp; Win are for people aged 18 and over.</p>
+
+  <h2>9. Changes</h2>
+  <p>We will update this page if we change how we use personal data. The date at the top shows the latest version.</p>
+</LegalPage>

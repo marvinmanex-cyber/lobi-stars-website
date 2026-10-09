@@ -75,6 +75,8 @@ To change a match, click **Edit** on it. Use **Hide** if a match should
 temporarily disappear from the site. A match that already has tickets sold
 can't be deleted, only hidden.
 
+> **Home games:** for Kick-off, Full-time, stream links, Man of the Match voting and Predict & Win, see **STAFF-MATCHDAY-GUIDE.md**.
+
 ### Update the score and live events (Match Centre)
 
 1. In **Manage matches**, click **Match Centre** on the match (or click

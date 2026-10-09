@@ -49,12 +49,15 @@ export async function onRequestGet({ request, env, params }) {
   }
 
   const winner = rows.find(p => p.is_winner);
+  const hasNotes = await env.DB.prepare(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'matchday_notifications'`).first();
+  const notifications = hasNotes ? (await env.DB.prepare(`SELECT kind, status, recipients, created_at FROM matchday_notifications WHERE event_id = ?`).bind(match.id).all()).results : [];
   const { opensAt, closesAt } = predictionWindow(match);
   return Response.json({
     match: { id: match.id, slug: match.slug, home_team: match.home_team, away_team: match.away_team, event_date: match.event_date, status: match.status, is_home: match.is_home },
     state: predictState(match, !!result),
     opensAt: new Date(opensAt).toISOString(), closesAt: Number.isFinite(closesAt) ? new Date(closesAt).toISOString() : null,
     canExport: admin.canExport,
+    notifications,
     result: result ? {
       home: result.home_score, away: result.away_score, correct: result.correct_count, total: result.total_count, prize: result.prize_amount,
       paid: !!result.prize_paid, paidAt: result.paid_at, paidBy: result.paid_by, emailed: !!result.emailed_member_id && result.emailed_member_id === result.winner_member_id,
