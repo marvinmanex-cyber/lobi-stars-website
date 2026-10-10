@@ -75,6 +75,8 @@ const teamJsonLd = {
 </Layout>
 
 <style>
+  /* Speed: sections far below the fold are only laid out when the visitor scrolls near them. */
+  :global(.ncar), .hp-sec, .hp-member, :global(.mgs), :global(.ps) { content-visibility: auto; contain-intrinsic-size: auto 560px; }
   .hp-sec { padding: 48px 0; }
   .hp-inner { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
   .hp-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
