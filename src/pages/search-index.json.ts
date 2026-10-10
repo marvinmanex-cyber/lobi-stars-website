@@ -1,4 +1,4 @@
-import { getCollection } from 'astro:content';
+import { getPlayers } from '../lib/players';
 import { getSortedNews } from '../lib/news';
 import { MAIN_NAV, EXTRA_PAGES } from '../lib/nav';
 
@@ -11,7 +11,7 @@ export async function GET() {
     url: `/news/${a.id}/`,
     date: a.data.publishedAt.toISOString().slice(0, 10),
   }));
-  const players = (await getCollection('players')).map(p => ({
+  const players = (await getPlayers()).map(p => ({
     type: 'Player',
     title: p.data.name,
     text: `${p.data.position} #${p.data.number} ${p.data.nationality}`,

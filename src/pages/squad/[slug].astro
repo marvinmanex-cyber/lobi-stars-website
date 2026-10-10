@@ -1,11 +1,12 @@
 ---
+import { getPlayers } from '../../lib/players';
 import Layout from '../../layouts/Layout.astro';
 import NewsCarousel from '../../components/news/NewsCarousel.astro';
-import { getCollection, render } from 'astro:content';
+import { render } from 'astro:content';
 import { getSortedNews } from '../../lib/news';
 
 export async function getStaticPaths() {
-  const players = await getCollection('players');
+  const players = await getPlayers();
   const news = await getSortedNews();
   return players.map(player => {
     // Related news: stories that mention the player's name.
@@ -46,7 +47,7 @@ const stats = [
 ] as [string, number | null][];
 const hasStats = stats.some(([, v]) => (v ?? 0) > 0);
 ---
-<Layout title={`${p.name} | Lobi Stars Squad`} description={`${p.name}, ${position} (#${p.number}) for Lobi Stars FC: profile, appearances, goals and news.`} image={p.photo || undefined}>
+<Layout title={`${p.name} | Lobi Stars Squad`} description={`${p.name}, ${position} (#${p.number}) for Lobi Stars FC: profile, appearances, goals and news.`} image={p.photo || undefined} noindex={!!p.isSample}>
   <div class="wrap pl">
     <a class="pl-back" href="/squad">&larr; Back to the squad</a>
     {p.isSample && <p class="pl-sample" role="note"><strong>Sample profile.</strong> This shows how a player page will look and will be replaced with a real player.</p>}

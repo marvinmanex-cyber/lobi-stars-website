@@ -32,6 +32,11 @@ manager gives you once. Paste it in and the CMS remembers it on that device.
 
 ## 1. Add a news article
 
+> **Sample stories:** the site came with sample news stories (marked "Sample") so pages
+> weren't empty. They disappear automatically as soon as you publish your
+> first real story. You don't need to delete them.
+
+
 1. Log in, then click **Manage news**.
 2. Click **+ New article**. The news editor opens.
 3. Fill in:
@@ -115,6 +120,11 @@ can't be deleted, only hidden.
 ---
 
 ## 4. Add a player
+
+> **Sample players:** the squad came with sample players (marked "Sample"). They
+> disappear everywhere, including the squad page and Man of the Match voting,
+> as soon as you add your first real player. You don't need to delete them.
+
 
 1. Open the **Content CMS** and click **Squad / Players**, then **New**.
 2. Fill in the name, position, shirt number, and upload a **photo**. Portrait

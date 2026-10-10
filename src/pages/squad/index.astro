@@ -1,10 +1,11 @@
 ---
+import { getPlayers } from '../../lib/players';
 import Layout from '../../layouts/Layout.astro';
 import PersonCard from '../../components/PersonCard.astro';
 import { getCollection } from 'astro:content';
 import { CURRENT_SEASON } from '../../lib/site';
 
-const players = (await getCollection('players')).sort((a, b) => a.data.number - b.data.number);
+const players = (await getPlayers()).sort((a, b) => a.data.number - b.data.number);
 const coaches = (await getCollection('staff'))
   .filter(s => s.data.group === 'Coaching Staff')
   .sort((a, b) => a.data.order - b.data.order);

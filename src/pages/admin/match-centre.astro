@@ -1,10 +1,10 @@
 ---
+import { getPlayers } from '../../lib/players';
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
-import { getCollection } from 'astro:content';
 
 // Lobi Stars players for the matchday squad picker (MOTM voting uses only these).
-const roster = (await getCollection('players'))
+const roster = (await getPlayers())
   .sort((a, b) => a.data.number - b.data.number)
   .map(p => ({ slug: p.id, name: p.data.name, number: p.data.number, position: p.data.position, isSample: p.data.isSample }));
 ---
