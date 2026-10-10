@@ -3,10 +3,9 @@
 // functions/matches/[slug].js; the match itself is loaded from
 // /api/matches/<slug> in the browser.
 import Layout from '../layouts/Layout.astro';
-import matchday from '../data/matchday.json';
 ---
 <Layout title="Match Centre | Lobi Stars Football Club" description="Lobi Stars FC Match Centre: preview, line-ups, live updates, match report, stats and photos." noindex>
-  <div id="mc" class="mc" aria-live="polite" data-commentary={matchday.commentaryUrl}>
+  <div id="mc" class="mc" aria-live="polite" data-commentary="/commentary/">
     <div class="wrap mc-loading" id="mcStatus">Loading match&hellip;</div>
   </div>
 </Layout>
@@ -170,9 +169,9 @@ import matchday from '../data/matchday.json';
     } else if (root.dataset.commentary && !['full-time', 'cancelled', 'postponed'].includes(m.status)) {
       // Away games: live commentary only (no stream, voting or predictions).
       const cm = el('a', 'btn-p mc-live-btn', '🎧 Listen to live commentary') as HTMLAnchorElement;
-      cm.href = root.dataset.commentary; cm.target = '_blank'; cm.rel = 'noopener';
+      cm.href = root.dataset.commentary;
       cm.dataset.track = 'commentary_click'; cm.dataset.trackLabel = m.slug;
-      cm.setAttribute('aria-label', 'Listen to live commentary (opens in a new tab)');
+      cm.setAttribute('aria-label', 'Listen live on Lobi Stars FC Live');
       const wrapLive = el('div', 'mc-live-wrap'); wrapLive.append(cm);
       inner.append(wrapLive);
     }

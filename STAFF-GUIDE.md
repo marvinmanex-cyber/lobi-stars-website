@@ -238,7 +238,10 @@ a green ▲ means up, a red ▼ means down.
 - **Latest sign-ups:** first name and source only. Full details are only in
   the Fan database.
 - **Matchday:** for each home game, visitors to its live page and clicks on
-  Watch Live and commentary. MOTM votes and predictions appear once those
+  Watch Live and commentary.
+- **Lobi Stars FC Live (commentary):** for each match with commentary: listens
+  (presses of Play), unique listeners, average listening time and peak
+  listeners. **Broadcast Report (CSV)** downloads these figures. MOTM votes and predictions appear once those
   features are switched on.
 - **Partners:** impressions (page views, because every page shows every
   partner logo in the footer), clicks to each partner's website and click
@@ -294,6 +297,55 @@ temporary password), turns **Can export fan data** on or off, resets
 passwords and deactivates people who leave. **Import existing records** (on
 the Fan database page) pulls older records into the database; it is safe to
 press again.
+
+---
+
+## 9. Lobi Stars FC Live (live match commentary)
+
+Fans listen to live commentary of every Lobi Stars match on
+**lobistarsfc.com/commentary**, in the Commentary tab of Matchday Live, and
+from the **Listen Live** button on the homepage LIVE banner. It is branded
+**Lobi Stars FC Live** everywhere. Fans never leave our website.
+
+### Switch commentary on or off (whole site)
+**Admin → Commentary** → tick or untick **Lobi Stars FC Live is switched on** →
+**Save settings**. Fans see the change within a few seconds. When it's off,
+the player shows "Off air".
+
+### Set it up for each match
+**Admin → Manage matches** → **Edit** the match:
+- **Live commentary available for this match** is ticked by default (home and away games).
+- **Commentary starts:** leave blank to start **15 minutes before kick-off**,
+  or set an exact time.
+
+Fans can only listen from the commentary start time until **15 minutes after
+full time**. Outside that the player says "Off air" and doesn't connect.
+Press **End Match** in Match Centre as usual at the final whistle; if nobody
+does, commentary ends automatically 2 hours 30 minutes after kick-off.
+
+### Test the stream (do this before every match)
+**Admin → Commentary** → **Test stream**. Each line says **working ✓** or
+**not working ✗**. If it's not working, contact the broadcast partner.
+
+### Other settings
+- **Public stream address:** the Lobi Stars address fans' players connect to
+  (e.g. `https://stream.lobistarsfc.com/live`, or `/live/commentary`). Only
+  lobistarsfc.com addresses are accepted. Leave blank to use the default.
+- **Backup stream address:** optional. The player switches to it if the main
+  stream fails twice.
+- **Commentators:** optional names shown on the player.
+- **Maximum listeners:** only for the website relay; extra listeners see "full, try again".
+
+### Check listener numbers
+**Admin → Commentary → Right now** shows **Live listeners** (updated every 30
+seconds) and the **peak** for the current match. After matches, see the
+**Lobi Stars FC Live** panel on **Admin → Analytics**, or download the
+**Broadcast Report (CSV)**.
+
+### White-label rule
+Never put the broadcast partner's name, logo or web address on the
+commentary player or the commentary pages, and never link fans to an outside
+site for commentary. The partner still appears on the Partners page.
 
 ---
 

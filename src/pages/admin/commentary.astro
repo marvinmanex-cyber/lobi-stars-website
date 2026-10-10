@@ -1,0 +1,146 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Commentary | Lobi Stars Admin" description="Lobi Stars FC Live commentary settings." noindex whiteLabel>
+  <div class="wrap ac">
+    <AdminNav current="commentary" />
+    <div class="stag">Admin</div>
+    <h1 class="stitle">Lobi Stars FC <span class="r">Live</span></h1>
+    <p class="muted ac-lede">
+      Live match commentary on <a href="/commentary/" target="_blank" rel="noopener">lobistarsfc.com/commentary</a>. Fans can only listen during a match's
+      commentary window (from its commentary start time, normally 15 minutes before kick-off, until 15 minutes after full time).
+      Turn commentary on or off for each match, and set its start time, in <a href="/admin/matches">Manage matches</a>.
+    </p>
+    <p class="ac-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="panel ac-now" aria-labelledby="now-h">
+      <h2 id="now-h">Right now</h2>
+      <div class="ac-stats">
+        <div><span class="ac-k">On air</span><strong id="nowState">–</strong></div>
+        <div><span class="ac-k">Match</span><strong id="nowMatch">–</strong></div>
+        <div><span class="ac-k">Live listeners</span><strong id="nowListeners">0</strong></div>
+        <div><span class="ac-k">Peak this match</span><strong id="nowPeak">0</strong></div>
+      </div>
+      <p class="muted small">Listener numbers update every 30 seconds and count players that are playing (signed-in staff aren't counted).</p>
+    </section>
+
+    <form class="panel" id="form">
+      <h2>Settings</h2>
+      <label class="ac-check"><input type="checkbox" id="enabled" /> Lobi Stars FC Live is switched on</label>
+      <div class="form-grp">
+        <label class="form-lbl" for="streamUrl">Public stream address (what fans' players connect to)</label>
+        <input class="form-inp" id="streamUrl" placeholder="https://stream.lobistarsfc.com/live" />
+        <p class="muted small">Must be a lobistarsfc.com address, e.g. <code>https://stream.lobistarsfc.com/live</code>, or <code>/live/commentary</code> to use the website's own relay. Leave blank to use the server default.</p>
+      </div>
+      <div class="form-grp">
+        <label class="form-lbl" for="backupUrl">Backup stream address (optional)</label>
+        <input class="form-inp" id="backupUrl" placeholder="https://stream2.lobistarsfc.com/live" />
+      </div>
+      <div class="form-row">
+        <div class="form-grp"><label class="form-lbl" for="commentators">Commentators (optional, shown on the player)</label><input class="form-inp" id="commentators" placeholder="e.g. Terna Akaa & Ngozi Bello" /></div>
+        <div class="form-grp"><label class="form-lbl" for="maxListeners">Maximum listeners (relay only)</label><input class="form-inp" id="maxListeners" type="number" min="1" max="100000" /></div>
+      </div>
+      <p class="muted small" id="delivery"></p>
+      <div class="ac-actions">
+        <button type="submit" class="btn-p">Save settings</button>
+        <button type="button" class="btn-o" id="testBtn">Test stream</button>
+      </div>
+      <div id="testOut" class="ac-test" aria-live="polite"></div>
+    </form>
+
+    <section class="panel">
+      <h2>Broadcast report</h2>
+      <p class="muted small">Listens, unique listeners, average listening time and peak listeners for each match. Also shown on the <a href="/admin/analytics">Analytics</a> page.</p>
+      <div class="ac-actions">
+        <a class="btn-o" href="/api/admin/broadcast-report?range=30d">Last 30 days (CSV)</a>
+        <a class="btn-o" href="/api/admin/broadcast-report?range=season">This season (CSV)</a>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .ac { max-width: 980px; padding-top: 40px; padding-bottom: 90px; }
+  .ac-lede { max-width: 760px; margin-bottom: 18px; line-height: 1.6; }
+  .ac-lede a, .small a { color: var(--red-text); font-weight: 600; }
+  .ac-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
+  .ac-msg.ok { background: #E8F7EE; color: #17643A; } .ac-msg.err { background: #FDECEC; color: #A3161B; }
+  .panel { margin-bottom: 20px; }
+  .panel h2 { margin: 0 0 14px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ac-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+  .ac-stats > div { border: 1px solid var(--d4); border-radius: 10px; padding: 12px 14px; min-width: 0; }
+  .ac-k { display: block; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); margin-bottom: 6px; }
+  .ac-stats strong { font: 400 26px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; overflow-wrap: anywhere; }
+  .small { font-size: 14px; margin: 6px 0 0; }
+  .ac-check { display: flex; gap: 10px; align-items: center; font-weight: 700; margin: 0 0 16px; }
+  .ac-check input { width: 20px; height: 20px; accent-color: var(--red); }
+  .ac-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .ac-test { margin-top: 14px; }
+  .ac-test :global(p) { margin: 6px 0; padding: 10px 12px; border-radius: 8px; }
+  .ac-test :global(.ok) { background: #E8F7EE; color: #17643A; } .ac-test :global(.bad) { background: #FDECEC; color: #A3161B; }
+  code { background: var(--d3); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'ac-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
+  async function api(path, opts = {}) {
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code } });
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/commentary';
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  }
+  const STATE = { live: 'LIVE NOW', today: 'Later today', off: 'Off air' };
+  const DELIVERY = {
+    relay: 'Delivery: the website relays the partner feed (Option B). The partner address is kept secret on the server.',
+    'own-domain': 'Delivery: fans connect straight to the stream on our own domain (Option A).',
+    'not-set': 'Delivery: no stream address yet. Fans will see "Off air" until one is set.',
+  };
+  let filled = false;
+  async function load() {
+    try {
+      const d = await api('/api/admin/commentary');
+      $('nowState').textContent = d.settings.enabled ? (STATE[d.state] || d.state) : 'Switched off';
+      $('nowMatch').textContent = d.fixture ? `${d.fixture.home_team} vs ${d.fixture.away_team}` : '–';
+      $('nowListeners').textContent = d.listeners;
+      $('nowPeak').textContent = d.peak;
+      $('delivery').textContent = DELIVERY[d.delivery] + (d.relayConfigured ? '' : ' (The relay needs PARTNER_ORIGIN_STREAM_URL on the server.)');
+      if (!filled) {
+        $('enabled').checked = d.settings.enabled;
+        $('streamUrl').value = d.settings.streamUrl;
+        $('backupUrl').value = d.settings.backupUrl;
+        $('commentators').value = d.settings.commentators;
+        $('maxListeners').value = d.settings.maxListeners;
+        filled = true;
+      }
+    } catch (e) { msg(e.message, false); }
+  }
+  $('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      await api('/api/admin/commentary', { method: 'PUT', body: JSON.stringify({
+        enabled: $('enabled').checked, streamUrl: $('streamUrl').value, backupUrl: $('backupUrl').value,
+        commentators: $('commentators').value, maxListeners: $('maxListeners').value,
+      }) });
+      msg('Saved. Fans see the change within a few seconds.', true);
+      filled = false; load();
+    } catch (err) { msg(err.message, false); }
+  });
+  $('testBtn').addEventListener('click', async () => {
+    $('testBtn').disabled = true; $('testOut').innerHTML = '<p>Testing… (up to 8 seconds)</p>';
+    try {
+      const { results } = await api('/api/admin/commentary/test', { method: 'POST' });
+      $('testOut').innerHTML = results.map(r => `<p class="${r.ok ? 'ok' : 'bad'}"><strong>${esc(r.name)}:</strong> ` +
+        (r.ok ? `working ✓ (${esc(r.contentType)}, answered in ${r.ms} ms)` : `not working ✗ ${esc(r.error || `(status ${r.status}, ${esc(r.contentType || 'no audio')})`)}`) + '</p>').join('');
+    } catch (err) { $('testOut').innerHTML = `<p class="bad">${esc(err.message)}</p>`; }
+    $('testBtn').disabled = false;
+  });
+  load();
+  setInterval(load, 30000);
+})();
+</script>

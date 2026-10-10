@@ -1,0 +1,134 @@
+---
+// /commentary -- Lobi Stars FC Live: live match commentary played right here
+// on lobistarsfc.com (white-label: no partner branding on this page).
+import Layout from '../../layouts/Layout.astro';
+import LivePlayer from '../../components/commentary/LivePlayer.astro';
+---
+<Layout
+  title="Live Match Commentary | Lobi Stars FC"
+  description="Listen live to every Lobi Stars FC match with Lobi Stars FC Live: free live match commentary, right here on lobistarsfc.com."
+  image="/images/og-commentary.jpg"
+  imageAlt="Lobi Stars FC Live – live match commentary"
+  whiteLabel
+>
+  <section class="cm-hero">
+    <div class="cm-inner">
+      <p class="cm-kicker">Lobi Stars FC Live</p>
+      <h1 class="cm-title">Lobi Stars FC Live <span>– Match Commentary</span></h1>
+      <p class="cm-sub">Listen live to every Lobi Stars match, right here.</p>
+    </div>
+  </section>
+
+  <div class="cm-inner cm-body">
+    <LivePlayer variant="full" />
+    <p class="cm-data">Live audio uses about 30–60MB per hour. Use Wi-Fi if you can.</p>
+
+    <section class="cm-sec" aria-labelledby="cm-up">
+      <h2 class="cm-h2" id="cm-up">Upcoming Live Commentary</h2>
+      <ul class="cm-list" id="cmUpcoming"><li class="cm-empty">Loading…</li></ul>
+    </section>
+
+    <section class="cm-sec" aria-labelledby="cm-how">
+      <h2 class="cm-h2" id="cm-how">How to listen</h2>
+      <ol class="cm-steps">
+        <li><span class="cm-n">1</span><div><h3>Come back on matchday</h3><p>Commentary starts about 15 minutes before kick-off.</p></div></li>
+        <li><span class="cm-n">2</span><div><h3>Press play</h3><p>Tap the big red button. You always join live, right where the action is.</p></div></li>
+        <li><span class="cm-n">3</span><div><h3>Keep listening</h3><p>Lock your phone or use the pop-out player while you browse. The commentary keeps going.</p></div></li>
+      </ol>
+    </section>
+
+    <section class="cm-sec cm-share" aria-labelledby="cm-share">
+      <h2 class="cm-h2" id="cm-share">Tell other fans</h2>
+      <div class="cm-share-row" id="cmShare"></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .cm-hero { background: radial-gradient(120% 140% at 50% 0%, #7A0F12 0%, #2A0507 55%, #15181D 100%); color: #fff; padding: 48px 0 110px; text-align: center; }
+  .cm-inner { max-width: 820px; margin: 0 auto; padding: 0 5%; }
+  .cm-kicker { margin: 0; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2.5px; text-transform: uppercase; color: #FFC72C; }
+  .cm-title { margin: 12px 0; font: 400 clamp(38px, 6.4vw, 64px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; }
+  .cm-title span { color: #FFC72C; }
+  .cm-sub { margin: 0; font-size: 17px; color: rgba(255,255,255,.9); }
+  .cm-body { margin-top: -84px; padding-bottom: 70px; position: relative; }
+  .cm-data { margin: 12px 0 0; text-align: center; font-size: 13px; color: var(--lt); }
+  .cm-sec { margin-top: 42px; }
+  .cm-h2 { margin: 0 0 16px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .cm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .cm-list :global(li) { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border: 1px solid var(--d4); border-radius: 12px; background: #fff; }
+  .cm-list :global(.cm-empty) { color: var(--lt); border-style: dashed; }
+  .cm-list :global(.cm-teams) { font: 400 21px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .cm-list :global(.cm-when) { display: block; margin-top: 3px; font-size: 14px; color: var(--lt); font-family: 'Barlow', sans-serif; letter-spacing: 0; }
+  .cm-list :global(button) { border: 1px solid var(--d4); background: #fff; border-radius: 999px; padding: 8px 14px; cursor: pointer; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--white); }
+  .cm-list :global(button:hover), .cm-list :global(button:focus-visible) { border-color: var(--red); color: var(--red-text); }
+  .cm-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .cm-steps li { display: flex; gap: 14px; padding: 16px; border: 1px solid var(--d4); border-radius: 12px; background: #fff; }
+  .cm-n { flex: 0 0 36px; height: 36px; border-radius: 50%; background: var(--red); color: #fff; display: inline-flex; align-items: center; justify-content: center; font: 400 20px/1 'Bebas Neue', sans-serif; }
+  .cm-steps h3 { margin: 4px 0 6px; font: 700 16px/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .5px; }
+  .cm-steps p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--lt); }
+  .cm-share-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .cm-share-row :global(a), .cm-share-row :global(button) { padding: 10px 18px; border-radius: 999px; color: #fff; text-decoration: none; border: 0; cursor: pointer; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .cm-share-row :global(.wa) { background: #1B8A4B; } .cm-share-row :global(.x) { background: #15181D; } .cm-share-row :global(.fb) { background: #1565D8; } .cm-share-row :global(.cp) { background: var(--red); }
+  .cm-share-row :global(a:focus-visible), .cm-share-row :global(button:focus-visible) { outline: 3px solid #FFC72C; outline-offset: 2px; }
+</style>
+
+<script>
+  import { liveEngine, type LiveFixture } from '../../lib/livePlayer';
+  import { fmtDate, fmtTime } from '../../lib/matchUi';
+
+  const engine = liveEngine();
+  const list = document.getElementById('cmUpcoming')!;
+
+  // "Add to calendar" (.ics) for an upcoming commentary.
+  function ics(f: LiveFixture) {
+    const d = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const start = f.commentaryStart || f.event_date;
+    const end = new Date(new Date(f.event_date).getTime() + 2 * 3600e3).toISOString();
+    const body = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Lobi Stars FC//Lobi Stars FC Live//EN', 'BEGIN:VEVENT',
+      `UID:commentary-${f.id}@lobistarsfc.com`, `DTSTAMP:${d(new Date().toISOString())}`, `DTSTART:${d(start)}`, `DTEND:${d(end)}`,
+      `SUMMARY:Lobi Stars FC Live: ${f.home_team} vs ${f.away_team}`,
+      'DESCRIPTION:Live match commentary at https://lobistarsfc.com/commentary', 'URL:https://lobistarsfc.com/commentary',
+      'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([body], { type: 'text/calendar' })), download: `lobi-stars-fc-live-${f.slug}.ics` });
+    document.body.append(a); a.click(); a.remove();
+  }
+
+  let lastKey = '';
+  engine.subscribe(() => {
+    const up = engine.info?.upcoming || [];
+    const key = up.map(u => u.id).join();
+    if (!engine.info || key === lastKey) return;
+    lastKey = key;
+    if (!up.length) { list.innerHTML = '<li class="cm-empty">No live commentary scheduled yet. Check the fixtures for the next match.</li>'; return; }
+    list.replaceChildren(...up.map(f => {
+      const li = document.createElement('li');
+      const t = document.createElement('div');
+      const teams = document.createElement('span'); teams.className = 'cm-teams'; teams.textContent = `${f.home_team} vs ${f.away_team}`;
+      const when = document.createElement('span'); when.className = 'cm-when';
+      when.textContent = `${fmtDate(f.event_date)} · Kick-off ${fmtTime(f.event_date)} · Commentary from ${fmtTime(f.commentaryStart || f.event_date)}`;
+      t.append(teams, when);
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = '📅 Add to calendar';
+      b.setAttribute('aria-label', `Add ${f.home_team} vs ${f.away_team} commentary to your calendar`);
+      b.addEventListener('click', () => ics(f));
+      li.append(t, b);
+      return li;
+    }));
+  });
+
+  // Share buttons.
+  const text = 'Listening to Lobi Stars FC Live at lobistarsfc.com/commentary';
+  const url = 'https://lobistarsfc.com/commentary';
+  const share = document.getElementById('cmShare')!;
+  const add = (label: string, href: string, cls: string) => {
+    const a = Object.assign(document.createElement('a'), { href, textContent: label, className: cls, target: '_blank', rel: 'noopener' });
+    a.setAttribute('aria-label', `Share on ${label} (opens in a new tab)`);
+    share.append(a);
+  };
+  add('WhatsApp', `https://wa.me/?text=${encodeURIComponent(text)}`, 'wa');
+  add('X', `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, 'x');
+  add('Facebook', `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, 'fb');
+  const copy = Object.assign(document.createElement('button'), { type: 'button', textContent: 'Copy link', className: 'cp' });
+  copy.addEventListener('click', async () => { try { await navigator.clipboard.writeText(url); copy.textContent = 'Link copied'; } catch { copy.textContent = url; } });
+  share.append(copy);
+</script>

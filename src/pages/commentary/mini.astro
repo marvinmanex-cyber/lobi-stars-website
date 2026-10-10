@@ -1,0 +1,14 @@
+---
+// /commentary/mini -- the pop-out Lobi Stars FC Live player (opened from
+// /commentary in a small window so fans can keep listening while browsing).
+import Layout from '../../layouts/Layout.astro';
+import LivePlayer from '../../components/commentary/LivePlayer.astro';
+---
+<Layout title="Lobi Stars FC Live" description="Lobi Stars FC Live mini player." noindex bare>
+  <LivePlayer variant="mini" popout={false} />
+</Layout>
+
+<style is:global>
+  html, body { background: #15181D; }
+  .toast { display: none; }
+</style>

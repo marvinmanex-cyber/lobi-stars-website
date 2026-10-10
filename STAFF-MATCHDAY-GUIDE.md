@@ -2,8 +2,8 @@
 
 This guide covers everything staff do for a **Lobi Stars home game** on the
 website: the stream, the squad, Kick-off and Full-time, Man of the Match
-voting and Predict & Win. Away games only need the score (fans get the live
-commentary link automatically).
+voting and Predict & Win. Away games only need the score (they can still have
+live commentary on Lobi Stars FC Live).
 
 Sign in at **https://lobistarsfc.com/admin/login** with your own staff email
 and password (the owner can use the admin code). All times on the website use
@@ -19,7 +19,7 @@ the Match Centre) with four tabs:
 | Tab | What it does | When |
 |---|---|---|
 | **Watch Live** | Plays the YouTube or Facebook stream; afterwards it becomes the "Full match replay" | Stream starts at kick-off |
-| **Commentary** | Opens Aeson Sports Radio live commentary | Any time |
+| **Commentary** | Plays Lobi Stars FC Live commentary right on the page (same player as lobistarsfc.com/commentary) | From the commentary start time (normally 15 min before kick-off) until 15 min after full time |
 | **Vote MOTM** | Fans vote for the Lobi Stars Man of the Match | Kick-off to full time |
 | **Predict & Win** | Fans predict the exact score; earliest correct prediction wins ₦10,000 | 24 hours before kick-off until kick-off |
 
@@ -40,7 +40,12 @@ Fans need a free fan account with a confirmed email to vote or predict.
    link** and/or the **Facebook live link** for this game and press **Save**.
    Leave them empty to show links to the official channels instead.
    - Only YouTube and Facebook links are accepted.
-5. Predict & Win opens automatically **24 hours before kick-off**. Fans who
+5. **Live commentary:** in **Admin → Manage matches**, edit the match and check
+   *Live commentary available for this match* is ticked. Change *Commentary
+   starts* only if it shouldn't start 15 minutes before kick-off. This works
+   for home **and** away games. On the day, press **Test stream** on
+   **Admin → Commentary** (see STAFF-GUIDE.md, section 9).
+6. Predict & Win opens automatically **24 hours before kick-off**. Fans who
    said yes to news and offers get a "Predictions are now open" email (once
    the email service is set up).
 
@@ -158,9 +163,12 @@ exported files private and delete them when you no longer need them.
    noreply@lobistarsfc.com) so confirmation, winner and reminder emails are sent.
 2. **Turnstile:** add the Cloudflare Turnstile keys for the human check on sign-up.
 3. **Stream channels:** confirm the YouTube/Facebook channels for Lobi Stars
-   streams (currently the Aeson channels).
+   streams (the Watch Live fallback links currently point to the partner's channels).
 4. **Legal review:** Predict & Win terms (cash prize promotions may need
    regulatory approval), the Privacy Policy and the website Terms of Use, all marked DRAFT. The terms
    also include points to confirm: the prize is for the score at the end of
    normal time, and winners may be asked for ID.
 5. **Players:** add the real squad with photos in the CMS (voting uses them).
+6. **Lobi Stars FC Live stream:** choose the delivery option and finish the
+   partner and DNS setup (see COMMENTARY-STREAM-SETUP.md), then add the stream
+   address on Admin → Commentary.

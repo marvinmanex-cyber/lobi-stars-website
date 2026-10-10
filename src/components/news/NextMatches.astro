@@ -1,9 +1,8 @@
 ---
 // Upcoming First Team fixtures, loaded in the browser from /api/events
 // (the same source as the ticket shop and match countdown).
-import matchday from '../../data/matchday.json';
 ---
-<section class="nm" aria-labelledby="nm-title" data-next-matches data-commentary={matchday.commentaryUrl}>
+<section class="nm" aria-labelledby="nm-title" data-next-matches data-commentary="/commentary/">
   <div class="nm-inner">
     <div class="nm-head">
       <h2 class="nm-title" id="nm-title">Next Matches</h2>
@@ -159,11 +158,11 @@ import matchday from '../../data/matchday.json';
       links.append(ml);
     }
     if (commentaryUrl) {
-      // Live commentary (home AND away games) on Aeson Sports Radio (opens in a new tab).
+      // Lobi Stars FC Live commentary (home AND away games), played on our own /commentary page.
       const ll = el('a', 'nm-link nm-link--listen', '🎧 Listen Live') as HTMLAnchorElement;
-      ll.href = commentaryUrl; ll.target = '_blank'; ll.rel = 'noopener';
+      ll.href = commentaryUrl;
       ll.dataset.track = 'commentary_click'; ll.dataset.trackLabel = slug;
-      ll.setAttribute('aria-label', `Listen to live commentary: Lobi Stars FC vs ${opponent} (opens in a new tab)`);
+      ll.setAttribute('aria-label', `Listen live to Lobi Stars FC vs ${opponent} on Lobi Stars FC Live`);
       links.append(ll);
     }
 

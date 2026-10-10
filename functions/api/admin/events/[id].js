@@ -1,5 +1,6 @@
 import { requireAdmin, parseEventPayload } from '../../_lib/adminEvents.js';
 import { ensureTable } from '../../_lib/matchCentre.js';
+import { ensureCommentarySchema } from '../../_lib/commentary.js';
 
 // PUT /api/admin/events/:id -- overwrite a match's details.
 export async function onRequestPut({ request, env, params }) {
@@ -22,15 +23,17 @@ export async function onRequestPut({ request, env, params }) {
   if (parsed.error) return Response.json({ error: parsed.error }, { status: 400 });
   const e = parsed.value;
 
+  await ensureCommentarySchema(env.DB);
   await env.DB.prepare(
     `UPDATE events SET
        home_team = ?, away_team = ?, competition = ?, event_date = ?, venue = ?,
        vip_price_kobo = ?, premium_price_kobo = ?, regular_price_kobo = ?, active = ?,
-       programme_url = ?, is_home = ?
+       programme_url = ?, is_home = ?, commentary_enabled = ?, commentary_start_at = ?
      WHERE id = ?`
   ).bind(
     e.home_team, e.away_team, e.competition, e.event_date, e.venue,
-    e.vip_price_kobo, e.premium_price_kobo, e.regular_price_kobo, e.active, e.programme_url, e.is_home, id
+    e.vip_price_kobo, e.premium_price_kobo, e.regular_price_kobo, e.active, e.programme_url, e.is_home,
+    e.commentary_enabled, e.commentary_start_at, id
   ).run();
 
   return Response.json({ ok: true });

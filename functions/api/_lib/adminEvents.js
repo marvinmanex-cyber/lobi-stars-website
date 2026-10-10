@@ -37,6 +37,14 @@ export function parseEventPayload(body) {
   const venue = str(b.venue);
   const event_date = str(b.event_date);
   const programme_url = str(b.programme_url).slice(0, 300) || null;
+  // Lobi Stars FC Live: commentary on by default; start time blank = 15 minutes before kick-off.
+  const commentary_enabled = b.commentary_enabled === false ? 0 : 1;
+  let commentary_start_at = null;
+  if (str(b.commentary_start_at)) {
+    const cs = new Date(str(b.commentary_start_at));
+    if (Number.isNaN(cs.getTime())) return { error: 'Commentary start time is not a valid date/time.' };
+    commentary_start_at = cs.toISOString();
+  }
 
   if (!home_team || !away_team || !venue || !event_date) {
     return { error: 'Home team, away team, venue and date are all required.' };
@@ -68,6 +76,8 @@ export function parseEventPayload(body) {
       programme_url,
       // null = decide from the home team name; true/false = set by staff.
       is_home: b.is_home === true ? 1 : b.is_home === false ? 0 : null,
+      commentary_enabled,
+      commentary_start_at,
     },
   };
 }

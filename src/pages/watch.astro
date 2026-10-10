@@ -1,91 +1,172 @@
 ---
-// /watch -- live streams of upcoming Lobi Stars home games and full match
-// replays. Each match links to its Matchday Live "Watch" tab. Match status
-// comes from the server (/api/matches).
+// /watch -- Watch Live: where to watch Lobi Stars home games, the streaming
+// schedule, the last result and full match replays. Each match links to its
+// Matchday Live "Watch" tab. Match status comes from the server (/api/matches).
 import Layout from '../layouts/Layout.astro';
+import MatchesTabs from '../components/MatchesTabs.astro';
 import settings from '../data/matchday.json';
+import site from '../data/site.json';
+const whatsappChannel = site.social.whatsappChannel;
 ---
-<Layout title="Watch Live | Lobi Stars Football Club" description="Watch Lobi Stars home games live and catch up on full match replays.">
-  <div class="page-hero wrap">
-    <div class="stag">Lobi Stars TV</div>
-    <h1 class="stitle">Watch <span class="r">Live</span></h1>
-    <div class="divr"></div>
-    <p class="wl-lede">Lobi Stars home games streamed live, then kept here as full match replays. The video only loads when you press play, to save your data.</p>
+<Layout title="Watch Live | Lobi Stars Football Club" description="Watch Lobi Stars FC home games live on YouTube and Facebook, see the streaming schedule and catch up on full match replays.">
+  <div class="wrap"><MatchesTabs current="watch" /></div>
+
+  <section class="wv-hero">
+    <div class="wv-inner">
+      <p class="wv-kicker">Lobi Stars Football Club</p>
+      <h1 class="wv-title">Watch <span>Live</span></h1>
+      <p class="wv-tag">Every Lobi Stars home game, streamed live from McCarthy Stadium.</p>
+
+      <h2 class="wv-label">Where to watch</h2>
+      <div class="wv-where">
+        {settings.youtubeChannel && (
+          <a class="wv-plat" href={settings.youtubeChannel} target="_blank" rel="noopener" data-track="watch_play" data-track-label="channel-youtube" aria-label="Watch on YouTube (opens in a new tab)">
+            <svg viewBox="0 0 48 34" aria-hidden="true"><rect width="48" height="34" rx="9" fill="#FF0000"/><path d="M19 9.5v15l13-7.5z" fill="#fff"/></svg>
+            <span>YouTube</span>
+          </a>
+        )}
+        {settings.facebookPage && (
+          <a class="wv-plat" href={settings.facebookPage} target="_blank" rel="noopener" data-track="watch_play" data-track-label="channel-facebook" aria-label="Watch on Facebook (opens in a new tab)">
+            <svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#1877F2"/><path d="M22.2 32V21.6h3.5l.5-4.1h-4v-2.6c0-1.2.3-2 2-2h2.2V9.3c-.4 0-1.7-.2-3.2-.2-3.1 0-5.2 1.9-5.2 5.4v3H14.5v4.1H18V32h4.2z" fill="#fff"/></svg>
+            <span>Facebook</span>
+          </a>
+        )}
+      </div>
+      <p class="wv-note">The video only loads when you press play, to save your data. Can't watch? <a href="/commentary/">Listen live on Lobi Stars FC Live &rarr;</a></p>
+    </div>
+  </section>
+
+  <div class="wrap wv-body">
+    <section aria-labelledby="wv-sched">
+      <h2 class="wv-label wv-left" id="wv-sched">Streaming schedule</h2>
+      <div class="wv-list" id="wlUp"><p class="wv-empty">Loading&hellip;</p></div>
+    </section>
+
+    <div class="wv-last" id="wlLast" hidden></div>
+
+    <section aria-labelledby="wv-rp" id="wlRpSec" hidden>
+      <h2 class="wv-label wv-left" id="wv-rp">Full match replays</h2>
+      <div class="wv-grid" id="wlRp"></div>
+    </section>
   </div>
 
-  <div class="page-content wrap wl" id="wl">
-    <section aria-labelledby="wl-up">
-      <h2 class="wl-h" id="wl-up">Live &amp; upcoming</h2>
-      <div class="wl-grid" id="wlUp"><p class="muted">Loading&hellip;</p></div>
-    </section>
-    <section aria-labelledby="wl-rp">
-      <h2 class="wl-h" id="wl-rp">Full match replays</h2>
-      <div class="wl-grid" id="wlRp"><p class="muted">Loading&hellip;</p></div>
-    </section>
-    <section class="wl-ch" aria-labelledby="wl-ch">
-      <h2 class="wl-h" id="wl-ch">Official channels</h2>
-      <p class="muted">Subscribe so you never miss a stream.</p>
-      <div class="wl-acts">
-        {settings.youtubeChannel && <a class="btn-p" href={settings.youtubeChannel} target="_blank" rel="noopener" data-track="watch_play" data-track-label="channel-youtube">YouTube</a>}
-        {settings.facebookPage && <a class="btn-o" href={settings.facebookPage} target="_blank" rel="noopener" data-track="watch_play" data-track-label="channel-facebook">Facebook</a>}
-        <a class="btn-o" href="/video">More club videos</a>
+  {whatsappChannel && (
+    <section class="wv-wa" aria-label="WhatsApp channel">
+      <div class="wrap wv-wa-inner">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><path fill="#fff" d="M13.6 2.3A7.9 7.9 0 0 0 8 0C3.6 0 .1 3.6.1 7.9c0 1.4.4 2.8 1.1 4L0 16l4.2-1.1a7.9 7.9 0 0 0 3.8 1C12.4 15.9 16 12.3 16 7.9c0-2.1-.8-4.1-2.4-5.6zM8 14.5c-1.2 0-2.4-.3-3.4-.9l-.2-.1-2.5.6.7-2.4-.2-.3a6.6 6.6 0 0 1-1-3.5C1.4 4.3 4.4 1.3 8 1.3c1.8 0 3.4.7 4.7 1.9a6.6 6.6 0 0 1 1.9 4.7c0 3.6-3 6.6-6.6 6.6z"/></svg>
+        <div><strong>Join the Lobi Stars WhatsApp channel</strong><span>Match updates, highlights and behind-the-scenes content, straight to your phone.</span></div>
+        <a class="wv-wa-btn" href={whatsappChannel} target="_blank" rel="noopener" data-track="whatsapp_click" data-track-label="channel">Join WhatsApp channel</a>
       </div>
     </section>
-  </div>
+  )}
 </Layout>
 
 <style>
-  .wl-lede { max-width: 640px; color: var(--lt); line-height: 1.65; margin: 14px 0 0; }
-  .wl { padding-bottom: 80px; }
-  .wl section { margin-bottom: 40px; }
-  .wl-h { margin: 0 0 16px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .wl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-  .wl-grid :global(.wl-card) { display: flex; flex-direction: column; gap: 10px; padding: 20px; border: 1px solid var(--d4); border-radius: 14px; background: #fff; text-decoration: none; color: var(--white); transition: border-color .15s, transform .15s; }
-  .wl-grid :global(.wl-card:hover), .wl-grid :global(.wl-card:focus-visible) { border-color: var(--red); transform: translateY(-2px); outline: none; }
-  .wl-grid :global(.wl-top) { display: flex; justify-content: space-between; align-items: center; gap: 8px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); }
-  .wl-grid :global(.wl-badge) { padding: 5px 9px; border-radius: 20px; background: var(--d3); color: var(--white); }
-  .wl-grid :global(.wl-badge.live) { background: var(--red); color: #fff; }
-  .wl-grid :global(.wl-teams) { display: flex; align-items: center; gap: 10px; font: 400 24px/1.05 'Bebas Neue', sans-serif; letter-spacing: .5px; }
-  .wl-grid :global(.wl-teams .crest), .wl-grid :global(.wl-teams .crest--initials) { width: 36px; height: 36px; border-radius: 50%; object-fit: contain; flex: 0 0 36px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; background: var(--d3); }
-  .wl-grid :global(.wl-when) { color: var(--lt); font-size: 15px; }
-  .wl-grid :global(.wl-go) { margin-top: auto; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--red-text); }
-  .wl-ch p { margin: 0 0 16px; }
-  .wl-acts { display: flex; flex-wrap: wrap; gap: 10px; }
+  .wv-hero { text-align: center; padding: 48px 0 40px; }
+  .wv-inner { max-width: 820px; margin: 0 auto; padding: 0 5%; }
+  .wv-kicker { margin: 0; font: 700 14px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 2.5px; text-transform: uppercase; color: var(--red-text); }
+  .wv-title { margin: 10px 0 12px; font: 400 clamp(52px, 9vw, 84px)/.9 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .wv-title span { color: var(--red-text); }
+  .wv-tag { margin: 0; font-size: clamp(17px, 2.2vw, 20px); color: var(--lt); }
+  .wv-label { margin: 40px 0 18px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 4px; text-transform: uppercase; color: var(--gold-text); }
+  .wv-left { text-align: left; margin-top: 10px; }
+  .wv-where { display: flex; justify-content: center; gap: 28px; flex-wrap: wrap; }
+  .wv-plat { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 26px; border-radius: 16px; border: 1px solid var(--d4); background: #fff; text-decoration: none; color: var(--white);
+    font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; transition: transform .15s, border-color .15s, box-shadow .15s; }
+  .wv-plat svg { width: 64px; height: 64px; }
+  .wv-plat:hover, .wv-plat:focus-visible { transform: translateY(-3px); border-color: var(--red); box-shadow: 0 10px 24px rgba(0,0,0,.08); outline: none; }
+  .wv-note { margin: 22px 0 0; font-size: 14px; color: var(--lt); }
+  .wv-note a { color: var(--red-text); font-weight: 700; }
+  .wv-body { padding-bottom: 64px; max-width: 1100px; }
+  .wv-empty { margin: 0; color: var(--lt); }
+  .wv-list { display: grid; gap: 12px; }
+  .wv-list :global(.wv-item) { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; padding: 16px 18px; border: 1px solid var(--d4); border-radius: 14px; background: #fff; }
+  .wv-list :global(.wv-date) { text-align: center; min-width: 64px; padding: 8px 6px; border-radius: 10px; background: var(--d3); }
+  .wv-list :global(.wv-date b) { display: block; font: 400 30px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .wv-list :global(.wv-date span) { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .wv-list :global(.wv-teams) { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; min-width: 0; }
+  .wv-list :global(.wv-teams .crest), .wv-list :global(.wv-teams .crest--initials) { width: 32px; height: 32px; border-radius: 50%; object-fit: contain; display: inline-flex; align-items: center; justify-content: center; background: var(--d3); font-size: 12px; }
+  .wv-list :global(.wv-meta) { display: block; margin-top: 4px; font-size: 14px; color: var(--lt); }
+  .wv-list :global(.wv-live) { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; background: var(--red); color: #fff; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .wv-list :global(.wv-live::before) { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: wvp 1.2s infinite; }
+  @keyframes wvp { 50% { opacity: .25; } }
+  .wv-list :global(.wv-acts) { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .wv-list :global(.wv-acts a) { padding: 10px 16px; font-size: 13px; letter-spacing: 1.2px; }
+  .wv-last { margin: 34px 0 10px; padding: 22px 24px; border: 1px solid var(--d4); border-radius: 14px; background: #fff; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .wv-last :global(.wv-last-k) { display: block; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: var(--gold-text); margin-bottom: 6px; }
+  .wv-last :global(strong) { font: 400 clamp(24px, 3.4vw, 34px)/1.05 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .wv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .wv-grid :global(a) { display: flex; flex-direction: column; gap: 8px; padding: 18px; border: 1px solid var(--d4); border-radius: 14px; background: #fff; text-decoration: none; color: var(--white); transition: border-color .15s, transform .15s; }
+  .wv-grid :global(a:hover), .wv-grid :global(a:focus-visible) { border-color: var(--red); transform: translateY(-2px); outline: none; }
+  .wv-grid :global(.wv-rp-score) { font: 400 24px/1.1 'Bebas Neue', sans-serif; }
+  .wv-grid :global(.wv-rp-meta) { font-size: 14px; color: var(--lt); }
+  .wv-grid :global(.wv-rp-go) { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--red-text); }
+  .wv-wa { background: #1B8A4B; color: #fff; padding: 26px 0; }
+  .wv-wa-inner { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .wv-wa-inner svg { width: 34px; height: 34px; flex-shrink: 0; }
+  .wv-wa-inner div { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 4px; }
+  .wv-wa-inner strong { font: 700 16px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .wv-wa-btn { background: #fff; color: #145F36; padding: 12px 22px; border-radius: 999px; text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  @media (max-width: 640px) {
+    .wv-list :global(.wv-item) { grid-template-columns: auto 1fr; }
+    .wv-list :global(.wv-acts) { grid-column: 1 / -1; justify-content: stretch; }
+    .wv-list :global(.wv-acts a) { flex: 1; text-align: center; }
+    .wv-where { gap: 14px; }
+    .wv-plat { padding: 14px 20px; }
+    .wv-plat svg { width: 52px; height: 52px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .wv-list :global(.wv-live::before) { animation: none; } }
 </style>
 
 <script>
-  import { crest, fmtDate, fmtTime, hasScore } from '../lib/matchUi';
+  import { crest, fmtTime, hasScore } from '../lib/matchUi';
   type M = { slug: string; home_team: string; away_team: string; event_date: string; is_home: boolean; status: string;
     home_score: number | null; away_score: number | null; has_stream: boolean };
 
-  const up = document.getElementById('wlUp')!, rp = document.getElementById('wlRp')!;
-  const card = (m: M, kind: 'up' | 'replay') => {
-    const a = document.createElement('a');
-    a.className = 'wl-card';
-    a.href = `/matches/${m.slug}/live#watch`;
-    const live = m.status === 'live' || m.status === 'half-time';
-    const top = document.createElement('div'); top.className = 'wl-top';
-    const badge = document.createElement('span');
-    badge.className = `wl-badge${live ? ' live' : ''}`;
-    badge.textContent = live ? '● Live now' : kind === 'replay' ? 'Replay' : m.has_stream ? 'Stream ready' : 'Upcoming';
-    top.append(fmtDate(m.event_date), badge);
-    const teams = document.createElement('div'); teams.className = 'wl-teams';
-    const score = kind === 'replay' && hasScore(m) ? ` ${m.home_score}–${m.away_score} ` : ' vs ';
-    teams.append(crest(m.home_team, 36), `${m.home_team}${score}${m.away_team}`);
-    const when = document.createElement('div'); when.className = 'wl-when';
-    when.textContent = kind === 'replay' ? 'Full match replay' : live ? 'Streaming now' : `Live stream from kick-off, ${fmtTime(m.event_date)}`;
-    const go = document.createElement('span'); go.className = 'wl-go';
-    go.textContent = kind === 'replay' ? 'Watch replay →' : live ? 'Watch live →' : 'Go to Matchday Live →';
-    a.append(top, teams, when, go);
-    return a;
-  };
-  const empty = (box: HTMLElement, text: string) => { const p = document.createElement('p'); p.className = 'muted'; p.textContent = text; box.replaceChildren(p); };
+  const up = document.getElementById('wlUp')!, rp = document.getElementById('wlRp')!, last = document.getElementById('wlLast')!;
+  const el = <K extends keyof HTMLElementTagNameMap>(tag: K, cls = '', text?: string) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+  const link = (href: string, text: string, cls: string) => Object.assign(el('a', cls, text), { href });
+  const day = (iso: string, opts: Intl.DateTimeFormatOptions) => new Date(iso).toLocaleDateString('en-GB', { ...opts, timeZone: 'Africa/Lagos' });
+  const isLive = (m: M) => m.status === 'live' || m.status === 'half-time';
+
+  function item(m: M) {
+    const row = el('div', 'wv-item');
+    const date = el('div', 'wv-date');
+    date.append(el('b', '', day(m.event_date, { day: 'numeric' })), el('span', '', day(m.event_date, { month: 'short' })));
+    const mid = el('div');
+    const teams = el('div', 'wv-teams');
+    teams.append(crest(m.home_team, 32), `${m.home_team} vs ${m.away_team}`);
+    if (isLive(m)) teams.append(el('span', 'wv-live', 'Live now'));
+    mid.append(teams, el('span', 'wv-meta', isLive(m) ? 'Streaming now' : `${day(m.event_date, { weekday: 'long' })} · Live from kick-off, ${fmtTime(m.event_date)}`));
+    const acts = el('div', 'wv-acts');
+    acts.append(link(`/matches/${m.slug}/live#watch`, isLive(m) ? '▶ Watch live' : '▶ Watch', 'btn-p'), link('/commentary/', '🎧 Listen', 'btn-o'));
+    row.append(date, mid, acts);
+    return row;
+  }
 
   fetch('/api/matches').then(r => r.json()).then(({ matches }: { matches: M[] }) => {
     const home = matches.filter(m => m.is_home);
     const upcoming = home.filter(m => ['scheduled', 'live', 'half-time'].includes(m.status)).slice(0, 6);
-    const replays = home.filter(m => m.status === 'full-time' && m.has_stream).reverse().slice(0, 12);
-    upcoming.length ? up.replaceChildren(...upcoming.map(m => card(m, 'up'))) : empty(up, 'No home games scheduled at the moment. Check the fixtures for the next one.');
-    replays.length ? rp.replaceChildren(...replays.map(m => card(m, 'replay'))) : empty(rp, 'Full match replays will appear here after each home game.');
-  }).catch(() => { empty(up, 'Streams could not be loaded. Please try again.'); rp.replaceChildren(); });
+    upcoming.length ? up.replaceChildren(...upcoming.map(item)) : up.replaceChildren(el('p', 'wv-empty', 'No upcoming matches scheduled.'));
+
+    const finished = home.filter(m => m.status === 'full-time' && hasScore(m)).reverse();
+    if (finished[0]) {
+      const f = finished[0];
+      const t = el('div');
+      t.append(el('span', 'wv-last-k', 'Last result'), el('strong', '', `Final score: ${f.home_team} ${f.home_score} : ${f.away_score} ${f.away_team}`));
+      last.replaceChildren(t);
+      if (f.has_stream) last.append(link(`/matches/${f.slug}/live#watch`, '▶ Full match replay', 'btn-o'));
+      else last.append(link(`/matches/${f.slug}/`, 'Match report', 'btn-o'));
+      last.hidden = false;
+    }
+    const replays = finished.filter(m => m.has_stream).slice(0, 12);
+    if (replays.length) {
+      rp.replaceChildren(...replays.map(m => {
+        const a = link(`/matches/${m.slug}/live#watch`, '', '');
+        a.append(el('span', 'wv-rp-score', `${m.home_team} ${m.home_score}–${m.away_score} ${m.away_team}`), el('span', 'wv-rp-meta', day(m.event_date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })), el('span', 'wv-rp-go', 'Watch replay →'));
+        return a;
+      }));
+      document.getElementById('wlRpSec')!.hidden = false;
+    }
+  }).catch(() => { up.replaceChildren(el('p', 'wv-empty', 'The schedule could not be loaded. Please try again.')); });
 </script>

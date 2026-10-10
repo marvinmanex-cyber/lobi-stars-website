@@ -2,9 +2,12 @@
 import { FOOTER_TAGLINE, SOCIAL_LINKS } from '../lib/site';
 import PartnerLogo from './partners/PartnerLogo.astro';
 import { getPartners } from '../lib/partners';
-import matchday from '../data/matchday.json';
 
-const partners = await getPartners();
+interface Props { whiteLabel?: boolean }
+const { whiteLabel = false } = Astro.props;
+// On Lobi Stars FC Live pages the broadcast partner isn't shown (the commentary is white-label).
+const WHITE_LABEL_HIDDEN = ['aeson-sports-management'];
+const partners = (await getPartners()).filter(p => !(whiteLabel && WHITE_LABEL_HIDDEN.includes(p.id)));
 
 const columns = [
   { title: 'Club', links: [
@@ -13,7 +16,7 @@ const columns = [
   ] },
   { title: 'Matches', links: [
     ['Fixtures', '/fixtures'], ['Results', '/results'], ['League Table', '/table'],
-    ['Buy Tickets', '/tickets'], ['Watch Live', '/watch'], ['Match Commentary', matchday.commentaryUrl, 'external'], ['Man of the Match', '/man-of-the-match'], ['Predict & Win', '/predict-and-win'], ['Matchday Programme', '/programme'], ['In-Seat Food', '/food'],
+    ['Buy Tickets', '/tickets'], ['Watch Live', '/watch'], ['Match Commentary', '/commentary'], ['Man of the Match', '/man-of-the-match'], ['Predict & Win', '/predict-and-win'], ['Matchday Programme', '/programme'], ['In-Seat Food', '/food'],
   ] },
   { title: 'Fans', links: [
     ['News', '/news'], ['Video', '/video'], ['Squad', '/squad'], ['Gallery', '/gallery'],

@@ -51,6 +51,7 @@ export async function ensureAnalyticsSchema(db) {
 export const EVENT_NAMES = [
   'partner_click', 'commentary_click', 'watch_play', 'motm_vote', 'prediction_submit', 'ticket_purchase',
   'shop_click', 'programme_download', 'brochure_download', 'whatsapp_click',
+  'commentary_play', 'commentary_pause', 'commentary_error', 'commentary_heartbeat',
 ];
 
 const BOT_RE = /bot|crawl|spider|slurp|scrape|fetch|preview|headless|lighthouse|pagespeed|facebookexternalhit|whatsapp\/|telegrambot|embedly|bingpreview|python-|curl\/|wget|httpclient|monitor|uptime|axios|node-fetch|go-http/i;

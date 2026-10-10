@@ -1,10 +1,12 @@
 ---
-interface Props { current: 'fixtures' | 'results' | 'table' }
+interface Props { current: 'fixtures' | 'results' | 'table' | 'watch' | 'commentary' }
 const { current } = Astro.props;
 const tabs = [
   { id: 'fixtures', label: 'Fixtures', href: '/fixtures' },
   { id: 'results', label: 'Results', href: '/results' },
   { id: 'table', label: 'Table', href: '/table' },
+  { id: 'watch', label: 'Watch Live', href: '/watch' },
+  { id: 'commentary', label: 'Commentary', href: '/commentary' },
 ];
 ---
 <nav class="mt" aria-label="Matches">

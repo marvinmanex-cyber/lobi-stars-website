@@ -1,0 +1,234 @@
+---
+// Lobi Stars FC Live player. All copies on a page share one audio engine
+// (src/lib/livePlayer.ts), so only one can ever play.
+//   variant="full"    -- the main player card (/commentary, Matchday Live tab)
+//   variant="mini"    -- the pop-out window (/commentary/mini)
+//   variant="compact" -- just a "Listen Live" button (homepage LIVE banner)
+// forSlug: on a match page, only play that match's commentary.
+interface Props { variant?: 'full' | 'mini' | 'compact'; forSlug?: string; popout?: boolean }
+const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.props;
+---
+{variant === 'compact' ? (
+  <button type="button" class="lp-compact" data-live-player data-variant="compact" data-for-slug={forSlug} hidden aria-label="Listen live to Lobi Stars FC Live">
+    <span class="lp-c-icon" data-lp-icon aria-hidden="true"></span><span data-lp-label>Listen Live</span>
+  </button>
+) : (
+  <section class:list={['lp', `lp--${variant}`]} data-live-player data-variant={variant} data-for-slug={forSlug} aria-label="Lobi Stars FC Live player">
+    <div class="lp-top">
+      <span class="lp-brand"><img src="/images/icon-192.png" alt="" width="28" height="28" /> Lobi Stars FC Live</span>
+      <span class="lp-badge" data-lp-badge>Off air</span>
+    </div>
+
+    <div class="lp-main">
+      <button type="button" class="lp-play" data-lp-play aria-label="Play Lobi Stars FC Live" aria-pressed="false">
+        <span class="lp-play-icon" data-lp-icon aria-hidden="true"></span>
+      </button>
+      <div class="lp-info">
+        <p class="lp-status" data-lp-status role="status" aria-live="polite">Loading…</p>
+        <div class="lp-eq" data-lp-eq aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <p class="lp-comm" data-lp-comm hidden></p>
+      </div>
+    </div>
+
+    <div class="lp-match" data-lp-match hidden></div>
+
+    {variant === 'full' && (
+      <div class="lp-controls">
+        <div class="lp-vol" data-lp-volwrap>
+          <button type="button" class="lp-mute" data-lp-mute aria-label="Mute" aria-pressed="false">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path data-lp-waves d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <label class="sr-only" for="lp-volume">Volume</label>
+          <input id="lp-volume" class="lp-range" type="range" min="0" max="100" value="100" data-lp-volume />
+        </div>
+        {popout && <button type="button" class="lp-pop" data-lp-popout aria-label="Open the mini player in a small window">&#10697; Pop-out player</button>}
+      </div>
+    )}
+  </section>
+)}
+
+<style>
+  .lp { position: relative; border-radius: 18px; padding: 22px; color: #fff; overflow: hidden;
+    background: radial-gradient(130% 160% at 0% 0%, #7A0F12 0%, #2A0507 55%, #15181D 100%); box-shadow: 0 14px 40px rgba(0,0,0,.22); }
+  .lp-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .lp-brand { display: inline-flex; align-items: center; gap: 8px; font: 400 20px/1 'Bebas Neue', sans-serif; letter-spacing: 1.5px; color: #FFC72C; }
+  .lp-brand img { border-radius: 50%; background: #fff; }
+  .lp-badge { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.14);
+    font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.8px; text-transform: uppercase; white-space: nowrap; }
+  .lp-badge.live { background: var(--red); }
+  .lp-badge.live::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: lppulse 1.2s infinite; }
+  .lp-badge.today { background: #FFC72C; color: #15181D; }
+  @keyframes lppulse { 50% { opacity: .2; } }
+  .lp-main { display: flex; align-items: center; gap: 20px; }
+  .lp-play { flex: 0 0 auto; width: 92px; height: 92px; border-radius: 50%; border: 0; cursor: pointer; background: var(--red); position: relative;
+    box-shadow: 0 0 0 8px rgba(227,30,36,.25); transition: transform .15s, background .15s; }
+  .lp-play:hover { background: var(--rd); transform: scale(1.04); }
+  .lp-play:focus-visible { outline: 3px solid #FFC72C; outline-offset: 4px; }
+  .lp-play:disabled { opacity: .45; cursor: default; transform: none; box-shadow: none; }
+  .lp-play-icon, .lp-c-icon { position: absolute; inset: 0; margin: auto; width: 0; height: 0; border-style: solid; border-width: 17px 0 17px 28px; border-color: transparent transparent transparent #fff; transform: translateX(4px); }
+  .lp-play.is-playing .lp-play-icon, .lp-compact.is-playing .lp-c-icon { width: 26px; height: 30px; border: 0; transform: none; background: linear-gradient(90deg, #fff 0 9px, transparent 9px 17px, #fff 17px 26px); }
+  .lp-play.is-busy .lp-play-icon { width: 34px; height: 34px; border: 4px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; transform: none; animation: lpspin .9s linear infinite; background: none; }
+  @keyframes lpspin { to { transform: rotate(360deg); } }
+  .lp-info { min-width: 0; flex: 1; }
+  .lp-status { margin: 0 0 10px; font: 400 clamp(22px, 4vw, 30px)/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; }
+  .lp-comm { margin: 10px 0 0; font-size: 14px; color: rgba(255,255,255,.8); }
+  .lp-eq { display: flex; align-items: flex-end; gap: 4px; height: 34px; }
+  .lp-eq i { width: 6px; height: 20%; border-radius: 3px; background: rgba(255,255,255,.3); }
+  .lp-eq.on i { background: #FFC72C; animation: lpbar 1s ease-in-out infinite; }
+  .lp-eq.on i:nth-child(2) { animation-delay: .25s; } .lp-eq.on i:nth-child(3) { animation-delay: .5s; } .lp-eq.on i:nth-child(4) { animation-delay: .15s; }
+  .lp-eq.on i:nth-child(5) { animation-delay: .4s; } .lp-eq.on i:nth-child(6) { animation-delay: .1s; } .lp-eq.on i:nth-child(7) { animation-delay: .35s; }
+  @keyframes lpbar { 0%, 100% { height: 20%; } 50% { height: 100%; } }
+  .lp-match { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.15); }
+  .lp-match :global(.lpm-row) { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
+  .lp-match :global(.lpm-team) { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; font: 400 17px/1.05 'Bebas Neue', sans-serif; letter-spacing: .5px; min-width: 0; overflow-wrap: anywhere; }
+  .lp-match :global(.lpm-crest) { width: 46px; height: 46px; border-radius: 50%; object-fit: contain; background: #fff; padding: 2px; }
+  .lp-match :global(.lpm-crest--initials) { display: inline-flex; align-items: center; justify-content: center; color: #15181D; font: 400 18px/1 'Bebas Neue', sans-serif; }
+  .lp-match :global(.lpm-mid) { text-align: center; }
+  .lp-match :global(.lpm-score) { font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: 2px; }
+  .lp-match :global(.lpm-state) { display: block; margin-top: 4px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: #FFC72C; }
+  .lp-match :global(.lpm-meta) { margin: 10px 0 0; text-align: center; font-size: 13px; color: rgba(255,255,255,.8); }
+  .lp-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+  .lp-vol { display: flex; align-items: center; gap: 10px; }
+  .lp-mute { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .lp-mute svg { width: 22px; height: 22px; fill: currentColor; }
+  .lp-mute[aria-pressed='true'] [data-lp-waves] { display: none; }
+  .lp-mute:focus-visible, .lp-pop:focus-visible, .lp-range:focus-visible { outline: 3px solid #FFC72C; outline-offset: 2px; }
+  .lp-range { width: 140px; accent-color: #E31E24; }
+  .lp-pop { border: 1px solid rgba(255,255,255,.35); background: transparent; color: #fff; border-radius: 999px; padding: 8px 14px; cursor: pointer; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .lp--mini { border-radius: 0; min-height: 100vh; padding: 14px; box-shadow: none; }
+  .lp--mini .lp-top { margin-bottom: 10px; }
+  .lp--mini .lp-play { width: 64px; height: 64px; box-shadow: 0 0 0 5px rgba(227,30,36,.25); }
+  .lp--mini .lp-play-icon { border-width: 12px 0 12px 20px; }
+  .lp--mini .lp-status { font-size: 20px; margin-bottom: 6px; }
+  .lp--mini .lp-eq { height: 22px; }
+  .lp--mini .lp-match { margin-top: 10px; padding-top: 10px; }
+  .lp--mini .lp-match :global(.lpm-crest) { width: 30px; height: 30px; }
+  .lp--mini .lp-match :global(.lpm-score) { font-size: 24px; }
+  .lp--mini .lp-match :global(.lpm-team) { font-size: 14px; }
+  .lp--mini .lp-match :global(.lpm-meta) { display: none; }
+  .lp-compact { position: relative; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px 8px 36px; border-radius: 999px; border: 2px solid #fff; background: #fff; color: var(--rd);
+    cursor: pointer; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
+  .lp-compact .lp-c-icon { right: auto; left: 13px; border-width: 7px 0 7px 11px; border-color: transparent transparent transparent var(--red); transform: none; }
+  .lp-compact.is-playing .lp-c-icon { width: 12px; height: 14px; background: linear-gradient(90deg, var(--red) 0 4px, transparent 4px 8px, var(--red) 8px 12px); }
+  .lp-compact:focus-visible { outline: 3px solid #FFC72C; outline-offset: 2px; }
+  @media (max-width: 480px) {
+    .lp { padding: 18px; }
+    .lp-play { width: 76px; height: 76px; }
+    .lp-main { gap: 16px; }
+    .lp-range { width: 110px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .lp-eq.on i, .lp-badge.live::before, .lp-play.is-busy .lp-play-icon { animation: none; } .lp-eq.on i { height: 70%; } }
+</style>
+
+<script>
+  import { liveEngine, type LiveFixture } from '../../lib/livePlayer';
+  import { crest, fmtDate, fmtTime } from '../../lib/matchUi';
+
+  const engine = liveEngine();
+  const time = (iso: string) => fmtTime(iso);
+  const today = (iso: string) => new Date(new Date(iso).getTime() + 3600e3).toISOString().slice(0, 10) === new Date(engine.serverNow() + 3600e3).toISOString().slice(0, 10);
+  const when = (iso: string) => (today(iso) ? time(iso) : `${fmtDate(iso)}, ${time(iso)}`);
+  const STATUS: Record<string, string> = { live: 'Live', 'half-time': 'Half-time', 'full-time': 'Full time', scheduled: 'Kick-off' };
+
+  function matchStrip(box: HTMLElement, f: LiveFixture) {
+    const team = (name: string) => { const d = document.createElement('div'); d.className = 'lpm-team'; d.append(crest(name, 46, 'lpm-crest'), name); return d; };
+    const mid = document.createElement('div'); mid.className = 'lpm-mid';
+    const started = ['live', 'half-time', 'full-time'].includes(f.status);
+    const score = document.createElement('div'); score.className = 'lpm-score';
+    score.textContent = started && f.home_score !== null ? `${f.home_score} – ${f.away_score}` : time(f.event_date).replace(' WAT', '');
+    const st = document.createElement('span'); st.className = 'lpm-state'; st.textContent = STATUS[f.status] || 'Kick-off';
+    mid.append(score, st);
+    const row = document.createElement('div'); row.className = 'lpm-row'; row.append(team(f.home_team), mid, team(f.away_team));
+    const meta = document.createElement('p'); meta.className = 'lpm-meta'; meta.textContent = `${f.competition} · ${f.venue} · Kick-off ${when(f.event_date)}`;
+    box.replaceChildren(row, meta);
+  }
+
+  function bind(root: HTMLElement) {
+    if (root.dataset.bound) return;
+    root.dataset.bound = '1';
+    const variant = root.dataset.variant;
+    const $ = <T extends Element>(sel: string) => root.querySelector<T>(sel);
+    const playBtn = (variant === 'compact' ? root : $('[data-lp-play]')) as HTMLButtonElement;
+    const status = $<HTMLElement>('[data-lp-status]');
+    const badge = $<HTMLElement>('[data-lp-badge]');
+    const eq = $<HTMLElement>('[data-lp-eq]');
+    const comm = $<HTMLElement>('[data-lp-comm]');
+    const match = $<HTMLElement>('[data-lp-match]');
+    const vol = $<HTMLInputElement>('[data-lp-volume]');
+    const mute = $<HTMLButtonElement>('[data-lp-mute]');
+    const volWrap = $<HTMLElement>('[data-lp-volwrap]');
+    const pop = $<HTMLButtonElement>('[data-lp-popout]');
+    let lastMatchKey = '';
+
+    playBtn.addEventListener('click', () => engine.toggle());
+    vol?.addEventListener('input', () => engine.setVolume(Number(vol.value) / 100));
+    mute?.addEventListener('click', () => engine.setMuted(!engine.muted));
+    pop?.addEventListener('click', () => {
+      // The mini window takes over playback (only one player plays at a time).
+      engine.pause(false);
+      window.open('/commentary/mini/', 'lobiStarsLive', 'width=380,height=260,resizable=yes');
+    });
+
+    engine.subscribe(() => {
+      const forSlug = root.dataset.forSlug || '';
+      const info = engine.info;
+      const f = info?.fixture || null;
+      // On a match page, only that match's commentary can be played here.
+      const otherMatch = !!forSlug && !!f && f.slug !== forSlug;
+      const thisUpcoming = forSlug ? info?.upcoming.find(u => u.slug === forSlug) : null;
+      const canPlay = !!info?.streamUrl && !otherMatch;
+      const st = engine.status;
+      const busy = st === 'connecting' || st === 'reconnecting';
+      const on = engine.playing || busy;
+
+      if (variant === 'compact') {
+        root.hidden = !canPlay && !on;
+        root.classList.toggle('is-playing', on);
+        root.querySelector('[data-lp-label]')!.textContent = st === 'connecting' ? 'Connecting…' : st === 'reconnecting' ? 'Reconnecting…' : engine.playing ? 'Pause' : 'Listen Live';
+        root.setAttribute('aria-label', engine.playing ? 'Pause Lobi Stars FC Live' : 'Listen live to Lobi Stars FC Live');
+        return;
+      }
+
+      playBtn.disabled = !canPlay && !on;
+      playBtn.classList.toggle('is-playing', engine.playing);
+      playBtn.classList.toggle('is-busy', busy);
+      playBtn.setAttribute('aria-pressed', String(on));
+      playBtn.setAttribute('aria-label', on ? 'Pause Lobi Stars FC Live' : 'Play Lobi Stars FC Live');
+      eq!.classList.toggle('on', engine.playing);
+
+      const state = otherMatch ? 'off' : info?.state || 'off';
+      badge!.className = `lp-badge ${state === 'live' ? 'live' : state === 'today' ? 'today' : ''}`;
+      badge!.textContent = state === 'live' ? 'Live now' : state === 'today' && f?.commentaryStart ? `Starts at ${time(f.commentaryStart).replace(' WAT', '')}` : 'Off air';
+
+      let text: string;
+      if (st === 'connecting') text = 'Connecting…';
+      else if (st === 'reconnecting') text = 'Reconnecting…';
+      else if (engine.playing) text = 'Live';
+      else if (st === 'error') text = "Sorry, we can't reach the commentary right now. Please try again shortly.";
+      else if (info && !info.enabled) text = 'Off air';
+      else if (otherMatch) text = thisUpcoming?.commentaryStart ? `Off air – commentary starts at ${when(thisUpcoming.commentaryStart)}` : 'Live commentary for this match is not available.';
+      else if (forSlug && !f && thisUpcoming?.commentaryStart) text = `Off air – commentary starts at ${when(thisUpcoming.commentaryStart)}`;
+      else if (canPlay) text = 'Press play to listen live';
+      else if (f?.commentaryStart) text = `Off air – commentary starts at ${when(f.commentaryStart)}`;
+      else text = 'Off air – check back on matchday';
+      if (status!.textContent !== text) status!.textContent = text;
+
+      if (comm) { comm.hidden = !info?.commentators; comm.textContent = info?.commentators ? `Commentary: ${info.commentators}` : ''; }
+      if (volWrap) volWrap.hidden = !engine.volumeSupported;
+      if (vol && document.activeElement !== vol) vol.value = String(Math.round(engine.volume * 100));
+      if (mute) { mute.setAttribute('aria-pressed', String(engine.muted)); mute.setAttribute('aria-label', engine.muted ? 'Unmute' : 'Mute'); }
+
+      const shown = otherMatch ? thisUpcoming || null : f;
+      if (match) {
+        match.hidden = !shown;
+        const key = shown ? `${shown.id}${shown.status}${shown.home_score}${shown.away_score}` : '';
+        if (shown && key !== lastMatchKey) matchStrip(match, shown);
+        lastMatchKey = key;
+      }
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-live-player]').forEach(bind);
+  // Players added later (e.g. when the Matchday Live tab is opened).
+  (window as any).__bindLivePlayers = () => document.querySelectorAll<HTMLElement>('[data-live-player]').forEach(bind);
+</script>

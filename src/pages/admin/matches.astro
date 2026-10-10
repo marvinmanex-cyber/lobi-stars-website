@@ -73,7 +73,18 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 
         <div class="fset">
           <label class="f-check"><input id="f-active" type="checkbox" checked/> <span>Visible on the site</span></label>
-          <label class="f-check"><input id="f-ishome" type="checkbox" checked/> <span>Lobi Stars home game (turns on Matchday Live: stream, voting and Predict &amp; Win; commentary is on for every game)</span></label>
+          <label class="f-check"><input id="f-ishome" type="checkbox" checked/> <span>Lobi Stars home game (turns on Matchday Live: stream, voting and Predict &amp; Win)</span></label>
+        </div>
+
+        <div class="fset">
+          <div class="fset-label">Lobi Stars FC Live (commentary)</div>
+          <label class="f-check"><input id="f-comm" type="checkbox" checked/> <span>Live commentary available for this match (home or away)</span></label>
+          <div class="f-grid">
+            <label class="span2">Commentary starts
+              <input id="f-commstart" type="datetime-local"/>
+            </label>
+          </div>
+          <p class="fhint">Leave blank to start 15 minutes before kick-off. Fans can only listen from this time until 15 minutes after full time.</p>
         </div>
 
         <div class="form-actions">
@@ -323,6 +334,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('f-prem').value = e ? e.premium_price_kobo / 100 : 0;
       $('f-reg').value = e ? e.regular_price_kobo / 100 : 0;
       $('f-prog').value = e ? (e.programme_url || '') : '';
+      $('f-comm').checked = e ? e.commentary_enabled !== 0 : true;
+      $('f-commstart').value = e && e.commentary_start_at ? isoToLocalInput(e.commentary_start_at) : '';
       form._editId = e ? e.id : '';
       form.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -344,6 +357,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         premium_price_kobo: Math.round(Number($('f-prem').value) * 100),
         regular_price_kobo: Math.round(Number($('f-reg').value) * 100),
         programme_url: $('f-prog').value.trim(),
+        commentary_enabled: $('f-comm').checked,
+        commentary_start_at: $('f-commstart').value ? new Date($('f-commstart').value).toISOString() : '',
       };
       const id = form._editId || '';
       $('f-save').disabled = true;
@@ -386,6 +401,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
               vip_price_kobo: e.vip_price_kobo, premium_price_kobo: e.premium_price_kobo,
               regular_price_kobo: e.regular_price_kobo, programme_url: e.programme_url || '',
               is_home: e.is_home === null || e.is_home === undefined ? undefined : e.is_home === 1,
+              commentary_enabled: e.commentary_enabled !== 0, commentary_start_at: e.commentary_start_at || '',
             }),
           });
           await load();

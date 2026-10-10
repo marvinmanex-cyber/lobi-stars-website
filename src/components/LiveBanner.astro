@@ -1,14 +1,25 @@
 ---
 // Red "LIVE NOW" banner shown at the top of the homepage while a Lobi Stars
 // HOME game is live. The live status comes from the server (/api/matches).
+// The "Listen Live" button plays Lobi Stars FC Live right here.
+import LivePlayer from './commentary/LivePlayer.astro';
 ---
-<a class="lb" id="liveBanner" href="/fixtures" hidden>
-  <span class="lb-dot" aria-hidden="true"></span>
-  <span class="lb-text"><strong>LIVE NOW:</strong> <span data-lb-teams></span> <span class="lb-cta">– Watch, Listen, Vote</span></span>
-  <span class="lb-arrow" aria-hidden="true">&rarr;</span>
-</a>
+<div class="lb-wrap" id="liveBannerWrap" hidden>
+  <a class="lb" id="liveBanner" href="/fixtures">
+    <span class="lb-dot" aria-hidden="true"></span>
+    <span class="lb-text"><strong>LIVE NOW:</strong> <span data-lb-teams></span> <span class="lb-cta">– Watch, Listen, Vote</span></span>
+    <span class="lb-arrow" aria-hidden="true">&rarr;</span>
+  </a>
+  <div class="lb-listen"><LivePlayer variant="compact" /></div>
+</div>
 
 <style>
+  .lb-wrap { display: flex; align-items: center; background: var(--red); }
+  .lb-wrap[hidden] { display: none; }
+  .lb-wrap .lb { flex: 1; min-width: 0; }
+  .lb-listen { padding: 0 5% 0 0; flex-shrink: 0; }
+  .lb-listen:empty { display: none; }
+  @media (max-width: 600px) { .lb-wrap { flex-wrap: wrap; justify-content: center; } .lb-wrap .lb { flex-basis: 100%; } .lb-listen { padding: 0 5% 12px; } }
   .lb {
     display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 5%;
     background: var(--red); color: #fff; text-decoration: none; text-align: center;
@@ -27,15 +38,16 @@
 <script>
   async function check() {
     const banner = document.getElementById('liveBanner') as HTMLAnchorElement | null;
-    if (!banner) return;
+    const wrap = document.getElementById('liveBannerWrap');
+    if (!banner || !wrap) return;
     try {
       const { matches = [] } = await (await fetch('/api/matches')).json();
       const live = matches.find((m: any) => m.is_home && (m.status === 'live' || m.status === 'half-time'));
-      if (!live) { banner.hidden = true; return; }
+      if (!live) { wrap.hidden = true; return; }
       const opponent = /lobi stars/i.test(live.home_team) ? live.away_team : live.home_team;
       banner.querySelector('[data-lb-teams]')!.textContent = `Lobi Stars vs ${opponent}`;
       banner.href = `/matches/${live.slug}/live/`;
-      banner.hidden = false;
+      wrap.hidden = false;
     } catch { /* leave hidden */ }
   }
   check();

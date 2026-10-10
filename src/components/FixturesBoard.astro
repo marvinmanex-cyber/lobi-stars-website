@@ -26,9 +26,8 @@ const cms = (await getCollection('fixtures')).map(f => ({
   away_score: f.data.away_score ?? null,
   status: f.data.status === 'Completed' ? 'full-time' : 'scheduled',
 }));
-import matchday from '../data/matchday.json';
 ---
-<div class="fxb" data-commentary={matchday.commentaryUrl} data-fixtures-board data-show={show} data-structured={structuredData ? '1' : undefined} data-cms={JSON.stringify(cms)}>
+<div class="fxb" data-commentary="/commentary/" data-fixtures-board data-show={show} data-structured={structuredData ? '1' : undefined} data-cms={JSON.stringify(cms)}>
   <p class="fxb-empty" data-status>Loading {show === 'upcoming' ? 'fixtures' : 'results'}&hellip;</p>
   <div data-list></div>
 </div>
@@ -121,11 +120,11 @@ import matchday from '../data/matchday.json';
     }
     const commentary = document.querySelector<HTMLElement>('[data-fixtures-board]')?.dataset.commentary;
     if (!lobiHome && lobiInvolved && upcoming && commentary && m.status !== 'postponed' && m.status !== 'cancelled') {
-      // Away games: live commentary (home games have it inside Matchday Live).
+      // Away games: Lobi Stars FC Live commentary (home games have it inside Matchday Live).
       const ll = el('a', 'fx-btn', '🎧 Listen Live') as HTMLAnchorElement;
-      ll.href = commentary; ll.target = '_blank'; ll.rel = 'noopener';
+      ll.href = commentary;
       ll.dataset.track = 'commentary_click'; if (m.slug) ll.dataset.trackLabel = m.slug;
-      ll.setAttribute('aria-label', `Listen to live commentary: ${m.home_team} vs ${m.away_team} (opens in a new tab)`);
+      ll.setAttribute('aria-label', `Listen live to ${m.home_team} vs ${m.away_team} on Lobi Stars FC Live`);
       actions.append(ll);
     }
     if (upcoming && lobiHome && m.id) {

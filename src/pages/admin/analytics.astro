@@ -77,6 +77,12 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     </section>
 
     <section class="panel">
+      <div class="ph"><h2>Lobi Stars FC Live (commentary)</h2><a class="btn-o sm" id="broadcastCsv" href="#">Broadcast Report (CSV)</a></div>
+      <p class="muted small">Listens = presses of Play. Unique listeners = listening sessions. Peak = most people listening at the same time.</p>
+      <div id="broadcast"></div>
+    </section>
+
+    <section class="panel">
       <div class="ph"><h2>Partners</h2><a class="btn-p sm" id="partnerCsv" href="#">Export Partner Report (CSV)</a></div>
       <p class="muted small">Impressions = page views in the period (every page shows every partner's logo in the footer). Clicks = visits to the partner's website from ours.</p>
       <div id="partners"></div>
@@ -165,6 +171,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const q = new URLSearchParams({ range });
     if (range === 'custom') { q.set('from', from); q.set('to', to); }
     $('partnerCsv').href = '/api/admin/partner-report?' + q;
+    $('broadcastCsv').href = '/api/admin/broadcast-report?' + q;
     $('err').hidden = true;
     let d;
     try {
@@ -213,6 +220,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       d.recentSignups.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.source)}</td><td>${esc(fmtWat(s.at))}</td></tr>`), 'No contacts yet.');
     $('matchday').innerHTML = table([{ t: 'Match' }, { t: 'Date' }, { t: 'Live page visitors', n: 1 }, { t: 'Watch clicks', n: 1 }, { t: 'Commentary clicks', n: 1 }, { t: 'MOTM votes', n: 1 }, { t: 'Predictions', n: 1 }],
       d.matchday.map(m => `<tr><td>${esc(m.match)}</td><td>${esc(fmtWat(m.date))}</td><td class="n">${fmt(m.liveViewers)}</td><td class="n">${fmt(m.watchPlays)}</td><td class="n">${fmt(m.commentaryClicks)}</td><td class="n">${fmt(m.votes)}</td><td class="n">${fmt(m.predictions)}</td></tr>`), 'No home games yet.');
+    $('broadcast').innerHTML = table([{ t: 'Match' }, { t: 'Kick-off' }, { t: 'Listens', n: 1 }, { t: 'Unique listeners', n: 1 }, { t: 'Avg. minutes', n: 1 }, { t: 'Peak', n: 1 }],
+      (d.broadcast || []).map(b => `<tr><td>${esc(b.match)}</td><td>${esc(fmtWat(b.date))}</td><td class="n">${fmt(b.listens)}</td><td class="n">${fmt(b.uniqueListeners)}</td><td class="n">${b.avgMinutes}</td><td class="n">${fmt(b.peak)}</td></tr>`), 'No matches with commentary in this period.');
     $('partners').innerHTML = table([{ t: 'Partner' }, { t: 'Tier' }, { t: 'Impressions', n: 1 }, { t: 'Clicks', n: 1 }, { t: 'Click rate', n: 1 }],
       d.partners.map(p => `<tr><td>${esc(p.name)}</td><td>${esc(p.tier)}</td><td class="n">${fmt(d.partnerImpressions)}</td><td class="n">${fmt(p.clicks)}</td><td class="n">${d.partnerImpressions ? ((p.clicks / d.partnerImpressions) * 100).toFixed(2) : '0.00'}%</td></tr>`), 'No partners found.');
   }

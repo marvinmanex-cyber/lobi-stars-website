@@ -245,3 +245,28 @@ const isActive = (href: string) => {
     if (!menu.hidden) { close(); btn.focus(); }
   });
 </script>
+
+<script>
+  // Small LIVE dot next to "Match Commentary" (menu + footer) while Lobi Stars FC Live is on air.
+  async function liveDot() {
+    try {
+      const d = await (await fetch('/api/commentary')).json();
+      const on = d.state === 'live' && !!d.streamUrl;
+      document.querySelectorAll<HTMLAnchorElement>('a[href="/commentary"], a[href="/commentary/"]').forEach(a => {
+        a.classList.toggle('has-live', on);
+        if (on && !a.querySelector('.live-dot')) {
+          const dot = document.createElement('span'); dot.className = 'live-dot'; dot.setAttribute('aria-label', 'live now'); a.append(dot);
+        }
+        if (!on) a.querySelector('.live-dot')?.remove();
+      });
+    } catch { /* no dot */ }
+  }
+  liveDot();
+  setInterval(liveDot, 60_000);
+</script>
+
+<style is:global>
+  .live-dot { display: inline-block; width: 8px; height: 8px; margin-left: 6px; border-radius: 50%; background: #E31E24; vertical-align: middle; box-shadow: 0 0 0 3px rgba(227, 30, 36, .25); animation: livedot 1.2s infinite; }
+  @keyframes livedot { 50% { opacity: .3; } }
+  @media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+</style>

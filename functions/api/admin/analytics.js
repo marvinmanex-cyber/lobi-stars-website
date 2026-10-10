@@ -4,6 +4,7 @@ import { ensureContactsSchema, SOURCES } from '../_lib/contacts.js';
 import { ensureTable as ensureMatchTables, isHomeGame } from '../_lib/matchCentre.js';
 import { matchSlug } from '../_lib/matchSlug.js';
 import { resolveRange, sqlTs, isoTs } from '../_lib/reportRange.js';
+import { broadcastStats } from '../_lib/commentary.js';
 
 // GET /api/admin/analytics?range=today|7d|30d|season|custom&from=&to=
 // Everything the admin dashboard shows. No full contact details are
@@ -103,6 +104,9 @@ export async function onRequestGet({ request, env }) {
   const clicks = await all(`SELECT label, COUNT(*) AS n FROM track_events WHERE name = 'partner_click' AND ts >= ? AND ts < ? GROUP BY label`, S);
   const partners = partnerList.map(p => ({ slug: p.slug, name: p.name, tier: p.tier, clicks: clicks.find(c => c.label === p.slug)?.n || 0 }));
 
+  // Lobi Stars FC Live: listening figures per match in this period.
+  const broadcast = await broadcastStats(db, SI[0], SI[1]);
+
   const evCounts = await all(`SELECT name, COUNT(*) AS n FROM track_events WHERE ts >= ? AND ts < ? GROUP BY name`, S);
 
   return Response.json({
@@ -118,7 +122,7 @@ export async function onRequestGet({ request, env }) {
     totalContacts, sources,
     firstTouch: firstTouch.map(f => ({ source: SOURCES[f.source] || f.source || 'Unknown', contacts: f.n })),
     daily, traffic, devices, topPages, locations, recentSignups, matchday,
-    partners, partnerImpressions: pvNow.views || 0,
+    partners, partnerImpressions: pvNow.views || 0, broadcast,
     events: Object.fromEntries(evCounts.map(e => [e.name, e.n])),
   }, { headers: { 'Cache-Control': 'no-store' } });
 }
