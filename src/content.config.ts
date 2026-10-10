@@ -7,7 +7,7 @@ const news = defineCollection({
   schema: z.object({
     title: z.string(),
     summary: z.string(),
-    category: z.enum(['First Team', 'Club', 'Tickets', 'Media Watch']),
+    category: z.enum(['First Team', 'Team News', 'Club', 'Features', 'Tickets', 'Media Watch']),
     coverImage: z.string(),
     imageAlt: z.string(),
     publishedAt: z.coerce.date(),
@@ -20,6 +20,30 @@ const news = defineCollection({
     isBanner: z.boolean().default(false),
     // Drafts are hidden from the public site, sitemap and search (visible in admin).
     status: z.enum(['published', 'draft']).default('published'),
+    // Byline. Sveltia writes null/"" for empty optional fields.
+    author: z.string().nullable().optional(),
+    authorRole: z.string().nullable().optional(),
+    authorPhoto: z.string().nullable().optional(),
+    // Set when a story is edited after publishing ("Updated ...").
+    updatedAt: z.coerce.date().nullable().optional(),
+    // Squad players tagged in the story (player file names, e.g. "terna-akaa").
+    players: z.array(z.string()).nullable().optional(),
+    // Series tag, e.g. "Heritage" (long reads about club history and legends).
+    series: z.string().nullable().optional(),
+    // What kind of matchday content this is (drives the admin matchday checklist).
+    contentType: z.enum(['General', 'Preview', 'Team News', 'Line-ups', 'Live updates', 'Match Report', 'Highlights', 'Reaction/Interview']).nullable().optional(),
+    // The match this story is about (its kick-off date, Nigerian time).
+    matchDate: z.coerce.date().nullable().optional(),
+    // Team News: availability of each player, shown as a colour-coded table.
+    teamNews: z.array(z.object({
+      player: z.string().nullable().optional(),      // squad player file name
+      name: z.string().nullable().optional(),        // or a typed name
+      status: z.enum(['Available', 'Doubtful', 'Injured', 'Suspended']),
+      reason: z.string().nullable().optional(),
+      expectedReturn: z.string().nullable().optional(),
+    })).nullable().optional(),
+    // Long reads: extra photos shown as a gallery.
+    gallery: z.array(z.object({ src: z.string(), caption: z.string().nullable().optional() })).nullable().optional(),
     // Legacy flag from the starter content (all sample stories are drafts now).
     isSample: z.boolean().default(false),
   }),

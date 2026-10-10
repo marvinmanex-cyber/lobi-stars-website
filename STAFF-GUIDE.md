@@ -65,6 +65,19 @@ it, make your changes and save. To delete, open the story and choose
 
 ---
 
+### Extra fields on a story (all optional)
+- **Author name / role / photo:** shown as a byline ("By Ngozi Bello, Club Media Officer"). Leave blank to show "By Lobi Stars FC".
+- **Updated at:** set this when you change a story after publishing; the page then shows "Updated …".
+- **Tagged players:** pick players from the squad. They appear as small chips linking to their profiles, and the story appears under "Latest news about …" on each player's profile.
+- **Category → Features**, or **Series → Heritage**: long reads get a wide layout with a large photo, reading time, big pull quotes (start a paragraph with `>`) and a **Photo gallery**.
+- **Category → Club:** community, partner and off-pitch stories. They get their own "Across the Club" row on the homepage.
+
+### Publishing Team News (injury and availability update)
+1. New story → **Category: Team News** and **Matchday content type: Team News**.
+2. Set **Match date** to the day of the match.
+3. In **Team News table**, add a row per player: pick the player (or type a name), choose **Available / Doubtful / Injured / Suspended**, and add the injury or reason and the expected return.
+4. Publish. The table appears colour-coded at the top of the story, and as **Squad availability** on that match's Match Centre page.
+
 ## 2. Add or update a fixture, result or score
 
 ### Add a new match (fixture)
@@ -83,6 +96,16 @@ temporarily disappear from the site. A match that already has tickets sold
 can't be deleted, only hidden.
 
 > **Home games:** for Kick-off, Full-time, stream links, Man of the Match voting and Predict & Win, see **STAFF-MATCHDAY-GUIDE.md**.
+
+### Matchday content checklist
+In **Admin → Match Centre**, each match shows a checklist of recommended content:
+Preview (two days before), Team News (day before), Line-ups (1 hour before
+kick-off), Live updates (during), Match Report, Highlights video and
+Reaction/Interview (after). A green tick appears when the content exists:
+either filled in on the Match Centre (preview, line-ups, live timeline,
+report, stream link) or as a **published** story with that **Match date** and
+**Matchday content type**. **Create article** opens a new story in the CMS
+with the title, category, type and match date already filled in.
 
 ### Update the score and live events (Match Centre)
 

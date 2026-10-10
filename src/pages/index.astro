@@ -17,6 +17,9 @@ const news = await getSortedNews();
 const enoughNews = news.length >= 3;
 const featuredNews = enoughNews ? news.filter(a => a.data.isFeatured).slice(0, 5) : [];
 const videoNews = enoughNews ? news.filter(a => a.data.isVideo).slice(0, 12) : [];
+// "Across the Club": community, partner and off-pitch stories, kept out of Latest News.
+const clubNews = enoughNews ? news.filter(a => a.data.category === 'Club').slice(0, 12) : [];
+const latestNews = enoughNews ? news.filter(a => !(clubNews.length && a.data.category === 'Club')).slice(0, 12) : [];
 const shopHighlights = shop.products.filter(p => p.inStock).slice(0, 4);
 
 const site = Astro.site!.toString().replace(/\/$/, '');
@@ -50,9 +53,10 @@ const teamJsonLd = {
   <NewsHero articles={featuredNews} />
   <NextMatches />
   <MatchdayGames />
-  <NewsCarousel title="Latest News" articles={enoughNews ? news.slice(0, 12) : []} viewAllHref="/news" />
+  <NewsCarousel title="Latest News" articles={latestNews} viewAllHref="/news" />
   <WhatsAppChannel variant="band" />
   <NewsCarousel title="Video" articles={videoNews} viewAllHref="/video" viewAllLabel="All videos" tone="band" />
+  <NewsCarousel title="Across the Club" articles={clubNews} viewAllHref="/news?category=club" viewAllLabel="All club news" />
 
   <section class="hp-sec" aria-labelledby="shop-title">
     <div class="hp-inner">

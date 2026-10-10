@@ -9,10 +9,12 @@ export async function getStaticPaths() {
   const players = await getPlayers();
   const news = await getSortedNews();
   return players.map(player => {
-    // Related news: stories that mention the player's name.
+    // Latest news about the player: stories tagged with them first, then
+    // stories that mention their name.
     const name = player.data.name.toLowerCase();
-    const related = player.data.isSample ? [] : news.filter(a =>
-      `${a.data.title} ${a.data.summary} ${a.body ?? ''}`.toLowerCase().includes(name)).slice(0, 8);
+    const tagged = news.filter(a => (a.data.players || []).includes(player.id));
+    const mentions = news.filter(a => !tagged.includes(a) && `${a.data.title} ${a.data.summary} ${a.body ?? ''}`.toLowerCase().includes(name));
+    const related = player.data.isSample ? [] : [...tagged, ...mentions].slice(0, 8);
     return { params: { slug: player.id }, props: { player, related } };
   });
 }
@@ -85,7 +87,7 @@ const hasStats = stats.some(([, v]) => (v ?? 0) > 0);
     )}
   </div>
 
-  {related.length > 0 && <NewsCarousel title="Related news" articles={related} viewAllHref="/news" tone="band" />}
+  {related.length > 0 && <NewsCarousel title={`Latest news about ${p.name}`} articles={related} viewAllHref="/news" tone="band" />}
 </Layout>
 
 <style>

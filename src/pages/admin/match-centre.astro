@@ -51,6 +51,12 @@ const roster = (await getRoster())
       </div>
     </section>
 
+    <section class="mce-check" id="checklist" hidden aria-labelledby="chk-h">
+      <h2 id="chk-h">Matchday content checklist</h2>
+      <p class="muted chk-note">Recommended content for this match. Ticks update from the Match Centre fields below and from published news stories with this match's date and the matching <em>Matchday content type</em>. <strong>Create article</strong> opens the CMS with the match filled in.</p>
+      <ul class="chk-list" id="chkList"></ul>
+    </section>
+
     <dialog class="ctl-dialog" id="ftDialog" aria-labelledby="ft-h">
       <form id="ftForm" method="dialog">
         <h2 id="ft-h">Final score</h2>
@@ -207,6 +213,16 @@ const roster = (await getRoster())
   .ctl-motm :global(.motm-table th), .ctl-motm :global(.motm-table td) { padding: 7px 8px; border-bottom: 1px solid var(--d4); text-align: left; }
   .ctl-motm :global(.motm-table tr.win td) { font-weight: 700; color: var(--red-text); }
   .ctl-motm :global(.motm-bar) { display: inline-block; width: 80px; height: 8px; margin-right: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--red) var(--w), var(--d3) var(--w)); vertical-align: middle; }
+  .mce-check { border: 1px solid var(--d4); border-radius: 14px; padding: 18px 20px; margin: 0 0 22px; background: #fff; }
+  .mce-check h2 { margin: 0 0 6px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .chk-note { font-size: 14px; margin: 0 0 12px; }
+  .chk-list { list-style: none; margin: 0; padding: 0; }
+  .chk-list :global(li) { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--d4); flex-wrap: wrap; }
+  .chk-list :global(.chk-tick) { width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; border: 2px solid var(--d4); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; }
+  .chk-list :global(li.done .chk-tick) { background: #17643A; border-color: #17643A; }
+  .chk-list :global(.chk-main) { flex: 1; min-width: 200px; }
+  .chk-list :global(.chk-main a) { color: var(--red-text); font-weight: 600; }
+  .chk-list :global(.chk-create) { padding: 7px 12px !important; font-size: 12px !important; }
   .mce-set { min-width: 0; border: 1px solid var(--d4); border-radius: 12px; padding: 18px 20px 6px; margin: 0 0 18px; }
   .mce-set legend { padding: 0 8px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-text); }
   .mce-hint { margin: 0 0 12px; font-size: 14px; }
@@ -237,6 +253,39 @@ const roster = (await getRoster())
   const msg = $('msg');
   const show = (text, ok) => { msg.textContent = text; msg.className = 'mce-msg ' + (ok ? 'ok' : 'err'); msg.hidden = false; };
   if (!code) { location.href = '/admin/login/?next=' + encodeURIComponent(location.pathname + location.search); return; }
+
+  // ── Matchday content checklist ──
+  let newsIndex = null;
+  async function renderChecklist(m) {
+    if (!newsIndex) {
+      try { newsIndex = await fetch('/data/news-index.json').then(r => r.json()); } catch { newsIndex = []; }
+    }
+    const day = new Date(new Date(m.event_date).getTime() + 3600e3).toISOString().slice(0, 10);
+    const forMatch = newsIndex.filter(n => n.matchDate === day);
+    const story = type => forMatch.find(n => n.contentType === type);
+    const anyLineup = [m.lineups?.home, m.lineups?.away].some(l => l && l.starting && l.starting.length);
+    const vs = `${m.home_team} vs ${m.away_team}`;
+    const ITEMS = [
+      { type: 'Preview', when: 'MD-2 (two days before)', done: !!story('Preview') || !!(m.preview || '').trim(), title: `Preview: ${vs}`, category: 'First Team' },
+      { type: 'Team News', when: 'MD-1 (day before)', done: !!story('Team News'), title: `Team news: ${vs}`, category: 'Team News' },
+      { type: 'Line-ups', when: '1 hour before kick-off', done: anyLineup || !!story('Line-ups'), title: `Line-ups: ${vs}`, category: 'First Team' },
+      { type: 'Live updates', when: 'During the match', done: (m.timeline || []).length > 0 || !!story('Live updates'), title: `Live: ${vs}`, category: 'First Team' },
+      { type: 'Match Report', when: 'After full time', done: !!(m.report || '').trim() || !!story('Match Report'), title: `Report: ${vs}`, category: 'First Team' },
+      { type: 'Highlights', when: 'After full time', done: !!(m.youtube_url || m.facebook_url) || !!story('Highlights'), title: `Highlights: ${vs}`, category: 'First Team' },
+      { type: 'Reaction/Interview', when: 'After full time', done: !!story('Reaction/Interview'), title: `Reaction: ${vs}`, category: 'First Team' },
+    ];
+    const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    document.getElementById('chkList').innerHTML = ITEMS.map(it => {
+      const q = new URLSearchParams({ title: it.title, category: it.category, contentType: it.type, matchDate: day });
+      const linked = story(it.type);
+      return `<li class="${it.done ? 'done' : ''}"><span class="chk-tick" aria-hidden="true">${it.done ? '✓' : ''}</span>`
+        + `<span class="chk-main"><strong>${esc(it.type)}</strong> <span class="muted">${esc(it.when)}</span>`
+        + `${linked ? ` · <a href="/news/${esc(linked.slug)}/" target="_blank" rel="noopener">view story</a>` : ''}</span>`
+        + `<span class="sr-only">${it.done ? 'Done' : 'Not done yet'}</span>`
+        + `<a class="btn-o chk-create" href="/admin/#/collections/news/new?${q}" target="_blank" rel="noopener">Create article</a></li>`;
+    }).join('');
+    document.getElementById('checklist').hidden = false;
+  }
 
   async function api(path, opts) {
     const res = await fetch(path, Object.assign({}, opts, { headers: { 'Content-Type': 'application/json', 'x-admin-code': code } }));
@@ -306,6 +355,7 @@ const roster = (await getRoster())
     document.querySelectorAll('input[data-squad]').forEach(r => { r.checked = (pos[r.dataset.squad] || '') === r.value; });
     countSquad();
     renderControl(m);
+    renderChecklist(m);
     $('viewLink').href = `/matches/${m.slug}/`;
     $('viewLink').hidden = false;
     $('mcForm').hidden = false;

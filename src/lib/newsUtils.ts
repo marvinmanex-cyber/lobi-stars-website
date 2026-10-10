@@ -4,6 +4,8 @@
 // tabs on /news (after "All").
 export const NEWS_CATEGORIES = [
   { name: 'First Team', slug: 'first-team' },
+  { name: 'Team News', slug: 'team-news' },
+  { name: 'Features', slug: 'features' },
   { name: 'Tickets', slug: 'tickets' },
   { name: 'Club', slug: 'club' },
   { name: 'Media Watch', slug: 'media-watch' },

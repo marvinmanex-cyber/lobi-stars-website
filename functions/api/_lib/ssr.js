@@ -226,3 +226,18 @@ export async function fullTimeBannerHtml(env, now = Date.now()) {
     return `<strong>Full time:</strong> ${esc(short(m.home_team))} ${esc(m.home_score)}–${esc(m.away_score)} ${esc(short(m.away_team))} <span class="ftb-sep">–</span> ${links.join('<span class="ftb-sep">|</span>')}`;
   } catch { return ''; }
 }
+
+// ── "Next fixture" card at the end of news articles ──
+
+export function nextFixtureHtml(matches, now = Date.now()) {
+  const m = upcomingLobi(matches, now)[0];
+  if (!m) return '';
+  const home = typeof m.is_home === 'boolean' ? m.is_home : isLobi(m.home_team);
+  const live = m.status === 'live' || m.status === 'half-time';
+  const acts = [`<a class="btn-o" href="/matches/${esc(m.slug)}/">Match Centre</a>`];
+  if (home && !live) acts.unshift(`<a class="btn-p" href="/tickets?event=${encodeURIComponent(m.id)}">Buy Tickets</a>`);
+  if (home && live) acts.unshift(`<a class="btn-p" href="/matches/${esc(m.slug)}/live/">● Matchday Live</a>`);
+  return `<div class="anx"><div><span class="anx-k">${live ? 'Live now' : 'Next match'}</span><strong>${esc(m.home_team)} vs ${esc(m.away_team)}</strong>`
+    + `<span class="anx-meta">${esc(fmtDate(m.event_date, true))} · ${esc(fmtTime(m.event_date))} · ${esc(m.venue)}</span></div>`
+    + `<div class="anx-acts">${acts.join('')}</div></div>`;
+}

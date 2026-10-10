@@ -60,3 +60,12 @@ test('Cookie settings in the footer is a real button', async () => {
   const body = (await html('/')).body;
   assert.match(body, /<button type="button" data-cookie-settings[^>]*>Cookie settings<\/button>/);
 });
+
+test('news index for Match Centre and the matchday checklist lists published stories only', async () => {
+  const res = await fetch(`${BASE}/data/news-index.json`);
+  assert.equal(res.status, 200);
+  const items = await res.json();
+  assert.ok(Array.isArray(items));
+  assert.ok(!items.some(i => /first-team-step-up-preparations/.test(i.slug)), 'draft samples are not listed');
+  for (const i of items) assert.ok('contentType' in i && 'matchDate' in i && Array.isArray(i.teamNews));
+});

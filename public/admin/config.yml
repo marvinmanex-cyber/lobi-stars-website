@@ -28,7 +28,7 @@ collections:
     fields:
       - {label: "Title", name: "title", widget: "string"}
       - {label: "Summary (1-2 sentences, shown on cards and banners)", name: "summary", widget: "text"}
-      - {label: "Category", name: "category", widget: "select", options: ["First Team", "Club", "Tickets", "Media Watch"], default: "First Team"}
+      - {label: "Category", name: "category", widget: "select", options: ["First Team", "Team News", "Club", "Features", "Tickets", "Media Watch"], default: "First Team", hint: "Features = long reads (wide layout with reading time). Club = community, partners and off-pitch stories."}
       - {label: "Cover Image (16:9 works best)", name: "coverImage", widget: "image"}
       - {label: "Cover Image Description (for screen readers)", name: "imageAlt", widget: "string"}
       - {label: "Published At", name: "publishedAt", widget: "datetime"}
@@ -38,7 +38,33 @@ collections:
       - {label: "Featured (top story on the homepage)", name: "isFeatured", widget: "boolean", default: false}
       - {label: "Homepage Promo Banner", name: "isBanner", widget: "boolean", default: false}
       - {label: "Status (Draft = hidden from the website)", name: "status", widget: "select", options: [{label: "Published", value: "published"}, {label: "Draft", value: "draft"}], default: "published"}
-      - {label: "Body", name: "body", widget: "markdown"}
+      - {label: "Author name (optional)", name: "author", widget: "string", required: false}
+      - {label: "Author role (optional, e.g. Club Media Officer)", name: "authorRole", widget: "string", required: false}
+      - {label: "Author photo (optional)", name: "authorPhoto", widget: "image", required: false}
+      - {label: "Updated at (set this when you edit a published story)", name: "updatedAt", widget: "datetime", required: false}
+      - {label: "Tagged players", name: "players", widget: "relation", collection: "players", value_field: "{{slug}}", search_fields: ["name"], display_fields: ["name"], multiple: true, required: false, hint: "Shown as player chips; the story also appears on each player's profile."}
+      - {label: "Series (optional, e.g. Heritage)", name: "series", widget: "string", required: false, hint: "Use Heritage for long reads about club history and legends."}
+      - {label: "Matchday content type", name: "contentType", widget: "select", required: false, options: ["General", "Preview", "Team News", "Line-ups", "Live updates", "Match Report", "Highlights", "Reaction/Interview"], hint: "Used by the matchday content checklist in Admin → Match Centre."}
+      - {label: "Match date (for match previews, team news, reports…)", name: "matchDate", widget: "datetime", required: false, time_format: false, format: "YYYY-MM-DD", date_format: "DD/MM/YYYY"}
+      - label: "Team News table (Team News stories only)"
+        name: "teamNews"
+        widget: "list"
+        required: false
+        summary: "{{fields.name}}{{fields.player}} – {{fields.status}}"
+        fields:
+          - {label: "Player", name: "player", widget: "relation", collection: "players", value_field: "{{slug}}", search_fields: ["name"], display_fields: ["name"], required: false}
+          - {label: "…or type a name", name: "name", widget: "string", required: false}
+          - {label: "Status", name: "status", widget: "select", options: ["Available", "Doubtful", "Injured", "Suspended"], default: "Available"}
+          - {label: "Injury or reason", name: "reason", widget: "string", required: false}
+          - {label: "Expected return", name: "expectedReturn", widget: "string", required: false}
+      - label: "Photo gallery (long reads)"
+        name: "gallery"
+        widget: "list"
+        required: false
+        fields:
+          - {label: "Photo", name: "src", widget: "image"}
+          - {label: "Caption", name: "caption", widget: "string", required: false}
+      - {label: "Body (use > at the start of a line for a pull quote)", name: "body", widget: "markdown"}
 
   - name: "players"
     label: "Squad / Players"

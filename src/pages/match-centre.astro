@@ -43,6 +43,19 @@ import Layout from '../layouts/Layout.astro';
   .mc :global(.mc-motm) { text-align: center; margin: 14px 0 0; color: #FFC72C; font: 700 16px/1.4 'Barlow Condensed', sans-serif; letter-spacing: .6px; text-transform: uppercase; }
   .mc :global(.mc-motm a) { color: #fff; }
   .mc :global(.mc-live-btn) { padding: 11px 18px; font-size: 13px; }
+  .mc :global(.mc-avail) { margin: 0 0 24px; padding: 16px 18px; border: 1px solid var(--d4); border-radius: 12px; background: #fff; }
+  .mc :global(.mc-avail h3) { margin: 0 0 10px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .mc :global(.mc-avail-scroll) { overflow-x: auto; position: relative; }
+  .mc :global(.mc-avail table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .mc :global(.mc-avail th), .mc :global(.mc-avail td) { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--d4); }
+  .mc :global(.mc-avail thead th) { font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .mc :global(.mc-avail a) { color: var(--red-text); font-weight: 600; }
+  .mc :global(.mc-avail-st) { display: inline-block; padding: 2px 8px; border-radius: 999px; font: 700 12px/1.3 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .6px; }
+  .mc :global(.mc-avail-st.ok) { background: #E8F7EE; color: #17643A; }
+  .mc :global(.mc-avail-st.warn) { background: #FFF4D6; color: #7A5300; }
+  .mc :global(.mc-avail-st.bad) { background: #FDECEC; color: #A3161B; }
+  .mc :global(.mc-avail-st.sus) { background: #EDE9FE; color: #4C2A9E; }
+  .mc :global(.mc-avail-more) { display: inline-block; margin-top: 10px; }
   .mc :global(.mc-tabs) { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--d4); background: #fff; position: sticky; top: var(--header-h); z-index: 20; scrollbar-width: none; }
   .mc :global(.mc-tabs::-webkit-scrollbar) { display: none; }
   .mc :global(.mc-tab) { padding: 16px 16px 13px; background: none; border: 0; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; color: var(--lt); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
@@ -210,9 +223,45 @@ import Layout from '../layouts/Layout.astro';
     return head;
   }
 
+  // Latest published Team News for this match (from /data/news-index.json).
+  type TeamNewsRow = { name: string; player: string | null; status: string; reason: string; expectedReturn: string };
+  type NewsItem = { slug: string; title: string; contentType: string | null; matchDate: string | null; teamNews: TeamNewsRow[] };
+  let newsIndex: NewsItem[] = [];
+  fetch('/data/news-index.json').then(r => (r.ok ? r.json() : [])).then((d: NewsItem[]) => { newsIndex = d; if (match && activeTab === 'preview') render(match); }).catch(() => {});
+  const watDay = (iso: string) => new Date(new Date(iso).getTime() + 3600e3).toISOString().slice(0, 10);
+  const STATUS_CLASS: Record<string, string> = { Available: 'ok', Doubtful: 'warn', Injured: 'bad', Suspended: 'sus' };
+
+  function squadAvailability(m: Full): HTMLElement | null {
+    if (m.status === 'full-time') return null;
+    const tn = newsIndex.find(n => n.contentType === 'Team News' && n.teamNews.length && n.matchDate === watDay(m.event_date));
+    if (!tn) return null;
+    const box = el('section', 'mc-avail');
+    box.append(el('h3', '', 'Squad availability'));
+    const wrap = el('div', 'mc-avail-scroll');
+    const t = el('table');
+    t.innerHTML = '<thead><tr><th scope="col">Player</th><th scope="col">Status</th><th scope="col">Injury / reason</th><th scope="col">Expected return</th></tr></thead>';
+    const tb = el('tbody');
+    tn.teamNews.forEach(r => {
+      const tr = el('tr');
+      const th = el('th'); th.scope = 'row';
+      if (r.player) { const a = el('a', '', r.name) as HTMLAnchorElement; a.href = `/squad/${r.player}/`; th.append(a); } else th.textContent = r.name;
+      const st = el('td'); st.append(el('span', `mc-avail-st ${STATUS_CLASS[r.status] || ''}`, r.status));
+      tr.append(th, st, el('td', '', r.reason || '–'), el('td', '', r.expectedReturn || '–'));
+      tb.append(tr);
+    });
+    t.append(tb); wrap.append(t); box.append(wrap);
+    const more = el('a', 'mc-avail-more', 'Read the full team news →') as HTMLAnchorElement; more.href = `/news/${tn.slug}/`;
+    box.append(more);
+    return box;
+  }
+
   function panel(id: string, m: Full): HTMLElement {
     const p = el('div');
-    if (id === 'preview') p.append(m.preview ? paragraphs(m.preview) : empty('The match preview will appear here before kick-off.'));
+    if (id === 'preview') {
+      const avail = squadAvailability(m);
+      if (avail) p.append(avail);
+      p.append(m.preview ? paragraphs(m.preview) : empty('The match preview will appear here before kick-off.'));
+    }
     if (id === 'lineups') {
       const any = [m.lineups.home, m.lineups.away].some(l => l.starting.length);
       if (!any) p.append(empty('Line-ups are usually announced about an hour before kick-off.'));
