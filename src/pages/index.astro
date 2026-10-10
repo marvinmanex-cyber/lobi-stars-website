@@ -7,6 +7,7 @@ import ShopCard from '../components/ShopCard.astro';
 import PartnersShowcase from '../components/partners/PartnersShowcase.astro';
 import LiveBanner from '../components/LiveBanner.astro';
 import WhatsAppChannel from '../components/WhatsAppChannel.astro';
+import HomeHero from '../components/HomeHero.astro';
 import MatchdayGames from '../components/fans/MatchdayGames.astro';
 import { getSortedNews } from '../lib/news';
 import shop from '../data/shop.json';
@@ -48,7 +49,7 @@ const teamJsonLd = {
   <LiveBanner />
   <!-- "FULL TIME" banner for 24 hours after a match: filled in on the server (functions/index.js). -->
   <div class="ftb" id="ftBanner" hidden></div>
-  <h1 class="sr-only">Lobi Stars Football Club &ndash; official website</h1>
+  <HomeHero />
 
   <NewsHero articles={featuredNews} />
   <NextMatches />

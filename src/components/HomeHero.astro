@@ -1,0 +1,42 @@
+---
+// Homepage hero: full-width stadium photo with the club name, shown on
+// phones and laptops. The photo is the first slide in the CMS
+// ("Hero Slides", lowest order number), so staff can change it.
+import { getCollection } from 'astro:content';
+const slides = (await getCollection('heroSlides')).sort((a, b) => a.data.order - b.data.order);
+const photo = slides[0]?.data.photo || '/images/hero-1.jpg';
+---
+<section class="hh" aria-labelledby="hh-title">
+  <img class="hh-bg" src={photo} alt="" width="1920" height="1080" loading="eager" fetchpriority="high" decoding="sync" sizes="100vw" />
+  <div class="hh-shade" aria-hidden="true"></div>
+  <div class="hh-inner">
+    <p class="hh-eyebrow">Pride of Benue &middot; Makurdi, Nigeria</p>
+    <h1 class="hh-title" id="hh-title"><span class="hh-lobi">Lobi</span> <span class="hh-stars">Stars</span><span class="hh-fc">Football Club</span></h1>
+    <p class="hh-tag">Glory to Glory</p>
+    <div class="hh-acts">
+      <a class="btn-p" href="/fixtures">Fixtures</a>
+      <a class="btn-o hh-o" href="/tickets">Buy Tickets</a>
+      <a class="btn-o hh-o" href="/shop">Club Shop</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hh { position: relative; min-height: min(86vh, 820px); display: flex; align-items: center; justify-content: center; overflow: hidden; background: #0A0A0A; color: #fff; text-align: center; }
+  .hh-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+  .hh-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,10,.55) 0%, rgba(10,10,10,.35) 40%, rgba(77,11,13,.75) 100%); }
+  .hh-inner { position: relative; padding: 48px 5%; max-width: 980px; }
+  .hh-eyebrow { margin: 0 0 14px; font: 700 14px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 4px; text-transform: uppercase; color: #FFC72C; }
+  .hh-title { margin: 0; font: 400 clamp(64px, 14vw, 168px)/.86 'Bebas Neue', sans-serif; letter-spacing: 2px; color: #fff; text-shadow: 0 6px 30px rgba(0,0,0,.45); }
+  .hh-stars { color: #FFC72C; }
+  .hh-fc { display: block; margin-top: 10px; font: 700 clamp(15px, 2.4vw, 24px)/1 'Barlow Condensed', sans-serif; letter-spacing: clamp(6px, 1.4vw, 14px); text-transform: uppercase; color: #fff; }
+  .hh-tag { margin: 18px 0 0; font: 700 clamp(14px, 1.8vw, 18px)/1 'Barlow Condensed', sans-serif; letter-spacing: 6px; text-transform: uppercase; color: rgba(255,255,255,.9); }
+  .hh-acts { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 30px; }
+  .hh-o { color: #fff; border-color: rgba(255,255,255,.7); }
+  .hh-o:hover { background: #fff; color: var(--rdp); border-color: #fff; }
+  @media (max-width: 600px) {
+    .hh { min-height: 72svh; }
+    .hh-inner { padding: 40px 18px; }
+    .hh-acts a { flex: 1 1 140px; padding-left: 12px; padding-right: 12px; }
+  }
+</style>

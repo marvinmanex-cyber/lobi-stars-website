@@ -405,6 +405,12 @@ site for commentary. The partner still appears on the Partners page.
 
 ## Other things you can update in the CMS
 
+### Homepage hero photo
+The big photo at the top of the homepage (with "LOBI STARS – Football Club")
+is the **first** photo in **CMS → Hero Slides** (the one with the lowest
+*order* number). To change it, upload a new wide photo (at least 1600 pixels
+wide) and give it order 1.
+
 ### Promo bar (thin announcement bar at the very top of every page)
 **CMS → Site Settings → Promo Bar**: tick **Show the promo bar**, type a short
 message (e.g. "Tickets on sale: Lobi Stars vs Kada Warriors"), optionally a
