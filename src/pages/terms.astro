@@ -1,4 +1,57 @@
 ---
-import ComingSoon from '../components/ComingSoon.astro';
+import LegalPage from '../components/LegalPage.astro';
+import site from '../data/site.json';
+const { email, phone, address } = site.contact;
 ---
-<ComingSoon title="Terms of Use" tag="Legal" description="The terms of use for the official Lobi Stars FC website." />
+<LegalPage
+  title="Terms of Use"
+  description="The terms for using the Lobi Stars FC website, fan accounts and online services."
+  updated="10 October 2026"
+  draft="these terms must be reviewed by the club's legal adviser before they are final."
+>
+  <p>These terms apply when you use lobistarsfc.com ("the website"), run by Lobi Stars Football Club ("the club", "we"), {address}. By using the website you agree to them.</p>
+
+  <h2>1. Using the website</h2>
+  <ul>
+    <li>You may use the website for your own personal, non-commercial use.</li>
+    <li>Do not misuse it: no attempts to break, overload or get around its security, no automated scripts or bots, and nothing unlawful, offensive or misleading.</li>
+    <li>We work to keep the website available and accurate, but match times, scores, squads and other information can change. We are not responsible for losses caused by temporary unavailability or errors.</li>
+  </ul>
+
+  <h2>2. Fan accounts</h2>
+  <ul>
+    <li>Fan accounts are free. One account per person, with your own true name, email address and phone number.</li>
+    <li>You must be 18 or older to create a fan account.</li>
+    <li>Keep your password private. You are responsible for what is done with your account.</li>
+    <li>We may suspend or close accounts that break these terms, use false details or are duplicates.</li>
+  </ul>
+
+  <h2>3. Man of the Match voting and Predict &amp; Win</h2>
+  <p>These have their own rules, which apply in addition to these terms: <a href="/motm/rules/">Man of the Match voting rules</a> and <a href="/predict-and-win/terms/">Predict &amp; Win terms &amp; conditions</a>.</p>
+
+  <h2>4. Tickets, membership, food orders and the shop</h2>
+  <ul>
+    <li>Card payments are processed securely by Paystack. We never see or store your card details.</li>
+    <li>Please check your order before paying. The details shown at the time of purchase (such as match, stand, price and quantity) apply to that order.</li>
+    <li>Club shop products are sold through our partner's store; their terms apply to those purchases.</li>
+    <li>For any problem with an order, contact us using the details below.</li>
+  </ul>
+
+  <h2>5. Club content</h2>
+  <p>The Lobi Stars name, crest, photos, videos, articles and the design of the website belong to the club or the people who licensed them to us. You may share links to our pages, but you may not copy or reuse our content or crest for commercial purposes without written permission.</p>
+
+  <h2>6. Other websites</h2>
+  <p>The website links to other sites and services, such as YouTube, Facebook, Aeson Sports Radio, WhatsApp and our partners' websites. We are not responsible for their content or how they handle your data.</p>
+
+  <h2>7. Your data</h2>
+  <p>We use your personal data as described in our <a href="/privacy/">Privacy Policy</a>.</p>
+
+  <h2>8. Changes and law</h2>
+  <ul>
+    <li>We may update these terms. The date at the top shows the latest version; continuing to use the website means you accept the updated terms.</li>
+    <li>These terms are governed by the laws of the Federal Republic of Nigeria.</li>
+  </ul>
+
+  <h2>9. Contact</h2>
+  <p>Email <a href={`mailto:${email}`}>{email}</a> or call {phone}.</p>
+</LegalPage>

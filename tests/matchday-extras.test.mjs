@@ -97,3 +97,9 @@ test('/motm redirects to the Man of the Match page', async () => {
   assert.equal(res.status, 301);
   assert.match(res.headers.get('location'), /\/man-of-the-match\/$/);
 });
+
+test('website Terms of Use page exists and links the game rules and privacy policy', async () => {
+  const html = await fetch(`${BASE}/terms/`).then(r => r.text());
+  assert.match(html, /<title>Terms of Use \| Lobi Stars Football Club<\/title>/);
+  for (const href of ['/motm/rules/', '/predict-and-win/terms/', '/privacy/']) assert.ok(html.includes(`href="${href}"`), href);
+});
