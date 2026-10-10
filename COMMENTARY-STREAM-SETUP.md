@@ -3,8 +3,22 @@
 How to get the partner's commentary stream playing on **lobistarsfc.com/commentary**
 under the Lobi Stars FC Live name, so that fans only ever see a Lobi Stars address.
 
-The website is ready for **either** option below. Pick one, then set the
-values in the last section.
+> **Decision (10 October 2026): Option A (DNS)**, as recommended. The website
+> side is finished. Remaining checklist:
+>
+> - [ ] Send the partner the message below.
+> - [ ] Partner sends their stream server's host name (or IP address) and the mount point.
+> - [ ] Add the `stream` DNS record in Cloudflare, set to **DNS only** (grey cloud).
+> - [ ] Partner installs the HTTPS certificate for `stream.lobistarsfc.com`, sets
+>       the stream name to "Lobi Stars FC Live" and confirms.
+> - [ ] Open `https://stream.lobistarsfc.com/<mount>` in a browser: audio plays, padlock OK.
+> - [ ] Admin → Commentary: set **Public stream address** to that address → **Save** → **Test stream** shows working ✓.
+> - [ ] Optional: backup feed (e.g. `stream2.lobistarsfc.com`) → **Backup stream address**.
+>
+> Until the last steps are done, the player shows "Off air" (no stream address is set),
+> so fans never see a broken player.
+
+The website is ready for **either** option below.
 
 ---
 

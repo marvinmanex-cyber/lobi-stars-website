@@ -169,6 +169,6 @@ exported files private and delete them when you no longer need them.
    also include points to confirm: the prize is for the score at the end of
    normal time, and winners may be asked for ID.
 5. **Players:** add the real squad with photos in the CMS (voting uses them).
-6. **Lobi Stars FC Live stream:** choose the delivery option and finish the
-   partner and DNS setup (see COMMENTARY-STREAM-SETUP.md), then add the stream
-   address on Admin → Commentary.
+6. **Lobi Stars FC Live stream:** the club chose Option A (our own
+   stream.lobistarsfc.com address). Finish the partner and DNS checklist in
+   COMMENTARY-STREAM-SETUP.md, then add the stream address on Admin → Commentary.
