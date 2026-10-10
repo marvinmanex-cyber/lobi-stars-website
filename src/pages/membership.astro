@@ -1,6 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { CURRENT_SEASON } from '../lib/site';
+import { CURRENT_SEASON, formatNaira } from '../lib/site';
+import membership from '../data/membership.json';
+const price = formatNaira(membership.priceNaira) || '₦10,000';
 
 const benefits = [
   `Official ${CURRENT_SEASON} Membership Card`,
@@ -8,6 +10,8 @@ const benefits = [
   'Weekly Exclusive Club Newsletter',
   'Priority Match Day Ticket Access',
   'Digital Match Day Programmes',
+  'Digital membership card on your account',
+  'Members-only stories and features',
 ];
 ---
 <Layout
@@ -24,7 +28,7 @@ const benefits = [
   <div class="page-content wrap mem-grid">
     <aside class="mem-card" aria-labelledby="tier-title">
       <p class="mem-card-kicker">Official Membership</p>
-      <h2 class="mem-card-price" id="tier-title">₦10,000<span>/yr</span></h2>
+      <h2 class="mem-card-price" id="tier-title">{price}<span>/yr</span></h2>
       <ul class="mem-benefits">
         {benefits.map(b => <li>{b}</li>)}
       </ul>
@@ -35,14 +39,15 @@ const benefits = [
       <!-- Shown when a member is already logged in -->
       <div id="memLoggedIn" hidden>
         <h2 class="mem-h2" id="mem-welcome">Welcome back</h2>
-        <p class="muted">You're logged in to your Lobi Stars membership account.</p>
+        <p class="muted">You're logged in to your Lobi Stars account. Your membership status and digital membership card are on your account page.</p>
+        <p><a class="btn-p" href="/fans/account/">My membership</a></p>
         <button type="button" class="btn-o" id="logoutBtn">Log out</button>
       </div>
 
       <div id="memRegister">
         <h2 class="mem-h2" id="mem-form-title">Register as a Member</h2>
-        <p class="muted" style="margin-bottom:18px;">Complete the form below to activate your season membership.</p>
-        <p class="mem-tier">⭐ Official Member &mdash; ₦10,000/yr</p>
+        <p class="muted" style="margin-bottom:18px;">Create your account below. Your membership becomes active for the season once your payment is confirmed; you will then find your digital membership card on your account page.</p>
+        <p class="mem-tier">⭐ Official Member &mdash; {price}/yr</p>
 
         <form id="memFields" novalidate>
           <div class="form-row">

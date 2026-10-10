@@ -71,6 +71,8 @@ it, make your changes and save. To delete, open the story and choose
 - **Tagged players:** pick players from the squad. They appear as small chips linking to their profiles, and the story appears under "Latest news about …" on each player's profile.
 - **Category → Features**, or **Series → Heritage**: long reads get a wide layout with a large photo, reading time, big pull quotes (start a paragraph with `>`) and a **Photo gallery**.
 - **Category → Club:** community, partner and off-pitch stories. They get their own "Across the Club" row on the homepage.
+- **Shop the story:** pick club shop products (e.g. the new home shirt on a kit launch story). They appear as product cards under the article with a link to the shop.
+- **Members only:** only confirmed members (section 11) can read the story text. Everyone else sees the title, summary and cover photo, with "Become a member" and "Log in" buttons. A video in a members-only story is also hidden from non-members.
 
 ### Publishing Team News (injury and availability update)
 1. New story → **Category: Team News** and **Matchday content type: Team News**.
@@ -90,6 +92,10 @@ it, make your changes and save. To delete, open the story and choose
    **Visible on the site**.
 4. Click **Save match**. It appears on Fixtures, Tickets and the home page
    straight away.
+5. **Members' priority window (optional):** set **General sale opens** to let
+   confirmed members buy tickets first. Until that time only members who are
+   logged in can buy; everyone else sees "Members' priority window. General
+   sale opens …". Leave it blank for no priority window.
 
 To change a match, click **Edit** on it. Use **Hide** if a match should
 temporarily disappear from the site. A match that already has tickets sold
@@ -205,6 +211,22 @@ appear on the Squad page.
 
 The **Shop on Jumia** button only works when a product has **both** a price
 and a Jumia link. Otherwise it shows "Coming soon".
+
+### Shirt personalisation (name and number, paid with Paystack)
+Switched **OFF**. To switch it on, in **Club Shop Products → Shirt personalisation**:
+1. Enter the **personalisation fee** (added to the shirt price), the **most
+   letters** allowed and the **sizes**.
+2. Fill in **How fans get their shirt** (e.g. where and when to collect it).
+   Fans see this before paying and in their confirmation email.
+3. On each shirt that can be personalised, tick **Can be personalised** and
+   make sure it has a **price** and is **In Stock**.
+4. Tick **Switch on** and save. A **Personalise with name & number** button
+   then appears on those shirts. Fans see a preview, check the spelling and
+   pay with Paystack.
+
+Paid orders appear in **Admin → Shirt orders**. Change each order from
+*New (to print)* to *Ready*, then *Collected / delivered* (or *Cancelled /
+refunded*). Personalisation needs Paystack set up (the same account as tickets).
 
 ---
 
@@ -437,6 +459,53 @@ Fans vote at https://lobistarsfc.com/awards. You set the votes up in
   The nominees can only be changed before the first vote.
 - To close voting early, edit the closing time to now.
 - **Delete** removes the award and all its votes. It can't be undone.
+
+---
+
+## 11. Membership (Admin → Members)
+
+A fan becomes an **official member for the season** only when the club
+confirms their payment. Signing up on the Membership page creates an account
+but is **not** membership on its own.
+
+### Confirm a membership
+1. The fan pays the club (however the club takes membership payments).
+2. Open **Admin → Members** and search the fan's name, email, phone or member
+   number (LS-MBR-…).
+3. Press **Confirm 2026/27** and type how it was paid (e.g. "Cash at club
+   office, receipt 0123"). This is saved with your name.
+
+The top of the page shows how many people signed up on the Membership page but
+are not confirmed yet. Search their names to confirm them once they have paid.
+**Remove membership** undoes it (e.g. a payment that bounced).
+
+### What members get
+- A **digital membership card** on their account page (name, member number,
+  season, member since). Ask to see it on their phone at the club.
+- **Members-only stories** (section 1).
+- The **ticket priority window** (section 2).
+
+### Settings (CMS → Site Settings → Membership settings)
+- **Price** per season (shown on the Membership page and the account page).
+- **How to pay:** shown to fans who are not yet members. Fill it in once the
+  club decides how fans pay (e.g. at the club office).
+- **Allow online payment:** OFF. When switched on, fans can also pay on their
+  account page with Paystack and become members straight away.
+
+Membership runs per season: at the start of a new season (Current Season in
+Site Settings), everyone needs confirming again.
+
+---
+
+## 12. Hospitality (/hospitality)
+
+The Hospitality page has an enquiry form (name, phone, email, company, number
+of guests, which match, message). Enquiries go to the club's inbox like the
+Contact form, and are saved in the fan database under **Hospitality Enquiry**.
+
+To show packages, open **CMS → Site Settings → Hospitality packages** and add
+each package: name, what's included, and a price (or price text such as "From
+₦50,000 per table"). Leave the list empty to show only the enquiry form.
 
 ---
 

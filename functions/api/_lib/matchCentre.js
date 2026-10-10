@@ -50,7 +50,10 @@ export async function ensureTable(db) {
     ['facebook_url', 'TEXT'],   // Watch Live: Facebook live/replay link (home games only)
   ]);
   // NULL = work it out from the home team name; 1/0 = set explicitly by staff.
-  await addMissing('events', [['is_home', 'INTEGER']]);
+  await addMissing('events', [
+    ['is_home', 'INTEGER'],
+    ['public_sale_at', 'TEXT'],  // optional: before this time only confirmed members can buy tickets
+  ]);
   ready = true;
 }
 

@@ -1,0 +1,86 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Shirt Orders | Lobi Stars Admin" description="Personalised shirt orders." noindex>
+  <div class="wrap so">
+    <AdminNav current="shirt-orders" />
+    <div class="stag">Admin</div>
+    <h1 class="stitle">Shirt <span class="r">Orders</span></h1>
+    <p class="muted so-lede" id="lede">Paid personalised-shirt orders (name and number). Mark each order as ready, then collected.</p>
+    <p class="so-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <section class="panel">
+      <div class="so-filter" role="group" aria-label="Show">
+        <button type="button" data-f="open" aria-pressed="true">To do</button>
+        <button type="button" data-f="all" aria-pressed="false">All</button>
+      </div>
+      <div class="scroll" id="list"><p class="muted">Loading…</p></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .so { max-width: 1200px; padding-top: 40px; padding-bottom: 90px; }
+  .so-lede { max-width: 860px; margin-bottom: 18px; }
+  .so-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
+  .so-msg.ok { background: #E8F7EE; color: #17643A; } .so-msg.err { background: #FDECEC; color: #A3161B; }
+  .so-filter { display: flex; gap: 8px; margin-bottom: 12px; }
+  .so-filter button { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-weight: 600; }
+  .so-filter button[aria-pressed='true'] { background: var(--red); border-color: var(--red); color: #fff; }
+  .scroll { overflow-x: auto; }
+  .so :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .so :global(th), .so :global(td) { padding: 8px 10px; border-bottom: 1px solid var(--d4); text-align: left; vertical-align: top; }
+  .so :global(th) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); white-space: nowrap; }
+  .so :global(.print) { font: 400 20px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; white-space: nowrap; }
+  .so :global(select) { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--d4); font: inherit; }
+  .so :global(.note) { color: var(--lt); font-size: 12px; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'so-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
+  const when = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const LABEL = { new: 'New (to print)', ready: 'Ready', collected: 'Collected / delivered', cancelled: 'Cancelled / refunded' };
+  let orders = [], filter = 'open';
+
+  async function api(path, opts = {}) {
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code } });
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/shirt-orders';
+    if (!res.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function render() {
+    const list = filter === 'open' ? orders.filter(o => o.status === 'new' || o.status === 'ready') : orders;
+    $('list').innerHTML = list.length ? '<table><thead><tr><th>Paid (WAT)</th><th>Order</th><th>Shirt</th><th>Print</th><th>Buyer</th><th>Status</th></tr></thead><tbody>' +
+      list.map(o => `<tr><td>${esc(when(o.paidAt))}</td><td>${esc(o.id)}<br><span class="note">₦${(o.totalKobo / 100).toLocaleString('en-NG')}${o.emailed ? '' : ' · email not sent'}</span></td>` +
+        `<td>${esc(o.product)}<br><span class="note">Size ${esc(o.size)}</span></td><td class="print">${esc(o.name)} ${esc(o.number)}</td>` +
+        `<td>${esc(o.buyer)}<br><span class="note">${esc(o.phone)} · ${esc(o.email)}</span></td>` +
+        `<td><select data-id="${esc(o.id)}" aria-label="Status for ${esc(o.id)}">${Object.entries(LABEL).map(([k, v]) => `<option value="${k}"${k === o.status ? ' selected' : ''}>${v}</option>`).join('')}</select>` +
+        (o.statusBy ? `<br><span class="note">${esc(o.statusBy)}, ${esc(when(o.statusAt))}</span>` : '') + '</td></tr>').join('') + '</tbody></table>'
+      : `<p class="muted">${filter === 'open' ? 'Nothing to do: no new or ready orders.' : 'No paid orders yet.'}</p>`;
+  }
+  async function load() {
+    const d = await api('/api/admin/shirt-orders');
+    orders = d.orders;
+    $('lede').textContent = d.enabled
+      ? `Paid personalised-shirt orders (name and number). How fans get them: ${d.howYouGetIt}`
+      : 'Shirt personalisation is switched OFF on the website (CMS → Club Shop Products → Personalisation). Past orders still show here.';
+    render();
+  }
+  $('list').addEventListener('change', async e => {
+    const s = e.target.closest('select[data-id]'); if (!s) return;
+    try { await api('/api/admin/shirt-orders', { method: 'POST', body: JSON.stringify({ id: s.dataset.id, status: s.value }) }); msg('Saved.', true); await load(); }
+    catch (err) { msg(err.message, false); }
+  });
+  document.querySelectorAll('[data-f]').forEach(b => b.addEventListener('click', () => {
+    filter = b.dataset.f;
+    document.querySelectorAll('[data-f]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  }));
+  load().catch(err => msg(err.message, false));
+})();
+</script>

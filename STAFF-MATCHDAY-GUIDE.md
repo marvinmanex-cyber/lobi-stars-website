@@ -45,7 +45,10 @@ Fans need a free fan account with a confirmed email to vote or predict.
    starts* only if it shouldn't start 15 minutes before kick-off. This works
    for home **and** away games. On the day, press **Test stream** on
    **Admin → Commentary** (see STAFF-GUIDE.md, section 9).
-6. Predict & Win opens automatically **24 hours before kick-off**. Fans who
+6. **Tickets:** to give members first access, set *General sale opens* on the
+   match (Admin → Manage matches). Members confirmed in Admin → Members can
+   buy before then; everyone else from that time.
+7. Predict & Win opens automatically **24 hours before kick-off**. Fans who
    said yes to news and offers get a "Predictions are now open" email (once
    the email service is set up).
 
@@ -190,6 +193,11 @@ exported files private and delete them when you no longer need them.
 5. **Players:** add the real squad with photos in the CMS (voting uses them).
 6. **Prediction League prize:** confirm whether there is an end-of-season
    prize and how much (see section 5a). The legal review should cover it too.
-7. **Lobi Stars FC Live stream:** the club chose Option A (our own
+7. **Membership:** decide how fans pay for membership and fill in *How to pay*
+   (CMS → Membership settings); decide whether to switch on online payment.
+8. **Shirt personalisation:** confirm the fee, sizes and how fans get their
+   shirts before switching it on (STAFF-GUIDE.md, section 5).
+9. **Hospitality packages:** add them in the CMS when they are ready.
+10. **Lobi Stars FC Live stream:** the club chose Option A (our own
    stream.lobistarsfc.com address). Finish the partner and DNS checklist in
    COMMENTARY-STREAM-SETUP.md, then add the stream address on Admin → Commentary.

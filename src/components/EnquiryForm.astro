@@ -3,12 +3,15 @@
 // endpoint the original homepage contact form used). Works without
 // JavaScript; with JavaScript it submits in place and shows a message.
 interface Props {
-  kind: 'contact' | 'partnership';
+  kind: 'contact' | 'partnership' | 'hospitality';
+  /** Hospitality form: package names to choose from. */
+  packages?: string[];
   submitLabel?: string;
   /** Partnership form: Official Club Partner categories still available. */
   openCategories?: string[];
 }
-const { kind, submitLabel = kind === 'partnership' ? 'Send Partnership Request' : 'Send Message', openCategories = [] } = Astro.props;
+const { kind, submitLabel = kind === 'partnership' ? 'Send Partnership Request' : kind === 'hospitality' ? 'Send Hospitality Enquiry' : 'Send Message', openCategories = [], packages = [] } = Astro.props;
+const SUBJECTS = { partnership: 'Partnership enquiry - lobistarsfc.com', hospitality: 'Hospitality enquiry - lobistarsfc.com', contact: 'Contact form - lobistarsfc.com' };
 const FORMSPREE = 'https://formspree.io/f/xbdwbyaz';
 // Principal and Kit partnerships are taken, so they're not offered.
 const interests = [
@@ -22,7 +25,7 @@ const interests = [
 ];
 ---
 <form class="eq" action={FORMSPREE} method="POST" data-enquiry>
-  <input type="hidden" name="_subject" value={kind === 'partnership' ? 'Partnership enquiry - lobistarsfc.com' : 'Contact form - lobistarsfc.com'} />
+  <input type="hidden" name="_subject" value={SUBJECTS[kind]} />
   <input type="hidden" name="form" value={kind} />
   <div class="form-row">
     <div class="form-grp"><label class="form-lbl" for={`${kind}-fn`}>{kind === 'partnership' ? 'Full Name' : 'First Name'}</label>
@@ -39,7 +42,7 @@ const interests = [
     <div class="form-grp"><label class="form-lbl" for={`${kind}-em`}>{kind === 'partnership' ? 'Work Email' : 'Email Address'}</label>
       <input class="form-inp" id={`${kind}-em`} name="email" type="email" autocomplete="email" required /></div>
     <div class="form-grp"><label class="form-lbl" for={`${kind}-ph`}>Phone {kind === 'contact' && <span>(optional)</span>}</label>
-      <input class="form-inp" id={`${kind}-ph`} name="phone" type="tel" autocomplete="tel" placeholder="+234..." required={kind === 'partnership'} /></div>
+      <input class="form-inp" id={`${kind}-ph`} name="phone" type="tel" autocomplete="tel" placeholder="+234..." required={kind !== 'contact'} /></div>
   </div>
   {kind === 'partnership' ? (
     <div class="form-row">
@@ -54,14 +57,31 @@ const interests = [
         </select>
       </div>
     </div>
+  ) : kind === 'hospitality' ? (
+    <>
+      <div class="form-row">
+        <div class="form-grp"><label class="form-lbl" for="hospitality-co">Company or group <span>(optional)</span></label>
+          <input class="form-inp" id="hospitality-co" name="company" autocomplete="organization" /></div>
+        <div class="form-grp"><label class="form-lbl" for="hospitality-guests">Number of guests</label>
+          <input class="form-inp" id="hospitality-guests" name="guests" type="number" min="1" max="500" inputmode="numeric" required /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-grp"><label class="form-lbl" for="hospitality-match">Which match?</label>
+          <input class="form-inp" id="hospitality-match" name="subject" placeholder="e.g. next home game, or a date" required /></div>
+        {packages.length > 0 && (
+          <div class="form-grp"><label class="form-lbl" for="hospitality-pkg">Package</label>
+            <select class="form-sel" id="hospitality-pkg" name="category" data-package>{packages.map(n => <option>{n}</option>)}<option>Not sure yet</option></select></div>
+        )}
+      </div>
+    </>
   ) : (
     <div class="form-grp"><label class="form-lbl" for="contact-sub">Subject</label>
       <input class="form-inp" id="contact-sub" name="subject" placeholder="How can we help?" required /></div>
   )}
   <div class="form-grp"><label class="form-lbl" for={`${kind}-msg`}>Message</label>
     <textarea class="form-ta" id={`${kind}-msg`} name="message" required
-      placeholder={kind === 'partnership' ? 'How would you like to work with Lobi Stars?' : 'Write your message here...'}></textarea></div>
-  {kind === 'partnership' && (
+      placeholder={kind === 'partnership' ? 'How would you like to work with Lobi Stars?' : kind === 'hospitality' ? 'Tell us about your group or event, and anything you need.' : 'Write your message here...'}></textarea></div>
+  {kind !== 'contact' && (
     <div class="form-grp eq-consent">
       <label><input type="checkbox" name="privacy_consent" value="yes" required />
         I agree that Lobi Stars FC may use these details to respond to my enquiry, as described in the <a href="/privacy" target="_blank">Privacy Policy</a>.</label>
@@ -95,6 +115,16 @@ const interests = [
     sel.addEventListener('change', sync);
     sync();
   });
+  // Hospitality "Enquire" buttons pre-select the package and jump to the form.
+  document.querySelectorAll<HTMLElement>('[data-enquire-package]').forEach(btn => btn.addEventListener('click', e => {
+    const form = document.querySelector<HTMLFormElement>('[data-enquiry]');
+    const pkg = form?.querySelector<HTMLSelectElement>('[data-package]');
+    if (!form) return;
+    e.preventDefault();
+    if (pkg) pkg.value = btn.dataset.enquirePackage!;
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    form.querySelector<HTMLInputElement>('input:not([type=hidden])')?.focus({ preventScroll: true });
+  }));
   // "Enquire" buttons pre-select a category and jump to the form.
   document.querySelectorAll<HTMLElement>('[data-enquire]').forEach(btn => btn.addEventListener('click', e => {
     const form = document.querySelector<HTMLFormElement>('[data-enquiry]');

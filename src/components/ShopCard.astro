@@ -4,10 +4,13 @@ import { withSeason, formatNaira } from '../lib/site';
 interface Props {
   product: {
     name: string; description: string; price: number | null; image: string; jumiaUrl: string;
-    badge: string; badgeColor: string; inStock: boolean;
+    badge: string; badgeColor: string; inStock: boolean; id?: string;
   };
+  /** Show "Personalise" (name and number, paid on the site). */
+  personalise?: boolean;
 }
 const p = Astro.props.product;
+const personalise = Astro.props.personalise && p.inStock && !!formatNaira(p.price);
 const name = withSeason(p.name);
 const price = formatNaira(p.price);
 const canBuy = p.inStock && !!price && !!p.jumiaUrl;
@@ -26,6 +29,7 @@ const canBuy = p.inStock && !!price && !!p.jumiaUrl;
     ) : (
       <button type="button" class="pc-btn" disabled>{p.inStock ? 'Coming soon' : 'Out of stock'}</button>
     )}
+    {personalise && <button type="button" class="pc-btn pc-btn--pers" data-personalise={p.id}>Personalise with name &amp; number</button>}
   </div>
 </article>
 
@@ -47,6 +51,8 @@ const canBuy = p.inStock && !!price && !!p.jumiaUrl;
     background: #F68B1E; color: #fff; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase;
   }
   .pc-btn:hover { background: #E07A10; }
+  .pc-btn--pers { margin-top: 8px; background: var(--red); cursor: pointer; }
+  .pc-btn--pers:hover { background: #A3161B; }
   .pc-btn:disabled { background: #D5D9DE; color: #5B6472; cursor: not-allowed; }
   .pc-btn:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
 </style>

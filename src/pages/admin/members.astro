@@ -1,0 +1,101 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Members | Lobi Stars Admin" description="Confirm official memberships." noindex>
+  <div class="wrap am">
+    <AdminNav current="members" />
+    <div class="stag">Admin</div>
+    <h1 class="stitle">Official <span class="r">Members</span></h1>
+    <p class="muted am-lede">
+      A fan becomes an official member for the season when you confirm their payment here (or when they pay online, if
+      online payment is switched on in the CMS). Members get the digital membership card on their account, members-only
+      stories and the ticket priority window. Signing up on the Membership page alone does not make someone a member.
+    </p>
+    <p class="am-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="panel">
+      <form class="am-search" id="search">
+        <label class="form-lbl" for="q">Find a fan account</label>
+        <div class="am-row">
+          <input class="form-inp" id="q" placeholder="Name, email, phone or member number (LS-MBR-…)" />
+          <button class="btn-p" type="submit">Search</button>
+          <button class="btn-o" type="button" id="showMembers">This season's members</button>
+        </div>
+      </form>
+      <p class="muted small" id="summary"></p>
+      <div class="scroll" id="list"><p class="muted">Loading…</p></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .am { max-width: 1200px; padding-top: 40px; padding-bottom: 90px; }
+  .am-lede { max-width: 860px; margin-bottom: 18px; }
+  .am-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
+  .am-msg.ok { background: #E8F7EE; color: #17643A; } .am-msg.err { background: #FDECEC; color: #A3161B; }
+  .panel { margin-bottom: 20px; min-width: 0; }
+  .am-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .am-row .form-inp { flex: 1 1 260px; }
+  .small { font-size: 14px; margin: 14px 0 10px; }
+  .scroll { overflow-x: auto; }
+  .am :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .am :global(th), .am :global(td) { padding: 8px 10px; border-bottom: 1px solid var(--d4); text-align: left; vertical-align: top; }
+  .am :global(th) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); white-space: nowrap; }
+  .am :global(.tag) { display: inline-block; border-radius: 4px; padding: 2px 6px; font-size: 12px; background: #F1F2F4; margin: 0 4px 2px 0; white-space: nowrap; }
+  .am :global(.tag.ok) { background: #FFC72C; color: #15181D; font-weight: 700; }
+  .am :global(td button) { margin: 2px 4px 2px 0; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-size: 13px; white-space: nowrap; }
+  .am :global(td button.go) { background: var(--red); border-color: var(--red); color: #fff; }
+  .am :global(.note) { color: var(--lt); font-size: 13px; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'am-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
+  const day = iso => iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' }) : '';
+  let season = '', query = '';
+
+  async function api(path, opts = {}) {
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code } });
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/members';
+    if (!res.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+
+  async function load(q = '') {
+    query = q;
+    const d = await api('/api/admin/members' + (q ? '?q=' + encodeURIComponent(q) : ''));
+    season = d.season;
+    const price = d.priceKobo ? '₦' + (d.priceKobo / 100).toLocaleString('en-NG') : '';
+    $('summary').textContent = (q ? `${d.members.length} fan account(s) matching "${q}".` : `${d.members.length} confirmed member(s) for ${season}.`) +
+      ` Membership ${price}. Online payment is ${d.onlinePayment ? 'ON' : 'OFF'}. ${d.pendingSignups} sign-up(s) from the Membership page not yet confirmed for ${season} (search their name to confirm).`;
+    $('list').innerHTML = d.members.length ? '<table><thead><tr><th>Member number</th><th>Name</th><th>Email / phone</th><th>Status</th><th>Note</th><th></th></tr></thead><tbody>' +
+      d.members.map(m => `<tr data-id="${esc(m.id)}" data-name="${esc(m.name)}"><td>${esc(m.id)}</td><td>${esc(m.name)}</td><td>${esc(m.email)}<br><span class="note">${esc(m.phone)}</span></td><td>` +
+        (m.season === season ? `<span class="tag ok">Member ${esc(season)}</span><br><span class="note">since ${esc(day(m.since))} (${m.source === 'online' ? 'paid online' : 'staff'})</span>` : (m.season ? `<span class="tag">Was member ${esc(m.season)}</span>` : '<span class="tag">Not a member</span>')) +
+        (m.signedUpAsMember && m.season !== season ? '<span class="tag">Signed up on Membership page</span>' : '') + (m.verified ? '' : '<span class="tag">Email not confirmed</span>') +
+        `</td><td class="note">${esc(m.note)}</td><td>` +
+        (m.season === season ? '<button data-act="remove">Remove membership</button>' : `<button class="go" data-act="confirm">Confirm ${esc(season)}</button>`) + '</td></tr>').join('') +
+      '</tbody></table>' : `<p class="muted">${q ? 'No fan accounts found.' : 'No confirmed members yet this season.'}</p>`;
+  }
+
+  $('list').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const tr = b.closest('tr');
+    const body = { memberId: tr.dataset.id, action: b.dataset.act };
+    if (body.action === 'confirm') {
+      const note = prompt(`Confirm ${tr.dataset.name} as an official member for ${season}.\n\nHow was it paid? (e.g. "Cash at club office, receipt 0123" or "Bank transfer, ref 4567")`);
+      if (!note) return;
+      body.note = note;
+    } else if (!confirm(`Remove ${tr.dataset.name}'s membership for ${season}?`)) return;
+    try { await api('/api/admin/members', { method: 'POST', body: JSON.stringify(body) }); msg(body.action === 'confirm' ? 'Membership confirmed.' : 'Membership removed.', true); await load(query); }
+    catch (err) { msg(err.message, false); }
+  });
+  $('search').addEventListener('submit', e => { e.preventDefault(); load($('q').value.trim()).catch(err => msg(err.message, false)); });
+  $('showMembers').addEventListener('click', () => { $('q').value = ''; load().catch(err => msg(err.message, false)); });
+  load().catch(err => msg(err.message, false));
+})();
+</script>

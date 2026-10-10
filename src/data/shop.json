@@ -1,5 +1,19 @@
 {
   "_todo": "TODO: add each product's real price in naira (a number, e.g. 25000) and its own Jumia product link. Products without a price show 'Price coming soon'; without a link the buy button is disabled.",
+  "personalisation": {
+    "_todo": "TODO: the club to confirm the personalisation fee, the sizes and how fans receive personalised shirts. Personalisation only appears when enabled is true, a fee is set, 'howYouGetIt' is filled in and the shirt has a price.",
+    "enabled": false,
+    "feeNaira": null,
+    "maxLetters": 12,
+    "sizes": [
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "howYouGetIt": ""
+  },
   "products": [
     {
       "id": "anthem-jacket",
@@ -10,7 +24,8 @@
       "jumiaUrl": "",
       "badge": "PREMIUM",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "away-jersey",
@@ -21,7 +36,8 @@
       "jumiaUrl": "",
       "badge": "AWAY",
       "badgeColor": "#444444",
-      "inStock": true
+      "inStock": true,
+      "personalisable": true
     },
     {
       "id": "backpack",
@@ -32,7 +48,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "club-cap",
@@ -43,7 +60,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "coffee-mug",
@@ -54,7 +72,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "fancy-tshirts",
@@ -65,7 +84,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "flipstraw-tumbler",
@@ -76,7 +96,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "home-jersey",
@@ -87,7 +108,8 @@
       "jumiaUrl": "",
       "badge": "HOME",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": true
     },
     {
       "id": "mini-football",
@@ -98,7 +120,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "phone-case",
@@ -109,7 +132,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "pint-glass",
@@ -120,7 +144,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "pro-boots",
@@ -131,7 +156,8 @@
       "jumiaUrl": "",
       "badge": "PRO GEAR",
       "badgeColor": "#000000",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "retro-jersey",
@@ -142,7 +168,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "supporters-scarf",
@@ -153,7 +180,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "training-joggers",
@@ -164,7 +192,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     },
     {
       "id": "wall-clock",
@@ -175,7 +204,8 @@
       "jumiaUrl": "",
       "badge": "",
       "badgeColor": "#D4202B",
-      "inStock": true
+      "inStock": true,
+      "personalisable": false
     }
   ]
 }

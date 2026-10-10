@@ -1,0 +1,75 @@
+---
+// /hospitality -- matchday hospitality enquiries. Packages come from the CMS
+// (Site Settings -> Hospitality packages) and are only shown once the club
+// has added them; until then the page is the enquiry form.
+import Layout from '../layouts/Layout.astro';
+import EnquiryForm from '../components/EnquiryForm.astro';
+import data from '../data/hospitality.json';
+import { formatNaira } from '../lib/site';
+
+type Pkg = { name?: string; includes?: string[]; price?: number | null; priceNote?: string; guests?: string };
+const packages = ((data.packages || []) as Pkg[])
+  .filter(p => p.name && (p.includes || []).filter(Boolean).length)
+  .map(p => ({ ...p, name: p.name!, includes: (p.includes || []).filter(Boolean), priceText: formatNaira(p.price ?? null) || p.priceNote || 'Price on request' }));
+---
+<Layout title="Hospitality | Lobi Stars Football Club" description="Matchday hospitality at Lobi Stars FC home games for businesses, groups and special occasions. Send an enquiry to the club.">
+  <div class="page-hero wrap">
+    <div class="stag">Matchday</div>
+    <h1 class="stitle">Hospitality</h1>
+    <div class="divr"></div>
+    <p class="muted hp-lede">Bring clients, colleagues, family or friends to a Lobi Stars home game. Tell us about your group and the match you would like to attend, and the club will get back to you.</p>
+  </div>
+
+  <div class="page-content wrap hp">
+    {packages.length > 0 && (
+      <section aria-labelledby="hp-pk">
+        <h2 class="hp-h2" id="hp-pk">Packages</h2>
+        <div class="hp-grid">
+          {packages.map(p => (
+            <article class="hp-card">
+              <h3>{p.name}</h3>
+              <p class="hp-price">{p.priceText}</p>
+              {p.guests && <p class="hp-guests">{p.guests}</p>}
+              <ul>{p.includes.map(i => <li>{i}</li>)}</ul>
+              <a class="btn-p" href="#enquire" data-enquire-package={p.name}>Enquire</a>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <div class="hp-cols">
+      <section class="panel" id="enquire" aria-labelledby="hp-form">
+        <h2 class="hp-h2" id="hp-form">Hospitality enquiry</h2>
+        <EnquiryForm kind="hospitality" packages={packages.map(p => p.name)} />
+      </section>
+      <aside class="hp-side">
+        <h2 class="hp-h3">Just want a great seat?</h2>
+        <p>VIP Sitting tickets for home games can be bought online.</p>
+        <a class="btn-o" href="/tickets/">Buy tickets</a>
+        <h2 class="hp-h3">Partnerships</h2>
+        <p>For sponsorship, pitchside advertising and brand partnerships, see our partner programme.</p>
+        <a class="btn-o" href="/partners/">Partner with us</a>
+      </aside>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .hp { padding-bottom: 80px; }
+  .hp-lede { max-width: 680px; font-size: 17px; line-height: 1.7; }
+  .hp-h2 { margin: 0 0 16px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .hp-h3 { margin: 0 0 6px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .hp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 18px; margin-bottom: 36px; }
+  .hp-card { border: 2px solid #C9A227; border-radius: 16px; padding: 22px; background: linear-gradient(160deg, #15181D, #2A0507); color: #fff; display: flex; flex-direction: column; }
+  .hp-card h3 { margin: 0; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; }
+  .hp-price { margin: 8px 0 0; font: 400 24px/1 'Bebas Neue', sans-serif; color: #FFC72C; }
+  .hp-guests { margin: 6px 0 0; font-size: 14px; color: rgba(255,255,255,.75); }
+  .hp-card ul { margin: 14px 0 18px; padding-left: 18px; line-height: 1.7; color: rgba(255,255,255,.9); flex: 1; }
+  .hp-card .btn-p { text-align: center; }
+  .hp-cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, .8fr); gap: 26px; align-items: start; }
+  .hp-side { border: 1px solid var(--d4); border-radius: 14px; padding: 22px; background: #fff; }
+  .hp-side p { color: var(--lt); margin: 0 0 12px; }
+  .hp-side .btn-o { margin-bottom: 22px; display: inline-block; }
+  @media (max-width: 860px) { .hp-cols { grid-template-columns: 1fr; } }
+</style>

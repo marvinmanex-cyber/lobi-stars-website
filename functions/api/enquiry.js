@@ -2,15 +2,22 @@ import { ensureContactsSchema, captureContact, normEmail, splitName } from './_l
 import { clientIp, rateLimit, tooMany, ensureFanSchema } from './_lib/fans.js';
 import { randomId } from './_lib/crypto.js';
 
-// POST /api/enquiry -- saves a Contact Us or partnership enquiry to the
-// database (the browser also still sends it to the club's Formspree inbox).
+// POST /api/enquiry -- saves a Contact Us, partnership or hospitality enquiry
+// to the database (the browser also still sends it to the club's Formspree
+// inbox). Hospitality enquiries are stored as 'contact' rows (the table only
+// allows contact/partnership) with "Hospitality: N guests" in `interest`,
+// and appear in the fan database under the Hospitality Enquiry source.
 export async function onRequestPost({ request, env }) {
   await ensureFanSchema(env.DB);
   if (!(await rateLimit(env.DB, `enquiry:${clientIp(request)}`, 10, 3600))) return tooMany();
   let b;
   try { b = await request.json(); } catch { b = {}; }
   const s = (v, n = 200) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
-  const kind = b.form === 'partnership' ? 'partnership' : 'contact';
+  const kind = b.form === 'partnership' ? 'partnership' : b.form === 'hospitality' ? 'hospitality' : 'contact';
+  if (kind === 'hospitality') {
+    const guests = Math.max(0, Math.min(500, Math.round(Number(b.guests) || 0)));
+    b.interest = guests ? `Hospitality: ${guests} guest${guests === 1 ? '' : 's'}` : 'Hospitality';
+  }
   const email = normEmail(b.email);
   if (!email) return Response.json({ error: 'Please enter a valid email address.' }, { status: 400 });
 
@@ -20,12 +27,12 @@ export async function onRequestPost({ request, env }) {
   await env.DB.prepare(
     `INSERT INTO enquiries (id, kind, first_name, surname, company, email, phone, subject, interest, category, message, privacy_consent)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, kind, name.firstName || null, name.surname || null, s(b.company, 120) || null, email, s(b.phone, 30) || null,
+  ).bind(id, kind === 'partnership' ? 'partnership' : 'contact', name.firstName || null, name.surname || null, s(b.company, 120) || null, email, s(b.phone, 30) || null,
     s(b.subject, 200) || null, s(b.interest, 120) || null, s(b.category, 60) || null, s(b.message, 5000) || null,
     b.privacy_consent ? 1 : 0).run();
 
   await captureContact(env, {
-    source: kind === 'partnership' ? 'sponsorship' : 'contact_form', refTable: 'enquiries', refId: id,
+    source: kind === 'partnership' ? 'sponsorship' : kind === 'hospitality' ? 'hospitality' : 'contact_form', refTable: 'enquiries', refId: id,
     email, phone: b.phone, firstName: name.firstName, surname: name.surname, label: s(b.subject || b.interest, 120),
   });
   return Response.json({ ok: true });

@@ -94,7 +94,9 @@ test('the .xlsx export has every sheet and opens as a valid workbook', async () 
   const wb = strFromU8(files['xl/workbook.xml']);
   const names = [...wb.matchAll(/<sheet name="([^"]+)"/g)].map(m => m[1].replace(/&amp;/g, '&'));
   assert.deepEqual(names.slice(0, 2), ['All Contacts', 'Summary']);
-  assert.equal(names.length, 10);
+  // All Contacts + Summary + one sheet per source.
+  const { sources } = (await call('/api/admin/fans', { admin: true })).data;
+  assert.equal(names.length, 2 + Object.keys(sources).length);
   for (const n of ['Newsletter', 'Contact Form', 'Membership', 'Ticket Buyer', 'Sponsorship Enquiry', 'Food Order', 'Download Lead']) assert.ok(names.includes(n), n);
   const all = strFromU8(files['xl/worksheets/sheet1.xml']);
   assert.match(all, /state="frozen"/);
@@ -145,7 +147,9 @@ test('non-admins are blocked and staff without export permission cannot download
 test('bots and signed-in staff are not counted as visitors', async () => {
   const path = `/seed-${RUN}`;
   const view = headers => call('/api/track', { method: 'POST', body: { path, consent: false }, headers });
-  for (let i = 0; i < 12; i++) await view({ 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1' });
+  // Enough views to reach today's top 10 even on a busy local test database.
+  const HUMAN = 60;
+  for (let i = 0; i < HUMAN; i++) await view({ 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1' });
   await view({ 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' });
   await view({ 'User-Agent': 'facebookexternalhit/1.1' });
   const login = await call('/api/admin/login', { method: 'POST', body: { code: CODE } });
@@ -154,7 +158,7 @@ test('bots and signed-in staff are not counted as visitors', async () => {
   const { data } = await call('/api/admin/analytics?range=today', { admin: true });
   const row = data.topPages.find(p => p.path === path);
   assert.ok(row, 'test page is in the top pages');
-  assert.equal(row.views, 12);
+  assert.equal(row.views, HUMAN);
   assert.equal(row.visitors, 0, 'no consent -> anonymous page views only');
 });
 

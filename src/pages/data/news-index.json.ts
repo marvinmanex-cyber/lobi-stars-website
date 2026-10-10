@@ -17,6 +17,7 @@ export async function GET() {
     publishedAt: a.data.publishedAt.toISOString(),
     publishedDay: watDate(a.data.publishedAt),
     isVideo: a.data.isVideo,
+    membersOnly: a.data.membersOnly,
     teamNews: (a.data.teamNews || []).map(r => ({
       name: r.name || name(r.player) || '', player: r.player && name(r.player) ? r.player : null,
       status: r.status, reason: r.reason || '', expectedReturn: r.expectedReturn || '',

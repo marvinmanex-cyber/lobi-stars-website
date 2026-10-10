@@ -28,12 +28,12 @@ export async function onRequestPut({ request, env, params }) {
     `UPDATE events SET
        home_team = ?, away_team = ?, competition = ?, event_date = ?, venue = ?,
        vip_price_kobo = ?, premium_price_kobo = ?, regular_price_kobo = ?, active = ?,
-       programme_url = ?, is_home = ?, commentary_enabled = ?, commentary_start_at = ?
+       programme_url = ?, is_home = ?, commentary_enabled = ?, commentary_start_at = ?, public_sale_at = ?
      WHERE id = ?`
   ).bind(
     e.home_team, e.away_team, e.competition, e.event_date, e.venue,
     e.vip_price_kobo, e.premium_price_kobo, e.regular_price_kobo, e.active, e.programme_url, e.is_home,
-    e.commentary_enabled, e.commentary_start_at, id
+    e.commentary_enabled, e.commentary_start_at, e.public_sale_at, id
   ).run();
 
   return Response.json({ ok: true });

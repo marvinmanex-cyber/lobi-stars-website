@@ -1,6 +1,7 @@
 import { verifyWebhookSignature } from './_lib/paystack.js';
 import { fulfillOrder } from './_lib/fulfillOrder.js';
 import { fulfillFoodOrder } from './_lib/fulfillFoodOrder.js';
+import { findPayment, fulfilPayment } from './_lib/extraPayments.js';
 
 // POST /api/paystack-webhook -- Paystack calls this server-to-server after a
 // payment attempt. This (not the browser redirect) is the source of truth
@@ -8,7 +9,8 @@ import { fulfillFoodOrder } from './_lib/fulfillFoodOrder.js';
 // buyer can close their browser before the redirect completes.
 //
 // One Paystack account has exactly one webhook URL, so this handles both
-// ticket orders and food orders -- whichever table has a matching reference.
+// ticket orders, food orders, online membership and personalised shirts --
+// whichever table has a matching reference.
 export async function onRequestPost({ request, env, waitUntil }) {
   const rawBody = await request.text();
   const signature = request.headers.get('x-paystack-signature');
@@ -46,6 +48,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
       return new Response('Amount mismatch', { status: 400 });
     }
     await fulfillFoodOrder(env, foodOrder, waitUntil);
+    return new Response('OK', { status: 200 });
+  }
+
+  const other = await findPayment(env.DB, reference);
+  if (other) {
+    if (amount !== other.amount) return new Response('Amount mismatch', { status: 400 });
+    await fulfilPayment(env, other, waitUntil);
     return new Response('OK', { status: 200 });
   }
 

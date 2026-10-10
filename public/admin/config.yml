@@ -44,6 +44,8 @@ collections:
       - {label: "Updated at (set this when you edit a published story)", name: "updatedAt", widget: "datetime", required: false}
       - {label: "Tagged players", name: "players", widget: "relation", collection: "players", value_field: "{{slug}}", search_fields: ["name"], display_fields: ["name"], multiple: true, required: false, hint: "Shown as player chips; the story also appears on each player's profile."}
       - {label: "Series (optional, e.g. Heritage)", name: "series", widget: "string", required: false, hint: "Use Heritage for long reads about club history and legends."}
+      - {label: "Shop the story (club shop products)", name: "products", widget: "relation", collection: "settings", file: "shop", value_field: "products.*.id", search_fields: ["products.*.name"], display_fields: ["products.*.name"], multiple: true, required: false, hint: "e.g. tag the new home shirt on a kit launch story. Shown as product cards under the article."}
+      - {label: "Members only", name: "membersOnly", widget: "boolean", default: false, hint: "Only confirmed members can read the story. Title, summary and cover photo stay public."}
       - {label: "Matchday content type", name: "contentType", widget: "select", required: false, options: ["General", "Preview", "Team News", "Line-ups", "Live updates", "Match Report", "Highlights", "Reaction/Interview"], hint: "Used by the matchday content checklist in Admin → Match Centre."}
       - {label: "Match date (for match previews, team news, reports…)", name: "matchDate", widget: "datetime", required: false, time_format: false, format: "YYYY-MM-DD", date_format: "DD/MM/YYYY"}
       - label: "Team News table (Team News stories only)"
@@ -174,6 +176,28 @@ collections:
           - {label: "Link address (optional)", name: "url", widget: "string", required: false, hint: "e.g. /tickets/ or a full https:// address"}
           - {label: "Show from (optional, Nigerian time)", name: "start", widget: "datetime", required: false, format: "YYYY-MM-DDTHH:mm", date_format: "DD/MM/YYYY", time_format: "HH:mm"}
           - {label: "Show until (optional, Nigerian time)", name: "end", widget: "datetime", required: false, format: "YYYY-MM-DDTHH:mm", date_format: "DD/MM/YYYY", time_format: "HH:mm"}
+      - name: "hospitality"
+        label: "Hospitality packages"
+        file: "src/data/hospitality.json"
+        fields:
+          - label: "Packages (leave empty to show only the enquiry form)"
+            name: "packages"
+            widget: "list"
+            required: false
+            summary: "{{fields.name}}"
+            fields:
+              - {label: "Package name", name: "name", widget: "string"}
+              - {label: "What's included (one item per line)", name: "includes", widget: "list"}
+              - {label: "Price per person in naira (optional)", name: "price", widget: "number", value_type: "int", required: false}
+              - {label: "Price text if no fixed price (e.g. From ₦50,000 per table)", name: "priceNote", widget: "string", required: false}
+              - {label: "Group size (optional, e.g. Tables of 10)", name: "guests", widget: "string", required: false}
+      - name: "membership"
+        label: "Membership settings"
+        file: "src/data/membership.json"
+        fields:
+          - {label: "Membership price in naira (per season)", name: "priceNaira", widget: "number", value_type: "int"}
+          - {label: "Allow online payment with Paystack", name: "onlinePayment", widget: "boolean", default: false, hint: "Off: staff confirm memberships in Admin → Members after payment. On: fans can also pay on their account page."}
+          - {label: "How to pay (shown to fans who are not yet members)", name: "howToPay", widget: "text", required: false, hint: "e.g. Pay at the club office at McCarthy Stadium, Monday to Friday 9am–4pm."}
       - name: "predictLeague"
         label: "Prediction League prize"
         file: "src/data/predict-league.json"
@@ -228,6 +252,16 @@ collections:
         label: "Club Shop Products"
         file: "src/data/shop.json"
         fields:
+          - label: "Shirt personalisation (name and number, paid online with Paystack)"
+            name: "personalisation"
+            widget: "object"
+            collapsed: true
+            fields:
+              - {label: "Switch on", name: "enabled", widget: "boolean", default: false, hint: "Only switch on once the fee, sizes and 'how fans get it' are confirmed and Paystack is set up. Shirts also need a price and 'Can be personalised' ticked."}
+              - {label: "Personalisation fee in naira (added to the shirt price)", name: "feeNaira", widget: "number", value_type: "int", required: false}
+              - {label: "Most letters in the name", name: "maxLetters", widget: "number", value_type: "int", default: 12}
+              - {label: "Sizes", name: "sizes", widget: "list", default: ["S", "M", "L", "XL", "XXL"]}
+              - {label: "How fans get their shirt", name: "howYouGetIt", widget: "text", required: false, hint: "e.g. Collect from the club shop at McCarthy Stadium within 14 days; bring your order email. Shown before payment and in the confirmation email."}
           - label: "Products"
             name: "products"
             widget: "list"
@@ -242,6 +276,7 @@ collections:
               - {label: "Badge (e.g. NEW)", name: "badge", widget: "string", required: false}
               - {label: "Badge Colour", name: "badgeColor", widget: "string", default: "#E31E24"}
               - {label: "In Stock", name: "inStock", widget: "boolean", default: true}
+              - {label: "Can be personalised (shirts)", name: "personalisable", widget: "boolean", default: false, required: false}
 
       - name: "videos"
         label: "Video Library (YouTube)"

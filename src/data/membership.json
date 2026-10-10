@@ -1,0 +1,6 @@
+{
+  "_todo": "TODO: the club to confirm how fans pay for membership (at the club, bank transfer or online) and whether to switch on online payment. Online payment stays off until onlinePayment is true.",
+  "priceNaira": 10000,
+  "onlinePayment": false,
+  "howToPay": ""
+}

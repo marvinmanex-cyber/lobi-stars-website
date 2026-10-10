@@ -46,6 +46,14 @@ export function parseEventPayload(body) {
     commentary_start_at = cs.toISOString();
   }
 
+  // Members' priority window: before this time only confirmed members can buy tickets.
+  let public_sale_at = null;
+  if (str(b.public_sale_at)) {
+    const ps = new Date(str(b.public_sale_at));
+    if (Number.isNaN(ps.getTime())) return { error: 'General sale time is not a valid date/time.' };
+    public_sale_at = ps.toISOString();
+  }
+
   if (!home_team || !away_team || !venue || !event_date) {
     return { error: 'Home team, away team, venue and date are all required.' };
   }
@@ -78,6 +86,7 @@ export function parseEventPayload(body) {
       is_home: b.is_home === true ? 1 : b.is_home === false ? 0 : null,
       commentary_enabled,
       commentary_start_at,
+      public_sale_at,
     },
   };
 }

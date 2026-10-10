@@ -42,6 +42,7 @@ export const MAIN_NAV: NavItem[] = [
 export const EXTRA_PAGES: NavLink[] = [
   { label: 'Contact', href: '/contact', description: 'Address, phone, email and contact form' },
   { label: 'In-Seat Food Ordering', href: '/food', description: 'Order food to your seat on matchday' },
+  { label: 'Hospitality', href: '/hospitality', description: 'Matchday hospitality for businesses and groups' },
   { label: 'Matchday Programme', href: '/programme', description: 'Download the matchday programme' },
   { label: 'Gallery', href: '/gallery', description: 'Photos from matchdays and club events' },
   { label: 'About the Club', href: '/club', description: 'About Lobi Stars FC' },

@@ -61,6 +61,16 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         </div>
 
         <div class="fset">
+          <div class="fset-label">Members' priority window (optional)</div>
+          <div class="f-grid">
+            <label class="span2">General sale opens
+              <input id="f-publicsale" type="datetime-local"/>
+            </label>
+          </div>
+          <p class="fhint">Until this time only confirmed members (Admin &rarr; Members) can buy tickets for this match. Leave blank for no priority window.</p>
+        </div>
+
+        <div class="fset">
           <div class="fset-label">Matchday programme (optional)</div>
           <div class="f-grid">
             <label class="span2">Image path
@@ -336,6 +346,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('f-prog').value = e ? (e.programme_url || '') : '';
       $('f-comm').checked = e ? e.commentary_enabled !== 0 : true;
       $('f-commstart').value = e && e.commentary_start_at ? isoToLocalInput(e.commentary_start_at) : '';
+      $('f-publicsale').value = e && e.public_sale_at ? isoToLocalInput(e.public_sale_at) : '';
       form._editId = e ? e.id : '';
       form.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -359,6 +370,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         programme_url: $('f-prog').value.trim(),
         commentary_enabled: $('f-comm').checked,
         commentary_start_at: $('f-commstart').value ? new Date($('f-commstart').value).toISOString() : '',
+        public_sale_at: $('f-publicsale').value ? new Date($('f-publicsale').value).toISOString() : '',
       };
       const id = form._editId || '';
       $('f-save').disabled = true;
@@ -402,6 +414,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
               regular_price_kobo: e.regular_price_kobo, programme_url: e.programme_url || '',
               is_home: e.is_home === null || e.is_home === undefined ? undefined : e.is_home === 1,
               commentary_enabled: e.commentary_enabled !== 0, commentary_start_at: e.commentary_start_at || '',
+              public_sale_at: e.public_sale_at || '',
             }),
           });
           await load();

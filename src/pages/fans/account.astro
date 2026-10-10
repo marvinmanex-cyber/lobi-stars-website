@@ -1,7 +1,7 @@
 ---
 // /fans/account -- the fan's own account page (opened from the header's
-// account icon). Shows the fan's Prediction League position this season;
-// a later phase adds the digital membership card here.
+// account icon). Shows the digital membership card (confirmed members), the
+// membership status, and the fan's Prediction League position this season.
 import FanAuthShell from '../../components/fans/FanAuthShell.astro';
 ---
 <FanAuthShell title="My Account" heading="My account" description="Your Lobi Stars FC fan account." intro="">
@@ -9,6 +9,16 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
     <p class="fa-note info" id="accLoading">Checking your account…</p>
     <div id="accBody" hidden>
       <p class="acc-hi">Hi <strong id="accName"></strong></p>
+      <section class="mcard-wrap" id="memCard" hidden aria-label="Digital membership card">
+        <div class="mcard">
+          <div class="mcard-top"><img src="/images/lobi-stars-fc.jpg" alt="" width="44" height="44" /><div><p class="mcard-club">Lobi Stars FC</p><p class="mcard-kind">Official Member</p></div><span class="mcard-season" id="mcSeason"></span></div>
+          <p class="mcard-name" id="mcName"></p>
+          <div class="mcard-row"><div><span>Member number</span><b id="mcId"></b></div><div><span>Member since</span><b id="mcSince"></b></div></div>
+          <p class="mcard-foot">Pride of Benue &middot; Red &amp; Gold</p>
+        </div>
+        <p class="acc-small">Show this card at the club when asked. It is only valid for the season shown.</p>
+      </section>
+      <div class="acc-mem" id="memStatus" hidden></div>
       <dl class="acc-dl">
         <div><dt>Email</dt><dd id="accEmail"></dd></div>
         <div><dt>Email confirmed</dt><dd id="accVerified"></dd></div>
@@ -37,6 +47,21 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
   .acc-dl dt { font: 700 13px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
   .acc-dl dd { margin: 0; overflow-wrap: anywhere; }
   .acc-h { margin: 0 0 10px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .mcard-wrap { margin: 0 0 22px; }
+  .mcard { position: relative; border-radius: 16px; padding: 18px 20px; color: #fff; background: radial-gradient(120% 140% at 0% 0%, #A3161B 0%, #4D0B0D 55%, #15181D 100%); border: 2px solid #C9A227; box-shadow: 0 14px 30px rgba(77, 11, 13, .3); aspect-ratio: 1.586; display: flex; flex-direction: column; max-width: 420px; margin: 0 auto; }
+  .mcard-top { display: flex; align-items: center; gap: 10px; }
+  .mcard-top img { width: 44px; height: 44px; border-radius: 50%; background: #fff; object-fit: contain; }
+  .mcard-club { margin: 0; font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .mcard-kind { margin: 2px 0 0; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .mcard-season { margin-left: auto; padding: 4px 10px; border-radius: 999px; background: #FFC72C; color: #15181D; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; }
+  .mcard-name { margin: auto 0 8px; font: 400 clamp(24px, 7vw, 32px)/1 'Bebas Neue', sans-serif; letter-spacing: 1.5px; overflow-wrap: anywhere; }
+  .mcard-row { display: flex; gap: 22px; flex-wrap: wrap; }
+  .mcard-row span { display: block; font: 700 10px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255,255,255,.7); }
+  .mcard-row b { font: 600 15px/1.3 'Barlow', sans-serif; letter-spacing: .5px; }
+  .mcard-foot { margin: 10px 0 0; font: 700 10px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.6); }
+  .acc-small { font-size: 13px; color: var(--lt); text-align: center; margin: 8px 0 0; }
+  .acc-mem { margin: 0 0 22px; padding: 14px 16px; border-radius: 10px; background: #FFF8E1; border: 1px solid #F1D27A; font-size: 15px; line-height: 1.5; }
+  .acc-mem .btn-p { margin-top: 10px; }
   .acc-season { font: 600 15px 'Barlow', sans-serif; letter-spacing: 0; color: var(--lt); }
   .acc-league { margin: 0 0 22px; }
   .acc-league strong { color: var(--red-text); }
@@ -51,7 +76,37 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
     $('accName').textContent = `${member.firstName} ${member.lastName}`;
     $('accEmail').textContent = member.email;
     $('accVerified').textContent = member.emailVerified ? 'Yes' : 'Not yet – check your inbox';
-    $('accTier').textContent = member.tier && member.tier !== 'Fan' ? `${member.tier} member` : 'Fan account';
+    const ms = member.membership || {};
+    $('accTier').textContent = ms.active ? `Official member (${ms.season})` : member.tier === 'Official' ? 'Membership not yet confirmed' : 'Fan account';
+    if (ms.active) {
+      $('mcSeason').textContent = ms.season;
+      $('mcName').textContent = `${member.firstName} ${member.lastName}`;
+      $('mcId').textContent = member.id;
+      $('mcSince').textContent = new Date(ms.since).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' });
+      $('memCard').hidden = false;
+    } else {
+      const box = $('memStatus');
+      const price = ms.priceKobo ? '₦' + (ms.priceKobo / 100).toLocaleString('en-NG') : '';
+      box.innerHTML = `<strong>Become an official member for ${ms.season}</strong><br>Members get the digital membership card, members-only stories and priority access to tickets.${price ? ` Membership is ${price} for the season.` : ''}`;
+      if (ms.onlinePayment) {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'btn-p'; b.textContent = `Pay ${price} with Paystack`;
+        b.addEventListener('click', async () => {
+          b.disabled = true; b.textContent = 'Starting payment…';
+          try {
+            const r = await fetch('/api/membership/checkout', { method: 'POST' }); const d = await r.json();
+            if (!r.ok || !d.authorizationUrl) throw new Error(d.error || 'Payment could not be started.');
+            location.href = d.authorizationUrl;
+          } catch (err) { b.disabled = false; b.textContent = `Pay ${price} with Paystack`; alert((err as Error).message); }
+        });
+        box.appendChild(document.createElement('br')); box.appendChild(b);
+      } else {
+        const p = document.createElement('p'); p.style.margin = '8px 0 0';
+        p.textContent = ms.howToPay || 'Your membership is activated once the club confirms your payment. ';
+        if (!ms.howToPay) { const a = document.createElement('a'); a.href = '/contact/'; a.textContent = 'Contact the club'; p.appendChild(a); }
+        box.appendChild(p);
+      }
+      box.hidden = false;
+    }
     $('accLoading').hidden = true; $('accBody').hidden = false;
     loadLeague();
   }).catch(() => { $('accLoading').textContent = 'Your account could not be loaded. Please try again.'; });

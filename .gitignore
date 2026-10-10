@@ -11,3 +11,6 @@ dist/
 
 # Local Cloudflare dev state (wrangler pages dev / local D1)
 .wrangler/
+
+# Generated at build time (members-only story text)
+functions/api/_generated/

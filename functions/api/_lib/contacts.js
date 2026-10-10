@@ -16,6 +16,8 @@ export const SOURCES = {
   sponsorship: 'Sponsorship Enquiry',
   food_order: 'Food Order',
   download_lead: 'Download Lead',
+  shop_order: 'Shop Order',
+  hospitality: 'Hospitality Enquiry',
 };
 
 let ready = false;
@@ -247,12 +249,15 @@ export async function deleteContactEverywhere(db, contactId) {
     if (s.ref_table === 'enquiries') stmts.push(db.prepare(`DELETE FROM enquiries WHERE id = ?`).bind(s.ref_id));
     if (s.ref_table === 'download_leads') stmts.push(db.prepare(`DELETE FROM download_leads WHERE id = ?`).bind(s.ref_id));
     if (s.ref_table === 'orders') stmts.push(db.prepare(`UPDATE orders SET buyer_name = 'Deleted', buyer_email = 'deleted@deleted.invalid', buyer_phone = '' WHERE id = ?`).bind(s.ref_id));
+    if (s.ref_table === 'shirt_orders') stmts.push(db.prepare(`UPDATE shirt_orders SET buyer_name = 'Deleted', buyer_email = 'deleted@deleted.invalid', buyer_phone = '', member_id = NULL WHERE id = ?`).bind(s.ref_id));
     if (s.ref_table === 'food_orders') stmts.push(db.prepare(`UPDATE food_orders SET email = 'deleted@deleted.invalid', phone = '', seat = '', stand = '' WHERE id = ?`).bind(s.ref_id));
     if (s.ref_table === 'members') {
       if (await tableExists(db, 'auth_tokens')) stmts.push(db.prepare(`DELETE FROM auth_tokens WHERE member_id = ?`).bind(s.ref_id));
       // Keep the vote counted for the match result but unlink it from the person.
       if (await tableExists(db, 'motm_votes')) stmts.push(db.prepare(`UPDATE motm_votes SET member_id = 'deleted-' || id WHERE member_id = ?`).bind(s.ref_id));
       if (await tableExists(db, 'predictions')) stmts.push(db.prepare(`UPDATE predictions SET member_id = 'deleted-' || id WHERE member_id = ?`).bind(s.ref_id));
+      if (await tableExists(db, 'shirt_orders')) stmts.push(db.prepare(`UPDATE shirt_orders SET member_id = NULL WHERE member_id = ?`).bind(s.ref_id));
+      if (await tableExists(db, 'membership_payments')) stmts.push(db.prepare(`UPDATE membership_payments SET member_id = 'deleted-' || id WHERE member_id = ?`).bind(s.ref_id));
       if (await tableExists(db, 'award_votes')) stmts.push(db.prepare(`UPDATE award_votes SET member_id = 'deleted-' || id WHERE member_id = ?`).bind(s.ref_id));
       stmts.push(db.prepare(`DELETE FROM members WHERE id = ?`).bind(s.ref_id));
     }

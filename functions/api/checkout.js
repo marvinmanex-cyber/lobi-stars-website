@@ -1,5 +1,9 @@
 import { randomId } from './_lib/crypto.js';
 import { initializeTransaction } from './_lib/paystack.js';
+import { ensureTable } from './_lib/matchCentre.js';
+import { readSession } from './_lib/session.js';
+import { membershipOf } from './_lib/membership.js';
+import { seasonConfig } from './_lib/seasonConfig.js';
 
 const TIER_COLUMN = {
   VIP: 'vip_price_kobo',
@@ -28,13 +32,29 @@ export async function onRequestPost({ request, env }) {
     return Response.json({ error: 'Invalid email address' }, { status: 400 });
   }
 
+  await ensureTable(env.DB);
   const event = await env.DB.prepare(
-    `SELECT id, home_team, away_team, event_date, ${TIER_COLUMN[tier]} AS unit_price_kobo
+    `SELECT id, home_team, away_team, event_date, public_sale_at, ${TIER_COLUMN[tier]} AS unit_price_kobo
      FROM events WHERE id = ? AND active = 1`
   ).bind(eventId).first();
 
   if (!event) {
     return Response.json({ error: 'Event not found or no longer on sale' }, { status: 404 });
+  }
+
+  // Members' priority window: until general sale opens, only confirmed members can buy.
+  if (event.public_sale_at && Date.now() < Date.parse(event.public_sale_at)) {
+    const memberId = await readSession(request, env.SESSION_SECRET);
+    const m = await membershipOf(env.DB, memberId, (await seasonConfig(env, request)).currentSeason);
+    if (!m?.active) {
+      const opens = new Date(event.public_sale_at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
+      return Response.json({
+        error: memberId
+          ? `Tickets for this match are in the members' priority window. General sale opens ${opens} WAT.`
+          : `Tickets for this match are in the members' priority window. Members: please log in first. General sale opens ${opens} WAT.`,
+        code: 'members_only',
+      }, { status: 403 });
+    }
   }
 
   const unitPriceKobo = event.unit_price_kobo;

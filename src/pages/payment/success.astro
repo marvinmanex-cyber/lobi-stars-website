@@ -1,0 +1,59 @@
+---
+// /payment/success -- where Paystack sends fans back after paying for
+// membership or a personalised shirt. The result is checked on the server.
+import FanAuthShell from '../../components/fans/FanAuthShell.astro';
+---
+<FanAuthShell title="Payment" heading="Payment" description="Your Lobi Stars FC payment." intro="">
+  <div id="pay" aria-live="polite">
+    <p class="fa-note info" id="payMsg">Checking your payment…</p>
+    <div id="payBody" hidden></div>
+  </div>
+</FanAuthShell>
+
+<style>
+  #payBody dl { display: grid; gap: 8px; margin: 0 0 18px; }
+  #payBody dl div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--d4); padding-bottom: 8px; flex-wrap: wrap; }
+  #payBody dt { font: 700 13px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  #payBody dd { margin: 0; font-weight: 600; }
+  #payBody .btn-p { display: block; text-align: center; }
+</style>
+
+<script>
+  const $ = (id: string) => document.getElementById(id)!;
+  const ref = new URLSearchParams(location.search).get('reference') || new URLSearchParams(location.search).get('trxref') || '';
+  const text = (tag: string, t: string) => { const el = document.createElement(tag); el.textContent = t; return el; };
+  let tries = 0;
+  async function check() {
+    if (!ref) { $('payMsg').textContent = 'No payment reference was found.'; $('payMsg').className = 'fa-note err'; return; }
+    try {
+      const r = await fetch(`/api/payments/verify?reference=${encodeURIComponent(ref)}`);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Payment not found');
+      if (!d.paid) {
+        if (++tries < 6) { setTimeout(check, 3000); return; }
+        $('payMsg').textContent = 'We have not received confirmation of this payment yet. If money left your account, keep your Paystack receipt and contact the club with the reference ' + ref + '.';
+        $('payMsg').className = 'fa-note err';
+        return;
+      }
+      $('payMsg').className = 'fa-note ok';
+      const body = $('payBody');
+      if (d.kind === 'membership') {
+        $('payMsg').textContent = `Payment received. You are now an official Lobi Stars member for ${d.season}.`;
+        const a = text('a', 'See your membership card') as HTMLAnchorElement; a.href = '/fans/account/'; a.className = 'btn-p';
+        body.appendChild(a);
+      } else {
+        $('payMsg').textContent = 'Payment received. Your personalised shirt is ordered. We have emailed you the details.';
+        const dl = document.createElement('dl');
+        for (const [k, v] of [['Order', d.order.id], ['Shirt', `${d.order.product} (size ${d.order.size})`], ['Name and number', `${d.order.name} ${d.order.number}`], ['Paid', '₦' + (d.order.totalKobo / 100).toLocaleString('en-NG')]]) {
+          const row = document.createElement('div'); row.append(text('dt', k), text('dd', v)); dl.appendChild(row);
+        }
+        body.appendChild(dl);
+        if (d.howYouGetIt) { const p = text('p', ''); p.append(text('strong', 'How you get it: '), d.howYouGetIt); body.appendChild(p); }
+      }
+      body.hidden = false;
+    } catch (err) {
+      $('payMsg').textContent = (err as Error).message; $('payMsg').className = 'fa-note err';
+    }
+  }
+  check();
+</script>

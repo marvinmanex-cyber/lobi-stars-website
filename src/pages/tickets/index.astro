@@ -90,6 +90,8 @@ import Layout from '../../layouts/Layout.astro';
   .mteams span{color: var(--red-text);}
   .mdate{font-size:12px;color:var(--lt);margin-bottom:3px;}
   .mvenue{font-size:11px;color:var(--lt);}
+  .mprio{margin-top:8px;padding:6px 8px;border-radius:6px;background:#FFF8E1;color:#6B4700;font-size:12px;line-height:1.4;}
+  .mprio a{color:var(--red-text);font-weight:700;}
 
   .seat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px;}
   .scard{background:var(--d2);border:2px solid var(--d4);border-radius:8px;padding:26px 18px;text-align:center;cursor:pointer;user-select:none;transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;}
@@ -156,6 +158,12 @@ function teamBadge(name){
     : `<span class="mteam-logo mteam-fallback">${name.charAt(0)}</span>`;
 }
 
+// Members' priority window (set per match by staff): before general sale, only confirmed members can buy.
+function prioNote(ev){
+  if(!ev.public_sale_at || Date.now() >= Date.parse(ev.public_sale_at)) return '';
+  const t = new Date(ev.public_sale_at).toLocaleString('en-GB', {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', timeZone:'Africa/Lagos'});
+  return `<div class="mprio">&#9733; Members' priority window. General sale opens ${t} WAT. <a href="/fans/login/?next=/tickets/" onclick="event.stopPropagation()">Members log in</a></div>`;
+}
 let ticketEvents = [], tEventId = '', tM = '', tS = '', tPKobo = 0, tQ = 1;
 const preselectEventId = new URLSearchParams(window.location.search).get('event');
 
@@ -174,7 +182,7 @@ async function loadTicketEvents(){
       const d = new Date(ev.event_date);
       const dateStr = d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
       const timeStr = d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
-      return `<div class="mcard" data-event-id="${ev.id}" onclick="selMatch('${ev.id}',this)"><span class="home-badge">HOME</span><div class="mcomp">${ev.competition}</div><div class="mteams-row">${teamBadge(ev.home_team)}<div class="mteams"><span>${ev.home_team}</span> vs ${ev.away_team}</div>${teamBadge(ev.away_team)}</div><div class="mdate">${dateStr} &middot; ${timeStr}</div><div class="mvenue">&#128205; ${ev.venue}</div></div>`;
+      return `<div class="mcard" data-event-id="${ev.id}" onclick="selMatch('${ev.id}',this)"><span class="home-badge">HOME</span><div class="mcomp">${ev.competition}</div><div class="mteams-row">${teamBadge(ev.home_team)}<div class="mteams"><span>${ev.home_team}</span> vs ${ev.away_team}</div>${teamBadge(ev.away_team)}</div><div class="mdate">${dateStr} &middot; ${timeStr}</div><div class="mvenue">&#128205; ${ev.venue}</div>${prioNote(ev)}</div>`;
     }).join('');
 
     if(preselectEventId && ticketEvents.some(e => e.id === preselectEventId)){

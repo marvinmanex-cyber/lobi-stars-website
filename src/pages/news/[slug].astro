@@ -6,6 +6,8 @@ import RelativeTime from '../../components/news/RelativeTime.astro';
 import { render } from 'astro:content';
 import { getSortedNews, categoryHref, categorySlug, formatDate, videoEmbedUrl, type Article } from '../../lib/news';
 import { getPlayers } from '../../lib/players';
+import ShopCard from '../../components/ShopCard.astro';
+import shop from '../../data/shop.json';
 
 export async function getStaticPaths() {
   const all = await getSortedNews();
@@ -60,6 +62,7 @@ const articleJsonLd = {
   articleSection: a.category,
   mainEntityOfPage: pageUrl,
   author: a.author ? { '@type': 'Person', name: a.author, ...(a.authorRole ? { jobTitle: a.authorRole } : {}) } : { '@type': 'Organization', name: 'Lobi Stars FC', url: `${site}/` },
+  ...(a.membersOnly ? { isAccessibleForFree: false, hasPart: { '@type': 'WebPageElement', isAccessibleForFree: false, cssSelector: '.art-members' } } : {}),
   ...(tagged.length ? { about: tagged.map(p => ({ '@type': 'Person', name: p.data.name, url: `${site}/squad/${p.id}/` })) } : {}),
   publisher: {
     '@type': 'Organization',
@@ -68,6 +71,11 @@ const articleJsonLd = {
   },
 };
 const embed = a.isVideo ? videoEmbedUrl(a.videoUrl) : null;
+// Members-only: the story text (and any video) is cut out of the public page
+// at build time and only sent by the server to confirmed members.
+const membersOnly = a.membersOnly;
+// "Shop the story": tagged shop products that still exist.
+const products = (a.products || []).map(id => shop.products.find(p => p.id === id)).filter(Boolean).slice(0, 4) as typeof shop.products;
 const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.test(a.videoUrl) ? a.videoUrl : null;
 ---
 <Layout title={`${a.title} | Lobi Stars FC News`} description={a.summary} image={a.coverImage} imageAlt={a.imageAlt} type="article" jsonLd={[articleJsonLd]}>
@@ -80,11 +88,11 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
 
   <article class:list={['art', { 'art--long': longRead }]}>
     <div class="art-media">
-      {embed ? (
+      {embed && !membersOnly ? (
         <div class="art-video">
           <iframe src={embed} title={a.title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
         </div>
-      ) : directVideo ? (
+      ) : directVideo && !membersOnly ? (
         <video class="art-video-el" src={directVideo} poster={a.coverImage} controls preload="metadata"></video>
       ) : (
         <div class="art-cover">
@@ -106,6 +114,7 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
         <span aria-hidden="true">&middot;</span>
         <RelativeTime date={a.publishedAt} class="art-rel" />
         {a.series && <span class="art-series">{a.series}</span>}
+        {membersOnly && <span class="art-series art-mo">Members only</span>}
         {longRead && <><span aria-hidden="true">&middot;</span><span>{readMins} min read</span></>}
       </div>
       <h1 class="art-title">{a.title}</h1>
@@ -163,6 +172,20 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
             </table></div>
           </section>
         )}
+        {membersOnly ? (
+          <div class="art-members">
+            <div class="art-lock" data-ms-lock>
+              <p class="art-lock-k">Members only</p>
+              <h2>This story is for Lobi Stars members</h2>
+              <p>Official members can read the full story. Already a member? Log in with your fan account.</p>
+              <div class="art-lock-acts">
+                <a class="btn-p" href="/membership/">Become a member</a>
+                <a class="btn-o" href={`/fans/login/?next=/news/${article.id}/`}>Log in</a>
+              </div>
+            </div>
+            <i hidden data-ms-start></i>
+            {embed ? <div class="art-video art-video--in"><iframe src={embed} title={a.title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+              : directVideo ? <video class="art-video-el art-video--in" src={directVideo} poster={a.coverImage} controls preload="metadata"></video> : null}
         <Content />
         {(a.gallery || []).length > 0 && (
           <div class="art-gallery">
@@ -171,7 +194,29 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
             ))}
           </div>
         )}
+            <i hidden data-ms-end></i>
+          </div>
+        ) : (
+          <>
+        <Content />
+        {(a.gallery || []).length > 0 && (
+          <div class="art-gallery">
+            {(a.gallery || []).map(g => (
+              <figure><img src={g.src} alt={g.caption || ''} loading="lazy" />{g.caption && <figcaption>{g.caption}</figcaption>}</figure>
+            ))}
+          </div>
+        )}
+          </>
+        )}
       </div>
+
+      {products.length > 0 && (
+        <section class="art-shop" aria-labelledby="art-shop-h">
+          <h2 id="art-shop-h">Shop the story</h2>
+          <div class="art-shop-grid">{products.map(p => <ShopCard product={p} />)}</div>
+          <a class="art-shop-all" href="/shop/">Visit the club shop &rarr;</a>
+        </section>
+      )}
 
       <div class="art-share art-share--end" aria-label="Share this story">
         <span class="art-share-label">Share this story</span>
@@ -194,6 +239,20 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
 
 <style>
   .art { padding-top: 32px; }
+  .art-mo { background: #FFC72C !important; color: #15181D !important; }
+  .art-lock { margin: 8px 0 26px; padding: 26px 24px; border-radius: 14px; background: linear-gradient(160deg, #15181D, #2A0507); color: #fff; border: 2px solid #C9A227; text-align: center; }
+  .art-lock-k { margin: 0; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .art-lock h2 { margin: 10px 0 8px; font: 400 30px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; }
+  .art-lock p { color: rgba(255,255,255,.85); }
+  .art-lock-acts { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  .art-lock .btn-o, .art-lock .btn-o:visited { color: #fff; border-color: rgba(255,255,255,.7); text-decoration: none; }
+  .art-lock .btn-p, .art-lock .btn-p:visited { color: #fff; text-decoration: none; }
+  .art-video--in { margin-bottom: 22px; }
+  .art-shop { margin: 34px 0 10px; padding-top: 24px; border-top: 1px solid var(--d4); }
+  .art-shop h2 { margin: 0 0 14px; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .art-shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); gap: 14px; }
+  .art-shop-all { display: inline-block; margin-top: 14px; color: var(--red-text); font-weight: 700; text-decoration: none; }
+  @media (max-width: 520px) { .art-shop-grid { grid-template-columns: 1fr 1fr; gap: 10px; } }
   .art-media { max-width: 1100px; margin: 0 auto; padding: 0 5%; }
   .art-cover, .art-video, .art-video-el { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #0F1115; width: 100%; display: block; }
   .art-cover img { display: block; width: 100%; height: 100%; object-fit: cover; }

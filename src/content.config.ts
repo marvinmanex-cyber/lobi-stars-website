@@ -44,6 +44,11 @@ const news = defineCollection({
     })).nullable().optional(),
     // Long reads: extra photos shown as a gallery.
     gallery: z.array(z.object({ src: z.string(), caption: z.string().nullable().optional() })).nullable().optional(),
+    // "Shop the story": club shop product IDs shown under the article.
+    products: z.array(z.string()).nullable().optional(),
+    // Members-only: the story text is only sent to confirmed members
+    // (title, summary and cover stay public so people can see what it is).
+    membersOnly: z.boolean().default(false),
     // Legacy flag from the starter content (all sample stories are drafts now).
     isSample: z.boolean().default(false),
   }),

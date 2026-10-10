@@ -2,6 +2,15 @@
 import Layout from '../layouts/Layout.astro';
 import ShopCard from '../components/ShopCard.astro';
 import shop from '../data/shop.json';
+import { withSeason, formatNaira } from '../lib/site';
+
+// Shirt personalisation (name and number, paid with Paystack) is OFF unless
+// switched on in the CMS with a fee and "how fans get it" filled in. The
+// server applies the same rules (functions/api/_lib/shirtOrders.js).
+const P = shop.personalisation;
+const persOn = P.enabled === true && Number(P.feeNaira) > 0 && !!String(P.howYouGetIt || '').trim();
+const canPers = (p: (typeof shop.products)[number]) => persOn && p.personalisable && p.inStock && Number(p.price) > 0;
+const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: withSeason(p.name), price: Number(p.price) }));
 ---
 <Layout title="Club Shop | Lobi Stars Football Club" description="Official Lobi Stars FC merchandise: jerseys, jackets, scarves, caps and gifts, sold through Jumia Nigeria.">
   <div class="page-hero wrap">
@@ -11,10 +20,47 @@ import shop from '../data/shop.json';
   </div>
   <div class="page-content wrap">
     <div class="shop-grid">
-      {shop.products.map(p => <ShopCard product={p} />)}
+      {shop.products.map(p => <ShopCard product={p} personalise={canPers(p)} />)}
     </div>
     <p class="shop-note"><strong>Note:</strong> Official sales are powered by Jumia Nigeria. Members get 10% off club merchandise &mdash; <a href="/membership">join here</a>.</p>
   </div>
+
+  {persShirts.length > 0 && (
+    <dialog class="pz" id="pzDialog" aria-labelledby="pz-title">
+      <form method="dialog" class="pz-close"><button aria-label="Close">&times;</button></form>
+      <h2 id="pz-title">Personalise your shirt</h2>
+      <div class="pz-grid">
+        <div class="pz-shirt" aria-hidden="true">
+          <svg viewBox="0 0 200 210"><path d="M60 8 L30 20 L4 60 L30 78 L42 64 L42 202 L158 202 L158 64 L170 78 L196 60 L170 20 L140 8 Q100 34 60 8Z" fill="#B3121A" stroke="#FFC72C" stroke-width="3"/></svg>
+          <span class="pz-sname" id="pzPrevName">NAME</span>
+          <span class="pz-snum" id="pzPrevNum">10</span>
+        </div>
+        <form id="pzForm" novalidate>
+          <input type="hidden" id="pzProduct" />
+          <p class="pz-prod" id="pzProdName"></p>
+          <div class="form-row">
+            <div class="form-grp"><label class="form-lbl" for="pzName">Name (up to {P.maxLetters} letters)</label>
+              <input class="form-inp" id="pzName" maxlength={P.maxLetters} autocomplete="off" required /></div>
+            <div class="form-grp"><label class="form-lbl" for="pzNum">Number (0–99)</label>
+              <input class="form-inp" id="pzNum" inputmode="numeric" maxlength="2" pattern="[0-9]{1,2}" required /></div>
+          </div>
+          <div class="form-grp"><label class="form-lbl" for="pzSize">Size</label>
+            <select class="form-sel" id="pzSize" required><option value="">Choose a size</option>{P.sizes.map(s => <option>{s}</option>)}</select></div>
+          <div class="form-row">
+            <div class="form-grp"><label class="form-lbl" for="pzBuyer">Your full name</label><input class="form-inp" id="pzBuyer" autocomplete="name" required /></div>
+            <div class="form-grp"><label class="form-lbl" for="pzPhone">Phone</label><input class="form-inp" id="pzPhone" type="tel" autocomplete="tel" placeholder="0803 123 4567" required /></div>
+          </div>
+          <div class="form-grp"><label class="form-lbl" for="pzEmail">Email (for your receipt)</label><input class="form-inp" id="pzEmail" type="email" autocomplete="email" required /></div>
+          <p class="pz-how"><strong>How you get it:</strong> {P.howYouGetIt}</p>
+          <p class="pz-total">Total: <b id="pzTotal"></b> <span id="pzBreak"></span></p>
+          <p class="form-error" id="pzErr" role="alert" hidden></p>
+          <button class="btn-p pz-pay" type="submit" id="pzPay">Pay with Paystack</button>
+          <p class="pz-small">Personalised shirts are made for you, so please check the spelling. You will be taken to Paystack to pay securely. We never ask for your card PIN or bank details on this website.</p>
+        </form>
+      </div>
+      <script is:inline type="application/json" id="pzData" set:html={JSON.stringify({ shirts: persShirts, fee: Number(P.feeNaira), max: P.maxLetters }).replace(/</g, '\\u003c')}></script>
+    </dialog>
+  )}
 </Layout>
 
 <style>
@@ -23,4 +69,78 @@ import shop from '../data/shop.json';
   .shop-note strong { color: var(--gold-text); }
   .shop-note a { color: var(--red-text); font-weight: 600; }
   @media (max-width: 520px) { .shop-grid { grid-template-columns: 1fr 1fr; gap: 12px; } }
+  .pz { border: 0; border-radius: 16px; padding: 26px 24px; width: min(760px, 94vw); max-height: 92vh; overflow-y: auto; box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+  .pz::backdrop { background: rgba(15,17,21,.6); }
+  .pz h2 { margin: 0 0 14px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .pz-close { position: absolute; top: 10px; right: 10px; }
+  .pz-close button { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--d4); background: #fff; font-size: 22px; cursor: pointer; }
+  .pz-grid { display: grid; grid-template-columns: 220px 1fr; gap: 22px; align-items: start; }
+  .pz-shirt { position: relative; width: 100%; max-width: 220px; margin: 0 auto; }
+  .pz-shirt svg { display: block; width: 100%; height: auto; }
+  .pz-sname { position: absolute; top: 34%; left: 0; right: 0; text-align: center; font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: 2px; color: #FFC72C; }
+  .pz-snum { position: absolute; top: 46%; left: 0; right: 0; text-align: center; font: 400 74px/1 'Bebas Neue', sans-serif; color: #FFC72C; }
+  .pz-prod { margin: 0 0 10px; font: 700 18px/1.2 'Barlow Condensed', sans-serif; }
+  .pz-how { font-size: 14px; background: #FFF8E1; border-radius: 8px; padding: 10px 12px; }
+  .pz-total { font-size: 16px; } .pz-total b { font: 400 26px/1 'Bebas Neue', sans-serif; color: var(--red-text); } .pz-total span { color: var(--lt); font-size: 13px; }
+  .pz-pay { width: 100%; padding: 15px; }
+  .pz-small { font-size: 12px; color: var(--lt); margin-top: 10px; }
+  @media (max-width: 640px) { .pz-grid { grid-template-columns: 1fr; } .pz-shirt { max-width: 150px; } .pz-snum { font-size: 50px; } .pz-sname { font-size: 16px; } }
 </style>
+
+<script>
+  const dlg = document.getElementById('pzDialog') as HTMLDialogElement | null;
+  if (dlg) {
+    const data = JSON.parse(document.getElementById('pzData')!.textContent!) as { shirts: { id: string; name: string; price: number }[]; fee: number; max: number };
+    const $ = <T extends HTMLElement = HTMLInputElement>(id: string) => document.getElementById(id) as T;
+    const naira = (n: number) => '₦' + n.toLocaleString('en-NG');
+    const clean = (v: string) => v.toUpperCase().replace(/[^A-Z .'-]/g, '').replace(/\s+/g, ' ').slice(0, data.max);
+    const preview = () => {
+      $('pzName').value = clean($('pzName').value);
+      $('pzNum').value = $('pzNum').value.replace(/\D/g, '').slice(0, 2);
+      $('pzPrevName').textContent = $('pzName').value.trim() || 'NAME';
+      $('pzPrevNum').textContent = $('pzNum').value || '10';
+    };
+    $('pzName').addEventListener('input', preview);
+    $('pzNum').addEventListener('input', preview);
+    document.querySelectorAll<HTMLButtonElement>('[data-personalise]').forEach(b => b.addEventListener('click', async () => {
+      const s = data.shirts.find(x => x.id === b.dataset.personalise);
+      if (!s) return;
+      $('pzProduct').value = s.id;
+      $('pzProdName').textContent = s.name;
+      $('pzTotal').textContent = naira(s.price + data.fee);
+      $('pzBreak').textContent = `(shirt ${naira(s.price)} + name and number ${naira(data.fee)})`;
+      $('pzErr').hidden = true;
+      try {
+        const me = await (await fetch('/api/auth/me')).json();
+        if (me.member) {
+          if (!$('pzBuyer').value) $('pzBuyer').value = `${me.member.firstName} ${me.member.lastName}`;
+          if (!$('pzEmail').value) $('pzEmail').value = me.member.email;
+        }
+      } catch {}
+      dlg.showModal();
+      $('pzName').focus();
+    }));
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    $<HTMLFormElement>('pzForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const btn = $<HTMLButtonElement>('pzPay'), err = $('pzErr');
+      err.hidden = true;
+      const name = $('pzName').value.trim(), num = $('pzNum').value;
+      if (!name || !num || !$<HTMLSelectElement>('pzSize').value) { err.textContent = 'Please enter the name, number and size.'; err.hidden = false; return; }
+      if (!confirm(`Print "${name} ${num}" on your shirt (size ${$<HTMLSelectElement>('pzSize').value})? Personalised shirts can't be changed after payment.`)) return;
+      btn.disabled = true; btn.textContent = 'Going to Paystack…';
+      try {
+        const res = await fetch('/api/shop/personalise', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product: $('pzProduct').value, size: $<HTMLSelectElement>('pzSize').value, printName: name, printNumber: num, buyerName: $('pzBuyer').value, buyerEmail: $('pzEmail').value, buyerPhone: $('pzPhone').value }),
+        });
+        const d = await res.json();
+        if (!res.ok || !d.authorizationUrl) throw new Error(d.error || 'Payment could not be started.');
+        location.href = d.authorizationUrl;
+      } catch (e2) {
+        err.textContent = (e2 as Error).message; err.hidden = false;
+        btn.disabled = false; btn.textContent = 'Pay with Paystack';
+      }
+    });
+  }
+</script>
