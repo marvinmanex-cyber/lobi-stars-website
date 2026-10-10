@@ -54,7 +54,7 @@ import Layout from '../../layouts/Layout.astro';
       <div style="max-width:580px;">
         <div class="form-row"><div class="form-grp"><label class="form-lbl">First Name</label><input type="text" class="form-inp" id="t-fn" placeholder="First name"/></div><div class="form-grp"><label class="form-lbl">Last Name</label><input type="text" class="form-inp" id="t-ln" placeholder="Last name"/></div></div>
         <div class="form-grp"><label class="form-lbl">Email Address</label><input type="email" class="form-inp" id="t-em" placeholder="you@example.com"/></div>
-        <div class="form-grp"><label class="form-lbl">Confirm Email Address</label><input type="email" class="form-inp" id="t-em2" placeholder="you@example.com" onpaste="return false" oncopy="return false" autocomplete="off"/></div>
+        <div class="form-grp"><label class="form-lbl">Confirm Email Address</label><input type="email" class="form-inp" id="t-em2" placeholder="you@example.com" autocomplete="email"/></div>
         <div class="form-grp"><label class="form-lbl">Phone Number</label><input type="tel" class="form-inp" id="t-ph" placeholder="+234 800 000 0000"/></div>
       </div>
       <p id="tix-error" class="muted" style="display:none;color: var(--red-text);margin-top:10px;font-weight:600;"></p>

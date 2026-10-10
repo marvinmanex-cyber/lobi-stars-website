@@ -23,10 +23,6 @@ import LivePlayer from '../../components/commentary/LivePlayer.astro';
     <LivePlayer variant="full" />
     <p class="cm-data">Live audio uses about 30–60MB per hour. Use Wi-Fi if you can.</p>
 
-    <section class="cm-sec" aria-labelledby="cm-up">
-      <h2 class="cm-h2" id="cm-up">Upcoming Live Commentary</h2>
-      <ul class="cm-list" id="cmUpcoming"><li class="cm-empty">Loading…</li></ul>
-    </section>
 
     <section class="cm-sec" aria-labelledby="cm-how">
       <h2 class="cm-h2" id="cm-how">How to listen</h2>
@@ -40,6 +36,10 @@ import LivePlayer from '../../components/commentary/LivePlayer.astro';
     <section class="cm-sec cm-share" aria-labelledby="cm-share">
       <h2 class="cm-h2" id="cm-share">Tell other fans</h2>
       <div class="cm-share-row" id="cmShare"></div>
+    </section>
+    <section class="cm-sec" aria-labelledby="cm-up">
+      <h2 class="cm-h2" id="cm-up">Upcoming Live Commentary</h2>
+      <ul class="cm-list" id="cmUpcoming"><li class="cm-empty">Loading…</li></ul>
     </section>
   </div>
 </Layout>
@@ -55,6 +55,7 @@ import LivePlayer from '../../components/commentary/LivePlayer.astro';
   .cm-data { margin: 12px 0 0; text-align: center; font-size: 13px; color: var(--lt); }
   .cm-sec { margin-top: 42px; }
   .cm-h2 { margin: 0 0 16px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .cm-list:has(.cm-empty:only-child) { min-height: 120px; }
   .cm-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
   .cm-list :global(li) { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border: 1px solid var(--d4); border-radius: 12px; background: #fff; }
   .cm-list :global(.cm-empty) { color: var(--lt); border-style: dashed; }
@@ -69,7 +70,7 @@ import LivePlayer from '../../components/commentary/LivePlayer.astro';
   .cm-steps p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--lt); }
   .cm-share-row { display: flex; flex-wrap: wrap; gap: 10px; }
   .cm-share-row :global(a), .cm-share-row :global(button) { padding: 10px 18px; border-radius: 999px; color: #fff; text-decoration: none; border: 0; cursor: pointer; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
-  .cm-share-row :global(.wa) { background: #1B8A4B; } .cm-share-row :global(.x) { background: #15181D; } .cm-share-row :global(.fb) { background: #1565D8; } .cm-share-row :global(.cp) { background: var(--red); }
+  .cm-share-row :global(.wa) { background: #157A42; } .cm-share-row :global(.x) { background: #15181D; } .cm-share-row :global(.fb) { background: #1565D8; } .cm-share-row :global(.cp) { background: var(--red); }
   .cm-share-row :global(a:focus-visible), .cm-share-row :global(button:focus-visible) { outline: 3px solid #FFC72C; outline-offset: 2px; }
 </style>
 
@@ -109,7 +110,7 @@ import LivePlayer from '../../components/commentary/LivePlayer.astro';
       when.textContent = `${fmtDate(f.event_date)} · Kick-off ${fmtTime(f.event_date)} · Commentary from ${fmtTime(f.commentaryStart || f.event_date)}`;
       t.append(teams, when);
       const b = document.createElement('button'); b.type = 'button'; b.textContent = '📅 Add to calendar';
-      b.setAttribute('aria-label', `Add ${f.home_team} vs ${f.away_team} commentary to your calendar`);
+      b.setAttribute('aria-label', `Add to calendar: ${f.home_team} vs ${f.away_team} commentary`);
       b.addEventListener('click', () => ics(f));
       li.append(t, b);
       return li;

@@ -22,6 +22,8 @@ const site = website(partner);
 const href = link === 'page' ? `/partners/${partner.id}/` : link === 'site' ? site : null;
 const external = link === 'site' && !!site;
 const Tag = href ? 'a' : 'div';
+// Display width of each card size, so browsers download a small enough logo file.
+const SIZES = { principal: '260px', kit: '220px', club: '180px', small: '150px', tiny: '110px' };
 const card = partner.data.cardColor ? `background:${partner.data.cardColor};border-color:${partner.data.cardColor};` : undefined;
 ---
 <div class:list={['pl', `pl--${size}`]}>
@@ -36,7 +38,7 @@ const card = partner.data.cardColor ? `background:${partner.data.cardColor};bord
     aria-label={href && !src ? logoAlt(partner) : undefined}
   >
     {src
-      ? <img src={src} alt={logoAlt(partner)} loading="lazy" decoding="async" />
+      ? <img src={src} alt={logoAlt(partner)} loading="lazy" decoding="async" sizes={SIZES[size]} />
       : <span class="pl-name">{partner.data.name}</span>}
   </Tag>
   {label && <span class="pl-label">{label}</span>}

@@ -3,14 +3,15 @@ import type { Article } from '../../lib/news';
 import { categoryHref } from '../../lib/news';
 import RelativeTime from './RelativeTime.astro';
 
-interface Props { article: Article }
-const { article } = Astro.props;
+// priority: the first card at the top of a page loads its image straight away.
+interface Props { article: Article; priority?: boolean }
+const { article, priority = false } = Astro.props;
 const a = article.data;
 const href = `/news/${article.id}`;
 ---
 <article class="nc" data-cat={a.category}>
   <div class="nc-media">
-    <img src={a.coverImage} alt={a.imageAlt} loading="lazy" decoding="async" sizes="(max-width: 480px) 84vw, (max-width: 768px) 72vw, (max-width: 1100px) 33vw, 320px" />
+    <img src={a.coverImage} alt={a.imageAlt} loading={priority ? 'eager' : 'lazy'} fetchpriority={priority ? 'high' : undefined} decoding="async" sizes="(max-width: 480px) 84vw, (max-width: 768px) 72vw, (max-width: 1100px) 33vw, 320px" />
     {a.isSample && <span class="nc-sample">Sample</span>}
     {a.isVideo && (
       <span class="nc-badge">

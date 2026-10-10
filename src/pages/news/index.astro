@@ -44,8 +44,8 @@ const tabs = [{ name: 'All', slug: 'all' }, ...NEWS_CATEGORIES];
     </div>
 
     <ul class="nl-grid" data-grid>
-      {articles.map(article => (
-        <li data-cat={categorySlug(article.data.category)}><NewsCard article={article} /></li>
+      {articles.map((article, i) => (
+        <li data-cat={categorySlug(article.data.category)}><NewsCard article={article} priority={i === 0} /></li>
       ))}
     </ul>
     <p class="nl-empty" data-empty hidden>There are no stories in this category yet. <a href="/news">See all news</a></p>
