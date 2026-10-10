@@ -2,6 +2,7 @@ import { requireAdmin } from '../../_lib/adminEvents.js';
 import { parseStreams } from '../../_lib/streams.js';
 import { settlePredictions } from '../../_lib/predict.js';
 import { notifyFans } from '../../_lib/notify.js';
+import { parsePlayerStats, savePlayerStats, loadPlayerStats } from '../../_lib/stats.js';
 import { loadMatch, toPublic, parseCentrePayload, parseSquad, scoreInt, isHomeGame, LIVE_STATUSES } from '../../_lib/matchCentre.js';
 
 async function roster(request, env) {
@@ -23,6 +24,7 @@ export async function onRequestGet({ request, env, params }) {
     match: {
       ...toPublic(m.event, m.centre), auto_closed: !!m.centre?.auto_closed,
       youtube_url: m.centre?.youtube_url || '', facebook_url: m.centre?.facebook_url || '',
+      playerStats: await loadPlayerStats(env.DB, params.id),
     },
     serverTime: new Date().toISOString(),
   });
@@ -43,7 +45,8 @@ export async function onRequestPut({ request, env, params }) {
   if (streams.error) return Response.json({ error: streams.error }, { status: 400 });
   // Stream links only apply to home games.
   const s = isHomeGame(m.event) ? streams.value : { youtube_url: null, facebook_url: null };
-  const squad = parseSquad(body.squad, await roster(request, env));
+  const players = await roster(request, env);
+  const squad = parseSquad(body.squad, players);
 
   // Keep the recorded kick-off / end times consistent with a status chosen
   // from the dropdown (the big Kick-off / Full-time buttons are preferred).
@@ -70,6 +73,9 @@ export async function onRequestPut({ request, env, params }) {
     params.id, v.status, v.home_score, v.away_score, v.preview, v.report,
     v.lineups_json, v.timeline_json, v.stats_json, v.gallery_json, JSON.stringify(squad), kickoffAt, endedAt, s.youtube_url, s.facebook_url
   ).run();
+
+  // Player stats for the /stats page (only sent by the admin form).
+  if (Array.isArray(body.playerStats)) await savePlayerStats(env.DB, params.id, parsePlayerStats(body.playerStats, players));
 
   // A corrected final score recalculates the Predict & Win winner.
   if (v.status === 'full-time' && isHomeGame(m.event)) await settlePredictions(env, { ...toPublic(m.event, m.centre), home_score: v.home_score, away_score: v.away_score });

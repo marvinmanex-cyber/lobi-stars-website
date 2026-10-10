@@ -3,8 +3,10 @@
 // functions/matches/[slug].js; the match itself is loaded from
 // /api/matches/<slug> in the browser.
 import Layout from '../layouts/Layout.astro';
+import MatchesTabs from '../components/MatchesTabs.astro';
 ---
 <Layout title="Match Centre | Lobi Stars Football Club" description="Lobi Stars FC Match Centre: preview, line-ups, live updates, match report, stats and photos." noindex>
+  <div class="wrap"><MatchesTabs /></div>
   <div id="mc" class="mc" aria-live="polite" data-commentary="/commentary/">
     <div class="wrap mc-loading" id="mcStatus">Loading match&hellip;</div>
   </div>
@@ -39,7 +41,8 @@ import Layout from '../layouts/Layout.astro';
   .mc :global(.mc-actions .btn-o:hover) { border-color: #FFC72C; color: #FFC72C; }
   .mc :global(.mc-actions .btn-p) { padding: 11px 18px; font-size: 13px; }
 
-  .mc :global(.mc-live-wrap) { display: flex; justify-content: center; margin-top: 14px; }
+  .mc :global(.mc-live-wrap) { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .mc :global(.mc-btn-light) { color: #fff; border-color: rgba(255, 255, 255, .6); }
   .mc :global(.mc-motm) { text-align: center; margin: 14px 0 0; color: #FFC72C; font: 700 16px/1.4 'Barlow Condensed', sans-serif; letter-spacing: .6px; text-transform: uppercase; }
   .mc :global(.mc-motm a) { color: #fff; }
   .mc :global(.mc-live-btn) { padding: 11px 18px; font-size: 13px; }
@@ -105,7 +108,7 @@ import Layout from '../layouts/Layout.astro';
 
 <script>
   import { ssrData } from '../lib/ssr';
-  import { crest, fmtDate, fmtTime, isLobi, hasScore, downloadIcs, googleCalUrl, STATUS_LABELS } from '../lib/matchUi';
+  import { crest, fmtDate, fmtTime, isLobi, hasScore, downloadIcs, googleCalUrl, STATUS_LABELS, isMatchDay } from '../lib/matchUi';
 
   type Line = { starting: string[]; subs: string[] };
   type Full = {
@@ -161,10 +164,17 @@ import Layout from '../layouts/Layout.astro';
     info.append(`${fmtDate(m.event_date, true)} · Kick-off ${fmtTime(m.event_date)}`, el('br'), `📍 ${m.venue}`);
     inner.append(h1, board, info);
     if (m.is_home) {
-      const ml = el('a', 'btn-p mc-live-btn', '● Matchday Live: watch, listen, vote, predict') as HTMLAnchorElement;
-      ml.href = `/matches/${m.slug}/live/`;
-      const wrapLive = el('div', 'mc-live-wrap'); wrapLive.append(ml);
-      inner.append(wrapLive);
+      // Buttons only appear when they have somewhere to go.
+      const wrapLive = el('div', 'mc-live-wrap');
+      const preview = newsIndex.find(n => n.contentType === 'Preview' && n.matchDate === watDay(m.event_date));
+      if (preview && m.status !== 'full-time') {
+        const pv = el('a', 'btn-o mc-live-btn mc-btn-light', 'Match Preview') as HTMLAnchorElement; pv.href = `/news/${preview.slug}/`; wrapLive.append(pv);
+      }
+      if (isMatchDay(m)) {
+        const ml = el('a', 'btn-p mc-live-btn', '● Matchday Live: watch, listen, vote, predict') as HTMLAnchorElement;
+        ml.href = `/matches/${m.slug}/live/`; wrapLive.append(ml);
+      }
+      if (wrapLive.childElementCount) inner.append(wrapLive);
       if (m.status === 'full-time') {
         const motm = el('p', 'mc-motm'); motm.hidden = true;
         inner.append(motm);
@@ -206,7 +216,7 @@ import Layout from '../layouts/Layout.astro';
       timers.push(window.setInterval(tick, 1000));
 
       const actions = el('div', 'mc-actions');
-      if (isLobi(m.home_team)) {
+      if ((m as any).on_sale) {
         const t = el('a', 'btn-p', 'Buy Tickets') as HTMLAnchorElement;
         t.href = `/tickets?event=${encodeURIComponent(m.id)}`;
         actions.append(t);
@@ -227,7 +237,7 @@ import Layout from '../layouts/Layout.astro';
   type TeamNewsRow = { name: string; player: string | null; status: string; reason: string; expectedReturn: string };
   type NewsItem = { slug: string; title: string; contentType: string | null; matchDate: string | null; teamNews: TeamNewsRow[] };
   let newsIndex: NewsItem[] = [];
-  fetch('/data/news-index.json').then(r => (r.ok ? r.json() : [])).then((d: NewsItem[]) => { newsIndex = d; if (match && activeTab === 'preview') render(match); }).catch(() => {});
+  fetch('/data/news-index.json').then(r => (r.ok ? r.json() : [])).then((d: NewsItem[]) => { newsIndex = d; if (match) render(match); }).catch(() => {});
   const watDay = (iso: string) => new Date(new Date(iso).getTime() + 3600e3).toISOString().slice(0, 10);
   const STATUS_CLASS: Record<string, string> = { Available: 'ok', Doubtful: 'warn', Injured: 'bad', Suspended: 'sus' };
 

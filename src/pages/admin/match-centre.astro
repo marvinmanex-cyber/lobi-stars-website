@@ -121,6 +121,29 @@ const roster = (await getRoster())
         )}
       </fieldset>
 
+      <fieldset class="mce-set" id="statsSet">
+        <legend>Player stats (for the Stats page)</legend>
+        <p class="muted mce-hint">After the match, tick who played and started and enter goals, assists and cards. These feed the season leaderboards on <a href="/stats" target="_blank" rel="noopener">/stats</a> (clean sheets are worked out automatically for goalkeepers). Works for home and away games. <button type="button" class="btn-o mce-mini" id="statsFromSquad">Fill from matchday squad</button></p>
+        {roster.length === 0 ? <p class="muted">No players yet. Add the squad in the Content CMS (Squad / Players) first.</p> : (
+          <div class="sq-scroll"><table class="sq-table st-table">
+            <thead><tr><th scope="col">Player</th><th scope="col">Played</th><th scope="col">Started</th><th scope="col">Goals</th><th scope="col">Assists</th><th scope="col">Yellow</th><th scope="col">Red</th></tr></thead>
+            <tbody>
+              {roster.map(p => (
+                <tr data-stat-row={p.slug}>
+                  <th scope="row">#{p.number} {p.name} <span class="muted">({p.position}){p.isSample && ' – sample'}</span></th>
+                  <td><input type="checkbox" data-k="played" aria-label={`${p.name} played`} /></td>
+                  <td><input type="checkbox" data-k="started" aria-label={`${p.name} started`} /></td>
+                  <td><input type="number" min="0" max="30" data-k="goals" aria-label={`${p.name} goals`} /></td>
+                  <td><input type="number" min="0" max="30" data-k="assists" aria-label={`${p.name} assists`} /></td>
+                  <td><input type="number" min="0" max="2" data-k="yellow" aria-label={`${p.name} yellow cards`} /></td>
+                  <td><input type="number" min="0" max="1" data-k="red" aria-label={`${p.name} red cards`} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        )}
+      </fieldset>
+
       <fieldset class="mce-set" id="streamSet">
         <legend>Live stream (Watch Live)</legend>
         <p class="muted mce-hint" id="streamHint">Paste the YouTube and/or Facebook link for this game's live stream. Fans see it on Matchday Live; after the match it stays there as the full match replay. Leave blank to show links to the official channels instead.</p>
@@ -223,6 +246,9 @@ const roster = (await getRoster())
   .chk-list :global(.chk-main) { flex: 1; min-width: 200px; }
   .chk-list :global(.chk-main a) { color: var(--red-text); font-weight: 600; }
   .chk-list :global(.chk-create) { padding: 7px 12px !important; font-size: 12px !important; }
+  .st-table input[type=number] { width: 56px; padding: 6px; border: 1px solid var(--d4); border-radius: 6px; font: inherit; }
+  .st-table input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--red); }
+  .mce-mini { padding: 5px 10px !important; font-size: 12px !important; margin-left: 6px; }
   .mce-set { min-width: 0; border: 1px solid var(--d4); border-radius: 12px; padding: 18px 20px 6px; margin: 0 0 18px; }
   .mce-set legend { padding: 0 8px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold-text); }
   .mce-hint { margin: 0 0 12px; font-size: 14px; }
@@ -286,6 +312,15 @@ const roster = (await getRoster())
     }).join('');
     document.getElementById('checklist').hidden = false;
   }
+
+  document.getElementById('statsFromSquad')?.addEventListener('click', () => {
+    const sel = squadSelection();
+    document.querySelectorAll('[data-stat-row]').forEach(tr => {
+      const slug = tr.dataset.statRow;
+      const starting = sel.starting.includes(slug);
+      if (starting) { tr.querySelector('[data-k=played]').checked = true; tr.querySelector('[data-k=started]').checked = true; }
+    });
+  });
 
   async function api(path, opts) {
     const res = await fetch(path, Object.assign({}, opts, { headers: { 'Content-Type': 'application/json', 'x-admin-code': code } }));
@@ -356,6 +391,15 @@ const roster = (await getRoster())
     countSquad();
     renderControl(m);
     renderChecklist(m);
+    // Player stats
+    const ps = new Map((m.playerStats || []).map(r => [r.player, r]));
+    document.querySelectorAll('[data-stat-row]').forEach(tr => {
+      const r = ps.get(tr.dataset.statRow) || {};
+      tr.querySelectorAll('input').forEach(inp => {
+        const v = r[inp.dataset.k];
+        if (inp.type === 'checkbox') inp.checked = !!v; else inp.value = v ? String(v) : '';
+      });
+    });
     $('viewLink').href = `/matches/${m.slug}/`;
     $('viewLink').hidden = false;
     $('mcForm').hidden = false;
@@ -476,6 +520,11 @@ const roster = (await getRoster())
       stats,
       gallery: lines($('gallery').value).map(l => { const [url, ...cap] = l.split('|'); return { url: url.trim(), caption: cap.join('|').trim() }; }),
       squad: squadSelection(),
+      playerStats: [...document.querySelectorAll('[data-stat-row]')].map(tr => {
+        const o = { player: tr.dataset.statRow };
+        tr.querySelectorAll('input').forEach(inp => { o[inp.dataset.k] = inp.type === 'checkbox' ? inp.checked : Number(inp.value || 0); });
+        return o;
+      }),
     };
     const btn = $('saveBtn');
     btn.disabled = true; btn.textContent = 'Saving…';

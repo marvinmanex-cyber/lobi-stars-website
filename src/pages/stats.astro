@@ -1,0 +1,69 @@
+---
+// /stats -- season statistics. The content is rendered on the server
+// (functions/stats.js) from match data entered in Admin -> Match Centre.
+import Layout from '../layouts/Layout.astro';
+import MatchesTabs from '../components/MatchesTabs.astro';
+import { CURRENT_SEASON } from '../lib/site';
+---
+<Layout title="Stats | Lobi Stars Football Club" description="Lobi Stars FC season stats: top scorers, assists, clean sheets, appearances, cards, Man of the Match winners and team record.">
+  <div class="page-hero wrap">
+    <div class="stag">{CURRENT_SEASON} Season</div>
+    <h1 class="stitle">Season <span class="r">Stats</span></h1>
+    <MatchesTabs current="stats" />
+  </div>
+
+  <div class="page-content wrap st">
+    <form class="st-season" method="get" action="/stats/">
+      <label for="season">Season</label>
+      <select id="season" name="season"><option>{CURRENT_SEASON}</option></select>
+      <noscript><button type="submit" class="btn-o">Show</button></noscript>
+    </form>
+    <div id="statsBody">
+      <p class="st-empty">Season stats will appear here once match results and player stats are entered.</p>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .st { padding-bottom: 80px; }
+  .st-season { display: flex; align-items: center; gap: 10px; margin: 0 0 24px; }
+  .st-season label { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .st-season select { padding: 9px 12px; border: 1px solid var(--d4); border-radius: 8px; font: 600 15px 'Barlow', sans-serif; background: #fff; color: var(--white); }
+  .st-empty { color: var(--lt); padding: 18px 0; }
+  .st :global(.st-h2) { margin: 34px 0 14px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .st :global(.st-team) { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+  .st :global(.st-kpi) { border: 1px solid var(--d4); border-radius: 12px; padding: 14px; background: #fff; text-align: center; }
+  .st :global(.st-kpi b) { display: block; font: 400 34px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .st :global(.st-kpi span) { font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .st :global(.st-records) { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-top: 10px; }
+  .st :global(.st-rec) { border: 1px solid var(--d4); border-radius: 12px; padding: 12px 14px; background: #fff; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .st :global(.st-rec strong) { font: 700 14px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .st :global(.st-form) { display: inline-flex; gap: 4px; }
+  .st :global(.st-form i) { font-style: normal; width: 24px; height: 24px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font: 700 12px/1 'Barlow Condensed', sans-serif; color: #fff; }
+  .st :global(.st-form .W) { background: #17643A; } .st :global(.st-form .D) { background: #7A8088; } .st :global(.st-form .L) { background: #A3161B; }
+  .st :global(.st-boards) { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .st :global(.st-board) { border: 1px solid var(--d4); border-radius: 14px; background: #fff; overflow: hidden; display: flex; flex-direction: column; }
+  .st :global(.st-board h3) { margin: 0; padding: 14px 16px; background: #15181D; color: #fff; font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .st :global(.st-board ol) { list-style: none; margin: 0; padding: 6px 0; flex: 1; }
+  .st :global(.st-board li) { display: flex; align-items: center; gap: 10px; padding: 8px 16px; }
+  .st :global(.st-board li:first-child) { background: #FFF8E1; }
+  .st :global(.st-rank) { width: 20px; font: 700 14px/1 'Barlow Condensed', sans-serif; color: var(--lt); }
+  .st :global(.st-face) { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; background: var(--d3); display: inline-flex; align-items: center; justify-content: center; font: 400 15px/1 'Bebas Neue', sans-serif; color: var(--red-text); flex-shrink: 0; }
+  .st :global(.st-name) { flex: 1; min-width: 0; text-decoration: none; color: var(--white); font-weight: 600; overflow-wrap: anywhere; }
+  .st :global(.st-name:hover) { color: var(--red-text); }
+  .st :global(.st-val) { font: 400 24px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .st :global(.st-share) { display: flex; gap: 8px; padding: 10px 16px 14px; border-top: 1px solid var(--d4); }
+  .st :global(.st-share a), .st :global(.st-share button) { padding: 7px 12px; border-radius: 999px; border: 1px solid var(--d4); background: #fff; color: var(--white); text-decoration: none; cursor: pointer; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .st :global(.st-share a:hover), .st :global(.st-share button:hover) { border-color: var(--red); color: var(--red-text); }
+</style>
+
+<script>
+  // Changing the season reloads the page with ?season=…
+  const sel = document.getElementById('season') as HTMLSelectElement;
+  sel.addEventListener('change', () => (sel.form as HTMLFormElement).submit());
+  // Native share sheet where available (WhatsApp link works everywhere).
+  document.querySelectorAll<HTMLButtonElement>('[data-share-text]').forEach(b => {
+    if (!navigator.share) { b.hidden = true; return; }
+    b.addEventListener('click', () => navigator.share({ text: b.dataset.shareText!, url: 'https://lobistarsfc.com/stats' }).catch(() => {}));
+  });
+</script>

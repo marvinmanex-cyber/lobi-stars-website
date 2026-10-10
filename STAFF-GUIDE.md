@@ -97,6 +97,24 @@ can't be deleted, only hidden.
 
 > **Home games:** for Kick-off, Full-time, stream links, Man of the Match voting and Predict & Win, see **STAFF-MATCHDAY-GUIDE.md**.
 
+### Entering player stats (for the Stats page)
+After each match (home **or** away), open **Admin → Match Centre**, choose the
+match and scroll to **Player stats**. Press **Fill from matchday squad** to tick
+the starting XI, then tick anyone who came on, and enter goals, assists and
+yellow/red cards. Press **Save Match Centre**. The **/stats** page updates
+straight away:
+- Top Scorers, Assists, Appearances, Yellow and Red Cards come from these entries.
+- **Clean Sheets** are worked out automatically for goalkeepers who played when Lobi Stars conceded nothing.
+- **Man of the Match** wins come from the fan vote.
+- The **team** figures (played, won, drawn, lost, goals, home/away record, longest unbeaten run, form) come from the final scores.
+Leaderboards with no data are hidden. Fans can switch seasons with the season menu.
+
+### Fixture card buttons
+Fixture cards (homepage, Fixtures page, match page) show buttons only when they lead somewhere:
+- **Match Preview** – when a published story has *Matchday content type: Preview* and that match's date.
+- **Buy Tickets** – home games that are on sale (a future match with at least one seat price set in Manage matches).
+- **Matchday Live** – home games, from 24 hours before kick-off until the end of match day.
+
 ### Matchday content checklist
 In **Admin → Match Centre**, each match shows a checklist of recommended content:
 Preview (two days before), Team News (day before), Line-ups (1 hour before

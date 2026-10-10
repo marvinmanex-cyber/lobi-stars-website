@@ -121,6 +121,10 @@ export function toPublic(event, centre) {
     squad: json(c.squad_json, { starting: [], bench: [] }),
     // Streams are a Matchday Live feature, so away games never get one.
     stream: isHomeGame(event) ? publicStream(c) : { youtube: null, facebook: null },
+    // Tickets on sale: an upcoming Lobi Stars home game with at least one priced seat tier.
+    on_sale: !!(isHomeGame(event) && (c.status || 'scheduled') === 'scheduled' && event.active !== 0
+      && new Date(event.event_date).getTime() > Date.now()
+      && [event.vip_price_kobo, event.premium_price_kobo, event.regular_price_kobo].some(v => Number(v) > 0)),
     updated_at: c.updated_at || null,
   };
 }
@@ -133,7 +137,16 @@ export function toSummary(event, centre) {
     event_date: p.event_date, venue: p.venue, is_home: p.is_home, status: p.status,
     home_score: p.home_score, away_score: p.away_score, kickoff_at: p.kickoff_at,
     has_stream: !!(p.stream.youtube || p.stream.facebook),
+    on_sale: p.on_sale,
   };
+}
+
+/** "Match day" for Matchday Live buttons: from 24 hours before kick-off until the end of the day after the match ends. */
+export function isMatchDay(m, now = Date.now()) {
+  if (m.status === 'live' || m.status === 'half-time') return true;
+  const ko = new Date(m.event_date).getTime();
+  const endOfDay = Date.parse(new Date(ko + 3_600_000).toISOString().slice(0, 10) + 'T23:00:00Z'); // 24:00 WAT
+  return now >= ko - 24 * 3_600_000 && now <= endOfDay;
 }
 
 export async function listMatches(db) {

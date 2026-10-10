@@ -4,6 +4,7 @@
 // match is on. The status card asks the SERVER (/api/matches) for the
 // current/next Lobi Stars home game and links to its Matchday Live tab.
 import settings from '../../data/matchday.json';
+import MatchesTabs from '../MatchesTabs.astro';
 
 interface Props {
   kind: 'vote' | 'predict';
@@ -17,6 +18,7 @@ interface Props {
 const { kind, kicker, title, highlight, intro, steps, rules } = Astro.props;
 const live = kind === 'vote' ? settings.motmLive === true : settings.predictLive === true;
 ---
+<div class="wrap"><MatchesTabs current={kind === 'vote' ? 'motm' : 'predict'} /></div>
 <section class="mg-hero">
   <div class="mg-inner">
     <p class="mg-kicker">{kicker}</p>

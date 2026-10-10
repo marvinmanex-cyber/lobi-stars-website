@@ -3,6 +3,7 @@
 // on lobistarsfc.com (white-label: no partner branding on this page).
 import Layout from '../../layouts/Layout.astro';
 import LivePlayer from '../../components/commentary/LivePlayer.astro';
+import MatchesTabs from '../../components/MatchesTabs.astro';
 ---
 <Layout
   title="Live Match Commentary | Lobi Stars FC"
@@ -11,6 +12,7 @@ import LivePlayer from '../../components/commentary/LivePlayer.astro';
   imageAlt="Lobi Stars FC Live – live match commentary"
   whiteLabel
 >
+  <div class="wrap"><MatchesTabs current="commentary" /></div>
   <section class="cm-hero">
     <div class="cm-inner">
       <p class="cm-kicker">Lobi Stars FC Live</p>

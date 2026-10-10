@@ -73,6 +73,8 @@ const cms = (await getCollection('fixtures')).map(f => ({
 <script>
   import { crest, fmtDate, fmtTime, monthKey, isLobi, hasScore, downloadIcs, googleCalUrl, STATUS_LABELS, type Match } from '../lib/matchUi';
   import { ssrData } from '../lib/ssr';
+  import { isMatchDay, loadPreviews, watDay } from '../lib/matchUi';
+  let previews: Record<string, string> = {};
 
   const DAY = 86_400_000;
   const norm = (s: string) => s.toLowerCase().replace(/\bfc\b|[^a-z]/g, '');
@@ -113,7 +115,13 @@ const cms = (await getCollection('fixtures')).map(f => ({
       mc.setAttribute('aria-label', `Match Centre: ${m.home_team} vs ${m.away_team}`);
       actions.append(mc);
     }
-    if (lobiHome && m.slug) {
+    const preview = previews[watDay(m.event_date)];
+    if (upcoming && preview) {
+      const pv = el('a', 'fx-btn', 'Match Preview') as HTMLAnchorElement;
+      pv.href = `/news/${preview}/`;
+      actions.append(pv);
+    }
+    if (lobiHome && m.slug && isMatchDay(m as any)) {
       const ml = el('a', 'fx-btn primary', '● Matchday Live') as HTMLAnchorElement;
       ml.href = `/matches/${m.slug}/live/`;
       ml.setAttribute('aria-label', `Matchday Live: ${m.home_team} vs ${m.away_team}`);
@@ -128,7 +136,7 @@ const cms = (await getCollection('fixtures')).map(f => ({
       ll.setAttribute('aria-label', `Listen live to ${m.home_team} vs ${m.away_team} on Lobi Stars FC Live`);
       actions.append(ll);
     }
-    if (upcoming && lobiHome && m.id) {
+    if (upcoming && lobiHome && m.id && (m as any).on_sale) {
       const t = el('a', 'fx-btn primary', 'Buy Tickets') as HTMLAnchorElement;
       t.href = `/tickets?event=${encodeURIComponent(m.id)}`;
       t.setAttribute('aria-label', `Buy tickets: ${m.home_team} vs ${m.away_team}`);
@@ -178,6 +186,7 @@ const cms = (await getCollection('fixtures')).map(f => ({
       if (res.ok) db = (await res.json()).matches || [];
     } catch { /* show CMS fixtures only */ }
 
+    previews = await loadPreviews();
     const now = Date.now();
     const merged = [...db, ...cms.filter(c => !db.some(d => same(d, c)))]
       .filter(m => m.status !== 'cancelled');

@@ -76,6 +76,7 @@
   .nm-track :global(.nm-links) { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--d4); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .nm-track :global(.nm-links .nm-link) { margin: 0; padding: 0; border: 0; }
   .nm-track :global(.nm-link--live) { color: #fff; background: var(--red); padding: 5px 9px !important; border-radius: 4px; }
+  .nm-track :global(.nm-link--btn) { color: var(--red-text); border: 1px solid var(--red) !important; padding: 4px 8px !important; border-radius: 4px; }
   .nm-track :global(.nm-link--cal) { color: var(--white); border: 1px solid var(--d4) !important; padding: 4px 8px !important; border-radius: 4px; }
   .nm-track :global(.nm-link--listen) { color: var(--white); border: 1px solid var(--d4) !important; padding: 4px 8px !important; border-radius: 4px; }
   .nm-track :global(.nm-live-badge) { display: inline-block; background: var(--red); color: #fff; padding: 4px 8px; border-radius: 3px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
@@ -85,6 +86,8 @@
   import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
   import { matchSlug } from '../../../functions/api/_lib/matchSlug.js';
   import { ssrData } from '../../lib/ssr';
+  import { isMatchDay, loadPreviews, watDay } from '../../lib/matchUi';
+  let previews: Record<string, string> = {};
 
   type ClubEvent = { id: string; home_team: string; away_team: string; competition?: string; event_date: string; venue: string;
     slug?: string; is_home?: boolean; status?: string };
@@ -153,7 +156,19 @@
     link.href = ev.id.startsWith('sample-') ? '/fixtures' : `/matches/${slug}/`;
     link.setAttribute('aria-label', `Match Centre: Lobi Stars FC vs ${opponent}`);
     links.append(link);
-    if (home && !ev.id.startsWith('sample-')) {
+    const preview = previews[watDay(ev.event_date)];
+    if (preview) {
+      const pv = el('a', 'nm-link nm-link--btn', 'Match Preview') as HTMLAnchorElement;
+      pv.href = `/news/${preview}/`;
+      links.append(pv);
+    }
+    if (home && (ev as any).on_sale) {
+      const bt = el('a', 'nm-link nm-link--live', 'Buy Tickets') as HTMLAnchorElement;
+      bt.href = `/tickets?event=${encodeURIComponent(ev.id)}`;
+      bt.setAttribute('aria-label', `Buy tickets: Lobi Stars FC vs ${opponent}`);
+      links.append(bt);
+    }
+    if (home && !ev.id.startsWith('sample-') && isMatchDay(ev)) {
       const ml = el('a', 'nm-link nm-link--live', '● Matchday Live') as HTMLAnchorElement;
       ml.href = `/matches/${slug}/live/`;
       ml.setAttribute('aria-label', `Matchday Live: Lobi Stars FC vs ${opponent}`);
@@ -189,6 +204,7 @@
     } catch {
       if (import.meta.env.DEV) events = DEV_SAMPLE;
     }
+    previews = await loadPreviews();
     const now = Date.now();
     const upcoming = events
       .filter(ev => (isLobi(ev.home_team) || isLobi(ev.away_team)) && ev.status !== 'full-time' && ev.status !== 'cancelled'

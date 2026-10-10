@@ -7,7 +7,7 @@
 // The HTML built here mirrors the cards the browser scripts build, using the
 // same CSS classes.
 import { TEAM_LOGOS } from './teamLogos.js';
-import { listMatches, toSummary } from './matchCentre.js';
+import { listMatches, toSummary, isMatchDay } from './matchCentre.js';
 import { matchSlug } from './matchSlug.js';
 
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -58,6 +58,20 @@ export async function renderPage(request, env, assetPath, handlers = [], data = 
   return rw.transform(new Response(shell.body, { status: shell.status, headers }));
 }
 
+/**
+ * { 'YYYY-MM-DD' (match day, WAT): previewArticleSlug } from the published
+ * news index, so fixture cards can show "Match Preview".
+ */
+export async function previewSlugs(request, env) {
+  try {
+    const items = await (await env.ASSETS.fetch(new URL('/data/news-index.json', request.url))).json();
+    const out = {};
+    for (const n of items) if (n.contentType === 'Preview' && n.matchDate && !out[n.matchDate]) out[n.matchDate] = n.slug;
+    return out;
+  } catch { return {}; }
+}
+export const watDay = iso => new Date(new Date(iso).getTime() + 3_600_000).toISOString().slice(0, 10);
+
 /** Handler that replaces an element's contents with HTML. */
 export const fill = html => ({ element(el) { el.setInnerContent(html, { html: true }); } });
 
@@ -75,7 +89,7 @@ export function upcomingLobi(matches, now = Date.now()) {
     .sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
 }
 
-export function nextMatchesHtml(matches, now = Date.now()) {
+export function nextMatchesHtml(matches, now = Date.now(), previews = {}) {
   const upcoming = upcomingLobi(matches, now);
   if (!upcoming.length) return '<li class="nm-empty">Fixtures for the next round will be announced soon. <a href="/fixtures">See all fixtures</a></li>';
   return upcoming.map(ev => {
@@ -93,7 +107,7 @@ export function nextMatchesHtml(matches, now = Date.now()) {
 <div class="nm-top"><span class="nm-comp-logo" aria-hidden="true">${esc(compAbbr(comp))}</span><div class="nm-comp"><span class="nm-comp-name">${esc(comp)}</span><span class="nm-venue">${esc(ev.venue)}</span></div></div>
 <div class="nm-when">${live ? '<span class="nm-live-badge">Live now</span>' : `${esc(date)} · <b>${esc(time)} WAT</b>`}</div>
 <div class="nm-opp">${crest}<span class="nm-opp-name">${esc(opponent)}</span><span class="nm-ha ${home ? 'home' : 'away'}">${home ? 'Home' : 'Away'}</span></div>
-<div class="nm-links"><a class="nm-link" href="/matches/${esc(slug)}/" aria-label="Match Centre: Lobi Stars FC vs ${esc(opponent)}">Match Centre →</a>${home ? `<a class="nm-link nm-link--live" href="/matches/${esc(slug)}/live/" aria-label="Matchday Live: Lobi Stars FC vs ${esc(opponent)}">● Matchday Live</a>` : ''}<a class="nm-link nm-link--cal" href="/api/calendar?match=${encodeURIComponent(slug)}" aria-label="Add Lobi Stars FC vs ${esc(opponent)} to your calendar">📅 Add to calendar</a><a class="nm-link nm-link--listen" href="/commentary/" data-track="commentary_click" data-track-label="${esc(slug)}" aria-label="Listen live to Lobi Stars FC vs ${esc(opponent)} on Lobi Stars FC Live">🎧 Listen Live</a></div>
+<div class="nm-links"><a class="nm-link" href="/matches/${esc(slug)}/" aria-label="Match Centre: Lobi Stars FC vs ${esc(opponent)}">Match Centre →</a>${previews[watDay(ev.event_date)] ? `<a class="nm-link nm-link--btn" href="/news/${esc(previews[watDay(ev.event_date)])}/">Match Preview</a>` : ''}${home && ev.on_sale ? `<a class="nm-link nm-link--live" href="/tickets?event=${encodeURIComponent(ev.id)}" aria-label="Buy tickets: Lobi Stars FC vs ${esc(opponent)}">Buy Tickets</a>` : ''}${home && isMatchDay(ev, now) ? `<a class="nm-link nm-link--live" href="/matches/${esc(slug)}/live/" aria-label="Matchday Live: Lobi Stars FC vs ${esc(opponent)}">● Matchday Live</a>` : ''}<a class="nm-link nm-link--cal" href="/api/calendar?match=${encodeURIComponent(slug)}" aria-label="Add Lobi Stars FC vs ${esc(opponent)} to your calendar">📅 Add to calendar</a><a class="nm-link nm-link--listen" href="/commentary/" data-track="commentary_click" data-track-label="${esc(slug)}" aria-label="Listen live to Lobi Stars FC vs ${esc(opponent)} on Lobi Stars FC Live">🎧 Listen Live</a></div>
 </li>`;
   }).join('');
 }
@@ -121,7 +135,7 @@ function googleCalUrl(m) {
   return `https://calendar.google.com/calendar/render?${q}`;
 }
 
-function fixtureCard(m, upcoming) {
+function fixtureCard(m, upcoming, previews = {}, now = Date.now()) {
   const lobiHome = typeof m.is_home === 'boolean' ? m.is_home : isLobi(m.home_team);
   const lobiInvolved = lobiHome || isLobi(m.away_team);
   let mid;
@@ -131,9 +145,11 @@ function fixtureCard(m, upcoming) {
   const vs = `${esc(m.home_team)} vs ${esc(m.away_team)}`;
   const actions = [];
   if (m.slug) actions.push(`<a class="fx-btn" href="/matches/${esc(m.slug)}/" aria-label="Match Centre: ${vs}">Match Centre</a>`);
-  if (lobiHome && m.slug) actions.push(`<a class="fx-btn primary" href="/matches/${esc(m.slug)}/live/" aria-label="Matchday Live: ${vs}">● Matchday Live</a>`);
+  const preview = previews[watDay(m.event_date)];
+  if (upcoming && preview) actions.push(`<a class="fx-btn" href="/news/${esc(preview)}/">Match Preview</a>`);
+  if (lobiHome && m.slug && isMatchDay(m, now)) actions.push(`<a class="fx-btn primary" href="/matches/${esc(m.slug)}/live/" aria-label="Matchday Live: ${vs}">● Matchday Live</a>`);
   if (!lobiHome && lobiInvolved && upcoming && m.status !== 'postponed') actions.push(`<a class="fx-btn" href="/commentary/" aria-label="Listen live to ${vs} on Lobi Stars FC Live">🎧 Listen Live</a>`);
-  if (upcoming && lobiHome && m.id) actions.push(`<a class="fx-btn primary" href="/tickets?event=${encodeURIComponent(m.id)}" aria-label="Buy tickets: ${vs}">Buy Tickets</a>`);
+  if (upcoming && lobiHome && m.id && m.on_sale) actions.push(`<a class="fx-btn primary" href="/tickets?event=${encodeURIComponent(m.id)}" aria-label="Buy tickets: ${vs}">Buy Tickets</a>`);
   if (upcoming && m.slug) actions.push(`<a class="fx-btn" href="/api/calendar?match=${encodeURIComponent(m.slug)}">📅 Add to calendar (.ics)</a>`);
   if (upcoming) actions.push(`<a class="fx-btn" href="${esc(googleCalUrl(m))}" target="_blank" rel="noopener">Google Calendar</a>`);
   return `<article class="fx">
@@ -143,13 +159,13 @@ function fixtureCard(m, upcoming) {
 </article>`;
 }
 
-export function boardHtml(items, show) {
+export function boardHtml(items, show, previews = {}) {
   if (!items.length) return { status: show === 'upcoming' ? 'Fixtures for the next round will be announced soon.' : 'No results yet this season.', list: '' };
   let month = '', out = '';
   for (const m of items) {
     const k = monthKey(m.event_date);
     if (k !== month) { month = k; out += `<h2 class="fx-month">${esc(k)}</h2>`; }
-    out += fixtureCard(m, show === 'upcoming');
+    out += fixtureCard(m, show === 'upcoming', previews);
   }
   return { status: '', list: out };
 }
@@ -159,7 +175,7 @@ export function boardHtml(items, show) {
  * data-cms attribute, so they're read as the page streams past.
  */
 export async function renderBoardPage(request, env, assetPath) {
-  const matches = await publicMatches(env);
+  const [matches, previews] = await Promise.all([publicMatches(env), previewSlugs(request, env)]);
   let cms = [], show = 'upcoming';
   return renderPage(request, env, assetPath, [
     ['[data-fixtures-board]', { element(el) {
@@ -167,11 +183,11 @@ export async function renderBoardPage(request, env, assetPath) {
       try { cms = JSON.parse(el.getAttribute('data-cms') || '[]'); } catch { cms = []; }
     } }],
     ['[data-fixtures-board] [data-status]', { element(el) {
-      const r = boardHtml(boardItems(matches, cms, show), show);
+      const r = boardHtml(boardItems(matches, cms, show), show, previews);
       if (r.status) el.setInnerContent(r.status); else el.setAttribute('hidden', '');
     } }],
-    ['[data-fixtures-board] [data-list]', { element(el) { el.setInnerContent(boardHtml(boardItems(matches, cms, show), show).list, { html: true }); } }],
-  ], { 'ssr-matches': { matches } });
+    ['[data-fixtures-board] [data-list]', { element(el) { el.setInnerContent(boardHtml(boardItems(matches, cms, show), show, previews).list, { html: true }); } }],
+  ], { 'ssr-matches': { matches }, 'ssr-previews': previews });
 }
 
 // ── Watch Live page ──

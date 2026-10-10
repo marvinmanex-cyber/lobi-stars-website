@@ -1,12 +1,18 @@
 ---
-interface Props { current: 'fixtures' | 'results' | 'table' | 'watch' | 'commentary' }
-const { current } = Astro.props;
+// Matches sub-navigation, shown on every match-related page. Scrolls
+// sideways on phones; the active item is highlighted.
+interface Props { current?: 'fixtures' | 'results' | 'table' | 'stats' | 'matchday' | 'watch' | 'commentary' | 'motm' | 'predict' | '' }
+const { current = '' } = Astro.props;
 const tabs = [
   { id: 'fixtures', label: 'Fixtures', href: '/fixtures' },
   { id: 'results', label: 'Results', href: '/results' },
   { id: 'table', label: 'Table', href: '/table' },
+  { id: 'stats', label: 'Stats', href: '/stats' },
+  { id: 'matchday', label: 'Matchday Live', href: '/matchday' },
   { id: 'watch', label: 'Watch Live', href: '/watch' },
   { id: 'commentary', label: 'Commentary', href: '/commentary' },
+  { id: 'motm', label: 'Man of the Match', href: '/man-of-the-match' },
+  { id: 'predict', label: 'Predict & Win', href: '/predict-and-win' },
 ];
 ---
 <nav class="mt" aria-label="Matches">
@@ -14,9 +20,10 @@ const tabs = [
 </nav>
 
 <style>
-  .mt { display: flex; gap: 4px; margin: 8px 0 0; border-bottom: 1px solid var(--d4); overflow-x: auto; }
+  .mt { display: flex; gap: 4px; margin: 8px 0 0; border-bottom: 1px solid var(--d4); overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .mt::-webkit-scrollbar { display: none; }
   .mt a {
-    padding: 14px 18px 12px; text-decoration: none; color: var(--lt); white-space: nowrap;
+    padding: 14px 16px 12px; text-decoration: none; color: var(--lt); white-space: nowrap; flex-shrink: 0;
     font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase;
     border-bottom: 3px solid transparent;
   }
@@ -24,3 +31,8 @@ const tabs = [
   .mt a[aria-current='page'] { color: var(--red-text); border-bottom-color: var(--red); }
   .mt a:focus-visible { outline: 3px solid var(--red); outline-offset: -3px; }
 </style>
+
+<script>
+  // Keep the active item in view on phones.
+  document.querySelectorAll<HTMLElement>('.mt a[aria-current="page"]').forEach(a => a.scrollIntoView({ block: 'nearest', inline: 'center' }));
+</script>

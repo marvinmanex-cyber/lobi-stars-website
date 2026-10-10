@@ -6,8 +6,10 @@
 import Layout from '../layouts/Layout.astro';
 import settings from '../data/matchday.json';
 import LivePlayer from '../components/commentary/LivePlayer.astro';
+import MatchesTabs from '../components/MatchesTabs.astro';
 ---
 <Layout title="Matchday Live | Lobi Stars Football Club" description="Matchday Live: watch Lobi Stars home games, listen to live commentary, vote for Man of the Match and play Predict & Win." noindex whiteLabel>
+  <div class="wrap"><MatchesTabs current="matchday" /></div>
   <div id="mlLivePlayer" hidden><LivePlayer variant="full" /></div>
   <div id="ml" class="ml" data-settings={JSON.stringify(settings)}>
     <div class="wrap ml-loading" id="mlStatus" aria-live="polite">Loading Matchday Live&hellip;</div>

@@ -79,3 +79,26 @@ export function googleCalUrl(m: Match) {
 
 export const SUBSCRIBE_URL = 'webcal://lobistarsfc.com/fixtures.ics';
 export const FEED_URL = 'https://lobistarsfc.com/fixtures.ics';
+
+/** "Match day" for Matchday Live buttons: 24 hours before kick-off until the end of the match day (WAT). */
+export function isMatchDay(m: { status?: string; event_date: string }, now = Date.now()) {
+  if (m.status === 'live' || m.status === 'half-time') return true;
+  const ko = new Date(m.event_date).getTime();
+  const endOfDay = Date.parse(new Date(ko + 3_600_000).toISOString().slice(0, 10) + 'T23:00:00Z');
+  return now >= ko - 24 * 3_600_000 && now <= endOfDay;
+}
+
+export const watDay = (iso: string) => new Date(new Date(iso).getTime() + 3_600_000).toISOString().slice(0, 10);
+
+/** { 'YYYY-MM-DD': previewSlug } -- embedded by the server, or read from the news index. */
+let previewsPromise: Promise<Record<string, string>> | null = null;
+export function loadPreviews(): Promise<Record<string, string>> {
+  const el = document.getElementById('ssr-previews');
+  if (el?.textContent) { try { return Promise.resolve(JSON.parse(el.textContent)); } catch { /* fetch */ } }
+  previewsPromise ??= fetch('/data/news-index.json').then(r => (r.ok ? r.json() : [])).then((items: any[]) => {
+    const out: Record<string, string> = {};
+    for (const n of items) if (n.contentType === 'Preview' && n.matchDate && !out[n.matchDate]) out[n.matchDate] = n.slug;
+    return out;
+  }).catch(() => ({}));
+  return previewsPromise;
+}
