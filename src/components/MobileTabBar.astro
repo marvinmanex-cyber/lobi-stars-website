@@ -1,0 +1,58 @@
+---
+// Bottom tab bar for phones (under 768px): Home, Matches, News, Shop, More.
+// "More" opens the full site menu. Leaves room for the iPhone home bar.
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const MATCH_PATHS = ['/fixtures', '/results', '/table', '/watch', '/commentary', '/matches', '/man-of-the-match', '/predict-and-win', '/tickets', '/programme', '/stats', '/awards', '/match-centre', '/matchday-live'];
+const active = path === '/' ? 'home'
+  : MATCH_PATHS.some(p => path === p || path.startsWith(p + '/')) ? 'matches'
+  : path === '/news' || path.startsWith('/news/') ? 'news'
+  : path === '/shop' || path.startsWith('/shop/') ? 'shop' : '';
+const tabs = [
+  { id: 'home', label: 'Home', href: '/', icon: 'M3 11.5 12 4l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z' },
+  { id: 'matches', label: 'Matches', href: '/fixtures', icon: 'M4 6.5h16V20H4zM4 10.5h16M8.5 3.5v4M15.5 3.5v4' },
+  { id: 'news', label: 'News', href: '/news', icon: 'M4 5h13v14H5a1 1 0 0 1-1-1zm13 4h3v9a1 1 0 0 1-1 1h-2M7 8h7M7 11h7M7 14h4' },
+  { id: 'shop', label: 'Shop', href: '/shop', icon: 'M5 8h14l-1.2 12H6.2L5 8zM9 8V6.5a3 3 0 0 1 6 0V8' },
+];
+---
+<nav class="tb" aria-label="Quick links">
+  {tabs.map(t => (
+    <a class="tb-item" href={t.href} aria-current={active === t.id ? 'page' : undefined}>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d={t.icon} /></svg>
+      <span>{t.label}</span>
+    </a>
+  ))}
+  <button type="button" class="tb-item" id="tbMore" aria-controls="mobileMenu" aria-label="More: open the full menu">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
+    <span>More</span>
+  </button>
+</nav>
+
+<style is:global>
+  .tb { display: none; }
+  @media (max-width: 767px) {
+    .tb {
+      display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 1500;
+      background: #fff; border-top: 1px solid var(--d4); box-shadow: 0 -6px 18px rgba(15, 17, 21, .06);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .tb-item {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 60px;
+      border: 0; background: none; color: var(--lt); text-decoration: none; cursor: pointer;
+      font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .6px; text-transform: uppercase;
+    }
+    .tb-item svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+    .tb-item[aria-current='page'] { color: var(--red-text); }
+    .tb-item[aria-current='page'] svg { stroke-width: 2.3; }
+    .tb-item:focus-visible { outline: 3px solid var(--red); outline-offset: -4px; }
+    /* Keep page content, the WhatsApp button and pop-ups clear of the bar. */
+    body { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+    .wa-float { bottom: calc(76px + env(safe-area-inset-bottom)) !important; right: 16px !important; width: 52px !important; height: 52px !important; }
+    .cc { bottom: calc(72px + env(safe-area-inset-bottom)) !important; }
+    .toast { bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
+    .mv-confirm { bottom: calc(72px + env(safe-area-inset-bottom)) !important; }
+  }
+</style>
+
+<script>
+  document.getElementById('tbMore')?.addEventListener('click', () => document.getElementById('menuBtn')?.click());
+</script>

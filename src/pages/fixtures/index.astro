@@ -4,8 +4,8 @@ import FixturesBoard from '../../components/FixturesBoard.astro';
 import MatchesTabs from '../../components/MatchesTabs.astro';
 import { CURRENT_SEASON } from '../../lib/site';
 
-const FEED = 'https://lobistarsfc.com/api/calendar';
-const WEBCAL = 'webcal://lobistarsfc.com/api/calendar';
+const FEED = 'https://lobistarsfc.com/fixtures.ics';
+const WEBCAL = 'webcal://lobistarsfc.com/fixtures.ics';
 ---
 <Layout title="Fixtures | Lobi Stars Football Club" description={`Upcoming Lobi Stars FC First Team fixtures for the ${CURRENT_SEASON} season, with dates, kick-off times, venues and calendar downloads.`}>
   <div class="page-hero wrap">

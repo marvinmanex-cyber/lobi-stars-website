@@ -35,3 +35,14 @@ export async function readSession(request, secret) {
 export function clearSessionCookie() {
   return `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
+
+/**
+ * Non-secret hint cookie ("ls_fan=1") readable by page scripts, so the header
+ * knows to show the fan's initials without calling the server on every page.
+ * It grants nothing: the real session is the HttpOnly ls_session cookie.
+ */
+export function fanHintCookie(on) {
+  return on
+    ? `ls_fan=1; Secure; SameSite=Lax; Path=/; Max-Age=${Math.floor(SESSION_DURATION_MS / 1000)}`
+    : 'ls_fan=; Secure; SameSite=Lax; Path=/; Max-Age=0';
+}

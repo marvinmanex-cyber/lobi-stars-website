@@ -1,6 +1,7 @@
 ---
 import { FOOTER_TAGLINE, SOCIAL_LINKS } from '../lib/site';
 import PartnerLogo from './partners/PartnerLogo.astro';
+import WhatsAppChannel from './WhatsAppChannel.astro';
 import { getPartners } from '../lib/partners';
 
 interface Props { whiteLabel?: boolean }
@@ -61,15 +62,19 @@ const year = new Date().getFullYear();
       <form class="sf-news" id="newsletterForm" novalidate>
         <h2 class="sf-news-title">Club Newsletter</h2>
         <p>Get club news, ticket releases and matchday updates by email.</p>
-        <label class="sr-only" for="newsletterEmail">Email address</label>
-        <div class="sf-news-row">
-          <input id="newsletterEmail" name="email" type="email" placeholder="Your email address" autocomplete="email" required />
-          <button type="submit" class="btn-p">Sign up</button>
+        <div class="sf-news-grid">
+          <div><label class="sr-only" for="nlName">Full name</label><input id="nlName" name="fullName" placeholder="Full name" autocomplete="name" required maxlength="100" /></div>
+          <div><label class="sr-only" for="nlPhone">Phone number</label><input id="nlPhone" name="phone" type="tel" inputmode="tel" placeholder="Phone number (e.g. 0803 123 4567)" autocomplete="tel" required /></div>
+          <div><label class="sr-only" for="newsletterEmail">Email address</label><input id="newsletterEmail" name="email" type="email" placeholder="Email address" autocomplete="email" required /></div>
+          <div><label class="sr-only" for="nlEmail2">Confirm email address</label><input id="nlEmail2" name="confirmEmail" type="email" placeholder="Confirm email address" autocomplete="email" required /></div>
         </div>
+        <label class="sf-news-consent"><input type="checkbox" name="consent" required /> <span>Yes, send me Lobi Stars news by email. I agree to the <a href="/privacy/">Privacy Policy</a>.</span></label>
+        <button type="submit" class="btn-p sf-news-btn">Sign up</button>
         <p class="sf-news-msg" id="newsletterMsg" role="status" aria-live="polite"></p>
       </form>
     </div>
 
+    <WhatsAppChannel variant="footer" />
     <div class="sf-cols">
       {columns.map(col => (
         <nav class="sf-col" aria-label={col.title}>
@@ -98,6 +103,7 @@ const year = new Date().getFullYear();
       <ul class="sf-legal">
         <li><a href="/privacy">Privacy Policy</a></li>
         <li><a href="/terms">Terms of Use</a></li>
+        <li><a href="/sitemap">Sitemap</a></li>
         <li><button type="button" data-cookie-settings>Cookie settings</button></li>
       </ul>
     </div>
@@ -123,8 +129,14 @@ const year = new Date().getFullYear();
 
   .sf-news-title { margin: 0; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; }
   .sf-news p { margin: 8px 0 14px; font-size: 14px; color: rgba(255, 255, 255, .7); }
-  .sf-news-row { display: flex; gap: 8px; }
-  .sf-news input {
+  .sf-news-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sf-news-grid input { width: 100%; }
+  .sf-news-consent { display: flex; gap: 10px; align-items: flex-start; margin: 12px 0; font-size: 13px; line-height: 1.45; color: rgba(255, 255, 255, .85); cursor: pointer; }
+  .sf-news-consent input { width: 18px; height: 18px; margin-top: 1px; flex-shrink: 0; accent-color: #E31E24; }
+  .sf-news-consent a { color: #FFC72C; }
+  .sf-news-btn { width: 100%; }
+  @media (max-width: 520px) { .sf-news-grid { grid-template-columns: 1fr; } }
+  .sf-news input:not([type=checkbox]) {
     flex: 1; min-width: 0; padding: 12px 14px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, .25);
     background: rgba(255, 255, 255, .06); color: #fff; font-size: 15px;
   }
@@ -171,28 +183,30 @@ const year = new Date().getFullYear();
 
   const form = document.getElementById('newsletterForm') as HTMLFormElement | null;
   if (form) {
-    const input = form.querySelector('input') as HTMLInputElement;
     const msg = document.getElementById('newsletterMsg')!;
-    const btn = form.querySelector('button') as HTMLButtonElement;
+    const btn = form.querySelector('button[type=submit]') as HTMLButtonElement;
     form.addEventListener('submit', async e => {
       e.preventDefault();
       msg.className = 'sf-news-msg';
-      const email = input.value.trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        msg.textContent = 'Please enter a valid email address.'; msg.classList.add('err'); return;
-      }
+      const f = new FormData(form);
+      const v = (k: string) => String(f.get(k) || '').trim();
+      const show = (t: string, ok = false) => { msg.textContent = t; msg.classList.add(ok ? 'ok' : 'err'); };
+      if (!v('fullName')) return show('Please enter your full name.');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email'))) return show('Please enter a valid email address.');
+      if (v('email').toLowerCase() !== v('confirmEmail').toLowerCase()) return show('The email addresses do not match.');
+      if (!f.get('consent')) return show('Please tick the box to agree to receive club news.');
       btn.disabled = true;
       try {
         const res = await fetch('/api/newsletter', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, source: location.pathname }),
+          body: JSON.stringify({ fullName: v('fullName'), phone: v('phone'), email: v('email'), confirmEmail: v('confirmEmail'), consent: true, source: location.pathname }),
         });
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Could not sign you up. Please try again.');
-        msg.textContent = "Thanks! You're on the list."; msg.classList.add('ok');
+        show(data.message || "Thanks! You're on the list.", true);
         form.reset();
       } catch (err) {
-        msg.textContent = (err as Error).message; msg.classList.add('err');
+        show((err as Error).message);
       } finally {
         btn.disabled = false;
       }

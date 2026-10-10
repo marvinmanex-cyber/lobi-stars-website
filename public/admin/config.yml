@@ -138,12 +138,32 @@ collections:
   - name: "settings"
     label: "Site Settings, League Table & Shop"
     files:
+      - name: "promo"
+        label: "Promo Bar (thin bar at the top of every page)"
+        file: "src/data/promo.json"
+        fields:
+          - {label: "Show the promo bar", name: "enabled", widget: "boolean", default: false}
+          - {label: "Text (keep it short)", name: "text", widget: "string", hint: "e.g. Tickets on sale: Lobi Stars vs Kada Warriors"}
+          - {label: "Link text (optional)", name: "linkText", widget: "string", required: false, hint: "e.g. Buy now"}
+          - {label: "Link address (optional)", name: "url", widget: "string", required: false, hint: "e.g. /tickets/ or a full https:// address"}
+          - {label: "Show from (optional, Nigerian time)", name: "start", widget: "datetime", required: false, format: "YYYY-MM-DDTHH:mm", date_format: "DD/MM/YYYY", time_format: "HH:mm"}
+          - {label: "Show until (optional, Nigerian time)", name: "end", widget: "datetime", required: false, format: "YYYY-MM-DDTHH:mm", date_format: "DD/MM/YYYY", time_format: "HH:mm"}
       - name: "site"
         label: "Season, Homepage Stats & Footer Text"
         file: "src/data/site.json"
         fields:
           - {label: "Current Season (e.g. 2026/27)", name: "currentSeason", widget: "string"}
           - {label: "Footer Tagline", name: "footerTagline", widget: "text"}
+          - label: "Social links (leave blank to hide an icon)"
+            name: "social"
+            widget: "object"
+            fields:
+              - {label: "Facebook", name: "facebook", widget: "string", required: false}
+              - {label: "X (Twitter)", name: "x", widget: "string", required: false}
+              - {label: "Instagram", name: "instagram", widget: "string", required: false}
+              - {label: "YouTube", name: "youtube", widget: "string", required: false}
+              - {label: "TikTok", name: "tiktok", widget: "string", required: false}
+              - {label: "WhatsApp Channel (shows the 'Join our WhatsApp Channel' blocks)", name: "whatsappChannel", widget: "string", required: false}
           - label: "Homepage Stats Bar"
             name: "stats"
             widget: "list"

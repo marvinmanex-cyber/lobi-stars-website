@@ -6,6 +6,7 @@ import NewsCarousel from '../components/news/NewsCarousel.astro';
 import ShopCard from '../components/ShopCard.astro';
 import PartnersShowcase from '../components/partners/PartnersShowcase.astro';
 import LiveBanner from '../components/LiveBanner.astro';
+import WhatsAppChannel from '../components/WhatsAppChannel.astro';
 import MatchdayGames from '../components/fans/MatchdayGames.astro';
 import { getSortedNews } from '../lib/news';
 import shop from '../data/shop.json';
@@ -42,12 +43,15 @@ const teamJsonLd = {
   jsonLd={[teamJsonLd]}
 >
   <LiveBanner />
+  <!-- "FULL TIME" banner for 24 hours after a match: filled in on the server (functions/index.js). -->
+  <div class="ftb" id="ftBanner" hidden></div>
   <h1 class="sr-only">Lobi Stars Football Club &ndash; official website</h1>
 
   <NewsHero articles={featuredNews} />
   <NextMatches />
   <MatchdayGames />
   <NewsCarousel title="Latest News" articles={enoughNews ? news.slice(0, 12) : []} viewAllHref="/news" />
+  <WhatsAppChannel variant="band" />
   <NewsCarousel title="Video" articles={videoNews} viewAllHref="/video" viewAllLabel="All videos" tone="band" />
 
   <section class="hp-sec" aria-labelledby="shop-title">
@@ -77,6 +81,11 @@ const teamJsonLd = {
 </Layout>
 
 <style>
+  .ftb { background: #15181D; color: #fff; padding: 10px 5%; text-align: center; font: 700 14px/1.4 'Barlow Condensed', sans-serif; letter-spacing: .8px; text-transform: uppercase; }
+  .ftb :global(strong) { color: #FFC72C; margin-right: 6px; }
+  .ftb :global(a) { color: #fff; text-decoration: underline; text-underline-offset: 3px; margin: 0 4px; }
+  .ftb :global(a:hover), .ftb :global(a:focus-visible) { color: #FFC72C; }
+  .ftb :global(.ftb-sep) { opacity: .5; }
   /* Speed: sections far below the fold are only laid out when the visitor scrolls near them. */
   :global(.ncar), .hp-sec, .hp-member, :global(.mgs), :global(.ps) { content-visibility: auto; contain-intrinsic-size: auto 560px; }
   .hp-sec { padding: 48px 0; }

@@ -77,5 +77,5 @@ export function googleCalUrl(m: Match) {
   return `https://calendar.google.com/calendar/render?${p}`;
 }
 
-export const SUBSCRIBE_URL = 'webcal://lobistarsfc.com/api/calendar';
-export const FEED_URL = 'https://lobistarsfc.com/api/calendar';
+export const SUBSCRIBE_URL = 'webcal://lobistarsfc.com/fixtures.ics';
+export const FEED_URL = 'https://lobistarsfc.com/fixtures.ics';

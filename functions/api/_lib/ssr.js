@@ -93,7 +93,7 @@ export function nextMatchesHtml(matches, now = Date.now()) {
 <div class="nm-top"><span class="nm-comp-logo" aria-hidden="true">${esc(compAbbr(comp))}</span><div class="nm-comp"><span class="nm-comp-name">${esc(comp)}</span><span class="nm-venue">${esc(ev.venue)}</span></div></div>
 <div class="nm-when">${live ? '<span class="nm-live-badge">Live now</span>' : `${esc(date)} · <b>${esc(time)} WAT</b>`}</div>
 <div class="nm-opp">${crest}<span class="nm-opp-name">${esc(opponent)}</span><span class="nm-ha ${home ? 'home' : 'away'}">${home ? 'Home' : 'Away'}</span></div>
-<div class="nm-links"><a class="nm-link" href="/matches/${esc(slug)}/" aria-label="Match Centre: Lobi Stars FC vs ${esc(opponent)}">Match Centre →</a>${home ? `<a class="nm-link nm-link--live" href="/matches/${esc(slug)}/live/" aria-label="Matchday Live: Lobi Stars FC vs ${esc(opponent)}">● Matchday Live</a>` : ''}<a class="nm-link nm-link--listen" href="/commentary/" data-track="commentary_click" data-track-label="${esc(slug)}" aria-label="Listen live to Lobi Stars FC vs ${esc(opponent)} on Lobi Stars FC Live">🎧 Listen Live</a></div>
+<div class="nm-links"><a class="nm-link" href="/matches/${esc(slug)}/" aria-label="Match Centre: Lobi Stars FC vs ${esc(opponent)}">Match Centre →</a>${home ? `<a class="nm-link nm-link--live" href="/matches/${esc(slug)}/live/" aria-label="Matchday Live: Lobi Stars FC vs ${esc(opponent)}">● Matchday Live</a>` : ''}<a class="nm-link nm-link--cal" href="/api/calendar?match=${encodeURIComponent(slug)}" aria-label="Add Lobi Stars FC vs ${esc(opponent)} to your calendar">📅 Add to calendar</a><a class="nm-link nm-link--listen" href="/commentary/" data-track="commentary_click" data-track-label="${esc(slug)}" aria-label="Listen live to Lobi Stars FC vs ${esc(opponent)} on Lobi Stars FC Live">🎧 Listen Live</a></div>
 </li>`;
   }).join('');
 }
@@ -134,6 +134,7 @@ function fixtureCard(m, upcoming) {
   if (lobiHome && m.slug) actions.push(`<a class="fx-btn primary" href="/matches/${esc(m.slug)}/live/" aria-label="Matchday Live: ${vs}">● Matchday Live</a>`);
   if (!lobiHome && lobiInvolved && upcoming && m.status !== 'postponed') actions.push(`<a class="fx-btn" href="/commentary/" aria-label="Listen live to ${vs} on Lobi Stars FC Live">🎧 Listen Live</a>`);
   if (upcoming && lobiHome && m.id) actions.push(`<a class="fx-btn primary" href="/tickets?event=${encodeURIComponent(m.id)}" aria-label="Buy tickets: ${vs}">Buy Tickets</a>`);
+  if (upcoming && m.slug) actions.push(`<a class="fx-btn" href="/api/calendar?match=${encodeURIComponent(m.slug)}">📅 Add to calendar (.ics)</a>`);
   if (upcoming) actions.push(`<a class="fx-btn" href="${esc(googleCalUrl(m))}" target="_blank" rel="noopener">Google Calendar</a>`);
   return `<article class="fx">
 <div class="fx-meta"><span class="fx-comp">${esc(m.competition)}</span>${lobiInvolved ? `<span class="fx-ha ${lobiHome ? 'home' : 'away'}">${lobiHome ? 'Home' : 'Away'}</span>` : ''}<span class="fx-when">${esc(fmtDate(m.event_date))} · ${esc(fmtTime(m.event_date))}</span></div>
@@ -193,4 +194,35 @@ export function watchHtml(matches) {
     + (f.has_stream ? `<a class="btn-o" href="/matches/${esc(f.slug)}/live#watch">▶ Full match replay</a>` : `<a class="btn-o" href="/matches/${esc(f.slug)}/">Match report</a>`) : '';
   const replays = finished.filter(m => m.has_stream).slice(0, 12).map(m => `<a href="/matches/${esc(m.slug)}/live#watch"><span class="wv-rp-score">${esc(m.home_team)} ${esc(m.home_score)}–${esc(m.away_score)} ${esc(m.away_team)}</span><span class="wv-rp-meta">${esc(day(m.event_date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }))}</span><span class="wv-rp-go">Watch replay →</span></a>`).join('');
   return { schedule, last, replays };
+}
+
+// ── Homepage "FULL TIME" banner (24 hours after a Lobi Stars match) ──
+
+/**
+ * HTML for the slim full-time banner, or '' when no Lobi Stars match finished
+ * in the last 24 hours. Links only appear when their content exists.
+ */
+export async function fullTimeBannerHtml(env, now = Date.now()) {
+  try {
+    const rows = await listMatches(env.DB);
+    const recent = rows
+      .filter(r => r.status === 'full-time' && r.ended_at && (isLobi(r.home_team) || isLobi(r.away_team)) && hasScore(r)
+        && now - new Date(r.ended_at).getTime() < 24 * 3600_000 && now >= new Date(r.ended_at).getTime())
+      .sort((a, b) => new Date(b.ended_at) - new Date(a.ended_at))[0];
+    if (!recent) return '';
+    const m = toSummary(recent, recent);
+    const centre = await env.DB.prepare(`SELECT report FROM match_centre WHERE event_id = ?`).bind(recent.id).first();
+    let votes = 0;
+    if (m.is_home) {
+      const t = await env.DB.prepare(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'motm_votes'`).first();
+      if (t) votes = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM motm_votes WHERE event_id = ?`).bind(recent.id).first()).n || 0;
+    }
+    const short = n => String(n).replace(/\s+FC$/i, '');
+    const links = [];
+    if ((centre?.report || '').trim()) links.push(`<a href="/matches/${esc(m.slug)}/">Report</a>`);
+    if (m.has_stream) links.push(`<a href="/matches/${esc(m.slug)}/live#watch">Highlights</a>`);
+    if (votes > 0) links.push(`<a href="/matches/${esc(m.slug)}/live#vote">Man of the Match</a>`);
+    if (!links.length) links.push(`<a href="/matches/${esc(m.slug)}/">Match Centre</a>`);
+    return `<strong>Full time:</strong> ${esc(short(m.home_team))} ${esc(m.home_score)}–${esc(m.away_score)} ${esc(short(m.away_team))} <span class="ftb-sep">–</span> ${links.join('<span class="ftb-sep">|</span>')}`;
+  } catch { return ''; }
 }

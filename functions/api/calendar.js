@@ -8,9 +8,16 @@ const esc = s => String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').rep
 const stamp = d => new Date(d).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
 const fold = line => line.length <= 74 ? line : line.match(/.{1,74}/g).join('\r\n ');
 
+// ?match=<slug> returns just that match, as a download ("Add to calendar").
 export async function onRequestGet({ request, env }) {
-  const origin = new URL(request.url).origin;
-  const rows = await listMatches(env.DB);
+  const url = new URL(request.url);
+  const origin = url.origin;
+  const only = (url.searchParams.get('match') || '').toLowerCase();
+  let rows = await listMatches(env.DB);
+  if (only) {
+    rows = rows.filter(e => matchSlug(e) === only || e.id.toLowerCase() === only);
+    if (!rows.length) return new Response('Match not found', { status: 404 });
+  }
   const now = stamp(Date.now());
 
   const lines = [
@@ -41,7 +48,7 @@ export async function onRequestGet({ request, env }) {
   return new Response(lines.map(fold).join('\r\n') + '\r\n', {
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
-      'Content-Disposition': 'inline; filename="lobi-stars-fixtures.ics"',
+      'Content-Disposition': only ? `attachment; filename="lobi-stars-${only}.ics"` : 'inline; filename="lobi-stars-fixtures.ics"',
       'Cache-Control': 'public, max-age=900',
     },
   });

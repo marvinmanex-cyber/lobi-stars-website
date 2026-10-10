@@ -43,7 +43,7 @@ import Layout from '../layouts/Layout.astro';
   .mc :global(.mc-motm) { text-align: center; margin: 14px 0 0; color: #FFC72C; font: 700 16px/1.4 'Barlow Condensed', sans-serif; letter-spacing: .6px; text-transform: uppercase; }
   .mc :global(.mc-motm a) { color: #fff; }
   .mc :global(.mc-live-btn) { padding: 11px 18px; font-size: 13px; }
-  .mc :global(.mc-tabs) { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--d4); background: #fff; position: sticky; top: 72px; z-index: 20; scrollbar-width: none; }
+  .mc :global(.mc-tabs) { display: flex; gap: 2px; overflow-x: auto; border-bottom: 1px solid var(--d4); background: #fff; position: sticky; top: var(--header-h); z-index: 20; scrollbar-width: none; }
   .mc :global(.mc-tabs::-webkit-scrollbar) { display: none; }
   .mc :global(.mc-tab) { padding: 16px 16px 13px; background: none; border: 0; border-bottom: 3px solid transparent; cursor: pointer; white-space: nowrap; color: var(--lt); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
   .mc :global(.mc-tab[aria-selected='true']) { color: var(--red-text); border-bottom-color: var(--red); }
@@ -86,7 +86,7 @@ import Layout from '../layouts/Layout.astro';
   @media (max-width: 640px) {
     .mc :global(.mc-lineups) { grid-template-columns: 1fr; }
     .mc :global(.mc-board) { gap: 8px; }
-    .mc :global(.mc-tabs) { top: 72px; }
+    .mc :global(.mc-tabs) { top: var(--header-h); }
   }
 </style>
 

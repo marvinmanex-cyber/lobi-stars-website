@@ -364,6 +364,30 @@ site for commentary. The partner still appears on the Partners page.
 
 ## Other things you can update in the CMS
 
+### Promo bar (thin announcement bar at the very top of every page)
+**CMS → Site Settings → Promo Bar**: tick **Show the promo bar**, type a short
+message (e.g. "Tickets on sale: Lobi Stars vs Kada Warriors"), optionally a
+link text ("Buy now") and link (e.g. `/tickets/`), and optional **Show from /
+Show until** dates (Nigerian time). Fans can close it; it stays closed until
+they next open the site. Untick to remove it.
+
+### Social links and the WhatsApp Channel
+**CMS → Site Settings → Season, Homepage Stats & Footer Text → Social links**:
+add the Facebook, X, Instagram, YouTube, TikTok and **WhatsApp Channel** links.
+Empty ones are hidden. As soon as the WhatsApp Channel link is added, a
+"Join our WhatsApp Channel" block appears on the homepage, in the footer, at
+the end of every news article and on Watch Live.
+
+### Newsletter sign-ups
+The footer form asks for full name, phone, email (typed twice) and consent.
+If someone signs up again with the same email, their details are updated.
+Every sign-up appears in **Admin → Fan database** (source: Newsletter).
+
+### "FULL TIME" banner
+For 24 hours after you press **End Match** and enter the score, the homepage
+shows "FULL TIME: Lobi Stars 2–1 …" with links to the report, highlights
+(when a stream link is set) and Man of the Match (when votes exist).
+
 All of these are under **Site Settings, League Table & Shop**:
 
 - **Season, Homepage Stats & Footer Text**: the current season (e.g.

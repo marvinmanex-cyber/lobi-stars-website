@@ -1,0 +1,45 @@
+---
+// /sitemap -- a plain list of the site's main pages (sitemap.xml is the
+// machine-readable version for search engines).
+import LegalPage from '../components/LegalPage.astro';
+import { MAIN_NAV, EXTRA_PAGES } from '../lib/nav';
+
+const groups: { title: string; links: { label: string; href: string }[] }[] = [
+  { title: 'Matches', links: [
+    ...(MAIN_NAV.find(i => i.label === 'Matches')?.children ?? []),
+    { label: 'Buy Tickets', href: '/tickets' }, { label: 'Matchday Programme', href: '/programme' }, { label: 'In-Seat Food', href: '/food' },
+  ] },
+  { title: 'News & Media', links: [{ label: 'News', href: '/news' }, { label: 'Video', href: '/video' }, { label: 'Gallery', href: '/gallery' }] },
+  { title: 'Team', links: [{ label: 'Squad', href: '/squad' }] },
+  { title: 'Club', links: [{ label: 'About the Club', href: '/club' }, ...(MAIN_NAV.find(i => i.label === 'Club')?.children ?? [])] },
+  { title: 'Fans', links: [
+    { label: 'Membership', href: '/membership' }, { label: 'Club Shop', href: '/shop' },
+    { label: 'Create a fan account', href: '/fans/register' }, { label: 'Fan log in', href: '/fans/login' },
+  ] },
+  { title: 'Help & Legal', links: [
+    { label: 'Help Centre', href: '/help' }, { label: 'Contact Us', href: '/contact' }, { label: 'Search', href: '/search' },
+    { label: 'Privacy Policy', href: '/privacy' }, { label: 'Terms of Use', href: '/terms' },
+    { label: 'Predict & Win Terms', href: '/predict-and-win/terms' }, { label: 'Man of the Match Rules', href: '/motm/rules' },
+  ] },
+];
+// Anything in the search page's list that isn't above yet.
+const listed = new Set(groups.flatMap(g => g.links.map(l => l.href)));
+const extra = EXTRA_PAGES.filter(p => !listed.has(p.href) && !p.external);
+if (extra.length) groups.push({ title: 'More', links: extra });
+---
+<LegalPage title="Sitemap" tag="Help" description="Every main page on the Lobi Stars FC website." updated="10 October 2026">
+  <div class="sm-grid">
+    {groups.map(g => (
+      <section>
+        <h2>{g.title}</h2>
+        <ul>{g.links.map(l => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+      </section>
+    ))}
+  </div>
+</LegalPage>
+
+<style>
+  .sm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px 28px; }
+  .sm-grid ul { list-style: none; padding: 0; margin: 0; }
+  .sm-grid li { margin: 6px 0; }
+</style>

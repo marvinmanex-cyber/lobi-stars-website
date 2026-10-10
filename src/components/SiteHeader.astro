@@ -1,5 +1,6 @@
 ---
 import { MAIN_NAV } from '../lib/nav';
+import PromoBar from './PromoBar.astro';
 import { getPartners, logoSrc, logoAlt } from '../lib/partners';
 
 // Principal partner shown next to the search icon; hidden if there isn't one.
@@ -13,6 +14,7 @@ const isActive = (href: string) => {
 };
 ---
 <header class="sh" id="siteHeader">
+  <PromoBar />
   <div class="sh-inner">
     <a class="sh-logo" href="/">
       <img src="/images/lobi-stars-fc.jpg" alt="Home" width="44" height="44" />
@@ -62,6 +64,13 @@ const isActive = (href: string) => {
       )}
       <a class="sh-icon" href="/search" aria-label="Search the site">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>
+      </a>
+      <a class="sh-icon" href="/shop" aria-label="Club shop">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 12H6.2L5 8z" /><path d="M9 8V6.5a3 3 0 0 1 6 0V8" /></svg>
+      </a>
+      <a class="sh-icon sh-account" id="accountLink" href="/fans/login/" aria-label="Log in or create a fan account">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8" /><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4" /></svg>
+        <span class="sh-initials" id="accountInitials" hidden></span>
       </a>
       <button type="button" class="sh-icon sh-burger" id="menuBtn" aria-label="Open menu" aria-expanded="false" aria-controls="mobileMenu">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
@@ -145,6 +154,10 @@ const isActive = (href: string) => {
   .sh-icon:hover { border-color: var(--red); color: var(--red-text); }
   .sh-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
   .sh-burger { display: none; }
+  .sh-account { position: relative; text-decoration: none; }
+  .sh-account.is-in { background: var(--red); border-color: var(--red); }
+  .sh-account.is-in svg { display: none; }
+  .sh-initials { font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .5px; color: #fff; }
 
   .sh-pp { display: flex; align-items: center; gap: 8px; text-decoration: none; margin-right: 6px; padding: 4px 6px; border-radius: 8px; }
   .sh-pp:hover, .sh-pp:focus-visible { background: var(--d3); }
@@ -157,6 +170,12 @@ const isActive = (href: string) => {
   /* Keep the 18+ line visible at every width; only the label shrinks. */
   @media (min-width: 1181px) and (max-width: 1440px) { .sh-link { padding: 10px 8px; letter-spacing: .8px; } .sh-inner { gap: 12px; } }
   /* Small phones: badge only, plus a compact principal-partner block. */
+  /* Phones: the bottom tab bar's "More" opens the menu, so the burger isn't needed. */
+  @media (max-width: 767px) {
+    .sh-burger { display: none !important; }
+    .sh-icon { width: 36px; height: 36px; }
+    .sh-icon svg { width: 17px; height: 17px; }
+  }
   @media (max-width: 640px) {
     .sh-logo .sh-name { display: none; }
     .sh-inner { gap: 10px; }
@@ -270,3 +289,20 @@ const isActive = (href: string) => {
   @keyframes livedot { 50% { opacity: .3; } }
   @media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
 </style>
+
+<script>
+  // Account icon: shows the fan's initials when they're logged in. The ls_fan
+  // hint cookie (set at login) avoids asking the server on every page.
+  if (document.cookie.split('; ').includes('ls_fan=1')) {
+    fetch('/api/auth/me').then(r => r.json()).then(({ member }) => {
+      const a = document.getElementById('accountLink') as HTMLAnchorElement;
+      if (!member || !a) return;
+      const ini = `${(member.firstName || '')[0] || ''}${(member.lastName || '')[0] || ''}`.toUpperCase() || '★';
+      const span = document.getElementById('accountInitials')!;
+      span.textContent = ini; span.hidden = false;
+      a.classList.add('is-in');
+      a.href = '/fans/account/';
+      a.setAttribute('aria-label', `Your fan account (${member.firstName} ${member.lastName})`);
+    }).catch(() => {});
+  }
+</script>

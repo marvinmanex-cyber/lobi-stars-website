@@ -1,5 +1,5 @@
 import { verifyPassword } from '../_lib/password.js';
-import { createSessionCookie } from '../_lib/session.js';
+import { createSessionCookie, fanHintCookie } from '../_lib/session.js';
 import { ensureFanSchema, clientIp, rateLimit, tooMany } from '../_lib/fans.js';
 
 // POST /api/auth/login -- shared by fan accounts (/fans/login) and the
@@ -40,8 +40,11 @@ export async function onRequestPost({ request, env }) {
 
   const cookie = await createSessionCookie(member.id, env.SESSION_SECRET);
 
+  const headers = new Headers({ 'Content-Type': 'application/json' });
+  headers.append('Set-Cookie', cookie);
+  headers.append('Set-Cookie', fanHintCookie(true));
   return new Response(
     JSON.stringify({ member: { id: member.id, firstName: member.first_name, lastName: member.last_name, email: member.email } }),
-    { status: 200, headers: { 'Content-Type': 'application/json', 'Set-Cookie': cookie } }
+    { status: 200, headers }
   );
 }

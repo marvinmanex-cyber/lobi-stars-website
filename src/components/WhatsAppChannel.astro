@@ -1,0 +1,36 @@
+---
+// "Join our WhatsApp Channel" block. Hidden until the channel link is set in
+// the CMS (Site Settings -> Social links -> WhatsApp Channel).
+import site from '../data/site.json';
+interface Props { variant?: 'band' | 'card' | 'footer' }
+const { variant = 'card' } = Astro.props;
+const url = (site.social?.whatsappChannel || '').trim();
+---
+{url && (
+  <section class:list={['wac', `wac--${variant}`]} aria-label="WhatsApp Channel">
+    <div class="wac-inner">
+      <svg class="wac-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 2.3A7.9 7.9 0 0 0 8 0C3.6 0 .1 3.6.1 7.9c0 1.4.4 2.8 1.1 4L0 16l4.2-1.1a7.9 7.9 0 0 0 3.8 1C12.4 15.9 16 12.3 16 7.9c0-2.1-.8-4.1-2.4-5.6zM8 14.5c-1.2 0-2.4-.3-3.4-.9l-.2-.1-2.5.6.7-2.4-.2-.3a6.6 6.6 0 0 1-1-3.5C1.4 4.3 4.4 1.3 8 1.3c1.8 0 3.4.7 4.7 1.9a6.6 6.6 0 0 1 1.9 4.7c0 3.6-3 6.6-6.6 6.6z"/></svg>
+      <div class="wac-text">
+        <strong>Join our WhatsApp Channel</strong>
+        <span>Get match updates, line-ups and goals straight to your phone.</span>
+      </div>
+      <a class="wac-btn" href={url} target="_blank" rel="noopener" data-track="whatsapp_click" data-track-label={`channel-${variant}`}>Join the channel <span class="sr-only">(opens WhatsApp)</span></a>
+    </div>
+  </section>
+)}
+
+<style>
+  .wac { background: #157A42; color: #fff; }
+  .wac-inner { max-width: 1280px; margin: 0 auto; padding: 22px 5%; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .wac-ic { width: 36px; height: 36px; fill: #fff; flex-shrink: 0; }
+  .wac-text { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 4px; }
+  .wac-text strong { font: 700 17px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .wac-text span { font-size: 15px; color: rgba(255, 255, 255, .92); }
+  .wac-btn { background: #fff; color: #145F36; padding: 12px 22px; border-radius: 999px; text-decoration: none; white-space: nowrap;
+    font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .wac-btn:hover, .wac-btn:focus-visible { background: #E8F7EE; outline: 3px solid #FFC72C; outline-offset: 2px; }
+  .wac--card { border-radius: 14px; margin: 32px 0; }
+  .wac--card .wac-inner { padding: 20px 22px; }
+  .wac--footer { background: rgba(21, 122, 66, .9); border-radius: 12px; margin-bottom: 28px; }
+  .wac--footer .wac-inner { padding: 16px 18px; }
+</style>

@@ -1,0 +1,9 @@
+{
+  "_help": "Thin bar at the very top of every page. Turn on, add the text and (optionally) a link and start/end dates (Nigerian time).",
+  "enabled": false,
+  "text": "Tickets on sale: Lobi Stars vs Kada Warriors",
+  "linkText": "Buy now",
+  "url": "/tickets/",
+  "start": "",
+  "end": ""
+}

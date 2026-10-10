@@ -1,0 +1,54 @@
+---
+// /fans/account -- the fan's own account page (opened from the header's
+// account icon). Later phases add the Predict & Win season rank and the
+// digital membership card here.
+import FanAuthShell from '../../components/fans/FanAuthShell.astro';
+---
+<FanAuthShell title="My Account" heading="My account" description="Your Lobi Stars FC fan account." intro="">
+  <div id="acc" aria-live="polite">
+    <p class="fa-note info" id="accLoading">Checking your account…</p>
+    <div id="accBody" hidden>
+      <p class="acc-hi">Hi <strong id="accName"></strong></p>
+      <dl class="acc-dl">
+        <div><dt>Email</dt><dd id="accEmail"></dd></div>
+        <div><dt>Email confirmed</dt><dd id="accVerified"></dd></div>
+        <div><dt>Account type</dt><dd id="accTier"></dd></div>
+      </dl>
+      <h2 class="acc-h">Matchday</h2>
+      <ul class="acc-links">
+        <li><a href="/predict-and-win/">Predict &amp; Win</a></li>
+        <li><a href="/man-of-the-match/">Vote for Man of the Match</a></li>
+        <li><a href="/commentary/">Lobi Stars FC Live commentary</a></li>
+        <li><a href="/membership/">Membership</a></li>
+      </ul>
+      <button type="button" class="btn-o fa-submit" id="logoutBtn">Log out</button>
+    </div>
+  </div>
+</FanAuthShell>
+
+<style>
+  .acc-hi { font-size: 18px; margin: 0 0 14px; }
+  .acc-dl { display: grid; gap: 10px; margin: 0 0 22px; }
+  .acc-dl div { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--d4); flex-wrap: wrap; }
+  .acc-dl dt { font: 700 13px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .acc-dl dd { margin: 0; overflow-wrap: anywhere; }
+  .acc-h { margin: 0 0 10px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .acc-links { margin: 0 0 22px; padding-left: 20px; line-height: 1.9; }
+  .acc-links a { color: var(--red-text); font-weight: 600; }
+</style>
+
+<script>
+  const $ = (id: string) => document.getElementById(id)!;
+  fetch('/api/auth/me').then(r => r.json()).then(({ member }) => {
+    if (!member) { location.replace('/fans/login/?next=/fans/account/'); return; }
+    $('accName').textContent = `${member.firstName} ${member.lastName}`;
+    $('accEmail').textContent = member.email;
+    $('accVerified').textContent = member.emailVerified ? 'Yes' : 'Not yet – check your inbox';
+    $('accTier').textContent = member.tier && member.tier !== 'Fan' ? `${member.tier} member` : 'Fan account';
+    $('accLoading').hidden = true; $('accBody').hidden = false;
+  }).catch(() => { $('accLoading').textContent = 'Your account could not be loaded. Please try again.'; });
+  $('logoutBtn').addEventListener('click', async () => {
+    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+    location.href = '/';
+  });
+</script>

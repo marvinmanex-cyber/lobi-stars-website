@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import WhatsAppChannel from '../../components/WhatsAppChannel.astro';
 import NewsCarousel from '../../components/news/NewsCarousel.astro';
 import RelativeTime from '../../components/news/RelativeTime.astro';
 import { render } from 'astro:content';
@@ -106,6 +107,7 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
 
       <div class="art-body">
         <Content />
+        <WhatsAppChannel variant="card" />
       </div>
 
       <a class="art-back" href={`/news?category=${categorySlug(a.category)}`}>&larr; More {a.category} news</a>

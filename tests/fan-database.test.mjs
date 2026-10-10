@@ -39,7 +39,7 @@ const C = { email: mail('c'), email2: mail('c2'), phone: `0813${r7()}` };
 const B = { email: mail('b') };
 
 test('overlapping records merge into one person per email or phone', async () => {
-  assert.equal((await call('/api/newsletter', { method: 'POST', body: { email: A.email, source: 'test' } })).status, 200);
+  assert.equal((await call('/api/newsletter', { method: 'POST', body: { fullName: 'Seed Subscriber', phone: A.phone, email: A.email, confirmEmail: A.email, consent: true, source: 'test' } })).status, 200);
   const reg = await call('/api/fans/register', { method: 'POST', body: {
     firstName: 'Seed', surname: `Alpha${RUN}`, email: A.email, confirmEmail: A.email, phone: A.phone,
     password: 'Lobi-Stars-2026', confirmPassword: 'Lobi-Stars-2026', agree: true, marketing: true,
@@ -47,9 +47,9 @@ test('overlapping records merge into one person per email or phone', async () =>
   assert.ok(reg.status < 300, JSON.stringify(reg.data));
   assert.equal((await call('/api/enquiry', { method: 'POST', body: { form: 'contact', first_name: 'Seedy', last_name: `Alpha${RUN}`, email: A.email2, phone: `+234${A.phone.slice(1)}`, subject: 'Test', message: 'Hello', privacy_consent: true } })).status, 200);
 
-  assert.equal((await call('/api/newsletter', { method: 'POST', body: { email: B.email, source: 'test' } })).status, 200);
+  assert.equal((await call('/api/newsletter', { method: 'POST', body: { fullName: 'Seed Subscriber', phone: `0802${r7()}`, email: B.email, confirmEmail: B.email, consent: true, source: 'test' } })).status, 200);
 
-  assert.equal((await call('/api/newsletter', { method: 'POST', body: { email: C.email, source: 'test' } })).status, 200);
+  assert.equal((await call('/api/newsletter', { method: 'POST', body: { fullName: 'Seed Subscriber', phone: C.phone, email: C.email, confirmEmail: C.email, consent: true, source: 'test' } })).status, 200);
   assert.equal((await call('/api/enquiry', { method: 'POST', body: { form: 'contact', first_name: 'Cee', last_name: 'One', email: C.email2, phone: C.phone, message: 'Hi', privacy_consent: true } })).status, 200);
   assert.equal((await call('/api/enquiry', { method: 'POST', body: { form: 'partnership', name: `Cee Merged${RUN}`, company: 'Seed Ltd', email: C.email, phone: C.phone, message: 'Sponsor', privacy_consent: true } })).status, 200);
 
