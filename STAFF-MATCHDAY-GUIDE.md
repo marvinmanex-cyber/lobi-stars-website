@@ -148,6 +148,7 @@ exported files private and delete them when you no longer need them.
 - Man of the Match rules: https://lobistarsfc.com/motm/rules
 - Predict & Win terms: https://lobistarsfc.com/predict-and-win/terms *(DRAFT until reviewed by the club's legal adviser)*
 - Privacy Policy: https://lobistarsfc.com/privacy *(DRAFT until reviewed)*
+- Website Terms of Use: https://lobistarsfc.com/terms *(DRAFT until reviewed)*
 
 ---
 
@@ -159,7 +160,7 @@ exported files private and delete them when you no longer need them.
 3. **Stream channels:** confirm the YouTube/Facebook channels for Lobi Stars
    streams (currently the Aeson channels).
 4. **Legal review:** Predict & Win terms (cash prize promotions may need
-   regulatory approval) and the Privacy Policy, both marked DRAFT. The terms
+   regulatory approval), the Privacy Policy and the website Terms of Use, all marked DRAFT. The terms
    also include points to confirm: the prize is for the score at the end of
    normal time, and winners may be asked for ID.
 5. **Players:** add the real squad with photos in the CMS (voting uses them).
