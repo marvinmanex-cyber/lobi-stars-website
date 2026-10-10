@@ -418,6 +418,19 @@ seconds) and the **peak** for the current match. After matches, see the
 **Lobi Stars FC Live** panel on **Admin → Analytics**, or download the
 **Broadcast Report (CSV)**.
 
+### What fans see while listening
+- After pressing **Play**, a **"now playing" bar** appears at the bottom of
+  every page (match name, Live / Paused, Pause/Play, **Stop**, Open). Fans can
+  browse the whole website and the commentary keeps playing.
+- It also keeps playing with the phone locked or in another app, with
+  play/pause on the lock screen.
+- **Stop** ends listening: the bar disappears and the lock-screen controls go away.
+- **Never commentary and video together:** starting any video (Watch Live,
+  match replay, goal clip, video in a story) pauses the commentary. Pressing
+  Play on the commentary again pauses the video and shows "Video paused for
+  live commentary" in its place.
+- When nobody is listening, the website works exactly as before.
+
 ### White-label rule
 Never put the broadcast partner's name, logo or web address on the
 commentary player or the commentary pages, and never link fans to an outside

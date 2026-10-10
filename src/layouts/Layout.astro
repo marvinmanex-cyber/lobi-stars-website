@@ -4,6 +4,8 @@ import CookieConsent from '../components/CookieConsent.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import MobileTabBar from '../components/MobileTabBar.astro';
+import LiveBar from '../components/commentary/LiveBar.astro';
+import { ClientRouter } from 'astro:transitions';
 import { CONTACT } from '../lib/site';
 
 export interface Props {
@@ -32,15 +34,76 @@ const {
   whiteLabel = false,
   bare = false,
 } = Astro.props;
+// In-page navigation is only used while live commentary is playing (so the
+// audio keeps going between pages); otherwise every link is a normal page
+// load. Not on admin/staff pages or the pop-out player.
+const softNav = !bare && !/^\/(admin|scan)(\/|$)/.test(Astro.url.pathname);
 const waLink = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Hello Lobi Stars Management, I have an inquiry.')}`;
 ---
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" transition:animate="none">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <HeadMeta title={title} description={description} image={image} imageAlt={imageAlt} type={type} noindex={noindex} jsonLd={jsonLd} />
 <slot name="head" />
+{softNav && <ClientRouter fallback="swap" />}
+<script is:inline>
+(function () {
+  if (!document.querySelector('meta[name="astro-view-transitions-enabled"]')) return;
+  // Live commentary keeps playing between pages: while a listening session is
+  // active (Play pressed, not yet Stopped), links open inside the page;
+  // otherwise links and forms work exactly as normal page loads.
+  if (window.__lsNavGate) return;
+  window.__lsNavGate = 1;
+  var listening = function () { var e = window.__lobiStarsLive; return !!(e && e.active); };
+  document.addEventListener('click', function (ev) {
+    var a = ev.target && ev.target.closest ? ev.target.closest('a, area') : null;
+    if (!a) return;
+    if (listening()) a.removeAttribute('data-astro-reload'); else a.setAttribute('data-astro-reload', '');
+  }, true);
+  document.addEventListener('submit', function (ev) {
+    var f = ev.target;
+    if (!listening() || (f.getAttribute('method') || '').toLowerCase() === 'post') f.setAttribute('data-astro-reload', '');
+    else f.removeAttribute('data-astro-reload');
+  }, true);
+  document.addEventListener('astro:before-preparation', function (ev) { if (!listening()) ev.preventDefault(); });
+
+  // Timers started by a page stop when you move to another page in-page
+  // (the commentary engine uses window.__lsSetInterval, which is never cleared).
+  var nativeSet = window.setInterval.bind(window), pageTimers = [];
+  window.__lsSetInterval = nativeSet;
+  window.setInterval = function () { var id = nativeSet.apply(window, arguments); pageTimers.push(id); return id; };
+
+  document.addEventListener('astro:before-swap', function (ev) {
+    pageTimers.splice(0).forEach(function (id) { clearInterval(id); });
+    // Run every script of the new page as on a fresh load. Classic scripts are
+    // wrapped in a block so their let/const can be declared again.
+    ev.newDocument.body.querySelectorAll('script').forEach(function (s) {
+      if (s.closest('[data-astro-transition-persist]')) return;
+      var type = s.getAttribute('type');
+      if (type && type !== 'module' && type !== 'text/javascript') return;
+      if (s.hasAttribute('src') && type === 'module') return; // re-imported after the swap (below)
+      s.setAttribute('data-astro-rerun', '');
+      if (!s.hasAttribute('src') && type !== 'module') s.textContent = '{\n' + s.textContent + '\n}';
+    });
+  });
+  // Module files the browser already ran are imported again so they set up the new page.
+  var ran = {}, first = true, rendered = location.pathname;
+  document.addEventListener('astro:page-load', function () {
+    rendered = location.pathname;
+    document.body.querySelectorAll('script[type="module"][src]').forEach(function (s) {
+      if (s.closest('[data-astro-transition-persist]')) return;
+      var src = s.getAttribute('src');
+      if (ran[src] && !first) import(src + (src.indexOf('?') < 0 ? '?' : '&') + 'r=' + Date.now()).catch(function () {});
+      ran[src] = 1;
+    });
+    first = false;
+  });
+  // Back/forward into an entry a page script changed: reload it properly.
+  window.addEventListener('popstate', function (ev) { if (!ev.state && location.pathname !== rendered) location.reload(); });
+})();
+</script>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap"/>
@@ -127,6 +190,7 @@ main.bare{padding-top:0;min-height:0;}
 
 <SiteFooter whiteLabel={whiteLabel} />
 <MobileTabBar />
+{softNav && <LiveBar />}
 </>}
 
 {!bare && <a href={waLink} target="_blank" rel="noopener" class="wa-float" aria-label="Chat with Lobi Stars FC on WhatsApp">

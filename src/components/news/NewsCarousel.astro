@@ -94,7 +94,9 @@ const headingId = `car-${title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
       });
     });
     track.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
+    // Removed once this carousel's page is gone (in-page navigation).
+    const onResize = () => { if (!car.isConnected) { window.removeEventListener('resize', onResize); return; } update(); };
+    window.addEventListener('resize', onResize);
     update();
   });
 </script>

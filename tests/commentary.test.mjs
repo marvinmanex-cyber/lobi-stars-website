@@ -160,3 +160,18 @@ test('Broadcast Report CSV', async () => {
   assert.equal(r.status, 200);
   assert.match(await r.text(), /Match,Kick-off \(WAT\),Listens \(plays\),Unique listeners,Average listening time \(minutes\),Peak concurrent listeners/);
 });
+
+test('persistent player: now-playing bar with Stop on public pages; in-page navigation never on admin pages', async () => {
+  const home = await fetch(`${BASE}/fixtures/`).then(r => r.text());
+  assert.match(home, /<meta name="astro-view-transitions-enabled"/);
+  const bar = home.match(/<div[^>]*id="lsLiveBar"[^>]*>/)?.[0] || '';
+  assert.match(bar, /data-astro-transition-persist/);
+  assert.match(home, /data-lbar-stop/);
+  const player = await fetch(`${BASE}/commentary/`).then(r => r.text());
+  assert.match(player, /data-lp-stop/);
+  for (const path of ['/admin/members/', '/commentary/mini/']) {
+    const html = await fetch(`${BASE}${path}`).then(r => r.text());
+    assert.doesNotMatch(html, /<meta name="astro-view-transitions-enabled"/, path);
+    assert.doesNotMatch(html, /id="lsLiveBar"/, path);
+  }
+});

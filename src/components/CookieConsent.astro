@@ -53,13 +53,18 @@
       set(v); apply(v); banner.hidden = true;
     });
   });
-  document.addEventListener('click', function (e) {
-    var t = e.target.closest && e.target.closest('[data-cookie-settings]');
-    if (!t) return;
-    e.preventDefault();
-    banner.hidden = false;
-    banner.querySelector('.cc-accept').focus();
-  });
+  // Added once (this script runs again after an in-page navigation).
+  if (!window.__lsCookieSettings) {
+    window.__lsCookieSettings = true;
+    document.addEventListener('click', function (e) {
+      var t = e.target.closest && e.target.closest('[data-cookie-settings]');
+      var b = document.getElementById('cookieBanner');
+      if (!t || !b) return;
+      e.preventDefault();
+      b.hidden = false;
+      b.querySelector('.cc-accept').focus();
+    });
+  }
   var choice = get();
   if (choice) apply(choice); else banner.hidden = false;
 })();

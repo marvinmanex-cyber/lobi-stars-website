@@ -76,8 +76,12 @@ import MatchesTabs from '../components/MatchesTabs.astro';
   type Award = { id: string; state: string; totalVoters?: number };
   type Data = { awards: Award[]; fan: { firstName: string; verified: boolean } | null; myVotes: Record<string, { nominee: number }> };
 
+  // Page-wide click handlers are added once (this script runs again after an
+  // in-page navigation); they work on whatever awards page is showing.
+  const firstRun = !(window as any).__lsAwardsClicks;
+  (window as any).__lsAwardsClicks = true;
   // Goal clips load only when tapped (privacy-friendly YouTube player).
-  document.addEventListener('click', e => {
+  if (firstRun) document.addEventListener('click', e => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.aw-clip[data-yt]');
     if (!btn) return;
     const f = document.createElement('iframe');
@@ -118,7 +122,7 @@ import MatchesTabs from '../components/MatchesTabs.astro';
     }).catch(() => {});
   }
 
-  document.addEventListener('click', async e => {
+  if (firstRun) document.addEventListener('click', async e => {
     const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.aw-vote');
     if (!btn || btn.disabled) return;
     const card = btn.closest<HTMLElement>('.aw-card')!;

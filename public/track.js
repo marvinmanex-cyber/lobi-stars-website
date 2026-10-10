@@ -5,7 +5,9 @@
 // - window.lsTrack(name, label) records click events; common clicks are
 //   picked up automatically below.
 (function () {
-  if (window.lsTrack) return;
+  // Loaded again after an in-page navigation (while live commentary keeps
+  // playing): just count the new page.
+  if (window.lsTrack) { if (window.__lsPageview) window.__lsPageview(true); return; }
   var path = location.pathname || '/';
   if (path.indexOf('/admin') === 0 || path.indexOf('/scan') === 0) { window.lsTrack = function () {}; return; }
 
@@ -36,19 +38,25 @@
   }
 
   // Page view
-  try {
-    var ref = '';
-    if (document.referrer) {
-      var r = new URL(document.referrer);
-      if (r.host && r.host !== location.host) ref = r.host;
-    }
-    var q = new URLSearchParams(location.search);
-    var i = ids();
-    send({
-      type: 'pageview', path: path, ref: ref, dev: device(), consent: i.consent, vid: i.vid, sid: i.sid, new: i.new,
-      utm: { source: q.get('utm_source') || '', medium: q.get('utm_medium') || '', campaign: q.get('utm_campaign') || '' },
-    });
-  } catch (e) { /* analytics must never break the page */ }
+  function pageview(inPage) {
+    try {
+      path = location.pathname || '/';
+      if (path.indexOf('/admin') === 0 || path.indexOf('/scan') === 0) return;
+      var ref = '';
+      if (!inPage && document.referrer) {
+        var r = new URL(document.referrer);
+        if (r.host && r.host !== location.host) ref = r.host;
+      }
+      var q = new URLSearchParams(location.search);
+      var i = ids();
+      send({
+        type: 'pageview', path: path, ref: ref, dev: device(), consent: i.consent, vid: i.vid, sid: i.sid, new: inPage ? false : i.new,
+        utm: { source: q.get('utm_source') || '', medium: q.get('utm_medium') || '', campaign: q.get('utm_campaign') || '' },
+      });
+    } catch (e) { /* analytics must never break the page */ }
+  }
+  window.__lsPageview = pageview;
+  pageview(false);
 
   // Events
   window.lsTrack = function (name, label) {

@@ -218,10 +218,11 @@ const isActive = (href: string) => {
 </style>
 
 <script>
-  const header = document.getElementById('siteHeader')!;
-  const onScroll = () => header.classList.toggle('scrolled', window.scrollY > 8);
+  // Page-wide listeners are added once (this script runs again after an
+  // in-page navigation) and always look up the current header.
+  const w = window as any;
+  const onScroll = () => document.getElementById('siteHeader')?.classList.toggle('scrolled', window.scrollY > 8);
   onScroll();
-  window.addEventListener('scroll', onScroll, { passive: true });
 
   // Desktop dropdowns: hover opens them; click/Enter toggles for touch and keyboard.
   const toggles = document.querySelectorAll<HTMLButtonElement>('[data-sub-toggle]');
@@ -237,9 +238,7 @@ const isActive = (href: string) => {
       if (!t.parentElement!.contains(e.relatedTarget as Node)) t.setAttribute('aria-expanded', 'false');
     });
   });
-  document.addEventListener('click', e => {
-    if (!(e.target as HTMLElement).closest('.has-sub')) closeAll();
-  });
+  w.__lsHeader = { closeAll, close: () => {}, btn: null as HTMLButtonElement | null, menu: null as HTMLElement | null };
 
   // Mobile menu
   const btn = document.getElementById('menuBtn') as HTMLButtonElement;
@@ -258,11 +257,20 @@ const isActive = (href: string) => {
   closeBtn.addEventListener('click', () => { close(); btn.focus(); });
   ov.addEventListener('click', close);
   menu.querySelectorAll('a').forEach(a => a.addEventListener('click', close));
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    closeAll();
-    if (!menu.hidden) { close(); btn.focus(); }
-  });
+  Object.assign(w.__lsHeader, { close, btn, menu });
+  if (!w.__lsHeaderGlobal) {
+    w.__lsHeaderGlobal = true;
+    window.addEventListener('scroll', () => document.getElementById('siteHeader')?.classList.toggle('scrolled', window.scrollY > 8), { passive: true });
+    document.addEventListener('click', e => {
+      if (!(e.target as HTMLElement).closest('.has-sub')) w.__lsHeader.closeAll();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      const h = w.__lsHeader;
+      h.closeAll();
+      if (h.menu && !h.menu.hidden) { h.close(); h.btn?.focus(); }
+    });
+  }
 </script>
 
 <script>
@@ -271,7 +279,7 @@ const isActive = (href: string) => {
     try {
       const d = await (await fetch('/api/commentary')).json();
       const on = d.state === 'live' && !!d.streamUrl;
-      document.querySelectorAll<HTMLAnchorElement>('a[href="/commentary"], a[href="/commentary/"]').forEach(a => {
+      document.querySelectorAll<HTMLAnchorElement>('a[href="/commentary"]:not(.lbar-open), a[href="/commentary/"]:not(.lbar-open)').forEach(a => {
         a.classList.toggle('has-live', on);
         if (on && !a.querySelector('.live-dot')) {
           const dot = document.createElement('span'); dot.className = 'live-dot'; dot.setAttribute('aria-label', 'live now'); a.append(dot);

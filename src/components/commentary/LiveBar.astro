@@ -1,0 +1,85 @@
+---
+// The "now playing" bar for Lobi Stars FC Live. It appears once a fan presses
+// Play on any commentary player and stays at the bottom of every page (it is
+// kept alive between pages, so the audio never stops when the fan moves
+// around the site) until they press Stop. Hidden on the commentary pages,
+// which have the full player.
+---
+<div class="lbar" id="lsLiveBar" transition:persist="ls-live-bar" hidden role="region" aria-label="Lobi Stars FC Live commentary">
+  <span class="lbar-dot" aria-hidden="true"></span>
+  <div class="lbar-text">
+    <strong>Lobi Stars FC Live</strong>
+    <span class="lbar-match" data-lbar-match></span>
+    <span class="lbar-status" data-lbar-status aria-live="polite"></span>
+  </div>
+  <button type="button" class="lbar-btn lbar-play" data-lbar-toggle aria-label="Pause commentary"><span aria-hidden="true" data-lbar-icon>❚❚</span></button>
+  <button type="button" class="lbar-btn lbar-stop" data-lbar-stop aria-label="Stop commentary"><span aria-hidden="true">■</span><span class="lbar-stop-t">Stop</span></button>
+  <a class="lbar-open" href="/commentary/" aria-label="Open the full commentary player">Open</a>
+</div>
+
+<style is:global>
+  .lbar { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 1200; display: flex; align-items: center; gap: 10px; max-width: 720px; margin: 0 auto; padding: 10px 12px 10px 16px; border-radius: 14px; background: linear-gradient(135deg, #15181D, #4D0B0D); color: #fff; box-shadow: 0 14px 40px rgba(0,0,0,.35); border: 1px solid rgba(255,199,44,.35); }
+  .lbar[hidden] { display: none; }
+  .lbar-dot { width: 10px; height: 10px; border-radius: 50%; background: #E31E24; flex-shrink: 0; box-shadow: 0 0 0 4px rgba(227,30,36,.3); }
+  .lbar.is-live .lbar-dot { animation: lbardot 1.2s infinite; }
+  @keyframes lbardot { 50% { opacity: .35; } }
+  .lbar-text { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+  .lbar-text strong { font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: #FFC72C; }
+  .lbar-match { font: 600 14px/1.25 'Barlow', sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lbar-status { font-size: 12px; color: rgba(255,255,255,.75); }
+  .lbar-btn { flex-shrink: 0; min-width: 44px; height: 44px; border-radius: 999px; border: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .lbar-play { background: #E31E24; color: #fff; font-size: 15px; }
+  .lbar-stop { background: #fff; color: #15181D; padding: 0 14px; }
+  .lbar-btn:focus-visible, .lbar-open:focus-visible { outline: 3px solid #FFC72C; outline-offset: 2px; }
+  .lbar-open { color: #fff; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; text-decoration: underline; padding: 8px 4px; }
+  /* Above the phone tab bar, and keep page content clear of it. */
+  @media (max-width: 767px) { .lbar { bottom: calc(70px + env(safe-area-inset-bottom)); left: 8px; right: 8px; } .lbar-open { display: none; } .lbar-stop-t { display: none; } .lbar-stop { padding: 0; } }
+  body.has-lbar { padding-bottom: 84px; }
+  body.has-lbar .wa-float { bottom: 100px; }
+  body.has-lbar .toast { bottom: 100px; }
+  @media (max-width: 767px) { body.has-lbar .wa-float { bottom: 150px; } body.has-lbar .toast { bottom: 150px; } }
+  .ls-video-paused { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 12px; background: #15181D; color: #fff; font: 600 15px/1.4 'Barlow', sans-serif; padding: 20px; cursor: pointer; }
+</style>
+
+<script>
+  import { liveEngine, opponentOf } from '../../lib/livePlayer';
+
+  // The bar itself is kept between pages; set it up only once.
+  if (!(window as any).__lsLiveBarInit) { (window as any).__lsLiveBarInit = true; setup(); }
+
+  function setup() {
+  const bar = document.getElementById('lsLiveBar')!;
+  const STATUS: Record<string, string> = { connecting: 'Connecting…', live: 'Live now', reconnecting: 'Reconnecting…', idle: 'Paused', offair: 'Off air', error: 'Stream unavailable' };
+  let unsubscribe: (() => void) | null = null;
+
+  function render() {
+    const e = (window as any).__lobiStarsLive;
+    const onPlayerPage = /^\/commentary(\/|$)/.test(location.pathname);
+    const show = !!e?.active && !onPlayerPage;
+    bar.hidden = !show;
+    document.body.classList.toggle('has-lbar', show);
+    if (!e) return;
+    const f = e.info?.fixture;
+    bar.querySelector('[data-lbar-match]')!.textContent = f ? `Lobi Stars vs ${opponentOf(f)}` : 'Match commentary';
+    bar.querySelector('[data-lbar-status]')!.textContent = STATUS[e.status] || '';
+    bar.classList.toggle('is-live', e.status === 'live');
+    const playing = !!e.wantPlay;
+    bar.querySelector('[data-lbar-icon]')!.textContent = playing ? '❚❚' : '▶';
+    bar.querySelector('[data-lbar-toggle]')!.setAttribute('aria-label', playing ? 'Pause commentary' : 'Play commentary');
+  }
+
+  // Only attach to the engine once a commentary player has created it
+  // (so pages without commentary don't contact the commentary service).
+  function attach() {
+    if (unsubscribe || !(window as any).__lobiStarsLive) return;
+    unsubscribe = liveEngine().subscribe(render);
+  }
+  window.addEventListener('ls:engine-ready', attach);
+  attach();
+
+  bar.querySelector('[data-lbar-toggle]')!.addEventListener('click', () => liveEngine().toggle());
+  bar.querySelector('[data-lbar-stop]')!.addEventListener('click', () => liveEngine().end());
+  // The bar stays on screen between pages; re-check where we are after each move.
+  document.addEventListener('astro:page-load', render);
+  }
+</script>

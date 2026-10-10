@@ -8,7 +8,13 @@
 // - Every Play reconnects to the live point (no seek, no stale buffer).
 // - On errors/stalls: "Reconnecting…" with 2s, 5s, 10s, then 15s retries for
 //   up to 5 minutes, switching to the backup stream after 2 failures.
-// - Lock screen / notification shows "Lobi Stars vs X – Live" via Media Session.
+// - Lock screen / notification shows "Lobi Stars vs X – Live" via Media Session
+//   (keeps playing with the screen locked or in another app).
+// - A listening "session" starts with Play and ends with Stop. While it is
+//   active the "now playing" bar shows on every page and moving between pages
+//   doesn't interrupt the audio (see LiveBar.astro and Layout.astro).
+// - Never commentary and video at the same time (see mediaGuard.ts).
+import { installMediaGuard } from './mediaGuard';
 
 export type LiveFixture = {
   id: string; slug: string; home_team: string; away_team: string; competition: string; venue: string; event_date: string;
@@ -33,6 +39,8 @@ class LiveEngine {
   info: LiveInfo | null = null;
   status: LiveStatus = 'idle';
   playing = false;
+  /** True from Play until Stop: the "now playing" bar is shown on every page. */
+  active = false;
   volumeSupported = true;
   private audio: HTMLAudioElement;
   private listeners = new Set<Listener>();
@@ -103,6 +111,9 @@ class LiveEngine {
   play() {
     if (!this.info?.streamUrl) { this.status = 'offair'; this.emit(); this.refresh(); return; }
     this.wantPlay = true;
+    this.active = true;
+    // Stop any video on the page (never commentary and video at once).
+    window.dispatchEvent(new CustomEvent('ls:commentary-play'));
     this.failures = 0; this.firstFailureAt = 0; this.useBackup = false;
     this.status = 'connecting'; this.emit();
     this.channel?.postMessage({ type: 'playing', sid: this.sid });
@@ -114,6 +125,21 @@ class LiveEngine {
   pause(track = true) {
     if (track && this.wantPlay) this.track('commentary_pause');
     this.stop('idle');
+  }
+
+  /** Stop: ends the listening session (the bar disappears and the lock-screen controls go away). */
+  end() {
+    if (this.active) this.track('commentary_stop');
+    this.stop('idle');
+    this.active = false;
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.playbackState = 'none';
+      navigator.mediaSession.metadata = null;
+      for (const a of ['play', 'pause', 'stop'] as MediaSessionAction[]) {
+        try { navigator.mediaSession.setActionHandler(a, null); } catch { /* not supported */ }
+      }
+    }
+    this.emit();
   }
 
   private stop(status: LiveStatus) {
@@ -164,7 +190,7 @@ class LiveEngine {
     this.failures = 0; this.firstFailureAt = 0;
     this.playing = true; this.status = 'live';
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-    if (!this.heartbeatTimer) { this.heartbeat(); this.heartbeatTimer = window.setInterval(() => this.heartbeat(), HEARTBEAT_MS); }
+    if (!this.heartbeatTimer) { this.heartbeat(); this.heartbeatTimer = ((window as any).__lsSetInterval || window.setInterval)(() => this.heartbeat(), HEARTBEAT_MS); }
     this.emit();
   }
 
@@ -214,7 +240,7 @@ class LiveEngine {
     });
     navigator.mediaSession.setActionHandler('play', () => this.play());
     navigator.mediaSession.setActionHandler('pause', () => this.pause());
-    navigator.mediaSession.setActionHandler('stop', () => this.pause());
+    navigator.mediaSession.setActionHandler('stop', () => this.end());
     for (const a of ['seekbackward', 'seekforward', 'seekto', 'previoustrack', 'nexttrack'] as MediaSessionAction[]) {
       try { navigator.mediaSession.setActionHandler(a, null); } catch { /* not supported */ }
     }
@@ -237,7 +263,12 @@ function loadHls() {
 /** The page's single engine (created on first use). */
 export function liveEngine(): LiveEngine {
   const w = window as any;
-  return (w.__lobiStarsLive ??= new LiveEngine());
+  if (!w.__lobiStarsLive) {
+    w.__lobiStarsLive = new LiveEngine();
+    installMediaGuard(w.__lobiStarsLive);
+    window.dispatchEvent(new CustomEvent('ls:engine-ready'));
+  }
+  return w.__lobiStarsLive;
 }
 
 export { opponentOf };

@@ -28,6 +28,7 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
         <div class="lp-eq" data-lp-eq aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <p class="lp-comm" data-lp-comm hidden></p>
       </div>
+      <button type="button" class="lp-stop" data-lp-stop aria-label="Stop Lobi Stars FC Live" hidden><span aria-hidden="true">&#9632;</span> Stop</button>
     </div>
 
     <div class="lp-match" data-lp-match hidden></div>
@@ -56,6 +57,8 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
   .lp-badge { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.14);
     font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.8px; text-transform: uppercase; white-space: nowrap; }
   .lp-badge.live { background: var(--red); }
+  .lp-stop { margin-left: auto; align-self: center; flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 0; background: #fff; color: #15181D; cursor: pointer; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .lp-stop:focus-visible { outline: 3px solid #FFC72C; outline-offset: 2px; }
   .lp-badge.live::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: lppulse 1.2s infinite; }
   .lp-badge.today { background: #FFC72C; color: #15181D; }
   @keyframes lppulse { 50% { opacity: .2; } }
@@ -162,6 +165,8 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
     let lastMatchKey = '';
 
     playBtn.addEventListener('click', () => engine.toggle());
+    const stopBtn = $<HTMLButtonElement>('[data-lp-stop]');
+    stopBtn?.addEventListener('click', () => engine.end());
     vol?.addEventListener('input', () => engine.setVolume(Number(vol.value) / 100));
     mute?.addEventListener('click', () => engine.setMuted(!engine.muted));
     pop?.addEventListener('click', () => {
@@ -190,6 +195,7 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
         return;
       }
 
+      if (stopBtn) stopBtn.hidden = !engine.active;
       playBtn.disabled = !canPlay && !on;
       playBtn.classList.toggle('is-playing', engine.playing);
       playBtn.classList.toggle('is-busy', busy);

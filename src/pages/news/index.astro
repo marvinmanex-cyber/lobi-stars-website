@@ -228,7 +228,9 @@ const tabs = [{ name: 'All', slug: 'all' }, ...NEWS_CATEGORIES];
     const top = document.getElementById('latest')!.getBoundingClientRect().top + scrollY - 140;
     if (scrollY > top) scrollTo({ top, behavior: 'smooth' });
   });
-  window.addEventListener('popstate', render);
+  const newsRoot = document.getElementById('latest');
+  const onPop = () => { if (!newsRoot?.isConnected) { window.removeEventListener('popstate', onPop); return; } render(); };
+  window.addEventListener('popstate', onPop);
 
   document.querySelectorAll<HTMLButtonElement>('[data-tab-scroll]').forEach(btn => {
     btn.addEventListener('click', () => tabList.scrollBy({ left: Number(btn.dataset.tabScroll) * 160, behavior: 'smooth' }));
