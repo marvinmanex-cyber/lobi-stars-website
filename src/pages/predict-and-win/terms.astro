@@ -1,14 +1,16 @@
 ---
 import LegalPage from '../../components/LegalPage.astro';
-import { PRIZE_AMOUNT, PREDICTION_OPENS_HOURS_BEFORE, MAX_GOALS, formatNaira } from '../../../functions/api/_lib/predictSettings.js';
+import { PRIZE_AMOUNT, PREDICTION_OPENS_HOURS_BEFORE, MAX_GOALS, POINTS_EXACT, POINTS_RESULT, formatNaira } from '../../../functions/api/_lib/predictSettings.js';
 import site from '../../data/site.json';
+import league from '../../data/predict-league.json';
 const prize = formatNaira(PRIZE_AMOUNT);
+const seasonPrize = league.seasonPrize > 0 ? formatNaira(league.seasonPrize) : '';
 ---
 <LegalPage
   title="Predict & Win: Terms & Conditions"
   tag="Predict & Win"
   description={`Terms and conditions for Lobi Stars FC Predict & Win (${prize} per home game).`}
-  updated="9 October 2026"
+  updated="10 October 2026"
   draft="to be reviewed by the club's legal adviser before launch (cash prize promotions may require regulatory approval)."
 >
   <h2>1. The promoter</h2>
@@ -47,10 +49,23 @@ const prize = formatNaira(PRIZE_AMOUNT);
     <li>The club will never ask for your password, card PIN or bank details through the website.</li>
   </ol>
 
-  <h2>6. Disqualification</h2>
+  <h2>6. Season Prediction League</h2>
+  <ol>
+    <li>Every Predict &amp; Win entry also counts towards the season's <a href="/predict-and-win/league/">Prediction League</a>. You do not need to enter separately.</li>
+    <li>When the club enters a home game's final score, each entry earns <strong>{POINTS_EXACT} points for the exact score</strong> or <strong>{POINTS_RESULT} point for the correct result</strong> (home win, draw or away win) without the exact score. Other entries earn 0 points.</li>
+    <li>The table ranks fans by points. Ties are broken first by the number of exact scores (more is better), then by the earliest average submission time: on average, how soon after predictions opened the fan sent their predictions.</li>
+    <li>The table shows each fan's first name and the initial of their surname, their points, exact scores and predictions made. Your own position is shown on your fan account.</li>
+    <li>Disqualified entries, accounts flagged as club staff or players, and deleted accounts do not appear in the table.</li>
+    <li>The season follows the club's football season. The per-game {prize} prize in section 4 is not affected by the league.</li>
+    {seasonPrize
+      ? <li>The fan at the top of the table at the end of the season wins <strong>{seasonPrize}</strong>{league.prizeNote ? ` (${league.prizeNote})` : ''}. It is announced and collected as described in section 5.</li>
+      : <li>If the club offers an end-of-season prize, it will be announced on the league page and these terms will be updated first.</li>}
+  </ol>
+
+  <h2>7. Disqualification</h2>
   <p>The club may disqualify any entry it reasonably believes involves fraud, more than one account per person, false details, automated entries or any breach of these terms. If a winning entry is disqualified, the next earliest correct entry wins.</p>
 
-  <h2>7. General</h2>
+  <h2>8. General</h2>
   <ol>
     <li>The club's decision on all matters relating to Predict &amp; Win is final.</li>
     <li>The club may change, suspend or end Predict &amp; Win at any time, for example for legal or technical reasons. Changes do not affect entries already made for a match unless required by law.</li>

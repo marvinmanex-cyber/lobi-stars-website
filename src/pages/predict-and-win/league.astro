@@ -1,0 +1,81 @@
+---
+// /predict-and-win/league -- the Season Prediction League table. The table is
+// rendered on the server (functions/predict-and-win/league.js) from Predict &
+// Win entries and final scores.
+import Layout from '../../layouts/Layout.astro';
+import MatchesTabs from '../../components/MatchesTabs.astro';
+import { CURRENT_SEASON } from '../../lib/site';
+import { POINTS_EXACT, POINTS_RESULT, formatNaira } from '../../../functions/api/_lib/predictSettings.js';
+import league from '../../data/predict-league.json';
+const seasonPrize = league.seasonPrize > 0 ? formatNaira(league.seasonPrize) : '';
+---
+<Layout title="Prediction League | Lobi Stars Football Club" description="The Lobi Stars Season Prediction League: points for every Predict & Win entry across the season.">
+  <div class="page-hero wrap">
+    <div class="stag">Predict &amp; Win</div>
+    <h1 class="stitle">Prediction <span class="r">League</span></h1>
+    <MatchesTabs current="league" />
+  </div>
+
+  <div class="page-content wrap lg">
+    <div class="lg-intro">
+      <p>Every <a href="/predict-and-win/">Predict &amp; Win</a> entry for a Lobi Stars home game also scores season points:</p>
+      <ul class="lg-points">
+        <li><b>{POINTS_EXACT}</b><span>points for the exact score</span></li>
+        <li><b>{POINTS_RESULT}</b><span>point for the correct result</span></li>
+      </ul>
+      <p class="lg-small">Ties are decided by more exact scores, then by who predicted earliest on average. {seasonPrize ? <>Top of the table at the end of the season wins <strong>{seasonPrize}</strong>{league.prizeNote ? ` (${league.prizeNote})` : ''}.</> : null} <a href="/predict-and-win/terms/">Terms &amp; Conditions</a></p>
+      <p class="lg-small" id="lgMine" hidden></p>
+    </div>
+
+    <form class="lg-season" method="get" action="/predict-and-win/league/">
+      <label for="season">Season</label>
+      <select id="season" name="season"><option>{CURRENT_SEASON}</option></select>
+      <noscript><button type="submit" class="btn-o">Show</button></noscript>
+    </form>
+    <div id="leagueBody">
+      <p class="lg-empty">No points yet. The table fills up after each Lobi Stars home game once the final score is in.</p>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .lg { padding-bottom: 80px; }
+  .lg-intro { max-width: 760px; margin-bottom: 20px; }
+  .lg-points { list-style: none; padding: 0; margin: 12px 0; display: flex; gap: 12px; flex-wrap: wrap; }
+  .lg-points li { display: flex; align-items: center; gap: 10px; border: 1px solid var(--d4); border-radius: 12px; padding: 10px 16px; background: #fff; }
+  .lg-points b { font: 400 34px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .lg-small { font-size: 14px; color: var(--lt); }
+  #lgMine { color: var(--white); font-weight: 600; }
+  .lg-season { display: flex; align-items: center; gap: 10px; margin: 0 0 18px; }
+  .lg-season label { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .lg-season select { padding: 9px 12px; border: 1px solid var(--d4); border-radius: 8px; font: 600 15px 'Barlow', sans-serif; background: #fff; color: var(--white); }
+  .lg-empty { color: var(--lt); padding: 18px 0; }
+  .lg :global(.lg-meta) { font-size: 14px; color: var(--lt); margin: 0 0 10px; }
+  .lg :global(.lg-scroll) { overflow-x: auto; border: 1px solid var(--d4); border-radius: 14px; background: #fff; max-width: 760px; }
+  .lg :global(.lg-table) { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .lg :global(.lg-table th) { padding: 12px 14px; background: #15181D; color: #fff; text-align: left; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .lg :global(.lg-table th abbr) { text-decoration: none; }
+  .lg :global(.lg-table td) { padding: 11px 14px; border-top: 1px solid var(--d4); }
+  .lg :global(.lg-table td:nth-child(n+3)), .lg :global(.lg-table th:nth-child(n+3)) { text-align: center; }
+  .lg :global(.lg-rank) { font-weight: 700; color: var(--lt); width: 56px; }
+  .lg :global(.lg-pts) { font: 400 22px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .lg :global(.lg-top1 td) { background: #FFF8E1; }
+  .lg :global(.lg-top1 .lg-rank) { color: #8A5A00; }
+</style>
+
+<script>
+  const sel = document.getElementById('season') as HTMLSelectElement;
+  sel.addEventListener('change', () => (sel.form as HTMLFormElement).submit());
+
+  // Signed-in fans see their own position.
+  if (document.cookie.includes('ls_fan=1')) {
+    fetch('/api/fans/league', { credentials: 'same-origin' }).then(r => (r.ok ? r.json() : null)).then(d => {
+      if (!d || d.season !== sel.value) return;
+      const el = document.getElementById('lgMine')!;
+      el.textContent = d.me
+        ? `You are ${d.me.rank}${['th', 'st', 'nd', 'rd'][(d.me.rank % 100 > 10 && d.me.rank % 100 < 14) ? 0 : (d.me.rank % 10 < 4 ? d.me.rank % 10 : 0)]} of ${d.of} with ${d.me.points} point${d.me.points === 1 ? '' : 's'}.`
+        : d.staff ? 'Club staff and player accounts are not included in the league.' : 'You have no points yet this season. Make a prediction at the next home game.';
+      el.hidden = false;
+    }).catch(() => {});
+  }
+</script>

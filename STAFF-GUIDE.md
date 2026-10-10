@@ -403,7 +403,49 @@ site for commentary. The partner still appears on the Partners page.
 
 ---
 
+## 10. Fan Awards (Goal of the Month, Player of the Month, Player of the Season)
+
+Fans vote at https://lobistarsfc.com/awards. You set the votes up in
+**Admin → Fan Awards**.
+
+### Set up a vote
+1. Choose the award: **Goal of the Month**, **Player of the Month** or **Player of the Season**.
+2. Type the month or season, e.g. *October 2026* or *2026/27*.
+3. Choose a **Sponsor** if a partner sponsors the award (e.g. Zeva Lager Beer).
+   The award is then called "*Zeva Lager Beer Goal of the Month*" and shows the
+   partner's logo, if their logo has been uploaded on the Partners page.
+   Leave it as *No sponsor* otherwise.
+4. Set when voting **opens** and **closes** (Nigerian time).
+5. Add the nominees:
+   - **Goal of the Month:** 3 to 5 goals. Upload each goal clip to the club's
+     YouTube channel first, then paste the YouTube link. Pick the scorer and
+     write a short description (e.g. *vs Kada City, 34'*).
+   - **Player of the Month / Season:** pick at least 2 players from the squad list.
+6. Press **Create award**.
+
+### Rules (enforced by the website)
+- Fans need a free fan account with a confirmed email. One vote per fan per
+  award, and a vote can't be changed.
+- Votes are only accepted between the opening and closing times.
+- Fans can't see the counts while voting is open, only how many fans have
+  voted. When voting closes, the winner appears on /awards under **Past
+  winners**. A tie gives joint winners.
+- You can see the live count in Admin → Fan Awards at any time.
+
+### Changing or deleting
+- **Edit** lets you change the dates, month/season and sponsor at any time.
+  The nominees can only be changed before the first vote.
+- To close voting early, edit the closing time to now.
+- **Delete** removes the award and all its votes. It can't be undone.
+
+---
+
 ## Other things you can update in the CMS
+
+### Prediction League prize
+**Site Settings, League Table & Shop → Prediction League prize.** Enter the
+end-of-season prize in naira only once the club has confirmed it (0 hides it).
+See the Matchday guide, section 5a.
 
 ### Homepage hero photo
 The big photo at the top of the homepage (with "LOBI STARS – Football Club")

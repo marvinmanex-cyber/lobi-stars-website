@@ -1,0 +1,229 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Fan Awards | Lobi Stars Admin" description="Set up Goal of the Month, Player of the Month and Player of the Season votes." noindex>
+  <div class="wrap aa">
+    <AdminNav current="awards" />
+    <div class="stag">Admin</div>
+    <h1 class="stitle">Fan <span class="r">Awards</span></h1>
+    <p class="muted aa-lede">
+      Set up Goal of the Month (3 to 5 goal clips), Player of the Month and Player of the Season votes. Fans with a confirmed
+      account get one vote per award. Results stay hidden on the website until voting closes; you can see the live count here.
+      Shown on <a href="/awards/" target="_blank" rel="noopener">/awards</a>.
+    </p>
+    <p class="aa-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="panel">
+      <h2 id="formTitle">New award</h2>
+      <form id="form" novalidate>
+        <div class="aa-row">
+          <div><label class="form-lbl" for="type">Award</label>
+            <select class="form-sel" id="type" name="type">
+              <option value="gotm">Goal of the Month</option>
+              <option value="potm">Player of the Month</option>
+              <option value="pots">Player of the Season</option>
+            </select></div>
+          <div><label class="form-lbl" for="period">Month or season</label>
+            <input class="form-inp" id="period" name="period" placeholder="e.g. October 2026 or 2026/27" maxlength="40" required /></div>
+          <div><label class="form-lbl" for="sponsor">Sponsor (optional)</label>
+            <select class="form-sel" id="sponsor" name="sponsor"><option value="">No sponsor</option></select></div>
+        </div>
+        <div class="aa-row">
+          <div><label class="form-lbl" for="opens">Voting opens (Nigerian time)</label>
+            <input class="form-inp" type="datetime-local" id="opens" name="opens" required /></div>
+          <div><label class="form-lbl" for="closes">Voting closes (Nigerian time)</label>
+            <input class="form-inp" type="datetime-local" id="closes" name="closes" required /></div>
+        </div>
+        <h3 class="aa-h3" id="nomTitle">Goals</h3>
+        <p class="muted small" id="nomHelp"></p>
+        <div id="noms"></div>
+        <button type="button" class="btn-o sm" id="addNom">+ Add another</button>
+        <div class="aa-acts">
+          <button type="submit" class="btn-p" id="save">Create award</button>
+          <button type="button" class="btn-o" id="cancel" hidden>Cancel editing</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Awards</h2>
+      <div id="list"><p class="muted">Loading…</p></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .aa { max-width: 1100px; padding-top: 40px; padding-bottom: 90px; }
+  .aa-lede { max-width: 820px; margin-bottom: 18px; }
+  .aa-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
+  .aa-msg.ok { background: #E8F7EE; color: #17643A; } .aa-msg.err { background: #FDECEC; color: #A3161B; }
+  .panel { margin-bottom: 20px; min-width: 0; }
+  .panel h2 { margin: 0 0 12px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .aa-h3 { margin: 18px 0 4px; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .aa-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; margin-bottom: 12px; }
+  .small { font-size: 14px; margin: 0 0 10px; }
+  .sm { padding: 8px 14px; font-size: 13px; }
+  .aa-acts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+  .aa :global(.aa-nom) { display: grid; grid-template-columns: 28px minmax(140px, 1fr) minmax(140px, 1fr) minmax(160px, 1.2fr) 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .aa :global(.aa-nom.potm) { grid-template-columns: 28px minmax(160px, 1fr) minmax(160px, 1fr) 36px; }
+  .aa :global(.aa-nom b) { color: var(--lt); font-size: 14px; }
+  .aa :global(.aa-nom input), .aa :global(.aa-nom select) { width: 100%; padding: 9px 10px; border: 1px solid var(--d4); border-radius: 8px; font: inherit; font-size: 14px; background: #fff; min-width: 0; }
+  .aa :global(.aa-nom button) { border: 1px solid var(--d4); background: #fff; border-radius: 8px; height: 38px; cursor: pointer; }
+  @media (max-width: 720px) {
+    .aa :global(.aa-nom), .aa :global(.aa-nom.potm) { grid-template-columns: 1fr 36px; border: 1px solid var(--d4); border-radius: 10px; padding: 10px; }
+    .aa :global(.aa-nom b) { grid-column: 1 / -1; }
+    .aa :global(.aa-nom > :not(b):not(button)) { grid-column: 1; }
+    .aa :global(.aa-nom button) { grid-column: 2; grid-row: 2; }
+  }
+  .aa :global(.aa-item) { border: 1px solid var(--d4); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+  .aa :global(.aa-item h3) { margin: 0 0 4px; font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .aa :global(.aa-item p) { margin: 0 0 8px; font-size: 14px; }
+  .aa :global(.aa-tag) { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 700; background: #F1F2F4; margin-left: 6px; vertical-align: middle; font-family: 'Barlow', sans-serif; }
+  .aa :global(.aa-tag.open) { background: #E8F7EE; color: #17643A; } .aa :global(.aa-tag.closed) { background: #FFC72C; color: #15181D; }
+  .aa :global(.aa-item table) { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0 10px; }
+  .aa :global(.aa-item td) { padding: 6px 8px; border-bottom: 1px solid var(--d4); }
+  .aa :global(.aa-item td:last-child) { text-align: right; white-space: nowrap; }
+  .aa :global(.aa-item tr.win td) { background: #FFF8E1; font-weight: 700; }
+  .aa :global(.aa-item .aa-btns) { display: flex; gap: 8px; flex-wrap: wrap; }
+  .aa :global(.aa-item .aa-btns button) { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-size: 13px; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'aa-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; $('msg').scrollIntoView({ block: 'nearest' }); };
+  // datetime-local values are Nigerian time (WAT, UTC+1, no daylight saving).
+  const toIso = v => v ? new Date(v + ':00+01:00').toISOString() : '';
+  const toLocal = iso => new Date(new Date(iso).getTime() + 3600000).toISOString().slice(0, 16);
+  const watText = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) + ' WAT';
+  const STATE = { upcoming: 'Not open yet', open: 'Voting open', closed: 'Closed' };
+  let data = { awards: [], players: [], partners: [], types: {} };
+  let editing = null;
+
+  async function api(path, opts = {}) {
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code } });
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/awards';
+    if (!res.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+
+  const playerOptions = sel => '<option value="">— Player —</option>' + data.players.map(p =>
+    `<option value="${esc(p.slug)}"${p.slug === sel ? ' selected' : ''}>${esc((p.number != null ? p.number + '. ' : '') + p.name + (p.isSample ? ' (sample)' : ''))}</option>`).join('');
+
+  function nomRow(n = {}) {
+    const goal = $('type').value === 'gotm';
+    const div = document.createElement('div');
+    div.className = 'aa-nom' + (goal ? '' : ' potm');
+    div.innerHTML = `<b></b><select aria-label="Player" data-f="player">${playerOptions(n.player_slug)}</select>` +
+      `<input data-f="label" maxlength="120" placeholder="${goal ? 'Description, e.g. vs Kano Pillars, 34\'' : 'Name (if not in the list)'}" value="${esc(n.label && (goal || !n.player_slug) ? n.label : '')}" aria-label="${goal ? 'Goal description' : 'Name'}">` +
+      (goal ? `<input data-f="youtube" placeholder="YouTube link or video id" value="${esc(n.youtube_id || '')}" aria-label="YouTube link">` : '') +
+      `<button type="button" aria-label="Remove" data-rm>✕</button>`;
+    $('noms').appendChild(div);
+    number();
+  }
+  function number() { [...$('noms').children].forEach((r, i) => { r.querySelector('b').textContent = i + 1; }); }
+  function resetNoms(list) {
+    $('noms').innerHTML = '';
+    const goal = $('type').value === 'gotm';
+    $('nomTitle').textContent = goal ? 'Goals (3 to 5)' : 'Shortlist';
+    $('nomHelp').textContent = goal
+      ? 'For each goal: the scorer, a short description and the YouTube clip (upload it to the club channel first).'
+      : 'Pick at least 2 players. Fans vote for one.';
+    (list && list.length ? list : Array.from({ length: goal ? 3 : 3 }, () => ({}))).forEach(nomRow);
+  }
+
+  function resetForm() {
+    editing = null;
+    $('form').reset();
+    $('type').disabled = false;
+    $('formTitle').textContent = 'New award';
+    $('save').textContent = 'Create award';
+    $('cancel').hidden = true;
+    resetNoms();
+  }
+
+  function render() {
+    $('sponsor').innerHTML = '<option value="">No sponsor</option>' + data.partners.map(p =>
+      `<option value="${esc(p.slug)}">${esc(p.name)}${p.hasLogo ? '' : ' (no logo yet)'}</option>`).join('');
+    if (!data.awards.length) { $('list').innerHTML = '<p class="muted">No awards yet. Create the first one above.</p>'; return; }
+    $('list').innerHTML = data.awards.map(a => {
+      const r = a.results; const sp = data.partners.find(p => p.slug === a.sponsor_slug);
+      const rows = a.nominees.map(n => {
+        const row = r.rows.find(x => x.id === n.id) || { votes: 0, pct: 0 };
+        const p = data.players.find(x => x.slug === n.player_slug);
+        const name = a.type === 'gotm' ? `${n.label}${p ? ' (' + p.name + ')' : ''}` : (p ? p.name : n.label);
+        return `<tr class="${a.state === 'closed' && r.winners.includes(n.id) ? 'win' : ''}"><td>${esc(name)}${n.youtube_id ? ` <a href="https://youtu.be/${esc(n.youtube_id)}" target="_blank" rel="noopener">clip</a>` : ''}</td><td>${row.votes} vote${row.votes === 1 ? '' : 's'} (${row.pct}%)</td></tr>`;
+      }).join('');
+      return `<div class="aa-item" data-id="${esc(a.id)}"><h3>${esc((sp ? sp.name + ' ' : '') + data.types[a.type])} – ${esc(a.period)}<span class="aa-tag ${a.state}">${STATE[a.state]}</span></h3>` +
+        `<p class="muted">Opens ${esc(watText(a.opens_at))} · closes ${esc(watText(a.closes_at))} · ${r.total} vote${r.total === 1 ? '' : 's'}${a.sponsor_slug && !sp ? ' · sponsor not found (partner removed?)' : ''}</p>` +
+        `<table><tbody>${rows}</tbody></table>` +
+        `<div class="aa-btns"><button data-act="edit">Edit</button><button data-act="delete">Delete</button></div></div>`;
+    }).join('');
+  }
+
+  async function load() {
+    data = await api('/api/admin/awards');
+    render();
+  }
+
+  $('type').addEventListener('change', () => resetNoms());
+  $('addNom').addEventListener('click', () => nomRow());
+  $('noms').addEventListener('click', e => { if (e.target.closest('[data-rm]')) { e.target.closest('.aa-nom').remove(); number(); } });
+  $('cancel').addEventListener('click', resetForm);
+
+  $('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const body = {
+      type: $('type').value, period: $('period').value, sponsor: $('sponsor').value,
+      opens_at: toIso($('opens').value), closes_at: toIso($('closes').value),
+      nominees: [...$('noms').children].map(r => ({
+        player: r.querySelector('[data-f=player]').value,
+        label: r.querySelector('[data-f=label]').value,
+        youtube: r.querySelector('[data-f=youtube]')?.value || '',
+      })).filter(n => n.player || n.label || n.youtube),
+    };
+    $('save').disabled = true;
+    try {
+      if (editing) {
+        const d = await api('/api/admin/awards/' + encodeURIComponent(editing), { method: 'PUT', body: JSON.stringify(body) });
+        msg(d.nomineesLocked ? 'Saved. Fans have already voted, so the nominees were not changed (only dates, month/season and sponsor).' : 'Saved.', true);
+      } else {
+        await api('/api/admin/awards', { method: 'POST', body: JSON.stringify(body) });
+        msg('Award created.', true);
+      }
+      resetForm();
+      await load();
+    } catch (err) { msg(err.message, false); }
+    finally { $('save').disabled = false; }
+  });
+
+  $('list').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const id = b.closest('.aa-item').dataset.id;
+    const a = data.awards.find(x => x.id === id);
+    if (b.dataset.act === 'delete') {
+      if (!confirm(`Delete ${data.types[a.type]} – ${a.period}? This also deletes ${a.results.total} vote(s) and cannot be undone.`)) return;
+      try { await api('/api/admin/awards/' + encodeURIComponent(id), { method: 'DELETE' }); msg('Deleted.', true); await load(); }
+      catch (err) { msg(err.message, false); }
+      return;
+    }
+    editing = id;
+    $('type').value = a.type; $('type').disabled = true;
+    $('period').value = a.period; $('sponsor').value = a.sponsor_slug || '';
+    $('opens').value = toLocal(a.opens_at); $('closes').value = toLocal(a.closes_at);
+    resetNoms(a.nominees);
+    $('formTitle').textContent = 'Edit award';
+    $('save').textContent = 'Save changes';
+    $('cancel').hidden = false;
+    if (a.results.total) msg('Fans have already voted in this award: you can change the dates, month/season and sponsor, but not the nominees.', true);
+    $('form').scrollIntoView({ behavior: 'smooth' });
+  });
+
+  resetNoms();
+  load().catch(err => msg(err.message, false));
+})();
+</script>

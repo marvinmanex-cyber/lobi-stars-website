@@ -122,6 +122,25 @@ player's number of awards appears on their profile automatically.
 
 ---
 
+## 5a. Season Prediction League
+
+Every Predict & Win entry also scores season points automatically when you
+enter the final score (End Match): **3 points** for the exact score, **1 point**
+for the correct result (home win, draw or away win). There is nothing extra to
+do. The table is at https://lobistarsfc.com/predict-and-win/league and each
+fan sees their own position on their account page.
+
+- Ties: more exact scores first, then whoever predicted earliest on average.
+- Disqualified entries and accounts marked **club staff/player** are left out
+  of the table, just as they can't win the match prize.
+- Correcting a final score or disqualifying an entry updates the table straight away.
+- **End-of-season prize:** not set yet. When the club confirms one, enter it in
+  the CMS: **Site Settings, League Table & Shop → Prediction League prize**
+  (amount in naira; 0 hides it). It then appears on the league page and in the
+  Predict & Win terms.
+
+---
+
 ## 6. Exports
 
 | What | Where | Who |
@@ -169,6 +188,8 @@ exported files private and delete them when you no longer need them.
    also include points to confirm: the prize is for the score at the end of
    normal time, and winners may be asked for ID.
 5. **Players:** add the real squad with photos in the CMS (voting uses them).
-6. **Lobi Stars FC Live stream:** the club chose Option A (our own
+6. **Prediction League prize:** confirm whether there is an end-of-season
+   prize and how much (see section 5a). The legal review should cover it too.
+7. **Lobi Stars FC Live stream:** the club chose Option A (our own
    stream.lobistarsfc.com address). Finish the partner and DNS checklist in
    COMMENTARY-STREAM-SETUP.md, then add the stream address on Admin → Commentary.

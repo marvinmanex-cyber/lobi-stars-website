@@ -1,7 +1,7 @@
 ---
 // /fans/account -- the fan's own account page (opened from the header's
-// account icon). Later phases add the Predict & Win season rank and the
-// digital membership card here.
+// account icon). Shows the fan's Prediction League position this season;
+// a later phase adds the digital membership card here.
 import FanAuthShell from '../../components/fans/FanAuthShell.astro';
 ---
 <FanAuthShell title="My Account" heading="My account" description="Your Lobi Stars FC fan account." intro="">
@@ -14,10 +14,14 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
         <div><dt>Email confirmed</dt><dd id="accVerified"></dd></div>
         <div><dt>Account type</dt><dd id="accTier"></dd></div>
       </dl>
+      <h2 class="acc-h">Prediction League <span class="acc-season" id="lgSeason"></span></h2>
+      <p class="acc-league" id="lgMine">Loading…</p>
       <h2 class="acc-h">Matchday</h2>
       <ul class="acc-links">
         <li><a href="/predict-and-win/">Predict &amp; Win</a></li>
+        <li><a href="/predict-and-win/league/">Prediction League table</a></li>
         <li><a href="/man-of-the-match/">Vote for Man of the Match</a></li>
+        <li><a href="/awards/">Fan Awards</a></li>
         <li><a href="/commentary/">Lobi Stars FC Live commentary</a></li>
         <li><a href="/membership/">Membership</a></li>
       </ul>
@@ -33,6 +37,9 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
   .acc-dl dt { font: 700 13px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
   .acc-dl dd { margin: 0; overflow-wrap: anywhere; }
   .acc-h { margin: 0 0 10px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .acc-season { font: 600 15px 'Barlow', sans-serif; letter-spacing: 0; color: var(--lt); }
+  .acc-league { margin: 0 0 22px; }
+  .acc-league strong { color: var(--red-text); }
   .acc-links { margin: 0 0 22px; padding-left: 20px; line-height: 1.9; }
   .acc-links a { color: var(--red-text); font-weight: 600; }
 </style>
@@ -46,7 +53,19 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
     $('accVerified').textContent = member.emailVerified ? 'Yes' : 'Not yet – check your inbox';
     $('accTier').textContent = member.tier && member.tier !== 'Fan' ? `${member.tier} member` : 'Fan account';
     $('accLoading').hidden = true; $('accBody').hidden = false;
+    loadLeague();
   }).catch(() => { $('accLoading').textContent = 'Your account could not be loaded. Please try again.'; });
+  const ordinal = (n: number) => n + (n % 100 > 10 && n % 100 < 14 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th');
+  function loadLeague() {
+    fetch('/api/fans/league').then(r => (r.ok ? r.json() : Promise.reject())).then(d => {
+      $('lgSeason').textContent = d.season;
+      const el = $('lgMine');
+      if (d.me) {
+        el.innerHTML = `You are <strong></strong> of ${d.of} with ${d.me.points} point${d.me.points === 1 ? '' : 's'} (${d.me.exact} exact score${d.me.exact === 1 ? '' : 's'} from ${d.me.predictions} prediction${d.me.predictions === 1 ? '' : 's'}).`;
+        el.querySelector('strong')!.textContent = ordinal(d.me.rank);
+      } else el.textContent = d.staff ? 'Club staff and player accounts are not included in the league.' : 'No points yet this season. Predict the score at the next Lobi Stars home game to get on the table.';
+    }).catch(() => { $('lgMine').textContent = 'Your league position could not be loaded right now.'; });
+  }
   $('logoutBtn').addEventListener('click', async () => {
     await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     location.href = '/';

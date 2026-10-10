@@ -1,7 +1,7 @@
 ---
 // Matches sub-navigation, shown on every match-related page. Scrolls
 // sideways on phones; the active item is highlighted.
-interface Props { current?: 'fixtures' | 'results' | 'table' | 'stats' | 'matchday' | 'watch' | 'commentary' | 'motm' | 'predict' | '' }
+interface Props { current?: 'fixtures' | 'results' | 'table' | 'stats' | 'matchday' | 'watch' | 'commentary' | 'motm' | 'predict' | 'awards' | 'league' | '' }
 const { current = '' } = Astro.props;
 const tabs = [
   { id: 'fixtures', label: 'Fixtures', href: '/fixtures' },
@@ -13,6 +13,8 @@ const tabs = [
   { id: 'commentary', label: 'Commentary', href: '/commentary' },
   { id: 'motm', label: 'Man of the Match', href: '/man-of-the-match' },
   { id: 'predict', label: 'Predict & Win', href: '/predict-and-win' },
+  { id: 'league', label: 'Prediction League', href: '/predict-and-win/league' },
+  { id: 'awards', label: 'Fan Awards', href: '/awards' },
 ];
 ---
 <nav class="mt" aria-label="Matches">

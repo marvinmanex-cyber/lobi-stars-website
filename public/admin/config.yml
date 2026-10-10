@@ -174,6 +174,12 @@ collections:
           - {label: "Link address (optional)", name: "url", widget: "string", required: false, hint: "e.g. /tickets/ or a full https:// address"}
           - {label: "Show from (optional, Nigerian time)", name: "start", widget: "datetime", required: false, format: "YYYY-MM-DDTHH:mm", date_format: "DD/MM/YYYY", time_format: "HH:mm"}
           - {label: "Show until (optional, Nigerian time)", name: "end", widget: "datetime", required: false, format: "YYYY-MM-DDTHH:mm", date_format: "DD/MM/YYYY", time_format: "HH:mm"}
+      - name: "predictLeague"
+        label: "Prediction League prize"
+        file: "src/data/predict-league.json"
+        fields:
+          - {label: "End-of-season prize in naira (0 = no prize shown)", name: "seasonPrize", widget: "number", value_type: "int", min: 0, default: 0, hint: "Only set this once the club has confirmed the prize. Shown on the league page and in the Predict & Win terms."}
+          - {label: "Prize note (optional)", name: "prizeNote", widget: "string", required: false, hint: "e.g. plus a signed shirt"}
       - name: "site"
         label: "Season, Homepage Stats & Footer Text"
         file: "src/data/site.json"

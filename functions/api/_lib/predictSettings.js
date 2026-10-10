@@ -18,6 +18,10 @@ export const PREDICTION_OPENS_HOURS_BEFORE = 24;
  */
 export const PREDICTION_CLOSES_AT = 'kickoff';
 
+/** Season Prediction League points: exact score, and correct result without the exact score. */
+export const POINTS_EXACT = 3;
+export const POINTS_RESULT = 1;
+
 /** Highest score a fan can predict for either team. */
 export const MAX_GOALS = 20;
 

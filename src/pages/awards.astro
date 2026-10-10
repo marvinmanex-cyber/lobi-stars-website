@@ -1,0 +1,142 @@
+---
+// /awards -- fan awards: Goal of the Month, Player of the Month and Player of
+// the Season. Content is rendered on the server (functions/awards.js) from
+// what staff set up in Admin -> Awards; this script adds voting.
+import Layout from '../layouts/Layout.astro';
+import MatchesTabs from '../components/MatchesTabs.astro';
+---
+<Layout title="Fan Awards | Lobi Stars Football Club" description="Vote for the Lobi Stars Goal of the Month, Player of the Month and Player of the Season, and see past winners.">
+  <div class="page-hero wrap">
+    <div class="stag">Fans' Choice</div>
+    <h1 class="stitle">Fan <span class="r">Awards</span></h1>
+    <MatchesTabs current="awards" />
+  </div>
+
+  <div class="page-content wrap aw">
+    <p class="aw-lede">Goal of the Month, Player of the Month and Player of the Season are chosen by you. Votes are free with a fan account. One vote per fan for each award.</p>
+    <div id="awardsBody">
+      <p class="aw-empty">No award votes yet. Goal of the Month, Player of the Month and Player of the Season votes will appear here when they open.</p>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .aw { padding-bottom: 80px; }
+  .aw-lede { max-width: 760px; color: var(--lt); margin: 0 0 8px; }
+  .aw-empty { color: var(--lt); padding: 18px 0; }
+  .aw :global(.aw-h2) { margin: 34px 0 14px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .aw :global(.aw-grid) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 18px; }
+  .aw :global(.aw-card) { border: 1px solid var(--d4); border-radius: 16px; background: #fff; overflow: hidden; min-width: 0; }
+  .aw :global(.aw-head) { padding: 16px 18px; background: linear-gradient(135deg, #4D0B0D, #A3161B); color: #fff; }
+  .aw :global(.aw-head h3) { margin: 2px 0 0; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .aw :global(.aw-k) { margin: 0; font: 700 12px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: #FFC72C; }
+  .aw :global(.aw-sponsor) { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; font-size: 13px; color: rgba(255,255,255,.9); }
+  .aw :global(.aw-sponsor img) { height: 28px; width: auto; max-width: 110px; object-fit: contain; background: #fff; border-radius: 6px; padding: 3px 6px; }
+  .aw :global(.aw-time) { margin: 0; padding: 12px 18px 0; font-size: 14px; color: var(--lt); }
+  .aw :global(.aw-noms) { list-style: none; margin: 0; padding: 12px 18px; display: grid; gap: 10px; }
+  .aw :global(.aw-nom) { display: flex; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--d4); border-radius: 12px; flex-wrap: wrap; }
+  .aw :global(.aw-nom.is-mine) { border-color: #FFC72C; background: #FFF8E1; }
+  .aw :global(.aw-noms:has(.aw-nom--goal)) { grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); }
+  .aw :global(.aw-nom--goal) { flex-direction: column; align-items: stretch; }
+  .aw :global(.aw-nom--goal .aw-nom-t) { display: flex; flex-direction: column; }
+  .aw :global(.aw-face) { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--d3); display: inline-flex; align-items: center; justify-content: center; font: 400 22px/1 'Bebas Neue', sans-serif; color: var(--red-text); flex-shrink: 0; }
+  .aw :global(.aw-nom-t) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .aw :global(.aw-nom-t strong) { display: block; font-size: 16px; }
+  .aw :global(.aw-nom-t span) { font-size: 13px; color: var(--lt); }
+  .aw :global(.aw-vote) { padding: 10px 18px; min-height: 44px; border-radius: 999px; border: 0; background: var(--red); color: #fff; cursor: pointer; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .aw :global(.aw-vote:disabled) { background: #C9CDD3; color: #4A4F57; cursor: not-allowed; }
+  .aw :global(.aw-nom--goal .aw-vote) { align-self: flex-start; }
+  .aw :global(.aw-mine) { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: #8A5A00; }
+  .aw :global(.aw-clip) { position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; padding: 0; border-radius: 10px; overflow: hidden; background: #000; cursor: pointer; }
+  .aw :global(.aw-clip img) { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .aw :global(.aw-play) { position: absolute; inset: 0; margin: auto; width: 60px; height: 60px; border-radius: 50%; background: rgba(163,22,27,.92); display: flex; align-items: center; justify-content: center; }
+  .aw :global(.aw-play svg) { width: 28px; height: 28px; fill: #fff; }
+  .aw :global(iframe.aw-clip) { cursor: auto; }
+  .aw :global(.aw-msg) { margin: 0; padding: 0 18px 16px; font-size: 14px; }
+  .aw :global(.aw-msg.err) { color: #A3161B; }
+  .aw :global(.aw-msg.ok) { color: #17643A; font-weight: 600; }
+  .aw :global(.aw-card--soon) { padding-bottom: 16px; }
+  .aw :global(.aw-winner) { display: flex; gap: 14px; align-items: center; padding: 16px 18px; }
+  .aw :global(.aw-trophy) { font-size: 34px; }
+  .aw :global(.aw-winner .aw-k) { color: #8A5A00; }
+  .aw :global(.aw-wname) { margin: 2px 0 0; font: 400 26px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .aw :global(.aw-wname a) { color: var(--white); text-decoration: none; }
+  .aw :global(.aw-wname a:hover) { color: var(--red-text); }
+  .aw :global(.aw-wname span) { font: 400 15px 'Barlow', sans-serif; color: var(--lt); }
+  .aw :global(.aw-wclip) { padding: 0 18px 12px; }
+  .aw :global(.aw-res) { padding: 0 18px 16px; }
+  .aw :global(.aw-res summary) { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+  .aw :global(.aw-res ol) { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 8px; }
+  .aw :global(.aw-res li) { display: grid; grid-template-columns: minmax(0, 1fr) 90px 48px; gap: 10px; align-items: center; font-size: 14px; }
+  .aw :global(.aw-bar) { height: 8px; border-radius: 4px; background: linear-gradient(90deg, #A3161B var(--p), #EEF0F2 var(--p)); }
+  .aw :global(.aw-res b) { text-align: right; }
+</style>
+
+<script>
+  type Award = { id: string; state: string; totalVoters?: number };
+  type Data = { awards: Award[]; fan: { firstName: string; verified: boolean } | null; myVotes: Record<string, { nominee: number }> };
+
+  // Goal clips load only when tapped (privacy-friendly YouTube player).
+  document.addEventListener('click', e => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.aw-clip[data-yt]');
+    if (!btn) return;
+    const f = document.createElement('iframe');
+    f.className = 'aw-clip';
+    f.src = `https://www.youtube-nocookie.com/embed/${btn.dataset.yt}?autoplay=1&rel=0`;
+    f.title = btn.getAttribute('aria-label')?.replace('Play goal: ', '') || 'Goal';
+    f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+    f.allowFullscreen = true;
+    btn.replaceWith(f);
+  });
+
+  const cards = [...document.querySelectorAll<HTMLElement>('.aw-card[data-state="open"]')];
+  function markMine(card: HTMLElement, nominee: number) {
+    card.querySelectorAll<HTMLButtonElement>('.aw-vote').forEach(b => { b.disabled = true; b.hidden = true; });
+    const li = card.querySelector<HTMLElement>(`.aw-nom[data-nominee="${nominee}"]`);
+    li?.classList.add('is-mine');
+    const tag = li?.querySelector<HTMLElement>('.aw-mine'); if (tag) tag.hidden = false;
+  }
+  function say(card: HTMLElement, html: string, cls = '') {
+    const m = card.querySelector<HTMLElement>('.aw-msg')!;
+    m.className = 'aw-msg ' + cls; m.innerHTML = html;
+  }
+
+  if (cards.length) {
+    fetch('/api/awards', { credentials: 'same-origin' }).then(r => r.json()).then((d: Data) => {
+      for (const card of cards) {
+        const id = card.dataset.award!;
+        const a = d.awards.find(x => x.id === id);
+        if (!a || a.state !== 'open') { say(card, 'Voting has closed. Refresh to see the winner.'); continue; }
+        const voters = a.totalVoters ? ` ${a.totalVoters} fan${a.totalVoters === 1 ? ' has' : 's have'} voted so far.` : '';
+        const mine = d.myVotes[id];
+        if (mine) { markMine(card, mine.nominee); say(card, `Thanks for voting.${voters} The winner is revealed when voting closes.`, 'ok'); continue; }
+        if (!d.fan) continue; // keeps the "Log in to vote" message
+        if (!d.fan.verified) { say(card, 'Please confirm your email address to vote. Check your inbox, or <a href="/fans/account/">resend the email from your account</a>.'); continue; }
+        card.querySelectorAll<HTMLButtonElement>('.aw-vote').forEach(b => { b.disabled = false; });
+        say(card, `Hi ${d.fan.firstName.replace(/[<>&"]/g, '')}, pick one. You can't change your vote afterwards.${voters}`);
+      }
+    }).catch(() => {});
+  }
+
+  document.addEventListener('click', async e => {
+    const btn = (e.target as HTMLElement).closest<HTMLButtonElement>('.aw-vote');
+    if (!btn || btn.disabled) return;
+    const card = btn.closest<HTMLElement>('.aw-card')!;
+    const name = btn.closest('.aw-nom')?.querySelector('strong')?.textContent || 'this nominee';
+    if (!confirm(`Vote for ${name}? You can only vote once for this award.`)) return;
+    card.querySelectorAll<HTMLButtonElement>('.aw-vote').forEach(b => { b.disabled = true; });
+    try {
+      const res = await fetch(`/api/awards/${encodeURIComponent(card.dataset.award!)}/vote`, {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nominee: Number(btn.dataset.vote) }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Your vote could not be saved. Please try again.');
+      markMine(card, d.myVote.nominee);
+      say(card, `Thanks for voting for ${name.replace(/[<>&"]/g, '')}! The winner is revealed when voting closes.`, 'ok');
+    } catch (err) {
+      say(card, (err as Error).message.replace(/[<>&"]/g, ''), 'err');
+      card.querySelectorAll<HTMLButtonElement>('.aw-vote').forEach(b => { b.disabled = false; });
+    }
+  });
+</script>
