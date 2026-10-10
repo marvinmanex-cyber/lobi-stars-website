@@ -3,12 +3,15 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 export type Player = CollectionEntry<'players'>;
 
 /**
- * Squad players for the site. Sample players (isSample) are only shown until
- * the first real player is added in the CMS; after that they disappear
- * everywhere automatically (squad pages, search, Man of the Match voting).
+ * Squad players shown on the public site. The starter "sample" players are
+ * never shown publicly (squad page, profiles, search); they only exist so
+ * staff can see how things look in the admin.
  */
 export async function getPlayers(): Promise<Player[]> {
-  const all = await getCollection('players');
-  const real = all.filter(p => !p.data.isSample);
-  return real.length ? real : all;
+  return (await getCollection('players')).filter(p => !p.data.isSample);
+}
+
+/** Every player including samples (admin screens and /data/players.json, which marks samples). */
+export async function getRoster(): Promise<Player[]> {
+  return getCollection('players');
 }

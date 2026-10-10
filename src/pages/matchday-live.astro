@@ -145,6 +145,7 @@ import LivePlayer from '../components/commentary/LivePlayer.astro';
 <script>
   import { crest, fmtDate, fmtTime, hasScore } from '../lib/matchUi';
   import { liveEngine } from '../lib/livePlayer';
+  import { ssrData } from '../lib/ssr';
 
   type M = { id: string; slug: string; home_team: string; away_team: string; competition: string; event_date: string; venue: string;
     status: string; home_score: number | null; away_score: number | null; is_home: boolean; kickoff_at: string | null;
@@ -642,10 +643,16 @@ import LivePlayer from '../components/commentary/LivePlayer.astro';
 
   async function load() {
     try {
-      const res = await fetch(`/api/matches/${encodeURIComponent(slug)}`);
-      if (res.status === 404) throw new Error('notfound');
-      if (!res.ok) throw new Error('error');
-      const data = await res.json();
+      // First draw uses the match embedded by the server; later refreshes fetch it.
+      const embedded = !match ? ssrData<{ match: M; serverTime: string }>('ssr-match') : null;
+      let data;
+      if (embedded) data = embedded;
+      else {
+        const res = await fetch(`/api/matches/${encodeURIComponent(slug)}`);
+        if (res.status === 404) throw new Error('notfound');
+        if (!res.ok) throw new Error('error');
+        data = await res.json();
+      }
       if (data.serverTime) clockOffset = new Date(data.serverTime).getTime() - Date.now();
       if (!data.match.is_home) { location.replace(`/matches/${data.match.slug}/`); return; }
       const key = (x: M) => `${x.status}${x.home_score}${x.away_score}${JSON.stringify(x.stream || {})}`;

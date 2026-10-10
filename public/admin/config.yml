@@ -37,7 +37,7 @@ collections:
       - {label: "Video Duration (e.g. 06:02)", name: "videoDuration", widget: "string", required: false}
       - {label: "Featured (top story on the homepage)", name: "isFeatured", widget: "boolean", default: false}
       - {label: "Homepage Promo Banner", name: "isBanner", widget: "boolean", default: false}
-      - {label: "Sample article (shows a SAMPLE label; untick for real news)", name: "isSample", widget: "boolean", default: false}
+      - {label: "Status (Draft = hidden from the website)", name: "status", widget: "select", options: [{label: "Published", value: "published"}, {label: "Draft", value: "draft"}], default: "published"}
       - {label: "Body", name: "body", widget: "markdown"}
 
   - name: "players"

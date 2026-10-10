@@ -12,7 +12,6 @@ const href = `/news/${article.id}`;
 <article class="nc" data-cat={a.category}>
   <div class="nc-media">
     <img src={a.coverImage} alt={a.imageAlt} loading={priority ? 'eager' : 'lazy'} fetchpriority={priority ? 'high' : undefined} decoding="async" sizes="(max-width: 480px) 84vw, (max-width: 768px) 72vw, (max-width: 1100px) 33vw, 320px" />
-    {a.isSample && <span class="nc-sample">Sample</span>}
     {a.isVideo && (
       <span class="nc-badge">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" /></svg>

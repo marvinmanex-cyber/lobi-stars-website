@@ -63,7 +63,17 @@ class LiveEngine {
       this.channel = new BroadcastChannel('lobi-stars-live');
       this.channel.onmessage = e => { if (e.data?.type === 'playing' && e.data.sid !== this.sid && this.wantPlay) this.pause(false); };
     } catch { /* older browsers: one player per tab still applies */ }
-    this.refresh();
+    // The /commentary page arrives with the current state embedded by the server.
+    const embedded = document.getElementById('ssr-commentary')?.textContent;
+    if (embedded) {
+      try {
+        this.info = JSON.parse(embedded);
+        this.clockOffset = new Date(this.info!.serverTime).getTime() - Date.now();
+        this.status = this.info!.streamUrl ? 'idle' : 'offair';
+      } catch { /* fetch below */ }
+    }
+    if (this.info) this.refreshTimer = window.setTimeout(() => this.refresh(), 20_000);
+    else this.refresh();
     document.addEventListener('visibilitychange', () => { if (!document.hidden) this.refresh(); });
   }
 

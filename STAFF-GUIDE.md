@@ -32,9 +32,11 @@ manager gives you once. Paste it in and the CMS remembers it on that device.
 
 ## 1. Add a news article
 
-> **Sample stories:** the site came with sample news stories (marked "Sample") so pages
-> weren't empty. They disappear automatically as soon as you publish your
-> first real story. You don't need to delete them.
+> **Published or Draft:** every story has a **Status**. **Published** stories appear on
+> the website; **Draft** stories are hidden from the website, Google and search
+> but stay in the CMS and on Admin → Manage news (marked "Draft"). The starter
+> sample stories are all drafts, so you can use them as examples or delete them.
+> The homepage news rows appear once at least **3** stories are published.
 
 
 1. Log in, then click **Manage news**.
@@ -121,9 +123,10 @@ can't be deleted, only hidden.
 
 ## 4. Add a player
 
-> **Sample players:** the squad came with sample players (marked "Sample"). They
-> disappear everywhere, including the squad page and Man of the Match voting,
-> as soon as you add your first real player. You don't need to delete them.
+> **Sample players:** the starter sample players are never shown on the public site.
+> They still appear (marked "sample") in Admin → Match Centre's squad picker, so
+> don't pick them for a real match. The squad page shows "The squad will be
+> announced soon" until you add real players.
 
 
 1. Open the **Content CMS** and click **Squad / Players**, then **New**.

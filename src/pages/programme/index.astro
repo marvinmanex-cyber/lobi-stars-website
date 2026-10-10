@@ -9,7 +9,7 @@ import Layout from '../../layouts/Layout.astro';
   </div>
 
   <div class="page-content wrap">
-    <div id="prog-loading" class="muted">Loading the next matchday programme&hellip;</div>
+    <div id="prog-loading" class="muted">The programme for the next home match will appear here before kick-off.</div>
     <div id="prog-empty" class="empty-state" hidden></div>
 
     <div id="prog-body" hidden>
@@ -92,8 +92,9 @@ import Layout from '../../layouts/Layout.astro';
     async function load() {
       let events;
       try {
-        const res = await fetch('/api/events');
-        const data = await res.json();
+        // Embedded by the server; fetched only if it's missing.
+        const embedded = document.getElementById('ssr-events');
+        const data = embedded ? JSON.parse(embedded.textContent) : await (await fetch('/api/events')).json();
         events = (data.events || []).slice().sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
       } catch {
         showEmpty('Could not load fixtures right now — please try again shortly.');

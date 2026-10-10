@@ -10,6 +10,7 @@ videoUrl: ""
 videoDuration: "06:02"
 isFeatured: true
 isSample: true
+status: "draft"
 isBanner: false
 ---
 

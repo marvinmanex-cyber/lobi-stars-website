@@ -43,6 +43,7 @@ const tabs = [{ name: 'All', slug: 'all' }, ...NEWS_CATEGORIES];
       <span class="nl-count" data-count aria-live="polite"></span>
     </div>
 
+    {articles.length === 0 && <p class="nl-empty">Club news is on its way. Follow us on social media for the latest updates in the meantime.</p>}
     <ul class="nl-grid" data-grid>
       {articles.map((article, i) => (
         <li data-cat={categorySlug(article.data.category)}><NewsCard article={article} priority={i === 0} /></li>

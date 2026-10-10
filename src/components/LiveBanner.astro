@@ -36,12 +36,16 @@ import LivePlayer from './commentary/LivePlayer.astro';
 </style>
 
 <script>
+  import { ssrData } from '../lib/ssr';
+  let first = true;
   async function check() {
     const banner = document.getElementById('liveBanner') as HTMLAnchorElement | null;
     const wrap = document.getElementById('liveBannerWrap');
     if (!banner || !wrap) return;
     try {
-      const { matches = [] } = await (await fetch('/api/matches')).json();
+      const embedded = first ? ssrData<{ matches: any[] }>('ssr-matches') : null;
+      first = false;
+      const { matches = [] } = embedded || await (await fetch('/api/matches')).json();
       const live = matches.find((m: any) => m.is_home && (m.status === 'live' || m.status === 'half-time'));
       if (!live) { wrap.hidden = true; return; }
       const opponent = /lobi stars/i.test(live.home_team) ? live.away_team : live.home_team;

@@ -12,8 +12,10 @@ import shop from '../data/shop.json';
 import { CURRENT_SEASON } from '../lib/site';
 
 const news = await getSortedNews();
-const featuredNews = news.filter(a => a.data.isFeatured).slice(0, 5);
-const videoNews = news.filter(a => a.data.isVideo).slice(0, 12);
+// With fewer than 3 published stories the news rows would look empty, so they're hidden.
+const enoughNews = news.length >= 3;
+const featuredNews = enoughNews ? news.filter(a => a.data.isFeatured).slice(0, 5) : [];
+const videoNews = enoughNews ? news.filter(a => a.data.isVideo).slice(0, 12) : [];
 const shopHighlights = shop.products.filter(p => p.inStock).slice(0, 4);
 
 const site = Astro.site!.toString().replace(/\/$/, '');
@@ -45,7 +47,7 @@ const teamJsonLd = {
   <NewsHero articles={featuredNews} />
   <NextMatches />
   <MatchdayGames />
-  <NewsCarousel title="Latest News" articles={news.slice(0, 12)} viewAllHref="/news" />
+  <NewsCarousel title="Latest News" articles={enoughNews ? news.slice(0, 12) : []} viewAllHref="/news" />
   <NewsCarousel title="Video" articles={videoNews} viewAllHref="/video" viewAllLabel="All videos" tone="band" />
 
   <section class="hp-sec" aria-labelledby="shop-title">

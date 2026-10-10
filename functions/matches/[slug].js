@@ -1,4 +1,5 @@
-import { ensureTable } from '../api/_lib/matchCentre.js';
+import { jsonScript } from '../api/_lib/ssr.js';
+import { ensureTable, loadMatch, toPublic } from '../api/_lib/matchCentre.js';
 import { matchSlug } from '../api/_lib/matchSlug.js';
 
 // /matches/<slug> -- serves the static Match Centre page (built at
@@ -30,6 +31,16 @@ export async function onRequestGet({ request, env, params }) {
   const canonical = `${url.origin}/matches/${matchSlug(event)}/`;
   const set = v => ({ element(el) { el.setAttribute('content', v); } });
 
+  // Embed the match (same shape as /api/matches/<slug>) so the page renders at once, and
+  // replace the placeholder line with the match itself in case scripts don't run.
+  let embed = '';
+  try {
+    const m = await loadMatch(env.DB, event.id);
+    const data = { match: toPublic(m.event, m.centre), serverTime: new Date().toISOString() };
+    embed = jsonScript('ssr-match', data);
+  } catch { /* the page fetches it instead */ }
+  const line = `${event.home_team} vs ${event.away_team} · ${date} · ${event.venue}`;
+
   const rewritten = new HTMLRewriter()
     .on('title', { element(el) { el.setInnerContent(title); } })
     .on('meta[name="description"]', set(description))
@@ -40,6 +51,8 @@ export async function onRequestGet({ request, env, params }) {
     .on('meta[property="og:url"]', set(canonical))
     .on('meta[name="robots"]', { element(el) { el.remove(); } })
     .on('link[rel="canonical"]', { element(el) { el.setAttribute('href', canonical); } })
+    .on('head', { element(el) { if (embed) el.append(embed, { html: true }); } })
+    .on('#mcStatus', { element(el) { el.setInnerContent(line); } })
     .transform(new Response(shell.body, { status: 200, headers }));
   return rewritten;
 }

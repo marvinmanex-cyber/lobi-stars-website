@@ -1,12 +1,8 @@
-// GET /api/events -- lists active purchasable matches with seat tier pricing.
-export async function onRequestGet({ env }) {
-  const { results } = await env.DB.prepare(
-    `SELECT id, home_team, away_team, competition, event_date, venue,
-            vip_price_kobo, premium_price_kobo, regular_price_kobo, programme_url
-     FROM events
-     WHERE active = 1 AND event_date >= datetime('now')
-     ORDER BY event_date ASC`
-  ).all();
+import { onSaleEvents } from './_lib/onSale.js';
 
-  return Response.json({ events: results });
+// GET /api/events -- lists active purchasable matches with seat tier pricing.
+// (Kick-off times are stored as ISO strings, so "now" is compared in the same
+// format; a match drops off the list as soon as it kicks off.)
+export async function onRequestGet({ env }) {
+  return Response.json({ events: await onSaleEvents(env.DB) });
 }

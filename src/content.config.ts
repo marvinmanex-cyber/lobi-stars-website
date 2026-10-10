@@ -18,7 +18,9 @@ const news = defineCollection({
     isFeatured: z.boolean().default(false),
     // Shown in the wide promo banner on the homepage (newest one wins).
     isBanner: z.boolean().default(false),
-    // Placeholder content: shown with a "SAMPLE" label until replaced.
+    // Drafts are hidden from the public site, sitemap and search (visible in admin).
+    status: z.enum(['published', 'draft']).default('published'),
+    // Legacy flag from the starter content (all sample stories are drafts now).
     isSample: z.boolean().default(false),
   }),
 });

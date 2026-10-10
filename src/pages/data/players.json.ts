@@ -1,11 +1,11 @@
-import { getPlayers } from '../../lib/players';
+import { getRoster } from '../../lib/players';
 
 
 // Published squad list. The server reads this (via env.ASSETS) to check that
 // a matchday squad only contains real Lobi Stars players, and to store a
 // snapshot of each player's name, number and photo for MOTM voting.
 export async function GET() {
-  const players = (await getPlayers())
+  const players = (await getRoster())
     .sort((a, b) => a.data.number - b.data.number)
     .map(p => ({
       slug: p.id,

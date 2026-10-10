@@ -1,4 +1,5 @@
-import { ensureTable, isHomeGame } from '../../api/_lib/matchCentre.js';
+import { jsonScript } from '../../api/_lib/ssr.js';
+import { ensureTable, isHomeGame, loadMatch, toPublic } from '../../api/_lib/matchCentre.js';
 import { matchSlug } from '../../api/_lib/matchSlug.js';
 
 // /matches/<slug>/live -- Matchday Live (watch, listen, vote, predict). HOME
@@ -32,6 +33,16 @@ export async function onRequestGet({ request, env, params }) {
   const canonical = `${url.origin}/matches/${matchSlug(event)}/live/`;
   const set = v => ({ element(el) { el.setAttribute('content', v); } });
 
+  // Embed the match (same shape as /api/matches/<slug>) so the page renders at once, and
+  // replace the placeholder line with the match itself in case scripts don't run.
+  let embed = '';
+  try {
+    const m = await loadMatch(env.DB, event.id);
+    const data = { match: toPublic(m.event, m.centre), serverTime: new Date().toISOString() };
+    embed = jsonScript('ssr-match', data);
+  } catch { /* the page fetches it instead */ }
+  const line = `${event.home_team} vs ${event.away_team} · ${date} · ${event.venue}`;
+
   return new HTMLRewriter()
     .on('title', { element(el) { el.setInnerContent(title); } })
     .on('meta[name="description"]', set(description))
@@ -42,5 +53,7 @@ export async function onRequestGet({ request, env, params }) {
     .on('meta[property="og:url"]', set(canonical))
     .on('meta[name="robots"]', { element(el) { el.remove(); } })
     .on('link[rel="canonical"]', { element(el) { el.setAttribute('href', canonical); } })
+    .on('head', { element(el) { if (embed) el.append(embed, { html: true }); } })
+    .on('#mlStatus', { element(el) { el.setInnerContent(`Matchday Live: ${line}`); } })
     .transform(new Response(shell.body, { status: 200, headers }));
 }

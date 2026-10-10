@@ -91,6 +91,7 @@ import Layout from '../layouts/Layout.astro';
 </style>
 
 <script>
+  import { ssrData } from '../lib/ssr';
   import { crest, fmtDate, fmtTime, isLobi, hasScore, downloadIcs, googleCalUrl, STATUS_LABELS } from '../lib/matchUi';
 
   type Line = { starting: string[]; subs: string[] };
@@ -320,10 +321,15 @@ import Layout from '../layouts/Layout.astro';
   async function load() {
     if (!slug) { root.replaceChildren(el('div', 'wrap mc-loading', 'Match not found.')); return; }
     try {
-      const res = await fetch(`/api/matches/${encodeURIComponent(slug)}`);
-      if (res.status === 404) throw new Error('notfound');
-      if (!res.ok) throw new Error('error');
-      match = (await res.json()).match;
+      // First draw uses the match embedded by the server; later refreshes fetch it.
+      const embedded = !match ? ssrData<{ match: any }>('ssr-match') : null;
+      if (embedded) match = embedded.match;
+      else {
+        const res = await fetch(`/api/matches/${encodeURIComponent(slug)}`);
+        if (res.status === 404) throw new Error('notfound');
+        if (!res.ok) throw new Error('error');
+        match = (await res.json()).match;
+      }
       render(match!);
     } catch (err) {
       if (match) return; // keep showing the last good data

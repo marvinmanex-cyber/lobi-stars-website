@@ -275,3 +275,31 @@ export async function probeStream(url, timeoutMs = 8000) {
     clearTimeout(timer);
   }
 }
+
+/**
+ * The public Lobi Stars FC Live state (what /api/commentary returns and what
+ * the /commentary page is rendered with). The stream address is only included
+ * while a match's commentary window is open.
+ */
+export async function publicCommentaryState(env, now = Date.now()) {
+  const s = await getSettings(env);
+  const rows = s.enabled ? await commentaryFixtures(env.DB) : [];
+  const st = commentaryState(rows, now);
+  const live = s.enabled && st.state === 'live' && !!s.streamUrl;
+  const upcoming = rows
+    .map(r => ({ r, w: commentaryWindow(r) }))
+    .filter(x => x.w && x.w.start > now && x.w.end > now)
+    .slice(0, 6)
+    .map(x => publicFixture(x.r, x.w));
+  return {
+    enabled: s.enabled,
+    brand: s.brand,
+    state: !s.enabled ? 'off' : st.state === 'live' && !s.streamUrl ? 'off' : st.state,
+    fixture: st.fixture ? publicFixture(st.fixture, st.window) : null,
+    streamUrl: live ? s.streamUrl : null,
+    backupUrl: live && s.backupUrl ? s.backupUrl : null,
+    commentators: s.commentators || null,
+    upcoming,
+    serverTime: new Date(now).toISOString(),
+  };
+}

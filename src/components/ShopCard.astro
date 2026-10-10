@@ -22,7 +22,7 @@ const canBuy = p.inStock && !!price && !!p.jumiaUrl;
     <p class="pc-price">{price ?? 'Price coming soon'}</p>
     <p class="pc-desc">{p.description}</p>
     {canBuy ? (
-      <a class="pc-btn" href={p.jumiaUrl} target="_blank" rel="noopener" aria-label={`Shop on Jumia: ${name} (opens in a new tab)`}>Shop on Jumia</a>
+      <a class="pc-btn" href={p.jumiaUrl} target="_blank" rel="noopener" aria-label={`Buy on Jumia: ${name} (opens in a new tab)`}>Buy on Jumia</a>
     ) : (
       <button type="button" class="pc-btn" disabled>{p.inStock ? 'Coming soon' : 'Out of stock'}</button>
     )}

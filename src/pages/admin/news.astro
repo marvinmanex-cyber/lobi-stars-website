@@ -1,12 +1,12 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
-import { getSortedNews, formatDate } from '../../lib/news';
+import { getAllNews, formatDate } from '../../lib/news';
 
 // Articles are edited in the content CMS (Sveltia, at /admin/), which saves
 // them to src/content/news and uploads images to public/images. This screen
 // lists what's published and jumps straight to the right CMS editor.
-const articles = await getSortedNews();
+const articles = await getAllNews();
 const CMS = '/admin/#/collections/news';
 ---
 <Layout title="Manage News | Lobi Stars Admin" description="Manage Lobi Stars FC news articles." noindex>
@@ -28,12 +28,12 @@ const CMS = '/admin/#/collections/news';
         <li><strong>Delete:</strong> press <em>Edit</em>, then use the <em>Delete</em> option in the editor's menu.</li>
         <li><strong>Videos:</strong> tick <em>Is this a video?</em>, paste the YouTube/Vimeo link and the duration (e.g. 06:02).</li>
         <li><strong>Homepage:</strong> tick <em>Featured</em> to put the story in the big top section.</li>
-        <li>Untick <em>Sample article</em> on real stories. Changes appear on the website about a minute after saving.</li>
+        <li>Set <em>Status</em> to <strong>Published</strong> to show a story on the website; <strong>Draft</strong> keeps it hidden. Changes appear about a minute after saving.</li>
       </ol>
       <p class="muted">The CMS asks for a GitHub access token the first time you use it on a device.</p>
     </details>
 
-    <p class="muted mn-count">{articles.length} published {articles.length === 1 ? 'article' : 'articles'} ({articles.filter(a => a.data.isSample).length} samples)</p>
+    <p class="muted mn-count">{articles.filter(a => a.data.status !== 'draft').length} published, {articles.filter(a => a.data.status === 'draft').length} drafts (drafts are hidden from the website)</p>
     <div class="mn-table-wrap">
       <table class="mn-table">
         <thead><tr><th scope="col">Article</th><th scope="col">Category</th><th scope="col">Published</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
@@ -43,7 +43,7 @@ const CMS = '/admin/#/collections/news';
               <th scope="row">
                 <span class="mn-title">{a.data.title}</span>
                 <span class="mn-flags">
-                  {a.data.isSample && <span class="mn-flag sample">Sample</span>}
+                  {a.data.status === 'draft' && <span class="mn-flag sample">Draft</span>}
                   {a.data.isFeatured && <span class="mn-flag">Featured</span>}
                   {a.data.isVideo && <span class="mn-flag">Video</span>}
                 </span>

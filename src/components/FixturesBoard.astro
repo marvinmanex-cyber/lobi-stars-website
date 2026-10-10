@@ -28,7 +28,7 @@ const cms = (await getCollection('fixtures')).map(f => ({
 }));
 ---
 <div class="fxb" data-commentary="/commentary/" data-fixtures-board data-show={show} data-structured={structuredData ? '1' : undefined} data-cms={JSON.stringify(cms)}>
-  <p class="fxb-empty" data-status>Loading {show === 'upcoming' ? 'fixtures' : 'results'}&hellip;</p>
+  <p class="fxb-empty" data-status>{show === 'upcoming' ? 'Fixtures for the next round will be announced soon.' : 'No results yet this season.'} <a href="/fixtures">See all fixtures</a></p>
   <div data-list></div>
 </div>
 
@@ -72,6 +72,7 @@ const cms = (await getCollection('fixtures')).map(f => ({
 
 <script>
   import { crest, fmtDate, fmtTime, monthKey, isLobi, hasScore, downloadIcs, googleCalUrl, STATUS_LABELS, type Match } from '../lib/matchUi';
+  import { ssrData } from '../lib/ssr';
 
   const DAY = 86_400_000;
   const norm = (s: string) => s.toLowerCase().replace(/\bfc\b|[^a-z]/g, '');
@@ -170,8 +171,9 @@ const cms = (await getCollection('fixtures')).map(f => ({
     const list = board.querySelector<HTMLElement>('[data-list]')!;
     const cms: Match[] = JSON.parse(board.dataset.cms || '[]');
 
-    let db: Match[] = [];
-    try {
+    // Embedded by the server (which also pre-rendered the list); fetch only as a fallback.
+    let db: Match[] = ssrData<{ matches: Match[] }>('ssr-matches')?.matches || [];
+    if (!document.getElementById('ssr-matches')) try {
       const res = await fetch('/api/matches');
       if (res.ok) db = (await res.json()).matches || [];
     } catch { /* show CMS fixtures only */ }
@@ -187,7 +189,8 @@ const cms = (await getCollection('fixtures')).map(f => ({
 
     list.replaceChildren();
     if (!items.length) {
-      status.textContent = upcoming ? 'No upcoming fixtures have been announced yet. Check back soon.' : 'No results yet this season.';
+      status.hidden = false;
+      status.textContent = upcoming ? 'Fixtures for the next round will be announced soon.' : 'No results yet this season.';
       return;
     }
     status.hidden = true;

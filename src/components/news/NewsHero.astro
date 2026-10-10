@@ -21,7 +21,6 @@ const { articles } = Astro.props;
             <div class="nh-body">
               <div class="nh-meta">
                 <a class="nh-cat" href={categoryHref(a.category)}>{a.category}</a>
-                {a.isSample && <span class="nh-sample">Sample</span>}
                 <RelativeTime date={a.publishedAt} class="nh-time" />
                 {a.isVideo && a.videoDuration && <span class="nh-dur">{a.videoDuration}</span>}
               </div>

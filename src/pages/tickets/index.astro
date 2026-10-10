@@ -26,7 +26,7 @@ import Layout from '../../layouts/Layout.astro';
     <div class="tpanel active" id="tp1">
       <p class="muted" style="margin-bottom:22px;font-size:15px;">Select a home match to purchase tickets for:</p>
       <div class="match-cards" id="matchCardsList">
-        <p class="muted">Loading fixtures...</p>
+        <p class="muted">Tickets for the next home match will go on sale soon. See the <a href="/fixtures/">fixtures</a>.</p>
       </div>
       <div class="tnav"><button class="btn-p" onclick="goStep(2)">Continue &rarr;</button></div>
     </div>
@@ -162,8 +162,9 @@ const preselectEventId = new URLSearchParams(window.location.search).get('event'
 async function loadTicketEvents(){
   const list = document.getElementById('matchCardsList');
   try{
-    const res = await fetch('/api/events');
-    const data = await res.json();
+    // Embedded by the server; fetched only if it's missing.
+    const embedded = document.getElementById('ssr-events');
+    const data = embedded ? JSON.parse(embedded.textContent) : await (await fetch('/api/events')).json();
     ticketEvents = data.events || [];
     if(!ticketEvents.length){
       list.innerHTML = '<p class="muted">No matches are currently on sale. Check back soon.</p>';

@@ -39,7 +39,7 @@ const whatsappChannel = site.social.whatsappChannel;
   <div class="wrap wv-body">
     <section aria-labelledby="wv-sched">
       <h2 class="wv-label wv-left" id="wv-sched">Streaming schedule</h2>
-      <div class="wv-list" id="wlUp"><p class="wv-empty">Loading&hellip;</p></div>
+      <div class="wv-list" id="wlUp"><p class="wv-empty">Fixtures for the next round will be announced soon. <a href="/fixtures/">See all fixtures</a></p></div>
     </section>
 
     <div class="wv-last" id="wlLast" hidden></div>
@@ -120,6 +120,7 @@ const whatsappChannel = site.social.whatsappChannel;
 
 <script>
   import { crest, fmtTime, hasScore } from '../lib/matchUi';
+  import { ssrData } from '../lib/ssr';
   type M = { slug: string; home_team: string; away_team: string; event_date: string; is_home: boolean; status: string;
     home_score: number | null; away_score: number | null; has_stream: boolean };
 
@@ -144,7 +145,8 @@ const whatsappChannel = site.social.whatsappChannel;
     return row;
   }
 
-  fetch('/api/matches').then(r => r.json()).then(({ matches }: { matches: M[] }) => {
+  const embedded = ssrData<{ matches: M[] }>('ssr-matches');
+  (embedded ? Promise.resolve(embedded) : fetch('/api/matches').then(r => r.json())).then(({ matches }: { matches: M[] }) => {
     const home = matches.filter(m => m.is_home);
     const upcoming = home.filter(m => ['scheduled', 'live', 'half-time'].includes(m.status)).slice(0, 6);
     upcoming.length ? up.replaceChildren(...upcoming.map(item)) : up.replaceChildren(el('p', 'wv-empty', 'No upcoming matches scheduled.'));

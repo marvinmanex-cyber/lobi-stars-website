@@ -9,7 +9,7 @@
       <a class="nm-all" href="/fixtures">All fixtures <span aria-hidden="true">&rarr;</span></a>
     </div>
     <ul class="nm-track" data-nm-track aria-live="polite">
-      <li class="nm-empty" data-nm-status>Loading fixtures&hellip;</li>
+      <li class="nm-empty" data-nm-status>Fixtures for the next round will be announced soon. <a href="/fixtures">See all fixtures</a></li>
     </ul>
   </div>
 </section>
@@ -83,6 +83,7 @@
 <script>
   import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
   import { matchSlug } from '../../../functions/api/_lib/matchSlug.js';
+  import { ssrData } from '../../lib/ssr';
 
   type ClubEvent = { id: string; home_team: string; away_team: string; competition?: string; event_date: string; venue: string;
     slug?: string; is_home?: boolean; status?: string };
@@ -172,8 +173,9 @@
 
   async function load(section: HTMLElement) {
     const track = section.querySelector<HTMLElement>('[data-nm-track]')!;
-    let events: ClubEvent[] = [];
-    try {
+    // The server already filled in the cards and embedded the data; fetch only if it didn't.
+    let events: ClubEvent[] = ssrData<{ matches: ClubEvent[] }>('ssr-matches')?.matches || [];
+    if (!document.getElementById('ssr-matches')) try {
       const res = await fetch('/api/matches');
       if (!res.ok) throw new Error(String(res.status));
       events = (await res.json()).matches || [];
@@ -188,7 +190,7 @@
 
     track.replaceChildren();
     if (upcoming.length === 0) {
-      const li = el('li', 'nm-empty', 'No upcoming First Team fixtures have been announced yet. ');
+      const li = el('li', 'nm-empty', 'Fixtures for the next round will be announced soon. ');
       const a = el('a', '', 'See all fixtures') as HTMLAnchorElement;
       a.href = '/fixtures';
       li.append(a);
