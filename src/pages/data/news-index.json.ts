@@ -10,6 +10,8 @@ export async function GET() {
   const items = news.map(a => ({
     slug: a.id,
     title: a.data.title,
+    summary: a.data.summary,
+    coverImage: a.data.coverImage,
     category: a.data.category,
     contentType: a.data.contentType || (a.data.category === 'Team News' ? 'Team News' : null),
     // CMS dates are plain dates, so the stored value is already the match day.

@@ -1,4 +1,5 @@
 ---
+import NewsletterCta from '../../components/NewsletterCta.astro';
 import Layout from '../../layouts/Layout.astro';
 import WhatsAppChannel from '../../components/WhatsAppChannel.astro';
 import NewsCarousel from '../../components/news/NewsCarousel.astro';
@@ -224,6 +225,8 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
         <a href={share.x} target="_blank" rel="noopener">X</a>
         <a href={share.whatsapp} target="_blank" rel="noopener">WhatsApp</a>
       </div>
+
+      <NewsletterCta variant="card" />
 
       <!-- Next Lobi Stars fixture: filled in on the server (functions/news/[slug].js). -->
       <div class="art-next" id="nextFixture" hidden></div>

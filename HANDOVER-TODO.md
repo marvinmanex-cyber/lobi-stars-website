@@ -54,6 +54,8 @@ computer, no errors; 160 automated tests, all passing).
 | C10 | **Values** | Approve or edit the DRAFT mission and five values in the CMS (Club Values), then switch on Published. |
 | C11 | **Community** | Real community projects (title, description, date, photo) and/or Club news stories tagged "Community". |
 | C12 | **Transparency** (optional) | Annual reports, financial or official statements (PDF) the club wants public. |
+| C14 | **Newsletter sponsors** | For each sponsor in the newsletter: the advert text or offer they want, the button text and the exact web link. Logos for **Zeva Lager Beer** and **Play** (PNG, clear background). Which sponsor goes at the top ("In partnership with"). |
+| C15 | **Newsletter sender** | The address the newsletter comes from, e.g. **news@lobistarsfc.com** (needs to be on the Resend domain; set as `NEWSLETTER_FROM`). Which day it goes out each week, and who on the staff writes and sends it. |
 | C13 | **Partnership page** | Audience figures (followers, attendance, website visitors) and the partnership brochure PDF. |
 
 ## D. Shop, membership and commercial decisions

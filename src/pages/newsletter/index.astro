@@ -1,0 +1,169 @@
+---
+// /newsletter -- sign up for the Lobi Stars Weekly and choose what to
+// receive (weekly newsletter, matchday & ticket alerts, partner offers).
+// With ?t=<link from an email> fans change their options or unsubscribe.
+// Past newsletters are listed at the bottom.
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Newsletter | Lobi Stars Football Club" description="Sign up for the free Lobi Stars Weekly: club news, team news, ticket releases, the next match and offers from our partners, every week by email.">
+  <div class="page-hero wrap">
+    <div class="stag">Free every week</div>
+    <h1 class="stitle">The Lobi Stars <span class="r">Weekly</span></h1>
+    <div class="divr"></div>
+  </div>
+  <div class="page-content wrap nlp">
+    <div class="nlp-grid">
+      <section class="nlp-why" aria-labelledby="why">
+        <h2 id="why">What you get</h2>
+        <ul class="nlp-list">
+          <li><span aria-hidden="true">📰</span><div><b>Club news every week</b>Team news, interviews and the stories behind the Pride of Benue.</div></li>
+          <li><span aria-hidden="true">⚽</span><div><b>The next match</b>Date, kick-off time, venue and a direct link to tickets.</div></li>
+          <li><span aria-hidden="true">🎟️</span><div><b>Tickets first</b>Hear when tickets go on sale and when matchday food ordering opens.</div></li>
+          <li><span aria-hidden="true">🤝</span><div><b>Offers from our partners</b>Deals and competitions from the club's partners (only if you want them).</div></li>
+        </ul>
+        <p class="nlp-small">Free. One email a week, plus the extras you choose. Unsubscribe with one click from any email. We never sell your details (see our <a href="/privacy/">Privacy Policy</a>).</p>
+      </section>
+
+      <section class="panel nlp-card" id="signup" aria-labelledby="signup-h">
+        <div id="signupBox">
+          <h2 id="signup-h">Sign up</h2>
+          <form id="nlForm" novalidate>
+            <label>Full name<input name="fullName" autocomplete="name" maxlength="100" required /></label>
+            <label>Phone number<input name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="e.g. 0803 123 4567" required /></label>
+            <label>Email address<input name="email" type="email" autocomplete="email" required /></label>
+            <label>Confirm email address<input name="confirmEmail" type="email" autocomplete="email" required /></label>
+            <fieldset class="nlp-opts">
+              <legend>What would you like to receive?</legend>
+              <label><input type="checkbox" name="weekly" checked /> <span><b>The weekly newsletter</b> (recommended)</span></label>
+              <label><input type="checkbox" name="matchday" /> <span><b>Matchday &amp; ticket alerts</b>: when tickets go on sale and reminders before home games</span></label>
+              <label><input type="checkbox" name="offers" /> <span><b>Partner offers</b>: deals and competitions from our partners</span></label>
+            </fieldset>
+            <label class="nlp-consent"><input type="checkbox" name="consent" required /> <span>Yes, send me Lobi Stars FC emails. I agree to the <a href="/privacy/">Privacy Policy</a>.</span></label>
+            <p class="nlp-msg" id="nlMsg" role="status" aria-live="polite"></p>
+            <button type="submit" class="btn-p nlp-btn">Sign me up</button>
+          </form>
+        </div>
+
+        <div id="manageBox" hidden>
+          <h2>Your newsletter options</h2>
+          <p class="nlp-small" id="manageWho"></p>
+          <form id="manageForm">
+            <fieldset class="nlp-opts">
+              <legend>Send me:</legend>
+              <label><input type="checkbox" name="weekly" /> <span><b>The weekly newsletter</b></span></label>
+              <label><input type="checkbox" name="matchday" /> <span><b>Matchday &amp; ticket alerts</b></span></label>
+              <label><input type="checkbox" name="offers" /> <span><b>Partner offers</b></span></label>
+            </fieldset>
+            <p class="nlp-msg" id="manageMsg" role="status" aria-live="polite"></p>
+            <button type="submit" class="btn-p nlp-btn">Save my options</button>
+            <button type="button" class="btn-o nlp-btn" id="unsubAll">Unsubscribe from all club emails</button>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <section class="nlp-archive" aria-labelledby="past">
+      <h2 id="past">Past newsletters</h2>
+      <ul class="nlp-issues" id="issues"><li class="nlp-small">The first newsletter is on its way. Sign up so you don't miss it.</li></ul>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .nlp-grid { display: grid; grid-template-columns: 1fr minmax(0, 480px); gap: 32px; align-items: start; }
+  .nlp h2 { margin: 0 0 14px; font: 400 clamp(28px, 3.4vw, 36px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .nlp-list { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 14px; }
+  .nlp-list li { display: flex; gap: 14px; align-items: flex-start; }
+  .nlp-list span { font-size: 28px; line-height: 1; }
+  .nlp-list b { display: block; font: 700 19px/1.3 'Barlow Condensed', sans-serif; color: var(--white); }
+  .nlp-list div { color: var(--lt); line-height: 1.55; }
+  .nlp-small { color: var(--lt); font-size: 14px; line-height: 1.6; }
+  .nlp-small a, .nlp-consent a { color: var(--red-text); font-weight: 600; }
+  .nlp-card { padding: 24px; border-top: 5px solid var(--red); scroll-margin-top: 90px; }
+  .nlp-card form { display: grid; gap: 12px; }
+  .nlp-card label { display: grid; gap: 5px; font-weight: 600; font-size: 14px; color: var(--white); }
+  .nlp-card input:not([type=checkbox]) { min-height: 48px; padding: 10px 12px; border: 1px solid var(--d4); border-radius: 8px; font-size: 16px; background: #fff; color: #15181D; }
+  .nlp-opts { border: 1px solid var(--d4); border-radius: 10px; padding: 12px 14px; margin: 0; display: grid; gap: 10px; }
+  .nlp-opts legend { padding: 0 6px; font-weight: 700; color: var(--white); }
+  .nlp-opts label, .nlp-consent { display: flex !important; gap: 10px; align-items: flex-start; font-weight: 400 !important; line-height: 1.45; color: var(--lt) !important; cursor: pointer; }
+  .nlp-opts b { color: var(--white); }
+  .nlp-card input[type=checkbox] { width: 20px; height: 20px; flex: none; margin-top: 1px; accent-color: var(--red); }
+  .nlp-btn { width: 100%; min-height: 50px; }
+  .nlp-msg { margin: 0; min-height: 1.2em; font-weight: 600; }
+  .nlp-msg.ok { color: #17643A; } .nlp-msg.err { color: #B3161B; }
+  .nlp-archive { margin-top: 40px; }
+  .nlp-issues { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .nlp-issues :global(a) { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 16px; border: 1px solid var(--d4); border-radius: 12px; background: #fff; text-decoration: none; color: var(--white); }
+  .nlp-issues :global(a:hover), .nlp-issues :global(a:focus-visible) { border-color: var(--red); }
+  .nlp-issues :global(b) { font: 700 18px/1.3 'Barlow Condensed', sans-serif; }
+  .nlp-issues :global(span) { color: var(--lt); font-size: 14px; }
+  @media (max-width: 860px) { .nlp-grid { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  const $ = (id: string) => document.getElementById(id)!;
+  const token = new URLSearchParams(location.search).get('t') || '';
+  const say = (el: HTMLElement, t: string, ok = false) => { el.textContent = t; el.className = 'nlp-msg ' + (ok ? 'ok' : 'err'); };
+
+  // Sign up.
+  const form = $('nlForm') as HTMLFormElement;
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = form.elements as any, msg = $('nlMsg');
+    const btn = form.querySelector('button[type=submit]') as HTMLButtonElement;
+    if (!f.weekly.checked && !f.matchday.checked && !f.offers.checked) return say(msg, 'Please choose at least one thing to receive.');
+    btn.disabled = true; btn.textContent = 'Signing you up…';
+    try {
+      const res = await fetch('/api/newsletter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+        fullName: f.fullName.value, phone: f.phone.value, email: f.email.value, confirmEmail: f.confirmEmail.value, consent: f.consent.checked,
+        weekly: f.weekly.checked, matchday: f.matchday.checked, offers: f.offers.checked, source: 'newsletter-page',
+      }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) { say(msg, d.error || 'Sign-up failed. Please try again.'); return; }
+      say(msg, d.message || "You're subscribed!", true);
+      form.reset(); f.weekly.checked = true;
+      (window as any).lsTrack?.('newsletter_signup', 'newsletter-page');
+    } catch { say(msg, 'Sign-up failed. Please check your connection and try again.'); }
+    finally { btn.disabled = false; btn.textContent = 'Sign me up'; }
+  });
+
+  // Newsletter options from the link in an email.
+  if (token) {
+    $('signupBox').hidden = true; $('manageBox').hidden = false;
+    const mf = $('manageForm') as HTMLFormElement, mm = $('manageMsg');
+    const el = mf.elements as any;
+    fetch('/api/newsletter/prefs?t=' + encodeURIComponent(token)).then(r => r.json().then(d => ({ ok: r.ok, d }))).then(({ ok, d }) => {
+      if (!ok) { say(mm, d.error || 'This link is not valid.'); mf.querySelectorAll('button,input').forEach(x => ((x as HTMLButtonElement).disabled = true)); return; }
+      $('manageWho').textContent = `${d.firstName ? d.firstName + ', you' : 'You'} are signed up with ${d.email}.${d.subscribed ? '' : ' You are currently unsubscribed from all club emails.'}`;
+      el.weekly.checked = d.prefs.weekly; el.matchday.checked = d.prefs.matchday; el.offers.checked = d.prefs.offers;
+    }).catch(() => say(mm, 'Your options could not be loaded. Please try again.'));
+    const save = async (body: Record<string, unknown>) => {
+      const res = await fetch('/api/newsletter/prefs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token, ...body }) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Could not save. Please try again.');
+      return d;
+    };
+    mf.addEventListener('submit', async e => {
+      e.preventDefault();
+      try {
+        const d = await save({ weekly: el.weekly.checked, matchday: el.matchday.checked, offers: el.offers.checked });
+        say(mm, d.subscribed ? 'Saved. Thank you!' : "You've been unsubscribed from all club emails.", true);
+      } catch (err) { say(mm, (err as Error).message); }
+    });
+    $('unsubAll').addEventListener('click', async () => {
+      try { await save({ unsubscribeAll: true }); el.weekly.checked = el.matchday.checked = el.offers.checked = false; say(mm, "You've been unsubscribed from all club emails. You can sign up again at any time.", true); }
+      catch (err) { say(mm, (err as Error).message); }
+    });
+  }
+
+  // Past newsletters.
+  fetch('/api/newsletter/issues').then(r => r.json()).then(d => {
+    if (!d.issues?.length) return;
+    const fmt = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
+    $('issues').replaceChildren(...d.issues.map((i: any) => {
+      const li = document.createElement('li'), a = document.createElement('a'), b = document.createElement('b'), s = document.createElement('span');
+      a.href = `/newsletter/${i.slug}/`; b.textContent = i.subject; s.textContent = fmt(i.sent_at);
+      a.append(b, s); li.append(a); return li;
+    }));
+  }).catch(() => {});
+</script>

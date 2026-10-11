@@ -1,0 +1,39 @@
+---
+// "Get the Lobi Stars Weekly" call to action, linking to the sign-up page.
+//  band: full-width strip on the homepage (after the news sections)
+//  card: box at the end of every news story
+interface Props { variant?: 'band' | 'card' }
+const { variant = 'band' } = Astro.props;
+---
+<section class:list={['nlc', `nlc-${variant}`]} aria-labelledby={`nlc-${variant}`}>
+  <div class="nlc-inner">
+    <div class="nlc-icon" aria-hidden="true">✉️</div>
+    <div class="nlc-text">
+      <p class="nlc-kicker">Free every week</p>
+      <h2 id={`nlc-${variant}`}>{variant === 'card' ? 'Get stories like this every week' : 'The Lobi Stars Weekly'}</h2>
+      <p>Club news, team news, ticket releases, the next match and offers from our partners, straight to your inbox. Choose what you get and unsubscribe at any time.</p>
+    </div>
+    <a class="btn-p nlc-btn" href="/newsletter/#signup">Sign up free</a>
+  </div>
+</section>
+
+<style>
+  .nlc-band { background: linear-gradient(120deg, #15181D 0%, #2A0507 70%, #8B0E12 100%); color: #fff; padding: 40px 0; }
+  .nlc-band .nlc-inner { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
+  .nlc-inner { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .nlc-icon { font-size: 44px; line-height: 1; flex: none; }
+  .nlc-text { flex: 1 1 420px; min-width: 0; }
+  .nlc-kicker { margin: 0 0 6px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .nlc h2 { margin: 0 0 8px; font: 400 clamp(30px, 4vw, 42px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .nlc-band h2 { color: #fff; }
+  .nlc-text p:last-child { margin: 0; line-height: 1.6; }
+  .nlc-band .nlc-text p:last-child { color: rgba(255, 255, 255, .85); max-width: 680px; }
+  .nlc-btn { flex: none; }
+  .nlc-band .nlc-btn { background: #FFC72C; color: #15181D; }
+  .nlc-band .nlc-btn:hover, .nlc-band .nlc-btn:focus-visible { background: #fff; color: #15181D; }
+  .nlc-card { margin: 28px 0; padding: 22px; border-radius: 14px; border: 1px solid var(--d4); border-left: 5px solid var(--red); background: #fff; }
+  .nlc-card .nlc-icon { font-size: 34px; }
+  .nlc-card h2 { color: var(--white); font-size: clamp(26px, 3vw, 32px); }
+  .nlc-card .nlc-text p:last-child { color: var(--lt); }
+  @media (max-width: 600px) { .nlc-btn { width: 100%; text-align: center; } .nlc-icon { display: none; } }
+</style>

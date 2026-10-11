@@ -1036,7 +1036,7 @@ checklist (section 2), player stats (section 2), award votes (section 10),
 members-only stories (section 1 and 11), shirt personalisation orders
 (section 5), hospitality (section 12), the promo bar ("Other things you can
 update in the CMS"), the club pages (section 20), the app (section 21),
-translations (section 22) and search and sharing (section 23).
+translations (section 22), search and sharing (section 23) and the newsletter (section 24).
 
 **Trying the admin safely:** the website manager can run the website on
 their own computer with demo messages and contacts (`npm run seed:local`, see
@@ -1171,6 +1171,101 @@ Nothing to do for most of this; it is built in. What it means for staff:
 
 ---
 
+## 24. The newsletter: The Lobi Stars Weekly (Admin › Fans & Inbox › Newsletter)
+
+A free weekly email for fans, with the club badge, the week's news, the next
+match and adverts from the club's sponsors. Fan Relations, Commercial and
+Super Admin staff can use it.
+
+### Where fans sign up
+- **The newsletter page** (https://lobistarsfc.com/newsletter): what they
+  get, the sign-up form and the **options**: *the weekly newsletter*,
+  *matchday & ticket alerts* and *partner offers*. Past newsletters are
+  listed at the bottom.
+- **Homepage:** a red-and-black "The Lobi Stars Weekly" band after the news
+  sections, with a **Sign up free** button.
+- **End of every news story:** a "Get stories like this every week" box.
+- **Footer of every page:** the quick sign-up form (weekly newsletter) and a
+  **Newsletter options** link; "Newsletter" is also in the footer's Fans list.
+- Everyone who signs up is saved in the **Fan Database** (source:
+  Newsletter), with their options.
+
+### Who receives it
+Everyone in the fan database who agreed to club news by email and has not
+unsubscribed, except people who switched the weekly newsletter off. The
+number is shown at the top of the Newsletter screen ("will receive the
+newsletter"). Every email has an **Unsubscribe** link and a **Newsletter
+options** link where the fan can change what they get (or come back after
+unsubscribing).
+
+### Writing a newsletter
+1. Open **Fans & Inbox › Newsletter** and press **＋ New newsletter**. It
+   starts filled in with this week's date, the three latest published news
+   stories, the next match and all active sponsor adverts.
+2. **1. The email:** the **Subject** (what fans see in their inbox) and the
+   **Preview text** (the grey line after the subject in most inboxes).
+3. **2. Main message:** a **Headline** and your **Message**. Each fan is
+   greeted by their first name ("Hi Ngozi,"). Leave an empty line between
+   paragraphs. Add a **Main photo** (Upload, or paste a picture address) and,
+   if you like, a **button** (e.g. text "Buy tickets", link /tickets/).
+4. **3. Next match:** tick to show the next Lobi Stars match with date,
+   kick-off time (WAT), venue and a tickets button. It is filled in
+   automatically from the fixtures.
+5. **4. Stories:** each has a title, short text, picture and link. **＋ Add
+   from club news** adds a published story in one click; **＋ Add a story**
+   adds your own (e.g. a community visit). Use ↑ ↓ to change the order and ✕
+   to remove one.
+6. **5. Sponsor adverts:** choose the **"In partnership with"** sponsor shown
+   under the club badge at the top, then tick the sponsor adverts to include
+   in this newsletter and put them in order with ↑ ↓. There is no limit on
+   the number of sponsors; they appear two per row on a computer and one per
+   row on a phone.
+7. The **Preview** on the right (below on smaller screens) updates as you
+   type. Switch between **Computer** and **Phone** to see both.
+8. **💾 Save draft** at any time. Drafts stay in the list until sent.
+
+### Testing and sending
+- **Send test:** type your email (up to 5 addresses, separated by commas)
+  and press **Send test**. The subject starts with [TEST]. Always send a
+  test and check it on your phone before sending to everyone.
+- **📨 Send to … subscribers:** confirms the number, then sends. Large lists
+  are sent in rounds automatically; keep the page open until it says it has
+  finished. A newsletter can only be sent once and can't be changed after
+  sending; use **Duplicate** to make a new one from it.
+- After sending, the newsletter gets a **web version**
+  (lobistarsfc.com/newsletter/…) for "View it in your browser" and the
+  archive on the newsletter page.
+- **Results:** the list shows how many emails were sent and how many clicks
+  the newsletter got. Each sponsor advert shows how many clicks it has had
+  from newsletters, which is useful for sponsor reports. Sponsor links also
+  carry "utm" tags so sponsors can see newsletter visits in their own
+  analytics.
+
+### Sponsor adverts (the Sponsor adverts tab, or Partners › Newsletter Sponsor Adverts)
+- **＋ Add sponsor advert:** sponsor **name**, **logo** (Upload; a PNG with a
+  clear background looks best; pictures are made smaller automatically),
+  **website link** (must start with https://), a **title** shown above the
+  name (e.g. "Official Banking Partner"), the **advert text** (an offer or a
+  short message), the **button text** (e.g. "Open an account") and
+  **Active**.
+- **Edit** to change anything, **Switch off** to keep an advert for later
+  without using it, **↑ ↓** to set the default order, **Delete** to remove it
+  for good (newsletters already sent are not changed).
+- **Import club partners** adds every partner from the website's Partners
+  page in one go (name, logo, website and title); then add advert text to
+  each. Zeva Lager Beer and Play have no logo on the website yet, so upload
+  their logos here.
+- Only include offers the sponsor has approved, and keep advert text short.
+
+### Before the first newsletter (website manager)
+The newsletter can be written and previewed now, but **is only emailed once
+the email service (Resend) is set up** (section 18, Setup A). Optionally set
+`NEWSLETTER_FROM` in Cloudflare to the sender, e.g.
+`Lobi Stars FC <news@lobistarsfc.com>` (otherwise the general sender is used).
+Until then the Newsletter screen shows a yellow note.
+
+---
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize
@@ -1199,6 +1294,7 @@ Empty ones are hidden. As soon as the WhatsApp Channel link is added, a
 the end of every news article and on Watch Live.
 
 ### Newsletter sign-ups
+(For the weekly newsletter itself, sign-up options and sponsor adverts, see section 24.)
 The footer form asks for full name, phone, email (typed twice) and consent.
 If someone signs up again with the same email, their details are updated.
 Every sign-up appears in **Admin → Fan database** (source: Newsletter).

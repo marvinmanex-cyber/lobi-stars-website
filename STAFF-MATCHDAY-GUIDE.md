@@ -231,3 +231,6 @@ exported files private and delete them when you no longer need them.
     translate the interface text (STAFF-GUIDE.md, section 22).
 16. **Google Search Console:** verify the site and submit the sitemap
     (STAFF-GUIDE.md, section 23).
+17. **Newsletter:** once the email service is set up, send a test, then the
+    first Lobi Stars Weekly. Upload logos for Zeva Lager Beer and Play and add
+    advert text for each sponsor (STAFF-GUIDE.md, section 24).

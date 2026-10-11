@@ -25,7 +25,7 @@ const columns = [
   ] },
   { title: 'Fans', links: [
     ['News', '/news'], ['Video', '/video'], ['Squad', '/squad'], ['Gallery', '/gallery'],
-    ['Club Shop', '/shop'], ['Membership', '/membership'],
+    ['Club Shop', '/shop'], ['Membership', '/membership'], ['Newsletter', '/newsletter'],
   ] },
   { title: 'Help', links: [
     ['Help Centre', '/help'], ['Contact Us', '/contact'], ['Search', '/search'],
@@ -65,7 +65,7 @@ const year = new Date().getFullYear();
 
       <form class="sf-news" id="newsletterForm" novalidate>
         <h2 class="sf-news-title">Club Newsletter</h2>
-        <p>Get club news, ticket releases and matchday updates by email.</p>
+        <p>Get the free Lobi Stars Weekly: club news, ticket releases and matchday updates by email. <a class="sf-news-more" href="/newsletter/">Newsletter options</a></p>
         <div class="sf-news-grid">
           <div><label class="sr-only" for="nlName">Full name</label><input id="nlName" name="fullName" placeholder="Full name" autocomplete="name" required maxlength="100" /></div>
           <div><label class="sr-only" for="nlPhone">Phone number</label><input id="nlPhone" name="phone" type="tel" inputmode="tel" placeholder="Phone number (e.g. 0803 123 4567)" autocomplete="tel" required /></div>
@@ -148,6 +148,7 @@ const year = new Date().getFullYear();
   .sf-news input::placeholder { color: rgba(255, 255, 255, .5); }
   .sf-news input:focus { outline: 2px solid #FFC72C; outline-offset: 1px; }
   .sf-news .btn-p { padding: 12px 22px; }
+  .sf-news-more { color: #FFC72C; font-weight: 700; white-space: nowrap; }
   .sf-news-msg { min-height: 1.2em; margin: 10px 0 0 !important; }
   .sf-news-msg.ok { color: #7BE495 !important; }
   .sf-news-msg.err { color: #FF8A8E !important; }

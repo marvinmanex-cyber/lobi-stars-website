@@ -33,6 +33,7 @@ const CATEGORIES: Cat[] = [
   ] },
   { id: 'fans', icon: '👥', label: 'Fans & Inbox', color: '#8B5CF6', items: [
     { id: 'inbox', label: 'Inbox', href: '/admin/inbox/', area: 'inbox', hint: 'Read and reply to contact, sponsorship and hospitality messages' },
+    { id: 'newsletter', label: 'Newsletter', href: '/admin/newsletter/', area: 'fans', hint: 'Write and send the weekly newsletter' },
     { id: 'fans', label: 'Fan Database', href: '/admin/fans/', area: 'fans' },
     { id: 'fans-newsletter', label: 'Newsletter Subscribers', href: '/admin/fans/?source=newsletter', area: 'fans' },
     { id: 'fans-accounts', label: 'Fan Accounts', href: '/admin/fans/?source=fan_account', area: 'fans' },
@@ -54,6 +55,7 @@ const CATEGORIES: Cat[] = [
   { id: 'partners', icon: '🤝', label: 'Partners', color: '#14B8A6', items: [
     { id: 'partners', label: 'Partners & Open Categories', href: '/admin/partners/', area: 'partners' },
     { id: 'inbox-sponsorship', label: 'Sponsorship Enquiries', href: '/admin/inbox/?source=sponsorship', area: 'inbox' },
+    { id: 'newsletter-sponsors', label: 'Newsletter Sponsor Adverts', href: '/admin/newsletter/?tab=sponsors', area: 'partners', hint: 'Sponsor logos, links and adverts in the newsletter' },
     { id: 'analytics-partners', label: 'Partner Reports', href: '/admin/analytics/#sec-partners', area: 'analytics' },
     { id: 'cms-partners', label: 'Partner Profiles', href: `${CMS}/partners`, area: 'cms', ext: true },
   ] },
