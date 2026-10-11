@@ -203,7 +203,7 @@ export async function backfillContacts(db) {
   }
   if (await tableExists(db, 'food_orders')) {
     const { results } = await db.prepare(`SELECT * FROM food_orders WHERE payment_status = 'paid'`).all();
-    results.forEach(r => recs.push({ source: 'food_order', refTable: 'food_orders', refId: r.id, email: r.email, phone: r.phone, seenAt: r.paid_at || r.created_at }));
+    results.forEach(r => { const n = splitName(r.customer_name || ''); recs.push({ source: 'food_order', refTable: 'food_orders', refId: r.id, email: r.email, phone: r.phone, firstName: n.firstName, surname: n.surname, seenAt: r.paid_at || r.created_at }); });
   }
   {
     const { results } = await db.prepare(`SELECT * FROM enquiries`).all();
@@ -243,6 +243,8 @@ export async function deleteContactEverywhere(db, contactId) {
   const c = await db.prepare(`SELECT * FROM contacts WHERE id = ?`).bind(contactId).first();
   if (!c) return false;
   const { results: sources } = await db.prepare(`SELECT * FROM contact_sources WHERE contact_id = ?`).bind(contactId).all();
+  // Food orders gained name/note columns; make sure they exist before clearing them.
+  if (sources.some(x => x.ref_table === 'food_orders')) await (await import('./foodOrders.js')).ensureFoodSchema(db);
   const stmts = [];
   for (const s of sources) {
     if (s.ref_table === 'newsletter_subscribers') stmts.push(db.prepare(`DELETE FROM newsletter_subscribers WHERE email = ?`).bind(s.ref_id));
@@ -250,7 +252,7 @@ export async function deleteContactEverywhere(db, contactId) {
     if (s.ref_table === 'download_leads') stmts.push(db.prepare(`DELETE FROM download_leads WHERE id = ?`).bind(s.ref_id));
     if (s.ref_table === 'orders') stmts.push(db.prepare(`UPDATE orders SET buyer_name = 'Deleted', buyer_email = 'deleted@deleted.invalid', buyer_phone = '' WHERE id = ?`).bind(s.ref_id));
     if (s.ref_table === 'shirt_orders') stmts.push(db.prepare(`UPDATE shirt_orders SET buyer_name = 'Deleted', buyer_email = 'deleted@deleted.invalid', buyer_phone = '', member_id = NULL WHERE id = ?`).bind(s.ref_id));
-    if (s.ref_table === 'food_orders') stmts.push(db.prepare(`UPDATE food_orders SET email = 'deleted@deleted.invalid', phone = '', seat = '', stand = '' WHERE id = ?`).bind(s.ref_id));
+    if (s.ref_table === 'food_orders') stmts.push(db.prepare(`UPDATE food_orders SET email = 'deleted@deleted.invalid', phone = '', seat = '', stand = '', customer_name = 'Deleted', notes = NULL WHERE id = ?`).bind(s.ref_id));
     if (s.ref_table === 'members') {
       if (await tableExists(db, 'auth_tokens')) stmts.push(db.prepare(`DELETE FROM auth_tokens WHERE member_id = ?`).bind(s.ref_id));
       // Keep the vote counted for the match result but unlink it from the person.

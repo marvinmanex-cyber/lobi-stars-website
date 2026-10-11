@@ -1,0 +1,133 @@
+---
+// /food/order/?ref=FD-...&t=... -- the fan's order page after Paystack.
+// Shows "Confirming your payment…" until the SERVER has confirmed the
+// payment with Paystack, then the order and a live status tracker
+// (Paid -> Preparing -> On the way -> Delivered). Refreshes itself.
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Your Food Order | Lobi Stars Football Club" description="Your Lobi Stars FC in-seat food order." noindex>
+  <div class="page-content wrap fo" aria-live="polite">
+    <div id="waiting">
+      <div class="stag">In-Seat Food</div>
+      <h1 class="stitle">Confirming your <span class="r">payment…</span></h1>
+      <p class="muted" id="waitMsg">This usually takes a few seconds. Please keep this page open.</p>
+      <div class="fo-spin" aria-hidden="true"></div>
+    </div>
+
+    <div id="problem" hidden>
+      <div class="stag">In-Seat Food</div>
+      <h1 class="stitle" id="probTitle">Payment not <span class="r">confirmed</span></h1>
+      <p class="muted" id="probMsg"></p>
+      <a class="btn-p" href="/food/">Order again</a>
+    </div>
+
+    <div id="done" hidden>
+      <div class="stag">Order confirmed</div>
+      <h1 class="stitle">Your food is <span class="r" id="headline">on its way</span></h1>
+      <p class="fo-ref">Order <strong id="ref"></strong></p>
+      <ol class="fo-track" id="track" aria-label="Order progress">
+        <li data-step="PAID"><span class="dot"></span><b>Paid</b><small data-time></small></li>
+        <li data-step="PREPARING"><span class="dot"></span><b>Preparing</b><small data-time></small></li>
+        <li data-step="OUT_FOR_DELIVERY"><span class="dot"></span><b>On the way</b><small data-time></small></li>
+        <li data-step="DELIVERED"><span class="dot"></span><b>Delivered</b><small data-time></small></li>
+      </ol>
+      <p class="fo-cancel" id="cancelled" hidden></p>
+      <div class="panel fo-card">
+        <p class="fo-seat" id="seat"></p>
+        <ul class="fo-items" id="items"></ul>
+        <p class="fo-total">Total <strong id="total"></strong></p>
+        <p class="muted fo-note" id="note" hidden></p>
+      </div>
+      <p class="muted fo-small">This page updates by itself. A receipt has been emailed to you. Keep your order reference in case you need help.</p>
+      <a class="btn-o" href="/">&larr; Back to the website</a>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .fo { max-width: 640px; padding-top: 50px; padding-bottom: 80px; min-height: 55vh; }
+  .fo-spin { width: 44px; height: 44px; border-radius: 50%; border: 4px solid var(--d4); border-top-color: var(--red); animation: fospin 1s linear infinite; margin-top: 18px; }
+  @keyframes fospin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .fo-spin { animation: none; } }
+  .fo-ref { margin: 4px 0 18px; font-size: 16px; }
+  .fo-track { list-style: none; padding: 0; margin: 0 0 22px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; position: relative; }
+  .fo-track li { text-align: center; position: relative; color: var(--lt); }
+  .fo-track li::before { content: ''; position: absolute; top: 13px; left: -50%; width: 100%; height: 4px; background: var(--d4); z-index: 0; }
+  .fo-track li:first-child::before { display: none; }
+  .fo-track .dot { position: relative; z-index: 1; display: block; width: 30px; height: 30px; margin: 0 auto 8px; border-radius: 50%; background: var(--d3); border: 3px solid var(--d4); }
+  .fo-track b { display: block; font: 700 14px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .fo-track small { display: block; font-size: 12px; min-height: 16px; }
+  .fo-track li.on { color: var(--white); }
+  .fo-track li.on .dot { background: #16A34A; border-color: #16A34A; }
+  .fo-track li.on::before { background: #16A34A; }
+  .fo-track li.now .dot { box-shadow: 0 0 0 6px rgba(22,163,74,.2); }
+  .fo-cancel { padding: 12px 14px; border-radius: 10px; background: #F3F4F6; color: #374151; font-weight: 600; }
+  .fo-card { padding: 20px !important; margin-bottom: 16px; }
+  .fo-seat { margin: 0 0 12px; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fo-items { list-style: none; margin: 0; padding: 0; }
+  .fo-items :global(li) { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--d4); }
+  .fo-total { display: flex; justify-content: space-between; margin: 12px 0 0; font-size: 17px; }
+  .fo-note { margin: 10px 0 0; font-size: 14px; }
+  .fo-small { font-size: 13px; }
+  #problem .btn-p { margin-top: 16px; display: inline-block; }
+</style>
+
+<script is:inline>
+(function () {
+  const p = new URLSearchParams(location.search);
+  const ref = p.get('ref') || '', token = p.get('t') || '';
+  const $ = id => document.getElementById(id);
+  const naira = k => '₦' + (k / 100).toLocaleString('en-NG');
+  const time = iso => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const STEPS = ['PAID', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+  const STAMPS = { PAID: 'paidAt', PREPARING: 'preparingAt', OUT_FOR_DELIVERY: 'outAt', DELIVERED: 'deliveredAt' };
+  const HEAD = { PAID: 'confirmed', PREPARING: 'being prepared', OUT_FOR_DELIVERY: 'on its way', DELIVERED: 'delivered' };
+  let tries = 0, timer = 0;
+
+  function show(id) { ['waiting', 'problem', 'done'].forEach(x => { $(x).hidden = x !== id; }); }
+  function problem(title, text) { $('probTitle').innerHTML = title; $('probMsg').textContent = text; show('problem'); }
+
+  async function load() {
+    clearTimeout(timer);
+    if (!ref || !token) { problem('Order not <span class="r">found</span>', 'This link is incomplete. Please use the link in your email.'); return; }
+    let d;
+    try {
+      const res = await fetch(`/api/food/order?ref=${encodeURIComponent(ref)}&t=${encodeURIComponent(token)}`, { cache: 'no-store' });
+      d = await res.json();
+      if (!res.ok) { problem('Order not <span class="r">found</span>', d.error || 'We could not find this order.'); return; }
+    } catch { timer = setTimeout(load, 5000); return; }
+    const o = d.order;
+    if (o.status === 'AWAITING_PAYMENT') {
+      tries++;
+      $('waitMsg').textContent = tries > 20
+        ? `We haven't received confirmation from Paystack yet. If you completed the payment, keep this page open; if not, the order will be cancelled automatically. Reference: ${o.ref}`
+        : 'This usually takes a few seconds. Please keep this page open.';
+      show('waiting');
+      timer = setTimeout(load, tries < 20 ? 3000 : 10000);
+      return;
+    }
+    if (o.status === 'PAYMENT_FAILED') return problem('Payment <span class="r">failed</span>', `Paystack reported that the payment for ${o.ref} did not go through. No order was placed. You can try again.`);
+    if (o.status === 'EXPIRED') return problem('Order <span class="r">expired</span>', `Order ${o.ref} wasn't paid in time, so it was cancelled. If money left your account, contact the club with this reference.`);
+
+    $('ref').textContent = o.ref;
+    $('seat').textContent = `Seat ${o.seat}${o.stand ? ' · ' + o.stand : ''}`;
+    $('items').innerHTML = o.items.map(i => `<li><span></span><span>${naira(i.priceKobo * i.qty)}</span></li>`).join('');
+    [...$('items').children].forEach((li, n) => { li.firstChild.textContent = `${o.items[n].qty} × ${o.items[n].name}`; });
+    $('total').textContent = naira(o.totalKobo);
+    $('note').hidden = !o.notes; $('note').textContent = o.notes ? `Your note: ${o.notes}` : '';
+    const stopped = o.status === 'CANCELLED' || o.status === 'REFUNDED';
+    const at = STEPS.indexOf(o.status);
+    document.querySelectorAll('#track li').forEach((li, n) => {
+      li.classList.toggle('on', !stopped && n <= at);
+      li.classList.toggle('now', !stopped && n === at);
+      li.querySelector('[data-time]').textContent = n <= at ? time(o[STAMPS[li.dataset.step]]) : '';
+    });
+    $('headline').textContent = stopped ? (o.status === 'REFUNDED' ? 'refunded' : 'cancelled') : HEAD[o.status] || 'confirmed';
+    $('cancelled').hidden = !stopped;
+    $('cancelled').textContent = o.status === 'REFUNDED' ? 'This order was cancelled and refunded.' : stopped ? 'This order was cancelled by the club. If you were charged, a refund will be arranged; contact the club with your reference.' : '';
+    show('done');
+    if (!stopped && o.status !== 'DELIVERED') timer = setTimeout(load, 10000);
+  }
+  load();
+})();
+</script>

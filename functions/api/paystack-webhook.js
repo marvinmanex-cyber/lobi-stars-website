@@ -1,6 +1,6 @@
 import { verifyWebhookSignature } from './_lib/paystack.js';
 import { fulfillOrder } from './_lib/fulfillOrder.js';
-import { fulfillFoodOrder } from './_lib/fulfillFoodOrder.js';
+import { ensureFoodSchema, confirmFoodPayment } from './_lib/foodOrders.js';
 import { findPayment, fulfilPayment } from './_lib/extraPayments.js';
 
 // POST /api/paystack-webhook -- Paystack calls this server-to-server after a
@@ -39,6 +39,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     return new Response('OK', { status: 200 });
   }
 
+  await ensureFoodSchema(env.DB);
   const foodOrder = await env.DB.prepare(
     `SELECT * FROM food_orders WHERE paystack_reference = ?`
   ).bind(reference).first();
@@ -47,7 +48,15 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (amount !== foodOrder.total_kobo) {
       return new Response('Amount mismatch', { status: 400 });
     }
-    await fulfillFoodOrder(env, foodOrder, waitUntil);
+    // Food orders are only marked paid after the server checks the payment
+    // with Paystack's Verify Transaction API (amount, NGN and reference).
+    // Repeated webhooks are ignored (the order is already paid).
+    try {
+      await confirmFoodPayment(env, foodOrder, { waitUntil, origin: new URL(request.url).origin });
+    } catch (err) {
+      console.error('[food] verify failed', err);
+      return new Response('Could not verify the payment yet', { status: 500 }); // Paystack retries later
+    }
     return new Response('OK', { status: 200 });
   }
 

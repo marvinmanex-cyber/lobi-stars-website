@@ -559,24 +559,44 @@ each package: name, what's included, and a price (or price text such as "From
 
 ---
 
-## 13. In-seat food orders (Admin › Commerce › In-Seat Food Orders)
+## 13. In-seat food orders (Admin › Commerce › In-Seat Food › Orders)
 
-Paid orders from the In-Seat Food page appear here straight away. Keep the
-page open on a phone or tablet on matchday: it refreshes itself every 20 seconds.
+### How an order works
+1. The fan chooses food, enters their **name, seat, stand, phone and email**
+   (and an optional note for the kitchen) and presses *Place Order & Pay*.
+2. The order is saved straight away as **Awaiting payment** with a reference
+   such as **FD-20261011-0042**, and the fan goes to Paystack to pay.
+3. The order becomes **Paid** only when the website has checked with Paystack
+   that the money really arrived (right amount, in naira, for that
+   reference). A fan cannot fake this from their phone.
+4. The fan's order page shows "Confirming your payment…", then a live
+   tracker: **Paid → Preparing → On the way → Delivered**. They also get an
+   email with a **Track your order** link (once the email service is set up).
+5. Orders not paid within **15 minutes** become **Expired** automatically.
+   You can change the time under **Settings** at the bottom of the page.
 
-- **To do** shows orders that are **New** or **Preparing**, oldest first.
-  Each card shows the seat and stand, what was ordered, the total, the fan's
-  phone number (tap to call) and how long ago it was paid. The time turns
-  amber after 10 minutes and red after 20.
-- Press **Start preparing** when the kitchen takes an order, then
-  **Delivered** when it reaches the seat. Use **Back to new** or **Reopen** if
-  you pressed the wrong button.
-- **Cancel** marks an order cancelled on this screen only. Any refund is done
-  in the Paystack dashboard.
-- The coloured boxes at the top show today's orders still to do, orders and
-  money paid today, and the most-ordered items.
-- **Today** and **All** show delivered and cancelled orders too. Every status
-  change is saved with your name (also in the Activity Log).
+### Statuses
+| Status | Colour | Meaning |
+|---|---|---|
+| Awaiting payment | amber | Not paid yet. **Do not prepare.** |
+| Paid | green | Payment confirmed. Start preparing. |
+| Preparing | blue | The kitchen is making it. |
+| Out for delivery | purple | A runner is taking it to the seat. |
+| Delivered | dark green | Handed to the fan. |
+| Payment failed / Expired | red / grey | No money taken. Nothing to do. |
+| Cancelled / Refunded | grey | Cancelled by staff; refund done in Paystack. |
+
+### On matchday
+- Keep the page open on a phone or tablet; it refreshes every 20 seconds.
+- **To do** shows paid orders, oldest first, with seat and stand, the fan's
+  name, items, note, phone (tap to call) and how long ago it was paid (amber
+  after 10 minutes, red after 20).
+- Press **Start preparing**, then **Out for delivery**, then **Delivered**.
+  Steps can't be skipped; use the "Back to…" button if you pressed the wrong one.
+- **Cancel** stops an order. Refunds are done in the **Paystack dashboard**;
+  then press **Mark refunded** here.
+- **Awaiting payment** lists orders that are not paid yet (shown faded).
+- Every change is saved with your name and appears in the Activity Log.
 
 ---
 

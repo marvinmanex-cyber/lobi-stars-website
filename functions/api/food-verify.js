@@ -1,51 +1,19 @@
-import { verifyTransaction } from './_lib/paystack.js';
-import { fulfillFoodOrder } from './_lib/fulfillFoodOrder.js';
+import { ensureFoodSchema, confirmFoodPayment, trackUrl } from './_lib/foodOrders.js';
 
-// GET /api/food-verify?reference=xxx -- called by /food/success right after
-// Paystack redirects the buyer back. Independently confirms payment with
-// Paystack's API and fulfills the order if the webhook hasn't landed yet.
-export async function onRequestGet({ request, env }) {
+// GET /api/food-verify?reference=xxx -- older return address (/food/success)
+// for payments started before the order status page existed. Confirms the
+// payment with Paystack on the server, then points to the status page.
+export async function onRequestGet({ request, env, waitUntil }) {
   const reference = new URL(request.url).searchParams.get('reference');
-  if (!reference) {
-    return Response.json({ error: 'Missing reference' }, { status: 400 });
+  if (!reference) return Response.json({ error: 'Missing reference' }, { status: 400 });
+  await ensureFoodSchema(env.DB);
+  let order = await env.DB.prepare(`SELECT * FROM food_orders WHERE paystack_reference = ?`).bind(reference).first();
+  if (!order) return Response.json({ error: 'Order not found' }, { status: 404 });
+  if (!order.view_token) {
+    const t = crypto.randomUUID().replace(/-/g, '');
+    await env.DB.prepare(`UPDATE food_orders SET view_token = ? WHERE id = ? AND view_token IS NULL`).bind(t, order.id).run();
+    order = await env.DB.prepare(`SELECT * FROM food_orders WHERE id = ?`).bind(order.id).first();
   }
-
-  const order = await env.DB.prepare(
-    `SELECT * FROM food_orders WHERE paystack_reference = ?`
-  ).bind(reference).first();
-
-  if (!order) {
-    return Response.json({ error: 'Order not found' }, { status: 404 });
-  }
-
-  let finalOrder = order;
-
-  if (order.payment_status !== 'paid') {
-    let paystackData;
-    try {
-      paystackData = await verifyTransaction(env.PAYSTACK_SECRET_KEY, reference);
-    } catch (err) {
-      return Response.json({ error: `Could not verify payment: ${err.message}` }, { status: 502 });
-    }
-
-    if (paystackData.status !== 'success') {
-      return Response.json({ status: paystackData.status, order: { id: order.id } });
-    }
-    if (paystackData.amount !== order.total_kobo) {
-      return Response.json({ error: 'Amount mismatch' }, { status: 400 });
-    }
-
-    finalOrder = await fulfillFoodOrder(env, order);
-  }
-
-  return Response.json({
-    status: 'success',
-    order: {
-      id: finalOrder.id,
-      seat: finalOrder.seat,
-      stand: finalOrder.stand,
-      totalKobo: finalOrder.total_kobo,
-    },
-    items: JSON.parse(finalOrder.items_json),
-  });
+  try { await confirmFoodPayment(env, order, { waitUntil, origin: new URL(request.url).origin }); } catch (err) { console.error('[food] verify', err); }
+  return Response.json({ redirect: trackUrl(new URL(request.url).origin, order).replace(new URL(request.url).origin, '') });
 }

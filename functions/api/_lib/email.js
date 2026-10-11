@@ -104,7 +104,7 @@ export function ticketEmailHtml({ order, event, tickets }) {
   </div>`;
 }
 
-export function foodOrderEmailHtml({ order, items }) {
+export function foodOrderEmailHtml({ order, items, trackUrl = '' }) {
   const itemRows = items.map(i => `
     <tr>
       <td style="padding:6px 0;">${i.name} &times; ${i.qty}</td>
@@ -115,11 +115,12 @@ export function foodOrderEmailHtml({ order, items }) {
   return `
   <div style="max-width:520px;margin:0 auto;font-family:Arial,sans-serif;color:#111;">
     <h2 style="color:#D4202B;">Lobi Stars FC &mdash; Food Order Confirmed</h2>
-    <p>Your in-seat order has been received and will be delivered within 15 minutes.</p>
+    <p>Your payment has been received and your order is being sent to the kitchen.</p>
     <p>
       <strong>Seat:</strong> ${order.seat}${order.stand ? ' &middot; ' + order.stand : ''}<br/>
-      <strong>Order Reference:</strong> ${order.id}
+      <strong>Order Reference:</strong> ${order.ref || order.id}
     </p>
+    ${trackUrl ? `<p><a href="${trackUrl}" style="display:inline-block;background:#D4202B;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:bold;">Track your order</a></p>` : ''}
     <table style="width:100%;border-collapse:collapse;margin-top:12px;">
       ${itemRows}
       <tr style="border-top:1px solid #ddd;font-weight:bold;">
