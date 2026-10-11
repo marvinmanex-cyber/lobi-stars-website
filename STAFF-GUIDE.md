@@ -737,8 +737,8 @@ category can only be deleted when it has no items.
 
 **💬 Order on WhatsApp** (same tab, below):
 - **Show the "Order on WhatsApp" button:** switch it on or off.
-- **Club WhatsApp number:** where orders are sent (currently the club number
-  shown on the website, 0903 039 9416).
+- **Club WhatsApp number:** where orders are sent: **0903 039 9416** (the
+  club's confirmed order number).
 - **Unconfirmed WhatsApp orders expire after** (hours).
 - **Pickup points:** one per line, e.g. *Main Stand Kiosk*. When there is at
   least one, fans can choose **I'll collect it** instead of seat delivery

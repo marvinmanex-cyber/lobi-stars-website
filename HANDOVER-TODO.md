@@ -67,7 +67,7 @@ computer, no errors; 160 automated tests, all passing).
 | D3 | **Shirt personalisation** | Fee, available sizes, how fans collect or receive shirts; then "switch it on". |
 | D4 | **Hospitality packages** | Package names, what's included, price (or "on request"). |
 | D5 | **Prediction League prize** | Is there an end-of-season prize, and how much? |
-| D7 | **Order on WhatsApp** | The bank account fans pay into (account name, bank, number); pickup points if fans can collect (e.g. "Main Stand Kiosk"); confirm orders go to **0903 039 9416**; who answers WhatsApp orders on matchday. |
+| D7 | **Order on WhatsApp** | The bank account fans pay into (account name, bank, number); pickup points if fans can collect (e.g. "Main Stand Kiosk"); who answers WhatsApp orders on matchday. (Orders go to **0903 039 9416**: confirmed by the club on 11 October 2026.) |
 | D6 | **In-seat food** | The real menu (items, prices, photos, categories), the list of stands/blocks for seat delivery, and the alert email addresses / phone numbers for the kitchen. |
 
 ## E. Legal and translations
