@@ -1,0 +1,124 @@
+---
+// "🔔 Match alerts": fans get phone / computer notifications when the
+// pre-match radio show (Lobi Stars FC Live) goes on air, at kick-off,
+// half-time and full time, and for goals. No account needed; they choose
+// what they want and can turn it off here at any time.
+interface Props { variant?: 'card' | 'band' }
+const { variant = 'card' } = Astro.props;
+---
+<section class:list={['ma', `ma-${variant}`]} data-match-alerts aria-labelledby={`ma-h-${variant}`}>
+  <div class="ma-in">
+    <div class="ma-text">
+      <h2 id={`ma-h-${variant}`}>🔔 Match alerts</h2>
+      <p class="ma-lede">Get a notification on your phone when the <b>pre-match radio show</b> goes live, at <b>kick-off</b>, for every <b>goal</b> and at <b>full time</b>.</p>
+    </div>
+    <div class="ma-box">
+      <fieldset class="ma-opts">
+        <legend class="sr-only">Which alerts?</legend>
+        <label><input type="checkbox" data-pref="radio" checked /> 🎙️ Radio show &amp; live commentary</label>
+        <label><input type="checkbox" data-pref="match" checked /> ⚽ Kick-off, half-time &amp; full time</label>
+        <label><input type="checkbox" data-pref="goals" checked /> 🥅 Goals</label>
+      </fieldset>
+      <div class="ma-acts">
+        <button type="button" class="btn-p ma-on" data-ma-on>Turn on match alerts</button>
+        <button type="button" class="btn-o ma-off" data-ma-off hidden>Turn off</button>
+      </div>
+      <p class="ma-msg" data-ma-msg role="status" aria-live="polite"></p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .ma { margin: 24px 0; }
+  .ma-band { margin: 0; padding: 32px 0; background: #15181D; color: #fff; }
+  .ma-band .ma-in { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
+  .ma-card .ma-in { border: 1px solid var(--d4); border-left: 5px solid #FFC72C; border-radius: 14px; background: #fff; padding: 20px; }
+  .ma-in { display: grid; grid-template-columns: 1fr minmax(0, 420px); gap: 20px; align-items: center; }
+  .ma h2 { margin: 0 0 6px; font: 400 clamp(26px, 3.2vw, 34px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ma-card h2 { color: var(--white); }
+  .ma-lede { margin: 0; line-height: 1.55; }
+  .ma-card .ma-lede { color: var(--lt); }
+  .ma-band .ma-lede { color: rgba(255, 255, 255, .85); }
+  .ma-opts { border: 0; padding: 0; margin: 0 0 12px; display: grid; gap: 8px; }
+  .ma-opts label { display: flex; gap: 10px; align-items: center; font-size: 15px; cursor: pointer; min-height: 32px; }
+  .ma-opts input { width: 20px; height: 20px; accent-color: #E31E24; flex: none; }
+  .ma-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ma-on { flex: 1; min-height: 48px; }
+  .ma-band .ma-off { color: #fff; border-color: rgba(255, 255, 255, .5); }
+  .ma-msg { margin: 10px 0 0; font-size: 14px; min-height: 1.2em; }
+  .ma-msg.ok { color: #16A34A; font-weight: 700; } .ma-band .ma-msg.ok { color: #86EFAC; }
+  .ma-msg.err { color: #B3161B; } .ma-band .ma-msg.err { color: #FCA5A5; }
+  .ma [hidden] { display: none !important; }
+  @media (max-width: 760px) { .ma-in { grid-template-columns: 1fr; } }
+</style>
+
+<script is:inline>
+(function () {
+  document.querySelectorAll('[data-match-alerts]').forEach(function (box) {
+    if (box.dataset.ready) return; box.dataset.ready = '1';
+    var $ = function (s) { return box.querySelector(s); };
+    var msg = function (t, ok) { var m = $('[data-ma-msg]'); m.textContent = t; m.className = 'ma-msg ' + (ok ? 'ok' : 'err'); };
+    var prefs = function () { var p = {}; box.querySelectorAll('[data-pref]').forEach(function (c) { p[c.dataset.pref] = c.checked; }); return p; };
+    var ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+    var supported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    function draw(on) {
+      $('[data-ma-on]').textContent = on ? 'Save my choices' : 'Turn on match alerts';
+      $('[data-ma-off]').hidden = !on;
+    }
+    var b64 = function (s) { var p = (s + '===').slice(0, s.length + (4 - s.length % 4) % 4).replace(/-/g, '+').replace(/_/g, '/'); return Uint8Array.from(atob(p), function (c) { return c.charCodeAt(0); }); };
+    async function current() {
+      if (!supported) return null;
+      var reg = await navigator.serviceWorker.getRegistration('/');
+      return reg ? reg.pushManager.getSubscription() : null;
+    }
+    // Show whether this browser already gets alerts.
+    (async function () {
+      try {
+        var sub = await current();
+        if (!sub) return;
+        var r = await fetch('/api/push/status', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+        var d = await r.json();
+        if (d.subscribed) {
+          box.querySelectorAll('[data-pref]').forEach(function (c) { c.checked = d.prefs[c.dataset.pref] !== false; });
+          draw(true); msg('✅ Match alerts are on for this device.', true);
+        }
+      } catch (e) {}
+    })();
+    $('[data-ma-on]').addEventListener('click', async function () {
+      var p = prefs();
+      if (!p.radio && !p.match && !p.goals) { msg('Choose at least one kind of alert.'); return; }
+      if (!supported) { msg(ios && !standalone ? 'On iPhone, first add this site to your Home Screen (Share → Add to Home Screen), open it from there, then tap this button.' : 'This browser cannot show notifications. Try Chrome, Edge, Firefox or Samsung Internet.'); return; }
+      var btn = this; btn.disabled = true;
+      try {
+        var perm = await Notification.requestPermission();
+        if (perm !== 'granted') { msg('Notifications are blocked for this site. Allow them in your browser settings (Site settings → Notifications), then try again.'); return; }
+        var reg = await navigator.serviceWorker.register('/sw.js');
+        await navigator.serviceWorker.ready;
+        var sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          var k = await fetch('/api/push/public-key').then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); });
+          if (!k.ok) { msg(k.d.error || 'Match alerts are not available yet.'); return; }
+          sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(k.d.key) });
+        }
+        var r = await fetch('/api/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription: sub.toJSON(), prefs: p }) });
+        var d = await r.json().catch(function () { return {}; });
+        if (!r.ok) { msg(d.error || 'Something went wrong. Please try again.'); return; }
+        draw(true); msg('✅ Done! You will get match alerts on this device.', true);
+        if (window.lsTrack) window.lsTrack('match_alerts_on', Object.keys(p).filter(function (x) { return p[x]; }).join(','));
+      } catch (e) { msg('Match alerts could not be turned on: ' + (e.message || e)); }
+      finally { btn.disabled = false; }
+    });
+    $('[data-ma-off]').addEventListener('click', async function () {
+      try {
+        var sub = await current();
+        if (sub) {
+          await fetch('/api/push/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: sub.endpoint }) });
+          await sub.unsubscribe();
+        }
+        draw(false); msg('Match alerts are off for this device.', true);
+      } catch (e) { msg('Could not turn them off. Please try again.'); }
+    });
+  });
+})();
+</script>

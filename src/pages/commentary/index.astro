@@ -4,6 +4,7 @@
 import Layout from '../../layouts/Layout.astro';
 import LivePlayer from '../../components/commentary/LivePlayer.astro';
 import MatchesTabs from '../../components/MatchesTabs.astro';
+import MatchAlerts from '../../components/MatchAlerts.astro';
 ---
 <Layout
   title="Live Match Commentary | Lobi Stars FC"
@@ -24,6 +25,7 @@ import MatchesTabs from '../../components/MatchesTabs.astro';
   <div class="cm-inner cm-body">
     <LivePlayer variant="full" />
     <p class="cm-data">Live audio uses about 30–60MB per hour. Use Wi-Fi if you can.</p>
+    <MatchAlerts />
 
 
     <section class="cm-sec" aria-labelledby="cm-how">

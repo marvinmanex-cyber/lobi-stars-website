@@ -55,7 +55,7 @@ these in git.
 | `INBOX_INBOUND_KEY` | Fans' replies into the Inbox | Long random secret, also in the provider's webhook URL `/api/inbox/inbound?key=…`. |
 | `TURNSTILE_SECRET_KEY` | Human check on sign-up and enquiry forms | Site key goes in `src/data/fan-settings.json`. |
 | `STAFF_SCAN_CODE` | Ticket scanner at /scan | Short PIN for gate staff. |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Food order phone notifications and Kitchen Screen push | See "Kitchen Order Alerts". |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Food order phone notifications, Kitchen Screen push and fan match alerts | See "Kitchen Order Alerts". |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_KITCHEN_CHAT_ID`, `TELEGRAM_WEBHOOK_SECRET` | Telegram kitchen group alerts and the Accept button | See "Kitchen Order Alerts". |
 | `CRON_SECRET` | Repeat kitchen alerts (cron Worker) | Same value on the cron Worker. |
 | `TERMII_API_KEY`, `TERMII_SENDER_ID` | Food order SMS / WhatsApp (optional) | |
@@ -151,6 +151,29 @@ on Admin › Food: Kitchen Alerts.
   in `TELEGRAM_KITCHEN_CHAT_ID`. `getWebhookInfo` (printed by the script) shows
   Telegram's last error.
 - **Repeats stop when screens are closed:** deploy the cron Worker (step 3).
+
+## Fan match alerts (Web Push, free)
+
+Fans subscribe with the **🔔 Match alerts** box (`src/components/MatchAlerts.astro`)
+through the public service worker `/sw.js` (push handler for `kind: 'match'`).
+API: `/api/push/public-key|subscribe|status|unsubscribe` (no account, rate
+limited, stores only the push endpoint, keys and choices in `fan_push_subs`).
+
+- **Needs:** the same `VAPID_*` keys as the kitchen. `CRON_SECRET` + the
+  `lobistars-kitchen-cron` Worker are recommended: every minute it also checks
+  whether commentary went on air (`checkRadioOnAir`) and continues sends.
+- **Automatic alerts** come from `functions/api/admin/match-centre/[id].js`
+  (kick-off, goal, half-time, second half, full time) and from
+  `/api/commentary` + the cron (radio on air). Each is claimed once per match in
+  `fan_alert_once (event_id, kind)`. Staff switch them in `fan_alert_settings`.
+- **Sending at scale:** a job (`fan_push_jobs`) is sent in batches of 40 per
+  request (D1/subrequest limits on the free plan). The first batch is sent
+  straight away; then it chains itself via `/api/internal/fan-push-run`
+  (Bearer `CRON_SECRET`), open admin pages call `/api/admin/fan-alerts/run`,
+  and the cron continues it. Gone subscriptions (404/410) are switched off.
+- Tables are created automatically on first use (`ensureMatchAlertsSchema`).
+- Admin page: `/admin/fan-alerts/` (Super Admin, Matchday Operator).
+- Tests: `tests/match-alerts.test.mjs`.
 
 ## Food ordering (Paystack and Order on WhatsApp)
 

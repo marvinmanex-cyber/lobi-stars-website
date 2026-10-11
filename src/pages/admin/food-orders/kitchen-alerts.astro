@@ -8,60 +8,124 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
 <Layout title="Kitchen Alerts | Lobi Stars Admin" description="Kitchen order alerts." noindex>
   <div class="wrap ka">
     <AdminNav current="kitchen-alerts" />
-    <div class="ka-head">
+    <header class="ka-head">
       <div><div class="stag">Commerce › In-Seat Food</div><h1 class="stitle">Kitchen <span class="r">Alerts</span></h1></div>
       <div class="ka-tools"><a class="btn-p" href="/admin/kitchen/">👩‍🍳 Open the Kitchen Screen</a><button type="button" class="btn-o" id="test">🔔 Send test alert</button></div>
-    </div>
-    <p class="muted ka-lede">When an order is paid, the kitchen gets a <b>push notification</b> on every Kitchen Screen device and a message in the <b>Telegram kitchen group</b>. Someone must accept it (Kitchen Screen, live order board or the Telegram ✅ button); until then it is sent again.</p>
+    </header>
+    <ol class="ka-flow" aria-label="How kitchen alerts work">
+      <li><b>1</b><span>A fan <strong>pays</strong> for an order</span></li>
+      <li><b>2</b><span>Kitchen devices get a <strong>push alert</strong> and the <strong>Telegram</strong> group a message</span></li>
+      <li><b>3</b><span>Someone taps <strong>Accept</strong> (Kitchen Screen, order board or Telegram ✅)</span></li>
+      <li><b>4</b><span>Not accepted? It is <strong>sent again</strong> until it is</span></li>
+    </ol>
     <p class="ka-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <h2 class="ka-h">Setup</h2>
     <section class="ka-ready" id="ready" aria-label="What is set up"></section>
 
-    <form class="panel ka-form" id="form">
-      <h2>Settings</h2>
-      <label class="ka-check"><input type="checkbox" name="enabled" /> <span><b>Kitchen alerts on</b> (push to Kitchen Screen devices)</span></label>
-      <label class="ka-check"><input type="checkbox" name="telegram" /> <span><b>Telegram kitchen group</b> (with an Accept button)</span></label>
-      <div class="ka-row">
-        <label>Alert again every (minutes)<input class="form-inp" type="number" name="repeatMinutes" min="1" max="30" /></label>
-        <label>Stop after (repeats)<input class="form-inp" type="number" name="maxRepeats" min="0" max="20" /></label>
+    <div class="ka-grid">
+      <form class="ka-card" id="form" aria-labelledby="setH">
+        <h2 id="setH">Settings</h2>
+        <p class="ka-sub">Changes apply to the next order.</p>
+        <label class="ka-sw"><span><b>Kitchen alerts</b><small>Push notifications to Kitchen Screen devices</small></span><input type="checkbox" role="switch" name="enabled" /></label>
+        <label class="ka-sw"><span><b>Telegram kitchen group</b><small>A message with an Accept button</small></span><input type="checkbox" role="switch" name="telegram" /></label>
+        <div class="ka-row">
+          <label>Alert again every<span class="ka-unit"><input type="number" name="repeatMinutes" min="1" max="30" /><em>minutes</em></span></label>
+          <label>Stop after<span class="ka-unit"><input type="number" name="maxRepeats" min="0" max="20" /><em>repeats</em></span></label>
+        </div>
+        <div class="ka-actions"><button class="btn-p" type="submit">Save settings</button></div>
+      </form>
+
+      <section class="ka-card" aria-labelledby="devH">
+        <div class="ka-cardhead"><h2 id="devH">Kitchen devices</h2><span class="ka-badge" id="devCount"></span></div>
+        <p class="ka-sub">Phones and tablets that tapped <b>Turn on kitchen alerts</b> on the Kitchen Screen. Remove one that is lost or no longer used.</p>
+        <div id="devices"><p class="muted">Loading…</p></div>
+      </section>
+    </div>
+
+    <section class="ka-card" aria-labelledby="logH">
+      <div class="ka-cardhead">
+        <h2 id="logH">Last 50 alerts</h2>
+        <div class="ka-filter" id="filter" role="group" aria-label="Show">
+          <button type="button" data-f="all" aria-pressed="true">All</button>
+          <button type="button" data-f="push" aria-pressed="false">Push</button>
+          <button type="button" data-f="telegram" aria-pressed="false">Telegram</button>
+          <button type="button" data-f="failed" aria-pressed="false">Failed</button>
+        </div>
       </div>
-      <button class="btn-p" type="submit">Save settings</button>
-    </form>
-
-    <section class="panel">
-      <h2>Kitchen devices</h2>
-      <p class="muted">Phones and tablets that pressed <b>Turn on kitchen alerts</b> on the Kitchen Screen. Remove a device that is lost or no longer used.</p>
-      <div class="scroll" id="devices"><p class="muted">Loading…</p></div>
-    </section>
-
-    <section class="panel">
-      <h2>Last 50 alerts</h2>
       <div class="scroll" id="log"><p class="muted">Loading…</p></div>
     </section>
   </div>
 </Layout>
 
 <style>
-  .ka { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
-  .ka-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .ka { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; }
+  .ka-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
   .ka-tools { display: flex; gap: 8px; flex-wrap: wrap; }
-  .ka-lede { max-width: 860px; margin-bottom: 14px; }
-  .ka-msg { padding: 12px 16px; border-radius: 10px; margin: 0 0 14px; }
+  .ka-flow { list-style: none; margin: 0 0 22px; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; counter-reset: none; }
+  .ka-flow li { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 12px; background: var(--a-soft); font-size: 14px; line-height: 1.45; color: var(--a-ink); }
+  .ka-flow li > b { flex: none; width: 26px; height: 26px; border-radius: 50%; background: #E31E24; color: #fff; display: grid; place-items: center; font-size: 13px; }
+  .ka-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
   .ka-msg.ok { background: #E8F7EE; color: #17643A; } .ka-msg.err { background: #FDECEC; color: #A3161B; }
-  .ka-ready { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px; }
-  .ka :global(.ka-r) { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--a-line); background: var(--a-card); font-size: 14px; }
-  .ka :global(.ka-r b) { display: block; font-size: 15px; margin-bottom: 2px; }
-  .ka :global(.ka-r.ok) { border-left: 4px solid #16A34A; } .ka :global(.ka-r.no) { border-left: 4px solid #F59E0B; }
-  .panel { margin-bottom: 16px; padding: 18px; }
-  .panel h2 { margin: 0 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .ka-form { display: grid; gap: 12px; }
-  .ka-check { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; }
-  .ka-check input { width: 22px; height: 22px; accent-color: #16A34A; flex: none; }
-  .ka-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-  .ka-row label { display: grid; gap: 4px; font-weight: 700; font-size: 14px; }
+  .ka-h { margin: 0 0 10px; font: 700 13px/1 'Barlow', sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--a-muted); }
+  .ka-ready { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .ka :global(.ka-r) { display: flex; gap: 10px; align-items: flex-start; padding: 14px; border-radius: 14px; border: 1px solid var(--a-line); background: var(--a-card); font-size: 13px; color: var(--a-muted); line-height: 1.45; overflow-wrap: anywhere; }
+  .ka :global(.ka-r i) { flex: none; font-style: normal; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 15px; }
+  .ka :global(.ka-r.ok i) { background: #DCFCE7; } .ka :global(.ka-r.no i) { background: #FEF3C7; }
+  .ka :global(.ka-r b) { display: block; font-size: 15px; color: var(--a-ink); margin-bottom: 2px; }
+  .ka-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: start; margin-bottom: 16px; }
+  .ka-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; box-shadow: 0 6px 18px rgba(15,17,21,.04); min-width: 0; }
+  .ka-card h2 { margin: 0 0 4px; font: 700 19px/1.2 'Barlow', sans-serif; color: var(--a-ink); }
+  .ka-cardhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .ka-cardhead h2 { margin: 0; }
+  .ka-sub { margin: 0 0 12px; color: var(--a-muted); font-size: 14px; line-height: 1.5; }
+  .ka-badge { padding: 3px 10px; border-radius: 999px; background: var(--a-soft); font-size: 12px; font-weight: 700; color: var(--a-muted); }
+  .ka-sw { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--a-line); cursor: pointer; }
+  .ka-sw b { display: block; font-size: 15px; color: var(--a-ink); }
+  .ka-sw small { color: var(--a-muted); font-size: 12px; }
+  .ka-sw input { appearance: none; width: 46px; height: 26px; border-radius: 999px; background: #CBD2DA; position: relative; flex: none; cursor: pointer; transition: background .15s; margin: 0; }
+  .ka-sw input::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+  .ka-sw input:checked { background: #16A34A; }
+  .ka-sw input:checked::after { transform: translateX(20px); }
+  .ka-sw input:focus-visible { outline: 3px solid #FFC72C; outline-offset: 2px; }
+  .ka-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px 0 4px; }
+  .ka-row label { display: grid; gap: 5px; font-weight: 700; font-size: 13px; color: var(--a-muted); }
+  .ka-unit { display: flex; align-items: center; border: 1px solid var(--a-line); border-radius: 10px; overflow: hidden; background: var(--a-card); }
+  .ka-unit input { width: 100%; min-width: 0; min-height: 42px; border: 0; padding: 8px 10px; background: transparent; color: var(--a-ink); font: inherit; font-size: 16px; font-weight: 700; }
+  .ka-unit em { font-style: normal; padding: 0 10px; color: var(--a-muted); font-weight: 600; font-size: 13px; background: var(--a-soft); align-self: stretch; display: grid; place-items: center; }
+  .ka-actions { display: flex; justify-content: flex-end; padding-top: 12px; }
+  .ka :global(.ka-dev) { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--a-line); }
+  .ka :global(.ka-dev b) { display: block; color: var(--a-ink); font-size: 15px; }
+  .ka :global(.ka-dev small) { display: block; color: var(--a-muted); font-size: 12px; line-height: 1.5; }
+  .ka :global(.ka-dev button) { min-height: 36px; padding: 4px 12px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; font-weight: 700; flex: none; }
+  .ka :global(.ka-dev button:hover) { border-color: #DC2626; color: #DC2626; }
+  .ka-filter { display: flex; gap: 6px; flex-wrap: wrap; }
+  .ka-filter button { min-height: 34px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); font-size: 13px; font-weight: 700; cursor: pointer; }
+  .ka-filter button[aria-pressed="true"] { background: #15181D; color: #fff; border-color: #15181D; }
+  :global(body.admin-dark) .ka-filter button[aria-pressed="true"] { background: #fff; color: #15181D; }
+  #log { margin-top: 8px; }
   .ka :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; }
-  .ka :global(th), .ka :global(td) { padding: 9px 12px; text-align: left; font-size: 14px; vertical-align: top; }
-  .ka :global(.ok-t) { color: #16A34A; font-weight: 700; } .ka :global(.no-t) { color: #DC2626; font-weight: 700; }
-  .ka :global(td button) { min-height: 36px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; font-weight: 700; }
+  .ka :global(th) { padding: 10px 12px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--a-muted); border-bottom: 1px solid var(--a-line); white-space: nowrap; }
+  .ka :global(td) { padding: 11px 12px; text-align: left; font-size: 14px; vertical-align: top; border-bottom: 1px solid var(--a-line); }
+  .ka :global(tbody tr:last-child td) { border-bottom: 0; }
+  .ka :global(.pill) { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .ka :global(.pill.ok) { background: #DCFCE7; color: #166534; } .ka :global(.pill.no) { background: #FEE2E2; color: #991B1B; }
+  .ka :global(.pill.n) { background: var(--a-soft); color: var(--a-ink); }
+  .ka :global(.ka-err) { display: block; color: var(--a-muted); font-size: 12px; margin-top: 3px; }
+  @media (max-width: 1024px) { .ka-ready, .ka-flow { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 860px) { .ka-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 640px) {
+    #log :global(thead) { display: none; }
+    #log :global(table), #log :global(tbody) { display: block; }
+    #log :global(tr) { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 12px 2px; border-bottom: 1px solid var(--a-line); }
+    #log :global(td) { padding: 0; border: 0; background: none !important; }
+    #log :global(td:nth-child(2)) { white-space: nowrap; }
+    #log :global(td:nth-child(1)) { grid-column: 1 / -1; font-size: 12px; color: var(--a-muted); }
+    #log :global(td:nth-child(3)), #log :global(td:nth-child(5)) { text-align: right; }
+    #log :global(td:nth-child(5)) { grid-column: 2; grid-row: 3; }
+    #log :global(td:nth-child(4)) { grid-row: 3; font-size: 13px; }
+  }
+  @media (max-width: 560px) { .ka-ready, .ka-flow { grid-template-columns: 1fr; } .ka-row { grid-template-columns: 1fr; } .ka-actions .btn-p, .ka-tools > * { flex: 1; } .ka-tools { width: 100%; } }
 </style>
 
 <script is:inline>
@@ -71,7 +135,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const wat = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Lagos' }) : '–';
   const ATT = { initial: 'New order', repeat: 'Repeat', cancel: 'Cancelled', test: 'Test' };
-  let devices = [];
+  let devices = [], log = [], filter = 'all', msgT;
   async function api(body) {
     const res = await fetch('/api/admin/kitchen/settings', body ? { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-code': code }, body: JSON.stringify(body) } : { headers: { 'x-admin-code': code }, cache: 'no-store' });
     if (res.status === 401) location.href = '/admin/login/?next=/admin/food-orders/kitchen-alerts/';
@@ -79,7 +143,12 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     if (!res.ok) throw new Error(d.error || 'Request failed');
     return d;
   }
-  function msg(t, ok) { $('msg').textContent = t; $('msg').className = 'ka-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; }
+  function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'ka-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 7000); }
+  function drawLog() {
+    const rows = log.filter(l => filter === 'all' || (filter === 'failed' ? !l.success : (l.channel === 'telegram' ? 'telegram' : 'push') === filter));
+    $('log').innerHTML = rows.length ? `<table><thead><tr><th>Time (WAT)</th><th>Order</th><th>Alert</th><th>Channel</th><th>Result</th></tr></thead><tbody>${rows.map(l => `<tr><td>${esc(wat(l.created_at))}</td><td><b>${esc(l.ref || '–')}</b></td><td><span class="pill n">${esc(ATT[l.attempt] || l.attempt)}</span></td><td>${l.channel === 'telegram' ? '✈️ Telegram' : '🔔 Push'}</td><td>${l.success ? '<span class="pill ok">Sent</span>' : `<span class="pill no">Failed</span>${l.error ? `<span class="ka-err">${esc(l.error)}</span>` : ''}`}</td></tr>`).join('')}</tbody></table>`
+      : `<div class="empty-state"><b>🔔</b>${log.length ? 'Nothing matches this filter.' : 'No alerts sent yet.'}</div>`;
+  }
   async function load() {
     try {
       const d = await api();
@@ -91,14 +160,21 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
         [r.telegram, 'Telegram group', r.telegram ? 'Bot and group set' : 'Needs TELEGRAM_BOT_TOKEN and TELEGRAM_KITCHEN_CHAT_ID'],
         [r.webhook, 'Telegram Accept button', r.webhook ? 'Webhook secret set' : 'Needs TELEGRAM_WEBHOOK_SECRET + the webhook script'],
         [r.cron, 'Repeat alerts (cron)', r.cron ? 'CRON_SECRET set' : 'Needs CRON_SECRET + the cron Worker (repeats still run while the Kitchen Screen is open)'],
-      ].map(([ok, t, sub]) => `<div class="ka-r ${ok ? 'ok' : 'no'}"><b>${ok ? '✅' : '⚠️'} ${esc(t)}</b>${esc(sub)}</div>`).join('');
+      ].map(([ok, t, sub]) => `<div class="ka-r ${ok ? 'ok' : 'no'}"><i aria-hidden="true">${ok ? '✅' : '⚠️'}</i><span><b>${esc(t)}</b>${esc(sub)}</span></div>`).join('');
       devices = d.devices;
-      $('devices').innerHTML = devices.length ? `<table><thead><tr><th>Device</th><th>Added by</th><th>Added</th><th>Last alert received</th><th>Status</th><th></th></tr></thead><tbody>${devices.map((x, i) => `<tr><td><b>${esc(x.device || 'Kitchen device')}</b></td><td>${esc(x.staff_name)}</td><td>${esc(wat(x.created_at))}</td><td>${esc(wat(x.last_ok_at))}</td><td>${x.is_active ? '<span class="ok-t">Active</span>' : '<span class="no-t">Stopped (device unsubscribed)</span>'}</td><td><button type="button" data-rm="${i}">Remove</button></td></tr>`).join('')}</tbody></table>`
+      const active = devices.filter(x => x.is_active).length;
+      $('devCount').textContent = `${active} active`;
+      $('devices').innerHTML = devices.length ? devices.map((x, i) => `<div class="ka-dev"><div><b>📱 ${esc(x.device || 'Kitchen device')} ${x.is_active ? '<span class="pill ok">Active</span>' : '<span class="pill no">Stopped</span>'}</b><small>Added by ${esc(x.staff_name || '–')} · ${esc(wat(x.created_at))}</small><small>Last alert received: ${esc(wat(x.last_ok_at))}</small></div><button type="button" data-rm="${i}">Remove</button></div>`).join('')
         : '<div class="empty-state"><b>📱</b>No kitchen devices yet. Open the Kitchen Screen on the kitchen phone or tablet and tap <b>Turn on kitchen alerts</b>.</div>';
-      $('log').innerHTML = d.log.length ? `<table><thead><tr><th>Time (WAT)</th><th>Order</th><th>Alert</th><th>Channel</th><th>Result</th></tr></thead><tbody>${d.log.map(l => `<tr><td>${esc(wat(l.created_at))}</td><td>${esc(l.ref || '–')}</td><td>${esc(ATT[l.attempt] || l.attempt)}</td><td>${l.channel === 'telegram' ? 'Telegram' : 'Push'}</td><td>${l.success ? '<span class="ok-t">Sent</span>' : `<span class="no-t">Failed</span> ${esc(l.error || '')}`}</td></tr>`).join('')}</tbody></table>`
-        : '<div class="empty-state"><b>🔔</b>No alerts sent yet.</div>';
+      log = d.log; drawLog();
     } catch (err) { msg(err.message, false); }
   }
+  $('filter').addEventListener('click', e => {
+    const b = e.target.closest('[data-f]'); if (!b) return;
+    filter = b.dataset.f;
+    $('filter').querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    drawLog();
+  });
   $('form').addEventListener('submit', async e => {
     e.preventDefault(); const f = e.target.elements;
     try { await api({ settings: { enabled: f.enabled.checked, telegram: f.telegram.checked, repeatMinutes: Number(f.repeatMinutes.value), maxRepeats: Number(f.maxRepeats.value) } }); msg('Settings saved.', true); load(); }

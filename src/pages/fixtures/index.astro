@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import FixturesBoard from '../../components/FixturesBoard.astro';
 import MatchesTabs from '../../components/MatchesTabs.astro';
+import MatchAlerts from '../../components/MatchAlerts.astro';
 import { CURRENT_SEASON } from '../../lib/site';
 
 const FEED = 'https://lobistarsfc.com/fixtures.ics';
@@ -26,6 +27,7 @@ const WEBCAL = 'webcal://lobistarsfc.com/fixtures.ics';
       </div>
     </aside>
     <FixturesBoard show="upcoming" structuredData />
+    <MatchAlerts />
   </div>
 </Layout>
 

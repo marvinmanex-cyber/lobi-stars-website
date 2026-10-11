@@ -25,6 +25,11 @@ the Match Centre) with four tabs:
 
 Fans need a free fan account with a confirmed email to vote or predict.
 
+Fans who turned on **🔔 Match alerts** also get phone notifications: when the
+radio show goes on air, at kick-off, for every goal, at half-time and at full
+time. These go out **by themselves** from the buttons below; see
+STAFF-GUIDE section 26 (Admin → Matchday → Fan Match Alerts).
+
 ---
 
 ## 1. Before the match (a day or more ahead)
@@ -60,6 +65,14 @@ Fans need a free fan account with a confirmed email to vote or predict.
 
 ---
 
+## 1b. About 30 minutes before kick-off (optional)
+
+Want to remind fans the pre-match show is about to start? Go to
+**Admin → Matchday → Fan Match Alerts**, tap **🎙️ Pre-match show starting**,
+check the text and press **Send alert**. (When Lobi Stars FC Live goes on air,
+fans who chose radio get "Pre-match show is live" automatically, so you
+don't need to send both.)
+
 ## 2. At kick-off
 
 In **Admin → Match Centre**, choose the match and press
@@ -69,10 +82,13 @@ In **Admin → Match Centre**, choose the match and press
 - **Man of the Match voting opens.**
 - **Predict & Win closes** (it also closes by itself at the scheduled kick-off time).
 - Opted-in fans get a "Kick-off! Vote for Man of the Match" email.
+- Fans with match alerts get a **⚽ Kick-off!** phone notification.
 
 During the match you can add goals, cards and substitutions in the *Live
 timeline* and update the score, then press **Save Match Centre**. Fans see
-updates within 30 seconds.
+updates within 30 seconds. **Each goal you save sends a goal alert** to fans'
+phones, and setting the status to half-time (and back to live) sends the
+half-time and second-half alerts, so check the score before saving.
 
 ---
 

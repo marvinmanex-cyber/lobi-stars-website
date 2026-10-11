@@ -39,6 +39,7 @@ export const canAccess = (admin, area) => !area || areasOf(admin).includes(area)
 const RULES = [
   // Pages
   [/^\/admin\/(dashboard|login|account)(\/|$)/, null],
+  [/^\/admin\/fan-alerts(\/|$)/, 'matchday'],
   [/^\/admin\/(matches|predictions|commentary)(\/|$)/, 'matchday'],
   [/^\/admin\/match-centre(\/|$)/, 'matchday-content'],
   [/^\/admin\/(news|awards)(\/|$)/, 'content'],
@@ -56,6 +57,9 @@ const RULES = [
   [/^\/admin\/?(index\.html|config\.yml)?$/, 'cms'],
   // APIs
   [/^\/api\/admin\/(login|logout|me|dashboard|search|notifications|account)(\/|$)/, null],
+  // Any open admin page helps finish sending a match alert to fans.
+  [/^\/api\/admin\/fan-alerts\/run(\/|$)/, null],
+  [/^\/api\/admin\/fan-alerts(\/|$)/, 'matchday'],
   [/^\/api\/admin\/match-centre(\/|$)/, 'matchday-content'],
   [/^\/api\/admin\/events(\/|$)/, 'matchday-content'],
   [/^\/api\/admin\/(predictions|motm|commentary)(\/|$)/, 'matchday'],

@@ -11,6 +11,7 @@ import HomeHero from '../components/HomeHero.astro';
 import MatchdayGames from '../components/fans/MatchdayGames.astro';
 import ClubAtAGlance from '../components/ClubAtAGlance.astro';
 import NewsletterCta from '../components/NewsletterCta.astro';
+import MatchAlerts from '../components/MatchAlerts.astro';
 import { getSortedNews } from '../lib/news';
 import shop from '../data/shop.json';
 import { CURRENT_SEASON } from '../lib/site';
@@ -55,6 +56,7 @@ const teamJsonLd = {
 
   <NewsHero articles={featuredNews} />
   <NextMatches />
+  <MatchAlerts variant="band" />
   <MatchdayGames />
   <NewsCarousel title="Latest News" articles={latestNews} viewAllHref="/news" />
   <WhatsAppChannel variant="band" />

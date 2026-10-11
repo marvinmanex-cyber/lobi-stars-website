@@ -7,6 +7,7 @@
 //  - Only static files are cached: the hashed /_astro/ files, images, icons
 //    and fonts. Never /api/, /data/, /admin, /scan, documents or other sites.
 //  - Each deployment gets a new cache name; old caches are deleted.
+//  - Shows fans' match alerts (push) and opens the right page when tapped.
 export const prerender = true;
 
 const VERSION = Date.now().toString(36);
@@ -34,6 +35,28 @@ async function trim(cache) {
   const keys = await cache.keys();
   for (let i = 0; i < keys.length - MAX_ITEMS; i++) if (!PRECACHE.includes(new URL(keys[i].url).pathname)) await cache.delete(keys[i]);
 }
+
+// Match alerts for fans (kick-off, goals, radio show on air…), turned on with "🔔 Match alerts".
+self.addEventListener('push', event => {
+  let d = null;
+  try { d = event.data ? event.data.json() : null; } catch (e) { d = null; }
+  if (!d || d.kind !== 'match') return;
+  event.waitUntil(self.registration.showNotification(d.title || 'Lobi Stars FC', {
+    body: d.body || '', tag: d.tag || 'match', renotify: true,
+    icon: '/images/icon-192.png', badge: '/images/icon-192.png', vibrate: [200, 100, 200],
+    data: { url: d.url || '/' },
+  }));
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const url = new URL((event.notification.data && event.notification.data.url) || '/', self.location.origin).href;
+  event.waitUntil((async () => {
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const same = wins.find(w => w.url === url);
+    if (same) return same.focus();
+    return self.clients.openWindow(url);
+  })());
+});
 
 self.addEventListener('fetch', event => {
   const req = event.request;

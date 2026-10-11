@@ -2,6 +2,7 @@ import { requireAdmin } from '../../_lib/adminEvents.js';
 import { parseStreams } from '../../_lib/streams.js';
 import { settlePredictions } from '../../_lib/predict.js';
 import { notifyFans } from '../../_lib/notify.js';
+import { autoAlert } from '../../_lib/matchAlerts.js';
 import { parsePlayerStats, savePlayerStats, loadPlayerStats } from '../../_lib/stats.js';
 import { loadMatch, toPublic, parseCentrePayload, parseSquad, scoreInt, isHomeGame, LIVE_STATUSES } from '../../_lib/matchCentre.js';
 
@@ -32,7 +33,7 @@ export async function onRequestGet({ request, env, params }) {
 
 // PUT /api/admin/match-centre/:id -- save status, score, preview, line-ups,
 // timeline, report, stats, gallery and the matchday squad.
-export async function onRequestPut({ request, env, params }) {
+export async function onRequestPut({ request, env, params, waitUntil }) {
   const denied = await requireAdmin(request, env);
   if (denied) return denied;
   const m = await loadMatch(env.DB, params.id);
@@ -74,6 +75,20 @@ export async function onRequestPut({ request, env, params }) {
     v.lineups_json, v.timeline_json, v.stats_json, v.gallery_json, JSON.stringify(squad), kickoffAt, endedAt, s.youtube_url, s.facebook_url
   ).run();
 
+  // Match alerts for fans: kick-off, goals, half-time, second half, full time (each once).
+  const origin = new URL(request.url).origin;
+  const ps = prev.status || 'scheduled', ph = Number(prev.home_score) || 0, pa = Number(prev.away_score) || 0;
+  const h = Number(v.home_score) || 0, a = Number(v.away_score) || 0;
+  const alert = (kind, extra = {}, onceKey) => waitUntil(autoAlert(env, kind, m.event, { home: h, away: a, ...extra }, { onceKey, waitUntil, origin }));
+  if (ps === 'scheduled' && v.status === 'live') alert('kickoff');
+  if (LIVE_STATUSES.includes(v.status) || (v.status === 'full-time' && LIVE_STATUSES.includes(ps))) {
+    if (h > ph) alert('goal', { scorerTeam: m.event.home_team }, `goal:${h}-${a}`);
+    if (a > pa) alert('goal', { scorerTeam: m.event.away_team }, `goal:${h}-${a}${h > ph ? ':away' : ''}`);
+  }
+  if (ps === 'live' && v.status === 'half-time') alert('halftime');
+  if (ps === 'half-time' && v.status === 'live') alert('second_half');
+  if (v.status === 'full-time' && ps !== 'full-time' && ps !== 'scheduled') alert('fulltime');
+
   // Player stats for the /stats page (only sent by the admin form).
   if (Array.isArray(body.playerStats)) await savePlayerStats(env.DB, params.id, parsePlayerStats(body.playerStats, players));
 
@@ -107,6 +122,7 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
     ).bind(params.id, now).run();
     // "Kick-off! Vote for Man of the Match" reminder for fans who opted in.
     waitUntil(notifyFans(env, m.event, 'kickoff'));
+    waitUntil(autoAlert(env, 'kickoff', m.event, {}, { waitUntil, origin: new URL(request.url).origin }));
     return Response.json({ ok: true, status: 'live', kickoff_at: now });
   }
 
@@ -122,6 +138,7 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
       `UPDATE match_centre SET status = 'full-time', home_score = ?, away_score = ?, ended_at = ?, updated_at = datetime('now')
        WHERE event_id = ?`
     ).bind(home, away, endedAt, params.id).run();
+    if (status !== 'full-time') waitUntil(autoAlert(env, 'fulltime', m.event, { home, away }, { waitUntil, origin: new URL(request.url).origin }));
     // Predict & Win: the winner is worked out as soon as the final score is in.
     const prediction = isHomeGame(m.event) ? await settlePredictions(env, { ...toPublic(m.event, m.centre), home_score: home, away_score: away }) : null;
     return Response.json({ ok: true, status: 'full-time', ended_at: endedAt, home_score: home, away_score: away, predictionWinner: !!prediction?.winner, correctPredictions: prediction?.correct ?? 0 });

@@ -20,6 +20,7 @@ const CATEGORIES: Cat[] = [
     { id: 'match-centre', label: 'Live Match Control', href: '/admin/match-centre/', area: 'matchday-content', hint: 'Kick-off, score, squad, Man of the Match, stats, streams, content checklist' },
     { id: 'predictions', label: 'Predict & Win', href: '/admin/predictions/', area: 'matchday', hint: 'Entries, winners and prize payments' },
     { id: 'commentary', label: 'Live Commentary', href: '/admin/commentary/', area: 'matchday' },
+    { id: 'fan-alerts', label: 'Fan Match Alerts', href: '/admin/fan-alerts/', area: 'matchday', hint: 'Phone notifications for fans: radio show, kick-off, goals, full time' },
     { id: 'cms-table', label: 'League Table', href: `${CMS}/settings/entries/leagueTable`, area: 'cms', ext: true },
   ] },
   { id: 'content', icon: '📰', label: 'Content', color: '#0EA5E9', items: [
@@ -429,6 +430,19 @@ const crumbs = active ? [active.c.label, active.i.label] : ['Admin'];
     document.addEventListener('ls:food-poll', foodPoll);
   }
   w.__lsFoodChime = chime;
+  // Match alerts to fans go out in batches: while one is pending, every open
+  // admin page sends the next batch every few seconds.
+  if (!w.__lsFanPush) {
+    w.__lsFanPush = true;
+    let fanTimer = 0;
+    const fanTick = async () => {
+      let pending = 0;
+      try { pending = (await (await fetch('/api/admin/fan-alerts/run', { method: 'POST', headers: H, cache: 'no-store' })).json()).pending || 0; } catch {}
+      clearTimeout(fanTimer); fanTimer = setTimeout(fanTick, pending ? 4000 : 60000);
+    };
+    setTimeout(fanTick, 3000);
+    document.addEventListener('ls:fan-alert-sent', () => { clearTimeout(fanTimer); fanTimer = setTimeout(fanTick, 1500); });
+  }
   notes(); window.setInterval(notes, 120_000);
 
   // Light / dark mode.

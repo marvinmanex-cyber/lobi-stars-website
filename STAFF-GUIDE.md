@@ -694,10 +694,14 @@ When an order is **paid**, the kitchen is alerted straight away and must
   Telegram) stops it. A cancelled order sends "❌ CANCELLED, do not cook".
 - **Kitchen staff accounts:** give cooks a login with the **Kitchen** role.
   It only opens the Kitchen Screen (no customer details).
-- **Admin › Commerce › Food: Kitchen Alerts:** switch alerts and Telegram on
-  or off, how often to repeat and how many times, the registered kitchen
-  devices (remove lost ones), **Send test alert**, and the last 50 alerts
-  with any errors. The orders list shows each order's kitchen status
+- **Admin › Commerce › Food: Kitchen Alerts:** the page reads top to bottom:
+  the 4 steps of how alerts work; **Setup** (4 cards, ✅ when that part is
+  ready, ⚠️ with what is missing); **Settings** on the left (switches for
+  kitchen alerts and Telegram, how often to repeat and how many times, then
+  **Save settings**); **Kitchen devices** on the right (remove lost ones);
+  and the **Last 50 alerts** with buttons to show All / Push / Telegram /
+  Failed (on a phone each alert shows as a small card). **Send test alert**
+  is at the top right. The orders list shows each order's kitchen status
   ("Alerted 19:42", "Accepted by …", "⚠️ Not accepted, 4 min") and a
   **Resend kitchen alert** button.
 
@@ -1416,7 +1420,45 @@ problem. If someone reports a problem, pass it to the website manager.
 
 ---
 
-## Other things you can update in the CMS
+## 26. Fan Match Alerts (Matchday › Fan Match Alerts)
+
+Fans can get a **notification on their phone** (or computer) for match-day
+moments. They turn it on with the **🔔 Match alerts** box on the homepage,
+Fixtures, Match Centre and Commentary pages and choose what they want:
+🎙️ radio show & live commentary, ⚽ kick-off / half-time / full time,
+🥅 goals. No account, name, email or phone is needed, and they can turn it
+off on the same box. (iPhone: the site must first be added to the Home
+Screen and opened from there.)
+
+**Automatic alerts** (each goes out **once per match**):
+
+| Alert | Sent when |
+|---|---|
+| 🎙️ "Pre-match show is live" / "Live commentary has started" | Lobi Stars FC Live goes on air (it says "pre-match show" if that is before kick-off) |
+| ⚽ Kick-off | **Start Match (Kick-off)** is pressed in Live Match Control |
+| ⚽ Goal | The score goes up and you press **Save Match Centre** |
+| ⏸️ Half-time / ▶️ Second half | The status is changed to half-time, then back to live, and saved |
+| 🏁 Full time (with the score) | **Full Time** is pressed |
+
+So **enter the score correctly before saving**: a wrong goal sends a wrong
+alert that can't be called back.
+
+**The Fan Match Alerts page** shows how many fan devices are signed up (in
+total and per kind), switches to turn any automatic alert off, **Send an
+alert now** and **Recent alerts** (how many devices it reached).
+
+- **Send an alert now:** tap a ready-made one (🎙️ Pre-match show starting,
+  🎙️ Commentary starting, 📋 Team line-up is out, 🎟️ Tickets on sale) or
+  write your own title (up to 100 characters) and message, choose which page
+  it opens and which fans get it (e.g. only fans who chose radio), then
+  **Send alert**. It asks you to confirm because it can't be undone.
+- Alerts go out in groups of 40 devices; with thousands of fans it can take
+  a minute or two. Keep any admin page open and it carries on by itself.
+- Don't over-send: a few alerts per match is right. Too many and fans turn
+  them off.
+- Who can use it: Super Admins and Matchday Operators.
+
+
 
 ### Prediction League prize
 **Site Settings, League Table & Shop → Prediction League prize.** Enter the
