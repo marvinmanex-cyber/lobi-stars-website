@@ -96,6 +96,19 @@ export async function onRequestGet({ request, env }) {
     };
   }
 
+  // In-seat food today (paid orders only).
+  if ((can('commerce') || can('analytics')) && await tableExists('food_orders')) {
+    try {
+      const watNow = new Date(Date.now() + 3600e3);
+      const start = new Date(Date.UTC(watNow.getUTCFullYear(), watNow.getUTCMonth(), watNow.getUTCDate()) - 3600e3).toISOString();
+      const { results } = await db.prepare(`SELECT items_json, total_kobo FROM food_orders WHERE payment_status = 'paid' AND order_status IN ('PAID','PREPARING','OUT_FOR_DELIVERY','DELIVERED') AND created_iso >= ?`).bind(start).all();
+      const qty = {};
+      for (const o of results) { try { for (const i of JSON.parse(o.items_json)) qty[i.name] = (qty[i.name] || 0) + i.qty; } catch {} }
+      const top = Object.entries(qty).sort((a, b) => b[1] - a[1])[0];
+      out.food = { orders: results.length, revenueKobo: results.reduce((s, o) => s + o.total_kobo, 0), top: top ? `${top[0]} (${top[1]})` : null, href: can('commerce') ? '/admin/food-orders/live/' : '/admin/food-orders/analytics/' };
+    } catch (err) { console.error('[dashboard] food', err); }
+  }
+
   out.quick = [
     can('content') && { label: 'New article', href: '/admin/#/collections/news/new', icon: '📝' },
     can('matchday-content') && { label: 'Update score', href: out.nextMatch?.controlHref || '/admin/match-centre/', icon: '⚽' },

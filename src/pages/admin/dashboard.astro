@@ -85,6 +85,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     if (d.contacts) cards.push(card({ color: '#8B5CF6', icon: '👥', num: fmt(d.contacts.week), label: 'New contacts this week', sub: `${fmt(d.contacts.total)} in the fan database`, href: '/admin/fans/', change: chg(d.contacts.change, 'vs last week') }));
     if (d.pageViews) cards.push(card({ color: '#0EA5E9', icon: '📈', num: fmt(d.pageViews.today), label: 'Page views today', sub: 'Compared with yesterday', href: '/admin/analytics/', change: chg(d.pageViews.change, 'vs yesterday') }));
     if (d.listeners) cards.push(card({ color: '#10B981', icon: '🎧', num: fmt(d.listeners.now), label: 'Listening live now', sub: d.listeners.match, href: '/admin/commentary/' }));
+    if (d.food) cards.push(card({ color: '#F97316', icon: '🍽️', num: fmt(d.food.orders), label: 'Food orders today (paid)', sub: `₦${fmt(Math.round(d.food.revenueKobo / 100))} · Top: ${d.food.top || '–'}`, href: d.food.href }));
     if (d.winner) cards.push(card({ color: '#EAB308', icon: '🏆', num: d.winner.name ? esc(d.winner.name) : 'No winner', label: 'Latest Predict & Win', sub: `${d.winner.match} (${d.winner.score}) · ${d.winner.name ? (d.winner.paid ? 'Prize paid' : 'Prize NOT paid yet') : 'No exact score'}`, href: d.winner.href }));
     $('cards').innerHTML = cards.join('');
     if (d.quick?.length) {

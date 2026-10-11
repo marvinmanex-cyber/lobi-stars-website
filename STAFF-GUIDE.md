@@ -678,6 +678,36 @@ category can only be deleted when it has no items.
 
 ---
 
+## 15. Reading the food analytics (Admin › Commerce › Food: Analytics)
+
+Only **paid** orders are counted: unpaid, expired, failed, cancelled and
+refunded orders never appear in the figures. Pick a period (7 days, 30 days,
+this season, all time or custom dates) and, if you like, **one match**.
+
+- **Cards:** paid orders and portions, revenue, average order, unique
+  customers (and how many came back), **payment conversion** (paid orders out
+  of all orders started), unpaid/expired orders, and **average delivery time**
+  (from payment to "Delivered").
+- **Most ordered items:** each item's share of all portions sold, e.g.
+  "Beef Suya – 34% (212 portions)". The slices always add up to 100%.
+- **Fan favourite:** the number-one item.
+- **Items ranked:** bar chart and table with portions, % of items, revenue
+  and % of food revenue (from the price each fan actually paid).
+- **By category:** Meals vs Snacks vs Drinks.
+- **Orders by stand:** where to put more runners.
+- **Orders per 15 minutes:** for one match it is shown against kick-off
+  (half-time is usually the busiest); otherwise by time of day.
+- **⬇ Food Report (Excel):** sheets for orders, items with % and customers.
+  **⬇ Customers (Excel):** the customer list. Both need **Can export fan
+  data** and are recorded in the Activity Log.
+
+Food customers are also added to the **Fan Database** (source "Food Order"),
+merged with any existing record with the same email or phone. Their food
+orders show in their profile there. The **Dashboard** shows today's paid food
+orders, money taken and the top item.
+
+---
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

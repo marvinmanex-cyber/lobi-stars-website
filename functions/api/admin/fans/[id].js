@@ -11,6 +11,15 @@ export async function onRequestGet({ request, env, params }) {
   const c = await env.DB.prepare(`SELECT * FROM contacts WHERE id = ?`).bind(params.id).first();
   if (!c) return Response.json({ error: 'Not found' }, { status: 404 });
   const { results } = await env.DB.prepare(`SELECT source, ref_table, seen_at, label FROM contact_sources WHERE contact_id = ? ORDER BY seen_at DESC`).bind(c.id).all();
+  // Their in-seat food orders (paid), matched by email or phone.
+  let food = [];
+  try {
+    const { results: fo } = await env.DB.prepare(
+      `SELECT ref, order_status, total_kobo, items_json, seat, stand, paid_iso, created_iso FROM food_orders
+       WHERE payment_status = 'paid' AND ((? != '' AND lower(email) = ?) OR (? != '' AND phone = ?)) ORDER BY created_iso DESC LIMIT 50`
+    ).bind(c.email || '', (c.email || '').toLowerCase(), c.phone || '', c.phone || '').all();
+    food = fo.map(o => { let items = []; try { items = JSON.parse(o.items_json); } catch {} return { ref: o.ref, status: o.order_status, totalKobo: o.total_kobo, items: items.map(i => `${i.qty}× ${i.name}`).join(', '), seat: [o.seat, o.stand].filter(Boolean).join(' · '), at: o.paid_iso || o.created_iso }; });
+  } catch { /* no food orders yet */ }
   return Response.json({
     contact: {
       id: c.id, firstName: c.first_name || '', surname: c.surname || '', state: c.state || '',
@@ -20,6 +29,7 @@ export async function onRequestGet({ request, env, params }) {
       marketingConsent: !!c.marketing_consent, unsubscribedAt: c.unsubscribed_at,
     },
     history: results.map(h => ({ source: SOURCES[h.source] || h.source, at: h.seen_at, detail: h.label || '' })),
+    foodOrders: food,
     canExport: admin.canExport,
   }, { headers: { 'Cache-Control': 'no-store' } });
 }

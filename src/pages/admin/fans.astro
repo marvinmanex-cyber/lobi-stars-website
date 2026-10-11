@@ -168,7 +168,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('dlgBody').innerHTML = `<dl><dt>Email</dt><dd>${esc(c.email) || '&ndash;'}</dd><dt>Phone</dt><dd>${esc(c.phone) || '&ndash;'}</dd><dt>State</dt><dd>${esc(c.state) || '&ndash;'}</dd>` +
         `<dt>First source</dt><dd>${esc(c.firstSource)}</dd><dt>First seen</dt><dd>${esc(wat(c.firstSeen))}</dd><dt>Last seen</dt><dd>${esc(wat(c.lastSeen))}</dd>` +
         `<dt>Marketing consent</dt><dd>${c.marketingConsent ? 'Y' : 'N'}${c.unsubscribedAt ? ` (unsubscribed ${esc(wat(c.unsubscribedAt))})` : ''}</dd></dl>` +
-        `<h3>History</h3><ol>${d.history.map(h => `<li>${esc(wat(h.at))} &middot; ${esc(h.source)}${h.detail ? ` &middot; ${esc(h.detail)}` : ''}</li>`).join('')}</ol>`;
+        `<h3>History</h3><ol>${d.history.map(h => `<li>${esc(wat(h.at))} &middot; ${esc(h.source)}${h.detail ? ` &middot; ${esc(h.detail)}` : ''}</li>`).join('')}</ol>` +
+        (d.foodOrders && d.foodOrders.length ? `<h3>In-seat food orders (${d.foodOrders.length})</h3><ol>${d.foodOrders.map(o => `<li>${esc(wat(o.at))} &middot; ${esc(o.ref)} &middot; ${esc(o.items)} &middot; ₦${(o.totalKobo / 100).toLocaleString('en-NG')} &middot; ${esc(o.seat)}</li>`).join('')}</ol>` : '');
       $('unsub').disabled = !c.marketingConsent;
       $('dlg').showModal();
     } catch (e) { msg(e.message, false); }

@@ -1,0 +1,175 @@
+---
+// Commerce › In-Seat Food › Food Analytics: most ordered items (share of
+// portions, %), revenue, fan favourite, category share, KPIs, orders over
+// time and by stand, with date and match filters and Excel exports.
+// Only PAID orders are counted.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Food Analytics | Lobi Stars Admin" description="In-seat food analytics." noindex>
+  <div class="wrap fa">
+    <AdminNav current="food-analytics" />
+    <div class="stag">Commerce › In-Seat Food</div>
+    <h1 class="stitle">Food <span class="r">Analytics</span></h1>
+    <p class="muted fa-lede">Only <strong>paid</strong> orders are counted (never unpaid, expired, failed, cancelled or refunded ones). Times are Nigerian time.</p>
+
+    <form class="panel fa-filters" id="filters">
+      <div class="fa-range" role="group" aria-label="Period">
+        <button type="button" data-r="7d">7 days</button><button type="button" data-r="30d">30 days</button><button type="button" data-r="season">This season</button><button type="button" data-r="all" class="on">All time</button><button type="button" data-r="custom">Custom</button>
+      </div>
+      <span class="fa-custom" id="custom" hidden><input type="date" id="from" aria-label="From" /> to <input type="date" id="to" aria-label="To" /> <button class="btn-o" type="button" id="apply">Apply</button></span>
+      <label>Match <select id="event"><option value="">All matches</option></select></label>
+      <span class="fa-exports" id="exports" hidden><a class="btn-p" href="#" data-x="report">⬇ Food Report (Excel)</a><a class="btn-o" href="#" data-x="customers">⬇ Customers (Excel)</a></span>
+    </form>
+    <p class="fa-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="fa-kpis" id="kpis" aria-label="Key figures"></section>
+
+    <div class="fa-grid">
+      <section class="panel fa-main"><h2>Most ordered items</h2><p class="muted fa-small">Share of all portions sold</p><div class="fa-chart"><canvas id="donut" aria-label="Most ordered items, share of portions"></canvas></div></section>
+      <section class="panel fa-fav" id="fav"></section>
+    </div>
+
+    <section class="panel"><h2>Items ranked</h2><div class="fa-chart tall"><canvas id="bars" aria-label="Items ranked by portions sold"></canvas></div><div class="scroll" id="itemTable"></div></section>
+
+    <div class="fa-grid two">
+      <section class="panel"><h2>By category</h2><div class="fa-chart"><canvas id="cats" aria-label="Share by category"></canvas></div></section>
+      <section class="panel"><h2>Orders by stand</h2><div class="fa-chart"><canvas id="stands" aria-label="Orders by stand"></canvas></div></section>
+    </div>
+    <section class="panel"><h2 id="timeTitle">Orders by time</h2><p class="muted fa-small" id="timeHint"></p><div class="fa-chart"><canvas id="time" aria-label="Orders per 15 minutes"></canvas></div></section>
+  </div>
+</Layout>
+
+<style>
+  .fa { max-width: 1300px; padding-top: 24px; padding-bottom: 80px; }
+  .fa-lede { max-width: 860px; margin-bottom: 14px; }
+  .fa-filters { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; padding: 14px 18px !important; margin-bottom: 14px; }
+  .fa-range { display: flex; gap: 6px; flex-wrap: wrap; }
+  .fa-range button { border: 1px solid var(--d4); background: var(--a-card); color: var(--a-ink); border-radius: 999px; padding: 8px 14px; cursor: pointer; font: 600 14px/1 'Barlow', sans-serif; }
+  .fa-range button.on { background: #EC4899; border-color: #EC4899; color: #fff; }
+  .fa-custom input, .fa-filters select { padding: 7px 9px; border-radius: 8px; border: 1px solid var(--d4); font: inherit; background: var(--a-card); color: var(--a-ink); }
+  .fa-filters label { display: flex; gap: 8px; align-items: center; font-weight: 600; min-width: 0; max-width: 100%; }
+  .fa-filters select { min-width: 0; max-width: 100%; flex: 1 1 auto; width: 260px; }
+  .fa-exports { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+  .fa-exports a { padding: 10px 14px; font-size: 13px; }
+  .fa-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 14px; background: #FDECEC; color: #A3161B; }
+  .fa :global(.fa-kpis) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: 12px; margin-bottom: 16px; }
+  .fa :global(.fa-kpi) { position: relative; padding: 16px; border-radius: 16px; background: linear-gradient(145deg, color-mix(in srgb, var(--c) 16%, var(--a-card)), var(--a-card) 72%); border: 1px solid color-mix(in srgb, var(--c) 28%, var(--a-line)); }
+  .fa :global(.fa-kpi i) { float: right; font-style: normal; width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--c) 22%, var(--a-card)); }
+  .fa :global(.fa-kpi b) { display: block; font: 400 34px/1.05 'Bebas Neue', sans-serif; color: color-mix(in srgb, var(--c) 80%, var(--a-ink)); margin-top: 6px; }
+  .fa :global(.fa-kpi span) { font: 700 12px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .fa :global(.fa-kpi small) { display: block; margin-top: 3px; color: var(--lt); font-size: 12px; }
+  .fa .panel { margin-bottom: 16px; min-width: 0; }
+  .fa h2 { margin: 0 0 4px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fa-small { margin: 0 0 8px; font-size: 13px; }
+  .fa-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 16px; }
+  .fa-grid.two { grid-template-columns: 1fr 1fr; }
+  .fa-chart { position: relative; height: 320px; }
+  .fa-chart.tall { height: 360px; }
+  .fa :global(.fa-fav) { background: linear-gradient(160deg, #15181D, #4D0B0D) !important; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; border: 2px solid #C9A227 !important; }
+  .fa :global(.fa-fav img), .fa :global(.fa-fav .em) { width: 150px; height: 112px; object-fit: cover; border-radius: 12px; background: rgba(255,255,255,.1); display: flex; align-items: center; justify-content: center; font-size: 56px; }
+  .fa :global(.fa-fav .k) { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .fa :global(.fa-fav .n) { font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fa :global(.fa-fav p) { margin: 0; color: rgba(255,255,255,.85); }
+  .fa :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; margin-top: 12px; }
+  .fa :global(th), .fa :global(td) { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--d4); vertical-align: middle; }
+  .fa :global(td.n), .fa :global(th.n) { text-align: right; font-variant-numeric: tabular-nums; }
+  .fa :global(.th) { width: 44px; height: 33px; border-radius: 6px; object-fit: cover; background: var(--a-soft); display: inline-flex; align-items: center; justify-content: center; font-size: 18px; vertical-align: middle; }
+  @media (max-width: 860px) { .fa-grid, .fa-grid.two { grid-template-columns: 1fr; } .fa-chart { height: 280px; } .fa-exports { margin-left: 0; } }
+</style>
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const naira = k => '₦' + Math.round(Number(k || 0) / 100).toLocaleString('en-NG');
+  const fmt = n => Number(n || 0).toLocaleString('en-NG');
+  const COLORS = ['#E31E24', '#EAB308', '#10B981', '#0EA5E9', '#8B5CF6', '#F97316', '#14B8A6', '#EC4899', '#64748B', '#84CC16', '#06B6D4', '#A855F7'];
+  const charts = {};
+  let range = 'all', last = null, filled = false;
+
+  function draw(id, config) {
+    if (!window.Chart) return;
+    charts[id]?.destroy();
+    const css = getComputedStyle(document.body);
+    Chart.defaults.font.family = 'Barlow, sans-serif';
+    Chart.defaults.color = css.getPropertyValue('--a-muted').trim() || '#5B6472';
+    Chart.defaults.borderColor = css.getPropertyValue('--a-line').trim() || '#E3E6EA';
+    const base = { responsive: true, maintainAspectRatio: false, animation: { duration: 700, easing: 'easeOutQuart' }, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 14 } }, tooltip: { backgroundColor: '#15181D', padding: 10, cornerRadius: 10 } } };
+    const o = config.options || {};
+    config.options = Object.assign({}, base, o, { plugins: Object.assign({}, base.plugins, o.plugins || {}) });
+    charts[id] = new Chart($(id), config);
+  }
+  const card = () => getComputedStyle(document.body).getPropertyValue('--a-card').trim() || '#fff';
+  const query = () => { const q = new URLSearchParams({ range }); if (range === 'custom') { q.set('from', $('from').value); q.set('to', $('to').value); } if ($('event').value) q.set('event', $('event').value); return q; };
+
+  async function load() {
+    $('msg').hidden = true;
+    try {
+      const res = await fetch('/api/admin/food-analytics?' + query(), { headers: { 'x-admin-code': code } });
+      const d = await res.json();
+      if (res.status === 401) location.href = '/admin/login/?next=/admin/food-orders/analytics/';
+      if (!res.ok) throw new Error(d.error || 'Could not load analytics');
+      last = d; render(d);
+    } catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; }
+  }
+  function render(d) {
+    if (!filled) { d.matches.forEach(m => $('event').add(new Option(m.label, m.id))); filled = true; }
+    $('exports').hidden = !d.canExport;
+    const k = d.kpis;
+    $('kpis').innerHTML = [
+      ['#16A34A', '🧾', fmt(k.paidOrders), 'Paid orders', `${fmt(k.itemsSold)} portions`],
+      ['#0EA5E9', '💰', naira(k.revenueKobo), 'Revenue', ''],
+      ['#8B5CF6', '🧮', naira(k.avgOrderKobo), 'Average order', ''],
+      ['#EC4899', '👥', fmt(k.customers), 'Unique customers', `${k.repeatPct}% came back`],
+      ['#F97316', '✅', `${k.conversionPct}%`, 'Payment conversion', `${fmt(k.paidOrders)} paid of ${fmt(k.ordersCreated)} started`],
+      ['#64748B', '⏳', fmt(k.unpaidOrExpired), 'Unpaid / expired', 'Orders not paid'],
+      ['#14B8A6', '🏃', k.avgDeliveryMinutes == null ? '–' : `${k.avgDeliveryMinutes} min`, 'Avg. delivery time', 'Paid → delivered'],
+    ].map(([c, i, v, l, s]) => `<div class="fa-kpi" style="--c:${c}"><i aria-hidden="true">${i}</i><span>${esc(l)}</span><b>${esc(v)}</b>${s ? `<small>${esc(s)}</small>` : ''}</div>`).join('');
+
+    const items = d.items;
+    const empty = !items.length;
+    draw('donut', { type: 'doughnut', data: { labels: empty ? ['No paid orders yet'] : items.map(i => `${i.name} – ${i.qtyPct}% (${fmt(i.qty)} portion${i.qty === 1 ? '' : 's'})`),
+      datasets: [{ data: empty ? [1] : items.map(i => i.qty), backgroundColor: empty ? ['#E5E7EB'] : COLORS, borderColor: card(), borderWidth: 3, hoverOffset: 10, borderRadius: 6 }] },
+      options: { cutout: '60%', plugins: { legend: { position: window.innerWidth < 700 ? 'bottom' : 'right' }, tooltip: { callbacks: { label: c => empty ? 'No data' : ` ${items[c.dataIndex].name}: ${items[c.dataIndex].qtyPct}% (${fmt(items[c.dataIndex].qty)})` } } } } });
+    const f = d.favourite;
+    $('fav').innerHTML = f ? `<span class="k">⭐ Fan favourite</span>${f.photo ? `<img src="${esc(f.photo)}" alt="">` : `<span class="em" aria-hidden="true">${esc(f.emoji || '🍽️')}</span>`}<span class="n">${esc(f.name)}</span><p>${f.qtyPct}% of all portions · ${fmt(f.qty)} sold · ${naira(f.revenueKobo)}</p>`
+      : '<span class="k">⭐ Fan favourite</span><p>Appears once orders are paid.</p>';
+    draw('bars', { type: 'bar', data: { labels: items.map(i => i.name), datasets: [{ label: 'Portions sold', data: items.map(i => i.qty), backgroundColor: COLORS, borderRadius: 8, borderSkipped: false, maxBarThickness: 34 }] },
+      options: { indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${fmt(items[c.dataIndex].qty)} portions (${items[c.dataIndex].qtyPct}%) · ${naira(items[c.dataIndex].revenueKobo)}` } } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } } });
+    $('itemTable').innerHTML = empty ? '<div class="empty-state"><b>🍽️</b><p>No paid orders in this period.</p></div>' :
+      '<table><thead><tr><th></th><th>Item</th><th class="n">Sold</th><th class="n">% of items</th><th class="n">Revenue</th><th class="n">% of revenue</th></tr></thead><tbody>' +
+      items.map(i => `<tr><td>${i.photo ? `<img class="th" src="${esc(i.photo)}" alt="">` : `<span class="th" aria-hidden="true">${esc(i.emoji || '🍽️')}</span>`}</td><td>${esc(i.name)}<div class="muted" style="font-size:12px">${esc(i.category)}</div></td><td class="n">${fmt(i.qty)}</td><td class="n">${i.qtyPct}%</td><td class="n">${naira(i.revenueKobo)}</td><td class="n">${i.revenuePct}%</td></tr>`).join('') + '</tbody></table>';
+    draw('cats', { type: 'doughnut', data: { labels: d.categories.length ? d.categories.map(c => `${c.name} – ${c.qtyPct}%`) : ['No data'], datasets: [{ data: d.categories.length ? d.categories.map(c => c.qty) : [1], backgroundColor: d.categories.length ? COLORS.slice(2) : ['#E5E7EB'], borderColor: card(), borderWidth: 3, borderRadius: 6 }] }, options: { cutout: '58%' } });
+    draw('stands', { type: 'bar', data: { labels: d.stands.map(s => s.stand), datasets: [{ label: 'Paid orders', data: d.stands.map(s => s.orders), backgroundColor: '#0EA5E9', borderRadius: 8, maxBarThickness: 46 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } } });
+    $('timeTitle').textContent = d.timelineMode === 'kickoff' ? `Orders per 15 minutes – ${d.match}` : 'Orders per 15 minutes (time of day)';
+    $('timeHint').textContent = d.timelineMode === 'kickoff' ? 'Minutes before (−) and after (+) kick-off. Half-time is usually around +45 to +60.' : 'All selected days added together. Pick a match to see it against kick-off.';
+    draw('time', { type: 'line', data: { labels: d.timeline.map(t => t.label), datasets: [{ label: 'Paid orders', data: d.timeline.map(t => t.orders), borderColor: '#E31E24', backgroundColor: 'rgba(227,30,36,.14)', fill: true, tension: .35, borderWidth: 3, pointRadius: 2 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } } });
+  }
+
+  document.querySelectorAll('[data-r]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-r]').forEach(x => x.classList.toggle('on', x === b));
+    $('custom').hidden = b.dataset.r !== 'custom';
+    if (b.dataset.r === 'custom') return;
+    range = b.dataset.r; load();
+  }));
+  $('apply').addEventListener('click', () => { range = 'custom'; load(); });
+  $('event').addEventListener('change', load);
+  document.querySelectorAll('[data-x]').forEach(a => a.addEventListener('click', async e => {
+    e.preventDefault();
+    const q = query(); q.set('format', a.dataset.x);
+    try {
+      const res = await fetch('/api/admin/food-analytics?' + q, { headers: { 'x-admin-code': code } });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Download failed');
+      const name = (res.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'food-report.xlsx';
+      const url = URL.createObjectURL(await res.blob());
+      const link = Object.assign(document.createElement('a'), { href: url, download: name });
+      document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; }
+  }));
+  document.addEventListener('ls:theme', () => { if (last) render(last); });
+  load();
+})();
+</script>
