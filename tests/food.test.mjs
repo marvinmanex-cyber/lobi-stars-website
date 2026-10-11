@@ -128,3 +128,18 @@ test('the fake Paystack helper does not exist unless PAYSTACK_FAKE=1 (it is set 
   const r = await fetch(`${BASE}/api/dev/paystack-fake`, { method: 'POST', body: '{}' });
   assert.ok([200, 404].includes(r.status));
 });
+
+test('a food customer who already subscribed to the newsletter is merged into one fan-database record', async () => {
+  const email = `merge-${uid()}@example.com`, phone = `0803${r7()}`;
+  const nl = await post('/api/newsletter', { fullName: 'Merge Fan', phone, email, confirmEmail: email, consent: true, source: 'test' });
+  assert.equal(nl.status, 200, JSON.stringify(nl.data));
+  // Same person orders food with a different-looking email case but the same phone.
+  const r = await post('/api/food-checkout', { name: 'Merge Fan', seat: 'H1', stand: '', phone, email: email.toUpperCase(), items: [{ id: 'water', qty: 1 }] });
+  assert.equal(r.status, 200, JSON.stringify(r.data));
+  await fake({ reference: r.data.ref, status: 'success', amount: 30000 });
+  await webhook(r.data.ref, 30000);
+  const fans = await admin(`/api/admin/fans?q=${encodeURIComponent(email)}`);
+  assert.equal(fans.data.rows.length, 1, 'one person, not two');
+  assert.ok(fans.data.rows[0].sources.includes('newsletter'));
+  assert.ok(fans.data.rows[0].sources.includes('food_order'));
+});

@@ -708,6 +708,51 @@ orders, money taken and the top item.
 
 ---
 
+## 16. In-seat food: setup checklist and a test run
+
+### Before the first matchday (website manager / club)
+1. **Paystack webhook:** in the Paystack dashboard → Settings → API Keys &
+   Webhooks, set the webhook URL to **https://lobistarsfc.com/api/paystack-webhook**
+   (the same address tickets use). Food orders are only marked paid after the
+   website checks each payment with Paystack.
+2. **Keys:** use Paystack **test** keys while rehearsing (below), then switch
+   `PAYSTACK_SECRET_KEY` in Cloudflare Pages to the **live** key.
+3. **Phone notifications:** run `npx web-push generate-vapid-keys` once and add
+   `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT`
+   (`mailto:info@lobistarsfc.com`) in Cloudflare Pages → Settings → Variables.
+4. **Email:** add the Resend key (`RESEND_API_KEY`, `RESEND_FROM`), then enter
+   the kitchen/manager addresses under **Food: Orders → Alert settings**.
+5. **SMS / WhatsApp (optional):** create a Termii account, add `TERMII_API_KEY`
+   (and `TERMII_SENDER_ID`), then switch it on in Alert settings.
+6. **Menu:** add the real items, prices, descriptions and photos
+   (**Food: Menu & Prices**); remove anything not sold.
+7. **Stands:** enter the stands/sections list (Menu → Ordering settings).
+8. **Ordering times:** choose **Automatic** (e.g. 90 minutes before kick-off
+   of home games until full time) or open/close it by hand.
+9. **Staff:** give kitchen and runner staff a **Commercial** staff account,
+   and ask them to enable notifications on their phones.
+
+### A test run with Paystack test keys (do this once before going live)
+With the test secret key set in Cloudflare (the live site then takes test
+payments only):
+1. Open **Food: Live Order Board** on a tablet; tap the page once (sounds).
+2. On a phone, order on **/food** → the board's *Awaiting payment* strip
+   shows it, with a 🟡 pop-up and soft chime (and a phone alert if chosen).
+3. Pay with a Paystack **test card** (Paystack shows test card numbers on the
+   payment page in test mode). The order moves to **Paid** without
+   refreshing, with a 🟢 pop-up, urgent beep, phone alert and email.
+4. Close the payment page **without paying** on another order: it stays
+   *Awaiting payment* and becomes *Expired* after the time limit.
+5. Move the paid order through Start preparing → Out for delivery →
+   Delivered and watch the fan's order page follow.
+6. Change a price and mark an item sold out; check /food updates and the
+   earlier order still shows the old price.
+7. Check Food: Analytics and the Fan Database (the customer appears with
+   source "Food Order").
+8. Switch Cloudflare back to the **live** secret key.
+
+---
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

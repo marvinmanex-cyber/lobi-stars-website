@@ -45,6 +45,10 @@ Fans need a free fan account with a confirmed email to vote or predict.
    starts* only if it shouldn't start 15 minutes before kick-off. This works
    for home **and** away games. On the day, press **Test stream** on
    **Admin → Commentary** (see STAFF-GUIDE.md, section 9).
+6. **In-seat food:** check the menu (**Food: Menu & Prices**): prices, photos,
+   anything sold out, and that ordering is **Automatic** or will be opened.
+   Set up the kitchen tablet with **Food: Live Order Board** and make sure the
+   kitchen and runners have notifications on (STAFF-GUIDE.md, sections 13–16).
 6. **Tickets:** to give members first access, set *General sale opens* on the
    match (Admin → Manage matches). Members confirmed in Admin → Members can
    buy before then; everyone else from that time.
@@ -71,6 +75,9 @@ timeline* and update the score, then press **Save Match Centre**. Fans see
 updates within 30 seconds.
 
 ---
+
+**During the match (in-seat food):** keep the Live Order Board open; prepare
+only **Paid** orders; switch items to **Sold out** as soon as they run out.
 
 ## 3. At the final whistle
 
@@ -198,6 +205,10 @@ exported files private and delete them when you no longer need them.
 8. **Shirt personalisation:** confirm the fee, sizes and how fans get their
    shirts before switching it on (STAFF-GUIDE.md, section 5).
 9. **Hospitality packages:** add them in the CMS when they are ready.
-10. **Lobi Stars FC Live stream:** the club chose Option A (our own
+10. **In-seat food:** Paystack webhook URL check, test run with test keys then
+    live keys, VAPID keys for phone notifications, alert email addresses,
+    optional Termii SMS/WhatsApp, the stands list, and the real menu items,
+    prices and photos (STAFF-GUIDE.md, section 16).
+11. **Lobi Stars FC Live stream:** the club chose Option A (our own
    stream.lobistarsfc.com address). Finish the partner and DNS checklist in
    COMMENTARY-STREAM-SETUP.md, then add the stream address on Admin → Commentary.
