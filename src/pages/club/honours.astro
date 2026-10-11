@@ -1,9 +1,9 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import data from '../../data/honours.json';
+import ClubAtAGlance from '../../components/ClubAtAGlance.astro';
+import { verifiedHonours as honours, glanceCounters } from '../../lib/club';
 
-// Only competitions the club has checked ("verified": true) are published.
-const honours = data.honours.filter(h => h.verified && h.years.length);
+// Only what the club has checked ("verified" in the CMS) is published.
 const total = honours.reduce((n, h) => n + h.years.length, 0);
 ---
 <Layout title="Honours | Lobi Stars Football Club" description="The Lobi Stars FC trophy cabinet: titles and cups won by the Pride of Benue.">
@@ -14,6 +14,7 @@ const total = honours.reduce((n, h) => n + h.years.length, 0);
     {total > 0 && <p class="hn-total">{total} major {total === 1 ? 'honour' : 'honours'}</p>}
   </div>
   <div class="page-content wrap">
+    <ClubAtAGlance variant="page" />
     {honours.length ? (
       <ul class="hn-grid">
         {honours.map(h => (
@@ -25,7 +26,7 @@ const total = honours.reduce((n, h) => n + h.years.length, 0);
           </li>
         ))}
       </ul>
-    ) : (
+    ) : glanceCounters().length ? null : (
       <div class="empty-state">The full honours list is being confirmed &mdash; check back soon.</div>
     )}
   </div>

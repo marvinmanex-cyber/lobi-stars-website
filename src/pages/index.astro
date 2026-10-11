@@ -9,6 +9,7 @@ import LiveBanner from '../components/LiveBanner.astro';
 import WhatsAppChannel from '../components/WhatsAppChannel.astro';
 import HomeHero from '../components/HomeHero.astro';
 import MatchdayGames from '../components/fans/MatchdayGames.astro';
+import ClubAtAGlance from '../components/ClubAtAGlance.astro';
 import { getSortedNews } from '../lib/news';
 import shop from '../data/shop.json';
 import { CURRENT_SEASON } from '../lib/site';
@@ -70,6 +71,8 @@ const teamJsonLd = {
       </div>
     </div>
   </section>
+
+  <ClubAtAGlance />
 
   <section class="hp-member" aria-labelledby="member-title">
     <div class="hp-inner hp-member-inner">

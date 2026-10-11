@@ -1,0 +1,55 @@
+---
+// Our mission and values (CMS › Club Values). Until the club publishes them
+// the page says they are coming soon and stays out of the menu, search and Google.
+import Layout from '../../layouts/Layout.astro';
+import { clubValues } from '../../lib/club';
+
+const { ready, mission, values } = clubValues;
+---
+<Layout title="Our Values | Lobi Stars Football Club" description="The mission and values of Lobi Stars FC, the Pride of Benue." noindex={!ready}>
+  <div class="page-hero wrap">
+    <div class="stag">The Club</div>
+    <h1 class="stitle">Our <span class="r">Values</span></h1>
+    <div class="divr"></div>
+  </div>
+  <div class="page-content wrap">
+    {ready ? (
+      <>
+        {mission && (
+          <section class="vl-mission" aria-labelledby="vl-m">
+            <h2 id="vl-m" class="vl-kicker">Our mission</h2>
+            <p>{mission}</p>
+          </section>
+        )}
+        {values.length > 0 && (
+          <section aria-labelledby="vl-v">
+            <h2 id="vl-v" class="vl-h2">What we stand for</h2>
+            <ol class="vl-grid">
+              {values.map((v, i) => (
+                <li class="vl-card">
+                  <span class="vl-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                  <h3>{v.title}</h3>
+                  {v.text && <p>{v.text}</p>}
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+      </>
+    ) : (
+      <div class="empty-state">Our mission and values are being finalised. Check back soon.</div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .vl-mission { background: linear-gradient(135deg, #15181D, #2A0507); color: #fff; border-radius: 16px; padding: clamp(24px, 4vw, 44px); margin-bottom: 32px; border: 1px solid rgba(255, 199, 44, .35); }
+  .vl-kicker { margin: 0 0 10px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .vl-mission p { margin: 0; font: 600 clamp(19px, 2.4vw, 26px)/1.45 'Barlow', sans-serif; max-width: 900px; }
+  .vl-h2 { margin: 0 0 16px; font: 400 clamp(28px, 3.6vw, 38px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .vl-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+  .vl-card { border: 1px solid var(--d4); border-radius: 14px; background: #fff; padding: 22px; border-top: 4px solid var(--red); }
+  .vl-num { font: 400 34px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .vl-card h3 { margin: 6px 0 8px; font: 700 22px/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .5px; color: var(--white); }
+  .vl-card p { margin: 0; color: var(--lt); line-height: 1.6; }
+</style>

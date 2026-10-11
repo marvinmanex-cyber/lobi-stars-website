@@ -1,0 +1,122 @@
+---
+// "Add Lobi Stars to your home screen": registers the app's service worker
+// (/sw.js) and, on phones, shows a friendly prompt from the second visit on.
+//  - Android / Chrome: an Install button (the browser's own install window).
+//  - iPhone / iPad: how to do it (Share, then Add to Home Screen).
+// Dismissed = not shown again for 30 days; never shown once installed, while
+// the cookie notice is open, or while live commentary is playing.
+---
+<div class="ip" id="installPrompt" role="dialog" aria-labelledby="ipTitle" aria-describedby="ipText" hidden>
+  <img class="ip-icon" src="/images/icon-192.png" alt="" width="52" height="52" />
+  <div class="ip-body">
+    <p class="ip-title" id="ipTitle">Add Lobi Stars to your home screen</p>
+    <p class="ip-text" id="ipText">Fixtures, scores, tickets and live commentary in one tap, like an app.</p>
+    <ol class="ip-ios" id="ipIos" hidden>
+      <li>Tap the <b>Share</b> button <span class="ip-share" aria-hidden="true"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 3v12M7 8l5-5 5 5M5 12v8h14v-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span> at the bottom (or top) of Safari.</li>
+      <li>Choose <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+    </ol>
+    <div class="ip-acts">
+      <button type="button" class="ip-go" id="ipInstall" hidden>Install</button>
+      <button type="button" class="ip-later" id="ipLater">Not now</button>
+    </div>
+  </div>
+  <button type="button" class="ip-x" id="ipClose" aria-label="Close">&times;</button>
+</div>
+
+<style>
+  .ip { position: fixed; left: 12px; right: 12px; bottom: calc(72px + env(safe-area-inset-bottom)); z-index: 2900; max-width: 520px; margin: 0 auto; display: flex; gap: 12px; align-items: flex-start; padding: 14px 14px 14px 14px; border-radius: 16px; background: #fff; color: #15181D; box-shadow: 0 18px 44px rgba(0, 0, 0, .28); border: 1px solid rgba(0, 0, 0, .08); border-top: 4px solid #E31E24; animation: ipin .3s ease-out; }
+  .ip[hidden] { display: none; }
+  @keyframes ipin { from { transform: translateY(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .ip { animation: none; } }
+  .ip-icon { width: 52px; height: 52px; border-radius: 12px; flex: none; }
+  .ip-body { flex: 1; min-width: 0; padding-right: 22px; }
+  .ip-title { margin: 0; font: 700 17px/1.25 'Barlow Condensed', 'Barlow', sans-serif; letter-spacing: .3px; }
+  .ip-text { margin: 4px 0 0; font-size: 14px; line-height: 1.45; color: #4B5563; }
+  .ip-ios { margin: 10px 0 0; padding-left: 20px; font-size: 14px; line-height: 1.5; color: #15181D; }
+  .ip-ios li + li { margin-top: 4px; }
+  .ip-share { display: inline-flex; vertical-align: -3px; color: #0A84FF; }
+  .ip-acts { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .ip-go, .ip-later { min-height: 44px; padding: 10px 18px; border-radius: 10px; font: 700 15px/1 'Barlow', sans-serif; cursor: pointer; }
+  .ip-go { background: #E31E24; color: #fff; border: 0; }
+  .ip-go:hover, .ip-go:focus-visible { background: #B8141A; }
+  .ip-later { background: #fff; color: #15181D; border: 1px solid #D1D5DB; }
+  .ip-x { position: absolute; top: 6px; right: 6px; width: 40px; height: 40px; border: 0; background: none; font-size: 24px; line-height: 1; color: #6B7280; cursor: pointer; border-radius: 50%; }
+  .ip-x:hover, .ip-x:focus-visible { background: #F3F4F6; color: #15181D; }
+  @media (min-width: 901px) { .ip { bottom: 20px; } }
+</style>
+
+<script is:inline>
+(function () {
+  if (window.__lsInstall) return;
+  window.__lsInstall = 1;
+  var DAY = 864e5;
+  var store = {
+    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  };
+  var track = function (label) { try { if (window.lsTrack) window.lsTrack('install_prompt', label); } catch (e) {} };
+
+  // The app's service worker: offline page and faster repeat visits (pages themselves are never cached).
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+  }
+
+  // Count visits (once per browser session).
+  try {
+    if (!sessionStorage.getItem('ls_visit_counted')) {
+      sessionStorage.setItem('ls_visit_counted', '1');
+      store.set('ls_visits', String((Number(store.get('ls_visits')) || 0) + 1));
+    }
+  } catch (e) {}
+
+  var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  if (standalone) store.set('ls_app_installed', '1');
+  var ua = navigator.userAgent || '';
+  var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var phone = window.matchMedia && matchMedia('(max-width: 900px)').matches && (matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window);
+  var deferred = null;
+
+  function allowed() {
+    if (standalone || store.get('ls_app_installed') || !phone) return false;
+    if ((Number(store.get('ls_visits')) || 0) < 2) return false;
+    if (Date.now() - (Number(store.get('ls_install_dismissed')) || 0) < 30 * DAY) return false;
+    if (!store.get('ls_consent')) return false; // wait until the cookie notice is answered
+    if (window.__lobiStarsLive && window.__lobiStarsLive.active) return false; // commentary bar in use
+    return true;
+  }
+  var el = function (id) { return document.getElementById(id); };
+  function show(mode) {
+    var box = el('installPrompt');
+    if (!box || !box.hidden || !allowed()) return;
+    el('ipInstall').hidden = mode !== 'install';
+    el('ipIos').hidden = mode !== 'ios';
+    el('ipLater').textContent = mode === 'ios' ? 'Got it' : 'Not now';
+    box.hidden = false;
+    track('shown_' + mode);
+  }
+  function close(remember) {
+    var box = el('installPrompt'); if (box) box.hidden = true;
+    if (remember) store.set('ls_install_dismissed', String(Date.now()));
+  }
+
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferred = e;
+    setTimeout(function () { show('install'); }, 3000);
+  });
+  window.addEventListener('appinstalled', function () { store.set('ls_app_installed', '1'); close(false); track('installed'); });
+  if (ios) setTimeout(function () { show('ios'); }, 3000);
+
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!(t instanceof Element)) return;
+    if (t.closest('#ipInstall') && deferred) {
+      deferred.prompt();
+      deferred.userChoice.then(function (c) { track(c && c.outcome === 'accepted' ? 'install' : 'declined'); if (!c || c.outcome !== 'accepted') store.set('ls_install_dismissed', String(Date.now())); deferred = null; close(false); }).catch(function () {});
+    } else if (t.closest('#ipLater') || t.closest('#ipClose')) {
+      track('dismiss');
+      close(true);
+    }
+  });
+})();
+</script>

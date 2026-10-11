@@ -1,0 +1,56 @@
+---
+// Annual reports and official statements (PDFs uploaded in CMS ›
+// Transparency). Out of the menu, search and Google until a document is added.
+import Layout from '../../layouts/Layout.astro';
+import { clubDocuments, transparencyIntro } from '../../lib/club';
+
+const types = [...new Set(clubDocuments.map(d => d.type))];
+const fmt = (d?: string) => (d && /^\d{4}-\d{2}-\d{2}/.test(d) ? new Date(`${d.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : d || '');
+---
+<Layout title="Transparency | Lobi Stars Football Club" description="Lobi Stars FC annual reports and official statements." noindex={!clubDocuments.length}>
+  <div class="page-hero wrap">
+    <div class="stag">The Club</div>
+    <h1 class="stitle">Trans<span class="r">parency</span></h1>
+    <div class="divr"></div>
+    {transparencyIntro && <p class="tr-intro">{transparencyIntro}</p>}
+  </div>
+  <div class="page-content wrap">
+    {clubDocuments.length ? types.map(type => (
+      <section class="tr-sec" aria-labelledby={`tr-${type}`}>
+        <h2 class="tr-h2" id={`tr-${type}`}>{type}{type.endsWith('s') ? '' : 's'}</h2>
+        <ul class="tr-list">
+          {clubDocuments.filter(d => d.type === type).map(d => (
+            <li class="tr-doc">
+              <span class="tr-ico" aria-hidden="true">📄</span>
+              <div class="tr-body">
+                <h3><a href={d.file} target="_blank" rel="noopener">{d.title}</a></h3>
+                <p class="tr-meta">{fmt(d.date)}{d.size && <> &middot; PDF, {d.size}</>}</p>
+                {d.summary && <p class="tr-sum">{d.summary}</p>}
+              </div>
+              <a class="btn-o tr-dl" href={d.file} download>Download</a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )) : (
+      <div class="empty-state">No documents have been published yet.</div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .tr-intro { max-width: 820px; font-size: 18px; line-height: 1.6; color: var(--lt); margin: 14px 0 0; }
+  .tr-sec { margin-bottom: 32px; }
+  .tr-h2 { margin: 0 0 14px; font: 400 clamp(28px, 3.6vw, 36px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .tr-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .tr-doc { display: flex; gap: 14px; align-items: center; border: 1px solid var(--d4); border-radius: 12px; background: #fff; padding: 16px 18px; }
+  .tr-ico { font-size: 28px; flex: none; }
+  .tr-body { flex: 1; min-width: 0; }
+  .tr-body h3 { margin: 0; font: 700 19px/1.3 'Barlow Condensed', sans-serif; overflow-wrap: anywhere; }
+  .tr-body h3 a { color: var(--white); text-decoration: none; }
+  .tr-body h3 a:hover, .tr-body h3 a:focus-visible { color: var(--red-text); text-decoration: underline; }
+  .tr-meta { margin: 4px 0 0; font-size: 14px; color: var(--lt); }
+  .tr-sum { margin: 6px 0 0; color: var(--lt); line-height: 1.55; }
+  .tr-dl { flex: none; }
+  @media (max-width: 560px) { .tr-doc { flex-wrap: wrap; } .tr-dl { width: 100%; text-align: center; } }
+</style>

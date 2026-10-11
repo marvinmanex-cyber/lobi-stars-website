@@ -1,8 +1,18 @@
 // Main navigation, used by the header (desktop + mobile menu) and the search
 // page's list of site pages.
 // external: opens in a new tab.
+import { clubValues, communityContent, clubDocuments } from './club';
+
 export type NavLink = { label: string; href: string; description?: string; external?: boolean };
 export type NavItem = NavLink & { children?: NavLink[] };
+
+// Values, Community and Transparency only appear once they have content.
+const community = await communityContent();
+export const optionalClub: NavLink[] = [
+  ...(clubValues.ready ? [{ label: 'Values', href: '/club/values', description: 'Our mission and values' }] : []),
+  ...(community.ready ? [{ label: 'Community', href: '/club/community', description: 'Community projects, clinics and charity work' }] : []),
+  ...(clubDocuments.length ? [{ label: 'Transparency', href: '/club/transparency', description: 'Annual reports and official statements' }] : []),
+];
 
 export const MAIN_NAV: NavItem[] = [
   { label: 'News', href: '/news', description: 'The latest club news' },
@@ -32,6 +42,7 @@ export const MAIN_NAV: NavItem[] = [
       { label: 'Stadium', href: '/club/stadium', description: 'McCarthy Stadium, Makurdi' },
       { label: 'Partners', href: '/partners', description: 'Our sponsors and partnership enquiries' },
       { label: 'Fan Clubs', href: '/club/fan-clubs', description: 'Supporters clubs' },
+      ...optionalClub,
     ],
   },
   { label: 'Membership', href: '/membership', description: 'Join as an official member' },

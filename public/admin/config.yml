@@ -44,6 +44,7 @@ collections:
       - {label: "Updated at (set this when you edit a published story)", name: "updatedAt", widget: "datetime", required: false}
       - {label: "Tagged players", name: "players", widget: "relation", collection: "players", value_field: "{{slug}}", search_fields: ["name"], display_fields: ["name"], multiple: true, required: false, hint: "Shown as player chips; the story also appears on each player's profile."}
       - {label: "Series (optional, e.g. Heritage)", name: "series", widget: "string", required: false, hint: "Use Heritage for long reads about club history and legends."}
+      - {label: "Tags (optional)", name: "tags", widget: "list", required: false, hint: "Add Community to a Club story about community projects, clinics or charity work: it then appears on /club/community."}
       - {label: "Shop the story (club shop products)", name: "products", widget: "relation", collection: "settings", file: "shop", value_field: "products.*.id", search_fields: ["products.*.name"], display_fields: ["products.*.name"], multiple: true, required: false, hint: "e.g. tag the new home shirt on a kit launch story. Shown as product cards under the article."}
       - {label: "Members only", name: "membersOnly", widget: "boolean", default: false, hint: "Only confirmed members can read the story. Title, summary and cover photo stay public."}
       - {label: "Matchday content type", name: "contentType", widget: "select", required: false, options: ["General", "Preview", "Team News", "Line-ups", "Live updates", "Match Report", "Highlights", "Reaction/Interview"], hint: "Used by the matchday content checklist in Admin → Match Centre."}
@@ -312,14 +313,78 @@ collections:
         label: "Honours / Trophy Cabinet"
         file: "src/data/honours.json"
         fields:
+          - label: "Year founded"
+            name: "founded"
+            widget: "object"
+            hint: "Shown in the Club at a Glance strip once verified."
+            fields:
+              - {label: "Year", name: "year", widget: "string"}
+              - {label: "Verified (show on the site)", name: "verified", widget: "boolean", default: false}
+          - label: "CAF competition appearances"
+            name: "caf"
+            widget: "object"
+            fields:
+              - {label: "Label", name: "label", widget: "string", default: "CAF competition appearances"}
+              - {label: "Seasons / years", name: "years", widget: "list"}
+              - {label: "Verified (show on the site)", name: "verified", widget: "boolean", default: false}
           - label: "Honours"
             name: "honours"
             widget: "list"
             summary: "{{fields.competition}}"
             fields:
               - {label: "Competition", name: "competition", widget: "string"}
+              - {label: "Counts as", name: "type", widget: "select", options: [{label: "League title", value: "league"}, {label: "Cup", value: "cup"}, {label: "Other honour", value: "other"}], default: "league"}
               - {label: "Winning seasons / years", name: "years", widget: "list"}
               - {label: "Verified (show on the site)", name: "verified", widget: "boolean", default: false}
+
+      - name: "values"
+        label: "Club Values (mission and values)"
+        file: "src/data/values.json"
+        fields:
+          - {label: "Published (show /club/values)", name: "published", widget: "boolean", default: false, hint: "The text below is a DRAFT for the club to review. Switch on when approved."}
+          - {label: "Mission", name: "mission", widget: "text"}
+          - label: "Values"
+            name: "values"
+            widget: "list"
+            summary: "{{fields.title}}"
+            fields:
+              - {label: "Value", name: "title", widget: "string"}
+              - {label: "What it means", name: "text", widget: "text"}
+
+      - name: "community"
+        label: "Community (projects, clinics, charity)"
+        file: "src/data/community.json"
+        fields:
+          - {label: "Published (show the introduction and projects)", name: "published", widget: "boolean", default: false}
+          - {label: "Introduction", name: "intro", widget: "text", required: false}
+          - label: "Community projects"
+            name: "projects"
+            widget: "list"
+            required: false
+            summary: "{{fields.title}}"
+            fields:
+              - {label: "Title", name: "title", widget: "string"}
+              - {label: "Description", name: "text", widget: "text", required: false}
+              - {label: "When (e.g. October 2026)", name: "date", widget: "string", required: false}
+              - {label: "Photo", name: "image", widget: "image", required: false}
+
+      - name: "transparency"
+        label: "Transparency (annual reports and statements)"
+        file: "src/data/transparency.json"
+        fields:
+          - {label: "Introduction (optional)", name: "intro", widget: "text", required: false}
+          - label: "Documents"
+            name: "documents"
+            widget: "list"
+            required: false
+            summary: "{{fields.date}} - {{fields.title}}"
+            hint: "The Transparency page appears in the menu once at least one document is added."
+            fields:
+              - {label: "Title", name: "title", widget: "string"}
+              - {label: "Type", name: "type", widget: "select", options: ["Annual report", "Financial statement", "Official statement", "Policy"], default: "Official statement"}
+              - {label: "Date (YYYY-MM-DD)", name: "date", widget: "string"}
+              - {label: "PDF file", name: "file", widget: "file", media_folder: "/public/documents", public_folder: "/documents"}
+              - {label: "Short summary (optional)", name: "summary", widget: "text", required: false}
 
       - name: "stadium"
         label: "Stadium Information"

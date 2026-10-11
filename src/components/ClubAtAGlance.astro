@@ -1,0 +1,57 @@
+---
+// "Club at a Glance": trophy cabinet counters (league titles, cups, CAF
+// appearances, year founded) with the years won. Only confirmed data is
+// shown (Honours in the CMS); with nothing confirmed the strip is hidden.
+import { glanceCounters } from '../lib/club';
+
+interface Props {
+  /** home: dark strip with a link to the trophy cabinet; page: on /club/honours. */
+  variant?: 'home' | 'page';
+}
+const { variant = 'home' } = Astro.props;
+const counters = glanceCounters();
+---
+{counters.length > 0 && (
+  <section class:list={['cg', `cg-${variant}`]} aria-labelledby={`cg-title-${variant}`}>
+    <div class="cg-inner">
+      {variant === 'home' ? (
+        <div class="cg-head">
+          <h2 class="cg-title" id="cg-title-home">Club at a Glance</h2>
+          <a class="cg-more" href="/club/honours">Trophy cabinet <span aria-hidden="true">&rarr;</span></a>
+        </div>
+      ) : <h2 class="sr-only" id="cg-title-page">Club at a glance</h2>}
+      <ul class="cg-list">
+        {counters.map(c => (
+          <li class="cg-item">
+            <span class="cg-icon" aria-hidden="true">{c.icon}</span>
+            <span class="cg-num">{c.value}</span>
+            <span class="cg-label">{c.label}</span>
+            {c.years.length > 0 && <span class="cg-years">{c.years.join(' · ')}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+)}
+
+<style>
+  .cg-home { background: linear-gradient(135deg, #15181D 0%, #2A0507 100%); color: #fff; padding: 40px 0; }
+  .cg-inner { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
+  .cg-page .cg-inner { padding: 0; }
+  .cg-page { margin: 0 0 28px; }
+  .cg-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .cg-title { margin: 0; font: 400 clamp(30px, 4vw, 42px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: #fff; }
+  .cg-more { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: #FFC72C; text-decoration: none; white-space: nowrap; }
+  .cg-more:hover, .cg-more:focus-visible { text-decoration: underline; }
+  .cg-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+  .cg-item { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 20px 14px; border-radius: 14px; border: 1px solid rgba(255, 199, 44, .35); background: rgba(255, 255, 255, .05); }
+  .cg-page .cg-item { background: linear-gradient(160deg, #15181D, #2A0507); color: #fff; }
+  .cg-icon { font-size: 30px; line-height: 1; }
+  .cg-num { font: 400 52px/1 'Bebas Neue', sans-serif; color: #FFC72C; }
+  .cg-label { font: 700 15px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: #fff; }
+  .cg-years { font-size: 13px; color: rgba(255, 255, 255, .78); overflow-wrap: anywhere; }
+  @media (max-width: 480px) {
+    .cg-list { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .cg-num { font-size: 42px; }
+  }
+</style>

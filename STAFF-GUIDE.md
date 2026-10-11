@@ -119,6 +119,9 @@ it, make your changes and save. To delete, open the story and choose
 ---
 
 ### Extra fields on a story (all optional)
+- **Tags:** add **Community** to a **Club** story about community work
+  (clinics, school visits, charity). It then also appears on the Community
+  page (/club/community).
 - **Author name / role / photo:** shown as a byline ("By Ngozi Bello, Club Media Officer"). Leave blank to show "By Lobi Stars FC".
 - **Updated at:** set this when you change a story after publishing; the page then shows "Updated …".
 - **Tagged players:** pick players from the squad. They appear as small chips linking to their profiles, and the story appears under "Latest news about …" on each player's profile.
@@ -1034,6 +1037,78 @@ DEPLOYMENT.md). This never touches the live site.
 
 ---
 
+## 20. Trophy cabinet, values, community and transparency pages
+
+All four are edited in the **Content CMS** (Admin › Content › Content CMS ↗,
+then **Site Settings, League Table & Shop**). Nothing appears on the site until
+the club has confirmed it, so wrong or invented information is never shown.
+
+### Trophy cabinet and "Club at a Glance" (CMS › Honours / Trophy Cabinet)
+- **Honours:** each competition, what it **counts as** (League title, Cup
+  or Other honour) and the winning seasons. Tick **Verified** once checked.
+- **Year founded** and **CAF competition appearances** (with the seasons):
+  tick **Verified** once checked.
+- Confirmed items appear as counters with icons (e.g. **2 League titles**,
+  1998/99 · 2017/18) at the top of **/club/honours** and in a **Club at a
+  Glance** strip on the homepage. A counter with nothing confirmed is hidden;
+  with nothing confirmed at all, the homepage strip is hidden and the honours
+  page says the list is being confirmed.
+- **To confirm (club):** the league titles and seasons, the FA Cup year(s),
+  the year founded (the site says 1969 but some sources differ) and the CAF
+  appearances. The entries in the CMS are unconfirmed suggestions.
+
+### Our Values (/club/values, CMS › Club Values)
+- A **draft** mission and five values (Pride, Community, Discipline,
+  Ambition, Integrity) are ready for the club to review. Change the wording as
+  needed, then switch on **Published**.
+- Until then the page only says the values are coming soon, and it is not in
+  the menu, search or Google.
+
+### Community (/club/community, CMS › Community)
+- Lists **community projects** (title, description, when, photo) and an
+  **introduction** from the CMS (switch on **Published** to show them), plus
+  every published **Club** news story with the tag **Community** (newest
+  first).
+- The page appears in the **Club** menu and the footer as soon as there is a
+  published project, introduction or tagged story.
+
+### Transparency (/club/transparency, CMS › Transparency)
+- For **annual reports**, **financial statements**, **official statements**
+  and **policies**. For each document: title, type, date, the **PDF file**
+  (upload it straight from your computer) and an optional short summary.
+- The page appears in the menu, footer, search and Google once the first
+  document is added. Documents are listed newest first with their size and
+  a Download button.
+- Only upload documents the club has approved for the public.
+
+---
+
+## 21. The Lobi Stars app (add to home screen)
+
+The website can be installed on a phone like an app: it gets the club badge
+on the home screen and opens full screen without the browser bar.
+
+- **What fans see:** on a phone, from their **second visit**, a small box
+  says **"Add Lobi Stars to your home screen"**.
+  - **Android (Chrome, Edge, Samsung Internet):** an **Install** button
+    opens the phone's own install window.
+  - **iPhone / iPad:** it explains how: tap **Share** (the square with an
+    arrow), then **Add to Home Screen**, then **Add**.
+  - **Not now** (or ×) hides it for **30 days**. It never appears on
+    computers, once the app is installed, while the cookie notice is open or
+    while live commentary is playing.
+- **Live information is always fresh:** the app never stores pages, scores,
+  fixtures, tickets or commentary. Only pictures, icons and design files are
+  kept on the phone to make it faster. Without a connection, fans see a
+  "You're offline" page with a **Try again** button.
+- **Staff:** you can install it the same way to check the site quickly. If
+  someone reports the app looks out of date, ask them to close and reopen
+  it; pages are always loaded fresh.
+- How often the prompt is shown, accepted or dismissed is counted in the
+  analytics as **install_prompt** clicks.
+
+---
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize
@@ -1076,7 +1151,8 @@ All of these are under **Site Settings, League Table & Shop**:
 - **Season, Homepage Stats & Footer Text**: the current season (e.g.
   2026/27) and the text at the bottom of every page.
 - **Club History Timeline** and **Honours / Trophy Cabinet**: entries only
-  appear on the site when **Verified** is ticked.
+  appear on the site when **Verified** is ticked (see section 20).
+- **Club Values**, **Community** and **Transparency**: see section 20.
 - **Stadium Information**: capacity, directions and matchday tips.
 - **Supporters' Clubs**: fan clubs by city with a contact person.
 

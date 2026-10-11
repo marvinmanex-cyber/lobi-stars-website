@@ -2,6 +2,7 @@
 title: "Lobi Stars FC launches community football clinics across Makurdi"
 summary: "Club staff and First Team players will visit schools and local pitches over the coming weeks to run free football clinics for the community."
 category: Club
+tags: ["Community"]
 coverImage: /images/gallery-matchday.jpg
 imageAlt: "Lobi Stars FC supporters celebrating on matchday"
 publishedAt: 2026-10-05T13:00:00Z

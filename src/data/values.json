@@ -1,0 +1,27 @@
+{
+  "_todo": "TODO: DRAFT wording for the club to review. Edit the mission and values, then switch on 'Published'. Until then /club/values says it is coming soon and is hidden from the menu, search and Google.",
+  "published": false,
+  "mission": "To represent Makurdi and Benue State with pride, play exciting, winning football, develop players and staff the right way, and give back to the community that has always stood by the Red and Gold.",
+  "values": [
+    {
+      "title": "Pride",
+      "text": "We wear the Red and Gold for Benue. Every match, every training session and every visit to the community carries the club's name."
+    },
+    {
+      "title": "Community",
+      "text": "The club belongs to its supporters. We stay close to our fans, schools and local football, on and off matchday."
+    },
+    {
+      "title": "Discipline",
+      "text": "Hard work, respect and fair play: towards team-mates, opponents, officials and supporters."
+    },
+    {
+      "title": "Ambition",
+      "text": "We aim to compete for trophies and represent Nigeria with distinction."
+    },
+    {
+      "title": "Integrity",
+      "text": "We are honest and open in how the club is run, and we keep our promises to fans and partners."
+    }
+  ]
+}

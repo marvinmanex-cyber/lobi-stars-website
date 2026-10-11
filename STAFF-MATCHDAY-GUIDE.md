@@ -221,3 +221,8 @@ exported files private and delete them when you no longer need them.
 13. **Staff logins:** create a personal login with the right role for every
     staff member (Settings › Staff Users & Roles) and stop sharing the owner
     admin code (STAFF-GUIDE.md, section 19).
+14. **Club pages:** confirm the honours (league titles, cups and seasons),
+    the year founded and CAF appearances, then tick Verified; review the
+    draft mission and values and publish them; add community projects or tag
+    Club stories "Community"; upload any annual reports or statements for the
+    Transparency page (STAFF-GUIDE.md, section 20).

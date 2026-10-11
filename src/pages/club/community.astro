@@ -1,0 +1,67 @@
+---
+// Community projects, clinics and charity work: the introduction and
+// projects from CMS › Community, plus every published Club news story tagged
+// "Community". Out of the menu, search and Google until there is something to show.
+import Layout from '../../layouts/Layout.astro';
+import NewsCard from '../../components/news/NewsCard.astro';
+import { communityContent } from '../../lib/club';
+
+const { intro, projects, news, ready } = await communityContent();
+---
+<Layout title="Community | Lobi Stars Football Club" description="Lobi Stars FC in the community: football clinics, school visits and charity work across Makurdi and Benue State." noindex={!ready}>
+  <div class="page-hero wrap">
+    <div class="stag">The Club</div>
+    <h1 class="stitle">In the <span class="r">Community</span></h1>
+    <div class="divr"></div>
+    {intro && <p class="cm-intro">{intro}</p>}
+  </div>
+  <div class="page-content wrap">
+    {projects.length > 0 && (
+      <section aria-labelledby="cm-p" class="cm-sec">
+        <h2 id="cm-p" class="cm-h2">Community projects</h2>
+        <ul class="cm-grid">
+          {projects.map(p => (
+            <li class="cm-card">
+              {p.image && <img src={p.image} alt="" loading="lazy" />}
+              <div class="cm-body">
+                {p.date && <span class="cm-date">{p.date}</span>}
+                <h3>{p.title}</h3>
+                {p.text && <p>{p.text}</p>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
+    {news.length > 0 && (
+      <section aria-labelledby="cm-n" class="cm-sec">
+        <h2 id="cm-n" class="cm-h2">Community news</h2>
+        <div class="cm-news">
+          {news.map(a => <NewsCard article={a} />)}
+        </div>
+      </section>
+    )}
+    {!ready && <div class="empty-state">Stories about our community work will appear here soon.</div>}
+
+    <section class="panel cm-cta" aria-labelledby="cm-c">
+      <h2 id="cm-c">Working on a community project?</h2>
+      <p>Schools, community groups and charities can get in touch about clinics, visits and partnerships.</p>
+      <a class="btn-p" href="/contact">Contact the club</a>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .cm-intro { max-width: 820px; font-size: 18px; line-height: 1.6; color: var(--lt); margin: 14px 0 0; }
+  .cm-sec { margin-bottom: 36px; }
+  .cm-h2 { margin: 0 0 16px; font: 400 clamp(28px, 3.6vw, 38px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .cm-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+  .cm-card { border: 1px solid var(--d4); border-radius: 14px; background: #fff; overflow: hidden; display: flex; flex-direction: column; }
+  .cm-card img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; }
+  .cm-body { padding: 18px; }
+  .cm-date { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--red-text); }
+  .cm-card h3 { margin: 6px 0 6px; font: 700 20px/1.25 'Barlow Condensed', sans-serif; color: var(--white); }
+  .cm-card p { margin: 0; color: var(--lt); line-height: 1.6; }
+  .cm-news { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+  .cm-cta { margin-top: 12px; }
+</style>

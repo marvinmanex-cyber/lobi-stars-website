@@ -1,8 +1,20 @@
 {
-  "_todo": "TODO: check each competition and its winning years, then set \"verified\": true. Only verified honours are shown on /club/honours.",
+  "_todo": "TODO: check each item and its years, then set \"verified\": true. Only verified items are shown (trophy cabinet on /club/honours and the homepage 'Club at a Glance' strip); anything unconfirmed stays hidden.",
+  "founded": {
+    "year": "1969",
+    "verified": false
+  },
+  "caf": {
+    "label": "CAF competition appearances",
+    "years": [
+      "2019"
+    ],
+    "verified": false
+  },
   "honours": [
     {
       "competition": "Nigerian Premier League / NPFL",
+      "type": "league",
       "years": [
         "1998/99",
         "2017/18"
@@ -11,6 +23,7 @@
     },
     {
       "competition": "Nigerian FA Cup (Federation Cup)",
+      "type": "cup",
       "years": [
         "2003"
       ],

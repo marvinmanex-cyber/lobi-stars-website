@@ -1,5 +1,6 @@
 ---
 import HeadMeta from '../components/HeadMeta.astro';
+import InstallPrompt from '../components/InstallPrompt.astro';
 import CookieConsent from '../components/CookieConsent.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
@@ -206,6 +207,7 @@ main.bare{padding-top:0;min-height:0;}
   function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(function(){t.classList.remove('show');},3200);}
 </script>
 {!bare && !adminPage && <CookieConsent />}
+{!bare && !adminPage && <InstallPrompt />}
 <script is:inline src="/track.js" defer></script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 ---
 import { FOOTER_TAGLINE, SOCIAL_LINKS } from '../lib/site';
+import { optionalClub } from '../lib/nav';
 import PartnerLogo from './partners/PartnerLogo.astro';
 import WhatsAppChannel from './WhatsAppChannel.astro';
 import { getPartners } from '../lib/partners';
@@ -14,6 +15,8 @@ const columns = [
   { title: 'Club', links: [
     ['History', '/club/history'], ['Honours', '/club/honours'], ['Stadium', '/club/stadium'],
     ['Partners', '/partners'], ['Fan Clubs', '/club/fan-clubs'],
+    // Values, Community and Transparency appear once they have content.
+    ...optionalClub.map(l => [l.label, l.href]),
   ] },
   { title: 'Matches', links: [
     ['Fixtures', '/fixtures'], ['Results', '/results'], ['League Table', '/table'],

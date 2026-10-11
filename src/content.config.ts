@@ -30,6 +30,8 @@ const news = defineCollection({
     players: z.array(z.string()).nullable().optional(),
     // Series tag, e.g. "Heritage" (long reads about club history and legends).
     series: z.string().nullable().optional(),
+    // Free tags, e.g. "Community" (Club stories tagged Community are listed on /club/community).
+    tags: z.array(z.string()).nullable().optional().transform(v => (v || []).filter(Boolean)),
     // What kind of matchday content this is (drives the admin matchday checklist).
     contentType: z.enum(['General', 'Preview', 'Team News', 'Line-ups', 'Live updates', 'Match Report', 'Highlights', 'Reaction/Interview']).nullable().optional(),
     // The match this story is about (its kick-off date, Nigerian time).
