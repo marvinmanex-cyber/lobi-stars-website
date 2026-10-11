@@ -116,3 +116,17 @@ test('admin pages: own shell, noindex, no public header; old URLs still work', a
   const robots = await (await fetch(`${BASE}/robots.txt`)).text();
   assert.match(robots, /Disallow: \/admin/);
 });
+
+test('in-seat food orders: Commerce can view and update; other roles cannot', async () => {
+  const c = await staff('commercial');
+  const r = await call(c, '/api/admin/food-orders?show=today');
+  assert.equal(r.status, 200);
+  const d = await r.json();
+  assert.ok(Array.isArray(d.orders) && typeof d.today.orders === 'number');
+  assert.equal((await call(c, '/api/admin/food-orders', 'POST', { id: 'x', status: 'bogus' })).status, 400);
+  assert.equal((await call(c, '/api/admin/food-orders', 'POST', { id: 'LS-FOOD-NOPE', status: 'delivered' })).status, 404);
+  assert.equal((await call(c, '/admin/food-orders/')).status, 200);
+  const fr = await staff('fan_relations');
+  assert.equal((await call(fr, '/api/admin/food-orders')).status, 403);
+  assert.equal((await call(fr, '/admin/food-orders/')).status, 302);
+});

@@ -1,0 +1,127 @@
+---
+// In-seat food orders: paid orders with seat, items and phone, a status that
+// staff move from New to Preparing to Delivered, and today's totals.
+// Refreshes itself every 20 seconds so it can stay open on a phone or tablet.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="In-Seat Food Orders | Lobi Stars Admin" description="In-seat food orders." noindex>
+  <div class="wrap fo">
+    <AdminNav current="food-orders" />
+    <div class="stag">Commerce</div>
+    <h1 class="stitle">In-Seat <span class="r">Food Orders</span></h1>
+    <p class="muted fo-lede">Paid orders from the In-Seat Food page. Press <strong>Start preparing</strong> when the kitchen takes an order and <strong>Delivered</strong> when it reaches the seat. This page refreshes itself every 20 seconds.</p>
+    <p class="fo-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="fo-stats" id="stats" aria-label="Today"></section>
+
+    <div class="fo-filter" role="group" aria-label="Show">
+      <button type="button" data-show="open" aria-pressed="true">To do</button>
+      <button type="button" data-show="today" aria-pressed="false">Today</button>
+      <button type="button" data-show="all" aria-pressed="false">All</button>
+      <span class="fo-updated" id="updated"></span>
+    </div>
+    <div class="fo-list" id="list"><p class="muted">Loading…</p></div>
+  </div>
+</Layout>
+
+<style>
+  .fo { max-width: 1200px; padding-top: 28px; padding-bottom: 80px; }
+  .fo-lede { max-width: 820px; margin-bottom: 16px; }
+  .fo-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
+  .fo-msg.ok { background: #E8F7EE; color: #17643A; } .fo-msg.err { background: #FDECEC; color: #A3161B; }
+  .fo :global(.fo-stats) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 12px; margin-bottom: 18px; }
+  .fo :global(.fo-stat) { padding: 16px; border-radius: 14px; background: linear-gradient(145deg, color-mix(in srgb, var(--c) 14%, #fff), #fff 70%); border: 1px solid color-mix(in srgb, var(--c) 25%, #E3E6EA); }
+  .fo :global(.fo-stat b) { display: block; font: 400 34px/1 'Bebas Neue', sans-serif; color: color-mix(in srgb, var(--c) 80%, #15181D); }
+  .fo :global(.fo-stat span) { font: 700 12px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .fo :global(.fo-stat small) { display: block; margin-top: 4px; color: var(--lt); font-size: 13px; }
+  .fo-filter { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .fo-filter button { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-weight: 700; }
+  .fo-filter button[aria-pressed='true'] { background: #F97316; border-color: #F97316; color: #fff; }
+  .fo-updated { margin-left: auto; color: var(--lt); font-size: 13px; }
+  .fo :global(.fo-list) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
+  .fo :global(.fo-card) { background: #fff; border: 1px solid var(--d4); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 6px 18px rgba(15,17,21,.05); border-top: 5px solid var(--s); }
+  .fo :global(.fo-top) { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+  .fo :global(.fo-seat) { font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fo :global(.fo-seat small) { display: block; font: 600 13px 'Barlow', sans-serif; letter-spacing: 0; color: var(--lt); }
+  .fo :global(.fo-badge) { padding: 4px 10px; border-radius: 999px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: #fff; background: var(--s); white-space: nowrap; }
+  .fo :global(.fo-items) { list-style: none; margin: 0; padding: 0; font-size: 15px; }
+  .fo :global(.fo-items li) { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px dashed var(--d4); }
+  .fo :global(.fo-meta) { font-size: 13px; color: var(--lt); line-height: 1.5; }
+  .fo :global(.fo-meta a) { color: var(--red-text); font-weight: 700; }
+  .fo :global(.fo-age) { font-weight: 700; } .fo :global(.fo-age.warn) { color: #B45309; } .fo :global(.fo-age.late) { color: #B91C1C; }
+  .fo :global(.fo-acts) { display: flex; gap: 8px; flex-wrap: wrap; }
+  .fo :global(.fo-acts button) { flex: 1 1 auto; min-height: 44px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-weight: 700; }
+  .fo :global(.fo-acts .go) { background: #F97316; border-color: #F97316; color: #fff; }
+  .fo :global(.fo-acts .done) { background: #10B981; border-color: #10B981; color: #fff; }
+  .fo :global(.fo-empty) { grid-column: 1 / -1; text-align: center; padding: 40px 16px; color: var(--lt); border: 1px dashed var(--d4); border-radius: 14px; background: #fff; }
+  .fo :global(.fo-empty b) { display: block; font-size: 34px; margin-bottom: 6px; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const naira = k => '₦' + (Number(k || 0) / 100).toLocaleString('en-NG');
+  const asDate = ts => new Date(String(ts).includes('T') ? ts : String(ts).replace(' ', 'T') + 'Z');
+  const time = ts => ts ? asDate(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const day = ts => ts ? asDate(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' }) : '';
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'fo-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
+  const ST = { new: ['New', '#E31E24'], preparing: ['Preparing', '#F59E0B'], delivered: ['Delivered', '#10B981'], cancelled: ['Cancelled', '#64748B'] };
+  let show = 'open';
+
+  async function api(path, opts = {}) {
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code } });
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/food-orders/';
+    if (!res.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function card(o) {
+    const [label, color] = ST[o.status] || ST.new;
+    const mins = Math.round((Date.now() - asDate(o.paidAt).getTime()) / 60000);
+    const open = o.status === 'new' || o.status === 'preparing';
+    const age = open ? `<span class="fo-age ${mins >= 20 ? 'late' : mins >= 10 ? 'warn' : ''}">${mins < 1 ? 'just now' : mins + ' min ago'}</span> · ` : '';
+    const acts = o.status === 'new' ? '<button class="go" data-s="preparing">Start preparing</button><button data-s="cancelled">Cancel</button>'
+      : o.status === 'preparing' ? '<button class="done" data-s="delivered">Delivered</button><button data-s="new">Back to new</button>'
+      : '<button data-s="new">Reopen</button>';
+    return `<article class="fo-card" style="--s:${color}" data-id="${esc(o.id)}">` +
+      `<div class="fo-top"><div class="fo-seat">Seat ${esc(o.seat)}<small>${esc(o.stand || 'Stand not given')}</small></div><span class="fo-badge">${label}</span></div>` +
+      `<ul class="fo-items">${o.items.map(i => `<li><span>${esc(i.qty)} × ${esc(i.name)}</span><span>${naira(i.priceKobo * i.qty)}</span></li>`).join('')}</ul>` +
+      `<p class="fo-meta">${age}Paid ${esc(show === 'open' ? time(o.paidAt) : day(o.paidAt) + ', ' + time(o.paidAt))} · <strong>${naira(o.totalKobo)}</strong><br>` +
+      `📞 <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · ${esc(o.id)}${o.statusBy ? `<br>${esc(ST[o.status]?.[0] || o.status)} by ${esc(o.statusBy)} at ${esc(time(o.statusAt))}` : ''}</p>` +
+      `<div class="fo-acts">${acts}</div></article>`;
+  }
+  async function load() {
+    try {
+      const d = await api('/api/admin/food-orders?show=' + show);
+      const t = d.today;
+      $('stats').innerHTML = [
+        ['#F97316', t.open, 'To do now', 'New or being prepared'],
+        ['#10B981', t.orders, 'Orders today', ''],
+        ['#0EA5E9', naira(t.revenueKobo), 'Paid today', ''],
+        ['#8B5CF6', t.topItems[0] ? t.topItems[0].name : '–', 'Most ordered today', t.topItems.slice(0, 3).map(i => `${i.name} × ${i.qty}`).join(', ')],
+      ].map(([c, n, l, s]) => `<div class="fo-stat" style="--c:${c}"><b>${esc(n)}</b><span>${esc(l)}</span>${s ? `<small>${esc(s)}</small>` : ''}</div>`).join('');
+      $('list').innerHTML = d.orders.length ? d.orders.map(card).join('')
+        : `<p class="fo-empty"><b>🍽️</b>${show === 'open' ? 'No orders waiting. The kitchen is all clear 🎉' : 'No paid food orders yet.'}</p>`;
+      $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Lagos' });
+    } catch (err) { msg(err.message, false); }
+  }
+  $('list').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-s]'); if (!b) return;
+    const id = b.closest('[data-id]').dataset.id;
+    if (b.dataset.s === 'cancelled' && !confirm(`Cancel order ${id}? Refunds are done in Paystack, not here.`)) return;
+    b.disabled = true;
+    try { await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ id, status: b.dataset.s }) }); await load(); }
+    catch (err) { msg(err.message, false); b.disabled = false; }
+  });
+  document.querySelectorAll('[data-show]').forEach(b => b.addEventListener('click', () => {
+    show = b.dataset.show;
+    document.querySelectorAll('[data-show]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    load();
+  }));
+  load();
+  setInterval(load, 20000);
+})();
+</script>

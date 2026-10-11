@@ -554,6 +554,27 @@ each package: name, what's included, and a price (or price text such as "From
 
 ---
 
+## 13. In-seat food orders (Admin › Commerce › In-Seat Food Orders)
+
+Paid orders from the In-Seat Food page appear here straight away. Keep the
+page open on a phone or tablet on matchday: it refreshes itself every 20 seconds.
+
+- **To do** shows orders that are **New** or **Preparing**, oldest first.
+  Each card shows the seat and stand, what was ordered, the total, the fan's
+  phone number (tap to call) and how long ago it was paid. The time turns
+  amber after 10 minutes and red after 20.
+- Press **Start preparing** when the kitchen takes an order, then
+  **Delivered** when it reaches the seat. Use **Back to new** or **Reopen** if
+  you pressed the wrong button.
+- **Cancel** marks an order cancelled on this screen only. Any refund is done
+  in the Paystack dashboard.
+- The coloured boxes at the top show today's orders still to do, orders and
+  money paid today, and the most-ordered items.
+- **Today** and **All** show delivered and cancelled orders too. Every status
+  change is saved with your name (also in the Activity Log).
+
+---
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize
