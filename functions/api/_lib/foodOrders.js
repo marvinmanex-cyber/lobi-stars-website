@@ -89,12 +89,20 @@ export async function ensureFoodSchema(db) {
 }
 
 // ── Settings ──
-export const FOOD_DEFAULTS = { paymentExpiryMinutes: 15 };
+// orderingMode: 'open' (always), 'closed', or 'auto' (from autoOpenMinutes before kick-off
+// of a home game until full time). stands: list for the seat form (empty = free text).
+export const FOOD_DEFAULTS = { paymentExpiryMinutes: 15, orderingMode: 'open', autoOpenMinutes: 90, stands: [], minOrderKobo: 0 };
 export async function foodSettings(db) {
   await ensureFoodSchema(db);
   const { results } = await db.prepare(`SELECT key, value FROM food_settings`).all();
-  const s = { ...FOOD_DEFAULTS };
-  for (const r of results) if (r.key === 'paymentExpiryMinutes') s.paymentExpiryMinutes = Math.min(120, Math.max(1, Number(r.value) || 15));
+  const s = { ...FOOD_DEFAULTS, stands: [] };
+  for (const r of results) {
+    if (r.key === 'paymentExpiryMinutes') s.paymentExpiryMinutes = Math.min(120, Math.max(1, Number(r.value) || 15));
+    if (r.key === 'orderingMode' && ['open', 'closed', 'auto'].includes(r.value)) s.orderingMode = r.value;
+    if (r.key === 'autoOpenMinutes') s.autoOpenMinutes = Math.min(600, Math.max(0, Number(r.value) || 90));
+    if (r.key === 'minOrderKobo') s.minOrderKobo = Math.max(0, Number(r.value) || 0);
+    if (r.key === 'stands') { try { const v = JSON.parse(r.value); if (Array.isArray(v)) s.stands = v.map(String).filter(Boolean).slice(0, 40); } catch {} }
+  }
   return s;
 }
 export async function saveFoodSetting(db, key, value, by) {
@@ -143,6 +151,13 @@ export async function confirmFoodPayment(env, order, { waitUntil, origin = 'http
   ).bind(at, t.reference, late, order.id).run();
   if (!res.meta?.changes) return { order, changed: false, reason: 'already paid' };
   const paid = { ...order, payment_status: 'paid', order_status: 'PAID', paid_iso: at };
+  // Items with a stock count go down by what was paid for (0 = sold out).
+  try {
+    const stmts = JSON.parse(order.items_json).map(i => env.DB.prepare(
+      `UPDATE food_items SET stock = MAX(0, stock - ?), sold_out = CASE WHEN stock - ? <= 0 THEN 1 ELSE sold_out END WHERE id = ? AND stock IS NOT NULL`
+    ).bind(i.qty, i.qty, i.id));
+    if (stmts.length) await env.DB.batch(stmts);
+  } catch { /* menu table not created yet */ }
 
   const n = splitName(order.customer_name || '');
   await captureContact(env, { source: 'food_order', refTable: 'food_orders', refId: order.id, email: order.email, phone: order.phone, firstName: n.firstName, surname: n.surname, label: order.ref });

@@ -1,11 +1,11 @@
 import { randomId } from './_lib/crypto.js';
 import { initialize } from './_lib/paystackClient.js';
-import { FOOD_MENU } from './_lib/foodMenu.js';
+import { ensureMenuSchema, orderingState } from './_lib/foodMenuDb.js';
 import { ensureFoodSchema, nextRef, foodSettings } from './_lib/foodOrders.js';
 import { normalizeNigerianPhone, rateLimit, tooMany, clientIp, ensureFanSchema } from './_lib/fans.js';
 import { listMatches, isMatchDay, toSummary } from './_lib/matchCentre.js';
 
-// POST /api/food-checkout { name, seat, stand, phone, email, notes, items: [{ id, qty }] }
+// POST /api/food-checkout { name, seat, stand, phone, email, notes, adultConfirmed, items: [{ id, qty }] }
 // Saves the order straight away as AWAITING_PAYMENT with a reference such as
 // FD-20261011-0042, then returns the Paystack checkout address. Prices come
 // from the server's menu only (never from the browser). The order becomes
@@ -28,21 +28,33 @@ export async function onRequestPost({ request, env }) {
   await ensureFanSchema(env.DB); // rate limit table
   if (!(await rateLimit(env.DB, `food:${clientIp(request)}`, 20, 600))) return tooMany();
 
-  const orderItems = [];
-  let totalKobo = 0;
-  for (const item of items) {
-    const menuItem = FOOD_MENU[item?.id];
-    const qty = Number.parseInt(item?.qty, 10);
-    if (!menuItem || !Number.isInteger(qty) || qty < 1 || qty > 50) {
-      return Response.json({ error: `Invalid item or quantity: ${item?.id}` }, { status: 400 });
-    }
-    // A copy of the name and price at the time of ordering (later menu changes never alter this order).
-    orderItems.push({ id: item.id, name: menuItem.name, priceKobo: menuItem.priceKobo, qty });
-    totalKobo += menuItem.priceKobo * qty;
-  }
-
   await ensureFoodSchema(env.DB);
-  const { paymentExpiryMinutes } = await foodSettings(env.DB);
+  await ensureMenuSchema(env.DB);
+  const settings = await foodSettings(env.DB);
+  const { paymentExpiryMinutes } = settings;
+  if (!(await orderingState(env, settings)).open) return Response.json({ error: 'In-seat ordering is closed at the moment. It opens on matchday.', code: 'closed' }, { status: 409 });
+  if (settings.stands.length && !settings.stands.includes(stand)) return Response.json({ error: 'Please choose your stand from the list.' }, { status: 400 });
+
+  // Prices, availability and limits come from the menu in the database (Admin -> In-Seat Food -> Menu).
+  const { results: menu } = await env.DB.prepare(`SELECT * FROM food_items WHERE archived = 0`).all();
+  const orderItems = [];
+  let totalKobo = 0, adult = false;
+  for (const item of items) {
+    const m = menu.find(x => x.id === String(item?.id || ''));
+    const qty = Number.parseInt(item?.qty, 10);
+    if (!m || !m.available || !Number.isInteger(qty) || qty < 1 || qty > 50) {
+      return Response.json({ error: 'One of the items is no longer on the menu. Please refresh the page.' }, { status: 400 });
+    }
+    if (m.sold_out || m.stock === 0) return Response.json({ error: `Sorry, ${m.name} has just sold out. Please remove it and try again.` }, { status: 409 });
+    if (m.max_per_order && qty > m.max_per_order) return Response.json({ error: `You can order at most ${m.max_per_order} × ${m.name}.` }, { status: 400 });
+    if (m.stock != null && qty > m.stock) return Response.json({ error: `Only ${m.stock} × ${m.name} left. Please reduce the quantity.` }, { status: 409 });
+    if (m.adult) adult = true;
+    // A copy of the name and price at the time of ordering (later menu changes never alter this order).
+    orderItems.push({ id: m.id, name: m.name, priceKobo: m.price_kobo, qty });
+    totalKobo += m.price_kobo * qty;
+  }
+  if (adult && b.adultConfirmed !== true) return Response.json({ error: 'Please confirm you are 18 or older to order alcoholic drinks.', code: 'adult' }, { status: 400 });
+  if (settings.minOrderKobo && totalKobo < settings.minOrderKobo) return Response.json({ error: `The minimum order is ₦${(settings.minOrderKobo / 100).toLocaleString('en-NG')}.` }, { status: 400 });
   // The home match being played today, if any (for reports per match).
   let eventId = null;
   try {

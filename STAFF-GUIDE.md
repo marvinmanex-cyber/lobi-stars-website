@@ -600,6 +600,55 @@ each package: name, what's included, and a price (or price text such as "From
 
 ---
 
+## 14. Managing the food menu, prices and photos (Admin › Commerce › Food Menu & Prices)
+
+Open **Food Menu & Prices** in the menu on the left (or the "Edit the menu"
+button on Food Orders). Changes show on the public food page straight away.
+
+### Add an item
+1. Press **+ Add item**.
+2. Type the **name**, the **price** in whole naira (e.g. 2500) and choose a
+   **category** (Meals, Snacks, Drinks…). Add a short description if you like.
+3. **Photo:** drag a picture onto the box (or tap *choose a file*). JPG, PNG
+   or WebP up to 5MB. Choose the frame (4:3 or square), use **Zoom** and drag
+   the picture to position it, then press **Use this photo**. It is made
+   smaller automatically so it loads fast on phones.
+4. Optional: **Most per order**, **Stock this match** (counts down as orders
+   are paid and shows *Sold out* at 0), **18+** for alcoholic drinks (fans
+   must confirm they are 18 or older).
+5. The **Preview** shows exactly what fans will see. Press **Save item**.
+
+### Everyday changes (straight from the list)
+- **Sold out** switch: turn it on when an item runs out; fans see it greyed
+  out and can't order it. Turn it off when it's back.
+- **Price box:** type the new price and press Enter. New orders pay the new
+  price; past orders keep the price that was paid. The change is recorded in
+  the item's history ("Price changed from ₦X to ₦Y").
+- **Edit** to change anything else (name, photo, category, limits).
+- **Duplicate** makes a hidden copy (handy for a similar item). Edit it and
+  tick *Show on the menu*.
+- **Reorder:** drag the ⠿ handle, or use ▲ ▼, to change the order fans see.
+
+### Deleting
+- An item that has **never been ordered** is deleted for good.
+- An item that **has been ordered** is **archived** instead: hidden from fans
+  but kept for order history and reports. Find it under **Archived items** and
+  press **Restore** to bring it back.
+
+### Categories
+In the **Categories** tab you can add, rename and reorder categories. A
+category can only be deleted when it has no items.
+
+### Ordering settings
+- **Open**, **Closed** ("In-seat ordering opens on matchday") or **Automatic**
+  (opens a set number of minutes before kick-off of a Lobi Stars home game
+  and closes at full time).
+- **Unpaid orders expire after** (minutes), **Minimum order** (₦, 0 = none).
+- **Stands / sections:** one per line. Fans then pick their stand from a list
+  instead of typing it.
+
+---
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

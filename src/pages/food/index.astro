@@ -1,4 +1,8 @@
 ---
+// /food -- in-seat food ordering. The menu (items, prices, photos, sold out),
+// whether ordering is open and the stands list all come from
+// /api/food/menu, managed in Admin -> Commerce -> In-Seat Food -> Menu, so
+// changes show straight away. Prices are always checked again on the server.
 import Layout from '../../layouts/Layout.astro';
 ---
 <Layout
@@ -15,28 +19,32 @@ import Layout from '../../layouts/Layout.astro';
     </div>
   </div>
 
-  <div class="page-content wrap fd-grid">
-    <section aria-labelledby="menu-title">
-      <h2 class="fd-h2" id="menu-title">Menu</h2>
-      <ul class="fd-menu" id="foodMenu"></ul>
-    </section>
+  <div class="page-content wrap">
+    <p class="fd-closed" id="closed" hidden>🍽️ <strong>In-seat ordering opens on matchday.</strong> Come back when Lobi Stars are playing at home.</p>
+    <div class="fd-grid" id="shop">
+      <section aria-labelledby="menu-title">
+        <h2 class="fd-h2" id="menu-title">Menu</h2>
+        <div id="foodMenu"><p class="muted">Loading the menu…</p></div>
+      </section>
 
-    <form class="panel fd-order" id="foodForm" novalidate>
-      <h2 class="fd-h2">Your Order</h2>
-      <div class="fd-summary" id="foodSummaryItems" aria-live="polite"><p class="muted">No items selected yet.</p></div>
-      <div class="form-grp"><label class="form-lbl" for="foodName">Your Name</label><input class="form-inp" id="foodName" autocomplete="name" placeholder="e.g. Terna Akaa" required /></div>
-      <div class="form-row">
-        <div class="form-grp"><label class="form-lbl" for="foodSeat">Seat Number</label><input class="form-inp" id="foodSeat" placeholder="e.g. A-14" required /></div>
-        <div class="form-grp"><label class="form-lbl" for="foodStand">Stand / Section</label><input class="form-inp" id="foodStand" placeholder="e.g. North Stand" /></div>
-      </div>
-      <div class="form-grp"><label class="form-lbl" for="foodPhone">Phone Number</label><input class="form-inp" id="foodPhone" type="tel" autocomplete="tel" placeholder="e.g. 08012345678" required /></div>
-      <div class="form-grp"><label class="form-lbl" for="foodEmail">Email Address</label><input class="form-inp" id="foodEmail" type="email" autocomplete="email" placeholder="you@example.com" required /></div>
-      <div class="form-grp"><label class="form-lbl" for="foodNotes">Note for the kitchen (optional)</label><input class="form-inp" id="foodNotes" maxlength="200" placeholder="e.g. no pepper, extra napkins" /></div>
-      <p class="fd-small">Your order is confirmed once Paystack confirms your payment. Unpaid orders are cancelled automatically after a few minutes.</p>
-      <p class="form-error" id="food-error" role="alert" hidden></p>
-      <button type="submit" class="btn-p fd-submit" id="placeFoodBtn">Place Order &amp; Pay</button>
-      <img class="fd-partner" src="/images/food-logo.jpg" alt="Matchday food partner" loading="lazy" />
-    </form>
+      <form class="panel fd-order" id="foodForm" novalidate>
+        <h2 class="fd-h2">Your Order</h2>
+        <div class="fd-summary" id="foodSummaryItems" aria-live="polite"><p class="muted">No items selected yet.</p></div>
+        <div class="form-grp"><label class="form-lbl" for="foodName">Your Name</label><input class="form-inp" id="foodName" autocomplete="name" placeholder="e.g. Terna Akaa" required /></div>
+        <div class="form-row">
+          <div class="form-grp"><label class="form-lbl" for="foodSeat">Seat Number</label><input class="form-inp" id="foodSeat" placeholder="e.g. A-14" required /></div>
+          <div class="form-grp" id="standWrap"><label class="form-lbl" for="foodStand">Stand / Section</label><input class="form-inp" id="foodStand" placeholder="e.g. North Stand" /></div>
+        </div>
+        <div class="form-grp"><label class="form-lbl" for="foodPhone">Phone Number</label><input class="form-inp" id="foodPhone" type="tel" autocomplete="tel" placeholder="e.g. 08012345678" required /></div>
+        <div class="form-grp"><label class="form-lbl" for="foodEmail">Email Address</label><input class="form-inp" id="foodEmail" type="email" autocomplete="email" placeholder="you@example.com" required /></div>
+        <div class="form-grp"><label class="form-lbl" for="foodNotes">Note for the kitchen (optional)</label><input class="form-inp" id="foodNotes" maxlength="200" placeholder="e.g. no pepper, extra napkins" /></div>
+        <label class="fd-adult" id="adultWrap" hidden><input type="checkbox" id="foodAdult" /> I confirm I am 18 or older (your order includes alcohol). <b>18+ | Drink Responsibly</b></label>
+        <p class="fd-small" id="smallPrint">Your order is confirmed once Paystack confirms your payment. Unpaid orders are cancelled automatically after a few minutes.</p>
+        <p class="form-error" id="food-error" role="alert" hidden></p>
+        <button type="submit" class="btn-p fd-submit" id="placeFoodBtn">Place Order &amp; Pay</button>
+        <img class="fd-partner" src="/images/food-logo.jpg" alt="Matchday food partner" loading="lazy" />
+      </form>
+    </div>
   </div>
 </Layout>
 
@@ -44,23 +52,34 @@ import Layout from '../../layouts/Layout.astro';
   .fd-brand { display: flex; align-items: center; gap: 14px; max-width: 640px; }
   .fd-brand img { width: 56px; height: 56px; border-radius: 8px; object-fit: contain; flex-shrink: 0; }
   .fd-brand p { margin: 0; font-size: 16px; line-height: 1.6; }
+  .fd-closed { padding: 16px 18px; border-radius: 12px; background: #FFF8E1; color: #5C4300; font-size: 16px; margin: 0 0 20px; }
   .fd-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 28px; align-items: start; }
+  .fd-grid.is-closed { opacity: .55; pointer-events: none; }
   .fd-h2 { margin: 0 0 16px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .fd-menu { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
-  .fd-menu :global(.fd-item) { border: 1px solid var(--d4); border-radius: 12px; padding: 16px; background: #fff; text-align: center; }
-  .fd-menu :global(.fd-item.picked) { border-color: var(--red); box-shadow: 0 0 0 2px rgba(227, 30, 36, .15); }
-  .fd-menu :global(.fd-emoji) { font-size: 34px; }
-  .fd-menu :global(.fd-name) { margin: 8px 0 4px; font: 700 16px/1.2 'Barlow Condensed', sans-serif; }
-  .fd-menu :global(.fd-price) { color: var(--gold-text); font: 400 20px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .fd-menu :global(.fd-qty) { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
-  .fd-menu :global(.fd-qty button) {
-    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--d4); background: var(--d3); font-size: 18px; cursor: pointer;
-  }
-  .fd-menu :global(.fd-qty button:hover) { border-color: var(--red); color: var(--red-text); }
-  .fd-menu :global(.fd-qty output) { min-width: 20px; font-weight: 700; }
+  #foodMenu :global(.fd-cat) { margin: 0 0 10px; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); }
+  #foodMenu :global(.fd-menu) { list-style: none; margin: 0 0 22px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; }
+  #foodMenu :global(.fd-item) { border: 1px solid var(--d4); border-radius: 12px; overflow: hidden; background: #fff; text-align: center; display: flex; flex-direction: column; }
+  #foodMenu :global(.fd-item.picked) { border-color: var(--red); box-shadow: 0 0 0 2px rgba(227, 30, 36, .15); }
+  #foodMenu :global(.fd-item.sold) { opacity: .5; }
+  #foodMenu :global(.fd-photo) { position: relative; aspect-ratio: 4 / 3; background: var(--d3); display: flex; align-items: center; justify-content: center; font-size: 40px; }
+  #foodMenu :global(.fd-photo img) { width: 100%; height: 100%; object-fit: cover; }
+  #foodMenu :global(.fd-tag) { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 999px; font: 700 11px/1.2 'Barlow', sans-serif; background: #15181D; color: #fff; }
+  #foodMenu :global(.fd-tag.sold) { background: #6B7280; }
+  #foodMenu :global(.fd-body) { padding: 10px 12px 14px; display: flex; flex-direction: column; flex: 1; }
+  #foodMenu :global(.fd-name) { margin: 0 0 4px; font: 700 16px/1.2 'Barlow Condensed', sans-serif; }
+  #foodMenu :global(.fd-desc) { margin: 0 0 6px; font-size: 13px; color: var(--lt); line-height: 1.35; flex: 1; }
+  #foodMenu :global(.fd-price) { color: var(--gold-text); font: 400 20px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  #foodMenu :global(.fd-age) { display: block; margin-top: 4px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; color: #A3161B; }
+  #foodMenu :global(.fd-qty) { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 10px; }
+  #foodMenu :global(.fd-qty button) { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--d4); background: var(--d3); font-size: 18px; cursor: pointer; }
+  #foodMenu :global(.fd-qty button:hover:not(:disabled)) { border-color: var(--red); color: var(--red-text); }
+  #foodMenu :global(.fd-qty button:disabled) { cursor: not-allowed; opacity: .5; }
+  #foodMenu :global(.fd-qty output) { min-width: 20px; font-weight: 700; }
   .fd-summary { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--d4); }
   .fd-summary :global(.fd-sum) { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: 15px; }
   .fd-summary :global(.fd-sum.total) { font-weight: 700; border-top: 1px solid var(--d4); margin-top: 6px; padding-top: 10px; }
+  .fd-adult { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: #FDECEC; }
+  .fd-adult input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--red); }
   .fd-small { font-size: 13px; color: var(--lt); margin: 0 0 12px; }
   .fd-submit { width: 100%; padding: 15px; font-size: 15px; }
   .fd-partner { width: 100%; height: 45px; object-fit: cover; margin-top: 14px; border-radius: 6px; }
@@ -69,75 +88,84 @@ import Layout from '../../layouts/Layout.astro';
 
 <script is:inline>
 (function () {
-  // Item ids must match the server-side menu in functions/api/_lib/foodMenu.js.
-  const foodMenu = [
-    { id: 'suya', name: 'Beef Suya', price: 1500, emoji: '🍢' },
-    { id: 'pepper', name: 'Pepper Soup', price: 2000, emoji: '🍲' },
-    { id: 'chicken', name: 'Grilled Chicken', price: 2500, emoji: '🍗' },
-    { id: 'water', name: 'Bottled Water', price: 300, emoji: '💧' },
-    { id: 'malt', name: 'Malt Drink', price: 500, emoji: '🥤' },
-    { id: 'puff', name: 'Puff Puff (5 pcs)', price: 500, emoji: '🍩' },
-    { id: 'plantain', name: 'Fried Plantain', price: 800, emoji: '🍌' },
-    { id: 'pie', name: 'Meat Pie', price: 700, emoji: '🥧' },
-  ];
-  const qty = Object.fromEntries(foodMenu.map(f => [f.id, 0]));
-  const naira = n => '₦' + n.toLocaleString('en-NG');
   const $ = id => document.getElementById(id);
+  const naira = k => '₦' + (k / 100).toLocaleString('en-NG');
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  let items = [], qty = {}, minOrder = 0;
 
-  function renderMenu() {
-    $('foodMenu').innerHTML = foodMenu.map(f => `
-      <li class="fd-item${qty[f.id] ? ' picked' : ''}">
-        <div class="fd-emoji" aria-hidden="true">${f.emoji}</div>
-        <div class="fd-name">${f.name}</div>
-        <div class="fd-price">${naira(f.price)}</div>
-        <div class="fd-qty">
-          <button type="button" data-id="${f.id}" data-d="-1" aria-label="Remove one ${f.name}">−</button>
-          <output aria-label="${f.name} quantity">${qty[f.id]}</output>
-          <button type="button" data-id="${f.id}" data-d="1" aria-label="Add one ${f.name}">+</button>
-        </div>
-      </li>`).join('');
+  function renderMenu(cats) {
+    $('foodMenu').innerHTML = cats.length ? cats.map(c => `<h3 class="fd-cat">${esc(c.name)}</h3><ul class="fd-menu">` + c.items.map(f => {
+      const q = qty[f.id] || 0;
+      return `<li class="fd-item${q ? ' picked' : ''}${f.soldOut ? ' sold' : ''}">
+        <div class="fd-photo">${f.photo ? `<img src="${esc(f.photo)}" alt="${esc(f.name)}" loading="lazy" width="400" height="300">` : `<span aria-hidden="true">${esc(f.emoji || '🍽️')}</span>`}
+          ${f.soldOut ? '<span class="fd-tag sold">Sold out</span>' : f.adult ? '<span class="fd-tag">18+</span>' : ''}</div>
+        <div class="fd-body"><div class="fd-name">${esc(f.name)}</div>${f.description ? `<p class="fd-desc">${esc(f.description)}</p>` : '<p class="fd-desc"></p>'}
+          <div class="fd-price">${naira(f.priceKobo)}</div>${f.adult ? '<span class="fd-age">18+ | Drink Responsibly</span>' : ''}
+          <div class="fd-qty">
+            <button type="button" data-id="${esc(f.id)}" data-d="-1" aria-label="Remove one ${esc(f.name)}" ${f.soldOut || !q ? 'disabled' : ''}>−</button>
+            <output aria-label="${esc(f.name)} quantity">${q}</output>
+            <button type="button" data-id="${esc(f.id)}" data-d="1" aria-label="Add one ${esc(f.name)}" ${f.soldOut || q >= f.maxPerOrder ? 'disabled' : ''}>+</button>
+          </div></div></li>`;
+    }).join('') + '</ul>').join('') : '<p class="muted">The menu will be available on matchday.</p>';
   }
   function renderSummary() {
-    const picked = foodMenu.filter(f => qty[f.id] > 0);
+    const picked = items.filter(f => qty[f.id] > 0);
+    $('adultWrap').hidden = !picked.some(f => f.adult);
     if (!picked.length) { $('foodSummaryItems').innerHTML = '<p class="muted">No items selected yet.</p>'; return; }
     let total = 0;
     $('foodSummaryItems').innerHTML = picked.map(f => {
-      const sub = f.price * qty[f.id]; total += sub;
-      return `<div class="fd-sum"><span>${f.emoji} ${f.name} × ${qty[f.id]}</span><span>${naira(sub)}</span></div>`;
-    }).join('') + `<div class="fd-sum total"><span>Total</span><span>${naira(total)}</span></div>`;
+      const sub = f.priceKobo * qty[f.id]; total += sub;
+      return `<div class="fd-sum"><span>${esc(f.name)} × ${qty[f.id]}</span><span>${naira(sub)}</span></div>`;
+    }).join('') + `<div class="fd-sum total"><span>Total</span><span>${naira(total)}</span></div>` +
+      (minOrder && total < minOrder ? `<p class="fd-small">Minimum order ${naira(minOrder)}.</p>` : '');
   }
+  let cats = [];
   $('foodMenu').addEventListener('click', e => {
     const b = e.target.closest('button[data-id]');
-    if (!b) return;
-    qty[b.dataset.id] = Math.max(0, qty[b.dataset.id] + Number(b.dataset.d));
-    renderMenu(); renderSummary();
-    $('foodMenu').querySelector(`button[data-id="${b.dataset.id}"][data-d="${b.dataset.d}"]`).focus();
+    if (!b || b.disabled) return;
+    const f = items.find(x => x.id === b.dataset.id);
+    qty[f.id] = Math.max(0, Math.min(f.maxPerOrder, (qty[f.id] || 0) + Number(b.dataset.d)));
+    renderMenu(cats); renderSummary();
+    $('foodMenu').querySelector(`button[data-id="${b.dataset.id}"][data-d="${b.dataset.d}"]`)?.focus();
   });
+
+  async function loadMenu() {
+    try {
+      const d = await (await fetch('/api/food/menu', { cache: 'no-store' })).json();
+      cats = d.categories; items = cats.flatMap(c => c.items); minOrder = d.minOrderKobo || 0;
+      for (const f of items) if (f.soldOut) delete qty[f.id];
+      $('closed').hidden = d.open;
+      $('shop').classList.toggle('is-closed', !d.open);
+      if (d.stands?.length && $('foodStand').tagName === 'INPUT') {
+        $('foodStand').outerHTML = `<select class="form-sel" id="foodStand" required><option value="">Choose your stand</option>${d.stands.map(s => `<option>${esc(s)}</option>`).join('')}</select>`;
+      }
+      $('smallPrint').textContent = `Your order is confirmed once Paystack confirms your payment. Unpaid orders are cancelled automatically after ${d.paymentExpiryMinutes} minutes.`;
+      renderMenu(cats); renderSummary();
+    } catch { $('foodMenu').innerHTML = '<p class="muted">The menu could not be loaded. Please refresh the page.</p>'; }
+  }
 
   $('foodForm').addEventListener('submit', async e => {
     e.preventDefault();
     const errEl = $('food-error'), btn = $('placeFoodBtn');
     const fail = msg => { errEl.textContent = msg; errEl.hidden = false; };
     errEl.hidden = true;
-    const name = $('foodName').value.trim();
-    const notes = $('foodNotes').value.trim();
-    const seat = $('foodSeat').value.trim();
-    const stand = $('foodStand').value.trim();
-    const phone = $('foodPhone').value.trim();
-    const email = $('foodEmail').value.trim();
-    const picked = foodMenu.filter(f => qty[f.id] > 0);
+    const v = id => $(id).value.trim();
+    const picked = items.filter(f => qty[f.id] > 0);
     if (!picked.length) return fail('Please select at least one item.');
-    if (!name) return fail('Please enter your name.');
-    if (!seat) return fail('Please enter your seat number.');
-    if (!phone || !email) return fail('Please enter your phone number and email.');
+    if (!v('foodName')) return fail('Please enter your name.');
+    if (!v('foodSeat')) return fail('Please enter your seat number.');
+    if ($('foodStand').tagName === 'SELECT' && !v('foodStand')) return fail('Please choose your stand.');
+    if (!v('foodPhone') || !v('foodEmail')) return fail('Please enter your phone number and email.');
+    if (!$('adultWrap').hidden && !$('foodAdult').checked) return fail('Please confirm you are 18 or older to order alcoholic drinks.');
     btn.disabled = true; btn.textContent = 'Redirecting to payment...';
     try {
       const res = await fetch('/api/food-checkout', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, seat, stand, phone, email, notes, items: picked.map(f => ({ id: f.id, qty: qty[f.id] })) }),
+        body: JSON.stringify({ name: v('foodName'), seat: v('foodSeat'), stand: v('foodStand'), phone: v('foodPhone'), email: v('foodEmail'), notes: v('foodNotes'),
+          adultConfirmed: $('foodAdult').checked, items: picked.map(f => ({ id: f.id, qty: qty[f.id] })) }),
       });
       const data = await res.json();
-      if (!res.ok || !data.authorizationUrl) throw new Error(data.error || 'Could not start payment.');
+      if (!res.ok || !data.authorizationUrl) { if (res.status === 409) loadMenu(); throw new Error(data.error || 'Could not start payment.'); }
       window.location.href = data.authorizationUrl;
     } catch (err) {
       fail(err.message || 'Something went wrong. Please try again.');
@@ -145,6 +173,8 @@ import Layout from '../../layouts/Layout.astro';
     }
   });
 
-  renderMenu(); renderSummary();
+  loadMenu();
+  // Keep sold-out items and opening times up to date while the page is open.
+  setInterval(loadMenu, 60000);
 })();
 </script>

@@ -1,0 +1,412 @@
+---
+// Commerce › In-Seat Food › Menu: add, edit, price, photo, sold out,
+// reorder, duplicate, archive/delete menu items; categories; ordering
+// settings. Changes show on the public /food page straight away.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Food Menu | Lobi Stars Admin" description="Manage the in-seat food menu." noindex>
+  <div class="wrap fm">
+    <AdminNav current="food-menu" />
+    <div class="stag">Commerce › In-Seat Food</div>
+    <h1 class="stitle">Food <span class="r">Menu</span></h1>
+    <p class="muted fm-lede">Add items, change prices and photos, and mark items <strong>sold out</strong> when they run out. Changes appear on the <a href="/food/" target="_blank" rel="noopener">food ordering page</a> straight away. New prices apply to new orders only; past orders keep the price that was paid.</p>
+    <p class="fm-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <p class="fm-state" id="orderingState"></p>
+
+    <div class="fm-tabs" role="tablist">
+      <button role="tab" type="button" data-tab="items" aria-selected="true">Items</button>
+      <button role="tab" type="button" data-tab="cats" aria-selected="false">Categories</button>
+      <button role="tab" type="button" data-tab="settings" aria-selected="false">Ordering settings</button>
+    </div>
+
+    <section data-panel="items">
+      <div class="fm-bar"><button type="button" class="btn-p" id="addBtn">+ Add item</button><span class="muted fm-hint">Drag ⠿ (or use ↑ ↓) to change the order fans see.</span></div>
+      <ul class="fm-list" id="list"></ul>
+      <details class="fm-arch" id="archWrap" hidden><summary>Archived items (<span id="archN"></span>)</summary><ul class="fm-list" id="archList"></ul></details>
+    </section>
+
+    <section data-panel="cats" hidden>
+      <form class="fm-catadd" id="catAdd"><input class="form-inp" id="catName" placeholder="New category, e.g. Combos" maxlength="40" /><button class="btn-p" type="submit">Add category</button></form>
+      <ul class="fm-cats" id="cats"></ul>
+    </section>
+
+    <section data-panel="settings" hidden>
+      <form class="panel fm-set" id="settings">
+        <fieldset><legend>Ordering</legend>
+          <label><input type="radio" name="mode" value="open" /> <b>Open</b> (fans can order now)</label>
+          <label><input type="radio" name="mode" value="closed" /> <b>Closed</b> (the page says "In-seat ordering opens on matchday")</label>
+          <label><input type="radio" name="mode" value="auto" /> <b>Automatic</b>: opens <input type="number" id="autoMin" min="0" max="600" class="fm-num" /> minutes before kick-off of a Lobi Stars <b>home</b> game and closes at full time</label>
+        </fieldset>
+        <div class="form-row">
+          <div class="form-grp"><label class="form-lbl" for="expiry">Unpaid orders expire after (minutes)</label><input class="form-inp" id="expiry" type="number" min="1" max="120" /></div>
+          <div class="form-grp"><label class="form-lbl" for="minOrder">Minimum order in ₦ (0 = none)</label><input class="form-inp" id="minOrder" type="number" min="0" /></div>
+        </div>
+        <div class="form-grp"><label class="form-lbl" for="stands">Stands / sections (one per line; leave empty to let fans type it)</label><textarea class="form-ta" id="stands" rows="5" placeholder="Cover Stand&#10;Popular Stand&#10;VIP"></textarea></div>
+        <button class="btn-p" type="submit">Save settings</button>
+      </form>
+    </section>
+  </div>
+
+  <dialog class="fm-dlg" id="dlg" aria-labelledby="dlgTitle">
+    <form method="dialog" class="fm-x"><button aria-label="Close">&times;</button></form>
+    <h2 id="dlgTitle">Add item</h2>
+    <form id="itemForm" class="fm-form" novalidate>
+      <div class="fm-cols">
+        <div>
+          <div class="form-grp"><label class="form-lbl" for="fName">Name *</label><input class="form-inp" id="fName" maxlength="60" required /></div>
+          <div class="form-row">
+            <div class="form-grp"><label class="form-lbl" for="fPrice">Price (₦, whole naira) *</label><input class="form-inp" id="fPrice" type="number" min="1" step="1" inputmode="numeric" required /></div>
+            <div class="form-grp"><label class="form-lbl" for="fCat">Category *</label><select class="form-sel" id="fCat" required></select></div>
+          </div>
+          <div class="form-grp"><label class="form-lbl" for="fDesc">Short description</label><input class="form-inp" id="fDesc" maxlength="160" placeholder="e.g. Spicy grilled beef with onions" /></div>
+          <div class="fm-photo">
+            <p class="form-lbl">Photo * <span class="muted">(JPG, PNG or WebP, up to 5MB; it is resized for you)</span></p>
+            <div class="fm-drop" id="drop" tabindex="0" role="button" aria-label="Choose or drop a photo">
+              <span id="dropTxt">Drag a photo here, or <u>choose a file</u></span>
+              <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden />
+            </div>
+            <div class="fm-crop" id="crop" hidden>
+              <canvas id="cropCanvas" width="320" height="240" aria-label="Drag to position the photo"></canvas>
+              <div class="fm-crop-tools">
+                <label>Frame <select id="frame"><option value="43">4:3</option><option value="11">Square</option></select></label>
+                <label>Zoom <input type="range" id="zoom" min="1" max="3" step="0.01" value="1" /></label>
+                <button type="button" class="btn-o" id="usePhoto">Use this photo</button>
+                <button type="button" class="btn-o" id="cancelPhoto">Cancel</button>
+              </div>
+              <p class="muted fm-small">Drag the picture to position it.</p>
+            </div>
+            <div class="fm-cur" id="cur" hidden><span id="curInfo"></span> <button type="button" class="fm-link" id="removePhoto">Remove photo</button></div>
+            <div class="form-grp fm-emoji"><label class="form-lbl" for="fEmoji">Emoji (shown if there is no photo)</label><input class="form-inp" id="fEmoji" maxlength="4" placeholder="Optional, e.g. 🍲" /></div>
+          </div>
+          <div class="form-row">
+            <div class="form-grp"><label class="form-lbl" for="fMax">Most per order (optional)</label><input class="form-inp" id="fMax" type="number" min="1" max="50" /></div>
+            <div class="form-grp"><label class="form-lbl" for="fStock">Stock this match (optional)</label><input class="form-inp" id="fStock" type="number" min="0" placeholder="No limit" /></div>
+          </div>
+          <div class="fm-checks">
+            <label><input type="checkbox" id="fAvail" checked /> Show on the menu</label>
+            <label><input type="checkbox" id="fSold" /> Sold out</label>
+            <label><input type="checkbox" id="fAdult" /> 18+ (alcoholic drink)</label>
+          </div>
+        </div>
+        <aside>
+          <p class="form-lbl">Preview (what fans see)</p>
+          <div class="pv" id="preview"></div>
+          <div class="fm-hist" id="hist"></div>
+        </aside>
+      </div>
+      <p class="form-error" id="formErr" role="alert" hidden></p>
+      <div class="fm-acts"><button class="btn-p" type="submit" id="saveBtn">Save item</button><button class="btn-o" type="button" id="closeBtn">Cancel</button></div>
+    </form>
+  </dialog>
+</Layout>
+
+<style>
+  .fm { max-width: 1100px; padding-top: 28px; padding-bottom: 80px; }
+  .fm-lede { max-width: 860px; margin-bottom: 12px; }
+  .fm-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 14px; }
+  .fm-msg.ok { background: #E8F7EE; color: #17643A; } .fm-msg.err { background: #FDECEC; color: #A3161B; }
+  .fm-state { margin: 0 0 14px; font-weight: 700; }
+  .fm-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; border-bottom: 1px solid var(--d4); }
+  .fm-tabs button { border: 0; background: none; padding: 12px 14px 10px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); border-bottom: 3px solid transparent; cursor: pointer; }
+  .fm-tabs button[aria-selected='true'] { color: var(--a-ink); border-color: #F97316; }
+  .fm-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .fm-hint { font-size: 13px; }
+  .fm :global(.fm-list) { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+  .fm :global(.fm-row) { display: grid; grid-template-columns: 28px 56px minmax(0, 1fr) 120px auto auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--d4); border-radius: 12px; background: var(--a-card); }
+  .fm :global(.fm-row.dragging) { opacity: .5; }
+  .fm :global(.fm-row.over) { border-color: #F97316; box-shadow: 0 0 0 2px rgba(249,115,22,.25); }
+  .fm :global(.fm-row.off) { opacity: .6; }
+  .fm :global(.fm-handle) { cursor: grab; color: var(--lt); font-size: 18px; text-align: center; user-select: none; display: flex; flex-direction: column; align-items: center; }
+  .fm :global(.fm-handle button) { border: 0; background: none; color: var(--lt); cursor: pointer; font-size: 12px; padding: 0; line-height: 1; }
+  .fm :global(.fm-thumb) { width: 56px; height: 42px; border-radius: 8px; object-fit: cover; background: var(--a-soft); display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .fm :global(.fm-name) { font-weight: 700; overflow-wrap: anywhere; }
+  .fm :global(.fm-name small) { display: block; font-weight: 400; color: var(--lt); font-size: 12px; }
+  .fm :global(.fm-price) { display: flex; align-items: center; gap: 4px; }
+  .fm :global(.fm-price input) { width: 90px; padding: 7px 8px; border-radius: 8px; border: 1px solid var(--d4); font: 700 15px 'Barlow', sans-serif; }
+  .fm :global(.fm-switch) { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .fm :global(.fm-switch input) { appearance: none; width: 40px; height: 22px; border-radius: 999px; background: #CBD5E1; position: relative; cursor: pointer; transition: background .15s; }
+  .fm :global(.fm-switch input::after) { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: left .15s; }
+  .fm :global(.fm-switch input:checked) { background: #DC2626; }
+  .fm :global(.fm-switch input:checked::after) { left: 21px; }
+  .fm :global(.fm-btns) { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .fm :global(.fm-btns button) { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--d4); background: var(--a-card); color: var(--a-ink); cursor: pointer; font-size: 13px; font-weight: 600; }
+  .fm :global(.fm-btns .del) { color: #B91C1C; }
+  .fm-arch { margin-top: 20px; } .fm-arch summary { cursor: pointer; font-weight: 700; margin-bottom: 8px; }
+  .fm-catadd { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; } .fm-catadd .form-inp { flex: 1 1 240px; max-width: 360px; }
+  .fm :global(.fm-cats) { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-width: 640px; }
+  .fm :global(.fm-cat) { display: flex; gap: 8px; align-items: center; padding: 10px 12px; border: 1px solid var(--d4); border-radius: 12px; background: var(--a-card); }
+  .fm :global(.fm-cat input) { flex: 1; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--d4); font: inherit; }
+  .fm :global(.fm-cat button) { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--d4); background: var(--a-card); color: var(--a-ink); cursor: pointer; }
+  .fm :global(.fm-cat span) { font-size: 13px; color: var(--lt); white-space: nowrap; }
+  .fm-set fieldset { border: 0; padding: 0; margin: 0 0 16px; display: grid; gap: 10px; }
+  .fm-set legend { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); margin-bottom: 8px; }
+  .fm-set label { line-height: 1.6; }
+  .fm-num { width: 70px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--d4); font: inherit; }
+
+  .fm-dlg { border: 0; border-radius: 16px; padding: 24px; width: min(960px, 96vw); max-height: 94vh; overflow-y: auto; background: var(--a-card, #fff); color: var(--a-ink, #15181D); box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+  .fm-dlg::backdrop { background: rgba(15,17,21,.6); }
+  .fm-dlg h2 { margin: 0 0 14px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fm-x { position: absolute; top: 10px; right: 10px; } .fm-x button { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--d4); background: var(--a-card, #fff); font-size: 22px; cursor: pointer; }
+  .fm-cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 22px; }
+  .fm-drop { border: 2px dashed var(--d4); border-radius: 12px; padding: 22px; text-align: center; cursor: pointer; color: var(--lt); }
+  .fm-drop.over, .fm-drop:focus-visible { border-color: #F97316; color: var(--a-ink); outline: none; }
+  .fm-crop canvas { display: block; max-width: 100%; border-radius: 10px; background: #111; cursor: grab; touch-action: none; }
+  .fm-crop-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 8px; font-size: 14px; }
+  .fm-small { font-size: 12px; margin: 4px 0 0; }
+  .fm-cur { margin: 8px 0; font-size: 14px; } .fm-link { border: 0; background: none; color: var(--red-text); text-decoration: underline; cursor: pointer; font: inherit; }
+  .fm-emoji { margin-top: 10px; }
+  .fm-checks { display: flex; gap: 16px; flex-wrap: wrap; margin: 6px 0 10px; }
+  .fm-checks label { display: flex; gap: 6px; align-items: center; font-weight: 600; }
+  .fm-checks input { width: 18px; height: 18px; accent-color: var(--red); }
+  .fm-acts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .fm :global(.pv), .fm-dlg :global(.pv) { width: 210px; border: 1px solid #E3E6EA; border-radius: 12px; overflow: hidden; background: #fff; color: #15181D; text-align: center; font-family: 'Barlow', sans-serif; }
+  .fm-dlg :global(.pv-photo) { position: relative; aspect-ratio: 4 / 3; background: #F1F3F5; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+  .fm-dlg :global(.pv-photo img) { width: 100%; height: 100%; object-fit: cover; }
+  .fm-dlg :global(.pv-tag) { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 999px; font: 700 11px/1.2 'Barlow', sans-serif; background: #15181D; color: #fff; }
+  .fm-dlg :global(.pv-body) { padding: 10px 12px 14px; }
+  .fm-dlg :global(.pv-name) { font: 700 16px/1.2 'Barlow Condensed', sans-serif; }
+  .fm-dlg :global(.pv-desc) { margin: 4px 0 6px; font-size: 13px; color: #5B6472; }
+  .fm-dlg :global(.pv-price) { color: #865C08; font: 400 20px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fm-dlg :global(.pv-age) { display: block; margin-top: 4px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; color: #A3161B; }
+  .fm-dlg :global(.pv.sold) { opacity: .5; }
+  .fm-hist { margin-top: 16px; font-size: 13px; color: var(--lt); }
+  .fm-hist :global(li) { margin: 4px 0; }
+  @media (max-width: 760px) {
+    .fm :global(.fm-row) { grid-template-columns: 26px 48px minmax(0, 1fr); }
+    .fm :global(.fm-price), .fm :global(.fm-switch), .fm :global(.fm-btns) { grid-column: 2 / -1; }
+    .fm :global(.fm-btns) { justify-content: flex-start; }
+    .fm-cols { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const naira = n => '₦' + Number(n || 0).toLocaleString('en-NG');
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'fm-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
+  let S = { items: [], categories: [], settings: {} }, editing = null, photoId = null, photoUrl = null;
+
+  async function api(body) {
+    const res = await fetch('/api/admin/food-menu', { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', 'x-admin-code': code }, body: body ? JSON.stringify(body) : undefined });
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/food-orders/menu/';
+    if (!res.ok) throw new Error(d.error || 'Request failed');
+    if (d.items) { S = d; render(); }
+    return d;
+  }
+  const catName = id => S.categories.find(c => c.id === id)?.name || 'No category';
+
+  // ── Items list ──
+  function row(i, archived) {
+    const thumb = i.photo ? `<img class="fm-thumb" src="${esc(i.photo)}" alt="" width="56" height="42">` : `<span class="fm-thumb" aria-hidden="true">${esc(i.emoji || '🍽️')}</span>`;
+    const flags = [!i.available && 'hidden from menu', i.adult && '18+', i.stock != null && `${i.stock} left`, i.maxPerOrder && `max ${i.maxPerOrder} per order`].filter(Boolean).join(' · ');
+    if (archived) return `<li class="fm-row off" data-id="${esc(i.id)}"><span></span>${thumb}<div class="fm-name">${esc(i.name)}<small>${esc(catName(i.category))} · ${naira(i.price)}</small></div><span></span><span></span><div class="fm-btns"><button data-act="restore">Restore</button></div></li>`;
+    return `<li class="fm-row${!i.available ? ' off' : ''}" draggable="true" data-id="${esc(i.id)}">
+      <span class="fm-handle" title="Drag to reorder"><button type="button" data-act="up" aria-label="Move ${esc(i.name)} up">▲</button>⠿<button type="button" data-act="down" aria-label="Move ${esc(i.name)} down">▼</button></span>
+      ${thumb}
+      <div class="fm-name">${esc(i.name)}<small>${esc(catName(i.category))}${flags ? ' · ' + esc(flags) : ''}</small></div>
+      <label class="fm-price">₦<input type="number" min="1" step="1" value="${i.price}" data-price aria-label="Price of ${esc(i.name)} in naira"></label>
+      <label class="fm-switch"><input type="checkbox" data-sold ${i.soldOut ? 'checked' : ''} aria-label="${esc(i.name)} sold out"> Sold out</label>
+      <div class="fm-btns"><button data-act="edit">Edit</button><button data-act="duplicate">Duplicate</button><button class="del" data-act="delete">Delete</button></div></li>`;
+  }
+  function render() {
+    const live = S.items.filter(i => !i.archived), arch = S.items.filter(i => i.archived);
+    $('list').innerHTML = live.length ? live.map(i => row(i)).join('') : '<li class="empty-state"><b>🍽️</b><p>No menu items yet. Add the first one.</p></li>';
+    $('archList').innerHTML = arch.map(i => row(i, true)).join('');
+    $('archWrap').hidden = !arch.length; $('archN').textContent = arch.length;
+    $('cats').innerHTML = S.categories.map((c, n) => `<li class="fm-cat" data-id="${esc(c.id)}"><input value="${esc(c.name)}" aria-label="Category name"><span>${c.count} item${c.count === 1 ? '' : 's'}</span>
+      <button data-c="up" ${n === 0 ? 'disabled' : ''} aria-label="Move up">↑</button><button data-c="down" ${n === S.categories.length - 1 ? 'disabled' : ''} aria-label="Move down">↓</button>
+      <button data-c="save">Rename</button><button data-c="del" ${c.count ? 'disabled title="Only empty categories can be deleted"' : ''}>Delete</button></li>`).join('');
+    $('fCat').innerHTML = S.categories.map(c => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+    const o = S.ordering || {};
+    $('orderingState').innerHTML = o.open ? `🟢 Ordering is <b>open</b>${o.match ? ` (${esc(o.match)})` : ''}.` : '🔴 Ordering is <b>closed</b>: fans see "In-seat ordering opens on matchday".';
+    const st = S.settings;
+    if (!$('settings').contains(document.activeElement)) {
+      $('settings').querySelectorAll('[name=mode]').forEach(r => { r.checked = r.value === st.orderingMode; });
+      $('autoMin').value = st.autoOpenMinutes; $('expiry').value = st.paymentExpiryMinutes; $('minOrder').value = st.minOrder; $('stands').value = (st.stands || []).join('\n');
+    }
+  }
+  $('list').addEventListener('change', async e => {
+    const li = e.target.closest('[data-id]'); if (!li) return;
+    try {
+      if (e.target.matches('[data-sold]')) { await api({ action: 'soldOut', id: li.dataset.id, value: e.target.checked }); msg(e.target.checked ? 'Marked sold out. Fans can no longer add it.' : 'Back on sale.', true); }
+      if (e.target.matches('[data-price]')) { await api({ action: 'price', id: li.dataset.id, price: Number(e.target.value) }); msg('Price saved. It applies to new orders.', true); }
+    } catch (err) { msg(err.message, false); api(); }
+  });
+  $('list').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('[data-price]')) { e.preventDefault(); e.target.blur(); } });
+  async function saveOrder() { await api({ action: 'order', ids: [...$('list').querySelectorAll('[data-id]')].map(li => li.dataset.id) }); }
+  async function onRowClick(e) {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const li = b.closest('[data-id]'); const item = S.items.find(i => i.id === li.dataset.id);
+    try {
+      if (b.dataset.act === 'edit') return openForm(item);
+      if (b.dataset.act === 'up' && li.previousElementSibling) { li.previousElementSibling.before(li); return saveOrder(); }
+      if (b.dataset.act === 'down' && li.nextElementSibling) { li.nextElementSibling.after(li); return saveOrder(); }
+      if (b.dataset.act === 'duplicate') { await api({ action: 'duplicate', id: item.id }); return msg(`Copied "${item.name}". The copy is hidden until you edit it and tick "Show on the menu".`, true); }
+      if (b.dataset.act === 'restore') { await api({ action: 'restore', id: item.id }); return msg(`"${item.name}" is back on the menu.`, true); }
+      if (b.dataset.act === 'delete') {
+        if (!confirm(`Delete "${item.name}"?\n\nIf it has never been ordered it is deleted permanently. If fans have ordered it before, it is ARCHIVED instead: hidden from the menu but kept for order history and reports (you can restore it later).`)) return;
+        const d = await api({ action: 'delete', id: item.id });
+        msg(d.archived ? `"${item.name}" has past orders, so it was archived (hidden, kept for reports).` : `"${item.name}" was deleted.`, true);
+      }
+    } catch (err) { msg(err.message, false); }
+  }
+  $('list').addEventListener('click', onRowClick);
+  $('archList').addEventListener('click', onRowClick);
+  // Drag and drop reordering.
+  let dragged = null;
+  $('list').addEventListener('dragstart', e => { dragged = e.target.closest('.fm-row'); dragged?.classList.add('dragging'); });
+  $('list').addEventListener('dragend', () => { dragged?.classList.remove('dragging'); document.querySelectorAll('.fm-row.over').forEach(x => x.classList.remove('over')); });
+  $('list').addEventListener('dragover', e => { const t = e.target.closest('.fm-row'); if (!dragged || !t || t === dragged) return; e.preventDefault(); document.querySelectorAll('.fm-row.over').forEach(x => x.classList.remove('over')); t.classList.add('over'); });
+  $('list').addEventListener('drop', e => {
+    const t = e.target.closest('.fm-row'); if (!dragged || !t || t === dragged) return;
+    e.preventDefault();
+    const after = [...$('list').children].indexOf(t) > [...$('list').children].indexOf(dragged);
+    after ? t.after(dragged) : t.before(dragged);
+    saveOrder().then(() => msg('Order saved.', true)).catch(err => msg(err.message, false));
+  });
+
+  // ── Categories ──
+  $('catAdd').addEventListener('submit', async e => { e.preventDefault(); try { await api({ action: 'category-add', name: $('catName').value }); $('catName').value = ''; msg('Category added.', true); } catch (err) { msg(err.message, false); } });
+  $('cats').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-c]'); if (!b) return;
+    const li = b.closest('[data-id]'); const ids = S.categories.map(c => c.id); const i = ids.indexOf(li.dataset.id);
+    try {
+      if (b.dataset.c === 'save') { await api({ action: 'category-rename', id: li.dataset.id, name: li.querySelector('input').value }); msg('Category renamed.', true); }
+      if (b.dataset.c === 'del') { if (!confirm('Delete this empty category?')) return; await api({ action: 'category-delete', id: li.dataset.id }); msg('Category deleted.', true); }
+      if (b.dataset.c === 'up' || b.dataset.c === 'down') { const j = b.dataset.c === 'up' ? i - 1 : i + 1; [ids[i], ids[j]] = [ids[j], ids[i]]; await api({ action: 'category-order', ids }); }
+    } catch (err) { msg(err.message, false); }
+  });
+
+  // ── Settings ──
+  $('settings').addEventListener('submit', async e => {
+    e.preventDefault();
+    const mode = $('settings').querySelector('[name=mode]:checked')?.value;
+    try {
+      await api({ action: 'settings', settings: { orderingMode: mode, autoOpenMinutes: Number($('autoMin').value), paymentExpiryMinutes: Number($('expiry').value), minOrder: $('minOrder').value === '' ? 0 : Number($('minOrder').value), stands: $('stands').value.split('\n') } });
+      msg('Settings saved.', true);
+    } catch (err) { msg(err.message, false); }
+  });
+
+  // ── Tabs ──
+  document.querySelectorAll('[data-tab]').forEach(t => t.addEventListener('click', () => {
+    document.querySelectorAll('[data-tab]').forEach(x => x.setAttribute('aria-selected', String(x === t)));
+    document.querySelectorAll('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== t.dataset.tab; });
+  }));
+
+  // ── Add / edit form with live preview ──
+  function preview() {
+    const name = $('fName').value.trim() || 'Item name', price = Number($('fPrice').value) || 0, desc = $('fDesc').value.trim();
+    const sold = $('fSold').checked, adult = $('fAdult').checked;
+    $('preview').className = 'pv' + (sold ? ' sold' : '');
+    $('preview').innerHTML = `<div class="pv-photo">${photoUrl ? `<img src="${esc(photoUrl)}" alt="">` : `<span>${esc($('fEmoji').value || '🍽️')}</span>`}${sold ? '<span class="pv-tag">Sold out</span>' : adult ? '<span class="pv-tag">18+</span>' : ''}</div>` +
+      `<div class="pv-body"><div class="pv-name">${esc(name)}</div>${desc ? `<p class="pv-desc">${esc(desc)}</p>` : ''}<div class="pv-price">${naira(price)}</div>${adult ? '<span class="pv-age">18+ | Drink Responsibly</span>' : ''}</div>`;
+    $('cur').hidden = !photoUrl; $('curInfo').textContent = photoUrl ? '✓ Photo added.' : '';
+  }
+  ['fName', 'fPrice', 'fDesc', 'fEmoji', 'fSold', 'fAdult'].forEach(id => $(id).addEventListener('input', preview));
+  function openForm(item) {
+    editing = item || null;
+    $('dlgTitle').textContent = item ? `Edit: ${item.name}` : 'Add item';
+    $('fName').value = item?.name || ''; $('fPrice').value = item?.price || ''; $('fCat').value = item?.category || S.categories[0]?.id || '';
+    $('fDesc').value = item?.description || ''; $('fEmoji').value = item?.emoji || ''; $('fMax').value = item?.maxPerOrder ?? ''; $('fStock').value = item?.stock ?? '';
+    $('fAvail').checked = item ? item.available : true; $('fSold').checked = !!item?.soldOut; $('fAdult').checked = !!item?.adult;
+    photoId = item?.photoId || null; photoUrl = item?.photo || null;
+    $('crop').hidden = true; $('drop').hidden = false; $('formErr').hidden = true;
+    $('hist').innerHTML = item?.history?.length ? '<p class="form-lbl">History</p><ul>' + item.history.map(h => `<li>${esc(new Date(h.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }))}: ${esc(h.text)}${h.by ? ` (${esc(h.by)})` : ''}</li>`).join('') + '</ul>' : '';
+    preview();
+    $('dlg').showModal();
+    $('fName').focus();
+  }
+  $('addBtn').addEventListener('click', () => openForm(null));
+  $('closeBtn').addEventListener('click', () => $('dlg').close());
+  $('removePhoto').addEventListener('click', () => { photoId = null; photoUrl = null; preview(); });
+  $('itemForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const err = $('formErr'); err.hidden = true;
+    if (!$('crop').hidden) { err.textContent = 'Press "Use this photo" (or Cancel) first.'; err.hidden = false; return; }
+    $('saveBtn').disabled = true;
+    try {
+      await api({ action: 'save', id: editing?.id, item: {
+        name: $('fName').value, price: Number($('fPrice').value), category: $('fCat').value, description: $('fDesc').value, emoji: $('fEmoji').value,
+        photoId, maxPerOrder: $('fMax').value, stock: $('fStock').value, available: $('fAvail').checked, soldOut: $('fSold').checked, adult: $('fAdult').checked,
+      } });
+      $('dlg').close();
+      msg(editing ? 'Item saved.' : 'Item added to the menu.', true);
+    } catch (ex) { err.textContent = ex.message; err.hidden = false; }
+    finally { $('saveBtn').disabled = false; }
+  });
+
+  // ── Photo: drop, crop to 4:3 or square, resize to max 1200px, WebP under 200KB ──
+  const cv = $('cropCanvas'), ctx = cv.getContext('2d');
+  let img = null, zoom = 1, ox = 0, oy = 0;
+  const frame = () => ($('frame').value === '11' ? [1, 1] : [4, 3]);
+  function sizeCanvas() { const [w, h] = frame(); cv.width = 320; cv.height = Math.round(320 * h / w); }
+  function base() { return Math.max(cv.width / img.width, cv.height / img.height); }
+  function clamp() {
+    const s = base() * zoom, w = img.width * s, h = img.height * s;
+    ox = Math.min(0, Math.max(cv.width - w, ox)); oy = Math.min(0, Math.max(cv.height - h, oy));
+  }
+  function draw() { if (!img) return; clamp(); const s = base() * zoom; ctx.fillStyle = '#111'; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(img, ox, oy, img.width * s, img.height * s); }
+  function loadFile(f) {
+    $('formErr').hidden = true;
+    if (!f) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(f.type)) { $('formErr').textContent = 'Please choose a JPG, PNG or WebP picture.'; $('formErr').hidden = false; return; }
+    if (f.size > 5 * 1024 * 1024) { $('formErr').textContent = 'That picture is larger than 5MB. Please choose a smaller one.'; $('formErr').hidden = false; return; }
+    const url = URL.createObjectURL(f);
+    const im = new Image();
+    im.onload = () => { img = im; zoom = 1; $('zoom').value = 1; sizeCanvas(); const s = base(); ox = (cv.width - img.width * s) / 2; oy = (cv.height - img.height * s) / 2; draw(); $('crop').hidden = false; $('drop').hidden = true; URL.revokeObjectURL(url); };
+    im.onerror = () => { $('formErr').textContent = 'That file could not be opened as a picture.'; $('formErr').hidden = false; };
+    im.src = url;
+  }
+  $('drop').addEventListener('click', () => $('file').click());
+  $('drop').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } });
+  $('file').addEventListener('change', () => { loadFile($('file').files[0]); $('file').value = ''; });
+  ['dragover', 'dragenter'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(ev => $('drop').addEventListener(ev, () => $('drop').classList.remove('over')));
+  $('drop').addEventListener('drop', e => { e.preventDefault(); loadFile(e.dataTransfer.files[0]); });
+  $('frame').addEventListener('change', () => { if (!img) return; sizeCanvas(); const s = base() * zoom; ox = (cv.width - img.width * s) / 2; oy = (cv.height - img.height * s) / 2; draw(); });
+  $('zoom').addEventListener('input', () => {
+    const cx = cv.width / 2, cy = cv.height / 2, s0 = base() * zoom;
+    zoom = Number($('zoom').value);
+    const s1 = base() * zoom;
+    ox = cx - (cx - ox) * s1 / s0; oy = cy - (cy - oy) * s1 / s0; draw();
+  });
+  let drag = null;
+  cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, ox, oy }; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => { if (!drag) return; const k = cv.width / cv.getBoundingClientRect().width; ox = drag.ox + (e.clientX - drag.x) * k; oy = drag.oy + (e.clientY - drag.y) * k; draw(); });
+  cv.addEventListener('pointerup', () => { drag = null; });
+  $('cancelPhoto').addEventListener('click', () => { img = null; $('crop').hidden = true; $('drop').hidden = false; });
+  $('usePhoto').addEventListener('click', async () => {
+    const [fw, fh] = frame();
+    const W = fw === fh ? 1000 : 1200, H = Math.round(W * fh / fw);
+    const outC = document.createElement('canvas'); outC.width = W; outC.height = H;
+    const k = W / cv.width, s = base() * zoom * k;
+    const o = outC.getContext('2d');
+    o.imageSmoothingQuality = 'high';
+    o.drawImage(img, ox * k, oy * k, img.width * s, img.height * s);
+    const toBlob = (type, q) => new Promise(r => outC.toBlob(r, type, q));
+    let blob = null;
+    for (const q of [0.85, 0.75, 0.65, 0.55, 0.45, 0.35]) {
+      blob = await toBlob('image/webp', q);
+      if (blob && blob.type !== 'image/webp') blob = await toBlob('image/jpeg', q); // browsers that can't make WebP
+      if (blob && blob.size < 200 * 1024) break;
+    }
+    $('usePhoto').disabled = true; $('usePhoto').textContent = 'Uploading…';
+    try {
+      const res = await fetch('/api/admin/food-photo', { method: 'POST', headers: { 'Content-Type': blob.type, 'x-admin-code': code }, body: blob });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Upload failed');
+      photoId = d.id; photoUrl = d.url;
+      $('crop').hidden = true; $('drop').hidden = false; img = null;
+      preview();
+      $('curInfo').textContent = `✓ Photo added (${Math.round(blob.size / 1024)}KB ${blob.type === 'image/webp' ? 'WebP' : 'JPG'}).`;
+    } catch (ex) { $('formErr').textContent = ex.message; $('formErr').hidden = false; }
+    finally { $('usePhoto').disabled = false; $('usePhoto').textContent = 'Use this photo'; }
+  });
+
+  api().catch(err => msg(err.message, false));
+})();
+</script>
