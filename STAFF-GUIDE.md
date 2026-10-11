@@ -753,6 +753,57 @@ payments only):
 
 ---
 
+## 17. Contacts: downloads, the sources chart and duplicates
+
+Everyone who gives us their details (contact form, newsletter, fan accounts
+for Predict & Win and voting, downloads, membership, tickets, sponsorship and
+hospitality enquiries, food and shop orders) is stored **once**: the same email
+**or** the same phone number means the same person, with all their sources
+listed together. Nothing anyone submitted is ever deleted by merging.
+
+### Downloading the contact list
+On **Fans & Inbox › Fan Database** or **Analytics › Contact Sources** (staff
+with **Can export fan data** only):
+- **⬇ Download All Contacts (Excel)** – `lobi-stars-contacts-YYYY-MM-DD.xlsx`:
+  sheet **All Contacts** (one row per person: name, email, phone, state, all
+  sources, first source, first/last seen, number of interactions, email
+  verified, member, marketing consent), sheet **Summary** (totals and % per
+  source, date and time of the export) and **one sheet per source**.
+- **⬇ Download Filtered List (Excel)** – exactly what you have filtered on
+  screen (e.g. Newsletter only, a date range, or the slice you clicked).
+- **⬇ Marketing List (Excel)** – only people who agreed to marketing, with an
+  unsubscribe link for each.
+Every download is recorded (your name, time, type and number of rows) in the
+**Export Log** and the **Activity Log**. Keep downloaded files private and
+delete them when you no longer need them.
+
+### Reading the contact sources chart (Analytics › Contact Sources)
+- **Where our contacts come from (pie):** each person counted **once**, by the
+  first way they reached us, so the slices add up to 100%. **Click a slice**
+  to list those people underneath; click it again (or *Show all sources*) to
+  go back.
+- **All channels used (bars):** how many people used each channel at least
+  once. Someone who joined the newsletter and later bought a ticket is in both
+  bars, so the bars add up to more than the total.
+- **Cards:** total contacts, new this month, how many agreed to marketing, and
+  the top source. The period buttons (7 days, 30 days, this season, all time,
+  custom) apply to the charts, cards and list.
+
+### Possible duplicates (Fans & Inbox › Possible Duplicates)
+Shows pairs with the **same name and a very similar email** (a typo, dots,
+or the same username at another provider) that couldn't be merged
+automatically. Press **Merge** (choose whose details to keep; all sources and
+history are combined) or **Keep separate** (never suggested again).
+
+### Managing sources (Settings access)
+At the bottom of Contact Sources, **Manage sources** lets you rename sources
+(e.g. "Predictor Registration"), change their colours and order, and **add a
+new source** before a new form goes live. Give the new source's code to the
+website manager so the form records contacts under it. Added sources can be
+deleted only while no contacts came from them.
+
+---
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

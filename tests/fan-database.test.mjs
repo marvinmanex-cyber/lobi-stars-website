@@ -88,7 +88,7 @@ test('source percentages match the contact counts', async () => {
 test('the .xlsx export has every sheet and opens as a valid workbook', async () => {
   const r = await call('/api/admin/fans/export?type=xlsx', { admin: true });
   assert.equal(r.status, 200);
-  assert.match(r.headers.get('Content-Disposition'), /lobi-stars-fan-database-\d{4}-\d{2}-\d{2}\.xlsx/);
+  assert.match(r.headers.get('Content-Disposition'), /lobi-stars-contacts-\d{4}-\d{2}-\d{2}\.xlsx/);
   const files = unzipSync(r.data);
   for (const f of ['[Content_Types].xml', 'xl/workbook.xml', 'xl/styles.xml', 'xl/worksheets/sheet1.xml']) assert.ok(files[f], f);
   const wb = strFromU8(files['xl/workbook.xml']);
@@ -109,7 +109,8 @@ test('the .xlsx export has every sheet and opens as a valid workbook', async () 
   assert.match(new TextDecoder().decode(s.data), /Source,Contacts,% of all contacts/);
 
   const m = await call('/api/admin/fans/export?type=marketing', { admin: true });
-  const csv = new TextDecoder().decode(m.data);
+  assert.match(m.headers.get('Content-Disposition'), /lobi-stars-marketing-list-.*\.xlsx/);
+  const csv = strFromU8(unzipSync(m.data)['xl/worksheets/sheet1.xml']); // the Marketing List sheet
   assert.ok(csv.includes(B.email), 'newsletter subscriber (consent Y) is on the marketing list');
   assert.ok(!csv.includes(C.email2) || csv.includes(C.email), 'contact-form only people are not');
   assert.match(csv, /\/unsubscribe\/\?t=[a-f0-9]{36}/);

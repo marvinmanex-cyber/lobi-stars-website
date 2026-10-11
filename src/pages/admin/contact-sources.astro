@@ -1,0 +1,231 @@
+---
+// Analytics › Contact Sources: where our contacts come from (pie: each person
+// once, by first source = 100%; click a slice to list those people), all
+// channels used (bar), summary cards, date range, one-click Excel downloads,
+// and (Settings access) renaming/recolouring/adding sources.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Contact Sources | Lobi Stars Admin" description="Where our contacts come from." noindex>
+  <div class="wrap cs">
+    <AdminNav current="contact-sources" />
+    <div class="stag">Analytics</div>
+    <h1 class="stitle">Contact <span class="r">Sources</span></h1>
+
+    <div class="cs-dl" id="downloads" hidden>
+      <a class="cs-btn red" href="#" data-x="xlsx">⬇ Download All Contacts (Excel)</a>
+      <a class="cs-btn blue" href="#" data-x="filtered">⬇ Download Filtered List (Excel)</a>
+      <a class="cs-btn green" href="#" data-x="marketing">⬇ Marketing List (Excel)</a>
+    </div>
+    <p class="cs-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <form class="panel cs-filter" id="rangeForm">
+      <div class="cs-range" role="group" aria-label="Period (when people first reached us)">
+        <button type="button" data-r="7d">Last 7 days</button><button type="button" data-r="30d">30 days</button><button type="button" data-r="season">This season</button><button type="button" data-r="all" class="on">All time</button><button type="button" data-r="custom">Custom</button>
+      </div>
+      <span id="custom" hidden><input type="date" id="from" aria-label="From" /> to <input type="date" id="to" aria-label="To" /> <button type="button" class="btn-o" id="apply">Apply</button></span>
+    </form>
+
+    <section class="cs-cards" id="cards" aria-label="Summary"></section>
+
+    <div class="cs-grid">
+      <section class="panel"><h2>Where our contacts come from</h2><p class="muted cs-small">Each person is counted <strong>once</strong>, by the first way they reached us, so the slices add up to 100%. <strong>Click a slice</strong> to list those people below.</p><div class="cs-chart"><canvas id="pie" aria-label="Where our contacts come from"></canvas></div></section>
+      <section class="panel"><h2>All channels used</h2><p class="muted cs-small">How many people used each channel at least once. Someone who joined the newsletter and later bought a ticket is in both bars, so these add up to more than the total.</p><div class="cs-chart"><canvas id="bars" aria-label="All channels used"></canvas></div></section>
+    </div>
+
+    <section class="panel">
+      <div class="cs-list-head"><h2 id="listTitle">Contacts</h2><button type="button" class="btn-o" id="clearSlice" hidden>Show all sources</button></div>
+      <div class="scroll" id="list" data-server-paged><p class="muted">Loading…</p></div>
+      <div class="cs-pager" id="pager"></div>
+    </section>
+
+    <details class="panel cs-manage" id="manage" hidden>
+      <summary>⚙️ Manage sources (Settings)</summary>
+      <p class="muted cs-small">Rename sources or change their colours. Add a new source before a new form goes live; the website manager then connects the form to it.</p>
+      <ul class="cs-defs" id="defs"></ul>
+      <form class="cs-add" id="addForm"><input class="form-inp" id="newLabel" placeholder="New source, e.g. Matchday Wi-Fi sign-up" maxlength="40" /><input type="color" id="newColor" value="#14B8A6" aria-label="Colour" /><button class="btn-p" type="submit">Add source</button></form>
+    </details>
+  </div>
+</Layout>
+
+<style>
+  .cs { max-width: 1300px; padding-top: 24px; padding-bottom: 80px; }
+  .cs-dl { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 16px; }
+  .cs-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 12px; color: #fff; text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 8px 20px rgba(15,17,21,.12); }
+  .cs-btn.red { background: linear-gradient(135deg, #B91C1C, #E31E24); } .cs-btn.blue { background: linear-gradient(135deg, #0369A1, #0EA5E9); } .cs-btn.green { background: linear-gradient(135deg, #047857, #10B981); }
+  .cs-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 14px; }
+  .cs-msg.ok { background: #E8F7EE; color: #17643A; } .cs-msg.err { background: #FDECEC; color: #A3161B; }
+  .cs-filter { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 14px 18px !important; margin-bottom: 14px; }
+  .cs-range { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cs-range button { border: 1px solid var(--d4); background: var(--a-card); color: var(--a-ink); border-radius: 999px; padding: 8px 14px; cursor: pointer; font: 600 14px/1 'Barlow', sans-serif; }
+  .cs-range button.on { background: #EC4899; border-color: #EC4899; color: #fff; }
+  .cs-filter input[type=date] { padding: 7px 9px; border-radius: 8px; border: 1px solid var(--d4); font: inherit; background: var(--a-card); color: var(--a-ink); }
+  .cs :global(.cs-cards) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 12px; margin-bottom: 16px; }
+  .cs :global(.cs-card) { padding: 16px; border-radius: 16px; background: linear-gradient(145deg, color-mix(in srgb, var(--c) 16%, var(--a-card)), var(--a-card) 72%); border: 1px solid color-mix(in srgb, var(--c) 28%, var(--a-line)); }
+  .cs :global(.cs-card i) { float: right; font-style: normal; width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--c) 22%, var(--a-card)); }
+  .cs :global(.cs-card b) { display: block; margin-top: 6px; font: 400 34px/1.05 'Bebas Neue', sans-serif; color: color-mix(in srgb, var(--c) 80%, var(--a-ink)); }
+  .cs :global(.cs-card span) { font: 700 12px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .cs :global(.cs-card small) { display: block; margin-top: 3px; color: var(--lt); font-size: 12px; }
+  .cs .panel { margin-bottom: 16px; min-width: 0; }
+  .cs h2 { margin: 0 0 4px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .cs-small { font-size: 13px; margin: 0 0 8px; max-width: 640px; }
+  .cs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .cs-chart { position: relative; height: 340px; }
+  .cs-list-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .cs :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+  .cs :global(th), .cs :global(td) { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--d4); vertical-align: top; }
+  .cs :global(.src) { display: inline-block; margin: 0 4px 3px 0; padding: 2px 8px; border-radius: 999px; font: 700 11px/1.4 'Barlow', sans-serif; color: #fff; background: var(--s); white-space: nowrap; }
+  .cs-pager { display: flex; gap: 6px; justify-content: flex-end; margin-top: 10px; flex-wrap: wrap; }
+  .cs-pager :global(button) { min-width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--d4); background: var(--a-card); color: var(--a-ink); cursor: pointer; font-weight: 700; }
+  .cs-pager :global(button[aria-current]) { background: #EC4899; border-color: #EC4899; color: #fff; }
+  .cs-manage summary { cursor: pointer; font-weight: 700; }
+  .cs :global(.cs-defs) { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 8px; max-width: 640px; }
+  .cs :global(.cs-def) { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 8px 10px; border: 1px solid var(--d4); border-radius: 10px; background: var(--a-card); }
+  .cs :global(.cs-def input[type=text]) { flex: 1 1 200px; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--d4); font: inherit; background: var(--a-card); color: var(--a-ink); }
+  .cs :global(.cs-def input[type=color]), .cs-add input[type=color] { width: 42px; height: 36px; border: 1px solid var(--d4); border-radius: 8px; padding: 2px; background: var(--a-card); }
+  .cs :global(.cs-def button) { padding: 7px 10px; border-radius: 8px; border: 1px solid var(--d4); background: var(--a-card); color: var(--a-ink); cursor: pointer; }
+  .cs :global(.cs-def code) { font-size: 12px; color: var(--lt); }
+  .cs-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; max-width: 640px; }
+  .cs-add .form-inp { flex: 1 1 240px; }
+  @media (max-width: 900px) { .cs-grid { grid-template-columns: 1fr; } .cs-chart { height: 300px; } }
+</style>
+
+<script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': code };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const fmt = n => Number(n || 0).toLocaleString('en-NG');
+  const when = iso => iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' }) : '';
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'cs-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
+  const charts = {};
+  let range = 'all', slice = '', page = 1, data = null, defs = [], exportQuery = '';
+
+  async function api(path, opts = {}) {
+    const res = await fetch(path, { ...opts, headers: H, cache: 'no-store' });
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/contact-sources/';
+    if (!res.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  const rq = () => { const q = new URLSearchParams({ range }); if (range === 'custom') { q.set('from', $('from').value); q.set('to', $('to').value); } return q; };
+  const label = k => defs.find(d => d.key === k)?.label || k;
+  const color = k => defs.find(d => d.key === k)?.color || '#64748B';
+
+  function draw(id, config) {
+    if (!window.Chart) return;
+    charts[id]?.destroy();
+    const css = getComputedStyle(document.body);
+    Chart.defaults.font.family = 'Barlow, sans-serif';
+    Chart.defaults.color = css.getPropertyValue('--a-muted').trim() || '#5B6472';
+    Chart.defaults.borderColor = css.getPropertyValue('--a-line').trim() || '#E3E6EA';
+    const base = { responsive: true, maintainAspectRatio: false, animation: { duration: 700, easing: 'easeOutQuart' }, plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 12 } }, tooltip: { backgroundColor: '#15181D', padding: 10, cornerRadius: 10 } } };
+    const o = config.options || {};
+    config.options = Object.assign({}, base, o, { plugins: Object.assign({}, base.plugins, o.plugins || {}) });
+    charts[id] = new Chart($(id), config);
+  }
+
+  async function load() {
+    try {
+      [data, { sources: defs }] = await Promise.all([api('/api/admin/contact-sources?' + rq()), api('/api/admin/contact-source-defs')]);
+      render();
+      loadList();
+    } catch (err) { msg(err.message, false); }
+  }
+  function render() {
+    const c = data.cards;
+    $('downloads').hidden = !data.canExport;
+    $('cards').innerHTML = [
+      ['#E31E24', '👥', fmt(c.total), 'Total contacts', range === 'all' ? 'Unique people, no duplicates' : 'First reached us in this period'],
+      ['#10B981', '✨', fmt(c.newThisMonth), 'New this month', 'Since the 1st'],
+      ['#0EA5E9', '✅', fmt(c.consent), 'Marketing consent', `${c.consentPct}% of these contacts`],
+      ['#8B5CF6', '🏆', c.top ? c.top.label : '–', 'Top source', c.top ? `${fmt(c.top.contacts)} people (${c.top.pct}%)` : ''],
+    ].map(([col, i, v, l, s]) => `<div class="cs-card" style="--c:${col}"><i aria-hidden="true">${i}</i><span>${esc(l)}</span><b>${esc(v)}</b>${s ? `<small>${esc(s)}</small>` : ''}</div>`).join('');
+    const pie = data.pie, empty = !pie.length;
+    const card = getComputedStyle(document.body).getPropertyValue('--a-card').trim() || '#fff';
+    draw('pie', { type: 'pie', data: { labels: empty ? ['No contacts yet'] : pie.map(p => `${p.label} – ${fmt(p.contacts)} (${p.pct}%)`),
+      datasets: [{ data: empty ? [1] : pie.map(p => p.contacts), backgroundColor: empty ? ['#E5E7EB'] : pie.map(p => p.color), borderColor: card, borderWidth: 3, hoverOffset: 12,
+        offset: empty ? 0 : pie.map(p => (p.key === slice ? 18 : 0)) }] },
+      options: {
+        onClick: (_e, els) => { if (empty || !els.length) return; const k = pie[els[0].index].key; slice = slice === k ? '' : k; page = 1; setTimeout(() => { render(); loadList(); }, 0); }, // redraw after Chart.js finishes the click
+        onHover: (e, els) => { e.native.target.style.cursor = els.length && !empty ? 'pointer' : 'default'; },
+        plugins: { tooltip: { callbacks: { label: c => empty ? 'No data' : ` ${pie[c.dataIndex].label}: ${fmt(pie[c.dataIndex].contacts)} people (${pie[c.dataIndex].pct}%) – click to list them` } } },
+      } });
+    const bars = data.bars;
+    draw('bars', { type: 'bar', data: { labels: bars.map(b => b.label), datasets: [{ label: 'People who used this channel', data: bars.map(b => b.contacts), backgroundColor: bars.map(b => b.color), borderRadius: 8, borderSkipped: false, maxBarThickness: 34 }] },
+      options: { indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${fmt(bars[c.dataIndex].contacts)} people (${bars[c.dataIndex].pct}% of contacts)` } } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } } });
+  }
+  async function loadList() {
+    const q = rq(); q.set('list', '1'); q.set('page', page); if (slice) q.set('firstSource', slice);
+    try {
+      const d = await api('/api/admin/contact-sources?' + q);
+      exportQuery = d.exportQuery;
+      $('listTitle').textContent = slice ? `First came from: ${label(slice)} (${fmt(d.total)})` : `Contacts (${fmt(d.total)})`;
+      $('clearSlice').hidden = !slice;
+      $('list').innerHTML = d.rows.length ? '<table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>First source</th><th>All sources</th><th>First seen</th><th>Consent</th></tr></thead><tbody>' +
+        d.rows.map(r => `<tr><td>${esc(r.name)}</td><td>${esc(r.email)}</td><td>${esc(r.phone)}</td><td><span class="src" style="--s:${color(r.firstSource)}">${esc(label(r.firstSource))}</span></td>` +
+          `<td>${r.sources.map(s => `<span class="src" style="--s:${color(s)}">${esc(label(s))}</span>`).join('')}</td><td>${esc(when(r.firstSeen))}</td><td>${r.consent ? 'Yes' : 'No'}</td></tr>`).join('') + '</tbody></table>'
+        : '<div class="empty-state"><b>📭</b><p>No contacts in this period.</p></div>';
+      $('pager').innerHTML = d.pages > 1 ? Array.from({ length: d.pages }, (_, i) => i + 1).filter(n => n === 1 || n === d.pages || Math.abs(n - page) <= 2)
+        .map(n => `<button type="button" data-p="${n}" ${n === page ? 'aria-current="page"' : ''}>${n}</button>`).join('') : '';
+    } catch (err) { msg(err.message, false); }
+  }
+  $('pager').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) { page = Number(b.dataset.p); loadList(); } });
+  $('clearSlice').addEventListener('click', () => { slice = ''; page = 1; render(); loadList(); });
+  document.querySelectorAll('[data-r]').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('[data-r]').forEach(x => x.classList.toggle('on', x === b));
+    $('custom').hidden = b.dataset.r !== 'custom';
+    if (b.dataset.r === 'custom') return;
+    range = b.dataset.r; slice = ''; page = 1; load();
+  }));
+  $('apply').addEventListener('click', () => { range = 'custom'; slice = ''; page = 1; load(); });
+
+  // One-click downloads.
+  document.querySelectorAll('[data-x]').forEach(a => a.addEventListener('click', async e => {
+    e.preventDefault();
+    const q = a.dataset.x === 'filtered' ? `type=filtered&${exportQuery}` : `type=${a.dataset.x}`;
+    a.style.opacity = .6;
+    try {
+      const res = await fetch('/api/admin/fans/export?' + q, { headers: { 'x-admin-code': code } });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Download failed');
+      const name = (res.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'lobi-stars-contacts.xlsx';
+      const url = URL.createObjectURL(await res.blob());
+      const link = Object.assign(document.createElement('a'), { href: url, download: name });
+      document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+      msg(`Downloaded ${name}. The download has been recorded in the Export Log.`, true);
+    } catch (err) { msg(err.message, false); } finally { a.style.opacity = ''; }
+  }));
+
+  // Manage sources (Settings access only).
+  document.addEventListener('ls:admin', e => { if (e.detail.areas.includes('settings')) { $('manage').hidden = false; } });
+  function renderDefs() {
+    $('defs').innerHTML = defs.map((d, i) => `<li class="cs-def" data-key="${esc(d.key)}"><input type="color" value="${esc(d.color)}" aria-label="Colour of ${esc(d.label)}"><input type="text" value="${esc(d.label)}" maxlength="40" aria-label="Name"><code>${esc(d.key)}${d.builtin ? '' : ' (new)'}</code>` +
+      `<button type="button" data-a="up" ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button><button type="button" data-a="down" ${i === defs.length - 1 ? 'disabled' : ''} aria-label="Move down">↓</button><button type="button" data-a="save">Save</button>${d.builtin ? '' : '<button type="button" data-a="delete">Delete</button>'}</li>`).join('');
+  }
+  $('manage').addEventListener('toggle', () => { if ($('manage').open) renderDefs(); });
+  $('defs').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-a]'); if (!b) return;
+    const li = b.closest('[data-key]'); const keys = defs.map(d => d.key); const i = keys.indexOf(li.dataset.key);
+    try {
+      let d;
+      if (b.dataset.a === 'delete') { if (!confirm('Delete this source? Only possible while no contacts came from it.')) return; d = await api('/api/admin/contact-source-defs', { method: 'POST', body: JSON.stringify({ action: 'delete', key: li.dataset.key }) }); }
+      else if (b.dataset.a === 'save') d = await api('/api/admin/contact-source-defs', { method: 'POST', body: JSON.stringify({ action: 'save', key: li.dataset.key, label: li.querySelector('input[type=text]').value, color: li.querySelector('input[type=color]').value }) });
+      else { const j = b.dataset.a === 'up' ? i - 1 : i + 1; [keys[i], keys[j]] = [keys[j], keys[i]]; d = await api('/api/admin/contact-source-defs', { method: 'POST', body: JSON.stringify({ action: 'order', keys }) }); }
+      defs = d.sources; renderDefs(); msg('Saved.', true); load();
+    } catch (err) { msg(err.message, false); }
+  });
+  $('addForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      const d = await api('/api/admin/contact-source-defs', { method: 'POST', body: JSON.stringify({ action: 'add', label: $('newLabel').value, color: $('newColor').value }) });
+      defs = d.sources; renderDefs(); $('newLabel').value = '';
+      msg(`Source added. Its code is "${d.key}": give this to the website manager to connect the new form.`, true);
+    } catch (err) { msg(err.message, false); }
+  });
+
+  document.addEventListener('ls:theme', () => { if (data) render(); });
+  load();
+})();
+</script>

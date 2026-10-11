@@ -1,6 +1,6 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { ensureAnalyticsSchema } from '../_lib/analytics.js';
-import { ensureContactsSchema, SOURCES } from '../_lib/contacts.js';
+import { ensureContactsSchema, getSources } from '../_lib/contacts.js';
 import { ensureTable as ensureMatchTables, isHomeGame } from '../_lib/matchCentre.js';
 import { matchSlug } from '../_lib/matchSlug.js';
 import { resolveRange, sqlTs, isoTs } from '../_lib/reportRange.js';
@@ -48,7 +48,9 @@ export async function onRequestGet({ request, env }) {
   const totalContacts = (await one(`SELECT COUNT(*) AS n FROM contacts`, [])).n || 0;
   const bySource = await all(`SELECT source, COUNT(DISTINCT contact_id) AS n FROM contact_sources GROUP BY source`);
   const firstTouch = await all(`SELECT first_source AS source, COUNT(*) AS n FROM contacts GROUP BY first_source`);
-  const sources = Object.entries(SOURCES).map(([key, label]) => {
+  const defs = await getSources(db);
+  const SOURCES = Object.fromEntries(defs.map(s => [s.key, s.label]));
+  const sources = defs.map(({ key, label }) => {
     const n = bySource.find(x => x.source === key)?.n || 0;
     return { key, label, contacts: n, pct: totalContacts ? Math.round((n / totalContacts) * 1000) / 10 : 0 };
   });

@@ -1,0 +1,80 @@
+---
+// Fans & Inbox › Possible duplicates: same name + very similar email. Merge
+// into one record (all sources and history kept) or keep separate.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Possible Duplicates | Lobi Stars Admin" description="Review possible duplicate contacts." noindex>
+  <div class="wrap dp">
+    <AdminNav current="fans-duplicates" />
+    <div class="stag">Fans &amp; Inbox</div>
+    <h1 class="stitle">Possible <span class="r">Duplicates</span></h1>
+    <p class="muted dp-lede">People with the same email or phone are already merged automatically. These look like the same person but couldn't be matched for sure: the same name with a very similar email. Check each pair, then <strong>Merge</strong> (one record, all sources and history kept; nothing that anyone submitted is deleted) or <strong>Keep separate</strong>.</p>
+    <p class="dp-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <div id="list"><p class="muted">Looking for possible duplicates…</p></div>
+  </div>
+</Layout>
+
+<style>
+  .dp { max-width: 1100px; padding-top: 24px; padding-bottom: 80px; }
+  .dp-lede { max-width: 860px; margin-bottom: 16px; }
+  .dp-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 14px; }
+  .dp-msg.ok { background: #E8F7EE; color: #17643A; } .dp-msg.err { background: #FDECEC; color: #A3161B; }
+  .dp :global(.dp-pair) { border: 1px solid var(--d4); border-radius: 16px; background: var(--a-card); padding: 14px; margin-bottom: 14px; box-shadow: 0 6px 18px rgba(15,17,21,.05); }
+  .dp :global(.dp-why) { margin: 0 0 10px; font-weight: 700; color: #B45309; }
+  .dp :global(.dp-cols) { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .dp :global(.dp-c) { border: 1px solid var(--a-line); border-radius: 12px; padding: 12px; background: var(--a-soft); }
+  .dp :global(.dp-c h3) { margin: 0 0 6px; font: 700 17px/1.2 'Barlow', sans-serif; }
+  .dp :global(.dp-c dl) { display: grid; grid-template-columns: 90px 1fr; gap: 3px 10px; margin: 0; font-size: 14px; }
+  .dp :global(.dp-c dt) { color: var(--lt); }
+  .dp :global(.dp-c dd) { margin: 0; overflow-wrap: anywhere; }
+  .dp :global(.dp-acts) { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .dp :global(.dp-acts button) { min-height: 44px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--d4); background: var(--a-card); color: var(--a-ink); font-weight: 700; cursor: pointer; }
+  .dp :global(.dp-acts .go) { background: #8B5CF6; border-color: #8B5CF6; color: #fff; }
+  @media (max-width: 700px) { .dp :global(.dp-cols) { grid-template-columns: 1fr; } }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const when = iso => iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' }) : '–';
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'dp-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
+  let pairs = [];
+  async function api(opts) {
+    const res = await fetch('/api/admin/fans/duplicates', { ...(opts || {}), headers: { 'Content-Type': 'application/json', 'x-admin-code': code }, cache: 'no-store' });
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/fans/duplicates/';
+    if (!res.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  const person = (c, tag) => `<div class="dp-c"><h3>${esc(c.name)} <span class="muted" style="font-size:12px">${tag}</span></h3><dl>` +
+    `<dt>Email</dt><dd>${esc(c.email || '–')}</dd><dt>Phone</dt><dd>${esc(c.phone || '–')}</dd><dt>State</dt><dd>${esc(c.state || '–')}</dd>` +
+    `<dt>Sources</dt><dd>${esc(c.sources.join(', ') || '–')}</dd><dt>First seen</dt><dd>${esc(when(c.firstSeen))}</dd><dt>Last seen</dt><dd>${esc(when(c.lastSeen))}</dd>` +
+    `<dt>Consent</dt><dd>${c.consent ? 'Yes' : 'No'}</dd></dl></div>`;
+  async function load() {
+    try {
+      pairs = (await api()).pairs;
+      $('list').innerHTML = pairs.length ? pairs.map((p, i) => `<article class="dp-pair" data-i="${i}"><p class="dp-why">⚠️ ${esc(p.why)}</p><div class="dp-cols">${person(p.a, 'A')}${person(p.b, 'B')}</div>` +
+        `<div class="dp-acts"><button class="go" data-act="mergeAB">Merge (keep A's details)</button><button class="go" data-act="mergeBA">Merge (keep B's details)</button><button data-act="separate">Keep separate</button></div></article>`).join('')
+        : '<div class="empty-state"><b>🎉</b><p>No possible duplicates. The fan database is clean.</p></div>';
+    } catch (err) { msg(err.message, false); }
+  }
+  $('list').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const p = pairs[Number(b.closest('[data-i]').dataset.i)];
+    try {
+      if (b.dataset.act === 'separate') { await api({ method: 'POST', body: JSON.stringify({ action: 'separate', a: p.a.id, b: p.b.id }) }); msg('Marked as different people. This pair won\'t be suggested again.', true); }
+      else {
+        const [keep, merge] = b.dataset.act === 'mergeAB' ? [p.a, p.b] : [p.b, p.a];
+        if (!confirm(`Merge these two into one record for ${keep.name}? All sources and history are kept together.`)) return;
+        await api({ method: 'POST', body: JSON.stringify({ action: 'merge', keep: keep.id, merge: merge.id }) });
+        msg('Merged into one record.', true);
+      }
+      load();
+    } catch (err) { msg(err.message, false); }
+  });
+  load();
+})();
+</script>

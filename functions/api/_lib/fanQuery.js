@@ -1,9 +1,10 @@
 // Queries behind /admin/fans and the fan database exports.
 import { SOURCES, ensureContactsSchema } from './contacts.js';
 
+// The columns of the contact downloads (one row per person, no duplicates).
 export const FAN_COLUMNS = [
-  'First Name', 'Surname', 'Email', 'Phone', 'State', 'Sources', 'First Source', 'First Seen', 'Last Seen',
-  'Interactions', 'Email Verified', 'Member', 'Marketing Consent', 'Matches Predicted', 'MOTM Votes', 'Prize Wins',
+  'First Name', 'Surname', 'Email', 'Phone', 'State', 'All Sources', 'First Source', 'First Seen', 'Last Seen',
+  'Number of Interactions', 'Email Verified', 'Member', 'Marketing Consent',
 ];
 
 const SORTS = {
@@ -32,7 +33,13 @@ function whereFrom(p) {
     if (digits.length >= 3) binds.push(`%${digits}%`);
   }
   const source = p.get('source');
-  if (source && SOURCES[source]) { where.push(`EXISTS (SELECT 1 FROM contact_sources s2 WHERE s2.contact_id = c.id AND s2.source = ?)`); binds.push(source); }
+  if (source && /^[a-z0-9_]{1,40}$/.test(source)) { where.push(`EXISTS (SELECT 1 FROM contact_sources s2 WHERE s2.contact_id = c.id AND s2.source = ?)`); binds.push(source); }
+  // Contact Sources page: by FIRST source, and people who first reached us in a date range.
+  const firstSource = p.get('firstSource');
+  if (firstSource && /^[a-z0-9_]{1,40}$/.test(firstSource)) { where.push('c.first_source = ?'); binds.push(firstSource); }
+  const ff = p.get('firstFrom'), ft = p.get('firstTo');
+  if (ff && !Number.isNaN(Date.parse(ff))) { where.push('c.first_seen >= ?'); binds.push(new Date(ff).toISOString()); }
+  if (ft && !Number.isNaN(Date.parse(ft))) { where.push('c.first_seen < ?'); binds.push(new Date(ft).toISOString()); }
   const consent = p.get('consent');
   if (consent === 'Y') where.push('c.marketing_consent = 1');
   if (consent === 'N') where.push('c.marketing_consent = 0');
@@ -70,31 +77,44 @@ export async function queryContacts(db, opts = {}) {
   return { total, page, pageSize, rows: results };
 }
 
-/** Email Verified / Member / Predict & Win figures, from the fan accounts. */
+/**
+ * Email Verified / Member / Predict & Win figures, from the fan accounts.
+ * Uses a fixed handful of queries however many contacts there are (D1 limits
+ * the number of queries per request), so downloads work for thousands.
+ */
 async function addEngagement(db, rows) {
   if (!rows.length) return;
-  const hasMembers = await tableExists(db, 'members');
-  const verifiedCol = hasMembers && (await hasColumn(db, 'members', 'email_verified'));
-  // Phase 6-7 tables (MOTM voting, Predict & Win). Counted once they exist.
-  const votes = (await hasColumn(db, 'motm_votes', 'member_id'));
-  const preds = (await hasColumn(db, 'predictions', 'member_id'));
-  const wins = preds && (await hasColumn(db, 'predictions', 'is_winner'));
   for (const r of rows) {
     r.sources = (r.source_keys || '').split(',').filter(Boolean);
     r.email_verified = 0; r.member = 0; r.matches_predicted = 0; r.motm_votes = 0; r.prize_wins = 0;
-    if (!hasMembers) continue;
-    const { results: mem } = await db.prepare(
-      `SELECT m.id, m.tier${verifiedCol ? ', m.email_verified' : ''} FROM contact_sources s JOIN members m ON m.id = s.ref_id
-       WHERE s.contact_id = ? AND s.ref_table = 'members'`
-    ).bind(r.id).all();
-    r.member = mem.some(m => m.tier && m.tier !== 'Fan') || r.sources.includes('membership') ? 1 : 0;
+    if (r.sources.includes('membership')) r.member = 1;
+  }
+  if (!(await tableExists(db, 'members'))) return;
+  const verifiedCol = await hasColumn(db, 'members', 'email_verified');
+  const want = new Set(rows.map(r => r.id));
+  const { results: links } = await db.prepare(
+    `SELECT s.contact_id, m.id AS mid, m.tier${verifiedCol ? ', m.email_verified' : ''} FROM contact_sources s JOIN members m ON m.id = s.ref_id WHERE s.ref_table = 'members'`
+  ).all();
+  const byContact = new Map();
+  for (const l of links) if (want.has(l.contact_id)) { const a = byContact.get(l.contact_id) || []; a.push(l); byContact.set(l.contact_id, a); }
+  const counts = async (table, extra = '') => {
+    if (!(await hasColumn(db, table, 'member_id'))) return new Map();
+    const { results } = await db.prepare(`SELECT member_id, COUNT(*) AS n FROM ${table} ${extra} GROUP BY member_id`).all();
+    return new Map(results.map(x => [x.member_id, x.n]));
+  };
+  const votes = await counts('motm_votes');
+  const preds = await counts('predictions');
+  const wins = (await hasColumn(db, 'predictions', 'is_winner')) ? await counts('predictions', 'WHERE is_winner = 1') : new Map();
+  for (const r of rows) {
+    const mem = byContact.get(r.id) || [];
+    if (!mem.length) continue;
+    r.member = mem.some(m => m.tier && m.tier !== 'Fan') || r.member ? 1 : 0;
     r.email_verified = mem.some(m => (verifiedCol ? m.email_verified === 1 : true)) ? 1 : 0;
-    const ids = mem.map(m => m.id);
-    if (!ids.length) continue;
-    const inList = ids.map(() => '?').join(',');
-    if (votes) r.motm_votes = (await db.prepare(`SELECT COUNT(*) AS n FROM motm_votes WHERE member_id IN (${inList})`).bind(...ids).first()).n;
-    if (preds) r.matches_predicted = (await db.prepare(`SELECT COUNT(*) AS n FROM predictions WHERE member_id IN (${inList})`).bind(...ids).first()).n;
-    if (wins) r.prize_wins = (await db.prepare(`SELECT COUNT(*) AS n FROM predictions WHERE is_winner = 1 AND member_id IN (${inList})`).bind(...ids).first()).n;
+    for (const m of mem) {
+      r.motm_votes += votes.get(m.mid) || 0;
+      r.matches_predicted += preds.get(m.mid) || 0;
+      r.prize_wins += wins.get(m.mid) || 0;
+    }
   }
 }
 
@@ -106,14 +126,13 @@ export function watTime(iso) {
   return new Date(d.getTime() + 3_600_000).toISOString().slice(0, 16).replace('T', ' ');
 }
 
-export function exportRow(r) {
-  const yn = v => (v ? 'Y' : 'N');
+export function exportRow(r, labels = SOURCES) {
+  const yn = v => (v ? 'Yes' : 'No');
   return [
     r.first_name || '', r.surname || '', r.email || '', r.phone || '', r.state || '',
-    r.sources.map(s => SOURCES[s] || s).join(', '), SOURCES[r.first_source] || r.first_source || '',
+    r.sources.map(s => labels[s] || s).join(', '), labels[r.first_source] || r.first_source || '',
     watTime(r.first_seen), watTime(r.last_seen), r.interactions || 0,
     yn(r.email_verified), yn(r.member), yn(r.marketing_consent),
-    r.matches_predicted || 0, r.motm_votes || 0, r.prize_wins || 0,
   ];
 }
 

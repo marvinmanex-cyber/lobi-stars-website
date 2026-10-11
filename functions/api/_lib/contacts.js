@@ -19,6 +19,34 @@ export const SOURCES = {
   shop_order: 'Shop Order',
   hospitality: 'Hospitality Enquiry',
 };
+/** Chart / badge colour for each built-in source (can be changed in Settings). */
+export const SOURCE_COLORS = {
+  newsletter: '#0EA5E9', contact_form: '#F97316', fan_account: '#8B5CF6', membership: '#EAB308', ticket_buyer: '#E31E24',
+  sponsorship: '#14B8A6', food_order: '#10B981', download_lead: '#EC4899', shop_order: '#64748B', hospitality: '#A855F7',
+};
+
+/**
+ * Every contact source with its label, colour and order. Built-in sources
+ * come from the code (forms that already exist); staff can rename and
+ * recolour them, and add new ones for future forms (Settings › Contact
+ * Sources). A new form then records contacts with the new source's key.
+ * Returns an ordered array [{ key, label, color, builtin }].
+ */
+export async function getSources(db) {
+  await ensureContactsSchema(db);
+  const { results } = await db.prepare(`SELECT * FROM contact_source_defs ORDER BY sort, label`).all();
+  const defs = new Map(results.map(r => [r.key, r]));
+  const list = Object.entries(SOURCES).map(([key, label], i) => {
+    const d = defs.get(key);
+    return { key, label: d?.label || label, color: d?.color || SOURCE_COLORS[key] || '#64748B', builtin: true, sort: d ? d.sort : 100 + i };
+  });
+  for (const d of results) if (!SOURCES[d.key]) list.push({ key: d.key, label: d.label, color: d.color || '#64748B', builtin: false, sort: d.sort });
+  return list.sort((a, b) => a.sort - b.sort);
+}
+/** { key: label } for all sources (labels as set in Settings). */
+export async function sourceLabels(db) {
+  return Object.fromEntries((await getSources(db)).map(x => [x.key, x.label]));
+}
 
 let ready = false;
 export async function ensureContactsSchema(db) {
@@ -50,6 +78,10 @@ export async function ensureContactsSchema(db) {
       UNIQUE (source, ref_table, ref_id)
     )`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_contact_sources_contact ON contact_sources(contact_id)`),
+    // Source names, colours and order (Settings › Contact Sources), plus sources added for future forms.
+    db.prepare(`CREATE TABLE IF NOT EXISTS contact_source_defs (key TEXT PRIMARY KEY, label TEXT NOT NULL, color TEXT, sort INTEGER NOT NULL DEFAULT 0, updated_at TEXT, updated_by TEXT)`),
+    // "Possible duplicates" pairs that staff decided to keep separate.
+    db.prepare(`CREATE TABLE IF NOT EXISTS contact_dup_ignore (a TEXT NOT NULL, b TEXT NOT NULL, by TEXT, at TEXT, PRIMARY KEY (a, b))`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_contacts_last_seen ON contacts(last_seen)`),
     // Contact Us + partnership enquiries (they also still go to the Formspree inbox).
     db.prepare(`CREATE TABLE IF NOT EXISTS enquiries (
@@ -97,7 +129,7 @@ export function splitName(full) {
  */
 export async function upsertContact(db, rec) {
   await ensureContactsSchema(db);
-  if (!SOURCES[rec.source]) throw new Error(`Unknown source ${rec.source}`);
+  if (!SOURCES[rec.source] && !(await db.prepare(`SELECT 1 FROM contact_source_defs WHERE key = ?`).bind(String(rec.source || '')).first())) throw new Error(`Unknown source ${rec.source}`);
   const email = normEmail(rec.email);
   const phone = normalizeNigerianPhone(rec.phone);
   if (!email && !phone) return null;

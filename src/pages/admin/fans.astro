@@ -5,8 +5,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 <Layout title="Fan Database | Lobi Stars Admin" description="Lobi Stars FC fan database." noindex>
   <div class="wrap fd">
     <AdminNav current="fans" />
-    <div class="stag">Admin</div>
+    <div class="stag">Fans &amp; Inbox</div>
     <h1 class="stitle">Fan <span class="r">Database</span></h1>
+    <p class="fd-links"><a href="/admin/contact-sources/">📊 Contact sources chart</a> · <a href="/admin/fans/duplicates/">🔍 Possible duplicates</a></p>
     <p class="muted fd-lede">
       Everyone who has given us their details (newsletter, contact form, fan accounts, membership, tickets, partnership
       enquiries, food orders and downloads), merged into one row per person by email or phone number.
@@ -17,11 +18,13 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <div class="panel fd-exports" id="exports" hidden>
       <h2>Downloads</h2>
       <div class="fd-btns">
-        <a class="btn-p sm" href="/api/admin/fans/export?type=xlsx" data-export>Full fan database (.xlsx)</a>
+        <a class="fd-dl red" href="/api/admin/fans/export?type=xlsx" data-export>⬇ Download All Contacts (Excel)</a>
+        <a class="fd-dl blue" href="/api/admin/fans/export?type=filtered" data-export data-filtered>⬇ Download Filtered List (Excel)</a>
+        <a class="fd-dl green" href="/api/admin/fans/export?type=marketing" data-export>⬇ Marketing List (Excel)</a>
         <a class="btn-o sm" href="/api/admin/fans/export?type=sources" data-export>Source breakdown (CSV)</a>
-        <a class="btn-o sm" href="/api/admin/fans/export?type=marketing" data-export>Marketing list, consent = Y only (CSV)</a>
         <button type="button" class="btn-o sm" id="backfill" hidden>Import existing records</button>
       </div>
+      <p class="muted small">"Filtered List" downloads exactly the people matching the search and filters below.</p>
       <p class="muted small">Every download is recorded with your name and the time.</p>
     </div>
     <p class="muted small" id="noExport" hidden>Emails and phone numbers are partly hidden because your account can't export fan data. Ask the owner if you need this.</p>
@@ -85,6 +88,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .panel :global(tbody tr[data-id]:hover) { background: #FFF5F5; }
   .panel :global(td.n) { text-align: right; }
   .panel :global(.tag) { display: inline-block; background: var(--a-soft); border-radius: 4px; padding: 2px 6px; margin: 1px 2px; font-size: 12px; }
+  .panel :global(.tag.src) { color: #fff !important; background: var(--s) !important; border: 0 !important; border-radius: 999px; font-weight: 700; }
+  .fd-links { margin: 4px 0 10px; font-weight: 700; } .fd-links a { color: var(--red-text); }
+  .fd-dl { display: inline-flex; align-items: center; padding: 11px 16px; border-radius: 12px; color: #fff; text-decoration: none; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 6px 16px rgba(15,17,21,.12); }
+  .fd-dl.red { background: linear-gradient(135deg, #B91C1C, #E31E24); } .fd-dl.blue { background: linear-gradient(135deg, #0369A1, #0EA5E9); } .fd-dl.green { background: linear-gradient(135deg, #047857, #10B981); }
   .fd-pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-bottom: 26px; }
   .fd-pager button { border: 1px solid var(--d4); background: var(--a-card); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
   .fd-pager button:disabled { opacity: .4; cursor: default; }
@@ -114,6 +121,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     if (!res.ok) throw new Error(data.error || 'Request failed');
     return data;
   }
+  let colors = {};
   let state = { page: 1, sort: 'last_seen', dir: 'desc' }, sources = {}, filled = false, current = null, canExport = false;
   const COLS = [
     ['name', 'Name'], [null, 'Email'], [null, 'Phone'], ['state', 'State'], [null, 'Sources'],
@@ -126,7 +134,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     q.set('page', state.page); q.set('sort', state.sort); q.set('dir', state.dir);
     let d;
     try { d = await api('/api/admin/fans?' + q); } catch (e) { $('table').innerHTML = `<p class="muted">${esc(e.message)}</p>`; return; }
-    canExport = d.canExport; sources = d.sources;
+    canExport = d.canExport; sources = d.sources; colors = d.sourceColors || {};
     $('exports').hidden = !canExport; $('noExport').hidden = canExport; $('del').hidden = !canExport;
     if (!filled) {
       const sel = $('filters').elements.source, st = $('filters').elements.state;
@@ -144,7 +152,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       : `<th>${l}</th>`).join('');
     $('table').innerHTML = d.rows.length ? `<table><thead><tr>${head}</tr></thead><tbody>` + d.rows.map(r =>
       `<tr data-id="${esc(r.id)}" tabindex="0"><td>${esc([r.firstName, r.surname].filter(Boolean).join(' ') || '(no name)')}</td><td>${esc(r.email)}</td><td>${esc(r.phone)}</td><td>${esc(r.state)}</td>` +
-      `<td>${r.sources.map(s => `<span class="tag">${esc(sources[s] || s)}</span>`).join('')}</td><td>${esc(wat(r.firstSeen))}</td><td>${esc(wat(r.lastSeen))}</td>` +
+      `<td>${r.sources.map(s => `<span class="tag src" style="--s:${esc(colors[s] || '#64748B')}">${esc(sources[s] || s)}</span>`).join('')}</td><td>${esc(wat(r.firstSeen))}</td><td>${esc(wat(r.lastSeen))}</td>` +
       `<td class="n">${r.interactions}</td><td>${r.marketingConsent ? 'Y' : 'N'}</td><td>${r.member ? 'Y' : 'N'}</td></tr>`).join('') + '</tbody></table>'
       : '<p class="muted" style="padding:16px">Nobody matches these filters.</p>';
     const pages = Math.max(1, Math.ceil(d.total / d.pageSize));
@@ -169,6 +177,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         `<dt>First source</dt><dd>${esc(c.firstSource)}</dd><dt>First seen</dt><dd>${esc(wat(c.firstSeen))}</dd><dt>Last seen</dt><dd>${esc(wat(c.lastSeen))}</dd>` +
         `<dt>Marketing consent</dt><dd>${c.marketingConsent ? 'Y' : 'N'}${c.unsubscribedAt ? ` (unsubscribed ${esc(wat(c.unsubscribedAt))})` : ''}</dd></dl>` +
         `<h3>History</h3><ol>${d.history.map(h => `<li>${esc(wat(h.at))} &middot; ${esc(h.source)}${h.detail ? ` &middot; ${esc(h.detail)}` : ''}</li>`).join('')}</ol>` +
+        (d.activity && d.activity.messages.length ? `<h3>Messages (${d.activity.messages.length})</h3><ol>${d.activity.messages.map(m => `<li>${esc(wat(m.at))} &middot; ${esc(m.kind)}${m.subject ? ` &middot; <b>${esc(m.subject)}</b>` : ''}<br><span class="muted">${esc(m.message)}</span></li>`).join('')}</ol>` : '') +
+        (d.activity && d.activity.predictions.length ? `<h3>Predict &amp; Win (${d.activity.predictions.length})</h3><ol>${d.activity.predictions.map(x => `<li>${esc(wat(x.at))} &middot; ${esc(x.match)} &middot; predicted ${esc(x.prediction)}${x.winner ? ' &middot; 🏆 winner' : ''}</li>`).join('')}</ol>` : '') +
+        (d.activity && d.activity.votes.length ? `<h3>Man of the Match votes (${d.activity.votes.length})</h3><ol>${d.activity.votes.map(x => `<li>${esc(wat(x.at))} &middot; ${esc(x.match)} &middot; ${esc(x.player)}</li>`).join('')}</ol>` : '') +
+        (d.activity && d.activity.awardVotes ? `<p class="muted">Fan award votes: ${d.activity.awardVotes}</p>` : '') +
         (d.foodOrders && d.foodOrders.length ? `<h3>In-seat food orders (${d.foodOrders.length})</h3><ol>${d.foodOrders.map(o => `<li>${esc(wat(o.at))} &middot; ${esc(o.ref)} &middot; ${esc(o.items)} &middot; ₦${(o.totalKobo / 100).toLocaleString('en-NG')} &middot; ${esc(o.seat)}</li>`).join('')}</ol>` : '');
       $('unsub').disabled = !c.marketingConsent;
       $('dlg').showModal();
@@ -203,7 +215,13 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   document.querySelectorAll('[data-export]').forEach(a => a.addEventListener('click', async e => {
     e.preventDefault();
     try {
-      const res = await fetch(a.href, { headers: { 'x-admin-code': code } });
+      let href = a.href;
+      if (a.hasAttribute('data-filtered')) {
+        const q = new URLSearchParams(new FormData($('filters')));
+        for (const [k, v] of [...q]) if (!v) q.delete(k);
+        href = '/api/admin/fans/export?type=filtered&' + q;
+      }
+      const res = await fetch(href, { headers: { 'x-admin-code': code } });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Download failed');
       const name = (res.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'export';
       const url = URL.createObjectURL(await res.blob());
