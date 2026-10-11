@@ -34,6 +34,49 @@ the Production environment, add:
 Then trigger a fresh deployment (a new commit, not "Retry" on an old one --
 see the note further down about why retrying doesn't pick up new config).
 
+## All Cloudflare variables and secrets (complete list)
+
+Set in **Cloudflare → Workers & Pages → the project → Settings → Variables and
+Secrets** (Production). Mark keys and codes as **secret**. Never put any of
+these in git.
+
+| Variable | Needed for | Notes |
+|---|---|---|
+| `DB` (D1 binding) | Everything | Already bound (see below). |
+| `ADMIN_CODE` | Owner sign-in to /admin | Long and private; staff use their own logins. |
+| `SESSION_SECRET` | Fan and staff sessions, ticket QR codes | Long random value. |
+| `PAYSTACK_SECRET_KEY` | Tickets, membership, shirts, food | Test key (`sk_test_`) while testing, then the live key. |
+| `RESEND_API_KEY` | All emails | From Resend → API Keys. |
+| `RESEND_FROM` | Ticket, food and general emails | e.g. `Lobi Stars FC <noreply@lobistarsfc.com>`. |
+| `FAN_EMAIL_FROM` | Fan account / reminder emails (optional) | Falls back to `RESEND_FROM`. |
+| `INBOX_FROM_EMAIL` | Inbox replies | e.g. `info@lobistarsfc.com`; staff first names are added ("Ade from Lobi Stars FC"). |
+| `INBOX_REPLY_DOMAIN` | Fans' replies into the Inbox | e.g. `reply.lobistarsfc.com` (needs its MX record). |
+| `INBOX_INBOUND_KEY` | Fans' replies into the Inbox | Long random secret, also in the provider's webhook URL `/api/inbox/inbound?key=…`. |
+| `TURNSTILE_SECRET_KEY` | Human check on sign-up and enquiry forms | Site key goes in `src/data/fan-settings.json`. |
+| `STAFF_SCAN_CODE` | Ticket scanner at /scan | Short PIN for gate staff. |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Food order phone notifications | See STAFF-GUIDE section 16. |
+| `TERMII_API_KEY`, `TERMII_SENDER_ID` | Food order SMS / WhatsApp (optional) | |
+| `PARTNER_ORIGIN_STREAM_URL` | Lobi Stars FC Live commentary | Server-only; see COMMENTARY-STREAM-SETUP.md. |
+| `COMMENTARY_BRAND_NAME` | Commentary player name (optional) | |
+| `ANALYTICS_SALT` | Visitor analytics (optional) | Falls back to `SESSION_SECRET`. |
+
+**Local testing only, never in production:** `PAYSTACK_FAKE=1` (pretend
+payments) and `FANS_DEV_LINKS=1` (shows email links and counts Inbox replies
+as sent without an email service).
+
+### Local test server and demo data
+
+```
+npm run build
+npx wrangler pages dev dist --ip 127.0.0.1 --port 8833 --binding FANS_DEV_LINKS=1 \
+  SESSION_SECRET=local-test-secret ADMIN_CODE=<local code> PAYSTACK_SECRET_KEY=sk_test_local PAYSTACK_FAKE=1 \
+  INBOX_INBOUND_KEY=test-inbound INBOX_REPLY_DOMAIN=reply.lobistarsfc.com
+BASE=http://127.0.0.1:8833 ADMIN_CODE=<local code> npm run seed:local   # demo messages and contacts
+BASE=http://127.0.0.1:8833 ADMIN_CODE=<local code> npm test             # all automated tests
+```
+
+`seed:local` refuses to run against anything except 127.0.0.1 / localhost.
+
 ## Site (Astro + Cloudflare Pages)
 
 Already live on `main`. Cloudflare Pages build settings (already configured):

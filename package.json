@@ -8,6 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "optimize-images": "node scripts/optimize-images.mjs",
+    "seed:local": "node scripts/seed-local-demo.mjs",
     "test": "node --test --test-concurrency=1 tests/"
   },
   "dependencies": {

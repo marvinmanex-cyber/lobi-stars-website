@@ -11,7 +11,7 @@ There are two places where you make changes:
 
 | What you want to change | Where | How fast it appears on the site |
 |---|---|---|
-| Matches, scores, live updates | **Manage Matches** and **Match Centre** | Straight away |
+| Matches, scores, live updates, messages, fans, food orders, partners, awards (everything in the admin menu) | **Admin** (https://lobistarsfc.com/admin/login) | Straight away |
 | News, players, league table, shop, videos, club pages | **Content CMS** | About 1–2 minutes after you press Save |
 
 1. Go to **https://lobistarsfc.com/admin/login**.
@@ -41,7 +41,21 @@ manager gives you once. Paste it in and the CMS remembers it on that device.
   match day), messages this week (and how many wait for a reply), new contacts this week, page views today, people
   listening to the commentary, the latest Predict & Win winner and whether the
   prize is paid, plus quick actions.
-- All the old admin addresses (e.g. /admin/matches, /admin/fans) still work.
+- All the old admin addresses (e.g. /admin/matches, /admin/fans) still work,
+  so old bookmarks are fine.
+- **Where everything is:**
+
+  | Section | Screens |
+  |---|---|
+  | 🏠 Overview | Dashboard |
+  | ⚽ Matchday | Fixtures & Results, Live Match Control, Predict & Win, Live Commentary, League Table ↗ |
+  | 📰 Content | News & Articles (including Team News), Fan Awards, Squad & Players ↗, Videos ↗, Gallery ↗, Club Pages ↗, Content CMS ↗ |
+  | 👥 Fans & Inbox | **Inbox**, Fan Database, Newsletter Subscribers, Fan Accounts, Contact Sources & Downloads, Possible Duplicates, Members |
+  | 🛒 Commerce | Ticket Scanner ↗, Food: Live Order Board, Food: Orders, Food: Analytics, Food: Menu & Prices, Shirt Personalisation Orders, Shop Products ↗, Hospitality Packages ↗, Membership Settings ↗ |
+  | 🤝 Partners | Partners & Open Categories, Sponsorship Enquiries (opens the Inbox), Partner Reports, Partner Profiles ↗ |
+  | 📊 Analytics | Traffic & Engagement, Contact Sources, Matchday Analytics, Commentary / Broadcast Report, Food Analytics |
+  | ⚙️ Settings | Site Settings & Social Links ↗, Promo Bar ↗, Commentary & Stream Settings, Staff Users & Roles, Inbox Emails & Templates, Export Log, Activity Log |
+
 - **Light or dark:** the 🌙 / ☀️ button in the top bar switches dark mode.
   Your choice is remembered for your account on that device.
 - **Long tables** (more than 25 rows) get a **filter box** above them (type a
@@ -62,7 +76,8 @@ manager gives you once. Paste it in and the CMS remembers it on that device.
 Downloading contact lists also needs **Can export fan data** on the account.
 If you open a screen your role doesn't include, you're taken back to the
 Dashboard with a note. **Settings › Activity Log** shows every staff action
-(exports, deletions, staff, award and membership changes).
+(exports, deletions, staff, award and membership changes, Inbox replies,
+notes, assignments and status changes).
 
 > **Tip:** Bookmark https://lobistarsfc.com/admin/login on the devices you use.
 
@@ -975,6 +990,47 @@ the Inbox says so. (Menu names at Resend may differ slightly.)
 
 Other email services (Postmark, SendGrid Inbound Parse, Mailgun) also work:
 point their inbound webhook at the same address with the same key.
+
+---
+
+## 19. Admin handover: what is ready and what still needs doing
+
+**Ready to use now**
+- The admin menu, dashboard, search, bell, dark mode and staff roles
+  (sections "Finding your way around the admin" and "Roles" at the top).
+- **Fans & Inbox:** the Inbox (section 18), the Fan Database, contact
+  downloads, the contact sources chart and possible duplicates (section 17).
+- In-seat food orders, menu and analytics (sections 13 to 16).
+- Every page and every role has been checked automatically: each role opens
+  exactly its own screens, every menu link works, old addresses still work and
+  no admin page can appear in Google.
+
+**Still to do before staff rely on it** (website manager / club)
+1. **Staff accounts:** create a login for each person in **Settings › Staff
+   Users & Roles** with the right role (e.g. Fan Relations for whoever answers
+   fans, Commercial for sponsorship and hospitality). Only tick **Can export
+   fan data** for people who need to download contact lists. Stop sharing the
+   owner admin code.
+2. **Email (Resend):** API key, the sender address for Inbox replies
+   (suggested **info@lobistarsfc.com**) and the SPF, DKIM and DMARC records
+   (section 18, Setup A). Until then nothing is emailed: Inbox replies,
+   alerts, the daily summary, ticket and food receipts and fan account emails.
+3. **Fans' replies into the Inbox:** the `reply` MX record and the inbound
+   webhook (section 18, Setup B).
+4. **Human check (Turnstile):** create a Turnstile widget in Cloudflare, put
+   the site key in `src/data/fan-settings.json` (`turnstileSiteKey`) and the
+   secret key in the Cloudflare variables (`TURNSTILE_SECRET_KEY`). It then
+   protects fan sign-ups and the Contact, Sponsorship and Hospitality forms.
+5. **Formspree:** messages are still also copied to the old Formspree email
+   inbox. Once Inbox emails work, decide whether to switch that copy off.
+6. **Templates:** edit the three starter reply templates to match how the
+   club wants to answer (📝 Templates in the Inbox).
+7. **In-seat food, commentary and the other open items:** see "Outstanding
+   items for the club" in STAFF-MATCHDAY-GUIDE.md.
+
+**Trying the admin safely:** the website manager can run the website on
+their own computer with demo messages and contacts (`npm run seed:local`, see
+DEPLOYMENT.md). This never touches the live site.
 
 ---
 

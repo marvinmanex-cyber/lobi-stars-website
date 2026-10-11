@@ -190,7 +190,8 @@ exported files private and delete them when you no longer need them.
 
 1. **Email service:** add the Resend API key and sender address (e.g.
    noreply@lobistarsfc.com) so confirmation, winner and reminder emails are sent.
-2. **Turnstile:** add the Cloudflare Turnstile keys for the human check on sign-up.
+2. **Turnstile:** add the Cloudflare Turnstile keys for the human check on
+   fan sign-up and the Contact, Sponsorship and Hospitality forms.
 3. **Stream channels:** confirm the YouTube/Facebook channels for Lobi Stars
    streams (the Watch Live fallback links currently point to the partner's channels).
 4. **Legal review:** Predict & Win terms (cash prize promotions may need
@@ -217,3 +218,6 @@ exported files private and delete them when you no longer need them.
     emailed, and set up reply.lobistarsfc.com so fans' replies come back in.
     Give Fan Relations and Commercial staff their own logins so they get the
     new-message alerts (STAFF-GUIDE.md, section 18).
+13. **Staff logins:** create a personal login with the right role for every
+    staff member (Settings › Staff Users & Roles) and stop sharing the owner
+    admin code (STAFF-GUIDE.md, section 19).
