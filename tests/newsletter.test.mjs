@@ -166,3 +166,22 @@ test('only Fan Relations, Commercial and Super Admin can use the newsletter admi
   assert.match(home, /href="\/newsletter\/#signup"/, 'homepage band');
   assert.match(home, /href="\/newsletter"/, 'footer link');
 });
+
+test('everything is editable: sponsor address, phone, email, offer, featured banner; template wording and footer', async () => {
+  const sp = await nl({ action: 'save_sponsor', sponsor: { name: `Featured ${uid()}`, logo: '/images/novus.png', link: 'https://featured.example.com', headline: 'Official Banking Partner', text: 'Open an account today', button_text: 'Open an account', address: '12 Old Otukpo Road, Makurdi', phone: '0803 123 4567', email: 'hello@featured.example.com', offer: '10% off with code LOBISTARS', featured: true, banner_image: '/images/hero-1.jpg' } });
+  assert.equal(sp.status, 200);
+  assert.equal((await nl({ action: 'save_sponsor', sponsor: { name: 'Bad email', email: 'not-an-email' } })).status, 400);
+  const saved = (await get('/api/admin/newsletter')).data.sponsors.find(s => s.id === sp.data.id);
+  assert.equal(saved.featured, 1);
+  assert.equal(saved.offer, '10% off with code LOBISTARS');
+
+  const before = (await get('/api/admin/newsletter')).data.settings;
+  assert.equal((await nl({ action: 'save_settings', settings: { facebook: 'http://not-secure.example.com' } })).status, 400);
+  const st = await nl({ action: 'save_settings', settings: { title: 'Lobi Stars Matchday Mail', partnersLabel: 'Proudly supported by', footerAddress: 'Test address, Makurdi', youtube: 'https://www.youtube.com/@lobistars' } });
+  assert.equal(st.status, 200);
+  const pv = await fetch(`${BASE}/api/admin/newsletter/preview`, { method: 'POST', headers: ADMIN, body: JSON.stringify({ issue: { subject: 'x', sponsor_ids: [sp.data.id] } }) }).then(r => r.text());
+  for (const t of ['Lobi Stars Matchday Mail', 'From our partners', '10% off with code LOBISTARS', '12 Old Otukpo Road, Makurdi', 'hello@featured.example.com', 'Open an account', 'Test address, Makurdi', 'youtube.com/@lobistars', '/images/hero-1.jpg']) assert.ok(pv.includes(t), t);
+  // Back to how it was.
+  await nl({ action: 'save_settings', settings: before });
+  await nl({ action: 'delete_sponsor', id: sp.data.id });
+});

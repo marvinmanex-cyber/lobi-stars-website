@@ -10,5 +10,7 @@ export async function onRequestGet({ env }) {
   return Response.json({
     open: state.open, reason: state.reason, match: state.match || null,
     categories, stands: settings.stands, minOrderKobo: settings.minOrderKobo, paymentExpiryMinutes: settings.paymentExpiryMinutes,
+    pickupPoints: settings.pickupPoints,
+    whatsapp: settings.whatsappEnabled ? { number: settings.whatsappNumber, display: `+${settings.whatsappNumber.slice(0, 3)} ${settings.whatsappNumber.slice(3, 6)} ${settings.whatsappNumber.slice(6, 9)} ${settings.whatsappNumber.slice(9)}` } : null,
   }, { headers: { 'Cache-Control': 'no-store' } });
 }

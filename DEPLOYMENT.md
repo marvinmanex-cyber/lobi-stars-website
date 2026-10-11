@@ -78,6 +78,26 @@ BASE=http://127.0.0.1:8833 ADMIN_CODE=<local code> npm test             # all au
 
 `seed:local` refuses to run against anything except 127.0.0.1 / localhost.
 
+## Food ordering (Paystack and Order on WhatsApp)
+
+- Public: `/food` (menu from `GET /api/food/menu`), Paystack checkout
+  `POST /api/food-checkout`, WhatsApp checkout `POST /api/food/whatsapp-order`
+  (saves the order as `AWAITING_WHATSAPP` with server prices and returns the
+  `wa.me` link and message), order status `GET /api/food/order?ref=&t=`.
+- Admin: `/admin/food-orders/` (list), `/admin/food-orders/live/` (live board,
+  WhatsApp box, open/closed switch), `/admin/food-orders/menu/` (menu, prices,
+  photos, sold out, Ordering settings incl. WhatsApp number, pickup points,
+  bank details and reply templates). APIs under `/api/admin/food-*` use the
+  site's own staff login and roles (Commerce).
+- Data: D1 tables `food_items`, `food_categories`, `food_orders` (columns
+  `channel` paystack/whatsapp, `fulfilment` seat/pickup, `pickup_point`),
+  `food_settings`. Tables and columns are created automatically on first use;
+  there are no manual migrations.
+- Optional settings: `TURNSTILE_SECRET_KEY` (+ site key in
+  `src/data/fan-settings.json`) adds the human check to WhatsApp orders;
+  `RESEND_API_KEY` for staff email alerts; VAPID keys for phone alerts.
+- Local: `npm run build` then the `wrangler pages dev dist …` command below.
+
 ## Site (Astro + Cloudflare Pages)
 
 Already live on `main`. Cloudflare Pages build settings (already configured):

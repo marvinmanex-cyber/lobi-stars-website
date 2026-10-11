@@ -1,7 +1,7 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { unsubscribeUrl } from '../../_lib/contacts.js';
-import { ensureNewsletterSchema, parseIssue, renderNewsletter, renderText, loadSponsors, nextMatch, recipients, slugFor, SITE } from '../../_lib/newsletter.js';
+import { ensureNewsletterSchema, parseIssue, renderNewsletter, renderText, loadSponsors, nextMatch, recipients, slugFor, SITE, newsletterSettings } from '../../_lib/newsletter.js';
 
 const json = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -33,12 +33,13 @@ export async function onRequestPost({ request, env }) {
   if (!live && !testMode) return json({ error: 'The email service (Resend) is not set up yet, so newsletters cannot be sent. See the staff guide, section 24.' }, 503);
   const sponsors = await loadSponsors(db);
   const match = issue.include_match ? await nextMatch(db) : null;
+  const settings = await newsletterSettings(db);
 
   if (b.test) {
     const to = String(b.test).split(/[\s,;]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
     if (!to.length || to.length > 5 || !to.every(e => EMAIL.test(e))) return json({ error: 'Type up to 5 valid email addresses for the test.' }, 400);
     const recipient = { firstName: (admin.name || '').split(' ')[0] || '', unsubscribeUrl: `${SITE}/newsletter/`, optionsUrl: `${SITE}/newsletter/` };
-    const html = renderNewsletter({ issue, sponsors, match, recipient });
+    const html = renderNewsletter({ issue, sponsors, match, recipient, settings });
     if (live) await resendBatch(env, to.map(e => ({ from: fromAddress(env), to: e, subject: `[TEST] ${issue.subject}`, html, text: renderText({ issue, sponsors, match, recipient }) })));
     await logAdminAction(db, admin, 'newsletter_test', `${issue.subject} to ${to.join(', ')}`);
     return json({ ok: true, sentTo: to, testMode });
@@ -52,7 +53,7 @@ export async function onRequestPost({ request, env }) {
     if (await db.prepare(`SELECT 1 FROM newsletter_issues WHERE slug = ?`).bind(slug).first()) slug = `${slug}-${issue.id.slice(-4).toLowerCase()}`;
     const sentAt = new Date().toISOString();
     const frozen = { ...issue, slug, status: 'sent', sent_at: sentAt };
-    const web = renderNewsletter({ issue: frozen, sponsors, match, web: true });
+    const web = renderNewsletter({ issue: frozen, sponsors, match, web: true, settings });
     await db.prepare(`UPDATE newsletter_issues SET status = 'sending', slug = ?, sent_at = ?, sent_by = ?, html_snapshot = ? WHERE id = ? AND status = 'draft'`).bind(slug, sentAt, admin.name, web, issue.id).run();
     Object.assign(issue, { slug, sent_at: sentAt, status: 'sending' });
     await logAdminAction(db, admin, 'newsletter_send_start', issue.subject);
@@ -65,7 +66,7 @@ export async function onRequestPost({ request, env }) {
     const emails = chunk.map(r => {
       const unsub = r.unsub_token ? unsubscribeUrl(r) : `${SITE}/newsletter/`;
       const recipient = { firstName: r.first_name || '', unsubscribeUrl: unsub, optionsUrl: r.unsub_token ? `${SITE}/newsletter/?t=${r.unsub_token}` : `${SITE}/newsletter/` };
-      return { from: fromAddress(env), to: r.email, subject: issue.subject, html: renderNewsletter({ issue: final, sponsors, match, recipient }), text: renderText({ issue: final, sponsors, match, recipient }), headers: { 'List-Unsubscribe': `<${unsub}>` } };
+      return { from: fromAddress(env), to: r.email, subject: issue.subject, html: renderNewsletter({ issue: final, sponsors, match, recipient, settings }), text: renderText({ issue: final, sponsors, match, recipient }), headers: { 'List-Unsubscribe': `<${unsub}>` } };
     });
     let status = testMode ? 'dev' : 'sent';
     if (live) { try { await resendBatch(env, emails); } catch (err) { console.log('[newsletter]', err.message); status = 'failed'; } }

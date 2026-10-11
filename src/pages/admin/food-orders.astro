@@ -26,6 +26,7 @@ import PushEnable from '../../components/admin/PushEnable.astro';
       <label class="wide">Search <input type="search" name="q" placeholder="Reference, name, phone, email or seat" /></label>
       <label>Status <select name="status"><option value="">All statuses</option></select></label>
       <label>Payment <select name="pay"><option value="">Any</option><option value="paid">Paid</option><option value="unpaid">Not paid</option></select></label>
+      <label>Ordered by <select name="channel"><option value="">Website and WhatsApp</option><option value="paystack">Website (Paystack)</option><option value="whatsapp">WhatsApp</option></select></label>
       <label>Match <select name="event"><option value="">All matches</option></select></label>
       <label>Stand <select name="stand"><option value="">All stands</option></select></label>
       <label>From <input type="date" name="from" /></label>
@@ -109,6 +110,8 @@ import PushEnable from '../../components/admin/PushEnable.astro';
   .fo-dlg :global(.acts) { display: flex; gap: 8px; flex-wrap: wrap; }
   .fo-dlg :global(.acts button) { min-height: 44px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--d4); background: var(--a-card, #fff); color: var(--a-ink); font-weight: 700; cursor: pointer; }
   @media (max-width: 600px) { .fo-dlg :global(dl) { grid-template-columns: 1fr; } }
+  .fo-dlg :global(.fo-chat) { display: inline-flex; align-items: center; gap: 6px; padding: 10px 14px; border-radius: 10px; background: #25D366; color: #fff; font-weight: 700; text-decoration: none; min-height: 44px; }
+  .fo-dlg :global(.fo-chat:hover) { background: #1EBE5A; }
 </style>
 
 <script is:inline>
@@ -119,7 +122,9 @@ import PushEnable from '../../components/admin/PushEnable.astro';
   const naira = k => '₦' + (Number(k || 0) / 100).toLocaleString('en-NG');
   const when = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
   const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'fo-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
-  const NEXT = { PAID: ['Start preparing', 'PREPARING'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED'] };
+  const NEXT = { AWAITING_WHATSAPP: ['Confirm order', 'CONFIRMED'], CONFIRMED: ['Payment received', 'PAID'], PAID: ['Start preparing', 'PREPARING'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED'] };
+  const STEP = { AWAITING_WHATSAPP: ['CONFIRMED', 'Send confirmation & payment details'], CONFIRMED: ['CONFIRMED', 'Remind about payment'], PAID: ['PAID', 'Tell them payment arrived'], PREPARING: ['PAID', 'Tell them it is being prepared'], OUT_FOR_DELIVERY: ['READY', 'Tell them it is ready / on its way'], CANCELLED: ['CANCELLED', 'Tell them it is cancelled'] };
+  const waLink = (o, step) => `https://wa.me/${esc(o.wa.phone)}?text=${encodeURIComponent(o.wa.messages[step] || '')}`;
   let ST = {}, rows = [], page = 1, filled = false;
 
   async function api(path, opts = {}) {
@@ -157,9 +162,9 @@ import PushEnable from '../../components/admin/PushEnable.astro';
       const x = qs(); x.set('show', 'list'); x.set('format', 'xlsx');
       $('xlsx').href = '/api/admin/food-orders?' + x; $('xlsx').hidden = !d.canExport;
       $('count').textContent = `${d.total.toLocaleString('en-NG')} order${d.total === 1 ? '' : 's'}`;
-      $('table').innerHTML = rows.length ? '<table><thead><tr><th>Reference</th><th>Status</th><th>Created</th><th>Name</th><th>Seat · Stand</th><th>Items</th><th>Total</th><th>Match</th></tr></thead><tbody>' +
-        rows.map(o => `<tr data-id="${esc(o.id)}" tabindex="0"><td class="ref">${esc(o.ref)}</td><td>${badge(o.status)}</td><td>${esc(when(o.createdAt))}</td><td>${esc(o.name || '–')}<div class="sm">${esc(o.phone)}</div></td>` +
-          `<td>${esc(o.seat)}<div class="sm">${esc(o.stand)}</div></td><td>${esc(o.items.map(i => `${i.qty}× ${i.name}`).join(', '))}</td><td>${naira(o.totalKobo)}</td><td class="sm">${esc(o.match)}</td></tr>`).join('') + '</tbody></table>'
+      $('table').innerHTML = rows.length ? '<table><thead><tr><th>Reference</th><th>Status</th><th>Created</th><th>Name</th><th>Seat / pickup</th><th>Items</th><th>Total</th><th>Match</th></tr></thead><tbody>' +
+        rows.map(o => `<tr data-id="${esc(o.id)}" tabindex="0"><td class="ref">${esc(o.ref)}${o.channel === 'whatsapp' ? '<div class="sm">💬 WhatsApp</div>' : ''}</td><td>${badge(o.status)}</td><td>${esc(when(o.createdAt))}</td><td>${esc(o.name || '–')}<div class="sm">${esc(o.phone)}</div></td>` +
+          `<td>${o.fulfilment === 'pickup' ? `Pickup<div class="sm">${esc(o.pickupPoint)}</div>` : `${esc(o.seat)}<div class="sm">${esc(o.stand)}</div>`}</td><td>${esc(o.items.map(i => `${i.qty}× ${i.name}`).join(', '))}</td><td>${naira(o.totalKobo)}</td><td class="sm">${esc(o.match)}</td></tr>`).join('') + '</tbody></table>'
         : '<div class="empty-state"><b>🍽️</b><p>No orders match these filters.</p></div>';
       $('pager').innerHTML = d.pages > 1 ? Array.from({ length: d.pages }, (_, i) => i + 1).filter(n => n === 1 || n === d.pages || Math.abs(n - page) <= 2)
         .map(n => `<button type="button" data-p="${n}" ${n === page ? 'aria-current="page"' : ''}>${n}</button>`).join('') : '';
@@ -171,19 +176,21 @@ import PushEnable from '../../components/admin/PushEnable.astro';
     $('dBody').innerHTML = `<p>${badge(o.status)} ${o.paidLate ? '<span class="sm">paid after expiry</span>' : ''}</p>` +
       `<ul class="it">${o.items.map(i => `<li><span>${esc(i.qty)} × ${esc(i.name)}</span><span>${naira(i.priceKobo * i.qty)}</span></li>`).join('')}<li><b>Total</b><b>${naira(o.totalKobo)}</b></li></ul>` +
       `<dl><dt>Name</dt><dd>${esc(o.name || '–')}</dd><dt>Phone</dt><dd><a href="tel:${esc(o.phone)}">${esc(o.phone)}</a></dd><dt>Email</dt><dd>${esc(o.email)}</dd>` +
-      `<dt>Seat</dt><dd>${esc(o.seat)} · ${esc(o.stand || 'Stand not given')}</dd><dt>Note</dt><dd>${esc(o.notes || '–')}</dd><dt>Match</dt><dd>${esc(o.match || '–')}</dd>` +
+      `<dt>Ordered by</dt><dd>${o.channel === 'whatsapp' ? '💬 WhatsApp' : 'Website (Paystack)'}</dd>` +
+      `<dt>${o.fulfilment === 'pickup' ? 'Pickup' : 'Seat'}</dt><dd>${o.fulfilment === 'pickup' ? esc(o.pickupPoint) : `${esc(o.seat)} · ${esc(o.stand || 'Stand not given')}`}</dd><dt>Note</dt><dd>${esc(o.notes || '–')}</dd><dt>Match</dt><dd>${esc(o.match || '–')}</dd>` +
       `<dt>Paystack ref</dt><dd>${esc(o.paystackRef || '–')}</dd><dt>Payment</dt><dd>${esc(o.payment)}</dd></dl>` +
       `<ul class="tl"><li>🕒 Ordered ${esc(when(o.createdAt))}</li>${o.paidAt ? `<li>🟢 Paid ${esc(when(o.paidAt))}</li>` : `<li>⏳ Pay by ${esc(when(o.expiresAt))}</li>`}` +
       `${o.preparingAt ? `<li>👩‍🍳 Preparing ${esc(when(o.preparingAt))}</li>` : ''}${o.outAt ? `<li>🏃 Out for delivery ${esc(when(o.outAt))}</li>` : ''}${o.deliveredAt ? `<li>✅ Delivered ${esc(when(o.deliveredAt))}</li>` : ''}` +
       `${o.cancelledAt ? `<li>✖ Cancelled ${esc(when(o.cancelledAt))}</li>` : ''}${o.statusBy ? `<li>Last change by ${esc(o.statusBy)} ${esc(when(o.statusAt))}</li>` : ''}</ul>` +
-      `<div class="acts" data-id="${esc(o.id)}">${nx ? `<button data-s="${nx[1]}">${nx[0]}</button>` : ''}${['PAID', 'PREPARING', 'OUT_FOR_DELIVERY'].includes(o.status) ? '<button data-s="CANCELLED">Cancel</button>' : ''}${o.status === 'CANCELLED' ? '<button data-s="REFUNDED">Mark refunded</button>' : ''}</div>`;
+      `<div class="acts" data-id="${esc(o.id)}">${o.wa && STEP[o.status] ? `<a class="fo-chat" href="${waLink(o, STEP[o.status][0])}" target="_blank" rel="noopener">💬 Chat on WhatsApp: ${esc(STEP[o.status][1])}</a>` : ''}${nx ? `<button data-s="${nx[1]}">${nx[0]}</button>` : ''}${['AWAITING_WHATSAPP', 'CONFIRMED', 'PAID', 'PREPARING', 'OUT_FOR_DELIVERY'].includes(o.status) ? '<button data-s="CANCELLED">Cancel</button>' : ''}${o.status === 'CANCELLED' ? '<button data-s="REFUNDED">Mark refunded</button>' : ''}</div>`;
     $('dlg').showModal();
   }
   $('table').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) open(rows.find(o => o.id === tr.dataset.id)); });
   $('table').addEventListener('keydown', e => { if (e.key === 'Enter') { const tr = e.target.closest('tr[data-id]'); if (tr) open(rows.find(o => o.id === tr.dataset.id)); } });
   $('dBody').addEventListener('click', async e => {
     const b = e.target.closest('button[data-s]'); if (!b) return;
-    if (b.dataset.s === 'CANCELLED' && !confirm('Cancel this order? Refunds are done in the Paystack dashboard; mark it "Refunded" here afterwards.')) return;
+    if (b.dataset.s === 'CANCELLED' && !confirm('Cancel this order? Refunds for Paystack payments are done in the Paystack dashboard; mark it "Refunded" here afterwards.')) return;
+    if (b.dataset.s === 'PAID' && !confirm('Has the payment arrived? The order then goes to the kitchen.')) return;
     try { await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ id: b.closest('[data-id]').dataset.id, status: b.dataset.s }) }); $('dlg').close(); msg('Saved.', true); load(); stats(); }
     catch (err) { alert(err.message); }
   });

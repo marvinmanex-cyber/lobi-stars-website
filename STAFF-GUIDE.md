@@ -595,9 +595,44 @@ each package: name, what's included, and a price (or price text such as "From
 5. Orders not paid within **15 minutes** become **Expired** automatically.
    You can change the time under **Settings** at the bottom of the page.
 
+### Orders on WhatsApp
+Next to *Place Order & Pay* fans can press the green **Order on WhatsApp**
+button. Their choice of food stays in the basket even if they refresh the
+page.
+1. The fan enters their name, phone, seat (or chooses **I'll collect it** and
+   a pickup point) and an optional note. Email is not needed.
+2. The order is saved with a reference (FD-…) and the prices from the menu,
+   and **WhatsApp opens** with a ready-made message to the club number, for
+   example *"Order: FD-20261011-0042, 2 × Beef Suya: ₦3,000 … Total ₦3,300,
+   Seat C14, Cover Stand"*. The fan presses Send. If WhatsApp doesn't open,
+   the page has a "Tap here" button, a **Copy order message** button and the
+   club number.
+3. On the **Live Order Board** the order appears in the green **WhatsApp
+   orders** box (with the loud alert). Then:
+   - **💬 Chat on WhatsApp** opens a chat with the fan with the right message
+     already typed (e.g. the confirmation with your bank details). Check it
+     and press Send.
+   - **Confirm order** once you have replied (status *Confirmed – awaiting
+     payment*).
+   - **Payment received** when the money has arrived (bank transfer or cash).
+     **Only press this when you have seen the payment.** The order then goes
+     into **Paid – start preparing** like any other order and counts in the
+     takings.
+   - **Cancel** if the fan doesn't pay or changes their mind (then use
+     💬 to tell them).
+4. From then on it is the same as a website order: Preparing → Out for
+   delivery (or **Ready for pickup** / **Collected** for pickup orders) →
+   Delivered. A 💬 button lets you message the fan at each step.
+5. WhatsApp orders nobody confirms expire after **3 hours** (change it in
+   Ordering settings).
+6. Limits: one phone number can place at most 5 orders in 30 minutes, and a
+   hidden robot trap blocks spam.
+
 ### Statuses
 | Status | Colour | Meaning |
 |---|---|---|
+| WhatsApp – to confirm | WhatsApp green | A WhatsApp order: reply to the fan and confirm it. **Not paid: do not prepare.** |
+| Confirmed – awaiting payment | light blue | WhatsApp order confirmed; waiting for the fan's payment. **Do not prepare.** |
 | Awaiting payment | amber | Not paid yet. **Do not prepare.** |
 | Paid | green | Payment confirmed. Start preparing. |
 | Preparing | blue | The kitchen is making it. |
@@ -610,7 +645,11 @@ each package: name, what's included, and a price (or price text such as "From
 Open **Food: Live Order Board** on a tablet or phone in the kitchen. It
 updates by itself (the top shows **● Live**); there is no need to refresh.
 
-- Columns: **Paid – start preparing** | **Preparing** | **Out for delivery** |
+- **Ordering OPEN / CLOSED:** the big button at the top opens or closes food
+  ordering for fans straight away (e.g. at half-time or when the kitchen runs
+  out).
+- **WhatsApp orders** (green box at the top): see "Orders on WhatsApp" above.
+- Columns: **Paid – start preparing** | **Preparing** | **Out for delivery / ready** |
   **Delivered** (last 30 minutes). Below, **Awaiting payment** lists orders
   that are not paid yet: **do not prepare them**.
 - Each card shows the **seat and stand** in big letters, the items and
@@ -627,7 +666,7 @@ updates by itself (the top shows **● Live**); there is no need to refresh.
 
 ### The orders list (Food: Orders)
 Search by reference, name, phone, email or seat, and filter by status,
-payment, match, stand and date. Tap an order to see everything (customer,
+payment, match, stand, date and **Ordered by** (website or WhatsApp). Tap an order to see everything (customer,
 items, note, Paystack reference and the time of each step), move it on,
 cancel it or mark it refunded. **⬇ Excel** downloads the filtered list (staff
 with "Can export fan data" only).
@@ -695,6 +734,20 @@ category can only be deleted when it has no items.
 - **Unpaid orders expire after** (minutes), **Minimum order** (₦, 0 = none).
 - **Stands / sections:** one per line. Fans then pick their stand from a list
   instead of typing it.
+
+**💬 Order on WhatsApp** (same tab, below):
+- **Show the "Order on WhatsApp" button:** switch it on or off.
+- **Club WhatsApp number:** where orders are sent (currently the club number
+  shown on the website, 0903 039 9416).
+- **Unconfirmed WhatsApp orders expire after** (hours).
+- **Pickup points:** one per line, e.g. *Main Stand Kiosk*. When there is at
+  least one, fans can choose **I'll collect it** instead of seat delivery
+  (for both ways of ordering). Leave empty for seat delivery only.
+- **Bank details:** the account fans pay into. They are put into the
+  "Order confirmed" message.
+- **Ready-made WhatsApp replies:** the messages for *Order confirmed*,
+  *Payment received*, *Ready / on its way* and *Cancelled*. You can use
+  {name} (first name), {ref}, {total}, {bank}, {pickup}, {seat} and {where}.
 
 ---
 
@@ -1248,6 +1301,11 @@ unsubscribing).
   name (e.g. "Official Banking Partner"), the **advert text** (an offer or a
   short message), the **button text** (e.g. "Open an account") and
   **Active**.
+- Also optional: an **offer or promo code** (shown in a gold box, e.g.
+  "10% off with code LOBISTARS"), the sponsor's **address**, **phone** and
+  **email** (shown under the advert), and **Featured**: a big advert across
+  the whole email, above the other sponsors, with a **wide advert picture**
+  (about 1200 × 600) if you upload one.
 - **Edit** to change anything, **Switch off** to keep an advert for later
   without using it, **↑ ↓** to set the default order, **Delete** to remove it
   for good (newsletters already sent are not changed).
@@ -1256,6 +1314,16 @@ unsubscribing).
   each. Zeva Lager Beer and Play have no logo on the website yet, so upload
   their logos here.
 - Only include offers the sponsor has approved, and keep advert text short.
+
+### Template & settings (🎨 tab)
+Change the wording used in every newsletter: the name under the club badge
+(e.g. "The Weekly Newsletter"), the "Next match" and stories headings, the
+featured and sponsor advert headings and the line under them, the club
+address in the footer, the "why you get this email" text and the social links
+(Facebook, X, Instagram, YouTube, TikTok, WhatsApp Channel; leave a link
+empty to hide it). **Back to the standard wording** undoes your changes. The
+preview shows changes straight away; newsletters already sent stay as they
+were.
 
 ### Before the first newsletter (website manager)
 The newsletter can be written and previewed now, but **is only emailed once

@@ -19,6 +19,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <div class="nl-tabs" role="tablist">
       <button type="button" role="tab" data-tab="issues" aria-selected="true">✉️ Newsletters</button>
       <button type="button" role="tab" data-tab="sponsors" aria-selected="false">🤝 Sponsor adverts</button>
+      <button type="button" role="tab" data-tab="settings" aria-selected="false">🎨 Template &amp; settings</button>
       <button type="button" role="tab" data-tab="subs" aria-selected="false">👥 Subscribers</button>
     </div>
     <p class="nl-msg" id="msg" role="status" aria-live="polite" hidden></p>
@@ -93,6 +94,28 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <div class="nl-spgrid" id="sponsors"></div>
     </section>
 
+    <!-- Template & settings -->
+    <section data-pane="settings" hidden>
+      <form class="nl-form nl-setform" id="setForm" autocomplete="off">
+        <fieldset class="panel"><legend>Wording in every newsletter</legend>
+          <p class="muted">These words appear in every newsletter. Leave a box empty to go back to the standard wording.</p>
+          <label>Name under the club badge<input name="title" maxlength="60" /></label>
+          <div class="nl-2"><label>"Next match" heading<input name="matchLabel" maxlength="40" /></label><label>Stories heading<input name="storiesLabel" maxlength="40" /></label></div>
+          <div class="nl-2"><label>Featured sponsors heading<input name="featuredLabel" maxlength="40" /></label><label>Sponsor adverts heading<input name="partnersLabel" maxlength="40" /></label></div>
+          <label>Line under the sponsor adverts heading<input name="partnersText" maxlength="200" /></label>
+        </fieldset>
+        <fieldset class="panel"><legend>Footer</legend>
+          <label>Club address<input name="footerAddress" maxlength="160" /></label>
+          <label>Why fans get this email (the unsubscribe link is added after it)<textarea name="footerNote" rows="2" maxlength="300"></textarea></label>
+          <p class="nl-lbl">Social links (leave empty to hide)</p>
+          <div class="nl-2"><label>Facebook<input name="facebook" placeholder="https://www.facebook.com/…" /></label><label>X<input name="x" placeholder="https://x.com/…" /></label></div>
+          <div class="nl-2"><label>Instagram<input name="instagram" placeholder="https://www.instagram.com/…" /></label><label>YouTube<input name="youtube" placeholder="https://www.youtube.com/@…" /></label></div>
+          <div class="nl-2"><label>TikTok<input name="tiktok" placeholder="https://www.tiktok.com/@…" /></label><label>WhatsApp Channel<input name="whatsapp" placeholder="https://whatsapp.com/channel/…" /></label></div>
+        </fieldset>
+        <div class="nl-bar"><button class="btn-p" type="submit">Save template settings</button><button type="button" class="btn-o" id="setReset">Back to the standard wording</button><span class="muted">Changes apply to newsletters not yet sent (and to previews straight away).</span></div>
+      </form>
+    </section>
+
     <!-- Subscribers -->
     <section data-pane="subs" hidden>
       <div class="panel nl-subs" id="subs"></div>
@@ -112,6 +135,14 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <label>Website link<input name="link" placeholder="https://www.sponsor.com" /></label>
       <label>Title above the name<input name="headline" maxlength="60" placeholder="Official Banking Partner" /></label>
       <label>Advert text<textarea name="text" rows="3" maxlength="300" placeholder="Open an account in minutes and get…"></textarea></label>
+      <label>Offer or promo code (optional, shown in a highlighted box)<input name="offer" maxlength="120" placeholder="10% off with code LOBISTARS" /></label>
+      <label>Address (optional)<input name="address" maxlength="160" placeholder="12 Old Otukpo Road, Makurdi" /></label>
+      <div class="nl-2"><label>Phone (optional)<input name="phone" maxlength="40" placeholder="0803 123 4567" /></label><label>Email (optional)<input name="email" type="email" maxlength="120" placeholder="hello@sponsor.com" /></label></div>
+      <label class="nl-check"><input type="checkbox" name="featured" /> Featured: show as a big advert across the whole email (above the other sponsors)</label>
+      <div class="nl-img" data-img="banner_image">
+        <span class="nl-lbl">Wide advert picture for featured adverts (optional, about 1200 × 600)</span>
+        <div class="nl-img-row"><img alt="" hidden /><input name="banner_image" placeholder="https://… or upload" /><label class="btn-o sm nl-up">Upload<input type="file" accept="image/*" hidden /></label><button type="button" class="btn-o sm" data-clear>Remove</button></div>
+      </div>
       <div class="nl-2"><label>Button text<input name="button_text" maxlength="30" placeholder="Visit website" /></label>
         <label class="nl-check nl-active"><input type="checkbox" name="active" checked /> Active (can be added to newsletters)</label></div>
       <div class="nl-dacts"><button type="button" class="btn-o" id="spDelete">Delete</button><button class="btn-p" type="submit">Save advert</button></div>
@@ -187,10 +218,12 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .nl :global(.nl-sp h3) { margin: 0; font: 700 17px/1.25 'Barlow', sans-serif; color: var(--a-ink); }
   .nl :global(.nl-sp p) { margin: 0; font-size: 13px; color: var(--a-muted); overflow-wrap: anywhere; }
   .nl :global(.nl-subs) { padding: 18px; }
+  .nl-setform { max-width: 900px; }
   .nl :global(.nl-subs ul) { margin: 8px 0 14px; padding-left: 20px; line-height: 1.7; }
 
   .nl-dlg { margin: auto; border: 0; border-radius: 16px; padding: 22px; width: min(620px, calc(100vw - 24px)); max-height: calc(100vh - 30px); background: var(--a-card); color: var(--a-ink); position: relative; }
   .nl-dlg::backdrop { background: rgba(0,0,0,.5); }
+  .nl-dlg ::placeholder, .nl ::placeholder { color: var(--a-muted); opacity: .75; font-weight: 400; }
   .nl-dlg h2 { margin: 0 0 12px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; padding-right: 44px; }
   .nl-dlg .nl-form label { display: grid; gap: 4px; font-size: 13px; font-weight: 700; color: var(--a-muted); }
   .nl-dlg input:not([type=checkbox]):not([type=file]), .nl-dlg textarea { min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 15px; width: 100%; }
@@ -241,7 +274,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     bn.hidden = data.emailReady;
     bn.innerHTML = data.testMode ? '🧪 <b>Test mode:</b> the email service is not connected on this copy of the site, so sending only records who would receive it.'
       : '⚠️ <b>Newsletters can be written and previewed, but not sent yet:</b> the email service (Resend) still needs to be set up. See the staff guide, section 24.';
-    drawIssues(); drawSponsors(); drawSubs();
+    drawIssues(); drawSponsors(); drawSubs(); fillSettings();
   }
   function drawIssues() {
     const rows = data.issues;
@@ -284,7 +317,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     // Chosen sponsors first (in their order), then the other active ones.
     const chosen = (i.sponsor_ids || []).map(id => data.sponsors.find(s => s.id === id)).filter(Boolean);
     const rest = data.sponsors.filter(s => s.active && !chosen.includes(s));
-    $('sponsorPicks').innerHTML = [...chosen.map(s => [s, true]), ...rest.map(s => [s, false])].map(([s, on]) => `<li class="nl-pick" data-id="${esc(s.id)}">${s.logo ? `<img src="${esc(s.logo)}" alt="">` : ''}<label><input type="checkbox" value="${esc(s.id)}" ${on ? 'checked' : ''}> ${esc(s.name)}${s.active ? '' : ' <span class="muted">(switched off)</span>'}</label><span class="nl-mini"><button type="button" data-up aria-label="Move up">↑</button><button type="button" data-down aria-label="Move down">↓</button></span></li>`).join('') || '<li class="muted">No sponsor adverts yet. Add them in the Sponsor adverts tab.</li>';
+    $('sponsorPicks').innerHTML = [...chosen.map(s => [s, true]), ...rest.map(s => [s, false])].map(([s, on]) => `<li class="nl-pick" data-id="${esc(s.id)}">${s.logo ? `<img src="${esc(s.logo)}" alt="">` : ''}<label><input type="checkbox" value="${esc(s.id)}" ${on ? 'checked' : ''}> ${esc(s.name)}${s.featured ? ' <span class="badge win">★ Featured</span>' : ''}${s.active ? '' : ' <span class="muted">(switched off)</span>'}</label><span class="nl-mini"><button type="button" data-up aria-label="Move up">↑</button><button type="button" data-down aria-label="Move down">↓</button></span></li>`).join('') || '<li class="muted">No sponsor adverts yet. Add them in the Sponsor adverts tab.</li>';
     imgPreviews();
   }
   function addStory(s) {
@@ -458,6 +491,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <h3>${esc(x.name)}</h3>
       ${x.headline ? `<p><b>${esc(x.headline)}</b></p>` : ''}
       ${x.text ? `<p>${esc(x.text)}</p>` : ''}
+      ${x.offer ? `<p>🏷️ ${esc(x.offer)}</p>` : ''}
+      ${x.address || x.phone || x.email ? `<p>📍 ${esc([x.address, x.phone, x.email].filter(Boolean).join(' · '))}</p>` : ''}
+      ${x.featured ? '<p><span class="badge win">★ Featured advert</span></p>' : ''}
       <p>${x.link ? `🔗 <a href="${esc(x.link)}" target="_blank" rel="noopener">${esc(x.link.replace(/^https?:\/\//, ''))}</a>` : '<span class="muted">No website link</span>'}</p>
       <p><span class="badge ${x.active ? 'ok' : 'closed'}">${x.active ? 'Active' : 'Switched off'}</span> · ${x.clicks || 0} clicks from newsletters</p>
       <div class="nl-row-acts"><button type="button" data-edit="${i}">Edit</button><button type="button" data-toggle="${i}">${x.active ? 'Switch off' : 'Switch on'}</button><button type="button" data-sup="${i}" aria-label="Move earlier">↑</button><button type="button" data-sdown="${i}" aria-label="Move later">↓</button><button type="button" data-sdel="${i}">Delete</button></div>
@@ -467,6 +503,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const f = $('spForm').elements;
     f.id.value = s ? s.id : ''; f.name.value = s ? s.name : ''; f.logo.value = s ? s.logo || '' : ''; f.link.value = s ? s.link || '' : '';
     f.headline.value = s ? s.headline || '' : ''; f.text.value = s ? s.text || '' : ''; f.button_text.value = s ? s.button_text || '' : 'Visit website'; f.active.checked = s ? !!s.active : true;
+    f.offer.value = s ? s.offer || '' : ''; f.address.value = s ? s.address || '' : ''; f.phone.value = s ? s.phone || '' : ''; f.email.value = s ? s.email || '' : '';
+    f.featured.checked = s ? !!s.featured : false; f.banner_image.value = s ? s.banner_image || '' : '';
     $('spTitle').textContent = s ? 'Edit sponsor advert' : 'New sponsor advert'; $('spDelete').hidden = !s;
     imgPreviews(); $('spDlg').showModal();
   }
@@ -490,7 +528,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   $('spForm').addEventListener('submit', async e => {
     e.preventDefault(); const f = e.target.elements;
     try {
-      await api('/api/admin/newsletter', { action: 'save_sponsor', sponsor: { id: f.id.value || undefined, name: f.name.value, logo: f.logo.value.trim(), link: f.link.value.trim(), headline: f.headline.value, text: f.text.value, button_text: f.button_text.value, active: f.active.checked } });
+      await api('/api/admin/newsletter', { action: 'save_sponsor', sponsor: { id: f.id.value || undefined, name: f.name.value, logo: f.logo.value.trim(), link: f.link.value.trim(), headline: f.headline.value, text: f.text.value, button_text: f.button_text.value, active: f.active.checked, offer: f.offer.value, address: f.address.value, phone: f.phone.value, email: f.email.value, featured: f.featured.checked, banner_image: f.banner_image.value.trim() } });
       $('spDlg').close(); await load(); msg('Sponsor advert saved.', true);
       if (cur && cur.status === 'draft') { const keep = collect(); fill({ ...cur, ...keep }); refreshPreview(true); }
     } catch (err) { msg(err.message, false); }
@@ -505,6 +543,24 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       const r = await api('/api/admin/newsletter', { action: 'import_partners', partners: partners.map(p => ({ name: p.name, logo: p.logo, link: p.website, headline: p.officialTitle || p.tier })) });
       await load(); msg(r.added ? r.added + ' club partners added. Check each one and add advert text.' : 'All club partners are already in the list.', true);
     } catch (err) { msg(err.message, false); }
+  });
+
+  // ── Template & settings ──
+  function fillSettings() {
+    const f = $('setForm').elements;
+    for (const [k, v] of Object.entries(data.settings || {})) if (f[k]) f[k].value = v || '';
+  }
+  $('setForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target.elements, settings = {};
+    for (const k of Object.keys(data.defaults || {})) if (f[k]) settings[k] = f[k].value;
+    try { const r = await api('/api/admin/newsletter', { action: 'save_settings', settings }); data.settings = r.settings; fillSettings(); msg('Template settings saved.', true); if (cur) refreshPreview(true); }
+    catch (err) { msg(err.message, false); }
+  });
+  $('setReset').addEventListener('click', async () => {
+    if (!confirm('Go back to the standard wording and links?')) return;
+    try { const r = await api('/api/admin/newsletter', { action: 'save_settings', settings: data.defaults }); data.settings = r.settings; fillSettings(); msg('Standard wording restored.', true); }
+    catch (err) { msg(err.message, false); }
   });
 
   // ── Subscribers ──

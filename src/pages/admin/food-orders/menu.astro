@@ -45,6 +45,26 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
         <div class="form-grp"><label class="form-lbl" for="stands">Stands / sections (one per line; leave empty to let fans type it)</label><textarea class="form-ta" id="stands" rows="5" placeholder="Cover Stand&#10;Popular Stand&#10;VIP"></textarea></div>
         <button class="btn-p" type="submit">Save settings</button>
       </form>
+
+      <form class="panel fm-set fm-wa" id="waSettings">
+        <h2 class="fm-wa-h">💬 Order on WhatsApp</h2>
+        <p class="muted">Fans choose their food on the food page and press <b>Order on WhatsApp</b>: the order is saved and WhatsApp opens with the order message to the club number. Staff confirm it, take payment (bank transfer or cash) and mark it paid on the live order board.</p>
+        <label class="fm-wa-on"><input type="checkbox" id="waEnabled" /> <b>Show the "Order on WhatsApp" button</b></label>
+        <div class="form-row">
+          <div class="form-grp"><label class="form-lbl" for="waNumber">Club WhatsApp number (orders go here)</label><input class="form-inp" id="waNumber" type="tel" placeholder="0903 039 9416" /></div>
+          <div class="form-grp"><label class="form-lbl" for="waHours">Unconfirmed WhatsApp orders expire after (hours)</label><input class="form-inp" id="waHours" type="number" min="1" max="48" /></div>
+        </div>
+        <div class="form-grp"><label class="form-lbl" for="pickupPoints">Pickup points (one per line; fans can then choose "I'll collect it". Leave empty for seat delivery only)</label><textarea class="form-ta" id="pickupPoints" rows="3" placeholder="Main Stand Kiosk&#10;East Gate Kiosk"></textarea></div>
+        <div class="form-grp"><label class="form-lbl" for="bankDetails">Bank details for payment (used in the "Confirmed" message)</label><textarea class="form-ta" id="bankDetails" rows="2" maxlength="300" placeholder="Lobi Stars FC, Bank name, Account number 0123456789"></textarea></div>
+        <fieldset><legend>Ready-made WhatsApp replies for staff</legend>
+          <p class="muted">Staff press <b>Chat on WhatsApp</b> on an order and the right message is filled in. You can use <code>{'{name}'}</code>, <code>{'{ref}'}</code>, <code>{'{total}'}</code>, <code>{'{bank}'}</code>, <code>{'{pickup}'}</code>, <code>{'{seat}'}</code> and <code>{'{where}'}</code>.</p>
+          <div class="form-grp"><label class="form-lbl" for="msgConfirmed">Order confirmed (ask for payment)</label><textarea class="form-ta" id="msgConfirmed" rows="2" maxlength="500"></textarea></div>
+          <div class="form-grp"><label class="form-lbl" for="msgPaid">Payment received</label><textarea class="form-ta" id="msgPaid" rows="2" maxlength="500"></textarea></div>
+          <div class="form-grp"><label class="form-lbl" for="msgReady">Ready / on its way</label><textarea class="form-ta" id="msgReady" rows="2" maxlength="500"></textarea></div>
+          <div class="form-grp"><label class="form-lbl" for="msgCancelled">Cancelled</label><textarea class="form-ta" id="msgCancelled" rows="2" maxlength="500"></textarea></div>
+        </fieldset>
+        <button class="btn-p" type="submit">Save WhatsApp settings</button>
+      </form>
     </section>
   </div>
 
@@ -178,6 +198,10 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     .fm :global(.fm-btns) { justify-content: flex-start; }
     .fm-cols { grid-template-columns: 1fr; }
   }
+  .fm-wa { margin-top: 16px; border-top: 4px solid #25D366; }
+  .fm-wa-h { margin: 0 0 8px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fm-wa-on { display: flex; gap: 10px; align-items: center; margin: 10px 0 14px; font-size: 15px; }
+  .fm-wa-on input { width: 20px; height: 20px; accent-color: #25D366; }
 </style>
 
 <script is:inline>
@@ -227,6 +251,12 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     if (!$('settings').contains(document.activeElement)) {
       $('settings').querySelectorAll('[name=mode]').forEach(r => { r.checked = r.value === st.orderingMode; });
       $('autoMin').value = st.autoOpenMinutes; $('expiry').value = st.paymentExpiryMinutes; $('minOrder').value = st.minOrder; $('stands').value = (st.stands || []).join('\n');
+    }
+    if (!$('waSettings').contains(document.activeElement)) {
+      $('waEnabled').checked = !!st.whatsappEnabled;
+      $('waNumber').value = st.whatsappNumber ? '0' + String(st.whatsappNumber).slice(3) : '';
+      $('waHours').value = st.whatsappExpiryHours; $('pickupPoints').value = (st.pickupPoints || []).join('\n'); $('bankDetails').value = st.bankDetails || '';
+      for (const k of ['msgConfirmed', 'msgPaid', 'msgReady', 'msgCancelled']) $(k).value = st[k] || '';
     }
   }
   $('list').addEventListener('change', async e => {
@@ -288,6 +318,18 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     try {
       await api({ action: 'settings', settings: { orderingMode: mode, autoOpenMinutes: Number($('autoMin').value), paymentExpiryMinutes: Number($('expiry').value), minOrder: $('minOrder').value === '' ? 0 : Number($('minOrder').value), stands: $('stands').value.split('\n') } });
       msg('Settings saved.', true);
+    } catch (err) { msg(err.message, false); }
+  });
+
+  $('waSettings').addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      await api({ action: 'whatsapp_settings', settings: {
+        whatsappEnabled: $('waEnabled').checked, whatsappNumber: $('waNumber').value, whatsappExpiryHours: Number($('waHours').value),
+        pickupPoints: $('pickupPoints').value.split('\n'), bankDetails: $('bankDetails').value,
+        msgConfirmed: $('msgConfirmed').value, msgPaid: $('msgPaid').value, msgReady: $('msgReady').value, msgCancelled: $('msgCancelled').value,
+      } });
+      msg('WhatsApp settings saved.', true);
     } catch (err) { msg(err.message, false); }
   });
 

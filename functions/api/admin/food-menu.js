@@ -1,7 +1,8 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { logAdminAction } from '../_lib/adminSession.js';
 import { ensureMenuSchema, parseItem, history, wasOrdered, photoUrl, naira, orderingState } from '../_lib/foodMenuDb.js';
-import { foodSettings, saveFoodSetting } from '../_lib/foodOrders.js';
+import { foodSettings, saveFoodSetting, WA_TEMPLATES } from '../_lib/foodOrders.js';
+import { normalizeNigerianPhone } from '../_lib/fans.js';
 import { randomId } from '../_lib/crypto.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
@@ -171,6 +172,28 @@ export async function onRequestPost({ request, env }) {
         await saveFoodSetting(db, k, v, admin.name);
       }
       await log('settings', `ordering ${s.orderingMode}, ${stands.length} stands, min ${min}, expiry ${expiry}`);
+      break;
+    }
+    case 'ordering_mode': {
+      // The big OPEN / CLOSED button on the live order board.
+      if (!['open', 'closed', 'auto'].includes(b.mode)) return bad('Choose open, closed or automatic.');
+      await saveFoodSetting(db, 'orderingMode', b.mode, admin.name);
+      await log('settings', `ordering ${b.mode} (live board)`);
+      break;
+    }
+    case 'whatsapp_settings': {
+      // Order on WhatsApp: the club number, pickup points, bank details and the staff reply messages.
+      const w = b.settings || {};
+      const num = normalizeNigerianPhone(w.whatsappNumber);
+      if (w.whatsappEnabled && !num) return bad('Please enter the club WhatsApp number (e.g. 0903 039 9416).');
+      const hours = Math.round(Number(w.whatsappExpiryHours));
+      if (!(hours >= 1 && hours <= 48)) return bad('Unconfirmed WhatsApp orders must expire after 1 to 48 hours.');
+      const points = (Array.isArray(w.pickupPoints) ? w.pickupPoints : String(w.pickupPoints || '').split('\n')).map(x => String(x).trim().slice(0, 60)).filter(Boolean).slice(0, 20);
+      const pairs = [['whatsappEnabled', w.whatsappEnabled ? '1' : '0'], ['whatsappExpiryHours', hours], ['pickupPoints', JSON.stringify(points)], ['bankDetails', String(w.bankDetails || '').trim().slice(0, 300)]];
+      if (num) pairs.push(['whatsappNumber', num.replace(/\D/g, '')]);
+      for (const k of Object.keys(WA_TEMPLATES)) pairs.push([k, String(w[k] || '').trim().slice(0, 500) || WA_TEMPLATES[k]]);
+      for (const [k, v] of pairs) await saveFoodSetting(db, k, v, admin.name);
+      await log('whatsapp_settings', `WhatsApp ordering ${w.whatsappEnabled ? 'on' : 'off'}, ${points.length} pickup points`);
       break;
     }
     default:

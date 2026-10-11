@@ -1,6 +1,6 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
-import { ensureNewsletterSchema, parseIssue, loadSponsors, recipients, safeUrl, newId } from '../../_lib/newsletter.js';
+import { ensureNewsletterSchema, parseIssue, loadSponsors, recipients, safeUrl, newId, newsletterSettings, saveNewsletterSettings, NL_DEFAULTS } from '../../_lib/newsletter.js';
 
 const json = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
@@ -19,7 +19,7 @@ export async function onRequestGet({ request, env }) {
   for (const s of sponsors) s.clicks = clicks.filter(c => c.kind === 's' && c.ref === s.id).reduce((t, c) => t + c.n, 0);
   const prefs = await db.prepare(`SELECT COUNT(*) AS total, SUM(pref_weekly) AS weekly, SUM(pref_matchday) AS matchday, SUM(pref_offers) AS offers FROM newsletter_subscribers`).first();
   return json({
-    issues, sponsors,
+    issues, sponsors, settings: await newsletterSettings(db), defaults: NL_DEFAULTS,
     counts: { recipients: (await recipients(db)).length, signups: prefs.total || 0, weekly: prefs.weekly || 0, matchday: prefs.matchday || 0, offers: prefs.offers || 0 },
     emailReady: !!env.RESEND_API_KEY, testMode: !env.RESEND_API_KEY && String(env.FANS_DEV_LINKS) === '1',
   });
@@ -47,6 +47,7 @@ async function cleanIssue(db, b) {
 //   { action: 'save_sponsor', sponsor: {...} }       add (no id) or change an advert
 //   { action: 'delete_sponsor', id } / { action: 'order_sponsors', ids: [...] }
 //   { action: 'import_partners', partners: [{ name, logo, link, headline }] }
+//   { action: 'save_settings', settings: { title, matchLabel, ..., facebook, x, ... } }  template wording and footer
 export async function onRequestPost({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
@@ -107,20 +108,23 @@ export async function onRequestPost({ request, env }) {
     const v = {
       name: str(s.name, 80), logo: safeUrl(s.logo), link: safeUrl(s.link), headline: str(s.headline, 60), text: str(s.text, 300),
       button_text: str(s.button_text, 30) || 'Visit website', active: s.active === false ? 0 : 1,
+      address: str(s.address, 160), phone: str(s.phone, 40), email: str(s.email, 120), offer: str(s.offer, 120),
+      banner_image: safeUrl(s.banner_image), featured: s.featured ? 1 : 0,
     };
+    if (v.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email)) return json({ error: 'Please check the sponsor email address.' }, 400);
     if (!v.name) return json({ error: 'Please type the sponsor name.' }, 400);
     if (s.link && !v.link) return json({ error: 'The website address must start with https://' }, 400);
     if (s.id) {
-      const r = await db.prepare(`UPDATE newsletter_sponsors SET name = ?, logo = ?, link = ?, headline = ?, text = ?, button_text = ?, active = ?, updated_at = ?, updated_by = ? WHERE id = ?`)
-        .bind(v.name, v.logo, v.link, v.headline, v.text, v.button_text, v.active, now, admin.name, String(s.id)).run();
+      const r = await db.prepare(`UPDATE newsletter_sponsors SET name = ?, logo = ?, link = ?, headline = ?, text = ?, button_text = ?, active = ?, address = ?, phone = ?, email = ?, offer = ?, banner_image = ?, featured = ?, updated_at = ?, updated_by = ? WHERE id = ?`)
+        .bind(v.name, v.logo, v.link, v.headline, v.text, v.button_text, v.active, v.address, v.phone, v.email, v.offer, v.banner_image, v.featured, now, admin.name, String(s.id)).run();
       if (!r.meta?.changes) return json({ error: 'Sponsor not found.' }, 404);
       await logAdminAction(db, admin, 'newsletter_sponsor_edit', v.name);
       return json({ ok: true, id: String(s.id) });
     }
     const id = newId('SP');
     const sort = ((await db.prepare(`SELECT MAX(sort) AS m FROM newsletter_sponsors`).first())?.m ?? -1) + 1;
-    await db.prepare(`INSERT INTO newsletter_sponsors (id, name, logo, link, headline, text, button_text, active, sort, created_at, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, v.name, v.logo, v.link, v.headline, v.text, v.button_text, v.active, sort, now, now, admin.name).run();
+    await db.prepare(`INSERT INTO newsletter_sponsors (id, name, logo, link, headline, text, button_text, active, address, phone, email, offer, banner_image, featured, sort, created_at, updated_at, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, v.name, v.logo, v.link, v.headline, v.text, v.button_text, v.active, v.address, v.phone, v.email, v.offer, v.banner_image, v.featured, sort, now, now, admin.name).run();
     await logAdminAction(db, admin, 'newsletter_sponsor_add', v.name);
     return json({ ok: true, id });
   }
@@ -150,6 +154,13 @@ export async function onRequestPost({ request, env }) {
     if (add.length) await db.batch(add);
     await logAdminAction(db, admin, 'newsletter_sponsor_import', `${add.length} club partner(s)`);
     return json({ ok: true, added: add.length });
+  }
+  if (b.action === 'save_settings') {
+    try {
+      const settings = await saveNewsletterSettings(db, b.settings || {}, admin.name);
+      await logAdminAction(db, admin, 'newsletter_settings', 'template wording / footer');
+      return json({ ok: true, settings });
+    } catch (err) { return json({ error: err.message }, 400); }
   }
   return json({ error: 'Unknown action' }, 400);
 }

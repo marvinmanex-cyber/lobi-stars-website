@@ -1,5 +1,5 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
-import { ensureNewsletterSchema, renderNewsletter, loadSponsors, nextMatch, safeUrl } from '../../_lib/newsletter.js';
+import { ensureNewsletterSchema, renderNewsletter, loadSponsors, nextMatch, safeUrl, newsletterSettings } from '../../_lib/newsletter.js';
 
 // POST /api/admin/newsletter/preview { issue } -- the email exactly as fans
 // will see it, from what is in the editor (nothing is saved or sent).
@@ -18,7 +18,7 @@ export async function onRequestPost({ request, env }) {
   const html = renderNewsletter({
     issue, sponsors: await loadSponsors(env.DB), match: issue.include_match ? await nextMatch(env.DB) : null,
     recipient: { firstName: 'Ngozi', unsubscribeUrl: 'https://lobistarsfc.com/newsletter/', optionsUrl: 'https://lobistarsfc.com/newsletter/' }, preview: true,
-    base: new URL(request.url).origin,
+    base: new URL(request.url).origin, settings: await newsletterSettings(env.DB),
   });
   return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }

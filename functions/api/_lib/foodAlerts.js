@@ -45,7 +45,8 @@ export async function alertSettings(db) {
 const naira = k => '₦' + (k / 100).toLocaleString('en-NG');
 const itemsText = o => { try { return JSON.parse(o.items_json).map(i => `${i.qty}× ${i.name}`).join(', '); } catch { return ''; } };
 export function alertText(kind, o) {
-  const where = `Seat ${o.seat}${o.stand ? `, ${o.stand}` : ''}`;
+  const where = o.fulfilment === 'pickup' ? `Pickup: ${o.pickup_point || ''}` : `Seat ${o.seat}${o.stand ? `, ${o.stand}` : ''}`;
+  if (kind === 'whatsapp') return { title: `💬 New WhatsApp order – confirm it: ${o.ref}`, body: `${o.customer_name || 'Fan'}, ${where}, ${itemsText(o)}, ${naira(o.total_kobo)}` };
   return kind === 'paid'
     ? { title: `🟢 PAID – start preparing: ${o.ref}`, body: `${o.customer_name || 'Fan'}, ${where}, ${itemsText(o)}, ${naira(o.total_kobo)}` }
     : { title: `🟡 New order – awaiting payment: ${o.ref}`, body: `${o.customer_name || 'Fan'}, ${where}, ${naira(o.total_kobo)}` };
@@ -65,13 +66,13 @@ export async function raiseFoodAlert(env, kind, order, { waitUntil, origin = 'ht
   const s = await alertSettings(db);
   const jobs = [];
   if (s.push) jobs.push(sendPushes(env, kind).catch(err => console.error('[alerts] push', err)));
-  if (env.RESEND_API_KEY && s.emails.length && (kind === 'paid' ? s.emailPaid : s.emailUnpaid)) {
+  if (env.RESEND_API_KEY && s.emails.length && (kind === 'unpaid' ? s.emailUnpaid : s.emailPaid)) {
     jobs.push(sendEmail(env, {
       to: s.emails, subject: title,
       html: `<div style="font-family:Arial,sans-serif"><h2 style="margin:0 0 8px">${esc(title)}</h2><p style="font-size:16px">${esc(body)}</p>${order.notes ? `<p><b>Note:</b> ${esc(order.notes)}</p>` : ''}<p><a href="${origin}/admin/food-orders/live/">Open the live order board</a></p></div>`,
     }).catch(err => console.error('[alerts] email', err)));
   }
-  if (kind === 'paid' && s.sms && s.smsNumbers.length && env.TERMII_API_KEY) {
+  if (kind !== 'unpaid' && s.sms && s.smsNumbers.length && env.TERMII_API_KEY) {
     jobs.push(sendTermii(env, s, `${title}\n${body}`).catch(err => console.error('[alerts] sms', err)));
   }
   const all = Promise.all(jobs);
@@ -118,12 +119,12 @@ export async function vapidAuth(env, endpoint) {
 }
 export async function sendPushes(env, kind) {
   if (!pushReady(env)) return 0;
-  const col = kind === 'paid' ? 'want_paid' : 'want_unpaid';
+  const col = kind === 'unpaid' ? 'want_unpaid' : 'want_paid';
   const { results } = await env.DB.prepare(`SELECT endpoint FROM push_subs WHERE ${col} = 1`).all();
   let sent = 0;
   for (const { endpoint } of results) {
     try {
-      const r = await fetch(endpoint, { method: 'POST', headers: { TTL: '3600', Urgency: kind === 'paid' ? 'high' : 'normal', Authorization: await vapidAuth(env, endpoint), 'Content-Length': '0' } });
+      const r = await fetch(endpoint, { method: 'POST', headers: { TTL: '3600', Urgency: kind === 'unpaid' ? 'normal' : 'high', Authorization: await vapidAuth(env, endpoint), 'Content-Length': '0' } });
       if (r.status === 404 || r.status === 410) await env.DB.prepare(`DELETE FROM push_subs WHERE endpoint = ?`).bind(endpoint).run();
       else if (r.ok) { sent++; await env.DB.prepare(`UPDATE push_subs SET last_ok_at = ? WHERE endpoint = ?`).bind(new Date().toISOString(), endpoint).run(); }
     } catch (err) { console.error('[alerts] push send', err); }

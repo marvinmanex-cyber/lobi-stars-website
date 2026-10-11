@@ -55,8 +55,14 @@ export async function ensureNewsletterSchema(db) {
       id INTEGER PRIMARY KEY AUTOINCREMENT, issue_id TEXT NOT NULL, kind TEXT NOT NULL, ref TEXT, at TEXT NOT NULL
     )`),
     db.prepare(`CREATE INDEX IF NOT EXISTS newsletter_clicks_issue ON newsletter_clicks (issue_id, kind, ref)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS newsletter_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT, updated_by TEXT)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS newsletter_assets (id TEXT PRIMARY KEY, mime TEXT NOT NULL, data BLOB NOT NULL, bytes INTEGER, created_at TEXT NOT NULL)`),
   ]);
+  // Sponsor contact details, offer and featured banner (added later).
+  const spCols = new Set((await db.prepare(`PRAGMA table_info(newsletter_sponsors)`).all()).results.map(r => r.name));
+  for (const [name, type] of [['address', 'TEXT'], ['phone', 'TEXT'], ['email', 'TEXT'], ['offer', 'TEXT'], ['banner_image', 'TEXT'], ['featured', 'INTEGER NOT NULL DEFAULT 0']]) {
+    if (!spCols.has(name)) await db.prepare(`ALTER TABLE newsletter_sponsors ADD COLUMN ${name} ${type}`).run();
+  }
   // Newsletter options on each subscriber (added to the existing table).
   const cols = new Set((await db.prepare(`PRAGMA table_info(newsletter_subscribers)`).all()).results.map(r => r.name));
   for (const [name, type] of [['full_name', 'TEXT'], ['phone_e164', 'TEXT'], ['consent_at', 'TEXT'], ['updated_at', 'TEXT'],
@@ -77,6 +83,43 @@ export const parseIssue = r => r && ({ ...r, stories: JSON.parse(r.stories || '[
 export const newId = p => randomId(p, 10);
 export function slugFor(subject, date = new Date()) {
   return `${date.toISOString().slice(0, 10)}-${String(subject || 'newsletter').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'newsletter'}`;
+}
+
+// ── Template settings (Admin › Newsletter › Template & settings) ──
+export const NL_DEFAULTS = {
+  title: 'The Weekly Newsletter',
+  matchLabel: 'Next match',
+  storiesLabel: 'This week at the club',
+  partnersLabel: 'Our partners',
+  partnersText: 'Thank you to the partners who support Lobi Stars FC.',
+  featuredLabel: 'From our partners',
+  footerAddress: 'Lobi Stars FC, McCarthy Stadium, Makurdi, Benue State, Nigeria',
+  footerNote: "You're receiving this because you signed up for Lobi Stars FC news by email.",
+  facebook: 'https://www.facebook.com/LobiStars', x: 'https://x.com/LobiStars', instagram: 'https://www.instagram.com/lobistarsfc',
+  youtube: '', tiktok: '', whatsapp: '',
+};
+export const NL_LIMITS = { title: 60, matchLabel: 40, storiesLabel: 40, partnersLabel: 40, partnersText: 200, featuredLabel: 40, footerAddress: 160, footerNote: 300 };
+export const NL_LINKS = ['facebook', 'x', 'instagram', 'youtube', 'tiktok', 'whatsapp'];
+export async function newsletterSettings(db) {
+  await ensureNewsletterSchema(db);
+  const { results } = await db.prepare(`SELECT key, value FROM newsletter_settings`).all();
+  const s = { ...NL_DEFAULTS };
+  for (const r of results) if (r.key in NL_DEFAULTS && r.value != null) s[r.key] = r.value;
+  return s;
+}
+export async function saveNewsletterSettings(db, values, by) {
+  const now = new Date().toISOString();
+  const stmts = [];
+  for (const k of Object.keys(NL_DEFAULTS)) {
+    if (!(k in values)) continue;
+    let v = String(values[k] ?? '').trim();
+    if (NL_LINKS.includes(k)) { if (v && !/^https:\/\//i.test(v)) throw new Error(`The ${k === 'x' ? 'X' : k} link must start with https://`); v = v.slice(0, 300); }
+    else { v = v.slice(0, NL_LIMITS[k]); if (!v) v = NL_DEFAULTS[k]; }
+    stmts.push(db.prepare(`INSERT INTO newsletter_settings (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?)
+      ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`).bind(k, v, now, by || ''));
+  }
+  if (stmts.length) await db.batch(stmts);
+  return newsletterSettings(db);
 }
 
 /** The next Lobi Stars match (for the "Next match" block). */
@@ -102,7 +145,8 @@ function tracked(issue, kind, ref, url, preview) {
  * The email (and web version). `recipient` = { firstName, unsubscribeUrl,
  * optionsUrl } (empty for the web version / previews).
  */
-export function renderNewsletter({ issue, sponsors = [], match = null, recipient = {}, preview = false, web = false, base = SITE }) {
+export function renderNewsletter({ issue, sponsors = [], match = null, recipient = {}, preview = false, web = false, base = SITE, settings = NL_DEFAULTS }) {
+  const T = { ...NL_DEFAULTS, ...settings };
   // Pictures: from this site's address in admin previews (so new uploads show before going live).
   const abs = u => absFrom(u, base);
   const byId = new Map(sponsors.map(s => [s.id, s]));
@@ -122,7 +166,7 @@ export function renderNewsletter({ issue, sponsors = [], match = null, recipient
       <td width="68" valign="middle"><img src="${SITE}/images/lobi-stars-badge.png" width="60" height="60" alt="Lobi Stars FC" style="display:block;border-radius:50%;background:#ffffff;padding:4px"></td>
       <td valign="middle" style="padding-left:12px">
         <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:bold;letter-spacing:1px;color:#ffffff">LOBI STARS FC</p>
-        <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:${GOLD}">The Weekly Newsletter &middot; ${esc(date)}</p>
+        <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:${GOLD}">${esc(T.title)} &middot; ${esc(date)}</p>
       </td>
     </tr></table></td></tr>`);
   // "In partnership with" headline sponsor.
@@ -143,7 +187,7 @@ export function renderNewsletter({ issue, sponsors = [], match = null, recipient
     const day = when.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Africa/Lagos' });
     const time = when.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
     const home = /lobi stars/i.test(match.home_team);
-    rows.push(section(`${label('Next match')}
+    rows.push(section(`${label(T.matchLabel)}
       <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:bold;color:${INK}">${esc(match.home_team)} vs ${esc(match.away_team)}</p>
       <p style="margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#5B6472">${esc(day)}, ${esc(time)} (WAT)${match.venue ? ` &middot; ${esc(match.venue)}` : ''}</p>
       ${btn(tracked(issue, 'm', '0', home ? '/tickets/' : '/fixtures/', preview), home ? 'Get your tickets' : 'Match details', INK)}`, '24px 32px', '#FFF8E1'));
@@ -160,10 +204,34 @@ export function renderNewsletter({ issue, sponsors = [], match = null, recipient
         ${href ? `<a href="${esc(href)}" style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${RED};text-decoration:none">Read more &rarr;</a>` : ''}
       </td></tr></table>`;
     }).join('');
-    rows.push(section(`${label('This week at the club')}${items}`, '26px 32px 6px'));
+    rows.push(section(`${label(T.storiesLabel)}${items}`, '26px 32px 6px'));
+  }
+  // Sponsor extras shared by both advert styles: offer / promo code and contact details.
+  const extras = s => `${s.offer ? `<p style="margin:0 0 12px"><span style="display:inline-block;padding:8px 12px;border:2px dashed ${GOLD};border-radius:8px;background:#FFF8E1;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:${INK}">${esc(s.offer)}</span></p>` : ''}
+    ${s.address || s.phone || s.email ? `<p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#6B7280">${[s.address ? esc(s.address) : '', s.phone ? `<a href="tel:${esc(String(s.phone).replace(/[^\d+]/g, ''))}" style="color:#6B7280">${esc(s.phone)}</a>` : '', s.email ? `<a href="mailto:${esc(s.email)}" style="color:#6B7280">${esc(s.email)}</a>` : ''].filter(Boolean).join('<br>')}</p>` : ''}`;
+  // Featured sponsors: a full-width advert with a wide banner picture.
+  const featured = list.filter(s => s.featured);
+  if (featured.length) {
+    const banner = s => {
+      const href = tracked(issue, 's', s.id, safeUrl(s.link), preview);
+      const img = s.banner_image || s.logo;
+      const pic = s.banner_image
+        ? `<img src="${esc(abs(img))}" width="536" alt="${esc(s.name)}" style="display:block;width:100%;max-width:536px;height:auto;border-radius:10px;border:0;margin:0 0 14px">`
+        : (s.logo ? `<img src="${esc(abs(s.logo))}" alt="${esc(s.name)}" height="64" style="display:block;height:64px;max-width:240px;margin:0 auto 14px;border:0">` : '');
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 16px;background:#ffffff;border:1px solid #E6E8EB;border-radius:12px"><tr><td style="padding:18px;text-align:center">
+        ${href && pic ? `<a href="${esc(href)}">${pic}</a>` : pic}
+        ${s.headline ? `<p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:#8A6D00">${esc(s.headline)}</p>` : ''}
+        <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;color:${INK}">${esc(s.name)}</p>
+        ${s.text ? `<p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#4B5563">${esc(s.text)}</p>` : ''}
+        ${extras(s)}
+        ${href ? btn(href, s.button_text || 'Visit website') : ''}
+      </td></tr></table>`;
+    };
+    rows.push(`<tr><td class="px" style="padding:24px 32px 8px;background:#F4F5F7">${label(T.featuredLabel)}${featured.map(banner).join('')}</td></tr>`);
   }
   // Sponsor adverts (two per row on computers, one per row on phones).
-  if (list.length) {
+  const grid2 = list.filter(s => !s.featured);
+  if (grid2.length) {
     const card = s => {
       const href = tracked(issue, 's', s.id, safeUrl(s.link), preview);
       const logo = s.logo ? `<img src="${esc(abs(s.logo))}" alt="${esc(s.name)}" height="56" style="display:block;height:56px;max-width:200px;margin:0 auto 12px;border:0">` : '';
@@ -173,14 +241,15 @@ export function renderNewsletter({ issue, sponsors = [], match = null, recipient
           ${s.headline ? `<p style="margin:0 0 4px;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:#8A6D00">${esc(s.headline)}</p>` : ''}
           <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:17px;font-weight:bold;color:${INK}">${esc(s.name)}</p>
           ${s.text ? `<p style="margin:0 0 12px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#4B5563">${esc(s.text)}</p>` : ''}
+          ${extras(s)}
           ${href ? `<a href="${esc(href)}" style="display:inline-block;padding:10px 18px;border-radius:8px;background:${INK};font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#ffffff;text-decoration:none">${esc(s.button_text || 'Visit website')}</a>` : ''}
         </td></tr></table></td>`;
     };
     let grid = '';
-    for (let i = 0; i < list.length; i += 2) grid += `<tr>${card(list[i])}${list[i + 1] ? card(list[i + 1]) : '<td class="sp" width="50%"></td>'}</tr>`;
+    for (let i = 0; i < grid2.length; i += 2) grid += `<tr>${card(grid2[i])}${grid2[i + 1] ? card(grid2[i + 1]) : '<td class="sp" width="50%"></td>'}</tr>`;
     rows.push(`<tr><td class="px" style="padding:24px 24px 18px;background:#F4F5F7">
-      <p style="margin:0 0 6px;padding:0 8px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:${RED}">Our partners</p>
-      <p style="margin:0 0 6px;padding:0 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#5B6472">Thank you to the partners who support Lobi Stars FC.</p>
+      <p style="margin:0 0 6px;padding:0 8px;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:${RED}">${esc(T.partnersLabel)}</p>
+      <p style="margin:0 0 6px;padding:0 8px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#5B6472">${esc(T.partnersText)}</p>
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${grid}</table></td></tr>`);
   }
   // Footer.
@@ -188,9 +257,9 @@ export function renderNewsletter({ issue, sponsors = [], match = null, recipient
     ? `<a href="${esc(recipient.unsubscribeUrl)}" style="color:#C9CDD3">Unsubscribe</a>${recipient.optionsUrl ? ` &middot; <a href="${esc(recipient.optionsUrl)}" style="color:#C9CDD3">Newsletter options</a>` : ''}`
     : `<a href="${SITE}/newsletter/" style="color:#C9CDD3">Newsletter options</a>`;
   rows.push(`<tr><td style="background:${INK};padding:24px 32px;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.7;color:#C9CDD3">
-    <p style="margin:0 0 8px"><a href="${SITE}/" style="color:${GOLD};font-weight:bold;text-decoration:none">lobistarsfc.com</a> &middot; <a href="https://www.facebook.com/LobiStars" style="color:#ffffff;text-decoration:none">Facebook</a> &middot; <a href="https://x.com/LobiStars" style="color:#ffffff;text-decoration:none">X</a> &middot; <a href="https://www.instagram.com/lobistarsfc" style="color:#ffffff;text-decoration:none">Instagram</a></p>
-    <p style="margin:0 0 8px">Lobi Stars FC, McCarthy Stadium, Makurdi, Benue State, Nigeria</p>
-    <p style="margin:0">You're receiving this because you signed up for Lobi Stars FC news by email. ${unsub}</p>
+    <p style="margin:0 0 8px"><a href="${SITE}/" style="color:${GOLD};font-weight:bold;text-decoration:none">lobistarsfc.com</a>${[['facebook', 'Facebook'], ['x', 'X'], ['instagram', 'Instagram'], ['youtube', 'YouTube'], ['tiktok', 'TikTok'], ['whatsapp', 'WhatsApp']].filter(([k]) => safeUrl(T[k])).map(([k, n]) => ` &middot; <a href="${esc(T[k])}" style="color:#ffffff;text-decoration:none">${n}</a>`).join('')}</p>
+    ${T.footerAddress ? `<p style="margin:0 0 8px">${esc(T.footerAddress)}</p>` : ''}
+    <p style="margin:0">${esc(T.footerNote)} ${unsub}</p>
   </td></tr>`);
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="x-apple-disable-message-reformatting">

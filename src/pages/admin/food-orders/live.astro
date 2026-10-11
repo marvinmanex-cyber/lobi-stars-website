@@ -13,6 +13,7 @@ import PushEnable from '../../../components/admin/PushEnable.astro';
     <div class="lb-head">
       <div><div class="stag">Commerce › In-Seat Food</div><h1 class="stitle">Live <span class="r">Order Board</span></h1></div>
       <div class="lb-tools">
+        <button type="button" class="lb-open" id="openBtn" aria-live="polite">Ordering…</button>
         <span class="lb-live" id="liveState" aria-live="polite">● Connecting…</span>
         <PushEnable />
         <a class="btn-o" href="/admin/food-orders/">Orders list</a>
@@ -20,10 +21,15 @@ import PushEnable from '../../../components/admin/PushEnable.astro';
     </div>
     <p class="lb-msg" id="msg" role="status" aria-live="polite" hidden></p>
 
+    <section class="lb-wa" id="waSec" aria-labelledby="waH">
+      <h2 id="waH">💬 WhatsApp orders: confirm and take payment <span data-n="WA"></span></h2>
+      <div class="lb-wa-cards" data-col="WA"></div>
+    </section>
+
     <div class="lb-board" id="board">
       <section class="lb-col" style="--c:#16A34A"><h2>Paid – start preparing <span data-n="PAID"></span></h2><div class="lb-cards" data-col="PAID"></div></section>
       <section class="lb-col" style="--c:#2563EB"><h2>Preparing <span data-n="PREPARING"></span></h2><div class="lb-cards" data-col="PREPARING"></div></section>
-      <section class="lb-col" style="--c:#7C3AED"><h2>Out for delivery <span data-n="OUT_FOR_DELIVERY"></span></h2><div class="lb-cards" data-col="OUT_FOR_DELIVERY"></div></section>
+      <section class="lb-col" style="--c:#7C3AED"><h2>Out for delivery / ready <span data-n="OUT_FOR_DELIVERY"></span></h2><div class="lb-cards" data-col="OUT_FOR_DELIVERY"></div></section>
       <section class="lb-col" style="--c:#166534"><h2>Delivered <small>(last 30 min)</small> <span data-n="DELIVERED"></span></h2><div class="lb-cards" data-col="DELIVERED"></div></section>
     </div>
     <section class="lb-await"><h2>Awaiting payment <small>(not paid: do not prepare)</small> <span data-n="AWAITING_PAYMENT"></span></h2><div class="lb-mini" data-col="AWAITING_PAYMENT"></div></section>
@@ -37,6 +43,16 @@ import PushEnable from '../../../components/admin/PushEnable.astro';
   .lb-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
   .lb-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .lb-live { font-weight: 700; color: var(--lt); }
+  .lb-open { min-height: 48px; padding: 10px 18px; border-radius: 12px; border: 0; font: 700 16px/1 'Barlow', sans-serif; letter-spacing: .5px; cursor: pointer; color: #fff; background: #6B7280; }
+  .lb-open.on { background: #16A34A; } .lb-open.off { background: #DC2626; }
+  .lb-wa { margin: 0 0 16px; padding: 14px; border-radius: 16px; border: 2px solid #25D366; background: color-mix(in srgb, #25D366 8%, var(--a-card)); }
+  .lb-wa h2 { margin: 0 0 10px; font: 700 18px/1.2 'Barlow', sans-serif; }
+  .lb-wa h2 span { display: inline-block; min-width: 26px; padding: 2px 8px; border-radius: 999px; background: #25D366; color: #fff; text-align: center; }
+  .lb-wa-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .lb :global(.lb-wa-st) { display: inline-block; padding: 3px 9px; border-radius: 999px; font: 700 12px/1.3 'Barlow', sans-serif; color: #fff; background: var(--s); }
+  .lb :global(.lb-chat) { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 10px; background: #25D366; color: #fff !important; font-weight: 700; text-decoration: none; min-height: 40px; }
+  .lb :global(.lb-chat:hover) { background: #1EBE5A; }
+  .lb :global(.lb-tag-wa) { display: inline-block; padding: 1px 7px; border-radius: 999px; background: #25D366; color: #fff; font-size: 11px; font-weight: 700; margin-left: 6px; vertical-align: middle; }
   .lb-live.on { color: #16A34A; }
   .lb-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 14px; background: #FDECEC; color: #A3161B; }
   .lb-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
@@ -85,7 +101,22 @@ import PushEnable from '../../../components/admin/PushEnable.astro';
   const time = iso => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
   const NEXT = { PAID: ['Start preparing', 'PREPARING', '#2563EB'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY', '#7C3AED'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED', '#166534'] };
   const BACK = { PREPARING: 'PAID', OUT_FOR_DELIVERY: 'PREPARING', DELIVERED: 'OUT_FOR_DELIVERY' };
-  let orders = [], known = new Set(), first = true, offset = 0;
+  let orders = [], known = new Set(), first = true, offset = 0, settings = {};
+  const WA = ['AWAITING_WHATSAPP', 'CONFIRMED'];
+  // "Chat on WhatsApp" with the right ready-made message for where the order is.
+  const chat = (o, step) => o.wa ? `<a class="lb-chat" href="https://wa.me/${esc(o.wa.phone)}?text=${encodeURIComponent(o.wa.messages[step] || '')}" target="_blank" rel="noopener">💬 Chat on WhatsApp</a>` : '';
+  const placeOf = o => o.fulfilment === 'pickup' ? `<div class="lb-seat">Pickup</div><div class="lb-stand">${esc(o.pickupPoint)}</div>` : `<div class="lb-seat">Seat ${esc(o.seat)}</div><div class="lb-stand">${esc(o.stand || 'Stand not given')}</div>`;
+  const ago = iso => { const m = Math.max(0, Math.floor((Date.now() + offset - new Date(iso).getTime()) / 60000)); return m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${m % 60} min ago`; };
+  function waCard(o) {
+    const confirmed = o.status === 'CONFIRMED';
+    return `<article class="lb-card${!first && !known.has(o.id) ? ' new' : ''}" data-id="${esc(o.id)}">
+      <div class="lb-top"><div>${placeOf(o)}</div><span class="lb-wa-st" style="--s:${confirmed ? '#0EA5E9' : '#25D366'}">${confirmed ? 'Confirmed – awaiting payment' : 'New – confirm it'}</span></div>
+      <ul class="lb-items">${o.items.map(i => `<li><b>${esc(i.qty)}×</b> ${esc(i.name)}</li>`).join('')}</ul>
+      ${o.notes ? `<p class="lb-note">📝 ${esc(o.notes)}</p>` : ''}
+      <p class="lb-meta">${esc(o.ref)} · ${esc(o.name || '–')} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a> · <b>${naira(o.totalKobo)}</b> · ${esc(ago(o.createdAt))}</p>
+      <div class="lb-acts">${chat(o, 'CONFIRMED')}${confirmed ? '' : '<button class="go" style="--g:#0EA5E9" data-s="CONFIRMED">Confirm order</button>'}<button class="go" style="--g:#16A34A" data-s="PAID">Payment received</button><button data-s="CANCELLED">Cancel</button></div>
+    </article>`;
+  }
 
   async function api(path, opts = {}) {
     const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code }, cache: 'no-store' });
@@ -99,14 +130,17 @@ import PushEnable from '../../../components/admin/PushEnable.astro';
     const m = mins(o), nx = NEXT[o.status];
     const timer = o.status === 'DELIVERED' ? `<span class="lb-timer">✓ ${esc(time(o.deliveredAt))}</span>` : `<span class="lb-timer ${m >= 20 ? 'late' : m >= 10 ? 'warn' : ''}" data-timer="${esc(o.paidAt)}">${m} min</span>`;
     return `<article class="lb-card${!first && !known.has(o.id) ? ' new' : ''}" data-id="${esc(o.id)}">
-      <div class="lb-top"><div><div class="lb-seat">Seat ${esc(o.seat)}</div><div class="lb-stand">${esc(o.stand || 'Stand not given')}</div></div>${timer}</div>
+      <div class="lb-top"><div>${placeOf(o)}</div>${timer}</div>
       <ul class="lb-items">${o.items.map(i => `<li><b>${esc(i.qty)}×</b> ${esc(i.name)}</li>`).join('')}</ul>
       ${o.notes ? `<p class="lb-note">📝 ${esc(o.notes)}</p>` : ''}
-      <p class="lb-meta">${esc(o.ref)} · ${esc(o.name || '–')} · ${naira(o.totalKobo)}${o.statusBy ? ` · ${esc(o.statusBy)} ${esc(time(o.statusAt))}` : ''}</p>
-      <div class="lb-acts">${nx ? `<button class="go" style="--g:${nx[2]}" data-s="${nx[1]}">${nx[0]}</button>` : ''}${BACK[o.status] ? `<button data-s="${BACK[o.status]}" aria-label="Move back">↩</button>` : ''}<button data-print aria-label="Print kitchen ticket">🖨</button></div>
+      <p class="lb-meta">${esc(o.ref)}${o.channel === 'whatsapp' ? '<span class="lb-tag-wa">WhatsApp</span>' : ''} · ${esc(o.name || '–')} · ${naira(o.totalKobo)}${o.statusBy ? ` · ${esc(o.statusBy)} ${esc(time(o.statusAt))}` : ''}</p>
+      <div class="lb-acts">${nx ? `<button class="go" style="--g:${nx[2]}" data-s="${nx[1]}">${o.status === 'PREPARING' && o.fulfilment === 'pickup' ? 'Ready for pickup' : o.status === 'OUT_FOR_DELIVERY' && o.fulfilment === 'pickup' ? 'Collected' : nx[0]}</button>` : ''}${o.channel === 'whatsapp' && o.status === 'PAID' ? chat(o, 'PAID') : ''}${o.channel === 'whatsapp' && o.status === 'OUT_FOR_DELIVERY' ? chat(o, 'READY') : ''}${BACK[o.status] ? `<button data-s="${BACK[o.status]}" aria-label="Move back">↩</button>` : ''}<button data-print aria-label="Print kitchen ticket">🖨</button></div>
     </article>`;
   }
   function render() {
+    const wa = orders.filter(o => WA.includes(o.status));
+    document.querySelector('[data-n="WA"]').textContent = wa.length;
+    document.querySelector('[data-col="WA"]').innerHTML = wa.length ? wa.map(waCard).join('') : '<p class="lb-empty">No WhatsApp orders waiting.</p>';
     for (const col of ['PAID', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'AWAITING_PAYMENT']) {
       const list = orders.filter(o => o.status === col);
       if (col === 'DELIVERED') list.reverse();
@@ -123,7 +157,7 @@ import PushEnable from '../../../components/admin/PushEnable.astro';
     try {
       const d = await api('/api/admin/food-orders?show=board');
       offset = new Date(d.serverTime).getTime() - Date.now();
-      orders = d.orders; render(); $('msg').hidden = true;
+      orders = d.orders; settings = d.settings || {}; render(); drawOpen(); $('msg').hidden = true;
     } catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; }
   }
   // Timers tick every 20 seconds without reloading.
@@ -132,14 +166,34 @@ import PushEnable from '../../../components/admin/PushEnable.astro';
     const m = mins(o); t.textContent = `${m} min`; t.className = `lb-timer ${m >= 20 ? 'late' : m >= 10 ? 'warn' : ''}`;
   }), 20000);
 
-  $('board').addEventListener('click', async e => {
+  $('waSec').addEventListener('click', onClick);
+  $('board').addEventListener('click', onClick);
+  async function onClick(e) {
     const c = e.target.closest('[data-id]'); if (!c) return;
     const o = orders.find(x => x.id === c.dataset.id);
     if (e.target.closest('[data-print]')) return printTicket(o);
     const b = e.target.closest('button[data-s]'); if (!b) return;
+    if (b.dataset.s === 'PAID' && WA.includes(o.status) && !confirm(`Has the payment of ${naira(o.totalKobo)} for ${o.ref} arrived? The order then goes to the kitchen.`)) return;
+    if (b.dataset.s === 'CANCELLED' && !confirm(`Cancel order ${o.ref}?`)) return;
     b.disabled = true;
     try { await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ id: o.id, status: b.dataset.s }) }); await load(); }
     catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; b.disabled = false; load(); }
+  }
+
+  // Big OPEN / CLOSED switch for matchdays.
+  function drawOpen() {
+    const m = settings.orderingMode, btn = $('openBtn');
+    btn.className = 'lb-open ' + (m === 'closed' ? 'off' : m === 'open' ? 'on' : '');
+    btn.textContent = m === 'open' ? '🟢 Ordering OPEN (tap to close)' : m === 'closed' ? '🔴 Ordering CLOSED (tap to open)' : '⏱ Ordering automatic (tap to open now)';
+  }
+  $('openBtn').addEventListener('click', async () => {
+    const to = settings.orderingMode === 'open' ? 'closed' : 'open';
+    if (!confirm(to === 'open' ? 'Open food ordering for fans now?' : 'Close food ordering now? Fans will see "In-seat ordering opens on matchday".')) return;
+    try {
+      const res = await fetch('/api/admin/food-menu', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-code': code }, body: JSON.stringify({ action: 'ordering_mode', mode: to }) });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Could not change ordering.');
+      settings.orderingMode = to; drawOpen();
+    } catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; }
   });
   function printTicket(o) {
     $('printArea').innerHTML = `<div style="text-align:center;font-weight:bold">LOBI STARS FC – IN-SEAT FOOD</div><hr>` +

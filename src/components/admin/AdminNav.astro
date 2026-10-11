@@ -137,6 +137,7 @@ const crumbs = active ? [active.c.label, active.i.label] : ['Admin'];
   .ash-toast span { font-size: 14px; opacity: .95; }
   .ash-toast.paid { background: linear-gradient(135deg, #15803D, #16A34A); }
   .ash-toast.unpaid { background: linear-gradient(135deg, #B45309, #F59E0B); }
+  .ash-toast.whatsapp { background: linear-gradient(135deg, #128C7E, #25D366); }
   .ash-toast.test { background: linear-gradient(135deg, #1E40AF, #3B82F6); }
   @keyframes ashin { from { transform: translateY(12px); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .ash-toast { animation: none; } }
@@ -344,7 +345,7 @@ const crumbs = active ? [active.c.label, active.i.label] : ['Admin'];
   function renderBell() {
     const total = serverNotes.length + foodUnread.length;
     $('ashBadge').hidden = !total; $('ashBadge').textContent = String(total);
-    const food = foodUnread.map((a: any) => `<a class="ash-food" style="--k:${a.kind === 'paid' ? '#16A34A' : a.kind === 'unpaid' ? '#F59E0B' : '#3B82F6'}" href="/admin/food-orders/live/">${esc(a.title)}<small>${esc(a.body)}</small></a>`).join('');
+    const food = foodUnread.map((a: any) => `<a class="ash-food" style="--k:${a.kind === 'paid' ? '#16A34A' : a.kind === 'unpaid' ? '#F59E0B' : a.kind === 'whatsapp' ? '#25D366' : '#3B82F6'}" href="/admin/food-orders/live/">${esc(a.title)}<small>${esc(a.body)}</small></a>`).join('');
     $('ashNotes').innerHTML = total
       ? food + serverNotes.map((n: any) => `<a href="${esc(n.href)}">${esc(n.icon || '•')} ${esc(n.title)}<small>${esc(n.sub || '')}</small></a>`).join('')
       : '<p class="ash-empty">No new notifications. All clear 🎉</p>';
@@ -391,7 +392,7 @@ const crumbs = active ? [active.c.label, active.i.label] : ['Admin'];
     t.className = `ash-toast ${a.kind}`; t.href = '/admin/food-orders/live/';
     t.innerHTML = `<b></b><span></span>`; t.querySelector('b')!.textContent = a.title; t.querySelector('span')!.textContent = a.body;
     $('ashToasts').prepend(t);
-    setTimeout(() => t.remove(), a.kind === 'paid' ? 20000 : 9000);
+    setTimeout(() => t.remove(), a.kind === 'unpaid' ? 9000 : 20000);
   }
   async function foodPoll() {
     if (!w.__lsAdmin) return;

@@ -3,11 +3,17 @@
 // whether ordering is open and the stands list all come from
 // /api/food/menu, managed in Admin -> Commerce -> In-Seat Food -> Menu, so
 // changes show straight away. Prices are always checked again on the server.
+// Two ways to order: "Place Order & Pay" (Paystack) or "Order on WhatsApp"
+// (the order is saved, then WhatsApp opens with the order message to the
+// club; staff confirm it and take payment). Orders can go to the seat or be
+// collected at a pickup point (Admin -> Menu & Prices -> Ordering settings).
 import Layout from '../../layouts/Layout.astro';
+import fanSettings from '../../data/fan-settings.json';
+const siteKey = fanSettings.turnstileSiteKey;
 ---
 <Layout
   title="In-Seat Food Ordering | Lobi Stars Football Club"
-  description="Order food and drinks to your seat at McCarthy Stadium on matchday and pay securely with Paystack."
+  description="Order food and drinks to your seat at McCarthy Stadium on matchday: pay securely with Paystack or order on WhatsApp."
 >
   <div class="page-hero wrap">
     <div class="stag">Match Day</div>
@@ -15,7 +21,7 @@ import Layout from '../../layouts/Layout.astro';
     <div class="divr"></div>
     <div class="fd-brand">
       <img src="/images/fooddomain-logo.jpg" alt="" width="56" height="56" />
-      <p class="muted">5-minute in-seat food order &amp; delivery. Select your items, enter your seat number and pay securely with Paystack.</p>
+      <p class="muted">5-minute in-seat food order &amp; delivery. Select your items, enter your seat number, then pay securely with Paystack or order on WhatsApp.</p>
     </div>
   </div>
 
@@ -27,25 +33,62 @@ import Layout from '../../layouts/Layout.astro';
         <div id="foodMenu"><p class="muted">Loading the menu…</p></div>
       </section>
 
+      <div class="fd-side">
       <form class="panel fd-order" id="foodForm" novalidate>
         <h2 class="fd-h2">Your Order</h2>
         <div class="fd-summary" id="foodSummaryItems" aria-live="polite"><p class="muted">No items selected yet.</p></div>
-        <div class="form-grp"><label class="form-lbl" for="foodName">Your Name</label><input class="form-inp" id="foodName" autocomplete="name" placeholder="e.g. Terna Akaa" required /></div>
-        <div class="form-row">
-          <div class="form-grp"><label class="form-lbl" for="foodSeat">Seat Number</label><input class="form-inp" id="foodSeat" placeholder="e.g. A-14" required /></div>
-          <div class="form-grp" id="standWrap"><label class="form-lbl" for="foodStand">Stand / Section</label><input class="form-inp" id="foodStand" placeholder="e.g. North Stand" /></div>
+        <div class="form-grp"><label class="form-lbl" for="foodName">Your Name</label><input class="form-inp" id="foodName" autocomplete="name" placeholder="e.g. Terna Akaa" maxlength="60" required /></div>
+        <fieldset class="fd-how" id="fulfilWrap" hidden>
+          <legend class="form-lbl">How would you like it?</legend>
+          <label><input type="radio" name="fulfil" value="seat" checked /> Deliver to my seat</label>
+          <label><input type="radio" name="fulfil" value="pickup" /> I'll collect it</label>
+        </fieldset>
+        <div class="form-row" id="seatFields">
+          <div class="form-grp"><label class="form-lbl" for="foodSeat">Seat Number</label><input class="form-inp" id="foodSeat" placeholder="e.g. A-14" maxlength="20" required /></div>
+          <div class="form-grp" id="standWrap"><label class="form-lbl" for="foodStand">Stand / Section</label><input class="form-inp" id="foodStand" placeholder="e.g. North Stand" maxlength="60" /></div>
         </div>
+        <div class="form-grp" id="pickupFields" hidden><label class="form-lbl" for="foodPickup">Collect from</label><select class="form-sel" id="foodPickup"><option value="">Choose a pickup point</option></select></div>
         <div class="form-grp"><label class="form-lbl" for="foodPhone">Phone Number</label><input class="form-inp" id="foodPhone" type="tel" autocomplete="tel" placeholder="e.g. 08012345678" required /></div>
-        <div class="form-grp"><label class="form-lbl" for="foodEmail">Email Address</label><input class="form-inp" id="foodEmail" type="email" autocomplete="email" placeholder="you@example.com" required /></div>
+        <div class="form-grp"><label class="form-lbl" for="foodEmail">Email Address <span class="fd-opt" id="emailOpt" hidden>(not needed for WhatsApp orders)</span></label><input class="form-inp" id="foodEmail" type="email" autocomplete="email" placeholder="you@example.com" /></div>
         <div class="form-grp"><label class="form-lbl" for="foodNotes">Note for the kitchen (optional)</label><input class="form-inp" id="foodNotes" maxlength="200" placeholder="e.g. no pepper, extra napkins" /></div>
+        <div class="fd-hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" id="foodWebsite" tabindex="-1" autocomplete="off" /></label></div>
         <label class="fd-adult" id="adultWrap" hidden><input type="checkbox" id="foodAdult" /> I confirm I am 18 or older (your order includes alcohol). <b>18+ | Drink Responsibly</b></label>
         <p class="fd-small" id="smallPrint">Your order is confirmed once Paystack confirms your payment. Unpaid orders are cancelled automatically after a few minutes.</p>
         <p class="form-error" id="food-error" role="alert" hidden></p>
         <button type="submit" class="btn-p fd-submit" id="placeFoodBtn">Place Order &amp; Pay</button>
+        <div id="waBox" hidden>
+          <p class="fd-or"><span>or</span></p>
+          {siteKey && <div class="cf-turnstile fd-turnstile" data-sitekey={siteKey}></div>}
+          <button type="button" class="fd-wa" id="waBtn">
+            <svg viewBox="0 0 16 16" aria-hidden="true" width="20" height="20"><path fill="currentColor" d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.06 3.973L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg>
+            <span id="waBtnText">Order on WhatsApp</span>
+          </button>
+          <p class="fd-small fd-wa-hint">Your order is saved and WhatsApp opens with your order message to the club. Our staff confirm it and tell you how to pay (bank transfer or cash).</p>
+        </div>
         <img class="fd-partner" src="/images/food-logo.jpg" alt="Matchday food partner" loading="lazy" />
       </form>
+
+      <section class="panel fd-done" id="waDone" tabindex="-1" aria-labelledby="waDoneTitle" hidden>
+        <p class="fd-done-tick" aria-hidden="true">✅</p>
+        <h2 class="fd-h2" id="waDoneTitle">Order saved</h2>
+        <p class="fd-done-ref">Reference <b id="waRef"></b> · Total <b id="waTotal"></b></p>
+        <p id="waOpening">Opening WhatsApp so you can send your order to the club…</p>
+        <a class="fd-wa" id="waOpen">
+          <svg viewBox="0 0 16 16" aria-hidden="true" width="20" height="20"><path fill="currentColor" d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.06 3.973L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326z"/></svg>
+          <span>WhatsApp didn't open? Tap here</span>
+        </a>
+        <button type="button" class="btn-o fd-copy" id="waCopy">Copy order message</button>
+        <p class="fd-small">Or send the message yourself to the club on WhatsApp: <b id="waNumber"></b>. Your order is only confirmed when our staff reply.</p>
+        <p class="fd-done-links"><a id="waTrack">Track your order</a> · <button type="button" class="fd-linkbtn" id="waNew">Start a new order</button></p>
+      </section>
+      </div>
     </div>
   </div>
+  <div class="fd-cartbar" id="cartBar" hidden>
+    <span id="cartBarText"></span>
+    <a class="btn-p" href="#foodForm">Checkout</a>
+  </div>
+  {siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 </Layout>
 
 <style>
@@ -82,6 +125,35 @@ import Layout from '../../layouts/Layout.astro';
   .fd-adult input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--red); }
   .fd-small { font-size: 13px; color: var(--lt); margin: 0 0 12px; }
   .fd-submit { width: 100%; padding: 15px; font-size: 15px; }
+  .fd-side { min-width: 0; }
+  .fd-side [hidden] { display: none !important; }
+  .fd-how { border: 0; padding: 0; margin: 0 0 14px; display: flex; gap: 16px; flex-wrap: wrap; }
+  .fd-how legend { margin-bottom: 6px; }
+  .fd-how label { display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer; min-height: 44px; }
+  .fd-how input { width: 18px; height: 18px; accent-color: var(--red); }
+  .fd-opt { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--lt); }
+  .fd-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .fd-or { display: flex; align-items: center; gap: 12px; margin: 16px 0 12px; color: var(--lt); font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; }
+  .fd-or::before, .fd-or::after { content: ''; flex: 1; height: 1px; background: var(--d4); }
+  .fd-turnstile { margin: 0 0 12px; }
+  .fd-wa { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; padding: 13px 16px; border: 0; border-radius: 6px; background: #25D366; color: #fff; font: 700 16px/1.2 'Barlow', sans-serif; text-decoration: none; cursor: pointer; }
+  .fd-wa:hover, .fd-wa:focus-visible { background: #1EBE5A; color: #fff; }
+  .fd-wa:disabled { opacity: .7; cursor: wait; }
+  .fd-wa-hint { margin: 10px 0 0; }
+  .fd-done { text-align: center; }
+  .fd-done:focus { outline: none; }
+  .fd-done-tick { font-size: 44px; margin: 0 0 4px; }
+  .fd-done-ref { font-size: 16px; margin: 0 0 12px; }
+  .fd-done .fd-wa { margin: 14px 0 10px; }
+  .fd-copy { width: 100%; margin-bottom: 12px; }
+  .fd-done-links { margin: 14px 0 0; font-size: 15px; }
+  .fd-done-links a, .fd-linkbtn { color: var(--red-text); font-weight: 700; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; }
+  .fd-cartbar { display: none; }
+  @media (max-width: 900px) {
+    .fd-cartbar:not([hidden]) { display: flex; position: fixed; left: 12px; right: 12px; bottom: calc(70px + env(safe-area-inset-bottom)); z-index: 1400; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 10px 10px 16px; border-radius: 14px; background: #15181D; color: #fff; font-weight: 700; box-shadow: 0 12px 30px rgba(0,0,0,.3); }
+    .fd-cartbar .btn-p { padding: 10px 18px; min-height: 44px; display: inline-flex; align-items: center; }
+    :global(body.has-cartbar .wa-float) { display: none !important; }
+  }
   .fd-partner { width: 100%; height: 45px; object-fit: cover; margin-top: 14px; border-radius: 6px; }
   @media (max-width: 900px) { .fd-grid { grid-template-columns: 1fr; } }
 </style>
@@ -91,9 +163,15 @@ import Layout from '../../layouts/Layout.astro';
   const $ = id => document.getElementById(id);
   const naira = k => '₦' + (k / 100).toLocaleString('en-NG');
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  let items = [], qty = {}, minOrder = 0;
+  const CART = 'ls_food_cart';
+  let items = [], qty = {}, minOrder = 0, cats = [], wa = null, pickupPoints = [];
 
-  function renderMenu(cats) {
+  // The cart survives a refresh (kept for 6 hours on this device).
+  try { const c = JSON.parse(localStorage.getItem(CART) || 'null'); if (c && Date.now() - c.at < 6 * 3600e3) qty = c.qty || {}; } catch (e) {}
+  const saveCart = () => { try { localStorage.setItem(CART, JSON.stringify({ qty, at: Date.now() })); } catch (e) {} };
+  const clearCart = () => { qty = {}; try { localStorage.removeItem(CART); } catch (e) {} };
+
+  function renderMenu() {
     $('foodMenu').innerHTML = cats.length ? cats.map(c => `<h3 class="fd-cat">${esc(c.name)}</h3><ul class="fd-menu">` + c.items.map(f => {
       const q = qty[f.id] || 0;
       return `<li class="fd-item${q ? ' picked' : ''}${f.soldOut ? ' sold' : ''}">
@@ -111,66 +189,137 @@ import Layout from '../../layouts/Layout.astro';
   function renderSummary() {
     const picked = items.filter(f => qty[f.id] > 0);
     $('adultWrap').hidden = !picked.some(f => f.adult);
-    if (!picked.length) { $('foodSummaryItems').innerHTML = '<p class="muted">No items selected yet.</p>'; return; }
-    let total = 0;
-    $('foodSummaryItems').innerHTML = picked.map(f => {
-      const sub = f.priceKobo * qty[f.id]; total += sub;
-      return `<div class="fd-sum"><span>${esc(f.name)} × ${qty[f.id]}</span><span>${naira(sub)}</span></div>`;
-    }).join('') + `<div class="fd-sum total"><span>Total</span><span>${naira(total)}</span></div>` +
-      (minOrder && total < minOrder ? `<p class="fd-small">Minimum order ${naira(minOrder)}.</p>` : '');
+    let total = 0, count = 0;
+    if (!picked.length) $('foodSummaryItems').innerHTML = '<p class="muted">No items selected yet.</p>';
+    else {
+      $('foodSummaryItems').innerHTML = picked.map(f => {
+        const sub = f.priceKobo * qty[f.id]; total += sub; count += qty[f.id];
+        return `<div class="fd-sum"><span>${esc(f.name)} × ${qty[f.id]}</span><span>${naira(sub)}</span></div>`;
+      }).join('') + `<div class="fd-sum total"><span>Total</span><span>${naira(total)}</span></div>` +
+        (minOrder && total < minOrder ? `<p class="fd-small">Minimum order ${naira(minOrder)}.</p>` : '');
+    }
+    // Phones: a small bar with the cart total and a Checkout button.
+    const bar = $('cartBar');
+    bar.hidden = !count || !$('waDone').hidden;
+    document.body.classList.toggle('has-cartbar', !bar.hidden);
+    $('cartBarText').textContent = `${count} item${count === 1 ? '' : 's'} · ${naira(total)}`;
   }
-  let cats = [];
   $('foodMenu').addEventListener('click', e => {
     const b = e.target.closest('button[data-id]');
     if (!b || b.disabled) return;
     const f = items.find(x => x.id === b.dataset.id);
     qty[f.id] = Math.max(0, Math.min(f.maxPerOrder, (qty[f.id] || 0) + Number(b.dataset.d)));
-    renderMenu(cats); renderSummary();
+    if (!qty[f.id]) delete qty[f.id];
+    saveCart(); renderMenu(); renderSummary();
     $('foodMenu').querySelector(`button[data-id="${b.dataset.id}"][data-d="${b.dataset.d}"]`)?.focus();
   });
+
+  const pickup = () => !$('fulfilWrap').hidden && document.querySelector('[name=fulfil]:checked')?.value === 'pickup';
+  function syncFulfil() {
+    $('seatFields').hidden = pickup();
+    $('pickupFields').hidden = !pickup();
+  }
+  $('fulfilWrap').addEventListener('change', syncFulfil);
 
   async function loadMenu() {
     try {
       const d = await (await fetch('/api/food/menu', { cache: 'no-store' })).json();
       cats = d.categories; items = cats.flatMap(c => c.items); minOrder = d.minOrderKobo || 0;
-      for (const f of items) if (f.soldOut) delete qty[f.id];
+      for (const id of Object.keys(qty)) { const f = items.find(x => x.id === id); if (!f || f.soldOut) delete qty[id]; }
+      saveCart();
       $('closed').hidden = d.open;
       $('shop').classList.toggle('is-closed', !d.open);
       if (d.stands?.length && $('foodStand').tagName === 'INPUT') {
         $('foodStand').outerHTML = `<select class="form-sel" id="foodStand" required><option value="">Choose your stand</option>${d.stands.map(s => `<option>${esc(s)}</option>`).join('')}</select>`;
       }
-      $('smallPrint').textContent = `Your order is confirmed once Paystack confirms your payment. Unpaid orders are cancelled automatically after ${d.paymentExpiryMinutes} minutes.`;
-      renderMenu(cats); renderSummary();
+      pickupPoints = d.pickupPoints || [];
+      $('fulfilWrap').hidden = !pickupPoints.length;
+      const sel = $('foodPickup'), cur = sel.value;
+      sel.innerHTML = '<option value="">Choose a pickup point</option>' + pickupPoints.map(p => `<option>${esc(p)}</option>`).join('');
+      sel.value = cur;
+      syncFulfil();
+      wa = d.whatsapp;
+      $('waBox').hidden = !wa;
+      $('emailOpt').hidden = !wa;
+      $('smallPrint').textContent = `Place Order & Pay: your order is confirmed once Paystack confirms your payment. Unpaid orders are cancelled automatically after ${d.paymentExpiryMinutes} minutes.`;
+      renderMenu(); renderSummary();
     } catch { $('foodMenu').innerHTML = '<p class="muted">The menu could not be loaded. Please refresh the page.</p>'; }
   }
 
-  $('foodForm').addEventListener('submit', async e => {
-    e.preventDefault();
-    const errEl = $('food-error'), btn = $('placeFoodBtn');
-    const fail = msg => { errEl.textContent = msg; errEl.hidden = false; };
+  // Checks shared by both ways of ordering. Returns the order details, or null after showing the problem.
+  function collect(viaWhatsApp) {
+    const errEl = $('food-error');
+    const fail = msg => { errEl.textContent = msg; errEl.hidden = false; errEl.scrollIntoView({ block: 'nearest' }); return null; };
     errEl.hidden = true;
     const v = id => $(id).value.trim();
     const picked = items.filter(f => qty[f.id] > 0);
     if (!picked.length) return fail('Please select at least one item.');
-    if (!v('foodName')) return fail('Please enter your name.');
-    if (!v('foodSeat')) return fail('Please enter your seat number.');
-    if ($('foodStand').tagName === 'SELECT' && !v('foodStand')) return fail('Please choose your stand.');
-    if (!v('foodPhone') || !v('foodEmail')) return fail('Please enter your phone number and email.');
+    if (v('foodName').length < 2) return fail('Please enter your name.');
+    if (pickup()) { if (!v('foodPickup')) return fail('Please choose where you will collect your order.'); }
+    else {
+      if (!v('foodSeat')) return fail('Please enter your seat number.');
+      if ($('foodStand').tagName === 'SELECT' && !v('foodStand')) return fail('Please choose your stand.');
+    }
+    if (!/^(\+?234|0)?[789][01]\d{8}$/.test(v('foodPhone').replace(/[\s-]/g, ''))) return fail('Please enter a valid Nigerian mobile number (e.g. 0803 123 4567).');
+    if (!viaWhatsApp && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('foodEmail'))) return fail('Please enter your email address for the payment receipt.');
     if (!$('adultWrap').hidden && !$('foodAdult').checked) return fail('Please confirm you are 18 or older to order alcoholic drinks.');
+    return {
+      name: v('foodName'), seat: v('foodSeat'), stand: v('foodStand'), phone: v('foodPhone'), email: v('foodEmail'), notes: v('foodNotes'),
+      fulfilment: pickup() ? 'pickup' : 'seat', pickupPoint: v('foodPickup'), website: $('foodWebsite').value,
+      adultConfirmed: $('foodAdult').checked, items: picked.map(f => ({ id: f.id, qty: qty[f.id] })),
+    };
+  }
+
+  $('foodForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = $('placeFoodBtn');
+    const body = collect(false); if (!body) return;
     btn.disabled = true; btn.textContent = 'Redirecting to payment...';
     try {
-      const res = await fetch('/api/food-checkout', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: v('foodName'), seat: v('foodSeat'), stand: v('foodStand'), phone: v('foodPhone'), email: v('foodEmail'), notes: v('foodNotes'),
-          adultConfirmed: $('foodAdult').checked, items: picked.map(f => ({ id: f.id, qty: qty[f.id] })) }),
-      });
+      const res = await fetch('/api/food-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok || !data.authorizationUrl) { if (res.status === 409) loadMenu(); throw new Error(data.error || 'Could not start payment.'); }
+      clearCart();
       window.location.href = data.authorizationUrl;
     } catch (err) {
-      fail(err.message || 'Something went wrong. Please try again.');
+      $('food-error').textContent = err.message || 'Something went wrong. Please try again.'; $('food-error').hidden = false;
       btn.disabled = false; btn.textContent = 'Place Order & Pay';
     }
+  });
+
+  // Order on WhatsApp.
+  let lastMessage = '';
+  $('waBtn').addEventListener('click', async () => {
+    const btn = $('waBtn');
+    const body = collect(true); if (!body) return;
+    body.turnstileToken = document.querySelector('#waBox [name="cf-turnstile-response"]')?.value || '';
+    btn.disabled = true; $('waBtnText').textContent = 'Preparing your order…';
+    try {
+      const res = await fetch('/api/food/whatsapp-order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok || !d.whatsappUrl) { if (res.status === 409 || d.code === 'stock') loadMenu(); window.turnstile?.reset?.(); throw new Error(d.error || 'Your order could not be saved. Please try again.'); }
+      lastMessage = d.message;
+      $('waRef').textContent = d.ref; $('waTotal').textContent = d.total;
+      $('waOpen').href = d.whatsappUrl; $('waTrack').href = d.trackUrl;
+      $('waNumber').textContent = (wa && wa.display) || ('+' + d.whatsappNumber);
+      clearCart(); renderMenu();
+      $('foodForm').hidden = true; $('waDone').hidden = false; renderSummary();
+      $('waDone').focus();
+      window.lsTrack?.('food_whatsapp_order', d.ref);
+      // window.location (not a pop-up) so phones don't block it after waiting for the server.
+      setTimeout(() => { window.location.href = d.whatsappUrl; }, 700);
+    } catch (err) {
+      $('food-error').textContent = err.message; $('food-error').hidden = false;
+    } finally { btn.disabled = false; $('waBtnText').textContent = 'Order on WhatsApp'; }
+  });
+  $('waCopy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(lastMessage); $('waCopy').textContent = 'Copied ✓'; }
+    catch (e) { $('waCopy').textContent = 'Copy failed: please use the WhatsApp button'; }
+    setTimeout(() => { $('waCopy').textContent = 'Copy order message'; }, 3000);
+  });
+  $('waNew').addEventListener('click', () => {
+    $('waDone').hidden = true; $('foodForm').hidden = false; renderSummary();
+    $('foodMenu').scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
   loadMenu();

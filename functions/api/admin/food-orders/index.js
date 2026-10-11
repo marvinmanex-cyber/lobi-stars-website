@@ -1,6 +1,6 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
-import { ensureFoodSchema, expireStale, moveOrder, STATUS, foodSettings, saveFoodSetting } from '../../_lib/foodOrders.js';
+import { ensureFoodSchema, expireStale, moveOrder, STATUS, foodSettings, saveFoodSetting, staffMessage, whereText } from '../../_lib/foodOrders.js';
 import { buildXlsx } from '../../_lib/xlsx.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
@@ -8,12 +8,19 @@ const json = s => { try { return JSON.parse(s); } catch { return []; } };
 const ACTIVE = ['PAID', 'PREPARING', 'OUT_FOR_DELIVERY'];
 const wat = iso => (iso ? new Date(new Date(iso).getTime() + 3600e3).toISOString().slice(0, 16).replace('T', ' ') : '');
 
-const view = o => ({
+// For WhatsApp replies: the customer's number for wa.me and ready-made messages per step.
+const waReplies = (o, settings) => settings ? {
+  phone: String(o.phone || '').replace(/\D/g, ''),
+  messages: { CONFIRMED: staffMessage(settings, o, 'CONFIRMED'), PAID: staffMessage(settings, o, 'PAID'), READY: staffMessage(settings, o, 'READY'), CANCELLED: staffMessage(settings, o, 'CANCELLED') },
+} : null;
+const view = (o, settings) => ({
   id: o.id, ref: o.ref, name: o.customer_name || '', seat: o.seat, stand: o.stand || '', phone: o.phone, email: o.email,
   notes: o.notes || '', items: json(o.items_json), totalKobo: o.total_kobo, status: o.order_status, payment: o.payment_status,
   eventId: o.event_id, match: o.home_team ? `${o.home_team} vs ${o.away_team}` : '',
   createdAt: o.created_iso, expiresAt: o.expires_at, paidAt: o.paid_iso, paidLate: !!o.paid_late, paystackRef: o.paid_reference || o.paystack_reference,
   preparingAt: o.preparing_at, outAt: o.out_at, deliveredAt: o.delivered_at, cancelledAt: o.cancelled_at, statusBy: o.status_by, statusAt: o.status_at,
+  channel: o.channel || 'paystack', fulfilment: o.fulfilment || 'seat', pickupPoint: o.pickup_point || '', where: whereText(o), confirmedAt: o.confirmed_at,
+  wa: waReplies(o, settings),
 });
 
 // GET /api/admin/food-orders
@@ -32,6 +39,7 @@ export async function onRequestGet({ request, env }) {
   const p = new URL(request.url).searchParams;
   const show = p.get('show') || 'open';
   const base = `SELECT f.*, e.home_team, e.away_team FROM food_orders f LEFT JOIN events e ON e.id = f.event_id`;
+  const settings = await foodSettings(db);
   const watNow = new Date(Date.now() + 3600e3);
   const todayStart = new Date(Date.UTC(watNow.getUTCFullYear(), watNow.getUTCMonth(), watNow.getUTCDate()) - 3600e3).toISOString();
 
@@ -44,17 +52,19 @@ export async function onRequestGet({ request, env }) {
     if (p.get('pay') === 'unpaid') where.push(`f.payment_status != 'paid'`);
     if (p.get('event')) { where.push(`f.event_id = ?`); binds.push(p.get('event')); }
     if (p.get('stand')) { where.push(`f.stand = ?`); binds.push(p.get('stand')); }
+    if (p.get('channel') === 'whatsapp') where.push(`f.channel = 'whatsapp'`);
+    if (p.get('channel') === 'paystack') where.push(`COALESCE(f.channel, 'paystack') = 'paystack'`);
     if (/^\d{4}-\d{2}-\d{2}$/.test(p.get('from') || '')) { where.push(`f.created_iso >= ?`); binds.push(new Date(Date.parse(p.get('from') + 'T00:00:00Z') - 3600e3).toISOString()); }
     if (/^\d{4}-\d{2}-\d{2}$/.test(p.get('to') || '')) { where.push(`f.created_iso < ?`); binds.push(new Date(Date.parse(p.get('to') + 'T00:00:00Z') + 86400e3 - 3600e3).toISOString()); }
     const w = where.length ? ` WHERE ${where.join(' AND ')}` : '';
     if (p.get('format') === 'xlsx') {
       if (!admin.canExport) return Response.json({ error: 'You do not have permission to export customer data.' }, { status: 403 });
       const { results } = await db.prepare(`${base}${w} ORDER BY f.created_iso DESC LIMIT 20000`).bind(...binds).all();
-      const rows = results.map(view);
+      const rows = results.map(o => view(o, null));
       const file = buildXlsx([{
         name: 'Food orders',
-        columns: ['Reference', 'Status', 'Payment', 'Created (WAT)', 'Paid (WAT)', 'Delivered (WAT)', 'Name', 'Phone', 'Email', 'Seat', 'Stand', 'Match', 'Items', 'Total (₦)', 'Note', 'Paystack reference', 'Last change by'],
-        rows: rows.map(o => [o.ref, STATUS[o.status]?.label || o.status, o.payment, wat(o.createdAt), wat(o.paidAt), wat(o.deliveredAt), o.name, o.phone, o.email, o.seat, o.stand, o.match,
+        columns: ['Reference', 'Ordered by', 'Status', 'Payment', 'Created (WAT)', 'Paid (WAT)', 'Delivered (WAT)', 'Name', 'Phone', 'Email', 'Seat / pickup', 'Stand', 'Match', 'Items', 'Total (₦)', 'Note', 'Payment reference', 'Last change by'],
+        rows: rows.map(o => [o.ref, o.channel === 'whatsapp' ? 'WhatsApp' : 'Website (Paystack)', STATUS[o.status]?.label || o.status, o.payment, wat(o.createdAt), wat(o.paidAt), wat(o.deliveredAt), o.name, o.phone, o.email, o.fulfilment === 'pickup' ? `Pickup: ${o.pickupPoint}` : o.seat, o.stand, o.match,
           o.items.map(i => `${i.qty}× ${i.name}`).join(', '), o.totalKobo / 100, o.notes, o.paystackRef, o.statusBy || '']),
       }]);
       await logAdminAction(db, admin, 'export_food_orders', `${rows.length} orders`);
@@ -66,7 +76,7 @@ export async function onRequestGet({ request, env }) {
     const { results: matches } = await db.prepare(`SELECT DISTINCT f.event_id AS id, e.home_team, e.away_team, e.event_date FROM food_orders f JOIN events e ON e.id = f.event_id ORDER BY e.event_date DESC LIMIT 50`).all();
     const { results: stands } = await db.prepare(`SELECT DISTINCT stand FROM food_orders WHERE stand IS NOT NULL AND stand != '' ORDER BY stand LIMIT 60`).all();
     return Response.json({
-      statuses: STATUS, orders: results.map(view), total, page, pages: Math.max(1, Math.ceil(total / size)), canExport: admin.canExport,
+      statuses: STATUS, orders: results.map(o => view(o, settings)), total, page, pages: Math.max(1, Math.ceil(total / size)), canExport: admin.canExport,
       matches: matches.map(m => ({ id: m.id, label: `${m.home_team} vs ${m.away_team} (${new Date(m.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' })})` })),
       stands: stands.map(s => s.stand),
     }, { headers: noStore });
@@ -75,7 +85,7 @@ export async function onRequestGet({ request, env }) {
   let sql = base, binds = [];
   if (show === 'open') sql += ` WHERE f.order_status IN ('PAID','PREPARING','OUT_FOR_DELIVERY') ORDER BY f.paid_iso ASC`;
   else if (show === 'awaiting') sql += ` WHERE f.order_status = 'AWAITING_PAYMENT' ORDER BY f.created_iso DESC`;
-  else if (show === 'board') { sql += ` WHERE f.order_status IN ('AWAITING_PAYMENT','PAID','PREPARING','OUT_FOR_DELIVERY') OR (f.order_status = 'DELIVERED' AND f.delivered_at >= ?) ORDER BY f.paid_iso ASC, f.created_iso ASC`; binds = [new Date(Date.now() - 30 * 60_000).toISOString()]; }
+  else if (show === 'board') { sql += ` WHERE f.order_status IN ('AWAITING_PAYMENT','AWAITING_WHATSAPP','CONFIRMED','PAID','PREPARING','OUT_FOR_DELIVERY') OR (f.order_status = 'DELIVERED' AND f.delivered_at >= ?) ORDER BY f.paid_iso ASC, f.created_iso ASC`; binds = [new Date(Date.now() - 30 * 60_000).toISOString()]; }
   else if (show === 'today') { sql += ` WHERE f.created_iso >= ? ORDER BY f.created_iso DESC`; binds = [todayStart]; }
   else sql += ` ORDER BY f.created_iso DESC`;
   const { results } = await db.prepare(`${sql} LIMIT 500`).bind(...binds).all();
@@ -85,15 +95,16 @@ export async function onRequestGet({ request, env }) {
   const items = {};
   for (const o of paidToday) for (const i of json(o.items_json)) items[i.name] = (items[i.name] || 0) + (i.qty || 0);
   const awaiting = (await db.prepare(`SELECT COUNT(*) AS n FROM food_orders WHERE order_status = 'AWAITING_PAYMENT'`).first()).n || 0;
+  const whatsapp = (await db.prepare(`SELECT COUNT(*) AS n FROM food_orders WHERE order_status IN ('AWAITING_WHATSAPP', 'CONFIRMED')`).first()).n || 0;
 
   return Response.json({
     statuses: STATUS,
-    settings: await foodSettings(db),
-    orders: results.map(view),
+    settings,
+    orders: results.map(o => view(o, settings)),
     serverTime: new Date().toISOString(),
     today: {
       orders: paidToday.length, revenueKobo: paidToday.reduce((s, o) => s + o.total_kobo, 0),
-      open: today.filter(o => ACTIVE.includes(o.order_status)).length, awaiting,
+      open: today.filter(o => ACTIVE.includes(o.order_status)).length, awaiting, whatsapp,
       topItems: Object.entries(items).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, qty]) => ({ name, qty })),
     },
   }, { headers: noStore });

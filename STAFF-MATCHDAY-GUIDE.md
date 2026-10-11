@@ -234,3 +234,6 @@ exported files private and delete them when you no longer need them.
 17. **Newsletter:** once the email service is set up, send a test, then the
     first Lobi Stars Weekly. Upload logos for Zeva Lager Beer and Play and add
     advert text for each sponsor (STAFF-GUIDE.md, section 24).
+18. **Order on WhatsApp:** add the bank details fans pay into and any pickup
+    points (Admin › Commerce › Food: Menu & Prices › Ordering settings), and
+    decide who answers WhatsApp orders on matchday (STAFF-GUIDE.md, section 13).
