@@ -20,7 +20,9 @@ import Layout from '../layouts/Layout.astro';
   // switches marketing consent off on the server.
   const msg = document.getElementById('msg')!;
   const t = new URLSearchParams(location.search).get('t') || '';
-  fetch('/api/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t }) })
+  // Opened without the link from an email: nothing to send.
+  if (!t) msg.textContent = 'To unsubscribe, use the "Unsubscribe" link at the bottom of any Lobi Stars email, or contact us and we will do it for you.';
+  else fetch('/api/unsubscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t }) })
     .then(async r => {
       const d = await r.json().catch(() => ({}));
       msg.textContent = r.ok

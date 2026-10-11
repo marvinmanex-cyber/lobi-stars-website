@@ -7,7 +7,7 @@ const slides = (await getCollection('heroSlides')).sort((a, b) => a.data.order -
 const photo = slides[0]?.data.photo || '/images/hero-1.jpg';
 ---
 <section class="hh" aria-labelledby="hh-title">
-  <img class="hh-bg" src={photo} alt="" width="1920" height="1080" loading="eager" fetchpriority="high" decoding="sync" sizes="100vw" />
+  <img class="hh-bg" src={photo} alt="" width="1920" height="1080" loading="eager" fetchpriority="high" decoding="async" sizes="100vw" />
   <div class="hh-shade" aria-hidden="true"></div>
   <div class="hh-inner">
     <p class="hh-eyebrow">Pride of Benue &middot; Makurdi, Nigeria</p>

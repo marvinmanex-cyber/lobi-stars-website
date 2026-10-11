@@ -177,7 +177,7 @@
     if (!ev.id.startsWith('sample-')) {
       const cal = el('a', 'nm-link nm-link--cal', '📅 Add to calendar') as HTMLAnchorElement;
       cal.href = `/api/calendar?match=${encodeURIComponent(slug)}`;
-      cal.setAttribute('aria-label', `Add Lobi Stars FC vs ${opponent} to your calendar`);
+      cal.setAttribute('aria-label', `Add to calendar: Lobi Stars FC vs ${opponent}`);
       links.append(cal);
     }
     if (commentaryUrl) {

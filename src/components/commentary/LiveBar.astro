@@ -42,7 +42,11 @@
 </style>
 
 <script>
-  import { liveEngine, opponentOf } from '../../lib/livePlayer';
+  // The player code is only loaded once a commentary player exists on the
+  // page (pressing Play), so other pages don't spend time on it.
+  type Mod = typeof import('../../lib/livePlayer');
+  let mod: Mod | null = null;
+  const load = async () => (mod ||= await import('../../lib/livePlayer'));
 
   // The bar itself is kept between pages; set it up only once.
   if (!(window as any).__lsLiveBarInit) { (window as any).__lsLiveBarInit = true; setup(); }
@@ -60,7 +64,7 @@
     document.body.classList.toggle('has-lbar', show);
     if (!e) return;
     const f = e.info?.fixture;
-    bar.querySelector('[data-lbar-match]')!.textContent = f ? `Lobi Stars vs ${opponentOf(f)}` : 'Match commentary';
+    bar.querySelector('[data-lbar-match]')!.textContent = f && mod ? `Lobi Stars vs ${mod.opponentOf(f)}` : 'Match commentary';
     bar.querySelector('[data-lbar-status]')!.textContent = STATUS[e.status] || '';
     bar.classList.toggle('is-live', e.status === 'live');
     const playing = !!e.wantPlay;
@@ -70,15 +74,16 @@
 
   // Only attach to the engine once a commentary player has created it
   // (so pages without commentary don't contact the commentary service).
-  function attach() {
+  async function attach() {
     if (unsubscribe || !(window as any).__lobiStarsLive) return;
-    unsubscribe = liveEngine().subscribe(render);
+    const m = await load();
+    if (!unsubscribe) unsubscribe = m.liveEngine().subscribe(render);
   }
   window.addEventListener('ls:engine-ready', attach);
   attach();
 
-  bar.querySelector('[data-lbar-toggle]')!.addEventListener('click', () => liveEngine().toggle());
-  bar.querySelector('[data-lbar-stop]')!.addEventListener('click', () => liveEngine().end());
+  bar.querySelector('[data-lbar-toggle]')!.addEventListener('click', async () => (await load()).liveEngine().toggle());
+  bar.querySelector('[data-lbar-stop]')!.addEventListener('click', async () => (await load()).liveEngine().end());
   // The bar stays on screen between pages; re-check where we are after each move.
   document.addEventListener('astro:page-load', render);
   }
