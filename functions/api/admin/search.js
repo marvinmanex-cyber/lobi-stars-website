@@ -2,9 +2,10 @@ import { requireAdminUser } from '../_lib/adminEvents.js';
 import { canAccess } from '../_lib/adminRoles.js';
 import { ensureContactsSchema } from '../_lib/contacts.js';
 import { ensureTable } from '../_lib/matchCentre.js';
+import { ensureInboxSchema } from '../_lib/inbox.js';
 
 // GET /api/admin/search?q= -- the admin top-bar search: fans, members,
-// matches and news, limited to what the signed-in person's role can open.
+// Inbox conversations, matches and news, limited to what the signed-in person's role can open.
 export async function onRequestGet({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
@@ -30,6 +31,14 @@ export async function onRequestGet({ request, env }) {
     for (const m of mem) results.push({ type: 'Member', title: `${m.first_name} ${m.last_name}`, sub: `${m.id} · ${m.email}`, href: `/admin/members/?q=${encodeURIComponent(m.email)}` });
   }
 
+  if (canAccess(admin, 'inbox')) {
+    await ensureInboxSchema(db);
+    const { results: th } = await db.prepare(
+      `SELECT id, ref, name, email, subject, status FROM inbox_threads WHERE spam_at IS NULL AND (lower(ref) LIKE ? OR lower(COALESCE(name,'')) LIKE ? OR lower(COALESCE(email,'')) LIKE ? OR lower(COALESCE(subject,'')) LIKE ?)
+       ORDER BY last_message_at DESC LIMIT 5`
+    ).bind(like, like, like, like).all();
+    for (const t of th) results.push({ type: 'Message', title: `${t.subject || '(no subject)'}`, sub: `${t.ref} · ${t.name || t.email} · ${t.status}`, href: `/admin/inbox/?t=${encodeURIComponent(t.id)}` });
+  }
   if (canAccess(admin, 'matchday-content')) {
     await ensureTable(db);
     const { results: ev } = await db.prepare(

@@ -2,7 +2,7 @@
 // middleware, so a link typed in directly is refused too) and by the admin
 // sidebar (which only shows what the signed-in person can open).
 //
-// Areas:  overview, matchday, content, fans, commerce, partners, analytics,
+// Areas:  overview, matchday, content, fans, inbox (messages), commerce, partners, analytics,
 //         settings, staff (manage staff users and roles), cms (content CMS).
 // Downloading contact data also needs the separate "can export fan data"
 // permission on the staff account.
@@ -38,6 +38,7 @@ const RULES = [
   [/^\/admin\/(matches|predictions|commentary)(\/|$)/, 'matchday'],
   [/^\/admin\/match-centre(\/|$)/, 'matchday-content'],
   [/^\/admin\/(news|awards)(\/|$)/, 'content'],
+  [/^\/admin\/inbox(\/|$)/, 'inbox'],
   [/^\/admin\/contact-sources(\/|$)/, 'fans|analytics'],
   [/^\/admin\/(fans|members)(\/|$)/, 'fans'],
   [/^\/admin\/food-orders\/analytics(\/|$)/, 'commerce|analytics'],
@@ -53,6 +54,7 @@ const RULES = [
   [/^\/api\/admin\/events(\/|$)/, 'matchday-content'],
   [/^\/api\/admin\/(predictions|motm|commentary)(\/|$)/, 'matchday'],
   [/^\/api\/admin\/awards(\/|$)/, 'content'],
+  [/^\/api\/admin\/inbox(\/|$)/, 'inbox'],
   [/^\/api\/admin\/fans\/export(\/|$)/, 'fans|analytics'],
   [/^\/api\/admin\/(contact-sources|contact-source-defs)(\/|$)/, 'fans|analytics|settings'],
   [/^\/api\/admin\/(fans|members)(\/|$)/, 'fans'],

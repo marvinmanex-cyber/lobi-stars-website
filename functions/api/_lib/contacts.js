@@ -296,6 +296,9 @@ export async function deleteContactEverywhere(db, contactId) {
       stmts.push(db.prepare(`DELETE FROM members WHERE id = ?`).bind(s.ref_id));
     }
   }
+  // Their Inbox conversations (messages, replies and notes) go too.
+  const enquiryIds = sources.filter(x => x.ref_table === 'enquiries').map(x => x.ref_id);
+  stmts.push(...(await (await import('./inbox.js')).erasureStatements(db, enquiryIds, c.email)));
   stmts.push(db.prepare(`DELETE FROM contact_sources WHERE contact_id = ?`).bind(contactId));
   stmts.push(db.prepare(`DELETE FROM contacts WHERE id = ?`).bind(contactId));
   await db.batch(stmts);

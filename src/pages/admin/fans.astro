@@ -235,5 +235,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const startQ = new URLSearchParams(location.search).get('q');
   if (startQ) $('filters').elements.q.value = startQ;
   load(); loadLog();
+  // Opened from an Inbox conversation (?open=contact id): show that person's profile.
+  const openId = new URLSearchParams(location.search).get('open');
+  if (openId) open(openId);
 })();
 </script>

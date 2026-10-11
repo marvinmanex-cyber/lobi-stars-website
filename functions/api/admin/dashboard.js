@@ -1,4 +1,5 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
+import { syncEnquiries } from '../_lib/inbox.js';
 import { canAccess } from '../_lib/adminRoles.js';
 import { ensureAnalyticsSchema } from '../_lib/analytics.js';
 import { ensureContactsSchema } from '../_lib/contacts.js';
@@ -39,15 +40,17 @@ export async function onRequestGet({ request, env }) {
     }
   } catch (err) { console.error('[dashboard] match', err); }
 
-  // Messages (contact, sponsorship and hospitality enquiries) -- the Inbox comes later.
+  // Messages (contact, sponsorship and hospitality enquiries) and how many wait for a reply in the Inbox.
   if (can('fans') || can('inbox')) {
     await ensureContactsSchema(db);
+    await syncEnquiries(db);
     const week = Date.now() - 7 * 86400e3;
     const [n, p] = await Promise.all([
       one(`SELECT COUNT(*) AS n FROM enquiries WHERE created_at >= ?`, [isoTs(week)]),
       one(`SELECT COUNT(*) AS n FROM enquiries WHERE created_at >= ? AND created_at < ?`, [isoTs(week - 7 * 86400e3), isoTs(week)]),
     ]);
-    out.messages = { week: n.n || 0, change: pct(n.n || 0, p.n || 0) };
+    const w = await one(`SELECT COUNT(*) AS n, SUM(unread) AS u FROM inbox_threads WHERE spam_at IS NULL AND status IN ('new', 'open')`);
+    out.messages = { week: n.n || 0, change: pct(n.n || 0, p.n || 0), waiting: w.n || 0, unread: w.u || 0 };
   }
 
   // New contacts this week.

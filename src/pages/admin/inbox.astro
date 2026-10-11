@@ -1,0 +1,576 @@
+---
+// Fans & Inbox › Inbox: every Contact Form, Sponsorship and Hospitality
+// message as an email conversation. Staff read, reply by email (from the
+// club address, with their name), assign, add private notes and set the
+// status. Fans' email replies come back into the same conversation.
+// On phones the list and the conversation are two screens.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Inbox | Lobi Stars Admin" description="Contact, sponsorship and hospitality messages." noindex>
+  <div class="wrap ib">
+    <AdminNav current="inbox" />
+    <div class="ib-head">
+      <div><div class="stag">Fans &amp; Inbox</div><h1 class="stitle">In<span class="r">box</span></h1></div>
+      <div class="ib-tools">
+        <button type="button" class="btn-o sm" id="tplBtn">📝 Templates</button>
+        <button type="button" class="btn-o sm" id="setBtn">⚙️ Email settings</button>
+      </div>
+    </div>
+    <p class="ib-banner" id="setup" hidden></p>
+    <p class="ib-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <div class="ib-app" id="app" data-view="list">
+      <section class="ib-list" aria-label="Conversations">
+        <div class="ib-tabs" id="tabs" role="tablist"></div>
+        <div class="ib-filter">
+          <input type="search" id="q" placeholder="Search name, email, subject, LS- reference or words" aria-label="Search messages" />
+          <select id="source" aria-label="Filter by type"><option value="">All types</option></select>
+        </div>
+        <ul class="ib-threads" id="threads"><li class="ib-loading">Loading messages…</li></ul>
+        <button type="button" class="btn-o ib-more" id="more" hidden>Load more</button>
+      </section>
+
+      <section class="ib-conv" id="conv" aria-label="Conversation">
+        <div class="empty-state ib-pick" id="pick"><b>✉️</b>Choose a conversation on the left to read it and reply.</div>
+        <div id="convIn" hidden>
+          <div class="ib-ch">
+            <button type="button" class="ib-back" id="back" aria-label="Back to the list">← Back</button>
+            <div class="ib-ch-t">
+              <h2 id="cSubject"></h2>
+              <p class="ib-ch-meta" id="cMeta"></p>
+            </div>
+          </div>
+          <div class="ib-actions">
+            <label>Status <select id="cStatus"><option value="new">New</option><option value="open">Open</option><option value="replied">Replied</option><option value="closed">Closed</option></select></label>
+            <label>Assigned to <select id="cAssign"><option value="">Nobody</option></select></label>
+            <button type="button" class="btn-o sm" id="cUnread">Mark unread</button>
+            <button type="button" class="btn-o sm" id="cSpam">🚫 Mark as spam</button>
+          </div>
+          <div class="ib-scroll" id="scroll">
+            <details class="ib-who" id="who" open><summary>Sender details</summary><div id="whoBody"></div></details>
+            <ol class="ib-msgs" id="msgs" aria-label="Messages"></ol>
+          </div>
+
+          <div class="ib-compose" id="compose">
+            <div class="ib-ctabs" role="tablist">
+              <button type="button" role="tab" aria-selected="true" data-mode="reply">↩ Reply by email</button>
+              <button type="button" role="tab" aria-selected="false" data-mode="note">🔒 Private note</button>
+            </div>
+            <div data-pane="reply">
+              <div class="ib-tb" role="toolbar" aria-label="Formatting">
+                <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+                <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+                <button type="button" data-cmd="link" title="Add a link">🔗 Link</button>
+                <button type="button" data-cmd="insertUnorderedList" title="Bulleted list">• List</button>
+                <button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+                <select id="tplPick" aria-label="Insert a template"><option value="">Insert template…</option></select>
+              </div>
+              <div class="ib-editor" id="editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Your reply" data-ph="Write your reply… {first_name} becomes the fan's first name."></div>
+              <div class="ib-files" id="files"></div>
+              <div class="ib-send">
+                <label class="btn-o sm ib-attach">📎 Attach <input type="file" id="attach" multiple accept="application/pdf,image/jpeg,image/png,image/webp,image/gif" hidden /></label>
+                <span class="muted ib-hint">PDF or images, 5MB each. Your original message is quoted below your reply.</span>
+                <button type="button" class="btn-o" id="previewBtn">👁 Preview</button>
+                <button type="button" class="btn-p" id="sendBtn">Send reply</button>
+              </div>
+            </div>
+            <div data-pane="note" hidden>
+              <textarea class="form-ta ib-note" id="note" rows="3" placeholder="Only staff see this. It is never emailed to the fan."></textarea>
+              <div class="ib-send"><button type="button" class="btn-p ib-note-btn" id="noteBtn">Add private note</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <dialog class="ib-dlg wide" id="pvDlg" aria-labelledby="pvTitle">
+    <form method="dialog" class="ib-x"><button aria-label="Close">&times;</button></form>
+    <h2 id="pvTitle">Email preview</h2>
+    <dl class="ib-pvh" id="pvHead"></dl>
+    <iframe id="pvFrame" title="Email preview" sandbox=""></iframe>
+    <div class="ib-dacts"><button type="button" class="btn-o" id="pvBack">Keep editing</button><button type="button" class="btn-p" id="pvSend">Send reply</button></div>
+  </dialog>
+
+  <dialog class="ib-dlg wide" id="tplDlg" aria-labelledby="tplTitle">
+    <form method="dialog" class="ib-x"><button aria-label="Close">&times;</button></form>
+    <h2 id="tplTitle">Reply templates</h2>
+    <p class="muted">Saved replies everyone can use. <code>{'{first_name}'}</code> becomes the fan's first name, <code>{'{staff_name}'}</code> yours and <code>{'{ref}'}</code> the conversation reference.</p>
+    <ul class="ib-tpls" id="tplList"></ul>
+    <form id="tplForm" class="ib-tform">
+      <input type="hidden" name="id" />
+      <label>Template name <input class="form-inp" name="name" maxlength="80" required /></label>
+      <label>Text</label>
+      <div class="ib-editor small" id="tplEditor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Template text"></div>
+      <div class="ib-dacts"><button type="button" class="btn-o" id="tplNew">New template</button><button class="btn-p" type="submit">Save template</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="ib-dlg" id="setDlg" aria-labelledby="setTitle">
+    <form method="dialog" class="ib-x"><button aria-label="Close">&times;</button></form>
+    <h2 id="setTitle">Inbox email settings</h2>
+    <div id="setStatus" class="ib-setstat"></div>
+    <form id="setForm" class="ib-sform">
+      <label><input type="checkbox" name="alertsEmail" /><span>Email staff about each new message <span class="muted">(Contact Form → Fan Relations staff; Sponsorship and Hospitality → Commercial staff)</span></span></label>
+      <label><input type="checkbox" name="dailySummary" /><span>Daily summary email of messages still waiting for a reply <span class="muted">(once a day, after 8am)</span></span></label>
+      <label class="col">Also send both to (optional, comma separated)<input class="form-inp" name="extraEmails" placeholder="manager@lobistarsfc.com" /></label>
+      <div class="ib-dacts"><button class="btn-p" type="submit">Save settings</button></div>
+    </form>
+  </dialog>
+</Layout>
+
+<style>
+  .ib { max-width: 1500px; padding-top: 20px; padding-bottom: 60px; }
+  .ib-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .ib-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ib-banner { background: #FFF7E6; color: #7A4B00; border: 1px solid #F6D58E; border-radius: 12px; padding: 10px 14px; margin: 0 0 12px; font-size: 14px; }
+  /* Shown floating at the bottom so it is seen wherever you are in a long conversation. */
+  .ib-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .ib-msg.ok { background: #E8F7EE; color: #17643A; } .ib-msg.err { background: #FDECEC; color: #A3161B; }
+  :global(body.admin-dark) .ib-banner { background: #3A2E12; color: #F6D58E; border-color: #5A4718; }
+
+  .ib-app { display: grid; grid-template-columns: minmax(300px, 380px) 1fr; gap: 0; background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; overflow: hidden; height: calc(100vh - 110px); min-height: 600px; box-shadow: 0 8px 26px rgba(15,17,21,.05); }
+  .ib-list { display: flex; flex-direction: column; border-right: 1px solid var(--a-line); min-width: 0; min-height: 0; }
+  .ib-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 10px 10px 6px; scrollbar-width: thin; }
+  .ib :global(.ib-tab) { flex: none; border: 1px solid var(--a-line); background: var(--a-soft); color: var(--a-ink); border-radius: 999px; padding: 6px 11px; font: 700 13px/1.2 'Barlow', sans-serif; cursor: pointer; min-height: 34px; }
+  .ib :global(.ib-tab[aria-selected="true"]) { background: #8B5CF6; border-color: #8B5CF6; color: #fff; }
+  .ib :global(.ib-tab small) { opacity: .8; margin-left: 3px; }
+  .ib-filter { display: grid; grid-template-columns: 1fr auto; gap: 6px; padding: 4px 10px 10px; border-bottom: 1px solid var(--a-line); }
+  .ib-filter input, .ib-filter select, .ib-actions select { min-height: 40px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 14px; min-width: 0; }
+  .ib-threads { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; min-height: 0; }
+  .ib-loading { padding: 20px; color: var(--a-muted); }
+  .ib :global(.ib-t) { display: grid; grid-template-columns: 12px 1fr auto; gap: 2px 8px; padding: 11px 12px 11px 8px; border-bottom: 1px solid var(--a-line); cursor: pointer; border-left: 3px solid transparent; }
+  .ib :global(.ib-t:hover) { background: var(--a-hover); }
+  .ib :global(.ib-t[aria-current="true"]) { background: color-mix(in srgb, #8B5CF6 12%, var(--a-card)); border-left-color: #8B5CF6; }
+  .ib :global(.ib-t.amber) { border-left-color: #F59E0B; } .ib :global(.ib-t.red) { border-left-color: #E31E24; }
+  .ib :global(.ib-dot) { width: 9px; height: 9px; border-radius: 50%; background: #2563EB; margin-top: 6px; grid-row: 1; }
+  .ib :global(.ib-dot.off) { visibility: hidden; }
+  .ib :global(.ib-from) { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--a-ink); }
+  .ib :global(.ib-t.unread .ib-from), .ib :global(.ib-t.unread .ib-subj) { font-weight: 800; }
+  .ib :global(.ib-time) { font-size: 12px; color: var(--a-muted); white-space: nowrap; text-align: right; }
+  .ib :global(.ib-subj), .ib :global(.ib-prev) { grid-column: 2 / 4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+  .ib :global(.ib-prev) { color: var(--a-muted); font-size: 13px; }
+  .ib :global(.ib-tags) { grid-column: 2 / 4; display: flex; gap: 5px; flex-wrap: wrap; margin-top: 4px; align-items: center; }
+  .ib :global(.ib-src) { display: inline-flex; padding: 2px 8px; border-radius: 999px; font: 700 11px/1.4 'Barlow', sans-serif; color: #fff; }
+  .ib :global(.ib-age) { font: 700 11px/1.4 'Barlow', sans-serif; padding: 2px 7px; border-radius: 999px; }
+  .ib :global(.ib-age.amber) { background: #FEF3C7; color: #92400E; } .ib :global(.ib-age.red) { background: #FEE2E2; color: #991B1B; }
+  .ib :global(.ib-asg) { font-size: 11px; color: var(--a-muted); }
+  .ib-more { margin: 10px; }
+
+  /* Desktop: the conversation header and reply box stay put; only the messages scroll. */
+  .ib-conv { min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .ib-pick { margin: 40px; }
+  #convIn { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+  .ib-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+  #convIn[hidden] { display: none; }
+  .ib-ch { display: flex; gap: 10px; align-items: flex-start; padding: 14px 16px 6px; }
+  .ib-back { display: none; border: 1px solid var(--a-line); background: var(--a-soft); color: var(--a-ink); border-radius: 10px; padding: 8px 12px; font-weight: 700; cursor: pointer; min-height: 40px; flex: none; }
+  .ib-ch h2 { margin: 0; font: 700 21px/1.25 'Barlow', sans-serif; overflow-wrap: anywhere; }
+  .ib-ch-meta { margin: 4px 0 0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--a-muted); }
+  .ib-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 6px 16px 10px; border-bottom: 1px solid var(--a-line); }
+  .ib-actions label { display: flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 700; color: var(--a-muted); }
+  .btn-o.sm, .sm { min-height: 40px; padding: 6px 12px; font-size: 13px; }
+  .ib-who { margin: 10px 16px 0; border: 1px solid var(--a-line); border-radius: 12px; background: var(--a-soft); }
+  .ib-who summary { cursor: pointer; padding: 9px 12px; font-weight: 700; font-size: 14px; }
+  .ib :global(.ib-who dl) { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 0; padding: 0 12px 12px; font-size: 14px; }
+  .ib :global(.ib-who dt) { color: var(--a-muted); } .ib :global(.ib-who dd) { margin: 0; overflow-wrap: anywhere; }
+  .ib :global(.ib-who a) { color: #7C3AED; font-weight: 700; }
+
+  .ib-msgs { list-style: none; margin: 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  .ib :global(.ib-m) { max-width: 82%; border-radius: 14px; padding: 10px 14px; border: 1px solid var(--a-line); background: var(--a-soft); overflow-wrap: anywhere; }
+  .ib :global(.ib-m.out) { align-self: flex-end; background: color-mix(in srgb, #0EA5E9 10%, var(--a-card)); border-color: color-mix(in srgb, #0EA5E9 30%, transparent); }
+  .ib :global(.ib-m.note) { align-self: stretch; max-width: none; background: #FEF9C3; border-color: #FDE047; color: #422006; }
+  :global(body.admin-dark) .ib :global(.ib-m.note) { background: #3B3511; border-color: #6B5E12; color: #FDF6C3; }
+  .ib :global(.ib-mh) { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; font-size: 12px; color: var(--a-muted); margin-bottom: 4px; }
+  .ib :global(.ib-m.note .ib-mh) { color: inherit; opacity: .8; }
+  .ib :global(.ib-mh b) { color: var(--a-ink); font-size: 13px; }
+  .ib :global(.ib-m.note .ib-mh b) { color: inherit; }
+  .ib :global(.ib-mb p) { margin: 0 0 8px; } .ib :global(.ib-mb p:last-child) { margin: 0; }
+  .ib :global(.ib-mb ul), .ib :global(.ib-mb ol) { margin: 0 0 8px; padding-left: 20px; }
+  .ib :global(.ib-mb a) { color: #2563EB; text-decoration: underline; }
+  .ib :global(.ib-att) { margin-top: 6px; font-size: 12px; color: var(--a-muted); }
+  .ib :global(.ib-warn) { color: #B45309; font-weight: 700; }
+
+  .ib-compose { flex: none; background: var(--a-card); border-top: 1px solid var(--a-line); padding: 10px 16px 14px; box-shadow: 0 -8px 20px rgba(15,17,21,.04); }
+  .ib-compose .ib-editor { max-height: 180px; }
+  .ib-ctabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .ib-ctabs button { border: 1px solid var(--a-line); background: var(--a-soft); color: var(--a-ink); border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: 13px; cursor: pointer; min-height: 36px; }
+  .ib-ctabs button[aria-selected="true"] { background: var(--a-ink); color: var(--a-card); }
+  .ib-ctabs button[data-mode="note"][aria-selected="true"] { background: #EAB308; border-color: #EAB308; color: #1F1600; }
+  .ib-tb { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+  .ib-tb button, .ib-tb select { min-height: 36px; border: 1px solid var(--a-line); background: var(--a-soft); color: var(--a-ink); border-radius: 8px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
+  .ib-tb select { max-width: 200px; }
+  .ib-editor { min-height: 96px; max-height: 260px; overflow-y: auto; border: 1px solid var(--a-line); border-radius: 10px; padding: 10px 12px; background: var(--a-card); color: var(--a-ink); font-size: 15px; line-height: 1.5; outline: none; overflow-wrap: anywhere; }
+  .ib-editor.small { min-height: 120px; }
+  .ib-editor:focus { border-color: #8B5CF6; box-shadow: 0 0 0 3px color-mix(in srgb, #8B5CF6 20%, transparent); }
+  .ib-editor:empty::before { content: attr(data-ph); color: var(--a-muted); }
+  .ib-editor :global(p) { margin: 0 0 8px; }
+  .ib-files { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .ib :global(.ib-file) { display: inline-flex; gap: 6px; align-items: center; border: 1px solid var(--a-line); border-radius: 999px; padding: 3px 4px 3px 10px; font-size: 12px; background: var(--a-soft); }
+  .ib :global(.ib-file button) { border: 0; background: none; cursor: pointer; font-size: 16px; color: var(--a-muted); width: 28px; height: 28px; }
+  .ib-send { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .ib-hint { flex: 1; font-size: 12px; min-width: 160px; }
+  .ib-attach { cursor: pointer; display: inline-flex; align-items: center; }
+  .ib-note { width: 100%; background: #FFFDE7; }
+  :global(body.admin-dark) .ib-note { background: #2A2712; color: var(--a-ink); }
+  .ib-note-btn { margin-left: auto; }
+
+  .ib-dlg { margin: auto; border: 0; border-radius: 16px; padding: 22px; width: min(560px, calc(100vw - 32px)); max-height: calc(100vh - 40px); background: var(--a-card); color: var(--a-ink); }
+  .ib-dlg.wide { width: min(820px, calc(100vw - 32px)); }
+  .ib-dlg::backdrop { background: rgba(0,0,0,.5); }
+  .ib-dlg h2 { margin: 0 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; padding-right: 40px; }
+  .ib-x { position: absolute; top: 12px; right: 12px; } .ib-x button { width: 40px; height: 40px; border: 0; background: var(--a-soft); color: var(--a-ink); border-radius: 50%; font-size: 22px; cursor: pointer; }
+  .ib-dlg { position: relative; }
+  .ib-pvh { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; font-size: 14px; margin: 0 0 10px; }
+  .ib-pvh dt { color: var(--a-muted); } .ib-pvh dd { margin: 0; overflow-wrap: anywhere; }
+  #pvFrame { width: 100%; height: 50vh; border: 1px solid var(--a-line); border-radius: 10px; background: #fff; }
+  .ib-dacts { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 12px; }
+  .ib-tpls { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 6px; }
+  .ib :global(.ib-tpl), :global(.ib-tpl) { display: flex; gap: 8px; align-items: center; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-soft); }
+  :global(.ib-tpl b) { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  :global(.ib-tpl button) { min-height: 36px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); border-radius: 8px; padding: 4px 10px; cursor: pointer; font-size: 13px; }
+  .ib-tform, .ib-sform { display: grid; gap: 10px; }
+  .ib-tform label, .ib-sform label { font-weight: 700; font-size: 14px; display: block; }
+  .ib-sform label:not(.col) { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; }
+  .ib-sform input[type=checkbox] { width: 20px; height: 20px; flex: none; margin-top: 1px; accent-color: #8B5CF6; }
+  .ib-sform .col input { margin-top: 6px; }
+  .ib-setstat { font-size: 14px; margin-bottom: 12px; display: grid; gap: 6px; }
+  :global(.ib-setstat p) { margin: 0; padding: 8px 10px; border-radius: 10px; background: var(--a-soft); }
+
+  /* Phones and small tablets: the list and the conversation are two screens. */
+  @media (max-width: 900px) {
+    .ib-app { grid-template-columns: 1fr; height: auto; min-height: 0; border-radius: 14px; }
+    .ib-list { border-right: 0; }
+    .ib-threads { max-height: none; overflow: visible; }
+    .ib-app[data-view="list"] .ib-conv { display: none; }
+    .ib-app[data-view="thread"] .ib-list { display: none; }
+    .ib-conv, .ib-scroll { overflow: visible; }
+    #convIn { height: auto; }
+    .ib-back { display: inline-block; }
+    .ib :global(.ib-m) { max-width: 94%; }
+    .ib-compose { padding: 10px 12px 12px; }
+    .ib-ch, .ib-actions { padding-left: 12px; padding-right: 12px; }
+    .ib-who { margin: 10px 12px 0; }
+    .ib-msgs { padding: 12px; }
+  }
+  @media (max-width: 520px) {
+    .ib-filter { grid-template-columns: 1fr; }
+    .ib-actions label { flex: 1 1 100%; justify-content: space-between; }
+    .ib-actions label select { flex: 1; max-width: 70%; }
+    .ib-hint { flex-basis: 100%; order: 3; }
+    .ib-send .btn-p, .ib-send #previewBtn { flex: 1; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const TABS = [['all', 'All'], ['unread', 'Unread'], ['new', 'New'], ['open', 'Open'], ['replied', 'Replied'], ['closed', 'Closed'], ['mine', 'Assigned to me'], ['spam', 'Spam']];
+  const STATUS = { new: 'New', open: 'Open', replied: 'Replied', closed: 'Closed' };
+  const params = new URLSearchParams(location.search);
+  const state = { tab: params.get('tab') || 'all', source: params.get('source') || '', q: '', offset: 0, threads: [], current: null, data: null, list: null, files: [], mode: 'reply' };
+  const drafts = {};
+  const narrow = () => matchMedia('(max-width: 900px)').matches;
+
+  async function api(path, opts) {
+    const res = await fetch(path, { ...(opts || {}), headers: { 'Content-Type': 'application/json', 'x-admin-code': code }, cache: 'no-store' });
+    if (res.status === 401) { location.href = '/admin/login/?next=' + encodeURIComponent(location.pathname + location.search); throw new Error('Please sign in again.'); }
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+    return data;
+  }
+  let msgTimer;
+  function msg(text, ok) {
+    const el = $('msg'); el.textContent = text; el.className = 'ib-msg ' + (ok ? 'ok' : 'err'); el.hidden = false;
+    clearTimeout(msgTimer); msgTimer = setTimeout(() => { el.hidden = true; }, ok ? 5000 : 12000);
+  }
+  const when = iso => {
+    const d = new Date(iso); const now = new Date();
+    const opt = { timeZone: 'Africa/Lagos' };
+    const day = x => x.toLocaleDateString('en-GB', opt);
+    if (day(d) === day(now)) return d.toLocaleTimeString('en-GB', { ...opt, hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString('en-GB', { ...opt, day: 'numeric', month: 'short', ...(d.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {}) });
+  };
+  const full = iso => new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  // Waiting for a reply: amber after 24 hours, red after 48.
+  function age(t) {
+    if (t.spam_at || !(t.status === 'new' || t.status === 'open')) return null;
+    const h = (Date.now() - Date.parse(t.last_in_at || t.created_at)) / 3600e3;
+    const txt = h < 1 ? 'just now' : h < 48 ? Math.floor(h) + 'h waiting' : Math.floor(h / 24) + 'd waiting';
+    return { cls: h >= 48 ? 'red' : h >= 24 ? 'amber' : '', txt };
+  }
+  const srcBadge = key => { const s = (state.list && state.list.sources[key]) || { label: key, color: '#64748B' }; return `<span class="ib-src" style="background:${esc(s.color)}">${esc(s.label)}</span>`; };
+
+  // ── List ──
+  async function loadList(append) {
+    const p = new URLSearchParams({ tab: state.tab, offset: String(append ? state.offset : 0) });
+    if (state.source) p.set('source', state.source);
+    if (state.q) p.set('q', state.q);
+    try {
+      const d = await api('/api/admin/inbox?' + p);
+      state.list = d;
+      state.offset = d.offset + d.threads.length;
+      state.threads = append ? state.threads.concat(d.threads) : d.threads;
+      drawTabs(); drawList(); setupBanner();
+      $('more').hidden = state.offset >= d.total;
+    } catch (e) { msg(e.message, false); }
+  }
+  function drawTabs() {
+    const c = state.list.counts;
+    $('tabs').innerHTML = TABS.map(([k, label]) => `<button type="button" role="tab" class="ib-tab" data-tab="${k}" aria-selected="${state.tab === k}">${label}<small>${c[k] || 0}</small></button>`).join('');
+    const sel = $('source');
+    if (sel.options.length === 1) {
+      for (const [k, s] of Object.entries(state.list.sources)) sel.add(new Option(s.label, k));
+      sel.value = state.source;
+    }
+  }
+  function drawList() {
+    const ul = $('threads');
+    if (!state.threads.length) {
+      const empty = state.q ? 'No messages match your search.' : state.tab === 'spam' ? 'No spam. Messages marked as spam are kept here for 30 days.' : state.tab === 'unread' ? 'No unread messages. 🎉' : 'No messages here.';
+      ul.innerHTML = `<li class="ib-loading">${empty}</li>`; return;
+    }
+    ul.innerHTML = state.threads.map(t => {
+      const a = age(t);
+      return `<li class="ib-t${t.unread ? ' unread' : ''}${a && a.cls ? ' ' + a.cls : ''}" data-id="${esc(t.id)}" tabindex="0" aria-current="${state.current === t.id}">
+        <span class="ib-dot${t.unread ? '' : ' off'}" title="${t.unread ? 'Unread' : ''}"></span>
+        <span class="ib-from">${esc(t.name || t.email)}</span><span class="ib-time">${esc(when(t.last_message_at))}</span>
+        <span class="ib-subj">${esc(t.subject || '(no subject)')}</span>
+        <span class="ib-prev">${esc(t.preview || '')}</span>
+        <span class="ib-tags">${srcBadge(t.source)}<span class="badge ${esc(t.status)}">${STATUS[t.status] || esc(t.status)}</span>${a && a.cls ? `<span class="ib-age ${a.cls}">${esc(a.txt)}</span>` : ''}${t.assigned_name ? `<span class="ib-asg">👤 ${esc(t.assigned_name)}</span>` : ''}</span>
+      </li>`;
+    }).join('');
+  }
+  function setupBanner() {
+    const d = state.list; const el = $('setup');
+    if (!d.emailReady) { el.innerHTML = '⚠️ <b>Replies are not emailed yet.</b> The email service (Resend) still needs to be set up, so replies you write are saved in the conversation but the fan does not receive them. See the staff guide, "Answering messages in the Inbox".'; el.hidden = false; }
+    else if (!d.inboundReady) { el.innerHTML = 'ℹ️ Replies are emailed to fans. Fans\' email replies won\'t come back into the Inbox until the reply address is set up (see the staff guide).'; el.hidden = false; }
+    else el.hidden = true;
+  }
+
+  // ── Conversation ──
+  function setView(v) { $('app').dataset.view = v; }
+  async function openThread(id, push) {
+    saveDraft();
+    state.current = id; state.files = []; drawFiles();
+    document.querySelectorAll('.ib-t').forEach(li => li.setAttribute('aria-current', String(li.dataset.id === id)));
+    const url = new URL(location.href); url.searchParams.set('t', id); url.searchParams.delete('settings');
+    history[push && narrow() ? 'pushState' : 'replaceState']({ t: id }, '', url);
+    setView('thread');
+    $('pick').hidden = true; $('convIn').hidden = false;
+    $('msgs').innerHTML = '<li class="muted">Loading…</li>';
+    try {
+      const d = await api('/api/admin/inbox/' + encodeURIComponent(id));
+      if (state.current !== id) return;
+      state.data = d;
+      drawThread();
+      const t = state.threads.find(x => x.id === id);
+      if (t && t.unread) { t.unread = 0; drawList(); if (state.list) { state.list.counts.unread = Math.max(0, (state.list.counts.unread || 1) - 1); drawTabs(); } }
+    } catch (e) { msg(e.message, false); $('msgs').innerHTML = ''; }
+  }
+  function drawThread() {
+    const { thread: t, messages, contact, templates, staff, canOpenProfile } = state.data;
+    $('cSubject').textContent = t.subject || '(no subject)';
+    const a = age(t);
+    $('cMeta').innerHTML = `<span>${esc(t.ref)}</span>${srcBadge(t.source)}<span class="badge ${esc(t.status)}">${STATUS[t.status]}</span>${a && a.cls ? `<span class="ib-age ${a.cls}">${esc(a.txt)}</span>` : ''}${t.spam_at ? '<span class="badge bad">Spam</span>' : ''}<span>Received ${esc(full(t.created_at))}</span>`;
+    $('cStatus').value = t.status;
+    $('cAssign').innerHTML = '<option value="">Nobody</option>' + staff.map(s => `<option value="${esc(s.id)}">${esc(s.name)}${s.id === state.list?.me?.id ? ' (me)' : ''}</option>`).join('');
+    // Someone no longer on the staff list still shows as assigned.
+    if (t.assigned_to && !staff.some(x => x.id === t.assigned_to)) $('cAssign').add(new Option((t.assigned_name || 'Former staff') + ' (no longer active)', t.assigned_to));
+    $('cAssign').value = t.assigned_to || '';
+    $('cSpam').textContent = t.spam_at ? '✅ Not spam' : '🚫 Mark as spam';
+    const det = Object.entries(t.details || {}).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
+    const c = contact;
+    $('whoBody').innerHTML = `<dl>
+      <dt>Name</dt><dd>${esc((c && c.name) || t.name || '–')}</dd>
+      <dt>Email</dt><dd><a href="mailto:${esc(t.email)}">${esc(t.email)}</a></dd>
+      <dt>Phone</dt><dd>${esc((c && c.phone) || t.phone || '–')}</dd>${det}
+      ${c ? `<dt>All sources</dt><dd>${c.sources.map(esc).join(', ') || '–'}</dd>` : ''}
+      ${c && c.otherConversations ? `<dt>Other messages</dt><dd><a href="#" data-search="${esc(t.email)}">${c.otherConversations} more conversation${c.otherConversations === 1 ? '' : 's'}</a></dd>` : ''}
+      ${c && canOpenProfile ? `<dt>Fan profile</dt><dd><a href="/admin/fans/?open=${encodeURIComponent(c.id)}">Open in the Fan Database →</a></dd>` : ''}
+    </dl>`;
+    $('msgs').innerHTML = messages.map(m => {
+      const who = m.direction === 'note' ? '🔒 Private note · ' + esc(m.author_name) : esc(m.author_name || (m.direction === 'in' ? t.name || t.email : 'Staff'));
+      const delivery = m.direction !== 'out' ? '' : m.delivery === 'sent' ? '<span>✓ Emailed</span>' : m.delivery === 'dev' ? '<span>✓ Emailed (test mode)</span>' : '<span class="ib-warn">⚠ Not emailed (email service not set up)</span>';
+      const att = (m.attachments || []).length ? `<div class="ib-att">📎 ${m.attachments.map(x => esc(x.name) + ' (' + Math.max(1, Math.round(x.size / 1024)) + ' KB)').join(', ')}</div>` : '';
+      return `<li class="ib-m ${esc(m.direction)}"><div class="ib-mh"><b>${who}</b><span>${esc(full(m.created_at))}</span>${m.direction === 'out' ? '<span>to fan</span>' : ''}${delivery}</div><div class="ib-mb">${m.body_html}</div>${att}</li>`;
+    }).join('');
+    $('tplPick').innerHTML = '<option value="">Insert template…</option>' + templates.map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');
+    $('editor').innerHTML = drafts[t.id] || '';
+    $('note').value = '';
+    $('compose').hidden = !!t.spam_at;
+    if (!narrow()) $('scroll').scrollTop = $('scroll').scrollHeight; else window.scrollTo(0, 0);
+  }
+  function saveDraft() { if (state.current) drafts[state.current] = $('editor').innerHTML.trim(); }
+  function backToList() {
+    saveDraft(); setView('list');
+    const url = new URL(location.href); url.searchParams.delete('t'); history.replaceState({}, '', url);
+  }
+
+  async function act(body, okText) {
+    const id = state.current;
+    try {
+      await api('/api/admin/inbox/' + encodeURIComponent(id), { method: 'POST', body: JSON.stringify(body) });
+      if (okText) msg(okText, true);
+      await loadList();
+      if (state.current === id) await openThread(id);
+    } catch (e) { msg(e.message, false); }
+  }
+
+  // ── Reply ──
+  const firstName = () => ((state.data && state.data.thread.name) || '').split(/\s+/)[0] || 'there';
+  function fillVars(html) {
+    const me = state.list && state.list.me ? state.list.me.name : '';
+    return html.replace(/\{first_name\}/g, esc(firstName())).replace(/\{staff_name\}/g, esc(/admin code/i.test(me) ? 'The Lobi Stars FC team' : me.split(' ')[0])).replace(/\{ref\}/g, esc(state.data ? state.data.thread.ref : ''));
+  }
+  function drawFiles() {
+    $('files').innerHTML = state.files.map((f, i) => `<span class="ib-file">📎 ${esc(f.name)} (${Math.max(1, Math.round(f.size / 1024))} KB)<button type="button" data-rm="${i}" aria-label="Remove ${esc(f.name)}">&times;</button></span>`).join('');
+  }
+  const readB64 = f => new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1]); r.onerror = bad; r.readAsDataURL(f); });
+  async function send() {
+    const html = $('editor').innerHTML.trim();
+    if (!$('editor').textContent.trim()) { msg('Please write your reply first.', false); $('editor').focus(); return; }
+    const btns = [$('sendBtn'), $('pvSend')]; btns.forEach(b => { b.disabled = true; b.textContent = 'Sending…'; });
+    try {
+      const attachments = [];
+      for (const f of state.files) attachments.push({ name: f.name, type: f.type, data: await readB64(f) });
+      const r = await api('/api/admin/inbox/' + encodeURIComponent(state.current), { method: 'POST', body: JSON.stringify({ action: 'reply', html, attachments }) });
+      drafts[state.current] = ''; $('editor').innerHTML = ''; state.files = []; drawFiles();
+      if ($('pvDlg').open) $('pvDlg').close();
+      if (r.emailed) msg('Reply sent to ' + state.data.thread.email + '. Status set to Replied.', true); else msg(r.warning, false);
+      const id = state.current; await loadList(); await openThread(id);
+    } catch (e) { msg(e.message, false); }
+    finally { btns.forEach(b => { b.disabled = false; b.textContent = 'Send reply'; }); }
+  }
+  async function preview() {
+    if (!$('editor').textContent.trim()) { msg('Please write your reply first.', false); return; }
+    try {
+      const p = await api('/api/admin/inbox/' + encodeURIComponent(state.current), { method: 'POST', body: JSON.stringify({ action: 'preview', html: $('editor').innerHTML }) });
+      $('pvHead').innerHTML = `<dt>From</dt><dd>${esc(p.from)}</dd><dt>To</dt><dd>${esc(p.to)}</dd><dt>Subject</dt><dd>${esc(p.subject)}</dd>${state.files.length ? `<dt>Attached</dt><dd>${state.files.map(f => esc(f.name)).join(', ')}</dd>` : ''}`;
+      $('pvFrame').srcdoc = `<!doctype html><meta charset="utf-8"><body style="margin:16px;background:#fff">${p.html}</body>`;
+      $('pvDlg').showModal();
+    } catch (e) { msg(e.message, false); }
+  }
+
+  // ── Templates ──
+  async function loadTemplates() {
+    const d = await api('/api/admin/inbox/templates');
+    $('tplList').innerHTML = d.templates.length ? d.templates.map(x => `<li class="ib-tpl" data-id="${esc(x.id)}"><b>${esc(x.name)}</b><button type="button" data-edit="${esc(x.id)}">Edit</button><button type="button" data-del="${esc(x.id)}">Delete</button></li>`).join('') : '<li class="muted">No templates yet.</li>';
+    state.templates = d.templates;
+  }
+  function editTemplate(t) {
+    const f = $('tplForm'); f.elements.id.value = t ? t.id : ''; f.elements.name.value = t ? t.name : ''; $('tplEditor').innerHTML = t ? t.body_html : '<p>Hi {first_name},</p><p></p>';
+    f.elements.name.focus();
+  }
+
+  // ── Settings ──
+  function openSettings() {
+    const d = state.list; if (!d) return;
+    const f = $('setForm');
+    f.elements.alertsEmail.checked = d.settings.alertsEmail; f.elements.dailySummary.checked = d.settings.dailySummary; f.elements.extraEmails.value = d.settings.extraEmails || '';
+    $('setStatus').innerHTML = `<p>${d.emailReady ? '✅ Email service connected: replies, alerts and the daily summary are emailed.' : '⚠️ Email service (Resend) not set up yet: nothing is emailed until it is. Replies are still saved in the Inbox.'}</p>
+      <p>${d.inboundReady ? '✅ Fans\' email replies come back into the Inbox.' : '⚠️ Fans\' email replies do not come back into the Inbox yet (reply address not set up).'}</p>`;
+    $('setDlg').showModal();
+  }
+
+  // ── Events ──
+  $('tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (!b) return; state.tab = b.dataset.tab; const u = new URL(location.href); u.searchParams.set('tab', state.tab); history.replaceState(history.state, '', u); loadList(); });
+  $('source').addEventListener('change', e => { state.source = e.target.value; loadList(); });
+  let qTimer; $('q').addEventListener('input', e => { clearTimeout(qTimer); qTimer = setTimeout(() => { state.q = e.target.value.trim(); loadList(); }, 300); });
+  $('more').addEventListener('click', () => loadList(true));
+  $('threads').addEventListener('click', e => { const li = e.target.closest('.ib-t'); if (li) openThread(li.dataset.id, true); });
+  $('threads').addEventListener('keydown', e => { const li = e.target.closest('.ib-t'); if (li && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openThread(li.dataset.id, true); } });
+  $('back').addEventListener('click', () => { if (history.state && history.state.t && narrow()) history.back(); else backToList(); });
+  window.addEventListener('popstate', () => { const t = new URLSearchParams(location.search).get('t'); if (t) openThread(t); else { saveDraft(); setView('list'); } });
+  $('whoBody').addEventListener('click', e => { const a = e.target.closest('[data-search]'); if (!a) return; e.preventDefault(); $('q').value = a.dataset.search; state.q = a.dataset.search; state.tab = 'all'; backToList(); loadList(); });
+  $('cStatus').addEventListener('change', e => act({ action: 'status', status: e.target.value }, 'Status changed to ' + STATUS[e.target.value] + '.'));
+  $('cAssign').addEventListener('change', e => act({ action: 'assign', to: e.target.value }, e.target.value ? 'Assigned to ' + e.target.selectedOptions[0].textContent.replace(' (me)', '') + '.' : 'Unassigned.'));
+  $('cUnread').addEventListener('click', async () => { await act({ action: 'unread' }, 'Marked as unread.'); backToList(); state.current = null; drawList(); $('pick').hidden = false; $('convIn').hidden = true; });
+  $('cSpam').addEventListener('click', async () => {
+    const spam = !state.data.thread.spam_at;
+    if (spam && !confirm('Move this conversation to Spam? It is kept for 30 days and then deleted.')) return;
+    await act({ action: spam ? 'spam' : 'notspam' }, spam ? 'Moved to Spam (kept for 30 days).' : 'Moved back to the Inbox.');
+  });
+  document.querySelectorAll('.ib-ctabs [data-mode]').forEach(b => b.addEventListener('click', () => {
+    state.mode = b.dataset.mode;
+    document.querySelectorAll('.ib-ctabs [data-mode]').forEach(x => x.setAttribute('aria-selected', String(x === b)));
+    document.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== state.mode; });
+    (state.mode === 'note' ? $('note') : $('editor')).focus();
+  }));
+  function format(cmd, editor) {
+    editor.focus();
+    if (cmd === 'link') {
+      const url = prompt('Link address (starting https://)', 'https://');
+      if (!url || !/^(https?:\/\/|mailto:)/i.test(url.trim())) return;
+      if (document.getSelection().isCollapsed) document.execCommand('insertHTML', false, `<a href="${esc(url.trim())}">${esc(url.trim())}</a>`);
+      else document.execCommand('createLink', false, url.trim());
+      return;
+    }
+    document.execCommand(cmd, false, null);
+  }
+  document.querySelector('.ib-tb').addEventListener('click', e => { const b = e.target.closest('[data-cmd]'); if (b) format(b.dataset.cmd, $('editor')); });
+  // Pasting keeps the words but not other programs' styling.
+  [$('editor'), $('tplEditor')].forEach(ed => ed.addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain')); }));
+  $('editor').addEventListener('keydown', e => { if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); send(); } });
+  $('tplPick').addEventListener('change', e => {
+    const t = (state.data.templates || []).find(x => x.id === e.target.value); e.target.value = '';
+    if (!t) return;
+    $('editor').focus(); document.execCommand('insertHTML', false, fillVars(t.body_html));
+  });
+  $('attach').addEventListener('change', e => {
+    for (const f of e.target.files) {
+      if (!/^(application\/pdf|image\/(jpeg|png|webp|gif))$/.test(f.type)) { msg(f.name + ': only PDF and image files can be attached.', false); continue; }
+      if (f.size > 5 * 1024 * 1024) { msg(f.name + ' is bigger than 5MB.', false); continue; }
+      if (state.files.length >= 5) { msg('Up to 5 attachments per reply.', false); break; }
+      state.files.push(f);
+    }
+    e.target.value = ''; drawFiles();
+  });
+  $('files').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (b) { state.files.splice(Number(b.dataset.rm), 1); drawFiles(); } });
+  $('sendBtn').addEventListener('click', send);
+  $('previewBtn').addEventListener('click', preview);
+  $('pvSend').addEventListener('click', send);
+  $('pvBack').addEventListener('click', () => { $('pvDlg').close(); $('editor').focus(); });
+  $('noteBtn').addEventListener('click', async () => {
+    const text = $('note').value.trim(); if (!text) { msg('Please write the note first.', false); return; }
+    await act({ action: 'note', text }, 'Private note added (staff only).');
+  });
+
+  $('tplBtn').addEventListener('click', async () => { try { await loadTemplates(); editTemplate(null); $('tplDlg').showModal(); } catch (e) { msg(e.message, false); } });
+  $('tplNew').addEventListener('click', () => editTemplate(null));
+  $('tplList').addEventListener('click', async e => {
+    const ed = e.target.closest('[data-edit]'); const del = e.target.closest('[data-del]');
+    if (ed) editTemplate(state.templates.find(x => x.id === ed.dataset.edit));
+    if (del && confirm('Delete this template?')) { try { await api('/api/admin/inbox/templates', { method: 'POST', body: JSON.stringify({ action: 'delete', id: del.dataset.del }) }); await loadTemplates(); editTemplate(null); } catch (err) { msg(err.message, false); } }
+  });
+  $('tplForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target;
+    try {
+      await api('/api/admin/inbox/templates', { method: 'POST', body: JSON.stringify({ action: 'save', id: f.elements.id.value || undefined, name: f.elements.name.value, html: $('tplEditor').innerHTML }) });
+      await loadTemplates(); editTemplate(null); msg('Template saved.', true);
+      if (state.current) { const d = await api('/api/admin/inbox/' + encodeURIComponent(state.current) + '?peek=1'); state.data.templates = d.templates; $('tplPick').innerHTML = '<option value="">Insert template…</option>' + d.templates.map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join(''); }
+    } catch (err) { msg(err.message, false); }
+  });
+  $('setBtn').addEventListener('click', openSettings);
+  $('setForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target;
+    try {
+      const r = await api('/api/admin/inbox/settings', { method: 'POST', body: JSON.stringify({ alertsEmail: f.elements.alertsEmail.checked, dailySummary: f.elements.dailySummary.checked, extraEmails: f.elements.extraEmails.value }) });
+      state.list.settings = r.settings; $('setDlg').close(); msg('Inbox settings saved.', true);
+    } catch (err) { msg(err.message, false); }
+  });
+
+  // Start: the list, then the conversation / settings named in the address.
+  (async () => {
+    await loadList();
+    const t = params.get('t');
+    if (t) openThread(t);
+    if (params.get('settings')) openSettings();
+  })();
+  // New messages appear without reloading.
+  setInterval(() => { if (!document.hidden) loadList(); }, 60000);
+})();
+</script>

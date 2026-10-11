@@ -13,6 +13,9 @@ interface Props {
 const { kind, submitLabel = kind === 'partnership' ? 'Send Partnership Request' : kind === 'hospitality' ? 'Send Hospitality Enquiry' : 'Send Message', openCategories = [], packages = [] } = Astro.props;
 const SUBJECTS = { partnership: 'Partnership enquiry - lobistarsfc.com', hospitality: 'Hospitality enquiry - lobistarsfc.com', contact: 'Contact form - lobistarsfc.com' };
 const FORMSPREE = 'https://formspree.io/f/xbdwbyaz';
+// Cloudflare Turnstile human check, shown once the site key is set in fan-settings.json.
+import settings from '../data/fan-settings.json';
+const siteKey = settings.turnstileSiteKey;
 // Principal and Kit partnerships are taken, so they're not offered.
 const interests = [
   'Official Club Partner (category)',
@@ -87,9 +90,13 @@ const interests = [
         I agree that Lobi Stars FC may use these details to respond to my enquiry, as described in the <a href="/privacy" target="_blank">Privacy Policy</a>.</label>
     </div>
   )}
+  {/* Spam trap: hidden from people, bots fill it in (Formspree also ignores these). */}
+  <div class="eq-hp" aria-hidden="true"><label>Leave this empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" /></label></div>
+  {siteKey && <div class="cf-turnstile eq-turnstile" data-sitekey={siteKey}></div>}
   <p class="eq-status" role="status" aria-live="polite" hidden></p>
   <button type="submit" class="btn-p eq-submit">{submitLabel}</button>
 </form>
+{siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 
 <style>
   .eq-submit { width: 100%; padding: 15px; font-size: 15px; }
@@ -100,6 +107,8 @@ const interests = [
   .eq-consent label { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: var(--lt); cursor: pointer; }
   .eq-consent input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--red); }
   .eq-consent a { color: var(--red-text); font-weight: 600; }
+  .eq-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .eq-turnstile { margin: 0 0 14px; }
 </style>
 
 <script>
@@ -152,14 +161,20 @@ const interests = [
         // Save to the club's own database (fan database), then send to the Formspree inbox as before.
         const data: Record<string, unknown> = Object.fromEntries(new FormData(form).entries());
         data.privacy_consent = !!data.privacy_consent;
-        await fetch('/api/enquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).catch(() => {});
+        const saved = await fetch('/api/enquiry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).catch(() => null);
+        // Refused (human check, too many messages): say why. A server problem still sends to Formspree.
+        if (saved && (saved.status === 400 || saved.status === 429)) {
+          (window as any).turnstile?.reset?.();
+          throw new Error((await saved.json().catch(() => ({}))).error || '');
+        }
         const res = await fetch(form.action, { method: 'POST', body: new FormData(form), headers: { Accept: 'application/json' } });
         if (!res.ok) throw new Error();
         form.reset();
+        (window as any).turnstile?.reset?.();
         status.textContent = 'Thank you! Your message has been sent. We will get back to you shortly.';
         status.classList.add('ok');
-      } catch {
-        status.textContent = 'Sorry, your message could not be sent. Please try again or email us directly.';
+      } catch (err) {
+        status.textContent = (err as Error).message || 'Sorry, your message could not be sent. Please try again or email us directly.';
         status.classList.add('err');
       } finally {
         status.hidden = false; btn.disabled = false; btn.textContent = label;

@@ -33,11 +33,12 @@ manager gives you once. Paste it in and the CMS remembers it on that device.
 - Links with **↗** open the **Content CMS** (or another tool such as the
   ticket scanner) at the right place.
 - **Top bar:** where you are (e.g. *Fans & Inbox › Fan Database*), a **search
-  box** (fans, members, matches and news), the **🔔 bell** (new messages,
-  Predict & Win prizes not yet paid, commentary stream problems) and who is
-  signed in, with **Log out**.
+  box** (fans, members, Inbox messages by name or LS- reference, matches and
+  news), the **🔔 bell** (unread Inbox messages, messages waiting over 48
+  hours, Predict & Win prizes not yet paid, commentary stream problems) and who
+  is signed in, with **Log out**.
 - **Dashboard:** the next match (with a button to open live match control on
-  match day), messages and new contacts this week, page views today, people
+  match day), messages this week (and how many wait for a reply), new contacts this week, page views today, people
   listening to the commentary, the latest Predict & Win winner and whether the
   prize is paid, plus quick actions.
 - All the old admin addresses (e.g. /admin/matches, /admin/fans) still work.
@@ -53,8 +54,8 @@ manager gives you once. Paste it in and the CMS remembers it on that device.
 | Super Admin | Everything, including staff accounts and roles |
 | Media | Content (news, awards, CMS) and the Match Centre's matchday content (view) |
 | Matchday Operator | Matchday: matches, live match control, squad, Predict & Win, commentary |
-| Commercial | Commerce, Partners (and the Inbox when it arrives) |
-| Fan Relations | Fan database, members (and the Inbox when it arrives) |
+| Commercial | Commerce, Partners and the Inbox |
+| Fan Relations | Fan database, members and the Inbox |
 | Analyst | Analytics only, read-only |
 | All areas | Accounts made before roles existed: everything except staff accounts |
 
@@ -550,8 +551,9 @@ Site Settings), everyone needs confirming again.
 ## 12. Hospitality (/hospitality)
 
 The Hospitality page has an enquiry form (name, phone, email, company, number
-of guests, which match, message). Enquiries go to the club's inbox like the
-Contact form, and are saved in the fan database under **Hospitality Enquiry**.
+of guests, which match, message). Enquiries arrive in the **Inbox** (Fans &
+Inbox › Inbox, see section 18) like the Contact form, and are saved in the fan
+database under **Hospitality Enquiry**.
 
 To show packages, open **CMS → Site Settings → Hospitality packages** and add
 each package: name, what's included, and a price (or price text such as "From
@@ -801,6 +803,178 @@ At the bottom of Contact Sources, **Manage sources** lets you rename sources
 new source** before a new form goes live. Give the new source's code to the
 website manager so the form records contacts under it. Added sources can be
 deleted only while no contacts came from them.
+
+---
+
+## 18. Answering messages in the Inbox (Fans & Inbox › Inbox)
+
+Every message sent with the **Contact form**, the **Sponsorship / partnership
+form** and the **Hospitality form** arrives in the Inbox, including all the
+messages sent before the Inbox existed. Each one is a conversation with a
+reference such as **LS-2026-00123**. You answer by email from the website: the
+fan receives your reply from the club address, signed with your first name
+(e.g. *Ade from Lobi Stars FC*), and when they reply to that email, their
+answer comes back into the same conversation.
+
+Who can open it: **Fan Relations**, **Commercial** and **Super Admin** (and
+"All areas" accounts). Media, Matchday and Analyst accounts can't read
+messages.
+
+### The screen
+- **Left:** the list. Each message shows the sender, the subject, the first
+  words, the type (**Contact Form**, **Sponsorship**, **Hospitality**), the
+  time, a **blue dot** if nobody has opened it yet, and the status.
+- **Tabs:** All, Unread, New, Open, Replied, Closed, Assigned to me, Spam. The
+  number on each tab is how many are in it. Use **All types** to show only
+  one type, and the search box to find a name, email, subject, reference or
+  any word in the messages.
+- **Waiting too long:** a message still waiting for a reply turns **amber
+  after 24 hours** and **red after 48 hours** (coloured edge and "2d
+  waiting").
+- **Right:** the whole conversation. The fan's messages are grey, staff
+  replies are blue (with **✓ Emailed**), and private notes are **yellow**.
+  **Sender details** at the top shows their name, email, phone, company or
+  interest, every way they have been in touch with the club, other
+  conversations from the same person, and a link to their **Fan Database**
+  profile.
+- **On a phone:** the list and the conversation are two screens. Tap a
+  message to open it and **← Back** to return to the list.
+
+### Statuses
+| Status | Meaning |
+|---|---|
+| **New** | Nobody has replied yet. |
+| **Open** | The fan replied again and is waiting for us (also gets the blue dot). |
+| **Replied** | We replied; waiting for the fan. Set automatically when you send a reply. |
+| **Closed** | Finished. Set it yourself when nothing more is needed. |
+
+Change the status with the **Status** box at the top of the conversation. If
+a closed conversation gets a new email from the fan, it opens again by itself.
+
+### Replying
+1. Open the conversation and read it (opening it removes the blue dot; use
+   **Mark unread** to put it back).
+2. Under **↩ Reply by email**, write your reply. Use **B** (bold), **I**,
+   **🔗 Link** (type the full address, starting https://) and the list buttons.
+   Pasted text keeps the words but not other programs' styling.
+3. **Insert template…** adds a saved reply. `{first_name}` is filled in with the
+   fan's first name automatically. Change anything you need before sending.
+4. **📎 Attach** adds PDF or image files (JPG, PNG, WEBP, GIF), up to 5MB
+   each and 5 per reply, e.g. a hospitality price list.
+5. **👁 Preview** shows the email exactly as the fan will get it: the sender
+   name, the subject (with the reference in square brackets), your reply, your
+   name, and their original message quoted underneath.
+6. **Send reply** (or Ctrl + Enter). The reply is emailed, added to the
+   conversation, and the status becomes **Replied**. If you are the first to
+   reply, the conversation is assigned to you.
+
+Your half-written reply is kept while you look at other conversations (until
+you leave the page). If a reply says **⚠ Not emailed**, the email service is
+not set up yet (see the setup steps below); the reply is saved, but the fan
+did not get it.
+
+### Working as a team
+- **Assigned to:** choose who looks after a conversation. **Assigned to me**
+  lists yours.
+- **🔒 Private note:** switch to the yellow tab to write a note for other
+  staff (e.g. "Called them, sending the proposal Friday"). Notes are **never**
+  emailed to the fan.
+- Replies, notes, status changes, assignments, spam and template changes are
+  recorded in the **Activity Log** (Settings › Activity Log). The content of
+  private notes is not copied there.
+
+### Spam
+- **🚫 Mark as spam** moves a conversation to the **Spam** tab. It is kept for
+  **30 days** (in case of a mistake, use **✅ Not spam**) and then deleted for
+  good, together with the form record.
+- The forms also block most spam automatically: a hidden trap field that
+  only robots fill in, a limit on how many messages can be sent from one
+  connection or email address per hour, the Cloudflare **Turnstile** human
+  check once its keys are added, and everything fans send is cleaned so no
+  harmful code can run in the admin.
+
+### Templates (📝 Templates at the top of the Inbox, or Settings › Inbox Emails & Templates)
+Saved replies everyone can use. Three starter templates are included; edit
+them to match how the club wants to answer. You can use `{first_name}` (the
+fan's first name), `{staff_name}` (your first name) and `{ref}` (the
+reference).
+
+### Alerts and the daily summary (⚙️ Email settings)
+- **Email staff about each new message:** Contact Form messages go to every
+  **Fan Relations** staff account, Sponsorship and Hospitality messages to
+  every **Commercial** account (they need their own staff login with that
+  role). The email links straight to the conversation; answer from the Inbox,
+  not by replying to the alert.
+- **Daily summary:** one email a day (after 8am) listing every message still
+  waiting for a reply, with how long it has been waiting. It is sent the first
+  time anyone opens the admin after 8am, or when a new message arrives.
+- **Also send both to:** extra addresses, e.g. a manager.
+- The **🔔 bell** shows unread messages and messages waiting over 48 hours.
+
+### Privacy
+- Only the roles above can read messages.
+- **Deleting a person** in the Fan Database (right to erasure) also deletes
+  all their conversations, replies and notes.
+- Messages are still also copied to the club's existing Formspree email inbox
+  for now, so nothing is lost while the email service is being set up.
+
+### Setup (website manager, once)
+The Inbox works now, but **emails are only sent once these steps are done**.
+Until then, replies are saved but not emailed, and a yellow note at the top of
+the Inbox says so. (Menu names at Resend may differ slightly.)
+
+**A. Sending replies (Resend)**
+1. Create an account at resend.com and add the domain **lobistarsfc.com**
+   (Domains → Add domain).
+2. Resend shows a few DNS records. In **Cloudflare → lobistarsfc.com → DNS →
+   Records**, add each one exactly as shown. Set them to **DNS only** (grey
+   cloud). They are:
+   - **DKIM** (a TXT record named like `resend._domainkey`): a digital
+     signature that proves the email really comes from the club.
+   - **SPF** (a TXT record, usually on a `send` subdomain, starting
+     `v=spf1`): the list of services allowed to send email for the club.
+     Never add a second SPF record on the main domain; if the club already
+     has one (e.g. for Google Workspace), change nothing there.
+   - An **MX** record for the same `send` subdomain (bounce handling).
+3. Wait until Resend shows the domain as **Verified** (minutes to a few hours).
+4. Add **DMARC** (tells other mail services what to do with fake emails
+   pretending to be the club): a TXT record named `_dmarc` with the value
+   `v=DMARC1; p=none; rua=mailto:info@lobistarsfc.com`. After a few weeks
+   without problems, change `p=none` to `p=quarantine`. If a `_dmarc` record
+   already exists, keep the existing one.
+5. In Resend, create an **API key** (sending access).
+6. In **Cloudflare → Workers & Pages → the website → Settings → Variables and
+   Secrets** (Production), add:
+   - `RESEND_API_KEY`: the API key (as a secret);
+   - `INBOX_FROM_EMAIL`: the club address replies come from, e.g.
+     `info@lobistarsfc.com` (staff names are added automatically);
+   - `RESEND_FROM`: the sender for other website emails (tickets, sign-ups),
+     e.g. `Lobi Stars FC <noreply@lobistarsfc.com>`.
+7. Redeploy (or wait for the next update). The yellow note in the Inbox
+   changes once the email service is connected.
+8. Make sure `info@lobistarsfc.com` is a real mailbox or forwards to one, in
+   case someone writes to it directly.
+
+**B. Fans' replies coming back into the Inbox**
+1. Use a separate address area so the club's normal email is untouched:
+   **reply.lobistarsfc.com**. Replies are addressed to
+   `reply+LS-2026-00123@reply.lobistarsfc.com`, so each one finds its
+   conversation.
+2. In Resend, set up **receiving** (inbound) for `reply.lobistarsfc.com`.
+   Resend shows an **MX record**: in Cloudflare DNS add Type **MX**, Name
+   **reply**, and the mail server and priority exactly as shown.
+3. Make up a long random secret (30+ letters and numbers). In Resend →
+   **Webhooks**, add the address
+   `https://lobistarsfc.com/api/inbox/inbound?key=YOUR-SECRET` for the
+   **email received** event.
+4. In Cloudflare Variables and Secrets add `INBOX_REPLY_DOMAIN` =
+   `reply.lobistarsfc.com` and `INBOX_INBOUND_KEY` = the same secret. Redeploy.
+5. Test: send a message with the Contact form from your own email, reply to it
+   from the Inbox, then reply to that email. Within a minute your answer
+   appears in the conversation with status **Open** and a blue dot.
+
+Other email services (Postmark, SendGrid Inbound Parse, Mailgun) also work:
+point their inbound webhook at the same address with the same key.
 
 ---
 

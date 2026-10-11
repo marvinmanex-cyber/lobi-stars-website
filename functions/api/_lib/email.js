@@ -7,19 +7,24 @@ const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popu
 const TIER_BADGES = { VIP: '/images/vip-siting.png', Premium: '/images/cover-stand.png', Regular: '/images/popular-stand.png' };
 const SITE_ORIGIN = 'https://lobistarsfc.com';
 
-export async function sendEmail(env, { to, subject, html }) {
+/**
+ * Optional extras (used by the Inbox): `from` (a different sender name or
+ * address), `replyTo`, `text`, `headers` and `attachments`
+ * ([{ filename, content: base64 }]).
+ */
+export async function sendEmail(env, { to, subject, html, from, replyTo, text, headers, attachments }) {
+  const payload = { from: from || env.RESEND_FROM || 'Lobi Stars FC <tickets@lobistarsfc.com>', to, subject, html };
+  if (replyTo) payload.reply_to = replyTo;
+  if (text) payload.text = text;
+  if (headers) payload.headers = headers;
+  if (attachments?.length) payload.attachments = attachments;
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      from: env.RESEND_FROM || 'Lobi Stars FC <tickets@lobistarsfc.com>',
-      to,
-      subject,
-      html,
-    }),
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
     const body = await res.text();

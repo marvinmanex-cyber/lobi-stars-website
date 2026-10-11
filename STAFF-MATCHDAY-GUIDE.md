@@ -212,3 +212,8 @@ exported files private and delete them when you no longer need them.
 11. **Lobi Stars FC Live stream:** the club chose Option A (our own
    stream.lobistarsfc.com address). Finish the partner and DNS checklist in
    COMMENTARY-STREAM-SETUP.md, then add the stream address on Admin → Commentary.
+12. **Inbox emails:** connect the email service (Resend key, sender address
+    info@lobistarsfc.com, SPF/DKIM/DMARC records) so Inbox replies are
+    emailed, and set up reply.lobistarsfc.com so fans' replies come back in.
+    Give Fan Relations and Commercial staff their own logins so they get the
+    new-message alerts (STAFF-GUIDE.md, section 18).

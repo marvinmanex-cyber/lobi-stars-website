@@ -1,22 +1,28 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { canAccess } from '../_lib/adminRoles.js';
-import { ensureContactsSchema } from '../_lib/contacts.js';
+import { syncEnquiries, maybeDailySummary } from '../_lib/inbox.js';
 import { ensureAnalyticsSchema } from '../_lib/analytics.js';
 import { sqlTs, isoTs } from '../_lib/reportRange.js';
 
-// GET /api/admin/notifications -- the admin bell: new messages (last 48h),
+// GET /api/admin/notifications -- the admin bell: unread / overdue Inbox messages,
 // Predict & Win prizes not yet paid, and commentary stream errors today.
-export async function onRequestGet({ request, env }) {
+export async function onRequestGet({ request, env, waitUntil }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
   const db = env.DB;
   const items = [];
   const tableExists = async n => !!(await db.prepare(`SELECT 1 FROM sqlite_master WHERE type='table' AND name=?`).bind(n).first());
 
-  if (canAccess(admin, 'fans') || canAccess(admin, 'inbox')) {
-    await ensureContactsSchema(db);
-    const n = (await db.prepare(`SELECT COUNT(*) AS n FROM enquiries WHERE created_at >= ?`).bind(isoTs(Date.now() - 48 * 3600e3)).first()).n || 0;
-    if (n) items.push({ icon: '✉️', title: `${n} new message${n === 1 ? '' : 's'} in the last 48 hours`, sub: 'Contact, sponsorship and hospitality enquiries', href: '/admin/fans/?source=contact_form' });
+  if (canAccess(admin, 'inbox')) {
+    await syncEnquiries(db);
+    const r = await db.prepare(
+      `SELECT SUM(unread) AS unread, SUM(status IN ('new', 'open') AND COALESCE(last_in_at, created_at) < ?) AS late
+       FROM inbox_threads WHERE spam_at IS NULL`
+    ).bind(isoTs(Date.now() - 48 * 3600e3)).first();
+    if (r.unread) items.push({ icon: '✉️', title: `${r.unread} unread message${r.unread === 1 ? '' : 's'} in the Inbox`, sub: 'Contact, sponsorship and hospitality', href: '/admin/inbox/?tab=unread' });
+    if (r.late) items.push({ icon: '⏰', title: `${r.late} message${r.late === 1 ? '' : 's'} waiting over 48 hours`, sub: 'Please reply or close them', href: '/admin/inbox/' });
+    // The daily summary email goes out the first time staff open the admin after 8am.
+    if (waitUntil) waitUntil(maybeDailySummary(env));
   }
   if (canAccess(admin, 'matchday') && await tableExists('prediction_results')) {
     const { results } = await db.prepare(

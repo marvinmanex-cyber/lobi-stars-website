@@ -32,6 +32,7 @@ const CATEGORIES: Cat[] = [
     { id: 'cms', label: 'Content CMS (everything)', href: '/admin/', area: 'cms', ext: true },
   ] },
   { id: 'fans', icon: '👥', label: 'Fans & Inbox', color: '#8B5CF6', items: [
+    { id: 'inbox', label: 'Inbox', href: '/admin/inbox/', area: 'inbox', hint: 'Read and reply to contact, sponsorship and hospitality messages' },
     { id: 'fans', label: 'Fan Database', href: '/admin/fans/', area: 'fans' },
     { id: 'fans-newsletter', label: 'Newsletter Subscribers', href: '/admin/fans/?source=newsletter', area: 'fans' },
     { id: 'fans-accounts', label: 'Fan Accounts', href: '/admin/fans/?source=fan_account', area: 'fans' },
@@ -52,7 +53,7 @@ const CATEGORIES: Cat[] = [
   ] },
   { id: 'partners', icon: '🤝', label: 'Partners', color: '#14B8A6', items: [
     { id: 'partners', label: 'Partners & Open Categories', href: '/admin/partners/', area: 'partners' },
-    { id: 'fans-sponsorship', label: 'Sponsorship Enquiries', href: '/admin/fans/?source=sponsorship', area: 'fans' },
+    { id: 'inbox-sponsorship', label: 'Sponsorship Enquiries', href: '/admin/inbox/?source=sponsorship', area: 'inbox' },
     { id: 'analytics-partners', label: 'Partner Reports', href: '/admin/analytics/#sec-partners', area: 'analytics' },
     { id: 'cms-partners', label: 'Partner Profiles', href: `${CMS}/partners`, area: 'cms', ext: true },
   ] },
@@ -68,6 +69,7 @@ const CATEGORIES: Cat[] = [
     { id: 'cms-promo', label: 'Promo Bar', href: `${CMS}/settings/entries/promo`, area: 'cms', ext: true },
     { id: 'commentary-settings', label: 'Commentary & Stream Settings', href: '/admin/commentary/', area: 'matchday' },
     { id: 'staff', label: 'Staff Users & Roles', href: '/admin/staff/', area: 'staff' },
+    { id: 'inbox-settings', label: 'Inbox Emails & Templates', href: '/admin/inbox/?settings=1', area: 'inbox', hint: 'New-message alerts, daily summary, saved replies' },
     { id: 'export-log', label: 'Export Log', href: '/admin/fans/#exportLog', area: 'fans' },
     { id: 'activity', label: 'Activity Log', href: '/admin/activity/', area: 'settings' },
   ] },

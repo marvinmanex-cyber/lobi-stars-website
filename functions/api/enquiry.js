@@ -1,5 +1,6 @@
 import { ensureContactsSchema, captureContact, normEmail, splitName } from './_lib/contacts.js';
-import { clientIp, rateLimit, tooMany, ensureFanSchema } from './_lib/fans.js';
+import { clientIp, rateLimit, tooMany, ensureFanSchema, checkTurnstile } from './_lib/fans.js';
+import { syncEnquiries, alertNewThread, maybeDailySummary } from './_lib/inbox.js';
 import { randomId } from './_lib/crypto.js';
 
 // POST /api/enquiry -- saves a Contact Us, partnership or hospitality enquiry
@@ -7,11 +8,21 @@ import { randomId } from './_lib/crypto.js';
 // inbox). Hospitality enquiries are stored as 'contact' rows (the table only
 // allows contact/partnership) with "Hospitality: N guests" in `interest`,
 // and appear in the fan database under the Hospitality Enquiry source.
-export async function onRequestPost({ request, env }) {
+// Every message also becomes an Inbox conversation (Fans & Inbox › Inbox).
+//
+// Spam protection: a hidden "_gotcha" field that people never see (bots fill
+// it in; those messages are quietly dropped), the Turnstile human check when
+// TURNSTILE_SECRET_KEY is set, and limits per connection and per email.
+export async function onRequestPost({ request, env, waitUntil }) {
   await ensureFanSchema(env.DB);
-  if (!(await rateLimit(env.DB, `enquiry:${clientIp(request)}`, 10, 3600))) return tooMany();
+  const ip = clientIp(request);
+  if (!(await rateLimit(env.DB, `enquiry:${ip}`, 10, 3600))) return tooMany();
   let b;
   try { b = await request.json(); } catch { b = {}; }
+  if (typeof b._gotcha === 'string' && b._gotcha.trim()) return Response.json({ ok: true });
+  if (!(await checkTurnstile(env, b['cf-turnstile-response'] || b.turnstileToken, ip))) {
+    return Response.json({ error: 'Please complete the human check and try again.' }, { status: 400 });
+  }
   const s = (v, n = 200) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
   const kind = b.form === 'partnership' ? 'partnership' : b.form === 'hospitality' ? 'hospitality' : 'contact';
   if (kind === 'hospitality') {
@@ -20,6 +31,8 @@ export async function onRequestPost({ request, env }) {
   }
   const email = normEmail(b.email);
   if (!email) return Response.json({ error: 'Please enter a valid email address.' }, { status: 400 });
+
+  if (!(await rateLimit(env.DB, `enquiry-email:${email}`, 5, 3600))) return tooMany();
 
   const name = kind === 'partnership' ? splitName(s(b.name)) : { firstName: s(b.first_name, 60), surname: s(b.last_name, 60) };
   await ensureContactsSchema(env.DB);
@@ -35,5 +48,8 @@ export async function onRequestPost({ request, env }) {
     source: kind === 'partnership' ? 'sponsorship' : kind === 'hospitality' ? 'hospitality' : 'contact_form', refTable: 'enquiries', refId: id,
     email, phone: b.phone, firstName: name.firstName, surname: name.surname, label: s(b.subject || b.interest, 120),
   });
-  return Response.json({ ok: true });
+  const [thread] = await syncEnquiries(env.DB, id);
+  const later = Promise.all([thread ? alertNewThread(env, thread) : null, maybeDailySummary(env)]);
+  if (waitUntil) waitUntil(later); else await later;
+  return Response.json({ ok: true, ref: thread?.ref });
 }

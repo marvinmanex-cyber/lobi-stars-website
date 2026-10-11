@@ -81,7 +81,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('match').hidden = false;
     }
     const cards = [];
-    if (d.messages) cards.push(card({ color: '#F97316', icon: '✉️', num: fmt(d.messages.week), label: 'Messages this week', sub: 'Contact, sponsorship & hospitality', href: '/admin/fans/?source=contact_form', change: chg(d.messages.change, 'vs last week') }));
+    if (d.messages) cards.push(card({ color: '#F97316', icon: '✉️', num: fmt(d.messages.week), label: 'Messages this week', sub: d.messages.waiting ? `${fmt(d.messages.waiting)} waiting for a reply` : 'Contact, sponsorship & hospitality · all answered', href: '/admin/inbox/', change: chg(d.messages.change, 'vs last week') }));
     if (d.contacts) cards.push(card({ color: '#8B5CF6', icon: '👥', num: fmt(d.contacts.week), label: 'New contacts this week', sub: `${fmt(d.contacts.total)} in the fan database`, href: '/admin/fans/', change: chg(d.contacts.change, 'vs last week') }));
     if (d.pageViews) cards.push(card({ color: '#0EA5E9', icon: '📈', num: fmt(d.pageViews.today), label: 'Page views today', sub: 'Compared with yesterday', href: '/admin/analytics/', change: chg(d.pageViews.change, 'vs yesterday') }));
     if (d.listeners) cards.push(card({ color: '#10B981', icon: '🎧', num: fmt(d.listeners.now), label: 'Listening live now', sub: d.listeners.match, href: '/admin/commentary/' }));
