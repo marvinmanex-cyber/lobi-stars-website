@@ -1,80 +1,114 @@
 ---
-// In-seat food orders (Commerce › In-Seat Food › Orders). Only PAID orders
-// (confirmed with Paystack on the server) are prepared; "Awaiting payment"
-// orders are shown separately and must not be prepared. Staff move paid
-// orders: Start preparing -> Out for delivery -> Delivered. Refreshes every
-// 20 seconds.
+// Commerce › In-Seat Food › Orders: every order, searchable and filterable
+// (status, match, date, stand, payment), with full details, customer and
+// payment reference, and an Excel export. The kitchen uses the Live Board.
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
+import PushEnable from '../../components/admin/PushEnable.astro';
 ---
 <Layout title="In-Seat Food Orders | Lobi Stars Admin" description="In-seat food orders." noindex>
   <div class="wrap fo">
     <AdminNav current="food-orders" />
-    <div class="stag">Commerce › In-Seat Food</div>
-    <h1 class="stitle">Food <span class="r">Orders</span></h1>
-    <p class="muted fo-lede">Prepare only <strong>Paid</strong> orders: their payment has been confirmed with Paystack. <strong>Awaiting payment</strong> orders are not paid yet and expire automatically. This page refreshes itself every 20 seconds.</p>
-    <p><a class="btn-o" href="/admin/food-orders/menu/">🍽️ Edit the menu, prices, photos &amp; sold out</a></p>
+    <div class="fo-head">
+      <div><div class="stag">Commerce › In-Seat Food</div><h1 class="stitle">Food <span class="r">Orders</span></h1></div>
+      <div class="fo-tools">
+        <a class="btn-p" href="/admin/food-orders/live/">📺 Live order board</a>
+        <a class="btn-o" href="/admin/food-orders/menu/">🍽️ Menu &amp; prices</a>
+        <PushEnable />
+      </div>
+    </div>
+    <p class="muted fo-lede">Only <strong>Paid</strong> orders are prepared (payment confirmed with Paystack). Use the <strong>Live order board</strong> on matchday; this page is for finding and checking orders.</p>
     <p class="fo-msg" id="msg" role="status" aria-live="polite" hidden></p>
 
     <section class="fo-stats" id="stats" aria-label="Today"></section>
 
-    <div class="fo-filter" role="group" aria-label="Show">
-      <button type="button" data-show="open" aria-pressed="true">To do</button>
-      <button type="button" data-show="awaiting" aria-pressed="false">Awaiting payment <span id="awaitN"></span></button>
-      <button type="button" data-show="today" aria-pressed="false">Today</button>
-      <button type="button" data-show="all" aria-pressed="false">All</button>
-      <span class="fo-updated" id="updated"></span>
-    </div>
-    <div class="fo-list" id="list"><p class="muted">Loading…</p></div>
+    <form class="panel fo-filters" id="filters">
+      <label class="wide">Search <input type="search" name="q" placeholder="Reference, name, phone, email or seat" /></label>
+      <label>Status <select name="status"><option value="">All statuses</option></select></label>
+      <label>Payment <select name="pay"><option value="">Any</option><option value="paid">Paid</option><option value="unpaid">Not paid</option></select></label>
+      <label>Match <select name="event"><option value="">All matches</option></select></label>
+      <label>Stand <select name="stand"><option value="">All stands</option></select></label>
+      <label>From <input type="date" name="from" /></label>
+      <label>To <input type="date" name="to" /></label>
+      <div class="fo-fbtn"><button class="btn-p" type="submit">Filter</button><button class="btn-o" type="button" id="reset">Clear</button><a class="btn-o" id="xlsx" href="#" hidden>⬇ Excel</a></div>
+    </form>
+    <p class="muted fo-count" id="count"></p>
+    <div class="panel fo-table" data-server-paged><div class="scroll" id="table"><p class="muted">Loading…</p></div></div>
+    <div class="fo-pager" id="pager"></div>
 
-    <details class="panel fo-settings">
-      <summary>Settings</summary>
-      <form id="settings" class="fo-set">
-        <label for="expiry">Unpaid orders expire after</label>
-        <input id="expiry" type="number" min="1" max="120" required /> <span>minutes</span>
-        <button class="btn-p" type="submit">Save</button>
+    <details class="panel fo-alerts" id="alertBox">
+      <summary>🔔 Alert settings (for everyone)</summary>
+      <form id="alertForm" class="fo-aform">
+        <p class="muted">Each staff member chooses their own phone alerts with the <strong>🔔 Notifications</strong> button, and can mute sounds with 🔊 in the top bar.</p>
+        <label><input type="checkbox" name="push" /> Phone / computer notifications (Web Push) <span class="muted" id="pushInfo"></span></label>
+        <label><input type="checkbox" name="emailPaid" /> Email for <b>paid</b> orders</label>
+        <label><input type="checkbox" name="emailUnpaid" /> Email for <b>new unpaid</b> orders (off by default to avoid a full inbox)</label>
+        <label class="col">Alert email addresses (one per line) <span class="muted" id="emailInfo"></span><textarea class="form-ta" name="emails" rows="3" placeholder="kitchen@lobistarsfc.com"></textarea></label>
+        <label><input type="checkbox" name="sms" /> SMS / WhatsApp for paid orders (Termii) <span class="muted" id="smsInfo"></span></label>
+        <label class="col">Numbers for SMS / WhatsApp (one per line, +234…)<textarea class="form-ta" name="smsNumbers" rows="2" placeholder="+2348031234567"></textarea></label>
+        <label>Send by <select name="smsChannel"><option value="generic">SMS</option><option value="whatsapp">WhatsApp</option></select></label>
+        <button class="btn-p" type="submit">Save alert settings</button>
       </form>
     </details>
   </div>
+
+  <dialog class="fo-dlg" id="dlg" aria-labelledby="dTitle">
+    <form method="dialog" class="fo-x"><button aria-label="Close">&times;</button></form>
+    <h2 id="dTitle"></h2>
+    <div id="dBody"></div>
+  </dialog>
 </Layout>
 
 <style>
-  .fo { max-width: 1200px; padding-top: 28px; padding-bottom: 80px; }
-  .fo-lede { max-width: 860px; margin-bottom: 16px; }
-  .fo-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
+  .fo { max-width: 1300px; padding-top: 24px; padding-bottom: 80px; }
+  .fo-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  .fo-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .fo-lede { max-width: 860px; margin: 8px 0 14px; }
+  .fo-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 14px; }
   .fo-msg.ok { background: #E8F7EE; color: #17643A; } .fo-msg.err { background: #FDECEC; color: #A3161B; }
-  .fo :global(.fo-stats) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 12px; margin-bottom: 18px; }
-  .fo :global(.fo-stat) { padding: 16px; border-radius: 14px; background: linear-gradient(145deg, color-mix(in srgb, var(--c) 14%, var(--a-card)), var(--a-card) 70%); border: 1px solid color-mix(in srgb, var(--c) 25%, var(--a-line)); }
-  .fo :global(.fo-stat b) { display: block; font: 400 34px/1 'Bebas Neue', sans-serif; color: color-mix(in srgb, var(--c) 80%, var(--a-ink)); }
+  .fo :global(.fo-stats) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 12px; margin-bottom: 16px; }
+  .fo :global(.fo-stat) { padding: 14px 16px; border-radius: 14px; background: linear-gradient(145deg, color-mix(in srgb, var(--c) 14%, var(--a-card)), var(--a-card) 70%); border: 1px solid color-mix(in srgb, var(--c) 25%, var(--a-line)); }
+  .fo :global(.fo-stat b) { display: block; font: 400 32px/1 'Bebas Neue', sans-serif; color: color-mix(in srgb, var(--c) 80%, var(--a-ink)); }
   .fo :global(.fo-stat span) { font: 700 12px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
   .fo :global(.fo-stat small) { display: block; margin-top: 4px; color: var(--lt); font-size: 13px; }
-  .fo-filter { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
-  .fo-filter button { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--d4); background: var(--a-card); color: var(--a-ink); cursor: pointer; font-weight: 700; }
-  .fo-filter button[aria-pressed='true'] { background: #F97316; border-color: #F97316; color: #fff; }
-  .fo-updated { margin-left: auto; color: var(--lt); font-size: 13px; }
-  .fo :global(.fo-list) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
-  .fo :global(.fo-card) { background: var(--a-card); border: 1px solid var(--d4); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 6px 18px rgba(15,17,21,.05); border-top: 5px solid var(--s); }
-  .fo :global(.fo-card.unpaid) { opacity: .7; background: var(--a-soft); }
-  .fo :global(.fo-top) { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-  .fo :global(.fo-seat) { font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .fo :global(.fo-seat small) { display: block; font: 600 13px 'Barlow', sans-serif; letter-spacing: 0; color: var(--lt); }
-  .fo :global(.fo-badge) { padding: 4px 10px; border-radius: 999px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: #fff; background: var(--s); white-space: nowrap; }
-  .fo :global(.fo-who) { font-weight: 700; }
-  .fo :global(.fo-items) { list-style: none; margin: 0; padding: 0; font-size: 15px; }
-  .fo :global(.fo-items li) { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px dashed var(--d4); }
-  .fo :global(.fo-note) { margin: 0; padding: 8px 10px; border-radius: 8px; background: #FFF8E1; color: #6B4700; font-size: 14px; }
-  .fo :global(.fo-meta) { font-size: 13px; color: var(--lt); line-height: 1.5; }
-  .fo :global(.fo-meta a) { color: var(--red-text); font-weight: 700; }
-  .fo :global(.fo-age) { font-weight: 700; } .fo :global(.fo-age.warn) { color: #B45309; } .fo :global(.fo-age.late) { color: #B91C1C; }
-  .fo :global(.fo-acts) { display: flex; gap: 8px; flex-wrap: wrap; }
-  .fo :global(.fo-acts button) { flex: 1 1 auto; min-height: 44px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--d4); background: var(--a-card); color: var(--a-ink); cursor: pointer; font-weight: 700; }
-  .fo :global(.fo-acts .go) { background: var(--g); border-color: var(--g); color: #fff; }
-  .fo :global(.fo-empty) { grid-column: 1 / -1; text-align: center; padding: 40px 16px; color: var(--lt); border: 1px dashed var(--d4); border-radius: 14px; background: var(--a-card); }
-  .fo :global(.fo-empty b) { display: block; font-size: 34px; margin-bottom: 6px; }
-  .fo-settings { margin-top: 26px; padding: 16px 20px !important; }
-  .fo-settings summary { cursor: pointer; font-weight: 700; }
-  .fo-set { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
-  .fo-set input { width: 90px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--d4); font: inherit; }
+  .fo-filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 12px; padding: 16px !important; margin-bottom: 10px; }
+  .fo-filters label { display: flex; flex-direction: column; gap: 4px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .fo-filters .wide { grid-column: 1 / -1; }
+  .fo-filters input, .fo-filters select { padding: 9px 10px; border-radius: 8px; border: 1px solid var(--d4); font: 15px 'Barlow', sans-serif; letter-spacing: 0; text-transform: none; color: var(--a-ink); background: var(--a-card); }
+  .fo-fbtn { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+  .fo-fbtn .btn-p, .fo-fbtn .btn-o { padding: 10px 14px; font-size: 13px; }
+  .fo-count { margin: 6px 0; font-size: 14px; }
+  .fo-table { padding: 0 !important; overflow: hidden; }
+  .fo :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; }
+  .fo :global(th), .fo :global(td) { padding: 9px 10px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--d4); }
+  .fo :global(th) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; white-space: nowrap; }
+  .fo :global(tbody tr) { cursor: pointer; }
+  .fo-dlg :global(.st), .fo :global(.st) { display: inline-block; padding: 3px 9px; border-radius: 999px; color: #fff; font: 700 12px/1.3 'Barlow', sans-serif; white-space: nowrap; background: var(--s); }
+  .fo :global(.ref) { font-weight: 700; white-space: nowrap; }
+  .fo :global(.sm) { color: var(--lt); font-size: 12px; }
+  .fo-pager { display: flex; gap: 6px; justify-content: flex-end; margin-top: 10px; flex-wrap: wrap; }
+  .fo-pager :global(button) { min-width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--d4); background: var(--a-card); color: var(--a-ink); cursor: pointer; font-weight: 700; }
+  .fo-pager :global(button[aria-current]) { background: #F97316; border-color: #F97316; color: #fff; }
+  .fo-alerts { margin-top: 24px; padding: 16px 20px !important; }
+  .fo-alerts summary { cursor: pointer; font-weight: 700; }
+  .fo-aform { display: grid; gap: 10px; margin-top: 12px; max-width: 720px; }
+  .fo-aform label { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .fo-aform label.col { flex-direction: column; align-items: stretch; font-weight: 600; }
+  .fo-aform input[type=checkbox] { width: 18px; height: 18px; accent-color: #16A34A; }
+  .fo-dlg { border: 0; border-radius: 16px; padding: 24px; width: min(640px, 94vw); max-height: 92vh; overflow-y: auto; background: var(--a-card, #fff); color: var(--a-ink, #15181D); box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+  .fo-dlg::backdrop { background: rgba(15,17,21,.6); }
+  .fo-dlg h2 { margin: 0 0 12px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .fo-x { position: absolute; top: 10px; right: 10px; } .fo-x button { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--d4); background: var(--a-card, #fff); font-size: 22px; cursor: pointer; }
+  .fo-dlg :global(dl) { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px; margin: 0 0 14px; font-size: 15px; }
+  .fo-dlg :global(dt) { color: var(--lt); font-weight: 600; }
+  .fo-dlg :global(dd) { margin: 0; overflow-wrap: anywhere; }
+  .fo-dlg :global(.it) { list-style: none; padding: 0; margin: 0 0 12px; }
+  .fo-dlg :global(.it li) { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed var(--d4); }
+  .fo-dlg :global(.tl) { list-style: none; padding: 0; margin: 0 0 14px; font-size: 14px; }
+  .fo-dlg :global(.tl li) { padding: 3px 0; }
+  .fo-dlg :global(.acts) { display: flex; gap: 8px; flex-wrap: wrap; }
+  .fo-dlg :global(.acts button) { min-height: 44px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--d4); background: var(--a-card, #fff); color: var(--a-ink); font-weight: 700; cursor: pointer; }
+  @media (max-width: 600px) { .fo-dlg :global(dl) { grid-template-columns: 1fr; } }
 </style>
 
 <script is:inline>
@@ -83,81 +117,116 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const naira = k => '₦' + (Number(k || 0) / 100).toLocaleString('en-NG');
-  const time = iso => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
-  const day = iso => iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' }) : '';
+  const when = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
   const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'fo-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
-  // The next step for each status: [button label, new status, colour].
-  const NEXT = { PAID: ['Start preparing', 'PREPARING', '#2563EB'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY', '#7C3AED'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED', '#166534'] };
-  const BACK = { PREPARING: ['Back to paid', 'PAID'], OUT_FOR_DELIVERY: ['Back to preparing', 'PREPARING'], DELIVERED: ['Not delivered', 'OUT_FOR_DELIVERY'], CANCELLED: ['Mark refunded', 'REFUNDED'] };
-  let show = 'open', ST = {};
+  const NEXT = { PAID: ['Start preparing', 'PREPARING'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED'] };
+  let ST = {}, rows = [], page = 1, filled = false;
 
   async function api(path, opts = {}) {
-    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code } });
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code }, cache: 'no-store' });
     const d = await res.json().catch(() => ({}));
     if (res.status === 401) location.href = '/admin/login/?next=/admin/food-orders/';
     if (!res.ok) throw new Error(d.error || 'Request failed');
     return d;
   }
-  function card(o) {
-    const st = ST[o.status] || { label: o.status, color: '#6B7280' };
-    const unpaid = o.status === 'AWAITING_PAYMENT';
-    const since = o.paidAt || o.createdAt;
-    const mins = Math.max(0, Math.round((Date.now() - new Date(since).getTime()) / 60000));
-    const active = ['PAID', 'PREPARING', 'OUT_FOR_DELIVERY'].includes(o.status);
-    const age = active ? `<span class="fo-age ${mins >= 20 ? 'late' : mins >= 10 ? 'warn' : ''}">${mins < 1 ? 'paid just now' : `paid ${mins} min ago`}</span> · `
-      : unpaid ? `Expires ${esc(time(o.expiresAt))} · ` : '';
-    const nx = NEXT[o.status], bk = BACK[o.status];
-    const acts = unpaid ? '<p class="fo-meta">Not paid yet: do not prepare.</p>'
-      : (nx ? `<button class="go" style="--g:${nx[2]}" data-s="${nx[1]}">${nx[0]}</button>` : '') +
-        (bk ? `<button data-s="${bk[1]}">${bk[0]}</button>` : '') +
-        (['PAID', 'PREPARING', 'OUT_FOR_DELIVERY'].includes(o.status) ? '<button data-s="CANCELLED">Cancel</button>' : '');
-    return `<article class="fo-card${unpaid ? ' unpaid' : ''}" style="--s:${st.color}" data-id="${esc(o.id)}" data-ref="${esc(o.ref)}">` +
-      `<div class="fo-top"><div class="fo-seat">Seat ${esc(o.seat)}<small>${esc(o.stand || 'Stand not given')}</small></div><span class="fo-badge">${esc(st.label)}</span></div>` +
-      `<div class="fo-who">${esc(o.name || '–')} · ${esc(o.ref)}</div>` +
-      `<ul class="fo-items">${o.items.map(i => `<li><span>${esc(i.qty)} × ${esc(i.name)}</span><span>${naira(i.priceKobo * i.qty)}</span></li>`).join('')}</ul>` +
-      (o.notes ? `<p class="fo-note">📝 ${esc(o.notes)}</p>` : '') +
-      `<p class="fo-meta">${age}${show === 'open' || unpaid ? '' : esc(day(since)) + ' · '}<strong>${naira(o.totalKobo)}</strong>${o.paidLate ? ' · paid after expiry' : ''}<br>` +
-      `📞 <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>${o.paystackRef && !unpaid ? ` · Paystack ${esc(o.paystackRef)}` : ''}` +
-      `${o.statusBy ? `<br>${esc(st.label)} · ${esc(o.statusBy)}, ${esc(time(o.statusAt))}` : ''}</p>` +
-      `<div class="fo-acts">${acts}</div></article>`;
+  const qs = () => { const q = new URLSearchParams(new FormData($('filters'))); for (const [k, v] of [...q]) if (!v) q.delete(k); return q; };
+  const badge = s => `<span class="st" style="--s:${(ST[s] || {}).color || '#6B7280'}">${esc((ST[s] || {}).label || s)}</span>`;
+
+  async function stats() {
+    try {
+      const d = await api('/api/admin/food-orders?show=open');
+      const t = d.today;
+      $('stats').innerHTML = [
+        ['#F97316', t.open, 'To do now', 'Paid, preparing or on the way'], ['#F59E0B', t.awaiting, 'Awaiting payment', 'Not to be prepared'],
+        ['#16A34A', t.orders, 'Paid orders today', naira(t.revenueKobo) + ' paid'], ['#8B5CF6', t.topItems[0] ? t.topItems[0].name : '–', 'Most ordered today', t.topItems.slice(0, 3).map(i => `${i.name} × ${i.qty}`).join(', ')],
+      ].map(([c, n, l, s]) => `<div class="fo-stat" style="--c:${c}"><b>${esc(n)}</b><span>${esc(l)}</span>${s ? `<small>${esc(s)}</small>` : ''}</div>`).join('');
+    } catch {}
   }
   async function load() {
+    const q = qs(); q.set('show', 'list'); q.set('page', page);
     try {
-      const d = await api('/api/admin/food-orders?show=' + show);
-      ST = d.statuses;
-      if (document.activeElement !== $('expiry')) $('expiry').value = d.settings.paymentExpiryMinutes;
-      const t = d.today;
-      $('awaitN').textContent = t.awaiting ? `(${t.awaiting})` : '';
-      $('stats').innerHTML = [
-        ['#F97316', t.open, 'To do now', 'Paid, preparing or on the way'],
-        ['#F59E0B', t.awaiting, 'Awaiting payment', 'Not to be prepared'],
-        ['#16A34A', t.orders, 'Paid orders today', naira(t.revenueKobo) + ' paid'],
-        ['#8B5CF6', t.topItems[0] ? t.topItems[0].name : '–', 'Most ordered today', t.topItems.slice(0, 3).map(i => `${i.name} × ${i.qty}`).join(', ')],
-      ].map(([c, n, l, s]) => `<div class="fo-stat" style="--c:${c}"><b>${esc(n)}</b><span>${esc(l)}</span>${s ? `<small>${esc(s)}</small>` : ''}</div>`).join('');
-      $('list').innerHTML = d.orders.length ? d.orders.map(card).join('')
-        : `<p class="fo-empty"><b>🍽️</b>${show === 'open' ? 'No paid orders waiting. The kitchen is all clear 🎉' : show === 'awaiting' ? 'No orders waiting for payment.' : 'No food orders yet.'}</p>`;
-      $('updated').textContent = 'Updated ' + new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Lagos' });
+      const d = await api('/api/admin/food-orders?' + q);
+      ST = d.statuses; rows = d.orders;
+      if (!filled) {
+        const f = $('filters').elements;
+        Object.entries(ST).forEach(([k, v]) => f.status.add(new Option(v.label, k)));
+        d.matches.forEach(m => f.event.add(new Option(m.label, m.id)));
+        d.stands.forEach(s => f.stand.add(new Option(s, s)));
+        filled = true;
+      }
+      const x = qs(); x.set('show', 'list'); x.set('format', 'xlsx');
+      $('xlsx').href = '/api/admin/food-orders?' + x; $('xlsx').hidden = !d.canExport;
+      $('count').textContent = `${d.total.toLocaleString('en-NG')} order${d.total === 1 ? '' : 's'}`;
+      $('table').innerHTML = rows.length ? '<table><thead><tr><th>Reference</th><th>Status</th><th>Created</th><th>Name</th><th>Seat · Stand</th><th>Items</th><th>Total</th><th>Match</th></tr></thead><tbody>' +
+        rows.map(o => `<tr data-id="${esc(o.id)}" tabindex="0"><td class="ref">${esc(o.ref)}</td><td>${badge(o.status)}</td><td>${esc(when(o.createdAt))}</td><td>${esc(o.name || '–')}<div class="sm">${esc(o.phone)}</div></td>` +
+          `<td>${esc(o.seat)}<div class="sm">${esc(o.stand)}</div></td><td>${esc(o.items.map(i => `${i.qty}× ${i.name}`).join(', '))}</td><td>${naira(o.totalKobo)}</td><td class="sm">${esc(o.match)}</td></tr>`).join('') + '</tbody></table>'
+        : '<div class="empty-state"><b>🍽️</b><p>No orders match these filters.</p></div>';
+      $('pager').innerHTML = d.pages > 1 ? Array.from({ length: d.pages }, (_, i) => i + 1).filter(n => n === 1 || n === d.pages || Math.abs(n - page) <= 2)
+        .map(n => `<button type="button" data-p="${n}" ${n === page ? 'aria-current="page"' : ''}>${n}</button>`).join('') : '';
     } catch (err) { msg(err.message, false); }
   }
-  $('list').addEventListener('click', async e => {
+  function open(o) {
+    $('dTitle').textContent = `Order ${o.ref}`;
+    const nx = NEXT[o.status];
+    $('dBody').innerHTML = `<p>${badge(o.status)} ${o.paidLate ? '<span class="sm">paid after expiry</span>' : ''}</p>` +
+      `<ul class="it">${o.items.map(i => `<li><span>${esc(i.qty)} × ${esc(i.name)}</span><span>${naira(i.priceKobo * i.qty)}</span></li>`).join('')}<li><b>Total</b><b>${naira(o.totalKobo)}</b></li></ul>` +
+      `<dl><dt>Name</dt><dd>${esc(o.name || '–')}</dd><dt>Phone</dt><dd><a href="tel:${esc(o.phone)}">${esc(o.phone)}</a></dd><dt>Email</dt><dd>${esc(o.email)}</dd>` +
+      `<dt>Seat</dt><dd>${esc(o.seat)} · ${esc(o.stand || 'Stand not given')}</dd><dt>Note</dt><dd>${esc(o.notes || '–')}</dd><dt>Match</dt><dd>${esc(o.match || '–')}</dd>` +
+      `<dt>Paystack ref</dt><dd>${esc(o.paystackRef || '–')}</dd><dt>Payment</dt><dd>${esc(o.payment)}</dd></dl>` +
+      `<ul class="tl"><li>🕒 Ordered ${esc(when(o.createdAt))}</li>${o.paidAt ? `<li>🟢 Paid ${esc(when(o.paidAt))}</li>` : `<li>⏳ Pay by ${esc(when(o.expiresAt))}</li>`}` +
+      `${o.preparingAt ? `<li>👩‍🍳 Preparing ${esc(when(o.preparingAt))}</li>` : ''}${o.outAt ? `<li>🏃 Out for delivery ${esc(when(o.outAt))}</li>` : ''}${o.deliveredAt ? `<li>✅ Delivered ${esc(when(o.deliveredAt))}</li>` : ''}` +
+      `${o.cancelledAt ? `<li>✖ Cancelled ${esc(when(o.cancelledAt))}</li>` : ''}${o.statusBy ? `<li>Last change by ${esc(o.statusBy)} ${esc(when(o.statusAt))}</li>` : ''}</ul>` +
+      `<div class="acts" data-id="${esc(o.id)}">${nx ? `<button data-s="${nx[1]}">${nx[0]}</button>` : ''}${['PAID', 'PREPARING', 'OUT_FOR_DELIVERY'].includes(o.status) ? '<button data-s="CANCELLED">Cancel</button>' : ''}${o.status === 'CANCELLED' ? '<button data-s="REFUNDED">Mark refunded</button>' : ''}</div>`;
+    $('dlg').showModal();
+  }
+  $('table').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) open(rows.find(o => o.id === tr.dataset.id)); });
+  $('table').addEventListener('keydown', e => { if (e.key === 'Enter') { const tr = e.target.closest('tr[data-id]'); if (tr) open(rows.find(o => o.id === tr.dataset.id)); } });
+  $('dBody').addEventListener('click', async e => {
     const b = e.target.closest('button[data-s]'); if (!b) return;
-    const c = b.closest('[data-id]');
-    if (b.dataset.s === 'CANCELLED' && !confirm(`Cancel order ${c.dataset.ref}? Any refund is done in the Paystack dashboard; mark it "Refunded" here afterwards.`)) return;
-    b.disabled = true;
-    try { await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ id: c.dataset.id, status: b.dataset.s }) }); await load(); }
-    catch (err) { msg(err.message, false); b.disabled = false; }
+    if (b.dataset.s === 'CANCELLED' && !confirm('Cancel this order? Refunds are done in the Paystack dashboard; mark it "Refunded" here afterwards.')) return;
+    try { await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ id: b.closest('[data-id]').dataset.id, status: b.dataset.s }) }); $('dlg').close(); msg('Saved.', true); load(); stats(); }
+    catch (err) { alert(err.message); }
   });
-  document.querySelectorAll('[data-show]').forEach(b => b.addEventListener('click', () => {
-    show = b.dataset.show;
-    document.querySelectorAll('[data-show]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    load();
-  }));
-  $('settings').addEventListener('submit', async e => {
+  $('filters').addEventListener('submit', e => { e.preventDefault(); page = 1; load(); });
+  $('reset').addEventListener('click', () => { $('filters').reset(); page = 1; load(); });
+  $('pager').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (b) { page = Number(b.dataset.p); load(); } });
+  $('xlsx').addEventListener('click', async e => {
     e.preventDefault();
-    try { await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ settings: { paymentExpiryMinutes: Number($('expiry').value) } }) }); msg('Saved. New orders use this time limit.', true); }
-    catch (err) { msg(err.message, false); }
+    try {
+      const res = await fetch($('xlsx').href, { headers: { 'x-admin-code': code } });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Download failed');
+      const name = (res.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'food-orders.xlsx';
+      const url = URL.createObjectURL(await res.blob());
+      const a = Object.assign(document.createElement('a'), { href: url, download: name });
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+    } catch (err) { msg(err.message, false); }
   });
-  load();
-  setInterval(load, 20000);
+
+  // Alert settings
+  async function loadAlerts() {
+    try {
+      const d = await api('/api/admin/food-alerts?after=999999999');
+      const f = $('alertForm').elements, s = d.settings;
+      f.push.checked = s.push; f.emailPaid.checked = s.emailPaid; f.emailUnpaid.checked = s.emailUnpaid; f.sms.checked = s.sms;
+      f.emails.value = s.emails.join('\n'); f.smsNumbers.value = s.smsNumbers.join('\n'); f.smsChannel.value = s.smsChannel;
+      $('pushInfo').textContent = d.push.ready ? `(${d.push.devices} device${d.push.devices === 1 ? '' : 's'} signed up)` : '(needs the VAPID keys on the server)';
+      $('emailInfo').textContent = d.emailReady ? '' : '(email service not set up yet)';
+      $('smsInfo').textContent = d.smsReady ? '' : '(needs the Termii API key on the server)';
+    } catch {}
+  }
+  $('alertBox').addEventListener('toggle', () => { if ($('alertBox').open) loadAlerts(); });
+  $('alertForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = $('alertForm').elements;
+    try {
+      await api('/api/admin/food-alerts/settings', { method: 'POST', body: JSON.stringify({ push: f.push.checked, emailPaid: f.emailPaid.checked, emailUnpaid: f.emailUnpaid.checked, emails: f.emails.value, sms: f.sms.checked, smsNumbers: f.smsNumbers.value, smsChannel: f.smsChannel.value }) });
+      msg('Alert settings saved.', true);
+    } catch (err) { msg(err.message, false); }
+  });
+
+  // New alerts refresh the list.
+  document.addEventListener('ls:food-alert', () => { load(); stats(); });
+  stats(); load();
+  setInterval(stats, 30000);
 })();
 </script>

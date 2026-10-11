@@ -1,0 +1,164 @@
+---
+// Commerce › In-Seat Food › Live Board: for the kitchen and runners on a
+// tablet or phone. Columns Paid (new) | Preparing | Out for delivery |
+// Delivered (last 30 min), plus a greyed "Awaiting payment" panel. Updates
+// in real time (Server-Sent Events, or every 10 seconds if that fails).
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import PushEnable from '../../../components/admin/PushEnable.astro';
+---
+<Layout title="Live Order Board | Lobi Stars Admin" description="Live in-seat food order board." noindex>
+  <div class="wrap lb">
+    <AdminNav current="food-live" />
+    <div class="lb-head">
+      <div><div class="stag">Commerce › In-Seat Food</div><h1 class="stitle">Live <span class="r">Order Board</span></h1></div>
+      <div class="lb-tools">
+        <span class="lb-live" id="liveState" aria-live="polite">● Connecting…</span>
+        <PushEnable />
+        <a class="btn-o" href="/admin/food-orders/">Orders list</a>
+      </div>
+    </div>
+    <p class="lb-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <div class="lb-board" id="board">
+      <section class="lb-col" style="--c:#16A34A"><h2>Paid – start preparing <span data-n="PAID"></span></h2><div class="lb-cards" data-col="PAID"></div></section>
+      <section class="lb-col" style="--c:#2563EB"><h2>Preparing <span data-n="PREPARING"></span></h2><div class="lb-cards" data-col="PREPARING"></div></section>
+      <section class="lb-col" style="--c:#7C3AED"><h2>Out for delivery <span data-n="OUT_FOR_DELIVERY"></span></h2><div class="lb-cards" data-col="OUT_FOR_DELIVERY"></div></section>
+      <section class="lb-col" style="--c:#166534"><h2>Delivered <small>(last 30 min)</small> <span data-n="DELIVERED"></span></h2><div class="lb-cards" data-col="DELIVERED"></div></section>
+    </div>
+    <section class="lb-await"><h2>Awaiting payment <small>(not paid: do not prepare)</small> <span data-n="AWAITING_PAYMENT"></span></h2><div class="lb-mini" data-col="AWAITING_PAYMENT"></div></section>
+  </div>
+
+  <div class="lb-print" id="printArea" aria-hidden="true"></div>
+</Layout>
+
+<style>
+  .lb { max-width: 1600px; padding-top: 20px; padding-bottom: 60px; }
+  .lb-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  .lb-tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .lb-live { font-weight: 700; color: var(--lt); }
+  .lb-live.on { color: #16A34A; }
+  .lb-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 14px; background: #FDECEC; color: #A3161B; }
+  .lb-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
+  .lb-col { background: color-mix(in srgb, var(--c) 7%, var(--a-bg)); border: 1px solid color-mix(in srgb, var(--c) 25%, var(--a-line)); border-radius: 16px; padding: 12px; min-height: 200px; }
+  .lb-col h2, .lb-await h2 { margin: 0 0 10px; font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: color-mix(in srgb, var(--c, #6B7280) 85%, var(--a-ink)); }
+  .lb-col h2 span, .lb-await h2 span { display: inline-block; min-width: 26px; padding: 2px 8px; border-radius: 999px; background: var(--c, #6B7280); color: #fff; font: 700 13px/1.4 'Barlow', sans-serif; text-align: center; }
+  .lb-col h2 small, .lb-await h2 small { font: 600 12px 'Barlow', sans-serif; letter-spacing: 0; color: var(--lt); }
+  .lb :global(.lb-cards) { display: grid; gap: 10px; }
+  .lb :global(.lb-card) { background: var(--a-card); border-radius: 14px; padding: 12px 14px; border-left: 6px solid var(--c); box-shadow: 0 6px 16px rgba(15,17,21,.07); }
+  .lb :global(.lb-card.new) { animation: lbflash 1.2s ease-out 2; }
+  @keyframes lbflash { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,.7); } 100% { box-shadow: 0 0 0 14px rgba(22,163,74,0); } }
+  .lb :global(.lb-seat) { font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .lb :global(.lb-stand) { font: 700 15px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .5px; text-transform: uppercase; color: var(--lt); }
+  .lb :global(.lb-top) { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+  .lb :global(.lb-timer) { font: 700 15px/1 'Barlow', sans-serif; padding: 5px 9px; border-radius: 999px; background: #E8F7EE; color: #166534; white-space: nowrap; }
+  .lb :global(.lb-timer.warn) { background: #FEF3C7; color: #92400E; }
+  .lb :global(.lb-timer.late) { background: #FEE2E2; color: #B91C1C; }
+  .lb :global(.lb-items) { list-style: none; margin: 8px 0; padding: 0; font-size: 17px; font-weight: 600; }
+  .lb :global(.lb-items li) { padding: 2px 0; }
+  .lb :global(.lb-items b) { display: inline-block; min-width: 30px; color: var(--c); }
+  .lb :global(.lb-note) { margin: 6px 0; padding: 6px 9px; border-radius: 8px; background: #FFF8E1; color: #6B4700; font-size: 14px; font-weight: 600; }
+  .lb :global(.lb-meta) { font-size: 13px; color: var(--lt); margin: 4px 0 8px; }
+  .lb :global(.lb-acts) { display: flex; gap: 6px; flex-wrap: wrap; }
+  .lb :global(.lb-acts button) { min-height: 48px; padding: 8px 12px; border-radius: 12px; border: 1px solid var(--d4); background: var(--a-card); color: var(--a-ink); font-weight: 700; cursor: pointer; }
+  .lb :global(.lb-acts .go) { flex: 1 1 auto; background: var(--g); border-color: var(--g); color: #fff; font-size: 16px; }
+  .lb :global(.lb-empty) { text-align: center; color: var(--lt); padding: 24px 8px; font-size: 14px; }
+  .lb-await { margin-top: 16px; padding: 12px; border-radius: 16px; background: var(--a-soft); border: 1px dashed var(--a-line); --c: #F59E0B; }
+  .lb :global(.lb-mini) { display: flex; gap: 8px; flex-wrap: wrap; }
+  .lb :global(.lb-pill) { padding: 6px 10px; border-radius: 10px; background: var(--a-card); border: 1px solid var(--a-line); font-size: 13px; color: var(--lt); }
+  .lb-print { display: none; }
+  @media (max-width: 1100px) { .lb-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .lb-board { grid-template-columns: 1fr; } }
+  @media print {
+    body * { visibility: hidden !important; }
+    .lb-print, .lb-print * { visibility: visible !important; }
+    .lb-print { display: block !important; position: absolute; left: 0; top: 0; width: 72mm; font: 14px/1.4 monospace; color: #000; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const naira = k => '₦' + (Number(k || 0) / 100).toLocaleString('en-NG');
+  const time = iso => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const NEXT = { PAID: ['Start preparing', 'PREPARING', '#2563EB'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY', '#7C3AED'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED', '#166534'] };
+  const BACK = { PREPARING: 'PAID', OUT_FOR_DELIVERY: 'PREPARING', DELIVERED: 'OUT_FOR_DELIVERY' };
+  let orders = [], known = new Set(), first = true, offset = 0;
+
+  async function api(path, opts = {}) {
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code }, cache: 'no-store' });
+    const d = await res.json().catch(() => ({}));
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/food-orders/live/';
+    if (!res.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  const mins = o => Math.max(0, Math.floor((Date.now() + offset - new Date(o.paidAt || o.createdAt).getTime()) / 60000));
+  function card(o) {
+    const m = mins(o), nx = NEXT[o.status];
+    const timer = o.status === 'DELIVERED' ? `<span class="lb-timer">✓ ${esc(time(o.deliveredAt))}</span>` : `<span class="lb-timer ${m >= 20 ? 'late' : m >= 10 ? 'warn' : ''}" data-timer="${esc(o.paidAt)}">${m} min</span>`;
+    return `<article class="lb-card${!first && !known.has(o.id) ? ' new' : ''}" data-id="${esc(o.id)}">
+      <div class="lb-top"><div><div class="lb-seat">Seat ${esc(o.seat)}</div><div class="lb-stand">${esc(o.stand || 'Stand not given')}</div></div>${timer}</div>
+      <ul class="lb-items">${o.items.map(i => `<li><b>${esc(i.qty)}×</b> ${esc(i.name)}</li>`).join('')}</ul>
+      ${o.notes ? `<p class="lb-note">📝 ${esc(o.notes)}</p>` : ''}
+      <p class="lb-meta">${esc(o.ref)} · ${esc(o.name || '–')} · ${naira(o.totalKobo)}${o.statusBy ? ` · ${esc(o.statusBy)} ${esc(time(o.statusAt))}` : ''}</p>
+      <div class="lb-acts">${nx ? `<button class="go" style="--g:${nx[2]}" data-s="${nx[1]}">${nx[0]}</button>` : ''}${BACK[o.status] ? `<button data-s="${BACK[o.status]}" aria-label="Move back">↩</button>` : ''}<button data-print aria-label="Print kitchen ticket">🖨</button></div>
+    </article>`;
+  }
+  function render() {
+    for (const col of ['PAID', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'AWAITING_PAYMENT']) {
+      const list = orders.filter(o => o.status === col);
+      if (col === 'DELIVERED') list.reverse();
+      document.querySelector(`[data-n="${col}"]`).textContent = list.length;
+      const box = document.querySelector(`[data-col="${col}"]`);
+      box.innerHTML = col === 'AWAITING_PAYMENT'
+        ? (list.length ? list.map(o => `<span class="lb-pill">${esc(o.ref)} · Seat ${esc(o.seat)} · ${naira(o.totalKobo)} · expires ${esc(time(o.expiresAt))}</span>`).join('') : '<span class="lb-pill">None</span>')
+        : (list.length ? list.map(card).join('') : `<p class="lb-empty">${col === 'PAID' ? 'No new paid orders 🎉' : 'Nothing here'}</p>`);
+    }
+    orders.forEach(o => known.add(o.id));
+    first = false;
+  }
+  async function load() {
+    try {
+      const d = await api('/api/admin/food-orders?show=board');
+      offset = new Date(d.serverTime).getTime() - Date.now();
+      orders = d.orders; render(); $('msg').hidden = true;
+    } catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; }
+  }
+  // Timers tick every 20 seconds without reloading.
+  setInterval(() => document.querySelectorAll('[data-timer]').forEach(t => {
+    const o = orders.find(x => x.paidAt === t.dataset.timer); if (!o) return;
+    const m = mins(o); t.textContent = `${m} min`; t.className = `lb-timer ${m >= 20 ? 'late' : m >= 10 ? 'warn' : ''}`;
+  }), 20000);
+
+  $('board').addEventListener('click', async e => {
+    const c = e.target.closest('[data-id]'); if (!c) return;
+    const o = orders.find(x => x.id === c.dataset.id);
+    if (e.target.closest('[data-print]')) return printTicket(o);
+    const b = e.target.closest('button[data-s]'); if (!b) return;
+    b.disabled = true;
+    try { await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ id: o.id, status: b.dataset.s }) }); await load(); }
+    catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; b.disabled = false; load(); }
+  });
+  function printTicket(o) {
+    $('printArea').innerHTML = `<div style="text-align:center;font-weight:bold">LOBI STARS FC – IN-SEAT FOOD</div><hr>` +
+      `<div style="font-size:22px;font-weight:bold">SEAT ${esc(o.seat)}</div><div>${esc(o.stand || '')}</div><div>${esc(o.ref)} · ${esc(o.name || '')}</div><hr>` +
+      o.items.map(i => `<div>${esc(i.qty)} x ${esc(i.name)}</div>`).join('') + (o.notes ? `<hr><div>NOTE: ${esc(o.notes)}</div>` : '') +
+      `<hr><div>Total ${naira(o.totalKobo)} · PAID ${esc(time(o.paidAt))}</div>`;
+    window.print();
+  }
+
+  // Real-time updates: Server-Sent Events, falling back to polling every 10 seconds.
+  let poll = 0;
+  function startPolling() { if (!poll) poll = setInterval(load, 10000); $('liveState').textContent = '● Updating every 10 s'; $('liveState').className = 'lb-live'; }
+  if ('EventSource' in window) {
+    const es = new EventSource('/api/admin/food-orders/stream');
+    es.addEventListener('change', () => { load(); document.dispatchEvent(new Event('ls:food-poll')); });
+    es.onopen = () => { $('liveState').textContent = '● Live'; $('liveState').className = 'lb-live on'; if (poll) { clearInterval(poll); poll = 0; } };
+    es.onerror = () => { if (es.readyState === EventSource.CLOSED) startPolling(); else { $('liveState').textContent = '● Reconnecting…'; $('liveState').className = 'lb-live'; } };
+    setInterval(() => { if (es.readyState !== EventSource.OPEN) startPolling(); }, 15000);
+  } else startPolling();
+  load();
+})();
+</script>

@@ -52,7 +52,7 @@ const RULES = [
   [/^\/api\/admin\/(predictions|motm|commentary)(\/|$)/, 'matchday'],
   [/^\/api\/admin\/awards(\/|$)/, 'content'],
   [/^\/api\/admin\/(fans|members)(\/|$)/, 'fans'],
-  [/^\/api\/admin\/(shirt-orders|food-orders|food-menu|food-photo)(\/|$)/, 'commerce'],
+  [/^\/api\/admin\/(shirt-orders|food-orders|food-menu|food-photo|food-alerts)(\/|$)/, 'commerce'],
   [/^\/api\/admin\/partner-report(\/|$)/, 'partners|analytics'],
   [/^\/api\/admin\/(analytics|broadcast-report)(\/|$)/, 'analytics'],
   [/^\/api\/admin\/export-log(\/|$)/, 'fans|settings'],

@@ -4,13 +4,14 @@ import { ensureMenuSchema, orderingState } from './_lib/foodMenuDb.js';
 import { ensureFoodSchema, nextRef, foodSettings } from './_lib/foodOrders.js';
 import { normalizeNigerianPhone, rateLimit, tooMany, clientIp, ensureFanSchema } from './_lib/fans.js';
 import { listMatches, isMatchDay, toSummary } from './_lib/matchCentre.js';
+import { raiseFoodAlert } from './_lib/foodAlerts.js';
 
 // POST /api/food-checkout { name, seat, stand, phone, email, notes, adultConfirmed, items: [{ id, qty }] }
 // Saves the order straight away as AWAITING_PAYMENT with a reference such as
 // FD-20261011-0042, then returns the Paystack checkout address. Prices come
 // from the server's menu only (never from the browser). The order becomes
 // PAID only when the server has confirmed the payment with Paystack.
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, waitUntil }) {
   let body;
   try { body = await request.json(); } catch { return Response.json({ error: 'Invalid JSON body' }, { status: 400 }); }
   const s = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
@@ -76,6 +77,10 @@ export async function onRequestPost({ request, env }) {
     token, created.toISOString(), expires.toISOString()).run();
 
   const origin = new URL(request.url).origin;
+  // Staff alert "New order – awaiting payment" (in the admin; push/email only if switched on).
+  const alert = raiseFoodAlert(env, 'unpaid', { id, ref, seat, stand, customer_name: name, notes, items_json: JSON.stringify(orderItems), total_kobo: totalKobo }, { waitUntil, origin })
+    .catch(err => console.error('[food] unpaid alert', err));
+  if (waitUntil) waitUntil(alert); else await alert;
   try {
     const p = await initialize(env, {
       email, amountKobo: totalKobo, reference: ref,

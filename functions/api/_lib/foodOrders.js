@@ -18,6 +18,7 @@
 import { verify } from './paystackClient.js';
 import { captureContact, splitName } from './contacts.js';
 import { sendEmail, foodOrderEmailHtml } from './email.js';
+import { raiseFoodAlert } from './foodAlerts.js';
 
 export const STATUS = {
   AWAITING_PAYMENT: { label: 'Awaiting payment', color: '#F59E0B' },
@@ -159,6 +160,8 @@ export async function confirmFoodPayment(env, order, { waitUntil, origin = 'http
     if (stmts.length) await env.DB.batch(stmts);
   } catch { /* menu table not created yet */ }
 
+  // Staff alert "PAID – start preparing" (sent once).
+  await raiseFoodAlert(env, 'paid', paid, { waitUntil, origin }).catch(err => console.error('[food] paid alert', err));
   const n = splitName(order.customer_name || '');
   await captureContact(env, { source: 'food_order', refTable: 'food_orders', refId: order.id, email: order.email, phone: order.phone, firstName: n.firstName, surname: n.surname, label: order.ref });
   if (env.RESEND_API_KEY) {

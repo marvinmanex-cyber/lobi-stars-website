@@ -586,17 +586,46 @@ each package: name, what's included, and a price (or price text such as "From
 | Payment failed / Expired | red / grey | No money taken. Nothing to do. |
 | Cancelled / Refunded | grey | Cancelled by staff; refund done in Paystack. |
 
-### On matchday
-- Keep the page open on a phone or tablet; it refreshes every 20 seconds.
-- **To do** shows paid orders, oldest first, with seat and stand, the fan's
-  name, items, note, phone (tap to call) and how long ago it was paid (amber
+### Running in-seat food on matchday (Live Order Board)
+Open **Food: Live Order Board** on a tablet or phone in the kitchen. It
+updates by itself (the top shows **● Live**); there is no need to refresh.
+
+- Columns: **Paid – start preparing** | **Preparing** | **Out for delivery** |
+  **Delivered** (last 30 minutes). Below, **Awaiting payment** lists orders
+  that are not paid yet: **do not prepare them**.
+- Each card shows the **seat and stand** in big letters, the items and
+  quantities, the fan's note, the total and a **timer** since payment (amber
   after 10 minutes, red after 20).
-- Press **Start preparing**, then **Out for delivery**, then **Delivered**.
-  Steps can't be skipped; use the "Back to…" button if you pressed the wrong one.
-- **Cancel** stops an order. Refunds are done in the **Paystack dashboard**;
-  then press **Mark refunded** here.
-- **Awaiting payment** lists orders that are not paid yet (shown faded).
-- Every change is saved with your name and appears in the Activity Log.
+- Tap **Start preparing**, then **Out for delivery**, then **Delivered**. The
+  fan's order page updates straight away. ↩ moves a card back if you tapped
+  by mistake. Every tap is saved with your name.
+- 🖨 prints a kitchen ticket (seat, items, note).
+- New orders flash when they arrive. Each admin page also shows a pop-up and
+  plays a sound: a soft chime for a **new unpaid** order (🟡) and a loud,
+  urgent beep for a **PAID** order (🟢, start preparing). Tap anywhere on the
+  page once so the browser allows sounds. **🔊** in the top bar mutes them.
+
+### The orders list (Food: Orders)
+Search by reference, name, phone, email or seat, and filter by status,
+payment, match, stand and date. Tap an order to see everything (customer,
+items, note, Paystack reference and the time of each step), move it on,
+cancel it or mark it refunded. **⬇ Excel** downloads the filtered list (staff
+with "Can export fan data" only).
+
+### Turning on order notifications on your phone
+1. Open the admin on your phone (on iPhone, first use Share → **Add to Home
+   Screen** and open the site from the new icon).
+2. Go to **Food: Live Order Board** (or Food: Orders) and tap **🔔 Notifications**.
+3. Choose what you want: **🟢 Paid orders** (on by default) and/or
+   **🟡 New orders awaiting payment**, then tap **Enable notifications** and allow.
+4. Tap **Send test** to check. Notifications arrive even when the admin isn't
+   open. Tap one to open the live board. **Turn off** stops them on that device.
+
+### Alert settings (for everyone, at the bottom of Food: Orders)
+Switch phone notifications on or off for everyone, set **email alerts**
+(paid orders on by default; unpaid orders off to avoid a full inbox) and the
+addresses that receive them, and optionally **SMS / WhatsApp** for paid
+orders (needs a Termii account).
 
 ---
 
