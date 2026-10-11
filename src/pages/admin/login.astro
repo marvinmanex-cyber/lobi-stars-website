@@ -56,7 +56,7 @@ import Layout from '../../layouts/Layout.astro';
 <script>
   const err = document.getElementById('err')!;
   const next = new URLSearchParams(location.search).get('next') || '';
-  const target = /^\/admin(\/|$)/.test(next) && !next.startsWith('/admin/login') ? next : '/admin/matches';
+  const target = /^\/admin(\/|$)/.test(next) && !next.startsWith('/admin/login') ? next : '/admin/dashboard/';
   const tabs = { staff: document.getElementById('tabStaff')!, owner: document.getElementById('tabOwner')! };
   const forms = { staff: document.getElementById('staffForm') as HTMLFormElement, owner: document.getElementById('ownerForm') as HTMLFormElement };
 

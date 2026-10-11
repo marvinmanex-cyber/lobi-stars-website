@@ -1,9 +1,10 @@
 import { hashPassword } from '../../_lib/password.js';
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { ensureAdminSchema, logAdminAction } from '../../_lib/adminSession.js';
+import { ROLES, ASSIGNABLE_ROLES } from '../../_lib/adminRoles.js';
 
-// PUT /api/admin/staff/:id { name?, canExport?, active?, password? }
-// -- update a staff account (owner only). Deactivating signs them out.
+// PUT /api/admin/staff/:id { name?, role?, canExport?, active?, password? }
+// -- update a staff account (Super Admin only). Deactivating signs them out.
 export async function onRequestPut({ request, env, params }) {
   const { admin, denied } = await requireAdminUser(request, env, { ownerOnly: true });
   if (denied) return denied;
@@ -15,16 +16,18 @@ export async function onRequestPut({ request, env, params }) {
 
   const name = typeof b.name === 'string' && b.name.trim() ? b.name.trim().slice(0, 80) : u.name;
   const canExport = typeof b.canExport === 'boolean' ? (b.canExport ? 1 : 0) : u.can_export_fan_data;
+  const role = ASSIGNABLE_ROLES.includes(b.role) ? b.role : u.role;
   const active = typeof b.active === 'boolean' ? (b.active ? 1 : 0) : u.active;
   let hash = u.password_hash;
   if (typeof b.password === 'string' && b.password) {
     if (b.password.length < 10) return Response.json({ error: 'Staff passwords must be at least 10 characters.' }, { status: 400 });
     hash = await hashPassword(b.password);
   }
-  await env.DB.prepare(`UPDATE admin_users SET name = ?, can_export_fan_data = ?, active = ?, password_hash = ? WHERE id = ?`)
-    .bind(name, canExport, active, hash, u.id).run();
+  await env.DB.prepare(`UPDATE admin_users SET name = ?, role = ?, can_export_fan_data = ?, active = ?, password_hash = ? WHERE id = ?`)
+    .bind(name, role, canExport, active, hash, u.id).run();
   const changes = [
     name !== u.name && `name -> ${name}`,
+    role !== u.role && `role -> ${ROLES[role]?.label || role}`,
     canExport !== u.can_export_fan_data && `export permission ${canExport ? 'granted' : 'removed'}`,
     active !== u.active && (active ? 'reactivated' : 'deactivated'),
     hash !== u.password_hash && 'password reset',

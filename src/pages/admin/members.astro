@@ -96,6 +96,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   });
   $('search').addEventListener('submit', e => { e.preventDefault(); load($('q').value.trim()).catch(err => msg(err.message, false)); });
   $('showMembers').addEventListener('click', () => { $('q').value = ''; load().catch(err => msg(err.message, false)); });
-  load().catch(err => msg(err.message, false));
+  // Opened from the admin search (?q=...).
+  const startQ = new URLSearchParams(location.search).get('q') || '';
+  $('q').value = startQ;
+  load(startQ).catch(err => msg(err.message, false));
 })();
 </script>

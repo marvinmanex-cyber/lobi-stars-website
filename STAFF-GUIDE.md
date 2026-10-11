@@ -18,13 +18,45 @@ There are two places where you make changes:
 2. Sign in with **your own staff email and password** (the owner creates
    your account under **Staff**). The owner can instead use the
    **Admin code (owner)** tab. Never share your password or the code.
-3. You'll see links at the top of every admin page: **Analytics**,
-   **Fan database**, **Manage matches**, **Match Centre**, **Manage news**,
-   **Partners** and **Content CMS** (plus **Staff** for the owner).
+3. You land on the **Dashboard** (see "Finding your way around the admin" below).
 
 **The first time you open the Content CMS** on a computer or phone, it asks for
 a **GitHub access token**. This is a long password-like code that the website
 manager gives you once. Paste it in and the CMS remembers it on that device.
+
+### Finding your way around the admin
+- **Menu on the left**, grouped into colour-coded sections: 🏠 Overview,
+  ⚽ Matchday, 📰 Content, 👥 Fans & Inbox, 🛒 Commerce, 🤝 Partners,
+  📊 Analytics and ⚙️ Settings. You only see the sections your role allows.
+  On a computer, the **«** button shrinks the menu to icons (hover an icon to
+  see its links). On a phone, tap **☰** to open the menu.
+- Links with **↗** open the **Content CMS** (or another tool such as the
+  ticket scanner) at the right place.
+- **Top bar:** where you are (e.g. *Fans & Inbox › Fan Database*), a **search
+  box** (fans, members, matches and news), the **🔔 bell** (new messages,
+  Predict & Win prizes not yet paid, commentary stream problems) and who is
+  signed in, with **Log out**.
+- **Dashboard:** the next match (with a button to open live match control on
+  match day), messages and new contacts this week, page views today, people
+  listening to the commentary, the latest Predict & Win winner and whether the
+  prize is paid, plus quick actions.
+- All the old admin addresses (e.g. /admin/matches, /admin/fans) still work.
+
+### Roles (set by a Super Admin in Settings › Staff Users & Roles)
+| Role | Can open |
+|---|---|
+| Super Admin | Everything, including staff accounts and roles |
+| Media | Content (news, awards, CMS) and the Match Centre's matchday content (view) |
+| Matchday Operator | Matchday: matches, live match control, squad, Predict & Win, commentary |
+| Commercial | Commerce, Partners (and the Inbox when it arrives) |
+| Fan Relations | Fan database, members (and the Inbox when it arrives) |
+| Analyst | Analytics only, read-only |
+| All areas | Accounts made before roles existed: everything except staff accounts |
+
+Downloading contact lists also needs **Can export fan data** on the account.
+If you open a screen your role doesn't include, you're taken back to the
+Dashboard with a note. **Settings › Activity Log** shows every staff action
+(exports, deletions, staff, award and membership changes).
 
 > **Tip:** Bookmark https://lobistarsfc.com/admin/login on the devices you use.
 

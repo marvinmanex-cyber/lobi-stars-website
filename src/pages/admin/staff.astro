@@ -7,7 +7,16 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <AdminNav current="staff" />
     <div class="stag">Admin</div>
     <h1 class="stitle">Staff <span class="r">Accounts</span></h1>
-    <p class="muted st-lede">Only the owner (signed in with the admin code) can manage staff. Give <strong>Can export fan data</strong> only to people who need to download the fan database.</p>
+    <p class="muted st-lede">Only Super Admins can manage staff. Each person's <strong>role</strong> decides which parts of the admin they see. Give <strong>Can export fan data</strong> only to people who need to download contact lists.</p>
+    <details class="st-roles"><summary>What each role can open</summary><ul>
+      <li><strong>Super Admin:</strong> everything, including staff accounts and roles.</li>
+      <li><strong>Media:</strong> Content (news, awards, CMS) and the Match Centre's matchday content.</li>
+      <li><strong>Matchday Operator:</strong> Matchday (matches, live control, squad, Predict &amp; Win, commentary).</li>
+      <li><strong>Commercial:</strong> Commerce, Partners and (soon) the Inbox.</li>
+      <li><strong>Fan Relations:</strong> Fan database, members and (soon) the Inbox.</li>
+      <li><strong>Analyst:</strong> Analytics only, read-only.</li>
+      <li><strong>All areas:</strong> accounts made before roles existed: everything except staff accounts.</li>
+    </ul></details>
     <p class="st-msg" id="msg" role="status" aria-live="polite" hidden></p>
 
     <form class="panel st-form" id="newForm">
@@ -16,6 +25,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <div class="form-grp"><label class="form-lbl" for="n-name">Name</label><input class="form-inp" id="n-name" required /></div>
         <div class="form-grp"><label class="form-lbl" for="n-email">Email</label><input class="form-inp" id="n-email" type="email" required /></div>
       </div>
+      <div class="form-grp"><label class="form-lbl" for="n-role">Role</label><select class="form-sel" id="n-role" required><option value="">Choose a role…</option></select></div>
       <div class="form-grp"><label class="form-lbl" for="n-pass">Temporary password (10+ characters)</label><input class="form-inp" id="n-pass" type="text" minlength="10" required autocomplete="off" /></div>
       <label class="st-check"><input type="checkbox" id="n-export" /> Can export fan data (download the fan database)</label>
       <button type="submit" class="btn-p">Add staff account</button>
@@ -32,6 +42,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .st-msg.ok { background: #E8F7EE; color: #17643A; } .st-msg.err { background: #FDECEC; color: #A3161B; }
   .st-form { margin-bottom: 26px; }
   .st-form h2 { margin: 0 0 14px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .st-roles { margin: 0 0 20px; max-width: 760px; } .st-roles summary { cursor: pointer; font-weight: 700; } .st-roles ul { margin: 8px 0 0 18px; line-height: 1.7; }
+  .st-list :global(select) { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--d4); font: inherit; font-size: 13px; }
   .st-check { display: flex; gap: 10px; align-items: center; margin: 6px 0 16px; font-weight: 600; }
   .st-check input { width: 18px; height: 18px; accent-color: var(--red); }
   .st-list :global(table) { width: 100%; border-collapse: collapse; font-size: 15px; }
@@ -57,10 +69,12 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   }
   async function load() {
     try {
-      const { staff } = await api('/api/admin/staff');
-      $('list').innerHTML = staff.length ? '<div class="scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Can export</th><th>Last login</th><th></th></tr></thead><tbody>' +
+      const { staff, roles } = await api('/api/admin/staff');
+      if ($('n-role').options.length < 2) $('n-role').insertAdjacentHTML('beforeend', roles.map(r => `<option value="${esc(r.id)}">${esc(r.label)}</option>`).join(''));
+      const roleSel = s => `<select data-role aria-label="Role for ${esc(s.name)}">${roles.map(r => `<option value="${esc(r.id)}"${r.id === s.role ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select>`;
+      $('list').innerHTML = staff.length ? '<div class="scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Can export</th><th>Last login</th><th></th></tr></thead><tbody>' +
         staff.map(s => `<tr class="${s.active ? '' : 'inactive'}" data-id="${esc(s.id)}"><td>${esc(s.name)}${s.active ? '' : ' (deactivated)'}</td><td>${esc(s.email)}</td>` +
-          `<td>${s.can_export_fan_data ? 'Yes' : 'No'}</td><td>${s.last_login_at ? esc(s.last_login_at) + ' UTC' : 'Never'}</td><td>` +
+          `<td>${roleSel(s)}</td><td>${s.can_export_fan_data ? 'Yes' : 'No'}</td><td>${s.last_login_at ? esc(s.last_login_at) + ' UTC' : 'Never'}</td><td>` +
           `<button data-act="export">${s.can_export_fan_data ? 'Remove export' : 'Allow export'}</button>` +
           `<button data-act="active">${s.active ? 'Deactivate' : 'Reactivate'}</button><button data-act="password">Reset password</button></td></tr>`).join('') +
         '</tbody></table></div>' : '<p class="muted">No staff accounts yet.</p>';
@@ -77,10 +91,15 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     try { await api(`/api/admin/staff/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(body) }); show('Saved.', true); load(); }
     catch (err) { show(err.message, false); }
   });
+  $('list').addEventListener('change', async e => {
+    const sel = e.target.closest('select[data-role]'); if (!sel) return;
+    try { await api(`/api/admin/staff/${encodeURIComponent(sel.closest('tr').dataset.id)}`, { method: 'PUT', body: JSON.stringify({ role: sel.value }) }); show('Role saved. It applies the next time they open a page.', true); load(); }
+    catch (err) { show(err.message, false); }
+  });
   $('newForm').addEventListener('submit', async e => {
     e.preventDefault();
     try {
-      await api('/api/admin/staff', { method: 'POST', body: JSON.stringify({ name: $('n-name').value, email: $('n-email').value, password: $('n-pass').value, canExport: $('n-export').checked }) });
+      await api('/api/admin/staff', { method: 'POST', body: JSON.stringify({ name: $('n-name').value, email: $('n-email').value, password: $('n-pass').value, role: $('n-role').value, canExport: $('n-export').checked }) });
       show('Staff account created. Share the email and temporary password with them privately.', true);
       e.target.reset(); load();
     } catch (err) { show(err.message, false); }

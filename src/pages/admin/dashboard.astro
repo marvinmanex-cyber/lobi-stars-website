@@ -1,0 +1,96 @@
+---
+// Admin home: the next match, messages, new contacts, page views, live
+// listeners, the latest Predict & Win winner and quick actions. Cards only
+// appear for areas the signed-in person's role can see.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Dashboard | Lobi Stars Admin" description="Lobi Stars FC admin dashboard." noindex>
+  <div class="wrap db">
+    <AdminNav current="dashboard" />
+    <div class="db-head">
+      <div>
+        <p class="db-hello" id="hello">Welcome back</p>
+        <h1 class="db-title">Dashboard</h1>
+      </div>
+      <p class="db-date" id="today"></p>
+    </div>
+
+    <section class="db-match" id="match" hidden aria-label="Next match"></section>
+    <section class="db-cards" id="cards" aria-label="Key figures"></section>
+    <section class="db-quick-wrap" id="quickWrap" hidden>
+      <h2 class="db-h2">Quick actions</h2>
+      <div class="db-quick" id="quick"></div>
+    </section>
+    <p class="db-empty" id="empty" hidden>Nothing to show for your role yet. Use the menu to open your screens.</p>
+  </div>
+</Layout>
+
+<style>
+  .db { max-width: 1200px; padding-top: 28px; padding-bottom: 80px; }
+  .db-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .db-hello { margin: 0; color: var(--lt); font-weight: 600; }
+  .db-title { margin: 2px 0 0; font: 400 44px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .db-date { margin: 0; color: var(--lt); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .db-h2 { margin: 28px 0 12px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .db :global(.db-match) { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding: 20px 22px; border-radius: 18px; color: #fff; background: radial-gradient(130% 160% at 0% 0%, #A3161B 0%, #4D0B0D 55%, #15181D 100%); box-shadow: 0 16px 40px rgba(77,11,13,.25); margin-bottom: 18px; }
+  .db :global(.db-match-k) { margin: 0; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .db :global(.db-match-t) { margin: 6px 0 4px; font: 400 clamp(26px, 4vw, 36px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .db :global(.db-match-s) { margin: 0; color: rgba(255,255,255,.8); font-size: 14px; }
+  .db :global(.db-match-info) { flex: 1; min-width: 220px; }
+  .db :global(.db-score) { font: 400 48px/1 'Bebas Neue', sans-serif; padding: 6px 16px; border-radius: 12px; background: rgba(0,0,0,.3); }
+  .db :global(.db-live) { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: #E31E24; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; margin-left: 8px; vertical-align: middle; }
+  .db :global(.db-btn) { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 999px; background: #FFC72C; color: #15181D; text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .db :global(.db-btn.ghost) { background: rgba(255,255,255,.12); color: #fff; }
+  .db :global(.db-cards) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 14px; }
+  .db :global(.db-card) { position: relative; display: block; padding: 18px; border-radius: 16px; text-decoration: none; color: var(--white); background: linear-gradient(145deg, color-mix(in srgb, var(--c) 14%, #fff), #fff 70%); border: 1px solid color-mix(in srgb, var(--c) 25%, #E3E6EA); box-shadow: 0 8px 22px rgba(15,17,21,.05); transition: transform .15s, box-shadow .15s; }
+  .db :global(a.db-card:hover) { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(15,17,21,.09); }
+  .db :global(.db-ic) { width: 42px; height: 42px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; background: color-mix(in srgb, var(--c) 20%, #fff); }
+  .db :global(.db-num) { display: block; margin: 12px 0 2px; font: 400 40px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: color-mix(in srgb, var(--c) 80%, #15181D); }
+  .db :global(.db-lbl) { font: 700 13px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .db :global(.db-chg) { position: absolute; top: 18px; right: 18px; font: 700 13px/1 'Barlow', sans-serif; padding: 4px 8px; border-radius: 999px; }
+  .db :global(.db-chg.up) { background: #E8F7EE; color: #17643A; } .db :global(.db-chg.down) { background: #FDECEC; color: #A3161B; } .db :global(.db-chg.flat) { background: #F1F2F4; color: #5B6472; }
+  .db :global(.db-sub) { display: block; margin-top: 4px; font-size: 13px; color: var(--lt); }
+  .db :global(.db-quick) { display: flex; gap: 10px; flex-wrap: wrap; }
+  .db :global(.db-q) { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 12px; background: #fff; border: 1px solid var(--d4); text-decoration: none; color: var(--white); font-weight: 700; box-shadow: 0 4px 12px rgba(15,17,21,.04); }
+  .db :global(.db-q:hover) { border-color: var(--red); color: var(--red-text); }
+  .db-empty { color: var(--lt); padding: 30px 0; }
+</style>
+
+<script>
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = (id: string) => document.getElementById(id)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+  const fmt = (n: number) => Number(n || 0).toLocaleString('en-NG');
+  const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) + ' WAT';
+  $('today').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
+  document.addEventListener('ls:admin', e => { $('hello').textContent = `Welcome back, ${(e as CustomEvent).detail.name.split(' ')[0]}`; });
+
+  const chg = (c: number | null | undefined, label: string) => c == null ? '' : `<span class="db-chg ${c > 0 ? 'up' : c < 0 ? 'down' : 'flat'}" aria-label="${c > 0 ? 'up' : c < 0 ? 'down' : 'no change'} ${Math.abs(c)}% ${label}">${c > 0 ? '▲' : c < 0 ? '▼' : '•'} ${Math.abs(c)}%</span>`;
+  const card = (o: { color: string; icon: string; num: string; label: string; sub?: string; href?: string; change?: string }) =>
+    `<${o.href ? `a href="${esc(o.href)}"` : 'div'} class="db-card" style="--c:${o.color}"><span class="db-ic" aria-hidden="true">${o.icon}</span>${o.change || ''}<span class="db-num">${o.num}</span><span class="db-lbl">${esc(o.label)}</span>${o.sub ? `<span class="db-sub">${esc(o.sub)}</span>` : ''}</${o.href ? 'a' : 'div'}>`;
+
+  fetch('/api/admin/dashboard', { headers: { 'x-admin-code': code } }).then(r => r.json()).then(d => {
+    const m = d.nextMatch;
+    if (m) {
+      const live = m.status === 'live' || m.status === 'half-time';
+      $('match').innerHTML = `<div class="db-match-info"><p class="db-match-k">${live ? 'Live now' : m.matchDay ? 'Match day' : 'Next match'}${live ? '<span class="db-live">● LIVE</span>' : ''}</p>` +
+        `<p class="db-match-t">${esc(m.home)} vs ${esc(m.away)}</p><p class="db-match-s">${esc(m.competition || '')} · ${esc(when(m.date))} · ${esc(m.venue || '')}</p></div>` +
+        (m.score && live ? `<span class="db-score">${esc(m.score)}</span>` : '') +
+        (m.controlHref ? `<a class="db-btn" href="${esc(m.controlHref)}">${live ? 'Update score' : m.matchDay && m.home_game ? '▶ Kick-off control' : 'Open Match Centre'}</a>` : '');
+      $('match').hidden = false;
+    }
+    const cards = [];
+    if (d.messages) cards.push(card({ color: '#F97316', icon: '✉️', num: fmt(d.messages.week), label: 'Messages this week', sub: 'Contact, sponsorship & hospitality', href: '/admin/fans/?source=contact_form', change: chg(d.messages.change, 'vs last week') }));
+    if (d.contacts) cards.push(card({ color: '#8B5CF6', icon: '👥', num: fmt(d.contacts.week), label: 'New contacts this week', sub: `${fmt(d.contacts.total)} in the fan database`, href: '/admin/fans/', change: chg(d.contacts.change, 'vs last week') }));
+    if (d.pageViews) cards.push(card({ color: '#0EA5E9', icon: '📈', num: fmt(d.pageViews.today), label: 'Page views today', sub: 'Compared with yesterday', href: '/admin/analytics/', change: chg(d.pageViews.change, 'vs yesterday') }));
+    if (d.listeners) cards.push(card({ color: '#10B981', icon: '🎧', num: fmt(d.listeners.now), label: 'Listening live now', sub: d.listeners.match, href: '/admin/commentary/' }));
+    if (d.winner) cards.push(card({ color: '#EAB308', icon: '🏆', num: d.winner.name ? esc(d.winner.name) : 'No winner', label: 'Latest Predict & Win', sub: `${d.winner.match} (${d.winner.score}) · ${d.winner.name ? (d.winner.paid ? 'Prize paid' : 'Prize NOT paid yet') : 'No exact score'}`, href: d.winner.href }));
+    $('cards').innerHTML = cards.join('');
+    if (d.quick?.length) {
+      $('quick').innerHTML = d.quick.map((q: any) => `<a class="db-q" href="${esc(q.href)}"><span aria-hidden="true">${q.icon}</span>${esc(q.label)}</a>`).join('');
+      $('quickWrap').hidden = false;
+    }
+    $('empty').hidden = !!(m || cards.length || d.quick?.length);
+  }).catch(() => { $('empty').hidden = false; });
+</script>

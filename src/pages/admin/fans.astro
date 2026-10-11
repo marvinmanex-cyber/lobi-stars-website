@@ -40,7 +40,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <div class="panel fd-table"><div class="scroll" id="table"><p class="muted">Loading…</p></div></div>
     <div class="fd-pager" id="pager"></div>
 
-    <section class="panel">
+    <section class="panel" id="exportLog">
       <h2>Download &amp; privacy log</h2>
       <div class="scroll" id="log"></div>
     </section>
@@ -133,7 +133,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       Object.entries(sources).forEach(([k, v]) => sel.add(new Option(v, k)));
       d.states.forEach(s => st.add(new Option(s, s)));
       filled = true;
-      fetch('/api/admin/me', { headers: { 'x-admin-code': code } }).then(r => r.json()).then(m => { if (m.admin?.role === 'owner') $('backfill').hidden = false; }).catch(() => {});
+      // Sidebar links such as "Newsletter subscribers" open with a source filter (?source=newsletter).
+      const want = new URLSearchParams(location.search).get('source');
+      if (want && sources[want] && !sel.value) { sel.value = want; return load(); }
+      fetch('/api/admin/me', { headers: { 'x-admin-code': code } }).then(r => r.json()).then(m => { if (m.admin?.roleId === 'super_admin') $('backfill').hidden = false; }).catch(() => {});
     }
     $('count').textContent = `${d.total.toLocaleString('en-NG')} ${d.total === 1 ? 'person' : 'people'}`;
     const head = COLS.map(([k, l]) => k
@@ -209,6 +212,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       loadLog();
     } catch (err) { msg(err.message, false); }
   }));
+  // Opened from the admin search (?q=...).
+  const startQ = new URLSearchParams(location.search).get('q');
+  if (startQ) $('filters').elements.q.value = startQ;
   load(); loadLog();
 })();
 </script>

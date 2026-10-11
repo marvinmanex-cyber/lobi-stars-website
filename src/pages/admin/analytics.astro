@@ -31,7 +31,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 
     <section class="kpis" id="kpis" aria-label="Key figures"></section>
 
-    <section class="panel">
+    <section class="panel" id="sec-sources">
       <div class="ph"><h2>Where our contacts come from</h2></div>
       <p class="muted small">Share of all contacts in the fan database that came through each source. One person can come through several sources (for example, a ticket buyer who also joined the newsletter), so these can add up to more than 100%.</p>
       <div class="src-cards" id="srcCards"></div>
@@ -70,19 +70,19 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <div id="recent"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="sec-matchday">
       <div class="ph"><h2>Matchday</h2></div>
       <p class="muted small">Lobi Stars home games. MOTM votes and predictions appear once those features are switched on.</p>
       <div id="matchday"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="sec-commentary">
       <div class="ph"><h2>Lobi Stars FC Live (commentary)</h2><a class="btn-o sm" id="broadcastCsv" href="#">Broadcast Report (CSV)</a></div>
       <p class="muted small">Listens = presses of Play. Unique listeners = listening sessions. Peak = most people listening at the same time.</p>
       <div id="broadcast"></div>
     </section>
 
-    <section class="panel">
+    <section class="panel" id="sec-partners">
       <div class="ph"><h2>Partners</h2><a class="btn-p sm" id="partnerCsv" href="#">Export Partner Report (CSV)</a></div>
       <p class="muted small">Impressions = page views in the period (every page shows every partner's logo in the footer). Clicks = visits to the partner's website from ours.</p>
       <div id="partners"></div>

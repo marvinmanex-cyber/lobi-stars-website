@@ -127,7 +127,7 @@ test('non-admins are blocked and staff without export permission cannot download
   assert.equal(page.status, 302, 'dashboard page redirects to login');
 
   const email = mail('staff');
-  const created = await call('/api/admin/staff', { method: 'POST', admin: true, body: { name: `Seed Staff ${RUN}`, email, password: 'Staff-Password-1', canExport: false } });
+  const created = await call('/api/admin/staff', { method: 'POST', admin: true, body: { name: `Seed Staff ${RUN}`, email, password: 'Staff-Password-1', role: 'fan_relations', canExport: false } });
   assert.ok(created.status < 300, JSON.stringify(created.data));
   const login = await call('/api/admin/login', { method: 'POST', body: { email, password: 'Staff-Password-1' } });
   assert.equal(login.status, 200);

@@ -1,47 +1,271 @@
 ---
-// Shared navigation for admin pages, plus who is signed in and a log-out button.
+// The admin shell: a left sidebar grouped into colour-coded categories
+// (collapsible on desktop, a slide-out menu on phones) and a top bar with the
+// breadcrumb, admin search, notifications and who is signed in.
+// The sidebar only shows what the signed-in person's role can open (the
+// server enforces the same rules: functions/api/_lib/adminRoles.js).
+// Pages keep including it the same way: <AdminNav current="fans" />.
 interface Props { current?: string }
 const { current = '' } = Astro.props;
-const links = [
-  ['analytics', 'Analytics', '/admin/analytics'],
-  ['fans', 'Fan database', '/admin/fans'],
-  ['matches', 'Manage matches', '/admin/matches'],
-  ['match-centre', 'Match Centre', '/admin/match-centre'],
-  ['predictions', 'Predict & Win', '/admin/predictions'],
-  ['awards', 'Fan Awards', '/admin/awards'],
-  ['members', 'Members', '/admin/members'],
-  ['shirt-orders', 'Shirt orders', '/admin/shirt-orders'],
-  ['commentary', 'Commentary', '/admin/commentary'],
-  ['news', 'Manage news', '/admin/news'],
-  ['partners', 'Partners', '/admin/partners'],
-  ['staff', 'Staff', '/admin/staff'],
-  ['cms', 'Content CMS', '/admin/'],
-];
----
-<nav class="an" aria-label="Admin">
-  <a href="/" class="an-back">&larr; Site</a>
-  {links.map(([id, label, href]) => <a href={href} aria-current={id === current ? 'page' : undefined} data-an={id}>{label}</a>)}
-  <span class="an-who" id="anWho"></span>
-  <button type="button" class="an-out" id="anOut">Log out</button>
-</nav>
 
-<style>
-  .an { display: flex; gap: 6px 18px; flex-wrap: wrap; align-items: center; margin-bottom: 26px; font: 600 14px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
-  .an a { color: var(--lt); text-decoration: none; }
-  .an a:hover, .an a[aria-current='page'] { color: var(--red-text); }
-  .an .an-back { color: var(--gold-text); }
-  .an-who { margin-left: auto; color: var(--lt); text-transform: none; letter-spacing: 0; font: 400 13px/1.3 'Barlow', sans-serif; }
-  .an-out { border: 1px solid var(--d4); background: #fff; border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; color: var(--white); }
+type Item = { id: string; label: string; href: string; area: string; ext?: boolean; hint?: string };
+type Cat = { id: string; icon: string; label: string; color: string; items: Item[] };
+const CMS = '/admin/#/collections';
+const CATEGORIES: Cat[] = [
+  { id: 'overview', icon: '🏠', label: 'Overview', color: '#E31E24', items: [
+    { id: 'dashboard', label: 'Dashboard', href: '/admin/dashboard/', area: 'overview' },
+  ] },
+  { id: 'matchday', icon: '⚽', label: 'Matchday', color: '#10B981', items: [
+    { id: 'matches', label: 'Fixtures & Results', href: '/admin/matches/', area: 'matchday' },
+    { id: 'match-centre', label: 'Live Match Control', href: '/admin/match-centre/', area: 'matchday-content', hint: 'Kick-off, score, squad, Man of the Match, stats, streams, content checklist' },
+    { id: 'predictions', label: 'Predict & Win', href: '/admin/predictions/', area: 'matchday', hint: 'Entries, winners and prize payments' },
+    { id: 'commentary', label: 'Live Commentary', href: '/admin/commentary/', area: 'matchday' },
+    { id: 'cms-table', label: 'League Table', href: `${CMS}/settings/entries/leagueTable`, area: 'cms', ext: true },
+  ] },
+  { id: 'content', icon: '📰', label: 'Content', color: '#0EA5E9', items: [
+    { id: 'news', label: 'News & Articles', href: '/admin/news/', area: 'content', hint: 'Including Team News' },
+    { id: 'awards', label: 'Fan Awards', href: '/admin/awards/', area: 'content', hint: 'Goal / Player of the Month, Player of the Season' },
+    { id: 'cms-players', label: 'Squad & Players', href: `${CMS}/players`, area: 'cms', ext: true },
+    { id: 'cms-videos', label: 'Videos', href: `${CMS}/settings/entries/videos`, area: 'cms', ext: true },
+    { id: 'cms-gallery', label: 'Gallery', href: `${CMS}/gallery`, area: 'cms', ext: true },
+    { id: 'cms-club', label: 'Club Pages', href: `${CMS}/settings/entries/history`, area: 'cms', ext: true, hint: 'History, Honours, Stadium, Fan Clubs' },
+    { id: 'cms', label: 'Content CMS (everything)', href: '/admin/', area: 'cms', ext: true },
+  ] },
+  { id: 'fans', icon: '👥', label: 'Fans & Inbox', color: '#8B5CF6', items: [
+    { id: 'fans', label: 'Fan Database', href: '/admin/fans/', area: 'fans' },
+    { id: 'fans-newsletter', label: 'Newsletter Subscribers', href: '/admin/fans/?source=newsletter', area: 'fans' },
+    { id: 'fans-accounts', label: 'Fan Accounts', href: '/admin/fans/?source=fan_account', area: 'fans' },
+    { id: 'members', label: 'Members', href: '/admin/members/', area: 'fans' },
+  ] },
+  { id: 'commerce', icon: '🛒', label: 'Commerce', color: '#F97316', items: [
+    { id: 'scan', label: 'Ticket Scanner', href: '/scan/', area: 'commerce', ext: true },
+    { id: 'shirt-orders', label: 'Shirt Personalisation Orders', href: '/admin/shirt-orders/', area: 'commerce' },
+    { id: 'cms-shop', label: 'Shop Products', href: `${CMS}/settings/entries/shop`, area: 'cms', ext: true },
+    { id: 'cms-hospitality', label: 'Hospitality Packages', href: `${CMS}/settings/entries/hospitality`, area: 'cms', ext: true },
+    { id: 'cms-membership', label: 'Membership Settings', href: `${CMS}/settings/entries/membership`, area: 'cms', ext: true },
+  ] },
+  { id: 'partners', icon: '🤝', label: 'Partners', color: '#14B8A6', items: [
+    { id: 'partners', label: 'Partners & Open Categories', href: '/admin/partners/', area: 'partners' },
+    { id: 'fans-sponsorship', label: 'Sponsorship Enquiries', href: '/admin/fans/?source=sponsorship', area: 'fans' },
+    { id: 'analytics-partners', label: 'Partner Reports', href: '/admin/analytics/#sec-partners', area: 'analytics' },
+    { id: 'cms-partners', label: 'Partner Profiles', href: `${CMS}/partners`, area: 'cms', ext: true },
+  ] },
+  { id: 'analytics', icon: '📊', label: 'Analytics', color: '#EC4899', items: [
+    { id: 'analytics', label: 'Traffic & Engagement', href: '/admin/analytics/', area: 'analytics' },
+    { id: 'analytics-sources', label: 'Contact Sources', href: '/admin/analytics/#sec-sources', area: 'analytics' },
+    { id: 'analytics-matchday', label: 'Matchday Analytics', href: '/admin/analytics/#sec-matchday', area: 'analytics' },
+    { id: 'analytics-commentary', label: 'Commentary / Broadcast Report', href: '/admin/analytics/#sec-commentary', area: 'analytics' },
+  ] },
+  { id: 'settings', icon: '⚙️', label: 'Settings', color: '#64748B', items: [
+    { id: 'cms-site', label: 'Site Settings & Social Links', href: `${CMS}/settings/entries/site`, area: 'cms', ext: true },
+    { id: 'cms-promo', label: 'Promo Bar', href: `${CMS}/settings/entries/promo`, area: 'cms', ext: true },
+    { id: 'commentary-settings', label: 'Commentary & Stream Settings', href: '/admin/commentary/', area: 'matchday' },
+    { id: 'staff', label: 'Staff Users & Roles', href: '/admin/staff/', area: 'staff' },
+    { id: 'export-log', label: 'Export Log', href: '/admin/fans/#exportLog', area: 'fans' },
+    { id: 'activity', label: 'Activity Log', href: '/admin/activity/', area: 'settings' },
+  ] },
+];
+const active = CATEGORIES.flatMap(c => c.items.map(i => ({ c, i }))).find(x => x.i.id === current);
+const crumbs = active ? [active.c.label, active.i.label] : ['Admin'];
+---
+<div class="ash" data-current={current}>
+  <aside class="ash-side" id="ashSide" aria-label="Admin menu">
+    <div class="ash-brand">
+      <a href="/admin/dashboard/" class="ash-logo"><img src="/images/lobi-stars-fc.jpg" alt="" width="34" height="34" /><span><b>Lobi Stars</b><small>Admin</small></span></a>
+      <button type="button" class="ash-collapse" id="ashCollapse" aria-label="Collapse menu" title="Collapse menu">&laquo;</button>
+    </div>
+    <nav class="ash-nav">
+      {CATEGORIES.map(c => (
+        <section class="ash-cat" data-cat={c.id} style={`--cat:${c.color}`} hidden>
+          <h2 class="ash-cat-h"><span class="ash-ico" aria-hidden="true">{c.icon}</span><span class="ash-cat-t">{c.label}</span></h2>
+          <ul>
+            {c.items.map(i => (
+              <li data-area={i.area} hidden>
+                <a href={i.href} aria-current={i.id === current ? 'page' : undefined} title={i.hint || i.label} target={i.ext && i.href.startsWith('/scan') ? '_blank' : undefined}>
+                  <span class="ash-dot" aria-hidden="true"></span><span class="ash-lbl">{i.label}</span>{i.ext && <span class="ash-ext" aria-label="(opens the CMS or another tool)">↗</span>}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </nav>
+    <a href="/" class="ash-site">&larr; <span class="ash-lbl">Back to the website</span></a>
+  </aside>
+  <div class="ash-ov" id="ashOv" hidden></div>
+
+  <header class="ash-top">
+    <button type="button" class="ash-burger" id="ashBurger" aria-label="Open admin menu" aria-controls="ashSide" aria-expanded="false">☰</button>
+    <nav class="ash-crumb" aria-label="Breadcrumb">{crumbs.map((c, i) => <><span aria-current={i === crumbs.length - 1 ? 'page' : undefined}>{c}</span>{i < crumbs.length - 1 && <span class="ash-sep" aria-hidden="true">›</span>}</>)}</nav>
+    <form class="ash-search" id="ashSearch" role="search">
+      <label class="sr-only" for="ashQ">Search the admin</label>
+      <input id="ashQ" type="search" placeholder="Search fans, matches, news…" autocomplete="off" />
+      <div class="ash-results" id="ashResults" hidden></div>
+    </form>
+    <div class="ash-bell-wrap">
+      <button type="button" class="ash-bell" id="ashBell" aria-label="Notifications" aria-expanded="false">🔔<span class="ash-badge" id="ashBadge" hidden></span></button>
+      <div class="ash-notes" id="ashNotes" hidden><p class="ash-empty">No new notifications.</p></div>
+    </div>
+    <div class="ash-user"><span class="ash-name" id="ashName"></span><span class="ash-role" id="ashRole"></span></div>
+    <button type="button" class="ash-out" id="anOut">Log out</button>
+  </header>
+</div>
+
+<style is:global>
+  body.admin-body main#main { padding-top: 0; }
+  body.admin-body { --side: 260px; --top: 60px; padding-left: var(--side); padding-top: var(--top); background: #F5F6F8; }
+  body.admin-body.ash-collapsed { --side: 72px; }
+  .ash-side { position: fixed; top: 0; left: 0; bottom: 0; width: var(--side); background: #15181D; color: #fff; z-index: 1300; display: flex; flex-direction: column; transition: width .2s, transform .25s; overflow: hidden; }
+  .ash-brand { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 12px 12px 16px; height: var(--top); border-bottom: 1px solid rgba(255,255,255,.08); flex-shrink: 0; }
+  .ash-logo { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; min-width: 0; }
+  .ash-logo img { border-radius: 50%; background: #fff; flex-shrink: 0; }
+  .ash-logo b { display: block; font: 400 20px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ash-logo small { display: block; font: 700 10px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .ash-collapse { background: rgba(255,255,255,.08); border: 0; color: #fff; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 16px; flex-shrink: 0; }
+  .ash-nav { flex: 1; overflow-y: auto; padding: 8px 0 16px; scrollbar-width: thin; }
+  .ash-cat { padding: 6px 10px; }
+  .ash-cat-h { display: flex; align-items: center; gap: 10px; margin: 8px 6px 4px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,.6); white-space: nowrap; }
+  .ash-ico { width: 30px; height: 30px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--cat) 22%, transparent); font-size: 15px; flex-shrink: 0; }
+  .ash-cat ul { list-style: none; margin: 0; padding: 0; }
+  .ash-cat a { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 14px; margin: 1px 0; border-radius: 9px; color: rgba(255,255,255,.82); text-decoration: none; font: 600 14px/1.25 'Barlow', sans-serif; white-space: nowrap; }
+  .ash-cat a:hover { background: rgba(255,255,255,.07); color: #fff; }
+  .ash-cat a[aria-current='page'] { background: color-mix(in srgb, var(--cat) 26%, transparent); color: #fff; box-shadow: inset 3px 0 0 var(--cat); }
+  .ash-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cat); flex-shrink: 0; opacity: .85; }
+  .ash-lbl { overflow: hidden; text-overflow: ellipsis; }
+  .ash-ext { margin-left: auto; opacity: .5; font-size: 12px; }
+  .ash-site { display: block; padding: 14px 18px; color: #FFC72C; text-decoration: none; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; border-top: 1px solid rgba(255,255,255,.08); white-space: nowrap; }
+  body.ash-collapsed .ash-lbl, body.ash-collapsed .ash-cat-t, body.ash-collapsed .ash-logo span, body.ash-collapsed .ash-ext, body.ash-collapsed .ash-dot { display: none; }
+  body.ash-collapsed .ash-cat a { justify-content: center; padding: 8px 0; }
+  body.ash-collapsed .ash-cat-h { justify-content: center; margin: 8px 0 2px; }
+  body.ash-collapsed .ash-cat ul { display: none; }
+  body.ash-collapsed .ash-cat:hover ul, body.ash-collapsed .ash-cat:focus-within ul { display: block; position: fixed; left: var(--side); background: #15181D; padding: 8px; border-radius: 0 10px 10px 0; min-width: 240px; box-shadow: 8px 8px 30px rgba(0,0,0,.3); }
+  body.ash-collapsed .ash-cat:hover .ash-lbl, body.ash-collapsed .ash-cat:focus-within .ash-lbl, body.ash-collapsed .ash-cat:hover .ash-dot, body.ash-collapsed .ash-cat:focus-within .ash-dot { display: inline; }
+  body.ash-collapsed .ash-cat:hover a, body.ash-collapsed .ash-cat:focus-within a { justify-content: flex-start; padding: 8px 12px; }
+  body.ash-collapsed .ash-collapse { transform: rotate(180deg); }
+
+  .ash-top { position: fixed; top: 0; left: var(--side); right: 0; height: var(--top); z-index: 1250; display: flex; align-items: center; gap: 12px; padding: 0 18px; background: #fff; border-bottom: 1px solid var(--d4); transition: left .2s; }
+  .ash-burger { display: none; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--d4); background: #fff; font-size: 18px; cursor: pointer; flex-shrink: 0; }
+  .ash-crumb { display: flex; align-items: center; gap: 8px; min-width: 0; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); white-space: nowrap; overflow: hidden; }
+  .ash-crumb [aria-current='page'] { color: var(--white); overflow: hidden; text-overflow: ellipsis; }
+  .ash-sep { color: var(--d4); }
+  .ash-search { position: relative; margin-left: auto; flex: 0 1 320px; min-width: 0; }
+  .ash-search input { width: 100%; padding: 9px 14px; border-radius: 999px; border: 1px solid var(--d4); background: #F5F6F8; font: 15px 'Barlow', sans-serif; }
+  .ash-search input:focus { outline: none; border-color: var(--red); background: #fff; box-shadow: 0 0 0 3px rgba(227,30,36,.12); }
+  .ash-results, .ash-notes { position: absolute; top: calc(100% + 8px); right: 0; width: min(420px, 92vw); max-height: 70vh; overflow-y: auto; background: #fff; border: 1px solid var(--d4); border-radius: 12px; box-shadow: 0 18px 40px rgba(15,17,21,.15); padding: 6px; z-index: 1400; }
+  .ash-results a, .ash-notes a { display: block; padding: 9px 10px; border-radius: 8px; color: var(--white); text-decoration: none; font-size: 14px; line-height: 1.35; }
+  .ash-results a:hover, .ash-notes a:hover, .ash-results a:focus { background: #F5F6F8; outline: none; }
+  .ash-results small, .ash-notes small { display: block; color: var(--lt); font-size: 12px; }
+  .ash-rtype { display: inline-block; font: 700 10px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; padding: 3px 6px; border-radius: 4px; margin-right: 6px; color: #fff; vertical-align: 1px; }
+  .ash-empty { margin: 0; padding: 12px; color: var(--lt); font-size: 14px; }
+  .ash-bell-wrap { position: relative; }
+  .ash-bell { position: relative; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-size: 17px; }
+  .ash-badge { position: absolute; top: -4px; right: -4px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--red); color: #fff; font: 700 11px/19px 'Barlow', sans-serif; }
+  .ash-user { display: flex; flex-direction: column; line-height: 1.2; text-align: right; min-width: 0; }
+  .ash-name { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+  .ash-role { font-size: 12px; color: var(--lt); white-space: nowrap; }
+  .ash-out { border: 1px solid var(--d4); background: #fff; border-radius: 8px; padding: 7px 12px; cursor: pointer; font: 600 13px 'Barlow', sans-serif; white-space: nowrap; }
+  .ash-denied { margin: 0 0 18px; padding: 12px 16px; border-radius: 10px; background: #FFF4E5; color: #7A4B00; }
+
+  @media (max-width: 1023px) {
+    body.admin-body, body.admin-body.ash-collapsed { --side: 0px; }
+    .ash-side { width: 280px; transform: translateX(-100%); }
+    body.ash-open .ash-side { transform: none; }
+    body.ash-collapsed .ash-lbl, body.ash-collapsed .ash-cat-t, body.ash-collapsed .ash-logo span, body.ash-collapsed .ash-ext, body.ash-collapsed .ash-dot { display: inline; }
+    body.ash-collapsed .ash-cat ul { display: block; position: static; box-shadow: none; padding: 0; min-width: 0; }
+    body.ash-collapsed .ash-cat a { justify-content: flex-start; padding: 8px 10px 8px 14px; }
+    .ash-collapse { display: none; }
+    .ash-ov { position: fixed; inset: 0; background: rgba(15,17,21,.5); z-index: 1290; }
+    .ash-burger { display: inline-flex; align-items: center; justify-content: center; }
+    .ash-user { display: none; }
+  }
+  @media (max-width: 640px) {
+    .ash-top { gap: 8px; padding: 0 10px; }
+    .ash-crumb span:not([aria-current]) { display: none; }
+    .ash-search { flex: 1 1 auto; }
+    .ash-search input { padding: 8px 12px; font-size: 14px; }
+    .ash-out { padding: 7px 9px; }
+  }
 </style>
 
 <script>
-  fetch('/api/admin/me', { headers: { 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' } })
-    .then(r => r.json()).then(d => {
-      if (!d.admin) return;
-      document.getElementById('anWho')!.textContent = `Signed in as ${d.admin.name}`;
-      if (d.admin.role !== 'owner') document.querySelector<HTMLElement>('[data-an="staff"]')?.remove();
-    }).catch(() => {});
-  document.getElementById('anOut')!.addEventListener('click', async () => {
+  const w = window as any;
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'x-admin-code': code };
+  const $ = (id: string) => document.getElementById(id)!;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
+  document.body.classList.add('admin-body');
+  try { if (localStorage.getItem('ls_admin_collapsed') === '1') document.body.classList.add('ash-collapsed'); } catch {}
+
+  // Role-based sidebar: show only what this person can open.
+  fetch('/api/admin/me', { headers: H }).then(r => r.json()).then(d => {
+    if (!d.admin) return;
+    w.__lsAdmin = d.admin;
+    $('ashName').textContent = d.admin.name;
+    $('ashRole').textContent = d.admin.roleLabel;
+    const areas = new Set<string>(d.admin.areas);
+    document.querySelectorAll<HTMLElement>('.ash-cat').forEach(cat => {
+      let any = false;
+      cat.querySelectorAll<HTMLElement>('li[data-area]').forEach(li => { const ok = areas.has(li.dataset.area!); li.hidden = !ok; any ||= ok; });
+      cat.hidden = !any;
+    });
+    document.dispatchEvent(new CustomEvent('ls:admin', { detail: d.admin }));
+  }).catch(() => {});
+  if (new URLSearchParams(location.search).has('denied')) {
+    const note = document.createElement('p');
+    note.className = 'ash-denied'; note.setAttribute('role', 'alert');
+    note.textContent = "Your role doesn't include that screen, so you've been brought to the dashboard. Ask a Super Admin if you need access.";
+    document.querySelector('.ash')?.parentElement?.insertBefore(note, document.querySelector('.ash')!.nextSibling);
+  }
+
+  // Collapse (desktop) and slide-out (phones).
+  $('ashCollapse').addEventListener('click', () => {
+    const on = document.body.classList.toggle('ash-collapsed');
+    try { localStorage.setItem('ls_admin_collapsed', on ? '1' : '0'); } catch {}
+  });
+  const setOpen = (on: boolean) => { document.body.classList.toggle('ash-open', on); $('ashOv').hidden = !on; $('ashBurger').setAttribute('aria-expanded', String(on)); };
+  $('ashBurger').addEventListener('click', () => setOpen(!document.body.classList.contains('ash-open')));
+  $('ashOv').addEventListener('click', () => setOpen(false));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { setOpen(false); $('ashResults').hidden = true; $('ashNotes').hidden = true; } });
+
+  // Admin search.
+  const TYPE_COLOR: Record<string, string> = { Fan: '#8B5CF6', Match: '#10B981', News: '#0EA5E9', Member: '#8B5CF6', Message: '#F97316' };
+  let timer = 0;
+  const q = $('ashQ') as HTMLInputElement, results = $('ashResults');
+  async function search() {
+    const term = q.value.trim();
+    if (term.length < 2) { results.hidden = true; return; }
+    try {
+      const d = await (await fetch(`/api/admin/search?q=${encodeURIComponent(term)}`, { headers: H })).json();
+      results.innerHTML = d.results?.length
+        ? d.results.map((r: any) => `<a href="${esc(r.href)}"><span class="ash-rtype" style="background:${TYPE_COLOR[r.type] || '#64748B'}">${esc(r.type)}</span>${esc(r.title)}<small>${esc(r.sub || '')}</small></a>`).join('')
+        : `<p class="ash-empty">Nothing found for “${esc(term)}”.</p>`;
+      results.hidden = false;
+    } catch { results.hidden = true; }
+  }
+  q.addEventListener('input', () => { clearTimeout(timer); timer = window.setTimeout(search, 250); });
+  $('ashSearch').addEventListener('submit', e => { e.preventDefault(); search(); });
+  document.addEventListener('click', e => {
+    if (!(e.target as HTMLElement).closest('.ash-search')) results.hidden = true;
+    if (!(e.target as HTMLElement).closest('.ash-bell-wrap')) { $('ashNotes').hidden = true; $('ashBell').setAttribute('aria-expanded', 'false'); }
+  });
+
+  // Notifications.
+  async function notes() {
+    try {
+      const d = await (await fetch('/api/admin/notifications', { headers: H })).json();
+      const list = d.items || [];
+      $('ashBadge').hidden = !list.length; $('ashBadge').textContent = String(list.length);
+      $('ashNotes').innerHTML = list.length
+        ? list.map((n: any) => `<a href="${esc(n.href)}">${esc(n.icon || '•')} ${esc(n.title)}<small>${esc(n.sub || '')}</small></a>`).join('')
+        : '<p class="ash-empty">No new notifications. All clear 🎉</p>';
+    } catch { /* keep quiet */ }
+  }
+  $('ashBell').addEventListener('click', () => {
+    const n = $('ashNotes'); n.hidden = !n.hidden; $('ashBell').setAttribute('aria-expanded', String(!n.hidden));
+  });
+  notes(); window.setInterval(notes, 120_000);
+
+  $('anOut').addEventListener('click', async () => {
     sessionStorage.removeItem('ls_admin_code');
     await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {});
     location.href = '/admin/login/';
