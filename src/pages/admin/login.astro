@@ -30,6 +30,7 @@ import Layout from '../../layouts/Layout.astro';
         <input id="code" name="code" type="password" autocomplete="current-password" required />
         <button type="submit" class="btn-p" id="submit">Log in</button>
       </form>
+      <a class="login-back" href="/">← Back to the website</a>
 
       <p class="login-err" id="err" role="alert" hidden></p>
     </div>
@@ -44,6 +45,8 @@ import Layout from '../../layouts/Layout.astro';
   }
   .login-card form { display: flex; flex-direction: column; gap: 10px; }
   .login-icon { font-size: 34px; }
+  .login-back { display: block; margin-top: 18px; text-align: center; color: var(--lt); font-weight: 600; text-decoration: none; }
+  .login-back:hover { color: var(--red); text-decoration: underline; }
   .login-title { font: 400 38px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; margin: 0; }
   .login-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--d3); padding: 4px; border-radius: 8px; }
   .login-tabs button { border: 0; background: none; padding: 10px 6px; border-radius: 6px; cursor: pointer; font: 700 13px/1.1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }

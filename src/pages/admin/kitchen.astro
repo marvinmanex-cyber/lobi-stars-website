@@ -14,6 +14,7 @@ import Layout from '../../layouts/Layout.astro';
       <span class="kt-clock" id="clock" aria-label="Time"></span>
       <span class="kt-dot" id="dot" role="status"><i aria-hidden="true"></i><span>Connecting…</span></span>
       <div class="kt-btns">
+        <a class="kt-tb kt-back" href="/admin/dashboard/" title="Leave the Kitchen Screen">← Admin</a>
         <button type="button" class="kt-tb" id="alertsBtn" aria-pressed="false">🔔 Alerts OFF</button>
         <button type="button" class="kt-tb" id="muteBtn" aria-pressed="false">🔇 Mute 1 min</button>
       </div>
@@ -57,6 +58,7 @@ import Layout from '../../layouts/Layout.astro';
   .kt-dot i { width: 14px; height: 14px; border-radius: 50%; background: #6B7280; }
   .kt-dot.on i { background: #22C55E; box-shadow: 0 0 10px #22C55E; } .kt-dot.off i { background: #EF4444; box-shadow: 0 0 10px #EF4444; }
   .kt-btns { display: flex; gap: 8px; }
+  .kt-back { display: inline-flex; align-items: center; text-decoration: none; }
   .kt-tb { min-height: 48px; padding: 8px 14px; border-radius: 12px; border: 2px solid #3A414B; background: #161A20; color: #fff; font: 700 16px/1 'Barlow', sans-serif; cursor: pointer; }
   .kt-tb[aria-pressed="true"] { background: #16A34A; border-color: #16A34A; }
   #muteBtn[aria-pressed="true"] { background: #B45309; border-color: #B45309; }

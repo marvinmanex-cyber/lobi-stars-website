@@ -18,6 +18,7 @@
   h1 { margin: 18px 0 8px; font-size: 28px; letter-spacing: .5px; }
   p { margin: 0 0 22px; line-height: 1.55; color: rgba(255, 255, 255, .85); }
   button { min-height: 48px; padding: 12px 26px; border: 0; border-radius: 10px; background: #E31E24; color: #fff; font: 700 16px/1 inherit; font-family: inherit; cursor: pointer; }
+  .ghost { background: transparent; border: 1.5px solid rgba(255, 255, 255, .5); margin-left: 8px; }
   button:hover, button:focus-visible { background: #FFC72C; color: #15181D; outline: none; }
 </style>
 </head>
@@ -27,6 +28,7 @@
   <h1>You're offline</h1>
   <p>There's no internet connection right now. Scores, fixtures, tickets and commentary need a connection, so check your data or Wi-Fi and try again.</p>
   <button type="button" onclick="location.reload()">Try again</button>
+  <button type="button" class="ghost" onclick="history.length > 1 ? history.back() : (location.href = '/')">← Go back</button>
 </main>
 <script is:inline>window.addEventListener('online', function () { location.reload(); });</script>
 </body>

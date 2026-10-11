@@ -32,6 +32,11 @@ manager gives you once. Paste it in and the CMS remembers it on that device.
   see its links). On a phone, tap **☰** to open the menu.
 - Links with **↗** open the **Content CMS** (or another tool such as the
   ticket scanner) at the right place.
+- **← Back** (top left, on every admin page except the Dashboard): takes you
+  back to the admin page you were on. If you opened the page directly, it goes
+  up one level instead (a Food page → Food: Orders, Possible Duplicates → Fan
+  Database, anything else → Dashboard). The Kitchen Screen has **← Admin**,
+  and the login page has **← Back to the website**.
 - **Top bar:** where you are (e.g. *Fans & Inbox › Fan Database*), a **search
   box** (fans, members, Inbox messages by name or LS- reference, matches and
   news), the **🔔 bell** (unread Inbox messages, messages waiting over 48

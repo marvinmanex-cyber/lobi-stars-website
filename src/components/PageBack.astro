@@ -1,0 +1,78 @@
+---
+// "← Back" + breadcrumb bar under the header on every page except the
+// homepage (e.g. ← Back | Home › News › Story). "Back" returns to the page the
+// fan came from on this site; opened from Google or a shared link, it goes up
+// one level instead (story -> News -> Home). Pages served from a shared
+// template (/matches/…, news stories) fix the trail from the real address.
+interface Props { title: string }
+const { title } = Astro.props;
+const SECTIONS: Record<string, [string, string] | null> = {
+  news: ['News', '/news/'], club: ['The Club', '/club/'], fixtures: ['Fixtures & Results', '/fixtures/'], matches: ['Fixtures & Results', '/fixtures/'],
+  squad: ['Squad', '/squad/'], gallery: ['Gallery', '/gallery/'], tickets: ['Tickets', '/tickets/'], programme: ['Matchday Programme', '/programme/'],
+  food: ['Food Orders', '/food/'], partners: ['Partners', '/partners/'], commentary: ['Live Commentary', '/commentary/'],
+  'predict-and-win': ['Predict & Win', '/predict-and-win/'], motm: ['Man of the Match', '/man-of-the-match/'], newsletter: ['Newsletter', '/newsletter/'],
+  fans: null, payment: null,
+};
+const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : Astro.url.pathname + '/';
+const segs = path.split('/').filter(Boolean);
+const pageName = title.split(' | ')[0];
+const crumbs: [string, string][] = [['Home', '/']];
+segs.slice(0, -1).forEach(s => { const x = SECTIONS[s]; if (x && x[1] !== crumbs[crumbs.length - 1][1]) crumbs.push(x); });
+const parent = crumbs[crumbs.length - 1][1];
+---
+<nav class="pback" aria-label="Breadcrumb" data-pback data-path={path} data-sections={JSON.stringify(SECTIONS)}>
+  <div class="pback-in">
+    <a class="pback-btn" href={parent} data-pback-btn><span aria-hidden="true">←</span> Back</a>
+    <ol class="pback-trail">
+      {crumbs.map(([n, h]) => <li><a href={h}>{n}</a></li>)}
+      <li aria-current="page">{pageName}</li>
+    </ol>
+  </div>
+</nav>
+
+<style>
+  .pback { background: var(--d2); border-bottom: 1px solid var(--d4); }
+  .pback-in { max-width: 1280px; margin: 0 auto; padding: 8px 5%; display: flex; align-items: center; gap: 14px; min-height: 48px; }
+  .pback-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px 6px 12px; border-radius: 999px; border: 1.5px solid var(--d4); color: var(--white); text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; transition: border-color .15s, color .15s; }
+  .pback-btn:hover, .pback-btn:focus-visible { border-color: var(--red, #E31E24); color: var(--red, #E31E24); }
+  .pback-btn span { font-size: 16px; }
+  .pback-trail { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 14px; color: var(--lt); }
+  .pback-trail li { display: flex; align-items: center; min-width: 0; }
+  .pback-trail li + li::before { content: '›'; margin: 0 8px; color: var(--d4); font-weight: 700; }
+  .pback-trail a { color: var(--lt); text-decoration: none; }
+  .pback-trail a:hover { color: var(--white); text-decoration: underline; }
+  .pback-trail [aria-current] { color: var(--white); font-weight: 600; overflow: hidden; text-overflow: ellipsis; display: block; }
+  @media (max-width: 640px) {
+    .pback-in { padding: 6px 16px; gap: 10px; min-height: 44px; }
+    .pback-trail li:not(:last-child):not(:nth-last-child(2)) { display: none; }
+    .pback-trail li:nth-last-child(2)::before { display: none; }
+    .pback-trail { font-size: 13px; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  var bar = document.querySelector('[data-pback]');
+  // Served from a shared template (e.g. /matches/<slug>/ uses the Match Centre page): rebuild the trail.
+  if (bar) {
+    var here = location.pathname.replace(/\/?$/, '/');
+    if (here !== bar.dataset.path) {
+      var S = JSON.parse(bar.dataset.sections || '{}'), segs = here.split('/').filter(Boolean), trail = [['Home', '/']];
+      segs.slice(0, -1).forEach(function (s) { var x = S[s]; if (x && x[1] !== trail[trail.length - 1][1]) trail.push(x); });
+      var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+      var name = document.title.split(' | ')[0];
+      bar.querySelector('.pback-trail').innerHTML = trail.map(function (t) { return '<li><a href="' + t[1] + '">' + esc(t[0]) + '</a></li>'; }).join('') + '<li aria-current="page">' + esc(name) + '</li>';
+      bar.querySelector('[data-pback-btn]').setAttribute('href', trail[trail.length - 1][1]);
+    }
+  }
+  if (window.__lsBack) return; window.__lsBack = 1;
+  // Came here from another page on this site: go back to exactly that page (and scroll position).
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('[data-pback-btn]');
+    if (!b || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+    var fromHere = false;
+    try { fromHere = !!document.referrer && new URL(document.referrer).origin === location.origin && new URL(document.referrer).pathname !== location.pathname; } catch (err) {}
+    if (history.length > 1 && (fromHere || history.state)) { e.preventDefault(); history.back(); }
+  });
+})();
+</script>

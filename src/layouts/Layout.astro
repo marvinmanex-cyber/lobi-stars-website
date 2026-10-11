@@ -1,4 +1,5 @@
 ---
+import PageBack from '../components/PageBack.astro';
 import HeadMeta from '../components/HeadMeta.astro';
 import InstallPrompt from '../components/InstallPrompt.astro';
 import Translate from '../components/Translate.astro';
@@ -47,6 +48,8 @@ const {
 // Admin pages have their own shell (sidebar + top bar), not the public header and footer.
 const adminPage = /^\/admin(\/|$)/.test(Astro.url.pathname);
 const softNav = !bare && !adminPage && !/^\/(admin|scan)(\/|$)/.test(Astro.url.pathname);
+// "← Back" + breadcrumb bar on every public page except the homepage (the Match Centre has its own).
+const showBack = !bare && !adminPage && !/^\/(match-centre)?\/?$/.test(Astro.url.pathname);
 const waLink = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Hello Lobi Stars Management, I have an inquiry.')}`;
 ---
 <!DOCTYPE html>
@@ -212,6 +215,7 @@ main.bare{padding-top:0;min-height:0;}
 <SiteHeader />
 
 <main id="main">
+  {showBack && <PageBack title={title} />}
   <slot />
 </main>
 
