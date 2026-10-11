@@ -68,8 +68,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .aa :global(.aa-nom) { display: grid; grid-template-columns: 28px minmax(140px, 1fr) minmax(140px, 1fr) minmax(160px, 1.2fr) 36px; gap: 8px; align-items: center; margin-bottom: 8px; }
   .aa :global(.aa-nom.potm) { grid-template-columns: 28px minmax(160px, 1fr) minmax(160px, 1fr) 36px; }
   .aa :global(.aa-nom b) { color: var(--lt); font-size: 14px; }
-  .aa :global(.aa-nom input), .aa :global(.aa-nom select) { width: 100%; padding: 9px 10px; border: 1px solid var(--d4); border-radius: 8px; font: inherit; font-size: 14px; background: #fff; min-width: 0; }
-  .aa :global(.aa-nom button) { border: 1px solid var(--d4); background: #fff; border-radius: 8px; height: 38px; cursor: pointer; }
+  .aa :global(.aa-nom input), .aa :global(.aa-nom select) { width: 100%; padding: 9px 10px; border: 1px solid var(--d4); border-radius: 8px; font: inherit; font-size: 14px; background: var(--a-card); min-width: 0; }
+  .aa :global(.aa-nom button) { border: 1px solid var(--d4); background: var(--a-card); border-radius: 8px; height: 38px; cursor: pointer; }
   @media (max-width: 720px) {
     .aa :global(.aa-nom), .aa :global(.aa-nom.potm) { grid-template-columns: 1fr 36px; border: 1px solid var(--d4); border-radius: 10px; padding: 10px; }
     .aa :global(.aa-nom b) { grid-column: 1 / -1; }
@@ -79,14 +79,14 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .aa :global(.aa-item) { border: 1px solid var(--d4); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
   .aa :global(.aa-item h3) { margin: 0 0 4px; font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
   .aa :global(.aa-item p) { margin: 0 0 8px; font-size: 14px; }
-  .aa :global(.aa-tag) { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 700; background: #F1F2F4; margin-left: 6px; vertical-align: middle; font-family: 'Barlow', sans-serif; }
+  .aa :global(.aa-tag) { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 700; background: var(--a-soft); margin-left: 6px; vertical-align: middle; font-family: 'Barlow', sans-serif; }
   .aa :global(.aa-tag.open) { background: #E8F7EE; color: #17643A; } .aa :global(.aa-tag.closed) { background: #FFC72C; color: #15181D; }
   .aa :global(.aa-item table) { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0 10px; }
   .aa :global(.aa-item td) { padding: 6px 8px; border-bottom: 1px solid var(--d4); }
   .aa :global(.aa-item td:last-child) { text-align: right; white-space: nowrap; }
   .aa :global(.aa-item tr.win td) { background: #FFF8E1; font-weight: 700; }
   .aa :global(.aa-item .aa-btns) { display: flex; gap: 8px; flex-wrap: wrap; }
-  .aa :global(.aa-item .aa-btns button) { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-size: 13px; }
+  .aa :global(.aa-item .aa-btns button) { padding: 6px 12px; border-radius: 6px; border: 1px solid var(--d4); background: var(--a-card); cursor: pointer; font-size: 13px; }
 </style>
 
 <script is:inline>
@@ -149,7 +149,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   function render() {
     $('sponsor').innerHTML = '<option value="">No sponsor</option>' + data.partners.map(p =>
       `<option value="${esc(p.slug)}">${esc(p.name)}${p.hasLogo ? '' : ' (no logo yet)'}</option>`).join('');
-    if (!data.awards.length) { $('list').innerHTML = '<p class="muted">No awards yet. Create the first one above.</p>'; return; }
+    if (!data.awards.length) { $('list').innerHTML = '<div class="empty-state"><b>🏆</b><p>No awards yet. Create the first Goal or Player of the Month above.</p></div>'; return; }
     $('list').innerHTML = data.awards.map(a => {
       const r = a.results; const sp = data.partners.find(p => p.slug === a.sponsor_slug);
       const rows = a.nominees.map(n => {

@@ -31,16 +31,16 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .fo-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
   .fo-msg.ok { background: #E8F7EE; color: #17643A; } .fo-msg.err { background: #FDECEC; color: #A3161B; }
   .fo :global(.fo-stats) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 12px; margin-bottom: 18px; }
-  .fo :global(.fo-stat) { padding: 16px; border-radius: 14px; background: linear-gradient(145deg, color-mix(in srgb, var(--c) 14%, #fff), #fff 70%); border: 1px solid color-mix(in srgb, var(--c) 25%, #E3E6EA); }
+  .fo :global(.fo-stat) { padding: 16px; border-radius: 14px; background: linear-gradient(145deg, color-mix(in srgb, var(--c) 14%, var(--a-card)), var(--a-card) 70%); border: 1px solid color-mix(in srgb, var(--c) 25%, #E3E6EA); }
   .fo :global(.fo-stat b) { display: block; font: 400 34px/1 'Bebas Neue', sans-serif; color: color-mix(in srgb, var(--c) 80%, #15181D); }
   .fo :global(.fo-stat span) { font: 700 12px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
   .fo :global(.fo-stat small) { display: block; margin-top: 4px; color: var(--lt); font-size: 13px; }
   .fo-filter { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
-  .fo-filter button { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-weight: 700; }
+  .fo-filter button { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--d4); background: var(--a-card); cursor: pointer; font-weight: 700; }
   .fo-filter button[aria-pressed='true'] { background: #F97316; border-color: #F97316; color: #fff; }
   .fo-updated { margin-left: auto; color: var(--lt); font-size: 13px; }
   .fo :global(.fo-list) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 14px; }
-  .fo :global(.fo-card) { background: #fff; border: 1px solid var(--d4); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 6px 18px rgba(15,17,21,.05); border-top: 5px solid var(--s); }
+  .fo :global(.fo-card) { background: var(--a-card); border: 1px solid var(--d4); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 6px 18px rgba(15,17,21,.05); border-top: 5px solid var(--s); }
   .fo :global(.fo-top) { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
   .fo :global(.fo-seat) { font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .fo :global(.fo-seat small) { display: block; font: 600 13px 'Barlow', sans-serif; letter-spacing: 0; color: var(--lt); }
@@ -51,10 +51,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .fo :global(.fo-meta a) { color: var(--red-text); font-weight: 700; }
   .fo :global(.fo-age) { font-weight: 700; } .fo :global(.fo-age.warn) { color: #B45309; } .fo :global(.fo-age.late) { color: #B91C1C; }
   .fo :global(.fo-acts) { display: flex; gap: 8px; flex-wrap: wrap; }
-  .fo :global(.fo-acts button) { flex: 1 1 auto; min-height: 44px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-weight: 700; }
+  .fo :global(.fo-acts button) { flex: 1 1 auto; min-height: 44px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--d4); background: var(--a-card); cursor: pointer; font-weight: 700; }
   .fo :global(.fo-acts .go) { background: #F97316; border-color: #F97316; color: #fff; }
   .fo :global(.fo-acts .done) { background: #10B981; border-color: #10B981; color: #fff; }
-  .fo :global(.fo-empty) { grid-column: 1 / -1; text-align: center; padding: 40px 16px; color: var(--lt); border: 1px dashed var(--d4); border-radius: 14px; background: #fff; }
+  .fo :global(.fo-empty) { grid-column: 1 / -1; text-align: center; padding: 40px 16px; color: var(--lt); border: 1px dashed var(--d4); border-radius: 14px; background: var(--a-card); }
   .fo :global(.fo-empty b) { display: block; font-size: 34px; margin-bottom: 6px; }
 </style>
 

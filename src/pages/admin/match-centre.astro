@@ -236,7 +236,7 @@ const roster = (await getRoster())
   .ctl-motm :global(.motm-table th), .ctl-motm :global(.motm-table td) { padding: 7px 8px; border-bottom: 1px solid var(--d4); text-align: left; }
   .ctl-motm :global(.motm-table tr.win td) { font-weight: 700; color: var(--red-text); }
   .ctl-motm :global(.motm-bar) { display: inline-block; width: 80px; height: 8px; margin-right: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--red) var(--w), var(--d3) var(--w)); vertical-align: middle; }
-  .mce-check { border: 1px solid var(--d4); border-radius: 14px; padding: 18px 20px; margin: 0 0 22px; background: #fff; }
+  .mce-check { border: 1px solid var(--d4); border-radius: 14px; padding: 18px 20px; margin: 0 0 22px; background: var(--a-card); }
   .mce-check h2 { margin: 0 0 6px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .chk-note { font-size: 14px; margin: 0 0 12px; }
   .chk-list { list-style: none; margin: 0; padding: 0; }
@@ -258,11 +258,11 @@ const roster = (await getRoster())
   .mce-quick .btn-o { padding: 9px 14px; font-size: 12px; }
   .mce :global(.tl-row) { display: grid; grid-template-columns: 70px 120px 120px 1fr 1fr 40px; gap: 8px; margin-bottom: 8px; }
   .mce :global(.tl-row .form-inp), .mce :global(.tl-row .form-sel) { padding: 9px 10px; font-size: 14px; }
-  .mce :global(.tl-del) { border: 1px solid var(--d4); background: #fff; border-radius: 6px; cursor: pointer; font-size: 18px; }
+  .mce :global(.tl-del) { border: 1px solid var(--d4); background: var(--a-card); border-radius: 6px; cursor: pointer; font-size: 18px; }
   .mce-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0 18px; }
   .mce :global(.st-pair) { display: grid; grid-template-columns: 1fr 70px 70px; gap: 8px; align-items: center; margin-bottom: 12px; }
   .mce :global(.st-pair .form-inp) { padding: 9px 10px; }
-  .mce-save { position: sticky; bottom: 0; padding: 14px 0; background: linear-gradient(to top, #fff 70%, rgba(255, 255, 255, 0)); }
+  .mce-save { position: sticky; bottom: 0; padding: 14px 0; background: linear-gradient(to top, var(--a-card) 70%, rgba(255, 255, 255, 0)); }
   .mce-save .btn-p { width: 100%; padding: 16px; }
   @media (max-width: 700px) {
     .mce-row3, .mce-row2 { grid-template-columns: 1fr; }

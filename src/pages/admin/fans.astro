@@ -37,7 +37,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     </form>
 
     <p class="fd-count" id="count"></p>
-    <div class="panel fd-table"><div class="scroll" id="table"><p class="muted">Loading…</p></div></div>
+    <div class="panel fd-table" data-server-paged><div class="scroll" id="table"><p class="muted">Loading…</p></div></div>
     <div class="fd-pager" id="pager"></div>
 
     <section class="panel" id="exportLog">
@@ -72,7 +72,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .danger { color: #A3161B; border-color: #A3161B; }
   .fd-filters { display: grid; grid-template-columns: 2fr repeat(5, 1fr) auto; gap: 10px; align-items: end; margin: 18px 0 10px; }
   .fd-filters label { display: flex; flex-direction: column; gap: 4px; font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); min-width: 0; }
-  .fd-filters input, .fd-filters select { padding: 9px 10px; border: 1px solid var(--d4); border-radius: 6px; font: 400 15px 'Barlow', sans-serif; color: var(--white); background: #fff; min-width: 0; width: 100%; }
+  .fd-filters input, .fd-filters select { padding: 9px 10px; border: 1px solid var(--d4); border-radius: 6px; font: 400 15px 'Barlow', sans-serif; color: var(--white); background: var(--a-card); min-width: 0; width: 100%; }
   .fd-count { color: var(--lt); font-size: 14px; margin: 6px 0 10px; }
   .scroll { overflow-x: auto; position: relative; }
   .fd-table { padding: 0; }
@@ -84,9 +84,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .panel :global(tbody tr[data-id]) { cursor: pointer; }
   .panel :global(tbody tr[data-id]:hover) { background: #FFF5F5; }
   .panel :global(td.n) { text-align: right; }
-  .panel :global(.tag) { display: inline-block; background: #F1F2F4; border-radius: 4px; padding: 2px 6px; margin: 1px 2px; font-size: 12px; }
+  .panel :global(.tag) { display: inline-block; background: var(--a-soft); border-radius: 4px; padding: 2px 6px; margin: 1px 2px; font-size: 12px; }
   .fd-pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-bottom: 26px; }
-  .fd-pager button { border: 1px solid var(--d4); background: #fff; border-radius: 6px; padding: 7px 12px; cursor: pointer; }
+  .fd-pager button { border: 1px solid var(--d4); background: var(--a-card); border-radius: 6px; padding: 7px 12px; cursor: pointer; }
   .fd-pager button:disabled { opacity: .4; cursor: default; }
   .fd-dlg { border: 0; border-radius: 14px; padding: 0; width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 40px); }
   .fd-dlg::backdrop { background: rgba(0,0,0,.5); }

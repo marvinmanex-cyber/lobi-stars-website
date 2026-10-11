@@ -43,16 +43,16 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .db :global(.db-btn) { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 999px; background: #FFC72C; color: #15181D; text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
   .db :global(.db-btn.ghost) { background: rgba(255,255,255,.12); color: #fff; }
   .db :global(.db-cards) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 14px; }
-  .db :global(.db-card) { position: relative; display: block; padding: 18px; border-radius: 16px; text-decoration: none; color: var(--white); background: linear-gradient(145deg, color-mix(in srgb, var(--c) 14%, #fff), #fff 70%); border: 1px solid color-mix(in srgb, var(--c) 25%, #E3E6EA); box-shadow: 0 8px 22px rgba(15,17,21,.05); transition: transform .15s, box-shadow .15s; }
+  .db :global(.db-card) { position: relative; display: block; padding: 18px; border-radius: 16px; text-decoration: none; color: var(--white); background: linear-gradient(145deg, color-mix(in srgb, var(--c) 14%, var(--a-card)), var(--a-card) 70%); border: 1px solid color-mix(in srgb, var(--c) 25%, #E3E6EA); box-shadow: 0 8px 22px rgba(15,17,21,.05); transition: transform .15s, box-shadow .15s; }
   .db :global(a.db-card:hover) { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(15,17,21,.09); }
-  .db :global(.db-ic) { width: 42px; height: 42px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; background: color-mix(in srgb, var(--c) 20%, #fff); }
+  .db :global(.db-ic) { width: 42px; height: 42px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 20px; background: color-mix(in srgb, var(--c) 20%, var(--a-card)); }
   .db :global(.db-num) { display: block; margin: 12px 0 2px; font: 400 40px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: color-mix(in srgb, var(--c) 80%, #15181D); }
   .db :global(.db-lbl) { font: 700 13px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
   .db :global(.db-chg) { position: absolute; top: 18px; right: 18px; font: 700 13px/1 'Barlow', sans-serif; padding: 4px 8px; border-radius: 999px; }
-  .db :global(.db-chg.up) { background: #E8F7EE; color: #17643A; } .db :global(.db-chg.down) { background: #FDECEC; color: #A3161B; } .db :global(.db-chg.flat) { background: #F1F2F4; color: #5B6472; }
+  .db :global(.db-chg.up) { background: #E8F7EE; color: #17643A; } .db :global(.db-chg.down) { background: #FDECEC; color: #A3161B; } .db :global(.db-chg.flat) { background: var(--a-soft); color: #5B6472; }
   .db :global(.db-sub) { display: block; margin-top: 4px; font-size: 13px; color: var(--lt); }
   .db :global(.db-quick) { display: flex; gap: 10px; flex-wrap: wrap; }
-  .db :global(.db-q) { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 12px; background: #fff; border: 1px solid var(--d4); text-decoration: none; color: var(--white); font-weight: 700; box-shadow: 0 4px 12px rgba(15,17,21,.04); }
+  .db :global(.db-q) { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 12px; background: var(--a-card); border: 1px solid var(--d4); text-decoration: none; color: var(--white); font-weight: 700; box-shadow: 0 4px 12px rgba(15,17,21,.04); }
   .db :global(.db-q:hover) { border-color: var(--red); color: var(--red-text); }
   .db-empty { color: var(--lt); padding: 30px 0; }
 </style>

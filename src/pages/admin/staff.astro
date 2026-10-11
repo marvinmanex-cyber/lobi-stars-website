@@ -50,7 +50,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .st-list :global(th), .st-list :global(td) { padding: 10px 12px; border-bottom: 1px solid var(--d4); text-align: left; vertical-align: middle; }
   .st-list :global(thead th) { background: #15181D; color: #fff; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
   .st-list :global(.inactive) { opacity: .55; }
-  .st-list :global(button) { margin: 2px 6px 2px 0; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-size: 13px; }
+  .st-list :global(button) { margin: 2px 6px 2px 0; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--d4); background: var(--a-card); cursor: pointer; font-size: 13px; }
   .st-list :global(.scroll) { overflow-x: auto; position: relative; }
 </style>
 
@@ -77,7 +77,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
           `<td>${roleSel(s)}</td><td>${s.can_export_fan_data ? 'Yes' : 'No'}</td><td>${s.last_login_at ? esc(s.last_login_at) + ' UTC' : 'Never'}</td><td>` +
           `<button data-act="export">${s.can_export_fan_data ? 'Remove export' : 'Allow export'}</button>` +
           `<button data-act="active">${s.active ? 'Deactivate' : 'Reactivate'}</button><button data-act="password">Reset password</button></td></tr>`).join('') +
-        '</tbody></table></div>' : '<p class="muted">No staff accounts yet.</p>';
+        '</tbody></table></div>' : '<div class="empty-state"><b>🧑‍💼</b><p>No staff accounts yet. Add the first one above.</p></div>';
       $('list')._staff = staff;
     } catch (e) { $('list').innerHTML = `<p class="muted">${esc(e.message)}</p>`; }
   }

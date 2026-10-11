@@ -52,9 +52,9 @@ import { PRIZE_AMOUNT, formatNaira } from '../../../functions/api/_lib/predictSe
   .pw :global(tr.win td) { background: #FFF8E1; font-weight: 700; }
   .pw :global(tr.dq td) { opacity: .55; text-decoration: line-through; }
   .pw :global(tr.dq td:last-child), .pw :global(tr.dq td.reason) { text-decoration: none; opacity: 1; }
-  .pw :global(.tag) { display: inline-block; border-radius: 4px; padding: 2px 6px; font-size: 12px; background: #F1F2F4; margin-right: 4px; }
+  .pw :global(.tag) { display: inline-block; border-radius: 4px; padding: 2px 6px; font-size: 12px; background: var(--a-soft); margin-right: 4px; }
   .pw :global(.tag.ok) { background: #E8F7EE; color: #17643A; } .pw :global(.tag.win) { background: #FFC72C; color: #15181D; }
-  .pw :global(td button) { margin: 2px 4px 2px 0; padding: 5px 9px; border-radius: 6px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-size: 12px; }
+  .pw :global(td button) { margin: 2px 4px 2px 0; padding: 5px 9px; border-radius: 6px; border: 1px solid var(--d4); background: var(--a-card); cursor: pointer; font-size: 12px; }
   .pw :global(.pw-win) { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px 20px; margin: 12px 0; }
   .pw :global(.pw-win dt) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
   .pw :global(.pw-win dd) { margin: 4px 0 0; font-size: 16px; word-break: break-word; }
@@ -117,7 +117,7 @@ import { PRIZE_AMOUNT, formatNaira } from '../../../functions/api/_lib/predictSe
         `</td><td class="reason">${esc(p.reason)}</td><td>` +
         (p.disqualified ? '<button data-act="reinstate">Reinstate</button>' : '<button data-act="disqualify">Disqualify</button>') +
         `<button data-act="staff" data-on="${p.staff ? '0' : '1'}">${p.staff ? 'Not staff' : 'Mark club staff/player'}</button></td></tr>`).join('') +
-      '</tbody></table>' : '<p class="muted">No predictions yet.</p>';
+      '</tbody></table>' : '<div class="empty-state"><b>🔮</b><p>No predictions yet. They open 24 hours before kick-off.</p></div>';
   }
 
   $('entries').addEventListener('click', async e => {

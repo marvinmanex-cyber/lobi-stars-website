@@ -25,7 +25,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .so-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
   .so-msg.ok { background: #E8F7EE; color: #17643A; } .so-msg.err { background: #FDECEC; color: #A3161B; }
   .so-filter { display: flex; gap: 8px; margin-bottom: 12px; }
-  .so-filter button { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-weight: 600; }
+  .so-filter button { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--d4); background: var(--a-card); cursor: pointer; font-weight: 600; }
   .so-filter button[aria-pressed='true'] { background: var(--red); border-color: var(--red); color: #fff; }
   .scroll { overflow-x: auto; }
   .so :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
@@ -61,7 +61,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         `<td>${esc(o.buyer)}<br><span class="note">${esc(o.phone)} · ${esc(o.email)}</span></td>` +
         `<td><select data-id="${esc(o.id)}" aria-label="Status for ${esc(o.id)}">${Object.entries(LABEL).map(([k, v]) => `<option value="${k}"${k === o.status ? ' selected' : ''}>${v}</option>`).join('')}</select>` +
         (o.statusBy ? `<br><span class="note">${esc(o.statusBy)}, ${esc(when(o.statusAt))}</span>` : '') + '</td></tr>').join('') + '</tbody></table>'
-      : `<p class="muted">${filter === 'open' ? 'Nothing to do: no new or ready orders.' : 'No paid orders yet.'}</p>`;
+      : (filter === 'open' ? '<div class="empty-state"><b>👕</b><p>Nothing to do: no new or ready shirt orders 🎉</p></div>' : '<div class="empty-state"><b>👕</b><p>No paid shirt orders yet.</p></div>');
   }
   async function load() {
     const d = await api('/api/admin/shirt-orders');

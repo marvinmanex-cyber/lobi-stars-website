@@ -95,14 +95,18 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .ad-lede { max-width: 760px; margin-bottom: 22px; }
   .ad-bar { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center; margin-bottom: 20px; }
   .ad-range { display: flex; flex-wrap: wrap; gap: 6px; }
-  .ad-range button { border: 1px solid var(--d4); background: #fff; border-radius: 999px; padding: 8px 14px; cursor: pointer; font: 600 14px/1 'Barlow', sans-serif; color: var(--white); }
+  .ad-range button { border: 1px solid var(--d4); background: var(--a-card); border-radius: 999px; padding: 8px 14px; cursor: pointer; font: 600 14px/1 'Barlow', sans-serif; color: var(--white); }
   .ad-range button.on { background: var(--red); border-color: var(--red); color: #fff; }
   .ad-custom { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px; }
   .ad-custom input { padding: 6px 8px; border: 1px solid var(--d4); border-radius: 6px; font: inherit; }
   .ad-label { color: var(--lt); font-size: 14px; }
   .ad-err { background: #FDECEC; color: #A3161B; padding: 12px 16px; border-radius: 8px; }
   .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px; margin-bottom: 22px; }
-  .kpis :global(.kpi) { background: #fff; border: 1px solid var(--d4); border-radius: 12px; padding: 16px 18px; min-width: 0; }
+  .kpis :global(.kpi) { position: relative; border-radius: 16px; padding: 16px 18px; min-width: 0; background: linear-gradient(145deg, color-mix(in srgb, var(--c) 16%, var(--a-card)), var(--a-card) 72%); border: 1px solid color-mix(in srgb, var(--c) 28%, var(--a-line)); box-shadow: 0 8px 22px rgba(15,17,21,.05); }
+  .kpis :global(.kpi-ic) { float: right; width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 19px; background: color-mix(in srgb, var(--c) 22%, var(--a-card)); }
+  .kpis :global(.kpi-v) { color: color-mix(in srgb, var(--c) 80%, var(--a-ink)); }
+  :global(.chg) { display: inline-block; padding: 3px 8px; border-radius: 999px; }
+  :global(.chg.up) { background: color-mix(in srgb, #10B981 16%, transparent); } :global(.chg.down) { background: color-mix(in srgb, #E31E24 14%, transparent); }
   .kpis :global(.kpi-l) { font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); }
   .kpis :global(.kpi-v) { font: 400 40px/1.1 'Bebas Neue', sans-serif; margin: 6px 0 2px; }
   :global(.chg) { font-size: 13px; font-weight: 700; }
@@ -117,7 +121,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .chart { position: relative; height: 300px; }
   .chart.sq { height: 280px; max-width: 420px; }
   .src-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
-  .src-cards :global(.sc) { border: 1px solid var(--d4); border-left: 4px solid var(--red); border-radius: 8px; padding: 10px 12px; }
+  .src-cards :global(.sc) { border: 1px solid color-mix(in srgb, var(--c, #E31E24) 30%, var(--a-line)); border-left: 5px solid var(--c, #E31E24); border-radius: 12px; padding: 10px 12px; background: color-mix(in srgb, var(--c, #E31E24) 7%, var(--a-card)); }
+  .src-cards :global(.sc b) { color: color-mix(in srgb, var(--c, #E31E24) 80%, var(--a-ink)); }
   .src-cards :global(.sc b) { display: block; font: 400 30px/1 'Bebas Neue', sans-serif; }
   .src-cards :global(.sc span) { font-size: 13px; color: var(--lt); }
   .panel :global(.scroll) { overflow-x: auto; position: relative; }
@@ -143,7 +148,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const fmt = n => Number(n || 0).toLocaleString('en-NG');
-  const COLORS = ['#E31E24', '#15181D', '#865C08', '#2F6FDE', '#17A05D', '#8A55D6', '#F08C1A', '#7A8088'];
+  // Club red and gold first, then the bright admin accent palette.
+  const COLORS = ['#E31E24', '#EAB308', '#10B981', '#0EA5E9', '#8B5CF6', '#F97316', '#14B8A6', '#EC4899', '#64748B'];
+  let lastData = null;
+  const cardColor = () => getComputedStyle(document.body).getPropertyValue('--a-card').trim() || '#fff';
   const charts = {};
   let saved = null;
   try { saved = localStorage.getItem('ls_an_range'); } catch {}
@@ -158,13 +166,28 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   }
   const table = (head, rows, empty) => rows.length
     ? `<div class="scroll"><table><thead><tr>${head.map(h => `<th class="${h.n ? 'n' : ''}">${esc(h.t)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`
-    : `<p class="muted">${esc(empty)}</p>`;
+    : `<div class="empty-state"><b>📭</b><p>${esc(empty)}</p></div>`;
   function draw(id, config) {
     if (!window.Chart) return;
     charts[id]?.destroy();
-    config.options = Object.assign({ responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }, config.options || {});
+    const css = getComputedStyle(document.body);
+    Chart.defaults.font.family = 'Barlow, sans-serif';
+    Chart.defaults.color = css.getPropertyValue('--a-muted').trim() || '#5B6472';
+    Chart.defaults.borderColor = css.getPropertyValue('--a-line').trim() || '#E3E6EA';
+    const base = {
+      responsive: true, maintainAspectRatio: false,
+      animation: { duration: 700, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 } },
+        tooltip: { backgroundColor: '#15181D', padding: 10, cornerRadius: 10 },
+      },
+    };
+    const o = config.options || {};
+    config.options = Object.assign({}, base, o, { plugins: Object.assign({}, base.plugins, o.plugins || {}) });
     charts[id] = new Chart($(id), config);
   }
+  // Redraw in the right colours when someone switches light/dark mode.
+  document.addEventListener('ls:theme', () => { if (lastData) render(lastData); });
   const fmtWat = iso => iso ? new Date(new Date(iso).getTime() + 3600000).toISOString().slice(0, 16).replace('T', ' ') : '';
 
   async function load() {
@@ -183,32 +206,37 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       if (/admin code/i.test(e.message)) location.href = '/admin/login/?next=/admin/analytics';
       return;
     }
+    lastData = d;
+    render(d);
+  }
+
+  function render(d) {
     $('rangeLabel').textContent = `${d.range.label} (compared with the ${d.range.days} day${d.range.days === 1 ? '' : 's'} before)`;
 
     const K = d.kpis;
     $('kpis').innerHTML = [
-      ['Page views', K.pageViews], ['Unique visitors', K.uniqueVisitors], ['Downloads', K.downloads],
-      ['Enquiries', K.enquiries], ['Total contacts', K.totalContacts], ['New contacts', K.newContacts],
-    ].map(([l, k]) => `<div class="kpi"><div class="kpi-l">${l}</div><div class="kpi-v">${fmt(k.value)}</div>${change(k.value, k.previous)}</div>`).join('');
+      ['Page views', K.pageViews, '📈', '#0EA5E9'], ['Unique visitors', K.uniqueVisitors, '🧑‍🤝‍🧑', '#8B5CF6'], ['Downloads', K.downloads, '⬇️', '#14B8A6'],
+      ['Enquiries', K.enquiries, '✉️', '#F97316'], ['Total contacts', K.totalContacts, '👥', '#E31E24'], ['New contacts', K.newContacts, '✨', '#10B981'],
+    ].map(([l, k, ic, c]) => `<div class="kpi" style="--c:${c}"><span class="kpi-ic" aria-hidden="true">${ic}</span><div class="kpi-l">${l}</div><div class="kpi-v">${fmt(k.value)}</div>${change(k.value, k.previous)}</div>`).join('');
 
-    $('srcCards').innerHTML = d.sources.map(s => `<div class="sc"><b>${s.pct}%</b><span>${esc(s.label)} &middot; ${fmt(s.contacts)}</span></div>`).join('')
+    $('srcCards').innerHTML = d.sources.map((s, i) => `<div class="sc" style="--c:${COLORS[i % COLORS.length]}"><b>${s.pct}%</b><span>${esc(s.label)} &middot; ${fmt(s.contacts)}</span></div>`).join('')
       + `<div class="sc"><b>${fmt(d.totalContacts)}</b><span>Total contacts</span></div>`;
 
     const ft = d.firstTouch.filter(f => f.contacts > 0);
-    draw('firstTouch', { type: 'doughnut', data: { labels: ft.length ? ft.map(f => f.source) : ['No contacts yet'], datasets: [{ data: ft.length ? ft.map(f => f.contacts) : [1], backgroundColor: ft.length ? COLORS : ['#E5E7EB'] }] } });
-    draw('devices', { type: 'doughnut', data: { labels: d.devices.length ? d.devices.map(x => x.device) : ['No visits yet'], datasets: [{ data: d.devices.length ? d.devices.map(x => x.views) : [1], backgroundColor: d.devices.length ? COLORS : ['#E5E7EB'] }] } });
+    draw('firstTouch', { type: 'doughnut', data: { labels: ft.length ? ft.map(f => f.source) : ['No contacts yet'], datasets: [{ data: ft.length ? ft.map(f => f.contacts) : [1], backgroundColor: ft.length ? COLORS : ['#E5E7EB'], borderWidth: 3, borderColor: cardColor(), hoverOffset: 10, borderRadius: 6 }] }, options: { cutout: '62%' } });
+    draw('devices', { type: 'doughnut', data: { labels: d.devices.length ? d.devices.map(x => x.device) : ['No visits yet'], datasets: [{ data: d.devices.length ? d.devices.map(x => x.views) : [1], backgroundColor: d.devices.length ? COLORS.slice(3) : ['#E5E7EB'], borderWidth: 3, borderColor: cardColor(), hoverOffset: 10, borderRadius: 6 }] }, options: { cutout: '62%' } });
     draw('daily', {
       type: 'line',
       data: { labels: d.daily.map(x => x.day), datasets: [
-        { label: 'Page views', data: d.daily.map(x => x.views), borderColor: '#E31E24', backgroundColor: 'rgba(227,30,36,.12)', fill: true, tension: .3 },
-        { label: 'Unique visitors', data: d.daily.map(x => x.visitors), borderColor: '#15181D', tension: .3 },
+        { label: 'Page views', data: d.daily.map(x => x.views), borderColor: '#E31E24', backgroundColor: 'rgba(227,30,36,.14)', fill: true, tension: .35, borderWidth: 3, pointRadius: 2, pointHoverRadius: 6 },
+        { label: 'Unique visitors', data: d.daily.map(x => x.visitors), borderColor: '#0EA5E9', backgroundColor: 'rgba(14,165,233,.10)', fill: true, tension: .35, borderWidth: 3, pointRadius: 2, pointHoverRadius: 6 },
       ] },
       options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
     });
     const tk = Object.keys(d.traffic);
     draw('traffic', {
       type: 'bar',
-      data: { labels: tk, datasets: [{ label: 'Page views', data: tk.map(k => d.traffic[k]), backgroundColor: ['#25D366', '#1877F2', '#C13584', '#15181D', '#F4B400', '#7A8088', '#865C08'] }] },
+      data: { labels: tk, datasets: [{ label: 'Page views', data: tk.map(k => d.traffic[k]), backgroundColor: COLORS, borderRadius: 10, borderSkipped: false, maxBarThickness: 46 }] },
       options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
     });
 

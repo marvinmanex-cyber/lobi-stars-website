@@ -21,10 +21,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .al-panel { padding: 0; overflow: hidden; }
   .scroll { overflow-x: auto; max-height: 70vh; }
   .al :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .al :global(th) { position: sticky; top: 0; background: #15181D; color: #fff; text-align: left; padding: 10px 12px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .al :global(th) { text-align: left; padding: 10px 12px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
   .al :global(td) { padding: 9px 12px; border-bottom: 1px solid var(--d4); vertical-align: top; }
-  .al :global(tbody tr:nth-child(even)) { background: #FAFBFC; }
-  .al :global(tbody tr:hover) { background: #FFF8E1; }
   .al :global(.act) { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #EEF2FF; color: #3730A3; font-size: 12px; font-weight: 700; white-space: nowrap; }
   .al :global(.act.export) { background: #FEF3C7; color: #92400E; } .al :global(.act.delete) { background: #FDECEC; color: #A3161B; }
   .al :global(.empty) { padding: 30px; text-align: center; color: var(--lt); }
@@ -42,7 +40,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     if (!res.ok) { $('log').innerHTML = `<p class="empty">${esc(d.error || 'Could not load the log.')}</p>`; return; }
     $('log').innerHTML = d.log.length ? '<table><thead><tr><th>When (WAT)</th><th>Staff</th><th>Action</th><th>Detail</th></tr></thead><tbody>' +
       d.log.map(r => `<tr><td>${esc(when(r.ts))}</td><td>${esc(r.staff_name)}</td><td><span class="act ${/export/.test(r.action) ? 'export' : /delete|remove/.test(r.action) ? 'delete' : ''}">${esc(r.action.replace(/_/g, ' '))}</span></td><td>${esc(r.detail)}</td></tr>`).join('') +
-      '</tbody></table>' : '<p class="empty">Nothing in the log yet 🎉</p>';
+      '</tbody></table>' : '<div class="empty-state"><b>📜</b><p>Nothing in the log yet 🎉</p></div>';
   }
   $('f').addEventListener('submit', e => { e.preventDefault(); load($('q').value.trim()); });
   load('');

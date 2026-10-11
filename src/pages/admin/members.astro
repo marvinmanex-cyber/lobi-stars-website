@@ -42,9 +42,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .am :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
   .am :global(th), .am :global(td) { padding: 8px 10px; border-bottom: 1px solid var(--d4); text-align: left; vertical-align: top; }
   .am :global(th) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); white-space: nowrap; }
-  .am :global(.tag) { display: inline-block; border-radius: 4px; padding: 2px 6px; font-size: 12px; background: #F1F2F4; margin: 0 4px 2px 0; white-space: nowrap; }
+  .am :global(.tag) { display: inline-block; border-radius: 4px; padding: 2px 6px; font-size: 12px; background: var(--a-soft); margin: 0 4px 2px 0; white-space: nowrap; }
   .am :global(.tag.ok) { background: #FFC72C; color: #15181D; font-weight: 700; }
-  .am :global(td button) { margin: 2px 4px 2px 0; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-size: 13px; white-space: nowrap; }
+  .am :global(td button) { margin: 2px 4px 2px 0; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--d4); background: var(--a-card); cursor: pointer; font-size: 13px; white-space: nowrap; }
   .am :global(td button.go) { background: var(--red); border-color: var(--red); color: #fff; }
   .am :global(.note) { color: var(--lt); font-size: 13px; }
 </style>
@@ -79,7 +79,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         (m.signedUpAsMember && m.season !== season ? '<span class="tag">Signed up on Membership page</span>' : '') + (m.verified ? '' : '<span class="tag">Email not confirmed</span>') +
         `</td><td class="note">${esc(m.note)}</td><td>` +
         (m.season === season ? '<button data-act="remove">Remove membership</button>' : `<button class="go" data-act="confirm">Confirm ${esc(season)}</button>`) + '</td></tr>').join('') +
-      '</tbody></table>' : `<p class="muted">${q ? 'No fan accounts found.' : 'No confirmed members yet this season.'}</p>`;
+      '</tbody></table>' : (q ? '<div class="empty-state"><b>🔎</b><p>No fan accounts match that search. Try their email or phone number.</p></div>' : '<div class="empty-state"><b>🎟️</b><p>No confirmed members yet this season. Search a fan above to confirm their membership.</p></div>');
   }
 
   $('list').addEventListener('click', async e => {

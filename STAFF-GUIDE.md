@@ -41,6 +41,11 @@ manager gives you once. Paste it in and the CMS remembers it on that device.
   listening to the commentary, the latest Predict & Win winner and whether the
   prize is paid, plus quick actions.
 - All the old admin addresses (e.g. /admin/matches, /admin/fans) still work.
+- **Light or dark:** the 🌙 / ☀️ button in the top bar switches dark mode.
+  Your choice is remembered for your account on that device.
+- **Long tables** (more than 25 rows) get a **filter box** above them (type a
+  name, match or word to narrow the rows) and **page numbers** below. Column
+  headers stay visible while you scroll.
 
 ### Roles (set by a Super Admin in Settings › Staff Users & Roles)
 | Role | Can open |
