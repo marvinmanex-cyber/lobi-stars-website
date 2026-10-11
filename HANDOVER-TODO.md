@@ -105,9 +105,9 @@ computer, no errors; 160 automated tests, all passing).
    match, ticket link and one story.
 
 **Fans and engagement**
-5. **Goal and kick-off alerts for fans** by phone notification (the site
-   already has the technology for staff food alerts; it can be extended to
-   fans who opt in).
+5. **Goal and kick-off alerts for fans** ✅ *built:* fans turn on 🔔 Match
+   alerts (radio show, kick-off, goals, half/full time); staff manage them in
+   Matchday › Fan Match Alerts. Works once the VAPID keys (A5) are set.
 6. **Use the Pidgin, Hausa and Tiv translations for key announcements** (ticket
    sales, match changes), not just the menus.
 7. **Keep Predict & Win, Man of the Match and the Fan Awards running every
