@@ -1,83 +1,51 @@
 ---
-// Homepage "Our Official Partners", in three compact centred rows:
-//   1. Principal + Official Kit Partner side by side
-//   2. Official Club Partners (and Official Suppliers, if any)
-//   3. Media & Broadcast and Institutional & Community as two small groups
-// Anything with no active partners is left out, so there are no empty
-// headings or boxes.
+// Homepage "Our Official Partners": every partner in equal logo cards on
+// straight lines, ordered by tier (Principal and Kit Partner first): one line
+// on desktop (two equal lines when there are more than 8), two lines on
+// tablets and phones. The tier or official title sits under each logo.
+// Anything with no active partners is left out.
 import PartnerLogo from './PartnerLogo.astro';
 import { getPartners } from '../../lib/partners';
 
 const all = await getPartners();
-const tier = (t: string) => all.filter(p => p.data.tier === t);
-const principal = tier('Principal Partner');
-const kit = tier('Official Kit Partner');
-const club = tier('Official Club Partners');
-const suppliers = tier('Official Suppliers');
-const media = tier('Media & Broadcast Partners');
-const institutional = tier('Institutional & Community Partners');
-const row3 = [
-  { label: 'Media & Broadcast', list: media },
-  { label: 'Institutional & Community', list: institutional },
-].filter(g => g.list.length);
+// Principal and Kit Partner show their tier; others their official title (e.g. "Official Banking Partner").
+const SHORT: Record<string, string> = { 'Media & Broadcast Partners': 'Media Partner', 'Institutional & Community Partners': 'Community Partner' };
+const label = (p: (typeof all)[number]) => ['Principal Partner', 'Official Kit Partner'].includes(p.data.tier)
+  ? p.data.tier : (p.data.officialTitle || SHORT[p.data.tier] || p.data.tier);
+const n = all.length;
+const desk = n <= 8 ? n : Math.ceil(n / 2);
+const half = Math.ceil(n / 2);
 ---
-{all.length > 0 && (
+{n > 0 && (
   <section class="ps" aria-labelledby="ps-title">
     <div class="ps-inner">
       <h2 class="ps-title" id="ps-title">Our Official Partners</h2>
-
-      {(principal.length > 0 || kit.length > 0) && (
-        <div class="ps-row ps-row--hero">
-          {principal.map(p => <PartnerLogo partner={p} size="principal" label="Principal Partner" />)}
-          {kit.map(p => <PartnerLogo partner={p} size="kit" label="Official Kit Partner" />)}
-        </div>
-      )}
-
-      {club.length > 0 && (
-        <div class="ps-block">
-          <h3 class="ps-h3">Official Club Partners</h3>
-          <div class="ps-row">{club.map(p => <PartnerLogo partner={p} size="club" label={p.data.officialTitle} />)}</div>
-        </div>
-      )}
-
-      {suppliers.length > 0 && (
-        <div class="ps-block">
-          <h3 class="ps-h3">Official Suppliers</h3>
-          <div class="ps-row">{suppliers.map(p => <PartnerLogo partner={p} size="club" label={p.data.officialTitle} />)}</div>
-        </div>
-      )}
-
-      {row3.length > 0 && (
-        <div class="ps-row ps-row--groups">
-          {row3.map(g => (
-            <div class="ps-group">
-              <h3 class="ps-h3">{g.label}</h3>
-              <div class="ps-row ps-row--inner">{g.list.map(p => <PartnerLogo partner={p} size="small" />)}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
+      <ul class="ps-grid" style={`--cols:${desk};--cols-t:${half};--cols-m:${Math.min(half, 4)}`}>
+        {all.map(p => <li><PartnerLogo partner={p} size="small" label={label(p)} /></li>)}
+      </ul>
       <div class="ps-cta"><a class="btn-o" href="/partners">View all partners</a></div>
     </div>
   </section>
 )}
 
 <style>
-  .ps { padding: 48px 0; background: var(--dark); border-top: 1px solid var(--d4); }
-  .ps-inner { max-width: 1100px; margin: 0 auto; padding: 0 5%; display: flex; flex-direction: column; gap: 32px; }
+  .ps { padding: 40px 0; background: var(--dark); border-top: 1px solid var(--d4); }
+  .ps-inner { max-width: 1240px; margin: 0 auto; padding: 0 5%; display: flex; flex-direction: column; gap: 24px; }
   .ps-title { margin: 0; text-align: center; font: 400 clamp(30px, 4vw, 42px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--white); }
-  .ps-row { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 24px 28px; }
-  .ps-row--hero { gap: 24px 40px; align-items: flex-end; }
-  .ps-block { display: flex; flex-direction: column; gap: 14px; }
-  .ps-row--groups { gap: 24px 56px; }
-  .ps-group { display: flex; flex-direction: column; align-items: center; gap: 12px; }
-  .ps-row--inner { gap: 20px; }
-  .ps-h3 { margin: 0; text-align: center; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gold-text); }
+  .ps-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); gap: 18px 14px; align-items: start; }
+  .ps-grid li { min-width: 0; }
+  .ps-grid :global(.pl) { width: 100%; gap: 6px; }
+  .ps-grid :global(.pl.pl--small .pl-box) { width: 100%; height: 64px; padding: 8px 10px; overflow: hidden; }
+  .ps-grid :global(.pl-label) { max-width: 100%; font-size: 11px; letter-spacing: .8px; line-height: 1.25; }
+  .ps-grid :global(.pl-age) { font-size: 10px; }
   .ps-cta { text-align: center; }
+  @media (max-width: 1023px) { .ps-grid { grid-template-columns: repeat(var(--cols-t), minmax(0, 1fr)); max-width: 760px; margin: 0 auto; width: 100%; } }
   @media (max-width: 600px) {
-    .ps-row--hero { flex-direction: column; align-items: center; gap: 22px; }
-    .ps-row { gap: 18px 16px; }
-    .ps-row--groups { flex-direction: column; align-items: center; gap: 24px; }
+    .ps { padding: 32px 0; }
+    .ps-inner { padding: 0 16px; gap: 18px; }
+    .ps-grid { grid-template-columns: repeat(var(--cols-m), minmax(0, 1fr)); gap: 12px 8px; }
+    .ps-grid :global(.pl.pl--small .pl-box) { height: 42px; padding: 5px 6px; border-radius: 8px; }
+    .ps-grid :global(.pl-label) { font-size: 9px; letter-spacing: .4px; }
+    .ps-grid :global(.pl.pl--small .pl-name) { font-size: 11px; }
   }
 </style>

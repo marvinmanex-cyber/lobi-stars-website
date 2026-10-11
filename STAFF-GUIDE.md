@@ -331,7 +331,11 @@ refunded*). Personalisation needs Paystack set up (the same account as tickets).
      "18+ | Drink Responsibly" next to their logo everywhere.
 4. Make sure **Active** is ticked and click **Save**. The partner appears on
    the home page, in the footer, on /partners and on their own partner page in
-   about 1–2 minutes.
+   about 1–2 minutes. Partners are shown **once per page**: the homepage
+   "Our Official Partners" section shows every partner in one straight line
+   (two lines on phones, or with more than 8 partners), so the footer partner
+   strip is left out there and on the partner pages; every other page shows
+   them in the footer.
 
 **To remove a partner** without deleting them, untick **Active**.
 

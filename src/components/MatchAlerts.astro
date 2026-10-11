@@ -15,9 +15,9 @@ const { variant = 'card' } = Astro.props;
     <div class="ma-box">
       <fieldset class="ma-opts">
         <legend class="sr-only">Which alerts?</legend>
-        <label><input type="checkbox" data-pref="radio" checked /> 🎙️ Radio show &amp; live commentary</label>
-        <label><input type="checkbox" data-pref="match" checked /> ⚽ Kick-off, half-time &amp; full time</label>
-        <label><input type="checkbox" data-pref="goals" checked /> 🥅 Goals</label>
+        <label><input type="checkbox" data-pref="radio" checked /> Radio show &amp; live commentary</label>
+        <label><input type="checkbox" data-pref="match" checked /> Kick-off, half-time &amp; full time</label>
+        <label><input type="checkbox" data-pref="goals" checked /> Goals</label>
       </fieldset>
       <div class="ma-acts">
         <button type="button" class="btn-p ma-on" data-ma-on>Turn on match alerts</button>
@@ -81,7 +81,7 @@ const { variant = 'card' } = Astro.props;
         var d = await r.json();
         if (d.subscribed) {
           box.querySelectorAll('[data-pref]').forEach(function (c) { c.checked = d.prefs[c.dataset.pref] !== false; });
-          draw(true); msg('✅ Match alerts are on for this device.', true);
+          draw(true); msg('Match alerts are on for this device.', true);
         }
       } catch (e) {}
     })();
@@ -104,7 +104,7 @@ const { variant = 'card' } = Astro.props;
         var r = await fetch('/api/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription: sub.toJSON(), prefs: p }) });
         var d = await r.json().catch(function () { return {}; });
         if (!r.ok) { msg(d.error || 'Something went wrong. Please try again.'); return; }
-        draw(true); msg('✅ Done! You will get match alerts on this device.', true);
+        draw(true); msg('Done! You will get match alerts on this device.', true);
         if (window.lsTrack) window.lsTrack('match_alerts_on', Object.keys(p).filter(function (x) { return p[x]; }).join(','));
       } catch (e) { msg('Match alerts could not be turned on: ' + (e.message || e)); }
       finally { btn.disabled = false; }
