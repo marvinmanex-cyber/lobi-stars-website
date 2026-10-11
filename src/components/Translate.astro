@@ -1,0 +1,39 @@
+---
+// Applies the visitor's chosen language to the interface (header, menu, tab
+// bar, footer, cookie notice, install prompt: elements marked
+// data-i18n-scope). Page content such as news stays in English.
+// ?lang=<code> chooses (or previews) a language; ?lang=en goes back.
+import { PUBLISHED } from '../lib/i18n';
+const codes = PUBLISHED.map(f => f._meta.code);
+---
+<script is:inline define:vars={{ codes }}>
+(function () {
+  var q = new URLSearchParams(location.search).get('lang');
+  try { if (q === 'en' || codes.indexOf(q) !== -1) localStorage.setItem('ls_lang', q); } catch (e) {}
+  var lang = 'en';
+  try { lang = localStorage.getItem('ls_lang') || 'en'; } catch (e) {}
+  if (lang === 'en' || codes.indexOf(lang) === -1) return;
+  var ATTRS = ['aria-label', 'placeholder', 'title', 'alt'];
+  function apply(dict) {
+    document.documentElement.lang = lang === 'pcm' ? 'pcm-NG' : lang;
+    document.querySelectorAll('[data-i18n-scope]').forEach(function (scope) {
+      var walker = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT);
+      var node;
+      while ((node = walker.nextNode())) {
+        var t = node.nodeValue.trim();
+        if (t && dict[t]) node.nodeValue = node.nodeValue.replace(t, dict[t]);
+      }
+      scope.querySelectorAll('[aria-label],[placeholder],[title],[alt]').forEach(function (el) {
+        ATTRS.forEach(function (a) { var v = el.getAttribute(a); if (v && dict[v.trim()]) el.setAttribute(a, dict[v.trim()]); });
+      });
+    });
+  }
+  var cache = null;
+  function run() {
+    if (cache) return apply(cache);
+    fetch('/i18n/' + lang + '.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { if (d) { cache = d; apply(d); } }).catch(function () {});
+  }
+  run();
+  if (!window.__lsI18n) { window.__lsI18n = 1; document.addEventListener('astro:after-swap', run); }
+})();
+</script>

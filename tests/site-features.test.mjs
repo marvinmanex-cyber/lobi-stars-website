@@ -84,7 +84,7 @@ test('header icons, mobile tab bar and the account page', async () => {
   assert.match(html, /aria-label="Search the site"/);
   assert.match(html, /aria-label="Club shop"/);
   assert.match(html, /id="accountLink" href="\/fans\/login\/"/);
-  assert.match(html, /<nav class="tb" aria-label="Quick links">/);
+  assert.match(html, /<nav class="tb" aria-label="Quick links"[^>]*>/);
   assert.match(html, /class="tb-item" href="\/news" aria-current="page"/, 'News tab active on the news page');
   assert.equal((await fetch(`${BASE}/fans/account/`)).status, 200);
 

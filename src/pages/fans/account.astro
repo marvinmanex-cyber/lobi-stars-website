@@ -11,7 +11,7 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
       <p class="acc-hi">Hi <strong id="accName"></strong></p>
       <section class="mcard-wrap" id="memCard" hidden aria-label="Digital membership card">
         <div class="mcard">
-          <div class="mcard-top"><img src="/images/lobi-stars-fc.jpg" alt="" width="44" height="44" /><div><p class="mcard-club">Lobi Stars FC</p><p class="mcard-kind">Official Member</p></div><span class="mcard-season" id="mcSeason"></span></div>
+          <div class="mcard-top"><img src="/images/lobi-stars-badge.png" alt="" width="44" height="44" /><div><p class="mcard-club">Lobi Stars FC</p><p class="mcard-kind">Official Member</p></div><span class="mcard-season" id="mcSeason"></span></div>
           <p class="mcard-name" id="mcName"></p>
           <div class="mcard-row"><div><span>Member number</span><b id="mcId"></b></div><div><span>Member since</span><b id="mcSince"></b></div></div>
           <p class="mcard-foot">Pride of Benue &middot; Red &amp; Gold</p>
@@ -50,7 +50,7 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
   .mcard-wrap { margin: 0 0 22px; }
   .mcard { position: relative; border-radius: 16px; padding: 18px 20px; color: #fff; background: radial-gradient(120% 140% at 0% 0%, #A3161B 0%, #4D0B0D 55%, #15181D 100%); border: 2px solid #C9A227; box-shadow: 0 14px 30px rgba(77, 11, 13, .3); aspect-ratio: 1.586; display: flex; flex-direction: column; max-width: 420px; margin: 0 auto; }
   .mcard-top { display: flex; align-items: center; gap: 10px; }
-  .mcard-top img { width: 44px; height: 44px; border-radius: 50%; background: #fff; object-fit: contain; }
+  .mcard-top img { width: 44px; height: 44px; border-radius: 50%; background: #fff; object-fit: contain; padding: 4px; }
   .mcard-club { margin: 0; font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .mcard-kind { margin: 2px 0 0; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
   .mcard-season { margin-left: auto; padding: 4px 10px; border-radius: 999px; background: #FFC72C; color: #15181D; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; }

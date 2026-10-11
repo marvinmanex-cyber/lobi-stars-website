@@ -14,7 +14,7 @@ const tabs = [
   { id: 'shop', label: 'Shop', href: '/shop', icon: 'M5 8h14l-1.2 12H6.2L5 8zM9 8V6.5a3 3 0 0 1 6 0V8' },
 ];
 ---
-<nav class="tb" aria-label="Quick links">
+<nav class="tb" aria-label="Quick links" data-i18n-scope>
   {tabs.map(t => (
     <a class="tb-item" href={t.href} aria-current={active === t.id ? 'page' : undefined}>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d={t.icon} /></svg>

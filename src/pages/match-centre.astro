@@ -13,6 +13,8 @@ import MatchesTabs from '../components/MatchesTabs.astro';
 </Layout>
 
 <style>
+  /* The match is drawn by the script; keeping the footer below the screen until then stops the page jumping. */
+  .mc { min-height: 100vh; min-height: 100svh; }
   .mc-loading { padding: 80px 5%; text-align: center; color: var(--lt); }
   .mc :global(.mc-head) { background: linear-gradient(140deg, #15181D 0%, #2A0507 100%); color: #fff; padding: 34px 0 30px; }
   .mc :global(.mc-inner) { max-width: 1000px; margin: 0 auto; padding: 0 5%; }

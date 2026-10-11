@@ -3,6 +3,7 @@ import { FOOTER_TAGLINE, SOCIAL_LINKS } from '../lib/site';
 import { optionalClub } from '../lib/nav';
 import PartnerLogo from './partners/PartnerLogo.astro';
 import WhatsAppChannel from './WhatsAppChannel.astro';
+import LangSwitch from './LangSwitch.astro';
 import { getPartners } from '../lib/partners';
 
 interface Props { whiteLabel?: boolean }
@@ -42,12 +43,12 @@ const ICONS: Record<string, string> = {
 };
 const year = new Date().getFullYear();
 ---
-<footer class="sf">
+<footer class="sf" data-i18n-scope>
   <div class="sf-inner">
     <div class="sf-top">
       <div class="sf-brand">
         <a class="sf-logo" href="/">
-          <img src="/images/lobi-stars-fc.jpg" alt="" width="52" height="52" loading="lazy" />
+          <img src="/images/lobi-stars-badge.png" alt="" width="52" height="52" loading="lazy" />
           <span>Lobi Stars<small>Football Club</small></span>
         </a>
         <p>{FOOTER_TAGLINE}</p>
@@ -109,6 +110,7 @@ const year = new Date().getFullYear();
         <li><a href="/sitemap">Sitemap</a></li>
         <li><button type="button" data-cookie-settings>Cookie settings</button></li>
       </ul>
+      <LangSwitch />
     </div>
   </div>
 </footer>
@@ -118,7 +120,7 @@ const year = new Date().getFullYear();
   .sf-inner { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
   .sf-top { display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; padding-bottom: 40px; border-bottom: 1px solid rgba(255, 255, 255, .12); }
   .sf-logo { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
-  .sf-logo img { width: 52px; height: 52px; border-radius: 50%; background: #fff; object-fit: contain; }
+  .sf-logo img { width: 52px; height: 52px; border-radius: 50%; background: #fff; object-fit: contain; padding: 5px; }
   .sf-logo span { font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1.5px; color: #fff; }
   .sf-logo small { display: block; font: 600 10px/1.6 'Barlow Condensed', sans-serif; letter-spacing: 3px; color: #FFC72C; text-transform: uppercase; }
   .sf-brand p { margin: 16px 0 0; max-width: 420px; font-size: 14px; line-height: 1.7; color: rgba(255, 255, 255, .7); }

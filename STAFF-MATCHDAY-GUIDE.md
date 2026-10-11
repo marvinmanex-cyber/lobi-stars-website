@@ -226,3 +226,8 @@ exported files private and delete them when you no longer need them.
     draft mission and values and publish them; add community projects or tag
     Club stories "Community"; upload any annual reports or statements for the
     Transparency page (STAFF-GUIDE.md, section 20).
+15. **Translations:** a native Pidgin speaker checks the draft Pidgin
+    (https://lobistarsfc.com/?lang=pcm); native Hausa and Tiv speakers
+    translate the interface text (STAFF-GUIDE.md, section 22).
+16. **Google Search Console:** verify the site and submit the sitemap
+    (STAFF-GUIDE.md, section 23).

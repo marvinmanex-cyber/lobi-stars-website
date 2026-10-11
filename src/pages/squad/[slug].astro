@@ -48,8 +48,22 @@ const stats = [
   ...(p.position === 'GK' ? [['Clean sheets', p.cleanSheets]] : []),
 ] as [string, number | null][];
 const hasStats = stats.some(([, v]) => (v ?? 0) > 0);
+
+// Structured data for search engines (real players only).
+const personJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: p.name,
+  url: new URL(`/squad/${player.id}/`, Astro.site).toString(),
+  ...(p.photo ? { image: new URL(p.photo, Astro.site).toString() } : {}),
+  jobTitle: `${position}, Lobi Stars FC`,
+  ...(p.dateOfBirth ? { birthDate: p.dateOfBirth.toISOString().slice(0, 10) } : {}),
+  ...(p.nationality ? { nationality: { '@type': 'Country', name: p.nationality } } : {}),
+  ...(p.height ? { height: p.height } : {}),
+  memberOf: { '@type': 'SportsTeam', name: 'Lobi Stars Football Club', url: new URL('/', Astro.site).toString() },
+};
 ---
-<Layout title={`${p.name} | Lobi Stars Squad`} description={`${p.name}, ${position} (#${p.number}) for Lobi Stars FC: profile, appearances, goals and news.`} image={p.photo || undefined} noindex={!!p.isSample}>
+<Layout title={`${p.name} | Lobi Stars Squad`} description={`${p.name}, ${position} (#${p.number}) for Lobi Stars FC: profile, appearances, goals and news.`} image={p.photo || undefined} noindex={!!p.isSample} jsonLd={p.isSample ? [] : [personJsonLd]}>
   <div class="wrap pl">
     <a class="pl-back" href="/squad">&larr; Back to the squad</a>
 

@@ -15,12 +15,12 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const IMAGES = path.join(ROOT, 'public', 'images');
 const PUBLIC = path.join(ROOT, 'public');
 const MAX_WIDTH = 1600;
-const VARIANT_WIDTHS = [480, 960];
+const VARIANT_WIDTHS = [240, 480, 960];
 const BADGE = path.join(IMAGES, 'lobi-stars-fc.jpg');
 const RED = '#E31E24', DEEP = '#4D0B0D', GOLD = '#FFC72C';
 
 // Generated files that shouldn't be treated as content photos.
-const GENERATED = new Set(['icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'og-default.jpg']);
+const GENERATED = new Set(['lobi-stars-badge.png', 'lobi-stars-badge.webp', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'og-default.jpg']);
 
 const kb = n => `${(n / 1024).toFixed(0)} KB`;
 
@@ -66,11 +66,13 @@ async function optimisePhotos() {
       }
       const webp = await sharp(full).webp({ quality: 74, effort: 6 }).toBuffer();
       const current = (await stat(full)).size;
-      if (webp.length < current * 0.9) {
+      const width = (await sharp(full).metadata()).width;
+      // A WebP copy when it is smaller, or when smaller sizes are needed for
+      // phones (the build only offers sizes for images with a WebP copy).
+      if (webp.length < current * 0.9 || width > VARIANT_WIDTHS[0] * 1.25) {
         await writeFile(webpPath, webp);
         webpTotal += webp.length;
         // Smaller WebP versions for phones (used in srcset at build time).
-        const width = (await sharp(full).metadata()).width;
         for (const w of VARIANT_WIDTHS) {
           if (width <= w * 1.25) continue;
           const v = await sharp(full).resize({ width: w }).webp({ quality: 72, effort: 6 }).toBuffer();
@@ -154,7 +156,10 @@ async function makeIcons() {
     offset += png.length;
   });
   await writeFile(path.join(PUBLIC, 'favicon.ico'), Buffer.concat([header, ...pngs]));
-  console.log('Icons: favicon.ico, favicon-16/32, apple-touch-icon, icon-192/512, maskable');
+  // Small badge for the header, footer and admin logo (shown at 34-64px).
+  await sharp(await badge(128)).png().toFile(path.join(IMAGES, 'lobi-stars-badge.png'));
+  await sharp(await badge(128)).webp({ quality: 82 }).toFile(path.join(IMAGES, 'lobi-stars-badge.webp'));
+  console.log('Icons: favicon.ico, favicon-16/32, apple-touch-icon, icon-192/512, maskable, lobi-stars-badge (128px)');
 }
 
 async function makeShareImage() {

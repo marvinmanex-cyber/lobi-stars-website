@@ -1031,6 +1031,13 @@ point their inbound webhook at the same address with the same key.
 7. **In-seat food, commentary and the other open items:** see "Outstanding
    items for the club" in STAFF-MATCHDAY-GUIDE.md.
 
+**Where to find each feature in this guide:** team news and the matchday
+checklist (section 2), player stats (section 2), award votes (section 10),
+members-only stories (section 1 and 11), shirt personalisation orders
+(section 5), hospitality (section 12), the promo bar ("Other things you can
+update in the CMS"), the club pages (section 20), the app (section 21),
+translations (section 22) and search and sharing (section 23).
+
 **Trying the admin safely:** the website manager can run the website on
 their own computer with demo messages and contacts (`npm run seed:local`, see
 DEPLOYMENT.md). This never touches the live site.
@@ -1106,6 +1113,61 @@ on the home screen and opens full screen without the browser bar.
   it; pages are always loaded fresh.
 - How often the prompt is shown, accepted or dismissed is counted in the
   analytics as **install_prompt** clicks.
+
+---
+
+## 22. Translations (English, Pidgin, Hausa, Tiv)
+
+The website's **interface** (menus, buttons, labels, the footer, the cookie
+notice and the install box) can be shown in other languages. **News stories,
+match reports and other content stay in English.**
+
+- The translations are in four files in the website code (`src/i18n/`):
+  `en.json` (English, the original), `pcm.json` (Nigerian Pidgin),
+  `ha.json` (Hausa) and `tiv.json` (Tiv). Each line is the English text and
+  its translation.
+- **Pidgin:** a full DRAFT is ready but was not written by a native speaker.
+  Ask a native speaker to check it on the live site: open
+  **https://lobistarsfc.com/?lang=pcm** (every page then shows Pidgin until
+  you open **?lang=en**). Send the website manager any corrections.
+- **Hausa and Tiv:** every line says `TODO: ...`. A native speaker writes the
+  translation for each line (no machine translation). Send the website
+  manager the completed list.
+- A language is only switched on when **every** line is translated **and** a
+  native speaker has checked it (the website manager then sets
+  `"reviewed": true` in the file). The **EN | Pidgin | Hausa | Tiv** switcher
+  appears at the bottom of every page once at least one language besides
+  English is switched on. A half-translated language is never shown.
+- When new buttons or menu items are added to the site, they are added to
+  `en.json` first; the other files need the same lines translated.
+
+---
+
+## 23. Search engines and sharing (automatic)
+
+Nothing to do for most of this; it is built in. What it means for staff:
+
+- **Every page has its own title, description and share picture.** When a
+  link is shared on WhatsApp, Facebook or X, the preview shows:
+  - **news stories:** the story's cover photo, title and summary (so always
+    write a clear **Summary** and choose a good **Cover Image**);
+  - **players:** their photo (players without a photo get a red-and-gold
+    card with their name);
+  - **matches:** a card with both club crests, e.g. *Lobi Stars v Kada
+    Warriors* (a club without a crest in the site gets its initials);
+  - **other pages (awards, partners, club pages...):** a branded card with
+    the page title (partners show their logo).
+- **Google** is told what each page is (a news article, a match with its
+  date, venue and teams, a player, the club) so results can show extra
+  detail, and the **sitemap** (https://lobistarsfc.com/sitemap.xml) lists
+  every public page and match automatically. Drafts, hidden pages and the
+  admin are never listed.
+- **New opponent crest:** when the club plays a team whose crest is not on
+  the site yet, send the crest image to the website manager so it appears on
+  tickets, fixtures and the match share picture.
+- **Website manager, once:** add the site to **Google Search Console**
+  (search.google.com/search-console), verify it with a DNS record in
+  Cloudflare, and submit the sitemap address above.
 
 ---
 

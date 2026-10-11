@@ -3,6 +3,7 @@
 //    loading="lazy" (except the header and homepage hero), decoding="async",
 //    and a <picture> WebP source when a .webp copy exists.
 //  - writes sitemap.xml listing every page that isn't marked noindex.
+//  - branded share images (integrations/og) for pages without their own photo.
 //  - members-only stories: cuts the story text out of the public HTML and
 //    writes it to functions/api/_generated/membersContent.js, so it is only
 //    ever sent by the server to confirmed members (functions/news/[slug].js).
@@ -10,6 +11,7 @@ import { readFile, writeFile, readdir, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { makeShareImages } from './og/index.mjs';
 
 async function walk(dir) {
   const out = [];
@@ -70,9 +72,9 @@ function rewriteImages(html, dist, sizes) {
     if (!canWrap) return out;
     // srcset is space-separated, so spaces in file names must be encoded.
     const webpSrc = ((src.startsWith('/') ? '' : '/') + src.replace(/\.(jpe?g|png)$/i, '.webp')).replace(/ /g, '%20');
-    // Offer the smaller -480w / -960w versions (made by optimize-images) so
+    // Offer the smaller -240w / -480w / -960w versions (made by optimize-images) so
     // phones don't download desktop-sized photos.
-    const candidates = [480, 960]
+    const candidates = [240, 480, 960]
       .filter(w => existsSync(path.join(dist, ...webpKey.replace(/\.webp$/, `-${w}w.webp`).split('/'))))
       .map(w => `${webpSrc.replace(/\.webp$/, `-${w}w.webp`)} ${w}w`);
     if (candidates.length && dims) {
@@ -117,6 +119,9 @@ export default function postbuild() {
           const published = html.match(/<meta property="article:published_time" content="([^"]+)"/)?.[1];
           urls.push({ loc: site + route, lastmod: published?.slice(0, 10) });
         }
+
+        // Branded share images for pages without their own photo (and match cards).
+        await makeShareImages({ dist, site, files, logger });
 
         urls.sort((a, b) => a.loc.localeCompare(b.loc));
         const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
