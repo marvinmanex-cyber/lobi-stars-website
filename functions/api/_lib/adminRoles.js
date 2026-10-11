@@ -16,8 +16,10 @@ export const ROLES = {
   commercial: { label: 'Commercial', areas: ['overview', 'commerce', 'partners', 'inbox', 'cms'] },
   fan_relations: { label: 'Fan Relations', areas: ['overview', 'fans', 'inbox'] },
   analyst: { label: 'Analyst (read-only)', areas: ['overview', 'analytics'] },
+  // Kitchen tablets / cooks: only the Kitchen Screen (accept, cooking, ready).
+  kitchen: { label: 'Kitchen', areas: ['overview', 'kitchen'] },
 };
-export const ASSIGNABLE_ROLES = ['super_admin', 'media', 'matchday', 'commercial', 'fan_relations', 'analyst', 'staff'];
+export const ASSIGNABLE_ROLES = ['super_admin', 'media', 'matchday', 'commercial', 'fan_relations', 'analyst', 'kitchen', 'staff'];
 
 /** The owner (admin code) is a Super Admin. Unknown roles get nothing beyond the dashboard. */
 export const roleOf = admin => (admin?.role === 'owner' ? 'super_admin' : ROLES[admin?.role] ? admin.role : 'none');
@@ -27,6 +29,8 @@ export const areasOf = admin => {
   // Full matchday access includes the matchday content screens; full fans access includes the inbox.
   if (set.has('matchday')) set.add('matchday-content');
   if (set.has('fans')) set.add('inbox');
+  // Commerce (food orders) includes the Kitchen Screen.
+  if (set.has('commerce')) set.add('kitchen');
   return [...set];
 };
 export const canAccess = (admin, area) => !area || areasOf(admin).includes(area);
@@ -42,6 +46,7 @@ const RULES = [
   [/^\/admin\/newsletter(\/|$)/, 'fans|partners'],
   [/^\/admin\/contact-sources(\/|$)/, 'fans|analytics'],
   [/^\/admin\/(fans|members)(\/|$)/, 'fans'],
+  [/^\/admin\/kitchen(\/|$)/, 'kitchen'],
   [/^\/admin\/food-orders\/analytics(\/|$)/, 'commerce|analytics'],
   [/^\/admin\/(shirt-orders|food-orders)(\/|$)/, 'commerce'],
   [/^\/admin\/partners(\/|$)/, 'partners'],
@@ -60,6 +65,7 @@ const RULES = [
   [/^\/api\/admin\/fans\/export(\/|$)/, 'fans|analytics'],
   [/^\/api\/admin\/(contact-sources|contact-source-defs)(\/|$)/, 'fans|analytics|settings'],
   [/^\/api\/admin\/(fans|members)(\/|$)/, 'fans'],
+  [/^\/api\/admin\/kitchen(\/|$)/, 'kitchen'],
   [/^\/api\/admin\/food-analytics(\/|$)/, 'commerce|analytics'],
   [/^\/api\/admin\/(shirt-orders|food-orders|food-menu|food-photo|food-alerts)(\/|$)/, 'commerce'],
   [/^\/api\/admin\/partner-report(\/|$)/, 'partners|analytics'],

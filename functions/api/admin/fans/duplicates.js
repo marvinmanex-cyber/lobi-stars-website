@@ -41,11 +41,13 @@ async function findPairs(db) {
       const [a, b] = [people[i], people[j]].sort((p, q) => (p.id < q.id ? -1 : 1));
       if (ignored.has(`${a.id}|${b.id}`)) continue;
       const why = similar(a, b);
-      if (why) pairs.push({ a, b, why });
-      if (pairs.length >= 200) return pairs;
+      if (why) pairs.push({ a, b, why, rank: !a.email && !b.email ? 2 : !a.email || !b.email ? 1 : 0 });
+      if (pairs.length >= 3000) break;
     }
   }
-  return pairs;
+  // Strongest first: similar emails, then one email missing, then no emails at all
+  // (common names without emails would otherwise crowd out the likely matches).
+  return pairs.sort((x, y) => x.rank - y.rank).slice(0, 200);
 }
 
 // GET /api/admin/fans/duplicates -- pairs to review.

@@ -1,0 +1,22 @@
+# Copy to .dev.vars for local testing (wrangler pages dev reads it). Never commit .dev.vars.
+# In production these are set in Cloudflare → Workers & Pages → the project → Settings → Variables and Secrets.
+# The full list with explanations is in DEPLOYMENT.md ("All Cloudflare variables and secrets").
+
+ADMIN_CODE=change-me
+SESSION_SECRET=change-me-long-random
+PAYSTACK_SECRET_KEY=sk_test_xxx
+# PAYSTACK_FAKE=1            # local tests only, NEVER in production
+# FANS_DEV_LINKS=1           # local tests only
+
+RESEND_API_KEY=
+RESEND_FROM=Lobi Stars FC <noreply@lobistarsfc.com>
+TURNSTILE_SECRET_KEY=
+
+# Kitchen order alerts
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:info@lobistarsfc.com
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_KITCHEN_CHAT_ID=
+TELEGRAM_WEBHOOK_SECRET=
+CRON_SECRET=

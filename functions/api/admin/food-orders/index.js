@@ -2,10 +2,11 @@ import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { ensureFoodSchema, expireStale, moveOrder, STATUS, foodSettings, saveFoodSetting, staffMessage, whereText } from '../../_lib/foodOrders.js';
 import { buildXlsx } from '../../_lib/xlsx.js';
+import { kitchenStatus } from '../../_lib/kitchenNotify.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
 const json = s => { try { return JSON.parse(s); } catch { return []; } };
-const ACTIVE = ['PAID', 'PREPARING', 'OUT_FOR_DELIVERY'];
+const ACTIVE = ['PAID', 'ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY'];
 const wat = iso => (iso ? new Date(new Date(iso).getTime() + 3600e3).toISOString().slice(0, 16).replace('T', ' ') : '');
 
 // For WhatsApp replies: the customer's number for wa.me and ready-made messages per step.
@@ -21,6 +22,7 @@ const view = (o, settings) => ({
   preparingAt: o.preparing_at, outAt: o.out_at, deliveredAt: o.delivered_at, cancelledAt: o.cancelled_at, statusBy: o.status_by, statusAt: o.status_at,
   channel: o.channel || 'paystack', fulfilment: o.fulfilment || 'seat', pickupPoint: o.pickup_point || '', where: whereText(o), confirmedAt: o.confirmed_at,
   wa: waReplies(o, settings),
+  kitchen: kitchenStatus(o),
 });
 
 // GET /api/admin/food-orders
@@ -83,9 +85,9 @@ export async function onRequestGet({ request, env }) {
   }
 
   let sql = base, binds = [];
-  if (show === 'open') sql += ` WHERE f.order_status IN ('PAID','PREPARING','OUT_FOR_DELIVERY') ORDER BY f.paid_iso ASC`;
+  if (show === 'open') sql += ` WHERE f.order_status IN ('PAID','ACCEPTED','PREPARING','OUT_FOR_DELIVERY') ORDER BY f.paid_iso ASC`;
   else if (show === 'awaiting') sql += ` WHERE f.order_status = 'AWAITING_PAYMENT' ORDER BY f.created_iso DESC`;
-  else if (show === 'board') { sql += ` WHERE f.order_status IN ('AWAITING_PAYMENT','AWAITING_WHATSAPP','CONFIRMED','PAID','PREPARING','OUT_FOR_DELIVERY') OR (f.order_status = 'DELIVERED' AND f.delivered_at >= ?) ORDER BY f.paid_iso ASC, f.created_iso ASC`; binds = [new Date(Date.now() - 30 * 60_000).toISOString()]; }
+  else if (show === 'board') { sql += ` WHERE f.order_status IN ('AWAITING_PAYMENT','AWAITING_WHATSAPP','CONFIRMED','PAID','ACCEPTED','PREPARING','OUT_FOR_DELIVERY') OR (f.order_status = 'DELIVERED' AND f.delivered_at >= ?) ORDER BY f.paid_iso ASC, f.created_iso ASC`; binds = [new Date(Date.now() - 30 * 60_000).toISOString()]; }
   else if (show === 'today') { sql += ` WHERE f.created_iso >= ? ORDER BY f.created_iso DESC`; binds = [todayStart]; }
   else sql += ` ORDER BY f.created_iso DESC`;
   const { results } = await db.prepare(`${sql} LIMIT 500`).bind(...binds).all();
@@ -112,7 +114,7 @@ export async function onRequestGet({ request, env }) {
 
 // POST /api/admin/food-orders { id, status }  -- move an order (Start preparing, Out for delivery, Delivered, Cancel, Refunded)
 // POST /api/admin/food-orders { settings: { paymentExpiryMinutes } }
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, waitUntil }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
   let b;
@@ -125,11 +127,28 @@ export async function onRequestPost({ request, env }) {
     await logAdminAction(env.DB, admin, 'food_settings', `payment time limit ${m} min`);
     return Response.json({ ok: true, settings: await foodSettings(env.DB) }, { headers: noStore });
   }
+  if (b.action === 'resend_kitchen') {
+    const o = await env.DB.prepare(`SELECT * FROM food_orders WHERE id = ?`).bind(String(b.id || '')).first();
+    if (!o) return Response.json({ error: 'Order not found' }, { status: 404 });
+    if (o.order_status !== 'PAID') return Response.json({ error: 'Only paid orders the kitchen has not accepted can be re-sent.' }, { status: 409 });
+    const { notifyKitchen } = await import('../../_lib/kitchenNotify.js');
+    const r = await notifyKitchen(env, o.id, o.kitchen_alerted_at ? 'repeat' : 'initial');
+    await logAdminAction(env.DB, admin, 'kitchen_resend', o.ref);
+    return Response.json({ ok: true, result: r }, { headers: noStore });
+  }
   if (!STATUS[b.status]) return Response.json({ error: 'Unknown status' }, { status: 400 });
   const order = await env.DB.prepare(`SELECT * FROM food_orders WHERE id = ?`).bind(String(b.id || '')).first();
   if (!order) return Response.json({ error: 'Order not found' }, { status: 404 });
   const err = await moveOrder(env.DB, order, b.status, admin.name);
   if (err) return Response.json({ error: err }, { status: 409 });
   await logAdminAction(env.DB, admin, 'food_order_status', `${order.ref}: ${order.order_status} → ${b.status}`);
+  // Kitchen alerts (in the background, so staff get an instant reply).
+  const later = (async () => {
+    const k = await import('../../_lib/kitchenNotify.js');
+    if (b.status === 'PAID' && order.order_status !== 'PAID') await k.kitchenOnPaid(env, order.id);
+    if (b.status === 'CANCELLED' && order.kitchen_alerted_at && ['PAID', 'ACCEPTED', 'PREPARING'].includes(order.order_status)) await k.notifyKitchen(env, order.id, 'cancel');
+    if (['ACCEPTED', 'PREPARING'].includes(b.status) && order.order_status === 'PAID') await k.clearTelegramButtons(env, env.DB, order.id, `✅ ${k.escHtml(order.ref)} accepted by ${k.escHtml(admin.name)}`);
+  })().catch(err => console.error('[food] kitchen', err));
+  if (waitUntil) waitUntil(later); else await later;
   return Response.json({ ok: true }, { headers: noStore });
 }

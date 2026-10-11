@@ -237,3 +237,7 @@ exported files private and delete them when you no longer need them.
 18. **Order on WhatsApp:** add the bank details fans pay into and any pickup
     points (Admin › Commerce › Food: Menu & Prices › Ordering settings), and
     decide who answers WhatsApp orders on matchday (STAFF-GUIDE.md, section 13).
+19. **Kitchen alerts:** create the Telegram kitchen group and bot, set the
+    secrets, run the webhook script, deploy the cron Worker, and turn on
+    alerts on the kitchen tablet (DEPLOYMENT.md, "Kitchen Order Alerts";
+    STAFF-GUIDE.md, section 13).

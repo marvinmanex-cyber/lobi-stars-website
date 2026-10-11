@@ -1,0 +1,293 @@
+---
+// /admin/kitchen/ -- the Kitchen Screen: a full-screen, installable app for a
+// phone or tablet on the kitchen counter. NEW (paid) | COOKING (accepted,
+// preparing) | READY. New orders beep loudly every 5 seconds and the NEW
+// column flashes until someone taps ACCEPT. Push notifications (with the
+// ticket) reach the device even when the screen is closed. Staff log in with
+// their own account (the Kitchen role only opens this screen).
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Lobi Stars Kitchen" description="Kitchen order screen." noindex manifest="/kitchen.webmanifest" themeColor="#0B0D10">
+  <div class="kt" id="kt">
+    <header class="kt-head">
+      <div class="kt-brand"><img src="/images/lobi-stars-badge.png" alt="" width="40" height="40" /><h1>Lobi Stars Kitchen</h1></div>
+      <span class="kt-clock" id="clock" aria-label="Time"></span>
+      <span class="kt-dot" id="dot" role="status"><i aria-hidden="true"></i><span>Connecting…</span></span>
+      <div class="kt-btns">
+        <button type="button" class="kt-tb" id="alertsBtn" aria-pressed="false">🔔 Alerts OFF</button>
+        <button type="button" class="kt-tb" id="muteBtn" aria-pressed="false">🔇 Mute 1 min</button>
+      </div>
+    </header>
+
+    <section class="kt-setup" id="setup" aria-labelledby="setupH" hidden>
+      <h2 id="setupH">Turn on kitchen alerts on this device</h2>
+      <p>One tap allows notifications, keeps the screen awake and turns the order sound on.</p>
+      <label class="kt-lbl" for="devName">Name this device</label>
+      <input class="kt-inp" id="devName" maxlength="60" placeholder="Kitchen tablet" />
+      <button type="button" class="kt-big" id="turnOn">Turn on kitchen alerts</button>
+      <p class="kt-help" id="setupHelp" hidden></p>
+      <p class="kt-help" id="iosNote" hidden>📱 <b>iPhone / iPad:</b> add this page to your Home Screen first (Share → Add to Home Screen), then open it from there and tap the button again.</p>
+    </section>
+
+    <button type="button" class="kt-sound" id="soundTap" hidden>🔈 Tap here to turn the order sound on</button>
+    <p class="kt-msg" id="msg" role="alert" hidden></p>
+
+    <main class="kt-cols" id="cols">
+      <section class="kt-col kt-new" id="colNew" aria-labelledby="hNew"><h2 id="hNew">NEW <span id="nNew">0</span></h2><div class="kt-list" id="listNew"></div></section>
+      <section class="kt-col kt-cook" aria-labelledby="hCook"><h2 id="hCook">COOKING <span id="nCook">0</span></h2><div class="kt-list" id="listCook"></div></section>
+      <section class="kt-col kt-ready" aria-labelledby="hReady"><h2 id="hReady">READY <span id="nReady">0</span></h2><div class="kt-list" id="listReady"></div></section>
+    </main>
+  </div>
+</Layout>
+
+<style is:global>
+  body:has(.kt) { background: #0B0D10; }
+  body:has(.kt) .admin-main { padding: 0; max-width: none; }
+  body:has(.kt) .skip-link { display: none; }
+</style>
+<style>
+  .kt [hidden] { display: none !important; }
+  .kt { min-height: 100vh; background: #0B0D10; color: #F5F7FA; font-family: 'Barlow', system-ui, sans-serif; padding: 0 12px 24px; }
+  .kt-head { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 4px; background: #0B0D10; border-bottom: 1px solid #2A2F37; }
+  .kt-brand { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; min-width: 0; }
+  .kt-brand img { width: 40px; height: 40px; border-radius: 50%; background: #fff; padding: 3px; }
+  .kt-brand h1 { margin: 0; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; white-space: nowrap; }
+  .kt-clock { font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #FFC72C; }
+  .kt-dot { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; }
+  .kt-dot i { width: 14px; height: 14px; border-radius: 50%; background: #6B7280; }
+  .kt-dot.on i { background: #22C55E; box-shadow: 0 0 10px #22C55E; } .kt-dot.off i { background: #EF4444; box-shadow: 0 0 10px #EF4444; }
+  .kt-btns { display: flex; gap: 8px; }
+  .kt-tb { min-height: 48px; padding: 8px 14px; border-radius: 12px; border: 2px solid #3A414B; background: #161A20; color: #fff; font: 700 16px/1 'Barlow', sans-serif; cursor: pointer; }
+  .kt-tb[aria-pressed="true"] { background: #16A34A; border-color: #16A34A; }
+  #muteBtn[aria-pressed="true"] { background: #B45309; border-color: #B45309; }
+  .kt-setup { margin: 16px auto; max-width: 560px; padding: 22px; border-radius: 18px; background: #161A20; border: 2px solid #FFC72C; text-align: center; }
+  .kt-setup h2 { margin: 0 0 6px; font: 400 32px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .kt-setup p { margin: 0 0 14px; color: #C9CDD3; font-size: 17px; line-height: 1.5; }
+  .kt-lbl { display: block; text-align: left; font-weight: 700; margin-bottom: 6px; }
+  .kt-inp { width: 100%; min-height: 54px; padding: 10px 14px; border-radius: 12px; border: 2px solid #3A414B; background: #0B0D10; color: #fff; font-size: 18px; margin-bottom: 14px; }
+  .kt-big { width: 100%; min-height: 64px; border: 0; border-radius: 14px; background: #E31E24; color: #fff; font: 700 22px/1.1 'Barlow', sans-serif; cursor: pointer; }
+  .kt-big:focus-visible, .kt-act:focus-visible, .kt-tb:focus-visible, .kt-sound:focus-visible { outline: 4px solid #FFC72C; outline-offset: 2px; }
+  .kt-help { margin: 14px 0 0 !important; padding: 12px; border-radius: 12px; background: #2A2412; color: #FDE68A !important; text-align: left; font-size: 16px !important; }
+  .kt-sound { display: block; width: 100%; margin: 12px 0 0; min-height: 56px; border-radius: 14px; border: 2px dashed #FFC72C; background: #1F1A0B; color: #FFC72C; font: 700 18px/1.2 'Barlow', sans-serif; cursor: pointer; }
+  .kt-msg { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: #3B0D0F; color: #FECACA; font-weight: 700; font-size: 17px; }
+  .kt-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+  .kt-col { min-width: 0; border-radius: 18px; background: #12161B; padding: 12px; border-top: 6px solid var(--c); }
+  .kt-new { --c: #22C55E; } .kt-cook { --c: #3B82F6; } .kt-ready { --c: #A855F7; }
+  .kt-col h2 { margin: 0 0 10px; font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: 2px; display: flex; align-items: center; gap: 10px; }
+  .kt-col h2 span { min-width: 40px; padding: 2px 10px; border-radius: 999px; background: var(--c); color: #0B0D10; text-align: center; font-size: 28px; }
+  .kt-new.flash { animation: ktflash 1s steps(2, start) infinite; }
+  @keyframes ktflash { 50% { background: #14532D; box-shadow: 0 0 0 4px #22C55E inset; } }
+  @media (prefers-reduced-motion: reduce) { .kt-new.flash { animation: none; box-shadow: 0 0 0 4px #22C55E inset; } }
+  .kt-list { display: grid; gap: 12px; }
+  .kt-empty { margin: 14px 4px; color: #8B93A0; font-size: 18px; }
+  .kt :global(.kt-card) { border-radius: 16px; background: #1B2027; border: 2px solid #2E343C; padding: 14px; }
+  .kt :global(.kt-card.hl) { border-color: #FFC72C; box-shadow: 0 0 0 4px rgba(255,199,44,.35); }
+  .kt :global(.kt-top) { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .kt :global(.kt-ref) { font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; overflow-wrap: anywhere; }
+  .kt :global(.kt-age) { font: 700 22px/1 'Barlow', sans-serif; padding: 4px 10px; border-radius: 10px; background: #2A2F37; color: #fff; white-space: nowrap; }
+  .kt :global(.kt-age.amber) { background: #B45309; } .kt :global(.kt-age.red) { background: #DC2626; }
+  .kt :global(.kt-where) { margin: 8px 0 2px; font: 700 22px/1.2 'Barlow', sans-serif; color: #FFC72C; }
+  .kt :global(.kt-who) { margin: 0 0 8px; color: #C9CDD3; font-size: 16px; }
+  .kt :global(.kt-items) { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; }
+  .kt :global(.kt-items li) { display: flex; gap: 10px; align-items: baseline; font-size: 22px; line-height: 1.25; }
+  .kt :global(.kt-items b) { min-width: 46px; font: 400 34px/1 'Bebas Neue', sans-serif; color: #22C55E; }
+  .kt :global(.kt-note) { margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: #FDE047; color: #1F1600; font-weight: 700; font-size: 19px; }
+  .kt :global(.kt-act) { width: 100%; min-height: 64px; border: 0; border-radius: 14px; font: 700 24px/1 'Barlow', sans-serif; letter-spacing: 1px; color: #fff; cursor: pointer; background: var(--b); }
+  .kt :global(.kt-act:disabled) { opacity: .6; cursor: wait; }
+  .kt :global(.kt-meta) { margin: 8px 0 0; color: #8B93A0; font-size: 14px; }
+  @media (max-width: 900px) {
+    .kt-cols { grid-template-columns: 1fr; }
+    .kt-brand h1 { font-size: 24px; }
+    .kt-clock { font-size: 24px; }
+    .kt-btns { width: 100%; } .kt-tb { flex: 1; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': code };
+  const $ = id => document.getElementById(id);
+  const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  let orders = [], offset = 0, mutedUntil = 0, audio = null, wakeLock = null, highlight = new URLSearchParams(location.search).get('order');
+  let alertsOn = store.get('ls_kitchen_alerts') === '1';
+
+  // ── Clock and connection ──
+  const tick = () => { $('clock').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Lagos' }); };
+  tick(); setInterval(tick, 1000);
+  function online(ok) { const d = $('dot'); d.className = 'kt-dot ' + (ok ? 'on' : 'off'); d.lastElementChild.textContent = ok ? 'Connected' : 'Offline'; }
+  function msg(text) { $('msg').textContent = text; $('msg').hidden = !text; }
+
+  // ── Sound (Web Audio, no file) ──
+  function unlockAudio() {
+    try {
+      if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === 'suspended') audio.resume();
+      $('soundTap').hidden = true;
+      return true;
+    } catch (e) { return false; }
+  }
+  function tone(f, start, dur, vol) {
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = 'square'; o.frequency.value = f;
+    g.gain.setValueAtTime(vol, audio.currentTime + start);
+    g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + start + dur);
+    o.connect(g).connect(audio.destination); o.start(audio.currentTime + start); o.stop(audio.currentTime + start + dur + 0.05);
+  }
+  function alarm() {
+    if (!audio || audio.state !== 'running') { $('soundTap').hidden = !alertsOn; return; }
+    [1046, 1318, 1568, 1046, 1318, 1568, 2093].forEach((f, i) => tone(f, i * 0.14 + (i > 2 ? 0.2 : 0), 0.12, 0.6));
+  }
+
+  // ── Wake Lock (keep the screen on) ──
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator && !wakeLock && document.visibilityState === 'visible') { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { keepAwake(); load(); } });
+
+  // ── Turn on alerts (one tap) ──
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  $('iosNote').hidden = !(ios && !standalone);
+  $('devName').value = store.get('ls_kitchen_device') || '';
+  function drawAlerts() {
+    $('alertsBtn').textContent = alertsOn ? '🔔 Alerts ON' : '🔕 Alerts OFF';
+    $('alertsBtn').setAttribute('aria-pressed', String(alertsOn));
+    $('setup').hidden = alertsOn;
+  }
+  const b64ToBytes = s => { const p = (s + '===').slice(0, s.length + (4 - s.length % 4) % 4).replace(/-/g, '+').replace(/_/g, '/'); return Uint8Array.from(atob(p), c => c.charCodeAt(0)); };
+  async function turnOn() {
+    const help = $('setupHelp'); help.hidden = true;
+    unlockAudio(); keepAwake();
+    const name = $('devName').value.trim() || 'Kitchen tablet';
+    store.set('ls_kitchen_device', name);
+    let note = '';
+    try {
+      if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+        note = ios && !standalone ? 'Phone notifications need this page on the Home Screen first (see below). The screen will still beep while it is open.' : 'This browser cannot show phone notifications. The screen will still beep while it is open.';
+      } else {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') note = 'Notifications are blocked. Allow them in the browser settings for lobistarsfc.com (site settings → Notifications → Allow), then tap the button again. The screen will still beep while it is open.';
+        else {
+          const reg = await navigator.serviceWorker.register('/admin-sw.js', { scope: '/admin/' });
+          await navigator.serviceWorker.ready;
+          const k = await fetch('/api/admin/kitchen/push/public-key', { headers: H }).then(r => r.json().then(d => ({ ok: r.ok, d })));
+          if (!k.ok) note = (k.d.error || 'Push is not set up on the server yet.') + ' The screen will still beep while it is open.';
+          else {
+            const sub = (await reg.pushManager.getSubscription()) || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(k.d.key) });
+            const r = await fetch('/api/admin/kitchen/push/subscribe', { method: 'POST', headers: H, body: JSON.stringify({ subscription: sub.toJSON(), deviceName: name }) });
+            if (!r.ok) note = 'This device could not be registered for notifications. Please try again.';
+          }
+        }
+      }
+    } catch (e) { note = 'Notifications could not be turned on (' + (e.message || e) + '). The screen will still beep while it is open.'; }
+    alertsOn = true; store.set('ls_kitchen_alerts', '1'); drawAlerts();
+    if (note) { $('setup').hidden = false; help.textContent = note; help.hidden = false; $('turnOn').textContent = 'Try again'; }
+    alarmCheck();
+  }
+  $('turnOn').addEventListener('click', turnOn);
+  $('alertsBtn').addEventListener('click', () => {
+    if (!alertsOn) { turnOn(); return; }
+    alertsOn = false; store.set('ls_kitchen_alerts', '0'); drawAlerts(); alarmCheck();
+  });
+  $('muteBtn').addEventListener('click', () => { unlockAudio(); mutedUntil = mutedUntil > Date.now() ? 0 : Date.now() + 60000; drawMute(); });
+  function drawMute() {
+    const m = mutedUntil > Date.now();
+    $('muteBtn').setAttribute('aria-pressed', String(m));
+    $('muteBtn').textContent = m ? `🔇 Muted ${Math.ceil((mutedUntil - Date.now()) / 1000)} s` : '🔇 Mute 1 min';
+  }
+  setInterval(drawMute, 1000);
+  $('soundTap').addEventListener('click', () => { unlockAudio(); keepAwake(); alarmCheck(); });
+  // Any tap unlocks sound and the wake lock (browsers need a tap first).
+  document.addEventListener('pointerdown', () => { if (alertsOn) { unlockAudio(); keepAwake(); } }, { passive: true });
+
+  // ── The board ──
+  const NEXT = { PAID: ['ACCEPT', 'accept', '#16A34A'], ACCEPTED: ['START COOKING', 'preparing', '#2563EB'], PREPARING: ['MARK READY', 'ready', '#7C3AED'] };
+  const minsSince = iso => Math.max(0, Math.floor((Date.now() + offset - Date.parse(iso)) / 60000));
+  function card(o) {
+    const c = el('article', 'kt-card' + (highlight && o.ref === highlight ? ' hl' : ''));
+    c.dataset.ref = o.ref;
+    const top = el('div', 'kt-top');
+    top.append(el('span', 'kt-ref', o.ref));
+    if (o.status !== 'OUT_FOR_DELIVERY') {
+      const m = minsSince(o.paidAt);
+      const age = el('span', 'kt-age' + (m >= 10 ? ' red' : m >= 5 ? ' amber' : ''), `${m} min`);
+      age.dataset.paid = o.paidAt; top.append(age);
+    } else top.append(el('span', 'kt-age', '✓ Ready'));
+    c.append(top, el('p', 'kt-where', o.where));
+    if (o.firstName) c.append(el('p', 'kt-who', `👤 ${o.firstName}`));
+    const ul = el('ul', 'kt-items');
+    for (const i of o.items) { const li = el('li'); li.append(el('b', '', `${i.qty}×`), el('span', '', i.name)); ul.append(li); }
+    c.append(ul);
+    if (o.notes) c.append(el('p', 'kt-note', `📝 ${o.notes}`));
+    const nx = NEXT[o.status];
+    if (nx) {
+      const b = el('button', 'kt-act', o.status === 'PREPARING' && o.fulfilment === 'pickup' ? 'MARK READY FOR PICKUP' : nx[0]);
+      b.type = 'button'; b.style.setProperty('--b', nx[2]); b.dataset.action = nx[1]; b.dataset.ref = o.ref;
+      c.append(b);
+    }
+    if (o.acceptedBy && o.status !== 'PAID') c.append(el('p', 'kt-meta', `Accepted by ${o.acceptedBy}`));
+    return c;
+  }
+  function fill(listId, countId, list, empty) {
+    const box = $(listId);
+    box.replaceChildren(...(list.length ? list.map(card) : [el('p', 'kt-empty', empty)]));
+    $(countId).textContent = String(list.length);
+  }
+  function render() {
+    fill('listNew', 'nNew', orders.filter(o => o.status === 'PAID'), 'No new orders');
+    fill('listCook', 'nCook', orders.filter(o => o.status === 'ACCEPTED' || o.status === 'PREPARING'), 'Nothing cooking');
+    fill('listReady', 'nReady', orders.filter(o => o.status === 'OUT_FOR_DELIVERY').reverse(), 'Nothing ready');
+    if (highlight) { const h = document.querySelector(`.kt-card[data-ref="${CSS.escape(highlight)}"]`); if (h) { h.scrollIntoView({ block: 'center', behavior: 'smooth' }); highlight = null; } }
+    alarmCheck();
+  }
+  // Ages tick without reloading.
+  setInterval(() => document.querySelectorAll('.kt-age[data-paid]').forEach(a => { const m = minsSince(a.dataset.paid); a.textContent = `${m} min`; a.className = 'kt-age' + (m >= 10 ? ' red' : m >= 5 ? ' amber' : ''); }), 15000);
+
+  let loading = false;
+  async function load() {
+    if (loading) return; loading = true;
+    try {
+      const r = await fetch('/api/admin/kitchen/orders', { headers: H, cache: 'no-store' });
+      if (r.status === 401) { location.href = '/admin/login/?next=/admin/kitchen/'; return; }
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Could not load orders');
+      offset = Date.parse(d.serverTime) - Date.now();
+      orders = d.orders; online(true); msg(''); render();
+    } catch (e) { online(false); msg('Offline: trying again…'); }
+    finally { loading = false; }
+  }
+
+  // Loud alert every 5 seconds while any order is NEW (until accepted), unless muted or alerts are off.
+  let alarmTimer = 0;
+  function alarmCheck() {
+    const waiting = orders.some(o => o.status === 'PAID');
+    $('colNew').classList.toggle('flash', waiting && alertsOn);
+    if (waiting && alertsOn && !alarmTimer) { if (mutedUntil <= Date.now()) alarm(); alarmTimer = setInterval(() => { if (mutedUntil <= Date.now()) alarm(); }, 5000); }
+    if ((!waiting || !alertsOn) && alarmTimer) { clearInterval(alarmTimer); alarmTimer = 0; }
+  }
+
+  $('cols').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-action]'); if (!b) return;
+    unlockAudio();
+    b.disabled = true; const label = b.textContent; b.textContent = '…';
+    try {
+      const r = await fetch(`/api/admin/kitchen/orders/${encodeURIComponent(b.dataset.ref)}/${b.dataset.action}`, { method: 'POST', headers: H });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) msg(d.error || 'That did not work. Please try again.');
+    } catch (err) { msg('Offline: the change was not saved. Try again.'); b.disabled = false; b.textContent = label; return; }
+    load();
+  });
+
+  // A push arrived (or a notification was tapped): refresh at once.
+  if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', ev => {
+    if (ev.data && ev.data.type === 'kitchen-push') { if (ev.data.open) { try { highlight = new URL(ev.data.open, location.href).searchParams.get('order'); } catch (e) {} } load(); }
+  });
+
+  drawAlerts();
+  if (alertsOn) { $('soundTap').hidden = false; keepAwake(); }
+  load();
+  setInterval(load, 10000);
+})();
+</script>

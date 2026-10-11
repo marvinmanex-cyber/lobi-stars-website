@@ -81,7 +81,8 @@ import Layout from '../../layouts/Layout.astro';
   const time = iso => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
   const STEPS = ['PAID', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
   const STAMPS = { PAID: 'paidAt', PREPARING: 'preparingAt', OUT_FOR_DELIVERY: 'outAt', DELIVERED: 'deliveredAt' };
-  const HEAD = { PAID: 'confirmed', PREPARING: 'being prepared', OUT_FOR_DELIVERY: 'on its way', DELIVERED: 'delivered' };
+  const HEAD = { PAID: 'confirmed', ACCEPTED: 'accepted by the kitchen', PREPARING: 'being prepared', OUT_FOR_DELIVERY: 'on its way', DELIVERED: 'delivered',
+    AWAITING_WHATSAPP: 'saved: send it to us on WhatsApp', CONFIRMED: 'confirmed: waiting for your payment' };
   let tries = 0, timer = 0;
 
   function show(id) { ['waiting', 'problem', 'done'].forEach(x => { $(x).hidden = x !== id; }); }
@@ -110,19 +111,21 @@ import Layout from '../../layouts/Layout.astro';
     if (o.status === 'EXPIRED') return problem('Order <span class="r">expired</span>', `Order ${o.ref} wasn't paid in time, so it was cancelled. If money left your account, contact the club with this reference.`);
 
     $('ref').textContent = o.ref;
-    $('seat').textContent = `Seat ${o.seat}${o.stand ? ' · ' + o.stand : ''}`;
+    $('seat').textContent = o.fulfilment === 'pickup' ? `Collect from ${o.pickupPoint}` : `Seat ${o.seat}${o.stand ? ' · ' + o.stand : ''}`;
     $('items').innerHTML = o.items.map(i => `<li><span></span><span>${naira(i.priceKobo * i.qty)}</span></li>`).join('');
     [...$('items').children].forEach((li, n) => { li.firstChild.textContent = `${o.items[n].qty} × ${o.items[n].name}`; });
     $('total').textContent = naira(o.totalKobo);
     $('note').hidden = !o.notes; $('note').textContent = o.notes ? `Your note: ${o.notes}` : '';
     const stopped = o.status === 'CANCELLED' || o.status === 'REFUNDED';
-    const at = STEPS.indexOf(o.status);
+    // Accepted by the kitchen counts as the "confirmed" step; WhatsApp orders before payment show no step yet.
+    const at = STEPS.indexOf(o.status === 'ACCEPTED' ? 'PAID' : o.status);
     document.querySelectorAll('#track li').forEach((li, n) => {
       li.classList.toggle('on', !stopped && n <= at);
       li.classList.toggle('now', !stopped && n === at);
       li.querySelector('[data-time]').textContent = n <= at ? time(o[STAMPS[li.dataset.step]]) : '';
     });
     $('headline').textContent = stopped ? (o.status === 'REFUNDED' ? 'refunded' : 'cancelled') : HEAD[o.status] || 'confirmed';
+    if (o.status === 'OUT_FOR_DELIVERY' && o.fulfilment === 'pickup') $('headline').textContent = 'ready to collect';
     $('cancelled').hidden = !stopped;
     $('cancelled').textContent = o.status === 'REFUNDED' ? 'This order was cancelled and refunded.' : stopped ? 'This order was cancelled by the club. If you were charged, a refund will be arranged; contact the club with your reference.' : '';
     show('done');

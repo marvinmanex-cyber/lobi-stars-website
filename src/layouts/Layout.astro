@@ -24,6 +24,9 @@ export interface Props {
   whiteLabel?: boolean;
   /** No header, footer or WhatsApp button (e.g. the pop-out mini player). */
   bare?: boolean;
+  /** A different app manifest and browser colour (the Kitchen Screen app). */
+  manifest?: string;
+  themeColor?: string;
 }
 const {
   title,
@@ -35,6 +38,8 @@ const {
   jsonLd = [],
   whiteLabel = false,
   bare = false,
+  manifest,
+  themeColor,
 } = Astro.props;
 // In-page navigation is only used while live commentary is playing (so the
 // audio keeps going between pages); otherwise every link is a normal page
@@ -49,7 +54,7 @@ const waLink = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Hel
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<HeadMeta title={title} description={description} image={image} imageAlt={imageAlt} type={type} noindex={noindex} jsonLd={jsonLd} />
+<HeadMeta title={title} description={description} image={image} imageAlt={imageAlt} type={type} noindex={noindex} jsonLd={jsonLd} manifest={manifest} themeColor={themeColor} />
 <slot name="head" />
 {softNav && <ClientRouter fallback="swap" />}
 <script is:inline>

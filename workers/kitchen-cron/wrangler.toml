@@ -1,0 +1,13 @@
+# Separate from the website (Cloudflare Pages). Deploy from this folder:
+#   cd workers/kitchen-cron
+#   npx wrangler deploy
+#   npx wrangler secret put CRON_SECRET      (same value as CRON_SECRET on the Pages project)
+name = "lobistars-kitchen-cron"
+main = "index.js"
+compatibility_date = "2026-10-01"
+
+[triggers]
+crons = ["* * * * *"]
+
+[vars]
+SITE_URL = "https://lobistarsfc.com"

@@ -1,0 +1,124 @@
+---
+// Commerce › Kitchen Alerts: switch kitchen alerts and Telegram on or off,
+// how often unaccepted orders are alerted again, the registered Kitchen
+// Screen devices, a test alert and the last 50 alerts sent.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Kitchen Alerts | Lobi Stars Admin" description="Kitchen order alerts." noindex>
+  <div class="wrap ka">
+    <AdminNav current="kitchen-alerts" />
+    <div class="ka-head">
+      <div><div class="stag">Commerce › In-Seat Food</div><h1 class="stitle">Kitchen <span class="r">Alerts</span></h1></div>
+      <div class="ka-tools"><a class="btn-p" href="/admin/kitchen/">👩‍🍳 Open the Kitchen Screen</a><button type="button" class="btn-o" id="test">🔔 Send test alert</button></div>
+    </div>
+    <p class="muted ka-lede">When an order is paid, the kitchen gets a <b>push notification</b> on every Kitchen Screen device and a message in the <b>Telegram kitchen group</b>. Someone must accept it (Kitchen Screen, live order board or the Telegram ✅ button); until then it is sent again.</p>
+    <p class="ka-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <section class="ka-ready" id="ready" aria-label="What is set up"></section>
+
+    <form class="panel ka-form" id="form">
+      <h2>Settings</h2>
+      <label class="ka-check"><input type="checkbox" name="enabled" /> <span><b>Kitchen alerts on</b> (push to Kitchen Screen devices)</span></label>
+      <label class="ka-check"><input type="checkbox" name="telegram" /> <span><b>Telegram kitchen group</b> (with an Accept button)</span></label>
+      <div class="ka-row">
+        <label>Alert again every (minutes)<input class="form-inp" type="number" name="repeatMinutes" min="1" max="30" /></label>
+        <label>Stop after (repeats)<input class="form-inp" type="number" name="maxRepeats" min="0" max="20" /></label>
+      </div>
+      <button class="btn-p" type="submit">Save settings</button>
+    </form>
+
+    <section class="panel">
+      <h2>Kitchen devices</h2>
+      <p class="muted">Phones and tablets that pressed <b>Turn on kitchen alerts</b> on the Kitchen Screen. Remove a device that is lost or no longer used.</p>
+      <div class="scroll" id="devices"><p class="muted">Loading…</p></div>
+    </section>
+
+    <section class="panel">
+      <h2>Last 50 alerts</h2>
+      <div class="scroll" id="log"><p class="muted">Loading…</p></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .ka { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
+  .ka-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .ka-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ka-lede { max-width: 860px; margin-bottom: 14px; }
+  .ka-msg { padding: 12px 16px; border-radius: 10px; margin: 0 0 14px; }
+  .ka-msg.ok { background: #E8F7EE; color: #17643A; } .ka-msg.err { background: #FDECEC; color: #A3161B; }
+  .ka-ready { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .ka :global(.ka-r) { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--a-line); background: var(--a-card); font-size: 14px; }
+  .ka :global(.ka-r b) { display: block; font-size: 15px; margin-bottom: 2px; }
+  .ka :global(.ka-r.ok) { border-left: 4px solid #16A34A; } .ka :global(.ka-r.no) { border-left: 4px solid #F59E0B; }
+  .panel { margin-bottom: 16px; padding: 18px; }
+  .panel h2 { margin: 0 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ka-form { display: grid; gap: 12px; }
+  .ka-check { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; }
+  .ka-check input { width: 22px; height: 22px; accent-color: #16A34A; flex: none; }
+  .ka-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .ka-row label { display: grid; gap: 4px; font-weight: 700; font-size: 14px; }
+  .ka :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .ka :global(th), .ka :global(td) { padding: 9px 12px; text-align: left; font-size: 14px; vertical-align: top; }
+  .ka :global(.ok-t) { color: #16A34A; font-weight: 700; } .ka :global(.no-t) { color: #DC2626; font-weight: 700; }
+  .ka :global(td button) { min-height: 36px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; font-weight: 700; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const wat = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Lagos' }) : '–';
+  const ATT = { initial: 'New order', repeat: 'Repeat', cancel: 'Cancelled', test: 'Test' };
+  let devices = [];
+  async function api(body) {
+    const res = await fetch('/api/admin/kitchen/settings', body ? { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-code': code }, body: JSON.stringify(body) } : { headers: { 'x-admin-code': code }, cache: 'no-store' });
+    if (res.status === 401) location.href = '/admin/login/?next=/admin/food-orders/kitchen-alerts/';
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function msg(t, ok) { $('msg').textContent = t; $('msg').className = 'ka-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; }
+  async function load() {
+    try {
+      const d = await api();
+      const f = $('form').elements, s = d.settings;
+      f.enabled.checked = s.enabled; f.telegram.checked = s.telegram; f.repeatMinutes.value = s.repeatMinutes; f.maxRepeats.value = s.maxRepeats;
+      const r = d.ready;
+      $('ready').innerHTML = [
+        [r.push, 'Push notifications', r.push ? 'VAPID keys set' : 'Needs VAPID keys on the server'],
+        [r.telegram, 'Telegram group', r.telegram ? 'Bot and group set' : 'Needs TELEGRAM_BOT_TOKEN and TELEGRAM_KITCHEN_CHAT_ID'],
+        [r.webhook, 'Telegram Accept button', r.webhook ? 'Webhook secret set' : 'Needs TELEGRAM_WEBHOOK_SECRET + the webhook script'],
+        [r.cron, 'Repeat alerts (cron)', r.cron ? 'CRON_SECRET set' : 'Needs CRON_SECRET + the cron Worker (repeats still run while the Kitchen Screen is open)'],
+      ].map(([ok, t, sub]) => `<div class="ka-r ${ok ? 'ok' : 'no'}"><b>${ok ? '✅' : '⚠️'} ${esc(t)}</b>${esc(sub)}</div>`).join('');
+      devices = d.devices;
+      $('devices').innerHTML = devices.length ? `<table><thead><tr><th>Device</th><th>Added by</th><th>Added</th><th>Last alert received</th><th>Status</th><th></th></tr></thead><tbody>${devices.map((x, i) => `<tr><td><b>${esc(x.device || 'Kitchen device')}</b></td><td>${esc(x.staff_name)}</td><td>${esc(wat(x.created_at))}</td><td>${esc(wat(x.last_ok_at))}</td><td>${x.is_active ? '<span class="ok-t">Active</span>' : '<span class="no-t">Stopped (device unsubscribed)</span>'}</td><td><button type="button" data-rm="${i}">Remove</button></td></tr>`).join('')}</tbody></table>`
+        : '<div class="empty-state"><b>📱</b>No kitchen devices yet. Open the Kitchen Screen on the kitchen phone or tablet and tap <b>Turn on kitchen alerts</b>.</div>';
+      $('log').innerHTML = d.log.length ? `<table><thead><tr><th>Time (WAT)</th><th>Order</th><th>Alert</th><th>Channel</th><th>Result</th></tr></thead><tbody>${d.log.map(l => `<tr><td>${esc(wat(l.created_at))}</td><td>${esc(l.ref || '–')}</td><td>${esc(ATT[l.attempt] || l.attempt)}</td><td>${l.channel === 'telegram' ? 'Telegram' : 'Push'}</td><td>${l.success ? '<span class="ok-t">Sent</span>' : `<span class="no-t">Failed</span> ${esc(l.error || '')}`}</td></tr>`).join('')}</tbody></table>`
+        : '<div class="empty-state"><b>🔔</b>No alerts sent yet.</div>';
+    } catch (err) { msg(err.message, false); }
+  }
+  $('form').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target.elements;
+    try { await api({ settings: { enabled: f.enabled.checked, telegram: f.telegram.checked, repeatMinutes: Number(f.repeatMinutes.value), maxRepeats: Number(f.maxRepeats.value) } }); msg('Settings saved.', true); load(); }
+    catch (err) { msg(err.message, false); }
+  });
+  $('devices').addEventListener('click', async e => {
+    const b = e.target.closest('[data-rm]'); if (!b) return;
+    const d = devices[Number(b.dataset.rm)];
+    if (!confirm(`Remove "${d.device || 'Kitchen device'}"? It will stop getting kitchen alerts.`)) return;
+    try { await api({ removeDevice: d.endpoint }); msg('Device removed.', true); load(); } catch (err) { msg(err.message, false); }
+  });
+  $('test').addEventListener('click', async () => {
+    try {
+      const res = await fetch('/api/admin/kitchen/push/test', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-code': code } });
+      const d = await res.json();
+      const r = d.result || {};
+      msg(`Test sent. Push: ${r.push && r.push.ok ? 'sent' : 'not sent (' + ((r.push && r.push.error) || '') + ')'}. Telegram: ${r.telegram ? (r.telegram.ok ? 'sent' : 'not sent (' + (r.telegram.error || '') + ')') : 'switched off'}.`, !!(r.push && r.push.ok) || !!(r.telegram && r.telegram.ok));
+      load();
+    } catch (err) { msg(err.message, false); }
+  });
+  load();
+})();
+</script>

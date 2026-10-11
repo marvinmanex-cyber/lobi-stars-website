@@ -634,7 +634,8 @@ page.
 | WhatsApp – to confirm | WhatsApp green | A WhatsApp order: reply to the fan and confirm it. **Not paid: do not prepare.** |
 | Confirmed – awaiting payment | light blue | WhatsApp order confirmed; waiting for the fan's payment. **Do not prepare.** |
 | Awaiting payment | amber | Not paid yet. **Do not prepare.** |
-| Paid | green | Payment confirmed. Start preparing. |
+| Paid | green | Payment confirmed. The kitchen is alerted: accept it. |
+| Accepted by kitchen | teal | The kitchen has seen it; start cooking. |
 | Preparing | blue | The kitchen is making it. |
 | Out for delivery | purple | A runner is taking it to the seat. |
 | Delivered | dark green | Handed to the fan. |
@@ -663,6 +664,42 @@ updates by itself (the top shows **● Live**); there is no need to refresh.
   plays a sound: a soft chime for a **new unpaid** order (🟡) and a loud,
   urgent beep for a **PAID** order (🟢, start preparing). Tap anywhere on the
   page once so the browser allows sounds. **🔊** in the top bar mutes them.
+
+### Kitchen alerts and the Kitchen Screen (Admin › Commerce › Kitchen Screen)
+When an order is **paid**, the kitchen is alerted straight away and must
+**accept** it, so no paid order is missed.
+- **The Kitchen Screen** (https://lobistarsfc.com/admin/kitchen/) is a
+  full-screen app for the kitchen phone or tablet: big text, dark screen,
+  three columns: **NEW** (paid, flashing, loud beep every 5 seconds until
+  someone taps **ACCEPT**) → **COOKING** (**START COOKING**, then **MARK
+  READY**) → **READY** (disappears after 15 minutes). Each ticket shows the
+  reference, minutes since payment (amber after 5, red after 10), the food in
+  big numbers, the note in yellow, the seat or pickup point and the fan's
+  first name. No phone numbers or money.
+- **First time on a device:** log in, open the Kitchen Screen, type a name
+  (e.g. "Kitchen tablet") and tap **Turn on kitchen alerts** (allows
+  notifications, keeps the screen on, turns the sound on). Install it as an
+  app (Android: browser menu → Install app; iPhone: Share → Add to Home
+  Screen, then open it from the new icon and tap the button again).
+- **Each matchday:** open the Kitchen Screen and **tap the screen once** so
+  the sound can play. **🔇 Mute 1 min** silences it briefly; **🔔 Alerts
+  ON/OFF** switches this device's alerts.
+- **Phone notifications** arrive even when the screen is closed; tap one to
+  open the order.
+- **Telegram:** each paid order is also posted in the kitchen Telegram group
+  with an **✅ Accept** button. The first person to tap it accepts the order
+  ("Accepted by Ada at 19:43").
+- **Not accepted?** The alert repeats every 3 minutes (up to 5 times) with
+  "⚠️ STILL WAITING". Accepting anywhere (Kitchen Screen, live board or
+  Telegram) stops it. A cancelled order sends "❌ CANCELLED, do not cook".
+- **Kitchen staff accounts:** give cooks a login with the **Kitchen** role.
+  It only opens the Kitchen Screen (no customer details).
+- **Admin › Commerce › Food: Kitchen Alerts:** switch alerts and Telegram on
+  or off, how often to repeat and how many times, the registered kitchen
+  devices (remove lost ones), **Send test alert**, and the last 50 alerts
+  with any errors. The orders list shows each order's kitchen status
+  ("Alerted 19:42", "Accepted by …", "⚠️ Not accepted, 4 min") and a
+  **Resend kitchen alert** button.
 
 ### The orders list (Food: Orders)
 Search by reference, name, phone, email or seat, and filter by status,
@@ -866,7 +903,7 @@ delete them when you no longer need them.
 Shows pairs with the **same name and a very similar email** (a typo, dots,
 or the same username at another provider) that couldn't be merged
 automatically. Press **Merge** (choose whose details to keep; all sources and
-history are combined) or **Keep separate** (never suggested again).
+history are combined) or **Keep separate** (never suggested again). The likeliest matches (similar emails) are listed first; people with the same name but no email come last.
 
 ### Managing sources (Settings access)
 At the bottom of Contact Sources, **Manage sources** lets you rename sources

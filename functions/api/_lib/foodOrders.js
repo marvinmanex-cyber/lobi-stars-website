@@ -1,7 +1,9 @@
 // In-seat food orders.
 //
 // Order life cycle (order_status):
-//   AWAITING_PAYMENT -> PAID -> PREPARING -> OUT_FOR_DELIVERY -> DELIVERED
+//   AWAITING_PAYMENT -> PAID -> ACCEPTED (kitchen saw it) -> PREPARING -> OUT_FOR_DELIVERY (ready) -> DELIVERED
+// When an order becomes PAID the kitchen is alerted (kitchenNotify.js) and
+// alerted again every few minutes until someone accepts it.
 //   plus PAYMENT_FAILED, EXPIRED, CANCELLED, REFUNDED.
 //
 // An order is saved as AWAITING_PAYMENT with a reference such as
@@ -34,6 +36,7 @@ export const STATUS = {
   AWAITING_WHATSAPP: { label: 'WhatsApp – to confirm', color: '#25D366' },
   CONFIRMED: { label: 'Confirmed – awaiting payment', color: '#0EA5E9' },
   PAID: { label: 'Paid', color: '#16A34A' },
+  ACCEPTED: { label: 'Accepted by kitchen', color: '#0D9488' },
   PREPARING: { label: 'Preparing', color: '#2563EB' },
   OUT_FOR_DELIVERY: { label: 'Out for delivery', color: '#7C3AED' },
   DELIVERED: { label: 'Delivered', color: '#166534' },
@@ -46,8 +49,9 @@ export const STATUS = {
 export const STAFF_MOVES = {
   AWAITING_WHATSAPP: ['CONFIRMED', 'PAID', 'CANCELLED'],
   CONFIRMED: ['PAID', 'AWAITING_WHATSAPP', 'CANCELLED'],
-  PAID: ['PREPARING', 'CANCELLED'],
-  PREPARING: ['OUT_FOR_DELIVERY', 'PAID', 'CANCELLED'],
+  PAID: ['ACCEPTED', 'PREPARING', 'CANCELLED'],
+  ACCEPTED: ['PREPARING', 'PAID', 'CANCELLED'],
+  PREPARING: ['OUT_FOR_DELIVERY', 'ACCEPTED', 'PAID', 'CANCELLED'],
   OUT_FOR_DELIVERY: ['DELIVERED', 'PREPARING', 'CANCELLED'],
   DELIVERED: ['OUT_FOR_DELIVERY'],
   CANCELLED: ['REFUNDED', 'PAID'],
@@ -84,10 +88,14 @@ export async function ensureFoodSchema(db) {
     ['fulfilment', "TEXT NOT NULL DEFAULT 'seat'"],     // seat (deliver to seat) / pickup
     ['pickup_point', 'TEXT'],
     ['confirmed_at', 'TEXT'],
+    // Kitchen alerts: first alert (stops duplicates), who accepted and when, repeat alerts.
+    ['kitchen_alerted_at', 'TEXT'], ['kitchen_ack_at', 'TEXT'], ['kitchen_ack_by', 'TEXT'],
+    ['repeat_count', 'INTEGER NOT NULL DEFAULT 0'], ['last_alert_at', 'TEXT'],
   ]) if (!cols.has(name)) await db.prepare(`ALTER TABLE food_orders ADD COLUMN ${name} ${type}`).run();
   await db.batch([
     db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_food_ref ON food_orders(ref) WHERE ref IS NOT NULL`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_food_status ON food_orders(order_status)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_food_kitchen ON food_orders(order_status, kitchen_ack_at)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS food_ref_counter (day TEXT PRIMARY KEY, n INTEGER NOT NULL)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS food_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT, updated_by TEXT)`),
     // Existing orders get the new statuses (nothing is deleted).
@@ -197,6 +205,12 @@ export async function confirmFoodPayment(env, order, { waitUntil, origin = 'http
 
   // Staff alert "PAID – start preparing" (sent once).
   await raiseFoodAlert(env, 'paid', paid, { waitUntil, origin }).catch(err => console.error('[food] paid alert', err));
+  // Kitchen alert (Kitchen Screen push + Telegram), repeated until accepted.
+  try {
+    const { kitchenOnPaid } = await import('./kitchenNotify.js');
+    const job = kitchenOnPaid(env, order.id, waitUntil);
+    if (!waitUntil) await job;
+  } catch (err) { console.error('[food] kitchen alert', err); }
   const n = splitName(order.customer_name || '');
   await captureContact(env, { source: 'food_order', refTable: 'food_orders', refId: order.id, email: order.email, phone: order.phone, firstName: n.firstName, surname: n.surname, label: order.ref });
   if (env.RESEND_API_KEY) {
@@ -222,6 +236,10 @@ export async function moveOrder(db, order, to, staffName) {
     `UPDATE food_orders SET order_status = ?, status_by = ?, status_at = ?${col ? `, ${col} = ?` : ''} WHERE id = ? AND order_status = ?`
   ).bind(...[to, staffName, nowIso(), ...(col ? [nowIso()] : []), order.id, order.order_status]).run();
   if (!res.meta?.changes) return 'Someone else has just changed this order. Refresh and try again.';
+  // The kitchen has seen it (accepted, or went straight to preparing): stop repeat alerts.
+  if (['ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY'].includes(to) && !order.kitchen_ack_at) {
+    await db.prepare(`UPDATE food_orders SET kitchen_ack_at = ?, kitchen_ack_by = ? WHERE id = ? AND kitchen_ack_at IS NULL`).bind(nowIso(), staffName, order.id).run();
+  }
   // WhatsApp orders: staff confirm the payment arrived (bank transfer / cash), so it counts as paid in reports.
   if (to === 'PAID' && order.channel === 'whatsapp' && order.payment_status !== 'paid') {
     await db.prepare(`UPDATE food_orders SET payment_status = 'paid', paid_at = datetime('now'), paid_iso = ?, paid_reference = ? WHERE id = ?`)

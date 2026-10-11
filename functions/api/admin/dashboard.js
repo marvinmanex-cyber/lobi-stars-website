@@ -104,7 +104,7 @@ export async function onRequestGet({ request, env }) {
     try {
       const watNow = new Date(Date.now() + 3600e3);
       const start = new Date(Date.UTC(watNow.getUTCFullYear(), watNow.getUTCMonth(), watNow.getUTCDate()) - 3600e3).toISOString();
-      const { results } = await db.prepare(`SELECT items_json, total_kobo FROM food_orders WHERE payment_status = 'paid' AND order_status IN ('PAID','PREPARING','OUT_FOR_DELIVERY','DELIVERED') AND created_iso >= ?`).bind(start).all();
+      const { results } = await db.prepare(`SELECT items_json, total_kobo FROM food_orders WHERE payment_status = 'paid' AND order_status IN ('PAID','ACCEPTED','PREPARING','OUT_FOR_DELIVERY','DELIVERED') AND created_iso >= ?`).bind(start).all();
       const qty = {};
       for (const o of results) { try { for (const i of JSON.parse(o.items_json)) qty[i.name] = (qty[i.name] || 0) + i.qty; } catch {} }
       const top = Object.entries(qty).sort((a, b) => b[1] - a[1])[0];

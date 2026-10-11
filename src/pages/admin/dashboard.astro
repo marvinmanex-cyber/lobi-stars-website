@@ -65,6 +65,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) + ' WAT';
   $('today').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
   document.addEventListener('ls:admin', e => { $('hello').textContent = `Welcome back, ${(e as CustomEvent).detail.name.split(' ')[0]}`; });
+  // Kitchen accounts go straight to the Kitchen Screen.
+  document.addEventListener('ls:admin', e => { if ((e as CustomEvent).detail.roleId === 'kitchen') location.replace('/admin/kitchen/'); });
 
   const chg = (c: number | null | undefined, label: string) => c == null ? '' : `<span class="db-chg ${c > 0 ? 'up' : c < 0 ? 'down' : 'flat'}" aria-label="${c > 0 ? 'up' : c < 0 ? 'down' : 'no change'} ${Math.abs(c)}% ${label}">${c > 0 ? '▲' : c < 0 ? '▼' : '•'} ${Math.abs(c)}%</span>`;
   const card = (o: { color: string; icon: string; num: string; label: string; sub?: string; href?: string; change?: string }) =>

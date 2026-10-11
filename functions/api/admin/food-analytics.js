@@ -8,7 +8,7 @@ import { buildXlsx } from '../_lib/xlsx.js';
 //   [&format=report|customers]  (Excel; needs "can export fan data")
 // Only PAID orders count (paid, preparing, out for delivery, delivered):
 // never unpaid, expired, failed, cancelled or refunded ones.
-const COUNTED = ['PAID', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
+const COUNTED = ['PAID', 'ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
 const json = s => { try { return JSON.parse(s); } catch { return []; } };
 const pct = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : 0);
 const wat = iso => (iso ? new Date(new Date(iso).getTime() + 3600e3).toISOString().slice(0, 16).replace('T', ' ') : '');

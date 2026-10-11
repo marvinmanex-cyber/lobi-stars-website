@@ -55,7 +55,9 @@ these in git.
 | `INBOX_INBOUND_KEY` | Fans' replies into the Inbox | Long random secret, also in the provider's webhook URL `/api/inbox/inbound?key=…`. |
 | `TURNSTILE_SECRET_KEY` | Human check on sign-up and enquiry forms | Site key goes in `src/data/fan-settings.json`. |
 | `STAFF_SCAN_CODE` | Ticket scanner at /scan | Short PIN for gate staff. |
-| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Food order phone notifications | See STAFF-GUIDE section 16. |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Food order phone notifications and Kitchen Screen push | See "Kitchen Order Alerts". |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_KITCHEN_CHAT_ID`, `TELEGRAM_WEBHOOK_SECRET` | Telegram kitchen group alerts and the Accept button | See "Kitchen Order Alerts". |
+| `CRON_SECRET` | Repeat kitchen alerts (cron Worker) | Same value on the cron Worker. |
 | `TERMII_API_KEY`, `TERMII_SENDER_ID` | Food order SMS / WhatsApp (optional) | |
 | `PARTNER_ORIGIN_STREAM_URL` | Lobi Stars FC Live commentary | Server-only; see COMMENTARY-STREAM-SETUP.md. |
 | `COMMENTARY_BRAND_NAME` | Commentary player name (optional) | |
@@ -77,6 +79,78 @@ BASE=http://127.0.0.1:8833 ADMIN_CODE=<local code> npm test             # all au
 ```
 
 `seed:local` refuses to run against anything except 127.0.0.1 / localhost.
+
+## Kitchen Order Alerts (Kitchen Screen push + Telegram, free)
+
+When a food order becomes **PAID** (Paystack confirmed, or staff press
+"Payment received" on a WhatsApp order) the kitchen is alerted once
+(`kitchen_alerted_at` is claimed in one UPDATE, so it can never send twice):
+an encrypted **Web Push** to every Kitchen Screen device and a message in the
+**Telegram kitchen group** with an **✅ Accept** button. Until someone accepts
+(Kitchen Screen, live board or Telegram) it is re-alerted every N minutes, up
+to a maximum (Admin › Commerce › Food: Kitchen Alerts). Tickets never contain
+phone numbers, totals or payment details. No SMS or paid services.
+
+Code: `functions/api/_lib/kitchenNotify.js` (tickets, notifyKitchen, repeats,
+Telegram), `functions/api/_lib/webPush.js` (RFC 8291 aes128gcm + RFC 8292
+VAPID with Web Crypto; no npm library; checked against the RFC 8291 example in
+`tests/web-push.test.mjs`), `functions/api/admin/kitchen/*` (Kitchen Screen
+API, staff login, role Kitchen or Commerce), `functions/api/telegram/webhook.js`
+(public, secret header), `functions/api/internal/kitchen-repeat.js` (cron),
+`workers/kitchen-cron/` (the cron Worker), `src/pages/admin/kitchen.astro`
+(the Kitchen Screen, its own manifest `public/kitchen.webmanifest`),
+`public/admin-sw.js` (push → notification + refresh the screen). Statuses:
+PAID → **ACCEPTED** → PREPARING → OUT_FOR_DELIVERY (ready) → DELIVERED.
+
+### 1. Secrets (Cloudflare Pages → Settings → Variables and Secrets)
+| Name | What |
+|---|---|
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | Push keys. Make them once: `npx web-push generate-vapid-keys` (only to generate; not used at runtime). Same keys as the food phone alerts. |
+| `VAPID_SUBJECT` | `mailto:info@lobistarsfc.com` |
+| `TELEGRAM_BOT_TOKEN` | From **@BotFather** (`/newbot`). |
+| `TELEGRAM_KITCHEN_CHAT_ID` | The kitchen group's id (negative number, e.g. `-1001234567890`). Add the bot to the group, send a message, then open `https://api.telegram.org/bot<TOKEN>/getUpdates` and copy `chat.id`. |
+| `TELEGRAM_WEBHOOK_SECRET` | Any long random text (letters, numbers, `_`, `-`). |
+| `CRON_SECRET` | Any long random text; the same value goes on the cron Worker. |
+
+### 2. Telegram webhook (once)
+```
+TELEGRAM_BOT_TOKEN=... TELEGRAM_WEBHOOK_SECRET=... node scripts/set-telegram-webhook.mjs
+```
+(PowerShell: `$env:TELEGRAM_BOT_TOKEN="..."; $env:TELEGRAM_WEBHOOK_SECRET="..."; node scripts/set-telegram-webhook.mjs`)
+It points Telegram at `https://lobistarsfc.com/api/telegram/webhook` for button presses only.
+In the group, the bot needs permission to send messages (BotFather → `/setprivacy` can stay enabled; buttons still work).
+
+### 3. Re-alert cron Worker (free Cron Trigger, every minute)
+```
+cd workers/kitchen-cron
+npx wrangler deploy
+npx wrangler secret put CRON_SECRET     # paste the same CRON_SECRET as on Pages
+```
+Without it, repeats still happen while a Kitchen Screen is open (each refresh checks), but not when every screen is closed.
+
+### 4. Kitchen devices
+On the kitchen phone/tablet: log in with a staff account (role **Kitchen**:
+it only opens the Kitchen Screen), open **https://lobistarsfc.com/admin/kitchen/**,
+name the device and tap **Turn on kitchen alerts** (allows notifications,
+keeps the screen awake, turns the sound on). Install it to the home screen
+(Android: browser menu → Install app; iPhone: Share → Add to Home Screen, then
+open it from the icon and tap the button again). Check with **Send test alert**
+on Admin › Food: Kitchen Alerts.
+
+### Troubleshooting
+- **No sound:** tap the screen once after opening it (browsers need a tap
+  before playing sound); check 🔇 Mute isn't on and the device volume is up.
+- **No push on iPhone:** iOS 16.4 or newer, the page must be opened from the
+  Home Screen icon, and notifications allowed in iPhone Settings → Notifications
+  → Lobi Stars Kitchen. Low Power Mode can delay them.
+- **No push at all:** VAPID keys set? Device listed as Active on Kitchen Alerts?
+  "Stopped" means the browser unsubscribed: open the Kitchen Screen and turn
+  alerts on again. The alert log shows each failure.
+- **Telegram button does nothing:** run the webhook script again, check
+  `TELEGRAM_WEBHOOK_SECRET` matches, and that the message came from the group
+  in `TELEGRAM_KITCHEN_CHAT_ID`. `getWebhookInfo` (printed by the script) shows
+  Telegram's last error.
+- **Repeats stop when screens are closed:** deploy the cron Worker (step 3).
 
 ## Food ordering (Paystack and Order on WhatsApp)
 

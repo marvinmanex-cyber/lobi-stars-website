@@ -11,6 +11,9 @@ interface Props {
   noindex?: boolean;
   /** Extra JSON-LD objects for this page. */
   jsonLd?: Record<string, unknown>[];
+  /** A different app manifest (e.g. the Kitchen Screen installs as its own app). */
+  manifest?: string;
+  themeColor?: string;
 }
 const {
   title,
@@ -20,6 +23,8 @@ const {
   type = 'website',
   noindex = false,
   jsonLd = [],
+  manifest = '/manifest.json',
+  themeColor = '#E31E24',
 } = Astro.props;
 
 const SITE_NAME = 'Lobi Stars FC';
@@ -70,12 +75,12 @@ if (!noindex && breadcrumbs.length) {
 <meta name="twitter:description" content={description}/>
 <meta name="twitter:image" content={ogImage}/>
 
-<meta name="theme-color" content="#E31E24"/>
+<meta name="theme-color" content={themeColor}/>
 <link rel="icon" href="/favicon.ico" sizes="48x48"/>
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png"/>
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png"/>
 <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png"/>
-<link rel="manifest" href="/manifest.json"/>
+<link rel="manifest" href={manifest}/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-title" content="Lobi Stars"/>

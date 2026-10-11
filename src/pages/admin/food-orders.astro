@@ -112,6 +112,7 @@ import PushEnable from '../../components/admin/PushEnable.astro';
   @media (max-width: 600px) { .fo-dlg :global(dl) { grid-template-columns: 1fr; } }
   .fo-dlg :global(.fo-chat) { display: inline-flex; align-items: center; gap: 6px; padding: 10px 14px; border-radius: 10px; background: #25D366; color: #fff; font-weight: 700; text-decoration: none; min-height: 44px; }
   .fo-dlg :global(.fo-chat:hover) { background: #1EBE5A; }
+  .fo-dlg :global(.fo-kitchen) { margin: 0 0 10px; font-weight: 700; } .fo-dlg :global(.fo-kitchen.late) { color: #DC2626; } .fo-dlg :global(.fo-kitchen.accepted) { color: #0D9488; }
 </style>
 
 <script is:inline>
@@ -122,7 +123,7 @@ import PushEnable from '../../components/admin/PushEnable.astro';
   const naira = k => '₦' + (Number(k || 0) / 100).toLocaleString('en-NG');
   const when = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
   const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'fo-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
-  const NEXT = { AWAITING_WHATSAPP: ['Confirm order', 'CONFIRMED'], CONFIRMED: ['Payment received', 'PAID'], PAID: ['Start preparing', 'PREPARING'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED'] };
+  const NEXT = { AWAITING_WHATSAPP: ['Confirm order', 'CONFIRMED'], CONFIRMED: ['Payment received', 'PAID'], PAID: ['Start preparing', 'PREPARING'], ACCEPTED: ['Start preparing', 'PREPARING'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED'] };
   const STEP = { AWAITING_WHATSAPP: ['CONFIRMED', 'Send confirmation & payment details'], CONFIRMED: ['CONFIRMED', 'Remind about payment'], PAID: ['PAID', 'Tell them payment arrived'], PREPARING: ['PAID', 'Tell them it is being prepared'], OUT_FOR_DELIVERY: ['READY', 'Tell them it is ready / on its way'], CANCELLED: ['CANCELLED', 'Tell them it is cancelled'] };
   const waLink = (o, step) => `https://wa.me/${esc(o.wa.phone)}?text=${encodeURIComponent(o.wa.messages[step] || '')}`;
   let ST = {}, rows = [], page = 1, filled = false;
@@ -179,15 +180,23 @@ import PushEnable from '../../components/admin/PushEnable.astro';
       `<dt>Ordered by</dt><dd>${o.channel === 'whatsapp' ? '💬 WhatsApp' : 'Website (Paystack)'}</dd>` +
       `<dt>${o.fulfilment === 'pickup' ? 'Pickup' : 'Seat'}</dt><dd>${o.fulfilment === 'pickup' ? esc(o.pickupPoint) : `${esc(o.seat)} · ${esc(o.stand || 'Stand not given')}`}</dd><dt>Note</dt><dd>${esc(o.notes || '–')}</dd><dt>Match</dt><dd>${esc(o.match || '–')}</dd>` +
       `<dt>Paystack ref</dt><dd>${esc(o.paystackRef || '–')}</dd><dt>Payment</dt><dd>${esc(o.payment)}</dd></dl>` +
+      (o.kitchen ? `<p class="fo-kitchen ${esc(o.kitchen.state)}">👩‍🍳 Kitchen: ${esc(o.kitchen.text)}</p>` : '') +
       `<ul class="tl"><li>🕒 Ordered ${esc(when(o.createdAt))}</li>${o.paidAt ? `<li>🟢 Paid ${esc(when(o.paidAt))}</li>` : `<li>⏳ Pay by ${esc(when(o.expiresAt))}</li>`}` +
       `${o.preparingAt ? `<li>👩‍🍳 Preparing ${esc(when(o.preparingAt))}</li>` : ''}${o.outAt ? `<li>🏃 Out for delivery ${esc(when(o.outAt))}</li>` : ''}${o.deliveredAt ? `<li>✅ Delivered ${esc(when(o.deliveredAt))}</li>` : ''}` +
       `${o.cancelledAt ? `<li>✖ Cancelled ${esc(when(o.cancelledAt))}</li>` : ''}${o.statusBy ? `<li>Last change by ${esc(o.statusBy)} ${esc(when(o.statusAt))}</li>` : ''}</ul>` +
-      `<div class="acts" data-id="${esc(o.id)}">${o.wa && STEP[o.status] ? `<a class="fo-chat" href="${waLink(o, STEP[o.status][0])}" target="_blank" rel="noopener">💬 Chat on WhatsApp: ${esc(STEP[o.status][1])}</a>` : ''}${nx ? `<button data-s="${nx[1]}">${nx[0]}</button>` : ''}${['AWAITING_WHATSAPP', 'CONFIRMED', 'PAID', 'PREPARING', 'OUT_FOR_DELIVERY'].includes(o.status) ? '<button data-s="CANCELLED">Cancel</button>' : ''}${o.status === 'CANCELLED' ? '<button data-s="REFUNDED">Mark refunded</button>' : ''}</div>`;
+      `<div class="acts" data-id="${esc(o.id)}">${o.wa && STEP[o.status] ? `<a class="fo-chat" href="${waLink(o, STEP[o.status][0])}" target="_blank" rel="noopener">💬 Chat on WhatsApp: ${esc(STEP[o.status][1])}</a>` : ''}${nx ? `<button data-s="${nx[1]}">${nx[0]}</button>` : ''}${o.status === 'PAID' ? '<button data-resend>🔔 Resend kitchen alert</button>' : ''}${['AWAITING_WHATSAPP', 'CONFIRMED', 'PAID', 'ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY'].includes(o.status) ? '<button data-s="CANCELLED">Cancel</button>' : ''}${o.status === 'CANCELLED' ? '<button data-s="REFUNDED">Mark refunded</button>' : ''}</div>`;
     $('dlg').showModal();
   }
   $('table').addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) open(rows.find(o => o.id === tr.dataset.id)); });
   $('table').addEventListener('keydown', e => { if (e.key === 'Enter') { const tr = e.target.closest('tr[data-id]'); if (tr) open(rows.find(o => o.id === tr.dataset.id)); } });
   $('dBody').addEventListener('click', async e => {
+    const rs = e.target.closest('button[data-resend]');
+    if (rs) {
+      rs.disabled = true;
+      try { const r = await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ action: 'resend_kitchen', id: rs.closest('[data-id]').dataset.id }) }); msg(r.result && r.result.sent ? 'Kitchen alert sent again.' : 'Not sent: ' + ((r.result && r.result.reason) || 'see Kitchen Alerts'), !!(r.result && r.result.sent)); }
+      catch (err) { msg(err.message, false); }
+      rs.disabled = false; return;
+    }
     const b = e.target.closest('button[data-s]'); if (!b) return;
     if (b.dataset.s === 'CANCELLED' && !confirm('Cancel this order? Refunds for Paystack payments are done in the Paystack dashboard; mark it "Refunded" here afterwards.')) return;
     if (b.dataset.s === 'PAID' && !confirm('Has the payment arrived? The order then goes to the kitchen.')) return;
