@@ -1,0 +1,45 @@
+---
+// /accessibility -- the accessibility statement: what the site does so
+// everyone can use it, what is known not to work well yet, and how to report
+// a problem. Describes features the site actually has.
+import LegalPage from '../components/LegalPage.astro';
+import site from '../data/site.json';
+const { email, phone, whatsapp } = site.contact;
+---
+<LegalPage
+  title="Accessibility"
+  tag="About this website"
+  description="How lobistarsfc.com is built so that every fan can use it, what we are still improving, and how to tell us about a problem."
+  updated="11 October 2026"
+>
+  <p>Lobi Stars FC wants every supporter to be able to follow the club, buy tickets, order food and get in touch, whatever device they use and whatever their ability. We aim to meet the <a href="https://www.w3.org/TR/WCAG22/" target="_blank" rel="noopener">Web Content Accessibility Guidelines (WCAG) 2.2</a> at level AA.</p>
+
+  <h2>What the website does</h2>
+  <ul>
+    <li><b>Keyboard:</b> every page can be used without a mouse. A <b>Skip to content</b> link is the first thing on each page, and the item in focus is clearly outlined.</li>
+    <li><b>Screen readers:</b> pages use proper headings, labelled buttons and form fields, and descriptions for photos. Live updates (scores, order status) are announced.</li>
+    <li><b>Text and colour:</b> text can be enlarged with your browser or phone settings without breaking the page, and text colours are chosen to be readable.</li>
+    <li><b>Phones:</b> the site works on small screens, with large buttons and a menu bar at the bottom.</li>
+    <li><b>Less movement:</b> if your device is set to reduce motion, animations are switched off.</li>
+    <li><b>Slow connections:</b> pages are kept light and pictures are made smaller for phones. If you lose your connection, the website app shows a clear "You're offline" message.</li>
+    <li><b>Languages:</b> the menus and buttons can be shown in other languages as translations are completed.</li>
+  </ul>
+
+  <h2>What we are still improving</h2>
+  <ul>
+    <li>Some <b>videos</b> (for example match highlights from YouTube) may not have captions yet.</li>
+    <li>Some <b>PDF documents</b> (such as matchday programmes) may not be fully readable by screen readers. Ask us and we will send the information in another format.</li>
+    <li>Pages from <b>other services</b> we link to (such as Paystack for payments, Jumia for the shop, YouTube and WhatsApp) are not run by the club, so their accessibility is outside our control.</li>
+    <li>The <b>human check</b> on some forms (Cloudflare Turnstile) is designed to work without puzzles; if it stops you, contact us and we will help.</li>
+  </ul>
+
+  <h2>Tell us about a problem</h2>
+  <p>If something on the website is hard to use, or you need information in a different format, please tell us. Say which page and what happened; we will reply and fix it where we can.</p>
+  <ul>
+    <li>Email: <a href={`mailto:${email}?subject=Website%20accessibility`}>{email}</a></li>
+    <li>Phone: <a href={`tel:${phone.replace(/\s/g, '')}`}>{phone}</a></li>
+    <li>WhatsApp: <a href={`https://wa.me/${whatsapp}?text=${encodeURIComponent('Hello Lobi Stars FC, I had a problem using the website:')}`} target="_blank" rel="noopener">message us</a></li>
+    <li>Or use the <a href="/contact">contact form</a>.</li>
+  </ul>
+  <p>We review this statement when the website changes.</p>
+</LegalPage>

@@ -43,6 +43,11 @@ export async function ensureAdminSchema(db) {
       detail TEXT
     )`),
   ]);
+  // Two-step login (authenticator app codes).
+  const cols = new Set((await db.prepare(`PRAGMA table_info(admin_users)`).all()).results.map(r => r.name));
+  for (const [name, type] of [['totp_secret', 'TEXT'], ['totp_enabled', 'INTEGER NOT NULL DEFAULT 0'], ['totp_pending', 'TEXT'], ['totp_last_step', 'INTEGER NOT NULL DEFAULT 0']]) {
+    if (!cols.has(name)) await db.prepare(`ALTER TABLE admin_users ADD COLUMN ${name} ${type}`).run();
+  }
   schemaReady = true;
 }
 
@@ -77,9 +82,9 @@ export async function getAdmin(request, env) {
   if (!id) return null;
   if (id === 'owner') return OWNER;
   await ensureAdminSchema(env.DB);
-  const u = await env.DB.prepare(`SELECT id, name, email, role, can_export_fan_data, active FROM admin_users WHERE id = ?`).bind(id).first();
+  const u = await env.DB.prepare(`SELECT id, name, email, role, can_export_fan_data, active, totp_enabled FROM admin_users WHERE id = ?`).bind(id).first();
   if (!u || !u.active) return null;
-  return { id: u.id, name: u.name, email: u.email, role: u.role, canExport: !!u.can_export_fan_data };
+  return { id: u.id, name: u.name, email: u.email, role: u.role, canExport: !!u.can_export_fan_data, twoStep: !!u.totp_enabled };
 }
 
 /** Used by the /admin page middleware. */

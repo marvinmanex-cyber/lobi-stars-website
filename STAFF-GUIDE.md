@@ -1126,7 +1126,7 @@ checklist (section 2), player stats (section 2), award votes (section 10),
 members-only stories (section 1 and 11), shirt personalisation orders
 (section 5), hospitality (section 12), the promo bar ("Other things you can
 update in the CMS"), the club pages (section 20), the app (section 21),
-translations (section 22), search and sharing (section 23) and the newsletter (section 24).
+translations (section 22), search and sharing (section 23), the newsletter (section 24), and your account, two-step login and backups (section 25).
 
 **Trying the admin safely:** the website manager can run the website on
 their own computer with demo messages and contacts (`npm run seed:local`, see
@@ -1368,6 +1368,51 @@ the email service (Resend) is set up** (section 18, Setup A). Optionally set
 `NEWSLETTER_FROM` in Cloudflare to the sender, e.g.
 `Lobi Stars FC <news@lobistarsfc.com>` (otherwise the general sender is used).
 Until then the Newsletter screen shows a yellow note.
+
+---
+
+## 25. Your account, two-step login and data backups
+
+### My account (click your name at the top right, or Settings › My Account)
+- **Change your password:** type your current password and the new one
+  twice (at least 10 characters).
+- **Two-step login:** after your password you also type a 6-digit code from
+  a free app on your phone (Google Authenticator, Microsoft Authenticator or
+  Authy). Even if someone learns your password, they can't get in without
+  your phone. **Everyone who can see fans' details (Super Admins and staff
+  allowed to download contact lists) should turn it on**; the dashboard
+  reminds them until they do.
+  1. Press **Turn on two-step login**.
+  2. In the app, tap **+ / Add account** and scan the QR code (or type the key).
+  3. Type the 6-digit code the app shows and press **Confirm**.
+  From then on the login page asks for the code after your password. Each
+  code works once and changes every 30 seconds; if it says the code is wrong,
+  wait for the next one and make sure the phone's time is set automatically.
+- **Lost or changed phone:** a Super Admin opens Settings › Staff Users &
+  Roles and presses **Reset two-step** next to your name; you then log in
+  with your password and set it up again.
+- The owner admin code has no account settings: use a personal Super Admin
+  account for everyday work.
+
+### Data backup (Settings › Data Backup, Super Admins only)
+- **Download backup (Excel)** saves everything the website stores (fans and
+  contacts, messages, newsletter, tickets, food orders, votes, predictions,
+  matches, settings) in one workbook, one sheet per table. **JSON** is the
+  same for the website manager.
+- Passwords, sign-in links, two-step login secrets and stored pictures are
+  never included.
+- Do it **at least once a month** and before big changes. The dashboard shows
+  a red **"Since the last data backup"** card when it has been 30 days or more.
+- The file contains fans' personal data: keep it somewhere private (not email
+  or chat groups) and delete old copies. Every download is in the Activity Log.
+- Cloudflare also keeps its own copies: the website manager can restore the
+  database to an earlier point (D1 "Time Travel": the last 7 days on the free
+  Cloudflare plan, 30 days on the paid plan).
+
+### Accessibility statement (/accessibility)
+The website has a public page explaining how it works for everyone (keyboard,
+screen readers, large text, phones, less movement) and how to report a
+problem. If someone reports a problem, pass it to the website manager.
 
 ---
 

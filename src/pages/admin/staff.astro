@@ -72,11 +72,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       const { staff, roles } = await api('/api/admin/staff');
       if ($('n-role').options.length < 2) $('n-role').insertAdjacentHTML('beforeend', roles.map(r => `<option value="${esc(r.id)}">${esc(r.label)}</option>`).join(''));
       const roleSel = s => `<select data-role aria-label="Role for ${esc(s.name)}">${roles.map(r => `<option value="${esc(r.id)}"${r.id === s.role ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select>`;
-      $('list').innerHTML = staff.length ? '<div class="scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Can export</th><th>Last login</th><th></th></tr></thead><tbody>' +
+      $('list').innerHTML = staff.length ? '<div class="scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Can export</th><th>Two-step login</th><th>Last login</th><th></th></tr></thead><tbody>' +
         staff.map(s => `<tr class="${s.active ? '' : 'inactive'}" data-id="${esc(s.id)}"><td>${esc(s.name)}${s.active ? '' : ' (deactivated)'}</td><td>${esc(s.email)}</td>` +
-          `<td>${roleSel(s)}</td><td>${s.can_export_fan_data ? 'Yes' : 'No'}</td><td>${s.last_login_at ? esc(s.last_login_at) + ' UTC' : 'Never'}</td><td>` +
+          `<td>${roleSel(s)}</td><td>${s.can_export_fan_data ? 'Yes' : 'No'}</td><td>${s.totp_enabled ? '🔐 On' : 'Off'}</td><td>${s.last_login_at ? esc(s.last_login_at) + ' UTC' : 'Never'}</td><td>` +
           `<button data-act="export">${s.can_export_fan_data ? 'Remove export' : 'Allow export'}</button>` +
-          `<button data-act="active">${s.active ? 'Deactivate' : 'Reactivate'}</button><button data-act="password">Reset password</button></td></tr>`).join('') +
+          `<button data-act="active">${s.active ? 'Deactivate' : 'Reactivate'}</button><button data-act="password">Reset password</button>${s.totp_enabled ? '<button data-act="twostep">Reset two-step</button>' : ''}</td></tr>`).join('') +
         '</tbody></table></div>' : '<div class="empty-state"><b>🧑‍💼</b><p>No staff accounts yet. Add the first one above.</p></div>';
       $('list')._staff = staff;
     } catch (e) { $('list').innerHTML = `<p class="muted">${esc(e.message)}</p>`; }
@@ -87,6 +87,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const body = {};
     if (b.dataset.act === 'export') body.canExport = !s.can_export_fan_data;
     if (b.dataset.act === 'active') { if (s.active && !confirm(`Deactivate ${s.name}? They will be signed out.`)) return; body.active = !s.active; }
+    if (b.dataset.act === 'twostep') { if (!confirm(`Switch off two-step login for ${s.name}? Use this if they lost their phone; they should set it up again in My account.`)) return; body.resetTwoStep = true; }
     if (b.dataset.act === 'password') { const p = prompt(`New password for ${s.name} (10+ characters):`); if (!p) return; body.password = p; }
     try { await api(`/api/admin/staff/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(body) }); show('Saved.', true); load(); }
     catch (err) { show(err.message, false); }

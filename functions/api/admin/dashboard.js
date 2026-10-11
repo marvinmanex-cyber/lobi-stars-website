@@ -53,6 +53,14 @@ export async function onRequestGet({ request, env }) {
     out.messages = { week: n.n || 0, change: pct(n.n || 0, p.n || 0), waiting: w.n || 0, unread: w.u || 0 };
   }
 
+  // Backup reminder (Super Admins): the last data backup download.
+  if (can('staff')) {
+    try {
+      const b = await one(`SELECT MAX(ts) AS ts FROM admin_log WHERE action = 'backup_download'`);
+      out.lastBackup = b?.ts || null;
+    } catch { /* activity log not created yet */ }
+  }
+
   // New contacts this week.
   if (can('fans') || can('analytics')) {
     await ensureContactsSchema(db);

@@ -55,6 +55,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .db :global(.db-q) { display: inline-flex; align-items: center; gap: 8px; padding: 12px 18px; border-radius: 12px; background: var(--a-card); border: 1px solid var(--d4); text-decoration: none; color: var(--white); font-weight: 700; box-shadow: 0 4px 12px rgba(15,17,21,.04); }
   .db :global(.db-q:hover) { border-color: var(--red); color: var(--red-text); }
   .db-empty { color: var(--lt); padding: 30px 0; }
+  :global(.db-2fa) { display: block; margin: 10px 0 14px; padding: 12px 16px; border-radius: 12px; background: #FFF7E6; border: 1px solid #F6D58E; color: #7A4B00; font-weight: 700; text-decoration: none; }
+  :global(body.admin-dark .db-2fa) { background: #3A2E12; color: #F6D58E; border-color: #5A4718; }
 </style>
 
 <script>
@@ -65,6 +67,15 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) + ' WAT';
   $('today').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
   document.addEventListener('ls:admin', e => { $('hello').textContent = `Welcome back, ${(e as CustomEvent).detail.name.split(' ')[0]}`; });
+  // Accounts that can see fans' data are asked to turn on two-step login.
+  document.addEventListener('ls:admin', e => {
+    const a = (e as CustomEvent).detail;
+    if (a.id === 'owner' || a.twoStep || !(a.roleId === 'super_admin' || a.canExport)) return;
+    const n = document.createElement('a');
+    n.className = 'db-2fa'; n.href = '/admin/account/';
+    n.textContent = "🔐 Protect fans' data: turn on two-step login for your account (2 minutes) →";
+    document.querySelector('.db-hero, h1')?.after(n);
+  });
   // Kitchen accounts go straight to the Kitchen Screen.
   document.addEventListener('ls:admin', e => { if ((e as CustomEvent).detail.roleId === 'kitchen') location.replace('/admin/kitchen/'); });
 
@@ -87,6 +98,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     if (d.contacts) cards.push(card({ color: '#8B5CF6', icon: '👥', num: fmt(d.contacts.week), label: 'New contacts this week', sub: `${fmt(d.contacts.total)} in the fan database`, href: '/admin/fans/', change: chg(d.contacts.change, 'vs last week') }));
     if (d.pageViews) cards.push(card({ color: '#0EA5E9', icon: '📈', num: fmt(d.pageViews.today), label: 'Page views today', sub: 'Compared with yesterday', href: '/admin/analytics/', change: chg(d.pageViews.change, 'vs yesterday') }));
     if (d.listeners) cards.push(card({ color: '#10B981', icon: '🎧', num: fmt(d.listeners.now), label: 'Listening live now', sub: d.listeners.match, href: '/admin/commentary/' }));
+    // Super Admins: a reminder when no data backup has been downloaded for 30 days.
+    if ('lastBackup' in d) {
+      const days = d.lastBackup ? Math.floor((Date.now() - Date.parse(String(d.lastBackup).replace(' ', 'T') + (String(d.lastBackup).includes('Z') ? '' : 'Z'))) / 864e5) : null;
+      if (days === null || days >= 30) cards.push(card({ color: '#DC2626', icon: '💾', num: days === null ? 'Never' : `${days} days`, label: 'Since the last data backup', sub: 'Download a backup now (Settings › Data Backup)', href: '/admin/backup/' }));
+    }
     if (d.food) cards.push(card({ color: '#F97316', icon: '🍽️', num: fmt(d.food.orders), label: 'Food orders today (paid)', sub: `₦${fmt(Math.round(d.food.revenueKobo / 100))} · Top: ${d.food.top || '–'}`, href: d.food.href }));
     if (d.winner) cards.push(card({ color: '#EAB308', icon: '🏆', num: d.winner.name ? esc(d.winner.name) : 'No winner', label: 'Latest Predict & Win', sub: `${d.winner.match} (${d.winner.score}) · ${d.winner.name ? (d.winner.paid ? 'Prize paid' : 'Prize NOT paid yet') : 'No exact score'}`, href: d.winner.href }));
     $('cards').innerHTML = cards.join('');

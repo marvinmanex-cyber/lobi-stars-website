@@ -12,7 +12,7 @@ export async function onRequestGet({ request, env }) {
   if (denied) return denied;
   await ensureAdminSchema(env.DB);
   const { results } = await env.DB.prepare(
-    `SELECT id, name, email, role, can_export_fan_data, active, created_at, last_login_at FROM admin_users ORDER BY active DESC, name`
+    `SELECT id, name, email, role, can_export_fan_data, active, created_at, last_login_at, totp_enabled FROM admin_users ORDER BY active DESC, name`
   ).all();
   return Response.json({ staff: results, roles: ASSIGNABLE_ROLES.map(id => ({ id, label: ROLES[id].label })) });
 }

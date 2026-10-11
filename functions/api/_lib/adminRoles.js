@@ -38,7 +38,7 @@ export const canAccess = (admin, area) => !area || areasOf(admin).includes(area)
 // Which area each admin page or API belongs to (first match wins; null = any signed-in staff).
 const RULES = [
   // Pages
-  [/^\/admin\/(dashboard|login)(\/|$)/, null],
+  [/^\/admin\/(dashboard|login|account)(\/|$)/, null],
   [/^\/admin\/(matches|predictions|commentary)(\/|$)/, 'matchday'],
   [/^\/admin\/match-centre(\/|$)/, 'matchday-content'],
   [/^\/admin\/(news|awards)(\/|$)/, 'content'],
@@ -55,7 +55,7 @@ const RULES = [
   [/^\/admin\/staff(\/|$)/, 'staff'],
   [/^\/admin\/?(index\.html|config\.yml)?$/, 'cms'],
   // APIs
-  [/^\/api\/admin\/(login|logout|me|dashboard|search|notifications)(\/|$)/, null],
+  [/^\/api\/admin\/(login|logout|me|dashboard|search|notifications|account)(\/|$)/, null],
   [/^\/api\/admin\/match-centre(\/|$)/, 'matchday-content'],
   [/^\/api\/admin\/events(\/|$)/, 'matchday-content'],
   [/^\/api\/admin\/(predictions|motm|commentary)(\/|$)/, 'matchday'],

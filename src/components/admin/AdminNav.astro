@@ -73,9 +73,11 @@ const CATEGORIES: Cat[] = [
     { id: 'cms-promo', label: 'Promo Bar', href: `${CMS}/settings/entries/promo`, area: 'cms', ext: true },
     { id: 'commentary-settings', label: 'Commentary & Stream Settings', href: '/admin/commentary/', area: 'matchday' },
     { id: 'staff', label: 'Staff Users & Roles', href: '/admin/staff/', area: 'staff' },
+    { id: 'account', label: 'My Account (password, two-step login)', href: '/admin/account/', area: 'overview' },
     { id: 'inbox-settings', label: 'Inbox Emails & Templates', href: '/admin/inbox/?settings=1', area: 'inbox', hint: 'New-message alerts, daily summary, saved replies' },
     { id: 'export-log', label: 'Export Log', href: '/admin/fans/#exportLog', area: 'fans' },
     { id: 'activity', label: 'Activity Log', href: '/admin/activity/', area: 'settings' },
+    { id: 'backup', label: 'Data Backup', href: '/admin/backup/', area: 'staff', hint: 'Download a copy of all website data (Super Admin)' },
   ] },
 ];
 const active = CATEGORIES.flatMap(c => c.items.map(i => ({ c, i }))).find(x => x.i.id === current);
@@ -123,7 +125,7 @@ const crumbs = active ? [active.c.label, active.i.label] : ['Admin'];
       <button type="button" class="ash-bell" id="ashBell" aria-label="Notifications" aria-expanded="false">🔔<span class="ash-badge" id="ashBadge" hidden></span></button>
       <div class="ash-notes" id="ashNotes" hidden><p class="ash-empty">No new notifications.</p></div>
     </div>
-    <div class="ash-user"><span class="ash-name" id="ashName"></span><span class="ash-role" id="ashRole"></span></div>
+    <a class="ash-user" href="/admin/account/" title="My account: password and two-step login"><span class="ash-name" id="ashName"></span><span class="ash-role" id="ashRole"></span></a>
     <button type="button" class="ash-theme" id="ashMute" aria-label="Mute food order sounds" title="Food order sounds on/off" hidden>🔊</button>
     <button type="button" class="ash-theme" id="ashTheme" aria-label="Switch to dark mode" title="Dark / light mode">🌙</button>
     <button type="button" class="ash-out" id="anOut">Log out</button>
@@ -253,6 +255,8 @@ const crumbs = active ? [active.c.label, active.i.label] : ['Admin'];
   .ash-user { display: flex; flex-direction: column; line-height: 1.2; text-align: right; min-width: 0; }
   .ash-name { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
   .ash-role { font-size: 12px; color: var(--lt); white-space: nowrap; }
+  a.ash-user { text-decoration: none; color: inherit; border-radius: 8px; padding: 2px 6px; }
+  a.ash-user:hover, a.ash-user:focus-visible { background: var(--a-hover); }
   .ash-out { border: 1px solid var(--d4); background: #fff; border-radius: 8px; padding: 7px 12px; cursor: pointer; font: 600 13px 'Barlow', sans-serif; white-space: nowrap; }
   .ash-denied { margin: 0 0 18px; padding: 12px 16px; border-radius: 10px; background: #FFF4E5; color: #7A4B00; }
 

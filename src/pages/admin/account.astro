@@ -1,0 +1,115 @@
+---
+// My account: change your password and turn two-step login on or off
+// (a 6-digit code from an authenticator app as well as the password).
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="My Account | Lobi Stars Admin" description="Your staff account." noindex>
+  <div class="wrap ac">
+    <AdminNav current="account" />
+    <div class="stag">Settings</div>
+    <h1 class="stitle">My <span class="r">Account</span></h1>
+    <p class="ac-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <p class="muted" id="who">Loading…</p>
+
+    <section class="panel" id="twoStep" hidden>
+      <h2>Two-step login</h2>
+      <p class="muted">Protects fans' personal data even if someone learns your password: after your password you also type a 6-digit code from an app on your phone (Google Authenticator, Microsoft Authenticator or Authy, free).</p>
+      <p class="ac-state" id="tsState"></p>
+      <div id="tsOff" hidden>
+        <button type="button" class="btn-p" id="tsStart">🔐 Turn on two-step login</button>
+        <div class="ac-setup" id="tsSetup" hidden>
+          <ol>
+            <li>Install an authenticator app on your phone and tap <b>+</b> / <b>Add account</b>.</li>
+            <li>Scan this code (or type the key below).</li>
+            <li>Type the 6-digit code the app shows, then press <b>Confirm</b>.</li>
+          </ol>
+          <img id="tsQr" alt="QR code for your authenticator app" width="220" height="220" />
+          <p class="ac-key">Key: <code id="tsKey"></code></p>
+          <form id="tsConfirm" class="ac-form"><label>6-digit code<input class="form-inp" name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required /></label><button class="btn-p" type="submit">Confirm</button></form>
+        </div>
+      </div>
+      <form id="tsDisable" class="ac-form" hidden>
+        <p class="muted">To turn it off, type your password and a current code.</p>
+        <label>Password<input class="form-inp" name="password" type="password" autocomplete="current-password" required /></label>
+        <label>6-digit code<input class="form-inp" name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required /></label>
+        <button class="btn-o" type="submit">Turn off two-step login</button>
+      </form>
+      <p class="muted ac-small">Lost your phone? Ask a Super Admin to reset your two-step login (Settings › Staff Users &amp; Roles), then set it up again.</p>
+    </section>
+
+    <section class="panel" id="pwBox" hidden>
+      <h2>Change your password</h2>
+      <form id="pwForm" class="ac-form">
+        <label>Current password<input class="form-inp" name="current" type="password" autocomplete="current-password" required /></label>
+        <label>New password (10+ characters)<input class="form-inp" name="next" type="password" autocomplete="new-password" minlength="10" required /></label>
+        <label>New password again<input class="form-inp" name="again" type="password" autocomplete="new-password" minlength="10" required /></label>
+        <button class="btn-p" type="submit">Change password</button>
+      </form>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .ac { max-width: 760px; padding-top: 20px; padding-bottom: 60px; }
+  .ac-msg { padding: 12px 16px; border-radius: 10px; }
+  .ac-msg.ok { background: #E8F7EE; color: #17643A; } .ac-msg.err { background: #FDECEC; color: #A3161B; }
+  .panel { padding: 20px; margin-bottom: 16px; }
+  .panel h2 { margin: 0 0 8px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ac-state { font-weight: 700; font-size: 16px; }
+  .ac-setup { margin-top: 16px; }
+  .ac-setup ol { padding-left: 20px; line-height: 1.7; }
+  .ac-setup img { display: block; background: #fff; border-radius: 12px; padding: 8px; border: 1px solid var(--a-line); margin: 10px 0; }
+  .ac-key code { font-size: 15px; letter-spacing: 1px; word-break: break-all; }
+  .ac-form { display: grid; gap: 10px; max-width: 420px; }
+  .ac-form label { display: grid; gap: 4px; font-weight: 700; font-size: 14px; }
+  .ac-small { font-size: 13px; margin-top: 14px; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': code };
+  const $ = id => document.getElementById(id);
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'ac-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; window.scrollTo(0, 0); };
+  async function api(body) {
+    const r = await fetch('/api/admin/account', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/account/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  async function load() {
+    try {
+      const d = await api();
+      if (d.owner) { $('who').textContent = 'You are signed in with the owner admin code. Create a personal staff account (Settings › Staff Users & Roles) to change a password or use two-step login.'; return; }
+      $('who').textContent = `${d.name} · ${d.email}`;
+      $('twoStep').hidden = false; $('pwBox').hidden = false;
+      $('tsState').textContent = d.twoStep ? '🔐 Two-step login is ON for your account.' : '⚠️ Two-step login is OFF.';
+      $('tsOff').hidden = d.twoStep; $('tsDisable').hidden = !d.twoStep; $('tsSetup').hidden = true;
+    } catch (e) { msg(e.message, false); }
+  }
+  $('tsStart').addEventListener('click', async () => {
+    try { const d = await api({ action: 'start_2fa' }); $('tsQr').src = d.qr; $('tsKey').textContent = d.secret; $('tsSetup').hidden = false; $('tsConfirm').elements.otp.focus(); }
+    catch (e) { msg(e.message, false); }
+  });
+  $('tsConfirm').addEventListener('submit', async e => {
+    e.preventDefault();
+    try { await api({ action: 'confirm_2fa', otp: e.target.elements.otp.value }); msg('Two-step login is on. Next time you log in, you will also be asked for a code from the app.', true); e.target.reset(); load(); }
+    catch (err) { msg(err.message, false); }
+  });
+  $('tsDisable').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target.elements;
+    if (!confirm('Turn off two-step login? Your account will only be protected by your password.')) return;
+    try { await api({ action: 'disable_2fa', password: f.password.value, otp: f.otp.value }); msg('Two-step login is off.', true); e.target.reset(); load(); }
+    catch (err) { msg(err.message, false); }
+  });
+  $('pwForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target.elements;
+    if (f.next.value !== f.again.value) { msg('The new passwords are not the same.', false); return; }
+    try { await api({ action: 'password', current: f.current.value, next: f.next.value }); msg('Password changed.', true); e.target.reset(); }
+    catch (err) { msg(err.message, false); }
+  });
+  load();
+})();
+</script>

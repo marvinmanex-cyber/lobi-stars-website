@@ -241,3 +241,6 @@ exported files private and delete them when you no longer need them.
     secrets, run the webhook script, deploy the cron Worker, and turn on
     alerts on the kitchen tablet (DEPLOYMENT.md, "Kitchen Order Alerts";
     STAFF-GUIDE.md, section 13).
+20. **Security:** every Super Admin and anyone who can download contact lists
+    turns on two-step login; a Super Admin downloads a data backup monthly
+    (STAFF-GUIDE.md, section 25).

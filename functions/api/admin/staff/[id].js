@@ -3,7 +3,7 @@ import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { ensureAdminSchema, logAdminAction } from '../../_lib/adminSession.js';
 import { ROLES, ASSIGNABLE_ROLES } from '../../_lib/adminRoles.js';
 
-// PUT /api/admin/staff/:id { name?, role?, canExport?, active?, password? }
+// PUT /api/admin/staff/:id { name?, role?, canExport?, active?, password?, resetTwoStep? }
 // -- update a staff account (Super Admin only). Deactivating signs them out.
 export async function onRequestPut({ request, env, params }) {
   const { admin, denied } = await requireAdminUser(request, env, { ownerOnly: true });
@@ -25,12 +25,15 @@ export async function onRequestPut({ request, env, params }) {
   }
   await env.DB.prepare(`UPDATE admin_users SET name = ?, role = ?, can_export_fan_data = ?, active = ?, password_hash = ? WHERE id = ?`)
     .bind(name, role, canExport, active, hash, u.id).run();
+  // A Super Admin can switch off someone's two-step login (e.g. a lost phone); they set it up again.
+  if (b.resetTwoStep === true && u.totp_enabled) await env.DB.prepare(`UPDATE admin_users SET totp_enabled = 0, totp_secret = NULL, totp_pending = NULL, totp_last_step = 0 WHERE id = ?`).bind(u.id).run();
   const changes = [
     name !== u.name && `name -> ${name}`,
     role !== u.role && `role -> ${ROLES[role]?.label || role}`,
     canExport !== u.can_export_fan_data && `export permission ${canExport ? 'granted' : 'removed'}`,
     active !== u.active && (active ? 'reactivated' : 'deactivated'),
     hash !== u.password_hash && 'password reset',
+    b.resetTwoStep === true && u.totp_enabled && 'two-step login reset',
   ].filter(Boolean).join(', ');
   if (changes) await logAdminAction(env.DB, admin, 'staff_updated', `${u.name} <${u.email}>: ${changes}`);
   return Response.json({ ok: true });

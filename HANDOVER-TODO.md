@@ -123,18 +123,18 @@ computer, no errors; 160 automated tests, all passing).
     every month; it helps renewals.
 
 **Trust, safety and reliability**
-11. **Backups**: export the database (fans, tickets, orders, messages) on a
-    schedule, and enable Cloudflare D1 Time Travel/point-in-time restore on
-    the paid plan if available.
+11. **Backups** ✅ *done:* Settings › Data Backup downloads everything (Super
+    Admins); the dashboard reminds after 30 days. Cloudflare D1 Time Travel
+    also allows restoring to an earlier point (7 days on the free plan, 30 on paid).
 12. **Uptime monitoring** (e.g. a free UptimeRobot check on the homepage, the
     ticket page and the commentary stream) so problems are noticed before fans do.
 13. **Personal staff logins only, and remove access when people leave.**
-    Consider two-step login for Super Admins as a next step.
+    ✅ *Two-step login is built* (My account); turn it on for every Super Admin
+    and anyone who can download contacts.
 14. **Data protection (NDPA)**: name a data protection contact, finalise the
     Privacy Policy (E1), and answer deletion requests with the Fan Database's
     "Delete" button (it removes the person everywhere, including messages).
-15. **Accessibility statement**: a short page saying the site aims to work for
-    everyone and how to report problems.
+15. **Accessibility statement** ✅ *done:* /accessibility, linked in the footer.
 
 **Speed**
 16. The site now scores 90-97 for speed on news, match and shop pages and 74

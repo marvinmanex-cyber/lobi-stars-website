@@ -60,4 +60,5 @@ export const EXTRA_PAGES: NavLink[] = [
   { label: 'About the Club', href: '/club', description: 'About Lobi Stars FC' },
   { label: 'Privacy Policy', href: '/privacy', description: 'How we use your data' },
   { label: 'Terms of Use', href: '/terms', description: 'Website terms' },
+  { label: 'Accessibility', href: '/accessibility', description: 'How the website works for everyone, and how to report a problem' },
 ];
