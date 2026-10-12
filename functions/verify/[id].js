@@ -1,6 +1,8 @@
 import { TEAM_LOGOS } from '../api/_lib/teamLogos.js';
 
 const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' };
+// Everything shown comes from the address or the database: always escaped.
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 // GET /verify/:id -- public, read-only ticket authenticity check. This is
 // what the QR code on every ticket points to, so anyone can scan it with an
@@ -9,7 +11,7 @@ const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popu
 // anything -- only /api/validate-ticket (staff-code protected) marks a
 // ticket used.
 export async function onRequestGet({ params, env }) {
-  const id = (params.id || '').trim();
+  const id = String(params.id || '').trim().slice(0, 64);
 
   const ticket = await env.DB.prepare(
     `SELECT t.id, t.status, t.tier, t.used_at, e.home_team, e.away_team, e.event_date, e.venue
@@ -25,8 +27,8 @@ export async function onRequestGet({ params, env }) {
 function crest(name) {
   const src = TEAM_LOGOS[name];
   return src
-    ? `<img src="${src}" alt="${name}" style="width:56px;height:56px;object-fit:contain;"/>`
-    : `<div style="width:56px;height:56px;border-radius:50%;background:#1e2f52;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;">${(name || '?').charAt(0)}</div>`;
+    ? `<img src="${esc(src)}" alt="${esc(name)}" style="width:56px;height:56px;object-fit:contain;"/>`
+    : `<div style="width:56px;height:56px;border-radius:50%;background:#1e2f52;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;">${esc((name || '?').charAt(0))}</div>`;
 }
 
 function renderPage(id, ticket) {
@@ -39,10 +41,10 @@ function renderPage(id, ticket) {
   const matchBlock = ticket ? `
     <div class="match">
       <div class="crests">${crest(ticket.home_team)}<span class="vs">VS</span>${crest(ticket.away_team)}</div>
-      <div class="teams">${ticket.home_team} vs ${ticket.away_team}</div>
+      <div class="teams">${esc(ticket.home_team)} vs ${esc(ticket.away_team)}</div>
       <div class="meta">${new Date(ticket.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</div>
-      <div class="meta">${new Date(ticket.event_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} &middot; ${ticket.venue}</div>
-      <div class="tier">${TIER_LABELS[ticket.tier] || ticket.tier}</div>
+      <div class="meta">${new Date(ticket.event_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} &middot; ${esc(ticket.venue)}</div>
+      <div class="tier">${esc(TIER_LABELS[ticket.tier] || ticket.tier)}</div>
     </div>` : '';
 
   return `<!doctype html>
@@ -76,7 +78,7 @@ function renderPage(id, ticket) {
     <div class="brand">LOBI STARS FOOTBALL CLUB</div>
     ${statusBlock}
     ${matchBlock}
-    <div class="id">${id}</div>
+    <div class="id">${esc(id)}</div>
   </div>
 </body>
 </html>`;

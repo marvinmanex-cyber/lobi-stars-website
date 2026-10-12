@@ -50,3 +50,9 @@ test('unverified "delete my data" requests reach the Inbox but add nobody to the
   const fans = await (await fetch(`${BASE}/api/admin/fans?q=${encodeURIComponent(email)}`, { headers: ADMIN })).json();
   assert.equal((fans.rows || fans.fans || []).filter(x => x.email === email).length, 0, 'not added to the fan database');
 });
+
+test('ticket verify page escapes the code from the address (no script injection)', async () => {
+  const html = await (await fetch(`${BASE}/verify/%3Cscript%3Ealert(1)%3C%2Fscript%3E`)).text();
+  assert.ok(!html.includes('<script>alert(1)'), 'escaped');
+  assert.match(html, /NOT A VALID TICKET/);
+});

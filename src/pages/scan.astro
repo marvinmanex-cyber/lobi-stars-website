@@ -109,7 +109,8 @@ import Layout from '../layouts/Layout.astro';
         result.style.background = 'rgba(76,175,80,.15)';
         resultIcon.textContent = '✅';
         resultTitle.textContent = 'ADMIT';
-        resultDetail.innerHTML = `${data.ticket.buyer_name} &middot; ${data.ticket.tier}<br/>${data.ticket.home_team} vs ${data.ticket.away_team}`;
+        // Plain text only: the buyer's name is typed by the buyer.
+        resultDetail.replaceChildren(`${data.ticket.buyer_name} · ${data.ticket.tier}`, document.createElement('br'), `${data.ticket.home_team} vs ${data.ticket.away_team}`);
       } else {
         result.style.background = 'rgba(212,32,43,.15)';
         resultIcon.textContent = '⛔';
