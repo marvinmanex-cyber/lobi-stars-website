@@ -16,7 +16,8 @@ export async function onRequestPost({ request, env }) {
     const email = fan?.email || normaliseEmail(b.email);
     if (!email) return Response.json({ error: 'Please enter your email address.' }, { status: 400 });
     await addInbound(env, {
-      from: email, to: 'info@lobistarsfc.com', subject: 'Data deletion request (Match Day Programme)',
+      // Not signed in: the address is unverified, so it must not be added to the fan database.
+      from: email, to: 'info@lobistarsfc.com', subject: 'Data deletion request (Match Day Programme)', skipContact: !fan,
       text: `Please delete my personal data held by Lobi Stars FC.\n\nEmail: ${email}\n${fan ? 'Sent while signed in to this account.' : 'Sent from the programme page (not signed in): confirm by replying to this email before deleting.'}\n\nStaff: use Admin › Fan Database › Delete for this person.`,
     });
     return Response.json({ ok: true });

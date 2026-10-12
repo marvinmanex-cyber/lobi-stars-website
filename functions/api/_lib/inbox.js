@@ -367,7 +367,8 @@ export function composeReply(env, { thread, admin, bodyHtml, quoted }) {
  * reply address (reply+LS-2026-00123@...) or the subject; otherwise the
  * sender's latest conversation; otherwise a new conversation.
  */
-export async function addInbound(env, { from, to, subject, text, html }) {
+/** skipContact: don't add the sender to the fan database (e.g. an unverified "delete my data" request). */
+export async function addInbound(env, { from, to, subject, text, html, skipContact = false }) {
   const db = env.DB;
   await ensureInboxSchema(db);
   const fromEmail = normEmail((String(from || '').match(/<([^>]+)>/) || [])[1] || from);
@@ -385,7 +386,7 @@ export async function addInbound(env, { from, to, subject, text, html }) {
     const [firstName, ...rest] = fromName.includes('@') ? [''] : fromName.split(/\s+/);
     await db.prepare(`INSERT INTO enquiries (id, kind, first_name, surname, email, subject, message, privacy_consent) VALUES (?, 'contact', ?, ?, ?, ?, ?, 0)`)
       .bind(id, firstName || null, rest.join(' ') || null, fromEmail, String(subject || '').slice(0, 200) || 'Email', htmlToText(safeBody).slice(0, 5000)).run();
-    await captureContact(env, { source: 'contact_form', refTable: 'enquiries', refId: id, email: fromEmail, firstName, surname: rest.join(' '), label: String(subject || '').slice(0, 120) });
+    if (!skipContact) await captureContact(env, { source: 'contact_form', refTable: 'enquiries', refId: id, email: fromEmail, firstName, surname: rest.join(' '), label: String(subject || '').slice(0, 120) });
     const [made] = await syncEnquiries(db, id);
     return { ok: true, threadId: made?.id, created: true };
   }

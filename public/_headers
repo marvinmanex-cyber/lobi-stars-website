@@ -1,0 +1,11 @@
+# Security headers for every page and file (Cloudflare Pages). Pages built by
+# Functions add the same headers in code (functions/api/_lib/securityHeaders.js).
+# - Only this site may show its pages in a frame (stops "clickjacking").
+# - Browsers use HTTPS only (not includeSubDomains: stream.lobistarsfc.com
+#   points to the commentary partner's server).
+# - Pages may use the camera (gate ticket scanner) but not the microphone or location.
+/*
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: frame-ancestors 'self'
+  Strict-Transport-Security: max-age=15552000
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), usb=(), interest-cohort=()

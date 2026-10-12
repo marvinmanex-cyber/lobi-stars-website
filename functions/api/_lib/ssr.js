@@ -1,3 +1,4 @@
+import { withSecurityHeaders } from './securityHeaders.js';
 // Server-side rendering for pages whose content comes from the database
 // (fixtures, results, streams, commentary). The static page is fetched from
 // the build, the real content is written into it before it is sent, and the
@@ -51,6 +52,7 @@ export async function renderPage(request, env, assetPath, handlers = [], data = 
   if (!shell.ok) return shell;
   const headers = new Headers(shell.headers);
   headers.set('Cache-Control', 'public, max-age=30');
+  withSecurityHeaders(headers);
   let rw = new HTMLRewriter();
   const json = Object.entries(data).map(([id, v]) => jsonScript(id, v)).join('');
   if (json) rw = rw.on('head', { element(el) { el.append(json, { html: true }); } });

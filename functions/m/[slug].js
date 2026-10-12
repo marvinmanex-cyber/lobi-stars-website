@@ -1,5 +1,6 @@
 import { ensureShareSchema, escapeHtml as h, escapeAttr as a, validSlug, programmeState, formatDateLagos, formatTimeLagos, shareVersion, SITE } from '../api/_lib/share.js';
 import { validSrc, isBotOrPreview, parseDevice, logCampaignEvent } from '../api/_lib/qr.js';
+import { withSecurityHeaders } from '../api/_lib/securityHeaders.js';
 
 // GET /m/<slug>?src=<platform>&v=<n> -- the link people share on social media.
 // Link-preview robots read the og: tags (title, description, the 1200x630
@@ -61,7 +62,7 @@ ${hasCard ? '<meta property="og:image:width" content="1200">\n<meta property="og
 <script>location.replace(${JSON.stringify(target).replace(/</g, '\\u003c')});</script>
 </body>
 </html>`;
-    return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60', 'X-Content-Type-Options': 'nosniff' } });
+    return new Response(html, { headers: withSecurityHeaders(new Headers({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=60', 'X-Content-Type-Options': 'nosniff' })) });
   } catch (err) {
     console.error('[share] page', err);
     return toScan(request);

@@ -1,6 +1,6 @@
 import { normaliseEmail, checkOrigin, requestCode, verifyCode, verifyLinkToken, getFan, jsonWithCookies, INTENTS } from '../../_lib/fanCode.js';
 import { validSrc, logCampaignEvent } from '../../_lib/qr.js';
-import { checkTurnstile, clientIp, normalizeNigerianPhone, ensureFanSchema } from '../../_lib/fans.js';
+import { checkTurnstile, clientIp, normalizeNigerianPhone, ensureFanSchema, rateLimit, tooMany } from '../../_lib/fans.js';
 import { clearSessionCookie, fanHintCookie } from '../../_lib/session.js';
 import { stripTags, ensureProgrammeSchema, getCurrentProgramme } from '../../_lib/programme.js';
 import { captureContact } from '../../_lib/contacts.js';
@@ -30,6 +30,13 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
       if (r.error) return jsonWithCookies({ error: r.error }, [], r.status);
       if (src) logCampaignEvent(env, src, 'signin_started', { request }, waitUntil);
       return jsonWithCookies(r.devCode ? { ok: true, devCode: r.devCode, devLink: r.devLink } : { ok: true });
+    }
+
+    // Guessing limits on top of "5 tries per code": per email and per connection, across codes.
+    if (action === 'verify' || action === 'verify-link') {
+      await ensureFanSchema(env.DB);
+      const em = normaliseEmail(b.email) || 'invalid';
+      if (!(await rateLimit(env.DB, `fanverify:${em}`, 10, 3600)) || !(await rateLimit(env.DB, `fanverify-ip:${clientIp(request)}`, 30, 3600))) return tooMany();
     }
 
     if (action === 'verify') {

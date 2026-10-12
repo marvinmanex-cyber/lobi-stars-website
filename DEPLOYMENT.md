@@ -234,6 +234,26 @@ the old version is deleted.
 - **"File storage is not connected":** the R2 binding is still commented out
   in `wrangler.toml` (Setup steps 1-2).
 
+## Security notes (review of 12 October 2026)
+
+- **Headers:** `public/_headers` (static pages) and
+  `functions/api/_lib/securityHeaders.js` (pages built by Functions: admin,
+  `/m/`, server-rendered pages) send `X-Frame-Options: SAMEORIGIN` +
+  `frame-ancestors 'self'`, HSTS for 180 days (no `includeSubDomains`, because
+  stream.lobistarsfc.com points to the commentary partner), and a
+  Permissions-Policy (camera only for this site, for the gate scanner). No site-wide
+  Function middleware is used on purpose: it would count every file request
+  against the free plan's daily Functions limit.
+- **Email-code sign-in:** codes and links hashed; 10 minutes; 5 tries per code;
+  3 codes per email per 15 minutes; 10 codes per connection per hour; **10
+  wrong tries per email and 30 per connection per hour across codes**; Origin
+  check on every POST; same reply for known and unknown emails. Set Turnstile
+  (`TURNSTILE_SECRET_KEY`) before email goes live.
+- **"Delete my data"** from someone not signed in goes to the Inbox but does not
+  add that address to the Fan Database.
+- **Never set in production:** `FANS_DEV_LINKS`, `SOCIAL_POST_FAKE`, `PAYSTACK_FAKE`.
+- Tests: `tests/security-review.test.mjs`.
+
 ## Monthly partner reports
 
 `functions/api/_lib/partnerReport.js`: per partner and calendar month

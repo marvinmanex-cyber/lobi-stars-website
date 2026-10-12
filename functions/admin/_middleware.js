@@ -1,5 +1,6 @@
 import { getAdmin } from '../api/_lib/adminSession.js';
 import { allowedPath } from '../api/_lib/adminRoles.js';
+import { withSecurityHeaders } from '../api/_lib/securityHeaders.js';
 
 // Every /admin page (the CMS, Manage Matches, Analytics...) needs a staff
 // login. Visitors without a valid staff cookie are sent to /admin/login, and
@@ -29,5 +30,6 @@ export async function onRequest({ request, env, next }) {
   const out = new Response(res.body, res);
   out.headers.set('X-Robots-Tag', 'noindex, nofollow');
   out.headers.set('Cache-Control', 'no-store');
+  withSecurityHeaders(out.headers);
   return out;
 }
