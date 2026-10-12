@@ -1,0 +1,312 @@
+---
+// Matchday › Share any page: pick or paste any page of lobistarsfc.com, see
+// how its link card will look (with a checklist), then post it to the club's
+// accounts: automatically on Telegram and Facebook (once their secrets are
+// set), or with a ready caption everywhere else. Also: which pages visitors
+// share most (anonymous Share button clicks) and the club's own post history.
+// Arrive with ?url=<page> (the bookmarklet does this).
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+const bookmarklet = "javascript:(function(){window.open('https://lobistarsfc.com/admin/share/?url='+encodeURIComponent(location.href),'_blank')})()";
+---
+<Layout title="Share any page | Lobi Stars Admin" description="Check a page's link card and share it to the club socials." noindex>
+  <div class="wrap sp">
+    <AdminNav current="share" />
+    <header class="sp-head">
+      <div><div class="stag">Matchday</div><h1 class="stitle">Share any <span class="r">page</span></h1></div>
+    </header>
+    <p class="sp-lede">Choose a page of the website, check how it will look when shared, then post it to the club's accounts.</p>
+
+    <form class="sp-card sp-find" id="find" autocomplete="off">
+      <label for="addr">Page address or search</label>
+      <div class="sp-row">
+        <input id="addr" name="addr" list="pageList" placeholder="Paste https://lobistarsfc.com/… or type to search, e.g. tickets" maxlength="300" />
+        <datalist id="pageList"></datalist>
+        <button class="btn-p" type="submit">Check</button>
+      </div>
+      <p class="sp-msg" id="msg" role="status" aria-live="polite"></p>
+    </form>
+
+    <section id="result" hidden>
+      <div class="sp-grid">
+        <article class="sp-card sp-preview" aria-label="Link card preview">
+          <h2>Link card preview</h2>
+          <div class="lc">
+            <div class="lc-img"><img id="lcImg" alt="" width="1200" height="630" /></div>
+            <div class="lc-body">
+              <small id="lcSite"></small>
+              <b id="lcTitle"></b>
+              <span id="lcDesc"></span>
+            </div>
+          </div>
+          <p class="sp-small"><a id="lcOpen" target="_blank" rel="noopener">Open the page</a> · <span id="lcSize"></span></p>
+        </article>
+        <article class="sp-card">
+          <h2>Checklist</h2>
+          <ul class="chk" id="chk"></ul>
+          <p class="sp-small">Shared before and the card looks old? Facebook keeps its own copy: paste the address into the <a href="https://developers.facebook.com/tools/debug/" target="_blank" rel="noopener">Facebook Sharing Debugger</a> and press <b>Scrape Again</b>.</p>
+        </article>
+      </div>
+      <h2 class="sp-h2">Post it</h2>
+      <div class="sp-plats" id="plats"></div>
+    </section>
+
+    <section class="sp-card">
+      <h2>What gets shared</h2>
+      <div class="sp-tabs" role="group" aria-label="Period">
+        <button type="button" data-range="7">7 days</button><button type="button" data-range="30" aria-pressed="true">30 days</button><button type="button" data-range="90">90 days</button>
+      </div>
+      <div class="sp-grid">
+        <div><h3>Most shared pages (visitors)</h3><div id="topPages"><p class="muted">Loading…</p></div></div>
+        <div><h3>Shares per platform</h3><div id="byPlat"><p class="muted">Loading…</p></div></div>
+      </div>
+      <h3>Club posts</h3>
+      <div id="posts" class="sp-scroll"><p class="muted">Loading…</p></div>
+      <p class="sp-small">Visitor shares are counted anonymously: only the page and the platform, never who.</p>
+    </section>
+
+    <section class="sp-card">
+      <h2>"Share to club socials" bookmark</h2>
+      <p>Add this bookmark once. Then, on any page of lobistarsfc.com, tap it to open that page here, ready to check and post.</p>
+      <p><a class="sp-bm" href={bookmarklet} id="bm">Share to club socials</a></p>
+      <details class="sp-how">
+        <summary>How to add it</summary>
+        <ul>
+          <li><b>Computer:</b> show the bookmarks bar (Ctrl+Shift+B, or Cmd+Shift+B on a Mac), then drag the red button above onto it.</li>
+          <li><b>Phone:</b> bookmark this page (Share › Add bookmark, or the star in Chrome). Then edit that bookmark: name it "Share to club socials" and replace its address with the code below (Copy). To use it, open a page of the site, tap the address bar, type "Share to" and tap the bookmark.</li>
+        </ul>
+        <div class="sp-row"><input id="bmCode" readonly value={bookmarklet} aria-label="Bookmark code" /><button type="button" class="btn-o" id="bmCopy">Copy</button></div>
+      </details>
+    </section>
+  </div>
+
+  <dialog id="confirm" class="sp-dlg" aria-labelledby="dlgH">
+    <form method="dialog">
+      <h2 id="dlgH">Post now?</h2>
+      <p id="dlgWhere"></p>
+      <div class="lc lc--small"><div class="lc-img"><img id="dlgImg" alt="" /></div><div class="lc-body"><b id="dlgTitle"></b><span id="dlgDesc"></span></div></div>
+      <pre id="dlgCaption"></pre>
+      <ul class="chk" id="dlgWarn"></ul>
+      <div class="sp-row sp-row--end"><button value="cancel" class="btn-o">Cancel</button><button value="ok" class="btn-p" id="dlgOk">Post now</button></div>
+    </form>
+  </dialog>
+</Layout>
+
+<style>
+  .sp { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
+  .sp-head { margin-bottom: 6px; }
+  .sp-lede { margin: 0 0 16px; color: var(--a-muted); line-height: 1.55; }
+  .sp-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; min-width: 0; }
+  .sp-card h2, .sp-h2 { margin: 0 0 12px; font: 700 18px 'Barlow', sans-serif; }
+  .sp-h2 { margin: 8px 0 12px; }
+  .sp-card h3 { margin: 14px 0 8px; font: 700 15px 'Barlow', sans-serif; }
+  .sp-find label { display: block; font-weight: 700; margin-bottom: 6px; }
+  .sp-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .sp-row--end { justify-content: flex-end; }
+  .sp-row input { flex: 1 1 260px; min-width: 0; min-height: 46px; padding: 10px 12px; border: 1.5px solid var(--a-line); border-radius: 10px; font: 400 16px 'Barlow', sans-serif; background: var(--a-card); color: var(--a-ink); }
+  .sp-msg { margin: 10px 0 0; font-weight: 600; }
+  .sp-msg:empty { display: none; }
+  .sp-msg.err { color: #A3161B; }
+  .sp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .sp-small { margin: 10px 0 0; font-size: 13px; color: var(--a-muted); line-height: 1.5; }
+  .lc { border: 1px solid var(--a-line); border-radius: 12px; overflow: hidden; background: #F0F2F5; color: #1C1E21; }
+  .lc-img { aspect-ratio: 1200 / 630; background: #DADDE1; }
+  .lc-img img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .lc-body { padding: 10px 12px 12px; display: grid; gap: 3px; }
+  .lc-body small { text-transform: uppercase; font-size: 12px; color: #65676B; letter-spacing: .4px; }
+  .lc-body b { font-size: 16px; line-height: 1.3; }
+  .lc-body span { font-size: 14px; color: #65676B; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .lc--small { max-width: 360px; margin: 10px 0; }
+  .chk { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .sp :global(.chk li), .sp-dlg :global(.chk li) { padding: 7px 10px 7px 34px; border-radius: 8px; position: relative; font-size: 14px; line-height: 1.4; }
+  .sp :global(.chk li::before), .sp-dlg :global(.chk li::before) { position: absolute; left: 10px; top: 7px; font-weight: 800; }
+  .sp :global(.chk .ok), .sp-dlg :global(.chk .ok) { background: #E8F7EE; color: #17643A; }
+  .sp :global(.chk .ok::before), .sp-dlg :global(.chk .ok::before) { content: '✓'; }
+  .sp :global(.chk .warn), .sp-dlg :global(.chk .warn) { background: #FFF7E6; color: #7A4B00; }
+  .sp :global(.chk .warn::before), .sp-dlg :global(.chk .warn::before) { content: '!'; }
+  .sp :global(.chk .bad), .sp-dlg :global(.chk .bad) { background: #FDECEC; color: #A3161B; }
+  .sp :global(.chk .bad::before), .sp-dlg :global(.chk .bad::before) { content: '✕'; }
+  .sp-plats { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .sp :global(.pc) { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 14px; padding: 14px 16px; display: grid; gap: 10px; min-width: 0; border-top: 5px solid var(--c, #5B6470); }
+  .sp :global(.pc-h) { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .sp :global(.pc-h b) { font-size: 17px; }
+  .sp :global(.pc-mode) { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: #EEF0F3; color: #3D4652; }
+  .sp :global(.pc-mode.auto) { background: #E8F7EE; color: #17643A; }
+  .sp :global(.pc textarea) { width: 100%; box-sizing: border-box; min-height: 210px; padding: 10px; border: 1.5px solid var(--a-line); border-radius: 10px; font: 400 15px/1.45 'Barlow', sans-serif; resize: vertical; background: var(--a-card); color: var(--a-ink); }
+  .sp :global(.pc-count) { font-size: 13px; color: var(--a-muted); }
+  .sp :global(.pc-count.over) { color: #A3161B; font-weight: 700; }
+  .sp :global(.pc-hint) { margin: 0; font-size: 13px; color: #7A4B00; background: #FFF7E6; padding: 8px 10px; border-radius: 8px; }
+  .sp :global(.pc-acts) { display: flex; flex-wrap: wrap; gap: 8px; }
+  .sp :global(.pc-acts > *) { min-height: 44px; padding: 8px 14px; font-size: 13px; display: inline-flex; align-items: center; }
+  .sp :global(.pc-out) { margin: 0; font-size: 14px; font-weight: 600; }
+  .sp :global(.pc-out:empty) { display: none; }
+  .sp :global(.pc-out.err) { color: #A3161B; }
+  .sp-tabs { display: inline-flex; border: 1px solid var(--a-line); border-radius: 999px; overflow: hidden; margin-bottom: 4px; }
+  .sp-tabs button { min-height: 40px; padding: 0 16px; border: 0; background: none; font: 700 14px 'Barlow', sans-serif; cursor: pointer; color: var(--a-ink); }
+  .sp-tabs button[aria-pressed="true"] { background: #E31E24; color: #fff; }
+  .sp-scroll { overflow-x: auto; }
+  .sp :global(table) { width: 100%; border-collapse: collapse; }
+  .sp :global(th), .sp :global(td) { padding: 8px 10px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--a-line); vertical-align: top; }
+  .sp :global(td.n) { text-align: right; font-variant-numeric: tabular-nums; }
+  .sp-bm { display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 999px; background: #E31E24; color: #fff !important; font-weight: 700; text-decoration: none; }
+  .sp-how summary { cursor: pointer; font-weight: 700; min-height: 44px; display: flex; align-items: center; }
+  .sp-how li { margin-bottom: 8px; line-height: 1.5; }
+  .sp-dlg { width: min(560px, calc(100vw - 32px)); border: 0; border-radius: 16px; padding: 20px; box-sizing: border-box; }
+  .sp-dlg::backdrop { background: rgba(15, 17, 21, .55); }
+  .sp-dlg h2 { margin: 0 0 8px; font: 700 20px 'Barlow', sans-serif; }
+  .sp-dlg pre { white-space: pre-wrap; word-break: break-word; background: #F4F5F7; padding: 10px 12px; border-radius: 10px; font: 400 14px/1.45 'Barlow', sans-serif; max-height: 220px; overflow: auto; }
+  .sp-dlg .chk { margin: 0 0 14px; }
+  [hidden] { display: none !important; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'x-admin-code': code };
+  const $ = id => document.getElementById(id);
+  const el = (t, p = {}, ...k) => { const n = document.createElement(t); for (const [a, v] of Object.entries(p)) { if (a === 'class') n.className = v; else if (a === 'text') n.textContent = v; else n.setAttribute(a, v); } k.forEach(x => x != null && n.append(x)); return n; };
+  const api = async (path, opts = {}) => {
+    const r = await fetch(path, { ...opts, headers: { ...H, ...(opts.body ? { 'Content-Type': 'application/json' } : {}) } });
+    const d = await r.json().catch(() => ({}));
+    if (r.status === 401) location.href = '/admin/login/?next=' + encodeURIComponent(location.pathname + location.search);
+    return { ok: r.ok, status: r.status, d };
+  };
+  const when = s => s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WAT' : '–';
+  const PLATS = [
+    ['telegram', 'Telegram', '#229ED9'], ['facebook', 'Facebook', '#1877F2'], ['twitter', 'X', '#000000'], ['whatsapp', 'WhatsApp', '#25D366'],
+    ['instagram', 'Instagram', '#C13584'], ['tiktok', 'TikTok', '#111111'], ['youtube', 'YouTube', '#FF0000'],
+  ];
+  const NAMES = Object.fromEntries(PLATS.map(p => [p[0], p[1]]).concat([['native', 'Phone share sheet'], ['email', 'Email'], ['copy', 'Copy link']]));
+  const LIMIT = { twitter: 280, telegram: 4096, facebook: 5000, whatsapp: 4000, instagram: 2200, tiktok: 2200, youtube: 5000 };
+  const URL_RE = /https?:\/\/[^\s]+/g;
+  const len = (k, t) => k === 'twitter' ? [...t.replace(URL_RE, 'x'.repeat(23))].length : [...t].length;
+  const withUtm = (url, src) => { const u = new URL(url); u.searchParams.set('utm_source', src); u.searchParams.set('utm_medium', 'social'); u.searchParams.set('utm_campaign', 'club_post'); return u.toString(); };
+  const noLink = (t, u) => t.split(u).join('').replace(URL_RE, '').replace(/\n{3,}/g, '\n\n').trim();
+  let card = null, auto = { telegram: false, facebook: false }, range = 30;
+
+  // ── Type-ahead over the site's pages ──
+  let tq;
+  $('addr').addEventListener('input', () => {
+    clearTimeout(tq);
+    const q = $('addr').value.trim();
+    if (!q || /^https?:/i.test(q)) return;
+    tq = setTimeout(async () => {
+      const { d } = await api('/api/admin/share/pages?q=' + encodeURIComponent(q));
+      $('pageList').replaceChildren(...(d.pages || []).map(p => el('option', { value: p })));
+    }, 200);
+  });
+
+  function msg(text, err) { $('msg').textContent = text || ''; $('msg').className = 'sp-msg' + (err ? ' err' : ''); }
+  function checklist(ul, items) { ul.replaceChildren(...items.map(w => el('li', { class: w.level, text: w.text }))); }
+
+  async function check(addr) {
+    addr = String(addr || '').trim();
+    if (!addr) { msg('Enter a page address or search for a page.', true); return; }
+    if (addr.startsWith('/')) addr = location.origin + addr;
+    msg('Checking…');
+    const { ok, d } = await api('/api/admin/share/preview?url=' + encodeURIComponent(addr));
+    if (!ok) { msg(d.error || 'Could not check that page.', true); $('result').hidden = true; return; }
+    msg('');
+    card = d;
+    history.replaceState(null, '', '?url=' + encodeURIComponent(d.url));
+    $('lcImg').src = d.image || ''; $('lcImg').alt = d.imageAlt || '';
+    $('lcSite').textContent = new URL(d.url).hostname; $('lcTitle').textContent = d.title || '(no title)'; $('lcDesc').textContent = d.description || '';
+    $('lcOpen').href = d.url;
+    $('lcSize').textContent = d.imageBytes != null ? `Image ${Math.round(d.imageBytes / 1024)} KB${d.imageType ? ', ' + d.imageType.replace('image/', '').toUpperCase() : ''}` : 'Image size unknown';
+    checklist($('chk'), d.warnings);
+    renderPlats();
+    $('result').hidden = false;
+  }
+  $('find').addEventListener('submit', e => { e.preventDefault(); check($('addr').value); });
+
+  function renderPlats() {
+    $('plats').replaceChildren(...PLATS.map(([key, name, color]) => {
+      const url = withUtm(card.shareUrl, key);
+      const ta = el('textarea', { 'aria-label': `${name} caption` }); ta.value = card.captions[key] || '';
+      const count = el('span', { class: 'pc-count' });
+      const upd = () => { const n = len(key, ta.value); count.textContent = `${n} / ${LIMIT[key]}`; count.className = 'pc-count' + (n > LIMIT[key] ? ' over' : ''); };
+      ta.addEventListener('input', upd); upd();
+      const out = el('p', { class: 'pc-out', role: 'status', 'aria-live': 'polite' });
+      const say = (t, err) => { out.textContent = t; out.className = 'pc-out' + (err ? ' err' : ''); };
+      const isAuto = (key === 'telegram' || key === 'facebook') && auto[key];
+      const acts = el('div', { class: 'pc-acts' });
+      const btn = (text, cls, fn) => { const b = el('button', { type: 'button', class: cls, text }); b.addEventListener('click', fn); acts.append(b); return b; };
+      if (isAuto) btn('Post now', 'btn-p', () => confirmPost(key, name, ta.value, say, out));
+      btn('Copy caption', 'btn-o', async () => { try { await navigator.clipboard.writeText(ta.value); say('Caption copied.'); } catch { ta.select(); say('Press Ctrl+C (or long-press › Copy) to copy.'); } });
+      const intent = {
+        twitter: () => `https://x.com/intent/post?text=${encodeURIComponent(noLink(ta.value, url))}&url=${encodeURIComponent(url)}`,
+        whatsapp: () => `https://wa.me/?text=${encodeURIComponent(ta.value.includes(url) ? ta.value : ta.value + '\n' + url)}`,
+        facebook: () => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
+        telegram: () => `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(noLink(ta.value, url))}`,
+      }[key];
+      if (intent) btn('Open post window', 'btn-o', () => { window.open(intent(), '_blank', 'noopener'); say('Post it in the window that opened, then press Mark as posted.'); });
+      if (navigator.share) btn('Share from my phone', 'btn-o', async () => {
+        try { await navigator.share({ title: card.title || '', text: ta.value, url: ['instagram', 'tiktok'].includes(key) ? undefined : url }); say('Shared. Press Mark as posted if it went on the club account.'); }
+        catch (e) { if (e && e.name !== 'AbortError') say('Sharing did not work on this device.', true); }
+      });
+      if (card.image) { const a = el('a', { class: 'btn-o', href: card.image, download: '', target: '_blank', rel: 'noopener', text: 'Download image' }); acts.append(a); }
+      btn('Mark as posted', 'btn-o', async () => {
+        const { ok, d } = await api('/api/admin/share/page-mark', { method: 'POST', body: JSON.stringify({ url: card.url, platformKey: key, title: card.title }) });
+        if (ok) { say('Recorded in Club posts.'); loadStats(); } else say(d.error || 'Could not record it.', true);
+      });
+      const kids = [el('div', { class: 'pc-h' }, el('b', { text: name }), el('span', { class: 'pc-mode' + (isAuto ? ' auto' : ''), text: isAuto ? 'Posts automatically' : 'Post by hand' })), ta, count];
+      if (key === 'instagram' || key === 'tiktok') kids.push(el('p', { class: 'pc-hint', text: `${name} posts can't have clickable links: put the page in the club's link in bio, or add it with the Link sticker on a Story.` }));
+      if ((key === 'telegram' || key === 'facebook') && !auto[key]) kids.push(el('p', { class: 'pc-hint', text: `Automatic posting to ${name} isn't set up yet (see HANDOVER-TODO). Use Open post window for now.` }));
+      const pc = el('div', { class: 'pc', style: `--c:${color}` }, ...kids, acts, out);
+      return pc;
+    }));
+  }
+
+  function confirmPost(key, name, caption, say, outEl) {
+    const dlg = $('confirm');
+    $('dlgWhere').textContent = `This posts on the club's ${name} straight away.`;
+    $('dlgImg').src = card.image || ''; $('dlgTitle').textContent = card.title || ''; $('dlgDesc').textContent = card.description || '';
+    $('dlgCaption').textContent = caption;
+    checklist($('dlgWarn'), card.warnings.filter(w => w.level !== 'ok'));
+    dlg.onclose = async () => {
+      if (dlg.returnValue !== 'ok') return;
+      say('Posting…');
+      const { d } = await api('/api/admin/share/page-post', { method: 'POST', body: JSON.stringify({ url: card.url, title: card.title, platforms: [key], captions: { [key]: caption } }) });
+      const r = (d.results || [])[0];
+      if (r && r.ok) { say('Posted. '); if (r.externalUrl) outEl.append(el('a', { href: r.externalUrl, target: '_blank', rel: 'noopener', text: 'See the post' })); loadStats(); }
+      else say((r && r.error) || d.error || 'Posting failed.', true);
+    };
+    dlg.showModal();
+  }
+
+  // ── Stats ──
+  function table(head, rows) {
+    if (!rows.length) return el('p', { class: 'muted', text: 'Nothing yet.' });
+    return el('table', {}, el('thead', {}, el('tr', {}, ...head.map(h => el('th', { scope: 'col', text: h })))), el('tbody', {}, ...rows.map(r => el('tr', {}, ...r))));
+  }
+  async function loadStats() {
+    const { ok, d } = await api('/api/admin/share/page-stats?range=' + range);
+    if (!ok) { $('topPages').textContent = d.error || 'Could not load.'; return; }
+    const before = JSON.stringify(auto);
+    auto = d.auto || auto;
+    $('topPages').replaceChildren(table(['Page', 'Shares'], d.topPages.map(p => [el('td', {}, el('a', { href: p.path, target: '_blank', rel: 'noopener', text: p.path })), el('td', { class: 'n', text: String(p.shares) })])));
+    $('byPlat').replaceChildren(table(['Platform', 'Shares'], d.byPlatform.map(p => [el('td', { text: NAMES[p.platform] || p.platform }), el('td', { class: 'n', text: String(p.shares) })])));
+    $('posts').replaceChildren(table(['When', 'Page', 'Platform', 'How', 'Who', 'Post'], d.posts.map(p => [
+      el('td', { text: when(p.created_at) }), el('td', {}, el('a', { href: p.path, target: '_blank', rel: 'noopener', text: p.title || p.path })),
+      el('td', { text: NAMES[p.platform_key] || p.platform_key }),
+      el('td', { text: p.status === 'posted' ? 'Posted automatically' : p.status === 'failed' ? 'Failed: ' + (p.error || '') : 'Posted by hand' }),
+      el('td', { text: p.staff_email || '–' }),
+      el('td', {}, p.external_url ? el('a', { href: p.external_url, target: '_blank', rel: 'noopener', text: 'Open' }) : '–'),
+    ])));
+    if (card && JSON.stringify(auto) !== before) renderPlats();
+  }
+  document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => {
+    range = Number(b.dataset.range);
+    document.querySelectorAll('[data-range]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    loadStats();
+  }));
+
+  $('bmCopy').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('bmCode').value); $('bmCopy').textContent = 'Copied'; } catch { $('bmCode').select(); } });
+  $('bm').addEventListener('click', e => { e.preventDefault(); alert('Drag this button to your bookmarks bar (or follow "How to add it"), then use it on any page of lobistarsfc.com.'); });
+
+  loadStats().then(() => {
+    const u = new URLSearchParams(location.search).get('url');
+    if (u) { $('addr').value = u; check(u); }
+  });
+})();
+</script>

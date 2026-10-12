@@ -26,10 +26,16 @@ const p = partner.data;
 const { Content } = await render(partner);
 const site = website(partner);
 const hasBody = (partner.body ?? '').trim().length > 0;
+// Link-card title under 70 characters, and a description of 70 to 160.
+const fullTitle = `${p.name} – ${p.officialTitle} | Lobi Stars FC`;
+const pageTitle = fullTitle.length <= 70 ? fullTitle : `${p.name} – ${p.officialTitle}`.length <= 70 ? `${p.name} – ${p.officialTitle}` : `${p.name} | Lobi Stars FC Partner`;
+let pageDesc = (p.shortDescription || `${p.name} is the ${p.officialTitle} of Lobi Stars Football Club.`).trim();
+if (pageDesc.length < 70) pageDesc = `${pageDesc} Find out more about ${p.name} and its partnership with the Pride of Benue.`;
+if (pageDesc.length > 160) pageDesc = pageDesc.slice(0, 157).replace(/\s+\S*$/, '') + '…';
 ---
 <Layout
-  title={`${p.name} – ${p.officialTitle} | Lobi Stars FC`}
-  description={p.shortDescription || `${p.name} is the ${p.officialTitle} of Lobi Stars Football Club.`}
+  title={pageTitle}
+  description={pageDesc}
   image={logoSrc(partner) ?? undefined}
   imageAlt={logoAlt(partner)}
 >

@@ -27,7 +27,7 @@ const listed = new Set(groups.flatMap(g => g.links.map(l => l.href)));
 const extra = EXTRA_PAGES.filter(p => !listed.has(p.href) && !p.external);
 if (extra.length) groups.push({ title: 'More', links: extra });
 ---
-<LegalPage title="Sitemap" tag="Help" description="Every main page on the Lobi Stars FC website." updated="10 October 2026">
+<LegalPage title="Sitemap" tag="Help" description="Every main page on the Lobi Stars FC website in one list: club, matches, tickets, fans, partners, help and legal pages." updated="10 October 2026">
   <div class="sm-grid">
     {groups.map(g => (
       <section>

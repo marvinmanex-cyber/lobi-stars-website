@@ -297,6 +297,80 @@ and Super Admins are emailed (when `RESEND_API_KEY` is set). Admin page
 work: point a free outside monitor (e.g. UptimeRobot, every 5 minutes) at it.
 Tests: `tests/health.test.mjs`.
 
+## Sharing pages (Share button + Admin › Share any page)
+
+**How the button works.** `src/components/ShareButton.astro` is a `<details>`
+menu of plain links (WhatsApp, Facebook, X, Telegram, Email), so it works with
+JavaScript off. One small inline script (event delegation, so it survives the
+in-page navigation used while commentary plays) works everything out **when
+the button is pressed**: the page's canonical address (tracking parameters
+removed) plus `utm_source=<platform>&utm_medium=social&utm_campaign=page_share`,
+the og:title and og:description. On phones with a share sheet
+(`pointer: coarse` + `navigator.share`) it opens the phone's own sheet
+(`utm_source=native`); elsewhere the menu (a bottom sheet under 640 px).
+"Copy link" needs JavaScript (`utm_source=copy`). Each choice is counted once
+per page and platform per session with `navigator.sendBeacon` to
+`POST /api/share/event` (page and platform only: no IP, browser or ID; the
+endpoint checks Origin and answers only 204 or 400). No third-party scripts.
+
+**Where it shows.** In the breadcrumb strip of every public page through
+`Layout.astro` (`share` prop, default on). Never on noindex pages, `/admin`,
+`/kitchen`, `/scan`, `/fans/*` (sign-in and account), `/payment`, any
+`.../success/`, `.../order/` or `.../checkout/` page, the 404 page, or the
+programme pages (they have their own Share with tracked links). Opt a page
+out with `<Layout share={false}>`. News stories have it under the byline and
+at the end instead (`share={false}` on their Layout). Match pages: a share bar
+on the Match Centre template that `functions/matches/[slug].js` switches on
+for each match's own address (the bare `/match-centre/` page doesn't show it).
+
+**Link cards.** `src/components/HeadMeta.astro` writes every head tag (title,
+description, canonical, og:*, twitter:*). The build step
+(`integrations/og/index.mjs`) gives every indexable page a 1200x630 JPEG:
+a branded card with the page title (pages without a photo), the partner's
+logo (partner pages), or the page's own photo cropped to 1200x630 (news
+stories, players). The fallback image is `/images/og-default.jpg`
+(1200x630, 66 KB); the homepage keeps it on purpose. Titles stay under 70
+characters and descriptions between 70 and 160.
+
+**Admin › Share any page** (`/admin/share/`: Media, Matchday Operator, Super
+Admin). APIs in `functions/api/admin/share/`: `pages` (type-ahead from the
+sitemap, cached 10 minutes), `preview` (own host name only, at most 3
+same-host redirects, 6 s, 1.5 MB, HTML only; falls back to the ASSETS binding),
+`page-post` (Telegram and Facebook through `postLink` in
+`functions/api/_lib/shareAdapters.js`, only when their secrets are set; 3 per
+platform per page per hour), `page-mark` (manual posts) and `page-stats`.
+Captions come from `buildPageCaption` in `functions/api/_lib/pageShare.js`;
+hashtags from the `settings` row `page_share_hashtags`. Club posts carry
+`utm_campaign=club_post`. Every post or mark is in the activity log.
+
+**Bookmarklet.** The page shows a "Share to club socials" bookmark that opens
+`/admin/share/?url=<current page>`; how to add it on a computer and on a phone
+is on the page.
+
+**Database.** `page_share_events`, `page_share_posts` and `settings` are made
+on first use. The same SQL is in `migrations/0001_page_sharing.sql` if you
+prefer wrangler migrations (optional; the database is `lobi-stars-tickets`):
+
+```
+npx wrangler d1 migrations apply lobi-stars-tickets --local
+npm run build && npx wrangler pages dev dist
+npx wrangler d1 migrations apply lobi-stars-tickets --remote
+```
+
+**Troubleshooting**
+- *Preview has no image:* check the page in Admin › Share any page; the
+  checklist says what is missing. Images must be full https addresses, JPEG or
+  PNG, under 300 KB.
+- *Preview text or picture is old:* Facebook, WhatsApp and X keep their own
+  copy for days. Facebook: paste the address into the Facebook Sharing
+  Debugger (developers.facebook.com/tools/debug) and press **Scrape Again**.
+  X refreshes on its own within about a week.
+- *The share menu doesn't open:* check the page isn't one of those above where
+  it is switched off. Without JavaScript the menu still opens (no Copy link).
+- *WhatsApp shows no image:* the image is over about 300 KB or not reachable
+  without signing in. Check with Admin › Share any page.
+- Tests: `tests/page-share.test.mjs`.
+
 ## Share Hub (sharing programmes to social media)
 
 Staff share a programme from **Admin › Matchday Programme › Share** (a button

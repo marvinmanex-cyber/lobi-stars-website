@@ -5,9 +5,12 @@
 import Layout from '../layouts/Layout.astro';
 import MatchesTabs from '../components/MatchesTabs.astro';
 import MatchAlerts from '../components/MatchAlerts.astro';
+import ShareButton from '../components/ShareButton.astro';
 ---
 <Layout title="Match Centre | Lobi Stars Football Club" description="Lobi Stars FC Match Centre: preview, line-ups, live updates, match report, stats and photos." noindex>
   <div class="wrap"><MatchesTabs /></div>
+  <!-- Share: shown on each match's own page (/matches/<slug>/, made by functions/matches/[slug].js). -->
+  <div class="wrap mc-sharebar" data-match-share hidden><ShareButton /></div>
   <div id="mc" class="mc" aria-live="polite" data-commentary="/commentary/">
     <div class="wrap mc-loading" id="mcStatus">Loading match&hellip;</div>
   </div>
@@ -15,6 +18,8 @@ import MatchAlerts from '../components/MatchAlerts.astro';
 </Layout>
 
 <style>
+  .mc-sharebar { display: flex; justify-content: flex-end; padding-top: 10px; padding-bottom: 10px; }
+  .mc-sharebar[hidden] { display: none; }
   /* The match is drawn by the script; keeping the footer below the screen until then stops the page jumping. */
   .mc { min-height: 100vh; min-height: 100svh; }
   .mc-loading { padding: 80px 5%; text-align: center; color: var(--lt); }

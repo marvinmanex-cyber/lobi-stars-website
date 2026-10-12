@@ -1651,6 +1651,43 @@ until you switch it on.
   themselves are done in Paystack.
 Who can use it: Super Admins and Commercial staff.
 
+## 32. Sharing pages (Share button and Matchday › Share any page)
+
+**On the website:** most pages have a **Share** button at the top right, next
+to Back (news stories have it under the headline and at the end). Fans pick
+WhatsApp, Facebook, X, Telegram, Email or Copy link; on a phone it opens the
+phone's own share menu. The club only counts which page was shared and where
+(for example "WhatsApp"), never who. It isn't on sign-in, account, checkout or
+staff pages.
+
+**Matchday › Share any page** (Media, Matchday Operator and Super Admin):
+1. Type part of a page name (for example "tickets") and pick it, or paste any
+   lobistarsfc.com address, then press **Check**.
+2. The **link card preview** shows what people will see on Facebook or
+   WhatsApp. The checklist is green when all is well; amber or red items say
+   what to fix (for example a description that is too short, or a picture
+   that is too big for WhatsApp).
+3. Each platform has a ready caption you can edit (the counter shows the
+   limit; X allows 280). Then:
+   - **Post now** (Telegram and Facebook, once set up): posts straight away
+     after you confirm. At most 3 times per page per platform per hour.
+   - **Open post window** (X, WhatsApp, Facebook, Telegram): opens the
+     platform with the caption filled in.
+   - **Share from my phone**, **Copy caption** and **Download image**.
+   - Instagram and TikTok can't have links in posts: use the club's link in
+     bio, or the Link sticker on a Story.
+   - After posting by hand, press **Mark as posted** so it appears in
+     **Club posts**.
+4. **What gets shared** shows the pages fans share most (7, 30 or 90 days),
+   shares per platform, and every club post (who, when, where, link).
+
+**Bookmark "Share to club socials":** add it once (instructions on the page).
+Then, on any page of the website, tap it to open that page here ready to post.
+
+**Old picture on Facebook?** Facebook keeps its own copy of a link card. Paste
+the address into the Facebook Sharing Debugger
+(developers.facebook.com/tools/debug) and press **Scrape Again**.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

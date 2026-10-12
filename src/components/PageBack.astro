@@ -4,8 +4,10 @@
 // fan came from on this site; opened from Google or a shared link, it goes up
 // one level instead (story -> News -> Home). Pages served from a shared
 // template (/matches/…, news stories) fix the trail from the real address.
-interface Props { title: string }
-const { title } = Astro.props;
+// With share (the default on public pages) a Share button sits at the right.
+import ShareButton from './ShareButton.astro';
+interface Props { title: string; share?: boolean }
+const { title, share = false } = Astro.props;
 const SECTIONS: Record<string, [string, string] | null> = {
   news: ['News', '/news/'], club: ['The Club', '/club/'], fixtures: ['Fixtures & Results', '/fixtures/'], matches: ['Fixtures & Results', '/fixtures/'],
   squad: ['Squad', '/squad/'], gallery: ['Gallery', '/gallery/'], tickets: ['Tickets', '/tickets/'], programme: ['Matchday Programme', '/programme/'],
@@ -27,6 +29,7 @@ const parent = crumbs[crumbs.length - 1][1];
       {crumbs.map(([n, h]) => <li><a href={h}>{n}</a></li>)}
       <li aria-current="page">{pageName}</li>
     </ol>
+    {share && <ShareButton class="pback-share" />}
   </div>
 </nav>
 
@@ -36,7 +39,8 @@ const parent = crumbs[crumbs.length - 1][1];
   .pback-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px 6px 12px; border-radius: 999px; border: 1.5px solid var(--d4); color: var(--white); text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; transition: border-color .15s, color .15s; }
   .pback-btn:hover, .pback-btn:focus-visible { border-color: var(--red, #E31E24); color: var(--red, #E31E24); }
   .pback-btn span { font-size: 16px; }
-  .pback-trail { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; min-width: 0; overflow: hidden; white-space: nowrap; font-size: 14px; color: var(--lt); }
+  .pback-in :global(.pback-share) { margin-left: auto; }
+  .pback-trail { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; min-width: 0; flex: 1 1 auto; overflow: hidden; white-space: nowrap; font-size: 14px; color: var(--lt); }
   .pback-trail li { display: flex; align-items: center; min-width: 0; }
   .pback-trail li + li::before { content: '›'; margin: 0 8px; color: var(--d4); font-weight: 700; }
   .pback-trail a { color: var(--lt); text-decoration: none; }
@@ -47,6 +51,8 @@ const parent = crumbs[crumbs.length - 1][1];
     .pback-trail li:not(:last-child):not(:nth-last-child(2)) { display: none; }
     .pback-trail li:nth-last-child(2)::before { display: none; }
     .pback-trail { font-size: 13px; }
+    /* With the Share button there is room for the page name only. */
+    .pback-in:has(.pback-share) .pback-trail li:not(:last-child) { display: none; }
   }
 </style>
 

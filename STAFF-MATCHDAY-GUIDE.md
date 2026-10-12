@@ -94,6 +94,8 @@ for a different fixture: don't let them in on it. That ticket is not used up
 and still works on its own match day. Send the fan to the ticket desk if they
 need a ticket for today.
 
+**Sharing the match page:** in Admin, Matchday, Share any page, type the opponent's name, press Check, then use Post now (Telegram, Facebook) or Open post window and Mark as posted. Fans can also press Share on the match page.
+
 ## 2. At kick-off
 
 In **Admin → Match Centre**, choose the match and press

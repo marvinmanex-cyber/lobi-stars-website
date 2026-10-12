@@ -43,6 +43,7 @@ const RULES = [
   [/^\/admin\/(matches|predictions|commentary)(\/|$)/, 'matchday'],
   [/^\/admin\/match-centre(\/|$)/, 'matchday-content'],
   [/^\/admin\/(programmes|programme-preview)(\/|$)/, 'matchday-content'],
+  [/^\/admin\/share(\/|$)/, 'matchday-content'],
   [/^\/admin\/(news|awards)(\/|$)/, 'content'],
   [/^\/admin\/inbox(\/|$)/, 'inbox'],
   [/^\/admin\/newsletter(\/|$)/, 'fans|partners'],

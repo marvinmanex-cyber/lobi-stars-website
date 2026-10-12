@@ -18,6 +18,35 @@ export async function postToPlatform(env, key, { caption, programme, url, cardKe
   throw new Error('This platform cannot post automatically.');
 }
 
+/**
+ * A link-only post of any page of the site (Admin › Share any page). The
+ * platform builds the card from the page's own og: tags.
+ *  - Telegram: a message with a large link preview and an "Open" button.
+ *  - Facebook: a Page feed post with the link (re-scraped first).
+ */
+export async function postLink(env, key, { caption, url }) {
+  if (!configured(env, key)) throw new Error('Auto-posting is not set up for this platform.');
+  if (String(env.SOCIAL_POST_FAKE) === '1') {
+    const id = String(Date.now());
+    return { ok: true, externalId: id, externalUrl: key === 'telegram' ? `https://t.me/test_channel/${id}` : `https://www.facebook.com/${id}` };
+  }
+  if (key === 'facebook') return facebook(env, { caption, url });
+  if (key !== 'telegram') throw new Error('This platform cannot post automatically.');
+  const token = env.TELEGRAM_PUBLIC_BOT_TOKEN, chat = String(env.TELEGRAM_PUBLIC_CHANNEL);
+  let r;
+  try {
+    r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+      chat_id: chat, text: escapeHtml([...caption].slice(0, 4096).join('')), parse_mode: 'HTML',
+      link_preview_options: { url, prefer_large_media: true },
+      reply_markup: { inline_keyboard: [[{ text: 'Open', url }]] },
+    }) });
+  } catch (e) { throw clean(`Could not reach Telegram: ${e.message}`, token); }
+  const d = await r.json().catch(() => ({}));
+  if (!d.ok) throw clean(`Telegram: ${d.description || `error ${r.status}`}`, token);
+  const name = chat.startsWith('@') ? chat.slice(1) : null;
+  return { ok: true, externalId: String(d.result.message_id), externalUrl: name ? `https://t.me/${name}/${d.result.message_id}` : null };
+}
+
 async function cardBlob(env, cardKey, programme) {
   const b = bucket(env);
   const obj = b ? (cardKey && await b.get(cardKey)) || (programme.cover_key && await b.get(programme.cover_key)) : null;

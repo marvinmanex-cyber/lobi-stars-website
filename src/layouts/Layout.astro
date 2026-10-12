@@ -28,6 +28,8 @@ export interface Props {
   /** A different app manifest and browser colour (the Kitchen Screen app). */
   manifest?: string;
   themeColor?: string;
+  /** Share button in the breadcrumb strip (default on; never on noindex, account, checkout or staff pages). */
+  share?: boolean;
 }
 const {
   title,
@@ -41,6 +43,7 @@ const {
   bare = false,
   manifest,
   themeColor,
+  share = true,
 } = Astro.props;
 // In-page navigation is only used while live commentary is playing (so the
 // audio keeps going between pages); otherwise every link is a normal page
@@ -50,6 +53,9 @@ const adminPage = /^\/admin(\/|$)/.test(Astro.url.pathname);
 const softNav = !bare && !adminPage && !/^\/(admin|scan)(\/|$)/.test(Astro.url.pathname);
 // "← Back" + breadcrumb bar on every public page except the homepage (the Match Centre has its own).
 const showBack = !bare && !adminPage && !/^\/(match-centre)?\/?$/.test(Astro.url.pathname);
+// Pages that are never shared: staff, sign-in and account, checkout and order
+// status, error pages, and the programme pages (they have their own Share).
+const showShare = share && showBack && !noindex && !/^\/(admin|kitchen|scan|fans|payment|programme|offline|unsubscribe|404)(\/|$)|\/(success|order|checkout)(\/|$)/.test(Astro.url.pathname);
 const waLink = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Hello Lobi Stars Management, I have an inquiry.')}`;
 ---
 <!DOCTYPE html>
@@ -215,7 +221,7 @@ main.bare{padding-top:0;min-height:0;}
 <SiteHeader />
 
 <main id="main">
-  {showBack && <PageBack title={title} />}
+  {showBack && <PageBack title={title} share={showShare} />}
   <slot />
 </main>
 

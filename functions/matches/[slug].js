@@ -83,6 +83,7 @@ export async function onRequestGet({ request, env, params }) {
     .on('meta[property="og:image:alt"]', set(imgAlt))
     .on('head', { element(el) { el.append(ldHtml + embed, { html: true }); } })
     .on('#mcStatus', { element(el) { el.setInnerContent(line); } })
+    .on('[data-match-share]', { element(el) { el.removeAttribute('hidden'); } })
     .transform(new Response(shell.body, { status: 200, headers }));
   return rewritten;
 }

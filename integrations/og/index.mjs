@@ -6,7 +6,7 @@
 //  - Match pages (made on the server): one card per opponent, home and away.
 // If image tools aren't available the pages keep the general image.
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { TEAM_LOGOS } from '../../functions/api/_lib/teamLogos.js';
 import { teamSlug, matchImagePath, MATCH_FALLBACK_IMAGE } from '../../functions/api/_lib/shareImage.js';
@@ -39,7 +39,29 @@ export async function makeShareImages({ dist, site, files, logger }) {
     if (!og) continue;
     const ogPath = og.replace(site, '');
     const partner = /^partners\/[^/]+\/index\.html$/.test(rel);
-    if (ogPath !== DEFAULT && !partner) continue; // has its own photo
+    if (ogPath !== DEFAULT && !partner) {
+      // Its own photo (news story, player, …): make it a 1200x630 JPEG under
+      // 300 KB, the size every platform shows as a large card.
+      if (ogPath.startsWith('/') && !ogPath.startsWith('/og/') && existsSync(pub(decodeURI(ogPath)))) {
+        try {
+          const { default: sharp } = await import('sharp');
+          const src = pub(decodeURI(ogPath));
+          const m = await sharp(src).metadata();
+          let out = ogPath;
+          const ready = m.width === 1200 && m.height === 630 && m.format === 'jpeg' && statSync(src).size <= 300 * 1024;
+          if (!ready) {
+            const name = rel.replace(/\/?index\.html$/, '').replace(/\.html$/, '').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+            out = `/og/${name}.jpg`;
+            await sharp(src).rotate().resize(1200, 630, { fit: 'cover', position: 'attention' }).flatten({ background: '#ffffff' }).jpeg({ quality: 80, mozjpeg: true }).toFile(pub(out));
+            html = setMeta(setMeta(html, 'property', 'og:image', site + out), 'name', 'twitter:image', site + out);
+          }
+          if (!html.includes('og:image:width')) html = html.replace(/(<meta property="og:image" content="[^"]*"\/?>)/, '$1<meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/>');
+          await writeFile(file, html);
+          pages++;
+        } catch (err) { logger.warn(`share image for ${rel} failed: ${err.message}`); }
+      }
+      continue;
+    }
     const title = decode(meta(html, 'property', 'og:title') || '').split(' | ')[0].trim();
     if (!title) continue;
     const name = rel.replace(/\/?index\.html$/, '').replace(/\.html$/, '').replace(/[^a-z0-9]+/gi, '-').toLowerCase();
