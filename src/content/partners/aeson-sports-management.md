@@ -3,7 +3,7 @@ name: Aeson Sports Management Limited
 tier: Media & Broadcast Partners
 category: Media
 officialTitle: Official Media & Broadcast Partner
-logo: /images/Aeson_Sports_Management_Logo_White_Background.jpg
+logo: /images/aeson-sports-management-240w.webp
 logoDark: ''
 cardColor: '#000000'
 website: ''
