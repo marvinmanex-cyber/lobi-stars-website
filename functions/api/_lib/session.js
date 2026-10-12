@@ -7,12 +7,14 @@ import { sign, verify } from './crypto.js';
 const SESSION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 const COOKIE_NAME = 'ls_session';
 
-export async function createSessionCookie(memberId, secret) {
-  const expiry = Date.now() + SESSION_DURATION_MS;
+/** `days` overrides the 30-day default (Match Day Programme sign-ins last 90 days). */
+export async function createSessionCookie(memberId, secret, days = null) {
+  const duration = days ? days * 86400000 : SESSION_DURATION_MS;
+  const expiry = Date.now() + duration;
   const payload = `${memberId}.${expiry}`;
   const signature = await sign(payload, secret);
   const token = encodeURIComponent(`${payload}.${signature}`);
-  return `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${Math.floor(SESSION_DURATION_MS / 1000)}`;
+  return `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${Math.floor(duration / 1000)}`;
 }
 
 export async function readSession(request, secret) {

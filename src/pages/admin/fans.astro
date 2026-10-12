@@ -142,8 +142,14 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       d.states.forEach(s => st.add(new Option(s, s)));
       filled = true;
       // Sidebar links such as "Newsletter subscribers" open with a source filter (?source=newsletter).
+      // ...and ?consent=Y for opted-in people only (e.g. from Matchday Programme).
       const want = new URLSearchParams(location.search).get('source');
-      if (want && sources[want] && !sel.value) { sel.value = want; return load(); }
+      const wantConsent = new URLSearchParams(location.search).get('consent');
+      if (want && sources[want] && !sel.value) {
+        sel.value = want;
+        if (wantConsent === 'Y' || wantConsent === 'N') $('filters').elements.consent.value = wantConsent;
+        return load();
+      }
       fetch('/api/admin/me', { headers: { 'x-admin-code': code } }).then(r => r.json()).then(m => { if (m.admin?.roleId === 'super_admin') $('backfill').hidden = false; }).catch(() => {});
     }
     $('count').textContent = `${d.total.toLocaleString('en-NG')} ${d.total === 1 ? 'person' : 'people'}`;

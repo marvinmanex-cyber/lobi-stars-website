@@ -1,0 +1,9 @@
+---
+// /programme/join/?next=… -- the sign-in on its own page (when the pop-up can't be used).
+import FanAuthShell from '../../components/fans/FanAuthShell.astro';
+import FanCodeSignIn from '../../components/programme/FanCodeSignIn.astro';
+---
+<FanAuthShell title="Sign in for the Programme" heading="Match Day Programme" description="Sign in to read the Lobi Stars FC match day programme."
+  intro="Free for registered fans. Sign in with your email, no password needed.">
+  <FanCodeSignIn standalone />
+</FanAuthShell>

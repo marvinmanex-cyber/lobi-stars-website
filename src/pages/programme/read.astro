@@ -1,0 +1,10 @@
+---
+// /programme/read/?slug=… -- the Match Day Programme reader (registered fans).
+import Layout from '../../layouts/Layout.astro';
+import ProgrammeReader from '../../components/programme/ProgrammeReader.astro';
+import FanCodeSignIn from '../../components/programme/FanCodeSignIn.astro';
+---
+<Layout title="Read the Programme | Lobi Stars Football Club" description="Read the Lobi Stars FC match day programme." noindex>
+  <ProgrammeReader mode="fan" />
+  <FanCodeSignIn />
+</Layout>

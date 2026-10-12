@@ -1,0 +1,234 @@
+---
+// The Match Day Programme reader: a sticky bar (title, "Page 2 of 4",
+// Download PDF, Share, Sign out), quick-link chips, then the four pages as
+// full-width images in one vertical scroll. Pinch-zoom stays on; tap a page
+// for full screen.
+//   mode="fan"   /programme/read/?slug=…  (sign-in needed; reading is counted)
+//   mode="admin" /admin/programme-preview/?id=…  (staff preview of any
+//                programme, drafts too; nothing is counted)
+interface Props { mode?: 'fan' | 'admin' }
+const { mode = 'fan' } = Astro.props;
+---
+<div class="pr" id="pr" data-mode={mode}>
+  <div class="pr-bar">
+    <img class="pr-logo" src="/images/lobi-stars-badge.png" alt="" width="36" height="36" />
+    <div class="pr-ttl"><b id="prTitle">Match Day Programme</b><span id="prPage" aria-live="polite"></span></div>
+    <button type="button" class="pr-btn pr-dl" id="prDownload" disabled>Download PDF</button>
+    <button type="button" class="pr-btn pr-ghost" id="prShare" hidden>Share</button>
+    <div class="pr-menu-wrap">
+      <button type="button" class="pr-btn pr-ghost pr-menu-btn" id="prMenuBtn" aria-haspopup="true" aria-expanded="false" aria-label="More">⋯</button>
+      <div class="pr-menu" id="prMenu" hidden>
+        <p class="pr-who" id="prWho"></p>
+        {mode === 'fan' && <button type="button" class="pr-share2" id="prShare2">Share</button>}
+        <a href="/programme/">All programmes</a>
+        {mode === 'fan' && <button type="button" id="prOut">Sign out</button>}
+      </div>
+    </div>
+  </div>
+  <div class="pr-chips" id="prChips" hidden></div>
+  <p class="pr-msg" id="prMsg" role="status" aria-live="polite" hidden></p>
+  <div class="pr-pages" id="prPages"><p class="pr-loading">Loading the programme…</p></div>
+</div>
+
+<style is:global>
+  .pr { background: #0E1013; min-height: 100vh; color: #fff; }
+  .pr-bar { position: sticky; top: var(--header-h, 72px); z-index: 40; display: flex; align-items: center; gap: 10px; padding: 10px max(16px, 3vw); background: rgba(14, 16, 19, .96); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(255, 255, 255, .1); }
+  .pr-logo { width: 36px; height: 36px; border-radius: 50%; background: #fff; padding: 3px; flex: none; }
+  .pr-ttl { min-width: 0; flex: 1; display: flex; flex-direction: column; line-height: 1.2; }
+  .pr-ttl b { font: 400 20px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pr-ttl span { font-size: 12px; color: rgba(255, 255, 255, .7); }
+  .pr-btn { flex: none; min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 1px solid #E31E24; background: #E31E24; color: #fff; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+  .pr-btn[disabled] { opacity: .5; cursor: wait; }
+  .pr-ghost { background: transparent; border-color: rgba(255, 255, 255, .35); }
+  .pr-menu-btn { font-size: 18px; padding: 6px 12px; }
+  .pr-menu-wrap { position: relative; }
+  .pr-menu { position: absolute; right: 0; top: calc(100% + 6px); min-width: 220px; background: #fff; color: #15181D; border-radius: 12px; padding: 8px; box-shadow: 0 16px 36px rgba(0, 0, 0, .35); }
+  .pr-menu a, .pr-menu button { display: block; width: 100%; text-align: left; padding: 10px 12px; border: 0; background: none; border-radius: 8px; color: inherit; text-decoration: none; font: 600 15px 'Barlow', sans-serif; cursor: pointer; }
+  .pr-menu a:hover, .pr-menu button:hover { background: #F1F3F5; }
+  .pr-who { margin: 4px 12px 6px; font-size: 13px; color: #5B6472; overflow-wrap: anywhere; }
+  .pr-who:empty { display: none; }
+  .pr-chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px max(16px, 3vw); scrollbar-width: none; }
+  .pr-chips a { flex: none; padding: 7px 14px; border-radius: 999px; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .2); color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; white-space: nowrap; }
+  .pr-chips a:hover { background: rgba(255, 255, 255, .2); }
+  .pr-msg { margin: 10px auto 0; max-width: 900px; padding: 10px 14px; border-radius: 10px; background: #3A2E12; color: #FFE4A1; font-size: 15px; }
+  .pr-pages { max-width: 1000px; margin: 0 auto; padding: 14px 0 60px; display: grid; gap: 14px; }
+  .pr-page { margin: 0; background: #1B1F25; line-height: 0; cursor: zoom-in; }
+  .pr-page img { display: block; width: 100%; height: auto; background: #1B1F25; }
+  .pr-page:fullscreen { background: #000; display: flex; align-items: center; justify-content: center; overflow: auto; cursor: zoom-out; }
+  .pr-page:fullscreen img { width: auto; max-width: 100%; height: auto; max-height: 100%; object-fit: contain; }
+  .pr-loading, .pr-empty { padding: 60px 16px; text-align: center; line-height: 1.6; color: rgba(255, 255, 255, .8); }
+  .pr-empty a { color: #FFC72C; }
+  .pr [hidden] { display: none !important; }
+  @media (max-width: 560px) {
+    .pr-ttl b { font-size: 17px; }
+    .pr-dl { padding: 6px 10px; }
+    .pr-logo { display: none; }
+    .pr-bar .pr-btn#prShare { display: none !important; }
+  }
+  @media (min-width: 561px) { .pr-share2 { display: none !important; } }
+</style>
+
+<script is:inline>
+(function () {
+  var root = document.getElementById('pr');
+  if (!root || root.dataset.ready) return; root.dataset.ready = '1';
+  var ADMIN = root.dataset.mode === 'admin';
+  var q = new URLSearchParams(location.search);
+  var key = ADMIN ? q.get('id') : q.get('slug');
+  var $ = function (id) { return document.getElementById(id); };
+  var data = null, seen = {}, total = 4;
+  var adminH = { 'x-admin-code': (function () { try { return sessionStorage.getItem('ls_admin_code') || '__session__'; } catch (e) { return '__session__'; } })() };
+  var src = (function () { try { return sessionStorage.getItem('ls_prog_src') || null; } catch (e) { return null; } })();
+
+  function msg(t) { var m = $('prMsg'); m.textContent = t || ''; m.hidden = !t; }
+  function empty(text, linkText, href) {
+    var box = $('prPages'); box.textContent = '';
+    var p = document.createElement('p'); p.className = 'pr-empty'; p.textContent = text + ' ';
+    if (linkText) { var a = document.createElement('a'); a.href = href; a.textContent = linkText; p.appendChild(a); }
+    box.appendChild(p);
+  }
+  function event(type, extra) {
+    if (ADMIN || !data) return;
+    try {
+      fetch('/api/programme/' + encodeURIComponent(data.slug) + '/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', keepalive: true,
+        body: JSON.stringify(Object.assign({ type: type, src: src }, extra || {})) }).catch(function () {});
+    } catch (e) { console.error(e); }
+  }
+  function pageUrl(n) {
+    return ADMIN ? '/api/admin/programmes/' + encodeURIComponent(key) + '/page/' + n + '.jpg'
+      : '/api/programme/' + encodeURIComponent(data.slug) + '/page/' + n + '.jpg?v=' + data.version;
+  }
+  async function loadData() {
+    if (ADMIN) {
+      var r = await fetch('/api/admin/programmes/' + encodeURIComponent(key || ''), { headers: adminH, cache: 'no-store' });
+      if (r.status === 401) { location.href = '/admin/login/?next=' + encodeURIComponent(location.pathname + location.search); return null; }
+      if (!r.ok) return null;
+      var d = await r.json();
+      return { slug: d.programme.slug, title: d.programme.title, version: d.programme.version, hasFiles: !!d.programme.pdf_key, links: d.links, signedIn: true, preview: true };
+    }
+    var res = await fetch('/api/programme/' + encodeURIComponent(key || ''), { credentials: 'same-origin', cache: 'no-store' });
+    if (!res.ok) return null;
+    var x = await res.json(); x.hasFiles = true; return x;
+  }
+
+  function render() {
+    $('prTitle').textContent = data.title + (ADMIN ? ' (preview)' : '');
+    document.title = data.title + ' | Match Day Programme';
+    $('prWho').textContent = ADMIN ? 'Staff preview: nothing is counted' : (data.email ? 'Signed in as ' + data.email : '');
+    $('prDownload').disabled = false;
+    $('prShare').hidden = ADMIN;
+    var chips = $('prChips'); chips.textContent = '';
+    (data.links || []).forEach(function (l) {
+      var a = document.createElement('a');
+      a.textContent = l.label;
+      a.href = ADMIN ? l.url : '/api/programme/' + encodeURIComponent(data.slug) + '/link/' + l.id;
+      if (ADMIN || !/^\//.test(l.url || '')) { a.target = '_blank'; a.rel = 'noopener'; }
+      chips.appendChild(a);
+    });
+    chips.hidden = !(data.links || []).length;
+    var box = $('prPages'); box.textContent = '';
+    for (var n = 1; n <= total; n++) {
+      var fig = document.createElement('figure'); fig.className = 'pr-page'; fig.dataset.page = n;
+      fig.tabIndex = 0; fig.setAttribute('role', 'button'); fig.setAttribute('aria-label', 'Page ' + n + ': open full screen');
+      var img = document.createElement('img');
+      img.alt = 'Page ' + n + ' of ' + total + ' of the ' + data.title + ' match day programme';
+      img.decoding = 'async';
+      if (n > 1) img.loading = 'lazy';
+      img.width = 1240; img.height = 1754;
+      img.src = pageUrl(n);
+      fig.appendChild(img); box.appendChild(fig);
+    }
+    $('prPage').textContent = 'Page 1 of ' + total;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        var p = Number(en.target.dataset.page);
+        $('prPage').textContent = 'Page ' + p + ' of ' + total;
+        if (!seen[p]) { seen[p] = 1; event('page_view', { page: p }); }
+      });
+    }, { threshold: 0.5 });
+    box.querySelectorAll('.pr-page').forEach(function (f) { io.observe(f); });
+    event('open');
+  }
+
+  async function start() {
+    try {
+      if (!key) { empty('No programme chosen.', 'See all programmes', '/programme/'); return; }
+      data = await loadData();
+      if (!data) { empty('This programme is not available.', 'See all programmes', '/programme/'); return; }
+      if (ADMIN && !data.hasFiles) { $('prTitle').textContent = data.title; empty('No files have been uploaded for this programme yet.'); return; }
+      if (!ADMIN && (!data.signedIn || data.needsProfile)) {
+        $('prTitle').textContent = data.title;
+        empty('This programme is free for registered fans. Sign in with your email, no password needed.');
+        var ok = window.lsFanSignIn ? await window.lsFanSignIn({ next: location.pathname + location.search, profileOnly: data.signedIn && data.needsProfile }) : false;
+        if (!ok) { empty('Sign in to read the programme.', 'Sign in', '/programme/join/?next=' + encodeURIComponent(location.pathname + location.search)); return; }
+        data = await loadData();
+        if (!data) { empty('This programme is not available.', 'See all programmes', '/programme/'); return; }
+      }
+      render();
+    } catch (e) {
+      console.error('[programme reader]', e);
+      empty('The programme could not be loaded. Check your connection and try again.');
+    }
+  }
+
+  $('prPages').addEventListener('click', function (e) {
+    var fig = e.target.closest && e.target.closest('.pr-page'); if (!fig) return;
+    try {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else if (fig.requestFullscreen) fig.requestFullscreen();
+      else window.open(fig.querySelector('img').src, '_blank');
+    } catch (err) { console.error(err); }
+  });
+  $('prPages').addEventListener('keydown', function (e) {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList && e.target.classList.contains('pr-page')) { e.preventDefault(); e.target.click(); }
+  });
+
+  $('prDownload').addEventListener('click', async function () {
+    if (!data) return;
+    var btn = this; msg('');
+    if (ADMIN) { window.open('/api/admin/programmes/' + encodeURIComponent(key) + '/pdf', '_blank'); return; }
+    btn.disabled = true; btn.textContent = 'Downloading…';
+    try {
+      var r = await fetch('/api/programme/' + encodeURIComponent(data.slug) + '/download', { credentials: 'same-origin' });
+      if (r.status === 401 || r.status === 403) { msg('Please sign in again to download.'); if (window.lsFanSignIn && await window.lsFanSignIn({ profileOnly: r.status === 403 })) btn.click(); return; }
+      if (r.status === 429) { var d = await r.json().catch(function () { return {}; }); msg(d.error || 'Too many downloads. Please try again later.'); return; }
+      if (!r.ok) { msg('The download did not work. Please try again.'); return; }
+      var name = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || 'Lobi-Stars-Matchday-Programme.pdf';
+      var url = URL.createObjectURL(await r.blob());
+      var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+      if (window.lsTrack) window.lsTrack('programme_download', data.slug);
+    } catch (e) { console.error(e); msg('The download did not work. Check your connection and try again.'); }
+    finally { btn.disabled = false; btn.textContent = 'Download PDF'; }
+  });
+
+  $('prShare').addEventListener('click', async function () {
+    if (!data) return;
+    var link = location.origin + '/programme/?src=share';
+    var text = data.title + ': the free Lobi Stars FC match day programme.';
+    try {
+      if (navigator.share) { await navigator.share({ title: data.title, text: text, url: link }); event('share'); return; }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+    try { await navigator.clipboard.writeText(link); msg('Link copied. Share it with other fans.'); event('share'); }
+    catch (e) { msg('Share this link: ' + link); }
+  });
+
+  var share2 = $('prShare2');
+  if (share2) share2.addEventListener('click', function () { $('prMenu').hidden = true; $('prShare').click(); });
+  $('prMenuBtn').addEventListener('click', function (e) {
+    e.stopPropagation(); var m = $('prMenu'); m.hidden = !m.hidden; this.setAttribute('aria-expanded', String(!m.hidden));
+  });
+  document.addEventListener('click', function (e) { if (!e.target.closest('.pr-menu-wrap')) { $('prMenu').hidden = true; $('prMenuBtn').setAttribute('aria-expanded', 'false'); } });
+  var out = $('prOut');
+  if (out) out.addEventListener('click', async function () {
+    try {
+      await fetch('/api/fan/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: '{}' });
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'clear-programme-pages' });
+      if (window.caches) caches.delete('programme-pages-v1').catch(function () {});
+    } catch (e) { console.error(e); }
+    location.href = '/programme/';
+  });
+  start();
+})();
+</script>

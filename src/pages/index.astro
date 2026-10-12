@@ -1,4 +1,5 @@
 ---
+import ProgrammeBanner from '../components/programme/ProgrammeBanner.astro';
 import Layout from '../layouts/Layout.astro';
 import NewsHero from '../components/news/NewsHero.astro';
 import NextMatches from '../components/news/NextMatches.astro';
@@ -55,6 +56,7 @@ const teamJsonLd = {
   <HomeHero />
 
   <NewsHero articles={featuredNews} />
+  <ProgrammeBanner />
   <NextMatches />
   <MatchAlerts variant="band" />
   <MatchdayGames />

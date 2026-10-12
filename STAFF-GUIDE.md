@@ -1467,7 +1467,79 @@ alert now** and **Recent alerts** (how many devices it reached).
   them off.
 - Who can use it: Super Admins and Matchday Operators.
 
+## 27. Back buttons on the public website
 
+Every page except the homepage has a bar under the menu with **← Back** and
+where the fan is (e.g. *Home › The Club › Honours*). **Back** returns to the
+page they came from on our site. If they arrived from Google or a shared link,
+it goes up one level (a story → News → Home). Each part of the trail can be
+clicked. The Match Centre keeps its own **← Fixtures & results** link, and the
+"You're offline" screen has **← Go back**. New pages get the bar automatically;
+nothing needs adding.
+
+## 28. Match Day Programme (Matchday › Matchday Programme)
+
+The 4-page programme for each match. Fans read it free at
+**lobistarsfc.com/programme**: they sign in with their email and a 6-digit
+code (no password), then **Read online** (pages scroll on the phone) or
+**Download PDF**. It is the same fan account as Man of the Match and Predict &
+Win. Who can use it: Super Admins, Matchday Operators and Media.
+
+### Prepare the PDF
+A4 portrait, **exactly 4 pages**, under 10 MB if possible (25 MB at most).
+
+### Add a programme (+ New programme)
+1. **Match details:** pick the fixture to fill everything in, or type the
+   title (e.g. "Lobi Stars vs Enyimba"), opponent, competition, venue and
+   kick-off (Nigeria time).
+2. **PDF:** drop the file in the box (or click to choose it). The page checks
+   it: it must have exactly 4 pages; it warns if a page is landscape or the
+   file is over 10 MB (slow on mobile data). You see the four pages; press
+   **Upload and continue** and watch the progress bar. Uploading again later
+   replaces the files (a new version).
+3. **Quick links:** small buttons above the pages, up to 8. Tap a ready-made one
+   (Order food on WhatsApp, Order food to your seat, Listen to Lobi Stars Radio,
+   Buy tickets, Vote Man of the Match, Predict & Win, Club shop) or type your
+   own: a label of up to 40 characters and an address starting with https://.
+4. **Publish:** Save as draft, **Publish now**, or **Schedule** (choose the
+   time, or press "24 hours before kick-off"). Check the summary, then
+   **Confirm**.
+
+**Preview** shows the programme exactly as fans see it (drafts too; nothing
+is counted). **Unpublish** hides it from fans; **Publish again** brings it
+back. A draft that was never published can be deleted.
+
+### On the website
+- /programme shows the current programme (the next match; after the match the
+  latest one) with its cover, and earlier programmes below. When the next one
+  is scheduled, fans see "The programme drops in 3h 12m" and can register so it
+  is waiting for them.
+- The homepage shows a yellow "Match Day Programme" bar from publishing until
+  6 hours after kick-off (switch **Homepage banner** off on the admin page to
+  hide it). **Programme page on** switches the whole feature off.
+- New fans give their first name (surname and phone optional) and can tick
+  "Send me club news and match day programme alerts". It is never ticked for
+  them.
+
+### QR codes and posters
+Choose where the code is shown (gates, big screen, social, radio), then
+**Download PNG** / **Download SVG** for designers, or **Print A4 poster**.
+Every code goes to lobistarsfc.com/programme; the Stats show how many fans
+came from each.
+
+### Stats
+Per programme: unique readers, opens, downloads, link clicks (per link), new
+fans gained, shares, views of each page (bar chart) and where fans came from.
+Sponsors may be given these totals; never names or contact details.
+
+### Fans and privacy
+**Export opted-in fans (CSV)** opens the Fan Database filtered to programme
+readers who agreed to club news; press Export there (only staff allowed to
+download contacts; every export is logged). "Delete my data" requests from
+fans arrive in the **Inbox** ("Data deletion request"): reply to confirm, then
+delete the person in the Fan Database (removes them everywhere).
+
+## Other things you can update in the CMS
 
 ### Prediction League prize
 **Site Settings, League Table & Shop → Prediction League prize.** Enter the

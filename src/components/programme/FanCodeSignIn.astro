@@ -1,0 +1,218 @@
+---
+// "Sign in with your email, no password needed" for the Match Day Programme.
+// 1. email (+ human check) -> 2. the 6-digit code from the email ->
+// 3. first name etc. (only for new fans). It signs the fan into their normal
+// fan account (the same one used for Man of the Match and Predict & Win).
+//
+// As a pop-up: window.lsFanSignIn({ next }) returns a Promise that resolves
+// true once signed in (false if closed). standalone: the same steps inline on
+// /programme/join, which then goes on to ?next=.
+import settings from '../../data/fan-settings.json';
+interface Props { standalone?: boolean }
+const { standalone = false } = Astro.props;
+const siteKey = settings.turnstileSiteKey;
+const Wrap = standalone ? 'div' : 'dialog';
+---
+<Wrap class:list={['fcs', { 'fcs-modal': !standalone }]} id="fcs" aria-labelledby="fcsTitle" data-standalone={standalone ? '1' : undefined}>
+  <div class="fcs-in">
+    {!standalone && <button type="button" class="fcs-x" data-fcs-close aria-label="Close">×</button>}
+    <h2 class="fcs-title" id="fcsTitle">Sign in to read the programme</h2>
+    <p class="fcs-sub" id="fcsSub">Free for registered fans. Sign in with your email, no password needed.</p>
+
+    <form class="fcs-step" data-step="email" novalidate>
+      <label class="fcs-lbl" for="fcsEmail">Email address</label>
+      <input class="form-inp fcs-inp" id="fcsEmail" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254" />
+      {siteKey && <div class="cf-turnstile fcs-ts" data-sitekey={siteKey}></div>}
+      <p class="fcs-err" role="alert" data-err></p>
+      <button class="btn-p fcs-btn" type="submit">Send me a code</button>
+      <p class="fcs-small">By continuing you agree to our <a href="/terms/" target="_blank" rel="noopener">Terms</a> and <a href="/privacy/" target="_blank" rel="noopener">Privacy Notice</a>.</p>
+    </form>
+
+    <form class="fcs-step" data-step="code" novalidate hidden>
+      <p class="fcs-sent">We sent a 6-digit code to <b data-email></b>.</p>
+      <label class="fcs-lbl" for="fcsCode">Your code</label>
+      <input class="form-inp fcs-inp fcs-code" id="fcsCode" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" required />
+      <p class="fcs-err" role="alert" data-err></p>
+      <button class="btn-p fcs-btn" type="submit">Sign in</button>
+      <p class="fcs-small">Check your spam or promotions folder if it isn't there.</p>
+      <div class="fcs-links">
+        <button type="button" class="fcs-link" data-resend disabled>Resend code</button>
+        <button type="button" class="fcs-link" data-other>Use a different email</button>
+      </div>
+    </form>
+
+    <form class="fcs-step" data-step="profile" novalidate hidden>
+      <p class="fcs-sent">Welcome! Just a few details.</p>
+      <label class="fcs-lbl" for="fcsFirst">First name</label>
+      <input class="form-inp fcs-inp" id="fcsFirst" name="firstName" autocomplete="given-name" required maxlength="60" />
+      <label class="fcs-lbl" for="fcsLast">Last name <span class="fcs-opt">(optional)</span></label>
+      <input class="form-inp fcs-inp" id="fcsLast" name="lastName" autocomplete="family-name" maxlength="60" />
+      <label class="fcs-lbl" for="fcsPhone">Phone <span class="fcs-opt">(optional)</span></label>
+      <input class="form-inp fcs-inp" id="fcsPhone" name="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20" placeholder="0803 123 4567" />
+      <label class="fcs-check"><input type="checkbox" name="marketingConsent" /> <span>Send me club news and match day programme alerts</span></label>
+      <p class="fcs-err" role="alert" data-err></p>
+      <button class="btn-p fcs-btn" type="submit">Continue</button>
+    </form>
+  </div>
+</Wrap>
+{siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+
+<style is:global>
+  .fcs-modal { border: 0; padding: 0; border-radius: 16px; width: min(440px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); box-shadow: 0 30px 70px rgba(0, 0, 0, .35); background: #fff; color: var(--white); }
+  .fcs-modal::backdrop { background: rgba(15, 17, 21, .6); }
+  .fcs-in { position: relative; padding: 26px clamp(18px, 5vw, 30px) 24px; }
+  .fcs-x { position: absolute; top: 8px; right: 10px; width: 40px; height: 40px; border: 0; background: none; font-size: 28px; line-height: 1; cursor: pointer; color: var(--lt); border-radius: 50%; }
+  .fcs-x:hover, .fcs-x:focus-visible { background: var(--d3); color: var(--white); }
+  .fcs-title { margin: 0 32px 6px 0; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .fcs-sub { margin: 0 0 18px; color: var(--lt); font-size: 15px; line-height: 1.5; }
+  .fcs-step { display: grid; gap: 8px; }
+  .fcs-step[hidden] { display: none; }
+  .fcs-lbl { font-weight: 700; font-size: 14px; margin-top: 4px; }
+  .fcs-opt { font-weight: 400; color: var(--lt); }
+  .fcs-inp { width: 100%; min-height: 48px; font-size: 16px; box-sizing: border-box; }
+  .fcs-code { font-size: 28px; letter-spacing: 10px; text-align: center; font-weight: 700; }
+  .fcs-btn { width: 100%; min-height: 50px; margin-top: 6px; }
+  .fcs-btn[disabled] { opacity: .6; cursor: wait; }
+  .fcs-err { margin: 0; color: #A3161B; font-size: 14px; }
+  .fcs-err:empty { display: none; }
+  .fcs-small { margin: 4px 0 0; color: var(--lt); font-size: 13px; line-height: 1.5; }
+  .fcs-small a { color: var(--white); }
+  .fcs-sent { margin: 0 0 4px; font-size: 15px; overflow-wrap: anywhere; }
+  .fcs-links { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .fcs-link { border: 0; background: none; padding: 8px 0; color: var(--red-text, #C11A1F); font: 600 14px 'Barlow', sans-serif; cursor: pointer; text-decoration: underline; }
+  .fcs-link[disabled] { color: var(--lt); cursor: default; text-decoration: none; }
+  .fcs-check { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0 2px; font-size: 14px; line-height: 1.45; cursor: pointer; }
+  .fcs-check input { width: 20px; height: 20px; margin-top: 1px; flex: none; accent-color: #E31E24; }
+  .fcs-ts { min-height: 65px; }
+</style>
+
+<script is:inline>
+(function () {
+  var root = document.getElementById('fcs');
+  if (!root || root.dataset.ready) return; root.dataset.ready = '1';
+  var standalone = root.dataset.standalone === '1';
+  var state = { email: '', next: '/programme/', resolve: null, timer: null };
+  var $ = function (s) { return root.querySelector(s); };
+  var step = function (name) { return root.querySelector('[data-step="' + name + '"]'); };
+  function show(name) {
+    root.querySelectorAll('.fcs-step').forEach(function (f) { f.hidden = f.dataset.step !== name; });
+    var f = step(name); var inp = f.querySelector('input:not([type=checkbox])'); if (inp) setTimeout(function () { inp.focus(); }, 30);
+    $('#fcsTitle').textContent = name === 'profile' ? 'Nearly done' : 'Sign in to read the programme';
+    $('#fcsSub').hidden = name !== 'email';
+  }
+  function err(name, text) { step(name).querySelector('[data-err]').textContent = text || ''; }
+  async function post(path, body) {
+    var r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(body) });
+    var d = await r.json().catch(function () { return {}; });
+    return { ok: r.ok, status: r.status, d: d };
+  }
+  function busy(form, on) { var b = form.querySelector('.fcs-btn'); b.disabled = on; }
+  function startResendTimer() {
+    var btn = $('[data-resend]'), left = 60;
+    btn.disabled = true; clearInterval(state.timer);
+    btn.textContent = 'Resend code (60s)';
+    state.timer = setInterval(function () {
+      left--; btn.textContent = left > 0 ? 'Resend code (' + left + 's)' : 'Resend code';
+      if (left <= 0) { clearInterval(state.timer); btn.disabled = false; }
+    }, 1000);
+  }
+  async function sendCode() {
+    var f = step('email');
+    var tsInput = f.querySelector('[name="cf-turnstile-response"]');
+    var r = await post('/api/fan/auth/request', { email: state.email, turnstileToken: tsInput ? tsInput.value : '', next: state.next });
+    try { if (window.turnstile) window.turnstile.reset(); } catch (e) {}
+    if (r.d && r.d.devCode) console.info('Local test code:', r.d.devCode);
+    return r;
+  }
+  function done(ok) {
+    clearInterval(state.timer);
+    if (standalone) { if (ok) location.href = state.next; return; }
+    if (root.open) root.close();
+    var res = state.resolve; state.resolve = null;
+    if (res) res(ok);
+  }
+
+  step('email').addEventListener('submit', async function (e) {
+    e.preventDefault(); err('email');
+    var email = String(this.email.value || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { err('email', 'Please enter a valid email address.'); return; }
+    state.email = email; busy(this, true);
+    try {
+      var r = await sendCode();
+      if (!r.ok) { err('email', r.d.error || 'Something went wrong. Please try again.'); return; }
+      $('[data-email]').textContent = email;
+      step('code').code.value = '';
+      show('code'); startResendTimer();
+    } catch (x) { console.error(x); err('email', 'No connection. Please try again.'); }
+    finally { busy(this, false); }
+  });
+  step('code').addEventListener('submit', async function (e) {
+    e.preventDefault(); err('code');
+    var code = String(this.code.value || '').replace(/\D/g, '');
+    if (code.length !== 6) { err('code', 'Enter the 6 digits from the email.'); return; }
+    busy(this, true);
+    try {
+      var r = await post('/api/fan/auth/verify', { email: state.email, code: code, next: state.next });
+      if (!r.ok) { err('code', r.d.error || "That code didn't work. Check it or request a new one."); return; }
+      if (window.lsTrack) window.lsTrack('programme_sign_in', r.d.needsProfile ? 'new' : 'returning');
+      if (r.d.needsProfile) show('profile'); else done(true);
+    } catch (x) { console.error(x); err('code', 'No connection. Please try again.'); }
+    finally { busy(this, false); }
+  });
+  step('code').code.addEventListener('input', function () {
+    this.value = this.value.replace(/\D/g, '').slice(0, 6);
+    if (this.value.length === 6) step('code').requestSubmit();
+  });
+  $('[data-resend]').addEventListener('click', async function () {
+    err('code');
+    try {
+      var r = await sendCode();
+      if (!r.ok) { err('code', r.d.error || 'Could not send a new code.'); return; }
+      err('code', ''); startResendTimer();
+    } catch (x) { console.error(x); err('code', 'No connection. Please try again.'); }
+  });
+  $('[data-other]').addEventListener('click', function () { clearInterval(state.timer); show('email'); });
+  step('profile').addEventListener('submit', async function (e) {
+    e.preventDefault(); err('profile');
+    var first = String(this.firstName.value || '').trim();
+    if (!first) { err('profile', 'Please enter your first name.'); this.firstName.focus(); return; }
+    busy(this, true);
+    try {
+      var r = await post('/api/fan/auth/profile', { firstName: first, lastName: this.lastName.value, phone: this.phone.value, marketingConsent: this.marketingConsent.checked });
+      if (!r.ok) {
+        var es = r.d.errors || {};
+        err('profile', es.firstName || es.phone || r.d.error || 'Please check your details.');
+        return;
+      }
+      done(true);
+    } catch (x) { console.error(x); err('profile', 'No connection. Please try again.'); }
+    finally { busy(this, false); }
+  });
+  root.querySelectorAll('[data-fcs-close]').forEach(function (b) { b.addEventListener('click', function () { done(false); }); });
+  if (!standalone) {
+    root.addEventListener('cancel', function (e) { e.preventDefault(); done(false); });
+    root.addEventListener('click', function (e) { if (e.target === root) done(false); });
+  }
+
+  /** Opens the sign-in. { next, profileOnly } -> Promise<boolean>. */
+  window.lsFanSignIn = function (opts) {
+    opts = opts || {};
+    state.next = opts.next || location.pathname + location.search;
+    if (standalone) { show(opts.profileOnly ? 'profile' : 'email'); return Promise.resolve(false); }
+    return new Promise(function (resolve) {
+      state.resolve = resolve;
+      root.querySelectorAll('[data-err]').forEach(function (x) { x.textContent = ''; });
+      show(opts.profileOnly ? 'profile' : 'email');
+      try { root.showModal(); } catch (e) { root.setAttribute('open', ''); }
+    });
+  };
+  if (standalone) {
+    var q = new URLSearchParams(location.search);
+    var nx = q.get('next') || '/programme/';
+    state.next = /^\/(?!\/)/.test(nx) ? nx : '/programme/';
+    fetch('/api/fan/me', { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d.signedIn && d.needsProfile) show('profile'); else if (d.signedIn) location.href = state.next; else show('email');
+    }).catch(function () { show('email'); });
+  }
+})();
+</script>

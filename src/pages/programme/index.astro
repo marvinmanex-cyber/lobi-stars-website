@@ -1,5 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+// The 4-page Match Day Programme; the older single-image view below is the fallback.
+import ProgrammeCurrent from '../../components/programme/ProgrammeCurrent.astro';
 ---
 <Layout title="Matchday Programme | Lobi Stars Football Club" description="Download the official Lobi Stars FC matchday programme for the next home game.">
   <div class="page-hero wrap">
@@ -9,6 +11,7 @@ import Layout from '../../layouts/Layout.astro';
   </div>
 
   <div class="page-content wrap">
+    <ProgrammeCurrent />
     <div id="prog-loading" class="muted">The programme for the next home match will appear here before kick-off.</div>
     <div id="prog-empty" class="empty-state" hidden></div>
 
@@ -138,7 +141,8 @@ import Layout from '../../layouts/Layout.astro';
       document.getElementById('prog-body').hidden = false;
     }
 
-    load();
+    // ProgrammeCurrent runs this when the 4-page programme isn't in use.
+    window.__progLegacy = load;
   })();
   </script>
 </Layout>

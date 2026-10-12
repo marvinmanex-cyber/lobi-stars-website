@@ -152,6 +152,86 @@ on Admin › Food: Kitchen Alerts.
   Telegram's last error.
 - **Repeats stop when screens are closed:** deploy the cron Worker (step 3).
 
+## Match Day Programme (4-page digital programme, R2 + fan sign-in by email code)
+
+Registered fans read each match's 4-page programme online or download the PDF
+at **lobistarsfc.com/programme** (the permanent short link for QR codes).
+Staff upload and publish it at **/admin/programmes** (Matchday Operators,
+Media and Super Admins).
+
+**How it fits the site.** There is no separate login: fans sign in with a
+6-digit code emailed to them, which signs them into their normal fan account
+(`members`, cookie `ls_session`, 90 days for programme sign-ins), creating
+one if the email is new. Details already known from the newsletter or the fan
+database are copied in. Programme readers appear in the Fan Database as source
+"Match Day Programme"; fans who tick "Send me club news" also join the one
+newsletter list. Tables are created on first use (`ensureProgrammeSchema`,
+`functions/api/_lib/programme.js`; columns added to `members` in
+`ensureFanSchema`): `programmes`, `programme_pages`, `programme_links`,
+`programme_events`, `programme_settings`, `fan_login_codes` (code and IP stored
+only as hashes). No migrations folder and no cron job: scheduled programmes go
+live when their time comes (checked on each request).
+
+**Code.** `functions/api/_lib/programme.js`, `functions/api/_lib/fanCode.js`,
+`functions/api/fan/*` (request / verify / profile / logout / me /
+delete-request), `functions/api/programme/*` (current, archive, details, cover,
+page images, download, events, link redirects), `functions/api/admin/programmes/*`,
+pages `src/pages/programme/{index,read,join}.astro`,
+`src/pages/admin/{programmes,programme-preview}.astro`, components in
+`src/components/programme/`, offline page cache in `src/pages/sw.js.ts`,
+tests `tests/programme.test.mjs`.
+
+### Setup (once)
+1. **Create the R2 bucket** (Cloudflare account that runs the site):
+   `npx wrangler r2 bucket create lobistars-programmes`
+2. **Switch on the binding:** in `wrangler.toml` remove the `# ` in front of the
+   three `[[r2_buckets]]` lines (binding `PROGRAMME_BUCKET`), commit and push.
+   Do this only after step 1, or the deployment fails.
+3. **Secrets:** nothing new. It uses `SESSION_SECRET`, `RESEND_API_KEY` (codes
+   can't be emailed without it), and optionally `TURNSTILE_SECRET_KEY` plus the
+   site key in `src/data/fan-settings.json`.
+4. **Database:** nothing to run; tables appear on first use.
+5. Open /admin/programmes: the yellow "File storage is not connected" note
+   should be gone. Upload a test programme, preview it, publish it, then check
+   /programme on a phone.
+
+### Local testing
+```
+npm run build
+npx wrangler pages dev dist --r2=PROGRAMME_BUCKET --binding FANS_DEV_LINKS=1 SESSION_SECRET=local-test-secret ADMIN_CODE=test-code-123
+BASE=http://127.0.0.1:8788 node --test tests/programme.test.mjs
+```
+Without `RESEND_API_KEY` on localhost the sign-in code is printed in the
+wrangler log (and, with `FANS_DEV_LINKS=1` only, returned to the page and shown
+in the browser console). The D1 database already has its binding in
+`wrangler.toml`, so no `--d1` flag or migration command is needed.
+
+### Preparing the PDF
+A4 portrait, **exactly 4 pages**, ideally under 10 MB (25 MB maximum). Export
+from the design app as "PDF (print)" with images at about 150 dpi. The admin
+page reads the PDF in the browser (pdf.js 4.10.38 from cdn.jsdelivr.net),
+blocks anything that isn't 4 pages, warns about landscape pages and files over
+10 MB, and makes the page images (1240 px wide, JPEG) and a cover (600 px). The
+server checks every file again (PDF signature and size, exactly 4 JPEG pages
+under 2 MB each, cover under 500 KB). Each upload is a new version: all files
+are stored under a new folder in R2 before the database switches over, then
+the old version is deleted.
+
+### Troubleshooting
+- **Code email not arriving:** `RESEND_API_KEY` set and the domain verified in
+  Resend? Ask the fan to check spam/promotions and to wait 60 seconds before
+  "Resend code". Limits: 3 codes per email per 15 minutes, 10 per connection
+  per hour; 5 wrong tries kill a code.
+- **"This PDF has N pages":** export again with exactly 4 pages (no blank
+  pages; spreads must be single pages).
+- **Upload too large / 413:** export with smaller images (150 dpi) or lower
+  JPEG quality; page images over 2 MB are re-compressed automatically.
+- **Reader blank:** the fan must be signed in (the reader asks), the programme
+  must be Live (not Draft, Hidden or Scheduled for later), and the bucket
+  connected. Staff can check with Preview, which shows drafts too.
+- **"File storage is not connected":** the R2 binding is still commented out
+  in `wrangler.toml` (Setup steps 1-2).
+
 ## Fan match alerts (Web Push, free)
 
 Fans subscribe with the **🔔 Match alerts** box (`src/components/MatchAlerts.astro`)

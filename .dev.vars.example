@@ -8,6 +8,7 @@ PAYSTACK_SECRET_KEY=sk_test_xxx
 # PAYSTACK_FAKE=1            # local tests only, NEVER in production
 # FANS_DEV_LINKS=1           # local tests only
 
+# Empty locally: Match Day Programme sign-in codes are printed in the wrangler log instead.
 RESEND_API_KEY=
 RESEND_FROM=Lobi Stars FC <noreply@lobistarsfc.com>
 TURNSTILE_SECRET_KEY=
@@ -20,3 +21,8 @@ TELEGRAM_BOT_TOKEN=
 TELEGRAM_KITCHEN_CHAT_ID=
 TELEGRAM_WEBHOOK_SECRET=
 CRON_SECRET=
+
+# Match Day Programme: no extra secrets. Sign-in codes and sessions use
+# SESSION_SECRET (the spec's AUTH_SECRET), email uses RESEND_API_KEY and the
+# human check TURNSTILE_SECRET_KEY. Files need the R2 binding PROGRAMME_BUCKET
+# (wrangler.toml); locally add  --r2=PROGRAMME_BUCKET  to "wrangler pages dev".

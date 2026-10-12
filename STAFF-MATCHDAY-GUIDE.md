@@ -65,6 +65,13 @@ STAFF-GUIDE section 26 (Admin → Matchday → Fan Match Alerts).
 
 ---
 
+## 1a. The digital match day programme (2 days before)
+
+In **Admin → Matchday → Matchday Programme**, press **+ New programme**, pick the
+fixture, upload the 4-page PDF, add quick links and choose **Schedule → 24 hours
+before kick-off** (or Publish now). Print the A4 QR poster for the gates and
+put the QR code on the big screen. Full steps: STAFF-GUIDE section 28.
+
 ## 1b. About 30 minutes before kick-off (optional)
 
 Want to remind fans the pre-match show is about to start? Go to

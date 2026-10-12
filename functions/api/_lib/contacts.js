@@ -18,11 +18,12 @@ export const SOURCES = {
   download_lead: 'Download Lead',
   shop_order: 'Shop Order',
   hospitality: 'Hospitality Enquiry',
+  programme: 'Match Day Programme',
 };
 /** Chart / badge colour for each built-in source (can be changed in Settings). */
 export const SOURCE_COLORS = {
   newsletter: '#0EA5E9', contact_form: '#F97316', fan_account: '#8B5CF6', membership: '#EAB308', ticket_buyer: '#E31E24',
-  sponsorship: '#14B8A6', food_order: '#10B981', download_lead: '#EC4899', shop_order: '#64748B', hospitality: '#A855F7',
+  sponsorship: '#14B8A6', food_order: '#10B981', download_lead: '#EC4899', shop_order: '#64748B', hospitality: '#A855F7', programme: '#0F766E',
 };
 
 /**
@@ -293,6 +294,8 @@ export async function deleteContactEverywhere(db, contactId) {
       if (await tableExists(db, 'shirt_orders')) stmts.push(db.prepare(`UPDATE shirt_orders SET member_id = NULL WHERE member_id = ?`).bind(s.ref_id));
       if (await tableExists(db, 'membership_payments')) stmts.push(db.prepare(`UPDATE membership_payments SET member_id = 'deleted-' || id WHERE member_id = ?`).bind(s.ref_id));
       if (await tableExists(db, 'award_votes')) stmts.push(db.prepare(`UPDATE award_votes SET member_id = 'deleted-' || id WHERE member_id = ?`).bind(s.ref_id));
+      // Match Day Programme: reading stays counted (anonymous), sign-in codes go.
+      if (await tableExists(db, 'programme_events')) stmts.push(db.prepare(`UPDATE programme_events SET fan_id = NULL WHERE fan_id = ?`).bind(s.ref_id));
       stmts.push(db.prepare(`DELETE FROM members WHERE id = ?`).bind(s.ref_id));
     }
   }
@@ -302,6 +305,7 @@ export async function deleteContactEverywhere(db, contactId) {
   // Newsletter delivery records and options.
   if (c.email && (await tableExists(db, 'newsletter_deliveries'))) stmts.push(db.prepare(`DELETE FROM newsletter_deliveries WHERE email = ?`).bind(c.email));
   if (c.email && (await tableExists(db, 'newsletter_subscribers'))) stmts.push(db.prepare(`DELETE FROM newsletter_subscribers WHERE email = ?`).bind(c.email));
+  if (c.email && (await tableExists(db, 'fan_login_codes'))) stmts.push(db.prepare(`DELETE FROM fan_login_codes WHERE email = ?`).bind(c.email));
   stmts.push(db.prepare(`DELETE FROM contact_sources WHERE contact_id = ?`).bind(contactId));
   stmts.push(db.prepare(`DELETE FROM contacts WHERE id = ?`).bind(contactId));
   await db.batch(stmts);

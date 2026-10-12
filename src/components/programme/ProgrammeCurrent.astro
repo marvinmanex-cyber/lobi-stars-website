@@ -1,0 +1,208 @@
+---
+// The top of /programme: the current 4-page Match Day Programme (cover, match,
+// "Read online" and "Download PDF" for registered fans), a countdown when the
+// next one is scheduled, and earlier issues. If the 4-page programme isn't in
+// use yet (or nothing is scheduled) it hands over to the older single-image
+// programme on the same page (window.__progLegacy).
+import FanCodeSignIn from './FanCodeSignIn.astro';
+---
+<section class="pg" id="pg" hidden aria-live="polite">
+  <div class="pg-live" id="pgLive" hidden>
+    <a class="pg-cover" id="pgCoverLink" href="#read"><img id="pgCover" alt="" width="600" height="849" /></a>
+    <div class="pg-info">
+      <p class="pg-kicker">Match Day Programme</p>
+      <h2 class="pg-title" id="pgTitle"></h2>
+      <ul class="pg-meta">
+        <li id="pgComp"></li><li id="pgVenue"></li><li id="pgKick"></li>
+      </ul>
+      <div class="pg-acts">
+        <button type="button" class="btn-p pg-big" id="pgRead">Read online</button>
+        <button type="button" class="btn-o pg-big" id="pgDl">Download PDF</button>
+      </div>
+      <p class="pg-note" id="pgNote">Free for registered fans. Sign in with your email, no password needed.</p>
+      <p class="pg-msg" id="pgMsg" role="status" hidden></p>
+    </div>
+  </div>
+  <div class="pg-soon" id="pgSoon" hidden>
+    <p class="pg-kicker">Match Day Programme</p>
+    <h2 class="pg-title" id="pgSoonTitle"></h2>
+    <p class="pg-count">The programme drops in <b id="pgCount"></b></p>
+    <button type="button" class="btn-p pg-big" id="pgRegister">Register now so it's waiting for you</button>
+  </div>
+  <p class="pg-none" id="pgNone" hidden>The next programme is coming soon.</p>
+  <div class="pg-account" id="pgAccount" hidden><span id="pgWho"></span> <button type="button" class="pg-link" id="pgOut">Sign out</button></div>
+
+  <div class="pg-arch" id="pgArchWrap" hidden>
+    <h2 class="pg-h2">Earlier programmes</h2>
+    <div class="pg-grid" id="pgArch"></div>
+    <button type="button" class="btn-o" id="pgMore" hidden>Show more</button>
+  </div>
+  <p class="pg-privacy"><a href="/privacy/#programme">How we use your data</a> · <button type="button" class="pg-link" id="pgDelete">Delete my data</button></p>
+</section>
+<FanCodeSignIn />
+
+<style is:global>
+  .pg { margin-bottom: 30px; }
+  .pg-live { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: clamp(20px, 4vw, 48px); align-items: center; }
+  .pg-cover { display: block; border-radius: 12px; overflow: hidden; box-shadow: 0 22px 50px rgba(15, 17, 21, .18); border: 1px solid var(--d4); background: var(--d3); line-height: 0; }
+  .pg-cover img { width: 100%; height: auto; display: block; }
+  .pg-kicker { margin: 0 0 6px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2.5px; text-transform: uppercase; color: var(--red-text, #C11A1F); }
+  .pg-title { margin: 0 0 12px; font: 400 clamp(34px, 5vw, 52px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .pg-meta { list-style: none; margin: 0 0 22px; padding: 0; display: grid; gap: 6px; color: var(--lt); font-size: 16px; }
+  .pg-meta li:empty { display: none; }
+  .pg-acts { display: flex; gap: 12px; flex-wrap: wrap; }
+  .pg-big { min-height: 54px; padding: 14px 28px; font-size: 16px; flex: 1 1 200px; text-align: center; }
+  .pg-note { margin: 12px 0 0; color: var(--lt); font-size: 14px; }
+  .pg-msg { margin: 12px 0 0; padding: 10px 14px; border-radius: 10px; background: #FFF4E5; color: #7A4B00; }
+  .pg-soon { text-align: center; padding: 36px 16px; border: 1px solid var(--d4); border-radius: 16px; background: var(--d2); }
+  .pg-count { font-size: 18px; margin: 0 0 18px; }
+  .pg-count b { font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--red-text, #C11A1F); }
+  .pg-soon .pg-big { flex: none; }
+  .pg-none { text-align: center; padding: 28px 16px; color: var(--lt); font-size: 17px; }
+  .pg-account { margin: 18px 0 0; font-size: 14px; color: var(--lt); overflow-wrap: anywhere; }
+  .pg-link { border: 0; background: none; padding: 0; color: var(--white); font: inherit; text-decoration: underline; cursor: pointer; }
+  .pg-arch { margin-top: 44px; }
+  .pg-h2 { margin: 0 0 14px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .pg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; margin-bottom: 14px; }
+  .pg-card { display: block; text-decoration: none; color: var(--white); }
+  .pg-card img { width: 100%; aspect-ratio: 1 / 1.414; object-fit: cover; border-radius: 8px; border: 1px solid var(--d4); background: var(--d3); display: block; }
+  .pg-card b { display: block; margin-top: 8px; font-size: 14px; line-height: 1.3; }
+  .pg-card span { font-size: 13px; color: var(--lt); }
+  .pg-privacy { margin: 30px 0 0; font-size: 13px; color: var(--lt); }
+  .pg-privacy a { color: var(--lt); }
+  .pg[hidden], .pg [hidden] { display: none !important; }
+  @media (max-width: 760px) { .pg-live { grid-template-columns: 1fr; } .pg-cover { max-width: 320px; margin: 0 auto; } .pg-info { text-align: center; } }
+</style>
+
+<script is:inline>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  if (!$('pg') || $('pg').dataset.ready) return; $('pg').dataset.ready = '1';
+  var q = new URLSearchParams(location.search);
+  try { if (q.get('src')) sessionStorage.setItem('ls_prog_src', q.get('src').replace(/[^a-z0-9-]/gi, '').slice(0, 30)); } catch (e) {}
+  var src = null; try { src = sessionStorage.getItem('ls_prog_src'); } catch (e) {}
+  var cur = null, me = { signedIn: false }, archPage = 1;
+  var WAT = { timeZone: 'Africa/Lagos' };
+  function when(iso) {
+    var d = new Date(iso);
+    return d.toLocaleDateString('en-GB', Object.assign({ weekday: 'long', day: 'numeric', month: 'long' }, WAT)) + ', ' +
+      d.toLocaleTimeString('en-GB', Object.assign({ hour: '2-digit', minute: '2-digit' }, WAT)) + ' (WAT)';
+  }
+  function msg(t) { $('pgMsg').textContent = t || ''; $('pgMsg').hidden = !t; }
+  function event(slug, type) {
+    try {
+      fetch('/api/programme/' + encodeURIComponent(slug) + '/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', keepalive: true,
+        body: JSON.stringify({ type: type, src: src }) }).catch(function () {});
+    } catch (e) { console.error(e); }
+  }
+  function readUrl(slug) { return '/programme/read/?slug=' + encodeURIComponent(slug); }
+  async function loadMe() {
+    try { me = await (await fetch('/api/fan/me', { credentials: 'same-origin', cache: 'no-store' })).json(); } catch (e) { me = { signedIn: false }; }
+    $('pgAccount').hidden = !me.signedIn;
+    if (me.signedIn) $('pgWho').textContent = 'Signed in as ' + me.email + '.';
+    $('pgNote').hidden = !!me.signedIn;
+  }
+  async function ensureSignedIn(next) {
+    if (me.signedIn && !me.needsProfile) return true;
+    if (!window.lsFanSignIn) { location.href = '/programme/join/?next=' + encodeURIComponent(next); return false; }
+    var ok = await window.lsFanSignIn({ next: next, profileOnly: me.signedIn && me.needsProfile });
+    if (ok) await loadMe();
+    return ok;
+  }
+  function countdown(publishAt, serverTime) {
+    var skew = new Date(serverTime).getTime() - Date.now();
+    function tick() {
+      var ms = new Date(publishAt).getTime() - (Date.now() + skew);
+      if (ms <= 0) { location.reload(); return; }
+      var m = Math.floor(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
+      $('pgCount').textContent = d > 0 ? d + 'd ' + h + 'h' : h > 0 ? h + 'h ' + (m % 60) + 'm' : Math.max(1, m) + 'm';
+    }
+    tick(); setInterval(tick, 30000);
+  }
+  async function loadArchive() {
+    try {
+      var d = await (await fetch('/api/programme/archive?page=' + archPage)).json();
+      (d.items || []).filter(function (x) { return !cur || x.slug !== cur.slug; }).forEach(function (x) {
+        var a = document.createElement('a'); a.className = 'pg-card'; a.href = readUrl(x.slug);
+        var img = document.createElement('img'); img.loading = 'lazy'; img.alt = ''; if (x.coverUrl) img.src = x.coverUrl;
+        var b = document.createElement('b'); b.textContent = x.title;
+        var s = document.createElement('span');
+        s.textContent = x.kickoffAt ? new Date(x.kickoffAt).toLocaleDateString('en-GB', Object.assign({ day: 'numeric', month: 'short', year: 'numeric' }, WAT)) : '';
+        a.append(img, b, s); $('pgArch').appendChild(a);
+      });
+      if ($('pgArch').children.length) $('pgArchWrap').hidden = false;
+      $('pgMore').hidden = !d.more;
+    } catch (e) { console.error('[programme] archive', e); }
+  }
+  async function start() {
+    var d = null;
+    try { d = await (await fetch('/api/programme/current', { cache: 'no-store' })).json(); } catch (e) { console.error('[programme] current', e); }
+    if (!d || !d.enabled || (!d.programme && !d.upcoming)) { if (window.__progLegacy) window.__progLegacy(); return; }
+    var old = $('prog-loading'); if (old) old.hidden = true;
+    $('pg').hidden = false;
+    await loadMe();
+    cur = d.programme;
+    if (cur) {
+      $('pgLive').hidden = false;
+      $('pgTitle').textContent = cur.title;
+      $('pgComp').textContent = cur.competition || '';
+      $('pgVenue').textContent = cur.venue || '';
+      $('pgKick').textContent = cur.kickoffAt ? 'Kick-off ' + when(cur.kickoffAt) : '';
+      if (cur.coverUrl) { $('pgCover').src = cur.coverUrl; $('pgCover').alt = 'Cover of the ' + cur.title + ' match day programme'; }
+      else $('pgCoverLink').hidden = true;
+      var key = 'ls_prog_landing_' + cur.slug, first = true;
+      try { first = !sessionStorage.getItem(key); sessionStorage.setItem(key, '1'); } catch (e) {}
+      if (first) event(cur.slug, 'landing');
+    } else if (d.upcoming) {
+      $('pgSoon').hidden = false;
+      $('pgSoonTitle').textContent = d.upcoming.title;
+      countdown(d.upcoming.publishAt, d.serverTime);
+    } else $('pgNone').hidden = false;
+    loadArchive();
+  }
+
+  async function read(e) {
+    if (e) e.preventDefault();
+    if (!cur) return;
+    if (await ensureSignedIn(readUrl(cur.slug))) location.href = readUrl(cur.slug);
+  }
+  $('pgRead').addEventListener('click', read);
+  $('pgCoverLink').addEventListener('click', read);
+  $('pgDl').addEventListener('click', async function () {
+    if (!cur) return; msg('');
+    if (!(await ensureSignedIn('/programme/'))) return;
+    var btn = this; btn.disabled = true; btn.textContent = 'Downloading…';
+    try {
+      var r = await fetch('/api/programme/' + encodeURIComponent(cur.slug) + '/download', { credentials: 'same-origin' });
+      if (r.status === 429) { var x = await r.json().catch(function () { return {}; }); msg(x.error || 'Too many downloads. Please try again later.'); return; }
+      if (!r.ok) { msg(r.status === 401 ? 'Please sign in again.' : 'The download did not work. Please try again.'); return; }
+      var name = ((r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/) || [])[1] || 'Lobi-Stars-Matchday-Programme.pdf';
+      var url = URL.createObjectURL(await r.blob());
+      var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+    } catch (e) { console.error(e); msg('The download did not work. Check your connection and try again.'); }
+    finally { btn.disabled = false; btn.textContent = 'Download PDF'; }
+  });
+  $('pgRegister').addEventListener('click', async function () { if (await ensureSignedIn('/programme/')) location.reload(); });
+  $('pgMore').addEventListener('click', function () { archPage++; loadArchive(); });
+  $('pgOut').addEventListener('click', async function () {
+    try {
+      await fetch('/api/fan/auth/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: '{}' });
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'clear-programme-pages' });
+      if (window.caches) caches.delete('programme-pages-v1').catch(function () {});
+    } catch (e) { console.error(e); }
+    location.reload();
+  });
+  $('pgDelete').addEventListener('click', async function () {
+    var email = me.signedIn ? me.email : prompt('Your email address (we will reply to confirm before deleting):');
+    if (!email) return;
+    if (!confirm('Ask Lobi Stars FC to delete the personal data it holds for ' + email + '?')) return;
+    try {
+      var r = await fetch('/api/fan/delete-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email: email }) });
+      alert(r.ok ? 'Thank you. Your request has been sent to the club. We will reply by email.' : 'Sorry, that did not work. Please email info@lobistarsfc.com.');
+    } catch (e) { alert('Sorry, that did not work. Please email info@lobistarsfc.com.'); }
+  });
+  // Runs after the page's older programme script has set window.__progLegacy.
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else setTimeout(start, 0);
+})();
+</script>

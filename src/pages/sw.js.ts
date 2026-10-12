@@ -8,6 +8,10 @@
 //    and fonts. Never /api/, /data/, /admin, /scan, documents or other sites.
 //  - Each deployment gets a new cache name; old caches are deleted.
 //  - Shows fans' match alerts (push) and opens the right page when tapped.
+//  - Match Day Programme page images (/api/programme/<slug>/page/<n>.jpg?v=)
+//    are kept for offline reading (cache-first; each upload has a new ?v=
+//    address). The PDF and every other /api answer are never cached. Signing
+//    out clears them (message 'clear-programme-pages').
 export const prerender = true;
 
 const VERSION = Date.now().toString(36);
@@ -17,6 +21,8 @@ const STATIC = 'ls-static-${VERSION}';
 const OFFLINE = '/offline/';
 const PRECACHE = [OFFLINE, '/images/icon-192.png', '/images/lobi-stars-fc.jpg', '/manifest.json'];
 const MAX_ITEMS = 160;
+const PROGRAMME = 'programme-pages-v1';
+const PROGRAMME_PAGE = /^\\/api\\/programme\\/[a-z0-9-]+\\/page\\/[1-4]\\.jpg$/;
 const NEVER = /^\\/(api|data|admin|scan|documents|functions)(\\/|$)|^\\/(sw|admin-sw|track)\\.js$/;
 const STATIC_FILE = /^\\/(_astro|images|fonts)\\/|\\.(png|jpe?g|webp|gif|svg|ico|woff2?)$|^\\/manifest\\.json$/;
 
@@ -26,7 +32,7 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
-    for (const key of await caches.keys()) if (key !== STATIC) await caches.delete(key);
+    for (const key of await caches.keys()) if (key !== STATIC && key !== PROGRAMME) await caches.delete(key);
     await self.clients.claim();
   })());
 });
@@ -58,10 +64,27 @@ self.addEventListener('notificationclick', event => {
   })());
 });
 
+// Signing out of the programme removes the saved pages from this device.
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'clear-programme-pages') event.waitUntil(caches.delete(PROGRAMME));
+});
+
 self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // Programme pages: from the cache when saved (works offline), otherwise saved after loading.
+  if (url.origin === self.location.origin && PROGRAMME_PAGE.test(url.pathname)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(PROGRAMME);
+      const hit = await cache.match(req);
+      if (hit) return hit;
+      const res = await fetch(req);
+      if (res.ok && res.type === 'basic') cache.put(req, res.clone()).catch(() => {});
+      return res;
+    })());
+    return;
+  }
   if (url.origin !== self.location.origin || NEVER.test(url.pathname)) return;
 
   // Pages: always the network; the offline page only when there is no connection.

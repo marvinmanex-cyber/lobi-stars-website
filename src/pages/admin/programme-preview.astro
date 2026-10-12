@@ -1,0 +1,15 @@
+---
+// /admin/programme-preview/?id=… -- staff see a programme exactly as fans will
+// (drafts too), straight from the admin preview files. Nothing is counted.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+import ProgrammeReader from '../../components/programme/ProgrammeReader.astro';
+---
+<Layout title="Programme Preview | Lobi Stars Admin" description="Preview a match day programme." noindex>
+  <AdminNav current="programmes" />
+  <div class="pp-wrap"><ProgrammeReader mode="admin" /></div>
+</Layout>
+<style>
+  .pp-wrap { margin: 0 -1px; }
+  .pp-wrap :global(.pr-bar) { top: var(--top, 64px); }
+</style>

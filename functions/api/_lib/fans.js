@@ -21,6 +21,12 @@ export async function ensureFanSchema(db) {
     ['marketing_opt_in', 'INTEGER NOT NULL DEFAULT 0'],
     ['age_confirmed_at', 'TEXT'],
     ['is_staff', 'INTEGER NOT NULL DEFAULT 0'],
+    // Sign in with an email code (Match Day Programme). Accounts made that way
+    // have no password until the fan sets one with "Forgot password".
+    ['profile_completed_at', 'TEXT'],
+    ['last_login_at', 'TEXT'],
+    ['marketing_consent_at', 'TEXT'],
+    ['first_programme', 'TEXT'],   // programmes.id that brought a new fan in
   ];
   for (const [name, type] of add) {
     if (!cols.has(name)) await db.prepare(`ALTER TABLE members ADD COLUMN ${name} ${type}`).run();

@@ -1,0 +1,609 @@
+---
+// Matchday › Matchday Programme: the 4-page digital programme for each match.
+// New programme (4 steps): match details -> PDF (checked and turned into page
+// images in the browser with pdf.js, then checked again on the server) ->
+// quick links -> draft / publish now / schedule. Plus QR codes and an A4
+// poster, reading stats per programme, and the fan numbers.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Matchday Programme | Lobi Stars Admin" description="Upload and publish the match day programme." noindex>
+  <div class="wrap mp">
+    <AdminNav current="programmes" />
+    <header class="mp-head">
+      <div><div class="stag">Matchday</div><h1 class="stitle">Matchday <span class="r">Programme</span></h1></div>
+      <div class="mp-tools"><a class="btn-o" href="/programme/" target="_blank" rel="noopener">View /programme ↗</a><button type="button" class="btn-p" id="newBtn">+ New programme</button></div>
+    </header>
+    <p class="mp-lede">A 4-page programme for each match. Registered fans read it online or download the PDF from <b>lobistarsfc.com/programme</b> (sign-in with an emailed code, no password).</p>
+    <p class="mp-warn" id="storageWarn" hidden>⚠️ <b>File storage is not connected yet.</b> Programmes can be created, but PDFs can't be uploaded until the R2 bucket <code>lobistars-programmes</code> is added (DEPLOYMENT.md, "Match Day Programme"). Until then /programme shows the older single-image programme from Fixtures &amp; Results.</p>
+    <p class="mp-toast" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="mp-cards" id="cards" aria-label="Totals"></section>
+
+    <section class="mp-card">
+      <div class="mp-cardhead"><h2>Programmes</h2>
+        <div class="mp-switches">
+          <label class="mp-sw"><span>Programme page on</span><input type="checkbox" role="switch" id="setEnabled" /></label>
+          <label class="mp-sw"><span>Homepage banner</span><input type="checkbox" role="switch" id="setBanner" /></label>
+        </div>
+      </div>
+      <div id="list"><p class="muted">Loading…</p></div>
+    </section>
+
+    <div class="mp-grid">
+      <section class="mp-card" aria-labelledby="statsH">
+        <div class="mp-cardhead"><h2 id="statsH">Stats</h2><select id="statsSel" aria-label="Programme"></select></div>
+        <div id="stats"><p class="muted">Choose a programme.</p></div>
+      </section>
+      <section class="mp-card" aria-labelledby="fansH">
+        <h2 id="fansH">Fans and privacy</h2>
+        <div id="fans"></div>
+        <div class="mp-row">
+          <a class="btn-o sm" href="/admin/fans/?source=programme&consent=Y">Export opted-in fans (CSV)</a>
+          <a class="btn-o sm" href="/admin/inbox/?q=Data%20deletion%20request">Data deletion requests</a>
+        </div>
+        <p class="mp-note">The export opens the Fan Database filtered to programme readers who ticked "Send me club news"; press <b>Export</b> there (staff with download permission only; every export is logged). Deletion requests arrive in the Inbox; delete the person with Fan Database › Delete, which removes them everywhere, then mark the message done.</p>
+      </section>
+    </div>
+
+    <section class="mp-card" aria-labelledby="qrH">
+      <h2 id="qrH">QR codes and posters</h2>
+      <p class="mp-sub">Each QR code opens the current programme and records where the fan scanned it (shown in Stats).</p>
+      <div class="mp-qr">
+        <div>
+          <label class="mp-lbl">Where it's shown<select id="qrSrc">
+            <option value="qr-gate">Stadium gates and turnstiles</option>
+            <option value="qr-screen">Big screen</option>
+            <option value="qr-social">Social media</option>
+            <option value="qr-radio">Radio (read out on air)</option>
+          </select></label>
+          <p class="mp-url" id="qrUrl"></p>
+          <div class="mp-row"><button type="button" class="btn-o sm" id="qrPng">Download PNG</button><button type="button" class="btn-o sm" id="qrSvg">Download SVG</button><button type="button" class="btn-p sm" id="qrPrint">Print A4 poster</button></div>
+        </div>
+        <div class="mp-poster" id="poster">
+          <img src="/images/lobi-stars-badge.png" alt="" width="90" height="90" />
+          <p class="mp-poster-club">LOBI STARS FC</p>
+          <p class="mp-poster-h">Scan for today's programme</p>
+          <div class="mp-poster-qr" id="qrBox"></div>
+          <p class="mp-poster-url">lobistarsfc.com/programme</p>
+          <p class="mp-poster-small">Free for registered fans</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <dialog class="wz" id="wz" aria-labelledby="wzTitle">
+    <div class="wz-head">
+      <h2 id="wzTitle">New programme</h2>
+      <button type="button" class="wz-x" id="wzClose" aria-label="Close">×</button>
+    </div>
+    <ol class="wz-steps" id="wzSteps">
+      <li data-s="1">Match details</li><li data-s="2">PDF</li><li data-s="3">Quick links</li><li data-s="4">Publish</li>
+    </ol>
+    <div class="wz-body">
+      <form class="wz-pane" data-pane="1" id="f1" novalidate>
+        <label class="mp-lbl">Fill in from a fixture (optional)<select id="fixtureSel"><option value="">Choose a fixture…</option></select></label>
+        <label class="mp-lbl">Match title<input name="title" required maxlength="120" placeholder="Lobi Stars vs Enyimba" /></label>
+        <div class="wz-2">
+          <label class="mp-lbl">Opponent<input name="opponent" maxlength="80" /></label>
+          <label class="mp-lbl">Competition<input name="competition" maxlength="80" placeholder="NNL Matchday 7" /></label>
+        </div>
+        <div class="wz-2">
+          <label class="mp-lbl">Venue<input name="venue" maxlength="120" placeholder="McCarthy Stadium, Makurdi" /></label>
+          <label class="mp-lbl">Kick-off (Nigeria time, WAT)<input name="kickoff" type="datetime-local" /></label>
+        </div>
+        <label class="mp-lbl">Notes (staff only)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
+      </form>
+
+      <div class="wz-pane" data-pane="2" hidden>
+        <div class="wz-drop" id="drop" tabindex="0" role="button" aria-label="Choose the programme PDF">
+          <b>Drop the programme PDF here</b><span>or click to choose a file. A4 portrait, exactly 4 pages, under 10 MB is best.</span>
+          <input type="file" id="pdfIn" accept="application/pdf,.pdf" hidden />
+        </div>
+        <p class="wz-check" id="pdfMsg" role="status"></p>
+        <div class="wz-prev" id="prev"></div>
+        <div class="wz-prog" id="prog" hidden><div class="wz-bar"><i id="progBar"></i></div><span id="progTxt"></span></div>
+        <p class="mp-note" id="current"></p>
+      </div>
+
+      <div class="wz-pane" data-pane="3" hidden>
+        <p class="mp-sub">Small buttons under the programme title (up to 8). Fans' clicks are counted.</p>
+        <div class="wz-presets" id="presets"></div>
+        <div id="links"></div>
+        <button type="button" class="btn-o sm" id="addLink">+ Add a link</button>
+      </div>
+
+      <div class="wz-pane" data-pane="4" hidden>
+        <fieldset class="wz-radios">
+          <legend class="mp-lbl">When should fans see it?</legend>
+          <label><input type="radio" name="when" value="draft" checked /> Save as draft (only staff can see it)</label>
+          <label><input type="radio" name="when" value="now" /> Publish now</label>
+          <label><input type="radio" name="when" value="schedule" /> Schedule</label>
+        </fieldset>
+        <div class="wz-sched" id="sched" hidden>
+          <label class="mp-lbl">Publish at (Nigeria time, WAT)<input type="datetime-local" id="pubAt" /></label>
+          <button type="button" class="btn-o sm" id="before24">24 hours before kick-off</button>
+        </div>
+        <div class="wz-summary" id="summary"></div>
+      </div>
+    </div>
+    <p class="wz-err" id="wzErr" role="alert"></p>
+    <div class="wz-foot">
+      <button type="button" class="btn-o" id="wzBack">Back</button>
+      <a class="btn-o" id="wzPreview" target="_blank" rel="noopener" hidden>Preview as fan ↗</a>
+      <button type="button" class="btn-p" id="wzNext">Save and continue</button>
+    </div>
+  </dialog>
+</Layout>
+
+<style>
+  .mp { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; }
+  .mp-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .mp-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mp-lede { margin: 0 0 16px; color: var(--a-muted); max-width: 820px; line-height: 1.55; }
+  .mp-warn { margin: 0 0 16px; padding: 12px 16px; border-radius: 12px; background: #FFF7E6; border: 1px solid #F6D58E; color: #7A4B00; line-height: 1.5; }
+  :global(body.admin-dark) .mp-warn { background: #3A2E12; color: #F6D58E; border-color: #5A4718; }
+  .mp-toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 3000; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .mp-toast.ok { background: #E8F7EE; color: #17643A; } .mp-toast.err { background: #FDECEC; color: #A3161B; }
+  .mp-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .mp :global(.mp-stat) { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 14px; padding: 14px 16px; border-top: 4px solid var(--c); }
+  .mp :global(.mp-stat b) { display: block; font: 400 34px/1 'Bebas Neue', sans-serif; color: var(--a-ink); }
+  .mp :global(.mp-stat span) { font-size: 13px; color: var(--a-muted); }
+  .mp-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; box-shadow: 0 6px 18px rgba(15,17,21,.04); margin-bottom: 16px; min-width: 0; }
+  .mp-card h2 { margin: 0 0 6px; font: 700 19px/1.2 'Barlow', sans-serif; color: var(--a-ink); }
+  .mp-cardhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .mp-cardhead h2 { margin: 0; }
+  .mp-sub { margin: 0 0 12px; color: var(--a-muted); font-size: 14px; }
+  .mp-note { margin: 12px 0 0; color: var(--a-muted); font-size: 13px; line-height: 1.5; }
+  .mp-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .mp-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .sm { min-height: 38px; padding: 7px 14px; font-size: 13px; }
+  .mp-switches { display: flex; gap: 18px; flex-wrap: wrap; }
+  .mp-sw { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--a-muted); cursor: pointer; }
+  .mp-sw input { appearance: none; width: 42px; height: 24px; border-radius: 999px; background: #CBD2DA; position: relative; cursor: pointer; margin: 0; transition: background .15s; }
+  .mp-sw input::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform .15s; }
+  .mp-sw input:checked { background: #16A34A; } .mp-sw input:checked::after { transform: translateX(18px); }
+  .mp-sw input:focus-visible { outline: 3px solid #FFC72C; outline-offset: 2px; }
+  .mp :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .mp :global(th) { padding: 10px 12px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--a-muted); border-bottom: 1px solid var(--a-line); white-space: nowrap; }
+  .mp :global(td) { padding: 11px 12px; font-size: 14px; vertical-align: middle; border-bottom: 1px solid var(--a-line); }
+  .mp :global(.badge) { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .mp :global(.b-draft) { background: #E5E7EB; color: #374151; } .mp :global(.b-scheduled) { background: #FEF3C7; color: #92400E; }
+  .mp :global(.b-live) { background: #DCFCE7; color: #166534; } .mp :global(.b-hidden) { background: #1F2937; color: #F9FAFB; }
+  .mp :global(.acts) { display: flex; gap: 6px; flex-wrap: wrap; }
+  .mp :global(.acts button), .mp :global(.acts a) { min-height: 34px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; font: 700 13px 'Barlow', sans-serif; text-decoration: none; display: inline-flex; align-items: center; }
+  .mp :global(.acts button:hover), .mp :global(.acts a:hover) { border-color: #E31E24; }
+  .mp-lbl { display: grid; gap: 5px; font-size: 13px; font-weight: 700; color: var(--a-muted); }
+  .mp-lbl input, .mp-lbl select, .mp-lbl textarea, #statsSel { min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); font: 400 15px 'Barlow', sans-serif; width: 100%; min-width: 0; box-sizing: border-box; }
+  #statsSel { width: auto; max-width: 100%; }
+  .mp :global(.mp-chart) { width: 100%; height: auto; display: block; margin: 6px 0 12px; }
+  .mp :global(.mp-kv) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+  .mp :global(.mp-kv div) { background: var(--a-soft); border-radius: 10px; padding: 10px 12px; }
+  .mp :global(.mp-kv b) { display: block; font: 400 26px/1 'Bebas Neue', sans-serif; color: var(--a-ink); }
+  .mp :global(.mp-kv span) { font-size: 12px; color: var(--a-muted); }
+  .mp-qr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 20px; align-items: start; }
+  .mp-url { margin: 10px 0 0; font: 600 14px ui-monospace, Menlo, monospace; color: var(--a-ink); overflow-wrap: anywhere; }
+  .mp-poster { background: #fff; color: #15181D; border: 1px solid var(--a-line); border-radius: 12px; padding: 22px 18px; text-align: center; aspect-ratio: 1 / 1.414; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+  .mp-poster img { width: 70px; height: 70px; }
+  .mp-poster-club { margin: 0; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 2px; }
+  .mp-poster-h { margin: 0 0 6px; font: 700 17px/1.2 'Barlow', sans-serif; }
+  .mp-poster-qr { width: 70%; line-height: 0; }
+  .mp-poster-qr :global(svg) { width: 100%; height: auto; }
+  .mp-poster-url { margin: 6px 0 0; font: 700 15px 'Barlow', sans-serif; }
+  .mp-poster-small { margin: 0; font-size: 12px; color: #5B6472; }
+  .mp [hidden] { display: none !important; }
+
+  .wz { border: 0; padding: 0; border-radius: 18px; width: min(860px, calc(100vw - 20px)); max-height: calc(100dvh - 20px); background: var(--a-card, #fff); color: var(--a-ink, #15181D); box-shadow: 0 30px 80px rgba(0,0,0,.35); }
+  .wz::backdrop { background: rgba(15,17,21,.55); }
+  .wz[open] { display: flex; flex-direction: column; }
+  .wz-head { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 6px; }
+  .wz-head h2 { margin: 0; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .wz-x { width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; font-size: 26px; cursor: pointer; color: inherit; }
+  .wz-steps { list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 0; padding: 6px 20px 12px; counter-reset: s; }
+  .wz-steps li { counter-increment: s; padding: 8px 6px; border-radius: 10px; background: var(--a-soft, #F1F3F5); font-size: 13px; font-weight: 700; text-align: center; color: var(--a-muted); }
+  .wz-steps li::before { content: counter(s) '. '; }
+  .wz-steps li[aria-current="step"] { background: #E31E24; color: #fff; }
+  .wz-steps li.done { background: #DCFCE7; color: #166534; }
+  .wz-body { padding: 4px 20px; overflow-y: auto; flex: 1; }
+  .wz-pane { display: grid; gap: 12px; }
+  .wz-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .wz-drop { border: 2px dashed var(--a-line, #E3E6EA); border-radius: 14px; padding: 28px 16px; text-align: center; cursor: pointer; display: grid; gap: 6px; color: var(--a-muted); }
+  .wz-drop b { color: var(--a-ink); font-size: 17px; }
+  .wz-drop.over, .wz-drop:focus-visible { border-color: #E31E24; background: rgba(227,30,36,.05); outline: none; }
+  .wz-check { margin: 0; font-size: 14px; line-height: 1.5; }
+  .wz-check:empty { display: none; }
+  .wz-check.bad { color: #A3161B; font-weight: 700; } .wz-check.warn { color: #92400E; }
+  .wz-prev { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .wz-prev :global(figure) { margin: 0; text-align: center; font-size: 12px; color: var(--a-muted); }
+  .wz-prev :global(img) { width: 100%; border: 1px solid var(--a-line); border-radius: 6px; display: block; margin-bottom: 4px; background: #fff; }
+  .wz-prog { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .wz-bar { flex: 1; height: 10px; border-radius: 999px; background: var(--a-soft, #F1F3F5); overflow: hidden; }
+  .wz-bar i { display: block; height: 100%; width: 0; background: #16A34A; transition: width .2s; }
+  .wz-presets { display: flex; gap: 6px; flex-wrap: wrap; }
+  .wz-presets button { min-height: 34px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--a-line); background: var(--a-soft); color: var(--a-ink); font: 700 13px 'Barlow', sans-serif; cursor: pointer; }
+  .mp :global(.wz-link), .wz :global(.wz-link) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr) auto; gap: 8px; margin-bottom: 8px; }
+  .wz :global(.wz-link input) { min-height: 40px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: 400 14px 'Barlow', sans-serif; min-width: 0; }
+  .wz :global(.wz-link button) { width: 40px; border: 1px solid var(--a-line); border-radius: 10px; background: var(--a-card); color: var(--a-ink); cursor: pointer; font-size: 18px; }
+  .wz-radios { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .wz-radios label { display: flex; gap: 10px; align-items: center; font-size: 15px; cursor: pointer; }
+  .wz-radios input { width: 18px; height: 18px; accent-color: #E31E24; }
+  .wz-sched { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+  .wz-summary { background: var(--a-soft, #F1F3F5); border-radius: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.6; }
+  .wz-err { margin: 6px 20px 0; color: #A3161B; font-weight: 600; font-size: 14px; }
+  .wz-err:empty { display: none; }
+  .wz-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 20px 18px; flex-wrap: wrap; border-top: 1px solid var(--a-line, #E3E6EA); margin-top: 10px; }
+  .wz [hidden] { display: none !important; }
+  @media (max-width: 960px) { .mp-grid, .mp-qr { grid-template-columns: 1fr; } .mp-cards { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 640px) { .wz-2, .wz-prev { grid-template-columns: 1fr 1fr; } .wz-steps { grid-template-columns: 1fr 1fr; } .mp :global(.mp-kv) { grid-template-columns: 1fr 1fr; } .wz :global(.wz-link) { grid-template-columns: 1fr auto; } .wz :global(.wz-link input:nth-child(2)) { grid-column: 1; } }
+  @media print {
+    :global(body *) { visibility: hidden !important; }
+    #poster, #poster * { visibility: visible !important; }
+    #poster { position: fixed; inset: 0; border: 0; border-radius: 0; width: 100vw; height: 100vh; aspect-ratio: auto; padding: 18mm; box-sizing: border-box; }
+    #poster img { width: 40mm; height: 40mm; }
+    .mp-poster-club { font-size: 34pt; } .mp-poster-h { font-size: 26pt; } .mp-poster-url { font-size: 22pt; } .mp-poster-small { font-size: 14pt; }
+    .mp-poster-qr { width: 120mm; }
+  }
+  @page { size: A4 portrait; margin: 0; }
+</style>
+
+<script>
+  import qrcode from 'qrcode-generator';
+
+  const PDFJS = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs';
+  const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
+  const SITE = 'https://lobistarsfc.com';
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'x-admin-code': code };
+  const $ = (id: string) => document.getElementById(id) as any;
+  const el = (tag: string, props: Record<string, any> = {}, ...kids: any[]) => {
+    const n: any = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) { if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v; else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? '' : v); }
+    for (const c of kids) if (c != null) n.append(c);
+    return n;
+  };
+  const WAT = { timeZone: 'Africa/Lagos' };
+  const wat = (iso: string) => iso ? new Date(iso).toLocaleString('en-GB', { ...WAT, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '–';
+  // <input type="datetime-local"> values are Nigeria time (UTC+1, no daylight saving).
+  const watToIso = (v: string) => v ? new Date(`${v}:00+01:00`).toISOString() : null;
+  const isoToWat = (iso: string) => iso ? new Date(new Date(iso).getTime() + 3600e3).toISOString().slice(0, 16) : '';
+  const mb = (n: number) => `${(n / 1048576).toFixed(n < 1048576 ? 2 : 1)} MB`;
+  let msgT: any;
+  function msg(t: string, ok = true) { const m = $('msg'); m.textContent = t; m.className = `mp-toast ${ok ? 'ok' : 'err'}`; m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 6000); }
+  async function api(path: string, method = 'GET', body?: any) {
+    const r = await fetch(path, { method, headers: body ? { ...H, 'Content-Type': 'application/json' } : H, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/programmes/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+
+  // ── List, top cards, switches ──
+  let all: any[] = [], storageReady = false;
+  const badge = (p: any) => p.live ? ['b-live', 'Live'] : p.status === 'scheduled' ? ['b-scheduled', `Scheduled ${wat(p.publish_at)}`] : p.status === 'hidden' ? ['b-hidden', 'Hidden'] : p.status === 'published' ? ['b-live', 'Live'] : ['b-draft', 'Draft'];
+  async function loadList() {
+    try {
+      const d = await api('/api/admin/programmes');
+      all = d.programmes; storageReady = d.storageReady;
+      $('storageWarn').hidden = storageReady;
+      $('setEnabled').checked = d.settings.enabled; $('setBanner').checked = d.settings.homepageBanner;
+      const t = d.totals;
+      $('cards').replaceChildren(...[['#E31E24', t.fans, 'Fan accounts'], ['#8B5CF6', t.newThisWeek, 'New fans this week'], ['#0EA5E9', t.opens, 'Programme opens'], ['#16A34A', t.downloads, 'Downloads']]
+        .map(([c, n, l]) => el('div', { class: 'mp-stat', style: `--c:${c}` }, el('b', { text: Number(n || 0).toLocaleString('en-NG') }), el('span', { text: l }))));
+      $('fans').replaceChildren(el('div', { class: 'mp-kv' },
+        ...[[t.fans, 'Fan accounts'], [t.programmeReaders, 'Signed in for the programme'], [t.optedIn, 'Opted in to club news']].map(([n, l]) => el('div', {}, el('b', { text: Number(n || 0).toLocaleString('en-NG') }), el('span', { text: l })))));
+      if (!all.length) { $('list').replaceChildren(el('div', { class: 'empty-state' }, el('b', { text: '📖' }), 'No programmes yet. Press "+ New programme".')); }
+      else {
+        const rows = all.map(p => {
+          const [cls, label] = badge(p);
+          return el('tr', {},
+            el('td', {}, el('b', { text: p.title }), p.competition ? el('div', { class: 'muted', text: p.competition }) : null),
+            el('td', { text: wat(p.kickoff_at) }),
+            el('td', {}, el('span', { class: `badge ${cls}`, text: label })),
+            el('td', { text: p.version ? `v${p.version}` : '–' }),
+            el('td', { text: String(p.opens) }), el('td', { text: String(p.downloads) }),
+            el('td', {}, el('div', { class: 'acts' },
+              el('button', { type: 'button', text: 'Edit', onclick: () => openWizard(p.id) }),
+              el('a', { href: `/admin/programme-preview/?id=${p.id}`, target: '_blank', rel: 'noopener', text: 'Preview' }),
+              el('button', { type: 'button', text: 'Stats', onclick: () => { $('statsSel').value = String(p.id); loadStats(); $('statsH').scrollIntoView({ behavior: 'smooth' }); } }),
+              p.live || p.status === 'scheduled' ? el('button', { type: 'button', text: 'Unpublish', onclick: () => setStatus(p, 'hidden') }) : null,
+              p.status === 'hidden' && p.pdf_key ? el('button', { type: 'button', text: 'Publish again', onclick: () => setStatus(p, 'published') }) : null,
+              !p.published_at && !p.live ? el('button', { type: 'button', text: 'Delete', onclick: () => del(p) }) : null)));
+        });
+        $('list').replaceChildren(el('div', { class: 'scroll' }, el('table', {},
+          el('thead', {}, el('tr', {}, ...['Programme', 'Kick-off (WAT)', 'Status', 'Version', 'Opens', 'Downloads', ''].map(h => el('th', { text: h })))),
+          el('tbody', {}, ...rows))));
+      }
+      const sel = $('statsSel'), keep = sel.value;
+      sel.replaceChildren(...all.map(p => el('option', { value: String(p.id), text: p.title })));
+      if (keep && all.some(p => String(p.id) === keep)) sel.value = keep;
+      if (all.length) loadStats();
+    } catch (e: any) { console.error(e); msg(e.message, false); }
+  }
+  async function setStatus(p: any, status: string) {
+    if (status === 'hidden' && !confirm(`Unpublish "${p.title}"? Fans will no longer see it.`)) return;
+    try { await api(`/api/admin/programmes/${p.id}`, 'PATCH', { status }); msg(status === 'hidden' ? 'Unpublished.' : 'Published.'); loadList(); } catch (e: any) { msg(e.message, false); }
+  }
+  async function del(p: any) {
+    if (!confirm(`Delete the draft "${p.title}" and its files?`)) return;
+    try { await api(`/api/admin/programmes/${p.id}`, 'DELETE'); msg('Deleted.'); loadList(); } catch (e: any) { msg(e.message, false); }
+  }
+  for (const [id, field] of [['setEnabled', 'enabled'], ['setBanner', 'homepageBanner']]) {
+    $(id).addEventListener('change', async (e: any) => {
+      try { await api('/api/admin/programmes/settings', 'POST', { [field]: e.target.checked }); msg('Saved.'); } catch (err: any) { msg(err.message, false); e.target.checked = !e.target.checked; }
+    });
+  }
+
+  // ── Stats ──
+  function barChart(values: number[]) {
+    const max = Math.max(1, ...values), W = 400, Hh = 170, bw = 64, gap = (W - bw * 4) / 5;
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', `0 0 ${W} ${Hh}`); svg.setAttribute('class', 'mp-chart'); svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', `Page views: ${values.map((v, i) => `page ${i + 1}: ${v}`).join(', ')}`);
+    values.forEach((v, i) => {
+      const h = Math.round((v / max) * 110), x = gap + i * (bw + gap), y = 130 - h;
+      const r = document.createElementNS(NS, 'rect');
+      Object.entries({ x, y, width: bw, height: Math.max(h, 2), rx: 6, fill: '#E31E24' }).forEach(([k, val]) => r.setAttribute(k, String(val)));
+      const t = document.createElementNS(NS, 'text'); t.textContent = String(v);
+      Object.entries({ x: x + bw / 2, y: y - 6, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 700, fill: 'currentColor' }).forEach(([k, val]) => t.setAttribute(k, String(val)));
+      const l = document.createElementNS(NS, 'text'); l.textContent = `Page ${i + 1}`;
+      Object.entries({ x: x + bw / 2, y: 152, 'text-anchor': 'middle', 'font-size': 13, fill: 'currentColor', opacity: .7 }).forEach(([k, val]) => l.setAttribute(k, String(val)));
+      svg.append(r, t, l);
+    });
+    return svg;
+  }
+  const SRC_LABEL: Record<string, string> = { 'qr-gate': 'QR: gates', 'qr-screen': 'QR: big screen', 'qr-social': 'QR: social', 'qr-radio': 'QR: radio', homepage: 'Homepage banner', share: 'Shared by fans', direct: 'Direct / other' };
+  async function loadStats() {
+    const id = $('statsSel').value; if (!id) return;
+    try {
+      const s = await api(`/api/admin/programmes/${id}/stats`);
+      const kv = el('div', { class: 'mp-kv' }, ...[[s.uniqueReaders, 'Unique readers'], [s.opens, 'Opens'], [s.downloads, 'Downloads'], [s.linkClicks, 'Link clicks'], [s.newFans, 'New fans gained'], [s.shares, 'Shares']]
+        .map(([n, l]) => el('div', {}, el('b', { text: String(n) }), el('span', { text: l }))));
+      const links = s.links.length ? el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Quick link' }), el('th', { text: 'Clicks' }))),
+        el('tbody', {}, ...s.links.map((l: any) => el('tr', {}, el('td', { text: l.label }), el('td', { text: String(l.clicks) }))))) : null;
+      const srcs = s.sources.length ? el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Where fans came from' }), el('th', { text: 'Visits' }))),
+        el('tbody', {}, ...s.sources.map((x: any) => el('tr', {}, el('td', { text: SRC_LABEL[x.src] || x.src }), el('td', { text: String(x.n) }))))) : el('p', { class: 'muted', text: 'No visits yet.' });
+      $('stats').replaceChildren(kv, el('p', { class: 'mp-sub', text: 'Views of each page' }), barChart(s.pageViews), links, srcs);
+    } catch (e: any) { $('stats').replaceChildren(el('p', { class: 'muted', text: e.message })); }
+  }
+  $('statsSel').addEventListener('change', loadStats);
+
+  // ── QR codes and poster ──
+  function qrFor(text: string) { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q; }
+  function drawQr() {
+    const url = `${SITE}/programme?src=${$('qrSrc').value}`;
+    $('qrUrl').textContent = url;
+    const q = qrFor(url);
+    $('qrBox').innerHTML = q.createSvgTag({ cellSize: 8, margin: 2, scalable: true }); // generated SVG, no fan or page data
+  }
+  function save(blob: Blob, name: string) { const a = el('a', { href: URL.createObjectURL(blob), download: name }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 20000); }
+  $('qrSrc').addEventListener('change', drawQr);
+  $('qrSvg').addEventListener('click', () => {
+    const q = qrFor(`${SITE}/programme?src=${$('qrSrc').value}`);
+    save(new Blob([q.createSvgTag({ cellSize: 10, margin: 4 })], { type: 'image/svg+xml' }), `lobi-stars-programme-${$('qrSrc').value}.svg`);
+  });
+  $('qrPng').addEventListener('click', () => {
+    const q = qrFor(`${SITE}/programme?src=${$('qrSrc').value}`), n = q.getModuleCount(), cell = 20, m = 4, size = (n + m * 2) * cell;
+    const c = el('canvas', { width: size, height: size }) as HTMLCanvasElement, g = c.getContext('2d')!;
+    g.fillStyle = '#fff'; g.fillRect(0, 0, size, size); g.fillStyle = '#000';
+    for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) g.fillRect((k + m) * cell, (r + m) * cell, cell, cell);
+    c.toBlob(b => b && save(b, `lobi-stars-programme-${$('qrSrc').value}.png`), 'image/png');
+  });
+  $('qrPrint').addEventListener('click', () => window.print());
+  drawQr();
+
+  // ── Wizard ──
+  const wz = $('wz');
+  let step = 1, cur: any = null, rendered: any = null;
+  const PRESETS = [
+    ['Order food on WhatsApp', 'https://wa.me/2349030399416?text=' + encodeURIComponent('Hello, I want to order food at the match.')],
+    ['Order food to your seat', '/food/'], ['Listen to Lobi Stars Radio', '/commentary/'], ['Buy tickets', '/tickets/'],
+    ['Vote Man of the Match', '/man-of-the-match/'], ['Predict & Win', '/predict-and-win/'], ['Club shop', '/shop/'],
+  ];
+  function showStep(n: number) {
+    step = n;
+    wz.querySelectorAll('.wz-pane').forEach((p: any) => { p.hidden = Number(p.dataset.pane) !== n; });
+    wz.querySelectorAll('#wzSteps li').forEach((li: any) => {
+      const s = Number(li.dataset.s);
+      li.toggleAttribute('aria-current', false); if (s === n) li.setAttribute('aria-current', 'step');
+      li.classList.toggle('done', s < n || (s === 2 && !!cur?.pdf_key));
+    });
+    $('wzBack').hidden = n === 1;
+    $('wzNext').textContent = n === 4 ? 'Confirm' : n === 2 && !rendered ? (cur?.pdf_key ? 'Keep current files' : 'Skip for now') : 'Save and continue';
+    if (n === 2 && rendered) $('wzNext').textContent = 'Upload and continue';
+    $('wzPreview').hidden = !cur?.pdf_key; if (cur) $('wzPreview').href = `/admin/programme-preview/?id=${cur.id}`;
+    $('wzErr').textContent = '';
+    if (n === 4) drawSummary();
+  }
+  async function openWizard(id: number | null) {
+    cur = null; rendered = null;
+    $('f1').reset(); $('prev').replaceChildren(); $('pdfMsg').textContent = ''; $('prog').hidden = true; $('links').replaceChildren();
+    wz.querySelector('input[name=when][value=draft]').checked = true; $('sched').hidden = true; $('pubAt').value = '';
+    $('wzTitle').textContent = id ? 'Edit programme' : 'New programme';
+    if (id) {
+      try {
+        const d = await api(`/api/admin/programmes/${id}`);
+        cur = d.programme; const f = $('f1').elements;
+        f.title.value = cur.title; f.opponent.value = cur.opponent || ''; f.competition.value = cur.competition || ''; f.venue.value = cur.venue || '';
+        f.kickoff.value = isoToWat(cur.kickoff_at); f.notes.value = cur.notes || '';
+        d.links.forEach((l: any) => addLink(l.label, l.url));
+        if (cur.live) wz.querySelector('input[name=when][value=now]').checked = true;
+        if (cur.status === 'scheduled' && !cur.live) { wz.querySelector('input[name=when][value=schedule]').checked = true; $('sched').hidden = false; $('pubAt').value = isoToWat(cur.publish_at); }
+      } catch (e: any) { msg(e.message, false); return; }
+    }
+    $('current').textContent = cur?.pdf_key ? `Current files: version ${cur.version}, PDF ${mb(cur.pdf_size_bytes || 0)}. Uploading a new PDF replaces them.` : '';
+    showStep(1);
+    wz.showModal();
+    loadFixtures();
+  }
+  $('newBtn').addEventListener('click', () => openWizard(null));
+  $('wzClose').addEventListener('click', () => { wz.close(); loadList(); });
+  wz.addEventListener('cancel', () => loadList());
+  $('wzBack').addEventListener('click', () => showStep(Math.max(1, step - 1)));
+
+  let fixturesLoaded = false;
+  async function loadFixtures() {
+    if (fixturesLoaded) return;
+    try {
+      const d = await api('/api/admin/events');
+      const soon = (d.events || []).filter((e: any) => new Date(e.event_date).getTime() > Date.now() - 864e5).sort((a: any, b: any) => +new Date(a.event_date) - +new Date(b.event_date));
+      soon.forEach((e: any) => $('fixtureSel').add(new Option(`${e.home_team} vs ${e.away_team} (${wat(e.event_date)})`, e.id)));
+      $('fixtureSel').onchange = () => {
+        const e = soon.find((x: any) => x.id === $('fixtureSel').value); if (!e) return;
+        const f = $('f1').elements, short = (s: string) => String(s || '').replace(/\s+F\.?C\.?$/i, '');
+        f.title.value = `${short(e.home_team)} vs ${short(e.away_team)}`;
+        f.opponent.value = /lobi stars/i.test(e.home_team) ? e.away_team : e.home_team;
+        f.competition.value = e.competition || ''; f.venue.value = e.venue || ''; f.kickoff.value = isoToWat(e.event_date);
+      };
+      fixturesLoaded = true;
+    } catch (e) { console.error(e); }
+  }
+
+  // Step 2: the PDF -> 4 page images + a cover, made in the browser.
+  async function canvasJpeg(page: any, width: number, quality: number, maxBytes: number) {
+    const base = page.getViewport({ scale: 1 });
+    const vp = page.getViewport({ scale: width / base.width });
+    const c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+    const g = c.getContext('2d')!; g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+    await page.render({ canvasContext: g, viewport: vp }).promise;
+    let q = quality, blob: Blob | null = null;
+    for (let i = 0; i < 4; i++) {
+      blob = await new Promise<Blob | null>(res => c.toBlob(res, 'image/jpeg', q));
+      if (blob && blob.size <= maxBytes) break;
+      q -= 0.12;
+    }
+    return { blob: blob!, width: c.width, height: c.height };
+  }
+  async function handlePdf(file: File) {
+    rendered = null; $('prev').replaceChildren(); $('prog').hidden = true;
+    const say = (t: string, cls = '') => { $('pdfMsg').textContent = t; $('pdfMsg').className = `wz-check ${cls}`; };
+    try {
+      if (!file) return;
+      if (file.type !== 'application/pdf' && !/\.pdf$/i.test(file.name)) { say('This is not a PDF. Please choose the programme PDF file.', 'bad'); return; }
+      if (file.size > 25 * 1048576) { say(`This PDF is ${mb(file.size)}. The maximum is 25 MB; please export a smaller file.`, 'bad'); return; }
+      const head = new Uint8Array(await file.slice(0, 5).arrayBuffer());
+      if (String.fromCharCode(...head) !== '%PDF-') { say('This file is not a valid PDF.', 'bad'); return; }
+      say('Reading the PDF…');
+      const pdfjs: any = await import(/* @vite-ignore */ PDFJS);
+      pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER;
+      const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+      if (doc.numPages !== 4) { say(`This PDF has ${doc.numPages} page${doc.numPages === 1 ? '' : 's'}. The programme must have exactly 4 pages.`, 'bad'); return; }
+      const warns: string[] = [];
+      if (file.size > 10 * 1048576) warns.push(`It is ${mb(file.size)}: this may be slow on mobile data.`);
+      const pages: any[] = [];
+      for (let i = 1; i <= 4; i++) {
+        say(`Making page images… ${i} of 4`);
+        const page = await doc.getPage(i);
+        const v = page.getViewport({ scale: 1 });
+        if (v.width > v.height) warns.push(`Page ${i} is landscape (portrait A4 reads best on phones).`);
+        pages.push({ ...(await canvasJpeg(page, 1240, 0.82, 2 * 1048576)) });
+        if (i === 1) rendered = { cover: await canvasJpeg(page, 600, 0.8, 500 * 1024) };
+      }
+      rendered = { ...rendered, pages, pdf: file };
+      const total = file.size + rendered.cover.blob.size + pages.reduce((s, p) => s + p.blob.size, 0);
+      $('prev').replaceChildren(...pages.map((p, i) => el('figure', {}, el('img', { src: URL.createObjectURL(p.blob), alt: `Page ${i + 1}` }), el('figcaption', { text: `Page ${i + 1} · ${mb(p.blob.size)}` }))));
+      say(`✅ 4 pages. PDF ${mb(file.size)}, page images and cover ${mb(total - file.size)}, ${mb(total)} in total.${warns.length ? ' ⚠️ ' + warns.join(' ') : ''}`, warns.length ? 'warn' : '');
+      showStep(2);
+    } catch (e: any) {
+      console.error('[programme] pdf', e);
+      rendered = null;
+      say(e?.name === 'PasswordException' ? 'This PDF is password-protected. Please export it without a password.' : 'The PDF could not be read. Please export it again (PDF, 4 pages) and retry.', 'bad');
+    }
+  }
+  const drop = $('drop'), pdfIn = $('pdfIn');
+  drop.addEventListener('click', () => pdfIn.click());
+  drop.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pdfIn.click(); } });
+  pdfIn.addEventListener('change', () => pdfIn.files[0] && handlePdf(pdfIn.files[0]));
+  ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, (e: Event) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, (e: Event) => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (e: DragEvent) => { const f = e.dataTransfer?.files?.[0]; if (f) handlePdf(f); });
+
+  function uploadFiles(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const f = new FormData();
+      f.append('pdf', rendered.pdf, 'programme.pdf'); f.append('cover', rendered.cover.blob, 'cover.jpg'); f.append('pageCount', '4');
+      rendered.pages.forEach((p: any, i: number) => { f.append(`page${i + 1}`, p.blob, `page-${i + 1}.jpg`); f.append(`width${i + 1}`, String(p.width)); f.append(`height${i + 1}`, String(p.height)); });
+      const x = new XMLHttpRequest();
+      x.open('POST', `/api/admin/programmes/${cur.id}/upload`);
+      x.setRequestHeader('x-admin-code', code);
+      $('prog').hidden = false;
+      x.upload.onprogress = e => { if (e.lengthComputable) { const pc = Math.round((e.loaded / e.total) * 100); $('progBar').style.width = `${pc}%`; $('progTxt').textContent = `Uploading… ${pc}%`; } };
+      x.onload = () => {
+        let d: any = {}; try { d = JSON.parse(x.responseText); } catch {}
+        if (x.status >= 200 && x.status < 300) { $('progBar').style.width = '100%'; $('progTxt').textContent = `Uploaded (version ${d.version}).`; resolve(d); }
+        else reject(new Error(d.error || `Upload failed (${x.status}).`));
+      };
+      x.onerror = () => reject(new Error('Upload failed: no connection. Please try again.'));
+      x.send(f);
+    });
+  }
+
+  // Step 3: quick links
+  function addLink(label = '', url = '') {
+    if ($('links').children.length >= 8) { $('wzErr').textContent = 'Up to 8 quick links.'; return; }
+    const row = el('div', { class: 'wz-link' },
+      el('input', { 'aria-label': 'Link label', maxlength: 40, placeholder: 'Label', value: label }),
+      el('input', { 'aria-label': 'Link address', placeholder: 'https://… or /page', value: url }),
+      el('button', { type: 'button', 'aria-label': 'Remove link', text: '×', onclick: () => row.remove() }));
+    $('links').append(row);
+  }
+  $('presets').replaceChildren(...PRESETS.map(([l, u]) => el('button', { type: 'button', text: `+ ${l}`, onclick: () => addLink(l, u) })));
+  $('addLink').addEventListener('click', () => addLink());
+  const linkRows = () => [...$('links').children].map((r: any) => ({ label: r.children[0].value.trim(), url: r.children[1].value.trim() })).filter(l => l.label || l.url);
+
+  // Step 4: publish
+  wz.querySelectorAll('input[name=when]').forEach((r: any) => r.addEventListener('change', () => { $('sched').hidden = whenVal() !== 'schedule'; drawSummary(); }));
+  const whenVal = () => (wz.querySelector('input[name=when]:checked') as any).value;
+  $('before24').addEventListener('click', () => {
+    if (!cur?.kickoff_at) { $('wzErr').textContent = 'Add the kick-off time in step 1 first.'; return; }
+    $('pubAt').value = isoToWat(new Date(new Date(cur.kickoff_at).getTime() - 864e5).toISOString()); drawSummary();
+  });
+  $('pubAt').addEventListener('input', drawSummary);
+  function drawSummary() {
+    if (!cur) return;
+    const w = whenVal();
+    const lines = [
+      ['Programme', cur.title], ['Kick-off', wat(cur.kickoff_at)], ['Files', cur.pdf_key ? `version ${cur.version}, PDF ${mb(cur.pdf_size_bytes || 0)}` : 'not uploaded yet'],
+      ['Quick links', String(linkRows().length)],
+      ['Fans see it', w === 'draft' ? 'not yet (draft)' : w === 'now' ? 'immediately at lobistarsfc.com/programme' : $('pubAt').value ? `from ${wat(watToIso($('pubAt').value)!)}` : 'choose a time'],
+    ];
+    $('summary').replaceChildren(...lines.map(([k, v]) => el('div', {}, el('b', { text: `${k}: ` }), v)));
+  }
+
+  $('wzNext').addEventListener('click', async () => {
+    const btn = $('wzNext'); $('wzErr').textContent = ''; btn.disabled = true;
+    try {
+      if (step === 1) {
+        const f = $('f1').elements;
+        const body = { title: f.title.value, opponent: f.opponent.value, competition: f.competition.value, venue: f.venue.value, kickoffAt: watToIso(f.kickoff.value) || '', notes: f.notes.value };
+        if (!body.title.trim()) { $('wzErr').textContent = 'Please enter the match title.'; return; }
+        if (cur) cur = (await api(`/api/admin/programmes/${cur.id}`, 'PATCH', body)).programme;
+        else { const r = await api('/api/admin/programmes', 'POST', body); cur = (await api(`/api/admin/programmes/${r.id}`)).programme; }
+        showStep(2);
+      } else if (step === 2) {
+        if (rendered) {
+          if (!storageReady) { $('wzErr').textContent = 'File storage is not connected yet, so the PDF cannot be uploaded.'; return; }
+          await uploadFiles();
+          cur = (await api(`/api/admin/programmes/${cur.id}`)).programme; rendered = null;
+          $('current').textContent = `Current files: version ${cur.version}, PDF ${mb(cur.pdf_size_bytes || 0)}. Uploading a new PDF replaces them.`;
+        }
+        showStep(3);
+      } else if (step === 3) {
+        await api(`/api/admin/programmes/${cur.id}/links`, 'PUT', { links: linkRows() });
+        showStep(4);
+      } else {
+        const w = whenVal();
+        if (w !== 'draft' && !cur.pdf_key) { $('wzErr').textContent = 'Upload the PDF (step 2) before publishing.'; return; }
+        if (w === 'schedule' && !$('pubAt').value) { $('wzErr').textContent = 'Choose when to publish.'; return; }
+        const status = w === 'draft' ? (cur.status === 'hidden' ? 'hidden' : 'draft') : w === 'now' ? 'published' : 'scheduled';
+        if (w !== 'draft' && !confirm(w === 'now' ? `Publish "${cur.title}" now? Fans will see it straight away.` : `Schedule "${cur.title}" for ${wat(watToIso($('pubAt').value)!)}?`)) return;
+        await api(`/api/admin/programmes/${cur.id}`, 'PATCH', { status, publishAt: w === 'schedule' ? watToIso($('pubAt').value) : undefined });
+        msg(w === 'draft' ? 'Saved as draft.' : w === 'now' ? 'Published. It is live on /programme.' : 'Scheduled.');
+        wz.close(); loadList();
+      }
+    } catch (e: any) { $('wzErr').textContent = e.message; }
+    finally { btn.disabled = false; }
+  });
+
+  loadList();
+</script>

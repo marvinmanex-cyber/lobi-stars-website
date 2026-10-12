@@ -70,7 +70,7 @@ test('service worker never caches pages or live data; offline page is ready and 
   assert.match(sw, /ls-static-[a-z0-9]+/, 'versioned cache');
   assert.match(sw, /req\.mode === 'navigate'[\s\S]*fetch\(req\)\.catch/, 'pages: network first, offline page only without a connection');
   assert.match(sw, /api\|data\|admin\|scan/, 'API, data, admin and scanner never touched');
-  assert.match(sw, /key !== STATIC\) await caches\.delete/, 'old caches deleted');
+  assert.match(sw, /key !== STATIC && key !== PROGRAMME\) await caches\.delete/, 'old caches deleted (saved programme pages kept)');
   assert.doesNotMatch(sw, /cache\.put\(req, res\.clone\(\)\)[^;]*navigate/);
   const off = await page('/offline/');
   assert.equal(off.status, 200);
