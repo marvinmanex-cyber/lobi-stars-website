@@ -234,6 +234,20 @@ the old version is deleted.
 - **"File storage is not connected":** the R2 binding is still commented out
   in `wrangler.toml` (Setup steps 1-2).
 
+## Website Health (uptime monitoring)
+
+`functions/api/_lib/uptime.js`: every 5 minutes (the cron Worker calls
+`/api/internal/health-check` each minute with `CRON_SECRET`; a round is
+claimed in `uptime_meta` so it runs at most every 5 minutes) the site fetches
+`/`, `/tickets/`, `/programme/`, `/api/events`, runs `SELECT 1`, and during a
+commentary window probes the stream. Results go to `uptime_checks` (kept 30
+days), outages to `uptime_incidents`; open incidents show in the admin bell
+and Super Admins are emailed (when `RESEND_API_KEY` is set). Admin page
+`/admin/health/` (Settings); "Check now" = `POST /api/admin/health`.
+`GET /api/health` (public, no details) answers 200 when the site and database
+work: point a free outside monitor (e.g. UptimeRobot, every 5 minutes) at it.
+Tests: `tests/health.test.mjs`.
+
 ## Share Hub (sharing programmes to social media)
 
 Staff share a programme from **Admin › Matchday Programme › Share** (a button

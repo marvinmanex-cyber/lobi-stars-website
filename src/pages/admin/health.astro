@@ -1,0 +1,99 @@
+---
+// Settings › Website Health: is the site up? The cron Worker checks the key
+// pages, the database and (on match days) the commentary stream every 5
+// minutes. Shows the latest result, uptime for 24 hours / 7 days, average
+// response time and incidents, with "Check now".
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Website Health | Lobi Stars Admin" description="Website uptime and incidents." noindex>
+  <div class="wrap wh">
+    <AdminNav current="health" />
+    <header class="wh-head">
+      <div><div class="stag">Settings</div><h1 class="stitle">Website <span class="r">Health</span></h1></div>
+      <button type="button" class="btn-p" id="now">Check now</button>
+    </header>
+    <p class="wh-lede">The site checks itself every 5 minutes. If something stops working it appears here and in the bell, and Super Admins get an email (once email is set up). <span id="last"></span></p>
+    <p class="wh-warn" id="cronWarn" hidden>Automatic checks need the cron Worker (HANDOVER-TODO A14). Until then, use <b>Check now</b>.</p>
+    <p class="wh-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <section class="wh-grid" id="grid" aria-label="Checks"><p class="muted">Loading…</p></section>
+    <section class="wh-card">
+      <h2>Incidents</h2>
+      <div id="inc"><p class="muted">Loading…</p></div>
+    </section>
+    <section class="wh-card">
+      <h2>Outside monitor (optional)</h2>
+      <p class="wh-note">For a second opinion from outside Cloudflare, add a free monitor (e.g. UptimeRobot) for <code>https://lobistarsfc.com/api/health</code>: it answers 200 when the site and its database work.</p>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .wh { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
+  .wh-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .wh-lede { margin: 0 0 16px; color: var(--a-muted); line-height: 1.55; }
+  .wh-warn { margin: 0 0 16px; padding: 12px 16px; border-radius: 12px; background: #FFF7E6; border: 1px solid #F6D58E; color: #7A4B00; }
+  .wh-msg { margin: 0 0 14px; padding: 10px 14px; border-radius: 10px; background: #E8F7EE; color: #17643A; font-weight: 600; }
+  .wh-msg.err { background: #FDECEC; color: #A3161B; }
+  .wh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .wh :global(.wh-c) { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 14px; padding: 14px 16px; border-left: 5px solid var(--c); }
+  .wh :global(.wh-c b) { display: block; font-size: 16px; color: var(--a-ink); }
+  .wh :global(.wh-c .st) { display: inline-block; margin: 6px 0; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--bg); color: var(--fg); }
+  .wh :global(.wh-c small) { display: block; color: var(--a-muted); font-size: 13px; line-height: 1.5; }
+  .wh-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
+  .wh-card h2 { margin: 0 0 10px; font: 700 18px 'Barlow', sans-serif; }
+  .wh-note { margin: 0; color: var(--a-muted); font-size: 14px; line-height: 1.55; }
+  .wh :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .wh :global(th), .wh :global(td) { padding: 9px 12px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--a-line); }
+  .wh :global(.pill) { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .wh :global(.pill.open) { background: #FEE2E2; color: #991B1B; } .wh :global(.pill.closed) { background: #DCFCE7; color: #166534; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'x-admin-code': code };
+  const $ = id => document.getElementById(id);
+  const el = (t, p = {}, ...k) => { const n = document.createElement(t); for (const [a, v] of Object.entries(p)) { if (a === 'class') n.className = v; else if (a === 'text') n.textContent = v; else if (a === 'style') n.setAttribute('style', v); else n.setAttribute(a, v); } k.forEach(x => x != null && n.append(x)); return n; };
+  // Database times are UTC "YYYY-MM-DD HH:MM:SS"; incident times are ISO.
+  const when = s => s ? new Date(/Z$/.test(s) ? s : s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WAT' : '–';
+  const pct = v => v == null ? '–' : `${(v * 100).toFixed(v === 1 ? 0 : 1)}%`;
+  const dur = (a, b) => { const m = Math.round(((b ? new Date(b) : new Date()) - new Date(a)) / 60000); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; };
+  function msg(t, ok = true) { $('msg').textContent = t; $('msg').className = 'wh-msg' + (ok ? '' : ' err'); $('msg').hidden = false; }
+  function draw(d) {
+    $('cronWarn').hidden = d.cron;
+    $('last').textContent = d.lastRun ? `Last check: ${when(d.lastRun)}.` : 'No check has run yet.';
+    $('grid').replaceChildren(...d.checks.map(c => {
+      const state = c.ok === null ? ['#94A3B8', '#F1F5F9', '#475569', c.key === 'stream' ? 'Checked on match days' : 'Not checked yet']
+        : c.ok ? (c.error ? ['#F59E0B', '#FEF3C7', '#92400E', 'Slow'] : ['#16A34A', '#DCFCE7', '#166534', 'Working']) : ['#DC2626', '#FEE2E2', '#991B1B', 'Down'];
+      return el('div', { class: 'wh-c', style: `--c:${state[0]};--bg:${state[1]};--fg:${state[2]}` },
+        el('b', { text: c.label }), el('span', { class: 'st', text: state[3] }),
+        c.error ? el('small', { text: c.error }) : null,
+        el('small', { text: `Uptime: ${pct(c.uptime24h)} (24 h) · ${pct(c.uptime7d)} (7 days)` }),
+        el('small', { text: `Average response: ${c.avgMs24h == null ? '–' : (c.avgMs24h / 1000).toFixed(2) + ' s'} · checked ${when(c.checkedAt)}` }));
+    }));
+    $('inc').replaceChildren(d.incidents.length ? el('div', { class: 'scroll' }, el('table', {},
+      el('thead', {}, el('tr', {}, ...['What', 'Started', 'Lasted', 'Problem', ''].map(h => el('th', { text: h })))),
+      el('tbody', {}, ...d.incidents.map(i => el('tr', {}, el('td', { text: i.label }), el('td', { text: when(i.started_at) }),
+        el('td', { text: dur(i.started_at, i.ended_at) }), el('td', { text: i.error || '' }),
+        el('td', {}, el('span', { class: 'pill ' + (i.ended_at ? 'closed' : 'open'), text: i.ended_at ? 'Fixed' : 'Ongoing' }))))))) : el('p', { class: 'wh-note', text: 'No incidents. Everything has been working.' }));
+  }
+  async function load() {
+    try {
+      const r = await fetch('/api/admin/health', { headers: H, cache: 'no-store' });
+      if (r.status === 401) { location.href = '/admin/login/?next=/admin/health/'; return; }
+      const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Failed'); draw(d);
+    } catch (e) { msg(e.message, false); }
+  }
+  $('now').addEventListener('click', async () => {
+    const b = $('now'); b.disabled = true; b.textContent = 'Checking…';
+    try {
+      const r = await fetch('/api/admin/health', { method: 'POST', headers: H });
+      const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Failed');
+      draw(d); msg('Checked just now.');
+    } catch (e) { msg(e.message, false); }
+    finally { b.disabled = false; b.textContent = 'Check now'; }
+  });
+  load();
+})();
+</script>

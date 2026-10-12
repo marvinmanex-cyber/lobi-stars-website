@@ -54,6 +54,7 @@ const RULES = [
   [/^\/admin\/partners(\/|$)/, 'partners'],
   [/^\/admin\/analytics(\/|$)/, 'analytics'],
   [/^\/admin\/activity(\/|$)/, 'settings'],
+  [/^\/admin\/health(\/|$)/, 'settings'],
   [/^\/admin\/staff(\/|$)/, 'staff'],
   [/^\/admin\/?(index\.html|config\.yml)?$/, 'cms'],
   // APIs
@@ -80,6 +81,7 @@ const RULES = [
   [/^\/api\/admin\/(analytics|broadcast-report)(\/|$)/, 'analytics'],
   [/^\/api\/admin\/export-log(\/|$)/, 'fans|settings'],
   [/^\/api\/admin\/activity(\/|$)/, 'settings'],
+  [/^\/api\/admin\/health(\/|$)/, 'settings'],
   [/^\/api\/admin\/staff(\/|$)/, 'staff'],
 ];
 

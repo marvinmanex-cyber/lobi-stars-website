@@ -1594,7 +1594,18 @@ download contacts; every export is logged). "Delete my data" requests from
 fans arrive in the **Inbox** ("Data deletion request"): reply to confirm, then
 delete the person in the Fan Database (removes them everywhere).
 
-## Other things you can update in the CMS
+## 29. Website Health (Settings › Website Health)
+
+The site checks itself every 5 minutes: the homepage, tickets page, Match Day
+Programme, fixtures data and database, and on match days the commentary
+stream. Each check shows **Working**, **Slow** or **Down**, its uptime for
+the last 24 hours and 7 days, and the average response time. When something
+goes down an incident opens: it shows in the bell (🚨 Website problem) and
+Super Admins get an email (once email is set up); it closes by itself when
+it works again. **Check now** runs the checks straight away. Who can see it:
+Super Admins.
+
+
 
 ### Prediction League prize
 **Site Settings, League Table & Shop → Prediction League prize.** Enter the

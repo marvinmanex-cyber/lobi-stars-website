@@ -61,7 +61,7 @@ const year = new Date().getFullYear();
         {SOCIAL_LINKS.length > 0 && (
           <ul class="sf-social">
             {SOCIAL_LINKS.map(s => (
-              <li><a href={s.url} target="_blank" rel="noopener" aria-label={`Lobi Stars FC on ${s.label}`}>
+              <li><a class={`sf-s--${s.key}`} href={s.url} target="_blank" rel="noopener" aria-label={`Lobi Stars FC on ${s.label}`}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d={ICONS[s.key]} /></svg>
               </a></li>
             ))}
@@ -132,12 +132,19 @@ const year = new Date().getFullYear();
   .sf-logo small { display: block; font: 600 10px/1.6 'Barlow Condensed', sans-serif; letter-spacing: 3px; color: #FFC72C; text-transform: uppercase; }
   .sf-brand p { margin: 16px 0 0; max-width: 420px; font-size: 14px; line-height: 1.7; color: rgba(255, 255, 255, .7); }
   .sf-social { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 0; padding: 0; }
+  /* Each platform in its own brand colours (white logo on the brand colour). */
   .sf-social a {
-    width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .22);
-    display: flex; align-items: center; justify-content: center; transition: background .2s, border-color .2s;
+    width: 40px; height: 40px; border-radius: 50%; border: 1px solid transparent;
+    display: flex; align-items: center; justify-content: center; transition: transform .2s, filter .2s;
   }
   .sf-social svg { width: 18px; height: 18px; fill: #fff; }
-  .sf-social a:hover, .sf-social a:focus-visible { background: var(--red); border-color: var(--red); }
+  .sf-social a:hover, .sf-social a:focus-visible { transform: translateY(-2px); filter: brightness(1.12); }
+  .sf-social .sf-s--facebook { background: #1877F2; }
+  .sf-social .sf-s--x { background: #000; border-color: rgba(255, 255, 255, .35); }
+  .sf-social .sf-s--instagram { background: radial-gradient(circle at 30% 107%, #FDF497 0%, #FDF497 5%, #FD5949 45%, #D6249F 60%, #285AEB 90%); }
+  .sf-social .sf-s--youtube { background: #FF0000; }
+  .sf-social .sf-s--tiktok { background: #000; border-color: rgba(255, 255, 255, .35); }
+  .sf-social .sf-s--whatsappChannel { background: #25D366; }
 
   .sf-news-title { margin: 0; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; }
   .sf-news p { margin: 8px 0 14px; font-size: 14px; color: rgba(255, 255, 255, .7); }

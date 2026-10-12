@@ -3,9 +3,11 @@ import { canAccess } from '../_lib/adminRoles.js';
 import { syncEnquiries, maybeDailySummary } from '../_lib/inbox.js';
 import { ensureAnalyticsSchema } from '../_lib/analytics.js';
 import { sqlTs, isoTs } from '../_lib/reportRange.js';
+import { healthSummary } from '../_lib/uptime.js';
 
 // GET /api/admin/notifications -- the admin bell: unread / overdue Inbox messages,
-// Predict & Win prizes not yet paid, and commentary stream errors today.
+// Predict & Win prizes not yet paid, commentary stream errors today, and
+// website health problems (Website Health monitoring).
 export async function onRequestGet({ request, env, waitUntil }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
@@ -36,6 +38,10 @@ export async function onRequestGet({ request, env, waitUntil }) {
     const since = sqlTs(Date.now() - 24 * 3600e3);
     const n = (await db.prepare(`SELECT COUNT(*) AS n FROM track_events WHERE name = 'commentary_error' AND ts >= ?`).bind(since).first()).n || 0;
     if (n) items.push({ icon: '📻', title: `Commentary stream problems: ${n} in the last 24 hours`, sub: 'Fans saw "Reconnecting". Check the stream on Live Commentary.', href: '/admin/commentary/' });
+  }
+  if (canAccess(admin, 'settings') && await tableExists('uptime_incidents')) {
+    const h = await healthSummary(db);
+    for (const i of h.open) items.push({ icon: '🚨', title: `Website problem: ${i.label}`, sub: `${i.error || 'Not responding'} since ${new Date(i.started_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} WAT`, href: '/admin/health/' });
   }
   return Response.json({ items }, { headers: { 'Cache-Control': 'no-store' } });
 }

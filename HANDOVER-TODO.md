@@ -7,8 +7,13 @@ plain email or chat: add secret keys yourself in Cloudflare (Workers & Pages
 › lobi-stars-website › Settings › Variables and Secrets) and just tell the
 website manager they are in.
 
-Last checked: 11 October 2026 (site-wide scan: 79 pages on phone and
-computer, no errors; 160 automated tests, all passing).
+Last checked: 12 October 2026 (209 automated tests, all passing).
+
+**One action unlocks several items:** signing in to the Cloudflare account
+that runs lobistarsfc.com (about 2 minutes, in a private browser window, with
+the website manager) lets these be finished together: A5 push keys, A10
+kitchen Telegram (the bot token is already saved locally) and cron Worker,
+A11 programme file storage, A12 Telegram channel secrets, and A14.
 
 ---
 
@@ -25,6 +30,7 @@ computer, no errors; 160 automated tests, all passing).
 | A11 | **Match Day Programme file storage** (Cloudflare R2) | Without it the programme can't be uploaded and /programme keeps showing the old single image | Sign in to the Cloudflare account that runs the site so the bucket `lobistars-programmes` can be created and the binding switched on (DEPLOYMENT.md, "Match Day Programme"). Fans' sign-in codes also need **A1 (Resend)**. Then: first real programme PDF (A4, 4 pages) and who prints the QR posters. |
 | A12 | **Share Hub: Telegram channel bot** | Automatic programme posts to the club's public Telegram channel | Create a bot with @BotFather, make it an admin of the channel (Post Messages), add `TELEGRAM_PUBLIC_BOT_TOKEN` and `TELEGRAM_PUBLIC_CHANNEL` (DEPLOYMENT.md, "Share Hub"). Also the club's **profile links** for each platform (Admin › Share › Edit platforms). |
 | A13 | **Share Hub: Facebook Page token** (optional) | Automatic posts to the Facebook Page (otherwise staff use the share window) | A Page admin creates a Meta app and a Page token with `pages_manage_posts` (steps in DEPLOYMENT.md, "Share Hub"); add `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_TOKEN`. |
+| A14 | **Redeploy the cron Worker** | Runs every minute: kitchen repeat alerts, "radio show is live" fan alert, finishing big match-alert sends, **scheduled Share Hub posts** and **Website Health checks**. Nothing on a timer works until it is deployed | During the Cloudflare sign-in: `cd workers/kitchen-cron && npx wrangler deploy`, then `npx wrangler secret put CRON_SECRET` (same value as on the website). |
 | A6 | **Termii** (optional) | SMS / WhatsApp order alerts | Decide yes or no. If yes: API key (`TERMII_API_KEY`) and approved sender ID (`TERMII_SENDER_ID`). |
 | A7 | **Commentary stream (Option A)** | Lobi Stars FC Live at stream.lobistarsfc.com | From the commentary partner: the stream host name, port and mount (e.g. `https://host:8000/live`). Then the DNS step in COMMENTARY-STREAM-SETUP.md. |
 | A8 | **Google Search Console** | See how the site appears in Google; submit the sitemap | Add the site, verify with the DNS record Google gives, submit `https://lobistarsfc.com/sitemap.xml` (section 23). |
@@ -60,6 +66,8 @@ computer, no errors; 160 automated tests, all passing).
 | C12 | **Transparency** (optional) | Annual reports, financial or official statements (PDF) the club wants public. |
 | C14 | **Newsletter sponsors** | For each sponsor in the newsletter: the advert text or offer they want, the button text and the exact web link. Logos for **Zeva Lager Beer** and **Play** (PNG, clear background). Which sponsor goes at the top ("In partnership with"). |
 | C15 | **Newsletter sender** | The address the newsletter comes from, e.g. **news@lobistarsfc.com** (needs to be on the Resend domain; set as `NEWSLETTER_FROM`). Which day it goes out each week, and who on the staff writes and sends it. |
+| C16 | **Bio links** | Put **lobistarsfc.com/p/instagram** in the Instagram bio and **lobistarsfc.com/p/tiktok** in the TikTok bio (they always open the current programme), and send the club's profile links for each platform (or add them in Admin › Matchday Programme › Share › Edit platforms). |
+| C17 | **First programme** | The first real Match Day Programme PDF (A4 portrait, exactly 4 pages, under 10 MB), and who prints the QR posters and flyers. |
 | C13 | **Partnership page** | Audience figures (followers, attendance, website visitors) and the partnership brochure PDF. |
 
 ## D. Shop, membership and commercial decisions
@@ -72,6 +80,7 @@ computer, no errors; 160 automated tests, all passing).
 | D4 | **Hospitality packages** | Package names, what's included, price (or "on request"). |
 | D5 | **Prediction League prize** | Is there an end-of-season prize, and how much? |
 | D7 | **Order on WhatsApp** | The bank account fans pay into (account name, bank, number); pickup points if fans can collect (e.g. "Main Stand Kiosk"); who answers WhatsApp orders on matchday. (Orders go to **0903 039 9416**: confirmed by the club on 11 October 2026.) |
+| D8 | **Predict & Win and email-code accounts** | Fans who sign in for the programme with an emailed code get a fan account without confirming they are 18+ and without a phone number. Should Predict & Win (and Man of the Match) ask those fans to confirm 18+ and add a phone number before they can play? (Recommended: yes for Predict & Win, because winners must be contacted and the terms say 18+.) |
 | D6 | **In-seat food** | The real menu (items, prices, photos, categories), the list of stands/blocks for seat delivery, and the alert email addresses / phone numbers for the kitchen. |
 
 ## E. Legal and translations
@@ -88,6 +97,9 @@ computer, no errors; 160 automated tests, all passing).
 - F2. After A1/A2: send a Contact form message from your own email, reply from the Inbox, reply to that email, check it comes back.
 - F3. After A4: buy one low-priced test ticket and one food order with the live key, then refund them in Paystack.
 - F4. Decide whether to switch off the old Formspree copy of form messages once Inbox emails work.
+- F5. QR adverts: print one advert at its real size and scan it with at least three phones (an Android, an iPhone, an older phone), also from inside Instagram or Facebook, before printing in bulk.
+- F6. Share Hub: share a programme link in WhatsApp, Facebook and X and check the preview card (picture, title) appears; test "Post now" to Telegram once A12 is done.
+- F7. Match alerts and kitchen alerts: after A5/A10, turn on 🔔 Match alerts on a phone and on the Kitchen Screen, and check a test alert arrives.
 
 ---
 
@@ -129,8 +141,10 @@ computer, no errors; 160 automated tests, all passing).
 11. **Backups** ✅ *done:* Settings › Data Backup downloads everything (Super
     Admins); the dashboard reminds after 30 days. Cloudflare D1 Time Travel
     also allows restoring to an earlier point (7 days on the free plan, 30 on paid).
-12. **Uptime monitoring** (e.g. a free UptimeRobot check on the homepage, the
-    ticket page and the commentary stream) so problems are noticed before fans do.
+12. **Uptime monitoring** ✅ *built:* Settings › Website Health checks the
+    key pages, database and match-day stream every 5 minutes, with bell alerts
+    and emails (needs A14 for automatic checks). Optional: add a free
+    UptimeRobot monitor for https://lobistarsfc.com/api/health.
 13. **Personal staff logins only, and remove access when people leave.**
     ✅ *Two-step login is built* (My account); turn it on for every Super Admin
     and anyone who can download contacts.

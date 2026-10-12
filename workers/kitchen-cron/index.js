@@ -4,10 +4,11 @@
 //    when the radio show goes on air, and keep sending match alerts to fans
 //    (/api/internal/kitchen-repeat);
 //  - post Match Day Programmes to Telegram / Facebook at their scheduled time
-//    (/api/internal/social-autopost, Share Hub).
+//    (/api/internal/social-autopost, Share Hub);
+//  - check the website is up, every 5 minutes (/api/internal/health-check).
 // Pages Functions can't run on a timer, so this does it. The website checks
 // CRON_SECRET (same value in both places). One failing call never stops the other.
-const CALLS = ['/api/internal/kitchen-repeat', '/api/internal/social-autopost'];
+const CALLS = ['/api/internal/kitchen-repeat', '/api/internal/social-autopost', '/api/internal/health-check'];
 
 export default {
   async scheduled(event, env, ctx) {
