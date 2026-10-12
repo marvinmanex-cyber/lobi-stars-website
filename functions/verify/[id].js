@@ -1,3 +1,4 @@
+import { ensureSeasonSchema, TIER_LABELS as SEASON_TIERS } from '../api/_lib/seasonTickets.js';
 import { TEAM_LOGOS } from '../api/_lib/teamLogos.js';
 
 const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' };
@@ -12,6 +13,14 @@ const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 // ticket used.
 export async function onRequestGet({ params, env }) {
   const id = String(params.id || '').trim().slice(0, 64);
+
+  // Season tickets: genuine or not, season, stand, matches used (no personal details).
+  if (/^LS-SZN-/i.test(id)) {
+    await ensureSeasonSchema(env.DB);
+    const pass = await env.DB.prepare(`SELECT p.id, p.season, p.tier, p.status, (SELECT COUNT(*) FROM season_pass_scans s WHERE s.pass_id = p.id) AS used
+      FROM season_passes p WHERE p.id = ?`).bind(id.toUpperCase()).first();
+    return new Response(renderSeasonPage(id, pass), { headers: { 'Content-Type': 'text/html; charset=utf-8' } });
+  }
 
   const ticket = await env.DB.prepare(
     `SELECT t.id, t.status, t.tier, t.used_at, e.home_team, e.away_team, e.event_date, e.venue
@@ -82,4 +91,20 @@ function renderPage(id, ticket) {
   </div>
 </body>
 </html>`;
+}
+
+function renderSeasonPage(id, pass) {
+  const block = !pass
+    ? `<div class="status invalid">&#10060; NOT A VALID SEASON TICKET</div><p class="sub">No Lobi Stars season ticket matches this code.</p>`
+    : pass.status !== 'valid'
+    ? `<div class="status invalid">&#10060; SEASON TICKET CANCELLED</div><p class="sub">This season ticket is no longer valid.</p>`
+    : `<div class="status valid">&#9989; VERIFIED &mdash; VALID SEASON TICKET</div><p class="sub">Genuine Lobi Stars FC season ticket: one person, every home match of the season. Used for ${Number(pass.used) || 0} match${Number(pass.used) === 1 ? '' : 'es'} so far.</p>
+       <div class="match"><div class="teams">Season ${esc(pass.season)}</div><div class="tier">${esc(SEASON_TIERS[pass.tier] || pass.tier)}</div></div>`;
+  return `<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><meta name="robots" content="noindex"/>
+<title>Season Ticket Verification | Lobi Stars Football Club</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0d1a33;color:#fff;font-family:Arial,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{max-width:420px;width:100%;background:#132248;border:2px solid #C9A227;border-radius:16px;padding:32px 26px;text-align:center}.brand{letter-spacing:2px;color:#C9A227;font-size:14px;font-weight:bold;margin-bottom:20px}
+.status{font-size:20px;font-weight:bold;margin-bottom:6px}.valid{color:#4CAF50}.invalid{color:#ff6b6b}.sub{color:#c8d1e6;font-size:14px;margin-bottom:18px;line-height:1.5}
+.teams{font-size:22px;font-weight:bold;margin:8px 0}.tier{display:inline-block;margin-top:8px;padding:6px 14px;border-radius:999px;background:#C9A227;color:#0d1a33;font-weight:bold}.id{margin-top:20px;font-family:monospace;color:#8a97b8;font-size:12px}</style></head>
+<body><div class="card"><div class="brand">LOBI STARS FC</div>${block}<div class="id">${esc(id)}</div></div></body></html>`;
 }

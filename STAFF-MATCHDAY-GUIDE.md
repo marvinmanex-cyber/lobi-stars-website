@@ -83,6 +83,11 @@ check the text and press **Send alert**. (When Lobi Stars FC Live goes on air,
 fans who chose radio get "Pre-match show is live" automatically, so you
 don't need to send both.)
 
+**At the gates:** the Ticket Scanner (lobistarsfc.com/scan) reads match
+tickets and season tickets alike. A season ticket gets in once per home match:
+if it shows "Already used for this match", the code has already been let in
+today. Season tickets only work on home match days.
+
 ## 2. At kick-off
 
 In **Admin → Match Centre**, choose the match and press

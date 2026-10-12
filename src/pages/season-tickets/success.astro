@@ -1,0 +1,55 @@
+---
+// /season-tickets/success/?reference=… -- where Paystack sends buyers back.
+// Shows the season tickets (QR codes) once the payment is confirmed; they are
+// also emailed.
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Your Season Tickets | Lobi Stars Football Club" description="Your Lobi Stars FC season tickets." noindex>
+  <div class="page-content wrap ss">
+    <h1 class="stitle">Season <span class="r">Tickets</span></h1>
+    <p class="muted" id="ssMsg" role="status" aria-live="polite">Checking your payment…</p>
+    <div id="ssPasses" class="ss-grid"></div>
+    <p class="ss-note" id="ssNote" hidden>Each QR code gets one person into every home match of the season, once per match. We've also emailed them to <b id="ssEmail"></b>. Keep them safe: anyone with the code can use it.</p>
+  </div>
+</Layout>
+
+<style>
+  .ss { max-width: 760px; padding-top: 30px; padding-bottom: 60px; }
+  .ss-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin: 16px 0; }
+  .ss :global(.ss-pass) { border: 2px solid var(--d4); border-radius: 14px; padding: 16px; text-align: center; background: var(--d2); }
+  .ss :global(.ss-pass img) { width: 180px; height: 180px; background: #fff; padding: 6px; border-radius: 8px; }
+  .ss :global(.ss-pass b) { display: block; font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; margin-top: 8px; }
+  .ss :global(.ss-pass code) { display: block; font-size: 13px; color: var(--lt); margin-top: 4px; }
+  .ss-note { line-height: 1.55; }
+  .ss [hidden] { display: none !important; }
+</style>
+
+<script is:inline>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var ref = new URLSearchParams(location.search).get('reference') || new URLSearchParams(location.search).get('trxref') || '';
+  var tries = 0;
+  async function check() {
+    try {
+      var r = await fetch('/api/season-tickets/order?reference=' + encodeURIComponent(ref), { cache: 'no-store' });
+      var d = await r.json().catch(function () { return {}; });
+      if (!r.ok) { $('ssMsg').textContent = d.error === 'Order not found' || d.error === 'Missing reference' ? 'We could not find this order. If you paid, check your email or contact info@lobistarsfc.com.' : 'Something went wrong. Please refresh.'; return; }
+      if (!d.paid) {
+        if (++tries < 10) { $('ssMsg').textContent = 'Waiting for the payment to be confirmed…'; setTimeout(check, 3000); }
+        else $('ssMsg').textContent = 'Your payment has not been confirmed yet. If money left your account, your season tickets will be emailed as soon as Paystack confirms it.';
+        return;
+      }
+      $('ssMsg').textContent = 'Payment confirmed. Your ' + d.quantity + ' season ticket' + (d.quantity === 1 ? '' : 's') + ' for ' + d.season + ', ' + d.stand + ':';
+      $('ssPasses').replaceChildren.apply($('ssPasses'), d.passes.map(function (id, i) {
+        var div = document.createElement('div'); div.className = 'ss-pass';
+        var img = document.createElement('img'); img.src = '/api/qr/' + encodeURIComponent(id); img.alt = 'QR code for season ticket ' + (i + 1); img.width = 180; img.height = 180;
+        var b = document.createElement('b'); b.textContent = 'Season ticket ' + (i + 1);
+        var c = document.createElement('code'); c.textContent = id;
+        div.append(img, b, c); return div;
+      }));
+      $('ssEmail').textContent = d.email; $('ssNote').hidden = false;
+    } catch (e) { $('ssMsg').textContent = 'No connection. Please refresh the page.'; }
+  }
+  if (!ref) $('ssMsg').textContent = 'No order to show.'; else check();
+})();
+</script>

@@ -1,5 +1,5 @@
-// Paystack payments other than tickets and food: online membership and
-// personalised shirts. Used by the webhook (the source of truth) and by
+// Paystack payments other than tickets and food: online membership,
+// personalised shirts and season tickets. Used by the webhook (the source of truth) and by
 // /api/payments/verify (the page fans return to), so both are safe to run
 // more than once.
 import { ensureMembershipSchema, setMembership } from './membership.js';
@@ -7,6 +7,7 @@ import { ensureShirtSchema, shirtOrderEmailHtml } from './shirtOrders.js';
 import { sendEmail } from './email.js';
 import { verifyTransaction } from './paystack.js';
 import { captureContact, splitName } from './contacts.js';
+import { ensureSeasonSchema, fulfilSeasonOrder } from './seasonTickets.js';
 
 /** Finds a membership payment or shirt order by Paystack reference. */
 export async function findPayment(db, reference) {
@@ -16,12 +17,16 @@ export async function findPayment(db, reference) {
   if (m) return { kind: 'membership', row: m, paid: m.status === 'paid', amount: m.amount_kobo };
   const s = await db.prepare(`SELECT * FROM shirt_orders WHERE paystack_reference = ?`).bind(reference).first();
   if (s) return { kind: 'shirt', row: s, paid: s.payment_status === 'paid', amount: s.total_kobo };
+  await ensureSeasonSchema(db);
+  const z = await db.prepare(`SELECT * FROM season_orders WHERE paystack_reference = ?`).bind(reference).first();
+  if (z) return { kind: 'season', row: z, paid: z.payment_status === 'paid', amount: z.total_kobo };
   return null;
 }
 
 /** Marks a found payment as paid (once) and does what it pays for. */
 export async function fulfilPayment(env, found, waitUntil) {
   const now = new Date().toISOString();
+  if (found.kind === 'season') { await fulfilSeasonOrder(env, found.row, waitUntil); return; }
   if (found.kind === 'membership') {
     const res = await env.DB.prepare(`UPDATE membership_payments SET status = 'paid', paid_at = ? WHERE id = ? AND status != 'paid'`).bind(now, found.row.id).run();
     if (res.meta?.changes) await setMembership(env.DB, found.row.member_id, { season: found.row.season, source: 'online', note: `Paystack ${found.row.paystack_reference}` });

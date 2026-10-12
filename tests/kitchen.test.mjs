@@ -31,7 +31,16 @@ async function paidOrder(name = 'Ada Obi') {
   assert.equal((await api('/api/admin/food-orders', 'POST', { id, status: 'PAID' })).status, 200);
   return { ref: r.ref, id };
 }
-const logFor = async ref => { await sleep(1500); return (await api('/api/admin/kitchen/settings')).data.log.filter(l => l.ref === ref); };
+// Alerts are logged in the background: wait until push and Telegram are both there (up to 8 s).
+const logFor = async (ref, done = log => log.some(l => l.channel === 'push') && log.some(l => l.channel === 'telegram')) => {
+  let log = [];
+  for (let i = 0; i < 16; i++) {
+    await sleep(500);
+    log = (await api('/api/admin/kitchen/settings')).data.log.filter(l => l.ref === ref);
+    if (done(log)) break;
+  }
+  return log;
+};
 const orderRow = async ref => (await api(`/api/admin/food-orders?show=list&q=${ref}`)).data.orders[0];
 const tg = (body, secret = TG_SECRET) => fetch(`${BASE}/api/telegram/webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Telegram-Bot-Api-Secret-Token': secret }, body: JSON.stringify(body) });
 const press = (ref, chat = CHAT, name = 'Ada') => tg({ update_id: 1, callback_query: { id: uid(), from: { id: 5, first_name: name }, data: `ack:${ref}`, message: { message_id: 10, chat: { id: Number(chat) }, text: `NEW PAID ORDER ${ref}` } } });
@@ -127,7 +136,8 @@ test('Telegram Accept button: secret required, kitchen group only, accepts once'
 test('cancelling an alerted order tells the kitchen; settings validate; Kitchen role sees only the Kitchen Screen', async () => {
   const o = await paidOrder();
   await api('/api/admin/food-orders', 'POST', { id: o.id, status: 'CANCELLED' });
-  assert.ok((await logFor(o.ref)).some(l => l.attempt === 'cancel' && l.channel === 'push'));
+  const isCancel = l => l.attempt === 'cancel' && l.channel === 'push';
+  assert.ok((await logFor(o.ref, log => log.some(isCancel))).some(isCancel));
   assert.equal((await api('/api/admin/kitchen/settings', 'POST', { settings: { enabled: true, telegram: true, repeatMinutes: 0, maxRepeats: 5 } })).status, 400);
   assert.equal((await api('/api/admin/kitchen/settings', 'POST', { settings: { enabled: true, telegram: true, repeatMinutes: 3, maxRepeats: 99 } })).status, 400);
 

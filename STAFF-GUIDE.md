@@ -1624,6 +1624,26 @@ personal details.
   website send them every month by itself (needs email and the cron Worker).
 Who can use it: Super Admins and Commercial staff.
 
+## 31. Season tickets (Commerce › Season Tickets)
+
+One ticket for every Lobi Stars home match of the season, in a stand. Off
+until you switch it on.
+- **Settings:** the season (e.g. 2026/27), a price for each stand (0 = that
+  stand isn't sold as a season ticket) and how many season tickets each stand
+  has (0 = no limit), plus an optional note for fans (e.g. "Cup matches not
+  included"). Tick **Season tickets on sale** and **Save**: they appear on
+  lobistarsfc.com/season-tickets and as a banner on the Tickets page.
+- Fans pay with Paystack (1 to 4 at a time) and get one QR code per season
+  ticket by email and on screen.
+- **At the gate** the normal Ticket Scanner reads it: it lets the person in
+  **once per home match**, only on the day of a home match ("Already used for
+  this match" if scanned again). A pass only works in its own season.
+- **Season tickets sold:** every pass with its holder, stand, code and how
+  many matches it has been used for; find by name, email or code. **Cancel**
+  stops a lost or refunded pass at the gate (**Restore** undoes it). Refunds
+  themselves are done in Paystack.
+Who can use it: Super Admins and Commercial staff.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

@@ -1,0 +1,140 @@
+---
+// Commerce › Season Tickets: switch season tickets on or off, the season,
+// each stand's price and how many season tickets it has, a short note for
+// fans, sales and every season ticket (cancel / restore one).
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Season Tickets | Lobi Stars Admin" description="Season ticket prices and sales." noindex>
+  <div class="wrap sz">
+    <AdminNav current="season-tickets" />
+    <header class="sz-head">
+      <div><div class="stag">Commerce</div><h1 class="stitle">Season <span class="r">Tickets</span></h1></div>
+      <a class="btn-o" href="/season-tickets/" target="_blank" rel="noopener">View the page ↗</a>
+    </header>
+    <p class="sz-lede">One ticket for every Lobi Stars home match of the season. Fans pay with Paystack and get a QR code by email; at the gate the Ticket Scanner lets it in once per home match, only on match days.</p>
+    <p class="sz-warn" id="testWarn" hidden>Paystack is still using a <b>test</b> key: real payments can't be taken until the live key is added (HANDOVER-TODO A4).</p>
+    <p class="sz-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <section class="sz-cards" id="cards" aria-label="Totals"></section>
+
+    <form class="sz-card" id="form" novalidate>
+      <h2>Settings</h2>
+      <label class="sz-sw"><input type="checkbox" role="switch" name="enabled" /> <span><b>Season tickets on sale</b> (shows on the Season Tickets page and the Tickets page)</span></label>
+      <div class="sz-row">
+        <label>Season<input name="season" placeholder="2026/27" maxlength="7" /></label>
+      </div>
+      <div class="sz-tiers" id="tiers"></div>
+      <label class="sz-full">Note for fans (optional)<textarea name="info" rows="2" maxlength="600" placeholder="e.g. Includes cup home matches. Collect a printed card at the club shop if you prefer."></textarea></label>
+      <div class="sz-actions"><button class="btn-p" type="submit">Save settings</button></div>
+    </form>
+
+    <section class="sz-card">
+      <div class="sz-cardhead"><h2>Season tickets sold</h2><input type="search" id="q" placeholder="Find by name, email or code" aria-label="Find a season ticket" /></div>
+      <div class="scroll" id="list"><p class="muted">Loading…</p></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .sz { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
+  .sz-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  .sz-lede { color: var(--a-muted); line-height: 1.55; max-width: 820px; }
+  .sz-warn { padding: 12px 16px; border-radius: 12px; background: #FFF7E6; border: 1px solid #F6D58E; color: #7A4B00; }
+  .sz-msg { padding: 10px 14px; border-radius: 10px; background: #E8F7EE; color: #17643A; font-weight: 600; }
+  .sz-msg.err { background: #FDECEC; color: #A3161B; }
+  .sz-cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 14px 0 16px; }
+  .sz :global(.sz-stat) { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 14px; padding: 14px 16px; border-top: 4px solid var(--c); }
+  .sz :global(.sz-stat b) { display: block; font: 400 32px/1 'Bebas Neue', sans-serif; color: var(--a-ink); }
+  .sz :global(.sz-stat span) { font-size: 13px; color: var(--a-muted); }
+  .sz-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; display: grid; gap: 12px; }
+  .sz-card h2 { margin: 0; font: 700 19px 'Barlow', sans-serif; color: var(--a-ink); }
+  .sz-cardhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sz-cardhead input { min-height: 38px; border: 1px solid var(--a-line); border-radius: 10px; padding: 4px 10px; background: var(--a-card); color: var(--a-ink); font: 400 14px 'Barlow', sans-serif; min-width: 240px; }
+  .sz-sw { display: flex; gap: 10px; align-items: center; font-size: 15px; cursor: pointer; }
+  .sz-sw input { width: 22px; height: 22px; accent-color: #16A34A; }
+  .sz-card label { display: grid; gap: 5px; font-size: 13px; font-weight: 700; color: var(--a-muted); }
+  .sz-card label.sz-sw { display: flex; }
+  .sz-card input:not([type=checkbox]), .sz-card textarea { min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); font: 400 15px 'Barlow', sans-serif; width: 100%; box-sizing: border-box; }
+  .sz-row { display: grid; grid-template-columns: 200px; gap: 12px; }
+  .sz-tiers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .sz :global(.sz-tier) { border: 1px solid var(--a-line); border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+  .sz :global(.sz-tier h3) { margin: 0; font: 700 15px 'Barlow', sans-serif; color: var(--a-ink); }
+  .sz :global(.sz-tier label) { display: grid; gap: 5px; font-size: 13px; font-weight: 700; color: var(--a-muted); }
+  .sz :global(.sz-tier input) { min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); font: 400 15px 'Barlow', sans-serif; width: 100%; box-sizing: border-box; }
+  .sz :global(.sz-tier small) { color: var(--a-muted); font-size: 12px; }
+  .sz-actions { display: flex; justify-content: flex-end; }
+  .sz :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .sz :global(th), .sz :global(td) { padding: 9px 10px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--a-line); }
+  .sz :global(.pill) { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .sz :global(.pill.ok) { background: #DCFCE7; color: #166534; } .sz :global(.pill.no) { background: #FEE2E2; color: #991B1B; }
+  .sz :global(td button) { min-height: 34px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; font: 700 12px 'Barlow', sans-serif; }
+  .sz [hidden] { display: none !important; }
+  @media (max-width: 760px) { .sz-cards { grid-template-columns: 1fr 1fr; } .sz-tiers { grid-template-columns: 1fr; } }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'x-admin-code': code };
+  const $ = id => document.getElementById(id);
+  const el = (t, p = {}, ...k) => { const n = document.createElement(t); for (const [a, v] of Object.entries(p)) { if (a === 'class') n.className = v; else if (a === 'text') n.textContent = v; else if (a === 'style') n.setAttribute('style', v); else if (a.startsWith('on')) n.addEventListener(a.slice(2), v); else n.setAttribute(a, v); } k.forEach(x => x != null && n.append(x)); return n; };
+  const naira = k => '₦' + (Number(k || 0) / 100).toLocaleString('en-NG');
+  let data = null;
+  function msg(t, ok = true) { $('msg').textContent = t; $('msg').className = 'sz-msg' + (ok ? '' : ' err'); $('msg').hidden = false; }
+  async function api(body) {
+    const r = await fetch('/api/admin/season-tickets', body ? { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/season-tickets/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function drawList() {
+    const q = $('q').value.trim().toLowerCase();
+    const orders = Object.fromEntries(data.orders.map(o => [o.id, o]));
+    const rows = data.passes.filter(p => {
+      const o = orders[p.order_id] || {};
+      return !q || [p.id, p.holder_name, o.buyer_email, o.buyer_phone].some(x => String(x || '').toLowerCase().includes(q));
+    }).map(p => {
+      const o = orders[p.order_id] || {};
+      return el('tr', {},
+        el('td', {}, el('b', { text: p.holder_name }), el('div', { class: 'muted', text: o.buyer_email || '' })),
+        el('td', { text: data.labels[p.tier] || p.tier }),
+        el('td', {}, el('code', { text: p.id })),
+        el('td', { text: String(p.used) }),
+        el('td', {}, el('span', { class: 'pill ' + (p.status === 'valid' ? 'ok' : 'no'), text: p.status === 'valid' ? 'Valid' : 'Cancelled' })),
+        el('td', {}, el('button', { type: 'button', text: p.status === 'valid' ? 'Cancel' : 'Restore', onclick: async () => {
+          if (p.status === 'valid' && !confirm(`Cancel season ticket ${p.id} (${p.holder_name})? It will no longer get in at the gate.`)) return;
+          try { await api(p.status === 'valid' ? { voidPass: p.id } : { restorePass: p.id }); msg(p.status === 'valid' ? 'Season ticket cancelled.' : 'Season ticket restored.'); load(); } catch (e) { msg(e.message, false); }
+        } })));
+    });
+    $('list').replaceChildren(rows.length ? el('table', {}, el('thead', {}, el('tr', {}, ...['Holder', 'Stand', 'Code', 'Matches used', 'Status', 'Action'].map(h => el('th', { text: h })))), el('tbody', {}, ...rows))
+      : el('div', { class: 'empty-state' }, el('b', { text: '🎟️' }), q ? 'No season ticket matches.' : 'No season tickets sold yet.'));
+  }
+  async function load() {
+    try {
+      data = await api();
+      const s = data.settings, f = $('form').elements;
+      $('testWarn').hidden = data.paystackLive;
+      f.enabled.checked = s.enabled; f.season.value = s.season; f.info.value = s.info;
+      $('tiers').replaceChildren(...data.availability.map(a => el('div', { class: 'sz-tier' },
+        el('h3', { text: a.label }),
+        el('label', {}, 'Price (₦, 0 = not on sale)', el('input', { type: 'number', min: '0', step: '100', name: `price_${a.tier}`, value: String(s.tiers[a.tier].priceKobo / 100) })),
+        el('label', {}, 'How many (0 = no limit)', el('input', { type: 'number', min: '0', step: '1', name: `limit_${a.tier}`, value: String(s.tiers[a.tier].limit) })),
+        el('small', { text: `Sold: ${a.sold}${a.limit ? ` of ${a.limit}` : ''}` }))));
+      const t = data.totals;
+      $('cards').replaceChildren(...[['#E31E24', t.passes, 'Season tickets sold'], ['#16A34A', naira(t.revenueKobo), 'Paid'], ['#0EA5E9', t.gateScans, 'Gate entries with season tickets'], ['#8B5CF6', data.homeMatchesLeft, 'Home matches left']]
+        .map(([c, n, l]) => el('div', { class: 'sz-stat', style: `--c:${c}` }, el('b', { text: typeof n === 'number' ? n.toLocaleString('en-NG') : n }), el('span', { text: l }))));
+      drawList();
+    } catch (e) { msg(e.message, false); }
+  }
+  $('form').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target.elements;
+    const tiers = {};
+    for (const a of data.availability) tiers[a.tier] = { priceNaira: Number(f[`price_${a.tier}`].value || 0), limit: Number(f[`limit_${a.tier}`].value || 0) };
+    if (f.enabled.checked && !data.settings.enabled && !confirm('Put season tickets on sale now? Fans will be able to buy them straight away.')) return;
+    try { await api({ settings: { enabled: f.enabled.checked, season: f.season.value, info: f.info.value, tiers } }); msg('Saved.'); load(); } catch (err) { msg(err.message, false); }
+  });
+  $('q').addEventListener('input', () => data && drawList());
+  load();
+})();
+</script>

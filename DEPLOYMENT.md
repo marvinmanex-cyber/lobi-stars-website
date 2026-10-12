@@ -234,6 +234,21 @@ the old version is deleted.
 - **"File storage is not connected":** the R2 binding is still commented out
   in `wrangler.toml` (Setup steps 1-2).
 
+## Season tickets
+
+`functions/api/_lib/seasonTickets.js`: settings in `season_settings`
+(enabled, season, info, per-stand price and limit), `season_orders`
+(Paystack reference `LSSZN-…`; paid through the shared webhook via
+`extraPayments.js`), `season_passes` (`LS-SZN-…`, in the QR code
+`/verify/<id>`), `season_pass_scans` (one row per pass and match; the gate
+claims it with `ON CONFLICT DO NOTHING`, so two doors can't both admit).
+`/api/validate-ticket` sends `LS-SZN-…` codes to `scanSeasonPass`: only on
+the day of a home match (Nigerian time), only within the pass's season.
+Public: `/season-tickets/` (`/api/season-tickets`, `/checkout`, `/order`),
+banner on `/tickets/`. Admin: `/admin/season-tickets/` (Commerce). Unpaid
+orders hold places for 30 minutes. Tests: `tests/season-tickets.test.mjs`
+(needs `PAYSTACK_FAKE=1` and `STAFF_SCAN_CODE`).
+
 ## Security notes (review of 12 October 2026)
 
 - **Headers:** `public/_headers` (static pages) and

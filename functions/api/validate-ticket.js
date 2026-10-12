@@ -1,6 +1,8 @@
 // POST /api/validate-ticket -- called from the /scan gate page. Atomically
 // flips a ticket from valid -> used so two doors scanning the same ticket
 // at the same instant can't both admit it.
+import { scanSeasonPass } from './_lib/seasonTickets.js';
+
 export async function onRequestPost({ request, env }) {
   let body;
   try {
@@ -19,6 +21,12 @@ export async function onRequestPost({ request, env }) {
   }
 
   const cleanId = ticketId.trim();
+
+  // Season tickets (LS-SZN-…): once per home match, on a match day.
+  if (/^LS-SZN-/i.test(cleanId)) {
+    const r = await scanSeasonPass(env.DB, cleanId.toUpperCase(), station);
+    return Response.json(r.body, { status: r.status });
+  }
 
   const claim = await env.DB.prepare(
     `UPDATE tickets SET status = 'used', used_at = datetime('now'), scanned_by = ?
