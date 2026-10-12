@@ -91,7 +91,7 @@
           data.emailReady ? el('button', { type: 'button', text: s && s.status === 'sent' ? 'Send again' : 'Send', onclick: () => send([p.slug], !!(s && s.status === 'sent')) }) : null)));
     });
     $('prrTable').replaceChildren(el('table', {},
-      el('thead', {}, el('tr', {}, ...['Partner', 'Impressions', 'Clicks', 'Page views', 'Newsletter', 'Report emails', 'Status', ''].map(h => el('th', { text: h })))),
+      el('thead', {}, el('tr', {}, ...['Partner', 'Impressions', 'Clicks', 'Page views', 'Newsletter', 'Report emails', 'Status', ''].map(h => h ? el('th', { text: h }) : el('th', {}, el('span', { class: 'sr-only', text: 'Actions' }))))),
       el('tbody', {}, ...rows)));
   }
   async function send(slugs, again) {

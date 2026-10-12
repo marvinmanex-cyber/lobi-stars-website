@@ -186,7 +186,7 @@
         return tr;
       });
       $('qcTable').replaceChildren(el('table', {},
-        el('thead', {}, el('tr', {}, ...['Campaign', 'Short link', 'QR', 'Scans', 'Sign-ins', 'Downloads', 'Read online', 'New fans', 'Conversion', 'Active', ''].map(h => el('th', { text: h })))),
+        el('thead', {}, el('tr', {}, ...['Campaign', 'Short link', 'QR', 'Scans', 'Sign-ins', 'Downloads', 'Read online', 'New fans', 'Conversion', 'Active', ''].map(h => h ? el('th', { text: h }) : el('th', {}, el('span', { class: 'sr-only', text: 'Actions' }))))),
         el('tbody', {}, ...rows)));
       const gc = $('gCamp'), keep = gc.value;
       gc.replaceChildren(...campaigns.filter(c => c.is_active || (selected && selected.id === c.id)).map(c => el('option', { value: String(c.id), text: `${c.label} (/p/${c.code})` })));

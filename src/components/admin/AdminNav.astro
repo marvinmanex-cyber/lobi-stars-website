@@ -214,7 +214,9 @@ const showBack = here !== '/admin/dashboard/';
 
   /* ── Cards and panels use the tokens ── */
   body.admin-body .admin-main .panel { background: var(--a-card); border-color: var(--a-line); box-shadow: 0 8px 26px rgba(15,17,21,.05); border-radius: 16px; }
-  body.admin-body .stag { color: var(--a-red); }
+  /* Small red labels: a slightly darker red so they meet the 4.5:1 contrast minimum. */
+  body.admin-body .stag { color: #C11A1F; }
+  body.admin-dark .stag { color: #FF7A7E; }
   body.admin-body main#main { padding-top: 0; }
   body.admin-body { --side: 260px; --top: 60px; padding-left: var(--side); padding-top: var(--top); background: var(--a-bg); }
   body.admin-body.ash-collapsed { --side: 72px; }
@@ -298,6 +300,17 @@ const showBack = here !== '/admin/dashboard/';
 
 <script>
   const w = window as any;
+  // Scrolling table areas must be reachable with the keyboard (and named for screen readers).
+  // Each gets a unique name from its section heading (e.g. "Programmes table").
+  const tagScroll = () => document.querySelectorAll('.scroll:not([tabindex])').forEach(el => {
+    const head = el.closest('section, .panel, .mp-card, .fa-card, .ka-card, .wh-card')?.querySelector('h2, h3')?.textContent?.trim() || 'Scrollable';
+    const used = new Set([...document.querySelectorAll('.scroll[aria-label]')].map(x => x.getAttribute('aria-label')));
+    let name = `${head} table`, i = 2;
+    while (used.has(name)) name = `${head} table ${i++}`;
+    el.setAttribute('tabindex', '0'); el.setAttribute('role', 'region'); el.setAttribute('aria-label', name);
+  });
+  tagScroll();
+  new MutationObserver(tagScroll).observe(document.body, { childList: true, subtree: true });
   // ← Back: return to the admin page you came from (not the login page); otherwise the link goes up one level.
   document.getElementById('ashBack')?.addEventListener('click', e => {
     const me = e as MouseEvent;

@@ -73,7 +73,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         el('small', { text: `Average response: ${c.avgMs24h == null ? '–' : (c.avgMs24h / 1000).toFixed(2) + ' s'} · checked ${when(c.checkedAt)}` }));
     }));
     $('inc').replaceChildren(d.incidents.length ? el('div', { class: 'scroll' }, el('table', {},
-      el('thead', {}, el('tr', {}, ...['What', 'Started', 'Lasted', 'Problem', ''].map(h => el('th', { text: h })))),
+      el('thead', {}, el('tr', {}, ...['What', 'Started', 'Lasted', 'Problem', 'Status'].map(h => el('th', { text: h })))),
       el('tbody', {}, ...d.incidents.map(i => el('tr', {}, el('td', { text: i.label }), el('td', { text: when(i.started_at) }),
         el('td', { text: dur(i.started_at, i.ended_at) }), el('td', { text: i.error || '' }),
         el('td', {}, el('span', { class: 'pill ' + (i.ended_at ? 'closed' : 'open'), text: i.ended_at ? 'Fixed' : 'Ongoing' }))))))) : el('p', { class: 'wh-note', text: 'No incidents. Everything has been working.' }));

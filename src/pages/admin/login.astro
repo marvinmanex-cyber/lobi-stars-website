@@ -12,7 +12,7 @@ import Layout from '../../layouts/Layout.astro';
         <button type="button" role="tab" id="tabOwner" aria-selected="false" aria-controls="ownerForm">Admin code (owner)</button>
       </div>
 
-      <form id="staffForm" role="tabpanel" aria-labelledby="tabStaff">
+      <form id="staffForm" aria-labelledby="tabStaff">
         <label class="login-label" for="email">Email</label>
         <input id="email" type="email" autocomplete="username" required />
         <label class="login-label" for="password">Password</label>
@@ -24,7 +24,7 @@ import Layout from '../../layouts/Layout.astro';
         <button type="submit" class="btn-p">Log in</button>
       </form>
 
-      <form id="ownerForm" role="tabpanel" aria-labelledby="tabOwner" hidden>
+      <form id="ownerForm" aria-labelledby="tabOwner" hidden>
         <p class="muted">The owner signs in with the club's admin code and can create staff accounts.</p>
         <label class="login-label" for="code">Admin code</label>
         <input id="code" name="code" type="password" autocomplete="current-password" required />
