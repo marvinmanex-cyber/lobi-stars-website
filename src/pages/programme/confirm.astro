@@ -1,0 +1,10 @@
+---
+// /programme/confirm/?e=&t=&src=&intent= -- the "Sign in and get the
+// programme" button in the sign-in email. Nobody is signed in until the fan
+// taps Continue (email security scanners open links by themselves).
+import ScanShell from '../../components/programme/ScanShell.astro';
+import ScanApp from '../../components/programme/ScanApp.astro';
+---
+<ScanShell title="Sign in | Lobi Stars FC" description="Sign in to get the Lobi Stars FC match day programme.">
+  <ScanApp mode="confirm" />
+</ScanShell>

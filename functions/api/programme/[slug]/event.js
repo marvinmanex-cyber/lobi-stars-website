@@ -1,12 +1,13 @@
 import { liveBySlug, logEvent, PAGE_COUNT } from '../../_lib/programme.js';
 import { getFan, hashIp } from '../../_lib/fanCode.js';
 import { clientIp, rateLimit } from '../../_lib/fans.js';
+import { validSrc, logCampaignEvent } from '../../_lib/qr.js';
 
 const ALLOWED = ['landing', 'open', 'page_view', 'share'];
 
 // POST /api/programme/:slug/event { type, page?, src? } -- reading statistics.
 // Requests from another site are ignored (204, nothing stored).
-export async function onRequestPost({ request, env, params }) {
+export async function onRequestPost({ request, env, params, waitUntil }) {
   try {
     if (request.headers.get('Origin') !== new URL(request.url).origin) return new Response(null, { status: 204 });
     const b = await request.json().catch(() => ({}));
@@ -18,6 +19,8 @@ export async function onRequestPost({ request, env, params }) {
     if (!(await rateLimit(env.DB, `progev:${await hashIp(clientIp(request), env.SESSION_SECRET || '')}`, 300, 3600))) return new Response(null, { status: 204 });
     const fan = await getFan(request, env);
     await logEvent(env.DB, { programmeId: p.id, fanId: fan?.id || null, type: b.type, page, src: b.src });
+    // Opening the reader from a QR advert counts as 'read' for that campaign.
+    if (b.type === 'open' && validSrc(b.src)) logCampaignEvent(env, b.src, 'read', { request, fanId: fan?.id || null, programmeId: p.id }, waitUntil);
     return new Response(null, { status: 204 });
   } catch (err) {
     console.error('[programme] event', err);

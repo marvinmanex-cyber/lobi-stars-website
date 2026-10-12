@@ -1521,11 +1521,41 @@ back. A draft that was never published can be deleted.
   "Send me club news and match day programme alerts". It is never ticked for
   them.
 
-### QR codes and posters
-Choose where the code is shown (gates, big screen, social, radio), then
-**Download PNG** / **Download SVG** for designers, or **Print A4 poster**.
-Every code goes to lobistarsfc.com/programme; the Stats show how many fans
-came from each.
+### QR advert campaigns
+Every QR advert has its own short link, e.g. **lobistarsfc.com/p/gate**. A fan
+scans it, lands on a small fast page, enters their email, types the code (or
+taps the button in the email) and the PDF downloads. Ready-made campaigns:
+gate (stadium gate posters), screen (big screen), social, status (WhatsApp
+status), radio, flyer and kiosk (food kiosk).
+
+- **The table** shows each campaign's scans, sign-ins, downloads, read online,
+  new fans and conversion (downloads ÷ scans) for Last 7 days, This programme
+  or All time. The best channel is highlighted. **Copy** copies the short link.
+- **Select** a campaign to see its funnel (scans → signed in → downloaded →
+  read online, with the drop at each step) and to make adverts for it.
+- **New campaign:** a name (e.g. "Sponsor flyers: Zeva"), the channel, and
+  optionally a short code (3-12 lowercase letters, numbers or -). Leave the
+  code empty and one is made up.
+- **Codes can never be changed or deleted**, because printed QR codes must
+  keep working. Switch a campaign off instead; its QR codes still work.
+- **Advert generator:** choose A4 poster, square social post, WhatsApp status
+  or big screen; edit the headline, subline, match and kick-off (filled in from
+  the next programme), or tick **Season evergreen** for a poster that works
+  all season. **Download advert (PNG)**, or **Download QR only (SVG)** for a
+  designer. The guide line under the controls says how big the QR code will
+  print: about 3 cm is enough for flyers, 10 cm or more for posters read from
+  1-2 metres; on the big screen keep it at least 40% of the screen height and
+  show it for 15 seconds or more.
+- **Scan test:** shows the exact link in the QR code with **Open link**.
+  Before printing in bulk, print one at the real size and scan it with at
+  least three different phones.
+- **Copy summary for sponsors:** totals only, e.g. "1,240 scans, 610 signed
+  in, 548 downloads, 96 read online, 212 new fans". No names or contacts.
+- **QR: auto-download** (switch at the top of Programmes): after signing in
+  from a QR code the PDF starts downloading by itself. Switch it off to show a
+  Download button instead.
+- Fans who scan inside Facebook, Instagram or TikTok see a note to open the
+  page in Chrome or Safari; "Read online" is the safer choice there.
 
 ### Stats
 Per programme: unique readers, opens, downloads, link clicks (per link), new

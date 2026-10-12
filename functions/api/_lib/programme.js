@@ -74,8 +74,12 @@ export async function ensureProgrammeSchema(db) {
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_programme_events ON programme_events (programme_id, type, created_at)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_programme_events_fan ON programme_events (fan_id)`),
     db.prepare(`INSERT OR IGNORE INTO programme_settings (key, value) VALUES
-      ('programme_enabled', 'true'), ('programme_session_days', '90'), ('programme_max_pdf_mb', '25'), ('programme_homepage_banner', 'true')`),
+      ('programme_enabled', 'true'), ('programme_session_days', '90'), ('programme_max_pdf_mb', '25'), ('programme_homepage_banner', 'true'),
+      ('scan_auto_download', 'true')`),
   ]);
+  // Sign-in emails also carry a one-tap link (QR campaigns); only its hash is stored.
+  const cols = new Set((await db.prepare(`PRAGMA table_info(fan_login_codes)`).all()).results.map(r => r.name));
+  if (!cols.has('link_token_hash')) await db.prepare(`ALTER TABLE fan_login_codes ADD COLUMN link_token_hash TEXT`).run();
   ready = true;
 }
 
@@ -96,6 +100,7 @@ export async function programmeSettings(db) {
     sessionDays: Math.min(365, Math.max(1, Number(s.programme_session_days) || 90)),
     maxPdfMb: Math.min(50, Math.max(1, Number(s.programme_max_pdf_mb) || 25)),
     homepageBanner: s.programme_homepage_banner !== 'false',
+    scanAutoDownload: s.scan_auto_download !== 'false',
   };
 }
 
@@ -159,7 +164,7 @@ export function friendlyPdfName(p) {
 export function toPublic(p, origin = '') {
   return {
     slug: p.slug, title: p.title, opponent: p.opponent || '', competition: p.competition || '', venue: p.venue || '',
-    kickoffAt: p.kickoff_at, publishAt: p.publish_at, version: p.version, pageCount: PAGE_COUNT,
+    kickoffAt: p.kickoff_at, publishAt: p.publish_at, version: p.version, pageCount: PAGE_COUNT, pdfSizeBytes: p.pdf_size_bytes || null,
     coverUrl: p.cover_key ? `${origin}/api/programme/${p.slug}/cover.jpg?v=${p.version}` : null,
   };
 }

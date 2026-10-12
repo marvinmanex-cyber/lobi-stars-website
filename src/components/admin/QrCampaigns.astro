@@ -1,0 +1,407 @@
+---
+// Admin › Matchday Programme › "QR advert campaigns": every QR advert is a
+// short link lobistarsfc.com/p/<code>. Campaign table with the funnel numbers
+// (scans -> sign-ins -> downloads -> read online, new fans), a funnel chart,
+// new campaigns, an advert generator (A4 poster, square post, WhatsApp
+// status, big screen; PNG made in the browser), a scan test and a sponsor
+// summary. Codes can never be changed or deleted: printed QR codes must keep
+// working. The QR image uses the same small QR library as the rest of the site
+// (bundled, error correction Q, dark on light, 4-module quiet zone).
+---
+<section class="qc mp-card" id="qc" aria-labelledby="qcH">
+  <div class="mp-cardhead">
+    <h2 id="qcH">QR advert campaigns</h2>
+    <div class="qc-filters">
+      <label class="qc-inl">Range <select id="qcRange">
+        <option value="7">Last 7 days</option><option value="prog">This programme</option><option value="all" selected>All time</option>
+      </select></label>
+      <label class="qc-inl" id="qcProgWrap" hidden>Programme <select id="qcProg"></select></label>
+      <button type="button" class="btn-o sm" id="qcSummary">Copy summary for sponsors</button>
+    </div>
+  </div>
+  <p class="mp-sub">Each QR code is a short link such as <b>lobistarsfc.com/p/gate</b>. Scans, sign-ins and downloads are counted per campaign (no personal data). Codes can't be changed or deleted, so printed QR codes always keep working; switch a campaign off instead.</p>
+  <p class="qc-best" id="qcBest" hidden></p>
+  <div class="scroll" id="qcTable"><p class="muted">Loading…</p></div>
+
+  <div class="qc-grid">
+    <div class="qc-box">
+      <h3>Funnel: <span id="qcSelName">all campaigns</span></h3>
+      <div id="qcFunnel"></div>
+      <p class="mp-note" id="qcFunnelNote"></p>
+    </div>
+    <form class="qc-box" id="qcNew" novalidate>
+      <h3>New campaign</h3>
+      <label class="mp-lbl">Name<input name="label" maxlength="80" required placeholder="e.g. Sponsor flyers – Zeva" /></label>
+      <label class="mp-lbl">Channel<select name="channel">
+        <option value="poster">Poster</option><option value="screen">Big screen</option><option value="social">Social media</option><option value="whatsapp">WhatsApp</option>
+        <option value="radio">Radio</option><option value="flyer">Flyer</option><option value="sponsor">Sponsor</option><option value="other">Other</option>
+      </select></label>
+      <label class="mp-lbl">Short code (optional)<input name="code" maxlength="12" placeholder="leave empty to make one up" autocapitalize="off" spellcheck="false" /></label>
+      <p class="qc-hint" id="qcCodeHint" aria-live="polite"></p>
+      <label class="mp-lbl">Notes (staff only)<input name="notes" maxlength="500" /></label>
+      <p class="qc-err" id="qcNewErr" role="alert"></p>
+      <button class="btn-p sm" type="submit">Create campaign</button>
+    </form>
+  </div>
+
+  <div class="qc-box" id="qcGen">
+    <h3>Advert generator: <span id="qcGenName"></span></h3>
+    <div class="qc-gen">
+      <div class="qc-controls">
+        <label class="mp-lbl">Campaign<select id="gCamp"></select></label>
+        <label class="mp-lbl">Format<select id="gFormat">
+          <option value="a4">A4 poster, portrait (2480 × 3508)</option>
+          <option value="square">Square social post (1080 × 1080)</option>
+          <option value="story">WhatsApp status / story (1080 × 1920)</option>
+          <option value="screen">Big screen (1920 × 1080)</option>
+        </select></label>
+        <label class="mp-lbl">Headline<input id="gHead" maxlength="60" value="Get today's Match Day Programme FREE" /></label>
+        <label class="mp-lbl">Subline<input id="gSub" maxlength="60" value="Scan. Sign in. Download." /></label>
+        <label class="qc-check"><input type="checkbox" id="gEver" /> Season evergreen (leave out the match, works all season)</label>
+        <label class="mp-lbl" id="gMatchWrap">Match<input id="gMatch" maxlength="60" /></label>
+        <label class="mp-lbl" id="gKickWrap">Kick-off line<input id="gKick" maxlength="60" /></label>
+        <p class="qc-guide" id="gGuide" aria-live="polite"></p>
+        <div class="mp-row">
+          <button type="button" class="btn-p sm" id="gPng">Download advert (PNG)</button>
+          <button type="button" class="btn-o sm" id="gSvg">Download QR only (SVG)</button>
+        </div>
+      </div>
+      <div class="qc-preview"><canvas id="gCanvas" aria-label="Advert preview"></canvas></div>
+    </div>
+    <div class="qc-test">
+      <h3>Scan test</h3>
+      <p>The QR code opens exactly: <code id="tUrl"></code></p>
+      <div class="mp-row"><a class="btn-o sm" id="tOpen" target="_blank" rel="noopener">Open link ↗</a><button type="button" class="btn-o sm" id="tCopy">Copy link</button></div>
+      <p class="mp-note"><b>Before printing in bulk:</b> print one copy at the real size and scan it with at least three different phones (an Android, an iPhone and an older phone), in the light where it will hang.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .qc .mp-lbl { display: grid; gap: 5px; font-size: 13px; font-weight: 700; color: var(--a-muted); }
+  .qc .mp-lbl input, .qc .mp-lbl select { min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); font: 400 15px 'Barlow', sans-serif; width: 100%; min-width: 0; box-sizing: border-box; }
+  .qc .mp-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+  .qc .sm { min-height: 38px; padding: 7px 14px; font-size: 13px; }
+  .qc :global(td:first-child) { min-width: 170px; }
+  .qc :global(td) { vertical-align: middle; }
+  .qc h3 { margin: 0 0 10px; font: 700 16px/1.2 'Barlow', sans-serif; color: var(--a-ink); }
+  .qc-filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .qc-inl { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--a-muted); }
+  .qc-inl select { min-height: 38px; border: 1px solid var(--a-line); border-radius: 10px; padding: 4px 8px; background: var(--a-card); color: var(--a-ink); font: 400 14px 'Barlow', sans-serif; }
+  .qc-best { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; font-weight: 600; }
+  :global(body.admin-dark) .qc-best { background: #12321F; color: #86EFAC; }
+  .qc :global(.qc-row-best) td { background: rgba(22, 163, 74, .07); }
+  .qc :global(.qc-qr) { width: 44px; height: 44px; display: block; background: #fff; border-radius: 4px; }
+  .qc :global(.qc-qr svg) { width: 100%; height: 100%; }
+  .qc :global(.qc-link) { display: flex; align-items: center; gap: 6px; white-space: nowrap; font: 600 13px ui-monospace, Menlo, monospace; }
+  .qc :global(.qc-link button), .qc :global(.qc-sel) { min-height: 30px; padding: 2px 8px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; font: 700 12px 'Barlow', sans-serif; }
+  .qc :global(.qc-off) td { opacity: .55; }
+  .qc :global(.qc-tog) { appearance: none; width: 38px; height: 22px; border-radius: 999px; background: #CBD2DA; position: relative; cursor: pointer; margin: 0; }
+  .qc :global(.qc-tog::after) { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s; }
+  .qc :global(.qc-tog:checked) { background: #16A34A; } .qc :global(.qc-tog:checked::after) { transform: translateX(16px); }
+  .qc :global(tr.qc-on) td { box-shadow: inset 3px 0 0 #E31E24; }
+  .qc-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; margin-top: 16px; }
+  .qc-box { border: 1px solid var(--a-line); border-radius: 14px; padding: 14px 16px; background: var(--a-card); min-width: 0; }
+  #qcGen { margin-top: 16px; }
+  #qcNew { display: grid; gap: 10px; align-content: start; }
+  .qc-hint { margin: -4px 0 0; font-size: 13px; color: var(--a-muted); }
+  .qc-hint.bad { color: #A3161B; font-weight: 700; }
+  .qc-err { margin: 0; color: #A3161B; font-weight: 700; font-size: 14px; }
+  .qc-err:empty { display: none; }
+  .qc :global(.qc-funnel) { width: 100%; height: auto; display: block; color: var(--a-ink); }
+  .qc-gen { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+  .qc-controls { display: grid; gap: 10px; }
+  .qc-check { display: flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+  .qc-check input { width: 18px; height: 18px; accent-color: #E31E24; }
+  .qc-guide { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--a-soft); font-size: 13px; line-height: 1.5; color: var(--a-ink); }
+  .qc-guide.warn { background: #FFF7E6; color: #7A4B00; }
+  .qc-preview { background: repeating-conic-gradient(var(--a-soft) 0 25%, transparent 0 50%) 0 0 / 20px 20px; border-radius: 12px; padding: 12px; display: flex; justify-content: center; align-items: center; min-height: 300px; }
+  .qc-preview canvas { max-width: 100%; max-height: 560px; height: auto; box-shadow: 0 10px 30px rgba(0,0,0,.25); border-radius: 4px; }
+  .qc-test { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--a-line); }
+  .qc-test code { font-size: 14px; overflow-wrap: anywhere; }
+  .qc [hidden] { display: none !important; }
+  @media (max-width: 960px) { .qc-grid, .qc-gen { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  import qrcode from 'qrcode-generator';
+
+  const SITE = 'https://lobistarsfc.com';
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'x-admin-code': code };
+  const $ = (id: string) => document.getElementById(id) as any;
+  const el = (tag: string, props: Record<string, any> = {}, ...kids: any[]) => {
+    const n: any = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) { if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v; else if (k.startsWith('on')) n.addEventListener(k.slice(2), v); else if (v !== undefined && v !== null && v !== false) n.setAttribute(k, v === true ? '' : v); }
+    for (const c of kids) if (c != null) n.append(c);
+    return n;
+  };
+  const RESERVED = ['admin', 'api', 'programme', 'p', 'scan', 'confirm', 'login'];
+  const CH: Record<string, string> = { poster: 'Poster', screen: 'Big screen', social: 'Social media', whatsapp: 'WhatsApp', radio: 'Radio', flyer: 'Flyer', sponsor: 'Sponsor', other: 'Other' };
+  const nf = (n: number) => Number(n || 0).toLocaleString('en-NG');
+  const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : '–');
+  const short = (c: string) => `lobistarsfc.com/p/${c}`;
+  const full = (c: string) => `${SITE}/p/${c}`;
+  let campaigns: any[] = [], programmes: any[] = [], selected: any = null, totals: any = null;
+  function toast(t: string, ok = true) { const m = $('msg'); if (!m) return alert(t); m.textContent = t; m.className = `mp-toast ${ok ? 'ok' : 'err'}`; m.hidden = false; setTimeout(() => { m.hidden = true; }, 5000); }
+  async function api(path: string, method = 'GET', body?: any) {
+    const r = await fetch(path, { method, headers: body ? { ...H, 'Content-Type': 'application/json' } : H, body: body ? JSON.stringify(body) : undefined, cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function qrFor(text: string) { const q = qrcode(0, 'Q'); q.addData(text); q.make(); return q; }
+  function rangeQuery() {
+    const r = $('qcRange').value, p = new URLSearchParams();
+    if (r === '7') p.set('from', new Date(Date.now() - 7 * 864e5).toISOString());
+    if (r === 'prog' && $('qcProg').value) p.set('programme', $('qcProg').value);
+    return p;
+  }
+  async function copy(text: string, what = 'Copied.') { try { await navigator.clipboard.writeText(text); toast(what); } catch { prompt('Copy this:', text); } }
+
+  // ── A) Campaign table ──
+  async function load() {
+    try {
+      const d = await api(`/api/admin/qr/campaigns?${rangeQuery()}`);
+      campaigns = d.campaigns; totals = d.totals;
+      // Best channel = most downloads (ties: better conversion).
+      const byCh: Record<string, { dl: number; scans: number }> = {};
+      for (const c of campaigns) { const x = byCh[c.channel] ||= { dl: 0, scans: 0 }; x.dl += c.counts.download; x.scans += c.counts.scan; }
+      const best = Object.entries(byCh).filter(([, v]) => v.dl > 0).sort((a, b) => b[1].dl - a[1].dl || (b[1].dl / (b[1].scans || 1)) - (a[1].dl / (a[1].scans || 1)))[0];
+      $('qcBest').hidden = !best;
+      if (best) $('qcBest').textContent = `Best-performing channel: ${CH[best[0]] || best[0]}, ${nf(best[1].dl)} downloads from ${nf(best[1].scans)} scans (${pct(best[1].dl, best[1].scans)}).`;
+      const rows = campaigns.map(c => {
+        const qr = qrFor(full(c.code));
+        const qrBox = el('span', { class: 'qc-qr', title: full(c.code) }); qrBox.innerHTML = qr.createSvgTag({ cellSize: 2, margin: 4, scalable: true }); // generated SVG only
+        const tog = el('input', { type: 'checkbox', class: 'qc-tog', role: 'switch', 'aria-label': `${c.label} active`, onchange: (e: any) => setActive(c, e.target.checked) });
+        tog.checked = !!c.is_active;
+        const tr = el('tr', { class: [c.is_active ? '' : 'qc-off', best && c.channel === best[0] ? 'qc-row-best' : '', selected && selected.id === c.id ? 'qc-on' : ''].join(' ') },
+          el('td', {}, el('b', { text: c.label }), el('div', { class: 'muted', text: CH[c.channel] || c.channel })),
+          el('td', {}, el('span', { class: 'qc-link' }, short(c.code), el('button', { type: 'button', text: 'Copy', onclick: () => copy(full(c.code), 'Link copied.') }))),
+          el('td', {}, qrBox),
+          el('td', { text: nf(c.counts.scan) }), el('td', { text: nf(c.counts.signin_completed) }), el('td', { text: nf(c.counts.download) }),
+          el('td', { text: nf(c.counts.read) }), el('td', { text: nf(c.newFans) }), el('td', { text: pct(c.counts.download, c.counts.scan) }),
+          el('td', {}, tog),
+          el('td', {}, el('button', { type: 'button', class: 'qc-sel', text: selected && selected.id === c.id ? 'Selected' : 'Select', onclick: () => select(c) })));
+        return tr;
+      });
+      $('qcTable').replaceChildren(el('table', {},
+        el('thead', {}, el('tr', {}, ...['Campaign', 'Short link', 'QR', 'Scans', 'Sign-ins', 'Downloads', 'Read online', 'New fans', 'Conversion', 'Active', ''].map(h => el('th', { text: h })))),
+        el('tbody', {}, ...rows)));
+      const gc = $('gCamp'), keep = gc.value;
+      gc.replaceChildren(...campaigns.filter(c => c.is_active || (selected && selected.id === c.id)).map(c => el('option', { value: String(c.id), text: `${c.label} (/p/${c.code})` })));
+      if (keep && [...gc.options].some((o: any) => o.value === keep)) gc.value = keep;
+      if (!selected && campaigns.length) selected = campaigns.find(c => c.code === 'gate') || campaigns[0];
+      if (selected) { selected = campaigns.find(c => c.id === selected.id) || selected; gc.value = String(selected.id); }
+      await funnel();
+      drawAdvert();
+    } catch (e: any) { $('qcTable').replaceChildren(el('p', { class: 'muted', text: e.message })); }
+  }
+  async function setActive(c: any, on: boolean) {
+    try { await api(`/api/admin/qr/campaigns/${c.id}`, 'PATCH', { is_active: on }); toast(on ? 'Campaign switched on.' : 'Campaign switched off. Its QR codes still work.'); load(); }
+    catch (e: any) { toast(e.message, false); load(); }
+  }
+  function select(c: any) { selected = c; $('gCamp').value = String(c.id); load(); }
+  $('gCamp').addEventListener('change', () => { const c = campaigns.find(x => String(x.id) === $('gCamp').value); if (c) select(c); });
+
+  // ── B) Funnel (SVG bars) ──
+  async function funnel() {
+    try {
+      const p = rangeQuery(); if (selected) p.set('campaign', String(selected.id));
+      const s = await api(`/api/admin/qr/stats?${p}`);
+      $('qcSelName').textContent = selected ? selected.label : 'all campaigns';
+      const steps = [['Scans', s.funnel.scan], ['Signed in', s.funnel.signin_completed], ['Downloaded', s.funnel.download], ['Read online', s.funnel.read]] as [string, number][];
+      const max = Math.max(1, steps[0][1], ...steps.map(x => x[1]));
+      const NS = 'http://www.w3.org/2000/svg', W = 560, row = 46;
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', `0 0 ${W} ${steps.length * row + 6}`); svg.setAttribute('class', 'qc-funnel'); svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', steps.map(([l, n]) => `${l}: ${n}`).join(', '));
+      const add = (tag: string, attrs: Record<string, any>, text?: string) => { const n = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v)); if (text != null) n.textContent = text; svg.append(n); };
+      const colors = ['#0EA5E9', '#8B5CF6', '#16A34A', '#F59E0B'];
+      steps.forEach(([label, n], i) => {
+        const y = i * row + 4, w = Math.max(3, Math.round((n / max) * 330));
+        add('text', { x: 0, y: y + 24, 'font-size': 14, 'font-weight': 700, fill: 'currentColor' }, label);
+        add('rect', { x: 110, y: y + 6, width: w, height: 26, rx: 6, fill: colors[i] });
+        const prev = i ? steps[i - 1][1] : 0;
+        const drop = prev ? Math.max(0, 100 - Math.round((n / prev) * 100)) : 0;
+        const tail = i === 0 ? nf(n) : `${nf(n)}  (${pct(n, steps[0][1])} of scans${i < 3 && drop ? `, ${drop}% drop from the step before` : ''})`;
+        add('text', { x: 118 + w, y: y + 24, 'font-size': 13, fill: 'currentColor' }, tail);
+      });
+      $('qcFunnel').replaceChildren(svg);
+      const dev = Object.entries(s.devices).map(([k, v]) => `${k} ${pct(v as number, s.funnel.scan)}`).join(', ');
+      $('qcFunnelNote').textContent = `Conversion (downloads ÷ scans): ${pct(s.funnel.download, s.funnel.scan)}. New fans gained: ${nf(s.newFans)}. Devices: ${dev || '–'}. Opened inside Facebook/Instagram/TikTok etc.: ${pct(Math.round(s.inAppShare * s.funnel.scan), s.funnel.scan)}. Landings: ${nf(s.funnel.landing)}, sign-ins started: ${nf(s.funnel.signin_started)}.`;
+    } catch (e: any) { $('qcFunnel').replaceChildren(el('p', { class: 'muted', text: e.message })); }
+  }
+
+  // ── C) New campaign ──
+  const form = $('qcNew');
+  function codeCheck() {
+    const v = form.elements.code.value.trim().toLowerCase();
+    const hint = $('qcCodeHint');
+    let bad = '';
+    if (v && !/^[a-z0-9-]{3,12}$/.test(v)) bad = '3 to 12 characters: lowercase letters, numbers or -';
+    else if (RESERVED.includes(v)) bad = `"${v}" is reserved`;
+    else if (v && campaigns.some(c => c.code === v)) bad = `"${v}" is already used`;
+    hint.classList.toggle('bad', !!bad);
+    if (bad) hint.textContent = bad;
+    else hint.replaceChildren('The link will be lobistarsfc.com/p/', el('b', { text: v || '(made up for you)' }));
+    return !bad;
+  }
+  form.elements.code.addEventListener('input', codeCheck);
+  form.addEventListener('submit', async (e: Event) => {
+    e.preventDefault(); $('qcNewErr').textContent = '';
+    if (!form.elements.label.value.trim()) { $('qcNewErr').textContent = 'Please give the campaign a name.'; return; }
+    if (!codeCheck()) return;
+    try {
+      const r = await api('/api/admin/qr/campaigns', 'POST', { label: form.elements.label.value, channel: form.elements.channel.value, code: form.elements.code.value.trim().toLowerCase(), notes: form.elements.notes.value });
+      toast(`Created: ${short(r.campaign.code)}`); form.reset(); codeCheck(); selected = r.campaign; load();
+    } catch (err: any) { $('qcNewErr').textContent = err.message; }
+  });
+  codeCheck();
+
+  // ── D) Advert generator ──
+  const FORMATS: Record<string, { w: number; h: number; name: string; mmWide?: number }> = {
+    a4: { w: 2480, h: 3508, name: 'a4-poster', mmWide: 210 }, square: { w: 1080, h: 1080, name: 'square' },
+    story: { w: 1080, h: 1920, name: 'whatsapp-status' }, screen: { w: 1920, h: 1080, name: 'big-screen' },
+  };
+  const crest = new Image(); crest.src = '/images/lobi-stars-badge.png'; crest.onload = () => drawAdvert();
+  function wrap(g: CanvasRenderingContext2D, text: string, maxW: number) {
+    const words = text.split(/\s+/), lines: string[] = []; let line = '';
+    for (const w of words) { const t = line ? `${line} ${w}` : w; if (g.measureText(t).width > maxW && line) { lines.push(line); line = w; } else line = t; }
+    if (line) lines.push(line); return lines;
+  }
+  function drawQr(g: CanvasRenderingContext2D, text: string, x: number, y: number, size: number) {
+    const q = qrFor(text), n = q.getModuleCount(), quiet = 4, cell = size / (n + quiet * 2);
+    g.fillStyle = '#FFFFFF'; g.fillRect(x, y, size, size);
+    g.fillStyle = '#111111';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) g.fillRect(Math.floor(x + (c + quiet) * cell), Math.floor(y + (r + quiet) * cell), Math.ceil(cell), Math.ceil(cell));
+  }
+  function drawAdvert() {
+    try {
+      const c = selected; if (!c) return;
+      $('qcGenName').textContent = c.label;
+      const f = FORMATS[$('gFormat').value], cv = $('gCanvas') as HTMLCanvasElement, g = cv.getContext('2d')!;
+      cv.width = f.w; cv.height = f.h;
+      const url = full(c.code), ever = $('gEver').checked;
+      $('gMatchWrap').hidden = ever; $('gKickWrap').hidden = ever;
+      $('tUrl').textContent = url; $('tOpen').href = url;
+      // Background: club red to near-black, gold accent bar.
+      const grad = g.createLinearGradient(0, 0, f.w * 0.4, f.h); grad.addColorStop(0, '#E31E24'); grad.addColorStop(1, '#3A0A0C');
+      g.fillStyle = grad; g.fillRect(0, 0, f.w, f.h);
+      g.fillStyle = '#15181D'; g.fillRect(0, f.h * 0.94, f.w, f.h * 0.06);
+      g.fillStyle = '#FFC72C'; g.fillRect(0, f.h * 0.94, f.w, Math.max(4, f.h * 0.006));
+      const landscape = f.w > f.h, U = Math.min(f.w, f.h) / 100;
+      const head = $('gHead').value.trim() || "Get today's Match Day Programme FREE", sub = $('gSub').value.trim();
+      const match = ever ? '' : $('gMatch').value.trim(), kick = ever ? '' : $('gKick').value.trim();
+      let qrSize: number;
+      if (!landscape) {
+        // QR size first (share of the width per format), then the text is scaled to fit above it.
+        const share = $('gFormat').value === 'a4' ? 0.56 : $('gFormat').value === 'story' ? 0.66 : 0.44;
+        qrSize = f.w * share;
+        const qy = f.h * 0.915 - U * 9 - qrSize, pad = f.w * 0.08, maxW = f.w - pad * 2, top = f.h * 0.04;
+        const text = (k: number, draw: boolean, start = top) => {
+          let y = start; const cs = U * 14 * k;
+          if (draw && crest.complete && crest.naturalWidth) g.drawImage(crest, (f.w - cs) / 2, y, cs, cs);
+          y += cs + U * 2.5 * k;
+          g.textAlign = 'center'; g.textBaseline = 'top';
+          g.fillStyle = '#FFFFFF'; g.font = `400 ${U * 6 * k}px "Bebas Neue", Impact, sans-serif`; if (draw) g.fillText('LOBI STARS FC', f.w / 2, y); y += U * 7.5 * k;
+          g.font = `400 ${U * 10 * k}px "Bebas Neue", Impact, sans-serif`;
+          for (const l of wrap(g, head.toUpperCase(), maxW)) { if (draw) g.fillText(l, f.w / 2, y); y += U * 10 * k; }
+          if (sub) { g.fillStyle = '#FFC72C'; g.font = `700 ${U * 4.6 * k}px Barlow, Arial, sans-serif`; if (draw) g.fillText(sub, f.w / 2, y + U * k); y += U * 7 * k; }
+          if (match) { g.fillStyle = '#FFFFFF'; g.font = `700 ${U * 4.2 * k}px Barlow, Arial, sans-serif`; if (draw) g.fillText(match, f.w / 2, y + U * k); y += U * 5.5 * k; }
+          if (kick) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `400 ${U * 3.6 * k}px Barlow, Arial, sans-serif`; if (draw) g.fillText(kick, f.w / 2, y + U * k); y += U * 5 * k; }
+          return y - start;
+        };
+        const room = qy - U * 4 - top, k = Math.max(0.5, Math.min(1, room / text(1, false)));
+        const used = text(k, false);
+        text(k, true, top + Math.max(0, (room - used) / 2));
+        const x = (f.w - qrSize) / 2;
+        g.fillStyle = '#FFFFFF'; roundRect(g, x - U * 2, qy - U * 2, qrSize + U * 4, qrSize + U * 4, U * 2.5); g.fill();
+        drawQr(g, url, x, qy, qrSize);
+        g.fillStyle = '#FFFFFF'; g.textAlign = 'center'; g.font = `700 ${U * 3.8}px Barlow, Arial, sans-serif`;
+        g.fillText('or visit lobistarsfc.com/programme', f.w / 2, qy + qrSize + U * 4);
+      } else {
+        const pad = f.w * 0.06; qrSize = f.h * 0.64;
+        const qx = f.w - pad - qrSize, qy = (f.h * 0.94 - qrSize) / 2 - f.h * 0.03;
+        let y = f.h * 0.1; const maxW = qx - pad * 2;
+        const cs = U * 16; if (crest.complete && crest.naturalWidth) g.drawImage(crest, pad, y, cs, cs);
+        g.fillStyle = '#FFFFFF'; g.textAlign = 'left'; g.textBaseline = 'top';
+        g.font = `400 ${U * 7}px "Bebas Neue", Impact, sans-serif`; g.fillText('LOBI STARS FC', pad + cs + U * 3, y + cs / 2 - U * 3.5);
+        y += cs + U * 4;
+        g.font = `400 ${U * 11}px "Bebas Neue", Impact, sans-serif`;
+        for (const l of wrap(g, head.toUpperCase(), maxW)) { g.fillText(l, pad, y); y += U * 11; }
+        if (sub) { g.fillStyle = '#FFC72C'; g.font = `700 ${U * 5}px Barlow, Arial, sans-serif`; g.fillText(sub, pad, y + U * 1.5); y += U * 8; }
+        if (match) { g.fillStyle = '#FFFFFF'; g.font = `700 ${U * 4.6}px Barlow, Arial, sans-serif`; g.fillText(match, pad, y + U); y += U * 6; }
+        if (kick) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = `400 ${U * 4}px Barlow, Arial, sans-serif`; g.fillText(kick, pad, y + U); }
+        g.fillStyle = '#FFFFFF'; roundRect(g, qx - U * 2, qy - U * 2, qrSize + U * 4, qrSize + U * 4, U * 2.5); g.fill();
+        drawQr(g, url, qx, qy, qrSize);
+        g.textAlign = 'center'; g.fillStyle = '#FFFFFF'; g.font = `700 ${U * 4}px Barlow, Arial, sans-serif`;
+        g.fillText('or visit lobistarsfc.com/programme', qx + qrSize / 2, qy + qrSize + U * 3.5);
+      }
+      guidance(f, qrSize);
+    } catch (e) { console.error('[qr] advert', e); }
+  }
+  function roundRect(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+    g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
+  }
+  function guidance(f: any, qrPx: number) {
+    const box = $('gGuide'); let warn = false, t = '';
+    if (f.mmWide) {
+      const cm = (qrPx / f.w) * f.mmWide / 10;
+      t = `Printed on A4 the QR code is about ${cm.toFixed(1)} cm wide. Guide: about 3 cm for flyers scanned up close, 10 cm or more for posters read from 1 to 2 metres; print bigger (A3/A2) for longer distances.`;
+      warn = cm < 10;
+      if (warn) t += ' This is a little small for a wall poster: print on A3 or shorten the headline.';
+    } else if ($('gFormat').value === 'screen') {
+      const share = qrPx / f.h;
+      t = `The QR code fills ${Math.round(share * 100)}% of the screen height. On a stadium big screen keep it at least 40% and show it for 15 seconds or more; test from the far stand.`;
+      warn = share < 0.4;
+    } else t = 'For phones: fans scan this from another phone or screenshot it; the QR code is large enough. Keep the image uncropped when posting.';
+    box.textContent = t; box.classList.toggle('warn', warn);
+  }
+  ['gFormat', 'gHead', 'gSub', 'gMatch', 'gKick', 'gEver'].forEach(id => $(id).addEventListener('input', drawAdvert));
+  $('gEver').addEventListener('change', drawAdvert);
+  function save(blob: Blob, name: string) { const a = el('a', { href: URL.createObjectURL(blob), download: name }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 20000); }
+  $('gPng').addEventListener('click', () => {
+    if (!selected) return;
+    ($('gCanvas') as HTMLCanvasElement).toBlob(b => b && save(b, `lobi-stars-programme-${selected.code}-${FORMATS[$('gFormat').value].name}.png`), 'image/png');
+  });
+  $('gSvg').addEventListener('click', () => {
+    if (!selected) return;
+    save(new Blob([qrFor(full(selected.code)).createSvgTag({ cellSize: 10, margin: 4 })], { type: 'image/svg+xml' }), `lobi-stars-qr-${selected.code}.svg`);
+  });
+  $('tCopy').addEventListener('click', () => selected && copy(full(selected.code), 'Link copied.'));
+
+  // Match line from the current or next programme.
+  async function fillMatch() {
+    try {
+      const d = await api('/api/admin/programmes');
+      programmes = d.programmes || [];
+      $('qcProg').replaceChildren(...programmes.map((p: any) => el('option', { value: String(p.id), text: p.title })));
+      const now = Date.now();
+      const next = programmes.filter((p: any) => p.kickoff_at && new Date(p.kickoff_at).getTime() > now - 6 * 3600e3).sort((a: any, b: any) => +new Date(a.kickoff_at) - +new Date(b.kickoff_at))[0] || programmes[0];
+      if (next) {
+        $('gMatch').value = next.title;
+        $('qcProg').value = String(next.id);
+        if (next.kickoff_at) $('gKick').value = 'Kick-off ' + new Date(next.kickoff_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' (WAT)';
+      }
+    } catch (e) { console.error(e); }
+  }
+  $('qcRange').addEventListener('change', () => { $('qcProgWrap').hidden = $('qcRange').value !== 'prog'; load(); });
+  $('qcProg').addEventListener('change', load);
+
+  // ── F) Sponsor summary (totals only, no personal data) ──
+  $('qcSummary').addEventListener('click', async () => {
+    try {
+      const s = await api(`/api/admin/qr/stats?${rangeQuery()}`);
+      const r = $('qcRange').value, range = r === '7' ? 'last 7 days' : r === 'prog' ? `programme: ${$('qcProg').selectedOptions[0]?.textContent || ''}` : 'all time';
+      copy(`Match Day Programme campaign (${range}): ${nf(s.funnel.scan)} scans, ${nf(s.funnel.signin_completed)} signed in, ${nf(s.funnel.download)} downloads, ${nf(s.funnel.read)} read online, ${nf(s.newFans)} new fans.`, 'Summary copied.');
+    } catch (e: any) { toast(e.message, false); }
+  });
+
+  (async () => {
+    await fillMatch();
+    // The advert uses the site fonts; wait for them (at most 2 seconds).
+    try { if (document.fonts) await Promise.race([Promise.all([document.fonts.load('400 40px "Bebas Neue"'), document.fonts.load('700 20px Barlow')]), new Promise(r => setTimeout(r, 2000))]); } catch {}
+    load();
+  })();
+</script>

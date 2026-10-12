@@ -69,8 +69,8 @@ STAFF-GUIDE section 26 (Admin → Matchday → Fan Match Alerts).
 
 In **Admin → Matchday → Matchday Programme**, press **+ New programme**, pick the
 fixture, upload the 4-page PDF, add quick links and choose **Schedule → 24 hours
-before kick-off** (or Publish now). Print the A4 QR poster for the gates and
-put the QR code on the big screen. Full steps: STAFF-GUIDE section 28.
+before kick-off** (or Publish now). Make the adverts in **QR advert campaigns**: an A4 poster for the gates
+(campaign gate), the big-screen slide (screen) and a WhatsApp status (status). Full steps: STAFF-GUIDE section 28.
 
 ## 1b. About 30 minutes before kick-off (optional)
 

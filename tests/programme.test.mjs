@@ -97,7 +97,7 @@ test('fan sign-in by code: same reply for any email, wrong codes, 5 tries, rate 
   assert.equal((await api('/api/fan/auth/request', 'POST', { email }, { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip })).status, 403, 'no Origin');
   assert.equal((await api('/api/fan/auth/request', 'POST', { email: 'bad' }, H)).status, 400);
   const r1 = await api('/api/fan/auth/request', 'POST', { email }, H);
-  assert.deepEqual(Object.keys(r1.data).filter(k => k !== 'devCode'), ['ok']);
+  assert.deepEqual(Object.keys(r1.data).filter(k => !['devCode', 'devLink'].includes(k)), ['ok']);
   for (let i = 0; i < 5; i++) {
     const v = await api('/api/fan/auth/verify', 'POST', { email, code: r1.data.devCode === '000000' ? '111111' : '000000' }, H);
     assert.equal(v.status, 400);

@@ -1,0 +1,329 @@
+---
+// The QR advert journey, from a scan to a signed-in PDF download as fast as
+// possible.
+//   mode="scan"    /programme/scan/?c=<campaign>  (where every /p/<code> lands)
+//   mode="confirm" /programme/confirm/?e=&t=&src=&intent=  (the button in the
+//                  sign-in email; nothing happens until the fan taps, because
+//                  email scanners open links on their own)
+// The sign-in steps run on the page (no reloads) and are remembered in this
+// tab, so a fan can switch to their email app and come back.
+import settings from '../../data/fan-settings.json';
+interface Props { mode?: 'scan' | 'confirm' }
+const { mode = 'scan' } = Astro.props;
+---
+<div id="app" data-mode={mode} data-sitekey={settings.turnstileSiteKey || ''}>
+  <div class="note" id="inApp" hidden role="note">For the best experience, open this page in Chrome or Safari.<br /><button type="button" id="copyLink">Copy link</button> <span id="copied" aria-live="polite"></span></div>
+  <p class="err" id="topErr" role="alert"></p>
+
+  <section class="card" id="sLoading"><p class="muted">Loading the programme…</p></section>
+
+  <section class="card" id="sLive" hidden aria-labelledby="liveTitle">
+    <div class="match"><img id="cover" alt="" width="86" height="122" /><div><h1 id="liveTitle"></h1><p class="muted" id="liveKick"></p></div></div>
+    <button type="button" class="btn" id="dlBtn">Download PDF</button>
+    <button type="button" class="btn alt" id="readBtn">Read online</button>
+    <p class="small" id="liveNote">Free for fans. We'll email you a code, no password needed.</p>
+  </section>
+
+  <section class="card" id="sSoon" hidden aria-labelledby="soonTitle">
+    <h1 id="soonTitle">Match Day Programme</h1>
+    <p>The programme drops in</p>
+    <p class="count" id="count" aria-live="polite"></p>
+    <button type="button" class="btn" id="regBtn">Register now, so it downloads in one tap when it's live</button>
+  </section>
+
+  <section class="card" id="sNone" hidden>
+    <h1>Match Day Programme</h1>
+    <p>The next programme is coming soon.</p>
+    <button type="button" class="btn" id="regBtn2">Register now, so it downloads in one tap when it's live</button>
+  </section>
+
+  <section class="card ok" id="sIn" hidden>
+    <h2>You're in!</h2>
+    <p>Come back when the countdown ends and the programme downloads in one tap.</p>
+    <p class="count" id="count2" aria-live="polite"></p>
+  </section>
+
+  <section class="card" id="sConfirm" hidden>
+    <h1>Tap to continue</h1>
+    <p>Sign in to Lobi Stars FC and get the match day programme.</p>
+    <button type="button" class="btn" id="confirmBtn">Continue</button>
+  </section>
+
+  <section class="card" id="sExpired" hidden>
+    <h2>This link has expired</h2>
+    <p>Sign-in links work once and for 10 minutes. Get a new one in a few seconds.</p>
+    <a class="btn" id="newCode" href="/programme/scan/">Send me a new code</a>
+  </section>
+
+  <form class="card" id="fEmail" hidden novalidate>
+    <h2>Get it free</h2>
+    <label for="email">Your email address</label>
+    <input id="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required />
+    <div id="ts" style="margin-top:12px"></div>
+    <p class="err" id="eErr" role="alert" aria-live="assertive"></p>
+    <button type="submit" class="btn" style="margin-top:12px">Send me a code</button>
+    <p class="small">By continuing you agree to our <a href="/terms/">Terms</a> and <a href="/privacy/#programme">Privacy Notice</a>.</p>
+  </form>
+
+  <form class="card" id="fCode" hidden novalidate>
+    <h2>Check your email</h2>
+    <p>We sent a 6-digit code to <b id="sentTo"></b>.</p>
+    <label for="code">Your code</label>
+    <input id="code" class="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" required />
+    <p class="err" id="cErr" role="alert" aria-live="assertive"></p>
+    <button type="submit" class="btn" style="margin-top:12px">Sign in</button>
+    <p class="small">Check spam or promotions. Or tap the button in the email to sign in with one tap.</p>
+    <button type="button" class="link" id="resend" disabled>Resend code</button>
+    <button type="button" class="link" id="other" style="float:right">Use a different email</button>
+  </form>
+
+  <form class="card" id="fProfile" hidden novalidate>
+    <h2>Nearly done</h2>
+    <label for="first">First name</label>
+    <input id="first" type="text" autocomplete="given-name" maxlength="60" required />
+    <label for="phone">Phone (optional)</label>
+    <input id="phone" type="tel" autocomplete="tel" inputmode="tel" maxlength="20" placeholder="0803 123 4567" />
+    <label class="check"><input type="checkbox" id="news" /> <span>Send me club news and match day programme alerts</span></label>
+    <p class="err" id="pErr" role="alert" aria-live="assertive"></p>
+    <button type="submit" class="btn">Continue</button>
+  </form>
+
+  <section class="card ok" id="sDone" hidden aria-live="polite">
+    <h2 id="doneTitle">Your programme is downloading</h2>
+    <p id="doneText">It will be in your downloads in a moment.</p>
+    <a class="btn" id="again" href="#">Tap here if it didn't start</a>
+    <a class="btn alt" id="doneRead" href="/programme/">Read online</a>
+    <p class="small" id="iosHint" hidden>On iPhone: tap Share, then Save to Files.</p>
+  </section>
+</div>
+
+<script is:inline>
+(function () {
+  var app = document.getElementById('app');
+  var MODE = app.dataset.mode, SITEKEY = app.dataset.sitekey;
+  var $ = function (id) { return document.getElementById(id); };
+  var q = new URLSearchParams(location.search);
+  var valid = function (v) { return /^[a-z0-9-]{1,20}$/.test(v || '') ? v : null; };
+  var src = valid(MODE === 'confirm' ? q.get('src') : q.get('c'));
+  var store = {
+    get: function (k) { try { return JSON.parse(sessionStorage.getItem(k)); } catch (e) { return null; } },
+    set: function (k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+    del: function (k) { try { sessionStorage.removeItem(k); } catch (e) {} },
+  };
+  if (src) { try { sessionStorage.setItem('ls_prog_src', src); } catch (e) {} }
+  else { try { src = valid(sessionStorage.getItem('ls_prog_src')); } catch (e) {} }
+  var ua = navigator.userAgent || '';
+  var IN_APP = /FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|Snapchat|TikTok|Twitter|musical_ly/.test(ua);
+  var IOS = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var cur = null, me = { signedIn: false }, data = null, flow = store.get('ls_scan_flow') || {}, timer = null, tsId = null;
+  var SECTIONS = ['sLoading', 'sLive', 'sSoon', 'sNone', 'sIn', 'sConfirm', 'sExpired', 'fEmail', 'fCode', 'fProfile', 'sDone'];
+
+  function show(id, focus) {
+    SECTIONS.forEach(function (s) { $(s).hidden = s !== id; });
+    var el = $(id);
+    var f = focus && (el.querySelector('input:not([type=checkbox])') || el.querySelector('h1,h2'));
+    if (f) { if (!/INPUT/.test(f.tagName)) f.tabIndex = -1; setTimeout(function () { try { f.focus(); } catch (e) {} }, 30); }
+  }
+  function save(step) { flow.step = step; store.set('ls_scan_flow', flow); }
+  function err(id, t) { $(id).textContent = t || ''; }
+  function busy(form, on) { var b = form.querySelector('button[type=submit]'); if (b) b.disabled = on; }
+  function mb(n) { return !n ? '' : n < 1048576 ? ' (' + Math.max(1, Math.round(n / 1024)) + ' KB)' : ' (' + (n / 1048576).toFixed(1) + ' MB)'; }
+  async function post(path, body) {
+    var r = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    var d = await r.json().catch(function () { return {}; });
+    return { ok: r.ok, status: r.status, d: d };
+  }
+  function wat(iso) {
+    var d = new Date(iso), o = { timeZone: 'Africa/Lagos' };
+    return d.toLocaleDateString('en-GB', Object.assign({ weekday: 'short', day: 'numeric', month: 'short' }, o)) + ', ' + d.toLocaleTimeString('en-GB', Object.assign({ hour: '2-digit', minute: '2-digit' }, o)) + ' (WAT)';
+  }
+  function countdown(publishAt, serverTime) {
+    var skew = new Date(serverTime).getTime() - Date.now();
+    clearInterval(timer);
+    function tick() {
+      var ms = new Date(publishAt).getTime() - (Date.now() + skew);
+      if (ms <= 0) { clearInterval(timer); location.reload(); return; }
+      var m = Math.floor(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60);
+      var t = d > 0 ? d + 'd ' + h + 'h' : h > 0 ? h + 'h ' + (m % 60) + 'm' : Math.max(1, m) + 'm';
+      $('count').textContent = t; $('count2').textContent = t;
+    }
+    tick(); timer = setInterval(tick, 30000);
+  }
+  function downloadUrl() { return '/api/programme/' + encodeURIComponent(cur.slug) + '/download' + (src ? '?src=' + src : ''); }
+  function readUrl(slug) { return '/programme/read/?slug=' + encodeURIComponent(slug || cur.slug) + (src ? '&src=' + src : ''); }
+
+  // After sign-in (or already signed in): do what the fan asked for. `tapped`
+  // = the fan pressed the button just now; otherwise the download starts by
+  // itself unless "auto-download after sign-in" is switched off.
+  function finish(intent, tapped) {
+    store.del('ls_scan_flow'); flow = {};
+    if (!cur) { show('sIn', true); return; }
+    if (intent === 'read') { location.href = readUrl(); return; }
+    if (!tapped && data && data.scanAutoDownload === false) { me.signedIn = true; me.needsProfile = false; render(); return; }
+    var url = downloadUrl();
+    $('again').href = url;
+    $('doneRead').href = readUrl();
+    $('iosHint').hidden = !IOS;
+    show('sDone', true);
+    location.href = url; // a plain navigation works for the PDF attachment, even in in-app browsers
+  }
+
+  // ── Sign-in ──
+  function loadTurnstile() {
+    if (!SITEKEY || window.turnstile) return Promise.resolve();
+    return new Promise(function (resolve) {
+      window.__tsReady = resolve;
+      var s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=__tsReady';
+      s.async = true; s.onerror = function () { resolve(); };
+      document.head.appendChild(s);
+      setTimeout(resolve, 8000);
+    });
+  }
+  async function startSignIn(intent) {
+    flow = { step: 'email', intent: intent, email: flow.email || '' };
+    save('email');
+    $('email').value = flow.email || '';
+    show('fEmail', true);
+    try {
+      await loadTurnstile();
+      if (SITEKEY && window.turnstile && tsId === null) tsId = window.turnstile.render('#ts', { sitekey: SITEKEY });
+    } catch (e) { console.error('[scan] turnstile', e); }
+  }
+  function resendTimer() {
+    var b = $('resend'), left = 60; b.disabled = true; b.textContent = 'Resend code (60s)';
+    clearInterval(resendTimer.t);
+    resendTimer.t = setInterval(function () { left--; b.textContent = left > 0 ? 'Resend code (' + left + 's)' : 'Resend code'; if (left <= 0) { clearInterval(resendTimer.t); b.disabled = false; } }, 1000);
+  }
+  async function sendCode() {
+    var token = '';
+    try { if (window.turnstile && tsId !== null) token = window.turnstile.getResponse(tsId) || ''; } catch (e) {}
+    var r = await post('/api/fan/auth/request', { email: flow.email, turnstileToken: token, src: src, intent: flow.intent, next: cur ? readUrl() : '/programme/' });
+    try { if (window.turnstile && tsId !== null) window.turnstile.reset(tsId); } catch (e) {}
+    if (r.d && r.d.devCode) console.info('Local test code: ' + r.d.devCode + ' | link: ' + r.d.devLink);
+    return r;
+  }
+  $('fEmail').addEventListener('submit', async function (e) {
+    e.preventDefault(); err('eErr');
+    var email = String($('email').value || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { err('eErr', 'Please enter a valid email address.'); $('email').focus(); return; }
+    flow.email = email; busy(this, true);
+    try {
+      var r = await sendCode();
+      if (!r.ok) { err('eErr', r.d.error || 'Something went wrong. Please try again.'); return; }
+      $('sentTo').textContent = email; $('code').value = '';
+      save('code'); show('fCode', true); resendTimer();
+    } catch (x) { console.error(x); err('eErr', 'No connection. Please try again.'); }
+    finally { busy(this, false); }
+  });
+  $('code').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 6); if (this.value.length === 6) $('fCode').requestSubmit(); });
+  $('fCode').addEventListener('submit', async function (e) {
+    e.preventDefault(); err('cErr');
+    var code = $('code').value.replace(/\D/g, '');
+    if (code.length !== 6) { err('cErr', 'Enter the 6 digits from the email.'); return; }
+    busy(this, true);
+    try {
+      var r = await post('/api/fan/auth/verify', { email: flow.email, code: code, src: src, next: cur ? readUrl() : '/programme/' });
+      if (!r.ok) { err('cErr', r.d.error || "That code didn't work. Check it or request a new one."); return; }
+      if (r.d.needsProfile) { save('profile'); show('fProfile', true); } else finish(flow.intent);
+    } catch (x) { console.error(x); err('cErr', 'No connection. Please try again.'); }
+    finally { busy(this, false); }
+  });
+  $('resend').addEventListener('click', async function () {
+    err('cErr');
+    try { var r = await sendCode(); if (!r.ok) err('cErr', r.d.error || 'Could not send a new code.'); else resendTimer(); }
+    catch (x) { console.error(x); err('cErr', 'No connection. Please try again.'); }
+  });
+  $('other').addEventListener('click', function () { save('email'); $('email').value = ''; show('fEmail', true); });
+  $('fProfile').addEventListener('submit', async function (e) {
+    e.preventDefault(); err('pErr');
+    var first = $('first').value.trim();
+    if (!first) { err('pErr', 'Please enter your first name.'); $('first').focus(); return; }
+    busy(this, true);
+    try {
+      var r = await post('/api/fan/auth/profile', { firstName: first, phone: $('phone').value, marketingConsent: $('news').checked });
+      if (!r.ok) { var es = r.d.errors || {}; err('pErr', es.firstName || es.phone || r.d.error || 'Please check your details.'); return; }
+      finish(flow.intent);
+    } catch (x) { console.error(x); err('pErr', 'No connection. Please try again.'); }
+    finally { busy(this, false); }
+  });
+
+  // ── Buttons on the programme card ──
+  function want(intent) {
+    if (me.signedIn && !me.needsProfile) { finish(intent, true); return; }
+    if (me.signedIn && me.needsProfile) { flow = { intent: intent }; save('profile'); show('fProfile', true); return; }
+    startSignIn(intent);
+  }
+  $('dlBtn').addEventListener('click', function () { want('download'); });
+  $('readBtn').addEventListener('click', function () { want('read'); });
+  $('regBtn').addEventListener('click', function () { want('download'); });
+  $('regBtn2').addEventListener('click', function () { want('download'); });
+  $('copyLink').addEventListener('click', async function () {
+    var link = location.origin + '/programme/scan/' + (src ? '?c=' + src : '');
+    try { await navigator.clipboard.writeText(link); $('copied').textContent = 'Copied. Paste it in Chrome or Safari.'; }
+    catch (e) { $('copied').textContent = link; }
+  });
+
+  function render() {
+    if (data && data.programme) {
+      cur = data.programme;
+      $('liveTitle').textContent = cur.title;
+      $('liveKick').textContent = cur.kickoffAt ? 'Kick-off ' + wat(cur.kickoffAt) : '';
+      if (cur.coverUrl) { $('cover').src = cur.coverUrl; $('cover').alt = 'Programme cover'; } else $('cover').hidden = true;
+      $('dlBtn').textContent = 'Download PDF' + mb(cur.pdfSizeBytes);
+      if (me.signedIn && !me.needsProfile) $('liveNote').textContent = me.email ? 'Signed in as ' + me.email + '.' : 'You are signed in.';
+      if (IN_APP) { $('readBtn').className = 'btn safe'; $('dlBtn').className = 'btn alt'; }
+      show('sLive');
+    } else if (data && data.upcoming) {
+      $('soonTitle').textContent = data.upcoming.title;
+      countdown(data.upcoming.publishAt, data.serverTime);
+      if (me.signedIn && !me.needsProfile) show('sIn'); else show('sSoon');
+    } else show(me.signedIn && !me.needsProfile ? 'sIn' : 'sNone');
+  }
+  function resume() {
+    // Back from the email app: carry on where the fan was.
+    if (flow.step === 'code' && flow.email) { $('sentTo').textContent = flow.email; show('fCode', true); $('resend').disabled = false; return true; }
+    if (flow.step === 'profile' && me.signedIn) { show('fProfile', true); return true; }
+    if (flow.step === 'email') { $('email').value = flow.email || ''; startSignIn(flow.intent || 'download'); return true; }
+    return false;
+  }
+
+  async function start() {
+    $('inApp').hidden = !IN_APP;
+    var msgs = { signin: 'Please sign in again to download.', limit: 'You have downloaded this a lot in the last hour. Please try again later.', gone: 'That programme is no longer available.' };
+    if (q.get('e') && msgs[q.get('e')]) err('topErr', msgs[q.get('e')]);
+    try {
+      var res = await Promise.all([
+        fetch('/api/programme/current', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; }),
+        fetch('/api/fan/me', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return { signedIn: false }; }),
+      ]);
+      data = res[0] && res[0].enabled ? res[0] : null; me = res[1] || { signedIn: false };
+      if (data && data.programme) cur = data.programme;
+    } catch (e) { console.error('[scan] load', e); }
+
+    if (MODE === 'confirm') {
+      var email = q.get('e'), token = q.get('t'), intent = q.get('intent') === 'read' ? 'read' : 'download';
+      $('newCode').href = '/programme/scan/' + (src ? '?c=' + src : '');
+      if (!email || !token) { show('sExpired', true); return; }
+      flow = { intent: intent, email: email };
+      show('sConfirm', true);
+      $('confirmBtn').addEventListener('click', async function () {
+        var b = this; b.disabled = true; b.textContent = 'Signing in…';
+        try {
+          var r = await post('/api/fan/auth/verify-link', { email: email, token: token, src: src, intent: intent });
+          if (!r.ok) { store.set('ls_scan_flow', { step: 'email', email: email, intent: intent }); show('sExpired', true); return; }
+          if (r.d.slug && (!cur || cur.slug !== r.d.slug)) cur = { slug: r.d.slug };
+          if (r.d.needsProfile) { save('profile'); show('fProfile', true); } else finish(intent);
+        } catch (x) { console.error(x); err('topErr', 'No connection. Please try again.'); }
+        finally { b.disabled = false; b.textContent = 'Continue'; }
+      });
+      return;
+    }
+
+    if (src) { try { fetch('/api/qr/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ src: src, type: 'landing' }), keepalive: true }).catch(function () {}); } catch (e) {} }
+    if (resume()) return;
+    render();
+  }
+  start();
+})();
+</script>

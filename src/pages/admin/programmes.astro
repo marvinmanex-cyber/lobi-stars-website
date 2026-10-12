@@ -3,9 +3,11 @@
 // New programme (4 steps): match details -> PDF (checked and turned into page
 // images in the browser with pdf.js, then checked again on the server) ->
 // quick links -> draft / publish now / schedule. Plus QR codes and an A4
-// poster, reading stats per programme, and the fan numbers.
+// advert campaigns (short links /p/<code>, funnel, advert generator), reading
+// stats per programme, and the fan numbers.
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
+import QrCampaigns from '../../components/admin/QrCampaigns.astro';
 ---
 <Layout title="Matchday Programme | Lobi Stars Admin" description="Upload and publish the match day programme." noindex>
   <div class="wrap mp">
@@ -25,6 +27,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <div class="mp-switches">
           <label class="mp-sw"><span>Programme page on</span><input type="checkbox" role="switch" id="setEnabled" /></label>
           <label class="mp-sw"><span>Homepage banner</span><input type="checkbox" role="switch" id="setBanner" /></label>
+          <label class="mp-sw" title="After signing in from a QR code, the PDF starts downloading by itself"><span>QR: auto-download</span><input type="checkbox" role="switch" id="setAuto" /></label>
         </div>
       </div>
       <div id="list"><p class="muted">Loading…</p></div>
@@ -46,30 +49,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       </section>
     </div>
 
-    <section class="mp-card" aria-labelledby="qrH">
-      <h2 id="qrH">QR codes and posters</h2>
-      <p class="mp-sub">Each QR code opens the current programme and records where the fan scanned it (shown in Stats).</p>
-      <div class="mp-qr">
-        <div>
-          <label class="mp-lbl">Where it's shown<select id="qrSrc">
-            <option value="qr-gate">Stadium gates and turnstiles</option>
-            <option value="qr-screen">Big screen</option>
-            <option value="qr-social">Social media</option>
-            <option value="qr-radio">Radio (read out on air)</option>
-          </select></label>
-          <p class="mp-url" id="qrUrl"></p>
-          <div class="mp-row"><button type="button" class="btn-o sm" id="qrPng">Download PNG</button><button type="button" class="btn-o sm" id="qrSvg">Download SVG</button><button type="button" class="btn-p sm" id="qrPrint">Print A4 poster</button></div>
-        </div>
-        <div class="mp-poster" id="poster">
-          <img src="/images/lobi-stars-badge.png" alt="" width="90" height="90" />
-          <p class="mp-poster-club">LOBI STARS FC</p>
-          <p class="mp-poster-h">Scan for today's programme</p>
-          <div class="mp-poster-qr" id="qrBox"></div>
-          <p class="mp-poster-url">lobistarsfc.com/programme</p>
-          <p class="mp-poster-small">Free for registered fans</p>
-        </div>
-      </div>
-    </section>
+    <QrCampaigns />
   </div>
 
   <dialog class="wz" id="wz" aria-labelledby="wzTitle">
@@ -181,16 +161,6 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .mp :global(.mp-kv div) { background: var(--a-soft); border-radius: 10px; padding: 10px 12px; }
   .mp :global(.mp-kv b) { display: block; font: 400 26px/1 'Bebas Neue', sans-serif; color: var(--a-ink); }
   .mp :global(.mp-kv span) { font-size: 12px; color: var(--a-muted); }
-  .mp-qr { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 20px; align-items: start; }
-  .mp-url { margin: 10px 0 0; font: 600 14px ui-monospace, Menlo, monospace; color: var(--a-ink); overflow-wrap: anywhere; }
-  .mp-poster { background: #fff; color: #15181D; border: 1px solid var(--a-line); border-radius: 12px; padding: 22px 18px; text-align: center; aspect-ratio: 1 / 1.414; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
-  .mp-poster img { width: 70px; height: 70px; }
-  .mp-poster-club { margin: 0; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 2px; }
-  .mp-poster-h { margin: 0 0 6px; font: 700 17px/1.2 'Barlow', sans-serif; }
-  .mp-poster-qr { width: 70%; line-height: 0; }
-  .mp-poster-qr :global(svg) { width: 100%; height: auto; }
-  .mp-poster-url { margin: 6px 0 0; font: 700 15px 'Barlow', sans-serif; }
-  .mp-poster-small { margin: 0; font-size: 12px; color: #5B6472; }
   .mp [hidden] { display: none !important; }
 
   .wz { border: 0; padding: 0; border-radius: 18px; width: min(860px, calc(100vw - 20px)); max-height: calc(100dvh - 20px); background: var(--a-card, #fff); color: var(--a-ink, #15181D); box-shadow: 0 30px 80px rgba(0,0,0,.35); }
@@ -233,22 +203,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .wz-err:empty { display: none; }
   .wz-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 20px 18px; flex-wrap: wrap; border-top: 1px solid var(--a-line, #E3E6EA); margin-top: 10px; }
   .wz [hidden] { display: none !important; }
-  @media (max-width: 960px) { .mp-grid, .mp-qr { grid-template-columns: 1fr; } .mp-cards { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 960px) { .mp-grid { grid-template-columns: 1fr; } .mp-cards { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 640px) { .wz-2, .wz-prev { grid-template-columns: 1fr 1fr; } .wz-steps { grid-template-columns: 1fr 1fr; } .mp :global(.mp-kv) { grid-template-columns: 1fr 1fr; } .wz :global(.wz-link) { grid-template-columns: 1fr auto; } .wz :global(.wz-link input:nth-child(2)) { grid-column: 1; } }
-  @media print {
-    :global(body *) { visibility: hidden !important; }
-    #poster, #poster * { visibility: visible !important; }
-    #poster { position: fixed; inset: 0; border: 0; border-radius: 0; width: 100vw; height: 100vh; aspect-ratio: auto; padding: 18mm; box-sizing: border-box; }
-    #poster img { width: 40mm; height: 40mm; }
-    .mp-poster-club { font-size: 34pt; } .mp-poster-h { font-size: 26pt; } .mp-poster-url { font-size: 22pt; } .mp-poster-small { font-size: 14pt; }
-    .mp-poster-qr { width: 120mm; }
-  }
-  @page { size: A4 portrait; margin: 0; }
 </style>
 
 <script>
-  import qrcode from 'qrcode-generator';
-
   const PDFJS = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs';
   const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
   const SITE = 'https://lobistarsfc.com';
@@ -285,7 +244,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       const d = await api('/api/admin/programmes');
       all = d.programmes; storageReady = d.storageReady;
       $('storageWarn').hidden = storageReady;
-      $('setEnabled').checked = d.settings.enabled; $('setBanner').checked = d.settings.homepageBanner;
+      $('setEnabled').checked = d.settings.enabled; $('setBanner').checked = d.settings.homepageBanner; $('setAuto').checked = d.settings.scanAutoDownload;
       const t = d.totals;
       $('cards').replaceChildren(...[['#E31E24', t.fans, 'Fan accounts'], ['#8B5CF6', t.newThisWeek, 'New fans this week'], ['#0EA5E9', t.opens, 'Programme opens'], ['#16A34A', t.downloads, 'Downloads']]
         .map(([c, n, l]) => el('div', { class: 'mp-stat', style: `--c:${c}` }, el('b', { text: Number(n || 0).toLocaleString('en-NG') }), el('span', { text: l }))));
@@ -327,7 +286,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     if (!confirm(`Delete the draft "${p.title}" and its files?`)) return;
     try { await api(`/api/admin/programmes/${p.id}`, 'DELETE'); msg('Deleted.'); loadList(); } catch (e: any) { msg(e.message, false); }
   }
-  for (const [id, field] of [['setEnabled', 'enabled'], ['setBanner', 'homepageBanner']]) {
+  for (const [id, field] of [['setEnabled', 'enabled'], ['setBanner', 'homepageBanner'], ['setAuto', 'scanAutoDownload']]) {
     $(id).addEventListener('change', async (e: any) => {
       try { await api('/api/admin/programmes/settings', 'POST', { [field]: e.target.checked }); msg('Saved.'); } catch (err: any) { msg(err.message, false); e.target.checked = !e.target.checked; }
     });
@@ -352,7 +311,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     });
     return svg;
   }
-  const SRC_LABEL: Record<string, string> = { 'qr-gate': 'QR: gates', 'qr-screen': 'QR: big screen', 'qr-social': 'QR: social', 'qr-radio': 'QR: radio', homepage: 'Homepage banner', share: 'Shared by fans', direct: 'Direct / other' };
+  // Other values are QR campaign codes (lobistarsfc.com/p/<code>).
+  const SRC_LABEL: Record<string, string> = { homepage: 'Homepage banner', share: 'Shared by fans', direct: 'Direct / other' };
   async function loadStats() {
     const id = $('statsSel').value; if (!id) return;
     try {
@@ -362,35 +322,12 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       const links = s.links.length ? el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Quick link' }), el('th', { text: 'Clicks' }))),
         el('tbody', {}, ...s.links.map((l: any) => el('tr', {}, el('td', { text: l.label }), el('td', { text: String(l.clicks) }))))) : null;
       const srcs = s.sources.length ? el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Where fans came from' }), el('th', { text: 'Visits' }))),
-        el('tbody', {}, ...s.sources.map((x: any) => el('tr', {}, el('td', { text: SRC_LABEL[x.src] || x.src }), el('td', { text: String(x.n) }))))) : el('p', { class: 'muted', text: 'No visits yet.' });
+        el('tbody', {}, ...s.sources.map((x: any) => el('tr', {}, el('td', { text: SRC_LABEL[x.src] || `QR campaign /p/${x.src}` }), el('td', { text: String(x.n) }))))) : el('p', { class: 'muted', text: 'No visits yet.' });
       $('stats').replaceChildren(kv, el('p', { class: 'mp-sub', text: 'Views of each page' }), barChart(s.pageViews), links, srcs);
     } catch (e: any) { $('stats').replaceChildren(el('p', { class: 'muted', text: e.message })); }
   }
   $('statsSel').addEventListener('change', loadStats);
 
-  // ── QR codes and poster ──
-  function qrFor(text: string) { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q; }
-  function drawQr() {
-    const url = `${SITE}/programme?src=${$('qrSrc').value}`;
-    $('qrUrl').textContent = url;
-    const q = qrFor(url);
-    $('qrBox').innerHTML = q.createSvgTag({ cellSize: 8, margin: 2, scalable: true }); // generated SVG, no fan or page data
-  }
-  function save(blob: Blob, name: string) { const a = el('a', { href: URL.createObjectURL(blob), download: name }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 20000); }
-  $('qrSrc').addEventListener('change', drawQr);
-  $('qrSvg').addEventListener('click', () => {
-    const q = qrFor(`${SITE}/programme?src=${$('qrSrc').value}`);
-    save(new Blob([q.createSvgTag({ cellSize: 10, margin: 4 })], { type: 'image/svg+xml' }), `lobi-stars-programme-${$('qrSrc').value}.svg`);
-  });
-  $('qrPng').addEventListener('click', () => {
-    const q = qrFor(`${SITE}/programme?src=${$('qrSrc').value}`), n = q.getModuleCount(), cell = 20, m = 4, size = (n + m * 2) * cell;
-    const c = el('canvas', { width: size, height: size }) as HTMLCanvasElement, g = c.getContext('2d')!;
-    g.fillStyle = '#fff'; g.fillRect(0, 0, size, size); g.fillStyle = '#000';
-    for (let r = 0; r < n; r++) for (let k = 0; k < n; k++) if (q.isDark(r, k)) g.fillRect((k + m) * cell, (r + m) * cell, cell, cell);
-    c.toBlob(b => b && save(b, `lobi-stars-programme-${$('qrSrc').value}.png`), 'image/png');
-  });
-  $('qrPrint').addEventListener('click', () => window.print());
-  drawQr();
 
   // ── Wizard ──
   const wz = $('wz');

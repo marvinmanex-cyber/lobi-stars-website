@@ -1,0 +1,73 @@
+---
+// A tiny stand-alone page frame for the QR scan pages (/programme/scan,
+// /programme/confirm): inline styles, the site's own fonts and colours, no
+// site header scripts or frameworks, so it opens fast on low-end phones and
+// mobile data. The Turnstile human check is only loaded when a fan starts
+// signing in.
+interface Props { title: string; description: string }
+const { title, description } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<meta name="theme-color" content="#15181D" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<link rel="icon" href="/favicon.ico" />
+<link rel="preload" href="/fonts/bebas-neue-400.woff2" as="font" type="font/woff2" crossorigin />
+<style is:inline>
+  @font-face { font-family: 'Bebas Neue'; font-weight: 400; font-display: swap; src: url('/fonts/bebas-neue-400.woff2') format('woff2'); }
+  @font-face { font-family: 'Barlow'; font-weight: 400; font-display: swap; src: url('/fonts/barlow-400.woff2') format('woff2'); }
+  @font-face { font-family: 'Barlow'; font-weight: 700; font-display: swap; src: url('/fonts/barlow-700.woff2') format('woff2'); }
+  :root { --red: #E31E24; --ink: #15181D; --gold: #FFC72C; --lt: #5B6472; --line: #DDE1E6; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { min-height: 100vh; min-height: 100dvh; background: #F4F5F7; color: var(--ink); font: 16px/1.5 Barlow, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; }
+  a { color: inherit; }
+  .top { background: var(--ink); color: #fff; display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
+  .top img { width: 34px; height: 34px; border-radius: 50%; background: #fff; padding: 2px; }
+  .top b { font: 400 22px/1 'Bebas Neue', Impact, sans-serif; letter-spacing: 1.5px; }
+  .top a { color: #fff; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+  main { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
+  .card { background: #fff; border-radius: 16px; padding: 20px 18px; box-shadow: 0 6px 20px rgba(15,17,21,.07); }
+  h1 { margin: 0 0 6px; font: 400 34px/1 'Bebas Neue', Impact, sans-serif; letter-spacing: 1px; }
+  h2 { margin: 0 0 8px; font: 400 26px/1.05 'Bebas Neue', Impact, sans-serif; letter-spacing: 1px; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--lt); font-size: 14px; }
+  .small { font-size: 13px; color: var(--lt); }
+  .btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 56px; padding: 12px 18px; border: 0; border-radius: 12px; background: var(--red); color: #fff; font: 700 18px/1.2 Barlow, system-ui, sans-serif; text-align: center; text-decoration: none; cursor: pointer; margin: 0 0 10px; }
+  .btn.alt { background: #fff; color: var(--ink); border: 2px solid var(--ink); }
+  .btn.safe { background: var(--ink); color: #fff; }
+  .btn[disabled] { opacity: .6; cursor: wait; }
+  .link { background: none; border: 0; padding: 10px 0; font: 700 15px Barlow, system-ui, sans-serif; color: #B3161B; text-decoration: underline; cursor: pointer; min-height: 44px; }
+  .link[disabled] { color: var(--lt); text-decoration: none; cursor: default; }
+  label { display: block; font-weight: 700; margin: 10px 0 6px; }
+  input[type=email], input[type=text], input[type=tel], input.code { width: 100%; min-height: 54px; padding: 10px 14px; border: 2px solid var(--line); border-radius: 12px; font: 18px Barlow, system-ui, sans-serif; background: #fff; color: var(--ink); }
+  input.code { font-size: 30px; letter-spacing: 12px; text-align: center; font-weight: 700; }
+  input:focus, .btn:focus-visible, .link:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; margin: 14px 0; }
+  .check input { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--red); flex: none; }
+  .err { color: #A3161B; font-weight: 700; margin: 8px 0; }
+  .err:empty { display: none; }
+  .note { background: #FFF4C2; border: 1px solid #F6D58E; color: #5A3E00; border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; font-size: 15px; }
+  .note button { margin-top: 8px; min-height: 40px; padding: 6px 14px; border-radius: 10px; border: 1px solid #5A3E00; background: #fff; font: 700 14px Barlow, system-ui, sans-serif; cursor: pointer; }
+  .match { display: flex; gap: 14px; align-items: center; margin: 0 0 16px; }
+  .match img { width: 86px; border-radius: 8px; box-shadow: 0 6px 16px rgba(0,0,0,.18); flex: none; background: #eee; }
+  .count { font: 400 44px/1 'Bebas Neue', Impact, sans-serif; color: var(--red); letter-spacing: 1px; margin: 4px 0 14px; }
+  .ok { text-align: center; }
+  .ok .big { font-size: 46px; line-height: 1; margin: 0 0 6px; }
+  [hidden] { display: none !important; }
+  .foot { text-align: center; margin-top: 18px; font-size: 13px; color: var(--lt); }
+</style>
+</head>
+<body>
+<header class="top"><a href="/"><img src="/images/lobi-stars-badge.png" alt="" width="34" height="34" /><b>Lobi Stars FC</b></a></header>
+<main>
+  <slot />
+  <p class="foot"><a href="/programme/">Match Day Programme</a> · <a href="/privacy/#programme">Privacy</a> · <a href="/terms/">Terms</a></p>
+</main>
+</body>
+</html>

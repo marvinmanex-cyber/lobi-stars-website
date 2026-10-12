@@ -63,6 +63,7 @@ const RULES = [
   [/^\/api\/admin\/fan-alerts(\/|$)/, 'matchday'],
   [/^\/api\/admin\/match-centre(\/|$)/, 'matchday-content'],
   [/^\/api\/admin\/programmes(\/|$)/, 'matchday-content'],
+  [/^\/api\/admin\/qr(\/|$)/, 'matchday-content'],
   [/^\/api\/admin\/events(\/|$)/, 'matchday-content'],
   [/^\/api\/admin\/(predictions|motm|commentary)(\/|$)/, 'matchday'],
   [/^\/api\/admin\/awards(\/|$)/, 'content'],

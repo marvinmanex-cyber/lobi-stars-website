@@ -232,6 +232,53 @@ the old version is deleted.
 - **"File storage is not connected":** the R2 binding is still commented out
   in `wrangler.toml` (Setup steps 1-2).
 
+## QR advert campaigns (Match Day Programme)
+
+Short links **/p/<code>** (`functions/p/[code].js`, `functions/p/index.js`)
+count the scan (not link previews or robots: WhatsApp, Facebook, Twitter,
+Telegram, Slack, Google, headless browsers, curl, HEAD requests) and always
+answer **302** to `/programme/scan/?c=<code>` with `Cache-Control: no-store`.
+Unknown codes, switched-off campaigns and database errors still redirect, so a
+printed QR code is never a dead end. Campaigns are never deleted and their
+codes never change.
+
+- **Tables** (created on first use, `ensureQrSchema` in
+  `functions/api/_lib/qr.js`): `qr_campaigns` (seeded: gate, screen, social,
+  status, radio, flyer, kiosk) and `qr_events` (campaign, programme, fan,
+  type scan/landing/signin_started/signin_completed/download/read, device
+  android/ios/desktop/other, in_app). No IP addresses, emails or user agents.
+  Also `fan_login_codes.link_token_hash`, `members.first_src` and the setting
+  `scan_auto_download`.
+- **Scan page** `/programme/scan/` and **email link page**
+  `/programme/confirm/` (`src/components/programme/ScanApp.astro` in the tiny
+  stand-alone frame `ScanShell.astro`: inline CSS, own fonts, no external
+  scripts; Turnstile loads only when sign-in starts). The sign-in email now has
+  the code and a one-tap button; the link only signs in when the fan taps
+  Continue (email scanners open links), works once and dies with the code.
+- **API:** `/api/fan/auth/request` takes `src` and `intent`;
+  `/api/fan/auth/verify-link`; `/api/qr/event` (landing); the download takes
+  `?src=` and, opened as a page, sends problems back to the scan page;
+  `/api/programme/current` returns `pdfSizeBytes` and `scanAutoDownload`.
+  Admin: `/api/admin/qr/campaigns` (GET, POST), `/api/admin/qr/campaigns/:id`
+  (PATCH only), `/api/admin/qr/stats`. Every change is in the Activity Log.
+- **Admin:** Matchday Programme › QR advert campaigns
+  (`src/components/admin/QrCampaigns.astro`). The QR codes are made in the
+  browser with the site's bundled `qrcode-generator` (error correction Q,
+  dark on white, 4-module quiet zone), so no CDN script is needed.
+- **Nothing extra to set up** beyond the Match Day Programme itself (R2
+  bucket, Resend). Tests: `tests/qr-campaigns.test.mjs`.
+
+### Troubleshooting
+- **Scan counts look too high:** link previews and robots are already left
+  out. Sharing the short link in chats also counts real taps; use a separate
+  campaign (e.g. "status") for links shared online and keep "gate" for posters.
+- **Download doesn't start in Facebook / Instagram / TikTok:** those in-app
+  browsers often block files. The page shows "open in Chrome or Safari" with
+  Copy link, and "Read online" works everywhere. On iPhone: Share, then Save to
+  Files.
+- **"This link has expired":** email links last 10 minutes and work once
+  (signing in with the code also uses it up). "Send me a new code" starts again.
+
 ## Fan match alerts (Web Push, free)
 
 Fans subscribe with the **🔔 Match alerts** box (`src/components/MatchAlerts.astro`)

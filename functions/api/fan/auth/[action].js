@@ -1,13 +1,17 @@
-import { normaliseEmail, checkOrigin, requestCode, verifyCode, getFan, jsonWithCookies } from '../../_lib/fanCode.js';
+import { normaliseEmail, checkOrigin, requestCode, verifyCode, verifyLinkToken, getFan, jsonWithCookies, INTENTS } from '../../_lib/fanCode.js';
+import { validSrc, logCampaignEvent } from '../../_lib/qr.js';
 import { checkTurnstile, clientIp, normalizeNigerianPhone, ensureFanSchema } from '../../_lib/fans.js';
 import { clearSessionCookie, fanHintCookie } from '../../_lib/session.js';
-import { stripTags, ensureProgrammeSchema } from '../../_lib/programme.js';
+import { stripTags, ensureProgrammeSchema, getCurrentProgramme } from '../../_lib/programme.js';
 import { captureContact } from '../../_lib/contacts.js';
 import { ensureNewsletterSchema } from '../../_lib/newsletter.js';
 
 // Fan sign-in with an emailed code (no password):
-// POST /api/fan/auth/request  { email, turnstileToken, next }  -> always { ok: true } (no account enumeration)
-// POST /api/fan/auth/verify   { email, code, next }            -> { ok, needsProfile, fan: { firstName } } + session cookie
+// POST /api/fan/auth/request  { email, turnstileToken, next, src?, intent? }  -> always { ok: true } (no account enumeration);
+//                             the email has the code and a one-tap link (/programme/confirm/)
+// POST /api/fan/auth/verify   { email, code, next, src? }      -> { ok, needsProfile, fan: { firstName } } + session cookie
+// POST /api/fan/auth/verify-link { email, token, src?, intent? } -> { ok, needsProfile, intent, slug } + session cookie
+// src = QR campaign code (e.g. gate), intent = download | read.
 // POST /api/fan/auth/profile  { firstName, lastName?, phone?, marketingConsent }  (signed in)
 // POST /api/fan/auth/logout
 export async function onRequestPost({ request, env, params, waitUntil }) {
@@ -21,9 +25,11 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
       const email = normaliseEmail(b.email);
       if (!email) return jsonWithCookies({ error: 'Please enter a valid email address.' }, [], 400);
       if (!(await checkTurnstile(env, b.turnstileToken, clientIp(request)))) return jsonWithCookies({ error: 'Please complete the human check and try again.' }, [], 400);
-      const r = await requestCode(env, request, waitUntil, email);
+      const src = validSrc(b.src), intent = INTENTS.includes(b.intent) ? b.intent : 'download';
+      const r = await requestCode(env, request, waitUntil, email, { src, intent });
       if (r.error) return jsonWithCookies({ error: r.error }, [], r.status);
-      return jsonWithCookies(r.devCode ? { ok: true, devCode: r.devCode } : { ok: true });
+      if (src) logCampaignEvent(env, src, 'signin_started', { request }, waitUntil);
+      return jsonWithCookies(r.devCode ? { ok: true, devCode: r.devCode, devLink: r.devLink } : { ok: true });
     }
 
     if (action === 'verify') {
@@ -40,9 +46,22 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
         const { getCurrentProgramme } = await import('../../_lib/programme.js');
         programmeId = (await getCurrentProgramme(env.DB)).current?.id ?? null;
       }
-      const r = await verifyCode(env, email, code, { programmeId });
+      const src = validSrc(b.src);
+      const r = await verifyCode(env, email, code, { programmeId, src });
       if (r.error) return jsonWithCookies({ error: r.error }, [], r.status);
+      if (src) logCampaignEvent(env, src, 'signin_completed', { request, fanId: r.member.id }, waitUntil);
       return jsonWithCookies({ ok: true, needsProfile: r.needsProfile, fan: { firstName: r.member.first_name || '' } }, r.cookies);
+    }
+
+    if (action === 'verify-link') {
+      const email = normaliseEmail(b.email);
+      if (!email) return jsonWithCookies({ error: "That code didn't work. Check it or request a new one." }, [], 400);
+      const src = validSrc(b.src), intent = INTENTS.includes(b.intent) ? b.intent : 'download';
+      const current = (await getCurrentProgramme(env.DB)).current;
+      const r = await verifyLinkToken(env, email, String(b.token || ''), { programmeId: current?.id ?? null, src });
+      if (r.error) return jsonWithCookies({ error: r.error }, [], r.status);
+      if (src) logCampaignEvent(env, src, 'signin_completed', { request, fanId: r.member.id }, waitUntil);
+      return jsonWithCookies({ ok: true, needsProfile: r.needsProfile, intent, slug: current?.slug || null, fan: { firstName: r.member.first_name || '' } }, r.cookies);
     }
 
     if (action === 'profile') {

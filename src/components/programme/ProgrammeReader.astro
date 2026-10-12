@@ -78,7 +78,9 @@ const { mode = 'fan' } = Astro.props;
   var $ = function (id) { return document.getElementById(id); };
   var data = null, seen = {}, total = 4;
   var adminH = { 'x-admin-code': (function () { try { return sessionStorage.getItem('ls_admin_code') || '__session__'; } catch (e) { return '__session__'; } })() };
-  var src = (function () { try { return sessionStorage.getItem('ls_prog_src') || null; } catch (e) { return null; } })();
+  // The QR campaign the fan came from (?src= from the scan page, else this visit's).
+  var src = /^[a-z0-9-]{1,20}$/.test(q.get('src') || '') ? q.get('src') : null;
+  try { if (src) sessionStorage.setItem('ls_prog_src', src); else src = sessionStorage.getItem('ls_prog_src') || null; } catch (e) {}
 
   function msg(t) { var m = $('prMsg'); m.textContent = t || ''; m.hidden = !t; }
   function empty(text, linkText, href) {

@@ -11,7 +11,7 @@ export async function onRequestGet({ env }) {
     if (!s.enabled || !bucket(env)) return Response.json({ enabled: false, serverTime }, { headers });
     const { current, next } = await getCurrentProgramme(env.DB);
     return Response.json({
-      enabled: true, serverTime, homepageBanner: s.homepageBanner,
+      enabled: true, serverTime, homepageBanner: s.homepageBanner, scanAutoDownload: s.scanAutoDownload,
       programme: current ? toPublic(current) : null,
       upcoming: next ? { title: next.title, publishAt: next.publish_at, kickoffAt: next.kickoff_at } : null,
     }, { headers });

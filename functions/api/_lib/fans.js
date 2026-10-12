@@ -27,6 +27,7 @@ export async function ensureFanSchema(db) {
     ['last_login_at', 'TEXT'],
     ['marketing_consent_at', 'TEXT'],
     ['first_programme', 'TEXT'],   // programmes.id that brought a new fan in
+    ['first_src', 'TEXT'],         // QR campaign code that brought a new fan in (e.g. gate)
   ];
   for (const [name, type] of add) {
     if (!cols.has(name)) await db.prepare(`ALTER TABLE members ADD COLUMN ${name} ${type}`).run();
