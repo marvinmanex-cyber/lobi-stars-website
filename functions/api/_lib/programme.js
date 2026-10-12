@@ -80,6 +80,12 @@ export async function ensureProgrammeSchema(db) {
   // Sign-in emails also carry a one-tap link (QR campaigns); only its hash is stored.
   const cols = new Set((await db.prepare(`PRAGMA table_info(fan_login_codes)`).all()).results.map(r => r.name));
   if (!cols.has('link_token_hash')) await db.prepare(`ALTER TABLE fan_login_codes ADD COLUMN link_token_hash TEXT`).run();
+  // Share Hub: link-card images and the scheduled social auto-post.
+  const pcols = new Set((await db.prepare(`PRAGMA table_info(programmes)`).all()).results.map(r => r.name));
+  for (const [name, type] of [['share_assets_version', 'INTEGER NOT NULL DEFAULT 0'], ['social_autopost_at', 'TEXT'],
+    ['social_autopost_platforms', 'TEXT'], ['social_autopost_done', 'INTEGER NOT NULL DEFAULT 0']]) {
+    if (!pcols.has(name)) await db.prepare(`ALTER TABLE programmes ADD COLUMN ${name} ${type}`).run();
+  }
   ready = true;
 }
 
@@ -151,6 +157,8 @@ export function r2Keys(slug, version) {
     pdf: `${base}/programme.pdf`,
     cover: `${base}/cover.jpg`,
     pages: Array.from({ length: PAGE_COUNT }, (_, i) => `${base}/page-${i + 1}.jpg`),
+    // Share Hub images (link card 1200x630, square 1080, story 1080x1920).
+    share: { card: `${base}/share-card.jpg`, square: `${base}/share-square.jpg`, story: `${base}/share-story.jpg` },
   };
 }
 
@@ -165,6 +173,8 @@ export function toPublic(p, origin = '') {
   return {
     slug: p.slug, title: p.title, opponent: p.opponent || '', competition: p.competition || '', venue: p.venue || '',
     kickoffAt: p.kickoff_at, publishAt: p.publish_at, version: p.version, pageCount: PAGE_COUNT, pdfSizeBytes: p.pdf_size_bytes || null,
+    // ?v= for shared links: changes when the link-card image changes, so previews refresh.
+    shareVersion: p.share_assets_version || p.version,
     coverUrl: p.cover_key ? `${origin}/api/programme/${p.slug}/cover.jpg?v=${p.version}` : null,
   };
 }

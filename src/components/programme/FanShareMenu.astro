@@ -1,0 +1,74 @@
+---
+// Fans' "Share" for the Match Day Programme: shares the tracked link
+// lobistarsfc.com/m/<slug>?src=fanshare&v=<n> (a proper link card; friends
+// sign in to read or download). Uses the phone's share sheet when there is
+// one, otherwise a small menu: WhatsApp, Facebook, X, Telegram, Copy link.
+// Call window.lsShareProgramme({ slug, shareVersion, title }).
+---
+<dialog class="fsm" id="fsm" aria-labelledby="fsmT">
+  <p class="fsm-t" id="fsmT">Share the programme</p>
+  <div class="fsm-list">
+    <a data-ch="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+    <a data-ch="facebook" target="_blank" rel="noopener">Facebook</a>
+    <a data-ch="x" target="_blank" rel="noopener">X</a>
+    <a data-ch="telegram" target="_blank" rel="noopener">Telegram</a>
+    <button type="button" data-ch="copy">Copy link</button>
+  </div>
+  <p class="fsm-msg" id="fsmMsg" aria-live="polite"></p>
+  <button type="button" class="fsm-x" id="fsmX">Close</button>
+</dialog>
+
+<style is:inline>
+  .fsm { border: 0; border-radius: 16px; padding: 18px; width: min(340px, calc(100vw - 32px)); color: #15181D; background: #fff; box-shadow: 0 24px 60px rgba(0,0,0,.35); font-family: Barlow, system-ui, sans-serif; }
+  .fsm::backdrop { background: rgba(15,17,21,.55); }
+  .fsm-t { margin: 0 0 12px; font: 400 24px/1 'Bebas Neue', Impact, sans-serif; letter-spacing: 1px; }
+  .fsm-list { display: grid; gap: 8px; }
+  .fsm-list a, .fsm-list button, .fsm-x { display: flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 12px; border: 2px solid #15181D; background: #fff; color: #15181D; font: 700 16px Barlow, system-ui, sans-serif; text-decoration: none; cursor: pointer; }
+  .fsm-list a:focus-visible, .fsm-list button:focus-visible, .fsm-x:focus-visible { outline: 3px solid #FFC72C; outline-offset: 2px; }
+  .fsm-x { width: 100%; margin-top: 10px; border-color: transparent; background: #F1F3F5; }
+  .fsm-msg { margin: 8px 0 0; min-height: 1.2em; font-size: 14px; color: #17643A; font-weight: 700; overflow-wrap: anywhere; }
+</style>
+
+<script is:inline>
+(function () {
+  var dlg = document.getElementById('fsm');
+  if (!dlg || window.lsShareProgramme) return;
+  var cur = null;
+  function log(ch) {
+    if (!cur) return;
+    try { fetch('/api/programme/' + encodeURIComponent(cur.slug) + '/event', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', keepalive: true, body: JSON.stringify({ type: 'share', src: ch }) }).catch(function () {}); } catch (e) {}
+  }
+  function link(p) { return 'https://lobistarsfc.com/m/' + encodeURIComponent(p.slug) + '?src=fanshare&v=' + (Number(p.shareVersion) || 0); }
+  var TEXT = 'Get the Lobi Stars match day programme free:';
+  dlg.querySelectorAll('[data-ch]').forEach(function (el) {
+    el.addEventListener('click', async function (e) {
+      var ch = el.dataset.ch;
+      log(ch);
+      if (ch === 'copy') {
+        e.preventDefault();
+        var url = link(cur);
+        try { await navigator.clipboard.writeText(url); document.getElementById('fsmMsg').textContent = 'Link copied.'; }
+        catch (x) { document.getElementById('fsmMsg').textContent = url; }
+      }
+    });
+  });
+  document.getElementById('fsmX').addEventListener('click', function () { dlg.close(); });
+  dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
+  window.lsShareProgramme = async function (p) {
+    try {
+      cur = p; var url = link(p), e = encodeURIComponent;
+      if (navigator.share) {
+        try { await navigator.share({ title: p.title + ': Match Day Programme', text: TEXT, url: url }); log('native'); return; }
+        catch (x) { if (x && x.name === 'AbortError') return; }
+      }
+      var q = function (ch) { return dlg.querySelector('[data-ch="' + ch + '"]'); };
+      q('whatsapp').href = 'https://wa.me/?text=' + e(TEXT + ' ' + url);
+      q('facebook').href = 'https://www.facebook.com/sharer/sharer.php?u=' + e(url);
+      q('x').href = 'https://x.com/intent/post?text=' + e(TEXT) + '&url=' + e(url);
+      q('telegram').href = 'https://t.me/share/url?url=' + e(url) + '&text=' + e(TEXT);
+      document.getElementById('fsmMsg').textContent = '';
+      try { dlg.showModal(); } catch (x) { dlg.setAttribute('open', ''); }
+    } catch (err) { console.error('[share]', err); }
+  };
+})();
+</script>

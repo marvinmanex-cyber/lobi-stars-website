@@ -5,6 +5,7 @@
 // use yet (or nothing is scheduled) it hands over to the older single-image
 // programme on the same page (window.__progLegacy).
 import FanCodeSignIn from './FanCodeSignIn.astro';
+import FanShareMenu from './FanShareMenu.astro';
 ---
 <section class="pg" id="pg" hidden aria-live="polite">
   <div class="pg-live" id="pgLive" hidden>
@@ -19,6 +20,7 @@ import FanCodeSignIn from './FanCodeSignIn.astro';
         <button type="button" class="btn-p pg-big" id="pgRead">Read online</button>
         <button type="button" class="btn-o pg-big" id="pgDl">Download PDF</button>
       </div>
+      <button type="button" class="pg-link pg-share" id="pgShare">Share with friends</button>
       <p class="pg-note" id="pgNote">Free for registered fans. Sign in with your email, no password needed.</p>
       <p class="pg-msg" id="pgMsg" role="status" hidden></p>
     </div>
@@ -40,6 +42,7 @@ import FanCodeSignIn from './FanCodeSignIn.astro';
   <p class="pg-privacy"><a href="/privacy/#programme">How we use your data</a> · <button type="button" class="pg-link" id="pgDelete">Delete my data</button></p>
 </section>
 <FanCodeSignIn />
+<FanShareMenu />
 
 <style is:global>
   .pg { margin-bottom: 30px; }
@@ -52,6 +55,7 @@ import FanCodeSignIn from './FanCodeSignIn.astro';
   .pg-meta li:empty { display: none; }
   .pg-acts { display: flex; gap: 12px; flex-wrap: wrap; }
   .pg-big { min-height: 54px; padding: 14px 28px; font-size: 16px; flex: 1 1 200px; text-align: center; }
+  .pg-share { margin-top: 14px; font-weight: 700; }
   .pg-note { margin: 12px 0 0; color: var(--lt); font-size: 14px; }
   .pg-msg { margin: 12px 0 0; padding: 10px 14px; border-radius: 10px; background: #FFF4E5; color: #7A4B00; }
   .pg-soon { text-align: center; padding: 36px 16px; border: 1px solid var(--d4); border-radius: 16px; background: var(--d2); }
@@ -183,6 +187,7 @@ import FanCodeSignIn from './FanCodeSignIn.astro';
     } catch (e) { console.error(e); msg('The download did not work. Check your connection and try again.'); }
     finally { btn.disabled = false; btn.textContent = 'Download PDF'; }
   });
+  $('pgShare').addEventListener('click', function () { if (cur && window.lsShareProgramme) window.lsShareProgramme({ slug: cur.slug, shareVersion: cur.shareVersion, title: cur.title }); });
   $('pgRegister').addEventListener('click', async function () { if (await ensureSignedIn('/programme/')) location.reload(); });
   $('pgMore').addEventListener('click', function () { archPage++; loadArchive(); });
   $('pgOut').addEventListener('click', async function () {

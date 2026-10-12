@@ -8,6 +8,7 @@
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
 import QrCampaigns from '../../components/admin/QrCampaigns.astro';
+import ShareHub from '../../components/admin/ShareHub.astro';
 ---
 <Layout title="Matchday Programme | Lobi Stars Admin" description="Upload and publish the match day programme." noindex>
   <div class="wrap mp">
@@ -50,6 +51,7 @@ import QrCampaigns from '../../components/admin/QrCampaigns.astro';
     </div>
 
     <QrCampaigns />
+    <ShareHub />
   </div>
 
   <dialog class="wz" id="wz" aria-labelledby="wzTitle">
@@ -93,6 +95,12 @@ import QrCampaigns from '../../components/admin/QrCampaigns.astro';
         <button type="button" class="btn-o sm" id="addLink">+ Add a link</button>
       </div>
 
+      <div class="wz-pane wz-done" data-pane="5" hidden>
+        <h3 id="wzDoneT">Done</h3>
+        <p id="wzDoneP"></p>
+        <button type="button" class="btn-p wz-big" id="wzShare">Share this programme</button>
+        <p class="mp-note">The Share Hub makes the share images, captions and tracked links for every platform.</p>
+      </div>
       <div class="wz-pane" data-pane="4" hidden>
         <fieldset class="wz-radios">
           <legend class="mp-lbl">When should fans see it?</legend>
@@ -180,6 +188,9 @@ import QrCampaigns from '../../components/admin/QrCampaigns.astro';
   .wz-drop { border: 2px dashed var(--a-line, #E3E6EA); border-radius: 14px; padding: 28px 16px; text-align: center; cursor: pointer; display: grid; gap: 6px; color: var(--a-muted); }
   .wz-drop b { color: var(--a-ink); font-size: 17px; }
   .wz-drop.over, .wz-drop:focus-visible { border-color: #E31E24; background: rgba(227,30,36,.05); outline: none; }
+  .wz-done { text-align: center; padding: 20px 0; }
+  .wz-done h3 { margin: 0 0 6px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .wz-big { min-height: 56px; padding: 14px 30px; font-size: 16px; }
   .wz-check { margin: 0; font-size: 14px; line-height: 1.5; }
   .wz-check:empty { display: none; }
   .wz-check.bad { color: #A3161B; font-weight: 700; } .wz-check.warn { color: #92400E; }
@@ -262,6 +273,7 @@ import QrCampaigns from '../../components/admin/QrCampaigns.astro';
             el('td', { text: String(p.opens) }), el('td', { text: String(p.downloads) }),
             el('td', {}, el('div', { class: 'acts' },
               el('button', { type: 'button', text: 'Edit', onclick: () => openWizard(p.id) }),
+              p.pdf_key ? el('button', { type: 'button', text: 'Share', onclick: () => (window as any).lsOpenShareHub(p.id) }) : null,
               el('a', { href: `/admin/programme-preview/?id=${p.id}`, target: '_blank', rel: 'noopener', text: 'Preview' }),
               el('button', { type: 'button', text: 'Stats', onclick: () => { $('statsSel').value = String(p.id); loadStats(); $('statsH').scrollIntoView({ behavior: 'smooth' }); } }),
               p.live || p.status === 'scheduled' ? el('button', { type: 'button', text: 'Unpublish', onclick: () => setStatus(p, 'hidden') }) : null,
@@ -345,7 +357,8 @@ import QrCampaigns from '../../components/admin/QrCampaigns.astro';
       li.toggleAttribute('aria-current', false); if (s === n) li.setAttribute('aria-current', 'step');
       li.classList.toggle('done', s < n || (s === 2 && !!cur?.pdf_key));
     });
-    $('wzBack').hidden = n === 1;
+    $('wzBack').hidden = n === 1 || n === 5;
+    $('wzNext').hidden = n === 5;
     $('wzNext').textContent = n === 4 ? 'Confirm' : n === 2 && !rendered ? (cur?.pdf_key ? 'Keep current files' : 'Skip for now') : 'Save and continue';
     if (n === 2 && rendered) $('wzNext').textContent = 'Upload and continue';
     $('wzPreview').hidden = !cur?.pdf_key; if (cur) $('wzPreview').href = `/admin/programme-preview/?id=${cur.id}`;
@@ -374,6 +387,7 @@ import QrCampaigns from '../../components/admin/QrCampaigns.astro';
     loadFixtures();
   }
   $('newBtn').addEventListener('click', () => openWizard(null));
+  $('wzShare').addEventListener('click', () => { const pid = cur?.id; wz.close(); if (pid) (window as any).lsOpenShareHub(pid); });
   $('wzClose').addEventListener('click', () => { wz.close(); loadList(); });
   wz.addEventListener('cancel', () => loadList());
   $('wzBack').addEventListener('click', () => showStep(Math.max(1, step - 1)));
@@ -536,7 +550,12 @@ import QrCampaigns from '../../components/admin/QrCampaigns.astro';
         if (w !== 'draft' && !confirm(w === 'now' ? `Publish "${cur.title}" now? Fans will see it straight away.` : `Schedule "${cur.title}" for ${wat(watToIso($('pubAt').value)!)}?`)) return;
         await api(`/api/admin/programmes/${cur.id}`, 'PATCH', { status, publishAt: w === 'schedule' ? watToIso($('pubAt').value) : undefined });
         msg(w === 'draft' ? 'Saved as draft.' : w === 'now' ? 'Published. It is live on /programme.' : 'Scheduled.');
-        wz.close(); loadList();
+        loadList();
+        if (w === 'draft') { wz.close(); return; }
+        // Published or scheduled: offer the Share Hub straight away.
+        $('wzDoneT').textContent = w === 'now' ? 'Published' : 'Scheduled';
+        $('wzDoneP').textContent = w === 'now' ? `"${cur.title}" is live on lobistarsfc.com/programme.` : `"${cur.title}" goes live ${wat(watToIso($('pubAt').value)!)}.`;
+        showStep(5);
       }
     } catch (e: any) { $('wzErr').textContent = e.message; }
     finally { btn.disabled = false; }

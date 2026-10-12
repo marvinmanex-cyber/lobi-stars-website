@@ -57,7 +57,9 @@ these in git.
 | `STAFF_SCAN_CODE` | Ticket scanner at /scan | Short PIN for gate staff. |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | Food order phone notifications, Kitchen Screen push and fan match alerts | See "Kitchen Order Alerts". |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_KITCHEN_CHAT_ID`, `TELEGRAM_WEBHOOK_SECRET` | Telegram kitchen group alerts and the Accept button | See "Kitchen Order Alerts". |
-| `CRON_SECRET` | Repeat kitchen alerts (cron Worker) | Same value on the cron Worker. |
+| `CRON_SECRET` | Repeat kitchen alerts and scheduled social posts (cron Worker) | Same value on the cron Worker. |
+| `TELEGRAM_PUBLIC_BOT_TOKEN`, `TELEGRAM_PUBLIC_CHANNEL` | Share Hub: automatic posts to the club's public Telegram channel | See "Share Hub". |
+| `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_TOKEN`, `FACEBOOK_GRAPH_VERSION` | Share Hub: optional automatic posts to the Facebook Page | See "Share Hub". |
 | `TERMII_API_KEY`, `TERMII_SENDER_ID` | Food order SMS / WhatsApp (optional) | |
 | `PARTNER_ORIGIN_STREAM_URL` | Lobi Stars FC Live commentary | Server-only; see COMMENTARY-STREAM-SETUP.md. |
 | `COMMENTARY_BRAND_NAME` | Commentary player name (optional) | |
@@ -231,6 +233,118 @@ the old version is deleted.
   connected. Staff can check with Preview, which shows drafts too.
 - **"File storage is not connected":** the R2 binding is still commented out
   in `wrangler.toml` (Setup steps 1-2).
+
+## Share Hub (sharing programmes to social media)
+
+Staff share a programme from **Admin › Matchday Programme › Share** (a button
+on every programme, and after Publish / Schedule in the wizard).
+
+**How link cards work.** Every shared link is a tracked share page
+`https://lobistarsfc.com/m/<slug>?src=<platform>&v=<n>` (`functions/m/[slug].js`).
+It returns a small HTML page with og:/twitter: tags (title, description and the
+1200x630 card `/m/<slug>/card.jpg?v=<n>`) for link-preview robots, and sends
+people straight on to `/programme/scan/?c=<platform>&slug=<slug>`, where they
+sign in to read or download. Everyone gets the same HTML (no user-agent
+tricks). Drafts, hidden and unknown programmes redirect to the scan page and
+reveal nothing. Visits are counted per platform (each platform is also a QR
+campaign with the same code), robots and link previews are not.
+`?v=` changes whenever the share images are saved, so WhatsApp and X fetch
+a fresh preview. The card is served outside `/api/` on purpose: robots.txt
+blocks `/api/`, and X's crawler respects that. `/api/programme/<slug>/share/card.jpg`
+is the same image (alias).
+
+**Tracked links and bio links.** Per platform: `/m/<slug>?src=facebook`
+(this programme) and the evergreen bio link `/p/facebook` (always the current
+programme; put it in the Instagram / TikTok bio).
+
+**Tables** (created on first use, `ensureShareSchema` in
+`functions/api/_lib/share.js`): `social_platforms` (seeded: Telegram, Facebook,
+X, WhatsApp, Instagram, TikTok, YouTube, with caption templates and hashtags),
+`programme_captions`, `social_posts`; `programmes.share_assets_version`,
+`social_autopost_at`, `social_autopost_platforms`, `social_autopost_done`. QR
+campaigns telegram, facebook, twitter, whatsapp, instagram, tiktok, youtube and
+fanshare are added for the statistics.
+
+**Code.** `functions/api/_lib/share.js` (captions, limits, links),
+`shareAdapters.js` (Telegram / Facebook), `shareRun.js`, `shareCard.js`;
+`functions/m/[slug].js`, `functions/m/[slug]/card.jpg.js`;
+`functions/api/admin/programmes/[id]/share*`, `functions/api/admin/share/platforms.js`,
+`functions/api/internal/social-autopost.js`; `src/components/admin/ShareHub.astro`;
+`src/components/programme/FanShareMenu.astro`. Tests: `tests/share-hub.test.mjs`.
+
+### Telegram channel bot (automatic posts, free)
+1. In Telegram, open **@BotFather**, send `/newbot`, give it a name (e.g.
+   "Lobi Stars FC") and a username ending in `bot`. Copy the token.
+   (A separate bot from the kitchen bot is safest.)
+2. Open the club's public channel › Administrators › Add Admin › search the
+   bot › allow **Post Messages**.
+3. In Cloudflare Pages › Settings › Variables and Secrets add
+   `TELEGRAM_PUBLIC_BOT_TOKEN` (the token) and `TELEGRAM_PUBLIC_CHANNEL`
+   (`@yourchannelname`, or the numeric id `-100…` for a private channel;
+   with `@name` the Share Hub can link to each post). Redeploy.
+4. In the Share Hub, Telegram shows "ready". Posts are the link card photo,
+   the caption and a "Get the programme" button. Captions over 1,024
+   characters are sent as a second message.
+
+### Facebook Page token (optional, automatic posts)
+Checked against Meta's documentation (Pages API, Graph API v26.0, October 2026):
+posting to `/{page-id}/feed` needs a **Page access token** from someone who can
+do the CREATE_CONTENT, MANAGE and MODERATE tasks on the Page, with the
+permissions `pages_manage_posts`, `pages_read_engagement` (and, per Meta's
+guide, `pages_manage_engagement`, `pages_read_user_engagement`). For the club's
+own Page used by people with a role on the app, App Review isn't needed.
+1. At developers.facebook.com create an app (type **Business**) and add the
+   Lobi Stars Page's admin as an app admin.
+2. Open **Graph API Explorer**, select the app, **Get User Access Token**
+   with `pages_show_list`, `pages_manage_posts`, `pages_read_engagement`,
+   `pages_manage_engagement`, `pages_read_user_engagement`; approve the Page.
+3. Exchange it for a long-lived user token:
+   `GET https://graph.facebook.com/v26.0/oauth/access_token?grant_type=fb_exchange_token&client_id=<APP_ID>&client_secret=<APP_SECRET>&fb_exchange_token=<SHORT_TOKEN>`
+4. `GET https://graph.facebook.com/v26.0/me/accounts?access_token=<LONG_USER_TOKEN>`:
+   copy the Page's `id` and `access_token` (a Page token made from a
+   long-lived user token does not expire unless the password changes or
+   access is removed). Check it in the Access Token Debugger.
+5. Add `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_TOKEN` and optionally
+   `FACEBOOK_GRAPH_VERSION` (default `v26.0`) as Cloudflare secrets; redeploy.
+Before each post the site asks Facebook to re-read the link (scrape), then
+posts the caption (without the link line) with the link, so Facebook shows the
+card. Until these are set, Facebook uses its share window.
+
+### Scheduled posts
+The cron Worker `workers/kitchen-cron` (every minute) also calls
+`/api/internal/social-autopost` with `CRON_SECRET`. Each programme is claimed
+with a conditional UPDATE, so it posts once; failures stay in the Share Hub
+with a Retry button. Deploy/redeploy the Worker after pulling this change:
+`cd workers/kitchen-cron && npx wrangler deploy`.
+
+### Crawlers
+`/m/*` must stay reachable: don't block it in robots.txt, Cloudflare WAF,
+Bot Fight Mode or Access. Test:
+```
+curl -s -A "facebookexternalhit/1.1" "https://lobistarsfc.com/m/<slug>?src=facebook" | grep og:
+```
+should print the og: tags.
+
+### Troubleshooting
+- **Preview shows no image:** the programme has no share images yet (open the
+  Share Hub, it makes them), or a firewall/bot protection blocks robots on
+  `/m/`. The card must be under 400 KB (the hub aims for 280 KB).
+- **Preview is old:** save the share images again (new `?v=`), then for
+  Facebook use **Open Facebook Sharing Debugger › Scrape Again**.
+- **Telegram post fails:** the bot isn't an admin of the channel with "Post
+  Messages", or the channel name/token is wrong. The error is shown in the hub.
+- **Facebook token expired** (error 190): make a new Page token (steps above).
+  Missing permission (error 200/10): add `pages_manage_posts`.
+- **WhatsApp shows no image:** WhatsApp ignores big preview images; the card is
+  kept under 280 KB. Old chats keep the old preview; a new `?v=` fixes new shares.
+
+### Local testing
+```
+npx wrangler pages dev dist --r2=PROGRAMME_BUCKET --binding SESSION_SECRET=x ADMIN_CODE=test-code-123 CRON_SECRET=cron-test-secret TELEGRAM_PUBLIC_BOT_TOKEN=000:test TELEGRAM_PUBLIC_CHANNEL=@test SOCIAL_POST_FAKE=1
+BASE=http://127.0.0.1:8788 node --test tests/share-hub.test.mjs
+```
+`SOCIAL_POST_FAKE=1` pretends to post (tests only; **never** set it in production).
+No migration commands are needed: tables are created on first use.
 
 ## QR advert campaigns (Match Day Programme)
 

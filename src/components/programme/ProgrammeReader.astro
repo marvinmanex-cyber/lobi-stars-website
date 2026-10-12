@@ -8,6 +8,7 @@
 //                programme, drafts too; nothing is counted)
 interface Props { mode?: 'fan' | 'admin' }
 const { mode = 'fan' } = Astro.props;
+import FanShareMenu from './FanShareMenu.astro';
 ---
 <div class="pr" id="pr" data-mode={mode}>
   <div class="pr-bar">
@@ -29,6 +30,8 @@ const { mode = 'fan' } = Astro.props;
   <p class="pr-msg" id="prMsg" role="status" aria-live="polite" hidden></p>
   <div class="pr-pages" id="prPages"><p class="pr-loading">Loading the programme…</p></div>
 </div>
+
+{mode === 'fan' && <FanShareMenu />}
 
 <style is:global>
   .pr { background: #0E1013; min-height: 100vh; color: #fff; }
@@ -110,7 +113,9 @@ const { mode = 'fan' } = Astro.props;
     }
     var res = await fetch('/api/programme/' + encodeURIComponent(key || ''), { credentials: 'same-origin', cache: 'no-store' });
     if (!res.ok) return null;
-    var x = await res.json(); x.hasFiles = true; return x;
+    var x = await res.json(); x.hasFiles = true;
+    if (x.state === 'upcoming') { x.upcoming = true; }
+    return x;
   }
 
   function render() {
@@ -158,6 +163,12 @@ const { mode = 'fan' } = Astro.props;
       if (!key) { empty('No programme chosen.', 'See all programmes', '/programme/'); return; }
       data = await loadData();
       if (!data) { empty('This programme is not available.', 'See all programmes', '/programme/'); return; }
+      if (data.upcoming) {
+        $('prTitle').textContent = data.title;
+        var when = new Date(data.publishAt).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+        empty('This programme is out on ' + when + ' (WAT).', 'Register now so it is waiting for you', '/programme/scan/?slug=' + encodeURIComponent(data.slug) + (src ? '&c=' + src : ''));
+        return;
+      }
       if (ADMIN && !data.hasFiles) { $('prTitle').textContent = data.title; empty('No files have been uploaded for this programme yet.'); return; }
       if (!ADMIN && (!data.signedIn || data.needsProfile)) {
         $('prTitle').textContent = data.title;
@@ -205,15 +216,10 @@ const { mode = 'fan' } = Astro.props;
     finally { btn.disabled = false; btn.textContent = 'Download PDF'; }
   });
 
-  $('prShare').addEventListener('click', async function () {
-    if (!data) return;
-    var link = location.origin + '/programme/?src=share';
-    var text = data.title + ': the free Lobi Stars FC match day programme.';
-    try {
-      if (navigator.share) { await navigator.share({ title: data.title, text: text, url: link }); event('share'); return; }
-    } catch (e) { if (e && e.name === 'AbortError') return; }
-    try { await navigator.clipboard.writeText(link); msg('Link copied. Share it with other fans.'); event('share'); }
-    catch (e) { msg('Share this link: ' + link); }
+  // Shares the tracked link /m/<slug>?src=fanshare (a link card; friends sign in to read).
+  $('prShare').addEventListener('click', function () {
+    if (!data || !window.lsShareProgramme) return;
+    window.lsShareProgramme({ slug: data.slug, shareVersion: data.shareVersion, title: data.title });
   });
 
   var share2 = $('prShare2');

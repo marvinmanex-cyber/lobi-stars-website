@@ -1557,6 +1557,31 @@ status), radio, flyer and kiosk (food kiosk).
 - Fans who scan inside Facebook, Instagram or TikTok see a note to open the
   page in Chrome or Safari; "Read online" is the safer choice there.
 
+### Share Hub (the Share button)
+Press **Share** on a programme (or **Share this programme** after publishing).
+- **Share images** are made for you from the cover: a link card (what people
+  see when the link is shared), a square post and a story (with a QR code and
+  "Link in bio"). Change the headline or sub-line and press **Save share
+  images**. If the PDF changes, new images are made automatically.
+- **One card per platform** (Telegram, Facebook, X, WhatsApp, Instagram,
+  TikTok, YouTube): the caption (edit it; the counter turns red if it's too
+  long; on X every link counts as 23 characters), the tracked link, and
+  buttons: **Copy caption**, **Open post window**, **Download image**,
+  **Share from my phone**, **Mark as posted**. Instagram and TikTok captions
+  can't hold links: use the bio link (e.g. lobistarsfc.com/p/instagram) or a
+  Story link sticker. Each card shows visits, sign-ins, downloads and new fans
+  from that platform (totals only).
+- **Post automatically:** Telegram (and Facebook once set up) can post by
+  themselves: tick them and press **Post now** (it shows exactly what will be
+  posted and warns if it was posted already), or choose a time (**When the
+  programme goes live** / **Now + 1 hour**) and **Save schedule**.
+- **Refresh previews:** if Facebook shows an old picture, open the Sharing
+  Debugger and press Scrape Again.
+- **Edit platforms, captions and hashtags:** the club's profile links, the
+  standard captions and hashtags, and which platforms show.
+- Fans can share too: the **Share** button on the programme pages shares the
+  same kind of tracked link (counted as "Fan share button").
+
 ### Stats
 Per programme: unique readers, opens, downloads, link clicks (per link), new
 fans gained, shares, views of each page (bar chart) and where fans came from.

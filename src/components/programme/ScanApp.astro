@@ -1,13 +1,15 @@
 ---
 // The QR advert journey, from a scan to a signed-in PDF download as fast as
 // possible.
-//   mode="scan"    /programme/scan/?c=<campaign>  (where every /p/<code> lands)
+//   mode="scan"    /programme/scan/?c=<campaign>[&slug=<programme>]  (where every
+//                  /p/<code> and shared /m/<slug> link lands; with slug, that programme)
 //   mode="confirm" /programme/confirm/?e=&t=&src=&intent=  (the button in the
 //                  sign-in email; nothing happens until the fan taps, because
 //                  email scanners open links on their own)
 // The sign-in steps run on the page (no reloads) and are remembered in this
 // tab, so a fan can switch to their email app and come back.
 import settings from '../../data/fan-settings.json';
+import FanShareMenu from './FanShareMenu.astro';
 interface Props { mode?: 'scan' | 'confirm' }
 const { mode = 'scan' } = Astro.props;
 ---
@@ -22,6 +24,7 @@ const { mode = 'scan' } = Astro.props;
     <button type="button" class="btn" id="dlBtn">Download PDF</button>
     <button type="button" class="btn alt" id="readBtn">Read online</button>
     <p class="small" id="liveNote">Free for fans. We'll email you a code, no password needed.</p>
+    <button type="button" class="link" id="shareBtn">Share with friends</button>
   </section>
 
   <section class="card" id="sSoon" hidden aria-labelledby="soonTitle">
@@ -96,6 +99,7 @@ const { mode = 'scan' } = Astro.props;
     <p class="small" id="iosHint" hidden>On iPhone: tap Share, then Save to Files.</p>
   </section>
 </div>
+<FanShareMenu />
 
 <script is:inline>
 (function () {
@@ -258,6 +262,7 @@ const { mode = 'scan' } = Astro.props;
   $('readBtn').addEventListener('click', function () { want('read'); });
   $('regBtn').addEventListener('click', function () { want('download'); });
   $('regBtn2').addEventListener('click', function () { want('download'); });
+  $('shareBtn').addEventListener('click', function () { if (cur && window.lsShareProgramme) window.lsShareProgramme({ slug: cur.slug, shareVersion: cur.shareVersion, title: cur.title }); });
   $('copyLink').addEventListener('click', async function () {
     var link = location.origin + '/programme/scan/' + (src ? '?c=' + src : '');
     try { await navigator.clipboard.writeText(link); $('copied').textContent = 'Copied. Paste it in Chrome or Safari.'; }
@@ -298,6 +303,13 @@ const { mode = 'scan' } = Astro.props;
         fetch('/api/fan/me', { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return { signedIn: false }; }),
       ]);
       data = res[0] && res[0].enabled ? res[0] : null; me = res[1] || { signedIn: false };
+      // A shared link (/m/<slug>) opens that programme: live or coming soon. Unknown: the current one.
+      var slug = /^[a-z0-9-]{1,120}$/.test(q.get('slug') || '') ? q.get('slug') : null;
+      if (slug && data) {
+        var one = await fetch('/api/programme/' + slug, { credentials: 'same-origin', cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+        if (one && one.state === 'live') data = Object.assign({}, data, { programme: one, upcoming: null });
+        else if (one && one.state === 'upcoming') data = Object.assign({}, data, { programme: null, upcoming: { title: one.title, publishAt: one.publishAt, kickoffAt: one.kickoffAt }, serverTime: one.serverTime || data.serverTime });
+      }
       if (data && data.programme) cur = data.programme;
     } catch (e) { console.error('[scan] load', e); }
 

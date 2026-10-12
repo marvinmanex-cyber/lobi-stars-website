@@ -152,7 +152,9 @@ test('live programme: countdown, reading needs sign-in, pages, download, links, 
   const cur = (await api('/api/programme/current')).data;
   assert.equal(cur.enabled, true, 'R2 bucket connected');
   assert.ok(cur.serverTime);
-  assert.equal((await api(`/api/programme/${slug}`)).status, 404, 'scheduled for later: not live yet');
+  const later = await api(`/api/programme/${slug}`);
+  assert.equal(later.data.state, 'upcoming', 'scheduled for later: only the countdown details');
+  assert.ok(!('links' in later.data) && !('version' in later.data), 'no files or links before it drops');
 
   assert.equal((await api(`/api/admin/programmes/${id}`, 'PATCH', { status: 'published' })).status, 200);
   const d = (await api(`/api/programme/${slug}`)).data;
