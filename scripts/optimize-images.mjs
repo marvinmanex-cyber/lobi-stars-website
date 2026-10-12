@@ -3,7 +3,7 @@
 // build time to add width/height attributes). Also (re)builds the favicon
 // set, app icons and the default social share image from the club badge.
 //
-// Run after adding images:   npm run optimize-images
+// Run after adding images:   npm run optimize-images   (add -- --all to redo every image)
 // (needs sharp; on Windows first run:
 //  npm install --no-save @img/sharp-win32-x64@<sharp version>)
 import sharp from 'sharp';
@@ -41,6 +41,16 @@ async function optimisePhotos() {
 
     if (!GENERATED.has(file)) {
       const meta = await sharp(full).metadata();
+      // Already done (has its WebP copy and is within the size limit): keep it.
+      // This also runs before every build (npm "prebuild"), so only new
+      // uploads (e.g. from the CMS) get processed. To redo an image that was
+      // replaced under the same name, delete its .webp files first.
+      const done = path.join(IMAGES, file.replace(/\.(jpe?g|png)$/i, '.webp'));
+      if (!process.argv.includes('--all') && meta.width <= MAX_WIDTH && !clash(file) && await stat(done).then(() => true, () => false)) {
+        sizes[`/images/${file}`] = [meta.width, meta.height];
+        after += original;
+        continue;
+      }
       const resize = meta.width > MAX_WIDTH ? { width: MAX_WIDTH } : null;
       let pipeline = sharp(full).rotate();
       if (resize) pipeline = pipeline.resize(resize);
