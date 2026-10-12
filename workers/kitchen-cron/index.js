@@ -5,10 +5,11 @@
 //    (/api/internal/kitchen-repeat);
 //  - post Match Day Programmes to Telegram / Facebook at their scheduled time
 //    (/api/internal/social-autopost, Share Hub);
-//  - check the website is up, every 5 minutes (/api/internal/health-check).
+//  - check the website is up, every 5 minutes (/api/internal/health-check);
+//  - send last month's partner reports from the 2nd, when switched on (/api/internal/partner-reports).
 // Pages Functions can't run on a timer, so this does it. The website checks
 // CRON_SECRET (same value in both places). One failing call never stops the other.
-const CALLS = ['/api/internal/kitchen-repeat', '/api/internal/social-autopost', '/api/internal/health-check'];
+const CALLS = ['/api/internal/kitchen-repeat', '/api/internal/social-autopost', '/api/internal/health-check', '/api/internal/partner-reports'];
 
 export default {
   async scheduled(event, env, ctx) {

@@ -78,6 +78,7 @@ const RULES = [
   [/^\/api\/admin\/food-analytics(\/|$)/, 'commerce|analytics'],
   [/^\/api\/admin\/(shirt-orders|food-orders|food-menu|food-photo|food-alerts)(\/|$)/, 'commerce'],
   [/^\/api\/admin\/partner-report(\/|$)/, 'partners|analytics'],
+  [/^\/api\/admin\/partner-reports(\/|$)/, 'partners'],
   [/^\/api\/admin\/(analytics|broadcast-report)(\/|$)/, 'analytics'],
   [/^\/api\/admin\/export-log(\/|$)/, 'fans|settings'],
   [/^\/api\/admin\/activity(\/|$)/, 'settings'],

@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
+import PartnerReports from '../../components/admin/PartnerReports.astro';
 import { getCollection } from 'astro:content';
 import { TIERS, partnerWarnings, openCategories, logoSrc, website, PARTNERSHIP } from '../../lib/partners';
 
@@ -84,6 +85,8 @@ const groups = TIERS.map(t => ({
       <p><strong>Open:</strong> {open.length ? open.join(', ') : 'none'}</p>
       {filled.length > 0 && <p><strong>Filled (hidden from opportunities):</strong> {filled.join(', ')}</p>}
     </section>
+
+    <PartnerReports />
   </div>
 </Layout>
 

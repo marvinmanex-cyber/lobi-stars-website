@@ -447,7 +447,7 @@ import MatchesTabs from '../components/MatchesTabs.astro';
   }
 
   function renderPredict(box: HTMLElement, m: M, d: Predict) {
-    const out: Node[] = [el('h2', '', `Predict & Win ${naira(d.prize)}`)];
+    const out: Node[] = [el('h2', '', `PREDICT FOR FREE AND WIN ${naira(d.prize)}!`)];
     const reload = () => { timers.forEach(clearInterval); timers = []; if (match) render(match, true); };
     const next = encodeURIComponent(`/matches/${m.slug}/live/#predict`);
     const auth = () => { const a = el('div', 'ml-actions'); a.append(link(`/fans/register/?next=${next}`, 'Register to play', 'btn-p'), link(`/fans/login/?next=${next}`, 'Log in', 'btn-o')); return a; };

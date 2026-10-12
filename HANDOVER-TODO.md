@@ -30,7 +30,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | A11 | **Match Day Programme file storage** (Cloudflare R2) | Without it the programme can't be uploaded and /programme keeps showing the old single image | Sign in to the Cloudflare account that runs the site so the bucket `lobistars-programmes` can be created and the binding switched on (DEPLOYMENT.md, "Match Day Programme"). Fans' sign-in codes also need **A1 (Resend)**. Then: first real programme PDF (A4, 4 pages) and who prints the QR posters. |
 | A12 | **Share Hub: Telegram channel bot** | Automatic programme posts to the club's public Telegram channel | Create a bot with @BotFather, make it an admin of the channel (Post Messages), add `TELEGRAM_PUBLIC_BOT_TOKEN` and `TELEGRAM_PUBLIC_CHANNEL` (DEPLOYMENT.md, "Share Hub"). Also the club's **profile links** for each platform (Admin › Share › Edit platforms). |
 | A13 | **Share Hub: Facebook Page token** (optional) | Automatic posts to the Facebook Page (otherwise staff use the share window) | A Page admin creates a Meta app and a Page token with `pages_manage_posts` (steps in DEPLOYMENT.md, "Share Hub"); add `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_TOKEN`. |
-| A14 | **Redeploy the cron Worker** | Runs every minute: kitchen repeat alerts, "radio show is live" fan alert, finishing big match-alert sends, **scheduled Share Hub posts** and **Website Health checks**. Nothing on a timer works until it is deployed | During the Cloudflare sign-in: `cd workers/kitchen-cron && npx wrangler deploy`, then `npx wrangler secret put CRON_SECRET` (same value as on the website). |
+| A14 | **Redeploy the cron Worker** | Runs every minute: kitchen repeat alerts, "radio show is live" fan alert, finishing big match-alert sends, **scheduled Share Hub posts**, **Website Health checks** and **monthly partner reports**. Nothing on a timer works until it is deployed | During the Cloudflare sign-in: `cd workers/kitchen-cron && npx wrangler deploy`, then `npx wrangler secret put CRON_SECRET` (same value as on the website). |
 | A6 | **Termii** (optional) | SMS / WhatsApp order alerts | Decide yes or no. If yes: API key (`TERMII_API_KEY`) and approved sender ID (`TERMII_SENDER_ID`). |
 | A7 | **Commentary stream (Option A)** | Lobi Stars FC Live at stream.lobistarsfc.com | From the commentary partner: the stream host name, port and mount (e.g. `https://host:8000/live`). Then the DNS step in COMMENTARY-STREAM-SETUP.md. |
 | A8 | **Google Search Console** | See how the site appears in Google; submit the sitemap | Add the site, verify with the DNS record Google gives, submit `https://lobistarsfc.com/sitemap.xml` (section 23). |
@@ -68,6 +68,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | C15 | **Newsletter sender** | The address the newsletter comes from, e.g. **news@lobistarsfc.com** (needs to be on the Resend domain; set as `NEWSLETTER_FROM`). Which day it goes out each week, and who on the staff writes and sends it. |
 | C16 | **Bio links** | Put **lobistarsfc.com/p/instagram** in the Instagram bio and **lobistarsfc.com/p/tiktok** in the TikTok bio (they always open the current programme), and send the club's profile links for each platform (or add them in Admin › Matchday Programme › Share › Edit platforms). |
 | C17 | **First programme** | The first real Match Day Programme PDF (A4 portrait, exactly 4 pages, under 10 MB), and who prints the QR posters and flyers. |
+| C18 | **Partner report emails** | For each partner, who should receive the monthly report (name and email of their marketing contact); add them in Admin › Partners › Monthly partner reports, or send them to the website manager. |
 | C13 | **Partnership page** | Audience figures (followers, attendance, website visitors) and the partnership brochure PDF. |
 
 ## D. Shop, membership and commercial decisions
@@ -134,8 +135,10 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 9. **Sell shirts directly** (with personalisation) instead of only linking to
    Jumia, once stock and delivery are sorted: the club keeps more of each sale
    and sees who its buyers are.
-10. **Partner reports**: send each sponsor the Partner Report from Analytics
-    every month; it helps renewals.
+10. **Partner reports** ✅ *built:* Partners › Monthly partner reports makes a
+    branded report per sponsor (print / PDF now; email and automatic monthly
+    sending once A1 Resend and A14 cron are done). Needs each partner's report
+    email address (C18).
 
 **Trust, safety and reliability**
 11. **Backups** ✅ *done:* Settings › Data Backup downloads everything (Super

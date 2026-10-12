@@ -1607,6 +1607,25 @@ Super Admins.
 
 
 
+## 30. Monthly partner reports (Partners › Monthly partner reports)
+
+Every sponsor can get a short branded report each month: website impressions
+(page views; their logo is on every page), visits to their website from ours,
+views of their partner page, newsletter issues that carried their advert
+(sent and clicks) and Match Day Programme reach. Totals only, no fans'
+personal details.
+- Choose the **month** (last month is shown first).
+- Type each partner's **report emails** (comma separated) and press **Save**.
+- **Open report** shows exactly what they receive: **Print or save as PDF**
+  to send it yourself.
+- **Send** / **Send to all partners** emails the reports (once email is set
+  up). Each partner gets a month's report once; sending again asks first.
+- Tick **Send last month's reports automatically on the 2nd** to let the
+  website send them every month by itself (needs email and the cron Worker).
+Who can use it: Super Admins and Commercial staff.
+
+## Other things you can update in the CMS
+
 ### Prediction League prize
 **Site Settings, League Table & Shop → Prediction League prize.** Enter the
 end-of-season prize in naira only once the club has confirmed it (0 hides it).

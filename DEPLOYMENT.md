@@ -234,6 +234,20 @@ the old version is deleted.
 - **"File storage is not connected":** the R2 binding is still commented out
   in `wrangler.toml` (Setup steps 1-2).
 
+## Monthly partner reports
+
+`functions/api/_lib/partnerReport.js`: per partner and calendar month
+(Nigerian time) the numbers from `pageviews`, `track_events` (partner_click),
+partner page views, `newsletter_issues` / `newsletter_clicks` (sponsor advert
+matched to the partner by name) and `programme_events`; a branded email /
+printable page (`/api/admin/partner-reports/view?slug=&month=`). Recipients in
+`partner_report_contacts`, history in `partner_report_sends` (one successful
+send per partner and month unless forced). Automatic sending
+(`partner_report_settings.auto_send`): the cron Worker calls
+`/api/internal/partner-reports`; from the 2nd of the month, at most hourly, it
+sends last month's reports (needs `RESEND_API_KEY`). Admin: Partners page
+(roles Super Admin, Commercial). Tests: `tests/partner-reports.test.mjs`.
+
 ## Website Health (uptime monitoring)
 
 `functions/api/_lib/uptime.js`: every 5 minutes (the cron Worker calls

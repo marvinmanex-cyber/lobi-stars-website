@@ -1,0 +1,119 @@
+---
+// Admin › Partners › "Monthly partner reports": each partner's numbers for a
+// month (website impressions, clicks to their site, partner page views,
+// newsletter, Match Day Programme reach), the email addresses that receive
+// their report, Open report (print / save as PDF), Send now, and automatic
+// sending on the 2nd of each month. Totals only, no fans' personal data.
+---
+<section class="prr" id="prr" aria-labelledby="prrH">
+  <div class="prr-head">
+    <h2 id="prrH">Monthly partner reports</h2>
+    <div class="prr-tools">
+      <label class="prr-inl">Month <input type="month" id="prrMonth" /></label>
+      <label class="prr-sw"><input type="checkbox" role="switch" id="prrAuto" /> <span>Send last month's reports automatically on the 2nd</span></label>
+      <button type="button" class="btn-p sm" id="prrSendAll">Send to all partners</button>
+    </div>
+  </div>
+  <p class="prr-warn" id="prrEmail" hidden>Email is not set up yet (Resend), so reports can't be emailed. Use <b>Open report</b> to print them or save them as PDF and send them yourself.</p>
+  <p class="prr-msg" id="prrMsg" role="status" aria-live="polite" hidden></p>
+  <p class="prr-sub" id="prrSum"></p>
+  <div class="scroll" id="prrTable"><p class="muted">Loading…</p></div>
+  <p class="prr-note">Impressions are page views on lobistarsfc.com (every page shows the partners). Newsletter numbers count issues sent that month that carried the partner's advert (Newsletter › Sponsor adverts, matched by name). Each report is sent once per month; sending again needs a confirmation.</p>
+</section>
+
+<style>
+  .prr { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; margin-top: 18px; }
+  .prr-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .prr-head h2 { margin: 0; font: 700 19px 'Barlow', sans-serif; color: var(--a-ink); }
+  .prr-tools { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .prr-inl { display: flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 700; color: var(--a-muted); }
+  .prr-inl input { min-height: 38px; border: 1px solid var(--a-line); border-radius: 10px; padding: 4px 8px; background: var(--a-card); color: var(--a-ink); font: 400 14px 'Barlow', sans-serif; }
+  .prr-sw { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--a-muted); cursor: pointer; }
+  .prr-sw input { width: 18px; height: 18px; accent-color: #16A34A; }
+  .sm { min-height: 38px; padding: 7px 14px; font-size: 13px; }
+  .prr-warn { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; background: #FFF7E6; border: 1px solid #F6D58E; color: #7A4B00; }
+  .prr-msg { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; background: #E8F7EE; color: #17643A; font-weight: 600; }
+  .prr-msg.err { background: #FDECEC; color: #A3161B; }
+  .prr-sub { margin: 0 0 10px; color: var(--a-muted); font-size: 14px; }
+  .prr-note { margin: 12px 0 0; color: var(--a-muted); font-size: 13px; line-height: 1.5; }
+  .prr :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .prr :global(th) { padding: 9px 10px; text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--a-muted); border-bottom: 1px solid var(--a-line); white-space: nowrap; }
+  .prr :global(td) { padding: 10px; font-size: 14px; border-bottom: 1px solid var(--a-line); vertical-align: middle; }
+  .prr :global(td.n) { text-align: right; font-variant-numeric: tabular-nums; }
+  .prr :global(.prr-mail) { display: flex; gap: 6px; min-width: 190px; }
+  .prr :global(td:first-child) { min-width: 150px; }
+  .prr :global(td) { padding: 10px 8px; }
+  .prr :global(.prr-mail input) { flex: 1; min-width: 0; min-height: 36px; border: 1px solid var(--a-line); border-radius: 8px; padding: 4px 8px; font: 400 13px 'Barlow', sans-serif; background: var(--a-card); color: var(--a-ink); }
+  .prr :global(.prr-acts) { display: flex; gap: 6px; flex-wrap: wrap; }
+  .prr :global(.prr-acts a), .prr :global(.prr-acts button), .prr :global(.prr-mail button) { min-height: 34px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; font: 700 12px 'Barlow', sans-serif; text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap; }
+  .prr :global(.prr-st) { font-size: 12px; color: var(--a-muted); }
+  .prr :global(.prr-st.ok) { color: #166534; font-weight: 700; } .prr :global(.prr-st.bad) { color: #991B1B; font-weight: 700; }
+  .prr [hidden] { display: none !important; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'x-admin-code': code };
+  const $ = id => document.getElementById(id);
+  const el = (t, p = {}, ...k) => { const n = document.createElement(t); for (const [a, v] of Object.entries(p)) { if (a === 'class') n.className = v; else if (a === 'text') n.textContent = v; else if (a.startsWith('on')) n.addEventListener(a.slice(2), v); else n.setAttribute(a, v); } k.forEach(x => x != null && n.append(x)); return n; };
+  const nf = n => Number(n || 0).toLocaleString('en-NG');
+  let data = null;
+  function msg(t, ok = true) { $('prrMsg').textContent = t; $('prrMsg').className = 'prr-msg' + (ok ? '' : ' err'); $('prrMsg').hidden = false; }
+  async function api(body) {
+    const r = await fetch('/api/admin/partner-reports' + (body ? '' : `?month=${encodeURIComponent($('prrMonth').value)}`), body ? { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function lastSend(slug, month) { return data.sends.find(s => s.partner_slug === slug && s.month === month); }
+  function draw() {
+    const rep = data.report;
+    if (!$('prrMonth').value) $('prrMonth').value = rep.month;
+    $('prrAuto').checked = data.autoSend;
+    $('prrEmail').hidden = data.emailReady;
+    $('prrSendAll').disabled = !data.emailReady;
+    $('prrSum').textContent = `${rep.label}: ${nf(rep.site.views)} page views from ${nf(rep.site.visitors)} visitors. Match Day Programme: ${nf(rep.programme.readers)} readers, ${nf(rep.programme.downloads)} downloads.`;
+    const rows = rep.partners.map(p => {
+      const c = data.contacts.find(x => x.partner_slug === p.slug);
+      const inp = el('input', { type: 'text', value: c ? c.emails : '', placeholder: 'name@partner.com, …', 'aria-label': `Report emails for ${p.name}` });
+      const s = lastSend(p.slug, rep.month);
+      return el('tr', {},
+        el('td', {}, el('b', { text: p.name }), el('div', { class: 'muted', text: p.tier })),
+        el('td', { class: 'n', text: nf(p.impressions) }), el('td', { class: 'n', text: nf(p.clicks) }), el('td', { class: 'n', text: nf(p.pageViews) }),
+        el('td', { class: 'n', text: p.newsletter.issues ? `${nf(p.newsletter.recipients)} / ${nf(p.newsletter.clicks)}` : '–' }),
+        el('td', {}, el('div', { class: 'prr-mail' }, inp, el('button', { type: 'button', text: 'Save', onclick: async () => {
+          try { const r = await api({ contacts: { slug: p.slug, emails: inp.value } }); inp.value = r.emails.join(', '); msg(`Saved report emails for ${p.name}.`); await load(); } catch (e) { msg(e.message, false); }
+        } }))),
+        el('td', {}, el('span', { class: 'prr-st ' + (s ? (s.status === 'sent' ? 'ok' : 'bad') : ''), text: s ? (s.status === 'sent' ? `Sent ${new Date(s.sent_at.replace(' ', 'T') + 'Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}` : `Failed: ${s.error}`) : 'Not sent' })),
+        el('td', {}, el('div', { class: 'prr-acts' },
+          el('a', { href: `/api/admin/partner-reports/view?slug=${encodeURIComponent(p.slug)}&month=${rep.month}`, target: '_blank', rel: 'noopener', text: 'Open report' }),
+          data.emailReady ? el('button', { type: 'button', text: s && s.status === 'sent' ? 'Send again' : 'Send', onclick: () => send([p.slug], !!(s && s.status === 'sent')) }) : null)));
+    });
+    $('prrTable').replaceChildren(el('table', {},
+      el('thead', {}, el('tr', {}, ...['Partner', 'Impressions', 'Clicks', 'Page views', 'Newsletter', 'Report emails', 'Status', ''].map(h => el('th', { text: h })))),
+      el('tbody', {}, ...rows)));
+  }
+  async function send(slugs, again) {
+    const label = data.report.label;
+    if (again && !confirm(`This report was already sent for ${label}. Send it again?`)) return;
+    if (!slugs && !confirm(`Send the ${label} report to every partner with an email address? Partners already sent this month are skipped.`)) return;
+    try {
+      const r = await api({ send: { month: data.report.month, slugs, force: !!again } });
+      const sent = r.results.filter(x => x.ok && !x.skipped).length, failed = r.results.filter(x => !x.ok);
+      msg(failed.length ? `Sent ${sent}; failed: ${failed.map(f => `${f.slug} (${f.error})`).join(', ')}` : `Sent ${sent} report${sent === 1 ? '' : 's'}.`, !failed.length);
+      await load();
+    } catch (e) { msg(e.message, false); }
+  }
+  async function load() {
+    try { data = await api(); draw(); } catch (e) { $('prrTable').replaceChildren(el('p', { class: 'muted', text: e.message })); }
+  }
+  $('prrMonth').addEventListener('change', load);
+  $('prrSendAll').addEventListener('click', () => send(null, false));
+  $('prrAuto').addEventListener('change', async e => {
+    try { await api({ settings: { autoSend: e.target.checked } }); msg(e.target.checked ? 'Automatic sending is on: last month\'s reports go out on the 2nd (once email and the cron Worker are set up).' : 'Automatic sending is off.'); }
+    catch (err) { msg(err.message, false); e.target.checked = !e.target.checked; }
+  });
+  load();
+})();
+</script>
