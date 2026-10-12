@@ -88,6 +88,12 @@ tickets and season tickets alike. A season ticket gets in once per home match:
 if it shows "Already used for this match", the code has already been let in
 today. Season tickets only work on home match days.
 
+A match ticket only gets in on the day of **its own match**. If the scanner
+shows "Wrong match: this ticket is for … on …", the fan has brought a ticket
+for a different fixture: don't let them in on it. That ticket is not used up
+and still works on its own match day. Send the fan to the ticket desk if they
+need a ticket for today.
+
 ## 2. At kick-off
 
 In **Admin → Match Centre**, choose the match and press

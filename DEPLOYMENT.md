@@ -637,5 +637,9 @@ endpoint:
   ticket code into the input field and submits it automatically. No app or
   special integration needed.
 
+A match ticket (`LS-TIX-…`) is only accepted on the Nigerian calendar day of
+its own event; any other day it is refused with "Wrong match: this ticket is
+for <home> v <away> on <date>" and stays valid (tests/gate-match-day.test.mjs).
+
 Each ticket can only be scanned once — a database-level check prevents two
 doors admitting the same ticket at the same moment.

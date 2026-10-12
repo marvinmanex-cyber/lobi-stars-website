@@ -28,6 +28,18 @@ export async function onRequestPost({ request, env }) {
     return Response.json(r.body, { status: r.status });
   }
 
+  // A match ticket only gets in on the day of its own match (Nigerian time):
+  // a ticket for another fixture is refused and stays valid for its match.
+  const forMatch = await env.DB.prepare(
+    `SELECT t.status, e.home_team, e.away_team, e.event_date FROM tickets t JOIN events e ON e.id = t.event_id WHERE t.id = ?`
+  ).bind(cleanId).first();
+  if (forMatch && forMatch.status === 'valid' && lagosDay(forMatch.event_date) !== lagosDay(Date.now())) {
+    return Response.json({
+      valid: false,
+      reason: `Wrong match: this ticket is for ${forMatch.home_team} v ${forMatch.away_team} on ${matchDate(forMatch.event_date)}`,
+    }, { status: 409 });
+  }
+
   const claim = await env.DB.prepare(
     `UPDATE tickets SET status = 'used', used_at = datetime('now'), scanned_by = ?
      WHERE id = ? AND status = 'valid'`
@@ -56,3 +68,7 @@ export async function onRequestPost({ request, env }) {
   }
   return Response.json({ valid: false, reason: 'Ticket void' }, { status: 409 });
 }
+
+// Calendar day in Nigeria (UTC+1), e.g. '2026-10-12'.
+const lagosDay = d => new Date(new Date(d).getTime() + 3600e3).toISOString().slice(0, 10);
+const matchDate = d => new Date(d).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });

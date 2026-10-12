@@ -323,7 +323,12 @@ refunded*). Personalisation needs Paystack set up (the same account as tickets).
      category.
    - **Logo**: upload the partner's logo. A transparent PNG or SVG looks best.
      If there's no logo yet, the site shows the partner's name in the box
-     instead.
+     instead. Logos always sit on a white card, so leave **Card colour behind
+     the logo** empty. Only fill it in (for example #000000) for a logo that is
+     all white and can't be seen on white. If a partner only has a logo on a
+     black box, ask them for a transparent PNG or SVG; the web team can also
+     clean it up with `scripts/logo-to-transparent.mjs` (instructions at the
+     top of that file).
    - **Website** (starting with https://), a one-line **Short Description**
      and **Partner Since** (the year).
    - **Display Order**: 1 shows first within its tier.
@@ -1638,6 +1643,8 @@ until you switch it on.
 - **At the gate** the normal Ticket Scanner reads it: it lets the person in
   **once per home match**, only on the day of a home match ("Already used for
   this match" if scanned again). A pass only works in its own season.
+  Ordinary match tickets only get in on the day of their own match; a ticket
+  for another fixture shows "Wrong match" and still works on its own day.
 - **Season tickets sold:** every pass with its holder, stand, code and how
   many matches it has been used for; find by name, email or code. **Cancel**
   stops a lost or refunded pass at the gate (**Restore** undoes it). Refunds

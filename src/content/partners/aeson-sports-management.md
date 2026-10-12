@@ -3,9 +3,9 @@ name: Aeson Sports Management Limited
 tier: Media & Broadcast Partners
 category: Media
 officialTitle: Official Media & Broadcast Partner
-logo: /images/Aeson Sports Sports Management Limited Limited Official Logo.png
+logo: /images/aeson-sports-management-logo.png
 logoDark: ''
-cardColor: '#000000'
+cardColor: ''
 website: ''
 shortDescription: Aeson Sports Management Limited is the Official Media & Broadcast Partner of Lobi Stars FC.
 since: null
