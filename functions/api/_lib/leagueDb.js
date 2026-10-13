@@ -315,7 +315,9 @@ export async function writeCentre(db, eventId, status, homeGoals, awayGoals) {
   const now = nowIso();
   await db.prepare(`INSERT INTO match_centre (event_id, status, home_score, away_score, kickoff_at, ended_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
     ON CONFLICT(event_id) DO UPDATE SET status = excluded.status, home_score = excluded.home_score, away_score = excluded.away_score,
-      kickoff_at = CASE WHEN excluded.status IN ('live','half-time','full-time') THEN COALESCE(match_centre.kickoff_at, excluded.kickoff_at) ELSE match_centre.kickoff_at END,
+      kickoff_at = CASE WHEN excluded.status IN ('scheduled','postponed','cancelled') THEN NULL
+        WHEN match_centre.status IN ('scheduled','postponed','cancelled') OR match_centre.kickoff_at IS NULL THEN excluded.kickoff_at
+        ELSE match_centre.kickoff_at END,
       ended_at = CASE WHEN excluded.status = 'full-time' THEN COALESCE(match_centre.ended_at, excluded.ended_at) ELSE NULL END,
       updated_at = datetime('now')`)
     .bind(eventId, st, homeGoals ?? null, awayGoals ?? null, ['live', 'half-time', 'full-time'].includes(st) ? now : null, st === 'full-time' ? now : null).run();
@@ -334,14 +336,25 @@ async function linkLobiFixtures(env) {
       for (const r of results) await syncEvent(env, r.id);
     }
     // The trial "Lobi Stars FC vs Kada Warriors FC, Fri 23 Oct 2026" match is not in the
-    // official fixture list: hide it, unless tickets were sold for it.
-    const old = await db.prepare(`SELECT e.id, (SELECT COUNT(*) FROM orders o WHERE o.event_id = e.id AND o.payment_status = 'paid') AS orders FROM events e
+    // official fixture list: hidden (the club confirmed its ticket orders were test purchases).
+    const old = await db.prepare(`SELECT e.id FROM events e
       WHERE e.home_team = 'Lobi Stars FC' AND e.away_team = 'Kada Warriors FC' AND substr(e.event_date, 1, 10) = '2026-10-23' AND e.active = 1
         AND e.id NOT IN (SELECT event_id FROM league_fixtures WHERE event_id IS NOT NULL)`).all();
     for (const e of old.results) {
-      if (e.orders > 0) continue; // paid tickets were sold for it: left in place
       await db.prepare(`UPDATE events SET active = 0 WHERE id = ?`).bind(e.id).run();
       await logLeague(db, { email: 'system' }, 'event.hide', 'event', e.id, { active: 1 }, { active: 0, reason: 'Not in the official NNL Conference D fixture list.' });
+    }
+    // Ticket prices the club set for the 2026/27 home league matches (once; later
+    // changes in Match Tickets & Settings are never overwritten): VIP Sitting
+    // N5,000, Cover Stand N2,000, Popular Stand N1,000.
+    const done = await db.prepare(`SELECT value FROM settings WHERE key = 'league_home_prices_2026_27'`).first().catch(() => null);
+    if (!done) {
+      await db.prepare(`UPDATE events SET vip_price_kobo = 500000, premium_price_kobo = 200000, regular_price_kobo = 100000
+        WHERE vip_price_kobo = 0 AND premium_price_kobo = 0 AND regular_price_kobo = 0 AND id IN (
+          SELECT f.event_id FROM league_fixtures f JOIN league_competitions c ON c.id = f.competition_id JOIN league_teams h ON h.id = f.home_team_id
+          WHERE c.slug = 'nnl-conference-d-2026-27' AND h.is_lobi = 1 AND f.event_id IS NOT NULL)`).run();
+      await db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES ('league_home_prices_2026_27', ?)`).bind(new Date().toISOString()).run();
+      await logLeague(db, { email: 'system' }, 'prices.set', 'event', 'home-2026-27', null, { vip: 5000, cover: 2000, popular: 1000 });
     }
   } catch (err) {
     linked = false;

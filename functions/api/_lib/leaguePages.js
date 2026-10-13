@@ -164,19 +164,21 @@ ${comps.length > 1 ? select('comp', 'Competition', [['', 'All'], ...comps], comp
   if (!list.length) body = `<p class="lg-empty">No matches to show${md || month || ha || comp ? ' with these filters. <a href="/fixtures/">Show all Lobi Stars fixtures</a>' : '. Fixtures for the next round will be announced soon.'}</p>`;
   else {
     const brk = league.competition.break_start ? { start: league.competition.break_start, end: league.competition.break_end, label: league.competition.break_label || 'Mid-season break' } : null;
-    let lastDay = '', lastMd = null, breakShown = false;
+    let lastDay = '', lastMd = null, breakShown = false, open = false;
     for (const f of list) {
       const iso = f.kickoff_at || f.original_kickoff_at;
       const day = toLagos(iso).date;
       // The mid-season break sits between the last match before it and the first after it.
       if (brk && !breakShown && lastDay && lastDay < brk.start && day >= brk.start) {
+        if (open) { body += '</div>'; open = false; }
         body += `<div class="lg-break" role="separator">${esc(brk.label)}, ${esc(formatShortDate(`${brk.start}T12:00:00Z`).replace(/^\w+ /, ''))} to ${esc(formatShortDate(`${brk.end}T12:00:00Z`).replace(/^\w+ /, ''))}</div>`;
         breakShown = true;
       }
-      if (f.matchday && f.matchday !== lastMd && !md) { body += `<h2 class="lg-md">Matchday ${esc(f.matchday)}</h2>`; lastMd = f.matchday; lastDay = ''; }
-      if (day !== lastDay) { body += `<h3 class="lg-day">${f.kickoff_at ? esc(formatDate(f.kickoff_at)) : `Originally ${esc(formatDate(iso))}`}</h3>`; lastDay = day; }
+      if (f.matchday && f.matchday !== lastMd && !md) { body += `${open ? '</div>' : ''}<h2 class="lg-md">Matchday ${esc(f.matchday)}</h2>`; open = false; lastMd = f.matchday; lastDay = ''; }
+      if (day !== lastDay) { body += `${open ? '</div>' : ''}<h3 class="lg-day">${f.kickoff_at ? esc(formatDate(f.kickoff_at)) : `Originally ${esc(formatDate(iso))}`}</h3><div class="lg-group">`; open = true; lastDay = day; }
       body += matchCard(f, { previews });
     }
+    if (open) body += '</div>';
   }
   const feed = `<aside class="lg-sub"><div><h2>Never miss a match</h2><p>Subscribe to the Lobi Stars fixtures: kick-off changes and new dates appear in your calendar automatically.</p></div>
 <div class="lg-acts"><a class="lg-btn primary" href="webcal://lobistarsfc.com/api/league/calendar.ics?team=lobi" data-webcal>Subscribe to Lobi Stars fixtures</a><a class="lg-btn" href="https://calendar.google.com/calendar/r?cid=${encodeURIComponent('webcal://lobistarsfc.com/api/league/calendar.ics?team=lobi')}" target="_blank" rel="noopener">Google Calendar</a><a class="lg-btn" href="/api/league/calendar.ics?team=lobi">Download (.ics)</a></div></aside>`;
@@ -205,7 +207,7 @@ export function resultsPage(league, extras, url) {
 ${select('team', 'Club', [['lobi', 'Lobi Stars'], ['all', 'All Conference D'], ...league.teams.filter(t => !t.is_lobi).map(t => [t.code.toLowerCase(), t.name])], team ? (team.is_lobi ? 'lobi' : team.code.toLowerCase()) : 'all')}
 ${select('matchday', 'Matchday', [['', 'All'], ...mds.map(d => [d, `Matchday ${d}`])], md)}
 <button type="submit" class="lg-btn" data-apply>Show</button></form>`;
-  const body = list.length ? list.map(f => matchCard(f, { results: true })).join('') : `<p class="lg-empty">No results yet${md ? ' for this matchday' : ' this season'}. The season starts on ${esc(formatDate(`${league.competition.start_date}T12:00:00Z`))}.</p>`;
+  const body = list.length ? `<div class="lg-group">${list.map(f => matchCard(f, { results: true })).join('')}</div>` : `<p class="lg-empty">No results yet${md ? ' for this matchday' : ' this season'}. The season starts on ${esc(formatDate(`${league.competition.start_date}T12:00:00Z`))}.</p>`;
   return `${formHtml}${filters}<div class="lg-list">${body}</div>`;
 }
 
@@ -236,7 +238,7 @@ ${select('upto', 'Table after', [['', 'Latest'], ...played.map(d => [d, `Matchda
     const team = league.allTeams.find(x => x.id === r.team.id);
     return `<tr class="${r.team.isLobi ? 'is-lobi' : ''}"${z ? ` style="--zone:${esc(z.colour)}" data-zone` : ''}>
 <td class="pos"><span>${esc(r.pos)}</span>${t.preSeason ? '' : arrow(r.movement)}</td>
-<th scope="row" class="club">${crest(team, 26)}<span class="full">${esc(r.team.name)}</span><span class="short">${esc(r.team.shortName)}</span>${r.adjustment ? `<sup title="Points adjustment">*</sup>` : ''}</th>
+<th scope="row" class="club"><span class="club-in">${crest(team, 26)}<span class="full">${esc(r.team.name)}</span><span class="short">${esc(r.team.shortName)}</span>${r.adjustment ? `<sup title="Points adjustment">*</sup>` : ''}</span></th>
 <td class="p">${r.played}</td><td class="ext">${r.won}</td><td class="ext">${r.drawn}</td><td class="ext">${r.lost}</td><td class="ext">${r.gf}</td><td class="ext">${r.ga}</td>
 <td class="gd">${sign(r.gd)}</td><td class="pts"><b>${r.points}</b></td>
 <td class="form">${r.form.length ? `<span class="lg-form-row">${r.form.map(x => `<span class="lg-f-${x}" title="${x === 'W' ? 'Won' : x === 'D' ? 'Drew' : 'Lost'}">${x}</span>`).join('')}</span><span class="sr">Form, oldest first: ${r.form.map(x => (x === 'W' ? 'won' : x === 'D' ? 'drew' : 'lost')).join(', ')}</span>` : '<span class="lg-small">–</span>'}</td></tr>`;
