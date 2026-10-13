@@ -34,8 +34,9 @@ STAFF-GUIDE section 26 (Admin → Matchday → Fan Match Alerts).
 
 ## 1. Before the match (a day or more ahead)
 
-1. **Add the match** in **Admin → Manage matches** if it isn't there. Make sure
-   Lobi Stars is the home team and "Lobi Stars home game" is ticked.
+1. **Check the match** in **Admin → League → Fixtures** (the whole season is
+   loaded): date, kick-off time (WAT) and venue. Ticket prices are set in
+   **Admin → Matchday → Match Tickets & Settings**.
 2. Open **Admin → Match Centre** and choose the match.
 3. **Matchday squad:** in *Matchday squad*, set each player to **Starting XI**,
    **Bench** or *Not selected*. Only these players appear in Man of the Match
@@ -45,7 +46,7 @@ STAFF-GUIDE section 26 (Admin → Matchday → Fan Match Alerts).
    link** and/or the **Facebook live link** for this game and press **Save**.
    Leave them empty to show links to the official channels instead.
    - Only YouTube and Facebook links are accepted.
-5. **Live commentary:** in **Admin → Manage matches**, edit the match and check
+5. **Live commentary:** in **Admin → Match Tickets & Settings**, edit the match and check
    *Live commentary available for this match* is ticked. Change *Commentary
    starts* only if it shouldn't start 15 minutes before kick-off. This works
    for home **and** away games. On the day, press **Test stream** on
@@ -55,7 +56,7 @@ STAFF-GUIDE section 26 (Admin → Matchday → Fan Match Alerts).
    Set up the kitchen tablet with **Food: Live Order Board** and make sure the
    kitchen and runners have notifications on (STAFF-GUIDE.md, sections 13–16).
 6. **Tickets:** to give members first access, set *General sale opens* on the
-   match (Admin → Manage matches). Members confirmed in Admin → Members can
+   match (Admin → Match Tickets & Settings). Members confirmed in Admin → Members can
    buy before then; everyone else from that time.
 7. Predict & Win opens automatically **24 hours before kick-off**. Fans who
    said yes to news and offers get a "Predictions are now open" email (once
@@ -95,6 +96,10 @@ and still works on its own match day. Send the fan to the ticket desk if they
 need a ticket for today.
 
 **Sharing the match page:** in Admin, Matchday, Share any page, type the opponent's name, press Check, then use Post now (Telegram, Facebook) or Open post window and Mark as posted. Fans can also press Share on the match page.
+
+**Postponed?** In **League → Fixtures** press **Postpone** on the match and
+give the reason; fans see "Postponed" with the reason, and the match page,
+tickets and alerts follow. Reschedule it there when the new date is known.
 
 ## 2. At kick-off
 
@@ -184,7 +189,7 @@ fan sees their own position on their account page.
   of the table, just as they can't win the match prize.
 - Correcting a final score or disqualifying an entry updates the table straight away.
 - **End-of-season prize:** not set yet. When the club confirms one, enter it in
-  the CMS: **Site Settings, League Table & Shop → Prediction League prize**
+  the CMS: **Site Settings & Shop → Prediction League prize**
   (amount in naira; 0 hides it). It then appears on the league page and in the
   Predict & Win terms.
 

@@ -1,0 +1,215 @@
+---
+// League › Table & Rules: the table as the website shows it (worked out from
+// the results), with "Explain this position"; points adjustments (never
+// deleted, only voided); tie decisions (only when clubs are level on every
+// rule); the rules (points, tie-break order, zones, live matches, awarded
+// score) with a before-and-after preview; and the data checks.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="League Table & Rules | Lobi Stars Admin" description="League table, adjustments and rules." noindex>
+  <div class="wrap la">
+    <AdminNav current="league-table" />
+    <header class="la-head"><div><div class="stag">League</div><h1 class="stitle">Table &amp; <span class="r">Rules</span></h1></div>
+      <a class="btn-o" href="/table/" target="_blank" rel="noopener">Public table ↗</a></header>
+    <p class="la-lede">The table can't be typed in: it is worked out from the results, the adjustments below and the league's rules, so it is always right and the same everywhere.</p>
+
+    <section class="la-card" aria-labelledby="h-t">
+      <h2 id="h-t">Table</h2>
+      <div class="la-row" style="margin-bottom:10px">
+        <div class="la-tabs" id="scope" role="group" aria-label="Table" style="margin:0"></div>
+        <label class="la-f">Table after<select id="upto"><option value="">Latest</option></select></label>
+      </div>
+      <p class="la-muted" id="tStatus"></p>
+      <div id="tbl"><p class="la-muted">Loading…</p></div>
+      <ul class="la-muted" id="notes" style="padding-left:18px"></ul>
+    </section>
+
+    <div class="la-grid">
+      <section class="la-card" aria-labelledby="h-adj">
+        <h2 id="h-adj">Points adjustments</h2>
+        <form id="adjForm" class="la-row" style="align-items:flex-end">
+          <label class="la-f">Club<select name="teamId" required></select></label>
+          <label class="la-f">Points<input name="points" type="number" inputmode="numeric" required style="width:90px" placeholder="-3" /></label>
+          <label class="la-f" style="flex:1 1 220px">Reason (shown on the table)<input name="reason" required minlength="5" maxlength="200" placeholder="Fielded an ineligible player (NNL ruling 12/2026)" /></label>
+          <button class="btn-p" type="submit">Add</button>
+        </form>
+        <div id="adjList" style="margin-top:12px"></div>
+      </section>
+      <section class="la-card" aria-labelledby="h-tie">
+        <h2 id="h-tie">Tie decisions</h2>
+        <div id="tie"><p class="la-muted">Loading…</p></div>
+      </section>
+    </div>
+
+    <section class="la-card" aria-labelledby="h-rules">
+      <h2 id="h-rules">Rules</h2>
+      <form id="rulesForm">
+        <div class="la-row">
+          <label class="la-f">Points for a win<input name="pointsWin" type="number" min="0" max="5" inputmode="numeric" style="width:90px" /></label>
+          <label class="la-f">Draw<input name="pointsDraw" type="number" min="0" max="5" inputmode="numeric" style="width:90px" /></label>
+          <label class="la-f">Defeat<input name="pointsLoss" type="number" min="0" max="5" inputmode="numeric" style="width:90px" /></label>
+          <label class="la-f">Awarded score (home–away)<span class="la-row"><input name="awardedHomeGoals" type="number" min="0" max="30" style="width:70px" />–<input name="awardedAwayGoals" type="number" min="0" max="30" style="width:70px" /></span></label>
+          <label class="la-row" style="gap:8px;font-weight:700"><input type="checkbox" name="includeLive" style="min-height:auto;width:20px;height:20px" /> Count live matches in the table</label>
+        </div>
+        <h3>Tie-break order</h3>
+        <p class="la-muted">Clubs level on points are separated by the rules below, in this order. Head-to-head rules use only the matches between the clubs still level.</p>
+        <ol id="tbOrder" style="padding-left:20px;display:grid;gap:6px"></ol>
+        <div class="la-row"><select id="tbAdd" aria-label="Add a tie-break rule"></select><button type="button" class="btn-o btn-sm" id="tbAddBtn">Add rule</button></div>
+        <h3>Zones (optional)</h3>
+        <p class="la-muted">Colour bands on the table, e.g. promotion places. Leave empty if the league hasn't announced them.</p>
+        <div id="zones" style="display:grid;gap:8px"></div>
+        <button type="button" class="btn-o btn-sm" id="zoneAdd" style="margin-top:8px">Add zone</button>
+        <div class="la-row la-end" style="margin-top:14px"><button type="submit" class="btn-p">Preview and save rules</button></div>
+      </form>
+    </section>
+
+    <section class="la-card" aria-labelledby="h-chk"><h2 id="h-chk">Check data</h2><button type="button" class="btn-o" id="chkBtn">Check data</button><div id="chk" style="margin-top:10px"></div></section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, el = LA.el, $ = function (id) { return document.getElementById(id); };
+  var state = { scope: 'overall', upto: '', data: null, rules: null, criteria: [], order: [], zones: [] };
+  var sign = function (n) { return n > 0 ? '+' + n : String(n); };
+
+  function loadTable() {
+    LA.api('/api/admin/league/table?scope=' + state.scope + (state.upto ? '&upto=' + state.upto : '')).then(function (r) {
+      if (!r.ok) { $('tbl').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load.' })); return; }
+      var d = state.data = r.d;
+      var sc = $('scope'); sc.replaceChildren();
+      ['overall', 'home', 'away'].forEach(function (s) { sc.append(el('button', { type: 'button', 'aria-pressed': String(state.scope === s), text: s[0].toUpperCase() + s.slice(1), onclick: function () { state.scope = s; loadTable(); } })); });
+      var up = $('upto'); if (up.options.length <= 1) d.matchdays.forEach(function (m) { up.add(new Option('Matchday ' + m, m)); });
+      $('tStatus').textContent = d.preSeason ? 'Pre-season: all clubs on zero, listed alphabetically.' : 'After Matchday ' + d.matchday + ', ' + d.matchesPlayed + ' of ' + d.matchesTotal + ' matches played.';
+      $('tbl').replaceChildren(LA.table(['Pos', 'Club', 'P', 'W', 'D', 'L', 'GF', 'GA', 'GD', 'Pts', 'Form', ''], d.rows.map(function (x) {
+        return el('tr', { class: x.team.isLobi ? 'is-lobi' : '' },
+          el('td', { class: 'n', text: x.pos + (x.movement > 0 ? ' ▲' : x.movement < 0 ? ' ▼' : '') }),
+          el('th', { scope: 'row' }, LA.crest(x.team), x.team.name, x.adjustment ? el('span', { class: 'la-chip', style: 'margin-left:6px', text: sign(x.adjustment) + ' pts' }) : null, x.level ? el('span', { class: 'la-chip postponed', style: 'margin-left:6px', text: 'Level on everything' }) : null),
+          [x.played, x.won, x.drawn, x.lost, x.gf, x.ga].map(function (v) { return el('td', { class: 'n', text: String(v) }); }),
+          el('td', { class: 'n', text: sign(x.gd) }), el('td', { class: 'n' }, el('b', { text: String(x.points) })), el('td', { text: x.form.join(' ') }),
+          el('td', {}, el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Explain', onclick: function () { LA.confirm(x.pos + '. ' + x.team.name, [x.explain || 'No explanation.'], 'Close'); } })));
+      })));
+      $('notes').replaceChildren.apply($('notes'), d.footnotes.map(function (n) { return el('li', { text: n }); }));
+      drawAdjustments(); drawTeams();
+    });
+  }
+  $('upto').addEventListener('change', function () { state.upto = this.value; loadTable(); });
+
+  function drawTeams() {
+    var s = $('adjForm').elements.teamId; if (s.options.length) return;
+    s.add(new Option('Choose…', '')); state.data.teams.forEach(function (t) { s.add(new Option(t.name, t.id)); });
+  }
+  function drawAdjustments() {
+    var list = state.data.adjustments, name = function (id) { var t = state.data.teams.find(function (x) { return x.id === id; }); return t ? t.name : '?'; };
+    $('adjList').replaceChildren(list.length ? LA.table(['Club', 'Points', 'Reason', 'Added', 'Status', ''], list.slice().reverse().map(function (a) {
+      return el('tr', {}, el('td', { text: name(a.team_id) }), el('td', { class: 'n', text: sign(a.points_delta) }), el('td', { text: a.reason }),
+        el('td', { class: 'la-muted', text: (a.created_by || '') + ', ' + LA.when(a.created_at) }),
+        el('td', { text: a.is_active ? 'Active' : 'Voided by ' + (a.voided_by || '') + ', ' + LA.when(a.voided_at) + (a.void_reason ? ': ' + a.void_reason : '') }),
+        el('td', {}, a.is_active ? el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Void', onclick: function () {
+          LA.prompt('Void this adjustment?', 'Why (e.g. overturned on appeal)', { ok: 'Void' }).then(function (reason) {
+            if (reason === null) return;
+            LA.api('/api/admin/league/adjustments/' + a.id + '/void', { method: 'POST', body: { reason: reason } }).then(function (r) { r.ok ? (LA.toast('Adjustment voided'), loadTable(), loadTie()) : LA.toast(r.d.error || 'Could not void.', true); });
+          });
+        } }) : null));
+    })) : el('p', { class: 'la-muted', text: 'No adjustments.' }));
+  }
+  $('adjForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = this.elements, body = { teamId: Number(f.teamId.value), points: Number(f.points.value), reason: f.reason.value };
+    var club = f.teamId.options[f.teamId.selectedIndex].text;
+    LA.confirm('Add ' + sign(body.points) + ' points for ' + club + '?', ['Reason: ' + body.reason, 'It shows as a footnote on the public table. It can be voided later but never deleted.'], 'Add adjustment').then(function (y) {
+      if (!y) return;
+      LA.api('/api/admin/league/adjustments', { method: 'POST', body: body }).then(function (r) { if (r.ok) { this.reset(); LA.toast('Adjustment added'); loadTable(); loadTie(); } else LA.toast(r.d.error || 'Could not save.', true); }.bind(this));
+    }.bind(this));
+  });
+
+  function loadTie() {
+    LA.api('/api/admin/league/tie-overrides').then(function (r) {
+      if (!r.ok) { $('tie').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load.' })); return; }
+      var groups = r.d.groups, ov = r.d.overrides;
+      if (!groups.length) { $('tie').replaceChildren(el('p', { class: 'la-muted', text: 'No clubs are level on every rule, so nothing to decide.' }), ov.length ? el('p', { class: 'la-muted', text: ov.length + ' earlier decision(s) are stored and only apply if clubs become level again.' }) : null); return; }
+      $('tie').replaceChildren.apply($('tie'), groups.map(function (g) {
+        var inputs = g.map(function (t, i) { var cur = ov.find(function (o) { return o.team_id === t.teamId; }); return { t: t, input: el('input', { type: 'number', min: 1, max: 99, value: cur ? cur.rank_hint : i + 1, style: 'width:70px', 'aria-label': 'Order for ' + t.name }) }; });
+        var reason = el('input', { maxlength: 200, placeholder: 'League ruling or reason', style: 'width:100%' });
+        return el('div', { style: 'border:1px solid var(--a-line);border-radius:12px;padding:10px;margin-bottom:10px' },
+          el('p', { style: 'margin:0 0 8px', text: 'Level on every rule (now shown alphabetically): ' + g.map(function (t) { return t.name; }).join(', ') + '.' }),
+          el('ol', { style: 'margin:0 0 8px;padding-left:18px' }, inputs.map(function (x) { return el('li', {}, x.input, ' ', x.t.name); })),
+          el('label', { class: 'la-f' }, 'Reason', reason),
+          el('div', { class: 'la-row la-end', style: 'margin-top:8px' }, el('button', { type: 'button', class: 'btn-p btn-sm', text: 'Save decision', onclick: function () {
+            var body = { decisions: inputs.map(function (x) { return { teamId: x.t.teamId, rankHint: Number(x.input.value) }; }), reason: reason.value };
+            LA.api('/api/admin/league/tie-overrides', { method: 'PUT', body: body }).then(function (r2) { r2.ok ? (LA.toast('Tie decision saved'), loadTable(), loadTie()) : LA.toast(r2.d.error || 'Could not save.', true); });
+          } })));
+      }));
+    });
+  }
+
+  // Rules
+  function loadRules() {
+    LA.api('/api/admin/league/rules').then(function (r) {
+      if (!r.ok) return;
+      var ru = state.rules = r.d.rules; state.criteria = r.d.criteria;
+      var f = $('rulesForm').elements;
+      f.pointsWin.value = ru.points_win; f.pointsDraw.value = ru.points_draw; f.pointsLoss.value = ru.points_loss;
+      f.awardedHomeGoals.value = ru.awarded_home_goals; f.awardedAwayGoals.value = ru.awarded_away_goals; f.includeLive.checked = !!ru.include_live;
+      try { state.order = JSON.parse(ru.tiebreak_order); } catch (e) { state.order = ['points']; }
+      try { state.zones = JSON.parse(ru.zones || '[]'); } catch (e) { state.zones = []; }
+      drawOrder(); drawZones();
+    });
+  }
+  var label = function (k) { var c = state.criteria.find(function (x) { return x.key === k; }); return c ? c.label : k; };
+  function drawOrder() {
+    $('tbOrder').replaceChildren.apply($('tbOrder'), state.order.map(function (k, i) {
+      var move = function (d) { var j = i + d; if (j < 1 || j >= state.order.length) return; var t = state.order[i]; state.order[i] = state.order[j]; state.order[j] = t; drawOrder(); };
+      return el('li', { class: 'la-row' }, el('span', { style: 'flex:1', text: label(k)[0].toUpperCase() + label(k).slice(1) }),
+        i > 0 ? el('button', { type: 'button', class: 'btn-o btn-sm', 'aria-label': 'Move up', text: '↑', disabled: i <= 1, onclick: function () { move(-1); } }) : null,
+        i > 0 ? el('button', { type: 'button', class: 'btn-o btn-sm', 'aria-label': 'Move down', text: '↓', disabled: i === state.order.length - 1, onclick: function () { move(1); } }) : null,
+        i > 0 ? el('button', { type: 'button', class: 'btn-o btn-sm', 'aria-label': 'Remove', text: 'Remove', onclick: function () { state.order.splice(i, 1); drawOrder(); } }) : el('span', { class: 'la-muted', text: 'always first' }));
+    }));
+    var add = $('tbAdd'); add.replaceChildren();
+    state.criteria.filter(function (c) { return state.order.indexOf(c.key) < 0; }).forEach(function (c) { add.add(new Option(c.label, c.key)); });
+    $('tbAddBtn').disabled = !add.options.length;
+  }
+  $('tbAddBtn').addEventListener('click', function () { var v = $('tbAdd').value; if (v) { state.order.push(v); drawOrder(); } });
+  function drawZones() {
+    $('zones').replaceChildren.apply($('zones'), state.zones.map(function (z, i) {
+      var set = function (k) { return function () { state.zones[i][k] = k === 'from' || k === 'to' ? Number(this.value) : this.value; }; };
+      return el('div', { class: 'la-row' },
+        el('label', { class: 'la-f' }, 'From', el('input', { type: 'number', min: 1, value: z.from, style: 'width:70px', oninput: set('from') })),
+        el('label', { class: 'la-f' }, 'To', el('input', { type: 'number', min: 1, value: z.to, style: 'width:70px', oninput: set('to') })),
+        el('label', { class: 'la-f' }, 'Label', el('input', { value: z.label, maxlength: 40, oninput: set('label') })),
+        el('label', { class: 'la-f' }, 'Colour', el('input', { type: 'color', value: z.colour, style: 'width:60px;padding:2px', oninput: set('colour') })),
+        el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Remove', onclick: function () { state.zones.splice(i, 1); drawZones(); } }));
+    }));
+  }
+  $('zoneAdd').addEventListener('click', function () { state.zones.push({ from: 1, to: 1, label: 'Promotion', colour: '#1a7f37' }); drawZones(); });
+
+  $('rulesForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = this.elements;
+    var body = { pointsWin: Number(f.pointsWin.value), pointsDraw: Number(f.pointsDraw.value), pointsLoss: Number(f.pointsLoss.value), tiebreakOrder: state.order,
+      zones: state.zones, includeLive: f.includeLive.checked, awardedHomeGoals: Number(f.awardedHomeGoals.value), awardedAwayGoals: Number(f.awardedAwayGoals.value) };
+    LA.api('/api/admin/league/rules?preview=1', { method: 'PATCH', body: body }).then(function (r) {
+      if (!r.ok) return LA.toast(r.d.error || 'Check the rules.', true);
+      var was = {}; r.d.before.forEach(function (x) { was[x.name] = x; });
+      var rows = r.d.after.map(function (x) { var b = was[x.name]; return el('tr', {}, el('td', { class: 'n', text: String(x.pos) }), el('td', { class: 'n', text: b ? String(b.pos) : '–' }), el('th', { scope: 'row', text: x.name }), el('td', { class: 'n', text: (b && b.points !== x.points ? b.points + ' → ' : '') + x.points })); });
+      LA.confirm('Save the new rules?', [el('p', { style: 'margin:0', text: 'The table with the new rules (and before):' }), LA.table(['New', 'Before', 'Club', 'Pts'], rows), 'The public table changes straight away.'], 'Save rules').then(function (y) {
+        if (!y) return;
+        LA.api('/api/admin/league/rules', { method: 'PATCH', body: body }).then(function (r2) { r2.ok ? (LA.toast('Rules saved'), loadRules(), loadTable()) : LA.toast(r2.d.error || 'Could not save.', true); });
+      });
+    });
+  });
+
+  $('chkBtn').addEventListener('click', function () {
+    $('chk').replaceChildren(el('p', { class: 'la-muted', text: 'Checking…' }));
+    LA.api('/api/admin/league/check').then(function (r) {
+      if (!r.ok) return $('chk').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not check.' }));
+      $('chk').replaceChildren(r.d.warnings.length ? el('ul', { class: 'la-warn' }, r.d.warnings.map(function (w) { return el('li', { class: w.level, text: w.text }); })) : el('p', { class: 'la-msg ok', text: 'No problems found.' }));
+    });
+  });
+
+  loadTable(); loadTie(); loadRules();
+})();
+</script>

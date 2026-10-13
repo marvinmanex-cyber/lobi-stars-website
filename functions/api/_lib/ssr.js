@@ -18,9 +18,7 @@ export const fmtDate = (iso, long = false) => new Date(iso).toLocaleDateString('
   long ? { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: TZ }
        : { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: TZ });
 export const fmtTime = iso => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ }) + ' WAT';
-const monthKey = iso => new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: TZ });
 const hasScore = m => m.home_score !== null && m.home_score !== undefined && m.away_score !== null && m.away_score !== undefined;
-const STATUS_LABELS = { scheduled: 'Upcoming', live: 'Live', 'half-time': 'Half-time', 'full-time': 'Full-time', postponed: 'Postponed', cancelled: 'Cancelled' };
 
 function initials(name) {
   const words = String(name).replace(/\b(FC|F\.C\.|United)\b/gi, '').trim().split(/\s+/).filter(Boolean);
@@ -98,7 +96,7 @@ export function nextMatchesHtml(matches, now = Date.now(), previews = {}) {
     const home = typeof ev.is_home === 'boolean' ? ev.is_home : isLobi(ev.home_team);
     const live = ev.status === 'live' || ev.status === 'half-time';
     const opponent = home ? ev.away_team : ev.home_team;
-    const comp = ev.competition || 'NPFL';
+    const comp = ev.competition || 'NNL';
     const slug = ev.slug || matchSlug(ev);
     const date = new Date(ev.event_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: TZ });
     const time = new Date(ev.event_date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
@@ -112,84 +110,6 @@ export function nextMatchesHtml(matches, now = Date.now(), previews = {}) {
 <div class="nm-links"><a class="nm-link" href="/matches/${esc(slug)}/" aria-label="Match Centre: Lobi Stars FC vs ${esc(opponent)}">Match Centre →</a>${previews[watDay(ev.event_date)] ? `<a class="nm-link nm-link--btn" href="/news/${esc(previews[watDay(ev.event_date)])}/">Match Preview</a>` : ''}${home && ev.on_sale ? `<a class="nm-link nm-link--live" href="/tickets?event=${encodeURIComponent(ev.id)}" aria-label="Buy tickets: Lobi Stars FC vs ${esc(opponent)}">Buy Tickets</a>` : ''}${home && isMatchDay(ev, now) ? `<a class="nm-link nm-link--live" href="/matches/${esc(slug)}/live/" aria-label="Matchday Live: Lobi Stars FC vs ${esc(opponent)}">● Matchday Live</a>` : ''}<a class="nm-link nm-link--cal" href="/api/calendar?match=${encodeURIComponent(slug)}" aria-label="Add Lobi Stars FC vs ${esc(opponent)} to your calendar">📅 Add to calendar</a><a class="nm-link nm-link--listen" href="/commentary/" data-track="commentary_click" data-track-label="${esc(slug)}" aria-label="Listen live to Lobi Stars FC vs ${esc(opponent)} on Lobi Stars FC Live">🎧 Listen Live</a></div>
 </li>`;
   }).join('');
-}
-
-// ── Fixtures / results board ──
-
-const DAY = 86_400_000;
-const norm = s => String(s).toLowerCase().replace(/\bfc\b|[^a-z]/g, '');
-const same = (a, b) => norm(a.home_team) === norm(b.home_team) && norm(a.away_team) === norm(b.away_team)
-  && Math.abs(new Date(a.event_date) - new Date(b.event_date)) < 3 * DAY;
-
-/** Same merge + filter as the browser: database matches plus CMS fixtures. */
-export function boardItems(db, cms, show, now = Date.now()) {
-  const merged = [...db, ...cms.filter(c => !db.some(d => same(d, c)))].filter(m => m.status !== 'cancelled');
-  const isPast = m => m.status === 'full-time' || (hasScore(m) && m.status !== 'live') || new Date(m.event_date).getTime() <= now;
-  const upcoming = show === 'upcoming';
-  return merged.filter(m => (upcoming ? !isPast(m) : isPast(m)))
-    .sort((x, y) => (new Date(x.event_date) - new Date(y.event_date)) * (upcoming ? 1 : -1));
-}
-
-function googleCalUrl(m) {
-  const d = iso => new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-  const end = new Date(new Date(m.event_date).getTime() + 2 * 3600e3).toISOString();
-  const q = new URLSearchParams({ action: 'TEMPLATE', text: `${m.home_team} vs ${m.away_team}`, dates: `${d(m.event_date)}/${d(end)}`, details: `${m.competition}`, location: m.venue || '' });
-  return `https://calendar.google.com/calendar/render?${q}`;
-}
-
-function fixtureCard(m, upcoming, previews = {}, now = Date.now()) {
-  const lobiHome = typeof m.is_home === 'boolean' ? m.is_home : isLobi(m.home_team);
-  const lobiInvolved = lobiHome || isLobi(m.away_team);
-  let mid;
-  if (upcoming) mid = `<div class="fx-mid">${m.status === 'postponed' ? 'P–P' : 'VS'}</div>`;
-  else if (hasScore(m)) mid = `<div class="fx-score">${esc(m.home_score)} – ${esc(m.away_score)}</div>`;
-  else mid = `<div class="fx-pending">${esc(m.status && m.status !== 'scheduled' && m.status !== 'full-time' ? STATUS_LABELS[m.status] : 'Result pending')}</div>`;
-  const vs = `${esc(m.home_team)} vs ${esc(m.away_team)}`;
-  const actions = [];
-  if (m.slug) actions.push(`<a class="fx-btn" href="/matches/${esc(m.slug)}/" aria-label="Match Centre: ${vs}">Match Centre</a>`);
-  const preview = previews[watDay(m.event_date)];
-  if (upcoming && preview) actions.push(`<a class="fx-btn" href="/news/${esc(preview)}/">Match Preview</a>`);
-  if (lobiHome && m.slug && isMatchDay(m, now)) actions.push(`<a class="fx-btn primary" href="/matches/${esc(m.slug)}/live/" aria-label="Matchday Live: ${vs}">● Matchday Live</a>`);
-  if (!lobiHome && lobiInvolved && upcoming && m.status !== 'postponed') actions.push(`<a class="fx-btn" href="/commentary/" aria-label="Listen live to ${vs} on Lobi Stars FC Live">🎧 Listen Live</a>`);
-  if (upcoming && lobiHome && m.id && m.on_sale) actions.push(`<a class="fx-btn primary" href="/tickets?event=${encodeURIComponent(m.id)}" aria-label="Buy tickets: ${vs}">Buy Tickets</a>`);
-  if (upcoming && m.slug) actions.push(`<a class="fx-btn" href="/api/calendar?match=${encodeURIComponent(m.slug)}">📅 Add to calendar (.ics)</a>`);
-  if (upcoming) actions.push(`<a class="fx-btn" href="${esc(googleCalUrl(m))}" target="_blank" rel="noopener">Google Calendar</a>`);
-  return `<article class="fx">
-<div class="fx-meta"><span class="fx-comp">${esc(m.competition)}</span>${lobiInvolved ? `<span class="fx-ha ${lobiHome ? 'home' : 'away'}">${lobiHome ? 'Home' : 'Away'}</span>` : ''}<span class="fx-when">${esc(fmtDate(m.event_date))} · ${esc(fmtTime(m.event_date))}</span></div>
-<div class="fx-teams"><div class="fx-team h"><span>${esc(m.home_team)}</span>${crestHtml(m.home_team, 34)}</div>${mid}<div class="fx-team">${crestHtml(m.away_team, 34)}<span>${esc(m.away_team)}</span></div></div>
-<div class="fx-venue">📍 ${esc(m.venue)}</div>${actions.length ? `<div class="fx-actions">${actions.join('')}</div>` : ''}
-</article>`;
-}
-
-export function boardHtml(items, show, previews = {}) {
-  if (!items.length) return { status: show === 'upcoming' ? 'Fixtures for the next round will be announced soon.' : 'No results yet this season.', list: '' };
-  let month = '', out = '';
-  for (const m of items) {
-    const k = monthKey(m.event_date);
-    if (k !== month) { month = k; out += `<h2 class="fx-month">${esc(k)}</h2>`; }
-    out += fixtureCard(m, show === 'upcoming', previews);
-  }
-  return { status: '', list: out };
-}
-
-/**
- * Renders a fixtures/results board page. The board's CMS fixtures live in its
- * data-cms attribute, so they're read as the page streams past.
- */
-export async function renderBoardPage(request, env, assetPath) {
-  const [matches, previews] = await Promise.all([publicMatches(env), previewSlugs(request, env)]);
-  let cms = [], show = 'upcoming';
-  return renderPage(request, env, assetPath, [
-    ['[data-fixtures-board]', { element(el) {
-      show = el.getAttribute('data-show') || 'upcoming';
-      try { cms = JSON.parse(el.getAttribute('data-cms') || '[]'); } catch { cms = []; }
-    } }],
-    ['[data-fixtures-board] [data-status]', { element(el) {
-      const r = boardHtml(boardItems(matches, cms, show), show, previews);
-      if (r.status) el.setInnerContent(r.status); else el.setAttribute('hidden', '');
-    } }],
-    ['[data-fixtures-board] [data-list]', { element(el) { el.setInnerContent(boardHtml(boardItems(matches, cms, show), show, previews).list, { html: true }); } }],
-  ], { 'ssr-matches': { matches }, 'ssr-previews': previews });
 }
 
 // ── Watch Live page ──

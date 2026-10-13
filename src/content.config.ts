@@ -85,22 +85,6 @@ const gallery = defineCollection({
   }),
 });
 
-const fixtures = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/fixtures' }),
-  schema: z.object({
-    home: z.string(),
-    away: z.string(),
-    date: z.date(),
-    venue: z.string(),
-    competition: z.string().default('NPFL'),
-    // Sveltia CMS writes `null` (not omitted) for empty number fields, so
-    // accept null as well as a missing value.
-    home_score: z.number().nullable().optional(),
-    away_score: z.number().nullable().optional(),
-    status: z.enum(['Upcoming', 'Completed']),
-  }),
-});
-
 const staff = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/staff' }),
   schema: z.object({
@@ -155,4 +139,4 @@ const partners = defineCollection({
   }),
 });
 
-export const collections = { news, players, gallery, fixtures, staff, heroSlides, partners };
+export const collections = { news, players, gallery, staff, heroSlides, partners };

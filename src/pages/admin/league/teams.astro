@@ -1,0 +1,73 @@
+---
+// League › Clubs & Venues: each club's name, short name, code, crest, colour,
+// home ground and other names (used by the fixture import). Clubs with
+// fixtures are never deleted.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="League Clubs | Lobi Stars Admin" description="League clubs and venues." noindex>
+  <div class="wrap la">
+    <AdminNav current="league-teams" />
+    <header class="la-head"><div><div class="stag">League</div><h1 class="stitle">Clubs &amp; <span class="r">Venues</span></h1></div></header>
+    <p class="la-lede">Crests: only use a club's crest with its permission. Upload the image in the Content CMS (Media), then paste its address here (e.g. <code>/images/clubs/abs.png</code>). Without a crest the site shows the club's initials on its colour.</p>
+    <section class="la-card" aria-labelledby="h-c"><h2 id="h-c">Clubs</h2><div id="teams"><p class="la-muted">Loading…</p></div>
+      <button type="button" class="btn-o" id="addTeam" style="margin-top:10px">Add a club</button></section>
+    <section class="la-card" aria-labelledby="h-v"><h2 id="h-v">Venues</h2><div id="venues"></div>
+      <form id="venueForm" class="la-row" style="align-items:flex-end;margin-top:10px">
+        <label class="la-f">Stadium<input name="name" required maxlength="100" placeholder="Township Stadium, Ilorin" /></label>
+        <label class="la-f">City (optional)<input name="city" maxlength="60" /></label>
+        <button class="btn-o" type="submit">Add venue</button></form></section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, el = LA.el, $ = function (id) { return document.getElementById(id); };
+  var state = { teams: [], venues: [] };
+  function load() {
+    LA.api('/api/admin/league/teams').then(function (r) {
+      if (!r.ok) return $('teams').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load.' }));
+      state.teams = r.d.teams; state.venues = r.d.venues;
+      $('teams').replaceChildren(LA.table(['Crest', 'Club', 'Code', 'Home ground', 'Other names', ''], state.teams.map(function (t) {
+        return el('tr', { class: t.is_lobi ? 'is-lobi' : '' }, el('td', {}, LA.crest({ crest_url: t.crest_url, code: t.code }), t.crest_url ? null : el('span', { class: 'la-muted', text: 'initials' })),
+          el('th', { scope: 'row' }, el('b', { text: t.name }), el('br'), el('span', { class: 'la-muted', text: t.short_name + (t.is_lobi ? ' · Lobi Stars' : '') + ' · ' + t.fixtures + ' fixtures' })),
+          el('td', { text: t.code }), el('td', { text: t.venue_name || '–' }), el('td', { text: (t.aliases || []).join(', ') }),
+          el('td', {}, el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Edit', onclick: function () { edit(t); } })));
+      })));
+      $('venues').replaceChildren(LA.table(['Stadium', 'City', ''], state.venues.map(function (v) {
+        return el('tr', {}, el('td', { text: v.name }), el('td', { text: v.city || '–' }), el('td', {}, el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Rename', onclick: function () {
+          LA.prompt('Rename venue', 'Stadium name', { value: v.name, max: 100 }).then(function (name) {
+            if (name) LA.api('/api/admin/league/venues', { method: 'PATCH', body: { id: v.id, name: name } }).then(function (r2) { r2.ok ? (LA.toast('Saved'), load()) : LA.toast(r2.d.error, true); });
+          });
+        } })));
+      })));
+    });
+  }
+  function edit(t) {
+    t = t || {};
+    var f = function (label, input) { return el('label', { class: 'la-f' }, label, input); };
+    var name = el('input', { value: t.name || '', maxlength: 80 }), short = el('input', { value: t.short_name || '', maxlength: 40 }), code = el('input', { value: t.code || '', maxlength: 5, style: 'text-transform:uppercase;width:100px' });
+    var crest = el('input', { value: t.crest_url || '', maxlength: 300, placeholder: '/images/clubs/abc.png' }), colour = el('input', { type: 'color', value: t.colour || '#5B6470', style: 'width:70px;padding:2px' });
+    var venue = el('select', {}); venue.add(new Option('None', '')); state.venues.forEach(function (v) { venue.add(new Option(v.name, v.id, false, v.id === t.home_venue_id)); });
+    var aliases = el('input', { value: (t.aliases || []).join(', '), maxlength: 400, placeholder: 'Other names, separated by commas' });
+    var lobi = el('input', { type: 'checkbox', checked: !!t.is_lobi, style: 'width:20px;height:20px;min-height:auto' });
+    var preview = el('img', { width: 48, height: 48, alt: 'Crest preview', style: 'border-radius:50%;border:1px solid var(--a-line);background:#fff;object-fit:contain' });
+    var upd = function () { preview.src = crest.value || (t.code ? '/api/league/crest/' + t.code : ''); }; crest.addEventListener('input', upd); upd();
+    LA.confirm(t.id ? 'Edit ' + t.name : 'Add a club', [f('Full name', name), f('Short name', short), f('Code (2 to 5 letters)', code), el('div', { class: 'la-row' }, f('Crest address', crest), preview),
+      f('Colour (for the initials badge)', colour), f('Home ground', venue), f('Other names (for the import)', aliases), el('label', { class: 'la-row', style: 'font-weight:700' }, lobi, ' This is Lobi Stars')], 'Save').then(function (y) {
+      if (!y) return;
+      var body = { name: name.value, shortName: short.value, code: code.value, crestUrl: crest.value, colour: colour.value, homeVenueId: venue.value || null, aliases: aliases.value, isLobi: lobi.checked };
+      if (t.id) body.id = t.id;
+      LA.api('/api/admin/league/teams', { method: t.id ? 'PATCH' : 'POST', body: body }).then(function (r) { r.ok ? (LA.toast('Saved'), load()) : LA.toast(r.d.error || 'Could not save.', true); });
+    });
+  }
+  $('addTeam').addEventListener('click', function () { edit(null); });
+  $('venueForm').addEventListener('submit', function (e) {
+    e.preventDefault(); var f = this.elements;
+    LA.api('/api/admin/league/venues', { method: 'POST', body: { name: f.name.value, city: f.city.value } }).then(function (r) { if (r.ok) { this.reset(); LA.toast('Venue added'); load(); } else LA.toast(r.d.error || 'Could not add.', true); }.bind(this));
+  });
+  load();
+})();
+</script>

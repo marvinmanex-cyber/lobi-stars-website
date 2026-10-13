@@ -1,0 +1,57 @@
+---
+// League › History: every league change (who, when, what, before and after),
+// searchable, with Undo for fixture changes.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="League History | Lobi Stars Admin" description="League change history." noindex>
+  <div class="wrap la">
+    <AdminNav current="league-audit" />
+    <header class="la-head"><div><div class="stag">League</div><h1 class="stitle">League <span class="r">History</span></h1></div></header>
+    <form id="f" class="la-row" style="margin-bottom:12px;align-items:flex-end">
+      <label class="la-f">Search<input name="q" maxlength="60" placeholder="e.g. result, Kada, a staff email" /></label>
+      <label class="la-f">Type<select name="entity"><option value="">Everything</option><option value="fixture">Fixtures and results</option><option value="adjustment">Adjustments</option><option value="competition">Rules and tie decisions</option><option value="team">Clubs</option><option value="venue">Venues</option><option value="event">Matches & Fixtures</option></select></label>
+      <button class="btn-o" type="submit">Search</button></form>
+    <section class="la-card"><div id="list"><p class="la-muted">Loading…</p></div><div class="la-row" id="pager" style="margin-top:10px"></div></section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, el = LA.el, $ = function (id) { return document.getElementById(id); };
+  var state = { q: '', entity: '', page: 1 };
+  var NAMES = { status: 'Status', home_goals: 'Home goals', away_goals: 'Away goals', kickoff_at: 'Kick-off', original_kickoff_at: 'Original kick-off', venue_id: 'Venue', note: 'Note', postponed_reason: 'Reason', home_team_id: 'Home team', away_team_id: 'Away team', matchday: 'Matchday', attendance: 'Attendance', referee: 'Referee', report_url: 'Report link', is_published: 'Published', result_type: 'Result type' };
+  var show = function (k, v) { if (v === null || v === undefined || v === '') return '–'; if (/kickoff/.test(k)) return LA.date(v) + ', ' + LA.time(v); return typeof v === 'object' ? JSON.stringify(v) : String(v); };
+  function summary(e) {
+    var b = e.before_json ? JSON.parse(e.before_json) : null, a = e.after_json ? JSON.parse(e.after_json) : null;
+    if (b && a && typeof b === 'object' && !Array.isArray(b)) {
+      var keys = Object.keys(a).filter(function (k) { return JSON.stringify(b[k]) !== JSON.stringify(a[k]) && k !== 'updated_at'; });
+      if (!keys.length) return el('span', { class: 'la-muted', text: 'No visible change' });
+      return el('ul', { style: 'margin:0;padding-left:16px' }, keys.slice(0, 8).map(function (k) { return el('li', { text: (NAMES[k] || k) + ': ' + show(k, b[k]) + ' → ' + show(k, a[k]) }); }));
+    }
+    if (a) return el('span', { text: show('', a).slice(0, 300) });
+    return el('span', { class: 'la-muted', text: 'Removed: ' + show('', b).slice(0, 300) });
+  }
+  function load() {
+    var p = new URLSearchParams({ page: state.page }); if (state.q) p.set('q', state.q); if (state.entity) p.set('entity', state.entity);
+    LA.api('/api/admin/league/audit?' + p.toString()).then(function (r) {
+      if (!r.ok) return $('list').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load.' }));
+      $('list').replaceChildren(r.d.entries.length ? LA.table(['When', 'Who', 'Action', 'What changed', ''], r.d.entries.map(function (e) {
+        return el('tr', {}, el('td', { text: LA.when(e.created_at) }), el('td', { text: e.staff_email }), el('td', {}, el('b', { text: e.action }), e.label ? el('div', { class: 'la-muted', text: e.label }) : null),
+          el('td', {}, summary(e)),
+          el('td', {}, e.revertable ? el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Undo', onclick: function () {
+            LA.confirm('Undo this change?', ['The fixture goes back to how it was before this change. This is recorded in the history too.'], 'Undo').then(function (y) {
+              if (y) LA.api('/api/admin/league/audit/' + e.id + '/revert', { method: 'POST', body: {} }).then(function (r2) { r2.ok ? (LA.toast('Change undone'), load()) : LA.toast(r2.d.error || 'Could not undo.', true); });
+            });
+          } }) : null));
+      })) : el('p', { class: 'la-muted', text: 'Nothing found.' }));
+      var pg = $('pager'); pg.replaceChildren();
+      if (r.d.pages > 1) { pg.append(el('button', { type: 'button', class: 'btn-o btn-sm', text: '← Newer', disabled: state.page <= 1, onclick: function () { state.page--; load(); } }), el('span', { class: 'la-muted', text: 'Page ' + r.d.page + ' of ' + r.d.pages }), el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Older →', disabled: state.page >= r.d.pages, onclick: function () { state.page++; load(); } })); }
+    });
+  }
+  $('f').addEventListener('submit', function (e) { e.preventDefault(); state.q = this.elements.q.value.trim(); state.entity = this.elements.entity.value; state.page = 1; load(); });
+  load();
+})();
+</script>

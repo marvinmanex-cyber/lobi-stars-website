@@ -1,0 +1,50 @@
+---
+// The next Lobi Stars match: teams, date and time (WAT), venue, a countdown
+// and the Tickets button (home matches). Loads /api/league/overview; if that
+// fails it says so and links to the fixtures. Not placed on the homepage yet:
+// drop <NextMatchCard /> wherever it should appear.
+---
+<section class="nmc" data-next-match aria-labelledby="nmc-h">
+  <h2 id="nmc-h">Next match</h2>
+  <div data-body><p class="nmc-msg">Loading the next match… <a href="/fixtures/">See all fixtures</a></p></div>
+</section>
+
+<style>
+  .nmc { background: linear-gradient(140deg, #15181D 0%, #2A0507 100%); color: #fff; border-radius: 14px; padding: 18px 20px; }
+  .nmc h2 { margin: 0 0 10px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #FFC72C; }
+  .nmc :global(.nmc-teams) { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; text-align: center; font: 700 16px/1.15 'Barlow Condensed', sans-serif; }
+  .nmc :global(.nmc-teams img) { width: 48px; height: 48px; border-radius: 50%; background: #fff; object-fit: contain; display: block; margin: 0 auto 6px; }
+  .nmc :global(.nmc-vs) { font: 400 26px/1 'Bebas Neue', sans-serif; opacity: .8; }
+  .nmc :global(.nmc-when) { text-align: center; margin: 10px 0 4px; font-size: 14px; opacity: .9; }
+  .nmc :global(.nmc-cd) { text-align: center; font: 400 22px/1 'Bebas Neue', sans-serif; color: #FFC72C; margin: 6px 0 12px; }
+  .nmc :global(.nmc-acts) { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .nmc :global(.nmc-acts a) { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 4px; border: 1.5px solid rgba(255,255,255,.45); color: #fff; text-decoration: none; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .nmc :global(.nmc-acts a.primary) { background: #E31E24; border-color: #E31E24; }
+  .nmc :global(.nmc-msg) { margin: 0; } .nmc :global(.nmc-msg a) { color: #FFC72C; }
+</style>
+
+<script is:inline>
+(function () {
+  document.querySelectorAll('[data-next-match]').forEach(function (box) {
+    var body = box.querySelector('[data-body]');
+    var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { if (k === 'text') n.textContent = props[k]; else if (k === 'class') n.className = props[k]; else n.setAttribute(k, props[k]); }); for (var i = 2; i < arguments.length; i++) if (arguments[i]) n.append(arguments[i]); return n; };
+    var fail = function (text) { body.replaceChildren(el('p', { class: 'nmc-msg', text: text + ' ' }, el('a', { href: '/fixtures/', text: 'See all fixtures' }))); };
+    fetch('/api/league/overview').then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (o) {
+      var f = o.nextLobi;
+      if (!f) return fail('The next fixture will be announced soon.');
+      var team = function (t) { return el('span', {}, el('img', { src: t.crest, alt: '', width: 48, height: 48, loading: 'lazy' }), t.name); };
+      var opts = { timeZone: 'Africa/Lagos' };
+      var when = new Date(f.kickoff).toLocaleDateString('en-GB', Object.assign({ weekday: 'long', day: 'numeric', month: 'long' }, opts)) + ' · ' + new Date(f.kickoff).toLocaleTimeString('en-US', Object.assign({ hour: 'numeric', minute: '2-digit' }, opts)) + ' WAT';
+      var cd = el('p', { class: 'nmc-cd', 'aria-live': 'off' });
+      var tick = function () { var s = Math.floor((Date.parse(f.kickoff) - Date.now()) / 1000); cd.textContent = s <= 0 ? 'Kick-off!' : (Math.floor(s / 86400) ? Math.floor(s / 86400) + ' days ' : '') + Math.floor(s % 86400 / 3600) + ' h ' + Math.floor(s % 3600 / 60) + ' min'; };
+      tick(); setInterval(tick, 30000);
+      var acts = el('div', { class: 'nmc-acts' });
+      if (f.home.isLobi) acts.append(el('a', { class: 'primary', href: '/tickets/', text: 'Tickets' }));
+      if (f.matchUrl) acts.append(el('a', { href: f.matchUrl.replace(/^https?:\/\/[^/]+/, ''), text: 'Match Centre' }));
+      acts.append(el('a', { href: '/api/league/calendar.ics?fixture=' + f.id, text: 'Add to calendar' }));
+      body.replaceChildren(el('div', { class: 'nmc-teams' }, team(f.home), el('span', { class: 'nmc-vs', text: 'vs' }), team(f.away)),
+        el('p', { class: 'nmc-when', text: when + (f.venue ? ' · ' + f.venue : '') }), cd, acts);
+    }).catch(function () { fail('The next match could not be loaded just now.'); });
+  });
+})();
+</script>

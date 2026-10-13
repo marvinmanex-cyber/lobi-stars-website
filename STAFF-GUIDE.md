@@ -12,7 +12,7 @@ There are two places where you make changes:
 | What you want to change | Where | How fast it appears on the site |
 |---|---|---|
 | Matches, scores, live updates, messages, fans, food orders, partners, awards (everything in the admin menu) | **Admin** (https://lobistarsfc.com/admin/login) | Straight away |
-| News, players, league table, shop, videos, club pages | **Content CMS** | About 1–2 minutes after you press Save |
+| News, players, shop, videos, club pages | **Content CMS** | About 1–2 minutes after you press Save |
 
 1. Go to **https://lobistarsfc.com/admin/login**.
 2. Sign in with **your own staff email and password** (the owner creates
@@ -53,7 +53,8 @@ manager gives you once. Paste it in and the CMS remembers it on that device.
   | Section | Screens |
   |---|---|
   | 🏠 Overview | Dashboard |
-  | ⚽ Matchday | Fixtures & Results, Live Match Control, Predict & Win, Live Commentary, League Table ↗ |
+  | ⚽ Matchday | Match Tickets & Settings, Live Match Control, Predict & Win, Live Commentary |
+  | 🏆 League | League Dashboard, Fixtures, Results, Table & Rules, Clubs & Venues, Import & Export, League History |
   | 📰 Content | News & Articles (including Team News), Fan Awards, Squad & Players ↗, Videos ↗, Gallery ↗, Club Pages ↗, Content CMS ↗ |
   | 👥 Fans & Inbox | **Inbox**, Fan Database, Newsletter Subscribers, Fan Accounts, Contact Sources & Downloads, Possible Duplicates, Members |
   | 🛒 Commerce | Ticket Scanner ↗, Food: Live Order Board, Food: Orders, Food: Analytics, Food: Menu & Prices, Shirt Personalisation Orders, Shop Products ↗, Hospitality Packages ↗, Membership Settings ↗ |
@@ -145,14 +146,18 @@ it, make your changes and save. To delete, open the story and choose
 
 ### Add a new match (fixture)
 
-1. Log in and click **Manage matches**.
-2. Click **+ New match** and fill in the home team, away team, competition,
-   venue and **kick-off** date and time. Use Nigerian time (WAT) on a device
-   set to Nigerian time.
-3. Fill in the **ticket prices** in naira (for home matches) and tick
-   **Visible on the site**.
-4. Click **Save match**. It appears on Fixtures, Tickets and the home page
-   straight away.
+The whole 2026/27 NNL Conference D season (all 56 matches) is already loaded.
+Dates, times and venues are changed in **League › Fixtures** (section 33).
+
+1. To add a match that isn't in the league list (a cup tie or a friendly), open
+   **League › Fixtures**, scroll to **Add a fixture**, choose the competition
+   (add it first with **Add a cup or friendly competition**), the teams, the
+   date and the kick-off time (Nigerian time, WAT) and press **Add fixture**.
+2. Every Lobi Stars match also appears in **Match Tickets & Settings**
+   (Matchday menu). Open it there, fill in the **ticket prices** in naira (home
+   matches) and tick **Visible on the site**. The teams, date and venue of a
+   league match can't be changed there: they follow League › Fixtures.
+3. Click **Save match**. Tickets go on sale straight away.
 5. **Members' priority window (optional):** set **General sale opens** to let
    confirmed members buy tickets first. Until that time only members who are
    logged in can buy; everyone else sees "Members' priority window. General
@@ -179,7 +184,7 @@ Leaderboards with no data are hidden. Fans can switch seasons with the season me
 ### Fixture card buttons
 Fixture cards (homepage, Fixtures page, match page) show buttons only when they lead somewhere:
 - **Match Preview** – when a published story has *Matchday content type: Preview* and that match's date.
-- **Buy Tickets** – home games that are on sale (a future match with at least one seat price set in Manage matches).
+- **Buy Tickets** – home games that are on sale (a future match with at least one seat price set in Match Tickets & Settings).
 - **Matchday Live** – home games, from 24 hours before kick-off until the end of match day.
 
 ### Matchday content checklist
@@ -194,7 +199,7 @@ with the title, category, type and match date already filled in.
 
 ### Update the score and live events (Match Centre)
 
-1. In **Manage matches**, click **Match Centre** on the match (or click
+1. In **Match Tickets & Settings**, click **Match Centre** on the match (or click
    **Match Centre** at the top and choose the match from the list).
 2. **Status & score:** set the status (Upcoming, Live, Half-time, Full-time,
    Postponed or Cancelled) and type in the score.
@@ -213,19 +218,16 @@ with the title, category, type and match date already filled in.
 
 ---
 
-## 3. Update the league table
+## 3. The league table (automatic)
 
-1. Log in and open the **Content CMS**.
-2. Click **Site Settings, League Table & Shop**, then **League Table**.
-3. For each club, update **Played, Won, Drawn, Lost, Goals For** and
-   **Goals Against**. Points and goal difference are worked out
-   automatically. Use **Points Adjustment** only for a points deduction
-   (e.g. -3).
-4. Set **Last Updated** to today's date in the format **YYYY-MM-DD**
-   (e.g. 2026-11-02).
-5. Click **Save**. The table appears on the site in 1–2 minutes. Until any
-   club has played a match, the site shows "The table will appear after
-   Matchday 1" instead of a table of zeros.
+The table is **worked out by the website** from the results, so it can't be
+typed in and is always the same on every page. To change it:
+
+- **Results:** enter them in **League › Results** (section 33). Lobi Stars'
+  own score comes from Live Match Control automatically.
+- **Points deductions** and **tie decisions:** **League › Table & Rules**.
+
+The old "League Table" form in the Content CMS has been removed.
 
 ---
 
@@ -259,7 +261,7 @@ appear on the Squad page.
 
 ## 5. Change shop prices and Jumia links
 
-1. Open the **Content CMS** and click **Site Settings, League Table & Shop**,
+1. Open the **Content CMS** and click **Site Settings & Shop**,
    then **Club Shop Products**.
 2. Open the product you want to change.
 3. **Price in Naira:** type numbers only, with no ₦ sign and no commas
@@ -298,7 +300,7 @@ refunded*). Personalisation needs Paystack set up (the same account as tickets).
 2. The **video ID** is the 11 characters after `v=`. In this example it's
    `dQw4w9WgXcQ`. For a short link like `https://youtu.be/dQw4w9WgXcQ`, it's
    the part after the last `/`.
-3. Open the **Content CMS** and click **Site Settings, League Table & Shop**,
+3. Open the **Content CMS** and click **Site Settings & Shop**,
    then **Video Library (YouTube)**.
 4. Click **Add** and fill in the **YouTube ID**, **Title**, **Category**
    (Highlights, Goals, Interviews, Press Conferences or Behind the Scenes),
@@ -459,7 +461,7 @@ from the **Listen Live** button on the homepage LIVE banner. It is branded
 the player shows "Off air".
 
 ### Set it up for each match
-**Admin → Manage matches** → **Edit** the match:
+**Admin → Match Tickets & Settings** → **Edit** the match:
 - **Live commentary available for this match** is ticked by default (home and away games).
 - **Commentary starts:** leave blank to start **15 minutes before kick-off**,
   or set an exact time.
@@ -1155,7 +1157,7 @@ DEPLOYMENT.md). This never touches the live site.
 ## 20. Trophy cabinet, values, community and transparency pages
 
 All four are edited in the **Content CMS** (Admin › Content › Content CMS ↗,
-then **Site Settings, League Table & Shop**). Nothing appears on the site until
+then **Site Settings & Shop**). Nothing appears on the site until
 the club has confirmed it, so wrong or invented information is never shown.
 
 ### Trophy cabinet and "Club at a Glance" (CMS › Honours / Trophy Cabinet)
@@ -1669,10 +1671,86 @@ Then, on any page of the website, tap it to open that page here ready to post.
 the address into the Facebook Sharing Debugger
 (developers.facebook.com/tools/debug) and press **Scrape Again**.
 
+## 33. League: fixtures, results and the table (League menu)
+
+The official **2026/27 NNL Conference D** season is loaded: 8 clubs, 56
+matches, kick-off 4:00 PM (WAT). The public **Fixtures**, **Results** and
+**Table** pages, the calendar feed and every Lobi Stars match page all come
+from here. Matchday Operator, Media and Super Admin staff can use it.
+
+**League Dashboard** shows the next Lobi Stars match with a countdown,
+**Results due** (matches that kicked off over 2 hours ago without a result,
+each with **Enter result**), data warnings, the table at a glance and the
+latest changes.
+
+**Fixtures** (tabs per matchday, with the mid-season break marked):
+- Change the **date**, **time** (always Nigerian time), **venue**, **public
+  note** or **status** in the row and press **Save**.
+- **Postpone** asks for the reason (shown on the website). The match moves to
+  **Needs a new date** at the top until you **Reschedule** it; the website
+  then shows "Rescheduled from …".
+- **Cancel match**, **Swap home/away** (only before it is played) and
+  **Live mode** are on each row. Home matches have **Create programme**, which
+  opens a new Match Day Programme with the match filled in (nothing is saved
+  until you press Save there).
+- **Shift a whole matchday:** choose a matchday tab, enter the days to move
+  and/or one time for all, press **Preview matchday change**, check the list,
+  then **Apply**. Only matches still "Not played" move.
+- Lobi Stars matches update their match page, tickets, commentary and alerts
+  automatically.
+
+**Results:** choose the matchday, set each match's status (**Full time**,
+**Awarded**, **Abandoned** …), type both scores and press **Save matchday**.
+Attendance, referee, a match report link and a note are optional. The page
+then shows **What changed in the table**. It asks before you change an old
+result or one that changes who won. An **Awarded** match gets the league's
+awarded score (3–0) unless you type a score.
+
+**Live mode** (a phone beside the pitch): **Kick-off**, **+1** for either
+team, **Half time**, **Second half**, **Full time**. Every tap saves at once
+("Saved at 16:47"); a second tap within 3 seconds is ignored. Undo buttons ask
+first. If the signal drops you see a red message and **Try again**.
+
+**Table & Rules:**
+- **Explain** on any row says why the club is in that place (e.g. "Level with
+  Mighty Jets FC until goal difference: +4 to +1").
+- **Points adjustments:** choose the club, the points (e.g. -3) and the reason
+  (shown under the public table). They can be **voided** (with a reason) but
+  never deleted.
+- **Tie decisions** only appear when clubs are level on every rule: enter the
+  order the league decided and the reason.
+- **Rules:** points for a win, draw and defeat, the tie-break order, optional
+  zones (e.g. promotion places), whether live matches count, and the awarded
+  score. **Preview and save rules** shows the table before and after first.
+- **Check data** lists anything that looks wrong (a finished match without a
+  score, a match left "Not played" long after kick-off, …).
+
+**Clubs & Venues:** names, short names, codes, crest addresses, colours, home
+grounds and other names (used by the import). Only use a club's crest with
+its permission; without one the site shows its initials.
+
+**Import & Export:** download the fixtures, the table or the empty template;
+upload a revised fixture list (CSV). You see every row first (new, changed,
+unchanged, error) and press **Apply changes** to confirm. Matches that
+already have a result are never changed unless you tick that option.
+
+**League History:** every change (who, when, before and after). **Undo** puts
+a fixture back as it was before a change, unless it has been changed again
+since (undo the later change first).
+
+**Sensitive actions** (rules, adjustments, tie decisions, the import, undo):
+if the setting `league_admin_emails` is set, only those staff can do them.
+Everyone can always edit fixtures and enter results.
+
+**Match day checklist:** check the kick-off time and venue on Fixtures;
+during the match use Live Match Control (or League Live mode); after full
+time check the score on Results; after the last match of the matchday enter
+the other Conference D results; open the public Table to check it.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize
-**Site Settings, League Table & Shop → Prediction League prize.** Enter the
+**Site Settings & Shop → Prediction League prize.** Enter the
 end-of-season prize in naira only once the club has confirmed it (0 hides it).
 See the Matchday guide, section 5a.
 
@@ -1707,7 +1785,7 @@ For 24 hours after you press **End Match** and enter the score, the homepage
 shows "FULL TIME: Lobi Stars 2–1 …" with links to the report, highlights
 (when a stream link is set) and Man of the Match (when votes exist).
 
-All of these are under **Site Settings, League Table & Shop**:
+All of these are under **Site Settings & Shop**:
 
 - **Season, Homepage Stats & Footer Text**: the current season (e.g.
   2026/27) and the text at the bottom of every page.

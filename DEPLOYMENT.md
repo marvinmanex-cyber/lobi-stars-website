@@ -297,6 +297,88 @@ and Super Admins are emailed (when `RESEND_API_KEY` is set). Admin page
 work: point a free outside monitor (e.g. UptimeRobot, every 5 minutes) at it.
 Tests: `tests/health.test.mjs`.
 
+## League, fixtures and table
+
+**The data.** The official 2026/27 Nigeria National League Conference D
+season (8 clubs, 56 fixtures, 14 matchdays, kick-off 16:00 WAT = 15:00 UTC)
+lives in the `league_*` tables (functions/api/_lib/leagueDb.js). They are
+created and seeded on first use from `functions/api/_lib/league/seed.js`, so a
+deploy needs no manual step; `migrations/0002_league.sql` and
+`migrations/0003_league_seed_nnl_d.sql` hold the same SQL for anyone who
+prefers wrangler migrations (made by `node scripts/build-league-seed-sql.mjs`).
+All times are stored in UTC and shown in Nigerian time (Africa/Lagos, UTC+1).
+
+**Link with Matches & Fixtures.** Every league fixture involving Lobi Stars
+has a linked `events` row (so tickets, match pages, commentary, Predict & Win,
+alerts and the programme keep working). League › Fixtures owns its teams,
+date, time and venue (`syncEvent`); the old editor keeps them. The score of a
+linked match lives in `match_centre`, written by Live Match Control and by
+League (`writeCentre`), and the league reads it from there, so the two never
+disagree. Friendlies added only in Matches & Fixtures still show on /fixtures.
+
+**How the table is calculated** (functions/api/_lib/league/standings.js, pure
+code shared by Functions, pages and tests): only full-time and awarded matches
+with both scores count (live ones only if the rule is switched on);
+points = wins x win points + draws x draw points + defeats x loss points +
+active adjustments (overall table only). Clubs are ordered by the
+competition's tie-break list (points, goal difference, goals scored, wins,
+then head-to-head points, goal difference and goals among the clubs still
+level), then the recorded tie decision, then alphabetically (flagged
+"level"). It can't be typed in, so it is always consistent with the results.
+
+**Public pages.** /fixtures, /results and /table are rendered on the server
+(functions/fixtures/index.js, functions/results.js, functions/table.js via
+functions/api/_lib/leaguePages.js): real HTML for search engines and without
+JavaScript, filters as normal links (filtered views are `noindex`). JSON-LD
+SportsEvent per fixture. Public APIs: `/api/league/overview`, `/fixtures`,
+`/results`, `/table`, `/calendar.ics?team=lobi|fixture=<id>`, `/crest/<code>`
+(cached 30 s). `src/components/league/NextMatchCard.astro` and `MiniTable.astro`
+are ready to place on any page.
+
+**Admin** (/admin/league/…, roles Matchday Operator, Media, Super Admin; APIs
+under /api/admin/league/, every write in `league_audit_log`): dashboard,
+fixtures (postpone, reschedule, swap, cancel, matchday bulk shift with
+preview), results (batch save, table before/after), live mode (double-tap
+protection), table & rules (adjustments never deleted, tie decisions, rules
+preview), clubs & venues, CSV import (dry run, finished matches protected)
+and export, history with undo. The setting `league_admin_emails` (JSON list)
+limits rules, adjustments, tie decisions, import and undo to those staff.
+
+**How to…**
+- *Enter results:* League › Results, choose the matchday, Save matchday.
+- *Postpone / reschedule:* League › Fixtures › Postpone (reason) / Reschedule.
+- *Points adjustment / tie decision:* League › Table & Rules.
+- *Change the rules:* League › Table & Rules › Rules (preview, then save).
+- *Import a revised fixture list:* League › Import & Export (template, upload,
+  check the preview, Apply changes).
+- *Undo a mistake:* League › History › Undo.
+- *Match day:* check Fixtures; Live Match Control or League Live mode during
+  the match; check Results after full time; enter the other results after the
+  matchday.
+
+**Troubleshooting**
+- *The table looks wrong:* League › Table & Rules › Check data, then
+  **Explain** on the row; check adjustments and the tie-break order.
+- *A time looks one hour off:* times are typed in Nigerian time (WAT) and
+  stored as UTC; a device set to another time zone shows its own time in
+  date pickers. The website always shows WAT.
+- *A fixture is missing:* check it is published and not filtered (Lobi Stars /
+  All Conference D); a postponed match shows in the "Needs a new date" box.
+- *The calendar didn't update:* calendar apps refresh subscribed feeds every
+  few hours (Google can take up to a day); each change raises the event's
+  SEQUENCE so the new time replaces the old one.
+- *Sample data for local testing:* `node scripts/dev-sample-results.mjs`
+  (local database only; remove with `--clear`).
+
+**Commands**
+```
+npx wrangler d1 migrations apply lobi-stars-tickets --local   # optional: the site also seeds itself
+node --test tests/league.standings.test.mjs                   # table calculation (no server)
+node scripts/check-league-seed.mjs                            # the 56-fixture season checks
+npm run build && npx wrangler pages dev dist                  # then: BASE=http://127.0.0.1:8788 node --test tests/league.api.test.mjs
+npx wrangler d1 migrations apply lobi-stars-tickets --remote  # optional, after deploying
+```
+
 ## Sharing pages (Share button + Admin › Share any page)
 
 **How the button works.** `src/components/ShareButton.astro` is a `<details>`
@@ -633,7 +715,7 @@ To replace the placeholders with real fixtures, run in the same console
 DELETE FROM events WHERE id LIKE 'evt-sample-%';
 
 INSERT INTO events (id, home_team, away_team, competition, event_date, venue, vip_price_kobo, premium_price_kobo, regular_price_kobo)
-VALUES ('evt-2026-08-15', 'Lobi Stars', 'Kano Pillars', 'NPFL', '2026-08-15T15:00:00Z', 'Aper Aku Stadium, Makurdi', 500000, 250000, 100000);
+VALUES ('evt-2026-08-15', 'Lobi Stars', 'Kano Pillars', 'NNL', '2026-08-15T15:00:00Z', 'Aper Aku Stadium, Makurdi', 500000, 250000, 100000);
 ```
 
 Or manage matches from the built-in UI at **`/admin/matches`** (enter the

@@ -387,6 +387,17 @@ import ShareHub from '../../components/admin/ShareHub.astro';
     loadFixtures();
   }
   $('newBtn').addEventListener('click', () => openWizard(null));
+  // League › Fixtures "Create programme": opens a new programme with the match
+  // filled in (nothing is saved until "Save and continue").
+  const pre = new URLSearchParams(location.search);
+  if (pre.get('new') === '1') {
+    openWizard(null).then(() => {
+      const f = $('f1').elements;
+      for (const k of ['title', 'opponent', 'competition', 'venue']) if (pre.get(k)) f[k].value = String(pre.get(k)).slice(0, 120);
+      if (pre.get('kickoff') && !Number.isNaN(Date.parse(pre.get('kickoff')!))) f.kickoff.value = isoToWat(pre.get('kickoff'));
+      history.replaceState(null, '', location.pathname);
+    });
+  }
   $('wzShare').addEventListener('click', () => { const pid = cur?.id; wz.close(); if (pid) (window as any).lsOpenShareHub(pid); });
   $('wzClose').addEventListener('click', () => { wz.close(); loadList(); });
   wz.addEventListener('cancel', () => loadList());

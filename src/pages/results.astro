@@ -1,7 +1,9 @@
 ---
+// /results -- finished matches, newest first, filled in on the server from
+// the league data (functions/results.js).
 import Layout from '../layouts/Layout.astro';
-import FixturesBoard from '../components/FixturesBoard.astro';
 import MatchesTabs from '../components/MatchesTabs.astro';
+import LeagueRoot from '../components/league/LeagueRoot.astro';
 import { CURRENT_SEASON } from '../lib/site';
 ---
 <Layout title="Results | Lobi Stars Football Club" description={`Every Lobi Stars FC First Team result and score from the ${CURRENT_SEASON} season, all in one place for fans of the Pride of Benue.`}>
@@ -11,6 +13,6 @@ import { CURRENT_SEASON } from '../lib/site';
     <MatchesTabs current="results" />
   </div>
   <div class="page-content wrap">
-    <FixturesBoard show="results" />
+    <LeagueRoot which="results" />
   </div>
 </Layout>

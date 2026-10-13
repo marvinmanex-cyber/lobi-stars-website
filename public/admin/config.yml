@@ -101,21 +101,6 @@ collections:
       - {label: "Caption", name: "caption", widget: "string"}
       - {label: "Photo", name: "photo", widget: "image"}
 
-  - name: "fixtures"
-    label: "Fixtures & Results"
-    folder: "src/content/fixtures"
-    create: true
-    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
-    fields:
-      - {label: "Home Team", name: "home", widget: "string"}
-      - {label: "Away Team", name: "away", widget: "string"}
-      - {label: "Date", name: "date", widget: "datetime"}
-      - {label: "Venue", name: "venue", widget: "string"}
-      - {label: "Competition", name: "competition", widget: "string", default: "NPFL"}
-      - {label: "Home Score", name: "home_score", widget: "number", required: false}
-      - {label: "Away Score", name: "away_score", widget: "number", required: false}
-      - {label: "Status", name: "status", widget: "select", options: ["Upcoming", "Completed"]}
-
   - name: "staff"
     label: "Coaching Staff"
     folder: "src/content/staff"
@@ -165,7 +150,7 @@ collections:
 
   # Single data files (src/data/*.json) -- one entry each, edited in place.
   - name: "settings"
-    label: "Site Settings, League Table & Shop"
+    label: "Site Settings & Shop"
     files:
       - name: "promo"
         label: "Promo Bar (thin bar at the top of every page)"
@@ -227,27 +212,6 @@ collections:
             fields:
               - {label: "Value (e.g. 1969)", name: "value", widget: "string"}
               - {label: "Label (e.g. Year Founded)", name: "label", widget: "string"}
-
-      - name: "leagueTable"
-        label: "League Table"
-        file: "src/data/league-table.json"
-        fields:
-          - {label: "Competition", name: "competition", widget: "string"}
-          - {label: "Last Updated (YYYY-MM-DD)", name: "lastUpdated", widget: "string", required: false}
-          - label: "Clubs"
-            name: "rows"
-            widget: "list"
-            summary: "{{fields.club}}"
-            fields:
-              - {label: "Club", name: "club", widget: "string"}
-              - {label: "Crest", name: "crest", widget: "image", required: false}
-              - {label: "Played", name: "played", widget: "number", value_type: "int", default: 0}
-              - {label: "Won", name: "won", widget: "number", value_type: "int", default: 0}
-              - {label: "Drawn", name: "drawn", widget: "number", value_type: "int", default: 0}
-              - {label: "Lost", name: "lost", widget: "number", value_type: "int", default: 0}
-              - {label: "Goals For", name: "goalsFor", widget: "number", value_type: "int", default: 0}
-              - {label: "Goals Against", name: "goalsAgainst", widget: "number", value_type: "int", default: 0}
-              - {label: "Points Adjustment (e.g. -3 for a deduction)", name: "pointsAdjustment", widget: "number", value_type: "int", default: 0}
 
       - name: "shop"
         label: "Club Shop Products"

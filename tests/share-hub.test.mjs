@@ -186,7 +186,7 @@ test('platform settings: https profile links, key never changes; roles', async (
   const ok = await api('/api/admin/share/platforms', 'PATCH', { key: 'facebook', profile_url: 'https://www.facebook.com/lobistarsfc', hashtags: '#LobiStarsFC   #MatchDay' });
   assert.equal(ok.status, 200);
   assert.equal(ok.data.platform.hashtags, '#LobiStarsFC #MatchDay');
-  assert.equal((await api('/api/admin/share/platforms', 'PATCH', { key: 'facebook', hashtags: '#LobiStarsFC #LobiStars #MatchDay #NPFL', profile_url: '' })).status, 200);
+  assert.equal((await api('/api/admin/share/platforms', 'PATCH', { key: 'facebook', hashtags: '#LobiStarsFC #LobiStars #MatchDay #NNL', profile_url: '' })).status, 200);
   const login = async role => {
     const email = `sh-${role}-${uid()}@example.com`;
     await api('/api/admin/staff', 'POST', { name: `SH ${role}`, email, password: 'Role-Test-2026!', role });

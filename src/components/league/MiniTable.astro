@@ -1,0 +1,44 @@
+---
+// A small league table (Pos, Club, P, GD, Pts) with Lobi Stars highlighted,
+// loaded from /api/league/table. If it can't load it says so and links to
+// /table. Not placed on the homepage yet: drop <MiniTable /> where it fits.
+---
+<section class="mtb" data-mini-table aria-labelledby="mtb-h">
+  <h2 id="mtb-h">League table</h2>
+  <div data-body><p class="mtb-msg">Loading the table… <a href="/table/">See the full table</a></p></div>
+  <p class="mtb-more"><a href="/table/">Full table →</a></p>
+</section>
+
+<style>
+  .mtb { background: var(--d2); border: 1px solid var(--d4); border-radius: 14px; padding: 16px 18px; }
+  .mtb h2 { margin: 0 0 8px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .mtb :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .mtb :global(caption) { text-align: left; font-size: 12px; color: var(--lt); padding-bottom: 6px; }
+  .mtb :global(th), .mtb :global(td) { padding: 7px 6px; border-bottom: 1px solid var(--d4); text-align: center; }
+  .mtb :global(th[scope=row]) { text-align: left; font-weight: 700; }
+  .mtb :global(thead th) { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .mtb :global(img) { width: 20px; height: 20px; border-radius: 50%; vertical-align: middle; margin-right: 6px; background: #fff; object-fit: contain; }
+  .mtb :global(tr.is-lobi) { background: #FFF1F1; }
+  .mtb :global(tr.is-lobi th), .mtb :global(tr.is-lobi td) { color: #15181D; }
+  .mtb-more { margin: 10px 0 0; font-weight: 700; }
+  .mtb :global(.mtb-msg) { margin: 0; color: var(--lt); }
+</style>
+
+<script is:inline>
+(function () {
+  document.querySelectorAll('[data-mini-table]').forEach(function (box) {
+    var body = box.querySelector('[data-body]');
+    var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { if (k === 'text') n.textContent = props[k]; else if (k === 'class') n.className = props[k]; else n.setAttribute(k, props[k]); }); for (var i = 2; i < arguments.length; i++) if (arguments[i]) n.append(arguments[i]); return n; };
+    fetch('/api/league/table').then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (t) {
+      var sign = function (n) { return n > 0 ? '+' + n : String(n); };
+      var thead = el('thead', {}, el('tr', {}, el('th', { scope: 'col', text: 'Pos' }), el('th', { scope: 'col', text: 'Club' }), el('th', { scope: 'col', text: 'P' }), el('th', { scope: 'col', text: 'GD' }), el('th', { scope: 'col', text: 'Pts' })));
+      var tbody = el('tbody');
+      t.rows.forEach(function (r) {
+        tbody.append(el('tr', { class: r.team.isLobi ? 'is-lobi' : '' }, el('td', { text: String(r.pos) }), el('th', { scope: 'row' }, el('img', { src: r.team.crest, alt: '', width: 20, height: 20, loading: 'lazy' }), r.team.shortName),
+          el('td', { text: String(r.played) }), el('td', { text: sign(r.gd) }), el('td', {}, el('b', { text: String(r.points) }))));
+      });
+      body.replaceChildren(el('table', {}, el('caption', { text: t.preSeason ? 'Before the first match' : 'After Matchday ' + t.matchday }), thead, tbody));
+    }).catch(function () { body.replaceChildren(el('p', { class: 'mtb-msg', text: 'The table could not be loaded just now. ' }, el('a', { href: '/table/', text: 'See the full table' }))); });
+  });
+})();
+</script>

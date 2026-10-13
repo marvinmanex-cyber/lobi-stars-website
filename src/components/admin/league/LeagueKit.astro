@@ -1,0 +1,139 @@
+---
+// Shared by the League admin pages: styles, and window.LA with helpers
+// (API calls, safe element building, Nigerian time, toasts, confirm dialog).
+// Values from the database are only ever set with textContent.
+---
+<div class="la-toast" id="laToast" role="status" aria-live="polite" hidden></div>
+<dialog class="la-dlg" id="laDlg" aria-labelledby="laDlgH">
+  <form method="dialog">
+    <h2 id="laDlgH"></h2>
+    <div id="laDlgBody"></div>
+    <div class="la-row la-end"><button value="cancel" class="btn-o" id="laDlgNo">Cancel</button><button value="ok" class="btn-p" id="laDlgOk">OK</button></div>
+  </form>
+</dialog>
+
+<style is:global>
+  .la { max-width: 1150px; padding-top: 20px; padding-bottom: 60px; }
+  .la-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .la-lede { margin: 0 0 16px; color: var(--a-muted); line-height: 1.55; }
+  .la-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px 18px; margin-bottom: 16px; min-width: 0; }
+  .la-card h2 { margin: 0 0 12px; font: 700 18px 'Barlow', sans-serif; }
+  .la-card h3 { margin: 14px 0 8px; font: 700 15px 'Barlow', sans-serif; }
+  .la-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .la-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .la-end { justify-content: flex-end; }
+  .la-muted { color: var(--a-muted); font-size: 13px; line-height: 1.5; }
+  .la-msg { margin: 10px 0; padding: 10px 14px; border-radius: 10px; font-weight: 600; }
+  .la-msg.ok { background: #E8F7EE; color: #17643A; }
+  .la-msg.err { background: #FDECEC; color: #A3161B; }
+  .la-msg.warn { background: #FFF7E6; color: #7A4B00; }
+  .la-msg:empty { display: none; }
+  .la input, .la select, .la textarea, .la-dlg input, .la-dlg select, .la-dlg textarea { min-height: 42px; padding: 8px 10px; border: 1.5px solid var(--a-line); border-radius: 8px; background: var(--a-card); color: var(--a-ink); font: 400 15px 'Barlow', sans-serif; box-sizing: border-box; max-width: 100%; }
+  .la label.la-f, .la-dlg label.la-f { display: grid; gap: 4px; font-weight: 700; font-size: 13px; }
+  .la .btn-p, .la .btn-o, .la-dlg .btn-p, .la-dlg .btn-o { padding: 9px 14px; font-size: 13px; min-height: 42px; }
+  .la .btn-sm { padding: 6px 10px; font-size: 12px; min-height: 36px; }
+  .la-chip { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #EEF0F3; color: #3D4652; white-space: nowrap; }
+  .la-chip.live, .la-chip.half_time { background: #C11A1F; color: #fff; }
+  .la-chip.full_time, .la-chip.awarded { background: #E8F7EE; color: #17643A; }
+  .la-chip.postponed { background: #FFF1D6; color: #7A4B00; }
+  .la-chip.cancelled, .la-chip.abandoned { background: #FDECEC; color: #A3161B; }
+  .la-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .la-tabs button { min-height: 40px; min-width: 44px; padding: 0 12px; border: 1.5px solid var(--a-line); border-radius: 999px; background: var(--a-card); color: var(--a-ink); font: 700 14px 'Barlow', sans-serif; cursor: pointer; }
+  .la-tabs button[aria-pressed="true"] { background: #E31E24; border-color: #E31E24; color: #fff; }
+  .la-tabs .la-break { align-self: center; font-size: 12px; color: var(--a-muted); padding: 0 4px; }
+  .la-scroll { overflow-x: auto; }
+  .la table { width: 100%; border-collapse: collapse; }
+  .la th, .la td { padding: 8px 10px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--a-line); vertical-align: middle; }
+  .la th { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--a-muted); }
+  .la td.n, .la th.n { text-align: center; }
+  .la tbody th { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--a-ink); font-weight: 700; }
+  .la tr.is-lobi td, .la tr.is-lobi th { background: color-mix(in srgb, #E31E24 9%, transparent); }
+  .la-crest { width: 24px; height: 24px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--a-line); vertical-align: middle; margin-right: 6px; }
+  .la-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 4000; background: #15181D; color: #fff; padding: 12px 20px; border-radius: 10px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-width: calc(100vw - 32px); }
+  .la-toast.err { background: #A3161B; }
+  .la-dlg { width: min(560px, calc(100vw - 32px)); border: 0; border-radius: 16px; padding: 20px; box-sizing: border-box; }
+  .la-dlg::backdrop { background: rgba(15, 17, 21, .55); }
+  .la-dlg h2 { margin: 0 0 10px; font: 700 20px 'Barlow', sans-serif; }
+  .la-dlg #laDlgBody { margin-bottom: 14px; line-height: 1.5; display: grid; gap: 10px; }
+  .la-warn { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .la-warn li { padding: 8px 10px; border-radius: 8px; font-size: 14px; }
+  .la-warn .bad { background: #FDECEC; color: #A3161B; } .la-warn .warn { background: #FFF7E6; color: #7A4B00; } .la-warn .info { background: #EEF4FB; color: #1A4E8A; }
+  [hidden] { display: none !important; }
+  @media (max-width: 640px) { .la-card { padding: 14px; } .la th, .la td { padding: 7px 6px; } }
+</style>
+
+<script is:inline>
+(function () {
+  if (window.LA) return;
+  var code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  var TZ = 'Africa/Lagos';
+  var LA = window.LA = {};
+  LA.api = function (path, opts) {
+    opts = opts || {};
+    var headers = { 'x-admin-code': code };
+    var bodyIsText = typeof opts.body === 'string' && opts.text;
+    if (opts.body !== undefined && !bodyIsText) headers['Content-Type'] = 'application/json';
+    if (bodyIsText) headers['Content-Type'] = 'text/csv';
+    return fetch(path, { method: opts.method || 'GET', headers: headers, body: opts.body === undefined ? undefined : (bodyIsText ? opts.body : JSON.stringify(opts.body)), cache: 'no-store' })
+      .then(function (r) {
+        if (r.status === 401) { location.href = '/admin/login/?next=' + encodeURIComponent(location.pathname + location.search); }
+        return r.json().catch(function () { return {}; }).then(function (d) { return { ok: r.ok, status: r.status, d: d }; });
+      })
+      .catch(function () { return { ok: false, status: 0, d: { error: 'No connection. Check your internet and try again.' } }; });
+  };
+  LA.el = function (tag, props) {
+    var n = document.createElement(tag);
+    props = props || {};
+    Object.keys(props).forEach(function (k) {
+      var v = props[k];
+      if (v === undefined || v === null || v === false) return;
+      if (k === 'class') n.className = v; else if (k === 'text') n.textContent = v;
+      else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v);
+      else n.setAttribute(k, v === true ? '' : v);
+    });
+    for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c === null || c === undefined || c === false) continue; n.append(Array.isArray(c) ? (function () { var f = document.createDocumentFragment(); c.forEach(function (x) { if (x != null && x !== false) f.append(x); }); return f; })() : c); }
+    return n;
+  };
+  var shift = function (iso) { return new Date(Date.parse(iso) + 3600e3).toISOString(); };
+  LA.lagosDate = function (iso) { return iso ? shift(iso).slice(0, 10) : ''; };
+  LA.lagosTime = function (iso) { return iso ? shift(iso).slice(11, 16) : ''; };
+  LA.date = function (iso) { return iso ? new Date(iso).toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'TBC'; };
+  LA.time = function (iso) { return iso ? new Date(iso).toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }) : ''; };
+  LA.when = function (s) { if (!s) return ''; var iso = /T|Z$/.test(s) ? s : s.replace(' ', 'T') + 'Z'; return new Date(iso).toLocaleString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WAT'; };
+  LA.STATUS = { scheduled: 'Not played', live: 'Live', half_time: 'Half time', full_time: 'Full time', postponed: 'Postponed', abandoned: 'Abandoned', cancelled: 'Cancelled', awarded: 'Awarded' };
+  LA.chip = function (status) { return LA.el('span', { class: 'la-chip ' + status, text: LA.STATUS[status] || status }); };
+  LA.crest = function (t) { return LA.el('img', { class: 'la-crest', src: (t && (t.crest || t.crest_url)) || ('/api/league/crest/' + (t && t.code)), alt: '', width: 24, height: 24, loading: 'lazy' }); };
+  var toastT;
+  LA.toast = function (text, err) {
+    var t = document.getElementById('laToast');
+    t.textContent = text; t.className = 'la-toast' + (err ? ' err' : ''); t.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, err ? 6000 : 3000);
+  };
+  /** Confirm dialog. body: string or nodes. Resolves true when OK is pressed. */
+  LA.confirm = function (title, body, okText) {
+    return new Promise(function (resolve) {
+      var d = document.getElementById('laDlg');
+      document.getElementById('laDlgH').textContent = title;
+      var b = document.getElementById('laDlgBody'); b.replaceChildren();
+      (Array.isArray(body) ? body : [body]).forEach(function (x) { b.append(typeof x === 'string' ? LA.el('p', { text: x, style: 'margin:0' }) : x); });
+      document.getElementById('laDlgOk').textContent = okText || 'OK';
+      d.onclose = function () { resolve(d.returnValue === 'ok'); };
+      d.returnValue = ''; d.showModal();
+    });
+  };
+  /** Asks for a line of text (e.g. a reason). Resolves the text or null. */
+  LA.prompt = function (title, label, opts) {
+    opts = opts || {};
+    var input = LA.el(opts.multiline ? 'textarea' : 'input', { maxlength: opts.max || 200, rows: 3, 'aria-label': label, style: 'width:100%' });
+    if (opts.value) input.value = opts.value;
+    var fields = [LA.el('label', { class: 'la-f' }, label, input)].concat(opts.extra || []);
+    setTimeout(function () { input.focus(); }, 50);
+    return LA.confirm(title, fields, opts.ok || 'Save').then(function (yes) { return yes ? input.value.trim() : null; });
+  };
+  LA.table = function (head, rows, cls) {
+    return LA.el('div', { class: 'la-scroll' }, LA.el('table', { class: cls || '' },
+      LA.el('thead', {}, LA.el('tr', {}, head.map(function (h) { return LA.el('th', { scope: 'col', text: h }); }))),
+      LA.el('tbody', {}, rows)));
+  };
+})();
+</script>

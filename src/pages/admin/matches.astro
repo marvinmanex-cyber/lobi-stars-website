@@ -2,11 +2,12 @@
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
 ---
-<Layout title="Manage Matches | Lobi Stars Admin" description="Manage Lobi Stars FC fixtures." noindex>
+<Layout title="Match Tickets & Settings | Lobi Stars Admin" description="Ticket prices and match settings." noindex>
   <div class="wrap admin-wrap">
     <AdminNav current="matches" />
     <div class="stag">Admin</div>
-    <h1 class="stitle">Manage <span class="r">Matches</span></h1>
+    <h1 class="stitle">Match Tickets &amp; <span class="r">Settings</span></h1>
+    <p class="muted" style="max-width:760px">League matches (dates, kick-off times, venues and results) are managed in <a href="/admin/league/fixtures/">League › Fixtures</a>; here you set ticket prices, the members' priority window, commentary and programme settings. Friendlies can still be added here.</p>
     <p class="admin-lede">
       These fixtures power the homepage countdown and the
       <a href="/tickets">Buy Tickets</a> page. Changes go live immediately.

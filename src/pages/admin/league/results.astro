@@ -1,0 +1,136 @@
+---
+// League › Results: enter the scores of a matchday (status, home and away
+// goals, optional attendance, referee, report link and note) and save them
+// together. Shows what changed in the table. Live mode is for the pitch side.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="League Results | Lobi Stars Admin" description="Enter league results." noindex>
+  <div class="wrap la">
+    <AdminNav current="league-results" />
+    <header class="la-head">
+      <div><div class="stag">League</div><h1 class="stitle">Res<span class="r">ults</span></h1></div>
+      <label class="la-f">Matchday<select id="mdSel"></select></label>
+    </header>
+    <p class="la-lede">Choose the status, type both scores and press <b>Save matchday</b>. The table and the website update straight away. Lobi Stars scores also update the match page (and the other way round: a score from Live Match Control appears here).</p>
+    <form id="grid" class="la-card" novalidate><p class="la-muted">Loading…</p></form>
+    <section class="la-card" id="changes" hidden aria-labelledby="h-ch"><h2 id="h-ch">What changed in the table</h2><div id="chBody"></div></section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<style is:global>
+  .rs { display: grid; gap: 12px; }
+  .rs-row { border: 1px solid var(--a-line); border-radius: 12px; padding: 12px; display: grid; gap: 10px; }
+  .rs-row.changed { border-color: #E31E24; box-shadow: 0 0 0 1px #E31E24; }
+  .rs-top { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--a-muted); }
+  .rs-score { display: grid; grid-template-columns: 1fr 64px 18px 64px 1fr; gap: 8px; align-items: center; }
+  .rs-score .h { text-align: right; font-weight: 700; } .rs-score .a { font-weight: 700; }
+  .rs-score input { width: 64px; text-align: center; font: 700 22px 'Barlow', sans-serif; }
+  .rs-more { display: flex; flex-wrap: wrap; gap: 10px; }
+  .rs-more input { width: 160px; } .rs-more input.att { width: 110px; }
+  @media (max-width: 560px) { .rs-score { grid-template-columns: 1fr 56px 12px 56px 1fr; } .rs-score input { width: 56px; } .rs-more input, .rs-more select { width: 100%; } .rs-more label { flex: 1 1 140px; } }
+</style>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, el = LA.el, $ = function (id) { return document.getElementById(id); };
+  var q = new URLSearchParams(location.search);
+  var state = { md: q.get('matchday') ? Number(q.get('matchday')) : null, fixtures: [], comp: null, rows: [] };
+
+  function load() {
+    LA.api('/api/admin/league/fixtures').then(function (r) {
+      if (!r.ok) { $('grid').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load.' })); return; }
+      state.comp = r.d.competition; state.fixtures = r.d.fixtures;
+      var mds = []; state.fixtures.forEach(function (f) { if (f.matchday && mds.indexOf(f.matchday) < 0) mds.push(f.matchday); }); mds.sort(function (a, b) { return a - b; });
+      if (!state.md) {
+        // The first matchday with a match that kicked off but has no result, else the first unfinished one.
+        var due = state.fixtures.find(function (f) { return f.resultDue; });
+        var open = state.fixtures.find(function (f) { return f.matchday && ['scheduled', 'live', 'half_time'].indexOf(f.status) >= 0; });
+        state.md = (due || open || { matchday: mds[0] }).matchday;
+      }
+      var s = $('mdSel'); s.replaceChildren(); mds.forEach(function (m) { s.add(new Option('Matchday ' + m, m, false, m === state.md)); });
+      draw();
+    });
+  }
+  $('mdSel').addEventListener('change', function () { state.md = Number(this.value); history.replaceState(null, '', '?matchday=' + state.md); $('changes').hidden = true; draw(); });
+
+  function draw() {
+    var list = state.fixtures.filter(function (f) { return f.matchday === state.md; });
+    state.rows = list.map(function (f) {
+      var st = el('select', { 'aria-label': 'Status: ' + f.home.name + ' vs ' + f.away.name });
+      [['scheduled', 'Not played'], ['live', 'Live'], ['half_time', 'Half time'], ['full_time', 'Full time'], ['awarded', 'Awarded'], ['abandoned', 'Abandoned'], ['postponed', 'Postponed'], ['cancelled', 'Cancelled']]
+        .forEach(function (o) { st.add(new Option(o[1], o[0], false, o[0] === f.status)); });
+      var hg = el('input', { type: 'number', inputmode: 'numeric', min: 0, max: 30, step: 1, value: f.homeGoals ?? '', 'aria-label': f.home.name + ' goals' });
+      var ag = el('input', { type: 'number', inputmode: 'numeric', min: 0, max: 30, step: 1, value: f.awayGoals ?? '', 'aria-label': f.away.name + ' goals' });
+      var att = el('input', { class: 'att', type: 'number', inputmode: 'numeric', min: 0, value: f.attendance ?? '', 'aria-label': 'Attendance' });
+      var ref = el('input', { value: f.referee || '', maxlength: 80, 'aria-label': 'Referee' });
+      var rep = el('input', { value: f.reportUrl || '', maxlength: 300, placeholder: '/news/… or https://…', 'aria-label': 'Match report link' });
+      var note = el('input', { value: f.note || '', maxlength: 200, 'aria-label': 'Public note' });
+      var box = el('div', { class: 'rs-row' },
+        el('div', { class: 'rs-top' }, el('span', { text: '#' + f.matchNo + ' · ' + LA.date(f.kickoff || f.originalKickoff) + (f.kickoff ? ', ' + LA.time(f.kickoff) + ' WAT' : '') + ' · ' + (f.venue || '') }), el('a', { href: '/admin/league/live/?id=' + f.id, text: 'Live mode →' })),
+        el('label', { class: 'la-f' }, 'Status', st),
+        el('div', { class: 'rs-score' }, el('span', { class: 'h', text: f.home.name }), hg, el('span', { 'aria-hidden': 'true', text: '–' }), ag, el('span', { class: 'a', text: f.away.name })),
+        el('div', { class: 'rs-more' }, el('label', { class: 'la-f' }, 'Attendance', att), el('label', { class: 'la-f' }, 'Referee', ref), el('label', { class: 'la-f' }, 'Report link', rep), el('label', { class: 'la-f' }, 'Note', note)));
+      var row = { f: f, st: st, hg: hg, ag: ag, att: att, ref: ref, rep: rep, note: note, box: box };
+      var mark = function () { box.classList.toggle('changed', changed(row)); };
+      [st, hg, ag, att, ref, rep, note].forEach(function (x) { x.addEventListener('input', mark); x.addEventListener('change', mark); });
+      st.addEventListener('change', function () { if (['scheduled', 'postponed', 'cancelled'].indexOf(st.value) >= 0) { hg.value = ''; ag.value = ''; } mark(); });
+      return row;
+    });
+    var body = list.length ? state.rows.map(function (r) { return r.box; }) : [el('p', { class: 'la-muted', text: 'No matches in this matchday.' })];
+    $('grid').replaceChildren(el('h2', { text: 'Matchday ' + state.md }), el('div', { class: 'rs' }, body),
+      el('p', { class: 'la-msg', id: 'gridMsg', role: 'status' }),
+      el('div', { class: 'la-row la-end', style: 'margin-top:12px' }, el('button', { type: 'submit', class: 'btn-p', text: 'Save matchday' })));
+  }
+  var val = function (x) { return x.value === '' ? null : x.value; };
+  function changed(r) {
+    var f = r.f, n = function (v) { return v === '' || v === null || v === undefined ? null : String(v); };
+    return r.st.value !== f.status || n(r.hg.value) !== n(f.homeGoals) || n(r.ag.value) !== n(f.awayGoals) || n(r.att.value) !== n(f.attendance)
+      || (r.ref.value || '') !== (f.referee || '') || (r.rep.value || '') !== (f.reportUrl || '') || (r.note.value || '') !== (f.note || '');
+  }
+  var outcome = function (h, a) { return h === null || a === null ? null : h > a ? 'home win' : h < a ? 'away win' : 'draw'; };
+
+  $('grid').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var rows = state.rows.filter(changed);
+    var msg = $('gridMsg');
+    if (!rows.length) { msg.className = 'la-msg warn'; msg.textContent = 'Nothing has changed.'; return; }
+    // Warn before changing an old result or one that changes who won.
+    var warnings = [];
+    rows.forEach(function (r) {
+      var f = r.f, wasDone = ['full_time', 'awarded'].indexOf(f.status) >= 0;
+      var before = outcome(f.homeGoals, f.awayGoals), after = outcome(val(r.hg) === null ? null : Number(r.hg.value), val(r.ag) === null ? null : Number(r.ag.value));
+      if (wasDone && before && after && before !== after) warnings.push(f.home.name + ' vs ' + f.away.name + ': the result changes from a ' + before + ' to a ' + after + '.');
+      else if (wasDone && f.kickoff && Date.parse(f.kickoff) < Date.now() - 3 * 864e5) warnings.push(f.home.name + ' vs ' + f.away.name + ' was played over 3 days ago: you are changing an old result.');
+    });
+    var go = function () {
+      var body = { competition: state.comp.slug, rows: rows.map(function (r) {
+        return { id: r.f.id, status: r.st.value, homeGoals: val(r.hg), awayGoals: val(r.ag), attendance: val(r.att), referee: r.ref.value, reportUrl: r.rep.value, note: r.note.value };
+      }) };
+      LA.api('/api/admin/league/results/matchday/' + state.md, { method: 'PUT', body: body }).then(function (r) {
+        if (!r.ok) { msg.className = 'la-msg err'; msg.textContent = r.d.error || 'Could not save.'; LA.toast(r.d.error || 'Could not save.', true); return; }
+        msg.className = 'la-msg ok'; msg.textContent = r.d.saved + ' match' + (r.d.saved === 1 ? '' : 'es') + ' saved.';
+        LA.toast('Matchday ' + state.md + ' saved');
+        showChanges(r.d.changes || []);
+        load();
+      });
+    };
+    if (warnings.length) LA.confirm('Change these results?', warnings.concat(['The table will be worked out again.']), 'Yes, save').then(function (y) { if (y) go(); });
+    else go();
+  });
+
+  function showChanges(ch) {
+    if (!ch.length) return;
+    $('changes').hidden = false;
+    $('chBody').replaceChildren(LA.table(['Now', 'Before', 'Club', 'Pts'], ch.map(function (c) {
+      var mv = c.before === null ? '' : c.moved > 0 ? ' ▲' + c.moved : c.moved < 0 ? ' ▼' + (-c.moved) : '';
+      return el('tr', {}, el('td', { class: 'n', text: c.pos + mv }), el('td', { class: 'n', text: c.before === null ? '–' : String(c.before) }), el('th', { scope: 'row', text: c.name }),
+        el('td', { class: 'n', text: c.beforePoints !== null && c.beforePoints !== c.points ? c.beforePoints + ' → ' + c.points : String(c.points) }));
+    })));
+    $('changes').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  }
+  load();
+})();
+</script>

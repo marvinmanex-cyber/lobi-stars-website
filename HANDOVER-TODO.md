@@ -60,7 +60,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | C4 | **Club YouTube / Facebook for match streams** | The club's own channels (the Watch Live fallback still points to the partner's). |
 | C5 | **Social links** | YouTube, TikTok and WhatsApp Channel addresses (Facebook, X and Instagram are already set). |
 | C6 | **Supporters' clubs** | For each: city, club name, contact person, optional phone and social link. |
-| C7 | **League table** | Update after every matchday (or send the table and the website manager updates it). |
+| C7 | **League results** | The table is now worked out by the website. After each matchday someone enters the **other** Conference D results in Admin › League › Results (Lobi Stars' own score comes from Live Match Control). |
 | C8 | **Opponent crests** | Crest images for any team not yet on the site (current crests: ABS, Bichi First, Kada Warriors, Mighty Jets, Sokoto United, Wikki Tourists, Yobe Desert Stars, Kano Pillars). |
 | C9 | **Gallery photos** | Matchday and club photos (the Gallery is empty). |
 | C10 | **Values** | Approve or edit the DRAFT mission and five values in the CMS (Club Values), then switch on Published. |
@@ -87,6 +87,16 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | D9 | **Season tickets** | Built and switched off. Decide the season-ticket price for each stand (VIP Sitting, Cover Stand, Popular Stand), how many each stand has, whether cup matches are included, then switch it on in Admin › Commerce › Season Tickets (needs A4, the live Paystack key). |
 | D10 | **Match tickets at the gate** | **Done (12 Oct 2026):** you chose "only that very match". The scanner now refuses a ticket for a different match with "Wrong match: this ticket is for <match> on <date>"; the ticket stays valid for its own match day. |
 | D6 | **In-seat food** | The real menu (items, prices, photos, categories), the list of stands/blocks for seat delivery, and the alert email addresses / phone numbers for the kitchen. |
+
+## L. League (fixtures, results, table)
+
+| # | What | What to send or do |
+|---|---|---|
+| L1 | **Crests** | The seven opponents' crests already on the site are used. Confirm the club is allowed to show them (or send official files, e.g. from each club); replace any in League › Clubs & Venues. |
+| L2 | **Rules to confirm** | The table uses 3 points for a win, 1 for a draw, and separates level clubs by goal difference, goals scored, wins, then head-to-head. Confirm this matches the NNL rules for 2026/27, and send the promotion/relegation places if you want coloured zones. |
+| L3 | **Who may change rules** | Optional: the staff emails allowed to change rules, adjustments, tie decisions, the import and undo (setting `league_admin_emails`); otherwise every League user can. |
+| L4 | **First real results** | From Matchday 1 (Sat 7 / Sun 8 Nov 2026), enter all four results after each matchday. |
+| L5 | **The 23 October match** | The trial "Lobi Stars vs Kada Warriors, Fri 23 Oct" is hidden automatically on the first visit after deploying (it isn't in the official list); if tickets had been sold for it, it stays and shows in League History instead. |
 
 ## E. Legal
 

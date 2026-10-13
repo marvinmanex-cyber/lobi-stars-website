@@ -1,0 +1,76 @@
+---
+// League › Import & Export: upload a revised fixture list (CSV), see every
+// row as new / changed / unchanged / error first, then apply. Matches with a
+// result are never changed unless that is ticked. Download fixtures and table.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="League Import | Lobi Stars Admin" description="Import and export fixtures." noindex>
+  <div class="wrap la">
+    <AdminNav current="league-import" />
+    <header class="la-head"><div><div class="stag">League</div><h1 class="stitle">Import &amp; <span class="r">Export</span></h1></div></header>
+    <section class="la-card" aria-labelledby="h-exp"><h2 id="h-exp">Download</h2>
+      <div class="la-row"><a class="btn-o" href="/api/admin/league/export/fixtures.csv" data-dl>Fixtures (CSV)</a><a class="btn-o" href="/api/admin/league/export/table.csv" data-dl>Table (CSV)</a><a class="btn-o" href="/api/admin/league/export/template.csv" data-dl>Import template</a></div></section>
+    <section class="la-card" aria-labelledby="h-imp"><h2 id="h-imp">Upload a revised fixture list</h2>
+      <p class="la-muted">Columns: <code>match_no, matchday, date, time, home, away, venue</code> (venue optional: empty means the home team's ground). Dates <code>2026-11-08</code> or <code>08/11/2026</code>, time <code>16:00</code> (24-hour, Nigerian time). Clubs can be written as their name, short name, code or another name listed on the Clubs page.</p>
+      <div class="la-row"><input type="file" id="file" accept=".csv,text/csv" aria-label="CSV file" />
+        <label class="la-row" style="gap:6px;font-weight:600"><input type="checkbox" id="allowFinished" style="width:18px;height:18px;min-height:auto" /> Also change matches that already have a result</label></div>
+      <p class="la-msg" id="msg" role="status"></p>
+      <div id="preview"></div>
+      <div class="la-row la-end" style="margin-top:12px"><button type="button" class="btn-p" id="apply" hidden>Apply changes</button></div></section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<style is:global>
+  .im-new td { background: #E8F7EE; } .im-changed td { background: #FFF7E6; } .im-error td { background: #FDECEC; } .im-unchanged td { color: var(--a-muted); }
+</style>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, el = LA.el, $ = function (id) { return document.getElementById(id); };
+  var csv = '';
+  // Downloads need the sign-in header, so fetch them and save the file.
+  document.querySelectorAll('[data-dl]').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      fetch(a.getAttribute('href'), { headers: { 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' } }).then(function (r) {
+        if (!r.ok) throw new Error();
+        var name = (r.headers.get('Content-Disposition') || '').replace(/^.*filename="([^"]+)".*$/, '$1') || 'export.csv';
+        return r.blob().then(function (b) { var u = URL.createObjectURL(b); var x = el('a', { href: u, download: name }); document.body.append(x); x.click(); x.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 2000); });
+      }).catch(function () { LA.toast('Could not download.', true); });
+    });
+  });
+  function send(apply) {
+    var url = '/api/admin/league/import' + (apply ? '' : '?dryRun=1');
+    return LA.api(url, { method: 'POST', body: { csv: csv, confirm: !!apply, allowFinished: $('allowFinished').checked } });
+  }
+  function show(d) {
+    var c = d.counts;
+    $('msg').className = 'la-msg ' + (c.error ? 'warn' : 'ok');
+    $('msg').textContent = c.new + ' new, ' + c.changed + ' changed, ' + c.unchanged + ' unchanged, ' + c.error + ' with errors.' + (d.applied !== undefined ? ' Applied ' + d.applied + '.' : '');
+    $('preview').replaceChildren(LA.table(['Line', 'Result', 'No.', 'MD', 'Date', 'Time', 'Match', 'Details'], d.rows.map(function (r) {
+      return el('tr', { class: 'im-' + r.status }, el('td', { text: String(r.line) }), el('td', {}, el('b', { text: r.status })), el('td', { text: r.matchNo || '' }), el('td', { text: r.matchday || '' }),
+        el('td', { text: r.date || '' }), el('td', { text: r.time || '' }), el('td', { text: r.home ? r.home + ' vs ' + r.away : (r.raw || '') }),
+        el('td', {}, r.error ? el('span', { text: r.error }) : null, r.diff ? el('ul', { style: 'margin:0;padding-left:16px' }, r.diff.map(function (x) { return el('li', { text: x.field + ': ' + x.from + ' → ' + x.to }); })) : null));
+    })));
+    $('apply').hidden = d.applied !== undefined || !(c.new || c.changed);
+  }
+  $('file').addEventListener('change', function () {
+    var file = this.files[0]; if (!file) return;
+    if (file.size > 200000) { $('msg').className = 'la-msg err'; $('msg').textContent = 'The file is too big (200 KB at most).'; return; }
+    file.text().then(function (t) { csv = t; return send(false); }).then(function (r) {
+      if (!r.ok) { $('msg').className = 'la-msg err'; $('msg').textContent = r.d.error || 'Could not read the file.'; $('preview').replaceChildren(); $('apply').hidden = true; return; }
+      show(r.d);
+    });
+  });
+  $('allowFinished').addEventListener('change', function () { if (csv) send(false).then(function (r) { if (r.ok) show(r.d); }); });
+  $('apply').addEventListener('click', function () {
+    LA.confirm('Apply these changes?', ['New fixtures are added and changed ones updated. Lobi Stars matches update their match pages too. Every change is in the League History and can be undone there.'], 'Apply changes').then(function (y) {
+      if (!y) return;
+      send(true).then(function (r) { if (!r.ok) return LA.toast(r.d.error || 'Could not apply.', true); LA.toast('Applied ' + r.d.applied + ' changes'); show(r.d); });
+    });
+  });
+})();
+</script>

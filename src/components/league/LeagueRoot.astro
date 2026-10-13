@@ -1,0 +1,187 @@
+---
+// Where /fixtures, /results and /table show the league. The server fills
+// [data-league-root] with real HTML (functions/api/_lib/leaguePages.js); this
+// component brings the styles and a small script: the countdown, filters that
+// apply as soon as they change, live scores refreshing every minute, Print.
+interface Props { which: 'fixtures' | 'results' | 'table' }
+const { which } = Astro.props;
+---
+<div class="lg" data-league-root data-which={which} aria-busy="true">
+  <p class="lg-empty">The {which === 'table' ? 'table' : which} could not be loaded just now. Please refresh the page in a minute.</p>
+</div>
+
+<style is:global>
+  .lg { max-width: 920px; position: relative; min-width: 0; }
+  .lg .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .lg-empty { padding: 26px 18px; text-align: center; color: var(--lt); border: 1px dashed var(--d4); border-radius: 10px; margin: 0 0 20px; }
+  .lg-small { color: var(--lt); font-size: 13px; margin: 6px 0 0; }
+  .lg-crest--none { display: inline-flex; align-items: center; justify-content: center; background: var(--d3) !important; color: var(--lt); font: 700 12px/1 'Barlow Condensed', sans-serif; }
+  .lg-crest { width: 34px; height: 34px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--d4); flex: none; }
+  .lg-btn { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px; border-radius: 4px; border: 1.5px solid var(--d4); background: var(--d2); color: var(--white); text-decoration: none; cursor: pointer; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .lg-btn:hover { border-color: var(--red); color: var(--red-text); }
+  .lg-btn.primary { background: var(--red); border-color: var(--red); color: #fff; }
+  .lg-btn.primary:hover { background: var(--rd); color: #fff; }
+  .lg-btn:focus-visible, .lg a:focus-visible, .lg select:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .lg-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* Next match */
+  .lg-next { background: linear-gradient(140deg, #15181D 0%, #2A0507 100%); color: #fff; border-radius: 14px; padding: 20px 22px; margin-bottom: 22px; }
+  .lg-next-top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+  .lg-next h2 { margin: 0; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #FFC72C; }
+  .lg-next-top span { font-size: 13px; color: rgba(255,255,255,.75); }
+  .lg-next-teams { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; margin: 16px 0 8px; text-align: center; }
+  .lg-next-team { display: flex; flex-direction: column; align-items: center; gap: 8px; font: 700 17px/1.15 'Barlow Condensed', sans-serif; }
+  .lg-next .lg-crest { width: 56px; height: 56px; }
+  .lg-next-vs { font: 400 30px/1 'Bebas Neue', sans-serif; color: rgba(255,255,255,.8); }
+  .lg-next-when { margin: 4px 0; text-align: center; color: rgba(255,255,255,.85); font-size: 14px; }
+  .lg-countdown { margin: 6px 0 14px; text-align: center; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #FFC72C; min-height: 24px; }
+  .lg-next .lg-acts { justify-content: center; }
+  .lg-next .lg-btn:not(.primary) { background: transparent; color: #fff; border-color: rgba(255,255,255,.45); }
+
+  /* Filters and tabs */
+  .lg-filters { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; margin: 0 0 18px; }
+  .lg-f { display: grid; gap: 4px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .lg-f select { min-height: 40px; padding: 6px 10px; border: 1.5px solid var(--d4); border-radius: 8px; background: var(--d2); color: var(--white); font: 600 15px 'Barlow', sans-serif; text-transform: none; letter-spacing: 0; }
+  .lg-switch, .lg-tabs { display: inline-flex; border: 1.5px solid var(--d4); border-radius: 999px; overflow: hidden; }
+  .lg-switch a, .lg-tabs a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; text-decoration: none; color: var(--white); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .lg-switch a[aria-current], .lg-tabs a[aria-current] { background: var(--red); color: #fff; }
+  .lg-tabs { margin-bottom: 14px; }
+  .lg.js .lg-filters [data-apply] { display: none; }
+
+  /* Match cards */
+  .lg-md { margin: 26px 0 6px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .lg-day { margin: 12px 0 8px; font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .lg-break { margin: 26px 0 10px; padding: 10px 14px; border-radius: 8px; background: var(--d3); text-align: center; font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .lg-card { background: var(--d2); border: 1px solid var(--d4); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+  .lg-card.is-lobi { border-left: 4px solid var(--red); }
+  .lg-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 13px; color: var(--lt); margin-bottom: 12px; }
+  .lg-comp { font-weight: 700; color: var(--white); }
+  .lg-when { margin-left: auto; }
+  .lg-ha, .lg-chip { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; padding: 4px 7px; border-radius: 3px; background: var(--d3); color: var(--white); display: inline-flex; align-items: center; gap: 5px; }
+  .lg-ha.home { background: var(--red); color: #fff; }
+  .lg-chip.warn { background: #FFF1D6; color: #7A4B00; }
+  .lg-chip.bad { background: #FDECEC; color: #A3161B; }
+  .lg-chip.info { background: #E6F0FB; color: #1A4E8A; }
+  .lg-chip.live { background: #C11A1F; color: #fff; }
+  .lg-pulse { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: lg-pulse 1.2s infinite; }
+  @keyframes lg-pulse { 50% { opacity: .25; } }
+  .lg-teams { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; font: 700 17px/1.2 'Barlow Condensed', sans-serif; }
+  .lg-team { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .lg-team.h { justify-content: flex-end; text-align: right; }
+  .lg-team.won span { font-weight: 800; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
+  .lg-vs { font: 400 18px/1 'Bebas Neue', sans-serif; color: var(--lt); text-align: center; white-space: nowrap; }
+  .lg-score { background: #15181D; color: #fff; padding: 6px 12px; border-radius: 4px; font: 400 22px/1 'Bebas Neue', sans-serif; white-space: nowrap; }
+  .lg-venue { margin-top: 10px; font-size: 13px; color: var(--lt); }
+  .lg-note { margin: 8px 0 0; font-size: 13px; color: var(--white); }
+  .lg-card .lg-acts { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--d4); }
+  .lg-sub { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 28px 0 10px; padding: 18px 20px; border-radius: 12px; background: var(--dark); border: 1px solid var(--d4); }
+  .lg-sub h2 { margin: 0 0 4px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .lg-sub p { margin: 0; color: var(--lt); max-width: 440px; }
+
+  /* Form guide */
+  .lg-form-guide { margin-bottom: 18px; }
+  .lg-form-guide h2 { margin: 0 0 8px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .lg-form, .lg-form-row { list-style: none; margin: 0; padding: 0; display: inline-flex; gap: 4px; }
+  .lg-form li, .lg-form-row span { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 4px; font: 700 13px/1 'Barlow Condensed', sans-serif; color: #fff; }
+  .lg-f-W { background: #17643A; } .lg-f-D { background: #5B6470; } .lg-f-L { background: #A3161B; }
+  .lg-form-row span { width: 20px; height: 20px; font-size: 11px; }
+
+  /* Table */
+  .lg-status { margin: 0 0 12px; color: var(--lt); font-size: 14px; }
+  .lg-table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--d4); border-radius: 12px; background: var(--d2); }
+  .lg-table-wrap:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .lg-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 15px; }
+  .lg-table caption { text-align: left; padding: 12px 14px 4px; font: 700 13px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .lg-table th, .lg-table td { padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--d4); white-space: nowrap; }
+  .lg-table thead th { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .lg-table abbr { text-decoration: none; }
+  .lg-table .club { text-align: left; display: flex; align-items: center; gap: 10px; font-weight: 700; background: inherit; }
+  .lg-table thead .club { display: table-cell; }
+  .lg-table .club .short { display: none; }
+  .lg-table .club sup { color: var(--red-text); }
+  .lg-table .pos { width: 52px; }
+  .lg-table .pos > span:first-child { font-weight: 700; }
+  .lg-table .pts b { font-size: 17px; }
+  .lg-table tbody tr { background: var(--d2); }
+  .lg-table tbody tr[data-zone] td.pos { box-shadow: inset 4px 0 0 var(--zone); }
+  .lg-table tr.is-lobi { background: #FFF1F1; }
+  .lg-table tr.is-lobi th, .lg-table tr.is-lobi td { color: #15181D; }
+  .lg-mv { display: inline-block; margin-left: 4px; font-size: 10px; }
+  .lg-mv.up { color: #17643A; } .lg-mv.down { color: #A3161B; } .lg-mv.same { color: var(--lt); }
+  .lg-zones, .lg-notes { list-style: none; margin: 12px 0 0; padding: 0; font-size: 13px; color: var(--lt); line-height: 1.5; }
+  .lg-zones li { display: flex; align-items: center; gap: 8px; }
+  .lg-zones li span { width: 12px; height: 12px; border-radius: 3px; }
+  .lg-table-acts { margin-top: 14px; }
+
+  @media (max-width: 640px) {
+    .lg-when { margin-left: 0; width: 100%; }
+    .lg-teams { font-size: 15px; }
+    .lg-crest { width: 28px; height: 28px; }
+    /* Phone: Pos, Club, P, GD, Pts first; the club stays put while the rest scrolls. */
+    .lg-table thead, .lg-table tbody { display: block; min-width: 610px; }
+    .lg-table tr { display: flex; align-items: center; }
+    .lg-table th, .lg-table td { flex: none; width: 40px; padding: 10px 4px; }
+    .lg-table .pos { order: 1; width: 44px; }
+    .lg-table .club { order: 2; width: 150px; position: sticky; left: 0; z-index: 1; display: flex; box-shadow: 1px 0 0 var(--d4); }
+    .lg-table thead .club { display: flex; background: var(--d2); }
+    .lg-table .club .full { display: none; } .lg-table .club .short { display: inline; overflow: hidden; text-overflow: ellipsis; }
+    .lg-table .p { order: 3; } .lg-table .gd { order: 4; } .lg-table .pts { order: 5; }
+    .lg-table .ext { order: 6; } .lg-table .form { order: 7; width: 116px; }
+    .lg-table tr.is-lobi .club { background: #FFF1F1; }
+    .lg-table tbody .club { background: var(--d2); }
+  }
+  @media (prefers-reduced-motion: reduce) { .lg-pulse { animation: none; } }
+  @media print {
+    .lg-filters, .lg-tabs, .lg-acts, .lg-sub, .lg-next .lg-acts { display: none !important; }
+    .lg-table-wrap { overflow: visible; border: 0; }
+    .lg-table tr.is-lobi { background: #eee; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  var root = document.querySelector('[data-league-root]');
+  if (!root) return;
+  root.classList.add('js');
+  // Filters apply as soon as they change.
+  root.querySelectorAll('form[data-autosubmit] select').forEach(function (s) {
+    s.addEventListener('change', function () {
+      var f = s.form, q = new URLSearchParams(new FormData(f));
+      Array.from(q.keys()).forEach(function (k) { if (!q.get(k)) q.delete(k); });
+      if (q.get('view') === 'lobi') q.delete('view');
+      var qs = q.toString();
+      location.href = f.getAttribute('action') + (qs ? '?' + qs : '');
+    });
+  });
+  // Countdown to the next match.
+  var cd = root.querySelector('[data-countdown]');
+  if (cd) {
+    var t = Date.parse(cd.getAttribute('data-countdown'));
+    var tick = function () {
+      var s = Math.floor((t - Date.now()) / 1000);
+      if (s <= 0) { cd.textContent = 'Kick-off!'; return; }
+      var d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+      cd.textContent = (d ? d + ' day' + (d === 1 ? '' : 's') + ' ' : '') + h + ' h ' + m + ' min to kick-off';
+    };
+    tick(); setInterval(tick, 30000);
+  }
+  // Live scores refresh every minute while a match is in play.
+  if (root.querySelector('.lg-card.is-live')) {
+    setInterval(function () {
+      fetch('/api/league/fixtures?status=live,half_time,full_time', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+        if (!d) return;
+        d.fixtures.forEach(function (f) {
+          var card = root.querySelector('.lg-card[data-id="' + f.id + '"]');
+          if (!card) return;
+          var sc = card.querySelector('[data-score]');
+          if (sc) sc.textContent = (f.homeGoals == null ? 0 : f.homeGoals) + ' – ' + (f.awayGoals == null ? 0 : f.awayGoals);
+          var st = card.querySelector('[data-status]');
+          if (st && f.status === 'full_time') { st.textContent = 'Full time'; st.className = 'lg-chip'; }
+          else if (st && f.status === 'half_time') st.lastChild.textContent = 'Half time';
+        });
+      }).catch(function () {});
+    }, 60000);
+  }
+  root.querySelectorAll('[data-print]').forEach(function (b) { b.addEventListener('click', function () { window.print(); }); });
+})();
+</script>

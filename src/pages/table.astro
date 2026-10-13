@@ -1,17 +1,19 @@
 ---
+// /table -- the NNL Conference D table, worked out on the server from the
+// results, points adjustments and the league's rules (functions/table.js).
+// It is never typed in: staff enter results in Admin › League › Results.
 import Layout from '../layouts/Layout.astro';
-import LeagueTable from '../components/LeagueTable.astro';
 import MatchesTabs from '../components/MatchesTabs.astro';
-import table from '../data/league-table.json';
+import LeagueRoot from '../components/league/LeagueRoot.astro';
 import { CURRENT_SEASON } from '../lib/site';
 ---
-<Layout title="League Table | Lobi Stars Football Club" description={`The ${table.competition} ${CURRENT_SEASON} league table, with Lobi Stars FC highlighted.`}>
+<Layout title="League Table | Lobi Stars Football Club" description={`The NNL Conference D ${CURRENT_SEASON} league table with Lobi Stars FC highlighted: points, goal difference, form, and home and away tables.`}>
   <div class="page-hero wrap">
-    <div class="stag">{CURRENT_SEASON} {table.competition}</div>
+    <div class="stag">{CURRENT_SEASON} NNL Conference D</div>
     <h1 class="stitle">League <span class="r">Table</span></h1>
     <MatchesTabs current="table" />
   </div>
   <div class="page-content wrap">
-    <LeagueTable showHeading={false} />
+    <LeagueRoot which="table" />
   </div>
 </Layout>

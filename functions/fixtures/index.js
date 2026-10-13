@@ -1,4 +1,4 @@
-import { renderBoardPage } from '../api/_lib/ssr.js';
+import { renderLeaguePage } from '../api/_lib/leagueRender.js';
 
-// "/fixtures" -- upcoming fixtures rendered on the server.
-export const onRequestGet = ({ request, env }) => renderBoardPage(request, env, '/fixtures/');
+// "/fixtures" -- fixtures from the league data, rendered on the server.
+export const onRequestGet = ({ request, env }) => renderLeaguePage(request, env, 'fixtures');

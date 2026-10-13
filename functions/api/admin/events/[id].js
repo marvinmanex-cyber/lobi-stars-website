@@ -1,6 +1,7 @@
 import { requireAdmin, parseEventPayload } from '../../_lib/adminEvents.js';
 import { ensureTable } from '../../_lib/matchCentre.js';
 import { ensureCommentarySchema } from '../../_lib/commentary.js';
+import { leagueFixtureForEvent } from '../../_lib/leagueDb.js';
 
 // PUT /api/admin/events/:id -- overwrite a match's details.
 export async function onRequestPut({ request, env, params }) {
@@ -23,6 +24,16 @@ export async function onRequestPut({ request, env, params }) {
   if (parsed.error) return Response.json({ error: parsed.error }, { status: 400 });
   const e = parsed.value;
 
+  // A Lobi Stars league match: its teams, date, time and venue come from
+  // League > Fixtures (prices, commentary and sale settings are still set here).
+  const league = await leagueFixtureForEvent(env.DB, id);
+  let managed = false;
+  if (league) {
+    const cur = await env.DB.prepare(`SELECT home_team, away_team, competition, event_date, venue FROM events WHERE id = ?`).bind(id).first();
+    managed = ['home_team', 'away_team', 'competition', 'event_date', 'venue'].some(k => e[k] !== cur[k]);
+    Object.assign(e, cur);
+  }
+
   await ensureCommentarySchema(env.DB);
   await env.DB.prepare(
     `UPDATE events SET
@@ -36,7 +47,7 @@ export async function onRequestPut({ request, env, params }) {
     e.commentary_enabled, e.commentary_start_at, e.public_sale_at, id
   ).run();
 
-  return Response.json({ ok: true });
+  return Response.json({ ok: true, ...(managed ? { note: 'Saved. The teams, date, time and venue of league matches are changed in League > Fixtures, so those were kept.' } : {}) });
 }
 
 // DELETE /api/admin/events/:id -- only allowed while no tickets have been
@@ -49,6 +60,10 @@ export async function onRequestDelete({ request, env, params }) {
   const id = (params.id || '').trim();
   const existing = await env.DB.prepare(`SELECT id FROM events WHERE id = ?`).bind(id).first();
   if (!existing) return Response.json({ error: 'Match not found' }, { status: 404 });
+
+  if (await leagueFixtureForEvent(env.DB, id)) {
+    return Response.json({ error: 'This is a league match: postpone, cancel or delete it in League > Fixtures.' }, { status: 409 });
+  }
 
   const orders = await env.DB.prepare(
     `SELECT COUNT(*) AS n FROM orders WHERE event_id = ?`

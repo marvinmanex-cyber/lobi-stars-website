@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS events (
   id TEXT PRIMARY KEY,
   home_team TEXT NOT NULL,
   away_team TEXT NOT NULL,
-  competition TEXT NOT NULL DEFAULT 'NPFL',
+  competition TEXT NOT NULL DEFAULT 'NNL',
   event_date TEXT NOT NULL,      -- ISO 8601, e.g. 2026-08-15T15:00:00Z
   venue TEXT NOT NULL,
   vip_price_kobo INTEGER NOT NULL,

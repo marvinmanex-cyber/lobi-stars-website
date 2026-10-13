@@ -8,7 +8,7 @@ import { validSrc, ensureQrSchema } from './qr.js';
 import { ensureProgrammeSchema } from './programme.js';
 
 export const SITE = 'https://lobistarsfc.com';
-const HASHTAGS = '#LobiStarsFC #LobiStars #MatchDay #NPFL';
+const HASHTAGS = '#LobiStarsFC #LobiStars #MatchDay #NNL';
 const LIVE = `📖 The Match Day Programme for {title} is OUT!
 
 🗓 {kickoff_date} · ⏰ {kickoff_time} · 📍 {venue}
@@ -85,6 +85,8 @@ export async function ensureShareSchema(db) {
       .bind(key, name, key, mode, live, upcoming, HASHTAGS, i)),
     ...PLATFORM_SEED.map(([key, name]) => db.prepare(`INSERT OR IGNORE INTO qr_campaigns (code, label, channel, created_by) VALUES (?, ?, 'social', 'setup')`).bind(key, `${name} posts`)),
     db.prepare(`INSERT OR IGNORE INTO qr_campaigns (code, label, channel, created_by) VALUES ('fanshare', 'Fan share button', 'social', 'setup')`),
+    // Lobi Stars play in the NNL: the earlier default hashtag #NPFL becomes #NNL (only where it is still the default).
+    db.prepare(`UPDATE social_platforms SET hashtags = ? WHERE hashtags = '#LobiStarsFC #LobiStars #MatchDay #NPFL'`).bind(HASHTAGS),
   ]);
   ready = true;
 }

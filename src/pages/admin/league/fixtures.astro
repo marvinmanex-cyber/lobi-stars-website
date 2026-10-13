@@ -1,0 +1,230 @@
+---
+// League › Fixtures: every match by matchday. Change the date, time, venue,
+// note and status in place; postpone (with a reason), reschedule, cancel,
+// swap home and away; shift a whole matchday; add a fixture to any
+// competition (including a cup or friendly). Times are Nigerian time (WAT).
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="League Fixtures | Lobi Stars Admin" description="Manage league fixtures." noindex>
+  <div class="wrap la">
+    <AdminNav current="league-fixtures" />
+    <header class="la-head">
+      <div><div class="stag">League</div><h1 class="stitle">Fix<span class="r">tures</span></h1></div>
+      <label class="la-f">Competition<select id="compSel"></select></label>
+    </header>
+    <p class="la-lede">Dates and times are <b>Nigerian time (WAT)</b>. Changes show on the website within a minute, and Lobi Stars matches update their match page, tickets and alerts too. Scores are entered on <a href="/admin/league/results/">Results</a>.</p>
+    <p class="la-msg" id="msg" role="status" aria-live="polite"></p>
+
+    <section class="la-card" id="pendingBox" hidden aria-labelledby="h-pend"><h2 id="h-pend">Needs a new date</h2><div id="pending"></div></section>
+
+    <section class="la-card" aria-labelledby="h-list">
+      <h2 id="h-list" class="sr-only" style="position:absolute;left:-9999px">Fixtures by matchday</h2>
+      <div class="la-tabs" id="tabs" role="group" aria-label="Matchday"></div>
+      <div id="bulk" class="la-row" hidden style="margin-bottom:12px">
+        <label class="la-f">Shift by days<input type="number" id="shift" value="0" min="-60" max="60" style="width:110px" inputmode="numeric" /></label>
+        <label class="la-f">Set time (WAT)<input type="time" id="setTime" /></label>
+        <button type="button" class="btn-o" id="bulkPrev">Preview matchday change</button>
+      </div>
+      <div id="list"><p class="la-muted">Loading…</p></div>
+    </section>
+
+    <section class="la-card" aria-labelledby="h-add">
+      <h2 id="h-add">Add a fixture</h2>
+      <form id="addForm" class="la-row" style="align-items:flex-end">
+        <label class="la-f">Competition<select name="competitionId" id="addComp" required></select></label>
+        <label class="la-f">Home<select name="homeTeamId" required></select></label>
+        <label class="la-f">Away<select name="awayTeamId" required></select></label>
+        <label class="la-f">Date<input type="date" name="date" required /></label>
+        <label class="la-f">Time (WAT)<input type="time" name="time" value="16:00" required /></label>
+        <label class="la-f">Venue<select name="venueId"><option value="">Home team's ground</option></select></label>
+        <label class="la-f" id="addMdWrap">Matchday<input type="number" name="matchday" min="1" max="60" inputmode="numeric" style="width:100px" /></label>
+        <button class="btn-p" type="submit">Add fixture</button>
+      </form>
+      <details style="margin-top:12px"><summary style="cursor:pointer;font-weight:700;min-height:40px;display:flex;align-items:center">Add a cup or friendly competition</summary>
+        <form id="compForm" class="la-row" style="align-items:flex-end;margin-top:8px">
+          <label class="la-f">Name<input name="name" placeholder="Federation Cup" required maxlength="100" /></label>
+          <label class="la-f">Short name<input name="shortName" placeholder="Fed Cup" maxlength="40" /></label>
+          <label class="la-f">Season<input name="season" value="2026/2027" required maxlength="20" style="width:120px" /></label>
+          <label class="la-f">Type<select name="type"><option value="cup">Cup</option><option value="friendly">Friendly</option></select></label>
+          <button class="btn-o" type="submit">Add competition</button>
+        </form>
+      </details>
+    </section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<style is:global>
+  /* Each fixture is a card: the fields wrap to fit any width. */
+  .la table.fx thead { display: none; }
+  .la table.fx, .la table.fx tbody { display: block; }
+  .la table.fx tr { display: block; }
+  .la table.fx tr.fx-row { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: flex-start; border: 1px solid var(--a-line); border-radius: 12px; margin-bottom: 10px; padding: 10px 12px; }
+  .la table.fx td { display: block; border: 0; padding: 0; }
+  .la table.fx td[data-l]::before { content: attr(data-l); display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--a-muted); margin-bottom: 3px; }
+  .la table.fx td.fx-match { flex: 1 1 260px; }
+  .la table.fx td.fx-actions { flex: 1 1 100%; }
+  .la table.fx th[colspan] { display: block; padding: 14px 0 6px; font: 700 16px 'Barlow', sans-serif; text-transform: none; letter-spacing: 0; color: var(--a-ink); border: 0; }
+  .fx-row input[type=date] { width: 150px; } .fx-row input[type=time] { width: 110px; }
+  .fx-row select { max-width: 230px; } .fx-row input.note { width: 200px; }
+  .fx-teams { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 700; }
+  .fx-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .la table.fx tr.fx-break { display: block; }
+  .fx-break td { display: block; background: #FFF7E6; color: #7A4B00; text-align: center; font-weight: 700; font-size: 13px; padding: 8px !important; border-radius: 8px; margin: 8px 0; }
+  @media (max-width: 560px) { .fx-row select, .fx-row input.note { width: 100%; max-width: none; } .la table.fx td { flex: 1 1 100%; } }
+</style>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, el = LA.el, $ = function (id) { return document.getElementById(id); };
+  var q = new URLSearchParams(location.search);
+  var state = { comp: q.get('competition') || '', md: q.get('matchday') ? Number(q.get('matchday')) : null, data: null };
+  var say = function (t, cls) { $('msg').textContent = t || ''; $('msg').className = 'la-msg ' + (cls || ''); };
+  var teamOpts = function (sel, teams, ids) { sel.replaceChildren(el('option', { value: '', text: 'Choose…' })); teams.filter(function (t) { return !ids || ids.indexOf(t.id) >= 0; }).forEach(function (t) { sel.add(new Option(t.name, t.id)); }); };
+
+  function load() {
+    LA.api('/api/admin/league/fixtures' + (state.comp ? '?competition=' + encodeURIComponent(state.comp) : '')).then(function (r) {
+      if (!r.ok) { $('list').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load the fixtures.' })); return; }
+      state.data = r.d; state.comp = r.d.competition.slug;
+      var cs = $('compSel'); cs.replaceChildren();
+      r.d.competitions.forEach(function (c) { cs.add(new Option(c.short_name + ' ' + c.season + (c.type !== 'league' ? ' (' + c.type + ')' : ''), c.slug, false, c.slug === state.comp)); });
+      var ac = $('addComp'); ac.replaceChildren(); r.d.competitions.forEach(function (c) { ac.add(new Option(c.short_name + ' ' + c.season, c.id, false, c.slug === state.comp)); });
+      var f = $('addForm').elements;
+      var isLeague = r.d.competition.type === 'league';
+      teamOpts(f.homeTeamId, r.d.teams, isLeague ? r.d.competitionTeams : null); teamOpts(f.awayTeamId, r.d.teams, isLeague ? r.d.competitionTeams : null);
+      f.venueId.replaceChildren(el('option', { value: '', text: "Home team's ground" })); r.d.venues.forEach(function (v) { f.venueId.add(new Option(v.name, v.id)); });
+      $('addMdWrap').hidden = !isLeague;
+      draw();
+    });
+  }
+  $('compSel').addEventListener('change', function () { state.comp = this.value; state.md = null; history.replaceState(null, '', '?competition=' + encodeURIComponent(state.comp)); load(); });
+
+  function draw() {
+    var d = state.data, fx = d.fixtures;
+    var mds = []; fx.forEach(function (f) { if (f.matchday && mds.indexOf(f.matchday) < 0) mds.push(f.matchday); }); mds.sort(function (a, b) { return a - b; });
+    if (state.md && mds.indexOf(state.md) < 0) state.md = null;
+    // Tabs: All, 1..N with the mid-season break between the first and second half.
+    var c = d.competition, tabs = $('tabs'); tabs.replaceChildren();
+    var tab = function (label, md) { return el('button', { type: 'button', text: label, 'aria-pressed': String(state.md === md), onclick: function () { state.md = md; draw(); } }); };
+    tabs.append(tab('All', null));
+    var brkAfter = c.break_start ? Math.max.apply(null, [0].concat(fx.filter(function (f) { return f.matchday && LA.lagosDate(f.kickoff || f.originalKickoff) < c.break_start; }).map(function (f) { return f.matchday; }))) : 0;
+    mds.forEach(function (m) { tabs.append(tab(String(m), m)); if (m === brkAfter && brkAfter < mds[mds.length - 1]) tabs.append(el('span', { class: 'la-break', text: '| ' + (c.break_label || 'Break') + ' |' })); });
+    $('bulk').hidden = !state.md;
+
+    var pend = fx.filter(function (f) { return f.status === 'postponed' && !f.kickoff; });
+    $('pendingBox').hidden = !pend.length;
+    $('pending').replaceChildren(el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:8px' }, pend.map(function (f) {
+      return el('li', { class: 'la-row', style: 'justify-content:space-between' },
+        el('span', {}, el('b', { text: f.home.name + ' vs ' + f.away.name }), ' ', el('span', { class: 'la-muted', text: '(Matchday ' + f.matchday + ', was ' + LA.date(f.originalKickoff || f.kickoff) + (f.postponedReason ? ': ' + f.postponedReason : '') + ')' })),
+        el('button', { type: 'button', class: 'btn-p btn-sm', text: 'Reschedule', onclick: function () { reschedule(f); } }));
+    })));
+
+    var list = fx.filter(function (f) { return !state.md || f.matchday === state.md; });
+    var rows = [], lastMd = null;
+    list.forEach(function (f) {
+      if (!state.md && f.matchday !== lastMd && f.matchday) {
+        if (lastMd !== null && lastMd === brkAfter) rows.push(el('tr', { class: 'fx-break' }, el('td', { colspan: 7, text: (c.break_label || 'Mid-season break') + ': ' + LA.date(c.break_start + 'T12:00:00Z') + ' to ' + LA.date(c.break_end + 'T12:00:00Z') })));
+        rows.push(el('tr', {}, el('th', { colspan: 7, scope: 'colgroup', text: 'Matchday ' + f.matchday })));
+        lastMd = f.matchday;
+      }
+      rows.push(row(f));
+    });
+    $('list').replaceChildren(list.length ? LA.table(['Date', 'Time (WAT)', 'Match', 'Venue', 'Status', 'Note', 'Actions'], rows, 'fx') : el('p', { class: 'la-muted', text: 'No fixtures.' }));
+  }
+
+  function row(f) {
+    var d = state.data, done = ['full_time', 'awarded', 'live', 'half_time'].indexOf(f.status) >= 0;
+    var date = el('input', { type: 'date', value: LA.lagosDate(f.kickoff), 'aria-label': 'Date', disabled: done || f.status === 'postponed' });
+    var time = el('input', { type: 'time', value: LA.lagosTime(f.kickoff), 'aria-label': 'Time', disabled: done || f.status === 'postponed' });
+    var venue = el('select', { 'aria-label': 'Venue' }); venue.add(new Option('No venue', '')); d.venues.forEach(function (v) { venue.add(new Option(v.name, v.id, false, v.id === f.venueId)); });
+    var status = el('select', { 'aria-label': 'Status', disabled: done });
+    (done ? [f.status] : ['scheduled', 'postponed', 'cancelled', 'abandoned']).forEach(function (s) { status.add(new Option(LA.STATUS[s], s, false, s === f.status)); });
+    var note = el('input', { class: 'note', value: f.note || '', maxlength: 200, 'aria-label': 'Public note', placeholder: 'Public note' });
+    var save = el('button', { type: 'button', class: 'btn-p btn-sm', text: 'Save', hidden: true });
+    var dirty = function () { save.hidden = false; };
+    [date, time, venue, status, note].forEach(function (x) { x.addEventListener('input', dirty); x.addEventListener('change', dirty); });
+    save.addEventListener('click', function () {
+      if (status.value === 'postponed' && f.status !== 'postponed') return postpone(f);
+      var body = { venueId: venue.value || null, note: note.value };
+      if (!done && f.status !== 'postponed' && (date.value !== LA.lagosDate(f.kickoff) || time.value !== LA.lagosTime(f.kickoff))) { body.date = date.value; body.time = time.value; }
+      if (status.value !== f.status) body.status = status.value;
+      var go = function () { patch(f, body); };
+      if (body.status === 'cancelled' || body.status === 'abandoned') LA.confirm('Mark as ' + LA.STATUS[body.status] + '?', f.home.name + ' vs ' + f.away.name + ' will show as ' + LA.STATUS[body.status].toLowerCase() + ' on the website and will not count in the table.', 'Yes, save').then(function (y) { if (y) go(); });
+      else go();
+    });
+    var acts = [save];
+    if (!done && f.status !== 'postponed' && f.status !== 'cancelled') acts.push(el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Postpone', onclick: function () { postpone(f); } }));
+    if (!done) acts.push(el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Reschedule', onclick: function () { reschedule(f); } }));
+    if (f.status === 'scheduled' && f.homeGoals === null) acts.push(el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Swap home/away', onclick: function () { swap(f); } }));
+    if (f.status === 'scheduled' && !done) acts.push(el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Cancel match', onclick: function () { LA.confirm('Cancel this match?', f.home.name + ' vs ' + f.away.name + ' will show as cancelled.', 'Cancel the match').then(function (y) { if (y) patch(f, { status: 'cancelled' }); }); } }));
+    acts.push(el('a', { class: 'btn-o btn-sm', href: '/admin/league/live/?id=' + f.id, text: 'Live mode' }));
+    if (f.home.isLobi && f.kickoff) {
+      var opp = f.away.name, p = new URLSearchParams({ new: '1', title: 'Lobi Stars vs ' + f.away.shortName, opponent: opp, competition: f.competition + (f.matchday ? ', Matchday ' + f.matchday : ''), venue: f.venue || '', kickoff: f.kickoff });
+      acts.push(el('a', { class: 'btn-o btn-sm', href: '/admin/programmes/?' + p.toString(), text: 'Create programme' }));
+    }
+    var teams = el('div', { class: 'fx-teams' }, el('span', {}, LA.crest(f.home), f.home.name), el('span', { class: 'la-muted', text: 'vs' }), el('span', {}, LA.crest(f.away), f.away.name));
+    if (Number.isInteger(f.homeGoals)) teams.append(el('span', { class: 'la-muted', text: 'Score ' + f.homeGoals + '–' + f.awayGoals }));
+    var orig = f.originalKickoff ? el('div', { class: 'la-muted', text: 'Originally ' + LA.date(f.originalKickoff) }) : null;
+    return el('tr', { class: 'fx-row' + (f.home.isLobi || f.away.isLobi ? ' is-lobi' : '') },
+      el('td', { 'data-l': 'Date' }, date, orig), el('td', { 'data-l': 'Time (WAT)' }, time), el('td', { 'data-l': 'Match #' + f.matchNo, class: 'fx-match' }, teams),
+      el('td', { 'data-l': 'Venue' }, venue), el('td', { 'data-l': 'Status' }, status, ' ', LA.chip(f.status)), el('td', { 'data-l': 'Note' }, note),
+      el('td', { class: 'fx-actions' }, el('div', { class: 'fx-acts' }, acts)));
+  }
+
+  function done(r, okText) {
+    if (r.ok) { LA.toast(okText || 'Saved'); say(''); load(); } else { LA.toast(r.d.error || 'Could not save.', true); say(r.d.error || 'Could not save.', 'err'); }
+  }
+  function patch(f, body) { LA.api('/api/admin/league/fixtures/' + f.id, { method: 'PATCH', body: body }).then(function (r) { done(r); }); }
+  function postpone(f) {
+    LA.prompt('Postpone ' + f.home.name + ' vs ' + f.away.name, 'Reason (shown on the website)', { ok: 'Postpone' }).then(function (reason) {
+      if (reason === null) return;
+      LA.api('/api/admin/league/fixtures/' + f.id + '/postpone', { method: 'POST', body: { reason: reason } }).then(function (r) { done(r, 'Postponed'); });
+    });
+  }
+  function reschedule(f) {
+    var date = el('input', { type: 'date', value: LA.lagosDate(f.kickoff || f.originalKickoff), required: true });
+    var time = el('input', { type: 'time', value: LA.lagosTime(f.kickoff || f.originalKickoff) || '16:00', required: true });
+    var venue = el('select', {}); venue.add(new Option('Keep the venue', '')); state.data.venues.forEach(function (v) { venue.add(new Option(v.name, v.id)); });
+    LA.confirm('Reschedule ' + f.home.name + ' vs ' + f.away.name, [el('label', { class: 'la-f' }, 'New date', date), el('label', { class: 'la-f' }, 'Kick-off (WAT)', time), el('label', { class: 'la-f' }, 'Venue', venue)], 'Reschedule').then(function (y) {
+      if (!y) return;
+      LA.api('/api/admin/league/fixtures/' + f.id + '/reschedule', { method: 'POST', body: { date: date.value, time: time.value, venueId: venue.value || null } }).then(function (r) { done(r, 'Rescheduled'); });
+    });
+  }
+  function swap(f) {
+    LA.confirm('Swap home and away?', f.away.name + ' will be the home team and the venue becomes their home ground.', 'Swap').then(function (y) {
+      if (y) LA.api('/api/admin/league/fixtures/' + f.id + '/swap', { method: 'POST', body: {} }).then(function (r) { done(r, 'Swapped'); });
+    });
+  }
+
+  $('bulkPrev').addEventListener('click', function () {
+    var body = { competition: state.comp, shiftDays: Number($('shift').value) || 0, setTime: $('setTime').value || undefined };
+    LA.api('/api/admin/league/matchdays/' + state.md + '/bulk', { method: 'POST', body: body }).then(function (r) {
+      if (!r.ok) return LA.toast(r.d.error || 'Could not preview.', true);
+      var rows = r.d.preview.map(function (p) { return el('li', { text: p.skipped ? 'Match ' + p.id + ': ' + p.skipped : 'Match ' + p.matchNo + ': ' + p.from + ' → ' + p.to }); });
+      LA.confirm('Change Matchday ' + state.md + '?', [el('ul', { style: 'margin:0;padding-left:18px' }, rows), 'Only matches still "Not played" change.'], 'Apply').then(function (y) {
+        if (!y) return;
+        body.apply = true;
+        LA.api('/api/admin/league/matchdays/' + state.md + '/bulk', { method: 'POST', body: body }).then(function (r2) { done(r2, r2.ok ? r2.d.changed + ' matches changed' : ''); });
+      });
+    });
+  });
+
+  $('addForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = this.elements;
+    var body = { competitionId: Number(f.competitionId.value), homeTeamId: Number(f.homeTeamId.value), awayTeamId: Number(f.awayTeamId.value), date: f.date.value, time: f.time.value, venueId: f.venueId.value || undefined, matchday: f.matchday.value || undefined };
+    LA.api('/api/admin/league/fixtures', { method: 'POST', body: body }).then(function (r) { if (r.ok) this.reset(); done(r, 'Fixture added'); }.bind(this));
+  });
+  $('compForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = this.elements;
+    LA.api('/api/admin/league/competitions', { method: 'POST', body: { name: f.name.value, shortName: f.shortName.value, season: f.season.value, type: f.type.value } }).then(function (r) {
+      if (r.ok) { state.comp = r.d.slug; this.reset(); }
+      done(r, 'Competition added');
+    }.bind(this));
+  });
+  load();
+})();
+</script>

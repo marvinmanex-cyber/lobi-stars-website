@@ -1,0 +1,91 @@
+---
+// League › Dashboard: the next Lobi Stars match, results waiting to be
+// entered, data warnings, the table at a glance and the latest changes.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="League | Lobi Stars Admin" description="League dashboard." noindex>
+  <div class="wrap la">
+    <AdminNav current="league" />
+    <header class="la-head"><div><div class="stag">League</div><h1 class="stitle">League <span class="r">Dashboard</span></h1></div></header>
+    <p class="la-lede" id="comp">Loading…</p>
+    <div class="la-grid">
+      <section class="la-card" aria-labelledby="h-next"><h2 id="h-next">Next Lobi Stars match</h2><div id="next"><p class="la-muted">Loading…</p></div></section>
+      <section class="la-card" aria-labelledby="h-due"><h2 id="h-due">Results due</h2><div id="due"><p class="la-muted">Loading…</p></div></section>
+    </div>
+    <div class="la-grid">
+      <section class="la-card" aria-labelledby="h-table"><h2 id="h-table">Table</h2><div id="table"><p class="la-muted">Loading…</p></div><p><a href="/admin/league/table/">Full table, adjustments and rules →</a></p></section>
+      <section class="la-card" aria-labelledby="h-warn"><h2 id="h-warn">Data checks</h2><div id="warn"><p class="la-muted">Loading…</p></div></section>
+    </div>
+    <section class="la-card" aria-labelledby="h-links"><h2 id="h-links">Quick links</h2>
+      <div class="la-row">
+        <a class="btn-o" href="/admin/league/fixtures/">Fixtures</a><a class="btn-o" href="/admin/league/results/">Enter results</a><a class="btn-o" href="/admin/league/table/">Table &amp; rules</a>
+        <a class="btn-o" href="/admin/league/teams/">Clubs &amp; venues</a><a class="btn-o" href="/admin/league/import/">Import &amp; export</a><a class="btn-o" href="/admin/league/audit/">History</a>
+        <a class="btn-o" href="/fixtures/" target="_blank" rel="noopener">Public fixtures ↗</a><a class="btn-o" href="/table/" target="_blank" rel="noopener">Public table ↗</a>
+      </div>
+    </section>
+    <section class="la-card" aria-labelledby="h-audit"><h2 id="h-audit">Latest changes</h2><div id="audit"><p class="la-muted">Loading…</p></div></section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, $ = function (id) { return document.getElementById(id); }, el = LA.el;
+  var fail = function (box, d) { box.replaceChildren(el('p', { class: 'la-msg err', text: (d && d.error) || 'Could not load this. Please refresh.' })); };
+
+  fetch('/api/league/overview', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (o) {
+    var c = o.competition;
+    $('comp').textContent = c.name + ' ' + c.season + ' · Matchday ' + (o.matchday.current || '–') + ' · ' + o.matchday.played + ' of ' + o.matchday.total + ' matches played';
+    var n = o.nextLobi;
+    if (!n) { $('next').replaceChildren(el('p', { class: 'la-muted', text: 'No upcoming Lobi Stars match.' })); return; }
+    var cd = el('p', { style: 'font:400 26px/1 Bebas Neue, sans-serif;color:#E31E24;margin:8px 0' });
+    var tick = function () { var s = Math.floor((Date.parse(n.kickoff) - Date.now()) / 1000); if (s <= 0) { cd.textContent = 'Kick-off time'; return; } cd.textContent = Math.floor(s / 86400) + ' days ' + Math.floor(s % 86400 / 3600) + ' h ' + Math.floor(s % 3600 / 60) + ' min'; };
+    tick(); setInterval(tick, 30000);
+    $('next').replaceChildren(
+      el('p', { style: 'font-weight:700;font-size:18px;margin:0' }, LA.crest(n.home), n.home.name, ' vs ', LA.crest(n.away), n.away.name),
+      el('p', { class: 'la-muted', text: (n.matchday ? 'Matchday ' + n.matchday + ' · ' : '') + LA.date(n.kickoff) + ', ' + LA.time(n.kickoff) + ' WAT · ' + (n.venue || 'Venue TBC') }),
+      cd,
+      el('div', { class: 'la-row' }, el('a', { class: 'btn-o btn-sm', href: '/admin/league/live/?id=' + n.id, text: 'Live mode' }), n.matchUrl ? el('a', { class: 'btn-o btn-sm', href: '/admin/matches/', text: 'Tickets & settings' }) : null));
+  }).catch(function () { fail($('next')); $('comp').textContent = ''; });
+
+  LA.api('/api/admin/league/fixtures').then(function (r) {
+    if (!r.ok) return fail($('due'), r.d);
+    var due = r.d.fixtures.filter(function (f) { return f.resultDue; });
+    if (!due.length) { $('due').replaceChildren(el('p', { class: 'la-msg ok', text: 'All results are up to date.' })); return; }
+    $('due').replaceChildren(el('ul', { style: 'list-style:none;margin:0;padding:0;display:grid;gap:8px' }, due.map(function (f) {
+      return el('li', { class: 'la-row', style: 'justify-content:space-between' },
+        el('span', {}, el('b', { text: f.home.name + ' vs ' + f.away.name }), el('br'), el('span', { class: 'la-muted', text: 'Matchday ' + f.matchday + ' · ' + LA.date(f.kickoff) + ' · ' + LA.STATUS[f.status] })),
+        el('a', { class: 'btn-p btn-sm', href: '/admin/league/results/?matchday=' + f.matchday, text: 'Enter result' }));
+    })));
+  });
+
+  LA.api('/api/admin/league/table').then(function (r) {
+    if (!r.ok) return fail($('table'), r.d);
+    var rows = r.d.rows, show = rows.length <= 8 ? rows : rows.slice(0, 4).concat(rows.slice(-3));
+    $('table').replaceChildren(
+      el('p', { class: 'la-muted', text: r.d.preSeason ? 'Pre-season: no results yet.' : 'After Matchday ' + r.d.matchday }),
+      LA.table(['Pos', 'Club', 'P', 'GD', 'Pts'], show.map(function (x) {
+        return el('tr', { class: x.team.isLobi ? 'is-lobi' : '' }, el('td', { class: 'n', text: String(x.pos) }), el('th', { scope: 'row' }, LA.crest(x.team), x.team.name),
+          el('td', { class: 'n', text: String(x.played) }), el('td', { class: 'n', text: (x.gd > 0 ? '+' : '') + x.gd }), el('td', { class: 'n' }, el('b', { text: String(x.points) })));
+      })));
+  });
+
+  LA.api('/api/admin/league/check').then(function (r) {
+    if (!r.ok) return fail($('warn'), r.d);
+    var w = r.d.warnings;
+    if (!w.length) { $('warn').replaceChildren(el('p', { class: 'la-msg ok', text: 'No problems found.' })); return; }
+    $('warn').replaceChildren(el('ul', { class: 'la-warn' }, w.slice(0, 12).map(function (x) { return el('li', { class: x.level, text: x.text }); })), w.length > 12 ? el('p', { class: 'la-muted', text: '+ ' + (w.length - 12) + ' more on the Table page (Check data).' }) : null);
+  });
+
+  LA.api('/api/admin/league/audit').then(function (r) {
+    if (!r.ok) return fail($('audit'), r.d);
+    var e = r.d.entries.slice(0, 10);
+    if (!e.length) { $('audit').replaceChildren(el('p', { class: 'la-muted', text: 'No changes yet.' })); return; }
+    $('audit').replaceChildren(LA.table(['When', 'Who', 'What'], e.map(function (x) {
+      return el('tr', {}, el('td', { text: LA.when(x.created_at) }), el('td', { text: x.staff_email }), el('td', { text: x.action + (x.label ? ' · ' + x.label : '') }));
+    })), el('p', {}, el('a', { href: '/admin/league/audit/', text: 'Full history →' })));
+  });
+})();
+</script>
