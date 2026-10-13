@@ -125,10 +125,14 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
 </style>
 
 <script>
-  import { liveEngine, type LiveFixture } from '../../lib/livePlayer';
+  import type { LiveFixture } from '../../lib/livePlayer';
   import { crest, fmtDate, fmtTime } from '../../lib/matchUi';
 
-  const engine = liveEngine();
+  // The audio engine (and its checks with the commentary service) only starts
+  // once a player is actually on screen: the homepage's compact "Listen Live"
+  // button sits in a hidden banner until a match is live.
+  type Engine = ReturnType<typeof import('../../lib/livePlayer').liveEngine>;
+  let engine: Engine;
   const time = (iso: string) => fmtTime(iso);
   const today = (iso: string) => new Date(new Date(iso).getTime() + 3600e3).toISOString().slice(0, 10) === new Date(engine.serverNow() + 3600e3).toISOString().slice(0, 10);
   const when = (iso: string) => (today(iso) ? time(iso) : `${fmtDate(iso)}, ${time(iso)}`);
@@ -236,7 +240,17 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
     });
   }
 
-  document.querySelectorAll<HTMLElement>('[data-live-player]').forEach(bind);
-  // Players added later (e.g. when the Matchday Live tab is opened).
-  (window as any).__bindLivePlayers = () => document.querySelectorAll<HTMLElement>('[data-live-player]').forEach(bind);
+  const waiting = (el: HTMLElement) => !!el.closest('[data-live-lazy][hidden]');
+  let loading: Promise<void> | null = null;
+  function bindAll() {
+    const players = [...document.querySelectorAll<HTMLElement>('[data-live-player]')];
+    // Already listening (e.g. from another page): always connect to the engine.
+    if (!(window as any).__lobiStarsLive && !players.some(el => !waiting(el))) return;
+    loading ||= import('../../lib/livePlayer').then(m => { engine = m.liveEngine(); });
+    loading.then(() => players.forEach(el => { if (!waiting(el) || (window as any).__lobiStarsLive) bind(el); }));
+  }
+  bindAll();
+  // Players added or shown later (the Matchday Live tab, the homepage LIVE banner).
+  (window as any).__bindLivePlayers = bindAll;
+  window.addEventListener('ls:live-needed', bindAll);
 </script>

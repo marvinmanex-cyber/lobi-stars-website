@@ -4,7 +4,7 @@
 // The "Listen Live" button plays Lobi Stars FC Live right here.
 import LivePlayer from './commentary/LivePlayer.astro';
 ---
-<div class="lb-wrap" id="liveBannerWrap" hidden>
+<div class="lb-wrap" id="liveBannerWrap" data-live-lazy hidden>
   <a class="lb" id="liveBanner" href="/fixtures">
     <span class="lb-dot" aria-hidden="true"></span>
     <span class="lb-text"><strong>LIVE NOW:</strong> <span data-lb-teams></span> <span class="lb-cta">– Watch, Listen, Vote</span></span>
@@ -52,6 +52,8 @@ import LivePlayer from './commentary/LivePlayer.astro';
       banner.querySelector('[data-lb-teams]')!.textContent = `Lobi Stars vs ${opponent}`;
       banner.href = `/matches/${live.slug}/live/`;
       wrap.hidden = false;
+      // Start the Listen Live button now that it can be seen.
+      window.dispatchEvent(new Event('ls:live-needed'));
     } catch { /* leave hidden */ }
   }
   check();
