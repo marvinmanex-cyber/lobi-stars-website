@@ -88,13 +88,11 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | D10 | **Match tickets at the gate** | **Done (12 Oct 2026):** you chose "only that very match". The scanner now refuses a ticket for a different match with "Wrong match: this ticket is for <match> on <date>"; the ticket stays valid for its own match day. |
 | D6 | **In-seat food** | The real menu (items, prices, photos, categories), the list of stands/blocks for seat delivery, and the alert email addresses / phone numbers for the kitchen. |
 
-## E. Legal and translations
+## E. Legal
 
 | # | What | What to send |
 |---|---|---|
 | E1 | **Legal review** | A lawyer checks the DRAFT Privacy Policy, Terms of Use and Predict & Win terms (cash prize promotions may need approval; prize for the score after normal time; ID for winners). Send the approved wording or changes. |
-| E2 | **Pidgin** | A native Pidgin speaker checks the draft at https://lobistarsfc.com/?lang=pcm and sends corrections (or "approved"). |
-| E3 | **Hausa and Tiv** | Native speakers translate the 83 interface texts in `src/i18n/ha.json` and `src/i18n/tiv.json` (the website manager can send them as a simple two-column list). |
 
 ## F. Checks only the club can do
 
@@ -130,8 +128,8 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 5. **Goal and kick-off alerts for fans** ✅ *built:* fans turn on 🔔 Match
    alerts (radio show, kick-off, goals, half/full time); staff manage them in
    Matchday › Fan Match Alerts. Works once the VAPID keys (A5) are set.
-6. **Use the Pidgin, Hausa and Tiv translations for key announcements** (ticket
-   sales, match changes), not just the menus.
+6. **English only:** the Pidgin, Hausa and Tiv versions were removed (13 Oct
+   2026) at the club's request.
 7. **Keep Predict & Win, Man of the Match and the Fan Awards running every
    home match**, and announce winners on social media with a link back.
 

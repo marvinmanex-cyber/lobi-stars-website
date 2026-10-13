@@ -265,21 +265,18 @@ exported files private and delete them when you no longer need them.
     draft mission and values and publish them; add community projects or tag
     Club stories "Community"; upload any annual reports or statements for the
     Transparency page (STAFF-GUIDE.md, section 20).
-15. **Translations:** a native Pidgin speaker checks the draft Pidgin
-    (https://lobistarsfc.com/?lang=pcm); native Hausa and Tiv speakers
-    translate the interface text (STAFF-GUIDE.md, section 22).
-16. **Google Search Console:** verify the site and submit the sitemap
+15. **Google Search Console:** verify the site and submit the sitemap
     (STAFF-GUIDE.md, section 23).
-17. **Newsletter:** once the email service is set up, send a test, then the
+16. **Newsletter:** once the email service is set up, send a test, then the
     first Lobi Stars Weekly. Upload logos for Zeva Lager Beer and Play and add
     advert text for each sponsor (STAFF-GUIDE.md, section 24).
-18. **Order on WhatsApp:** add the bank details fans pay into and any pickup
+17. **Order on WhatsApp:** add the bank details fans pay into and any pickup
     points (Admin › Commerce › Food: Menu & Prices › Ordering settings), and
     decide who answers WhatsApp orders on matchday (STAFF-GUIDE.md, section 13).
-19. **Kitchen alerts:** create the Telegram kitchen group and bot, set the
+18. **Kitchen alerts:** create the Telegram kitchen group and bot, set the
     secrets, run the webhook script, deploy the cron Worker, and turn on
     alerts on the kitchen tablet (DEPLOYMENT.md, "Kitchen Order Alerts";
     STAFF-GUIDE.md, section 13).
-20. **Security:** every Super Admin and anyone who can download contact lists
+19. **Security:** every Super Admin and anyone who can download contact lists
     turns on two-step login; a Super Admin downloads a data backup monthly
     (STAFF-GUIDE.md, section 25).

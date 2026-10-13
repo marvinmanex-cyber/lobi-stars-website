@@ -13,7 +13,7 @@ const isActive = (href: string) => {
   return h !== '/' && (path === h || path.startsWith(h + '/'));
 };
 ---
-<header class="sh" id="siteHeader" data-i18n-scope>
+<header class="sh" id="siteHeader">
   <PromoBar />
   <div class="sh-inner">
     <a class="sh-logo" href="/">
@@ -80,7 +80,7 @@ const isActive = (href: string) => {
 </header>
 
 <div class="mm-ov" id="mobileMenuOv" hidden></div>
-<div class="mm" id="mobileMenu" data-i18n-scope role="dialog" aria-modal="true" aria-label="Site menu" hidden>
+<div class="mm" id="mobileMenu" role="dialog" aria-modal="true" aria-label="Site menu" hidden>
   <div class="mm-head">
     <span class="sh-name">Menu</span>
     <button type="button" class="sh-icon" id="menuClose" aria-label="Close menu">

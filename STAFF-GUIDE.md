@@ -1144,7 +1144,7 @@ checklist (section 2), player stats (section 2), award votes (section 10),
 members-only stories (section 1 and 11), shirt personalisation orders
 (section 5), hospitality (section 12), the promo bar ("Other things you can
 update in the CMS"), the club pages (section 20), the app (section 21),
-translations (section 22), search and sharing (section 23), the newsletter (section 24), and your account, two-step login and backups (section 25).
+language (section 22), search and sharing (section 23), the newsletter (section 24), and your account, two-step login and backups (section 25).
 
 **Trying the admin safely:** the website manager can run the website on
 their own computer with demo messages and contacts (`npm run seed:local`, see
@@ -1224,30 +1224,11 @@ on the home screen and opens full screen without the browser bar.
 
 ---
 
-## 22. Translations (English, Pidgin, Hausa, Tiv)
+## 22. Language
 
-The website's **interface** (menus, buttons, labels, the footer, the cookie
-notice and the install box) can be shown in other languages. **News stories,
-match reports and other content stay in English.**
-
-- The translations are in four files in the website code (`src/i18n/`):
-  `en.json` (English, the original), `pcm.json` (Nigerian Pidgin),
-  `ha.json` (Hausa) and `tiv.json` (Tiv). Each line is the English text and
-  its translation.
-- **Pidgin:** a full DRAFT is ready but was not written by a native speaker.
-  Ask a native speaker to check it on the live site: open
-  **https://lobistarsfc.com/?lang=pcm** (every page then shows Pidgin until
-  you open **?lang=en**). Send the website manager any corrections.
-- **Hausa and Tiv:** every line says `TODO: ...`. A native speaker writes the
-  translation for each line (no machine translation). Send the website
-  manager the completed list.
-- A language is only switched on when **every** line is translated **and** a
-  native speaker has checked it (the website manager then sets
-  `"reviewed": true` in the file). The **EN | Pidgin | Hausa | Tiv** switcher
-  appears at the bottom of every page once at least one language besides
-  English is switched on. A half-translated language is never shown.
-- When new buttons or menu items are added to the site, they are added to
-  `en.json` first; the other files need the same lines translated.
+The website is in **English only**. The draft Pidgin, Hausa and Tiv versions
+were removed on 13 October 2026 at the club's request, so there is no
+language switcher and nothing to translate.
 
 ---
 

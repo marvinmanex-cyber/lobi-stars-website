@@ -2,7 +2,6 @@
 import PageBack from '../components/PageBack.astro';
 import HeadMeta from '../components/HeadMeta.astro';
 import InstallPrompt from '../components/InstallPrompt.astro';
-import Translate from '../components/Translate.astro';
 import CookieConsent from '../components/CookieConsent.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
@@ -242,7 +241,6 @@ main.bare{padding-top:0;min-height:0;}
 </script>
 {!bare && !adminPage && <CookieConsent />}
 {!bare && !adminPage && <InstallPrompt />}
-{!bare && !adminPage && <Translate />}
 <script is:inline src="/track.js" defer></script>
 </body>
 </html>

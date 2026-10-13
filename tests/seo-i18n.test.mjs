@@ -1,7 +1,7 @@
 // Phase 8: search engines and sharing (titles, descriptions, canonical,
-// Open Graph / Twitter, share images, JSON-LD, sitemap) and interface
-// translations (only complete languages published; switcher only for
-// reviewed ones). Needs the local Pages dev server with ADMIN_CODE.
+// Open Graph / Twitter, share images, JSON-LD, sitemap). The site is English
+// only (the Pidgin, Hausa and Tiv versions were removed on 13 October 2026).
+// Needs the local Pages dev server with ADMIN_CODE.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
@@ -81,22 +81,11 @@ test('sitemap leaves out drafts, sample players, admin and hidden pages', async 
   }
 });
 
-test('translations: only complete languages are published; the switcher shows only reviewed ones; news stays English', async () => {
-  const en = JSON.parse(readFileSync(new URL('../src/i18n/en.json', import.meta.url), 'utf8'));
-  const keys = Object.keys(en.strings);
-  for (const code of ['pcm', 'ha', 'tiv']) {
-    const f = JSON.parse(readFileSync(new URL(`../src/i18n/${code}.json`, import.meta.url), 'utf8'));
-    assert.deepEqual(Object.keys(f.strings).sort(), [...keys].sort(), `${code} has every English key`);
-    const complete = keys.every(k => f.strings[k] && !/^TODO/.test(f.strings[k]));
-    const r = await fetch(`${BASE}/i18n/${code}.json`);
-    assert.equal(r.status === 200, complete, `${code}: published only when complete`);
-    if (complete) assert.deepEqual(Object.keys(await r.json()).sort(), [...keys].sort());
-  }
+test('English only: no language switcher or translation files', async () => {
   const home = await html('/');
-  const reviewed = ['pcm', 'ha', 'tiv'].filter(c => JSON.parse(readFileSync(new URL(`../src/i18n/${c}.json`, import.meta.url), 'utf8'))._meta.reviewed);
-  assert.equal(home.includes('class="ls"'), reviewed.length > 0, 'switcher only with a reviewed language');
-  // Every piece of interface text in the footer is in the English source.
-  const footer = home.slice(home.indexOf('<footer'), home.indexOf('</footer>'));
-  for (const t of ['Club Newsletter', 'Sign up', 'Cookie settings', 'Terms of Use']) { assert.ok(footer.includes(t)); assert.ok(keys.includes(t), t); }
-  assert.match(home, /data-i18n-scope/);
+  assert.match(home, /<html[^>]* lang="en"/);
+  assert.ok(!home.includes('class="ls"'), 'no language switcher');
+  assert.ok(!home.includes('data-i18n-scope'));
+  assert.ok(!home.includes('ls_lang'));
+  for (const code of ['pcm', 'ha', 'tiv']) assert.notEqual((await fetch(`${BASE}/i18n/${code}.json`)).status, 200, code);
 });

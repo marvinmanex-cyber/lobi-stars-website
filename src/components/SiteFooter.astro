@@ -3,7 +3,6 @@ import { FOOTER_TAGLINE, SOCIAL_LINKS } from '../lib/site';
 import { optionalClub } from '../lib/nav';
 import PartnerLogo from './partners/PartnerLogo.astro';
 import WhatsAppChannel from './WhatsAppChannel.astro';
-import LangSwitch from './LangSwitch.astro';
 import { getPartners } from '../lib/partners';
 
 interface Props { whiteLabel?: boolean }
@@ -49,7 +48,7 @@ const MAX_ROWS = 4;
 const layout = (n: number, max: number) => { const cols = Math.ceil(n / max); return Math.ceil(n / cols); };
 const year = new Date().getFullYear();
 ---
-<footer class="sf" data-i18n-scope>
+<footer class="sf">
   <div class="sf-inner">
     <div class="sf-top">
       <div class="sf-brand">
@@ -117,7 +116,6 @@ const year = new Date().getFullYear();
         <li><a href="/sitemap">Sitemap</a></li>
         <li><button type="button" data-cookie-settings>Cookie settings</button></li>
       </ul>
-      <LangSwitch />
     </div>
   </div>
 </footer>
