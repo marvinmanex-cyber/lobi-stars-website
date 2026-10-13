@@ -1747,6 +1747,54 @@ during the match use Live Match Control (or League Live mode); after full
 time check the score on Results; after the last match of the matchday enter
 the other Conference D results; open the public Table to check it.
 
+## 34. Match tickets (Commerce › Match Tickets)
+
+Fans buy tickets for one home match or several at once on **lobistarsfc.com/tickets**:
+they tick the matches (or press **Select all home matches** or **Select next 3
+matches**), choose a stand and how many for each, and pay **once** with Paystack.
+One email arrives with every ticket (one QR code per person per match).
+Away matches are never sold here: the home club sells those.
+
+**Nothing is on sale until you switch it on.** Open **Admin › Commerce › Match
+Tickets**. Each home match has:
+
+- **Prices** in naira for VIP Sitting, Cover Stand and Popular Stand (0 = that stand is not sold).
+- **Seats** per stand. Empty = no limit. When the seats run out the stand shows "Sold out";
+  the website never sells more than the number you set, even if two fans pay at the same moment.
+- **On sale** tick box, plus optional **Sales open** and **Sales close** times (Nigerian time).
+  Before the open time the match says "Tickets not on sale yet (from <date>)".
+- **Most per order** (1 to 10).
+
+Press **Save** on the match. To set the same thing for many matches at once,
+use **Apply to all** at the top (leave a box empty to
+keep what each match already has).
+
+**What fans see:** the homepage "Upcoming Matches" shows the next three Lobi
+Stars matches (a live match first). Each says **Buy ticket**, **Sold out**,
+**Tickets not on sale yet** or **Away fixture**. A postponed match says
+"Postponed – date to be confirmed". The full list is on /fixtures.
+
+**Lost tickets:** a fan can get them back at **lobistarsfc.com/tickets/lookup**
+with their email and the order reference (from the Paystack receipt or the email).
+You can also find the order in **Orders** (search by name, email, phone or
+reference) and press **Resend email**.
+
+**Refunds:** the money is returned in the Paystack dashboard (Transactions ›
+the payment › Refund). Then, in **Orders**, press **Refund** on that order and
+type the reason. This cancels its unused tickets (the scanner then says "DO
+NOT ADMIT"), takes them out of the sales figures and is written in the audit
+log (League › Audit log, "Tickets"). Already-scanned tickets stay used.
+
+**Sales figures:** the top of the page shows tickets sold and money taken per
+match and per stand. **Export CSV** gives every order (no card details;
+the website never sees them).
+
+**Season tickets** stay in Commerce › Season Tickets (section 31). The tickets
+page tells fans buying several matches how much a season ticket would save them.
+
+**Who can use it:** Super Admin and Commercial. Matchday Operators can open the
+scanner only (Admin › Matchday › Ticket Scanner).
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

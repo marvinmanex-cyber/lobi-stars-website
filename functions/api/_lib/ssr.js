@@ -8,8 +8,9 @@ import { withSecurityHeaders } from './securityHeaders.js';
 // The HTML built here mirrors the cards the browser scripts build, using the
 // same CSS classes.
 import { TEAM_LOGOS } from './teamLogos.js';
-import { listMatches, toSummary, isMatchDay } from './matchCentre.js';
-import { matchSlug } from './matchSlug.js';
+import { listMatches, toSummary } from './matchCentre.js';
+import { decorateMatches } from './ticketShop.js';
+import { upcomingHtml } from './tickets/upcomingHtml.js';
 
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const TZ = 'Africa/Lagos';
@@ -35,7 +36,9 @@ export function crestHtml(name, size = 30, cls = 'crest') {
 export async function publicMatches(env) {
   try {
     const rows = await listMatches(env.DB);
-    return rows.map(r => toSummary(r, r));
+    // + ticket state (Buy ticket / Sold out / not on sale yet) and the league matchday.
+    const out = await decorateMatches(env, rows.map(r => toSummary(r, r)), rows);
+    return out.map(m => (m.ticket ? { ...m, on_sale: m.ticket.state === 'on_sale' } : m));
   } catch { return []; }
 }
 
@@ -77,11 +80,6 @@ export const fill = html => ({ element(el) { el.setInnerContent(html, { html: tr
 
 // ── Homepage "Next Matches" ──
 
-function compAbbr(comp) {
-  const first = comp.trim().split(/\s+/)[0] || '';
-  return /^[A-Z]{2,5}$/.test(first) ? first : comp.split(/\s+/).map(w => w[0]).join('').slice(0, 4).toUpperCase();
-}
-
 export function upcomingLobi(matches, now = Date.now()) {
   return matches
     .filter(ev => (isLobi(ev.home_team) || isLobi(ev.away_team)) && ev.status !== 'full-time' && ev.status !== 'cancelled'
@@ -89,27 +87,9 @@ export function upcomingLobi(matches, now = Date.now()) {
     .sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
 }
 
+/** The homepage "Upcoming Matches" cards (see functions/api/_lib/tickets/upcomingHtml.js). */
 export function nextMatchesHtml(matches, now = Date.now(), previews = {}) {
-  const upcoming = upcomingLobi(matches, now);
-  if (!upcoming.length) return '<li class="nm-empty">Fixtures for the next round will be announced soon. <a href="/fixtures">See all fixtures</a></li>';
-  return upcoming.map(ev => {
-    const home = typeof ev.is_home === 'boolean' ? ev.is_home : isLobi(ev.home_team);
-    const live = ev.status === 'live' || ev.status === 'half-time';
-    const opponent = home ? ev.away_team : ev.home_team;
-    const comp = ev.competition || 'NNL';
-    const slug = ev.slug || matchSlug(ev);
-    const date = new Date(ev.event_date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: TZ });
-    const time = new Date(ev.event_date).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
-    const crest = TEAM_LOGOS[opponent]
-      ? `<img class="nm-crest" src="${esc(TEAM_LOGOS[opponent])}" alt="${esc(opponent)} crest" loading="lazy" width="44" height="44">`
-      : `<span class="nm-crest nm-crest-fallback" aria-hidden="true">${esc(opponent.charAt(0))}</span>`;
-    return `<li class="nm-card">
-<div class="nm-top"><span class="nm-comp-logo" aria-hidden="true">${esc(compAbbr(comp))}</span><div class="nm-comp"><span class="nm-comp-name">${esc(comp)}</span><span class="nm-venue">${esc(ev.venue)}</span></div></div>
-<div class="nm-when">${live ? '<span class="nm-live-badge">Live now</span>' : `${esc(date)} · <b>${esc(time)} WAT</b>`}</div>
-<div class="nm-opp">${crest}<span class="nm-opp-name">${esc(opponent)}</span><span class="nm-ha ${home ? 'home' : 'away'}">${home ? 'Home' : 'Away'}</span></div>
-<div class="nm-links"><a class="nm-link" href="/matches/${esc(slug)}/" aria-label="Match Centre: Lobi Stars FC vs ${esc(opponent)}">Match Centre →</a>${previews[watDay(ev.event_date)] ? `<a class="nm-link nm-link--btn" href="/news/${esc(previews[watDay(ev.event_date)])}/">Match Preview</a>` : ''}${home && ev.on_sale ? `<a class="nm-link nm-link--live" href="/tickets?event=${encodeURIComponent(ev.id)}" aria-label="Buy tickets: Lobi Stars FC vs ${esc(opponent)}">Buy Tickets</a>` : ''}${home && isMatchDay(ev, now) ? `<a class="nm-link nm-link--live" href="/matches/${esc(slug)}/live/" aria-label="Matchday Live: Lobi Stars FC vs ${esc(opponent)}">● Matchday Live</a>` : ''}<a class="nm-link nm-link--cal" href="/api/calendar?match=${encodeURIComponent(slug)}" aria-label="Add Lobi Stars FC vs ${esc(opponent)} to your calendar">📅 Add to calendar</a><a class="nm-link nm-link--listen" href="/commentary/" data-track="commentary_click" data-track-label="${esc(slug)}" aria-label="Listen live to Lobi Stars FC vs ${esc(opponent)} on Lobi Stars FC Live">🎧 Listen Live</a></div>
-</li>`;
-  }).join('');
+  return upcomingHtml(matches, { now, previews, limit: 3 });
 }
 
 // ── Watch Live page ──

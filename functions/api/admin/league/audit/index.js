@@ -8,7 +8,7 @@ export async function onRequestGet({ request, env }) {
   try {
     const url = new URL(request.url);
     const entity = url.searchParams.get('entity');
-    if (entity && !['fixture', 'adjustment', 'competition', 'team', 'venue', 'event'].includes(entity)) return fail('Unknown entity.');
+    if (entity && !['fixture', 'adjustment', 'competition', 'team', 'venue', 'event', 'tickets'].includes(entity)) return fail('Unknown entity.');
     const q = (url.searchParams.get('q') || '').trim().slice(0, 60);
     const page = Math.max(1, Math.min(500, Number(url.searchParams.get('page')) || 1));
     const where = [], binds = [];

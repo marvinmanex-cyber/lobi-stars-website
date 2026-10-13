@@ -42,12 +42,14 @@ test('Buy Tickets only for priced upcoming home games; on_sale flag in the API',
     return id;
   };
   const free = await mk({}), priced = await mk({ regular_price_kobo: 200000 });
+  // Matches are off until switched on in Admin › Match Tickets.
+  for (const id of [free, priced]) await fetch(`${BASE}/api/admin/tickets/match/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ isOnSale: true }) });
   const { matches } = await fetch(`${BASE}/api/matches`).then(r => r.json());
   assert.equal(matches.find(m => m.id === free).on_sale, false);
   assert.equal(matches.find(m => m.id === priced).on_sale, true);
   const fx = await fetch(`${BASE}/fixtures/`).then(r => r.text());
-  assert.ok(fx.includes(`/tickets?event=${priced}`), 'priced game has Buy Tickets');
-  assert.ok(!fx.includes(`/tickets?event=${free}`), 'unpriced game has no Buy Tickets');
+  assert.ok(fx.includes(`/tickets/?event=${priced}`), 'priced game has Buy ticket');
+  assert.ok(!fx.includes(`/tickets/?event=${free}`), 'unpriced game has no Buy ticket');
 });
 
 test('Matches sub-menu on match pages and /matchday redirect', async () => {

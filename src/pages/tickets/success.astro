@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import TicketsView from '../../components/tickets/TicketsView.astro';
 ---
 <Layout title="Your Tickets | Lobi Stars Football Club" description="Your Lobi Stars FC match tickets." noindex>
   <div class="page-content wrap" style="max-width:720px;padding-top:60px;min-height:50vh;">
@@ -23,6 +24,18 @@ import Layout from '../../layouts/Layout.astro';
       </div>
     </div>
 
+    <!-- Several matches in one payment (/tickets): ?basket=LSBAS-… -->
+    <div id="state-basket" style="display:none;">
+      <div class="stag">Booking Confirmed</div>
+      <h1 class="stitle">Your <span class="r">Tickets</span></h1>
+      <p id="basket-summary" class="muted" style="margin-bottom:20px;"></p>
+      <div id="basket-list"></div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:20px;">
+        <a href="/tickets/" class="btn-p" style="display:inline-block;">Buy more tickets &rarr;</a>
+        <a href="/tickets/lookup/" class="btn-o" style="display:inline-block;">Find my tickets later</a>
+      </div>
+    </div>
+
     <div id="state-error" style="display:none;">
       <div class="stag">Something's Not Right</div>
       <h1 class="stitle">Payment Not <span class="r">Confirmed</span></h1>
@@ -30,6 +43,7 @@ import Layout from '../../layouts/Layout.astro';
       <a href="/tickets" class="btn-o" style="margin-top:20px;display:inline-block;">&larr; Back to Tickets</a>
     </div>
   </div>
+  <TicketsView />
 </Layout>
 
 <style is:global>
@@ -104,6 +118,30 @@ import Layout from '../../layouts/Layout.astro';
   const success = document.getElementById('state-success');
   const errorState = document.getElementById('state-error');
   const errorMsg = document.getElementById('error-msg');
+
+  // Tickets for several matches (one payment): wait for the payment, then show them all.
+  const basket = params.get('basket');
+  if (basket) {
+    for (let i = 0; i < 12; i++) {
+      try {
+        const r = await fetch(`/api/tickets/basket?reference=${encodeURIComponent(basket)}`, { cache: 'no-store' });
+        const d = await r.json();
+        if (r.ok && d.paid) {
+          loading.style.display = 'none';
+          document.getElementById('state-basket').style.display = 'block';
+          const n = window.lsRenderTickets(document.getElementById('basket-list'), d);
+          document.getElementById('basket-summary').textContent = `Payment confirmed. ${n} ticket${n === 1 ? '' : 's'} for ${d.matches.length} match${d.matches.length === 1 ? '' : 'es'}, also emailed to ${d.email}. Order reference: ${d.reference}.`;
+          return;
+        }
+        if (!r.ok && r.status !== 500) { errorMsg.textContent = d.error || 'Order not found.'; break; }
+      } catch (e) { /* retry */ }
+      await new Promise(res => setTimeout(res, 2500));
+    }
+    loading.style.display = 'none';
+    errorState.style.display = 'block';
+    if (!errorMsg.textContent) errorMsg.textContent = `Your payment has not been confirmed yet. If money left your account, your tickets will be emailed as soon as Paystack confirms it (reference ${basket}).`;
+    return;
+  }
 
   if (!reference) {
     loading.style.display = 'none';

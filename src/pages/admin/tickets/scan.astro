@@ -1,0 +1,12 @@
+---
+// /admin/tickets/scan -- the gate scanner (signed-in staff). It is the
+// existing scanner at /scan, which shows VALID (green), ALREADY USED (red,
+// with the time) and WRONG MATCH (amber); marking a ticket used is atomic.
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="Ticket Scanner | Lobi Stars Admin" description="Gate ticket scanner." noindex>
+  <meta http-equiv="refresh" content="0; url=/scan/" slot="head" />
+  <div class="wrap" style="padding:40px 5%">
+    <p>Opening the ticket scanner… <a href="/scan/">Open the scanner</a></p>
+  </div>
+</Layout>

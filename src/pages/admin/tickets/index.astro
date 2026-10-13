@@ -1,0 +1,149 @@
+---
+// Commerce › Match Tickets: per home match the stand prices, capacity per
+// stand, sale open/close times (WAT), most tickets per order and the on/off
+// switch, with "apply to all home matches"; sales and revenue per match; the
+// orders list (search, filter, resend email, mark refunded, CSV). Season
+// Tickets (one QR for every home match) are managed on their own page.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="Match Tickets | Lobi Stars Admin" description="Match ticket settings, sales and orders." noindex>
+  <div class="wrap la">
+    <AdminNav current="tickets" />
+    <header class="la-head"><div><div class="stag">Commerce</div><h1 class="stitle">Match <span class="r">Tickets</span></h1></div>
+      <div class="la-row"><a class="btn-o" href="/tickets/" target="_blank" rel="noopener">Public tickets page ↗</a><a class="btn-o" href="/admin/season-tickets/">Season Tickets</a><a class="btn-o" href="/admin/tickets/scan/">Ticket Scanner</a></div></header>
+    <p class="la-lede">Nothing is sold unless a match is switched <b>On sale</b> and has at least one stand price. Tickets are only sold for Lobi Stars home matches. Times are Nigerian time (WAT). Leave a capacity empty for no limit.</p>
+
+    <section class="la-card" aria-labelledby="h-tot"><h2 id="h-tot">Sales</h2><div id="totals" class="la-row"></div></section>
+
+    <section class="la-card" aria-labelledby="h-bulk">
+      <h2 id="h-bulk">Apply to all home matches</h2>
+      <form id="bulk" class="la-row" style="align-items:flex-end">
+        <label class="la-f">VIP Sitting ₦<input name="VIP" type="number" min="0" inputmode="numeric" style="width:110px" /></label>
+        <label class="la-f">Cover Stand ₦<input name="Premium" type="number" min="0" inputmode="numeric" style="width:110px" /></label>
+        <label class="la-f">Popular Stand ₦<input name="Regular" type="number" min="0" inputmode="numeric" style="width:110px" /></label>
+        <label class="la-f">VIP seats<input name="capVIP" type="number" min="0" inputmode="numeric" style="width:100px" /></label>
+        <label class="la-f">Cover seats<input name="capPremium" type="number" min="0" inputmode="numeric" style="width:100px" /></label>
+        <label class="la-f">Popular seats<input name="capRegular" type="number" min="0" inputmode="numeric" style="width:100px" /></label>
+        <label class="la-f">Most per order<input name="max" type="number" min="1" max="10" inputmode="numeric" style="width:90px" /></label>
+        <label class="la-f">On sale<select name="on"><option value="">Keep</option><option value="1">On</option><option value="0">Off</option></select></label>
+        <button class="btn-p" type="submit">Apply to all</button>
+      </form>
+      <p class="la-muted">Empty boxes are left as they are. Applies to every home match that hasn't been played.</p>
+    </section>
+
+    <section class="la-card" aria-labelledby="h-m"><h2 id="h-m">Home matches</h2><div id="matches"><p class="la-muted">Loading…</p></div></section>
+
+    <section class="la-card" aria-labelledby="h-o">
+      <h2 id="h-o">Orders</h2>
+      <form id="of" class="la-row" style="align-items:flex-end;margin-bottom:10px">
+        <label class="la-f">Search<input name="q" maxlength="80" placeholder="Name, email, phone or reference" /></label>
+        <label class="la-f">Match<select name="event"><option value="">All matches</option></select></label>
+        <label class="la-f">Status<select name="status"><option value="">Any</option><option value="paid">Paid</option><option value="pending">Pending</option><option value="failed">Failed</option><option value="refunded">Refunded</option></select></label>
+        <button class="btn-o" type="submit">Search</button>
+        <button class="btn-o" type="button" id="csv">Export CSV</button>
+      </form>
+      <div id="orders"><p class="la-muted">Loading…</p></div>
+    </section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<style is:global>
+  .tk-m { border: 1px solid var(--a-line); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
+  .tk-m-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .tk-m-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .tk-m input { width: 100%; }
+  .tk-stat { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 12px; padding: 10px 14px; min-width: 150px; }
+  .tk-stat b { display: block; font-size: 22px; }
+</style>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, el = LA.el, $ = function (id) { return document.getElementById(id); };
+  var naira = function (k) { return '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
+  var wat = function (iso) { return iso ? new Date(Date.parse(iso) + 3600e3).toISOString().slice(0, 16) : ''; };
+  var STATE = { on_sale: 'On sale', sold_out: 'Sold out', not_on_sale: 'Not on sale', closed: 'Closed / played' };
+
+  function load() {
+    LA.api('/api/admin/tickets').then(function (r) {
+      if (!r.ok) { $('matches').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load.' })); return; }
+      var t = r.d.totals;
+      $('totals').replaceChildren(el('div', { class: 'tk-stat' }, el('b', { text: String(t.sold) }), 'tickets sold'), el('div', { class: 'tk-stat' }, el('b', { text: naira(t.revenueKobo) }), 'revenue'),
+        el('div', { class: 'tk-stat' }, el('b', { text: t.capacity ? String(Math.max(0, t.capacity - t.sold)) : '–' }), 'seats left (where a capacity is set)'));
+      var sel = $('of').elements.event; if (sel.options.length <= 1) r.d.matches.forEach(function (m) { sel.add(new Option((m.matchday ? 'MD' + m.matchday + ' ' : '') + 'v ' + m.awayTeam, m.id)); });
+      $('matches').replaceChildren.apply($('matches'), r.d.matches.map(row));
+    });
+  }
+
+  function row(m) {
+    var inputs = {};
+    var tierBoxes = m.tiers.map(function (x) {
+      inputs['p' + x.tier] = el('input', { type: 'number', min: 0, inputmode: 'numeric', value: x.priceNaira, 'aria-label': x.label + ' price' });
+      inputs['c' + x.tier] = el('input', { type: 'number', min: 0, inputmode: 'numeric', value: x.capacity == null ? '' : x.capacity, placeholder: 'no limit', 'aria-label': x.label + ' seats' });
+      return el('div', {}, el('b', { text: x.label }),
+        el('label', { class: 'la-f' }, 'Price ₦', inputs['p' + x.tier]), el('label', { class: 'la-f' }, 'Seats', inputs['c' + x.tier]),
+        el('p', { class: 'la-muted', text: x.sold + ' sold · ' + naira(x.revenueKobo) + (x.held ? ' · ' + x.held + ' held in checkouts' : '') + (x.capacity != null ? ' · ' + Math.max(0, x.capacity - x.sold - x.held) + ' left' : '') }));
+    });
+    var on = el('input', { type: 'checkbox', checked: m.isOnSale, style: 'width:22px;height:22px;min-height:auto' });
+    var opens = el('input', { type: 'datetime-local', value: wat(m.saleOpensAt) }), closes = el('input', { type: 'datetime-local', value: wat(m.saleClosesAt) });
+    var max = el('input', { type: 'number', min: 1, max: 10, value: m.maxPerOrder, style: 'width:80px' });
+    var save = el('button', { type: 'button', class: 'btn-p btn-sm', text: 'Save' });
+    save.addEventListener('click', function () {
+      var body = { prices: {}, capacities: {}, saleOpensAt: opens.value, saleClosesAt: closes.value, maxPerOrder: Number(max.value), isOnSale: on.checked };
+      ['VIP', 'Premium', 'Regular'].forEach(function (t) { body.prices[t] = Number(inputs['p' + t].value || 0); body.capacities[t] = inputs['c' + t].value === '' ? null : Number(inputs['c' + t].value); });
+      LA.api('/api/admin/tickets/match/' + encodeURIComponent(m.id), { method: 'PUT', body: body }).then(function (r) { r.ok ? (LA.toast('Saved'), load()) : LA.toast(r.d.error || 'Could not save.', true); });
+    });
+    return el('div', { class: 'tk-m' },
+      el('div', { class: 'tk-m-head' }, el('span', {}, el('b', { text: (m.matchday ? 'Matchday ' + m.matchday + ': ' : '') + m.homeTeam + ' vs ' + m.awayTeam }), el('br'), el('span', { class: 'la-muted', text: LA.date(m.kickoff) + ', ' + LA.time(m.kickoff) + ' WAT · ' + m.venue })),
+        el('span', { class: 'la-chip ' + (m.state === 'on_sale' ? 'full_time' : m.state === 'sold_out' ? 'cancelled' : '') , text: STATE[m.state] || m.state })),
+      el('div', { class: 'tk-m-grid' }, tierBoxes),
+      el('div', { class: 'la-row', style: 'margin-top:10px;align-items:flex-end' },
+        el('label', { class: 'la-row', style: 'gap:6px;font-weight:700' }, on, 'On sale'),
+        el('label', { class: 'la-f' }, 'Sales open (WAT)', opens), el('label', { class: 'la-f' }, 'Sales close (WAT)', closes),
+        el('label', { class: 'la-f' }, 'Most per order', max), save));
+  }
+
+  $('bulk').addEventListener('submit', function (e) {
+    e.preventDefault(); var f = this.elements, body = {};
+    var prices = {}, caps = {};
+    ['VIP', 'Premium', 'Regular'].forEach(function (t) { if (f[t].value !== '') prices[t] = Number(f[t].value); if (f['cap' + t].value !== '') caps[t] = Number(f['cap' + t].value); });
+    if (Object.keys(prices).length) body.prices = prices;
+    if (Object.keys(caps).length) body.capacities = caps;
+    if (f.max.value) body.maxPerOrder = Number(f.max.value);
+    if (f.on.value !== '') body.isOnSale = f.on.value === '1';
+    LA.confirm('Apply to every home match?', ['These values replace the current ones on every home match that hasn\'t been played.'], 'Apply').then(function (y) {
+      if (y) LA.api('/api/admin/tickets/bulk', { method: 'POST', body: body }).then(function (r) { r.ok ? (LA.toast('Applied to ' + r.d.applied + ' matches'), load()) : LA.toast(r.d.error || 'Could not apply.', true); });
+    });
+  });
+
+  function orderQuery() { var f = $('of').elements, p = new URLSearchParams(); ['q', 'event', 'status'].forEach(function (k) { if (f[k].value) p.set(k, f[k].value); }); return p.toString(); }
+  function loadOrders() {
+    LA.api('/api/admin/tickets/orders?' + orderQuery()).then(function (r) {
+      if (!r.ok) { $('orders').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load.' })); return; }
+      if (!r.d.orders.length) { $('orders').replaceChildren(el('p', { class: 'la-muted', text: 'No orders found.' })); return; }
+      $('orders').replaceChildren(LA.table(['When', 'Reference', 'Buyer', 'Matches', 'Tickets', 'Total', 'Status', ''], r.d.orders.map(function (o) {
+        var acts = el('div', { class: 'la-row' });
+        if (o.status === 'paid') {
+          acts.append(el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Resend email', onclick: function () { LA.api('/api/admin/tickets/orders/' + encodeURIComponent(o.id) + '/resend', { method: 'POST', body: {} }).then(function (x) { x.ok ? LA.toast('Email sent') : LA.toast(x.d.error || 'Could not send.', true); }); } }),
+            el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Mark refunded', onclick: function () {
+              LA.prompt('Mark ' + o.reference + ' refunded?', 'Reason (the money is refunded in the Paystack dashboard)', { ok: 'Mark refunded' }).then(function (reason) {
+                if (reason !== null) LA.api('/api/admin/tickets/orders/' + encodeURIComponent(o.id) + '/refund', { method: 'POST', body: { reason: reason } }).then(function (x) { x.ok ? (LA.toast('Marked refunded: its tickets no longer work'), loadOrders(), load()) : LA.toast(x.d.error || 'Could not save.', true); });
+              });
+            } }));
+        }
+        return el('tr', {}, el('td', { text: LA.when(o.createdAt) }), el('td', {}, el('code', { text: o.reference })), el('td', {}, el('b', { text: o.name }), el('br'), el('span', { class: 'la-muted', text: o.email + ' · ' + o.phone })),
+          el('td', { text: o.matches + (o.opponents ? ' (v ' + o.opponents + ')' : '') }), el('td', { class: 'n', text: String(o.tickets) }), el('td', { text: naira(o.totalKobo) }), el('td', {}, el('span', { class: 'la-chip ' + (o.status === 'paid' ? 'full_time' : o.status === 'refunded' || o.status === 'failed' ? 'cancelled' : 'postponed'), text: o.status })), el('td', {}, acts));
+      })));
+    });
+  }
+  $('of').addEventListener('submit', function (e) { e.preventDefault(); loadOrders(); });
+  $('csv').addEventListener('click', function () {
+    fetch('/api/admin/tickets/export.csv?' + orderQuery(), { headers: { 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' } }).then(function (r) { if (!r.ok) throw new Error(); return r.blob(); }).then(function (b) {
+      var u = URL.createObjectURL(b), a = el('a', { href: u, download: 'ticket-orders.csv' }); document.body.append(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 2000);
+    }).catch(function () { LA.toast('Could not download.', true); });
+  });
+  load(); loadOrders();
+})();
+</script>

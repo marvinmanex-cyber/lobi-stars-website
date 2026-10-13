@@ -33,9 +33,12 @@ export async function sendEmail(env, { to, subject, html, from, replyTo, text, h
   return res.json();
 }
 
-export function ticketEmailHtml({ order, event, tickets }) {
-  const dateStr = new Date(event.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const timeStr = new Date(event.event_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/** The ticket cards (one per ticket, each with its QR code) for one match. */
+export function ticketBlocksHtml({ order, event, tickets }) {
+  const dateStr = new Date(event.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
+  const timeStr = new Date(event.event_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' });
   const tierLabel = TIER_LABELS[order.tier] || order.tier;
   const tierBadge = TIER_BADGES[order.tier];
   const tierPriceKobo = order.total_kobo / order.quantity;
@@ -53,7 +56,7 @@ export function ticketEmailHtml({ order, event, tickets }) {
       <tr>
         <td style="background:linear-gradient(160deg,#0d1a33,#0a1226);padding:22px;font-family:Arial,sans-serif;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-            <tr><td align="center" style="color:rgba(255,255,255,.55);font-size:9px;letter-spacing:2px;text-transform:uppercase;padding-bottom:4px;">Nigeria Professional Football League</td></tr>
+            <tr><td align="center" style="color:rgba(255,255,255,.55);font-size:9px;letter-spacing:2px;text-transform:uppercase;padding-bottom:4px;">Nigeria National League</td></tr>
             <tr><td align="center" style="color:#C9A227;font-size:15px;letter-spacing:2px;font-weight:bold;padding-bottom:16px;">OFFICIAL MATCH TICKET</td></tr>
             <tr>
               <td align="center" style="padding-bottom:10px;">
@@ -66,14 +69,14 @@ export function ticketEmailHtml({ order, event, tickets }) {
             </tr>
             <tr>
               <td align="center" style="color:#ffffff;font-size:19px;font-weight:bold;line-height:1.3;padding-bottom:14px;">
-                ${event.home_team} <span style="color:#C9A227;font-size:12px;">VS</span> ${event.away_team}
+                ${escHtml(event.home_team)} <span style="color:#C9A227;font-size:12px;">VS</span> ${escHtml(event.away_team)}
               </td>
             </tr>
             <tr>
               <td style="background:rgba(255,255,255,.92);border-radius:8px;padding:12px;">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-                  <td align="center" style="color:#0d1a33;font-size:11px;font-weight:bold;">${dateStr}<br/><span style="font-weight:normal;color:#5a6270;">Kick-off ${timeStr}</span></td>
-                  <td align="center" style="color:#0d1a33;font-size:11px;font-weight:bold;">${event.venue}</td>
+                  <td align="center" style="color:#0d1a33;font-size:11px;font-weight:bold;">${dateStr}<br/><span style="font-weight:normal;color:#5a6270;">Kick-off ${timeStr} (WAT)</span></td>
+                  <td align="center" style="color:#0d1a33;font-size:11px;font-weight:bold;">${escHtml(event.venue)}</td>
                 </tr></table>
               </td>
             </tr>
@@ -97,12 +100,16 @@ export function ticketEmailHtml({ order, event, tickets }) {
       </tr>
     </table>
   `).join('');
+  return ticketBlocks;
+}
 
+export function ticketEmailHtml({ order, event, tickets }) {
+  const ticketBlocks = ticketBlocksHtml({ order, event, tickets });
   return `
   <div style="max-width:520px;margin:0 auto;font-family:Arial,sans-serif;color:#111;">
     <h2 style="color:#0d1a33;">Your Lobi Stars Match Tickets</h2>
-    <p>Hi ${order.buyer_name},</p>
-    <p>Your booking for <strong>${event.home_team} vs ${event.away_team}</strong> (${event.competition}) is confirmed. Order reference: <strong>${order.id}</strong>.</p>
+    <p>Hi ${escHtml(order.buyer_name)},</p>
+    <p>Your booking for <strong>${escHtml(event.home_team)} vs ${escHtml(event.away_team)}</strong> (${escHtml(event.competition)}) is confirmed. Order reference: <strong>${order.id}</strong>.</p>
     <p>Present each QR code below at the gate &mdash; one scan per ticket. Screenshots work fine, or download the ticket image from your confirmation page on the website.</p>
     ${ticketBlocks}
     <p style="font-size:12px;color:#888;">Pride of Benue &middot; Lobi Stars Football Club</p>

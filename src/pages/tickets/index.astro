@@ -1,303 +1,219 @@
 ---
+// /tickets -- buy tickets for one or several Lobi Stars home matches in one
+// payment. Every home match from Matchday 1 is listed with its stands, prices
+// and seats left (from /api/tickets/catalogue); matches not on sale, sold out
+// or already played can't be ticked. "?event=<id>" pre-selects a match.
+// Paying: /api/tickets/basket (Paystack). Season Tickets (one QR for every
+// home match) are suggested when every remaining home match is selected.
 import Layout from '../../layouts/Layout.astro';
+import settings from '../../data/fan-settings.json';
+const siteKey = settings.turnstileSiteKey;
 ---
-<Layout title="Buy Tickets | Lobi Stars Football Club" description="Buy Lobi Stars FC match tickets online. Choose your seat, pay securely with Paystack and get QR-code tickets by email.">
-  <div class="wrap" style="padding-top:60px;padding-bottom:90px;">
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:16px;">
-      <div>
-        <div class="stag">Match Day</div>
-        <h1 class="stitle" style="margin-bottom:0;">Buy <span class="r">Tickets</span></h1>
-      </div>
-      <a id="progDlBtn" download hidden style="display:inline-block;line-height:0;border-radius:10px;overflow:hidden;box-shadow:0 10px 24px rgba(15,17,21,.12);margin-bottom:8px;">
-        <img src="/images/matchdayprogramme-beside-fixture-click.png" alt="Download matchday programme" style="display:block;width:240px;max-width:55vw;height:auto;"/>
-      </a>
-    </div>
+<Layout title="Buy Tickets | Lobi Stars Football Club" description="Buy Lobi Stars FC home match tickets online: one match or the whole season in one payment, with QR-code tickets by email.">
+  <div class="page-hero wrap">
+    <div class="stag">Match Day</div>
+    <h1 class="stitle">Buy <span class="r">Tickets</span></h1>
     <div class="divr"></div>
-    <p style="margin:-14px 0 28px;font-size:15px;color:var(--lt);">Going to the match? <a href="/food" style="color: var(--red-text);font-weight:700;">Order food to your seat &rarr;</a></p>
-    <!-- Shown only while season tickets are on sale (Admin › Commerce › Season Tickets). -->
-    <a id="seasonBanner" href="/season-tickets/" hidden style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 26px;padding:16px 20px;border-radius:12px;background:#15181D;color:#fff;text-decoration:none;">
-      <span><b style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:1px;display:block;">Season tickets</b><span id="seasonBannerText" style="color:rgba(255,255,255,.85);font-size:15px;">One ticket for every home match.</span></span>
-      <span style="background:#FFC72C;color:#15181D;font-weight:700;padding:10px 18px;border-radius:999px;">Buy a season ticket &rarr;</span>
-    </a>
-    <script is:inline>
-      fetch('/api/season-tickets').then(function (r) { return r.json(); }).then(function (d) {
-        if (!d.enabled || !d.tiers || !d.tiers.length) return;
-        var low = Math.min.apply(null, d.tiers.map(function (t) { return t.priceKobo; }));
-        document.getElementById('seasonBannerText').textContent = 'Every home match of the ' + d.season + ' season, from ₦' + (low / 100).toLocaleString('en-NG') + '.';
-        document.getElementById('seasonBanner').hidden = false;
-      }).catch(function () {});
-    </script>
-
-    <div class="tsteps" id="tsteps">
-      <div class="tstep"><div class="tsn act" id="sn1">1</div><div class="tsl act" id="sl1">Select Match</div></div>
-      <div class="tconn"></div>
-      <div class="tstep"><div class="tsn" id="sn2">2</div><div class="tsl" id="sl2">Choose Seat</div></div>
-      <div class="tconn"></div>
-      <div class="tstep"><div class="tsn" id="sn3">3</div><div class="tsl" id="sl3">Your Details</div></div>
-    </div>
-
-    <div class="tpanel active" id="tp1">
-      <p class="muted" style="margin-bottom:22px;font-size:15px;">Select a home match to purchase tickets for:</p>
-      <div class="match-cards" id="matchCardsList">
-        <p class="muted">Tickets for the next home match will go on sale soon. See the <a href="/fixtures/">fixtures</a>.</p>
+    <p class="tk-lede">Tick the home matches you want, choose a stand and how many tickets, then pay once. Your QR-code tickets arrive by email straight away. <a href="/tickets/lookup/">Find my tickets</a> · <a href="/food/">Order food to your seat</a></p>
+  </div>
+  <div class="page-content wrap">
+    <div class="tk" data-tickets>
+      <div class="tk-main">
+        <!-- Shown only while season tickets are on sale (Admin › Commerce › Season Tickets). -->
+        <a class="tk-seasonbar" id="seasonBanner" href="/season-tickets/" hidden><span><b>Season tickets</b><span id="seasonBannerText">One ticket for every home match.</span></span><span class="tk-seasonbtn">Buy a season ticket &rarr;</span></a>
+        <div class="tk-tools">
+          <button type="button" class="tk-tool" id="selAll">Select all home matches</button>
+          <button type="button" class="tk-tool" id="selNext3">Select next 3 matches</button>
+          <button type="button" class="tk-tool" id="selNone">Clear</button>
+          <label class="tk-f">Stand for all ticked
+            <select id="allTier"><option value="">Keep as is</option><option value="VIP">VIP Sitting</option><option value="Premium">Cover Stand</option><option value="Regular">Popular Stand</option></select>
+          </label>
+        </div>
+        <p class="tk-msg" id="tkMsg" role="status" aria-live="polite"></p>
+        <ol class="tk-list" id="tkList"><li class="tk-empty">Loading the home matches…</li></ol>
+        <div class="tk-bar" id="tkBar" hidden><span><span id="barCount"></span> · <b id="barTotal"></b></span><a href="#sumH">Checkout</a></div>
       </div>
-      <div class="tnav"><button class="btn-p" onclick="goStep(2)">Continue &rarr;</button></div>
-    </div>
-
-    <div class="tpanel" id="tp2">
-      <p class="muted" style="margin-bottom:22px;font-size:15px;">Choose your seat category:</p>
-      <div class="seat-cards" id="seatCardsList"></div>
-      <div class="qty-ctrl">
-        <span class="qty-lbl">Tickets:</span>
-        <button class="qty-btn" onclick="chgQty(-1)">&minus;</button>
-        <div class="qty-num" id="qtyNum">1</div>
-        <button class="qty-btn" onclick="chgQty(1)">+</button>
-      </div>
-      <div class="tsum-bar">
-        <div><div class="tsum-val" id="sumMatch">&mdash;</div><div class="tsum-key">Match</div></div>
-        <div><div class="tsum-val" id="sumSeat">&mdash;</div><div class="tsum-key">Category</div></div>
-        <div><div class="tsum-val" id="sumQty">&mdash;</div><div class="tsum-key">Tickets</div></div>
-        <div><div class="tsum-val" id="sumTotal">&#8358; &mdash;</div><div class="tsum-key">Total</div></div>
-      </div>
-      <div class="tnav"><button class="btn-back" onclick="goStep(1)">&larr; Back</button></div>
-    </div>
-
-    <div class="tpanel" id="tp3">
-      <p class="muted" style="margin-bottom:22px;font-size:15px;">Enter your details to complete your booking:</p>
-      <div style="max-width:580px;">
-        <div class="form-row"><div class="form-grp"><label class="form-lbl">First Name</label><input type="text" class="form-inp" id="t-fn" placeholder="First name"/></div><div class="form-grp"><label class="form-lbl">Last Name</label><input type="text" class="form-inp" id="t-ln" placeholder="Last name"/></div></div>
-        <div class="form-grp"><label class="form-lbl">Email Address</label><input type="email" class="form-inp" id="t-em" placeholder="you@example.com"/></div>
-        <div class="form-grp"><label class="form-lbl">Confirm Email Address</label><input type="email" class="form-inp" id="t-em2" placeholder="you@example.com" autocomplete="email"/></div>
-        <div class="form-grp"><label class="form-lbl">Phone Number</label><input type="tel" class="form-inp" id="t-ph" placeholder="+234 800 000 0000"/></div>
-      </div>
-      <p id="tix-error" class="muted" style="display:none;color: var(--red-text);margin-top:10px;font-weight:600;"></p>
-      <div class="tnav"><button class="btn-back" type="button" onclick="goStep(2)">&larr; Back</button><button class="btn-p" type="button" id="confirmBkBtn" onclick="confirmBk()">Confirm &amp; Pay &rarr;</button></div>
+      <aside class="tk-sum" aria-labelledby="sumH">
+        <h2 id="sumH">Your order</h2>
+        <ul class="tk-sum-lines" id="sumLines"><li class="tk-muted">No matches selected yet.</li></ul>
+        <p class="tk-total">Total <b id="sumTotal">₦0</b></p>
+        <p class="tk-season" id="sumSeason" hidden></p>
+        <form id="buyForm" class="tk-form" novalidate>
+          <label class="tk-f">Full name<input name="buyerName" autocomplete="name" required maxlength="80" /></label>
+          <label class="tk-f">Email (tickets are sent here)<input name="buyerEmail" type="email" autocomplete="email" required maxlength="254" /></label>
+          <label class="tk-f">Phone<input name="buyerPhone" type="tel" autocomplete="tel" required placeholder="0803 123 4567" /></label>
+          {siteKey && <div class="cf-turnstile" data-sitekey={siteKey}></div>}
+          <p class="tk-err" id="buyErr" role="alert"></p>
+          <button type="submit" class="btn-p tk-pay" id="payBtn" disabled>Pay with Paystack</button>
+          <p class="tk-small">Card, bank transfer or USSD, handled securely by Paystack. One QR code per ticket; each admits one person, once, on the day of its match. By buying you agree to our <a href="/terms/">Terms</a>.</p>
+        </form>
+      </aside>
     </div>
   </div>
+  {siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 </Layout>
 
-<style is:global>
-  .tsteps{display:flex;align-items:center;margin:36px 0 40px;overflow-x:auto;padding-bottom:4px;}
-  .tstep{display:flex;align-items:center;gap:10px;flex-shrink:0;}
-  .tsn{width:32px;height:32px;border-radius:50%;border:2px solid var(--d4);display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--lt);transition:all .3s;flex-shrink:0;}
-  .tsn.act{border-color:var(--red);background:var(--red);color:#fff;}
-  .tsn.done{border-color:var(--gold);background:var(--gold);color:#fff;}
-  .tsl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--lt);white-space:nowrap;}
-  .tsl.act{color:var(--white);}
-  .tconn{flex:1;height:1px;background:var(--d4);margin:0 12px;min-width:20px;}
-  .tpanel{display:none;}.tpanel.active{display:block;}
-
-  .match-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
-  .mcard{background:var(--d2);border:2px solid var(--d4);border-radius:8px;padding:22px;cursor:pointer;user-select:none;transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;}
-  .mcard:hover{border-color:var(--red);transform:translateY(-3px);}
-  .mcard.sel{border-color:var(--red);background:rgba(212,32,43,.1);box-shadow:0 0 0 3px rgba(212,32,43,.18),0 10px 24px -8px rgba(212,32,43,.35);animation:cardPop .3s ease;}
-  .mcard.sel::after{content:'✓';position:absolute;top:-10px;left:-10px;width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:badgeIn .25s ease;}
-  .home-badge{position:absolute;top:12px;right:12px;background:var(--gold);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 9px;border-radius:2px;}
-  @keyframes cardPop{0%{transform:scale(.97);}60%{transform:scale(1.015);}100%{transform:scale(1);}}
-  @keyframes badgeIn{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
-  .mcomp{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--lt);margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;}
-  .mteams-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
-  .mteam-logo{width:32px;height:32px;object-fit:contain;flex-shrink:0;}
-  .mteam-fallback{display:flex;align-items:center;justify-content:center;background:var(--d3);border-radius:50%;font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--lt);}
-  .mteams{font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--white);letter-spacing:1px;flex:1;min-width:0;}
-  .mteams span{color: var(--red-text);}
-  .mdate{font-size:12px;color:var(--lt);margin-bottom:3px;}
-  .mvenue{font-size:11px;color:var(--lt);}
-  .mprio{margin-top:8px;padding:6px 8px;border-radius:6px;background:#FFF8E1;color:#6B4700;font-size:12px;line-height:1.4;}
-  .mprio a{color:var(--red-text);font-weight:700;}
-
-  .seat-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:24px;}
-  .scard{background:var(--d2);border:2px solid var(--d4);border-radius:8px;padding:26px 18px;text-align:center;cursor:pointer;user-select:none;transition:border-color .2s,transform .2s,box-shadow .2s;position:relative;}
-  .scard:hover{border-color:var(--gold);transform:translateY(-2px);}
-  .scard.sel{border-color:var(--gold);background:rgba(245,184,0,.1);box-shadow:0 0 0 3px rgba(245,184,0,.2),0 10px 24px -8px rgba(245,184,0,.4);animation:cardPop .3s ease;}
-  .scard.sel::after{content:'✓';position:absolute;top:-10px;right:-10px;width:26px;height:26px;border-radius:50%;background:var(--gold);color:var(--black);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35);animation:badgeIn .25s ease;}
-  .scard.pop{border-color:rgba(245,184,0,.35);}
-  .spop-tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--black);font-family:'Barlow Condensed',sans-serif;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 12px;border-radius:20px;white-space:nowrap;}
-  .stic-img{width:64px;height:64px;object-fit:contain;margin-bottom:8px;}
-  .stier{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;margin-bottom:5px;}
-  .stier.vip{color: var(--gold-text);}.stier.prem{color:#6B7280;}.stier.reg{color:var(--lt);}
-  .sprice{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--white);letter-spacing:1px;}
-  .sprice span{font-size:32px;color:var(--white);}
-  .sperk{font-size:12px;color:var(--lt);margin-top:5px;}
-
-  .qty-ctrl{display:flex;align-items:center;gap:14px;margin-bottom:24px;}
-  .qty-lbl{font-family:'Barlow Condensed',sans-serif;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--lt);}
-  .qty-btn{width:36px;height:36px;border-radius:50%;background:var(--d3);border:1px solid var(--d4);color:var(--white);font-size:20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;}
-  .qty-btn:hover{background:var(--red);border-color:var(--red);color:#fff;}
-  .qty-num{font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--white);min-width:28px;text-align:center;}
-
-  .tsum-bar{background:var(--d3);border:1px solid rgba(245,184,0,.2);border-radius:6px;padding:16px 22px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:10px;}
-  .tsum-val{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:700;color: var(--gold-text);}
-  .tsum-key{font-size:10px;color:var(--lt);letter-spacing:1px;margin-top:2px;text-transform:uppercase;}
-  .tnav{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;}
-  .btn-back{background:transparent;border:1.5px solid var(--red);color: var(--red-text);padding:12px 26px;border-radius:3px;font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
-  .btn-back:hover{background:var(--red);color:#fff;}
-
-  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-  .form-grp{margin-bottom:18px;}
-  .form-lbl{display:block;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--lt);margin-bottom:7px;}
-  .form-inp{width:100%;background:var(--d3);border:1px solid var(--d4);border-radius:4px;padding:13px 15px;color:var(--white);font-family:'Barlow',sans-serif;font-size:15px;transition:border-color .2s;outline:none;}
-  .form-inp:focus{border-color:var(--red);}
-
-  @media(max-width:600px){
-    .seat-cards{grid-template-columns:1fr;}
-    .form-row{grid-template-columns:1fr;}
+<style>
+  .tk-lede { margin: -10px 0 0; color: var(--lt); font-size: 15px; line-height: 1.6; max-width: 760px; }
+  .tk-lede a { color: var(--red-text); font-weight: 700; }
+  .tk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; width: 100%; }
+  @media (min-width: 1000px) { .tk { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; } .tk-sum { position: sticky; top: 90px; } }
+  .tk-seasonbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 16px; padding: 14px 18px; border-radius: 12px; background: #15181D; color: #fff; text-decoration: none; }
+  .tk-seasonbar b { display: block; font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .tk-seasonbar span span { color: rgba(255,255,255,.85); font-size: 14px; }
+  .tk-seasonbtn { background: #FFC72C; color: #15181D !important; font-weight: 700; padding: 10px 16px; border-radius: 999px; min-height: 24px; }
+  .tk-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 14px; }
+  .tk-tool { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--d4); background: var(--d2); color: var(--white); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+  .tk-tool:hover, .tk-tool:focus-visible { border-color: var(--red); color: var(--red-text); }
+  .tk-f { display: grid; gap: 5px; font-weight: 700; font-size: 13px; }
+  .tk-f input, .tk-f select, .tk :global(.tk-row select) { min-height: 44px; border: 1.5px solid var(--d4); border-radius: 8px; padding: 8px 10px; font: 400 16px 'Barlow', sans-serif; background: var(--d2); color: var(--white); box-sizing: border-box; width: 100%; }
+  .tk-msg { margin: 0 0 10px; font-weight: 600; }
+  .tk-msg:empty { display: none; }
+  .tk-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .tk-empty, .tk-muted { color: var(--lt); }
+  .tk :global(.tk-row) { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 16px; border: 1.5px solid var(--d4); border-radius: 12px; background: var(--d2); }
+  .tk :global(.tk-row.on) { border-color: var(--red); box-shadow: 0 0 0 1px var(--red); }
+  .tk :global(.tk-row.off) { opacity: .55; }
+  .tk :global(.tk-row input[type=checkbox]) { width: 24px; height: 24px; margin: 10px 0 0; accent-color: #E31E24; }
+  .tk :global(.tk-row label.tk-check) { display: flex; align-items: flex-start; min-width: 44px; min-height: 44px; cursor: pointer; }
+  .tk :global(.tk-head) { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
+  .tk :global(.tk-head b) { font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .tk :global(.tk-meta) { color: var(--lt); font-size: 14px; line-height: 1.5; }
+  .tk :global(.tk-state) { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; padding: 6px 9px; border-radius: 4px; background: var(--d3); align-self: start; }
+  .tk :global(.tk-state.out) { background: #FDECEC; color: #A3161B; }
+  .tk :global(.tk-pick) { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 10px; margin-top: 10px; }
+  .tk :global(.tk-pick[hidden]) { display: none; }
+  .tk-sum { background: var(--d2); border: 1.5px solid var(--d4); border-radius: 14px; padding: 18px; }
+  .tk-sum h2 { margin: 0 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .tk-sum-lines { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; font-size: 14px; }
+  .tk :global(.tk-sum-lines li) { display: flex; justify-content: space-between; gap: 10px; }
+  .tk-total { display: flex; justify-content: space-between; font-size: 18px; margin: 10px 0; padding-top: 10px; border-top: 1px solid var(--d4); }
+  .tk-season { background: #FFF7E6; color: #7A4B00; padding: 10px 12px; border-radius: 8px; font-size: 14px; line-height: 1.5; }
+  .tk-season a { color: #7A4B00; font-weight: 700; }
+  .tk-form { display: grid; gap: 12px; margin-top: 12px; }
+  .tk-err { margin: 0; color: #A3161B; font-weight: 700; }
+  .tk-err:empty { display: none; }
+  .tk-pay { min-height: 52px; font-size: 16px; }
+  .tk-pay:disabled { opacity: .5; cursor: not-allowed; }
+  .tk-small { margin: 0; color: var(--lt); font-size: 13px; line-height: 1.5; }
+  .tk [hidden] { display: none !important; }
+  /* Phones: the order sits under the list; a slim bar keeps the total in view. */
+  .tk-bar { display: none; }
+  @media (max-width: 999px) {
+    .tk-bar:not([hidden]) { display: flex; position: sticky; bottom: 72px; z-index: 5; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 14px; border-radius: 12px; background: #15181D; color: #fff; box-shadow: 0 -6px 20px rgba(15,17,21,.18); }
+    .tk-bar b { font-size: 18px; }
+    .tk-bar a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--red); color: #fff; text-decoration: none; font-weight: 700; }
   }
 </style>
 
 <script is:inline>
-const TEAM_LOGOS = {
-  'Lobi Stars FC': '/images/lobi-stars-fc.jpg',
-  'Lobi Stars': '/images/lobi-stars-crest.png',
-  'ABS FC': '/images/abs-illorin.jpg',
-  'Bichi First FC': '/images/bichi-first.jpg',
-  'Bichi First': '/images/bichi-first.jpg',
-  'Kada Warriors FC': '/images/kadawarriors-kaduna.jpg',
-  'Kada Warriors': '/images/kadawarriors-kaduna.jpg',
-  'Mighty Jets': '/images/mighty-jets-jos.jpg',
-  'Mighty Jets Feeder / Bida Lions': '/images/mighty-jets-jos.jpg',
-  'Sokoto United FC': '/images/sokoto-united.jpg',
-  'Sokoto United': '/images/sokoto-united.jpg',
-  'Wikki Tourists FC': '/images/wikki-tourists.jpg',
-  'Wikki Tourists': '/images/wikki-tourists.jpg',
-  'Yobe Desert Stars FC': '/images/yobe-desert-stars.jpg',
-  'Yobe Desert Stars': '/images/yobe-desert-stars.jpg',
-  'Kano Pillars': '/images/kano-pillars-logo.png',
-};
-function teamBadge(name){
-  const logo = TEAM_LOGOS[name];
-  return logo
-    ? `<img src="${logo}" alt="${name}" class="mteam-logo"/>`
-    : `<span class="mteam-logo mteam-fallback">${name.charAt(0)}</span>`;
-}
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var naira = function (k) { return '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
+  var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c != null && c !== false) n.append(c); } return n; };
+  var TZ = 'Africa/Lagos';
+  var STATE = { on_sale: '', sold_out: 'Sold out', not_on_sale: 'Not on sale yet', closed: 'Played or closed' };
+  var matches = [], rows = new Map(), season = null;
+  var pre = new URLSearchParams(location.search).get('event');
 
-// Members' priority window (set per match by staff): before general sale, only confirmed members can buy.
-function prioNote(ev){
-  if(!ev.public_sale_at || Date.now() >= Date.parse(ev.public_sale_at)) return '';
-  const t = new Date(ev.public_sale_at).toLocaleString('en-GB', {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit', timeZone:'Africa/Lagos'});
-  return `<div class="mprio">&#9733; Members' priority window. General sale opens ${t} WAT. <a href="/fans/login/?next=/tickets/" onclick="event.stopPropagation()">Members log in</a></div>`;
-}
-let ticketEvents = [], tEventId = '', tM = '', tS = '', tPKobo = 0, tQ = 1;
-const preselectEventId = new URLSearchParams(window.location.search).get('event');
-
-async function loadTicketEvents(){
-  const list = document.getElementById('matchCardsList');
-  try{
-    // Embedded by the server; fetched only if it's missing.
-    const embedded = document.getElementById('ssr-events');
-    const data = embedded ? JSON.parse(embedded.textContent) : await (await fetch('/api/events')).json();
-    ticketEvents = data.events || [];
-    if(!ticketEvents.length){
-      list.innerHTML = '<p class="muted">No matches are currently on sale. Check back soon.</p>';
-      return;
-    }
-    list.innerHTML = ticketEvents.map(ev => {
-      const d = new Date(ev.event_date);
-      const dateStr = d.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
-      const timeStr = d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
-      return `<div class="mcard" data-event-id="${ev.id}" onclick="selMatch('${ev.id}',this)"><span class="home-badge">HOME</span><div class="mcomp">${ev.competition}</div><div class="mteams-row">${teamBadge(ev.home_team)}<div class="mteams"><span>${ev.home_team}</span> vs ${ev.away_team}</div>${teamBadge(ev.away_team)}</div><div class="mdate">${dateStr} &middot; ${timeStr}</div><div class="mvenue">&#128205; ${ev.venue}</div>${prioNote(ev)}</div>`;
-    }).join('');
-
-    if(preselectEventId && ticketEvents.some(e => e.id === preselectEventId)){
-      const card = list.querySelector(`[data-event-id="${preselectEventId}"]`);
-      selMatch(preselectEventId, card);
-      goStep(2);
-    }
-
-    // Next up chronologically (the list is already sorted by kickoff) is
-    // the match the programme button offers, regardless of which one the
-    // buyer ends up selecting a seat for.
-    const soonest = ticketEvents[0];
-    if(soonest && soonest.programme_url){
-      const btn = document.getElementById('progDlBtn');
-      btn.href = soonest.programme_url;
-      btn.download = 'lobi-stars-matchday-programme.jpg';
-      btn.hidden = false;
-    }
-  }catch(err){
-    list.innerHTML = '<p class="muted">Could not load fixtures. Please refresh the page.</p>';
-  }
-}
-loadTicketEvents();
-
-function selMatch(eventId, el){
-  document.querySelectorAll('.mcard').forEach(c => c.classList.remove('sel'));
-  if(el) el.classList.add('sel');
-  tEventId = eventId;
-  const ev = ticketEvents.find(e => e.id === eventId);
-  if(!ev) return;
-  tM = `${ev.home_team} vs ${ev.away_team}`;
-  tS = ''; tPKobo = 0;
-  document.getElementById('seatCardsList').innerHTML = `
-    <div class="scard" onclick="selSeat('VIP',${ev.vip_price_kobo},this)"><img class="stic-img" src="/images/vip-siting.png" alt="VIP Sitting"/><div class="stier vip">VIP Sitting</div><div class="sprice">&#8358;<span>${(ev.vip_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Premium covered stand</div><div class="sperk">&#10022; Refreshments included</div><div class="sperk">&#10022; Priority entry</div></div>
-    <div class="scard pop" onclick="selSeat('Premium',${ev.premium_price_kobo},this)"><div class="spop-tag">Most Popular</div><img class="stic-img" src="/images/cover-stand.png" alt="Cover Stand"/><div class="stier prem">Cover Stand</div><div class="sprice">&#8358;<span>${(ev.premium_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; Covered stand</div><div class="sperk">&#10022; Good sightlines</div></div>
-    <div class="scard" onclick="selSeat('Regular',${ev.regular_price_kobo},this)"><img class="stic-img" src="/images/popular-stand.png" alt="Popular Stand"/><div class="stier reg">Popular Stand</div><div class="sprice">&#8358;<span>${(ev.regular_price_kobo/100).toLocaleString()}</span></div><div class="sperk">&#10022; General admission</div><div class="sperk">&#10022; Open terrace</div></div>
-  `;
-  updSum();
-}
-function selSeat(s, pKobo, el){
-  document.querySelectorAll('.scard').forEach(c => c.classList.remove('sel'));
-  el.classList.add('sel');
-  tS = s; tPKobo = pKobo;
-  updSum();
-  // Brief pause so the selected checkmark/highlight is visible before the
-  // page advances on its own -- picking a seat category is now enough to
-  // move on, no separate "Continue" click required for this step.
-  setTimeout(() => goStep(3), 400);
-}
-function chgQty(d){
-  tQ = Math.max(1, Math.min(10, tQ + d));
-  document.getElementById('qtyNum').textContent = tQ;
-  updSum();
-}
-const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' };
-function updSum(){
-  document.getElementById('sumMatch').textContent = tM || '—';
-  document.getElementById('sumSeat').textContent = tS ? TIER_LABELS[tS] : '—';
-  document.getElementById('sumQty').textContent = tQ;
-  document.getElementById('sumTotal').textContent = tPKobo ? '₦' + ((tPKobo/100) * tQ).toLocaleString() : '₦ —';
-}
-function goStep(n){
-  [1, 2, 3].forEach(i => {
-    document.getElementById('tp' + i).classList.toggle('active', i === n);
-    const sn = document.getElementById('sn' + i), sl = document.getElementById('sl' + i);
-    sn.className = 'tsn' + (i < n ? ' done' : i === n ? ' act' : '');
-    if(sl) sl.className = 'tsl' + (i === n ? ' act' : '');
-  });
-  window.scrollTo({top: 0, behavior: 'smooth'});
-}
-async function confirmBk(){
-  const errEl = document.getElementById('tix-error');
-  const btn = document.getElementById('confirmBkBtn');
-  errEl.style.display = 'none';
-
-  const fn = document.getElementById('t-fn').value.trim();
-  const ln = document.getElementById('t-ln').value.trim();
-  const email = document.getElementById('t-em').value.trim();
-  const emailConfirm = document.getElementById('t-em2').value.trim();
-  const phone = document.getElementById('t-ph').value.trim();
-
-  if(!tEventId || !tS){ errEl.textContent = 'Please select a match and seat category.'; errEl.style.display = 'block'; return; }
-  if(!fn || !ln || !email || !emailConfirm || !phone){ errEl.textContent = 'Please fill in all of your details.'; errEl.style.display = 'block'; return; }
-  if(email.toLowerCase() !== emailConfirm.toLowerCase()){ errEl.textContent = 'Your email addresses do not match. Please check and try again.'; errEl.style.display = 'block'; return; }
-
-  btn.disabled = true; btn.textContent = 'Redirecting to payment...';
-  try{
-    const res = await fetch('/api/checkout', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({eventId: tEventId, tier: tS, quantity: tQ, buyerName: `${fn} ${ln}`, buyerEmail: email, buyerPhone: phone}),
+  function draw() {
+    var list = $('tkList'); list.replaceChildren();
+    if (!matches.length) { list.append(el('li', { class: 'tk-empty' }, 'No home matches yet. See the ', el('a', { href: '/fixtures/', text: 'fixtures' }), '.')); return; }
+    matches.forEach(function (m) {
+      var can = m.state === 'on_sale';
+      var cb = el('input', { type: 'checkbox', 'aria-label': 'Buy tickets: ' + m.homeTeam + ' vs ' + m.awayTeam, disabled: !can });
+      var tier = el('select', { 'aria-label': 'Stand' });
+      m.tiers.forEach(function (t) { tier.add(new Option(t.label + ' · ' + naira(t.priceKobo) + (t.left !== null ? ' · ' + t.left + ' left' : ''), t.tier, false, false)); if (t.left === 0) tier.options[tier.options.length - 1].disabled = true; });
+      var firstOpen = m.tiers.find(function (t) { return t.left !== 0; }); if (firstOpen) tier.value = firstOpen.tier;
+      var qty = el('select', { 'aria-label': 'Number of tickets' });
+      var fillQty = function () { var t = m.tiers.find(function (x) { return x.tier === tier.value; }); var max = Math.min(m.maxPerOrder, t && t.left !== null ? t.left : m.maxPerOrder); var cur = Number(qty.value) || 1; qty.replaceChildren(); for (var i = 1; i <= Math.max(1, max); i++) qty.add(new Option(i + ' ticket' + (i === 1 ? '' : 's'), i, false, i === Math.min(cur, max))); };
+      fillQty();
+      var pick = el('div', { class: 'tk-pick', hidden: true }, el('label', { class: 'tk-f' }, 'Stand', tier), el('label', { class: 'tk-f' }, 'Tickets', qty));
+      var when = new Date(m.kickoff);
+      var date = when.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + when.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }) + ' WAT';
+      var low = m.tiers.length ? Math.min.apply(null, m.tiers.map(function (t) { return t.priceKobo; })) : 0;
+      var left = m.tiers.some(function (t) { return t.left !== null; }) ? m.tiers.reduce(function (s, t) { return s + (t.left || 0); }, 0) : null;
+      var stateText = m.state === 'not_on_sale' && m.opensAt ? 'On sale from ' + new Date(m.opensAt).toLocaleDateString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short' }) : STATE[m.state];
+      var row = el('li', { class: 'tk-row' + (can ? '' : ' off') },
+        el('label', { class: 'tk-check' }, cb),
+        el('div', {},
+          el('div', { class: 'tk-head' }, el('b', { text: (m.matchday ? 'Matchday ' + m.matchday + ': ' : '') + 'Lobi Stars vs ' + m.awayTeam.replace(/\s+FC$/, '') }), stateText ? el('span', { class: 'tk-state' + (m.state === 'sold_out' ? ' out' : ''), text: stateText }) : null),
+          el('div', { class: 'tk-meta', text: date + ' · ' + m.venue + (can && low ? ' · from ' + naira(low) : '') + (can && left !== null ? ' · ' + left + ' left' : '') }),
+          pick));
+      var r = { m: m, cb: cb, tier: tier, qty: qty, row: row, pick: pick };
+      cb.addEventListener('change', function () { pick.hidden = !cb.checked; row.classList.toggle('on', cb.checked); summary(); });
+      tier.addEventListener('change', function () { fillQty(); summary(); });
+      qty.addEventListener('change', summary);
+      rows.set(m.id, r);
+      list.append(row);
+      if (pre && pre === m.id && can) { cb.checked = true; pick.hidden = false; row.classList.add('on'); }
     });
-    const data = await res.json();
-    if(!res.ok || !data.authorizationUrl){
-      throw new Error(data.error || 'Could not start payment.');
-    }
-    window.location.href = data.authorizationUrl;
-  }catch(err){
-    console.error('Checkout failed:', err);
-    errEl.textContent = err.message || 'Something went wrong. Please try again.';
-    errEl.style.display = 'block';
-    btn.disabled = false; btn.textContent = 'Confirm & Pay →';
+    summary();
   }
-}
+
+  function selected() { return Array.from(rows.values()).filter(function (r) { return r.cb.checked; }); }
+  function set(r, on) { if (r.cb.disabled) return; r.cb.checked = on; r.pick.hidden = !on; r.row.classList.toggle('on', on); }
+  $('selAll').addEventListener('click', function () { rows.forEach(function (r) { set(r, true); }); summary(); });
+  $('selNext3').addEventListener('click', function () { var n = 0; rows.forEach(function (r) { var on = !r.cb.disabled && n < 3; if (on) n++; set(r, on); }); summary(); });
+  $('selNone').addEventListener('click', function () { rows.forEach(function (r) { set(r, false); }); summary(); });
+  $('allTier').addEventListener('change', function () { var v = this.value; if (!v) return; selected().forEach(function (r) { var o = Array.from(r.tier.options).find(function (x) { return x.value === v && !x.disabled; }); if (o) { r.tier.value = v; r.tier.dispatchEvent(new Event('change')); } }); summary(); });
+
+  function summary() {
+    var sel = selected(), total = 0, lines = $('sumLines');
+    lines.replaceChildren();
+    if (!sel.length) lines.append(el('li', { class: 'tk-muted', text: 'No matches selected yet.' }));
+    var basket = sel.map(function (r) {
+      var t = r.m.tiers.find(function (x) { return x.tier === r.tier.value; }), q = Number(r.qty.value) || 1, sub = t.priceKobo * q;
+      total += sub;
+      lines.append(el('li', {}, el('span', { text: 'Lobi Stars vs ' + r.m.awayTeam.replace(/\s+FC$/, '') + ' · ' + t.label + ' × ' + q }), el('b', { text: naira(sub) })));
+      return { eventId: r.m.id, tier: t.tier, quantity: q, unitKobo: t.priceKobo };
+    });
+    $('sumTotal').textContent = naira(total);
+    $('tkBar').hidden = !sel.length;
+    $('barTotal').textContent = naira(total);
+    $('barCount').textContent = sel.length + ' match' + (sel.length === 1 ? '' : 'es');
+    $('payBtn').disabled = !sel.length;
+    $('payBtn').textContent = sel.length ? 'Pay ' + naira(total) + ' with Paystack' : 'Pay with Paystack';
+    // Season Ticket saving: every remaining home match on sale, one stand, same number of tickets.
+    var onSale = matches.filter(function (m) { return m.state === 'on_sale'; }).map(function (m) { return m.id; });
+    var s = $('sumSeason'); s.hidden = true;
+    if (season && season.enabled && basket.length && onSale.every(function (id) { return basket.some(function (b) { return b.eventId === id; }); })) {
+      var tiers = Array.from(new Set(basket.map(function (b) { return b.tier; }))), qs = Array.from(new Set(basket.map(function (b) { return b.quantity; })));
+      var st = tiers.length === 1 && qs.length === 1 ? (season.tiers || []).find(function (t) { return t.tier === tiers[0]; }) : null;
+      if (st && st.priceKobo * qs[0] < total) { s.replaceChildren('Tip: a ', el('a', { href: '/season-tickets/', text: 'Season Ticket' }), ' covers every home match for ' + naira(st.priceKobo * qs[0]) + ' (save ' + naira(total - st.priceKobo * qs[0]) + ').'); s.hidden = false; }
+    }
+    return basket;
+  }
+
+  function load() {
+    fetch('/api/tickets/catalogue', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (d) {
+      matches = d.matches || []; rows.clear(); draw();
+    }).catch(function () { $('tkList').replaceChildren(el('li', { class: 'tk-empty' }, 'The matches could not be loaded. Please refresh the page.')); });
+  }
+  fetch('/api/season-tickets').then(function (r) { return r.json(); }).then(function (d) {
+    season = d; summary();
+    if (d.enabled && d.tiers && d.tiers.length) { $('seasonBannerText').textContent = 'Every home match of the ' + d.season + ' season, from ' + naira(Math.min.apply(null, d.tiers.map(function (t) { return t.priceKobo; }))) + '.'; $('seasonBanner').hidden = false; }
+  }).catch(function () {});
+  load();
+
+  $('buyForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = this, err = $('buyErr'); err.textContent = '';
+    var lines = summary().map(function (l) { return { eventId: l.eventId, tier: l.tier, quantity: l.quantity }; });
+    if (!lines.length) { err.textContent = 'Tick at least one match.'; return; }
+    var tokenEl = f.querySelector('[name="cf-turnstile-response"]');
+    $('payBtn').disabled = true;
+    fetch('/api/tickets/basket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines: lines, buyerName: f.buyerName.value, buyerEmail: f.buyerEmail.value, buyerPhone: f.buyerPhone.value, turnstileToken: tokenEl ? tokenEl.value : '' }) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        if (res.ok && res.d.authorizationUrl) { location.href = res.d.authorizationUrl; return; }
+        err.textContent = res.d.error || 'Something went wrong. Please try again.';
+        // A match that just sold out: untick it so the rest can be paid in one click.
+        if (res.d.soldOut && res.d.eventId && rows.get(res.d.eventId)) { set(rows.get(res.d.eventId), false); summary(); load(); }
+        if (window.turnstile && window.turnstile.reset) window.turnstile.reset();
+        $('payBtn').disabled = !selected().length;
+      })
+      .catch(function () { err.textContent = 'No connection. Please try again.'; $('payBtn').disabled = false; });
+  });
+})();
 </script>

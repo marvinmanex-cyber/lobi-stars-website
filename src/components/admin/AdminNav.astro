@@ -53,7 +53,8 @@ const CATEGORIES: Cat[] = [
     { id: 'members', label: 'Members', href: '/admin/members/', area: 'fans' },
   ] },
   { id: 'commerce', icon: '🛒', label: 'Commerce', color: '#F97316', items: [
-    { id: 'scan', label: 'Ticket Scanner', href: '/scan/', area: 'commerce', ext: true },
+    { id: 'tickets', label: 'Match Tickets', href: '/admin/tickets/', area: 'commerce', hint: 'Prices, capacity, sale times and on/off per home match; orders, refunds, sales' },
+    { id: 'scan', label: 'Ticket Scanner', href: '/admin/tickets/scan/', area: 'commerce' },
     { id: 'season-tickets', label: 'Season Tickets', href: '/admin/season-tickets/', area: 'commerce', hint: 'Prices, how many per stand, sales, cancel a season ticket' },
     { id: 'kitchen', label: 'Kitchen Screen', href: '/admin/kitchen/', area: 'kitchen', hint: 'Full-screen app for the kitchen: accept, cooking, ready' },
     { id: 'food-live', label: 'Food: Live Order Board', href: '/admin/food-orders/live/', area: 'commerce', hint: 'Kitchen and runners on matchday' },

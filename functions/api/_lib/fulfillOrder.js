@@ -7,7 +7,7 @@ import { recordServerEvent } from './analytics.js';
 // for the same order (e.g. from both the webhook and the success-page
 // verify call) -- if it's already paid, this is a no-op that just returns
 // the existing tickets.
-export async function fulfillOrder(env, order, waitUntil) {
+export async function fulfillOrder(env, order, waitUntil, { email = true } = {}) {
   if (order.payment_status === 'paid') {
     const { results } = await env.DB.prepare(`SELECT * FROM tickets WHERE order_id = ?`).bind(order.id).all();
     return results;
@@ -44,6 +44,9 @@ export async function fulfillOrder(env, order, waitUntil) {
   await captureContact(env, { source: 'ticket_buyer', refTable: 'orders', refId: order.id, email: order.buyer_email, phone: order.buyer_phone, firstName: name.firstName, surname: name.surname, label: order.event_id });
   await recordServerEvent(env, 'ticket_purchase', order.event_id);
   const eventRow = await env.DB.prepare(`SELECT * FROM events WHERE id = ?`).bind(order.event_id).first();
+
+  // Multi-match orders (league_ticket_orders) send one email for everything instead.
+  if (!email) return tickets;
 
   const sendConfirmation = () =>
     sendEmail(env, {

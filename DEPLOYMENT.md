@@ -693,6 +693,42 @@ password — only accounts with write access to this repo can sign in at
 
 ---
 
+## Match tickets: several matches in one payment (13 October 2026)
+
+**No migration to run.** The two new tables create themselves the first time
+the tickets pages are used (`functions/api/_lib/ticketShop.js`):
+
+- `league_ticket_settings`: one row per event (seats per stand, sale open/close, most per order, on sale).
+- `league_ticket_orders`: one row per basket (reference `LSBAS-…`, one Paystack payment).
+  Each match in the basket is a normal row in `orders` (`basket_id` set, reference `LSBAS-…-1`, `-2`, …),
+  so the tickets, QR codes and gate scanner are unchanged.
+
+The first time, matches that already had prices are switched on (so the seven
+matches on sale stay on sale); every new match starts **off**.
+
+**Secrets (already in the list above):** `PAYSTACK_SECRET_KEY` (the live key
+once testing is done), `RESEND_API_KEY` + `RESEND_FROM`, `TURNSTILE_SECRET_KEY`
+(and the site key in `src/data/fan-settings.json`), `STAFF_SCAN_CODE`.
+
+**Webhook:** the same URL as before, `https://lobistarsfc.com/api/paystack-webhook`.
+It checks the amount and currency and is safe to receive twice (tickets are
+only issued once; the email is only sent once).
+
+**No oversell:** each stand's seats are taken in one SQL statement that only
+inserts the order if sold + held (unpaid orders less than 30 minutes old) + wanted
+fits the capacity.
+
+**Access:** `/admin/tickets` and `/api/admin/tickets/*` use the website's own
+admin login and roles (Super Admin, Commercial; the scanner also Matchday).
+No Cloudflare Access rule is needed.
+
+**Endpoints:** `GET /api/tickets/catalogue`, `POST|GET /api/tickets/basket`,
+`POST /api/tickets/lookup` (5 per 15 minutes per IP, 20 a day per email),
+`/api/admin/tickets` (sales), `…/match/:id` (PUT settings), `…/bulk`,
+`…/orders` (search), `…/orders/:id/resend|refund`, `…/export.csv`.
+
+**Tests:** `tests/tickets.unit.test.mjs`, `tests/tickets.api.test.mjs` (Paystack fake mode only).
+
 ## Ticketing system setup (Cloudflare D1 + Paystack + Resend)
 
 This is new infrastructure, separate from the static site. You'll need

@@ -35,7 +35,7 @@ export async function onRequestPost({ request, env }) {
   ).bind(cleanId).first();
   if (forMatch && forMatch.status === 'valid' && lagosDay(forMatch.event_date) !== lagosDay(Date.now())) {
     return Response.json({
-      valid: false,
+      valid: false, code: 'wrong_match',
       reason: `Wrong match: this ticket is for ${forMatch.home_team} v ${forMatch.away_team} on ${matchDate(forMatch.event_date)}`,
     }, { status: 409 });
   }
@@ -54,19 +54,21 @@ export async function onRequestPost({ request, env }) {
        WHERE t.id = ?`
     ).bind(cleanId).first();
 
-    return Response.json({ valid: true, ticket });
+    return Response.json({ valid: true, code: 'valid', ticket });
   }
 
   // Not updated -- figure out why, for a clear message at the gate.
   const existing = await env.DB.prepare(`SELECT status, used_at FROM tickets WHERE id = ?`).bind(cleanId).first();
 
   if (!existing) {
-    return Response.json({ valid: false, reason: 'Ticket not found' }, { status: 404 });
+    return Response.json({ valid: false, code: 'not_found', reason: 'Ticket not found' }, { status: 404 });
   }
   if (existing.status === 'used') {
-    return Response.json({ valid: false, reason: `Already used at ${existing.used_at}` }, { status: 409 });
+    const at = new Date(String(existing.used_at).replace(' ', 'T') + 'Z');
+    const when = Number.isNaN(at.getTime()) ? existing.used_at : at.toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WAT';
+    return Response.json({ valid: false, code: 'used', usedAt: existing.used_at, reason: `Already used: scanned ${when}` }, { status: 409 });
   }
-  return Response.json({ valid: false, reason: 'Ticket void' }, { status: 409 });
+  return Response.json({ valid: false, code: 'void', reason: 'Ticket cancelled (refunded or void)' }, { status: 409 });
 }
 
 // Calendar day in Nigeria (UTC+1), e.g. '2026-10-12'.

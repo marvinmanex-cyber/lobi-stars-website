@@ -108,13 +108,15 @@ import Layout from '../layouts/Layout.astro';
         scanCountEl.textContent = `${scanCount} ticket${scanCount === 1 ? '' : 's'} scanned this session`;
         result.style.background = 'rgba(76,175,80,.15)';
         resultIcon.textContent = '✅';
-        resultTitle.textContent = 'ADMIT';
+        resultTitle.textContent = 'VALID: ADMIT';
         // Plain text only: the buyer's name is typed by the buyer.
         resultDetail.replaceChildren(`${data.ticket.buyer_name} · ${data.ticket.tier}`, document.createElement('br'), `${data.ticket.home_team} vs ${data.ticket.away_team}`);
       } else {
-        result.style.background = 'rgba(212,32,43,.15)';
-        resultIcon.textContent = '⛔';
-        resultTitle.textContent = 'DO NOT ADMIT';
+        // Amber for a ticket to another match, red for everything else.
+        const wrong = data.code === 'wrong_match';
+        result.style.background = wrong ? 'rgba(245,158,11,.22)' : 'rgba(212,32,43,.15)';
+        resultIcon.textContent = wrong ? '⚠️' : '⛔';
+        resultTitle.textContent = wrong ? 'WRONG MATCH' : data.code === 'used' ? 'ALREADY USED' : 'DO NOT ADMIT';
         resultDetail.textContent = data.reason || 'Invalid ticket';
       }
     } catch (err) {

@@ -18,8 +18,8 @@ export async function renderLeaguePage(request, env, which) {
         const [events, previews] = await Promise.all([publicMatches(env).catch(() => []), which === 'fixtures' ? previewSlugs(request, env) : {}]);
         const extras = extraMatches(events, league);
         // Tickets show only for matches on sale (prices set in Match Tickets & Settings).
-        const onSale = new Map(events.map(e => [e.id, !!e.on_sale]));
-        for (const f of league.fixtures) if (f.event_id) f.on_sale = onSale.get(f.event_id) || false;
+        const byEvent = new Map(events.map(e => [e.id, e]));
+        for (const f of league.fixtures) if (f.event_id) { const e = byEvent.get(f.event_id); f.on_sale = !!e?.on_sale; f.ticket = e?.ticket || null; }
         html = which === 'fixtures' ? fixturesPage(league, extras, url, previews) : resultsPage(league, extras, url);
       }
     }

@@ -95,6 +95,19 @@ for a different fixture: don't let them in on it. That ticket is not used up
 and still works on its own match day. Send the fan to the ticket desk if they
 need a ticket for today.
 
+The scanner screen has three answers for match tickets (the scanner is also
+at Admin › Matchday › Ticket Scanner, lobistarsfc.com/admin/tickets/scan):
+
+| Screen | Means | Do |
+|---|---|---|
+| **Green: VALID: ADMIT** | Right match, not used yet | Let the fan in. The ticket is now used. |
+| **Red: ALREADY USED** | Scanned before; the time is shown ("scanned 3:41 PM WAT") | Don't let them in. Call the supervisor if the fan says it's their first time. |
+| **Amber: WRONG MATCH** | A ticket for another match | Don't let them in on it; it still works on its own match day. |
+| **Red: DO NOT ADMIT** | Not a real ticket, or cancelled (refunded) | Don't let them in. Send them to the ticket desk. |
+
+A fan who bought several matches in one payment has one QR code per match per
+person: they must show the code for **today's** match.
+
 **Sharing the match page:** in Admin, Matchday, Share any page, type the opponent's name, press Check, then use Post now (Telegram, Facebook) or Open post window and Mark as posted. Fans can also press Share on the match page.
 
 **Postponed?** In **League → Fixtures** press **Postpone** on the match and

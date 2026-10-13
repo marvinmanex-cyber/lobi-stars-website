@@ -4,6 +4,8 @@ import { ensureTable } from './_lib/matchCentre.js';
 import { readSession } from './_lib/session.js';
 import { membershipOf } from './_lib/membership.js';
 import { seasonConfig } from './_lib/seasonConfig.js';
+import { catalogue, holdLineStatement } from './_lib/ticketShop.js';
+import { priceBasket } from './_lib/tickets/rules.js';
 
 const TIER_COLUMN = {
   VIP: 'vip_price_kobo',
@@ -57,15 +59,18 @@ export async function onRequestPost({ request, env }) {
     }
   }
 
-  const unitPriceKobo = event.unit_price_kobo;
+  // Same rules as the Tickets page: on/off switch, sale times, home matches only, seats left.
+  const priced = priceBasket([{ eventId: String(eventId), tier, quantity: qty }], await catalogue(env));
+  if (!priced.ok) return Response.json({ error: priced.error, soldOut: !!priced.soldOut }, { status: priced.soldOut ? 409 : 400 });
+
+  const unitPriceKobo = priced.lines[0].unitKobo;
   const totalKobo = unitPriceKobo * qty;
   const orderId = randomId('LS-ORD');
   const reference = randomId('LSPAY');
 
-  await env.DB.prepare(
-    `INSERT INTO orders (id, event_id, buyer_name, buyer_email, buyer_phone, tier, quantity, unit_price_kobo, total_kobo, paystack_reference, payment_status)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`
-  ).bind(orderId, eventId, buyerName, buyerEmail, buyerPhone, tier, qty, unitPriceKobo, totalKobo, reference).run();
+  // Holds the seats only if they still fit (one statement: no overselling).
+  const held = await holdLineStatement(env.DB, { orderId, basketId: null, eventId, tier, quantity: qty, unitKobo: unitPriceKobo, buyer: { name: String(buyerName).slice(0, 80), email: buyerEmail, phone: buyerPhone }, reference }).run();
+  if (!held.meta.changes) return Response.json({ error: 'Sorry, that stand has just sold out.', soldOut: true }, { status: 409 });
 
   const origin = new URL(request.url).origin;
 

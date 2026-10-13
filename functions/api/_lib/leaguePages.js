@@ -96,7 +96,13 @@ function matchCard(f, { results = false, now = Date.now(), previews = {} } = {})
   const upcoming = !done && !['cancelled', 'abandoned'].includes(f.status) && f.status !== 'postponed';
   const preview = iso ? previews[toLagos(iso).date] : null;
   if (upcoming && lobi && preview) acts.push(`<a class="lg-btn" href="/news/${esc(preview)}/">Match preview</a>`);
-  if (upcoming && lobiHome && f.on_sale && f.kickoff_at && Date.parse(f.kickoff_at) > now - 2 * 3600e3) acts.push(`<a class="lg-btn primary" href="/tickets?event=${encodeURIComponent(f.event_id)}">Tickets</a>`);
+  // Ticket state: Buy ticket / Sold out / not on sale yet (home), Away fixture (away).
+  const ts = f.ticket?.state || (f.on_sale ? 'on_sale' : 'not_on_sale');
+  if (upcoming && lobiHome && f.kickoff_at && Date.parse(f.kickoff_at) > now) {
+    if (ts === 'on_sale') acts.unshift(`<a class="lg-btn primary" href="/tickets/?event=${encodeURIComponent(f.event_id)}">Buy ticket</a>`);
+    else if (ts === 'sold_out') acts.unshift('<span class="lg-chip bad lg-tix">Sold out</span>');
+    else if (ts === 'not_on_sale') acts.unshift('<span class="lg-chip lg-tix">Tickets not on sale yet</span>');
+  } else if (upcoming && lobiAway) acts.unshift('<span class="lg-chip lg-tix">Away fixture</span>');
   if (upcoming && f.kickoff_at && !f.extra) acts.push(`<a class="lg-btn" href="/api/league/calendar.ics?fixture=${encodeURIComponent(f.id)}" download>Add to calendar</a>`);
   const winnerName = winner === 'h' ? f.home?.name : winner === 'a' ? f.away?.name : '';
   const label = done ? `${f.home?.name} ${f.home_goals}, ${f.away?.name} ${f.away_goals}${winnerName ? `. ${winnerName} won` : '. A draw'}` : `${f.home?.name} vs ${f.away?.name}`;
@@ -121,7 +127,7 @@ export function nextMatchBanner(f) {
 <div class="lg-next-teams"><span class="lg-next-team">${crest(f.home, 56)}<b>${teamName(f.home)}</b></span><span class="lg-next-vs">${live ? `${esc(f.home_goals ?? 0)} – ${esc(f.away_goals ?? 0)}` : 'vs'}</span><span class="lg-next-team">${crest(f.away, 56)}<b>${teamName(f.away)}</b></span></div>
 <p class="lg-next-when">${esc(formatDate(f.kickoff_at))} · ${esc(formatTime(f.kickoff_at))} WAT${f.venue?.name ? ` · ${esc(f.venue.name)}` : ''}</p>
 ${live ? '' : `<p class="lg-countdown" data-countdown="${esc(f.kickoff_at)}" aria-live="off"></p>`}
-<div class="lg-acts">${lobiHome && f.on_sale ? `<a class="lg-btn primary" href="/tickets?event=${encodeURIComponent(f.event_id)}">Tickets</a>` : lobiHome ? '<a class="lg-btn primary" href="/tickets/">Tickets</a>' : '<a class="lg-btn primary" href="/commentary/">Listen live</a>'}${matchUrl(f) ? `<a class="lg-btn" href="${esc(matchUrl(f))}">Match Centre</a>` : ''}${f.extra ? '' : `<a class="lg-btn" href="/api/league/calendar.ics?fixture=${encodeURIComponent(f.id)}" download>Add to calendar</a>`}</div>
+<div class="lg-acts">${lobiHome && f.on_sale ? `<a class="lg-btn primary" href="/tickets/?event=${encodeURIComponent(f.event_id)}">Buy ticket</a>` : lobiHome ? '<span class="lg-chip lg-tix">Tickets not on sale yet</span>' : '<span class="lg-chip lg-tix">Away fixture</span><a class="lg-btn primary" href="/commentary/">Listen live</a>'}${matchUrl(f) ? `<a class="lg-btn" href="${esc(matchUrl(f))}">Match Centre</a>` : ''}${f.extra ? '' : `<a class="lg-btn" href="/api/league/calendar.ics?fixture=${encodeURIComponent(f.id)}" download>Add to calendar</a>`}</div>
 </section>`;
 }
 

@@ -1,0 +1,48 @@
+---
+// Shows the tickets of an order, grouped by match: one QR code per ticket,
+// the match, date and time (WAT), venue, stand, "Add to calendar" and the
+// gate rules. window.lsRenderTickets(container, data) where data comes from
+// /api/tickets/basket or /api/tickets/lookup. Values are set with textContent.
+---
+<style is:global>
+  .tv-match { border: 1.5px solid var(--d4); border-radius: 14px; padding: 16px; margin-bottom: 16px; background: var(--d2); }
+  .tv-match h2 { margin: 0 0 4px; font: 400 26px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .tv-meta { margin: 0 0 12px; color: var(--lt); font-size: 14px; line-height: 1.5; }
+  .tv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .tv-ticket { border: 2px solid #C9A227; border-radius: 12px; padding: 12px; text-align: center; background: #fff; color: #0d1a33; }
+  .tv-ticket img { width: 160px; height: 160px; display: block; margin: 0 auto 8px; }
+  .tv-ticket code { display: block; font-size: 12px; word-break: break-all; }
+  .tv-ticket b { display: block; font-size: 13px; margin-top: 4px; }
+  .tv-ticket.void { opacity: .5; border-color: #A3161B; }
+  .tv-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .tv-acts a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1.5px solid var(--d4); border-radius: 4px; color: var(--white); text-decoration: none; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .tv-rules { background: var(--d3); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.55; margin: 0 0 16px; }
+</style>
+<script is:inline>
+(function () {
+  if (window.lsRenderTickets) return;
+  var TZ = 'Africa/Lagos';
+  var STAND = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' };
+  var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else n.setAttribute(k, v); }); for (var i = 2; i < arguments.length; i++) if (arguments[i] != null) n.append(arguments[i]); return n; };
+  window.lsRenderTickets = function (box, data) {
+    var count = data.matches.reduce(function (s, m) { return s + m.tickets.length; }, 0);
+    var parts = [el('p', { class: 'tv-rules' }, el('b', { text: 'At the gate: ' }), 'each QR code admits one person, once, and only on the day of its match. Show it on your phone (a screenshot works) or printed. Keep it private: anyone with the code can use it.')];
+    if (data.refunded) parts.unshift(el('p', { class: 'tv-rules', text: 'This order was refunded: its tickets are cancelled.' }));
+    data.matches.forEach(function (m) {
+      var d = new Date(m.kickoff);
+      var when = d.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ', kick-off ' + d.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }) + ' (WAT)';
+      var grid = el('div', { class: 'tv-grid' });
+      m.tickets.forEach(function (t, i) {
+        grid.append(el('div', { class: 'tv-ticket' + (t.status === 'void' ? ' void' : '') },
+          el('img', { src: '/api/qr/' + encodeURIComponent(t.id), alt: 'QR code for ticket ' + (i + 1), width: 160, height: 160, loading: 'lazy' }),
+          el('code', { text: t.id }), el('b', { text: (STAND[m.tier] || m.tier) + (t.status === 'used' ? ' · used' : t.status === 'void' ? ' · cancelled' : '') })));
+      });
+      var acts = el('div', { class: 'tv-acts' });
+      if (m.fixtureId) acts.append(el('a', { href: '/api/league/calendar.ics?fixture=' + m.fixtureId, text: 'Add to calendar' }));
+      parts.push(el('section', { class: 'tv-match' }, el('h2', { text: m.homeTeam + ' vs ' + m.awayTeam }), el('p', { class: 'tv-meta', text: when + ' · ' + m.venue + ' · ' + m.tickets.length + ' ticket' + (m.tickets.length === 1 ? '' : 's') }), grid, acts));
+    });
+    box.replaceChildren.apply(box, parts);
+    return count;
+  };
+})();
+</script>

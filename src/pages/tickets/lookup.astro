@@ -1,0 +1,54 @@
+---
+// /tickets/lookup -- re-open your tickets with the email you paid with and
+// the order reference from your email (rate-limited: /api/tickets/lookup).
+import Layout from '../../layouts/Layout.astro';
+import TicketsView from '../../components/tickets/TicketsView.astro';
+---
+<Layout title="Find My Tickets | Lobi Stars Football Club" description="Lost your ticket email? Re-open your Lobi Stars FC match tickets with your email address and order reference." noindex>
+  <div class="page-hero wrap">
+    <div class="stag">Tickets</div>
+    <h1 class="stitle">Find my <span class="r">tickets</span></h1>
+    <div class="divr"></div>
+  </div>
+  <div class="page-content wrap">
+    <form class="lk" id="lk" novalidate>
+      <label>Email you paid with<input name="email" type="email" autocomplete="email" required maxlength="254" /></label>
+      <label>Order reference (in your ticket email, e.g. LSBAS-…)<input name="reference" required maxlength="40" autocapitalize="characters" /></label>
+      <p class="lk-err" id="lkErr" role="alert"></p>
+      <button class="btn-p" type="submit">Show my tickets</button>
+    </form>
+    <p class="lk-msg" id="lkMsg" role="status" aria-live="polite"></p>
+    <div id="lkTickets"></div>
+  </div>
+  <TicketsView />
+</Layout>
+
+<style>
+  .lk { display: grid; gap: 12px; max-width: 520px; margin-bottom: 24px; }
+  .lk label { display: grid; gap: 6px; font-weight: 700; font-size: 14px; }
+  .lk input { min-height: 46px; border: 1.5px solid var(--d4); border-radius: 8px; padding: 8px 12px; font: 400 16px 'Barlow', sans-serif; background: var(--d2); color: var(--white); }
+  .lk .btn-p { min-height: 48px; justify-self: start; }
+  .lk-err { margin: 0; color: #A3161B; font-weight: 700; }
+  .lk-err:empty, .lk-msg:empty { display: none; }
+  .lk-msg { font-weight: 600; }
+</style>
+
+<script is:inline>
+(function () {
+  var f = document.getElementById('lk');
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = document.getElementById('lkErr'); err.textContent = '';
+    var btn = f.querySelector('button'); btn.disabled = true;
+    fetch('/api/tickets/lookup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: f.email.value, reference: f.reference.value }) })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (res) {
+        btn.disabled = false;
+        if (!res.ok) { err.textContent = res.d.error || 'Something went wrong.'; return; }
+        var n = window.lsRenderTickets(document.getElementById('lkTickets'), res.d);
+        document.getElementById('lkMsg').textContent = n + ' ticket' + (n === 1 ? '' : 's') + ' for order ' + res.d.reference + '.';
+      })
+      .catch(function () { btn.disabled = false; err.textContent = 'No connection. Please try again.'; });
+  });
+})();
+</script>
