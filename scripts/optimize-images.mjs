@@ -139,7 +139,8 @@ async function badge(size) {
 async function iconOnBackground(size, inner, background) {
   return sharp({ create: { width: size, height: size, channels: 4, background } })
     .composite([{ input: await badge(Math.round(size * inner)), gravity: 'center' }])
-    .png();
+    // A 256-colour palette looks the same for the badge at about a third of the size.
+    .png({ palette: true, quality: 90, effort: 10, compressionLevel: 9 });
 }
 
 async function makeIcons() {
