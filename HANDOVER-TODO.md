@@ -96,7 +96,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | L2 | **Rules to confirm** | The table uses 3 points for a win, 1 for a draw, and separates level clubs by goal difference, goals scored, wins, then head-to-head. Confirm this matches the NNL rules for 2026/27, and send the promotion/relegation places if you want coloured zones. |
 | L3 | **Who may change rules** | Optional: the staff emails allowed to change rules, adjustments, tie decisions, the import and undo (setting `league_admin_emails`); otherwise every League user can. |
 | L4 | **First real results** | From Matchday 1 (Sat 7 / Sun 8 Nov 2026), enter all four results after each matchday. |
-| L5 | **The 23 October match** | The trial "Lobi Stars vs Kada Warriors, Fri 23 Oct" is hidden automatically on the first visit after deploying (it isn't in the official list); if tickets had been sold for it, it stays and shows in League History instead. |
+| L5 | **The 23 October match** | The trial "Lobi Stars vs Kada Warriors, Fri 23 Oct" isn't in the official list. It has **paid ticket orders**, so it was left on the site. If those were test purchases, untick *Visible on the site* for it in Admin › Match Tickets & Settings (or tell me to). |
 
 ## E. Legal
 
