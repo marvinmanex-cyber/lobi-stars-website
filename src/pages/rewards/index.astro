@@ -1,0 +1,109 @@
+---
+// /rewards -- Lobi Stars Rewards (Phase 1: what it is and how to join).
+// Signed-in fans join with one click after accepting the Rewards Terms; guests
+// are sent to the normal registration (with "Also join Lobi Stars Rewards")
+// or login. Until the programme is switched on (Admin › Rewards, setting
+// "live"), this page is unlisted and kept out of search engines; staff can
+// preview it with ?preview=1.
+// TODO (Phase 5): full landing page (earning table, tiers, catalogue preview, partners).
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Lobi Stars Rewards | Lobi Stars Football Club" description="Lobi Stars Rewards: support the Pride, earn Pride Points and enjoy rewards. Free for Lobi Stars FC fans." noindex>
+  <section class="rw-hero" aria-labelledby="rwTitle">
+    <div class="rw-in">
+      <p class="rw-kicker">Free for Lobi Stars fans</p>
+      <h1 id="rwTitle">Lobi Stars <span>Rewards</span></h1>
+      <p class="rw-sub">Support the Pride, earn rewards.</p>
+    </div>
+  </section>
+
+  <div class="wrap rw-page">
+    <ol class="rw-steps" aria-label="How it works">
+      <li><b>1</b><h2>Join free</h2><p>Use your Lobi Stars fan account. One click if you already have one.</p></li>
+      <li><b>2</b><h2>Earn Pride Points</h2><p>On tickets, jerseys, matchday food and membership bought on lobistarsfc.com, and at home matches.</p></li>
+      <li><b>3</b><h2>Enjoy rewards</h2><p>Swap your points for rewards such as airtime, data, tickets and matchday treats.</p></li>
+    </ol>
+
+    <section class="rw-join" id="rwJoin" aria-live="polite">
+      <p class="rw-muted">Checking your account…</p>
+    </section>
+
+    <section class="rw-faq" aria-labelledby="rwFaq">
+      <h2 id="rwFaq">Questions</h2>
+      <details><summary>Does it cost anything?</summary><p>No. Lobi Stars Rewards is free for anyone with a Lobi Stars FC fan account.</p></details>
+      <details><summary>When can I start earning?</summary><p>As soon as you have joined and confirmed your email address. You get welcome points straight away, and more points when you add your state of residence and date of birth to your profile.</p></details>
+      <details><summary>Can I swap points for cash?</summary><p>No. Pride Points have no cash value and cannot be transferred or sold. See the <a href="/rewards/terms/">Rewards Terms</a>.</p></details>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .rw-hero { background: radial-gradient(120% 140% at 0% 0%, #C11A1F 0%, #7A0E12 50%, #15181D 100%); color: #fff; padding: 56px 0 64px; border-bottom: 4px solid #FFC72C; }
+  .rw-in { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
+  .rw-kicker { margin: 0 0 8px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .rw-hero h1 { margin: 0; font: 400 clamp(44px, 9vw, 84px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rw-hero h1 span { color: #FFC72C; }
+  .rw-sub { margin: 10px 0 0; font-size: clamp(17px, 2.4vw, 21px); }
+  .rw-page { padding-top: 32px; padding-bottom: 64px; }
+  .rw-steps { list-style: none; margin: 0 0 28px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .rw-steps li { padding: 18px; border-radius: 14px; background: var(--d2); border: 1px solid var(--d4); }
+  .rw-steps b { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; background: #FFC72C; color: #15181D; font: 400 24px/1 'Bebas Neue', sans-serif; }
+  .rw-steps h2 { margin: 10px 0 4px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rw-steps p { margin: 0; color: var(--lt); line-height: 1.5; }
+  .rw-join { margin: 0 0 32px; padding: 20px; border-radius: 16px; border: 2px solid #C9A227; background: linear-gradient(135deg, rgba(193, 26, 31, .08), rgba(255, 199, 44, .14)); }
+  .rw-join :global(h2) { margin: 0 0 8px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rw-join :global(p) { line-height: 1.6; }
+  .rw-join :global(.rw-acts) { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .rw-join :global(.btn-p), .rw-join :global(.btn-o) { min-height: 44px; display: inline-flex; align-items: center; }
+  .rw-join :global(.rw-check) { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; }
+  .rw-join :global(.rw-check input) { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--red); }
+  .rw-join :global(a:not(.btn-p):not(.btn-o)) { color: var(--red-text); font-weight: 600; }
+  .rw-join :global(.rw-big) { font: 400 52px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .rw-join :global(.rw-err) { color: var(--red-text); font-weight: 600; margin: 4px 0 0; }
+  .rw-muted { color: var(--lt); margin: 0; }
+  .rw-faq h2 { font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rw-faq details { border-bottom: 1px solid var(--d4); padding: 12px 0; }
+  .rw-faq summary { cursor: pointer; font-weight: 700; min-height: 32px; }
+  .rw-faq a { color: var(--red-text); font-weight: 600; }
+  @media (max-width: 420px) { .rw-in { padding: 0 16px; } .rw-page { padding-left: 16px; padding-right: 16px; } }
+</style>
+
+<script is:inline>
+(function () {
+  try { if (new URLSearchParams(location.search).get('preview') === '1') localStorage.setItem('ls_rewards_preview', '1'); } catch (e) {}
+  var box = document.getElementById('rwJoin');
+  var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c != null && c !== false) n.append(c); } return n; };
+  var fmt = function (n) { return Number(n).toLocaleString('en-NG'); };
+  function load() {
+    fetch('/api/rewards/me', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(draw).catch(function () { box.replaceChildren(el('p', { class: 'rw-muted', text: 'Could not check your account just now.' })); });
+  }
+  function draw(d) {
+    if (!d.signedIn) {
+      box.replaceChildren(el('h2', { text: 'Join Lobi Stars Rewards' }),
+        el('p', { text: 'Create a free fan account (tick "Also join Lobi Stars Rewards"), or log in to join with one click.' }),
+        el('div', { class: 'rw-acts' }, el('a', { class: 'btn-p', href: '/fans/register/?next=/rewards/', text: 'Join now' }), el('a', { class: 'btn-o', href: '/fans/login/?next=/rewards/', text: 'Log in' })));
+      return;
+    }
+    if (!d.joined) {
+      var agree = el('input', { type: 'checkbox', id: 'rwAgree' }), err = el('p', { class: 'rw-err', role: 'alert' });
+      box.replaceChildren(el('h2', { text: 'Join with one click' }),
+        el('p', { text: 'Hi ' + d.firstName + '! Join free and get ' + d.bonuses.welcome + ' Pride Points to start, plus ' + d.bonuses.profile + ' more when you complete your profile.' }),
+        el('label', { class: 'rw-check', for: 'rwAgree' }, agree, el('span', {}, 'I agree to the ', el('a', { href: '/rewards/terms/', target: '_blank', text: 'Lobi Stars Rewards Terms' }), '.')),
+        err,
+        el('div', { class: 'rw-acts' }, el('button', { type: 'button', class: 'btn-p', text: 'Join Lobi Stars Rewards', onclick: function () {
+          if (!agree.checked) { err.textContent = 'Please tick "I agree to the Lobi Stars Rewards Terms".'; return; }
+          var b = this; b.disabled = true;
+          fetch('/api/rewards/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agree: true }) }).then(function (r) { return r.json().then(function (x) { return { ok: r.ok, x: x }; }); })
+            .then(function (res) { if (res.ok) load(); else { err.textContent = res.x.error || 'Could not join.'; b.disabled = false; } });
+        } })));
+      return;
+    }
+    box.replaceChildren.apply(box, [el('h2', { text: 'You are a member' }),
+      el('p', {}, 'Member number ', el('b', { text: d.memberNo })),
+      el('p', {}, el('span', { class: 'rw-big', text: fmt(d.balance) }), ' Pride Points', d.pending ? ' (' + fmt(d.pending) + ' pending)' : ''),
+      !d.verified ? el('p', { text: 'Confirm your email address (use the link we sent you) to start earning. Your welcome points are waiting.' }) : null,
+      el('div', { class: 'rw-acts' }, el('a', { class: 'btn-p', href: '/fans/account/', text: 'My account and points' }))].filter(Boolean));
+  }
+  load();
+})();
+</script>

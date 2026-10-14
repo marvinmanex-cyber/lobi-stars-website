@@ -2,6 +2,8 @@
 // /fans/account -- the fan's own account page (opened from the header's
 // account icon). Shows the digital membership card (confirmed members), the
 // membership status, and the fan's Prediction League position this season.
+// Lobi Stars Rewards: join with one click, member number, Pride Points balance,
+// profile bonus (state + date of birth) and recent activity (/api/rewards/*).
 import FanAuthShell from '../../components/fans/FanAuthShell.astro';
 ---
 <FanAuthShell title="My Account" heading="My account" description="Your Lobi Stars FC fan account." intro="">
@@ -19,6 +21,10 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
         <p class="acc-small">Show this card at the club when asked. It is only valid for the season shown.</p>
       </section>
       <div class="acc-mem" id="memStatus" hidden></div>
+      <section class="rw-box" id="rwBox" aria-labelledby="rwH" hidden>
+        <h2 class="acc-h" id="rwH">Lobi Stars Rewards</h2>
+        <div id="rwBody"></div>
+      </section>
       <dl class="acc-dl">
         <div><dt>Email</dt><dd id="accEmail"></dd></div>
         <div><dt>Email confirmed</dt><dd id="accVerified"></dd></div>
@@ -39,6 +45,25 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
     </div>
   </div>
 </FanAuthShell>
+
+<style is:global>
+  .rw-box { margin: 0 0 24px; padding: 16px; border-radius: 14px; border: 2px solid #C9A227; background: linear-gradient(135deg, rgba(193, 26, 31, .08), rgba(255, 199, 44, .14)); }
+  .rw-pts { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: baseline; margin: 4px 0 12px; }
+  .rw-pts b { font: 400 46px/1 'Bebas Neue', sans-serif; color: var(--red-text); letter-spacing: 1px; }
+  .rw-pts span { font: 700 13px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .rw-no { margin: 0; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; }
+  .rw-note { margin: 0 0 12px; padding: 10px 12px; border-radius: 8px; background: var(--d3); font-size: 14px; line-height: 1.5; }
+  .rw-form { display: grid; gap: 10px; margin: 12px 0; }
+  .rw-form .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 480px) { .rw-form .row { grid-template-columns: 1fr; } }
+  .rw-form select, .rw-form input[type=date] { width: 100%; min-height: 44px; box-sizing: border-box; padding: 0 10px; border-radius: 8px; border: 1.5px solid var(--d4); background: var(--d2); color: var(--white); font: inherit; }
+  .rw-hist { list-style: none; margin: 8px 0 12px; padding: 0; display: grid; gap: 6px; }
+  .rw-hist li { display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 8px; background: var(--d2); font-size: 14px; }
+  .rw-hist .plus { color: #0B7A2E; font-weight: 700; }
+  .rw-hist .minus { color: var(--red-text); font-weight: 700; }
+  .rw-box .btn-p { min-height: 44px; }
+  .rw-box a { color: var(--red-text); font-weight: 600; }
+</style>
 
 <style>
   .acc-hi { font-size: 18px; margin: 0 0 14px; }
@@ -124,4 +149,57 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
     await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     location.href = '/';
   });
+</script>
+
+<script is:inline>
+(function () {
+  var box = document.getElementById('rwBox'), body = document.getElementById('rwBody');
+  if (!box) return;
+  var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c != null && c !== false) n.append(c); } return n; };
+  var fmt = function (n) { return Number(n).toLocaleString('en-NG'); };
+  var post = function (url, data) { return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); }); };
+  function load() {
+    var preview = false; try { preview = localStorage.getItem('ls_rewards_preview') === '1'; } catch (e) {}
+    fetch('/api/rewards/me', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) { if (d.signedIn && (d.live || preview || d.joined)) { box.hidden = false; draw(d); } }).catch(function () {});
+  }
+  function draw(d) {
+    var parts = [];
+    if (!d.joined) {
+      var agree = el('input', { type: 'checkbox', id: 'rwAgree' });
+      var msg = el('p', { class: 'fa-err', role: 'alert' });
+      parts.push(el('p', { text: 'Earn Pride Points when you buy tickets, jerseys and matchday food on lobistarsfc.com and when you come to home matches, then swap them for rewards. Free to join: you get ' + d.bonuses.welcome + ' points to start.' }),
+        el('label', { class: 'fa-check', for: 'rwAgree' }, agree, el('span', {}, 'I agree to the ', el('a', { href: '/rewards/terms/', target: '_blank', text: 'Lobi Stars Rewards Terms' }), '.')),
+        msg,
+        el('button', { type: 'button', class: 'btn-p', text: 'Join Lobi Stars Rewards', onclick: function () {
+          if (!agree.checked) { msg.textContent = 'Please tick "I agree to the Lobi Stars Rewards Terms".'; return; }
+          var btn = this; btn.disabled = true;
+          post('/api/rewards/join', { agree: true }).then(function (x) { if (x.ok) load(); else { msg.textContent = x.d.error || 'Could not join.'; btn.disabled = false; } });
+        } }));
+    } else {
+      parts.push(el('p', { class: 'rw-no', text: 'Member number ' + d.memberNo }),
+        el('div', { class: 'rw-pts' }, el('div', {}, el('b', { text: fmt(d.balance) }), ' ', el('span', { text: 'Pride Points' })), d.pending ? el('span', { text: fmt(d.pending) + ' pending' }) : null));
+      if (!d.verified) parts.push(el('p', { class: 'rw-note', text: 'Confirm your email address (use the link we sent you) to start earning. Your ' + d.bonuses.welcome + ' welcome points are waiting.' }));
+      if (d.status === 'suspended') parts.push(el('p', { class: 'rw-note', text: 'Your Rewards membership is on hold. Please contact the club via the Help Centre.' }));
+      if (!d.profileBonusDone) {
+        var st = el('select', { id: 'rwState' }, el('option', { value: '', text: 'Choose your state' }));
+        d.states.forEach(function (x) { var o = el('option', { value: x, text: x }); if (x === d.profile.state) o.selected = true; st.append(o); });
+        var dob = el('input', { type: 'date', id: 'rwDob', value: d.profile.dateOfBirth || '', max: new Date().toISOString().slice(0, 10) });
+        var pm = el('p', { class: 'fa-err', role: 'alert' });
+        parts.push(el('div', { class: 'rw-form' }, el('b', { text: 'Complete your profile: +' + d.bonuses.profile + ' points' }),
+          el('div', { class: 'row' }, el('label', { for: 'rwState' }, el('span', { class: 'form-lbl', text: 'State of residence' }), st), el('label', { for: 'rwDob' }, el('span', { class: 'form-lbl', text: 'Date of birth' }), dob)),
+          pm, el('button', { type: 'button', class: 'btn-p', text: 'Save my profile', onclick: function () {
+            post('/api/rewards/profile', { state: st.value, dateOfBirth: dob.value }).then(function (x) { if (x.ok) load(); else pm.textContent = (x.d.errors && (x.d.errors.state || x.d.errors.dateOfBirth)) || x.d.error || 'Could not save.'; });
+          } })));
+      }
+      if (d.history.length) {
+        var ul = el('ul', { class: 'rw-hist' });
+        d.history.slice(0, 5).forEach(function (h) { ul.append(el('li', {}, el('span', { text: h.description + (h.status === 'PENDING' ? ' (pending)' : '') }), el('span', { class: h.points >= 0 ? 'plus' : 'minus', text: (h.points >= 0 ? '+' : '') + fmt(h.points) }))); });
+        parts.push(el('b', { text: 'Recent activity' }), ul);
+      }
+      parts.push(el('p', {}, el('a', { href: '/rewards/', text: 'About Lobi Stars Rewards' })));
+    }
+    body.replaceChildren.apply(body, parts);
+  }
+  load();
+})();
 </script>

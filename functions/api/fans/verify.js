@@ -1,4 +1,5 @@
 import { ensureFanSchema, consumeToken, safeNext } from '../_lib/fans.js';
+import { rewardsOnVerified } from '../_lib/rewards.js';
 
 // GET /api/fans/verify?token=... -- the link in the confirmation email.
 // Marks the account verified and sends the fan to the login page.
@@ -14,6 +15,7 @@ export async function onRequestGet({ request, env }) {
     login.searchParams.set('verify', 'expired');
   } else {
     await env.DB.prepare(`UPDATE members SET email_verified = 1, email_verified_at = datetime('now') WHERE id = ?`).bind(memberId).run();
+    await rewardsOnVerified(env.DB, memberId); // Rewards welcome bonus waits for a verified email
     login.searchParams.set('confirmed', '1');
   }
   return Response.redirect(login.toString(), 302);

@@ -38,6 +38,11 @@ const siteKey = settings.turnstileSiteKey;
         <span>I am 18 or older and agree to the <a href="/terms/" target="_blank">Terms &amp; Conditions</a> and <a href="/privacy/" target="_blank">Privacy Policy</a>.</span></label>
       <p class="fa-err" id="err-agree" role="alert"></p>
     </div>
+    <div class="fa-field fa-rewards" id="rewardsBlock" hidden>
+      <label class="fa-check"><input type="checkbox" id="joinRewards" name="joinRewards" checked /><span><strong>Also join Lobi Stars Rewards</strong>: earn Pride Points on tickets, jerseys, food and matchdays (free).</span></label>
+      <label class="fa-check" id="rewardsAgreeRow"><input type="checkbox" id="rewardsAgree" name="rewardsAgree" aria-describedby="err-rewardsAgree" /><span>I agree to the <a href="/rewards/terms/" target="_blank">Lobi Stars Rewards Terms</a>.</span></label>
+      <p class="fa-err" id="err-rewardsAgree" role="alert"></p>
+    </div>
     <div class="fa-field">
       <label class="fa-check"><input type="checkbox" id="marketing" name="marketing" /><span>Send me Lobi Stars news and offers (optional).</span></label>
     </div>
@@ -59,6 +64,10 @@ const siteKey = settings.turnstileSiteKey;
   </div>
 </FanAuthShell>
 
+<style is:global>
+  .fa-check[hidden] { display: none; }
+  .fa-rewards { display: grid; gap: 10px; padding: 12px 14px; border-radius: 10px; background: rgba(255, 199, 44, .12); border: 1px solid rgba(201, 162, 39, .55); }
+</style>
 {siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 
 <script>
@@ -72,9 +81,18 @@ const siteKey = settings.turnstileSiteKey;
     (document.getElementById('doneLogin') as HTMLAnchorElement).href = `/fans/login/?next=${encodeURIComponent(safeNext)}`;
   }
 
-  const FIELDS = ['firstName', 'surname', 'email', 'confirmEmail', 'phone', 'password', 'confirmPassword', 'agree', 'human'];
+  const FIELDS = ['firstName', 'surname', 'email', 'confirmEmail', 'phone', 'password', 'confirmPassword', 'agree', 'rewardsAgree', 'human'];
   const val = (id: string) => (document.getElementById(id) as HTMLInputElement).value.trim();
   const checked = (id: string) => (document.getElementById(id) as HTMLInputElement).checked;
+  // The Rewards Terms box only matters when "Also join Lobi Stars Rewards" is ticked.
+  const joinBox = document.getElementById('joinRewards') as HTMLInputElement;
+  const syncRewards = () => { document.getElementById('rewardsAgreeRow')!.hidden = !joinBox.checked; };
+  joinBox.addEventListener('change', syncRewards); syncRewards();
+  // Shown once Lobi Stars Rewards has launched (or in staff preview).
+  const rewardsBlock = document.getElementById('rewardsBlock')!;
+  let preview = false; try { preview = localStorage.getItem('ls_rewards_preview') === '1'; } catch { /* ignore */ }
+  fetch('/api/rewards/me').then(r => r.json()).then(d => { if (d.live || preview) rewardsBlock.hidden = false; }).catch(() => {});
+  const joining = () => !rewardsBlock.hidden && checked('joinRewards');
   const phoneOk = (p: string) => /^(0(70|80|81|90|91)\d{8}|\+?234(70|80|81|90|91)\d{8})$/.test(p.replace(/[\s\-().]/g, ''));
 
   function showErrors(errors: Record<string, string>) {
@@ -98,6 +116,7 @@ const siteKey = settings.turnstileSiteKey;
     const pw = (document.getElementById('password') as HTMLInputElement).value;
     if (pw.length < 8) e.password = 'Password must be at least 8 characters.';
     else if (pw !== (document.getElementById('confirmPassword') as HTMLInputElement).value) e.confirmPassword = 'The passwords do not match.';
+    if (joining() && !checked('rewardsAgree')) e.rewardsAgree = 'Please accept the Lobi Stars Rewards Terms, or untick "Also join Lobi Stars Rewards".';
     if (!checked('agree')) e.agree = 'Please confirm you are 18 or older and agree to the Terms & Conditions and Privacy Policy.';
     return e;
   }
@@ -118,7 +137,7 @@ const siteKey = settings.turnstileSiteKey;
           firstName: val('firstName'), surname: val('surname'), email: val('email'), confirmEmail: val('confirmEmail'),
           phone: val('phone'), password: (document.getElementById('password') as HTMLInputElement).value,
           confirmPassword: (document.getElementById('confirmPassword') as HTMLInputElement).value,
-          agree: checked('agree'), marketing: checked('marketing'), turnstileToken: turnstile, next: safeNext,
+          agree: checked('agree'), marketing: checked('marketing'), joinRewards: joining(), rewardsAgree: checked('rewardsAgree'), turnstileToken: turnstile, next: safeNext,
         }),
       });
       const data = await res.json().catch(() => ({}));

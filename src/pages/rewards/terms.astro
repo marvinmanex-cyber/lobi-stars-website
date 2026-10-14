@@ -1,0 +1,87 @@
+---
+// /rewards/terms -- Lobi Stars Rewards Terms (DRAFT until the club's legal
+// adviser has reviewed them; kept out of search engines while a draft).
+// Numbers here are described in general terms: the current rates, rewards and
+// tier levels are on the Rewards pages and set in Admin › Rewards.
+import LegalPage from '../../components/LegalPage.astro';
+import site from '../../data/site.json';
+const { email } = site.contact;
+---
+<LegalPage
+  title="Lobi Stars Rewards Terms"
+  tag="Lobi Stars Rewards"
+  description="The terms of Lobi Stars Rewards, the free Pride Points programme for Lobi Stars FC fans."
+  updated="14 October 2026"
+  draft="these terms must be reviewed by the club's legal adviser before they are final."
+>
+  <p>Lobi Stars Rewards ("Rewards") is a free loyalty programme run by Lobi Stars Football Club ("the club", "we"). Members collect Pride Points ("points") and can swap them for rewards. By joining you agree to these terms, our <a href="/terms/">Terms of Use</a> and our <a href="/privacy/">Privacy Policy</a>.</p>
+
+  <h2>1. Who can join</h2>
+  <ul>
+    <li>Anyone with a Lobi Stars FC fan account on lobistarsfc.com whose email address has been confirmed. Fan accounts are for people aged 18 or older living in Nigeria.</li>
+    <li>One Rewards membership per person, per verified email address and per phone number.</li>
+    <li>Rewards linked to an alcohol sponsor are for people aged 18 or older only.</li>
+    <li>Each member gets a member number (for example LSR-000123).</li>
+  </ul>
+
+  <h2>2. Earning Pride Points</h2>
+  <ul>
+    <li>Points are given for the activities shown on the Lobi Stars Rewards pages, for example tickets, jerseys, merchandise, matchday food and membership bought through lobistarsfc.com, coming to home matches, and taking part in matchday activities. The current rates are shown on the Rewards pages and may change.</li>
+    <li>Points are only given when our systems record the activity: a confirmed payment, a ticket scanned at the gate, or a vote or prediction saved by us. Purchases made on other websites or shops (for example Jumia) do not earn points.</li>
+    <li>Points are worked out on the amount actually paid in naira, after discounts and any points used, without delivery fees.</li>
+    <li>Each order or activity can earn points only once.</li>
+    <li>Joining and completing your profile may earn bonus points, shown on the Rewards pages.</li>
+  </ul>
+
+  <h2>3. When points can be used</h2>
+  <ul>
+    <li>Points from match tickets are "pending" until the match has been played, then become available. If a match is cancelled and the ticket is refunded, those points are removed.</li>
+    <li>Points from other purchases become available once the payment is confirmed.</li>
+    <li>Jerseys and merchandise are non-refundable. Points earned on them are final, except in cases of fraud or a payment dispute.</li>
+    <li>If a payment is reversed, disputed or refunded, the points from it are removed. Your balance can go below zero; you cannot redeem while it is below zero.</li>
+  </ul>
+
+  <h2>4. Using points</h2>
+  <ul>
+    <li>Rewards, their points cost and how many are available are shown on the Rewards pages. Rewards are subject to availability, and we may replace a reward with one of similar value if it is no longer available.</li>
+    <li>A redemption cannot be undone once confirmed. Larger redemptions may need a code sent to your verified email.</li>
+    <li>Vouchers are single-use and expire on the date shown.</li>
+  </ul>
+
+  <h2>5. Points have no cash value</h2>
+  <ul>
+    <li>Points cannot be exchanged for cash, withdrawn, transferred to another person or account, sold or bought.</li>
+  </ul>
+
+  <h2>6. Expiry</h2>
+  <ul>
+    <li>Points expire 12 months after your last Rewards activity (earning or using points). We will try to remind you by email before points expire.</li>
+  </ul>
+
+  <h2>7. Tiers</h2>
+  <ul>
+    <li>Members may be placed in tiers based on points earned in the current season. Tier levels and benefits are shown on the Rewards pages and may change.</li>
+  </ul>
+
+  <h2>8. Fair use and fraud</h2>
+  <ul>
+    <li>We may refuse, remove or reverse points that were earned by mistake, by fraud, by misuse of referrals or by breaking these terms, and we may suspend or close a membership in those cases.</li>
+    <li>Automated or bulk activity, fake accounts and self-referrals are not allowed.</li>
+  </ul>
+
+  <h2>9. Changes to the programme</h2>
+  <ul>
+    <li>We may change these terms, the earning rates, rewards or tiers, or end the programme. We will give reasonable notice on the website or by email, except where a change is needed to stop fraud or comply with the law.</li>
+  </ul>
+
+  <h2>10. Your data</h2>
+  <ul>
+    <li>We use your account details, your Rewards activity and the date of birth and state you choose to give us to run the programme, prevent fraud, send you Rewards messages you can manage, and understand how fans use our services, in line with the Nigeria Data Protection Act 2023 and our <a href="/privacy/">Privacy Policy</a>.</li>
+  </ul>
+
+  <h2>11. Leaving and contact</h2>
+  <ul>
+    <li>You can leave Rewards at any time by contacting us; any points you have will be lost.</li>
+    <li>Questions: <a href={`mailto:${email}`}>{email}</a> or the <a href="/help/">Help Centre</a>.</li>
+  </ul>
+</LegalPage>

@@ -5,6 +5,7 @@ import {
   checkTurnstile, createToken, sendVerificationEmail, VERIFY_TTL_MS,
 } from '../_lib/fans.js';
 import { captureContact } from '../_lib/contacts.js';
+import { joinRewards } from '../_lib/rewards.js';
 
 // POST /api/fans/register -- create a fan account and email a confirmation
 // link. Returns { errors: { field: message } } (400) when validation fails.
@@ -33,6 +34,9 @@ export async function onRequestPost({ request, env }) {
   if (password.length < 8) errors.password = 'Password must be at least 8 characters.';
   else if (password.length > 200) errors.password = 'Password is too long.';
   if (!errors.password && password !== confirmPassword) errors.confirmPassword = 'The passwords do not match.';
+  // "Also join Lobi Stars Rewards" (pre-ticked on the form): the Rewards Terms must be accepted too.
+  const joinRw = b.joinRewards === true;
+  if (joinRw && b.rewardsAgree !== true) errors.rewardsAgree = 'Please accept the Lobi Stars Rewards Terms, or untick "Also join Lobi Stars Rewards".';
   if (b.agree !== true) errors.agree = 'Please confirm you are 18 or older and agree to the Terms & Conditions and Privacy Policy.';
 
   if (!(await checkTurnstile(env, b.turnstileToken, ip))) errors.human = 'Please complete the human check and try again.';
@@ -58,6 +62,9 @@ export async function onRequestPost({ request, env }) {
     // Unique constraint race (same email/phone submitted twice at once).
     return Response.json({ errors: { email: 'An account with this email or phone already exists.' } }, { status: 400 });
   }
+
+  // Rewards: joined now; the welcome bonus is added when the email is verified.
+  if (joinRw) await joinRewards(env.DB, id, 'register').catch(err => console.error('[rewards] join at sign-up', err));
 
   await captureContact(env, { source: 'fan_account', refTable: 'members', refId: id, email, phone, firstName, surname: surname, consent: b.marketing === true });
 

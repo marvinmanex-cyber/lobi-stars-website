@@ -854,6 +854,24 @@ No Cloudflare Access rule is needed.
   email per match.
 - Tests: `tests/ticket-discounts.unit.test.mjs`, `tests/ticket-discounts.api.test.mjs`.
 
+## Lobi Stars Rewards (Phase 1, 14 October 2026; not launched)
+
+- `functions/api/_lib/rewards.js`: tables `rewards_members` (seq -> member
+  number LSR-000123, status, terms version) and `rewards_ledger` (type EARN /
+  BONUS / REDEEM / EXPIRE / REVERSE / ADJUST, status PENDING / AVAILABLE /
+  REVERSED, source, source_ref, UNIQUE(source, source_ref) so nothing is
+  awarded twice); members.date_of_birth (and state). Created on first use.
+- Balance = sum of AVAILABLE rows; pending = PENDING rows. EARN/BONUS rows need
+  an active member with a verified email.
+- Settings in `settings.rewards_settings` (JSON, defaults in rewards.js):
+  welcomeBonus 50, profileBonus 20, termsVersion, live false.
+- APIs: GET `/api/rewards/me`, POST `/api/rewards/join` { agree }, POST
+  `/api/rewards/profile` { state, dateOfBirth }. `/api/fans/register` accepts
+  joinRewards + rewardsAgree; `/api/fans/verify` gives the waiting bonuses.
+- Pages: `/rewards/` (noindex, preview with ?preview=1 until live),
+  `/rewards/terms/` (DRAFT), Rewards box on `/fans/account/` and the register form.
+- Test: `tests/rewards.api.test.mjs` (needs FANS_DEV_LINKS=1 locally).
+
 ## Ticketing system setup (Cloudflare D1 + Paystack + Resend)
 
 This is new infrastructure, separate from the static site. You'll need

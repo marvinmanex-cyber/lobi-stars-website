@@ -1923,6 +1923,29 @@ Paid orders keep the discount they got, even if you change the rules later.
 **At the gate:** the scanner shows **VALID: ADMIT ADULT** or **VALID: ADMIT
 CHILD**. For a child ticket, staff may ask for proof of age.
 
+## 34b. Lobi Stars Rewards (being built, not launched yet)
+
+Lobi Stars Rewards is the free fan loyalty programme: fans collect **Pride
+Points** and swap them for rewards. It is being built in phases and is **not
+visible to fans yet**: the sign-up box, the account-page section and
+lobistarsfc.com/rewards only show in staff preview. To preview, open
+**lobistarsfc.com/rewards/?preview=1** once on your phone or computer.
+
+**Phase 1 (done):**
+- Fans join with their normal fan account: one click on /rewards or **My
+  account** after ticking "I agree to the Lobi Stars Rewards Terms". New fans
+  see "Also join Lobi Stars Rewards" (ticked) on the registration form and must
+  accept the Rewards Terms too.
+- Each member gets a member number such as **LSR-000123**.
+- **50 welcome points** once their email is confirmed, and **20 points** for
+  adding their state of residence and date of birth (once).
+- Every points change is kept as a line in the member's points history; the
+  same order or event can never give points twice.
+- Rewards Terms (DRAFT, for the club's legal adviser): /rewards/terms.
+
+Earning on purchases and matchdays, tiers, the rewards catalogue, the admin
+screens (Admin › Rewards) and the launch switch come in the next phases.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize
