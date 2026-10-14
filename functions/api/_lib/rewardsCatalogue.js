@@ -45,7 +45,7 @@ export async function ensureCatalogueSchema(db) {
       stock INTEGER,                 -- NULL = unlimited; goes down by one per redemption
       per_fan_limit INTEGER,         -- NULL = no limit
       min_age INTEGER,               -- e.g. 18 for alcohol-sponsored rewards
-      min_tier TEXT,                 -- 'gold' / 'star' or NULL
+      min_tier TEXT,                 -- 'gold' / 'legend' or NULL
       sponsor TEXT,                  -- partner id (optional)
       starts_at TEXT, ends_at TEXT,
       active INTEGER NOT NULL DEFAULT 1, archived INTEGER NOT NULL DEFAULT 0,
@@ -71,6 +71,8 @@ export async function ensureCatalogueSchema(db) {
       member_id TEXT NOT NULL, item_id TEXT NOT NULL, code_hash TEXT NOT NULL, expires_at INTEGER NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (member_id, item_id))`),
   ]);
+  // The top tier was "Star" before October 2026.
+  await db.prepare(`UPDATE rewards_catalogue SET min_tier = 'legend' WHERE min_tier = 'star'`).run();
   // Seed the starting catalogue once (never overwrites the club's changes).
   const seeded = await db.prepare(`SELECT value FROM settings WHERE key = 'rewards_catalogue_seeded'`).first();
   if (!seeded) {

@@ -1,6 +1,6 @@
 // Lobi Stars Rewards tiers: reaching Gold from points earned (celebration
 // shown once), Gold's purchase multiplier, early ticket access for a signed-in
-// Gold member (guests wait), Star Fans wall only for Star, admin tier
+// Gold member (guests wait), Legend Fans wall only for Legend, admin tier
 // settings. Uses small tier thresholds and switches Rewards live for the test,
 // then puts the settings back.
 // Needs the local Pages dev server (ADMIN_CODE=test-code-123, PAYSTACK_FAKE=1, FANS_DEV_LINKS=1).
@@ -60,7 +60,7 @@ test('reaching Gold: from points earned this season; celebration once; Gold mult
   assert.equal((await me(m.cookie)).tier.celebrate, false, 'shown once');
   await buy(m, await match(49), 4); // ₦4,000 -> 40 x 1.25 = 50
   assert.equal((await me(m.cookie)).pending, 50);
-  assert.equal((await pub('/api/rewards/tier', { action: 'star-wall', optIn: true }, m.cookie)).status, 403, 'Star Fans wall is for Star members');
+  assert.equal((await pub('/api/rewards/tier', { action: 'legend-wall', optIn: true }, m.cookie)).status, 403, 'Legend Fans wall is for Legend members');
   const look = (await call('GET', `/api/admin/rewards/member?q=${encodeURIComponent(m.email)}`)).data;
   assert.equal(look.tier.name, 'Gold');
 });

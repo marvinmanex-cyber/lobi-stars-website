@@ -64,7 +64,7 @@ export async function onRequestPost({ request, env }) {
       sort: x.sort === undefined ? before?.sort ?? 100 : Number(x.sort) || 100,
     };
     for (const k of ['stock', 'per_fan_limit', 'min_age']) if (row[k] !== null && (!Number.isInteger(row[k]) || row[k] < 0 || row[k] > 1_000_000)) return fail(`${k.replace(/_/g, ' ')}: a whole number (empty = no limit).`);
-    if (row.min_tier && !['gold', 'star'].includes(row.min_tier)) return fail('Tier: Gold or Star (or any).');
+    if (row.min_tier && !['gold', 'legend'].includes(row.min_tier)) return fail('Tier: Gold or Legend (or any).');
     if (row.image && !/^(\/images\/|https:\/\/)/.test(row.image)) return fail('Image: a site path like /images/... or an https:// address.');
     if (before) {
       await db.prepare(`UPDATE rewards_catalogue SET name = ?, description = ?, image = ?, points = ?, config_json = ?, stock = ?, per_fan_limit = ?, min_age = ?, min_tier = ?, sponsor = ?, starts_at = ?, ends_at = ?, active = ?, archived = ?, sort = ?, updated_at = datetime('now'), updated_by = ? WHERE id = ?`)

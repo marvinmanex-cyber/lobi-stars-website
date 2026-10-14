@@ -134,11 +134,11 @@ export function effectiveTier({ earned, prevEarned = 0, paidMember = false, now 
 
 /** Checks the tier settings: three tiers, Red from 0, rising thresholds, sane multipliers and presale hours. */
 export function tiersProblem(tiers) {
-  if (!Array.isArray(tiers) || tiers.length !== 3) return 'There are three tiers: Red, Gold and Star.';
+  if (!Array.isArray(tiers) || tiers.length !== 3) return 'There are three tiers: Red, Gold and Legend.';
   const [r, g, s] = tiers;
-  if (r.key !== 'red' || g.key !== 'gold' || s.key !== 'star') return 'Tiers must be Red, Gold, Star.';
+  if (r.key !== 'red' || g.key !== 'gold' || s.key !== 'legend') return 'Tiers must be Red, Gold, Legend.';
   if (r.min !== 0) return 'Red starts at 0 points.';
-  if (!(Number.isInteger(g.min) && g.min > 0 && Number.isInteger(s.min) && s.min > g.min && s.min <= 1_000_000)) return 'Gold needs more points than Red, and Star more than Gold.';
+  if (!(Number.isInteger(g.min) && g.min > 0 && Number.isInteger(s.min) && s.min > g.min && s.min <= 1_000_000)) return 'Gold needs more points than Red, and Legend more than Gold.';
   for (const t of tiers) {
     if (typeof t.multiplier !== 'number' || t.multiplier < 1 || t.multiplier > 5) return `${t.name}: purchase multiplier from 1 to 5.`;
     if (!Number.isInteger(t.presaleHours) || t.presaleHours < 0 || t.presaleHours > 168) return `${t.name}: early ticket access 0 to 168 hours.`;

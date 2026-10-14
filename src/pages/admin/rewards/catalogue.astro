@@ -63,7 +63,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       field('Stock (empty = no limit, 0 = not available)', mk('stock', { type: 'number', min: 0, value: i.stock == null ? '' : i.stock })),
       field('Most per fan (empty = no limit)', mk('perFanLimit', { type: 'number', min: 0, value: i.perFanLimit == null ? '' : i.perFanLimit })),
       field('Minimum age (e.g. 18 for alcohol sponsors)', mk('minAge', { type: 'number', min: 0, value: i.minAge == null ? '' : i.minAge })),
-      field('Tier needed', (function () { var s = mk('minTier', { tag: 'select' }); [['', 'Any member'], ['gold', 'Gold or Star'], ['star', 'Star only']].forEach(function (x) { var o = el('option', { value: x[0], text: x[1] }); if ((i.minTier || '') === x[0]) o.selected = true; s.append(o); }); return s; })()),
+      field('Tier needed', (function () { var s = mk('minTier', { tag: 'select' }); [['', 'Any member'], ['gold', 'Gold or Legend'], ['legend', 'Legend only']].forEach(function (x) { var o = el('option', { value: x[0], text: x[1] }); if ((i.minTier || '') === x[0]) o.selected = true; s.append(o); }); return s; })()),
       field('Partner sponsor (optional)', mk('sponsor', { value: i.sponsor || '', maxlength: 60 })),
       field('Starts (Nigerian time, optional)', mk('startsAt', { type: 'datetime-local', value: wat(i.startsAt) })), field('Ends (optional)', mk('endsAt', { type: 'datetime-local', value: wat(i.endsAt) })),
       field('Order on the page', mk('sort', { type: 'number', value: i.sort || 100 })),

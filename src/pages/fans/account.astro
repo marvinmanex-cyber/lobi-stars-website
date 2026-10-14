@@ -65,7 +65,7 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
   /* Tier card (Red / Gold / Star) with progress to the next tier. */
   .rw-tier { margin: 0 0 14px; padding: 14px; border-radius: 12px; background: var(--d2); border: 1px solid var(--d4); }
   .rw-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
-  .rw-badge.red { background: #C11A1F; color: #fff; } .rw-badge.gold { background: #FFC72C; color: #15181D; } .rw-badge.star { background: #15181D; color: #FFC72C; border: 1px solid #FFC72C; }
+  .rw-badge.red { background: #C11A1F; color: #fff; } .rw-badge.gold { background: #FFC72C; color: #15181D; } .rw-badge.legend { background: #15181D; color: #FFC72C; border: 1px solid #FFC72C; }
   .rw-bar { height: 10px; border-radius: 999px; background: var(--d4); overflow: hidden; margin: 10px 0 6px; }
   .rw-bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #C11A1F, #FFC72C); }
   .rw-tier ul { margin: 8px 0 0; padding-left: 20px; line-height: 1.6; }
@@ -223,7 +223,7 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
     }
     body.replaceChildren.apply(body, parts);
   }
-  // Tier card, upgrade celebration (once per new tier) and the Star Fans wall choice.
+  // Tier card, upgrade celebration (once per new tier) and the Legend Fans wall choice.
   function tierParts(t) {
     var out = [];
     if (t.celebrate && t.key !== 'red') {
@@ -243,10 +243,10 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
     }
     if (t.benefits.length) { var ul = el('ul'); t.benefits.forEach(function (b) { ul.append(el('li', { text: b })); }); card.append(el('b', { style: 'display:block;margin-top:10px', text: 'Your ' + t.name + ' benefits' }), ul); }
     if (t.next && t.next.benefits.length) card.append(el('small', { text: t.next.name + ': ' + t.next.benefits.join(' · ') }));
-    if (t.key === 'star') {
-      var box = el('input', { type: 'checkbox', id: 'rwWall' }); box.checked = t.starWall;
-      box.addEventListener('change', function () { post('/api/rewards/tier', { action: 'star-wall', optIn: box.checked }); });
-      card.append(el('label', { class: 'fa-check', for: 'rwWall', style: 'margin-top:10px' }, box, el('span', {}, 'Show my first name and surname initial on the ', el('a', { href: '/rewards/star-fans/', text: 'Star Fans wall' }), '.')));
+    if (t.key === 'legend') {
+      var box = el('input', { type: 'checkbox', id: 'rwWall' }); box.checked = t.legendWall;
+      box.addEventListener('change', function () { post('/api/rewards/tier', { action: 'legend-wall', optIn: box.checked }); });
+      card.append(el('label', { class: 'fa-check', for: 'rwWall', style: 'margin-top:10px' }, box, el('span', {}, 'Show my first name and surname initial on the ', el('a', { href: '/rewards/legend-fans/', text: 'Legend Fans wall' }), '.')));
     }
     out.push(card);
     return out;

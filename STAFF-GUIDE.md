@@ -1994,15 +1994,16 @@ earning). **Run the points job now** makes ticket points of played matches
 available straight away (it also runs every 10 minutes, and when a fan opens
 their points).
 
-**Tiers (done):** Red, Gold and Star, by Star Points **earned this season**
+**Tiers (done):** Red, Gold and Legend, by Star Points **earned this season**
 (from the season start date in Admin › Rewards). Spending points never lowers a
-tier. Starting levels: Red from 0, Gold from 1,000, Star from 3,000.
+tier. Starting levels: Red from 0, Gold from 1,000, Legend from 3,000. (The top
+tier was called "Star" until October 2026; members at that level are now Legend.)
 - **Gold:** more points on purchases (1.25x) and match tickets 24 hours before
-  general sale; **Star:** 1.5x and 48 hours early, plus the end-of-season fans'
-  event and the **Star Fans wall** (lobistarsfc.com/rewards/star-fans; Star
+  general sale; **Legend:** 1.5x and 48 hours early, plus the end-of-season fans'
+  event and the **Legend Fans wall** (lobistarsfc.com/rewards/legend-fans; Legend
   members choose to appear, first name and surname initial only).
 - **Early ticket access** works when a match has a **Sales open** time (Admin ›
-  Match Tickets): signed-in Gold/Star members see "Early access for you" and can
+  Match Tickets): signed-in Gold/Legend members see "Early access for you" and can
   buy before that time; everyone else waits. It also opens the members'
   priority window early for them.
 - **Paid annual members** are at least Gold for that season (a setting).
@@ -2019,7 +2020,7 @@ tier. Starting levels: Red from 0, Gold from 1,000, Star from 3,000.
 **Rewards catalogue and redeeming (done):**
 - **Admin › Rewards › Rewards Catalogue:** add or edit a reward (name,
   description, image, points, type, value, stock, most per fan, minimum age e.g.
-  18 for alcohol sponsors, Gold/Star only, partner sponsor, start/end dates),
+  18 for alcohol sponsors, Gold/Legend only, partner sponsor, start/end dates),
   switch it off or archive it. Starting rewards (confirm the points first):
   ₦500 airtime 100, free Popular Stand ticket 200, ₦1,500 food voucher 300,
   ₦2,000 data 400, free name & number printing 600, ₦5,000 off a jersey 1,000,

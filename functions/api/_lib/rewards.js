@@ -50,7 +50,7 @@ const DEFAULTS = {
     // benefits: extra benefits as text; the multiplier and early-access lines are written from the numbers.
     { key: 'red', name: 'Red', min: 0, multiplier: 1, presaleHours: 0, benefits: [] },
     { key: 'gold', name: 'Gold', min: 1000, multiplier: 1.25, presaleHours: 24, benefits: ['Birthday gift'] },
-    { key: 'star', name: 'Star', min: 3000, multiplier: 1.5, presaleHours: 48, benefits: ["Invitation to the end-of-season fans' event", 'Your name on the Star Fans wall (if you choose)'] },
+    { key: 'legend', name: 'Legend', min: 3000, multiplier: 1.5, presaleHours: 48, benefits: ["Invitation to the end-of-season fans' event", 'Your name on the Legend Fans wall (if you choose)'] },
   ],
   // Until the programme launches, the Rewards sign-up box, the account-page
   // section and /rewards stay hidden (staff preview: /rewards/?preview=1).
@@ -108,7 +108,14 @@ export async function ensureRewardsSchema(db) {
   const rc = new Set((await db.prepare(`PRAGMA table_info(rewards_members)`).all()).results.map(c => c.name));
   if (!rc.has('tier_notified')) await addColumn(db, `ALTER TABLE rewards_members ADD COLUMN tier_notified TEXT`); // highest tier emailed this season ("2026/27:gold")
   if (!rc.has('tier_seen')) await addColumn(db, `ALTER TABLE rewards_members ADD COLUMN tier_seen TEXT`);         // highest tier the fan has seen the celebration for
-  if (!rc.has('star_wall')) await addColumn(db, `ALTER TABLE rewards_members ADD COLUMN star_wall INTEGER NOT NULL DEFAULT 0`); // opt-in to the Star Fans wall
+  // Opt-in to the Legend Fans wall (the top tier was called "Star" before October 2026: same column, renamed).
+  if (rc.has('star_wall') && !rc.has('legend_wall')) await addColumn(db, `ALTER TABLE rewards_members RENAME COLUMN star_wall TO legend_wall`).catch(() => {});
+  else if (!rc.has('legend_wall')) await addColumn(db, `ALTER TABLE rewards_members ADD COLUMN legend_wall INTEGER NOT NULL DEFAULT 0`);
+  // Members already at the top tier keep it under its new name (celebration/email records).
+  await db.batch([
+    db.prepare(`UPDATE rewards_members SET tier_notified = replace(tier_notified, ':star', ':legend') WHERE tier_notified LIKE '%:star'`),
+    db.prepare(`UPDATE rewards_members SET tier_seen = replace(tier_seen, ':star', ':legend') WHERE tier_seen LIKE '%:star'`),
+  ]);
   const lc = new Set((await db.prepare(`PRAGMA table_info(rewards_ledger)`).all()).results.map(c => c.name));
   if (!lc.has('event_id')) await addColumn(db, `ALTER TABLE rewards_ledger ADD COLUMN event_id TEXT`); // ticket points wait for this match
   if (!lc.has('pay_ref')) await addColumn(db, `ALTER TABLE rewards_ledger ADD COLUMN pay_ref TEXT`);   // Paystack reference (refunds/disputes reverse by it)
@@ -129,10 +136,16 @@ export async function ensureRewardsSchema(db) {
 
 /** Programme settings (all editable later in Admin › Rewards; these are the starting defaults). */
 export const REWARDS_DEFAULTS = DEFAULTS;
+/** The top tier was "Star" until October 2026; settings saved before then are read as "Legend". */
+function normaliseTiers(s) {
+  if (Array.isArray(s.tiers)) s.tiers = s.tiers.map(t => (t.key === 'star' ? { ...t, key: 'legend', name: t.name === 'Star' ? 'Legend' : t.name,
+    benefits: (t.benefits || []).map(b => b.replace(/Star Fans wall/g, 'Legend Fans wall')) } : t));
+  return s;
+}
 export async function rewardsSettings(db) {
   try {
     const r = await db.prepare(`SELECT value FROM settings WHERE key = 'rewards_settings'`).first();
-    return { ...DEFAULTS, ...(r?.value ? JSON.parse(r.value) : {}) };
+    return normaliseTiers({ ...DEFAULTS, ...(r?.value ? JSON.parse(r.value) : {}) });
   } catch { return { ...DEFAULTS }; }
 }
 

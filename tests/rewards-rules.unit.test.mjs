@@ -67,7 +67,7 @@ test('tiers by points earned this season', () => {
   assert.equal(tierFor(999, TIERS).key, 'red');
   assert.equal(tierFor(1000, TIERS).key, 'gold');
   assert.equal(tierFor(2999, TIERS).key, 'gold');
-  assert.equal(tierFor(3000, TIERS).key, 'star');
+  assert.equal(tierFor(3000, TIERS).key, 'legend');
   const e = effectiveTier({ earned: 350, seasonStart: '2026-08-01' }, TIERS);
   assert.equal(e.tier.key, 'red'); assert.equal(e.next.key, 'gold'); assert.equal(e.toNext, 650, '650 more points this season to reach Gold');
   assert.equal(seasonLabel('2026-08-01'), '2026/27');
@@ -76,9 +76,9 @@ test('tiers by points earned this season', () => {
 test('paid members at least Gold; last season\'s tier kept during the grace period', () => {
   assert.equal(effectiveTier({ earned: 10, paidMember: true, seasonStart: '2026-08-01' }, TIERS).tier.key, 'gold');
   assert.equal(effectiveTier({ earned: 10, paidMember: true, paidMembersStartGold: false, seasonStart: '2026-08-01' }, TIERS).tier.key, 'red');
-  assert.equal(effectiveTier({ earned: 3500, paidMember: true, seasonStart: '2026-08-01' }, TIERS).tier.key, 'star', 'points can take a member higher');
+  assert.equal(effectiveTier({ earned: 3500, paidMember: true, seasonStart: '2026-08-01' }, TIERS).tier.key, 'legend', 'points can take a member higher');
   const inGrace = effectiveTier({ earned: 0, prevEarned: 3200, seasonStart: '2026-08-01', graceMonths: 2, now: Date.parse('2026-09-15T12:00:00Z') }, TIERS);
-  assert.equal(inGrace.tier.key, 'star'); assert.equal(inGrace.reason, 'last-season'); assert.equal(inGrace.graceUntil, '2026-09-30T23:00:00.000Z');
+  assert.equal(inGrace.tier.key, 'legend'); assert.equal(inGrace.reason, 'last-season'); assert.equal(inGrace.graceUntil, '2026-09-30T23:00:00.000Z');
   assert.equal(effectiveTier({ earned: 0, prevEarned: 3200, seasonStart: '2026-08-01', graceMonths: 2, now: Date.parse('2026-10-02T12:00:00Z') }, TIERS).tier.key, 'red', 'grace over');
 });
 

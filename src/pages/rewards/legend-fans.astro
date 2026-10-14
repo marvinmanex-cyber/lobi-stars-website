@@ -1,14 +1,14 @@
 ---
-// /rewards/star-fans -- the Star Fans wall: Lobi Stars Rewards Star members who
-// chose to appear (first name and surname initial only, from /api/rewards/star-fans).
+// /rewards/legend-fans -- the Legend Fans wall: Lobi Stars Rewards Legend members who
+// chose to appear (first name and surname initial only, from /api/rewards/legend-fans). The old address /rewards/star-fans/ redirects here.
 // Kept out of search engines; empty until Rewards is live.
 import Layout from '../../layouts/Layout.astro';
 ---
-<Layout title="Star Fans | Lobi Stars Rewards" description="The Star Fans of Lobi Stars FC: the most loyal supporters of the Pride of Benue this season." noindex>
-  <section class="sf-hero"><div class="sf-in"><p class="sf-k">Lobi Stars Rewards</p><h1>Star <span>Fans</span></h1><p>The most loyal supporters of the Pride of Benue this season.</p></div></section>
+<Layout title="Legend Fans | Lobi Stars Rewards" description="The Legend Fans of Lobi Stars FC: the most loyal supporters of the Pride of Benue this season." noindex>
+  <section class="sf-hero"><div class="sf-in"><p class="sf-k">Lobi Stars Rewards</p><h1>Legend <span>Fans</span></h1><p>The most loyal supporters of the Pride of Benue this season.</p></div></section>
   <div class="wrap sf-page">
     <ul class="sf-wall" id="sfWall" aria-live="polite"><li class="sf-muted">Loading…</li></ul>
-    <p class="sf-note">Star members can choose to appear here from <a href="/fans/account/">My account</a>. Only first names and surname initials are shown. <a href="/rewards/">About Lobi Stars Rewards</a></p>
+    <p class="sf-note">Legend members can choose to appear here from <a href="/fans/account/">My account</a>. Only first names and surname initials are shown. <a href="/rewards/">About Lobi Stars Rewards</a></p>
   </div>
 </Layout>
 
@@ -30,9 +30,9 @@ import Layout from '../../layouts/Layout.astro';
 <script is:inline>
 (function () {
   var wall = document.getElementById('sfWall');
-  fetch('/api/rewards/star-fans').then(function (r) { return r.json(); }).then(function (d) {
+  fetch('/api/rewards/legend-fans').then(function (r) { return r.json(); }).then(function (d) {
     wall.replaceChildren();
-    if (!d.fans || !d.fans.length) { var li = document.createElement('li'); li.className = 'sf-muted'; li.textContent = 'The first Star Fans of the season will appear here.'; wall.append(li); return; }
+    if (!d.fans || !d.fans.length) { var li = document.createElement('li'); li.className = 'sf-muted'; li.textContent = 'The first Legend Fans of the season will appear here.'; wall.append(li); return; }
     d.fans.forEach(function (n) { var li = document.createElement('li'); li.textContent = n; wall.append(li); });
   }).catch(function () { wall.replaceChildren(); });
 })();

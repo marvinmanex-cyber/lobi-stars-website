@@ -4,7 +4,7 @@ import { ensureRewardsSchema, rewardsMember } from '../_lib/rewards.js';
 import { tierStatus, celebration } from '../_lib/rewardsTiers.js';
 
 // POST /api/rewards/tier { action: 'seen' }            -- the tier celebration was shown (once per new tier per season)
-// POST /api/rewards/tier { action: 'star-wall', optIn } -- Star members choose to appear on the Star Fans wall
+// POST /api/rewards/tier { action: 'legend-wall', optIn } -- Legend members choose to appear on the Legend Fans wall
 //      (first name and surname initial only).
 export async function onRequestPost({ request, env }) {
   try {
@@ -18,10 +18,10 @@ export async function onRequestPost({ request, env }) {
     const b = await request.json().catch(() => ({}));
     const st = await tierStatus(db, memberId);
     if (b.action === 'seen') { await celebration(db, memberId, st, { seen: true }); return Response.json({ ok: true }); }
-    if (b.action === 'star-wall') {
-      if (b.optIn && st.tier.key !== 'star') return Response.json({ error: 'The Star Fans wall is for Star members.' }, { status: 403 });
-      await db.prepare(`UPDATE rewards_members SET star_wall = ? WHERE member_id = ?`).bind(b.optIn ? 1 : 0, memberId).run();
-      return Response.json({ ok: true, starWall: !!b.optIn });
+    if (b.action === 'legend-wall') {
+      if (b.optIn && st.tier.key !== 'legend') return Response.json({ error: 'The Legend Fans wall is for Legend members.' }, { status: 403 });
+      await db.prepare(`UPDATE rewards_members SET legend_wall = ? WHERE member_id = ?`).bind(b.optIn ? 1 : 0, memberId).run();
+      return Response.json({ ok: true, legendWall: !!b.optIn });
     }
     return Response.json({ error: 'Unknown action.' }, { status: 400 });
   } catch (err) {

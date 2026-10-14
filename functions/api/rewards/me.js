@@ -39,7 +39,7 @@ export async function onRequestGet({ request, env }) {
         key: st.tier.key, name: st.tier.name, season: st.season, earned: st.earned, reason: st.reason, graceUntil: st.graceUntil,
         benefits: st.benefits, next: st.next ? { key: st.next.key, name: st.next.name, min: st.next.min, benefits: st.nextBenefits } : null, toNext: st.toNext,
         all: st.tiers.map(t => ({ key: t.key, name: t.name, min: t.min, benefits: tierBenefits(t) })),
-        celebrate, starWall: !!r.star_wall,
+        celebrate, legendWall: !!r.legend_wall,
       },
       profileBonusDone: history.some(h => h.source === 'profile'),
     }, { headers });

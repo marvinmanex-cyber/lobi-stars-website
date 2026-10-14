@@ -897,8 +897,12 @@ No Cloudflare Access rule is needed.
   Pure rules in rewardsRules.js (tierFor, effectiveTier, tiersProblem,
   tierBenefits). Presale: `ticketState(..., { earlyMs })`, `catalogue(env,
   { earlyMs })`, used by `/api/tickets/catalogue` and `/api/tickets/basket`
-  for the signed-in fan. APIs: `/api/rewards/tier` (seen, star-wall),
-  `/api/rewards/star-fans`; page `/rewards/star-fans/` (noindex).
+  for the signed-in fan. APIs: `/api/rewards/tier` (seen, legend-wall),
+  `/api/rewards/legend-fans`; page `/rewards/legend-fans/` (noindex; /rewards/star-fans
+  redirects). Top tier renamed Star -> Legend (Oct 2026): settings saved with key
+  'star' are read as 'legend' (rewardsSettings), rewards_members.star_wall renamed
+  legend_wall, tier_notified/tier_seen ':star' -> ':legend', catalogue min_tier
+  'star' -> 'legend' (all in the schema setup; balances and ledger untouched).
   Test: `tests/rewards-tiers.api.test.mjs`.
 - Catalogue and redeeming: `functions/api/_lib/rewardsCatalogue.js` (tables
   rewards_catalogue, rewards_redemptions with UNIQUE idem_key and voucher_code,
