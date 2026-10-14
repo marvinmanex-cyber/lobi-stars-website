@@ -297,6 +297,32 @@ and Super Admins are emailed (when `RESEND_API_KEY` is set). Admin page
 work: point a free outside monitor (e.g. UptimeRobot, every 5 minutes) at it.
 Tests: `tests/health.test.mjs`.
 
+## Logos: no white circles (14 October 2026)
+
+- Every logo (club crest, opponents, partners) uses the shared class
+  `.club-logo` (`src/styles/club-logo.css`, loaded by the main layout) or the
+  `<ClubLogo>` component: a sized box, `object-fit: contain`, and no
+  background, border, radius, padding or shadow (forced with `!important`, so
+  a local style can't add the circle back). Size with `--logo-h` (and
+  `--logo-w`). Without a file: the club's initials as plain text
+  (`.club-logo--mono`, colour `--logo-c`).
+- Files with a white (or black) background baked in now have transparent
+  copies (`public/images/*-transparent.png`, made with
+  `scripts/logo-remove-background.mjs`, which flood-fills only the background
+  joined to the edges). Originals are kept in public/images (emails already sent
+  link to them) and in `design-sources/logo-originals/`.
+  `functions/api/_lib/logoFiles.js` swaps stored addresses (league teams in
+  D1, older content) for the transparent copy when a logo is shown. No
+  database change.
+- `wikki-tourists.jpg` has no copy (its white inside joins the background);
+  it needs a transparent file from the club.
+- Emails, share images (`integrations/og/shareImages.mjs`, `og-default.jpg`)
+  and the offline page show logos without a circle. App icons and favicons
+  are unchanged: install icons need a solid background (iOS and Android
+  maskable icons).
+- Partners: the CMS field "Logo for dark backgrounds" (`logoDark`) is used in
+  the dark footer and on share pictures; `cardColor` is no longer used.
+
 ## Match cards and wording (fixtures redesign, 14 October 2026)
 
 - One card builder for every match card: `functions/api/_lib/fixtureCard.js`

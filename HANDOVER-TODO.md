@@ -72,6 +72,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | C17 | **First programme** | The first real Match Day Programme PDF (A4 portrait, exactly 4 pages, under 10 MB), and who prints the QR posters and flyers. |
 | C18 | **Partner report emails** | For each partner, who should receive the monthly report (name and email of their marketing contact); add them in Admin › Partners › Monthly partner reports, or send them to the website manager. |
 | C13 | **Partnership page** | Audience figures (followers, attendance, website visitors) and the partnership brochure PDF. |
+| C19 | **Transparent logo files** | Logos now show without a white circle, so a background baked into the file shows. Please send **transparent PNG or SVG** files for: the **Wikki Tourists** crest (its white inside couldn't be separated from the background safely, so it still shows a white square); **BIPC** (the current file is cropped: letters cut off at both sides); **Zeva Lager** and **PLAY** (no logo file yet). If possible, also **light/white versions** for dark backgrounds of Jumia, Novus MFB, Prime Beverages, BIPC, Aeson Sports Management and Benue Links (add them in the CMS field "Logo for dark backgrounds"), and of the Bichi First crest (its black laurels disappear on dark). |
 
 ## D. Shop, membership and commercial decisions
 

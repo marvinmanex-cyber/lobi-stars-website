@@ -33,15 +33,9 @@ async function text(str, { size, color = '#FFFFFF', width = 1040, align = 'left'
   return { input: await img.png().toBuffer(), w, h };
 }
 
-/** A round crest with a white ring. */
-async function crest(file, size) {
-  const r = size / 2;
-  const inner = await sharp(file).resize(size - 16, size - 16, { fit: 'contain', background: '#ffffff' }).flatten({ background: '#ffffff' }).png().toBuffer();
-  const ring = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${r}" cy="${r}" r="${r}" fill="#ffffff"/></svg>`);
-  const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${r}" cy="${r}" r="${r - 8}" fill="#fff"/></svg>`);
-  const round = await sharp({ create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-    .composite([{ input: inner, left: 8, top: 8 }, { input: mask, blend: 'dest-in' }]).png().toBuffer();
-  return sharp(ring).composite([{ input: round }]).png().toBuffer();
+/** A crest or logo exactly as designed, fitted into a box: no circle, ring or background. */
+async function crest(file, size, width = size) {
+  return sharp(file).resize(width, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
 }
 
 /** Fits the title into at most ~3 lines by stepping the size down. */
@@ -56,7 +50,11 @@ async function title(str, width, maxH) {
 /** Page card: badge, small heading (e.g. NEWS) and the page title. */
 export async function pageCard({ heading, title: str, badge, out }) {
   const layers = [];
-  if (badge && existsSync(badge)) layers.push({ input: await crest(badge, 150), left: 80, top: 60 });
+  if (badge && existsSync(badge)) {
+    // Wide logos (partners) get a wide box, so they show at a readable size.
+    const { width: bw = 1, height: bh = 1 } = await sharp(badge).metadata();
+    layers.push({ input: await crest(badge, 150, bw / bh > 1.3 ? 420 : 150), left: 80, top: 60 });
+  }
   const k = await text(heading.toUpperCase(), { size: 40, color: '#FFC72C', spacing: 3 });
   layers.push({ input: k.input, left: 80, top: 238 });
   const t = await title(str, 1040, 270);
@@ -71,9 +69,10 @@ export async function matchCard({ home, away, homeCrest, awayCrest, out }) {
   const layers = [];
   const size = 210, top = 70;
   const placeholder = async name => {
-    const t = await text((name.replace(/\b(FC|F\.C\.)\b/g, '').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('') || '?').toUpperCase(), { size: 110, color: '#15181D', width: size, align: 'centre' });
-    const circle = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#ffffff"/></svg>`);
-    return sharp(circle).composite([{ input: t.input, left: Math.round((size - t.w) / 2), top: Math.round((size - t.h) / 2) }]).png().toBuffer();
+    // No crest: the club's initials as plain text (no circle behind them).
+    const t = await text((name.replace(/\b(FC|F\.C\.)\b/g, '').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('') || '?').toUpperCase(), { size: 130, color: '#FFFFFF', width: size, align: 'centre' });
+    const box = sharp({ create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } });
+    return box.composite([{ input: t.input, left: Math.round((size - t.w) / 2), top: Math.round((size - t.h) / 2) }]).png().toBuffer();
   };
   const hc = homeCrest && existsSync(homeCrest) ? await crest(homeCrest, size) : await placeholder(home);
   const ac = awayCrest && existsSync(awayCrest) ? await crest(awayCrest, size) : await placeholder(away);

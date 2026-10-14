@@ -28,8 +28,8 @@ import '../styles/fixture-card.css';
   .ml :global(.ml-comp) { margin-top: 18px; text-align: center; color: rgba(255, 255, 255, .8); font: 700 13px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
   .ml :global(.ml-board) { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 14px; margin: 18px 0 12px; }
   .ml :global(.ml-team) { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; font: 400 clamp(19px, 3vw, 30px)/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .ml :global(.ml-crest) { width: clamp(64px, 11vw, 100px); height: clamp(64px, 11vw, 100px); border-radius: 50%; object-fit: contain; background: #fff; padding: 4px; }
-  .ml :global(.ml-crest--initials) { display: inline-flex; align-items: center; justify-content: center; color: #15181D; font-size: 28px; }
+  .ml :global(.ml-crest) { --logo-h: clamp(64px, 11vw, 100px); }
+  .ml :global(.ml-crest--initials) { --logo-c: #fff; }
   .ml :global(.ml-mid) { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .ml :global(.ml-score) { font: 400 clamp(46px, 9vw, 76px)/1 'Bebas Neue', sans-serif; letter-spacing: 3px; white-space: nowrap; }
   .ml :global(.ml-ko) { font: 400 clamp(30px, 6vw, 48px)/1 'Bebas Neue', sans-serif; color: #FFC72C; }
@@ -71,8 +71,8 @@ import '../styles/fixture-card.css';
   .ml :global(.pw-form) { margin: 8px 0 14px; }
   .ml :global(.pw-row) { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 12px; max-width: 520px; margin: 0 auto 16px; }
   .ml :global(.pw-side) { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
-  .ml :global(.pw-crest) { width: 64px; height: 64px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--d4); }
-  .ml :global(.pw-crest--initials) { display: inline-flex; align-items: center; justify-content: center; font: 400 22px/1 'Bebas Neue', sans-serif; color: var(--white); background: var(--d3); }
+  .ml :global(.pw-crest) { --logo-h: 64px; }
+  .ml :global(.pw-crest--initials) { --logo-c: var(--white); }
   .ml :global(.pw-team) { font: 700 15px/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; text-align: center; overflow-wrap: anywhere; }
   .ml :global(.pw-inp) { width: 88px; padding: 10px 6px; text-align: center; font: 400 44px/1 'Bebas Neue', sans-serif; border: 2px solid var(--d4); border-radius: 12px; color: var(--white); background: #fff; }
   .ml :global(.pw-inp:focus) { outline: none; border-color: var(--red); box-shadow: 0 0 0 3px rgba(227, 30, 36, .2); }

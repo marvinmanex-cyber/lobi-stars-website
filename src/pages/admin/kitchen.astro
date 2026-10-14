@@ -10,7 +10,7 @@ import Layout from '../../layouts/Layout.astro';
 <Layout title="Lobi Stars Kitchen" description="Kitchen order screen." noindex manifest="/kitchen.webmanifest" themeColor="#0B0D10">
   <div class="kt" id="kt">
     <header class="kt-head">
-      <div class="kt-brand"><img src="/images/lobi-stars-badge.png" alt="" width="40" height="40" /><h1>Lobi Stars Kitchen</h1></div>
+      <div class="kt-brand"><img class="club-logo" style="--logo-h:40px" src="/images/lobi-stars-badge.png" alt="" width="40" height="40" /><h1>Lobi Stars Kitchen</h1></div>
       <span class="kt-clock" id="clock" aria-label="Time"></span>
       <span class="kt-dot" id="dot" role="status"><i aria-hidden="true"></i><span>Connecting…</span></span>
       <div class="kt-btns">
@@ -51,7 +51,6 @@ import Layout from '../../layouts/Layout.astro';
   .kt { min-height: 100vh; background: #0B0D10; color: #F5F7FA; font-family: 'Barlow', system-ui, sans-serif; padding: 0 12px 24px; }
   .kt-head { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 4px; background: #0B0D10; border-bottom: 1px solid #2A2F37; }
   .kt-brand { display: flex; align-items: center; gap: 10px; flex: 1 1 auto; min-width: 0; }
-  .kt-brand img { width: 40px; height: 40px; border-radius: 50%; background: #fff; padding: 3px; }
   .kt-brand h1 { margin: 0; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; white-space: nowrap; }
   .kt-clock { font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #FFC72C; }
   .kt-dot { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 15px; }

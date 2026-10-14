@@ -6,6 +6,7 @@
 // signing in.
 interface Props { title: string; description: string }
 const { title, description } = Astro.props;
+import '../../styles/club-logo.css';
 ---
 <!doctype html>
 <html lang="en">
@@ -29,7 +30,6 @@ const { title, description } = Astro.props;
   body { min-height: 100vh; min-height: 100dvh; background: #F4F5F7; color: var(--ink); font: 16px/1.5 Barlow, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; }
   a { color: inherit; }
   .top { background: var(--ink); color: #fff; display: flex; align-items: center; gap: 10px; padding: 10px 16px; }
-  .top img { width: 34px; height: 34px; border-radius: 50%; background: #fff; padding: 2px; }
   .top b { font: 400 22px/1 'Bebas Neue', Impact, sans-serif; letter-spacing: 1.5px; }
   .top a { color: #fff; text-decoration: none; display: flex; align-items: center; gap: 10px; }
   main { max-width: 480px; margin: 0 auto; padding: 16px 16px 40px; }
@@ -65,7 +65,7 @@ const { title, description } = Astro.props;
 </style>
 </head>
 <body>
-<header class="top"><a href="/"><img src="/images/lobi-stars-badge.png" alt="" width="34" height="34" /><b>Lobi Stars FC</b></a></header>
+<header class="top"><a href="/"><img class="club-logo" style="--logo-h:36px" src="/images/lobi-stars-badge.png" alt="" width="36" height="36" /><b>Lobi Stars FC</b></a></header>
 <main>
   <slot />
   <p class="foot"><a href="/programme/">Match Day Programme</a> · <a href="/privacy/#programme">Privacy</a> · <a href="/terms/">Terms</a></p>

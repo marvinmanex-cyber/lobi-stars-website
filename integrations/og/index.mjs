@@ -26,7 +26,7 @@ export async function makeShareImages({ dist, site, files, logger }) {
   let cards;
   try { cards = await import('./shareImages.mjs'); } catch (err) { logger.warn(`share images skipped (${err.message})`); return; }
   const pub = p => path.join(dist, ...p.replace(/^\//, '').split('/'));
-  const badge = pub('/images/lobi-stars-fc.jpg');
+  const badge = pub('/images/lobi-stars-fc-transparent.png');
   await mkdir(path.join(dist, 'og', 'match'), { recursive: true });
   let pages = 0;
 

@@ -12,7 +12,7 @@ import FanShareMenu from './FanShareMenu.astro';
 ---
 <div class="pr" id="pr" data-mode={mode}>
   <div class="pr-bar">
-    <img class="pr-logo" src="/images/lobi-stars-badge.png" alt="" width="36" height="36" />
+    <img class="pr-logo club-logo" style="--logo-h:36px" src="/images/lobi-stars-badge.png" alt="" width="36" height="36" />
     <div class="pr-ttl"><b id="prTitle">Match Day Programme</b><span id="prPage" aria-live="polite"></span></div>
     <button type="button" class="pr-btn pr-dl" id="prDownload" disabled>Download PDF</button>
     <button type="button" class="pr-btn pr-ghost" id="prShare" hidden>Share</button>
@@ -36,7 +36,6 @@ import FanShareMenu from './FanShareMenu.astro';
 <style is:global>
   .pr { background: #0E1013; min-height: 100vh; color: #fff; }
   .pr-bar { position: sticky; top: var(--header-h, 72px); z-index: 40; display: flex; align-items: center; gap: 10px; padding: 10px max(16px, 3vw); background: rgba(14, 16, 19, .96); backdrop-filter: blur(6px); border-bottom: 1px solid rgba(255, 255, 255, .1); }
-  .pr-logo { width: 36px; height: 36px; border-radius: 50%; background: #fff; padding: 3px; flex: none; }
   .pr-ttl { min-width: 0; flex: 1; display: flex; flex-direction: column; line-height: 1.2; }
   .pr-ttl b { font: 400 20px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pr-ttl span { font-size: 12px; color: rgba(255, 255, 255, .7); }

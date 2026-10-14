@@ -1,13 +1,13 @@
 ---
-// A partner logo in a fixed-size white rounded card. Logos always show in
-// full colour and are never stretched or cropped (object-fit: contain).
+// A partner logo in a fixed-size box, shown exactly as designed: no card,
+// background or border behind it (.club-logo). Never stretched or cropped.
 // Falls back to the partner's name as text if the logo file is missing.
 // Shows "18+ | Drink Responsibly" for age-restricted partners.
 //
 // Card sizes by tier (desktop / mobile):
 //   principal 260x130 / 200x100   kit   220x110 / 170x85
 //   club      180x90  / 140x70    small 150x75  / 120x60   tiny 110x55 / 96x48
-import { logoSrc, logoAlt, website, type Partner } from '../../lib/partners';
+import { logoSrc, logoDarkSrc, logoAlt, website, type Partner } from '../../lib/partners';
 
 interface Props {
   partner: Partner;
@@ -15,21 +15,21 @@ interface Props {
   /** Link to the partner's detail page ('page'), their website ('site') or nothing. */
   link?: 'page' | 'site' | 'none';
   label?: string;
+  /** On a dark background: use the light logo version when one was uploaded. */
+  onDark?: boolean;
 }
-const { partner, size = 'club', link = 'page', label } = Astro.props;
-const src = logoSrc(partner);
+const { partner, size = 'club', link = 'page', label, onDark = false } = Astro.props;
+const src = (onDark && logoDarkSrc(partner)) || logoSrc(partner);
 const site = website(partner);
 const href = link === 'page' ? `/partners/${partner.id}/` : link === 'site' ? site : null;
 const external = link === 'site' && !!site;
 const Tag = href ? 'a' : 'div';
 // Display width of each card size, so browsers download a small enough logo file.
 const SIZES = { principal: '260px', kit: '220px', club: '180px', small: '150px', tiny: '110px' };
-const card = partner.data.cardColor ? `background:${partner.data.cardColor};border-color:${partner.data.cardColor};` : undefined;
 ---
 <div class:list={['pl', `pl--${size}`]}>
   <Tag
     class="pl-box"
-    style={card}
     href={href ?? undefined}
     data-track={href ? 'partner_click' : undefined}
     data-track-label={href ? partner.id : undefined}
@@ -38,7 +38,7 @@ const card = partner.data.cardColor ? `background:${partner.data.cardColor};bord
     aria-label={href && !src ? logoAlt(partner) : undefined}
   >
     {src
-      ? <img src={src} alt={logoAlt(partner)} loading="lazy" decoding="async" sizes={SIZES[size]} />
+      ? <img class="club-logo" src={src} alt={logoAlt(partner)} loading="lazy" decoding="async" sizes={SIZES[size]} />
       : <span class="pl-name">{partner.data.name}</span>}
   </Tag>
   {label && <span class="pl-label">{label}</span>}
@@ -49,13 +49,12 @@ const card = partner.data.cardColor ? `background:${partner.data.cardColor};bord
   .pl { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; flex: 0 0 auto; }
   .pl-box {
     display: flex; align-items: center; justify-content: center; box-sizing: border-box;
-    background: #fff; border: 1px solid var(--d4); border-radius: 12px; padding: 12px;
-    box-shadow: 0 2px 8px rgba(15, 17, 21, .05); text-decoration: none;
-    transition: transform .2s ease, box-shadow .2s ease;
+    text-decoration: none; border-radius: 6px;
+    transition: transform .2s ease;
   }
-  a.pl-box:hover, a.pl-box:focus-visible { transform: translateY(-3px); box-shadow: 0 10px 22px rgba(15, 17, 21, .12); }
+  a.pl-box:hover, a.pl-box:focus-visible { transform: translateY(-3px); }
   a.pl-box:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
-  .pl-box img { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .pl-box img.club-logo { --logo-h: 100%; --logo-w: 100%; }
   .pl-name { font: 400 18px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); overflow-wrap: anywhere; }
 
   .pl--principal .pl-box { width: 260px; height: 130px; padding: 14px; }

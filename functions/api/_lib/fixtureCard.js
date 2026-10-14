@@ -5,6 +5,8 @@
 // Times are stored in UTC and shown in Nigerian time (Africa/Lagos, UTC+1 all
 // year); the full ISO time with its offset stays in <time datetime> and JSON-LD.
 
+import { logoFile } from './logoFiles.js';
+
 export const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -45,11 +47,15 @@ const ICON = {
   venue: svg('<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>'),
 };
 
-/** A crest image (fixed size, lazy) or a monogram circle when there is no crest. */
-export function crestHtml(name, src, size) {
-  const box = `width:${size}px;height:${size}px`;
-  if (!src) return `<span class="fx-crest fx-crest--mono" style="${box};font-size:${Math.round(size * 0.36)}px" aria-hidden="true">${esc(initials(name))}</span>`;
-  return `<img class="fx-crest" src="${esc(src)}" alt="${esc(name)} crest" width="${size}" height="${size}" loading="lazy" decoding="async" style="${box}">`;
+/**
+ * A crest exactly as designed (.club-logo: sized box, no circle or background),
+ * or the club's initials as plain text in the club colour when there is no crest.
+ */
+export function crestHtml(name, src, size, colour) {
+  const box = `--logo-h:${size}px`;
+  const c = /^#[0-9a-f]{6}$/i.test(colour || '') ? `;--logo-c:${colour}` : '';
+  if (!src) return `<span class="club-logo club-logo--mono fx-crest fx-crest--mono" style="${box}${c}" aria-hidden="true">${esc(initials(name))}</span>`;
+  return `<img class="club-logo fx-crest" src="${esc(logoFile(src))}" alt="${esc(name)} crest" width="${size}" height="${size}" loading="lazy" decoding="async" style="${box}">`;
 }
 
 /**
@@ -88,7 +94,7 @@ export const compLabel = s => String(s || '').replace(/^NNL\s+/, 'Nigeria Nation
 
 /**
  * One match card. `c` = {
- *   id, home: { name, crest, isLobi }, away: {...}, kickoff (UTC ISO), venue (text),
+ *   id, home: { name, crest, colour, isLobi }, away: {...}, kickoff (UTC ISO), venue (text),
  *   status, homeGoals, awayGoals, matchday, competition, featured, seconds,
  *   chips: [html], notes: [html], actions: [html], jsonLd (html), tag ('article'|'li'), attrs (html)
  * }
@@ -110,7 +116,7 @@ export function fixtureCardHtml(c) {
   else if (postponed) mid = '<div class="fx-vs fx-vs--pp">P–P</div>';
   else mid = '<div class="fx-vs" aria-hidden="true">VS</div>';
 
-  const team = (t, side) => `<div class="fx-team fx-team--${side}${winner === side[0] ? ' won' : ''}">${crestHtml(t?.name, t?.crest, size)}<span class="fx-name">${esc(t?.name)}</span></div>`;
+  const team = (t, side) => `<div class="fx-team fx-team--${side}${winner === side[0] ? ' won' : ''}">${crestHtml(t?.name, t?.crest, size, t?.colour)}<span class="fx-name">${esc(t?.name)}</span></div>`;
 
   // Featured card: the countdown, or LIVE, the final score, or "Postponed".
   let status = '';

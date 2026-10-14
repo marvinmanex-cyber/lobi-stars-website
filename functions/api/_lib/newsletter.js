@@ -7,6 +7,7 @@
 // weekly newsletter off in their newsletter options.
 import { ensureContactsSchema } from './contacts.js';
 import { randomId } from './crypto.js';
+import { logoFile } from './logoFiles.js';
 
 export const SITE = 'https://lobistarsfc.com';
 const RED = '#E31E24', GOLD = '#FFC72C', INK = '#15181D';
@@ -75,7 +76,7 @@ export async function ensureNewsletterSchema(db) {
 // ── Helpers ──
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const absFrom = (u, base = SITE) => (!u ? '' : /^https?:\/\//i.test(u) ? u : `${base}${u.startsWith('/') ? '' : '/'}${u}`);
-const abs = u => absFrom(u);
+const abs = u => absFrom(logoFile(u));
 export const safeUrl = u => { const s = String(u || '').trim(); return /^(https?:\/\/|\/)/i.test(s) ? s.slice(0, 500) : ''; };
 const paras = (text, style) => String(text || '').replace(/\r\n?/g, '\n').trim().split(/\n{2,}/).filter(Boolean)
   .map(p => `<p style="${style}">${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
@@ -148,7 +149,7 @@ function tracked(issue, kind, ref, url, preview) {
 export function renderNewsletter({ issue, sponsors = [], match = null, recipient = {}, preview = false, web = false, base = SITE, settings = NL_DEFAULTS }) {
   const T = { ...NL_DEFAULTS, ...settings };
   // Pictures: from this site's address in admin previews (so new uploads show before going live).
-  const abs = u => absFrom(u, base);
+  const abs = u => absFrom(logoFile(u), base);
   const byId = new Map(sponsors.map(s => [s.id, s]));
   const list = (issue.sponsor_ids || []).map(id => byId.get(id)).filter(Boolean);
   const top = issue.top_sponsor_id ? byId.get(issue.top_sponsor_id) : null;
@@ -163,7 +164,7 @@ export function renderNewsletter({ issue, sponsors = [], match = null, recipient
   // Header with the club badge.
   rows.push(`<tr><td style="background:${INK};padding:22px 32px;border-bottom:4px solid ${RED}">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td width="68" valign="middle"><img src="${SITE}/images/lobi-stars-badge.png" width="60" height="60" alt="Lobi Stars FC" style="display:block;border-radius:50%;background:#ffffff;padding:4px"></td>
+      <td width="68" valign="middle"><img src="${SITE}/images/lobi-stars-badge.png" width="60" height="60" alt="Lobi Stars FC" style="display:block;border:0"></td>
       <td valign="middle" style="padding-left:12px">
         <p style="margin:0;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:bold;letter-spacing:1px;color:#ffffff">LOBI STARS FC</p>
         <p style="margin:4px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:${GOLD}">${esc(T.title)} &middot; ${esc(date)}</p>

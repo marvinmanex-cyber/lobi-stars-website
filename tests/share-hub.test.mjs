@@ -39,18 +39,18 @@ const assets = (id, over = {}) => {
 };
 
 test('helpers: captions, X counts links as 23, intent links, states, escaping', () => {
-  const p = { slug: 'lobi-stars-vs-enyimba-2026-10-18', title: 'Lobi Stars vs Enyimba', venue: 'McCarthy Stadium', kickoff_at: '2026-10-18T15:00:00Z', publish_at: '2026-10-17T15:00:00Z', version: 2 };
+  const p = { slug: 'lobi-stars-vs-bichi-first-2026-11-08', title: 'Lobi Stars vs Bichi First', venue: 'McCarthy Stadium', kickoff_at: '2026-11-08T15:00:00Z', publish_at: '2026-11-07T15:00:00Z', version: 2 };
   const fb = { key: 'facebook', campaign_code: 'facebook', hashtags: '#LobiStarsFC' };
   const live = PLATFORM_SEED.find(x => x[0] === 'facebook')[3];
   const c = renderCaption(live, p, fb, 'live');
-  assert.match(c, /Lobi Stars vs Enyimba is OUT!/);
-  assert.match(c, /Sunday 18 October · ⏰ 4:00 PM · 📍 McCarthy Stadium/);
-  assert.ok(c.includes('https://lobistarsfc.com/m/lobi-stars-vs-enyimba-2026-10-18?src=facebook&v=2'));
+  assert.match(c, /Lobi Stars vs Bichi First is OUT!/);
+  assert.match(c, /Sunday 8 November · ⏰ 4:00 PM · 📍 McCarthy Stadium/);
+  assert.ok(c.includes('https://lobistarsfc.com/m/lobi-stars-vs-bichi-first-2026-11-08?src=facebook&v=2'));
   assert.ok(!/\n{3}/.test(c));
   const ig = renderCaption(PLATFORM_SEED.find(x => x[0] === 'instagram')[3], p, { key: 'instagram', campaign_code: 'instagram', hashtags: '' }, 'live');
   assert.match(ig, /Link in bio/); assert.ok(!ig.includes('https://'), 'no link in Instagram captions');
   const up = renderCaption(PLATFORM_SEED.find(x => x[0] === 'telegram')[4], p, { key: 'telegram', campaign_code: 'telegram', hashtags: '' }, 'upcoming');
-  assert.match(up, /drops Saturday 17 October at 4:00 PM/);
+  assert.match(up, /drops Saturday 7 November at 4:00 PM/);
   const x = `${'a'.repeat(250)} https://lobistarsfc.com/m/${'x'.repeat(100)}`;
   assert.deepEqual(captionLength('twitter', x), { length: 250 + 1 + 23, limit: 280, over: false });
   assert.equal(captionLength('telegram', 'é'.repeat(1025)).over, true);

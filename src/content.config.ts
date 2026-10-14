@@ -127,8 +127,8 @@ const partners = defineCollection({
     officialTitle: z.string(),
     logo: z.string().nullable().optional(),
     logoDark: z.string().nullable().optional(),
-    // Card background behind the logo, only for logos on a dark background
-    // (e.g. "#000000"), so the logo blends in. Default: white.
+    // No longer used: logos show without a card or background (.club-logo).
+    // Kept so older entries still load.
     cardColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/).nullable().optional(),
     website: z.string().nullable().optional(),
     shortDescription: z.string().default(''),

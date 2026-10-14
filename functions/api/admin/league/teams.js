@@ -1,3 +1,4 @@
+import { logoFile } from '../../_lib/logoFiles.js';
 import { leagueAuth, body, ok, fail } from '../../_lib/leagueAdmin.js';
 import { logLeague, slugify, syncEvent } from '../../_lib/leagueDb.js';
 
@@ -39,7 +40,8 @@ export async function onRequestGet({ request, env }) {
       (SELECT COUNT(*) FROM league_fixtures f WHERE f.home_team_id = t.id OR f.away_team_id = t.id) AS fixtures
     FROM league_teams t LEFT JOIN league_venues v ON v.id = t.home_venue_id ORDER BY t.name`).all();
   const venues = (await db.prepare(`SELECT * FROM league_venues ORDER BY name`).all()).results;
-  return ok({ teams: results.map(t => ({ ...t, aliases: JSON.parse(t.aliases || '[]') })), venues });
+  // crest: the file shown on the site (the transparent copy when there is one); crest_url stays as stored.
+  return ok({ teams: results.map(t => ({ ...t, crest: logoFile(t.crest_url), aliases: JSON.parse(t.aliases || '[]') })), venues });
 }
 
 export async function onRequestPost({ request, env }) {

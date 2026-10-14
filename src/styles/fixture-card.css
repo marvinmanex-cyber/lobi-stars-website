@@ -34,8 +34,8 @@
 .fx-team { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; text-align: center; }
 .fx-name { font: 700 18px/1.15 'Barlow Condensed', sans-serif; letter-spacing: .01em; overflow-wrap: anywhere; hyphens: auto; }
 .fx-team.won .fx-name { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
-.fx-crest { display: block; flex: none; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--d4); box-sizing: border-box; }
-.fx-crest--mono { display: inline-flex; align-items: center; justify-content: center; background: var(--d3); color: var(--white); font-family: 'Barlow Condensed', sans-serif; font-weight: 700; letter-spacing: .04em; }
+/* Crests: .club-logo (src/styles/club-logo.css), the logo exactly as designed. */
+.fx-crest--mono { --logo-c: var(--white); }
 .fx-vs { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--d3); color: var(--white); font: 400 20px/1 'Bebas Neue', sans-serif; letter-spacing: .04em; }
 .fx-vs--pp { width: auto; padding: 0 10px; border-radius: 999px; font-size: 18px; }
 .fx-score { display: inline-flex; gap: 8px; align-items: center; padding: 6px 14px; border-radius: 10px; background: #15181D; color: #fff; font: 400 30px/1 'Bebas Neue', sans-serif; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -107,6 +107,8 @@
 .fx-card--featured .fx-acts .fx-btn:hover, .fx-card--featured .fx-acts .lg-btn:not(.primary):hover { border-color: #fff; color: #fff; background: rgba(255, 255, 255, .08); }
 .fx-card--featured a:focus-visible, .fx-card--featured button:focus-visible { outline-color: #FFC72C; }
 .fx-card--featured .fx-pp { background: #FFF1D6; }
+/* Initials on the dark card: white, so they stay readable. */
+.fx-card--featured .fx-crest--mono { --logo-c: #fff !important; }
 
 /* Desktop details: more air between the three items */
 @media (min-width: 900px) {
@@ -122,8 +124,8 @@
   .fx-card--featured .fx-d--venue { border-top-color: rgba(255, 255, 255, .16); }
   .fx-name { font-size: 16px; }
   .fx-tiles { grid-auto-columns: minmax(58px, 72px); gap: 8px; }
-  .fx-card--featured .fx-crest { width: 76px !important; height: 76px !important; }
-  .fx-card--regular .fx-crest { width: 52px !important; height: 52px !important; }
+  .fx-card--featured .fx-crest { --logo-h: 76px !important; }
+  .fx-card--regular .fx-crest { --logo-h: 52px !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .fx-card, .fx-card:hover { transition: none; transform: none; }

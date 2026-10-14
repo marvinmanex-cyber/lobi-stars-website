@@ -8,6 +8,7 @@
 //    syncEvent() copies them to the events row.
 //  - For linked fixtures the SCORE lives in match_centre (Live Match Control
 //    and League › Results both write it), and loadLeague() reads it from there.
+import { logoFile } from './logoFiles.js';
 import { COMPETITION, TEAMS, FIXTURES } from './league/seed.js';
 import { computeStandings, isCounted } from './league/standings.js';
 import { ensureTable } from './matchCentre.js';
@@ -244,7 +245,8 @@ export async function loadLeague(env, { slug = null, publishedOnly = true } = {}
     db.prepare(`SELECT * FROM league_tie_overrides WHERE competition_id = ?`).bind(competition.id).all(),
   ]);
   const allTeams = (await db.prepare(`SELECT * FROM league_teams`).all()).results;
-  const teamById = new Map(allTeams.map(t => [t.id, { ...t, aliases: parse(t.aliases, []) }]));
+  // crest_url: the transparent copy of a crest when there is one (logoFiles.js); the stored address is unchanged.
+  const teamById = new Map(allTeams.map(t => [t.id, { ...t, crest_url: logoFile(t.crest_url), aliases: parse(t.aliases, []) }]));
   const venueById = new Map(venuesR.results.map(v => [v.id, v]));
   const fixtures = await overlayCentre(db, fixturesR.results.map(f => ({ ...f })));
   for (const f of fixtures) { f.home = teamById.get(f.home_team_id); f.away = teamById.get(f.away_team_id); f.venue = venueById.get(f.venue_id) || null; f.competition = competition; }

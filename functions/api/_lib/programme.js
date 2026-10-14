@@ -162,7 +162,7 @@ export function r2Keys(slug, version) {
   };
 }
 
-/** "Lobi-Stars-vs-Enyimba-Matchday-Programme.pdf" */
+/** "Lobi-Stars-FC-vs-Bichi-First-FC-Matchday-Programme.pdf" */
 export function friendlyPdfName(p) {
   const t = String(p.title || 'Lobi Stars').replace(/&/g, 'and').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
   return `${t || 'Lobi-Stars'}-Matchday-Programme.pdf`;
@@ -235,6 +235,6 @@ export function cleanDetails(b) {
   const k = String(b.kickoffAt || '').trim();
   if (k && Number.isNaN(Date.parse(k))) return { error: 'Please enter a valid kick-off date and time.' };
   out.kickoffAt = k ? new Date(k).toISOString() : null;
-  if (!out.title) return { error: 'Please enter the match title, e.g. "Lobi Stars vs Enyimba".' };
+  if (!out.title) return { error: 'Please enter the match title, e.g. "Lobi Stars FC vs Bichi First FC".' };
   return { value: out };
 }

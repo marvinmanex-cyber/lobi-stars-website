@@ -183,8 +183,6 @@ async function makeShareImage() {
       </linearGradient>
     </defs>
     <rect width="${W}" height="${H}" fill="url(#g)"/>
-    <circle cx="${W - 300}" cy="${H / 2}" r="250" fill="#FFFFFF"/>
-    <circle cx="${W - 300}" cy="${H / 2}" r="250" fill="none" stroke="${GOLD}" stroke-width="10"/>
     <rect x="80" y="214" width="90" height="8" fill="${GOLD}"/>
     <text x="80" y="320" font-family="Impact, 'Arial Black', Arial, sans-serif" font-size="92" fill="#FFFFFF" letter-spacing="2">LOBI STARS FC</text>
     <text x="80" y="388" font-family="Arial, sans-serif" font-weight="700" font-size="34" fill="${GOLD}" letter-spacing="6">THE PRIDE OF BENUE</text>

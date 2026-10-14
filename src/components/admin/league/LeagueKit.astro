@@ -48,7 +48,7 @@
   .la td.n, .la th.n { text-align: center; }
   .la tbody th { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--a-ink); font-weight: 700; }
   .la tr.is-lobi td, .la tr.is-lobi th { background: color-mix(in srgb, #E31E24 9%, transparent); }
-  .la-crest { width: 24px; height: 24px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--a-line); vertical-align: middle; margin-right: 6px; }
+  .la-crest { --logo-h: 24px; display: inline-block; vertical-align: middle; margin-right: 6px; }
   .la-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 4000; background: #15181D; color: #fff; padding: 12px 20px; border-radius: 10px; font-weight: 600; box-shadow: 0 10px 30px rgba(0,0,0,.25); max-width: calc(100vw - 32px); }
   .la-toast.err { background: #A3161B; }
   .la-dlg { width: min(560px, calc(100vw - 32px)); border: 0; border-radius: 16px; padding: 20px; box-sizing: border-box; }
@@ -102,7 +102,7 @@
   LA.when = function (s) { if (!s) return ''; var iso = /T|Z$/.test(s) ? s : s.replace(' ', 'T') + 'Z'; return new Date(iso).toLocaleString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); };
   LA.STATUS = { scheduled: 'Not played', live: 'Live', half_time: 'Half time', full_time: 'Full time', postponed: 'Postponed', abandoned: 'Abandoned', cancelled: 'Cancelled', awarded: 'Awarded' };
   LA.chip = function (status) { return LA.el('span', { class: 'la-chip ' + status, text: LA.STATUS[status] || status }); };
-  LA.crest = function (t) { return LA.el('img', { class: 'la-crest', src: (t && (t.crest || t.crest_url)) || ('/api/league/crest/' + (t && t.code)), alt: '', width: 24, height: 24, loading: 'lazy' }); };
+  LA.crest = function (t) { return LA.el('img', { class: 'la-crest club-logo', src: (t && (t.crest || t.crest_url)) || ('/api/league/crest/' + (t && t.code)), alt: '', width: 24, height: 24, loading: 'lazy' }); };
   var toastT;
   LA.toast = function (text, err) {
     var t = document.getElementById('laToast');

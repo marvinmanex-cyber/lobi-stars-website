@@ -37,7 +37,7 @@ function crest(name) {
   const src = TEAM_LOGOS[name];
   return src
     ? `<img src="${esc(src)}" alt="${esc(name)}" style="width:56px;height:56px;object-fit:contain;"/>`
-    : `<div style="width:56px;height:56px;border-radius:50%;background:#1e2f52;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:22px;">${esc((name || '?').charAt(0))}</div>`;
+    : `<div style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:26px;">${esc((name || '?').charAt(0))}</div>`;
 }
 
 function renderPage(id, ticket) {

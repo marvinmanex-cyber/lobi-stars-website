@@ -15,12 +15,13 @@ const STATUS_TEXT = { scheduled: 'Upcoming', live: 'LIVE', half_time: 'Half time
 const monthLabel = ym => new Date(`${ym}-15T12:00:00Z`).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const lagosMonth = iso => toLagos(iso)?.date.slice(0, 7) || '';
 
-const crest = (t, size = 34) => {
-  if (!t?.crest_url && !t?.code) return `<span class="lg-crest lg-crest--none" style="width:${size}px;height:${size}px" aria-hidden="true">${esc(String(t?.name || '?').trim().charAt(0))}</span>`;
-  return `<img class="lg-crest" src="${esc(t.crest_url || `/api/league/crest/${t.code}`)}" alt="" width="${size}" height="${size}" loading="lazy" decoding="async">`;
+// Table crests: the shared logo rule (.club-logo), the crest exactly as designed.
+const crest = (t, size = 26) => {
+  if (!t?.crest_url && !t?.code) return `<span class="club-logo club-logo--mono lg-crest" style="--logo-h:${size}px" aria-hidden="true">${esc(String(t?.name || '?').trim().charAt(0))}</span>`;
+  return `<img class="club-logo lg-crest" src="${esc(t.crest_url || `/api/league/crest/${t.code}`)}" alt="" width="${size}" height="${size}" loading="lazy" decoding="async" style="--logo-h:${size}px">`;
 };
 const crestUrl = t => t?.crest_url || (t?.code ? `/api/league/crest/${t.code}` : null);
-const side = t => ({ name: t?.name, crest: crestUrl(t), isLobi: !!t?.is_lobi });
+const side = t => ({ name: t?.name, crest: crestUrl(t), colour: t?.colour, isLobi: !!t?.is_lobi });
 
 /**
  * A unified match for the pages: league fixtures plus any Lobi Stars match in

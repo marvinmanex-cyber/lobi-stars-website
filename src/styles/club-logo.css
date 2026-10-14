@@ -1,0 +1,37 @@
+/* Every logo on the site (club crests, opponents, partners) uses .club-logo:
+   the logo shows exactly as designed, in its own shape and colours, inside a
+   sized box only. Never a circle, a background, a border, a ring or padding,
+   and never cropped or stretched (object-fit: contain). The resets are
+   !important so a local style can't bring the white circle back.
+   Size per spot with --logo-h (height) and, for wide logos, --logo-w.
+   Same rules for HTML built in functions/ (fixture cards, emails use inline styles). */
+.club-logo {
+  display: block;
+  flex: none;
+  box-sizing: content-box;
+  width: var(--logo-w, var(--logo-h, 48px));
+  height: var(--logo-h, 48px);
+  object-fit: contain !important;
+  object-position: center;
+  background: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  outline-offset: 2px;
+}
+/* Wide logos (partners): fixed height, natural width up to a limit. */
+.club-logo--wide { width: auto; max-width: var(--logo-max-w, calc(var(--logo-h, 48px) * 3.2)); }
+/* No logo file: the club's initials as plain text, in the club colour. */
+.club-logo--mono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: calc(var(--logo-h, 48px) * .44);
+  line-height: 1;
+  letter-spacing: .04em;
+  color: var(--logo-c, currentColor);
+  text-transform: uppercase;
+}

@@ -15,7 +15,7 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
 ) : (
   <section class:list={['lp', `lp--${variant}`]} data-pending data-live-player data-variant={variant} data-for-slug={forSlug} aria-label="Lobi Stars FC Live player">
     <div class="lp-top">
-      <span class="lp-brand"><img src="/images/icon-192.png" alt="" width="28" height="28" /> Lobi Stars FC Live</span>
+      <span class="lp-brand"><img class="club-logo" style="--logo-h:30px" src="/images/lobi-stars-badge.png" alt="" width="30" height="30" /> Lobi Stars FC Live</span>
       <span class="lp-badge" data-lp-badge>Off air</span>
     </div>
 
@@ -53,7 +53,6 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
     background: radial-gradient(130% 160% at 0% 0%, #7A0F12 0%, #2A0507 55%, #15181D 100%); box-shadow: 0 14px 40px rgba(0,0,0,.22); }
   .lp-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 18px; }
   .lp-brand { display: inline-flex; align-items: center; gap: 8px; font: 400 20px/1 'Bebas Neue', sans-serif; letter-spacing: 1.5px; color: #FFC72C; }
-  .lp-brand img { border-radius: 50%; background: #fff; }
   .lp-badge { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.14);
     font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.8px; text-transform: uppercase; white-space: nowrap; }
   .lp-badge.live { background: var(--red); }
@@ -85,8 +84,8 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
   .lp-match { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.15); }
   .lp-match :global(.lpm-row) { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
   .lp-match :global(.lpm-team) { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; font: 400 17px/1.05 'Bebas Neue', sans-serif; letter-spacing: .5px; min-width: 0; overflow-wrap: anywhere; }
-  .lp-match :global(.lpm-crest) { width: 46px; height: 46px; border-radius: 50%; object-fit: contain; background: #fff; padding: 2px; }
-  .lp-match :global(.lpm-crest--initials) { display: inline-flex; align-items: center; justify-content: center; color: #15181D; font: 400 18px/1 'Bebas Neue', sans-serif; }
+  .lp-match :global(.lpm-crest) { --logo-h: 46px; }
+  .lp-match :global(.lpm-crest--initials) { --logo-c: #fff; }
   .lp-match :global(.lpm-mid) { text-align: center; }
   .lp-match :global(.lpm-score) { font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: 2px; }
   .lp-match :global(.lpm-state) { display: block; margin-top: 4px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: #FFC72C; }

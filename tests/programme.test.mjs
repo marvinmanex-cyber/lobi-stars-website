@@ -56,8 +56,8 @@ test('helpers: codes, email, slug, file name, live rule, link addresses', () => 
   assert.ok(timingSafeEqual('abc', 'abc') && !timingSafeEqual('abc', 'abd') && !timingSafeEqual('abc', 'abcd'));
   assert.equal(normaliseEmail('  Ada@Example.COM '), 'ada@example.com');
   assert.equal(normaliseEmail('nope'), null);
-  assert.equal(slugify('Lobi Stars vs Enyimba', '2026-10-18T15:00:00Z'), 'lobi-stars-vs-enyimba-2026-10-18');
-  assert.equal(friendlyPdfName({ title: 'Lobi Stars vs Enyimba' }), 'Lobi-Stars-vs-Enyimba-Matchday-Programme.pdf');
+  assert.equal(slugify('Lobi Stars vs Bichi First', '2026-11-08T15:00:00Z'), 'lobi-stars-vs-bichi-first-2026-11-08');
+  assert.equal(friendlyPdfName({ title: 'Lobi Stars vs Bichi First' }), 'Lobi-Stars-vs-Bichi-First-Matchday-Programme.pdf');
   const now = new Date('2026-10-10T12:00:00Z');
   assert.equal(isLive({ status: 'draft', pdf_key: 'x' }, now), false);
   assert.equal(isLive({ status: 'published', pdf_key: null }, now), false);

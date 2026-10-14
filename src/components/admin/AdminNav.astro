@@ -111,7 +111,7 @@ const showBack = here !== '/admin/dashboard/';
 <div class="ash" data-current={current}>
   <aside class="ash-side" id="ashSide" aria-label="Admin menu">
     <div class="ash-brand">
-      <a href="/admin/dashboard/" class="ash-logo"><img src="/images/lobi-stars-badge.png" alt="" width="34" height="34" /><span><b>Lobi Stars</b><small>Admin</small></span></a>
+      <a href="/admin/dashboard/" class="ash-logo"><img class="club-logo" style="--logo-h:36px" src="/images/lobi-stars-badge.png" alt="" width="36" height="36" /><span><b>Lobi Stars</b><small>Admin</small></span></a>
       <button type="button" class="ash-collapse" id="ashCollapse" aria-label="Collapse menu" title="Collapse menu">&laquo;</button>
     </div>
     <nav class="ash-nav">
@@ -234,7 +234,6 @@ const showBack = here !== '/admin/dashboard/';
   .ash-side { position: fixed; top: 0; left: 0; bottom: 0; width: var(--side); background: #15181D; color: #fff; z-index: 1300; display: flex; flex-direction: column; transition: width .2s, transform .25s; overflow: hidden; }
   .ash-brand { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 12px 12px 12px 16px; height: var(--top); border-bottom: 1px solid rgba(255,255,255,.08); flex-shrink: 0; }
   .ash-logo { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; min-width: 0; }
-  .ash-logo img { border-radius: 50%; background: #fff; flex-shrink: 0; padding: 3px; object-fit: contain; }
   .ash-logo b { display: block; font: 400 20px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .ash-logo small { display: block; font: 700 10px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
   .ash-collapse { background: rgba(255,255,255,.08); border: 0; color: #fff; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 16px; flex-shrink: 0; }

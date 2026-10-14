@@ -18,12 +18,12 @@ import ProgrammeCurrent from '../../components/programme/ProgrammeCurrent.astro'
     <div id="prog-body" hidden>
       <div class="prog-header">
         <div class="prog-team">
-          <img id="prog-home-logo" class="prog-crest" alt="" />
+          <img id="prog-home-logo" class="prog-crest club-logo" alt="" />
           <span id="prog-home-name"></span>
         </div>
         <div class="prog-vs">VS</div>
         <div class="prog-team">
-          <img id="prog-away-logo" class="prog-crest" alt="" />
+          <img id="prog-away-logo" class="prog-crest club-logo" alt="" />
           <span id="prog-away-name"></span>
         </div>
       </div>
@@ -47,8 +47,7 @@ import ProgrammeCurrent from '../../components/programme/ProgrammeCurrent.astro'
   <style is:global>
     .prog-header{display:flex;align-items:center;justify-content:center;gap:24px;margin-bottom:10px;flex-wrap:wrap;}
     .prog-team{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:110px;}
-    .prog-crest{width:64px;height:64px;object-fit:contain;background:#fff;border-radius:50%;
-      box-shadow:0 0 0 1px var(--d4);padding:4px;}
+    .prog-crest{--logo-h:64px;}
     .prog-team span{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:14px;
       letter-spacing:.5px;color:var(--white);text-align:center;}
     .prog-vs{font-family:'Bebas Neue',sans-serif;font-size:22px;color: var(--red-text);}
@@ -67,21 +66,21 @@ import ProgrammeCurrent from '../../components/programme/ProgrammeCurrent.astro'
   <script is:inline>
   (function () {
     const TEAM_LOGOS = {
-      'Lobi Stars FC': '/images/lobi-stars-fc.jpg',
+      'Lobi Stars FC': '/images/lobi-stars-fc-transparent.png',
       'Lobi Stars': '/images/lobi-stars-crest.png',
-      'ABS FC': '/images/abs-illorin.jpg',
-      'Bichi First FC': '/images/bichi-first.jpg',
-      'Bichi First': '/images/bichi-first.jpg',
-      'Kada Warriors FC': '/images/kadawarriors-kaduna.jpg',
-      'Kada Warriors': '/images/kadawarriors-kaduna.jpg',
-      'Mighty Jets': '/images/mighty-jets-jos.jpg',
-      'Mighty Jets Feeder / Bida Lions': '/images/mighty-jets-jos.jpg',
-      'Sokoto United FC': '/images/sokoto-united.jpg',
-      'Sokoto United': '/images/sokoto-united.jpg',
+      'ABS FC': '/images/abs-illorin-transparent.png',
+      'Bichi First FC': '/images/bichi-first-transparent.png',
+      'Bichi First': '/images/bichi-first-transparent.png',
+      'Kada Warriors FC': '/images/kadawarriors-kaduna-transparent.png',
+      'Kada Warriors': '/images/kadawarriors-kaduna-transparent.png',
+      'Mighty Jets': '/images/mighty-jets-jos-transparent.png',
+      'Mighty Jets Feeder / Bida Lions': '/images/mighty-jets-jos-transparent.png',
+      'Sokoto United FC': '/images/sokoto-united-transparent.png',
+      'Sokoto United': '/images/sokoto-united-transparent.png',
       'Wikki Tourists FC': '/images/wikki-tourists.jpg',
       'Wikki Tourists': '/images/wikki-tourists.jpg',
-      'Yobe Desert Stars FC': '/images/yobe-desert-stars.jpg',
-      'Yobe Desert Stars': '/images/yobe-desert-stars.jpg',
+      'Yobe Desert Stars FC': '/images/yobe-desert-stars-transparent.png',
+      'Yobe Desert Stars': '/images/yobe-desert-stars-transparent.png',
       'Kano Pillars': '/images/kano-pillars-logo.png',
     };
 

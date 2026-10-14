@@ -57,6 +57,14 @@ export function logoSrc(p: Partner): string | null {
   return existsSync(`public${decodeURI(logo)}`) ? logo : null;
 }
 
+/** The light version of the logo for dark backgrounds, if one was uploaded (CMS: "Logo for dark backgrounds"). */
+export function logoDarkSrc(p: Partner): string | null {
+  const logo = p.data.logoDark;
+  if (!logo) return null;
+  if (/^https?:\/\//.test(logo)) return logo;
+  return existsSync(`public${decodeURI(logo)}`) ? logo : null;
+}
+
 export function logoAlt(p: Partner) {
   return `${p.data.name} – ${p.data.officialTitle} of Lobi Stars FC`;
 }

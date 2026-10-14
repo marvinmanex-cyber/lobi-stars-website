@@ -17,7 +17,7 @@ const isActive = (href: string) => {
   <PromoBar />
   <div class="sh-inner">
     <a class="sh-logo" href="/">
-      <img src="/images/lobi-stars-badge.png" alt="Home" width="44" height="44" />
+      <img class="club-logo" style="--logo-h:48px" src="/images/lobi-stars-badge.png" alt="Home" width="48" height="48" />
       <span class="sh-name">Lobi Stars<span>Football Club</span></span>
     </a>
 
@@ -115,7 +115,6 @@ const isActive = (href: string) => {
   .sh.scrolled { box-shadow: 0 6px 24px rgba(15, 17, 21, .07); }
   .sh-inner { max-width: 1320px; margin: 0 auto; padding: 0 3%; height: 72px; display: flex; align-items: center; gap: 18px; }
   .sh-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
-  .sh-logo img { width: 44px; height: 44px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--d4); padding: 4px; }
   .sh-name { font: 400 19px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1.5px; color: var(--white); }
   .sh-name span { display: block; font: 600 9px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 3px; color: var(--red-text); text-transform: uppercase; }
 

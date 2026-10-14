@@ -1,0 +1,28 @@
+---
+// A logo (club crest, opponent or partner) shown exactly as designed: its own
+// shape and colours in a sized box, never in a circle or on a background.
+// Styles: src/styles/club-logo.css (.club-logo). Without a file it shows the
+// club's initials as plain text.
+//   <ClubLogo src="/images/lobi-stars-badge.png" alt="Lobi Stars FC" size={48} />
+//   <ClubLogo src={logo} alt={name} size={40} wide />   (wide partner logo)
+interface Props {
+  src?: string | null;
+  alt: string;
+  /** Height of the logo box in px (also the width unless `wide`). */
+  size?: number;
+  /** Wide logo: natural width up to about 3x the height. */
+  wide?: boolean;
+  /** Text for the initials fallback (default: from `alt`). */
+  name?: string;
+  /** Initials colour (e.g. the club colour). */
+  colour?: string;
+  lazy?: boolean;
+  class?: string;
+}
+const { src, alt, size = 48, wide = false, name, colour, lazy = true, class: cls } = Astro.props;
+const initials = (name || alt).replace(/\b(FC|F\.C\.)\b/gi, '').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
+const style = `--logo-h:${size}px;${colour ? `--logo-c:${colour};` : ''}`;
+---
+{src
+  ? <img class:list={['club-logo', wide && 'club-logo--wide', cls]} src={src} alt={alt} width={wide ? undefined : size} height={size} style={style} loading={lazy ? 'lazy' : undefined} decoding="async" />
+  : <span class:list={['club-logo', 'club-logo--mono', cls]} style={style} role="img" aria-label={alt}>{initials}</span>}

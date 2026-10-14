@@ -8,7 +8,7 @@ const { title, heading, intro, description } = Astro.props;
 <Layout title={`${title} | Lobi Stars Football Club`} description={description} noindex>
   <div class="fa-wrap">
     <div class="fa-card">
-      <img class="fa-badge" src="/images/lobi-stars-badge.png" alt="" width="64" height="64" />
+      <img class="fa-badge club-logo" style="--logo-h:64px" src="/images/lobi-stars-badge.png" alt="" width="64" height="64" />
       <h1 class="fa-h1">{heading}</h1>
       {intro && <p class="fa-intro">{intro}</p>}
       <slot />
@@ -19,7 +19,7 @@ const { title, heading, intro, description } = Astro.props;
 <style is:global>
   .fa-wrap { padding: 40px 16px 70px; display: flex; justify-content: center; background: linear-gradient(180deg, var(--dark), #fff 60%); }
   .fa-card { width: 100%; max-width: 520px; background: #fff; border: 1px solid var(--d4); border-radius: 16px; padding: clamp(22px, 5vw, 38px); box-shadow: 0 18px 44px rgba(15, 17, 21, .07); }
-  .fa-badge { display: block; width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; object-fit: contain; background: #fff; padding: 6px; }
+  .fa-badge { margin: 0 auto 10px; }
   .fa-h1 { margin: 0 0 6px; text-align: center; font: 400 38px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
   .fa-intro { margin: 0 0 22px; text-align: center; color: var(--lt); line-height: 1.6; }
   .fa-field { margin-bottom: 14px; }

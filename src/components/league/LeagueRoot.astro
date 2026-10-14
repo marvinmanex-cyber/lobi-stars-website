@@ -17,8 +17,6 @@ const { which } = Astro.props;
   .lg .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .lg-empty { padding: 26px 18px; text-align: center; color: var(--lt); border: 1px dashed var(--d4); border-radius: 10px; margin: 0 0 20px; }
   .lg-small { color: var(--lt); font-size: 13px; margin: 6px 0 0; }
-  .lg-crest--none { display: inline-flex; align-items: center; justify-content: center; background: var(--d3) !important; color: var(--lt); font: 700 12px/1 'Barlow Condensed', sans-serif; }
-  .lg-crest { width: 34px; height: 34px; border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--d4); flex: none; }
   .lg-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 8px 14px; border-radius: 4px; border: 1.5px solid var(--d4); background: var(--d2); color: var(--white); text-decoration: none; cursor: pointer; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
   .lg-btn:hover { border-color: var(--red); color: var(--red-text); }
   .lg-btn.primary { background: var(--red); border-color: var(--red); color: #fff; }
@@ -94,7 +92,6 @@ const { which } = Astro.props;
   .lg-table-acts { margin-top: 14px; }
 
   @media (max-width: 640px) {
-    .lg-crest { width: 28px; height: 28px; }
     .lg-ha, .lg-chip, .lg-table thead th { font-size: 13px; }
     .lg-form-row span { width: 22px; height: 22px; font-size: 13px; }
     /* Phone: Pos, Club, P, GD, Pts first; the club stays put while the rest scrolls. */

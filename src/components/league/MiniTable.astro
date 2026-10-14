@@ -17,7 +17,7 @@
   .mtb :global(th), .mtb :global(td) { padding: 7px 6px; border-bottom: 1px solid var(--d4); text-align: center; }
   .mtb :global(th[scope=row]) { text-align: left; font-weight: 700; }
   .mtb :global(thead th) { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
-  .mtb :global(img) { width: 20px; height: 20px; border-radius: 50%; vertical-align: middle; margin-right: 6px; background: #fff; object-fit: contain; }
+  .mtb :global(img) { --logo-h: 22px; display: inline-block; vertical-align: middle; margin-right: 6px; }
   .mtb :global(tr.is-lobi) { background: #FFF1F1; }
   .mtb :global(tr.is-lobi th), .mtb :global(tr.is-lobi td) { color: #15181D; }
   .mtb-more { margin: 10px 0 0; font-weight: 700; }
@@ -34,7 +34,7 @@
       var thead = el('thead', {}, el('tr', {}, el('th', { scope: 'col', text: 'Pos' }), el('th', { scope: 'col', text: 'Club' }), el('th', { scope: 'col', text: 'P' }), el('th', { scope: 'col', text: 'GD' }), el('th', { scope: 'col', text: 'Pts' })));
       var tbody = el('tbody');
       t.rows.forEach(function (r) {
-        tbody.append(el('tr', { class: r.team.isLobi ? 'is-lobi' : '' }, el('td', { text: String(r.pos) }), el('th', { scope: 'row' }, el('img', { src: r.team.crest, alt: '', width: 20, height: 20, loading: 'lazy' }), r.team.shortName),
+        tbody.append(el('tr', { class: r.team.isLobi ? 'is-lobi' : '' }, el('td', { text: String(r.pos) }), el('th', { scope: 'row' }, el('img', { class: 'club-logo', src: r.team.crest, alt: '', width: 22, height: 22, loading: 'lazy' }), r.team.shortName),
           el('td', { text: String(r.played) }), el('td', { text: sign(r.gd) }), el('td', {}, el('b', { text: String(r.points) }))));
       });
       body.replaceChildren(el('table', {}, el('caption', { text: t.preSeason ? 'Before the first match' : 'After Matchday ' + t.matchday }), thead, tbody));

@@ -28,8 +28,8 @@ function initials(name) {
 export function crestHtml(name, size = 30, cls = 'crest') {
   const src = TEAM_LOGOS[name];
   return src
-    ? `<img class="${cls}" src="${esc(src)}" alt="${esc(name)} crest" loading="lazy" width="${size}" height="${size}">`
-    : `<span class="${cls} ${cls}--initials" aria-hidden="true">${esc(initials(name))}</span>`;
+    ? `<img class="club-logo ${cls}" src="${esc(src)}" alt="${esc(name)} crest" loading="lazy" width="${size}" height="${size}" style="--logo-h:${size}px">`
+    : `<span class="club-logo club-logo--mono ${cls} ${cls}--initials" style="--logo-h:${size}px" aria-hidden="true">${esc(initials(name))}</span>`;
 }
 
 /** All visible matches in the public summary shape (same as /api/matches). */

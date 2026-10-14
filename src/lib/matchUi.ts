@@ -26,14 +26,16 @@ export function crest(name: string, size = 30, cls = 'crest'): HTMLElement {
   const src = (TEAM_LOGOS as Record<string, string>)[name];
   const fallback = () => {
     const s = document.createElement('span');
-    s.className = `${cls} ${cls}--initials`;
+    s.className = `club-logo club-logo--mono ${cls} ${cls}--initials`;
     s.textContent = teamInitials(name);
     s.setAttribute('aria-hidden', 'true');
+    s.style.setProperty('--logo-h', `${size}px`);
     return s;
   };
   if (!src) return fallback();
   const img = document.createElement('img');
-  img.className = cls; img.src = src; img.alt = `${name} crest`; img.loading = 'lazy';
+  img.className = `club-logo ${cls}`; img.src = src; img.alt = `${name} crest`; img.loading = 'lazy';
+  img.style.setProperty('--logo-h', `${size}px`);
   img.width = size; img.height = size;
   img.onerror = () => img.replaceWith(fallback());
   return img;

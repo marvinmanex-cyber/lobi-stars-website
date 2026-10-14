@@ -172,10 +172,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     .m-card{background:var(--d2);border:1px solid var(--d4);border-radius:14px;padding:18px 20px;
       display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:start;}
     .m-card.inactive{opacity:.6;}
-    .m-crest{width:46px;height:46px;border-radius:50%;object-fit:contain;background: var(--a-card);
-      padding:3px;box-shadow:0 0 0 1px var(--d4);flex-shrink:0;}
-    .m-crest.ph{display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;
-      font-size:20px;color:#8a8a8a;padding:0;}
+    .m-crest{--logo-h:46px;}
+    .m-crest.ph{--logo-c:#8a8a8a;}
     .m-main{min-width:0;}
     .m-teams{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:19px;letter-spacing:.3px;
       color:var(--white);line-height:1.2;}
@@ -216,21 +214,21 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 
     // Opponent crests already in /public/images, keyed by a normalised name.
     const CRESTS = {
-      'abs fc': '/images/abs-illorin.jpg',
-      'bichi first fc': '/images/bichi-first.jpg',
-      'bichi first': '/images/bichi-first.jpg',
-      'kada warriors fc': '/images/kadawarriors-kaduna.jpg',
-      'kada warriors': '/images/kadawarriors-kaduna.jpg',
-      'lobi stars fc': '/images/lobi-stars-fc.jpg',
-      'lobi stars': '/images/lobi-stars-fc.jpg',
-      'mighty jets': '/images/mighty-jets-jos.jpg',
-      'mighty jets feeder / bida lions': '/images/mighty-jets-jos.jpg',
-      'sokoto united fc': '/images/sokoto-united.jpg',
-      'sokoto united': '/images/sokoto-united.jpg',
+      'abs fc': '/images/abs-illorin-transparent.png',
+      'bichi first fc': '/images/bichi-first-transparent.png',
+      'bichi first': '/images/bichi-first-transparent.png',
+      'kada warriors fc': '/images/kadawarriors-kaduna-transparent.png',
+      'kada warriors': '/images/kadawarriors-kaduna-transparent.png',
+      'lobi stars fc': '/images/lobi-stars-fc-transparent.png',
+      'lobi stars': '/images/lobi-stars-fc-transparent.png',
+      'mighty jets': '/images/mighty-jets-jos-transparent.png',
+      'mighty jets feeder / bida lions': '/images/mighty-jets-jos-transparent.png',
+      'sokoto united fc': '/images/sokoto-united-transparent.png',
+      'sokoto united': '/images/sokoto-united-transparent.png',
       'wikki tourists fc': '/images/wikki-tourists.jpg',
       'wikki tourists': '/images/wikki-tourists.jpg',
-      'yobe desert stars fc': '/images/yobe-desert-stars.jpg',
-      'yobe desert stars': '/images/yobe-desert-stars.jpg',
+      'yobe desert stars fc': '/images/yobe-desert-stars-transparent.png',
+      'yobe desert stars': '/images/yobe-desert-stars-transparent.png',
       'kano pillars': '/images/kano-pillars-logo.png',
     };
     const crestFor = name => CRESTS[String(name || '').trim().toLowerCase()] || null;
@@ -290,8 +288,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       const crest = crestFor(opp);
       const orders = e.paid_orders || 0;
       const crestEl = crest
-        ? '<img class="m-crest" width="46" height="46" src="' + crest + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"/>'
-        : '<div class="m-crest ph">' + esc(String(opp || '?').charAt(0).toUpperCase()) + '</div>';
+        ? '<img class="m-crest club-logo" width="46" height="46" src="' + crest + '" alt="" loading="lazy" onerror="this.style.visibility=\'hidden\'"/>'
+        : '<div class="m-crest ph club-logo club-logo--mono">' + esc(String(opp || '?').charAt(0).toUpperCase()) + '</div>';
       return '<div class="m-card ' + (e.active ? '' : 'inactive') + '" data-id="' + esc(e.id) + '">' +
         crestEl +
         '<div class="m-main">' +

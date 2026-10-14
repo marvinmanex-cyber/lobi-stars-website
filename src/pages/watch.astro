@@ -76,7 +76,7 @@ import WhatsAppChannel from '../components/WhatsAppChannel.astro';
   .wv-list :global(.wv-date b) { display: block; font: 400 30px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
   .wv-list :global(.wv-date span) { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
   .wv-list :global(.wv-teams) { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; min-width: 0; }
-  .wv-list :global(.wv-teams .crest), .wv-list :global(.wv-teams .crest--initials) { width: 32px; height: 32px; border-radius: 50%; object-fit: contain; display: inline-flex; align-items: center; justify-content: center; background: var(--d3); font-size: 12px; }
+  .wv-list :global(.wv-teams .crest) { --logo-h: 32px; }
   .wv-list :global(.wv-meta) { display: block; margin-top: 4px; font-size: 14px; color: var(--lt); }
   .wv-list :global(.wv-live) { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; background: var(--red); color: #fff; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
   .wv-list :global(.wv-live::before) { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: wvp 1.2s infinite; }

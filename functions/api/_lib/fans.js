@@ -153,7 +153,7 @@ function layout(title, bodyHtml) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F1F3F5;padding:24px 12px;"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:12px;overflow:hidden;">
 <tr><td style="background:#E31E24;background:linear-gradient(120deg,#4D0B0D,#E31E24);padding:22px;text-align:center;">
-<img src="${SITE}/images/icon-192.png" width="64" height="64" alt="Lobi Stars FC" style="border-radius:50%;background:#fff;"/>
+<img src="${SITE}/images/lobi-stars-badge.png" width="64" height="64" alt="Lobi Stars FC" style="display:block;margin:0 auto;border:0;"/>
 <div style="color:#ffffff;font-size:20px;font-weight:bold;letter-spacing:2px;margin-top:8px;">LOBI STARS FC</div>
 <div style="color:#FFC72C;font-size:11px;letter-spacing:3px;">THE PRIDE OF BENUE</div></td></tr>
 <tr><td style="padding:28px 26px;">

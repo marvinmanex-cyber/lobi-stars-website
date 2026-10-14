@@ -323,14 +323,17 @@ refunded*). Personalisation needs Paystack set up (the same account as tickets).
    - **Category** (e.g. Telecom) and **Official Title** (e.g. Official Telecom
      Partner). Only **one** active Official Club Partner is allowed per
      category.
-   - **Logo**: upload the partner's logo. A transparent PNG or SVG looks best.
-     If there's no logo yet, the site shows the partner's name in the box
-     instead. Logos always sit on a white card, so leave **Card colour behind
-     the logo** empty. Only fill it in (for example #000000) for a logo that is
-     all white and can't be seen on white. If a partner only has a logo on a
-     black box, ask them for a transparent PNG or SVG; the web team can also
-     clean it up with `scripts/logo-to-transparent.mjs` (instructions at the
-     top of that file).
+   - **Logo**: upload the partner's logo as a **transparent PNG or SVG**.
+     Every logo on the site shows exactly as designed: its own shape and
+     colours, with no white card, circle or box behind it. A logo with a white
+     or black box baked into the file shows that box, so ask the partner for a
+     transparent file (the web team can also remove a plain background with
+     `scripts/logo-remove-background.mjs`). If there's no logo yet, the site
+     shows the partner's name instead.
+   - **Logo for dark backgrounds** (optional): a light or white version of the
+     logo. It is used in the dark footer and on the partner's share picture,
+     where a dark logo would be hard to see. **Card colour** is no longer
+     used.
    - **Website** (starting with https://), a one-line **Short Description**
      and **Partner Since** (the year).
    - **Display Order**: 1 shows first within its tier.
@@ -1254,8 +1257,10 @@ Nothing to do for most of this; it is built in. What it means for staff:
   every public page and match automatically. Drafts, hidden pages and the
   admin are never listed.
 - **New opponent crest:** when the club plays a team whose crest is not on
-  the site yet, send the crest image to the website manager so it appears on
-  tickets, fixtures and the match share picture.
+  the site yet, send the crest image (a **transparent PNG**, if the club has
+  one) to the website manager so it appears on tickets, fixtures and the
+  match share picture. Crests show in their own shape, never in a white
+  circle.
 - **Website manager, once:** add the site to **Google Search Console**
   (search.google.com/search-console), verify it with a DNS record in
   Cloudflare, and submit the sitemap address above.
@@ -1735,7 +1740,9 @@ first. If the signal drops you see a red message and **Try again**.
 
 **Clubs & Venues:** names, short names, codes, crest addresses, colours, home
 grounds and other names (used by the import). Only use a club's crest with
-its permission; without one the site shows its initials.
+its permission; without one the site shows its initials in the club colour.
+Use a crest file with a transparent background: crests are shown exactly as
+designed, without a circle or white background behind them.
 
 **Import & Export:** download the fixtures, the table or the empty template;
 upload a revised fixture list (CSV). You see every row first (new, changed,
