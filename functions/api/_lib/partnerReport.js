@@ -7,7 +7,6 @@
 // month.
 import { sendEmail } from './email.js';
 import { ensureAnalyticsSchema } from './analytics.js';
-import { logoFile } from './logoFiles.js';
 
 export const SITE = 'https://lobistarsfc.com';
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -142,7 +141,7 @@ ${web ? '<style>@media print{.np{display:none}} body{margin:0}</style>' : ''}</h
 <td><img src="${SITE}/images/lobi-stars-badge.png" width="44" height="44" alt="Lobi Stars FC" style="vertical-align:middle;border:0"> <span style="color:#fff;font-size:20px;font-weight:bold;letter-spacing:1px;vertical-align:middle">LOBI STARS FC</span></td>
 <td align="right" style="color:#FFC72C;font-size:12px;font-weight:bold;letter-spacing:1px">PARTNER REPORT</td></tr></table></td></tr>
 <tr><td style="padding:24px 24px 6px">
-${partner.logo ? `<img src="${esc(logoFile(partner.logo))}" alt="${esc(partner.name)}" style="max-height:56px;max-width:200px;margin-bottom:12px">` : ''}
+${partner.logo ? `<img src="${esc(partner.logo)}" alt="${esc(partner.name)}" style="max-height:56px;max-width:200px;margin-bottom:12px">` : ''}
 <div style="font-size:24px;font-weight:bold">${esc(partner.name)}</div>
 <div style="font-size:15px;color:#5B6472;margin-top:4px">${esc(partner.tier)} · ${esc(report.label)}</div>
 <p style="font-size:15px;line-height:1.55;margin:16px 0 8px">Thank you for supporting Lobi Stars FC. Here is how your partnership showed up on the club's channels in ${esc(report.label)}.</p>

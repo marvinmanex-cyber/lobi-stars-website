@@ -47,14 +47,21 @@ async function title(str, width, maxH) {
   return text(str.toUpperCase().slice(0, 90) + '…', { size: 60, width });
 }
 
-/** Page card: badge, small heading (e.g. NEWS) and the page title. */
-export async function pageCard({ heading, title: str, badge, out }) {
+/** A partner logo on a round white card with a ring (partner share images keep their original look). */
+async function ringCrest(file, size) {
+  const r = size / 2;
+  const inner = await sharp(file).resize(size - 16, size - 16, { fit: 'contain', background: '#ffffff' }).flatten({ background: '#ffffff' }).png().toBuffer();
+  const ring = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${r}" cy="${r}" r="${r}" fill="#ffffff"/></svg>`);
+  const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><circle cx="${r}" cy="${r}" r="${r - 8}" fill="#fff"/></svg>`);
+  const round = await sharp({ create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
+    .composite([{ input: inner, left: 8, top: 8 }, { input: mask, blend: 'dest-in' }]).png().toBuffer();
+  return sharp(ring).composite([{ input: round }]).png().toBuffer();
+}
+
+/** Page card: badge (or a partner's logo on its white card), small heading (e.g. NEWS) and the page title. */
+export async function pageCard({ heading, title: str, badge, partner = false, out }) {
   const layers = [];
-  if (badge && existsSync(badge)) {
-    // Wide logos (partners) get a wide box, so they show at a readable size.
-    const { width: bw = 1, height: bh = 1 } = await sharp(badge).metadata();
-    layers.push({ input: await crest(badge, 150, bw / bh > 1.3 ? 420 : 150), left: 80, top: 60 });
-  }
+  if (badge && existsSync(badge)) layers.push({ input: partner ? await ringCrest(badge, 150) : await crest(badge, 150), left: 80, top: 60 });
   const k = await text(heading.toUpperCase(), { size: 40, color: '#FFC72C', spacing: 3 });
   layers.push({ input: k.input, left: 80, top: 238 });
   const t = await title(str, 1040, 270);

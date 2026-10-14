@@ -323,17 +323,14 @@ refunded*). Personalisation needs Paystack set up (the same account as tickets).
    - **Category** (e.g. Telecom) and **Official Title** (e.g. Official Telecom
      Partner). Only **one** active Official Club Partner is allowed per
      category.
-   - **Logo**: upload the partner's logo as a **transparent PNG or SVG**.
-     Every logo on the site shows exactly as designed: its own shape and
-     colours, with no white card, circle or box behind it. A logo with a white
-     or black box baked into the file shows that box, so ask the partner for a
-     transparent file (the web team can also remove a plain background with
-     `scripts/logo-remove-background.mjs`). If there's no logo yet, the site
-     shows the partner's name instead.
-   - **Logo for dark backgrounds** (optional): a light or white version of the
-     logo. It is used in the dark footer and on the partner's share picture,
-     where a dark logo would be hard to see. **Card colour** is no longer
-     used.
+   - **Logo**: upload the partner's logo. A transparent PNG or SVG looks best.
+     If there's no logo yet, the site shows the partner's name in the box
+     instead. Logos always sit on a white card, so leave **Card colour behind
+     the logo** empty. Only fill it in (for example #000000) for a logo that is
+     all white and can't be seen on white. If a partner only has a logo on a
+     black box, ask them for a transparent PNG or SVG; the web team can also
+     clean it up with `scripts/logo-to-transparent.mjs` (instructions at the
+     top of that file).
    - **Website** (starting with https://), a one-line **Short Description**
      and **Partner Since** (the year).
    - **Display Order**: 1 shows first within its tier.
@@ -1507,9 +1504,15 @@ back. A draft that was never published can be deleted.
   latest one) with its cover, and earlier programmes below. When the next one
   is scheduled, fans see "The programme drops in 3h 12m" and can register so it
   is waiting for them.
-- The homepage shows a yellow "Match Day Programme" bar from publishing until
-  6 hours after kick-off (switch **Homepage banner** off on the admin page to
-  hide it). **Programme page on** switches the whole feature off.
+- The homepage shows a yellow "Match Day Programme" bar: **Lobi Stars FC vs
+  <next opponent>** with HOME or AWAY. The opponent always comes from the next
+  Lobi Stars fixture (the same match as "Upcoming Matches"), never from the
+  programme's title, and it moves on by itself once a match is played (or
+  marked full time, cancelled or postponed in League › Fixtures). When that
+  match's programme is published it says **Read free →**; until then it says
+  "Programme coming soon". Changes show within 30 seconds (straight away after
+  any save in the admin). Switch **Homepage banner** off on the admin page to
+  hide it; **Programme page on** switches the whole feature off.
 - New fans give their first name (surname and phone optional) and can tick
   "Send me club news and match day programme alerts". It is never ticked for
   them.

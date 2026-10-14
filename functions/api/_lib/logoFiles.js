@@ -5,6 +5,8 @@
 // working: wherever a logo is shown, logoFile() swaps in the transparent copy.
 // No copy for wikki-tourists.jpg: its white inside can't be separated from
 // the background safely, so it waits for a transparent file from the club.
+// Club crests only: partner logos stay exactly as uploaded, on their white
+// cards (PartnerLogo.astro).
 export const TRANSPARENT_LOGOS = {
   '/images/lobi-stars-fc.jpg': '/images/lobi-stars-fc-transparent.png',
   '/images/lobi-stars-badge.png': '/images/lobi-stars-fc-transparent.png',
@@ -14,10 +16,6 @@ export const TRANSPARENT_LOGOS = {
   '/images/bichi-first.jpg': '/images/bichi-first-transparent.png',
   '/images/abs-illorin.jpg': '/images/abs-illorin-transparent.png',
   '/images/sokoto-united.jpg': '/images/sokoto-united-transparent.png',
-  '/images/bipc-logo.jpg': '/images/bipc-logo-transparent.png',
-  '/images/novus.png': '/images/novus-transparent.png',
-  '/images/prime-beverages2.jpg': '/images/prime-beverages2-transparent.png',
-  '/images/Jumia-Logo.jpg': '/images/Jumia-Logo-transparent.png',
 };
 
 /** The file to show for a stored logo address (the transparent copy when there is one). */

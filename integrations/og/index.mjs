@@ -68,7 +68,7 @@ export async function makeShareImages({ dist, site, files, logger }) {
     const out = `/og/${name}.jpg`;
     try {
       const logo = partner && ogPath.startsWith('/') && existsSync(pub(ogPath)) ? pub(ogPath) : badge;
-      await cards.pageCard({ heading: partner ? 'Official Partner' : (HEADINGS.find(([re]) => re.test(rel))?.[1] || 'Lobi Stars FC'), title, badge: logo, out: pub(out) });
+      await cards.pageCard({ heading: partner ? 'Official Partner' : (HEADINGS.find(([re]) => re.test(rel))?.[1] || 'Lobi Stars FC'), title, badge: logo, partner: !!partner && logo !== badge, out: pub(out) });
     } catch (err) { logger.warn(`share image for ${rel} failed: ${err.message}`); continue; }
     html = setMeta(setMeta(html, 'property', 'og:image', site + out), 'name', 'twitter:image', site + out);
     if (!html.includes('og:image:width')) html = html.replace(/(<meta property="og:image" content="[^"]*"\/?>)/, '$1<meta property="og:image:width" content="1200"/><meta property="og:image:height" content="630"/>');

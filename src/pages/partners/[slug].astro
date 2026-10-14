@@ -3,7 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import PartnerLogo from '../../components/partners/PartnerLogo.astro';
 import NewsCarousel from '../../components/news/NewsCarousel.astro';
 import { render } from 'astro:content';
-import { getPartners, logoSrc, logoDarkSrc, logoAlt, website, type Partner } from '../../lib/partners';
+import { getPartners, logoSrc, logoAlt, website, type Partner } from '../../lib/partners';
 import { getSortedNews } from '../../lib/news';
 
 export async function getStaticPaths() {
@@ -36,7 +36,7 @@ if (pageDesc.length > 160) pageDesc = pageDesc.slice(0, 157).replace(/\s+\S*$/, 
 <Layout
   title={pageTitle}
   description={pageDesc}
-  image={logoDarkSrc(partner) ?? logoSrc(partner) ?? undefined}
+  image={logoSrc(partner) ?? undefined}
   imageAlt={logoAlt(partner)}
 >
   <div class="wrap pd">

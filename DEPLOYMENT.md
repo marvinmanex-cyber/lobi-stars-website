@@ -297,9 +297,25 @@ and Super Admins are emailed (when `RESEND_API_KEY` is set). Admin page
 work: point a free outside monitor (e.g. UptimeRobot, every 5 minutes) at it.
 Tests: `tests/health.test.mjs`.
 
+## Homepage Match Day Programme strip (14 October 2026)
+
+- Built on the server for every homepage request (`functions/index.js` +
+  `functions/api/_lib/programmeStrip.js`), so it works without JavaScript.
+  The match is `nextLobiMatch()` (`functions/api/_lib/tickets/rules.js`), the
+  same helper as the Upcoming Matches featured card: live first, else the
+  earliest unfinished Lobi Stars match; finished, cancelled, abandoned and
+  postponed (match or league status) are skipped.
+- Link only when a programme is published (or its scheduled time has come)
+  with a kick-off within 12 hours of that match; otherwise "Programme coming
+  soon". Hidden while the programme feature, its file storage (R2) or the
+  "Homepage banner" switch is off, or when no match is left.
+- Freshness: the homepage is cached for 30 seconds and the cache is cleared
+  on every admin save. To force it by hand, save anything in the admin (or
+  wait 30 seconds); no redeploy is needed.
+
 ## Logos: no white circles (14 October 2026)
 
-- Every logo (club crest, opponents, partners) uses the shared class
+- Every club crest (Lobi Stars and opponents) uses the shared class
   `.club-logo` (`src/styles/club-logo.css`, loaded by the main layout) or the
   `<ClubLogo>` component: a sized box, `object-fit: contain`, and no
   background, border, radius, padding or shadow (forced with `!important`, so
@@ -320,8 +336,10 @@ Tests: `tests/health.test.mjs`.
   and the offline page show logos without a circle. App icons and favicons
   are unchanged: install icons need a solid background (iOS and Android
   maskable icons).
-- Partners: the CMS field "Logo for dark backgrounds" (`logoDark`) is used in
-  the dark footer and on share pictures; `cardColor` is no longer used.
+- Partner logos are NOT part of this (restored 14 October 2026 at the club's
+  request): they keep their original files on their white cards
+  (PartnerLogo.astro, card colour still works) and their round white card on
+  share pictures.
 
 ## Match cards and wording (fixtures redesign, 14 October 2026)
 
