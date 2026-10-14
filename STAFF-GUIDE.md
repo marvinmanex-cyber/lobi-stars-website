@@ -1307,7 +1307,7 @@ Super Admin staff can use it.
   get, the sign-up form and the **options**: *the weekly newsletter*,
   *matchday & ticket alerts* and *partner offers*. Past newsletters are
   listed at the bottom.
-- **Homepage:** a red-and-black "The Lobi Stars Weekly" band after the news
+- **Homepage:** a red-and-black "The Lobi Stars Weekly Newsletter" band (labelled "Free email newsletter") after the news
   sections, with a **Sign up free** button.
 - **End of every news story:** a "Get stories like this every week" box.
 - **Footer of every page:** the quick sign-up form (weekly newsletter) and a
