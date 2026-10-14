@@ -1827,7 +1827,8 @@ countdown with seconds; a 3-step progress bar
 with a coloured date block (red, gold, navy, maroon and black in turn) and a
 round **Select** button, "Next match" / "This week" labels, a stand
 switch and a − 1 + ticket counter; stand cards (VIP Sitting, Cover Stand,
-Popular Stand, with the price per ticket; "Best value" marks the cheapest);
+Popular Stand, with the price per ticket; picking one sets that stand on every
+ticked match, and each match card can still be changed on its own);
 the order and checkout on the right (a slide-up sheet with a bottom bar on
 phones); MatchDay Kitchen and Matchday Programme links; and short questions
 and answers. Stand descriptions and two answers (gate times, passing tickets

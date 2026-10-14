@@ -76,7 +76,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
           </div>
           <!-- The existing "Stand for all ticked" control (hidden; the stand cards drive it). -->
           <label class="tk-sr">Stand for all ticked
-            <select id="allTier" tabindex="-1"><option value="">Keep as is</option><option value="VIP">VIP Sitting</option><option value="Premium">Cover Stand</option><option value="Regular">Popular Stand</option></select>
+            <select id="allTier" tabindex="-1"><option value="">Not chosen</option><option value="VIP">VIP Sitting</option><option value="Premium">Cover Stand</option><option value="Regular">Popular Stand</option></select>
           </label>
         </div>
 
@@ -308,7 +308,6 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   .tk :global(.tk-stand .tk-price) { font: 700 15px/1.2 'Barlow Condensed', sans-serif; color: var(--red-text); }
   .tk :global(.tk-stand small) { color: var(--lt); font-size: 13.5px; line-height: 1.4; }
   .tk :global(.tk-stand .tk-flag) { position: absolute; top: -10px; right: 12px; }
-  .tk :global(.tk-stand--keep b) { font-size: 20px; }
 
   /* E + F. Summary and checkout */
   .tk-sum { background: var(--d2); border: 1.5px solid var(--d4); border-radius: var(--tk-radius); padding: 20px; box-shadow: 0 10px 30px -18px rgba(16, 24, 40, .35); }
@@ -453,19 +452,16 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     onSale.forEach(function (m) { m.tiers.forEach(function (t) { if (lowest[t.tier] == null || t.priceKobo < lowest[t.tier]) lowest[t.tier] = t.priceKobo; }); });
     var offered = TIERS.filter(function (t) { return lowest[t[0]] != null; });
     if (!offered.length) { box.append(el('p', { class: 'tk-hint', text: 'Stands and prices appear here when tickets go on sale.' })); return; }
-    var cheapest = offered.reduce(function (a, b) { return lowest[a[0]] <= lowest[b[0]] ? a : b; })[0];
     var varies = function (tier) { var ps = onSale.map(function (m) { var t = m.tiers.find(function (x) { return x.tier === tier; }); return t ? t.priceKobo : null; }).filter(function (x) { return x != null; }); return ps.some(function (p) { return p !== ps[0]; }); };
     var radio = function (value, checked) { var r = el('input', { type: 'radio', name: 'standAll', value: value }); r.checked = checked; r.addEventListener('change', function () { var s = $('allTier'); s.value = value; s.dispatchEvent(new Event('change')); }); return r; };
     offered.forEach(function (t) {
       var tier = t[0];
       box.append(el('label', { class: 'tk-stand' }, radio(tier, $('allTier').value === tier),
-        tier === cheapest && offered.length > 1 ? el('span', { class: 'tk-flag', text: 'Best value' }) : null, // lowest price per ticket (a fact, not a perk)
         // TODO (Marvin to confirm): a "Most Popular" badge needs sales data or the club's say-so.
         el('b', { text: t[1] }),
         el('span', { class: 'tk-price', text: (varies(tier) ? 'from ' : '') + naira(lowest[tier]) + ' per ticket' }),
         el('small', { text: STAND_TEXT[tier] })));
     });
-    box.append(el('label', { class: 'tk-stand tk-stand--keep' }, radio('', !$('allTier').value), el('b', { text: 'Keep as is' }), el('small', { text: 'Choose the stand on each match card instead.' })));
   }
 
   function draw() {
