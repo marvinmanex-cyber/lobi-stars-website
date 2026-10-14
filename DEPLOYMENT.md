@@ -888,6 +888,17 @@ No Cloudflare Access rule is needed.
   `/api/admin/rewards/member` (lookup, adjust, suspend), `/api/admin/rewards/run`.
   Routed to the `fans` area in `adminRoles.js`.
 - Test: `tests/rewards-earn.api.test.mjs`.
+- Tiers: `functions/api/_lib/rewardsTiers.js` (tierStatus: AVAILABLE EARN/BONUS/
+  REVERSE points since `seasonStart`; paid member = members.membership_season
+  equals the season label "2026/27"; last season's tier during `tierGraceMonths`;
+  purchaseMultiplier and presaleMs only when `live`; upgrade email once per tier
+  per season via rewards_members.tier_notified; celebration via tier_seen).
+  Pure rules in rewardsRules.js (tierFor, effectiveTier, tiersProblem,
+  tierBenefits). Presale: `ticketState(..., { earlyMs })`, `catalogue(env,
+  { earlyMs })`, used by `/api/tickets/catalogue` and `/api/tickets/basket`
+  for the signed-in fan. APIs: `/api/rewards/tier` (seen, star-wall),
+  `/api/rewards/star-fans`; page `/rewards/star-fans/` (noindex).
+  Test: `tests/rewards-tiers.api.test.mjs`.
 
 ## Ticketing system setup (Cloudflare D1 + Paystack + Resend)
 

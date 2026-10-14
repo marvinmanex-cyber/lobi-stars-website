@@ -113,8 +113,8 @@ export async function decorateMatches(env, summaries, rows = null) {
   }
 }
 
-/** Every visible match with its ticket state, for /tickets and the basket checks. */
-export async function catalogue(env) {
+/** Every visible match with its ticket state, for /tickets and the basket checks. `earlyMs`: the buyer's early access (Rewards tier). */
+export async function catalogue(env, { earlyMs = 0 } = {}) {
   const db = env.DB;
   await ensureTicketShopSchema(db);
   const rows = await listMatches(db);
@@ -122,7 +122,7 @@ export async function catalogue(env) {
   const map = new Map();
   for (const r of rows) {
     const summary = toSummary(r, r);
-    const ticket = ticketState({ ...r, is_home: summary.is_home, status: summary.status }, settings.get(r.id), sold.get(r.id) || {});
+    const ticket = ticketState({ ...r, is_home: summary.is_home, status: summary.status }, settings.get(r.id), sold.get(r.id) || {}, Date.now(), { earlyMs });
     map.set(r.id, { event: { ...r, ...summary }, ticket, settings: settings.get(r.id) || null, matchday: md.get(r.id)?.matchday ?? null });
   }
   return map;

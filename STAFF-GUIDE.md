@@ -1973,8 +1973,30 @@ earning). **Run the points job now** makes ticket points of played matches
 available straight away (it also runs every 10 minutes, and when a fan opens
 their points).
 
-Tiers, the rewards catalogue, redeeming, the fan dashboard and the launch come
-in the next phases.
+**Tiers (done):** Red, Gold and Star, by Pride Points **earned this season**
+(from the season start date in Admin › Rewards). Spending points never lowers a
+tier. Starting levels: Red from 0, Gold from 1,000, Star from 3,000.
+- **Gold:** more points on purchases (1.25x) and match tickets 24 hours before
+  general sale; **Star:** 1.5x and 48 hours early, plus the end-of-season fans'
+  event and the **Star Fans wall** (lobistarsfc.com/rewards/star-fans; Star
+  members choose to appear, first name and surname initial only).
+- **Early ticket access** works when a match has a **Sales open** time (Admin ›
+  Match Tickets): signed-in Gold/Star members see "Early access for you" and can
+  buy before that time; everyone else waits. It also opens the members'
+  priority window early for them.
+- **Paid annual members** are at least Gold for that season (a setting).
+- **New season:** fans keep last season's tier for 2 months (a setting) while
+  they earn points again.
+- Moving up shows a celebration on My account (once) and sends the email
+  "You've reached Gold!".
+- In Admin › Rewards: the points needed, multiplier, early-access hours and extra
+  benefits per tier (the multiplier and early-access lines are written for fans
+  automatically), the grace period and the paid-member rule; the totals show how
+  many members are in each tier; Find a member shows their tier.
+- Tier benefits and early access only apply once Rewards is live.
+
+The rewards catalogue, redeeming, the fan dashboard and the launch come in the
+next phases.
 
 ## Other things you can update in the CMS
 

@@ -27,7 +27,16 @@ const DEFAULTS = {
   birthday: 100,           // in the birthday month, once a year
   birthdayDobMinDays: 30,  // date of birth saved at least this many days before
   engagementMonthlyCap: 200, // votes and predictions per calendar month (0 = no cap; attendance not included)
-  seasonStart: '2026-08-01', // first day of the current season (referral limit per season; tiers later). Same as the CMS seasonStart.
+  seasonStart: '2026-08-01', // first day of the current season (tiers, referral limit). Same as the CMS seasonStart.
+  // Tiers by points EARNED this season (spending never lowers a tier).
+  tierGraceMonths: 2,          // last season's tier is kept this long after the new season starts
+  paidMembersStartGold: true,  // paid annual members are at least Gold for the season
+  tiers: [
+    // benefits: extra benefits as text; the multiplier and early-access lines are written from the numbers.
+    { key: 'red', name: 'Red', min: 0, multiplier: 1, presaleHours: 0, benefits: [] },
+    { key: 'gold', name: 'Gold', min: 1000, multiplier: 1.25, presaleHours: 24, benefits: ['Birthday gift'] },
+    { key: 'star', name: 'Star', min: 3000, multiplier: 1.5, presaleHours: 48, benefits: ["Invitation to the end-of-season fans' event", 'Your name on the Star Fans wall (if you choose)'] },
+  ],
   // Until the programme launches, the Rewards sign-up box, the account-page
   // section and /rewards stay hidden (staff preview: /rewards/?preview=1).
   live: false,
@@ -78,6 +87,10 @@ export async function ensureRewardsSchema(db) {
   if (!cols.has('dob_set_at')) await db.prepare(`ALTER TABLE members ADD COLUMN dob_set_at TEXT`).run();       // birthday bonus needs the date of birth saved 30+ days before
   if (!cols.has('referred_by')) await db.prepare(`ALTER TABLE members ADD COLUMN referred_by TEXT`).run();     // referrer's member id (from ?ref= at sign-up)
   if (!cols.has('signup_device')) await db.prepare(`ALTER TABLE members ADD COLUMN signup_device TEXT`).run(); // random id from the browser (self-referral checks)
+  const rc = new Set((await db.prepare(`PRAGMA table_info(rewards_members)`).all()).results.map(c => c.name));
+  if (!rc.has('tier_notified')) await db.prepare(`ALTER TABLE rewards_members ADD COLUMN tier_notified TEXT`).run(); // highest tier emailed this season ("2026/27:gold")
+  if (!rc.has('tier_seen')) await db.prepare(`ALTER TABLE rewards_members ADD COLUMN tier_seen TEXT`).run();         // highest tier the fan has seen the celebration for
+  if (!rc.has('star_wall')) await db.prepare(`ALTER TABLE rewards_members ADD COLUMN star_wall INTEGER NOT NULL DEFAULT 0`).run(); // opt-in to the Star Fans wall
   const lc = new Set((await db.prepare(`PRAGMA table_info(rewards_ledger)`).all()).results.map(c => c.name));
   if (!lc.has('event_id')) await db.prepare(`ALTER TABLE rewards_ledger ADD COLUMN event_id TEXT`).run(); // ticket points wait for this match
   if (!lc.has('pay_ref')) await db.prepare(`ALTER TABLE rewards_ledger ADD COLUMN pay_ref TEXT`).run();   // Paystack reference (refunds/disputes reverse by it)

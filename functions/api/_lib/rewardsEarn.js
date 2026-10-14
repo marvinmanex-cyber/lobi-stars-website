@@ -5,6 +5,7 @@
 // safe to call from payment code: it never throws (errors are logged), so
 // Rewards can never break a payment, a ticket or the gate.
 import { ensureRewardsSchema, rewardsSettings, addLedger } from './rewards.js';
+import { purchaseMultiplier, checkTierUpgrade } from './rewardsTiers.js';
 import { purchasePoints, lagosMonthStartUtc, capAllowance, streakReached, selfReferralReason, birthdayDue, lagosYear } from './rewardsRules.js';
 
 const safe = (label, fn) => fn().catch(err => { console.error(`[rewards] ${label}`, err); return null; });
@@ -17,19 +18,18 @@ async function memberByEmail(db, email) {
 }
 
 /**
- * Tier multiplier for purchase points.
- * TODO (tiers phase): Gold 1.25x, Star 1.5x from the tier settings. 1x until tiers exist.
+ * Purchase points for an order (times the fan's tier multiplier, rounded down),
+ * then a possible referral reward for whoever referred this fan, and the tier
+ * upgrade email if they moved up.
  */
-async function purchaseMultiplier() { return 1; }
-
-/** Purchase points for an order, then a possible referral reward for whoever referred this fan. */
-async function earnPurchase(db, { memberId, source, ref, paidKobo, per100, description, pending = false, eventId = null, payRef = null }) {
+async function earnPurchase(db, { memberId, source, ref, paidKobo, per100, description, pending = false, eventId = null, payRef = null, env = null }) {
   await ensureRewardsSchema(db);
   if (!memberId) return false;
   const points = purchasePoints(paidKobo, per100, await purchaseMultiplier(db, memberId));
   let added = false;
   if (points > 0) added = await addLedger(db, { memberId, type: 'EARN', points, status: pending ? 'PENDING' : 'AVAILABLE', source, sourceRef: ref, description, eventId, payRef });
-  await maybeReferral(db, memberId);
+  const referrer = await maybeReferral(db, memberId);
+  if (env) { if (added) await checkTierUpgrade(env, memberId); if (referrer) await checkTierUpgrade(env, referrer); }
   return added;
 }
 
@@ -44,7 +44,7 @@ export function earnTickets(env, order, event) {
     const played = await matchPlayed(db, order.event_id);
     const payRef = String(order.paystack_reference || '').replace(/^(LSBAS-[A-Z0-9]+)-\d+$/, '$1');
     const vs = event ? `${event.home_team} vs ${event.away_team}` : 'a home match';
-    return earnPurchase(db, { memberId: m.id, source: 'ticket_order', ref: order.id, paidKobo: order.total_kobo, per100: s.ticketsPer100,
+    return earnPurchase(db, { env, memberId: m.id, source: 'ticket_order', ref: order.id, paidKobo: order.total_kobo, per100: s.ticketsPer100,
       description: `Tickets: ${vs} (${order.quantity})`, pending: !played, eventId: order.event_id, payRef });
   });
 }
@@ -56,7 +56,7 @@ export function earnSeasonTicket(env, row) {
     const s = await rewardsSettings(db);
     const m = row.member_id ? { id: row.member_id } : await memberByEmail(db, row.buyer_email);
     if (!m) return false;
-    return earnPurchase(db, { memberId: m.id, source: 'ticket_order', ref: `season:${row.id}`, paidKobo: row.total_kobo, per100: s.ticketsPer100, description: `Season ticket ${row.season || ''}`.trim(), payRef: row.paystack_reference });
+    return earnPurchase(db, { env, memberId: m.id, source: 'ticket_order', ref: `season:${row.id}`, paidKobo: row.total_kobo, per100: s.ticketsPer100, description: `Season ticket ${row.season || ''}`.trim(), payRef: row.paystack_reference });
   });
 }
 
@@ -67,7 +67,7 @@ export function earnShop(env, row) {
     const s = await rewardsSettings(db);
     const m = await memberByEmail(db, row.buyer_email);
     if (!m) return false;
-    return earnPurchase(db, { memberId: m.id, source: 'shop_order', ref: row.id, paidKobo: row.total_kobo, per100: s.shopPer100, description: `Shop order ${row.id}: ${row.product_name || 'shirt'}`, payRef: row.paystack_reference });
+    return earnPurchase(db, { env, memberId: m.id, source: 'shop_order', ref: row.id, paidKobo: row.total_kobo, per100: s.shopPer100, description: `Shop order ${row.id}: ${row.product_name || 'shirt'}`, payRef: row.paystack_reference });
   });
 }
 
@@ -78,7 +78,7 @@ export function earnFood(env, order) {
     const s = await rewardsSettings(db);
     const m = await memberByEmail(db, order.email);
     if (!m) return false;
-    return earnPurchase(db, { memberId: m.id, source: 'food_order', ref: order.id, paidKobo: order.total_kobo, per100: s.foodPer100, description: `MatchDay Kitchen order ${order.ref || order.id}`, payRef: order.paystack_reference });
+    return earnPurchase(db, { env, memberId: m.id, source: 'food_order', ref: order.id, paidKobo: order.total_kobo, per100: s.foodPer100, description: `MatchDay Kitchen order ${order.ref || order.id}`, payRef: order.paystack_reference });
   });
 }
 
@@ -88,8 +88,9 @@ export function earnMembership(env, row) {
     const db = env.DB;
     const s = await rewardsSettings(db);
     if (!row.member_id) return false;
-    const added = await earnPurchase(db, { memberId: row.member_id, source: 'membership', ref: row.id, paidKobo: row.amount_kobo, per100: s.membershipPer100, description: `Membership ${row.season || ''}`.trim(), payRef: row.paystack_reference });
+    const added = await earnPurchase(db, { env, memberId: row.member_id, source: 'membership', ref: row.id, paidKobo: row.amount_kobo, per100: s.membershipPer100, description: `Membership ${row.season || ''}`.trim(), payRef: row.paystack_reference });
     if (s.membershipBonus > 0) await addLedger(db, { memberId: row.member_id, type: 'BONUS', points: s.membershipBonus, source: 'membership', sourceRef: `bonus:${row.id}`, description: 'Membership bonus', payRef: row.paystack_reference });
+    await checkTierUpgrade(env, row.member_id); // paid members are at least Gold
     return added;
   });
 }
@@ -117,6 +118,7 @@ export function earnAttendance(env, ticketId) {
     if (!m || !(s.attendance > 0)) return false;
     const added = await addLedger(db, { memberId: m.id, type: 'EARN', points: s.attendance, source: 'attendance', sourceRef: `${m.id}:${t.event_id}`, description: `Attended ${t.home_team} vs ${t.away_team}`, eventId: t.event_id });
     if (added && s.streakBonus > 0) await streakBonus(db, m.id, t, s);
+    if (added) await checkTierUpgrade(env, m.id);
     return added;
   });
 }
@@ -133,7 +135,7 @@ async function streakBonus(db, memberId, t, s) {
 }
 
 /** Votes and predictions: capped per calendar month (Nigerian time). */
-async function earnEngagement(db, { memberId, source, ref, points, description, eventId = null }) {
+async function earnEngagement(db, { memberId, source, ref, points, description, eventId = null, env = null }) {
   await ensureRewardsSchema(db);
   const s = await rewardsSettings(db);
   if (!(points > 0)) return false;
@@ -141,20 +143,22 @@ async function earnEngagement(db, { memberId, source, ref, points, description, 
     .bind(memberId, lagosMonthStartUtc()).first();
   const allowed = capAllowance(points, used?.n, s.engagementMonthlyCap);
   if (allowed <= 0) return false;
-  return addLedger(db, { memberId, type: 'EARN', points: allowed, source, sourceRef: ref, description: allowed < points ? `${description} (monthly limit reached)` : description, eventId });
+  const added = await addLedger(db, { memberId, type: 'EARN', points: allowed, source, sourceRef: ref, description: allowed < points ? `${description} (monthly limit reached)` : description, eventId });
+  if (added && env) await checkTierUpgrade(env, memberId);
+  return added;
 }
 
 export function earnVote(env, memberId, match) {
   return safe('vote', async () => {
     const s = await rewardsSettings(env.DB);
-    return earnEngagement(env.DB, { memberId, source: 'vote', ref: `${match.id}:${memberId}`, points: s.motmVote, description: `Man of the Match vote: ${match.home_team} vs ${match.away_team}`, eventId: match.id });
+    return earnEngagement(env.DB, { env, memberId, source: 'vote', ref: `${match.id}:${memberId}`, points: s.motmVote, description: `Man of the Match vote: ${match.home_team} vs ${match.away_team}`, eventId: match.id });
   });
 }
 
 export function earnPrediction(env, memberId, match) {
   return safe('prediction', async () => {
     const s = await rewardsSettings(env.DB);
-    return earnEngagement(env.DB, { memberId, source: 'prediction', ref: `submit:${match.id}:${memberId}`, points: s.prediction, description: `Predict & Win: ${match.home_team} vs ${match.away_team}`, eventId: match.id });
+    return earnEngagement(env.DB, { env, memberId, source: 'prediction', ref: `submit:${match.id}:${memberId}`, points: s.prediction, description: `Predict & Win: ${match.home_team} vs ${match.away_team}`, eventId: match.id });
   });
 }
 
@@ -180,7 +184,7 @@ async function maybeReferral(db, friendId) {
   if (!(s.referral > 0)) return false;
   const added = await addLedger(db, { memberId: referrer.id, type: 'BONUS', points: s.referral, source: 'referral', sourceRef: friendId, description: 'A friend you referred made their first purchase' });
   await decide(added ? 'awarded' : 'flagged', added ? null : 'referrer is not an active, verified Rewards member');
-  return added;
+  return added ? referrer.id : null;
 }
 
 /** Records who referred a new fan (at sign-up). `code` is the referrer's member number (LSR-000123). */
@@ -282,6 +286,7 @@ export async function rewardsSweep(env, { memberId = null } = {}) {
   out.released = (await safe('release', () => releaseTicketPoints(db, memberId))) || 0;
   out.predictions = (await safe('predictions', () => settlePredictions(db, memberId))) || 0;
   out.birthdays = (await safe('birthdays', () => birthdays(db, memberId))) || 0;
+  if (memberId) await checkTierUpgrade(env, memberId);
   return out;
 }
 

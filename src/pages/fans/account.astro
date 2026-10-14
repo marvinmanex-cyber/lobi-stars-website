@@ -62,6 +62,20 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
   .rw-hist .plus { color: #0B7A2E; font-weight: 700; }
   .rw-hist .minus { color: var(--red-text); font-weight: 700; }
   .rw-box .btn-p { min-height: 44px; }
+  /* Tier card (Red / Gold / Star) with progress to the next tier. */
+  .rw-tier { margin: 0 0 14px; padding: 14px; border-radius: 12px; background: var(--d2); border: 1px solid var(--d4); }
+  .rw-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .rw-badge.red { background: #C11A1F; color: #fff; } .rw-badge.gold { background: #FFC72C; color: #15181D; } .rw-badge.star { background: #15181D; color: #FFC72C; border: 1px solid #FFC72C; }
+  .rw-bar { height: 10px; border-radius: 999px; background: var(--d4); overflow: hidden; margin: 10px 0 6px; }
+  .rw-bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #C11A1F, #FFC72C); }
+  .rw-tier ul { margin: 8px 0 0; padding-left: 20px; line-height: 1.6; }
+  .rw-tier small { color: var(--lt); }
+  /* Tier upgrade celebration: a light CSS-only burst, no images. */
+  .rw-cele { position: relative; overflow: hidden; margin: 0 0 14px; padding: 16px; border-radius: 12px; background: linear-gradient(135deg, #C11A1F, #7A0E12); color: #fff; text-align: center; }
+  .rw-cele b { display: block; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #FFC72C; }
+  .rw-cele i { position: absolute; top: -10px; width: 8px; height: 14px; border-radius: 2px; animation: rw-fall 2.4s ease-in 2 forwards; }
+  @keyframes rw-fall { to { transform: translateY(160px) rotate(540deg); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .rw-cele i { display: none; } }
   .rw-box a { color: var(--red-text); font-weight: 600; }
 </style>
 
@@ -178,6 +192,7 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
     } else {
       parts.push(el('p', { class: 'rw-no', text: 'Member number ' + d.memberNo }),
         el('div', { class: 'rw-pts' }, el('div', {}, el('b', { text: fmt(d.balance) }), ' ', el('span', { text: 'Pride Points' })), d.pending ? el('span', { text: fmt(d.pending) + ' pending' }) : null));
+      if (d.tier) parts.push.apply(parts, tierParts(d.tier));
       if (!d.verified) parts.push(el('p', { class: 'rw-note', text: 'Confirm your email address (use the link we sent you) to start earning. Your ' + d.bonuses.welcome + ' welcome points are waiting.' }));
       if (d.status === 'suspended') parts.push(el('p', { class: 'rw-note', text: 'Your Rewards membership is on hold. Please contact the club via the Help Centre.' }));
       if (!d.profileBonusDone) {
@@ -199,6 +214,34 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
       parts.push(el('p', {}, el('a', { href: '/rewards/', text: 'About Lobi Stars Rewards' })));
     }
     body.replaceChildren.apply(body, parts);
+  }
+  // Tier card, upgrade celebration (once per new tier) and the Star Fans wall choice.
+  function tierParts(t) {
+    var out = [];
+    if (t.celebrate && t.key !== 'red') {
+      var cele = el('div', { class: 'rw-cele', role: 'status' }, el('b', { text: "You've reached " + t.name + '!' }), 'Thank you for supporting the Pride of Benue this season.');
+      ['#FFC72C', '#fff', '#FFC72C', '#18C93A', '#fff', '#FFC72C', '#fff', '#FFC72C'].forEach(function (c, i) { cele.append(el('i', { 'aria-hidden': 'true', style: 'left:' + (6 + i * 12) + '%;background:' + c + ';animation-delay:' + (i % 4) * 0.15 + 's' })); });
+      out.push(cele);
+      post('/api/rewards/tier', { action: 'seen' }).catch(function () {});
+    }
+    var why = t.reason === 'member' ? ' (as a paid member)' : t.reason === 'last-season' ? ' (kept from last season until ' + new Date(t.graceUntil).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'long' }) + ')' : '';
+    var card = el('div', { class: 'rw-tier' },
+      el('span', { class: 'rw-badge ' + t.key, text: t.name + ' tier' }), el('small', { text: '  ' + why }),
+      el('p', { style: 'margin:8px 0 0', text: fmt(t.earned) + ' points earned this ' + t.season + ' season.' }));
+    if (t.next) {
+      var pct = Math.max(0, Math.min(100, Math.round(t.earned / t.next.min * 100)));
+      card.append(el('div', { class: 'rw-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(t.next.min), 'aria-valuenow': String(t.earned), 'aria-label': 'Progress to ' + t.next.name }, el('span', { style: 'width:' + pct + '%' })),
+        el('small', { text: fmt(t.toNext) + ' more points this season to reach ' + t.next.name + '.' }));
+    }
+    if (t.benefits.length) { var ul = el('ul'); t.benefits.forEach(function (b) { ul.append(el('li', { text: b })); }); card.append(el('b', { style: 'display:block;margin-top:10px', text: 'Your ' + t.name + ' benefits' }), ul); }
+    if (t.next && t.next.benefits.length) card.append(el('small', { text: t.next.name + ': ' + t.next.benefits.join(' · ') }));
+    if (t.key === 'star') {
+      var box = el('input', { type: 'checkbox', id: 'rwWall' }); box.checked = t.starWall;
+      box.addEventListener('change', function () { post('/api/rewards/tier', { action: 'star-wall', optIn: box.checked }); });
+      card.append(el('label', { class: 'fa-check', for: 'rwWall', style: 'margin-top:10px' }, box, el('span', {}, 'Show my first name and surname initial on the ', el('a', { href: '/rewards/star-fans/', text: 'Star Fans wall' }), '.')));
+    }
+    out.push(card);
+    return out;
   }
   load();
 })();

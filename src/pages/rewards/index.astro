@@ -100,6 +100,7 @@ import Layout from '../../layouts/Layout.astro';
     }
     box.replaceChildren.apply(box, [el('h2', { text: 'You are a member' }),
       el('p', {}, 'Member number ', el('b', { text: d.memberNo })),
+      d.tier ? el('p', {}, el('b', { text: d.tier.name + ' tier' }), ' · ' + fmt(d.tier.earned) + ' points earned this ' + d.tier.season + ' season' + (d.tier.next ? ' · ' + fmt(d.tier.toNext) + ' more to reach ' + d.tier.next.name : '')) : null,
       el('p', {}, el('span', { class: 'rw-big', text: fmt(d.balance) }), ' Pride Points', d.pending ? ' (' + fmt(d.pending) + ' pending)' : ''),
       !d.verified ? el('p', { text: 'Confirm your email address (use the link we sent you) to start earning. Your welcome points are waiting.' }) : null,
       el('div', { class: 'rw-acts' }, el('a', { class: 'btn-p', href: '/fans/account/', text: 'My account and points' }))].filter(Boolean));

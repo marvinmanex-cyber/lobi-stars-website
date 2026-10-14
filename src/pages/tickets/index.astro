@@ -565,6 +565,8 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       var stateText = m.state === 'not_on_sale' && m.opensAt ? 'On sale from ' + new Date(m.opensAt).toLocaleDateString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short' }) : STATE[m.state];
       var days = (Date.parse(m.kickoff) - now) / 864e5;
       var flag = firstUpcoming && firstUpcoming.id === m.id ? el('span', { class: 'tk-flag', text: 'Next match' }) : days >= 0 && days <= 7 ? el('span', { class: 'tk-flag tk-flag--week', text: 'This week' }) : null;
+      // Open early for this signed-in Gold/Star Rewards member (presale).
+      if (m.presale) flag = el('span', { class: 'tk-flag', text: 'Early access for you' });
       var ribbon = el('span', { class: 'tk-ribbon', text: 'Selected', hidden: true });
       var row = el('li', { class: 'tk-card' + (can ? '' : ' off') },
         ribbon,

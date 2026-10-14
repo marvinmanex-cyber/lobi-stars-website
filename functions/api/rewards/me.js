@@ -2,6 +2,8 @@ import { readSession } from '../_lib/session.js';
 import { ensureFanSchema } from '../_lib/fans.js';
 import { ensureRewardsSchema, rewardsMember, memberNo, pointsSummary, ledgerFor, rewardsSettings, NIGERIAN_STATES } from '../_lib/rewards.js';
 import { rewardsSweep } from '../_lib/rewardsEarn.js';
+import { tierStatus, celebration } from '../_lib/rewardsTiers.js';
+import { tierBenefits } from '../_lib/rewardsRules.js';
 
 // GET /api/rewards/me -- the signed-in fan's Rewards status:
 // { signedIn, verified, joined, memberNo, balance, pending, profile, history, bonuses }.
@@ -27,10 +29,18 @@ export async function onRequestGet({ request, env }) {
     if (!r) return Response.json({ ...base, joined: false }, { headers });
     // This fan's ticket points of played matches, prediction results and birthday bonus, straight away.
     await rewardsSweep(env, { memberId });
-    const [sum, history] = await Promise.all([pointsSummary(db, memberId), ledgerFor(db, memberId, 50)]);
+    const [sum, history, st] = await Promise.all([pointsSummary(db, memberId), ledgerFor(db, memberId, 50), tierStatus(db, memberId)]);
+    const celebrate = await celebration(db, memberId, st);
     return Response.json({
       ...base, joined: true, memberNo: memberNo(r.seq), referralLink: `https://lobistarsfc.com/fans/register/?ref=${memberNo(r.seq)}`, status: r.status, joinedAt: r.joined_at,
       balance: sum.balance, pending: sum.pending, history,
+      // Tier: from points earned this season (spending never lowers it). All numbers from the settings.
+      tier: {
+        key: st.tier.key, name: st.tier.name, season: st.season, earned: st.earned, reason: st.reason, graceUntil: st.graceUntil,
+        benefits: st.benefits, next: st.next ? { key: st.next.key, name: st.next.name, min: st.next.min, benefits: st.nextBenefits } : null, toNext: st.toNext,
+        all: st.tiers.map(t => ({ key: t.key, name: t.name, min: t.min, benefits: tierBenefits(t) })),
+        celebrate, starWall: !!r.star_wall,
+      },
       profileBonusDone: history.some(h => h.source === 'profile'),
     }, { headers });
   } catch (err) {

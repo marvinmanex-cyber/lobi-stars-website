@@ -5,6 +5,7 @@ import { normalizeNigerianPhone, clientIp, rateLimit, tooMany, checkTurnstile, e
 import { readSession } from '../_lib/session.js';
 import { membershipOf } from '../_lib/membership.js';
 import { seasonConfig } from '../_lib/seasonConfig.js';
+import { presaleMs } from '../_lib/rewardsTiers.js';
 import { ensureDiscountSchema, priceWithDiscounts, orderChunks, holdChunkStatement, parseBuyerLines, publicPricing, lockedTotalOk } from '../_lib/ticketDiscounts.js';
 
 // POST /api/tickets/basket { lines: [{ eventId, tier, quantity } | { eventId, tier, family: true, adults, children }],
@@ -35,7 +36,10 @@ export async function onRequestPost({ request, env }) {
     await ensureDiscountSchema(db);
     const { lines: buyerLines, rawByKey } = parseBuyerLines(b.lines);
     const groupName = clean(b.groupName, 80);
-    let cat = await catalogue(env);
+    // Early ticket access for signed-in Gold/Star Rewards members (presale), also in the members' priority window.
+    const sessionId = await readSession(request, env.SESSION_SECRET).catch(() => null);
+    const earlyMs = await presaleMs(db, sessionId);
+    let cat = await catalogue(env, { earlyMs });
     const priced = priceBasket(buyerLines, cat);
     if (!priced.ok) return Response.json({ error: priced.error, eventId: priced.eventId || null, soldOut: !!priced.soldOut }, { status: priced.soldOut ? 409 : 400 });
     const { pricing, input } = await priceWithDiscounts(db, priced.lines, rawByKey, cat, email);
@@ -46,9 +50,9 @@ export async function onRequestPost({ request, env }) {
     }
 
     // Members' priority window (same rule as single tickets).
-    const early = priced.lines.filter(l => { const e = cat.get(l.eventId).event; return e.public_sale_at && Date.now() < Date.parse(e.public_sale_at); });
+    const early = priced.lines.filter(l => { const e = cat.get(l.eventId).event; return e.public_sale_at && Date.now() < Date.parse(e.public_sale_at) - earlyMs; });
     if (early.length) {
-      const memberId = await readSession(request, env.SESSION_SECRET);
+      const memberId = sessionId;
       const m = memberId ? await membershipOf(db, memberId, (await seasonConfig(env, request)).currentSeason) : null;
       if (!m?.active) {
         const e = cat.get(early[0].eventId).event;
@@ -76,7 +80,7 @@ export async function onRequestPost({ request, env }) {
         db.prepare(`UPDATE league_ticket_orders SET status = 'failed' WHERE id = ?`).bind(basketId),
       ]);
       // Either the seats are gone, or someone else just took the last discounted tickets.
-      cat = await catalogue(env);
+      cat = await catalogue(env, { earlyMs });
       const again = priceBasket(buyerLines, cat);
       if (again.ok) {
         const fresh = (await priceWithDiscounts(db, again.lines, rawByKey, cat, email)).pricing;

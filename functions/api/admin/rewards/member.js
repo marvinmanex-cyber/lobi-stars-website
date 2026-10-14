@@ -3,6 +3,7 @@ import { logLeague } from '../../_lib/leagueDb.js';
 import { ensureRewardsSchema, rewardsMember, memberNo, pointsSummary, ledgerFor } from '../../_lib/rewards.js';
 import { adjustPoints } from '../../_lib/rewardsEarn.js';
 import { ensureFanSchema } from '../../_lib/fans.js';
+import { tierStatus } from '../../_lib/rewardsTiers.js';
 
 // Admin › Rewards › Members.
 // GET ?q=<email or member number LSR-000123> -> the member, balance, points history and referrals.
@@ -28,13 +29,15 @@ export async function onRequestGet({ request, env }) {
     const hit = await find(db, new URL(request.url).searchParams.get('q'));
     if (!hit) return fail('No Rewards member with that email or member number.', 404);
     const m = await rewardsMember(db, hit.member_id);
-    const [sum, history, refs] = await Promise.all([
+    const [sum, history, st, refs] = await Promise.all([
       pointsSummary(db, m.member_id), ledgerFor(db, m.member_id, 200),
+      tierStatus(db, m.member_id),
       db.prepare(`SELECT f.friend_member_id, f.status, f.reason, f.created_at, f.decided_at, x.email FROM rewards_referrals f JOIN members x ON x.id = f.friend_member_id WHERE f.referrer_member_id = ? ORDER BY f.created_at DESC LIMIT 50`).bind(m.member_id).all(),
     ]);
     return ok({
       member: { id: m.member_id, memberNo: memberNo(m.seq), name: `${m.first_name} ${m.last_name}`, email: m.email, verified: !!m.email_verified, status: m.status, joinedAt: m.joined_at, state: m.state, dateOfBirth: m.date_of_birth },
       balance: sum.balance, pending: sum.pending, history,
+      tier: { name: st.tier.name, key: st.tier.key, earned: st.earned, season: st.season, reason: st.reason, toNext: st.toNext, next: st.next?.name || null },
       referrals: refs.results.map(r => ({ email: r.email, status: r.status, reason: r.reason, createdAt: r.created_at, decidedAt: r.decided_at })),
     });
   } catch (err) {

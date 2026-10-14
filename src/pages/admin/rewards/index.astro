@@ -2,7 +2,9 @@
 // Admin › Rewards: Lobi Stars Rewards settings (every earn rate, bonus, cap
 // and the launch switch), totals, member lookup (points history, adjust with a
 // reason, suspend) and "run the job now". All changes go to the audit log.
-// TODO (later phases): tiers, catalogue, fulfilment queue, analytics.
+// Tiers (Red, Gold, Star): points needed this season, purchase multiplier,
+// early ticket access, extra benefits, grace period, paid members at Gold.
+// TODO (later phases): catalogue, fulfilment queue, analytics.
 import Layout from '../../../layouts/Layout.astro';
 import AdminNav from '../../../components/admin/AdminNav.astro';
 import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
@@ -21,6 +23,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       <form id="set">
         <label class="la-row rw-live"><input type="checkbox" name="live" /> <span><b>Rewards is live for fans</b>: shows Rewards on the registration form, My account and /rewards. Leave off until the programme is ready.</span></label>
         <div id="fields"></div>
+        <div id="tiers"></div>
         <button class="btn-p" type="submit">Save settings</button>
       </form>
     </section>
@@ -48,6 +51,10 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
   .rw-stat { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 12px; padding: 10px 14px; min-width: 150px; }
   .rw-stat b { display: block; font-size: 22px; }
   .rw-mem { margin-top: 14px; }
+  .rw-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .rw-tcard { border: 1px solid var(--a-line); border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+  .rw-tcard textarea { width: 100%; min-height: 70px; box-sizing: border-box; }
+  .rw-tcard h4 { margin: 0; font-size: 17px; }
   .rw-plus { color: #0B7A2E; font-weight: 700; } .rw-minus { color: #B91C1C; font-weight: 700; }
 </style>
 
@@ -72,7 +79,22 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
         el('div', { class: 'rw-stat' }, el('b', { text: fmt(st.members) }), 'members' + (st.suspended ? ' (' + st.suspended + ' suspended)' : '')),
         el('div', { class: 'rw-stat' }, el('b', { text: fmt(st.available) }), 'points available'),
         el('div', { class: 'rw-stat' }, el('b', { text: fmt(st.pending) }), 'points pending'),
-        el('div', { class: 'rw-stat' }, el('b', { text: String((st.referrals.awarded || 0)) }), 'referrals rewarded' + (st.referrals.flagged ? ' · ' + st.referrals.flagged + ' flagged' : '')));
+        el('div', { class: 'rw-stat' }, el('b', { text: String((st.referrals.awarded || 0)) }), 'referrals rewarded' + (st.referrals.flagged ? ' · ' + st.referrals.flagged + ' flagged' : '')),
+        el('div', { class: 'rw-stat' }, el('b', { text: s.tiers.map(function (t) { return (st.tiers[t.key] || 0); }).join(' / ') }), s.tiers.map(function (t) { return t.name; }).join(' / ') + ' members'));
+      // Tiers editor
+      $('tiers').replaceChildren(el('div', { class: 'rw-group' }, el('h3', { text: 'Tiers (points earned this season; spending never lowers a tier)' }),
+        el('div', { class: 'rw-tiers' }, s.tiers.map(function (t, i) {
+          return el('div', { class: 'rw-tcard', 'data-tier': i }, el('h4', { text: t.name }),
+            el('label', { class: 'la-f' }, 'Points needed this season', el('input', { name: 'tmin' + i, type: 'number', min: 0, step: 1, value: t.min, readonly: i === 0 ? true : null })),
+            el('label', { class: 'la-f' }, 'Purchase points multiplier (e.g. 1.25)', el('input', { name: 'tmul' + i, type: 'number', min: 1, max: 5, step: 0.05, value: t.multiplier })),
+            el('label', { class: 'la-f' }, 'Early ticket access (hours before general sale)', el('input', { name: 'tpre' + i, type: 'number', min: 0, max: 168, step: 1, value: t.presaleHours })),
+            el('label', { class: 'la-f' }, 'Extra benefits (one per line)', el('textarea', { name: 'tben' + i, maxlength: 1500, text: (t.benefits || []).join('\n') })));
+        })),
+        el('div', { class: 'rw-grid', style: 'margin-top:10px' },
+          el('label', { class: 'la-f' }, 'Keep last season\'s tier for (months)', el('input', { name: 'tierGraceMonths', type: 'number', min: 0, max: 12, step: 1, value: s.tierGraceMonths })),
+          el('label', { class: 'la-row', style: 'gap:8px;align-items:center' }, el('input', { name: 'paidGold', type: 'checkbox', checked: s.paidMembersStartGold ? true : null, style: 'width:22px;height:22px;min-height:auto' }), 'Paid annual members are at least Gold')),
+        el('p', { class: 'la-muted', text: 'The multiplier and early-access lines are shown to fans automatically from these numbers. Early access needs a ticket "Sales open" time on the match (Match Tickets).' })));
+      window.__rwTiers = s.tiers;
       var f = $('set'); f.elements.live.checked = !!s.live;
       $('fields').replaceChildren.apply($('fields'), GROUPS.map(function (g) {
         return el('div', { class: 'rw-group' }, el('h3', { text: g[0] }), el('div', { class: 'rw-grid' }, g[1].map(function (x) {
@@ -84,6 +106,8 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
   $('set').addEventListener('submit', function (e) {
     e.preventDefault(); var f = this.elements, body = { live: f.live.checked, seasonStart: f.seasonStart.value };
     GROUPS.forEach(function (g) { g[1].forEach(function (x) { body[x[0]] = Number(f[x[0]].value); }); });
+    body.tierGraceMonths = Number(f.tierGraceMonths.value); body.paidMembersStartGold = f.paidGold.checked;
+    body.tiers = (window.__rwTiers || []).map(function (t, i) { return { min: Number(f['tmin' + i].value), multiplier: Number(f['tmul' + i].value), presaleHours: Number(f['tpre' + i].value), benefits: f['tben' + i].value.split('\n') }; });
     var go = function () { LA.api('/api/admin/rewards', { method: 'PUT', body: { settings: body } }).then(function (r) { r.ok ? (LA.toast('Settings saved'), load()) : LA.toast(r.d.error || 'Could not save.', true); }); };
     if (body.live && !window.__rwWasLive) LA.confirm('Make Lobi Stars Rewards live for fans?', ['Fans will see Rewards on the registration form, My account and /rewards. Check the Rewards Terms have been reviewed first.'], 'Make it live').then(function (y) { if (y) go(); }); else go();
   });
@@ -97,6 +121,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       box.replaceChildren(el('div', { class: 'rw-mem' },
         el('p', {}, el('b', { text: m.name + ' · ' + m.memberNo }), el('br'), el('span', { class: 'la-muted', text: m.email + (m.verified ? '' : ' (email not confirmed)') + ' · joined ' + LA.when(m.joinedAt.replace(' ', 'T') + 'Z') + (m.state ? ' · ' + m.state : '') })),
         el('div', { class: 'la-row' }, el('div', { class: 'rw-stat' }, el('b', { text: fmt(r.d.balance) }), 'available'), el('div', { class: 'rw-stat' }, el('b', { text: fmt(r.d.pending) }), 'pending'),
+          el('div', { class: 'rw-stat' }, el('b', { text: r.d.tier.name }), fmt(r.d.tier.earned) + ' earned ' + r.d.tier.season + (r.d.tier.reason === 'member' ? ' (paid member)' : r.d.tier.reason === 'last-season' ? ' (last season)' : '') + (r.d.tier.next ? ' · ' + fmt(r.d.tier.toNext) + ' to ' + r.d.tier.next : '')),
           el('span', { class: 'la-chip ' + (m.status === 'active' ? 'full_time' : 'cancelled'), text: m.status })),
         el('h3', { text: 'Adjust points' }),
         el('div', { class: 'la-row', style: 'align-items:flex-end' }, el('label', { class: 'la-f' }, 'Points (+/-)', pts), el('label', { class: 'la-f' }, 'Reason', why),

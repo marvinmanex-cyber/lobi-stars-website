@@ -58,3 +58,34 @@ test('defaults are valid settings; bad values are refused', () => {
   assert.match(settingsProblem({ ...REWARDS_DEFAULTS, ticketsPer100: 500 }), /ticketsPer100/);
   assert.match(settingsProblem({ ...REWARDS_DEFAULTS, streakLength: 1 }), /in a row/);
 });
+
+import { tierFor, effectiveTier, tiersProblem, tierBenefits, seasonLabel } from '../functions/api/_lib/rewardsRules.js';
+const TIERS = REWARDS_DEFAULTS.tiers;
+
+test('tiers by points earned this season', () => {
+  assert.equal(tierFor(0, TIERS).key, 'red');
+  assert.equal(tierFor(999, TIERS).key, 'red');
+  assert.equal(tierFor(1000, TIERS).key, 'gold');
+  assert.equal(tierFor(2999, TIERS).key, 'gold');
+  assert.equal(tierFor(3000, TIERS).key, 'star');
+  const e = effectiveTier({ earned: 350, seasonStart: '2026-08-01' }, TIERS);
+  assert.equal(e.tier.key, 'red'); assert.equal(e.next.key, 'gold'); assert.equal(e.toNext, 650, '650 more points this season to reach Gold');
+  assert.equal(seasonLabel('2026-08-01'), '2026/27');
+});
+
+test('paid members at least Gold; last season\'s tier kept during the grace period', () => {
+  assert.equal(effectiveTier({ earned: 10, paidMember: true, seasonStart: '2026-08-01' }, TIERS).tier.key, 'gold');
+  assert.equal(effectiveTier({ earned: 10, paidMember: true, paidMembersStartGold: false, seasonStart: '2026-08-01' }, TIERS).tier.key, 'red');
+  assert.equal(effectiveTier({ earned: 3500, paidMember: true, seasonStart: '2026-08-01' }, TIERS).tier.key, 'star', 'points can take a member higher');
+  const inGrace = effectiveTier({ earned: 0, prevEarned: 3200, seasonStart: '2026-08-01', graceMonths: 2, now: Date.parse('2026-09-15T12:00:00Z') }, TIERS);
+  assert.equal(inGrace.tier.key, 'star'); assert.equal(inGrace.reason, 'last-season'); assert.equal(inGrace.graceUntil, '2026-09-30T23:00:00.000Z');
+  assert.equal(effectiveTier({ earned: 0, prevEarned: 3200, seasonStart: '2026-08-01', graceMonths: 2, now: Date.parse('2026-10-02T12:00:00Z') }, TIERS).tier.key, 'red', 'grace over');
+});
+
+test('tier benefits come from the numbers; tier settings are validated', () => {
+  assert.deepEqual(tierBenefits(TIERS[1]).slice(0, 2), ['1.25x Pride Points on purchases', 'Buy match tickets 24 hours before general sale']);
+  assert.deepEqual(tierBenefits(TIERS[0]), []);
+  assert.equal(tiersProblem(TIERS), null);
+  assert.match(tiersProblem([TIERS[0], { ...TIERS[1], min: 5000 }, TIERS[2]]), /more than Gold/);
+  assert.match(tiersProblem([TIERS[0], { ...TIERS[1], multiplier: 9 }, TIERS[2]]), /multiplier/);
+});

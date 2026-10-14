@@ -79,5 +79,74 @@ export function settingsProblem(s) {
   for (const k of ['ticketsPer100', 'shopPer100', 'foodPer100', 'membershipPer100']) if (typeof s[k] !== 'number' || !(s[k] >= 0) || s[k] > 100) return `${k}: 0 to 100 points per ₦100.`;
   if (s.streakLength < 2 || s.streakLength > 20) return 'Home games in a row: 2 to 20.';
   if (s.birthdayDobMinDays > 365) return 'Birthday: date of birth saved at least 0 to 365 days before.';
+  if (!Number.isInteger(s.tierGraceMonths) || s.tierGraceMonths < 0 || s.tierGraceMonths > 12) return 'Tier grace period: 0 to 12 months.';
+  if (s.tiers !== undefined) { const t = tiersProblem(s.tiers); if (t) return t; }
   return null;
+}
+
+// ── Tiers ──
+// tiers: [{ key, name, min, multiplier, presaleHours, benefits: [text] }], lowest first (min 0).
+
+/** The tier for points earned this season. */
+export function tierFor(points, tiers) {
+  const list = [...tiers].sort((a, b) => a.min - b.min);
+  let t = list[0];
+  for (const x of list) if ((Number(points) || 0) >= x.min) t = x;
+  return t;
+}
+export const tierRank = (key, tiers) => [...tiers].sort((a, b) => a.min - b.min).findIndex(t => t.key === key);
+
+/** "2026/27" for a season starting in 2026 (same format as membership seasons). */
+export function seasonLabel(seasonStart) {
+  const y = Number(String(seasonStart || '').slice(0, 4));
+  return y ? `${y}/${String((y + 1) % 100).padStart(2, '0')}` : '';
+}
+
+/** Adds `months` calendar months to a "YYYY-MM-DD" date; returns ms. */
+export function addMonths(dateStr, months) {
+  // Calendar months in Nigerian time: midnight (UTC+1) on the same day `months` later.
+  const [y, m, d] = String(dateStr).split('-').map(Number);
+  return Date.UTC(y, m - 1 + (Number(months) || 0), d) - 3600e3;
+}
+
+/**
+ * The fan's tier: the highest of (1) points earned this season, (2) Gold for a
+ * paid annual member this season (when switched on), (3) last season's tier
+ * during the grace period after the season starts. Spending points never
+ * lowers it. Returns { tier, next, toNext, reason, graceUntil }.
+ */
+export function effectiveTier({ earned, prevEarned = 0, paidMember = false, now = Date.now(), seasonStart, graceMonths = 0, paidMembersStartGold = true }, tiers) {
+  const list = [...tiers].sort((a, b) => a.min - b.min);
+  let tier = tierFor(earned, list), reason = 'points';
+  const better = (t, why) => { if (tierRank(t.key, list) > tierRank(tier.key, list)) { tier = t; reason = why; } };
+  if (paidMember && paidMembersStartGold) { const gold = list.find(t => t.key === 'gold'); if (gold) better(gold, 'member'); }
+  const graceUntil = seasonStart && graceMonths > 0 ? addMonths(seasonStart, graceMonths) : null;
+  if (graceUntil && now < graceUntil) better(tierFor(prevEarned, list), 'last-season');
+  const i = tierRank(tier.key, list);
+  // Next tier by points (what the fan sees on the progress bar).
+  const next = list.slice(i + 1).find(t => t.min > (Number(earned) || 0)) || null;
+  return { tier, next, toNext: next ? next.min - (Number(earned) || 0) : 0, reason, graceUntil: reason === 'last-season' ? new Date(graceUntil).toISOString() : null };
+}
+
+/** Checks the tier settings: three tiers, Red from 0, rising thresholds, sane multipliers and presale hours. */
+export function tiersProblem(tiers) {
+  if (!Array.isArray(tiers) || tiers.length !== 3) return 'There are three tiers: Red, Gold and Star.';
+  const [r, g, s] = tiers;
+  if (r.key !== 'red' || g.key !== 'gold' || s.key !== 'star') return 'Tiers must be Red, Gold, Star.';
+  if (r.min !== 0) return 'Red starts at 0 points.';
+  if (!(Number.isInteger(g.min) && g.min > 0 && Number.isInteger(s.min) && s.min > g.min && s.min <= 1_000_000)) return 'Gold needs more points than Red, and Star more than Gold.';
+  for (const t of tiers) {
+    if (typeof t.multiplier !== 'number' || t.multiplier < 1 || t.multiplier > 5) return `${t.name}: purchase multiplier from 1 to 5.`;
+    if (!Number.isInteger(t.presaleHours) || t.presaleHours < 0 || t.presaleHours > 168) return `${t.name}: early ticket access 0 to 168 hours.`;
+    if (!Array.isArray(t.benefits) || t.benefits.length > 12 || t.benefits.some(b => typeof b !== 'string' || b.length > 140)) return `${t.name}: up to 12 benefits of 140 characters.`;
+  }
+  return null;
+}
+
+/** A tier's benefits in plain English, written from its settings (never hard-coded). */
+export function tierBenefits(t) {
+  const out = [];
+  if (t.multiplier > 1) out.push(`${t.multiplier}x Pride Points on purchases`);
+  if (t.presaleHours > 0) out.push(`Buy match tickets ${t.presaleHours} hours before general sale`);
+  return out.concat(t.benefits || []);
 }

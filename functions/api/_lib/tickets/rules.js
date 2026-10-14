@@ -68,7 +68,8 @@ export const lobiAtHome = m => isLobi(m.home_team);
  * settings: { is_on_sale, sale_opens_at, sale_closes_at, max_per_order, <tier>_capacity }
  * sold: { VIP: n, Premium: n, Regular: n } (paid tickets + seats held by unpaid orders)
  */
-export function ticketState(event, settings, sold = {}, now = Date.now()) {
+// earlyMs: early ticket access for a Gold/Star Rewards member (sales open that much sooner for them).
+export function ticketState(event, settings, sold = {}, now = Date.now(), { earlyMs = 0 } = {}) {
   const home = event.is_home === true || event.is_home === 1;
   if (!home) return { state: 'away', tiers: [], maxPerOrder: 0 };
   const kickoff = Date.parse(event.event_date);
@@ -84,9 +85,10 @@ export function ticketState(event, settings, sold = {}, now = Date.now()) {
   if (event.active === 0 || (event.status && event.status !== 'scheduled') || !(kickoff > now)) return { ...base, state: 'closed' };
   if (settings?.sale_closes_at && Date.parse(settings.sale_closes_at) <= now) return { ...base, state: 'closed' };
   if (!settings || !settings.is_on_sale || !tiers.length) return { ...base, state: 'not_on_sale' };
-  if (settings.sale_opens_at && Date.parse(settings.sale_opens_at) > now) return { ...base, state: 'not_on_sale', opensAt: settings.sale_opens_at };
-  if (tiers.every(t => t.remaining === 0)) return { ...base, state: 'sold_out' };
-  return { ...base, state: 'on_sale' };
+  if (settings.sale_opens_at && Date.parse(settings.sale_opens_at) - earlyMs > now) return { ...base, state: 'not_on_sale', opensAt: settings.sale_opens_at };
+  const presale = !!(settings.sale_opens_at && Date.parse(settings.sale_opens_at) > now); // open only thanks to early access
+  if (tiers.every(t => t.remaining === 0)) return { ...base, state: 'sold_out', presale };
+  return { ...base, state: 'on_sale', presale };
 }
 
 /** Short text for a card or list row. */

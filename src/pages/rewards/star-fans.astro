@@ -1,0 +1,39 @@
+---
+// /rewards/star-fans -- the Star Fans wall: Lobi Stars Rewards Star members who
+// chose to appear (first name and surname initial only, from /api/rewards/star-fans).
+// Kept out of search engines; empty until Rewards is live.
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Star Fans | Lobi Stars Rewards" description="The Star Fans of Lobi Stars FC: the most loyal supporters of the Pride of Benue this season." noindex>
+  <section class="sf-hero"><div class="sf-in"><p class="sf-k">Lobi Stars Rewards</p><h1>Star <span>Fans</span></h1><p>The most loyal supporters of the Pride of Benue this season.</p></div></section>
+  <div class="wrap sf-page">
+    <ul class="sf-wall" id="sfWall" aria-live="polite"><li class="sf-muted">Loading…</li></ul>
+    <p class="sf-note">Star members can choose to appear here from <a href="/fans/account/">My account</a>. Only first names and surname initials are shown. <a href="/rewards/">About Lobi Stars Rewards</a></p>
+  </div>
+</Layout>
+
+<style>
+  .sf-hero { background: radial-gradient(120% 140% at 0% 0%, #15181D 0%, #4D0B0D 60%, #C11A1F 100%); color: #fff; padding: 48px 0 56px; border-bottom: 4px solid #FFC72C; }
+  .sf-in { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
+  .sf-k { margin: 0 0 6px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .sf-hero h1 { margin: 0; font: 400 clamp(44px, 9vw, 80px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .sf-hero h1 span { color: #FFC72C; }
+  .sf-page { padding-top: 28px; padding-bottom: 64px; }
+  .sf-wall { list-style: none; margin: 0 0 20px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+  .sf-wall :global(li) { padding: 14px; border-radius: 12px; background: #15181D; color: #FFC72C; border: 1px solid #C9A227; font: 400 24px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; text-align: center; }
+  .sf-wall :global(li.sf-muted) { grid-column: 1 / -1; background: var(--d2); color: var(--lt); border-color: var(--d4); font: 400 16px/1.5 'Barlow', sans-serif; }
+  .sf-note { color: var(--lt); line-height: 1.6; }
+  .sf-note a { color: var(--red-text); font-weight: 600; }
+  @media (max-width: 420px) { .sf-in { padding: 0 16px; } .sf-page { padding-left: 16px; padding-right: 16px; } }
+</style>
+
+<script is:inline>
+(function () {
+  var wall = document.getElementById('sfWall');
+  fetch('/api/rewards/star-fans').then(function (r) { return r.json(); }).then(function (d) {
+    wall.replaceChildren();
+    if (!d.fans || !d.fans.length) { var li = document.createElement('li'); li.className = 'sf-muted'; li.textContent = 'The first Star Fans of the season will appear here.'; wall.append(li); return; }
+    d.fans.forEach(function (n) { var li = document.createElement('li'); li.textContent = n; wall.append(li); });
+  }).catch(function () { wall.replaceChildren(); });
+})();
+</script>
