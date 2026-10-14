@@ -83,8 +83,8 @@ export function countdownHtml(kickoff, { seconds = false } = {}) {
 const LIVE = ['live', 'half_time', 'half-time'];
 const DONE = ['full_time', 'full-time', 'awarded'];
 
-/** "Nigeria National League, Conference D" -> "Nigeria National League · Conference D". */
-export const compLabel = s => String(s || '').replace(/,\s*/g, ' · ');
+/** "Nigeria National League, Conference D" (or "NNL Conference D") -> "Nigeria National League · Conference D". */
+export const compLabel = s => String(s || '').replace(/^NNL\s+/, 'Nigeria National League, ').replace(/,\s*/g, ' · ');
 
 /**
  * One match card. `c` = {

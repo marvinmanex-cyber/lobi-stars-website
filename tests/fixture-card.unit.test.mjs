@@ -63,4 +63,6 @@ test('featured and regular cards look different; LIVE, final score, postponed', 
   assert.equal(initials('Lobi Stars FC'), 'LS');
   assert.equal(initials('ABS FC'), 'AB');
   assert.equal(compLabel('Nigeria National League, Conference D'), 'Nigeria National League · Conference D');
+  assert.equal(compLabel('NNL Conference D'), 'Nigeria National League · Conference D');
+  assert.equal(compLabel('Friendly'), 'Friendly');
 });
