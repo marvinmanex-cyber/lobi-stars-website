@@ -16,10 +16,10 @@ import Layout from '../../layouts/Layout.astro';
       <section class="nlp-why" aria-labelledby="why">
         <h2 id="why">What you get</h2>
         <ul class="nlp-list">
-          <li><span aria-hidden="true">📰</span><div><b>Club news every week</b>Team news, interviews and the stories behind the Pride of Benue.</div></li>
-          <li><span aria-hidden="true">⚽</span><div><b>The next match</b>Date, kick-off time, venue and a direct link to tickets.</div></li>
-          <li><span aria-hidden="true">🎟️</span><div><b>Tickets first</b>Hear when tickets go on sale and when matchday food ordering opens.</div></li>
-          <li><span aria-hidden="true">🤝</span><div><b>Offers from our partners</b>Deals and competitions from the club's partners (only if you want them).</div></li>
+          <li><div><b>Club news every week</b>Team news, interviews and the stories behind the Pride of Benue.</div></li>
+          <li><div><b>The next match</b>Date, kick-off time, venue and a direct link to tickets.</div></li>
+          <li><div><b>Tickets first</b>Hear when tickets go on sale and when matchday food ordering opens.</div></li>
+          <li><div><b>Offers from our partners</b>Deals and competitions from the club's partners (only if you want them).</div></li>
         </ul>
         <p class="nlp-small">Free. One email a week, plus the extras you choose. Unsubscribe with one click from any email. We never sell your details (see our <a href="/privacy/">Privacy Policy</a>).</p>
       </section>
@@ -74,7 +74,7 @@ import Layout from '../../layouts/Layout.astro';
   .nlp h2 { margin: 0 0 14px; font: 400 clamp(28px, 3.4vw, 36px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
   .nlp-list { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 14px; }
   .nlp-list li { display: flex; gap: 14px; align-items: flex-start; }
-  .nlp-list span { font-size: 28px; line-height: 1; }
+  .nlp-list li { padding-left: 14px; border-left: 3px solid var(--red); }
   .nlp-list b { display: block; font: 700 19px/1.3 'Barlow Condensed', sans-serif; color: var(--white); }
   .nlp-list div { color: var(--lt); line-height: 1.55; }
   .nlp-small { color: var(--lt); font-size: 14px; line-height: 1.6; }
