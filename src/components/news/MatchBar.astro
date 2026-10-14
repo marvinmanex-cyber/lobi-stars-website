@@ -13,7 +13,7 @@ import '../../styles/club-logo.css';
   .mb[hidden] { display: none; }
   .mb :global(.mb-sr) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .mb :global(.mb-card) {
-    display: grid; align-items: center; gap: 12px 20px; box-sizing: border-box;
+    display: grid; align-items: center; gap: 12px 16px; box-sizing: border-box;
     grid-template-columns: minmax(0, 1fr) auto auto auto auto;
     grid-template-areas: "main when venue cd acts";
     padding: 14px 22px; min-height: 88px;
@@ -28,20 +28,21 @@ import '../../styles/club-logo.css';
   .mb :global(.mb-teams) { display: flex; align-items: center; gap: 10px; min-width: 0; }
   .mb :global(.mb-team) { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .mb :global(.mb-team .club-logo) { --logo-h: 44px; }
-  .mb :global(.mb-name) { font: 700 19px/1.1 'Barlow Condensed', sans-serif; overflow-wrap: anywhere; }
+  .mb :global(.mb-name) { font: 700 19px/1.1 'Barlow Condensed', sans-serif; overflow-wrap: break-word; }
   .mb :global(.mb-vs) { flex: none; font: 400 18px/1 'Bebas Neue', sans-serif; color: var(--lt); letter-spacing: .04em; }
   .mb :global(.mb-score) { flex: none; display: inline-flex; gap: 6px; padding: 4px 10px; border-radius: 8px; background: #15181D; color: #fff; font: 400 24px/1 'Bebas Neue', sans-serif; font-variant-numeric: tabular-nums; }
-  .mb :global(.mb-when) { grid-area: when; display: flex; flex-direction: column; gap: 3px; margin: 0; padding-left: 20px; border-left: 1px solid var(--d4); white-space: nowrap; }
+  .mb :global(.mb-when) { grid-area: when; display: flex; flex-direction: column; gap: 3px; margin: 0; padding-left: 16px; border-left: 1px solid var(--d4); white-space: nowrap; }
   .mb :global(.mb-when dd) { margin: 0; font: 600 15px/1.2 'Barlow', sans-serif; }
   .mb :global(.mb-when div + div dd) { color: var(--lt); }
-  .mb :global(.mb-venue) { grid-area: venue; margin: 0; max-width: 190px; padding-left: 20px; border-left: 1px solid var(--d4); font: 400 14px/1.3 'Barlow', sans-serif; color: var(--lt); }
-  .mb :global(.mb-cd) { grid-area: cd; min-width: 150px; padding-left: 20px; border-left: 1px solid var(--d4); }
-  .mb :global(.mb-cd-h) { display: block; margin-bottom: 4px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--lt); }
-  .mb :global(.mb-tiles) { display: flex; gap: 4px; }
-  .mb :global(.mb-tile) { display: inline-flex; align-items: baseline; gap: 1px; min-width: 40px; justify-content: center; padding: 5px 6px; border-radius: 6px; background: var(--d3); }
+  .mb :global(.mb-venue) { grid-area: venue; margin: 0; max-width: 165px; padding-left: 16px; border-left: 1px solid var(--d4); font: 400 14px/1.3 'Barlow', sans-serif; color: var(--lt); }
+  .mb :global(.mb-cd) { grid-area: cd; min-width: 150px; padding-left: 16px; border-left: 1px solid var(--d4); }
+  .mb :global(.mb-cd-h) { display: block; margin-bottom: 6px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--lt); }
+  /* Countdown: each unit its own tile, a big bold number over a spelled-out label. */
+  .mb :global(.mb-tiles) { display: flex; gap: 6px; }
+  .mb :global(.mb-tile) { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-width: 46px; padding: 7px 5px 6px; box-sizing: border-box; border-radius: 8px; background: var(--d3); border: 1px solid var(--d4); }
   .mb :global(.mb-tile[hidden]) { display: none; }
-  .mb :global(.mb-tile b) { font: 400 20px/1 'Bebas Neue', sans-serif; font-variant-numeric: tabular-nums; }
-  .mb :global(.mb-tile small) { font: 700 11px/1 'Barlow Condensed', sans-serif; color: var(--lt); }
+  .mb :global(.mb-tile b) { font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: .04em; font-variant-numeric: tabular-nums; color: var(--white); }
+  .mb :global(.mb-tile small) { font: 700 10px/1 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--lt); }
   .mb :global(.mb-live) { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #C11A1F; color: #fff; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .12em; }
   .mb :global(.mb-pulse), .mb :global(.mb-live-dot) { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: mb-pulse 1.2s infinite; }
   @keyframes mb-pulse { 50% { opacity: .3; } }
@@ -81,8 +82,9 @@ import '../../styles/club-logo.css';
     .mb { padding: 0 16px; margin-top: -20px; }
     .mb :global(.mb-name) { font-size: 17px; }
     .mb :global(.mb-team .club-logo) { --logo-h: 40px; }
-    .mb :global(.mb-tile) { min-width: 34px; padding: 4px 5px; }
-    .mb :global(.mb-tile b) { font-size: 18px; }
+    .mb :global(.mb-tiles) { gap: 6px; }
+    .mb :global(.mb-tile) { min-width: 44px; padding: 6px 4px 5px; }
+    .mb :global(.mb-tile b) { font-size: 22px; }
   }
   @media (prefers-reduced-motion: reduce) { .mb :global(.mb-pulse), .mb :global(.mb-live-dot) { animation: none; } }
 </style>

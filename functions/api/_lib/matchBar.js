@@ -23,7 +23,7 @@ function countdown(iso) {
   const tile = (u, label, hidden = false) => `<span class="mb-tile" data-u="${u}"${hidden ? ' hidden' : ''}><b class="fx-num">--</b><small>${label}</small></span>`;
   return `<div class="mb-cd" data-fx-cd="${esc(new Date(Date.parse(iso)).toISOString())}">
 <div class="fx-cd-live" hidden><span class="mb-live"><span class="mb-pulse" aria-hidden="true"></span>LIVE</span></div>
-<div class="fx-cd-js" hidden><span class="mb-cd-h">Kick-off in</span><span class="fx-tiles mb-tiles" role="timer" aria-live="off">${tile('d', 'd')}${tile('h', 'h')}${tile('m', 'm')}${tile('s', 's', true)}</span></div>
+<div class="fx-cd-js" hidden><span class="mb-cd-h">Kick-off in</span><span class="fx-tiles mb-tiles" role="timer" aria-live="off">${tile('d', 'Days')}${tile('h', 'Hrs')}${tile('m', 'Min')}${tile('s', 'Sec', true)}</span></div>
 <span class="fx-cd-plain"></span></div>`;
 }
 
