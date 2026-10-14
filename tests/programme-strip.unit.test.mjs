@@ -48,7 +48,7 @@ test('Upcoming Matches features the same match as the strip', () => {
   assert.match(html, /Postponed – date to be confirmed/, 'the postponed match is still listed');
 });
 
-test('strip: "Lobi Stars FC vs <opponent>", link only when the programme is published', () => {
+test('strip: "Lobi Stars FC vs <opponent>" and always "Read free" to the programme page', () => {
   const on = programmeStripHtml({ opponent: 'Bichi First FC', home: true, kickoff: MD1.event_date, programmeSlug: 'lobi-stars-vs-bichi-first-2026-11-08' });
   assert.match(on, /Match Day Programme/);
   assert.match(on, /Lobi Stars FC vs Bichi First FC <span class="pgb-ha">Home<\/span>/);
@@ -56,8 +56,9 @@ test('strip: "Lobi Stars FC vs <opponent>", link only when the programme is publ
   assert.match(on, /Read free &rarr;/);
   const soon = programmeStripHtml({ opponent: 'Kada Warriors FC', home: false, kickoff: MD2.event_date, programmeSlug: null });
   assert.match(soon, /Lobi Stars FC vs Kada Warriors FC <span class="pgb-ha">Away<\/span>/);
-  assert.match(soon, /Programme coming soon/);
-  assert.ok(!soon.includes('href='), 'no dead link');
+  assert.match(soon, /<a class="pgb-link" href="\/programme\/\?src=homepage"/, 'Read free even before the programme is out');
+  assert.match(soon, /Read free &rarr;/);
+  assert.ok(!soon.includes('coming soon'));
   assert.equal(programmeStripHtml(null), '');
   assert.ok(!programmeStripHtml({ opponent: '<b>x</b>', home: true, kickoff: 'k', programmeSlug: null }).includes('<b>x</b>'), 'escaped');
 });

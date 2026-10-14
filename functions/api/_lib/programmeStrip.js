@@ -14,8 +14,8 @@ const SAME_MATCH_MS = 12 * 3600e3;
 /**
  * { opponent, home, kickoff, programmeSlug|null } for the strip, or null to hide it:
  * no match left, the programme feature is off, or "Homepage banner" is off in
- * Admin › Matchday Programme. While the file storage (R2) isn't connected no
- * programme can be published, so the strip shows "Programme coming soon".
+ * Admin › Matchday Programme. programmeSlug is null while that match's
+ * programme isn't published (or the file storage, R2, isn't connected).
  * A programme belongs to the match when it is published (or its scheduled
  * publish time has come) and its kick-off is within 12 hours of the match's.
  */
@@ -32,14 +32,16 @@ export async function programmeStripData(env, matches, now = new Date()) {
   return { ...base, programmeSlug: p?.slug || null };
 }
 
-/** The strip's inside (escaped). With a programme: a link "Read free →"; without: "Programme coming soon". */
+/**
+ * The strip's inside (escaped): always a link "Read free →" to the programme
+ * page (/programme/?src=homepage). If that match's programme isn't out yet,
+ * the programme page itself says so (after the fan signs in).
+ */
 export function programmeStripHtml(d) {
   if (!d) return '';
   const match = `Lobi Stars FC vs ${esc(d.opponent)}`;
   const text = `<span class="pgb-txt"><span class="pgb-k">Match Day Programme</span><span class="pgb-t">${match} <span class="pgb-ha">${d.home ? 'Home' : 'Away'}</span></span></span>`;
   const key = esc(d.programmeSlug || `soon-${d.kickoff}`);
-  const main = d.programmeSlug
-    ? `<a class="pgb-link" href="/programme/?src=homepage" aria-label="Read the match day programme: ${match}">${text}<span class="pgb-go">Read free &rarr;</span></a>`
-    : `<div class="pgb-link pgb-link--soon">${text}<span class="pgb-soon">Programme coming soon</span></div>`;
+  const main = `<a class="pgb-link" href="/programme/?src=homepage" aria-label="Read the match day programme: ${match}">${text}<span class="pgb-go">Read free &rarr;</span></a>`;
   return `<div class="pgb-in" data-key="${key}">${main}<button type="button" class="pgb-x" aria-label="Close the programme banner">&times;</button></div>`;
 }

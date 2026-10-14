@@ -305,9 +305,8 @@ Tests: `tests/health.test.mjs`.
   same helper as the Upcoming Matches featured card: live first, else the
   earliest unfinished Lobi Stars match; finished, cancelled, abandoned and
   postponed (match or league status) are skipped.
-- Link only when a programme is published (or its scheduled time has come)
-  with a kick-off within 12 hours of that match; otherwise "Programme coming
-  soon" (also while the file storage, R2, is not connected yet). Hidden while
+- The button always reads "Read free →" and opens /programme/?src=homepage
+  (the programme page says when the programme isn't out yet). Hidden while
   the programme feature or the "Homepage banner" switch is off, or when no
   match is left.
 - Freshness: the homepage is cached for 30 seconds and the cache is cleared

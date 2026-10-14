@@ -2,9 +2,9 @@
 // Homepage strip "MATCH DAY PROGRAMME · Lobi Stars FC vs <next opponent> ·
 // Read free →". The server fills it in for every homepage request
 // (functions/index.js + functions/api/_lib/programmeStrip.js): the opponent
-// comes from THE next Lobi Stars match (the same as Upcoming Matches), and the
-// button only links when that match's programme is published; otherwise it
-// says "Programme coming soon" (also while the file storage isn't connected).
+// comes from THE next Lobi Stars match (the same as Upcoming Matches). The
+// "Read free →" button always opens /programme/?src=homepage, which tells fans
+// when the programme isn't out yet.
 // Hidden while the programme feature or its "Homepage banner" switch is off,
 // and when no match is left. Fans can close
 // it; it stays closed for that match on this device.
