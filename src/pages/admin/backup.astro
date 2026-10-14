@@ -62,7 +62,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       const d = await get('/api/admin/backup');
       tables = d.tables;
       $('tables').innerHTML = `<table><thead><tr><th>Table</th><th>Rows</th><th>Columns</th></tr></thead><tbody>${tables.map(t => `<tr><td>${esc(t.table)}</td><td>${t.rows.toLocaleString('en-NG')}</td><td>${t.columns}</td></tr>`).join('')}</tbody></table>`;
-      $('history').innerHTML = d.history.length ? `<table><thead><tr><th>When (WAT)</th><th>By</th><th>What</th></tr></thead><tbody>${d.history.map((h: any) => `<tr><td>${esc(wat(h.ts))}</td><td>${esc(h.staff_name)}</td><td>${esc(h.detail)}</td></tr>`).join('')}</tbody></table>`
+      $('history').innerHTML = d.history.length ? `<table><thead><tr><th>When</th><th>By</th><th>What</th></tr></thead><tbody>${d.history.map((h: any) => `<tr><td>${esc(wat(h.ts))}</td><td>${esc(h.staff_name)}</td><td>${esc(h.detail)}</td></tr>`).join('')}</tbody></table>`
         : '<p class="muted">No backup has been downloaded yet. Download one now.</p>';
     } catch (err) { msg((err as Error).message, false); }
   }
@@ -91,7 +91,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         blob = new Blob([JSON.stringify(body)], { type: 'application/json' });
       } else {
         const sheets = [{ name: 'About this backup', columns: ['Item', 'Value'], rows: [
-          ['Website', 'lobistarsfc.com'], ['Created', new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' }) + ' WAT'], ['Tables', tables.length], ['Rows', done],
+          ['Website', 'lobistarsfc.com'], ['Created', new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' })], ['Tables', tables.length], ['Rows', done],
           ['Left out', 'Passwords, sign-in links, two-step login secrets, push keys, private links and stored pictures'],
           ['Keep it safe', "This file contains fans' personal data. Store it privately and delete old copies."],
         ] }, ...Object.entries(data).filter(([, t]) => t.columns.length).map(([n, t]) => ({ name: n, columns: t.columns, rows: t.rows }))];

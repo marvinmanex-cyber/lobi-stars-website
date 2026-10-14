@@ -142,7 +142,7 @@ test('winner = earliest exact score; staff accounts excluded; disqualification r
   assert.ok(paid.result.paidBy && paid.result.paidAt);
   const csv = await fetch(`${BASE}/api/admin/predictions/${m.id}?format=csv`, { headers: ADMIN });
   assert.equal(csv.status, 200);
-  assert.match(await csv.text(), /Submitted \(WAT to the millisecond\),Name,Email,Phone,Prediction/);
+  assert.match(await csv.text(), /Submitted \(Nigerian time to the millisecond\),Name,Email,Phone,Prediction/);
 });
 
 test('no exact score means no winner', async () => {

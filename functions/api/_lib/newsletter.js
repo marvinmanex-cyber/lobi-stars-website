@@ -189,7 +189,7 @@ export function renderNewsletter({ issue, sponsors = [], match = null, recipient
     const home = /lobi stars/i.test(match.home_team);
     rows.push(section(`${label(T.matchLabel)}
       <p style="margin:0 0 6px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:bold;color:${INK}">${esc(match.home_team)} vs ${esc(match.away_team)}</p>
-      <p style="margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#5B6472">${esc(day)}, ${esc(time)} (WAT)${match.venue ? ` &middot; ${esc(match.venue)}` : ''}</p>
+      <p style="margin:0 0 14px;font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#5B6472">${esc(day)}, ${esc(time)}${match.venue ? `<br>${esc(match.venue)}` : ''}</p>
       ${btn(tracked(issue, 'm', '0', home ? '/tickets/' : '/fixtures/', preview), home ? 'Get your tickets' : 'Match details', INK)}`, '24px 32px', '#FFF8E1'));
   }
   // Stories.
@@ -280,7 +280,7 @@ export function renderText({ issue, sponsors = [], match = null, recipient = {} 
   if (issue.headline) lines.push(issue.headline.toUpperCase(), '');
   if (recipient.firstName) lines.push(`Hi ${recipient.firstName},`, '');
   if (issue.intro) lines.push(issue.intro.trim(), '');
-  if (issue.include_match && match) lines.push(`NEXT MATCH: ${match.home_team} vs ${match.away_team}, ${new Date(match.event_date).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', dateStyle: 'full', timeStyle: 'short' })} WAT`, '');
+  if (issue.include_match && match) lines.push(`NEXT MATCH: ${match.home_team} vs ${match.away_team}, ${new Date(match.event_date).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', dateStyle: 'full', timeStyle: 'short' })}`, '');
   for (const s of issue.stories || []) if (s.title) lines.push(`- ${s.title}${s.url ? ` ${abs(s.url)}` : ''}`);
   const sp = (issue.sponsor_ids || []).map(id => byId.get(id)).filter(Boolean);
   if (sp.length) lines.push('', 'OUR PARTNERS', ...sp.map(s => `- ${s.name}${s.link ? `: ${s.link}` : ''}`));

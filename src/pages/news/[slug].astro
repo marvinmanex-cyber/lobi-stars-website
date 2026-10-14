@@ -42,7 +42,7 @@ const longRead = a.category === 'Features' || !!a.series;
 const words = (article.body || '').split(/\s+/).filter(Boolean).length;
 const readMins = Math.max(1, Math.round(words / 220));
 const edited = a.updatedAt && a.updatedAt.getTime() - a.publishedAt.getTime() > 60_000 ? a.updatedAt : null;
-const fmtUpdated = (d: Date) => d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) + ' WAT';
+const fmtUpdated = (d: Date) => d.toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
 const STATUS_CLASS = { Available: 'ok', Doubtful: 'warn', Injured: 'bad', Suspended: 'sus' } as const;
 
 const pageUrl = new URL(`/news/${article.id}`, Astro.site).toString();

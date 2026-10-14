@@ -26,7 +26,7 @@ export const TEAMS = [
   { code: 'MJT', name: 'Mighty Jets FC', short_name: 'Mighty Jets', venue: 'Zaria Road Stadium, Jos', crest_url: '/images/mighty-jets-jos.jpg', colour: '#1F4E9C', aliases: ['Mighty Jets', 'Mighty Jets Jos'] },
   { code: 'WIK', name: 'Wikki Tourists FC', short_name: 'Wikki Tourists', venue: 'ATBS Stadium, Bauchi', crest_url: '/images/wikki-tourists.jpg', colour: '#0E7A3E', aliases: ['Wikki Tourists', 'Wikki'] },
   { code: 'KAD', name: 'Kada Warriors FC', short_name: 'Kada Warriors', venue: 'UBA Sanni Stadium', crest_url: '/images/kadawarriors-kaduna.jpg', colour: '#7A1F2B', aliases: ['Kada Warriors', 'Kada'] },
-  { code: 'LOB', name: 'Lobi Stars FC', short_name: 'Lobi Stars', venue: 'McCarthy Stadium, Makurdi, Benue', crest_url: '/images/lobi-stars-badge.png', colour: '#E31E24', is_lobi: 1, aliases: ['Lobi Stars', 'Lobi', 'Lobi Stars Makurdi'] },
+  { code: 'LOB', name: 'Lobi Stars FC', short_name: 'Lobi Stars', venue: 'McCarthy Stadium, Makurdi, Benue State', crest_url: '/images/lobi-stars-badge.png', colour: '#E31E24', is_lobi: 1, aliases: ['Lobi Stars', 'Lobi', 'Lobi Stars Makurdi'] },
   { code: 'BIC', name: 'Bichi First FC', short_name: 'Bichi First', venue: 'Bichi First Stadium, Bichi', crest_url: '/images/bichi-first.jpg', colour: '#5B2C83', aliases: ['Bichi First', 'Bichi'] },
   { code: 'ABS', name: 'ABS FC', short_name: 'ABS', venue: 'Ilorin Township Stadium', crest_url: '/images/abs-illorin.jpg', colour: '#0B6E99', aliases: ['ABS', 'ABS Ilorin', 'Abubakar Bukola Saraki FC'] },
   { code: 'SOK', name: 'Sokoto United FC', short_name: 'Sokoto Utd', venue: 'Giginya Memorial Stadium, Sokoto', crest_url: '/images/sokoto-united.jpg', colour: '#2E7D32', aliases: ['Sokoto Utd FC', 'Sokoto United', 'Sokoto Utd'] },

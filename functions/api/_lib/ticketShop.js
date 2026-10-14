@@ -7,6 +7,7 @@
 //    the gate work exactly as before.
 // Seats are held atomically: the order row is only inserted if the seats
 // sold plus seats held by unpaid orders (30 minutes) still fit.
+import { lagosParts } from './fixtureCard.js';
 import { randomId } from './crypto.js';
 import { ensureTable, listMatches, toSummary } from './matchCentre.js';
 import { ticketState, TIERS, CAP_COL, TIER_LABELS, naira } from './tickets/rules.js';
@@ -187,7 +188,7 @@ export async function sendBasketEmail(env, basket) {
     const fx = await db.prepare(`SELECT id FROM league_fixtures WHERE event_id = ?`).bind(o.event_id).first().catch(() => null);
     const cal = fx ? `https://lobistarsfc.com/api/league/calendar.ics?fixture=${fx.id}` : null;
     sections.push(`<h3 style="color:#0d1a33;margin:26px 0 8px;font-family:Arial,sans-serif;">${esc(o.home_team)} vs ${esc(o.away_team)}</h3>
-      <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:13px;color:#333;">${esc(new Date(o.event_date).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'long', day: 'numeric', month: 'long' }))}, kick-off ${esc(new Date(o.event_date).toLocaleTimeString('en-US', { timeZone: 'Africa/Lagos', hour: 'numeric', minute: '2-digit' }))} (WAT) &middot; ${esc(o.venue)}${cal ? ` &middot; <a href="${cal}">Add to calendar</a>` : ''}</p>
+      <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:#333;"><b>Date:</b> ${esc(lagosParts(o.event_date)?.date || 'To be confirmed')}<br><b>Kick-off:</b> ${esc(lagosParts(o.event_date)?.time || 'TBC')}<br><b>Venue:</b> ${esc(o.venue)}${cal ? `<br><a href="${cal}">Add to calendar</a>` : ''}</p>
       ${ticketBlocksHtml({ order: o, event, tickets })}`);
   }
   const total = orders.reduce((s, o) => s + o.total_kobo, 0);

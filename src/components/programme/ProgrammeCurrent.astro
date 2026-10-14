@@ -90,7 +90,7 @@ import FanShareMenu from './FanShareMenu.astro';
   function when(iso) {
     var d = new Date(iso);
     return d.toLocaleDateString('en-GB', Object.assign({ weekday: 'long', day: 'numeric', month: 'long' }, WAT)) + ', ' +
-      d.toLocaleTimeString('en-GB', Object.assign({ hour: '2-digit', minute: '2-digit' }, WAT)) + ' (WAT)';
+      d.toLocaleTimeString('en-GB', Object.assign({ hour: '2-digit', minute: '2-digit' }, WAT));
   }
   function msg(t) { $('pgMsg').textContent = t || ''; $('pgMsg').hidden = !t; }
   function event(slug, type) {

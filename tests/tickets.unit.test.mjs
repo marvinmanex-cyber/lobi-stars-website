@@ -77,7 +77,7 @@ test('gate states: valid, used, wrong match, cancelled', () => {
   assert.equal(gateState(null, ev, matchDay), 'not_found');
 });
 
-test('homepage cards: next match big with a countdown, 3 in all, HOME/AWAY and ticket states, escaped', () => {
+test('homepage cards: next match featured with countdown tiles, 3 in all, HOME/AWAY and ticket states, escaped', () => {
   const list = [
     { ...m('h1', 7), slug: 'h1', matchday: 1, competition: 'NNL Conference D', ticket: { state: 'on_sale', fromKobo: 100000 } },
     { ...m('a1', 14, { home_team: 'Kada Warriors FC', away_team: 'Lobi Stars FC', is_home: false }), slug: 'a1', matchday: 2 },
@@ -86,9 +86,17 @@ test('homepage cards: next match big with a countdown, 3 in all, HOME/AWAY and t
     { ...m('p', 10, { status: 'postponed', away_team: '<b>Bad</b> FC' }), slug: 'p', matchday: 5 },
   ];
   const html = upcomingHtml(list, { now: NOW });
-  assert.equal((html.match(/<li class="nm-card/g) || []).length, 3);
-  assert.equal((html.match(/nm-card--next/g) || []).length, 1);
-  assert.match(html, /data-countdown=/);
+  assert.equal((html.match(/<li class="fx-card/g) || []).length, 3);
+  assert.equal((html.match(/fx-card--featured/g) || []).length, 1);
+  assert.equal((html.match(/fx-card--regular/g) || []).length, 2);
+  assert.match(html, /data-fx-cd=/);
+  assert.match(html, /data-u="d".*Days.*data-u="h".*Hours.*data-u="m".*Minutes.*data-u="s"/s, 'Days, Hours, Minutes tiles (Seconds only on the featured card)');
+  assert.equal((html.match(/data-u="s"/g) || []).length, 1);
+  assert.match(html, /<dl class="fx-details">/);
+  assert.match(html, /<dt>.*?Date<\/span><\/dt><dd><time datetime="\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\+01:00">/);
+  assert.match(html, /Kick-off<\/span><\/dt><dd><time datetime="[^"]+">\d{1,2}:\d{2} (AM|PM)<\/time>/);
+  assert.ok(!/\bWAT\b/.test(html), 'no "WAT" label');
+  assert.ok(!html.includes(' · Matchday'), 'details are separate items, not one line');
   assert.match(html, /Matchday 1/);
   assert.match(html, /Buy ticket <small>from ₦1,000<\/small>/);
   assert.match(html, /Away fixture/);

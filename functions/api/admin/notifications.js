@@ -41,7 +41,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   }
   if (canAccess(admin, 'settings') && await tableExists('uptime_incidents')) {
     const h = await healthSummary(db);
-    for (const i of h.open) items.push({ icon: '🚨', title: `Website problem: ${i.label}`, sub: `${i.error || 'Not responding'} since ${new Date(i.started_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} WAT`, href: '/admin/health/' });
+    for (const i of h.open) items.push({ icon: '🚨', title: `Website problem: ${i.label}`, sub: `${i.error || 'Not responding'} since ${new Date(i.started_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`, href: '/admin/health/' });
   }
   return Response.json({ items }, { headers: { 'Cache-Control': 'no-store' } });
 }

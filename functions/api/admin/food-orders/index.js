@@ -65,7 +65,7 @@ export async function onRequestGet({ request, env }) {
       const rows = results.map(o => view(o, null));
       const file = buildXlsx([{
         name: 'Food orders',
-        columns: ['Reference', 'Ordered by', 'Status', 'Payment', 'Created (WAT)', 'Paid (WAT)', 'Delivered (WAT)', 'Name', 'Phone', 'Email', 'Seat / pickup', 'Stand', 'Match', 'Items', 'Total (₦)', 'Note', 'Payment reference', 'Last change by'],
+        columns: ['Reference', 'Ordered by', 'Status', 'Payment', 'Created', 'Paid', 'Delivered', 'Name', 'Phone', 'Email', 'Seat / pickup', 'Stand', 'Match', 'Items', 'Total (₦)', 'Note', 'Payment reference', 'Last change by'],
         rows: rows.map(o => [o.ref, o.channel === 'whatsapp' ? 'WhatsApp' : 'Website (Paystack)', STATUS[o.status]?.label || o.status, o.payment, wat(o.createdAt), wat(o.paidAt), wat(o.deliveredAt), o.name, o.phone, o.email, o.fulfilment === 'pickup' ? `Pickup: ${o.pickupPoint}` : o.seat, o.stand, o.match,
           o.items.map(i => `${i.qty}× ${i.name}`).join(', '), o.totalKobo / 100, o.notes, o.paystackRef, o.statusBy || '']),
       }]);

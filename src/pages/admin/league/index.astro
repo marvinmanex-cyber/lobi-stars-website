@@ -45,7 +45,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     tick(); setInterval(tick, 30000);
     $('next').replaceChildren(
       el('p', { style: 'font-weight:700;font-size:18px;margin:0' }, LA.crest(n.home), n.home.name, ' vs ', LA.crest(n.away), n.away.name),
-      el('p', { class: 'la-muted', text: (n.matchday ? 'Matchday ' + n.matchday + ' · ' : '') + LA.date(n.kickoff) + ', ' + LA.time(n.kickoff) + ' WAT · ' + (n.venue || 'Venue TBC') }),
+      el('p', { class: 'la-muted', text: (n.matchday ? 'Matchday ' + n.matchday + ' · ' : '') + LA.date(n.kickoff) + ', ' + LA.time(n.kickoff) + ' · ' + (n.venue || 'Venue TBC') }),
       cd,
       el('div', { class: 'la-row' }, el('a', { class: 'btn-o btn-sm', href: '/admin/league/live/?id=' + n.id, text: 'Live mode' }), n.matchUrl ? el('a', { class: 'btn-o btn-sm', href: '/admin/matches/', text: 'Tickets & settings' }) : null));
   }).catch(function () { fail($('next')); $('comp').textContent = ''; });

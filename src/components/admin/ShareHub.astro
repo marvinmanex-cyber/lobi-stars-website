@@ -41,7 +41,7 @@
         <button type="button" class="btn-p sm" id="shPostNow">Post now</button>
       </div>
       <div class="sh-sched">
-        <label class="sh-lbl">Or post at (Nigeria time, WAT)<input type="datetime-local" id="shAt" /></label>
+        <label class="sh-lbl">Or post at (Nigeria time)<input type="datetime-local" id="shAt" /></label>
         <div class="sh-row">
           <button type="button" class="btn-o sm" id="shAtLive">When the programme goes live</button>
           <button type="button" class="btn-o sm" id="shAtHour">Now + 1 hour</button>
@@ -225,7 +225,7 @@
       $('shTitle').textContent = p.title;
       $('shState').textContent = hub.state === 'live' ? 'Live' : hub.state === 'upcoming' ? `Drops ${watLong(p.publishAt)}` : 'Not published';
       $('shState').className = `sh-chip ${hub.state === 'live' ? '' : hub.state === 'upcoming' ? 'up' : 'no'}`;
-      $('shKick').textContent = p.kickoffAt ? `Kick-off ${watLong(p.kickoffAt)} (WAT)` : '';
+      $('shKick').textContent = p.kickoffAt ? `Kick-off ${watLong(p.kickoffAt)}` : '';
       if (!$('shHead').dataset.for || $('shHead').dataset.for !== String(pid)) {
         $('shHead').value = p.title; $('shSub').value = [dateLong(p.kickoffAt), p.venue].filter(Boolean).join(' · ');
         $('shHead').dataset.for = String(pid);
@@ -464,7 +464,7 @@
   }
   function drawSchedule() {
     const s = hub.schedule;
-    $('shSchedNow').textContent = s.at ? `Scheduled: ${s.platforms.join(' and ')} at ${watLong(s.at)} (WAT)${s.done ? ' (done)' : ''}.` : 'No scheduled post.';
+    $('shSchedNow').textContent = s.at ? `Scheduled: ${s.platforms.join(' and ')} at ${watLong(s.at)}${s.done ? ' (done)' : ''}.` : 'No scheduled post.';
     if (s.at) $('shAt').value = isoToWat(s.at);
     const failed = hub.history.filter((h: any) => h.status === 'failed' && !h.staff_email).slice(0, 3);
     if (failed.length && !$('shResults').children.length) showResults(failed.map((h: any) => ({ platform: h.platform_key, ok: false, error: `Scheduled post failed: ${h.error}` })));

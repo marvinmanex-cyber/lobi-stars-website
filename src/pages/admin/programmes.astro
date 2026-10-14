@@ -72,7 +72,7 @@ import ShareHub from '../../components/admin/ShareHub.astro';
         </div>
         <div class="wz-2">
           <label class="mp-lbl">Venue<input name="venue" maxlength="120" placeholder="McCarthy Stadium, Makurdi" /></label>
-          <label class="mp-lbl">Kick-off (Nigeria time, WAT)<input name="kickoff" type="datetime-local" /></label>
+          <label class="mp-lbl">Kick-off (Nigeria time)<input name="kickoff" type="datetime-local" /></label>
         </div>
         <label class="mp-lbl">Notes (staff only)<textarea name="notes" rows="2" maxlength="1000"></textarea></label>
       </form>
@@ -109,7 +109,7 @@ import ShareHub from '../../components/admin/ShareHub.astro';
           <label><input type="radio" name="when" value="schedule" /> Schedule</label>
         </fieldset>
         <div class="wz-sched" id="sched" hidden>
-          <label class="mp-lbl">Publish at (Nigeria time, WAT)<input type="datetime-local" id="pubAt" /></label>
+          <label class="mp-lbl">Publish at (Nigeria time)<input type="datetime-local" id="pubAt" /></label>
           <button type="button" class="btn-o sm" id="before24">24 hours before kick-off</button>
         </div>
         <div class="wz-summary" id="summary"></div>
@@ -281,7 +281,7 @@ import ShareHub from '../../components/admin/ShareHub.astro';
               !p.published_at && !p.live ? el('button', { type: 'button', text: 'Delete', onclick: () => del(p) }) : null)));
         });
         $('list').replaceChildren(el('div', { class: 'scroll' }, el('table', {},
-          el('thead', {}, el('tr', {}, ...['Programme', 'Kick-off (WAT)', 'Status', 'Version', 'Opens', 'Downloads', ''].map(h => h ? el('th', { text: h }) : el('th', {}, el('span', { class: 'sr-only', text: 'Actions' }))))),
+          el('thead', {}, el('tr', {}, ...['Programme', 'Kick-off', 'Status', 'Version', 'Opens', 'Downloads', ''].map(h => h ? el('th', { text: h }) : el('th', {}, el('span', { class: 'sr-only', text: 'Actions' }))))),
           el('tbody', {}, ...rows))));
       }
       const sel = $('statsSel'), keep = sel.value;

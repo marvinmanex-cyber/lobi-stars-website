@@ -297,10 +297,24 @@ and Super Admins are emailed (when `RESEND_API_KEY` is set). Admin page
 work: point a free outside monitor (e.g. UptimeRobot, every 5 minutes) at it.
 Tests: `tests/health.test.mjs`.
 
+## Match cards and wording (fixtures redesign, 14 October 2026)
+
+- One card builder for every match card: `functions/api/_lib/fixtureCard.js`
+  (homepage via `tickets/upcomingHtml.js`, /fixtures and /results via
+  `leaguePages.js`, the details block on the Match Centre and Matchday Live).
+  Styles: `src/styles/fixture-card.css`; countdown and Share: `src/lib/fixtureCards.ts`
+  (one 1-second timer per page, stopped when no countdown is left).
+- Times are stored in UTC and shown in Nigerian time without a "WAT" label;
+  `<time datetime>`, JSON-LD and the calendar feed keep the full time with `+01:00`.
+- "Benue" now reads "Benue State" (JSON-LD `addressRegion`, the seed venue).
+  `migrations/0004_benue_state.sql` updates the stored venue; the site also
+  does it itself the first time the league loads, so running it is optional.
+  The club nickname "Pride of Benue" and company names are unchanged.
+
 ## League, fixtures and table
 
 **The data.** The official 2026/27 Nigeria National League Conference D
-season (8 clubs, 56 fixtures, 14 matchdays, kick-off 16:00 WAT = 15:00 UTC)
+season (8 clubs, 56 fixtures, 14 matchdays, kick-off 16:00 Nigerian time = 15:00 UTC)
 lives in the `league_*` tables (functions/api/_lib/leagueDb.js). They are
 created and seeded on first use from `functions/api/_lib/league/seed.js`, so a
 deploy needs no manual step; `migrations/0002_league.sql` and
@@ -359,9 +373,9 @@ limits rules, adjustments, tie decisions, import and undo to those staff.
 **Troubleshooting**
 - *The table looks wrong:* League › Table & Rules › Check data, then
   **Explain** on the row; check adjustments and the tie-break order.
-- *A time looks one hour off:* times are typed in Nigerian time (WAT) and
+- *A time looks one hour off:* times are typed in Nigerian time and
   stored as UTC; a device set to another time zone shows its own time in
-  date pickers. The website always shows WAT.
+  date pickers. The website always shows Nigerian time.
 - *A fixture is missing:* check it is published and not filtered (Lobi Stars /
   All Conference D); a postponed match shows in the "Needs a new date" box.
 - *The calendar didn't update:* calendar apps refresh subscribed feeds every

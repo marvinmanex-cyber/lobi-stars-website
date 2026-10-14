@@ -69,7 +69,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       var rep = el('input', { value: f.reportUrl || '', maxlength: 300, placeholder: '/news/… or https://…', 'aria-label': 'Match report link' });
       var note = el('input', { value: f.note || '', maxlength: 200, 'aria-label': 'Public note' });
       var box = el('div', { class: 'rs-row' },
-        el('div', { class: 'rs-top' }, el('span', { text: '#' + f.matchNo + ' · ' + LA.date(f.kickoff || f.originalKickoff) + (f.kickoff ? ', ' + LA.time(f.kickoff) + ' WAT' : '') + ' · ' + (f.venue || '') }), el('a', { href: '/admin/league/live/?id=' + f.id, text: 'Live mode →' })),
+        el('div', { class: 'rs-top' }, el('span', { text: '#' + f.matchNo + ' · ' + LA.date(f.kickoff || f.originalKickoff) + (f.kickoff ? ', ' + LA.time(f.kickoff) : '') + ' · ' + (f.venue || '') }), el('a', { href: '/admin/league/live/?id=' + f.id, text: 'Live mode →' })),
         el('label', { class: 'la-f' }, 'Status', st),
         el('div', { class: 'rs-score' }, el('span', { class: 'h', text: f.home.name }), hg, el('span', { 'aria-hidden': 'true', text: '–' }), ag, el('span', { class: 'a', text: f.away.name })),
         el('div', { class: 'rs-more' }, el('label', { class: 'la-f' }, 'Attendance', att), el('label', { class: 'la-f' }, 'Referee', ref), el('label', { class: 'la-f' }, 'Report link', rep), el('label', { class: 'la-f' }, 'Note', note)));

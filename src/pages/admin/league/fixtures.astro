@@ -14,7 +14,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       <div><div class="stag">League</div><h1 class="stitle">Fix<span class="r">tures</span></h1></div>
       <label class="la-f">Competition<select id="compSel"></select></label>
     </header>
-    <p class="la-lede">Dates and times are <b>Nigerian time (WAT)</b>. Changes show on the website within a minute, and Lobi Stars matches update their match page, tickets and alerts too. Scores are entered on <a href="/admin/league/results/">Results</a>.</p>
+    <p class="la-lede">Dates and times are <b>Nigerian time</b>. Changes show on the website within a minute, and Lobi Stars matches update their match page, tickets and alerts too. Scores are entered on <a href="/admin/league/results/">Results</a>.</p>
     <p class="la-msg" id="msg" role="status" aria-live="polite"></p>
 
     <section class="la-card" id="pendingBox" hidden aria-labelledby="h-pend"><h2 id="h-pend">Needs a new date</h2><div id="pending"></div></section>
@@ -24,7 +24,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       <div class="la-tabs" id="tabs" role="group" aria-label="Matchday"></div>
       <div id="bulk" class="la-row" hidden style="margin-bottom:12px">
         <label class="la-f">Shift by days<input type="number" id="shift" value="0" min="-60" max="60" style="width:110px" inputmode="numeric" /></label>
-        <label class="la-f">Set time (WAT)<input type="time" id="setTime" /></label>
+        <label class="la-f">Set time<input type="time" id="setTime" /></label>
         <button type="button" class="btn-o" id="bulkPrev">Preview matchday change</button>
       </div>
       <div id="list"><p class="la-muted">Loading…</p></div>
@@ -37,7 +37,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
         <label class="la-f">Home<select name="homeTeamId" required></select></label>
         <label class="la-f">Away<select name="awayTeamId" required></select></label>
         <label class="la-f">Date<input type="date" name="date" required /></label>
-        <label class="la-f">Time (WAT)<input type="time" name="time" value="16:00" required /></label>
+        <label class="la-f">Time<input type="time" name="time" value="16:00" required /></label>
         <label class="la-f">Venue<select name="venueId"><option value="">Home team's ground</option></select></label>
         <label class="la-f" id="addMdWrap">Matchday<input type="number" name="matchday" min="1" max="60" inputmode="numeric" style="width:100px" /></label>
         <button class="btn-p" type="submit">Add fixture</button>
@@ -131,7 +131,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       }
       rows.push(row(f));
     });
-    $('list').replaceChildren(list.length ? LA.table(['Date', 'Time (WAT)', 'Match', 'Venue', 'Status', 'Note', 'Actions'], rows, 'fx') : el('p', { class: 'la-muted', text: 'No fixtures.' }));
+    $('list').replaceChildren(list.length ? LA.table(['Date', 'Time', 'Match', 'Venue', 'Status', 'Note', 'Actions'], rows, 'fx') : el('p', { class: 'la-muted', text: 'No fixtures.' }));
   }
 
   function row(f) {
@@ -168,7 +168,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     if (Number.isInteger(f.homeGoals)) teams.append(el('span', { class: 'la-muted', text: 'Score ' + f.homeGoals + '–' + f.awayGoals }));
     var orig = f.originalKickoff ? el('div', { class: 'la-muted', text: 'Originally ' + LA.date(f.originalKickoff) }) : null;
     return el('tr', { class: 'fx-row' + (f.home.isLobi || f.away.isLobi ? ' is-lobi' : '') },
-      el('td', { 'data-l': 'Date' }, date, orig), el('td', { 'data-l': 'Time (WAT)' }, time), el('td', { 'data-l': 'Match #' + f.matchNo, class: 'fx-match' }, teams),
+      el('td', { 'data-l': 'Date' }, date, orig), el('td', { 'data-l': 'Time' }, time), el('td', { 'data-l': 'Match #' + f.matchNo, class: 'fx-match' }, teams),
       el('td', { 'data-l': 'Venue' }, venue), el('td', { 'data-l': 'Status' }, status, ' ', LA.chip(f.status)), el('td', { 'data-l': 'Note' }, note),
       el('td', { class: 'fx-actions' }, el('div', { class: 'fx-acts' }, acts)));
   }
@@ -187,7 +187,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     var date = el('input', { type: 'date', value: LA.lagosDate(f.kickoff || f.originalKickoff), required: true });
     var time = el('input', { type: 'time', value: LA.lagosTime(f.kickoff || f.originalKickoff) || '16:00', required: true });
     var venue = el('select', {}); venue.add(new Option('Keep the venue', '')); state.data.venues.forEach(function (v) { venue.add(new Option(v.name, v.id)); });
-    LA.confirm('Reschedule ' + f.home.name + ' vs ' + f.away.name, [el('label', { class: 'la-f' }, 'New date', date), el('label', { class: 'la-f' }, 'Kick-off (WAT)', time), el('label', { class: 'la-f' }, 'Venue', venue)], 'Reschedule').then(function (y) {
+    LA.confirm('Reschedule ' + f.home.name + ' vs ' + f.away.name, [el('label', { class: 'la-f' }, 'New date', date), el('label', { class: 'la-f' }, 'Kick-off', time), el('label', { class: 'la-f' }, 'Venue', venue)], 'Reschedule').then(function (y) {
       if (!y) return;
       LA.api('/api/admin/league/fixtures/' + f.id + '/reschedule', { method: 'POST', body: { date: date.value, time: time.value, venueId: venue.value || null } }).then(function (r) { done(r, 'Rescheduled'); });
     });

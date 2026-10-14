@@ -268,12 +268,12 @@ test('Lobi Stars matches: League drives Matches & Fixtures and Match Centre; the
 test('public pages are real HTML: fixtures with SportsEvent data, a real table, filtered views not indexed', async () => {
   const fx = await (await fetch(`${BASE}/fixtures/`)).text();
   assert.match(fx, /"@type":"SportsEvent"/);
-  assert.match(fx, /"startDate":"2026-12-06T16:00:00\+01:00"/, 'Lobi Stars v Mighty Jets, Sunday 6 Dec, 4 PM WAT');
+  assert.match(fx, /"startDate":"2026-12-06T16:00:00\+01:00"/, 'Lobi Stars v Mighty Jets, Sunday 6 Dec, 4 PM Nigerian time');
   assert.match(fx, /Subscribe to Lobi Stars fixtures/);
   assert.match(fx, /href="\/api\/league\/calendar\.ics\?fixture=\d+" download>Add to calendar/);
   const all = await fetch(`${BASE}/fixtures/?view=all`);
   assert.equal(all.headers.get('x-robots-tag'), 'noindex, follow');
-  assert.ok(((await all.text()).match(/<article class="lg-card/g) || []).length >= 4);
+  assert.ok(((await all.text()).match(/<article class="fx-card/g) || []).length >= 4);
   const table = await (await fetch(`${BASE}/table/`)).text();
   assert.match(table, /<caption>Nigeria National League, Conference D 2026\/2027<\/caption>/);
   assert.match(table, /<th scope="row" class="club">/);

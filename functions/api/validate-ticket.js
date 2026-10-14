@@ -65,7 +65,7 @@ export async function onRequestPost({ request, env }) {
   }
   if (existing.status === 'used') {
     const at = new Date(String(existing.used_at).replace(' ', 'T') + 'Z');
-    const when = Number.isNaN(at.getTime()) ? existing.used_at : at.toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WAT';
+    const when = Number.isNaN(at.getTime()) ? existing.used_at : at.toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     return Response.json({ valid: false, code: 'used', usedAt: existing.used_at, reason: `Already used: scanned ${when}` }, { status: 409 });
   }
   return Response.json({ valid: false, code: 'void', reason: 'Ticket cancelled (refunded or void)' }, { status: 409 });

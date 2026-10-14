@@ -1,6 +1,7 @@
 // Sends transactional email via Resend (https://resend.com) using plain
 // fetch -- no SDK needed. Requires RESEND_API_KEY and RESEND_FROM secrets.
 
+import { lagosParts, splitVenue } from './fixtureCard.js';
 import { TEAM_LOGOS } from './teamLogos.js';
 
 const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' };
@@ -37,8 +38,11 @@ const escHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '
 
 /** The ticket cards (one per ticket, each with its QR code) for one match. */
 export function ticketBlocksHtml({ order, event, tickets }) {
-  const dateStr = new Date(event.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
-  const timeStr = new Date(event.event_date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' });
+  const when = lagosParts(event.event_date);
+  const dateStr = when?.date || 'To be confirmed';
+  const timeStr = when?.time || 'TBC';
+  const venue = splitVenue(event.venue);
+  const lbl = t => `<div style="font-size:9px;letter-spacing:1px;font-weight:bold;color:#5a6270;padding-bottom:3px;">${t}</div>`;
   const tierLabel = TIER_LABELS[order.tier] || order.tier;
   const tierBadge = TIER_BADGES[order.tier];
   const tierPriceKobo = order.total_kobo / order.quantity;
@@ -75,8 +79,9 @@ export function ticketBlocksHtml({ order, event, tickets }) {
             <tr>
               <td style="background:rgba(255,255,255,.92);border-radius:8px;padding:12px;">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-                  <td align="center" style="color:#0d1a33;font-size:11px;font-weight:bold;">${dateStr}<br/><span style="font-weight:normal;color:#5a6270;">Kick-off ${timeStr} (WAT)</span></td>
-                  <td align="center" style="color:#0d1a33;font-size:11px;font-weight:bold;">${escHtml(event.venue)}</td>
+                  <td align="center" valign="top" style="color:#0d1a33;font-size:11px;font-weight:bold;padding:0 4px;">${lbl('DATE')}${escHtml(dateStr)}</td>
+                  <td align="center" valign="top" style="color:#0d1a33;font-size:11px;font-weight:bold;padding:0 4px;border-left:1px solid #d5d9df;border-right:1px solid #d5d9df;">${lbl('KICK-OFF')}${escHtml(timeStr)}</td>
+                  <td align="center" valign="top" style="color:#0d1a33;font-size:11px;font-weight:bold;padding:0 4px;">${lbl('VENUE')}${escHtml(venue.name)}${venue.place ? `<br/><span style="font-weight:normal;color:#5a6270;">${escHtml(venue.place)}</span>` : ''}</td>
                 </tr></table>
               </td>
             </tr>

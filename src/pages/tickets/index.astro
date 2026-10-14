@@ -130,7 +130,7 @@ const siteKey = settings.turnstileSiteKey;
       fillQty();
       var pick = el('div', { class: 'tk-pick', hidden: true }, el('label', { class: 'tk-f' }, 'Stand', tier), el('label', { class: 'tk-f' }, 'Tickets', qty));
       var when = new Date(m.kickoff);
-      var date = when.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + when.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }) + ' WAT';
+      var date = when.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + when.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
       var low = m.tiers.length ? Math.min.apply(null, m.tiers.map(function (t) { return t.priceKobo; })) : 0;
       var left = m.tiers.some(function (t) { return t.left !== null; }) ? m.tiers.reduce(function (s, t) { return s + (t.left || 0); }, 0) : null;
       var stateText = m.state === 'not_on_sale' && m.opensAt ? 'On sale from ' + new Date(m.opensAt).toLocaleDateString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short' }) : STATE[m.state];

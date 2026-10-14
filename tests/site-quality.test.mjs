@@ -20,9 +20,9 @@ test('pages are rendered on the server: no "Loading…" placeholders', async () 
 test('homepage Next Matches and the fixtures list arrive with fixture cards and data', async () => {
   const home = (await html('/')).body;
   assert.match(home, /id="ssr-matches"/);
-  assert.ok(/class="nm-card"/.test(home) || /announced soon/.test(home), 'cards or the "announced soon" message');
+  assert.ok(/class="fx-card fx-card--featured/.test(home) || /announced soon/.test(home), 'cards or the "announced soon" message');
   const fx = (await html('/fixtures/')).body;
-  assert.ok(/class="lg-card/.test(fx) || /announced soon/.test(fx));
+  assert.ok(/class="fx-card/.test(fx) || /announced soon/.test(fx));
   const { matches } = await fetch(`${BASE}/api/matches`).then(r => r.json());
   const next = matches.find(m => /lobi stars/i.test(m.home_team + m.away_team) && m.status === 'scheduled' && new Date(m.event_date) > Date.now());
   if (next) assert.ok(home.includes(next.away_team.replace(/&/g, '&amp;')) || home.includes(next.home_team), 'next fixture is in the HTML');

@@ -168,7 +168,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     try {
       const { log } = await api('/api/admin/export-log');
       const names = { export_xlsx: 'Downloaded fan database (.xlsx)', export_sources_csv: 'Downloaded source breakdown', export_marketing_csv: 'Downloaded marketing list', fan_deleted: 'Deleted a person', fan_unsubscribed: 'Unsubscribed a person', fan_backfill: 'Imported existing records', partner_report: 'Downloaded partner report' };
-      $('log').innerHTML = log.length ? '<table><thead><tr><th>When (WAT)</th><th>Staff</th><th>Action</th><th>Detail</th></tr></thead><tbody>' +
+      $('log').innerHTML = log.length ? '<table><thead><tr><th>When</th><th>Staff</th><th>Action</th><th>Detail</th></tr></thead><tbody>' +
         log.map(l => `<tr><td>${esc(wat(l.ts))}</td><td>${esc(l.staff_name)}</td><td>${esc(names[l.action] || l.action)}</td><td>${esc(l.detail)}</td></tr>`).join('') + '</tbody></table>'
         : '<p class="muted">Nothing yet.</p>';
     } catch (e) { $('log').innerHTML = `<p class="muted">${esc(e.message)}</p>`; }

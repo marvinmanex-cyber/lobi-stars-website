@@ -18,7 +18,7 @@ const isLobi = name => /lobi stars/i.test(name || '');
 export const fmtDate = (iso, long = false) => new Date(iso).toLocaleDateString('en-GB',
   long ? { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: TZ }
        : { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: TZ });
-export const fmtTime = iso => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ }) + ' WAT';
+export const fmtTime = iso => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
 const hasScore = m => m.home_score !== null && m.home_score !== undefined && m.away_score !== null && m.away_score !== undefined;
 
 function initials(name) {

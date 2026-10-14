@@ -4,7 +4,8 @@
 // database is escaped.
 import { tablePayload, matchdaySummary } from './leagueApi.js';
 import { buildFormGuide, nextFixture, byKickoff, CRITERION_LABELS } from './league/standings.js';
-import { formatDate, formatShortDate, formatTime, formatDateTime, toLagos } from './league/time.js';
+import { formatDate, formatShortDate, formatDateTime, toLagos } from './league/time.js';
+import { fixtureCardHtml, shareAction, splitVenue } from './fixtureCard.js';
 
 export const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const SITE = 'https://lobistarsfc.com';
@@ -18,7 +19,8 @@ const crest = (t, size = 34) => {
   if (!t?.crest_url && !t?.code) return `<span class="lg-crest lg-crest--none" style="width:${size}px;height:${size}px" aria-hidden="true">${esc(String(t?.name || '?').trim().charAt(0))}</span>`;
   return `<img class="lg-crest" src="${esc(t.crest_url || `/api/league/crest/${t.code}`)}" alt="" width="${size}" height="${size}" loading="lazy" decoding="async">`;
 };
-const teamName = (t, short = false) => esc(short ? t?.short_name || t?.name : t?.name);
+const crestUrl = t => t?.crest_url || (t?.code ? `/api/league/crest/${t.code}` : null);
+const side = t => ({ name: t?.name, crest: crestUrl(t), isLobi: !!t?.is_lobi });
 
 /**
  * A unified match for the pages: league fixtures plus any Lobi Stars match in
@@ -49,6 +51,12 @@ const matchUrl = f => {
   return `/matches/${toLagos(iso).date}-${part(f.home?.name)}-vs-${part(f.away?.name)}/`;
 };
 
+/** "McCarthy Stadium, Makurdi, Benue State" -> { addressLocality: 'Makurdi', addressRegion: 'Benue State' }. */
+function postalAddress(venue) {
+  const [locality, region] = splitVenue(venue).place.split(',').map(x => x.trim());
+  return { '@type': 'PostalAddress', ...(locality ? { addressLocality: locality } : {}), ...(region ? { addressRegion: region } : {}), addressCountry: 'NG' };
+}
+
 function jsonLd(f) {
   const status = { postponed: 'EventPostponed', cancelled: 'EventCancelled', abandoned: 'EventCancelled' }[f.status]
     || (f.original_kickoff_at && f.kickoff_at && f.original_kickoff_at !== f.kickoff_at ? 'EventRescheduled' : 'EventScheduled');
@@ -57,7 +65,7 @@ function jsonLd(f) {
   const d = {
     '@context': 'https://schema.org', '@type': 'SportsEvent', name: `${f.home?.name} vs ${f.away?.name}`, sport: 'Soccer',
     startDate: `${l.date}T${l.time}:00+01:00`, eventStatus: `https://schema.org/${status}`, eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-    location: { '@type': 'Place', name: f.venue?.name || 'To be confirmed', address: { '@type': 'PostalAddress', addressCountry: 'NG' } },
+    location: { '@type': 'Place', name: f.venue?.name || 'To be confirmed', address: postalAddress(f.venue?.name) },
     homeTeam: { '@type': 'SportsTeam', name: f.home?.name }, awayTeam: { '@type': 'SportsTeam', name: f.away?.name },
     organizer: { '@type': 'SportsOrganization', name: f.competition?.name || f.competition?.short_name || 'Nigeria National League' },
     url: `${SITE}${matchUrl(f) || '/fixtures/'}`,
@@ -66,69 +74,52 @@ function jsonLd(f) {
   return `<script type="application/ld+json">${JSON.stringify(d).replace(/</g, '\\u003c')}</script>`;
 }
 
-function matchCard(f, { results = false, now = Date.now(), previews = {} } = {}) {
+function matchCard(f, { now = Date.now(), previews = {}, featured = false } = {}) {
   const lobiHome = !!f.home?.is_lobi, lobiAway = !!f.away?.is_lobi, lobi = lobiHome || lobiAway;
   const iso = f.kickoff_at || f.original_kickoff_at;
   const live = LIVE.includes(f.status);
   const done = DONE.includes(f.status) && Number.isInteger(f.home_goals);
   const rescheduled = f.kickoff_at && f.original_kickoff_at && f.kickoff_at !== f.original_kickoff_at;
   const chips = [];
-  if (live) chips.push(`<span class="lg-chip live" data-status><span class="lg-pulse" aria-hidden="true"></span>${f.status === 'half_time' ? 'Half time' : 'LIVE'}</span>`);
-  else if (f.status === 'postponed') chips.push('<span class="lg-chip warn">Postponed</span>');
+  if (live && !featured) chips.push(`<span class="lg-chip live" data-status><span class="lg-pulse" aria-hidden="true"></span>${f.status === 'half_time' ? 'Half time' : 'LIVE'}</span>`);
+  else if (done && !featured) chips.push('<span class="lg-chip">Full time</span>');
   else if (['cancelled', 'abandoned'].includes(f.status)) chips.push(`<span class="lg-chip bad">${STATUS_TEXT[f.status]}</span>`);
   else if (f.status === 'awarded') chips.push('<span class="lg-chip">Awarded</span>');
-  else if (rescheduled) chips.push('<span class="lg-chip info">Rescheduled</span>');
-  let mid;
-  const winner = done ? (f.home_goals > f.away_goals ? 'h' : f.home_goals < f.away_goals ? 'a' : '') : '';
-  if (done || live) mid = `<div class="lg-score" data-score aria-label="Score ${esc(f.home_goals ?? 0)} to ${esc(f.away_goals ?? 0)}">${esc(f.home_goals ?? 0)} – ${esc(f.away_goals ?? 0)}</div>`;
-  else if (f.status === 'postponed') mid = '<div class="lg-vs">P–P</div>';
-  else mid = `<div class="lg-vs">${f.kickoff_at ? esc(formatTime(f.kickoff_at)) : 'TBC'}</div>`;
-  const when = f.kickoff_at ? `${esc(formatDate(f.kickoff_at))} · <b>${esc(formatTime(f.kickoff_at))} WAT</b>` : 'Date to be confirmed';
+  else if (rescheduled && f.status !== 'postponed') chips.push('<span class="lg-chip info">Rescheduled</span>');
   const notes = [];
-  if (f.status === 'postponed') notes.push(`Originally ${esc(formatShortDate(f.original_kickoff_at))}${f.postponed_reason ? `: ${esc(f.postponed_reason)}` : ''}. New date to be confirmed.`);
+  if (f.status === 'postponed') notes.push(`Originally ${esc(formatShortDate(f.original_kickoff_at))}${f.postponed_reason ? `: ${esc(f.postponed_reason)}` : ''}.`);
   else if (rescheduled) notes.push(`Rescheduled from ${esc(formatShortDate(f.original_kickoff_at))}.`);
   if (f.note && !/^Postponed$|^Rescheduled from/.test(f.note)) notes.push(esc(f.note));
   if (f.result_type === 'awarded') notes.push('Result awarded by the league.');
   const acts = [];
   const mu = matchUrl(f);
-  if (mu) acts.push(`<a class="lg-btn" href="${esc(mu)}">${done ? 'Match report' : 'Match Centre'}</a>`);
-  if (done && f.report_url) acts.push(`<a class="lg-btn" href="${esc(f.report_url)}">Report</a>`);
-  const upcoming = !done && !['cancelled', 'abandoned'].includes(f.status) && f.status !== 'postponed';
-  const preview = iso ? previews[toLagos(iso).date] : null;
-  if (upcoming && lobi && preview) acts.push(`<a class="lg-btn" href="/news/${esc(preview)}/">Match preview</a>`);
+  const upcoming = !done && !live && !['cancelled', 'abandoned'].includes(f.status) && f.status !== 'postponed';
   // Ticket state: Buy ticket / Sold out / not on sale yet (home), Away fixture (away).
   const ts = f.ticket?.state || (f.on_sale ? 'on_sale' : 'not_on_sale');
   if (upcoming && lobiHome && f.kickoff_at && Date.parse(f.kickoff_at) > now) {
-    if (ts === 'on_sale') acts.unshift(`<a class="lg-btn primary" href="/tickets/?event=${encodeURIComponent(f.event_id)}">Buy ticket</a>`);
-    else if (ts === 'sold_out') acts.unshift('<span class="lg-chip bad lg-tix">Sold out</span>');
-    else if (ts === 'not_on_sale') acts.unshift('<span class="lg-chip lg-tix">Tickets not on sale yet</span>');
-  } else if (upcoming && lobiAway) acts.unshift('<span class="lg-chip lg-tix">Away fixture</span>');
+    if (ts === 'on_sale') acts.push(`<a class="lg-btn primary" href="/tickets/?event=${encodeURIComponent(f.event_id)}">Buy ticket</a>`);
+    else if (ts === 'sold_out') acts.push('<span class="lg-chip bad lg-tix">Sold out</span>');
+    else if (ts === 'not_on_sale') acts.push('<span class="lg-chip lg-tix">Tickets not on sale yet</span>');
+  } else if (upcoming && lobiAway) acts.push('<span class="lg-chip lg-tix">Away fixture</span>');
+  if (featured && live && lobi) acts.push('<a class="lg-btn primary" href="/commentary/">Listen live</a>');
+  if (mu) acts.push(`<a class="lg-btn" href="${esc(mu)}">${done ? 'Match report' : 'Match Centre'}</a>`);
+  if (done && f.report_url) acts.push(`<a class="lg-btn" href="${esc(f.report_url)}">Report</a>`);
+  const preview = iso ? previews[toLagos(iso).date] : null;
+  if (upcoming && lobi && preview) acts.push(`<a class="lg-btn" href="/news/${esc(preview)}/">Match preview</a>`);
   if (upcoming && f.kickoff_at && !f.extra) acts.push(`<a class="lg-btn" href="/api/league/calendar.ics?fixture=${encodeURIComponent(f.id)}" download>Add to calendar</a>`);
-  const winnerName = winner === 'h' ? f.home?.name : winner === 'a' ? f.away?.name : '';
-  const label = done ? `${f.home?.name} ${f.home_goals}, ${f.away?.name} ${f.away_goals}${winnerName ? `. ${winnerName} won` : '. A draw'}` : `${f.home?.name} vs ${f.away?.name}`;
-  return `<article class="lg-card${lobi ? ' is-lobi' : ''}${live ? ' is-live' : ''}" data-id="${esc(f.id)}" data-lobi="${lobi ? 1 : 0}" data-md="${esc(f.matchday ?? '')}" data-month="${esc(lagosMonth(iso))}" data-ha="${lobiHome ? 'home' : lobiAway ? 'away' : ''}" data-comp="${esc(f.competition?.slug || '')}" aria-label="${esc(label)}">
-<div class="lg-meta"><span class="lg-comp">${esc(f.competition?.short_name || '')}${f.matchday ? ` · Matchday ${esc(f.matchday)}` : ''}</span>${lobi ? `<span class="lg-ha ${lobiHome ? 'home' : 'away'}">${lobiHome ? 'Home' : 'Away'}</span>` : ''}${chips.join('')}<span class="lg-when">${when}</span></div>
-<div class="lg-teams"><div class="lg-team h${winner === 'h' ? ' won' : ''}"><span>${teamName(f.home)}</span>${crest(f.home)}</div>${mid}<div class="lg-team${winner === 'a' ? ' won' : ''}">${crest(f.away)}<span>${teamName(f.away)}</span></div></div>
-${f.venue?.name ? `<div class="lg-venue">${esc(f.venue.name)}</div>` : ''}${notes.length ? `<p class="lg-note">${notes.join(' ')}</p>` : ''}${acts.length ? `<div class="lg-acts">${acts.join('')}</div>` : ''}
-${jsonLd(f)}</article>`;
+  if (mu) acts.push(shareAction(mu, `${f.home?.name} vs ${f.away?.name}`));
+  const winner = done ? (f.home_goals > f.away_goals ? f.home?.name : f.home_goals < f.away_goals ? f.away?.name : '') : '';
+  const label = done ? `${f.home?.name} ${f.home_goals}, ${f.away?.name} ${f.away_goals}${winner ? `. ${winner} won` : '. A draw'}` : `${f.home?.name} vs ${f.away?.name}`;
+  return fixtureCardHtml({
+    home: side(f.home), away: side(f.away), kickoff: f.kickoff_at, venue: f.venue?.name, status: f.status,
+    homeGoals: f.home_goals, awayGoals: f.away_goals, matchday: f.matchday, competition: f.competition?.name || f.competition?.short_name,
+    featured, chips, notes, actions: acts, jsonLd: jsonLd(f),
+    attrs: `data-id="${esc(f.id)}" data-lobi="${lobi ? 1 : 0}" data-md="${esc(f.matchday ?? '')}" data-month="${esc(lagosMonth(iso))}" data-ha="${lobiHome ? 'home' : lobiAway ? 'away' : ''}" data-comp="${esc(f.competition?.slug || '')}" aria-label="${esc(label)}"`,
+  });
 }
 
 function select(name, label, options, value) {
   return `<label class="lg-f"><span>${esc(label)}</span><select name="${name}">${options.map(([v, t]) => `<option value="${esc(v)}"${String(v) === String(value ?? '') ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
-}
-
-/** The Next match banner (Lobi Stars). */
-export function nextMatchBanner(f) {
-  if (!f) return '';
-  const lobiHome = !!f.home?.is_lobi;
-  const live = LIVE.includes(f.status);
-  return `<section class="lg-next" aria-labelledby="lg-next-h">
-<div class="lg-next-top"><h2 id="lg-next-h">${live ? 'Live now' : 'Next match'}</h2><span>${esc(f.competition?.short_name || '')}${f.matchday ? ` · Matchday ${esc(f.matchday)}` : ''}</span></div>
-<div class="lg-next-teams"><span class="lg-next-team">${crest(f.home, 56)}<b>${teamName(f.home)}</b></span><span class="lg-next-vs">${live ? `${esc(f.home_goals ?? 0)} – ${esc(f.away_goals ?? 0)}` : 'vs'}</span><span class="lg-next-team">${crest(f.away, 56)}<b>${teamName(f.away)}</b></span></div>
-<p class="lg-next-when">${esc(formatDate(f.kickoff_at))} · ${esc(formatTime(f.kickoff_at))} WAT${f.venue?.name ? ` · ${esc(f.venue.name)}` : ''}</p>
-${live ? '' : `<p class="lg-countdown" data-countdown="${esc(f.kickoff_at)}" aria-live="off"></p>`}
-<div class="lg-acts">${lobiHome && f.on_sale ? `<a class="lg-btn primary" href="/tickets/?event=${encodeURIComponent(f.event_id)}">Buy ticket</a>` : lobiHome ? '<span class="lg-chip lg-tix">Tickets not on sale yet</span>' : '<span class="lg-chip lg-tix">Away fixture</span><a class="lg-btn primary" href="/commentary/">Listen live</a>'}${matchUrl(f) ? `<a class="lg-btn" href="${esc(matchUrl(f))}">Match Centre</a>` : ''}${f.extra ? '' : `<a class="lg-btn" href="/api/league/calendar.ics?fixture=${encodeURIComponent(f.id)}" download>Add to calendar</a>`}</div>
-</section>`;
 }
 
 // ── /fixtures ──
@@ -166,8 +157,12 @@ ${comps.length > 1 ? select('comp', 'Competition', [['', 'All'], ...comps], comp
 <button type="submit" class="lg-btn" data-apply>Show</button>
 </form>`;
 
+  // The next Lobi Stars match leads the page as the featured card (unfiltered views).
+  const filtered = !!(md || month || ha || comp);
+  const featured = !filtered && next ? next : null;
+  if (featured) list = list.filter(f => f.id !== featured.id);
   let body = '';
-  if (!list.length) body = `<p class="lg-empty">No matches to show${md || month || ha || comp ? ' with these filters. <a href="/fixtures/">Show all Lobi Stars fixtures</a>' : '. Fixtures for the next round will be announced soon.'}</p>`;
+  if (!list.length && !featured) body = `<p class="lg-empty">No matches to show${filtered ? ' with these filters. <a href="/fixtures/">Show all Lobi Stars fixtures</a>' : '. Fixtures for the next round will be announced soon.'}</p>`;
   else {
     const brk = league.competition.break_start ? { start: league.competition.break_start, end: league.competition.break_end, label: league.competition.break_label || 'Mid-season break' } : null;
     let lastDay = '', lastMd = null, breakShown = false, open = false;
@@ -180,15 +175,22 @@ ${comps.length > 1 ? select('comp', 'Competition', [['', 'All'], ...comps], comp
         body += `<div class="lg-break" role="separator">${esc(brk.label)}, ${esc(formatShortDate(`${brk.start}T12:00:00Z`).replace(/^\w+ /, ''))} to ${esc(formatShortDate(`${brk.end}T12:00:00Z`).replace(/^\w+ /, ''))}</div>`;
         breakShown = true;
       }
-      if (f.matchday && f.matchday !== lastMd && !md) { body += `${open ? '</div>' : ''}<h2 class="lg-md">Matchday ${esc(f.matchday)}</h2>`; open = false; lastMd = f.matchday; lastDay = ''; }
-      if (day !== lastDay) { body += `${open ? '</div>' : ''}<h3 class="lg-day">${f.kickoff_at ? esc(formatDate(f.kickoff_at)) : `Originally ${esc(formatDate(iso))}`}</h3><div class="lg-group">`; open = true; lastDay = day; }
+      // Cards are grouped under their matchday (other matches under their date).
+      const group = f.matchday ? `md${f.matchday}` : `d${day}`;
+      if (group !== lastMd || !open) {
+        if (open) body += '</div>';
+        body += `<h2 class="lg-md">${f.matchday ? `Matchday ${esc(f.matchday)}` : esc(formatDate(iso))}</h2><div class="lg-group">`;
+        open = true; lastMd = group;
+      }
+      lastDay = day;
       body += matchCard(f, { previews });
     }
     if (open) body += '</div>';
   }
   const feed = `<aside class="lg-sub"><div><h2>Never miss a match</h2><p>Subscribe to the Lobi Stars fixtures: kick-off changes and new dates appear in your calendar automatically.</p></div>
 <div class="lg-acts"><a class="lg-btn primary" href="webcal://lobistarsfc.com/api/league/calendar.ics?team=lobi" data-webcal>Subscribe to Lobi Stars fixtures</a><a class="lg-btn" href="https://calendar.google.com/calendar/r?cid=${encodeURIComponent('webcal://lobistarsfc.com/api/league/calendar.ics?team=lobi')}" target="_blank" rel="noopener">Google Calendar</a><a class="lg-btn" href="/api/league/calendar.ics?team=lobi">Download (.ics)</a></div></aside>`;
-  return `${nextMatchBanner(next)}${filters}<div class="lg-list" data-live-list>${body}</div>${feed}`;
+  const top = featured ? `<div class="lg-featured">${matchCard(featured, { previews, featured: true })}</div>` : '';
+  return `${top}${filters}<div class="lg-list" data-live-list>${body}</div>${feed}`;
 }
 
 // ── /results ──
@@ -213,7 +215,7 @@ export function resultsPage(league, extras, url) {
 ${select('team', 'Club', [['lobi', 'Lobi Stars'], ['all', 'All Conference D'], ...league.teams.filter(t => !t.is_lobi).map(t => [t.code.toLowerCase(), t.name])], team ? (team.is_lobi ? 'lobi' : team.code.toLowerCase()) : 'all')}
 ${select('matchday', 'Matchday', [['', 'All'], ...mds.map(d => [d, `Matchday ${d}`])], md)}
 <button type="submit" class="lg-btn" data-apply>Show</button></form>`;
-  const body = list.length ? `<div class="lg-group">${list.map(f => matchCard(f, { results: true })).join('')}</div>` : `<p class="lg-empty">No results yet${md ? ' for this matchday' : ' this season'}. The season starts on ${esc(formatDate(`${league.competition.start_date}T12:00:00Z`))}.</p>`;
+  const body = list.length ? `<div class="lg-group">${list.map(f => matchCard(f)).join('')}</div>` : `<p class="lg-empty">No results yet${md ? ' for this matchday' : ' this season'}. The season starts on ${esc(formatDate(`${league.competition.start_date}T12:00:00Z`))}.</p>`;
   return `${formHtml}${filters}<div class="lg-list">${body}</div>`;
 }
 

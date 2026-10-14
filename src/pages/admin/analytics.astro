@@ -8,7 +8,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <div class="stag">Admin</div>
     <h1 class="stitle">Website <span class="r">Analytics</span></h1>
     <p class="muted ad-lede">
-      All times are Nigerian time (WAT). No IP addresses are stored. Visitors who reject cookies are counted as
+      All times are Nigerian time. No IP addresses are stored. Visitors who reject cookies are counted as
       page views only, and staff who are signed in are never counted.
     </p>
 
@@ -244,7 +244,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       d.topPages.map(p => `<tr><td class="path">${esc(p.path)}</td><td class="n">${fmt(p.views)}</td><td class="n">${fmt(p.visitors)}</td></tr>`), 'No page views in this period.');
     $('locations').innerHTML = table([{ t: 'State' }, { t: 'Country' }, { t: 'Views', n: 1 }],
       d.locations.map(l => `<tr><td>${esc(l.region)}</td><td>${esc(l.country)}</td><td class="n">${fmt(l.views)}</td></tr>`), 'No page views in this period.');
-    $('recent').innerHTML = table([{ t: 'Name' }, { t: 'Source' }, { t: 'When (WAT)' }],
+    $('recent').innerHTML = table([{ t: 'Name' }, { t: 'Source' }, { t: 'When' }],
       d.recentSignups.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.source)}</td><td>${esc(fmtWat(s.at))}</td></tr>`), 'No contacts yet.');
     $('matchday').innerHTML = table([{ t: 'Match' }, { t: 'Date' }, { t: 'Live page visitors', n: 1 }, { t: 'Watch clicks', n: 1 }, { t: 'Commentary clicks', n: 1 }, { t: 'MOTM votes', n: 1 }, { t: 'Predictions', n: 1 }],
       d.matchday.map(m => `<tr><td>${esc(m.match)}</td><td>${esc(fmtWat(m.date))}</td><td class="n">${fmt(m.liveViewers)}</td><td class="n">${fmt(m.watchPlays)}</td><td class="n">${fmt(m.commentaryClicks)}</td><td class="n">${fmt(m.votes)}</td><td class="n">${fmt(m.predictions)}</td></tr>`), 'No home games yet.');

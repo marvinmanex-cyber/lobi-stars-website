@@ -18,7 +18,7 @@ export async function onRequestGet({ request, env }) {
   const rows = await broadcastStats(env.DB, new Date(r.start).toISOString(), new Date(r.end).toISOString());
   await logAdminAction(env.DB, admin, 'export_broadcast_report', r.label);
   const csv = buildCsv(
-    ['Match', 'Kick-off (WAT)', 'Listens (plays)', 'Unique listeners', 'Average listening time (minutes)', 'Peak concurrent listeners', 'Peak time (WAT)', 'Player errors'],
+    ['Match', 'Kick-off', 'Listens (plays)', 'Unique listeners', 'Average listening time (minutes)', 'Peak concurrent listeners', 'Peak time', 'Player errors'],
     rows.map(m => [m.match, watTime(m.date), m.listens, m.uniqueListeners, m.avgMinutes, m.peak, watTime(m.peakAt), m.errors])
       .concat([[], [`Period: ${r.label} (Nigerian time). Lobi Stars FC Live.`]]),
   );

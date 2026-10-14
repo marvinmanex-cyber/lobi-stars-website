@@ -107,9 +107,9 @@ export async function onRequestGet({ request, env }) {
   if (format === 'report' || format === 'customers') {
     if (!admin.canExport) return Response.json({ error: 'You do not have permission to export customer data.' }, { status: 403 });
     const custRows = [...customers.values()].sort((a, b) => b.spentKobo - a.spentKobo).map(c => [c.name, c.phone, c.email, c.orders, c.spentKobo / 100, [...c.stands].join(', '), wat(c.last)]);
-    const custSheet = { name: 'Customers', columns: ['Name', 'Phone', 'Email', 'Paid orders', 'Spent (₦)', 'Stands', 'Last order (WAT)'], rows: custRows };
+    const custSheet = { name: 'Customers', columns: ['Name', 'Phone', 'Email', 'Paid orders', 'Spent (₦)', 'Stands', 'Last order'], rows: custRows };
     const sheets = format === 'customers' ? [custSheet] : [
-      { name: 'Orders', columns: ['Reference', 'Status', 'Paid (WAT)', 'Delivered (WAT)', 'Name', 'Phone', 'Email', 'Seat', 'Stand', 'Items', 'Total (₦)'],
+      { name: 'Orders', columns: ['Reference', 'Status', 'Paid', 'Delivered', 'Name', 'Phone', 'Email', 'Seat', 'Stand', 'Items', 'Total (₦)'],
         rows: paid.map(o => [o.ref, o.order_status, wat(o.paid_iso), wat(o.delivered_at), o.customer_name || '', o.phone, o.email, o.seat, o.stand || '', json(o.items_json).map(i => `${i.qty}× ${i.name}`).join(', '), o.total_kobo / 100]) },
       { name: 'Items', columns: ['Item', 'Category', 'Quantity sold', '% of items sold', 'Revenue (₦)', '% of food revenue'],
         rows: itemRows.map(r => [r.name, r.category, r.qty, `${r.qtyPct}%`, r.revenueKobo / 100, `${r.revenuePct}%`]).concat([[], ['Total', '', totalQty, '100%', totalRev / 100, '100%']]) },

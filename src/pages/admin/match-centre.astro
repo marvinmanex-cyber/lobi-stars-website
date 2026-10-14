@@ -39,7 +39,7 @@ const roster = (await getRoster())
           <button type="button" class="ctl-btn start" id="kickoffBtn">▶ Start Match (Kick-off)</button>
           <button type="button" class="ctl-btn end" id="fulltimeBtn">■ End Match (Full-time)</button>
         </div>
-        <p class="muted ctl-note">Press <strong>Start Match</strong> at kick-off: Man of the Match voting opens. Press <strong>End Match</strong> at the final whistle and enter the score: voting closes and results are calculated. If nobody presses End Match, the match closes automatically 2 hours 15 minutes after kick-off (you can still add the final score afterwards). All times use the server clock in Nigerian time (WAT).</p>
+        <p class="muted ctl-note">Press <strong>Start Match</strong> at kick-off: Man of the Match voting opens. Press <strong>End Match</strong> at the final whistle and enter the score: voting closes and results are calculated. If nobody presses End Match, the match closes automatically 2 hours 15 minutes after kick-off (you can still add the final score afterwards). All times use the server clock in Nigerian time.</p>
         <div class="ctl-motm">
           <div class="ctl-motm-head">
             <h3>Man of the Match votes</h3>
@@ -417,7 +417,7 @@ const roster = (await getRoster())
   }
   document.querySelectorAll('input[data-squad]').forEach(r => r.addEventListener('change', countSquad));
 
-  const fmtWat = iso => iso ? new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) + ' WAT' : '–';
+  const fmtWat = iso => iso ? new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '–';
   function renderControl(m) {
     $('control').hidden = false;
     const home = !!m.is_home;

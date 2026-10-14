@@ -139,7 +139,7 @@ const { mode = 'scan' } = Astro.props;
   }
   function wat(iso) {
     var d = new Date(iso), o = { timeZone: 'Africa/Lagos' };
-    return d.toLocaleDateString('en-GB', Object.assign({ weekday: 'short', day: 'numeric', month: 'short' }, o)) + ', ' + d.toLocaleTimeString('en-GB', Object.assign({ hour: '2-digit', minute: '2-digit' }, o)) + ' (WAT)';
+    return d.toLocaleDateString('en-GB', Object.assign({ weekday: 'short', day: 'numeric', month: 'short' }, o)) + ', ' + d.toLocaleTimeString('en-GB', Object.assign({ hour: '2-digit', minute: '2-digit' }, o));
   }
   function countdown(publishAt, serverTime) {
     var skew = new Date(serverTime).getTime() - Date.now();

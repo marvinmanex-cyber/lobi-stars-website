@@ -166,7 +166,7 @@ import FanShareMenu from './FanShareMenu.astro';
       if (data.upcoming) {
         $('prTitle').textContent = data.title;
         var when = new Date(data.publishAt).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
-        empty('This programme is out on ' + when + ' (WAT).', 'Register now so it is waiting for you', '/programme/scan/?slug=' + encodeURIComponent(data.slug) + (src ? '&c=' + src : ''));
+        empty('This programme is out on ' + when + '.', 'Register now so it is waiting for you', '/programme/scan/?slug=' + encodeURIComponent(data.slug) + (src ? '&c=' + src : ''));
         return;
       }
       if (ADMIN && !data.hasFiles) { $('prTitle').textContent = data.title; empty('No files have been uploaded for this programme yet.'); return; }

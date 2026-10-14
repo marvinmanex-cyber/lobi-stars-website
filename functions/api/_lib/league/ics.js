@@ -44,7 +44,7 @@ export function buildIcs(fixtures, { calendarName = 'Lobi Stars FC fixtures', si
       'DURATION:PT2H',
       `SUMMARY:${icsEscape(summary)}`,
       ...(f.venue?.name ? [`LOCATION:${icsEscape(f.venue.name)}`] : []),
-      `DESCRIPTION:${icsEscape(`${f.competition?.name || comp}${f.matchday ? `, Matchday ${f.matchday}` : ''}. Kick-off times are Nigerian time (WAT). Fixtures: ${site}/fixtures/`)}`,
+      `DESCRIPTION:${icsEscape(`${f.competition?.name || comp}${f.matchday ? `, Matchday ${f.matchday}` : ''}. Kick-off times are Nigerian time. Fixtures: ${site}/fixtures/`)}`,
       `URL:${site}/fixtures/`,
       `STATUS:${cancelled ? 'CANCELLED' : 'CONFIRMED'}`,
       `SEQUENCE:${Number.isFinite(seq) ? seq : 0}`,

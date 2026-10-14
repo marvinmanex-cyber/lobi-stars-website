@@ -89,7 +89,7 @@ import { PRIZE_AMOUNT, formatNaira } from '../../../functions/api/_lib/predictSe
     $('csv').href = `/api/admin/predictions/${encodeURIComponent(id)}?format=csv`;
     const r = d.result;
     let html = `<h2>${esc(d.match.home_team)} vs ${esc(d.match.away_team)}</h2>` +
-      `<p class="muted small">Predictions open ${esc(wat(d.opensAt).slice(0, 16))} &middot; close ${esc(d.closesAt ? wat(d.closesAt).slice(0, 16) : '–')} (WAT) &middot; <strong>${esc(STATE[d.state] || d.state)}</strong></p>`;
+      `<p class="muted small">Predictions open ${esc(wat(d.opensAt).slice(0, 16))} &middot; close ${esc(d.closesAt ? wat(d.closesAt).slice(0, 16) : '–')} &middot; <strong>${esc(STATE[d.state] || d.state)}</strong></p>`;
     if (!r) html += '<p class="muted">The result appears here when you enter the final score (Match Centre &rarr; End Match).</p>';
     else if (!r.winner) html += `<p><strong>Final score ${r.home} – ${r.away}.</strong> No correct prediction this time (${r.total} entries): nobody has won and no prize is given out.</p>`;
     else html += `<p><strong>Final score ${r.home} – ${r.away}.</strong> ${r.correct} correct out of ${r.total} entries. Prize: ${naira(r.prize)}.</p>` +
@@ -97,7 +97,7 @@ import { PRIZE_AMOUNT, formatNaira } from '../../../functions/api/_lib/predictSe
       `<div><dt>Email</dt><dd>${esc(r.winner.email || '–')}</dd></div><div><dt>Prediction</dt><dd>${esc(r.winner.prediction)} at ${esc(wat(r.winner.at))}</dd></div>` +
       `<div><dt>Winner email</dt><dd>${r.emailed ? 'Sent' : 'Not sent (email not set up?)'}</dd></div></dl>` +
       `<label class="pw-paid"><input type="checkbox" id="paidBox" ${r.paid ? 'checked' : ''}/> Prize paid</label>` +
-      (r.paid ? `<p class="muted small">Marked paid by ${esc(r.paidBy)} on ${esc(wat(r.paidAt).slice(0, 16))} WAT.</p>` : '<p class="muted small">Call the winner on the phone number above (they have also been emailed) to arrange collection at the club. Tick when the prize has been handed over. Never ask for bank details through the website.</p>');
+      (r.paid ? `<p class="muted small">Marked paid by ${esc(r.paidBy)} on ${esc(wat(r.paidAt).slice(0, 16))}.</p>` : '<p class="muted small">Call the winner on the phone number above (they have also been emailed) to arrange collection at the club. Tick when the prize has been handed over. Never ask for bank details through the website.</p>');
     const NOTE = { predictions_open: '"Predictions are now open"', kickoff: '"Kick-off! Vote for Man of the Match"' };
     const ST = { sent: 'sent to', dev: 'test mode, would go to', 'no-email-service': 'not sent (email service not set up) –', failed: 'partly failed, sent to', sending: 'sending to' };
     html += '<p class="muted small">Reminder emails (fans who said yes to news): ' + (d.notifications.length
@@ -109,7 +109,7 @@ import { PRIZE_AMOUNT, formatNaira } from '../../../functions/api/_lib/predictSe
       catch (err) { msg(err.message, false); e.target.checked = !e.target.checked; }
     });
     $('count').textContent = `(${d.entries.length})`;
-    $('entries').innerHTML = d.entries.length ? '<table><thead><tr><th>#</th><th>Submitted (WAT)</th><th>Fan</th><th>Phone</th><th>Prediction</th><th>Status</th><th>Reason</th><th></th></tr></thead><tbody>' +
+    $('entries').innerHTML = d.entries.length ? '<table><thead><tr><th>#</th><th>Submitted</th><th>Fan</th><th>Phone</th><th>Prediction</th><th>Status</th><th>Reason</th><th></th></tr></thead><tbody>' +
       d.entries.map((p, i) => `<tr class="${p.winner ? 'win' : ''} ${p.disqualified ? 'dq' : ''}" data-id="${p.id}" data-member="${esc(p.memberId)}">` +
         `<td>${i + 1}</td><td>${esc(wat(p.at))}</td><td>${esc(p.name)}</td><td>${esc(p.phone)}</td><td>${p.home} – ${p.away}</td><td>` +
         (p.winner ? '<span class="tag win">Winner</span>' : '') + (p.correct ? '<span class="tag ok">Correct</span>' : '') +

@@ -152,7 +152,7 @@ Dates, times and venues are changed in **League › Fixtures** (section 33).
 1. To add a match that isn't in the league list (a cup tie or a friendly), open
    **League › Fixtures**, scroll to **Add a fixture**, choose the competition
    (add it first with **Add a cup or friendly competition**), the teams, the
-   date and the kick-off time (Nigerian time, WAT) and press **Add fixture**.
+   date and the kick-off time (Nigerian time) and press **Add fixture**.
 2. Every Lobi Stars match also appears in **Match Tickets & Settings**
    (Matchday menu). Open it there, fill in the **ticket prices** in naira (home
    matches) and tick **Visible on the site**. The teams, date and venue of a
@@ -1300,7 +1300,7 @@ unsubscribing).
    paragraphs. Add a **Main photo** (Upload, or paste a picture address) and,
    if you like, a **button** (e.g. text "Buy tickets", link /tickets/).
 4. **3. Next match:** tick to show the next Lobi Stars match with date,
-   kick-off time (WAT), venue and a tickets button. It is filled in
+   kick-off time, venue and a tickets button. It is filled in
    automatically from the fixtures.
 5. **4. Stories:** each has a title, short text, picture and link. **＋ Add
    from club news** adds a published story in one click; **＋ Add a story**
@@ -1674,9 +1674,17 @@ the address into the Facebook Sharing Debugger
 ## 33. League: fixtures, results and the table (League menu)
 
 The official **2026/27 NNL Conference D** season is loaded: 8 clubs, 56
-matches, kick-off 4:00 PM (WAT). The public **Fixtures**, **Results** and
+matches, kick-off 4:00 PM (Nigerian time). The public **Fixtures**, **Results** and
 **Table** pages, the calendar feed and every Lobi Stars match page all come
 from here. Matchday Operator, Media and Super Admin staff can use it.
+
+**How fans see a match:** every match card (homepage, Fixtures, Results)
+shows **Date**, **Kick-off** and **Venue** as three separate items (the
+stadium name above the town and state). The next Lobi Stars match is the
+large dark card with "Next match" and a countdown in Days, Hours and Minutes
+(plus Seconds on the last day); it turns into a red LIVE badge at kick-off and
+the final score after full time. Home matches have a red edge, away matches a
+black one. Times are always Nigerian time, so no time zone label is shown.
 
 **League Dashboard** shows the next Lobi Stars match with a countdown,
 **Results due** (matches that kicked off over 2 hours ago without a result,

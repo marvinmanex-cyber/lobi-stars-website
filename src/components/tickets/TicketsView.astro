@@ -30,7 +30,7 @@
     if (data.refunded) parts.unshift(el('p', { class: 'tv-rules', text: 'This order was refunded: its tickets are cancelled.' }));
     data.matches.forEach(function (m) {
       var d = new Date(m.kickoff);
-      var when = d.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ', kick-off ' + d.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }) + ' (WAT)';
+      var when = d.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ', kick-off ' + d.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
       var grid = el('div', { class: 'tv-grid' });
       m.tickets.forEach(function (t, i) {
         grid.append(el('div', { class: 'tv-ticket' + (t.status === 'void' ? ' void' : '') },

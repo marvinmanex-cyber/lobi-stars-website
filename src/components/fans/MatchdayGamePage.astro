@@ -98,7 +98,7 @@ const live = kind === 'vote' ? settings.motmLive === true : settings.predictLive
   const kind = box.dataset.kind as 'vote' | 'predict';
   const live = box.dataset.live === '1';
   const t = document.getElementById('mgStatusT')!, p = document.getElementById('mgStatusP')!, a = document.getElementById('mgStatusA')!;
-  const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' (WAT)';
+  const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const btn = (href: string, text: string, cls = 'btn-p') => Object.assign(document.createElement('a'), { href, textContent: text, className: cls });
   const notYet = 'This feature is launching soon on Matchday Live. Create your free fan account now so you are ready.';
 

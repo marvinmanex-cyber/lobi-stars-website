@@ -171,7 +171,7 @@ const bookmarklet = "javascript:(function(){window.open('https://lobistarsfc.com
     if (r.status === 401) location.href = '/admin/login/?next=' + encodeURIComponent(location.pathname + location.search);
     return { ok: r.ok, status: r.status, d };
   };
-  const when = s => s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WAT' : '–';
+  const when = s => s ? new Date(s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '–';
   const PLATS = [
     ['telegram', 'Telegram', '#229ED9'], ['facebook', 'Facebook', '#1877F2'], ['twitter', 'X', '#000000'], ['whatsapp', 'WhatsApp', '#25D366'],
     ['instagram', 'Instagram', '#C13584'], ['tiktok', 'TikTok', '#111111'], ['youtube', 'YouTube', '#FF0000'],

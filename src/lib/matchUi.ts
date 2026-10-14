@@ -14,7 +14,7 @@ const TZ = 'Africa/Lagos';
 export const fmtDate = (iso: string, long = false) => new Date(iso).toLocaleDateString('en-GB',
   long ? { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: TZ }
        : { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: TZ });
-export const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ }) + ' WAT';
+export const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ });
 export const monthKey = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: TZ });
 
 export const STATUS_LABELS: Record<string, string> = {

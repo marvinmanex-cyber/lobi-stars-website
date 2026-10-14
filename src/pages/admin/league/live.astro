@@ -81,7 +81,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     var st = f.status, inPlay = st === 'live' || st === 'half_time';
     var b = function (text, action, cls, enabled, confirmText) { return el('button', { type: 'button', class: 'lv-btn ' + cls, text: text, disabled: busy || !enabled, onclick: function () { act(action, confirmText); } }); };
     app.replaceChildren.apply(app, [
-      el('p', { class: 'la-muted', style: 'text-align:center;margin:0', text: f.competition + (f.matchday ? ' · Matchday ' + f.matchday : '') + ' · ' + LA.date(f.kickoff) + ', ' + LA.time(f.kickoff) + ' WAT' }),
+      el('p', { class: 'la-muted', style: 'text-align:center;margin:0', text: f.competition + (f.matchday ? ' · Matchday ' + f.matchday : '') + ' · ' + LA.date(f.kickoff) + ', ' + LA.time(f.kickoff) }),
       el('div', { class: 'lv-status' }, LA.chip(st)),
       el('div', { class: 'lv-teams' }, el('span', {}, LA.crest(f.home), el('br'), f.home.name), el('span', {}, LA.crest(f.away), el('br'), f.away.name)),
       el('div', { class: 'lv-score', 'aria-live': 'polite', 'aria-label': 'Score ' + (f.homeGoals ?? 0) + ' to ' + (f.awayGoals ?? 0) }, el('span', { text: String(f.homeGoals ?? 0) }), el('span', { text: '–' }), el('span', { text: String(f.awayGoals ?? 0) })),

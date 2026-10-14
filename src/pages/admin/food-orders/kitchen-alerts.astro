@@ -146,7 +146,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'ka-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 7000); }
   function drawLog() {
     const rows = log.filter(l => filter === 'all' || (filter === 'failed' ? !l.success : (l.channel === 'telegram' ? 'telegram' : 'push') === filter));
-    $('log').innerHTML = rows.length ? `<table><thead><tr><th>Time (WAT)</th><th>Order</th><th>Alert</th><th>Channel</th><th>Result</th></tr></thead><tbody>${rows.map(l => `<tr><td>${esc(wat(l.created_at))}</td><td><b>${esc(l.ref || '–')}</b></td><td><span class="pill n">${esc(ATT[l.attempt] || l.attempt)}</span></td><td>${l.channel === 'telegram' ? '✈️ Telegram' : '🔔 Push'}</td><td>${l.success ? '<span class="pill ok">Sent</span>' : `<span class="pill no">Failed</span>${l.error ? `<span class="ka-err">${esc(l.error)}</span>` : ''}`}</td></tr>`).join('')}</tbody></table>`
+    $('log').innerHTML = rows.length ? `<table><thead><tr><th>Time</th><th>Order</th><th>Alert</th><th>Channel</th><th>Result</th></tr></thead><tbody>${rows.map(l => `<tr><td>${esc(wat(l.created_at))}</td><td><b>${esc(l.ref || '–')}</b></td><td><span class="pill n">${esc(ATT[l.attempt] || l.attempt)}</span></td><td>${l.channel === 'telegram' ? '✈️ Telegram' : '🔔 Push'}</td><td>${l.success ? '<span class="pill ok">Sent</span>' : `<span class="pill no">Failed</span>${l.error ? `<span class="ka-err">${esc(l.error)}</span>` : ''}`}</td></tr>`).join('')}</tbody></table>`
       : `<div class="empty-state"><b>🔔</b>${log.length ? 'Nothing matches this filter.' : 'No alerts sent yet.'}</div>`;
   }
   async function load() {

@@ -39,7 +39,7 @@ export async function onRequestGet({ request, env, params }) {
   if (csv) {
     await logAdminAction(env.DB, admin, 'export_predictions_csv', `${match.home_team} vs ${match.away_team}`);
     const body = buildCsv(
-      ['Submitted (WAT to the millisecond)', 'Name', 'Email', 'Phone', 'Prediction', 'Correct', 'Winner', 'Club staff/player', 'Disqualified', 'Reason'],
+      ['Submitted (Nigerian time to the millisecond)', 'Name', 'Email', 'Phone', 'Prediction', 'Correct', 'Winner', 'Club staff/player', 'Disqualified', 'Reason'],
       rows.map(p => [`${watTime(p.created_at)}:${p.created_at.slice(17, 23)}`, name(p), p.email || '', p.phone_e164 || '', `${p.home_goals}-${p.away_goals}`,
         correct(p) ? 'Y' : 'N', p.is_winner ? 'Y' : 'N', p.is_staff ? 'Y' : 'N', p.disqualified ? 'Y' : 'N', p.dq_reason || '']));
     return new Response(body, { headers: {

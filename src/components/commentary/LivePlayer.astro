@@ -143,7 +143,7 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
     const mid = document.createElement('div'); mid.className = 'lpm-mid';
     const started = ['live', 'half-time', 'full-time'].includes(f.status);
     const score = document.createElement('div'); score.className = 'lpm-score';
-    score.textContent = started && f.home_score !== null ? `${f.home_score} – ${f.away_score}` : time(f.event_date).replace(' WAT', '');
+    score.textContent = started && f.home_score !== null ? `${f.home_score} – ${f.away_score}` : time(f.event_date);
     const st = document.createElement('span'); st.className = 'lpm-state'; st.textContent = STATUS[f.status] || 'Kick-off';
     mid.append(score, st);
     const row = document.createElement('div'); row.className = 'lpm-row'; row.append(team(f.home_team), mid, team(f.away_team));
@@ -209,7 +209,7 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
 
       const state = otherMatch ? 'off' : info?.state || 'off';
       badge!.className = `lp-badge ${state === 'live' ? 'live' : state === 'today' ? 'today' : ''}`;
-      badge!.textContent = state === 'live' ? 'Live now' : state === 'today' && f?.commentaryStart ? `Starts at ${time(f.commentaryStart).replace(' WAT', '')}` : 'Off air';
+      badge!.textContent = state === 'live' ? 'Live now' : state === 'today' && f?.commentaryStart ? `Starts at ${time(f.commentaryStart)}` : 'Off air';
 
       let text: string;
       if (st === 'connecting') text = 'Connecting…';

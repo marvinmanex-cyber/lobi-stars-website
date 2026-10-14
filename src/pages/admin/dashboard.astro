@@ -64,7 +64,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const $ = (id: string) => document.getElementById(id)!;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
   const fmt = (n: number) => Number(n || 0).toLocaleString('en-NG');
-  const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) + ' WAT';
+  const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
   $('today').textContent = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
   document.addEventListener('ls:admin', e => { $('hello').textContent = `Welcome back, ${(e as CustomEvent).detail.name.split(' ')[0]}`; });
   // Accounts that can see fans' data are asked to turn on two-step login.

@@ -56,7 +56,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const $ = id => document.getElementById(id);
   const el = (t, p = {}, ...k) => { const n = document.createElement(t); for (const [a, v] of Object.entries(p)) { if (a === 'class') n.className = v; else if (a === 'text') n.textContent = v; else if (a === 'style') n.setAttribute('style', v); else n.setAttribute(a, v); } k.forEach(x => x != null && n.append(x)); return n; };
   // Database times are UTC "YYYY-MM-DD HH:MM:SS"; incident times are ISO.
-  const when = s => s ? new Date(/Z$/.test(s) ? s : s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WAT' : '–';
+  const when = s => s ? new Date(/Z$/.test(s) ? s : s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '–';
   const pct = v => v == null ? '–' : `${(v * 100).toFixed(v === 1 ? 0 : 1)}%`;
   const dur = (a, b) => { const m = Math.round(((b ? new Date(b) : new Date()) - new Date(a)) / 60000); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; };
   function msg(t, ok = true) { $('msg').textContent = t; $('msg').className = 'wh-msg' + (ok ? '' : ' err'); $('msg').hidden = false; }

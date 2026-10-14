@@ -159,6 +159,12 @@ export async function ensureLeagueSchema(env) {
     await db.batch(seedStatements().map(s => db.prepare(s)));
     await logLeague(db, { email: 'system' }, 'season.seed', 'competition', COMPETITION.slug, null, { fixtures: FIXTURES.length, teams: TEAMS.length });
   }
+  // "Benue" -> "Benue State" in the stored home ground (same as migrations/0004_benue_state.sql; does nothing once done).
+  await db.batch([
+    db.prepare(`UPDATE league_venues SET name = 'McCarthy Stadium, Makurdi, Benue State' WHERE name = 'McCarthy Stadium, Makurdi, Benue'
+      AND NOT EXISTS (SELECT 1 FROM league_venues WHERE name = 'McCarthy Stadium, Makurdi, Benue State')`),
+    db.prepare(`UPDATE events SET venue = 'McCarthy Stadium, Makurdi, Benue State' WHERE venue = 'McCarthy Stadium, Makurdi, Benue'`),
+  ]).catch(err => console.error('[league] venue name', err));
   ready = true;
   // Lobi Stars fixtures get their Matches & Fixtures entries (tickets, match pages, ...).
   await linkLobiFixtures(env);

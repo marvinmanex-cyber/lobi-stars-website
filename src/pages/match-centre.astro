@@ -6,6 +6,7 @@ import Layout from '../layouts/Layout.astro';
 import MatchesTabs from '../components/MatchesTabs.astro';
 import MatchAlerts from '../components/MatchAlerts.astro';
 import ShareButton from '../components/ShareButton.astro';
+import '../styles/fixture-card.css';
 ---
 <Layout title="Match Centre | Lobi Stars Football Club" description="Lobi Stars FC Match Centre: preview, line-ups, live updates, match report, stats and photos." noindex>
   <div class="wrap"><MatchesTabs /></div>
@@ -38,7 +39,7 @@ import ShareButton from '../components/ShareButton.astro';
   .mc :global(.mc-pill.live::before) { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: mcpulse 1.2s infinite; }
   @keyframes mcpulse { 50% { opacity: .2; } }
   .mc :global(.mc-mid) { display: flex; flex-direction: column; align-items: center; }
-  .mc :global(.mc-info) { text-align: center; color: rgba(255, 255, 255, .85); font-size: 15px; line-height: 1.6; }
+  .mc :global(.mc-info) { max-width: 760px; margin: 18px auto 0; color: rgba(255, 255, 255, .85); }
 
   .mc :global(.mc-pre) { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 16px; margin-top: 22px; }
   .mc :global(.mc-count) { display: flex; gap: 8px; }
@@ -117,7 +118,8 @@ import ShareButton from '../components/ShareButton.astro';
 
 <script>
   import { ssrData } from '../lib/ssr';
-  import { crest, fmtDate, fmtTime, isLobi, hasScore, downloadIcs, googleCalUrl, STATUS_LABELS, isMatchDay } from '../lib/matchUi';
+  import { detailsHtml } from '../../functions/api/_lib/fixtureCard.js';
+  import { crest, fmtTime, isLobi, hasScore, downloadIcs, googleCalUrl, STATUS_LABELS, isMatchDay } from '../lib/matchUi';
 
   type Line = { starting: string[]; subs: string[] };
   type Full = {
@@ -163,14 +165,15 @@ import ShareButton from '../components/ShareButton.astro';
     const mid = el('div', 'mc-mid');
     const started = ['live', 'half-time', 'full-time'].includes(m.status) || hasScore(m);
     if (started && hasScore(m)) mid.append(el('div', 'mc-score', `${m.home_score} – ${m.away_score}`));
-    else mid.append(el('div', 'mc-ko', fmtTime(m.event_date).replace(' WAT', '')));
+    else mid.append(el('div', 'mc-ko', fmtTime(m.event_date)));
     const pill = el('span', `mc-pill${m.status === 'live' ? ' live' : ''}`, STATUS_LABELS[m.status] || 'Upcoming');
     mid.append(pill);
     board.append(team(m.home_team), mid, team(m.away_team));
 
     const h1 = el('h1', 'sr-only', `${m.home_team} vs ${m.away_team}`);
-    const info = el('p', 'mc-info');
-    info.append(`${fmtDate(m.event_date, true)} · Kick-off ${fmtTime(m.event_date)}`, el('br'), `📍 ${m.venue}`);
+    // Date, kick-off and venue as three separate details (shared with the match cards).
+    const info = el('div', 'mc-info fx-on-dark');
+    info.innerHTML = detailsHtml({ kickoff: m.event_date, venue: m.venue, tbc: m.status === 'postponed' }); // every value is escaped by the builder
     inner.append(h1, board, info);
     if (m.is_home) {
       // Buttons only appear when they have somewhere to go.

@@ -125,7 +125,7 @@ async function alertStaff(env, origin, opened, closed) {
   if (!to.length) return;
   const lines = [
     ...opened.map(o => `DOWN: ${label(o.key)} (${o.error || 'not responding'})`),
-    ...closed.map(c => `Back up: ${label(c.key)} (down since ${new Date(c.since).toLocaleString('en-GB', { timeZone: 'Africa/Lagos' })} WAT)`),
+    ...closed.map(c => `Back up: ${label(c.key)} (down since ${new Date(c.since).toLocaleString('en-GB', { timeZone: 'Africa/Lagos' })})`),
   ];
   const subject = opened.length ? `Website problem: ${opened.map(o => label(o.key)).join(', ')}` : `Website back to normal: ${closed.map(c => label(c.key)).join(', ')}`;
   const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));

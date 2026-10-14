@@ -1,9 +1,10 @@
 ---
-// Homepage "Upcoming Matches": the next Lobi Stars match large with a
-// countdown, then the following two (Matchday order, live match first). The
+// Homepage "Upcoming Matches": the next Lobi Stars match as the featured card
+// with countdown tiles, then the following two (live match first). The
 // cards come from the fixtures database: the server fills them in
 // (functions/index.js) and the browser refreshes them with the same builder
 // (functions/api/_lib/tickets/upcomingHtml.js). /fixtures lists every match.
+import '../../styles/fixture-card.css';
 ---
 <section class="nm" aria-labelledby="nm-title" data-next-matches data-commentary="/commentary/">
   <div class="nm-inner">
@@ -24,62 +25,25 @@
   .nm-title { margin: 0; font: 400 clamp(26px, 3.4vw, 34px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--white); }
   .nm-all { display: inline-flex; align-items: center; min-height: 44px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--red-text); text-decoration: none; white-space: nowrap; }
   .nm-all:hover, .nm-all:focus-visible { text-decoration: underline; }
-  /* Full width: the next match across the row, the following two side by side. */
-  .nm-track { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 16px; }
-  @media (min-width: 768px) { .nm-track { grid-template-columns: repeat(2, minmax(0, 1fr)); } .nm-track :global(.nm-card--next), .nm-track :global(.nm-empty) { grid-column: 1 / -1; } .nm-track :global(.nm-card:last-child:nth-child(even)) { grid-column: 1 / -1; } }
+  /* The featured (next) match across the row; the others one column on phones, two from 900px (a lone last card spans both). */
+  .nm-track { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  @media (min-width: 900px) {
+    .nm-track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .nm-track :global(.fx-card--featured), .nm-track :global(.nm-empty) { grid-column: 1 / -1; }
+    .nm-track :global(.fx-card--regular:last-child:nth-child(even)) { grid-column: 1 / -1; }
+  }
   .nm-empty { color: var(--lt); font-size: 15px; padding: 18px 0; }
   .nm-empty a { color: var(--red-text); font-weight: 600; }
-  .nm-track :global(.nm-card) { min-width: 0; box-sizing: border-box; background: var(--d2); border: 1px solid var(--d4); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
-  .nm-track :global(.nm-card--next) { padding: 22px 24px; border-left: 5px solid var(--red); }
-  .nm-track :global(.nm-top) { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-  .nm-track :global(.nm-md) { font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
-  .nm-track :global(.nm-ha) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; padding: 5px 8px; border-radius: 3px; background: var(--d3); color: var(--white); }
-  .nm-track :global(.nm-ha.home) { background: var(--red); color: #fff; }
-  .nm-track :global(.nm-teams) { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; text-align: center; font: 700 16px/1.15 'Barlow Condensed', sans-serif; color: var(--white); }
-  .nm-track :global(.nm-card--next .nm-teams) { font-size: 22px; }
-  .nm-track :global(.nm-team) { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
-  .nm-track :global(.nm-vs) { font: 400 20px/1 'Bebas Neue', sans-serif; color: var(--lt); }
-  .nm-track :global(.nm-crest) { border-radius: 50%; object-fit: contain; background: #fff; border: 1px solid var(--d4); flex-shrink: 0; }
-  .nm-track :global(.nm-crest-fallback) { display: inline-flex; align-items: center; justify-content: center; background: var(--d3); color: var(--lt); font: 700 16px/1 'Barlow Condensed', sans-serif; }
-  .nm-track :global(.nm-when) { text-align: center; color: var(--white); font-size: 15px; }
-  .nm-track :global(.nm-when b) { color: var(--gold-text); }
-  .nm-track :global(.nm-venue) { text-align: center; color: var(--lt); font-size: 13px; }
-  .nm-track :global(.nm-cd) { margin: 2px 0; text-align: center; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--red-text); min-height: 26px; }
-  .nm-track :global(.nm-live-badge) { display: inline-flex; align-items: center; gap: 6px; background: #C11A1F; color: #fff; padding: 5px 10px; border-radius: 4px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; }
-  .nm-track :global(.nm-pulse) { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: nm-pulse 1.2s infinite; }
-  @keyframes nm-pulse { 50% { opacity: .25; } }
-  .nm-track :global(.nm-postponed) { display: inline-block; background: #FFF1D6; color: #7A4B00; padding: 5px 10px; border-radius: 4px; font-weight: 700; font-size: 14px; }
-  .nm-track :global(.nm-links) { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: auto; padding-top: 6px; }
-  .nm-track :global(.nm-link), .nm-track :global(.nm-btn), .nm-track :global(.nm-ticket) { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 4px; border: 1.5px solid var(--d4); color: var(--white); text-decoration: none; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; box-sizing: border-box; }
-  .nm-track :global(.nm-link:hover), .nm-track :global(.nm-link:focus-visible) { border-color: var(--red); color: var(--red-text); }
-  .nm-track :global(.nm-btn--buy) { background: var(--red); border-color: var(--red); color: #fff; }
-  .nm-track :global(.nm-btn--buy small) { font-size: 12px; opacity: .9; text-transform: none; letter-spacing: 0; }
-  .nm-track :global(.nm-btn--buy:hover), .nm-track :global(.nm-btn--buy:focus-visible) { background: var(--rd); color: #fff; }
-  .nm-track :global(.nm-ticket) { border-style: dashed; color: var(--lt); }
-  .nm-track :global(.nm-ticket--out) { border-style: solid; border-color: #A3161B; color: #A3161B; }
-  .nm-track :global(.nm-ticket--away) { border-style: solid; }
-  .nm-track :global(a:focus-visible) { outline: 3px solid var(--red); outline-offset: 2px; }
-  @media (prefers-reduced-motion: reduce) { .nm-track :global(.nm-pulse) { animation: none; } }
 </style>
 
 <script>
   import { upcomingHtml } from '../../../functions/api/_lib/tickets/upcomingHtml.js';
+  import { startCountdowns } from '../../lib/fixtureCards';
   import { loadPreviews } from '../../lib/matchUi';
-
-  // Countdown on the big card.
-  function tick(track: HTMLElement) {
-    const cd = track.querySelector<HTMLElement>('[data-countdown]');
-    if (!cd) return;
-    const s = Math.floor((Date.parse(cd.dataset.countdown!) - Date.now()) / 1000);
-    if (s <= 0) { cd.textContent = 'Kick-off!'; return; }
-    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
-    cd.textContent = `${d ? `${d} day${d === 1 ? '' : 's'} ` : ''}${h} h ${m} min to kick-off`;
-  }
 
   async function load(section: HTMLElement) {
     const track = section.querySelector<HTMLElement>('[data-nm-track]')!;
-    tick(track);
-    setInterval(() => tick(track), 30000);
+    startCountdowns();
     // The server already filled in the cards; only build them here when it didn't.
     if (document.getElementById('ssr-matches')) return;
     try {
@@ -88,7 +52,7 @@
       const matches = (await res.json()).matches || [];
       const previews = await loadPreviews();
       track.innerHTML = upcomingHtml(matches, { previews }); // every value is escaped by the builder
-      tick(track);
+      startCountdowns();
     } catch {
       track.querySelector('[data-nm-status]')?.replaceChildren('The fixtures could not be loaded just now. ', Object.assign(document.createElement('a'), { href: '/fixtures/', textContent: 'See all fixtures' }));
     }

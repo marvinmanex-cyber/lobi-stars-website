@@ -38,7 +38,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const res = await fetch('/api/admin/activity' + (q ? '?q=' + encodeURIComponent(q) : ''), { headers: { 'x-admin-code': code } });
     const d = await res.json().catch(() => ({}));
     if (!res.ok) { $('log').innerHTML = `<p class="empty">${esc(d.error || 'Could not load the log.')}</p>`; return; }
-    $('log').innerHTML = d.log.length ? '<table><thead><tr><th>When (WAT)</th><th>Staff</th><th>Action</th><th>Detail</th></tr></thead><tbody>' +
+    $('log').innerHTML = d.log.length ? '<table><thead><tr><th>When</th><th>Staff</th><th>Action</th><th>Detail</th></tr></thead><tbody>' +
       d.log.map(r => `<tr><td>${esc(when(r.ts))}</td><td>${esc(r.staff_name)}</td><td><span class="act ${/export/.test(r.action) ? 'export' : /delete|remove/.test(r.action) ? 'delete' : ''}">${esc(r.action.replace(/_/g, ' '))}</span></td><td>${esc(r.detail)}</td></tr>`).join('') +
       '</tbody></table>' : '<div class="empty-state"><b>📜</b><p>Nothing in the log yet 🎉</p></div>';
   }

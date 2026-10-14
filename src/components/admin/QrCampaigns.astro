@@ -382,7 +382,7 @@
       if (next) {
         $('gMatch').value = next.title;
         $('qcProg').value = String(next.id);
-        if (next.kickoff_at) $('gKick').value = 'Kick-off ' + new Date(next.kickoff_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' (WAT)';
+        if (next.kickoff_at) $('gKick').value = 'Kick-off ' + new Date(next.kickoff_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
       }
     } catch (e) { console.error(e); }
   }

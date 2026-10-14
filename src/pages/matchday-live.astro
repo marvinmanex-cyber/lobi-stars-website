@@ -7,6 +7,7 @@ import Layout from '../layouts/Layout.astro';
 import settings from '../data/matchday.json';
 import LivePlayer from '../components/commentary/LivePlayer.astro';
 import MatchesTabs from '../components/MatchesTabs.astro';
+import '../styles/fixture-card.css';
 ---
 <Layout title="Matchday Live | Lobi Stars Football Club" description="Matchday Live: watch Lobi Stars home games, listen to live commentary, vote for Man of the Match and play Predict & Win." noindex whiteLabel>
   <div class="wrap"><MatchesTabs current="matchday" /></div>
@@ -37,7 +38,7 @@ import MatchesTabs from '../components/MatchesTabs.astro';
   .ml :global(.ml-badge.live::before) { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: mlpulse 1.2s infinite; }
   .ml :global(.ml-badge.ft) { background: #fff; color: #15181D; }
   @keyframes mlpulse { 50% { opacity: .2; } }
-  .ml :global(.ml-info) { text-align: center; color: rgba(255, 255, 255, .88); font-size: 15px; line-height: 1.6; margin: 0; }
+  .ml :global(.ml-info) { max-width: 760px; margin: 16px auto 0; color: rgba(255, 255, 255, .88); }
   .ml :global(.ml-count) { display: flex; justify-content: center; gap: 8px; margin: 16px 0 0; }
   .ml :global(.ml-count div) { min-width: 62px; padding: 10px 6px; border-radius: 8px; background: rgba(255, 255, 255, .1); text-align: center; }
   .ml :global(.ml-count b) { display: block; font: 400 28px/1 'Bebas Neue', sans-serif; }
@@ -146,6 +147,7 @@ import MatchesTabs from '../components/MatchesTabs.astro';
 
 <script>
   import { crest, fmtDate, fmtTime, hasScore } from '../lib/matchUi';
+  import { detailsHtml } from '../../functions/api/_lib/fixtureCard.js';
   import { liveEngine } from '../lib/livePlayer';
   import { ssrData } from '../lib/ssr';
 
@@ -199,13 +201,14 @@ import MatchesTabs from '../components/MatchesTabs.astro';
     const mid = el('div', 'ml-mid');
     if ((isLive(m) || isOver(m)) && hasScore(m)) mid.append(el('div', 'ml-score', `${m.home_score} – ${m.away_score}`));
     else if (isLive(m) || isOver(m)) mid.append(el('div', 'ml-ko', 'VS'));
-    else mid.append(el('div', 'ml-ko', fmtTime(m.event_date).replace(' WAT', '')));
+    else mid.append(el('div', 'ml-ko', fmtTime(m.event_date)));
     const label = isLive(m) ? (m.status === 'half-time' ? 'Half-time' : 'Live') : isOver(m) ? 'Full time' : m.status === 'postponed' ? 'Postponed' : m.status === 'cancelled' ? 'Cancelled' : 'Upcoming';
     mid.append(el('span', `ml-badge${isLive(m) ? ' live' : isOver(m) ? ' ft' : ''}`, label));
     board.append(team(m.home_team), mid, team(m.away_team));
 
-    const info = el('p', 'ml-info');
-    info.append(`${fmtDate(m.event_date, true)} · Kick-off ${fmtTime(m.event_date)}`, el('br'), `📍 ${m.venue}`);
+    // Date, kick-off and venue as three separate details (shared with the match cards).
+    const info = el('div', 'ml-info fx-on-dark');
+    info.innerHTML = detailsHtml({ kickoff: m.event_date, venue: m.venue, tbc: m.status === 'postponed' }); // every value is escaped by the builder
     inner.append(el('h1', 'sr-only', `Matchday Live: ${m.home_team} vs ${m.away_team}`), board, info);
 
     const start = new Date(m.event_date).getTime();
@@ -419,7 +422,7 @@ import MatchesTabs from '../components/MatchesTabs.astro';
     serverTime: string };
   const naira = (n: number) => `₦${n.toLocaleString('en-NG')}`;
   const predicted = (n: number) => `${n.toLocaleString('en-NG')} fan${n === 1 ? ' has' : 's have'} predicted`;
-  const fmtAt = (iso: string) => `${fmtDate(iso)}, ${new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Lagos' })} WAT`;
+  const fmtAt = (iso: string) => `${fmtDate(iso)}, ${new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Lagos' })}`;
 
   function countdown(target: number, prefix: string, onDone: () => void) {
     const c = el('p', 'pw-cd');

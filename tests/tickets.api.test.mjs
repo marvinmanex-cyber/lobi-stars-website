@@ -103,7 +103,7 @@ test('one payment for several matches: tickets per match, duplicate webhook issu
   const g1 = await gate(todayTicket);
   assert.equal(g1.data.code, 'valid');
   const g2 = await gate(todayTicket);
-  assert.equal(g2.data.code, 'used'); assert.match(g2.data.reason, /Already used: scanned .* WAT/);
+  assert.equal(g2.data.code, 'used'); assert.match(g2.data.reason, /^Already used: scanned (?!.*\bWAT\b).+$/);
   assert.equal((await gate(laterTicket)).data.code, 'wrong_match');
   // Admin: the order is listed; refunding cancels the unused tickets.
   const list = (await call('GET', `/api/admin/tickets/orders?q=${encodeURIComponent(ref.toLowerCase())}`)).data.orders;
@@ -128,6 +128,6 @@ test('public pages: /tickets lists home matches, homepage shows Upcoming Matches
   assert.match(tickets, /Select next 3 matches/);
   const home = await (await fetch(`${BASE}/`)).text();
   assert.match(home, /Upcoming Matches/);
-  assert.match(home, /nm-card--next/);
-  assert.ok((home.match(/<li class="nm-card/g) || []).length <= 3);
+  assert.match(home, /fx-card--featured/);
+  assert.ok((home.match(/<li class="fx-card/g) || []).length <= 3);
 });

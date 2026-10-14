@@ -99,7 +99,7 @@
   LA.lagosTime = function (iso) { return iso ? shift(iso).slice(11, 16) : ''; };
   LA.date = function (iso) { return iso ? new Date(iso).toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : 'TBC'; };
   LA.time = function (iso) { return iso ? new Date(iso).toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }) : ''; };
-  LA.when = function (s) { if (!s) return ''; var iso = /T|Z$/.test(s) ? s : s.replace(' ', 'T') + 'Z'; return new Date(iso).toLocaleString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WAT'; };
+  LA.when = function (s) { if (!s) return ''; var iso = /T|Z$/.test(s) ? s : s.replace(' ', 'T') + 'Z'; return new Date(iso).toLocaleString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); };
   LA.STATUS = { scheduled: 'Not played', live: 'Live', half_time: 'Half time', full_time: 'Full time', postponed: 'Postponed', abandoned: 'Abandoned', cancelled: 'Cancelled', awarded: 'Awarded' };
   LA.chip = function (status) { return LA.el('span', { class: 'la-chip ' + status, text: LA.STATUS[status] || status }); };
   LA.crest = function (t) { return LA.el('img', { class: 'la-crest', src: (t && (t.crest || t.crest_url)) || ('/api/league/crest/' + (t && t.code)), alt: '', width: 24, height: 24, loading: 'lazy' }); };

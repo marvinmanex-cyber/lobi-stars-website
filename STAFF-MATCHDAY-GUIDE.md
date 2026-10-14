@@ -7,7 +7,7 @@ live commentary on Lobi Stars FC Live).
 
 Sign in at **https://lobistarsfc.com/admin/login** with your own staff email
 and password (the owner can use the admin code). All times on the website use
-the club's server clock in **Nigerian time (WAT)**, never your phone's clock.
+the club's server clock in **Nigerian time**, never your phone's clock.
 
 ---
 
@@ -35,7 +35,7 @@ STAFF-GUIDE section 26 (Admin → Matchday → Fan Match Alerts).
 ## 1. Before the match (a day or more ahead)
 
 1. **Check the match** in **Admin → League → Fixtures** (the whole season is
-   loaded): date, kick-off time (WAT) and venue. Ticket prices are set in
+   loaded): date, kick-off time and venue. Ticket prices are set in
    **Admin → Matchday → Match Tickets & Settings**.
 2. Open **Admin → Match Centre** and choose the match.
 3. **Matchday squad:** in *Matchday squad*, set each player to **Starting XI**,
@@ -101,7 +101,7 @@ at Admin › Matchday › Ticket Scanner, lobistarsfc.com/admin/tickets/scan):
 | Screen | Means | Do |
 |---|---|---|
 | **Green: VALID: ADMIT** | Right match, not used yet | Let the fan in. The ticket is now used. |
-| **Red: ALREADY USED** | Scanned before; the time is shown ("scanned 3:41 PM WAT") | Don't let them in. Call the supervisor if the fan says it's their first time. |
+| **Red: ALREADY USED** | Scanned before; the time is shown ("scanned 9 Nov, 15:41") | Don't let them in. Call the supervisor if the fan says it's their first time. |
 | **Amber: WRONG MATCH** | A ticket for another match | Don't let them in on it; it still works on its own match day. |
 | **Red: DO NOT ADMIT** | Not a real ticket, or cancelled (refunded) | Don't let them in. Send them to the ticket desk. |
 

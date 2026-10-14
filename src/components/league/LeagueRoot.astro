@@ -1,8 +1,10 @@
 ---
 // Where /fixtures, /results and /table show the league. The server fills
 // [data-league-root] with real HTML (functions/api/_lib/leaguePages.js); this
-// component brings the styles and a small script: the countdown, filters that
+// component brings the styles (match cards: src/styles/fixture-card.css) and
+// small scripts: the countdown tiles, filters that
 // apply as soon as they change, live scores refreshing every minute, Print.
+import '../../styles/fixture-card.css';
 interface Props { which: 'fixtures' | 'results' | 'table' }
 const { which } = Astro.props;
 ---
@@ -24,20 +26,6 @@ const { which } = Astro.props;
   .lg-btn:focus-visible, .lg a:focus-visible, .lg select:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
   .lg-acts { display: flex; flex-wrap: wrap; gap: 8px; }
 
-  /* Next match */
-  .lg-next { background: linear-gradient(140deg, #15181D 0%, #2A0507 100%); color: #fff; border-radius: 14px; padding: 20px 22px; margin-bottom: 22px; }
-  .lg-next-top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: baseline; }
-  .lg-next h2 { margin: 0; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #FFC72C; }
-  .lg-next-top span { font-size: 13px; color: rgba(255,255,255,.75); }
-  .lg-next-teams { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; margin: 16px 0 8px; text-align: center; }
-  .lg-next-team { display: flex; flex-direction: column; align-items: center; gap: 8px; font: 700 17px/1.15 'Barlow Condensed', sans-serif; }
-  .lg-next .lg-crest { width: 56px; height: 56px; }
-  .lg-next-vs { font: 400 30px/1 'Bebas Neue', sans-serif; color: rgba(255,255,255,.8); }
-  .lg-next-when { margin: 4px 0; text-align: center; color: rgba(255,255,255,.85); font-size: 14px; }
-  .lg-countdown { margin: 6px 0 14px; text-align: center; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #FFC72C; min-height: 24px; }
-  .lg-next .lg-acts { justify-content: center; }
-  .lg-next .lg-btn:not(.primary) { background: transparent; color: #fff; border-color: rgba(255,255,255,.45); }
-
   /* Filters and tabs */
   .lg-filters { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; margin: 0 0 18px; }
   .lg-f { display: grid; gap: 4px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
@@ -48,37 +36,23 @@ const { which } = Astro.props;
   .lg-tabs { margin-bottom: 14px; }
   .lg.js .lg-filters [data-apply] { display: none; }
 
-  /* Match cards */
-  .lg-md { margin: 26px 0 6px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .lg-day { margin: 12px 0 8px; font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  /* Match cards (src/styles/fixture-card.css), grouped under matchday headings */
+  .lg-featured { margin-bottom: 26px; }
+  .lg-md { display: flex; align-items: center; gap: 10px; margin: 28px 0 12px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .lg-md::before { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 4px rgba(227, 30, 36, .15); flex: none; }
+  .lg-md::after { content: ''; flex: 1; height: 1px; background: var(--d4); }
+  .lg-list > .lg-md:first-child { margin-top: 6px; }
   .lg-break { margin: 26px 0 10px; padding: 10px 14px; border-radius: 8px; background: var(--d3); text-align: center; font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
   /* Cards fill their column: one column on phones, two from 900px (a lone last card spans both). */
-  .lg-group { display: grid; grid-template-columns: 1fr; gap: 12px; width: 100%; margin-bottom: 12px; }
-  @media (min-width: 900px) { .lg-group { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lg-group > .lg-card:last-child:nth-child(odd) { grid-column: 1 / -1; } }
-  .lg-card { background: var(--d2); border: 1px solid var(--d4); border-radius: 12px; padding: 14px 16px; width: 100%; min-width: 0; box-sizing: border-box; }
-  .lg-card.is-lobi { border-left: 4px solid var(--red); }
-  .lg-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; font-size: 13px; color: var(--lt); margin-bottom: 12px; }
-  .lg-comp { font-weight: 700; color: var(--white); }
-  .lg-when { margin-left: auto; }
+  .lg-group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; width: 100%; margin-bottom: 12px; }
+  @media (min-width: 900px) { .lg-group { grid-template-columns: repeat(2, minmax(0, 1fr)); } .lg-group > .fx-card:last-child:nth-child(odd) { grid-column: 1 / -1; } }
   .lg-ha, .lg-chip { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; padding: 4px 7px; border-radius: 3px; background: var(--d3); color: var(--white); display: inline-flex; align-items: center; gap: 5px; }
-  .lg-ha.home { background: var(--red); color: #fff; }
   .lg-chip.warn { background: #FFF1D6; color: #7A4B00; }
   .lg-chip.bad { background: #FDECEC; color: #A3161B; }
   .lg-chip.info { background: #E6F0FB; color: #1A4E8A; }
   .lg-chip.live { background: #C11A1F; color: #fff; }
-  .lg-chip.lg-tix { min-height: 44px; padding: 0 12px; font-size: 13px; box-sizing: border-box; }
   .lg-pulse { width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: lg-pulse 1.2s infinite; }
   @keyframes lg-pulse { 50% { opacity: .25; } }
-  .lg-teams { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; font: 700 17px/1.2 'Barlow Condensed', sans-serif; }
-  .lg-team { display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .lg-team span { min-width: 0; overflow-wrap: anywhere; }
-  .lg-team.h { justify-content: flex-end; text-align: right; }
-  .lg-team.won span { font-weight: 800; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
-  .lg-vs { font: 400 18px/1 'Bebas Neue', sans-serif; color: var(--lt); text-align: center; white-space: nowrap; }
-  .lg-score { background: #15181D; color: #fff; padding: 6px 12px; border-radius: 4px; font: 400 22px/1 'Bebas Neue', sans-serif; white-space: nowrap; }
-  .lg-venue { margin-top: 10px; font-size: 13px; color: var(--lt); }
-  .lg-note { margin: 8px 0 0; font-size: 13px; color: var(--white); }
-  .lg-card .lg-acts { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--d4); }
   .lg-sub { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 28px 0 10px; padding: 18px 20px; border-radius: 12px; background: var(--dark); border: 1px solid var(--d4); }
   .lg-sub h2 { margin: 0 0 4px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .lg-sub p { margin: 0; color: var(--lt); max-width: 440px; }
@@ -120,8 +94,6 @@ const { which } = Astro.props;
   .lg-table-acts { margin-top: 14px; }
 
   @media (max-width: 640px) {
-    .lg-when { margin-left: 0; width: 100%; }
-    .lg-teams { font-size: 15px; }
     .lg-crest { width: 28px; height: 28px; }
     .lg-ha, .lg-chip, .lg-table thead th { font-size: 13px; }
     .lg-form-row span { width: 22px; height: 22px; font-size: 13px; }
@@ -140,7 +112,7 @@ const { which } = Astro.props;
   }
   @media (prefers-reduced-motion: reduce) { .lg-pulse { animation: none; } }
   @media print {
-    .lg-filters, .lg-tabs, .lg-acts, .lg-sub, .lg-next .lg-acts { display: none !important; }
+    .lg-filters, .lg-tabs, .lg-acts, .lg-sub { display: none !important; }
     .lg-table-wrap { overflow: visible; border: 0; }
     .lg-table tr.is-lobi { background: #eee; }
   }
@@ -161,30 +133,18 @@ const { which } = Astro.props;
       location.href = f.getAttribute('action') + (qs ? '?' + qs : '');
     });
   });
-  // Countdown to the next match.
-  var cd = root.querySelector('[data-countdown]');
-  if (cd) {
-    var t = Date.parse(cd.getAttribute('data-countdown'));
-    var tick = function () {
-      var s = Math.floor((t - Date.now()) / 1000);
-      if (s <= 0) { cd.textContent = 'Kick-off!'; return; }
-      var d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
-      cd.textContent = (d ? d + ' day' + (d === 1 ? '' : 's') + ' ' : '') + h + ' h ' + m + ' min to kick-off';
-    };
-    tick(); setInterval(tick, 30000);
-  }
   // Live scores refresh every minute while a match is in play.
-  if (root.querySelector('.lg-card.is-live')) {
+  if (root.querySelector('.fx-card.is-live')) {
     setInterval(function () {
       fetch('/api/league/fixtures?status=live,half_time,full_time', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
         if (!d) return;
         d.fixtures.forEach(function (f) {
-          var card = root.querySelector('.lg-card[data-id="' + f.id + '"]');
+          var card = root.querySelector('.fx-card[data-id="' + f.id + '"]');
           if (!card) return;
           var sc = card.querySelector('[data-score]');
-          if (sc) sc.textContent = (f.homeGoals == null ? 0 : f.homeGoals) + ' – ' + (f.awayGoals == null ? 0 : f.awayGoals);
+          if (sc) sc.innerHTML = (f.homeGoals == null ? 0 : Number(f.homeGoals)) + '<span aria-hidden="true">–</span>' + (f.awayGoals == null ? 0 : Number(f.awayGoals));
           var st = card.querySelector('[data-status]');
-          if (st && f.status === 'full_time') { st.textContent = 'Full time'; st.className = 'lg-chip'; }
+          if (st && f.status === 'full_time') { st.textContent = 'Full time'; st.className = st.classList.contains('fx-live') ? 'fx-live' : 'lg-chip'; }
           else if (st && f.status === 'half_time') st.lastChild.textContent = 'Half time';
         });
       }).catch(function () {});
@@ -192,4 +152,10 @@ const { which } = Astro.props;
   }
   root.querySelectorAll('[data-print]').forEach(function (b) { b.addEventListener('click', function () { window.print(); }); });
 })();
+</script>
+
+<script>
+  // Countdown tiles on the featured card (one timer for the page).
+  import { startCountdowns } from '../../lib/fixtureCards';
+  startCountdowns();
 </script>

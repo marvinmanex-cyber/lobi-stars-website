@@ -98,7 +98,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   // datetime-local values are Nigerian time (WAT, UTC+1, no daylight saving).
   const toIso = v => v ? new Date(v + ':00+01:00').toISOString() : '';
   const toLocal = iso => new Date(new Date(iso).getTime() + 3600000).toISOString().slice(0, 16);
-  const watText = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) + ' WAT';
+  const watText = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
   const STATE = { upcoming: 'Not open yet', open: 'Voting open', closed: 'Closed' };
   let data = { awards: [], players: [], partners: [], types: {} };
   let editing = null;

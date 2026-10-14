@@ -158,7 +158,7 @@ test('the commentary pages and API never mention the partner or reveal its addre
 test('Broadcast Report CSV', async () => {
   const r = await fetch(`${BASE}/api/admin/broadcast-report?range=30d`, { headers: ADMIN });
   assert.equal(r.status, 200);
-  assert.match(await r.text(), /Match,Kick-off \(WAT\),Listens \(plays\),Unique listeners,Average listening time \(minutes\),Peak concurrent listeners/);
+  assert.match(await r.text(), /Match,Kick-off,Listens \(plays\),Unique listeners,Average listening time \(minutes\),Peak concurrent listeners/);
 });
 
 test('persistent player: now-playing bar with Stop on public pages; in-page navigation never on admin pages', async () => {

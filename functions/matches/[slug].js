@@ -66,7 +66,7 @@ export async function onRequestGet({ request, env, params }) {
   }];
   const ldHtml = ld.map(d => `<script type="application/ld+json">${JSON.stringify(d).replace(/</g, '\\u003c')}</script>`).join('');
   const imgAlt = `${event.home_team} vs ${event.away_team} | Lobi Stars FC`;
-  const line = `${event.home_team} vs ${event.away_team} · ${date} · ${event.venue}`;
+  const line = `${event.home_team} vs ${event.away_team}, ${date}, ${event.venue}`;
 
   const rewritten = new HTMLRewriter()
     .on('title', { element(el) { el.setInnerContent(title); } })

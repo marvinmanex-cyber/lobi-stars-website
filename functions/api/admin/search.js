@@ -44,7 +44,7 @@ export async function onRequestGet({ request, env }) {
     const { results: ev } = await db.prepare(
       `SELECT id, home_team, away_team, event_date FROM events WHERE lower(home_team || ' ' || away_team || ' ' || COALESCE(competition,'')) LIKE ? ORDER BY event_date DESC LIMIT 6`
     ).bind(like).all();
-    for (const e of ev) results.push({ type: 'Match', title: `${e.home_team} vs ${e.away_team}`, sub: new Date(e.event_date).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) + ' WAT', href: `/admin/match-centre/?id=${encodeURIComponent(e.id)}` });
+    for (const e of ev) results.push({ type: 'Match', title: `${e.home_team} vs ${e.away_team}`, sub: new Date(e.event_date).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }), href: `/admin/match-centre/?id=${encodeURIComponent(e.id)}` });
   }
 
   if (canAccess(admin, 'content')) {

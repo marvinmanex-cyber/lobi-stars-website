@@ -13,7 +13,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     <AdminNav current="tickets" />
     <header class="la-head"><div><div class="stag">Commerce</div><h1 class="stitle">Match <span class="r">Tickets</span></h1></div>
       <div class="la-row"><a class="btn-o" href="/tickets/" target="_blank" rel="noopener">Public tickets page ↗</a><a class="btn-o" href="/admin/season-tickets/">Season Tickets</a><a class="btn-o" href="/admin/tickets/scan/">Ticket Scanner</a></div></header>
-    <p class="la-lede">Nothing is sold unless a match is switched <b>On sale</b> and has at least one stand price. Tickets are only sold for Lobi Stars home matches. Times are Nigerian time (WAT). Leave a capacity empty for no limit.</p>
+    <p class="la-lede">Nothing is sold unless a match is switched <b>On sale</b> and has at least one stand price. Tickets are only sold for Lobi Stars home matches. Times are Nigerian time. Leave a capacity empty for no limit.</p>
 
     <section class="la-card" aria-labelledby="h-tot"><h2 id="h-tot">Sales</h2><div id="totals" class="la-row"></div></section>
 
@@ -96,12 +96,12 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       LA.api('/api/admin/tickets/match/' + encodeURIComponent(m.id), { method: 'PUT', body: body }).then(function (r) { r.ok ? (LA.toast('Saved'), load()) : LA.toast(r.d.error || 'Could not save.', true); });
     });
     return el('div', { class: 'tk-m' },
-      el('div', { class: 'tk-m-head' }, el('span', {}, el('b', { text: (m.matchday ? 'Matchday ' + m.matchday + ': ' : '') + m.homeTeam + ' vs ' + m.awayTeam }), el('br'), el('span', { class: 'la-muted', text: LA.date(m.kickoff) + ', ' + LA.time(m.kickoff) + ' WAT · ' + m.venue })),
+      el('div', { class: 'tk-m-head' }, el('span', {}, el('b', { text: (m.matchday ? 'Matchday ' + m.matchday + ': ' : '') + m.homeTeam + ' vs ' + m.awayTeam }), el('br'), el('span', { class: 'la-muted', text: LA.date(m.kickoff) + ', ' + LA.time(m.kickoff) + ' · ' + m.venue })),
         el('span', { class: 'la-chip ' + (m.state === 'on_sale' ? 'full_time' : m.state === 'sold_out' ? 'cancelled' : '') , text: STATE[m.state] || m.state })),
       el('div', { class: 'tk-m-grid' }, tierBoxes),
       el('div', { class: 'la-row', style: 'margin-top:10px;align-items:flex-end' },
         el('label', { class: 'la-row', style: 'gap:6px;font-weight:700' }, on, 'On sale'),
-        el('label', { class: 'la-f' }, 'Sales open (WAT)', opens), el('label', { class: 'la-f' }, 'Sales close (WAT)', closes),
+        el('label', { class: 'la-f' }, 'Sales open', opens), el('label', { class: 'la-f' }, 'Sales close', closes),
         el('label', { class: 'la-f' }, 'Most per order', max), save));
   }
 

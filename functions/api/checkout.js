@@ -52,8 +52,8 @@ export async function onRequestPost({ request, env }) {
       const opens = new Date(event.public_sale_at).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
       return Response.json({
         error: memberId
-          ? `Tickets for this match are in the members' priority window. General sale opens ${opens} WAT.`
-          : `Tickets for this match are in the members' priority window. Members: please log in first. General sale opens ${opens} WAT.`,
+          ? `Tickets for this match are in the members' priority window. General sale opens ${opens}.`
+          : `Tickets for this match are in the members' priority window. Members: please log in first. General sale opens ${opens}.`,
         code: 'members_only',
       }, { status: 403 });
     }
