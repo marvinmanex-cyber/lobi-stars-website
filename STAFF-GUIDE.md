@@ -1819,6 +1819,17 @@ Press **Save** on the match. To set the same thing for many matches at once,
 use **Apply to all** at the top (leave a box empty to
 keep what each match already has).
 
+**The /tickets page** (redesigned 14 Oct 2026, same buying steps): a stadium
+picture with the next home match and a countdown; a 3-step progress bar
+(Choose matches, Choose your stand, Pay); each home match as a ticket card
+with a round **Select** button, "Next match" / "This week" labels, a stand
+switch and a − 1 + ticket counter; stand cards (VIP Sitting, Cover Stand,
+Popular Stand, with the price per ticket; "Best value" marks the cheapest);
+the order and checkout on the right (a slide-up sheet with a bottom bar on
+phones); MatchDay Kitchen and Matchday Programme links; and short questions
+and answers. Stand descriptions and two answers (gate times, passing tickets
+on) still need the club's wording (HANDOVER-TODO C20).
+
 **What fans see:** under the homepage picture, a slim **match bar** shows the
 next Lobi Stars match: both clubs, date, kick-off, venue, a countdown and one
 button: **Buy ticket from ₦…** for a home match on sale, **Listen live** while

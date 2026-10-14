@@ -5,175 +5,580 @@
 // or already played can't be ticked. "?event=<id>" pre-selects a match.
 // Paying: /api/tickets/basket (Paystack). Season Tickets (one QR for every
 // home match) are suggested when every remaining home match is selected.
+// Look (14 Oct 2026): stadium hero with the next match, 3-step progress,
+// ticket-style match cards, stand cards, a sticky order summary (a slide-up
+// sheet on phones), cross-sell and FAQ. The buying logic is unchanged: the
+// per-match stand and quantity are still <select>s (hidden), driven by the
+// visual controls, so selection, prices, totals and payment work as before.
 import Layout from '../../layouts/Layout.astro';
 import settings from '../../data/fan-settings.json';
+import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
 const siteKey = settings.turnstileSiteKey;
+const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 'Lobi Stars': '/images/lobi-stars-badge.png' };
 ---
 <Layout title="Buy Tickets | Lobi Stars Football Club" description="Buy Lobi Stars FC home match tickets online: one match or the whole season in one payment, with QR-code tickets by email.">
-  <div class="page-hero wrap">
-    <div class="stag">Match Day</div>
-    <h1 class="stitle">Buy <span class="r">Tickets</span></h1>
-    <div class="divr"></div>
-    <p class="tk-lede">Tick the home matches you want, choose a stand and how many tickets, then pay once. Your QR-code tickets arrive by email straight away. <a href="/tickets/lookup/">Find my tickets</a> · <a href="/kitchen/">Order food to your seat</a></p>
-  </div>
-  <div class="page-content wrap">
-    <div class="tk" data-tickets>
-      <div class="tk-main">
-        <!-- Shown only while season tickets are on sale (Admin › Commerce › Season Tickets). -->
-        <a class="tk-seasonbar" id="seasonBanner" href="/season-tickets/" hidden><span><b>Season tickets</b><span id="seasonBannerText">One ticket for every home match.</span></span><span class="tk-seasonbtn">Buy a season ticket &rarr;</span></a>
-        <div class="tk-tools">
-          <button type="button" class="tk-tool" id="selAll">Select all home matches</button>
-          <button type="button" class="tk-tool" id="selNext3">Select next 3 matches</button>
-          <button type="button" class="tk-tool" id="selNone">Clear</button>
-          <label class="tk-f">Stand for all ticked
-            <select id="allTier"><option value="">Keep as is</option><option value="VIP">VIP Sitting</option><option value="Premium">Cover Stand</option><option value="Regular">Popular Stand</option></select>
+  <div class="tk" data-tickets>
+    <!-- A. Hero -->
+    <section class="tk-hero" aria-labelledby="tkTitle">
+      <picture>
+        <source type="image/webp" srcset="/images/hero-2-480w.webp 480w, /images/hero-2-960w.webp 960w, /images/hero-2.webp 1600w" sizes="100vw" />
+        <img class="tk-hero-bg" src="/images/hero-2.jpg" alt="" width="1600" height="900" decoding="async" fetchpriority="high" />
+      </picture>
+      <div class="tk-hero-in">
+        <div class="tk-hero-text">
+          <p class="tk-kicker">Lobi Stars home matches · McCarthy Stadium</p>
+          <h1 class="tk-h1" id="tkTitle">Buy <span>Tickets</span></h1>
+          <p class="tk-sub">Be there when the Pride of Benue plays.</p>
+          <ul class="tk-chips">
+            <li><span class="tk-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3h-3zM18 18h3v3h-3z" /></svg>QR tickets by email</span></li>
+            <li><span class="tk-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>Secure Paystack payment</span></li>
+            <li><a class="tk-chip tk-chip--link" href="/tickets/lookup/"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>Find my tickets</a></li>
+          </ul>
+        </div>
+        <div class="tk-next" id="tkNext" aria-live="polite">
+          <p class="tk-next-k">Next home match</p>
+          <div class="tk-next-skel" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="tk-wrap">
+      <!-- B. Progress -->
+      <ol class="tk-steps" id="tkSteps" aria-label="Your progress">
+        <li data-step="1" class="now"><span>1</span>Choose matches</li>
+        <li data-step="2"><span>2</span>Choose your stand</li>
+        <li data-step="3"><span>3</span>Pay</li>
+      </ol>
+
+      <!-- Shown only while season tickets are on sale (Admin › Commerce › Season Tickets). -->
+      <a class="tk-seasonbar" id="seasonBanner" href="/season-tickets/" hidden><span><b>Season tickets</b><span id="seasonBannerText">One ticket for every home match.</span></span><span class="tk-seasonbtn">Buy a season ticket &rarr;</span></a>
+
+      <div class="tk-grid">
+        <div class="tk-main">
+          <!-- C. Matches -->
+          <h2 class="tk-h2">1. Choose your matches</h2>
+          <div class="tk-tools" role="group" aria-label="Quick select">
+            <button type="button" class="tk-tool" id="selAll">Select all home matches</button>
+            <button type="button" class="tk-tool" id="selNext3">Select next 3 matches</button>
+            <button type="button" class="tk-tool" id="selNone">Clear</button>
+          </div>
+          <p class="tk-msg" id="tkMsg" role="status" aria-live="polite"></p>
+          <ol class="tk-list" id="tkList" aria-busy="true">
+            <li class="tk-skel" aria-hidden="true"></li><li class="tk-skel" aria-hidden="true"></li><li class="tk-skel" aria-hidden="true"></li>
+            <li class="tk-sr">Loading the home matches…</li>
+          </ol>
+
+          <!-- D. Stands -->
+          <h2 class="tk-h2" id="standsH">2. Choose your stand</h2>
+          <p class="tk-hint">Pick a stand for every match you've ticked, or change it on each match card.</p>
+          <div class="tk-stands" id="tkStands" role="radiogroup" aria-labelledby="standsH">
+            <!-- The stand cards are filled in from the match data (prices); descriptions below. -->
+          </div>
+          <!-- The existing "Stand for all ticked" control (hidden; the stand cards drive it). -->
+          <label class="tk-sr">Stand for all ticked
+            <select id="allTier" tabindex="-1"><option value="">Keep as is</option><option value="VIP">VIP Sitting</option><option value="Premium">Cover Stand</option><option value="Regular">Popular Stand</option></select>
           </label>
         </div>
-        <p class="tk-msg" id="tkMsg" role="status" aria-live="polite"></p>
-        <ol class="tk-list" id="tkList"><li class="tk-empty">Loading the home matches…</li></ol>
-        <div class="tk-bar" id="tkBar" hidden><span><span id="barCount"></span> · <b id="barTotal"></b></span><a href="#sumH">Checkout</a></div>
+
+        <!-- E + F. Order summary and checkout (a slide-up sheet on phones) -->
+        <aside class="tk-sum" id="tkSum" aria-labelledby="sumH">
+          <div class="tk-sum-head">
+            <h2 id="sumH">3. Your order</h2>
+            <button type="button" class="tk-sheet-x" id="sheetClose" aria-label="Close your order">&times;</button>
+          </div>
+          <ul class="tk-sum-lines" id="sumLines"><li class="tk-muted">No matches selected yet.</li></ul>
+          <p class="tk-total"><span>Total</span><b id="sumTotal" aria-hidden="true">₦0</b><span class="tk-sr" id="sumTotalLive" aria-live="polite">Total ₦0</span></p>
+          <p class="tk-season" id="sumSeason" hidden></p>
+          <form id="buyForm" class="tk-form" novalidate>
+            <div class="tk-fl"><input id="fName" name="buyerName" autocomplete="name" required maxlength="80" placeholder=" " /><label for="fName">Full name</label></div>
+            <div class="tk-fl"><input id="fEmail" name="buyerEmail" type="email" autocomplete="email" required maxlength="254" placeholder=" " /><label for="fEmail">Email (tickets are sent here)</label><p class="tk-inline" id="fEmailMsg" aria-live="polite"></p></div>
+            <div class="tk-fl"><input id="fPhone" name="buyerPhone" type="tel" autocomplete="tel" inputmode="tel" required placeholder=" " /><label for="fPhone">Phone (e.g. 0803 123 4567)</label><p class="tk-inline" id="fPhoneMsg" aria-live="polite"></p></div>
+            {siteKey && <div class="cf-turnstile" data-sitekey={siteKey}></div>}
+            <p class="tk-err" id="buyErr" role="alert"></p>
+            <button type="submit" class="tk-pay" id="payBtn" disabled>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+              <span id="payText">Pay with Paystack</span>
+            </button>
+            <p class="tk-paysub">Card, bank transfer or USSD</p>
+            <p class="tk-small">Handled securely by Paystack. One QR code per ticket; each admits one person, once, on the day of its match. By buying you agree to our <a href="/terms/">Terms</a>.</p>
+          </form>
+        </aside>
       </div>
-      <aside class="tk-sum" aria-labelledby="sumH">
-        <h2 id="sumH">Your order</h2>
-        <ul class="tk-sum-lines" id="sumLines"><li class="tk-muted">No matches selected yet.</li></ul>
-        <p class="tk-total">Total <b id="sumTotal">₦0</b></p>
-        <p class="tk-season" id="sumSeason" hidden></p>
-        <form id="buyForm" class="tk-form" novalidate>
-          <label class="tk-f">Full name<input name="buyerName" autocomplete="name" required maxlength="80" /></label>
-          <label class="tk-f">Email (tickets are sent here)<input name="buyerEmail" type="email" autocomplete="email" required maxlength="254" /></label>
-          <label class="tk-f">Phone<input name="buyerPhone" type="tel" autocomplete="tel" required placeholder="0803 123 4567" /></label>
-          {siteKey && <div class="cf-turnstile" data-sitekey={siteKey}></div>}
-          <p class="tk-err" id="buyErr" role="alert"></p>
-          <button type="submit" class="btn-p tk-pay" id="payBtn" disabled>Pay with Paystack</button>
-          <p class="tk-small">Card, bank transfer or USSD, handled securely by Paystack. One QR code per ticket; each admits one person, once, on the day of its match. By buying you agree to our <a href="/terms/">Terms</a>.</p>
-        </form>
-      </aside>
+
+      <!-- G. Cross-sell -->
+      <section class="tk-xsell" aria-label="Also on match day">
+        <a class="tk-xcard tk-xcard--kitchen" href="/kitchen/">
+          <img src="/images/matchday-kitchen-logo.png" alt="" width="72" height="72" loading="lazy" decoding="async" />
+          <span><b>Order food to your seat</b><span>MatchDay Kitchen: order from your phone at McCarthy Stadium.</span></span>
+          <span class="tk-xgo" aria-hidden="true">&rarr;</span>
+        </a>
+        <a class="tk-xcard" href="/programme/">
+          <span class="tk-xicon" aria-hidden="true">MDP</span>
+          <span><b>Matchday Programme</b><span>Read the official programme free before the match.</span></span>
+          <span class="tk-xgo" aria-hidden="true">&rarr;</span>
+        </a>
+      </section>
+
+      <!-- H. FAQ -->
+      <section class="tk-faq" aria-labelledby="faqH">
+        <h2 class="tk-h2" id="faqH">Questions</h2>
+        <details>
+          <summary>How do I get my tickets?</summary>
+          <p>Straight after you pay, your QR-code tickets appear on the confirmation page and are emailed to the address you entered. There is one QR code per ticket: show it at the gate on your phone (a screenshot works) or printed.</p>
+        </details>
+        <details>
+          <summary>I can't find my email</summary>
+          <p>Check your spam or promotions folder first. You can also get your tickets again at <a href="/tickets/lookup/">Find my tickets</a> with your email address and order reference.</p>
+        </details>
+        <details>
+          <summary>When do the gates open?</summary>
+          <!-- TODO (Marvin to confirm): gate opening time for home matches. -->
+          <p>Gate opening times will be announced before each home match. Each QR code admits one person, once, on the day of its match.</p>
+        </details>
+        <details>
+          <summary>Can I give my ticket to someone else?</summary>
+          <!-- TODO (Marvin to confirm): the club's ticket transfer policy. -->
+          <p>Each ticket is a QR code that admits one person, once. The club will confirm its policy on passing tickets to someone else; in the meantime, contact us via the <a href="/help/">Help Centre</a>.</p>
+        </details>
+      </section>
     </div>
+
+    <!-- Phones: the order total stays in view; it opens the order as a sheet. -->
+    <div class="tk-bar" id="tkBar" hidden>
+      <span class="tk-bar-txt"><span id="barCount"></span><b id="barTotal"></b></span>
+      <button type="button" id="barBtn" aria-controls="tkSum" aria-expanded="false">Checkout</button>
+    </div>
+    <div class="tk-scrim" id="tkScrim" hidden></div>
   </div>
   {siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
 </Layout>
 
 <style>
-  .tk-lede { margin: -10px 0 0; color: var(--lt); font-size: 15px; line-height: 1.6; max-width: 760px; }
-  .tk-lede a { color: var(--red-text); font-weight: 700; }
-  .tk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; width: 100%; }
-  @media (min-width: 1000px) { .tk { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; } .tk-sum { position: sticky; top: 90px; } }
-  .tk-seasonbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 16px; padding: 14px 18px; border-radius: 12px; background: #15181D; color: #fff; text-decoration: none; }
+  /* Tokens: the site's red, ink and greys (Layout.astro), plus a dark stadium hero. */
+  .tk { --tk-red: var(--red); --tk-ink: #15181D; --tk-gold: #FFC72C; --tk-radius: 16px; overflow-x: clip; }
+  .tk-wrap { max-width: 1280px; margin: 0 auto; padding: 0 5%; box-sizing: border-box; }
+  .tk-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .tk [hidden] { display: none !important; }
+  .tk :global(a:focus-visible), .tk :global(button:focus-visible), .tk :global(input:focus-visible), .tk :global(summary:focus-visible) { outline: 3px solid var(--tk-red); outline-offset: 2px; }
+
+  /* A. Hero */
+  .tk-hero { position: relative; isolation: isolate; color: #fff; background: var(--tk-ink); overflow: hidden; }
+  .tk-hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+  .tk-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(115deg, rgba(10, 12, 16, .92) 0%, rgba(40, 6, 8, .82) 45%, rgba(227, 30, 36, .55) 100%); }
+  .tk-hero-in { max-width: 1280px; margin: 0 auto; padding: 38px 5% 34px; display: grid; gap: 22px; align-items: center; }
+  @media (min-width: 900px) { .tk-hero-in { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); padding: 56px 5% 50px; gap: 40px; } }
+  .tk-kicker { margin: 0 0 8px; font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--tk-gold); }
+  .tk-h1 { margin: 0; font: 400 clamp(52px, 11vw, 96px)/.9 'Bebas Neue', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .tk-h1 span { color: var(--tk-red); text-shadow: 0 2px 18px rgba(227, 30, 36, .35); }
+  .tk-sub { margin: 10px 0 18px; font-size: 18px; color: rgba(255, 255, 255, .9); }
+  .tk-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .tk-chip { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px; border-radius: 999px; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .22); color: #fff; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; text-decoration: none; backdrop-filter: blur(4px); }
+  .tk-chip svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .tk-chip--link { min-height: 44px; background: #fff; color: var(--tk-ink); border-color: #fff; }
+  .tk-chip--link:hover { background: var(--tk-gold); border-color: var(--tk-gold); }
+  .tk-next { padding: 18px 20px; border-radius: var(--tk-radius); background: rgba(10, 12, 16, .72); border: 1px solid rgba(255, 255, 255, .16); border-top: 4px solid var(--tk-red); backdrop-filter: blur(6px); min-height: 190px; box-sizing: border-box; }
+  .tk-next-k { margin: 0 0 10px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--tk-gold); }
+  .tk-next-skel { height: 130px; border-radius: 10px; background: linear-gradient(90deg, rgba(255,255,255,.06) 25%, rgba(255,255,255,.14) 37%, rgba(255,255,255,.06) 63%); background-size: 400% 100%; animation: tk-shimmer 1.4s ease infinite; }
+  .tk :global(.tk-next-teams) { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; text-align: center; }
+  .tk :global(.tk-next-team) { display: flex; flex-direction: column; align-items: center; gap: 6px; font: 700 18px/1.1 'Barlow Condensed', sans-serif; min-width: 0; overflow-wrap: anywhere; }
+  .tk :global(.tk-next-vs) { font: 400 22px/1 'Bebas Neue', sans-serif; color: rgba(255, 255, 255, .7); }
+  .tk :global(.tk-next-when) { margin: 12px 0 10px; text-align: center; font-size: 15px; color: rgba(255, 255, 255, .9); }
+  .tk :global(.tk-next-cd) { display: flex; justify-content: center; gap: 8px; }
+  .tk :global(.tk-next-cd span) { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; min-width: 52px; padding: 7px 4px 6px; border-radius: 8px; background: rgba(255, 255, 255, .1); border: 1px solid rgba(255, 255, 255, .16); }
+  .tk :global(.tk-next-cd b) { font: 400 26px/1 'Bebas Neue', sans-serif; font-variant-numeric: tabular-nums; }
+  .tk :global(.tk-next-cd small) { font: 700 10px/1 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: rgba(255, 255, 255, .75); }
+  .tk :global(.tk-badge) { display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: 50%; object-fit: contain; }
+  .tk :global(.tk-badge--mono) { background: rgba(127, 127, 127, .18); font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: .04em; }
+
+  /* B. Progress */
+  .tk-steps { list-style: none; margin: 22px 0 18px; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; counter-reset: none; }
+  .tk-steps li { position: relative; display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--d3); color: var(--lt); font: 700 14px/1.15 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; transition: background .25s, color .25s; }
+  .tk-steps li span { flex: none; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--d2); border: 2px solid var(--d4); font-size: 15px; }
+  .tk-steps li.now { background: var(--tk-ink); color: #fff; }
+  .tk-steps li.now span { border-color: var(--tk-red); background: var(--tk-red); color: #fff; }
+  .tk-steps li.done { color: var(--white); }
+  .tk-steps li.done span { background: #17643A; border-color: #17643A; color: #fff; font-size: 0; }
+  .tk-steps li.done span::after { content: '✓'; font-size: 15px; }
+  @media (max-width: 520px) { .tk-steps li { flex-direction: column; text-align: center; font-size: 12px; padding: 8px 4px; } }
+
+  .tk-seasonbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 16px; padding: 14px 18px; border-radius: 12px; background: var(--tk-ink); color: #fff; text-decoration: none; }
   .tk-seasonbar b { display: block; font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .tk-seasonbar span span { color: rgba(255,255,255,.85); font-size: 14px; }
-  .tk-seasonbtn { background: #FFC72C; color: #15181D !important; font-weight: 700; padding: 10px 16px; border-radius: 999px; min-height: 24px; }
-  .tk-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-bottom: 14px; }
-  .tk-tool { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--d4); background: var(--d2); color: var(--white); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
-  .tk-tool:hover, .tk-tool:focus-visible { border-color: var(--red); color: var(--red-text); }
-  .tk-f { display: grid; gap: 5px; font-weight: 700; font-size: 13px; }
-  .tk-f input, .tk-f select, .tk :global(.tk-row select) { min-height: 44px; border: 1.5px solid var(--d4); border-radius: 8px; padding: 8px 10px; font: 400 16px 'Barlow', sans-serif; background: var(--d2); color: var(--white); box-sizing: border-box; width: 100%; }
+  .tk-seasonbtn { background: var(--tk-gold); color: var(--tk-ink) !important; font-weight: 700; padding: 10px 16px; border-radius: 999px; }
+
+  .tk-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  @media (min-width: 1000px) { .tk-grid { grid-template-columns: minmax(0, 1fr) 380px; align-items: start; } }
+  .tk-h2 { margin: 6px 0 12px; font: 400 clamp(26px, 3.4vw, 34px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--white); }
+  .tk-hint { margin: -4px 0 12px; color: var(--lt); }
+
+  /* C. Quick actions */
+  .tk-tools { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .tk-tool { min-height: 44px; padding: 0 18px; border-radius: 999px; border: 1.5px solid var(--d4); background: var(--d2); color: var(--white); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+  .tk-tool:hover, .tk-tool:focus-visible { border-color: var(--tk-red); color: var(--red-text); }
   .tk-msg { margin: 0 0 10px; font-weight: 600; }
   .tk-msg:empty { display: none; }
-  .tk-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
-  .tk-empty, .tk-muted { color: var(--lt); }
-  .tk :global(.tk-row) { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px 16px; border: 1.5px solid var(--d4); border-radius: 12px; background: var(--d2); }
-  .tk :global(.tk-row.on) { border-color: var(--red); box-shadow: 0 0 0 1px var(--red); }
-  .tk :global(.tk-row.off) { opacity: .55; }
-  .tk :global(.tk-row input[type=checkbox]) { width: 24px; height: 24px; margin: 10px 0 0; accent-color: #E31E24; }
-  .tk :global(.tk-row label.tk-check) { display: flex; align-items: flex-start; min-width: 44px; min-height: 44px; cursor: pointer; }
-  .tk :global(.tk-head) { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; }
-  .tk :global(.tk-head b) { font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .tk :global(.tk-meta) { color: var(--lt); font-size: 14px; line-height: 1.5; }
-  .tk :global(.tk-state) { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; padding: 6px 9px; border-radius: 4px; background: var(--d3); align-self: start; }
+
+  /* C. Ticket cards */
+  .tk-list { list-style: none; margin: 0 0 30px; padding: 0; display: grid; gap: 14px; }
+  .tk-skel { height: 128px; border-radius: var(--tk-radius); background: linear-gradient(90deg, var(--d3) 25%, var(--d2) 37%, var(--d3) 63%); background-size: 400% 100%; animation: tk-shimmer 1.4s ease infinite; }
+  @keyframes tk-shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+  .tk :global(.tk-empty) { padding: 22px; border-radius: var(--tk-radius); border: 1.5px dashed var(--d4); color: var(--lt); text-align: center; }
+  .tk :global(.tk-empty button) { margin-top: 10px; min-height: 44px; padding: 0 20px; border-radius: 999px; border: 0; background: var(--tk-red); color: #fff; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+  .tk :global(.tk-card) {
+    --notch: 14px; position: relative; display: grid; grid-template-columns: 84px minmax(0, 1fr); background: var(--d2); border: 1.5px solid var(--d4);
+    border-radius: var(--tk-radius); box-shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 6px 16px -8px rgba(16, 24, 40, .14);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .tk :global(.tk-card:hover:not(.off)) { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(16, 24, 40, .06), 0 14px 28px -12px rgba(16, 24, 40, .25); }
+  .tk :global(.tk-card.on) { border-color: var(--tk-red); box-shadow: 0 0 0 1px var(--tk-red), 0 10px 26px -10px rgba(227, 30, 36, .45); animation: tk-pop .28s ease; }
+  @keyframes tk-pop { 50% { transform: scale(1.012); } }
+  .tk :global(.tk-card.off) { opacity: .62; }
+  /* Date block, then a perforated edge with notches like a real ticket. */
+  .tk :global(.tk-date) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 12px 6px; border-radius: var(--tk-radius) 0 0 var(--tk-radius); background: var(--tk-ink); color: #fff; text-align: center; }
+  .tk :global(.tk-date b) { font: 400 38px/.9 'Bebas Neue', sans-serif; }
+  .tk :global(.tk-date span) { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+  .tk :global(.tk-date small) { font: 600 12px/1 'Barlow', sans-serif; color: rgba(255, 255, 255, .88); }
+  .tk :global(.tk-body) { position: relative; padding: 14px 16px 14px 20px; border-left: 2px dashed var(--d4); display: grid; gap: 10px; }
+  .tk :global(.tk-body::before), .tk :global(.tk-body::after) { content: ''; position: absolute; left: calc(var(--notch) / -2 - 1px); width: var(--notch); height: var(--notch); border-radius: 50%; background: var(--black); border: 1.5px solid var(--d4); }
+  .tk :global(.tk-body::before) { top: calc(var(--notch) / -2 - 2px); clip-path: inset(50% 0 0 0); }
+  .tk :global(.tk-body::after) { bottom: calc(var(--notch) / -2 - 2px); clip-path: inset(0 0 50% 0); }
+  .tk :global(.tk-top) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; align-items: center; }
+  .tk :global(.tk-labels) { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .tk :global(.tk-md) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--red-text); }
+  .tk :global(.tk-flag) { padding: 4px 8px; border-radius: 999px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; background: var(--tk-gold); color: var(--tk-ink); }
+  .tk :global(.tk-flag--week) { background: var(--tk-ink); color: #fff; }
+  .tk :global(.tk-state) { padding: 4px 8px; border-radius: 999px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; background: var(--d3); color: var(--white); }
   .tk :global(.tk-state.out) { background: #FDECEC; color: #A3161B; }
-  .tk :global(.tk-pick) { display: grid; grid-template-columns: minmax(0, 1fr) 110px; gap: 10px; margin-top: 10px; }
-  .tk :global(.tk-pick[hidden]) { display: none; }
-  .tk-sum { background: var(--d2); border: 1.5px solid var(--d4); border-radius: 14px; padding: 18px; }
-  .tk-sum h2 { margin: 0 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .tk-sum-lines { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 6px; font-size: 14px; }
-  .tk :global(.tk-sum-lines li) { display: flex; justify-content: space-between; gap: 10px; }
-  .tk-total { display: flex; justify-content: space-between; font-size: 18px; margin: 10px 0; padding-top: 10px; border-top: 1px solid var(--d4); }
+  .tk :global(.tk-teams) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font: 700 20px/1.15 'Barlow Condensed', sans-serif; }
+  .tk :global(.tk-teams i) { font: 400 16px/1 'Bebas Neue', sans-serif; font-style: normal; color: var(--lt); }
+  .tk :global(.tk-team) { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+  .tk :global(.tk-meta) { margin-top: 5px; color: var(--lt); font-size: 14px; line-height: 1.45; }
+  .tk :global(.tk-side) { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+  .tk :global(.tk-from) { font: 600 12px/1.1 'Barlow', sans-serif; color: var(--lt); }
+  .tk :global(.tk-from b) { display: block; font: 400 22px/1 'Bebas Neue', sans-serif; color: var(--white); letter-spacing: .02em; }
+  /* The Select toggle: a real checkbox inside a big round label. */
+  .tk :global(.tk-toggle) { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px; border-radius: 50%; border: 2px solid var(--d4); background: var(--d2); cursor: pointer; transition: background .2s, border-color .2s, transform .15s; }
+  .tk :global(.tk-toggle input) { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+  .tk :global(.tk-toggle svg) { width: 24px; height: 24px; fill: none; stroke: var(--lt); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .tk :global(.tk-toggle:hover) { border-color: var(--tk-red); }
+  .tk :global(.tk-toggle:has(input:checked)) { background: var(--tk-red); border-color: var(--tk-red); }
+  .tk :global(.tk-toggle:has(input:checked) svg) { stroke: #fff; }
+  .tk :global(.tk-toggle:has(input:focus-visible)) { outline: 3px solid var(--tk-red); outline-offset: 3px; }
+  .tk :global(.tk-toggle:has(input:disabled)) { opacity: .45; cursor: not-allowed; }
+  .tk :global(.tk-toggle-l) { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--lt); }
+  /* "Selected" ribbon across the top-left corner of the date block. */
+  .tk :global(.tk-ribbon) { position: absolute; z-index: 1; top: 12px; left: -6px; padding: 5px 10px; background: var(--tk-red); color: #fff; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; border-radius: 0 4px 4px 0; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .tk :global(.tk-ribbon::after) { content: ''; position: absolute; left: 0; bottom: -6px; border-right: 6px solid #A3161B; border-bottom: 6px solid transparent; }
+  .tk :global(.tk-card.on .tk-date) { padding-top: 34px; }
+  /* Per-match stand (segmented) and quantity (stepper). */
+  .tk :global(.tk-pick) { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding-top: 10px; border-top: 1px solid var(--d4); }
+  .tk :global(.tk-seg) { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); flex: 1 1 320px; border: 1.5px solid var(--d4); border-radius: 12px; overflow: hidden; }
+  .tk :global(.tk-seg label) { position: relative; display: inline-flex; align-items: center; justify-content: center; text-align: center; min-height: 44px; padding: 6px 10px; font: 700 13px/1.15 'Barlow Condensed', sans-serif; letter-spacing: .04em; cursor: pointer; }
+  .tk :global(.tk-seg label + label) { border-left: 1px solid var(--d4); }
+  @media (max-width: 560px) { .tk :global(.tk-seg) { grid-auto-flow: row; flex-basis: 100%; } .tk :global(.tk-seg label) { justify-content: space-between; text-align: left; } .tk :global(.tk-seg label + label) { border-left: 0; border-top: 1px solid var(--d4); } }
+  .tk :global(.tk-seg input) { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .tk :global(.tk-seg label:has(input:checked)) { background: var(--tk-ink); color: #fff; }
+  .tk :global(.tk-seg label:has(input:disabled)) { opacity: .4; cursor: not-allowed; text-decoration: line-through; }
+  .tk :global(.tk-seg label:has(input:focus-visible)) { outline: 3px solid var(--tk-red); outline-offset: -3px; }
+  .tk :global(.tk-step) { display: inline-grid; grid-template-columns: 44px 44px 44px; align-items: center; border: 1.5px solid var(--d4); border-radius: 999px; }
+  .tk :global(.tk-step button) { height: 44px; border: 0; background: none; color: var(--white); font: 700 20px/1 'Barlow', sans-serif; cursor: pointer; border-radius: 999px; }
+  .tk :global(.tk-step button:disabled) { color: var(--d4); cursor: not-allowed; }
+  .tk :global(.tk-step output) { text-align: center; font: 700 18px/1 'Barlow Condensed', sans-serif; }
+  .tk :global(.tk-hidden-sel) { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  @media (max-width: 560px) {
+    .tk :global(.tk-card) { grid-template-columns: 66px minmax(0, 1fr); }
+    .tk :global(.tk-date b) { font-size: 32px; }
+    .tk :global(.tk-teams) { font-size: 18px; }
+  }
+
+  /* D. Stand cards */
+  .tk-stands { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 30px; }
+  .tk :global(.tk-stand) { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: var(--tk-radius); border: 1.5px solid var(--d4); background: var(--d2); cursor: pointer; transition: border-color .18s, box-shadow .18s, transform .18s; }
+  .tk :global(.tk-stand:hover) { transform: translateY(-2px); }
+  .tk :global(.tk-stand input) { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .tk :global(.tk-stand:has(input:checked)) { border-color: var(--tk-red); box-shadow: 0 0 0 1px var(--tk-red); }
+  .tk :global(.tk-stand:has(input:focus-visible)) { outline: 3px solid var(--tk-red); outline-offset: 2px; }
+  .tk :global(.tk-stand b) { font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: .02em; }
+  .tk :global(.tk-stand .tk-price) { font: 700 15px/1.2 'Barlow Condensed', sans-serif; color: var(--red-text); }
+  .tk :global(.tk-stand small) { color: var(--lt); font-size: 13.5px; line-height: 1.4; }
+  .tk :global(.tk-stand .tk-flag) { position: absolute; top: -10px; right: 12px; }
+  .tk :global(.tk-stand--keep b) { font-size: 20px; }
+
+  /* E + F. Summary and checkout */
+  .tk-sum { background: var(--d2); border: 1.5px solid var(--d4); border-radius: var(--tk-radius); padding: 20px; box-shadow: 0 10px 30px -18px rgba(16, 24, 40, .35); }
+  @media (min-width: 1000px) { .tk-sum { position: sticky; top: 92px; } }
+  .tk-sum-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .tk-sum h2 { margin: 0; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .tk-sheet-x { display: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--d3); color: var(--white); font-size: 24px; cursor: pointer; }
+  .tk-sum-lines { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+  .tk :global(.tk-muted) { color: var(--lt); padding: 14px; border-radius: 12px; background: var(--dark); text-align: center; }
+  .tk :global(.tk-line) { display: grid; grid-template-columns: minmax(0, 1fr) auto 32px; gap: 4px 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--dark); }
+  .tk :global(.tk-line b) { font: 700 16px/1.2 'Barlow Condensed', sans-serif; }
+  .tk :global(.tk-line small) { display: block; color: var(--lt); font-size: 13px; }
+  .tk :global(.tk-line .tk-lt) { font: 700 16px/1 'Barlow Condensed', sans-serif; }
+  .tk :global(.tk-line button) { width: 32px; height: 32px; border: 0; border-radius: 50%; background: var(--d3); color: var(--white); font-size: 18px; cursor: pointer; }
+  .tk :global(.tk-line button:hover) { background: var(--tk-red); color: #fff; }
+  .tk-total { display: flex; justify-content: space-between; align-items: baseline; margin: 12px 0; padding-top: 12px; border-top: 1px solid var(--d4); font: 700 18px/1 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .04em; }
+  .tk-total b { font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
   .tk-season { background: #FFF7E6; color: #7A4B00; padding: 10px 12px; border-radius: 8px; font-size: 14px; line-height: 1.5; }
   .tk-season a { color: #7A4B00; font-weight: 700; }
   .tk-form { display: grid; gap: 12px; margin-top: 12px; }
+  /* Floating labels */
+  .tk-fl { position: relative; }
+  .tk-fl input { width: 100%; box-sizing: border-box; min-height: 56px; padding: 22px 14px 8px; border: 1.5px solid var(--d4); border-radius: 12px; background: var(--d2); color: var(--white); font: 500 16px 'Barlow', sans-serif; transition: border-color .15s, box-shadow .15s; }
+  .tk-fl label { position: absolute; left: 15px; top: 18px; color: var(--lt); font: 500 16px/1 'Barlow', sans-serif; pointer-events: none; transition: transform .15s ease, font-size .15s ease, top .15s ease; }
+  .tk-fl input:focus { outline: none; border-color: var(--tk-red); box-shadow: 0 0 0 3px rgba(227, 30, 36, .18); }
+  .tk-fl input:focus + label, .tk-fl input:not(:placeholder-shown) + label { top: 9px; font-size: 12px; font-weight: 700; color: var(--red-text); }
+  .tk-fl input.bad { border-color: #A3161B; }
+  .tk-inline { margin: 5px 2px 0; font-size: 13px; font-weight: 600; color: #A3161B; }
+  .tk-inline:empty { display: none; }
   .tk-err { margin: 0; color: #A3161B; font-weight: 700; }
   .tk-err:empty { display: none; }
-  .tk-pay { min-height: 52px; font-size: 16px; }
-  .tk-pay:disabled { opacity: .5; cursor: not-allowed; }
+  .tk-pay { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 58px; border: 0; border-radius: 12px; background: var(--tk-red); color: #fff; font: 700 18px/1 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; box-shadow: 0 10px 22px -10px rgba(227, 30, 36, .7); transition: background .15s, transform .12s; }
+  .tk-pay svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .tk-pay:hover:not(:disabled) { background: var(--rd); }
+  .tk-pay:active:not(:disabled) { transform: scale(.98); }
+  .tk-pay:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
+  .tk-paysub { margin: -4px 0 0; text-align: center; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--lt); }
   .tk-small { margin: 0; color: var(--lt); font-size: 13px; line-height: 1.5; }
-  .tk [hidden] { display: none !important; }
-  /* Phones: the order sits under the list; a slim bar keeps the total in view. */
+  .tk-small a { color: var(--red-text); }
+
+  /* G. Cross-sell */
+  .tk-xsell { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 40px 0 10px; }
+  .tk-xcard { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: var(--tk-radius); background: var(--tk-ink); color: #fff; text-decoration: none; transition: transform .18s, box-shadow .18s; }
+  .tk-xcard:hover { transform: translateY(-2px); box-shadow: 0 14px 26px -14px rgba(0, 0, 0, .55); }
+  .tk-xcard--kitchen { background: linear-gradient(120deg, #0A1730, #10224A); }
+  .tk-xcard img { width: 72px; height: 72px; flex: none; }
+  .tk-xcard b { display: block; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: .02em; margin-bottom: 4px; }
+  .tk-xcard > span:nth-child(2) { flex: 1; min-width: 0; }
+  .tk-xcard > span:nth-child(2) > span { color: rgba(255, 255, 255, .82); font-size: 14px; line-height: 1.4; }
+  .tk-xicon { flex: none; width: 72px; height: 72px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; background: var(--tk-gold); color: var(--tk-ink); font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: .04em; }
+  .tk-xgo { font-size: 22px; }
+
+  /* H. FAQ */
+  .tk-faq { margin: 36px 0 50px; max-width: 820px; }
+  .tk-faq details { border-bottom: 1px solid var(--d4); }
+  .tk-faq summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; cursor: pointer; list-style: none; font: 700 18px/1.25 'Barlow Condensed', sans-serif; }
+  .tk-faq summary::-webkit-details-marker { display: none; }
+  .tk-faq summary::after { content: '+'; flex: none; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--d3); font: 700 20px/1 'Barlow', sans-serif; transition: transform .2s; }
+  .tk-faq details[open] summary::after { transform: rotate(45deg); background: var(--tk-red); color: #fff; }
+  .tk-faq p { margin: 0 0 16px; color: var(--lt); line-height: 1.6; }
+  .tk-faq a { color: var(--red-text); font-weight: 700; }
+
+  /* Phones: sticky bar above the bottom nav; the order opens as a slide-up sheet. */
   .tk-bar { display: none; }
   @media (max-width: 999px) {
-    .tk-bar:not([hidden]) { display: flex; position: sticky; bottom: 72px; z-index: 5; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 14px; border-radius: 12px; background: #15181D; color: #fff; box-shadow: 0 -6px 20px rgba(15,17,21,.18); }
-    .tk-bar b { font-size: 18px; }
-    .tk-bar a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; background: var(--red); color: #fff; text-decoration: none; font-weight: 700; }
+    .tk-bar:not([hidden]) { display: flex; position: fixed; left: 12px; right: 12px; bottom: calc(68px + env(safe-area-inset-bottom)); z-index: 1200; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 8px 8px 16px; border-radius: 14px; background: var(--tk-ink); color: #fff; box-shadow: 0 10px 28px rgba(15,17,21,.35); }
+    .tk-bar-txt { display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+    .tk-bar b { font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: .02em; }
+    .tk-bar button { min-height: 48px; padding: 0 20px; border: 0; border-radius: 10px; background: var(--tk-red); color: #fff; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+    .tk-sum { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1600; max-height: 88vh; overflow-y: auto; border-radius: 20px 20px 0 0; padding-bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateY(105%); visibility: hidden; transition: transform .28s ease, visibility 0s linear .28s; }
+    .tk-sum.open { transform: none; visibility: visible; transition: transform .28s ease; }
+    .tk-sheet-x { display: inline-flex; align-items: center; justify-content: center; }
+    .tk-scrim:not([hidden]) { position: fixed; inset: 0; z-index: 1550; background: rgba(5, 8, 14, .55); }
+    /* Keep the WhatsApp and MatchDay Kitchen buttons clear of the bar. */
+    :global(body:has(.tk-bar:not([hidden]))) :global(.wa-float) { bottom: calc(146px + env(safe-area-inset-bottom)) !important; }
+    :global(body:has(.tk-bar:not([hidden]))) :global(.kfab:not([hidden])) { bottom: calc(210px + env(safe-area-inset-bottom)) !important; }
+    .tk-wrap { padding-bottom: 90px; }
+  }
+  @media (max-width: 420px) { .tk-wrap { padding-left: 16px; padding-right: 16px; } .tk-hero-in { padding-left: 16px; padding-right: 16px; } }
+  @media (prefers-reduced-motion: reduce) {
+    .tk *, .tk :global(*) { animation: none !important; transition: none !important; }
+    .tk :global(.tk-card:hover), .tk :global(.tk-stand:hover), .tk-xcard:hover { transform: none; }
   }
 </style>
 
-<script is:inline>
+<script is:inline define:vars={{ LOGOS }}>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var naira = function (k) { return '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
   var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c != null && c !== false) n.append(c); } return n; };
+  var svg = function (html) { var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = html; return s; };
   var TZ = 'Africa/Lagos';
   var STATE = { on_sale: '', sold_out: 'Sold out', not_on_sale: 'Not on sale yet', closed: 'Played or closed' };
+  var TIERS = [['VIP', 'VIP Sitting'], ['Premium', 'Cover Stand'], ['Regular', 'Popular Stand']];
+  // TODO (Marvin to confirm): stand descriptions. Neutral wording only; no perks the club has not confirmed.
+  var STAND_TEXT = { VIP: 'Seats in the VIP section.', Premium: 'Seats in the covered stand.', Regular: 'Seats in the Popular Stand.' };
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var matches = [], rows = new Map(), season = null;
   var pre = new URLSearchParams(location.search).get('event');
+  var short = function (n) { return String(n || '').replace(/\s+FC$/, ''); };
+
+  // A club badge: its crest, or a circle with initials.
+  function badge(name, size) {
+    var src = LOGOS[name] || LOGOS[short(name)];
+    if (src) return el('img', { class: 'tk-badge', src: src, alt: '', width: size, height: size, loading: 'lazy', decoding: 'async' });
+    var ini = short(name).split(/\s+/).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase();
+    return el('span', { class: 'tk-badge tk-badge--mono', style: 'width:' + size + 'px;height:' + size + 'px', 'aria-hidden': 'true', text: ini || '?' });
+  }
+
+  // ── A. Next match in the hero, with a live countdown ──
+  var cdTimer;
+  function heroNext() {
+    var box = $('tkNext');
+    var now = Date.now();
+    var m = matches.filter(function (x) { return Date.parse(x.kickoff) > now && x.state !== 'closed'; }).sort(function (a, b) { return Date.parse(a.kickoff) - Date.parse(b.kickoff); })[0];
+    if (!m) { box.replaceChildren(el('p', { class: 'tk-next-k', text: 'Next home match' }), el('p', { class: 'tk-next-when', text: 'Fixtures for the next round will be announced soon.' })); return; }
+    var when = new Date(m.kickoff);
+    var d = when.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' });
+    var t = when.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
+    var cells = ['Days', 'Hrs', 'Min'].map(function (u) { var b = el('b', { text: '--' }); return { b: b, node: el('span', {}, b, el('small', { text: u })) }; });
+    box.replaceChildren(
+      el('p', { class: 'tk-next-k', text: (m.matchday ? 'Matchday ' + m.matchday + ' · ' : '') + 'Next home match' }),
+      el('div', { class: 'tk-next-teams' },
+        el('span', { class: 'tk-next-team' }, badge(m.homeTeam, 56), short(m.homeTeam)),
+        el('span', { class: 'tk-next-vs', text: 'VS' }),
+        el('span', { class: 'tk-next-team' }, badge(m.awayTeam, 56), short(m.awayTeam))),
+      el('p', { class: 'tk-next-when' }, el('time', { datetime: m.kickoff, text: d + ' · ' + t }), el('br'), m.venue),
+      el('div', { class: 'tk-next-cd', role: 'timer', 'aria-label': 'Time to kick-off' }, cells[0].node, cells[1].node, cells[2].node));
+    var tick = function () {
+      var s = Math.max(0, Math.floor((Date.parse(m.kickoff) - Date.now()) / 1000));
+      var v = [Math.floor(s / 86400), Math.floor(s % 86400 / 3600), Math.floor(s % 3600 / 60)];
+      cells.forEach(function (c, i) { c.b.textContent = i ? String(v[i]).padStart(2, '0') : String(v[i]); });
+    };
+    tick(); clearInterval(cdTimer); cdTimer = setInterval(tick, 30000);
+  }
+
+  // ── D. Stand cards (drive the existing "Stand for all ticked" select) ──
+  function stands() {
+    var box = $('tkStands'); box.replaceChildren();
+    var onSale = matches.filter(function (m) { return m.state === 'on_sale'; });
+    var lowest = {};
+    onSale.forEach(function (m) { m.tiers.forEach(function (t) { if (lowest[t.tier] == null || t.priceKobo < lowest[t.tier]) lowest[t.tier] = t.priceKobo; }); });
+    var offered = TIERS.filter(function (t) { return lowest[t[0]] != null; });
+    if (!offered.length) { box.append(el('p', { class: 'tk-hint', text: 'Stands and prices appear here when tickets go on sale.' })); return; }
+    var cheapest = offered.reduce(function (a, b) { return lowest[a[0]] <= lowest[b[0]] ? a : b; })[0];
+    var varies = function (tier) { var ps = onSale.map(function (m) { var t = m.tiers.find(function (x) { return x.tier === tier; }); return t ? t.priceKobo : null; }).filter(function (x) { return x != null; }); return ps.some(function (p) { return p !== ps[0]; }); };
+    var radio = function (value, checked) { var r = el('input', { type: 'radio', name: 'standAll', value: value }); r.checked = checked; r.addEventListener('change', function () { var s = $('allTier'); s.value = value; s.dispatchEvent(new Event('change')); }); return r; };
+    offered.forEach(function (t) {
+      var tier = t[0];
+      box.append(el('label', { class: 'tk-stand' }, radio(tier, $('allTier').value === tier),
+        tier === cheapest && offered.length > 1 ? el('span', { class: 'tk-flag', text: 'Best value' }) : null, // lowest price per ticket (a fact, not a perk)
+        // TODO (Marvin to confirm): a "Most Popular" badge needs sales data or the club's say-so.
+        el('b', { text: t[1] }),
+        el('span', { class: 'tk-price', text: (varies(tier) ? 'from ' : '') + naira(lowest[tier]) + ' per ticket' }),
+        el('small', { text: STAND_TEXT[tier] })));
+    });
+    box.append(el('label', { class: 'tk-stand tk-stand--keep' }, radio('', !$('allTier').value), el('b', { text: 'Keep as is' }), el('small', { text: 'Choose the stand on each match card instead.' })));
+  }
 
   function draw() {
-    var list = $('tkList'); list.replaceChildren();
-    if (!matches.length) { list.append(el('li', { class: 'tk-empty' }, 'No home matches yet. See the ', el('a', { href: '/fixtures/', text: 'fixtures' }), '.')); return; }
+    var list = $('tkList'); list.replaceChildren(); list.removeAttribute('aria-busy');
+    if (!matches.length) { list.append(el('li', { class: 'tk-empty' }, 'No home matches yet. See the ', el('a', { href: '/fixtures/', text: 'fixtures' }), '.')); stands(); heroNext(); return; }
+    var now = Date.now();
+    var firstUpcoming = matches.filter(function (m) { return Date.parse(m.kickoff) > now; }).sort(function (a, b) { return Date.parse(a.kickoff) - Date.parse(b.kickoff); })[0];
     matches.forEach(function (m) {
       var can = m.state === 'on_sale';
-      var cb = el('input', { type: 'checkbox', 'aria-label': 'Buy tickets: ' + m.homeTeam + ' vs ' + m.awayTeam, disabled: !can });
-      var tier = el('select', { 'aria-label': 'Stand' });
+      var title = 'Lobi Stars vs ' + short(m.awayTeam);
+      var cb = el('input', { type: 'checkbox', 'aria-label': 'Select ' + title + (m.matchday ? ', Matchday ' + m.matchday : ''), disabled: !can });
+      // The existing stand and quantity selects stay the source of truth (hidden).
+      var tier = el('select', { 'aria-label': 'Stand', class: 'tk-hidden-sel', tabindex: '-1', 'aria-hidden': 'true' });
       m.tiers.forEach(function (t) { tier.add(new Option(t.label + ' · ' + naira(t.priceKobo) + (t.left !== null ? ' · ' + t.left + ' left' : ''), t.tier, false, false)); if (t.left === 0) tier.options[tier.options.length - 1].disabled = true; });
       var firstOpen = m.tiers.find(function (t) { return t.left !== 0; }); if (firstOpen) tier.value = firstOpen.tier;
-      var qty = el('select', { 'aria-label': 'Number of tickets' });
+      var qty = el('select', { 'aria-label': 'Number of tickets', class: 'tk-hidden-sel', tabindex: '-1', 'aria-hidden': 'true' });
       var fillQty = function () { var t = m.tiers.find(function (x) { return x.tier === tier.value; }); var max = Math.min(m.maxPerOrder, t && t.left !== null ? t.left : m.maxPerOrder); var cur = Number(qty.value) || 1; qty.replaceChildren(); for (var i = 1; i <= Math.max(1, max); i++) qty.add(new Option(i + ' ticket' + (i === 1 ? '' : 's'), i, false, i === Math.min(cur, max))); };
       fillQty();
-      var pick = el('div', { class: 'tk-pick', hidden: true }, el('label', { class: 'tk-f' }, 'Stand', tier), el('label', { class: 'tk-f' }, 'Tickets', qty));
+      // Visual: segmented stand control and a quantity stepper.
+      var segName = 'tier-' + m.id;
+      var seg = el('div', { class: 'tk-seg', role: 'radiogroup', 'aria-label': 'Stand for ' + title });
+      m.tiers.forEach(function (t) {
+        var r = el('input', { type: 'radio', name: segName, value: t.tier, disabled: t.left === 0 });
+        r.checked = tier.value === t.tier;
+        r.addEventListener('change', function () { tier.value = t.tier; tier.dispatchEvent(new Event('change')); });
+        seg.append(el('label', { title: t.left !== null ? t.left + ' left' : null }, r, t.label + ' · ' + naira(t.priceKobo)));
+      });
+      var out = el('output', { 'aria-live': 'polite', text: qty.value });
+      var minus = el('button', { type: 'button', 'aria-label': 'One ticket fewer for ' + title, text: '−' });
+      var plus = el('button', { type: 'button', 'aria-label': 'One more ticket for ' + title, text: '+' });
+      var syncStep = function () { out.textContent = qty.value; minus.disabled = Number(qty.value) <= 1; plus.disabled = Number(qty.value) >= qty.options.length; Array.from(seg.querySelectorAll('input')).forEach(function (i) { i.checked = i.value === tier.value; }); };
+      var bump = function (d) { var n = Math.min(qty.options.length, Math.max(1, Number(qty.value) + d)); qty.value = String(n); qty.dispatchEvent(new Event('change')); };
+      minus.addEventListener('click', function () { bump(-1); }); plus.addEventListener('click', function () { bump(1); });
+      var step = el('div', { class: 'tk-step', role: 'group', 'aria-label': 'Tickets for ' + title }, minus, out, plus);
+      var pick = el('div', { class: 'tk-pick', hidden: true }, seg, step, tier, qty);
       var when = new Date(m.kickoff);
-      var date = when.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + when.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
+      var time = when.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
       var low = m.tiers.length ? Math.min.apply(null, m.tiers.map(function (t) { return t.priceKobo; })) : 0;
       var left = m.tiers.some(function (t) { return t.left !== null; }) ? m.tiers.reduce(function (s, t) { return s + (t.left || 0); }, 0) : null;
       var stateText = m.state === 'not_on_sale' && m.opensAt ? 'On sale from ' + new Date(m.opensAt).toLocaleDateString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short' }) : STATE[m.state];
-      var row = el('li', { class: 'tk-row' + (can ? '' : ' off') },
-        el('label', { class: 'tk-check' }, cb),
-        el('div', {},
-          el('div', { class: 'tk-head' }, el('b', { text: (m.matchday ? 'Matchday ' + m.matchday + ': ' : '') + 'Lobi Stars vs ' + m.awayTeam.replace(/\s+FC$/, '') }), stateText ? el('span', { class: 'tk-state' + (m.state === 'sold_out' ? ' out' : ''), text: stateText }) : null),
-          el('div', { class: 'tk-meta', text: date + ' · ' + m.venue + (can && low ? ' · from ' + naira(low) : '') + (can && left !== null ? ' · ' + left + ' left' : '') }),
+      var days = (Date.parse(m.kickoff) - now) / 864e5;
+      var flag = firstUpcoming && firstUpcoming.id === m.id ? el('span', { class: 'tk-flag', text: 'Next match' }) : days >= 0 && days <= 7 ? el('span', { class: 'tk-flag tk-flag--week', text: 'This week' }) : null;
+      var ribbon = el('span', { class: 'tk-ribbon', text: 'Selected', hidden: true });
+      var row = el('li', { class: 'tk-card' + (can ? '' : ' off') },
+        ribbon,
+        el('div', { class: 'tk-date', 'aria-hidden': 'true' },
+          el('small', { text: when.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'short' }) }),
+          el('b', { text: when.toLocaleDateString('en-GB', { timeZone: TZ, day: 'numeric' }) }),
+          el('span', { text: when.toLocaleDateString('en-GB', { timeZone: TZ, month: 'short' }) })),
+        el('div', { class: 'tk-body' },
+          el('div', { class: 'tk-top' },
+            el('div', {},
+              el('div', { class: 'tk-labels' }, m.matchday ? el('span', { class: 'tk-md', text: 'Matchday ' + m.matchday }) : null, flag, stateText ? el('span', { class: 'tk-state' + (m.state === 'sold_out' ? ' out' : ''), text: stateText }) : null),
+              el('div', { class: 'tk-teams' }, el('span', { class: 'tk-team' }, badge(m.homeTeam, 30), 'Lobi Stars'), el('i', { text: 'vs' }), el('span', { class: 'tk-team' }, badge(m.awayTeam, 30), short(m.awayTeam))),
+              el('div', { class: 'tk-meta' }, el('time', { datetime: m.kickoff, text: when.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + time }), el('br'), 'McCarthy Stadium, Makurdi' + (can && left !== null ? ' · ' + left + ' left' : ''))),
+            el('div', { class: 'tk-side' },
+              can && low ? el('span', { class: 'tk-from' }, 'from', el('b', { text: naira(low) })) : null,
+              el('label', { class: 'tk-toggle' }, cb, svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>')),
+              el('span', { class: 'tk-toggle-l', 'aria-hidden': 'true', text: can ? 'Select' : '' }))),
           pick));
-      var r = { m: m, cb: cb, tier: tier, qty: qty, row: row, pick: pick };
-      cb.addEventListener('change', function () { pick.hidden = !cb.checked; row.classList.toggle('on', cb.checked); summary(); });
-      tier.addEventListener('change', function () { fillQty(); summary(); });
-      qty.addEventListener('change', summary);
+      var r = { m: m, cb: cb, tier: tier, qty: qty, row: row, pick: pick, ribbon: ribbon, sync: syncStep };
+      cb.addEventListener('change', function () { pick.hidden = !cb.checked; row.classList.toggle('on', cb.checked); ribbon.hidden = !cb.checked; summary(); });
+      tier.addEventListener('change', function () { fillQty(); syncStep(); summary(); });
+      qty.addEventListener('change', function () { syncStep(); summary(); });
+      syncStep();
       rows.set(m.id, r);
       list.append(row);
-      if (pre && pre === m.id && can) { cb.checked = true; pick.hidden = false; row.classList.add('on'); }
+      if (pre && pre === m.id && can) { cb.checked = true; pick.hidden = false; row.classList.add('on'); ribbon.hidden = false; }
     });
+    stands(); heroNext();
     summary();
   }
 
   function selected() { return Array.from(rows.values()).filter(function (r) { return r.cb.checked; }); }
-  function set(r, on) { if (r.cb.disabled) return; r.cb.checked = on; r.pick.hidden = !on; r.row.classList.toggle('on', on); }
+  function set(r, on) { if (r.cb.disabled) return; r.cb.checked = on; r.pick.hidden = !on; r.row.classList.toggle('on', on); if (r.ribbon) r.ribbon.hidden = !on; }
   $('selAll').addEventListener('click', function () { rows.forEach(function (r) { set(r, true); }); summary(); });
   $('selNext3').addEventListener('click', function () { var n = 0; rows.forEach(function (r) { var on = !r.cb.disabled && n < 3; if (on) n++; set(r, on); }); summary(); });
   $('selNone').addEventListener('click', function () { rows.forEach(function (r) { set(r, false); }); summary(); });
   $('allTier').addEventListener('change', function () { var v = this.value; if (!v) return; selected().forEach(function (r) { var o = Array.from(r.tier.options).find(function (x) { return x.value === v && !x.disabled; }); if (o) { r.tier.value = v; r.tier.dispatchEvent(new Event('change')); } }); summary(); });
 
+  // Animated total (the screen-reader text gets the final amount only).
+  var shownTotal = 0, totalAnim;
+  function showTotal(k) {
+    $('sumTotalLive').textContent = 'Total ' + naira(k);
+    var from = shownTotal; shownTotal = k; cancelAnimationFrame(totalAnim);
+    if (reduce || from === k) { $('sumTotal').textContent = naira(k); return; }
+    var t0 = performance.now();
+    var frame = function (t) { var p = Math.min(1, (t - t0) / 350); $('sumTotal').textContent = naira(from + (k - from) * (1 - Math.pow(1 - p, 3))); if (p < 1) totalAnim = requestAnimationFrame(frame); };
+    totalAnim = requestAnimationFrame(frame);
+  }
+  // B. Progress: 1 choose matches → 2 stand → 3 pay.
+  var typed = false;
+  function progress(n) {
+    var cur = !n ? 1 : typed ? 3 : 2;
+    document.querySelectorAll('#tkSteps li').forEach(function (li) { var s = Number(li.dataset.step); li.classList.toggle('done', s < cur); li.classList.toggle('now', s === cur); li.setAttribute('aria-current', s === cur ? 'step' : 'false'); });
+  }
+
   function summary() {
-    var sel = selected(), total = 0, lines = $('sumLines');
+    var sel = selected(), total = 0, tickets = 0, lines = $('sumLines');
     lines.replaceChildren();
-    if (!sel.length) lines.append(el('li', { class: 'tk-muted', text: 'No matches selected yet.' }));
+    if (!sel.length) lines.append(el('li', { class: 'tk-muted', text: 'No matches selected yet. Tick a match above to start your order.' }));
     var basket = sel.map(function (r) {
       var t = r.m.tiers.find(function (x) { return x.tier === r.tier.value; }), q = Number(r.qty.value) || 1, sub = t.priceKobo * q;
-      total += sub;
-      lines.append(el('li', {}, el('span', { text: 'Lobi Stars vs ' + r.m.awayTeam.replace(/\s+FC$/, '') + ' · ' + t.label + ' × ' + q }), el('b', { text: naira(sub) })));
+      total += sub; tickets += q;
+      var title = 'Lobi Stars vs ' + short(r.m.awayTeam);
+      lines.append(el('li', { class: 'tk-line' },
+        el('span', {}, el('b', { text: title }), el('small', { text: t.label + ' × ' + q })),
+        el('span', { class: 'tk-lt', text: naira(sub) }),
+        el('button', { type: 'button', 'aria-label': 'Remove ' + title, text: '×', onclick: function () { set(r, false); summary(); } })));
       return { eventId: r.m.id, tier: t.tier, quantity: q, unitKobo: t.priceKobo };
     });
-    $('sumTotal').textContent = naira(total);
+    showTotal(total);
     $('tkBar').hidden = !sel.length;
     $('barTotal').textContent = naira(total);
-    $('barCount').textContent = sel.length + ' match' + (sel.length === 1 ? '' : 'es');
+    $('barCount').textContent = sel.length + ' match' + (sel.length === 1 ? '' : 'es') + ', ' + tickets + ' ticket' + (tickets === 1 ? '' : 's');
+    if (!sel.length) closeSheet();
     $('payBtn').disabled = !sel.length;
-    $('payBtn').textContent = sel.length ? 'Pay ' + naira(total) + ' with Paystack' : 'Pay with Paystack';
+    $('payText').textContent = sel.length ? 'Pay ' + naira(total) + ' with Paystack' : 'Pay with Paystack';
+    progress(sel.length);
     // Season Ticket saving: every remaining home match on sale, one stand, same number of tickets.
     var onSale = matches.filter(function (m) { return m.state === 'on_sale'; }).map(function (m) { return m.id; });
     var s = $('sumSeason'); s.hidden = true;
@@ -186,9 +591,15 @@ const siteKey = settings.turnstileSiteKey;
   }
 
   function load() {
+    var list = $('tkList');
+    list.setAttribute('aria-busy', 'true');
+    list.replaceChildren(el('li', { class: 'tk-skel', 'aria-hidden': 'true' }), el('li', { class: 'tk-skel', 'aria-hidden': 'true' }), el('li', { class: 'tk-sr', text: 'Loading the home matches…' }));
     fetch('/api/tickets/catalogue', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (d) {
       matches = d.matches || []; rows.clear(); draw();
-    }).catch(function () { $('tkList').replaceChildren(el('li', { class: 'tk-empty' }, 'The matches could not be loaded. Please refresh the page.')); });
+    }).catch(function () {
+      list.removeAttribute('aria-busy');
+      list.replaceChildren(el('li', { class: 'tk-empty' }, 'The matches could not be loaded just now. Check your connection.', el('br'), el('button', { type: 'button', text: 'Try again', onclick: load })));
+    });
   }
   fetch('/api/season-tickets').then(function (r) { return r.json(); }).then(function (d) {
     season = d; summary();
@@ -196,9 +607,25 @@ const siteKey = settings.turnstileSiteKey;
   }).catch(function () {});
   load();
 
-  $('buyForm').addEventListener('submit', function (e) {
+  // ── E. Phones: the order as a slide-up sheet ──
+  var sheet = $('tkSum'), scrim = $('tkScrim'), lastFocus = null;
+  function openSheet() { lastFocus = document.activeElement; sheet.classList.add('open'); scrim.hidden = false; $('barBtn').setAttribute('aria-expanded', 'true'); sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); $('sheetClose').focus(); }
+  function closeSheet() { if (!sheet.classList.contains('open')) return; sheet.classList.remove('open'); scrim.hidden = true; $('barBtn').setAttribute('aria-expanded', 'false'); sheet.removeAttribute('role'); sheet.removeAttribute('aria-modal'); if (lastFocus) lastFocus.focus(); }
+  $('barBtn').addEventListener('click', openSheet);
+  $('sheetClose').addEventListener('click', closeSheet);
+  scrim.addEventListener('click', closeSheet);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSheet(); });
+
+  // ── F. Inline checks (shown as hints; the server checks everything again) ──
+  var f = $('buyForm');
+  ['fName', 'fEmail', 'fPhone'].forEach(function (id) { $(id).addEventListener('input', function () { if (!typed) { typed = true; progress(selected().length); } }); });
+  var check = function (id, msgId, ok, msg) { var bad = $(id).value.trim() && !ok($(id).value.trim()); $(id).classList.toggle('bad', !!bad); $(id).setAttribute('aria-invalid', bad ? 'true' : 'false'); $(msgId).textContent = bad ? msg : ''; };
+  $('fEmail').addEventListener('blur', function () { check('fEmail', 'fEmailMsg', function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }, 'Please check your email address: your tickets are sent here.'); });
+  $('fPhone').addEventListener('blur', function () { check('fPhone', 'fPhoneMsg', function (v) { return /^(\+?234|0)?[789][01]\d{8}$/.test(v.replace(/[\s-]/g, '')); }, 'Please enter a Nigerian mobile number, e.g. 0803 123 4567.'); });
+
+  f.addEventListener('submit', function (e) {
     e.preventDefault();
-    var f = this, err = $('buyErr'); err.textContent = '';
+    var err = $('buyErr'); err.textContent = '';
     var lines = summary().map(function (l) { return { eventId: l.eventId, tier: l.tier, quantity: l.quantity }; });
     if (!lines.length) { err.textContent = 'Tick at least one match.'; return; }
     var tokenEl = f.querySelector('[name="cf-turnstile-response"]');

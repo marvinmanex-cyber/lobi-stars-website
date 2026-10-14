@@ -73,6 +73,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | C18 | **Partner report emails** | For each partner, who should receive the monthly report (name and email of their marketing contact); add them in Admin › Partners › Monthly partner reports, or send them to the website manager. |
 | C13 | **Partnership page** | Audience figures (followers, attendance, website visitors) and the partnership brochure PDF. |
 | C19 | **Transparent crest files** | Club crests now show without a white circle, so a background baked into the file shows. Please send a **transparent PNG or SVG** of the **Wikki Tourists** crest (its white inside couldn't be separated from the background safely, so it still shows a white square) and, if possible, a light version of the **Bichi First** crest for dark backgrounds (its black laurels disappear on dark). Partner logos are unchanged (white cards). |
+| C20 | **Tickets page wording** | The redesigned /tickets page has placeholder text to confirm: a short description for each stand (now "Seats in the VIP section / covered stand / Popular Stand"), whether a stand should be marked **Most popular** (only "Best value" for the cheapest is shown now), the **gate opening time** for home matches, and the club's policy on **passing a ticket to someone else**. |
 
 ## D. Shop, membership and commercial decisions
 
