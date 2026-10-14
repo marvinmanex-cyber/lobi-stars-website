@@ -22,8 +22,9 @@ function update(): boolean {
     }
     js.hidden = false; if (plain) plain.hidden = true;
     const v: Record<string, number> = { d: Math.floor(s / 86400), h: Math.floor(s % 86400 / 3600), m: Math.floor(s % 3600 / 60), s: s % 60 };
+    // The seconds tile (where there is one) always shows, so the countdown visibly ticks.
     const secs = cd.querySelector<HTMLElement>('[data-u="s"]');
-    if (secs) secs.hidden = s >= 86400;
+    if (secs) secs.hidden = false;
     cd.querySelectorAll<HTMLElement>('[data-u]').forEach(t => {
       const n = t.querySelector('.fx-num')!;
       const text = t.dataset.u === 'd' ? String(v.d) : pad(v[t.dataset.u!]);

@@ -3,8 +3,8 @@
 // the server for every homepage request (functions/index.js). The match is
 // matchBarMatch() (rules.js), the same next match as the programme strip.
 //   [HOME · MATCHDAY 1] [crest] Lobi Stars FC VS Bichi First FC [crest]
-//   | Sun 8 Nov | 4:00 PM | McCarthy Stadium, Makurdi, Benue State |
-//   | Kick-off in 25d 05h 42m | [Buy ticket from ₦1,000] [More ▾]
+//   McCarthy Stadium, Makurdi, Benue State   (under the names)
+//   | Sun 8 Nov | 4:00 PM | Kick-off in 25d 05h 42m 10s | [Buy ticket from ₦1,000] [More ▾]
 // One main button: Buy ticket (home match on sale), Listen live (live match),
 // otherwise Match Centre. The other actions are in the "More" menu.
 import { TEAM_LOGOS } from './teamLogos.js';
@@ -23,7 +23,7 @@ function countdown(iso) {
   const tile = (u, label, hidden = false) => `<span class="mb-tile" data-u="${u}"${hidden ? ' hidden' : ''}><b class="fx-num">--</b><small>${label}</small></span>`;
   return `<div class="mb-cd" data-fx-cd="${esc(new Date(Date.parse(iso)).toISOString())}">
 <div class="fx-cd-live" hidden><span class="mb-live"><span class="mb-pulse" aria-hidden="true"></span>LIVE</span></div>
-<div class="fx-cd-js" hidden><span class="mb-cd-h">Kick-off in</span><span class="fx-tiles mb-tiles" role="timer" aria-live="off">${tile('d', 'Days')}${tile('h', 'Hrs')}${tile('m', 'Min')}${tile('s', 'Sec', true)}</span></div>
+<div class="fx-cd-js" hidden><span class="mb-cd-h">Kick-off in</span><span class="fx-tiles mb-tiles" role="timer" aria-live="off">${tile('d', 'Days')}${tile('h', 'Hrs')}${tile('m', 'Min')}${tile('s', 'Sec')}</span></div>
 <span class="fx-cd-plain"></span></div>`;
 }
 
@@ -65,9 +65,9 @@ export function matchBarHtml(matches, { now = Date.now() } = {}) {
 
   return `<div class="mb-card${live ? ' is-live' : ''}" role="group" aria-label="Next match: ${esc(title)}">
 <div class="mb-main"><div class="mb-meta"><span class="mb-ha mb-ha--${home ? 'home' : 'away'}">${home ? 'Home' : 'Away'}</span>${m.matchday ? `<span class="mb-md">Matchday ${esc(m.matchday)}</span>` : `<span class="mb-md">${esc(m.competition || 'Next match')}</span>`}</div>
-<div class="mb-teams">${team(m.home_team, 'h')}${mid}${team(m.away_team, 'a')}</div></div>
+<div class="mb-teams">${team(m.home_team, 'h')}${mid}${team(m.away_team, 'a')}</div>
+<p class="mb-venue"><span class="mb-sr">Venue: </span>${esc(m.venue || 'Venue to be confirmed')}</p></div>
 ${when}
-<p class="mb-venue"><span class="mb-sr">Venue: </span>${esc(m.venue || 'Venue to be confirmed')}</p>
 ${status}
 <div class="mb-acts">${primary}${home && !postponed ? '<a class="mb-btn mb-btn--food" href="/kitchen/" data-track="kitchen_click" data-track-label="match_bar">Order food to your seat</a>' : ''}<div class="mb-more"><button type="button" class="mb-btn mb-btn--more" aria-haspopup="true" aria-expanded="false" aria-controls="mbMenu">More <span aria-hidden="true">&#9662;</span></button><ul class="mb-menu" id="mbMenu" role="menu" aria-label="More for ${esc(title)}" hidden>${more.join('')}</ul></div></div>
 ${jsonLd(m)}</div>`;

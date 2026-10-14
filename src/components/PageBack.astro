@@ -78,7 +78,12 @@ const parent = crumbs[crumbs.length - 1][1];
     if (!b || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
     var fromHere = false;
     try { fromHere = !!document.referrer && new URL(document.referrer).origin === location.origin && new URL(document.referrer).pathname !== location.pathname; } catch (err) {}
-    if (history.length > 1 && (fromHere || history.state)) { e.preventDefault(); history.back(); }
+    // Pages reached inside the site by the page-transition router carry history.state.index > 0
+    // (the first page opened is index 0, and the router puts a state on every page, so a plain
+    // history.state check sent fans who opened a page directly out of the site). Otherwise the
+    // link's own address (one level up) is used.
+    var inSite = !!(history.state && typeof history.state.index === 'number' && history.state.index > 0);
+    if (history.length > 1 && (fromHere || inSite)) { e.preventDefault(); history.back(); }
   });
 })();
 </script>

@@ -34,7 +34,7 @@ test('home match on sale: "Buy ticket from ₦1,000"; Match Centre, calendar, sh
   assert.match(html, /McCarthy Stadium, Makurdi, Benue State/);
   assert.ok(!/\bWAT\b/.test(html));
   assert.match(html, /data-fx-cd="2026-11-08T15:00:00.000Z"/);
-  assert.match(html, /data-u="s" hidden/, 'seconds only under 24 hours');
+  assert.match(html, /data-u="s"><b/, 'seconds always shown, so the countdown visibly ticks');
   assert.match(html, /"@type":"SportsEvent"/);
   assert.match(html, /class="club-logo fx-crest"/);
 });

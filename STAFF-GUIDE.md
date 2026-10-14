@@ -1493,8 +1493,9 @@ alert now** and **Recent alerts** (how many devices it reached).
 
 Every page except the homepage has a bar under the menu with **← Back** and
 where the fan is (e.g. *Home › The Club › Honours*). **Back** returns to the
-page they came from on our site. If they arrived from Google or a shared link,
-it goes up one level (a story → News → Home). Each part of the trail can be
+page they came from on our site. If they arrived from Google, a shared link or
+typed the address (nothing on our site to go back to), it goes up one level
+(a story → News → Home; /tickets → Home), never off the site. Each part of the trail can be
 clicked. The Match Centre keeps its own **← Fixtures & results** link, and the
 "You're offline" screen has **← Go back**. New pages get the bar automatically;
 nothing needs adding.
@@ -1721,8 +1722,8 @@ from here. Matchday Operator, Media and Super Admin staff can use it.
 **How fans see a match:** every match card (homepage, Fixtures, Results)
 shows **Date**, **Kick-off** and **Venue** as three separate items (the
 stadium name above the town and state). The next Lobi Stars match is the
-large dark card with "Next match" and a countdown in Days, Hours and Minutes
-(plus Seconds on the last day); it turns into a red LIVE badge at kick-off and
+large dark card with "Next match" and a live countdown in Days, Hours,
+Minutes and Seconds; it turns into a red LIVE badge at kick-off and
 the final score after full time. Home matches have a red edge, away matches a
 black one. Times are always Nigerian time, so no time zone label is shown.
 
@@ -1820,9 +1821,11 @@ use **Apply to all** at the top (leave a box empty to
 keep what each match already has).
 
 **The /tickets page** (redesigned 14 Oct 2026, same buying steps): a stadium
-picture with the next home match and a countdown; a 3-step progress bar
+picture with the next home match (both crests shown whole) and a live
+countdown with seconds; a 3-step progress bar
 (Choose matches, Choose your stand, Pay); each home match as a ticket card
-with a round **Select** button, "Next match" / "This week" labels, a stand
+with a coloured date block (red, gold, navy, maroon and black in turn) and a
+round **Select** button, "Next match" / "This week" labels, a stand
 switch and a − 1 + ticket counter; stand cards (VIP Sitting, Cover Stand,
 Popular Stand, with the price per ticket; "Best value" marks the cheapest);
 the order and checkout on the right (a slide-up sheet with a bottom bar on
@@ -1831,8 +1834,9 @@ and answers. Stand descriptions and two answers (gate times, passing tickets
 on) still need the club's wording (HANDOVER-TODO C20).
 
 **What fans see:** under the homepage picture, a slim **match bar** shows the
-next Lobi Stars match: both clubs, date, kick-off, venue, a countdown and one
-button: **Buy ticket from ₦…** for a home match on sale, **Listen live** while
+next Lobi Stars match: both clubs on one line with the venue under them,
+date, kick-off, a live countdown (days, hours, minutes and seconds) and one
+main button: **Buy ticket from ₦…** for a home match on sale, **Listen live** while
 the match is live, otherwise **Match Centre**. "More" holds Match Centre, Add
 to calendar, Share and Listen live. The Match Day Programme line sits just
 below it. Further down, "Upcoming Matches" shows the two matches after that,

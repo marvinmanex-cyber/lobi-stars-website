@@ -73,8 +73,8 @@ export function detailsHtml({ kickoff, venue, tbc = false } = {}) {
 }
 
 /**
- * The countdown tiles (Days, Hours, Minutes, and Seconds under 24 hours when
- * `seconds`). Without JavaScript the plain date and time show instead.
+ * The countdown tiles (Days, Hours, Minutes, plus Seconds when `seconds`, so
+ * the featured card visibly ticks). Without JavaScript the plain date and time show instead.
  */
 export function countdownHtml(kickoff, { seconds = false } = {}) {
   const p = lagosParts(kickoff);
@@ -82,7 +82,7 @@ export function countdownHtml(kickoff, { seconds = false } = {}) {
   const tile = (unit, label, hidden = false) => `<div class="fx-tile"${hidden ? ' hidden' : ''} data-u="${unit}"><span class="fx-num">--</span><span class="fx-unit">${label}</span></div>`;
   return `<div class="fx-cd" data-fx-cd="${esc(new Date(Date.parse(kickoff)).toISOString())}"${seconds ? ' data-secs' : ''}>
 <div class="fx-cd-live" hidden><span class="fx-live"><span class="fx-pulse" aria-hidden="true"></span>LIVE</span></div>
-<div class="fx-cd-js" hidden><p class="fx-cd-h">Kick-off in</p><div class="fx-tiles" role="timer" aria-live="off">${tile('d', 'Days')}${tile('h', 'Hours')}${tile('m', 'Minutes')}${seconds ? tile('s', 'Seconds', true) : ''}</div></div>
+<div class="fx-cd-js" hidden><p class="fx-cd-h">Kick-off in</p><div class="fx-tiles" role="timer" aria-live="off">${tile('d', 'Days')}${tile('h', 'Hours')}${tile('m', 'Minutes')}${seconds ? tile('s', 'Seconds') : ''}</div></div>
 <p class="fx-cd-plain">Kick-off: <time datetime="${p.iso}">${esc(p.date)}, ${esc(p.time)}</time></p></div>`;
 }
 
