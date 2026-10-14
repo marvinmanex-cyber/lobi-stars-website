@@ -331,6 +331,12 @@ refunded*). Personalisation needs Paystack set up (the same account as tickets).
      black box, ask them for a transparent PNG or SVG; the web team can also
      clean it up with `scripts/logo-to-transparent.mjs` (instructions at the
      top of that file).
+     The one exception is **Zeva Premium Lager** (Principal Partner): its logo is
+     a cut-out with no white background, shown without a card, larger, in the
+     header, on its own row at the top of the footer's Official Partners and on
+     its partner page. The web team switches this on with `logoNoCard: true`
+     in the partner's file; the original logo is kept in
+     `public/images/originals/`.
    - **Website** (starting with https://), a one-line **Short Description**
      and **Partner Since** (the year).
    - **Display Order**: 1 shows first within its tier.

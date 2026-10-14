@@ -12,6 +12,8 @@ const WHITE_LABEL_HIDDEN = ['aeson-sports-management'];
 // Partners appear once per page: not in the footer on the homepage ("Our Official Partners") or the partner pages.
 const partnersOnPage = /^\/(partners(\/|$)|$)/.test(Astro.url.pathname);
 const partners = partnersOnPage ? [] : (await getPartners()).filter(p => !(whiteLabel && WHITE_LABEL_HIDDEN.includes(p.id)));
+const principal = partners.find(p => p.data.tier === 'Principal Partner');
+const others = partners.filter(p => p !== principal);
 
 const columns = [
   { title: 'Club', links: [
@@ -101,8 +103,11 @@ const year = new Date().getFullYear();
           <h2>Official Partners</h2>
           <a href="/partners">All partners &rarr;</a>
         </div>
+        {principal && (
+          <div class="sf-principal"><PartnerLogo partner={principal} size={principal.data.logoNoCard ? 'feature' : 'small'} label="Principal Partner" /></div>
+        )}
         <ul>
-          {partners.map(p => <li><PartnerLogo partner={p} size="tiny" /></li>)}
+          {others.map(p => <li><PartnerLogo partner={p} size="tiny" /></li>)}
         </ul>
       </div>
     )}
@@ -176,6 +181,10 @@ const year = new Date().getFullYear();
   .sf-partners-head h2 { margin: 0; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
   .sf-partners-head a { color: rgba(255, 255, 255, .8); font-size: 14px; text-decoration: none; }
   .sf-partners-head a:hover { color: #fff; text-decoration: underline; }
+  /* Principal partner on its own row, larger than the other partners. */
+  .sf-principal { display: flex; justify-content: center; margin: 0 0 22px; }
+  .sf-principal :global(.pl-label) { color: #FFC72C; font-size: 12px; }
+  .sf-principal :global(.pl-age) { font-size: 11.5px; color: rgba(255, 255, 255, .85); }
   .sf-partners ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 14px; }
   .sf-partners :global(.pl-age) { color: rgba(255, 255, 255, .75); font-size: 10px; }
   .sf-bottom {

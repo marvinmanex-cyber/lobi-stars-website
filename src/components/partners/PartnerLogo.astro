@@ -7,11 +7,14 @@
 // Card sizes by tier (desktop / mobile):
 //   principal 260x130 / 200x100   kit   220x110 / 170x85
 //   club      180x90  / 140x70    small 150x75  / 120x60   tiny 110x55 / 96x48
+//   feature   (footer principal partner, no card) 96px / 72px tall
+// Partners with logoNoCard (a transparent cut-out logo) show without the white
+// card: just the logo, taller than the card would allow.
 import { logoSrc, logoAlt, website, type Partner } from '../../lib/partners';
 
 interface Props {
   partner: Partner;
-  size?: 'principal' | 'kit' | 'club' | 'small' | 'tiny';
+  size?: 'principal' | 'kit' | 'club' | 'small' | 'tiny' | 'feature';
   /** Link to the partner's detail page ('page'), their website ('site') or nothing. */
   link?: 'page' | 'site' | 'none';
   label?: string;
@@ -22,11 +25,12 @@ const site = website(partner);
 const href = link === 'page' ? `/partners/${partner.id}/` : link === 'site' ? site : null;
 const external = link === 'site' && !!site;
 const Tag = href ? 'a' : 'div';
+const bare = !!src && partner.data.logoNoCard;
 // Display width of each card size, so browsers download a small enough logo file.
-const SIZES = { principal: '260px', kit: '220px', club: '180px', small: '150px', tiny: '110px' };
+const SIZES = { principal: '190px', kit: '220px', club: '180px', small: '150px', tiny: '110px', feature: '100px' };
 const card = partner.data.cardColor ? `background:${partner.data.cardColor};border-color:${partner.data.cardColor};` : undefined;
 ---
-<div class:list={['pl', `pl--${size}`]}>
+<div class:list={['pl', `pl--${size}`, { 'pl--bare': bare }]}>
   <Tag
     class="pl-box"
     style={card}
@@ -69,6 +73,14 @@ const card = partner.data.cardColor ? `background:${partner.data.cardColor};bord
   .pl--tiny .pl-box { width: 110px; height: 55px; padding: 6px 8px; border-radius: 10px; }
   .pl--tiny .pl-name { font-size: 12px; }
 
+  /* Cut-out logo without the white card (logoNoCard), height-led, never stretched. */
+  .pl--bare .pl-box { width: auto; background: none; border: 0; padding: 0; box-shadow: none; border-radius: 6px; }
+  .pl--bare .pl-box img { width: auto; height: 100%; max-width: none; }
+  .pl--bare.pl--principal .pl-box { height: 180px; width: auto; padding: 0; }
+  .pl--bare.pl--tiny .pl-box { height: 55px; padding: 0; }
+  .pl--feature .pl-box { height: 96px; }
+  .pl--feature .pl-name { font-size: 26px; }
+
   .pl-label { max-width: 220px; font: 700 12px/1.25 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
   .pl-age { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; color: var(--lt); }
 
@@ -82,6 +94,9 @@ const card = partner.data.cardColor ? `background:${partner.data.cardColor};bord
     .pl--small .pl-box { width: 120px; height: 60px; padding: 8px; }
     .pl--small .pl-name { font-size: 13px; }
     .pl--tiny .pl-box { width: 96px; height: 48px; }
+    .pl--bare.pl--principal .pl-box { height: 140px; width: auto; }
+    .pl--bare.pl--tiny .pl-box { width: auto; }
+    .pl--feature .pl-box { height: 72px; }
     .pl-label { max-width: 160px; font-size: 11px; }
   }
 </style>

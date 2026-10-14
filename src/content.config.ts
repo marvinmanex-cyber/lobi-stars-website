@@ -130,6 +130,9 @@ const partners = defineCollection({
     // Card background behind the logo, only for logos on a dark background
     // (e.g. "#000000"), so the logo blends in. Default: white.
     cardColor: z.string().regex(/^(#[0-9a-fA-F]{6})?$/).nullable().optional(),
+    // true when the logo file is a transparent cut-out that already has its own
+    // shape (e.g. Zeva's label): shown without the white card, a little larger.
+    logoNoCard: z.boolean().default(false),
     website: z.string().nullable().optional(),
     shortDescription: z.string().default(''),
     since: z.coerce.number().int().nullable().optional(),

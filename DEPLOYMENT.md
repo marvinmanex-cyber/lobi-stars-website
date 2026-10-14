@@ -373,6 +373,14 @@ Tests: `tests/health.test.mjs`.
   request): they keep their original files on their white cards
   (PartnerLogo.astro, card colour still works) and their round white card on
   share pictures.
+- Exception, Zeva Premium Lager only (requested 14 October 2026): the white
+  background was removed from `public/images/zeva-premium-lager.png` (800 px,
+  transparent, made from the club's 1254 px upload; original kept in
+  `public/images/originals/zeva-premium-lager-original.png`). Its partner file
+  has `logoNoCard: true`, so PartnerLogo shows it without the white card
+  (180 px tall on its page, 140 px on phones). The footer shows the Principal
+  Partner on its own row (`size="feature"`, 96 px / 72 px tall); the header
+  logo is 44 px / 36 px tall.
 
 ## Match cards and wording (fixtures redesign, 14 October 2026)
 
