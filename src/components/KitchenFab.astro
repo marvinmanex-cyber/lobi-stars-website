@@ -1,0 +1,41 @@
+---
+// Floating "MatchDay Kitchen" button on phones, shown only on match days
+// (while in-seat ordering is open, /api/food/menu). Sits above the WhatsApp
+// button; not shown on the kitchen and food pages themselves. The answer is
+// kept for 5 minutes per visit so pages don't ask on every click.
+---
+<a class="kfab" id="kfab" href="/kitchen/" hidden data-track="kitchen_click" data-track-label="floating_button">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-1.7 1.2-2.5 3.4-2.5 6.5h2.5V21" /></svg>
+  <span>MatchDay Kitchen</span>
+</a>
+
+<style is:global>
+  .kfab { display: none; }
+  @media (max-width: 767px) {
+    .kfab:not([hidden]) {
+      display: inline-flex; align-items: center; gap: 8px; position: fixed; right: 16px; z-index: 998;
+      bottom: calc(140px + env(safe-area-inset-bottom)); min-height: 48px; padding: 0 16px 0 14px; border-radius: 999px;
+      background: #18C93A; color: #04140A; text-decoration: none; box-shadow: 0 6px 18px -4px rgba(24, 201, 58, .6);
+      font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase;
+      animation: kfab-in .35s ease both;
+    }
+    .kfab svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+    .kfab:focus-visible { outline: 3px solid #0A1730; outline-offset: 2px; }
+  }
+  @keyframes kfab-in { from { opacity: 0; transform: translateY(10px); } }
+  @media (prefers-reduced-motion: reduce) { .kfab { animation: none !important; } }
+</style>
+
+<script is:inline>
+(function () {
+  var fab = document.getElementById('kfab');
+  if (!fab || /^\/(kitchen|food)(\/|$)/.test(location.pathname) || !window.matchMedia('(max-width: 767px)').matches) return;
+  var show = function (open) { fab.hidden = !open; };
+  try { var c = JSON.parse(sessionStorage.getItem('ls_kfab') || 'null'); if (c && Date.now() - c.at < 300000) return show(c.open); } catch (e) {}
+  fetch('/api/food/menu').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+    var open = !!(d && d.open);
+    try { sessionStorage.setItem('ls_kfab', JSON.stringify({ open: open, at: Date.now() })); } catch (e) {}
+    show(open);
+  }).catch(function () {});
+})();
+</script>

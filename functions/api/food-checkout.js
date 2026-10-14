@@ -6,7 +6,8 @@ import { normalizeNigerianPhone, rateLimit, tooMany, clientIp, ensureFanSchema }
 import { listMatches, isMatchDay, toSummary } from './_lib/matchCentre.js';
 import { raiseFoodAlert } from './_lib/foodAlerts.js';
 
-// POST /api/food-checkout { name, seat, stand, phone, email, notes, adultConfirmed, items: [{ id, qty }], fulfilment?, pickupPoint? }
+// POST /api/food-checkout { name, seat, stand, phone, email, notes, adultConfirmed, items: [{ id, qty }], fulfilment?, pickupPoint?, returnTo? }
+// returnTo 'kitchen': after paying, Paystack brings the fan back to /kitchen/ (MatchDay Kitchen) instead of /food/order/.
 // fulfilment 'pickup' (collect at a pickup point from Ordering settings) instead of seat delivery.
 // Saves the order straight away as AWAITING_PAYMENT with a reference such as
 // FD-20261011-0042, then returns the Paystack checkout address. Prices come
@@ -74,7 +75,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   try {
     const p = await initialize(env, {
       email, amountKobo: totalKobo, reference: ref,
-      callbackUrl: `${origin}/food/order/?ref=${encodeURIComponent(ref)}&t=${encodeURIComponent(token)}`,
+      callbackUrl: `${origin}${b.returnTo === 'kitchen' ? '/kitchen/' : '/food/order/'}?ref=${encodeURIComponent(ref)}&t=${encodeURIComponent(token)}`,
       metadata: { kind: 'food', orderId: id, ref, seat, stand },
     });
     return Response.json({ authorizationUrl: p.authorization_url, ref, orderId: id });

@@ -597,14 +597,32 @@ each package: name, what's included, and a price (or price text such as "From
 
 ## 13. In-seat food orders (Admin › Commerce › In-Seat Food › Orders)
 
-**Where fans find it:** the **Tickets** menu at the top of every page (In-Seat
-Food Ordering), an "In-Seat Food Ordering" section on the homepage under
-Upcoming Matches, "Order food to your seat" in the homepage match bar's
-**More** menu and on the Match Centre page of every home match, the ticket
-confirmation page, and every ticket email. The homepage says "Ordering opens
-on Lobi Stars home match days" and, while ordering is open, "Ordering is open
-now" with the match. Ordering opens and closes with the ordering setting in
-Food Menu & Prices.
+**MatchDay Kitchen (lobistarsfc.com/kitchen):** the page fans use to order
+food to their seat, made for phones: the next home match, whether the kitchen
+is open (with "Orders close in…" or "Opens in…"), their seat (section, row,
+seat), the menu by category ("Match Day Combos" first), a cart, and checkout
+with **Pay online** (Paystack) or **Order via WhatsApp**. After ordering, the
+same page shows the order's progress: Received, Preparing, On the way,
+Delivered (it follows the status you set in Orders). Orders arrive in the
+admin, the Kitchen Screen and Telegram exactly as before. A fan who wants it
+at half-time chooses "At half-time" and the order note starts with "Deliver at
+half-time."
+
+**Seat QR codes:** a QR code on a seat can open
+`lobistarsfc.com/kitchen/?section=Cover%20Stand&row=12&seat=34`; the seat is
+then filled in for the fan. Use the stand names exactly as in Food Menu &
+Prices › Ordering (stands list).
+
+**Where fans find it:** the green **MatchDay Kitchen** button in the top menu,
+the "MatchDay Kitchen" section on the homepage under Upcoming Matches, the
+green "Order food to your seat" button in the homepage match bar (home
+matches), a floating MatchDay Kitchen button on phones on match days, the
+Match Centre page of every home match, the ticket confirmation page, every
+ticket email, the footer, Help and the Stadium page. The kitchen opens and
+closes with the ordering setting in Food Menu & Prices (Automatic opens it
+before kick-off of each home match and closes it 3 hours after kick-off).
+The older page lobistarsfc.com/food still works until the club confirms the
+new page.
 
 ### How an order works
 1. The fan chooses food, enters their **name, seat, stand, phone and email**
@@ -755,6 +773,11 @@ orders (needs a Termii account).
 ---
 
 ## 14. Managing the food menu, prices and photos (Admin › Commerce › Food Menu & Prices)
+
+**MatchDay Kitchen extras** (optional, per item): **Spice level** (Not spicy,
+Mild, Medium, Hot: shown as small red dots) and a **Badge** (Best Seller,
+Spicy or New). To show combos first, create a category with "Combo" in its
+name, e.g. **Match Day Combos**; it is always listed first on MatchDay Kitchen.
 
 Open **Food Menu & Prices** in the menu on the left (or the "Edit the menu"
 button on Food Orders). Changes show on the public food page straight away.

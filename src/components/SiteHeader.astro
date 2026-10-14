@@ -41,7 +41,9 @@ const isActive = (href: string) => {
                 </ul>
               </>
             ) : (
-              <a class:list={['sh-link', { active: isActive(item.href) }]} href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
+              item.highlight
+                ? <a class:list={['sh-link', 'sh-pill', { active: isActive(item.href) }]} href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}><svg class="sh-pill-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-1.7 1.2-2.5 3.4-2.5 6.5h2.5V21" /></svg>{item.label}</a>
+                : <a class:list={['sh-link', { active: isActive(item.href) }]} href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
             )}
           </li>
         ))}
@@ -94,7 +96,7 @@ const isActive = (href: string) => {
   <ul class="mm-list">
     {MAIN_NAV.map(item => (
       <li>
-        <a class="mm-link" href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.label}</a>
+        <a class:list={['mm-link', { 'mm-pill': item.highlight }]} href={item.href} aria-current={isActive(item.href) ? 'page' : undefined}>{item.highlight && <Fragment set:html='<svg class="mm-pill-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-1.7 1.2-2.5 3.4-2.5 6.5h2.5V21" /></svg>' />}{item.label}</a>
         {item.children && (
           <ul class="mm-sub">
             {item.children.map(c => <li>{c.external
@@ -128,6 +130,12 @@ const isActive = (href: string) => {
   }
   .sh-link svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; transition: transform .2s; }
   .sh-link:hover, .sh-link.active, .sh-link[aria-expanded='true'] { color: var(--red-text); border-bottom-color: var(--red); }
+  /* MatchDay Kitchen: a green pill with a small food icon. */
+  .sh-link.sh-pill { margin: 0 4px; padding: 9px 14px; border: 0; border-radius: 999px; background: #18C93A; color: #04140A; box-shadow: 0 4px 12px -4px rgba(24, 201, 58, .55); white-space: nowrap; }
+  /* Narrow desktops: a little less space per link so the menu stays on one line. */
+  @media (min-width: 1181px) and (max-width: 1320px) { .sh-link { padding: 10px 6px; letter-spacing: .6px; } .sh-link.sh-pill { padding: 8px 11px; margin: 0 2px; } .sh-inner { gap: 10px; } .sh .sh-logo .sh-name { display: none; } }
+  .sh-link.sh-pill:hover, .sh-link.sh-pill.active { background: #12A12E; color: #fff; border: 0; }
+  .sh-link.sh-pill .sh-pill-ico { width: 15px; height: 15px; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
   .sh-link[aria-expanded='true'] svg { transform: rotate(180deg); }
   .sh-link:focus-visible, .sh-icon:focus-visible, .sh-logo:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; border-radius: 4px; }
 
@@ -208,6 +216,9 @@ const isActive = (href: string) => {
   .mm-sub { padding: 0 0 10px 20px; }
   .mm-sub a { display: block; padding: 9px 20px; text-decoration: none; color: var(--lt); font: 600 15px/1.2 'Barlow Condensed', sans-serif; }
   .mm a[aria-current='page'], .mm a:hover { color: var(--red-text); }
+  .mm-link.mm-pill { display: inline-flex; align-items: center; gap: 8px; margin: 4px 0; padding: 10px 16px; border-radius: 999px; background: #18C93A; color: #04140A; }
+  .mm-link.mm-pill:hover, .mm-link.mm-pill[aria-current='page'] { background: #12A12E; color: #fff; }
+  .mm :global(.mm-pill-ico) { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
 
   @media (max-width: 1180px) {
     .sh-nav { display: none; }

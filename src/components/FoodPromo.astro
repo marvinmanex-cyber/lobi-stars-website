@@ -1,19 +1,20 @@
 ---
-// Homepage band "In-Seat Food Ordering": tells fans the service exists and
-// links to the menu (/food). Placed with the matchday sections (after
+// Homepage band "MatchDay Kitchen": tells fans they can order food to their
+// seat and links to /kitchen/. Placed with the matchday sections (after
 // Upcoming Matches). Says "ordering opens on home match days" by default; on
 // the day, when ordering is open (/api/food/menu), it says so and names the match.
 ---
 <section class="fp" aria-labelledby="fp-title">
   <div class="fp-wrap"><div class="fp-inner">
+    <img class="fp-logo" src="/images/matchday-kitchen-logo.png" alt="" width="96" height="96" loading="lazy" decoding="async" />
     <div class="fp-text">
       <p class="fp-kicker">Matchday at McCarthy Stadium</p>
-      <h2 class="fp-title" id="fp-title">In-Seat Food Ordering</h2>
+      <h2 class="fp-title" id="fp-title">MatchDay Kitchen</h2>
       <p class="fp-lede">Order food and drinks from your phone, pay online and we bring them to your seat. Stay in your seat and don't miss a moment of the match.</p>
       <p class="fp-status" data-food-status>Ordering opens on Lobi Stars home match days.</p>
     </div>
     <div class="fp-acts">
-      <a class="fp-btn" href="/food/">See the menu</a>
+      <a class="fp-btn" href="/kitchen/" data-track="kitchen_click" data-track-label="home_section">Order food to your seat</a>
       <a class="fp-link" href="/tickets/">Buy match tickets</a>
     </div>
   </div></div>
@@ -30,21 +31,23 @@
     background: var(--d2); border: 1px solid var(--d4); border-left: 5px solid var(--red); border-radius: 14px;
     box-shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 6px 16px -6px rgba(16, 24, 40, .10);
   }
-  .fp-text { flex: 1 1 420px; min-width: 0; }
+  .fp-logo { width: 96px; height: 96px; flex: none; object-fit: contain; }
+  .fp-text { flex: 1 1 380px; min-width: 0; }
   .fp-kicker { margin: 0 0 6px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--red-text); }
   .fp-title { margin: 0 0 8px; font: 400 clamp(28px, 3.6vw, 38px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--white); }
   .fp-lede { margin: 0 0 8px; max-width: 620px; font-size: 16px; line-height: 1.5; color: var(--white); }
   .fp-status { margin: 0; font: 700 14px/1.4 'Barlow Condensed', sans-serif; letter-spacing: .04em; color: var(--lt); }
   .fp-status.is-open { color: #17643A; }
   .fp-acts { display: flex; align-items: center; gap: 10px 18px; flex-wrap: wrap; }
-  .fp-btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 8px; background: var(--red); color: #fff; text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; }
-  .fp-btn:hover, .fp-btn:focus-visible { background: var(--rd); }
+  .fp-btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 8px; background: #18C93A; color: #04140A; text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+  .fp-btn:hover, .fp-btn:focus-visible { background: #12A12E; color: #fff; }
   .fp-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--red-text); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; text-decoration: underline; text-underline-offset: 3px; }
   .fp a:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
   @media (max-width: 600px) {
     .fp { padding-bottom: 28px; }
     .fp-wrap { padding: 0 16px; }
     .fp-inner { padding: 20px 18px; }
+    .fp-logo { width: 72px; height: 72px; }
     .fp-acts { width: 100%; }
     .fp-btn { flex: 1; justify-content: center; }
   }

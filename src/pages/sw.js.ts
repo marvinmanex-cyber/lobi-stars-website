@@ -19,7 +19,7 @@ const VERSION = Date.now().toString(36);
 const worker = `// Lobi Stars FC service worker (build ${VERSION}). See src/pages/sw.js.ts.
 const STATIC = 'ls-static-${VERSION}';
 const OFFLINE = '/offline/';
-const PRECACHE = [OFFLINE, '/images/icon-192.png', '/images/lobi-stars-fc.jpg', '/images/lobi-stars-badge.png', '/manifest.json'];
+const PRECACHE = [OFFLINE, '/images/icon-192.png', '/images/lobi-stars-fc.jpg', '/images/lobi-stars-badge.png', '/kitchen/', '/images/matchday-kitchen-logo.png', '/manifest.json'];
 const MAX_ITEMS = 160;
 const PROGRAMME = 'programme-pages-v1';
 const PROGRAMME_PAGE = /^\\/api\\/programme\\/[a-z0-9-]+\\/page\\/[1-4]\\.jpg$/;
@@ -89,7 +89,8 @@ self.addEventListener('fetch', event => {
 
   // Pages: always the network; the offline page only when there is no connection.
   if (req.mode === 'navigate') {
-    event.respondWith(fetch(req).catch(async () => (await caches.match(OFFLINE)) || Response.error()));
+    // Offline: a cached copy of the page if there is one (e.g. /kitchen/), else the offline page.
+    event.respondWith(fetch(req).catch(async () => (await caches.match(req)) || (await caches.match(OFFLINE)) || Response.error()));
     return;
   }
   if (!STATIC_FILE.test(url.pathname) || req.headers.has('range')) return;

@@ -49,7 +49,6 @@ export function matchBarHtml(matches, { now = Date.now() } = {}) {
   const more = [];
   if (!primary.includes(`href="${centre}"`)) more.push(item(`<a role="menuitem" href="${centre}">Match Centre</a>`));
   if (!postponed && p) more.push(item(`<a role="menuitem" href="/api/calendar?match=${encodeURIComponent(slug)}">Add to calendar</a>`));
-  if (home && !postponed) more.push(item('<a role="menuitem" href="/food/">Order food to your seat</a>'));
   more.push(item(`<button type="button" role="menuitem" data-fx-share data-url="${centre}" data-title="${esc(title)}">Share</button>`));
   if (!live) more.push(item(listen('', ' role="menuitem"')));
 
@@ -70,6 +69,6 @@ export function matchBarHtml(matches, { now = Date.now() } = {}) {
 ${when}
 <p class="mb-venue"><span class="mb-sr">Venue: </span>${esc(m.venue || 'Venue to be confirmed')}</p>
 ${status}
-<div class="mb-acts">${primary}<div class="mb-more"><button type="button" class="mb-btn mb-btn--more" aria-haspopup="true" aria-expanded="false" aria-controls="mbMenu">More <span aria-hidden="true">&#9662;</span></button><ul class="mb-menu" id="mbMenu" role="menu" aria-label="More for ${esc(title)}" hidden>${more.join('')}</ul></div></div>
+<div class="mb-acts">${primary}${home && !postponed ? '<a class="mb-btn mb-btn--food" href="/kitchen/" data-track="kitchen_click" data-track-label="match_bar">Order food to your seat</a>' : ''}<div class="mb-more"><button type="button" class="mb-btn mb-btn--more" aria-haspopup="true" aria-expanded="false" aria-controls="mbMenu">More <span aria-hidden="true">&#9662;</span></button><ul class="mb-menu" id="mbMenu" role="menu" aria-label="More for ${esc(title)}" hidden>${more.join('')}</ul></div></div>
 ${jsonLd(m)}</div>`;
 }

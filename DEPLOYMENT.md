@@ -297,6 +297,25 @@ and Super Admins are emailed (when `RESEND_API_KEY` is set). Admin page
 work: point a free outside monitor (e.g. UptimeRobot, every 5 minutes) at it.
 Tests: `tests/health.test.mjs`.
 
+## MatchDay Kitchen (/kitchen/, 14 October 2026)
+
+- Page: `src/pages/kitchen/index.astro`, styles `src/styles/kitchen.css`,
+  script `src/lib/kitchen.ts`, logo `public/images/matchday-kitchen-logo.png`
+  (+ `public/kitchen-favicon-32.png`, `public/kitchen-touch-icon.png`,
+  `public/images/og-kitchen.jpg`; original in design-sources/logo-originals).
+- Uses the existing food backend only: `/api/food/menu`, `/api/food-checkout`
+  (Pay Online; `returnTo: 'kitchen'` brings the fan back to /kitchen/?ref=&t=),
+  `/api/food/whatsapp-order` (same message format, Turnstile), `/api/food/order`
+  (status). Prices are always worked out on the server (`priceCart`).
+- Additive changes: food_items gets `spice` (0-3) and `badge` columns (added
+  automatically on first use); `/api/food/menu` also returns `opensAt` and
+  `closesAt` (automatic ordering mode).
+- Seat: section = stand, "Row X, Seat Y" in the seat field (20 characters);
+  "At half-time" is written at the start of the order note.
+- Site: green MatchDay Kitchen pill in the main menu, match bar button,
+  homepage section, floating button on phones on match days
+  (`src/components/KitchenFab.astro`), links instead of /food (which still works).
+
 ## Homepage: one hero and a slim match bar (14 October 2026)
 
 - Order: hero, then the match bar (`src/components/news/MatchBar.astro`, built

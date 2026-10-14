@@ -1,0 +1,136 @@
+---
+// MatchDay Kitchen: order food and drinks to your seat at McCarthy Stadium.
+// The menu, prices, opening times and orders all come from the existing
+// in-seat food backend (Admin › Food Menu & Prices): /api/food/menu,
+// /api/food-checkout (Pay Online, Paystack), /api/food/whatsapp-order
+// (Order via WhatsApp) and /api/food/order (status). Prices are always
+// worked out on the server. Seat QR codes: /kitchen/?section=…&row=…&seat=…
+// Styles: src/styles/kitchen.css. Script: src/lib/kitchen.ts.
+import Layout from '../../layouts/Layout.astro';
+import fanSettings from '../../data/fan-settings.json';
+import '../../styles/kitchen.css';
+const siteKey = fanSettings.turnstileSiteKey;
+---
+<Layout
+  title="MatchDay Kitchen | Lobi Stars FC"
+  description="Order food and drinks to your seat at McCarthy Stadium on Lobi Stars match days. Pick from the menu, pay online or order via WhatsApp, and we bring it to you."
+  image="/images/og-kitchen.jpg"
+  imageAlt="MatchDay Kitchen: great food, every match"
+>
+  <Fragment slot="head">
+    <link rel="icon" type="image/png" sizes="32x32" href="/kitchen-favicon-32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/kitchen-touch-icon.png" />
+  </Fragment>
+
+  <div class="kx" id="kx">
+    <header class="kx-head">
+      <div class="kx-wrap">
+        <img class="kx-logo" src="/images/matchday-kitchen-logo.png" alt="MatchDay Kitchen" width="84" height="84" />
+        <div class="kx-brand">
+          <h1>MatchDay Kitchen</h1>
+          <p>Great food, every match. Delivered to your seat at McCarthy Stadium.</p>
+        </div>
+        <button type="button" class="kx-cartbtn" id="kxCartBtn" aria-haspopup="dialog" aria-controls="kxDrawer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 12H6.2L5 8z" /><path d="M9 8V6.5a3 3 0 0 1 6 0V8" /></svg>
+          <span>Cart</span><span class="kx-count" id="kxCount" aria-label="0 items">0</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="kx-match" aria-label="Next home match and kitchen status">
+      <div class="kx-wrap">
+        <p class="kx-fix" id="kxFix">Lobi Stars home matches at McCarthy Stadium<small>The kitchen opens on home match days.</small></p>
+        <div class="kx-state" aria-live="polite">
+          <span class="kx-pill kx-pill--closed" id="kxPill"><span class="kx-dot" aria-hidden="true"></span>Checking…</span>
+          <span class="kx-cd" id="kxCd"></span>
+        </div>
+      </div>
+    </section>
+
+    <div class="kx-wrap">
+      <p class="kx-banner kx-offline" id="kxOffline" hidden><b>You're offline</b>Check your connection. Your cart is saved on this phone.</p>
+      <p class="kx-banner" id="kxClosed" hidden><b>Kitchen closed</b><span id="kxClosedText">Ordering opens on Lobi Stars home match days. You can still look at the menu.</span></p>
+    </div>
+
+    <section class="kx-seat" id="kxSeatBar" aria-label="Your seat">
+      <div class="kx-wrap">
+        <span class="kx-seat-t">Your seat</span>
+        <label class="kx-f"><span>Section</span><span id="kxSectionWrap"><input id="kxSection" autocomplete="off" placeholder="e.g. Cover Stand" maxlength="60" /></span></label>
+        <label class="kx-f"><span>Row</span><input id="kxRow" inputmode="text" autocomplete="off" maxlength="4" placeholder="Row" /></label>
+        <label class="kx-f"><span>Seat</span><input id="kxSeat" inputmode="numeric" autocomplete="off" maxlength="5" placeholder="Seat" /></label>
+      </div>
+    </section>
+
+    <nav class="kx-tabs" aria-label="Menu categories"><div class="kx-wrap" id="kxTabs"></div></nav>
+
+    <section class="kx-wrap kx-menu" id="kxMenu" aria-label="Menu">
+      <p class="kx-empty">Loading the menu…</p>
+    </section>
+
+    <!-- Confirmation and order status (after ordering, or back from Paystack: /kitchen/?ref=…&t=…) -->
+    <section class="kx-wrap kx-done" id="kxDone" hidden tabindex="-1" aria-labelledby="kxDoneH">
+      <div class="kx-done-card">
+        <h2 id="kxDoneH">We have your order</h2>
+        <p class="kx-ref">Order <b id="kxRef"></b></p>
+        <ol class="kx-steps" id="kxSteps" aria-label="Order progress">
+          <li data-step="1">Received</li><li data-step="2">Preparing</li><li data-step="3">On the way</li><li data-step="4">Delivered</li>
+        </ol>
+        <p class="kx-status" id="kxStatus" aria-live="polite"></p>
+        <div class="kx-sum" id="kxSum"></div>
+        <div class="kx-done-acts">
+          <a class="kx-btn kx-btn--wa" id="kxWaOpen" hidden>Open WhatsApp to send your order</a>
+          <button type="button" class="kx-btn kx-btn--ghost" id="kxWaCopy" hidden>Copy order message</button>
+          <button type="button" class="kx-btn kx-btn--pay" id="kxAgain">Order something else</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="kx-bar" id="kxBar">
+      <button type="button" id="kxBarBtn" aria-haspopup="dialog" aria-controls="kxDrawer"><span id="kxBarText">View cart</span><b id="kxBarTotal"></b></button>
+    </div>
+
+    <dialog class="kx-drawer" id="kxDrawer" aria-labelledby="kxDrawerH">
+      <div class="kx-dhead"><h2 id="kxDrawerH">Your order</h2><button type="button" class="kx-x" id="kxClose" aria-label="Close your order">&times;</button></div>
+      <form class="kx-dbody" id="kxForm" novalidate>
+        <ul class="kx-lines" id="kxLines"></ul>
+        <div class="kx-total"><span>Total</span><span id="kxTotal">₦0</span></div>
+        <p class="kx-small" id="kxMin" hidden></p>
+
+        <fieldset class="kx-fs">
+          <legend>When</legend>
+          <div class="kx-radios">
+            <label class="kx-radio"><input type="radio" name="when" value="now" checked /> As soon as possible</label>
+            <label class="kx-radio"><input type="radio" name="when" value="half-time" /> At half-time</label>
+          </div>
+          <label class="kx-f"><span>Note for the kitchen (optional)</span><textarea id="kxNote" maxlength="150" placeholder="e.g. no pepper, extra sauce"></textarea></label>
+        </fieldset>
+
+        <fieldset class="kx-fs">
+          <legend>Your details</legend>
+          <div class="kx-seatsum"><span id="kxSeatSum">Seat not set</span><button type="button" class="kx-link" id="kxSeatEdit">Change seat</button></div>
+          <label class="kx-f"><span>Name</span><input id="kxName" autocomplete="name" maxlength="60" required /></label>
+          <label class="kx-f"><span>Phone (Nigerian mobile)</span><input id="kxPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="0803 123 4567" required /></label>
+          <label class="kx-f"><span>Email (for Pay Online receipt)</span><input id="kxEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" /></label>
+          <label class="kx-check" id="kxAdultWrap" hidden><input type="checkbox" id="kxAdult" /> I am 18 or older (your order has alcoholic drinks). Drink responsibly.</label>
+          <div class="kx-trap" aria-hidden="true"><label>Leave empty <input id="kxTrap" tabindex="-1" autocomplete="off" /></label></div>
+        </fieldset>
+
+        <p class="kx-err" id="kxErr" role="alert" hidden></p>
+        <div class="kx-pay">
+          <button type="submit" class="kx-btn kx-btn--pay" id="kxPayBtn">Pay online</button>
+          <div id="kxWaBox" hidden>
+            {siteKey && <div class="cf-turnstile" data-sitekey={siteKey} data-theme="dark"></div>}
+            <button type="button" class="kx-btn kx-btn--wa" id="kxWaBtn" style="width:100%">Order via WhatsApp</button>
+          </div>
+        </div>
+        <p class="kx-small" id="kxSmall">Pay online with card, bank transfer or USSD (Paystack). Your order goes to the kitchen as soon as payment is confirmed.</p>
+      </form>
+    </dialog>
+  </div>
+  {siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+</Layout>
+
+<script>
+  import { startKitchen } from '../../lib/kitchen';
+  startKitchen();
+</script>

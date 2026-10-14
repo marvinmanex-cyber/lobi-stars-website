@@ -103,6 +103,10 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
             <div class="form-grp"><label class="form-lbl" for="fMax">Most per order (optional)</label><input class="form-inp" id="fMax" type="number" min="1" max="50" /></div>
             <div class="form-grp"><label class="form-lbl" for="fStock">Stock this match (optional)</label><input class="form-inp" id="fStock" type="number" min="0" placeholder="No limit" /></div>
           </div>
+          <div class="form-row">
+            <div class="form-grp"><label class="form-lbl" for="fSpice">Spice level (MatchDay Kitchen)</label><select class="form-inp" id="fSpice"><option value="0">Not spicy</option><option value="1">Mild</option><option value="2">Medium</option><option value="3">Hot</option></select></div>
+            <div class="form-grp"><label class="form-lbl" for="fBadge">Badge (MatchDay Kitchen)</label><select class="form-inp" id="fBadge"><option value="">None</option><option value="best-seller">Best Seller</option><option value="spicy">Spicy</option><option value="new">New</option></select></div>
+          </div>
           <div class="fm-checks">
             <label><input type="checkbox" id="fAvail" checked /> Show on the menu</label>
             <label><input type="checkbox" id="fSold" /> Sold out</label>
@@ -355,6 +359,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     $('fName').value = item?.name || ''; $('fPrice').value = item?.price || ''; $('fCat').value = item?.category || S.categories[0]?.id || '';
     $('fDesc').value = item?.description || ''; $('fEmoji').value = item?.emoji || ''; $('fMax').value = item?.maxPerOrder ?? ''; $('fStock').value = item?.stock ?? '';
     $('fAvail').checked = item ? item.available : true; $('fSold').checked = !!item?.soldOut; $('fAdult').checked = !!item?.adult;
+    $('fSpice').value = String(item?.spice || 0); $('fBadge').value = item?.badge || '';
     photoId = item?.photoId || null; photoUrl = item?.photo || null;
     $('crop').hidden = true; $('drop').hidden = false; $('formErr').hidden = true;
     $('hist').innerHTML = item?.history?.length ? '<p class="form-lbl">History</p><ul>' + item.history.map(h => `<li>${esc(new Date(h.at).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }))}: ${esc(h.text)}${h.by ? ` (${esc(h.by)})` : ''}</li>`).join('') + '</ul>' : '';
@@ -374,6 +379,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       await api({ action: 'save', id: editing?.id, item: {
         name: $('fName').value, price: Number($('fPrice').value), category: $('fCat').value, description: $('fDesc').value, emoji: $('fEmoji').value,
         photoId, maxPerOrder: $('fMax').value, stock: $('fStock').value, available: $('fAvail').checked, soldOut: $('fSold').checked, adult: $('fAdult').checked,
+        spice: Number($('fSpice').value), badge: $('fBadge').value,
       } });
       $('dlg').close();
       msg(editing ? 'Item saved.' : 'Item added to the menu.', true);

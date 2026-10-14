@@ -53,6 +53,9 @@ import '../../styles/club-logo.css';
   .mb :global(.mb-btn--primary:hover), .mb :global(.mb-btn--primary:focus-visible) { background: var(--rd); border-color: var(--rd); color: #fff; }
   .mb :global(.mb-btn--primary small) { font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; opacity: .92; }
   .mb :global(.mb-btn--more:hover), .mb :global(.mb-btn--more[aria-expanded="true"]) { border-color: var(--red); color: var(--red-text); }
+  /* MatchDay Kitchen (home matches). */
+  .mb :global(.mb-btn--food) { background: #18C93A; border-color: #18C93A; color: #04140A; }
+  .mb :global(.mb-btn--food:hover), .mb :global(.mb-btn--food:focus-visible) { background: #12A12E; border-color: #12A12E; color: #fff; }
   .mb :global(.mb-more) { position: relative; }
   .mb :global(.mb-menu) { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 200px; margin: 0; padding: 6px; list-style: none; background: var(--d2); border: 1px solid var(--d4); border-radius: 10px; box-shadow: 0 12px 28px -8px rgba(16, 24, 40, .3); }
   .mb :global(.mb-menu[hidden]) { display: none; }
@@ -76,7 +79,9 @@ import '../../styles/club-logo.css';
     .mb :global(.mb-cd) { min-width: 0; padding-left: 0; border-left: 0; justify-self: end; text-align: right; }
     .mb :global(.mb-cd-h) { display: none; }
     .mb :global(.mb-venue) { max-width: none; padding-left: 0; border-left: 0; font-size: 13px; }
+    .mb :global(.mb-acts) { flex-wrap: wrap; }
     .mb :global(.mb-acts .mb-btn--primary) { flex: 1; }
+    .mb :global(.mb-acts .mb-btn--food) { order: 3; flex: 1 1 100%; }
   }
   @media (max-width: 420px) {
     .mb { padding: 0 16px; margin-top: -20px; }

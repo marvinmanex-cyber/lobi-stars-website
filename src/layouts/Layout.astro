@@ -6,6 +6,7 @@ import CookieConsent from '../components/CookieConsent.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import MobileTabBar from '../components/MobileTabBar.astro';
+import KitchenFab from '../components/KitchenFab.astro';
 import LiveBar from '../components/commentary/LiveBar.astro';
 import { ClientRouter } from 'astro:transitions';
 import { CONTACT } from '../lib/site';
@@ -227,6 +228,7 @@ main.bare{padding-top:0;min-height:0;}
 
 <SiteFooter whiteLabel={whiteLabel} />
 <MobileTabBar />
+{!bare && !adminPage && <KitchenFab />}
 {softNav && <LiveBar />}
 </>}
 

@@ -21,8 +21,9 @@ test('home match on sale: "Buy ticket from ₦1,000"; Match Centre, calendar, sh
   assert.equal(primary(html), 'Buy ticket from ₦1,000');
   assert.match(html, /href="\/tickets\/\?event=md1"/);
   const more = menu(html);
-  for (const t of ['Match Centre', 'Add to calendar', 'Order food to your seat', 'Share', 'Listen live']) assert.ok(more.includes(t), t);
-  assert.ok(!menu(matchBarHtml([AWAY], { now: NOW })).includes('Order food'), 'food ordering only for home matches');
+  for (const t of ['Match Centre', 'Add to calendar', 'Share', 'Listen live']) assert.ok(more.includes(t), t);
+  assert.match(html, /<a class="mb-btn mb-btn--food" href="\/kitchen\/"[^>]*>Order food to your seat<\/a>/, 'MatchDay Kitchen button for home matches');
+  assert.ok(!matchBarHtml([AWAY], { now: NOW }).includes('mb-btn--food'), 'not for away matches');
   assert.match(more, /href="\/matches\/md1\/"/);
   assert.match(more, /href="\/api\/calendar\?match=md1"/);
   assert.match(more, /href="\/commentary\/"[^>]*data-track="commentary_click"/);

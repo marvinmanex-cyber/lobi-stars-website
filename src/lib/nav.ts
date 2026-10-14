@@ -4,7 +4,8 @@
 import { clubValues, communityContent, clubDocuments } from './club';
 
 export type NavLink = { label: string; href: string; description?: string; external?: boolean };
-export type NavItem = NavLink & { children?: NavLink[] };
+/** highlight: shown as a green pill button with a small food icon (MatchDay Kitchen). */
+export type NavItem = NavLink & { children?: NavLink[]; highlight?: boolean };
 
 // Values, Community and Transparency only appear once they have content.
 const community = await communityContent();
@@ -30,6 +31,7 @@ export const MAIN_NAV: NavItem[] = [
       { label: 'Fan Awards', href: '/awards', description: 'Vote for Goal of the Month, Player of the Month and Player of the Season' },
     ],
   },
+  { label: 'MatchDay Kitchen', href: '/kitchen/', description: 'Order food and drinks to your seat at McCarthy Stadium', highlight: true },
   { label: 'Squad', href: '/squad', description: 'The First Team squad' },
   { label: 'Video', href: '/video', description: 'Press conferences, training and highlights' },
   {
@@ -37,7 +39,6 @@ export const MAIN_NAV: NavItem[] = [
     label: 'Tickets', href: '/tickets',
     children: [
       { label: 'Buy Match Tickets', href: '/tickets', description: 'Tickets for every Lobi Stars home match' },
-      { label: 'In-Seat Food Ordering', href: '/food', description: 'Order food and drinks to your seat on match day' },
       { label: 'Hospitality', href: '/hospitality', description: 'Matchday hospitality for businesses and groups' },
       { label: 'Matchday Programme', href: '/programme', description: 'Read the matchday programme free' },
     ],

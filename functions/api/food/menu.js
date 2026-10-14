@@ -8,7 +8,7 @@ export async function onRequestGet({ env }) {
   const settings = await foodSettings(env.DB);
   const [categories, state] = await Promise.all([publicMenu(env.DB), orderingState(env, settings)]);
   return Response.json({
-    open: state.open, reason: state.reason, match: state.match || null,
+    open: state.open, reason: state.reason, match: state.match || null, opensAt: state.opensAt || null, closesAt: state.closesAt || null,
     categories, stands: settings.stands, minOrderKobo: settings.minOrderKobo, paymentExpiryMinutes: settings.paymentExpiryMinutes,
     pickupPoints: settings.pickupPoints,
     whatsapp: settings.whatsappEnabled ? { number: settings.whatsappNumber, display: `+${settings.whatsappNumber.slice(0, 3)} ${settings.whatsappNumber.slice(3, 6)} ${settings.whatsappNumber.slice(6, 9)} ${settings.whatsappNumber.slice(9)}` } : null,
