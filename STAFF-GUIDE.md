@@ -1968,6 +1968,16 @@ the website records itself, and each order or match counts once.
   programme, inside the monthly limit with votes and predictions.
 - No points for sharing on social media: a share can't be checked, so it would
   be easy to abuse.
+
+**The fan guide: lobistarsfc.com/rewards** explains everything to fans: what
+Rewards is, how to join (and "already have an account? just log in"), every
+way to earn with its points, the tiers and benefits, how to use points (with
+8 rewards from the catalogue), a worked example ("Meet Terver"), the rules in
+plain English, 13 questions and answers, and help (WhatsApp, contact form,
+email). Every number on it comes from Admin › Rewards and the catalogue, so it
+updates by itself when you change a setting. Admin › Rewards › Fan guide holds
+the points expiry period and the example prices used for Terver (confirm the
+real jersey, ticket and food prices).
 - A Paystack refund or dispute on a payment removes its points automatically
   (a fan's balance can go below zero).
 

@@ -44,7 +44,8 @@ export async function ensureDiscountSchema(db) {
     db.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT DEFAULT (datetime('now')), updated_by TEXT)`),
   ]);
   const cols = async t => new Set((await db.prepare(`PRAGMA table_info(${t})`).all()).results.map(c => c.name));
-  const add = async (t, have, defs) => { for (const [c, d] of defs) if (!have.has(c)) await db.prepare(`ALTER TABLE ${t} ADD COLUMN ${c} ${d}`).run(); };
+  // Two first requests at once can both add a column: the second one's "duplicate column" is fine.
+  const add = async (t, have, defs) => { for (const [c, d] of defs) if (!have.has(c)) await db.prepare(`ALTER TABLE ${t} ADD COLUMN ${c} ${d}`).run().catch(err => { if (!/duplicate column/i.test(String(err))) throw err; }); };
   await add('league_ticket_orders', await cols('league_ticket_orders'), [
     ['subtotal_kobo', 'INTEGER'], ['discount_kobo', 'INTEGER NOT NULL DEFAULT 0'], ['discount_rule_id', 'TEXT'],
     ['discount_label', 'TEXT'], ['discount_snapshot_json', 'TEXT'], ['group_name', 'TEXT']]);

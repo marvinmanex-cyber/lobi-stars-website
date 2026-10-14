@@ -74,11 +74,12 @@ export const lagosYear = (now = Date.now()) => new Date(now + 3600e3).getUTCFull
 
 /** Settings validation for Admin › Rewards. Returns null or the problem. */
 export function settingsProblem(s) {
-  const ints = ['welcomeBonus', 'profileBonus', 'membershipBonus', 'attendance', 'streakBonus', 'streakLength', 'motmVote', 'prediction', 'predictionCorrect', 'predictionExact', 'referral', 'referralMaxPerSeason', 'birthday', 'birthdayDobMinDays', 'engagementMonthlyCap', 'newsletterBonus', 'alertsBonus', 'firstPurchaseBonus', 'programmeRead'];
+  const ints = ['welcomeBonus', 'profileBonus', 'membershipBonus', 'attendance', 'streakBonus', 'streakLength', 'motmVote', 'prediction', 'predictionCorrect', 'predictionExact', 'referral', 'referralMaxPerSeason', 'birthday', 'birthdayDobMinDays', 'engagementMonthlyCap', 'newsletterBonus', 'alertsBonus', 'firstPurchaseBonus', 'programmeRead', 'exampleJerseyNaira', 'exampleTicketNaira', 'exampleFoodNaira'];
   for (const k of ints) if (!Number.isInteger(s[k]) || s[k] < 0 || s[k] > 100000) return `${k}: a whole number from 0 to 100,000.`;
   for (const k of ['ticketsPer100', 'shopPer100', 'foodPer100', 'membershipPer100']) if (typeof s[k] !== 'number' || !(s[k] >= 0) || s[k] > 100) return `${k}: 0 to 100 points per ₦100.`;
   if (s.streakLength < 2 || s.streakLength > 20) return 'Home games in a row: 2 to 20.';
   if (s.birthdayDobMinDays > 365) return 'Birthday: date of birth saved at least 0 to 365 days before.';
+  if (!Number.isInteger(s.expiryMonths) || s.expiryMonths < 1 || s.expiryMonths > 60) return 'Points expire after: 1 to 60 months.';
   if (!Number.isInteger(s.tierGraceMonths) || s.tierGraceMonths < 0 || s.tierGraceMonths > 12) return 'Tier grace period: 0 to 12 months.';
   if (!Number.isInteger(s.redeemCodeThreshold) || s.redeemCodeThreshold < 1) return 'Email code needed from: at least 1 point.';
   if (!Number.isInteger(s.voucherDays) || s.voucherDays < 1 || s.voucherDays > 730) return 'Vouchers valid: 1 to 730 days.';

@@ -1,93 +1,318 @@
 ---
-// /rewards -- Lobi Stars Rewards (Phase 1: what it is and how to join).
-// Signed-in fans join with one click after accepting the Rewards Terms; guests
-// are sent to the normal registration (with "Also join Lobi Stars Rewards")
-// or login. Until the programme is switched on (Admin › Rewards, setting
-// "live"), this page is unlisted and kept out of search engines; staff can
-// preview it with ?preview=1.
-// TODO (Phase 5): full landing page (earning table, tiers, catalogue preview, partners).
+// /rewards -- "How Lobi Stars Rewards works": the fan guide. What it is, how
+// to join, every way to earn Pride Points, tiers, what points can be used
+// for (live catalogue), a worked example, the rules in plain English, FAQ,
+// help, and joining (one click for signed-in fans; the normal registration
+// for new fans). EVERY number comes live from /api/rewards/info (Admin ›
+// Rewards settings and catalogue); none is written into this page.
+// Until Rewards is live it is unlisted and kept out of search engines
+// (preview with ?preview=1). Points have no cash value.
 import Layout from '../../layouts/Layout.astro';
+import site from '../../data/site.json';
+const { email, whatsapp } = site.contact;
+// FAQ for search engines (FAQPage). Answers here avoid numbers, which can change in the admin.
+const FAQ_LD = [
+  ['Is Lobi Stars Rewards free?', 'Yes. Lobi Stars Rewards is free for anyone with a Lobi Stars FC fan account.'],
+  ['Do I need a new account?', 'No. Use your Lobi Stars FC fan account (the one for Predict & Win, Man of the Match voting or membership), log in and tap Join Rewards.'],
+  ['How do I earn Pride Points?', 'By buying match tickets, jerseys, merchandise, in-seat food and membership on lobistarsfc.com, by coming to home matches (your ticket is scanned at the gate), and by taking part in Man of the Match and Predict & Win.'],
+  ['What can I get with my points?', 'Rewards from the Lobi Stars Rewards catalogue, such as airtime and data, free match tickets, food vouchers, shop rewards and matchday experiences.'],
+  ['Can I swap points for cash?', 'No. Pride Points have no cash value and cannot be withdrawn, transferred or sold.'],
+];
+const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: FAQ_LD.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) };
 ---
-<Layout title="Lobi Stars Rewards | Lobi Stars Football Club" description="Lobi Stars Rewards: support the Pride, earn Pride Points and enjoy rewards. Free for Lobi Stars FC fans." noindex>
+<Layout title="Lobi Stars Rewards – Earn Points, Get Rewards | Lobi Stars FC" description="Lobi Stars Rewards is the free loyalty programme for Lobi Stars FC fans: earn Pride Points on tickets, jerseys, food and matchdays, and use them for airtime, data, free tickets and more." image="/images/hero-2.jpg" noindex>
+  <script type="application/ld+json" set:html={JSON.stringify(faqLd).replace(/</g, '\\u003c')}></script>
+
+  <!-- 1. Hero -->
   <section class="rw-hero" aria-labelledby="rwTitle">
+    <picture>
+      <source type="image/webp" srcset="/images/hero-2-480w.webp 480w, /images/hero-2-960w.webp 960w, /images/hero-2.webp 1600w" sizes="100vw" />
+      <img class="rw-hero-bg" src="/images/hero-2.jpg" alt="" width="1600" height="900" decoding="async" fetchpriority="high" />
+    </picture>
     <div class="rw-in">
       <p class="rw-kicker">Free for Lobi Stars fans</p>
       <h1 id="rwTitle">Lobi Stars <span>Rewards</span></h1>
-      <p class="rw-sub">Support the Pride, earn rewards.</p>
+      <p class="rw-sub">Support the Pride of Benue. Earn points. Enjoy rewards.</p>
+      <div class="rw-cta" id="heroCta">
+        <a class="btn-p" href="/fans/register/?next=/rewards/">Join for free</a>
+        <a class="btn-o rw-light" href="/fans/login/?next=/rewards/">Log in to see my points</a>
+      </div>
     </div>
   </section>
 
   <div class="wrap rw-page">
-    <ol class="rw-steps" aria-label="How it works">
-      <li><b>1</b><h2>Join free</h2><p>Use your Lobi Stars fan account. One click if you already have one.</p></li>
-      <li><b>2</b><h2>Earn Pride Points</h2><p>On tickets, jerseys, matchday food and membership bought on lobistarsfc.com, and at home matches.</p></li>
-      <li><b>3</b><h2>Enjoy rewards</h2><p>Swap your points for rewards such as airtime, data, tickets and matchday treats.</p></li>
-    </ol>
-
-    <section class="rw-join" id="rwJoin" aria-live="polite">
-      <p class="rw-muted">Checking your account…</p>
+    <!-- 2. What it is -->
+    <section class="rw-sec" aria-labelledby="hWhat">
+      <h2 id="hWhat">What is Lobi Stars Rewards?</h2>
+      <p class="rw-lead">Lobi Stars Rewards is a free loyalty programme for Lobi Stars fans. Every time you support the club on lobistarsfc.com, you earn <b>Pride Points</b>. Use them for free match tickets, airtime and data, food at the stadium, jersey rewards and special matchday experiences.</p>
     </section>
 
-    <section class="rw-faq" aria-labelledby="rwFaq">
-      <h2 id="rwFaq">Questions</h2>
-      <details><summary>Does it cost anything?</summary><p>No. Lobi Stars Rewards is free for anyone with a Lobi Stars FC fan account.</p></details>
-      <details><summary>When can I start earning?</summary><p>As soon as you have joined and confirmed your email address. You get welcome points straight away, and more points when you add your state of residence and date of birth to your profile.</p></details>
-      <details><summary>Can I swap points for cash?</summary><p>No. Pride Points have no cash value and cannot be transferred or sold. See the <a href="/rewards/terms/">Rewards Terms</a>.</p></details>
+    <!-- 3. How to join -->
+    <section class="rw-sec" aria-labelledby="hJoin">
+      <h2 id="hJoin">How to join</h2>
+      <ol class="rw-steps">
+        <li><span class="rw-num">1</span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 4-6 8-6s8 2 8 6" /></svg><h3>Create your free fan account</h3><p>Your name, surname, email (typed twice), phone number and a password.</p></li>
+        <li><span class="rw-num">2</span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 6 9-6" /></svg><h3>Confirm your email</h3><p>Click the link we send you.</p></li>
+        <li><span class="rw-num">3</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3 6.5 7 .8-5.2 4.7 1.5 7L12 17.5 5.7 21l1.5-7L2 9.3l7-.8z" /></svg><h3>Join Rewards</h3><p>Tick "Join Lobi Stars Rewards" and accept the terms. You get your welcome bonus of <b data-k="welcomeBonus">…</b> points once your email is confirmed.</p></li>
+      </ol>
+      <p class="rw-note"><b>Already have a Lobi Stars account</b> (Predict &amp; Win, Man of the Match voting or membership)? Just log in and tap <b>Join Rewards</b>. No new sign-up needed.</p>
+      <p class="rw-small">Free to join. One account per person, email address and phone number.</p>
+    </section>
+
+    <!-- 4. How to earn -->
+    <section class="rw-sec" aria-labelledby="hEarn">
+      <h2 id="hEarn">How to earn Pride Points</h2>
+      <ul class="rw-earn" id="earnGrid"><li class="rw-muted">Loading…</li></ul>
+      <ul class="rw-notes">
+        <li>Points are added after your payment is confirmed.</li>
+        <li>Ticket points become available after the match is played.</li>
+        <li>Jumia purchases don't earn points. Buy on lobistarsfc.com to earn.</li>
+        <li id="capNote">Voting, prediction and programme points are limited each month.</li>
+      </ul>
+    </section>
+
+    <!-- 5. Tiers -->
+    <section class="rw-sec" aria-labelledby="hTiers">
+      <h2 id="hTiers">Membership tiers</h2>
+      <p>The more you support the club this season, the higher your tier and the better your benefits.</p>
+      <div class="rw-tiers" id="tierGrid"></div>
+      <p class="rw-small" id="tierNote">Tiers are based on the points you earn this season. Spending points never lowers your tier.</p>
+    </section>
+
+    <!-- 6. How to use points -->
+    <section class="rw-sec" aria-labelledby="hUse">
+      <h2 id="hUse">How to use your points</h2>
+      <div class="rw-ways">
+        <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z" /></svg><h3>Redeem rewards</h3><p>Choose a reward from the catalogue and confirm. Bigger rewards need a code we email you, to keep your points safe.</p></div>
+        <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2" /><path d="M11 18h2" /></svg><h3>Free airtime and data</h3><p>On MTN, Airtel, Glo and 9mobile, sent straight to your phone. If a top-up fails, your points come back automatically.</p></div>
+        <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3a3 3 0 0 0 0 6v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a3 3 0 0 0 0-6z" /></svg><h3>Free match tickets</h3><p>Pick a home match and get a QR ticket by email, like any other ticket.</p></div>
+        <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6" /></svg><h3>Use rewards at the stadium</h3><p>Food and shop vouchers come with a code (valid <b data-k="voucherDays">…</b> days). Show it at the food stands or the club shop.</p></div>
+      </div>
+      <h3 class="rw-h3">Rewards you can get</h3>
+      <ul class="rw-items" id="itemGrid"><li class="rw-muted">Loading…</li></ul>
+      <p><a class="btn-p" href="/rewards/catalogue/">View all rewards</a></p>
+      <div id="partnerRewards" hidden><h3 class="rw-h3">Partner rewards</h3><ul class="rw-items" id="partnerGrid"></ul></div>
+    </section>
+
+    <!-- 7. Worked example -->
+    <section class="rw-sec rw-terver" aria-labelledby="hTerver">
+      <h2 id="hTerver">Meet Terver</h2>
+      <p>Terver supports Lobi Stars all season and does all of this on lobistarsfc.com:</p>
+      <ol class="rw-timeline" id="terver"><li class="rw-muted">Loading…</li></ol>
+      <p class="rw-total" id="terverTotal"></p>
+      <p id="terverGets"></p>
+      <p class="rw-small">Example prices for illustration only.</p>
+    </section>
+
+    <!-- 8. Good to know -->
+    <section class="rw-sec" aria-labelledby="hKnow">
+      <h2 id="hKnow">Good to know</h2>
+      <ul class="rw-know">
+        <li><b>No cash value.</b> Pride Points can't be exchanged for cash, transferred to anyone else or sold.</li>
+        <li><b>Expiry.</b> Points expire after <b data-k="expiryMonths">…</b> months with no activity. Any purchase or activity resets the clock, and we remind you 30 days before.</li>
+        <li><b>Jerseys and merchandise are non-refundable.</b> Points earned on them are final, except in cases of fraud or a payment dispute.</li>
+        <li><b>Cancelled matches.</b> If a match is cancelled and your ticket is refunded, the points from that ticket are removed.</li>
+        <li><b>Fair play.</b> We may remove points gained through fake accounts or fraud.</li>
+      </ul>
+      <p><a href="/rewards/terms/">Read the full Lobi Stars Rewards Terms</a></p>
+    </section>
+
+    <!-- 9. FAQ -->
+    <section class="rw-sec rw-faq" aria-labelledby="hFaq">
+      <h2 id="hFaq">Questions</h2>
+      <details><summary>Is it free?</summary><p>Yes. Lobi Stars Rewards is free for every fan with a Lobi Stars FC fan account.</p></details>
+      <details><summary>Do I need a new account?</summary><p>No. If you already use Predict &amp; Win, Man of the Match voting or membership, log in and tap Join Rewards.</p></details>
+      <details><summary>How long until my points show?</summary><p>Straight away after your payment is confirmed, your ticket is scanned or your vote or prediction is saved. Ticket points show as "pending" until the match is played.</p></details>
+      <details><summary>Why are my ticket points "pending"?</summary><p>Ticket points become available once the match has been played. If the match is cancelled and your ticket refunded, those points are removed.</p></details>
+      <details><summary>Can I earn points on Jumia purchases?</summary><p>No. Only purchases made on lobistarsfc.com earn Pride Points.</p></details>
+      <details><summary>How do I get airtime or data?</summary><p>Choose an airtime or data reward in the catalogue, pick your network (MTN, Airtel, Glo or 9mobile) and confirm your phone number. It is sent to your phone.</p></details>
+      <details><summary>Can I use points and pay the rest with my card?</summary><p>Paying part of a ticket, jersey or food order with points is coming soon. For now, swap your points for rewards in the catalogue.</p></details>
+      <details><summary>Do points expire?</summary><p>Yes, after <b data-k="expiryMonths">…</b> months with no activity on your account. Any purchase or activity resets the clock, and we remind you 30 days before.</p></details>
+      <details><summary>What happens if a match is postponed?</summary><p>Your ticket and its points stay valid for the new date. Ticket points become available after the match is played.</p></details>
+      <details><summary>Can I give my points to a friend?</summary><p>No. Points can't be transferred, sold or exchanged for cash.</p></details>
+      <details><summary>How does referring a friend work?</summary><p>Share your referral link from My account. When your friend creates an account with it, confirms their email and makes their first purchase on lobistarsfc.com, you get <b data-k="referral">…</b> points (up to <b data-k="referralMaxPerSeason">…</b> friends a season).</p></details>
+      <details><summary>What if my airtime doesn't arrive?</summary><p>We try again automatically. If it still fails, your points are returned to you. If something looks wrong, contact us below.</p></details>
+      <details><summary>Who do I contact for help?</summary><p>Chat with us on WhatsApp, use the contact form or email {email}.</p></details>
+    </section>
+
+    <!-- 10. Help -->
+    <section class="rw-sec rw-help" aria-labelledby="hHelp">
+      <h2 id="hHelp">Need help?</h2>
+      <div class="rw-acts">
+        <a class="btn-p" href={`https://wa.me/${whatsapp}?text=${encodeURIComponent('Hello Lobi Stars, I have a question about Lobi Stars Rewards.')}`} target="_blank" rel="noopener">Chat on WhatsApp</a>
+        <a class="btn-o" href="/contact/">Contact form</a>
+        <a class="btn-o" href={`mailto:${email}`}>{email}</a>
+      </div>
+    </section>
+
+    <!-- 11. Join / final call to action -->
+    <section class="rw-join" id="join" aria-live="polite">
+      <p class="rw-muted">Checking your account…</p>
     </section>
   </div>
 </Layout>
 
 <style>
-  .rw-hero { background: radial-gradient(120% 140% at 0% 0%, #C11A1F 0%, #7A0E12 50%, #15181D 100%); color: #fff; padding: 56px 0 64px; border-bottom: 4px solid #FFC72C; }
-  .rw-in { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
+  .rw-hero { position: relative; isolation: isolate; overflow: hidden; color: #fff; background: #15181D; border-bottom: 4px solid #FFC72C; }
+  .rw-hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -2; }
+  .rw-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; background: linear-gradient(100deg, rgba(122, 14, 18, .95) 0%, rgba(193, 26, 31, .8) 45%, rgba(21, 24, 29, .55) 100%); }
+  .rw-in { max-width: 1280px; margin: 0 auto; padding: 56px 5% 60px; }
   .rw-kicker { margin: 0 0 8px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
-  .rw-hero h1 { margin: 0; font: 400 clamp(44px, 9vw, 84px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rw-hero h1 { margin: 0; font: 400 clamp(46px, 9vw, 88px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .rw-hero h1 span { color: #FFC72C; }
-  .rw-sub { margin: 10px 0 0; font-size: clamp(17px, 2.4vw, 21px); }
-  .rw-page { padding-top: 32px; padding-bottom: 64px; }
-  .rw-steps { list-style: none; margin: 0 0 28px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
-  .rw-steps li { padding: 18px; border-radius: 14px; background: var(--d2); border: 1px solid var(--d4); }
-  .rw-steps b { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; background: #FFC72C; color: #15181D; font: 400 24px/1 'Bebas Neue', sans-serif; }
-  .rw-steps h2 { margin: 10px 0 4px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .rw-steps p { margin: 0; color: var(--lt); line-height: 1.5; }
-  .rw-join { margin: 0 0 32px; padding: 20px; border-radius: 16px; border: 2px solid #C9A227; background: linear-gradient(135deg, rgba(193, 26, 31, .08), rgba(255, 199, 44, .14)); }
-  .rw-join :global(h2) { margin: 0 0 8px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rw-sub { margin: 12px 0 0; font-size: clamp(17px, 2.4vw, 22px); max-width: 640px; }
+  .rw-cta, .rw-acts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .rw-cta :global(a), .rw-acts a, .rw-page :global(.btn-p), .rw-page :global(.btn-o) { min-height: 44px; display: inline-flex; align-items: center; }
+  .rw-hero :global(.rw-light) { color: #fff !important; border-color: rgba(255, 255, 255, .8) !important; }
+  .rw-page { padding-top: 8px; padding-bottom: 64px; }
+  .rw-sec { padding: 34px 0 6px; border-bottom: 1px solid var(--d4); }
+  .rw-sec h2 { margin: 0 0 12px; font: 400 clamp(30px, 4.5vw, 42px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rw-sec p { line-height: 1.6; }
+  .rw-lead { font-size: 18px; max-width: 820px; }
+  .rw-h3 { margin: 22px 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rw-small { color: var(--lt); font-size: 14px; }
+  .rw-note { padding: 12px 14px; border-radius: 10px; background: rgba(255, 199, 44, .14); border: 1px solid rgba(201, 162, 39, .55); }
+  .rw-muted, .rw-page :global(.rw-muted) { color: var(--lt); }
+  .rw-steps svg, .rw-way svg { width: 30px; height: 30px; fill: none; stroke: #C11A1F; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .rw-steps { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .rw-steps li, .rw-way { position: relative; padding: 18px; border-radius: 14px; background: var(--d2); border: 1px solid var(--d4); }
+  .rw-num { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; background: #FFC72C; color: #15181D; display: inline-flex; align-items: center; justify-content: center; font: 400 22px/1 'Bebas Neue', sans-serif; }
+  .rw-steps h3, .rw-way h3 { margin: 10px 0 4px; font: 700 19px/1.2 'Barlow Condensed', sans-serif; }
+  .rw-steps p, .rw-way p { margin: 0; color: var(--lt); }
+  .rw-earn { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .rw-earn :global(li:not(.rw-muted)) { padding: 14px; border-radius: 12px; border: 1px solid var(--d4); border-left: 5px solid #C11A1F; background: var(--d2); }
+  .rw-earn :global(li:nth-child(3n+2)) { border-left-color: #FFC72C; }
+  .rw-earn :global(li:nth-child(3n)) { border-left-color: #15181D; }
+  .rw-earn :global(b) { display: block; font: 400 28px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .rw-earn :global(span) { display: block; margin-top: 4px; font-weight: 600; }
+  .rw-earn :global(small) { display: block; margin-top: 4px; color: var(--lt); font-size: 13px; line-height: 1.4; }
+  .rw-notes { margin: 0 0 18px; padding-left: 20px; line-height: 1.8; color: var(--lt); }
+  .rw-tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 14px 0; }
+  .rw-tiers :global(.rw-tier) { padding: 18px; border-radius: 14px; color: #fff; }
+  .rw-tiers :global(.rw-tier.red) { background: linear-gradient(135deg, #C11A1F, #7A0E12); }
+  .rw-tiers :global(.rw-tier.gold) { background: linear-gradient(135deg, #FFD34D, #E0A800); color: #15181D; }
+  .rw-tiers :global(.rw-tier.star) { background: linear-gradient(135deg, #15181D, #3A2A05); border: 1px solid #FFC72C; }
+  .rw-tiers :global(h3) { margin: 0; font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rw-tiers :global(.rw-tier.star h3) { color: #FFC72C; }
+  .rw-tiers :global(p) { margin: 4px 0 8px; font-weight: 700; }
+  .rw-tiers :global(ul) { margin: 0; padding-left: 18px; line-height: 1.6; }
+  .rw-ways { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .rw-items { list-style: none; margin: 0 0 14px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  .rw-items :global(li:not(.rw-muted)) { padding: 14px; border-radius: 12px; background: var(--d2); border: 1px solid var(--d4); border-top: 4px solid #FFC72C; }
+  .rw-items :global(b) { display: block; font: 700 16px/1.25 'Barlow Condensed', sans-serif; }
+  .rw-items :global(span) { display: block; margin-top: 6px; font: 400 26px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .rw-items :global(small) { color: var(--lt); }
+  .rw-terver { border-bottom: 0; }
+  .rw-timeline { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 3px solid #FFC72C; display: grid; gap: 10px; }
+  .rw-timeline :global(li) { position: relative; padding: 10px 12px; border-radius: 10px; background: var(--d2); display: flex; justify-content: space-between; gap: 10px; }
+  .rw-timeline :global(li::before) { content: ''; position: absolute; left: -27px; top: 14px; width: 13px; height: 13px; border-radius: 50%; background: #C11A1F; border: 2px solid #FFC72C; }
+  .rw-timeline :global(b) { color: #0B7A2E; white-space: nowrap; }
+  .rw-total { margin-top: 14px; font: 400 32px/1.1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .rw-know { padding-left: 20px; line-height: 1.7; }
+  .rw-know li { margin-bottom: 6px; }
+  .rw-sec a:not(.btn-p):not(.btn-o) { color: var(--red-text); font-weight: 600; }
+  .rw-faq details { border-bottom: 1px solid var(--d4); padding: 12px 0; }
+  .rw-faq summary { cursor: pointer; font-weight: 700; min-height: 32px; }
+  .rw-faq details p { margin: 8px 0 0; color: var(--lt); }
+  .rw-help { border-bottom: 0; }
+  .rw-join { margin: 30px 0 0; padding: 22px; border-radius: 16px; border: 2px solid #C9A227; background: linear-gradient(135deg, rgba(193, 26, 31, .08), rgba(255, 199, 44, .14)); }
+  .rw-join :global(h2) { margin: 0 0 8px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .rw-join :global(p) { line-height: 1.6; }
-  .rw-join :global(.rw-acts) { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-  .rw-join :global(.btn-p), .rw-join :global(.btn-o) { min-height: 44px; display: inline-flex; align-items: center; }
+  .rw-join :global(.rw-acts) { margin-top: 12px; }
   .rw-join :global(.rw-check) { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0; }
   .rw-join :global(.rw-check input) { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--red); }
   .rw-join :global(a:not(.btn-p):not(.btn-o)) { color: var(--red-text); font-weight: 600; }
   .rw-join :global(.rw-big) { font: 400 52px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
   .rw-join :global(.rw-err) { color: var(--red-text); font-weight: 600; margin: 4px 0 0; }
-  .rw-muted { color: var(--lt); margin: 0; }
-  .rw-faq h2 { font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .rw-faq details { border-bottom: 1px solid var(--d4); padding: 12px 0; }
-  .rw-faq summary { cursor: pointer; font-weight: 700; min-height: 32px; }
-  .rw-faq a { color: var(--red-text); font-weight: 600; }
-  @media (max-width: 420px) { .rw-in { padding: 0 16px; } .rw-page { padding-left: 16px; padding-right: 16px; } }
+  @media (max-width: 420px) { .rw-in { padding: 40px 16px 44px; } .rw-page { padding-left: 16px; padding-right: 16px; } }
 </style>
 
 <script is:inline>
 (function () {
   try { if (new URLSearchParams(location.search).get('preview') === '1') localStorage.setItem('ls_rewards_preview', '1'); } catch (e) {}
-  var box = document.getElementById('rwJoin');
+  var $ = function (id) { return document.getElementById(id); };
   var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c != null && c !== false) n.append(c); } return n; };
   var fmt = function (n) { return Number(n).toLocaleString('en-NG'); };
-  function load() {
-    fetch('/api/rewards/me', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(draw).catch(function () { box.replaceChildren(el('p', { class: 'rw-muted', text: 'Could not check your account just now.' })); });
-  }
+  var naira = function (n) { return '₦' + fmt(n); };
+  var per = function (r) { return r === 1 ? '1 point per ₦100' : fmt(r) + ' points per ₦100'; };
+  var fill = function (parent, nodes) { parent.replaceChildren.apply(parent, nodes.filter(Boolean)); };
+
+  // Everything below comes from the Rewards settings and catalogue (Admin › Rewards).
+  fetch('/api/rewards/info').then(function (r) { return r.json(); }).then(function (d) {
+    var s = d.settings;
+    document.querySelectorAll('[data-k]').forEach(function (n) { var v = s[n.dataset.k]; if (v != null) n.textContent = fmt(v); });
+    // 4. Earning grid
+    var card = function (pts, what, note) { return el('li', {}, el('b', { text: pts }), el('span', { text: what }), note ? el('small', { text: note }) : null); };
+    fill($('earnGrid'), [
+      card(per(s.ticketsPer100), 'Match tickets', 'Bought on lobistarsfc.com. Available after the match is played.'),
+      card(per(s.shopPer100), 'Jerseys and merchandise', 'Bought on lobistarsfc.com (not Jumia).'),
+      card(per(s.foodPer100), 'In-seat food', 'MatchDay Kitchen orders.'),
+      card(per(s.membershipPer100), 'Annual membership', s.membershipBonus ? 'Plus a ' + fmt(s.membershipBonus) + '-point membership bonus.' : null),
+      s.attendance ? card('+' + fmt(s.attendance), 'Coming to a home match', 'When your ticket is scanned at the gate.') : null,
+      s.streakBonus ? card('+' + fmt(s.streakBonus), s.streakLength + ' home matches in a row', 'Bonus for coming again and again.') : null,
+      s.motmVote ? card('+' + fmt(s.motmVote), 'Man of the Match vote') : null,
+      s.prediction ? card('+' + fmt(s.prediction), 'Predict & Win prediction', (s.predictionCorrect ? '+' + fmt(s.predictionCorrect) + ' for the correct result' : '') + (s.predictionExact ? ', or +' + fmt(s.predictionExact) + ' for the exact score' : '') + ' (at full-time).') : null,
+      s.programmeRead ? card('+' + fmt(s.programmeRead), 'Reading the Match Day Programme', 'Once per programme.') : null,
+      s.referral ? card('+' + fmt(s.referral), 'Referring a friend', 'After their first purchase on lobistarsfc.com.') : null,
+      s.firstPurchaseBonus ? card('+' + fmt(s.firstPurchaseBonus), 'Your first purchase', 'One-off bonus.') : null,
+      s.birthday ? card('+' + fmt(s.birthday), 'Your birthday month', 'Once a year.') : null,
+      s.welcomeBonus ? card('+' + fmt(s.welcomeBonus), 'Welcome bonus', 'When you join.') : null,
+      s.profileBonus ? card('+' + fmt(s.profileBonus), 'Completing your profile', 'Add your state of residence and date of birth.') : null,
+      s.newsletterBonus ? card('+' + fmt(s.newsletterBonus), 'Newsletter sign-up', 'One-off.') : null,
+      s.alertsBonus ? card('+' + fmt(s.alertsBonus), 'Switching on match alerts', 'One-off.') : null,
+    ]);
+    if (s.engagementMonthlyCap > 0) $('capNote').textContent = 'Voting, prediction and programme points are limited to ' + fmt(s.engagementMonthlyCap) + ' per month.';
+    // 5. Tiers
+    fill($('tierGrid'), d.tiers.map(function (t, i) {
+      var next = d.tiers[i + 1];
+      var ul = el('ul'); (t.benefits.length ? t.benefits : ['Earn Pride Points and swap them for rewards']).forEach(function (b) { ul.append(el('li', { text: b })); });
+      return el('div', { class: 'rw-tier ' + t.key }, el('h3', { text: t.name }), el('p', { text: next ? fmt(t.min) + ' to ' + fmt(next.min - 1) + ' points this season' : fmt(t.min) + '+ points this season' }), ul);
+    }));
+    $('tierNote').textContent = 'Tiers are based on the points you earn this season. Spending points never lowers your tier.' + (s.paidMembersStartGold && d.tiers[1] ? ' Paid annual members start the season at ' + d.tiers[1].name + '.' : '') + (s.tierGraceMonths ? ' When a new season starts, you keep last season\'s tier for ' + s.tierGraceMonths + ' months.' : '');
+    // 6. Catalogue preview (live) and partner rewards
+    var item = function (i) { return el('li', {}, el('b', { text: i.name }), el('span', { text: fmt(i.points) }), el('small', { text: i.available ? 'Pride Points' : 'Pride Points · coming soon' })); };
+    fill($('itemGrid'), d.items.length ? d.items.slice(0, 8).map(item) : [el('li', { class: 'rw-muted', text: 'Rewards will appear here soon.' })]);
+    var partner = d.items.filter(function (i) { return i.sponsor; });
+    if (partner.length) { fill($('partnerGrid'), partner.map(item)); $('partnerRewards').hidden = false; }
+    // 7. Meet Terver (worked out from the current settings)
+    var pp = function (n, rate) { return Math.floor(n * 100 * rate / 10000); };
+    var steps = [
+      ['Joins Lobi Stars Rewards', s.welcomeBonus],
+      ['Completes his profile', s.profileBonus],
+      ['Buys a home jersey (' + naira(s.exampleJerseyNaira) + '), his first purchase', pp(s.exampleJerseyNaira, s.shopPer100) + s.firstPurchaseBonus],
+      ['Buys 4 home match tickets online (' + naira(4 * s.exampleTicketNaira) + ')', pp(4 * s.exampleTicketNaira, s.ticketsPer100)],
+      ['Comes to all 4 home matches', 4 * s.attendance + (s.streakLength && s.streakLength <= 4 ? Math.floor(4 / s.streakLength) * s.streakBonus : 0)],
+      ['Orders food to his seat twice (' + naira(2 * s.exampleFoodNaira) + ')', pp(2 * s.exampleFoodNaira, s.foodPer100)],
+      ['Votes for Man of the Match 4 times', 4 * s.motmVote],
+      ['Makes 4 Predict & Win predictions', 4 * s.prediction],
+    ].filter(function (x) { return x[1] > 0; });
+    var total = steps.reduce(function (t, x) { return t + x[1]; }, 0);
+    fill($('terver'), steps.map(function (x) { return el('li', {}, el('span', { text: x[0] }), el('b', { text: '+' + fmt(x[1]) })); }));
+    $('terverTotal').textContent = 'Total: ' + fmt(total) + ' Pride Points';
+    var afford = d.items.filter(function (i) { return i.available && i.points <= total; }).sort(function (a, b) { return b.points - a.points; });
+    if (afford.length) {
+      var best = afford[0], rest = afford.filter(function (i) { return i.id !== best.id && i.points <= total - best.points; })[0];
+      $('terverGets').textContent = 'With that, Terver can redeem: ' + best.name + (rest ? ' + ' + rest.name : '') + '. Or he can save his points for something bigger.';
+    }
+  }).catch(function () { $('earnGrid').replaceChildren(el('li', { class: 'rw-muted', text: 'Could not load the details just now.' })); });
+
+  // Hero buttons and the join box, for this visitor.
+  var box = $('join');
+  function load() { fetch('/api/rewards/me', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(draw).catch(function () {}); }
   function draw(d) {
+    var hero = $('heroCta');
+    if (d.signedIn && d.joined) hero.replaceChildren(el('a', { class: 'btn-p', href: '/fans/account/', text: 'Go to My Rewards' }), el('a', { class: 'btn-o rw-light', href: '/rewards/catalogue/', text: 'See the rewards' }));
+    else if (d.signedIn) hero.replaceChildren(el('a', { class: 'btn-p', href: '#join', text: 'Join for free' }));
     if (!d.signedIn) {
-      box.replaceChildren(el('h2', { text: 'Join Lobi Stars Rewards' }),
-        el('p', { text: 'Create a free fan account (tick "Also join Lobi Stars Rewards"), or log in to join with one click.' }),
-        el('div', { class: 'rw-acts' }, el('a', { class: 'btn-p', href: '/fans/register/?next=/rewards/', text: 'Join now' }), el('a', { class: 'btn-o', href: '/fans/login/?next=/rewards/', text: 'Log in' })));
+      fill(box, [el('h2', { text: "Join Lobi Stars Rewards – it's free" }),
+        el('p', { text: 'Create your free fan account (tick "Also join Lobi Stars Rewards"), or log in to join with one click.' }),
+        el('div', { class: 'rw-acts' }, el('a', { class: 'btn-p', href: '/fans/register/?next=/rewards/', text: 'Join for free' }), el('a', { class: 'btn-o', href: '/fans/login/?next=/rewards/', text: 'Log in' }))]);
       return;
     }
     if (!d.joined) {
       var agree = el('input', { type: 'checkbox', id: 'rwAgree' }), err = el('p', { class: 'rw-err', role: 'alert' });
-      box.replaceChildren(el('h2', { text: 'Join with one click' }),
-        el('p', { text: 'Hi ' + d.firstName + '! Join free and get ' + d.bonuses.welcome + ' Pride Points to start, plus ' + d.bonuses.profile + ' more when you complete your profile.' }),
+      fill(box, [el('h2', { text: "Join Lobi Stars Rewards – it's free" }),
+        el('p', { text: 'Hi ' + d.firstName + '! Join with one click and get ' + fmt(d.bonuses.welcome) + ' Pride Points to start, plus ' + fmt(d.bonuses.profile) + ' more when you complete your profile.' }),
         el('label', { class: 'rw-check', for: 'rwAgree' }, agree, el('span', {}, 'I agree to the ', el('a', { href: '/rewards/terms/', target: '_blank', text: 'Lobi Stars Rewards Terms' }), '.')),
         err,
         el('div', { class: 'rw-acts' }, el('button', { type: 'button', class: 'btn-p', text: 'Join Lobi Stars Rewards', onclick: function () {
@@ -95,15 +320,15 @@ import Layout from '../../layouts/Layout.astro';
           var b = this; b.disabled = true;
           fetch('/api/rewards/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ agree: true }) }).then(function (r) { return r.json().then(function (x) { return { ok: r.ok, x: x }; }); })
             .then(function (res) { if (res.ok) load(); else { err.textContent = res.x.error || 'Could not join.'; b.disabled = false; } });
-        } })));
+        } }))]);
       return;
     }
-    box.replaceChildren.apply(box, [el('h2', { text: 'You are a member' }),
+    fill(box, [el('h2', { text: 'You are a member' }),
       el('p', {}, 'Member number ', el('b', { text: d.memberNo })),
       d.tier ? el('p', {}, el('b', { text: d.tier.name + ' tier' }), ' · ' + fmt(d.tier.earned) + ' points earned this ' + d.tier.season + ' season' + (d.tier.next ? ' · ' + fmt(d.tier.toNext) + ' more to reach ' + d.tier.next.name : '')) : null,
       el('p', {}, el('span', { class: 'rw-big', text: fmt(d.balance) }), ' Pride Points', d.pending ? ' (' + fmt(d.pending) + ' pending)' : ''),
       !d.verified ? el('p', { text: 'Confirm your email address (use the link we sent you) to start earning. Your welcome points are waiting.' }) : null,
-      el('div', { class: 'rw-acts' }, el('a', { class: 'btn-p', href: '/fans/account/', text: 'My account and points' }))].filter(Boolean));
+      el('div', { class: 'rw-acts' }, el('a', { class: 'btn-p', href: '/fans/account/', text: 'Go to My Rewards' }), el('a', { class: 'btn-o', href: '/rewards/catalogue/', text: 'Use my points' }))]);
   }
   load();
 })();

@@ -33,6 +33,12 @@ const DEFAULTS = {
   firstPurchaseBonus: 50,  // first paid purchase on lobistarsfc.com (tickets, shop, food, membership)
   programmeRead: 5,        // opening the Match Day Programme, per programme (monthly limit applies)
   seasonStart: '2026-08-01', // first day of the current season (tiers, referral limit). Same as the CMS seasonStart.
+  // Points expire after this many months with no Rewards activity (Rewards Terms; reminder 30 days before).
+  expiryMonths: 12,
+  // Prices used in the worked example on /rewards ("Meet Terver"). TODO (club): confirm real prices.
+  exampleJerseyNaira: 20000,
+  exampleTicketNaira: 1000,
+  exampleFoodNaira: 3000,
   // Redeeming.
   redeemCodeThreshold: 1000, // redemptions of this many points or more need a 6-digit code emailed to the fan
   voucherDays: 90,           // vouchers are valid this many days
@@ -59,6 +65,9 @@ export const SOURCES = ['ticket_order', 'shop_order', 'food_order', 'membership'
 export const NIGERIAN_STATES = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT (Abuja)', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'];
 
 export const memberNo = seq => `LSR-${String(seq).padStart(6, '0')}`;
+
+// Two first requests at once can both try to add a column: the second one's "duplicate column" is fine.
+const addColumn = (db, sql) => db.prepare(sql).run().catch(err => { if (!/duplicate column/i.test(String(err))) throw err; });
 
 let ready = false;
 export async function ensureRewardsSchema(db) {
@@ -91,18 +100,18 @@ export async function ensureRewardsSchema(db) {
   ]);
   const { results } = await db.prepare(`PRAGMA table_info(members)`).all();
   const cols = new Set(results.map(c => c.name));
-  if (!cols.has('date_of_birth')) await db.prepare(`ALTER TABLE members ADD COLUMN date_of_birth TEXT`).run();
-  if (!cols.has('state')) await db.prepare(`ALTER TABLE members ADD COLUMN state TEXT`).run();
-  if (!cols.has('dob_set_at')) await db.prepare(`ALTER TABLE members ADD COLUMN dob_set_at TEXT`).run();       // birthday bonus needs the date of birth saved 30+ days before
-  if (!cols.has('referred_by')) await db.prepare(`ALTER TABLE members ADD COLUMN referred_by TEXT`).run();     // referrer's member id (from ?ref= at sign-up)
-  if (!cols.has('signup_device')) await db.prepare(`ALTER TABLE members ADD COLUMN signup_device TEXT`).run(); // random id from the browser (self-referral checks)
+  if (!cols.has('date_of_birth')) await addColumn(db, `ALTER TABLE members ADD COLUMN date_of_birth TEXT`);
+  if (!cols.has('state')) await addColumn(db, `ALTER TABLE members ADD COLUMN state TEXT`);
+  if (!cols.has('dob_set_at')) await addColumn(db, `ALTER TABLE members ADD COLUMN dob_set_at TEXT`);       // birthday bonus needs the date of birth saved 30+ days before
+  if (!cols.has('referred_by')) await addColumn(db, `ALTER TABLE members ADD COLUMN referred_by TEXT`);     // referrer's member id (from ?ref= at sign-up)
+  if (!cols.has('signup_device')) await addColumn(db, `ALTER TABLE members ADD COLUMN signup_device TEXT`); // random id from the browser (self-referral checks)
   const rc = new Set((await db.prepare(`PRAGMA table_info(rewards_members)`).all()).results.map(c => c.name));
-  if (!rc.has('tier_notified')) await db.prepare(`ALTER TABLE rewards_members ADD COLUMN tier_notified TEXT`).run(); // highest tier emailed this season ("2026/27:gold")
-  if (!rc.has('tier_seen')) await db.prepare(`ALTER TABLE rewards_members ADD COLUMN tier_seen TEXT`).run();         // highest tier the fan has seen the celebration for
-  if (!rc.has('star_wall')) await db.prepare(`ALTER TABLE rewards_members ADD COLUMN star_wall INTEGER NOT NULL DEFAULT 0`).run(); // opt-in to the Star Fans wall
+  if (!rc.has('tier_notified')) await addColumn(db, `ALTER TABLE rewards_members ADD COLUMN tier_notified TEXT`); // highest tier emailed this season ("2026/27:gold")
+  if (!rc.has('tier_seen')) await addColumn(db, `ALTER TABLE rewards_members ADD COLUMN tier_seen TEXT`);         // highest tier the fan has seen the celebration for
+  if (!rc.has('star_wall')) await addColumn(db, `ALTER TABLE rewards_members ADD COLUMN star_wall INTEGER NOT NULL DEFAULT 0`); // opt-in to the Star Fans wall
   const lc = new Set((await db.prepare(`PRAGMA table_info(rewards_ledger)`).all()).results.map(c => c.name));
-  if (!lc.has('event_id')) await db.prepare(`ALTER TABLE rewards_ledger ADD COLUMN event_id TEXT`).run(); // ticket points wait for this match
-  if (!lc.has('pay_ref')) await db.prepare(`ALTER TABLE rewards_ledger ADD COLUMN pay_ref TEXT`).run();   // Paystack reference (refunds/disputes reverse by it)
+  if (!lc.has('event_id')) await addColumn(db, `ALTER TABLE rewards_ledger ADD COLUMN event_id TEXT`); // ticket points wait for this match
+  if (!lc.has('pay_ref')) await addColumn(db, `ALTER TABLE rewards_ledger ADD COLUMN pay_ref TEXT`);   // Paystack reference (refunds/disputes reverse by it)
   await db.batch([
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_rewards_ledger_pending ON rewards_ledger (status, event_id)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_rewards_ledger_payref ON rewards_ledger (pay_ref)`),

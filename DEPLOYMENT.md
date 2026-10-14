@@ -919,6 +919,11 @@ No Cloudflare Access rule is needed.
   (earnAlerts for the signed-in fan), `/api/programme/:slug/event` type `open`
   (earnProgramme), first purchase inside earnPurchase (carries the pay_ref, so
   refunds/disputes reverse it). Test: `tests/rewards-actions.api.test.mjs`.
+- Fan guide `/rewards/` reads every number from `GET /api/rewards/info` (settings,
+  tiers with benefit lines, catalogue); FAQPage JSON-LD in the page (no numbers).
+  Settings expiryMonths 12 and exampleJerseyNaira / exampleTicketNaira /
+  exampleFoodNaira (Terver example; to confirm). Column setup tolerates two
+  first requests at once ("duplicate column" ignored).
 
 ## Ticketing system setup (Cloudflare D1 + Paystack + Resend)
 
