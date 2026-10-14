@@ -117,6 +117,7 @@ export function ticketEmailHtml({ order, event, tickets }) {
     <p>Your booking for <strong>${escHtml(event.home_team)} vs ${escHtml(event.away_team)}</strong> (${escHtml(event.competition)}) is confirmed. Order reference: <strong>${order.id}</strong>.</p>
     <p>Present each QR code below at the gate &mdash; one scan per ticket. Screenshots work fine, or download the ticket image from your confirmation page on the website.</p>
     ${ticketBlocks}
+    <p style="background:#FFF8E1;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;"><strong>On match day:</strong> order food and drinks to your seat from your phone. See the menu at <a href="https://lobistarsfc.com/food/">lobistarsfc.com/food</a>.</p>
     <p style="font-size:12px;color:#888;">Pride of Benue &middot; Lobi Stars Football Club</p>
   </div>`;
 }

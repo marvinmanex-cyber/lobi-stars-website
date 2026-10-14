@@ -242,6 +242,12 @@ import '../styles/fixture-card.css';
       const g = el('a', 'btn-o', 'Google Calendar') as HTMLAnchorElement;
       g.href = googleCalUrl(m); g.target = '_blank'; g.rel = 'noopener';
       actions.append(ics, g);
+      // In-seat food ordering at McCarthy Stadium (home matches).
+      if (m.is_home) {
+        const food = el('a', 'btn-o', 'Order food to your seat') as HTMLAnchorElement;
+        food.href = '/food/';
+        actions.append(food);
+      }
       // Live commentary (away matches already have it above; home matches get
       // Matchday Live on the day, and this link before it).
       if (m.is_home && root.dataset.commentary && !isMatchDay(m)) {

@@ -49,6 +49,7 @@ export function matchBarHtml(matches, { now = Date.now() } = {}) {
   const more = [];
   if (!primary.includes(`href="${centre}"`)) more.push(item(`<a role="menuitem" href="${centre}">Match Centre</a>`));
   if (!postponed && p) more.push(item(`<a role="menuitem" href="/api/calendar?match=${encodeURIComponent(slug)}">Add to calendar</a>`));
+  if (home && !postponed) more.push(item('<a role="menuitem" href="/food/">Order food to your seat</a>'));
   more.push(item(`<button type="button" role="menuitem" data-fx-share data-url="${centre}" data-title="${esc(title)}">Share</button>`));
   if (!live) more.push(item(listen('', ' role="menuitem"')));
 

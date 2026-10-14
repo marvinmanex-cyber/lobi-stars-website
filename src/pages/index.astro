@@ -1,6 +1,7 @@
 ---
 import ProgrammeBanner from '../components/programme/ProgrammeBanner.astro';
 import MatchBar from '../components/news/MatchBar.astro';
+import FoodPromo from '../components/FoodPromo.astro';
 import Layout from '../layouts/Layout.astro';
 import NewsHero from '../components/news/NewsHero.astro';
 import NextMatches from '../components/news/NextMatches.astro';
@@ -61,6 +62,8 @@ const teamJsonLd = {
 
   <NewsHero articles={featuredNews} />
   <NextMatches />
+  <!-- Matchday services: In-Seat Food Ordering, next to the matches it is for. -->
+  <FoodPromo />
   <MatchAlerts variant="band" />
   <MatchdayGames />
   <NewsCarousel title="Latest News" articles={latestNews} viewAllHref="/news" />

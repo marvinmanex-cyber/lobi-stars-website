@@ -597,6 +597,15 @@ each package: name, what's included, and a price (or price text such as "From
 
 ## 13. In-seat food orders (Admin › Commerce › In-Seat Food › Orders)
 
+**Where fans find it:** the **Tickets** menu at the top of every page (In-Seat
+Food Ordering), an "In-Seat Food Ordering" section on the homepage under
+Upcoming Matches, "Order food to your seat" in the homepage match bar's
+**More** menu and on the Match Centre page of every home match, the ticket
+confirmation page, and every ticket email. The homepage says "Ordering opens
+on Lobi Stars home match days" and, while ordering is open, "Ordering is open
+now" with the match. Ordering opens and closes with the ordering setting in
+Food Menu & Prices.
+
 ### How an order works
 1. The fan chooses food, enters their **name, seat, stand, phone and email**
    (and an optional note for the kitchen) and presses *Place Order & Pay*.

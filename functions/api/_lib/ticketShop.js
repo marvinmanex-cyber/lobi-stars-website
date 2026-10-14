@@ -198,6 +198,7 @@ export async function sendBasketEmail(env, basket) {
     <p>Your payment of <strong>${naira(total)}</strong> is confirmed. Order reference: <strong>${esc(basket.reference)}</strong>. Below is one QR code per ticket, for each match.</p>
     <p style="background:#f4f5f7;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;"><strong>At the gate:</strong> each QR code admits one person, once, and only on the day of its match. Have it ready on your phone (a screenshot works) or printed. Lost the email? Open lobistarsfc.com/tickets/lookup with your email and order reference.</p>
     ${sections.join('')}
+    <p style="background:#FFF8E1;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;"><strong>On match day:</strong> order food and drinks to your seat from your phone. See the menu at <a href="https://lobistarsfc.com/food/">lobistarsfc.com/food</a>.</p>
     <p style="font-size:12px;color:#888;">Pride of Benue &middot; Lobi Stars Football Club</p>
   </div>`;
   await sendEmail(env, { to: basket.buyer_email, subject: `Your Lobi Stars tickets (${orders.length} match${orders.length === 1 ? '' : 'es'}) – ${basket.reference}`, html });

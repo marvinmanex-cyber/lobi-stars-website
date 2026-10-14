@@ -22,6 +22,12 @@ import TicketsView from '../../components/tickets/TicketsView.astro';
         <a href="/tickets" class="btn-p" style="display:inline-block;">Buy Tickets for Another Match &rarr;</a>
         <a href="/" class="btn-o" style="display:inline-block;">&larr; Back to Home</a>
       </div>
+      <aside class="tix-food" aria-label="In-seat food ordering">
+        <p class="tix-food-k">On match day</p>
+        <p class="tix-food-t">Order food and drinks to your seat</p>
+        <p class="tix-food-p">Order from your phone at McCarthy Stadium, pay online and we bring it to your seat.</p>
+        <a href="/food/" class="btn-o tix-food-btn">See the menu &rarr;</a>
+      </aside>
     </div>
 
     <!-- Several matches in one payment (/tickets): ?basket=LSBAS-… -->
@@ -34,6 +40,12 @@ import TicketsView from '../../components/tickets/TicketsView.astro';
         <a href="/tickets/" class="btn-p" style="display:inline-block;">Buy more tickets &rarr;</a>
         <a href="/tickets/lookup/" class="btn-o" style="display:inline-block;">Find my tickets later</a>
       </div>
+      <aside class="tix-food" aria-label="In-seat food ordering">
+        <p class="tix-food-k">On match day</p>
+        <p class="tix-food-t">Order food and drinks to your seat</p>
+        <p class="tix-food-p">Order from your phone at McCarthy Stadium, pay online and we bring it to your seat.</p>
+        <a href="/food/" class="btn-o tix-food-btn">See the menu &rarr;</a>
+      </aside>
     </div>
 
     <div id="state-error" style="display:none;">
@@ -60,6 +72,11 @@ import TicketsView from '../../components/tickets/TicketsView.astro';
   }
   .tix-league{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.55);text-align:center;margin-bottom:4px;}
   .tix-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:#C9A227;text-align:center;margin-bottom:16px;}
+  .tix-food{margin-top:28px;padding:18px 20px;border-radius:12px;background:var(--dark);border:1px solid var(--d4);border-left:5px solid var(--red);}
+  .tix-food-k{margin:0 0 4px;font:700 12px/1 'Barlow Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--red-text);}
+  .tix-food-t{margin:0 0 6px;font:400 26px/1 'Bebas Neue',sans-serif;letter-spacing:1px;color:var(--white);}
+  .tix-food-p{margin:0 0 12px;color:var(--lt);}
+  .tix-food-btn{display:inline-flex;align-items:center;min-height:44px;}
   .tix-crests{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:10px;}
   .tix-crests img{--logo-h:56px;}
   .tix-vs{font-family:'Bebas Neue',sans-serif;font-size:16px;color:#C9A227;}

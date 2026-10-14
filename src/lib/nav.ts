@@ -32,7 +32,16 @@ export const MAIN_NAV: NavItem[] = [
   },
   { label: 'Squad', href: '/squad', description: 'The First Team squad' },
   { label: 'Video', href: '/video', description: 'Press conferences, training and highlights' },
-  { label: 'Tickets', href: '/tickets', description: 'Buy match tickets online' },
+  {
+    // Everything for a visit to McCarthy Stadium on match day.
+    label: 'Tickets', href: '/tickets',
+    children: [
+      { label: 'Buy Match Tickets', href: '/tickets', description: 'Tickets for every Lobi Stars home match' },
+      { label: 'In-Seat Food Ordering', href: '/food', description: 'Order food and drinks to your seat on match day' },
+      { label: 'Hospitality', href: '/hospitality', description: 'Matchday hospitality for businesses and groups' },
+      { label: 'Matchday Programme', href: '/programme', description: 'Read the matchday programme free' },
+    ],
+  },
   { label: 'Shop', href: '/shop', description: 'Official club merchandise' },
   {
     label: 'Club', href: '/club',
@@ -53,9 +62,6 @@ export const MAIN_NAV: NavItem[] = [
 export const EXTRA_PAGES: NavLink[] = [
   { label: 'Contact', href: '/contact', description: 'Address, phone, email and contact form' },
   { label: 'Newsletter', href: '/newsletter', description: 'Sign up for the free Lobi Stars Weekly newsletter' },
-  { label: 'In-Seat Food Ordering', href: '/food', description: 'Order food to your seat on matchday' },
-  { label: 'Hospitality', href: '/hospitality', description: 'Matchday hospitality for businesses and groups' },
-  { label: 'Matchday Programme', href: '/programme', description: 'Download the matchday programme' },
   { label: 'Gallery', href: '/gallery', description: 'Photos from matchdays and club events' },
   { label: 'About the Club', href: '/club', description: 'About Lobi Stars FC' },
   { label: 'Privacy Policy', href: '/privacy', description: 'How we use your data' },
