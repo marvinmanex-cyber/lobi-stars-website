@@ -1,49 +1,50 @@
 ---
-// Homepage card "Match Day Programme: Lobi Stars vs … Read free", shown from
-// the moment a programme is published until 6 hours after its kick-off (and
-// only while "Homepage banner" is on in Admin › Matchday Programme). Fans can
-// close it; it stays closed for that programme on this device.
+// Homepage strip "MATCH DAY PROGRAMME · Lobi Stars FC vs <next opponent> ·
+// Read free →". The server fills it in for every homepage request
+// (functions/index.js + functions/api/_lib/programmeStrip.js): the opponent
+// comes from THE next Lobi Stars match (the same as Upcoming Matches), and the
+// button only links when that match's programme is published; otherwise it
+// says "Programme coming soon". Hidden while the programme feature or its
+// "Homepage banner" switch is off, and when no match is left. Fans can close
+// it; it stays closed for that match on this device.
 ---
-<aside class="pgb" id="pgb" hidden aria-label="Match Day Programme">
-  <div class="pgb-in">
-    <a class="pgb-link" id="pgbLink" href="/programme/?src=homepage">
-      <span class="pgb-k">Match Day Programme</span>
-      <span class="pgb-t" id="pgbTitle"></span>
-      <span class="pgb-go">Read free &rarr;</span>
-    </a>
-    <button type="button" class="pgb-x" id="pgbX" aria-label="Close the programme banner">×</button>
-  </div>
-</aside>
+<aside class="pgb" id="pgb" hidden aria-label="Match Day Programme"></aside>
 
 <style>
   .pgb { background: #FFC72C; color: #15181D; }
-  .pgb-in { max-width: 1280px; margin: 0 auto; padding: 0 5%; display: flex; align-items: center; gap: 10px; }
-  .pgb-link { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px 14px; flex-wrap: wrap; padding: 12px 0; color: inherit; text-decoration: none; }
-  .pgb-k { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; }
-  .pgb-t { font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .pgb-go { font-weight: 700; text-decoration: underline; }
-  .pgb-x { flex: none; width: 40px; height: 40px; border: 0; border-radius: 50%; background: transparent; font-size: 26px; line-height: 1; cursor: pointer; color: inherit; }
-  .pgb-x:hover, .pgb-x:focus-visible { background: rgba(0, 0, 0, .1); }
+  .pgb :global(.pgb-in) { max-width: 1280px; margin: 0 auto; padding: 0 5%; display: flex; align-items: center; gap: 10px; }
+  .pgb :global(.pgb-link) { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px 18px; flex-wrap: wrap; padding: 10px 0; color: inherit; text-decoration: none; }
+  .pgb :global(.pgb-txt) { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .pgb :global(.pgb-k) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+  .pgb :global(.pgb-t) { font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; overflow-wrap: anywhere; }
+  .pgb :global(.pgb-ha) { display: inline-block; vertical-align: 3px; margin-left: 6px; padding: 3px 7px; border-radius: 999px; background: #15181D; color: #FFC72C; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+  .pgb :global(.pgb-go), .pgb :global(.pgb-soon) { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 8px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  .pgb :global(.pgb-go) { background: #15181D; color: #fff; }
+  .pgb :global(a.pgb-link:hover .pgb-go), .pgb :global(a.pgb-link:focus-visible .pgb-go) { background: #C11A1F; }
+  .pgb :global(a.pgb-link:focus-visible) { outline: 3px solid #15181D; outline-offset: 2px; }
+  .pgb :global(.pgb-soon) { border: 1.5px dashed rgba(21, 24, 29, .55); }
+  .pgb :global(.pgb-x) { flex: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; font-size: 26px; line-height: 1; cursor: pointer; color: inherit; }
+  .pgb :global(.pgb-x:hover), .pgb :global(.pgb-x:focus-visible) { background: rgba(0, 0, 0, .1); }
   .pgb[hidden] { display: none; }
-  @media (max-width: 600px) { .pgb-in { padding: 0 16px; } .pgb-t { font-size: 19px; } }
+  /* Phones: the button goes below the text; names wrap, never cut off. */
+  @media (max-width: 600px) {
+    .pgb :global(.pgb-in) { padding: 0 16px; align-items: flex-start; }
+    .pgb :global(.pgb-link) { flex-direction: column; align-items: flex-start; }
+    .pgb :global(.pgb-t) { font-size: 20px; }
+  }
 </style>
 
 <script is:inline>
 (function () {
   var box = document.getElementById('pgb');
   if (!box || box.dataset.ready) return; box.dataset.ready = '1';
-  fetch('/api/programme/current').then(function (r) { return r.json(); }).then(function (d) {
-    var p = d && d.enabled && d.homepageBanner && d.programme;
-    if (!p) return;
-    var now = new Date(d.serverTime || Date.now()).getTime();
-    if (p.kickoffAt && now > new Date(p.kickoffAt).getTime() + 6 * 3600e3) return;
-    try { if (localStorage.getItem('ls_pgb_closed') === p.slug) return; } catch (e) {}
-    document.getElementById('pgbTitle').textContent = p.title;
-    box.hidden = false;
-    document.getElementById('pgbX').addEventListener('click', function () {
-      box.hidden = true;
-      try { localStorage.setItem('ls_pgb_closed', p.slug); } catch (e) {}
-    });
-  }).catch(function (e) { console.error('[programme banner]', e); });
+  var inner = box.querySelector('.pgb-in');
+  if (!inner) return;
+  var key = inner.getAttribute('data-key');
+  try { if (localStorage.getItem('ls_pgb_closed') === key) { box.hidden = true; return; } } catch (e) {}
+  box.querySelector('.pgb-x').addEventListener('click', function () {
+    box.hidden = true;
+    try { localStorage.setItem('ls_pgb_closed', key); } catch (e) {}
+  });
 })();
 </script>

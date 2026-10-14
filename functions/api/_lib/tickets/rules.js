@@ -15,14 +15,35 @@ export const naira = kobo => `₦${Math.round(Number(kobo || 0) / 100).toLocaleS
 /**
  * The Lobi Stars match list: every unfinished match (not full time,
  * cancelled or abandoned), in kick-off order, with any live match first.
- * Postponed matches keep their place (their original date).
+ * Postponed matches keep their place (their original date). The league's own
+ * status (league_status, from League › Fixtures/Results) counts too: a league
+ * result or postponement there is enough.
  */
+const LEAGUE_GONE = ['full_time', 'awarded', 'cancelled', 'abandoned'];
 export function upcomingMatches(matches, now = Date.now()) {
   return matches
-    .filter(m => !GONE.includes(m.status))
+    .filter(m => !GONE.includes(m.status) && !LEAGUE_GONE.includes(m.league_status))
+    .map(m => (m.league_status === 'postponed' && !LIVE.includes(m.status) && m.status !== 'postponed' ? { ...m, status: 'postponed' } : m))
     .filter(m => LIVE.includes(m.status) || m.status === 'postponed' || Date.parse(m.event_date) > now - 2.25 * 3600e3)
     .sort((a, b) => (LIVE.includes(b.status) - LIVE.includes(a.status)) || Date.parse(a.event_date) - Date.parse(b.event_date));
 }
+
+const isLobi = name => /lobi stars/i.test(name || '');
+
+/**
+ * THE next Lobi Stars match, used by every "next match" on the site (the
+ * homepage Upcoming Matches card and the Match Day Programme strip), so they
+ * never disagree: a live match until it ends, otherwise the earliest
+ * unfinished one; postponed matches are skipped until they have a new date.
+ * Returns the match or null.
+ */
+export function nextLobiMatch(matches, now = Date.now()) {
+  return upcomingMatches(matches.filter(m => isLobi(m.home_team) || isLobi(m.away_team)), now).find(m => m.status !== 'postponed') || null;
+}
+
+/** The other club in a Lobi Stars match (its full name), and whether Lobi Stars are at home. */
+export const opponentOf = m => (isLobi(m.home_team) ? m.away_team : m.home_team);
+export const lobiAtHome = m => isLobi(m.home_team);
 
 /**
  * Can tickets be bought for this match? One of:

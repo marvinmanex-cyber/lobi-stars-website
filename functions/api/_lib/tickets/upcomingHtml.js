@@ -5,7 +5,7 @@
 // itself is the shared one (fixtureCard.js) used on /fixtures and /results.
 import { TEAM_LOGOS } from '../teamLogos.js';
 import { matchSlug } from '../matchSlug.js';
-import { upcomingMatches, naira } from './rules.js';
+import { upcomingMatches, nextLobiMatch, naira } from './rules.js';
 import { fixtureCardHtml, shareAction, lagosParts, splitVenue, esc } from '../fixtureCard.js';
 
 const isLobi = n => /lobi stars/i.test(n || '');
@@ -53,7 +53,12 @@ function card(m, featured, previews = {}) {
 
 /** The cards (HTML list items) for the Lobi Stars matches in `matches`. */
 export function upcomingHtml(matches, { now = Date.now(), previews = {}, limit = 3 } = {}) {
-  const list = upcomingMatches(matches.filter(m => isLobi(m.home_team) || isLobi(m.away_team)), now).slice(0, limit);
+  const lobi = matches.filter(m => isLobi(m.home_team) || isLobi(m.away_team));
+  // The featured card is THE next match (shared with the programme strip);
+  // postponed matches without a new date follow as regular cards.
+  const next = nextLobiMatch(lobi, now);
+  const rest = upcomingMatches(lobi, now).filter(m => !next || m.id !== next.id);
+  const list = (next ? [next, ...rest] : rest).slice(0, limit);
   if (!list.length) return '<li class="nm-empty">Fixtures for the next round will be announced soon. <a href="/fixtures/">See all fixtures</a></li>';
-  return list.map((m, i) => card(m, i === 0, previews)).join('');
+  return list.map((m, i) => card(m, !!next && i === 0, previews)).join('');
 }
