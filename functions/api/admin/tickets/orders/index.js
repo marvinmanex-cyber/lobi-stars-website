@@ -29,9 +29,9 @@ export function listSql(q, ev, status) {
   if (status) where.push(`status = ?`);
   return `SELECT * FROM (
       SELECT b.id, b.reference, b.buyer_name, b.buyer_email, b.buyer_phone, b.total_kobo, b.status, b.created_at, b.paid_at, 'basket' AS kind,
-        (SELECT COUNT(*) FROM orders o WHERE o.basket_id = b.id) AS matches,
+        (SELECT COUNT(DISTINCT o.event_id) FROM orders o WHERE o.basket_id = b.id) AS matches,
         (SELECT COUNT(*) FROM tickets t JOIN orders o ON o.id = t.order_id WHERE o.basket_id = b.id) AS tickets,
-        (SELECT group_concat(e.away_team, ', ') FROM orders o JOIN events e ON e.id = o.event_id WHERE o.basket_id = b.id) AS opponents
+        (SELECT group_concat(DISTINCT e.away_team) FROM orders o JOIN events e ON e.id = o.event_id WHERE o.basket_id = b.id) AS opponents
       FROM league_ticket_orders b
       UNION ALL
       SELECT o.id, o.paystack_reference, o.buyer_name, o.buyer_email, o.buyer_phone, o.total_kobo,

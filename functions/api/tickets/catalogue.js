@@ -1,4 +1,5 @@
 import { catalogue } from '../_lib/ticketShop.js';
+import { offersFor } from '../_lib/ticketDiscounts.js';
 
 // GET /api/tickets/catalogue -- every Lobi Stars HOME match from Matchday 1 to
 // the last, with its stands, prices, seats left and whether it can be bought.
@@ -16,6 +17,9 @@ export async function onRequestGet({ env }) {
         state: c.ticket.state, opensAt: c.ticket.opensAt || null, maxPerOrder: c.ticket.maxPerOrder,
         tiers: c.ticket.tiers.map(t => ({ tier: t.tier, label: t.label, priceKobo: t.priceKobo, left: t.remaining })),
       }));
+    // Discount badges (Group, Early bird, Family bundle) when a rule is on and applies.
+    const offers = await offersFor(env.DB, matches);
+    for (const m of matches) m.offers = offers.get(m.id) || null;
     return Response.json({ matches, serverTime: new Date().toISOString() }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     console.error('[tickets] catalogue', err);

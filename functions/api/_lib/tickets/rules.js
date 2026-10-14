@@ -6,6 +6,9 @@ export const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular
 export const PRICE_COL = { VIP: 'vip_price_kobo', Premium: 'premium_price_kobo', Regular: 'regular_price_kobo' };
 export const CAP_COL = { VIP: 'vip_capacity', Premium: 'premium_capacity', Regular: 'regular_capacity' };
 export const DEFAULT_MAX_PER_ORDER = 10;
+// Groups can buy more (the admin sets up to 50 per match); a large order is
+// stored as several orders rows of at most 10 (ticketDiscounts.orderChunks).
+export const MAX_PER_ORDER_LIMIT = 50;
 const LIVE = ['live', 'half-time'];
 const GONE = ['full-time', 'cancelled', 'abandoned'];
 
@@ -69,7 +72,7 @@ export function ticketState(event, settings, sold = {}, now = Date.now()) {
   const home = event.is_home === true || event.is_home === 1;
   if (!home) return { state: 'away', tiers: [], maxPerOrder: 0 };
   const kickoff = Date.parse(event.event_date);
-  const maxPerOrder = Math.max(1, Math.min(10, Number(settings?.max_per_order) || DEFAULT_MAX_PER_ORDER));
+  const maxPerOrder = Math.max(1, Math.min(MAX_PER_ORDER_LIMIT, Number(settings?.max_per_order) || DEFAULT_MAX_PER_ORDER));
   const tiers = TIERS.map(t => {
     const price = Number(event[PRICE_COL[t]]) || 0;
     const cap = settings?.[CAP_COL[t]];

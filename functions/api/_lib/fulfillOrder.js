@@ -32,12 +32,22 @@ export async function fulfillOrder(env, order, waitUntil, { email = true } = {})
   }
 
   const ticketIds = Array.from({ length: order.quantity }, () => randomId('LS-TIX', 12));
-  const insertTicket = env.DB.prepare(
-    `INSERT INTO tickets (id, order_id, event_id, tier, status) VALUES (?, ?, ?, ?, 'valid')`
-  );
-  await env.DB.batch(ticketIds.map(id => insertTicket.bind(id, order.id, order.event_id, order.tier)));
+  // Orders from the discount-aware basket carry the ticket type (adult/child)
+  // and the price paid per ticket (every row has one price; see orderChunks).
+  if (order.ticket_type !== undefined) {
+    const each = Math.floor((Number(order.discount_kobo) || 0) / order.quantity);
+    const insertTicket = env.DB.prepare(
+      `INSERT INTO tickets (id, order_id, event_id, tier, status, ticket_type, unit_price_kobo, discount_kobo) VALUES (?, ?, ?, ?, 'valid', ?, ?, ?)`
+    );
+    await env.DB.batch(ticketIds.map(id => insertTicket.bind(id, order.id, order.event_id, order.tier, order.ticket_type || 'adult', order.unit_price_kobo, each)));
+  } else {
+    const insertTicket = env.DB.prepare(
+      `INSERT INTO tickets (id, order_id, event_id, tier, status) VALUES (?, ?, ?, ?, 'valid')`
+    );
+    await env.DB.batch(ticketIds.map(id => insertTicket.bind(id, order.id, order.event_id, order.tier)));
+  }
 
-  const tickets = ticketIds.map(id => ({ id }));
+  const tickets = ticketIds.map(id => ({ id, ticket_type: order.ticket_type || 'adult' }));
 
   // Analytics + fan database (never blocks ticket issuing).
   const name = splitName(order.buyer_name);

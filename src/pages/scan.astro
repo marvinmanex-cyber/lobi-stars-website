@@ -108,9 +108,11 @@ import Layout from '../layouts/Layout.astro';
         scanCountEl.textContent = `${scanCount} ticket${scanCount === 1 ? '' : 's'} scanned this session`;
         result.style.background = 'rgba(76,175,80,.15)';
         resultIcon.textContent = '✅';
-        resultTitle.textContent = 'VALID: ADMIT';
+        // ADULT or CHILD (family bundle): staff may ask for proof of a child's age.
+        const child = data.ticketType === 'child';
+        resultTitle.textContent = child ? 'VALID: ADMIT CHILD' : 'VALID: ADMIT ADULT';
         // Plain text only: the buyer's name is typed by the buyer.
-        resultDetail.replaceChildren(`${data.ticket.buyer_name} · ${data.ticket.tier}`, document.createElement('br'), `${data.ticket.home_team} vs ${data.ticket.away_team}`);
+        resultDetail.replaceChildren(child ? 'CHILD ticket: check age if unsure.' : 'ADULT ticket', document.createElement('br'), `${data.ticket.buyer_name} · ${data.ticket.tier}`, document.createElement('br'), `${data.ticket.home_team} vs ${data.ticket.away_team}`);
       } else {
         // Amber for a ticket to another match, red for everything else.
         const wrong = data.code === 'wrong_match';

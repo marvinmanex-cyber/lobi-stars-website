@@ -7,7 +7,12 @@
 // home match) are suggested when every remaining home match is selected.
 // Look (14 Oct 2026): stadium hero with the next match, 3-step progress,
 // ticket-style match cards, stand cards, a sticky order summary (a slide-up
-// sheet on phones), cross-sell and FAQ. The buying logic is unchanged: the
+// sheet on phones), cross-sell and FAQ.
+// Discounts (Oct 2026): badges on each match card (Group, Early bird, Family
+// bundle) from /api/tickets/catalogue; a Family bundle option (adults and
+// children); an optional group name; and the order summary priced by the
+// server (/api/tickets/price, same function as checkout): subtotal, the
+// discount that applies and why, the amount saved and the total. The buying logic is unchanged: the
 // per-match stand and quantity are still <select>s (hidden), driven by the
 // visual controls, so selection, prices, totals and payment work as before.
 import Layout from '../../layouts/Layout.astro';
@@ -87,9 +92,11 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
             <button type="button" class="tk-sheet-x" id="sheetClose" aria-label="Close your order">&times;</button>
           </div>
           <ul class="tk-sum-lines" id="sumLines"><li class="tk-muted">No matches selected yet.</li></ul>
+          <div class="tk-disc" id="sumDisc" aria-live="polite" hidden></div>
           <p class="tk-total"><span>Total</span><b id="sumTotal" aria-hidden="true">₦0</b><span class="tk-sr" id="sumTotalLive" aria-live="polite">Total ₦0</span></p>
           <p class="tk-season" id="sumSeason" hidden></p>
           <form id="buyForm" class="tk-form" novalidate>
+            <div class="tk-fl" id="grpWrap" hidden><input id="fGroup" name="groupName" maxlength="80" placeholder=" " /><label for="fGroup">Group name, e.g. church or club (optional)</label></div>
             <div class="tk-fl"><input id="fName" name="buyerName" autocomplete="name" required maxlength="80" placeholder=" " /><label for="fName">Full name</label></div>
             <div class="tk-fl"><input id="fEmail" name="buyerEmail" type="email" autocomplete="email" required maxlength="254" placeholder=" " /><label for="fEmail">Email (tickets are sent here)</label><p class="tk-inline" id="fEmailMsg" aria-live="polite"></p></div>
             <div class="tk-fl"><input id="fPhone" name="buyerPhone" type="tel" autocomplete="tel" inputmode="tel" required placeholder=" " /><label for="fPhone">Phone (e.g. 0803 123 4567)</label><p class="tk-inline" id="fPhoneMsg" aria-live="polite"></p></div>
@@ -253,6 +260,27 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   .tk :global(.tk-md) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--red-text); }
   .tk :global(.tk-flag) { padding: 4px 8px; border-radius: 999px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; background: var(--tk-gold); color: var(--tk-ink); }
   .tk :global(.tk-flag--week) { background: var(--tk-ink); color: #fff; }
+  /* Discount badges and the early-bird deadline on a match card. */
+  .tk :global(.tk-offers) { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .tk :global(.tk-offer) { padding: 4px 9px; border-radius: 999px; background: #E3F6E9; color: #0B5A24; border: 1px solid #A8DDB8; font: 700 12px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .04em; }
+  .tk :global(.tk-offer-end) { width: 100%; margin: 2px 0 0; font-size: 13px; color: var(--lt); }
+  /* Tickets / Family bundle switch and the family steppers. */
+  .tk :global(.tk-mode) { display: inline-grid; grid-template-columns: 1fr 1fr; border: 1.5px solid var(--d4); border-radius: 999px; overflow: hidden; }
+  .tk :global(.tk-mode label) { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 14px; cursor: pointer; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .tk :global(.tk-mode input) { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .tk :global(.tk-mode label:has(input:checked)) { background: var(--tk-ink); color: #fff; }
+  .tk :global(.tk-mode label:has(input:focus-visible)) { outline: 3px solid var(--tk-red); outline-offset: -3px; }
+  .tk :global(.tk-fam) { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; width: 100%; }
+  .tk :global(.tk-fam-n) { display: inline-flex; align-items: center; gap: 8px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+  .tk :global(.tk-fam p) { width: 100%; margin: 0; font-size: 13.5px; color: var(--lt); }
+  /* Summary: subtotal, discount, saved, nudges. */
+  .tk-disc { display: grid; gap: 6px; margin-top: 12px; padding: 12px; border-radius: 12px; background: #E3F6E9; color: #0B3D1A; font-size: 14.5px; }
+  .tk-disc :global(.tk-dl) { display: flex; justify-content: space-between; gap: 10px; }
+  .tk-disc :global(.tk-dl b) { font-variant-numeric: tabular-nums; }
+  .tk-disc :global(.tk-dsave) { font-weight: 700; color: #0B5A24; }
+  .tk-disc :global(.tk-dwhy), .tk-disc :global(.tk-dnudge) { margin: 0; font-size: 13px; }
+  .tk-disc :global(.tk-dnudge) { padding: 6px 10px; border-radius: 8px; background: #fff; border: 1px dashed #7CC793; color: #0B3D1A; }
+  .tk-disc.plain { background: var(--dark); color: var(--white); }
   .tk :global(.tk-state) { padding: 4px 8px; border-radius: 999px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; background: var(--d3); color: var(--white); }
   .tk :global(.tk-state.out) { background: #FDECEC; color: #A3161B; }
   .tk :global(.tk-teams) { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; font: 700 20px/1.15 'Barlow Condensed', sans-serif; }
@@ -408,6 +436,21 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   var matches = [], rows = new Map(), season = null;
   var pre = new URLSearchParams(location.search).get('event');
   var short = function (n) { return String(n || '').replace(/\s+FC$/, ''); };
+  var pct = function (bp) { var v = bp / 100; return (Math.round(v * 100) / 100) + '%'; };
+  // Discount badges for a match card (only offers that apply right now; worked out on the server).
+  function offerBits(m) {
+    var o = m.offers; if (!o || m.state !== 'on_sale') return null;
+    var b = [];
+    if (o.earlyBird) b.push(el('span', { class: 'tk-offer', text: 'Early bird: save ' + pct(o.earlyBird.percentBp) }));
+    if (o.group) b.push(el('span', { class: 'tk-offer', text: 'Groups of ' + o.group.minTickets + '+: save ' + (o.group.tiers.length > 1 ? 'up to ' : '') + pct(o.group.maxPercentBp) }));
+    if (o.family) b.push(el('span', { class: 'tk-offer', text: 'Family bundle: save ' + pct(o.family.percentBp) }));
+    if (o.earlyBird) {
+      var end = Date.parse(o.earlyBird.endsAt), d = Math.ceil((end - Date.now()) / 864e5);
+      var day = new Date(end).toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' });
+      b.push(el('p', { class: 'tk-offer-end', text: (d <= 1 ? 'Early-bird price ends today or tomorrow' : 'Early-bird price ends in ' + d + ' days') + ' (ends ' + day + ').' }));
+    }
+    return b.length ? el.apply(null, ['div', { class: 'tk-offers' }].concat(b)) : null;
+  }
 
   // A club badge: its crest, or a circle with initials.
   function badge(name, size) {
@@ -496,7 +539,25 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       var bump = function (d) { var n = Math.min(qty.options.length, Math.max(1, Number(qty.value) + d)); qty.value = String(n); qty.dispatchEvent(new Event('change')); };
       minus.addEventListener('click', function () { bump(-1); }); plus.addEventListener('click', function () { bump(1); });
       var step = el('div', { class: 'tk-step', role: 'group', 'aria-label': 'Tickets for ' + title }, minus, out, plus);
-      var pick = el('div', { class: 'tk-pick', hidden: true }, seg, step, tier, qty);
+      // Family bundle (when that discount is on for this match): adults + children instead of a number of tickets.
+      var fo = m.offers && m.offers.family, fam = { on: false, adults: fo ? Math.max(1, fo.minAdults) : 1, children: fo ? fo.minChildren : 1 };
+      var famBox = null, mode = null;
+      if (fo) {
+        var famStep = function (key, label, min, max) {
+          var o = el('output', { 'aria-live': 'polite', text: String(fam[key]) });
+          var mi = el('button', { type: 'button', 'aria-label': 'One fewer ' + label.toLowerCase() + ' for ' + title, text: '−' }), pl = el('button', { type: 'button', 'aria-label': 'One more ' + label.toLowerCase() + ' for ' + title, text: '+' });
+          var upd = function () { o.textContent = String(fam[key]); mi.disabled = fam[key] <= min; pl.disabled = fam[key] >= max; };
+          mi.addEventListener('click', function () { fam[key] = Math.max(min, fam[key] - 1); upd(); summary(); });
+          pl.addEventListener('click', function () { fam[key] = Math.min(max, fam[key] + 1); upd(); summary(); });
+          upd();
+          return el('span', { class: 'tk-fam-n' }, label, el('span', { class: 'tk-step', role: 'group', 'aria-label': label + ' for ' + title }, mi, o, pl));
+        };
+        famBox = el('div', { class: 'tk-fam', hidden: true }, famStep('adults', 'Adults', Math.max(1, fo.minAdults), fo.maxAdults), famStep('children', 'Children', fo.minChildren, fo.maxChildren), el('p', { text: fo.text }));
+        var modeName = 'mode-' + m.id;
+        var mk = function (v, label, on) { var i = el('input', { type: 'radio', name: modeName, value: v }); i.checked = on; i.addEventListener('change', function () { fam.on = v === 'family'; step.hidden = fam.on; famBox.hidden = !fam.on; summary(); }); return el('label', {}, i, label); };
+        mode = el('div', { class: 'tk-mode', role: 'radiogroup', 'aria-label': 'Ticket type for ' + title }, mk('n', 'Tickets', true), mk('family', 'Family bundle', false));
+      }
+      var pick = el('div', { class: 'tk-pick', hidden: true }, seg, mode, step, famBox, tier, qty);
       var when = new Date(m.kickoff);
       var time = when.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
       var low = m.tiers.length ? Math.min.apply(null, m.tiers.map(function (t) { return t.priceKobo; })) : 0;
@@ -516,13 +577,14 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
             el('div', {},
               el('div', { class: 'tk-labels' }, m.matchday ? el('span', { class: 'tk-md', text: 'Matchday ' + m.matchday }) : null, flag, stateText ? el('span', { class: 'tk-state' + (m.state === 'sold_out' ? ' out' : ''), text: stateText }) : null),
               el('div', { class: 'tk-teams' }, el('span', { class: 'tk-team' }, badge(m.homeTeam, 30), 'Lobi Stars'), el('i', { text: 'vs' }), el('span', { class: 'tk-team' }, badge(m.awayTeam, 30), short(m.awayTeam))),
-              el('div', { class: 'tk-meta' }, el('time', { datetime: m.kickoff, text: when.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + time }), el('br'), 'McCarthy Stadium, Makurdi' + (can && left !== null ? ' · ' + left + ' left' : ''))),
+              el('div', { class: 'tk-meta' }, el('time', { datetime: m.kickoff, text: when.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + time }), el('br'), 'McCarthy Stadium, Makurdi' + (can && left !== null ? ' · ' + left + ' left' : '')),
+              offerBits(m)),
             el('div', { class: 'tk-side' },
               can && low ? el('span', { class: 'tk-from' }, 'from', el('b', { text: naira(low) })) : null,
               el('label', { class: 'tk-toggle' }, cb, svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>')),
               el('span', { class: 'tk-toggle-l', 'aria-hidden': 'true', text: can ? 'Select' : '' }))),
           pick));
-      var r = { m: m, cb: cb, tier: tier, qty: qty, row: row, pick: pick, ribbon: ribbon, sync: syncStep };
+      var r = { m: m, cb: cb, tier: tier, qty: qty, row: row, pick: pick, ribbon: ribbon, sync: syncStep, fam: fam };
       cb.addEventListener('change', function () { pick.hidden = !cb.checked; row.classList.toggle('on', cb.checked); ribbon.hidden = !cb.checked; summary(); });
       tier.addEventListener('change', function () { fillQty(); syncStep(); summary(); });
       qty.addEventListener('change', function () { syncStep(); summary(); });
@@ -536,6 +598,8 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   }
 
   function selected() { return Array.from(rows.values()).filter(function (r) { return r.cb.checked; }); }
+  var lastBasket = [];
+  function selectedBasket() { return lastBasket; }
   function set(r, on) { if (r.cb.disabled) return; r.cb.checked = on; r.pick.hidden = !on; r.row.classList.toggle('on', on); if (r.ribbon) r.ribbon.hidden = !on; }
   $('selAll').addEventListener('click', function () { rows.forEach(function (r) { set(r, true); }); summary(); });
   $('selNext3').addEventListener('click', function () { var n = 0; rows.forEach(function (r) { var on = !r.cb.disabled && n < 3; if (on) n++; set(r, on); }); summary(); });
@@ -559,27 +623,75 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     document.querySelectorAll('#tkSteps li').forEach(function (li) { var s = Number(li.dataset.step); li.classList.toggle('done', s < cur); li.classList.toggle('now', s === cur); li.setAttribute('aria-current', s === cur ? 'step' : 'false'); });
   }
 
+  // The price on screen: the full price straight away, then the server's price
+  // (with any discount) from /api/tickets/price. Pay uses the server's total.
+  var quote = null, quoteSeq = 0, quoteTimer;
+  function showPrice(total, tickets, nSel) {
+    showTotal(total);
+    $('tkBar').hidden = !nSel;
+    $('barTotal').textContent = naira(total);
+    $('barCount').textContent = nSel + ' match' + (nSel === 1 ? '' : 'es') + ', ' + tickets + ' ticket' + (tickets === 1 ? '' : 's');
+    $('payText').textContent = nSel ? 'Pay ' + naira(total) + ' with Paystack' : 'Pay with Paystack';
+  }
+  var payLines = function (basket) { return basket.map(function (l) { return l.family ? { eventId: l.eventId, tier: l.tier, family: true, adults: l.adults, children: l.children } : { eventId: l.eventId, tier: l.tier, quantity: l.quantity }; }); };
+  function requestPrice(basket) {
+    var box = $('sumDisc'), seq = ++quoteSeq; quote = null;
+    clearTimeout(quoteTimer);
+    if (!basket.length) { box.hidden = true; $('grpWrap').hidden = true; $('payBtn').disabled = true; return; }
+    $('payBtn').disabled = true;
+    quoteTimer = setTimeout(function () {
+      fetch('/api/tickets/price', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines: payLines(basket), buyerEmail: $('fEmail').value }) })
+        .then(function (r) { return r.json(); }).then(function (d) { if (seq === quoteSeq) showQuote(d, basket); })
+        .catch(function () { if (seq === quoteSeq) { quote = null; box.hidden = true; $('payBtn').disabled = false; } });
+    }, 200);
+  }
+  function showQuote(d, basket) {
+    var box = $('sumDisc'), err = $('buyErr');
+    if (!d || !d.ok) { box.hidden = true; quote = null; err.textContent = (d && d.error) || ''; err.dataset.from = 'price'; $('payBtn').disabled = true; return; }
+    if (err.dataset.from === 'price') { err.textContent = ''; err.dataset.from = ''; }
+    quote = d;
+    var titleOf = function (id) { var l = basket.find(function (x) { return x.eventId === id; }); return l ? l.title : ''; };
+    var tickets = d.matches.reduce(function (t, m) { return t + m.tickets; }, 0);
+    var parts = [], several = d.matches.length > 1;
+    d.matches.forEach(function (m) {
+      if (m.discountKobo > 0) {
+        parts.push(el('div', { class: 'tk-dl' }, el('span', { text: 'Discount: ' + m.label + (several ? ' · ' + titleOf(m.eventId).replace('Lobi Stars vs ', 'v ') : '') }), el('b', { text: '−' + naira(m.discountKobo) })));
+        if (m.reason) parts.push(el('p', { class: 'tk-dwhy', text: m.reason }));
+      }
+      if (m.nudge) parts.push(el('p', { class: 'tk-dnudge', text: (several ? titleOf(m.eventId).replace('Lobi Stars vs ', 'v ') + ': ' : '') + m.nudge.text }));
+    });
+    if (d.discountKobo > 0) {
+      parts.unshift(el('div', { class: 'tk-dl' }, el('span', { text: 'Subtotal' }), el('b', { text: naira(d.subtotalKobo) })));
+      parts.push(el('div', { class: 'tk-dl tk-dsave' }, el('span', { text: 'You save' }), el('b', { text: naira(d.discountKobo) })));
+    }
+    box.replaceChildren.apply(box, parts);
+    box.hidden = !parts.length;
+    box.classList.toggle('plain', !(d.discountKobo > 0));
+    $('grpWrap').hidden = !d.matches.some(function (m) { return m.applied.some(function (a) { return a.kind === 'group'; }); });
+    showPrice(d.totalKobo, tickets, basket.length);
+    $('payBtn').disabled = false;
+  }
+
   function summary() {
     var sel = selected(), total = 0, tickets = 0, lines = $('sumLines');
     lines.replaceChildren();
     if (!sel.length) lines.append(el('li', { class: 'tk-muted', text: 'No matches selected yet. Tick a match above to start your order.' }));
     var basket = sel.map(function (r) {
-      var t = r.m.tiers.find(function (x) { return x.tier === r.tier.value; }), q = Number(r.qty.value) || 1, sub = t.priceKobo * q;
+      var t = r.m.tiers.find(function (x) { return x.tier === r.tier.value; }), famOn = r.fam && r.fam.on;
+      var q = famOn ? r.fam.adults + r.fam.children : Number(r.qty.value) || 1, sub = t.priceKobo * q;
       total += sub; tickets += q;
       var title = 'Lobi Stars vs ' + short(r.m.awayTeam);
+      var what = famOn ? 'Family bundle: ' + r.fam.adults + ' adult' + (r.fam.adults === 1 ? '' : 's') + ' + ' + r.fam.children + ' child' + (r.fam.children === 1 ? '' : 'ren') + ' · ' + t.label : t.label + ' × ' + q;
       lines.append(el('li', { class: 'tk-line' },
-        el('span', {}, el('b', { text: title }), el('small', { text: t.label + ' × ' + q })),
+        el('span', {}, el('b', { text: title }), el('small', { text: what })),
         el('span', { class: 'tk-lt', text: naira(sub) }),
         el('button', { type: 'button', 'aria-label': 'Remove ' + title, text: '×', onclick: function () { set(r, false); summary(); } })));
-      return { eventId: r.m.id, tier: t.tier, quantity: q, unitKobo: t.priceKobo };
+      return famOn ? { eventId: r.m.id, tier: t.tier, family: true, adults: r.fam.adults, children: r.fam.children, quantity: q, unitKobo: t.priceKobo, title: title }
+        : { eventId: r.m.id, tier: t.tier, quantity: q, unitKobo: t.priceKobo, title: title };
     });
-    showTotal(total);
-    $('tkBar').hidden = !sel.length;
-    $('barTotal').textContent = naira(total);
-    $('barCount').textContent = sel.length + ' match' + (sel.length === 1 ? '' : 'es') + ', ' + tickets + ' ticket' + (tickets === 1 ? '' : 's');
+    showPrice(total, tickets, sel.length);
     if (!sel.length) closeSheet();
-    $('payBtn').disabled = !sel.length;
-    $('payText').textContent = sel.length ? 'Pay ' + naira(total) + ' with Paystack' : 'Pay with Paystack';
+    requestPrice(basket);
     progress(sel.length);
     // Season Ticket saving: every remaining home match on sale, one stand, same number of tickets.
     var onSale = matches.filter(function (m) { return m.state === 'on_sale'; }).map(function (m) { return m.id; });
@@ -589,6 +701,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       var st = tiers.length === 1 && qs.length === 1 ? (season.tiers || []).find(function (t) { return t.tier === tiers[0]; }) : null;
       if (st && st.priceKobo * qs[0] < total) { s.replaceChildren('Tip: a ', el('a', { href: '/season-tickets/', text: 'Season Ticket' }), ' covers every home match for ' + naira(st.priceKobo * qs[0]) + ' (save ' + naira(total - st.priceKobo * qs[0]) + ').'); s.hidden = false; }
     }
+    lastBasket = basket;
     return basket;
   }
 
@@ -622,21 +735,25 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   var f = $('buyForm');
   ['fName', 'fEmail', 'fPhone'].forEach(function (id) { $(id).addEventListener('input', function () { if (!typed) { typed = true; progress(selected().length); } }); });
   var check = function (id, msgId, ok, msg) { var bad = $(id).value.trim() && !ok($(id).value.trim()); $(id).classList.toggle('bad', !!bad); $(id).setAttribute('aria-invalid', bad ? 'true' : 'false'); $(msgId).textContent = bad ? msg : ''; };
+  $('fEmail').addEventListener('change', function () { if (selected().length) summary(); }); // one group/family discount per email per match
   $('fEmail').addEventListener('blur', function () { check('fEmail', 'fEmailMsg', function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v); }, 'Please check your email address: your tickets are sent here.'); });
   $('fPhone').addEventListener('blur', function () { check('fPhone', 'fPhoneMsg', function (v) { return /^(\+?234|0)?[789][01]\d{8}$/.test(v.replace(/[\s-]/g, '')); }, 'Please enter a Nigerian mobile number, e.g. 0803 123 4567.'); });
 
   f.addEventListener('submit', function (e) {
     e.preventDefault();
     var err = $('buyErr'); err.textContent = '';
-    var lines = summary().map(function (l) { return { eventId: l.eventId, tier: l.tier, quantity: l.quantity }; });
+    var lines = payLines(selectedBasket());
     if (!lines.length) { err.textContent = 'Tick at least one match.'; return; }
+    if (!quote) { err.textContent = 'Working out your price. Please try again in a moment.'; return; }
     var tokenEl = f.querySelector('[name="cf-turnstile-response"]');
     $('payBtn').disabled = true;
-    fetch('/api/tickets/basket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines: lines, buyerName: f.buyerName.value, buyerEmail: f.buyerEmail.value, buyerPhone: f.buyerPhone.value, turnstileToken: tokenEl ? tokenEl.value : '' }) })
+    fetch('/api/tickets/basket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines: lines, groupName: $('grpWrap').hidden ? '' : f.groupName.value, expectedTotalKobo: quote.totalKobo, buyerName: f.buyerName.value, buyerEmail: f.buyerEmail.value, buyerPhone: f.buyerPhone.value, turnstileToken: tokenEl ? tokenEl.value : '' }) })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
         if (res.ok && res.d.authorizationUrl) { location.href = res.d.authorizationUrl; return; }
         err.textContent = res.d.error || 'Something went wrong. Please try again.';
+        // The price changed (a discount ended or ran out): show the new total; the buyer presses Pay again.
+        if (res.d.code === 'repriced' && res.d.pricing) { showQuote(Object.assign({ ok: true }, res.d.pricing), selectedBasket()); err.textContent = res.d.error; }
         // A match that just sold out: untick it so the rest can be paid in one click.
         if (res.d.soldOut && res.d.eventId && rows.get(res.d.eventId)) { set(rows.get(res.d.eventId), false); summary(); load(); }
         if (window.turnstile && window.turnstile.reset) window.turnstile.reset();

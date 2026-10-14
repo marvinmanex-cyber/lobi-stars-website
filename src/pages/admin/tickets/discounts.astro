@@ -1,0 +1,179 @@
+---
+// Commerce › Match Tickets › Discounts: the three ticket discounts (Group,
+// Early bird, Family bundle) with on/off, percent, dates and limits; group
+// tiers; global settings (stacking, most discount in total, lowest ticket
+// price, group/family orders per email per match); a preview calculator; and
+// a report per discount with CSV. Every change is in the audit log. All
+// prices are worked out on the server (functions/api/_lib/tickets/discounts.js).
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="Ticket Discounts | Lobi Stars Admin" description="Group, early-bird and family ticket discounts." noindex>
+  <div class="wrap la">
+    <AdminNav current="ticket-discounts" />
+    <header class="la-head"><div><div class="stag">Commerce</div><h1 class="stitle">Ticket <span class="r">Discounts</span></h1></div>
+      <div class="la-row"><a class="btn-o" href="/admin/tickets/">Match Tickets</a><a class="btn-o" href="/tickets/" target="_blank" rel="noopener">Public tickets page ↗</a></div></header>
+    <p class="la-lede">Each discount does nothing until you switch it <b>On</b> and save. By default an order gets the <b>one</b> discount that saves the buyer the most. Discounts are worked out per match, on the server, at the moment of the order. Dates are Nigerian time; leave a date empty for no limit. To leave one match out, untick <b>Discounts allowed</b> on that match in <a href="/admin/tickets/">Match Tickets</a>.</p>
+
+    <div id="rules"><p class="la-muted">Loading…</p></div>
+
+    <section class="la-card" aria-labelledby="h-set">
+      <h2 id="h-set">Settings for all discounts</h2>
+      <form id="set" class="la-row" style="align-items:flex-end">
+        <label class="la-row" style="gap:6px;font-weight:700"><input name="stack" type="checkbox" style="width:22px;height:22px;min-height:auto" /> Combine discounts (stacking)</label>
+        <label class="la-f">Most discount in total %<input name="maxTotal" type="number" min="0" max="100" step="0.01" style="width:110px" /></label>
+        <label class="la-f">Lowest ticket price ₦<input name="minPrice" type="number" min="0" step="1" style="width:120px" /></label>
+        <label class="la-f">Group/family orders per email per match<input name="perEmail" type="number" min="0" max="20" style="width:110px" /></label>
+        <button class="btn-p" type="submit">Save settings</button>
+      </form>
+      <p class="la-muted">Stacking off (recommended): only the best discount applies. Stacking on: discounts add up, but never more than the "most discount in total". No ticket is ever sold below the lowest ticket price. Per email: how many group or family orders one email address can make for the same match (0 = no limit), so a discount can't be reused by splitting orders.</p>
+    </section>
+
+    <section class="la-card" aria-labelledby="h-prev">
+      <h2 id="h-prev">Preview calculator</h2>
+      <form id="prev" class="la-row" style="align-items:flex-end">
+        <label class="la-f">Match<select name="eventId" required></select></label>
+        <label class="la-f">Stand<select name="tier"></select></label>
+        <label class="la-f">Tickets<select name="mode"><option value="n">Normal</option><option value="family">Family bundle</option></select></label>
+        <label class="la-f" data-n>How many<input name="quantity" type="number" min="1" max="500" value="10" style="width:90px" /></label>
+        <label class="la-f" data-f hidden>Adults<input name="adults" type="number" min="0" max="6" value="2" style="width:80px" /></label>
+        <label class="la-f" data-f hidden>Children<input name="children" type="number" min="0" max="10" value="2" style="width:80px" /></label>
+        <label class="la-f">Bought on (Nigerian time)<input name="at" type="datetime-local" /></label>
+        <button class="btn-p" type="submit">Work out the price</button>
+      </form>
+      <div id="prevOut" aria-live="polite"></div>
+      <p class="la-muted">Uses the saved discounts as they are now (on or off) and the discounted tickets already sold for that match. Leave the date empty for "now".</p>
+    </section>
+
+    <section class="la-card" aria-labelledby="h-rep">
+      <h2 id="h-rep">Report</h2>
+      <div id="report"><p class="la-muted">Loading…</p></div>
+      <button class="btn-o" type="button" id="csv" style="margin-top:10px">Export CSV</button>
+      <p class="la-muted">Paid orders only (refunds are left out). Revenue is what buyers paid after the discount.</p>
+    </section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<style is:global>
+  .dc-rule { border: 1px solid var(--a-line); border-radius: 12px; padding: 14px; margin-bottom: 14px; background: var(--a-card); }
+  .dc-rule.on { border-color: #18A34A; box-shadow: 0 0 0 1px #18A34A inset; }
+  .dc-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+  .dc-head h2 { margin: 0; font-size: 20px; }
+  .dc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; align-items: end; }
+  .dc-grid input, .dc-grid select { width: 100%; }
+  .dc-switch { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 700; }
+  .dc-switch input { width: 22px; height: 22px; min-height: auto; }
+  .dc-tiers { margin: 10px 0; }
+  .dc-tier { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 6px; }
+  .dc-tier input { width: 110px; }
+  .dc-out { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: var(--a-card); border: 1px solid var(--a-line); line-height: 1.7; }
+</style>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, el = LA.el, $ = function (id) { return document.getElementById(id); };
+  var naira = function (k) { return '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
+  var wat = function (iso) { return iso ? new Date(Date.parse(iso) + 3600e3).toISOString().slice(0, 16) : ''; };
+  var pc = function (bp) { return bp / 100; };
+  var HELP = {
+    group: 'For one order with many tickets for the SAME match. The percent comes from the highest tier reached. Fans can add a group name (church, school, supporters club, company).',
+    early_bird: 'For tickets bought at least this many days before kick-off (server clock). The match card shows when the early-bird price ends.',
+    family: 'The buyer picks "Family bundle" and chooses adults and children. The percent applies to the whole bundle. Child tickets show CHILD at the gate.',
+  };
+  var data;
+
+  function num(label, value, attrs) { var i = el('input', Object.assign({ type: 'number', value: value == null ? '' : value }, attrs || {})); return { input: i, node: el('label', { class: 'la-f' }, label, i) }; }
+
+  function ruleCard(r) {
+    var on = el('input', { type: 'checkbox', checked: r.isActive });
+    var name = el('input', { value: r.name, maxlength: 60 });
+    var from = el('input', { type: 'datetime-local', value: wat(r.validFrom) }), until = el('input', { type: 'datetime-local', value: wat(r.validUntil) });
+    var cap = num('Discounted tickets per match (most)', r.maxPerMatch, { min: 0, placeholder: 'no limit' });
+    var fields = [el('label', { class: 'la-f' }, 'Name', name)];
+    var pct, days, fam = {}, tiersBox, addBtn;
+    if (r.kind !== 'group') { pct = num('Percent off %', pc(r.percentBp), { min: 0, max: 100, step: 0.01 }); fields.push(pct.node); }
+    if (r.kind === 'early_bird') { days = num('Days before kick-off (at least)', r.config.daysBefore, { min: 1, max: 365 }); fields.push(days.node); }
+    if (r.kind === 'family') {
+      [['minAdults', 'Adults (least)'], ['maxAdults', 'Adults (most)'], ['minChildren', 'Children (least)'], ['maxChildren', 'Children (most)'], ['childMaxAge', 'Children under age']].forEach(function (f) { fam[f[0]] = num(f[1], r.config[f[0]], { min: 0, max: 18 }); fields.push(fam[f[0]].node); });
+    }
+    fields.push(el('label', { class: 'la-f' }, 'Starts', from), el('label', { class: 'la-f' }, 'Ends', until), cap.node);
+    if (r.kind === 'group') {
+      tiersBox = el('div', { class: 'dc-tiers' });
+      var addTier = function (t) {
+        var mt = num('From tickets', t ? t.minTickets : '', { min: 2, max: 500 }), tp = num('Percent off %', t ? pc(t.percentBp) : '', { min: 0, max: 100, step: 0.01 });
+        var row = el('div', { class: 'dc-tier' }, mt.node, tp.node, el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Remove', onclick: function () { row.remove(); } }));
+        row._get = function () { return { minTickets: Number(mt.input.value), percent: tp.input.value }; };
+        tiersBox.append(row);
+      };
+      r.tiers.forEach(addTier);
+      addBtn = el('button', { type: 'button', class: 'btn-o btn-sm', text: '+ Add tier', onclick: function () { addTier(null); } });
+    }
+    var save = el('button', { type: 'button', class: 'btn-p', text: 'Save ' + r.name });
+    save.addEventListener('click', function () {
+      var body = { id: r.id, name: name.value, isActive: on.checked, validFrom: from.value, validUntil: until.value, maxPerMatch: cap.input.value === '' ? null : Number(cap.input.value), config: {} };
+      if (pct) body.percent = pct.input.value;
+      if (days) body.config.daysBefore = Number(days.input.value);
+      Object.keys(fam).forEach(function (k) { body.config[k] = Number(fam[k].input.value); });
+      if (tiersBox) body.tiers = Array.from(tiersBox.children).map(function (x) { return x._get(); });
+      LA.api('/api/admin/tickets/discounts', { method: 'PUT', body: { rule: body } }).then(function (x) { x.ok ? (LA.toast(r.name + ' saved' + (on.checked ? ' (on)' : ' (off)')), load()) : LA.toast(x.d.error || 'Could not save.', true); });
+    });
+    var status = r.isActive ? (r.liveNow ? 'On' : 'On, outside its dates') : 'Off';
+    return el('section', { class: 'dc-rule' + (r.isActive ? ' on' : ''), 'aria-label': r.name },
+      el('div', { class: 'dc-head' }, el('h2', { text: r.name }), el('span', { class: 'la-chip ' + (r.isActive && r.liveNow ? 'full_time' : ''), text: status }),
+        el('label', { class: 'dc-switch' }, on, 'Switched on')),
+      el('p', { class: 'la-muted', text: HELP[r.kind] }),
+      el('div', { class: 'dc-grid' }, fields),
+      tiersBox ? el('div', {}, el('b', { text: 'Group tiers' }), tiersBox, addBtn) : null,
+      el('div', { class: 'la-row', style: 'margin-top:10px' }, save, r.updatedBy ? el('span', { class: 'la-muted', text: 'Last change: ' + (r.updatedAt ? LA.when(r.updatedAt.replace(' ', 'T') + 'Z') : '') + ' by ' + r.updatedBy }) : null));
+  }
+
+  function load() {
+    LA.api('/api/admin/tickets/discounts').then(function (r) {
+      if (!r.ok) { $('rules').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load.' })); return; }
+      data = r.d;
+      $('rules').replaceChildren.apply($('rules'), data.rules.map(ruleCard));
+      var f = $('set').elements, s = data.settings;
+      f.stack.checked = s.allowStacking; f.maxTotal.value = pc(s.maxTotalBp); f.minPrice.value = s.minTicketKobo / 100; f.perEmail.value = s.perEmailPerMatch;
+      var ev = $('prev').elements.eventId;
+      if (!ev.options.length) data.matches.forEach(function (m) { ev.add(new Option((m.matchday ? 'MD' + m.matchday + ' ' : '') + 'v ' + m.awayTeam + ' (' + LA.date(m.kickoff) + ')' + (m.allowDiscounts ? '' : ' – no discounts'), m.id)); });
+      fillTiers();
+      $('report').replaceChildren(LA.table(['Discount', 'On', 'Orders', 'Tickets', 'Child tickets', 'Discount given', 'Revenue after discount'], data.report.map(function (x) {
+        return el('tr', {}, el('td', { text: x.name }), el('td', { text: x.isActive ? 'Yes' : 'No' }), el('td', { class: 'n', text: String(x.orders) }), el('td', { class: 'n', text: String(x.tickets) }), el('td', { class: 'n', text: String(x.childTickets) }), el('td', { text: naira(x.discountKobo) }), el('td', { text: naira(x.revenueKobo) }));
+      })));
+    });
+  }
+  function fillTiers() {
+    var f = $('prev').elements, m = data.matches.find(function (x) { return x.id === f.eventId.value; });
+    f.tier.replaceChildren(); (m ? m.tiers : []).forEach(function (t) { f.tier.add(new Option(t.label + ' (₦' + t.priceNaira.toLocaleString('en-NG') + ')', t.tier)); });
+  }
+  $('prev').elements.eventId.addEventListener('change', fillTiers);
+  $('prev').elements.mode.addEventListener('change', function () { var fam = this.value === 'family'; document.querySelectorAll('#prev [data-n]').forEach(function (x) { x.hidden = fam; }); document.querySelectorAll('#prev [data-f]').forEach(function (x) { x.hidden = !fam; }); });
+  $('prev').addEventListener('submit', function (e) {
+    e.preventDefault(); var f = this.elements, fam = f.mode.value === 'family';
+    var body = { eventId: f.eventId.value, tier: f.tier.value, family: fam, quantity: Number(f.quantity.value), adults: Number(f.adults.value), children: Number(f.children.value), at: f.at.value };
+    LA.api('/api/admin/tickets/discounts/preview', { method: 'POST', body: body }).then(function (r) {
+      if (!r.ok) { $('prevOut').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not work it out.' })); return; }
+      var d = r.d;
+      $('prevOut').replaceChildren(el('div', { class: 'dc-out' },
+        el('div', {}, d.tickets + ' ticket' + (d.tickets === 1 ? '' : 's') + ': ', el('b', { text: naira(d.subtotalKobo) })),
+        d.discountKobo ? el('div', {}, 'Discount: ' + d.label + ' ', el('b', { text: '−' + naira(d.discountKobo) }), d.discountedQty < d.tickets ? ' (on ' + d.discountedQty + ' tickets)' : '') : el('div', { class: 'la-muted', text: d.allowDiscounts ? 'No discount applies.' : 'Discounts are switched off for this match.' }),
+        d.reason ? el('div', { class: 'la-muted', text: d.reason }) : null,
+        el('div', {}, 'The buyer pays ', el('b', { text: naira(d.totalKobo) })),
+        d.nudge ? el('div', { class: 'la-muted', text: 'Shown to the buyer: ' + d.nudge }) : null));
+    });
+  });
+  $('set').addEventListener('submit', function (e) {
+    e.preventDefault(); var f = this.elements;
+    LA.api('/api/admin/tickets/discounts', { method: 'PUT', body: { settings: { allowStacking: f.stack.checked, maxTotalPercent: f.maxTotal.value, minTicketNaira: Number(f.minPrice.value || 0), perEmailPerMatch: Number(f.perEmail.value || 0) } } })
+      .then(function (r) { r.ok ? (LA.toast('Settings saved'), load()) : LA.toast(r.d.error || 'Could not save.', true); });
+  });
+  $('csv').addEventListener('click', function () {
+    fetch('/api/admin/tickets/discounts/report.csv', { headers: { 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' } }).then(function (r) { if (!r.ok) throw new Error(); return r.blob(); }).then(function (b) {
+      var u = URL.createObjectURL(b), a = el('a', { href: u, download: 'ticket-discounts.csv' }); document.body.append(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(u); }, 2000);
+    }).catch(function () { LA.toast('Could not download.', true); });
+  });
+  load();
+})();
+</script>

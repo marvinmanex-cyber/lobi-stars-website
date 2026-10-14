@@ -12,7 +12,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
   <div class="wrap la">
     <AdminNav current="tickets" />
     <header class="la-head"><div><div class="stag">Commerce</div><h1 class="stitle">Match <span class="r">Tickets</span></h1></div>
-      <div class="la-row"><a class="btn-o" href="/tickets/" target="_blank" rel="noopener">Public tickets page ↗</a><a class="btn-o" href="/admin/season-tickets/">Season Tickets</a><a class="btn-o" href="/admin/tickets/scan/">Ticket Scanner</a></div></header>
+      <div class="la-row"><a class="btn-o" href="/tickets/" target="_blank" rel="noopener">Public tickets page ↗</a><a class="btn-o" href="/admin/tickets/discounts/">Discounts</a><a class="btn-o" href="/admin/season-tickets/">Season Tickets</a><a class="btn-o" href="/admin/tickets/scan/">Ticket Scanner</a></div></header>
     <p class="la-lede">Nothing is sold unless a match is switched <b>On sale</b> and has at least one stand price. Tickets are only sold for Lobi Stars home matches. Times are Nigerian time. Leave a capacity empty for no limit.</p>
 
     <section class="la-card" aria-labelledby="h-tot"><h2 id="h-tot">Sales</h2><div id="totals" class="la-row"></div></section>
@@ -26,7 +26,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
         <label class="la-f">VIP seats<input name="capVIP" type="number" min="0" inputmode="numeric" style="width:100px" /></label>
         <label class="la-f">Cover seats<input name="capPremium" type="number" min="0" inputmode="numeric" style="width:100px" /></label>
         <label class="la-f">Popular seats<input name="capRegular" type="number" min="0" inputmode="numeric" style="width:100px" /></label>
-        <label class="la-f">Most per order<input name="max" type="number" min="1" max="10" inputmode="numeric" style="width:90px" /></label>
+        <label class="la-f">Most per order<input name="max" type="number" min="1" max="50" inputmode="numeric" style="width:90px" /></label>
         <label class="la-f">On sale<select name="on"><option value="">Keep</option><option value="1">On</option><option value="0">Off</option></select></label>
         <button class="btn-p" type="submit">Apply to all</button>
       </form>
@@ -88,10 +88,13 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     });
     var on = el('input', { type: 'checkbox', checked: m.isOnSale, style: 'width:22px;height:22px;min-height:auto' });
     var opens = el('input', { type: 'datetime-local', value: wat(m.saleOpensAt) }), closes = el('input', { type: 'datetime-local', value: wat(m.saleClosesAt) });
-    var max = el('input', { type: 'number', min: 1, max: 10, value: m.maxPerOrder, style: 'width:80px' });
+    var max = el('input', { type: 'number', min: 1, max: 50, value: m.maxPerOrder, style: 'width:80px' });
+    // Discounts (rules in Tickets › Discounts): allowed for this match, and an optional cap on discounted tickets.
+    var disc = el('input', { type: 'checkbox', checked: m.allowDiscounts !== false, style: 'width:22px;height:22px;min-height:auto' });
+    var dcap = el('input', { type: 'number', min: 0, inputmode: 'numeric', value: m.discountCap == null ? '' : m.discountCap, placeholder: 'no limit', style: 'width:110px' });
     var save = el('button', { type: 'button', class: 'btn-p btn-sm', text: 'Save' });
     save.addEventListener('click', function () {
-      var body = { prices: {}, capacities: {}, saleOpensAt: opens.value, saleClosesAt: closes.value, maxPerOrder: Number(max.value), isOnSale: on.checked };
+      var body = { prices: {}, capacities: {}, saleOpensAt: opens.value, saleClosesAt: closes.value, maxPerOrder: Number(max.value), isOnSale: on.checked, allowDiscounts: disc.checked, discountCap: dcap.value === '' ? null : Number(dcap.value) };
       ['VIP', 'Premium', 'Regular'].forEach(function (t) { body.prices[t] = Number(inputs['p' + t].value || 0); body.capacities[t] = inputs['c' + t].value === '' ? null : Number(inputs['c' + t].value); });
       LA.api('/api/admin/tickets/match/' + encodeURIComponent(m.id), { method: 'PUT', body: body }).then(function (r) { r.ok ? (LA.toast('Saved'), load()) : LA.toast(r.d.error || 'Could not save.', true); });
     });
@@ -102,7 +105,9 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       el('div', { class: 'la-row', style: 'margin-top:10px;align-items:flex-end' },
         el('label', { class: 'la-row', style: 'gap:6px;font-weight:700' }, on, 'On sale'),
         el('label', { class: 'la-f' }, 'Sales open', opens), el('label', { class: 'la-f' }, 'Sales close', closes),
-        el('label', { class: 'la-f' }, 'Most per order', max), save));
+        el('label', { class: 'la-f' }, 'Most per order', max),
+        el('label', { class: 'la-row', style: 'gap:6px;font-weight:700' }, disc, 'Discounts allowed'),
+        el('label', { class: 'la-f' }, 'Discounted tickets (most)', dcap), save));
   }
 
   $('bulk').addEventListener('submit', function (e) {

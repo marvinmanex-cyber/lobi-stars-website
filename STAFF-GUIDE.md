@@ -1820,7 +1820,9 @@ Tickets**. Each home match has:
   the website never sells more than the number you set, even if two fans pay at the same moment.
 - **On sale** tick box, plus optional **Sales open** and **Sales close** times (Nigerian time).
   Before the open time the match says "Tickets not on sale yet (from <date>)".
-- **Most per order** (1 to 10).
+- **Most per order** (1 to 50; raise it for groups, e.g. 30).
+- **Discounts allowed** tick box (untick to leave this match out of every discount) and
+  **Discounted tickets (most)** for this match (empty = no limit). See section 34a.
 
 Press **Save** on the match. To set the same thing for many matches at once,
 use **Apply to all** at the top (leave a box empty to
@@ -1872,6 +1874,54 @@ page tells fans buying several matches how much a season ticket would save them.
 
 **Who can use it:** Super Admin and Commercial. Matchday Operators can open the
 scanner only (Admin › Matchday › Ticket Scanner).
+
+## 34a. Ticket discounts (Commerce › Ticket Discounts)
+
+Three discounts, all **switched off** until you turn them on at
+**Admin › Commerce › Ticket Discounts** (also a **Discounts** button on Match Tickets):
+
+- **Group discount:** one order with many tickets for the SAME match. Starting
+  tiers: 10 to 19 tickets 10% off, 20 or more 15% off. Add, remove or change
+  tiers (each tier needs more tickets than the one before). The buyer can add a
+  group name (church, school, supporters club, company); it is on the order and
+  in the email. Raise **Most per order** on the match (up to 50) so groups can buy.
+- **Early bird:** tickets bought at least 7 days before kick-off (change the
+  days). The match card shows "Early bird: save 10%" and "Early-bird price ends
+  in X days (ends Sunday 1 November)".
+- **Family bundle:** the buyer picks **Family bundle** on the match card and
+  chooses adults and children (starting rule: 1 or 2 adults with 1 to 4
+  children under 16, 15% off the whole bundle). Child tickets say **CHILD** in
+  the email, on the confirmation page and at the gate.
+
+For each discount: name, percent, optional **Starts** / **Ends** (Nigerian
+time) and **Discounted tickets per match (most)** (e.g. early bird for the
+first 200 tickets only). Press **Save** on that discount.
+
+**Settings for all discounts:**
+- **Combine discounts (stacking):** off by default, so an order gets only the
+  ONE discount that saves the buyer the most (the summary says which and why).
+  On: discounts add up, but never more than **Most discount in total** (25%).
+- **Lowest ticket price:** no ticket is ever sold below this.
+- **Group/family orders per email per match** (1): stops a fan reusing a group
+  or family discount by splitting orders.
+
+**Preview calculator:** choose a match, stand, number of tickets (or a family
+bundle) and optionally a purchase date, and see exactly what the website would
+charge. **Report:** per discount the orders, tickets, child tickets, discount
+given and revenue after discount (paid, not refunded), with **Export CSV**.
+Every change is recorded in the audit log (who, when, before and after).
+
+**What fans see:** green badges on each home match card ("Early bird: save
+10%", "Groups of 10+: save up to 15%", "Family bundle: save 15%") only while a
+discount is on and still applies; in the order: subtotal, "Discount: Group
+(15%)", the amount saved and the total, and a nudge such as "Add 2 more tickets
+to save 10%". All prices are worked out on the server when the order is made.
+If a discount ends or runs out while a fan is paying, the website shows the new
+total and the fan presses Pay again: nobody is charged a price they didn't see.
+Paid orders keep the discount they got, even if you change the rules later.
+
+**At the gate:** the scanner shows **VALID: ADMIT ADULT** or **VALID: ADMIT
+CHILD**. For a child ticket, staff may ask for proof of age.
 
 ## Other things you can update in the CMS
 

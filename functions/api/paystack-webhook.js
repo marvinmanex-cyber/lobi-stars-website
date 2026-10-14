@@ -3,6 +3,7 @@ import { fulfillOrder } from './_lib/fulfillOrder.js';
 import { ensureFoodSchema, confirmFoodPayment } from './_lib/foodOrders.js';
 import { findPayment, fulfilPayment } from './_lib/extraPayments.js';
 import { ensureTicketShopSchema, fulfilBasket } from './_lib/ticketShop.js';
+import { ensureDiscountSchema, lockedTotalOk } from './_lib/ticketDiscounts.js';
 
 // POST /api/paystack-webhook -- Paystack calls this server-to-server after a
 // payment attempt. This (not the browser redirect) is the source of truth
@@ -31,9 +32,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // Tickets for several matches in one payment (Tickets page).
   if (/^LSBAS-/.test(reference || '')) {
     await ensureTicketShopSchema(env.DB);
+    await ensureDiscountSchema(env.DB);
     const basket = await env.DB.prepare(`SELECT * FROM league_ticket_orders WHERE reference = ?`).bind(reference).first();
     if (!basket) return new Response('Order not found', { status: 404 });
     if (amount !== basket.total_kobo || (event.data.currency || 'NGN') !== 'NGN') return new Response('Amount mismatch', { status: 400 });
+    // Re-check the locked price: the discount snapshot priced again by the same
+    // function (computeOrderPricing) must give the amount charged.
+    if (!(await lockedTotalOk(env.DB, basket))) { console.error('[tickets] locked total mismatch', basket.reference); return new Response('Amount mismatch', { status: 400 }); }
     // Safe to repeat: a second delivery issues nothing new and sends no second email.
     await fulfilBasket(env, basket, waitUntil);
     return new Response('OK', { status: 200 });

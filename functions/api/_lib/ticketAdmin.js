@@ -3,6 +3,7 @@ import { requireAdminUser } from './adminEvents.js';
 import { ensureTicketShopSchema, settingsFor, soldCounts } from './ticketShop.js';
 import { ticketState, TIERS, PRICE_COL, CAP_COL, TIER_LABELS } from './tickets/rules.js';
 import { listMatches, toSummary } from './matchCentre.js';
+import { ensureDiscountSchema } from './ticketDiscounts.js';
 
 export const ok = (d = {}) => Response.json({ ok: true, ...d }, { headers: { 'Cache-Control': 'no-store' } });
 export const fail = (error, status = 400) => Response.json({ error }, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -11,11 +12,12 @@ export async function ticketAuth(request, env) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return { denied };
   await ensureTicketShopSchema(env.DB);
+  await ensureDiscountSchema(env.DB);
   return { admin, staff: { email: admin.email || admin.name || 'owner' } };
 }
 
 /** Nigerian "YYYY-MM-DDTHH:MM" (or ISO) -> UTC ISO; '' -> null; undefined -> undefined (no change). */
-function lagosToIso(v) {
+export function lagosToIso(v) {
   if (v === undefined) return undefined;
   if (v === null || v === '') return null;
   const s = String(v).trim();
@@ -56,8 +58,18 @@ export function parseTicketSettings(b, event) {
   if (settings.sale_opens_at && settings.sale_closes_at && settings.sale_opens_at >= settings.sale_closes_at) return { error: 'Sales must open before they close.' };
   if (b.maxPerOrder !== undefined) {
     const n = Number(b.maxPerOrder);
-    if (!Number.isInteger(n) || n < 1 || n > 10) return { error: 'Most tickets per order is 1 to 10.' };
+    if (!Number.isInteger(n) || n < 1 || n > 50) return { error: 'Most tickets per order is 1 to 50.' };
     settings.max_per_order = n;
+  }
+  // Discounts for this match (Admin › Tickets › Discounts sets the rules).
+  if (b.allowDiscounts !== undefined) settings.allow_discounts = b.allowDiscounts ? 1 : 0;
+  if (b.discountCap !== undefined) {
+    if (b.discountCap === null || b.discountCap === '') settings.discount_cap = null;
+    else {
+      const n = Number(b.discountCap);
+      if (!Number.isInteger(n) || n < 0 || n > 100000) return { error: 'Discounted tickets for this match: a whole number (empty = no limit).' };
+      settings.discount_cap = n;
+    }
   }
   if (b.isOnSale !== undefined) {
     if (b.isOnSale && event && !(event.is_home === 1 || event.is_home === true)) return { error: 'Tickets are only sold for Lobi Stars home matches.' };
@@ -97,7 +109,7 @@ export async function salesView(env) {
     const p = paid.get(row.id) || {};
     return {
       id: row.id, matchday: md.get(row.id) ?? null, homeTeam: row.home_team, awayTeam: row.away_team, kickoff: row.event_date, venue: row.venue, status: s.status,
-      state: t.state, isOnSale: !!st?.is_on_sale, saleOpensAt: st?.sale_opens_at || null, saleClosesAt: st?.sale_closes_at || null, maxPerOrder: st?.max_per_order || 10,
+      state: t.state, isOnSale: !!st?.is_on_sale, allowDiscounts: st ? st.allow_discounts !== 0 : true, discountCap: st?.discount_cap ?? null, saleOpensAt: st?.sale_opens_at || null, saleClosesAt: st?.sale_closes_at || null, maxPerOrder: st?.max_per_order || 10,
       tiers: TIERS.map(tr => ({ tier: tr, label: TIER_LABELS[tr], priceNaira: (Number(row[PRICE_COL[tr]]) || 0) / 100, capacity: st?.[CAP_COL[tr]] ?? null,
         sold: Number(p[tr]?.sold) || 0, revenueKobo: Number(p[tr]?.revenue) || 0, held: Number(held.get(row.id)?.[tr]) || 0 })),
     };

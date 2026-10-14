@@ -828,6 +828,32 @@ No Cloudflare Access rule is needed.
 
 **Tests:** `tests/tickets.unit.test.mjs`, `tests/tickets.api.test.mjs` (Paystack fake mode only).
 
+## Ticket discounts (14 October 2026)
+
+- Pricing: `functions/api/_lib/tickets/discounts.js` (pure `computeOrderPricing`,
+  `publicOffers`, `ruleProblem`); database side `functions/api/_lib/ticketDiscounts.js`
+  (schema, seeds, allowances, `holdChunkStatement`, `orderChunks`, `lockedTotalOk`, report).
+- Used by `/api/tickets/price` (preview, rate-limited), `/api/tickets/basket`
+  (checkout; refuses a total the buyer didn't see with 409 `repriced`), the
+  Paystack webhook and the success-page verify (`lockedTotalOk`: the locked
+  snapshot priced again must equal the amount charged).
+- Admin: `/admin/tickets/discounts/` and `/api/admin/tickets/discounts` (+ `/preview`, `/report.csv`);
+  per match `allowDiscounts` / `discountCap` on `/api/admin/tickets/match/:id`.
+- Database: `migrations/0005_ticket_discounts.sql` (tables + seeds, safe any time):
+  `npx wrangler d1 migrations apply lobi-stars-tickets --remote`. The new
+  columns (orders.ticket_type, tickets.ticket_type, league_ticket_orders.discount_*,
+  league_ticket_settings.allow_discounts / discount_cap, ...) are added by the
+  site itself on first use (`ensureDiscountSchema`), because SQLite cannot add a
+  column only if it is missing.
+- The orders table only allows 1 to 10 tickets per row, so a large order is
+  stored as several rows of at most 10 in the same payment. Most per order per
+  match is now 1 to 50.
+- Seeded OFF: group 10-19 tickets 10%, 20+ 15%; early bird 10% at least 7 days
+  before kick-off; family 15% for 1-2 adults + 1-4 children under 16. Global:
+  stacking off, max total 25%, lowest ticket price ₦0, 1 group/family order per
+  email per match.
+- Tests: `tests/ticket-discounts.unit.test.mjs`, `tests/ticket-discounts.api.test.mjs`.
+
 ## Ticketing system setup (Cloudflare D1 + Paystack + Resend)
 
 This is new infrastructure, separate from the static site. You'll need

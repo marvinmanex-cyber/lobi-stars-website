@@ -181,21 +181,39 @@ export async function sendBasketEmail(env, basket) {
   const { results: orders } = await db.prepare(`SELECT o.*, e.home_team, e.away_team, e.event_date, e.venue, e.competition FROM orders o JOIN events e ON e.id = o.event_id WHERE o.basket_id = ? AND o.payment_status = 'paid' ORDER BY e.event_date`).bind(basket.id).all();
   if (!orders.length) return;
   const sections = [];
-  for (const o of orders) {
-    const { results: tickets } = await db.prepare(`SELECT id FROM tickets WHERE order_id = ? AND status != 'void'`).bind(o.id).all();
-    if (!tickets.length) continue;
-    const event = { home_team: o.home_team, away_team: o.away_team, event_date: o.event_date, venue: o.venue, competition: o.competition };
+  // A match can have several rows (adult/child, or more than 10 tickets): one heading per match.
+  const byMatch = new Map();
+  for (const o of orders) { if (!byMatch.has(o.event_id)) byMatch.set(o.event_id, []); byMatch.get(o.event_id).push(o); }
+  for (const rows of byMatch.values()) {
+    const o = rows[0];
+    const blocks = [];
+    let adults = 0, children = 0;
+    for (const r of rows) {
+      const { results: tickets } = await db.prepare(`SELECT id FROM tickets WHERE order_id = ? AND status != 'void'`).bind(r.id).all();
+      if (!tickets.length) continue;
+      if (r.ticket_type === 'child') children += tickets.length; else adults += tickets.length;
+      blocks.push(ticketBlocksHtml({ order: r, event: { home_team: o.home_team, away_team: o.away_team, event_date: o.event_date, venue: o.venue, competition: o.competition }, tickets }));
+    }
+    if (!blocks.length) continue;
     const fx = await db.prepare(`SELECT id FROM league_fixtures WHERE event_id = ?`).bind(o.event_id).first().catch(() => null);
     const cal = fx ? `https://lobistarsfc.com/api/league/calendar.ics?fixture=${fx.id}` : null;
+    const saved = rows.reduce((t, r) => t + (Number(r.discount_kobo) || 0), 0);
+    const count = children ? `${adults} adult${adults === 1 ? '' : 's'}, ${children} child${children === 1 ? '' : 'ren'}` : `${adults} ticket${adults === 1 ? '' : 's'}`;
     sections.push(`<h3 style="color:#0d1a33;margin:26px 0 8px;font-family:Arial,sans-serif;">${esc(o.home_team)} vs ${esc(o.away_team)}</h3>
-      <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:#333;"><b>Date:</b> ${esc(lagosParts(o.event_date)?.date || 'To be confirmed')}<br><b>Kick-off:</b> ${esc(lagosParts(o.event_date)?.time || 'TBC')}<br><b>Venue:</b> ${esc(o.venue)}${cal ? `<br><a href="${cal}">Add to calendar</a>` : ''}</p>
-      ${ticketBlocksHtml({ order: o, event, tickets })}`);
+      <p style="margin:0 0 12px;font-family:Arial,sans-serif;font-size:13px;line-height:1.6;color:#333;"><b>Date:</b> ${esc(lagosParts(o.event_date)?.date || 'To be confirmed')}<br><b>Kick-off:</b> ${esc(lagosParts(o.event_date)?.time || 'TBC')}<br><b>Venue:</b> ${esc(o.venue)}<br><b>Tickets:</b> ${count}${saved ? ` (you saved ${naira(saved)})` : ''}${cal ? `<br><a href="${cal}">Add to calendar</a>` : ''}</p>
+      ${blocks.join('')}`);
   }
   const total = orders.reduce((s, o) => s + o.total_kobo, 0);
+  const discount = Number(basket.discount_kobo) || 0;
+  const priceBox = discount > 0
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 14px;font-size:14px;line-height:1.7;background:#E9F8EE;border-radius:8px;"><tr><td style="padding:10px 12px;">Tickets<br><b>Discount: ${esc(basket.discount_label || 'Discount')}</b>${basket.group_name ? `<br>Group: ${esc(basket.group_name)}` : ''}<br><b>Total paid</b></td><td align="right" style="padding:10px 12px;vertical-align:top;">${naira(total + discount)}<br><b>−${naira(discount)}</b>${basket.group_name ? '<br>&nbsp;' : ''}<br><b>${naira(total)}</b></td></tr></table><p style="margin:0 0 14px;color:#0B7A2E;font-weight:bold;">You saved ${naira(discount)}.</p>`
+    : '';
   const html = `<div style="max-width:520px;margin:0 auto;font-family:Arial,sans-serif;color:#111;">
     <h2 style="color:#0d1a33;">Your Lobi Stars match tickets</h2>
     <p>Hi ${esc(basket.buyer_name)},</p>
     <p>Your payment of <strong>${naira(total)}</strong> is confirmed. Order reference: <strong>${esc(basket.reference)}</strong>. Below is one QR code per ticket, for each match.</p>
+    ${priceBox}
+    ${orders.some(o => o.ticket_type === 'child') ? '<p style="font-size:13px;line-height:1.5;"><strong>Child tickets:</strong> children may be asked for proof of age at the gate.</p>' : ''}
     <p style="background:#f4f5f7;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;"><strong>At the gate:</strong> each QR code admits one person, once, and only on the day of its match. Have it ready on your phone (a screenshot works) or printed. Lost the email? Open lobistarsfc.com/tickets/lookup with your email and order reference.</p>
     ${sections.join('')}
     <p style="background:#FFF8E1;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;"><strong>On match day:</strong> order food and drinks to your seat from your phone at MatchDay Kitchen: <a href="https://lobistarsfc.com/kitchen/">lobistarsfc.com/kitchen</a>.</p>

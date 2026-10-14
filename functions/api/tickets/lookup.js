@@ -1,4 +1,5 @@
 import { ensureTicketShopSchema } from '../_lib/ticketShop.js';
+import { ensureDiscountSchema } from '../_lib/ticketDiscounts.js';
 import { basketTickets } from './basket.js';
 import { clientIp, rateLimit, tooMany, ensureFanSchema } from '../_lib/fans.js';
 
@@ -10,6 +11,7 @@ export async function onRequestPost({ request, env }) {
     const db = env.DB;
     await ensureFanSchema(db);
     await ensureTicketShopSchema(db);
+    await ensureDiscountSchema(db);
     const b = await request.json().catch(() => ({}));
     const email = String(b.email || '').trim().toLowerCase().slice(0, 254);
     const ref = String(b.reference || '').trim().toUpperCase().slice(0, 40);

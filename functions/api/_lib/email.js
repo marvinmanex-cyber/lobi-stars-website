@@ -99,6 +99,7 @@ export function ticketBlocksHtml({ order, event, tickets }) {
           </div>
           ${tierBadge ? `<img src="${SITE_ORIGIN}${tierBadge}" width="40" height="40" alt="${tierLabel}" style="margin-bottom:4px;"/><br/>` : ''}
           <span style="color:#0d1a33;font-size:12px;font-weight:bold;text-transform:uppercase;">${tierLabel}</span><br/>
+          ${order.ticket_type === 'child' ? '<span style="display:inline-block;margin:4px 0;padding:2px 8px;border-radius:4px;background:#FFC72C;color:#0d1a33;font-size:11px;font-weight:bold;letter-spacing:1px;">CHILD</span><br/>' : order.ticket_type === 'adult' ? '<span style="display:inline-block;margin:4px 0;color:#5a6270;font-size:11px;font-weight:bold;letter-spacing:1px;">ADULT</span><br/>' : ''}
           <span style="color:#0d1a33;font-size:16px;font-weight:bold;">&#8358;${(tierPriceKobo / 100).toLocaleString()}</span>
           <div style="color:#5a6270;font-size:9px;margin-top:12px;">Ticket ${i + 1} of ${tickets.length}</div>
         </td>

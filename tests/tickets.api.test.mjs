@@ -46,7 +46,7 @@ test('off by default; away matches can never be put on sale; the old checkout fo
   assert.equal(off.status, 400); assert.match(off.data.error, /home matches/);
   assert.ok(!(await call('GET', '/api/tickets/catalogue', undefined, {})).data.matches.some(m => m.id === away), 'away matches are not listed');
   // Admin checks
-  assert.equal((await call('PUT', `/api/admin/tickets/match/${a}`, { maxPerOrder: 50 })).status, 400);
+  assert.equal((await call('PUT', `/api/admin/tickets/match/${a}`, { maxPerOrder: 51 })).status, 400);
   assert.equal((await call('PUT', `/api/admin/tickets/match/${a}`, { saleOpensAt: '2026-12-02T10:00', saleClosesAt: '2026-12-01T10:00' })).status, 400);
   assert.equal((await call('GET', '/api/admin/tickets', undefined, { 'Content-Type': 'application/json' })).status, 401);
 });

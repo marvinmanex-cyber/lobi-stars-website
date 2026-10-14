@@ -2,6 +2,7 @@
 // flips a ticket from valid -> used so two doors scanning the same ticket
 // at the same instant can't both admit it.
 import { scanSeasonPass } from './_lib/seasonTickets.js';
+import { ensureDiscountSchema } from './_lib/ticketDiscounts.js';
 
 export async function onRequestPost({ request, env }) {
   let body;
@@ -40,6 +41,7 @@ export async function onRequestPost({ request, env }) {
     }, { status: 409 });
   }
 
+  await ensureDiscountSchema(env.DB); // tickets.ticket_type (ADULT / CHILD at the gate)
   const claim = await env.DB.prepare(
     `UPDATE tickets SET status = 'used', used_at = datetime('now'), scanned_by = ?
      WHERE id = ? AND status = 'valid'`
@@ -47,14 +49,15 @@ export async function onRequestPost({ request, env }) {
 
   if (claim.meta.changes) {
     const ticket = await env.DB.prepare(
-      `SELECT t.id, t.tier, o.buyer_name, e.home_team, e.away_team, e.event_date, e.venue
+      `SELECT t.id, t.tier, t.ticket_type, o.buyer_name, e.home_team, e.away_team, e.event_date, e.venue
        FROM tickets t
        JOIN orders o ON o.id = t.order_id
        JOIN events e ON e.id = t.event_id
        WHERE t.id = ?`
     ).bind(cleanId).first();
 
-    return Response.json({ valid: true, code: 'valid', ticket });
+    // ADULT or CHILD, so staff can check a child ticket (family bundle).
+    return Response.json({ valid: true, code: 'valid', ticketType: ticket?.ticket_type === 'child' ? 'child' : 'adult', ticket });
   }
 
   // Not updated -- figure out why, for a clear message at the gate.
