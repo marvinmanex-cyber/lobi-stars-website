@@ -518,8 +518,8 @@ Fans vote at https://lobistarsfc.com/awards. You set the votes up in
 ### Set up a vote
 1. Choose the award: **Goal of the Month**, **Player of the Month** or **Player of the Season**.
 2. Type the month or season, e.g. *October 2026* or *2026/27*.
-3. Choose a **Sponsor** if a partner sponsors the award (e.g. Zeva Lager Beer).
-   The award is then called "*Zeva Lager Beer Goal of the Month*" and shows the
+3. Choose a **Sponsor** if a partner sponsors the award (e.g. Zeva Premium Lager).
+   The award is then called "*Zeva Premium Lager Goal of the Month*" and shows the
    partner's logo, if their logo has been uploaded on the Partners page.
    Leave it as *No sponsor* otherwise.
 4. Set when voting **opens** and **closes** (Nigerian time).
@@ -1360,8 +1360,8 @@ unsubscribing).
   for good (newsletters already sent are not changed).
 - **Import club partners** adds every partner from the website's Partners
   page in one go (name, logo, website and title); then add advert text to
-  each. Zeva Lager Beer and Play have no logo on the website yet, so upload
-  their logos here.
+  each. Play has no logo on the website yet, so upload
+  its logo here.
 - Only include offers the sponsor has approved, and keep advert text short.
 
 ### Template & settings (🎨 tab)

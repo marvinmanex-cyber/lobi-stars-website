@@ -1,11 +1,11 @@
 ---
-name: "Zeva Lager Beer"
+name: "Zeva Premium Lager"
 tier: "Principal Partner"
 category: "Lager Beer"
 officialTitle: "Principal Partner"
-logo: "/images/zeva-lager.png"
+logo: "/images/zeva-premium-lager.png"
 website: ""
-shortDescription: "Zeva Lager Beer is the Principal Partner of Lobi Stars FC."
+shortDescription: "Zeva Premium Lager is the Principal Partner of Lobi Stars FC."
 since: null
 displayOrder: 1
 active: true
