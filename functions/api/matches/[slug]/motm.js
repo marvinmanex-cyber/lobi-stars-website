@@ -2,6 +2,7 @@ import { findHomeMatch, currentFan } from '../../_lib/matchdayFan.js';
 import { rateLimit, tooMany, clientIp } from '../../_lib/fans.js';
 import { ensureMotmSchema, votingState, squadPlayers, totalVoters, leaderboard } from '../../_lib/motm.js';
 import { recordServerEvent } from '../../_lib/analytics.js';
+import { earnVote } from '../../_lib/rewardsEarn.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
 
@@ -58,5 +59,6 @@ export async function onRequestPost({ request, env, params }) {
     return Response.json({ error: `You have already voted for ${mine?.player_name || 'a player'} in this match.`, code: 'voted' }, { status: 409 });
   }
   await recordServerEvent(env, 'motm_vote', match.slug, request);
+  await earnVote(env, fan.id, match); // Lobi Stars Rewards (monthly limit applies)
   return Response.json({ ok: true, myVote: { slug: player.slug, name: player.name, at }, totalVoters: await totalVoters(env.DB, match.id) }, { headers: noStore });
 }

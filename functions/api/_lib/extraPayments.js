@@ -8,6 +8,7 @@ import { sendEmail } from './email.js';
 import { verifyTransaction } from './paystack.js';
 import { captureContact, splitName } from './contacts.js';
 import { ensureSeasonSchema, fulfilSeasonOrder } from './seasonTickets.js';
+import { earnMembership, earnShop, earnSeasonTicket } from './rewardsEarn.js';
 
 /** Finds a membership payment or shirt order by Paystack reference. */
 export async function findPayment(db, reference) {
@@ -26,15 +27,17 @@ export async function findPayment(db, reference) {
 /** Marks a found payment as paid (once) and does what it pays for. */
 export async function fulfilPayment(env, found, waitUntil) {
   const now = new Date().toISOString();
-  if (found.kind === 'season') { await fulfilSeasonOrder(env, found.row, waitUntil); return; }
+  if (found.kind === 'season') { await fulfilSeasonOrder(env, found.row, waitUntil); await earnSeasonTicket(env, found.row); return; }
   if (found.kind === 'membership') {
     const res = await env.DB.prepare(`UPDATE membership_payments SET status = 'paid', paid_at = ? WHERE id = ? AND status != 'paid'`).bind(now, found.row.id).run();
     if (res.meta?.changes) await setMembership(env.DB, found.row.member_id, { season: found.row.season, source: 'online', note: `Paystack ${found.row.paystack_reference}` });
+    await earnMembership(env, found.row); // Rewards (idempotent)
     return;
   }
   const res = await env.DB.prepare(`UPDATE shirt_orders SET payment_status = 'paid', paid_at = ? WHERE id = ? AND payment_status != 'paid'`).bind(now, found.row.id).run();
   if (res.meta?.changes) {
     const n = splitName(found.row.buyer_name);
+    await earnShop(env, found.row); // Rewards: our own checkout only (not Jumia)
     await captureContact(env, { source: 'shop_order', refTable: 'shirt_orders', refId: found.row.id, email: found.row.buyer_email, phone: found.row.buyer_phone, firstName: n.firstName, surname: n.surname, label: found.row.product_name });
   }
   if (res.meta?.changes && env.RESEND_API_KEY) {

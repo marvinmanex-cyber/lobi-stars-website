@@ -871,6 +871,23 @@ No Cloudflare Access rule is needed.
 - Pages: `/rewards/` (noindex, preview with ?preview=1 until live),
   `/rewards/terms/` (DRAFT), Rewards box on `/fans/account/` and the register form.
 - Test: `tests/rewards.api.test.mjs` (needs FANS_DEV_LINKS=1 locally).
+- Earning (14 October 2026): `functions/api/_lib/rewardsRules.js` (pure rules,
+  `tests/rewards-rules.unit.test.mjs`) and `functions/api/_lib/rewardsEarn.js`
+  (hooks that never throw). Hooked into `fulfillOrder.js` (tickets, PENDING with
+  event_id), `extraPayments.js` (membership + bonus, shirts, season tickets),
+  `foodOrders.js` (food PAID), `validate-ticket.js` (attendance + streak),
+  `matches/[slug]/motm.js` and `predict.js` (monthly cap), ticket refund action
+  and the Paystack webhook (`refund.processed` / `charge.dispute.create` reverse
+  by `rewards_ledger.pay_ref`). Referrals: `rewards_referrals`, `?ref=` + browser
+  id at `/api/fans/register`.
+- Job: `rewardsSweep` (release ticket points of full-time matches, prediction
+  results, birthdays) from `/api/internal/rewards-run` (cron Worker, CRON_SECRET,
+  at most every 10 min; added to `workers/kitchen-cron/index.js` CALLS: redeploy
+  the Worker) and per fan in `/api/rewards/me`.
+- Admin: `/admin/rewards/`, `/api/admin/rewards` (GET/PUT settings),
+  `/api/admin/rewards/member` (lookup, adjust, suspend), `/api/admin/rewards/run`.
+  Routed to the `fans` area in `adminRoles.js`.
+- Test: `tests/rewards-earn.api.test.mjs`.
 
 ## Ticketing system setup (Cloudflare D1 + Paystack + Resend)
 

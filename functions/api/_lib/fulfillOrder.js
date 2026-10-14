@@ -2,6 +2,7 @@ import { randomId } from './crypto.js';
 import { sendEmail, ticketEmailHtml } from './email.js';
 import { captureContact, splitName } from './contacts.js';
 import { recordServerEvent } from './analytics.js';
+import { earnTickets } from './rewardsEarn.js';
 
 // Marks an order paid and issues its tickets. Safe to call more than once
 // for the same order (e.g. from both the webhook and the success-page
@@ -54,6 +55,8 @@ export async function fulfillOrder(env, order, waitUntil, { email = true } = {})
   await captureContact(env, { source: 'ticket_buyer', refTable: 'orders', refId: order.id, email: order.buyer_email, phone: order.buyer_phone, firstName: name.firstName, surname: name.surname, label: order.event_id });
   await recordServerEvent(env, 'ticket_purchase', order.event_id);
   const eventRow = await env.DB.prepare(`SELECT * FROM events WHERE id = ?`).bind(order.event_id).first();
+  // Lobi Stars Rewards: ticket points (pending until the match is played). Never blocks the tickets.
+  await earnTickets(env, order, eventRow);
 
   // Multi-match orders (league_ticket_orders) send one email for everything instead.
   if (!email) return tickets;

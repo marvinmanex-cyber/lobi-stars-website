@@ -5,7 +5,8 @@ import {
   checkTurnstile, createToken, sendVerificationEmail, VERIFY_TTL_MS,
 } from '../_lib/fans.js';
 import { captureContact } from '../_lib/contacts.js';
-import { joinRewards } from '../_lib/rewards.js';
+import { joinRewards, ensureRewardsSchema } from '../_lib/rewards.js';
+import { recordReferral } from '../_lib/rewardsEarn.js';
 
 // POST /api/fans/register -- create a fan account and email a confirmation
 // link. Returns { errors: { field: message } } (400) when validation fails.
@@ -65,6 +66,12 @@ export async function onRequestPost({ request, env }) {
 
   // Rewards: joined now; the welcome bonus is added when the email is verified.
   if (joinRw) await joinRewards(env.DB, id, 'register').catch(err => console.error('[rewards] join at sign-up', err));
+  // Referral link (?ref=LSR-000123) and a random browser id (self-referral checks only).
+  try {
+    const device = typeof b.device === 'string' && /^[a-z0-9-]{8,64}$/i.test(b.device) ? b.device : null;
+    if (device) { await ensureRewardsSchema(env.DB); await env.DB.prepare(`UPDATE members SET signup_device = ? WHERE id = ?`).bind(device, id).run(); }
+    if (b.ref) await recordReferral(env.DB, id, String(b.ref).slice(0, 20));
+  } catch (err) { console.error('[rewards] referral at sign-up', err); }
 
   await captureContact(env, { source: 'fan_account', refTable: 'members', refId: id, email, phone, firstName, surname: surname, consent: b.marketing === true });
 

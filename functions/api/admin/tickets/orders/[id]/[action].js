@@ -2,6 +2,7 @@ import { ticketAuth, ok, fail } from '../../../../_lib/ticketAdmin.js';
 import { sendBasketEmail } from '../../../../_lib/ticketShop.js';
 import { sendEmail, ticketEmailHtml } from '../../../../_lib/email.js';
 import { logLeague } from '../../../../_lib/leagueDb.js';
+import { reversePoints } from '../../../../_lib/rewardsEarn.js';
 
 // POST /api/admin/tickets/orders/:id/resend  -- email the tickets again
 // POST /api/admin/tickets/orders/:id/refund  { reason } -- mark refunded and
@@ -43,6 +44,8 @@ export async function onRequestPost({ request, env, params }) {
       if (basket) stmts.push(db.prepare(`UPDATE league_ticket_orders SET status = 'refunded', refunded_at = datetime('now') WHERE id = ?`).bind(id));
       await db.batch(stmts);
       await logLeague(db, staff, 'tickets.refund', 'tickets', id, { status: 'paid' }, { status: 'refunded', reason });
+      // Lobi Stars Rewards: take back the points of these tickets (pending ones are cancelled).
+      for (const oid of orderIds) await reversePoints(env, { source: 'ticket_order', ref: oid }, 'tickets refunded');
       return ok();
     }
     return fail('Unknown action.', 404);

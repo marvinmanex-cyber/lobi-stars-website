@@ -93,6 +93,10 @@ const siteKey = settings.turnstileSiteKey;
   let preview = false; try { preview = localStorage.getItem('ls_rewards_preview') === '1'; } catch { /* ignore */ }
   fetch('/api/rewards/me').then(r => r.json()).then(d => { if (d.live || preview) rewardsBlock.hidden = false; }).catch(() => {});
   const joining = () => !rewardsBlock.hidden && checked('joinRewards');
+  // Rewards referral link (?ref=LSR-000123), kept for this visit; and a random browser id (self-referral checks).
+  const referral = () => { try { const r = new URLSearchParams(location.search).get('ref'); if (r) sessionStorage.setItem('ls_ref', r); return sessionStorage.getItem('ls_ref') || ''; } catch { return ''; } };
+  const deviceId = () => { try { let d = localStorage.getItem('ls_dev'); if (!d) { d = crypto.randomUUID(); localStorage.setItem('ls_dev', d); } return d; } catch { return ''; } };
+  referral();
   const phoneOk = (p: string) => /^(0(70|80|81|90|91)\d{8}|\+?234(70|80|81|90|91)\d{8})$/.test(p.replace(/[\s\-().]/g, ''));
 
   function showErrors(errors: Record<string, string>) {
@@ -137,7 +141,7 @@ const siteKey = settings.turnstileSiteKey;
           firstName: val('firstName'), surname: val('surname'), email: val('email'), confirmEmail: val('confirmEmail'),
           phone: val('phone'), password: (document.getElementById('password') as HTMLInputElement).value,
           confirmPassword: (document.getElementById('confirmPassword') as HTMLInputElement).value,
-          agree: checked('agree'), marketing: checked('marketing'), joinRewards: joining(), rewardsAgree: checked('rewardsAgree'), turnstileToken: turnstile, next: safeNext,
+          agree: checked('agree'), marketing: checked('marketing'), joinRewards: joining(), rewardsAgree: checked('rewardsAgree'), ref: referral(), device: deviceId(), turnstileToken: turnstile, next: safeNext,
         }),
       });
       const data = await res.json().catch(() => ({}));

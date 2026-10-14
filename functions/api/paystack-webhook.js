@@ -4,6 +4,7 @@ import { ensureFoodSchema, confirmFoodPayment } from './_lib/foodOrders.js';
 import { findPayment, fulfilPayment } from './_lib/extraPayments.js';
 import { ensureTicketShopSchema, fulfilBasket } from './_lib/ticketShop.js';
 import { ensureDiscountSchema, lockedTotalOk } from './_lib/ticketDiscounts.js';
+import { reversePoints } from './_lib/rewardsEarn.js';
 
 // POST /api/paystack-webhook -- Paystack calls this server-to-server after a
 // payment attempt. This (not the browser redirect) is the source of truth
@@ -23,6 +24,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
   }
 
   const event = JSON.parse(rawBody);
+  // Lobi Stars Rewards: a refund or a chargeback/dispute on any payment takes
+  // back the Pride Points earned on it (the balance may go below zero).
+  if (/^(refund\.processed|charge\.dispute\.create)$/.test(event.event || '')) {
+    const ref = event.data?.transaction?.reference || event.data?.transaction_reference || event.data?.reference;
+    if (ref) await reversePoints(env, { payRef: String(ref) }, event.event === 'refund.processed' ? 'payment refunded' : 'payment disputed');
+    return new Response('OK', { status: 200 });
+  }
   if (event.event !== 'charge.success') {
     return new Response('Ignored', { status: 200 });
   }

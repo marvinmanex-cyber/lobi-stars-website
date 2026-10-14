@@ -42,6 +42,9 @@ const CATEGORIES: Cat[] = [
     { id: 'cms-club', label: 'Club Pages', href: `${CMS}/settings/entries/history`, area: 'cms', ext: true, hint: 'History, Honours, Stadium, Fan Clubs' },
     { id: 'cms', label: 'Content CMS (everything)', href: '/admin/', area: 'cms', ext: true },
   ] },
+  { id: 'rewards', icon: '⭐', label: 'Rewards', color: '#C9A227', items: [
+    { id: 'rewards', label: 'Lobi Stars Rewards', href: '/admin/rewards/', area: 'fans', hint: 'Pride Points: settings, members, adjust points, launch switch' },
+  ] },
   { id: 'fans', icon: '👥', label: 'Fans & Inbox', color: '#8B5CF6', items: [
     { id: 'inbox', label: 'Inbox', href: '/admin/inbox/', area: 'inbox', hint: 'Read and reply to contact, sponsorship and hospitality messages' },
     { id: 'newsletter', label: 'Newsletter', href: '/admin/newsletter/', area: 'fans', hint: 'Write and send the weekly newsletter' },

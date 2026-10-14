@@ -211,6 +211,8 @@ export async function confirmFoodPayment(env, order, { waitUntil, origin = 'http
     const job = kitchenOnPaid(env, order.id, waitUntil);
     if (!waitUntil) await job;
   } catch (err) { console.error('[food] kitchen alert', err); }
+  // Lobi Stars Rewards: food points once the order is PAID.
+  try { const { earnFood } = await import('./rewardsEarn.js'); await earnFood(env, paid); } catch (err) { console.error('[food] rewards', err); }
   const n = splitName(order.customer_name || '');
   await captureContact(env, { source: 'food_order', refTable: 'food_orders', refId: order.id, email: order.email, phone: order.phone, firstName: n.firstName, surname: n.surname, label: order.ref });
   if (env.RESEND_API_KEY) {

@@ -18,7 +18,8 @@ export async function onRequestPost({ request, env }) {
     const dob = cleanDob(b.dateOfBirth);
     if (!dob) return Response.json({ errors: { dateOfBirth: 'Enter your real date of birth.' } }, { status: 400 });
     await ensureRewardsSchema(db);
-    await db.prepare(`UPDATE members SET state = ?, date_of_birth = ? WHERE id = ?`).bind(state, dob, memberId).run();
+    // dob_set_at: when the date of birth was first saved or changed (the birthday bonus needs it 30+ days before).
+    await db.prepare(`UPDATE members SET state = ?, dob_set_at = CASE WHEN date_of_birth IS ? THEN dob_set_at ELSE datetime('now') END, date_of_birth = ? WHERE id = ?`).bind(state, dob, dob, memberId).run();
     const awarded = await profileBonus(db, memberId);
     const sum = await pointsSummary(db, memberId);
     return Response.json({ ok: true, awarded, balance: sum.balance });

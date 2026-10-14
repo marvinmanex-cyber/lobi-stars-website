@@ -1943,8 +1943,38 @@ lobistarsfc.com/rewards only show in staff preview. To preview, open
   same order or event can never give points twice.
 - Rewards Terms (DRAFT, for the club's legal adviser): /rewards/terms.
 
-Earning on purchases and matchdays, tiers, the rewards catalogue, the admin
-screens (Admin › Rewards) and the launch switch come in the next phases.
+**Earning (done, all numbers in Admin › Rewards):** fans earn only from what
+the website records itself, and each order or match counts once.
+- **Match tickets:** points per ₦100 paid (after discounts), *pending* until the
+  match is set to full-time, then available. Refunded tickets lose their points.
+- **Shirts bought through our own checkout** (personalised shirts), **in-seat
+  food** (when the order is paid), **season tickets** and **membership** (plus a
+  membership bonus): points per ₦100 paid, available straight away. Jumia
+  purchases do not earn points.
+- **Coming to a home match:** points when their ticket is scanned at the gate
+  (once per match, however many of their tickets are scanned), and a bonus for
+  3 home matches in a row.
+- **Man of the Match vote** and **Predict & Win** (entry; at full-time a correct
+  result, or more for the exact score), limited to a monthly maximum.
+- **Referrals:** each member's link is lobistarsfc.com/fans/register/?ref=<member
+  number>. The referrer gets points once the friend has confirmed their email
+  and paid for something. Same phone, same device or the same surname at the
+  same company email are flagged, not paid. Most per season is a setting.
+- **Birthday month bonus,** once a year (date of birth saved 30+ days before).
+- A Paystack refund or dispute on a payment removes its points automatically
+  (a fan's balance can go below zero).
+
+**Admin › Rewards** (new "Rewards" section in the admin menu; Fan Relations and
+Super Admins): every number above, the season start date and the **Rewards is
+live for fans** switch (leave off until launch); totals; **Find a member** by
+email or member number to see their points history, **Adjust** points (a
+reason is required and shown to the fan) or **Suspend** for fraud (they stop
+earning). **Run the points job now** makes ticket points of played matches
+available straight away (it also runs every 10 minutes, and when a fan opens
+their points).
+
+Tiers, the rewards catalogue, redeeming, the fan dashboard and the launch come
+in the next phases.
 
 ## Other things you can update in the CMS
 

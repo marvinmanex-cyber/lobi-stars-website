@@ -3,6 +3,7 @@ import { rateLimit, tooMany, clientIp } from '../../_lib/fans.js';
 import { ensurePredictSchema, predictState, predictionWindow, parseGoals, countPredictions, publicName } from '../../_lib/predict.js';
 import { PRIZE_AMOUNT, MAX_GOALS, CLAIM_INSTRUCTIONS, NO_WINNER_TEXT } from '../../_lib/predictSettings.js';
 import { recordServerEvent } from '../../_lib/analytics.js';
+import { earnPrediction } from '../../_lib/rewardsEarn.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
 const notHome = () => Response.json({ error: 'Predict & Win is only for Lobi Stars home games.' }, { status: 404 });
@@ -78,5 +79,6 @@ export async function onRequestPost({ request, env, params }) {
     return Response.json({ error: `You have already predicted ${mine.home_goals} – ${mine.away_goals} for this match. Predictions can't be changed.`, code: 'predicted' }, { status: 409 });
   }
   await recordServerEvent(env, 'prediction_submit', match.slug, request);
+  await earnPrediction(env, fan.id, match); // Lobi Stars Rewards (monthly limit applies)
   return Response.json({ ok: true, mine: { home, away, at }, count: await countPredictions(env.DB, match.id) }, { headers: noStore });
 }

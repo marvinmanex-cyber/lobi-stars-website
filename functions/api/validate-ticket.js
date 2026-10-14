@@ -3,6 +3,7 @@
 // at the same instant can't both admit it.
 import { scanSeasonPass } from './_lib/seasonTickets.js';
 import { ensureDiscountSchema } from './_lib/ticketDiscounts.js';
+import { earnAttendance } from './_lib/rewardsEarn.js';
 
 export async function onRequestPost({ request, env }) {
   let body;
@@ -56,6 +57,8 @@ export async function onRequestPost({ request, env }) {
        WHERE t.id = ?`
     ).bind(cleanId).first();
 
+    // Lobi Stars Rewards: attendance points (once per fan per match) and the home-games-in-a-row bonus.
+    await earnAttendance(env, cleanId);
     // ADULT or CHILD, so staff can check a child ticket (family bundle).
     return Response.json({ valid: true, code: 'valid', ticketType: ticket?.ticket_type === 'child' ? 'child' : 'adult', ticket });
   }

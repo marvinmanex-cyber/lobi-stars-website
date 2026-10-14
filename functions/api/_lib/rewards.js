@@ -1,4 +1,5 @@
-// Lobi Stars Rewards (Pride Points), Phase 1: membership and the points LEDGER.
+// Lobi Stars Rewards (Pride Points): membership, the points LEDGER and settings.
+// Earning hooks are in rewardsEarn.js; pure rules in rewardsRules.js.
 // Reuses the fan accounts (members table, session cookie, email verification).
 // Every change to a fan's points is one row in rewards_ledger; the balance is
 // the sum of AVAILABLE rows. Each earning has a unique (source, source_ref),
@@ -8,6 +9,25 @@ const DEFAULTS = {
   welcomeBonus: 50,        // on joining (once the email is verified)
   profileBonus: 20,        // state of residence + date of birth added
   termsVersion: '2026-10-draft',
+  // Earning (starting defaults; all editable in Admin › Rewards).
+  ticketsPer100: 1,        // points per ₦100 paid for match tickets (pending until the match is played)
+  shopPer100: 1,           // shirts/merchandise bought through our own checkout
+  foodPer100: 1,           // in-seat food (MatchDay Kitchen)
+  membershipPer100: 1,     // annual membership ...
+  membershipBonus: 300,    // ... plus this bonus
+  attendance: 30,          // ticket scanned at the gate (once per match)
+  streakBonus: 100,        // home matches attended in a row ...
+  streakLength: 3,         // ... this many
+  motmVote: 5,             // Man of the Match vote
+  prediction: 5,           // Predict & Win prediction submitted
+  predictionCorrect: 10,   // correct result (at full-time)
+  predictionExact: 30,     // exact score (at full-time)
+  referral: 150,           // to the referrer, after the friend's first paid purchase
+  referralMaxPerSeason: 10,
+  birthday: 100,           // in the birthday month, once a year
+  birthdayDobMinDays: 30,  // date of birth saved at least this many days before
+  engagementMonthlyCap: 200, // votes and predictions per calendar month (0 = no cap; attendance not included)
+  seasonStart: '2026-08-01', // first day of the current season (referral limit per season; tiers later). Same as the CMS seasonStart.
   // Until the programme launches, the Rewards sign-up box, the account-page
   // section and /rewards stay hidden (staff preview: /rewards/?preview=1).
   live: false,
@@ -55,10 +75,29 @@ export async function ensureRewardsSchema(db) {
   const cols = new Set(results.map(c => c.name));
   if (!cols.has('date_of_birth')) await db.prepare(`ALTER TABLE members ADD COLUMN date_of_birth TEXT`).run();
   if (!cols.has('state')) await db.prepare(`ALTER TABLE members ADD COLUMN state TEXT`).run();
+  if (!cols.has('dob_set_at')) await db.prepare(`ALTER TABLE members ADD COLUMN dob_set_at TEXT`).run();       // birthday bonus needs the date of birth saved 30+ days before
+  if (!cols.has('referred_by')) await db.prepare(`ALTER TABLE members ADD COLUMN referred_by TEXT`).run();     // referrer's member id (from ?ref= at sign-up)
+  if (!cols.has('signup_device')) await db.prepare(`ALTER TABLE members ADD COLUMN signup_device TEXT`).run(); // random id from the browser (self-referral checks)
+  const lc = new Set((await db.prepare(`PRAGMA table_info(rewards_ledger)`).all()).results.map(c => c.name));
+  if (!lc.has('event_id')) await db.prepare(`ALTER TABLE rewards_ledger ADD COLUMN event_id TEXT`).run(); // ticket points wait for this match
+  if (!lc.has('pay_ref')) await db.prepare(`ALTER TABLE rewards_ledger ADD COLUMN pay_ref TEXT`).run();   // Paystack reference (refunds/disputes reverse by it)
+  await db.batch([
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_rewards_ledger_pending ON rewards_ledger (status, event_id)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_rewards_ledger_payref ON rewards_ledger (pay_ref)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS rewards_referrals (
+      friend_member_id TEXT PRIMARY KEY,
+      referrer_member_id TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'waiting' CHECK (status IN ('waiting', 'awarded', 'flagged', 'capped')),
+      reason TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      decided_at TEXT)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_rewards_referrals_referrer ON rewards_referrals (referrer_member_id, status)`),
+  ]);
   ready = true;
 }
 
 /** Programme settings (all editable later in Admin › Rewards; these are the starting defaults). */
+export const REWARDS_DEFAULTS = DEFAULTS;
 export async function rewardsSettings(db) {
   try {
     const r = await db.prepare(`SELECT value FROM settings WHERE key = 'rewards_settings'`).first();
@@ -76,16 +115,16 @@ export async function rewardsMember(db, memberId) {
  * sourceRef) does nothing and returns false. EARN and BONUS rows need an
  * active rewards member with a verified email.
  */
-export async function addLedger(db, { memberId, type, points, status = 'AVAILABLE', source, sourceRef, description, availableAt = null, createdBy = null }) {
+export async function addLedger(db, { memberId, type, points, status = 'AVAILABLE', source, sourceRef, description, availableAt = null, createdBy = null, eventId = null, payRef = null }) {
   if (!LEDGER_TYPES.includes(type) || !LEDGER_STATUSES.includes(status) || !SOURCES.includes(source)) throw new Error('bad ledger row');
   if (!Number.isInteger(points) || !sourceRef || !description) throw new Error('bad ledger row');
   if (type === 'EARN' || type === 'BONUS') {
     const m = await rewardsMember(db, memberId);
     if (!m || m.status !== 'active' || !m.email_verified) return false;
   }
-  const r = await db.prepare(`INSERT OR IGNORE INTO rewards_ledger (member_id, type, points, status, source, source_ref, description, available_at, created_by)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(memberId, type, points, status, source, String(sourceRef), String(description).slice(0, 200), status === 'AVAILABLE' ? (availableAt || new Date().toISOString()) : availableAt, createdBy).run();
+  const r = await db.prepare(`INSERT OR IGNORE INTO rewards_ledger (member_id, type, points, status, source, source_ref, description, available_at, created_by, event_id, pay_ref)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(memberId, type, points, status, source, String(sourceRef), String(description).slice(0, 200), status === 'AVAILABLE' ? (availableAt || new Date().toISOString()) : availableAt, createdBy, eventId, payRef).run();
   return r.meta.changes > 0;
 }
 

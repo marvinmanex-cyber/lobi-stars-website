@@ -1,6 +1,7 @@
 import { readSession } from '../_lib/session.js';
 import { ensureFanSchema } from '../_lib/fans.js';
 import { ensureRewardsSchema, rewardsMember, memberNo, pointsSummary, ledgerFor, rewardsSettings, NIGERIAN_STATES } from '../_lib/rewards.js';
+import { rewardsSweep } from '../_lib/rewardsEarn.js';
 
 // GET /api/rewards/me -- the signed-in fan's Rewards status:
 // { signedIn, verified, joined, memberNo, balance, pending, profile, history, bonuses }.
@@ -24,9 +25,11 @@ export async function onRequestGet({ request, env }) {
     };
     const r = await rewardsMember(db, memberId);
     if (!r) return Response.json({ ...base, joined: false }, { headers });
+    // This fan's ticket points of played matches, prediction results and birthday bonus, straight away.
+    await rewardsSweep(env, { memberId });
     const [sum, history] = await Promise.all([pointsSummary(db, memberId), ledgerFor(db, memberId, 50)]);
     return Response.json({
-      ...base, joined: true, memberNo: memberNo(r.seq), status: r.status, joinedAt: r.joined_at,
+      ...base, joined: true, memberNo: memberNo(r.seq), referralLink: `https://lobistarsfc.com/fans/register/?ref=${memberNo(r.seq)}`, status: r.status, joinedAt: r.joined_at,
       balance: sum.balance, pending: sum.pending, history,
       profileBonusDone: history.some(h => h.source === 'profile'),
     }, { headers });
