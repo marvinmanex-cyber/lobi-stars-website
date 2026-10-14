@@ -1,5 +1,6 @@
 import { ensureTable, loadMatch, toPublic } from '../_lib/matchCentre.js';
 import { matchSlug } from '../_lib/matchSlug.js';
+import { decorateMatches } from '../_lib/ticketShop.js';
 
 // GET /api/matches/:slug -- one match with its full Match Centre data.
 // Accepts the readable slug or the raw event id. serverTime lets pages show
@@ -12,8 +13,11 @@ export async function onRequestGet({ env, params }) {
   if (!event) return Response.json({ error: 'Match not found' }, { status: 404 });
 
   const m = await loadMatch(env.DB, event.id);
+  // Ticket state and "from" price (same rules as the homepage and /tickets).
+  const [match] = await decorateMatches(env, [toPublic(m.event, m.centre)], [m.event]);
+  if (match.ticket) match.on_sale = match.ticket.state === 'on_sale';
   return Response.json(
-    { match: toPublic(m.event, m.centre), serverTime: new Date().toISOString() },
+    { match, serverTime: new Date().toISOString() },
     { headers: { 'Cache-Control': 'no-store' } }
   );
 }

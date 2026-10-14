@@ -41,6 +41,16 @@ export function nextLobiMatch(matches, now = Date.now()) {
   return upcomingMatches(matches.filter(m => isLobi(m.home_team) || isLobi(m.away_team)), now).find(m => m.status !== 'postponed') || null;
 }
 
+/**
+ * The match in the homepage match bar: THE next match (nextLobiMatch); only
+ * when every remaining match is postponed, the first postponed one (shown as
+ * "Postponed – date to be confirmed"). null hides the bar.
+ */
+export function matchBarMatch(matches, now = Date.now()) {
+  const lobi = matches.filter(m => isLobi(m.home_team) || isLobi(m.away_team));
+  return nextLobiMatch(lobi, now) || upcomingMatches(lobi, now)[0] || null;
+}
+
 /** The other club in a Lobi Stars match (its full name), and whether Lobi Stars are at home. */
 export const opponentOf = m => (isLobi(m.home_team) ? m.away_team : m.home_team);
 export const lobiAtHome = m => isLobi(m.home_team);

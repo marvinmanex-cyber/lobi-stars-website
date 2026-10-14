@@ -89,7 +89,7 @@ export function upcomingLobi(matches, now = Date.now()) {
 
 /** The homepage "Upcoming Matches" cards (see functions/api/_lib/tickets/upcomingHtml.js). */
 export function nextMatchesHtml(matches, now = Date.now(), previews = {}) {
-  return upcomingHtml(matches, { now, previews, limit: 3 });
+  return upcomingHtml(matches, { now, previews, limit: 2, afterBar: true });
 }
 
 // ── Watch Live page ──

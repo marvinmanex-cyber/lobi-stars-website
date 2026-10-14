@@ -50,6 +50,7 @@ import '../styles/fixture-card.css';
   .mc :global(.mc-actions .btn-o) { color: #fff; border-color: rgba(255, 255, 255, .4); padding: 11px 16px; font-size: 13px; }
   .mc :global(.mc-actions .btn-o:hover) { border-color: #FFC72C; color: #FFC72C; }
   .mc :global(.mc-actions .btn-p) { padding: 11px 18px; font-size: 13px; }
+  .mc :global(.mc-tix-note) { align-self: center; color: rgba(255, 255, 255, .85); font-size: 14px; font-weight: 600; }
 
   .mc :global(.mc-live-wrap) { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
   .mc :global(.mc-btn-light) { color: #fff; border-color: rgba(255, 255, 255, .6); }
@@ -228,16 +229,28 @@ import '../styles/fixture-card.css';
       timers.push(window.setInterval(tick, 1000));
 
       const actions = el('div', 'mc-actions');
-      if ((m as any).on_sale) {
-        const t = el('a', 'btn-p', 'Buy Tickets') as HTMLAnchorElement;
-        t.href = `/tickets?event=${encodeURIComponent(m.id)}`;
+      const tk = (m as any).ticket as { state?: string; fromKobo?: number } | undefined;
+      if (tk ? tk.state === 'on_sale' : (m as any).on_sale) {
+        const from = tk?.fromKobo ? ` from ₦${Math.round(tk.fromKobo / 100).toLocaleString('en-NG')}` : '';
+        const t = el('a', 'btn-p', `Buy ticket${from}`) as HTMLAnchorElement;
+        t.href = `/tickets/?event=${encodeURIComponent(m.id)}`;
         actions.append(t);
-      }
+      } else if (tk?.state === 'sold_out') actions.append(el('span', 'mc-tix-note', 'Tickets sold out'));
+      else if (m.is_home && tk?.state === 'not_on_sale') actions.append(el('span', 'mc-tix-note', 'Tickets not on sale yet'));
       const ics = el('button', 'btn-o', '📅 Add to calendar') as HTMLButtonElement;
       ics.type = 'button'; ics.addEventListener('click', () => downloadIcs(m));
       const g = el('a', 'btn-o', 'Google Calendar') as HTMLAnchorElement;
       g.href = googleCalUrl(m); g.target = '_blank'; g.rel = 'noopener';
       actions.append(ics, g);
+      // Live commentary (away matches already have it above; home matches get
+      // Matchday Live on the day, and this link before it).
+      if (m.is_home && root.dataset.commentary && !isMatchDay(m)) {
+        const cm = el('a', 'btn-o', 'Listen live') as HTMLAnchorElement;
+        cm.href = root.dataset.commentary;
+        cm.dataset.track = 'commentary_click'; cm.dataset.trackLabel = m.slug;
+        cm.setAttribute('aria-label', 'Listen live on Lobi Stars FC Live');
+        actions.append(cm);
+      }
       pre.append(count, actions);
       inner.append(pre);
     }

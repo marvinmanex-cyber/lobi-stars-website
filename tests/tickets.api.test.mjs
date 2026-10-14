@@ -116,9 +116,9 @@ test('one payment for several matches: tickets per match, duplicate webhook issu
 });
 
 test('lookup is rate-limited', async () => {
-  const lip = ip();
+  const lip = ip(), email = `nobody-${uid()}@example.com`; // fresh email: the per-email daily limit doesn't carry over between runs
   const codes = [];
-  for (let i = 0; i < 6; i++) codes.push((await pub('/api/tickets/lookup', { email: 'nobody@example.com', reference: 'LSBAS-NOTREAL0000' }, { 'CF-Connecting-IP': lip })).status);
+  for (let i = 0; i < 6; i++) codes.push((await pub('/api/tickets/lookup', { email, reference: 'LSBAS-NOTREAL0000' }, { 'CF-Connecting-IP': lip })).status);
   assert.deepEqual(codes, [404, 404, 404, 404, 404, 429]);
 });
 
@@ -128,6 +128,7 @@ test('public pages: /tickets lists home matches, homepage shows Upcoming Matches
   assert.match(tickets, /Select next 3 matches/);
   const home = await (await fetch(`${BASE}/`)).text();
   assert.match(home, /Upcoming Matches/);
-  assert.match(home, /fx-card--featured/);
-  assert.ok((home.match(/<li class="fx-card/g) || []).length <= 3);
+  assert.match(home, /class="mb-card/);
+  assert.ok(!home.includes('class="fx-card fx-card--featured'), 'no second hero');
+  assert.ok((home.match(/<li class="fx-card/g) || []).length <= 2);
 });

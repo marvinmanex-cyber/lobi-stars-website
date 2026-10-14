@@ -1,5 +1,6 @@
 ---
 import ProgrammeBanner from '../components/programme/ProgrammeBanner.astro';
+import MatchBar from '../components/news/MatchBar.astro';
 import Layout from '../layouts/Layout.astro';
 import NewsHero from '../components/news/NewsHero.astro';
 import NextMatches from '../components/news/NextMatches.astro';
@@ -54,9 +55,11 @@ const teamJsonLd = {
   <!-- "FULL TIME" banner for 24 hours after a match: filled in on the server (functions/index.js). -->
   <div class="ftb" id="ftBanner" hidden></div>
   <HomeHero />
+  <!-- One hero, then the next match as a slim bar and the programme as one line under it. -->
+  <MatchBar />
+  <ProgrammeBanner />
 
   <NewsHero articles={featuredNews} />
-  <ProgrammeBanner />
   <NextMatches />
   <MatchAlerts variant="band" />
   <MatchdayGames />

@@ -1787,10 +1787,16 @@ Press **Save** on the match. To set the same thing for many matches at once,
 use **Apply to all** at the top (leave a box empty to
 keep what each match already has).
 
-**What fans see:** the homepage "Upcoming Matches" shows the next three Lobi
-Stars matches (a live match first). Each says **Buy ticket**, **Sold out**,
-**Tickets not on sale yet** or **Away fixture**. A postponed match says
-"Postponed – date to be confirmed". The full list is on /fixtures.
+**What fans see:** under the homepage picture, a slim **match bar** shows the
+next Lobi Stars match: both clubs, date, kick-off, venue, a countdown and one
+button: **Buy ticket from ₦…** for a home match on sale, **Listen live** while
+the match is live, otherwise **Match Centre**. "More" holds Match Centre, Add
+to calendar, Share and Listen live. The Match Day Programme line sits just
+below it. Further down, "Upcoming Matches" shows the two matches after that,
+each saying **Buy ticket**, **Sold out**, **Tickets not on sale yet** or
+**Away fixture**. A postponed match says "Postponed – date to be confirmed".
+The full list is on /fixtures, and each match's full detail on its Match
+Centre page.
 
 **Lost tickets:** a fan can get them back at **lobistarsfc.com/tickets/lookup**
 with their email and the order reference (from the Paystack receipt or the email).

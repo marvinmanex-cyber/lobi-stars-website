@@ -297,6 +297,20 @@ and Super Admins are emailed (when `RESEND_API_KEY` is set). Admin page
 work: point a free outside monitor (e.g. UptimeRobot, every 5 minutes) at it.
 Tests: `tests/health.test.mjs`.
 
+## Homepage: one hero and a slim match bar (14 October 2026)
+
+- Order: hero, then the match bar (`src/components/news/MatchBar.astro`, built
+  by `functions/api/_lib/matchBar.js` on the server), then the one-line Match
+  Day Programme strip, then the rest. The match is `matchBarMatch()`
+  (`tickets/rules.js`): the shared next match, or the first postponed one if
+  nothing else is left; no match hides the bar.
+- One main button (Buy ticket from ₦X / Listen live when live / Match
+  Centre); More menu: Match Centre, Add to calendar (/api/calendar?match=…),
+  Share, Listen live (/commentary/, commentary_click tracking).
+- "Upcoming Matches" lists the matches after the bar's (`afterBar`), no big card.
+- The Match Centre page and /api/matches/<slug> now include the ticket state
+  and "from" price, and home matches get a Listen live link before match day.
+
 ## Homepage Match Day Programme strip (14 October 2026)
 
 - Built on the server for every homepage request (`functions/index.js` +

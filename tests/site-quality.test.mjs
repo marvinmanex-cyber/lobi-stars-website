@@ -20,7 +20,8 @@ test('pages are rendered on the server: no "Loading…" placeholders', async () 
 test('homepage Next Matches and the fixtures list arrive with fixture cards and data', async () => {
   const home = (await html('/')).body;
   assert.match(home, /id="ssr-matches"/);
-  assert.ok(/class="fx-card fx-card--featured/.test(home) || /announced soon/.test(home), 'cards or the "announced soon" message');
+  assert.ok(/class="mb-card/.test(home) || /announced soon/.test(home), 'the next-match bar or the "announced soon" message');
+  assert.ok(!/class="fx-card fx-card--featured/.test(home), 'one hero only: no big next-match card on the homepage');
   const fx = (await html('/fixtures/')).body;
   assert.ok(/class="fx-card/.test(fx) || /announced soon/.test(fx));
   const { matches } = await fetch(`${BASE}/api/matches`).then(r => r.json());

@@ -1,6 +1,7 @@
 import { jsonScript } from '../api/_lib/ssr.js';
 import { ensureTable, loadMatch, toPublic } from '../api/_lib/matchCentre.js';
 import { matchSlug } from '../api/_lib/matchSlug.js';
+import { decorateMatches } from '../api/_lib/ticketShop.js';
 import { matchImagePath, MATCH_FALLBACK_IMAGE } from '../api/_lib/shareImage.js';
 
 // /matches/<slug> -- serves the static Match Centre page (built at
@@ -38,7 +39,10 @@ export async function onRequestGet({ request, env, params }) {
   let status = 'scheduled';
   try {
     const m = await loadMatch(env.DB, event.id);
-    const data = { match: toPublic(m.event, m.centre), serverTime: new Date().toISOString() };
+    // Same data as /api/matches/<slug>, with the ticket state and "from" price.
+    const [match] = await decorateMatches(env, [toPublic(m.event, m.centre)], [m.event]);
+    if (match.ticket) match.on_sale = match.ticket.state === 'on_sale';
+    const data = { match, serverTime: new Date().toISOString() };
     status = data.match.status || status;
     embed = jsonScript('ssr-match', data);
   } catch { /* the page fetches it instead */ }

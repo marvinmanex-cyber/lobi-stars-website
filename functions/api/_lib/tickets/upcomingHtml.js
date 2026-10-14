@@ -5,7 +5,7 @@
 // itself is the shared one (fixtureCard.js) used on /fixtures and /results.
 import { TEAM_LOGOS } from '../teamLogos.js';
 import { matchSlug } from '../matchSlug.js';
-import { upcomingMatches, nextLobiMatch, naira } from './rules.js';
+import { upcomingMatches, nextLobiMatch, matchBarMatch, naira } from './rules.js';
 import { fixtureCardHtml, shareAction, lagosParts, splitVenue, esc } from '../fixtureCard.js';
 
 const isLobi = n => /lobi stars/i.test(n || '');
@@ -20,7 +20,8 @@ function ticketHtml(m, home) {
   return `<span class="lg-chip lg-tix">Tickets not on sale yet${opens}</span>`;
 }
 
-function jsonLd(m) {
+/** SportsEvent JSON-LD for one match (also used by the homepage match bar). */
+export function jsonLd(m) {
   const status = m.status === 'postponed' ? 'EventPostponed' : 'EventScheduled';
   const [locality, region] = splitVenue(m.venue).place.split(',').map(x => x.trim());
   return `<script type="application/ld+json">${JSON.stringify({
@@ -52,8 +53,16 @@ function card(m, featured, previews = {}) {
 }
 
 /** The cards (HTML list items) for the Lobi Stars matches in `matches`. */
-export function upcomingHtml(matches, { now = Date.now(), previews = {}, limit = 3 } = {}) {
+export function upcomingHtml(matches, { now = Date.now(), previews = {}, limit = 3, afterBar = false } = {}) {
   const lobi = matches.filter(m => isLobi(m.home_team) || isLobi(m.away_team));
+  // Homepage: the next match is in the match bar (matchBar.js), so this list
+  // shows the matches after it, all as regular cards.
+  if (afterBar) {
+    const bar = matchBarMatch(lobi, now);
+    const after = upcomingMatches(lobi, now).filter(m => !bar || m.id !== bar.id).slice(0, limit);
+    if (!after.length) return '<li class="nm-empty">Fixtures for the next round will be announced soon. <a href="/fixtures/">See all fixtures</a></li>';
+    return after.map(m => card(m, false, previews)).join('');
+  }
   // The featured card is THE next match (shared with the programme strip);
   // postponed matches without a new date follow as regular cards.
   const next = nextLobiMatch(lobi, now);

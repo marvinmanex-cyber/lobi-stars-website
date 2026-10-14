@@ -12,27 +12,24 @@
 <aside class="pgb" id="pgb" hidden aria-label="Match Day Programme"></aside>
 
 <style>
-  .pgb { background: #FFC72C; color: #15181D; }
-  .pgb :global(.pgb-in) { max-width: 1280px; margin: 0 auto; padding: 0 5%; display: flex; align-items: center; gap: 10px; }
-  .pgb :global(.pgb-link) { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px 18px; flex-wrap: wrap; padding: 10px 0; color: inherit; text-decoration: none; }
-  .pgb :global(.pgb-txt) { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .pgb :global(.pgb-k) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .14em; text-transform: uppercase; }
-  .pgb :global(.pgb-t) { font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; overflow-wrap: anywhere; }
-  .pgb :global(.pgb-ha) { display: inline-block; vertical-align: 3px; margin-left: 6px; padding: 3px 7px; border-radius: 999px; background: #15181D; color: #FFC72C; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; }
-  .pgb :global(.pgb-go), .pgb :global(.pgb-soon) { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 8px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
-  .pgb :global(.pgb-go) { background: #15181D; color: #fff; }
-  .pgb :global(a.pgb-link:hover .pgb-go), .pgb :global(a.pgb-link:focus-visible .pgb-go) { background: #C11A1F; }
-  .pgb :global(a.pgb-link:focus-visible) { outline: 3px solid #15181D; outline-offset: 2px; }
-  .pgb :global(.pgb-soon) { border: 1.5px dashed rgba(21, 24, 29, .55); }
-  .pgb :global(.pgb-x) { flex: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; font-size: 26px; line-height: 1; cursor: pointer; color: inherit; }
-  .pgb :global(.pgb-x:hover), .pgb :global(.pgb-x:focus-visible) { background: rgba(0, 0, 0, .1); }
+  /* One thin line directly under the match bar (MatchBar.astro), same width. */
+  .pgb { max-width: 1280px; margin: 8px auto 0; padding: 0 5%; box-sizing: border-box; color: #15181D; }
   .pgb[hidden] { display: none; }
-  /* Phones: the button goes below the text; names wrap, never cut off. */
-  @media (max-width: 600px) {
-    .pgb :global(.pgb-in) { padding: 0 16px; align-items: flex-start; }
-    .pgb :global(.pgb-link) { flex-direction: column; align-items: flex-start; }
-    .pgb :global(.pgb-t) { font-size: 20px; }
-  }
+  .pgb :global(.pgb-in) { display: flex; align-items: center; gap: 6px; padding: 0 4px 0 14px; border-radius: 10px; background: #FFC72C; }
+  .pgb :global(.pgb-link) { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 4px 14px; flex-wrap: wrap; min-height: 44px; padding: 4px 0; color: inherit; text-decoration: none; }
+  .pgb :global(.pgb-txt) { display: flex; align-items: center; flex-wrap: wrap; gap: 2px 8px; min-width: 0; }
+  .pgb :global(.pgb-k) { font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+  .pgb :global(.pgb-t) { font: 700 16px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .02em; overflow-wrap: anywhere; }
+  .pgb :global(.pgb-t)::before { content: '·'; margin-right: 8px; font-weight: 700; }
+  .pgb :global(.pgb-ha) { display: inline-block; vertical-align: 1px; margin-left: 4px; padding: 2px 6px; border-radius: 999px; background: #15181D; color: #FFC72C; font: 700 10px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+  .pgb :global(.pgb-go) { display: inline-flex; align-items: center; min-height: 36px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; text-decoration: underline; text-underline-offset: 3px; }
+  .pgb :global(a.pgb-link:hover .pgb-go), .pgb :global(a.pgb-link:focus-visible .pgb-go) { color: #A3161B; }
+  .pgb :global(a.pgb-link:focus-visible) { outline: 3px solid #15181D; outline-offset: 2px; border-radius: 6px; }
+  .pgb :global(.pgb-x) { flex: none; width: 44px; height: 44px; border: 0; border-radius: 50%; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; color: inherit; }
+  .pgb :global(.pgb-x:hover), .pgb :global(.pgb-x:focus-visible) { background: rgba(0, 0, 0, .1); }
+  /* Narrow screens: the label sits above the match, so no separator dot. */
+  @media (max-width: 600px) { .pgb :global(.pgb-t)::before { content: none; } .pgb :global(.pgb-txt) { flex-direction: column; align-items: flex-start; } }
+  @media (max-width: 420px) { .pgb { padding: 0 16px; } }
 </style>
 
 <script is:inline>

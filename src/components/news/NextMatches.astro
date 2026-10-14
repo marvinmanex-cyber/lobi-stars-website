@@ -1,6 +1,6 @@
 ---
-// Homepage "Upcoming Matches": the next Lobi Stars match as the featured card
-// with countdown tiles, then the following two (live match first). The
+// Homepage "Upcoming Matches": the matches after the next one (the next match
+// is in the match bar under the hero, MatchBar.astro). The
 // cards come from the fixtures database: the server fills them in
 // (functions/index.js) and the browser refreshes them with the same builder
 // (functions/api/_lib/tickets/upcomingHtml.js). /fixtures lists every match.
@@ -30,7 +30,7 @@ import '../../styles/fixture-card.css';
   @media (min-width: 900px) {
     .nm-track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .nm-track :global(.fx-card--featured), .nm-track :global(.nm-empty) { grid-column: 1 / -1; }
-    .nm-track :global(.fx-card--regular:last-child:nth-child(even)) { grid-column: 1 / -1; }
+    .nm-track :global(.fx-card--regular:last-child:nth-child(odd)) { grid-column: 1 / -1; }
   }
   .nm-empty { color: var(--lt); font-size: 15px; padding: 18px 0; }
   .nm-empty a { color: var(--red-text); font-weight: 600; }
@@ -51,7 +51,7 @@ import '../../styles/fixture-card.css';
       if (!res.ok) throw new Error(String(res.status));
       const matches = (await res.json()).matches || [];
       const previews = await loadPreviews();
-      track.innerHTML = upcomingHtml(matches, { previews }); // every value is escaped by the builder
+      track.innerHTML = upcomingHtml(matches, { previews, limit: 2, afterBar: true }); // every value is escaped by the builder
       startCountdowns();
     } catch {
       track.querySelector('[data-nm-status]')?.replaceChildren('The fixtures could not be loaded just now. ', Object.assign(document.createElement('a'), { href: '/fixtures/', textContent: 'See all fixtures' }));

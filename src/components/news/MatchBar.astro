@@ -1,0 +1,114 @@
+---
+// The homepage match bar: the next Lobi Stars match as one slim strip docked
+// under the hero (the hero stays the only large block). The server fills it
+// in for every homepage request (functions/index.js +
+// functions/api/_lib/matchBar.js); hidden when there is no match left.
+// The full detail is on the Match Centre (/matches/<slug>/).
+import '../../styles/club-logo.css';
+---
+<section class="mb" id="matchBar" hidden aria-label="Next match"></section>
+
+<style>
+  .mb { position: relative; z-index: 2; max-width: 1280px; margin: -40px auto 0; padding: 0 5%; box-sizing: border-box; }
+  .mb[hidden] { display: none; }
+  .mb :global(.mb-sr) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .mb :global(.mb-card) {
+    display: grid; align-items: center; gap: 12px 20px; box-sizing: border-box;
+    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+    grid-template-areas: "main when venue cd acts";
+    padding: 14px 22px; min-height: 88px;
+    background: var(--d2); color: var(--white); border-radius: 14px; border-top: 4px solid var(--red);
+    box-shadow: 0 2px 6px rgba(16, 24, 40, .08), 0 14px 32px -16px rgba(16, 24, 40, .35);
+  }
+  .mb :global(.mb-main) { grid-area: main; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .mb :global(.mb-meta) { display: flex; align-items: center; gap: 8px; }
+  .mb :global(.mb-ha) { padding: 3px 8px; border-radius: 999px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; background: #15181D; color: #fff; }
+  .mb :global(.mb-ha--home) { background: var(--red); }
+  .mb :global(.mb-md) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--red-text); }
+  .mb :global(.mb-teams) { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .mb :global(.mb-team) { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .mb :global(.mb-team .club-logo) { --logo-h: 44px; }
+  .mb :global(.mb-name) { font: 700 19px/1.1 'Barlow Condensed', sans-serif; overflow-wrap: anywhere; }
+  .mb :global(.mb-vs) { flex: none; font: 400 18px/1 'Bebas Neue', sans-serif; color: var(--lt); letter-spacing: .04em; }
+  .mb :global(.mb-score) { flex: none; display: inline-flex; gap: 6px; padding: 4px 10px; border-radius: 8px; background: #15181D; color: #fff; font: 400 24px/1 'Bebas Neue', sans-serif; font-variant-numeric: tabular-nums; }
+  .mb :global(.mb-when) { grid-area: when; display: flex; flex-direction: column; gap: 3px; margin: 0; padding-left: 20px; border-left: 1px solid var(--d4); white-space: nowrap; }
+  .mb :global(.mb-when dd) { margin: 0; font: 600 15px/1.2 'Barlow', sans-serif; }
+  .mb :global(.mb-when div + div dd) { color: var(--lt); }
+  .mb :global(.mb-venue) { grid-area: venue; margin: 0; max-width: 190px; padding-left: 20px; border-left: 1px solid var(--d4); font: 400 14px/1.3 'Barlow', sans-serif; color: var(--lt); }
+  .mb :global(.mb-cd) { grid-area: cd; min-width: 150px; padding-left: 20px; border-left: 1px solid var(--d4); }
+  .mb :global(.mb-cd-h) { display: block; margin-bottom: 4px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; color: var(--lt); }
+  .mb :global(.mb-tiles) { display: flex; gap: 4px; }
+  .mb :global(.mb-tile) { display: inline-flex; align-items: baseline; gap: 1px; min-width: 40px; justify-content: center; padding: 5px 6px; border-radius: 6px; background: var(--d3); }
+  .mb :global(.mb-tile[hidden]) { display: none; }
+  .mb :global(.mb-tile b) { font: 400 20px/1 'Bebas Neue', sans-serif; font-variant-numeric: tabular-nums; }
+  .mb :global(.mb-tile small) { font: 700 11px/1 'Barlow Condensed', sans-serif; color: var(--lt); }
+  .mb :global(.mb-live) { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: #C11A1F; color: #fff; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .12em; }
+  .mb :global(.mb-pulse), .mb :global(.mb-live-dot) { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: mb-pulse 1.2s infinite; }
+  @keyframes mb-pulse { 50% { opacity: .3; } }
+  .mb :global(.mb-pp) { display: inline-block; padding: 6px 10px; border-radius: 6px; background: #FFF1D6; color: #7A4B00; font: 700 14px/1.2 'Barlow Condensed', sans-serif; }
+  .mb :global(.mb-acts) { grid-area: acts; display: flex; align-items: center; gap: 8px; }
+  .mb :global(.mb-btn) { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 16px; box-sizing: border-box; border-radius: 8px; border: 1.5px solid var(--d4); background: transparent; color: var(--white); text-decoration: none; cursor: pointer; white-space: nowrap; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .mb :global(.mb-btn--primary) { background: var(--red); border-color: var(--red); color: #fff; }
+  .mb :global(.mb-btn--primary:hover), .mb :global(.mb-btn--primary:focus-visible) { background: var(--rd); border-color: var(--rd); color: #fff; }
+  .mb :global(.mb-btn--primary small) { font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; opacity: .92; }
+  .mb :global(.mb-btn--more:hover), .mb :global(.mb-btn--more[aria-expanded="true"]) { border-color: var(--red); color: var(--red-text); }
+  .mb :global(.mb-more) { position: relative; }
+  .mb :global(.mb-menu) { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; min-width: 200px; margin: 0; padding: 6px; list-style: none; background: var(--d2); border: 1px solid var(--d4); border-radius: 10px; box-shadow: 0 12px 28px -8px rgba(16, 24, 40, .3); }
+  .mb :global(.mb-menu[hidden]) { display: none; }
+  .mb :global(.mb-menu a), .mb :global(.mb-menu button) { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 0 12px; box-sizing: border-box; border: 0; border-radius: 6px; background: none; color: var(--white); text-align: left; text-decoration: none; cursor: pointer; font: 600 15px/1 'Barlow', sans-serif; }
+  .mb :global(.mb-menu a:hover), .mb :global(.mb-menu a:focus-visible), .mb :global(.mb-menu button:hover), .mb :global(.mb-menu button:focus-visible) { background: var(--d3); color: var(--red-text); outline: none; }
+  .mb :global(a:focus-visible), .mb :global(button:focus-visible) { outline: 3px solid var(--red); outline-offset: 2px; }
+
+  /* Below 1180px: a compact card. Row 1: crests and names; row 2: date and
+     time left, countdown right; then the main button with "More"; venue last. */
+  @media (max-width: 1179px) {
+    .mb { margin-top: -28px; }
+    .mb :global(.mb-card) {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas: "main main" "when cd" "acts acts" "venue venue";
+      gap: 10px 14px; padding: 14px 16px;
+    }
+    .mb :global(.mb-teams) { justify-content: space-between; }
+    .mb :global(.mb-team--a) { flex-direction: row-reverse; text-align: right; }
+    .mb :global(.mb-when) { flex-direction: row; gap: 14px; padding-left: 0; border-left: 0; }
+    .mb :global(.mb-when div + div) { padding-left: 14px; border-left: 1px solid var(--d4); }
+    .mb :global(.mb-cd) { min-width: 0; padding-left: 0; border-left: 0; justify-self: end; text-align: right; }
+    .mb :global(.mb-cd-h) { display: none; }
+    .mb :global(.mb-venue) { max-width: none; padding-left: 0; border-left: 0; font-size: 13px; }
+    .mb :global(.mb-acts .mb-btn--primary) { flex: 1; }
+  }
+  @media (max-width: 420px) {
+    .mb { padding: 0 16px; margin-top: -20px; }
+    .mb :global(.mb-name) { font-size: 17px; }
+    .mb :global(.mb-team .club-logo) { --logo-h: 40px; }
+    .mb :global(.mb-tile) { min-width: 34px; padding: 4px 5px; }
+    .mb :global(.mb-tile b) { font-size: 18px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .mb :global(.mb-pulse), .mb :global(.mb-live-dot) { animation: none; } }
+</style>
+
+<script>
+  // Countdown (shared with the match cards) and the "More" menu: keyboard
+  // friendly, closes on outside click and Escape.
+  import { startCountdowns } from '../../lib/fixtureCards';
+  startCountdowns();
+  const bar = document.getElementById('matchBar');
+  const btn = bar?.querySelector<HTMLButtonElement>('.mb-btn--more');
+  const menu = bar?.querySelector<HTMLElement>('.mb-menu');
+  if (btn && menu) {
+    const items = () => [...menu.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+    const close = (focus = false) => { menu.hidden = true; btn.setAttribute('aria-expanded', 'false'); if (focus) btn.focus(); };
+    const open = () => { menu.hidden = false; btn.setAttribute('aria-expanded', 'true'); items()[0]?.focus(); };
+    btn.addEventListener('click', () => (menu.hidden ? open() : close()));
+    document.addEventListener('click', e => { if (!menu.hidden && !bar!.querySelector('.mb-more')!.contains(e.target as Node)) close(); });
+    bar!.addEventListener('keydown', e => {
+      if (menu.hidden) return;
+      const list = items(), i = list.indexOf(document.activeElement as HTMLElement);
+      if (e.key === 'Escape') { e.preventDefault(); close(true); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); list[(i + 1) % list.length]?.focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); list[(i - 1 + list.length) % list.length]?.focus(); }
+      else if (e.key === 'Tab') close();
+    });
+    menu.addEventListener('click', e => { if ((e.target as HTMLElement).closest('[role="menuitem"]')) close(); });
+  }
+</script>
