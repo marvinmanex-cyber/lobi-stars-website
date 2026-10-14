@@ -13,8 +13,9 @@ const SAME_MATCH_MS = 12 * 3600e3;
 
 /**
  * { opponent, home, kickoff, programmeSlug|null } for the strip, or null to hide it:
- * no match left, the programme feature is off (or its file storage isn't
- * connected), or "Homepage banner" is off in Admin › Matchday Programme.
+ * no match left, the programme feature is off, or "Homepage banner" is off in
+ * Admin › Matchday Programme. While the file storage (R2) isn't connected no
+ * programme can be published, so the strip shows "Programme coming soon".
  * A programme belongs to the match when it is published (or its scheduled
  * publish time has come) and its kick-off is within 12 hours of the match's.
  */
@@ -22,11 +23,13 @@ export async function programmeStripData(env, matches, now = new Date()) {
   const next = nextLobiMatch(matches, now.getTime());
   if (!next) return null;
   const s = await programmeSettings(env.DB);
-  if (!s.enabled || !s.homepageBanner || !bucket(env)) return null;
+  if (!s.enabled || !s.homepageBanner) return null;
+  const base = { opponent: opponentOf(next), home: lobiAtHome(next), kickoff: next.event_date };
+  if (!bucket(env)) return { ...base, programmeSlug: null };
   const ko = Date.parse(next.event_date);
   const p = await env.DB.prepare(`SELECT slug FROM programmes WHERE ${LIVE_SQL} AND kickoff_at BETWEEN ? AND ? ORDER BY kickoff_at LIMIT 1`)
     .bind(now.toISOString(), new Date(ko - SAME_MATCH_MS).toISOString(), new Date(ko + SAME_MATCH_MS).toISOString()).first();
-  return { opponent: opponentOf(next), home: lobiAtHome(next), kickoff: next.event_date, programmeSlug: p?.slug || null };
+  return { ...base, programmeSlug: p?.slug || null };
 }
 
 /** The strip's inside (escaped). With a programme: a link "Read free →"; without: "Programme coming soon". */

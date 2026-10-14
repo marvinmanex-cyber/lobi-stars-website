@@ -307,8 +307,9 @@ Tests: `tests/health.test.mjs`.
   postponed (match or league status) are skipped.
 - Link only when a programme is published (or its scheduled time has come)
   with a kick-off within 12 hours of that match; otherwise "Programme coming
-  soon". Hidden while the programme feature, its file storage (R2) or the
-  "Homepage banner" switch is off, or when no match is left.
+  soon" (also while the file storage, R2, is not connected yet). Hidden while
+  the programme feature or the "Homepage banner" switch is off, or when no
+  match is left.
 - Freshness: the homepage is cached for 30 seconds and the cache is cleared
   on every admin save. To force it by hand, save anything in the admin (or
   wait 30 seconds); no redeploy is needed.

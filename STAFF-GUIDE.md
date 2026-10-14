@@ -1509,8 +1509,9 @@ back. A draft that was never published can be deleted.
   Lobi Stars fixture (the same match as "Upcoming Matches"), never from the
   programme's title, and it moves on by itself once a match is played (or
   marked full time, cancelled or postponed in League › Fixtures). When that
-  match's programme is published it says **Read free →**; until then it says
-  "Programme coming soon". Changes show within 30 seconds (straight away after
+  match's programme is published it says **Read free →**; until then (and
+  while the programme file storage is not connected yet) it says "Programme
+  coming soon". Changes show within 30 seconds (straight away after
   any save in the admin). Switch **Homepage banner** off on the admin page to
   hide it; **Programme page on** switches the whole feature off.
 - New fans give their first name (surname and phone optional) and can tick
