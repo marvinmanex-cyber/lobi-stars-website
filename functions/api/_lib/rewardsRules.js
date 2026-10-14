@@ -74,7 +74,7 @@ export const lagosYear = (now = Date.now()) => new Date(now + 3600e3).getUTCFull
 
 /** Settings validation for Admin › Rewards. Returns null or the problem. */
 export function settingsProblem(s) {
-  const ints = ['welcomeBonus', 'profileBonus', 'membershipBonus', 'attendance', 'streakBonus', 'streakLength', 'motmVote', 'prediction', 'predictionCorrect', 'predictionExact', 'referral', 'referralMaxPerSeason', 'birthday', 'birthdayDobMinDays', 'engagementMonthlyCap'];
+  const ints = ['welcomeBonus', 'profileBonus', 'membershipBonus', 'attendance', 'streakBonus', 'streakLength', 'motmVote', 'prediction', 'predictionCorrect', 'predictionExact', 'referral', 'referralMaxPerSeason', 'birthday', 'birthdayDobMinDays', 'engagementMonthlyCap', 'newsletterBonus', 'alertsBonus', 'firstPurchaseBonus', 'programmeRead'];
   for (const k of ints) if (!Number.isInteger(s[k]) || s[k] < 0 || s[k] > 100000) return `${k}: a whole number from 0 to 100,000.`;
   for (const k of ['ticketsPer100', 'shopPer100', 'foodPer100', 'membershipPer100']) if (typeof s[k] !== 'number' || !(s[k] >= 0) || s[k] > 100) return `${k}: 0 to 100 points per ₦100.`;
   if (s.streakLength < 2 || s.streakLength > 20) return 'Home games in a row: 2 to 20.';

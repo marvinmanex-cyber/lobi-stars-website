@@ -56,14 +56,14 @@ test('tickets: pending until full-time, then available; replayed webhook adds no
   const b = await buy(m.email, ev, 2); // 2 x ₦1,000 -> 20 points at 1 per ₦100
   assert.equal(await paid(b.reference, b.total), 200, 'replay');
   let d = await me(m.cookie);
-  assert.equal(d.pending, 20); assert.equal(d.balance, 50, 'only the welcome bonus is available');
+  assert.equal(d.pending, 20); assert.equal(d.balance, 100, 'welcome 50 + first-purchase bonus 50 are available');
   assert.equal((await call('PUT', `/api/admin/match-centre/${ev}`, { status: 'full-time', home_score: 2, away_score: 1 })).status, 200);
   d = await me(m.cookie);
-  assert.equal(d.pending, 0); assert.equal(d.balance, 70, JSON.stringify(d.history.slice(0, 3)));
+  assert.equal(d.pending, 0); assert.equal(d.balance, 120, JSON.stringify(d.history.slice(0, 3)));
   assert.equal(await signed({ event: 'charge.dispute.create', data: { transaction: { reference: b.reference } } }), 200);
   assert.equal(await signed({ event: 'charge.dispute.create', data: { transaction: { reference: b.reference } } }), 200, 'repeat');
   d = await me(m.cookie);
-  assert.equal(d.balance, 50, 'dispute removed the 20 ticket points once');
+  assert.equal(d.balance, 50, 'dispute removed the 20 ticket points and the first-purchase bonus, once');
   assert.ok(d.history.some(h => h.type === 'REVERSE' && h.points === -20));
 });
 
@@ -75,14 +75,16 @@ test('refunded tickets: the pending points are cancelled', async () => {
   const orders = (await call('GET', `/api/admin/tickets/orders?q=${encodeURIComponent(b.reference)}`)).data.orders;
   assert.equal((await call('POST', `/api/admin/tickets/orders/${encodeURIComponent(orders[0].id)}/refund`, { reason: 'Test refund' })).status, 200);
   const d = await me(m.cookie);
-  assert.equal(d.pending, 0); assert.equal(d.balance, 50);
+  assert.equal(d.pending, 0); assert.equal(d.balance, 50, 'first-purchase bonus taken back too');
   assert.ok(d.history.some(h => h.status === 'REVERSED'));
 });
 
 test('gate scan: attendance once per match (two tickets), and the 3-in-a-row bonus', async () => {
   const m = await member();
   // Same Nigerian day (tickets only scan on match day); seconds apart so matches from earlier test runs can't fall in between.
-  const evs = [await match(0.3), await match(0.301), await match(0.302)];
+  const toMidnight = (86400e3 - ((Date.now() + 3600e3) % 86400e3)) / 3600e3;
+  const h = Math.max(0.01, Math.min(0.3, toMidnight - 0.01));
+  const evs = [await match(h), await match(h + 0.001), await match(h + 0.002)];
   for (let i = 0; i < 3; i++) {
     const b = await buy(m.email, evs[i], 2);
     for (const t of b.tickets) { const g = await gate(t.id); assert.equal(g.data.valid, true, JSON.stringify(g.data)); }

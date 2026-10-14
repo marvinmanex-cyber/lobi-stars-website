@@ -1961,6 +1961,13 @@ the website records itself, and each order or match counts once.
   and paid for something. Same phone, same device or the same surname at the
   same company email are flagged, not paid. Most per season is a setting.
 - **Birthday month bonus,** once a year (date of birth saved 30+ days before).
+- **One-off actions (once per fan):** newsletter sign-up with their account
+  email (20), switching on match alerts while signed in (10), and a bonus on
+  their first paid purchase on lobistarsfc.com (50; taken back if that payment
+  is refunded). **Reading the Match Day Programme** gives 5 points per
+  programme, inside the monthly limit with votes and predictions.
+- No points for sharing on social media: a share can't be checked, so it would
+  be easy to abuse.
 - A Paystack refund or dispute on a payment removes its points automatically
   (a fan's balance can go below zero).
 

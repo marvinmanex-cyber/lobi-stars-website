@@ -46,6 +46,8 @@ export async function onRequestPost({ request, env, params }) {
       await logLeague(db, staff, 'tickets.refund', 'tickets', id, { status: 'paid' }, { status: 'refunded', reason });
       // Lobi Stars Rewards: take back the points of these tickets (pending ones are cancelled).
       for (const oid of orderIds) await reversePoints(env, { source: 'ticket_order', ref: oid }, 'tickets refunded');
+      // ...and any bonus that came with that payment (e.g. the first-purchase bonus).
+      await reversePoints(env, { payRef: basket ? basket.reference : single.paystack_reference }, 'tickets refunded');
       return ok();
     }
     return fail('Unknown action.', 404);

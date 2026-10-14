@@ -1,5 +1,7 @@
 import { ensureMatchAlertsSchema, CATEGORIES } from '../_lib/matchAlerts.js';
 import { clientIp, rateLimit, tooMany, ensureFanSchema } from '../_lib/fans.js';
+import { earnAlerts } from '../_lib/rewardsEarn.js';
+import { readSession } from '../_lib/session.js';
 
 // Match alerts for fans (no account needed):
 // GET  /api/push/public-key                     the VAPID key the browser subscribes with
@@ -30,6 +32,9 @@ export async function onRequestPost({ request, env, params }) {
     await db.prepare(`INSERT INTO fan_push_subs (endpoint, keys_json, prefs, active, created_at, updated_at) VALUES (?, ?, ?, 1, ?, ?)
       ON CONFLICT (endpoint) DO UPDATE SET keys_json = excluded.keys_json, prefs = excluded.prefs, active = 1, updated_at = excluded.updated_at`)
       .bind(sub.endpoint, JSON.stringify({ p256dh: String(sub.keys.p256dh).slice(0, 200), auth: String(sub.keys.auth).slice(0, 100) }), JSON.stringify(prefs), now, now).run();
+    // Lobi Stars Rewards: once, for a signed-in fan.
+    const fanId = await readSession(request, env.SESSION_SECRET).catch(() => null);
+    if (fanId) await earnAlerts(env, fanId);
     return json({ ok: true, prefs });
   }
   if (params.action === 'status') {

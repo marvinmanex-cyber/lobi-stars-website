@@ -54,7 +54,7 @@ test('reaching Gold: from points earned this season; celebration once; Gold mult
   await buy(m, ev, 2); // 20 points, pending
   assert.equal((await call('PUT', `/api/admin/match-centre/${ev}`, { status: 'full-time', home_score: 1, away_score: 0 })).status, 200);
   d = await me(m.cookie);
-  assert.equal(d.tier.key, 'gold'); assert.equal(d.tier.earned, 70); assert.equal(d.tier.celebrate, true);
+  assert.equal(d.tier.key, 'gold'); assert.equal(d.tier.earned, 120, 'welcome 50 + first-purchase 50 + tickets 20'); assert.equal(d.tier.celebrate, true);
   assert.ok(d.tier.benefits.includes('1.25x Pride Points on purchases'));
   assert.equal((await pub('/api/rewards/tier', { action: 'seen' }, m.cookie)).status, 200);
   assert.equal((await me(m.cookie)).tier.celebrate, false, 'shown once');

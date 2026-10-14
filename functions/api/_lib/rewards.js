@@ -26,7 +26,12 @@ const DEFAULTS = {
   referralMaxPerSeason: 10,
   birthday: 100,           // in the birthday month, once a year
   birthdayDobMinDays: 30,  // date of birth saved at least this many days before
-  engagementMonthlyCap: 200, // votes and predictions per calendar month (0 = no cap; attendance not included)
+  engagementMonthlyCap: 200, // votes, predictions and programme reads per calendar month (0 = no cap; attendance not included)
+  // One-off actions that help the club (each once per fan).
+  newsletterBonus: 20,     // signing up to the newsletter with their account email
+  alertsBonus: 10,         // switching on match alerts (push notifications) while signed in
+  firstPurchaseBonus: 50,  // first paid purchase on lobistarsfc.com (tickets, shop, food, membership)
+  programmeRead: 5,        // opening the Match Day Programme, per programme (monthly limit applies)
   seasonStart: '2026-08-01', // first day of the current season (tiers, referral limit). Same as the CMS seasonStart.
   // Redeeming.
   redeemCodeThreshold: 1000, // redemptions of this many points or more need a 6-digit code emailed to the fan
@@ -48,7 +53,7 @@ const DEFAULTS = {
 
 export const LEDGER_TYPES = ['EARN', 'BONUS', 'REDEEM', 'EXPIRE', 'REVERSE', 'ADJUST'];
 export const LEDGER_STATUSES = ['PENDING', 'AVAILABLE', 'REVERSED'];
-export const SOURCES = ['ticket_order', 'shop_order', 'food_order', 'membership', 'attendance', 'vote', 'prediction', 'referral', 'birthday', 'admin', 'welcome', 'profile', 'redeem', 'points_payment'];
+export const SOURCES = ['ticket_order', 'shop_order', 'food_order', 'membership', 'attendance', 'vote', 'prediction', 'referral', 'birthday', 'admin', 'welcome', 'profile', 'redeem', 'points_payment', 'newsletter', 'alerts', 'first_purchase', 'programme'];
 
 // Nigeria's 36 states and the FCT (state of residence on the profile).
 export const NIGERIAN_STATES = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT (Abuja)', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'];

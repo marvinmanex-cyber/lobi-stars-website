@@ -913,6 +913,12 @@ No Cloudflare Access rule is needed.
 - Top-up provider secrets (when chosen): `VTU_PROVIDER=vtpass`, `VTPASS_API_KEY`,
   `VTPASS_SECRET_KEY`, `VTPASS_BASE_URL`. **Never set `VTU_FAKE` in production**
   (local tests only). Test: `tests/rewards-redeem.api.test.mjs`.
+- One-off actions: settings newsletterBonus 20, alertsBonus 10,
+  firstPurchaseBonus 50, programmeRead 5 (monthly cap with votes/predictions).
+  Hooks: `/api/newsletter` (earnNewsletter by email), `/api/push/subscribe`
+  (earnAlerts for the signed-in fan), `/api/programme/:slug/event` type `open`
+  (earnProgramme), first purchase inside earnPurchase (carries the pay_ref, so
+  refunds/disputes reverse it). Test: `tests/rewards-actions.api.test.mjs`.
 
 ## Ticketing system setup (Cloudflare D1 + Paystack + Resend)
 

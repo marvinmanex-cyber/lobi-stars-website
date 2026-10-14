@@ -9,7 +9,7 @@ import { purchaseMultiplier, checkTierUpgrade } from './rewardsTiers.js';
 import { purchasePoints, lagosMonthStartUtc, capAllowance, streakReached, selfReferralReason, birthdayDue, lagosYear } from './rewardsRules.js';
 
 const safe = (label, fn) => fn().catch(err => { console.error(`[rewards] ${label}`, err); return null; });
-const ENGAGEMENT = ['vote', 'prediction'];
+const ENGAGEMENT = ['vote', 'prediction', 'programme'];
 
 /** The fan account for an email (any account; Rewards membership is checked when points are added). */
 async function memberByEmail(db, email) {
@@ -28,6 +28,8 @@ async function earnPurchase(db, { memberId, source, ref, paidKobo, per100, descr
   const points = purchasePoints(paidKobo, per100, await purchaseMultiplier(db, memberId));
   let added = false;
   if (points > 0) added = await addLedger(db, { memberId, type: 'EARN', points, status: pending ? 'PENDING' : 'AVAILABLE', source, sourceRef: ref, description, eventId, payRef });
+  // First paid purchase on lobistarsfc.com: a one-off bonus (once per fan; reversed with this payment if refunded).
+  if (added) { const s = await rewardsSettings(db); if (s.firstPurchaseBonus > 0) await addLedger(db, { memberId, type: 'BONUS', points: s.firstPurchaseBonus, source: 'first_purchase', sourceRef: memberId, description: 'First purchase on lobistarsfc.com', payRef }); }
   const referrer = await maybeReferral(db, memberId);
   if (env) { if (added) await checkTierUpgrade(env, memberId); if (referrer) await checkTierUpgrade(env, referrer); }
   return added;
@@ -139,7 +141,7 @@ async function earnEngagement(db, { memberId, source, ref, points, description, 
   await ensureRewardsSchema(db);
   const s = await rewardsSettings(db);
   if (!(points > 0)) return false;
-  const used = await db.prepare(`SELECT COALESCE(SUM(points), 0) AS n FROM rewards_ledger WHERE member_id = ? AND source IN ('vote', 'prediction') AND points > 0 AND created_at >= ?`)
+  const used = await db.prepare(`SELECT COALESCE(SUM(points), 0) AS n FROM rewards_ledger WHERE member_id = ? AND source IN ('vote', 'prediction', 'programme') AND points > 0 AND created_at >= ?`)
     .bind(memberId, lagosMonthStartUtc()).first();
   const allowed = capAllowance(points, used?.n, s.engagementMonthlyCap);
   if (allowed <= 0) return false;
@@ -299,6 +301,37 @@ export async function adjustPoints(db, { memberId, points, reason, staff }) {
   await ensureRewardsSchema(db);
   const ref = `adj:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`;
   return addLedger(db, { memberId, type: 'ADJUST', points, source: 'admin', sourceRef: ref, description: `Adjustment by the club: ${reason}`, createdBy: staff });
+}
+
+/** One-off bonus for an action that helps the club (once per fan). */
+async function once(env, memberId, source, points, description) {
+  const db = env.DB;
+  await ensureRewardsSchema(db);
+  if (!memberId || !(points > 0)) return false;
+  const added = await addLedger(db, { memberId, type: 'BONUS', points, source, sourceRef: memberId, description });
+  if (added) await checkTierUpgrade(env, memberId);
+  return added;
+}
+
+/** Newsletter sign-up: the fan account with that email (once). */
+export function earnNewsletter(env, email) {
+  return safe('newsletter', async () => {
+    const m = await memberByEmail(env.DB, email);
+    return m ? once(env, m.id, 'newsletter', (await rewardsSettings(env.DB)).newsletterBonus, 'Signed up to the Lobi Stars newsletter') : false;
+  });
+}
+
+/** Match alerts (push notifications) switched on by a signed-in fan (once). */
+export function earnAlerts(env, memberId) {
+  return safe('alerts', async () => once(env, memberId, 'alerts', (await rewardsSettings(env.DB)).alertsBonus, 'Switched on match alerts'));
+}
+
+/** Opening the Match Day Programme (signed in): per programme, monthly limit applies. */
+export function earnProgramme(env, memberId, programme) {
+  return safe('programme', async () => {
+    const s = await rewardsSettings(env.DB);
+    return earnEngagement(env.DB, { env, memberId, source: 'programme', ref: `${programme.id}:${memberId}`, points: s.programmeRead, description: `Read the Match Day Programme${programme.title ? `: ${programme.title}` : ''}` });
+  });
 }
 
 export { ENGAGEMENT };

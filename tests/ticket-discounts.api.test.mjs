@@ -105,7 +105,9 @@ test('a match can exclude discounts; a per-match cap limits discounted tickets',
 test('family bundle: adults + children, CHILD at the gate; invalid bundles refused', async () => {
   for (const id of ['group', 'early_bird']) await rule(id, { isActive: false });
   assert.equal((await rule('family', { isActive: true, percent: 15 })).status, 200);
-  const a = await match(1);
+  // Same Nigerian day as now (tickets only scan on match day), however late the test runs.
+  const toMidnight = (86400e3 - ((Date.now() + 3600e3) % 86400e3)) / 3600e3;
+  const a = await match(Math.max(0.02, Math.min(1, toMidnight - 0.02)));
   assert.match((await offersOf(a)).family.text, /1 or 2 adults with up to 4 children under 16/);
   const bad = await pub('/api/tickets/basket', { lines: [{ eventId: a, tier: 'Regular', family: true, adults: 3, children: 1 }], ...buyer() });
   assert.equal(bad.status, 400); assert.match(bad.data.error, /family bundle/i);

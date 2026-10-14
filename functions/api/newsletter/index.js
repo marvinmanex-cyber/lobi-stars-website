@@ -1,6 +1,7 @@
 import { captureContact, splitName } from '../_lib/contacts.js';
 import { normalizeNigerianPhone, clientIp, rateLimit, tooMany, ensureFanSchema } from '../_lib/fans.js';
 import { ensureNewsletterSchema } from '../_lib/newsletter.js';
+import { earnNewsletter } from '../_lib/rewardsEarn.js';
 
 // POST /api/newsletter { fullName, phone, email, confirmEmail, consent, source?, weekly?, matchday?, offers? }
 // The options (weekly newsletter, matchday & ticket alerts, partner offers)
@@ -53,6 +54,7 @@ export async function onRequestPost({ request, env }) {
       source: 'newsletter', refTable: 'newsletter_subscribers', refId: existing ? `${email}#${now}` : email,
       email, phone, firstName: n.firstName, surname: n.surname, consent: true, label: source,
     });
+    await earnNewsletter(env, email); // Lobi Stars Rewards: once, for the fan account with this email
     return Response.json({
       ok: true, updated: !!existing,
       message: existing ? "You're already subscribed – details updated." : "You're subscribed! Watch your inbox for club news.",
