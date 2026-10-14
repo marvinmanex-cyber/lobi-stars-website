@@ -1,0 +1,71 @@
+---
+// Admin › Rewards › Terms: change the Lobi Stars Rewards Terms at any time.
+// Simple format (no HTML): "## " section heading, "### " smaller heading,
+// "- " list item, a blank line between paragraphs, [text](/page/) links.
+// Saving dates the terms today and makes them the version new members accept.
+// "Back to the approved text" restores the October 2026 version. Audit-logged.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="Rewards Terms | Lobi Stars Admin" description="Edit the Lobi Stars Rewards Terms." noindex>
+  <div class="wrap la">
+    <AdminNav current="rewards-terms" />
+    <header class="la-head"><div><div class="stag">Rewards</div><h1 class="stitle">Rewards <span class="r">Terms</span></h1></div>
+      <div class="la-row"><a class="btn-o" href="/admin/rewards/">Settings &amp; members</a><a class="btn-o" href="/rewards/terms/" target="_blank" rel="noopener">View on the website ↗</a></div></header>
+    <p class="la-lede">The terms fans accept when they join Lobi Stars Rewards. Change them here at any time: the website updates straight away and shows today's date as "Last updated". If a change affects members, tell them (the terms say we give reasonable notice).</p>
+    <section class="la-card">
+      <p class="la-muted" id="status">Loading…</p>
+      <div class="rt-help">
+        <b>How to format:</b> start a line with <code>## </code> for a section heading (e.g. <code>## 6. Expiry</code>), <code>- </code> for a list item, leave a blank line between paragraphs, and write links as <code>[Privacy Policy](/privacy/)</code>.
+      </div>
+      <textarea id="body" rows="28" spellcheck="true" aria-label="Rewards Terms text"></textarea>
+      <div class="la-row" style="margin-top:10px">
+        <button class="btn-p" type="button" id="save">Save the terms</button>
+        <button class="btn-o" type="button" id="preview">Preview</button>
+        <button class="btn-o" type="button" id="reset">Back to the approved text</button>
+      </div>
+      <div id="prev" class="rt-prev" hidden></div>
+    </section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<style is:global>
+  #body { width: 100%; box-sizing: border-box; font: 14px/1.6 ui-monospace, Consolas, monospace; padding: 12px; }
+  .rt-help { margin: 0 0 10px; padding: 10px 12px; border-radius: 8px; background: var(--a-card); border: 1px solid var(--a-line); font-size: 14px; line-height: 1.6; }
+  .rt-prev { margin-top: 14px; padding: 16px; border: 1px solid var(--a-line); border-radius: 12px; line-height: 1.7; }
+  .rt-prev h2 { font-size: 20px; margin: 18px 0 6px; }
+</style>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, $ = function (id) { return document.getElementById(id); };
+  var nice = function (d) { return new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' }); };
+  function show(d) {
+    $('body').value = d.body;
+    $('status').textContent = (d.custom ? 'Edited version' : 'The approved text (October 2026)') + ' · Last updated ' + nice(d.updated) + (d.updatedBy ? ' by ' + d.updatedBy : '');
+  }
+  function load() { LA.api('/api/admin/rewards/terms').then(function (r) { r.ok ? show(r.d) : ($('status').textContent = r.d.error || 'Could not load.'); }); }
+  function render(md) {
+    var box = document.createElement('div'), para = [], list = null;
+    var inline = function (node, line) { var re = /\[([^\]]{1,120})\]\(((?:\/[^\s)]*)|(?:https:\/\/[^\s)]+)|(?:mailto:[^\s)]+))\)/g, last = 0, m; while ((m = re.exec(line))) { if (m.index > last) node.append(line.slice(last, m.index)); var a = document.createElement('a'); a.href = m[2]; a.textContent = m[1]; node.append(a); last = m.index + m[0].length; } if (last < line.length) node.append(line.slice(last)); return node; };
+    var fp = function () { if (para.length) { box.append(inline(document.createElement('p'), para.join(' '))); para = []; } };
+    var fl = function () { if (list) { box.append(list); list = null; } };
+    md.split('\n').forEach(function (raw) { var l = raw.trim(), h, li; if (!l) { fp(); fl(); return; } if ((h = /^(#{2,3})\s+(.+)$/.exec(l))) { fp(); fl(); box.append(inline(document.createElement(h[1].length === 2 ? 'h2' : 'h3'), h[2])); return; } if ((li = /^[-*]\s+(.+)$/.exec(l))) { fp(); if (!list) list = document.createElement('ul'); list.append(inline(document.createElement('li'), li[1])); return; } fl(); para.push(l); });
+    fp(); fl(); return box;
+  }
+  $('preview').addEventListener('click', function () { var p = $('prev'); p.replaceChildren(render($('body').value)); p.hidden = false; });
+  $('save').addEventListener('click', function () {
+    LA.confirm('Save the new Rewards Terms?', ['They go live on the website straight away, dated today, and new members accept this version.'], 'Save').then(function (y) {
+      if (y) LA.api('/api/admin/rewards/terms', { method: 'PUT', body: { body: $('body').value } }).then(function (r) { r.ok ? (LA.toast('Terms saved'), show(r.d)) : LA.toast(r.d.error || 'Could not save.', true); });
+    });
+  });
+  $('reset').addEventListener('click', function () {
+    LA.confirm('Go back to the approved text?', ['Your edited version is replaced by the October 2026 approved terms.'], 'Restore').then(function (y) {
+      if (y) LA.api('/api/admin/rewards/terms', { method: 'PUT', body: { reset: true } }).then(function (r) { r.ok ? (LA.toast('Approved text restored'), show(r.d)) : LA.toast(r.d.error || 'Could not save.', true); });
+    });
+  });
+  load();
+})();
+</script>

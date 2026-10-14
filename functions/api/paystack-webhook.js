@@ -25,7 +25,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   const event = JSON.parse(rawBody);
   // Lobi Stars Rewards: a refund or a chargeback/dispute on any payment takes
-  // back the Pride Points earned on it (the balance may go below zero).
+  // back the Star Points earned on it (the balance may go below zero).
   if (/^(refund\.processed|charge\.dispute\.create)$/.test(event.event || '')) {
     const ref = event.data?.transaction?.reference || event.data?.transaction_reference || event.data?.reference;
     if (ref) await reversePoints(env, { payRef: String(ref) }, event.event === 'refund.processed' ? 'payment refunded' : 'payment disputed');

@@ -2,7 +2,7 @@
 // /fans/account -- the fan's own account page (opened from the header's
 // account icon). Shows the digital membership card (confirmed members), the
 // membership status, and the fan's Prediction League position this season.
-// Lobi Stars Rewards: join with one click, member number, Pride Points balance,
+// Lobi Stars Rewards: join with one click, member number, Star Points balance,
 // profile bonus (state + date of birth) and recent activity (/api/rewards/*).
 import FanAuthShell from '../../components/fans/FanAuthShell.astro';
 ---
@@ -181,7 +181,7 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
     if (!d.joined) {
       var agree = el('input', { type: 'checkbox', id: 'rwAgree' });
       var msg = el('p', { class: 'fa-err', role: 'alert' });
-      parts.push(el('p', { text: 'Earn Pride Points when you buy tickets, jerseys and matchday food on lobistarsfc.com and when you come to home matches, then swap them for rewards. Free to join: you get ' + d.bonuses.welcome + ' points to start.' }),
+      parts.push(el('p', { text: 'Earn Star Points when you buy tickets, jerseys and matchday food on lobistarsfc.com and when you come to home matches, then swap them for rewards. Free to join: you get ' + d.bonuses.welcome + ' points to start.' }),
         el('label', { class: 'fa-check', for: 'rwAgree' }, agree, el('span', {}, 'I agree to the ', el('a', { href: '/rewards/terms/', target: '_blank', text: 'Lobi Stars Rewards Terms' }), '.')),
         msg,
         el('button', { type: 'button', class: 'btn-p', text: 'Join Lobi Stars Rewards', onclick: function () {
@@ -191,7 +191,7 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
         } }));
     } else {
       parts.push(el('p', { class: 'rw-no', text: 'Member number ' + d.memberNo }),
-        el('div', { class: 'rw-pts' }, el('div', {}, el('b', { text: fmt(d.balance) }), ' ', el('span', { text: 'Pride Points' })), d.pending ? el('span', { text: fmt(d.pending) + ' pending' }) : null));
+        el('div', { class: 'rw-pts' }, el('div', {}, el('b', { text: fmt(d.balance) }), ' ', el('span', { text: 'Star Points' })), d.pending ? el('span', { text: fmt(d.pending) + ' pending' }) : null));
       if (d.tier) parts.push.apply(parts, tierParts(d.tier));
       if (!d.verified) parts.push(el('p', { class: 'rw-note', text: 'Confirm your email address (use the link we sent you) to start earning. Your ' + d.bonuses.welcome + ' welcome points are waiting.' }));
       if (d.status === 'suspended') parts.push(el('p', { class: 'rw-note', text: 'Your Rewards membership is on hold. Please contact the club via the Help Centre.' }));

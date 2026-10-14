@@ -1941,7 +1941,11 @@ lobistarsfc.com/rewards only show in staff preview. To preview, open
   adding their state of residence and date of birth (once).
 - Every points change is kept as a line in the member's points history; the
   same order or event can never give points twice.
-- Rewards Terms (DRAFT, for the club's legal adviser): /rewards/terms.
+- Rewards Terms (approved by the club's legal adviser): /rewards/terms. Change
+  them any time in **Admin › Rewards › Rewards Terms** (simple format: "## " for a
+  heading, "- " for a list item, a blank line between paragraphs; Preview, Save,
+  or "Back to the approved text"). Saving dates them today; new members accept
+  that version.
 
 **Earning (done, all numbers in Admin › Rewards):** fans earn only from what
 the website records itself, and each order or match counts once.
@@ -1990,7 +1994,7 @@ earning). **Run the points job now** makes ticket points of played matches
 available straight away (it also runs every 10 minutes, and when a fan opens
 their points).
 
-**Tiers (done):** Red, Gold and Star, by Pride Points **earned this season**
+**Tiers (done):** Red, Gold and Star, by Star Points **earned this season**
 (from the season start date in Admin › Rewards). Spending points never lowers a
 tier. Starting levels: Red from 0, Gold from 1,000, Star from 3,000.
 - **Gold:** more points on purchases (1.25x) and match tickets 24 hours before

@@ -150,7 +150,7 @@ export function tiersProblem(tiers) {
 /** A tier's benefits in plain English, written from its settings (never hard-coded). */
 export function tierBenefits(t) {
   const out = [];
-  if (t.multiplier > 1) out.push(`${t.multiplier}x Pride Points on purchases`);
+  if (t.multiplier > 1) out.push(`${t.multiplier}x Star Points on purchases`);
   if (t.presaleHours > 0) out.push(`Buy match tickets ${t.presaleHours} hours before general sale`);
   return out.concat(t.benefits || []);
 }

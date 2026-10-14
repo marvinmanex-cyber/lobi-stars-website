@@ -1,4 +1,4 @@
-// Lobi Stars Rewards: earning Pride Points from SERVER-SIDE events only
+// Lobi Stars Rewards: earning Star Points from SERVER-SIDE events only
 // (confirmed Paystack payments, gate scans, saved votes and predictions).
 // Every award is a ledger row with a unique (source, source_ref), so a
 // repeated webhook or a double scan can never award twice. Every hook here is

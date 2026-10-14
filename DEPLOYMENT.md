@@ -869,7 +869,8 @@ No Cloudflare Access rule is needed.
   `/api/rewards/profile` { state, dateOfBirth }. `/api/fans/register` accepts
   joinRewards + rewardsAgree; `/api/fans/verify` gives the waiting bonuses.
 - Pages: `/rewards/` (noindex, preview with ?preview=1 until live),
-  `/rewards/terms/` (DRAFT), Rewards box on `/fans/account/` and the register form.
+  `/rewards/terms/` (approved; text in `functions/api/_lib/rewardsTerms.js`, editable
+  at `/admin/rewards/terms/` via `/api/admin/rewards/terms`, served by `/api/rewards/terms`), Rewards box on `/fans/account/` and the register form.
 - Test: `tests/rewards.api.test.mjs` (needs FANS_DEV_LINKS=1 locally).
 - Earning (14 October 2026): `functions/api/_lib/rewardsRules.js` (pure rules,
   `tests/rewards-rules.unit.test.mjs`) and `functions/api/_lib/rewardsEarn.js`

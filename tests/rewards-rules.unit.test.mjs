@@ -83,7 +83,7 @@ test('paid members at least Gold; last season\'s tier kept during the grace peri
 });
 
 test('tier benefits come from the numbers; tier settings are validated', () => {
-  assert.deepEqual(tierBenefits(TIERS[1]).slice(0, 2), ['1.25x Pride Points on purchases', 'Buy match tickets 24 hours before general sale']);
+  assert.deepEqual(tierBenefits(TIERS[1]).slice(0, 2), ['1.25x Star Points on purchases', 'Buy match tickets 24 hours before general sale']);
   assert.deepEqual(tierBenefits(TIERS[0]), []);
   assert.equal(tiersProblem(TIERS), null);
   assert.match(tiersProblem([TIERS[0], { ...TIERS[1], min: 5000 }, TIERS[2]]), /more than Gold/);

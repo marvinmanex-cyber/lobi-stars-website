@@ -1,87 +1,64 @@
 ---
-// /rewards/terms -- Lobi Stars Rewards Terms (DRAFT until the club's legal
-// adviser has reviewed them; kept out of search engines while a draft).
-// Numbers here are described in general terms: the current rates, rewards and
-// tier levels are on the Rewards pages and set in Admin › Rewards.
+// /rewards/terms -- Lobi Stars Rewards Terms (approved by the club's legal
+// adviser, October 2026). The text lives in functions/api/_lib/rewardsTerms.js
+// and can be changed at any time in Admin › Rewards › Terms: this page is
+// built with the approved text and swaps in the latest saved version from
+// /api/rewards/terms. Out of search engines until Rewards is live.
 import LegalPage from '../../components/LegalPage.astro';
-import site from '../../data/site.json';
-const { email } = site.contact;
+import { DEFAULT_TERMS, DEFAULT_TERMS_UPDATED, parseTerms } from '../../../functions/api/_lib/rewardsTerms.js';
+const blocks = parseTerms(DEFAULT_TERMS);
+const nice = d => new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
 ---
 <LegalPage
   title="Lobi Stars Rewards Terms"
   tag="Lobi Stars Rewards"
-  description="The terms of Lobi Stars Rewards, the free Pride Points programme for Lobi Stars FC fans."
-  updated="14 October 2026"
-  draft="these terms must be reviewed by the club's legal adviser before they are final."
+  description="The terms of Lobi Stars Rewards, the free Star Points programme for Lobi Stars FC fans."
+  updated={nice(DEFAULT_TERMS_UPDATED)}
+  noindex
 >
-  <p>Lobi Stars Rewards ("Rewards") is a free loyalty programme run by Lobi Stars Football Club ("the club", "we"). Members collect Pride Points ("points") and can swap them for rewards. By joining you agree to these terms, our <a href="/terms/">Terms of Use</a> and our <a href="/privacy/">Privacy Policy</a>.</p>
-
-  <h2>1. Who can join</h2>
-  <ul>
-    <li>Anyone with a Lobi Stars FC fan account on lobistarsfc.com whose email address has been confirmed. Fan accounts are for people aged 18 or older living in Nigeria.</li>
-    <li>One Rewards membership per person, per verified email address and per phone number.</li>
-    <li>Rewards linked to an alcohol sponsor are for people aged 18 or older only.</li>
-    <li>Each member gets a member number (for example LSR-000123).</li>
-  </ul>
-
-  <h2>2. Earning Pride Points</h2>
-  <ul>
-    <li>Points are given for the activities shown on the Lobi Stars Rewards pages, for example tickets, jerseys, merchandise, matchday food and membership bought through lobistarsfc.com, coming to home matches, and taking part in matchday activities. The current rates are shown on the Rewards pages and may change.</li>
-    <li>Points are only given when our systems record the activity: a confirmed payment, a ticket scanned at the gate, or a vote or prediction saved by us. Purchases made on other websites or shops (for example Jumia) do not earn points.</li>
-    <li>Points are worked out on the amount actually paid in naira, after discounts and any points used, without delivery fees.</li>
-    <li>Each order or activity can earn points only once.</li>
-    <li>Joining and completing your profile may earn bonus points, shown on the Rewards pages.</li>
-  </ul>
-
-  <h2>3. When points can be used</h2>
-  <ul>
-    <li>Points from match tickets are "pending" until the match has been played, then become available. If a match is cancelled and the ticket is refunded, those points are removed.</li>
-    <li>Points from other purchases become available once the payment is confirmed.</li>
-    <li>Jerseys and merchandise are non-refundable. Points earned on them are final, except in cases of fraud or a payment dispute.</li>
-    <li>If a payment is reversed, disputed or refunded, the points from it are removed. Your balance can go below zero; you cannot redeem while it is below zero.</li>
-  </ul>
-
-  <h2>4. Using points</h2>
-  <ul>
-    <li>Rewards, their points cost and how many are available are shown on the Rewards pages. Rewards are subject to availability, and we may replace a reward with one of similar value if it is no longer available.</li>
-    <li>A redemption cannot be undone once confirmed. Larger redemptions may need a code sent to your verified email.</li>
-    <li>Vouchers are single-use and expire on the date shown.</li>
-  </ul>
-
-  <h2>5. Points have no cash value</h2>
-  <ul>
-    <li>Points cannot be exchanged for cash, withdrawn, transferred to another person or account, sold or bought.</li>
-  </ul>
-
-  <h2>6. Expiry</h2>
-  <ul>
-    <li>Points expire 12 months after your last Rewards activity (earning or using points). We will try to remind you by email before points expire.</li>
-  </ul>
-
-  <h2>7. Tiers</h2>
-  <ul>
-    <li>Members may be placed in tiers based on points earned in the current season. Tier levels and benefits are shown on the Rewards pages and may change.</li>
-  </ul>
-
-  <h2>8. Fair use and fraud</h2>
-  <ul>
-    <li>We may refuse, remove or reverse points that were earned by mistake, by fraud, by misuse of referrals or by breaking these terms, and we may suspend or close a membership in those cases.</li>
-    <li>Automated or bulk activity, fake accounts and self-referrals are not allowed.</li>
-  </ul>
-
-  <h2>9. Changes to the programme</h2>
-  <ul>
-    <li>We may change these terms, the earning rates, rewards or tiers, or end the programme. We will give reasonable notice on the website or by email, except where a change is needed to stop fraud or comply with the law.</li>
-  </ul>
-
-  <h2>10. Your data</h2>
-  <ul>
-    <li>We use your account details, your Rewards activity and the date of birth and state you choose to give us to run the programme, prevent fraud, send you Rewards messages you can manage, and understand how fans use our services, in line with the Nigeria Data Protection Act 2023 and our <a href="/privacy/">Privacy Policy</a>.</li>
-  </ul>
-
-  <h2>11. Leaving and contact</h2>
-  <ul>
-    <li>You can leave Rewards at any time by contacting us; any points you have will be lost.</li>
-    <li>Questions: <a href={`mailto:${email}`}>{email}</a> or the <a href="/help/">Help Centre</a>.</li>
-  </ul>
+  <div id="rwTerms">
+    {blocks.map(b => b.type === 'ul'
+      ? <ul>{b.items.map(parts => <li>{parts.map(x => x.href ? <a href={x.href}>{x.text}</a> : x.text)}</li>)}</ul>
+      : b.type === 'h2' ? <h2>{b.parts.map(x => x.href ? <a href={x.href}>{x.text}</a> : x.text)}</h2>
+      : b.type === 'h3' ? <h3>{b.parts.map(x => x.href ? <a href={x.href}>{x.text}</a> : x.text)}</h3>
+      : <p>{b.parts.map(x => x.href ? <a href={x.href}>{x.text}</a> : x.text)}</p>)}
+  </div>
 </LegalPage>
+
+<script is:inline>
+(function () {
+  // The latest version saved in Admin › Rewards › Terms (text only: built with textContent, never HTML).
+  var box = document.getElementById('rwTerms');
+  var linkRe = /\[([^\]]{1,120})\]\(((?:\/[^\s)]*)|(?:https:\/\/[^\s)]+)|(?:mailto:[^\s)]+))\)/g;
+  function inline(node, line) {
+    var last = 0, m; linkRe.lastIndex = 0;
+    while ((m = linkRe.exec(line))) {
+      if (m.index > last) node.append(line.slice(last, m.index));
+      var a = document.createElement('a'); a.href = m[2]; a.textContent = m[1]; node.append(a);
+      last = m.index + m[0].length;
+    }
+    if (last < line.length) node.append(line.slice(last));
+    return node;
+  }
+  function render(md) {
+    var out = [], para = [], list = null;
+    var flushP = function () { if (para.length) { out.push(inline(document.createElement('p'), para.join(' '))); para = []; } };
+    var flushL = function () { if (list) { out.push(list); list = null; } };
+    String(md).replace(/\r/g, '').split('\n').forEach(function (raw) {
+      var line = raw.trim(), h, li;
+      if (!line) { flushP(); flushL(); return; }
+      if ((h = /^(#{2,3})\s+(.+)$/.exec(line))) { flushP(); flushL(); out.push(inline(document.createElement(h[1].length === 2 ? 'h2' : 'h3'), h[2])); return; }
+      if ((li = /^[-*]\s+(.+)$/.exec(line))) { flushP(); if (!list) list = document.createElement('ul'); list.append(inline(document.createElement('li'), li[1])); return; }
+      flushL(); para.push(line);
+    });
+    flushP(); flushL();
+    return out;
+  }
+  fetch('/api/rewards/terms').then(function (r) { return r.json(); }).then(function (d) {
+    if (!d || !d.custom || !d.body) return;
+    box.replaceChildren.apply(box, render(d.body));
+    var u = document.getElementById('lgUpdated');
+    if (u && d.updated) u.textContent = new Date(d.updated + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
+  }).catch(function () {});
+})();
+</script>

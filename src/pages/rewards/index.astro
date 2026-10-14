@@ -1,6 +1,6 @@
 ---
 // /rewards -- "How Lobi Stars Rewards works": the fan guide. What it is, how
-// to join, every way to earn Pride Points, tiers, what points can be used
+// to join, every way to earn Star Points, tiers, what points can be used
 // for (live catalogue), a worked example, the rules in plain English, FAQ,
 // help, and joining (one click for signed-in fans; the normal registration
 // for new fans). EVERY number comes live from /api/rewards/info (Admin ›
@@ -12,15 +12,16 @@ import site from '../../data/site.json';
 const { email, whatsapp } = site.contact;
 // FAQ for search engines (FAQPage). Answers here avoid numbers, which can change in the admin.
 const FAQ_LD = [
-  ['Is Lobi Stars Rewards free?', 'Yes. Lobi Stars Rewards is free for anyone with a Lobi Stars FC fan account.'],
+  ['Do I have to pay to join Lobi Stars Rewards?', 'No. Joining is free for anyone with a Lobi Stars FC fan account, and so is collecting Star Points.'],
+  ['When can I start earning points?', 'As soon as you have joined Lobi Stars Rewards and confirmed your email address.'],
   ['Do I need a new account?', 'No. Use your Lobi Stars FC fan account (the one for Predict & Win, Man of the Match voting or membership), log in and tap Join Rewards.'],
-  ['How do I earn Pride Points?', 'By buying match tickets, jerseys, merchandise, in-seat food and membership on lobistarsfc.com, by coming to home matches (your ticket is scanned at the gate), and by taking part in Man of the Match and Predict & Win.'],
+  ['How do I earn Star Points?', 'By buying match tickets, jerseys, merchandise, in-seat food and membership on lobistarsfc.com, by coming to home matches (your ticket is scanned at the gate), and by taking part in Man of the Match and Predict & Win.'],
   ['What can I get with my points?', 'Rewards from the Lobi Stars Rewards catalogue, such as airtime and data, free match tickets, food vouchers, shop rewards and matchday experiences.'],
-  ['Can I swap points for cash?', 'No. Pride Points have no cash value and cannot be withdrawn, transferred or sold.'],
+  ['Can I swap points for cash?', 'No. Star Points have no cash value and cannot be withdrawn, transferred or sold.'],
 ];
 const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: FAQ_LD.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) };
 ---
-<Layout title="Lobi Stars Rewards – Earn Points, Get Rewards | Lobi Stars FC" description="Lobi Stars Rewards is the free loyalty programme for Lobi Stars FC fans: earn Pride Points on tickets, jerseys, food and matchdays, and use them for airtime, data, free tickets and more." image="/images/hero-2.jpg" noindex>
+<Layout title="Lobi Stars Rewards – Earn Points, Get Rewards | Lobi Stars FC" description="Lobi Stars Rewards is the free loyalty programme for Lobi Stars FC fans: earn Star Points on tickets, jerseys, food and matchdays, and use them for airtime, data, free tickets and more." image="/images/hero-2.jpg" noindex>
   <script type="application/ld+json" set:html={JSON.stringify(faqLd).replace(/</g, '\\u003c')}></script>
 
   <!-- 1. Hero -->
@@ -44,7 +45,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
     <!-- 2. What it is -->
     <section class="rw-sec" aria-labelledby="hWhat">
       <h2 id="hWhat">What is Lobi Stars Rewards?</h2>
-      <p class="rw-lead">Lobi Stars Rewards is a free loyalty programme for Lobi Stars fans. Every time you support the club on lobistarsfc.com, you earn <b>Pride Points</b>. Use them for free match tickets, airtime and data, food at the stadium, jersey rewards and special matchday experiences.</p>
+      <p class="rw-lead">Lobi Stars Rewards is a free loyalty programme for Lobi Stars fans. Every time you support the club on lobistarsfc.com, you earn <b>Star Points</b>. Use them for free match tickets, airtime and data, food at the stadium, jersey rewards and special matchday experiences.</p>
     </section>
 
     <!-- 3. How to join -->
@@ -61,7 +62,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
 
     <!-- 4. How to earn -->
     <section class="rw-sec" aria-labelledby="hEarn">
-      <h2 id="hEarn">How to earn Pride Points</h2>
+      <h2 id="hEarn">How to earn Star Points</h2>
       <ul class="rw-earn" id="earnGrid"><li class="rw-muted">Loading…</li></ul>
       <ul class="rw-notes">
         <li>Points are added after your payment is confirmed.</li>
@@ -108,7 +109,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
     <section class="rw-sec" aria-labelledby="hKnow">
       <h2 id="hKnow">Good to know</h2>
       <ul class="rw-know">
-        <li><b>No cash value.</b> Pride Points can't be exchanged for cash, transferred to anyone else or sold.</li>
+        <li><b>No cash value.</b> Star Points can't be exchanged for cash, transferred to anyone else or sold.</li>
         <li><b>Expiry.</b> Points expire after <b data-k="expiryMonths">…</b> months with no activity. Any purchase or activity resets the clock, and we remind you 30 days before.</li>
         <li><b>Jerseys and merchandise are non-refundable.</b> Points earned on them are final, except in cases of fraud or a payment dispute.</li>
         <li><b>Cancelled matches.</b> If a match is cancelled and your ticket is refunded, the points from that ticket are removed.</li>
@@ -120,11 +121,12 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
     <!-- 9. FAQ -->
     <section class="rw-sec rw-faq" aria-labelledby="hFaq">
       <h2 id="hFaq">Questions</h2>
-      <details><summary>Is it free?</summary><p>Yes. Lobi Stars Rewards is free for every fan with a Lobi Stars FC fan account.</p></details>
+      <details><summary>Do I have to pay to join Lobi Stars Rewards?</summary><p>No. Joining is free for every fan with a Lobi Stars FC fan account, and so is collecting Star Points.</p></details>
+      <details><summary>When can I start earning points?</summary><p>As soon as you have joined Lobi Stars Rewards and confirmed your email address. You get your welcome bonus straight away, and every purchase on lobistarsfc.com, home match and vote after that earns points.</p></details>
       <details><summary>Do I need a new account?</summary><p>No. If you already use Predict &amp; Win, Man of the Match voting or membership, log in and tap Join Rewards.</p></details>
       <details><summary>How long until my points show?</summary><p>Straight away after your payment is confirmed, your ticket is scanned or your vote or prediction is saved. Ticket points show as "pending" until the match is played.</p></details>
       <details><summary>Why are my ticket points "pending"?</summary><p>Ticket points become available once the match has been played. If the match is cancelled and your ticket refunded, those points are removed.</p></details>
-      <details><summary>Can I earn points on Jumia purchases?</summary><p>No. Only purchases made on lobistarsfc.com earn Pride Points.</p></details>
+      <details><summary>Can I earn points on Jumia purchases?</summary><p>No. Only purchases made on lobistarsfc.com earn Star Points.</p></details>
       <details><summary>How do I get airtime or data?</summary><p>Choose an airtime or data reward in the catalogue, pick your network (MTN, Airtel, Glo or 9mobile) and confirm your phone number. It is sent to your phone.</p></details>
       <details><summary>Can I use points and pay the rest with my card?</summary><p>Paying part of a ticket, jersey or food order with points is coming soon. For now, swap your points for rewards in the catalogue.</p></details>
       <details><summary>Do points expire?</summary><p>Yes, after <b data-k="expiryMonths">…</b> months with no activity on your account. Any purchase or activity resets the clock, and we remind you 30 days before.</p></details>
@@ -265,12 +267,12 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
     // 5. Tiers
     fill($('tierGrid'), d.tiers.map(function (t, i) {
       var next = d.tiers[i + 1];
-      var ul = el('ul'); (t.benefits.length ? t.benefits : ['Earn Pride Points and swap them for rewards']).forEach(function (b) { ul.append(el('li', { text: b })); });
+      var ul = el('ul'); (t.benefits.length ? t.benefits : ['Earn Star Points and swap them for rewards']).forEach(function (b) { ul.append(el('li', { text: b })); });
       return el('div', { class: 'rw-tier ' + t.key }, el('h3', { text: t.name }), el('p', { text: next ? fmt(t.min) + ' to ' + fmt(next.min - 1) + ' points this season' : fmt(t.min) + '+ points this season' }), ul);
     }));
     $('tierNote').textContent = 'Tiers are based on the points you earn this season. Spending points never lowers your tier.' + (s.paidMembersStartGold && d.tiers[1] ? ' Paid annual members start the season at ' + d.tiers[1].name + '.' : '') + (s.tierGraceMonths ? ' When a new season starts, you keep last season\'s tier for ' + s.tierGraceMonths + ' months.' : '');
     // 6. Catalogue preview (live) and partner rewards
-    var item = function (i) { return el('li', {}, el('b', { text: i.name }), el('span', { text: fmt(i.points) }), el('small', { text: i.available ? 'Pride Points' : 'Pride Points · coming soon' })); };
+    var item = function (i) { return el('li', {}, el('b', { text: i.name }), el('span', { text: fmt(i.points) }), el('small', { text: i.available ? 'Star Points' : 'Star Points · coming soon' })); };
     fill($('itemGrid'), d.items.length ? d.items.slice(0, 8).map(item) : [el('li', { class: 'rw-muted', text: 'Rewards will appear here soon.' })]);
     var partner = d.items.filter(function (i) { return i.sponsor; });
     if (partner.length) { fill($('partnerGrid'), partner.map(item)); $('partnerRewards').hidden = false; }
@@ -288,7 +290,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
     ].filter(function (x) { return x[1] > 0; });
     var total = steps.reduce(function (t, x) { return t + x[1]; }, 0);
     fill($('terver'), steps.map(function (x) { return el('li', {}, el('span', { text: x[0] }), el('b', { text: '+' + fmt(x[1]) })); }));
-    $('terverTotal').textContent = 'Total: ' + fmt(total) + ' Pride Points';
+    $('terverTotal').textContent = 'Total: ' + fmt(total) + ' Star Points';
     var afford = d.items.filter(function (i) { return i.available && i.points <= total; }).sort(function (a, b) { return b.points - a.points; });
     if (afford.length) {
       var best = afford[0], rest = afford.filter(function (i) { return i.id !== best.id && i.points <= total - best.points; })[0];
@@ -312,7 +314,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
     if (!d.joined) {
       var agree = el('input', { type: 'checkbox', id: 'rwAgree' }), err = el('p', { class: 'rw-err', role: 'alert' });
       fill(box, [el('h2', { text: "Join Lobi Stars Rewards – it's free" }),
-        el('p', { text: 'Hi ' + d.firstName + '! Join with one click and get ' + fmt(d.bonuses.welcome) + ' Pride Points to start, plus ' + fmt(d.bonuses.profile) + ' more when you complete your profile.' }),
+        el('p', { text: 'Hi ' + d.firstName + '! Join with one click and get ' + fmt(d.bonuses.welcome) + ' Star Points to start, plus ' + fmt(d.bonuses.profile) + ' more when you complete your profile.' }),
         el('label', { class: 'rw-check', for: 'rwAgree' }, agree, el('span', {}, 'I agree to the ', el('a', { href: '/rewards/terms/', target: '_blank', text: 'Lobi Stars Rewards Terms' }), '.')),
         err,
         el('div', { class: 'rw-acts' }, el('button', { type: 'button', class: 'btn-p', text: 'Join Lobi Stars Rewards', onclick: function () {
@@ -326,7 +328,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
     fill(box, [el('h2', { text: 'You are a member' }),
       el('p', {}, 'Member number ', el('b', { text: d.memberNo })),
       d.tier ? el('p', {}, el('b', { text: d.tier.name + ' tier' }), ' · ' + fmt(d.tier.earned) + ' points earned this ' + d.tier.season + ' season' + (d.tier.next ? ' · ' + fmt(d.tier.toNext) + ' more to reach ' + d.tier.next.name : '')) : null,
-      el('p', {}, el('span', { class: 'rw-big', text: fmt(d.balance) }), ' Pride Points', d.pending ? ' (' + fmt(d.pending) + ' pending)' : ''),
+      el('p', {}, el('span', { class: 'rw-big', text: fmt(d.balance) }), ' Star Points', d.pending ? ' (' + fmt(d.pending) + ' pending)' : ''),
       !d.verified ? el('p', { text: 'Confirm your email address (use the link we sent you) to start earning. Your welcome points are waiting.' }) : null,
       el('div', { class: 'rw-acts' }, el('a', { class: 'btn-p', href: '/fans/account/', text: 'Go to My Rewards' }), el('a', { class: 'btn-o', href: '/rewards/catalogue/', text: 'Use my points' }))]);
   }

@@ -139,7 +139,7 @@ export async function sendRedeemCode(env, memberId, item) {
     ON CONFLICT(member_id, item_id) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at, attempts = 0`)
     .bind(memberId, item.id, await sha256(`${env.SESSION_SECRET}:${memberId}:${item.id}:${code}`), Date.now() + 10 * 60e3).run();
   if (env.RESEND_API_KEY) {
-    await sendEmail(env, { to: m.email, subject: `Your Lobi Stars Rewards code: ${code}`, html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto"><p>Hi ${String(m.first_name).replace(/[<>&]/g, '')},</p><p>Your code to redeem <strong>${item.name.replace(/[<>&]/g, '')}</strong> for ${item.points.toLocaleString('en-NG')} Pride Points is:</p><p style="font-size:30px;font-weight:bold;letter-spacing:6px">${code}</p><p>It works for 10 minutes. If you didn't ask for it, ignore this email: no points have been used.</p></div>` }).catch(err => console.error('[rewards] code email', err));
+    await sendEmail(env, { to: m.email, subject: `Your Lobi Stars Rewards code: ${code}`, html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto"><p>Hi ${String(m.first_name).replace(/[<>&]/g, '')},</p><p>Your code to redeem <strong>${item.name.replace(/[<>&]/g, '')}</strong> for ${item.points.toLocaleString('en-NG')} Star Points is:</p><p style="font-size:30px;font-weight:bold;letter-spacing:6px">${code}</p><p>It works for 10 minutes. If you didn't ask for it, ignore this email: no points have been used.</p></div>` }).catch(err => console.error('[rewards] code email', err));
   }
   return String(env.FANS_DEV_LINKS) === '1' ? code : null;
 }
@@ -314,5 +314,5 @@ async function redemptionEmail(env, red, m) {
     : r.type === 'ticket' ? `<p>Your ticket for <strong>${esc(r.match)}</strong> has been sent in a separate email with its QR code.</p>`
     : r.type === 'airtime' || r.type === 'data' ? `<p>We are sending it to ${esc(r.network)} ${esc(r.phone)}. If it doesn't arrive, your points are returned automatically.</p>`
     : '<p>The club will contact you to arrange it.</p>';
-  await sendEmail(env, { to: m.email, subject: `You redeemed: ${red.item_name} – Lobi Stars Rewards`, html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto"><h2 style="color:#A3161B">${esc(red.item_name)}</h2><p>Hi ${esc(m.first_name)}, you used ${red.points.toLocaleString('en-NG')} Pride Points (member ${esc(memberNo(m.seq))}).</p>${body}<p><a href="https://lobistarsfc.com/fans/account/">See your rewards</a></p><p style="font-size:12px;color:#888">Pride Points have no cash value.</p></div>` });
+  await sendEmail(env, { to: m.email, subject: `You redeemed: ${red.item_name} – Lobi Stars Rewards`, html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto"><h2 style="color:#A3161B">${esc(red.item_name)}</h2><p>Hi ${esc(m.first_name)}, you used ${red.points.toLocaleString('en-NG')} Star Points (member ${esc(memberNo(m.seq))}).</p>${body}<p><a href="https://lobistarsfc.com/fans/account/">See your rewards</a></p><p style="font-size:12px;color:#888">Star Points have no cash value.</p></div>` });
 }

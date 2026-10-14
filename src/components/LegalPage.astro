@@ -3,15 +3,15 @@
 // and keeps the page out of search engines until it has been reviewed.
 import Layout from '../layouts/Layout.astro';
 
-interface Props { title: string; description: string; tag?: string; updated: string; draft?: string }
-const { title, description, tag = 'Legal', updated, draft } = Astro.props;
+interface Props { title: string; description: string; tag?: string; updated: string; draft?: string; noindex?: boolean }
+const { title, description, tag = 'Legal', updated, draft, noindex = false } = Astro.props;
 ---
-<Layout title={`${title} | Lobi Stars Football Club`} description={description} noindex={!!draft}>
+<Layout title={`${title} | Lobi Stars Football Club`} description={description} noindex={!!draft || noindex}>
   <div class="page-hero wrap">
     <div class="stag">{tag}</div>
     <h1 class="stitle">{title}</h1>
     <div class="divr"></div>
-    <p class="lg-updated">Last updated: {updated}</p>
+    <p class="lg-updated">Last updated: <span id="lgUpdated">{updated}</span></p>
   </div>
   <div class="page-content wrap lg">
     {draft && <p class="lg-draft" role="note"><strong>DRAFT</strong> &ndash; {draft}</p>}

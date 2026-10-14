@@ -1,4 +1,4 @@
-// Lobi Stars Rewards tiers (Red, Gold, Star): by Pride Points EARNED in the
+// Lobi Stars Rewards tiers (Red, Gold, Star): by Star Points EARNED in the
 // current season (spending never lowers a tier), Gold for paid annual members,
 // last season's tier kept for a grace period. Gives the purchase multiplier,
 // early ticket access (presale) and the "You've reached Gold!" email.
@@ -76,8 +76,8 @@ export async function checkTierUpgrade(env, memberId) {
       <h2 style="color:#A3161B;">You've reached ${esc(st.tier.name)}!</h2>
       <p>Well done ${esc(row.first_name)}! Your support this season has taken you to <strong>${esc(st.tier.name)}</strong> in Lobi Stars Rewards.</p>
       <ul>${st.benefits.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
-      <p><a href="https://lobistarsfc.com/fans/account/" style="color:#A3161B;font-weight:bold;">See your Pride Points</a></p>
-      <p style="font-size:12px;color:#888;">Pride Points have no cash value. Lobi Stars Rewards Terms: lobistarsfc.com/rewards/terms</p></div>`;
+      <p><a href="https://lobistarsfc.com/fans/account/" style="color:#A3161B;font-weight:bold;">See your Star Points</a></p>
+      <p style="font-size:12px;color:#888;">Star Points have no cash value. Lobi Stars Rewards Terms: lobistarsfc.com/rewards/terms</p></div>`;
     await sendEmail(env, { to: row.email, subject: `You've reached ${st.tier.name}! – Lobi Stars Rewards`, html }).catch(err => console.error('[rewards] tier email', err));
     return true;
   } catch (err) { console.error('[rewards] tier check', err); return false; }

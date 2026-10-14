@@ -27,7 +27,7 @@ before(async () => {
 });
 after(async () => { await call('PUT', '/api/admin/rewards', { settings: saved }); });
 
-/** A verified Rewards member with `points` Pride Points (welcome bonus + an adjustment). */
+/** A verified Rewards member with `points` Star Points (welcome bonus + an adjustment). */
 async function member(points) {
   const email = `rd-${uid()}@example.com`;
   const reg = await pub('/api/fans/register', { firstName: 'Aondona', surname: 'Ikyaa', email, confirmEmail: email, phone: phone(), password: 'Lobi-Stars-2026', confirmPassword: 'Lobi-Stars-2026', agree: true, joinRewards: true, rewardsAgree: true });

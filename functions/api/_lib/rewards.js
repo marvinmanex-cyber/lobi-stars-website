@@ -1,4 +1,4 @@
-// Lobi Stars Rewards (Pride Points): membership, the points LEDGER and settings.
+// Lobi Stars Rewards (Star Points): membership, the points LEDGER and settings.
 // Earning hooks are in rewardsEarn.js; pure rules in rewardsRules.js.
 // Reuses the fan accounts (members table, session cookie, email verification).
 // Every change to a fan's points is one row in rewards_ledger; the balance is

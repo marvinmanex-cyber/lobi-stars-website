@@ -6,12 +6,12 @@
 // TODO (fan pages step): images, partner logos, wallet page.
 import Layout from '../../layouts/Layout.astro';
 ---
-<Layout title="Rewards Catalogue | Lobi Stars Rewards" description="Swap your Pride Points for Lobi Stars rewards: tickets, airtime and data, food, shop rewards and experiences." noindex>
-  <section class="rc-hero"><div class="rc-in"><p class="rc-k">Lobi Stars Rewards</p><h1>Rewards <span>catalogue</span></h1><p id="rcBal">Swap your Pride Points for rewards.</p></div></section>
+<Layout title="Rewards Catalogue | Lobi Stars Rewards" description="Swap your Star Points for Lobi Stars rewards: tickets, airtime and data, food, shop rewards and experiences." noindex>
+  <section class="rc-hero"><div class="rc-in"><p class="rc-k">Lobi Stars Rewards</p><h1>Rewards <span>catalogue</span></h1><p id="rcBal">Swap your Star Points for rewards.</p></div></section>
   <div class="wrap rc-page">
     <div class="rc-filters" role="group" aria-label="Filter rewards" id="rcFilters"></div>
     <ul class="rc-grid" id="rcGrid" aria-live="polite"><li class="rc-muted">Loading the rewards…</li></ul>
-    <p class="rc-note">Pride Points have no cash value and can't be exchanged for cash, transferred or sold. <a href="/rewards/terms/">Rewards Terms</a></p>
+    <p class="rc-note">Star Points have no cash value and can't be exchanged for cash, transferred or sold. <a href="/rewards/terms/">Rewards Terms</a></p>
   </div>
   <dialog class="rc-dlg" id="rcDlg" aria-labelledby="rcDlgT"><form method="dialog" id="rcForm"></form></dialog>
 </Layout>
@@ -65,7 +65,7 @@ import Layout from '../../layouts/Layout.astro';
     fetch('/api/rewards/catalogue', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) { data = d; draw(); }).catch(function () { $('rcGrid').replaceChildren(el('li', { class: 'rc-muted', text: 'The rewards could not be loaded just now.' })); });
   }
   function draw() {
-    $('rcBal').textContent = data.member ? 'You have ' + fmt(data.balance) + ' Pride Points to use.' : 'Log in to see what you can get with your Pride Points.';
+    $('rcBal').textContent = data.member ? 'You have ' + fmt(data.balance) + ' Star Points to use.' : 'Log in to see what you can get with your Star Points.';
     var groups = ['All'].concat(Array.from(new Set(data.items.map(function (i) { return i.group; }))));
     $('rcFilters').replaceChildren.apply($('rcFilters'), groups.map(function (g) { return el('button', { type: 'button', 'aria-pressed': String(g === filter), text: g, onclick: function () { filter = g; draw(); } }); }));
     var items = data.items.filter(function (i) { return filter === 'All' || i.group === filter; });
@@ -75,7 +75,7 @@ import Layout from '../../layouts/Layout.astro';
       if (!data.member) btn = el('button', { type: 'button', text: 'Log in to redeem', onclick: function () { location.href = '/fans/login/?next=/rewards/catalogue/'; } });
       else if (!data.live) btn = el('button', { type: 'button', disabled: true, text: 'Opens soon' });
       else btn = el('button', { type: 'button', disabled: !i.canRedeem, text: i.canRedeem ? 'Redeem' : (i.reason || 'Not available'), onclick: function () { open(i); } });
-      return el('li', { class: 'rc-card' }, el('span', { class: 'rc-tag', text: i.group }), el('h2', { text: i.name }), el('div', { class: 'rc-pts' }, fmt(i.points), el('small', { text: 'Pride Points' })),
+      return el('li', { class: 'rc-card' }, el('span', { class: 'rc-tag', text: i.group }), el('h2', { text: i.name }), el('div', { class: 'rc-pts' }, fmt(i.points), el('small', { text: 'Star Points' })),
         el('p', { text: i.description }), i.minAge ? el('p', { text: i.minAge + '+ only' }) : null, i.stock !== null && i.stock > 0 && i.stock <= 10 ? el('p', { text: i.stock + ' left' }) : null, btn);
     }));
   }
@@ -110,13 +110,13 @@ import Layout from '../../layouts/Layout.astro';
       go.disabled = true; err.textContent = '';
       post(body).then(function (x) { go.disabled = false; if (x.ok) done(x.d.redemption); else err.textContent = x.d.error || 'Could not redeem.'; });
     });
-    form.replaceChildren.apply(form, [el('h2', { id: 'rcDlgT', text: i.name }), el('p', { text: 'Redeem ' + fmt(i.points) + ' Pride Points for ' + i.name + '? This can\'t be undone.' }),
+    form.replaceChildren.apply(form, [el('h2', { id: 'rcDlgT', text: i.name }), el('p', { text: 'Redeem ' + fmt(i.points) + ' Star Points for ' + i.name + '? This can\'t be undone.' }),
       fields.length ? el('div', { style: 'display:grid;gap:12px' }, fields) : null, codeRow, err,
       el('div', { class: 'rc-acts' }, el('button', { type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), go)].filter(Boolean));
     dlg.showModal();
   }
   function done(r) {
-    var parts = [el('h2', { text: 'Done!' }), el('p', { text: 'You redeemed ' + r.item + ' for ' + fmt(r.points) + ' Pride Points.' })];
+    var parts = [el('h2', { text: 'Done!' }), el('p', { text: 'You redeemed ' + r.item + ' for ' + fmt(r.points) + ' Star Points.' })];
     if (r.voucherCode) parts.push(el('p', { text: 'Your voucher code (also emailed to you):' }), el('div', { class: 'rc-code', text: r.voucherCode }), el('p', { text: 'Use it by ' + new Date(r.expiresAt).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'long', year: 'numeric' }) + '.' }));
     else if (r.type === 'ticket') parts.push(el('p', { text: r.status === 'refunded' ? 'Sorry, that stand has just sold out: your points have been returned.' : 'Your QR ticket for ' + r.match + ' is on its way by email.' }));
     else if (r.type === 'airtime' || r.type === 'data') parts.push(el('p', { text: 'Status: ' + r.statusText + ' (' + r.network + ' ' + r.phone + '). If it fails, your points come back automatically.' }));
