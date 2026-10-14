@@ -899,6 +899,20 @@ No Cloudflare Access rule is needed.
   for the signed-in fan. APIs: `/api/rewards/tier` (seen, star-wall),
   `/api/rewards/star-fans`; page `/rewards/star-fans/` (noindex).
   Test: `tests/rewards-tiers.api.test.mjs`.
+- Catalogue and redeeming: `functions/api/_lib/rewardsCatalogue.js` (tables
+  rewards_catalogue, rewards_redemptions with UNIQUE idem_key and voucher_code,
+  rewards_codes; seeds once; `redeem()` = one db.batch: redemption inserted only
+  if spendable points, stock and per-fan limit allow, then the REDEEM ledger row
+  and stock -1 follow it; ticket rewards via holdLineStatement + fulfillOrder at
+  ₦0 (reference RWD-...); top-ups via `functions/api/_lib/vtu.js`; refunds as a
+  REVERSE row with source 'redeem', not counted for tiers). Job retries top-ups
+  and expires vouchers. APIs `/api/rewards/catalogue`, `/api/rewards/redeem`
+  (also `action: 'code'`), `/api/rewards/wallet`; admin `/api/admin/rewards/
+  catalogue` and `/fulfilment`. Pages `/rewards/catalogue/` (noindex),
+  `/admin/rewards/catalogue/`, `/admin/rewards/fulfilment/`.
+- Top-up provider secrets (when chosen): `VTU_PROVIDER=vtpass`, `VTPASS_API_KEY`,
+  `VTPASS_SECRET_KEY`, `VTPASS_BASE_URL`. **Never set `VTU_FAKE` in production**
+  (local tests only). Test: `tests/rewards-redeem.api.test.mjs`.
 
 ## Ticketing system setup (Cloudflare D1 + Paystack + Resend)
 

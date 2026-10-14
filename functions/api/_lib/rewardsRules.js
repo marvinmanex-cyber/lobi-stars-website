@@ -80,6 +80,9 @@ export function settingsProblem(s) {
   if (s.streakLength < 2 || s.streakLength > 20) return 'Home games in a row: 2 to 20.';
   if (s.birthdayDobMinDays > 365) return 'Birthday: date of birth saved at least 0 to 365 days before.';
   if (!Number.isInteger(s.tierGraceMonths) || s.tierGraceMonths < 0 || s.tierGraceMonths > 12) return 'Tier grace period: 0 to 12 months.';
+  if (!Number.isInteger(s.redeemCodeThreshold) || s.redeemCodeThreshold < 1) return 'Email code needed from: at least 1 point.';
+  if (!Number.isInteger(s.voucherDays) || s.voucherDays < 1 || s.voucherDays > 730) return 'Vouchers valid: 1 to 730 days.';
+  if (!Number.isInteger(s.vtuMaxAttempts) || s.vtuMaxAttempts < 1 || s.vtuMaxAttempts > 10) return 'Airtime/data tries: 1 to 10.';
   if (s.tiers !== undefined) { const t = tiersProblem(s.tiers); if (t) return t; }
   return null;
 }

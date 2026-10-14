@@ -1,0 +1,88 @@
+---
+// Admin › Rewards › Catalogue: add, edit, switch off and archive rewards
+// (name, description, image, points, type and its value, stock, per-fan limit,
+// 18+, tier, partner sponsor, dates). Changes are in the audit log.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="Rewards Catalogue | Lobi Stars Admin" description="Lobi Stars Rewards catalogue." noindex>
+  <div class="wrap la">
+    <AdminNav current="rewards-catalogue" />
+    <header class="la-head"><div><div class="stag">Rewards</div><h1 class="stitle">Rewards <span class="r">Catalogue</span></h1></div>
+      <div class="la-row"><a class="btn-o" href="/admin/rewards/">Settings &amp; members</a><a class="btn-o" href="/admin/rewards/fulfilment/">Fulfilment &amp; vouchers</a><a class="btn-o" href="/rewards/catalogue/?preview=1" target="_blank" rel="noopener">Fan view ↗</a></div></header>
+    <p class="la-lede">What fans can swap their Pride Points for. The starting rewards and points are suggestions: confirm each one before launch. Stock <b>0</b> means "not available yet"; empty means no limit. Vouchers work at our own checkout and at the stadium (staff check the code in Fulfilment &amp; vouchers).</p>
+    <section class="la-card"><h2>Rewards</h2><div id="list"><p class="la-muted">Loading…</p></div><button class="btn-p" type="button" id="addBtn" style="margin-top:12px">Add a reward</button></section>
+    <section class="la-card" id="editCard" hidden><h2 id="editH">Edit reward</h2><form id="edit" class="rc-edit"></form></section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<style is:global>
+  .rc-edit { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; align-items: end; }
+  .rc-edit input, .rc-edit select, .rc-edit textarea { width: 100%; box-sizing: border-box; }
+  .rc-edit .wide { grid-column: 1 / -1; }
+  .rc-off td { opacity: .55; }
+</style>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, el = LA.el, $ = function (id) { return document.getElementById(id); };
+  var fmt = function (n) { return Number(n || 0).toLocaleString('en-NG'); };
+  var TYPE = { voucher: 'Voucher', ticket: 'Match ticket', airtime: 'Airtime', data: 'Data', experience: 'Experience', physical: 'Item to collect' };
+  var wat = function (iso) { return iso ? new Date(Date.parse(iso) + 3600e3).toISOString().slice(0, 16) : ''; };
+  var items = [];
+  function load() {
+    LA.api('/api/admin/rewards/catalogue').then(function (r) {
+      if (!r.ok) { $('list').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load.' })); return; }
+      items = r.d.items;
+      $('list').replaceChildren(LA.table(['Reward', 'Type', 'Points', 'Value', 'Stock', 'Status', ''], items.map(function (i) {
+        var v = i.config.valueKobo != null ? '₦' + fmt(i.config.valueKobo / 100) : i.config.amountKobo != null ? '₦' + fmt(i.config.amountKobo / 100) : i.config.tier ? ({ VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' })[i.config.tier] : '';
+        return el('tr', { class: i.active && !i.archived ? '' : 'rc-off' }, el('td', {}, el('b', { text: i.name }), el('br'), el('span', { class: 'la-muted', text: i.description })), el('td', { text: TYPE[i.type] + (i.type === 'voucher' ? ' (' + i.config.kind + ')' : '') }),
+          el('td', { class: 'n', text: fmt(i.points) }), el('td', { text: v }), el('td', { class: 'n', text: i.stock == null ? 'no limit' : String(i.stock) }),
+          el('td', { text: i.archived ? 'Archived' : i.active ? 'On' : 'Off' }), el('td', {}, el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Edit', onclick: function () { edit(i); } })));
+      })));
+    });
+  }
+  function field(label, input, wide) { return el('label', { class: 'la-f' + (wide ? ' wide' : '') }, label, input); }
+  function edit(i) {
+    var isNew = !i; i = i || { type: 'voucher', config: { kind: 'shop' }, active: true };
+    var f = $('edit'), inp = {};
+    var mk = function (k, attrs) { inp[k] = el(attrs.tag || 'input', Object.assign({}, attrs, { tag: null })); return inp[k]; };
+    var type = mk('type', { tag: 'select', disabled: isNew ? null : true });
+    Object.keys(TYPE).forEach(function (t) { var o = el('option', { value: t, text: TYPE[t] }); if (t === i.type) o.selected = true; type.append(o); });
+    var parts = [
+      field('Name', mk('name', { value: i.name || '', maxlength: 80, required: true })), field('Type', type), field('Points', mk('points', { type: 'number', min: 1, value: i.points || '' })),
+      field('Description (shown to fans)', mk('description', { tag: 'textarea', maxlength: 300, rows: 2, text: i.description || '' }), true),
+      field('Image (/images/... optional)', mk('image', { value: i.image || '', maxlength: 200 })),
+      field('Voucher for', (function () { var s = mk('kind', { tag: 'select' }); [['shop', 'Club shop'], ['food', 'Food (MatchDay Kitchen)']].forEach(function (x) { var o = el('option', { value: x[0], text: x[1] }); if ((i.config.kind || 'shop') === x[0]) o.selected = true; s.append(o); }); return s; })()),
+      field('Voucher value ₦ (empty = free item)', mk('valueNaira', { type: 'number', min: 0, value: i.config.valueKobo != null ? i.config.valueKobo / 100 : '' })),
+      field('Voucher applies to (e.g. jersey, personalisation, any)', mk('appliesTo', { value: i.config.appliesTo || '', maxlength: 30 })),
+      field('Airtime/data amount ₦', mk('amountNaira', { type: 'number', min: 0, value: i.config.amountKobo != null ? i.config.amountKobo / 100 : '' })),
+      field('Ticket stand', (function () { var s = mk('tier', { tag: 'select' }); [['Regular', 'Popular Stand'], ['Premium', 'Cover Stand'], ['VIP', 'VIP Sitting']].forEach(function (x) { var o = el('option', { value: x[0], text: x[1] }); if ((i.config.tier || 'Regular') === x[0]) o.selected = true; s.append(o); }); return s; })()),
+      field('Stock (empty = no limit, 0 = not available)', mk('stock', { type: 'number', min: 0, value: i.stock == null ? '' : i.stock })),
+      field('Most per fan (empty = no limit)', mk('perFanLimit', { type: 'number', min: 0, value: i.perFanLimit == null ? '' : i.perFanLimit })),
+      field('Minimum age (e.g. 18 for alcohol sponsors)', mk('minAge', { type: 'number', min: 0, value: i.minAge == null ? '' : i.minAge })),
+      field('Tier needed', (function () { var s = mk('minTier', { tag: 'select' }); [['', 'Any member'], ['gold', 'Gold or Star'], ['star', 'Star only']].forEach(function (x) { var o = el('option', { value: x[0], text: x[1] }); if ((i.minTier || '') === x[0]) o.selected = true; s.append(o); }); return s; })()),
+      field('Partner sponsor (optional)', mk('sponsor', { value: i.sponsor || '', maxlength: 60 })),
+      field('Starts (Nigerian time, optional)', mk('startsAt', { type: 'datetime-local', value: wat(i.startsAt) })), field('Ends (optional)', mk('endsAt', { type: 'datetime-local', value: wat(i.endsAt) })),
+      field('Order on the page', mk('sort', { type: 'number', value: i.sort || 100 })),
+      el('label', { class: 'la-row', style: 'gap:8px' }, mk('active', { type: 'checkbox', checked: i.active ? true : null, style: 'width:22px;height:22px;min-height:auto' }), 'On (fans can see it)'),
+      el('label', { class: 'la-row', style: 'gap:8px' }, mk('archived', { type: 'checkbox', checked: i.archived ? true : null, style: 'width:22px;height:22px;min-height:auto' }), 'Archived'),
+      el('div', { class: 'la-row wide' }, el('button', { type: 'submit', class: 'btn-p', text: isNew ? 'Add reward' : 'Save' }), el('button', { type: 'button', class: 'btn-o', text: 'Cancel', onclick: function () { $('editCard').hidden = true; } })),
+    ];
+    f.replaceChildren.apply(f, parts);
+    f.onsubmit = function (e) {
+      e.preventDefault();
+      var x = { id: isNew ? undefined : i.id, type: inp.type.value, name: inp.name.value, points: Number(inp.points.value), description: inp.description.value, image: inp.image.value, kind: inp.kind.value, valueNaira: inp.valueNaira.value, appliesTo: inp.appliesTo.value,
+        amountNaira: inp.amountNaira.value, tier: inp.tier.value, stock: inp.stock.value, perFanLimit: inp.perFanLimit.value, minAge: inp.minAge.value, minTier: inp.minTier.value, sponsor: inp.sponsor.value,
+        startsAt: inp.startsAt.value, endsAt: inp.endsAt.value, sort: Number(inp.sort.value), active: inp.active.checked, archived: inp.archived.checked };
+      LA.api('/api/admin/rewards/catalogue', { method: 'POST', body: { item: x } }).then(function (r) { r.ok ? (LA.toast('Saved'), $('editCard').hidden = true, load()) : LA.toast(r.d.error || 'Could not save.', true); });
+    };
+    $('editH').textContent = isNew ? 'Add a reward' : 'Edit: ' + i.name;
+    $('editCard').hidden = false; $('editCard').scrollIntoView({ behavior: 'smooth' });
+  }
+  $('addBtn').addEventListener('click', function () { edit(null); });
+  load();
+})();
+</script>

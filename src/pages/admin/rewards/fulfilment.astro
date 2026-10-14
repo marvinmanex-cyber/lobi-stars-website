@@ -1,0 +1,76 @@
+---
+// Admin › Rewards › Fulfilment & vouchers: airtime/data to send by hand (no
+// provider set up, or failing), experiences and items requested by fans
+// (Requested -> Confirmed -> Fulfilled/Collected), refunds of points, and the
+// voucher lookup for the stadium food stands and the club shop.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="Rewards Fulfilment | Lobi Stars Admin" description="Lobi Stars Rewards fulfilment queue and voucher lookup." noindex>
+  <div class="wrap la">
+    <AdminNav current="rewards-fulfilment" />
+    <header class="la-head"><div><div class="stag">Rewards</div><h1 class="stitle">Fulfilment &amp; <span class="r">Vouchers</span></h1></div>
+      <div class="la-row"><a class="btn-o" href="/admin/rewards/">Settings &amp; members</a><a class="btn-o" href="/admin/rewards/catalogue/">Catalogue</a></div></header>
+
+    <section class="la-card" aria-labelledby="h-v">
+      <h2 id="h-v">Check a voucher</h2>
+      <form id="vf" class="la-row" style="align-items:flex-end">
+        <label class="la-f">Voucher code<input name="code" maxlength="20" placeholder="LSR-XXXX-XXXX" autocomplete="off" style="text-transform:uppercase;min-width:220px" /></label>
+        <button class="btn-p" type="submit">Check</button>
+      </form>
+      <div id="vOut"></div>
+      <p class="la-muted">At the food stands or the club shop: check the code, give the fan their reward, then press <b>Mark used</b> (a voucher works once).</p>
+    </section>
+
+    <section class="la-card" aria-labelledby="h-q">
+      <h2 id="h-q">Waiting for the club</h2>
+      <div id="queue"><p class="la-muted">Loading…</p></div>
+      <p class="la-muted">Airtime/data: send it from the provider's dashboard (or your phone) then press <b>Delivered</b>, or <b>Retry</b> once the provider is set up. <b>Refund points</b> gives the fan their points back (a reason is required and shown to them).</p>
+    </section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<script is:inline>
+(function () {
+  var LA = window.LA, el = LA.el, $ = function (id) { return document.getElementById(id); };
+  var fmt = function (n) { return Number(n || 0).toLocaleString('en-NG'); };
+  var ACTIONS = { manual: ['deliver', 'retry', 'refund'], retry: ['deliver', 'retry', 'refund'], failed: ['deliver', 'retry', 'refund'], requested: ['confirm', 'fulfil', 'collect', 'refund'], confirmed: ['fulfil', 'collect', 'refund'], issued: ['use', 'refund'] };
+  var LABEL = { deliver: 'Delivered', retry: 'Retry', refund: 'Refund points', confirm: 'Confirm', fulfil: 'Done', collect: 'Collected', use: 'Mark used' };
+  function act(r, a, after) {
+    var go = function (note) { LA.api('/api/admin/rewards/fulfilment', { method: 'POST', body: { id: r.id, action: a, note: note || '' } }).then(function (x) { x.ok ? (LA.toast('Done'), after()) : LA.toast(x.d.error || 'Could not do that.', true); }); };
+    if (a === 'refund') LA.prompt('Give ' + fmt(r.points) + ' points back?', 'Reason (shown to the fan)', { ok: 'Refund points' }).then(function (n) { if (n !== null) go(n); });
+    else go('');
+  }
+  function row(r, after) {
+    var acts = el('div', { class: 'la-row' }); (ACTIONS[r.status] || []).forEach(function (a) { acts.append(el('button', { type: 'button', class: a === 'refund' ? 'btn-o btn-sm' : 'btn-p btn-sm', text: LABEL[a], onclick: function () { act(r, a, after); } })); });
+    var what = r.type === 'airtime' || r.type === 'data' ? r.network + ' ' + (r.fullPhone || '') : r.match || r.notes || '';
+    return el('tr', {}, el('td', { text: LA.when(r.createdAt.replace(' ', 'T') + 'Z') }), el('td', {}, el('b', { text: r.item }), el('br'), el('span', { class: 'la-muted', text: what })),
+      el('td', {}, r.fan ? el('span', {}, el('b', { text: r.fan.name + ' · ' + r.fan.memberNo }), el('br'), el('span', { class: 'la-muted', text: r.fan.email + ' · ' + (r.fan.phone || '') })) : ''),
+      el('td', { text: r.statusText + (r.lastError ? ' (' + r.lastError + ')' : '') }), el('td', {}, acts));
+  }
+  function loadQueue() {
+    LA.api('/api/admin/rewards/fulfilment?view=queue').then(function (r) {
+      if (!r.ok) { $('queue').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load.' })); return; }
+      $('queue').replaceChildren(r.d.queue.length ? LA.table(['When', 'Reward', 'Fan', 'Status', ''], r.d.queue.map(function (x) { return row(x, loadQueue); })) : el('p', { class: 'la-muted', text: 'Nothing waiting.' }));
+    });
+  }
+  $('vf').addEventListener('submit', function (e) {
+    e.preventDefault(); var code = this.elements.code.value.trim().toUpperCase(); if (!code) return;
+    var show = function () {
+      LA.api('/api/admin/rewards/fulfilment?code=' + encodeURIComponent(code)).then(function (r) {
+        if (!r.ok) { $('vOut').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Not found.' })); return; }
+        var v = r.d.voucher, expired = v.expiresAt && Date.parse(v.expiresAt) < Date.now();
+        $('vOut').replaceChildren(el('div', { class: 'la-card', style: 'margin-top:10px' },
+          el('p', {}, el('b', { text: v.item }), v.valueKobo ? ' · ₦' + fmt(v.valueKobo / 100) : ''),
+          el('p', { text: (v.fan ? v.fan.name + ' · ' + v.fan.memberNo + ' · ' : '') + 'expires ' + (v.expiresAt ? new Date(v.expiresAt).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', year: 'numeric' }) : '–') }),
+          el('p', {}, el('span', { class: 'la-chip ' + (v.status === 'issued' && !expired ? 'full_time' : 'cancelled'), text: expired && v.status === 'issued' ? 'Expired' : v.statusText })),
+          v.status === 'issued' && !expired ? el('button', { type: 'button', class: 'btn-p', text: 'Mark used', onclick: function () { act(v, 'use', show); } }) : null));
+      });
+    };
+    show();
+  });
+  loadQueue();
+})();
+</script>

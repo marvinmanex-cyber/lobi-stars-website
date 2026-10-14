@@ -1,0 +1,130 @@
+---
+// /rewards/catalogue -- the Lobi Stars Rewards catalogue: rewards from the
+// admin catalogue with their points cost, filters, and redeeming (confirm step,
+// emailed code for big rewards, then the voucher / ticket / top-up status).
+// Kept out of search engines until launch. Points have no cash value.
+// TODO (fan pages step): images, partner logos, wallet page.
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Rewards Catalogue | Lobi Stars Rewards" description="Swap your Pride Points for Lobi Stars rewards: tickets, airtime and data, food, shop rewards and experiences." noindex>
+  <section class="rc-hero"><div class="rc-in"><p class="rc-k">Lobi Stars Rewards</p><h1>Rewards <span>catalogue</span></h1><p id="rcBal">Swap your Pride Points for rewards.</p></div></section>
+  <div class="wrap rc-page">
+    <div class="rc-filters" role="group" aria-label="Filter rewards" id="rcFilters"></div>
+    <ul class="rc-grid" id="rcGrid" aria-live="polite"><li class="rc-muted">Loading the rewards…</li></ul>
+    <p class="rc-note">Pride Points have no cash value and can't be exchanged for cash, transferred or sold. <a href="/rewards/terms/">Rewards Terms</a></p>
+  </div>
+  <dialog class="rc-dlg" id="rcDlg" aria-labelledby="rcDlgT"><form method="dialog" id="rcForm"></form></dialog>
+</Layout>
+
+<style>
+  .rc-hero { background: radial-gradient(120% 140% at 0% 0%, #C11A1F 0%, #7A0E12 55%, #15181D 100%); color: #fff; padding: 40px 0 46px; border-bottom: 4px solid #FFC72C; }
+  .rc-in { max-width: 1280px; margin: 0 auto; padding: 0 5%; }
+  .rc-k { margin: 0 0 6px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .rc-hero h1 { margin: 0; font: 400 clamp(40px, 8vw, 72px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rc-hero h1 span { color: #FFC72C; }
+  .rc-hero p:last-child { margin: 10px 0 0; font-size: 17px; }
+  .rc-page { padding-top: 24px; padding-bottom: 64px; }
+  .rc-filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+  .rc-filters :global(button) { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--d4); background: var(--d2); color: var(--white); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+  .rc-filters :global(button[aria-pressed="true"]) { background: #C11A1F; border-color: #C11A1F; color: #fff; }
+  .rc-grid { list-style: none; margin: 0 0 20px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+  .rc-grid :global(.rc-card) { display: flex; flex-direction: column; gap: 8px; padding: 16px; border-radius: 14px; background: var(--d2); border: 1px solid var(--d4); border-top: 4px solid #FFC72C; }
+  .rc-grid :global(.rc-card h2) { margin: 0; font: 400 24px/1.05 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .rc-grid :global(.rc-pts) { font: 400 34px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .rc-grid :global(.rc-pts small) { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; color: var(--lt); margin-left: 4px; }
+  .rc-grid :global(.rc-card p) { margin: 0; color: var(--lt); line-height: 1.5; font-size: 14.5px; }
+  .rc-grid :global(.rc-tag) { align-self: flex-start; padding: 3px 9px; border-radius: 999px; background: rgba(255, 199, 44, .2); font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .rc-grid :global(.rc-card button) { margin-top: auto; min-height: 44px; border-radius: 8px; border: 0; background: #C11A1F; color: #fff; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+  .rc-grid :global(.rc-card button:disabled) { background: var(--d4); color: var(--lt); cursor: not-allowed; }
+  .rc-grid :global(.rc-muted) { grid-column: 1 / -1; color: var(--lt); }
+  .rc-note { color: var(--lt); font-size: 14px; }
+  .rc-note a { color: var(--red-text); font-weight: 600; }
+  .rc-dlg { width: min(460px, calc(100vw - 32px)); border: 0; border-radius: 16px; padding: 0; background: var(--d1, #fff); color: var(--white); box-shadow: 0 20px 50px rgba(0, 0, 0, .35); }
+  .rc-dlg::backdrop { background: rgba(5, 8, 14, .6); }
+  .rc-dlg :global(form) { display: grid; gap: 12px; padding: 20px; }
+  .rc-dlg :global(h2) { margin: 0; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rc-dlg :global(label) { display: grid; gap: 6px; font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .rc-dlg :global(select), .rc-dlg :global(input), .rc-dlg :global(textarea) { min-height: 44px; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--d4); background: var(--d2); color: var(--white); font: 400 16px/1.3 'Barlow', sans-serif; text-transform: none; letter-spacing: 0; }
+  .rc-dlg :global(.rc-acts) { display: flex; gap: 10px; flex-wrap: wrap; }
+  .rc-dlg :global(.rc-acts button) { flex: 1; min-height: 44px; border-radius: 8px; border: 1.5px solid var(--d4); background: transparent; color: var(--white); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+  .rc-dlg :global(.rc-acts .go) { background: #C11A1F; border-color: #C11A1F; color: #fff; }
+  .rc-dlg :global(.rc-err) { margin: 0; color: var(--red-text); font-weight: 600; }
+  .rc-dlg :global(.rc-code) { font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: 3px; color: var(--red-text); text-align: center; padding: 10px; border: 2px dashed #C9A227; border-radius: 10px; }
+  .rc-dlg :global(p) { margin: 0; line-height: 1.5; }
+  @media (max-width: 420px) { .rc-in { padding: 0 16px; } .rc-page { padding-left: 16px; padding-right: 16px; } }
+</style>
+
+<script is:inline>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c != null && c !== false) n.append(c); } return n; };
+  var fmt = function (n) { return Number(n).toLocaleString('en-NG'); };
+  var data = null, filter = 'All';
+  var dlg = $('rcDlg'), form = $('rcForm');
+  function load() {
+    fetch('/api/rewards/catalogue', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) { data = d; draw(); }).catch(function () { $('rcGrid').replaceChildren(el('li', { class: 'rc-muted', text: 'The rewards could not be loaded just now.' })); });
+  }
+  function draw() {
+    $('rcBal').textContent = data.member ? 'You have ' + fmt(data.balance) + ' Pride Points to use.' : 'Log in to see what you can get with your Pride Points.';
+    var groups = ['All'].concat(Array.from(new Set(data.items.map(function (i) { return i.group; }))));
+    $('rcFilters').replaceChildren.apply($('rcFilters'), groups.map(function (g) { return el('button', { type: 'button', 'aria-pressed': String(g === filter), text: g, onclick: function () { filter = g; draw(); } }); }));
+    var items = data.items.filter(function (i) { return filter === 'All' || i.group === filter; });
+    if (!items.length) { $('rcGrid').replaceChildren(el('li', { class: 'rc-muted', text: 'No rewards here yet.' })); return; }
+    $('rcGrid').replaceChildren.apply($('rcGrid'), items.map(function (i) {
+      var btn;
+      if (!data.member) btn = el('button', { type: 'button', text: 'Log in to redeem', onclick: function () { location.href = '/fans/login/?next=/rewards/catalogue/'; } });
+      else if (!data.live) btn = el('button', { type: 'button', disabled: true, text: 'Opens soon' });
+      else btn = el('button', { type: 'button', disabled: !i.canRedeem, text: i.canRedeem ? 'Redeem' : (i.reason || 'Not available'), onclick: function () { open(i); } });
+      return el('li', { class: 'rc-card' }, el('span', { class: 'rc-tag', text: i.group }), el('h2', { text: i.name }), el('div', { class: 'rc-pts' }, fmt(i.points), el('small', { text: 'Pride Points' })),
+        el('p', { text: i.description }), i.minAge ? el('p', { text: i.minAge + '+ only' }) : null, i.stock !== null && i.stock > 0 && i.stock <= 10 ? el('p', { text: i.stock + ' left' }) : null, btn);
+    }));
+  }
+  function key() { try { return crypto.randomUUID(); } catch (e) { return 'k' + Date.now() + Math.random().toString(36).slice(2); } }
+  function open(i) {
+    var k = key(), err = el('p', { class: 'rc-err', role: 'alert' }), fields = [], extra = {};
+    if (i.type === 'airtime' || i.type === 'data') {
+      var net = el('select', { required: true }, el('option', { value: '', text: 'Choose your network' }));
+      Object.keys(data.networks).forEach(function (n) { net.append(el('option', { value: n, text: data.networks[n] })); });
+      var ph = el('input', { type: 'tel', inputmode: 'tel', placeholder: 'Leave empty for your account number' });
+      fields.push(el('label', {}, 'Network', net), el('label', {}, 'Phone number', ph));
+      extra = function () { return { network: net.value, phone: ph.value }; };
+    } else if (i.type === 'ticket') {
+      var sel = el('select', { required: true }, el('option', { value: '', text: 'Loading matches…' }));
+      fetch('/api/tickets/catalogue').then(function (r) { return r.json(); }).then(function (d) {
+        sel.replaceChildren(el('option', { value: '', text: 'Choose a home match' }));
+        (d.matches || []).filter(function (m) { return m.state === 'on_sale'; }).forEach(function (m) { sel.append(el('option', { value: m.id, text: 'v ' + m.awayTeam.replace(/\s+FC$/, '') + ' · ' + new Date(m.kickoff).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short' }) })); });
+      });
+      fields.push(el('label', {}, 'Match', sel));
+      extra = function () { return { eventId: sel.value }; };
+    } else if (i.type === 'experience' || i.type === 'physical') {
+      var notes = el('textarea', { maxlength: 300, rows: 3, placeholder: i.type === 'physical' ? 'Size, home or away, and anything we should know' : 'Anything we should know' });
+      fields.push(el('label', {}, 'Notes for the club', notes));
+      extra = function () { return { notes: notes.value }; };
+    } else extra = function () { return {}; };
+    var code = el('input', { inputmode: 'numeric', maxlength: 6, autocomplete: 'one-time-code', placeholder: '6-digit code' });
+    var codeRow = i.needsCode ? el('div', {}, el('p', { text: 'For rewards of ' + fmt(data.codeFrom) + ' points or more we email you a code first.' }), el('label', {}, 'Code from your email', code),
+      el('div', { class: 'rc-acts' }, el('button', { type: 'button', text: 'Email me the code', onclick: function () { post({ action: 'code', itemId: i.id }).then(function (x) { err.textContent = x.ok ? 'Code sent: check your email.' + (x.d.devCode ? ' (' + x.d.devCode + ')' : '') : (x.d.error || 'Could not send.'); }); } }))) : null;
+    var go = el('button', { type: 'button', class: 'go', text: 'Redeem ' + fmt(i.points) + ' points' });
+    go.addEventListener('click', function () {
+      var body = Object.assign({ itemId: i.id, key: k, code: code.value }, extra());
+      go.disabled = true; err.textContent = '';
+      post(body).then(function (x) { go.disabled = false; if (x.ok) done(x.d.redemption); else err.textContent = x.d.error || 'Could not redeem.'; });
+    });
+    form.replaceChildren.apply(form, [el('h2', { id: 'rcDlgT', text: i.name }), el('p', { text: 'Redeem ' + fmt(i.points) + ' Pride Points for ' + i.name + '? This can\'t be undone.' }),
+      fields.length ? el('div', { style: 'display:grid;gap:12px' }, fields) : null, codeRow, err,
+      el('div', { class: 'rc-acts' }, el('button', { type: 'button', text: 'Cancel', onclick: function () { dlg.close(); } }), go)].filter(Boolean));
+    dlg.showModal();
+  }
+  function done(r) {
+    var parts = [el('h2', { text: 'Done!' }), el('p', { text: 'You redeemed ' + r.item + ' for ' + fmt(r.points) + ' Pride Points.' })];
+    if (r.voucherCode) parts.push(el('p', { text: 'Your voucher code (also emailed to you):' }), el('div', { class: 'rc-code', text: r.voucherCode }), el('p', { text: 'Use it by ' + new Date(r.expiresAt).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'long', year: 'numeric' }) + '.' }));
+    else if (r.type === 'ticket') parts.push(el('p', { text: r.status === 'refunded' ? 'Sorry, that stand has just sold out: your points have been returned.' : 'Your QR ticket for ' + r.match + ' is on its way by email.' }));
+    else if (r.type === 'airtime' || r.type === 'data') parts.push(el('p', { text: 'Status: ' + r.statusText + ' (' + r.network + ' ' + r.phone + '). If it fails, your points come back automatically.' }));
+    else parts.push(el('p', { text: 'The club will contact you to arrange it.' }));
+    parts.push(el('div', { class: 'rc-acts' }, el('button', { type: 'button', text: 'Close', onclick: function () { dlg.close(); load(); } }), el('button', { type: 'button', class: 'go', text: 'My rewards', onclick: function () { location.href = '/fans/account/'; } })));
+    form.replaceChildren.apply(form, parts);
+  }
+  function post(body) { return fetch('/api/rewards/redeem', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); }); }
+  load();
+})();
+</script>

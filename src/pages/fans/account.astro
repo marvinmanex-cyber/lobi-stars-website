@@ -211,7 +211,15 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
         d.history.slice(0, 5).forEach(function (h) { ul.append(el('li', {}, el('span', { text: h.description + (h.status === 'PENDING' ? ' (pending)' : '') }), el('span', { class: h.points >= 0 ? 'plus' : 'minus', text: (h.points >= 0 ? '+' : '') + fmt(h.points) }))); });
         parts.push(el('b', { text: 'Recent activity' }), ul);
       }
-      parts.push(el('p', {}, el('a', { href: '/rewards/', text: 'About Lobi Stars Rewards' })));
+      var wal = el('div', { id: 'rwWallet' });
+      parts.push(wal);
+      fetch('/api/rewards/wallet', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (w) {
+        if (!w.items || !w.items.length) return;
+        var ul = el('ul', { class: 'rw-hist' });
+        w.items.slice(0, 5).forEach(function (x) { ul.append(el('li', {}, el('span', { text: x.item + (x.voucherCode ? ' · ' + x.voucherCode : '') + (x.match ? ' · ' + x.match : '') }), el('span', { text: x.statusText }))); });
+        wal.append(el('b', { text: 'My rewards' }), ul);
+      }).catch(function () {});
+      parts.push(el('p', {}, el('a', { href: '/rewards/catalogue/', text: 'Use my points' }), ' · ', el('a', { href: '/rewards/', text: 'About Lobi Stars Rewards' })));
     }
     body.replaceChildren.apply(body, parts);
   }

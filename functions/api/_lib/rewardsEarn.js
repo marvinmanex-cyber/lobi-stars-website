@@ -287,6 +287,10 @@ export async function rewardsSweep(env, { memberId = null } = {}) {
   out.predictions = (await safe('predictions', () => settlePredictions(db, memberId))) || 0;
   out.birthdays = (await safe('birthdays', () => birthdays(db, memberId))) || 0;
   if (memberId) await checkTierUpgrade(env, memberId);
+  else {
+    const { redemptionSweep } = await import('./rewardsCatalogue.js');
+    Object.assign(out, (await safe('redemptions', () => redemptionSweep(env))) || {});
+  }
   return out;
 }
 

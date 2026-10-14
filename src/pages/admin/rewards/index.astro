@@ -13,7 +13,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
   <div class="wrap la">
     <AdminNav current="rewards" />
     <header class="la-head"><div><div class="stag">Rewards</div><h1 class="stitle">Lobi Stars <span class="r">Rewards</span></h1></div>
-      <div class="la-row"><a class="btn-o" href="/rewards/?preview=1" target="_blank" rel="noopener">Preview fan pages ↗</a><button class="btn-o" type="button" id="runNow">Run the points job now</button></div></header>
+      <div class="la-row"><a class="btn-o" href="/admin/rewards/catalogue/">Catalogue</a><a class="btn-o" href="/admin/rewards/fulfilment/">Fulfilment &amp; vouchers</a><a class="btn-o" href="/rewards/?preview=1" target="_blank" rel="noopener">Preview fan pages ↗</a><button class="btn-o" type="button" id="runNow">Run the points job now</button></div></header>
     <p class="la-lede">Fans earn Pride Points only from things the website records itself: confirmed Paystack payments, tickets scanned at the gate, Man of the Match votes and Predict &amp; Win. Points have no cash value. Change any number below and press <b>Save settings</b>; it applies to new points from then on.</p>
 
     <section class="la-card" aria-labelledby="h-stats"><h2 id="h-stats">Totals</h2><div id="stats" class="la-row"><p class="la-muted">Loading…</p></div></section>
@@ -67,6 +67,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     ['Joining', [['welcomeBonus', 'Welcome bonus (points)', 'After the email is confirmed'], ['profileBonus', 'Profile bonus (points)', 'State of residence + date of birth']]],
     ['Purchases (points per ₦100 paid)', [['ticketsPer100', 'Match tickets', 'Pending until the match is played'], ['shopPer100', 'Shirts & merchandise', 'Our own checkout only (not Jumia)'], ['foodPer100', 'In-seat food', 'When the order is paid'], ['membershipPer100', 'Annual membership', ''], ['membershipBonus', 'Membership bonus (points)', 'On top of the points above']]],
     ['Matchday', [['attendance', 'Attending a home match (points)', 'Ticket scanned at the gate, once per match'], ['streakLength', 'Home matches in a row', 'For the streak bonus'], ['streakBonus', 'Streak bonus (points)', ''], ['motmVote', 'Man of the Match vote (points)', ''], ['prediction', 'Predict & Win entry (points)', ''], ['predictionCorrect', 'Correct result (points)', 'At full-time'], ['predictionExact', 'Exact score (points)', 'At full-time (instead of correct result)'], ['engagementMonthlyCap', 'Monthly limit: votes + predictions', '0 = no limit; attendance not included']]],
+    ['Redeeming', [['redeemCodeThreshold', 'Email code needed from (points)', 'Bigger redemptions need a 6-digit code'], ['voucherDays', 'Vouchers valid (days)', ''], ['vtuMaxAttempts', 'Airtime/data tries', 'Then the points are returned']]],
     ['Referrals and birthdays', [['referral', 'Referral (points to the referrer)', 'After the friend\'s first paid purchase'], ['referralMaxPerSeason', 'Most referral rewards per season', ''], ['birthday', 'Birthday month (points)', 'Once a year'], ['birthdayDobMinDays', 'Date of birth saved at least (days)', 'Before the birthday bonus']]],
   ];
   var DECIMAL = { ticketsPer100: 1, shopPer100: 1, foodPer100: 1, membershipPer100: 1 };

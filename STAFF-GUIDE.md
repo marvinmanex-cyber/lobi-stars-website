@@ -1995,8 +1995,34 @@ tier. Starting levels: Red from 0, Gold from 1,000, Star from 3,000.
   many members are in each tier; Find a member shows their tier.
 - Tier benefits and early access only apply once Rewards is live.
 
-The rewards catalogue, redeeming, the fan dashboard and the launch come in the
-next phases.
+**Rewards catalogue and redeeming (done):**
+- **Admin › Rewards › Rewards Catalogue:** add or edit a reward (name,
+  description, image, points, type, value, stock, most per fan, minimum age e.g.
+  18 for alcohol sponsors, Gold/Star only, partner sponsor, start/end dates),
+  switch it off or archive it. Starting rewards (confirm the points first):
+  ₦500 airtime 100, free Popular Stand ticket 200, ₦1,500 food voucher 300,
+  ₦2,000 data 400, free name & number printing 600, ₦5,000 off a jersey 1,000,
+  free official cap 1,000, VIP Sitting for a match 1,500, free jersey 2,500,
+  pitchside experience 5,000 and signed match-worn jersey 8,000 (both stock 0
+  = not available until you set the number).
+- **Fans** redeem at lobistarsfc.com/rewards/catalogue: they confirm ("This
+  can't be undone"); rewards of 1,000 points or more also need a 6-digit code
+  emailed to them. Points are taken once, even with a double click.
+  - **Vouchers:** a code like LSR-7KQ2-9XMA (emailed, valid 90 days, used once).
+  - **Match ticket:** the fan picks a home match; a normal QR ticket is emailed
+    (the stand's seat limit applies).
+  - **Airtime/data:** the fan picks the network and number; sent automatically
+    once the top-up provider is set up, otherwise it waits in Fulfilment.
+    Failed top-ups are retried, then the points are returned automatically.
+  - **Experiences and items:** go to Fulfilment with the fan's details.
+- **Admin › Rewards › Fulfilment & Vouchers:** **Check a voucher** at the food
+  stands or club shop and press **Mark used**; send waiting airtime/data by hand
+  and press **Delivered** (or **Retry**); move experiences/items to Confirmed,
+  Done or Collected; **Refund points** (reason shown to the fan).
+- Redeeming only works once Rewards is live. Points have no cash value.
+
+Pay with points at checkout and vouchers applied automatically at our checkouts
+come next, then the fan dashboard, wallet and launch.
 
 ## Other things you can update in the CMS
 

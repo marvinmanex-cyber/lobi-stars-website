@@ -13,7 +13,7 @@ const seasonStartMs = s => Date.parse(`${s.seasonStart}T00:00:00+01:00`);
 /** Points earned (available earnings minus reversals) between two times. */
 async function earnedBetween(db, memberId, fromMs, toMs) {
   const r = await db.prepare(`SELECT COALESCE(SUM(points), 0) AS n FROM rewards_ledger
-    WHERE member_id = ? AND type IN ('EARN', 'BONUS', 'REVERSE') AND status = 'AVAILABLE' AND created_at >= ? AND created_at < ?`)
+    WHERE member_id = ? AND type IN ('EARN', 'BONUS', 'REVERSE') AND source NOT IN ('redeem', 'points_payment') AND status = 'AVAILABLE' AND created_at >= ? AND created_at < ?`)
     .bind(memberId, sqlDate(fromMs), sqlDate(toMs)).first();
   return Math.max(0, Number(r?.n) || 0);
 }
