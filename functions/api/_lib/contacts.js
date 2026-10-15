@@ -208,6 +208,10 @@ export async function captureContact(env, rec) {
 async function tableExists(db, name) {
   return !!(await db.prepare(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?`).bind(name).first());
 }
+async function hasColumn(db, table, col) {
+  if (!(await tableExists(db, table))) return false;
+  return (await db.prepare(`PRAGMA table_info(${table})`).all()).results.some(c => c.name === col);
+}
 
 /**
  * One-off backfill (safe to run again): imports every existing record from
@@ -296,6 +300,14 @@ export async function deleteContactEverywhere(db, contactId) {
       if (await tableExists(db, 'award_votes')) stmts.push(db.prepare(`UPDATE award_votes SET member_id = 'deleted-' || id WHERE member_id = ?`).bind(s.ref_id));
       // Match Day Programme: reading stays counted (anonymous), sign-in codes go.
       if (await tableExists(db, 'programme_events')) stmts.push(db.prepare(`UPDATE programme_events SET fan_id = NULL WHERE fan_id = ?`).bind(s.ref_id));
+      // Lobi Stars Rewards: membership, messages and referral links go; the points
+      // history and redeemed rewards stay only as anonymous totals.
+      if (await tableExists(db, 'rewards_members')) stmts.push(db.prepare(`DELETE FROM rewards_members WHERE member_id = ?`).bind(s.ref_id));
+      if (await tableExists(db, 'rewards_notifications')) stmts.push(db.prepare(`DELETE FROM rewards_notifications WHERE member_id = ?`).bind(s.ref_id));
+      if (await tableExists(db, 'rewards_referrals')) stmts.push(db.prepare(`DELETE FROM rewards_referrals WHERE friend_member_id = ? OR referrer_member_id = ?`).bind(s.ref_id, s.ref_id));
+      if (await tableExists(db, 'rewards_ledger')) stmts.push(db.prepare(`UPDATE rewards_ledger SET member_id = 'deleted-' || id, description = 'Deleted', pay_ref = NULL WHERE member_id = ?`).bind(s.ref_id));
+      if (await tableExists(db, 'rewards_redemptions')) stmts.push(db.prepare(`UPDATE rewards_redemptions SET member_id = 'deleted-' || id, details_json = '{}' WHERE member_id = ?`).bind(s.ref_id));
+      if (await hasColumn(db, 'members', 'referred_by')) stmts.push(db.prepare(`UPDATE members SET referred_by = NULL WHERE referred_by = ?`).bind(s.ref_id));
       stmts.push(db.prepare(`DELETE FROM members WHERE id = ?`).bind(s.ref_id));
     }
   }
