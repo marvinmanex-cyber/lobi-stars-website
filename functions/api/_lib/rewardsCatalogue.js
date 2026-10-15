@@ -6,22 +6,20 @@
 import { ensureRewardsSchema, rewardsSettings, rewardsMember, memberNo, addLedger } from './rewards.js';
 import { tierStatus } from './rewardsTiers.js';
 import { tierRank } from './rewardsRules.js';
-import { vtuSend, vtuConfigured, NETWORKS } from './vtu.js';
 import { sendEmail } from './email.js';
 import { randomId } from './crypto.js';
 
-export const TYPES = ['voucher', 'ticket', 'airtime', 'data', 'experience', 'physical'];
+// Airtime and data are not rewards (club decision, October 2026).
+export const TYPES = ['voucher', 'ticket', 'experience', 'physical'];
 // Fan-facing filter groups.
-export const GROUPS = { ticket: 'Tickets', airtime: 'Airtime & Data', data: 'Airtime & Data', experience: 'Experiences', physical: 'Shop' };
+export const GROUPS = { ticket: 'Tickets', experience: 'Experiences', physical: 'Shop' };
 const groupOf = it => (it.type === 'voucher' ? (it.config.kind === 'food' ? 'Food' : 'Shop') : GROUPS[it.type]);
 
 // Starting catalogue from the programme spec. TODO (club): confirm every
 // points cost and value; set stock for the limited items (0 = not available yet).
 const SEED = [
-  { id: 'airtime-500', name: '₦500 airtime', type: 'airtime', points: 100, sort: 10, description: 'Airtime on MTN, Airtel, Glo or 9mobile, sent straight to your phone.', config: { amountKobo: 50000 } },
   { id: 'ticket-popular', name: 'Free Popular Stand ticket', type: 'ticket', points: 200, sort: 20, description: 'One Popular Stand ticket for a Lobi Stars home match of your choice.', config: { tier: 'Regular' } },
   { id: 'food-1500', name: '₦1,500 food & drinks voucher', type: 'voucher', points: 300, sort: 30, description: 'For in-seat food and drinks at MatchDay Kitchen.', config: { kind: 'food', valueKobo: 150000 } },
-  { id: 'data-2000', name: '₦2,000 data bundle', type: 'data', points: 400, sort: 40, description: 'A data bundle on MTN, Airtel, Glo or 9mobile.', config: { amountKobo: 200000, dataCodes: {} } },
   { id: 'free-printing', name: 'Free name & number printing', type: 'voucher', points: 600, sort: 50, description: 'Your name and number printed free on a shirt bought on lobistarsfc.com.', config: { kind: 'shop', appliesTo: 'personalisation' } },
   { id: 'jersey-5000-off', name: '₦5,000 off any jersey', type: 'voucher', points: 1000, sort: 60, description: 'Money off any official jersey bought on lobistarsfc.com.', config: { kind: 'shop', appliesTo: 'jersey', valueKobo: 500000 } },
   { id: 'official-cap', name: 'Free official cap', type: 'physical', points: 1000, sort: 65, description: 'Collect an official Lobi Stars cap from the club shop.', config: {} },
@@ -73,6 +71,8 @@ export async function ensureCatalogueSchema(db) {
   ]);
   // The top tier was "Star" before October 2026.
   await db.prepare(`UPDATE rewards_catalogue SET min_tier = 'legend' WHERE min_tier = 'star'`).run();
+  // No airtime or data rewards: any added before October 2026 are switched off and archived.
+  await db.prepare(`UPDATE rewards_catalogue SET active = 0, archived = 1 WHERE type IN ('airtime', 'data') AND archived = 0`).run();
   // Seed the starting catalogue once (never overwrites the club's changes).
   const seeded = await db.prepare(`SELECT value FROM settings WHERE key = 'rewards_catalogue_seeded'`).first();
   if (!seeded) {
@@ -96,7 +96,7 @@ export async function listItems(db, { all = false } = {}) {
   await ensureCatalogueSchema(db);
   const { results } = await db.prepare(`SELECT * FROM rewards_catalogue ${all ? '' : 'WHERE active = 1 AND archived = 0'} ORDER BY sort, points`).all();
   const now = Date.now();
-  return results.map(toItem).filter(it => all || ((!it.startsAt || Date.parse(it.startsAt) <= now) && (!it.endsAt || Date.parse(it.endsAt) > now)));
+  return results.map(toItem).filter(it => TYPES.includes(it.type)).filter(it => all || ((!it.startsAt || Date.parse(it.startsAt) <= now) && (!it.endsAt || Date.parse(it.endsAt) > now)));
 }
 
 /** Spendable points: available balance minus points held for unpaid "pay with points" checkouts. */
@@ -191,17 +191,6 @@ export async function redeem(env, memberId, itemId, opts = {}) {
 
   // What the fan chose for this reward.
   const details = {};
-  if (item.type === 'airtime' || item.type === 'data') {
-    const { normalizeNigerianPhone } = await import('./fans.js');
-    if (!NETWORKS[opts.network]) return { ok: false, status: 400, error: 'Choose your network: MTN, Airtel, Glo or 9mobile.' };
-    const phone = normalizeNigerianPhone(opts.phone || m.phone_e164 || '');
-    if (!phone) return { ok: false, status: 400, error: 'Enter a valid Nigerian mobile number.' };
-    if (item.type === 'data' && !item.config.dataCodes?.[opts.network] && vtuConfigured(env) && !env.VTU_FAKE) {
-      // No bundle code for this network yet: staff send it by hand.
-      details.manual = true;
-    }
-    Object.assign(details, { network: opts.network, phone });
-  }
   if (item.type === 'ticket') {
     const { catalogue } = await import('./ticketShop.js');
     const cat = await catalogue(env);
@@ -223,7 +212,7 @@ export async function redeem(env, memberId, itemId, opts = {}) {
   const id = randomId('RDM', 10);
   const code = item.type === 'voucher' ? voucherCode() : null;
   const expires = item.type === 'voucher' ? new Date(Date.now() + s.voucherDays * 864e5).toISOString() : null;
-  const status = { voucher: 'issued', ticket: 'processing', airtime: 'processing', data: 'processing', experience: 'requested', physical: 'requested' }[item.type];
+  const status = { voucher: 'issued', ticket: 'processing', experience: 'requested', physical: 'requested' }[item.type];
   const res = await db.batch([
     db.prepare(`INSERT INTO rewards_redemptions (id, member_id, item_id, item_name, type, points, status, idem_key, details_json, voucher_code, value_kobo, expires_at)
       SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
@@ -248,7 +237,7 @@ export async function redeem(env, memberId, itemId, opts = {}) {
   return { ok: true, redemption: publicRedemption(red) };
 }
 
-/** Delivers what was redeemed: a ticket, a top-up (or the manual queue), or nothing more to do. */
+/** Delivers what was redeemed: a ticket (vouchers are ready; experiences and items go to the club). */
 async function fulfil(env, red, m) {
   const db = env.DB;
   const d = JSON.parse(red.details_json || '{}');
@@ -264,48 +253,25 @@ async function fulfil(env, red, m) {
       await db.prepare(`UPDATE rewards_redemptions SET status = 'issued', ticket_order_id = ?, updated_at = datetime('now') WHERE id = ?`).bind(orderId, red.id).run();
     }
   }
-  if (red.type === 'airtime' || red.type === 'data') await topUp(env, red);
   return db.prepare(`SELECT * FROM rewards_redemptions WHERE id = ?`).bind(red.id).first();
 }
 
-/** Tries a top-up once: delivered, retry later, manual queue, or (after the last try) refund. */
-export async function topUp(env, red) {
-  const db = env.DB;
-  const s = await rewardsSettings(db);
-  const d = JSON.parse(red.details_json || '{}');
-  const item = (await listItems(db, { all: true })).find(i => i.id === red.item_id) || { config: {} };
-  if (d.manual) { await db.prepare(`UPDATE rewards_redemptions SET status = 'manual', updated_at = datetime('now') WHERE id = ?`).bind(red.id).run(); return; }
-  const r = await vtuSend(env, { kind: red.type, network: d.network, phone: d.phone, amountKobo: item.config.amountKobo, dataCode: item.config.dataCodes?.[d.network], requestId: `${red.id}-${red.attempts + 1}` });
-  if (!r.configured) { await db.prepare(`UPDATE rewards_redemptions SET status = 'manual', updated_at = datetime('now') WHERE id = ?`).bind(red.id).run(); return; }
-  const attempts = red.attempts + 1;
-  if (r.ok) { await db.prepare(`UPDATE rewards_redemptions SET status = 'delivered', attempts = ?, provider_ref = ?, updated_at = datetime('now') WHERE id = ?`).bind(attempts, r.providerRef || null, red.id).run(); return; }
-  if (attempts >= s.vtuMaxAttempts) {
-    await db.prepare(`UPDATE rewards_redemptions SET attempts = ?, last_error = ? WHERE id = ?`).bind(attempts, r.error || 'failed', red.id).run();
-    await refundRedemption(env, { ...red, attempts }, 'top-up failed');
-    return;
-  }
-  await db.prepare(`UPDATE rewards_redemptions SET status = 'retry', attempts = ?, last_error = ?, updated_at = datetime('now') WHERE id = ?`).bind(attempts, r.error || 'failed', red.id).run();
-}
-
-/** The Rewards job: retry failed top-ups (a few minutes apart) and mark old vouchers expired. */
+/** The Rewards job: mark old vouchers expired. */
 export async function redemptionSweep(env) {
   const db = env.DB;
   await ensureCatalogueSchema(db);
-  const { results } = await db.prepare(`SELECT * FROM rewards_redemptions WHERE status = 'retry' AND updated_at <= datetime('now', '-5 minutes') LIMIT 50`).all();
-  for (const r of results) await topUp(env, r);
   const ex = await db.prepare(`UPDATE rewards_redemptions SET status = 'expired', updated_at = datetime('now') WHERE status = 'issued' AND type = 'voucher' AND expires_at < ?`).bind(new Date().toISOString()).run();
-  return { retried: results.length, expired: ex.meta.changes };
+  return { expired: ex.meta.changes };
 }
 
 const STATUS_TEXT = {
-  issued: 'Ready to use', reserved: 'Being used in a payment', used: 'Used', expired: 'Expired', processing: 'Processing', delivered: 'Delivered', retry: 'Processing (retrying)',
-  manual: 'Processing (sent by the club)', failed: 'Failed', refunded: 'Points returned', requested: 'Requested', confirmed: 'Confirmed', fulfilled: 'Done', collected: 'Collected',
+  issued: 'Ready to use', reserved: 'Being used in a payment', used: 'Used', expired: 'Expired', processing: 'Processing', refunded: 'Points returned', requested: 'Requested', confirmed: 'Confirmed', fulfilled: 'Done', collected: 'Collected',
 };
 export function publicRedemption(r) {
   const d = JSON.parse(r.details_json || '{}');
   return { id: r.id, item: r.item_name, itemId: r.item_id, type: r.type, points: r.points, status: r.status, statusText: STATUS_TEXT[r.status] || r.status,
     voucherCode: r.voucher_code || null, valueKobo: r.value_kobo, expiresAt: r.expires_at, ticketOrderId: r.ticket_order_id, createdAt: r.created_at,
-    network: d.network ? NETWORKS[d.network] : null, phone: d.phone ? d.phone.replace(/^(\+234\d{3})\d{4}(\d{3})$/, '$1••••$2') : null, match: d.match || null, notes: d.notes || null };
+    match: d.match || null, notes: d.notes || null };
 }
 
 async function redemptionEmail(env, red, m) {
@@ -314,7 +280,6 @@ async function redemptionEmail(env, red, m) {
   const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const body = r.voucherCode ? `<p>Your voucher code:</p><p style="font-size:26px;font-weight:bold;letter-spacing:3px">${esc(r.voucherCode)}</p><p>Use it by ${esc(new Date(r.expiresAt).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'long', year: 'numeric' }))}. It can be used once.</p>`
     : r.type === 'ticket' ? `<p>Your ticket for <strong>${esc(r.match)}</strong> has been sent in a separate email with its QR code.</p>`
-    : r.type === 'airtime' || r.type === 'data' ? `<p>We are sending it to ${esc(r.network)} ${esc(r.phone)}. If it doesn't arrive, your points are returned automatically.</p>`
     : '<p>The club will contact you to arrange it.</p>';
   await sendEmail(env, { to: m.email, subject: `You redeemed: ${red.item_name} – Lobi Stars Rewards`, html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto"><h2 style="color:#A3161B">${esc(red.item_name)}</h2><p>Hi ${esc(m.first_name)}, you used ${red.points.toLocaleString('en-NG')} Star Points (member ${esc(memberNo(m.seq))}).</p>${body}<p><a href="https://lobistarsfc.com/fans/account/">See your rewards</a></p><p style="font-size:12px;color:#888">Star Points have no cash value.</p></div>` });
 }

@@ -910,15 +910,13 @@ No Cloudflare Access rule is needed.
   rewards_codes; seeds once; `redeem()` = one db.batch: redemption inserted only
   if spendable points, stock and per-fan limit allow, then the REDEEM ledger row
   and stock -1 follow it; ticket rewards via holdLineStatement + fulfillOrder at
-  ₦0 (reference RWD-...); top-ups via `functions/api/_lib/vtu.js`; refunds as a
-  REVERSE row with source 'redeem', not counted for tiers). Job retries top-ups
-  and expires vouchers. APIs `/api/rewards/catalogue`, `/api/rewards/redeem`
+  ₦0 (reference RWD-...); refunds as a REVERSE row with source 'redeem', not
+  counted for tiers). The job expires vouchers. No airtime/data rewards (removed
+  Oct 2026 with the VTU adapter; old airtime/data catalogue rows are archived). APIs `/api/rewards/catalogue`, `/api/rewards/redeem`
   (also `action: 'code'`), `/api/rewards/wallet`; admin `/api/admin/rewards/
   catalogue` and `/fulfilment`. Pages `/rewards/catalogue/` (noindex),
   `/admin/rewards/catalogue/`, `/admin/rewards/fulfilment/`.
-- Top-up provider secrets (when chosen): `VTU_PROVIDER=vtpass`, `VTPASS_API_KEY`,
-  `VTPASS_SECRET_KEY`, `VTPASS_BASE_URL`. **Never set `VTU_FAKE` in production**
-  (local tests only). Test: `tests/rewards-redeem.api.test.mjs`.
+  Test: `tests/rewards-redeem.api.test.mjs`.
 - One-off actions: settings newsletterBonus 20, alertsBonus 10,
   firstPurchaseBonus 50, programmeRead 5 (monthly cap with votes/predictions).
   Hooks: `/api/newsletter` (earnNewsletter by email), `/api/push/subscribe`
@@ -928,7 +926,7 @@ No Cloudflare Access rule is needed.
 - Fan guide `/rewards/` reads every number from `GET /api/rewards/info` (settings,
   tiers with benefit lines, catalogue); FAQPage JSON-LD in the page (no numbers).
   Settings expiryMonths 12 and exampleJerseyNaira / exampleTicketNaira /
-  exampleFoodNaira (Terver example; to confirm). Column setup tolerates two
+  exampleFoodNaira (David example; to confirm). Column setup tolerates two
   first requests at once ("duplicate column" ignored).
 - Pay with points / vouchers at checkout: `functions/api/_lib/rewardsCheckout.js`
   (checkoutOptions, holdCheckoutRewards = PENDING minus ledger row source

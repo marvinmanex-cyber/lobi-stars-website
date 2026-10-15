@@ -3,7 +3,6 @@ import { ensureFanSchema } from '../_lib/fans.js';
 import { rewardsSettings, rewardsMember } from '../_lib/rewards.js';
 import { tierStatus } from '../_lib/rewardsTiers.js';
 import { listItems, spendable, eligibility, ensureCatalogueSchema } from '../_lib/rewardsCatalogue.js';
-import { NETWORKS } from '../_lib/vtu.js';
 
 // GET /api/rewards/catalogue -- the rewards fans can redeem (live from the
 // admin catalogue), each with points cost and, for a signed-in member, whether
@@ -28,10 +27,10 @@ export async function onRequestGet({ request, env }) {
     for (const it of items) {
       const e = m ? await eligibility(db, m, it, { balance, tierKey, used: used.get(it.id) || 0 }) : null;
       out.push({ id: it.id, name: it.name, description: it.description, image: it.image, type: it.type, group: it.group, points: it.points,
-        valueKobo: it.config.valueKobo ?? it.config.amountKobo ?? null, stock: it.stock, sponsor: it.sponsor, minAge: it.minAge, minTier: it.minTier,
+        valueKobo: it.config.valueKobo ?? null, stock: it.stock, sponsor: it.sponsor, minAge: it.minAge, minTier: it.minTier,
         canRedeem: e ? e.ok : null, reason: e && !e.ok ? e.reason : null, needsCode: it.points >= s.redeemCodeThreshold });
     }
-    return Response.json({ live: !!s.live, member: !!m, balance, items: out, networks: NETWORKS, codeFrom: s.redeemCodeThreshold }, { headers });
+    return Response.json({ live: !!s.live, member: !!m, balance, items: out, codeFrom: s.redeemCodeThreshold }, { headers });
   } catch (err) {
     console.error('[rewards] catalogue', err);
     return Response.json({ error: 'Could not load the rewards.' }, { status: 500, headers });

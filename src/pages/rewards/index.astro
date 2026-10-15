@@ -16,12 +16,12 @@ const FAQ_LD = [
   ['When can I start earning points?', 'As soon as you have joined Lobi Stars Rewards and confirmed your email address.'],
   ['Do I need a new account?', 'No. Use your Lobi Stars FC fan account (the one for Predict & Win, Man of the Match voting or membership), log in and tap Join Rewards.'],
   ['How do I earn Star Points?', 'By buying match tickets, jerseys, merchandise, in-seat food and membership on lobistarsfc.com, by coming to home matches (your ticket is scanned at the gate), and by taking part in Man of the Match and Predict & Win.'],
-  ['What can I get with my points?', 'Rewards from the Lobi Stars Rewards catalogue, such as airtime and data, free match tickets, food vouchers, shop rewards and matchday experiences.'],
+  ['What can I get with my points?', 'Rewards from the Lobi Stars Rewards catalogue, such as free match tickets, food vouchers, shop rewards and matchday experiences.'],
   ['Can I swap points for cash?', 'No. Star Points have no cash value and cannot be withdrawn, transferred or sold.'],
 ];
 const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: FAQ_LD.map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })) };
 ---
-<Layout title="Lobi Stars Rewards – Earn Points, Get Rewards | Lobi Stars FC" description="Lobi Stars Rewards is the free loyalty programme for Lobi Stars FC fans: earn Star Points on tickets, jerseys, food and matchdays, and use them for airtime, data, free tickets and more." image="/images/hero-2.jpg" noindex>
+<Layout title="Lobi Stars Rewards – Earn Points, Get Rewards | Lobi Stars FC" description="Lobi Stars Rewards is the free loyalty programme for Lobi Stars FC fans: earn Star Points on tickets, jerseys, food and matchdays, and use them for free tickets, food, shop rewards and more." image="/images/hero-2.jpg" noindex>
   <script type="application/ld+json" set:html={JSON.stringify(faqLd).replace(/</g, '\\u003c')}></script>
 
   <!-- 1. Hero -->
@@ -45,7 +45,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
     <!-- 2. What it is -->
     <section class="rw-sec" aria-labelledby="hWhat">
       <h2 id="hWhat">What is Lobi Stars Rewards?</h2>
-      <p class="rw-lead">Lobi Stars Rewards is a free loyalty programme for Lobi Stars fans. Every time you support the club on lobistarsfc.com, you earn <b>Star Points</b>. Use them for free match tickets, airtime and data, food at the stadium, jersey rewards and special matchday experiences.</p>
+      <p class="rw-lead">Lobi Stars Rewards is a free loyalty programme for Lobi Stars fans. Every time you support the club on lobistarsfc.com, you earn <b>Star Points</b>. Use them for free match tickets, food at the stadium, jersey rewards and special matchday experiences.</p>
     </section>
 
     <!-- 3. How to join -->
@@ -86,7 +86,6 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
       <div class="rw-ways">
         <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z" /></svg><h3>Redeem rewards</h3><p>Choose a reward from the catalogue and confirm. Bigger rewards need a code we email you, to keep your points safe.</p></div>
         <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></svg><h3>Pay with Star Points</h3><p>Use points to pay for part of your tickets, food or personalised shirt: 1 point = <b data-k="pointNaira">…</b> off, up to <b data-k="payWithPointsMaxPercent">…</b>% of your order.</p></div>
-        <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2" /><path d="M11 18h2" /></svg><h3>Free airtime and data</h3><p>On MTN, Airtel, Glo and 9mobile, sent straight to your phone. If a top-up fails, your points come back automatically.</p></div>
         <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3a3 3 0 0 0 0 6v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a3 3 0 0 0 0-6z" /></svg><h3>Free match tickets</h3><p>Pick a home match and get a QR ticket by email, like any other ticket.</p></div>
         <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6" /></svg><h3>Use rewards at the stadium</h3><p>Food and shop vouchers come with a code (valid <b data-k="voucherDays">…</b> days). Show it at the food stands or the club shop.</p></div>
       </div>
@@ -97,12 +96,12 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
     </section>
 
     <!-- 7. Worked example -->
-    <section class="rw-sec rw-terver" aria-labelledby="hTerver">
-      <h2 id="hTerver">Meet Terver</h2>
-      <p>Terver supports Lobi Stars all season and does all of this on lobistarsfc.com:</p>
-      <ol class="rw-timeline" id="terver"><li class="rw-muted">Loading…</li></ol>
-      <p class="rw-total" id="terverTotal"></p>
-      <p id="terverGets"></p>
+    <section class="rw-sec rw-david" aria-labelledby="hDavid">
+      <h2 id="hDavid">Meet David</h2>
+      <p>David supports Lobi Stars all season and does all of this on lobistarsfc.com:</p>
+      <ol class="rw-timeline" id="david"><li class="rw-muted">Loading…</li></ol>
+      <p class="rw-total" id="davidTotal"></p>
+      <p id="davidGets"></p>
       <p class="rw-small">Example prices for illustration only.</p>
     </section>
 
@@ -128,13 +127,11 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
       <details><summary>How long until my points show?</summary><p>Straight away after your payment is confirmed, your ticket is scanned or your vote or prediction is saved. Ticket points show as "pending" until the match is played.</p></details>
       <details><summary>Why are my ticket points "pending"?</summary><p>Ticket points become available once the match has been played. If the match is cancelled and your ticket refunded, those points are removed.</p></details>
       <details><summary>Can I earn points on Jumia purchases?</summary><p>No. Only purchases made on lobistarsfc.com earn Star Points.</p></details>
-      <details><summary>How do I get airtime or data?</summary><p>Choose an airtime or data reward in the catalogue, pick your network (MTN, Airtel, Glo or 9mobile) and confirm your phone number. It is sent to your phone.</p></details>
       <details><summary>Can I use points and pay the rest with my card?</summary><p>Yes. At checkout for match tickets, MatchDay Kitchen food or personalised shirts, tick "Use my Star Points". Each point takes <b data-k="pointNaira">…</b> off, up to <b data-k="payWithPointsMaxPercent">…</b>% of the order (at least <b data-k="payWithPointsMin">…</b> points), and you pay the rest with Paystack. Your points are only taken once the payment goes through.</p></details>
       <details><summary>Do points expire?</summary><p>Yes, after <b data-k="expiryMonths">…</b> months with no activity on your account. Any purchase or activity resets the clock, and we remind you 30 days before.</p></details>
       <details><summary>What happens if a match is postponed?</summary><p>Your ticket and its points stay valid for the new date. Ticket points become available after the match is played.</p></details>
       <details><summary>Can I give my points to a friend?</summary><p>No. Points can't be transferred, sold or exchanged for cash.</p></details>
       <details><summary>How does referring a friend work?</summary><p>Share your referral link from My account. When your friend creates an account with it, confirms their email and makes their first purchase on lobistarsfc.com, you get <b data-k="referral">…</b> points (up to <b data-k="referralMaxPerSeason">…</b> friends a season).</p></details>
-      <details><summary>What if my airtime doesn't arrive?</summary><p>We try again automatically. If it still fails, your points are returned to you. If something looks wrong, contact us below.</p></details>
       <details><summary>Who do I contact for help?</summary><p>Chat with us on WhatsApp, use the contact form or email {email}.</p></details>
     </section>
 
@@ -205,7 +202,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
   .rw-items :global(b) { display: block; font: 700 16px/1.25 'Barlow Condensed', sans-serif; }
   .rw-items :global(span) { display: block; margin-top: 6px; font: 400 26px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
   .rw-items :global(small) { color: var(--lt); }
-  .rw-terver { border-bottom: 0; }
+  .rw-david { border-bottom: 0; }
   .rw-timeline { list-style: none; margin: 0; padding: 0 0 0 18px; border-left: 3px solid #FFC72C; display: grid; gap: 10px; }
   .rw-timeline :global(li) { position: relative; padding: 10px 12px; border-radius: 10px; background: var(--d2); display: flex; justify-content: space-between; gap: 10px; }
   .rw-timeline :global(li::before) { content: ''; position: absolute; left: -27px; top: 14px; width: 13px; height: 13px; border-radius: 50%; background: #C11A1F; border: 2px solid #FFC72C; }
@@ -278,7 +275,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
     fill($('itemGrid'), d.items.length ? d.items.slice(0, 8).map(item) : [el('li', { class: 'rw-muted', text: 'Rewards will appear here soon.' })]);
     var partner = d.items.filter(function (i) { return i.sponsor; });
     if (partner.length) { fill($('partnerGrid'), partner.map(item)); $('partnerRewards').hidden = false; }
-    // 7. Meet Terver (worked out from the current settings)
+    // 7. Meet David (worked out from the current settings)
     var pp = function (n, rate) { return Math.floor(n * 100 * rate / 10000); };
     var steps = [
       ['Joins Lobi Stars Rewards', s.welcomeBonus],
@@ -291,12 +288,12 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
       ['Makes 4 Predict & Win predictions', 4 * s.prediction],
     ].filter(function (x) { return x[1] > 0; });
     var total = steps.reduce(function (t, x) { return t + x[1]; }, 0);
-    fill($('terver'), steps.map(function (x) { return el('li', {}, el('span', { text: x[0] }), el('b', { text: '+' + fmt(x[1]) })); }));
-    $('terverTotal').textContent = 'Total: ' + fmt(total) + ' Star Points';
+    fill($('david'), steps.map(function (x) { return el('li', {}, el('span', { text: x[0] }), el('b', { text: '+' + fmt(x[1]) })); }));
+    $('davidTotal').textContent = 'Total: ' + fmt(total) + ' Star Points';
     var afford = d.items.filter(function (i) { return i.available && i.points <= total; }).sort(function (a, b) { return b.points - a.points; });
     if (afford.length) {
       var best = afford[0], rest = afford.filter(function (i) { return i.id !== best.id && i.points <= total - best.points; })[0];
-      $('terverGets').textContent = 'With that, Terver can redeem: ' + best.name + (rest ? ' + ' + rest.name : '') + '. Or he can save his points for something bigger.';
+      $('davidGets').textContent = 'With that, David can redeem: ' + best.name + (rest ? ' + ' + rest.name : '') + '. Or he can save his points for something bigger.';
     }
   }).catch(function () { $('earnGrid').replaceChildren(el('li', { class: 'rw-muted', text: 'Could not load the details just now.' })); });
 

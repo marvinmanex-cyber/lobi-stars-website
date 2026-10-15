@@ -4,7 +4,7 @@ import { ensureCatalogueSchema, listItems, TYPES } from '../../_lib/rewardsCatal
 
 // Admin › Rewards › Catalogue.
 // GET -> { items } (all, including inactive and archived)
-// POST { item: { id?, name, description, image, type, points, valueNaira, amountNaira, tier, kind, appliesTo, dataCodes,
+// POST { item: { id?, name, description, image, type, points, valueNaira, tier, kind, appliesTo,
 //        stock, perFanLimit, minAge, minTier, sponsor, startsAt, endsAt, active, archived, sort } } -> add or edit
 // Every change goes to the audit log. Points have no cash value.
 const ok = (d = {}) => Response.json({ ok: true, ...d }, { headers: { 'Cache-Control': 'no-store' } });
@@ -44,11 +44,6 @@ export async function onRequestPost({ request, env }) {
       if (x.appliesTo !== undefined) config.appliesTo = clean(x.appliesTo, 30) || undefined;
       if (naira(x.valueNaira) !== undefined) config.valueKobo = naira(x.valueNaira);
       if (config.valueKobo !== undefined && !(config.valueKobo >= 0)) return fail('Voucher value: naira.');
-    }
-    if (type === 'airtime' || type === 'data') {
-      if (naira(x.amountNaira) !== undefined) config.amountKobo = naira(x.amountNaira);
-      if (!(config.amountKobo > 0)) return fail('Airtime/data: the amount in naira.');
-      if (type === 'data' && x.dataCodes && typeof x.dataCodes === 'object') config.dataCodes = Object.fromEntries(['mtn', 'airtel', 'glo', '9mobile'].map(k => [k, clean(x.dataCodes[k], 60)]).filter(([, v]) => v));
     }
     if (type === 'ticket') { config.tier = x.tier ?? config.tier ?? 'Regular'; if (!['VIP', 'Premium', 'Regular'].includes(config.tier)) return fail('Ticket: choose the stand.'); }
     const startsAt = x.startsAt === undefined ? before?.startsAt ?? null : lagosIso(x.startsAt);

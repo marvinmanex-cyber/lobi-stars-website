@@ -1976,11 +1976,11 @@ the website records itself, and each order or match counts once.
 **The fan guide: lobistarsfc.com/rewards** explains everything to fans: what
 Rewards is, how to join (and "already have an account? just log in"), every
 way to earn with its points, the tiers and benefits, how to use points (with
-8 rewards from the catalogue), a worked example ("Meet Terver"), the rules in
+8 rewards from the catalogue), a worked example ("Meet David"), the rules in
 plain English, 13 questions and answers, and help (WhatsApp, contact form,
 email). Every number on it comes from Admin › Rewards and the catalogue, so it
 updates by itself when you change a setting. Admin › Rewards › Fan guide holds
-the points expiry period and the example prices used for Terver (confirm the
+the points expiry period and the example prices used for David (confirm the
 real jersey, ticket and food prices).
 - A Paystack refund or dispute on a payment removes its points automatically
   (a fan's balance can go below zero).
@@ -1998,14 +1998,15 @@ their points).
 (from the season start date in Admin › Rewards). Spending points never lowers a
 tier. Starting levels: Red from 0, Gold from 1,000, Legend from 3,000. (The top
 tier was called "Star" until October 2026; members at that level are now Legend.)
-- **Gold:** more points on purchases (1.25x) and match tickets 24 hours before
-  general sale; **Legend:** 1.5x and 48 hours early, plus the end-of-season fans'
-  event and the **Legend Fans wall** (lobistarsfc.com/rewards/legend-fans; Legend
-  members choose to appear, first name and surname initial only).
-- **Early ticket access** works when a match has a **Sales open** time (Admin ›
-  Match Tickets): signed-in Gold/Legend members see "Early access for you" and can
-  buy before that time; everyone else waits. It also opens the members'
-  priority window early for them.
+- **Gold:** more points on purchases (1.25x) and a birthday gift; **Legend:**
+  1.5x, plus the end-of-season fans' event and the **Legend Fans wall**
+  (lobistarsfc.com/rewards/legend-fans; Legend members choose to appear, first
+  name and surname initial only).
+- **Early ticket access is switched off** (removed from the benefits in October
+  2026). To bring it back, enter hours under "Early ticket access" for Gold or
+  Legend in Admin › Rewards: the benefit line then shows again automatically, and
+  when a match has a **Sales open** time (Admin › Match Tickets) signed-in members
+  of that tier see "Early access for you" and can buy before that time.
 - **Paid annual members** are at least Gold for that season (a setting).
 - **New season:** fans keep last season's tier for 2 months (a setting) while
   they earn points again.
@@ -2022,24 +2023,21 @@ tier was called "Star" until October 2026; members at that level are now Legend.
   description, image, points, type, value, stock, most per fan, minimum age e.g.
   18 for alcohol sponsors, Gold/Legend only, partner sponsor, start/end dates),
   switch it off or archive it. Starting rewards (confirm the points first):
-  ₦500 airtime 100, free Popular Stand ticket 200, ₦1,500 food voucher 300,
-  ₦2,000 data 400, free name & number printing 600, ₦5,000 off a jersey 1,000,
+  free Popular Stand ticket 200, ₦1,500 food voucher 300,
+  free name & number printing 600, ₦5,000 off a jersey 1,000,
   free official cap 1,000, VIP Sitting for a match 1,500, free jersey 2,500,
   pitchside experience 5,000 and signed match-worn jersey 8,000 (both stock 0
-  = not available until you set the number).
+  = not available until you set the number). **No airtime or data rewards**
+  (club decision, October 2026).
 - **Fans** redeem at lobistarsfc.com/rewards/catalogue: they confirm ("This
   can't be undone"); rewards of 1,000 points or more also need a 6-digit code
   emailed to them. Points are taken once, even with a double click.
   - **Vouchers:** a code like LSR-7KQ2-9XMA (emailed, valid 90 days, used once).
   - **Match ticket:** the fan picks a home match; a normal QR ticket is emailed
     (the stand's seat limit applies).
-  - **Airtime/data:** the fan picks the network and number; sent automatically
-    once the top-up provider is set up, otherwise it waits in Fulfilment.
-    Failed top-ups are retried, then the points are returned automatically.
   - **Experiences and items:** go to Fulfilment with the fan's details.
 - **Admin › Rewards › Fulfilment & Vouchers:** **Check a voucher** at the food
-  stands or club shop and press **Mark used**; send waiting airtime/data by hand
-  and press **Delivered** (or **Retry**); move experiences/items to Confirmed,
+  stands or club shop and press **Mark used**; move experiences/items to Confirmed,
   Done or Collected; **Refund points** (reason shown to the fan).
 - Redeeming only works once Rewards is live. Points have no cash value.
 

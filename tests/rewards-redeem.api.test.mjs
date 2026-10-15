@@ -1,10 +1,10 @@
 // Lobi Stars Rewards, redeeming: catalogue with "you need X more points";
 // voucher (single-use code, staff mark it used); double click and two tabs
 // can't double-spend; free match ticket issued through the ticketing system;
-// airtime delivered, or retried then points returned; big rewards need the
+// no airtime or data rewards; big rewards need the
 // emailed code and go to the fulfilment queue; out of stock; not before launch.
 // Needs the local Pages dev server with ADMIN_CODE=test-code-123, FANS_DEV_LINKS=1,
-// PAYSTACK_FAKE=1 and VTU_FAKE=1 (numbers ending 0000 fail). Switches Rewards live
+// PAYSTACK_FAKE=1. Switches Rewards live
 // for the test, then puts the settings back.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -45,7 +45,8 @@ test('catalogue: seeded rewards; "you need X more points"; guests see prices onl
   const m = await member(150);
   const d = (await get('/api/rewards/catalogue', m.cookie)).data;
   assert.equal(d.balance, 150);
-  assert.equal(d.items.find(i => i.id === 'airtime-500').canRedeem, true);
+  assert.ok(!d.items.some(i => i.type === 'airtime' || i.type === 'data'), 'no airtime or data rewards');
+  assert.equal(d.items.find(i => i.id === 'ticket-popular').canRedeem, false);
   assert.equal(d.items.find(i => i.id === 'ticket-popular').reason, 'You need 50 more points');
   assert.equal(d.items.find(i => i.id === 'pitchside').reason, 'Out of stock');
   assert.equal((await redeem(m.cookie, 'pitchside')).status, 409);
@@ -89,22 +90,6 @@ test('free match ticket: issued as a QR ticket through the ticketing system', as
   assert.equal(await bal(m2.cookie), 250);
 });
 
-test('airtime: delivered; a failing number is retried, then the points come back', async () => {
-  const m = await member(300);
-  const ok = await redeem(m.cookie, 'airtime-500', { network: 'mtn' });
-  assert.equal(ok.status, 200, JSON.stringify(ok.data)); assert.equal(ok.data.redemption.status, 'delivered');
-  assert.equal((await redeem(m.cookie, 'airtime-500', { network: 'xyz' })).status, 400);
-  const bad = await redeem(m.cookie, 'airtime-500', { network: 'glo', phone: '08031230000' });
-  assert.equal(bad.data.redemption.status, 'retry');
-  assert.equal(await bal(m.cookie), 100);
-  for (let i = 0; i < 2; i++) await call('POST', '/api/admin/rewards/fulfilment', { id: bad.data.redemption.id, action: 'retry' });
-  const w = (await get('/api/rewards/wallet', m.cookie)).data.items.find(x => x.id === bad.data.redemption.id);
-  assert.equal(w.status, 'refunded', 'after 3 tries');
-  assert.equal(await bal(m.cookie), 200, 'points returned');
-  const me = (await get('/api/rewards/me', m.cookie)).data;
-  assert.equal(me.tier.earned, 50, 'returned points do not count towards the tier');
-});
-
 test('big rewards need the emailed code, then go to the fulfilment queue', async () => {
   const m = await member(1200);
   const first = await redeem(m.cookie, 'official-cap', { notes: 'Size L' });
@@ -123,12 +108,13 @@ test('big rewards need the emailed code, then go to the fulfilment queue', async
 
 test('admin catalogue: validation and adding a reward; nothing before launch', async () => {
   assert.equal((await call('POST', '/api/admin/rewards/catalogue', { item: { type: 'voucher', name: 'X', points: 10 } })).status, 400);
-  const add = await call('POST', '/api/admin/rewards/catalogue', { item: { type: 'airtime', name: `Test airtime ${uid()}`, points: 50, amountNaira: 200, description: 'Test' } });
+  assert.equal((await call('POST', '/api/admin/rewards/catalogue', { item: { type: 'airtime', name: 'Airtime', points: 50 } })).status, 400, 'no airtime rewards');
+  const add = await call('POST', '/api/admin/rewards/catalogue', { item: { type: 'voucher', kind: 'food', name: `Test voucher ${uid()}`, points: 50, valueNaira: 200, description: 'Test' } });
   assert.equal(add.status, 200, JSON.stringify(add.data));
   assert.equal((await call('POST', '/api/admin/rewards/catalogue', { item: { id: add.data.item.id, active: false } })).status, 200);
   assert.ok(!(await get('/api/rewards/catalogue')).data.items.some(i => i.id === add.data.item.id), 'switched off: hidden from fans');
   const m = await member(200);
   await call('PUT', '/api/admin/rewards', { settings: { live: false } });
-  assert.equal((await redeem(m.cookie, 'airtime-500', { network: 'mtn' })).status, 403);
+  assert.equal((await redeem(m.cookie, 'ticket-popular', {})).status, 403);
   await call('PUT', '/api/admin/rewards', { settings: { live: true } });
 });

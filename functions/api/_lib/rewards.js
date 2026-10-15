@@ -35,7 +35,7 @@ const DEFAULTS = {
   seasonStart: '2026-08-01', // first day of the current season (tiers, referral limit). Same as the CMS seasonStart.
   // Points expire after this many months with no Rewards activity (Rewards Terms; reminder 30 days before).
   expiryMonths: 12,
-  // Prices used in the worked example on /rewards ("Meet Terver"). TODO (club): confirm real prices.
+  // Prices used in the worked example on /rewards ("Meet David"). TODO (club): confirm real prices.
   exampleJerseyNaira: 20000,
   exampleTicketNaira: 1000,
   exampleFoodNaira: 3000,
@@ -46,15 +46,15 @@ const DEFAULTS = {
   // Redeeming.
   redeemCodeThreshold: 1000, // redemptions of this many points or more need a 6-digit code emailed to the fan
   voucherDays: 90,           // vouchers are valid this many days
-  vtuMaxAttempts: 3,         // airtime/data tries before the points are returned
   // Tiers by points EARNED this season (spending never lowers a tier).
   tierGraceMonths: 2,          // last season's tier is kept this long after the new season starts
   paidMembersStartGold: true,  // paid annual members are at least Gold for the season
   tiers: [
     // benefits: extra benefits as text; the multiplier and early-access lines are written from the numbers.
     { key: 'red', name: 'Red', min: 0, multiplier: 1, presaleHours: 0, benefits: [] },
-    { key: 'gold', name: 'Gold', min: 1000, multiplier: 1.25, presaleHours: 24, benefits: ['Birthday gift'] },
-    { key: 'legend', name: 'Legend', min: 3000, multiplier: 1.5, presaleHours: 48, benefits: ["Invitation to the end-of-season fans' event", 'Your name on the Legend Fans wall (if you choose)'] },
+    // Early ticket access (presaleHours) is off: the club removed it from the benefits (Oct 2026). Set hours in Admin › Rewards to bring it back.
+    { key: 'gold', name: 'Gold', min: 1000, multiplier: 1.25, presaleHours: 0, benefits: ['Birthday gift'] },
+    { key: 'legend', name: 'Legend', min: 3000, multiplier: 1.5, presaleHours: 0, benefits: ["Invitation to the end-of-season fans' event", 'Your name on the Legend Fans wall (if you choose)'] },
   ],
   // Until the programme launches, the Rewards sign-up box, the account-page
   // section and /rewards stay hidden (staff preview: /rewards/?preview=1).

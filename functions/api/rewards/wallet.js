@@ -2,8 +2,7 @@ import { readSession } from '../_lib/session.js';
 import { ensureCatalogueSchema, publicRedemption } from '../_lib/rewardsCatalogue.js';
 
 // GET /api/rewards/wallet -- the signed-in fan's redeemed rewards: vouchers
-// (code, value, expiry), reward tickets, airtime/data and their status,
-// experience and item requests. Newest first.
+// (code, value, expiry), reward tickets, experience and item requests. Newest first.
 export async function onRequestGet({ request, env }) {
   const headers = { 'Cache-Control': 'no-store' };
   const memberId = await readSession(request, env.SESSION_SECRET).catch(() => null);

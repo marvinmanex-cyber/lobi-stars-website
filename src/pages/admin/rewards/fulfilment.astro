@@ -1,6 +1,5 @@
 ---
-// Admin › Rewards › Fulfilment & vouchers: airtime/data to send by hand (no
-// provider set up, or failing), experiences and items requested by fans
+// Admin › Rewards › Fulfilment & vouchers: experiences and items requested by fans
 // (Requested -> Confirmed -> Fulfilled/Collected), refunds of points, and the
 // voucher lookup for the stadium food stands and the club shop.
 import Layout from '../../../layouts/Layout.astro';
@@ -26,7 +25,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     <section class="la-card" aria-labelledby="h-q">
       <h2 id="h-q">Waiting for the club</h2>
       <div id="queue"><p class="la-muted">Loading…</p></div>
-      <p class="la-muted">Airtime/data: send it from the provider's dashboard (or your phone) then press <b>Delivered</b>, or <b>Retry</b> once the provider is set up. <b>Refund points</b> gives the fan their points back (a reason is required and shown to them).</p>
+      <p class="la-muted">Move experiences and items along as you arrange them. <b>Refund points</b> gives the fan their points back (a reason is required and shown to them).</p>
     </section>
   </div>
   <LeagueKit />
@@ -36,8 +35,8 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
 (function () {
   var LA = window.LA, el = LA.el, $ = function (id) { return document.getElementById(id); };
   var fmt = function (n) { return Number(n || 0).toLocaleString('en-NG'); };
-  var ACTIONS = { manual: ['deliver', 'retry', 'refund'], retry: ['deliver', 'retry', 'refund'], failed: ['deliver', 'retry', 'refund'], requested: ['confirm', 'fulfil', 'collect', 'refund'], confirmed: ['fulfil', 'collect', 'refund'], issued: ['use', 'refund'] };
-  var LABEL = { deliver: 'Delivered', retry: 'Retry', refund: 'Refund points', confirm: 'Confirm', fulfil: 'Done', collect: 'Collected', use: 'Mark used' };
+  var ACTIONS = { requested: ['confirm', 'fulfil', 'collect', 'refund'], confirmed: ['fulfil', 'collect', 'refund'], issued: ['use', 'refund'] };
+  var LABEL = { refund: 'Refund points', confirm: 'Confirm', fulfil: 'Done', collect: 'Collected', use: 'Mark used' };
   function act(r, a, after) {
     var go = function (note) { LA.api('/api/admin/rewards/fulfilment', { method: 'POST', body: { id: r.id, action: a, note: note || '' } }).then(function (x) { x.ok ? (LA.toast('Done'), after()) : LA.toast(x.d.error || 'Could not do that.', true); }); };
     if (a === 'refund') LA.prompt('Give ' + fmt(r.points) + ' points back?', 'Reason (shown to the fan)', { ok: 'Refund points' }).then(function (n) { if (n !== null) go(n); });
@@ -45,7 +44,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
   }
   function row(r, after) {
     var acts = el('div', { class: 'la-row' }); (ACTIONS[r.status] || []).forEach(function (a) { acts.append(el('button', { type: 'button', class: a === 'refund' ? 'btn-o btn-sm' : 'btn-p btn-sm', text: LABEL[a], onclick: function () { act(r, a, after); } })); });
-    var what = r.type === 'airtime' || r.type === 'data' ? r.network + ' ' + (r.fullPhone || '') : r.match || r.notes || '';
+    var what = r.match || r.notes || '';
     return el('tr', {}, el('td', { text: LA.when(r.createdAt.replace(' ', 'T') + 'Z') }), el('td', {}, el('b', { text: r.item }), el('br'), el('span', { class: 'la-muted', text: what })),
       el('td', {}, r.fan ? el('span', {}, el('b', { text: r.fan.name + ' · ' + r.fan.memberNo }), el('br'), el('span', { class: 'la-muted', text: r.fan.email + ' · ' + (r.fan.phone || '') })) : ''),
       el('td', { text: r.statusText + (r.lastError ? ' (' + r.lastError + ')' : '') }), el('td', {}, acts));
