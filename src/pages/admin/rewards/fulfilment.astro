@@ -15,11 +15,11 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     <section class="la-card" aria-labelledby="h-v">
       <h2 id="h-v">Check a voucher</h2>
       <form id="vf" class="la-row" style="align-items:flex-end">
-        <label class="la-f">Voucher code<input name="code" maxlength="20" placeholder="LSR-XXXX-XXXX" autocomplete="off" style="text-transform:uppercase;min-width:220px" /></label>
+        <label class="la-f">Voucher or member card code<input name="code" maxlength="40" placeholder="LSR-XXXX-XXXX" autocomplete="off" style="text-transform:uppercase;min-width:220px" /></label>
         <button class="btn-p" type="submit">Check</button>
       </form>
       <div id="vOut"></div>
-      <p class="la-muted">At the food stands or the club shop: check the code, give the fan their reward, then press <b>Mark used</b> (a voucher works once).</p>
+      <p class="la-muted">At the food stands or the club shop: check the code, give the fan their reward, then press <b>Mark used</b> (a voucher works once). Scanning a fan's <b>member card</b> QR (on their My Rewards page) shows all their vouchers ready to use (or type their member number, e.g. LSR-000123).</p>
     </section>
 
     <section class="la-card" aria-labelledby="h-q">
@@ -60,6 +60,17 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     var show = function () {
       LA.api('/api/admin/rewards/fulfilment?code=' + encodeURIComponent(code)).then(function (r) {
         if (!r.ok) { $('vOut').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Not found.' })); return; }
+        if (r.d.card) {
+          var c = r.d.card;
+          $('vOut').replaceChildren(el('div', { class: 'la-card', style: 'margin-top:10px' }, el('p', {}, el('b', { text: c.name + ' · ' + c.memberNo })),
+            c.vouchers.length ? LA.table(['Voucher', 'Code', 'Expires', ''], c.vouchers.map(function (v) {
+              var exp = v.expiresAt && Date.parse(v.expiresAt) < Date.now();
+              return el('tr', {}, el('td', { text: v.item + (v.valueKobo ? ' · ₦' + fmt(v.valueKobo / 100) : '') }), el('td', { text: v.voucherCode }),
+                el('td', { text: v.expiresAt ? new Date(v.expiresAt).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', year: 'numeric' }) : '–' }),
+                el('td', {}, exp ? el('span', { class: 'la-chip cancelled', text: 'Expired' }) : el('button', { type: 'button', class: 'btn-p btn-sm', text: 'Mark used', onclick: function () { act(v, 'use', show); } })));
+            })) : el('p', { class: 'la-muted', text: 'No vouchers ready to use.' })));
+          return;
+        }
         var v = r.d.voucher, expired = v.expiresAt && Date.parse(v.expiresAt) < Date.now();
         $('vOut').replaceChildren(el('div', { class: 'la-card', style: 'margin-top:10px' },
           el('p', {}, el('b', { text: v.item }), v.valueKobo ? ' · ₦' + fmt(v.valueKobo / 100) : ''),

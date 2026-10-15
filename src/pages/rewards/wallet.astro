@@ -1,0 +1,73 @@
+---
+// /rewards/wallet -- My Wallet: the rewards a fan has redeemed, in three tabs:
+// Active (vouchers ready to use with their code and QR, reward tickets,
+// experiences and items being arranged), Used and Expired. From
+// /api/rewards/wallet; voucher QR from /api/rewards/qr. Kept out of search engines.
+import RewardsShell from '../../components/rewards/RewardsShell.astro';
+---
+<RewardsShell title="My Wallet | Lobi Stars Rewards" heading="My" accent="Wallet" current="wallet" description="Your Lobi Stars Rewards vouchers and redeemed rewards.">
+  <style is:global>
+    .rx-v { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 16px; border-radius: 14px; background: var(--d2); border: 1px solid var(--d4); border-left: 5px solid #FFC72C; }
+    .rx-v.off { border-left-color: var(--d4); opacity: .85; }
+    .rx-v h3 { margin: 0 0 4px; font: 400 24px/1.05 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+    .rx-v p { margin: 0 0 4px; color: var(--lt); font-size: 14.5px; line-height: 1.45; }
+    .rx-v .code { display: inline-block; margin: 6px 0; padding: 6px 12px; border: 2px dashed #C9A227; border-radius: 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 3px; color: var(--red-text); }
+    .rx-v img { width: 120px; height: 120px; border-radius: 10px; background: #fff; padding: 5px; border: 1px solid var(--d4); }
+    @media (max-width: 480px) { .rx-v { grid-template-columns: 1fr; } }
+  </style>
+</RewardsShell>
+
+<script is:inline>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) [].concat(arguments[i]).forEach(function (c) { if (c != null && c !== false) n.append(c); }); return n; };
+  var fmt = function (n) { return Number(n || 0).toLocaleString('en-NG'); };
+  var day = function (s) { if (!s) return ''; var d = new Date(/T|Z/.test(s) ? s : String(s).replace(' ', 'T') + 'Z'); return d.toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', year: 'numeric' }); };
+  var main = $('rxMain'), sub = $('rxSub');
+  var items = [], tab = 'active';
+  try { var t = new URLSearchParams(location.search).get('tab'); if (t === 'used' || t === 'expired') tab = t; } catch (e) {}
+
+  var expired = function (i) { return i.status === 'expired' || (i.status === 'issued' && i.expiresAt && Date.parse(i.expiresAt) < Date.now()); };
+  var group = function (i) {
+    if (expired(i)) return 'expired';
+    if (['issued', 'reserved', 'requested', 'confirmed', 'processing'].indexOf(i.status) >= 0) return 'active';
+    return 'used';
+  };
+  function row(i) {
+    var on = group(i) === 'active', live = on && i.status === 'issued' && i.voucherCode;
+    var chip = el('span', { class: 'rx-chip ' + (on ? 'ok' : i.status === 'refunded' ? 'wait' : 'no'), text: expired(i) ? 'Expired' : i.statusText });
+    var info = el('div', {}, el('h3', { text: i.item }),
+      el('p', {}, chip, ' ', fmt(i.points) + ' Star Points · ' + day(i.createdAt)),
+      i.valueKobo ? el('p', { text: 'Value: ₦' + fmt(i.valueKobo / 100) }) : null,
+      i.voucherCode ? el('div', { class: 'code', text: i.voucherCode }) : null,
+      i.voucherCode && i.expiresAt ? el('p', { text: (expired(i) ? 'Expired on ' : 'Use by ') + day(i.expiresAt) + '. A voucher works once.' }) : null,
+      i.match ? el('p', { text: 'Match: ' + i.match + (i.type === 'ticket' ? '. Your ticket QR code was sent by email.' : '') }) : null,
+      i.notes ? el('p', { text: i.notes }) : null,
+      live ? el('p', { text: 'Show the code or the QR code at the stadium food stands or the club shop, or enter it at checkout on lobistarsfc.com.' }) : null,
+      on && (i.type === 'experience' || i.type === 'physical') && i.status !== 'issued' ? el('p', { text: 'The club will contact you to arrange this.' }) : null);
+    return el('li', { class: 'rx-v' + (on ? '' : ' off') }, info, live ? el('img', { src: '/api/rewards/qr?voucher=' + encodeURIComponent(i.voucherCode), alt: 'QR code for voucher ' + i.voucherCode, width: '120', height: '120', loading: 'lazy' }) : null);
+  }
+  function draw() {
+    var counts = { active: 0, used: 0, expired: 0 };
+    items.forEach(function (i) { counts[group(i)]++; });
+    sub.textContent = counts.active ? 'You have ' + counts.active + (counts.active === 1 ? ' reward' : ' rewards') + ' ready or on the way.' : 'Your vouchers and redeemed rewards.';
+    var tabs = el('div', { class: 'rx-tabs', role: 'tablist', 'aria-label': 'Wallet' });
+    [['active', 'Active'], ['used', 'Used'], ['expired', 'Expired']].forEach(function (t) {
+      tabs.append(el('button', { type: 'button', role: 'tab', 'aria-selected': String(tab === t[0]), text: t[1] + ' (' + counts[t[0]] + ')', onclick: function () { tab = t[0]; try { history.replaceState(null, '', tab === 'active' ? location.pathname : '?tab=' + tab); } catch (e) {} draw(); } }));
+    });
+    var list = items.filter(function (i) { return group(i) === tab; });
+    var empty = { active: 'Nothing here yet. Swap your Star Points for a reward in the catalogue.', used: 'No used rewards yet.', expired: 'No expired vouchers.' }[tab];
+    main.replaceChildren(tabs, list.length ? el('ul', { class: 'rx-list', role: 'tabpanel' }, list.map(row)) : el('p', { class: 'rx-muted', role: 'tabpanel', text: empty }),
+      el('p', { class: 'rx-row' }, el('a', { class: 'rx-btn', href: '/rewards/catalogue/', text: 'Get a reward' }), el('a', { class: 'rx-btn o', href: '/rewards/me/', text: 'My Rewards' })),
+      el('p', { class: 'rx-muted', text: 'Vouchers have no cash value. Points used on a reward that is cancelled by the club are returned to you.' }));
+  }
+  fetch('/api/rewards/wallet', { cache: 'no-store' }).then(function (r) {
+    if (r.status === 401) { sub.textContent = 'Your vouchers and redeemed rewards.'; main.replaceChildren(el('section', { class: 'rx-card' }, el('h2', { text: 'Log in to see your wallet' }), el('a', { class: 'rx-btn', href: '/fans/login/?next=/rewards/wallet/', text: 'Log in' }))); return null; }
+    return r.json();
+  }).then(function (d) {
+    if (!d) return;
+    if (d.error) { main.replaceChildren(el('p', { class: 'rx-muted', text: d.error })); return; }
+    items = d.items || []; draw();
+  }).catch(function () { main.replaceChildren(el('p', { class: 'rx-muted', text: 'Your wallet could not be loaded just now. Please try again.' })); });
+})();
+</script>

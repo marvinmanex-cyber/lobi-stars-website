@@ -219,7 +219,7 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
         w.items.slice(0, 5).forEach(function (x) { ul.append(el('li', {}, el('span', { text: x.item + (x.voucherCode ? ' · ' + x.voucherCode : '') + (x.match ? ' · ' + x.match : '') }), el('span', { text: x.statusText }))); });
         wal.append(el('b', { text: 'My rewards' }), ul);
       }).catch(function () {});
-      parts.push(el('p', {}, el('a', { href: '/rewards/catalogue/', text: 'Use my points' }), ' · ', el('a', { href: '/rewards/', text: 'About Lobi Stars Rewards' })));
+      parts.push(el('p', {}, el('a', { class: 'btn-p', href: '/rewards/me/', text: 'Open My Rewards' }), ' ', el('a', { href: '/rewards/catalogue/', text: 'Use my points' }), ' · ', el('a', { href: '/rewards/history/', text: 'Points history' }), ' · ', el('a', { href: '/rewards/', text: 'About Lobi Stars Rewards' })));
     }
     body.replaceChildren.apply(body, parts);
   }

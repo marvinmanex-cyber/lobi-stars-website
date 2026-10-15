@@ -1,0 +1,72 @@
+---
+// The frame of the signed-in Rewards pages (My Rewards, Wallet, History):
+// red hero, the small menu between them, and their shared styles (.rx-*).
+// The pages fill #rxMain from /api/rewards/*.
+import Layout from '../../layouts/Layout.astro';
+interface Props { title: string; heading: string; accent: string; current: 'me' | 'wallet' | 'history'; description: string; }
+const { title, heading, accent, current, description } = Astro.props;
+const NAV = [['me', 'My Rewards', '/rewards/me/'], ['wallet', 'My Wallet', '/rewards/wallet/'], ['history', 'Points History', '/rewards/history/'], ['catalogue', 'Catalogue', '/rewards/catalogue/']];
+---
+<Layout title={title} description={description} noindex>
+  <section class="rx-hero"><div class="rx-in"><p class="rx-k">Lobi Stars Rewards</p><h1>{heading} <span>{accent}</span></h1><p id="rxSub">&nbsp;</p></div></section>
+  <nav class="rx-nav" aria-label="Lobi Stars Rewards"><div class="rx-in">
+    {NAV.map(([k, label, href]) => <a href={href} aria-current={k === current ? 'page' : undefined}>{label}</a>)}
+  </div></nav>
+  <div class="rx-page" id="rxMain" aria-live="polite"><p class="rx-muted">Loading…</p></div>
+  <slot />
+</Layout>
+
+<style is:global>
+  .rx-hero { background: radial-gradient(120% 140% at 0% 0%, #C11A1F 0%, #7A0E12 55%, #15181D 100%); color: #fff; padding: 36px 0 40px; }
+  .rx-in { max-width: 1100px; margin: 0 auto; padding: 0 5%; }
+  .rx-k { margin: 0 0 6px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .rx-hero h1 { margin: 0; font: 400 clamp(40px, 8vw, 68px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rx-hero h1 span { color: #FFC72C; }
+  .rx-hero p:last-child { margin: 10px 0 0; font-size: 17px; }
+  .rx-nav { background: #15181D; border-bottom: 4px solid #FFC72C; }
+  .rx-nav .rx-in { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  .rx-nav a { flex: none; padding: 14px 14px 12px; color: #fff; text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; border-bottom: 3px solid transparent; }
+  .rx-nav a[aria-current="page"] { border-bottom-color: #C11A1F; color: #FFC72C; }
+  .rx-nav a:hover, .rx-nav a:focus-visible { color: #FFC72C; }
+  .rx-page { max-width: 1100px; margin: 0 auto; padding: 24px 5% 64px; display: grid; gap: 16px; }
+  .rx-muted { color: var(--lt); margin: 0; }
+  .rx-card { padding: 18px; border-radius: 14px; background: var(--d2); border: 1px solid var(--d4); }
+  .rx-card h2 { margin: 0 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .rx-card p { margin: 0 0 8px; line-height: 1.5; }
+  .rx-card p:last-child { margin-bottom: 0; }
+  .rx-card a { color: var(--red-text); font-weight: 600; }
+  .rx-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .rx-stats { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .rx-stat { padding: 16px; border-radius: 14px; background: var(--d2); border: 1px solid var(--d4); border-top: 4px solid #C11A1F; }
+  .rx-stat.gold { border-top-color: #FFC72C; }
+  .rx-stat.grey { border-top-color: var(--d4); }
+  .rx-stat b { display: block; font: 400 42px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
+  .rx-stat.gold b { color: #A87F00; }
+  .rx-stat span { font: 700 13px/1.3 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--lt); }
+  .rx-stat small { display: block; margin-top: 6px; color: var(--lt); font-size: 13.5px; line-height: 1.4; }
+  .rx-alert { padding: 14px 16px; border-radius: 12px; background: rgba(255, 199, 44, .18); border: 1.5px solid #C9A227; line-height: 1.5; }
+  .rx-alert a { color: var(--red-text); font-weight: 700; }
+  .rx-bar { height: 12px; border-radius: 999px; background: var(--d4); overflow: hidden; margin: 8px 0; }
+  .rx-bar i { display: block; height: 100%; background: linear-gradient(90deg, #C11A1F, #FFC72C); border-radius: 999px; }
+  .rx-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1.5px solid #C11A1F; background: #C11A1F; color: #fff !important; text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+  .rx-btn.o { background: transparent; color: var(--white) !important; border-color: var(--d4); }
+  .rx-btn.wa { background: #1A7F45; border-color: #1A7F45; }
+  .rx-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .rx-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .rx-tabs button { min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--d4); background: var(--d2); color: var(--white); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+  .rx-tabs button[aria-pressed="true"], .rx-tabs button[aria-selected="true"] { background: #C11A1F; border-color: #C11A1F; color: #fff; }
+  .rx-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .rx-li { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 14px 16px; border-radius: 12px; background: var(--d2); border: 1px solid var(--d4); }
+  .rx-li .t { display: grid; gap: 3px; min-width: 0; }
+  .rx-li .t b { overflow-wrap: anywhere; }
+  .rx-li .t span { color: var(--lt); font-size: 14px; }
+  .rx-li .p { flex: none; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .rx-li .p.plus { color: #1A7F45; }
+  .rx-li .p.minus { color: var(--red-text); }
+  .rx-li .p.wait { color: #A87F00; }
+  .rx-chip { display: inline-block; padding: 3px 9px; border-radius: 999px; background: var(--d3, rgba(0,0,0,.06)); font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .rx-chip.ok { background: rgba(26, 127, 69, .16); color: #1A7F45; }
+  .rx-chip.wait { background: rgba(255, 199, 44, .25); color: #7A5A00; }
+  .rx-chip.no { background: rgba(193, 26, 31, .12); color: var(--red-text); }
+  @media (max-width: 480px) { .rx-in { padding: 0 16px; } .rx-page { padding: 18px 16px 56px; } .rx-li { flex-wrap: wrap; } }
+</style>

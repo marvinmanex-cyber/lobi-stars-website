@@ -1925,7 +1925,7 @@ CHILD**. For a child ticket, staff may ask for proof of age.
 
 ## 34b. Lobi Stars Rewards (being built, not launched yet)
 
-Lobi Stars Rewards is the free fan loyalty programme: fans collect **Pride
+Lobi Stars Rewards is the free fan loyalty programme: fans collect **Star
 Points** and swap them for rewards. It is being built in phases and is **not
 visible to fans yet**: the sign-up box, the account-page section and
 lobistarsfc.com/rewards only show in staff preview. To preview, open
@@ -2052,6 +2052,38 @@ held when the fan goes to Paystack, taken when the payment is confirmed, and
 given back automatically if the payment fails or is abandoned. A refund gives
 the points back. No points are earned on the part paid with points. Guests see
 "Log in to earn X Star Points". Nothing shows until Rewards is live.
+
+**Fans' own Rewards pages (done):**
+- **My Rewards** (lobistarsfc.com/rewards/me): Star Points, pending ticket
+  points (and the match they wait for), a warning when points are about to
+  expire, tier and progress to the next tier, the next reward to aim for, ways
+  to use points, the **digital member card** with a QR code, the fan's invite
+  link with share buttons (WhatsApp first), **badges** (First Ticket, Jersey
+  Owner, 5 and 10 Home Games, Predictor, MOTM Voter, Gold Member, Legend Member:
+  just for fun, no points or cash value) and recent activity.
+- **My Wallet** (/rewards/wallet): redeemed rewards in Active / Used / Expired
+  tabs; each voucher shows its code and a QR code.
+- **Points History** (/rewards/history): every movement, filters Earned, Used,
+  Pending, Expired, Removed.
+- Signed-in members see their **points balance in the site header** (on phones a
+  small gold badge on their account icon), linking to My Rewards.
+- The Club Shop says Star Points come from orders paid on lobistarsfc.com, not
+  Jumia orders.
+- These show only once Rewards is live (or in staff preview).
+
+**Member card and vouchers at the stadium:** in **Admin › Rewards › Fulfilment
+& Vouchers › Check a voucher**, scan the fan's **member card** QR (from My
+Rewards) or type their member number (e.g. LSR-000123): you see all their
+vouchers ready to use; give the reward and press **Mark used**. Scanning or
+typing a single voucher code works as before. The member card holds no personal
+details and can't be faked.
+
+**Points expiry (done):** points expire after **12 months with no activity**
+(Admin › Rewards › Fan guide › "Points expire after"). Any purchase, bonus,
+prediction, vote, reward used or club adjustment is activity and resets the
+clock. 30 days before, the fan gets an email and a warning on My Rewards. On
+the day, the points go as one "Points expired" line in their history. The job
+runs with the regular Rewards job and only once Rewards is live.
 
 ## Other things you can update in the CMS
 

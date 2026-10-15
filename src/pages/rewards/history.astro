@@ -1,0 +1,56 @@
+---
+// /rewards/history -- Points History: every Star Points movement in plain
+// English, newest first, with filters (All, Earned, Used, Pending, Expired,
+// Removed) and "Show more". Pending ticket points name the match they wait
+// for. From /api/rewards/history. Kept out of search engines.
+import RewardsShell from '../../components/rewards/RewardsShell.astro';
+---
+<RewardsShell title="Points History | Lobi Stars Rewards" heading="Points" accent="History" current="history" description="Your Lobi Stars Rewards Star Points history." />
+
+<script is:inline>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) [].concat(arguments[i]).forEach(function (c) { if (c != null && c !== false) n.append(c); }); return n; };
+  var fmt = function (n) { return Number(n || 0).toLocaleString('en-NG'); };
+  var day = function (s) { if (!s) return ''; var d = new Date(/T|Z/.test(s) ? s : String(s).replace(' ', 'T') + 'Z'); return d.toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', year: 'numeric' }); };
+  var main = $('rxMain'), sub = $('rxSub');
+  var FILTERS = [['all', 'All'], ['earned', 'Earned'], ['used', 'Used'], ['pending', 'Pending'], ['expired', 'Expired'], ['removed', 'Removed']];
+  var filter = 'all', items = [], more = false;
+  var tabs = el('div', { class: 'rx-tabs', role: 'group', 'aria-label': 'Filter the history' });
+  var list = el('ul', { class: 'rx-list' }), moreBtn = el('button', { type: 'button', class: 'rx-btn o', text: 'Show more', onclick: function () { load(true); } });
+  var note = el('p', { class: 'rx-muted', text: 'Pending: ticket points arrive after the match is played. Removed: points taken back after a refund or cancellation. Star Points have no cash value.' });
+
+  function label(h) {
+    if (h.status === 'PENDING' && h.points < 0) return 'Held for a payment';
+    if (h.status === 'PENDING') return 'Pending';
+    if (h.status === 'REVERSED') return 'Removed';
+    return { EARN: 'Earned', BONUS: 'Bonus', REDEEM: 'Used', EXPIRE: 'Expired', REVERSE: 'Removed', ADJUST: 'Club adjustment' }[h.type] || h.type;
+  }
+  function row(h) {
+    var cls = h.status === 'PENDING' ? 'wait' : h.status === 'REVERSED' ? '' : h.points < 0 ? 'minus' : 'plus';
+    var wait = h.waitsFor ? 'Arrives after ' + h.waitsFor.match + (h.waitsFor.date ? ' (' + day(h.waitsFor.date) + ')' : '') : '';
+    return el('li', { class: 'rx-li' }, el('div', { class: 't' }, el('b', { text: h.description }), el('span', { text: day(h.createdAt) + ' · ' + label(h) + (wait ? ' · ' + wait : '') })),
+      el('span', { class: 'p ' + cls, style: h.status === 'REVERSED' ? 'text-decoration:line-through;color:var(--lt)' : null, text: (h.points > 0 ? '+' : '') + fmt(h.points) }));
+  }
+  function drawTabs() {
+    tabs.replaceChildren.apply(tabs, FILTERS.map(function (f) { return el('button', { type: 'button', 'aria-pressed': String(filter === f[0]), text: f[1], onclick: function () { if (filter !== f[0]) { filter = f[0]; drawTabs(); load(false); } } }); }));
+  }
+  function load(append) {
+    var before = append && items.length ? '&before=' + items[items.length - 1].id : '';
+    moreBtn.disabled = true;
+    fetch('/api/rewards/history?filter=' + filter + before, { cache: 'no-store' }).then(function (r) {
+      if (r.status === 401) { sub.textContent = 'Every Star Points movement on your account.'; main.replaceChildren(el('section', { class: 'rx-card' }, el('h2', { text: 'Log in to see your history' }), el('a', { class: 'rx-btn', href: '/fans/login/?next=/rewards/history/', text: 'Log in' }))); return null; }
+      return r.json();
+    }).then(function (d) {
+      if (!d) return;
+      if (d.error) { list.replaceChildren(el('li', { class: 'rx-muted', text: d.error })); return; }
+      items = append ? items.concat(d.items) : d.items; more = d.more;
+      list.replaceChildren.apply(list, items.length ? items.map(row) : [el('li', { class: 'rx-muted', text: filter === 'all' ? 'No Star Points yet. Buy a ticket, vote for Man of the Match or make a prediction to start.' : 'Nothing here.' })]);
+      moreBtn.hidden = !more; moreBtn.disabled = false;
+      if (!main.contains(list)) main.replaceChildren(tabs, list, el('div', { class: 'rx-row' }, moreBtn), note);
+    }).catch(function () { list.replaceChildren(el('li', { class: 'rx-muted', text: 'Your history could not be loaded just now.' })); });
+  }
+  fetch('/api/rewards/balance', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (b) { sub.textContent = b.show ? 'Balance: ' + fmt(b.balance) + ' Star Points.' : 'Every Star Points movement on your account.'; }).catch(function () {});
+  drawTabs(); load(false);
+})();
+</script>

@@ -63,7 +63,7 @@ const DEFAULTS = {
 
 export const LEDGER_TYPES = ['EARN', 'BONUS', 'REDEEM', 'EXPIRE', 'REVERSE', 'ADJUST'];
 export const LEDGER_STATUSES = ['PENDING', 'AVAILABLE', 'REVERSED'];
-export const SOURCES = ['ticket_order', 'shop_order', 'food_order', 'membership', 'attendance', 'vote', 'prediction', 'referral', 'birthday', 'admin', 'welcome', 'profile', 'redeem', 'points_payment', 'newsletter', 'alerts', 'first_purchase', 'programme'];
+export const SOURCES = ['ticket_order', 'shop_order', 'food_order', 'membership', 'attendance', 'vote', 'prediction', 'referral', 'birthday', 'admin', 'welcome', 'profile', 'redeem', 'points_payment', 'newsletter', 'alerts', 'first_purchase', 'programme', 'expiry'];
 
 // Nigeria's 36 states and the FCT (state of residence on the profile).
 export const NIGERIAN_STATES = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT (Abuja)', 'Gombe', 'Imo', 'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara'];

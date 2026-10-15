@@ -3,7 +3,10 @@ import { ensureFanSchema } from '../_lib/fans.js';
 import { ensureRewardsSchema, rewardsMember, memberNo, pointsSummary, ledgerFor, rewardsSettings, NIGERIAN_STATES } from '../_lib/rewards.js';
 import { rewardsSweep } from '../_lib/rewardsEarn.js';
 import { tierStatus, celebration } from '../_lib/rewardsTiers.js';
-import { tierBenefits } from '../_lib/rewardsRules.js';
+import { tierBenefits, tierRank } from '../_lib/rewardsRules.js';
+import { memberBadges } from '../_lib/rewardsBadges.js';
+import { expirySoon } from '../_lib/rewardsExpiry.js';
+import { listItems, spendable } from '../_lib/rewardsCatalogue.js';
 
 // GET /api/rewards/me -- the signed-in fan's Rewards status:
 // { signedIn, verified, joined, memberNo, balance, pending, profile, history, bonuses }.
@@ -31,6 +34,15 @@ export async function onRequestGet({ request, env }) {
     await rewardsSweep(env, { memberId });
     const [sum, history, st] = await Promise.all([pointsSummary(db, memberId), ledgerFor(db, memberId, 50), tierStatus(db, memberId)]);
     const celebrate = await celebration(db, memberId, st);
+    const [badges, expiring, items, canSpend] = await Promise.all([
+      memberBadges(db, memberId, Math.max(0, tierRank(st.tier.key, st.tiers))),
+      expirySoon(db, memberId).catch(() => null),
+      listItems(db).catch(() => []),
+      spendable(db, memberId),
+    ]);
+    // Next reward: the cheapest reward the fan can't afford yet (or the cheapest one, if they can afford all).
+    const sorted = [...items].sort((a, b) => a.points - b.points);
+    const goal = sorted.find(i => i.points > canSpend) || null;
     return Response.json({
       ...base, joined: true, memberNo: memberNo(r.seq), referralLink: `https://lobistarsfc.com/fans/register/?ref=${memberNo(r.seq)}`, status: r.status, joinedAt: r.joined_at,
       balance: sum.balance, pending: sum.pending, history,
@@ -42,6 +54,9 @@ export async function onRequestGet({ request, env }) {
         celebrate, legendWall: !!r.legend_wall,
       },
       profileBonusDone: history.some(h => h.source === 'profile'),
+      spendable: canSpend, badges, expiring: s.live ? expiring : null,
+      nextReward: goal ? { name: goal.name, points: goal.points, toGo: goal.points - canSpend } : null,
+      canAfford: sorted.filter(i => i.points <= canSpend).length,
     }, { headers });
   } catch (err) {
     console.error('[rewards] me', err);

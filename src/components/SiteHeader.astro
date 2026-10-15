@@ -70,6 +70,7 @@ const isActive = (href: string) => {
       <a class="sh-icon" href="/shop" aria-label="Club shop">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 12H6.2L5 8z" /><path d="M9 8V6.5a3 3 0 0 1 6 0V8" /></svg>
       </a>
+      <a class="sh-pts" id="pointsLink" href="/rewards/me/" hidden><b id="pointsNum"></b><span class="sh-pts-l"> pts</span><span class="sr-only"> Star Points: open My Rewards</span></a>
       <a class="sh-icon sh-account" id="accountLink" href="/fans/login/" aria-label="Log in or create a fan account">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.8" /><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4" /></svg>
         <span class="sh-initials" id="accountInitials" hidden></span>
@@ -164,6 +165,17 @@ const isActive = (href: string) => {
   .sh-account { position: relative; text-decoration: none; }
   .sh-account.is-in { background: var(--red); border-color: var(--red); }
   .sh-account.is-in svg { display: none; }
+  .sh-pts { display: inline-flex; align-items: center; gap: 4px; height: 32px; padding: 0 10px; border-radius: 999px; background: #FFC72C; color: #15181D; text-decoration: none; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+  .sh-pts[hidden] { display: none; }
+  .sh-pts:hover, .sh-pts:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .sh-pts b { font: 400 17px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  /* Phones: a small badge on the corner of the account icon (no room in the row). */
+  @media (max-width: 599px) {
+    .sh-actions { position: relative; }
+    .sh-pts { position: absolute; z-index: 2; top: -9px; right: -6px; height: 16px; padding: 0 6px; box-shadow: 0 0 0 2px #fff; }
+    .sh-pts b { font-size: 12px; }
+    .sh-pts-l { display: none; }
+  }
   .sh-initials { font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .5px; color: #fff; }
 
   .sh-pp { display: flex; align-items: center; gap: 8px; text-decoration: none; margin-right: 6px; padding: 4px 6px; border-radius: 8px; }
@@ -321,6 +333,13 @@ const isActive = (href: string) => {
       a.classList.add('is-in');
       a.href = '/fans/account/';
       a.setAttribute('aria-label', `Your fan account (${member.firstName} ${member.lastName})`);
+    }).catch(() => {});
+    // Star Points balance (only for Rewards members, once Rewards is live).
+    fetch('/api/rewards/balance').then(r => r.json()).then(d => {
+      const p = document.getElementById('pointsLink');
+      if (!d.show || !p) return;
+      document.getElementById('pointsNum')!.textContent = Number(d.balance).toLocaleString('en-NG');
+      p.hidden = false;
     }).catch(() => {});
   }
 </script>

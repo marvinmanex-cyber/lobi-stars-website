@@ -302,6 +302,8 @@ export async function rewardsSweep(env, { memberId = null } = {}) {
     Object.assign(out, (await safe('redemptions', () => redemptionSweep(env))) || {});
     const { releaseAbandoned } = await import('./rewardsCheckout.js');
     out.released_holds = (await safe('holds', () => releaseAbandoned(env))) || 0;
+    const { expirySweep } = await import('./rewardsExpiry.js');
+    Object.assign(out, (await safe('expiry', () => expirySweep(env))) || {});
   }
   return out;
 }

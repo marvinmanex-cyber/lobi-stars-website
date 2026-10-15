@@ -1,0 +1,134 @@
+---
+// /rewards/me -- My Rewards: the signed-in fan's Star Points dashboard.
+// Balance, pending points (and the match they wait for), expiry warning, tier
+// and progress, the next reward, ways to use points, the digital member card
+// (signed QR, no personal data), referral link with share buttons (WhatsApp
+// first), badges and recent activity. All from /api/rewards/me and /info.
+// Kept out of search engines. Points have no cash value.
+import RewardsShell from '../../components/rewards/RewardsShell.astro';
+---
+<RewardsShell title="My Rewards | Lobi Stars Rewards" heading="My" accent="Rewards" current="me" description="Your Lobi Stars Rewards: Star Points, tier, member card, rewards and badges.">
+  <style is:global>
+    .rx-mc { position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 20px; border-radius: 18px; color: #fff; background: radial-gradient(120% 140% at 0% 0%, #C11A1F 0%, #7A0E12 60%, #15181D 100%); border: 2px solid #FFC72C; max-width: 520px; }
+    .rx-mc .k { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+    .rx-mc .n { margin: 8px 0 4px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+    .rx-mc .no { font: 700 18px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; }
+    .rx-mc .tier { display: inline-block; margin-top: 10px; padding: 4px 10px; border-radius: 999px; background: #FFC72C; color: #15181D; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+    .rx-mc img { width: 132px; height: 132px; border-radius: 10px; background: #fff; padding: 6px; }
+    .rx-badges { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .rx-badge { display: grid; gap: 6px; justify-items: center; text-align: center; padding: 14px 10px; border-radius: 12px; background: var(--d2); border: 1px solid var(--d4); }
+    .rx-badge .disc { width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; background: var(--d4); color: var(--lt); border: 3px dashed var(--lt); }
+    .rx-badge.on .disc { background: #C11A1F; color: #fff; border: 3px solid #FFC72C; }
+    .rx-badge b { font: 700 15px/1.15 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+    .rx-badge span { font-size: 12.5px; color: var(--lt); line-height: 1.35; }
+    .rx-badge:not(.on) b { color: var(--lt); }
+    .rx-ways { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+    .rx-ways a { display: block; height: 100%; padding: 14px 16px; border-radius: 12px; background: var(--d1, #fff); border: 1px solid var(--d4); border-left: 4px solid #FFC72C; text-decoration: none; color: var(--white) !important; font-weight: 400 !important; }
+    .rx-ways a b { display: block; margin-bottom: 4px; font: 400 21px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: var(--red-text); }
+    .rx-ref input { flex: 1 1 240px; min-height: 44px; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--d4); background: var(--d1, #fff); color: var(--white); font: 400 15px/1.3 'Barlow', sans-serif; min-width: 0; }
+    @media (max-width: 420px) { .rx-mc { grid-template-columns: 1fr; } .rx-mc img { justify-self: start; } .rx-badges { grid-template-columns: 1fr 1fr; } .rx-stats { grid-template-columns: 1fr 1fr; } .rx-stat b { font-size: 34px; } }
+  </style>
+</RewardsShell>
+
+<script is:inline>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) [].concat(arguments[i]).forEach(function (c) { if (c != null && c !== false) n.append(c); }); return n; };
+  var fmt = function (n) { return Number(n || 0).toLocaleString('en-NG'); };
+  var day = function (s) { if (!s) return ''; var d = new Date(/T|Z/.test(s) ? s : String(s).replace(' ', 'T') + 'Z'); return d.toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', year: 'numeric' }); };
+  var main = $('rxMain'), sub = $('rxSub');
+  var BADGE_SHORT = { 'first-ticket': '1st', 'jersey-owner': 'Kit', 'home-5': '5', 'home-10': '10', predictor: 'P&W', 'motm-voter': 'MOTM', gold: 'Gold', legend: 'Leg' };
+  var preview = false; try { preview = localStorage.getItem('ls_rewards_preview') === '1'; } catch (e) {}
+
+  function card(title) { var c = el('section', { class: 'rx-card' }, title ? el('h2', { text: title }) : null); for (var i = 1; i < arguments.length; i++) if (arguments[i]) c.append(arguments[i]); return c; }
+  function bar(done, total) { var p = total > 0 ? Math.max(2, Math.min(100, Math.round(done / total * 100))) : 100; return el('div', { class: 'rx-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(total), 'aria-valuenow': String(Math.min(done, total)) }, el('i', { style: 'width:' + p + '%' })); }
+
+  function guest(d) {
+    sub.textContent = 'Your Star Points, tier, member card and rewards.';
+    if (!d.signedIn) main.replaceChildren(card('Log in to see your Star Points', el('p', { text: 'Use your Lobi Stars FC fan account.' }), el('div', { class: 'rx-row' }, el('a', { class: 'rx-btn', href: '/fans/login/?next=/rewards/me/', text: 'Log in' }), el('a', { class: 'rx-btn o', href: '/fans/register/', text: 'Create a fan account' }), el('a', { class: 'rx-btn o', href: '/rewards/', text: 'How Rewards works' }))));
+    else main.replaceChildren(card('Join Lobi Stars Rewards', el('p', { text: 'Hi ' + d.firstName + ', you have not joined yet. It is free, and you get ' + fmt(d.bonuses.welcome) + ' Star Points to start.' }), el('div', { class: 'rx-row' }, el('a', { class: 'rx-btn', href: '/fans/account/#rwH', text: 'Join on my account page' }), el('a', { class: 'rx-btn o', href: '/rewards/', text: 'How Rewards works' }))));
+  }
+
+  function draw(d, info, pend) {
+    var S = (info && info.settings) || {};
+    sub.textContent = 'Hi ' + d.firstName + '. Member ' + d.memberNo + '.';
+    var parts = [];
+    if (!d.live) parts.push(el('p', { class: 'rx-alert', text: 'Lobi Stars Rewards opens soon. You can already see your points here; earning and rewards start at launch.' }));
+    if (!d.verified) parts.push(el('p', { class: 'rx-alert' }, 'Confirm your email address to start earning Star Points. ', el('a', { href: '/fans/account/', text: 'Go to my account' })));
+    if (d.status === 'suspended') parts.push(el('p', { class: 'rx-alert', text: 'Your Rewards membership is on hold. Please contact the club through the Help Centre.' }));
+    if (d.expiring) parts.push(el('p', { class: 'rx-alert' }, el('b', { text: fmt(d.expiring.points) + ' Star Points expire on ' + day(d.expiring.at) + '. ' }), 'Any purchase on lobistarsfc.com, a prediction, a vote or using a reward keeps them. ', el('a', { href: '/rewards/catalogue/', text: 'Use them now' })));
+
+    // Summary
+    var next = pend.filter(function (p) { return p.waitsFor; })[0];
+    parts.push(el('div', { class: 'rx-stats' },
+      el('div', { class: 'rx-stat' }, el('span', { text: 'Star Points' }), el('b', { text: fmt(d.balance) }), el('small', { text: d.spendable !== d.balance ? fmt(d.spendable) + ' ready to spend (the rest is held for a payment you started)' : 'Ready to use' })),
+      el('div', { class: 'rx-stat gold' }, el('span', { text: 'Pending' }), el('b', { text: fmt(d.pending) }), el('small', { text: d.pending > 0 ? (next ? 'Ticket points arrive after ' + next.waitsFor.match + (next.waitsFor.date ? ' (' + day(next.waitsFor.date) + ')' : '') + ' is played.' : 'Arriving soon.') : 'Ticket points arrive after the match is played.' })),
+      el('div', { class: 'rx-stat grey' }, el('span', { text: 'Tier' }), el('b', { text: d.tier.name }), el('small', { text: fmt(d.tier.earned) + ' points earned in the ' + (d.tier.season || 'current') + ' season' }))));
+
+    // Tier + next reward
+    var tierCard = card(d.tier.name + ' member');
+    if (d.tier.benefits.length) { var ul = el('ul', { style: 'margin:0 0 10px;padding-left:20px;line-height:1.6' }); d.tier.benefits.forEach(function (b) { ul.append(el('li', { text: b })); }); tierCard.append(ul); }
+    if (d.tier.next) tierCard.append(el('p', {}, el('b', { text: fmt(d.tier.toNext) }), ' more points to earn this season to reach ', el('b', { text: d.tier.next.name }), '.'), bar(d.tier.earned, d.tier.next.min), el('p', { class: 'rx-muted', text: d.tier.next.name + ': ' + d.tier.next.benefits.join(' · ') }));
+    else tierCard.append(el('p', { text: 'You are at the top tier. Thank you for supporting the Pride of Benue.' }));
+    if (d.tier.graceUntil) tierCard.append(el('p', { class: 'rx-muted', text: 'Kept from last season until ' + day(d.tier.graceUntil) + '.' }));
+    tierCard.append(el('p', {}, el('a', { href: '/rewards/#hTiers', text: 'About the tiers' })));
+    var goal = card('Your next reward');
+    if (d.nextReward) goal.append(el('p', {}, el('b', { text: fmt(d.nextReward.toGo) }), ' more Star Points for ', el('b', { text: d.nextReward.name }), ' (' + fmt(d.nextReward.points) + ' points).'), bar(d.spendable, d.nextReward.points));
+    if (d.canAfford) goal.append(el('p', {}, 'You can get ', el('b', { text: d.canAfford + (d.canAfford === 1 ? ' reward' : ' rewards') }), ' now.'));
+    if (!d.nextReward && !d.canAfford) goal.append(el('p', { class: 'rx-muted', text: 'New rewards are added to the catalogue regularly.' }));
+    goal.append(el('div', { class: 'rx-row' }, el('a', { class: 'rx-btn', href: '/rewards/catalogue/', text: 'See the catalogue' })));
+    parts.push(el('div', { class: 'rx-grid' }, tierCard, goal));
+
+    // Ways to use
+    var pct = S.payWithPointsMaxPercent, val = S.pointValueKobo ? S.pointValueKobo / 100 : null;
+    parts.push(card('Ways to use your points', el('ul', { class: 'rx-ways' },
+      el('li', {}, el('a', { href: '/rewards/catalogue/' }, el('b', { text: 'Swap for a reward' }), 'Free match tickets, food vouchers, shop rewards and experiences.')),
+      el('li', {}, el('a', { href: '/tickets/' }, el('b', { text: 'Pay at checkout' }), 'Use points on match tickets, matchday food and personalised shirts' + (pct ? ' (up to ' + pct + '% of the order' + (val ? ', 100 points = ₦' + fmt(val * 100) : '') + ')' : '') + '.')),
+      el('li', {}, el('a', { href: '/rewards/wallet/' }, el('b', { text: 'My vouchers' }), 'Codes and rewards you have already redeemed.'))),
+      el('p', { class: 'rx-muted', style: 'margin-top:10px', text: 'Star Points have no cash value and cannot be exchanged for cash, transferred or sold.' })));
+
+    // Member card + referral
+    var mc = el('div', { class: 'rx-mc' }, el('div', {}, el('div', { class: 'k', text: 'Lobi Stars Rewards' }), el('div', { class: 'n', text: d.firstName }), el('div', { class: 'no', text: d.memberNo }), el('span', { class: 'tier', text: d.tier.name })),
+      el('img', { src: '/api/rewards/qr?card=1', alt: 'Member card QR code for ' + d.memberNo, width: '132', height: '132', loading: 'lazy' }));
+    var cardBox = card('My member card', mc, el('p', { class: 'rx-muted', style: 'margin-top:10px', text: 'Show this at the stadium food stands or the club shop to use your vouchers. Staff scan it to see your rewards.' }));
+    var link = d.referralLink, msg = 'Join me in Lobi Stars Rewards. Earn Star Points when you support Lobi Stars FC: ' + link;
+    var copied = el('span', { class: 'rx-muted', role: 'status' });
+    var input = el('input', { value: link, readonly: true, 'aria-label': 'Your invite link', onfocus: function () { this.select(); } });
+    var shareRow = el('div', { class: 'rx-row', style: 'margin-top:10px' },
+      el('a', { class: 'rx-btn wa', href: 'https://wa.me/?text=' + encodeURIComponent(msg), target: '_blank', rel: 'noopener', text: 'Share on WhatsApp' }),
+      el('a', { class: 'rx-btn o', href: 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(link), target: '_blank', rel: 'noopener', text: 'Facebook' }),
+      el('a', { class: 'rx-btn o', href: 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(msg), target: '_blank', rel: 'noopener', text: 'X' }),
+      el('button', { type: 'button', class: 'rx-btn o', text: 'Copy link', onclick: function () { (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { copied.textContent = 'Copied.'; }, function () { input.focus(); input.select(); copied.textContent = 'Select and copy the link.'; }); } }),
+      navigator.share ? el('button', { type: 'button', class: 'rx-btn o', text: 'More', onclick: function () { navigator.share({ title: 'Lobi Stars Rewards', text: msg, url: link }).catch(function () {}); } }) : null, copied);
+    var refBox = card('Invite friends', el('p', {}, S.referral ? ['You get ', el('b', { text: fmt(S.referral) + ' Star Points' }), ' when a friend joins with your link, confirms their email and makes their first purchase on lobistarsfc.com' + (S.referralMaxPerSeason ? ' (up to ' + S.referralMaxPerSeason + ' friends a season).' : '.')].reduce(function (f, x) { f.append(x); return f; }, document.createDocumentFragment()) : 'Share your link with friends who support Lobi Stars.'),
+      el('div', { class: 'rx-row rx-ref' }, input), shareRow);
+    parts.push(el('div', { class: 'rx-grid' }, cardBox, refBox));
+
+    // Badges
+    var got = d.badges.filter(function (b) { return b.earned; }).length;
+    parts.push(card('My badges', el('p', { class: 'rx-muted', text: got + ' of ' + d.badges.length + ' badges. Badges are just for fun: they have no points or cash value.' }),
+      el('ul', { class: 'rx-badges' }, d.badges.map(function (b) { return el('li', { class: 'rx-badge' + (b.earned ? ' on' : '') }, el('span', { class: 'disc', 'aria-hidden': 'true', text: BADGE_SHORT[b.key] || '' }), el('b', { text: b.name }), el('span', { text: (b.earned ? '' : 'Not yet: ') + b.text })); }))));
+
+    // Recent
+    var recent = d.history.slice(0, 5);
+    parts.push(card('Recent activity', recent.length ? el('ul', { class: 'rx-list' }, recent.map(function (h) {
+      return el('li', { class: 'rx-li' }, el('div', { class: 't' }, el('b', { text: h.description }), el('span', { text: day(h.createdAt) + (h.status === 'PENDING' ? ' · pending' : h.status === 'REVERSED' ? ' · removed' : '') })),
+        el('span', { class: 'p ' + (h.status === 'PENDING' ? 'wait' : h.points < 0 ? 'minus' : 'plus'), text: (h.points > 0 ? '+' : '') + fmt(h.points) }));
+    })) : el('p', { class: 'rx-muted', text: 'Nothing yet. Buy a ticket, vote for Man of the Match or make a prediction to start.' }), el('p', { style: 'margin-top:10px' }, el('a', { href: '/rewards/history/', text: 'See all my points history' }))));
+
+    main.replaceChildren.apply(main, parts);
+  }
+
+  Promise.all([
+    fetch('/api/rewards/me', { cache: 'no-store' }).then(function (r) { return r.json(); }),
+    fetch('/api/rewards/info').then(function (r) { return r.json(); }).catch(function () { return null; }),
+  ]).then(function (x) {
+    var d = x[0];
+    if (d.error) { main.replaceChildren(el('p', { class: 'rx-muted', text: d.error })); return; }
+    if (!d.signedIn || !d.joined) { guest(d); return; }
+    if (!d.live && !preview && !d.joined) { guest(d); return; }
+    fetch('/api/rewards/history?filter=pending', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return { items: [] }; })
+      .then(function (p) { draw(d, x[1], p.items || []); });
+  }).catch(function () { main.replaceChildren(el('p', { class: 'rx-muted', text: 'Your Rewards could not be loaded just now. Please try again.' })); });
+})();
+</script>

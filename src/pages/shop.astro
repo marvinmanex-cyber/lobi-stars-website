@@ -25,7 +25,14 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
       {shop.products.map(p => <ShopCard product={p} personalise={canPers(p)} />)}
     </div>
     <p class="shop-note"><strong>Note:</strong> Official sales are powered by Jumia Nigeria. Members get 10% off club merchandise &mdash; <a href="/membership">join here</a>.</p>
+    <p class="shop-note" id="shopRwNote" hidden><strong>Lobi Stars Rewards:</strong> Star Points are earned on orders paid here on lobistarsfc.com (such as personalised shirts, match tickets, matchday food and membership), not on Jumia orders. <a href="/rewards/">How Star Points work</a></p>
   </div>
+  <script is:inline>
+  (function () {
+    var preview = false; try { preview = localStorage.getItem('ls_rewards_preview') === '1'; } catch (e) {}
+    fetch('/api/rewards/info').then(function (r) { return r.json(); }).then(function (d) { if (d.live || preview) document.getElementById('shopRwNote').hidden = false; }).catch(function () {});
+  })();
+  </script>
 
   {persShirts.length > 0 && (
     <dialog class="pz" id="pzDialog" aria-labelledby="pz-title">
