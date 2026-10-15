@@ -1,10 +1,11 @@
 // Queries behind /admin/fans and the fan database exports.
 import { SOURCES, ensureContactsSchema } from './contacts.js';
+import { rewardsTierMap } from './rewardsTiers.js';
 
 // The columns of the contact downloads (one row per person, no duplicates).
 export const FAN_COLUMNS = [
   'First Name', 'Surname', 'Email', 'Phone', 'State', 'All Sources', 'First Source', 'First Seen', 'Last Seen',
-  'Number of Interactions', 'Email Verified', 'Member', 'Marketing Consent',
+  'Number of Interactions', 'Email Verified', 'Member', 'Marketing Consent', 'Rewards Member', 'Rewards Tier', 'Star Points',
 ];
 
 const SORTS = {
@@ -105,12 +106,15 @@ async function addEngagement(db, rows) {
   const votes = await counts('motm_votes');
   const preds = await counts('predictions');
   const wins = (await hasColumn(db, 'predictions', 'is_winner')) ? await counts('predictions', 'WHERE is_winner = 1') : new Map();
+  // Lobi Stars Rewards: member (Yes / On hold), tier and Star Points balance.
+  const rewards = (await tableExists(db, 'rewards_members')) ? await rewardsTierMap(db).catch(() => new Map()) : new Map();
   for (const r of rows) {
     const mem = byContact.get(r.id) || [];
     if (!mem.length) continue;
     r.member = mem.some(m => m.tier && m.tier !== 'Fan') || r.member ? 1 : 0;
     r.email_verified = mem.some(m => (verifiedCol ? m.email_verified === 1 : true)) ? 1 : 0;
     for (const m of mem) {
+      if (!r.rewards && rewards.get(m.mid)) r.rewards = rewards.get(m.mid);
       r.motm_votes += votes.get(m.mid) || 0;
       r.matches_predicted += preds.get(m.mid) || 0;
       r.prize_wins += wins.get(m.mid) || 0;
@@ -133,6 +137,7 @@ export function exportRow(r, labels = SOURCES) {
     r.sources.map(s => labels[s] || s).join(', '), labels[r.first_source] || r.first_source || '',
     watTime(r.first_seen), watTime(r.last_seen), r.interactions || 0,
     yn(r.email_verified), yn(r.member), yn(r.marketing_consent),
+    r.rewards ? (r.rewards.status === 'active' ? 'Yes' : 'On hold') : 'No', r.rewards ? r.rewards.tier : '', r.rewards ? r.rewards.balance : '',
   ];
 }
 

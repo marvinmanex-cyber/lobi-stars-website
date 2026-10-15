@@ -89,3 +89,34 @@ export async function celebration(db, memberId, st, { seen = false } = {}) {
   if (up && seen) await db.prepare(`UPDATE rewards_members SET tier_seen = ? WHERE member_id = ?`).bind(`${st.season}:${st.tier.key}`, memberId).run();
   return up;
 }
+
+/**
+ * Every Rewards member at once (for exports and reports): Map member_id ->
+ * { status, tier, tierKey, earned, balance }. A fixed number of queries, however
+ * many members there are.
+ */
+export async function rewardsTierMap(db, now = Date.now()) {
+  await ensureRewardsSchema(db);
+  const s = await rewardsSettings(db);
+  const start = seasonStartMs(s);
+  const prevStart = new Date(start); prevStart.setUTCFullYear(prevStart.getUTCFullYear() - 1);
+  const season = seasonLabel(s.seasonStart);
+  const earnedSql = `SELECT member_id, COALESCE(SUM(points), 0) AS n FROM rewards_ledger
+    WHERE type IN ('EARN', 'BONUS', 'REVERSE') AND source NOT IN ('redeem', 'points_payment') AND status = 'AVAILABLE' AND created_at >= ? AND created_at < ? GROUP BY member_id`;
+  const hasSeason = (await db.prepare(`PRAGMA table_info(members)`).all()).results.some(c => c.name === 'membership_season');
+  const [mem, cur, prev, bal] = await Promise.all([
+    db.prepare(`SELECT r.member_id, r.status${hasSeason ? ', m.membership_season' : ''} FROM rewards_members r JOIN members m ON m.id = r.member_id`).all(),
+    db.prepare(earnedSql).bind(sqlDate(start), sqlDate(now + 864e5)).all(),
+    db.prepare(earnedSql).bind(sqlDate(prevStart.getTime()), sqlDate(start)).all(),
+    db.prepare(`SELECT member_id, COALESCE(SUM(points), 0) AS n FROM rewards_ledger WHERE status = 'AVAILABLE' GROUP BY member_id`).all(),
+  ]);
+  const toMap = r => new Map(r.results.map(x => [x.member_id, Math.max(0, Number(x.n) || 0)]));
+  const curM = toMap(cur), prevM = toMap(prev), balM = new Map(bal.results.map(x => [x.member_id, Number(x.n) || 0]));
+  const out = new Map();
+  for (const m of mem.results) {
+    const earned = curM.get(m.member_id) || 0;
+    const t = effectiveTier({ earned, prevEarned: prevM.get(m.member_id) || 0, paidMember: !!season && m.membership_season === season, now, seasonStart: s.seasonStart, graceMonths: s.tierGraceMonths, paidMembersStartGold: s.paidMembersStartGold }, s.tiers);
+    out.set(m.member_id, { status: m.status, tier: t.tier.name, tierKey: t.tier.key, earned, balance: balM.get(m.member_id) || 0 });
+  }
+  return out;
+}

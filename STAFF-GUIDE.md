@@ -2107,6 +2107,19 @@ email (all on, except "Star Points arriving"). Emails a fan asks for directly,
 like the voucher code after redeeming, always go. A note you type when moving a
 reward along in Fulfilment is shown to the fan. Emails need Resend (A-list).
 
+**Rewards Reports (Admin › Rewards › Rewards Reports, done):** members, Star
+Points issued / used / expired / taken back, the points sitting in fans'
+balances and roughly what they are worth in naira, a chart of points by month
+and of how fans earn them (each with "Show as a table"), members per tier and
+the rewards redeemed. **Checks** lists accounts worth a look: several accounts
+made on one device, referrals that were held back, many points in a week (not
+counting club adjustments), points taken back after refunds, many rewards in a
+day and large manual adjustments by staff. A check is not proof: look at the
+account before putting it on hold. **Download Excel** (needs "can export fan
+data"; every download is logged) has every figure, every member with tier and
+balance, and all the checks. The fan database download (Fans & Inbox) now also
+has **Rewards Member**, **Rewards Tier** and **Star Points** columns.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize
