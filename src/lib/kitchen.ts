@@ -168,6 +168,7 @@ function renderState() {
   $('kxCd').textContent = menu.open && menu.closesAt ? `Orders close in ${untilText(Date.parse(menu.closesAt) - now)}`
     : !menu.open && menu.opensAt ? `Opens in ${untilText(Date.parse(menu.opensAt) - now)}` : '';
   $('kxClosed').hidden = menu.open;
+  $('kxClosed').classList.remove('kx-pending');
   $('kxClosedText').textContent = menu.opensAt
     ? `Ordering opens ${new Date(menu.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' })}${menu.match ? ` for ${menu.match}` : ''}. You can look at the menu now.`
     : 'Ordering opens on Lobi Stars home match days. You can look at the menu now.';
@@ -201,6 +202,7 @@ async function loadMenu() {
     renderState(); renderMenu(); renderCart();
   } catch {
     if (!menu) $('kxMenu').innerHTML = '<p class="kx-empty">The menu could not be loaded. Check your connection and try again.</p>';
+    if (!menu) $('kxClosed').hidden = true;
   }
 }
 
