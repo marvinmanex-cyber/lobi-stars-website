@@ -104,6 +104,11 @@ const heroSlides = defineCollection({
   schema: z.object({
     photo: z.string(),
     order: z.number().default(0),
+    // Wide group/lineup photos crop too tightly in the tall, narrow mobile
+    // hero under the default "cover" fit (the outer people fall off the
+    // edges) -- set to "contain" to show the whole photo on phones instead,
+    // letterboxed on the hero's dark background.
+    mobileFit: z.enum(['cover', 'contain']).default('cover'),
   }),
 });
 
