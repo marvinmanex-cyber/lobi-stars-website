@@ -37,7 +37,7 @@ const DEFAULTS = {
   expiryMonths: 12,
   // Prices used in the worked example on /rewards ("Meet David"). TODO (club): confirm real prices.
   exampleJerseyNaira: 20000,
-  exampleTicketNaira: 1000,
+  exampleTicketNaira: 100,
   exampleFoodNaira: 3000,
   // Pay with Star Points at our checkouts (tickets, food, shirts).
   pointValueKobo: 500,           // 1 point = ₦5 off

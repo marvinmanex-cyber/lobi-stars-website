@@ -72,7 +72,7 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
       const data = await res.json().catch(() => ({}));
       if (res.status === 403 && data.code === 'unverified') { unverified.hidden = false; return; }
       if (!res.ok) throw new Error(data.error || 'Login failed. Please try again.');
-      location.href = next;
+      location.replace(next); // the login page is not kept in the history (Back goes to the page before it)
     } catch (ex) {
       err.textContent = (ex as Error).message; err.hidden = false;
     } finally {

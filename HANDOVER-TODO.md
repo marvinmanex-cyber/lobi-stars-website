@@ -106,7 +106,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | L3 | **Who may change rules** | Optional: the staff emails allowed to change rules, adjustments, tie decisions, the import and undo (setting `league_admin_emails`); otherwise every League user can. |
 | L4 | **First real results** | From Matchday 1 (Sat 7 / Sun 8 Nov 2026), enter all four results after each matchday. |
 | L5 | **The 23 October match** | **Done (13 Oct 2026):** its orders were test purchases, so the trial match is hidden. |
-| L6 | **Ticket prices** | **Done (13 Oct 2026):** every 2026/27 home league match is on sale at VIP Sitting ₦5,000, Cover Stand ₦2,000, Popular Stand ₦1,000 (change any match in Commerce › Match Tickets). Online payment needs the live Paystack key (A4). |
+| L6 | **Ticket prices** | **Done (15 Oct 2026):** every home match still to be played is now VIP Sitting ₦300, Cover Stand ₦200, Popular Stand ₦100 (club decision; before: ₦5,000 / ₦2,000 / ₦1,000). Tickets already bought keep the price paid. Change any match in Commerce › Match Tickets. Online payment needs the live Paystack key (A4). |
 | L7 | **Seats per stand** | How many VIP Sitting, Cover Stand and Popular Stand seats can be sold for each home match (until set, there is no limit). Enter them in Commerce › Match Tickets (one form sets all matches) or send them to the website manager. |
 
 ## E. Legal

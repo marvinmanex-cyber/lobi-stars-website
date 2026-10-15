@@ -147,7 +147,10 @@ const isActive = (href: string) => {
     /* Hide only after the fade-out, but show instantly so keyboard users can Tab straight in. */
     transition: opacity .15s, transform .15s, visibility 0s linear .15s;
   }
-  .sh-item:hover .sh-sub, .sh-link[aria-expanded='true'] + .sh-sub { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  .sh-link[aria-expanded='true'] + .sh-sub { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+  /* Hover opens the menus only with a mouse: on touch screens (large tablets) a tap
+     would leave a "hover" behind and the menu could not be closed by tapping again. */
+  @media (hover: hover) { .sh-item:hover .sh-sub { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; } }
   .sh-sub a {
     display: block; padding: 10px 12px; border-radius: 6px; text-decoration: none; color: var(--white);
     font: 600 15px/1.2 'Barlow Condensed', sans-serif;

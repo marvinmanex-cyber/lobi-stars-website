@@ -13,6 +13,7 @@ const SECTIONS: Record<string, [string, string] | null> = {
   squad: ['Squad', '/squad/'], gallery: ['Gallery', '/gallery/'], tickets: ['Tickets', '/tickets/'], programme: ['Matchday Programme', '/programme/'],
   food: ['Food Orders', '/food/'], partners: ['Partners', '/partners/'], commentary: ['Live Commentary', '/commentary/'],
   'predict-and-win': ['Predict & Win', '/predict-and-win/'], motm: ['Man of the Match', '/man-of-the-match/'], newsletter: ['Newsletter', '/newsletter/'],
+  rewards: ['Lobi Stars Rewards', '/rewards/'],
   fans: null, payment: null,
 };
 const path = Astro.url.pathname.endsWith('/') ? Astro.url.pathname : Astro.url.pathname + '/';
@@ -77,7 +78,11 @@ const parent = crumbs[crumbs.length - 1][1];
     var b = e.target.closest && e.target.closest('[data-pback-btn]');
     if (!b || e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
     var fromHere = false;
-    try { fromHere = !!document.referrer && new URL(document.referrer).origin === location.origin && new URL(document.referrer).pathname !== location.pathname; } catch (err) {}
+    try {
+      var ref = new URL(document.referrer);
+      // Sign-in pages replace themselves in the history, so the entry before is not the referrer.
+      fromHere = ref.origin === location.origin && ref.pathname !== location.pathname && !/^\/fans\/(login|register|forgot|reset)\//.test(ref.pathname);
+    } catch (err) {}
     // Pages reached inside the site by the page-transition router carry history.state.index > 0
     // (the first page opened is index 0, and the router puts a state on every page, so a plain
     // history.state check sent fans who opened a page directly out of the site). Otherwise the
