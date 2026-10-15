@@ -1932,193 +1932,194 @@ Paid orders keep the discount they got, even if you change the rules later.
 **At the gate:** the scanner shows **VALID: ADMIT ADULT** or **VALID: ADMIT
 CHILD**. For a child ticket, staff may ask for proof of age.
 
-## 34b. Lobi Stars Rewards (being built, not launched yet)
+## 34b. Running Lobi Stars Rewards
 
-Lobi Stars Rewards is the free fan loyalty programme: fans collect **Star
-Points** and swap them for rewards. It is being built in phases and is **not
-visible to fans yet**: the sign-up box, the account-page section and
-lobistarsfc.com/rewards only show in staff preview. To preview, open
-**lobistarsfc.com/rewards/?preview=1** once on your phone or computer.
+Lobi Stars Rewards is the free fan loyalty programme. Fans collect **Star
+Points** when they buy and take part on lobistarsfc.com, and swap them for
+rewards. Star Points have no cash value.
 
-**Phase 1 (done):**
-- Fans join with their normal fan account: one click on /rewards or **My
-  account** after ticking "I agree to the Lobi Stars Rewards Terms". New fans
-  see "Also join Lobi Stars Rewards" (ticked) on the registration form and must
-  accept the Rewards Terms too.
-- Each member gets a member number such as **LSR-000123**.
-- **50 welcome points** once their email is confirmed, and **20 points** for
-  adding their state of residence and date of birth (once).
-- Every points change is kept as a line in the member's points history; the
-  same order or event can never give points twice.
-- Rewards Terms (approved by the club's legal adviser): /rewards/terms. Change
-  them any time in **Admin › Rewards › Rewards Terms** (simple format: "## " for a
-  heading, "- " for a list item, a blank line between paragraphs; Preview, Save,
-  or "Back to the approved text"). Saving dates them today; new members accept
-  that version.
+**Status: built, not launched.** Fans can't see Rewards until you switch on
+**Rewards is live for fans** in **Admin › Rewards**. Until then, staff can
+preview it: open **lobistarsfc.com/rewards/?preview=1** once on your phone or
+computer.
 
-**Earning (done, all numbers in Admin › Rewards):** fans earn only from what
-the website records itself, and each order or match counts once.
-- **Match tickets:** points per ₦100 paid (after discounts), *pending* until the
-  match is set to full-time, then available. Refunded tickets lose their points.
-- **Shirts bought through our own checkout** (personalised shirts), **in-seat
-  food** (when the order is paid), **season tickets** and **membership** (plus a
-  membership bonus): points per ₦100 paid, available straight away. Jumia
-  purchases do not earn points.
-- **Coming to a home match:** points when their ticket is scanned at the gate
-  (once per match, however many of their tickets are scanned), and a bonus for
-  3 home matches in a row.
-- **Man of the Match vote** and **Predict & Win** (entry; at full-time a correct
-  result, or more for the exact score), limited to a monthly maximum.
-- **Referrals:** each member's link is lobistarsfc.com/fans/register/?ref=<member
-  number>. The referrer gets points once the friend has confirmed their email
-  and paid for something. Same phone, same device or the same surname at the
-  same company email are flagged, not paid. Most per season is a setting.
-- **Birthday month bonus,** once a year (date of birth saved 30+ days before).
-- **One-off actions (once per fan):** newsletter sign-up with their account
-  email (20), switching on match alerts while signed in (10), and a bonus on
-  their first paid purchase on lobistarsfc.com (50; taken back if that payment
-  is refunded). **Reading the Match Day Programme** gives 5 points per
-  programme, inside the monthly limit with votes and predictions.
-- No points for sharing on social media: a share can't be checked, so it would
-  be easy to abuse.
+Everything is in the **Rewards** section of the admin menu (Fan Relations and
+Super Admins):
 
-**The fan guide: lobistarsfc.com/rewards** explains everything to fans: what
-Rewards is, how to join (and "already have an account? just log in"), every
-way to earn with its points, the tiers and benefits, how to use points (with
-8 rewards from the catalogue), a worked example ("Meet David"), the rules in
-plain English, 13 questions and answers, and help (WhatsApp, contact form,
-email). Every number on it comes from Admin › Rewards and the catalogue, so it
-updates by itself when you change a setting. Admin › Rewards › Fan guide holds
-the points expiry period and the example prices used for David (confirm the
-real jersey, ticket and food prices).
-- A Paystack refund or dispute on a payment removes its points automatically
-  (a fan's balance can go below zero).
+| Page | What it is for |
+|---|---|
+| **Lobi Stars Rewards** | Settings (every number), the live switch, find a member, adjust points, put on hold, run the points job |
+| **Rewards Catalogue** | The rewards fans can get, their points, stock and limits |
+| **Rewards Terms** | The Terms fans accept (change them any time) |
+| **Fulfilment & Vouchers** | Check vouchers and member cards at the stadium; arrange experiences and items; give points back |
+| **Rewards Reports** | Charts, checks for suspicious accounts, Excel download |
 
-**Admin › Rewards** (new "Rewards" section in the admin menu; Fan Relations and
-Super Admins): every number above, the season start date and the **Rewards is
-live for fans** switch (leave off until launch); totals; **Find a member** by
-email or member number to see their points history, **Adjust** points (a
-reason is required and shown to the fan) or **Suspend** for fraud (they stop
-earning). **Run the points job now** makes ticket points of played matches
-available straight away (it also runs every 10 minutes, and when a fan opens
-their points).
+### Launching
 
-**Tiers (done):** Red, Gold and Legend, by Star Points **earned this season**
-(from the season start date in Admin › Rewards). Spending points never lowers a
-tier. Starting levels: Red from 0, Gold from 1,000, Legend from 3,000. (The top
-tier was called "Star" until October 2026; members at that level are now Legend.)
-- **Gold:** more points on purchases (1.25x) and a birthday gift; **Legend:**
-  1.5x, plus the end-of-season fans' event and the **Legend Fans wall**
-  (lobistarsfc.com/rewards/legend-fans; Legend members choose to appear, first
-  name and surname initial only).
-- **Early ticket access is switched off** (removed from the benefits in October
-  2026). To bring it back, enter hours under "Early ticket access" for Gold or
-  Legend in Admin › Rewards: the benefit line then shows again automatically, and
-  when a match has a **Sales open** time (Admin › Match Tickets) signed-in members
-  of that tier see "Early access for you" and can buy before that time.
+1. Confirm the numbers in **Admin › Rewards** (points per ₦100, bonuses, tiers,
+   pay with points) and each reward's points and stock in **Rewards Catalogue**.
+2. In **Admin › Rewards › Fan guide**, set the real example prices used in
+   "Meet David" (jersey, ticket, food) and the points expiry period.
+3. Make sure Resend (emails) and the live Paystack key are set up (A-list in
+   HANDOVER-TODO).
+4. Tell the food stand and club shop staff how to check vouchers (below).
+5. Switch on **Rewards is live for fans**. Then add Rewards to the menu,
+   footer and homepage (HANDOVER-TODO C26 and C27).
+
+### On match days: vouchers and member cards
+
+In **Admin › Rewards › Fulfilment & Vouchers › Check a voucher** (works on a
+phone):
+- **A voucher code** (e.g. LSR-7KQ2-9XMA, or its QR from the fan's wallet):
+  check it says *Ready to use*, give the reward, press **Mark used**. A voucher
+  works once, and an expired one is refused.
+- **A member card** (the QR on the fan's My Rewards page) or a **member
+  number** typed in (e.g. LSR-000123): you see all of that fan's vouchers ready
+  to use; press **Mark used** on the one they use. The card holds no personal
+  details and can't be faked.
+
+### Every week
+
+- **Fulfilment & Vouchers › Waiting for the club:** experiences and items fans
+  have redeemed. Contact the fan, then move it to **Confirmed**, **Done** or
+  **Collected**. A note you type is shown to the fan. **Refund points** gives
+  the points back (a reason is required and shown to the fan).
+- **Rewards Reports › Checks:** accounts worth a look (see "Fraud" below).
+- **Run the points job now** (Admin › Rewards) is only needed if you want
+  ticket points of a match just played to appear straight away; the job also
+  runs every 10 minutes and whenever a fan opens their points.
+
+### Helping a fan
+
+Find them in **Admin › Rewards › Find a member** (email or member number) to see
+their points history, tier and status.
+- **Points missing:** ticket points are *pending* until the match is set to
+  full-time. Jumia purchases never earn points. Each order or match counts once.
+- **Add or remove points:** **Adjust** with a reason (shown to the fan, and
+  kept in the audit log).
+- **Suspected fraud:** **Suspend** (put on hold); they stop earning and can't
+  redeem.
+- **Lost voucher:** it is in their wallet (lobistarsfc.com/rewards/wallet) and
+  in the email they got.
+
+### How fans earn Star Points
+
+All numbers are in **Admin › Rewards**; the fan guide (lobistarsfc.com/rewards)
+shows them automatically. Fans earn only from what the website records itself.
+- **Joining:** a welcome bonus once their email is confirmed, and a bonus for
+  adding their state of residence and date of birth (once). Fans join with their
+  normal fan account (one click on /rewards or My account, after accepting the
+  Rewards Terms), or with "Also join Lobi Stars Rewards" when they register.
+  Each member gets a number such as **LSR-000123**.
+- **Match tickets:** points per ₦100 paid (after discounts), pending until the
+  match is set to full-time.
+- **Personalised shirts, in-seat food, season tickets and membership** (plus a
+  membership bonus): points per ₦100 paid, straight away.
+- **Coming to a home match:** when their ticket is scanned at the gate (once per
+  match), plus a bonus for 3 home matches in a row.
+- **Man of the Match votes, Predict & Win** (entry, then more at full-time for a
+  correct result or the exact score) and **reading the Match Day Programme**:
+  limited to a monthly maximum together.
+- **Referrals:** each member's invite link (on My Rewards) is
+  lobistarsfc.com/fans/register/?ref=<member number>. The referrer gets points
+  once the friend has confirmed their email and paid for something. Referrals
+  from the same phone, the same device or the same surname at the same company
+  email are held back, not paid. There is a most-per-season limit.
+- **Birthday month bonus** once a year (date of birth saved 30+ days before).
+- **Once per fan:** newsletter sign-up with their account email, switching on
+  match alerts, and their first paid purchase (taken back if refunded).
+- No points for sharing on social media (it can't be checked).
+- A Paystack refund or dispute removes the points of that payment
+  automatically (a balance can go below zero).
+
+### Tiers
+
+Red, Gold and Legend, by Star Points **earned this season** (from the season
+start date in Admin › Rewards). Spending never lowers a tier. Starting levels:
+Gold from 1,000, Legend from 3,000.
+- **Gold:** 1.25x points on purchases and a birthday gift. **Legend:** 1.5x,
+  the end-of-season fans' event and the **Legend Fans wall**
+  (lobistarsfc.com/rewards/legend-fans; members choose to appear, first name and
+  surname initial only).
 - **Paid annual members** are at least Gold for that season (a setting).
-- **New season:** fans keep last season's tier for 2 months (a setting) while
-  they earn points again.
-- Moving up shows a celebration on My account (once) and sends the email
-  "You've reached Gold!".
-- In Admin › Rewards: the points needed, multiplier, early-access hours and extra
-  benefits per tier (the multiplier and early-access lines are written for fans
-  automatically), the grace period and the paid-member rule; the totals show how
-  many members are in each tier; Find a member shows their tier.
-- Tier benefits and early access only apply once Rewards is live.
+- **New season:** fans keep last season's tier for 2 months (a setting).
+- Moving up shows a celebration and sends "You've reached Gold!".
+- **Early ticket access is switched off** (club decision, October 2026). To
+  bring it back, enter hours for Gold or Legend in Admin › Rewards; matches with
+  a **Sales open** time then open early for those members, and the benefit line
+  shows again automatically.
+- The top tier was called "Star" until October 2026; those members are Legend.
 
-**Rewards catalogue and redeeming (done):**
-- **Admin › Rewards › Rewards Catalogue:** add or edit a reward (name,
-  description, image, points, type, value, stock, most per fan, minimum age e.g.
-  18 for alcohol sponsors, Gold/Legend only, partner sponsor, start/end dates),
-  switch it off or archive it. Starting rewards (confirm the points first):
-  free Popular Stand ticket 200, ₦1,500 food voucher 300,
-  free name & number printing 600, ₦5,000 off a jersey 1,000,
-  free official cap 1,000, VIP Sitting for a match 1,500, free jersey 2,500,
-  pitchside experience 5,000 and signed match-worn jersey 8,000 (both stock 0
-  = not available until you set the number). **No airtime or data rewards**
+### Rewards and redeeming
+
+- **Rewards Catalogue:** add or edit a reward (name, description, image,
+  points, type, value, stock, most per fan, minimum age e.g. 18 for alcohol
+  sponsors, Gold/Legend only, partner sponsor, start and end dates), switch it
+  off or archive it. Stock 0 means not available. **No airtime or data rewards**
   (club decision, October 2026).
-- **Fans** redeem at lobistarsfc.com/rewards/catalogue: they confirm ("This
-  can't be undone"); rewards of 1,000 points or more also need a 6-digit code
-  emailed to them. Points are taken once, even with a double click.
-  - **Vouchers:** a code like LSR-7KQ2-9XMA (emailed, valid 90 days, used once).
-  - **Match ticket:** the fan picks a home match; a normal QR ticket is emailed
+- Fans redeem at lobistarsfc.com/rewards/catalogue and confirm ("This can't be
+  undone"). Rewards of 1,000 points or more also need a 6-digit code emailed to
+  them. Points are taken once, even with a double click.
+  - **Vouchers:** a code valid 90 days, used once (emailed, and in their wallet
+    with a QR code).
+  - **Match ticket:** the fan picks a home match and gets a normal QR ticket
     (the stand's seat limit applies).
   - **Experiences and items:** go to Fulfilment with the fan's details.
-- **Admin › Rewards › Fulfilment & Vouchers:** **Check a voucher** at the food
-  stands or club shop and press **Mark used**; move experiences/items to Confirmed,
-  Done or Collected; **Refund points** (reason shown to the fan).
-- Redeeming only works once Rewards is live. Points have no cash value.
+- **Pay with Star Points at checkout:** on match tickets, MatchDay Kitchen and
+  personalised shirts, members see "You'll earn X Star Points", can tick **Use
+  my Star Points** (1 point = ₦5 off, up to 50% of the order, at least 100
+  points: Admin › Rewards › Pay with Star Points) and can use a voucher that
+  fits. The points are held while the fan pays with Paystack and given back if
+  the payment fails, is abandoned or is refunded. No points are earned on the
+  part paid with points.
 
-**Pay with Star Points and vouchers at our checkouts (done):** at checkout for
-match tickets (/tickets), MatchDay Kitchen (/kitchen and /food) and personalised
-shirts (/shop), a signed-in Rewards member sees "You'll earn X Star Points on
-this order", can tick **Use my Star Points** (1 point = ₦5 off, up to 50% of the
-order, at least 100 points: all in Admin › Rewards › Pay with Star Points) and
-can pick a reward voucher that fits (food vouchers at the kitchen; jersey money
-off and free name & number printing on personalised shirts). The points are
-held when the fan goes to Paystack, taken when the payment is confirmed, and
-given back automatically if the payment fails or is abandoned. A refund gives
-the points back. No points are earned on the part paid with points. Guests see
-"Log in to earn X Star Points". Nothing shows until Rewards is live.
+### What fans see
 
-**Fans' own Rewards pages (done):**
-- **My Rewards** (lobistarsfc.com/rewards/me): Star Points, pending ticket
-  points (and the match they wait for), a warning when points are about to
-  expire, tier and progress to the next tier, the next reward to aim for, ways
-  to use points, the **digital member card** with a QR code, the fan's invite
-  link with share buttons (WhatsApp first), **badges** (First Ticket, Jersey
-  Owner, 5 and 10 Home Games, Predictor, MOTM Voter, Gold Member, Legend Member:
-  just for fun, no points or cash value) and recent activity.
-- **My Wallet** (/rewards/wallet): redeemed rewards in Active / Used / Expired
-  tabs; each voucher shows its code and a QR code.
-- **Points History** (/rewards/history): every movement, filters Earned, Used,
-  Pending, Expired, Removed.
-- Signed-in members see their **points balance in the site header** (on phones a
-  small gold badge on their account icon), linking to My Rewards.
-- The Club Shop says Star Points come from orders paid on lobistarsfc.com, not
-  Jumia orders.
-- These show only once Rewards is live (or in staff preview).
+- **lobistarsfc.com/rewards:** the full guide (how to join, every way to earn,
+  tiers, how to use points, "Meet David", rules, questions, help).
+- **My Rewards** (/rewards/me): balance, pending points, expiry warning, tier
+  progress, next reward, member card QR, invite link with share buttons,
+  badges (just for fun), messages and email choices, recent activity.
+- **My Wallet** (/rewards/wallet) and **Points History** (/rewards/history).
+- Their **points balance in the site header** (a red dot means new messages).
+- "Earn" and "Use my Star Points" at checkout; the Club Shop says Jumia orders
+  don't earn points.
 
-**Member card and vouchers at the stadium:** in **Admin › Rewards › Fulfilment
-& Vouchers › Check a voucher**, scan the fan's **member card** QR (from My
-Rewards) or type their member number (e.g. LSR-000123): you see all their
-vouchers ready to use; give the reward and press **Mark used**. Scanning or
-typing a single voucher code works as before. The member card holds no personal
-details and can't be faked.
+**Messages:** fans get a message on My Rewards when ticket points arrive, on
+their birthday bonus, on reaching a new tier, when a reward is redeemed,
+confirmed, done, collected or refunded, 7 days before a voucher expires, and
+30 days before (and when) their points expire. Under **Email me about** each fan
+chooses which of these also come by email (all on except "Star Points
+arriving"). Emails a fan asks for directly, like a voucher code, always go.
 
-**Points expiry (done):** points expire after **12 months with no activity**
-(Admin › Rewards › Fan guide › "Points expire after"). Any purchase, bonus,
-prediction, vote, reward used or club adjustment is activity and resets the
-clock. 30 days before, the fan gets an email and a warning on My Rewards. On
-the day, the points go as one "Points expired" line in their history. The job
-runs with the regular Rewards job and only once Rewards is live.
+**Points expiry:** points expire after **12 months with no activity** (a
+setting). Any purchase, bonus, prediction, vote, reward used or club adjustment
+resets the clock. The fan is warned 30 days before; then the points go as one
+"Points expired" line in their history.
 
-**Messages to fans (notifications, done):** fans get a message on My Rewards
-(and a small red dot on the points badge in the header) when:
-- ticket points arrive after the match, or their birthday bonus is added;
-- they reach a new tier;
-- they redeem a reward, the club confirms / completes / marks it collected
-  (Fulfilment & Vouchers), or the club gives the points back (with your reason);
-- a voucher expires within 7 days;
-- their points are about to expire (30 days before) or have expired.
-On My Rewards › **Email me about**, each fan chooses which of these also come by
-email (all on, except "Star Points arriving"). Emails a fan asks for directly,
-like the voucher code after redeeming, always go. A note you type when moving a
-reward along in Fulfilment is shown to the fan. Emails need Resend (A-list).
+### Rewards Reports and fraud
 
-**Rewards Reports (Admin › Rewards › Rewards Reports, done):** members, Star
-Points issued / used / expired / taken back, the points sitting in fans'
-balances and roughly what they are worth in naira, a chart of points by month
-and of how fans earn them (each with "Show as a table"), members per tier and
-the rewards redeemed. **Checks** lists accounts worth a look: several accounts
-made on one device, referrals that were held back, many points in a week (not
-counting club adjustments), points taken back after refunds, many rewards in a
-day and large manual adjustments by staff. A check is not proof: look at the
-account before putting it on hold. **Download Excel** (needs "can export fan
-data"; every download is logged) has every figure, every member with tier and
-balance, and all the checks. The fan database download (Fans & Inbox) now also
-has **Rewards Member**, **Rewards Tier** and **Star Points** columns.
+**Rewards Reports** shows members, Star Points issued / used / expired / taken
+back, the points in fans' balances and roughly what they are worth in naira,
+points by month, how fans earn them, members per tier and the rewards redeemed.
+**Download Excel** (needs "can export fan data"; every download is logged) has
+every figure, every member with tier and balance, and all the checks. The fan
+database download (Fans & Inbox) also has **Rewards Member**, **Rewards Tier**
+and **Star Points** columns.
+
+**Checks** lists accounts worth a look: several accounts made on one device,
+referrals held back, many points in a week (not counting club adjustments),
+points taken back after refunds, many rewards in a day, and large manual
+adjustments by staff. A check is not proof of cheating: look at the account
+before you put it on hold or adjust points.
+
+### Rewards Terms
+
+The Terms (approved by the club's legal adviser) are at /rewards/terms. Change
+them in **Admin › Rewards › Rewards Terms** (simple format: "## " for a heading,
+"- " for a list item, a blank line between paragraphs; Preview, Save, or "Back
+to the approved text"). Saving dates them today, and new members accept that
+version.
 
 ## Other things you can update in the CMS
 
