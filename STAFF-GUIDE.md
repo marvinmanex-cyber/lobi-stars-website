@@ -1688,7 +1688,8 @@ to Back (news stories have it under the headline and at the end). Fans pick
 WhatsApp, Facebook, X, Telegram, Email or Copy link; on a phone it opens the
 phone's own share menu. The club only counts which page was shared and where
 (for example "WhatsApp"), never who. It isn't on sign-in, account, checkout or
-staff pages.
+staff pages. The MatchDay Kitchen page (/kitchen) has it too; it always shares
+the plain kitchen link, never a fan's seat from a seat QR code.
 
 **Matchday › Share any page** (Media, Matchday Operator and Super Admin):
 1. Type part of a page name (for example "tickets") and pick it, or paste any

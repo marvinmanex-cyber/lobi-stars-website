@@ -56,7 +56,7 @@ const softNav = !bare && !adminPage && !/^\/(admin|scan)(\/|$)/.test(Astro.url.p
 const showBack = !bare && !adminPage && !/^\/(match-centre)?\/?$/.test(Astro.url.pathname);
 // Pages that are never shared: staff, sign-in and account, checkout and order
 // status, error pages, and the programme pages (they have their own Share).
-const showShare = share && showBack && !noindex && !/^\/(admin|kitchen|scan|fans|payment|programme|offline|unsubscribe|404)(\/|$)|\/(success|order|checkout)(\/|$)/.test(Astro.url.pathname);
+const showShare = share && showBack && !noindex && !/^\/(admin|scan|fans|payment|programme|offline|unsubscribe|404)(\/|$)|\/(success|order|checkout)(\/|$)/.test(Astro.url.pathname);
 const waLink = `https://wa.me/${CONTACT.whatsapp}?text=${encodeURIComponent('Hello Lobi Stars Management, I have an inquiry.')}`;
 ---
 <!DOCTYPE html>
