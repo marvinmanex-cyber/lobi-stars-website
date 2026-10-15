@@ -3,8 +3,8 @@
 // reward used or club adjustment is activity and resets the clock. Fans get an
 // email 30 days before (once per quiet spell). Expired points become one EXPIRE
 // row, so the history shows it. Runs only once Rewards is live.
-import { ensureRewardsSchema, rewardsSettings, addLedger, memberNo } from './rewards.js';
-import { sendEmail } from './email.js';
+import { ensureRewardsSchema, rewardsSettings, addLedger } from './rewards.js';
+import { notify } from './rewardsNotify.js';
 
 const WARN_DAYS = 30;
 const sqlToMs = s => Date.parse(String(s).replace(' ', 'T') + (String(s).includes('Z') ? '' : 'Z'));
@@ -52,16 +52,18 @@ export async function expirySweep(env, now = Date.now()) {
     if (at <= now) {
       const ok = await addLedger(db, { memberId: m.member_id, type: 'EXPIRE', points: -Number(m.bal), source: 'expiry', sourceRef: `${m.member_id}:${m.last_at}`,
         description: `Points expired after ${s.expiryMonths} months with no activity` });
-      if (ok) out.expired++;
+      if (ok) {
+        out.expired++;
+        await notify(env, m.member_id, { kind: 'expiry', ref: `expired:${m.last_at}`, title: 'Your Star Points have expired',
+          body: `${Number(m.bal).toLocaleString('en-NG')} Star Points expired after ${s.expiryMonths} months with no activity. Points you earn from now on start a new ${s.expiryMonths}-month period.`, email: false });
+      }
     } else if (m.expiry_warned !== m.last_at) {
       // Mark first, so a failed email is never sent twice in a row.
       await db.prepare(`UPDATE rewards_members SET expiry_warned = ? WHERE member_id = ?`).bind(m.last_at, m.member_id).run();
-      if (env.RESEND_API_KEY && m.email) {
-        const date = new Date(at).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'long', year: 'numeric' });
-        const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-        await sendEmail(env, { to: m.email, subject: 'Your Star Points expire soon – Lobi Stars Rewards',
-          html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto"><h2 style="color:#A3161B">Keep your Star Points</h2><p>Hi ${esc(m.first_name)}, your ${Number(m.bal).toLocaleString('en-NG')} Star Points (member ${esc(memberNo(m.seq))}) expire on <strong>${esc(date)}</strong> because there has been no activity on your account.</p><p>Any purchase on lobistarsfc.com, a Predict &amp; Win entry, a Man of the Match vote or using a reward keeps them.</p><p><a href="https://lobistarsfc.com/rewards/me/">See your Star Points</a> · <a href="https://lobistarsfc.com/rewards/catalogue/">Use them now</a></p><p style="font-size:12px;color:#888">Star Points have no cash value.</p></div>` }).catch(err => console.error('[rewards] expiry email', err));
-      }
+      const date = new Date(at).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'long', year: 'numeric' });
+      await notify(env, m.member_id, { kind: 'expiry', ref: `warn:${m.last_at}`, title: 'Your Star Points expire soon',
+        body: `Your ${Number(m.bal).toLocaleString('en-NG')} Star Points expire on ${date} because there has been no activity on your account. Any purchase on lobistarsfc.com, a Predict & Win entry, a Man of the Match vote or using a reward keeps them.`,
+        link: '/rewards/catalogue/' });
       out.warned++;
     }
   }

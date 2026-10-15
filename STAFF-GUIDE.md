@@ -2094,6 +2094,19 @@ clock. 30 days before, the fan gets an email and a warning on My Rewards. On
 the day, the points go as one "Points expired" line in their history. The job
 runs with the regular Rewards job and only once Rewards is live.
 
+**Messages to fans (notifications, done):** fans get a message on My Rewards
+(and a small red dot on the points badge in the header) when:
+- ticket points arrive after the match, or their birthday bonus is added;
+- they reach a new tier;
+- they redeem a reward, the club confirms / completes / marks it collected
+  (Fulfilment & Vouchers), or the club gives the points back (with your reason);
+- a voucher expires within 7 days;
+- their points are about to expire (30 days before) or have expired.
+On My Rewards › **Email me about**, each fan chooses which of these also come by
+email (all on, except "Star Points arriving"). Emails a fan asks for directly,
+like the voucher code after redeeming, always go. A note you type when moving a
+reward along in Fulfilment is shown to the fan. Emails need Resend (A-list).
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

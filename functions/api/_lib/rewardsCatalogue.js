@@ -8,6 +8,7 @@ import { tierStatus } from './rewardsTiers.js';
 import { tierRank } from './rewardsRules.js';
 import { sendEmail } from './email.js';
 import { randomId } from './crypto.js';
+import { notify } from './rewardsNotify.js';
 
 // Airtime and data are not rewards (club decision, October 2026).
 export const TYPES = ['voucher', 'ticket', 'experience', 'physical'];
@@ -164,6 +165,8 @@ export async function refundRedemption(env, red, reason) {
   const r = await db.prepare(`UPDATE rewards_redemptions SET status = 'refunded', last_error = ?, updated_at = datetime('now') WHERE id = ? AND status NOT IN ('refunded', 'delivered', 'used', 'fulfilled', 'collected')`).bind(String(reason).slice(0, 200), red.id).run();
   if (!r.meta.changes) return false;
   if (red.type !== 'voucher' && red.type !== 'ticket') await db.prepare(`UPDATE rewards_catalogue SET stock = stock + 1 WHERE id = ? AND stock IS NOT NULL`).bind(red.item_id).run();
+  await notify(env, red.member_id, { kind: 'rewards', ref: `refunded:${red.id}`, title: `Points returned: ${red.item_name}`, link: '/rewards/history/',
+    body: `We have given back your ${Number(red.points).toLocaleString('en-NG')} Star Points for ${red.item_name}. Reason: ${String(reason).slice(0, 200)}` });
   return addLedger(db, { memberId: red.member_id, type: 'REVERSE', points: red.points, source: 'redeem', sourceRef: `refund:${red.id}`, description: `Points returned: ${red.item_name} (${reason})` });
 }
 
@@ -234,7 +237,12 @@ export async function redeem(env, memberId, itemId, opts = {}) {
   let red = await db.prepare(`SELECT * FROM rewards_redemptions WHERE id = ?`).bind(id).first();
   red = await fulfil(env, red, m);
   await redemptionEmail(env, red, m).catch(err => console.error('[rewards] redemption email', err));
-  return { ok: true, redemption: publicRedemption(red) };
+  // On-site message only: the fan has just had the confirmation email above.
+  const pr = publicRedemption(red);
+  await notify(env, memberId, { kind: 'rewards', ref: `redeemed:${red.id}`, title: `You redeemed: ${red.item_name}`, link: '/rewards/wallet/', email: false,
+    body: pr.voucherCode ? `Your voucher code is ${pr.voucherCode}. Show it at the stadium or the club shop, or enter it at checkout.`
+      : pr.type === 'ticket' ? `Your ticket for ${pr.match || 'the match'} has been emailed to you with its QR code.` : 'The club will contact you to arrange it.' });
+  return { ok: true, redemption: pr };
 }
 
 /** Delivers what was redeemed: a ticket (vouchers are ready; experiences and items go to the club). */
@@ -261,7 +269,17 @@ export async function redemptionSweep(env) {
   const db = env.DB;
   await ensureCatalogueSchema(db);
   const ex = await db.prepare(`UPDATE rewards_redemptions SET status = 'expired', updated_at = datetime('now') WHERE status = 'issued' AND type = 'voucher' AND expires_at < ?`).bind(new Date().toISOString()).run();
-  return { expired: ex.meta.changes };
+  // Vouchers that expire in the next 7 days: one reminder each.
+  const soon = new Date(Date.now() + 7 * 864e5).toISOString();
+  const { results } = await db.prepare(`SELECT id, member_id, item_name, voucher_code, expires_at FROM rewards_redemptions WHERE status = 'issued' AND type = 'voucher' AND expires_at >= ? AND expires_at < ? LIMIT 500`)
+    .bind(new Date().toISOString(), soon).all();
+  let reminded = 0;
+  for (const v of results) {
+    const date = new Date(v.expires_at).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'long', year: 'numeric' });
+    if (await notify(env, v.member_id, { kind: 'rewards', ref: `voucher-soon:${v.id}`, title: 'Your voucher expires soon', link: '/rewards/wallet/',
+      body: `Your ${v.item_name} voucher (${v.voucher_code}) expires on ${date}. Use it before then.` })) reminded++;
+  }
+  return { expired: ex.meta.changes, vouchers_reminded: reminded };
 }
 
 const STATUS_TEXT = {

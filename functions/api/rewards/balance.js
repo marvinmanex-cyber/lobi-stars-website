@@ -1,7 +1,8 @@
 import { readSession } from '../_lib/session.js';
 import { ensureRewardsSchema, rewardsSettings, pointsSummary } from '../_lib/rewards.js';
+import { unreadCount } from '../_lib/rewardsNotify.js';
 
-// GET /api/rewards/balance -- light call for the header: { show, balance } for a
+// GET /api/rewards/balance -- light call for the header: { show, balance, unread } for a
 // signed-in Rewards member once Rewards is live (nothing for anyone else).
 export async function onRequestGet({ request, env }) {
   const headers = { 'Cache-Control': 'no-store' };
@@ -13,6 +14,7 @@ export async function onRequestGet({ request, env }) {
     const s = await rewardsSettings(db);
     const r = await db.prepare(`SELECT status FROM rewards_members WHERE member_id = ?`).bind(memberId).first();
     if (!s.live || !r || r.status !== 'active') return Response.json({ show: false }, { headers });
-    return Response.json({ show: true, balance: (await pointsSummary(db, memberId)).balance }, { headers });
+    const [sum, unread] = await Promise.all([pointsSummary(db, memberId), unreadCount(db, memberId).catch(() => 0)]);
+    return Response.json({ show: true, balance: sum.balance, unread }, { headers });
   } catch { return Response.json({ show: false }, { headers }); }
 }

@@ -6,6 +6,7 @@
 // Rewards can never break a payment, a ticket or the gate.
 import { ensureRewardsSchema, rewardsSettings, addLedger } from './rewards.js';
 import { purchaseMultiplier, checkTierUpgrade } from './rewardsTiers.js';
+import { notify } from './rewardsNotify.js';
 import { purchasePoints, lagosMonthStartUtc, capAllowance, streakReached, selfReferralReason, birthdayDue, lagosYear } from './rewardsRules.js';
 
 const safe = (label, fn) => fn().catch(err => { console.error(`[rewards] ${label}`, err); return null; });
@@ -240,12 +241,29 @@ export function reversePoints(env, by, reason) {
 }
 
 /** Ticket points become available once their match has been played. */
-async function releaseTicketPoints(db, memberId = null) {
-  const where = memberId ? 'AND member_id = ?' : '';
-  const stmt = db.prepare(`UPDATE rewards_ledger SET status = 'AVAILABLE', available_at = ? WHERE status = 'PENDING' AND source = 'ticket_order' ${where}
-    AND event_id IN (SELECT event_id FROM match_centre WHERE status = 'full-time' UNION SELECT event_id FROM league_fixtures WHERE status IN ('full_time', 'awarded') AND event_id IS NOT NULL)`);
-  const r = await (memberId ? stmt.bind(new Date().toISOString(), memberId) : stmt.bind(new Date().toISOString())).run();
-  return r.meta.changes;
+async function releaseTicketPoints(env, memberId = null) {
+  const db = env.DB;
+  const { results } = await db.prepare(`SELECT l.id, l.member_id, l.points, l.event_id, e.home_team, e.away_team FROM rewards_ledger l LEFT JOIN events e ON e.id = l.event_id
+    WHERE l.status = 'PENDING' AND l.source = 'ticket_order' ${memberId ? 'AND l.member_id = ?' : ''}
+    AND l.event_id IN (SELECT event_id FROM match_centre WHERE status = 'full-time' UNION SELECT event_id FROM league_fixtures WHERE status IN ('full_time', 'awarded') AND event_id IS NOT NULL)
+    LIMIT 1000`).bind(...(memberId ? [memberId] : [])).all();
+  const now = new Date().toISOString();
+  const got = new Map();
+  let n = 0;
+  for (const r of results) {
+    const u = await db.prepare(`UPDATE rewards_ledger SET status = 'AVAILABLE', available_at = ? WHERE id = ? AND status = 'PENDING'`).bind(now, r.id).run();
+    if (!u.meta.changes) continue;
+    n++;
+    const k = `${r.member_id}|${r.event_id}`;
+    const g = got.get(k) || { ...r, points: 0 };
+    g.points += r.points; got.set(k, g);
+  }
+  // One message per fan per match: "120 Star Points are ready".
+  for (const g of got.values()) {
+    await notify(env, g.member_id, { kind: 'points', ref: `ticket:${g.event_id}`, title: `${g.points.toLocaleString('en-NG')} Star Points are ready`,
+      body: `Your points from your ${g.home_team ? `${g.home_team} vs ${g.away_team} ` : ''}tickets are now in your balance.` });
+  }
+  return n;
 }
 
 /** Predict & Win results at full-time: exact score, otherwise correct result (monthly cap applies). */
@@ -269,7 +287,8 @@ async function settlePredictions(db, memberId = null) {
 }
 
 /** Birthday month bonus (once a year; date of birth saved 30+ days before). */
-async function birthdays(db, memberId = null) {
+async function birthdays(env, memberId = null) {
+  const db = env.DB;
   const s = await rewardsSettings(db);
   if (!(s.birthday > 0)) return 0;
   const month = String(new Date(Date.now() + 3600e3).getUTCMonth() + 1).padStart(2, '0');
@@ -278,7 +297,10 @@ async function birthdays(db, memberId = null) {
   let n = 0;
   for (const m of results) {
     if (birthdayDue(m.date_of_birth, m.dob_set_at, s.birthdayDobMinDays)) {
-      if (await addLedger(db, { memberId: m.id, type: 'BONUS', points: s.birthday, source: 'birthday', sourceRef: `${m.id}:${lagosYear()}`, description: 'Happy birthday from Lobi Stars!' })) n++;
+      if (await addLedger(db, { memberId: m.id, type: 'BONUS', points: s.birthday, source: 'birthday', sourceRef: `${m.id}:${lagosYear()}`, description: 'Happy birthday from Lobi Stars!' })) {
+        n++;
+        await notify(env, m.id, { kind: 'points', ref: `birthday:${lagosYear()}`, title: 'Happy birthday from Lobi Stars!', body: `We have added ${s.birthday} Star Points to your balance. Have a great day!` });
+      }
     }
   }
   return n;
@@ -293,9 +315,9 @@ export async function rewardsSweep(env, { memberId = null } = {}) {
   const db = env.DB;
   await ensureRewardsSchema(db);
   const out = { released: 0, predictions: 0, birthdays: 0 };
-  out.released = (await safe('release', () => releaseTicketPoints(db, memberId))) || 0;
+  out.released = (await safe('release', () => releaseTicketPoints(env, memberId))) || 0;
   out.predictions = (await safe('predictions', () => settlePredictions(db, memberId))) || 0;
-  out.birthdays = (await safe('birthdays', () => birthdays(db, memberId))) || 0;
+  out.birthdays = (await safe('birthdays', () => birthdays(env, memberId))) || 0;
   if (memberId) await checkTierUpgrade(env, memberId);
   else {
     const { redemptionSweep } = await import('./rewardsCatalogue.js');

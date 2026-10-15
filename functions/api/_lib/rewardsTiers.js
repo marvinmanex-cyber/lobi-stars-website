@@ -5,7 +5,7 @@
 // All numbers come from the Rewards settings (Admin › Rewards).
 import { ensureRewardsSchema, rewardsSettings } from './rewards.js';
 import { effectiveTier, tierRank, seasonLabel, tierBenefits } from './rewardsRules.js';
-import { sendEmail } from './email.js';
+import { notify } from './rewardsNotify.js';
 
 const sqlDate = ms => new Date(ms).toISOString().replace('T', ' ').slice(0, 19);
 const seasonStartMs = s => Date.parse(`${s.seasonStart}T00:00:00+01:00`);
@@ -70,15 +70,12 @@ export async function checkTierUpgrade(env, memberId) {
     const now = tierRank(st.tier.key, st.tiers);
     if (now <= before) return false;
     const claim = await db.prepare(`UPDATE rewards_members SET tier_notified = ? WHERE member_id = ? AND (tier_notified IS ? )`).bind(`${st.season}:${st.tier.key}`, memberId, row.tier_notified).run();
-    if (!claim.meta.changes || !env.RESEND_API_KEY) return true;
+    if (!claim.meta.changes) return true;
     const esc = x => String(x ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const html = `<div style="max-width:520px;margin:0 auto;font-family:Arial,sans-serif;color:#111;">
-      <h2 style="color:#A3161B;">You've reached ${esc(st.tier.name)}!</h2>
-      <p>Well done ${esc(row.first_name)}! Your support this season has taken you to <strong>${esc(st.tier.name)}</strong> in Lobi Stars Rewards.</p>
-      <ul>${st.benefits.map(b => `<li>${esc(b)}</li>`).join('')}</ul>
-      <p><a href="https://lobistarsfc.com/rewards/me/" style="color:#A3161B;font-weight:bold;">See your Star Points</a></p>
-      <p style="font-size:12px;color:#888;">Star Points have no cash value. Lobi Stars Rewards Terms: lobistarsfc.com/rewards/terms</p></div>`;
-    await sendEmail(env, { to: row.email, subject: `You've reached ${st.tier.name}! – Lobi Stars Rewards`, html }).catch(err => console.error('[rewards] tier email', err));
+    await notify(env, memberId, { kind: 'tier', ref: `${st.season}:${st.tier.key}`, title: `You've reached ${st.tier.name}!`,
+      body: `Your support this season has taken you to ${st.tier.name} in Lobi Stars Rewards. ${st.benefits.join(' · ')}`,
+      email: { subject: `You've reached ${st.tier.name}! – Lobi Stars Rewards`,
+        html: `<p>Well done! Your support this season has taken you to <strong>${esc(st.tier.name)}</strong> in Lobi Stars Rewards.</p><ul>${st.benefits.map(b => `<li>${esc(b)}</li>`).join('')}</ul><p style="font-size:12px;color:#888;">Lobi Stars Rewards Terms: lobistarsfc.com/rewards/terms</p>` } });
     return true;
   } catch (err) { console.error('[rewards] tier check', err); return false; }
 }

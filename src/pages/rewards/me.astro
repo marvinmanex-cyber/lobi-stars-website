@@ -25,6 +25,11 @@ import RewardsShell from '../../components/rewards/RewardsShell.astro';
     .rx-ways { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
     .rx-ways a { display: block; height: 100%; padding: 14px 16px; border-radius: 12px; background: var(--d1, #fff); border: 1px solid var(--d4); border-left: 4px solid #FFC72C; text-decoration: none; color: var(--white) !important; font-weight: 400 !important; }
     .rx-ways a b { display: block; margin-bottom: 4px; font: 400 21px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: var(--red-text); }
+    .rx-msg.new { border-left: 4px solid #C11A1F; }
+    .rx-msg .t span { overflow-wrap: anywhere; }
+    .rx-prefs { display: grid; gap: 10px; }
+    .rx-pref { display: flex; gap: 10px; align-items: flex-start; line-height: 1.45; cursor: pointer; }
+    .rx-pref input { width: 20px; height: 20px; flex: none; margin-top: 1px; accent-color: #C11A1F; }
     .rx-ref input { flex: 1 1 240px; min-height: 44px; padding: 8px 10px; border-radius: 8px; border: 1.5px solid var(--d4); background: var(--d1, #fff); color: var(--white); font: 400 15px/1.3 'Barlow', sans-serif; min-width: 0; }
     @media (max-width: 420px) { .rx-mc { grid-template-columns: 1fr; } .rx-mc img { justify-self: start; } .rx-badges { grid-template-columns: 1fr 1fr; } .rx-stats { grid-template-columns: 1fr 1fr; } .rx-stat b { font-size: 34px; } }
   </style>
@@ -49,7 +54,34 @@ import RewardsShell from '../../components/rewards/RewardsShell.astro';
     else main.replaceChildren(card('Join Lobi Stars Rewards', el('p', { text: 'Hi ' + d.firstName + ', you have not joined yet. It is free, and you get ' + fmt(d.bonuses.welcome) + ' Star Points to start.' }), el('div', { class: 'rx-row' }, el('a', { class: 'rx-btn', href: '/fans/account/#rwH', text: 'Join on my account page' }), el('a', { class: 'rx-btn o', href: '/rewards/', text: 'How Rewards works' }))));
   }
 
-  function draw(d, info, pend) {
+  // Messages from Lobi Stars Rewards (newest first) with "Mark all as read".
+  function messagesCard(n) {
+    var c = card('Messages');
+    var list = el('ul', { class: 'rx-list' });
+    var items = n.items.slice(0, 6);
+    if (!items.length) c.append(el('p', { class: 'rx-muted', text: 'No messages yet. We will let you know here when points arrive, your rewards are ready or something needs your attention.' }));
+    items.forEach(function (m) {
+      list.append(el('li', { class: 'rx-li rx-msg' + (m.read ? '' : ' new') }, el('div', { class: 't' }, el('b', {}, m.read ? null : el('span', { class: 'rx-chip wait', text: 'New' }), m.read ? null : ' ', m.title), el('span', { text: m.body }), el('span', { text: day(m.createdAt) })),
+        m.link ? el('a', { class: 'rx-btn o', href: m.link, text: 'Open', onclick: function () { post({ action: 'read', id: m.id }); } }) : null));
+    });
+    if (items.length) c.append(list);
+    if (n.unread) c.append(el('p', { style: 'margin-top:10px' }, el('button', { type: 'button', class: 'rx-btn o', text: 'Mark all as read', onclick: function () { var b = this; b.disabled = true; post({ action: 'read' }).then(function () { load(); }); } })));
+    return c;
+  }
+  // Which Rewards emails the fan wants (on-site messages are always shown).
+  function prefsCard(n) {
+    var boxes = Object.keys(n.kinds).map(function (k) { var i = el('input', { type: 'checkbox', id: 'np-' + k, checked: n.email[k] }); i.dataset.k = k; return el('label', { class: 'rx-pref', for: 'np-' + k }, i, el('span', { text: n.kinds[k] })); });
+    var msg = el('span', { class: 'rx-muted', role: 'status' });
+    return card('Email me about', el('p', { class: 'rx-muted', text: 'Messages always show here. Choose which ones we also email to you. Emails you ask for, like a voucher code after redeeming, are always sent.' }),
+      el('div', { class: 'rx-prefs' }, boxes),
+      el('div', { class: 'rx-row', style: 'margin-top:10px' }, el('button', { type: 'button', class: 'rx-btn', text: 'Save', onclick: function () {
+        var email = {}; boxes.forEach(function (l) { var i = l.querySelector('input'); email[i.dataset.k] = i.checked; });
+        msg.textContent = 'Saving…'; post({ action: 'prefs', email: email }).then(function (r) { msg.textContent = r.ok ? 'Saved.' : 'Could not save. Please try again.'; });
+      } }), msg));
+  }
+  function post(body) { return fetch('/api/rewards/notifications', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); }).catch(function () { return {}; }); }
+
+  function draw(d, info, pend, notes) {
     var S = (info && info.settings) || {};
     sub.textContent = 'Hi ' + d.firstName + '. Member ' + d.memberNo + '.';
     var parts = [];
@@ -57,6 +89,8 @@ import RewardsShell from '../../components/rewards/RewardsShell.astro';
     if (!d.verified) parts.push(el('p', { class: 'rx-alert' }, 'Confirm your email address to start earning Star Points. ', el('a', { href: '/fans/account/', text: 'Go to my account' })));
     if (d.status === 'suspended') parts.push(el('p', { class: 'rx-alert', text: 'Your Rewards membership is on hold. Please contact the club through the Help Centre.' }));
     if (d.expiring) parts.push(el('p', { class: 'rx-alert' }, el('b', { text: fmt(d.expiring.points) + ' Star Points expire on ' + day(d.expiring.at) + '. ' }), 'Any purchase on lobistarsfc.com, a prediction, a vote or using a reward keeps them. ', el('a', { href: '/rewards/catalogue/', text: 'Use them now' })));
+
+    if (notes && notes.items) parts.push(messagesCard(notes));
 
     // Summary
     var next = pend.filter(function (p) { return p.waitsFor; })[0];
@@ -116,9 +150,11 @@ import RewardsShell from '../../components/rewards/RewardsShell.astro';
         el('span', { class: 'p ' + (h.status === 'PENDING' ? 'wait' : h.points < 0 ? 'minus' : 'plus'), text: (h.points > 0 ? '+' : '') + fmt(h.points) }));
     })) : el('p', { class: 'rx-muted', text: 'Nothing yet. Buy a ticket, vote for Man of the Match or make a prediction to start.' }), el('p', { style: 'margin-top:10px' }, el('a', { href: '/rewards/history/', text: 'See all my points history' }))));
 
+    if (notes && notes.kinds) parts.push(prefsCard(notes));
     main.replaceChildren.apply(main, parts);
   }
 
+  function load() {
   Promise.all([
     fetch('/api/rewards/me', { cache: 'no-store' }).then(function (r) { return r.json(); }),
     fetch('/api/rewards/info').then(function (r) { return r.json(); }).catch(function () { return null; }),
@@ -127,8 +163,12 @@ import RewardsShell from '../../components/rewards/RewardsShell.astro';
     if (d.error) { main.replaceChildren(el('p', { class: 'rx-muted', text: d.error })); return; }
     if (!d.signedIn || !d.joined) { guest(d); return; }
     if (!d.live && !preview && !d.joined) { guest(d); return; }
-    fetch('/api/rewards/history?filter=pending', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return { items: [] }; })
-      .then(function (p) { draw(d, x[1], p.items || []); });
+    Promise.all([
+      fetch('/api/rewards/history?filter=pending', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return { items: [] }; }),
+      fetch('/api/rewards/notifications', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; }),
+    ]).then(function (y) { draw(d, x[1], y[0].items || [], y[1]); });
   }).catch(function () { main.replaceChildren(el('p', { class: 'rx-muted', text: 'Your Rewards could not be loaded just now. Please try again.' })); });
+  }
+  load();
 })();
 </script>

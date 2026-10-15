@@ -3,6 +3,7 @@ import { logLeague } from '../../_lib/leagueDb.js';
 import { memberNo } from '../../_lib/rewards.js';
 import { ensureCatalogueSchema, publicRedemption, refundRedemption } from '../../_lib/rewardsCatalogue.js';
 import { readCardCode } from '../../_lib/rewardsBadges.js';
+import { notify } from '../../_lib/rewardsNotify.js';
 
 // Admin › Rewards › Fulfilment and vouchers.
 // GET ?view=queue          -> experiences and items requested/confirmed (with the fan's contact details)
@@ -81,6 +82,9 @@ export async function onRequestPost({ request, env }) {
       const u = await db.prepare(`UPDATE rewards_redemptions SET status = ?, updated_at = datetime('now'), updated_by = ?, last_error = COALESCE(?, last_error) WHERE id = ? AND status IN (${n.from.map(() => '?').join(',')})`)
         .bind(n.to, staff, note || null, r.id, ...n.from).run();
       if (!u.meta.changes) return fail(b.action === 'use' ? 'This voucher has already been used or is not valid.' : 'That step is not possible now.', 409);
+      // Tell the fan when the club moves their experience or item along (not for a voucher used in front of them).
+      const MSG = { confirm: ['is confirmed', 'The club has confirmed your reward and will be in touch with the details.'], fulfil: ['is done', 'The club has marked your reward as done. Enjoy!'], collect: ['has been collected', 'Your reward has been collected. Enjoy!'] };
+      if (MSG[b.action]) await notify(env, r.member_id, { kind: 'rewards', ref: `${b.action}:${r.id}`, title: `Your reward ${MSG[b.action][0]}: ${r.item_name}`, link: '/rewards/wallet/', body: MSG[b.action][1] + (note ? ` Note from the club: ${note}` : '') });
     } else return fail('Unknown action.');
     await logLeague(db, { email: staff }, `rewards.redemption.${b.action}`, 'rewards_redemption', r.id, { status: r.status }, { action: b.action, note });
     return ok({ redemption: await withFan(db, await db.prepare(`SELECT * FROM rewards_redemptions WHERE id = ?`).bind(r.id).first()) });
