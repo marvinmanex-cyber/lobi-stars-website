@@ -291,6 +291,14 @@ Paid orders appear in **Admin → Shirt orders**. Change each order from
 *New (to print)* to *Ready*, then *Collected / delivered* (or *Cancelled /
 refunded*). Personalisation needs Paystack set up (the same account as tickets).
 
+**No refunds on personalised shirts:** before paying, fans must tick "I
+understand: Personalised shirts are printed to your order, so they can't be
+returned, exchanged or refunded once paid, unless the shirt is faulty or we
+print it wrongly." The same line shows on the Club Shop page and in the
+confirmation email, and Admin → Shirt orders marks each order "no-refund
+agreed" (the time is saved with the order). A faulty or wrongly printed shirt
+is still replaced or refunded.
+
 ---
 
 ## 6. Add a video

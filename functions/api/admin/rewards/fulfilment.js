@@ -32,7 +32,7 @@ export async function onRequestGet({ request, env }) {
       const no = code.startsWith('LSR-CARD:') ? await readCardCode(env, code) : code;
       if (!no) return fail('That member card is not valid.', 404);
       const m = await db.prepare(`SELECT member_id FROM rewards_members WHERE seq = ?`).bind(Number(no.slice(4))).first();
-      if (!m) return fail('That member card is not valid.', 404);
+      if (!m) return fail(code.startsWith('LSR-CARD:') ? 'That member card is not valid.' : 'No member with that number.', 404);
       const { results } = await db.prepare(`SELECT * FROM rewards_redemptions WHERE member_id = ? AND status = 'issued' AND type = 'voucher' ORDER BY expires_at LIMIT 50`).bind(m.member_id).all();
       const f = await db.prepare(`SELECT m.first_name, m.last_name FROM members m WHERE m.id = ?`).bind(m.member_id).first();
       const vouchers = [];

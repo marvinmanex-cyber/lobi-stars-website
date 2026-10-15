@@ -56,7 +56,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   function render() {
     const list = filter === 'open' ? orders.filter(o => o.status === 'new' || o.status === 'ready') : orders;
     $('list').innerHTML = list.length ? '<table><thead><tr><th>Paid</th><th>Order</th><th>Shirt</th><th>Print</th><th>Buyer</th><th>Status</th></tr></thead><tbody>' +
-      list.map(o => `<tr><td>${esc(when(o.paidAt))}</td><td>${esc(o.id)}<br><span class="note">₦${(o.totalKobo / 100).toLocaleString('en-NG')}${o.emailed ? '' : ' · email not sent'}</span></td>` +
+      list.map(o => `<tr><td>${esc(when(o.paidAt))}</td><td>${esc(o.id)}<br><span class="note">₦${(o.totalKobo / 100).toLocaleString('en-NG')}${o.emailed ? '' : ' · email not sent'}${o.noRefundAgreedAt ? ' · no-refund agreed' : ''}</span></td>` +
         `<td>${esc(o.product)}<br><span class="note">Size ${esc(o.size)}</span></td><td class="print">${esc(o.name)} ${esc(o.number)}</td>` +
         `<td>${esc(o.buyer)}<br><span class="note">${esc(o.phone)} · ${esc(o.email)}</span></td>` +
         `<td><select data-id="${esc(o.id)}" aria-label="Status for ${esc(o.id)}">${Object.entries(LABEL).map(([k, v]) => `<option value="${k}"${k === o.status ? ' selected' : ''}>${v}</option>`).join('')}</select>` +

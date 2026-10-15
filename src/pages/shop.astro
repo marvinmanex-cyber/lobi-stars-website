@@ -4,6 +4,7 @@ import ShopCard from '../components/ShopCard.astro';
 import CheckoutRewards from '../components/rewards/CheckoutRewards.astro';
 import shop from '../data/shop.json';
 import { withSeason, formatNaira } from '../lib/site';
+import { NO_REFUND_POLICY } from '../../functions/api/_lib/shirtOrders.js';
 
 // Shirt personalisation (name and number, paid with Paystack) is OFF unless
 // switched on in the CMS with a fee and "how fans get it" filled in. The
@@ -25,6 +26,7 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
       {shop.products.map(p => <ShopCard product={p} personalise={canPers(p)} />)}
     </div>
     <p class="shop-note"><strong>Note:</strong> Official sales are powered by Jumia Nigeria. Members get 10% off club merchandise &mdash; <a href="/membership">join here</a>.</p>
+    {persShirts.length > 0 && <p class="shop-note"><strong>Personalised shirts:</strong> {NO_REFUND_POLICY}</p>}
     <p class="shop-note" id="shopRwNote" hidden><strong>Lobi Stars Rewards:</strong> Star Points are earned on orders paid here on lobistarsfc.com (such as personalised shirts, match tickets, matchday food and membership), not on Jumia orders. <a href="/rewards/">How Star Points work</a></p>
   </div>
   <script is:inline>
@@ -63,6 +65,7 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
           <p class="pz-how"><strong>How you get it:</strong> {P.howYouGetIt}</p>
           <p class="pz-total">Total: <b id="pzTotal"></b> <span id="pzBreak"></span></p>
           <div id="pzRewards" hidden></div>
+          <label class="pz-agree" for="pzAgree"><input type="checkbox" id="pzAgree" required /> <span>I understand: {NO_REFUND_POLICY}</span></label>
           <p class="form-error" id="pzErr" role="alert" hidden></p>
           <button class="btn-p pz-pay" type="submit" id="pzPay">Pay with Paystack</button>
           <p class="pz-small">Personalised shirts are made for you, so please check the spelling. You will be taken to Paystack to pay securely. We never ask for your card PIN or bank details on this website.</p>
@@ -92,6 +95,8 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
   .pz-sname { position: absolute; top: 34%; left: 0; right: 0; text-align: center; font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: 2px; color: #FFC72C; }
   .pz-snum { position: absolute; top: 46%; left: 0; right: 0; text-align: center; font: 400 74px/1 'Bebas Neue', sans-serif; color: #FFC72C; }
   .pz-prod { margin: 0 0 10px; font: 700 18px/1.2 'Barlow Condensed', sans-serif; }
+  .pz-agree { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; cursor: pointer; }
+  .pz-agree input { width: 20px; height: 20px; flex: none; margin-top: 1px; accent-color: var(--red); }
   .pz-how { font-size: 14px; background: #FFF8E1; border-radius: 8px; padding: 10px 12px; }
   .pz-total { font-size: 16px; } .pz-total b { font: 400 26px/1 'Bebas Neue', sans-serif; color: var(--red-text); } .pz-total span { color: var(--lt); font-size: 13px; }
   .pz-pay { width: 100%; padding: 15px; }
@@ -146,12 +151,13 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
       err.hidden = true;
       const name = $('pzName').value.trim(), num = $('pzNum').value;
       if (!name || !num || !$<HTMLSelectElement>('pzSize').value) { err.textContent = 'Please enter the name, number and size.'; err.hidden = false; return; }
+      if (!$<HTMLInputElement>('pzAgree').checked) { err.textContent = "Please tick to confirm you understand personalised shirts can't be returned or refunded."; err.hidden = false; $('pzAgree').focus(); return; }
       if (!confirm(`Print "${name} ${num}" on your shirt (size ${$<HTMLSelectElement>('pzSize').value})? Personalised shirts can't be changed after payment.`)) return;
       btn.disabled = true; btn.textContent = 'Going to Paystack…';
       try {
         const res = await fetch('/api/shop/personalise', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ product: $('pzProduct').value, size: $<HTMLSelectElement>('pzSize').value, printName: name, printNumber: num, buyerName: $('pzBuyer').value, buyerEmail: $('pzEmail').value, buyerPhone: $('pzPhone').value, ...((window as any).__pzRw?.values() || {}) }),
+          body: JSON.stringify({ product: $('pzProduct').value, size: $<HTMLSelectElement>('pzSize').value, printName: name, printNumber: num, buyerName: $('pzBuyer').value, buyerEmail: $('pzEmail').value, buyerPhone: $('pzPhone').value, agreeNoRefund: $<HTMLInputElement>('pzAgree').checked, ...((window as any).__pzRw?.values() || {}) }),
         });
         const d = await res.json();
         if (!res.ok || !d.authorizationUrl) throw new Error(d.error || 'Payment could not be started.');

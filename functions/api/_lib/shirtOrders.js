@@ -15,6 +15,9 @@ export const PERSONALISATION = {
   howYouGetIt: String(P.howYouGetIt || '').trim(),
 };
 
+/** The no-refund policy fans agree to before paying (shown on the shop, in the form and in the email). */
+export const NO_REFUND_POLICY = "Personalised shirts are printed to your order, so they can't be returned, exchanged or refunded once paid, unless the shirt is faulty or we print it wrongly.";
+
 const withSeason = s => String(s).replaceAll('{season}', site.currentSeason || '');
 
 /** Shirts that can be personalised right now: { id, name, priceKobo }. */
@@ -44,6 +47,7 @@ export function parseShirtOrder(b) {
   if (!buyerName || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(buyerEmail) || buyerPhone.replace(/\D/g, '').length < 10) {
     return { error: 'Please enter your name, a valid email address and your phone number.' };
   }
+  if (b.agreeNoRefund !== true) return { error: "Please tick to confirm you understand personalised shirts can't be returned or refunded." };
   return { value: {
     product_id: shirt.id, product_name: shirt.name, size, print_name: name, print_number: String(Number(num)),
     unit_kobo: shirt.priceKobo, fee_kobo: PERSONALISATION.feeKobo, total_kobo: shirt.priceKobo + PERSONALISATION.feeKobo,
@@ -77,6 +81,9 @@ export async function ensureShirtSchema(db) {
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     paid_at TEXT
   )`).run();
+  // When the fan ticked "I understand personalised shirts can't be returned or refunded".
+  const cols = new Set((await db.prepare(`PRAGMA table_info(shirt_orders)`).all()).results.map(c => c.name));
+  if (!cols.has('no_refund_agreed_at')) await db.prepare(`ALTER TABLE shirt_orders ADD COLUMN no_refund_agreed_at TEXT`).run().catch(e => { if (!/duplicate column/i.test(String(e?.message))) throw e; });
   ready = true;
 }
 
@@ -94,6 +101,7 @@ export function shirtOrderEmailHtml(o) {
     <tr><td style="padding:6px 0;color:#5B6472">Paid</td><td>${naira(o.total_kobo)}</td></tr>
   </table>
   <p><b>How you get it:</b> ${esc(PERSONALISATION.howYouGetIt)}</p>
+  <p><b>Returns:</b> ${esc(NO_REFUND_POLICY)} You agreed to this before paying.</p>
   <p style="color:#5B6472;font-size:13px">Keep this email and your order number. Lobi Stars FC will never ask for your bank details or card PIN.</p>
 </div>`;
 }

@@ -15,7 +15,7 @@ export async function onRequestGet({ request, env }) {
     enabled: PERSONALISATION.enabled, howYouGetIt: PERSONALISATION.howYouGetIt,
     orders: results.map(o => ({
       id: o.id, product: o.product_name, size: o.size, name: o.print_name, number: o.print_number, totalKobo: o.total_kobo,
-      buyer: o.buyer_name, email: o.buyer_email, phone: o.buyer_phone, paidAt: o.paid_at, emailed: !!o.emailed,
+      buyer: o.buyer_name, email: o.buyer_email, phone: o.buyer_phone, paidAt: o.paid_at, emailed: !!o.emailed, noRefundAgreedAt: o.no_refund_agreed_at || null,
       status: o.status, statusBy: o.status_by, statusAt: o.status_at,
     })),
   }, { headers: noStore });
