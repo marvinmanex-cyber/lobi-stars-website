@@ -65,5 +65,11 @@ if (pageDesc.length > 160) pageDesc = pageDesc.slice(0, 157).replace(/\s+\S*$/, 
   .pd-desc { margin: 0 0 22px; max-width: 620px; font-size: 17px; line-height: 1.7; color: var(--lt); }
   .pd-body { max-width: 720px; margin-top: 36px; font-size: 17px; line-height: 1.8; }
   .pd-body :global(p) { margin: 0 0 1.2em; }
+  .pd-body :global(img) { display: block; max-width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--d4); }
+  /* Pictures side by side (e.g. a product and a flyer); one under the other on phones. */
+  .pd-body :global(.pd-gallery) { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .pd-body :global(.pd-gallery picture) { display: block; min-width: 0; }
+  .pd-body :global(.pd-gallery img) { width: 100%; background: #fff; }
+  @media (max-width: 480px) { .pd-body :global(.pd-gallery) { grid-template-columns: 1fr; } }
   @media (max-width: 760px) { .pd-top { grid-template-columns: 1fr; gap: 24px; } }
 </style>
