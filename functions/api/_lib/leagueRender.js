@@ -1,14 +1,21 @@
 // Renders /fixtures, /results and /table on the server: the built page is the
 // shell, and its [data-league-root] is filled with the league HTML. If the
 // league can't be loaded the page still opens with a clear message.
+// The pages are the same for every visitor, so (like the homepage) each one is
+// kept in Cloudflare's cache for 30 seconds: faster first byte and far fewer
+// database reads. Staff changes show within 30 seconds (browsers were already
+// allowed to keep these pages for 30 seconds).
 import { renderPage, publicMatches, previewSlugs } from './ssr.js';
 import { loadLeague } from './leagueDb.js';
 import { fixturesPage, resultsPage, tablePage, extraMatches, esc } from './leaguePages.js';
 
 const FAILED = '<p class="lg-empty">The fixtures and table could not be loaded just now. Please refresh the page in a minute.</p>';
 
-export async function renderLeaguePage(request, env, which) {
+export async function renderLeaguePage(request, env, which, waitUntil = null) {
   const url = new URL(request.url);
+  const cache = caches.default;
+  const key = new Request(new URL(`/${which}/${url.search}`, request.url).toString());
+  try { const hit = await cache.match(key); if (hit) return hit; } catch { /* no cache: build the page */ }
   let html = FAILED;
   try {
     const league = await loadLeague(env);
@@ -33,8 +40,16 @@ export async function renderLeaguePage(request, env, which) {
   if (url.search && res.ok) {
     const headers = new Headers(res.headers);
     headers.set('X-Robots-Tag', 'noindex, follow');
-    return new Response(res.body, { status: res.status, headers });
+    return keep(new Response(res.body, { status: res.status, headers }));
   }
-  return res;
+  return keep(res);
+
+  // Only a page that loaded properly is kept (not the "could not be loaded" message).
+  async function keep(r) {
+    if (r.status !== 200 || html === FAILED || !waitUntil) return r;
+    const out = new Response(await r.arrayBuffer(), { status: 200, headers: r.headers });
+    try { waitUntil(cache.put(key, out.clone())); } catch { /* serving still works */ }
+    return out;
+  }
 }
 export { esc };
