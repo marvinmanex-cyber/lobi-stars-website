@@ -18,6 +18,7 @@
 import Layout from '../../layouts/Layout.astro';
 import settings from '../../data/fan-settings.json';
 import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
+import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
 const siteKey = settings.turnstileSiteKey;
 const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 'Lobi Stars': '/images/lobi-stars-badge.png' };
 ---
@@ -95,6 +96,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
           <div class="tk-disc" id="sumDisc" aria-live="polite" hidden></div>
           <p class="tk-total"><span>Total</span><b id="sumTotal" aria-hidden="true">₦0</b><span class="tk-sr" id="sumTotalLive" aria-live="polite">Total ₦0</span></p>
           <p class="tk-season" id="sumSeason" hidden></p>
+          <div id="tkRewards" hidden></div>
           <form id="buyForm" class="tk-form" novalidate>
             <div class="tk-fl" id="grpWrap" hidden><input id="fGroup" name="groupName" maxlength="80" placeholder=" " /><label for="fGroup">Group name, e.g. church or club (optional)</label></div>
             <div class="tk-fl"><input id="fName" name="buyerName" autocomplete="name" required maxlength="80" placeholder=" " /><label for="fName">Full name</label></div>
@@ -158,6 +160,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     <div class="tk-scrim" id="tkScrim" hidden></div>
   </div>
   {siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+  <CheckoutRewards />
 </Layout>
 
 <style>
@@ -672,7 +675,11 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     $('grpWrap').hidden = !d.matches.some(function (m) { return m.applied.some(function (a) { return a.kind === 'group'; }); });
     showPrice(d.totalKobo, tickets, basket.length);
     $('payBtn').disabled = false;
+    if (rw) rw.refresh();
   }
+  // Lobi Stars Rewards: "Use my Star Points" (shown once Rewards is live).
+  var rw = window.LSRewards ? window.LSRewards.mount($('tkRewards'), { kind: 'tickets', subtotal: function () { return quote ? quote.totalKobo : 0; },
+    onChange: function (x) { if (quote && x.offKobo) $('payText').textContent = 'Pay ' + naira(quote.totalKobo - x.offKobo) + ' with Paystack'; else if (quote) $('payText').textContent = 'Pay ' + naira(quote.totalKobo) + ' with Paystack'; } }) : null;
 
   function summary() {
     var sel = selected(), total = 0, tickets = 0, lines = $('sumLines');
@@ -749,7 +756,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     if (!quote) { err.textContent = 'Working out your price. Please try again in a moment.'; return; }
     var tokenEl = f.querySelector('[name="cf-turnstile-response"]');
     $('payBtn').disabled = true;
-    fetch('/api/tickets/basket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines: lines, groupName: $('grpWrap').hidden ? '' : f.groupName.value, expectedTotalKobo: quote.totalKobo, buyerName: f.buyerName.value, buyerEmail: f.buyerEmail.value, buyerPhone: f.buyerPhone.value, turnstileToken: tokenEl ? tokenEl.value : '' }) })
+    fetch('/api/tickets/basket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines: lines, groupName: $('grpWrap').hidden ? '' : f.groupName.value, expectedTotalKobo: quote.totalKobo, usePoints: rw ? rw.values().usePoints : 0, buyerName: f.buyerName.value, buyerEmail: f.buyerEmail.value, buyerPhone: f.buyerPhone.value, turnstileToken: tokenEl ? tokenEl.value : '' }) })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
         if (res.ok && res.d.authorizationUrl) { location.href = res.d.authorizationUrl; return; }

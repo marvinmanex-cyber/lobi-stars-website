@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import ShopCard from '../components/ShopCard.astro';
+import CheckoutRewards from '../components/rewards/CheckoutRewards.astro';
 import shop from '../data/shop.json';
 import { withSeason, formatNaira } from '../lib/site';
 
@@ -54,6 +55,7 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
           <div class="form-grp"><label class="form-lbl" for="pzEmail">Email (for your receipt)</label><input class="form-inp" id="pzEmail" type="email" autocomplete="email" required /></div>
           <p class="pz-how"><strong>How you get it:</strong> {P.howYouGetIt}</p>
           <p class="pz-total">Total: <b id="pzTotal"></b> <span id="pzBreak"></span></p>
+          <div id="pzRewards" hidden></div>
           <p class="form-error" id="pzErr" role="alert" hidden></p>
           <button class="btn-p pz-pay" type="submit" id="pzPay">Pay with Paystack</button>
           <p class="pz-small">Personalised shirts are made for you, so please check the spelling. You will be taken to Paystack to pay securely. We never ask for your card PIN or bank details on this website.</p>
@@ -62,6 +64,7 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
       <script is:inline type="application/json" id="pzData" set:html={JSON.stringify({ shirts: persShirts, fee: Number(P.feeNaira), max: P.maxLetters }).replace(/</g, '\\u003c')}></script>
     </dialog>
   )}
+  <CheckoutRewards />
 </Layout>
 
 <style>
@@ -69,7 +72,8 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
   .shop-note { margin-top: 32px; padding: 16px 20px; border-left: 3px solid var(--gold); background: var(--dark); border-radius: 6px; color: var(--lt); font-size: 14px; }
   .shop-note strong { color: var(--gold-text); }
   .shop-note a { color: var(--red-text); font-weight: 600; }
-  @media (max-width: 520px) { .shop-grid { grid-template-columns: 1fr 1fr; gap: 12px; } }
+  /* Phones (under 768px): one product per row, full width (readable card styles are in ShopCard). */
+  @media (max-width: 767px) { .shop-grid { grid-template-columns: 1fr; gap: 16px; } }
   .pz { border: 0; border-radius: 16px; padding: 26px 24px; width: min(760px, 94vw); max-height: 92vh; overflow-y: auto; box-shadow: 0 30px 80px rgba(0,0,0,.35); }
   .pz::backdrop { background: rgba(15,17,21,.6); }
   .pz h2 { margin: 0 0 14px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
@@ -103,6 +107,7 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
     };
     $('pzName').addEventListener('input', preview);
     $('pzNum').addEventListener('input', preview);
+    const pzShirt = { price: 0 };
     document.querySelectorAll<HTMLButtonElement>('[data-personalise]').forEach(b => b.addEventListener('click', async () => {
       const s = data.shirts.find(x => x.id === b.dataset.personalise);
       if (!s) return;
@@ -110,6 +115,12 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
       $('pzProdName').textContent = s.name;
       $('pzTotal').textContent = naira(s.price + data.fee);
       $('pzBreak').textContent = `(shirt ${naira(s.price)} + name and number ${naira(data.fee)})`;
+      // Lobi Stars Rewards: shop vouchers and "Use my Star Points" (shown once Rewards is live).
+      const lsr = (window as any).LSRewards;
+      if (lsr && !(window as any).__pzRw) (window as any).__pzRw = lsr.mount($('pzRewards'), { kind: 'shop', subtotal: () => Math.round((pzShirt.price + data.fee) * 100), feeKobo: () => Math.round(data.fee * 100),
+        onChange: ({ offKobo }: { offKobo: number }) => { $('pzTotal').textContent = naira(pzShirt.price + data.fee - offKobo / 100); } });
+      pzShirt.price = s.price;
+      (window as any).__pzRw?.refresh();
       $('pzErr').hidden = true;
       try {
         const me = await (await fetch('/api/auth/me')).json();
@@ -133,7 +144,7 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
       try {
         const res = await fetch('/api/shop/personalise', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ product: $('pzProduct').value, size: $<HTMLSelectElement>('pzSize').value, printName: name, printNumber: num, buyerName: $('pzBuyer').value, buyerEmail: $('pzEmail').value, buyerPhone: $('pzPhone').value }),
+          body: JSON.stringify({ product: $('pzProduct').value, size: $<HTMLSelectElement>('pzSize').value, printName: name, printNumber: num, buyerName: $('pzBuyer').value, buyerEmail: $('pzEmail').value, buyerPhone: $('pzPhone').value, ...((window as any).__pzRw?.values() || {}) }),
         });
         const d = await res.json();
         if (!res.ok || !d.authorizationUrl) throw new Error(d.error || 'Payment could not be started.');

@@ -112,6 +112,7 @@ test('referral: paid only after the friend verifies and buys; self-referral flag
 });
 
 test('admin: settings validation, adjust with a reason, suspend, member lookup, run now', async () => {
+  await call('PUT', '/api/admin/rewards', { settings: { live: false } }); // a stopped earlier run may have left it on
   const s = (await call('GET', '/api/admin/rewards')).data;
   assert.equal(s.settings.live, false); assert.equal(s.settings.ticketsPer100, 1); assert.equal(s.settings.engagementMonthlyCap, 200);
   assert.equal((await call('PUT', '/api/admin/rewards', { settings: { attendance: -5 } })).status, 400);

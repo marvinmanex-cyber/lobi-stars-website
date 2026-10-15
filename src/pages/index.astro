@@ -72,15 +72,22 @@ const teamJsonLd = {
   <NewsCarousel title="Across the Club" articles={clubNews} viewAllHref="/news?category=club" viewAllLabel="All club news" />
   <NewsletterCta />
 
-  <section class="hp-sec" aria-labelledby="shop-title">
+  <section class="hp-sec hp-sec--shop" aria-labelledby="shop-title">
     <div class="hp-inner">
       <div class="hp-head">
         <h2 class="hp-title" id="shop-title">Club Shop</h2>
         <a class="hp-more" href="/shop">Visit the shop <span aria-hidden="true">&rarr;</span></a>
       </div>
-      <div class="hp-shop">
-        {shopHighlights.map(p => <ShopCard product={p} />)}
+      <!-- Phones (under 768px): a swipe slider, one product at a time, with dots and arrows. Larger screens: the grid as before. -->
+      <div class="hp-shop" id="hpShop" aria-roledescription="carousel" aria-label="Club shop products">
+        {shopHighlights.map((p, i) => <div class="hp-slide" role="group" aria-roledescription="slide" aria-label={`Product ${i + 1} of ${shopHighlights.length}`}><ShopCard product={p} /></div>)}
       </div>
+      <div class="hp-shop-nav" id="hpShopNav" hidden>
+        <button type="button" class="hp-shop-arrow" id="hpShopPrev" aria-label="Previous product"><span aria-hidden="true">&#8249;</span></button>
+        <div class="hp-shop-dots" id="hpShopDots"></div>
+        <button type="button" class="hp-shop-arrow" id="hpShopNext" aria-label="Next product"><span aria-hidden="true">&#8250;</span></button>
+      </div>
+      <a class="hp-shop-cta" href="/shop">Visit the Shop <span aria-hidden="true">&rarr;</span></a>
     </div>
   </section>
 
@@ -129,5 +136,50 @@ const teamJsonLd = {
   }
 
   @media (max-width: 1000px) { .hp-shop { grid-template-columns: repeat(2, 1fr); } }
-  @media (max-width: 480px) { .hp-shop { gap: 12px; } }
+  .hp-slide { display: flex; min-width: 0; }
+  .hp-slide > :global(.pc) { flex: 1; }
+  .hp-shop-nav, .hp-shop-cta { display: none; }
+  /* Phones only: one product at a time (CSS scroll-snap; a little JS for the dots and arrows). */
+  @media (max-width: 767px) {
+    .hp-sec--shop .hp-inner { padding: 0 16px; }
+    .hp-shop { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; overscroll-behavior-x: contain; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+    .hp-shop::-webkit-scrollbar { display: none; }
+    .hp-slide { flex: 0 0 100%; scroll-snap-align: center; scroll-snap-stop: always; }
+    .hp-shop-nav:not([hidden]) { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; }
+    .hp-shop-arrow { width: 44px; height: 44px; flex: none; border-radius: 50%; border: 1.5px solid var(--d4); background: var(--d2); color: var(--white); font: 400 28px/1 'Barlow', sans-serif; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+    .hp-shop-arrow:disabled { opacity: .35; cursor: default; }
+    .hp-shop-arrow:focus-visible, .hp-shop-dots :global(button:focus-visible) { outline: 3px solid var(--red); outline-offset: 2px; }
+    .hp-shop-dots { display: flex; gap: 2px; }
+    .hp-shop-dots :global(button) { width: 28px; height: 44px; border: 0; background: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+    .hp-shop-dots :global(button::before) { content: ''; width: 10px; height: 10px; border-radius: 50%; background: var(--d4); transition: background .2s, transform .2s; }
+    .hp-shop-dots :global(button[aria-current="true"]::before) { background: #C11A1F; transform: scale(1.2); }
+    .hp-shop-cta { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; margin-top: 12px; border-radius: 8px; background: #C11A1F; color: #fff; text-decoration: none; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; }
+    .hp-shop-cta:hover, .hp-shop-cta:focus-visible { background: #A3161B; }
+  }
+  @media (max-width: 767px) and (prefers-reduced-motion: reduce) { .hp-shop { scroll-behavior: auto; } }
 </style>
+
+<script is:inline>
+// Club Shop slider on phones: dots (tap to jump, follow the swipe) and arrows (off at the ends).
+(function () {
+  var track = document.getElementById('hpShop'), nav = document.getElementById('hpShopNav');
+  if (!track || !nav) return;
+  var slides = Array.prototype.slice.call(track.querySelectorAll('.hp-slide'));
+  var dotsBox = document.getElementById('hpShopDots'), prev = document.getElementById('hpShopPrev'), next = document.getElementById('hpShopNext');
+  var phone = window.matchMedia('(max-width: 767px)'), reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  if (slides.length < 2) return;
+  var current = 0;
+  var dots = slides.map(function (s, i) {
+    var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', 'Show product ' + (i + 1) + ' of ' + slides.length);
+    b.addEventListener('click', function () { go(i); }); dotsBox.append(b); return b;
+  });
+  function show(i) { current = i; dots.forEach(function (d, k) { d.setAttribute('aria-current', String(k === i)); }); prev.disabled = i === 0; next.disabled = i === slides.length - 1; }
+  function go(i) { i = Math.max(0, Math.min(slides.length - 1, i)); track.scrollTo({ left: slides[i].offsetLeft - track.offsetLeft, behavior: reduce.matches ? 'auto' : 'smooth' }); show(i); }
+  prev.addEventListener('click', function () { go(current - 1); });
+  next.addEventListener('click', function () { go(current + 1); });
+  var io = 'IntersectionObserver' in window ? new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting && e.intersectionRatio > .6) show(slides.indexOf(e.target)); }); }, { root: track, threshold: [.6] }) : null;
+  function apply() { nav.hidden = !phone.matches; if (phone.matches) { slides.forEach(function (s) { io && io.observe(s); }); show(current); } else if (io) io.disconnect(); }
+  if (phone.addEventListener) phone.addEventListener('change', apply);
+  apply();
+})();
+</script>

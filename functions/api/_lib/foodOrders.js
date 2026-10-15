@@ -179,6 +179,7 @@ export async function confirmFoodPayment(env, order, { waitUntil, origin = 'http
   await env.DB.prepare(`UPDATE food_orders SET last_verify_at = ? WHERE id = ?`).bind(nowIso(), order.id).run();
   if (t.status === 'failed') {
     await env.DB.prepare(`UPDATE food_orders SET order_status = 'PAYMENT_FAILED', payment_status = 'failed' WHERE id = ? AND payment_status = 'pending'`).bind(order.id).run();
+    try { const { releaseCheckout } = await import('./rewardsCheckout.js'); await releaseCheckout(env, order.paystack_reference); } catch { /* released by the Rewards job */ }
     return { order: { ...order, order_status: 'PAYMENT_FAILED' }, changed: false, reason: 'payment failed' };
   }
   if (t.status !== 'success') return { order, changed: false, reason: `not paid (${t.status})` };
@@ -211,8 +212,8 @@ export async function confirmFoodPayment(env, order, { waitUntil, origin = 'http
     const job = kitchenOnPaid(env, order.id, waitUntil);
     if (!waitUntil) await job;
   } catch (err) { console.error('[food] kitchen alert', err); }
-  // Lobi Stars Rewards: food points once the order is PAID.
-  try { const { earnFood } = await import('./rewardsEarn.js'); await earnFood(env, paid); } catch (err) { console.error('[food] rewards', err); }
+  // Lobi Stars Rewards: Star Points / voucher used are taken, and food points are earned (on the part paid in naira).
+  try { const { confirmCheckout } = await import('./rewardsCheckout.js'); await confirmCheckout(env, order.paystack_reference); const { earnFood } = await import('./rewardsEarn.js'); await earnFood(env, paid); } catch (err) { console.error('[food] rewards', err); }
   const n = splitName(order.customer_name || '');
   await captureContact(env, { source: 'food_order', refTable: 'food_orders', refId: order.id, email: order.email, phone: order.phone, firstName: n.firstName, surname: n.surname, label: order.ref });
   if (env.RESEND_API_KEY) {

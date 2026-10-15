@@ -9,6 +9,7 @@
 import Layout from '../../layouts/Layout.astro';
 import fanSettings from '../../data/fan-settings.json';
 import '../../styles/kitchen.css';
+import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
 const siteKey = fanSettings.turnstileSiteKey;
 ---
 <Layout
@@ -94,6 +95,7 @@ const siteKey = fanSettings.turnstileSiteKey;
       <form class="kx-dbody" id="kxForm" novalidate>
         <ul class="kx-lines" id="kxLines"></ul>
         <div class="kx-total"><span>Total</span><span id="kxTotal">₦0</span></div>
+        <div id="kxRewards" hidden></div>
         <p class="kx-small" id="kxMin" hidden></p>
 
         <fieldset class="kx-fs">
@@ -128,6 +130,7 @@ const siteKey = fanSettings.turnstileSiteKey;
     </dialog>
   </div>
   {siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+  <CheckoutRewards />
 </Layout>
 
 <script>

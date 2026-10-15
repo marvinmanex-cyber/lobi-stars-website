@@ -55,4 +55,16 @@ const canBuy = p.inStock && !!price && !!p.jumiaUrl;
   .pc-btn--pers:hover { background: #A3161B; }
   .pc-btn:disabled { background: #D5D9DE; color: #5B6472; cursor: not-allowed; }
   .pc-btn:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  /* Phones (under 768px): one full-width card, stacked and easy to read. */
+  @media (max-width: 767px) {
+    .pc { width: 100%; }
+    .pc:hover { transform: none; }
+    .pc-img { aspect-ratio: 4 / 3; background: #F2F3F5; }
+    .pc-badge { left: 10px; right: auto; }
+    .pc-body { padding: 16px; }
+    .pc-name { font-size: 22px; line-height: 1.15; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .pc-price { margin-top: 8px; font: 700 20px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pc-desc { margin: 10px 0 14px; font-size: 15px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; flex: 1; }
+    .pc-btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 48px; padding: 0 12px; box-sizing: border-box; font-size: 14px; white-space: nowrap; }
+  }
 </style>

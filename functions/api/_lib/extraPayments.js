@@ -37,6 +37,7 @@ export async function fulfilPayment(env, found, waitUntil) {
   const res = await env.DB.prepare(`UPDATE shirt_orders SET payment_status = 'paid', paid_at = ? WHERE id = ? AND payment_status != 'paid'`).bind(now, found.row.id).run();
   if (res.meta?.changes) {
     const n = splitName(found.row.buyer_name);
+    try { const { confirmCheckout } = await import('./rewardsCheckout.js'); await confirmCheckout(env, found.row.paystack_reference); } catch (err) { console.error('[shirt] rewards confirm', err); }
     await earnShop(env, found.row); // Rewards: our own checkout only (not Jumia)
     await captureContact(env, { source: 'shop_order', refTable: 'shirt_orders', refId: found.row.id, email: found.row.buyer_email, phone: found.row.buyer_phone, firstName: n.firstName, surname: n.surname, label: found.row.product_name });
   }

@@ -1,8 +1,10 @@
 ---
-// Floating "MatchDay Kitchen" button on phones, shown only on match days
-// (while in-seat ordering is open, /api/food/menu). Sits above the WhatsApp
-// button; not shown on the kitchen and food pages themselves. The answer is
-// kept for 5 minutes per visit so pages don't ask on every click.
+// Floating "MatchDay Kitchen" button. It was shown on phones only, on match
+// days (while in-seat ordering is open). Since October 2026 it is not shown on
+// phones either (it covered content while scrolling): fans reach the kitchen
+// from the homepage MatchDay Kitchen card, the menu, the footer and match
+// pages. Tablet and desktop never showed it, so they are unchanged.
+// Kept (hidden) so it can be switched back on in one place.
 ---
 <a class="kfab" id="kfab" href="/kitchen/" hidden data-track="kitchen_click" data-track-label="floating_button">
   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-1.7 1.2-2.5 3.4-2.5 6.5h2.5V21" /></svg>
@@ -11,7 +13,8 @@
 
 <style is:global>
   .kfab { display: none; }
-  @media (max-width: 767px) {
+  /* Off on phones too (was: max-width 767px). Change "0px" back to "767px" to bring it back. */
+  @media (max-width: 0px) {
     .kfab:not([hidden]) {
       display: inline-flex; align-items: center; gap: 8px; position: fixed; right: 16px; z-index: 998;
       bottom: calc(140px + env(safe-area-inset-bottom)); min-height: 48px; padding: 0 16px 0 14px; border-radius: 999px;
@@ -29,7 +32,9 @@
 <script is:inline>
 (function () {
   var fab = document.getElementById('kfab');
-  if (!fab || /^\/(kitchen|food)(\/|$)/.test(location.pathname) || !window.matchMedia('(max-width: 767px)').matches) return;
+  // Not shown on any screen size now (see above), so it doesn't ask the server either.
+  // To bring it back on phones, restore: if (!fab || /^\/(kitchen|food)(\/|$)/.test(location.pathname) || !window.matchMedia('(max-width: 767px)').matches) return;
+  return;
   var show = function (open) { fab.hidden = !open; };
   try { var c = JSON.parse(sessionStorage.getItem('ls_kfab') || 'null'); if (c && Date.now() - c.at < 300000) return show(c.open); } catch (e) {}
   fetch('/api/food/menu').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {

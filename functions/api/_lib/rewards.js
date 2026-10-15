@@ -39,6 +39,10 @@ const DEFAULTS = {
   exampleJerseyNaira: 20000,
   exampleTicketNaira: 1000,
   exampleFoodNaira: 3000,
+  // Pay with Star Points at our checkouts (tickets, food, shirts).
+  pointValueKobo: 500,           // 1 point = ₦5 off
+  payWithPointsMaxPercent: 50,   // at most this % of an order
+  payWithPointsMin: 100,         // at least this many points
   // Redeeming.
   redeemCodeThreshold: 1000, // redemptions of this many points or more need a 6-digit code emailed to the fan
   voucherDays: 90,           // vouchers are valid this many days

@@ -46,10 +46,19 @@
   @media (max-width: 600px) {
     .fp { padding-bottom: 28px; }
     .fp-wrap { padding: 0 16px; }
-    .fp-inner { padding: 20px 18px; }
-    .fp-logo { width: 72px; height: 72px; }
-    .fp-acts { width: 100%; }
-    .fp-btn { flex: 1; justify-content: center; }
+  }
+  /* Phones (under 768px): a compact header row (logo left, label and title right), then the text and full-width button. */
+  @media (max-width: 767px) {
+    .fp-inner { display: grid; grid-template-columns: 64px minmax(0, 1fr); grid-template-areas: "logo kicker" "logo title" "lede lede" "status status" "acts acts"; column-gap: 12px; row-gap: 0; align-items: center; padding: 16px; }
+    .fp-text { display: contents; }
+    .fp-logo { grid-area: logo; width: 64px; height: 64px; border-radius: 50%; align-self: center; }
+    .fp-kicker { grid-area: kicker; align-self: end; margin: 0 0 4px; }
+    .fp-title { grid-area: title; align-self: start; margin: 0; font-size: 27px; line-height: 1; overflow-wrap: anywhere; }
+    .fp-lede { grid-area: lede; margin: 12px 0 8px; font-size: 16px; line-height: 1.5; }
+    .fp-status { grid-area: status; margin: 0; }
+    .fp-acts { grid-area: acts; display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-top: 14px; width: 100%; }
+    .fp-btn { width: 100%; justify-content: center; box-sizing: border-box; min-height: 48px; padding: 0 14px; text-align: center; }
+    .fp-link { justify-content: center; align-self: center; min-height: 44px; padding: 0 12px; }
   }
 </style>
 

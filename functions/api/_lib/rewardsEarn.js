@@ -46,7 +46,13 @@ export function earnTickets(env, order, event) {
     const played = await matchPlayed(db, order.event_id);
     const payRef = String(order.paystack_reference || '').replace(/^(LSBAS-[A-Z0-9]+)-\d+$/, '$1');
     const vs = event ? `${event.home_team} vs ${event.away_team}` : 'a home match';
-    return earnPurchase(db, { env, memberId: m.id, source: 'ticket_order', ref: order.id, paidKobo: order.total_kobo, per100: s.ticketsPer100,
+    // No points on the part paid with Star Points: share this row's total in the same proportion.
+    let paidKobo = order.total_kobo;
+    if (order.basket_id) {
+      const bk = await db.prepare(`SELECT total_kobo, points_kobo FROM league_ticket_orders WHERE id = ?`).bind(order.basket_id).first().catch(() => null);
+      if (bk?.points_kobo > 0) paidKobo = Math.floor(order.total_kobo * bk.total_kobo / (bk.total_kobo + bk.points_kobo));
+    }
+    return earnPurchase(db, { env, memberId: m.id, source: 'ticket_order', ref: order.id, paidKobo, per100: s.ticketsPer100,
       description: `Tickets: ${vs} (${order.quantity})`, pending: !played, eventId: order.event_id, payRef });
   });
 }
@@ -216,7 +222,7 @@ export function reversePoints(env, by, reason) {
     const db = env.DB;
     await ensureRewardsSchema(db);
     const { results } = by.payRef
-      ? await db.prepare(`SELECT * FROM rewards_ledger WHERE pay_ref = ? AND type IN ('EARN', 'BONUS')`).bind(by.payRef).all()
+      ? await db.prepare(`SELECT * FROM rewards_ledger WHERE pay_ref = ? AND (type IN ('EARN', 'BONUS') OR (type = 'REDEEM' AND source = 'points_payment'))`).bind(by.payRef).all()
       : await db.prepare(`SELECT * FROM rewards_ledger WHERE source = ? AND source_ref = ? AND type IN ('EARN', 'BONUS')`).bind(by.source, String(by.ref)).all();
     let n = 0;
     for (const row of results) {
@@ -224,7 +230,9 @@ export function reversePoints(env, by, reason) {
         const r = await db.prepare(`UPDATE rewards_ledger SET status = 'REVERSED', description = description || ? WHERE id = ? AND status = 'PENDING'`).bind(` (cancelled: ${reason})`, row.id).run();
         n += r.meta.changes;
       } else if (row.status === 'AVAILABLE') {
-        if (await addLedger(db, { memberId: row.member_id, type: 'REVERSE', points: -row.points, source: row.source, sourceRef: `reverse:${row.id}`, description: `Points removed: ${row.description} (${reason})`, eventId: row.event_id, payRef: row.pay_ref })) n++;
+        // Earned points are taken back; Star Points used to pay are given back.
+        const text = row.type === 'REDEEM' ? `Star Points returned: ${row.description} (${reason})` : `Points removed: ${row.description} (${reason})`;
+        if (await addLedger(db, { memberId: row.member_id, type: 'REVERSE', points: -row.points, source: row.source, sourceRef: `reverse:${row.id}`, description: text, eventId: row.event_id, payRef: row.pay_ref })) n++;
       }
     }
     return n;
@@ -292,6 +300,8 @@ export async function rewardsSweep(env, { memberId = null } = {}) {
   else {
     const { redemptionSweep } = await import('./rewardsCatalogue.js');
     Object.assign(out, (await safe('redemptions', () => redemptionSweep(env))) || {});
+    const { releaseAbandoned } = await import('./rewardsCheckout.js');
+    out.released_holds = (await safe('holds', () => releaseAbandoned(env))) || 0;
   }
   return out;
 }

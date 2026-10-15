@@ -33,6 +33,15 @@ let seatTimer: number | undefined;
 function saveCart() { store.set(CART, qty); }
 function count() { return Object.values(qty).reduce((a, b) => a + b, 0); }
 function total() { return items.reduce((s, f) => s + (qty[f.id] || 0) * f.priceKobo, 0); }
+// Lobi Stars Rewards: "Use my Star Points" and food vouchers (CheckoutRewards component; shown once Rewards is live).
+type RewardsBox = { refresh(): void; values(): { usePoints: number; voucherCode: string } };
+let rewardsBox: RewardsBox | null = null;
+function mountRewards() {
+  const lsr = (window as unknown as { LSRewards?: { mount(el: HTMLElement, o: unknown): RewardsBox } }).LSRewards;
+  const el = document.getElementById('kxRewards');
+  if (!lsr || !el || rewardsBox) return;
+  rewardsBox = lsr.mount(el, { kind: 'food', subtotal: total, onChange: ({ offKobo }: { offKobo: number }) => { const b = document.getElementById('kxPayBtn'); if (b) b.textContent = offKobo ? `Pay ${naira(total() - offKobo)} online` : 'Pay online'; } });
+}
 
 // ── Seat (URL ?section=&row=&seat= for QR codes on seats, else remembered) ──
 function seat() {
@@ -102,6 +111,7 @@ function renderCart() {
 <div class="kx-step" role="group" aria-label="${esc(f.name)} quantity"><button type="button" data-id="${esc(f.id)}" data-d="-1" aria-label="Remove one ${esc(f.name)}">−</button><output>${qty[f.id]}</output><button type="button" data-id="${esc(f.id)}" data-d="1" aria-label="Add one more ${esc(f.name)}"${qty[f.id] >= f.maxPerOrder ? ' disabled' : ''}>+</button></div></li>`).join('')
     : '<li class="kx-small">Your cart is empty. Add something from the menu.</li>';
   $('kxTotal').textContent = naira(t);
+  mountRewards(); rewardsBox?.refresh();
   const min = menu?.minOrderKobo || 0;
   $('kxMin').hidden = !(min && t && t < min);
   $('kxMin').textContent = `The minimum order is ${naira(min)}.`;
@@ -245,7 +255,7 @@ async function payOnline(e: Event) {
   const btn = $('kxPayBtn') as HTMLButtonElement;
   btn.disabled = true; btn.textContent = 'Opening payment…';
   try {
-    const { ok, status, d } = await post('/api/food-checkout', { ...body, returnTo: 'kitchen' });
+    const { ok, status, d } = await post('/api/food-checkout', { ...body, ...(rewardsBox?.values() || {}), returnTo: 'kitchen' });
     if (!ok || !d.authorizationUrl) { if (status === 409) loadMenu(); throw new Error(d.error || 'Payment could not be started. Please try again.'); }
     remember();
     store.set(PENDING, { ref: d.ref });

@@ -85,6 +85,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
       <h2 id="hUse">How to use your points</h2>
       <div class="rw-ways">
         <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7z" /></svg><h3>Redeem rewards</h3><p>Choose a reward from the catalogue and confirm. Bigger rewards need a code we email you, to keep your points safe.</p></div>
+        <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20M6 15h4" /></svg><h3>Pay with Star Points</h3><p>Use points to pay for part of your tickets, food or personalised shirt: 1 point = <b data-k="pointNaira">…</b> off, up to <b data-k="payWithPointsMaxPercent">…</b>% of your order.</p></div>
         <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2" /><path d="M11 18h2" /></svg><h3>Free airtime and data</h3><p>On MTN, Airtel, Glo and 9mobile, sent straight to your phone. If a top-up fails, your points come back automatically.</p></div>
         <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3a3 3 0 0 0 0 6v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a3 3 0 0 0 0-6z" /></svg><h3>Free match tickets</h3><p>Pick a home match and get a QR ticket by email, like any other ticket.</p></div>
         <div class="rw-way"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6" /></svg><h3>Use rewards at the stadium</h3><p>Food and shop vouchers come with a code (valid <b data-k="voucherDays">…</b> days). Show it at the food stands or the club shop.</p></div>
@@ -128,7 +129,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
       <details><summary>Why are my ticket points "pending"?</summary><p>Ticket points become available once the match has been played. If the match is cancelled and your ticket refunded, those points are removed.</p></details>
       <details><summary>Can I earn points on Jumia purchases?</summary><p>No. Only purchases made on lobistarsfc.com earn Star Points.</p></details>
       <details><summary>How do I get airtime or data?</summary><p>Choose an airtime or data reward in the catalogue, pick your network (MTN, Airtel, Glo or 9mobile) and confirm your phone number. It is sent to your phone.</p></details>
-      <details><summary>Can I use points and pay the rest with my card?</summary><p>Paying part of a ticket, jersey or food order with points is coming soon. For now, swap your points for rewards in the catalogue.</p></details>
+      <details><summary>Can I use points and pay the rest with my card?</summary><p>Yes. At checkout for match tickets, MatchDay Kitchen food or personalised shirts, tick "Use my Star Points". Each point takes <b data-k="pointNaira">…</b> off, up to <b data-k="payWithPointsMaxPercent">…</b>% of the order (at least <b data-k="payWithPointsMin">…</b> points), and you pay the rest with Paystack. Your points are only taken once the payment goes through.</p></details>
       <details><summary>Do points expire?</summary><p>Yes, after <b data-k="expiryMonths">…</b> months with no activity on your account. Any purchase or activity resets the clock, and we remind you 30 days before.</p></details>
       <details><summary>What happens if a match is postponed?</summary><p>Your ticket and its points stay valid for the new date. Ticket points become available after the match is played.</p></details>
       <details><summary>Can I give my points to a friend?</summary><p>No. Points can't be transferred, sold or exchanged for cash.</p></details>
@@ -242,7 +243,8 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
   // Everything below comes from the Rewards settings and catalogue (Admin › Rewards).
   fetch('/api/rewards/info').then(function (r) { return r.json(); }).then(function (d) {
     var s = d.settings;
-    document.querySelectorAll('[data-k]').forEach(function (n) { var v = s[n.dataset.k]; if (v != null) n.textContent = fmt(v); });
+    s.pointNaira = '₦' + fmt(s.pointValueKobo / 100);
+    document.querySelectorAll('[data-k]').forEach(function (n) { var v = s[n.dataset.k]; if (v != null) n.textContent = typeof v === 'string' ? v : fmt(v); });
     // 4. Earning grid
     var card = function (pts, what, note) { return el('li', {}, el('b', { text: pts }), el('span', { text: what }), note ? el('small', { text: note }) : null); };
     fill($('earnGrid'), [

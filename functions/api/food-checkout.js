@@ -2,6 +2,8 @@ import { randomId } from './_lib/crypto.js';
 import { initialize } from './_lib/paystackClient.js';
 import { ensureMenuSchema, orderingState } from './_lib/foodMenuDb.js';
 import { ensureFoodSchema, nextRef, foodSettings, priceCart } from './_lib/foodOrders.js';
+import { holdCheckoutRewards, releaseCheckout, ensureCheckoutColumns } from './_lib/rewardsCheckout.js';
+import { readSession } from './_lib/session.js';
 import { normalizeNigerianPhone, rateLimit, tooMany, clientIp, ensureFanSchema } from './_lib/fans.js';
 import { listMatches, isMatchDay, toSummary } from './_lib/matchCentre.js';
 import { raiseFoodAlert } from './_lib/foodAlerts.js';
@@ -57,29 +59,34 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   const id = randomId('LS-FOOD');
   const ref = await nextRef(env.DB);
+  // Lobi Stars Rewards: a food voucher and/or Star Points (held now, taken when paid).
+  await ensureCheckoutColumns(env.DB);
+  const pay = await holdCheckoutRewards(env, { memberId: await readSession(request, env.SESSION_SECRET).catch(() => null), kind: 'food', subtotalKobo: totalKobo, usePoints: b.usePoints, voucherCode: b.voucherCode, reference: ref });
+  if (pay.error) return Response.json({ error: pay.error }, { status: 400 });
   const token = randomId('t', 20);
   const created = new Date();
   const expires = new Date(created.getTime() + paymentExpiryMinutes * 60_000);
   await env.DB.prepare(
     `INSERT INTO food_orders (id, ref, seat, stand, phone, email, customer_name, notes, event_id, items_json, total_kobo, paystack_reference,
-       payment_status, order_status, view_token, created_iso, expires_at, fulfilment, pickup_point)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'AWAITING_PAYMENT', ?, ?, ?, ?, ?)`
-  ).bind(id, ref, pickup ? '' : seat, pickup ? null : stand || null, phone, email, name, notes || null, eventId, JSON.stringify(orderItems), totalKobo, ref,
-    token, created.toISOString(), expires.toISOString(), pickup ? 'pickup' : 'seat', pickup ? pickupPoint : null).run();
+       payment_status, order_status, view_token, created_iso, expires_at, fulfilment, pickup_point, points_used, points_kobo, voucher_code, voucher_kobo)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'AWAITING_PAYMENT', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, ref, pickup ? '' : seat, pickup ? null : stand || null, phone, email, name, notes || null, eventId, JSON.stringify(orderItems), pay.totalKobo, ref,
+    token, created.toISOString(), expires.toISOString(), pickup ? 'pickup' : 'seat', pickup ? pickupPoint : null, pay.pointsUsed, pay.pointsKobo, pay.voucherCode, pay.voucherKobo).run();
 
   const origin = new URL(request.url).origin;
   // Staff alert "New order – awaiting payment" (in the admin; push/email only if switched on).
-  const alert = raiseFoodAlert(env, 'unpaid', { id, ref, seat, stand, fulfilment: pickup ? 'pickup' : 'seat', pickup_point: pickupPoint, customer_name: name, notes, items_json: JSON.stringify(orderItems), total_kobo: totalKobo }, { waitUntil, origin })
+  const alert = raiseFoodAlert(env, 'unpaid', { id, ref, seat, stand, fulfilment: pickup ? 'pickup' : 'seat', pickup_point: pickupPoint, customer_name: name, notes, items_json: JSON.stringify(orderItems), total_kobo: pay.totalKobo }, { waitUntil, origin })
     .catch(err => console.error('[food] unpaid alert', err));
   if (waitUntil) waitUntil(alert); else await alert;
   try {
     const p = await initialize(env, {
-      email, amountKobo: totalKobo, reference: ref,
+      email, amountKobo: pay.totalKobo, reference: ref,
       callbackUrl: `${origin}${b.returnTo === 'kitchen' ? '/kitchen/' : '/food/order/'}?ref=${encodeURIComponent(ref)}&t=${encodeURIComponent(token)}`,
       metadata: { kind: 'food', orderId: id, ref, seat, stand },
     });
-    return Response.json({ authorizationUrl: p.authorization_url, ref, orderId: id });
+    return Response.json({ authorizationUrl: p.authorization_url, ref, orderId: id, totalKobo: pay.totalKobo });
   } catch (err) {
+    await releaseCheckout(env, ref);
     return Response.json({ error: `Payment could not be started: ${err.message}`, ref }, { status: 502 });
   }
 }

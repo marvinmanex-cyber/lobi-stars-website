@@ -171,12 +171,13 @@ export async function offersFor(db, matches, now = Date.now()) {
  */
 export async function lockedTotalOk(db, basket) {
   const rows = await db.prepare(`SELECT COALESCE(SUM(total_kobo), 0) AS t FROM orders WHERE basket_id = ?`).bind(basket.id).first();
-  if (Number(rows?.t) !== basket.total_kobo) return false;
+  const points = Number(basket.points_kobo) || 0; // part paid with Star Points
+  if (Number(rows?.t) !== basket.total_kobo + points) return false;
   if (!basket.discount_snapshot_json) return true;
   try {
     const s = JSON.parse(basket.discount_snapshot_json);
     const p = computeOrderPricing(s.lines, s.rules, s.settings, s.now, s.ctx);
-    return p.ok && p.totalKobo === basket.total_kobo;
+    return p.ok && p.totalKobo - points === basket.total_kobo;
   } catch { return false; }
 }
 

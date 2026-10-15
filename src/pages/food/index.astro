@@ -9,6 +9,7 @@
 // collected at a pickup point (Admin -> Menu & Prices -> Ordering settings).
 import Layout from '../../layouts/Layout.astro';
 import fanSettings from '../../data/fan-settings.json';
+import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
 const siteKey = fanSettings.turnstileSiteKey;
 ---
 <Layout
@@ -54,6 +55,7 @@ const siteKey = fanSettings.turnstileSiteKey;
         <div class="fd-hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" id="foodWebsite" tabindex="-1" autocomplete="off" /></label></div>
         <label class="fd-adult" id="adultWrap" hidden><input type="checkbox" id="foodAdult" /> I confirm I am 18 or older (your order includes alcohol). <b>18+ | Drink Responsibly</b></label>
         <p class="fd-small" id="smallPrint">Your order is confirmed once Paystack confirms your payment. Unpaid orders are cancelled automatically after a few minutes.</p>
+        <div id="foodRewards" hidden></div>
         <p class="form-error" id="food-error" role="alert" hidden></p>
         <button type="submit" class="btn-p fd-submit" id="placeFoodBtn">Place Order &amp; Pay</button>
         <div id="waBox" hidden>
@@ -89,6 +91,7 @@ const siteKey = fanSettings.turnstileSiteKey;
     <a class="btn-p" href="#foodForm">Checkout</a>
   </div>
   {siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+  <CheckoutRewards />
 </Layout>
 
 <style>
@@ -198,6 +201,9 @@ const siteKey = fanSettings.turnstileSiteKey;
       }).join('') + `<div class="fd-sum total"><span>Total</span><span>${naira(total)}</span></div>` +
         (minOrder && total < minOrder ? `<p class="fd-small">Minimum order ${naira(minOrder)}.</p>` : '');
     }
+    // Lobi Stars Rewards: "Use my Star Points" and food vouchers (shown once Rewards is live).
+    if (!window.__fdRw && window.LSRewards) window.__fdRw = window.LSRewards.mount($('foodRewards'), { kind: 'food', subtotal: function () { return items.reduce(function (s, f) { return s + (qty[f.id] || 0) * f.priceKobo; }, 0); } });
+    if (window.__fdRw) window.__fdRw.refresh();
     // Phones: a small bar with the cart total and a Checkout button.
     const bar = $('cartBar');
     bar.hidden = !count || !$('waDone').hidden;
@@ -276,7 +282,7 @@ const siteKey = fanSettings.turnstileSiteKey;
     const body = collect(false); if (!body) return;
     btn.disabled = true; btn.textContent = 'Redirecting to payment...';
     try {
-      const res = await fetch('/api/food-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res = await fetch('/api/food-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({}, body, window.__fdRw ? window.__fdRw.values() : {})) });
       const data = await res.json();
       if (!res.ok || !data.authorizationUrl) { if (res.status === 409) loadMenu(); throw new Error(data.error || 'Could not start payment.'); }
       clearCart();

@@ -79,6 +79,9 @@ export function settingsProblem(s) {
   for (const k of ['ticketsPer100', 'shopPer100', 'foodPer100', 'membershipPer100']) if (typeof s[k] !== 'number' || !(s[k] >= 0) || s[k] > 100) return `${k}: 0 to 100 points per ₦100.`;
   if (s.streakLength < 2 || s.streakLength > 20) return 'Home games in a row: 2 to 20.';
   if (s.birthdayDobMinDays > 365) return 'Birthday: date of birth saved at least 0 to 365 days before.';
+  if (!Number.isInteger(s.pointValueKobo) || s.pointValueKobo < 1 || s.pointValueKobo > 100000) return 'Value of 1 point: from 1 kobo.';
+  if (!Number.isInteger(s.payWithPointsMaxPercent) || s.payWithPointsMaxPercent < 0 || s.payWithPointsMaxPercent > 100) return 'Pay with points: 0 to 100% of an order.';
+  if (!Number.isInteger(s.payWithPointsMin) || s.payWithPointsMin < 1) return 'Pay with points: at least 1 point.';
   if (!Number.isInteger(s.expiryMonths) || s.expiryMonths < 1 || s.expiryMonths > 60) return 'Points expire after: 1 to 60 months.';
   if (!Number.isInteger(s.tierGraceMonths) || s.tierGraceMonths < 0 || s.tierGraceMonths > 12) return 'Tier grace period: 0 to 12 months.';
   if (!Number.isInteger(s.redeemCodeThreshold) || s.redeemCodeThreshold < 1) return 'Email code needed from: at least 1 point.';

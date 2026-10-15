@@ -15,7 +15,7 @@ export async function onRequestGet({ env }) {
     const items = (await listItems(db)).map(i => ({ id: i.id, name: i.name, description: i.description, image: i.image, type: i.type, group: i.group, points: i.points, sponsor: i.sponsor, available: i.stock === null || i.stock > 0 }));
     const keys = ['welcomeBonus', 'profileBonus', 'ticketsPer100', 'shopPer100', 'foodPer100', 'membershipPer100', 'membershipBonus', 'attendance', 'streakBonus', 'streakLength',
       'motmVote', 'prediction', 'predictionCorrect', 'predictionExact', 'referral', 'referralMaxPerSeason', 'birthday', 'engagementMonthlyCap', 'newsletterBonus', 'alertsBonus',
-      'firstPurchaseBonus', 'programmeRead', 'expiryMonths', 'voucherDays', 'redeemCodeThreshold', 'tierGraceMonths', 'paidMembersStartGold', 'exampleJerseyNaira', 'exampleTicketNaira', 'exampleFoodNaira'];
+      'firstPurchaseBonus', 'programmeRead', 'expiryMonths', 'voucherDays', 'redeemCodeThreshold', 'tierGraceMonths', 'paidMembersStartGold', 'exampleJerseyNaira', 'exampleTicketNaira', 'exampleFoodNaira', 'pointValueKobo', 'payWithPointsMaxPercent', 'payWithPointsMin'];
     return Response.json({
       live: !!s.live, settings: Object.fromEntries(keys.map(k => [k, s[k]])),
       tiers: s.tiers.map(t => ({ key: t.key, name: t.name, min: t.min, multiplier: t.multiplier, presaleHours: t.presaleHours, benefits: tierBenefits(t) })),

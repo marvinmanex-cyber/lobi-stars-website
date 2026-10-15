@@ -298,7 +298,7 @@ export async function redemptionSweep(env) {
 }
 
 const STATUS_TEXT = {
-  issued: 'Ready to use', used: 'Used', expired: 'Expired', processing: 'Processing', delivered: 'Delivered', retry: 'Processing (retrying)',
+  issued: 'Ready to use', reserved: 'Being used in a payment', used: 'Used', expired: 'Expired', processing: 'Processing', delivered: 'Delivered', retry: 'Processing (retrying)',
   manual: 'Processing (sent by the club)', failed: 'Failed', refunded: 'Points returned', requested: 'Requested', confirmed: 'Confirmed', fulfilled: 'Done', collected: 'Collected',
 };
 export function publicRedemption(r) {

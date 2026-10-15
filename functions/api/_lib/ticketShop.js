@@ -156,6 +156,8 @@ export const newBasketIds = () => ({ basketId: randomId('LS-BSK', 10), reference
 export async function fulfilBasket(env, basket, waitUntil) {
   const db = env.DB;
   await db.prepare(`UPDATE league_ticket_orders SET status = 'paid', paid_at = COALESCE(paid_at, datetime('now')) WHERE id = ? AND status = 'pending'`).bind(basket.id).run();
+  // Lobi Stars Rewards: Star Points used to pay are now taken (they were held).
+  try { const { confirmCheckout } = await import('./rewardsCheckout.js'); await confirmCheckout(env, basket.reference); } catch (err) { console.error('[tickets] rewards confirm', err); }
   const { results: orders } = await db.prepare(`SELECT * FROM orders WHERE basket_id = ? ORDER BY rowid`).bind(basket.id).all();
   const lines = [];
   for (const o of orders) {

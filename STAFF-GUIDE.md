@@ -622,7 +622,7 @@ Prices › Ordering (stands list).
 **Where fans find it:** the green **MatchDay Kitchen** button in the top menu,
 the "MatchDay Kitchen" section on the homepage under Upcoming Matches, the
 green "Order food to your seat" button in the homepage match bar (home
-matches), a floating MatchDay Kitchen button on phones on match days, the
+matches), the
 Match Centre page of every home match, the ticket confirmation page, every
 ticket email, the footer, Help and the Stadium page. The kitchen opens and
 closes with the ordering setting in Food Menu & Prices (Automatic opens it
@@ -2043,8 +2043,17 @@ tier was called "Star" until October 2026; members at that level are now Legend.
   Done or Collected; **Refund points** (reason shown to the fan).
 - Redeeming only works once Rewards is live. Points have no cash value.
 
-Pay with points at checkout and vouchers applied automatically at our checkouts
-come next, then the fan dashboard, wallet and launch.
+**Pay with Star Points and vouchers at our checkouts (done):** at checkout for
+match tickets (/tickets), MatchDay Kitchen (/kitchen and /food) and personalised
+shirts (/shop), a signed-in Rewards member sees "You'll earn X Star Points on
+this order", can tick **Use my Star Points** (1 point = ₦5 off, up to 50% of the
+order, at least 100 points: all in Admin › Rewards › Pay with Star Points) and
+can pick a reward voucher that fits (food vouchers at the kitchen; jersey money
+off and free name & number printing on personalised shirts). The points are
+held when the fan goes to Paystack, taken when the payment is confirmed, and
+given back automatically if the payment fails or is abandoned. A refund gives
+the points back. No points are earned on the part paid with points. Guests see
+"Log in to earn X Star Points". Nothing shows until Rewards is live.
 
 ## Other things you can update in the CMS
 

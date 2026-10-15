@@ -6,6 +6,7 @@ import { readSession } from '../_lib/session.js';
 import { membershipOf } from '../_lib/membership.js';
 import { seasonConfig } from '../_lib/seasonConfig.js';
 import { presaleMs } from '../_lib/rewardsTiers.js';
+import { holdCheckoutRewards, releaseCheckout, ensureCheckoutColumns } from '../_lib/rewardsCheckout.js';
 import { ensureDiscountSchema, priceWithDiscounts, orderChunks, holdChunkStatement, parseBuyerLines, publicPricing, lockedTotalOk } from '../_lib/ticketDiscounts.js';
 
 // POST /api/tickets/basket { lines: [{ eventId, tier, quantity } | { eventId, tier, family: true, adults, children }],
@@ -65,10 +66,14 @@ export async function onRequestPost({ request, env }) {
     // re-check always give the same numbers.
     const { basketId, reference } = newBasketIds();
     const buyer = { name, email, phone };
+    // Lobi Stars Rewards: "Use my Star Points" (held now, taken when Paystack confirms).
+    await ensureCheckoutColumns(db);
+    const pay = await holdCheckoutRewards(env, { memberId: sessionId, kind: 'tickets', subtotalKobo: pricing.totalKobo, usePoints: b.usePoints, reference });
+    if (pay.error) return Response.json({ error: pay.error }, { status: 400 });
     const groupApplied = pricing.applied.some(a => a.kind === 'group');
-    await db.prepare(`INSERT INTO league_ticket_orders (id, reference, buyer_name, buyer_email, buyer_phone, total_kobo, subtotal_kobo, discount_kobo, discount_rule_id, discount_label, discount_snapshot_json, group_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(basketId, reference, name, email, phone, pricing.totalKobo, pricing.subtotalKobo, pricing.discountKobo, pricing.applied[0]?.ruleId || null, pricing.label || null,
-        pricing.discountKobo ? JSON.stringify(input) : null, groupApplied && groupName ? groupName : null).run();
+    await db.prepare(`INSERT INTO league_ticket_orders (id, reference, buyer_name, buyer_email, buyer_phone, total_kobo, subtotal_kobo, discount_kobo, discount_rule_id, discount_label, discount_snapshot_json, group_name, points_used, points_kobo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(basketId, reference, name, email, phone, pay.totalKobo, pricing.subtotalKobo, pricing.discountKobo, pricing.applied[0]?.ruleId || null, pricing.label || null,
+        pricing.discountKobo ? JSON.stringify(input) : null, groupApplied && groupName ? groupName : null, pay.pointsUsed, pay.pointsKobo).run();
 
     // Hold the seats and discounted tickets: every row in one batch; a row that no longer fits inserts nothing.
     const chunks = orderChunks(pricing, priced.lines);
@@ -79,6 +84,7 @@ export async function onRequestPost({ request, env }) {
         db.prepare(`DELETE FROM orders WHERE basket_id = ?`).bind(basketId),
         db.prepare(`UPDATE league_ticket_orders SET status = 'failed' WHERE id = ?`).bind(basketId),
       ]);
+      await releaseCheckout(env, reference);
       // Either the seats are gone, or someone else just took the last discounted tickets.
       cat = await catalogue(env, { earlyMs });
       const again = priceBasket(buyerLines, cat);
@@ -94,13 +100,14 @@ export async function onRequestPost({ request, env }) {
 
     const origin = new URL(request.url).origin;
     try {
-      const p = await initialize(env, { email, amountKobo: pricing.totalKobo, reference, callbackUrl: `${origin}/tickets/success/?basket=${encodeURIComponent(reference)}`, metadata: { kind: 'basket', basketId, matches: pricing.matches.length, discount_kobo: pricing.discountKobo } });
-      return Response.json({ authorizationUrl: p.authorization_url, reference, totalKobo: pricing.totalKobo });
+      const p = await initialize(env, { email, amountKobo: pay.totalKobo, reference, callbackUrl: `${origin}/tickets/success/?basket=${encodeURIComponent(reference)}`, metadata: { kind: 'basket', basketId, matches: pricing.matches.length, discount_kobo: pricing.discountKobo } });
+      return Response.json({ authorizationUrl: p.authorization_url, reference, totalKobo: pay.totalKobo, pointsUsed: pay.pointsUsed });
     } catch (err) {
       await db.batch([
         db.prepare(`UPDATE orders SET payment_status = 'failed' WHERE basket_id = ?`).bind(basketId),
         db.prepare(`UPDATE league_ticket_orders SET status = 'failed' WHERE id = ?`).bind(basketId),
       ]);
+      await releaseCheckout(env, reference);
       return Response.json({ error: 'Payment could not be started. Please try again.' }, { status: 502 });
     }
   } catch (err) {

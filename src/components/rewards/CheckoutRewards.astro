@@ -1,0 +1,91 @@
+---
+// "Use my Star Points" on our checkouts (match tickets, MatchDay Kitchen,
+// personalised shirts). Include once on a page, then from the page script:
+//   const r = window.LSRewards.mount(containerEl, { kind: 'tickets'|'food'|'shop',
+//     subtotal: () => kobo, feeKobo: () => kobo (shirts), onChange: ({ offKobo }) => {} });
+//   r.refresh();  r.values() -> { usePoints, voucherCode }
+// Shows "You'll earn X Star Points" (or "Log in to earn" for guests), a slider
+// to use points (value and limits from Admin › Rewards) and the fan's vouchers
+// that fit. Nothing shows until Rewards is live. The server checks everything again.
+---
+<style is:global>
+  .lsr { margin: 12px 0; padding: 12px 14px; border-radius: 12px; border: 1.5px solid rgba(201, 162, 39, .6); background: rgba(255, 199, 44, .1); font-size: 14.5px; line-height: 1.5; }
+  .lsr[hidden] { display: none; }
+  .lsr b.lsr-k { display: block; font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--red-text, #A3161B); margin-bottom: 4px; }
+  .lsr label { display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; font-weight: 600; }
+  .lsr input[type=checkbox] { width: 20px; height: 20px; accent-color: #C11A1F; flex: none; }
+  .lsr input[type=range] { width: 100%; accent-color: #C11A1F; }
+  .lsr select { width: 100%; min-height: 44px; border-radius: 8px; padding: 0 10px; }
+  .lsr .lsr-off { font-weight: 700; color: #0B7A2E; }
+  .lsr a { color: var(--red-text, #A3161B); font-weight: 600; }
+  .lsr p { margin: 4px 0; }
+</style>
+<script is:inline>
+(function () {
+  if (window.LSRewards) return;
+  var naira = function (k) { return '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
+  var fmt = function (n) { return Number(n).toLocaleString('en-NG'); };
+  var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c != null && c !== false) n.append(c); } return n; };
+  window.LSRewards = {
+    mount: function (box, o) {
+      var state = { use: false, points: 0, voucher: '', opt: null }, seq = 0, timer;
+      box.classList.add('lsr'); box.hidden = true;
+      var offKobo = function () {
+        if (!state.opt || !state.opt.available) return 0;
+        var v = state.voucher ? (state.opt.vouchers.find(function (x) { return x.code === state.voucher; }) || {}).valueKobo || 0 : 0;
+        v = Math.max(0, Math.min(v, o.subtotal() - 10000));
+        return v + (state.use ? state.points * state.opt.pointValueKobo : 0);
+      };
+      var changed = function () { if (o.onChange) o.onChange({ offKobo: offKobo() }); };
+      function draw() {
+        var d = state.opt; if (!d) return;
+        var parts = [el('b', { class: 'lsr-k', text: 'Lobi Stars Rewards' })];
+        if (!d.available) {
+          if (!d.live) { box.hidden = true; changed(); return; }
+          parts.push(el('p', {}, d.signedIn ? el('a', { href: '/rewards/', text: 'Join Lobi Stars Rewards' }) : el('a', { href: '/fans/login/?next=' + encodeURIComponent(location.pathname), text: 'Log in' }), ' to earn ' + fmt(d.earnEstimate) + ' Star Points on this order.'));
+        } else {
+          parts.push(el('p', { text: "You'll earn " + fmt(d.earnEstimate) + ' Star Points on this order. You have ' + fmt(d.balance) + '.' }));
+          if (d.vouchers.length) {
+            var sel = el('select', { 'aria-label': 'Use a reward voucher' }, el('option', { value: '', text: 'No voucher' }));
+            d.vouchers.forEach(function (v) { var opt = el('option', { value: v.code, text: v.name + ' (' + naira(v.valueKobo) + ' off)' }); if (v.code === state.voucher) opt.selected = true; sel.append(opt); });
+            sel.addEventListener('change', function () { state.voucher = sel.value; draw(); });
+            parts.push(el('label', {}, 'Voucher', sel));
+          }
+          if (d.maxPoints >= d.minPoints && d.maxPoints > 0) {
+            var cb = el('input', { type: 'checkbox' }); cb.checked = state.use;
+            parts.push(el('label', {}, cb, 'Use my Star Points'));
+            cb.addEventListener('change', function () { state.use = cb.checked; if (state.use && !state.points) state.points = d.maxPoints; draw(); });
+            if (state.use) {
+              state.points = Math.max(d.minPoints, Math.min(state.points || d.maxPoints, d.maxPoints));
+              var r = el('input', { type: 'range', min: String(d.minPoints), max: String(d.maxPoints), step: '1', value: String(state.points), 'aria-label': 'Star Points to use' });
+              var txt = el('p', { class: 'lsr-off' });
+              var say = function () { txt.textContent = 'Use ' + fmt(state.points) + ' Star Points = ' + naira(state.points * d.pointValueKobo) + ' off'; };
+              r.addEventListener('input', function () { state.points = Number(r.value); say(); changed(); });
+              say(); parts.push(r, txt);
+            }
+            parts.push(el('p', { text: '1 Star Point = ' + naira(d.pointValueKobo) + ' off, up to ' + d.maxPercent + '% of an order (at least ' + fmt(d.minPoints) + ' points). Points are only taken once your payment goes through.' }));
+          } else if (d.balance > 0) {
+            parts.push(el('p', { text: 'Collect at least ' + fmt(d.minPoints) + ' Star Points to pay part of an order with points.' }));
+          }
+        }
+        box.replaceChildren.apply(box, parts); box.hidden = false; changed();
+      }
+      function refresh() {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+          var s = ++seq, sub = o.subtotal();
+          if (!(sub > 0)) { box.hidden = true; state.opt = null; changed(); return; }
+          fetch('/api/rewards/checkout?kind=' + o.kind + '&subtotalKobo=' + sub + '&feeKobo=' + (o.feeKobo ? o.feeKobo() : 0), { cache: 'no-store' })
+            .then(function (r) { return r.json(); }).then(function (d) { if (s === seq) { state.opt = d; draw(); } }).catch(function () {});
+        }, 250);
+      }
+      refresh();
+      return {
+        refresh: refresh,
+        values: function () { var d = state.opt; return d && d.available ? { usePoints: state.use ? state.points : 0, voucherCode: state.voucher || '' } : { usePoints: 0, voucherCode: '' }; },
+        offKobo: offKobo,
+      };
+    },
+  };
+})();
+</script>

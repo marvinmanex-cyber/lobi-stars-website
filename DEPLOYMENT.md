@@ -313,8 +313,9 @@ Tests: `tests/health.test.mjs`.
 - Seat: section = stand, "Row X, Seat Y" in the seat field (20 characters);
   "At half-time" is written at the start of the order note.
 - Site: green MatchDay Kitchen pill in the main menu, match bar button,
-  homepage section, floating button on phones on match days
-  (`src/components/KitchenFab.astro`), links instead of /food (which still works).
+  homepage section, links instead of /food (which still works). The floating
+  phone button (`src/components/KitchenFab.astro`) is switched off since 15 Oct 2026
+  (it covered content); one media query + one line bring it back.
 
 ## Homepage: one hero and a slim match bar (14 October 2026)
 
@@ -929,6 +930,20 @@ No Cloudflare Access rule is needed.
   Settings expiryMonths 12 and exampleJerseyNaira / exampleTicketNaira /
   exampleFoodNaira (Terver example; to confirm). Column setup tolerates two
   first requests at once ("duplicate column" ignored).
+- Pay with points / vouchers at checkout: `functions/api/_lib/rewardsCheckout.js`
+  (checkoutOptions, holdCheckoutRewards = PENDING minus ledger row source
+  'points_payment' + voucher status 'reserved', confirmCheckout on payment,
+  releaseCheckout on failure, releaseAbandoned in the Rewards job after 90 min;
+  order columns points_used / points_kobo / voucher_code / voucher_kobo).
+  Used by `/api/tickets/basket` (usePoints), `/api/food-checkout` and
+  `/api/shop/personalise` (usePoints, voucherCode). Ticket basket integrity:
+  rows = total_kobo + points_kobo. UI `src/components/rewards/CheckoutRewards.astro`
+  (`/api/rewards/checkout` options). Settings pointValueKobo 500,
+  payWithPointsMaxPercent 50, payWithPointsMin 100. Test:
+  `tests/rewards-checkout.api.test.mjs`.
+- Phones (under 768px): homepage Club Shop is a scroll-snap slider (dots,
+  arrows, "Visit the Shop"), /shop one card per row, readable ShopCard styles;
+  MatchDay Kitchen card header row (FoodPromo.astro). Tablet/desktop unchanged.
 
 ## Ticketing system setup (Cloudflare D1 + Paystack + Resend)
 
