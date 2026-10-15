@@ -382,6 +382,10 @@ Tests: `tests/health.test.mjs`.
   (180 px tall on its page, 140 px on phones). The footer shows the Principal
   Partner on its own row (`size="feature"`, 96 px / 72 px tall); the header
   logo is 44 px / 36 px tall.
+- Club crest on match cards, tickets and emails: `public/images/lobi-stars-fc-transparent-256.png`
+  (256 px, 20 KB, made from the 640 px `lobi-stars-fc-transparent.png`, which is
+  still used for share images and the search-engine logo). Server-rendered cards
+  don't get the build's image optimisation, so keep display copies small.
 - Msendo Table Water (Official Water Partner, added 15 October 2026): the card
   logo `public/images/msendo-table-water.png` is the wordmark cut from the club's
   flyer, rebuilt on white from the red channel (one ink colour, #05512C) so the

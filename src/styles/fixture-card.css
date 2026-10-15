@@ -74,7 +74,7 @@
 .fx-acts .fx-btn:hover, .fx-acts .lg-btn:hover { border-color: var(--red); color: var(--red-text); }
 .fx-acts .primary { background: var(--red); border-color: var(--red); color: #fff; }
 .fx-acts .primary:hover { background: var(--rd); border-color: var(--rd); color: #fff; }
-.fx-acts .primary small { font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; opacity: .92; }
+.fx-acts .primary small { font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; }
 .fx-acts .lg-chip.lg-tix { border-style: dashed; color: var(--lt); border-radius: 8px; }
 .fx-acts .lg-chip.lg-tix.bad { border-style: solid; border-color: #A3161B; color: #A3161B; background: transparent; }
 .fx-card a:focus-visible, .fx-card button:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }

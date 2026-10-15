@@ -8,7 +8,7 @@
 // fall back to the club's initials.
 export const TEAM_LOGOS = {
   // Lobi Stars
-  'Lobi Stars FC': '/images/lobi-stars-fc-transparent.png',
+  'Lobi Stars FC': '/images/lobi-stars-fc-transparent-256.png',
   'Lobi Stars': '/images/lobi-stars-crest.png',
 
   // 2026/27 NNL Conference D

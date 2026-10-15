@@ -104,6 +104,8 @@
 .kx-step button:disabled { color: #4F5B78; cursor: not-allowed; }
 .kx-step output { text-align: center; font: 700 18px/1 'Barlow Condensed', sans-serif; }
 .kx-empty { padding: 30px 0; color: var(--kx-muted); text-align: center; }
+/* Space for the menu while it loads, so the page doesn't jump when it arrives. */
+.kx-loading { min-height: 70vh; }
 
 /* Cart bar (sticky bottom) */
 .kx-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1400; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(6, 14, 30, .96); backdrop-filter: blur(8px); border-top: 1px solid var(--kx-line); transform: translateY(110%); transition: transform .25s ease; }

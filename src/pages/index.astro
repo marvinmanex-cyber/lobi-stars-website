@@ -79,7 +79,7 @@ const teamJsonLd = {
         <a class="hp-more" href="/shop">Visit the shop <span aria-hidden="true">&rarr;</span></a>
       </div>
       <!-- Phones (under 768px): a swipe slider, one product at a time, with dots and arrows. Larger screens: the grid as before. -->
-      <div class="hp-shop" id="hpShop" aria-roledescription="carousel" aria-label="Club shop products">
+      <div class="hp-shop" id="hpShop" tabindex="0" aria-roledescription="carousel" aria-label="Club shop products">
         {shopHighlights.map((p, i) => <div class="hp-slide" role="group" aria-roledescription="slide" aria-label={`Product ${i + 1} of ${shopHighlights.length}`}><ShopCard product={p} /></div>)}
       </div>
       <div class="hp-shop-nav" id="hpShopNav" hidden>
@@ -122,6 +122,7 @@ const teamJsonLd = {
   .hp-more { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--red-text); text-decoration: none; white-space: nowrap; }
   .hp-more:hover, .hp-more:focus-visible { text-decoration: underline; }
   .hp-shop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .hp-shop:focus-visible { outline: 3px solid var(--red); outline-offset: 4px; border-radius: 8px; }
 
   .hp-member { background: linear-gradient(120deg, var(--rdp), var(--red)); color: #fff; padding: 52px 0; }
   .hp-member-inner { display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; }

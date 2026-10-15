@@ -50,7 +50,7 @@ test('featured and regular cards look different; LIVE, final score, postponed', 
   assert.match(big, /fx-pill--home">Home/);
   assert.match(big, /<span class="club-logo club-logo--mono fx-crest fx-crest--mono"[^>]*>BF<\/span>/, 'initials for a missing crest');
   assert.ok(!/border-radius|background:#fff/.test(big), 'no circle or white background on logos');
-  assert.match(big, /<img class="club-logo fx-crest" src="\/images\/lobi-stars-fc-transparent.png"/, 'transparent copy of the crest');
+  assert.match(big, /<img class="club-logo fx-crest" src="\/images\/lobi-stars-fc-transparent-256.png"/, 'transparent copy of the crest (256 px, light)');
   assert.match(big, /alt="Lobi Stars FC crest" width="96" height="96" loading="lazy"/);
   const small = fixtureCardHtml({ ...base, home: base.away, away: base.home });
   assert.match(small, /class="fx-card fx-card--regular fx-card--away"/);

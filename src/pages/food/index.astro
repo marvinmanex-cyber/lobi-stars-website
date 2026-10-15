@@ -31,7 +31,7 @@ const siteKey = fanSettings.turnstileSiteKey;
     <div class="fd-grid" id="shop">
       <section aria-labelledby="menu-title">
         <h2 class="fd-h2" id="menu-title">Menu</h2>
-        <div id="foodMenu"><p class="muted">Loading the menu…</p></div>
+        <div id="foodMenu"><p class="muted fd-loading">Loading the menu…</p></div>
       </section>
 
       <div class="fd-side">
@@ -129,6 +129,8 @@ const siteKey = fanSettings.turnstileSiteKey;
   .fd-small { font-size: 13px; color: var(--lt); margin: 0 0 12px; }
   .fd-submit { width: 100%; padding: 15px; font-size: 15px; }
   .fd-side { min-width: 0; }
+  /* Space for the menu while it loads, so the page doesn't jump when it arrives. */
+  .fd-loading { min-height: 70vh; }
   .fd-side [hidden] { display: none !important; }
   .fd-how { border: 0; padding: 0; margin: 0 0 14px; display: flex; gap: 16px; flex-wrap: wrap; }
   .fd-how legend { margin-bottom: 6px; }
@@ -139,8 +141,8 @@ const siteKey = fanSettings.turnstileSiteKey;
   .fd-or { display: flex; align-items: center; gap: 12px; margin: 16px 0 12px; color: var(--lt); font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; }
   .fd-or::before, .fd-or::after { content: ''; flex: 1; height: 1px; background: var(--d4); }
   .fd-turnstile { margin: 0 0 12px; }
-  .fd-wa { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; padding: 13px 16px; border: 0; border-radius: 6px; background: #25D366; color: #fff; font: 700 16px/1.2 'Barlow', sans-serif; text-decoration: none; cursor: pointer; }
-  .fd-wa:hover, .fd-wa:focus-visible { background: #1EBE5A; color: #fff; }
+  .fd-wa { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 52px; padding: 13px 16px; border: 0; border-radius: 6px; background: #1A7F45; color: #fff; font: 700 16px/1.2 'Barlow', sans-serif; text-decoration: none; cursor: pointer; }
+  .fd-wa:hover, .fd-wa:focus-visible { background: #146A39; color: #fff; }
   .fd-wa:disabled { opacity: .7; cursor: wait; }
   .fd-wa-hint { margin: 10px 0 0; }
   .fd-done { text-align: center; }
