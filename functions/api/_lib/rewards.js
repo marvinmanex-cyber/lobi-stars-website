@@ -120,6 +120,22 @@ export async function ensureRewardsSchema(db) {
     db.prepare(`UPDATE rewards_members SET tier_notified = replace(tier_notified, ':star', ':legend') WHERE tier_notified LIKE '%:star'`),
     db.prepare(`UPDATE rewards_members SET tier_seen = replace(tier_seen, ':star', ':legend') WHERE tier_seen LIKE '%:star'`),
   ]);
+  // October 2026: the club removed early ticket access from the Gold/Legend benefits. Settings saved
+  // before then still had 24/48 hours: set them to 0 once (the admin can enter hours again later).
+  const done = await db.prepare(`SELECT 1 FROM settings WHERE key = 'rewards_presale_off_2026_10'`).first().catch(() => null);
+  if (!done) {
+    const row = await db.prepare(`SELECT value FROM settings WHERE key = 'rewards_settings'`).first().catch(() => null);
+    if (row?.value) {
+      try {
+        const v = JSON.parse(row.value);
+        if (Array.isArray(v.tiers)) {
+          v.tiers = v.tiers.map(t => (t.key === 'gold' || t.key === 'legend' || t.key === 'star' ? { ...t, presaleHours: 0 } : t));
+          await db.prepare(`UPDATE settings SET value = ? WHERE key = 'rewards_settings'`).bind(JSON.stringify(v)).run();
+        }
+      } catch { /* leave it */ }
+    }
+    await db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('rewards_presale_off_2026_10', ?)`).bind(new Date().toISOString()).run();
+  }
   const lc = new Set((await db.prepare(`PRAGMA table_info(rewards_ledger)`).all()).results.map(c => c.name));
   if (!lc.has('event_id')) await addColumn(db, `ALTER TABLE rewards_ledger ADD COLUMN event_id TEXT`); // ticket points wait for this match
   if (!lc.has('pay_ref')) await addColumn(db, `ALTER TABLE rewards_ledger ADD COLUMN pay_ref TEXT`);   // Paystack reference (refunds/disputes reverse by it)
