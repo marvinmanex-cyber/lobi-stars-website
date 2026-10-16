@@ -13,6 +13,7 @@ import { matchSlug } from './matchSlug.js';
 import { ensureFanSchema, matchdayReminderEmail } from './fans.js';
 import { ensureContactsSchema, unsubscribeUrl } from './contacts.js';
 import { predictionWindow } from './predict.js';
+import { DEFAULT_FROM, withName } from './email.js';
 
 const SITE = 'https://lobistarsfc.com';
 
@@ -63,12 +64,12 @@ export async function notifyFans(env, event, kind) {
       return { status: 'skipped', recipients: list.length };
     }
     const url = `${SITE}/matches/${matchSlug(event)}/live/#${kind === 'kickoff' ? 'vote' : 'predict'}`;
-    const from = env.FAN_EMAIL_FROM || env.RESEND_FROM || 'Lobi Stars FC <tickets@lobistarsfc.com>';
+    const from = withName(env.FAN_EMAIL_FROM || env.RESEND_FROM || DEFAULT_FROM);
     let sent = 0;
     for (let i = 0; i < list.length; i += 100) {
       const batch = list.slice(i, i + 100).map(f => {
         const { subject, html } = matchdayReminderEmail({ firstName: f.first_name, kind, match: event, url, unsubUrl: unsubscribeUrl({ unsub_token: f.unsub_token }) });
-        return { from, to: f.email, subject, html };
+        return { from, to: f.email, subject, html, reply_to: env.REPLY_TO_EMAIL || 'info@lobistarsfc.com' };
       });
       const res = await fetch('https://api.resend.com/emails/batch', {
         method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(batch),

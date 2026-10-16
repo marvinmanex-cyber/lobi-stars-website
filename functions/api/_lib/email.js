@@ -1,5 +1,6 @@
 // Sends transactional email via Resend (https://resend.com) using plain
-// fetch -- no SDK needed. Requires RESEND_API_KEY and RESEND_FROM secrets.
+// fetch -- no SDK needed. Requires RESEND_API_KEY; RESEND_FROM is the sender
+// (default "Lobi Stars FC" <noreply@lobistarsfc.com>).
 
 import { lagosParts, splitVenue } from './fixtureCard.js';
 import { TEAM_LOGOS } from './teamLogos.js';
@@ -7,6 +8,10 @@ import { TEAM_LOGOS } from './teamLogos.js';
 const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' };
 const TIER_BADGES = { VIP: '/images/vip-siting.png', Premium: '/images/cover-stand.png', Regular: '/images/popular-stand.png' };
 const SITE_ORIGIN = 'https://lobistarsfc.com';
+// Automatic emails (receipts, codes, alerts). Conversations use info@ (Inbox).
+export const DEFAULT_FROM = 'Lobi Stars FC <noreply@lobistarsfc.com>';
+/** "noreply@lobistarsfc.com" -> "Lobi Stars FC <noreply@lobistarsfc.com>" (a sender with a name is kept). */
+export const withName = addr => (/</.test(addr) ? addr : `Lobi Stars FC <${String(addr).trim()}>`);
 
 /**
  * Optional extras (used by the Inbox): `from` (a different sender name or
@@ -14,8 +19,12 @@ const SITE_ORIGIN = 'https://lobistarsfc.com';
  * ([{ filename, content: base64 }]).
  */
 export async function sendEmail(env, { to, subject, html, from, replyTo, text, headers, attachments }) {
-  const payload = { from: from || env.RESEND_FROM || 'Lobi Stars FC <tickets@lobistarsfc.com>', to, subject, html };
-  if (replyTo) payload.reply_to = replyTo;
+  const sender = withName(from || env.RESEND_FROM || DEFAULT_FROM);
+  const payload = { from: sender, to, subject, html };
+  // Automatic emails come from noreply@ but a fan's reply should reach a person:
+  // Reply-To info@ unless the email already says where replies go.
+  const reply = replyTo || (/info@/i.test(sender) ? '' : (env.REPLY_TO_EMAIL || 'info@lobistarsfc.com'));
+  if (reply) payload.reply_to = reply;
   if (text) payload.text = text;
   if (headers) payload.headers = headers;
   if (attachments?.length) payload.attachments = attachments;

@@ -1,6 +1,7 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { unsubscribeUrl } from '../../_lib/contacts.js';
+import { DEFAULT_FROM, withName } from '../../_lib/email.js';
 import { ensureNewsletterSchema, parseIssue, renderNewsletter, renderText, loadSponsors, nextMatch, recipients, slugFor, SITE, newsletterSettings } from '../../_lib/newsletter.js';
 
 const json = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -15,7 +16,9 @@ async function resendBatch(env, emails) {
   });
   if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 200)}`);
 }
-const fromAddress = env => env.NEWSLETTER_FROM || env.RESEND_FROM || 'Lobi Stars FC <info@lobistarsfc.com>';
+const fromAddress = env => withName(env.NEWSLETTER_FROM || env.RESEND_FROM || DEFAULT_FROM);
+// Replies to the newsletter reach the club's main inbox.
+const replyTo = env => env.REPLY_TO_EMAIL || 'info@lobistarsfc.com';
 
 // POST /api/admin/newsletter/send
 //   { id, test: "you@example.com, other@example.com" }  a test copy (subject starts [TEST])
@@ -40,7 +43,7 @@ export async function onRequestPost({ request, env }) {
     if (!to.length || to.length > 5 || !to.every(e => EMAIL.test(e))) return json({ error: 'Type up to 5 valid email addresses for the test.' }, 400);
     const recipient = { firstName: (admin.name || '').split(' ')[0] || '', unsubscribeUrl: `${SITE}/newsletter/`, optionsUrl: `${SITE}/newsletter/` };
     const html = renderNewsletter({ issue, sponsors, match, recipient, settings });
-    if (live) await resendBatch(env, to.map(e => ({ from: fromAddress(env), to: e, subject: `[TEST] ${issue.subject}`, html, text: renderText({ issue, sponsors, match, recipient }) })));
+    if (live) await resendBatch(env, to.map(e => ({ from: fromAddress(env), reply_to: replyTo(env), to: e, subject: `[TEST] ${issue.subject}`, html, text: renderText({ issue, sponsors, match, recipient }) })));
     await logAdminAction(db, admin, 'newsletter_test', `${issue.subject} to ${to.join(', ')}`);
     return json({ ok: true, sentTo: to, testMode });
   }
@@ -66,7 +69,7 @@ export async function onRequestPost({ request, env }) {
     const emails = chunk.map(r => {
       const unsub = r.unsub_token ? unsubscribeUrl(r) : `${SITE}/newsletter/`;
       const recipient = { firstName: r.first_name || '', unsubscribeUrl: unsub, optionsUrl: r.unsub_token ? `${SITE}/newsletter/?t=${r.unsub_token}` : `${SITE}/newsletter/` };
-      return { from: fromAddress(env), to: r.email, subject: issue.subject, html: renderNewsletter({ issue: final, sponsors, match, recipient, settings }), text: renderText({ issue: final, sponsors, match, recipient }), headers: { 'List-Unsubscribe': `<${unsub}>` } };
+      return { from: fromAddress(env), reply_to: replyTo(env), to: r.email, subject: issue.subject, html: renderNewsletter({ issue: final, sponsors, match, recipient, settings }), text: renderText({ issue: final, sponsors, match, recipient }), headers: { 'List-Unsubscribe': `<${unsub}>` } };
     });
     let status = testMode ? 'dev' : 'sent';
     if (live) { try { await resendBatch(env, emails); } catch (err) { console.log('[newsletter]', err.message); status = 'failed'; } }
