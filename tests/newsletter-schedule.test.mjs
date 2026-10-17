@@ -82,3 +82,30 @@ test('"Send now" on a scheduled newsletter cancels the schedule and sends it', a
   assert.equal(i.status, 'sent'); assert.equal(i.scheduled_at, null);
   assert.equal((await post('/api/internal/newsletter-run', {}, { Authorization: 'Bearer wrong' })).status, 401);
 });
+
+test('"Selected people only": the subscriber list, sending to chosen people only (they still need consent)', async () => {
+  const tag = uid();
+  const emails = [0, 1, 2].map(k => `pick-${tag}-${k}@example.com`);
+  for (const email of emails) {
+    assert.equal((await post('/api/newsletter', { fullName: `Pick ${tag}`, phone: `0803${String(Math.floor(Math.random() * 1e7)).padStart(7, '0')}`, email, confirmEmail: email, consent: true, weekly: true, source: 'test' }, { 'CF-Connecting-IP': randIp() })).status, 200);
+  }
+  const list = await get(`/api/admin/newsletter?subscribers=1&q=pick-${tag}`);
+  assert.equal(list.total, 3);
+  assert.ok(list.people.every(p => p.id && p.email.includes(`pick-${tag}`)), 'owner sees full emails');
+  const chosen = list.people.filter(p => !p.email.endsWith('-2@example.com')).map(p => p.id);
+  const r = await nl({ action: 'save_issue', issue: { subject: `Selected ${tag}`, headline: 'For some', intro: 'Hi', include_match: false, stories: [], sponsor_ids: [], audience: chosen } });
+  const id = r.data.id;
+  const i = await issue(id);
+  assert.deepEqual(i.audience.sort(), [...chosen].sort());
+  assert.equal(i.audience_count, 2); assert.equal(i.audience_people.length, 2);
+  let s;
+  do { s = await send({ id, confirm: true }); assert.equal(s.status, 200, JSON.stringify(s.data)); } while (s.data.remaining > 0);
+  assert.equal(s.data.total, 2, 'only the two selected people');
+  // Nobody selected: refused.
+  const empty = (await nl({ action: 'save_issue', issue: { subject: `Nobody ${tag}`, headline: 'x', intro: 'x', include_match: false, stories: [], sponsor_ids: [], audience: [] } })).data.id;
+  assert.equal((await send({ id: empty, confirm: true })).status, 400);
+  assert.equal((await send({ id: empty, schedule: new Date(Date.now() + 3600e3).toISOString() })).status, 400);
+  // Back to everyone: audience null.
+  await nl({ action: 'save_issue', issue: { id: empty, subject: `Nobody ${tag}`, headline: 'x', intro: 'x', include_match: false, stories: [], sponsor_ids: [], audience: null } });
+  assert.equal((await issue(empty)).audience, null);
+});

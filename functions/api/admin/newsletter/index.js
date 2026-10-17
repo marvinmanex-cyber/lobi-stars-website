@@ -1,17 +1,30 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { ensureNewsletterSchema, parseIssue, loadSponsors, recipients, safeUrl, newId, newsletterSettings, saveNewsletterSettings, NL_DEFAULTS } from '../../_lib/newsletter.js';
+import { maskEmail } from '../../_lib/fanQuery.js';
+
+const SUBS_PAGE = 50;
+/** A subscriber as staff see it (email partly hidden without "can export fan data"). */
+const subRow = (admin, r) => ({ id: r.id, name: [r.first_name, r.surname].filter(Boolean).join(' '), email: admin.canExport ? r.email : maskEmail(r.email), since: r.first_seen || null });
 
 const json = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
 
 // GET /api/admin/newsletter -- issues (with click counts), sponsor adverts,
 // subscriber numbers and whether the email service is connected.
+// GET ?subscribers=1&q=&offset= -- the people who receive the newsletter (50 at a time, search by name or email).
 export async function onRequestGet({ request, env }) {
-  const { denied } = await requireAdminUser(request, env);
+  const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
   const db = env.DB;
   await ensureNewsletterSchema(db);
+  const url = new URL(request.url);
+  if (url.searchParams.get('subscribers')) {
+    const q = (url.searchParams.get('q') || '').trim().toLowerCase().slice(0, 80);
+    const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0);
+    const all = (await recipients(db)).filter(r => !q || `${r.first_name || ''} ${r.surname || ''} ${r.email}`.toLowerCase().includes(q));
+    return json({ total: all.length, offset, pageSize: SUBS_PAGE, people: all.slice(offset, offset + SUBS_PAGE).map(r => subRow(admin, r)) });
+  }
   const { results: issues } = await db.prepare(`SELECT id, slug, subject, headline, status, created_at, created_by, updated_at, updated_by, sent_at, sent_by, sent_count, failed_count, scheduled_at, scheduled_by FROM newsletter_issues ORDER BY COALESCE(sent_at, updated_at, created_at) DESC`).all();
   const { results: clicks } = await db.prepare(`SELECT issue_id, kind, ref, COUNT(*) AS n FROM newsletter_clicks GROUP BY issue_id, kind, ref`).all();
   for (const i of issues) i.clicks = clicks.filter(c => c.issue_id === i.id).reduce((s, c) => s + c.n, 0);
@@ -37,6 +50,8 @@ async function cleanIssue(db, b) {
     include_match: b.include_match ? 1 : 0, stories: JSON.stringify(stories),
     sponsor_ids: JSON.stringify((Array.isArray(b.sponsor_ids) ? b.sponsor_ids : []).map(String).filter(id => known.has(id)).slice(0, 30)),
     top_sponsor_id: known.has(String(b.top_sponsor_id || '')) ? String(b.top_sponsor_id) : null,
+    // Selected people (contact ids) or everyone (null).
+    audience: Array.isArray(b.audience) ? JSON.stringify([...new Set(b.audience.map(String).filter(x => /^[\w-]{1,64}$/.test(x)))].slice(0, 10000)) : null,
   };
 }
 
@@ -60,6 +75,12 @@ export async function onRequestPost({ request, env }) {
     const issue = parseIssue(await db.prepare(`SELECT * FROM newsletter_issues WHERE id = ?`).bind(String(b.id || '')).first());
     if (!issue) return json({ error: 'Newsletter not found.' }, 404);
     delete issue.html_snapshot;
+    // For "Selected people": who they are, and how many can receive it (agreed to club emails, not unsubscribed).
+    if (Array.isArray(issue.audience)) {
+      const ok = await recipients(db, null, 100000, issue.audience);
+      issue.audience_people = ok.slice(0, 500).map(r => subRow(admin, r));
+      issue.audience_count = ok.length;
+    }
     return json({ issue });
   }
   if (b.action === 'save_issue') {
@@ -70,14 +91,14 @@ export async function onRequestPost({ request, env }) {
       const cur = await db.prepare(`SELECT status FROM newsletter_issues WHERE id = ?`).bind(id).first();
       if (!cur) return json({ error: 'Newsletter not found.' }, 404);
       if (cur.status !== 'draft' && cur.status !== 'scheduled') return json({ error: 'This newsletter has already been sent, so it can no longer be changed. Use Duplicate to make a new one from it.' }, 409);
-      await db.prepare(`UPDATE newsletter_issues SET subject = ?, preheader = ?, headline = ?, intro = ?, hero_image = ?, hero_button_text = ?, hero_button_url = ?, include_match = ?, stories = ?, sponsor_ids = ?, top_sponsor_id = ?, updated_at = ?, updated_by = ? WHERE id = ? AND status IN ('draft', 'scheduled')`)
-        .bind(i.subject, i.preheader, i.headline, i.intro, i.hero_image, i.hero_button_text, i.hero_button_url, i.include_match, i.stories, i.sponsor_ids, i.top_sponsor_id, now, admin.name, id).run();
+      await db.prepare(`UPDATE newsletter_issues SET subject = ?, preheader = ?, headline = ?, intro = ?, hero_image = ?, hero_button_text = ?, hero_button_url = ?, include_match = ?, stories = ?, sponsor_ids = ?, top_sponsor_id = ?, audience = ?, updated_at = ?, updated_by = ? WHERE id = ? AND status IN ('draft', 'scheduled')`)
+        .bind(i.subject, i.preheader, i.headline, i.intro, i.hero_image, i.hero_button_text, i.hero_button_url, i.include_match, i.stories, i.sponsor_ids, i.top_sponsor_id, i.audience, now, admin.name, id).run();
       return json({ ok: true, id });
     }
     const nid = newId('NL');
-    await db.prepare(`INSERT INTO newsletter_issues (id, subject, preheader, headline, intro, hero_image, hero_button_text, hero_button_url, include_match, stories, sponsor_ids, top_sponsor_id, status, created_at, created_by, updated_at, updated_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)`)
-      .bind(nid, i.subject, i.preheader, i.headline, i.intro, i.hero_image, i.hero_button_text, i.hero_button_url, i.include_match, i.stories, i.sponsor_ids, i.top_sponsor_id, now, admin.name, now, admin.name).run();
+    await db.prepare(`INSERT INTO newsletter_issues (id, subject, preheader, headline, intro, hero_image, hero_button_text, hero_button_url, include_match, stories, sponsor_ids, top_sponsor_id, audience, status, created_at, created_by, updated_at, updated_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)`)
+      .bind(nid, i.subject, i.preheader, i.headline, i.intro, i.hero_image, i.hero_button_text, i.hero_button_url, i.include_match, i.stories, i.sponsor_ids, i.top_sponsor_id, i.audience, now, admin.name, now, admin.name).run();
     await logAdminAction(db, admin, 'newsletter_create', i.subject);
     return json({ ok: true, id: nid });
   }
@@ -85,9 +106,9 @@ export async function onRequestPost({ request, env }) {
     const src = await db.prepare(`SELECT * FROM newsletter_issues WHERE id = ?`).bind(String(b.id || '')).first();
     if (!src) return json({ error: 'Newsletter not found.' }, 404);
     const nid = newId('NL');
-    await db.prepare(`INSERT INTO newsletter_issues (id, subject, preheader, headline, intro, hero_image, hero_button_text, hero_button_url, include_match, stories, sponsor_ids, top_sponsor_id, status, created_at, created_by, updated_at, updated_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)`)
-      .bind(nid, `${src.subject} (copy)`.slice(0, 150), src.preheader, src.headline, src.intro, src.hero_image, src.hero_button_text, src.hero_button_url, src.include_match, src.stories, src.sponsor_ids, src.top_sponsor_id, now, admin.name, now, admin.name).run();
+    await db.prepare(`INSERT INTO newsletter_issues (id, subject, preheader, headline, intro, hero_image, hero_button_text, hero_button_url, include_match, stories, sponsor_ids, top_sponsor_id, audience, status, created_at, created_by, updated_at, updated_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'draft', ?, ?, ?, ?)`)
+      .bind(nid, `${src.subject} (copy)`.slice(0, 150), src.preheader, src.headline, src.intro, src.hero_image, src.hero_button_text, src.hero_button_url, src.include_match, src.stories, src.sponsor_ids, src.top_sponsor_id, src.audience || null, now, admin.name, now, admin.name).run();
     return json({ ok: true, id: nid });
   }
   if (b.action === 'delete_issue') {

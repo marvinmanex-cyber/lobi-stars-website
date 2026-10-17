@@ -68,6 +68,18 @@ import AdminNav from '../../components/admin/AdminNav.astro';
               <ul class="nl-picks" id="sponsorPicks"></ul>
               <p class="muted">Add or change sponsor logos, links and text in the <a href="?tab=sponsors" data-go="sponsors">Sponsor adverts</a> tab.</p>
             </fieldset>
+            <fieldset class="panel"><legend>6. Who receives it</legend>
+              <label class="nl-radio"><input type="radio" name="audience_mode" value="all" checked /> <span>All subscribers <span class="muted" id="audAll"></span></span></label>
+              <label class="nl-radio"><input type="radio" name="audience_mode" value="some" /> <span>Selected people only</span></label>
+              <div class="nl-aud" id="audPick" hidden>
+                <p class="nl-lbl">Selected: <b id="audCount">0</b> <button type="button" class="btn-o sm" id="audClear">Clear all</button></p>
+                <ul class="nl-chips" id="audChips"></ul>
+                <input type="search" id="audQ" placeholder="Search subscribers by name or email" aria-label="Search subscribers" />
+                <ul class="nl-people" id="audList"></ul>
+                <button type="button" class="btn-o sm" id="audMore" hidden>Load more</button>
+                <p class="muted">Only people who agreed to club emails and have not unsubscribed are listed, so everyone you pick can receive it.</p>
+              </div>
+            </fieldset>
           </form>
           <div class="nl-pv">
             <div class="nl-pv-head"><b>Preview</b><span class="muted">as fans will see it</span>
@@ -194,6 +206,20 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .nl :global(.nl-mini) { display: inline-flex; gap: 4px; }
   .nl :global(.nl-mini button) { width: 36px; height: 36px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); border-radius: 8px; cursor: pointer; font-size: 15px; }
   .nl-picks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .nl fieldset label.nl-radio { display: flex !important; flex-direction: row !important; justify-content: flex-start; gap: 10px; align-items: center; font-weight: 600; margin: 4px 0; }
+  .nl fieldset label.nl-radio input { width: 18px !important; height: 18px !important; min-height: 0 !important; flex: none; margin: 0; padding: 0; accent-color: #15803D; }
+  .nl-aud { display: grid; gap: 8px; margin-top: 6px; }
+  .nl-aud input[type="search"] { min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); }
+  .nl :global(.nl-chips) { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; max-height: 140px; overflow: auto; }
+  .nl :global(.nl-chips li) { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px 4px 10px; border-radius: 999px; background: #E8F5EC; color: #14532D; font-size: 13px; font-weight: 600; }
+  .nl :global(.nl-chips button) { border: 0; background: transparent; cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 4px; color: inherit; }
+  .nl :global(.nl-people) { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow: auto; border: 1px solid var(--a-line); border-radius: 10px; }
+  .nl :global(.nl-people li) { border-bottom: 1px solid var(--a-line); }
+  .nl :global(.nl-people label) { display: flex; gap: 10px; align-items: center; padding: 8px 10px; cursor: pointer; flex-direction: row; font-weight: 400; }
+  .nl :global(.nl-people input) { width: 18px; height: 18px; flex: none; accent-color: #15803D; }
+  .nl :global(.nl-people .muted) { font-size: 13px; }
+  .nl :global(.nl-subtable) { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+  .nl :global(.nl-subtable th), .nl :global(.nl-subtable td) { text-align: left; padding: 8px; border-bottom: 1px solid var(--a-line); }
   .nl :global(.nl-pick) { display: flex; gap: 10px; align-items: center; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-soft); }
   .nl :global(.nl-pick img) { width: 54px; height: 32px; object-fit: contain; background: #fff; border-radius: 6px; }
   .nl :global(.nl-pick label) { display: flex; flex: 1; gap: 8px; align-items: center; color: var(--a-ink); font-size: 14px; font-weight: 600; min-width: 0; }
@@ -313,6 +339,41 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     } catch (err) { msg(err.message, false); }
   });
 
+  // ── Who receives it (all subscribers or selected people) ──
+  let aud = new Map(), peopleOffset = 0, peopleT;
+  const audMode = () => (F().audience_mode.value === 'some' ? 'some' : 'all');
+  const audienceSize = () => (audMode() === 'some' ? aud.size : data.counts.recipients);
+  function sendLabel() {
+    $('sendAll').textContent = audMode() === 'some' ? '📨 Send now to ' + aud.size.toLocaleString('en-NG') + ' selected' : '📨 Send now to ' + data.counts.recipients.toLocaleString('en-NG') + ' subscribers';
+  }
+  function drawAudience() {
+    $('audAll').textContent = '(' + data.counts.recipients.toLocaleString('en-NG') + ')';
+    $('audPick').hidden = audMode() !== 'some';
+    $('audCount').textContent = aud.size.toLocaleString('en-NG');
+    $('audChips').innerHTML = [...aud.values()].map(p => `<li>${esc(p.name || p.email)}<button type="button" data-unpick="${esc(p.id)}" aria-label="Remove ${esc(p.name || p.email)}">×</button></li>`).join('');
+    sendLabel();
+  }
+  async function loadPeople(reset) {
+    if (reset) { peopleOffset = 0; $('audList').innerHTML = ''; }
+    const q = $('audQ').value.trim();
+    const r = await fetch('/api/admin/newsletter?subscribers=1&q=' + encodeURIComponent(q) + '&offset=' + peopleOffset, { headers: H }).then(x => x.json());
+    $('audList').insertAdjacentHTML('beforeend', r.people.map(p => `<li><label><input type="checkbox" data-pick="${esc(p.id)}" data-name="${esc(p.name)}" data-email="${esc(p.email)}" ${aud.has(p.id) ? 'checked' : ''}> <span><b>${esc(p.name || '(no name)')}</b><br><span class="muted">${esc(p.email)}</span></span></label></li>`).join('') || (reset ? '<li class="muted" style="padding:10px">Nobody found.</li>' : ''));
+    peopleOffset += r.people.length;
+    $('audMore').hidden = peopleOffset >= r.total;
+  }
+  document.addEventListener('change', e => {
+    const t = e.target;
+    if (t.name === 'audience_mode') { drawAudience(); if (audMode() === 'some' && !$('audList').children.length) loadPeople(true); dirty = true; }
+    if (t.dataset && t.dataset.pick) { if (t.checked) aud.set(t.dataset.pick, { id: t.dataset.pick, name: t.dataset.name, email: t.dataset.email }); else aud.delete(t.dataset.pick); drawAudience(); dirty = true; }
+  });
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-unpick]'); if (!b) return;
+    aud.delete(b.dataset.unpick); const box = document.querySelector(`[data-pick="${CSS.escape(b.dataset.unpick)}"]`); if (box) box.checked = false; drawAudience(); dirty = true;
+  });
+  $('audQ').addEventListener('input', () => { clearTimeout(peopleT); peopleT = setTimeout(() => loadPeople(true), 300); });
+  $('audMore').addEventListener('click', () => loadPeople(false));
+  $('audClear').addEventListener('click', () => { aud.clear(); document.querySelectorAll('[data-pick]').forEach(x => { x.checked = false; }); drawAudience(); dirty = true; });
+
   // ── Editor ──
   const F = () => $('form').elements;
   function collect() {
@@ -323,6 +384,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       include_match: f.include_match.checked, top_sponsor_id: f.top_sponsor_id.value,
       stories: [...document.querySelectorAll('#stories .nl-story')].map(s => ({ title: s.querySelector('[name=title]').value, text: s.querySelector('[name=text]').value, image: s.querySelector('[name=image]').value.trim(), url: s.querySelector('[name=url]').value.trim() })),
       sponsor_ids: [...document.querySelectorAll('#sponsorPicks input:checked')].map(i => i.value),
+      audience: audMode() === 'some' ? [...aud.keys()] : null,
     };
   }
   function fill(i) {
@@ -332,6 +394,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     f.top_sponsor_id.innerHTML = '<option value="">None</option>' + data.sponsors.filter(s => s.active || s.id === i.top_sponsor_id).map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
     f.top_sponsor_id.value = i.top_sponsor_id || '';
     $('stories').innerHTML = ''; (i.stories || []).forEach(addStory);
+    // Who receives it.
+    aud = new Map((i.audience_people || []).map(p => [p.id, p]));
+    (i.audience || []).forEach(id => { if (!aud.has(id)) aud.set(id, { id, name: '', email: '(selected earlier)' }); });
+    f.audience_mode.value = Array.isArray(i.audience) ? 'some' : 'all';
+    drawAudience(); if (audMode() === 'some') loadPeople(true);
     // Chosen sponsors first (in their order), then the other active ones.
     const chosen = (i.sponsor_ids || []).map(id => data.sponsors.find(s => s.id === id)).filter(Boolean);
     const rest = data.sponsors.filter(s => s.active && !chosen.includes(s));
@@ -369,7 +436,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     $('form').querySelectorAll('input, textarea, select, button').forEach(el => { el.disabled = sent; });
     $('actions').hidden = sent;
     $('edSaved').textContent = sent ? 'Sent newsletters can\'t be changed. Use Duplicate to make a new one.' : issue.id ? 'Saved ' + day(issue.updated_at) : 'Not saved yet';
-    $('sendAll').textContent = '📨 Send now to ' + data.counts.recipients.toLocaleString('en-NG') + ' subscribers';
+    sendLabel();
     const row = data.issues.find(x => x.id === issue.id) || {};
     const schedAt = issue.scheduled_at || row.scheduled_at;
     $('schedInfo').hidden = issue.status !== 'scheduled';
@@ -490,8 +557,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     } catch (err) { msg(err.message, false); }
   });
   $('sendAll').addEventListener('click', async () => {
-    const n = data.counts.recipients;
-    if (!n) { msg('Nobody has signed up to receive the newsletter yet.', false); return; }
+    const n = audienceSize();
+    if (!n) { msg(audMode() === 'some' ? 'Pick at least one person under "6. Who receives it", or choose All subscribers.' : 'Nobody has signed up to receive the newsletter yet.', false); return; }
     if (!confirm((cur && cur.status === 'scheduled' ? 'This cancels the schedule. ' : '') + 'Send this newsletter to ' + n.toLocaleString('en-NG') + ' subscribers now? It can\'t be changed or recalled after sending.')) return;
     const btn = $('sendAll'); btn.disabled = true;
     try {
@@ -513,8 +580,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const v = $('schedAt').value; if (!v) { msg('Choose the date and time to send it.', false); $('schedAt').focus(); return; }
     const at = fromLocalInput(v);
     if (!(at > Date.now() + 5 * 60000)) { msg('Choose a time at least 5 minutes from now (or use Send now).', false); return; }
-    const n = data.counts.recipients;
-    if (!confirm('Send this newsletter automatically on ' + day(new Date(at).toISOString()) + ' (Nigerian time) to everyone subscribed then (now ' + n.toLocaleString('en-NG') + ')?')) return;
+    const n = audienceSize();
+    if (audMode() === 'some' && !n) { msg('Pick at least one person under "6. Who receives it", or choose All subscribers.', false); return; }
+    if (!confirm('Send this newsletter automatically on ' + day(new Date(at).toISOString()) + ' (Nigerian time) to ' + (audMode() === 'some' ? 'the ' + n.toLocaleString('en-NG') + ' selected people' : 'everyone subscribed then (now ' + n.toLocaleString('en-NG') + ')') + '?')) return;
     try {
       const i = await save(true);
       await api('/api/admin/newsletter/send', { id: i.id, schedule: new Date(at).toISOString() });
@@ -616,7 +684,22 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <ul><li>${c.signups} signed up with the newsletter form (footer, homepage or the newsletter page)</li>
       <li>${c.weekly} chose the weekly newsletter · ${c.matchday} matchday &amp; ticket alerts · ${c.offers} partner offers</li></ul>
       <p>Every email has an <b>Unsubscribe</b> link and a <b>Newsletter options</b> link where fans change what they get.</p>
-      <div class="nl-row-acts"><a href="/admin/fans/?source=newsletter">See subscribers in the Fan Database</a><a href="/admin/contact-sources/">Download contact lists</a><a href="/newsletter/" target="_blank" rel="noopener">The sign-up page ↗</a></div>`;
+      <div class="nl-row-acts"><a href="/admin/fans/?source=newsletter">See subscribers in the Fan Database</a><a href="/admin/contact-sources/">Download contact lists</a><a href="/newsletter/" target="_blank" rel="noopener">The sign-up page ↗</a></div>
+      <h3 style="margin:18px 0 6px">The subscriber list</h3>
+      <input type="search" id="subQ" placeholder="Search by name or email" aria-label="Search subscribers" style="min-height:42px;border:1px solid var(--a-line);border-radius:10px;padding:8px 10px;width:min(420px,100%)">
+      <div id="subList"></div><button type="button" class="btn-o sm" id="subMore" hidden>Load more</button>
+      <p class="muted">To send a newsletter to only some of these people, choose <b>Selected people only</b> in the newsletter (section 6).</p>`;
+    subOffset = 0; loadSubs(true);
+    $('subQ').addEventListener('input', () => { clearTimeout(subT); subT = setTimeout(() => loadSubs(true), 300); });
+    $('subMore').addEventListener('click', () => loadSubs(false));
+  }
+  let subOffset = 0, subT, subRows = [];
+  async function loadSubs(reset) {
+    if (reset) { subOffset = 0; subRows = []; }
+    const r = await fetch('/api/admin/newsletter?subscribers=1&q=' + encodeURIComponent(($('subQ') || {}).value || '') + '&offset=' + subOffset, { headers: H }).then(x => x.json());
+    subRows = subRows.concat(r.people); subOffset += r.people.length;
+    $('subList').innerHTML = subRows.length ? `<table class="nl-subtable"><thead><tr><th>Name</th><th>Email</th><th>In the fan database since</th></tr></thead><tbody>${subRows.map(p => `<tr><td>${esc(p.name || '–')}</td><td>${esc(p.email)}</td><td>${esc(p.since ? day(p.since) : '')}</td></tr>`).join('')}</tbody></table><p class="muted">Showing ${subRows.length} of ${r.total.toLocaleString('en-NG')}.</p>` : '<p class="muted">Nobody found.</p>';
+    $('subMore').hidden = subOffset >= r.total;
   }
 
   window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });

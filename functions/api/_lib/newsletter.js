@@ -65,7 +65,8 @@ export async function ensureNewsletterSchema(db) {
   }
   // Scheduling: "send at" date and time, and who scheduled it (added later).
   const isCols = new Set((await db.prepare(`PRAGMA table_info(newsletter_issues)`).all()).results.map(r => r.name));
-  for (const name of ['scheduled_at', 'scheduled_by']) {
+  // audience: NULL = all subscribers, or a JSON list of fan database contact ids ("Selected people").
+  for (const name of ['scheduled_at', 'scheduled_by', 'audience']) {
     if (!isCols.has(name)) await db.prepare(`ALTER TABLE newsletter_issues ADD COLUMN ${name} TEXT`).run().catch(e => { if (!/duplicate column/i.test(String(e?.message))) throw e; });
   }
   // Newsletter options on each subscriber (added to the existing table).
@@ -84,7 +85,7 @@ const abs = u => absFrom(u);
 export const safeUrl = u => { const s = String(u || '').trim(); return /^(https?:\/\/|\/)/i.test(s) ? s.slice(0, 500) : ''; };
 const paras = (text, style) => String(text || '').replace(/\r\n?/g, '\n').trim().split(/\n{2,}/).filter(Boolean)
   .map(p => `<p style="${style}">${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
-export const parseIssue = r => r && ({ ...r, stories: JSON.parse(r.stories || '[]'), sponsor_ids: JSON.parse(r.sponsor_ids || '[]'), include_match: !!r.include_match });
+export const parseIssue = r => r && ({ ...r, stories: JSON.parse(r.stories || '[]'), sponsor_ids: JSON.parse(r.sponsor_ids || '[]'), include_match: !!r.include_match, audience: r.audience ? JSON.parse(r.audience) : null });
 export const newId = p => randomId(p, 10);
 export function slugFor(subject, date = new Date()) {
   return `${date.toISOString().slice(0, 10)}-${String(subject || 'newsletter').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'newsletter'}`;
@@ -294,16 +295,22 @@ export function renderText({ issue, sponsors = [], match = null, recipient = {} 
 }
 
 /** People who get the weekly newsletter. */
-export async function recipients(db, issueId = null, limit = 100000) {
+/**
+ * Who receives a newsletter: everyone who agreed to club news by email, has not
+ * unsubscribed and has the weekly newsletter on. `audience` (a list of contact ids)
+ * narrows it to selected people; they still need that agreement.
+ */
+export async function recipients(db, issueId = null, limit = 100000, audience = null) {
   await ensureNewsletterSchema(db);
   const { results } = await db.prepare(
-    `SELECT c.id, c.email, c.first_name, c.unsub_token FROM contacts c
+    `SELECT c.id, c.email, c.first_name, c.surname, c.first_seen, c.unsub_token FROM contacts c
      LEFT JOIN newsletter_subscribers n ON n.email = c.email
      WHERE c.email IS NOT NULL AND c.email != '' AND c.email NOT LIKE '%@deleted.invalid'
        AND c.marketing_consent = 1 AND c.unsubscribed_at IS NULL AND COALESCE(n.pref_weekly, 1) = 1
        ${issueId ? 'AND NOT EXISTS (SELECT 1 FROM newsletter_deliveries d WHERE d.issue_id = ? AND d.email = c.email)' : ''}
+       ${Array.isArray(audience) ? 'AND c.id IN (SELECT value FROM json_each(?))' : ''}
      ORDER BY c.id LIMIT ?`
-  ).bind(...(issueId ? [issueId] : []), limit).all();
+  ).bind(...(issueId ? [issueId] : []), ...(Array.isArray(audience) ? [JSON.stringify(audience)] : []), limit).all();
   return results;
 }
 

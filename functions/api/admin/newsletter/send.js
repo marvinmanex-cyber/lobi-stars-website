@@ -1,6 +1,6 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
-import { ensureNewsletterSchema, parseIssue, renderNewsletter, renderText, loadSponsors, nextMatch, SITE, newsletterSettings } from '../../_lib/newsletter.js';
+import { ensureNewsletterSchema, parseIssue, renderNewsletter, renderText, loadSponsors, nextMatch, SITE, newsletterSettings, recipients } from '../../_lib/newsletter.js';
 import { fromAddress, replyTo, resendBatch, sendMode, sendIssueBatches } from '../../_lib/newsletterSend.js';
 
 const json = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -30,6 +30,10 @@ export async function onRequestPost({ request, env }) {
 
   const { live, testMode } = sendMode(env);
   if (!live && !testMode) return json({ error: 'The email service (Resend) is not set up yet, so newsletters cannot be sent. See the staff guide, section 24.' }, 503);
+
+  // "Selected people": at least one of them must be able to receive it.
+  const noneSelected = async () => Array.isArray(issue.audience) && !(await recipients(db, null, 1, issue.audience)).length;
+  if ((b.schedule || (b.confirm && issue.status !== 'sending')) && await noneSelected()) return json({ error: 'None of the selected people can receive the newsletter (pick at least one subscriber, or choose All subscribers).' }, 400);
 
   if (b.schedule) {
     const at = Date.parse(String(b.schedule));

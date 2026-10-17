@@ -1370,7 +1370,15 @@ unsubscribing).
    row on a phone.
 7. The **Preview** on the right (below on smaller screens) updates as you
    type. Switch between **Computer** and **Phone** to see both.
-8. **💾 Save draft** at any time. Drafts stay in the list until sent.
+8. **6. Who receives it:** **All subscribers** (everyone who agreed to club
+   emails, hasn't unsubscribed and has the weekly newsletter on), or
+   **Selected people only**: search by name or email and tick the people (they
+   show as green chips; ✕ removes one, **Clear all** starts again). Only
+   subscribers can be picked, so everyone chosen has agreed to club emails. The
+   send button then says "Send now to 2 selected", and a schedule sends to the
+   selected people only. The **Subscribers** tab shows the full subscriber list
+   (emails partly hidden unless your account can export fan data).
+9. **💾 Save draft** at any time. Drafts stay in the list until sent.
 
 ### Testing and sending
 - **Send test:** type your email (up to 5 addresses, separated by commas)

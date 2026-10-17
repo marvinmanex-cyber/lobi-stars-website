@@ -51,7 +51,7 @@ export async function sendIssueBatches(env, issue, by) {
     Object.assign(issue, { slug, sent_at: sentAt, status: 'sending' });
   }
   const final = { ...issue, status: 'sent' }; // links in the emails point to the sent version
-  const list = await recipients(db, issue.id, BATCH * PER_REQUEST);
+  const list = await recipients(db, issue.id, BATCH * PER_REQUEST, issue.audience);
   let sent = 0, failed = 0;
   for (let i = 0; i < list.length; i += BATCH) {
     const chunk = list.slice(i, i + BATCH);
@@ -66,7 +66,7 @@ export async function sendIssueBatches(env, issue, by) {
     await db.batch(chunk.map(r => db.prepare(`INSERT OR IGNORE INTO newsletter_deliveries (issue_id, email, status, at) VALUES (?, ?, ?, ?)`).bind(issue.id, r.email, status, at)));
     if (status === 'failed') failed += chunk.length; else sent += chunk.length;
   }
-  const remaining = (await recipients(db, issue.id)).length;
+  const remaining = (await recipients(db, issue.id, 100000, issue.audience)).length;
   const totals = await db.prepare(`SELECT SUM(status != 'failed') AS ok, SUM(status = 'failed') AS bad FROM newsletter_deliveries WHERE issue_id = ?`).bind(issue.id).first();
   await db.prepare(`UPDATE newsletter_issues SET sent_count = ?, failed_count = ?, status = CASE WHEN ? = 0 THEN 'sent' ELSE status END WHERE id = ?`)
     .bind(totals.ok || 0, totals.bad || 0, remaining, issue.id).run();
