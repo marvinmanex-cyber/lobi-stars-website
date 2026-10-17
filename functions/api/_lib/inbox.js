@@ -14,7 +14,9 @@ import { ROLES } from './adminRoles.js';
 import { sendEmail } from './email.js';
 import { randomId } from './crypto.js';
 
-export const INBOX_SOURCES = { contact_form: 'Contact Form', sponsorship: 'Sponsorship', hospitality: 'Hospitality' };
+export const INBOX_SOURCES = { contact_form: 'Contact Form', sponsorship: 'Sponsorship', hospitality: 'Hospitality', media_email: 'Media email' };
+// The media team's mailbox: emails to it come in as "Media email" conversations and replies go out from it.
+export const MEDIA_EMAIL = 'media@lobistarsfc.com';
 export const STATUSES = ['new', 'open', 'replied', 'closed'];
 const SITE = 'https://lobistarsfc.com';
 export const SPAM_KEEP_DAYS = 30;
@@ -340,7 +342,7 @@ export async function maybeDailySummary(env) {
 
 // ── Replies ──
 
-export const fromAddress = env => env.INBOX_FROM_EMAIL || 'info@lobistarsfc.com';
+export const fromAddress = (env, thread = null) => (thread?.source === 'media_email' ? env.MEDIA_FROM_EMAIL || MEDIA_EMAIL : env.INBOX_FROM_EMAIL || 'info@lobistarsfc.com');
 const cleanName = s => String(s || '').replace(/[<>"\\,;]/g, '').trim();
 export const staffFirstName = admin => (admin.id === 'owner' ? '' : cleanName(admin.name).split(/\s+/)[0]);
 export const fill = (html, vars) => String(html || '').replace(/\{(first_name|staff_name|ref)\}/g, (_, k) => esc(vars[k] || ''));
@@ -351,13 +353,13 @@ export function composeReply(env, { thread, admin, bodyHtml, quoted }) {
   const first = staffFirstName(admin);
   const fromName = first ? `${first} from Lobi Stars FC` : 'Lobi Stars FC';
   const subject = `${/^re:/i.test(thread.subject || '') ? '' : 'Re: '}${thread.subject || 'Your message'} [${thread.ref}]`;
-  const replyTo = env.INBOX_REPLY_DOMAIN ? `reply+${thread.ref}@${env.INBOX_REPLY_DOMAIN}` : fromAddress(env);
+  const replyTo = env.INBOX_REPLY_DOMAIN ? `reply+${thread.ref}@${env.INBOX_REPLY_DOMAIN}` : fromAddress(env, thread);
   const quote = quoted ? `<div style="margin-top:22px;border-left:3px solid #d6d9de;padding-left:12px;color:#555">
       <p style="margin:0 0 6px;font-size:13px">On ${esc(niceDate(quoted.created_at))}, ${esc(quoted.author_name || thread.name || thread.email)} wrote:</p>${quoted.body_html}</div>` : '';
   const html = shell(`${bodyHtml}
     <p style="margin-top:18px">${first ? `${esc(first)}<br>` : ''}<b>Lobi Stars FC</b><br><a href="${SITE}" style="color:#E31E24">lobistarsfc.com</a></p>
     <p style="color:#8a8f98;font-size:12px">Reference: ${esc(thread.ref)}. To continue the conversation, just reply to this email.</p>${quote}`);
-  return { from: `${fromName} <${fromAddress(env)}>`, replyTo, subject, html, text: htmlToText(html) };
+  return { from: `${thread.source === 'media_email' ? fromName.replace('Lobi Stars FC', 'Lobi Stars FC Media') : fromName} <${fromAddress(env, thread)}>`, replyTo, subject, html, text: htmlToText(html) };
 }
 
 // ── Fan replies (inbound email) ──
@@ -368,7 +370,7 @@ export function composeReply(env, { thread, admin, bodyHtml, quoted }) {
  * sender's latest conversation; otherwise a new conversation.
  */
 /** skipContact: don't add the sender to the fan database (e.g. an unverified "delete my data" request). */
-export async function addInbound(env, { from, to, subject, text, html, skipContact = false }) {
+export async function addInbound(env, { from, to, subject, text, html, skipContact = false, mailbox = null }) {
   const db = env.DB;
   await ensureInboxSchema(db);
   const fromEmail = normEmail((String(from || '').match(/<([^>]+)>/) || [])[1] || from);
@@ -376,7 +378,8 @@ export async function addInbound(env, { from, to, subject, text, html, skipConta
   const fromName = cleanName(String(from || '').replace(/<[^>]*>/, '').replace(/"/g, '')) || fromEmail;
   const ref = (String(to || '').match(REF_RE) || String(subject || '').match(REF_RE) || [])[0]?.toUpperCase();
   let t = ref ? await db.prepare(`SELECT * FROM inbox_threads WHERE ref = ?`).bind(ref).first() : null;
-  if (!t) t = await db.prepare(`SELECT * FROM inbox_threads WHERE email = ? AND spam_at IS NULL ORDER BY last_message_at DESC LIMIT 1`).bind(fromEmail).first();
+  // A new email to the media mailbox joins the sender's media conversation, never a contact-form one (and the other way round).
+  if (!t) t = await db.prepare(`SELECT * FROM inbox_threads WHERE email = ? AND spam_at IS NULL AND ${mailbox === 'media' ? "source = 'media_email'" : "source != 'media_email'"} ORDER BY last_message_at DESC LIMIT 1`).bind(fromEmail).first();
   const body = text ? textToHtml(stripQuoted(text)) : await sanitizeHtml(html);
   const safeBody = body || '<p><em>(Empty email)</em></p>';
   const now = new Date().toISOString();
@@ -388,6 +391,7 @@ export async function addInbound(env, { from, to, subject, text, html, skipConta
       .bind(id, firstName || null, rest.join(' ') || null, fromEmail, String(subject || '').slice(0, 200) || 'Email', htmlToText(safeBody).slice(0, 5000)).run();
     if (!skipContact) await captureContact(env, { source: 'contact_form', refTable: 'enquiries', refId: id, email: fromEmail, firstName, surname: rest.join(' '), label: String(subject || '').slice(0, 120) });
     const [made] = await syncEnquiries(db, id);
+    if (mailbox === 'media' && made?.id) await db.prepare(`UPDATE inbox_threads SET source = 'media_email' WHERE id = ?`).bind(made.id).run();
     return { ok: true, threadId: made?.id, created: true };
   }
   const other = fromEmail !== normEmail(t.email);

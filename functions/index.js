@@ -1,6 +1,7 @@
 import { renderPage, fill, publicMatches, nextMatchesHtml, fullTimeBannerHtml, previewSlugs } from './api/_lib/ssr.js';
 import { programmeStripData, programmeStripHtml } from './api/_lib/programmeStrip.js';
 import { matchBarHtml } from './api/_lib/matchBar.js';
+import { maybeRunScheduledNewsletters } from './api/_lib/newsletterSend.js';
 
 // "/" -- the homepage, with the next-match bar under the hero, the Match Day
 // Programme strip (next opponent), "Upcoming Matches" and the 24-hour
@@ -8,6 +9,8 @@ import { matchBarHtml } from './api/_lib/matchBar.js';
 // it is kept in Cloudflare's cache for 30 seconds (faster first byte, fewer
 // database reads); live details on the page refresh themselves in the browser.
 export async function onRequestGet({ request, env, waitUntil }) {
+  // Scheduled newsletters go out on time even before the timer Worker is deployed (at most one check a minute).
+  try { waitUntil(maybeRunScheduledNewsletters(env)); } catch { /* not important for the page */ }
   const cache = caches.default;
   const key = new Request(new URL('/', request.url).toString());
   try { const hit = await cache.match(key); if (hit) return hit; } catch { /* no cache: build the page */ }

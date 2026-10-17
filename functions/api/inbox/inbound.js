@@ -37,6 +37,8 @@ export async function onRequestPost({ request, env }) {
     const g = k => (typeof f.get(k) === 'string' ? f.get(k) : '');
     m = { from: g('from') || g('sender'), to: [g('to'), g('recipient')].filter(Boolean).join(','), subject: g('subject'), text: g('text') || g('body-plain'), html: g('html') || g('body-html') };
   }
-  const result = await addInbound(env, m);
+  // Emails to media@lobistarsfc.com (passed on by the media-mail Worker) are marked for the media team.
+  const box = new URL(request.url).searchParams.get('box') === 'media' || /(^|[\s<,])media@lobistarsfc\.com/i.test(m.to || '') ? 'media' : null;
+  const result = await addInbound(env, { ...m, mailbox: box });
   return Response.json(result, { status: result.ok ? 200 : 400 });
 }

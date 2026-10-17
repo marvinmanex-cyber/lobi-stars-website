@@ -1,28 +1,17 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
-import { unsubscribeUrl } from '../../_lib/contacts.js';
-import { DEFAULT_FROM, withName } from '../../_lib/email.js';
-import { ensureNewsletterSchema, parseIssue, renderNewsletter, renderText, loadSponsors, nextMatch, recipients, slugFor, SITE, newsletterSettings } from '../../_lib/newsletter.js';
+import { ensureNewsletterSchema, parseIssue, renderNewsletter, renderText, loadSponsors, nextMatch, SITE, newsletterSettings } from '../../_lib/newsletter.js';
+import { fromAddress, replyTo, resendBatch, sendMode, sendIssueBatches } from '../../_lib/newsletterSend.js';
 
 const json = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-// Resend takes up to 100 emails per call; a few calls per request keeps well
-// inside Cloudflare's limits. The admin page keeps calling until all are sent.
-const BATCH = 100, PER_REQUEST = 8;
-
-async function resendBatch(env, emails) {
-  const res = await fetch('https://api.resend.com/emails/batch', {
-    method: 'POST', headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(emails),
-  });
-  if (!res.ok) throw new Error(`Resend ${res.status}: ${(await res.text()).slice(0, 200)}`);
-}
-const fromAddress = env => withName(env.NEWSLETTER_FROM || env.RESEND_FROM || DEFAULT_FROM);
-// Replies to the newsletter reach the club's main inbox.
-const replyTo = env => env.REPLY_TO_EMAIL || 'info@lobistarsfc.com';
+const DAY = 864e5;
 
 // POST /api/admin/newsletter/send
 //   { id, test: "you@example.com, other@example.com" }  a test copy (subject starts [TEST])
-//   { id, confirm: true }    send to all subscribers (call again while "remaining" > 0)
+//   { id, confirm: true }    send to all subscribers now (call again while "remaining" > 0)
+//   { id, schedule: ISO }    send automatically at that date and time (5 minutes to 60 days ahead)
+//   { id, unschedule: true } cancel the schedule (back to draft)
 export async function onRequestPost({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
@@ -31,14 +20,34 @@ export async function onRequestPost({ request, env }) {
   const b = await request.json().catch(() => ({}));
   const issue = parseIssue(await db.prepare(`SELECT * FROM newsletter_issues WHERE id = ?`).bind(String(b.id || '')).first());
   if (!issue) return json({ error: 'Newsletter not found. Save it first.' }, 404);
-  const live = !!env.RESEND_API_KEY;
-  const testMode = !live && String(env.FANS_DEV_LINKS) === '1';
+
+  if (b.unschedule) {
+    const r = await db.prepare(`UPDATE newsletter_issues SET status = 'draft', scheduled_at = NULL, scheduled_by = NULL WHERE id = ? AND status = 'scheduled'`).bind(issue.id).run();
+    if (!r.meta.changes) return json({ error: 'This newsletter is not scheduled (it may already be sending).' }, 409);
+    await logAdminAction(db, admin, 'newsletter_unschedule', issue.subject);
+    return json({ ok: true, status: 'draft' });
+  }
+
+  const { live, testMode } = sendMode(env);
   if (!live && !testMode) return json({ error: 'The email service (Resend) is not set up yet, so newsletters cannot be sent. See the staff guide, section 24.' }, 503);
-  const sponsors = await loadSponsors(db);
-  const match = issue.include_match ? await nextMatch(db) : null;
-  const settings = await newsletterSettings(db);
+
+  if (b.schedule) {
+    const at = Date.parse(String(b.schedule));
+    if (!Number.isFinite(at)) return json({ error: 'Choose a date and time to send it.' }, 400);
+    if (at < Date.now() + 5 * 60000) return json({ error: 'Choose a time at least 5 minutes from now (or use Send now).' }, 400);
+    if (at > Date.now() + 60 * DAY) return json({ error: 'Choose a time within the next 60 days.' }, 400);
+    if (issue.status !== 'draft' && issue.status !== 'scheduled') return json({ error: 'This newsletter has already been sent.' }, 409);
+    const iso = new Date(at).toISOString();
+    await db.prepare(`UPDATE newsletter_issues SET status = 'scheduled', scheduled_at = ?, scheduled_by = ? WHERE id = ? AND status IN ('draft', 'scheduled')`).bind(iso, admin.name, issue.id).run();
+    const when = new Date(at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    await logAdminAction(db, admin, 'newsletter_schedule', `${issue.subject} for ${when}`);
+    return json({ ok: true, status: 'scheduled', scheduledAt: iso });
+  }
 
   if (b.test) {
+    const sponsors = await loadSponsors(db);
+    const match = issue.include_match ? await nextMatch(db) : null;
+    const settings = await newsletterSettings(db);
     const to = String(b.test).split(/[\s,;]+/).map(e => e.trim().toLowerCase()).filter(Boolean);
     if (!to.length || to.length > 5 || !to.every(e => EMAIL.test(e))) return json({ error: 'Type up to 5 valid email addresses for the test.' }, 400);
     const recipient = { firstName: (admin.name || '').split(' ')[0] || '', unsubscribeUrl: `${SITE}/newsletter/`, optionsUrl: `${SITE}/newsletter/` };
@@ -50,37 +59,16 @@ export async function onRequestPost({ request, env }) {
 
   if (!b.confirm) return json({ error: 'Please confirm sending to all subscribers.' }, 400);
   if (issue.status === 'sent') return json({ error: 'This newsletter has already been sent.' }, 409);
-  if (issue.status === 'draft') {
-    // First call: freeze the issue, give it its web address and save the web version.
-    let slug = slugFor(issue.subject);
-    if (await db.prepare(`SELECT 1 FROM newsletter_issues WHERE slug = ?`).bind(slug).first()) slug = `${slug}-${issue.id.slice(-4).toLowerCase()}`;
-    const sentAt = new Date().toISOString();
-    const frozen = { ...issue, slug, status: 'sent', sent_at: sentAt };
-    const web = renderNewsletter({ issue: frozen, sponsors, match, web: true, settings });
-    await db.prepare(`UPDATE newsletter_issues SET status = 'sending', slug = ?, sent_at = ?, sent_by = ?, html_snapshot = ? WHERE id = ? AND status = 'draft'`).bind(slug, sentAt, admin.name, web, issue.id).run();
-    Object.assign(issue, { slug, sent_at: sentAt, status: 'sending' });
-    await logAdminAction(db, admin, 'newsletter_send_start', issue.subject);
+  if (issue.status === 'sending' && issue.scheduled_at) return json({ error: 'The scheduler is sending this newsletter now. Refresh in a minute to see the result.' }, 409);
+  if (issue.status === 'scheduled') {
+    // "Send now" on a scheduled newsletter: the schedule is cancelled and it goes out now.
+    await db.prepare(`UPDATE newsletter_issues SET status = 'draft', scheduled_at = NULL, scheduled_by = NULL WHERE id = ? AND status = 'scheduled'`).bind(issue.id).run();
+    Object.assign(issue, { status: 'draft', scheduled_at: null });
   }
-  const final = { ...issue, status: 'sent' }; // links in the emails point to the sent version
-  const list = await recipients(db, issue.id, BATCH * PER_REQUEST);
-  let sent = 0, failed = 0;
-  for (let i = 0; i < list.length; i += BATCH) {
-    const chunk = list.slice(i, i + BATCH);
-    const emails = chunk.map(r => {
-      const unsub = r.unsub_token ? unsubscribeUrl(r) : `${SITE}/newsletter/`;
-      const recipient = { firstName: r.first_name || '', unsubscribeUrl: unsub, optionsUrl: r.unsub_token ? `${SITE}/newsletter/?t=${r.unsub_token}` : `${SITE}/newsletter/` };
-      return { from: fromAddress(env), reply_to: replyTo(env), to: r.email, subject: issue.subject, html: renderNewsletter({ issue: final, sponsors, match, recipient, settings }), text: renderText({ issue: final, sponsors, match, recipient }), headers: { 'List-Unsubscribe': `<${unsub}>` } };
-    });
-    let status = testMode ? 'dev' : 'sent';
-    if (live) { try { await resendBatch(env, emails); } catch (err) { console.log('[newsletter]', err.message); status = 'failed'; } }
-    const at = new Date().toISOString();
-    await db.batch(chunk.map(r => db.prepare(`INSERT OR IGNORE INTO newsletter_deliveries (issue_id, email, status, at) VALUES (?, ?, ?, ?)`).bind(issue.id, r.email, status, at)));
-    if (status === 'failed') failed += chunk.length; else sent += chunk.length;
-  }
-  const remaining = (await recipients(db, issue.id)).length;
-  const totals = await db.prepare(`SELECT SUM(status != 'failed') AS ok, SUM(status = 'failed') AS bad FROM newsletter_deliveries WHERE issue_id = ?`).bind(issue.id).first();
-  await db.prepare(`UPDATE newsletter_issues SET sent_count = ?, failed_count = ?, status = CASE WHEN ? = 0 THEN 'sent' ELSE status END WHERE id = ?`)
-    .bind(totals.ok || 0, totals.bad || 0, remaining, issue.id).run();
-  if (!remaining) await logAdminAction(db, admin, 'newsletter_sent', `${issue.subject}: ${totals.ok || 0} sent${totals.bad ? `, ${totals.bad} failed` : ''}`);
-  return json({ ok: true, sent, failed, remaining, total: totals.ok || 0, testMode, webUrl: `${SITE}/newsletter/${issue.slug}/` });
+  const starting = issue.status === 'draft';
+  const r = await sendIssueBatches(env, issue, admin.name);
+  if (r.busy) return json({ error: 'This newsletter is already being sent.' }, 409);
+  if (starting) await logAdminAction(db, admin, 'newsletter_send_start', issue.subject);
+  if (!r.remaining) await logAdminAction(db, admin, 'newsletter_sent', `${issue.subject}: ${r.total} sent${r.failedTotal ? `, ${r.failedTotal} failed` : ''}`);
+  return json({ ok: true, sent: r.sent, failed: r.failed, remaining: r.remaining, total: r.total, testMode: r.testMode, webUrl: r.webUrl });
 }

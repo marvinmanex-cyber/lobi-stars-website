@@ -1,6 +1,7 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { getSources } from '../../_lib/contacts.js';
 import { syncEnquiries, purgeSpam, inboxStaff, inboxSettings, INBOX_SOURCES } from '../../_lib/inbox.js';
+import { inboxScope } from '../../_lib/adminRoles.js';
 
 const PAGE = 50;
 
@@ -29,7 +30,9 @@ export async function onRequestGet({ request, env }) {
   };
   const where = [TAB[tab] || TAB.all];
   const args = tab === 'mine' ? [admin.id] : [];
-  if (INBOX_SOURCES[source]) { where.push('t.source = ?'); args.push(source); }
+  const scope = inboxScope(admin);
+  if (scope) { where.push('t.source = ?'); args.push(scope); }
+  else if (INBOX_SOURCES[source]) { where.push('t.source = ?'); args.push(source); }
   if (q) {
     where.push(`(LOWER(t.name) LIKE ? OR LOWER(t.email) LIKE ? OR LOWER(t.subject) LIKE ? OR LOWER(t.ref) LIKE ?
       OR EXISTS (SELECT 1 FROM inbox_messages m WHERE m.thread_id = t.id AND m.direction != 'note' AND LOWER(m.body_html) LIKE ?))`);
@@ -50,11 +53,11 @@ export async function onRequestGet({ request, env }) {
        SUM(spam_at IS NULL AND status = 'new') AS new, SUM(spam_at IS NULL AND status = 'open') AS open,
        SUM(spam_at IS NULL AND status = 'replied') AS replied, SUM(spam_at IS NULL AND status = 'closed') AS closed,
        SUM(spam_at IS NULL AND assigned_to = ?) AS mine, SUM(spam_at IS NOT NULL) AS spam
-     FROM inbox_threads`
-  ).bind(admin.id).first();
+     FROM inbox_threads ${scope ? 'WHERE source = ?' : ''}`
+  ).bind(admin.id, ...(scope ? [scope] : [])).first();
   const counts = Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v || 0]));
   const defs = await getSources(db);
-  const sources = Object.fromEntries(Object.keys(INBOX_SOURCES).map(k => { const d = defs.find(x => x.key === k); return [k, { label: INBOX_SOURCES[k], color: d?.color || '#64748B' }]; }));
+  const sources = Object.fromEntries(Object.keys(INBOX_SOURCES).filter(k => !scope || k === scope).map(k => { const d = defs.find(x => x.key === k); return [k, { label: INBOX_SOURCES[k], color: d?.color || '#64748B' }]; }));
   const s = await inboxSettings(db);
   return Response.json({
     threads: results, total, offset, pageSize: PAGE, counts, sources,

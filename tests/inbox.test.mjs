@@ -180,12 +180,12 @@ test('settings: alerts and daily summary can be switched off and on', async () =
   assert.equal(r.data.settings.alertsEmail, true);
 });
 
-test('privacy: only Inbox roles can read messages; bell shows unread; erasure deletes the conversation', async () => {
+test('privacy: only Inbox roles can read messages (Media: only media@ emails); bell shows unread; erasure deletes the conversation', async () => {
   const analyst = await staff('analyst');
   const media = await staff('media');
   const fr = await staff('fan_relations');
   assert.equal((await get('/api/admin/inbox', analyst.h)).status, 403);
-  assert.equal((await get('/api/admin/inbox', media.h)).status, 403);
+  assert.equal((await get('/api/admin/inbox', media.h)).status, 200, 'Media opens the Inbox (media@ emails only)');
   assert.equal((await get('/api/admin/inbox', fr.h)).status, 200);
   assert.equal((await fetch(`${BASE}/admin/inbox/`, { headers: analyst.h, redirect: 'manual' })).headers.get('location')?.includes('denied=1'), true);
   assert.equal((await fetch(`${BASE}/admin/inbox/`, { redirect: 'manual' })).status, 302, 'login needed');
@@ -195,7 +195,10 @@ test('privacy: only Inbox roles can read messages; bell shows unread; erasure de
   const { thread, email } = await newMessage('contact');
   const bell = (await get('/api/admin/notifications', fr.h)).data.items;
   assert.ok(bell.some(i => /unread message/.test(i.title) && i.href.startsWith('/admin/inbox/')));
-  assert.ok(!(await get('/api/admin/notifications', media.h)).data.items.some(i => /unread message/.test(i.title)));
+  assert.ok(!(await get('/api/admin/notifications', media.h)).data.items.some(i => /unread message/.test(i.title)), 'contact messages are not counted for Media');
+  assert.ok(!(await get('/api/admin/inbox', media.h)).data.threads.some(t => t.id === thread.id), 'Media does not see contact messages');
+  assert.equal((await get(`/api/admin/inbox/${thread.id}`, media.h)).status, 404);
+  assert.equal((await post('/api/admin/inbox/settings', { alertsEmail: true }, media.h)).status, 403, 'Media cannot change the alerts');
 
   const contactId = (await get(`/api/admin/inbox/${thread.id}`)).data.contact.id;
   const del = await fetch(`${BASE}/api/admin/fans/${contactId}`, { method: 'DELETE', headers: ADMIN });
@@ -208,4 +211,30 @@ test('admin search finds conversations by reference', async () => {
   const { ref } = await newMessage('contact');
   const r = (await get(`/api/admin/search?q=${ref}`)).data.results;
   assert.ok(r.some(x => x.type === 'Message' && x.href.startsWith('/admin/inbox/?t=')));
+});
+
+test('media@ mailbox: emails come in as "Media email" conversations the Media role can read and answer from media@', async () => {
+  const media = await staff('media');
+  const email = `press-${uid()}@example.com`;
+  const send = (to, subject, text) => fetch(`${BASE}/api/inbox/inbound?key=${KEY}&box=media`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ from: `Ada Press <${email}>`, to, subject, text }) }).then(r => r.json());
+  const r = await send('media@lobistarsfc.com', 'Interview request', 'Can we interview the coach on Friday?');
+  assert.equal(r.ok, true); assert.equal(r.created, true);
+  const list = (await get('/api/admin/inbox', media.h)).data;
+  const t = list.threads.find(x => x.email === email);
+  assert.ok(t, 'Media sees it'); assert.equal(t.source, 'media_email');
+  assert.deepEqual(Object.keys(list.sources), ['media_email'], 'Media only has the media filter');
+  assert.ok(list.threads.every(x => x.source === 'media_email'), 'and only media conversations');
+  // A second email from the same person joins the same conversation.
+  const r2 = await send('media@lobistarsfc.com', 'Re: Interview request', 'Any update?');
+  assert.equal(r2.threadId, t.id);
+  // The reply comes from media@ (replies come back through the reply address).
+  const pv = await post(`/api/admin/inbox/${t.id}`, { action: 'preview', html: '<p>Yes, Friday at 2pm works.</p>' }, media.h);
+  assert.equal(pv.status, 200, JSON.stringify(pv.data));
+  assert.match(pv.data.from, /<media@lobistarsfc\.com>$/);
+  assert.match(pv.data.from, /Lobi Stars FC Media/);
+  // The same person writing to the contact form starts a separate (non-media) conversation.
+  const fr = await staff('fan_relations');
+  const owner = (await get(`/api/admin/inbox?q=${encodeURIComponent(email)}`)).data.threads;
+  assert.equal(owner.length, 1, 'owner sees the media conversation too');
+  assert.ok((await get('/api/admin/inbox?source=media_email', fr.h)).data.threads.some(x => x.id === t.id), 'Fan Relations can filter Media emails');
 });

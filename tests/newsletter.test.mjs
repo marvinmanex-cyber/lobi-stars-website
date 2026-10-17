@@ -154,8 +154,8 @@ test('newsletter: branded template with club logo and sponsor adverts; test send
   assert.equal((await nl({ action: 'delete_issue', id: dup.data.id })).status, 200);
 });
 
-test('only Fan Relations, Commercial and Super Admin can use the newsletter admin; pages placed on the site', async () => {
-  for (const [role, ok] of [['fan_relations', true], ['commercial', true], ['analyst', false], ['media', false], ['matchday', false]]) {
+test('Fan Relations, Commercial, Media and Super Admin can use the newsletter admin; pages placed on the site', async () => {
+  for (const [role, ok] of [['fan_relations', true], ['commercial', true], ['analyst', false], ['media', true], ['matchday', false]]) {
     const h = await staff(role);
     assert.equal((await get('/api/admin/newsletter', h)).status, ok ? 200 : 403, role);
   }

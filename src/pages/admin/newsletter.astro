@@ -79,6 +79,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
           <button type="button" class="btn-p" id="save">💾 Save draft</button>
           <span class="nl-test"><input type="email" id="testTo" placeholder="your@email.com" aria-label="Send a test to" /><button type="button" class="btn-o" id="sendTest">Send test</button></span>
           <button type="button" class="btn-p nl-send" id="sendAll">📨 Send to subscribers</button>
+          <span class="nl-sched"><label for="schedAt">or send on</label><input type="datetime-local" id="schedAt" /><button type="button" class="btn-o" id="schedule">🕒 Schedule</button></span>
+          <p class="nl-sched-info" id="schedInfo" hidden><span id="schedText"></span> <button type="button" class="btn-o" id="unschedule">Cancel schedule</button></p>
         </div>
         <div class="panel nl-report" id="report" hidden></div>
       </div>
@@ -207,6 +209,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .nl-test { display: inline-flex; gap: 6px; flex: 1; min-width: 240px; }
   .nl-test input { flex: 1; min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); min-width: 0; }
   .nl-send { background: #15803D !important; border-color: #15803D !important; }
+  .nl-sched { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .nl-sched label { font-size: 13px; color: var(--a-muted); }
+  .nl-sched input { min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); }
+  .nl-sched-info { flex-basis: 100%; margin: 0; padding: 10px 12px; border-radius: 10px; background: #FFF8E1; color: #5c4300; font-weight: 600; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .nl-sched-info[hidden] { display: none; }
   .nl-report { margin-top: 14px; padding: 16px; }
   .nl :global(.nl-report h3) { margin: 0 0 8px; font: 700 18px/1.2 'Barlow', sans-serif; }
 
@@ -250,7 +257,18 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   let msgT;
   function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'nl-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, ok ? 5000 : 10000); }
   const day = iso => iso ? new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-  const ST = { draft: ['Draft', 'open'], sending: ['Sending…', 'new'], sent: ['Sent', 'closed'] };
+  const ST = { draft: ['Draft', 'open'], scheduled: ['Scheduled', 'new'], sending: ['Sending…', 'new'], sent: ['Sent', 'closed'] };
+  const editable = st => st === 'draft' || st === 'scheduled';
+  // Nigerian time (UTC+1, no daylight saving) for the date-and-time picker.
+  const toLocalInput = ms => new Date(ms + 3600e3).toISOString().slice(0, 16);
+  const fromLocalInput = v => Date.parse(v + ':00+01:00');
+  // Default: the next Wednesday at 20:00 (the newsletter goes out every Wednesday by 9 pm).
+  function nextWednesday() {
+    const now = Date.now(), d = new Date(now + 3600e3);
+    const add = (3 - d.getUTCDay() + 7) % 7;
+    const at = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + add, 20, 0) - 3600e3;
+    return at > now + 10 * 60000 ? at : at + 7 * 864e5;
+  }
   let data = null, news = [], cur = null, dirty = false;
 
   // ── Tabs ──
@@ -279,11 +297,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   function drawIssues() {
     const rows = data.issues;
     $('issues').innerHTML = rows.length ? `<table><thead><tr><th>Newsletter</th><th>Status</th><th>Sent</th><th>Clicks</th><th></th></tr></thead><tbody>${rows.map(i => `<tr>
-      <td><b>${esc(i.subject)}</b><br><span class="muted">${esc(i.status === 'draft' ? 'Last saved ' + day(i.updated_at) + ' by ' + (i.updated_by || '') : 'Sent by ' + (i.sent_by || ''))}</span></td>
+      <td><b>${esc(i.subject)}</b><br><span class="muted">${esc(editable(i.status) ? 'Last saved ' + day(i.updated_at) + ' by ' + (i.updated_by || '') : 'Sent by ' + (i.sent_by || ''))}</span></td>
       <td><span class="badge ${ST[i.status][1]}">${ST[i.status][0]}</span></td>
-      <td>${i.status === 'draft' ? '–' : esc(day(i.sent_at)) + '<br><span class="muted">' + i.sent_count + ' emails' + (i.failed_count ? ', ' + i.failed_count + ' failed' : '') + '</span>'}</td>
+      <td>${i.status === 'scheduled' ? 'Goes out ' + esc(day(i.scheduled_at)) + '<br><span class="muted">scheduled by ' + esc(i.scheduled_by || '') + '</span>' : i.status === 'draft' ? '–' : esc(day(i.sent_at)) + '<br><span class="muted">' + i.sent_count + ' emails' + (i.failed_count ? ', ' + i.failed_count + ' failed' : '') + '</span>'}</td>
       <td>${i.clicks || 0}</td>
-      <td><div class="nl-row-acts"><button type="button" data-open="${esc(i.id)}">${i.status === 'draft' ? 'Edit' : 'Open'}</button>${i.status === 'sent' ? `<a href="/newsletter/${esc(i.slug)}/" target="_blank" rel="noopener">Web version ↗</a>` : ''}<button type="button" data-dup="${esc(i.id)}">Duplicate</button><button type="button" data-del="${esc(i.id)}">Delete</button></div></td>
+      <td><div class="nl-row-acts"><button type="button" data-open="${esc(i.id)}">${editable(i.status) ? 'Edit' : 'Open'}</button>${i.status === 'sent' ? `<a href="/newsletter/${esc(i.slug)}/" target="_blank" rel="noopener">Web version ↗</a>` : ''}<button type="button" data-dup="${esc(i.id)}">Duplicate</button><button type="button" data-del="${esc(i.id)}">Delete</button></div></td>
     </tr>`).join('')}</tbody></table>` : '<div class="empty-state"><b>✉️</b>No newsletters yet. Press <b>New newsletter</b> to write the first one.</div>';
   }
   $('issues').addEventListener('click', async e => {
@@ -346,19 +364,26 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     cur = issue; dirty = false;
     $('issueList').hidden = true; $('editor').hidden = false;
     fill(issue);
-    const sent = issue.status !== 'draft';
+    const sent = !editable(issue.status);
     $('edStatus').textContent = ST[issue.status][0]; $('edStatus').className = 'badge ' + ST[issue.status][1];
     $('form').querySelectorAll('input, textarea, select, button').forEach(el => { el.disabled = sent; });
     $('actions').hidden = sent;
     $('edSaved').textContent = sent ? 'Sent newsletters can\'t be changed. Use Duplicate to make a new one.' : issue.id ? 'Saved ' + day(issue.updated_at) : 'Not saved yet';
-    $('sendAll').textContent = '📨 Send to ' + data.counts.recipients.toLocaleString('en-NG') + ' subscribers';
+    $('sendAll').textContent = '📨 Send now to ' + data.counts.recipients.toLocaleString('en-NG') + ' subscribers';
+    const row = data.issues.find(x => x.id === issue.id) || {};
+    const schedAt = issue.scheduled_at || row.scheduled_at;
+    $('schedInfo').hidden = issue.status !== 'scheduled';
+    $('schedText').textContent = issue.status === 'scheduled' ? '🕒 Scheduled: goes out automatically on ' + day(schedAt) + ' (Nigerian time). You can still edit it until then; press Save draft after changes.' : '';
+    $('schedAt').value = toLocalInput(issue.status === 'scheduled' && schedAt ? Date.parse(schedAt) : nextWednesday());
+    $('schedAt').min = toLocalInput(Date.now() + 5 * 60000);
+    $('schedule').textContent = issue.status === 'scheduled' ? '🕒 Change time' : '🕒 Schedule';
     report(issue);
     refreshPreview(true);
     window.scrollTo(0, 0);
   }
   function report(issue) {
     const r = $('report');
-    if (issue.status === 'draft') { r.hidden = true; return; }
+    if (editable(issue.status)) { r.hidden = true; return; }
     const row = data.issues.find(x => x.id === issue.id) || {};
     const sp = (issue.sponsor_ids || []).map(id => data.sponsors.find(s => s.id === id)).filter(Boolean);
     r.hidden = false;
@@ -386,7 +411,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     clearTimeout(pvT);
     pvT = setTimeout(async () => {
       try {
-        const res = await fetch('/api/admin/newsletter/preview', { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ issue: cur && cur.status !== 'draft' ? cur : collect() }) });
+        const res = await fetch('/api/admin/newsletter/preview', { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ issue: cur && !editable(cur.status) ? cur : collect() }) });
         $('pv').srcdoc = await res.text();
       } catch (e) {}
     }, now ? 0 : 600);
@@ -467,7 +492,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   $('sendAll').addEventListener('click', async () => {
     const n = data.counts.recipients;
     if (!n) { msg('Nobody has signed up to receive the newsletter yet.', false); return; }
-    if (!confirm('Send this newsletter to ' + n.toLocaleString('en-NG') + ' subscribers now? It can\'t be changed or recalled after sending.')) return;
+    if (!confirm((cur && cur.status === 'scheduled' ? 'This cancels the schedule. ' : '') + 'Send this newsletter to ' + n.toLocaleString('en-NG') + ' subscribers now? It can\'t be changed or recalled after sending.')) return;
     const btn = $('sendAll'); btn.disabled = true;
     try {
       const i = await save(true);
@@ -481,6 +506,26 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       openIssue(i.id);
     } catch (err) { msg(err.message, false); }
     finally { btn.disabled = false; }
+  });
+
+  // ── Schedule ──
+  $('schedule').addEventListener('click', async () => {
+    const v = $('schedAt').value; if (!v) { msg('Choose the date and time to send it.', false); $('schedAt').focus(); return; }
+    const at = fromLocalInput(v);
+    if (!(at > Date.now() + 5 * 60000)) { msg('Choose a time at least 5 minutes from now (or use Send now).', false); return; }
+    const n = data.counts.recipients;
+    if (!confirm('Send this newsletter automatically on ' + day(new Date(at).toISOString()) + ' (Nigerian time) to everyone subscribed then (now ' + n.toLocaleString('en-NG') + ')?')) return;
+    try {
+      const i = await save(true);
+      await api('/api/admin/newsletter/send', { id: i.id, schedule: new Date(at).toISOString() });
+      await load(); openIssue(i.id);
+      msg('Scheduled for ' + day(new Date(at).toISOString()) + '. It goes out automatically; you can still edit it or cancel the schedule until then.', true);
+    } catch (err) { msg(err.message, false); }
+  });
+  $('unschedule').addEventListener('click', async () => {
+    if (!cur || !confirm('Cancel the schedule? The newsletter goes back to a draft and is not sent.')) return;
+    try { await api('/api/admin/newsletter/send', { id: cur.id, unschedule: true }); await load(); openIssue(cur.id); msg('Schedule cancelled. The newsletter is a draft again.', true); }
+    catch (err) { msg(err.message, false); }
   });
 
   // ── Sponsor adverts ──
@@ -530,7 +575,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     try {
       await api('/api/admin/newsletter', { action: 'save_sponsor', sponsor: { id: f.id.value || undefined, name: f.name.value, logo: f.logo.value.trim(), link: f.link.value.trim(), headline: f.headline.value, text: f.text.value, button_text: f.button_text.value, active: f.active.checked, offer: f.offer.value, address: f.address.value, phone: f.phone.value, email: f.email.value, featured: f.featured.checked, banner_image: f.banner_image.value.trim() } });
       $('spDlg').close(); await load(); msg('Sponsor advert saved.', true);
-      if (cur && cur.status === 'draft') { const keep = collect(); fill({ ...cur, ...keep }); refreshPreview(true); }
+      if (cur && editable(cur.status)) { const keep = collect(); fill({ ...cur, ...keep }); refreshPreview(true); }
     } catch (err) { msg(err.message, false); }
   });
   $('spDelete').addEventListener('click', async () => {

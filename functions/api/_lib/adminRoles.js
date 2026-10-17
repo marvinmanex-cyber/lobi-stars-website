@@ -11,7 +11,9 @@ export const ROLES = {
   super_admin: { label: 'Super Admin', areas: ['overview', 'matchday', 'content', 'fans', 'commerce', 'partners', 'analytics', 'settings', 'staff', 'cms'] },
   // Accounts created before roles existed: everything except managing staff (as before).
   staff: { label: 'All areas', areas: ['overview', 'matchday', 'content', 'fans', 'commerce', 'partners', 'analytics', 'settings', 'cms'] },
-  media: { label: 'Media', areas: ['overview', 'content', 'matchday-content', 'cms'] },
+  // Media also reads and answers the media@lobistarsfc.com mailbox in the Inbox (only those
+  // conversations: inboxScope) and writes the newsletter.
+  media: { label: 'Media', areas: ['overview', 'content', 'matchday-content', 'cms', 'inbox', 'newsletter'] },
   matchday: { label: 'Matchday Operator', areas: ['overview', 'matchday', 'matchday-content', 'cms'] },
   commercial: { label: 'Commercial', areas: ['overview', 'commerce', 'partners', 'inbox', 'cms'] },
   fan_relations: { label: 'Fan Relations', areas: ['overview', 'fans', 'inbox'] },
@@ -34,6 +36,8 @@ export const areasOf = admin => {
   return [...set];
 };
 export const canAccess = (admin, area) => !area || areasOf(admin).includes(area);
+/** Inbox conversations a role may see: null = all; the Media role sees only the media@ mailbox. */
+export const inboxScope = admin => (roleOf(admin) === 'media' ? 'media_email' : null);
 
 // Which area each admin page or API belongs to (first match wins; null = any signed-in staff).
 const RULES = [
@@ -47,7 +51,7 @@ const RULES = [
   [/^\/admin\/league(\/|$)/, 'matchday-content'],
   [/^\/admin\/(news|awards)(\/|$)/, 'content'],
   [/^\/admin\/inbox(\/|$)/, 'inbox'],
-  [/^\/admin\/newsletter(\/|$)/, 'fans|partners'],
+  [/^\/admin\/newsletter(\/|$)/, 'fans|partners|newsletter'],
   [/^\/admin\/contact-sources(\/|$)/, 'fans|analytics'],
   [/^\/admin\/(fans|members)(\/|$)/, 'fans'],
   [/^\/admin\/rewards(\/|$)/, 'fans'],
@@ -78,7 +82,7 @@ const RULES = [
   [/^\/api\/admin\/(predictions|motm|commentary)(\/|$)/, 'matchday'],
   [/^\/api\/admin\/awards(\/|$)/, 'content'],
   [/^\/api\/admin\/inbox(\/|$)/, 'inbox'],
-  [/^\/api\/admin\/newsletter(\/|$)/, 'fans|partners'],
+  [/^\/api\/admin\/newsletter(\/|$)/, 'fans|partners|newsletter'],
   [/^\/api\/admin\/fans\/export(\/|$)/, 'fans|analytics'],
   [/^\/api\/admin\/(contact-sources|contact-source-defs)(\/|$)/, 'fans|analytics|settings'],
   [/^\/api\/admin\/(fans|members)(\/|$)/, 'fans'],

@@ -41,7 +41,7 @@ export async function ensureNewsletterSchema(db) {
       stories TEXT,                  -- JSON [{ title, text, image, url }]
       sponsor_ids TEXT,              -- JSON, in display order
       top_sponsor_id TEXT,           -- "In partnership with" at the top
-      status TEXT NOT NULL DEFAULT 'draft',   -- draft / sending / sent
+      status TEXT NOT NULL DEFAULT 'draft',   -- draft / scheduled / sending / sent
       created_at TEXT NOT NULL, created_by TEXT,
       updated_at TEXT, updated_by TEXT,
       sent_at TEXT, sent_by TEXT, sent_count INTEGER NOT NULL DEFAULT 0, failed_count INTEGER NOT NULL DEFAULT 0,
@@ -62,6 +62,11 @@ export async function ensureNewsletterSchema(db) {
   const spCols = new Set((await db.prepare(`PRAGMA table_info(newsletter_sponsors)`).all()).results.map(r => r.name));
   for (const [name, type] of [['address', 'TEXT'], ['phone', 'TEXT'], ['email', 'TEXT'], ['offer', 'TEXT'], ['banner_image', 'TEXT'], ['featured', 'INTEGER NOT NULL DEFAULT 0']]) {
     if (!spCols.has(name)) await db.prepare(`ALTER TABLE newsletter_sponsors ADD COLUMN ${name} ${type}`).run();
+  }
+  // Scheduling: "send at" date and time, and who scheduled it (added later).
+  const isCols = new Set((await db.prepare(`PRAGMA table_info(newsletter_issues)`).all()).results.map(r => r.name));
+  for (const name of ['scheduled_at', 'scheduled_by']) {
+    if (!isCols.has(name)) await db.prepare(`ALTER TABLE newsletter_issues ADD COLUMN ${name} TEXT`).run().catch(e => { if (!/duplicate column/i.test(String(e?.message))) throw e; });
   }
   // Newsletter options on each subscriber (added to the existing table).
   const cols = new Set((await db.prepare(`PRAGMA table_info(newsletter_subscribers)`).all()).results.map(r => r.name));

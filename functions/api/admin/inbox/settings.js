@@ -2,6 +2,7 @@ import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { normEmail } from '../../_lib/contacts.js';
 import { inboxSettings, saveInboxSetting } from '../../_lib/inbox.js';
+import { inboxScope } from '../../_lib/adminRoles.js';
 
 // POST /api/admin/inbox/settings { alertsEmail, dailySummary, extraEmails }
 //   alertsEmail   email the relevant staff about each new message
@@ -11,6 +12,7 @@ import { inboxSettings, saveInboxSetting } from '../../_lib/inbox.js';
 export async function onRequestPost({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
+  if (inboxScope(admin)) return Response.json({ error: 'Only Fan Relations, Commercial and Super Admins change the Inbox alerts.' }, { status: 403 });
   const db = env.DB;
   const b = await request.json().catch(() => ({}));
   const extra = String(b.extraEmails || '').split(/[\s,;]+/).filter(Boolean);

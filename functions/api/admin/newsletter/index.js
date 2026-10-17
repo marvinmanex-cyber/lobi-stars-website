@@ -12,7 +12,7 @@ export async function onRequestGet({ request, env }) {
   if (denied) return denied;
   const db = env.DB;
   await ensureNewsletterSchema(db);
-  const { results: issues } = await db.prepare(`SELECT id, slug, subject, headline, status, created_at, created_by, updated_at, updated_by, sent_at, sent_by, sent_count, failed_count FROM newsletter_issues ORDER BY COALESCE(sent_at, updated_at, created_at) DESC`).all();
+  const { results: issues } = await db.prepare(`SELECT id, slug, subject, headline, status, created_at, created_by, updated_at, updated_by, sent_at, sent_by, sent_count, failed_count, scheduled_at, scheduled_by FROM newsletter_issues ORDER BY COALESCE(sent_at, updated_at, created_at) DESC`).all();
   const { results: clicks } = await db.prepare(`SELECT issue_id, kind, ref, COUNT(*) AS n FROM newsletter_clicks GROUP BY issue_id, kind, ref`).all();
   for (const i of issues) i.clicks = clicks.filter(c => c.issue_id === i.id).reduce((s, c) => s + c.n, 0);
   const sponsors = await loadSponsors(db);
@@ -69,8 +69,8 @@ export async function onRequestPost({ request, env }) {
     if (id) {
       const cur = await db.prepare(`SELECT status FROM newsletter_issues WHERE id = ?`).bind(id).first();
       if (!cur) return json({ error: 'Newsletter not found.' }, 404);
-      if (cur.status !== 'draft') return json({ error: 'This newsletter has already been sent, so it can no longer be changed. Use Duplicate to make a new one from it.' }, 409);
-      await db.prepare(`UPDATE newsletter_issues SET subject = ?, preheader = ?, headline = ?, intro = ?, hero_image = ?, hero_button_text = ?, hero_button_url = ?, include_match = ?, stories = ?, sponsor_ids = ?, top_sponsor_id = ?, updated_at = ?, updated_by = ? WHERE id = ?`)
+      if (cur.status !== 'draft' && cur.status !== 'scheduled') return json({ error: 'This newsletter has already been sent, so it can no longer be changed. Use Duplicate to make a new one from it.' }, 409);
+      await db.prepare(`UPDATE newsletter_issues SET subject = ?, preheader = ?, headline = ?, intro = ?, hero_image = ?, hero_button_text = ?, hero_button_url = ?, include_match = ?, stories = ?, sponsor_ids = ?, top_sponsor_id = ?, updated_at = ?, updated_by = ? WHERE id = ? AND status IN ('draft', 'scheduled')`)
         .bind(i.subject, i.preheader, i.headline, i.intro, i.hero_image, i.hero_button_text, i.hero_button_url, i.include_match, i.stories, i.sponsor_ids, i.top_sponsor_id, now, admin.name, id).run();
       return json({ ok: true, id });
     }

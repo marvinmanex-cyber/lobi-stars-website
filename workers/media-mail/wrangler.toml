@@ -1,0 +1,19 @@
+# Email Worker for media@lobistarsfc.com (separate from the website). Every email
+# to media@ is forwarded to the media team's Gmail AND added to the website's
+# admin Inbox as a "Media email" conversation.
+#
+# Deploy from this folder (needs `npx wrangler login` on the club's Cloudflare account):
+#   cd workers/media-mail
+#   npm install
+#   npx wrangler deploy
+#   npx wrangler secret put INBOX_INBOUND_KEY     (same value as INBOX_INBOUND_KEY on the website)
+# Then: Cloudflare › lobistarsfc.com › Email › Email Routing › Routing rules:
+#   media@lobistarsfc.com → Action "Send to a Worker" → lobistars-media-mail
+# The Gmail address must be a verified destination in Email Routing.
+name = "lobistars-media-mail"
+main = "index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+SITE_URL = "https://lobistarsfc.com"
+FORWARD_TO = "lobistarsmedia@gmail.com"

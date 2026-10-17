@@ -991,8 +991,17 @@ fan receives your reply from the club address, signed with your first name
 answer comes back into the same conversation.
 
 Who can open it: **Fan Relations**, **Commercial** and **Super Admin** (and
-"All areas" accounts). Media, Matchday and Analyst accounts can't read
-messages.
+"All areas" accounts). **Media** accounts see only the **Media email**
+conversations (emails to media@lobistarsfc.com, below). Matchday and Analyst
+accounts can't read messages.
+
+**The media mailbox (media@lobistarsfc.com):** emails to media@ arrive in the
+media team's Gmail (lobistarsmedia@gmail.com) **and** in the Inbox as **Media
+email** conversations. The media team logs in to the admin with their staff
+account (email media@lobistarsfc.com, role Media) and answers from the Inbox:
+the reply comes from *Name from Lobi Stars FC Media* <media@lobistarsfc.com>,
+and the journalist's answer comes back into the same conversation. Other
+Inbox staff can see them too (filter **Media email**).
 
 ### The screen
 - **Left:** the list. Each message shows the sender, the subject, the first
@@ -1367,10 +1376,24 @@ unsubscribing).
 - **Send test:** type your email (up to 5 addresses, separated by commas)
   and press **Send test**. The subject starts with [TEST]. Always send a
   test and check it on your phone before sending to everyone.
-- **📨 Send to … subscribers:** confirms the number, then sends. Large lists
+- **📨 Send now to … subscribers:** confirms the number, then sends. Large lists
   are sent in rounds automatically; keep the page open until it says it has
   finished. A newsletter can only be sent once and can't be changed after
   sending; use **Duplicate** to make a new one from it.
+- **🕒 Schedule:** instead of sending now, choose a date and time (Nigerian
+  time, 5 minutes to 60 days ahead; it starts on next **Wednesday 20:00**, as
+  the newsletter goes out every Wednesday by 9 pm) and press **Schedule**. It is
+  then **Scheduled** in the list ("Goes out 21 Oct 2026, 20:00") and goes out
+  by itself at that time to everyone subscribed then, so nobody needs to be
+  online. Until then you can still edit it (press **Save draft** after
+  changes), **Change time**, **Cancel schedule** (back to a draft) or press
+  **Send now** (the schedule is cancelled and it goes out at once). Scheduled
+  newsletters go out within a minute or two of the time once the timer Worker
+  is running (HANDOVER-TODO A14); until then, at the first visit to the
+  website after that time.
+- **Who can write and send newsletters:** Media, Fan Relations, Commercial and
+  Super Admins. Routine: one main newsletter every **Wednesday by 9 pm**, by the
+  media team (media@lobistarsfc.com).
 - After sending, the newsletter gets a **web version**
   (lobistarsfc.com/newsletter/…) for "View it in your browser" and the
   archive on the newsletter page.
@@ -1419,7 +1442,7 @@ the email service (Resend) is set up** (section 18, Setup A). Optionally set
 Set up (17 Oct 2026): the newsletter comes from **Lobi Stars FC
 <news@news.lobistarsfc.com>**; replies reach info@. **Routine:** one main
 newsletter every **Wednesday by 9 pm**, written and sent by the media team
-(lobistarsmedia@gmail.com).
+(media@lobistarsfc.com).
 Until then the Newsletter screen shows a yellow note.
 
 ---
