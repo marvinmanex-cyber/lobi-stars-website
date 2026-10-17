@@ -128,6 +128,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 - F6. Share Hub: share a programme link in WhatsApp, Facebook and X and check the preview card (picture, title) appears; test "Post now" to Telegram once A12 is done.
 - F7. Match alerts and kitchen alerts: after A5/A10, turn on 🔔 Match alerts on a phone and on the Kitchen Screen, and check a test alert arrives.
 - F8. Share button: on a real Android phone and an iPhone, press Share on a news story, a match page and a partner page; check the phone's share menu opens, and that the link pasted into WhatsApp shows the picture and title. On a computer, check the menu and Copy link.
+- F10. media@ mailbox (A15): with the routing rule set to **Send to a Worker → lobistars-media-mail** (done 17 Oct 2026), send an email to media@lobistarsfc.com from another account and check it arrives in lobistarsmedia@gmail.com **and** in the admin Inbox as "Media email". Postponed to be tested with the other pending checks.
 - F9. Admin › Share any page: add the "Share to club socials" bookmark on a computer and on a phone and try it once. After A12/A13, post one page with Post now (until then use Open post window and Mark as posted).
 
 ---
