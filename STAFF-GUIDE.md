@@ -1416,6 +1416,10 @@ The newsletter can be written and previewed now, but **is only emailed once
 the email service (Resend) is set up** (section 18, Setup A). Optionally set
 `NEWSLETTER_FROM` in Cloudflare to the sender, e.g.
 `Lobi Stars FC <news@lobistarsfc.com>` (otherwise the general sender is used).
+Set up (17 Oct 2026): the newsletter comes from **Lobi Stars FC
+<news@news.lobistarsfc.com>**; replies reach info@. **Routine:** one main
+newsletter every **Wednesday by 9 pm**, written and sent by the media team
+(lobistarsmedia@gmail.com).
 Until then the Newsletter screen shows a yellow note.
 
 ---
