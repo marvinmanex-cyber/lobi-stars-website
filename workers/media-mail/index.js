@@ -21,7 +21,7 @@ export default {
       const site = env.SITE_URL || 'https://lobistarsfc.com';
       const r = await fetch(`${site}/api/inbox/inbound?box=media`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-inbox-key': env.INBOX_INBOUND_KEY },
+        headers: { 'Content-Type': 'application/json', 'x-inbox-key': env.MEDIA_INBOUND_KEY },
         body: JSON.stringify(body),
       });
       if (!r.ok) console.error('inbox', r.status, await r.text());

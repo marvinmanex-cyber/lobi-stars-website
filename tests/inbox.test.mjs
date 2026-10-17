@@ -238,3 +238,13 @@ test('media@ mailbox: emails come in as "Media email" conversations the Media ro
   assert.equal(owner.length, 1, 'owner sees the media conversation too');
   assert.ok((await get('/api/admin/inbox?source=media_email', fr.h)).data.threads.some(x => x.id === t.id), 'Fan Relations can filter Media emails');
 });
+
+test('media-mail Worker key: accepted only for the media mailbox; other keys refused', async () => {
+  const mk = process.env.MEDIA_INBOUND_KEY || 'test-media';
+  const email = `worker-${uid()}@example.com`;
+  const r = await fetch(`${BASE}/api/inbox/inbound`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-inbox-key': mk }, body: JSON.stringify({ from: `Reporter <${email}>`, to: 'media@lobistarsfc.com', subject: 'Via the Worker', text: 'Hello media team' }) });
+  assert.equal(r.status, 200);
+  const t = (await get(`/api/admin/inbox?q=${encodeURIComponent(email)}`)).data.threads[0];
+  assert.equal(t.source, 'media_email', 'the Worker key always files it as a media email');
+  assert.equal((await fetch(`${BASE}/api/inbox/inbound`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-inbox-key': 'nope' }, body: '{}' })).status, 403);
+});

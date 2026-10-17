@@ -10,8 +10,10 @@ import { addInbound } from '../_lib/inbox.js';
 // Refused unless the secret key matches, so nobody else can post messages.
 export async function onRequestPost({ request, env }) {
   const key = new URL(request.url).searchParams.get('key') || request.headers.get('x-inbox-key') || '';
-  if (!env.INBOX_INBOUND_KEY) return Response.json({ error: 'Inbound email is not set up (INBOX_INBOUND_KEY).' }, { status: 503 });
-  if (key !== env.INBOX_INBOUND_KEY) return Response.json({ error: 'Forbidden' }, { status: 403 });
+  // INBOX_INBOUND_KEY: Resend (replies). MEDIA_INBOUND_KEY: the media-mail Worker (emails to media@), its own key.
+  const mediaKey = !!env.MEDIA_INBOUND_KEY && key === env.MEDIA_INBOUND_KEY;
+  if (!env.INBOX_INBOUND_KEY && !env.MEDIA_INBOUND_KEY) return Response.json({ error: 'Inbound email is not set up (INBOX_INBOUND_KEY).' }, { status: 503 });
+  if (!mediaKey && (!env.INBOX_INBOUND_KEY || key !== env.INBOX_INBOUND_KEY)) return Response.json({ error: 'Forbidden' }, { status: 403 });
 
   const type = request.headers.get('Content-Type') || '';
   let m = {};
@@ -38,7 +40,7 @@ export async function onRequestPost({ request, env }) {
     m = { from: g('from') || g('sender'), to: [g('to'), g('recipient')].filter(Boolean).join(','), subject: g('subject'), text: g('text') || g('body-plain'), html: g('html') || g('body-html') };
   }
   // Emails to media@lobistarsfc.com (passed on by the media-mail Worker) are marked for the media team.
-  const box = new URL(request.url).searchParams.get('box') === 'media' || /(^|[\s<,])media@lobistarsfc\.com/i.test(m.to || '') ? 'media' : null;
+  const box = mediaKey || new URL(request.url).searchParams.get('box') === 'media' || /(^|[\s<,])media@lobistarsfc\.com/i.test(m.to || '') ? 'media' : null;
   const result = await addInbound(env, { ...m, mailbox: box });
   return Response.json(result, { status: result.ok ? 200 : 400 });
 }

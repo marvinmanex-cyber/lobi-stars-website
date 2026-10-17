@@ -11,12 +11,8 @@ binding = "DB"
 database_name = "lobi-stars-tickets"
 database_id = "d91166bc-53f5-4363-a44c-0f41ba01a1d6"
 
-# Match Day Programme files (PDF + page images). NOT switched on yet: the
-# bucket must exist first, or the deployment fails. To switch on:
-#   npx wrangler r2 bucket create lobistars-programmes
-# then remove the "# " in front of the next three lines and deploy.
-# Until then the programme admin says "File storage is not connected" and
-# /programme keeps showing the older single-image programme.
-# [[r2_buckets]]
-# binding = "PROGRAMME_BUCKET"
-# bucket_name = "lobistars-programmes"
+# Match Day Programme files (PDF + page images). Switched on 17 Oct 2026
+# (bucket created with `npx wrangler r2 bucket create lobistars-programmes`).
+[[r2_buckets]]
+binding = "PROGRAMME_BUCKET"
+bucket_name = "lobistars-programmes"

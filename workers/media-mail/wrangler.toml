@@ -6,7 +6,7 @@
 #   cd workers/media-mail
 #   npm install
 #   npx wrangler deploy
-#   npx wrangler secret put INBOX_INBOUND_KEY     (same value as INBOX_INBOUND_KEY on the website)
+#   npx wrangler secret put MEDIA_INBOUND_KEY     (same value as MEDIA_INBOUND_KEY on the website)
 # Then: Cloudflare › lobistarsfc.com › Email › Email Routing › Routing rules:
 #   media@lobistarsfc.com → Action "Send to a Worker" → lobistars-media-mail
 # The Gmail address must be a verified destination in Email Routing.
