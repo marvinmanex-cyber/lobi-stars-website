@@ -161,7 +161,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   // under it and as a notice at the bottom of the screen; a second send within 2 minutes is asked first.
   let lastSent = 0;
   function toast(t: string, ok: boolean) {
-    const n = Object.assign(document.createElement('div'), { className: 'bk-toast ' + (ok ? 'ok' : 'err'), textContent: t });
+    document.querySelectorAll('.bk-toast').forEach(o => o.remove()); // one notice at a time
+    const n =Object.assign(document.createElement('div'), { className: 'bk-toast ' + (ok ? 'ok' : 'err'), textContent: t });
     n.setAttribute('role', 'status'); document.body.appendChild(n);
     setTimeout(() => n.classList.add('out'), 6000); setTimeout(() => n.remove(), 6600);
   }
