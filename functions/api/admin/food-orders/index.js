@@ -1,3 +1,4 @@
+import { freshCodeCheck, exportName } from '../../_lib/exportGuard.js';
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { ensureFoodSchema, expireStale, moveOrder, STATUS, foodSettings, saveFoodSetting, staffMessage, whereText } from '../../_lib/foodOrders.js';
@@ -61,6 +62,8 @@ export async function onRequestGet({ request, env }) {
     const w = where.length ? ` WHERE ${where.join(' AND ')}` : '';
     if (p.get('format') === 'xlsx') {
       if (!admin.canExport) return Response.json({ error: 'You do not have permission to export customer data.' }, { status: 403 });
+      const needCode = await freshCodeCheck(request, env, admin);
+      if (needCode) return needCode;
       const { results } = await db.prepare(`${base}${w} ORDER BY f.created_iso DESC LIMIT 20000`).bind(...binds).all();
       const rows = results.map(o => view(o, null));
       const file = buildXlsx([{
@@ -70,7 +73,7 @@ export async function onRequestGet({ request, env }) {
           o.items.map(i => `${i.qty}× ${i.name}`).join(', '), o.totalKobo / 100, o.notes, o.paystackRef, o.statusBy || '']),
       }]);
       await logAdminAction(db, admin, 'export_food_orders', `${rows.length} orders`);
-      return new Response(file, { headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': `attachment; filename="lobi-stars-food-orders-${new Date().toISOString().slice(0, 10)}.xlsx"`, 'Cache-Control': 'no-store' } });
+      return new Response(file, { headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': `attachment; filename="${exportName('lobi-stars-food-orders', admin, 'xlsx').replace(/\.xlsx$/, '')}.xlsx"`, 'Cache-Control': 'no-store' } });
     }
     const page = Math.max(1, Number(p.get('page')) || 1), size = 50;
     const total = (await db.prepare(`SELECT COUNT(*) AS n FROM food_orders f${w}`).bind(...binds).first()).n;

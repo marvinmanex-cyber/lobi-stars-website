@@ -61,7 +61,7 @@ export async function onRequestGet({ request, env }) {
   const srcOf = async id => (await db.prepare(`SELECT DISTINCT source FROM contact_sources WHERE contact_id = ?`).bind(id).all()).results.map(r => labels[r.source] || r.source);
   const view = async c => ({
     id: c.id, name: [c.first_name, c.surname].filter(Boolean).join(' '), state: c.state || '',
-    email: admin.canExport ? c.email || '' : maskEmail(c.email), phone: admin.canExport ? c.phone || '' : maskPhone(c.phone),
+    email: admin.canSeeContacts ? c.email || '' : maskEmail(c.email), phone: admin.canSeeContacts ? c.phone || '' : maskPhone(c.phone),
     firstSeen: c.first_seen, lastSeen: c.last_seen, sources: await srcOf(c.id), consent: !!c.marketing_consent,
   });
   const out = [];

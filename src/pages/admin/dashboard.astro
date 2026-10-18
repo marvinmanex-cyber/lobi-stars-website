@@ -99,7 +99,13 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     if (d.pageViews) cards.push(card({ color: '#0EA5E9', icon: '📈', num: fmt(d.pageViews.today), label: 'Page views today', sub: 'Compared with yesterday', href: '/admin/analytics/', change: chg(d.pageViews.change, 'vs yesterday') }));
     if (d.listeners) cards.push(card({ color: '#10B981', icon: '🎧', num: fmt(d.listeners.now), label: 'Listening live now', sub: d.listeners.match, href: '/admin/commentary/' }));
     // Super Admins: a reminder when no data backup has been downloaded for 30 days.
-    if ('lastBackup' in d) {
+    // Super Admins: the automatic nightly backup (green when it ran in the last day; red when it failed or is late).
+    if (d.autoBackup?.ready) {
+      const a = d.autoBackup;
+      const hours = a.last ? (Date.now() - Date.parse(a.last.at)) / 3600e3 : null;
+      const ok = !a.error && hours !== null && hours < 26;
+      cards.push(card({ color: ok ? '#16A34A' : '#DC2626', icon: '💾', num: a.last ? a.last.day : 'None yet', label: 'Last backup', sub: a.error ? 'The last backup FAILED: open Data Backup' : ok ? 'Automatic, encrypted, kept 30 days' : a.last ? 'Late: no backup for over a day' : 'The first runs tonight from 02:00', href: '/admin/backup/' }));
+    } else if ('lastBackup' in d) {
       const days = d.lastBackup ? Math.floor((Date.now() - Date.parse(String(d.lastBackup).replace(' ', 'T') + (String(d.lastBackup).includes('Z') ? '' : 'Z'))) / 864e5) : null;
       if (days === null || days >= 30) cards.push(card({ color: '#DC2626', icon: '💾', num: days === null ? 'Never' : `${days} days`, label: 'Since the last data backup', sub: 'Download a backup now (Settings › Data Backup)', href: '/admin/backup/' }));
     }

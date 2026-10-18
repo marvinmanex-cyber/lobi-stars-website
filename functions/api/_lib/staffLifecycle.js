@@ -135,13 +135,13 @@ export async function sendAccessReview(env, origin, { force = false } = {}) {
 // ── Shared steps (run straight away, or when an approval is approved) ──
 
 /** Makes the account (Pending invite) and emails the invite link. */
-export async function inviteStaff(env, origin, { name, email, role, roleEmail }, by) {
+export async function inviteStaff(env, origin, { name, email, role, roleEmail, accessUntil = null }, by) {
   const db = env.DB;
   await ensureLifecycleSchema(db);
   if (await db.prepare(`SELECT id FROM admin_users WHERE email = ?`).bind(email).first()) throw new Error('A staff account with this email already exists.');
   const id = randomId('adm', 10);
-  await db.prepare(`INSERT INTO admin_users (id, name, email, password_hash, role, role_email) VALUES (?, ?, ?, ?, ?, ?)`)
-    .bind(id, name, email, NO_PASSWORD, role, roleEmail || null).run();
+  await db.prepare(`INSERT INTO admin_users (id, name, email, password_hash, role, role_email, access_until) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+    .bind(id, name, email, NO_PASSWORD, role, roleEmail || null, accessUntil).run();
   const link = await sendStaffLink(env, origin, { id, name, email, role }, 'invite', by);
   await logAdminAction(db, by, 'staff_invited', `${name} <${email}> as ${ROLE_DEFAULTS[role]?.label || role}${roleEmail ? ` (${roleEmail})` : ''}${link.emailed ? '' : '; invite email not sent (Resend not set up)'}`);
   return { id, emailed: link.emailed, inviteUrl: link.url, expiresHours: INVITE_HOURS };
@@ -155,5 +155,13 @@ export async function changeRole(env, origin, u, role, by) {
   await logAdminAction(db, by, 'role_assigned', `${u.name} <${u.email}>: ${from} -> ${to}`);
   await securityEmail(env, await alertAddresses(env), `Lobi Stars admin: ${u.name} is now ${to}`, [`<strong>${esc(by.name)}</strong> changed the role of <strong>${esc(u.name)}</strong> (${esc(u.email)}) to <strong>${esc(to)}</strong>.`], origin);
   return `${u.name} is now ${to}`;
+}
+/** A contractor's end date: required, in the future, at most 14 days away. Returns ms or an error. */
+export function contractorUntil(value) {
+  const t = Date.parse(String(value || '').length === 10 ? `${value}T23:59:00+01:00` : value);
+  if (!t) return { error: 'Choose when the contractor\'s access ends (at most 14 days).' };
+  if (t <= Date.now()) return { error: 'The end date must be in the future.' };
+  if (t > Date.now() + 14 * 864e5 + 60000) return { error: 'Contractor access can last at most 14 days.' };
+  return { until: t };
 }
 const ROLE_ALIASES_LOCAL = { media: 'content_editor', matchday: 'matchday_admin', commercial: 'commercial_manager', fan_relations: 'fan_support', kitchen: 'kitchen_staff' };

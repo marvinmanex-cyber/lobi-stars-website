@@ -19,6 +19,13 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     </div>
     <div class="bk-prog" id="prog" hidden><div class="bk-bar"><span id="bar"></span></div><p id="progText"></p></div>
 
+    <section class="panel"><h2>Automatic backups</h2>
+      <p class="muted">Every night from 02:00 the website saves an <strong>encrypted</strong> copy of the database in separate storage, and copies the programme files every Sunday. Backups are kept for 30 days. If a backup fails, the Super Admins are emailed.</p>
+      <p id="autoState" class="bk-state">Loading…</p>
+      <div class="bk-acts"><button type="button" class="btn-o" id="autoNow">Start a backup now</button></div>
+      <div class="scroll" id="autoList"></div>
+      <p class="muted bk-small">To restore: download the backup for the day you need (a fresh two-step code is asked for) and give the file to the developer, with the steps in the Staff guide (section 25, Data backup). For the last 7 days Cloudflare can also put the whole database back to any minute.</p>
+    </section>
     <section class="panel"><h2>Past backups</h2><div id="history"><p class="muted">Loading…</p></div></section>
     <section class="panel"><h2>What is included</h2><div class="scroll" id="tables"><p class="muted">Loading…</p></div></section>
   </div>
@@ -36,6 +43,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .bk-bar { height: 12px; border-radius: 999px; background: var(--a-soft); border: 1px solid var(--a-line); overflow: hidden; }
   .bk-bar span { display: block; height: 100%; width: 0; background: #16A34A; transition: width .2s; }
   .panel { padding: 18px; margin-bottom: 16px; }
+  .bk-state { font-weight: 700; } .bk-state.bad { color: #A3161B; } .bk-small { font-size: 13px; margin-top: 10px; }
+  .bk :global(td button) { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--a-line); background: var(--a-card); cursor: pointer; font-size: 13px; }
   .panel h2 { margin: 0 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .bk :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; }
   .bk :global(th), .bk :global(td) { padding: 8px 12px; text-align: left; font-size: 14px; }
@@ -106,6 +115,49 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     } catch (err) { msg(`The backup could not be completed: ${(err as Error).message}`, false); }
     finally { btns.forEach(b => { b.disabled = false; }); $('prog').hidden = true; }
   }
+  // Automatic backups.
+  async function loadAuto() {
+    try {
+      const d: any = await get('/api/admin/backup?auto=status');
+      const st = $('autoState');
+      if (!d.ready) { st.textContent = 'Not switched on yet: the storage and key need setting up (developer).'; st.className = 'bk-state bad'; ($('autoNow') as HTMLButtonElement).hidden = true; return; }
+      const kb = (b: number) => `${Math.max(1, Math.round(b / 1024)).toLocaleString('en-NG')} KB`;
+      st.className = 'bk-state' + (d.error ? ' bad' : '');
+      st.textContent = d.running ? `A backup is running now (${d.running.left} tables to go).`
+        : d.error ? `The last backup failed (${wat(d.error.at)}): ${d.error.error}`
+        : d.last ? `Last backup: ${d.last.day} · ${d.last.tables} tables · ${Number(d.last.rows).toLocaleString('en-NG')} rows · ${kb(d.last.bytes)} encrypted · finished ${wat(d.last.at)}`
+        : 'No automatic backup yet: the first runs tonight from 02:00 (or press Start a backup now).';
+      $('autoList').innerHTML = d.backups.length ? `<table><thead><tr><th>Day</th><th>Tables</th><th>Rows</th><th></th></tr></thead><tbody>${d.backups.map((b: any) =>
+        `<tr><td>${esc(b.day)}</td><td>${b.complete ? b.tables : b.complete === false ? 'not finished' : ''}</td><td>${b.complete ? Number(b.rows).toLocaleString('en-NG') : ''}</td><td>${b.complete ? `<button type="button" data-day="${esc(b.day)}">Download for restoring</button>` : ''}</td></tr>`).join('')}</tbody></table>` : '';
+    } catch (err) { msg((err as Error).message, false); }
+  }
+  $('autoNow').addEventListener('click', async () => {
+    try { await fetch('/api/admin/backup', { method: 'POST', headers: H, body: JSON.stringify({ action: 'backup_now' }) }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); }); msg('Backup started. It finishes over the next few minutes.', true); loadAuto(); }
+    catch (err) { msg((err as Error).message, false); }
+  });
+  $('autoList').addEventListener('click', async e => {
+    const b = (e.target as HTMLElement).closest('button[data-day]') as HTMLButtonElement | null; if (!b) return;
+    const day = b.dataset.day!; b.disabled = true;
+    try {
+      const man: any = await get(`/api/admin/backup?autoday=${day}`);
+      const out: Record<string, Record<string, unknown>[]> = {};
+      let n = 0;
+      for (const p of man.parts) {
+        const part: any = await get(`/api/admin/backup?autopart=${encodeURIComponent(p.key)}`);
+        (out[part.table] ||= []).push(...part.rows.map((r: unknown[]) => Object.fromEntries(part.columns.map((c: string, i: number) => [c, r[i]]))));
+        n += part.rows.length;
+        $('progText').textContent = `Reading ${part.table}… ${n.toLocaleString('en-NG')} rows`; $('prog').hidden = false;
+      }
+      const blob = new Blob([JSON.stringify({ site: 'lobistarsfc.com', createdAt: day, automatic: true, tables: out })], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: `lobi-stars-backup-${day}-restore.json` });
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+      await fetch('/api/admin/backup', { method: 'POST', headers: H, body: JSON.stringify({ action: 'restore_download', day, rows: n }) });
+      msg(`Backup of ${day} downloaded (${n.toLocaleString('en-NG')} rows). Keep it private.`, true);
+    } catch (err) { msg((err as Error).message, false); }
+    finally { b.disabled = false; $('prog').hidden = true; }
+  });
+  loadAuto();
   $('xlsx').addEventListener('click', () => backup('xlsx'));
   $('json').addEventListener('click', () => backup('json'));
   load();

@@ -21,8 +21,9 @@ export async function onRequestGet({ request, env }) {
     states: states.map(s => s.state),
     rows: rows.map(r => ({
       id: r.id, firstName: r.first_name || '', surname: r.surname || '',
-      email: admin.canExport ? r.email || '' : maskEmail(r.email),
-      phone: admin.canExport ? r.phone || '' : maskPhone(r.phone),
+      // Lists are always masked; the full details are on the fan's own page.
+      email: maskEmail(r.email),
+      phone: maskPhone(r.phone),
       state: r.state || '', sources: r.sources, firstSource: r.first_source, firstSeen: r.first_seen, lastSeen: r.last_seen,
       interactions: r.interactions, emailVerified: !!r.email_verified, member: !!r.member,
       marketingConsent: !!r.marketing_consent, unsubscribed: !!r.unsubscribed_at,

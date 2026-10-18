@@ -41,6 +41,8 @@ export async function onRequestGet({ request, env }) {
     device: r.user_agent ? describeDevice(r.user_agent) : null, location: r.country || null, ip: superAdmin ? r.ip || null : undefined,
     emergency: r.staff_id === 'owner' || r.action === 'owner_code_login',
   }));
-  const { results: people } = await db.prepare(`SELECT staff_id, MAX(staff_name) AS name FROM admin_log WHERE staff_id NOT IN ('unknown', 'system', 'staff') GROUP BY staff_id ORDER BY name LIMIT 300`).all();
+  const { results: people } = await db.prepare(`SELECT staff_id, MAX(staff_name) AS name FROM admin_log WHERE staff_id NOT IN ('unknown', 'system', 'staff') GROUP BY staff_id ORDER BY MAX(id) DESC LIMIT 300`).all();
+  // The 300 most recently active people, listed by name.
+  people.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
   return Response.json({ log, more: results.length > PAGE, offset, categories: CATEGORIES, people, showIp: superAdmin }, { headers: { 'Cache-Control': 'no-store' } });
 }

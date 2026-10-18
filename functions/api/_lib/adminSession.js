@@ -126,14 +126,17 @@ async function findAdmin(request, env) {
     return { ...OWNER, sessionId: sid };
   }
 
-  const u = await env.DB.prepare(`SELECT id, name, email, role, can_export_fan_data, active, totp_enabled, must_change_password, twostep_grace_until, created_at, password_hash, test_account, gmail_notice_at FROM admin_users WHERE id = ?`).bind(s.user_id).first();
+  const u = await env.DB.prepare(`SELECT id, name, email, role, can_export_fan_data, active, totp_enabled, must_change_password, twostep_grace_until, created_at, password_hash, test_account, gmail_notice_at, access_until FROM admin_users WHERE id = ?`).bind(s.user_id).first();
   if (!u || !u.active) return null;
+  // Contractor (temporary) access: nothing after the end date.
+  if (u.access_until && Date.now() > u.access_until) return null;
   const settings = await securitySettings(env.DB);
   if (allowlistApplies(settings, roleOf(u)) && !ipAllowed(clientIp(request), settings.ip_allowlist)) return null;
   // Super Admin only for the three people on the list (otherwise: Head of Media rights).
   const full = isFullSuperAdmin(env, u);
   const role = u.role === 'super_admin' && !full ? 'head_of_media' : u.role;
   const admin = { id: u.id, name: u.name, email: u.email, role, canExport: !!u.can_export_fan_data, twoStep: !!u.totp_enabled, sessionId: sid };
+  if (u.access_until) admin.accessUntil = new Date(u.access_until).toISOString();
   if (u.role === 'super_admin' && !full) admin.superAdminBlocked = true;
   // The one-time notice for Super Admins who sign in with a Gmail address.
   if (full && /@gmail\.com$/i.test(u.email) && !u.gmail_notice_at) admin.gmailNotice = true;

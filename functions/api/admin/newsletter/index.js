@@ -5,7 +5,7 @@ import { maskEmail } from '../../_lib/fanQuery.js';
 
 const SUBS_PAGE = 50;
 /** A subscriber as staff see it (email partly hidden without "can export fan data"). */
-const subRow = (admin, r) => ({ id: r.id, name: [r.first_name, r.surname].filter(Boolean).join(' '), email: admin.canExport ? r.email : maskEmail(r.email), since: r.first_seen || null });
+const subRow = (admin, r) => ({ id: r.id, name: [r.first_name, r.surname].filter(Boolean).join(' '), email: maskEmail(r.email), since: r.first_seen || null });
 
 const json = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
 const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');

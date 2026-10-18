@@ -24,6 +24,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <div class="form-grp"><label class="form-lbl" for="n-role">Role</label><select class="form-sel" id="n-role" required><option value="">Choose a role…</option></select></div>
         <div class="form-grp"><label class="form-lbl" for="n-remail">Role email (optional, e.g. media@lobistarsfc.com)</label><input class="form-inp" id="n-remail" type="email" list="roleEmailList" autocomplete="off" /><datalist id="roleEmailList"></datalist></div>
       </div>
+      <div class="form-grp" id="untilWrap" hidden><label class="form-lbl" for="n-until">Access until (contractors: at most 14 days)</label><input class="form-inp" id="n-until" type="date" /></div>
       <p class="muted st-small" id="domainNote" hidden>Personal emails must end with @lobistarsfc.com (Settings › Login &amp; Security).</p>
       <button type="submit" class="btn-p">Send invite</button>
       <p class="muted st-small">They get an email with a link that works once, for 48 hours: they choose a password (12+ characters) and set up two-step login. Until then they show as <strong>Pending invite</strong>.</p>
@@ -109,6 +110,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       if ($('n-role').options.length < 2) $('n-role').insertAdjacentHTML('beforeend', roles.filter(r => !r.legacy).map(r => `<option value="${esc(r.id)}">${esc(r.label)}${r.job ? ' – ' + esc(r.job) : ''}</option>`).join(''));
       $('roleEmailList').innerHTML = data.roleEmails.map(r => `<option value="${esc(r.address)}">${esc(r.label)}</option>`).join('');
       $('domainNote').hidden = !data.emailDomainOnly;
+      const ymd = n => new Date(Date.now() + 3600e3 + n * 864e5).toISOString().slice(0, 10);
+      $('n-until').min = ymd(1); $('n-until').max = ymd(14);
       const roleSel = s => s.status === 'disabled' ? esc((roles.find(r => r.id === s.role) || {}).label || s.role)
         : `<select data-role aria-label="Role for ${esc(s.name)}">${roles.map(r => `<option value="${esc(r.id)}"${r.id === s.role ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select>`;
       const actions = s => {
@@ -125,7 +128,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       };
       $('list').innerHTML = staff.length ? '<div class="scroll"><table><thead><tr><th>Name</th><th>Role</th><th>Role email</th><th>Two-step login</th><th>Last login</th><th>Status</th><th></th></tr></thead><tbody>' +
         staff.map(s => `<tr class="${s.status === 'disabled' ? 'inactive' : ''}" data-id="${esc(s.id)}"><td><strong>${esc(s.name)}</strong><br><small>${esc(s.email)}</small></td>` +
-          `<td>${roleSel(s)}</td><td>${s.role_email ? esc(s.role_email) : '<small>—</small>'}</td>` +
+          `<td>${roleSel(s)}${s.access_until ? `<br><small>Access until ${esc(day(new Date(s.access_until).toISOString()))}</small>` : ''}</td><td>${s.role_email ? esc(s.role_email) : '<small>—</small>'}</td>` +
           `<td>${s.totp_enabled ? '<span class="tag ok">🔐 On</span>' : s.status === 'pending' ? '<small>After the invite</small>' : '<span class="tag bad">Off</span>'}</td>` +
           `<td>${s.last_login_at ? esc(day(s.last_login_at)) : '<small>Never</small>'}${s.signed_in ? `<br><small>Signed in on ${s.signed_in} device${s.signed_in === 1 ? '' : 's'}</small>` : ''}${s.locked_until ? '<br><strong>🔒 Locked</strong>' : ''}</td>` +
           `<td>${STATUS[s.status]}${s.status === 'pending' ? `<br><small>${s.inviteExpired ? 'Invite expired' : 'Invite sent'}${s.invited_by ? ' by ' + esc(s.invited_by) : ''}</small>` : ''}` +
@@ -169,15 +172,18 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     try { const r = await put(id, body); show(done + (r.emailed === false ? ' (Email is not set up yet, so nothing was sent.)' : ''), true); load(); } catch (err) { show(err.message, false); }
   }
   for (const box of ['list', 'reviewList']) $(box).addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (b) act(b); });
+  $('n-role').addEventListener('change', () => { $('untilWrap').hidden = $('n-role').value !== 'contractor'; });
   $('list').addEventListener('change', async e => {
     const sel = e.target.closest('select[data-role]'); if (!sel) return;
-    try { const r = await put(sel.closest('tr').dataset.id, { role: sel.value }); show(r.pending ? r.message : 'Role saved. It applies the next time they open a page, and the Super Admins have been told.', true); load(); }
+    const body = { role: sel.value };
+    if (sel.value === 'contractor') { const v = prompt('Contractor access ends on (YYYY-MM-DD, at most 14 days from today):'); if (!v) { load(); return; } body.accessUntil = v.trim(); }
+    try { const r = await put(sel.closest('tr').dataset.id, body); show(r.pending ? r.message : 'Role saved. It applies the next time they open a page, and the Super Admins have been told.', true); load(); }
     catch (err) { show(err.message, false); load(); }
   });
   $('newForm').addEventListener('submit', async e => {
     e.preventDefault();
     try {
-      const r = await api('/api/admin/staff', { method: 'POST', body: JSON.stringify({ name: $('n-name').value, email: $('n-email').value, role: $('n-role').value, roleEmail: $('n-remail').value }) });
+      const r = await api('/api/admin/staff', { method: 'POST', body: JSON.stringify({ name: $('n-name').value, email: $('n-email').value, role: $('n-role').value, roleEmail: $('n-remail').value, accessUntil: $('n-role').value === 'contractor' ? $('n-until').value : undefined }) });
       if (r.pending) { show(r.message, true); e.target.reset(); load(); return; }
       show(r.emailed ? `Invite sent to ${$('n-email').value}. The link works for 48 hours.` : 'Account created, but the invite email could not be sent (email is not set up). Use "Resend invite" once email works.', !!r.emailed);
       e.target.reset(); load();

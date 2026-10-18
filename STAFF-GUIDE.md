@@ -119,6 +119,7 @@ Contributor sees Gallery, Homepage slides and Partners).
 | Fan Support | Fan Relations & Membership Officer | General fan messages, fan accounts, memberships, Rewards look-up and fulfilment, paying Predict & Win prizes. **No downloads** |
 | Commercial Manager | Commercial & Partnerships Officer | Partners, partner reports, shop, hospitality, shirt personalisation, sponsorship and hospitality enquiries (only those in the Inbox) |
 | Matchday Operations Manager | Ticketing & Matchday Operations Officer | Tickets, gate scanner, food orders and the kitchen; creates matchday helper accounts |
+| Contractor | Developer / contractor (temporary) | Content, matchday, broadcast and site settings for up to 14 days. No fans' data, Inbox, Rewards, downloads, staff or logs |
 | Gate Staff | Matchday helper | Only the gate ticket scanner |
 | Kitchen Staff | Matchday helper | Only the Kitchen order board |
 
@@ -610,6 +611,30 @@ Files are named with today's date, e.g. `lobi-stars-fan-database-2026-10-09.xlsx
   unusual.
 - **Export Log** (Settings › Export Log): every download and backup with who,
   when, what and how many rows.
+
+### Protecting fans' data
+
+- **Lists show fans' emails and phone numbers partly hidden** (`a***@gmail.com`,
+  `0803****21`): the Fan Database, contact sources, newsletter subscribers and
+  Predict & Win entries. The full details are only on a fan's own page, for
+  roles allowed to see fan accounts (CRM Manager, Fan Support, Super Admin).
+- **Downloads of fans' details** (contacts, food customers and orders, ticket
+  orders, Predict & Win entries, the Rewards report, backups) need **download
+  rights** (only the Super Admin and CRM Manager roles) **and a fresh two-step
+  code**: the page asks for the 6-digit code when you press Download (it's good
+  for 5 minutes). Files are named with the date and your initials, e.g.
+  `lobi-stars-contacts-2026-10-18-AO.xlsx`. Every download is logged and the
+  Super Admins are alerted.
+- **Deleting a fan's data** (a deletion request): CRM Manager or Super Admin
+  opens the fan in the Fan Database and presses **Delete this person**. Their
+  details are removed from every part of the site (contacts, newsletter,
+  membership, Rewards, messages, orders, tickets, season tickets, predictions
+  and votes are anonymised). Only the record number stays in the Activity Log.
+- **Contractors** (e.g. a developer helping for a few days): invite them with
+  the **Contractor** role and an **Access until** date (at most 14 days). They
+  can work on content, matchday and site settings, but never see fans' data,
+  the Inbox, Rewards, downloads, staff or logs. Every time they sign in, the
+  Super Admins are emailed. After the end date their login stops.
 
 ### Approvals (Super Admins, Settings › Approvals)
 
@@ -1737,14 +1762,30 @@ Until then the Newsletter screen shows a yellow note.
   codes used, and changes to accounts, roles and these settings.
 
 ### Data backup (Settings › Data Backup, Super Admins only)
+- **Automatic backups:** every night from 02:00 the website saves an
+  **encrypted** copy of the database in separate storage (it takes a few
+  minutes), and copies the programme files every Sunday. Backups are kept for
+  **30 days**. The dashboard's **Last backup** card is green when last night's
+  backup worked and red if it failed or is late; the Super Admins are also
+  emailed. **Start a backup now** runs one straight away.
 - **Download backup (Excel)** saves everything the website stores (fans and
   contacts, messages, newsletter, tickets, food orders, votes, predictions,
   matches, settings) in one workbook, one sheet per table. **JSON** is the
-  same for the website manager.
+  same for the website manager. You're asked for a fresh two-step code first.
 - Passwords, sign-in links, two-step login secrets and stored pictures are
   never included.
-- Do it **at least once a month** and before big changes. The dashboard shows
-  a red **"Since the last data backup"** card when it has been 30 days or more.
+- **Restoring** (with the developer):
+  1. Within the last 7 days: the developer can put the whole database back to
+     any minute with Cloudflare D1 "Time Travel".
+  2. Older: on Data Backup, press **Download for restoring** next to the day
+     you need (a fresh two-step code is asked for). Give the file to the
+     developer privately. They run
+     `node scripts/restore-backup.mjs <file> > restore.sql` and then
+     `npx wrangler d1 execute lobi-stars-tickets --remote --file=restore.sql`.
+     Rows are put back as they were; newer rows stay. Staff passwords aren't in
+     backups, so staff may need new invites.
+  3. Test a restore once every 3 months on a copy (the developer), so you know
+     it works.
 - The file contains fans' personal data: keep it somewhere private (not email
   or chat groups) and delete old copies. Every download is in the Activity Log.
 - Cloudflare also keeps its own copies: the website manager can restore the

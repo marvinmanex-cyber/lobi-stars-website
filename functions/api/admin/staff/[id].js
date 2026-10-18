@@ -2,7 +2,7 @@ import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { ROLE_DEFAULTS, ROLE_ALIASES, ASSIGNABLE_ROLES } from '../../_lib/adminRoles.js';
 import { revokeSessions, alertAddresses, securityEmail } from '../../_lib/adminSecurity.js';
-import { ensureLifecycleSchema, staffStatus, sendStaffLink, disableStaff, changeRole } from '../../_lib/staffLifecycle.js';
+import { ensureLifecycleSchema, staffStatus, sendStaffLink, disableStaff, changeRole, contractorUntil } from '../../_lib/staffLifecycle.js';
 import { needsApproval, requestApproval, pendingResponse } from '../../_lib/approvals.js';
 import { rolePermissions, loadRoles } from '../../_lib/adminRoles.js';
 import { isSuperAdminEmail, superAdminProblem } from '../../_lib/superAdmins.js';
@@ -86,6 +86,15 @@ export async function onRequestPut({ request, env, params, waitUntil }) {
     await log(`signed out of ${n} device(s)`);
     return json({ ok: true, signedOut: n });
   }
+  // A contractor's end date (at most 14 days from now).
+  if (b.accessUntil !== undefined && !b.role) {
+    if (!ROLE_DEFAULTS[ROLE_ALIASES[u.role] || u.role]?.contractor) return json({ error: 'Only contractor accounts have an end date.' }, 400);
+    const c = contractorUntil(b.accessUntil);
+    if (c.error) return json({ error: c.error }, 400);
+    await db.prepare(`UPDATE admin_users SET access_until = ? WHERE id = ?`).bind(c.until, u.id).run();
+    await log(`contractor access until ${new Date(c.until).toISOString()}`);
+    return json({ ok: true });
+  }
   if (b.keep === true) {
     await db.prepare(`UPDATE admin_users SET reviewed_at = datetime('now') WHERE id = ?`).bind(u.id).run();
     await logAdminAction(db, admin, 'access_review_keep', `${u.name} <${u.email}>: still needs access`);
@@ -106,6 +115,12 @@ export async function onRequestPut({ request, env, params, waitUntil }) {
   // Super Admin is only for the three people in the list, and they stay Super Admins while they're on it.
   if (role !== u.role && role === 'super_admin' && !(env.STAFF_TEST_PASSWORDS === '1' && u.test_account) && superAdminProblem(env, u.email)) return json({ error: superAdminProblem(env, u.email) }, 400);
   if (role !== u.role && u.role === 'super_admin' && isSuperAdminEmail(env, u.email)) return json({ error: `${u.email} is in the Super Admin list, so they stay a Super Admin. To change that, edit the SUPER_ADMIN_EMAILS server setting.` }, 400);
+  // Becoming a contractor needs an end date; leaving the role removes it.
+  if (role !== u.role && ROLE_DEFAULTS[role]?.contractor) {
+    const c = contractorUntil(b.accessUntil);
+    if (c.error) return json({ error: c.error }, 400);
+    await db.prepare(`UPDATE admin_users SET access_until = ? WHERE id = ?`).bind(c.until, u.id).run();
+  } else if (role !== u.role && u.access_until) await db.prepare(`UPDATE admin_users SET access_until = NULL WHERE id = ?`).bind(u.id).run();
   // Giving Super Admin or a role that can download fan data needs another Super Admin's approval.
   await loadRoles(db);
   const approvalNeeded = role !== u.role && (role === 'super_admin' || rolePermissions(role).includes('fans.export')) && await needsApproval(env, 'role_change', admin);

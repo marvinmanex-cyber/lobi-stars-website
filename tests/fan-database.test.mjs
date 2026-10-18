@@ -10,6 +10,9 @@ import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { unzipSync, strFromU8 } from 'fflate';
 
+// Lists show emails partly hidden (a***@gmail.com); the full address is only on the fan's own page.
+const masked = e => `${e[0]}***${e.slice(e.indexOf('@'))}`;
+
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
 const CODE = process.env.ADMIN_CODE || 'test-code-123';
 const RUN = Math.random().toString(36).slice(2, 9);
@@ -59,7 +62,8 @@ test('overlapping records merge into one person per email or phone', async () =>
   assert.ok(a, 'person A found');
   assert.deepEqual([...a.sources].sort(), ['contact_form', 'fan_account', 'newsletter']);
   assert.equal(a.firstName, 'Seedy', 'most recent non-empty name wins');
-  assert.equal(a.phone, `+234${A.phone.slice(1)}`, 'phone saved in +234 format');
+  assert.match(a.phone, /^0\d{3}\*{4}\d{2}$/, 'phone partly hidden in the list');
+  assert.equal((await call(`/api/admin/fans/${a.id}`, { admin: true })).data.contact.phone, `+234${A.phone.slice(1)}`, 'phone saved in +234 format');
   assert.equal(a.interactions, 3);
   assert.equal(a.marketingConsent, true);
   const c = d.rows.find(r => r.surname === `Merged${RUN}`);
@@ -88,7 +92,7 @@ test('source percentages match the contact counts', async () => {
 test('the .xlsx export has every sheet and opens as a valid workbook', async () => {
   const r = await call('/api/admin/fans/export?type=xlsx', { admin: true });
   assert.equal(r.status, 200);
-  assert.match(r.headers.get('Content-Disposition'), /lobi-stars-contacts-\d{4}-\d{2}-\d{2}\.xlsx/);
+  assert.match(r.headers.get('Content-Disposition'), /lobi-stars-contacts-\d{4}-\d{2}-\d{2}-[A-Z0-9]+\.xlsx/);
   const files = unzipSync(r.data);
   for (const f of ['[Content_Types].xml', 'xl/workbook.xml', 'xl/styles.xml', 'xl/worksheets/sheet1.xml']) assert.ok(files[f], f);
   const wb = strFromU8(files['xl/workbook.xml']);
@@ -165,7 +169,7 @@ test('bots and signed-in staff are not counted as visitors', async () => {
 
 test('unsubscribe and delete-everywhere work', async () => {
   const d = await seeded();
-  const b = d.rows.find(r => r.sources.length === 1 && r.sources[0] === 'newsletter' && r.email === B.email);
+  const b = d.rows.find(r => r.sources.length === 1 && r.sources[0] === 'newsletter' && r.email === masked(B.email));
   assert.ok(b);
   assert.equal((await call(`/api/admin/fans/${b.id}`, { method: 'POST', admin: true, body: { action: 'unsubscribe' } })).status, 200);
   assert.equal((await seeded()).rows.find(r => r.id === b.id).marketingConsent, false);

@@ -1,3 +1,4 @@
+import { freshCodeCheck, exportName } from '../../_lib/exportGuard.js';
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { getSources } from '../../_lib/contacts.js';
@@ -15,6 +16,9 @@ const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 export async function onRequestGet({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env, { needExport: true });
   if (denied) return denied;
+  // A fresh two-step code at the moment of downloading.
+  const needCode = await freshCodeCheck(request, env, admin);
+  if (needCode) return needCode;
   const url = new URL(request.url);
   const type = url.searchParams.get('type') || 'xlsx';
   const date = watDate();
@@ -48,7 +52,7 @@ export async function onRequestGet({ request, env }) {
       ...sources.map(s => ({ name: s.label.replace(/[\\/?*[\]:]/g, '&'), columns: FAN_COLUMNS, rows: rows.filter(r => r.sources.includes(s.key)).map(row) })),
     ];
     await logAdminAction(db, admin, 'export_xlsx', `All contacts: ${rows.length} rows`);
-    return file(buildXlsx(sheets), `lobi-stars-contacts-${date}.xlsx`, XLSX);
+    return file(buildXlsx(sheets), exportName('lobi-stars-contacts', admin, 'xlsx'), XLSX);
   }
 
   if (type === 'filtered') {
@@ -61,7 +65,7 @@ export async function onRequestGet({ request, env }) {
       summarySheet(rows, [['Filters', described]]),
     ];
     await logAdminAction(db, admin, 'export_filtered_xlsx', `Filtered (${described}): ${rows.length} rows`);
-    return file(buildXlsx(sheets), `lobi-stars-contacts-filtered-${date}.xlsx`, XLSX);
+    return file(buildXlsx(sheets), exportName('lobi-stars-contacts-filtered', admin, 'xlsx'), XLSX);
   }
 
   if (type === 'marketing') {
@@ -72,7 +76,7 @@ export async function onRequestGet({ request, env }) {
       rows: rows.map(r => [...row(r), `${origin}/unsubscribe/?t=${r.unsub_token}`]),
     }, summarySheet(rows, [['List', 'Marketing consent = Yes only']])];
     await logAdminAction(db, admin, 'export_marketing_xlsx', `Marketing list: ${rows.length} rows`);
-    return file(buildXlsx(sheets), `lobi-stars-marketing-list-${date}.xlsx`, XLSX);
+    return file(buildXlsx(sheets), exportName('lobi-stars-marketing-list', admin, 'xlsx'), XLSX);
   }
 
   if (type === 'sources') {
@@ -84,7 +88,7 @@ export async function onRequestGet({ request, env }) {
         return [s.label, s.contacts, s.pct, f.contacts, f.pct];
       }).concat([['Total contacts', rows.length, '', '', '']]));
     await logAdminAction(db, admin, 'export_sources_csv', `Source breakdown: ${rows.length} contacts`);
-    return file(csv, `lobi-stars-source-breakdown-${date}.csv`, 'text/csv; charset=utf-8');
+    return file(csv, exportName('lobi-stars-source-breakdown', admin, 'csv'), 'text/csv; charset=utf-8');
   }
 
   return Response.json({ error: 'Unknown export type' }, { status: 400 });
@@ -105,6 +109,7 @@ function firstTouch(rows, sources) {
   });
 }
 
+// name: from exportName() (the date and the downloader's initials).
 function file(body, name, type) {
   return new Response(body, {
     headers: { 'Content-Type': type, 'Content-Disposition': `attachment; filename="${name}"`, 'Cache-Control': 'no-store' },

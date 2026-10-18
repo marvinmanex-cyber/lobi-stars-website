@@ -56,7 +56,7 @@ test('Excel download (export permission) and Rewards columns in the fan export',
   const m = await member(700);
   const x = await fetch(`${BASE}/api/admin/rewards/analytics?format=xlsx`, { headers: ADMIN });
   assert.equal(x.status, 200);
-  assert.match(x.headers.get('Content-Disposition'), /lobi-stars-rewards-\d{4}-\d{2}-\d{2}\.xlsx/);
+  assert.match(x.headers.get('Content-Disposition'), /lobi-stars-rewards-\d{4}-\d{2}-\d{2}-[A-Z0-9]+\.xlsx/);
   const files = unzipSync(new Uint8Array(await x.arrayBuffer()));
   const names = [...strFromU8(files['xl/workbook.xml']).matchAll(/<sheet name="([^"]+)"/g)].map(n => n[1]);
   assert.deepEqual(names, ['Summary', 'By month', 'How points are earned', 'Tiers', 'Rewards redeemed', 'Members', 'Checks']);

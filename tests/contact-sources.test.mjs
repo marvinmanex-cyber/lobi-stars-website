@@ -54,7 +54,7 @@ test('clicking a slice lists only the people who first came from that source', a
 
 test('Download All Contacts: real Excel, one row per person, summary and one sheet per source, red header and alternating rows', async () => {
   const x = await sheets('/api/admin/fans/export?type=xlsx');
-  assert.match(x.disposition, /lobi-stars-contacts-\d{4}-\d{2}-\d{2}\.xlsx/);
+  assert.match(x.disposition, /lobi-stars-contacts-\d{4}-\d{2}-\d{2}-[A-Z0-9]+\.xlsx/);
   assert.deepEqual(x.names.slice(0, 2), ['All Contacts', 'Summary']);
   assert.ok(x.names.includes('Newsletter') && x.names.includes('Food Order'));
   const all = x.sheet(1);

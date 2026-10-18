@@ -27,6 +27,8 @@ export async function requireAdminUser(request, env, { needExport = false, owner
   await loadRoles(env.DB);
   // "Can export": the role's fans.export permission or the switch on the staff account.
   admin.canExport = can(admin, 'fans.export');
+  // Full emails and phone numbers: only on a fan's own page, for roles with fans.accounts.view (lists are always masked).
+  admin.canSeeContacts = can(admin, 'fans.accounts.view');
   admin.permissions = permissionsOf(admin);
   if (ownerOnly && !can(admin, 'staff.manage')) return { denied: Response.json({ error: 'Only a Super Admin can do this.' }, { status: 403 }) };
   if (needExport && !admin.canExport) return { denied: Response.json({ error: 'You do not have permission to export fan data.' }, { status: 403 }) };

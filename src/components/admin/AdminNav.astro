@@ -360,6 +360,28 @@ const showBack = here !== '/admin/dashboard/';
   document.body.classList.add('admin-body');
   try { if (localStorage.getItem('ls_admin_collapsed') === '1') document.body.classList.add('ash-collapsed'); } catch {}
 
+  // Downloads of fans' details need a fresh two-step code: when the server answers 428,
+  // ask for the code, get a download pass (5 minutes) and try again with it.
+  let exportTicket: { t: string; until: number } | null = null;
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
+    const withTicket = (i: RequestInit) => exportTicket && exportTicket.until > Date.now() ? { ...i, headers: { ...(i.headers as Record<string, string> || {}), 'x-export-ticket': exportTicket.t } } : i;
+    let res = await nativeFetch(input, withTicket(init));
+    if (res.status !== 428) return res;
+    const info = await res.clone().json().catch(() => ({}));
+    if (!info.needCode) return res;
+    if (!info.twoStep) { alert(info.error); return res; }
+    for (let tries = 0; tries < 3; tries++) {
+      const otp = prompt("Downloading fans' details: type the 6-digit code from your authenticator app (or a backup code).");
+      if (!otp) return res;
+      const t = await nativeFetch('/api/admin/export-ticket', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-code': '__session__' }, body: JSON.stringify({ otp }) });
+      const d = await t.json().catch(() => ({}));
+      if (t.ok && d.ticket) { exportTicket = { t: d.ticket, until: Date.now() + (d.minutes || 5) * 60000 - 10000 }; return nativeFetch(input, withTicket(init)); }
+      alert(d.error || 'That code is not right.');
+    }
+    return res;
+  };
+
   // Role-based sidebar: show only what this person can open.
   fetch('/api/admin/me', { headers: H }).then(r => r.json()).then(d => {
     if (!d.admin) return;

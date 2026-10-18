@@ -8,6 +8,34 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Staff access plan, Phase 7: data protection and backups
+
+**What changed**
+- Fans' emails and phone numbers are **partly hidden in every list**
+  (`a***@gmail.com`, `0803****21`); the full details are only on the fan's own
+  page, for roles allowed to see fan accounts.
+- **Downloads of fans' details need a fresh two-step code** at the moment of
+  downloading (plus download rights), and file names include the date and the
+  downloader's initials. The ticket orders download now also needs download
+  rights and is logged.
+- **Deleting a fan's data** now also clears season-ticket and ticket-shop
+  orders bought with their email.
+- **Automatic encrypted backups every night** (02:00) to separate storage, kept
+  30 days; programme files copied weekly; a **Last backup** card on the
+  dashboard; alerts if a backup fails or is late; **Start a backup now** and
+  **Download for restoring**; a restore tool for the developer
+  (scripts/restore-backup.mjs) and steps in the handbook.
+- **New role: Contractor:** temporary access (at most 14 days) without fans'
+  data, downloads, staff or logs; every sign-in is reported to the Super Admins.
+
+**Staff need to:** nothing. The developer switches the automatic backups on
+(handover A22).
+
+**Handbook:** STAFF-GUIDE.md › Protecting fans' data; Data backup (section 25);
+Staff roles (Contractor).
+
+---
+
 ## 2026-10-18: Staff access plan, Phase 6: Activity Log and alerts
 
 **What changed**

@@ -91,8 +91,8 @@ test('"Selected people only": the subscriber list, sending to chosen people only
   }
   const list = await get(`/api/admin/newsletter?subscribers=1&q=pick-${tag}`);
   assert.equal(list.total, 3);
-  assert.ok(list.people.every(p => p.id && p.email.includes(`pick-${tag}`)), 'owner sees full emails');
-  const chosen = list.people.filter(p => !p.email.endsWith('-2@example.com')).map(p => p.id);
+  assert.ok(list.people.every(p => p.id && p.email === 'p***@example.com'), 'emails partly hidden in the list');
+  const chosen = list.people.slice(0, 2).map(p => p.id);
   const r = await nl({ action: 'save_issue', issue: { subject: `Selected ${tag}`, headline: 'For some', intro: 'Hi', include_match: false, stories: [], sponsor_ids: [], audience: chosen } });
   const id = r.data.id;
   const i = await issue(id);

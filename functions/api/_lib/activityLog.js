@@ -24,7 +24,7 @@ export function categoryOf(action) {
 }
 
 // Downloads that contain fans' personal data.
-const FAN_EXPORTS = /^(export_(xlsx|filtered_xlsx|marketing_xlsx|sources_csv|food_customers|food_orders|predictions_csv|motm_csv|rewards_xlsx)|backup_download)$/;
+const FAN_EXPORTS = /^(export_(xlsx|filtered_xlsx|marketing_xlsx|sources_csv|food_customers|food_report|food_orders|predictions_csv|rewards_xlsx|ticket_orders)|backup_download)$/;
 
 let ready = false;
 export async function ensureActivitySchema(db) {
@@ -62,8 +62,10 @@ function alertFor(action, detail, admin) {
   if (action === 'owner_code_login' || action === 'owner_code_refused') return { kind: 'emergency', title: action === 'owner_code_login' ? 'The emergency admin code was used' : 'Someone tried the old admin code', email: false };
   if (action === 'account_locked') return { kind: 'lockout', title: `${admin.name}'s account was locked`, email: false };
   if (action === 'staff_updated' && /two-step login reset/.test(detail)) return { kind: '2fa_reset', title: 'Two-step login reset', email: false };
+  if (action === 'login' && admin.role === 'contractor') return { kind: 'contractor', title: `Contractor ${admin.name} signed in`, email: true };
   if (action === 'login' && /new device/.test(detail) && ['super_admin', 'crm_manager'].includes(admin.role)) return { kind: 'new_device', title: `${admin.name} signed in from a new device`, email: false };
   if (action === 'service_key_changed') return { kind: 'keys', title: 'A payment or email key was changed', email: false };
+  if (action === 'backup_failed' || action === 'backup_overdue') return { kind: 'backup', title: action === 'backup_failed' ? 'The automatic backup failed' : 'No automatic backup for over a day', email: true };
   if (action === 'super_admin_list_changed') return { kind: 'super_admins', title: 'The Super Admin list was changed', email: false };
   return null;
 }

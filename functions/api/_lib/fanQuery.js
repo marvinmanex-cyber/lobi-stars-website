@@ -142,8 +142,9 @@ export function exportRow(r, labels = SOURCES) {
 }
 
 /** Hides most of an email/phone for staff without export permission. */
-export const maskEmail = e => (e ? e.replace(/^(.)[^@]*(@.).*(\.[^.]+)$/, '$1***$2***$3') : '');
-export const maskPhone = p => (p ? p.slice(0, 7) + '****' + p.slice(-2) : '');
+// Partly hidden: a***@gmail.com and 0803****21.
+export const maskEmail = e => (e && e.includes('@') ? `${e[0]}***${e.slice(e.indexOf('@'))}` : e ? '***' : '');
+export const maskPhone = p => { if (!p) return ''; const local = String(p).replace(/^\+234/, '0'); return local.length > 6 ? `${local.slice(0, 4)}****${local.slice(-2)}` : '****'; };
 
 /** Nigerian date for file names, e.g. 2026-10-09. */
 export const watDate = () => new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);

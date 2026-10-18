@@ -60,6 +60,8 @@ test('entries cannot be changed or deleted, not even directly in the database', 
 test('downloading fan data and many failed sign-ins are alerts: in the bell, emailed by the security job', async () => {
   const x = await fetch(`${BASE}/api/admin/fans/export?type=xlsx`, { headers: ADMIN });
   assert.equal(x.status, 200); await x.arrayBuffer();
+  // The burst alert is sent at most once an hour: clear any from earlier test files first.
+  sqlFails(`DELETE FROM admin_alerts WHERE kind = 'failed_burst'`);
   for (let i = 0; i < 12; i++) await fetch(`${BASE}/api/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': randIp() }, body: JSON.stringify({ email: `nobody-${uid()}@example.com`, password: 'Wrong-Password-99' }) });
   const bell = (await api('/api/admin/notifications')).data.items.map(i => i.title);
   assert.ok(bell.some(t => /Fan data downloaded/.test(t)), 'download alert in the bell');

@@ -44,8 +44,8 @@ export async function onRequestGet({ request, env, params }) {
   return Response.json({
     contact: {
       id: c.id, firstName: c.first_name || '', surname: c.surname || '', state: c.state || '',
-      email: admin.canExport ? c.email || '' : maskEmail(c.email),
-      phone: admin.canExport ? c.phone || '' : maskPhone(c.phone),
+      email: admin.canSeeContacts ? c.email || '' : maskEmail(c.email),
+      phone: admin.canSeeContacts ? c.phone || '' : maskPhone(c.phone),
       firstSource: SOURCES[c.first_source] || c.first_source, firstSeen: c.first_seen, lastSeen: c.last_seen,
       marketingConsent: !!c.marketing_consent, unsubscribedAt: c.unsubscribed_at,
     },

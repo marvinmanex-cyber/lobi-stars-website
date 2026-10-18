@@ -9,10 +9,11 @@
 //  - send last month's partner reports from the 2nd, when switched on (/api/internal/partner-reports);
 //  - Lobi Stars Rewards: release ticket points of played matches, prediction results, birthdays (/api/internal/rewards-run, every 10 min).
 //  - the monthly staff access review email to the Super Admins, on the 1st (/api/internal/access-review);
-//  - keep the three Super Admin accounts in line with SUPER_ADMIN_EMAILS (/api/internal/super-admins).
+//  - keep the three Super Admin accounts in line with SUPER_ADMIN_EMAILS (/api/internal/super-admins);
+//  - the automatic encrypted daily backup, a few tables a minute from 02:00 (/api/internal/backup-run).
 // Pages Functions can't run on a timer, so this does it. The website checks
 // CRON_SECRET (same value in both places). One failing call never stops the other.
-const CALLS = ['/api/internal/kitchen-repeat', '/api/internal/social-autopost', '/api/internal/health-check', '/api/internal/partner-reports', '/api/internal/rewards-run', '/api/internal/newsletter-run', '/api/internal/access-review', '/api/internal/super-admins'];
+const CALLS = ['/api/internal/kitchen-repeat', '/api/internal/social-autopost', '/api/internal/health-check', '/api/internal/partner-reports', '/api/internal/rewards-run', '/api/internal/newsletter-run', '/api/internal/access-review', '/api/internal/super-admins', '/api/internal/backup-run'];
 
 export default {
   async scheduled(event, env, ctx) {

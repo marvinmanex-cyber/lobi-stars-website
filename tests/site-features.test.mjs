@@ -30,7 +30,9 @@ test('newsletter: validation, +234 phone, duplicates update the record and reach
 
   const fans = await fetch(`${BASE}/api/admin/fans?q=${encodeURIComponent(email)}`, { headers: ADMIN }).then(r => r.json());
   assert.equal(fans.total, 1);
-  assert.equal(fans.rows[0].phone, `+234${base.phone.slice(1)}`);
+  assert.match(fans.rows[0].phone, /^0\d{3}\*{4}\d{2}$/, 'partly hidden in the list');
+  const one = await fetch(`${BASE}/api/admin/fans/${fans.rows[0].id}`, { headers: ADMIN }).then(r => r.json());
+  assert.equal(one.contact.phone, `+234${base.phone.slice(1)}`, '+234 format on the fan page');
   assert.equal(fans.rows[0].firstName, 'Ada');
   assert.equal(fans.rows[0].surname, 'King', 'latest details win');
   await fetch(`${BASE}/api/admin/fans/${fans.rows[0].id}`, { method: 'DELETE', headers: ADMIN });

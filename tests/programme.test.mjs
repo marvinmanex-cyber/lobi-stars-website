@@ -8,6 +8,9 @@ import assert from 'node:assert/strict';
 import { generateCode, timingSafeEqual, normaliseEmail } from '../functions/api/_lib/fanCode.js';
 import { slugify, friendlyPdfName, isLive, cleanLinkUrl } from '../functions/api/_lib/programme.js';
 
+// Lists show emails partly hidden (a***@gmail.com); the full address is only on the fan's own page.
+const masked = e => `${e[0]}***${e.slice(e.indexOf('@'))}`;
+
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
 const ADMIN = { 'Content-Type': 'application/json', 'x-admin-code': process.env.ADMIN_CODE || 'test-code-123' };
 const uid = () => Math.random().toString(36).slice(2, 8);
@@ -132,7 +135,7 @@ test('new fan: profile step, details copied from the newsletter, one newsletter 
   assert.equal(p.status, 200);
   assert.equal(p.data.fan.firstName, 'Emeka', 'HTML stripped');
   const subs = (await api(`/api/admin/fans?source=programme&q=${encodeURIComponent(fresh)}`)).data;
-  const row = (subs.rows || subs.fans || []).find(x => x.email === fresh);
+  const row = (subs.rows || subs.fans || []).find(x => x.email === masked(fresh));
   assert.ok(row, 'in the fan database as Match Day Programme');
   assert.ok(row.sources.includes('programme') && row.sources.includes('newsletter'), JSON.stringify(row.sources));
   // Signing in again later: same account, no profile step.

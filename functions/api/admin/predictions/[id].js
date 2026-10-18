@@ -1,3 +1,4 @@
+import { freshCodeCheck, exportName } from '../../_lib/exportGuard.js';
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { can } from '../../_lib/adminRoles.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
@@ -38,6 +39,8 @@ export async function onRequestGet({ request, env, params }) {
   const name = p => [p.first_name, p.last_name].filter(Boolean).join(' ') || '(deleted account)';
 
   if (csv) {
+    const needCode = await freshCodeCheck(request, env, admin);
+    if (needCode) return needCode;
     await logAdminAction(env.DB, admin, 'export_predictions_csv', `${match.home_team} vs ${match.away_team}`);
     const body = buildCsv(
       ['Submitted (Nigerian time to the millisecond)', 'Name', 'Email', 'Phone', 'Prediction', 'Correct', 'Winner', 'Club staff/player', 'Disqualified', 'Reason'],
@@ -45,7 +48,7 @@ export async function onRequestGet({ request, env, params }) {
         correct(p) ? 'Y' : 'N', p.is_winner ? 'Y' : 'N', p.is_staff ? 'Y' : 'N', p.disqualified ? 'Y' : 'N', p.dq_reason || '']));
     return new Response(body, { headers: {
       'Content-Type': 'text/csv; charset=utf-8', 'Cache-Control': 'no-store',
-      'Content-Disposition': `attachment; filename="predictions-${match.slug}.csv"`,
+      'Content-Disposition': `attachment; filename="${exportName(`predictions-${match.slug}`, admin, 'csv')}"`,
     } });
   }
 
@@ -67,7 +70,7 @@ export async function onRequestGet({ request, env, params }) {
     } : null,
     entries: rows.map(p => ({
       id: p.id, memberId: p.member_id, name: name(p),
-      email: admin.canExport ? p.email || '' : maskEmail(p.email), phone: admin.canExport ? p.phone_e164 || '' : maskPhone(p.phone_e164),
+      email: maskEmail(p.email), phone: maskPhone(p.phone_e164),
       home: p.home_goals, away: p.away_goals, at: p.created_at, correct: !!correct(p), winner: !!p.is_winner,
       staff: !!p.is_staff, disqualified: !!p.disqualified, reason: p.dq_reason || '', dqBy: p.dq_by || '',
     })),

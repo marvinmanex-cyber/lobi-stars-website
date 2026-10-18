@@ -1,3 +1,4 @@
+import { freshCodeCheck, exportName } from '../../_lib/exportGuard.js';
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { ensureRewardsSchema, rewardsSettings, memberNo } from '../../_lib/rewards.js';
@@ -101,6 +102,7 @@ export async function onRequestGet({ request, env }) {
   const xlsx = url.searchParams.get('format') === 'xlsx';
   const { admin, denied } = await requireAdminUser(request, env, { needExport: xlsx });
   if (denied) return denied;
+  if (xlsx) { const needCode = await freshCodeCheck(request, env, admin); if (needCode) return needCode; }
   try {
     const db = env.DB;
     const f = await figures(db);
@@ -128,7 +130,7 @@ export async function onRequestGet({ request, env }) {
       { name: 'Checks', columns: ['Check', 'Members', 'Detail'], rows: flags.map(x => [x.label, x.members.map(p => `${p.memberNo} ${p.name} <${p.email}>`).join('; '), x.detail]) },
     ];
     await logAdminAction(db, admin, 'export_rewards_xlsx', `Rewards report: ${members.results.length} members`);
-    return new Response(buildXlsx(sheets), { headers: { 'Content-Type': XLSX, 'Content-Disposition': `attachment; filename="lobi-stars-rewards-${new Date().toISOString().slice(0, 10)}.xlsx"`, 'Cache-Control': 'no-store' } });
+    return new Response(buildXlsx(sheets), { headers: { 'Content-Type': XLSX, 'Content-Disposition': `attachment; filename="${exportName('lobi-stars-rewards', admin, 'xlsx')}"`, 'Cache-Control': 'no-store' } });
   } catch (err) {
     console.error('[rewards admin] analytics', err);
     return Response.json({ error: 'Could not load the report.' }, { status: 500 });

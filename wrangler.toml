@@ -16,3 +16,8 @@ database_id = "d91166bc-53f5-4363-a44c-0f41ba01a1d6"
 [[r2_buckets]]
 binding = "PROGRAMME_BUCKET"
 bucket_name = "lobistars-programmes"
+
+# Automatic encrypted daily backups (functions/api/_lib/autoBackup.js; key: the BACKUP_KEY secret).
+[[r2_buckets]]
+binding = "BACKUP_BUCKET"
+bucket_name = "lobistars-backups"

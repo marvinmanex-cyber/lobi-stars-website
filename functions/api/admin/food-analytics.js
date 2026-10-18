@@ -1,3 +1,4 @@
+import { freshCodeCheck, exportName } from '../_lib/exportGuard.js';
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { logAdminAction } from '../_lib/adminSession.js';
 import { ensureFoodSchema, expireStale } from '../_lib/foodOrders.js';
@@ -106,6 +107,8 @@ export async function onRequestGet({ request, env }) {
   const format = p.get('format');
   if (format === 'report' || format === 'customers') {
     if (!admin.canExport) return Response.json({ error: 'You do not have permission to export customer data.' }, { status: 403 });
+    const needCode = await freshCodeCheck(request, env, admin);
+    if (needCode) return needCode;
     const custRows = [...customers.values()].sort((a, b) => b.spentKobo - a.spentKobo).map(c => [c.name, c.phone, c.email, c.orders, c.spentKobo / 100, [...c.stands].join(', '), wat(c.last)]);
     const custSheet = { name: 'Customers', columns: ['Name', 'Phone', 'Email', 'Paid orders', 'Spent (₦)', 'Stands', 'Last order'], rows: custRows };
     const sheets = format === 'customers' ? [custSheet] : [
@@ -117,7 +120,7 @@ export async function onRequestGet({ request, env }) {
     ];
     await logAdminAction(db, admin, format === 'customers' ? 'export_food_customers' : 'export_food_report', `${paid.length} paid orders, ${customers.size} customers`);
     const name = format === 'customers' ? 'food-customers' : 'food-report';
-    return new Response(buildXlsx(sheets), { headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': `attachment; filename="lobi-stars-${name}-${today}.xlsx"`, 'Cache-Control': 'no-store' } });
+    return new Response(buildXlsx(sheets), { headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': `attachment; filename="${exportName(`lobi-stars-${name}`, admin, 'xlsx')}"`, 'Cache-Control': 'no-store' } });
   }
 
   const { results: matches } = await db.prepare(`SELECT DISTINCT f.event_id AS id, e.home_team, e.away_team, e.event_date FROM food_orders f JOIN events e ON e.id = f.event_id ORDER BY e.event_date DESC LIMIT 50`).all();

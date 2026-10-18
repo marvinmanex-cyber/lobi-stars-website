@@ -59,6 +59,13 @@ export async function onRequestGet({ request, env }) {
       const b = await one(`SELECT MAX(ts) AS ts FROM admin_log WHERE action = 'backup_download'`);
       out.lastBackup = b?.ts || null;
     } catch { /* activity log not created yet */ }
+    // The automatic nightly backup: set up?, the last one, a failure.
+    try {
+      const { securitySettings } = await import('../_lib/adminSecurity.js');
+      const s = await securitySettings(db);
+      const parse = v => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
+      out.autoBackup = { ready: !!(env.BACKUP_BUCKET && env.BACKUP_KEY), last: parse(s.auto_backup_last), error: parse(s.auto_backup_error) };
+    } catch { /* settings not created yet */ }
   }
 
   // New contacts this week.

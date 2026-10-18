@@ -112,6 +112,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   };
 
   if (!u || !u.active || u.disabled_at || !(await verifyPassword(password, u.password_hash))) return fail(WRONG);
+  if (u.access_until && Date.now() > u.access_until) return json({ error: 'Your temporary access has ended. Ask a Super Admin if you still need it.' }, 403);
 
   // An IP allowlist can limit where some roles sign in from.
   const settings = await securitySettings(db);

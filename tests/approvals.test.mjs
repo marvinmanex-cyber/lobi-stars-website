@@ -30,7 +30,8 @@ before(async () => {
   await sw('approvals_staff', true); await sw('approvals_points', true);
 });
 after(async () => {
-  await sw('approvals_staff', false);
+  // Switch both off again so later test files (Rewards) aren't held for approval.
+  await sw('approvals_staff', false); await sw('approvals_points', false);
   for (const id of made) await api(`/api/admin/staff/${id}`, 'PUT', { active: false, reason: 'test finished' });
 });
 

@@ -9,7 +9,7 @@ import { adjustPoints } from './rewardsEarn.js';
 import { logLeague } from './leagueDb.js';
 
 registerApprovalRunner('staff_invite', async (env, origin, p, requester, approver) => {
-  const r = await inviteStaff(env, origin, p, { id: requester.id, name: `${requester.name} (approved by ${approver.name})` });
+  const r = await inviteStaff(env, origin, { ...p, accessUntil: p.accessUntil || null }, { id: requester.id, name: `${requester.name} (approved by ${approver.name})` });
   return `Invite sent to ${p.email}${r.emailed ? '' : ' (email not sent: Resend not set up)'}`;
 });
 

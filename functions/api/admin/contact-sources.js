@@ -56,7 +56,7 @@ export async function onRequestGet({ request, env }) {
       exportQuery: params.toString(),
       rows: res.rows.map(c => ({
         id: c.id, name: [c.first_name, c.surname].filter(Boolean).join(' ') || '(no name)',
-        email: admin.canExport ? c.email || '' : maskEmail(c.email), phone: admin.canExport ? c.phone || '' : maskPhone(c.phone),
+        email: maskEmail(c.email), phone: maskPhone(c.phone),
         firstSource: c.first_source, sources: c.sources, firstSeen: c.first_seen, consent: !!c.marketing_consent,
       })),
     }, { headers: { 'Cache-Control': 'no-store' } });

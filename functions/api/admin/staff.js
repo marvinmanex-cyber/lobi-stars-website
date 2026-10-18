@@ -5,7 +5,7 @@ import { ROLE_DEFAULTS, ROLE_ALIASES, ASSIGNABLE_ROLES } from '../_lib/adminRole
 import { securitySettings, passwordProblem, IDLE_MS } from '../_lib/adminSecurity.js';
 import { hashPassword } from '../_lib/password.js';
 import { isSuperAdminEmail, superAdminProblem, syncSuperAdmins, superAdminEmails } from '../_lib/superAdmins.js';
-import { inviteStaff } from '../_lib/staffLifecycle.js';
+import { inviteStaff, contractorUntil } from '../_lib/staffLifecycle.js';
 import { needsApproval, requestApproval, pendingResponse } from '../_lib/approvals.js';
 import { ensureLifecycleSchema, staffStatus, sendStaffLink, accessReviewList, sendAccessReview, reviewMonth, INVITE_HOURS, NO_PASSWORD } from '../_lib/staffLifecycle.js';
 import roleEmails from '../../../src/data/role-emails.json';
@@ -24,7 +24,7 @@ export async function onRequestGet({ request, env }) {
   await syncSuperAdmins(env, new URL(request.url).origin);
   const now = Date.now();
   const { results } = await db.prepare(
-    `SELECT u.id, u.name, u.email, u.role, u.role_email, u.active, u.created_at, u.last_login_at, u.totp_enabled, u.must_change_password, u.password_hash,
+    `SELECT u.id, u.name, u.email, u.role, u.role_email, u.active, u.access_until, u.created_at, u.last_login_at, u.totp_enabled, u.must_change_password, u.password_hash,
        u.invite_kind, u.invite_expires, u.invited_by, u.disabled_at, u.disabled_by, u.disabled_reason, u.reviewed_at,
        CASE WHEN u.locked_until > ? THEN u.locked_until END AS locked_until,
        (SELECT COUNT(*) FROM admin_sessions s WHERE s.user_id = u.id AND s.revoked_at IS NULL AND s.expires_at > ? AND s.last_seen > ?) AS signed_in
@@ -72,6 +72,9 @@ export async function onRequestPost({ request, env }) {
   // Super Admin: only the three people in the Super Admin list (test accounts on the local test server excepted).
   const testAccount = env.STAFF_TEST_PASSWORDS === '1' && typeof b.password === 'string';
   if (role === 'super_admin' && !testAccount && superAdminProblem(env, email)) return json({ error: superAdminProblem(env, email) }, 400);
+  // Contractors: an end date, at most 14 days away.
+  let accessUntil = null;
+  if (ROLE_DEFAULTS[role].contractor) { const c = contractorUntil(b.accessUntil); if (c.error) return json({ error: c.error }, 400); accessUntil = c.until; }
   const settings = await securitySettings(db);
   // The Super Admins' own (Gmail) addresses are the only exception to the @lobistarsfc.com rule.
   if (settings.email_domain_only === '1' && !email.endsWith('@lobistarsfc.com') && !isSuperAdminEmail(env, email)) return json({ error: "Use the person's own @lobistarsfc.com email address (Settings › Login & Security)." }, 400);
@@ -83,14 +86,14 @@ export async function onRequestPost({ request, env }) {
   if (env.STAFF_TEST_PASSWORDS === '1' && typeof b.password === 'string') {
     const problem = await passwordProblem(env, b.password, { email, name });
     if (problem) return json({ error: problem }, 400);
-    await db.prepare(`INSERT INTO admin_users (id, name, email, password_hash, role, role_email, must_change_password, test_account) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`)
-      .bind(id, name, email, await hashPassword(b.password), role, roleEmail || null, b.mustChange === true ? 1 : 0).run();
+    await db.prepare(`INSERT INTO admin_users (id, name, email, password_hash, role, role_email, must_change_password, test_account, access_until) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)`)
+      .bind(id, name, email, await hashPassword(b.password), role, roleEmail || null, b.mustChange === true ? 1 : 0, accessUntil).run();
     await logAdminAction(db, admin, 'staff_created', `${name} <${email}> as ${ROLE_DEFAULTS[role].label} (test server)`);
     return json({ ok: true, id });
   }
   // A new staff account needs another Super Admin's approval (Settings › Approvals).
   if (await needsApproval(env, 'staff_invite', admin)) {
-    return pendingResponse(await requestApproval(env, origin, { kind: 'staff_invite', summary: `Invite ${name} <${email}> as ${ROLE_DEFAULTS[role].label}`, payload: { name, email, role, roleEmail: roleEmail || null }, requester: admin }));
+    return pendingResponse(await requestApproval(env, origin, { kind: 'staff_invite', summary: `Invite ${name} <${email}> as ${ROLE_DEFAULTS[role].label}`, payload: { name, email, role, roleEmail: roleEmail || null, accessUntil }, requester: admin }));
   }
-  return json({ ok: true, ...(await inviteStaff(env, origin, { name, email, role, roleEmail }, admin)) });
+  return json({ ok: true, ...(await inviteStaff(env, origin, { name, email, role, roleEmail, accessUntil }, admin)) });
 }

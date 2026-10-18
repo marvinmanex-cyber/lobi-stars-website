@@ -1,5 +1,8 @@
+import { freshCodeCheck, exportName } from '../_lib/exportGuard.js';
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { logAdminAction } from '../_lib/adminSession.js';
+import { backupReady, backupStep, listBackups, decryptPart, KEEP_DAYS } from '../_lib/autoBackup.js';
+import { securitySettings } from '../_lib/adminSecurity.js';
 
 // Admin › Settings › Data Backup (Super Admin only). The page downloads the
 // tables piece by piece and builds the Excel / JSON file in the browser, so
@@ -8,6 +11,10 @@ import { logAdminAction } from '../_lib/adminSession.js';
 // GET  /api/admin/backup                          -- tables with row counts, and past backups
 // GET  /api/admin/backup?table=<name>&offset=<n>  -- up to 5,000 rows of one table
 // POST /api/admin/backup { format, tables, rows }  -- records the finished backup in the Activity Log
+// GET  /api/admin/backup?auto=status              -- automatic backups: set up?, the last one, failures, the list kept
+// GET  /api/admin/backup?autoday=YYYY-MM-DD       -- the pieces of one automatic backup
+// GET  /api/admin/backup?autopart=<key>           -- one piece, decrypted (for restoring; fresh two-step code)
+// POST /api/admin/backup { action: 'backup_now' }  -- start an automatic backup now (it finishes over the next minutes)
 // Passwords, sign-in tokens, two-step login secrets, push keys, private links
 // and stored pictures are never included.
 const SKIP_TABLES = new Set(['rate_limits', 'auth_tokens', 'food_photos', 'newsletter_assets', 'd1_migrations', 'sqlite_sequence']);
@@ -30,13 +37,42 @@ async function schema(db) {
 }
 
 export async function onRequestGet({ request, env }) {
-  const { denied } = await requireAdminUser(request, env, { ownerOnly: true });
+  const { admin, denied } = await requireAdminUser(request, env, { ownerOnly: true });
   if (denied) return denied;
   const db = env.DB;
   const u = new URL(request.url);
   const tables = await schema(db);
+  // Automatic backups.
+  if (u.searchParams.get('auto') === 'status') {
+    const s = await securitySettings(db, { force: true });
+    const parse = v => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
+    const prog = parse(s.auto_backup_progress);
+    return Response.json({ ready: backupReady(env), keepDays: KEEP_DAYS, last: parse(s.auto_backup_last), error: parse(s.auto_backup_error),
+      running: prog && !prog.done ? { day: prog.day, left: prog.todo.length + (prog.current ? 1 : 0), rows: prog.rows } : null,
+      backups: await listBackups(env) }, { headers: noStore });
+  }
+  if (u.searchParams.get('autoday')) {
+    const day = u.searchParams.get('autoday');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !backupReady(env)) return Response.json({ error: 'Not found' }, { status: 404 });
+    const m = await env.BACKUP_BUCKET.get(`db/${day}/manifest.json`);
+    if (!m) return Response.json({ error: 'That backup is not complete.' }, { status: 404 });
+    const man = await m.json();
+    return Response.json({ day, parts: man.parts.map(p => ({ key: p.key, table: p.table, rows: p.rows })), rows: man.rows, tables: man.tables }, { headers: noStore });
+  }
+  if (u.searchParams.get('autopart')) {
+    const k = u.searchParams.get('autopart');
+    if (!/^db\/\d{4}-\d{2}-\d{2}\/[A-Za-z0-9_]+\.\d+\.bin$/.test(k) || !backupReady(env)) return Response.json({ error: 'Not found' }, { status: 404 });
+    const needCode = await freshCodeCheck(request, env, admin);
+    if (needCode) return needCode;
+    const obj = await env.BACKUP_BUCKET.get(k);
+    if (!obj) return Response.json({ error: 'Not found' }, { status: 404 });
+    return Response.json(await decryptPart(env, await obj.arrayBuffer()), { headers: noStore });
+  }
   const name = u.searchParams.get('table');
   if (name) {
+    // The data itself: a fresh two-step code (one download pass covers the whole backup).
+    const needCode = await freshCodeCheck(request, env, admin);
+    if (needCode) return needCode;
     const cols = tables[name];
     if (!cols) return Response.json({ error: 'Unknown table' }, { status: 404 });
     const offset = Math.max(0, Number(u.searchParams.get('offset')) || 0);
@@ -61,6 +97,17 @@ export async function onRequestPost({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env, { ownerOnly: true });
   if (denied) return denied;
   const b = await request.json().catch(() => ({}));
+  if (b.action === 'backup_now') {
+    const r = await backupStep(env, { force: true });
+    if (!r.ready) return Response.json({ error: 'Automatic backups are not set up yet (BACKUP_BUCKET and BACKUP_KEY).' }, { status: 400 });
+    if (r.error) return Response.json({ error: `The backup failed: ${r.error}` }, { status: 500 });
+    await logAdminAction(env.DB, admin, 'backup_started', 'automatic backup started by hand');
+    return Response.json({ ok: true, ...r });
+  }
+  if (b.action === 'restore_download') {
+    await logAdminAction(env.DB, admin, 'backup_download', `automatic backup ${String(b.day || '').slice(0, 10)} downloaded for restoring: ${Number(b.rows) || 0} rows`);
+    return Response.json({ ok: true });
+  }
   const format = b.format === 'json' ? 'json' : 'xlsx';
   await logAdminAction(env.DB, admin, 'backup_download', `${format}: ${Number(b.tables) || 0} tables, ${Number(b.rows) || 0} rows`);
   return Response.json({ ok: true });

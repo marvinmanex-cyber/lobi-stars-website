@@ -6,6 +6,9 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 
+// Lists show emails partly hidden (a***@gmail.com); the full address is only on the fan's own page.
+const masked = e => `${e[0]}***${e.slice(e.indexOf('@'))}`;
+
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
 const ADMIN = { 'Content-Type': 'application/json', 'x-admin-code': process.env.ADMIN_CODE || 'test-code-123' };
 const uid = () => Math.random().toString(36).slice(2, 9);
@@ -30,7 +33,7 @@ test('deleting a fan clears their Rewards data but keeps anonymous totals', asyn
   assert.equal((await pub('/api/rewards/redeem', { itemId: 'food-1500', key: `k-${uid()}-${uid()}` }, cookie)).status, 200);
   const before = (await call('GET', '/api/admin/rewards/analytics')).data.summary;
 
-  const contact = (await call('GET', `/api/admin/fans?q=${encodeURIComponent(email)}`)).data.rows.find(r => r.email === email);
+  const contact = (await call('GET', `/api/admin/fans?q=${encodeURIComponent(email)}`)).data.rows.find(r => r.email === masked(email));
   assert.ok(contact, 'in the fan database');
   assert.equal((await call('DELETE', `/api/admin/fans/${contact.id}`)).status, 200);
 

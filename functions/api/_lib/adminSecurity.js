@@ -45,7 +45,7 @@ export async function ensureSecuritySchema(db) {
   const cols = new Set((await db.prepare(`PRAGMA table_info(admin_users)`).all()).results.map(r => r.name));
   for (const [name, type] of [['failed_logins', 'INTEGER NOT NULL DEFAULT 0'], ['locked_until', 'INTEGER'], ['must_change_password', 'INTEGER NOT NULL DEFAULT 0'],
     ['twostep_grace_until', 'INTEGER'], ['twostep_login_at', 'TEXT'], ['password_changed_at', 'TEXT'], ['email_code_hash', 'TEXT'], ['email_code_expires', 'INTEGER'],
-    ['test_account', 'INTEGER NOT NULL DEFAULT 0'], ['gmail_notice_at', 'TEXT']]) {
+    ['test_account', 'INTEGER NOT NULL DEFAULT 0'], ['gmail_notice_at', 'TEXT'], ['access_until', 'INTEGER']]) {
     if (!cols.has(name)) {
       try { await db.prepare(`ALTER TABLE admin_users ADD COLUMN ${name} ${type}`).run(); }
       catch (err) { if (!/duplicate column/i.test(String(err))) throw err; }
@@ -74,6 +74,12 @@ export const SETTING_DEFAULTS = {
   statements_notified: '',    // official statements the approvers have been emailed about
   key_fingerprints: '',       // short fingerprints of the payment/email keys (to notice changes; never the keys)
   weekly_summary_week: '',    // the last week the security summary was emailed (YYYY-MM-DD of that Monday)
+  auto_backup_progress: '',   // automatic backups (autoBackup.js): the one in progress
+  auto_backup_day: '',        //   the last day backed up
+  auto_backup_last: '',       //   the last finished backup (day, tables, rows, size)
+  auto_backup_error: '',      //   the last failure (cleared when a backup finishes)
+  media_backup_since: '',     //   programme files copied up to this upload time
+  backup_overdue_alert: '',   //   the day an overdue-backup alert was last sent
 };
 let cache = null, cachedAt = 0;
 export async function securitySettings(db, { force = false } = {}) {

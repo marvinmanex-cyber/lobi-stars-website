@@ -314,6 +314,13 @@ export async function deleteContactEverywhere(db, contactId) {
   // Their Inbox conversations (messages, replies and notes) go too.
   const enquiryIds = sources.filter(x => x.ref_table === 'enquiries').map(x => x.ref_id);
   stmts.push(...(await (await import('./inbox.js')).erasureStatements(db, enquiryIds, c.email)));
+  // Season tickets bought with this email: the pass holder names first, then the order.
+  if (c.email && (await tableExists(db, 'season_orders'))) {
+    if (await tableExists(db, 'season_passes')) stmts.push(db.prepare(`UPDATE season_passes SET holder_name = 'Deleted' WHERE order_id IN (SELECT id FROM season_orders WHERE lower(buyer_email) = lower(?))`).bind(c.email));
+    stmts.push(db.prepare(`UPDATE season_orders SET buyer_name = 'Deleted', buyer_email = 'deleted@deleted.invalid', buyer_phone = '' WHERE lower(buyer_email) = lower(?)`).bind(c.email));
+  }
+  // Match tickets from the ticket shop bought with this email.
+  if (c.email && (await tableExists(db, 'league_ticket_orders'))) stmts.push(db.prepare(`UPDATE league_ticket_orders SET buyer_name = 'Deleted', buyer_email = 'deleted@deleted.invalid', buyer_phone = '' WHERE lower(buyer_email) = lower(?)`).bind(c.email));
   // Newsletter delivery records and options.
   if (c.email && (await tableExists(db, 'newsletter_deliveries'))) stmts.push(db.prepare(`DELETE FROM newsletter_deliveries WHERE email = ?`).bind(c.email));
   if (c.email && (await tableExists(db, 'newsletter_subscribers'))) stmts.push(db.prepare(`DELETE FROM newsletter_subscribers WHERE email = ?`).bind(c.email));

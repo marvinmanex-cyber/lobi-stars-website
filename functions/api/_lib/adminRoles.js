@@ -113,6 +113,9 @@ export const ROLE_DEFAULTS = {
     permissions: [...starts('partners.'), 'commerce.shop.manage', 'commerce.hospitality.manage', 'commerce.personalisation.manage', 'fans.inbox.read', 'fans.inbox.reply', 'analytics.partners'] },
   matchday_ops_manager: { label: 'Matchday Operations Manager', job: 'Ticketing & Matchday Operations Officer', about: 'Tickets, the gate scanner, food orders and the kitchen; creates matchday helper accounts.',
     permissions: ['commerce.tickets.manage', 'commerce.gate_scan', 'commerce.kitchen.manage', 'commerce.kitchen.board', 'helpers.create'] },
+  // Temporary developer / contractor access: an end date (at most 14 days), no fans' personal data or downloads.
+  contractor: { label: 'Contractor', job: 'Developer / contractor (temporary, max 14 days)', contractor: true, about: 'Temporary access for a developer or contractor: content, matchday, broadcast and site settings. No fans, Inbox, Rewards, downloads, staff or logs. Every sign-in is reported to the Super Admins.',
+    permissions: [...starts('content.', 'matchday.', 'broadcast.'), 'media.upload', 'settings.site', 'settings.promo_bar', 'settings.social_links', 'settings.commentary'] },
   gate_staff: { label: 'Gate Staff', job: 'Matchday helper', helper: true, about: 'Only the gate ticket scanner.', permissions: ['commerce.gate_scan'] },
   kitchen_staff: { label: 'Kitchen Staff', job: 'Matchday helper', helper: true, about: 'Only the Kitchen order board.', permissions: ['commerce.kitchen.board'] },
   // Older role names, kept so existing accounts keep working. Not offered for new accounts.
@@ -297,7 +300,7 @@ const RULES = [
   [/^\/admin\/news-approvals\.json$/, 'approvals.approve|content.news.edit|content.news.publish'],
   [/^\/admin\/?(index\.html|config\.yml)?$/, CMS_ANY()],
   // APIs
-  [/^\/api\/admin\/(login|logout|me|dashboard|search|notifications|account|invite|reset)(\/|$)/, null],
+  [/^\/api\/admin\/(login|logout|me|dashboard|search|notifications|account|invite|reset|export-ticket)(\/|$)/, null],
   // Any open admin page helps finish sending a match alert to fans.
   [/^\/api\/admin\/fan-alerts\/run(\/|$)/, null],
   [/^\/api\/admin\/fan-alerts(\/|$)/, 'matchday.live_updates'],
