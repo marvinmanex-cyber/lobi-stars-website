@@ -76,6 +76,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <section class="panel">
       <h2>Recent security events</h2>
       <p class="muted sec-small">Sign-ins, wrong attempts, lockouts and changes to accounts, roles and these settings. The full list is in the Activity Log.</p>
+      <div class="sec-row" id="clearEvWrap" hidden><button type="button" class="btn-o" id="clearEv">Clear this list</button><span class="muted sec-small" id="clearedAt"></span></div>
       <div class="scroll" id="events"></div>
     </section>
   </div>
@@ -164,6 +165,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         `<tr><td>${esc(s.name)}<br><small class="muted">${esc(s.role)}</small></td><td>${esc(s.device)}${s.twoStep ? ' 🔐' : ''}${s.current ? ' <strong>(you, here)</strong>' : ''}</td><td>${esc(s.ip)}${s.country ? ' (' + esc(s.country) + ')' : ''}</td><td>${esc(when(s.signedIn))}</td><td>${esc(when(s.lastActive))}</td>` +
         `<td>${s.current ? '' : `<button type="button" data-sid="${esc(s.id)}">Sign out</button> <button type="button" data-uid="${esc(s.userId)}" data-name="${esc(s.name)}">Sign out everywhere</button>`}</td></tr>`).join('') + '</tbody></table>'
         : '<p class="muted">Nobody else is signed in.</p>';
+      $('clearEvWrap').hidden = !d.canClearEvents && !d.eventsClearedAt; $('clearEv').hidden = !d.canClearEvents;
+      $('clearedAt').textContent = d.eventsClearedAt ? `Last cleared ${new Date(d.eventsClearedAt).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}. Older events are still in the Activity Log.` : '';
       $('events').innerHTML = d.events.length ? '<table><thead><tr><th>When</th><th>What</th><th>Who</th><th>Details</th></tr></thead><tbody>' + d.events.map(e =>
         `<tr><td>${esc(when(e.ts))}</td><td>${esc(LABEL[e.action] || e.action)}</td><td>${esc(e.staff_name)}</td><td>${esc(e.detail)}</td></tr>`).join('') + '</tbody></table>' : '<p class="muted">Nothing yet.</p>';
     } catch (e) { msg(e.message, false); }
@@ -179,6 +182,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   $('codeOn').addEventListener('click', () => { if (confirm('Switch the emergency admin code back on? All Super Admins will be emailed.')) act({ action: 'admin_code', off: false }, 'The admin code works again.'); });
   $('domainOnly').addEventListener('change', e => act({ action: 'email_domain_only', on: e.target.checked }, 'Saved.'));
   $('ipForm').addEventListener('submit', e => { e.preventDefault(); const f = e.target.elements; act({ action: 'ip_allowlist', scope: f.scope.value, list: f.list.value }, 'Saved.'); });
+  $('clearEv').addEventListener('click', () => { if (confirm('Clear the Recent security events list? It will show only new events from now on. The Activity Log keeps the full history.')) act({ action: 'clear_events' }, 'The list is cleared.'); });
   $('alertOnlyForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'alert_only', email: e.target.elements.email.value }, 'Saved.'); });
   $('alertForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'alert_emails', emails: e.target.elements.emails.value }, 'Saved.'); });
   $('sessions').addEventListener('click', e => {

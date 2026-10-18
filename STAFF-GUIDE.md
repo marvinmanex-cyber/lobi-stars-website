@@ -1766,6 +1766,12 @@ Until then the Newsletter screen shows a yellow note.
   password links are never copied, so nobody else could use them. Approval
   requests go to the Super Admins who can approve **and** to the chosen
   Super Admin.
+- **Recent security events:** the latest sign-ins, wrong attempts, lockouts
+  and account changes. The Super Admin who receives the security emails
+  (dkakaan@lobistarsfc.com) can press **Clear this list** to start it afresh;
+  nothing is deleted, the full history stays in the Activity Log, and the
+  clearing itself is recorded. If someone changes who receives the security
+  emails, the previous person is emailed.
 - **Signed in now:** everyone signed in, with device and network. **Sign
   out** one device or **Sign out everywhere** for a person.
 - **Recent security events:** sign-ins, wrong attempts, lockouts, backup

@@ -8,6 +8,24 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Clear the Recent security events list
+
+**What changed**
+- Settings › Login & Security › Recent security events has a **Clear this
+  list** button, shown only to the Super Admin who receives the security
+  emails (dkakaan@lobistarsfc.com). The list then shows only newer events.
+- Nothing is deleted: the Activity Log keeps the full history (it can't be
+  changed, so nobody who broke into an account could hide what they did), and
+  "list cleared" is itself recorded.
+- If someone changes who receives the security emails, the previous person is
+  emailed.
+
+**Staff need to:** nothing.
+
+**Handbook:** STAFF-GUIDE.md › Login & Security.
+
+---
+
 ## 2026-10-18: Security emails to one chosen Super Admin
 
 **What changed**

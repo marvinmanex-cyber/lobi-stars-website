@@ -18,13 +18,15 @@ import {
 //   { action: 'ip_allowlist', scope, list }   off | super_admin | super_admin_crm | all; one address or range per line
 //   { action: 'alert_emails', emails }        extra addresses for security alerts
 //   { action: 'alert_only', email }           send Super Admin security alerts only to this Super Admin ('' = all of them)
+//   { action: 'clear_events' }                empty the Recent security events list (only the security contact; the
+//                                             Activity Log keeps everything)
 //   { action: 'revoke_session', id }          sign out one device
 //   { action: 'revoke_user', userId }         sign someone out everywhere ('owner' = the admin code sessions)
 //   { action: 'admin_code', off }             switch the old emergency admin code off (needs at least two Super Admins
 //                                             who have signed in with two-step login) or back on
 const json = (d, status = 200) => Response.json(d, { status, headers: { 'Cache-Control': 'no-store' } });
 const EVENTS = ['login', 'login_failed', 'login_blocked_ip', 'account_locked', 'owner_code_login', 'backup_code_used', 'backup_codes_new', 'sessions_revoked',
-  'account_password', 'account_2fa_on', 'account_2fa_off', 'security_settings', 'staff_created', 'staff_updated', 'role_changed'];
+  'account_password', 'account_2fa_on', 'account_2fa_off', 'security_settings', 'staff_created', 'staff_updated', 'role_changed', 'security_events_cleared'];
 
 async function readiness(db) {
   const { results } = await db.prepare(`SELECT id, name, email, role, totp_enabled, twostep_login_at, created_at, twostep_grace_until FROM admin_users WHERE active = 1 ORDER BY name`).all();
@@ -51,7 +53,9 @@ export async function onRequestGet({ request, env }) {
       superAdmin: !!u && isFullSuperAdmin(env, u), twoStep: !!u?.totp_enabled, usedTwoStep: !!u?.twostep_login_at, lastLogin: u?.last_login_at || null,
       gmail: /@gmail\.com$/i.test(email), gmailNoticeAt: u?.gmail_notice_at || null, inviteExpires: u?.invite_expires ? new Date(u.invite_expires).toISOString() : null });
   }
-  const { results: events } = await db.prepare(`SELECT ts, staff_name, action, detail FROM admin_log WHERE action IN (${EVENTS.map(() => '?').join(',')}) ORDER BY id DESC LIMIT 60`).bind(...EVENTS).all();
+  // Only events after the list was last cleared (the Activity Log keeps everything).
+  const { results: events } = await db.prepare(`SELECT ts, staff_name, action, detail FROM admin_log WHERE action IN (${EVENTS.map(() => '?').join(',')}) AND ts > ? ORDER BY id DESC LIMIT 60`).bind(...EVENTS, s.security_events_cleared || '').all();
+  const contact = String(s.alert_only || '').trim().toLowerCase();
   const sessions = (await listSessions(db)).map(x => ({
     id: x.id, userId: x.user_id, name: x.name || '(deleted account)', role: x.user_id === 'owner' ? 'Owner (admin code)' : ROLE_DEFAULTS[roleOf(x)]?.label || x.role,
     device: x.device, ip: x.ip, country: x.country, signedIn: new Date(x.created_at).toISOString(), lastActive: new Date(x.last_seen).toISOString(), twoStep: !!x.two_step, current: x.id === admin.sessionId,
@@ -68,7 +72,8 @@ export async function onRequestGet({ request, env }) {
         deadline: required && !u.totp_enabled ? new Date(twoStepDeadline(u, s)).toISOString() : null })),
     },
     superAdmins: { list: people, tooMany: tooManySuperAdmins(env), readyCount: readySA.length, adminCodeOff: s.admin_code_off === '1', canSwitchOff: readySA.length >= 2 },
-    myIp: clientIp(request), sessions, events,
+    myIp: clientIp(request), sessions, events, eventsClearedAt: s.security_events_cleared || null,
+    canClearEvents: !!contact && String(admin.email || '').toLowerCase() === contact,
   });
 }
 
@@ -152,8 +157,18 @@ export async function onRequestPost({ request, env, waitUntil }) {
   if (b.action === 'alert_only') {
     const email = String(b.email || '').trim().toLowerCase();
     if (email && !superAdminEmails(env).includes(email)) return json({ error: 'Choose one of the Super Admins.' }, 400);
+    const before = String((await securitySettings(db)).alert_only || '').trim().toLowerCase();
     await saveSecuritySetting(db, 'alert_only', email, admin.name);
     await log(`security alerts go to ${email || 'every Super Admin'}`);
+    // The previous security contact is told it moved away from them.
+    if (before && before !== email) later(securityEmail(env, before, 'Lobi Stars admin: security emails now go to someone else', [`<strong>${admin.name}</strong> changed who receives the security emails to <strong>${email || 'every Super Admin'}</strong>. If that wasn't agreed, change it back in Settings › Login & Security.`], new URL(request.url).origin));
+    return json({ ok: true });
+  }
+  if (b.action === 'clear_events') {
+    const contact = String((await securitySettings(db)).alert_only || '').trim().toLowerCase();
+    if (!contact || String(admin.email || '').toLowerCase() !== contact) return json({ error: 'Only the Super Admin who receives the security emails can clear this list.' }, 403);
+    await saveSecuritySetting(db, 'security_events_cleared', new Date().toISOString(), admin.name);
+    await logAdminAction(db, admin, 'security_events_cleared', 'Recent security events list cleared (the Activity Log keeps the full history)');
     return json({ ok: true });
   }
   if (b.action === 'revoke_session') {

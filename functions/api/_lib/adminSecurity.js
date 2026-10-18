@@ -64,6 +64,7 @@ export const SETTING_DEFAULTS = {
   ip_allowlist: '',           // one address or range per line
   alert_emails: '',           // extra addresses for security alerts (comma separated)
   alert_only: '',             // one Super Admin's email: security alerts go only to them (empty = every Super Admin)
+  security_events_cleared: '', // when the security contact last cleared the Recent security events list (ISO time)
   access_review_month: '',    // the last month the access review was emailed (YYYY-MM)
   super_admin_list: '',       // the Super Admin list last seen (to notice changes)
   admin_code_off: '0',        // '1' = the old emergency admin code no longer works

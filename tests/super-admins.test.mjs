@@ -127,6 +127,16 @@ test('security emails can go to only one chosen Super Admin (or all of them)', a
   assert.equal((await api('/api/admin/security', 'POST', { action: 'alert_only', email: 'OWNER2@example.com' })).status, 200);
   assert.equal((await api('/api/admin/security')).data.settings.alertOnly, 'owner2@example.com');
   assert.ok((await api('/api/admin/activity?q=security alerts go to')).data.log.some(l => /owner2@example\.com/.test(l.detail)), 'logged');
+  // Only that Super Admin can clear the Recent security events list; the Activity Log keeps everything.
+  const two = as(sa['owner2@example.com'].cookie), three = as(sa['lobi.test.owner3@gmail.com'].cookie);
+  assert.equal((await api('/api/admin/security', 'GET', null, three)).data.canClearEvents, false);
+  assert.equal((await api('/api/admin/security', 'POST', { action: 'clear_events' }, three)).status, 403, 'another Super Admin');
+  assert.equal((await api('/api/admin/security', 'POST', { action: 'clear_events' })).status, 403, 'the admin code');
+  assert.equal((await api('/api/admin/security', 'GET', null, two)).data.canClearEvents, true);
+  assert.equal((await api('/api/admin/security', 'POST', { action: 'clear_events' }, two)).status, 200);
+  const after = (await api('/api/admin/security', 'GET', null, two)).data;
+  assert.ok(after.eventsClearedAt && after.events.every(e => e.ts > after.eventsClearedAt), 'only newer events listed');
+  assert.ok((await api('/api/admin/activity?q=security alerts go to')).data.log.length, 'older events still in the Activity Log');
   assert.equal((await api('/api/admin/security', 'POST', { action: 'alert_only', email: '' })).status, 200, 'back to every Super Admin');
   assert.equal((await api('/api/admin/security')).data.settings.alertOnly, '');
 });
