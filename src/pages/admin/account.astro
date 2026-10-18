@@ -1,6 +1,7 @@
 ---
-// My account: change your password and turn two-step login on or off
-// (a 6-digit code from an authenticator app as well as the password).
+// My account: change your password, two-step login (a 6-digit code from an
+// authenticator app as well as the password) with backup codes, and the
+// devices you're signed in on ("Log out of all other devices").
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
 ---
@@ -9,8 +10,21 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <AdminNav current="account" />
     <div class="stag">Settings</div>
     <h1 class="stitle">My <span class="r">Account</span></h1>
+    <p class="ac-must" id="must" role="alert" hidden></p>
     <p class="ac-msg" id="msg" role="status" aria-live="polite" hidden></p>
     <p class="muted" id="who">Loading…</p>
+
+    <section class="panel" id="pwBox" hidden>
+      <h2>Change your password</h2>
+      <p class="muted">At least 12 characters. A short sentence you'll remember works well (for example <em>my dog eats jollof at 7</em>). Don't reuse a password from another website: passwords that have leaked from other websites are refused.</p>
+      <form id="pwForm" class="ac-form">
+        <label>Current password<input class="form-inp" name="current" type="password" autocomplete="current-password" required /></label>
+        <label>New password (12+ characters)<input class="form-inp" name="next" type="password" autocomplete="new-password" minlength="12" required /></label>
+        <label>New password again<input class="form-inp" name="again" type="password" autocomplete="new-password" minlength="12" required /></label>
+        <button class="btn-p" type="submit">Change password</button>
+      </form>
+      <p class="muted ac-small">Changing your password signs you out on your other devices.</p>
+    </section>
 
     <section class="panel" id="twoStep" hidden>
       <h2>Two-step login</h2>
@@ -29,23 +43,41 @@ import AdminNav from '../../components/admin/AdminNav.astro';
           <form id="tsConfirm" class="ac-form"><label>6-digit code<input class="form-inp" name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required /></label><button class="btn-p" type="submit">Confirm</button></form>
         </div>
       </div>
-      <form id="tsDisable" class="ac-form" hidden>
-        <p class="muted">To turn it off, type your password and a current code.</p>
-        <label>Password<input class="form-inp" name="password" type="password" autocomplete="current-password" required /></label>
-        <label>6-digit code<input class="form-inp" name="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required /></label>
-        <button class="btn-o" type="submit">Turn off two-step login</button>
-      </form>
-      <p class="muted ac-small">Lost your phone? Ask a Super Admin to reset your two-step login (Settings › Staff Users &amp; Roles), then set it up again.</p>
+
+      <div class="ac-codes" id="codesBox" hidden>
+        <h3>Your backup codes</h3>
+        <p>Each code works <strong>once</strong>, instead of a code from your phone (for example if you lose it). Print them or write them down and keep them somewhere safe, <strong>not on your phone</strong>. You won't see them again.</p>
+        <ol class="ac-codelist" id="codes"></ol>
+        <div class="ac-row"><button type="button" class="btn-o" id="codesCopy">Copy</button><button type="button" class="btn-o" id="codesPrint">Print</button><button type="button" class="btn-p" id="codesDone">I've saved them</button></div>
+      </div>
+
+      <div id="tsOn" hidden>
+        <p class="muted" id="codesLeft"></p>
+        <details class="ac-more"><summary>Make new backup codes</summary>
+          <form id="codesForm" class="ac-form">
+            <p class="muted">Your old backup codes will stop working.</p>
+            <label>Password<input class="form-inp" name="password" type="password" autocomplete="current-password" required /></label>
+            <label>6-digit code<input class="form-inp" name="otp" autocomplete="one-time-code" maxlength="9" required /></label>
+            <button class="btn-p" type="submit">Make new backup codes</button>
+          </form>
+        </details>
+        <details class="ac-more" id="tsDisableBox"><summary>Turn off two-step login</summary>
+          <form id="tsDisable" class="ac-form">
+            <p class="muted">To turn it off, type your password and a current code.</p>
+            <label>Password<input class="form-inp" name="password" type="password" autocomplete="current-password" required /></label>
+            <label>6-digit code<input class="form-inp" name="otp" autocomplete="one-time-code" maxlength="9" required /></label>
+            <button class="btn-o" type="submit">Turn off two-step login</button>
+          </form>
+        </details>
+      </div>
+      <p class="muted ac-small">Lost your phone? Sign in with a backup code, or ask a Super Admin to reset your two-step login (Settings › Staff Users &amp; Roles), then set it up again.</p>
     </section>
 
-    <section class="panel" id="pwBox" hidden>
-      <h2>Change your password</h2>
-      <form id="pwForm" class="ac-form">
-        <label>Current password<input class="form-inp" name="current" type="password" autocomplete="current-password" required /></label>
-        <label>New password (10+ characters)<input class="form-inp" name="next" type="password" autocomplete="new-password" minlength="10" required /></label>
-        <label>New password again<input class="form-inp" name="again" type="password" autocomplete="new-password" minlength="10" required /></label>
-        <button class="btn-p" type="submit">Change password</button>
-      </form>
+    <section class="panel" id="devBox" hidden>
+      <h2>Where you're signed in</h2>
+      <p class="muted">You're signed out automatically after 30 minutes without activity, and after 12 hours at most. If you see a device you don't recognise, sign it out and change your password.</p>
+      <div id="devices"></div>
+      <div class="ac-row"><button type="button" class="btn-o" id="outOthers">Log out of all other devices</button><button type="button" class="btn-o" id="outAll">Log out of all devices (including this one)</button></div>
     </section>
   </div>
 </Layout>
@@ -54,8 +86,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .ac { max-width: 760px; padding-top: 20px; padding-bottom: 60px; }
   .ac-msg { padding: 12px 16px; border-radius: 10px; }
   .ac-msg.ok { background: #E8F7EE; color: #17643A; } .ac-msg.err { background: #FDECEC; color: #A3161B; }
+  .ac-must { padding: 14px 16px; border-radius: 10px; background: #FFF4E5; color: #7A4B00; font-weight: 600; border-left: 4px solid #F59E0B; }
   .panel { padding: 20px; margin-bottom: 16px; }
   .panel h2 { margin: 0 0 8px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .panel h3 { margin: 0 0 6px; font-size: 18px; }
   .ac-state { font-weight: 700; font-size: 16px; }
   .ac-setup { margin-top: 16px; }
   .ac-setup ol { padding-left: 20px; line-height: 1.7; }
@@ -64,13 +98,26 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .ac-form { display: grid; gap: 10px; max-width: 420px; }
   .ac-form label { display: grid; gap: 4px; font-weight: 700; font-size: 14px; }
   .ac-small { font-size: 13px; margin-top: 14px; }
+  .ac-codes { margin: 16px 0; padding: 16px; border: 2px dashed #F59E0B; border-radius: 12px; }
+  .ac-codelist :global(li) { break-inside: avoid; }
+  .ac-codelist { columns: 2; column-gap: 28px; padding-left: 22px; font: 700 18px/1.9 ui-monospace, Consolas, monospace; letter-spacing: 1px; }
+  .ac-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .ac-more { margin-top: 12px; } .ac-more summary { cursor: pointer; font-weight: 700; padding: 6px 0; }
+  /* Device rows and backup codes are added by the script below, so these styles are global. */
+  #devices :global(.ac-dev) { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--a-line); }
+  #devices :global(.ac-dev b) { font-size: 15px; grid-column: 1; }
+  #devices :global(.ac-dev small) { color: var(--a-muted, #5B6470); grid-column: 1; font-size: 13px; line-height: 1.5; }
+  #devices :global(.here) { display: inline-block; font-size: 12px; font-weight: 700; color: #17643A; background: #E8F7EE; padding: 2px 8px; border-radius: 99px; margin-left: 8px; }
+  #devices :global(.ac-dev button) { grid-row: 1 / span 2; grid-column: 2; padding: 8px 12px; }
+  @media print { body * { visibility: hidden; } .ac-codes, .ac-codes * { visibility: visible; } .ac-codes { position: absolute; left: 0; top: 0; } .ac-row { display: none; } }
 </style>
 
 <script is:inline>
 (function () {
-  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
-  const H = { 'Content-Type': 'application/json', 'x-admin-code': code };
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': '__session__' };
   const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const when = iso => new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'ac-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; window.scrollTo(0, 0); };
   async function api(body) {
     const r = await fetch('/api/admin/account', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
@@ -79,14 +126,35 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     if (!r.ok) throw new Error(d.error || 'Request failed');
     return d;
   }
+  function devices(list) {
+    $('devBox').hidden = false;
+    $('devices').innerHTML = list.length ? list.map(s => `<div class="ac-dev"><b>${esc(s.device)}${s.current ? '<span class="here">This device</span>' : ''}</b>` +
+      `<small>${esc(s.ip)}${s.country ? ' (' + esc(s.country) + ')' : ''} · signed in ${esc(when(s.signedIn))} · last active ${esc(when(s.lastActive))}${s.twoStep ? ' · with two-step login' : ''}</small>` +
+      (s.current ? '' : `<button type="button" class="btn-o" data-out="${esc(s.id)}">Sign out</button>`) + '</div>').join('') : '<p class="muted">No other devices.</p>';
+    $('outOthers').hidden = list.filter(s => !s.current).length === 0;
+  }
+  function showCodes(codes) {
+    $('codes').innerHTML = codes.map(c => `<li>${esc(c)}</li>`).join('');
+    $('codesBox').hidden = false; $('codesBox').scrollIntoView({ behavior: 'smooth' });
+    $('codesBox')._codes = codes;
+  }
   async function load() {
     try {
       const d = await api();
-      if (d.owner) { $('who').textContent = 'You are signed in with the owner admin code. Create a personal staff account (Settings › Staff Users & Roles) to change a password or use two-step login.'; return; }
+      devices(d.sessions || []);
+      if (d.owner) { $('who').textContent = 'You are signed in with the owner admin code. Create a personal staff account (Settings › Staff Users & Roles) to have your own password and two-step login.'; return; }
       $('who').textContent = `${d.name} · ${d.email}`;
-      $('twoStep').hidden = false; $('pwBox').hidden = false;
+      $('pwBox').hidden = false;
+      const must = new URLSearchParams(location.search).get('must') || d.restrict;
+      if (d.mustChangePassword) { $('must').textContent = 'Before you start: please choose your own password. The one you were given was temporary.'; $('must').hidden = false; $('twoStep').hidden = true; return; }
+      $('twoStep').hidden = false;
+      if (!d.twoStep && (must === 'twostep' || d.restrict === 'twostep')) { $('must').textContent = 'The club requires two-step login for every admin account. Please turn it on below to carry on (it takes 2 minutes).'; $('must').hidden = false; }
+      else if (!d.twoStep && d.twoStepDue) { $('must').textContent = `The club requires two-step login. Please turn it on by ${new Date(d.twoStepDue).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}; after that you'll only be able to open this page until it's on.`; $('must').hidden = false; }
+      else $('must').hidden = true;
       $('tsState').textContent = d.twoStep ? '🔐 Two-step login is ON for your account.' : '⚠️ Two-step login is OFF.';
-      $('tsOff').hidden = d.twoStep; $('tsDisable').hidden = !d.twoStep; $('tsSetup').hidden = true;
+      $('tsOff').hidden = d.twoStep; $('tsOn').hidden = !d.twoStep; $('tsSetup').hidden = true;
+      $('tsDisableBox').hidden = !!d.twoStepRequired;
+      $('codesLeft').textContent = d.twoStep ? `You have ${d.backupCodesLeft} unused backup code${d.backupCodesLeft === 1 ? '' : 's'}.${d.backupCodesLeft <= 3 ? ' Make new ones soon.' : ''}` : '';
     } catch (e) { msg(e.message, false); }
   }
   $('tsStart').addEventListener('click', async () => {
@@ -95,9 +163,17 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   });
   $('tsConfirm').addEventListener('submit', async e => {
     e.preventDefault();
-    try { await api({ action: 'confirm_2fa', otp: e.target.elements.otp.value }); msg('Two-step login is on. Next time you log in, you will also be asked for a code from the app.', true); e.target.reset(); load(); }
+    try { const d = await api({ action: 'confirm_2fa', otp: e.target.elements.otp.value }); e.target.reset(); await load(); msg('Two-step login is on. Save your backup codes below.', true); showCodes(d.backupCodes); }
     catch (err) { msg(err.message, false); }
   });
+  $('codesForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target.elements;
+    try { const d = await api({ action: 'backup_codes', password: f.password.value, otp: f.otp.value }); e.target.reset(); await load(); showCodes(d.backupCodes); }
+    catch (err) { msg(err.message, false); }
+  });
+  $('codesCopy').addEventListener('click', () => { navigator.clipboard?.writeText(($('codesBox')._codes || []).join('\n')).then(() => msg('Backup codes copied. Paste them somewhere safe (not on your phone).', true)); });
+  $('codesPrint').addEventListener('click', () => window.print());
+  $('codesDone').addEventListener('click', () => { if (confirm("Have you saved your backup codes? You won't see them again.")) { $('codesBox').hidden = true; $('codes').innerHTML = ''; } });
   $('tsDisable').addEventListener('submit', async e => {
     e.preventDefault(); const f = e.target.elements;
     if (!confirm('Turn off two-step login? Your account will only be protected by your password.')) return;
@@ -107,8 +183,24 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   $('pwForm').addEventListener('submit', async e => {
     e.preventDefault(); const f = e.target.elements;
     if (f.next.value !== f.again.value) { msg('The new passwords are not the same.', false); return; }
-    try { await api({ action: 'password', current: f.current.value, next: f.next.value }); msg('Password changed.', true); e.target.reset(); }
-    catch (err) { msg(err.message, false); }
+    try {
+      const d = await api({ action: 'password', current: f.current.value, next: f.next.value });
+      e.target.reset();
+      if (new URLSearchParams(location.search).get('must') === 'password') { location.href = '/admin/dashboard/'; return; }
+      msg(`Password changed.${d.otherDevicesSignedOut ? ` ${d.otherDevicesSignedOut} other device(s) signed out.` : ''}`, true); load();
+    } catch (err) { msg(err.message, false); }
+  });
+  $('devices').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-out]'); if (!b) return;
+    try { await api({ action: 'logout_session', id: b.dataset.out }); msg('That device is signed out.', true); load(); } catch (err) { msg(err.message, false); }
+  });
+  $('outOthers').addEventListener('click', async () => {
+    if (!confirm('Sign out everywhere except this device?')) return;
+    try { const d = await api({ action: 'logout_others' }); msg(`Signed out of ${d.signedOut} other device${d.signedOut === 1 ? '' : 's'}.`, true); load(); } catch (err) { msg(err.message, false); }
+  });
+  $('outAll').addEventListener('click', async () => {
+    if (!confirm('Sign out everywhere, including this device?')) return;
+    try { await api({ action: 'logout_all' }); sessionStorage.removeItem('ls_admin_code'); location.href = '/admin/login/'; } catch (err) { msg(err.message, false); }
   });
   load();
 })();

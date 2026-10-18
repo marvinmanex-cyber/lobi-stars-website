@@ -18,8 +18,10 @@ test('security headers on admin pages, share links and server-rendered pages', a
     fetch(`${BASE}/fixtures/`),
   ];
   for (const r of await Promise.all(pages)) {
-    assert.equal(r.headers.get('x-frame-options'), 'SAMEORIGIN', r.url);
-    assert.match(r.headers.get('content-security-policy') || '', /frame-ancestors 'self'/, r.url);
+    // Admin pages are stricter: no website (not even this one) may show them in a frame.
+    const admin = new URL(r.url).pathname.startsWith('/admin');
+    assert.equal(r.headers.get('x-frame-options'), admin ? 'DENY' : 'SAMEORIGIN', r.url);
+    assert.match(r.headers.get('content-security-policy') || '', admin ? /frame-ancestors 'none'/ : /frame-ancestors 'self'/, r.url);
     assert.match(r.headers.get('strict-transport-security') || '', /max-age=\d+/, r.url);
     assert.doesNotMatch(r.headers.get('strict-transport-security') || '', /includeSubDomains/, 'stream subdomain points to the partner');
     assert.match(r.headers.get('permissions-policy') || '', /camera=\(self\)/, r.url);

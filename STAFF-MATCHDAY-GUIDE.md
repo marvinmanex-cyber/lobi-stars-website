@@ -231,6 +231,13 @@ exported files private and delete them when you no longer need them.
 - **The match is stuck on LIVE:** press End Match. It also closes itself 2h15 after kick-off.
 - **Reminder emails didn't go out:** the email service (Resend) must be set up
   by the website manager. Admin → Predict & Win shows whether each reminder was sent.
+- **You were signed out of the admin:** it happens after 30 minutes without
+  activity and after 12 hours. Log in again; nothing you saved is lost. Sign in
+  again shortly before kick-off so a long match day doesn't run past 12 hours.
+  The Kitchen Screen and the Live Order Board stay signed in while they're open.
+- **"Account locked":** 5 wrong passwords or codes lock an account for 15
+  minutes. Wait, or ask a Super Admin to press **Unlock** (Settings › Staff
+  Users & Roles). Lost your phone for two-step login? Use one of your backup codes.
 
 ---
 

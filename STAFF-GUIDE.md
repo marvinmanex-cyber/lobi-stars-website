@@ -15,10 +15,20 @@ There are two places where you make changes:
 | News, players, shop, videos, club pages | **Content CMS** | About 1–2 minutes after you press Save |
 
 1. Go to **https://lobistarsfc.com/admin/login**.
-2. Sign in with **your own staff email and password** (the owner creates
-   your account under **Staff**). The owner can instead use the
+2. Sign in with **your own staff email and password** (a Super Admin creates
+   your account under **Staff**). If two-step login is on, type the 6-digit
+   code from your phone app (or a backup code). The owner can instead use the
    **Admin code (owner)** tab. Never share your password or the code.
-3. You land on the **Dashboard** (see "Finding your way around the admin" below).
+3. **The first time**, you're asked to choose your own password (the one you
+   were given is temporary). Then you land on the **Dashboard** (see
+   "Finding your way around the admin" below).
+
+**Staying signed in:** you're signed out after **30 minutes without
+activity** and after **12 hours** at most; just log in again. The Kitchen
+Screen and the Live Order Board stay signed in while they're open on a
+tablet. After **3 wrong attempts** a "not a robot" box appears; after **5**,
+the account is **locked for 15 minutes** and the account holder is emailed
+(a Super Admin can press **Unlock**). Full details: section 25.
 
 **The first time you open the Content CMS** on a computer or phone, it asks for
 a **GitHub access token**. This is a long password-like code that the website
@@ -473,8 +483,14 @@ Files are named with today's date, e.g. `lobi-stars-fan-database-2026-10-09.xlsx
 ### Staff accounts (Super Admin only)
 
 Under **Staff**, a Super Admin adds an account for each person (name, email,
-role, temporary password), turns **Can export fan data** on or off, resets
-passwords and deactivates people who leave. **Import existing records** (on
+role, temporary password of 12+ characters; leave **They must choose their
+own password the first time they sign in** ticked), turns **Can export fan
+data** on or off, resets passwords and deactivates people who leave.
+Deactivating someone, resetting their password or resetting their two-step
+login signs them out on every device straight away. **Unlock** ends a
+lockout; **Sign out everywhere** signs someone out without changing anything
+else. The **Signed in now** column shows on how many devices each person is
+signed in. You can't deactivate yourself or change your own role. **Import existing records** (on
 the Fan database page) pulls older records into the database; it is safe to
 press again.
 
@@ -1221,7 +1237,7 @@ checklist (section 2), player stats (section 2), award votes (section 10),
 members-only stories (section 1 and 11), shirt personalisation orders
 (section 5), hospitality (section 12), the promo bar ("Other things you can
 update in the CMS"), the club pages (section 20), the app (section 21),
-language (section 22), search and sharing (section 23), the newsletter (section 24), and your account, two-step login and backups (section 25).
+language (section 22), search and sharing (section 23), the newsletter (section 24), and your account, login security and backups (section 25).
 
 **Trying the admin safely:** the website manager can run the website on
 their own computer with demo messages and contacts (`npm run seed:local`, see
@@ -1475,28 +1491,77 @@ Until then the Newsletter screen shows a yellow note.
 
 ---
 
-## 25. Your account, two-step login and data backups
+## 25. Your account, login security and data backups
 
 ### My account (click your name at the top right, or Settings › My Account)
 - **Change your password:** type your current password and the new one
-  twice (at least 10 characters).
+  twice. Passwords must be **at least 12 characters**; a short sentence you'll
+  remember works well (e.g. *my dog eats jollof at 7*). The website refuses
+  very common passwords, your own email or name, and any password that has
+  leaked from another website in a data breach. Changing your password signs
+  you out on your other devices, and you get an email about it.
 - **Two-step login:** after your password you also type a 6-digit code from
   a free app on your phone (Google Authenticator, Microsoft Authenticator or
   Authy). Even if someone learns your password, they can't get in without
   your phone. **Everyone who can see fans' details (Super Admins and staff
   allowed to download contact lists) should turn it on**; the dashboard
-  reminds them until they do.
+  reminds them until they do (and a Super Admin can make it compulsory for
+  everyone).
   1. Press **Turn on two-step login**.
   2. In the app, tap **+ / Add account** and scan the QR code (or type the key).
   3. Type the 6-digit code the app shows and press **Confirm**.
   From then on the login page asks for the code after your password. Each
   code works once and changes every 30 seconds; if it says the code is wrong,
   wait for the next one and make sure the phone's time is set automatically.
-- **Lost or changed phone:** a Super Admin opens Settings › Staff Users &
-  Roles and presses **Reset two-step** next to your name; you then log in
-  with your password and set it up again.
-- The owner admin code has no account settings: use a personal Super Admin
-  account for everyday work.
+- **Backup codes:** when you turn two-step login on you get **10 backup
+  codes** (like `abcd-efgh`). Each works **once**, typed instead of the phone
+  code, if you lose your phone. Print them or write them down and keep them
+  away from your phone; you won't see them again. My account shows how many
+  are left; **Make new backup codes** gives you 10 new ones (the old ones stop
+  working). You're emailed whenever a backup code is used.
+- **Lost or changed phone:** sign in with a backup code, or a Super Admin opens
+  Settings › Staff Users & Roles and presses **Reset two-step** next to your
+  name; you then log in with your password and set it up again.
+- **When the club requires two-step login** (see Login & Security below),
+  you're emailed and have **7 days** to turn it on; a reminder shows at the
+  top of every admin page. After that, only My account opens until it's on,
+  and you can't turn it off.
+- **Where you're signed in:** My account lists every device you're signed in
+  on (browser, network, when). **Sign out** one, **Log out of all other
+  devices**, or **Log out of all devices (including this one)**. If you see a
+  device you don't recognise, sign it out and change your password.
+- **Emails about your account:** a sign-in from a new device, a backup code
+  used, a password change, two-step login turned on or off, and a lockout
+  after wrong attempts. If it wasn't you, sign in, log out of all devices,
+  change your password and tell a Super Admin.
+- The owner admin code has no password or two-step settings: use a personal
+  Super Admin account for everyday work. **Every sign-in with the admin code
+  is emailed to the Super Admins**, because it's the way back in when nothing
+  else works.
+
+### Login & Security (Settings › Login & Security, Super Admins only)
+- **The rules for everyone** are shown at the top: 12+ character passwords,
+  signed out after 30 minutes without activity and after 12 hours, locked for
+  15 minutes after 5 wrong attempts.
+- **Two-step login for everyone:** press **Require two-step login**. It only
+  works once at least one Super Admin has a **personal staff account** with
+  two-step login on **and has signed in with it once** (so nobody can be
+  locked out). Everyone without it is emailed and gets 7 days. The table
+  shows who has it on and each person's deadline. **Stop requiring it**
+  switches it back off.
+- **Staff email addresses:** tick to make new staff accounts use a
+  **@lobistarsfc.com** address. Leave it off until everyone has a club email.
+- **Only allow sign-in from certain networks (optional):** choose Off, Super
+  Admins only or All staff, and list the allowed network addresses (for
+  example the club office's internet connection; your own address is shown).
+  The page won't save a list that would sign you out. The owner admin code
+  always works from anywhere.
+- **Security alerts:** go to every Super Admin; add other addresses (e.g. the
+  club secretary) if you like.
+- **Signed in now:** everyone signed in, with device and network. **Sign
+  out** one device or **Sign out everywhere** for a person.
+- **Recent security events:** sign-ins, wrong attempts, lockouts, backup
+  codes used, and changes to accounts, roles and these settings.
 
 ### Data backup (Settings › Data Backup, Super Admins only)
 - **Download backup (Excel)** saves everything the website stores (fans and

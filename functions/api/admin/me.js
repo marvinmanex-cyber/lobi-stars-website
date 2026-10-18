@@ -1,10 +1,21 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { roleOf, roleLabel, areasOf } from '../_lib/adminRoles.js';
+import { IDLE_MS } from '../_lib/adminSecurity.js';
 
 // GET /api/admin/me -- who is signed in: name, role, the admin areas they
-// can open, their permissions (both drive the sidebar) and the export permission.
+// can open, their permissions (both drive the sidebar), the export permission,
+// and whether they must first choose a new password or set up two-step login.
 export async function onRequestGet({ request, env }) {
-  const { admin, denied } = await requireAdminUser(request, env);
+  const { admin, denied } = await requireAdminUser(request, env, { allowRestricted: true });
   if (denied) return denied;
-  return Response.json({ admin: { ...admin, roleId: roleOf(admin), roleLabel: roleLabel(admin), areas: areasOf(admin) } }, { headers: { 'Cache-Control': 'no-store' } });
+  const { sessionId, ...rest } = admin;
+  return Response.json({ admin: { ...rest, roleId: roleOf(admin), roleLabel: roleLabel(admin), areas: admin.restrict ? [] : areasOf(admin), permissions: admin.restrict ? [] : admin.permissions, idleMinutes: IDLE_MS / 60000 } }, { headers: { 'Cache-Control': 'no-store' } });
+}
+
+// POST /api/admin/me -- "still here": sent by admin pages while someone is using
+// them, so the session isn't ended after 30 minutes without activity.
+export async function onRequestPost({ request, env }) {
+  const { denied } = await requireAdminUser(request, env, { allowRestricted: true });
+  if (denied) return denied;
+  return Response.json({ ok: true }, { headers: { 'Cache-Control': 'no-store' } });
 }

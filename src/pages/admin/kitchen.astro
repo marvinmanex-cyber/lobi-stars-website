@@ -290,5 +290,7 @@ import Layout from '../../layouts/Layout.astro';
   if (alertsOn) { $('soundTap').hidden = false; keepAwake(); }
   load();
   setInterval(load, 10000);
+  // A kitchen tablet stays signed in while this screen is open (12 hours at most), even with nobody touching it.
+  setInterval(() => fetch('/api/admin/me', { method: 'POST', headers: { 'x-admin-code': '__session__' } }).then(r => { if (r.status === 401) location.href = '/admin/login/?ended=1&next=/admin/kitchen/'; }).catch(() => {}), 4 * 60000);
 })();
 </script>

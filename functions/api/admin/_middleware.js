@@ -1,13 +1,21 @@
 import { getAdmin } from '../_lib/adminSession.js';
 import { allowedPath, loadRoles } from '../_lib/adminRoles.js';
+import { crossSiteWrite } from '../_lib/adminSecurity.js';
 
 // Role check for every admin API (the endpoints themselves check the login).
 // A signed-in staff member calling an API outside their role gets 403.
+// Changes must come from the website's own pages (not another website), and
+// someone who must first choose a new password or set up two-step login can
+// only use My account.
 // After staff save anything, the cached homepage (functions/index.js, kept
 // 30 seconds) is cleared so match changes such as FULL TIME show at once.
 export async function onRequest({ request, env, next, waitUntil }) {
   const url = new URL(request.url);
+  if (crossSiteWrite(request)) return Response.json({ error: 'This request came from another website and was refused.' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
   const admin = await getAdmin(request, env);
+  if (admin?.restrict && !/^\/api\/admin\/(account|me|logout|login)(\/|$)/.test(url.pathname)) {
+    return Response.json({ error: admin.restrict === 'password' ? 'Please choose a new password first (My account).' : 'Please set up two-step login first (My account).', restrict: admin.restrict }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
+  }
   if (admin) await loadRoles(env.DB);
   if (admin && !allowedPath(admin, url.pathname, request.method)) {
     return Response.json({ error: "You don't have access to this. Ask a Super Admin if you need it." }, { status: 403, headers: { 'Cache-Control': 'no-store' } });

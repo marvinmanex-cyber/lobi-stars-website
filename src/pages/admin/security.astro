@@ -1,0 +1,150 @@
+---
+// Settings › Login & Security (Super Admin): require two-step login for all
+// staff, the staff email rule, the IP allowlist, who gets security alerts,
+// everyone who is signed in now, and recent security events.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Login & Security | Lobi Stars Admin" description="Staff login security settings." noindex>
+  <div class="wrap sec">
+    <AdminNav current="security" />
+    <div class="stag">Settings</div>
+    <h1 class="stitle">Login &amp; <span class="r">Security</span></h1>
+    <p class="muted sec-lede" id="rules">Loading…</p>
+    <p class="sec-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="panel">
+      <h2>Two-step login for everyone</h2>
+      <p class="muted">When this is on, every staff account must use a code from an authenticator app as well as its password. People without it get <span id="grace">7</span> days (they're emailed), then can only open My account until it's on.</p>
+      <p class="sec-state" id="tsState"></p>
+      <p class="sec-warn" id="tsWarn" hidden></p>
+      <div class="sec-row"><button type="button" class="btn-p" id="tsOn">Require two-step login</button><button type="button" class="btn-o" id="tsOff" hidden>Stop requiring it</button></div>
+      <div class="scroll" id="tsList"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Staff email addresses</h2>
+      <label class="sec-check"><input type="checkbox" id="domainOnly" /> New staff accounts must use a <strong>@lobistarsfc.com</strong> email address</label>
+      <p class="muted sec-small">Leave this off until every staff member has a club email address.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Only allow sign-in from certain networks (optional)</h2>
+      <p class="muted">For example the club office's internet connection. Your network address now is <strong id="myIp">…</strong>. The owner admin code always works from anywhere, as the way back in.</p>
+      <form id="ipForm" class="sec-form">
+        <fieldset><legend>Who it applies to</legend>
+          <label class="sec-radio"><input type="radio" name="scope" value="off" /> Off (sign in from anywhere)</label>
+          <label class="sec-radio"><input type="radio" name="scope" value="super_admin" /> Super Admins only</label>
+          <label class="sec-radio"><input type="radio" name="scope" value="all" /> All staff</label>
+        </fieldset>
+        <label><span>Allowed addresses, one per line (an address like <code>102.89.12.34</code>, a range like <code>102.89.0.0/16</code>, or the start of an IPv6 address like <code>2c0f:f5c0:</code>)</span><textarea class="form-inp" name="list" rows="4" spellcheck="false"></textarea></label>
+        <button class="btn-p" type="submit">Save</button>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Security alerts</h2>
+      <p class="muted">These emails go to every Super Admin staff account: the owner admin code being used, accounts locked after wrong attempts. Add other addresses here if you like (for example the club secretary).</p>
+      <form id="alertForm" class="sec-form">
+        <label>Extra addresses (comma separated)<input class="form-inp" name="emails" type="text" autocomplete="off" /></label>
+        <button class="btn-p" type="submit">Save</button>
+      </form>
+      <p class="muted sec-small">Each person is also emailed about their own account: a sign-in from a new device, a backup code used, a password change, a lockout.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Signed in now</h2>
+      <div class="scroll" id="sessions"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Recent security events</h2>
+      <p class="muted sec-small">Sign-ins, wrong attempts, lockouts and changes to accounts, roles and these settings. The full list is in the Activity Log.</p>
+      <div class="scroll" id="events"></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .sec { max-width: 980px; padding-top: 20px; padding-bottom: 80px; }
+  .sec-lede { max-width: 760px; }
+  .sec-msg { padding: 12px 16px; border-radius: 10px; }
+  .sec-msg.ok { background: #E8F7EE; color: #17643A; } .sec-msg.err { background: #FDECEC; color: #A3161B; }
+  .panel { padding: 20px; margin-bottom: 16px; }
+  .panel h2 { margin: 0 0 8px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .sec-state { font-weight: 700; }
+  .sec-warn { padding: 10px 14px; border-radius: 8px; background: #FFF4E5; color: #7A4B00; }
+  .sec-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; }
+  .sec-form { display: grid; gap: 12px; max-width: 620px; }
+  .sec-form > label { display: grid; gap: 4px; font-weight: 700; font-size: 14px; }
+  .sec-form fieldset { border: 0; margin: 0; padding: 0; } .sec-form legend { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .sec .sec-radio, .sec .sec-check { display: flex; gap: 10px; align-items: center; padding: 4px 0; font-weight: 400; font-size: 15px; }
+  .sec .sec-radio input, .sec .sec-check input { width: 18px; height: 18px; accent-color: var(--red); flex: none; }
+  .sec-small { font-size: 13px; }
+  .sec textarea { font: 14px/1.5 ui-monospace, Consolas, monospace; }
+  .scroll { overflow-x: auto; }
+  .sec :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .sec :global(th), .sec :global(td) { padding: 8px 10px; border-bottom: 1px solid var(--a-line); text-align: left; vertical-align: top; }
+  .sec :global(thead th) { background: #15181D; color: #fff; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .sec :global(.ok) { color: #17643A; font-weight: 700; } .sec :global(.no) { color: #A3161B; font-weight: 700; }
+  .sec :global(td button) { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--a-line); background: var(--a-card); cursor: pointer; font-size: 13px; }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const when = iso => iso ? new Date(String(iso).includes('T') ? iso : String(iso).replace(' ', 'T') + 'Z').toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+  const day = iso => new Date(iso).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short' });
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'sec-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; window.scrollTo(0, 0); };
+  const LABEL = { login: 'Signed in', login_failed: 'Wrong attempt', login_blocked_ip: 'Blocked network', account_locked: 'Account locked', owner_code_login: 'Owner code used',
+    backup_code_used: 'Backup code used', backup_codes_new: 'New backup codes', sessions_revoked: 'Signed out devices', account_password: 'Password changed',
+    account_2fa_on: 'Two-step on', account_2fa_off: 'Two-step off', security_settings: 'Security settings', staff_created: 'Staff added', staff_updated: 'Staff changed', role_changed: 'Role changed' };
+  async function api(body) {
+    const r = await fetch('/api/admin/security', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  async function load() {
+    try {
+      const d = await api();
+      const R = d.rules, S = d.settings, T = d.twoStep;
+      $('rules').textContent = `For everyone: passwords of at least ${R.minPassword} characters (leaked passwords refused); signed out after ${R.idleMinutes} minutes without activity and after ${R.sessionHours} hours at most; locked for 15 minutes after ${R.lockAfter} wrong attempts (a human check appears after 3).`;
+      $('grace').textContent = R.graceDays;
+      $('tsState').textContent = S.requireTwoStep ? `🔐 Required for every staff account since ${when(S.twoStepSince)}.` : 'Not required yet: each person chooses.';
+      $('tsOn').hidden = S.requireTwoStep; $('tsOff').hidden = !S.requireTwoStep;
+      $('tsWarn').hidden = S.requireTwoStep || T.readyToRequire;
+      $('tsWarn').textContent = 'Before you can require it: at least one Super Admin needs a personal staff account with two-step login turned on, and must have signed in with it once (so we know it works and nobody gets locked out).';
+      $('tsOn').disabled = !T.readyToRequire;
+      $('tsList').innerHTML = T.staff.length ? '<table><thead><tr><th>Name</th><th>Role</th><th>Two-step login</th><th>Must be on by</th></tr></thead><tbody>' + T.staff.map(u =>
+        `<tr><td>${esc(u.name)}<br><small class="muted">${esc(u.email)}</small></td><td>${esc(u.role)}</td><td>${u.on ? `<span class="ok">On</span>${u.usedAt ? ` · last used ${esc(when(u.usedAt))}` : ' · not used yet'}` : '<span class="no">Off</span>'}</td><td>${u.deadline ? esc(day(u.deadline)) : ''}</td></tr>`).join('') + '</tbody></table>'
+        : '<p class="muted">No staff accounts yet.</p>';
+      $('domainOnly').checked = S.emailDomainOnly;
+      $('myIp').textContent = d.myIp;
+      $('ipForm').elements.list.value = S.ipList || '';
+      ($('ipForm').querySelector(`input[name="scope"][value="${S.ipScope}"]`) || $('ipForm').querySelector('input[value="off"]')).checked = true;
+      $('alertForm').elements.emails.value = S.alertEmails || '';
+      $('sessions').innerHTML = d.sessions.length ? '<table><thead><tr><th>Who</th><th>Device</th><th>Network</th><th>Signed in</th><th>Last active</th><th></th></tr></thead><tbody>' + d.sessions.map(s =>
+        `<tr><td>${esc(s.name)}<br><small class="muted">${esc(s.role)}</small></td><td>${esc(s.device)}${s.twoStep ? ' 🔐' : ''}${s.current ? ' <strong>(you, here)</strong>' : ''}</td><td>${esc(s.ip)}${s.country ? ' (' + esc(s.country) + ')' : ''}</td><td>${esc(when(s.signedIn))}</td><td>${esc(when(s.lastActive))}</td>` +
+        `<td>${s.current ? '' : `<button type="button" data-sid="${esc(s.id)}">Sign out</button> <button type="button" data-uid="${esc(s.userId)}" data-name="${esc(s.name)}">Sign out everywhere</button>`}</td></tr>`).join('') + '</tbody></table>'
+        : '<p class="muted">Nobody else is signed in.</p>';
+      $('events').innerHTML = d.events.length ? '<table><thead><tr><th>When</th><th>What</th><th>Who</th><th>Details</th></tr></thead><tbody>' + d.events.map(e =>
+        `<tr><td>${esc(when(e.ts))}</td><td>${esc(LABEL[e.action] || e.action)}</td><td>${esc(e.staff_name)}</td><td>${esc(e.detail)}</td></tr>`).join('') + '</tbody></table>' : '<p class="muted">Nothing yet.</p>';
+    } catch (e) { msg(e.message, false); }
+  }
+  const act = async (body, ok) => { try { await api(body); msg(ok, true); load(); } catch (e) { msg(e.message, false); } };
+  $('tsOn').addEventListener('click', () => { if (confirm('Require two-step login for every staff account? People without it will be emailed and get 7 days to turn it on.')) act({ action: 'require_two_step', on: true }, 'Two-step login is now required. Staff without it have been emailed.'); });
+  $('tsOff').addEventListener('click', () => { if (confirm('Stop requiring two-step login? People will be able to turn it off again.')) act({ action: 'require_two_step', on: false }, 'Two-step login is no longer required.'); });
+  $('domainOnly').addEventListener('change', e => act({ action: 'email_domain_only', on: e.target.checked }, 'Saved.'));
+  $('ipForm').addEventListener('submit', e => { e.preventDefault(); const f = e.target.elements; act({ action: 'ip_allowlist', scope: f.scope.value, list: f.list.value }, 'Saved.'); });
+  $('alertForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'alert_emails', emails: e.target.elements.emails.value }, 'Saved.'); });
+  $('sessions').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.sid) act({ action: 'revoke_session', id: b.dataset.sid }, 'That device is signed out.');
+    else if (b.dataset.uid && confirm(`Sign ${b.dataset.name} out on every device?`)) act({ action: 'revoke_user', userId: b.dataset.uid }, `${b.dataset.name} is signed out everywhere.`);
+  });
+  load();
+})();
+</script>

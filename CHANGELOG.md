@@ -8,9 +8,56 @@ in HANDOVER-TODO.md.
 
 ---
 
-## 2026-10-18: Staff access and security, Phase 2: login security (in progress)
+## 2026-10-18: Staff access and security, Phase 2: login security
 
-Being built now; this entry is completed when it goes live.
+**What changed**
+- **Login sessions:** each sign-in is now recorded on the server. "Log out"
+  really ends it (a copied cookie stops working), and staff can see every
+  device they're signed in on and **Log out of all other devices** (My
+  account). Super Admins see everyone signed in (Settings › Login & Security).
+- **Signed out automatically** after 30 minutes without activity and after 12
+  hours at most. Automatic page refreshes don't count as activity. The Kitchen
+  Screen and the Live Order Board stay signed in while open (12 hours at most).
+- **Passwords:** at least 12 characters (was 10). Very common passwords, your
+  own email or name, and passwords that have leaked from other websites
+  (checked with Have I Been Pwned, which never sees the password itself) are
+  refused. Existing passwords keep working until they're changed.
+- **Temporary passwords:** new staff (and anyone whose password a Super Admin
+  resets) must choose their own password before they can do anything else.
+- **Lockout:** after 3 wrong attempts a "not a robot" check appears; after 5
+  the account is locked for 15 minutes and the person is emailed. Super
+  Admins can **Unlock** it.
+- **Two-step login backup codes:** 10 single-use codes when two-step login is
+  turned on, for a lost phone. New codes can be made at any time.
+- **Two-step login can be made compulsory** (Settings › Login & Security),
+  with 7 days for each person to set it up. It can only be switched on once a
+  Super Admin has a personal account with two-step login and has signed in
+  with it, so nobody gets locked out.
+- **Security emails:** sign-in from a new device, backup code used, password
+  changed, two-step login on/off, account locked. Every use of the owner admin
+  code is emailed to the Super Admins.
+- **Optional IP allowlist:** limit where Super Admins (or all staff) can sign
+  in from. It can't be saved in a way that signs out the person saving it; the
+  owner admin code always works.
+- **Optional rule:** new staff emails must end with @lobistarsfc.com (off).
+- **Leavers:** deactivating someone signs them out on every device straight
+  away. Super Admins can also **Sign out everywhere** for a person, and can't
+  deactivate themselves or change their own role.
+- **Protection against other websites:** changes to the admin must come from
+  the admin's own pages, and admin pages can't be shown inside another website
+  or load scripts from unknown sites.
+- The owner admin code is no longer kept in the browser after logging in.
+
+**Who it affects:** all staff. Everyone is signed out once when this goes
+live (the sign-in system changed), so log in again.
+
+**Staff need to:** nothing straight away. Super Admins: create a personal
+staff account with two-step login, sign in with it once, then decide whether
+to require two-step login for everyone (handover list A16).
+
+**Handbook:** STAFF-GUIDE.md › Before you start: logging in; Staff accounts;
+section 25 (My account, backup codes, where you're signed in, Login &
+Security). STAFF-MATCHDAY-GUIDE.md › If something goes wrong.
 
 ## 2026-10-18: Staff access and security, Phase 1: roles and permissions
 

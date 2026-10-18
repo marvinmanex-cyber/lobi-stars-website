@@ -1,6 +1,7 @@
 import { getAdmin } from '../api/_lib/adminSession.js';
 import { allowedPath, loadRoles, roleLabel } from '../api/_lib/adminRoles.js';
 import { withSecurityHeaders } from '../api/_lib/securityHeaders.js';
+import { ADMIN_PAGE_HEADERS } from '../api/_lib/adminSecurity.js';
 
 // Every /admin page (the CMS, Manage Matches, Analytics...) needs a staff
 // login. Visitors without a valid staff cookie are sent to /admin/login, and
@@ -19,10 +20,14 @@ export async function onRequest({ request, env, next }) {
       headers: { Location: login.toString(), 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' },
     });
   }
+  // Must choose a new password or set up two-step login first: only My account opens.
+  if (admin?.restrict && !/^\/admin\/account(\/|$)/.test(url.pathname)) {
+    return new Response(null, { status: 302, headers: { Location: new URL(`/admin/account/?must=${admin.restrict}`, url).toString(), 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' } });
+  }
   if (admin) await loadRoles(env.DB);
   if (admin && !allowedPath(admin, url.pathname)) {
     const h = new Headers({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' });
-    withSecurityHeaders(h);
+    adminHeaders(h);
     return new Response(deniedPage(admin), { status: 403, headers: h });
   }
 
@@ -30,7 +35,7 @@ export async function onRequest({ request, env, next }) {
   const out = new Response(res.body, res);
   out.headers.set('X-Robots-Tag', 'noindex, nofollow');
   out.headers.set('Cache-Control', 'no-store');
-  withSecurityHeaders(out.headers);
+  adminHeaders(out.headers);
   return out;
 }
 
@@ -52,4 +57,11 @@ function deniedPage(admin) {
 <p>If you need it for your work, ask a Super Admin to change your role.</p>
 <a class="b" href="/admin/dashboard/">Back to the dashboard</a>
 </main></body></html>`;
+}
+
+// Admin pages: no framing by any website, scripts only from this site and the
+// listed libraries (CMS, charts, the human check), plus the usual headers.
+function adminHeaders(h) {
+  for (const [k, v] of Object.entries(ADMIN_PAGE_HEADERS)) h.set(k, v);
+  return withSecurityHeaders(h);
 }

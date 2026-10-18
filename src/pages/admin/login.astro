@@ -1,11 +1,15 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+// The human check (Cloudflare Turnstile) appears after 3 wrong attempts.
+import settings from '../../data/fan-settings.json';
+const siteKey = settings.turnstileSiteKey || '';
 ---
 <Layout title="Staff Login | Lobi Stars Admin" description="Lobi Stars FC staff login." noindex>
   <div class="wrap login-wrap">
     <div class="login-card">
       <div class="login-icon" aria-hidden="true">&#128274;</div>
       <h1 class="login-title">Staff login</h1>
+      <p class="login-note" id="note" role="status" hidden></p>
 
       <div class="login-tabs" role="tablist" aria-label="Login type">
         <button type="button" role="tab" id="tabStaff" aria-selected="true" aria-controls="staffForm">Staff account</button>
@@ -19,13 +23,16 @@ import Layout from '../../layouts/Layout.astro';
         <input id="password" type="password" autocomplete="current-password" required />
         <div id="otpWrap" hidden>
           <label class="login-label" for="otp">6-digit code from your authenticator app</label>
-          <input id="otp" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="7" />
+          <input id="otp" autocomplete="one-time-code" maxlength="9" aria-describedby="otpHelp" />
+          <p class="muted login-help" id="otpHelp">Lost your phone? Type one of your backup codes instead (like <code>abcd-efgh</code>).</p>
         </div>
         <button type="submit" class="btn-p">Log in</button>
       </form>
 
+      <div id="captcha" class="login-captcha" data-sitekey={siteKey} hidden><div id="tsBox"></div></div>
+
       <form id="ownerForm" aria-labelledby="tabOwner" hidden>
-        <p class="muted">The owner signs in with the club's admin code and can create staff accounts.</p>
+        <p class="muted">The owner signs in with the club's admin code: the way in if nothing else works. Every use is emailed to the Super Admins.</p>
         <label class="login-label" for="code">Admin code</label>
         <input id="code" name="code" type="password" autocomplete="current-password" required />
         <button type="submit" class="btn-p" id="submit">Log in</button>
@@ -58,11 +65,35 @@ import Layout from '../../layouts/Layout.astro';
   .login-card input:focus { outline: 2px solid var(--red); outline-offset: 1px; }
   .login-card .btn-p { width: 100%; margin-top: 8px; }
   .login-err { color: #C11A1F; font-size: 14px; margin: 0; }
+  .login-note { margin: 0; padding: 10px 12px; border-radius: 8px; background: #FFF4E5; color: #7A4B00; font-size: 14px; }
+  .login-help { font-size: 13px; margin: 0; }
+  .login-captcha { min-height: 66px; }
 </style>
 
 <script>
   const err = document.getElementById('err')!;
-  const next = new URLSearchParams(location.search).get('next') || '';
+  const params = new URLSearchParams(location.search);
+  const next = params.get('next') || '';
+  const note = document.getElementById('note')!;
+  if (params.has('idle')) { note.textContent = 'You were signed out after 30 minutes without activity. Please log in again.'; note.hidden = false; }
+  else if (params.has('ended')) { note.textContent = 'You were signed out (12 hours is the longest a login lasts, or you were signed out on another device). Please log in again.'; note.hidden = false; }
+  sessionStorage.removeItem('ls_admin_code');
+
+  // The human check, shown after 3 wrong attempts.
+  const SITE_KEY = document.getElementById('captcha')!.dataset.sitekey || '';
+  let tsToken = '', tsReady = false;
+  function showCaptcha() {
+    const box = document.getElementById('captcha')!;
+    if (!SITE_KEY) return;
+    box.hidden = false;
+    const w = window as unknown as { turnstile?: { render: (el: string, o: object) => void; reset: () => void } };
+    if (tsReady) { w.turnstile?.reset(); tsToken = ''; return; }
+    const draw = () => { tsReady = true; w.turnstile!.render('#tsBox', { sitekey: SITE_KEY, callback: (t: string) => { tsToken = t; } }); };
+    if (w.turnstile) return draw();
+    const sc = document.createElement('script');
+    sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; sc.async = true; sc.onload = draw;
+    document.head.appendChild(sc);
+  }
   const target = /^\/admin(\/|$)/.test(next) && !next.startsWith('/admin/login') ? next : '/admin/dashboard/';
   const tabs = { staff: document.getElementById('tabStaff')!, owner: document.getElementById('tabOwner')! };
   const forms = { staff: document.getElementById('staffForm') as HTMLFormElement, owner: document.getElementById('ownerForm') as HTMLFormElement };
@@ -80,18 +111,19 @@ import Layout from '../../layouts/Layout.astro';
   async function login(body: Record<string, string>, marker: string, btn: HTMLButtonElement) {
     btn.disabled = true; err.hidden = true;
     try {
-      const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tsToken ? { ...body, turnstile: tsToken } : body) });
       const data = await res.json().catch(() => ({}));
       if (data.needCode) {
         // Two-step login: show the code box and ask for the authenticator code.
         const w = document.getElementById('otpWrap')!; w.hidden = false;
         (document.getElementById('otp') as HTMLInputElement).focus();
       }
+      if (data.needCaptcha) showCaptcha();
       if (!res.ok) throw new Error(data.error === 'Invalid admin code' ? 'That code is not correct.' : data.error || 'Login failed. Please try again.');
-      // Admin pages send this with each request: the owner's code, or a
-      // marker meaning "use my staff session cookie".
+      // Admin pages send this with each request: a marker meaning "use my
+      // session cookie" (the admin code itself is not kept in the browser).
       sessionStorage.setItem('ls_admin_code', marker);
-      location.href = target;
+      location.href = data.mustChangePassword ? '/admin/account/?must=password' : target;
     } catch (ex) {
       err.textContent = (ex as Error).message; err.hidden = false;
     } finally { btn.disabled = false; }
@@ -109,6 +141,6 @@ import Layout from '../../layouts/Layout.astro';
     e.preventDefault();
     const code = (document.getElementById('code') as HTMLInputElement).value.trim();
     if (!code) return;
-    login({ code }, code, forms.owner.querySelector('button')!);
+    login({ code }, '__session__', forms.owner.querySelector('button')!);
   });
 </script>

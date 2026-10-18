@@ -222,7 +222,7 @@ const RULES = [
   [/^\/admin\/analytics(\/|$)/, 'analytics.view'],
   [/^\/admin\/activity(\/|$)/, 'settings.activity'],
   [/^\/admin\/health(\/|$)/, 'settings.health'],
-  [/^\/admin\/staff(\/|$)/, 'staff.manage'],
+  [/^\/admin\/(staff|security)(\/|$)/, 'staff.manage'],
   [/^\/admin\/backup(\/|$)/, 'staff.backup'],
   [/^\/admin\/?(index\.html|config\.yml)?$/, 'content.cms'],
   // APIs
@@ -262,7 +262,7 @@ const RULES = [
   [/^\/api\/admin\/export-log(\/|$)/, 'fans.export|settings.activity'],
   [/^\/api\/admin\/activity(\/|$)/, 'settings.activity'],
   [/^\/api\/admin\/health(\/|$)/, 'settings.health'],
-  [/^\/api\/admin\/(staff|roles)(\/|$)/, 'staff.manage'],
+  [/^\/api\/admin\/(staff|roles|security)(\/|$)/, 'staff.manage'],
   [/^\/api\/admin\/backup(\/|$)/, 'staff.backup'],
 ];
 
@@ -280,6 +280,6 @@ export function allowedPath(admin, pathname, method = 'GET') {
   if (perm === undefined) return roleOf(admin) === 'super_admin';
   if (!can(admin, perm)) return false;
   // Read-only roles (the old Analyst) only read and download reports.
-  if (ROLE_DEFAULTS[roleOf(admin)]?.readOnly && !['GET', 'HEAD'].includes(method) && !/^\/api\/admin\/(login|logout|fan-alerts\/run)/.test(pathname)) return false;
+  if (ROLE_DEFAULTS[roleOf(admin)]?.readOnly && !['GET', 'HEAD'].includes(method) && !/^\/api\/admin\/(login|logout|me|account|fan-alerts\/run)/.test(pathname)) return false;
   return true;
 }

@@ -1,17 +1,22 @@
 import { sign, verify } from './crypto.js';
+import { ensureSecuritySchema, liveSession, touchSession, securitySettings, ipAllowed, allowlistApplies, GRACE_DAYS } from './adminSecurity.js';
+import { clientIp } from './fans.js';
+import { roleOf } from './adminRoles.js';
 
 // Staff (admin) sign-in.
 //
-// - The OWNER signs in with the shared ADMIN_CODE secret and has every
-//   permission, including managing staff accounts.
-// - STAFF sign in with their own email + password (admin_users table). Each
-//   account has a can_export_fan_data permission.
+// - The OWNER signs in with the shared ADMIN_CODE secret: a Super Admin and
+//   the way back in if everything else fails (every use is emailed to the
+//   Super Admins; see login.js).
+// - STAFF sign in with their own email + password (admin_users table), plus a
+//   code from their authenticator app when two-step login is on.
 //
-// A signed cookie ("ls_admin") records who is signed in. It gates the
-// /admin pages (functions/admin/_middleware.js) and the admin APIs. The
-// signing key includes ADMIN_CODE, so changing the code signs everyone out.
+// Each sign-in is a row in admin_sessions; the "ls_admin" cookie holds its id,
+// signed so made-up ids are refused without a database look-up. A session ends
+// after 30 minutes without activity, after 12 hours, on "Log out", "Log out of
+// all devices", or when a Super Admin deactivates the account. The signing key
+// includes ADMIN_CODE, so changing the code signs everyone out.
 const COOKIE_NAME = 'ls_admin';
-const DURATION_MS = 12 * 60 * 60 * 1000;
 export const OWNER = { id: 'owner', name: 'Owner (admin code)', email: '', role: 'owner', canExport: true };
 
 function key(env) {
@@ -46,45 +51,88 @@ export async function ensureAdminSchema(db) {
   // Two-step login (authenticator app codes).
   const cols = new Set((await db.prepare(`PRAGMA table_info(admin_users)`).all()).results.map(r => r.name));
   for (const [name, type] of [['totp_secret', 'TEXT'], ['totp_enabled', 'INTEGER NOT NULL DEFAULT 0'], ['totp_pending', 'TEXT'], ['totp_last_step', 'INTEGER NOT NULL DEFAULT 0']]) {
-    if (!cols.has(name)) await db.prepare(`ALTER TABLE admin_users ADD COLUMN ${name} ${type}`).run();
+    if (!cols.has(name)) {
+      try { await db.prepare(`ALTER TABLE admin_users ADD COLUMN ${name} ${type}`).run(); }
+      catch (err) { if (!/duplicate column/i.test(String(err))) throw err; }
+    }
   }
+  await ensureSecuritySchema(db);
   schemaReady = true;
 }
 
-export async function createAdminCookie(env, userId = 'owner') {
-  const expiry = Date.now() + DURATION_MS;
-  const payload = `${userId}.${expiry}`;
+/** The Set-Cookie value for a new session (see createSession in adminSecurity.js). */
+export async function sessionCookie(env, sessionId) {
+  const payload = `v2.${sessionId}`;
   const signature = await sign(payload, key(env));
-  return `${COOKIE_NAME}=${payload}.${signature}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${DURATION_MS / 1000}`;
+  return `${COOKIE_NAME}=${payload}.${signature}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${12 * 3600}`;
 }
 
-async function cookieUserId(request, env) {
+/** The session id in the cookie (signature checked), or null. Older cookies are no longer accepted. */
+export async function cookieSessionId(request, env) {
   if (!env.ADMIN_CODE) return null;
-  const match = (request.headers.get('Cookie') || '').match(new RegExp(`${COOKIE_NAME}=([^;]+)`));
+  const match = (request.headers.get('Cookie') || '').match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`));
   if (!match) return null;
   const parts = match[1].split('.');
-  if (parts.length !== 3) return null;
-  // Older cookies said "admin" for the owner.
-  const [rawId, expiryStr, signature] = parts;
-  const expiry = Number.parseInt(expiryStr, 10);
-  if (!rawId || !expiry || !signature || Date.now() > expiry) return null;
-  if (!(await verify(`${rawId}.${expiry}`, signature, key(env)))) return null;
-  return rawId === 'admin' ? 'owner' : rawId;
+  if (parts.length !== 3 || parts[0] !== 'v2' || !/^[a-f0-9]{48}$/.test(parts[1])) return null;
+  if (!(await verify(`v2.${parts[1]}`, parts[2], key(env)))) return null;
+  return parts[1];
 }
 
-/** The signed-in admin ({id, name, email, role, canExport}) or null. */
+// Activity that keeps a session open: opening an admin page, saving something,
+// or the "still here" signal admin pages send while someone is using them.
+// Automatic refreshes in the background don't count.
+function isActivity(request) {
+  const url = new URL(request.url);
+  if (request.method === 'GET') return url.pathname.startsWith('/admin');
+  return !/^\/api\/admin\/(fan-alerts\/run|notifications)(\/|$)/.test(url.pathname);
+}
+
+const memo = new WeakMap();
+/**
+ * The signed-in admin ({id, name, email, role, canExport, twoStep, sessionId,
+ * restrict, twoStepDue}) or null. restrict = 'password' (must choose a new
+ * password first) or 'twostep' (must set up two-step login first).
+ */
 export async function getAdmin(request, env) {
   if (!env.ADMIN_CODE) return null;
+  if (memo.has(request)) return memo.get(request);
+  const p = findAdmin(request, env);
+  memo.set(request, p);
+  return p;
+}
+async function findAdmin(request, env) {
+  // The owner's code in a header: for scripts and tests (the browser uses the session cookie).
   const code = request.headers.get('x-admin-code') || '';
-  if (code && code.length === env.ADMIN_CODE.length && code === env.ADMIN_CODE) return OWNER;
+  if (code && code.length === env.ADMIN_CODE.length && code === env.ADMIN_CODE) return { ...OWNER };
 
-  const id = await cookieUserId(request, env);
-  if (!id) return null;
-  if (id === 'owner') return OWNER;
+  const sid = await cookieSessionId(request, env);
+  if (!sid) return null;
   await ensureAdminSchema(env.DB);
-  const u = await env.DB.prepare(`SELECT id, name, email, role, can_export_fan_data, active, totp_enabled FROM admin_users WHERE id = ?`).bind(id).first();
+  const s = await liveSession(env.DB, sid);
+  if (!s) return null;
+  if (isActivity(request)) await touchSession(env.DB, s);
+  if (s.user_id === 'owner') return { ...OWNER, sessionId: sid };
+
+  const u = await env.DB.prepare(`SELECT id, name, email, role, can_export_fan_data, active, totp_enabled, must_change_password, twostep_grace_until, created_at FROM admin_users WHERE id = ?`).bind(s.user_id).first();
   if (!u || !u.active) return null;
-  return { id: u.id, name: u.name, email: u.email, role: u.role, canExport: !!u.can_export_fan_data, twoStep: !!u.totp_enabled };
+  const settings = await securitySettings(env.DB);
+  if (allowlistApplies(settings, roleOf(u)) && !ipAllowed(clientIp(request), settings.ip_allowlist)) return null;
+  const admin = { id: u.id, name: u.name, email: u.email, role: u.role, canExport: !!u.can_export_fan_data, twoStep: !!u.totp_enabled, sessionId: sid };
+  if (u.must_change_password) admin.restrict = 'password';
+  else if (settings.require_two_step === '1' && !u.totp_enabled) {
+    const due = twoStepDeadline(u, settings);
+    if (Date.now() > due) admin.restrict = 'twostep';
+    else admin.twoStepDue = new Date(due).toISOString();
+  }
+  return admin;
+}
+
+/** When someone without two-step login must have it set up (7 days after it became required, or after their account was made). */
+export function twoStepDeadline(u, settings) {
+  if (u.twostep_grace_until) return u.twostep_grace_until;
+  const since = Number(settings.two_step_since) || Date.now();
+  const made = Date.parse(String(u.created_at || '').replace(' ', 'T') + (String(u.created_at || '').includes('Z') ? '' : 'Z')) || 0;
+  return Math.max(since, made) + GRACE_DAYS * 86400e3;
 }
 
 /** Used by the /admin page middleware. */

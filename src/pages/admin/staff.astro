@@ -22,7 +22,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <div class="form-grp"><label class="form-lbl" for="n-email">Email</label><input class="form-inp" id="n-email" type="email" required /></div>
       </div>
       <div class="form-grp"><label class="form-lbl" for="n-role">Role</label><select class="form-sel" id="n-role" required><option value="">Choose a role…</option></select></div>
-      <div class="form-grp"><label class="form-lbl" for="n-pass">Temporary password (10+ characters)</label><input class="form-inp" id="n-pass" type="text" minlength="10" required autocomplete="off" /></div>
+      <div class="form-grp"><label class="form-lbl" for="n-pass">Temporary password (12+ characters)</label><input class="form-inp" id="n-pass" type="text" minlength="12" required autocomplete="off" /></div>
+      <label class="st-check"><input type="checkbox" id="n-must" checked /> They must choose their own password the first time they sign in</label>
       <label class="st-check"><input type="checkbox" id="n-export" /> Can export fan data (download the fan database)</label>
       <button type="submit" class="btn-p">Add staff account</button>
     </form>
@@ -81,11 +82,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       const { staff, roles } = await api('/api/admin/staff');
       if ($('n-role').options.length < 2) $('n-role').insertAdjacentHTML('beforeend', roles.filter(r => !r.legacy).map(r => `<option value="${esc(r.id)}">${esc(r.label)}</option>`).join(''));
       const roleSel = s => `<select data-role aria-label="Role for ${esc(s.name)}">${roles.map(r => `<option value="${esc(r.id)}"${r.id === s.role ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select>`;
-      $('list').innerHTML = staff.length ? '<div class="scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Can export</th><th>Two-step login</th><th>Last login</th><th></th></tr></thead><tbody>' +
+      $('list').innerHTML = staff.length ? '<div class="scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Can export</th><th>Two-step login</th><th>Last login</th><th>Signed in now</th><th></th></tr></thead><tbody>' +
         staff.map(s => `<tr class="${s.active ? '' : 'inactive'}" data-id="${esc(s.id)}"><td>${esc(s.name)}${s.active ? '' : ' (deactivated)'}</td><td>${esc(s.email)}</td>` +
-          `<td>${roleSel(s)}</td><td>${s.can_export_fan_data ? 'Yes' : 'No'}</td><td>${s.totp_enabled ? '🔐 On' : 'Off'}</td><td>${s.last_login_at ? esc(s.last_login_at) + ' UTC' : 'Never'}</td><td>` +
+          `<td>${roleSel(s)}</td><td>${s.can_export_fan_data ? 'Yes' : 'No'}</td><td>${s.totp_enabled ? '🔐 On' : 'Off'}</td><td>${s.last_login_at ? esc(s.last_login_at) + ' UTC' : 'Never'}${s.must_change_password ? '<br><small>Must choose a new password</small>' : ''}${s.locked_until ? '<br><strong>🔒 Locked</strong>' : ''}</td><td>${s.signed_in ? `${s.signed_in} device${s.signed_in === 1 ? '' : 's'}` : '—'}</td><td>` +
           `<button data-act="export">${s.can_export_fan_data ? 'Remove export' : 'Allow export'}</button>` +
-          `<button data-act="active">${s.active ? 'Deactivate' : 'Reactivate'}</button><button data-act="password">Reset password</button>${s.totp_enabled ? '<button data-act="twostep">Reset two-step</button>' : ''}</td></tr>`).join('') +
+          `<button data-act="active">${s.active ? 'Deactivate' : 'Reactivate'}</button><button data-act="password">Reset password</button>${s.totp_enabled ? '<button data-act="twostep">Reset two-step</button>' : ''}${s.locked_until ? '<button data-act="unlock">Unlock</button>' : ''}${s.signed_in ? '<button data-act="signout">Sign out everywhere</button>' : ''}</td></tr>`).join('') +
         '</tbody></table></div>' : '<div class="empty-state"><b>🧑‍💼</b><p>No staff accounts yet. Add the first one above.</p></div>';
       $('list')._staff = staff;
     } catch (e) { $('list').innerHTML = `<p class="muted">${esc(e.message)}</p>`; }
@@ -95,9 +96,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const id = b.closest('tr').dataset.id; const s = $('list')._staff.find(x => x.id === id);
     const body = {};
     if (b.dataset.act === 'export') body.canExport = !s.can_export_fan_data;
-    if (b.dataset.act === 'active') { if (s.active && !confirm(`Deactivate ${s.name}? They will be signed out.`)) return; body.active = !s.active; }
+    if (b.dataset.act === 'active') { if (s.active && !confirm(`Deactivate ${s.name}? They will be signed out on every device straight away.`)) return; body.active = !s.active; }
+    if (b.dataset.act === 'unlock') body.unlock = true;
+    if (b.dataset.act === 'signout') { if (!confirm(`Sign ${s.name} out on every device?`)) return; body.signOut = true; }
     if (b.dataset.act === 'twostep') { if (!confirm(`Switch off two-step login for ${s.name}? Use this if they lost their phone; they should set it up again in My account.`)) return; body.resetTwoStep = true; }
-    if (b.dataset.act === 'password') { const p = prompt(`New password for ${s.name} (10+ characters):`); if (!p) return; body.password = p; }
+    if (b.dataset.act === 'password') { const p = prompt(`New temporary password for ${s.name} (12+ characters). They will be signed out and must choose their own password when they next sign in:`); if (!p) return; body.password = p; body.mustChange = true; }
     try { await api(`/api/admin/staff/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(body) }); show('Saved.', true); load(); }
     catch (err) { show(err.message, false); }
   });
@@ -109,7 +112,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   $('newForm').addEventListener('submit', async e => {
     e.preventDefault();
     try {
-      await api('/api/admin/staff', { method: 'POST', body: JSON.stringify({ name: $('n-name').value, email: $('n-email').value, password: $('n-pass').value, role: $('n-role').value, canExport: $('n-export').checked }) });
+      await api('/api/admin/staff', { method: 'POST', body: JSON.stringify({ name: $('n-name').value, email: $('n-email').value, password: $('n-pass').value, role: $('n-role').value, canExport: $('n-export').checked, mustChange: $('n-must').checked }) });
       show('Staff account created. Share the email and temporary password with them privately.', true);
       e.target.reset(); load();
     } catch (err) { show(err.message, false); }

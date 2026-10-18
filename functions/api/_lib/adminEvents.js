@@ -12,7 +12,9 @@ export async function requireAdmin(request, env) {
   return r.denied || null;
 }
 
-export async function requireAdminUser(request, env, { needExport = false, ownerOnly = false } = {}) {
+// allowRestricted: let in people who must first choose a new password or set up
+// two-step login (only My account needs this).
+export async function requireAdminUser(request, env, { needExport = false, ownerOnly = false, allowRestricted = false } = {}) {
   if (!env.ADMIN_CODE) {
     return { denied: Response.json(
       { error: 'Admin access is not configured. Set ADMIN_CODE in the server environment.' },
@@ -21,6 +23,7 @@ export async function requireAdminUser(request, env, { needExport = false, owner
   }
   const admin = await getAdmin(request, env);
   if (!admin) return { denied: Response.json({ error: 'Invalid admin code' }, { status: 401 }) };
+  if (admin.restrict && !allowRestricted) return { denied: Response.json({ error: admin.restrict === 'password' ? 'Please choose a new password first (My account).' : 'Please set up two-step login first (My account).', restrict: admin.restrict }, { status: 403 }) };
   await loadRoles(env.DB);
   // "Can export": the role's fans.export permission or the switch on the staff account.
   admin.canExport = can(admin, 'fans.export');

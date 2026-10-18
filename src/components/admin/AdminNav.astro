@@ -96,6 +96,7 @@ const CATEGORIES: Cat[] = [
     { id: 'cms-promo', label: 'Promo Bar', href: `${CMS}/settings/entries/promo`, perm: 'content.cms', ext: true },
     { id: 'commentary-settings', label: 'Commentary & Stream Settings', href: '/admin/commentary/', perm: 'matchday.commentary' },
     { id: 'staff', label: 'Staff Users & Roles', href: '/admin/staff/', perm: 'staff.manage' },
+    { id: 'security', label: 'Login & Security', href: '/admin/security/', perm: 'staff.manage', hint: 'Require two-step login, IP allowlist, security alerts, who is signed in' },
     { id: 'account', label: 'My Account (password, two-step login)', href: '/admin/account/', perm: '' },
     { id: 'inbox-settings', label: 'Inbox Emails & Templates', href: '/admin/inbox/?settings=1', perm: 'inbox.settings', hint: 'New-message alerts, daily summary, saved replies' },
     { id: 'export-log', label: 'Export Log', href: '/admin/fans/#exportLog', perm: 'fans.export|settings.activity' },
@@ -294,6 +295,7 @@ const showBack = here !== '/admin/dashboard/';
   a.ash-user:hover, a.ash-user:focus-visible { background: var(--a-hover); }
   .ash-out { border: 1px solid var(--d4); background: #fff; border-radius: 8px; padding: 7px 12px; cursor: pointer; font: 600 13px 'Barlow', sans-serif; white-space: nowrap; }
   .ash-denied { margin: 0 0 18px; padding: 12px 16px; border-radius: 10px; background: #FFF4E5; color: #7A4B00; }
+  a.ash-due { display: block; font-weight: 700; text-decoration: none; }
 
   @media (max-width: 1023px) {
     body.admin-body, body.admin-body.ash-collapsed { --side: 0px; }
@@ -362,6 +364,14 @@ const showBack = here !== '/admin/dashboard/';
     });
     document.dispatchEvent(new CustomEvent('ls:admin', { detail: d.admin }));
     if (perms.has('commerce.food')) startFood();
+    idleMinutes = d.admin.idleMinutes || 30;
+    // Two-step login is required and this person hasn't set it up yet: remind them on every page.
+    if (d.admin.twoStepDue && !location.pathname.startsWith('/admin/account')) {
+      const n = document.createElement('a');
+      n.className = 'ash-denied ash-due'; n.href = '/admin/account/'; n.setAttribute('role', 'alert');
+      n.textContent = `🔐 The club requires two-step login. Please turn it on by ${new Date(d.admin.twoStepDue).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} (My account, 2 minutes) →`;
+      document.querySelector('.ash')?.parentElement?.insertBefore(n, document.querySelector('.ash')!.nextSibling);
+    }
   }).catch(() => {});
   if (new URLSearchParams(location.search).has('denied')) {
     const note = document.createElement('p');
@@ -562,6 +572,26 @@ const showBack = here !== '/admin/dashboard/';
     }).observe(main, { childList: true, subtree: true });
     scan();
   }
+
+  // Signed out after 30 minutes without activity. While someone is using the
+  // page (mouse, keys, touch, scrolling) a "still here" signal is sent every
+  // 4 minutes; automatic refreshes in the background don't keep a session open.
+  let idleMinutes = 30, lastAct = Date.now(), lastPing = Date.now();
+  const mark = () => { lastAct = Date.now(); };
+  for (const ev of ['pointerdown', 'keydown', 'touchstart', 'wheel', 'scroll']) window.addEventListener(ev, mark, { passive: true, capture: true });
+  const backToLogin = (why: string) => { sessionStorage.removeItem('ls_admin_code'); location.href = `/admin/login/?${why}=1&next=${encodeURIComponent(location.pathname + location.search)}`; };
+  // Matchday screens left open on a tablet (Live Order Board) carry on: they mark themselves data-admin-kiosk.
+  const kiosk = !!document.querySelector('[data-admin-kiosk]');
+  window.setInterval(async () => {
+    const now = Date.now();
+    if (kiosk) lastAct = now;
+    if (now - lastAct > idleMinutes * 60000) { await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {}); return backToLogin('idle'); }
+    if (lastAct > lastPing && now - lastPing > 4 * 60000) {
+      lastPing = now;
+      const r = await fetch('/api/admin/me', { method: 'POST', headers: H }).catch(() => null);
+      if (r && r.status === 401) backToLogin('ended');
+    }
+  }, 30000);
 
   $('anOut').addEventListener('click', async () => {
     sessionStorage.removeItem('ls_admin_code');
