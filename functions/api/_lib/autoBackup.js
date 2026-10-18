@@ -7,6 +7,8 @@
 // backup runs in small steps (a few tables each minute, called by the timer
 // Worker) from 02:00 Nigeria time, and finishes with a manifest:
 //   db/YYYY-MM-DD/<table>.<n>.bin   encrypted, gzipped JSON { table, columns, rows }
+//   db/YYYY-MM-DD/_schema.0.bin     encrypted: how every table, index and trigger is built, so a
+//                                   brand-new database can be rebuilt (DISASTER-RECOVERY.md)
 //   db/YYYY-MM-DD/manifest.json     (plain) tables, row counts, finished time
 //   media/<key>                     copies of the programme files
 import { securitySettings, saveSecuritySetting } from './adminSecurity.js';
@@ -102,7 +104,16 @@ export async function backupStep(env, { force = false } = {}) {
       n++;
     }
     if (!prog.current && !prog.todo.length) {
-      const tables = [...new Set(prog.parts.map(x => x.table))];
+      // The database structure (every table, also those whose rows are left out, plus indexes and triggers).
+      if (!prog.parts.some(x => x.table === '_schema')) {
+        const { results } = await db.prepare(`SELECT type, name, sql FROM sqlite_master WHERE sql IS NOT NULL AND type IN ('table', 'index', 'trigger') AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_cf_%' AND name <> 'd1_migrations' ORDER BY CASE type WHEN 'table' THEN 0 WHEN 'index' THEN 1 ELSE 2 END, name`).all();
+        const body = await encryptPart(env, { table: '_schema', columns: ['type', 'name', 'sql'], offset: 0, rows: results.map(r => [r.type, r.name, r.sql]) });
+        const keyName = `db/${prog.day}/_schema.0.bin`;
+        await env.BACKUP_BUCKET.put(keyName, body);
+        prog.parts.push({ key: keyName, table: '_schema', rows: results.length });
+        prog.bytes += body.length;
+      }
+      const tables = [...new Set(prog.parts.map(x => x.table).filter(t => t !== '_schema'))];
       await env.BACKUP_BUCKET.put(`db/${prog.day}/manifest.json`, JSON.stringify({ day: prog.day, started: prog.started, finished: new Date().toISOString(), tables: tables.length, rows: prog.rows, bytes: prog.bytes, parts: prog.parts }), { httpMetadata: { contentType: 'application/json' } });
       prog.done = true;
       await save(db, 'auto_backup_day', prog.day);

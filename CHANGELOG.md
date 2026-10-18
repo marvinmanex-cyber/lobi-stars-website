@@ -8,6 +8,30 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Disaster recovery: encrypted copies outside Cloudflare
+
+**What changed**
+- Settings › Data Backup › Automatic backups: **Download encrypted copy** for
+  each day: the whole backup, still locked with the backup key, as one file to
+  keep in Google Drive or on a USB stick. The page shows when the last copy was
+  kept and turns red after a month.
+- Each nightly backup now also holds the database structure, so a brand-new,
+  empty database can be rebuilt from it.
+- New tool scripts/decrypt-backup.mjs unlocks an encrypted copy with the key;
+  scripts/restore-backup.mjs now rebuilds the tables, loads them in the right
+  order, fills the "no password set" marker where passwords were left out, and
+  adds the indexes and the Activity Log protection after the rows.
+- New DISASTER-RECOVERY.md: the monthly habit for the club and step-by-step
+  recovery for every situation, up to losing the Cloudflare account. Tested:
+  an empty database was rebuilt and every table matched.
+
+**Staff need to:** a Super Admin downloads the encrypted copy once a month
+(handover A22).
+
+**Handbook:** STAFF-GUIDE.md › Data backup; DISASTER-RECOVERY.md.
+
+---
+
 ## 2026-10-18: Clear the Recent security events list
 
 **What changed**

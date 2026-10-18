@@ -2,7 +2,7 @@ import { freshCodeCheck, exportName } from '../_lib/exportGuard.js';
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { logAdminAction } from '../_lib/adminSession.js';
 import { backupReady, backupStep, listBackups, decryptPart, KEEP_DAYS } from '../_lib/autoBackup.js';
-import { securitySettings } from '../_lib/adminSecurity.js';
+import { securitySettings, saveSecuritySetting } from '../_lib/adminSecurity.js';
 
 // Admin › Settings › Data Backup (Super Admin only). The page downloads the
 // tables piece by piece and builds the Excel / JSON file in the browser, so
@@ -14,6 +14,9 @@ import { securitySettings } from '../_lib/adminSecurity.js';
 // GET  /api/admin/backup?auto=status              -- automatic backups: set up?, the last one, failures, the list kept
 // GET  /api/admin/backup?autoday=YYYY-MM-DD       -- the pieces of one automatic backup
 // GET  /api/admin/backup?autopart=<key>           -- one piece, decrypted (for restoring; fresh two-step code)
+// GET  /api/admin/backup?autoraw=YYYY-MM-DD        -- the whole backup still ENCRYPTED, as one file to keep outside
+//                                                    Cloudflare (fresh two-step code); unlock it with the key and
+//                                                    scripts/decrypt-backup.mjs (see DISASTER-RECOVERY.md)
 // POST /api/admin/backup { action: 'backup_now' }  -- start an automatic backup now (it finishes over the next minutes)
 // Passwords, sign-in tokens, two-step login secrets, push keys, private links
 // and stored pictures are never included.
@@ -47,7 +50,7 @@ export async function onRequestGet({ request, env }) {
     const s = await securitySettings(db, { force: true });
     const parse = v => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
     const prog = parse(s.auto_backup_progress);
-    return Response.json({ ready: backupReady(env), keepDays: KEEP_DAYS, last: parse(s.auto_backup_last), error: parse(s.auto_backup_error),
+    return Response.json({ ready: backupReady(env), keepDays: KEEP_DAYS, last: parse(s.auto_backup_last), error: parse(s.auto_backup_error), offsiteAt: s.offsite_copy_at || null,
       running: prog && !prog.done ? { day: prog.day, left: prog.todo.length + (prog.current ? 1 : 0), rows: prog.rows } : null,
       backups: await listBackups(env) }, { headers: noStore });
   }
@@ -58,6 +61,28 @@ export async function onRequestGet({ request, env }) {
     if (!m) return Response.json({ error: 'That backup is not complete.' }, { status: 404 });
     const man = await m.json();
     return Response.json({ day, parts: man.parts.map(p => ({ key: p.key, table: p.table, rows: p.rows })), rows: man.rows, tables: man.tables }, { headers: noStore });
+  }
+  if (u.searchParams.get('autoraw')) {
+    const day = u.searchParams.get('autoraw');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !backupReady(env)) return Response.json({ error: 'Not found' }, { status: 404 });
+    const needCode = await freshCodeCheck(request, env, admin);
+    if (needCode) return needCode;
+    const m = await env.BACKUP_BUCKET.get(`db/${day}/manifest.json`);
+    if (!m) return Response.json({ error: 'That backup is not complete.' }, { status: 404 });
+    const man = await m.json();
+    const parts = [];
+    for (const p of man.parts) {
+      const obj = await env.BACKUP_BUCKET.get(p.key);
+      if (!obj) return Response.json({ error: `A piece of this backup is missing (${p.table}).` }, { status: 500 });
+      const bytes = new Uint8Array(await obj.arrayBuffer());
+      let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      parts.push({ key: p.key, table: p.table, rows: p.rows, data: btoa(bin) });
+    }
+    await saveSecuritySetting(env.DB, 'offsite_copy_at', new Date().toISOString(), admin.name);
+    await logAdminAction(env.DB, admin, 'backup_download', `automatic backup ${day} downloaded ENCRYPTED to keep outside Cloudflare: ${man.rows} rows`);
+    const body = JSON.stringify({ format: 'lobi-stars-encrypted-backup', version: 1, site: 'lobistarsfc.com', day, finished: man.finished, tables: man.tables, rows: man.rows,
+      howToUnlock: 'node scripts/decrypt-backup.mjs <this file> <file containing the backup key> > restore.json (see DISASTER-RECOVERY.md)', parts });
+    return new Response(body, { headers: { ...noStore, 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="lobi-stars-encrypted-backup-${day}.json"` } });
   }
   if (u.searchParams.get('autopart')) {
     const k = u.searchParams.get('autopart');

@@ -95,6 +95,51 @@ test('automatic backups: encrypted, in steps, listed, and readable for restoring
   assert.ok((await api('/api/admin/activity?q=backup')).data.log.some(l => l.action === 'backup_auto'));
 });
 
+test('an encrypted copy to keep outside Cloudflare, unlocked with the key and turned into restore SQL', async () => {
+  const { encryptPart } = await import('../functions/api/_lib/autoBackup.js');
+  const { writeFileSync, mkdtempSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  // The real download: the whole backup, still encrypted, one file.
+  const s = (await api('/api/admin/backup?auto=status')).data;
+  const r = await fetch(`${BASE}/api/admin/backup?autoraw=${s.last.day}`, { headers: ADMIN });
+  assert.equal(r.status, 200); assert.match(r.headers.get('content-disposition'), /lobi-stars-encrypted-backup-\d{4}-\d{2}-\d{2}\.json/);
+  const file = await r.json();
+  assert.equal(file.format, 'lobi-stars-encrypted-backup'); assert.ok(file.parts.length > 20 && file.parts.every(p => p.data && !/"rows"/.test(Buffer.from(p.data, 'base64').toString('latin1'))), 'still encrypted');
+  assert.ok((await api('/api/admin/backup?auto=status')).data.offsiteAt, 'the last off-site copy is shown');
+  assert.ok(file.parts.some(p => p.table === '_schema'), 'the database structure is in the backup, to rebuild an empty database');
+  // The unlock tool, with a key of our own (the server's key never leaves Cloudflare).
+  const key = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64');
+  const env = { BACKUP_KEY: key };
+  const enc = async obj => Buffer.from(await encryptPart(env, obj)).toString('base64');
+  const fake = { ...file, parts: [
+    { key: 'db/x/fans.0.bin', table: 'fan_test', rows: 2, data: await enc({ table: 'fan_test', columns: ['id', 'name'], offset: 0, rows: [[1, "Ada O'Neil"], [2, 'Emeka']] }) },
+    { key: 'db/x/admin_log.0.bin', table: 'admin_log', rows: 1, data: await enc({ table: 'admin_log', columns: ['id', 'action'], offset: 0, rows: [[9, 'login']] }) }] };
+  const dir = mkdtempSync(join(tmpdir(), 'lobi-dr-'));
+  writeFileSync(join(dir, 'enc.json'), JSON.stringify(fake));
+  writeFileSync(join(dir, 'key.txt'), `Lobi Stars FC website: backup encryption key (BACKUP_KEY)
+
+
+
+${key}
+
+
+
+Keep it safe.`);
+  const restore = execSync(`node scripts/decrypt-backup.mjs "${join(dir, 'enc.json')}" "${join(dir, 'key.txt')}"`, { stdio: ['ignore', 'pipe', 'pipe'] }).toString();
+  const out = JSON.parse(restore);
+  assert.deepEqual(out.tables.fan_test, [{ id: 1, name: "Ada O'Neil" }, { id: 2, name: 'Emeka' }]);
+  writeFileSync(join(dir, 'restore.json'), restore);
+  const sql = execSync(`node scripts/restore-backup.mjs "${join(dir, 'restore.json')}"`, { stdio: ['ignore', 'pipe', 'pipe'] }).toString();
+  assert.match(sql, /INSERT OR REPLACE INTO "fan_test" \("id", "name"\) VALUES \(1, 'Ada O''Neil'\);/);
+  assert.match(sql, /INSERT OR IGNORE INTO "admin_log"/, 'the log is only added to');
+  // A wrong key is refused, and the key is never printed.
+  writeFileSync(join(dir, 'wrong.txt'), Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64'));
+  let err = '';
+  try { execSync(`node scripts/decrypt-backup.mjs "${join(dir, 'enc.json')}" "${join(dir, 'wrong.txt')}"`, { stdio: 'pipe' }); } catch (e) { err = String(e.stderr); }
+  assert.match(err, /wrong key/); assert.ok(!restore.includes(key) && !err.includes(key));
+});
+
 test('Contractor: an end date (at most 14 days), no fans\' data, every sign-in reported, nothing after the end date', async () => {
   const email = `contractor-${uid()}@example.com`;
   assert.equal((await api('/api/admin/staff', 'POST', { name: 'Dev Contractor', email, role: 'contractor', password: PW })).status, 400, 'needs an end date');
