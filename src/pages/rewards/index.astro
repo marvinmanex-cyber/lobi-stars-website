@@ -8,8 +8,11 @@
 // Until Rewards is live it is unlisted and kept out of search engines
 // (preview with ?preview=1). Points have no cash value.
 import Layout from '../../layouts/Layout.astro';
+import { roleEmail } from '../../lib/roleEmails';
 import site from '../../data/site.json';
-const { email, whatsapp } = site.contact;
+const { whatsapp } = site.contact;
+// Fans, membership and Rewards address (falls back to info@ until its mailbox is ready).
+const email = roleEmail('fans');
 // FAQ for search engines (FAQPage). Answers here avoid numbers, which can change in the admin.
 const FAQ_LD = [
   ['Do I have to pay to join Lobi Stars Rewards?', 'No. Joining is free for anyone with a Lobi Stars FC fan account, and so is collecting Star Points.'],

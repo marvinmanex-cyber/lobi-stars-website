@@ -17,7 +17,7 @@ const api = (path, method = 'GET', body, headers = ADMIN) => fetch(BASE + path, 
 const made = [], staff = [];
 after(async () => {
   for (const id of made) await fetch(`${BASE}/api/admin/programmes/${id}`, { method: 'PATCH', headers: ADMIN, body: JSON.stringify({ status: 'hidden' }) });
-  for (const id of staff) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false }) });
+  for (const id of staff) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false, reason: 'test finished' }) });
 });
 
 const PDF = () => new Blob([new TextEncoder().encode('%PDF-1.7\n% test programme\n')], { type: 'application/pdf' });
@@ -215,7 +215,7 @@ test('live programme: countdown, reading needs sign-in, pages, download, links, 
   assert.match(out.headers.getSetCookie().join(';'), /ls_session=;/);
 });
 
-test('roles: Matchday and Media staff manage programmes; others cannot; delete request reaches the Inbox', async () => {
+test('roles: the Content Editor (old name: media) manages programmes; others cannot; delete request reaches the Inbox', async () => {
   const login = async role => {
     const email = `pg-${role}-${uid()}@example.com`;
     const r = await api('/api/admin/staff', 'POST', { name: `PG ${role}`, email, password: 'Role-Test-2026!', role });
@@ -223,8 +223,8 @@ test('roles: Matchday and Media staff manage programmes; others cannot; delete r
     const l = await fetch(`${BASE}/api/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': randIp() }, body: JSON.stringify({ email, password: 'Role-Test-2026!' }) });
     return { Cookie: l.headers.get('set-cookie').split(';')[0], 'Content-Type': 'application/json' };
   };
-  for (const role of ['matchday', 'media']) assert.equal((await api('/api/admin/programmes', 'GET', null, await login(role))).status, 200, role);
-  for (const role of ['fan_support', 'commercial', 'kitchen']) assert.equal((await api('/api/admin/programmes', 'GET', null, await login(role))).status, 403, role);
+  for (const role of ['media', 'content_editor']) assert.equal((await api('/api/admin/programmes', 'GET', null, await login(role))).status, 200, role);
+  for (const role of ['matchday', 'fan_support', 'commercial', 'kitchen']) assert.equal((await api('/api/admin/programmes', 'GET', null, await login(role))).status, 403, role);
   const tag = uid();
   const email = `delete-${tag}@example.com`;
   assert.equal((await api('/api/fan/delete-request', 'POST', { email }, { 'Content-Type': 'application/json', Origin: BASE, 'CF-Connecting-IP': randIp() })).status, 200);

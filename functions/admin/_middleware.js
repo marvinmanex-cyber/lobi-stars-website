@@ -1,5 +1,5 @@
 import { getAdmin } from '../api/_lib/adminSession.js';
-import { allowedPath, loadRoles, roleLabel } from '../api/_lib/adminRoles.js';
+import { allowedPath, loadRoles, roleLabel, cmsConfigFor } from '../api/_lib/adminRoles.js';
 import { withSecurityHeaders } from '../api/_lib/securityHeaders.js';
 import { ADMIN_PAGE_HEADERS } from '../api/_lib/adminSecurity.js';
 
@@ -9,7 +9,8 @@ import { ADMIN_PAGE_HEADERS } from '../api/_lib/adminSecurity.js';
 // friendly "You don't have access" page).
 export async function onRequest({ request, env, next }) {
   const url = new URL(request.url);
-  const isLoginPage = /^\/admin\/login\/?$/.test(url.pathname);
+  // The login page and the invite / password-reset page (the emailed link is the key) open without signing in.
+  const isLoginPage = /^\/admin\/(login|invite)\/?$/.test(url.pathname);
   const admin = isLoginPage ? null : await getAdmin(request, env);
 
   if (!isLoginPage && !admin) {
@@ -32,6 +33,11 @@ export async function onRequest({ request, env, next }) {
   }
 
   const res = await next();
+  // The content CMS reads its list of sections from config.yml: each person gets only the sections they may edit.
+  if (admin && /^\/admin\/config\.yml$/.test(url.pathname) && res.ok) {
+    const h = new Headers({ 'Content-Type': 'text/yaml; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' });
+    return new Response(cmsConfigFor(admin, await res.text()), { status: 200, headers: adminHeaders(h) });
+  }
   const out = new Response(res.body, res);
   out.headers.set('X-Robots-Tag', 'noindex, nofollow');
   out.headers.set('Cache-Control', 'no-store');

@@ -17,7 +17,7 @@ const get = (path, headers = ADMIN) => fetch(BASE + path, { headers }).then(asyn
 const pub = (path, body) => fetch(BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': randIp() }, body: JSON.stringify(body) }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
 const nl = body => post('/api/admin/newsletter', body);
 const made = [];
-after(async () => { for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false }) }); });
+after(async () => { for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false, reason: 'test finished' }) }); });
 async function staff(role) {
   const email = `nl-${role}-${uid()}@example.com`;
   const r = await post('/api/admin/staff', { name: `NL ${role}`, email, password: 'Role-Test-2026!', role });

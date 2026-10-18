@@ -262,7 +262,7 @@ export async function inboxStaff(db) {
   await ensureAdminSchema(db);
   await loadRoles(db);
   const { results } = await db.prepare(`SELECT id, name, email, role FROM admin_users WHERE active = 1 ORDER BY name`).all();
-  return [{ id: 'owner', name: 'Owner (admin code)', email: '', role: 'super_admin' }, ...results.filter(u => can(u, 'inbox.contact|inbox.partners|inbox.media'))];
+  return [{ id: 'owner', name: 'Owner (admin code)', email: '', role: 'super_admin' }, ...results.filter(u => can(u, 'fans.inbox.read'))];
 }
 
 /** Who gets the alert for a new message: staff whose role answers that kind of message
@@ -271,7 +271,7 @@ async function alertRecipients(db, source, settings) {
   await ensureAdminSchema(db);
   await loadRoles(db);
   const { results: all } = await db.prepare(`SELECT email, role FROM admin_users WHERE active = 1 AND role != 'super_admin'`).all();
-  const results = all.filter(u => can(u, inboxPermFor(source)));
+  const results = all.filter(u => can(u, 'fans.inbox.read') && can(u, inboxPermFor(source)));
   return [...new Set([...results.map(r => normEmail(r.email)).filter(Boolean), ...settings.extraEmails])];
 }
 

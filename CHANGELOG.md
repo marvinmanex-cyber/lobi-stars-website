@@ -8,6 +8,78 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Staff access and security: staff account management, roles matched to the plan, login security gaps closed
+
+**Roles now follow the club's staff access plan exactly.** The permission
+names and what each role includes were rebuilt from the plan (for example
+`fans.inbox.reply`, `rewards.points.adjust`, `commerce.gate_scan`). Main
+differences from the version of earlier today:
+- Fan Support can edit fan accounts, manage memberships and mark Predict &
+  Win prizes paid (still no downloads).
+- Tickets, food and the kitchen belong to the Matchday Operations Manager
+  (not Commercial).
+- Media Editor is the social media and video role; Media Contributor uploads
+  only.
+- Commentary belongs to the Broadcast Operator; fan match alerts to the Media
+  Editor and Matchday Admin.
+- Only the Super Admin and CRM Manager can download fan data (the old
+  per-person "Can export fan data" switch no longer grants downloads).
+- Three extra permissions: general fan messages, the media@ mailbox, and
+  "Newsletter: send" (Content Editors write the newsletter; the CRM Manager and
+  Super Admins send it).
+- Live Match Control and Match Tickets & Settings save only the parts your
+  role may change (score and status, squad, stats, stream links, preview,
+  prices, commentary); other parts are kept as they were.
+- The content CMS shows each person only the sections their role can edit.
+
+**Staff account management (new)**
+- **Invites:** Super Admins invite staff by email; the person chooses their
+  own password and sets up two-step login with a one-time link (48 hours). No
+  admin ever chooses or sends a password. Status shows Active, Pending invite
+  or Disabled.
+- **Forgot password** on the login page (a reset link, 2 hours) and **Send
+  password reset** on the Staff page.
+- **Leaver process:** **Disable (leaver)** needs a reason; the account stops at
+  once and is signed out everywhere; who and why are recorded; accounts are
+  never deleted. **Re-enable** sends a new password link.
+- **Role emails:** each person can have a role email (e.g. media@), and the
+  club's role email directory (media@, news@, social@, design@, web@,
+  broadcast@, fans@, info@, partnerships@, tickets@) is edited in the CMS.
+  The contact page, partners page, Rewards page and season tickets show the
+  right one, but only once its mailbox is marked ready; until then they show
+  info@.
+- **Monthly access review:** on the 1st of each month the Super Admins and club
+  management get an email listing every account (unused for 30+ days
+  highlighted) with a link to **Keep** or **Disable** each one.
+- **Emergency (break-glass) account:** the owner admin code; every use emails
+  the Super Admins and club management straight away and is marked 🚨 in the
+  Activity Log.
+- Role changes are emailed to the Super Admins and recorded.
+
+**Login security gaps closed**
+- A 2-minute warning before the 30-minute idle sign-out ("Stay signed in").
+- **Email me a code:** a 6-digit code by email as a fallback for two-step
+  login (10 minutes, works once).
+- Generic error messages: "Email or password is incorrect." and a lockout
+  message that doesn't say whether the address has an account.
+- Sign-ins from a new device are emailed to the Super Admins as well as the
+  person; lockouts and two-step resets are emailed to the Super Admins.
+- IP allowlist option for "Super Admins and CRM Managers".
+
+**Who it affects:** all staff. New staff are invited by email from now on.
+
+**Staff need to:** nothing straight away. Club to-dos: create the role
+mailboxes or forwarders and tick "Mailbox ready" for each (handover A17);
+decide who keeps the emergency admin code sealed (A18); add club management
+emails in Login & Security.
+
+**Handbook:** STAFF-GUIDE.md › Before you start (your first time, forgot
+password, security rules for all staff); Staff roles and what each can do;
+Adding and removing staff; section 25 (what to do if you lose your phone,
+emergency account, Login & Security).
+
+---
+
 ## 2026-10-18: Staff access and security, Phase 2: login security
 
 **What changed**

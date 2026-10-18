@@ -1,4 +1,5 @@
-import { requireAdmin } from '../../_lib/adminEvents.js';
+import { requireAdmin, requireAdminUser } from '../../_lib/adminEvents.js';
+import { can } from '../../_lib/adminRoles.js';
 import { parseStreams } from '../../_lib/streams.js';
 import { settlePredictions } from '../../_lib/predict.js';
 import { notifyFans } from '../../_lib/notify.js';
@@ -34,7 +35,7 @@ export async function onRequestGet({ request, env, params }) {
 // PUT /api/admin/match-centre/:id -- save status, score, preview, line-ups,
 // timeline, report, stats, gallery and the matchday squad.
 export async function onRequestPut({ request, env, params, waitUntil }) {
-  const denied = await requireAdmin(request, env);
+  const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
   const m = await loadMatch(env.DB, params.id);
   if (!m) return Response.json({ error: 'Match not found' }, { status: 404 });
@@ -45,9 +46,27 @@ export async function onRequestPut({ request, env, params, waitUntil }) {
   const streams = parseStreams(body);
   if (streams.error) return Response.json({ error: streams.error }, { status: 400 });
   // Stream links only apply to home games.
-  const s = isHomeGame(m.event) ? streams.value : { youtube_url: null, facebook_url: null };
+  let s = isHomeGame(m.event) ? streams.value : { youtube_url: null, facebook_url: null };
   const players = await roster(request, env);
-  const squad = parseSquad(body.squad, players);
+  let squad = parseSquad(body.squad, players);
+
+  // Each part of the form needs its own permission. Parts this person can't
+  // change are kept exactly as they were (so saving never wipes them).
+  const old = m.centre || {};
+  const control = can(admin, 'matchday.live_control');
+  if (!control) {
+    v.status = old.status || 'scheduled'; v.home_score = old.home_score ?? null; v.away_score = old.away_score ?? null;
+    v.timeline_json = old.timeline_json ?? v.timeline_json;
+  }
+  if (!control && !can(admin, 'matchday.squad.edit')) {
+    v.lineups_json = old.lineups_json ?? v.lineups_json;
+    try { squad = old.squad_json ? JSON.parse(old.squad_json) : squad; } catch { /* keep the parsed one */ }
+  }
+  if (!control && !can(admin, 'matchday.stats.edit')) { v.stats_json = old.stats_json ?? v.stats_json; delete body.playerStats; }
+  if (!control && !can(admin, 'broadcast.watch_live.edit')) s = { youtube_url: old.youtube_url ?? null, facebook_url: old.facebook_url ?? null };
+  if (!control && !can(admin, 'matchday.live_updates')) {
+    v.preview = old.preview ?? v.preview; v.report = old.report ?? v.report; v.gallery_json = old.gallery_json ?? v.gallery_json;
+  }
 
   // Keep the recorded kick-off / end times consistent with a status chosen
   // from the dropdown (the big Kick-off / Full-time buttons are preferred).
@@ -101,8 +120,9 @@ export async function onRequestPut({ request, env, params, waitUntil }) {
 // { action: 'fulltime', home_score, away_score } -- the big match-control
 // buttons. Times are recorded from the server clock.
 export async function onRequestPost({ request, env, params, waitUntil }) {
-  const denied = await requireAdmin(request, env);
+  const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
+  if (!can(admin, 'matchday.live_control')) return Response.json({ error: 'Only staff who run Live Match Control can start or end the match.' }, { status: 403 });
   const m = await loadMatch(env.DB, params.id);
   if (!m) return Response.json({ error: 'Match not found' }, { status: 404 });
 

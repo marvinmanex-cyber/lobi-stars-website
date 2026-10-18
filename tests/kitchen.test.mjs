@@ -20,7 +20,7 @@ const api = (path, method = 'GET', body, headers = ADMIN) => fetch(BASE + path, 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const made = [];
 after(async () => {
-  for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false }) });
+  for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false, reason: 'test finished' }) });
   await api('/api/admin/kitchen/settings', 'POST', { settings: { enabled: true, telegram: true, repeatMinutes: 3, maxRepeats: 5 } });
 });
 

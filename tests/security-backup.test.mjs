@@ -13,7 +13,7 @@ const api = (path, method = 'GET', body, headers = ADMIN) => fetch(BASE + path, 
 const login = body => fetch(`${BASE}/api/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': randIp() }, body: JSON.stringify(body) })
   .then(async r => ({ status: r.status, data: await r.json().catch(() => ({})), cookie: (r.headers.get('set-cookie') || '').split(';')[0] }));
 const made = [];
-after(async () => { for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false }) }); });
+after(async () => { for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false, reason: 'test finished' }) }); });
 async function staff(role, canExport = false) {
   const email = `sec-${role}-${uid()}@example.com`;
   const r = await api('/api/admin/staff', 'POST', { name: `Sec ${role}`, email, password: 'Role-Test-2026!', role, canExport });

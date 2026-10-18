@@ -89,13 +89,14 @@ test('gate: once per home match, only on match days; cancelled passes refused; v
   assert.ok(admin.passes.some(p => p.id === pass && p.status === 'void' && p.used === 1));
 });
 
-test('roles: Commerce staff manage season tickets; Media cannot', async () => {
+test('roles: the Matchday Operations Manager (tickets) manages season tickets; Commercial and Media cannot', async () => {
   const login = async role => {
     const email = `sz-${role}-${uid()}@example.com`;
     await api('/api/admin/staff', 'POST', { name: `SZ ${role}`, email, password: 'Role-Test-2026!', role });
     const l = await fetch(`${BASE}/api/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': randIp() }, body: JSON.stringify({ email, password: 'Role-Test-2026!' }) });
     return { Cookie: l.headers.get('set-cookie').split(';')[0] };
   };
-  assert.equal((await api('/api/admin/season-tickets', 'GET', null, await login('commercial'))).status, 200);
+  assert.equal((await api('/api/admin/season-tickets', 'GET', null, await login('matchday_ops_manager'))).status, 200);
+  assert.equal((await api('/api/admin/season-tickets', 'GET', null, await login('commercial'))).status, 403);
   assert.equal((await api('/api/admin/season-tickets', 'GET', null, await login('media'))).status, 403);
 });

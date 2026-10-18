@@ -152,6 +152,22 @@ collections:
   - name: "settings"
     label: "Site Settings & Shop"
     files:
+      - name: "roleEmails"
+        label: "Role email addresses (contact page, tickets, partners, Rewards)"
+        file: "src/data/role-emails.json"
+        fields:
+          - label: "Role email addresses"
+            name: "roles"
+            widget: "list"
+            allow_add: false
+            allow_remove: false
+            summary: "{{fields.label}}: {{fields.address}}"
+            hint: "Only tick 'Mailbox ready' once the address really receives email (a mailbox or a forwarder in Cloudflare Email Routing). Until then the website shows info@ instead."
+            fields:
+              - {label: "Key (don't change)", name: "key", widget: "hidden"}
+              - {label: "Team", name: "label", widget: "string"}
+              - {label: "Email address", name: "address", widget: "string", pattern: ['^[^@\s]+@[^@\s]+\.[a-z]{2,}$', 'Must be an email address']}
+              - {label: "Mailbox ready (receives email)", name: "ready", widget: "boolean", default: false}
       - name: "promo"
         label: "Promo Bar (thin bar at the top of every page)"
         file: "src/data/promo.json"

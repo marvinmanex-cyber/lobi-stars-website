@@ -1,4 +1,5 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
+import { can } from '../../_lib/adminRoles.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { loadMatch, toPublic } from '../../_lib/matchCentre.js';
 import { ensureFanSchema } from '../../_lib/fans.js';
@@ -88,6 +89,8 @@ export async function onRequestPost({ request, env, params }) {
   const label = `${match.home_team} vs ${match.away_team}`;
   const now = new Date().toISOString();
   const entry = async () => db.prepare(`SELECT * FROM predictions WHERE id = ? AND event_id = ?`).bind(Number(b.predictionId) || 0, match.id).first();
+  // Marking a prize paid needs matchday.predict.pay_prizes; everything else matchday.predict.manage.
+  if (!can(admin, b.action === 'paid' ? 'matchday.predict.pay_prizes' : 'matchday.predict.manage')) return Response.json({ error: b.action === 'paid' ? 'Your role cannot mark prizes as paid.' : 'Your role can only mark prizes as paid.' }, { status: 403 });
 
   if (b.action === 'disqualify') {
     const p = await entry();

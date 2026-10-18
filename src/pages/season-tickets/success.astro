@@ -3,9 +3,11 @@
 // Shows the season tickets (QR codes) once the payment is confirmed; they are
 // also emailed.
 import Layout from '../../layouts/Layout.astro';
+import { roleEmail } from '../../lib/roleEmails';
+const ticketsEmail = roleEmail('tickets');
 ---
 <Layout title="Your Season Tickets | Lobi Stars Football Club" description="Your Lobi Stars FC season tickets." noindex>
-  <div class="page-content wrap ss">
+  <div class="page-content wrap ss" data-tickets-email={ticketsEmail}>
     <h1 class="stitle">Season <span class="r">Tickets</span></h1>
     <p class="muted" id="ssMsg" role="status" aria-live="polite">Checking your payment…</p>
     <div id="ssPasses" class="ss-grid"></div>
@@ -33,7 +35,7 @@ import Layout from '../../layouts/Layout.astro';
     try {
       var r = await fetch('/api/season-tickets/order?reference=' + encodeURIComponent(ref), { cache: 'no-store' });
       var d = await r.json().catch(function () { return {}; });
-      if (!r.ok) { $('ssMsg').textContent = d.error === 'Order not found' || d.error === 'Missing reference' ? 'We could not find this order. If you paid, check your email or contact info@lobistarsfc.com.' : 'Something went wrong. Please refresh.'; return; }
+      if (!r.ok) { $('ssMsg').textContent = d.error === 'Order not found' || d.error === 'Missing reference' ? 'We could not find this order. If you paid, check your email or contact ' + (document.querySelector('.ss').dataset.ticketsEmail || 'info@lobistarsfc.com') + '.' : 'Something went wrong. Please refresh.'; return; }
       if (!d.paid) {
         if (++tries < 10) { $('ssMsg').textContent = 'Waiting for the payment to be confirmed…'; setTimeout(check, 3000); }
         else $('ssMsg').textContent = 'Your payment has not been confirmed yet. If money left your account, your season tickets will be emailed as soon as Paystack confirms it.';

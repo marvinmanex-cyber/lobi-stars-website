@@ -1,0 +1,120 @@
+---
+// The page behind the emailed links: a new staff member chooses their own
+// password and sets up two-step login; or someone chooses a new password
+// after "Forgot password?". The link itself is the key (one use, time-limited).
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Set Up Your Account | Lobi Stars Admin" description="Set up your Lobi Stars FC admin account." noindex>
+  <div class="wrap iv-wrap">
+    <div class="iv-card">
+      <div class="iv-icon" aria-hidden="true">&#128272;</div>
+      <h1 class="iv-title" id="title">Your admin account</h1>
+      <p class="iv-msg" id="msg" role="status" aria-live="polite" hidden></p>
+      <p class="muted" id="who">Checking your link…</p>
+
+      <form id="pwForm" class="iv-form" hidden>
+        <ol class="iv-steps" id="steps"><li class="on">Choose a password</li><li>Two-step login</li><li>Done</li></ol>
+        <p class="muted">At least 12 characters. A short sentence you'll remember works well (for example <em>my dog eats jollof at 7</em>). Don't reuse a password from another website.</p>
+        <input type="email" id="email" autocomplete="username" hidden />
+        <label>New password<input class="form-inp" id="pw" type="password" autocomplete="new-password" minlength="12" required /></label>
+        <label>New password again<input class="form-inp" id="pw2" type="password" autocomplete="new-password" minlength="12" required /></label>
+        <button class="btn-p" type="submit">Save password</button>
+      </form>
+
+      <div id="tsBox" class="iv-form" hidden>
+        <ol class="iv-steps"><li class="done">Password</li><li class="on">Two-step login</li><li>Done</li></ol>
+        <p>Protects the club's and fans' data even if someone learns your password. You need a free authenticator app on your phone (Google Authenticator, Microsoft Authenticator or Authy).</p>
+        <ol class="iv-howto">
+          <li>In the app, tap <b>+</b> / <b>Add account</b> and scan this code (or type the key).</li>
+          <li>Type the 6-digit code the app shows and press <b>Confirm</b>.</li>
+        </ol>
+        <img id="qr" alt="QR code for your authenticator app" width="220" height="220" />
+        <p class="iv-key">Key: <code id="key"></code></p>
+        <form id="tsForm" class="iv-form"><label>6-digit code<input class="form-inp" id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="7" required /></label><button class="btn-p" type="submit">Confirm</button></form>
+        <a class="iv-later" id="later" href="/admin/dashboard/" hidden>Set this up later (within 7 days)</a>
+      </div>
+
+      <div id="codesBox" hidden>
+        <ol class="iv-steps"><li class="done">Password</li><li class="done">Two-step login</li><li class="on">Done</li></ol>
+        <h2>Save your backup codes</h2>
+        <p>Each code works <strong>once</strong>, instead of a code from your phone (for example if you lose it). Print them or write them down and keep them away from your phone. You won't see them again.</p>
+        <ol class="iv-codes" id="codes"></ol>
+        <div class="iv-row"><button type="button" class="btn-o" id="print">Print</button><a class="btn-p" href="/admin/dashboard/">I've saved them: go to the admin</a></div>
+      </div>
+
+      <div id="doneBox" hidden>
+        <p>Your new password is saved and every device was signed out. Log in with your email, the new password and your two-step code.</p>
+        <a class="btn-p" href="/admin/login/">Log in</a>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .iv-wrap { padding-top: 50px; padding-bottom: 60px; display: flex; justify-content: center; }
+  .iv-card { width: 100%; max-width: 480px; background: var(--d2); border: 1px solid var(--d4); border-radius: 12px; padding: 30px 26px; box-shadow: 0 16px 40px rgba(15, 17, 21, .08); }
+  .iv-icon { font-size: 34px; }
+  .iv-title { font: 400 36px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; margin: 4px 0 10px; }
+  .iv-card h2 { font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; margin: 4px 0 8px; }
+  .iv-form { display: grid; gap: 12px; margin-top: 10px; }
+  .iv-form label { display: grid; gap: 4px; font-weight: 700; font-size: 14px; }
+  .iv-msg { padding: 10px 14px; border-radius: 8px; margin: 0 0 10px; }
+  .iv-msg.ok { background: #E8F7EE; color: #17643A; } .iv-msg.err { background: #FDECEC; color: #A3161B; }
+  .iv-steps { display: flex; gap: 6px; list-style: none; padding: 0; margin: 0 0 6px; font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .iv-steps li { flex: 1; padding: 8px 6px; border-radius: 6px; background: var(--d3); color: var(--lt); text-align: center; }
+  .iv-steps li.on { background: var(--red); color: #fff; } .iv-steps li.done { background: #E8F7EE; color: #17643A; }
+  .iv-howto { padding-left: 20px; line-height: 1.6; margin: 0; }
+  #qr { display: block; background: #fff; border-radius: 12px; padding: 8px; border: 1px solid var(--d4); }
+  .iv-key code { word-break: break-all; letter-spacing: 1px; }
+  .iv-later { font-weight: 600; color: var(--lt); }
+  .iv-codes { columns: 2; column-gap: 24px; padding-left: 22px; font: 700 18px/1.9 ui-monospace, Consolas, monospace; letter-spacing: 1px; }
+  .iv-codes li { break-inside: avoid; }
+  .iv-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  @media print { body * { visibility: hidden; } #codesBox, #codesBox * { visibility: visible; } #codesBox { position: absolute; left: 0; top: 0; } .iv-row, .iv-steps { display: none; } }
+</style>
+
+<script is:inline>
+(function () {
+  const $ = id => document.getElementById(id);
+  const t = new URLSearchParams(location.search).get('t') || '';
+  const msg = (text, ok) => { $('msg').textContent = text; $('msg').className = 'iv-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const post = (path, body, headers = {}) => fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) }).then(async r => ({ ok: r.ok, data: await r.json().catch(() => ({})) }));
+  let info = null;
+  async function start() {
+    const r = await fetch('/api/admin/invite?t=' + encodeURIComponent(t), { cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('who').textContent = d.error || 'This link is not valid.'; $('title').textContent = 'Link expired'; return; }
+    info = d;
+    $('email').value = d.email;
+    if (d.kind === 'reset') { $('title').textContent = 'Choose a new password'; $('who').innerHTML = `For <strong>${esc(d.email)}</strong>.`; $('steps').hidden = true; }
+    else { $('title').textContent = `Welcome, ${d.name.split(' ')[0]}`; $('who').innerHTML = `Set up your Lobi Stars admin account (<strong>${esc(d.role)}</strong>, ${esc(d.email)}). It takes about 3 minutes.`; }
+    $('pwForm').hidden = false; $('pw').focus();
+  }
+  $('pwForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if ($('pw').value !== $('pw2').value) return msg('The two passwords are not the same.', false);
+    const r = await post('/api/admin/invite', { t, password: $('pw').value });
+    if (!r.ok) return msg(r.data.error || 'Please try again.', false);
+    $('msg').hidden = true; $('pwForm').hidden = true;
+    if (r.data.kind === 'reset') { $('doneBox').hidden = false; $('who').textContent = ''; return; }
+    sessionStorage.setItem('ls_admin_code', '__session__');
+    const s = await post('/api/admin/account', { action: 'start_2fa' }, { 'x-admin-code': '__session__' });
+    if (!s.ok) { msg(s.data.error || 'Two-step login could not start. Set it up in My account.', false); return; }
+    $('qr').src = s.data.qr; $('key').textContent = s.data.secret;
+    // Everyone has 7 days to set it up, so it can wait a little.
+    $('later').hidden = false;
+    $('tsBox').hidden = false; $('otp').focus();
+  });
+  $('tsForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const r = await post('/api/admin/account', { action: 'confirm_2fa', otp: $('otp').value }, { 'x-admin-code': '__session__' });
+    if (!r.ok) return msg(r.data.error || 'That code is not right.', false);
+    $('msg').hidden = true; $('tsBox').hidden = true;
+    $('codes').innerHTML = r.data.backupCodes.map(c => `<li>${esc(c)}</li>`).join('');
+    $('codesBox').hidden = false;
+  });
+  $('print').addEventListener('click', () => window.print());
+  start();
+})();
+</script>

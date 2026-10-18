@@ -31,7 +31,7 @@ after(async () => {
   await api('/api/admin/security', 'POST', { action: 'require_two_step', on: false });
   await api('/api/admin/security', 'POST', { action: 'ip_allowlist', scope: 'off', list: '' });
   await api('/api/admin/security', 'POST', { action: 'email_domain_only', on: false });
-  for (const id of made) await api(`/api/admin/staff/${id}`, 'PUT', { active: false });
+  for (const id of made) await api(`/api/admin/staff/${id}`, 'PUT', { active: false, reason: 'test finished' });
 });
 async function staff(role, extra = {}) {
   const email = `ls-${role}-${uid()}@example.com`;
@@ -102,7 +102,7 @@ test('sessions: log out ends the session on the server; log out of other devices
   assert.equal((await api(`/api/admin/staff/${s.id}`, 'PUT', { signOut: true })).status, 200);
   assert.equal((await api('/api/admin/me', 'GET', null, as(d))).status, 401);
   const e = await login({ email: s.email, password: PW });
-  assert.equal((await api(`/api/admin/staff/${s.id}`, 'PUT', { active: false })).status, 200);
+  assert.equal((await api(`/api/admin/staff/${s.id}`, 'PUT', { active: false, reason: 'Left the club' })).status, 200);
   assert.equal((await api('/api/admin/me', 'GET', null, as(e))).status, 401, 'leaver signed out straight away');
   assert.equal((await login({ email: s.email, password: PW })).status, 401);
   // Old-style cookies are no longer accepted.
@@ -134,7 +134,7 @@ test('5 wrong attempts lock the account for 15 minutes (the human check appears 
   assert.equal(r.status, 423); assert.equal(r.data.locked, true);
   r = await login({ email: s.email, password: PW });
   assert.equal(r.status, 423, 'even the right password waits');
-  assert.match(r.data.error, /locked for 1[45] more minutes/);
+  assert.match(r.data.error, /wait 15 minutes/, 'a generic message that does not confirm the account exists');
   const row = (await api('/api/admin/staff')).data.staff.find(x => x.id === s.id);
   assert.ok(row.locked_until, 'shown as locked on the Staff screen');
   assert.equal((await api(`/api/admin/staff/${s.id}`, 'PUT', { unlock: true })).status, 200);

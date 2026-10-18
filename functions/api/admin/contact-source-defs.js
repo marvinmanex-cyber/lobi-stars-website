@@ -20,7 +20,7 @@ export async function onRequestGet({ request, env }) {
 export async function onRequestPost({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
-  if (!can(admin, 'settings.sources')) return Response.json({ error: 'Only staff with Settings access can change sources.' }, { status: 403 });
+  if (!can(admin, 'settings.site')) return Response.json({ error: 'Only staff with Settings access can change sources.' }, { status: 403 });
   const db = env.DB;
   await ensureContactsSchema(db);
   const b = await request.json().catch(() => ({}));

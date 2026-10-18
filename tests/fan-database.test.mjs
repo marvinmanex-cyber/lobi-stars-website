@@ -142,7 +142,7 @@ test('non-admins are blocked and staff without export permission cannot download
   assert.equal((await call('/api/admin/fans/backfill', { method: 'POST', headers: { Cookie: cookie } })).status, 403);
   // Tidy up: switch the test account off.
   const id = created.data.staff?.id || created.data.id;
-  if (id) await call(`/api/admin/staff/${id}`, { method: 'PUT', admin: true, body: { active: false } });
+  if (id) await call(`/api/admin/staff/${id}`, { method: 'PUT', admin: true, body: { active: false, reason: 'test finished' } });
 });
 
 test('bots and signed-in staff are not counted as visitors', async () => {

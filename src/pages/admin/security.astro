@@ -35,6 +35,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <fieldset><legend>Who it applies to</legend>
           <label class="sec-radio"><input type="radio" name="scope" value="off" /> Off (sign in from anywhere)</label>
           <label class="sec-radio"><input type="radio" name="scope" value="super_admin" /> Super Admins only</label>
+          <label class="sec-radio"><input type="radio" name="scope" value="super_admin_crm" /> Super Admins and CRM Managers (they can download fan data)</label>
           <label class="sec-radio"><input type="radio" name="scope" value="all" /> All staff</label>
         </fieldset>
         <label><span>Allowed addresses, one per line (an address like <code>102.89.12.34</code>, a range like <code>102.89.0.0/16</code>, or the start of an IPv6 address like <code>2c0f:f5c0:</code>)</span><textarea class="form-inp" name="list" rows="4" spellcheck="false"></textarea></label>
@@ -44,9 +45,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 
     <section class="panel">
       <h2>Security alerts</h2>
-      <p class="muted">These emails go to every Super Admin staff account: the owner admin code being used, accounts locked after wrong attempts. Add other addresses here if you like (for example the club secretary).</p>
+      <p class="muted">These emails go to every Super Admin (Head of Media) staff account: the emergency admin code being used, accounts locked, two-step login resets, role changes, sign-ins from new devices, the monthly access review. Add <strong>club management</strong> here so they're told too (for example the club secretary or chairman).</p>
       <form id="alertForm" class="sec-form">
-        <label>Extra addresses (comma separated)<input class="form-inp" name="emails" type="text" autocomplete="off" /></label>
+        <label>Club management and other addresses (comma separated)<input class="form-inp" name="emails" type="text" autocomplete="off" /></label>
         <button class="btn-p" type="submit">Save</button>
       </form>
       <p class="muted sec-small">Each person is also emailed about their own account: a sign-in from a new device, a backup code used, a password change, a lockout.</p>

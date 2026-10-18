@@ -18,7 +18,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const b64u = buf => Buffer.from(buf).toString('base64url');
 const made = [];
 after(async () => {
-  for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false }) });
+  for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false, reason: 'test finished' }) });
   await api('/api/admin/fan-alerts', 'POST', { settings: { radio_live: true, kickoff: true, halftime: true, second_half: true, fulltime: true, goal: true } });
 });
 

@@ -156,7 +156,8 @@ test('campaign admin: validation, reserved words, codes never change, no delete,
     const l = await fetch(`${BASE}/api/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': randIp() }, body: JSON.stringify({ email, password: 'Role-Test-2026!' }) });
     return { Cookie: l.headers.get('set-cookie').split(';')[0] };
   };
-  assert.equal((await api('/api/admin/qr/campaigns', 'GET', null, await login('matchday'))).status, 200);
+  assert.equal((await api('/api/admin/qr/campaigns', 'GET', null, await login('commercial_manager'))).status, 200, 'partner reports and QR campaigns');
+  assert.equal((await api('/api/admin/qr/campaigns', 'GET', null, await login('matchday'))).status, 403);
   assert.equal((await api('/api/admin/qr/stats', 'GET', null, await login('fan_support'))).status, 403);
 });
 

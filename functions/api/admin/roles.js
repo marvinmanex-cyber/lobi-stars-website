@@ -12,7 +12,7 @@ export async function onRequestGet({ request, env }) {
   if (denied) return denied;
   await loadRoles(env.DB, { force: true });
   const roles = Object.entries(ROLE_DEFAULTS).map(([id, r]) => ({
-    id, label: r.label, about: r.about, locked: !!r.locked, legacy: !!r.legacy, readOnly: !!r.readOnly,
+    id, label: r.label, job: r.job || '', about: r.about, locked: !!r.locked, legacy: !!r.legacy, readOnly: !!r.readOnly,
     permissions: rolePermissions(id), defaults: r.locked ? ALL_PERMISSIONS : r.permissions, changed: roleChanged(id),
   }));
   return json({ permissions: PERMISSIONS.map(g => ({ group: g.group, items: g.items.map(([id, label]) => ({ id, label })) })), roles });

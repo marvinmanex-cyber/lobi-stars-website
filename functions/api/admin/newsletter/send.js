@@ -1,4 +1,5 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
+import { can } from '../../_lib/adminRoles.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { ensureNewsletterSchema, parseIssue, renderNewsletter, renderText, loadSponsors, nextMatch, SITE, newsletterSettings, recipients } from '../../_lib/newsletter.js';
 import { fromAddress, replyTo, resendBatch, sendMode, sendIssueBatches } from '../../_lib/newsletterSend.js';
@@ -18,6 +19,8 @@ export async function onRequestPost({ request, env }) {
   const db = env.DB;
   await ensureNewsletterSchema(db);
   const b = await request.json().catch(() => ({}));
+  // Writers can send themselves a test; sending or scheduling to subscribers needs fans.newsletter.send.
+  if ((b.confirm || b.schedule || b.unschedule) && !can(admin, 'fans.newsletter.send')) return json({ error: "Your role can write the newsletter but not send it to subscribers. Ask the CRM Manager or a Super Admin to send it." }, 403);
   const issue = parseIssue(await db.prepare(`SELECT * FROM newsletter_issues WHERE id = ?`).bind(String(b.id || '')).first());
   if (!issue) return json({ error: 'Newsletter not found. Save it first.' }, 404);
 

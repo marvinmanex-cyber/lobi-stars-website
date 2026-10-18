@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import EnquiryForm from '../../components/EnquiryForm.astro';
+import { roleEmail } from '../../lib/roleEmails';
+const partnershipsEmail = roleEmail('partnerships');
 import PartnerLogo from '../../components/partners/PartnerLogo.astro';
 import { getPartners, byTier, openCategories, website, PARTNERSHIP } from '../../lib/partners';
 
@@ -101,7 +103,7 @@ const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
     <section class="panel pp-form" id="enquiry" aria-labelledby="enquiry-title">
       <h2 class="pp-h2" id="enquiry-title">Partnership Enquiry</h2>
-      <p class="pp-note">Our commercial team will reach out within 48 hours.</p>
+      <p class="pp-note">Our commercial team will reach out within 48 hours. Or email <a href={`mailto:${partnershipsEmail}`}>{partnershipsEmail}</a>.</p>
       <EnquiryForm kind="partnership" openCategories={open} />
     </section>
   </div>

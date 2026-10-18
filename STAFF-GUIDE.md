@@ -14,17 +14,29 @@ There are two places where you make changes:
 | Matches, scores, live updates, messages, fans, food orders, partners, awards (everything in the admin menu) | **Admin** (https://lobistarsfc.com/admin/login) | Straight away |
 | News, players, shop, videos, club pages | **Content CMS** | About 1–2 minutes after you press Save |
 
+**Your first time (setting up your login):** a Super Admin invites you, and you
+get an email **"Your Lobi Stars FC admin account"**. Press **Set up your
+account** (the link works once, for 48 hours), choose your own password (at
+least 12 characters), then set up two-step login: scan the QR code with an
+authenticator app on your phone, type the 6-digit code, and **save your 10
+backup codes** somewhere safe away from your phone. Nobody else ever chooses
+or knows your password.
+
+**Every time after that:**
 1. Go to **https://lobistarsfc.com/admin/login**.
-2. Sign in with **your own staff email and password** (a Super Admin creates
-   your account under **Staff**). If two-step login is on, type the 6-digit
-   code from your phone app (or a backup code). The owner can instead use the
-   **Admin code (owner)** tab. Never share your password or the code.
-3. **The first time**, you're asked to choose your own password (the one you
-   were given is temporary). Then you land on the **Dashboard** (see
-   "Finding your way around the admin" below).
+2. Type your staff email and password, then the 6-digit code from your phone
+   app. No phone to hand? Type one of your backup codes, or press **email me
+   a code** and use the code we email you (it works once, for 10 minutes).
+3. You land on the **Dashboard** (see "Finding your way around the admin"
+   below).
+
+**Forgot your password?** Press **Forgot your password?** on the login page
+and type your email: you get a link to choose a new one (it works for 2
+hours). Then sign in as usual with your two-step code.
 
 **Staying signed in:** you're signed out after **30 minutes without
-activity** and after **12 hours** at most; just log in again. The Kitchen
+activity** (a box warns you 2 minutes before; press **Stay signed in**) and
+after **12 hours** at most; just log in again. The Kitchen
 Screen and the Live Order Board stay signed in while they're open on a
 tablet. After **3 wrong attempts** a "not a robot" box appears; after **5**,
 the account is **locked for 15 minutes** and the account holder is emailed
@@ -33,6 +45,21 @@ the account is **locked for 15 minutes** and the account holder is emailed
 **The first time you open the Content CMS** on a computer or phone, it asks for
 a **GitHub access token**. This is a long password-like code that the website
 manager gives you once. Paste it in and the CMS remembers it on that device.
+The CMS shows you only the sections your role can edit (for example a Media
+Contributor sees Gallery, Homepage slides and Partners).
+
+**Security rules for all staff**
+- Never share your password, your codes or your backup codes, not even with
+  club staff. Nobody from the club will ever ask for them.
+- Use a password you don't use anywhere else.
+- Lock your phone and computer; log out on shared computers.
+- If you get an email about a sign-in or change you didn't make, sign in,
+  press **Log out of all devices** (My account), change your password and tell
+  the Head of Media.
+- Downloaded fan lists contain personal data: keep them private and delete
+  them when you're done.
+- Lost your phone? See "What to do if you lose your phone" in section 25.
+
 
 ### Finding your way around the admin
 - **Menu on the left**, grouped into colour-coded sections: 🏠 Overview,
@@ -78,23 +105,30 @@ manager gives you once. Paste it in and the CMS remembers it on that device.
   name, match or word to narrow the rows) and **page numbers** below. Column
   headers stay visible while you scroll.
 
-### Roles (set by a Super Admin in Settings › Staff Users & Roles)
-| Role | Can open |
-|---|---|
-| Super Admin | Everything, including staff accounts, roles and data backups |
-| Content Editor | News, awards and the CMS; sees Live Match Control; writes the newsletter |
-| Media Editor | Content, Matchday Programme, results, Share any page, the newsletter and the media@ mailbox |
-| Media Contributor | Writes news and reads/answers the media@ mailbox; sees Live Match Control |
-| Matchday Admin | Everything on matchday: match settings, Live Match Control, League, Programme, Predict & Win, commentary, fan alerts, ticket scanner |
-| Broadcast Operator | Live Commentary, stream settings and Fan Match Alerts |
-| CRM Manager | Fan database (with downloads), members, Rewards, newsletter, the whole Inbox and reports |
-| Fan Support | Contact form messages, looking up fans and Rewards members (no editing or downloads) |
-| Commercial Manager | Tickets, season tickets, food, shirts, partners, sponsorship/hospitality enquiries and reports |
-| Matchday Operations Manager | Gate ticket scanner, food orders and the Kitchen Screen |
-| Gate Staff | Only the ticket scanner |
-| Kitchen Staff | Only the Kitchen Screen |
+### Staff roles and what each can do (set by a Super Admin in Settings › Staff Users & Roles)
+| Role | Job | Can do |
+|---|---|---|
+| Super Admin | Head of Media & Communications | Everything: staff, roles, approvals, login security, backups, all data |
+| Content Editor | Media Officer / Club Writer | All content (news, team news, programme, club pages, help, videos, gallery), uploads, writes the newsletter (can't send it to subscribers), media@ mailbox |
+| Media Editor | Social Media & Video Officer | Videos, gallery, uploads, live matchday updates (preview and report, fan match alerts, sharing to socials), media@ mailbox |
+| Media Contributor | Graphic Designer & Club Photographer | Uploads only: gallery, homepage images, partner logos |
+| Matchday Admin | Website & Data Officer | Fixtures and results, Live Match Control, stats, squad, Man of the Match, Predict & Win; site settings, promo bar, social links (not broadcasting) |
+| Broadcast Operator | Live Broadcast Coordinator | Watch Live links, Live Commentary, commentary settings, broadcast report |
+| CRM Manager | CRM Officer | All fan data **including downloads**, the whole Inbox, newsletter (write and send), Rewards, all reports |
+| Fan Support | Fan Relations & Membership Officer | General fan messages, fan accounts, memberships, Rewards look-up and fulfilment, paying Predict & Win prizes. **No downloads** |
+| Commercial Manager | Commercial & Partnerships Officer | Partners, partner reports, shop, hospitality, shirt personalisation, sponsorship and hospitality enquiries (only those in the Inbox) |
+| Matchday Operations Manager | Ticketing & Matchday Operations Officer | Tickets, gate scanner, food orders and the kitchen; creates matchday helper accounts |
+| Gate Staff | Matchday helper | Only the gate ticket scanner |
+| Kitchen Staff | Matchday helper | Only the Kitchen order board |
 
-Older role names still work and are shown as the new role: Media → Media
+Some screens have parts for different roles. On **Live Match Control**, only
+Live Match Control staff change the score, status and timeline; the squad,
+stats, stream links and preview/report each need their own permission, and
+parts you can't change are kept as they were when you save. On **Match
+Tickets & Settings**, prices are for ticketing staff, commentary on/off for the
+Broadcast Operator, teams and dates for fixtures staff.
+
+Older role names still work and are shown as the new role: Media → Content
 Editor, Matchday Operator → Matchday Admin, Commercial → Commercial Manager,
 Fan Relations → Fan Support, Kitchen → Kitchen Staff.
 
@@ -104,8 +138,8 @@ permissions and presses **Save**. It applies to everyone with that role within
 a minute, and **Back to the default** undoes it. Every change is in the
 Activity Log. Only the Super Admin role can manage staff and roles.
 
-Downloading contact lists needs the **Download fan contact data** permission
-(the CRM Manager role has it) or **Can export fan data** on the account.
+Downloading fan contact data needs the **Download fan contact data**
+permission: only the Super Admin and CRM Manager roles have it.
 If you open a screen your role doesn't include, you see a **"You don't have
 access to this section"** page with a button back to the Dashboard; ask a
 Super Admin if you need it. The server checks every request, so typing a
@@ -480,17 +514,43 @@ Files are named with today's date, e.g. `lobi-stars-fan-database-2026-10-09.xlsx
   for the accounts, with their name and contact details removed. It cannot
   be undone.
 
-### Staff accounts (Super Admin only)
+### Adding and removing staff (Super Admin only, Settings › Staff Users & Roles)
 
-Under **Staff**, a Super Admin adds an account for each person (name, email,
-role, temporary password of 12+ characters; leave **They must choose their
-own password the first time they sign in** ticked), turns **Can export fan
-data** on or off, resets passwords and deactivates people who leave.
-Deactivating someone, resetting their password or resetting their two-step
-login signs them out on every device straight away. **Unlock** ends a
-lockout; **Sign out everywhere** signs someone out without changing anything
-else. The **Signed in now** column shows on how many devices each person is
-signed in. You can't deactivate yourself or change your own role. **Import existing records** (on
+- **The list** shows each person's name and personal email, role, role email,
+  two-step login, last login and status: **Active**, **Pending invite** or
+  **Disabled**.
+- **Add someone:** fill in **Invite a staff member**: name, their own email
+  (for signing in), role, and optionally their role email (e.g.
+  media@lobistarsfc.com). They get an invite link (48 hours) and set their own
+  password and two-step login. If it expires, press **Resend invite**.
+- **Change a role:** pick it in the Role column. The Super Admins are emailed
+  about every role change. You can't change your own role.
+- **Leaver:** press **Disable (leaver)** and type why (e.g. "Left the club").
+  The account stops working at once and they're signed out on every device.
+  Accounts are never deleted, so their history stays in the Activity Log and
+  their content stays on the site. Also remove them from GitHub (Content CMS)
+  and any club email forwarders. **Re-enable** emails them a link to choose a
+  new password.
+- **Other buttons:** **Send password reset** (emails a link), **Reset
+  two-step** (lost phone; the Super Admins are told), **Unlock** (after 5
+  wrong attempts), **Log out of all devices**, **Role email**.
+- **Monthly access review:** on the 1st of each month the Super Admins (and
+  club management, if added in Login & Security) get an email listing every
+  account; accounts not used for 30 days are highlighted. Open the link, sign
+  in, and press **Keep** or **Disable** for each person. **Email the review
+  now** sends it straight away.
+- **Role email addresses:** the club's team addresses (media@, news@, social@,
+  design@, web@, broadcast@, fans@, info@, partnerships@, tickets@). The website
+  shows the right one on the contact page, tickets, partners and Rewards. Edit
+  them in the Content CMS: **Site Settings › Role email addresses**. Tick
+  **Mailbox ready** only once the address really receives email (a forwarder in
+  Cloudflare Email Routing); until then the site shows info@.
+- **Emergency (break-glass) account:** the owner admin code. Club management
+  keeps it sealed and uses it only if no Super Admin can sign in. Every use
+  emails the Super Admins and club management straight away and is marked
+  **🚨 Emergency account** in the Activity Log.
+
+**Import existing records** (on
 the Fan database page) pulls older records into the database; it is safe to
 press again.
 
@@ -1025,9 +1085,9 @@ fan receives your reply from the club address, signed with your first name
 answer comes back into the same conversation.
 
 Who sees what: **Super Admin** and **CRM Manager** see every message.
-**Fan Support** sees Contact Form messages; **Commercial Manager** sees
-Sponsorship and Hospitality enquiries; **Media Editor** and **Media
-Contributor** see only the **Media email** conversations (emails to
+**Fan Support** sees general fan messages (Contact Form); **Commercial
+Manager** sees Sponsorship and Hospitality enquiries; **Content Editor** and
+**Media Editor** see only the **Media email** conversations (emails to
 media@lobistarsfc.com, below). Other roles can't read messages.
 
 **The media mailbox (media@lobistarsfc.com):** emails to media@ arrive in the
@@ -1359,7 +1419,7 @@ Nothing to do for most of this; it is built in. What it means for staff:
 
 A free weekly email for fans, with the club badge, the week's news, the next
 match and adverts from the club's sponsors. Super Admin, CRM Manager, Content
-Editor, Media Editor and Commercial Manager (sponsor adverts) staff can use it.
+Editor and Commercial Manager (sponsor adverts) staff can use it.
 
 ### Where fans sign up
 - **The newsletter page** (https://lobistarsfc.com/newsletter): what they
@@ -1435,8 +1495,11 @@ unsubscribing).
   newsletters go out within a minute or two of the time once the timer Worker
   is running (HANDOVER-TODO A14); until then, at the first visit to the
   website after that time.
-- **Who can write and send newsletters:** Media Editor, Content Editor, CRM
-  Manager, Commercial Manager and Super Admins. Routine: one main newsletter every **Wednesday by 9 pm**, by the
+- **Who can write and send newsletters:** the Content Editor writes; the CRM
+  Manager and Super Admins **send or schedule** to subscribers (a Super Admin
+  can give the Content Editor "Newsletter: send" in the roles editor if the
+  media team should send it themselves). The Commercial Manager edits sponsor
+  adverts. Routine: one main newsletter every **Wednesday by 9 pm**, by the
   media team (media@lobistarsfc.com).
 - After sending, the newsletter gets a **web version**
   (lobistarsfc.com/newsletter/…) for "View it in your browser" and the
@@ -1519,9 +1582,16 @@ Until then the Newsletter screen shows a yellow note.
   away from your phone; you won't see them again. My account shows how many
   are left; **Make new backup codes** gives you 10 new ones (the old ones stop
   working). You're emailed whenever a backup code is used.
-- **Lost or changed phone:** sign in with a backup code, or a Super Admin opens
-  Settings › Staff Users & Roles and presses **Reset two-step** next to your
-  name; you then log in with your password and set it up again.
+- **What to do if you lose your phone:**
+  1. Sign in with one of your **backup codes** (instead of the 6-digit code),
+     or press **email me a code** on the login page.
+  2. Once in, open **My account**: make new backup codes, or turn two-step
+     login off and on again with your new phone.
+  3. No backup codes and no email? Ask a Super Admin to press **Reset two-step**
+     next to your name (the Super Admins are told). You then sign in with your
+     password and set it up again.
+  4. If the phone was stolen, press **Log out of all devices** and change your
+     password too.
 - **When the club requires two-step login** (see Login & Security below),
   you're emailed and have **7 days** to turn it on; a reminder shows at the
   top of every admin page. After that, only My account opens until it's on,
@@ -1530,14 +1600,15 @@ Until then the Newsletter screen shows a yellow note.
   on (browser, network, when). **Sign out** one, **Log out of all other
   devices**, or **Log out of all devices (including this one)**. If you see a
   device you don't recognise, sign it out and change your password.
-- **Emails about your account:** a sign-in from a new device, a backup code
-  used, a password change, two-step login turned on or off, and a lockout
-  after wrong attempts. If it wasn't you, sign in, log out of all devices,
+- **Emails about your account:** a sign-in from a new device (the Super Admins
+  are told too), a backup code used, a password change, two-step login turned
+  on, off or reset, and a lockout after wrong attempts. If it wasn't you, sign in, log out of all devices,
   change your password and tell a Super Admin.
-- The owner admin code has no password or two-step settings: use a personal
-  Super Admin account for everyday work. **Every sign-in with the admin code
-  is emailed to the Super Admins**, because it's the way back in when nothing
-  else works.
+- The owner admin code is the club's **emergency (break-glass) account**:
+  club management keeps it sealed and uses it only if no Super Admin can sign
+  in. It has no password or two-step settings; use a personal Super Admin
+  account for everyday work. **Every sign-in with it is emailed straight away
+  to the Super Admins and club management**, and marked 🚨 in the Activity Log.
 
 ### Login & Security (Settings › Login & Security, Super Admins only)
 - **The rules for everyone** are shown at the top: 12+ character passwords,
@@ -1552,12 +1623,15 @@ Until then the Newsletter screen shows a yellow note.
 - **Staff email addresses:** tick to make new staff accounts use a
   **@lobistarsfc.com** address. Leave it off until everyone has a club email.
 - **Only allow sign-in from certain networks (optional):** choose Off, Super
-  Admins only or All staff, and list the allowed network addresses (for
+  Admins only, Super Admins and CRM Managers (the roles that can download fan
+  data), or All staff, and list the allowed network addresses (for
   example the club office's internet connection; your own address is shown).
   The page won't save a list that would sign you out. The owner admin code
   always works from anywhere.
-- **Security alerts:** go to every Super Admin; add other addresses (e.g. the
-  club secretary) if you like.
+- **Security alerts:** go to every Super Admin (Head of Media); add **club
+  management** addresses (e.g. the club secretary) so they're told too. Alerts:
+  the emergency admin code used, accounts locked, two-step login resets, role
+  changes, sign-ins from new devices, and the monthly access review.
 - **Signed in now:** everyone signed in, with device and network. **Sign
   out** one device or **Sign out everywhere** for a person.
 - **Recent security events:** sign-ins, wrong attempts, lockouts, backup
@@ -1621,7 +1695,7 @@ alert now** and **Recent alerts** (how many devices it reached).
   a minute or two. Keep any admin page open and it carries on by itself.
 - Don't over-send: a few alerts per match is right. Too many and fans turn
   them off.
-- Who can use it: Super Admins, Matchday Admins and Broadcast Operators.
+- Who can use it: Super Admins, Matchday Admins and Media Editors.
 
 ## 27. Back buttons on the public website
 
@@ -2063,8 +2137,9 @@ rewards. Star Points have no cash value.
 preview it: open **lobistarsfc.com/rewards/?preview=1** once on your phone or
 computer.
 
-Everything is in the **Rewards** section of the admin menu (Fan Relations and
-Super Admins):
+Everything is in the **Rewards** section of the admin menu (CRM Manager and
+Super Admins for everything; Fan Support looks up members and handles
+fulfilment):
 
 | Page | What it is for |
 |---|---|

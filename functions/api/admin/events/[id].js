@@ -1,16 +1,23 @@
-import { requireAdmin, parseEventPayload } from '../../_lib/adminEvents.js';
+import { requireAdmin, requireAdminUser, parseEventPayload } from '../../_lib/adminEvents.js';
+import { can } from '../../_lib/adminRoles.js';
+
+const FIXTURE = 'matchday.fixtures.edit|matchday.live_control';
 import { ensureTable } from '../../_lib/matchCentre.js';
 import { ensureCommentarySchema } from '../../_lib/commentary.js';
 import { leagueFixtureForEvent } from '../../_lib/leagueDb.js';
 
 // PUT /api/admin/events/:id -- overwrite a match's details.
+// Each part needs its own permission and parts you can't change are kept:
+// teams, date, venue and on/off sale (fixtures), ticket prices and sale time
+// (tickets), commentary on/off and start time (broadcast).
 export async function onRequestPut({ request, env, params }) {
-  const denied = await requireAdmin(request, env);
+  const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
 
   await ensureTable(env.DB);
+  await ensureCommentarySchema(env.DB);
   const id = (params.id || '').trim();
-  const existing = await env.DB.prepare(`SELECT id FROM events WHERE id = ?`).bind(id).first();
+  const existing = await env.DB.prepare(`SELECT * FROM events WHERE id = ?`).bind(id).first();
   if (!existing) return Response.json({ error: 'Match not found' }, { status: 404 });
 
   let body;
@@ -23,6 +30,11 @@ export async function onRequestPut({ request, env, params }) {
   const parsed = parseEventPayload(body);
   if (parsed.error) return Response.json({ error: parsed.error }, { status: 400 });
   const e = parsed.value;
+  const keep = keys => { for (const k of keys) if (k in existing) e[k] = existing[k]; };
+  if (!can(admin, FIXTURE)) keep(['home_team', 'away_team', 'competition', 'event_date', 'venue', 'is_home', 'programme_url']);
+  if (!can(admin, `${FIXTURE}|commerce.tickets.manage`)) keep(['active']);
+  if (!can(admin, 'commerce.tickets.manage')) keep(['vip_price_kobo', 'premium_price_kobo', 'regular_price_kobo', 'public_sale_at']);
+  if (!can(admin, 'broadcast.commentary.manage|settings.commentary')) keep(['commentary_enabled', 'commentary_start_at']);
 
   // A Lobi Stars league match: its teams, date, time and venue come from
   // League > Fixtures (prices, commentary and sale settings are still set here).
@@ -54,8 +66,9 @@ export async function onRequestPut({ request, env, params }) {
 // sold. Once there are paid orders the match must stay for ticket lookups
 // and gate scans, so callers should set it inactive instead.
 export async function onRequestDelete({ request, env, params }) {
-  const denied = await requireAdmin(request, env);
+  const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
+  if (!can(admin, FIXTURE)) return Response.json({ error: 'Only staff who manage fixtures can delete a match.' }, { status: 403 });
 
   const id = (params.id || '').trim();
   const existing = await env.DB.prepare(`SELECT id FROM events WHERE id = ?`).bind(id).first();

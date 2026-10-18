@@ -14,7 +14,7 @@ import {
 //                                             Turning it on needs at least one Super Admin staff account that has
 //                                             already signed in with two-step login, so nobody is locked out.
 //   { action: 'email_domain_only', on }       new staff accounts must use a @lobistarsfc.com address
-//   { action: 'ip_allowlist', scope, list }   off | super_admin | all; one address or range per line
+//   { action: 'ip_allowlist', scope, list }   off | super_admin | super_admin_crm | all; one address or range per line
 //   { action: 'alert_emails', emails }        extra addresses for security alerts
 //   { action: 'revoke_session', id }          sign out one device
 //   { action: 'revoke_user', userId }         sign someone out everywhere ('owner' = the admin code sessions)
@@ -95,7 +95,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     return json({ ok: true });
   }
   if (b.action === 'ip_allowlist') {
-    const scope = ['off', 'super_admin', 'all'].includes(b.scope) ? b.scope : 'off';
+    const scope = ['off', 'super_admin', 'super_admin_crm', 'all'].includes(b.scope) ? b.scope : 'off';
     const list = String(b.list || '').slice(0, 2000);
     const { rules, bad } = parseAllowlist(list);
     if (bad.length) return json({ error: `Not a network address or range: ${bad.join(', ')}` }, 400);
@@ -106,7 +106,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     }
     await saveSecuritySetting(db, 'ip_allowlist', list, admin.name);
     await saveSecuritySetting(db, 'ip_allowlist_scope', scope, admin.name);
-    await log(scope === 'off' ? 'IP allowlist off' : `IP allowlist for ${scope === 'all' ? 'all staff' : 'Super Admins'}: ${rules.length} address(es)/range(s)`);
+    await log(scope === 'off' ? 'IP allowlist off' : `IP allowlist for ${scope === 'all' ? 'all staff' : scope === 'super_admin_crm' ? 'Super Admins and CRM Managers' : 'Super Admins'}: ${rules.length} address(es)/range(s)`);
     return json({ ok: true });
   }
   if (b.action === 'alert_emails') {

@@ -34,66 +34,75 @@ before(async () => {
   }
   cookies.owner = await login({ code: CODE });
 });
-after(async () => { for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false }) }); });
+after(async () => { for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false, reason: 'test finished' }) }); });
 const as = (who, path, method = 'GET') => fetch(BASE + path, { method, redirect: 'manual', headers: { Cookie: cookies[who], 'Content-Type': 'application/json' }, body: method === 'GET' ? undefined : '{}' });
 
 // Who may open what. Written out by hand (not read from the code) so a
 // mistake in the role rules shows up here.
 const ALL = ROLES;
 const SA = ['super_admin'];
-const VIEW_MATCH = ['content_editor', 'media_editor', 'media_contributor', 'matchday_admin', 'broadcast_operator', 'matchday_ops_manager'];
-const INBOX = ['media_editor', 'media_contributor', 'crm_manager', 'fan_support', 'commercial_manager'];
-const FANS = ['crm_manager', 'fan_support'];
-const FOOD = ['commercial_manager', 'matchday_ops_manager'];
-const REPORTS = ['crm_manager', 'commercial_manager'];
+// Short names for the roles (the club's staff access plan).
+const CE = 'content_editor', ME = 'media_editor', MC = 'media_contributor', MA = 'matchday_admin', BO = 'broadcast_operator',
+  CRM = 'crm_manager', FS = 'fan_support', CM = 'commercial_manager', OPS = 'matchday_ops_manager', GATE = 'gate_staff', KIT = 'kitchen_staff';
+const INBOX = [CE, ME, CRM, FS, CM];
+const FANS = [CRM, FS];
 const PAGES = {
   '/admin/dashboard/': ALL,
-  '/admin/matches/': [...SA, 'matchday_admin'],
-  '/admin/match-centre/': [...SA, ...VIEW_MATCH],
-  '/admin/predictions/': [...SA, 'matchday_admin'],
-  '/admin/commentary/': [...SA, 'matchday_admin', 'broadcast_operator'],
-  '/admin/fan-alerts/': [...SA, 'matchday_admin', 'broadcast_operator'],
-  '/admin/news/': [...SA, 'content_editor', 'media_editor', 'media_contributor'],
-  '/admin/awards/': [...SA, 'content_editor', 'media_editor'],
+  '/admin/matches/': [...SA, MA, BO, OPS],
+  '/admin/match-centre/': [...SA, ME, MA, BO],
+  '/admin/predictions/': [...SA, MA, FS],
+  '/admin/commentary/': [...SA, BO],
+  '/admin/fan-alerts/': [...SA, ME, MA],
+  '/admin/news/': [...SA, CE],
+  '/admin/awards/': [...SA, CE],
   '/admin/inbox/': [...SA, ...INBOX],
-  '/admin/newsletter/': [...SA, 'content_editor', 'media_editor', 'crm_manager', 'commercial_manager'],
+  '/admin/newsletter/': [...SA, CE, CRM, CM],
   '/admin/fans/': [...SA, ...FANS],
   '/admin/fans/duplicates/': [...SA, ...FANS],
   '/admin/members/': [...SA, ...FANS],
-  '/admin/contact-sources/': [...SA, ...FANS, 'commercial_manager'],
-  '/admin/food-orders/': [...SA, ...FOOD],
-  '/admin/food-orders/live/': [...SA, ...FOOD],
-  '/admin/food-orders/menu/': [...SA, ...FOOD],
-  '/admin/food-orders/analytics/': [...SA, ...FOOD, 'crm_manager'],
-  '/admin/kitchen/': [...SA, ...FOOD, 'kitchen_staff'],
-  '/admin/tickets/scan/': [...SA, 'matchday_admin', 'commercial_manager', 'matchday_ops_manager', 'gate_staff'],
-  '/admin/shirt-orders/': [...SA, 'commercial_manager'],
-  '/admin/partners/': [...SA, 'commercial_manager'],
-  '/admin/analytics/': [...SA, ...REPORTS],
+  '/admin/contact-sources/': [...SA, MA, CRM, FS],
+  '/admin/rewards/': [...SA, CRM, FS],
+  '/admin/food-orders/': [...SA, OPS],
+  '/admin/food-orders/live/': [...SA, OPS],
+  '/admin/food-orders/menu/': [...SA, OPS],
+  '/admin/food-orders/analytics/': [...SA, CRM, OPS],
+  '/admin/kitchen/': [...SA, OPS, KIT],
+  '/admin/tickets/': [...SA, OPS],
+  '/admin/tickets/scan/': [...SA, OPS, GATE],
+  '/admin/shirt-orders/': [...SA, CM],
+  '/admin/partners/': [...SA, CM],
+  '/admin/analytics/': [...SA, BO, CRM, CM],
   '/admin/activity/': SA,
   '/admin/backup/': SA,
+  '/admin/security/': SA,
   '/admin/staff/': SA,
+  '/admin/': [...SA, CE, ME, MC, MA, CRM, FS, CM],
 };
 const APIS = {
   '/api/admin/dashboard': ALL,
   '/api/admin/me': ALL,
   '/api/admin/notifications': ALL,
-  '/api/admin/events': [...SA, ...VIEW_MATCH, 'commercial_manager'],
-  '/api/admin/commentary': [...SA, 'matchday_admin', 'broadcast_operator'],
-  '/api/admin/awards': [...SA, 'content_editor', 'media_editor'],
+  '/api/admin/events': [...SA, CE, ME, MA, BO, OPS],
+  '/api/admin/commentary': [...SA, BO],
+  '/api/admin/awards': [...SA, CE],
   '/api/admin/inbox': [...SA, ...INBOX],
   '/api/admin/inbox/templates': [...SA, ...INBOX],
   '/api/admin/fans': [...SA, ...FANS],
   '/api/admin/fans/duplicates': [...SA, ...FANS],
   '/api/admin/members': [...SA, ...FANS],
-  '/api/admin/contact-sources?range=7d': [...SA, ...FANS, 'commercial_manager'],
-  '/api/admin/food-orders': [...SA, ...FOOD],
-  '/api/admin/food-menu': [...SA, ...FOOD],
-  '/api/admin/food-analytics?range=7d': [...SA, ...FOOD, 'crm_manager'],
-  '/api/admin/kitchen/orders': [...SA, ...FOOD, 'kitchen_staff'],
-  '/api/admin/shirt-orders': [...SA, 'commercial_manager'],
+  '/api/admin/contact-sources?range=7d': [...SA, MA, CRM, FS],
+  '/api/admin/rewards': [...SA, CRM, FS],
+  '/api/admin/food-orders': [...SA, OPS],
+  '/api/admin/food-menu': [...SA, OPS],
+  '/api/admin/food-analytics?range=7d': [...SA, CRM, OPS],
+  '/api/admin/kitchen/orders': [...SA, OPS, KIT],
+  '/api/admin/tickets': [...SA, OPS],
+  '/api/admin/shirt-orders': [...SA, CM],
+  '/api/admin/partner-reports': [...SA, CM],
+  '/api/admin/broadcast-report': [...SA, BO, CRM],
   '/api/admin/activity': SA,
-  '/api/admin/export-log': [...SA, 'crm_manager'],
+  '/api/admin/export-log': [...SA, CRM],
+  '/api/admin/fans/export': [...SA, CRM],
   '/api/admin/roles': SA,
   '/api/admin/staff': SA,
 };
@@ -163,9 +172,10 @@ test('roles: every admin API answers for exactly the right roles (403 otherwise)
   }
   assert.deepEqual(wrong, []);
   // Roles that can only look cannot change anything there.
-  for (const [role, path] of [['content_editor', '/api/admin/events'], ['media_editor', '/api/admin/events'], ['broadcast_operator', '/api/admin/match-centre/x'],
-    ['fan_support', '/api/admin/members'], ['fan_support', '/api/admin/fans/duplicates'], ['fan_support', '/api/admin/rewards/catalogue'],
-    ['commercial_manager', '/api/admin/contact-source-defs'], ['kitchen_staff', '/api/admin/kitchen/settings'], ['media_contributor', '/api/admin/league/teams']]) {
+  for (const [role, path] of [['content_editor', '/api/admin/events'], ['media_editor', '/api/admin/events'], ['broadcast_operator', '/api/admin/events'],
+    ['broadcast_operator', '/api/admin/fan-alerts'], ['fan_support', '/api/admin/rewards/catalogue'], ['fan_support', '/api/admin/rewards/member'],
+    ['commercial_manager', '/api/admin/contact-source-defs'], ['kitchen_staff', '/api/admin/kitchen/settings'], ['media_contributor', '/api/admin/league/teams'],
+    ['crm_manager', '/api/admin/league/teams'], ['matchday_admin', '/api/admin/tickets']]) {
     assert.equal((await as(role, path, 'POST')).status, 403, `${role} POST ${path}`);
   }
   // Signed-out visitors get nothing.

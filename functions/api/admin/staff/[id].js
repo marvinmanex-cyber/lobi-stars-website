@@ -1,62 +1,115 @@
-import { hashPassword } from '../../_lib/password.js';
 import { requireAdminUser } from '../../_lib/adminEvents.js';
-import { ensureAdminSchema, logAdminAction } from '../../_lib/adminSession.js';
+import { logAdminAction } from '../../_lib/adminSession.js';
 import { ROLE_DEFAULTS, ROLE_ALIASES, ASSIGNABLE_ROLES } from '../../_lib/adminRoles.js';
-import { passwordProblem, revokeSessions } from '../../_lib/adminSecurity.js';
+import { revokeSessions, alertAddresses, securityEmail } from '../../_lib/adminSecurity.js';
+import { ensureLifecycleSchema, staffStatus, sendStaffLink, disableStaff } from '../../_lib/staffLifecycle.js';
 
-// PUT /api/admin/staff/:id { name?, role?, canExport?, active?, password?, mustChange?, resetTwoStep?, unlock?, signOut? }
-// -- update a staff account (Super Admin only). Deactivating, a new password and
-// resetting two-step login sign them out everywhere at once; signOut does only that;
-// unlock ends a lockout after too many wrong attempts.
-export async function onRequestPut({ request, env, params }) {
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const json = (d, status = 200) => Response.json(d, { status, headers: { 'Cache-Control': 'no-store' } });
+
+// PUT /api/admin/staff/:id -- change a staff account (Super Admin only).
+//   { name?, role?, roleEmail? }        change details or role
+//   { active: false, reason }           leaver: disabled at once, signed out on every device, who and why recorded
+//   { active: true }                    re-enable a disabled account (they get a link to choose a new password)
+//   { resendInvite: true }              a new invite link (the old one stops working)
+//   { sendReset: true }                 email a link to choose a new password (2 hours)
+//   { resetTwoStep: true }              lost phone: two-step login is switched off; they set it up again (alerted)
+//   { unlock: true }                    end a lockout after too many wrong attempts
+//   { signOut: true }                   sign out on every device
+//   { keep: true }                      monthly access review: this account is still needed
+// Accounts are never deleted, so their history in the Activity Log stays.
+export async function onRequestPut({ request, env, params, waitUntil }) {
   const { admin, denied } = await requireAdminUser(request, env, { ownerOnly: true });
   if (denied) return denied;
-  await ensureAdminSchema(env.DB);
-  const u = await env.DB.prepare(`SELECT * FROM admin_users WHERE id = ?`).bind(params.id).first();
-  if (!u) return Response.json({ error: 'Staff account not found.' }, { status: 404 });
-  let b;
-  try { b = await request.json(); } catch { b = {}; }
+  const db = env.DB;
+  await ensureLifecycleSchema(db);
+  const u = await db.prepare(`SELECT * FROM admin_users WHERE id = ?`).bind(params.id).first();
+  if (!u) return json({ error: 'Staff account not found.' }, 404);
+  const b = await request.json().catch(() => ({}));
+  const origin = new URL(request.url).origin;
+  const later = p => { try { waitUntil(p); } catch { p.catch(() => {}); } };
+  const status = staffStatus(u);
+  const self = u.id === admin.id;
+  const log = detail => logAdminAction(db, admin, 'staff_updated', `${u.name} <${u.email}>: ${detail}`);
 
+  // Leaver.
+  if (b.active === false) {
+    if (self) return json({ error: "You can't disable your own account. Ask another Super Admin." }, 400);
+    if (status === 'disabled') return json({ ok: true });
+    if (!String(b.reason || '').trim()) return json({ error: 'Please say why (for example "Left the club").' }, 400);
+    const signedOut = await disableStaff(env, u, admin, b.reason);
+    return json({ ok: true, signedOut });
+  }
+  if (b.active === true) {
+    if (status !== 'disabled') return json({ ok: true });
+    await db.prepare(`UPDATE admin_users SET active = 1, disabled_at = NULL, disabled_by = NULL, disabled_reason = NULL, failed_logins = 0, locked_until = NULL WHERE id = ?`).bind(u.id).run();
+    const link = await sendStaffLink(env, origin, u, u.password_hash === '!' ? 'invite' : 'reset', admin);
+    await log(`re-enabled; ${u.password_hash === '!' ? 'invite' : 'password reset'} link sent`);
+    return json({ ok: true, emailed: link.emailed, link: link.url });
+  }
+  if (status === 'disabled') return json({ error: 'This account is disabled. Re-enable it first.' }, 400);
+
+  if (b.resendInvite === true) {
+    if (status !== 'pending') return json({ error: 'This person has already set up their account. Use "Send password reset" instead.' }, 400);
+    const link = await sendStaffLink(env, origin, u, 'invite', admin);
+    await log('new invite link sent');
+    return json({ ok: true, emailed: link.emailed, inviteUrl: link.url });
+  }
+  if (b.sendReset === true) {
+    if (status === 'pending') return json({ error: "They haven't set up their account yet. Use \"Resend invite\" instead." }, 400);
+    const link = await sendStaffLink(env, origin, u, 'reset', admin);
+    await log('password reset link sent');
+    return json({ ok: true, emailed: link.emailed, resetUrl: link.url });
+  }
+  if (b.resetTwoStep === true) {
+    if (!u.totp_enabled) return json({ ok: true });
+    await db.prepare(`UPDATE admin_users SET totp_enabled = 0, totp_secret = NULL, totp_pending = NULL, totp_last_step = 0 WHERE id = ?`).bind(u.id).run();
+    await db.prepare(`DELETE FROM admin_backup_codes WHERE user_id = ?`).bind(u.id).run();
+    const n = await revokeSessions(db, u.id, `two-step login reset by ${admin.name}`);
+    await log(`two-step login reset; signed out of ${n} device(s)`);
+    later(alertAddresses(env).then(to => Promise.all([
+      securityEmail(env, to, `Lobi Stars admin: two-step login reset for ${u.name}`, [`<strong>${admin.name}</strong> reset the two-step login of <strong>${u.name}</strong> (${u.email}). They will set it up again at their next sign-in.`], origin),
+      securityEmail(env, u.email, 'Lobi Stars admin: your two-step login was reset', [`Hello ${u.name.split(' ')[0]},`, `${admin.name} reset your two-step login (for example after a lost phone). Sign in with your password and set it up again in My account.`, "If you didn't ask for this, tell a Super Admin straight away."], origin),
+    ])));
+    return json({ ok: true });
+  }
+  if (b.unlock === true) {
+    await db.prepare(`UPDATE admin_users SET failed_logins = 0, locked_until = NULL WHERE id = ?`).bind(u.id).run();
+    await log('unlocked');
+    return json({ ok: true });
+  }
+  if (b.signOut === true) {
+    const n = await revokeSessions(db, u.id, `signed out by ${admin.name}`);
+    await log(`signed out of ${n} device(s)`);
+    return json({ ok: true, signedOut: n });
+  }
+  if (b.keep === true) {
+    await db.prepare(`UPDATE admin_users SET reviewed_at = datetime('now') WHERE id = ?`).bind(u.id).run();
+    await logAdminAction(db, admin, 'access_review_keep', `${u.name} <${u.email}>: still needs access`);
+    return json({ ok: true });
+  }
+
+  // Details and role.
   const name = typeof b.name === 'string' && b.name.trim() ? b.name.trim().slice(0, 80) : u.name;
-  const canExport = typeof b.canExport === 'boolean' ? (b.canExport ? 1 : 0) : u.can_export_fan_data;
-  // A different current role; the same role (or its new name) keeps what is stored.
+  let roleEmail = u.role_email;
+  if (typeof b.roleEmail === 'string') {
+    roleEmail = b.roleEmail.trim().toLowerCase() || null;
+    if (roleEmail && !EMAIL_RE.test(roleEmail)) return json({ error: 'The role email is not a valid email address.' }, 400);
+  }
   const want = ROLE_ALIASES[b.role] || b.role;
   const role = ASSIGNABLE_ROLES.includes(want) && want !== (ROLE_ALIASES[u.role] || u.role) ? want : u.role;
-  const active = typeof b.active === 'boolean' ? (b.active ? 1 : 0) : u.active;
-  // Nobody locks themselves out: you can't deactivate yourself or take away your own Super Admin role.
-  if (u.id === admin.id && (active === 0 || role !== u.role)) return Response.json({ error: "You can't deactivate yourself or change your own role. Ask another Super Admin." }, { status: 400 });
-  let hash = u.password_hash;
-  if (typeof b.password === 'string' && b.password) {
-    const problem = await passwordProblem(env, b.password, { email: u.email, name: u.name });
-    if (problem) return Response.json({ error: problem }, { status: 400 });
-    hash = await hashPassword(b.password);
-  }
-  await env.DB.prepare(`UPDATE admin_users SET name = ?, role = ?, can_export_fan_data = ?, active = ?, password_hash = ? WHERE id = ?`)
-    .bind(name, role, canExport, active, hash, u.id).run();
-  const newPassword = hash !== u.password_hash;
-  if (newPassword) await env.DB.prepare(`UPDATE admin_users SET must_change_password = ?, failed_logins = 0, locked_until = NULL WHERE id = ?`).bind(b.mustChange === false ? 0 : 1, u.id).run();
-  // A Super Admin can switch off someone's two-step login (e.g. a lost phone); they set it up again.
-  if (b.resetTwoStep === true && u.totp_enabled) {
-    await env.DB.prepare(`UPDATE admin_users SET totp_enabled = 0, totp_secret = NULL, totp_pending = NULL, totp_last_step = 0 WHERE id = ?`).bind(u.id).run();
-    await env.DB.prepare(`DELETE FROM admin_backup_codes WHERE user_id = ?`).bind(u.id).run();
-  }
-  const unlocked = b.unlock === true && u.locked_until > Date.now();
-  if (b.unlock === true) await env.DB.prepare(`UPDATE admin_users SET failed_logins = 0, locked_until = NULL WHERE id = ?`).bind(u.id).run();
-  // Leavers, new passwords and reset two-step: every device is signed out straight away.
-  let signedOut = 0;
-  if ((active === 0 && u.active) || newPassword || (b.resetTwoStep === true && u.totp_enabled) || b.signOut === true) {
-    signedOut = await revokeSessions(env.DB, u.id, active === 0 ? 'account deactivated' : b.signOut === true ? 'signed out by a Super Admin' : 'password or two-step login reset by a Super Admin');
-  }
+  // Nobody takes away their own Super Admin role.
+  if (self && role !== u.role) return json({ error: "You can't change your own role. Ask another Super Admin." }, 400);
+  await db.prepare(`UPDATE admin_users SET name = ?, role = ?, role_email = ? WHERE id = ?`).bind(name, role, roleEmail, u.id).run();
   const changes = [
     name !== u.name && `name -> ${name}`,
     role !== u.role && `role -> ${ROLE_DEFAULTS[role]?.label || role}`,
-    canExport !== u.can_export_fan_data && `export permission ${canExport ? 'granted' : 'removed'}`,
-    active !== u.active && (active ? 'reactivated' : 'deactivated'),
-    newPassword && `password reset${b.mustChange === false ? '' : ' (must choose a new one at next sign-in)'}`,
-    b.resetTwoStep === true && u.totp_enabled && 'two-step login reset',
-    unlocked && 'unlocked',
-    signedOut && `signed out of ${signedOut} device(s)`,
-  ].filter(Boolean).join(', ');
-  if (changes) await logAdminAction(env.DB, admin, 'staff_updated', `${u.name} <${u.email}>: ${changes}`);
-  return Response.json({ ok: true });
+    roleEmail !== u.role_email && `role email -> ${roleEmail || 'none'}`,
+  ].filter(Boolean);
+  if (changes.length) await log(changes.join(', '));
+  if (role !== u.role) {
+    await logAdminAction(db, admin, 'role_assigned', `${u.name} <${u.email}>: ${ROLE_DEFAULTS[ROLE_ALIASES[u.role] || u.role]?.label || u.role} -> ${ROLE_DEFAULTS[role]?.label || role}`);
+    later(alertAddresses(env).then(to => securityEmail(env, to, `Lobi Stars admin: ${u.name} is now ${ROLE_DEFAULTS[role]?.label || role}`, [`<strong>${admin.name}</strong> changed the role of <strong>${u.name}</strong> (${u.email}) to <strong>${ROLE_DEFAULTS[role]?.label || role}</strong>.`], origin)));
+  }
+  return json({ ok: true });
 }

@@ -1,4 +1,8 @@
 ---
+// Settings › Staff Users & Roles (Super Admin): invite staff (they choose their
+// own password and set up two-step login), change roles, the leaver process
+// (disable: signed out everywhere, who and why recorded; never deleted), the
+// role email directory, the monthly access review and what each role includes.
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
 ---
@@ -7,40 +11,57 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <AdminNav current="staff" />
     <div class="stag">Admin</div>
     <h1 class="stitle">Staff <span class="r">Accounts</span></h1>
-    <p class="muted st-lede">Only Super Admins can manage staff. Each person's <strong>role</strong> decides which parts of the admin they see and change; the server checks it on every request. Give <strong>Can export fan data</strong> only to people who need to download contact lists.</p>
+    <p class="muted st-lede">Only Super Admins manage staff. Each person's <strong>role</strong> decides what they see and change; the server checks it on every request. New staff get an <strong>invite link</strong> by email and choose their own password: nobody else ever chooses or sends a password.</p>
+    <p class="st-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <form class="panel st-form" id="newForm">
+      <h2>Invite a staff member</h2>
+      <div class="form-row">
+        <div class="form-grp"><label class="form-lbl" for="n-name">Name</label><input class="form-inp" id="n-name" required autocomplete="off" /></div>
+        <div class="form-grp"><label class="form-lbl" for="n-email">Personal email (their own, for signing in)</label><input class="form-inp" id="n-email" type="email" required autocomplete="off" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-grp"><label class="form-lbl" for="n-role">Role</label><select class="form-sel" id="n-role" required><option value="">Choose a role…</option></select></div>
+        <div class="form-grp"><label class="form-lbl" for="n-remail">Role email (optional, e.g. media@lobistarsfc.com)</label><input class="form-inp" id="n-remail" type="email" list="roleEmailList" autocomplete="off" /><datalist id="roleEmailList"></datalist></div>
+      </div>
+      <p class="muted st-small" id="domainNote" hidden>Personal emails must end with @lobistarsfc.com (Settings › Login &amp; Security).</p>
+      <button type="submit" class="btn-p">Send invite</button>
+      <p class="muted st-small">They get an email with a link that works once, for 48 hours: they choose a password (12+ characters) and set up two-step login. Until then they show as <strong>Pending invite</strong>.</p>
+    </form>
+
+    <div class="st-list" id="list"><p class="muted">Loading…</p></div>
+
+    <section class="panel st-review" id="review">
+      <h2>Monthly access review</h2>
+      <p class="muted">On the 1st of each month the Super Admins get an email listing everyone's account. Check each one: <strong>Keep</strong> if they still need it, <strong>Disable</strong> if they've left or no longer need it. Accounts not used for 30 days or more are highlighted.</p>
+      <p class="st-small" id="reviewInfo"></p>
+      <div class="scroll" id="reviewList"></div>
+      <button type="button" class="btn-o" id="sendReview">Email the review now</button>
+    </section>
+
+    <section class="panel st-emails">
+      <h2>Role email addresses</h2>
+      <p class="muted">The club's public addresses for each team. The website shows the right one on each page (contact page, tickets, partners, Rewards). An address marked <em>not ready</em> shows info@ instead until its mailbox or forwarder exists. Change them in the Content CMS: Site Settings › Role email addresses.</p>
+      <div class="scroll" id="emails"></div>
+    </section>
+
     <section class="panel st-rolesed" aria-labelledby="rolesH">
       <h2 id="rolesH">Roles and what they include</h2>
       <p class="muted">Each role is a set of permissions. Open a role to see or change what it includes; changes apply to everyone with that role within a minute and are recorded in the Activity Log. Only the Super Admin role manages staff and roles.</p>
       <div id="roles"><p class="muted">Loading…</p></div>
     </section>
-    <p class="st-msg" id="msg" role="status" aria-live="polite" hidden></p>
-
-    <form class="panel st-form" id="newForm">
-      <h2>Add a staff account</h2>
-      <div class="form-row">
-        <div class="form-grp"><label class="form-lbl" for="n-name">Name</label><input class="form-inp" id="n-name" required /></div>
-        <div class="form-grp"><label class="form-lbl" for="n-email">Email</label><input class="form-inp" id="n-email" type="email" required /></div>
-      </div>
-      <div class="form-grp"><label class="form-lbl" for="n-role">Role</label><select class="form-sel" id="n-role" required><option value="">Choose a role…</option></select></div>
-      <div class="form-grp"><label class="form-lbl" for="n-pass">Temporary password (12+ characters)</label><input class="form-inp" id="n-pass" type="text" minlength="12" required autocomplete="off" /></div>
-      <label class="st-check"><input type="checkbox" id="n-must" checked /> They must choose their own password the first time they sign in</label>
-      <label class="st-check"><input type="checkbox" id="n-export" /> Can export fan data (download the fan database)</label>
-      <button type="submit" class="btn-p">Add staff account</button>
-    </form>
-
-    <div class="st-list" id="list"><p class="muted">Loading…</p></div>
   </div>
 </Layout>
 
 <style>
-  .st { max-width: 980px; padding-top: 40px; padding-bottom: 90px; }
-  .st-lede { max-width: 700px; margin-bottom: 20px; }
+  .st { max-width: 1040px; padding-top: 40px; padding-bottom: 90px; }
+  .st-lede { max-width: 760px; margin-bottom: 20px; }
   .st-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 16px; }
   .st-msg.ok { background: #E8F7EE; color: #17643A; } .st-msg.err { background: #FDECEC; color: #A3161B; }
-  .st-form { margin-bottom: 26px; }
-  .st-form h2 { margin: 0 0 14px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .st-rolesed { margin: 0 0 26px; }
-  .st-rolesed h2 { margin: 0 0 8px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .st-small { font-size: 13px; }
+  .panel h2 { margin: 0 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .st-form, .st-review, .st-emails, .st-rolesed { margin-bottom: 26px; }
+  .st-list { margin-bottom: 26px; }
   .st-rolesed :global(details) { border: 1px solid var(--d4); border-radius: 10px; margin: 8px 0; background: var(--a-card); }
   .st-rolesed :global(summary) { cursor: pointer; padding: 12px 14px; font-weight: 700; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
   .st-rolesed :global(summary small) { font-weight: 400; color: var(--a-muted, #5B6470); }
@@ -49,73 +70,121 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .st-rolesed :global(legend) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
   .st-rolesed :global(label.perm) { display: flex; gap: 10px; align-items: flex-start; padding: 4px 0; font-size: 14px; }
   .st-rolesed :global(label.perm input) { width: 17px; height: 17px; margin-top: 2px; accent-color: var(--red); flex: none; }
-  .st-rolesed :global(.tag) { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: #FFF4E5; color: #7A4B00; font-weight: 700; }
+  .st :global(.tag) { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: #FFF4E5; color: #7A4B00; font-weight: 700; white-space: nowrap; }
+  .st :global(.tag.ok) { background: #E8F7EE; color: #17643A; } .st :global(.tag.off) { background: #EEF0F3; color: #5B6470; } .st :global(.tag.bad) { background: #FDECEC; color: #A3161B; }
   .st-rolesed :global(.ract) { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
   .st-rolesed :global(.ract button) { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--d4); background: var(--a-card); cursor: pointer; font: inherit; font-size: 14px; }
   .st-rolesed :global(.ract button.save) { background: var(--red); color: #fff; border-color: var(--red); font-weight: 700; }
-  .st-list :global(select) { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--d4); font: inherit; font-size: 13px; }
-  .st-check { display: flex; gap: 10px; align-items: center; margin: 6px 0 16px; font-weight: 600; }
-  .st-check input { width: 18px; height: 18px; accent-color: var(--red); }
-  .st-list :global(table) { width: 100%; border-collapse: collapse; font-size: 15px; }
-  .st-list :global(th), .st-list :global(td) { padding: 10px 12px; border-bottom: 1px solid var(--d4); text-align: left; vertical-align: middle; }
-  .st-list :global(thead th) { background: #15181D; color: #fff; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
-  .st-list :global(.inactive) { opacity: .55; }
-  .st-list :global(button) { margin: 2px 6px 2px 0; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--d4); background: var(--a-card); cursor: pointer; font-size: 13px; }
-  .st-list :global(.scroll) { overflow-x: auto; position: relative; }
+  .st :global(select) { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--d4); font: inherit; font-size: 13px; max-width: 190px; }
+  .st :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .st :global(th), .st :global(td) { padding: 10px 10px; border-bottom: 1px solid var(--d4); text-align: left; vertical-align: top; }
+  .st :global(thead th) { background: #15181D; color: #fff; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .st :global(tr.inactive td) { opacity: .6; }
+  .st :global(tr.flag td) { background: #FFF8EC; }
+  .st :global(td small) { color: var(--a-muted, #5B6470); }
+  .st :global(td button) { margin: 2px 6px 2px 0; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--d4); background: var(--a-card); cursor: pointer; font-size: 13px; }
+  .st :global(td button.danger) { border-color: #E9A3A5; color: #A3161B; }
+  .st :global(.scroll) { overflow-x: auto; position: relative; }
+  #sendReview { margin-top: 12px; }
 </style>
 
 <script is:inline>
 (function () {
-  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
   const $ = id => document.getElementById(id);
-  const msg = $('msg');
-  const show = (t, ok) => { msg.textContent = t; msg.className = 'st-msg ' + (ok ? 'ok' : 'err'); msg.hidden = false; };
+  const show = (t, ok) => { $('msg').textContent = t; $('msg').className = 'st-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); };
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const day = v => { if (!v) return ''; const d = new Date(String(v).includes('T') ? v : String(v).replace(' ', 'T') + 'Z'); return d.toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', year: 'numeric' }); };
   async function api(path, opts = {}) {
-    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': code } });
+    const res = await fetch(path, { ...opts, headers: { 'Content-Type': 'application/json', 'x-admin-code': '__session__' } });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'Request failed');
     return data;
   }
+  const STATUS = { active: '<span class="tag ok">Active</span>', pending: '<span class="tag">Pending invite</span>', disabled: '<span class="tag off">Disabled</span>' };
+  let data = null;
   async function load() {
     try {
-      const { staff, roles } = await api('/api/admin/staff');
-      if ($('n-role').options.length < 2) $('n-role').insertAdjacentHTML('beforeend', roles.filter(r => !r.legacy).map(r => `<option value="${esc(r.id)}">${esc(r.label)}</option>`).join(''));
-      const roleSel = s => `<select data-role aria-label="Role for ${esc(s.name)}">${roles.map(r => `<option value="${esc(r.id)}"${r.id === s.role ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select>`;
-      $('list').innerHTML = staff.length ? '<div class="scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Can export</th><th>Two-step login</th><th>Last login</th><th>Signed in now</th><th></th></tr></thead><tbody>' +
-        staff.map(s => `<tr class="${s.active ? '' : 'inactive'}" data-id="${esc(s.id)}"><td>${esc(s.name)}${s.active ? '' : ' (deactivated)'}</td><td>${esc(s.email)}</td>` +
-          `<td>${roleSel(s)}</td><td>${s.can_export_fan_data ? 'Yes' : 'No'}</td><td>${s.totp_enabled ? '🔐 On' : 'Off'}</td><td>${s.last_login_at ? esc(s.last_login_at) + ' UTC' : 'Never'}${s.must_change_password ? '<br><small>Must choose a new password</small>' : ''}${s.locked_until ? '<br><strong>🔒 Locked</strong>' : ''}</td><td>${s.signed_in ? `${s.signed_in} device${s.signed_in === 1 ? '' : 's'}` : '—'}</td><td>` +
-          `<button data-act="export">${s.can_export_fan_data ? 'Remove export' : 'Allow export'}</button>` +
-          `<button data-act="active">${s.active ? 'Deactivate' : 'Reactivate'}</button><button data-act="password">Reset password</button>${s.totp_enabled ? '<button data-act="twostep">Reset two-step</button>' : ''}${s.locked_until ? '<button data-act="unlock">Unlock</button>' : ''}${s.signed_in ? '<button data-act="signout">Sign out everywhere</button>' : ''}</td></tr>`).join('') +
-        '</tbody></table></div>' : '<div class="empty-state"><b>🧑‍💼</b><p>No staff accounts yet. Add the first one above.</p></div>';
-      $('list')._staff = staff;
+      data = await api('/api/admin/staff');
+      const { staff, roles } = data;
+      if ($('n-role').options.length < 2) $('n-role').insertAdjacentHTML('beforeend', roles.filter(r => !r.legacy).map(r => `<option value="${esc(r.id)}">${esc(r.label)}${r.job ? ' – ' + esc(r.job) : ''}</option>`).join(''));
+      $('roleEmailList').innerHTML = data.roleEmails.map(r => `<option value="${esc(r.address)}">${esc(r.label)}</option>`).join('');
+      $('domainNote').hidden = !data.emailDomainOnly;
+      const roleSel = s => s.status === 'disabled' ? esc((roles.find(r => r.id === s.role) || {}).label || s.role)
+        : `<select data-role aria-label="Role for ${esc(s.name)}">${roles.map(r => `<option value="${esc(r.id)}"${r.id === s.role ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select>`;
+      const actions = s => {
+        if (s.status === 'disabled') return `<button data-act="enable">Re-enable</button>`;
+        const b = [];
+        if (s.status === 'pending') b.push('<button data-act="invite">Resend invite</button>');
+        else b.push('<button data-act="reset">Send password reset</button>');
+        if (s.totp_enabled) b.push('<button data-act="twostep">Reset two-step</button>');
+        if (s.locked_until) b.push('<button data-act="unlock">Unlock</button>');
+        if (s.signed_in) b.push('<button data-act="signout">Log out of all devices</button>');
+        b.push('<button data-act="remail">Role email</button>');
+        b.push('<button data-act="disable" class="danger">Disable (leaver)</button>');
+        return b.join('');
+      };
+      $('list').innerHTML = staff.length ? '<div class="scroll"><table><thead><tr><th>Name</th><th>Role</th><th>Role email</th><th>Two-step login</th><th>Last login</th><th>Status</th><th></th></tr></thead><tbody>' +
+        staff.map(s => `<tr class="${s.status === 'disabled' ? 'inactive' : ''}" data-id="${esc(s.id)}"><td><strong>${esc(s.name)}</strong><br><small>${esc(s.email)}</small></td>` +
+          `<td>${roleSel(s)}</td><td>${s.role_email ? esc(s.role_email) : '<small>—</small>'}</td>` +
+          `<td>${s.totp_enabled ? '<span class="tag ok">🔐 On</span>' : s.status === 'pending' ? '<small>After the invite</small>' : '<span class="tag bad">Off</span>'}</td>` +
+          `<td>${s.last_login_at ? esc(day(s.last_login_at)) : '<small>Never</small>'}${s.signed_in ? `<br><small>Signed in on ${s.signed_in} device${s.signed_in === 1 ? '' : 's'}</small>` : ''}${s.locked_until ? '<br><strong>🔒 Locked</strong>' : ''}</td>` +
+          `<td>${STATUS[s.status]}${s.status === 'pending' ? `<br><small>${s.inviteExpired ? 'Invite expired' : 'Invite sent'}${s.invited_by ? ' by ' + esc(s.invited_by) : ''}</small>` : ''}` +
+          `${s.status === 'disabled' ? `<br><small>${esc(day(s.disabled_at))}${s.disabled_by ? ' by ' + esc(s.disabled_by) : ''}${s.disabled_reason ? ': ' + esc(s.disabled_reason) : ''}</small>` : ''}</td>` +
+          `<td>${actions(s)}</td></tr>`).join('') +
+        '</tbody></table></div>' : '<div class="empty-state"><b>🧑‍💼</b><p>No staff accounts yet. Invite the first one above.</p></div>';
+      // Monthly access review.
+      const R = data.review;
+      $('reviewInfo').textContent = R.lastSent ? `Last review email: ${R.lastSent}.` : 'No review email sent yet (the first goes out on the 1st of next month).';
+      $('reviewList').innerHTML = R.people.length ? '<table><thead><tr><th>Name</th><th>Role</th><th>Last active</th><th>Checked</th><th></th></tr></thead><tbody>' + R.people.map(p =>
+        `<tr class="${p.unused ? 'flag' : ''}" data-id="${esc(p.id)}"><td><strong>${esc(p.name)}</strong><br><small>${esc(p.email)}</small></td><td>${esc(p.role)}</td>` +
+        `<td>${p.status === 'pending' ? '<small>Invite not accepted yet</small>' : p.lastActive ? esc(day(p.lastActive)) : '<small>Never</small>'}${p.unused ? `<br><strong>Not used for ${p.idleDays} days</strong>` : ''}</td>` +
+        `<td>${p.reviewedAt ? esc(day(p.reviewedAt)) : '<small>—</small>'}</td><td><button data-act="keep">Keep</button><button data-act="disable" class="danger">Disable</button></td></tr>`).join('') + '</tbody></table>'
+        : '<p class="muted">No active staff accounts.</p>';
+      // Role email directory.
+      $('emails').innerHTML = '<table><thead><tr><th>Team</th><th>Address</th><th>Mailbox</th></tr></thead><tbody>' + data.roleEmails.map(r =>
+        `<tr><td>${esc(r.label)}</td><td>${esc(r.address)}</td><td>${r.ready ? '<span class="tag ok">Ready</span>' : '<span class="tag">Not ready (info@ shown)</span>'}</td></tr>`).join('') + '</tbody></table>';
+      if (location.hash === '#review') $('review').scrollIntoView();
     } catch (e) { $('list').innerHTML = `<p class="muted">${esc(e.message)}</p>`; }
   }
-  $('list').addEventListener('click', async e => {
-    const b = e.target.closest('button[data-act]'); if (!b) return;
-    const id = b.closest('tr').dataset.id; const s = $('list')._staff.find(x => x.id === id);
-    const body = {};
-    if (b.dataset.act === 'export') body.canExport = !s.can_export_fan_data;
-    if (b.dataset.act === 'active') { if (s.active && !confirm(`Deactivate ${s.name}? They will be signed out on every device straight away.`)) return; body.active = !s.active; }
-    if (b.dataset.act === 'unlock') body.unlock = true;
-    if (b.dataset.act === 'signout') { if (!confirm(`Sign ${s.name} out on every device?`)) return; body.signOut = true; }
-    if (b.dataset.act === 'twostep') { if (!confirm(`Switch off two-step login for ${s.name}? Use this if they lost their phone; they should set it up again in My account.`)) return; body.resetTwoStep = true; }
-    if (b.dataset.act === 'password') { const p = prompt(`New temporary password for ${s.name} (12+ characters). They will be signed out and must choose their own password when they next sign in:`); if (!p) return; body.password = p; body.mustChange = true; }
-    try { await api(`/api/admin/staff/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(body) }); show('Saved.', true); load(); }
-    catch (err) { show(err.message, false); }
-  });
+  const put = (id, body) => api(`/api/admin/staff/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify(body) });
+  async function act(btn) {
+    const id = btn.closest('tr').dataset.id;
+    const s = data.staff.find(x => x.id === id) || data.review.people.find(x => x.id === id);
+    const a = btn.dataset.act;
+    let body, done = 'Saved.';
+    if (a === 'disable') {
+      const reason = prompt(`Disable ${s.name}'s account? They are signed out on every device straight away and can't sign in. Their history stays.\n\nWhy? (for example "Left the club")`);
+      if (reason === null) return;
+      if (!reason.trim()) return show('Please give a reason.', false);
+      body = { active: false, reason }; done = `${s.name}'s account is disabled and signed out everywhere.`;
+    }
+    if (a === 'enable') { if (!confirm(`Re-enable ${s.name}? They'll get an email link to choose a new password.`)) return; body = { active: true }; done = 'Re-enabled. They have been emailed a link.'; }
+    if (a === 'invite') { body = { resendInvite: true }; done = 'A new invite link has been emailed (the old one no longer works).'; }
+    if (a === 'reset') { if (!confirm(`Email ${s.name} a link to choose a new password?`)) return; body = { sendReset: true }; done = 'Password reset link emailed (it works for 2 hours).'; }
+    if (a === 'twostep') { if (!confirm(`Reset two-step login for ${s.name}? Use this if they lost their phone. They'll be signed out and set it up again.`)) return; body = { resetTwoStep: true }; done = 'Two-step login reset. The Super Admins have been told.'; }
+    if (a === 'unlock') body = { unlock: true };
+    if (a === 'signout') { if (!confirm(`Log ${s.name} out of every device?`)) return; body = { signOut: true }; done = 'Logged out of every device.'; }
+    if (a === 'keep') { body = { keep: true }; done = `${s.name}: kept.`; }
+    if (a === 'remail') { const v = prompt(`Role email for ${s.name} (leave empty for none):`, s.role_email || ''); if (v === null) return; body = { roleEmail: v }; }
+    try { const r = await put(id, body); show(done + (r.emailed === false ? ' (Email is not set up yet, so nothing was sent.)' : ''), true); load(); } catch (err) { show(err.message, false); }
+  }
+  for (const box of ['list', 'reviewList']) $(box).addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (b) act(b); });
   $('list').addEventListener('change', async e => {
     const sel = e.target.closest('select[data-role]'); if (!sel) return;
-    try { await api(`/api/admin/staff/${encodeURIComponent(sel.closest('tr').dataset.id)}`, { method: 'PUT', body: JSON.stringify({ role: sel.value }) }); show('Role saved. It applies the next time they open a page.', true); load(); }
-    catch (err) { show(err.message, false); }
+    try { await put(sel.closest('tr').dataset.id, { role: sel.value }); show('Role saved. It applies the next time they open a page, and the Super Admins have been told.', true); load(); }
+    catch (err) { show(err.message, false); load(); }
   });
   $('newForm').addEventListener('submit', async e => {
     e.preventDefault();
     try {
-      await api('/api/admin/staff', { method: 'POST', body: JSON.stringify({ name: $('n-name').value, email: $('n-email').value, password: $('n-pass').value, role: $('n-role').value, canExport: $('n-export').checked, mustChange: $('n-must').checked }) });
-      show('Staff account created. Share the email and temporary password with them privately.', true);
+      const r = await api('/api/admin/staff', { method: 'POST', body: JSON.stringify({ name: $('n-name').value, email: $('n-email').value, role: $('n-role').value, roleEmail: $('n-remail').value }) });
+      show(r.emailed ? `Invite sent to ${$('n-email').value}. The link works for 48 hours.` : 'Account created, but the invite email could not be sent (email is not set up). Use "Resend invite" once email works.', !!r.emailed);
       e.target.reset(); load();
     } catch (err) { show(err.message, false); }
+  });
+  $('sendReview').addEventListener('click', async () => {
+    try { const r = await api('/api/admin/staff', { method: 'POST', body: JSON.stringify({ action: 'send_review' }) }); show(r.sent ? 'The access review has been emailed to the Super Admins.' : 'Saved, but the email could not be sent (email is not set up).', !!r.sent); load(); }
+    catch (err) { show(err.message, false); }
   });
   // Roles and permissions (Super Admin).
   async function loadRoles() {
@@ -124,8 +193,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('roles').innerHTML = roles.map(r => {
         const has = new Set(r.permissions);
         const groups = permissions.map(g => `<fieldset><legend>${esc(g.group)}</legend>${g.items.map(p =>
-          `<label class="perm"><input type="checkbox" value="${esc(p.id)}"${has.has(p.id) ? ' checked' : ''}${r.locked || p.id === 'staff.manage' ? ' disabled' : ''} /> <span>${esc(p.label)}</span></label>`).join('')}</fieldset>`).join('');
-        return `<details data-role="${esc(r.id)}"><summary>${esc(r.label)} <small>${esc(r.about || '')}</small>${r.changed ? '<span class="tag">Changed</span>' : ''}${r.legacy ? '<span class="tag">Old role</span>' : ''}${r.readOnly ? '<span class="tag">Read only</span>' : ''}</summary>
+          `<label class="perm"><input type="checkbox" value="${esc(p.id)}"${has.has(p.id) ? ' checked' : ''}${r.locked || p.id === 'staff.manage' ? ' disabled' : ''} /> <span>${esc(p.label)} <small class="muted">${esc(p.id)}</small></span></label>`).join('')}</fieldset>`).join('');
+        return `<details data-role="${esc(r.id)}"><summary>${esc(r.label)}${r.job ? ` <small>(${esc(r.job)})</small>` : ''} <small>${esc(r.about || '')}</small>${r.changed ? '<span class="tag">Changed</span>' : ''}${r.legacy ? '<span class="tag">Old role</span>' : ''}${r.readOnly ? '<span class="tag">Read only</span>' : ''}</summary>
           <div class="rbody">${r.locked ? '<p class="muted">The Super Admin role always includes everything.</p>' : ''}${groups}
           ${r.locked ? '' : `<div class="ract"><button type="button" class="save" data-save>Save ${esc(r.label)}</button>${r.changed ? '<button type="button" data-reset>Back to the default</button>' : ''}</div>`}</div></details>`;
       }).join('');

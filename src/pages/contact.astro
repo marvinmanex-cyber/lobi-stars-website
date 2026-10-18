@@ -2,6 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 import EnquiryForm from '../components/EnquiryForm.astro';
 import { CONTACT, SOCIAL_LINKS } from '../lib/site';
+import { readyRoleEmails } from '../lib/roleEmails';
+// Teams with their own address (Content CMS: Site Settings › Role email addresses).
+const teams = readyRoleEmails();
 
 const telHref = 'tel:+234' + CONTACT.phone.replace(/\D/g, '').replace(/^0/, '');
 const mapQuery = encodeURIComponent('McCarthy Stadium, Makurdi, Benue State, Nigeria');
@@ -21,7 +24,8 @@ const mapQuery = encodeURIComponent('McCarthy Stadium, Makurdi, Benue State, Nig
     <div>
       <ul class="ct-list">
         <li><span class="ct-ic" aria-hidden="true">📍</span><div><h2>Headquarters</h2><p>{CONTACT.address}</p></div></li>
-        <li><span class="ct-ic" aria-hidden="true">📧</span><div><h2>Email</h2><p><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></p></div></li>
+        <li><span class="ct-ic" aria-hidden="true">📧</span><div><h2>Email</h2><p><a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a></p>
+          {teams.length > 0 && <ul class="ct-teams">{teams.map(t => <li>{t.label}: <a href={`mailto:${t.address}`}>{t.address}</a></li>)}</ul>}</div></li>
         <li><span class="ct-ic" aria-hidden="true">📞</span><div><h2>Phone</h2><p><a href={telHref}>{CONTACT.phone}</a></p></div></li>
         <li><span class="ct-ic" aria-hidden="true">💬</span><div><h2>WhatsApp</h2><p><a href={`https://wa.me/${CONTACT.whatsapp}`} target="_blank" rel="noopener">Chat with us on WhatsApp</a></p></div></li>
       </ul>
@@ -48,6 +52,7 @@ const mapQuery = encodeURIComponent('McCarthy Stadium, Makurdi, Benue State, Nig
 </Layout>
 
 <style>
+  .ct-teams { list-style: none; margin: 6px 0 0; padding: 0; font-size: 14px; line-height: 1.7; }
   .ct-lede { max-width: 640px; font-size: 17px; line-height: 1.7; }
   .ct-grid { display: grid; grid-template-columns: 1fr 1.15fr; gap: 36px; align-items: start; }
   .ct-list { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-direction: column; gap: 20px; }

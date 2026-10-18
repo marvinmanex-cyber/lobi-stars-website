@@ -25,7 +25,7 @@ export async function onRequestGet({ request, env }) {
 export async function onRequestPost({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
-  if (!can(admin, 'commerce.food')) return Response.json({ error: 'Only staff who manage food orders can change kitchen alert settings.' }, { status: 403 });
+  if (!can(admin, 'commerce.kitchen.manage')) return Response.json({ error: 'Only staff who manage food orders can change kitchen alert settings.' }, { status: 403 });
   const db = env.DB;
   await ensureKitchenSchema(db);
   const b = await request.json().catch(() => ({}));

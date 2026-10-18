@@ -1,0 +1,14 @@
+{
+  "roles": [
+    { "key": "info", "label": "General enquiries", "address": "info@lobistarsfc.com", "ready": true },
+    { "key": "media", "label": "Media and press", "address": "media@lobistarsfc.com", "ready": true },
+    { "key": "news", "label": "News desk (story tips)", "address": "news@lobistarsfc.com", "ready": false },
+    { "key": "social", "label": "Social media and video", "address": "social@lobistarsfc.com", "ready": false },
+    { "key": "design", "label": "Design and photography", "address": "design@lobistarsfc.com", "ready": false },
+    { "key": "web", "label": "Website and data", "address": "web@lobistarsfc.com", "ready": false },
+    { "key": "broadcast", "label": "Live broadcast and commentary", "address": "broadcast@lobistarsfc.com", "ready": false },
+    { "key": "fans", "label": "Fans, membership and Rewards", "address": "fans@lobistarsfc.com", "ready": false },
+    { "key": "partnerships", "label": "Partnerships and sponsorship", "address": "partnerships@lobistarsfc.com", "ready": false },
+    { "key": "tickets", "label": "Tickets and matchday", "address": "tickets@lobistarsfc.com", "ready": false }
+  ]
+}

@@ -13,7 +13,7 @@ const randIp = () => `10.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 
 const r7 = () => String(Math.floor(Math.random() * 1e7)).padStart(7, '0');
 const admin = (path, headers = ADMIN) => fetch(BASE + path, { headers }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
 const made = [];
-after(async () => { for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false }) }); });
+after(async () => { for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false, reason: 'test finished' }) }); });
 
 async function order(items, email = `fa-${uid()}@example.com`) {
   const r = await fetch(`${BASE}/api/food-checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': randIp() }, body: JSON.stringify({ name: 'Analytics Fan', seat: 'G3', stand: 'Analytics Stand', phone: `0803${r7()}`, email, items }) }).then(r => r.json());
@@ -60,7 +60,7 @@ test('exports: Food Report and Customers are real Excel files, only for staff al
     const b = new Uint8Array(await r.arrayBuffer());
     assert.equal(String.fromCharCode(b[0], b[1]), 'PK');
   }
-  const analyst = await staff('commercial_manager');
+  const analyst = await staff('matchday_ops_manager'); // runs the food, sees its report, no fan downloads
   assert.equal((await admin('/api/admin/food-analytics?range=all', analyst)).status, 200, 'report readers can see food analytics');
   assert.equal((await fetch(`${BASE}/api/admin/food-analytics?format=customers`, { headers: analyst })).status, 403, 'but cannot download customers');
   assert.equal((await fetch(`${BASE}/admin/food-orders/analytics/`, { headers: analyst, redirect: 'manual' })).status, 200);

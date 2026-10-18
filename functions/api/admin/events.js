@@ -1,5 +1,6 @@
 import { randomId } from '../_lib/crypto.js';
-import { requireAdmin, parseEventPayload } from '../_lib/adminEvents.js';
+import { requireAdmin, requireAdminUser, parseEventPayload } from '../_lib/adminEvents.js';
+import { can } from '../_lib/adminRoles.js';
 import { ensureTable } from '../_lib/matchCentre.js';
 import { ensureCommentarySchema } from '../_lib/commentary.js';
 
@@ -24,8 +25,10 @@ export async function onRequestGet({ request, env }) {
 
 // POST /api/admin/events -- create a new match.
 export async function onRequestPost({ request, env }) {
-  const denied = await requireAdmin(request, env);
+  const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
+  // Adding a match: fixtures staff only.
+  if (!can(admin, 'matchday.fixtures.edit|matchday.live_control')) return Response.json({ error: 'Only staff who manage fixtures can add a match.' }, { status: 403 });
 
   let body;
   try {

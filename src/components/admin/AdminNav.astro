@@ -17,92 +17,92 @@ const CATEGORIES: Cat[] = [
     { id: 'dashboard', label: 'Dashboard', href: '/admin/dashboard/', perm: '' },
   ] },
   { id: 'matchday', icon: '⚽', label: 'Matchday', color: '#10B981', items: [
-    { id: 'matches', label: 'Match Tickets & Settings', href: '/admin/matches/', perm: 'matchday.matches|matchday.live', hint: 'Ticket prices, commentary and sale settings per match (dates and results: League)' },
-    { id: 'match-centre', label: 'Live Match Control', href: '/admin/match-centre/', perm: 'matchday.view|matchday.live', hint: 'Kick-off, score, squad, Man of the Match, stats, streams, content checklist' },
-    { id: 'predictions', label: 'Predict & Win', href: '/admin/predictions/', perm: 'matchday.predictions', hint: 'Entries, winners and prize payments' },
-    { id: 'programmes', label: 'Matchday Programme', href: '/admin/programmes/', perm: 'matchday.programmes', hint: 'Upload the 4-page programme, publish or schedule it, QR codes and reading stats' },
-    { id: 'share', label: 'Share any page', href: '/admin/share/', perm: 'matchday.share', hint: 'Check how any page of the site looks as a link card and post it to the club socials' },
-    { id: 'commentary', label: 'Live Commentary', href: '/admin/commentary/', perm: 'matchday.commentary' },
-    { id: 'fan-alerts', label: 'Fan Match Alerts', href: '/admin/fan-alerts/', perm: 'matchday.alerts', hint: 'Phone notifications for fans: radio show, kick-off, goals, full time' },
+    { id: 'matches', label: 'Match Tickets & Settings', href: '/admin/matches/', perm: 'matchday.fixtures.edit|commerce.tickets.manage|broadcast.commentary.manage|matchday.live_control', hint: 'Ticket prices, commentary and sale settings per match (dates and results: League)' },
+    { id: 'match-centre', label: 'Live Match Control', href: '/admin/match-centre/', perm: 'matchday.live_control|matchday.squad.edit|matchday.stats.edit|matchday.live_updates|broadcast.watch_live.edit|matchday.fixtures.edit|matchday.motm.manage', hint: 'Kick-off, score, squad, Man of the Match, stats, streams, content checklist' },
+    { id: 'predictions', label: 'Predict & Win', href: '/admin/predictions/', perm: 'matchday.predict.manage|matchday.predict.pay_prizes', hint: 'Entries, winners and prize payments' },
+    { id: 'programmes', label: 'Matchday Programme', href: '/admin/programmes/', perm: 'content.programme.edit', hint: 'Upload the 4-page programme, publish or schedule it, QR codes and reading stats' },
+    { id: 'share', label: 'Share any page', href: '/admin/share/', perm: 'matchday.live_updates|content.programme.edit|media.upload', hint: 'Check how any page of the site looks as a link card and post it to the club socials' },
+    { id: 'commentary', label: 'Live Commentary', href: '/admin/commentary/', perm: 'broadcast.commentary.manage|settings.commentary' },
+    { id: 'fan-alerts', label: 'Fan Match Alerts', href: '/admin/fan-alerts/', perm: 'matchday.live_updates', hint: 'Phone notifications for fans: radio show, kick-off, goals, full time' },
   ] },
   { id: 'league', icon: '🏆', label: 'League', color: '#F59E0B', items: [
-    { id: 'league', label: 'League Dashboard', href: '/admin/league/', perm: 'matchday.view|matchday.league', hint: 'Next match, results due, data warnings, table summary' },
-    { id: 'league-fixtures', label: 'Fixtures', href: '/admin/league/fixtures/', perm: 'matchday.view|matchday.league', hint: 'Dates, times, venues, postpone and reschedule' },
-    { id: 'league-results', label: 'Results', href: '/admin/league/results/', perm: 'matchday.view|matchday.league', hint: 'Enter scores matchday by matchday; Live mode for the pitch side' },
-    { id: 'league-table', label: 'Table & Rules', href: '/admin/league/table/', perm: 'matchday.view|matchday.league', hint: 'Points adjustments, tie decisions, rules and zones' },
-    { id: 'league-teams', label: 'Clubs & Venues', href: '/admin/league/teams/', perm: 'matchday.view|matchday.league' },
-    { id: 'league-import', label: 'Import & Export', href: '/admin/league/import/', perm: 'matchday.league', hint: 'Upload a revised fixture list (CSV); download fixtures and table' },
-    { id: 'league-audit', label: 'League History', href: '/admin/league/audit/', perm: 'matchday.view|matchday.league', hint: 'Every change, who and when; undo a mistake' },
+    { id: 'league', label: 'League Dashboard', href: '/admin/league/', perm: 'matchday.fixtures.edit|matchday.live_control', hint: 'Next match, results due, data warnings, table summary' },
+    { id: 'league-fixtures', label: 'Fixtures', href: '/admin/league/fixtures/', perm: 'matchday.fixtures.edit|matchday.live_control', hint: 'Dates, times, venues, postpone and reschedule' },
+    { id: 'league-results', label: 'Results', href: '/admin/league/results/', perm: 'matchday.fixtures.edit|matchday.live_control', hint: 'Enter scores matchday by matchday; Live mode for the pitch side' },
+    { id: 'league-table', label: 'Table & Rules', href: '/admin/league/table/', perm: 'matchday.fixtures.edit|matchday.live_control', hint: 'Points adjustments, tie decisions, rules and zones' },
+    { id: 'league-teams', label: 'Clubs & Venues', href: '/admin/league/teams/', perm: 'matchday.fixtures.edit|matchday.live_control' },
+    { id: 'league-import', label: 'Import & Export', href: '/admin/league/import/', perm: 'matchday.fixtures.edit', hint: 'Upload a revised fixture list (CSV); download fixtures and table' },
+    { id: 'league-audit', label: 'League History', href: '/admin/league/audit/', perm: 'matchday.fixtures.edit|matchday.live_control', hint: 'Every change, who and when; undo a mistake' },
   ] },
   { id: 'content', icon: '📰', label: 'Content', color: '#0EA5E9', items: [
-    { id: 'news', label: 'News & Articles', href: '/admin/news/', perm: 'content.news', hint: 'Including Team News' },
-    { id: 'awards', label: 'Fan Awards', href: '/admin/awards/', perm: 'content.awards', hint: 'Goal / Player of the Month, Player of the Season' },
-    { id: 'cms-players', label: 'Squad & Players', href: `${CMS}/players`, perm: 'content.cms', ext: true },
-    { id: 'cms-videos', label: 'Videos', href: `${CMS}/settings/entries/videos`, perm: 'content.cms', ext: true },
-    { id: 'cms-gallery', label: 'Gallery', href: `${CMS}/gallery`, perm: 'content.cms', ext: true },
-    { id: 'cms-club', label: 'Club Pages', href: `${CMS}/settings/entries/history`, perm: 'content.cms', ext: true, hint: 'History, Honours, Stadium, Fan Clubs' },
-    { id: 'cms', label: 'Content CMS (everything)', href: '/admin/', perm: 'content.cms', ext: true },
+    { id: 'news', label: 'News & Articles', href: '/admin/news/', perm: 'content.news.edit|content.news.publish|content.team_news.edit', hint: 'Including Team News' },
+    { id: 'awards', label: 'Fan Awards', href: '/admin/awards/', perm: 'content.club_pages.edit', hint: 'Goal / Player of the Month, Player of the Season' },
+    { id: 'cms-players', label: 'Squad & Players', href: `${CMS}/players`, perm: 'content.club_pages.edit|matchday.squad.edit', ext: true },
+    { id: 'cms-videos', label: 'Videos', href: `${CMS}/settings/entries/videos`, perm: 'content.videos.edit', ext: true },
+    { id: 'cms-gallery', label: 'Gallery', href: `${CMS}/gallery`, perm: 'content.gallery.edit', ext: true },
+    { id: 'cms-club', label: 'Club Pages', href: `${CMS}/settings/entries/history`, perm: 'content.club_pages.edit', ext: true, hint: 'History, Honours, Stadium, Fan Clubs' },
+    { id: 'cms', label: 'Content CMS (everything)', href: '/admin/', perm: 'commerce.hospitality.manage|commerce.personalisation.manage|commerce.shop.manage|content.club_pages.edit|content.gallery.edit|content.news.edit|content.news.publish|content.team_news.edit|content.videos.edit|fans.members.manage|matchday.predict.manage|matchday.squad.edit|media.upload|partners.manage|settings.promo_bar|settings.site|settings.social_links', ext: true },
   ] },
   { id: 'rewards', icon: '⭐', label: 'Rewards', color: '#C9A227', items: [
-    { id: 'rewards', label: 'Lobi Stars Rewards', href: '/admin/rewards/', perm: 'fans.rewards|fans.rewards.manage', hint: 'Star Points: settings, members, adjust points, launch switch' },
-    { id: 'rewards-catalogue', label: 'Rewards Catalogue', href: '/admin/rewards/catalogue/', perm: 'fans.rewards|fans.rewards.manage', hint: 'What fans can redeem: points, stock, limits' },
-    { id: 'rewards-terms', label: 'Rewards Terms', href: '/admin/rewards/terms/', perm: 'fans.rewards|fans.rewards.manage', hint: 'Change the Lobi Stars Rewards Terms at any time' },
-    { id: 'rewards-fulfilment', label: 'Fulfilment & Vouchers', href: '/admin/rewards/fulfilment/', perm: 'fans.rewards|fans.rewards.manage', hint: 'Experiences and items to arrange; check a voucher code' },
-    { id: 'rewards-analytics', label: 'Rewards Reports', href: '/admin/rewards/analytics/', perm: 'fans.rewards|fans.rewards.manage', hint: 'Charts, checks for suspicious accounts, Excel download' },
+    { id: 'rewards', label: 'Lobi Stars Rewards', href: '/admin/rewards/', perm: 'rewards.settings|rewards.catalogue|rewards.members.view|rewards.points.adjust|rewards.fulfilment', hint: 'Star Points: settings, members, adjust points, launch switch' },
+    { id: 'rewards-catalogue', label: 'Rewards Catalogue', href: '/admin/rewards/catalogue/', perm: 'rewards.catalogue', hint: 'What fans can redeem: points, stock, limits' },
+    { id: 'rewards-terms', label: 'Rewards Terms', href: '/admin/rewards/terms/', perm: 'rewards.settings', hint: 'Change the Lobi Stars Rewards Terms at any time' },
+    { id: 'rewards-fulfilment', label: 'Fulfilment & Vouchers', href: '/admin/rewards/fulfilment/', perm: 'rewards.fulfilment', hint: 'Experiences and items to arrange; check a voucher code' },
+    { id: 'rewards-analytics', label: 'Rewards Reports', href: '/admin/rewards/analytics/', perm: 'analytics.view_all|rewards.settings', hint: 'Charts, checks for suspicious accounts, Excel download' },
   ] },
   { id: 'fans', icon: '👥', label: 'Fans & Inbox', color: '#8B5CF6', items: [
-    { id: 'inbox', label: 'Inbox', href: '/admin/inbox/', perm: 'inbox.contact|inbox.partners|inbox.media', hint: 'Read and reply to contact, sponsorship and hospitality messages' },
-    { id: 'newsletter', label: 'Newsletter', href: '/admin/newsletter/', perm: 'fans.newsletter', hint: 'Write and send the weekly newsletter' },
-    { id: 'fans', label: 'Fan Database', href: '/admin/fans/', perm: 'fans.view' },
-    { id: 'fans-newsletter', label: 'Newsletter Subscribers', href: '/admin/fans/?source=newsletter', perm: 'fans.view' },
-    { id: 'fans-accounts', label: 'Fan Accounts', href: '/admin/fans/?source=fan_account', perm: 'fans.view' },
-    { id: 'contact-sources-f', label: 'Contact Sources & Downloads', href: '/admin/contact-sources/', perm: 'fans.view' },
-    { id: 'fans-duplicates', label: 'Possible Duplicates', href: '/admin/fans/duplicates/', perm: 'fans.view' },
-    { id: 'members', label: 'Members', href: '/admin/members/', perm: 'fans.view' },
+    { id: 'inbox', label: 'Inbox', href: '/admin/inbox/', perm: 'fans.inbox.read', hint: 'Read and reply to contact, sponsorship and hospitality messages' },
+    { id: 'newsletter', label: 'Newsletter', href: '/admin/newsletter/', perm: 'fans.newsletter.manage', hint: 'Write and send the weekly newsletter' },
+    { id: 'fans', label: 'Fan Database', href: '/admin/fans/', perm: 'fans.database.view|fans.accounts.view' },
+    { id: 'fans-newsletter', label: 'Newsletter Subscribers', href: '/admin/fans/?source=newsletter', perm: 'fans.database.view|fans.accounts.view' },
+    { id: 'fans-accounts', label: 'Fan Accounts', href: '/admin/fans/?source=fan_account', perm: 'fans.database.view|fans.accounts.view' },
+    { id: 'contact-sources-f', label: 'Contact Sources & Downloads', href: '/admin/contact-sources/', perm: 'fans.database.view' },
+    { id: 'fans-duplicates', label: 'Possible Duplicates', href: '/admin/fans/duplicates/', perm: 'fans.accounts.edit' },
+    { id: 'members', label: 'Members', href: '/admin/members/', perm: 'fans.members.manage|fans.accounts.view' },
   ] },
   { id: 'commerce', icon: '🛒', label: 'Commerce', color: '#F97316', items: [
-    { id: 'tickets', label: 'Match Tickets', href: '/admin/tickets/', perm: 'commerce.tickets', hint: 'Prices, capacity, sale times and on/off per home match; orders, refunds, sales' },
-    { id: 'ticket-discounts', label: 'Ticket Discounts', href: '/admin/tickets/discounts/', perm: 'commerce.tickets', hint: 'Group, early-bird and family bundle discounts: on/off, percents, dates, limits, report' },
-    { id: 'scan', label: 'Ticket Scanner', href: '/admin/tickets/scan/', perm: 'tickets.scan' },
-    { id: 'season-tickets', label: 'Season Tickets', href: '/admin/season-tickets/', perm: 'commerce.season', hint: 'Prices, how many per stand, sales, cancel a season ticket' },
-    { id: 'kitchen', label: 'Kitchen Screen', href: '/admin/kitchen/', perm: 'commerce.kitchen', hint: 'Full-screen app for the kitchen: accept, cooking, ready' },
-    { id: 'food-live', label: 'Food: Live Order Board', href: '/admin/food-orders/live/', perm: 'commerce.food', hint: 'Kitchen and runners on matchday' },
-    { id: 'kitchen-alerts', label: 'Food: Kitchen Alerts', href: '/admin/food-orders/kitchen-alerts/', perm: 'commerce.food', hint: 'Push + Telegram alerts, repeats, devices, log' },
-    { id: 'food-orders', label: 'Food: Orders', href: '/admin/food-orders/', perm: 'commerce.food' },
-    { id: 'food-analytics', label: 'Food: Analytics', href: '/admin/food-orders/analytics/', perm: 'commerce.food' },
-    { id: 'food-menu', label: 'Food: Menu & Prices', href: '/admin/food-orders/menu/', perm: 'commerce.food', hint: 'Add items, prices, photos, sold out' },
-    { id: 'shirt-orders', label: 'Shirt Personalisation Orders', href: '/admin/shirt-orders/', perm: 'commerce.shirts' },
-    { id: 'cms-shop', label: 'Shop Products', href: `${CMS}/settings/entries/shop`, perm: 'content.cms', ext: true },
-    { id: 'cms-hospitality', label: 'Hospitality Packages', href: `${CMS}/settings/entries/hospitality`, perm: 'content.cms', ext: true },
-    { id: 'cms-membership', label: 'Membership Settings', href: `${CMS}/settings/entries/membership`, perm: 'content.cms', ext: true },
+    { id: 'tickets', label: 'Match Tickets', href: '/admin/tickets/', perm: 'commerce.tickets.manage', hint: 'Prices, capacity, sale times and on/off per home match; orders, refunds, sales' },
+    { id: 'ticket-discounts', label: 'Ticket Discounts', href: '/admin/tickets/discounts/', perm: 'commerce.tickets.manage', hint: 'Group, early-bird and family bundle discounts: on/off, percents, dates, limits, report' },
+    { id: 'scan', label: 'Ticket Scanner', href: '/admin/tickets/scan/', perm: 'commerce.gate_scan' },
+    { id: 'season-tickets', label: 'Season Tickets', href: '/admin/season-tickets/', perm: 'commerce.tickets.manage', hint: 'Prices, how many per stand, sales, cancel a season ticket' },
+    { id: 'kitchen', label: 'Kitchen Screen', href: '/admin/kitchen/', perm: 'commerce.kitchen.board|commerce.kitchen.manage', hint: 'Full-screen app for the kitchen: accept, cooking, ready' },
+    { id: 'food-live', label: 'Food: Live Order Board', href: '/admin/food-orders/live/', perm: 'commerce.kitchen.manage', hint: 'Kitchen and runners on matchday' },
+    { id: 'kitchen-alerts', label: 'Food: Kitchen Alerts', href: '/admin/food-orders/kitchen-alerts/', perm: 'commerce.kitchen.manage', hint: 'Push + Telegram alerts, repeats, devices, log' },
+    { id: 'food-orders', label: 'Food: Orders', href: '/admin/food-orders/', perm: 'commerce.kitchen.manage' },
+    { id: 'food-analytics', label: 'Food: Analytics', href: '/admin/food-orders/analytics/', perm: 'commerce.kitchen.manage' },
+    { id: 'food-menu', label: 'Food: Menu & Prices', href: '/admin/food-orders/menu/', perm: 'commerce.kitchen.manage', hint: 'Add items, prices, photos, sold out' },
+    { id: 'shirt-orders', label: 'Shirt Personalisation Orders', href: '/admin/shirt-orders/', perm: 'commerce.personalisation.manage' },
+    { id: 'cms-shop', label: 'Shop Products', href: `${CMS}/settings/entries/shop`, perm: 'commerce.shop.manage|commerce.personalisation.manage', ext: true },
+    { id: 'cms-hospitality', label: 'Hospitality Packages', href: `${CMS}/settings/entries/hospitality`, perm: 'commerce.hospitality.manage', ext: true },
+    { id: 'cms-membership', label: 'Membership Settings', href: `${CMS}/settings/entries/membership`, perm: 'fans.members.manage', ext: true },
   ] },
   { id: 'partners', icon: '🤝', label: 'Partners', color: '#14B8A6', items: [
-    { id: 'partners', label: 'Partners & Open Categories', href: '/admin/partners/', perm: 'partners.manage' },
-    { id: 'inbox-sponsorship', label: 'Sponsorship Enquiries', href: '/admin/inbox/?source=sponsorship', perm: 'inbox.partners' },
+    { id: 'partners', label: 'Partners & Open Categories', href: '/admin/partners/', perm: 'partners.manage|partners.reports' },
+    { id: 'inbox-sponsorship', label: 'Sponsorship Enquiries', href: '/admin/inbox/?source=sponsorship', perm: 'partners.enquiries' },
     { id: 'newsletter-sponsors', label: 'Newsletter Sponsor Adverts', href: '/admin/newsletter/?tab=sponsors', perm: 'partners.manage', hint: 'Sponsor logos, links and adverts in the newsletter' },
-    { id: 'partner-reports', label: 'Monthly Partner Reports', href: '/admin/partners/#prr', perm: 'partners.manage', hint: 'Email each sponsor their monthly numbers' },
-    { id: 'analytics-partners', label: 'Partner Reports', href: '/admin/analytics/#sec-partners', perm: 'analytics.view' },
-    { id: 'cms-partners', label: 'Partner Profiles', href: `${CMS}/partners`, perm: 'content.cms', ext: true },
+    { id: 'partner-reports', label: 'Monthly Partner Reports', href: '/admin/partners/#prr', perm: 'partners.reports', hint: 'Email each sponsor their monthly numbers' },
+    { id: 'analytics-partners', label: 'Partner Reports', href: '/admin/analytics/#sec-partners', perm: 'analytics.partners|analytics.view_all' },
+    { id: 'cms-partners', label: 'Partner Profiles', href: `${CMS}/partners`, perm: 'partners.manage|media.upload', ext: true },
   ] },
   { id: 'analytics', icon: '📊', label: 'Analytics', color: '#EC4899', items: [
-    { id: 'analytics', label: 'Traffic & Engagement', href: '/admin/analytics/', perm: 'analytics.view' },
-    { id: 'contact-sources', label: 'Contact Sources', href: '/admin/contact-sources/', perm: 'analytics.view' },
-    { id: 'analytics-matchday', label: 'Matchday Analytics', href: '/admin/analytics/#sec-matchday', perm: 'analytics.view' },
-    { id: 'analytics-commentary', label: 'Commentary / Broadcast Report', href: '/admin/analytics/#sec-commentary', perm: 'analytics.view' },
-    { id: 'food-analytics-a', label: 'Food Analytics', href: '/admin/food-orders/analytics/', perm: 'analytics.view' },
+    { id: 'analytics', label: 'Traffic & Engagement', href: '/admin/analytics/', perm: 'analytics.view_all' },
+    { id: 'contact-sources', label: 'Contact Sources', href: '/admin/contact-sources/', perm: 'analytics.view_all' },
+    { id: 'analytics-matchday', label: 'Matchday Analytics', href: '/admin/analytics/#sec-matchday', perm: 'analytics.view_all' },
+    { id: 'analytics-commentary', label: 'Commentary / Broadcast Report', href: '/admin/analytics/#sec-commentary', perm: 'analytics.broadcast|analytics.view_all' },
+    { id: 'food-analytics-a', label: 'Food Analytics', href: '/admin/food-orders/analytics/', perm: 'analytics.view_all' },
   ] },
   { id: 'settings', icon: '⚙️', label: 'Settings', color: '#64748B', items: [
-    { id: 'cms-site', label: 'Site Settings & Social Links', href: `${CMS}/settings/entries/site`, perm: 'content.cms', ext: true },
-    { id: 'cms-promo', label: 'Promo Bar', href: `${CMS}/settings/entries/promo`, perm: 'content.cms', ext: true },
-    { id: 'commentary-settings', label: 'Commentary & Stream Settings', href: '/admin/commentary/', perm: 'matchday.commentary' },
+    { id: 'cms-site', label: 'Site Settings & Social Links', href: `${CMS}/settings/entries/site`, perm: 'settings.site|settings.social_links', ext: true },
+    { id: 'cms-promo', label: 'Promo Bar', href: `${CMS}/settings/entries/promo`, perm: 'settings.promo_bar', ext: true },
+    { id: 'commentary-settings', label: 'Commentary & Stream Settings', href: '/admin/commentary/', perm: 'settings.commentary|broadcast.commentary.manage' },
     { id: 'staff', label: 'Staff Users & Roles', href: '/admin/staff/', perm: 'staff.manage' },
     { id: 'security', label: 'Login & Security', href: '/admin/security/', perm: 'staff.manage', hint: 'Require two-step login, IP allowlist, security alerts, who is signed in' },
     { id: 'account', label: 'My Account (password, two-step login)', href: '/admin/account/', perm: '' },
-    { id: 'inbox-settings', label: 'Inbox Emails & Templates', href: '/admin/inbox/?settings=1', perm: 'inbox.settings', hint: 'New-message alerts, daily summary, saved replies' },
-    { id: 'export-log', label: 'Export Log', href: '/admin/fans/#exportLog', perm: 'fans.export|settings.activity' },
-    { id: 'activity', label: 'Activity Log', href: '/admin/activity/', perm: 'settings.activity' },
-    { id: 'health', label: 'Website Health', href: '/admin/health/', perm: 'settings.health', hint: 'Is the site up? Checks every 5 minutes, incidents and response times' },
-    { id: 'backup', label: 'Data Backup', href: '/admin/backup/', perm: 'staff.backup', hint: 'Download a copy of all website data (Super Admin)' },
+    { id: 'inbox-settings', label: 'Inbox Emails & Templates', href: '/admin/inbox/?settings=1', perm: 'fans.inbox.reply', hint: 'New-message alerts, daily summary, saved replies' },
+    { id: 'export-log', label: 'Export Log', href: '/admin/fans/#exportLog', perm: 'logs.view|fans.export' },
+    { id: 'activity', label: 'Activity Log', href: '/admin/activity/', perm: 'logs.view' },
+    { id: 'health', label: 'Website Health', href: '/admin/health/', perm: 'logs.view|settings.site', hint: 'Is the site up? Checks every 5 minutes, incidents and response times' },
+    { id: 'backup', label: 'Data Backup', href: '/admin/backup/', perm: 'staff.manage', hint: 'Download a copy of all website data (Super Admin)' },
   ] },
 ];
 const active = CATEGORIES.flatMap(c => c.items.map(i => ({ c, i }))).find(x => x.i.id === current);
@@ -143,6 +143,7 @@ const showBack = here !== '/admin/dashboard/';
     <a href="/" class="ash-site">&larr; <span class="ash-lbl">Back to the website</span></a>
   </aside>
   <div class="ash-ov" id="ashOv" hidden></div>
+  <div class="ash-idle" id="ashIdle" role="alertdialog" aria-live="assertive" aria-label="You will be signed out soon" hidden><p>You'll be signed out in <strong id="ashIdleLeft">2</strong> minute(s) because nothing has happened for a while.</p><button type="button" id="ashIdleStay">Stay signed in</button></div>
 
   <header class="ash-top">
     <button type="button" class="ash-burger" id="ashBurger" aria-label="Open admin menu" aria-controls="ashSide" aria-expanded="false">☰</button>
@@ -296,6 +297,10 @@ const showBack = here !== '/admin/dashboard/';
   .ash-out { border: 1px solid var(--d4); background: #fff; border-radius: 8px; padding: 7px 12px; cursor: pointer; font: 600 13px 'Barlow', sans-serif; white-space: nowrap; }
   .ash-denied { margin: 0 0 18px; padding: 12px 16px; border-radius: 10px; background: #FFF4E5; color: #7A4B00; }
   a.ash-due { display: block; font-weight: 700; text-decoration: none; }
+  .ash-idle { position: fixed; inset: auto 16px 16px auto; z-index: 9999; max-width: 340px; padding: 16px 18px; border-radius: 12px; background: #15181D; color: #fff; box-shadow: 0 12px 32px rgba(0,0,0,.3); }
+  .ash-idle p { margin: 0 0 10px; font-size: 15px; line-height: 1.45; }
+  .ash-idle button { padding: 9px 16px; border: 0; border-radius: 8px; background: #E31E24; color: #fff; font-weight: 700; cursor: pointer; }
+  @media (max-width: 480px) { .ash-idle { inset: auto 16px 16px 16px; max-width: none; } }
 
   @media (max-width: 1023px) {
     body.admin-body, body.admin-body.ash-collapsed { --side: 0px; }
@@ -363,7 +368,7 @@ const showBack = here !== '/admin/dashboard/';
       cat.hidden = !any;
     });
     document.dispatchEvent(new CustomEvent('ls:admin', { detail: d.admin }));
-    if (perms.has('commerce.food')) startFood();
+    if (perms.has('commerce.kitchen.manage')) startFood();
     idleMinutes = d.admin.idleMinutes || 30;
     // Two-step login is required and this person hasn't set it up yet: remind them on every page.
     if (d.admin.twoStepDue && !location.pathname.startsWith('/admin/account')) {
@@ -585,13 +590,22 @@ const showBack = here !== '/admin/dashboard/';
   window.setInterval(async () => {
     const now = Date.now();
     if (kiosk) lastAct = now;
+    const left = idleMinutes * 60000 - (now - lastAct);
+    const warn = document.getElementById('ashIdle');
+    if (warn) { warn.hidden = left > 2 * 60000 || left <= 0; if (!warn.hidden) document.getElementById('ashIdleLeft')!.textContent = String(Math.max(1, Math.ceil(left / 60000))); }
     if (now - lastAct > idleMinutes * 60000) { await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {}); return backToLogin('idle'); }
     if (lastAct > lastPing && now - lastPing > 4 * 60000) {
       lastPing = now;
       const r = await fetch('/api/admin/me', { method: 'POST', headers: H }).catch(() => null);
       if (r && r.status === 401) backToLogin('ended');
     }
-  }, 30000);
+  }, 15000);
+  // "Stay signed in" on the 2-minute warning.
+  document.getElementById('ashIdleStay')?.addEventListener('click', async () => {
+    mark(); lastPing = Date.now(); (document.getElementById('ashIdle') as HTMLElement).hidden = true;
+    const r = await fetch('/api/admin/me', { method: 'POST', headers: H }).catch(() => null);
+    if (r && r.status === 401) backToLogin('ended');
+  });
 
   $('anOut').addEventListener('click', async () => {
     sessionStorage.removeItem('ls_admin_code');

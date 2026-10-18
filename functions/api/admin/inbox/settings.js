@@ -2,6 +2,7 @@ import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { normEmail } from '../../_lib/contacts.js';
 import { inboxSettings, saveInboxSetting } from '../../_lib/inbox.js';
+import { inboxSources, can } from '../../_lib/adminRoles.js';
 
 // POST /api/admin/inbox/settings { alertsEmail, dailySummary, extraEmails }
 //   alertsEmail   email the relevant staff about each new message
@@ -11,7 +12,8 @@ import { inboxSettings, saveInboxSetting } from '../../_lib/inbox.js';
 export async function onRequestPost({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
-  // Needs the inbox.settings permission (checked by the admin API middleware).
+  // Only people who see every kind of message (CRM Manager, Super Admin) change the alerts for everyone.
+  if (inboxSources(admin) !== null && !can(admin, 'staff.manage')) return Response.json({ error: 'Only the CRM Manager and Super Admins change the Inbox alerts.' }, { status: 403 });
   const db = env.DB;
   const b = await request.json().catch(() => ({}));
   const extra = String(b.extraEmails || '').split(/[\s,;]+/).filter(Boolean);

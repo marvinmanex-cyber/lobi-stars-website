@@ -44,7 +44,7 @@ export async function ensureSecuritySchema(db) {
   ]);
   const cols = new Set((await db.prepare(`PRAGMA table_info(admin_users)`).all()).results.map(r => r.name));
   for (const [name, type] of [['failed_logins', 'INTEGER NOT NULL DEFAULT 0'], ['locked_until', 'INTEGER'], ['must_change_password', 'INTEGER NOT NULL DEFAULT 0'],
-    ['twostep_grace_until', 'INTEGER'], ['twostep_login_at', 'TEXT'], ['password_changed_at', 'TEXT']]) {
+    ['twostep_grace_until', 'INTEGER'], ['twostep_login_at', 'TEXT'], ['password_changed_at', 'TEXT'], ['email_code_hash', 'TEXT'], ['email_code_expires', 'INTEGER']]) {
     if (!cols.has(name)) {
       try { await db.prepare(`ALTER TABLE admin_users ADD COLUMN ${name} ${type}`).run(); }
       catch (err) { if (!/duplicate column/i.test(String(err))) throw err; }
@@ -59,9 +59,10 @@ export const SETTING_DEFAULTS = {
   require_two_step: '0',      // '1' = every staff account must use two-step login
   two_step_since: '',         // when it was switched on (ms)
   email_domain_only: '0',     // '1' = new staff emails must end with @lobistarsfc.com
-  ip_allowlist_scope: 'off',  // off | super_admin | all
+  ip_allowlist_scope: 'off',  // off | super_admin | super_admin_crm | all
   ip_allowlist: '',           // one address or range per line
   alert_emails: '',           // extra addresses for security alerts (comma separated)
+  access_review_month: '',    // the last month the access review was emailed (YYYY-MM)
 };
 let cache = null, cachedAt = 0;
 export async function securitySettings(db, { force = false } = {}) {
@@ -249,7 +250,8 @@ export function ipAllowed(ip, text) {
 }
 /** Does the allowlist apply to this role id right now? (Never to the owner code: the way back in.) */
 export const allowlistApplies = (settings, roleId) =>
-  settings.ip_allowlist_scope === 'all' || (settings.ip_allowlist_scope === 'super_admin' && roleId === 'super_admin');
+  settings.ip_allowlist_scope === 'all' || (settings.ip_allowlist_scope === 'super_admin' && roleId === 'super_admin')
+  || (settings.ip_allowlist_scope === 'super_admin_crm' && ['super_admin', 'crm_manager'].includes(roleId));
 
 // ── Requests from other websites (CSRF) ──
 

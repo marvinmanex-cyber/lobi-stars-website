@@ -24,9 +24,17 @@ const siteKey = settings.turnstileSiteKey || '';
         <div id="otpWrap" hidden>
           <label class="login-label" for="otp">6-digit code from your authenticator app</label>
           <input id="otp" autocomplete="one-time-code" maxlength="9" aria-describedby="otpHelp" />
-          <p class="muted login-help" id="otpHelp">Lost your phone? Type one of your backup codes instead (like <code>abcd-efgh</code>).</p>
+          <p class="muted login-help" id="otpHelp">Lost your phone? Type one of your backup codes instead (like <code>abcd-efgh</code>), or <button type="button" class="login-link" id="emailCode">email me a code</button>.</p>
         </div>
         <button type="submit" class="btn-p">Log in</button>
+        <button type="button" class="login-link login-forgot" id="forgotBtn">Forgot your password?</button>
+      </form>
+
+      <form id="forgotForm" class="login-forgotbox" hidden>
+        <p class="muted">Type your staff email address. If it has an account, we'll email you a link to choose a new password (it works for 2 hours).</p>
+        <label class="login-label" for="fEmail">Email</label>
+        <input id="fEmail" type="email" autocomplete="username" required />
+        <button type="submit" class="btn-p">Email me a link</button>
       </form>
 
       <div id="captcha" class="login-captcha" data-sitekey={siteKey} hidden><div id="tsBox"></div></div>
@@ -67,7 +75,10 @@ const siteKey = settings.turnstileSiteKey || '';
   .login-err { color: #C11A1F; font-size: 14px; margin: 0; }
   .login-note { margin: 0; padding: 10px 12px; border-radius: 8px; background: #FFF4E5; color: #7A4B00; font-size: 14px; }
   .login-help { font-size: 13px; margin: 0; }
+  .login-link { border: 0; background: none; padding: 0; color: var(--red-text); font: inherit; font-weight: 700; text-decoration: underline; cursor: pointer; }
   .login-captcha { min-height: 66px; }
+  .login-forgot { align-self: center; margin-top: 4px; }
+  .login-forgotbox { border-top: 1px solid var(--d4); padding-top: 14px; }
 </style>
 
 <script>
@@ -136,6 +147,30 @@ const siteKey = settings.turnstileSiteKey || '';
     if (!email || !password) return;
     const otp = (document.getElementById('otp') as HTMLInputElement).value.trim();
     login(otp ? { email, password, otp } : { email, password }, '__session__', forms.staff.querySelector('button')!);
+  });
+  // No phone to hand: email a 6-digit code instead (after the email and password).
+  document.getElementById('emailCode')!.addEventListener('click', async () => {
+    const email = (document.getElementById('email') as HTMLInputElement).value.trim();
+    const password = (document.getElementById('password') as HTMLInputElement).value;
+    if (!email || !password) { err.textContent = 'Type your email and password first.'; err.hidden = false; return; }
+    const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password, emailCode: true }) });
+    const data = await res.json().catch(() => ({}));
+    note.textContent = data.error || 'Please try again.'; note.hidden = false; err.hidden = true;
+    (document.getElementById('otp') as HTMLInputElement).focus();
+  });
+  // Forgot password: a reset link by email (the answer is the same whether or not the address has an account).
+  const forgot = document.getElementById('forgotForm') as HTMLFormElement;
+  document.getElementById('forgotBtn')!.addEventListener('click', () => {
+    forgot.hidden = false;
+    (document.getElementById('fEmail') as HTMLInputElement).value = (document.getElementById('email') as HTMLInputElement).value;
+    (document.getElementById('fEmail') as HTMLInputElement).focus();
+  });
+  forgot.addEventListener('submit', async e => {
+    e.preventDefault();
+    const res = await fetch('/api/admin/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'forgot', email: (document.getElementById('fEmail') as HTMLInputElement).value.trim() }) });
+    const data = await res.json().catch(() => ({}));
+    note.textContent = data.message || data.error || 'Please try again in a few minutes.'; note.hidden = false; err.hidden = true;
+    forgot.hidden = true;
   });
   forms.owner.addEventListener('submit', e => {
     e.preventDefault();

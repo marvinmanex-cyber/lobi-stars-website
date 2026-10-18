@@ -26,6 +26,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .al :global(.act) { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #EEF2FF; color: #3730A3; font-size: 12px; font-weight: 700; white-space: nowrap; }
   .al :global(.act.export) { background: #FEF3C7; color: #92400E; } .al :global(.act.delete) { background: #FDECEC; color: #A3161B; }
   .al :global(.empty) { padding: 30px; text-align: center; color: var(--lt); }
+  .act-wrap :global(tr.emerg td), :global(tr.emerg td) { background: #FDECEC; }
+  :global(.emtag) { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: #A3161B; color: #fff; }
 </style>
 
 <script is:inline>
@@ -39,7 +41,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const d = await res.json().catch(() => ({}));
     if (!res.ok) { $('log').innerHTML = `<p class="empty">${esc(d.error || 'Could not load the log.')}</p>`; return; }
     $('log').innerHTML = d.log.length ? '<table><thead><tr><th>When</th><th>Staff</th><th>Action</th><th>Detail</th></tr></thead><tbody>' +
-      d.log.map(r => `<tr><td>${esc(when(r.ts))}</td><td>${esc(r.staff_name)}</td><td><span class="act ${/export/.test(r.action) ? 'export' : /delete|remove/.test(r.action) ? 'delete' : ''}">${esc(r.action.replace(/_/g, ' '))}</span></td><td>${esc(r.detail)}</td></tr>`).join('') +
+      d.log.map(r => `<tr${r.emergency ? ' class="emerg"' : ''}><td>${esc(when(r.ts))}</td><td>${r.emergency ? '<span class="emtag">🚨 Emergency account</span><br>' : ''}${esc(r.staff_name)}</td><td><span class="act ${/export/.test(r.action) ? 'export' : /delete|remove/.test(r.action) ? 'delete' : ''}">${esc(r.action.replace(/_/g, ' '))}</span></td><td>${esc(r.detail)}</td></tr>`).join('') +
       '</tbody></table>' : '<div class="empty-state"><b>📜</b><p>Nothing in the log yet 🎉</p></div>';
   }
   $('f').addEventListener('submit', e => { e.preventDefault(); load($('q').value.trim()); });
