@@ -16,9 +16,13 @@ in HANDOVER-TODO.md.
   **dkakaan@lobistarsfc.com**. It covers the alerts, the weekly security
   summary, warnings about changed payment/email keys and the monthly access
   review. Every Super Admin still sees the alerts in the 🔔 bell.
-- Unchanged: emails about a person's own account (new sign-in, password
-  changed, sign-in code) go to that person; approval requests go to the Super
-  Admins who can approve.
+- Emails about a person's own account still go to them, and
+  dkakaan@lobistarsfc.com now gets a copy (marked "Copy:") of: password
+  changed, two-step login turned on or off, a backup code used (a new device
+  and a lockout already reach them as alerts). Sign-in codes and password
+  links are never copied, so nobody else can use them.
+- Approval requests (new staff, big points changes and so on) go to the
+  Super Admins who can approve **and** to dkakaan@lobistarsfc.com.
 
 **Staff need to:** nothing.
 

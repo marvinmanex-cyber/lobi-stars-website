@@ -1760,9 +1760,12 @@ Until then the Newsletter screen shows a yellow note.
   too. Alerts: the emergency admin code used, accounts locked, two-step login
   resets, role changes, sign-ins from new devices, fan data downloads, backups
   failing, the weekly summary and the monthly access review. Emails about
-  your **own** account (a new sign-in, a password change, your sign-in code)
-  always go to you, and approval requests go to the Super Admins who can
-  approve.
+  your **own** account always go to you, and the chosen Super Admin gets a
+  copy of the important ones (a new device, a lockout, a password change,
+  two-step login turned on or off, a backup code used). Sign-in codes and
+  password links are never copied, so nobody else could use them. Approval
+  requests go to the Super Admins who can approve **and** to the chosen
+  Super Admin.
 - **Signed in now:** everyone signed in, with device and network. **Sign
   out** one device or **Sign out everywhere** for a person.
 - **Recent security events:** sign-ins, wrong attempts, lockouts, backup

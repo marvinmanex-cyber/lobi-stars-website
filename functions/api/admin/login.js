@@ -6,8 +6,7 @@ import { roleOf, roleLabel } from '../_lib/adminRoles.js';
 import {
   createSession, deviceIdFrom, deviceCookie, randomHex, rememberDevice, looksLikeBackupCode, useBackupCode,
   securitySettings, allowlistApplies, ipAllowed, alertAddresses, securityEmail, loginDetails, describeDevice,
-  LOCK_AFTER, LOCK_MS, CAPTCHA_AFTER, sha256Hex,
-} from '../_lib/adminSecurity.js';
+  LOCK_AFTER, LOCK_MS, CAPTCHA_AFTER, sha256Hex, accountEmail } from '../_lib/adminSecurity.js';
 
 const WRONG = 'Email or password is incorrect.';
 const LOCKED = 'Too many wrong attempts. For your security, please wait 15 minutes and try again.';
@@ -143,7 +142,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
       const left = await useBackupCode(db, u.id, otp);
       if (left === null) return fail('That backup code is not right or has already been used.', { needCode: true });
       await logAdminAction(db, { id: u.id, name: u.name }, 'backup_code_used', `${left} backup code${left === 1 ? '' : 's'} left`);
-      later(securityEmail(env, u.email, 'Lobi Stars admin: a backup code was used', [
+      later(accountEmail(env, u.email, 'Lobi Stars admin: a backup code was used', [
         `Hello ${u.name.split(' ')[0]},`, `One of your two-step login backup codes was just used to sign in. You have <strong>${left}</strong> left.`, loginDetails(request),
         left <= 3 ? 'You are running low: make new backup codes in My account.' : 'Each code works once. You can make new ones in My account.'], origin));
     } else if (u.email_code_hash && u.email_code_expires > now && (await sha256Hex(`${u.id}:${otp.replace(/\D/g, '')}`)) === u.email_code_hash) {

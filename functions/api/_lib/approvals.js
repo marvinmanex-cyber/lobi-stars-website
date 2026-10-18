@@ -9,7 +9,7 @@
 // request. If there is nobody else who could approve, the action goes ahead and
 // is recorded as "no other approver", so the club is never stuck.
 import { logAdminAction } from './adminSession.js';
-import { securitySettings, saveSecuritySetting, securityEmail } from './adminSecurity.js';
+import { securitySettings, saveSecuritySetting, securityEmail, securityContact } from './adminSecurity.js';
 import { superAdminEmails, isFullSuperAdmin } from './superAdmins.js';
 import { randomId } from './crypto.js';
 
@@ -77,6 +77,9 @@ export async function requestApproval(env, origin, { kind, summary, payload, req
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).bind(id, kind, summary.slice(0, 300), JSON.stringify(payload), requester.id, requester.name, requester.email || null, new Date().toISOString()).run();
   await logAdminAction(env.DB, requester, 'approval_requested', `${summary} (waiting for approval)`);
   const to = (await otherApprovers(env, requester)).map(p => p.email).filter(Boolean);
+  // The chosen security contact is always told too (unless they asked for it themselves).
+  const contact = await securityContact(env);
+  if (contact && contact !== String(requester.email || '').toLowerCase() && !to.map(e => e.toLowerCase()).includes(contact)) to.push(contact);
   await securityEmail(env, to, 'Lobi Stars admin: an action is waiting for your approval', [
     `<strong>${esc(requester.name)}</strong> asked for: <strong>${esc(summary)}</strong>.`,
     `<a href="${origin}/admin/approvals/" style="display:inline-block;padding:12px 20px;background:#C11A1F;color:#fff;border-radius:8px;font-weight:700;text-decoration:none">Approve or reject</a>`,

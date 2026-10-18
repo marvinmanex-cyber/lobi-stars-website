@@ -6,8 +6,7 @@ import { qrPngBuffer } from '../_lib/qrcode.js';
 import { rateLimit, tooMany, ensureFanSchema } from '../_lib/fans.js';
 import {
   passwordProblem, newBackupCodes, backupCodesLeft, listSessions, revokeSessions, revokeSession, securitySettings,
-  securityEmail, loginDetails, looksLikeBackupCode, useBackupCode,
-} from '../_lib/adminSecurity.js';
+  securityEmail, loginDetails, looksLikeBackupCode, useBackupCode, accountEmail } from '../_lib/adminSecurity.js';
 
 // My account (any signed-in staff member).
 // GET  /api/admin/account                          -- name, email, two-step login, backup codes left, my signed-in devices
@@ -97,7 +96,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     // Anyone who knew the old password is signed out on their devices.
     const n = await revokeSessions(db, u.id, 'password changed', { keepId: admin.sessionId });
     await logAdminAction(db, admin, 'account_password', `changed own password${n ? `; ${n} other device(s) signed out` : ''}`);
-    later(securityEmail(env, u.email, 'Lobi Stars admin: your password was changed', [`Hello ${u.name.split(' ')[0]},`, 'The password for your Lobi Stars admin account was just changed. Your other devices have been signed out.', loginDetails(request)], origin));
+    later(accountEmail(env, u.email, 'Lobi Stars admin: your password was changed', [`Hello ${u.name.split(' ')[0]},`, 'The password for your Lobi Stars admin account was just changed. Your other devices have been signed out.', loginDetails(request)], origin));
     return json({ ok: true, otherDevicesSignedOut: n });
   }
   if (admin.restrict === 'password') return json({ error: 'Please choose a new password first.', restrict: 'password' }, 403);
@@ -117,7 +116,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     await db.prepare(`UPDATE admin_users SET totp_secret = totp_pending, totp_pending = NULL, totp_enabled = 1, totp_last_step = ? WHERE id = ?`).bind(step, u.id).run();
     const codes = await newBackupCodes(db, u.id);
     await logAdminAction(db, admin, 'account_2fa_on', 'two-step login turned on; 10 backup codes made');
-    later(securityEmail(env, u.email, 'Lobi Stars admin: two-step login is on', [`Hello ${u.name.split(' ')[0]},`, 'Two-step login is now on for your Lobi Stars admin account. Keep your backup codes somewhere safe, away from your phone.'], origin));
+    later(accountEmail(env, u.email, 'Lobi Stars admin: two-step login is on', [`Hello ${u.name.split(' ')[0]},`, 'Two-step login is now on for your Lobi Stars admin account. Keep your backup codes somewhere safe, away from your phone.'], origin));
     return json({ ok: true, backupCodes: codes });
   }
   if (b.action === 'backup_codes') {
@@ -136,7 +135,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     await db.prepare(`UPDATE admin_users SET totp_enabled = 0, totp_secret = NULL, totp_pending = NULL, totp_last_step = 0 WHERE id = ?`).bind(u.id).run();
     await db.prepare(`DELETE FROM admin_backup_codes WHERE user_id = ?`).bind(u.id).run();
     await logAdminAction(db, admin, 'account_2fa_off', 'two-step login turned off');
-    later(securityEmail(env, u.email, 'Lobi Stars admin: two-step login was turned off', [`Hello ${u.name.split(' ')[0]},`, 'Two-step login was just turned off for your Lobi Stars admin account. Your password is now the only thing protecting it.', loginDetails(request)], origin));
+    later(accountEmail(env, u.email, 'Lobi Stars admin: two-step login was turned off', [`Hello ${u.name.split(' ')[0]},`, 'Two-step login was just turned off for your Lobi Stars admin account. Your password is now the only thing protecting it.', loginDetails(request)], origin));
     return json({ ok: true });
   }
   return json({ error: 'Unknown action' }, 400);

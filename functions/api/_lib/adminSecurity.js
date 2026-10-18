@@ -318,6 +318,21 @@ export async function alertAddresses(env) {
   const list = [...admins, ...String(s.alert_emails || '').split(/[\s,;]+/)].map(e => e.trim().toLowerCase()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e));
   return [...new Set(list.length ? list : [env.SECURITY_ALERT_EMAIL || 'info@lobistarsfc.com'])];
 }
+/** The Super Admin chosen to receive security emails (Settings › Login & Security), or ''. */
+export async function securityContact(env) {
+  return String((await securitySettings(env.DB)).alert_only || '').trim().toLowerCase();
+}
+/**
+ * An email about someone's own account (password changed, two-step login on/off, backup code used),
+ * with a copy for the chosen security contact. Never use it for sign-in codes or password links.
+ */
+export async function accountEmail(env, owner, subject, lines, origin) {
+  const contact = await securityContact(env);
+  const copy = contact && contact !== String(owner || '').toLowerCase()
+    ? securityEmail(env, contact, `Copy: ${subject}`, [`A copy of an email sent to <strong>${owner}</strong> about their own admin account.`, ...lines], origin)
+    : false;
+  return Promise.all([securityEmail(env, owner, subject, lines, origin), copy]);
+}
 const when = (ms = Date.now()) => new Date(ms).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' (Nigeria time)';
 /** Sends a short security email; never stops the login if email isn't working. */
 export async function securityEmail(env, to, subject, lines, origin = 'https://lobistarsfc.com') {

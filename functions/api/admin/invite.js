@@ -2,7 +2,7 @@ import { hashPassword } from '../_lib/password.js';
 import { sessionCookie, logAdminAction } from '../_lib/adminSession.js';
 import { clientIp, rateLimit, tooMany, ensureFanSchema } from '../_lib/fans.js';
 import { roleLabel } from '../_lib/adminRoles.js';
-import { passwordProblem, createSession, deviceIdFrom, deviceCookie, randomHex, rememberDevice, revokeSessions, securityEmail, securitySettings, loginDetails } from '../_lib/adminSecurity.js';
+import { passwordProblem, createSession, deviceIdFrom, deviceCookie, randomHex, rememberDevice, revokeSessions, securityEmail, securitySettings, loginDetails, accountEmail } from '../_lib/adminSecurity.js';
 import { ensureLifecycleSchema, findByLink, sendStaffLink, staffStatus } from '../_lib/staffLifecycle.js';
 
 // The one-time links staff get by email (no sign-in needed; the link is the key).
@@ -57,7 +57,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   if (kind === 'reset') {
     const n = await revokeSessions(db, u.id, 'password reset by email link');
     await logAdminAction(db, { id: u.id, name: u.name }, 'account_password', `new password chosen with a reset link; ${n} device(s) signed out`);
-    later(securityEmail(env, u.email, 'Lobi Stars admin: your password was changed', [`Hello ${u.name.split(' ')[0]},`, 'The password for your Lobi Stars admin account was just changed with a reset link, and every device was signed out.', loginDetails(request)], origin));
+    later(accountEmail(env, u.email, 'Lobi Stars admin: your password was changed', [`Hello ${u.name.split(' ')[0]},`, 'The password for your Lobi Stars admin account was just changed with a reset link, and every device was signed out.', loginDetails(request)], origin));
     return json({ ok: true, kind, signedIn: false });
   }
   // A new account: signed in straight away, ready to set up two-step login.
