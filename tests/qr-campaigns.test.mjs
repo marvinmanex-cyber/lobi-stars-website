@@ -157,7 +157,7 @@ test('campaign admin: validation, reserved words, codes never change, no delete,
     return { Cookie: l.headers.get('set-cookie').split(';')[0] };
   };
   assert.equal((await api('/api/admin/qr/campaigns', 'GET', null, await login('matchday'))).status, 200);
-  assert.equal((await api('/api/admin/qr/stats', 'GET', null, await login('analyst'))).status, 403);
+  assert.equal((await api('/api/admin/qr/stats', 'GET', null, await login('fan_support'))).status, 403);
 });
 
 test('scan and confirm pages are small and stand-alone; privacy mentions scan counts', async () => {

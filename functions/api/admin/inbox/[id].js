@@ -1,7 +1,7 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { sourceLabels } from '../../_lib/contacts.js';
-import { canAccess, inboxScope } from '../../_lib/adminRoles.js';
+import { canAccess, can, inboxPermFor } from '../../_lib/adminRoles.js';
 import { sendEmail } from '../../_lib/email.js';
 import {
   ensureInboxSchema, inboxStaff, sanitizeHtml, textToHtml, composeReply, fill, staffFirstName, htmlToText, STATUSES,
@@ -24,8 +24,8 @@ export async function onRequestGet({ request, env, params }) {
   if (denied) return denied;
   const db = env.DB;
   const t = await load(db, params.id);
-  // The Media role only opens media@ conversations.
-  if (!t || (inboxScope(admin) && t.source !== inboxScope(admin))) return json({ error: 'Conversation not found. It may have been deleted.' }, 404);
+  // Each role only opens its own kinds of message (Media: media@ only).
+  if (!t || !can(admin, inboxPermFor(t.source))) return json({ error: 'Conversation not found. It may have been deleted.' }, 404);
   if (t.unread && !new URL(request.url).searchParams.has('peek')) {
     await db.prepare(`UPDATE inbox_threads SET unread = 0 WHERE id = ?`).bind(t.id).run();
     t.unread = 0;
@@ -60,8 +60,8 @@ export async function onRequestPost({ request, env, params }) {
   if (denied) return denied;
   const db = env.DB;
   const t = await load(db, params.id);
-  // The Media role only opens media@ conversations.
-  if (!t || (inboxScope(admin) && t.source !== inboxScope(admin))) return json({ error: 'Conversation not found. It may have been deleted.' }, 404);
+  // Each role only opens its own kinds of message (Media: media@ only).
+  if (!t || !can(admin, inboxPermFor(t.source))) return json({ error: 'Conversation not found. It may have been deleted.' }, 404);
   const b = await request.json().catch(() => ({}));
   const now = new Date().toISOString();
   const firstName = (t.name || '').split(/\s+/)[0] || 'there';

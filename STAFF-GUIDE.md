@@ -71,19 +71,37 @@ manager gives you once. Paste it in and the CMS remembers it on that device.
 ### Roles (set by a Super Admin in Settings › Staff Users & Roles)
 | Role | Can open |
 |---|---|
-| Super Admin | Everything, including staff accounts and roles |
-| Media | Content (news, awards, CMS) and the Match Centre's matchday content (view) |
-| Matchday Operator | Matchday: matches, live match control, squad, Predict & Win, commentary |
-| Commercial | Commerce, Partners and the Inbox |
-| Fan Relations | Fan database, members and the Inbox |
-| Analyst | Analytics only, read-only |
-| All areas | Accounts made before roles existed: everything except staff accounts |
+| Super Admin | Everything, including staff accounts, roles and data backups |
+| Content Editor | News, awards and the CMS; sees Live Match Control; writes the newsletter |
+| Media Editor | Content, Matchday Programme, results, Share any page, the newsletter and the media@ mailbox |
+| Media Contributor | Writes news and reads/answers the media@ mailbox; sees Live Match Control |
+| Matchday Admin | Everything on matchday: match settings, Live Match Control, League, Programme, Predict & Win, commentary, fan alerts, ticket scanner |
+| Broadcast Operator | Live Commentary, stream settings and Fan Match Alerts |
+| CRM Manager | Fan database (with downloads), members, Rewards, newsletter, the whole Inbox and reports |
+| Fan Support | Contact form messages, looking up fans and Rewards members (no editing or downloads) |
+| Commercial Manager | Tickets, season tickets, food, shirts, partners, sponsorship/hospitality enquiries and reports |
+| Matchday Operations Manager | Gate ticket scanner, food orders and the Kitchen Screen |
+| Gate Staff | Only the ticket scanner |
+| Kitchen Staff | Only the Kitchen Screen |
 
-Downloading contact lists also needs **Can export fan data** on the account.
-If you open a screen your role doesn't include, you're taken back to the
-Dashboard with a note. **Settings › Activity Log** shows every staff action
-(exports, deletions, staff, award and membership changes, Inbox replies,
-notes, assignments and status changes).
+Older role names still work and are shown as the new role: Media → Media
+Editor, Matchday Operator → Matchday Admin, Commercial → Commercial Manager,
+Fan Relations → Fan Support, Kitchen → Kitchen Staff.
+
+**Changing what a role includes:** a Super Admin opens **Settings › Staff
+Users & Roles › Roles and what they include**, opens a role, ticks or unticks
+permissions and presses **Save**. It applies to everyone with that role within
+a minute, and **Back to the default** undoes it. Every change is in the
+Activity Log. Only the Super Admin role can manage staff and roles.
+
+Downloading contact lists needs the **Download fan contact data** permission
+(the CRM Manager role has it) or **Can export fan data** on the account.
+If you open a screen your role doesn't include, you see a **"You don't have
+access to this section"** page with a button back to the Dashboard; ask a
+Super Admin if you need it. The server checks every request, so typing a
+link directly doesn't get round it. **Settings › Activity Log** shows every
+staff action (exports, deletions, staff and role changes, award and
+membership changes, Inbox replies, notes, assignments and status changes).
 
 > **Tip:** Bookmark https://lobistarsfc.com/admin/login on the devices you use.
 
@@ -452,10 +470,10 @@ Files are named with today's date, e.g. `lobi-stars-fan-database-2026-10-09.xlsx
   for the accounts, with their name and contact details removed. It cannot
   be undone.
 
-### Staff accounts (owner only)
+### Staff accounts (Super Admin only)
 
-Under **Staff**, the owner adds an account for each person (name, email,
-temporary password), turns **Can export fan data** on or off, resets
+Under **Staff**, a Super Admin adds an account for each person (name, email,
+role, temporary password), turns **Can export fan data** on or off, resets
 passwords and deactivates people who leave. **Import existing records** (on
 the Fan database page) pulls older records into the database; it is safe to
 press again.
@@ -749,7 +767,7 @@ When an order is **paid**, the kitchen is alerted straight away and must
 - **Not accepted?** The alert repeats every 3 minutes (up to 5 times) with
   "⚠️ STILL WAITING". Accepting anywhere (Kitchen Screen, live board or
   Telegram) stops it. A cancelled order sends "❌ CANCELLED, do not cook".
-- **Kitchen staff accounts:** give cooks a login with the **Kitchen** role.
+- **Kitchen staff accounts:** give cooks a login with the **Kitchen Staff** role.
   It only opens the Kitchen Screen (no customer details).
 - **Admin › Commerce › Food: Kitchen Alerts:** the page reads top to bottom:
   the 4 steps of how alerts work; **Setup** (4 cards, ✅ when that part is
@@ -990,10 +1008,11 @@ fan receives your reply from the club address, signed with your first name
 (e.g. *Ade from Lobi Stars FC*), and when they reply to that email, their
 answer comes back into the same conversation.
 
-Who can open it: **Fan Relations**, **Commercial** and **Super Admin** (and
-"All areas" accounts). **Media** accounts see only the **Media email**
-conversations (emails to media@lobistarsfc.com, below). Matchday and Analyst
-accounts can't read messages.
+Who sees what: **Super Admin** and **CRM Manager** see every message.
+**Fan Support** sees Contact Form messages; **Commercial Manager** sees
+Sponsorship and Hospitality enquiries; **Media Editor** and **Media
+Contributor** see only the **Media email** conversations (emails to
+media@lobistarsfc.com, below). Other roles can't read messages.
 
 **The media mailbox (media@lobistarsfc.com):** emails to media@ arrive in the
 media team's Gmail (lobistarsmedia@gmail.com) **and** in the Inbox as **Media
@@ -1084,8 +1103,9 @@ reference).
 
 ### Alerts and the daily summary (⚙️ Email settings)
 - **Email staff about each new message:** Contact Form messages go to every
-  **Fan Relations** staff account, Sponsorship and Hospitality messages to
-  every **Commercial** account (they need their own staff login with that
+  staff account whose role answers them (Fan Support, CRM Manager),
+  Sponsorship and Hospitality messages to every **Commercial Manager**
+  (and CRM Manager) account, media@ emails to the Media roles (they need their own staff login with that
   role). The email links straight to the conversation; answer from the Inbox,
   not by replying to the alert.
 - **Daily summary:** one email a day (after 8am) listing every message still
@@ -1175,8 +1195,8 @@ point their inbound webhook at the same address with the same key.
 
 **Still to do before staff rely on it** (website manager / club)
 1. **Staff accounts:** create a login for each person in **Settings › Staff
-   Users & Roles** with the right role (e.g. Fan Relations for whoever answers
-   fans, Commercial for sponsorship and hospitality). Only tick **Can export
+   Users & Roles** with the right role (e.g. Fan Support for whoever answers
+   fans, Commercial Manager for sponsorship and hospitality). Only tick **Can export
    fan data** for people who need to download contact lists. Stop sharing the
    owner admin code.
 2. **Email (Resend):** API key, the sender address for Inbox replies
@@ -1322,8 +1342,8 @@ Nothing to do for most of this; it is built in. What it means for staff:
 ## 24. The newsletter: The Lobi Stars Weekly (Admin › Fans & Inbox › Newsletter)
 
 A free weekly email for fans, with the club badge, the week's news, the next
-match and adverts from the club's sponsors. Fan Relations, Commercial and
-Super Admin staff can use it.
+match and adverts from the club's sponsors. Super Admin, CRM Manager, Content
+Editor, Media Editor and Commercial Manager (sponsor adverts) staff can use it.
 
 ### Where fans sign up
 - **The newsletter page** (https://lobistarsfc.com/newsletter): what they
@@ -1399,8 +1419,8 @@ unsubscribing).
   newsletters go out within a minute or two of the time once the timer Worker
   is running (HANDOVER-TODO A14); until then, at the first visit to the
   website after that time.
-- **Who can write and send newsletters:** Media, Fan Relations, Commercial and
-  Super Admins. Routine: one main newsletter every **Wednesday by 9 pm**, by the
+- **Who can write and send newsletters:** Media Editor, Content Editor, CRM
+  Manager, Commercial Manager and Super Admins. Routine: one main newsletter every **Wednesday by 9 pm**, by the
   media team (media@lobistarsfc.com).
 - After sending, the newsletter gets a **web version**
   (lobistarsfc.com/newsletter/…) for "View it in your browser" and the
@@ -1536,7 +1556,7 @@ alert now** and **Recent alerts** (how many devices it reached).
   a minute or two. Keep any admin page open and it carries on by itself.
 - Don't over-send: a few alerts per match is right. Too many and fans turn
   them off.
-- Who can use it: Super Admins and Matchday Operators.
+- Who can use it: Super Admins, Matchday Admins and Broadcast Operators.
 
 ## 27. Back buttons on the public website
 

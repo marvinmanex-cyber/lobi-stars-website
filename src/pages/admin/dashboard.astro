@@ -77,7 +77,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     document.querySelector('.db-hero, h1')?.after(n);
   });
   // Kitchen accounts go straight to the Kitchen Screen.
-  document.addEventListener('ls:admin', e => { if ((e as CustomEvent).detail.roleId === 'kitchen') location.replace('/admin/kitchen/'); });
+  document.addEventListener('ls:admin', e => { const d = (e as CustomEvent).detail; if (d.roleId === 'kitchen_staff') location.replace('/admin/kitchen/'); else if (d.roleId === 'gate_staff') location.replace('/scan/'); });
 
   const chg = (c: number | null | undefined, label: string) => c == null ? '' : `<span class="db-chg ${c > 0 ? 'up' : c < 0 ? 'down' : 'flat'}" aria-label="${c > 0 ? 'up' : c < 0 ? 'down' : 'no change'} ${Math.abs(c)}% ${label}">${c > 0 ? '▲' : c < 0 ? '▼' : '•'} ${Math.abs(c)}%</span>`;
   const card = (o: { color: string; icon: string; num: string; label: string; sub?: string; href?: string; change?: string }) =>

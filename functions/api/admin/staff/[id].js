@@ -1,7 +1,7 @@
 import { hashPassword } from '../../_lib/password.js';
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { ensureAdminSchema, logAdminAction } from '../../_lib/adminSession.js';
-import { ROLES, ASSIGNABLE_ROLES } from '../../_lib/adminRoles.js';
+import { ROLE_DEFAULTS, ROLE_ALIASES, ASSIGNABLE_ROLES } from '../../_lib/adminRoles.js';
 
 // PUT /api/admin/staff/:id { name?, role?, canExport?, active?, password?, resetTwoStep? }
 // -- update a staff account (Super Admin only). Deactivating signs them out.
@@ -16,7 +16,9 @@ export async function onRequestPut({ request, env, params }) {
 
   const name = typeof b.name === 'string' && b.name.trim() ? b.name.trim().slice(0, 80) : u.name;
   const canExport = typeof b.canExport === 'boolean' ? (b.canExport ? 1 : 0) : u.can_export_fan_data;
-  const role = ASSIGNABLE_ROLES.includes(b.role) ? b.role : u.role;
+  // A different current role; the same role (or its new name) keeps what is stored.
+  const want = ROLE_ALIASES[b.role] || b.role;
+  const role = ASSIGNABLE_ROLES.includes(want) && want !== (ROLE_ALIASES[u.role] || u.role) ? want : u.role;
   const active = typeof b.active === 'boolean' ? (b.active ? 1 : 0) : u.active;
   let hash = u.password_hash;
   if (typeof b.password === 'string' && b.password) {
@@ -29,7 +31,7 @@ export async function onRequestPut({ request, env, params }) {
   if (b.resetTwoStep === true && u.totp_enabled) await env.DB.prepare(`UPDATE admin_users SET totp_enabled = 0, totp_secret = NULL, totp_pending = NULL, totp_last_step = 0 WHERE id = ?`).bind(u.id).run();
   const changes = [
     name !== u.name && `name -> ${name}`,
-    role !== u.role && `role -> ${ROLES[role]?.label || role}`,
+    role !== u.role && `role -> ${ROLE_DEFAULTS[role]?.label || role}`,
     canExport !== u.can_export_fan_data && `export permission ${canExport ? 'granted' : 'removed'}`,
     active !== u.active && (active ? 'reactivated' : 'deactivated'),
     hash !== u.password_hash && 'password reset',

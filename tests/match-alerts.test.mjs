@@ -122,7 +122,7 @@ test('only matchday staff manage fan alerts; the run endpoint and cron need sign
   const md = await login('matchday');
   assert.equal((await api('/api/admin/fan-alerts', 'GET', null, md)).status, 200);
   assert.equal((await fetch(`${BASE}/admin/fan-alerts/`, { headers: md, redirect: 'manual' })).status, 200);
-  for (const role of ['analyst', 'commercial']) {
+  for (const role of ['fan_support', 'commercial']) {
     const h = await login(role);
     assert.equal((await api('/api/admin/fan-alerts', 'GET', null, h)).status, 403, role);
     assert.equal((await api('/api/admin/fan-alerts/run', 'POST', null, h)).status, 200, `${role} pages keep alerts moving`);

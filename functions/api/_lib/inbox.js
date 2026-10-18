@@ -10,7 +10,7 @@
 // deleting a person's data (erasure) carry over to their messages.
 import { ensureContactsSchema, captureContact, normEmail } from './contacts.js';
 import { ensureAdminSchema } from './adminSession.js';
-import { ROLES } from './adminRoles.js';
+import { can, loadRoles, inboxPermFor } from './adminRoles.js';
 import { sendEmail } from './email.js';
 import { randomId } from './crypto.js';
 
@@ -260,16 +260,18 @@ export async function erasureStatements(db, enquiryIds, email) {
 /** Active staff who can open the Inbox (for "Assign to"), plus the owner. */
 export async function inboxStaff(db) {
   await ensureAdminSchema(db);
-  const roles = Object.entries(ROLES).filter(([, r]) => r.areas.includes('inbox') || r.areas.includes('fans')).map(([k]) => k);
-  const { results } = await db.prepare(`SELECT id, name, email, role FROM admin_users WHERE active = 1 AND role IN (${roles.map(() => '?').join(',')}) ORDER BY name`).bind(...roles).all();
-  return [{ id: 'owner', name: 'Owner (admin code)', email: '', role: 'super_admin' }, ...results];
+  await loadRoles(db);
+  const { results } = await db.prepare(`SELECT id, name, email, role FROM admin_users WHERE active = 1 ORDER BY name`).all();
+  return [{ id: 'owner', name: 'Owner (admin code)', email: '', role: 'super_admin' }, ...results.filter(u => can(u, 'inbox.contact|inbox.partners|inbox.media'))];
 }
 
-/** Who gets the alert for a new message: Fan Relations for the contact form, Commercial for sponsorship / hospitality. */
+/** Who gets the alert for a new message: staff whose role answers that kind of message
+ *  (contact form: Fan Support / CRM; sponsorship and hospitality: Commercial; media@: Media), not Super Admins. */
 async function alertRecipients(db, source, settings) {
-  const role = source === 'contact_form' ? 'fan_relations' : 'commercial';
   await ensureAdminSchema(db);
-  const { results } = await db.prepare(`SELECT email FROM admin_users WHERE active = 1 AND role = ?`).bind(role).all();
+  await loadRoles(db);
+  const { results: all } = await db.prepare(`SELECT email, role FROM admin_users WHERE active = 1 AND role != 'super_admin'`).all();
+  const results = all.filter(u => can(u, inboxPermFor(source)));
   return [...new Set([...results.map(r => normEmail(r.email)).filter(Boolean), ...settings.extraEmails])];
 }
 

@@ -199,7 +199,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   }));
 
   // Manage sources (Settings access only).
-  document.addEventListener('ls:admin', e => { if (e.detail.areas.includes('settings')) { $('manage').hidden = false; } });
+  document.addEventListener('ls:admin', e => { if ((e.detail.permissions || []).includes('settings.sources')) { $('manage').hidden = false; } });
   function renderDefs() {
     $('defs').innerHTML = defs.map((d, i) => `<li class="cs-def" data-key="${esc(d.key)}"><input type="color" value="${esc(d.color)}" aria-label="Colour of ${esc(d.label)}"><input type="text" value="${esc(d.label)}" maxlength="40" aria-label="Name"><code>${esc(d.key)}${d.builtin ? '' : ' (new)'}</code>` +
       `<button type="button" data-a="up" ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button><button type="button" data-a="down" ${i === defs.length - 1 ? 'disabled' : ''} aria-label="Move down">↓</button><button type="button" data-a="save">Save</button>${d.builtin ? '' : '<button type="button" data-a="delete">Delete</button>'}</li>`).join('');

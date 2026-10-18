@@ -35,7 +35,7 @@ test('accessibility statement: public, in the footer and the sitemap', async () 
 test('data backup: Super Admin only; every table in pieces; passwords and secrets never included; recorded', async () => {
   const fr = await staff('fan_relations', true);
   assert.equal((await api('/api/admin/backup', 'GET', null, fr.h)).status, 403);
-  assert.equal((await fetch(`${BASE}/admin/backup/`, { headers: fr.h, redirect: 'manual' })).status, 302);
+  assert.equal((await fetch(`${BASE}/admin/backup/`, { headers: fr.h, redirect: 'manual' })).status, 403);
   const list = (await api('/api/admin/backup')).data;
   const names = list.tables.map(t => t.table);
   for (const t of ['contacts', 'food_orders', 'admin_users', 'inbox_threads', 'newsletter_issues']) assert.ok(names.includes(t), t);

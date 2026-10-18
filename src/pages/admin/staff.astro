@@ -7,16 +7,12 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <AdminNav current="staff" />
     <div class="stag">Admin</div>
     <h1 class="stitle">Staff <span class="r">Accounts</span></h1>
-    <p class="muted st-lede">Only Super Admins can manage staff. Each person's <strong>role</strong> decides which parts of the admin they see. Give <strong>Can export fan data</strong> only to people who need to download contact lists.</p>
-    <details class="st-roles"><summary>What each role can open</summary><ul>
-      <li><strong>Super Admin:</strong> everything, including staff accounts and roles.</li>
-      <li><strong>Media:</strong> Content (news, awards, CMS) and the Match Centre's matchday content.</li>
-      <li><strong>Matchday Operator:</strong> Matchday (matches, live control, squad, Predict &amp; Win, commentary).</li>
-      <li><strong>Commercial:</strong> Commerce, Partners and (soon) the Inbox.</li>
-      <li><strong>Fan Relations:</strong> Fan database, members and (soon) the Inbox.</li>
-      <li><strong>Analyst:</strong> Analytics only, read-only.</li>
-      <li><strong>All areas:</strong> accounts made before roles existed: everything except staff accounts.</li>
-    </ul></details>
+    <p class="muted st-lede">Only Super Admins can manage staff. Each person's <strong>role</strong> decides which parts of the admin they see and change; the server checks it on every request. Give <strong>Can export fan data</strong> only to people who need to download contact lists.</p>
+    <section class="panel st-rolesed" aria-labelledby="rolesH">
+      <h2 id="rolesH">Roles and what they include</h2>
+      <p class="muted">Each role is a set of permissions. Open a role to see or change what it includes; changes apply to everyone with that role within a minute and are recorded in the Activity Log. Only the Super Admin role manages staff and roles.</p>
+      <div id="roles"><p class="muted">Loading…</p></div>
+    </section>
     <p class="st-msg" id="msg" role="status" aria-live="polite" hidden></p>
 
     <form class="panel st-form" id="newForm">
@@ -42,7 +38,20 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .st-msg.ok { background: #E8F7EE; color: #17643A; } .st-msg.err { background: #FDECEC; color: #A3161B; }
   .st-form { margin-bottom: 26px; }
   .st-form h2 { margin: 0 0 14px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .st-roles { margin: 0 0 20px; max-width: 760px; } .st-roles summary { cursor: pointer; font-weight: 700; } .st-roles ul { margin: 8px 0 0 18px; line-height: 1.7; }
+  .st-rolesed { margin: 0 0 26px; }
+  .st-rolesed h2 { margin: 0 0 8px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .st-rolesed :global(details) { border: 1px solid var(--d4); border-radius: 10px; margin: 8px 0; background: var(--a-card); }
+  .st-rolesed :global(summary) { cursor: pointer; padding: 12px 14px; font-weight: 700; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+  .st-rolesed :global(summary small) { font-weight: 400; color: var(--a-muted, #5B6470); }
+  .st-rolesed :global(.rbody) { padding: 0 14px 14px; }
+  .st-rolesed :global(fieldset) { border: 0; margin: 10px 0 0; padding: 0; }
+  .st-rolesed :global(legend) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 6px; }
+  .st-rolesed :global(label.perm) { display: flex; gap: 10px; align-items: flex-start; padding: 4px 0; font-size: 14px; }
+  .st-rolesed :global(label.perm input) { width: 17px; height: 17px; margin-top: 2px; accent-color: var(--red); flex: none; }
+  .st-rolesed :global(.tag) { font-size: 11px; padding: 2px 8px; border-radius: 99px; background: #FFF4E5; color: #7A4B00; font-weight: 700; }
+  .st-rolesed :global(.ract) { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .st-rolesed :global(.ract button) { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--d4); background: var(--a-card); cursor: pointer; font: inherit; font-size: 14px; }
+  .st-rolesed :global(.ract button.save) { background: var(--red); color: #fff; border-color: var(--red); font-weight: 700; }
   .st-list :global(select) { padding: 6px 8px; border-radius: 6px; border: 1px solid var(--d4); font: inherit; font-size: 13px; }
   .st-check { display: flex; gap: 10px; align-items: center; margin: 6px 0 16px; font-weight: 600; }
   .st-check input { width: 18px; height: 18px; accent-color: var(--red); }
@@ -70,7 +79,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   async function load() {
     try {
       const { staff, roles } = await api('/api/admin/staff');
-      if ($('n-role').options.length < 2) $('n-role').insertAdjacentHTML('beforeend', roles.map(r => `<option value="${esc(r.id)}">${esc(r.label)}</option>`).join(''));
+      if ($('n-role').options.length < 2) $('n-role').insertAdjacentHTML('beforeend', roles.filter(r => !r.legacy).map(r => `<option value="${esc(r.id)}">${esc(r.label)}</option>`).join(''));
       const roleSel = s => `<select data-role aria-label="Role for ${esc(s.name)}">${roles.map(r => `<option value="${esc(r.id)}"${r.id === s.role ? ' selected' : ''}>${esc(r.label)}</option>`).join('')}</select>`;
       $('list').innerHTML = staff.length ? '<div class="scroll"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Can export</th><th>Two-step login</th><th>Last login</th><th></th></tr></thead><tbody>' +
         staff.map(s => `<tr class="${s.active ? '' : 'inactive'}" data-id="${esc(s.id)}"><td>${esc(s.name)}${s.active ? '' : ' (deactivated)'}</td><td>${esc(s.email)}</td>` +
@@ -105,6 +114,29 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       e.target.reset(); load();
     } catch (err) { show(err.message, false); }
   });
+  // Roles and permissions (Super Admin).
+  async function loadRoles() {
+    try {
+      const { permissions, roles } = await api('/api/admin/roles');
+      $('roles').innerHTML = roles.map(r => {
+        const has = new Set(r.permissions);
+        const groups = permissions.map(g => `<fieldset><legend>${esc(g.group)}</legend>${g.items.map(p =>
+          `<label class="perm"><input type="checkbox" value="${esc(p.id)}"${has.has(p.id) ? ' checked' : ''}${r.locked || p.id === 'staff.manage' ? ' disabled' : ''} /> <span>${esc(p.label)}</span></label>`).join('')}</fieldset>`).join('');
+        return `<details data-role="${esc(r.id)}"><summary>${esc(r.label)} <small>${esc(r.about || '')}</small>${r.changed ? '<span class="tag">Changed</span>' : ''}${r.legacy ? '<span class="tag">Old role</span>' : ''}${r.readOnly ? '<span class="tag">Read only</span>' : ''}</summary>
+          <div class="rbody">${r.locked ? '<p class="muted">The Super Admin role always includes everything.</p>' : ''}${groups}
+          ${r.locked ? '' : `<div class="ract"><button type="button" class="save" data-save>Save ${esc(r.label)}</button>${r.changed ? '<button type="button" data-reset>Back to the default</button>' : ''}</div>`}</div></details>`;
+      }).join('');
+    } catch (e) { $('roles').innerHTML = `<p class="muted">${esc(e.message)}</p>`; }
+  }
+  $('roles').addEventListener('click', async e => {
+    const btn = e.target.closest('button[data-save], button[data-reset]'); if (!btn) return;
+    const d = btn.closest('details'); const id = d.dataset.role;
+    const body = btn.hasAttribute('data-reset') ? { id, reset: true } : { id, permissions: [...d.querySelectorAll('input:checked')].map(i => i.value) };
+    if (body.reset && !confirm('Put this role back to its default permissions?')) return;
+    try { await api('/api/admin/roles', { method: 'PUT', body: JSON.stringify(body) }); show('Role saved. It applies within a minute.', true); await loadRoles(); document.querySelector(`#roles details[data-role="${id}"]`)?.setAttribute('open', ''); }
+    catch (err) { show(err.message, false); }
+  });
   load();
+  loadRoles();
 })();
 </script>

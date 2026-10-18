@@ -1,6 +1,6 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { logAdminAction } from '../_lib/adminSession.js';
-import { canAccess } from '../_lib/adminRoles.js';
+import { can } from '../_lib/adminRoles.js';
 import { ensureContactsSchema, getSources, SOURCES } from '../_lib/contacts.js';
 
 const COLOR = /^#[0-9A-Fa-f]{6}$/;
@@ -20,7 +20,7 @@ export async function onRequestGet({ request, env }) {
 export async function onRequestPost({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
-  if (!canAccess(admin, 'settings')) return Response.json({ error: 'Only staff with Settings access can change sources.' }, { status: 403 });
+  if (!can(admin, 'settings.sources')) return Response.json({ error: 'Only staff with Settings access can change sources.' }, { status: 403 });
   const db = env.DB;
   await ensureContactsSchema(db);
   const b = await request.json().catch(() => ({}));

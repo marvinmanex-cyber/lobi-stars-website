@@ -181,13 +181,13 @@ test('settings: alerts and daily summary can be switched off and on', async () =
 });
 
 test('privacy: only Inbox roles can read messages (Media: only media@ emails); bell shows unread; erasure deletes the conversation', async () => {
-  const analyst = await staff('analyst');
+  const analyst = await staff('broadcast_operator'); // a role without the Inbox
   const media = await staff('media');
   const fr = await staff('fan_relations');
   assert.equal((await get('/api/admin/inbox', analyst.h)).status, 403);
   assert.equal((await get('/api/admin/inbox', media.h)).status, 200, 'Media opens the Inbox (media@ emails only)');
   assert.equal((await get('/api/admin/inbox', fr.h)).status, 200);
-  assert.equal((await fetch(`${BASE}/admin/inbox/`, { headers: analyst.h, redirect: 'manual' })).headers.get('location')?.includes('denied=1'), true);
+  assert.equal((await fetch(`${BASE}/admin/inbox/`, { headers: analyst.h, redirect: 'manual' })).status, 403, 'the no-access page');
   assert.equal((await fetch(`${BASE}/admin/inbox/`, { redirect: 'manual' })).status, 302, 'login needed');
   assert.equal((await get('/api/admin/inbox')).status, 200);
   assert.equal((await fetch(`${BASE}/api/admin/inbox`)).status, 401);
@@ -195,7 +195,9 @@ test('privacy: only Inbox roles can read messages (Media: only media@ emails); b
   const { thread, email } = await newMessage('contact');
   const bell = (await get('/api/admin/notifications', fr.h)).data.items;
   assert.ok(bell.some(i => /unread message/.test(i.title) && i.href.startsWith('/admin/inbox/')));
-  assert.ok(!(await get('/api/admin/notifications', media.h)).data.items.some(i => /unread message/.test(i.title)), 'contact messages are not counted for Media');
+  // Media's bell only counts the media@ mailbox (other tests may have left media emails unread).
+  const mediaBell = (await get('/api/admin/notifications', media.h)).data.items.find(i => /unread message/.test(i.title));
+  assert.ok(!mediaBell || mediaBell.sub === 'Emails to media@lobistarsfc.com', 'contact messages are not counted for Media');
   assert.ok(!(await get('/api/admin/inbox', media.h)).data.threads.some(t => t.id === thread.id), 'Media does not see contact messages');
   assert.equal((await get(`/api/admin/inbox/${thread.id}`, media.h)).status, 404);
   assert.equal((await post('/api/admin/inbox/settings', { alertsEmail: true }, media.h)).status, 403, 'Media cannot change the alerts');
@@ -233,10 +235,13 @@ test('media@ mailbox: emails come in as "Media email" conversations the Media ro
   assert.match(pv.data.from, /<media@lobistarsfc\.com>$/);
   assert.match(pv.data.from, /Lobi Stars FC Media/);
   // The same person writing to the contact form starts a separate (non-media) conversation.
-  const fr = await staff('fan_relations');
+  const fr = await staff('fan_relations'); // now Fan Support: contact form messages only
+  const crm = await staff('crm_manager');
   const owner = (await get(`/api/admin/inbox?q=${encodeURIComponent(email)}`)).data.threads;
   assert.equal(owner.length, 1, 'owner sees the media conversation too');
-  assert.ok((await get('/api/admin/inbox?source=media_email', fr.h)).data.threads.some(x => x.id === t.id), 'Fan Relations can filter Media emails');
+  assert.ok((await get('/api/admin/inbox?source=media_email', crm.h)).data.threads.some(x => x.id === t.id), 'CRM can filter Media emails');
+  assert.ok(!(await get('/api/admin/inbox', fr.h)).data.threads.some(x => x.id === t.id), 'Fan Support does not see Media emails');
+  assert.equal((await get(`/api/admin/inbox/${t.id}`, fr.h)).status, 404);
 });
 
 test('media-mail Worker key: accepted only for the media mailbox; other keys refused', async () => {

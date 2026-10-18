@@ -88,8 +88,8 @@ test('sources can be renamed and added (Settings access only); new names show ev
   const add = await post('/api/admin/contact-source-defs', { action: 'add', label: `Test Form ${uid()}`, color: '#123456' });
   assert.match(add.data.key, /^test_form_/);
   assert.ok(add.data.sources.some(s => s.key === add.data.key && !s.builtin));
-  const analyst = await staff('analyst');
-  assert.equal((await get('/api/admin/contact-sources?range=all', analyst)).status, 200, 'analysts see the chart');
+  const analyst = await staff('commercial_manager'); // sees reports, cannot manage sources or download fans
+  assert.equal((await get('/api/admin/contact-sources?range=all', analyst)).status, 200, 'report readers see the chart');
   assert.equal((await post('/api/admin/contact-source-defs', { action: 'save', key: 'fan_account', label: 'X', color: '#000000' }, analyst)).status, 403);
   assert.equal((await fetch(`${BASE}/api/admin/fans/export?type=xlsx`, { headers: analyst })).status, 403, 'no download without the export permission');
   const list = (await get('/api/admin/contact-sources?range=all&list=1', analyst)).data;

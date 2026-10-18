@@ -22,7 +22,7 @@ async function login(body) {
   assert.equal(r.status, 200);
   return r.headers.get('set-cookie').split(';')[0];
 }
-const ROLES = ['super_admin', 'staff', 'media', 'matchday', 'commercial', 'fan_relations', 'analyst'];
+const ROLES = ['super_admin', 'content_editor', 'media_editor', 'media_contributor', 'matchday_admin', 'broadcast_operator', 'crm_manager', 'fan_support', 'commercial_manager', 'matchday_ops_manager', 'gate_staff', 'kitchen_staff'];
 before(async () => {
   for (const role of ROLES) {
     const email = `ho-${role}-${uid()}@example.com`;
@@ -40,50 +40,62 @@ const as = (who, path, method = 'GET') => fetch(BASE + path, { method, redirect:
 // Who may open what. Written out by hand (not read from the code) so a
 // mistake in the role rules shows up here.
 const ALL = ROLES;
-const S = ['super_admin', 'staff'];
+const SA = ['super_admin'];
+const VIEW_MATCH = ['content_editor', 'media_editor', 'media_contributor', 'matchday_admin', 'broadcast_operator', 'matchday_ops_manager'];
+const INBOX = ['media_editor', 'media_contributor', 'crm_manager', 'fan_support', 'commercial_manager'];
+const FANS = ['crm_manager', 'fan_support'];
+const FOOD = ['commercial_manager', 'matchday_ops_manager'];
+const REPORTS = ['crm_manager', 'commercial_manager'];
 const PAGES = {
   '/admin/dashboard/': ALL,
-  '/admin/matches/': [...S, 'matchday'],
-  '/admin/match-centre/': [...S, 'media', 'matchday'],
-  '/admin/predictions/': [...S, 'matchday'],
-  '/admin/commentary/': [...S, 'matchday'],
-  '/admin/news/': [...S, 'media'],
-  '/admin/awards/': [...S, 'media'],
-  '/admin/inbox/': [...S, 'commercial', 'fan_relations'],
-  '/admin/fans/': [...S, 'fan_relations'],
-  '/admin/fans/duplicates/': [...S, 'fan_relations'],
-  '/admin/members/': [...S, 'fan_relations'],
-  '/admin/contact-sources/': [...S, 'fan_relations', 'analyst'],
-  '/admin/food-orders/': [...S, 'commercial'],
-  '/admin/food-orders/live/': [...S, 'commercial'],
-  '/admin/food-orders/menu/': [...S, 'commercial'],
-  '/admin/food-orders/analytics/': [...S, 'commercial', 'analyst'],
-  '/admin/shirt-orders/': [...S, 'commercial'],
-  '/admin/partners/': [...S, 'commercial'],
-  '/admin/analytics/': [...S, 'analyst'],
-  '/admin/activity/': S,
-  '/admin/staff/': ['super_admin'],
+  '/admin/matches/': [...SA, 'matchday_admin'],
+  '/admin/match-centre/': [...SA, ...VIEW_MATCH],
+  '/admin/predictions/': [...SA, 'matchday_admin'],
+  '/admin/commentary/': [...SA, 'matchday_admin', 'broadcast_operator'],
+  '/admin/fan-alerts/': [...SA, 'matchday_admin', 'broadcast_operator'],
+  '/admin/news/': [...SA, 'content_editor', 'media_editor', 'media_contributor'],
+  '/admin/awards/': [...SA, 'content_editor', 'media_editor'],
+  '/admin/inbox/': [...SA, ...INBOX],
+  '/admin/newsletter/': [...SA, 'content_editor', 'media_editor', 'crm_manager', 'commercial_manager'],
+  '/admin/fans/': [...SA, ...FANS],
+  '/admin/fans/duplicates/': [...SA, ...FANS],
+  '/admin/members/': [...SA, ...FANS],
+  '/admin/contact-sources/': [...SA, ...FANS, 'commercial_manager'],
+  '/admin/food-orders/': [...SA, ...FOOD],
+  '/admin/food-orders/live/': [...SA, ...FOOD],
+  '/admin/food-orders/menu/': [...SA, ...FOOD],
+  '/admin/food-orders/analytics/': [...SA, ...FOOD, 'crm_manager'],
+  '/admin/kitchen/': [...SA, ...FOOD, 'kitchen_staff'],
+  '/admin/tickets/scan/': [...SA, 'matchday_admin', 'commercial_manager', 'matchday_ops_manager', 'gate_staff'],
+  '/admin/shirt-orders/': [...SA, 'commercial_manager'],
+  '/admin/partners/': [...SA, 'commercial_manager'],
+  '/admin/analytics/': [...SA, ...REPORTS],
+  '/admin/activity/': SA,
+  '/admin/backup/': SA,
+  '/admin/staff/': SA,
 };
 const APIS = {
   '/api/admin/dashboard': ALL,
   '/api/admin/me': ALL,
   '/api/admin/notifications': ALL,
-  '/api/admin/events': [...S, 'media', 'matchday'],
-  '/api/admin/commentary': [...S, 'matchday'],
-  '/api/admin/awards': [...S, 'media'],
-  '/api/admin/inbox': [...S, 'commercial', 'fan_relations'],
-  '/api/admin/inbox/templates': [...S, 'commercial', 'fan_relations'],
-  '/api/admin/fans': [...S, 'fan_relations'],
-  '/api/admin/fans/duplicates': [...S, 'fan_relations'],
-  '/api/admin/members': [...S, 'fan_relations'],
-  '/api/admin/contact-sources?range=7d': [...S, 'fan_relations', 'analyst'],
-  '/api/admin/food-orders': [...S, 'commercial'],
-  '/api/admin/food-menu': [...S, 'commercial'],
-  '/api/admin/food-analytics?range=7d': [...S, 'commercial', 'analyst'],
-  '/api/admin/shirt-orders': [...S, 'commercial'],
-  '/api/admin/activity': S,
-  '/api/admin/export-log': [...S, 'fan_relations'],
-  '/api/admin/staff': ['super_admin'],
+  '/api/admin/events': [...SA, ...VIEW_MATCH, 'commercial_manager'],
+  '/api/admin/commentary': [...SA, 'matchday_admin', 'broadcast_operator'],
+  '/api/admin/awards': [...SA, 'content_editor', 'media_editor'],
+  '/api/admin/inbox': [...SA, ...INBOX],
+  '/api/admin/inbox/templates': [...SA, ...INBOX],
+  '/api/admin/fans': [...SA, ...FANS],
+  '/api/admin/fans/duplicates': [...SA, ...FANS],
+  '/api/admin/members': [...SA, ...FANS],
+  '/api/admin/contact-sources?range=7d': [...SA, ...FANS, 'commercial_manager'],
+  '/api/admin/food-orders': [...SA, ...FOOD],
+  '/api/admin/food-menu': [...SA, ...FOOD],
+  '/api/admin/food-analytics?range=7d': [...SA, ...FOOD, 'crm_manager'],
+  '/api/admin/kitchen/orders': [...SA, ...FOOD, 'kitchen_staff'],
+  '/api/admin/shirt-orders': [...SA, 'commercial_manager'],
+  '/api/admin/activity': SA,
+  '/api/admin/export-log': [...SA, 'crm_manager'],
+  '/api/admin/roles': SA,
+  '/api/admin/staff': SA,
 };
 
 test('seed data: messages and sign-ups appear in the Inbox, the fan database, the sources chart, the dashboard and the bell', async () => {
@@ -124,14 +136,15 @@ test('seed data: messages and sign-ups appear in the Inbox, the fan database, th
   assert.ok(bell.some(i => /unread message/.test(i.title)));
 });
 
-test('roles: every admin page opens for exactly the right roles (others go to the dashboard)', async () => {
+test('roles: every admin page opens for exactly the right roles (others get the no-access page)', async () => {
   const wrong = [];
   for (const [path, allowed] of Object.entries(PAGES)) {
     for (const role of ROLES) {
       const r = await as(role, path);
       const ok = r.status === 200;
       if (ok !== allowed.includes(role)) wrong.push(`${role} ${path}: ${r.status} ${r.headers.get('location') || ''}`);
-      if (!ok && r.status === 302) assert.match(r.headers.get('location'), /\/admin\/dashboard\/\?denied=1/);
+      if (!ok) assert.equal(r.status, 403, `${role} ${path}`);
+      await r.body?.cancel();
     }
     assert.equal((await as('owner', path)).status, 200, `owner ${path}`);
   }
@@ -149,10 +162,12 @@ test('roles: every admin API answers for exactly the right roles (403 otherwise)
     }
   }
   assert.deepEqual(wrong, []);
-  // Analysts are read-only everywhere, even where they can look.
-  for (const path of ['/api/admin/contact-source-defs', '/api/admin/food-analytics', '/api/admin/analytics']) assert.equal((await as('analyst', path, 'POST')).status, 403, path);
-  // Media can view the Match Centre but not change matches.
-  assert.equal((await as('media', '/api/admin/events', 'POST')).status, 403);
+  // Roles that can only look cannot change anything there.
+  for (const [role, path] of [['content_editor', '/api/admin/events'], ['media_editor', '/api/admin/events'], ['broadcast_operator', '/api/admin/match-centre/x'],
+    ['fan_support', '/api/admin/members'], ['fan_support', '/api/admin/fans/duplicates'], ['fan_support', '/api/admin/rewards/catalogue'],
+    ['commercial_manager', '/api/admin/contact-source-defs'], ['kitchen_staff', '/api/admin/kitchen/settings'], ['media_contributor', '/api/admin/league/teams']]) {
+    assert.equal((await as(role, path, 'POST')).status, 403, `${role} POST ${path}`);
+  }
   // Signed-out visitors get nothing.
   for (const path of Object.keys(APIS)) assert.equal((await fetch(BASE + path)).status, 401, path);
 });

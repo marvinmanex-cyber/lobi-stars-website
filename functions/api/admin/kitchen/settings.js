@@ -1,6 +1,6 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
-import { canAccess } from '../../_lib/adminRoles.js';
+import { can } from '../../_lib/adminRoles.js';
 import { pushReady } from '../../_lib/foodAlerts.js';
 import { ensureKitchenSchema, kitchenSettings, saveKitchenSettings, telegramReady } from '../../_lib/kitchenNotify.js';
 
@@ -25,7 +25,7 @@ export async function onRequestGet({ request, env }) {
 export async function onRequestPost({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
-  if (!canAccess(admin, 'commerce')) return Response.json({ error: 'Only Commerce staff can change kitchen alert settings.' }, { status: 403 });
+  if (!can(admin, 'commerce.food')) return Response.json({ error: 'Only staff who manage food orders can change kitchen alert settings.' }, { status: 403 });
   const db = env.DB;
   await ensureKitchenSchema(db);
   const b = await request.json().catch(() => ({}));

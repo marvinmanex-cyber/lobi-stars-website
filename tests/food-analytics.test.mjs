@@ -60,8 +60,8 @@ test('exports: Food Report and Customers are real Excel files, only for staff al
     const b = new Uint8Array(await r.arrayBuffer());
     assert.equal(String.fromCharCode(b[0], b[1]), 'PK');
   }
-  const analyst = await staff('analyst');
-  assert.equal((await admin('/api/admin/food-analytics?range=all', analyst)).status, 200, 'analysts can see food analytics');
+  const analyst = await staff('commercial_manager');
+  assert.equal((await admin('/api/admin/food-analytics?range=all', analyst)).status, 200, 'report readers can see food analytics');
   assert.equal((await fetch(`${BASE}/api/admin/food-analytics?format=customers`, { headers: analyst })).status, 403, 'but cannot download customers');
   assert.equal((await fetch(`${BASE}/admin/food-orders/analytics/`, { headers: analyst, redirect: 'manual' })).status, 200);
   const fr = await staff('fan_relations');

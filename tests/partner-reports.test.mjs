@@ -63,5 +63,5 @@ test('roles: Commercial staff use partner reports; Analysts cannot', async () =>
     return { Cookie: l.headers.get('set-cookie').split(';')[0] };
   };
   assert.equal((await api('/api/admin/partner-reports', 'GET', null, await login('commercial'))).status, 200);
-  assert.equal((await api('/api/admin/partner-reports', 'GET', null, await login('analyst'))).status, 403);
+  assert.equal((await api('/api/admin/partner-reports', 'GET', null, await login('fan_support'))).status, 403);
 });

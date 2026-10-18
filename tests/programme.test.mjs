@@ -224,7 +224,7 @@ test('roles: Matchday and Media staff manage programmes; others cannot; delete r
     return { Cookie: l.headers.get('set-cookie').split(';')[0], 'Content-Type': 'application/json' };
   };
   for (const role of ['matchday', 'media']) assert.equal((await api('/api/admin/programmes', 'GET', null, await login(role))).status, 200, role);
-  for (const role of ['analyst', 'commercial', 'kitchen']) assert.equal((await api('/api/admin/programmes', 'GET', null, await login(role))).status, 403, role);
+  for (const role of ['fan_support', 'commercial', 'kitchen']) assert.equal((await api('/api/admin/programmes', 'GET', null, await login(role))).status, 403, role);
   const tag = uid();
   const email = `delete-${tag}@example.com`;
   assert.equal((await api('/api/fan/delete-request', 'POST', { email }, { 'Content-Type': 'application/json', Origin: BASE, 'CF-Connecting-IP': randIp() })).status, 200);

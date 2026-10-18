@@ -150,13 +150,13 @@ test('cancelling an alerted order tells the kitchen; settings validate; Kitchen 
   };
   const kitchen = await login('kitchen');
   assert.equal((await fetch(`${BASE}/admin/kitchen/`, { headers: kitchen, redirect: 'manual' })).status, 200);
-  assert.match((await fetch(`${BASE}/admin/food-orders/`, { headers: kitchen, redirect: 'manual' })).headers.get('location') || '', /denied=1/);
+  assert.equal((await fetch(`${BASE}/admin/food-orders/`, { headers: kitchen, redirect: 'manual' })).status, 403);
   assert.equal((await api('/api/admin/kitchen/orders', 'GET', null, kitchen)).status, 200);
   assert.equal((await api('/api/admin/food-orders?show=board', 'GET', null, kitchen)).status, 403, 'no customer details');
   assert.equal((await api('/api/admin/kitchen/settings', 'POST', { settings: { enabled: false, telegram: false, repeatMinutes: 3, maxRepeats: 5 } }, kitchen)).status, 403, 'cannot switch alerts off');
   const o2 = await paidOrder();
   assert.equal((await api(`/api/admin/kitchen/orders/${o2.ref}/accept`, 'POST', null, kitchen)).status, 200, 'the cook can accept');
-  const analyst = await login('analyst');
+  const analyst = await login('broadcast_operator');
   assert.equal((await api('/api/admin/kitchen/orders', 'GET', null, analyst)).status, 403);
   assert.equal((await fetch(`${BASE}/api/telegram/webhook`, { method: 'POST', body: '{}' })).status, 403, 'webhook needs the secret');
   const m = await fetch(`${BASE}/kitchen.webmanifest`).then(r => r.json());

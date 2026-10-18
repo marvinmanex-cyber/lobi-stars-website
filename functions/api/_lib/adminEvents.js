@@ -1,6 +1,6 @@
 // Shared helpers for the protected admin endpoints.
 import { getAdmin } from './adminSession.js';
-import { roleOf } from './adminRoles.js';
+import { can, loadRoles, permissionsOf } from './adminRoles.js';
 
 /**
  * Returns null when the request comes from a signed-in admin (the owner's
@@ -21,7 +21,11 @@ export async function requireAdminUser(request, env, { needExport = false, owner
   }
   const admin = await getAdmin(request, env);
   if (!admin) return { denied: Response.json({ error: 'Invalid admin code' }, { status: 401 }) };
-  if (ownerOnly && roleOf(admin) !== 'super_admin') return { denied: Response.json({ error: 'Only a Super Admin can do this.' }, { status: 403 }) };
+  await loadRoles(env.DB);
+  // "Can export": the role's fans.export permission or the switch on the staff account.
+  admin.canExport = can(admin, 'fans.export');
+  admin.permissions = permissionsOf(admin);
+  if (ownerOnly && !can(admin, 'staff.manage')) return { denied: Response.json({ error: 'Only a Super Admin can do this.' }, { status: 403 }) };
   if (needExport && !admin.canExport) return { denied: Response.json({ error: 'You do not have permission to export fan data.' }, { status: 403 }) };
   return { admin };
 }
