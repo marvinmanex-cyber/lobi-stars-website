@@ -1,0 +1,53 @@
+---
+// /helper -- matchday helpers (gate and kitchen) sign in here with the username
+// and PIN from the Matchday Operations Manager, or by opening their one-time link.
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Matchday Helper Login | Lobi Stars FC" description="Sign in for matchday helpers." noindex>
+  <div class="wrap hl-wrap">
+    <div class="hl-card">
+      <div class="hl-icon" aria-hidden="true">🎟️</div>
+      <h1 class="hl-title">Matchday helper</h1>
+      <p class="muted" id="intro">Sign in with the username and 6-digit PIN you were given. Your login works for today's match only.</p>
+      <p class="hl-msg" id="msg" role="alert" hidden></p>
+      <form id="f" class="hl-form">
+        <label for="u">Username</label>
+        <input id="u" autocomplete="username" autocapitalize="none" spellcheck="false" required />
+        <label for="p">6-digit PIN</label>
+        <input id="p" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" pattern="[0-9]{6}" required />
+        <button type="submit" class="btn-p">Sign in</button>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .hl-wrap { padding-top: 50px; padding-bottom: 60px; display: flex; justify-content: center; }
+  .hl-card { width: 100%; max-width: 400px; background: var(--d2); border: 1px solid var(--d4); border-radius: 12px; padding: 28px 24px; box-shadow: 0 16px 40px rgba(15, 17, 21, .08); }
+  .hl-icon { font-size: 34px; }
+  .hl-title { font: 400 36px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; margin: 4px 0 10px; }
+  .hl-form { display: grid; gap: 8px; margin-top: 12px; }
+  .hl-form label { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: var(--lt); margin-top: 6px; }
+  .hl-form input { padding: 13px 14px; border: 1px solid var(--d4); border-radius: 6px; font-size: 18px; background: var(--d3); color: var(--white); }
+  .hl-form .btn-p { margin-top: 10px; }
+  .hl-msg { padding: 10px 12px; border-radius: 8px; background: #FDECEC; color: #A3161B; margin: 8px 0 0; }
+</style>
+
+<script>
+  const msg = document.getElementById('msg')!;
+  async function signIn(body: Record<string, string>) {
+    msg.hidden = true;
+    const res = await fetch('/api/helper/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) { msg.textContent = d.error || 'Could not sign in. Try again.'; msg.hidden = false; return; }
+    sessionStorage.setItem('ls_admin_code', '__session__');
+    location.replace(d.screen);
+  }
+  // The one-time link from WhatsApp: sign in straight away.
+  const t = new URLSearchParams(location.search).get('t');
+  if (t) { history.replaceState(null, '', '/helper/'); document.getElementById('intro')!.textContent = 'Signing you in…'; signIn({ token: t }); }
+  document.getElementById('f')!.addEventListener('submit', e => {
+    e.preventDefault();
+    signIn({ username: (document.getElementById('u') as HTMLInputElement).value.trim(), pin: (document.getElementById('p') as HTMLInputElement).value.trim() });
+  });
+</script>

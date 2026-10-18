@@ -2,6 +2,7 @@ import { getAdmin } from '../api/_lib/adminSession.js';
 import { allowedPath, loadRoles, roleLabel, cmsConfigFor } from '../api/_lib/adminRoles.js';
 import { withSecurityHeaders } from '../api/_lib/securityHeaders.js';
 import { ADMIN_PAGE_HEADERS, securitySettings } from '../api/_lib/adminSecurity.js';
+import { helperMayOpen } from '../api/_lib/helpers.js';
 
 // Every /admin page (the CMS, Manage Matches, Analytics...) needs a staff
 // login. Visitors without a valid staff cookie are sent to /admin/login, and
@@ -20,6 +21,10 @@ export async function onRequest({ request, env, next }) {
       status: 302,
       headers: { Location: login.toString(), 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' },
     });
+  }
+  // Matchday helpers only see their one screen.
+  if (admin?.helper && !helperMayOpen(admin, url.pathname)) {
+    return new Response(null, { status: 302, headers: { Location: new URL(admin.screen, url).toString(), 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' } });
   }
   // Must choose a new password or set up two-step login first: only My account opens.
   if (admin?.restrict && !/^\/admin\/account(\/|$)/.test(url.pathname)) {

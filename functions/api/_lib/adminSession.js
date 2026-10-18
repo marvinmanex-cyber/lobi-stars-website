@@ -3,6 +3,7 @@ import { ensureSecuritySchema, liveSession, touchSession, securitySettings, ipAl
 import { clientIp } from './fans.js';
 import { roleOf } from './adminRoles.js';
 import { isFullSuperAdmin } from './superAdmins.js';
+import { helperId, helperAdmin } from './helpers.js';
 
 // Staff (admin) sign-in.
 //
@@ -117,6 +118,8 @@ async function findAdmin(request, env) {
   const s = await liveSession(env.DB, sid);
   if (!s) return null;
   if (isActivity(request)) await touchSession(env.DB, s);
+  // A matchday helper (gate or kitchen, one match day only).
+  if (helperId(s.user_id)) return helperAdmin(env.DB, helperId(s.user_id), sid);
   if (s.user_id === 'owner') {
     if ((await securitySettings(env.DB)).admin_code_off === '1') return null;
     return { ...OWNER, sessionId: sid };

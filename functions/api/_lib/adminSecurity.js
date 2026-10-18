@@ -135,11 +135,11 @@ export function deviceIdFrom(request) {
 /** Remembers this browser (so a sign-in from a new device can be emailed about). */
 export const deviceCookie = id => `ls_dev=${id}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${400 * 86400}`;
 
-export async function createSession(db, request, userId, { twoStep = false, deviceId } = {}) {
+export async function createSession(db, request, userId, { twoStep = false, deviceId, expiresAt } = {}) {
   await ensureSecuritySchema(db);
   const id = randomHex(24), now = Date.now();
   await db.prepare(`INSERT INTO admin_sessions (id, user_id, created_at, last_seen, expires_at, ip, country, user_agent, device_id, two_step)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(id, userId, now, now, now + SESSION_MS, clientIp(request),
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(id, userId, now, now, expiresAt || now + SESSION_MS, clientIp(request),
     request.headers.get('CF-IPCountry') || null, (request.headers.get('User-Agent') || '').slice(0, 300), deviceId || null, twoStep ? 1 : 0).run();
   return id;
 }
@@ -148,7 +148,8 @@ export async function liveSession(db, id, now = Date.now()) {
   await ensureSecuritySchema(db);
   const s = await db.prepare(`SELECT * FROM admin_sessions WHERE id = ?`).bind(id).first();
   if (!s || s.revoked_at || now > s.expires_at) return null;
-  if (now - s.last_seen > IDLE_MS) {
+  // Matchday helpers stay signed in for the whole match day on their device (no idle timeout).
+  if (now - s.last_seen > IDLE_MS && !String(s.user_id).startsWith('helper:')) {
     await db.prepare(`UPDATE admin_sessions SET revoked_at = ?, revoked_reason = 'idle' WHERE id = ? AND revoked_at IS NULL`).bind(now, id).run();
     return null;
   }

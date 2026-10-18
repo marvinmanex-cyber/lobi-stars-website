@@ -8,6 +8,32 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Staff access plan, Phase 5: matchday helper accounts
+
+**What changed**
+- New **Commerce › Matchday Helpers** page (Matchday Operations Manager and
+  Super Admins): make a temporary **Gate** or **Kitchen** helper for one match
+  (name, phone, match). Each gets a username, a 6-digit PIN and a one-time QR
+  login link, with **Share on WhatsApp**.
+- Helpers sign in at **lobistarsfc.com/helper** (or with the link) and see only
+  their one screen: the gate ticket scanner or the Kitchen order board. No menu
+  or other pages; the gate shows only the fan's first name.
+- Their login lasts the whole match day on that device (no 30-minute timeout,
+  no two-step login) and stops at 23:59 on match day (or a set finish time; at
+  most 06:00 the next morning). **New PIN**, **Later finish** and **Switch off**
+  (signed out at once). Five wrong PINs lock it for 15 minutes.
+- Every ticket scan records the helper's (or staff member's) name; kitchen steps
+  already did. The gate scanner now also accepts a staff login with scanner
+  access, and shows only the fan's first name.
+
+**Staff need to:** the Ops Manager makes helper logins before each home match.
+Later: remove the old shared gate code (handover A21).
+
+**Handbook:** STAFF-GUIDE.md › Creating matchday helper accounts;
+STAFF-MATCHDAY-GUIDE.md › Gate and kitchen helpers.
+
+---
+
 ## 2026-10-18: Staff access plan, Phase 4: approvals for sensitive actions
 
 **What changed**

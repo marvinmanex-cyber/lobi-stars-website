@@ -293,6 +293,7 @@ const RULES = [
   [/^\/admin\/health(\/|$)/, 'logs.view|settings.site'],
   [/^\/admin\/(staff|security|backup)(\/|$)/, 'staff.manage'],
   [/^\/admin\/approvals(\/|$)/, 'approvals.approve'],
+  [/^\/admin\/helpers(\/|$)/, 'helpers.create'],
   [/^\/admin\/news-approvals\.json$/, 'approvals.approve|content.news.edit|content.news.publish'],
   [/^\/admin\/?(index\.html|config\.yml)?$/, CMS_ANY()],
   // APIs
@@ -341,6 +342,7 @@ const RULES = [
   [/^\/api\/admin\/health(\/|$)/, 'logs.view|settings.site'],
   [/^\/api\/admin\/(staff|roles|security|backup|access-review|role-emails)(\/|$)/, 'staff.manage'],
   [/^\/api\/admin\/approvals(\/|$)/, 'approvals.approve'],
+  [/^\/api\/admin\/helpers(\/|$)/, 'helpers.create'],
 ];
 
 /** The permission(s) a path needs; null = any signed-in staff; undefined = not listed (Super Admin only). */

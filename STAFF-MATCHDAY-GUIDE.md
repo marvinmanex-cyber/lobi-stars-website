@@ -84,6 +84,18 @@ check the text and press **Send alert**. (When Lobi Stars FC Live goes on air,
 fans who chose radio get "Pre-match show is live" automatically, so you
 don't need to send both.)
 
+**Gate and kitchen helpers (the day before or on the morning):** the Matchday
+Operations Manager opens **Admin › Commerce › Matchday Helpers** and makes a
+login for each helper: name, phone, **Gate** or **Kitchen**, and the match.
+Each gets a username and a 6-digit PIN, plus a QR code / link. Press **Share on
+WhatsApp** to send it to their phone. The helper opens the link (or goes to
+**lobistarsfc.com/helper** and types the username and PIN) and lands straight on
+their screen: the ticket scanner or the Kitchen order board. They stay signed
+in all day on that phone, and their login stops at **23:59** on match day.
+Lost PIN: **New PIN**. Someone leaves early: **Switch off**. Running late:
+**Later finish** (until 06:00 next morning at most). Each scan and kitchen step
+shows the helper's name.
+
 **At the gates:** the Ticket Scanner (lobistarsfc.com/scan) reads match
 tickets and season tickets alike. A season ticket gets in once per home match:
 if it shows "Already used for this match", the code has already been let in

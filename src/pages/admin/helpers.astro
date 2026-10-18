@@ -1,0 +1,143 @@
+---
+// Commerce › Matchday helpers (Matchday Operations Manager): temporary gate and
+// kitchen helpers for one match, with a username + PIN and a one-time QR login
+// link to share on WhatsApp. They finish at 23:59 on match day.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Matchday Helpers | Lobi Stars Admin" description="Temporary gate and kitchen helper logins." noindex>
+  <div class="wrap hp">
+    <AdminNav current="helpers" />
+    <div class="stag">Commerce</div>
+    <h1 class="stitle">Matchday <span class="r">Helpers</span></h1>
+    <p class="muted hp-lede">Make a login for each gate or kitchen helper for one match. They see only their own screen (the ticket scanner or the Kitchen order board), stay signed in all day on their phone, and their login stops at <strong>23:59 on match day</strong>. Every scan and kitchen step records their name.</p>
+    <p class="hp-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <form class="panel hp-form" id="f">
+      <h2>Add a helper</h2>
+      <div class="hp-grid">
+        <label>Name<input class="form-inp" name="name" required autocomplete="off" /></label>
+        <label>Phone (for WhatsApp)<input class="form-inp" name="phone" type="tel" inputmode="tel" placeholder="0803 123 4567" autocomplete="off" /></label>
+        <label>Match<select class="form-sel" name="eventId" id="match" required></select></label>
+        <fieldset><legend>Screen</legend>
+          <label class="hp-radio"><input type="radio" name="kind" value="gate" checked /> 🎟️ Gate ticket scanner</label>
+          <label class="hp-radio"><input type="radio" name="kind" value="kitchen" /> 🍳 Kitchen order board</label>
+        </fieldset>
+        <label>Finish time (optional; normally 23:59 on match day)<input class="form-inp" name="endsAt" type="datetime-local" /></label>
+      </div>
+      <button class="btn-p" type="submit">Make the helper login</button>
+    </form>
+
+    <section class="panel hp-login" id="login" hidden>
+      <h2>Login for <span id="lName"></span></h2>
+      <p class="muted">Shown once. Share it with the helper only.</p>
+      <div class="hp-login-row">
+        <img id="lQr" alt="QR code: scan with the helper's phone camera to sign in" width="200" height="200" />
+        <div>
+          <p><strong>Username:</strong> <code id="lUser"></code></p>
+          <p><strong>PIN:</strong> <code id="lPin" class="hp-pin"></code></p>
+          <p class="muted">Sign in at <strong>lobistarsfc.com/helper</strong>, or scan the QR code (the link works once). Works until <span id="lUntil"></span>.</p>
+          <div class="hp-row"><a class="btn-p" id="lWa" target="_blank" rel="noopener">Share on WhatsApp</a><button type="button" class="btn-o" id="lCopy">Copy</button><button type="button" class="btn-o" id="lDone">Done</button></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Helpers</h2>
+      <div class="scroll" id="list"><p class="muted">Loading…</p></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .hp { max-width: 1000px; padding-top: 20px; padding-bottom: 80px; }
+  .hp-lede { max-width: 780px; }
+  .hp-msg { padding: 12px 16px; border-radius: 10px; }
+  .hp-msg.ok { background: #E8F7EE; color: #17643A; } .hp-msg.err { background: #FDECEC; color: #A3161B; }
+  .panel { padding: 20px; margin-bottom: 16px; }
+  .panel h2 { margin: 0 0 12px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .hp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px 18px; margin-bottom: 14px; }
+  .hp-grid > label { display: grid; gap: 4px; font-weight: 700; font-size: 14px; }
+  .hp-grid fieldset { border: 0; margin: 0; padding: 0; } .hp-grid legend { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .hp .hp-radio { display: flex; gap: 8px; align-items: center; padding: 3px 0; font-weight: 400; }
+  .hp .hp-radio input { width: 18px; height: 18px; accent-color: var(--red); }
+  .hp-login { border: 2px solid #F59E0B; }
+  .hp-login-row { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start; }
+  .hp-login img { background: #fff; border-radius: 12px; padding: 8px; border: 1px solid var(--a-line); }
+  .hp-login code { font-size: 18px; letter-spacing: 1px; }
+  .hp-pin { font-size: 26px !important; letter-spacing: 4px !important; font-weight: 700; }
+  .hp-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .scroll { overflow-x: auto; }
+  .hp :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .hp :global(th), .hp :global(td) { padding: 8px 10px; border-bottom: 1px solid var(--a-line); text-align: left; vertical-align: top; }
+  .hp :global(thead th) { background: #15181D; color: #fff; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .hp :global(td button) { margin: 2px 6px 2px 0; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--a-line); background: var(--a-card); cursor: pointer; font-size: 13px; }
+  .hp :global(.ok) { color: #17643A; font-weight: 700; } .hp :global(.off) { color: #5B6470; font-weight: 700; }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const when = iso => new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'hp-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  // datetime-local (Nigeria time) -> ISO.
+  const lagosToIso = v => v ? new Date(v + ':00+01:00').toISOString() : '';
+  async function api(body) {
+    const r = await fetch('/api/admin/helpers', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  let data;
+  function showLogin(d) {
+    $('lName').textContent = `${d.name} (${d.kind === 'gate' ? 'Gate' : 'Kitchen'})`;
+    $('lUser').textContent = d.username; $('lPin').textContent = d.pin; $('lQr').src = d.qr; $('lUntil').textContent = when(d.expiresAt);
+    const text = `Lobi Stars matchday helper login (${d.kind === 'gate' ? 'gate scanner' : 'kitchen'}):\nOpen: ${d.link}\nOr go to lobistarsfc.com/helper and sign in with\nUsername: ${d.username}\nPIN: ${d.pin}\nWorks until ${when(d.expiresAt)}. Don't share it.`;
+    const digits = String(d.phone || '').replace(/\D/g, '').replace(/^0/, '234');
+    $('lWa').href = `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+    $('lCopy').onclick = () => navigator.clipboard?.writeText(text).then(() => msg('Copied. Paste it to the helper only.', true));
+    $('login').hidden = false; $('login').scrollIntoView({ behavior: 'smooth' });
+  }
+  async function load() {
+    try {
+      data = await api();
+      const sel = $('match');
+      const keep = sel.value;
+      sel.innerHTML = data.matches.length ? data.matches.map(m => `<option value="${esc(m.id)}">${esc(m.home_team)} v ${esc(m.away_team)} · ${esc(when(m.event_date))}</option>`).join('') : '<option value="">No upcoming matches</option>';
+      if (keep) sel.value = keep;
+      const name = id => { const m = data.matches.find(x => x.id === id); return m ? `${m.home_team} v ${m.away_team}` : ''; };
+      $('list').innerHTML = data.helpers.length ? '<table><thead><tr><th>Helper</th><th>Screen</th><th>Match</th><th>Works until</th><th>Status</th><th></th></tr></thead><tbody>' + data.helpers.map(h =>
+        `<tr data-id="${esc(h.id)}"><td><strong>${esc(h.name)}</strong><br><small class="muted">${esc(h.username)}${h.phone ? ' · ' + esc(h.phone) : ''}</small></td><td>${esc(h.roleLabel)}${h.kind === 'gate' ? `<br><small class="muted">${h.scans} scans</small>` : ''}</td>` +
+        `<td>${esc(name(h.event_id))}</td><td>${esc(when(h.expiresAt))}</td>` +
+        `<td>${h.status === 'active' ? '<span class="ok">Active</span>' : `<span class="off">${h.status === 'expired' ? 'Finished' : 'Switched off'}</span>`}${h.last_login_at ? `<br><small class="muted">signed in ${esc(h.last_login_at)} UTC</small>` : ''}</td>` +
+        `<td>${h.status === 'active' ? '<button data-act="reset">New PIN</button><button data-act="extend">Later finish</button><button data-act="disable">Switch off</button>' : '<button data-act="extend">Switch on again</button>'}</td></tr>`).join('') + '</tbody></table>'
+        : '<p class="muted">No helpers yet.</p>';
+    } catch (e) { msg(e.message, false); }
+  }
+  $('f').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target.elements;
+    try {
+      const d = await api({ action: 'create', name: f.name.value, phone: f.phone.value, kind: f.kind.value, eventId: f.eventId.value, endsAt: lagosToIso(f.endsAt.value) });
+      showLogin(d); e.target.reset(); load();
+    } catch (err) { msg(err.message, false); }
+  });
+  $('lDone').addEventListener('click', () => { if (confirm("Has the helper got their login? You won't see the PIN again.")) { $('login').hidden = true; $('lPin').textContent = ''; } });
+  $('list').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const id = b.closest('tr').dataset.id; const h = data.helpers.find(x => x.id === id);
+    try {
+      if (b.dataset.act === 'disable') { if (!confirm(`Switch off ${h.name}'s login now? They are signed out straight away.`)) return; await api({ action: 'disable', id }); msg(`${h.name} is switched off.`, true); }
+      if (b.dataset.act === 'reset') { if (!confirm(`Make a new PIN and link for ${h.name}? The old ones stop working.`)) return; showLogin(await api({ action: 'reset', id })); }
+      if (b.dataset.act === 'extend') {
+        const v = prompt('New finish time (Nigeria time), e.g. 2026-10-25 23:30. At most 06:00 the next morning:'); if (!v) return;
+        await api({ action: 'extend', id, endsAt: lagosToIso(v.trim().replace(' ', 'T')) }); msg('Saved.', true);
+      }
+      load();
+    } catch (err) { msg(err.message, false); }
+  });
+  load();
+})();
+</script>

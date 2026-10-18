@@ -566,6 +566,27 @@ Files are named with today's date, e.g. `lobi-stars-fan-database-2026-10-09.xlsx
   then on the three Super Admins are each other's backup. Its history stays in
   the Activity Log, and anyone who tries the old code is refused and reported.
 
+### Creating matchday helper accounts (Matchday Operations Manager, Commerce › Matchday Helpers)
+
+- **Add a helper:** name, phone (for WhatsApp), **Gate ticket scanner** or
+  **Kitchen order board**, and the match. Press **Make the helper login**.
+- You get a **username** (e.g. `gate-terver-4821`), a **6-digit PIN** and a
+  **QR code / link** (it works once). They're shown once: press **Share on
+  WhatsApp** (or **Copy**) to send them to the helper only.
+- The helper scans the QR code or opens the link (or goes to
+  **lobistarsfc.com/helper** and types the username and PIN) and goes straight
+  to their screen. They see **only** that screen: no menu, no other pages, and
+  only the fan's first name (gate) or first name, seat and order (kitchen).
+- Helpers stay signed in **all match day** on their phone (no 30-minute
+  sign-out, no two-step login) and their login **stops at 23:59** on match day.
+- **New PIN** (forgotten PIN; the old one stops working), **Later finish** (up
+  to 06:00 the next morning), **Switch off** (signed out straight away). Five
+  wrong PINs lock the login for 15 minutes; a New PIN unlocks it.
+- Every ticket scan and kitchen step records the helper's name; the list shows
+  how many tickets each gate helper scanned.
+- The old shared gate code still works for now (until it's removed from
+  Cloudflare; see the handover list).
+
 ### Approvals (Super Admins, Settings › Approvals)
 
 Some actions don't happen straight away: another Super Admin must approve them.

@@ -6,7 +6,9 @@ import Layout from '../layouts/Layout.astro';
     <div class="stag">Match Day</div>
     <h1 class="stitle">Gate <span class="r">Scanner</span></h1>
 
+    <p id="who" class="muted" style="display:none;margin-top:12px;font-size:14px;"></p>
     <div id="gate-login" class="card" style="padding:24px;margin-top:20px;">
+      <p class="muted" style="margin:0 0 12px;font-size:14px;">Matchday helpers: <a href="/helper/">sign in with your username and PIN</a>.</p>
       <label class="muted" style="display:block;margin-bottom:8px;font-size:13px;">Staff Code</label>
       <input id="staff-code" type="password" inputmode="numeric" placeholder="Enter staff code" style="width:100%;padding:12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:var(--d3);color:var(--white);font-size:16px;margin-bottom:12px;"/>
       <button id="unlock-btn" class="btn-p" style="width:100%;">Start Scanning</button>
@@ -68,6 +70,20 @@ import Layout from '../layouts/Layout.astro';
     gateLogin.style.display = 'none';
     scanUi.style.display = 'block';
   }
+  // Signed in as a matchday helper (or staff with gate access): no staff code needed; the name goes on each scan.
+  let signedIn = false;
+  fetch('/api/admin/me', { headers: { 'x-admin-code': '__session__' }, cache: 'no-store' }).then(r => r.ok ? r.json() : null).then(d => {
+    const a = d && d.admin;
+    if (!a || !(a.permissions || []).includes('commerce.gate_scan')) return;
+    signedIn = true;
+    gateLogin.style.display = 'none';
+    scanUi.style.display = 'block';
+    const who = document.getElementById('who');
+    const until = a.helperUntil ? ' · works until ' + new Date(a.helperUntil).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    who.textContent = 'Signed in as ' + a.name + until;
+    who.style.display = 'block';
+    ticketInput.focus();
+  }).catch(() => {});
 
   async function validateTicket(rawInput) {
     // The QR now encodes a public verify URL (https://lobistarsfc.com/verify/<id>)
@@ -97,6 +113,7 @@ import Layout from '../layouts/Layout.astro';
       const data = await res.json();
 
       if (res.status === 401) {
+        if (signedIn) { alert('Your helper login has finished or was switched off. Sign in again.'); location.href = '/helper/'; return; }
         sessionStorage.removeItem('ls_staff_code');
         alert('Staff code rejected. Please re-enter it.');
         location.reload();

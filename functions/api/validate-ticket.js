@@ -4,6 +4,8 @@
 import { scanSeasonPass } from './_lib/seasonTickets.js';
 import { ensureDiscountSchema } from './_lib/ticketDiscounts.js';
 import { earnAttendance } from './_lib/rewardsEarn.js';
+import { getAdmin } from './_lib/adminSession.js';
+import { can, loadRoles } from './_lib/adminRoles.js';
 
 export async function onRequestPost({ request, env }) {
   let body;
@@ -13,11 +15,16 @@ export async function onRequestPost({ request, env }) {
     return Response.json({ valid: false, reason: 'Invalid request' }, { status: 400 });
   }
 
-  const { ticketId, staffCode, station } = body || {};
-
-  if (!staffCode || staffCode !== env.STAFF_SCAN_CODE) {
+  const { ticketId, staffCode } = body || {};
+  // Who is scanning: a matchday helper or staff member signed in with gate scanner
+  // access (their name is recorded on the ticket), or the old shared staff code.
+  const admin = await getAdmin(request, env);
+  if (admin) await loadRoles(env.DB);
+  const signedIn = admin && can(admin, 'commerce.gate_scan');
+  if (!signedIn && (!staffCode || !env.STAFF_SCAN_CODE || staffCode !== env.STAFF_SCAN_CODE)) {
     return Response.json({ valid: false, reason: 'Invalid staff code' }, { status: 401 });
   }
+  const station = signedIn ? String(admin.name).slice(0, 80) : String(body.station || 'unknown').slice(0, 80);
   if (!ticketId || typeof ticketId !== 'string') {
     return Response.json({ valid: false, reason: 'No ticket code provided' }, { status: 400 });
   }
@@ -60,6 +67,8 @@ export async function onRequestPost({ request, env }) {
     // Lobi Stars Rewards: attendance points (once per fan per match) and the home-games-in-a-row bonus.
     await earnAttendance(env, cleanId);
     // ADULT or CHILD, so staff can check a child ticket (family bundle).
+    // The gate only needs the first name.
+    if (ticket) ticket.buyer_name = String(ticket.buyer_name || '').trim().split(/\s+/)[0] || '';
     return Response.json({ valid: true, code: 'valid', ticketType: ticket?.ticket_type === 'child' ? 'child' : 'adult', ticket });
   }
 
