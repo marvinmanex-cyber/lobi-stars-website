@@ -85,12 +85,14 @@ export async function onRequestGet({ request, env }) {
   }
 
   let sql = base, binds = [];
-  if (show === 'open') sql += ` WHERE f.order_status IN ('PAID','ACCEPTED','PREPARING','OUT_FOR_DELIVERY') ORDER BY f.paid_iso ASC`;
+  // The open lists show the newest 500 orders (so a new order never drops off the end), oldest first.
+  const newestFirst = where => `SELECT * FROM (${base} WHERE ${where} ORDER BY f.created_iso DESC LIMIT 500) ORDER BY paid_iso ASC, created_iso ASC`;
+  if (show === 'open') sql = newestFirst(`f.order_status IN ('PAID','ACCEPTED','PREPARING','OUT_FOR_DELIVERY')`);
   else if (show === 'awaiting') sql += ` WHERE f.order_status = 'AWAITING_PAYMENT' ORDER BY f.created_iso DESC`;
-  else if (show === 'board') { sql += ` WHERE f.order_status IN ('AWAITING_PAYMENT','AWAITING_WHATSAPP','CONFIRMED','PAID','ACCEPTED','PREPARING','OUT_FOR_DELIVERY') OR (f.order_status = 'DELIVERED' AND f.delivered_at >= ?) ORDER BY f.paid_iso ASC, f.created_iso ASC`; binds = [new Date(Date.now() - 30 * 60_000).toISOString()]; }
+  else if (show === 'board') { sql = newestFirst(`f.order_status IN ('AWAITING_PAYMENT','AWAITING_WHATSAPP','CONFIRMED','PAID','ACCEPTED','PREPARING','OUT_FOR_DELIVERY') OR (f.order_status = 'DELIVERED' AND f.delivered_at >= ?)`); binds = [new Date(Date.now() - 30 * 60_000).toISOString()]; }
   else if (show === 'today') { sql += ` WHERE f.created_iso >= ? ORDER BY f.created_iso DESC`; binds = [todayStart]; }
   else sql += ` ORDER BY f.created_iso DESC`;
-  const { results } = await db.prepare(`${sql} LIMIT 500`).bind(...binds).all();
+  const { results } = await db.prepare(/LIMIT 500\)/.test(sql) ? sql : `${sql} LIMIT 500`).bind(...binds).all();
 
   const { results: today } = await db.prepare(`SELECT items_json, total_kobo, order_status, payment_status FROM food_orders WHERE created_iso >= ?`).bind(todayStart).all();
   const paidToday = today.filter(o => o.payment_status === 'paid' && !['CANCELLED', 'REFUNDED'].includes(o.order_status));

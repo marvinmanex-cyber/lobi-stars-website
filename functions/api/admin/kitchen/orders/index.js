@@ -18,7 +18,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
     const since = new Date(Date.now() - 12 * 3600e3).toISOString();
     const readySince = new Date(Date.now() - 15 * 60e3).toISOString();
     const { results } = await db.prepare(
-      `SELECT * FROM food_orders WHERE paid_iso >= ? AND (order_status IN ('PAID', 'ACCEPTED', 'PREPARING') OR (order_status = 'OUT_FOR_DELIVERY' AND out_at >= ?)) ORDER BY paid_iso ASC LIMIT 200`
+      `SELECT * FROM (SELECT * FROM food_orders WHERE paid_iso >= ? AND (order_status IN ('PAID', 'ACCEPTED', 'PREPARING') OR (order_status = 'OUT_FOR_DELIVERY' AND out_at >= ?)) ORDER BY paid_iso DESC LIMIT 200) ORDER BY paid_iso ASC`
     ).bind(since, readySince).all();
     const now = Date.now();
     const orders = results.map(o => {
