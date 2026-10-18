@@ -4,6 +4,7 @@ import { logAdminAction } from '../_lib/adminSession.js';
 import { ROLE_DEFAULTS, ROLE_ALIASES, ASSIGNABLE_ROLES } from '../_lib/adminRoles.js';
 import { securitySettings, passwordProblem, IDLE_MS } from '../_lib/adminSecurity.js';
 import { hashPassword } from '../_lib/password.js';
+import { isSuperAdminEmail, superAdminProblem, syncSuperAdmins, superAdminEmails } from '../_lib/superAdmins.js';
 import { ensureLifecycleSchema, staffStatus, sendStaffLink, accessReviewList, sendAccessReview, reviewMonth, INVITE_HOURS, NO_PASSWORD } from '../_lib/staffLifecycle.js';
 import roleEmails from '../../../src/data/role-emails.json';
 
@@ -18,6 +19,7 @@ export async function onRequestGet({ request, env }) {
   if (denied) return denied;
   const db = env.DB;
   await ensureLifecycleSchema(db);
+  await syncSuperAdmins(env, new URL(request.url).origin);
   const now = Date.now();
   const { results } = await db.prepare(
     `SELECT u.id, u.name, u.email, u.role, u.role_email, u.active, u.created_at, u.last_login_at, u.totp_enabled, u.must_change_password, u.password_hash,
@@ -35,7 +37,7 @@ export async function onRequestGet({ request, env }) {
   const roles = [...ASSIGNABLE_ROLES, ...inUse].map(id => ({ id, label: ROLE_DEFAULTS[id].label, job: ROLE_DEFAULTS[id].job || '', legacy: !!ROLE_DEFAULTS[id].legacy }));
   const settings = await securitySettings(db);
   return json({
-    staff, roles, roleEmails: roleEmails.roles, emailDomainOnly: settings.email_domain_only === '1',
+    staff, roles, roleEmails: roleEmails.roles, emailDomainOnly: settings.email_domain_only === '1', superAdminEmails: superAdminEmails(env),
     review: { month: reviewMonth(), lastSent: settings.access_review_month || null, people: await accessReviewList(db) },
   });
 }
@@ -52,6 +54,8 @@ export async function onRequestPost({ request, env }) {
   const b = await request.json().catch(() => ({}));
   const origin = new URL(request.url).origin;
   if (b.action === 'send_review') return json({ ok: true, ...(await sendAccessReview(env, origin, { force: true })) });
+  // Send the invites to the people in the Super Admin list who don't have one yet.
+  if (b.action === 'invite_super_admins') return json({ ok: true, ...(await syncSuperAdmins(env, origin, { sendInvites: true, by: admin })) });
 
   const name = typeof b.name === 'string' ? b.name.trim().slice(0, 80) : '';
   const email = typeof b.email === 'string' ? b.email.trim().toLowerCase() : '';
@@ -63,8 +67,12 @@ export async function onRequestPost({ request, env }) {
   const want = ROLE_ALIASES[b.role] || b.role;
   const role = ASSIGNABLE_ROLES.includes(want) ? want : null;
   if (!role) return json({ error: 'Please choose a role.' }, 400);
+  // Super Admin: only the three people in the Super Admin list (test accounts on the local test server excepted).
+  const testAccount = env.STAFF_TEST_PASSWORDS === '1' && typeof b.password === 'string';
+  if (role === 'super_admin' && !testAccount && superAdminProblem(env, email)) return json({ error: superAdminProblem(env, email) }, 400);
   const settings = await securitySettings(db);
-  if (settings.email_domain_only === '1' && !email.endsWith('@lobistarsfc.com')) return json({ error: "Use the person's own @lobistarsfc.com email address (Settings › Login & Security)." }, 400);
+  // The Super Admins' own (Gmail) addresses are the only exception to the @lobistarsfc.com rule.
+  if (settings.email_domain_only === '1' && !email.endsWith('@lobistarsfc.com') && !isSuperAdminEmail(env, email)) return json({ error: "Use the person's own @lobistarsfc.com email address (Settings › Login & Security)." }, 400);
   if (await db.prepare(`SELECT id FROM admin_users WHERE email = ?`).bind(email).first()) return json({ error: 'A staff account with this email already exists.' }, 409);
 
   const id = randomId('adm', 10);
@@ -73,7 +81,7 @@ export async function onRequestPost({ request, env }) {
   if (env.STAFF_TEST_PASSWORDS === '1' && typeof b.password === 'string') {
     const problem = await passwordProblem(env, b.password, { email, name });
     if (problem) return json({ error: problem }, 400);
-    await db.prepare(`INSERT INTO admin_users (id, name, email, password_hash, role, role_email, must_change_password) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+    await db.prepare(`INSERT INTO admin_users (id, name, email, password_hash, role, role_email, must_change_password, test_account) VALUES (?, ?, ?, ?, ?, ?, ?, 1)`)
       .bind(id, name, email, await hashPassword(b.password), role, roleEmail || null, b.mustChange === true ? 1 : 0).run();
     await logAdminAction(db, admin, 'staff_created', `${name} <${email}> as ${ROLE_DEFAULTS[role].label} (test server)`);
     return json({ ok: true, id });

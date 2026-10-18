@@ -3,6 +3,7 @@ import { logAdminAction } from '../../_lib/adminSession.js';
 import { ROLE_DEFAULTS, ROLE_ALIASES, ASSIGNABLE_ROLES } from '../../_lib/adminRoles.js';
 import { revokeSessions, alertAddresses, securityEmail } from '../../_lib/adminSecurity.js';
 import { ensureLifecycleSchema, staffStatus, sendStaffLink, disableStaff } from '../../_lib/staffLifecycle.js';
+import { isSuperAdminEmail, superAdminProblem } from '../../_lib/superAdmins.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const json = (d, status = 200) => Response.json(d, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -100,6 +101,9 @@ export async function onRequestPut({ request, env, params, waitUntil }) {
   const role = ASSIGNABLE_ROLES.includes(want) && want !== (ROLE_ALIASES[u.role] || u.role) ? want : u.role;
   // Nobody takes away their own Super Admin role.
   if (self && role !== u.role) return json({ error: "You can't change your own role. Ask another Super Admin." }, 400);
+  // Super Admin is only for the three people in the list, and they stay Super Admins while they're on it.
+  if (role !== u.role && role === 'super_admin' && !(env.STAFF_TEST_PASSWORDS === '1' && u.test_account) && superAdminProblem(env, u.email)) return json({ error: superAdminProblem(env, u.email) }, 400);
+  if (role !== u.role && u.role === 'super_admin' && isSuperAdminEmail(env, u.email)) return json({ error: `${u.email} is in the Super Admin list, so they stay a Super Admin. To change that, edit the SUPER_ADMIN_EMAILS server setting.` }, 400);
   await db.prepare(`UPDATE admin_users SET name = ?, role = ?, role_email = ? WHERE id = ?`).bind(name, role, roleEmail, u.id).run();
   const changes = [
     name !== u.name && `name -> ${name}`,

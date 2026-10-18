@@ -108,7 +108,8 @@ Contributor sees Gallery, Homepage slides and Partners).
 ### Staff roles and what each can do (set by a Super Admin in Settings › Staff Users & Roles)
 | Role | Job | Can do |
 |---|---|---|
-| Super Admin | Head of Media & Communications | Everything: staff, roles, approvals, login security, backups, all data |
+| Super Admin | One of the three website owners | Everything: staff, roles, approvals, login security, Website Health, backups, all data. **Only the three people in the Super Admin list** |
+| Head of Media | Head of Media & Communications | All content, matchday, broadcast, fans and Inbox, Rewards, partners, commerce, reports and site settings. Not staff, approvals, logs, security settings, Website Health or service keys |
 | Content Editor | Media Officer / Club Writer | All content (news, team news, programme, club pages, help, videos, gallery), uploads, writes the newsletter (can't send it to subscribers), media@ mailbox |
 | Media Editor | Social Media & Video Officer | Videos, gallery, uploads, live matchday updates (preview and report, fan match alerts, sharing to socials), media@ mailbox |
 | Media Contributor | Graphic Designer & Club Photographer | Uploads only: gallery, homepage images, partner logos |
@@ -545,10 +546,21 @@ Files are named with today's date, e.g. `lobi-stars-fan-database-2026-10-09.xlsx
   them in the Content CMS: **Site Settings › Role email addresses**. Tick
   **Mailbox ready** only once the address really receives email (a forwarder in
   Cloudflare Email Routing); until then the site shows info@.
-- **Emergency (break-glass) account:** the owner admin code. Club management
-  keeps it sealed and uses it only if no Super Admin can sign in. Every use
-  emails the Super Admins and club management straight away and is marked
-  **🚨 Emergency account** in the Activity Log.
+- **The three Super Admins:** only the three people in the **Super Admin
+  list** can be Super Admins. The list is a server setting
+  (`SUPER_ADMIN_EMAILS` in Cloudflare), so it can't be changed from the
+  website. Any change is recorded and emailed to all three. Their accounts are
+  made automatically from the list. **Send the Super Admin invites** (Settings ›
+  Login & Security) emails each one an invite. They must set up two-step login
+  before they can open anything. A fourth Super Admin can't be made, and a
+  listed Super Admin can't be given another role. Anyone else who somehow has
+  the Super Admin role only gets Head of Media rights, and is moved to Head of
+  Media. If a Super Admin is disabled, the other two are emailed.
+- **The old emergency admin code:** the owner admin code still works until the
+  Super Admins are set up. Once at least two of the three have signed in with
+  two-step login, press **Switch off the admin code** (Login & Security). From
+  then on the three Super Admins are each other's backup. Its history stays in
+  the Activity Log, and anyone who tries the old code is refused and reported.
 
 **Import existing records** (on
 the Fan database page) pulls older records into the database; it is safe to
@@ -1604,13 +1616,20 @@ Until then the Newsletter screen shows a yellow note.
   are told too), a backup code used, a password change, two-step login turned
   on, off or reset, and a lockout after wrong attempts. If it wasn't you, sign in, log out of all devices,
   change your password and tell a Super Admin.
-- The owner admin code is the club's **emergency (break-glass) account**:
-  club management keeps it sealed and uses it only if no Super Admin can sign
-  in. It has no password or two-step settings; use a personal Super Admin
-  account for everyday work. **Every sign-in with it is emailed straight away
-  to the Super Admins and club management**, and marked 🚨 in the Activity Log.
+- The old owner admin code works only until the three Super Admins are set up
+  and switch it off (see "The old emergency admin code" above). While it works,
+  every sign-in with it is emailed straight away to the Super Admins and is
+  marked 🚨 in the Activity Log.
+- **Super Admins with a Gmail address** see a one-time notice after signing in:
+  "Your website access depends on your email account. Please make sure Google
+  2-Step Verification is switched on for this Gmail account." Press **It's
+  switched on** once it is (the Login & Security page shows who has
+  confirmed).
 
 ### Login & Security (Settings › Login & Security, Super Admins only)
+- **The three Super Admins:** each one's account, two-step login, last login
+  and Gmail confirmation; **Send the Super Admin invites**; and **Switch off
+  the admin code** (needs two Super Admins signed in with two-step login).
 - **The rules for everyone** are shown at the top: 12+ character passwords,
   signed out after 30 minutes without activity and after 12 hours, locked for
   15 minutes after 5 wrong attempts.
@@ -1628,7 +1647,7 @@ Until then the Newsletter screen shows a yellow note.
   example the club office's internet connection; your own address is shown).
   The page won't save a list that would sign you out. The owner admin code
   always works from anywhere.
-- **Security alerts:** go to every Super Admin (Head of Media); add **club
+- **Security alerts:** go to every Super Admin; add **club
   management** addresses (e.g. the club secretary) so they're told too. Alerts:
   the emergency admin code used, accounts locked, two-step login resets, role
   changes, sign-ins from new devices, and the monthly access review.

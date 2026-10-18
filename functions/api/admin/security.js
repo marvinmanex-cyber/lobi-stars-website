@@ -2,9 +2,10 @@ import { requireAdminUser } from '../_lib/adminEvents.js';
 import { ensureAdminSchema, logAdminAction, twoStepDeadline } from '../_lib/adminSession.js';
 import { roleOf, ROLE_DEFAULTS } from '../_lib/adminRoles.js';
 import { clientIp } from '../_lib/fans.js';
+import { superAdminEmails, tooManySuperAdmins, readySuperAdmins, syncSuperAdmins, isFullSuperAdmin } from '../_lib/superAdmins.js';
 import {
   securitySettings, saveSecuritySetting, listSessions, revokeSession, revokeSessions, parseAllowlist, ipAllowed,
-  allowlistApplies, securityEmail, IDLE_MS, SESSION_MS, LOCK_AFTER, GRACE_DAYS, MIN_PASSWORD,
+  allowlistApplies, securityEmail, alertAddresses, IDLE_MS, SESSION_MS, LOCK_AFTER, GRACE_DAYS, MIN_PASSWORD,
 } from '../_lib/adminSecurity.js';
 
 // Settings › Login & Security (Super Admin only).
@@ -18,6 +19,8 @@ import {
 //   { action: 'alert_emails', emails }        extra addresses for security alerts
 //   { action: 'revoke_session', id }          sign out one device
 //   { action: 'revoke_user', userId }         sign someone out everywhere ('owner' = the admin code sessions)
+//   { action: 'admin_code', off }             switch the old emergency admin code off (needs at least two Super Admins
+//                                             who have signed in with two-step login) or back on
 const json = (d, status = 200) => Response.json(d, { status, headers: { 'Cache-Control': 'no-store' } });
 const EVENTS = ['login', 'login_failed', 'login_blocked_ip', 'account_locked', 'owner_code_login', 'backup_code_used', 'backup_codes_new', 'sessions_revoked',
   'account_password', 'account_2fa_on', 'account_2fa_off', 'security_settings', 'staff_created', 'staff_updated', 'role_changed'];
@@ -36,6 +39,17 @@ export async function onRequestGet({ request, env }) {
   const s = await securitySettings(db, { force: true });
   const { staff, ready } = await readiness(db);
   const required = s.require_two_step === '1';
+  // The three Super Admins (from the SUPER_ADMIN_EMAILS server setting).
+  await syncSuperAdmins(env, new URL(request.url).origin);
+  const list = superAdminEmails(env);
+  const readySA = await readySuperAdmins(env);
+  const people = [];
+  for (const email of list) {
+    const u = await db.prepare(`SELECT id, name, email, role, active, disabled_at, password_hash, totp_enabled, twostep_login_at, last_login_at, gmail_notice_at, invite_expires, test_account FROM admin_users WHERE email = ?`).bind(email).first();
+    people.push({ email, name: u?.name || null, status: !u ? 'missing' : (!u.active || u.disabled_at) ? 'disabled' : u.password_hash === '!' ? 'pending' : 'active',
+      superAdmin: !!u && isFullSuperAdmin(env, u), twoStep: !!u?.totp_enabled, usedTwoStep: !!u?.twostep_login_at, lastLogin: u?.last_login_at || null,
+      gmail: /@gmail\.com$/i.test(email), gmailNoticeAt: u?.gmail_notice_at || null, inviteExpires: u?.invite_expires ? new Date(u.invite_expires).toISOString() : null });
+  }
   const { results: events } = await db.prepare(`SELECT ts, staff_name, action, detail FROM admin_log WHERE action IN (${EVENTS.map(() => '?').join(',')}) ORDER BY id DESC LIMIT 60`).bind(...EVENTS).all();
   const sessions = (await listSessions(db)).map(x => ({
     id: x.id, userId: x.user_id, name: x.name || '(deleted account)', role: x.user_id === 'owner' ? 'Owner (admin code)' : ROLE_DEFAULTS[roleOf(x)]?.label || x.role,
@@ -52,6 +66,7 @@ export async function onRequestGet({ request, env }) {
       staff: staff.map(u => ({ id: u.id, name: u.name, email: u.email, role: ROLE_DEFAULTS[roleOf(u)]?.label || u.role, on: !!u.totp_enabled, usedAt: u.twostep_login_at,
         deadline: required && !u.totp_enabled ? new Date(twoStepDeadline(u, s)).toISOString() : null })),
     },
+    superAdmins: { list: people, tooMany: tooManySuperAdmins(env), readyCount: readySA.length, adminCodeOff: s.admin_code_off === '1', canSwitchOff: readySA.length >= 2 },
     myIp: clientIp(request), sessions, events,
   });
 }
@@ -87,6 +102,22 @@ export async function onRequestPost({ request, env, waitUntil }) {
     }
     await saveSecuritySetting(db, 'require_two_step', '0', admin.name);
     await log('two-step login no longer required');
+    return json({ ok: true });
+  }
+  if (b.action === 'admin_code') {
+    if (b.off === true) {
+      // Never lock the club out: at least two Super Admins must already sign in with two-step login.
+      const ready = await readySuperAdmins(env);
+      if (ready.length < 2) return json({ error: `At least two of the three Super Admins must have signed in with two-step login first (now: ${ready.length}). Then nobody can be locked out.` }, 409);
+      await saveSecuritySetting(db, 'admin_code_off', '1', admin.name);
+      await log('the old emergency admin code was switched off (the Super Admins are each other\'s backup)');
+      if (admin.id === 'owner') await revokeSessions(db, 'owner', 'admin code switched off');
+      later(alertAddresses(env).then(to => securityEmail(env, to, 'Lobi Stars admin: the old emergency admin code was switched off', [`<strong>${admin.name}</strong> switched off the old emergency admin code. From now on the three Super Admins are each other's backup. Its history stays in the Activity Log.`], new URL(request.url).origin)));
+      return json({ ok: true });
+    }
+    await saveSecuritySetting(db, 'admin_code_off', '0', admin.name);
+    await log('the old emergency admin code was switched back on');
+    later(alertAddresses(env).then(to => securityEmail(env, to, 'Lobi Stars admin: the emergency admin code was switched back on', [`<strong>${admin.name}</strong> switched the emergency admin code back on. If that wasn't agreed, switch it off again in Settings › Login & Security.`], new URL(request.url).origin)));
     return json({ ok: true });
   }
   if (b.action === 'email_domain_only') {

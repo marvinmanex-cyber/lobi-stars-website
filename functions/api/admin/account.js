@@ -54,6 +54,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
   if (!(await rateLimit(db, `account:${admin.id}`, 20, 900))) return tooMany();
   const b = await request.json().catch(() => ({}));
 
+  // The one-time notice for Super Admins on Gmail: "I've switched on Google 2-Step Verification".
+  if (b.action === 'ack_gmail') {
+    if (admin.id === 'owner') return json({ ok: true });
+    await db.prepare(`UPDATE admin_users SET gmail_notice_at = datetime('now') WHERE id = ? AND gmail_notice_at IS NULL`).bind(admin.id).run();
+    await logAdminAction(db, admin, 'gmail_notice_ack', 'confirmed Google 2-Step Verification is switched on for their Gmail account');
+    return json({ ok: true });
+  }
   // Signing out devices: staff and the owner.
   if (b.action === 'logout_session') {
     if (b.id === admin.sessionId) return json({ error: 'That is this device: use "Log out" instead.' }, 400);

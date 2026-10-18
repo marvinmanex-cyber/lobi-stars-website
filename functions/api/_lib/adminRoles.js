@@ -90,8 +90,11 @@ const starts = (...prefixes) => ALL_PERMISSIONS.filter(p => prefixes.some(x => p
 
 // The built-in roles (the club's staff access plan). Lobi Stars has one first team.
 export const ROLE_DEFAULTS = {
-  super_admin: { label: 'Super Admin', job: 'Head of Media & Communications', permissions: ALL_PERMISSIONS, locked: true,
-    about: 'Everything, including staff accounts, roles, approvals and backups.' },
+  // Only the three people in the SUPER_ADMIN_EMAILS server setting (see superAdmins.js).
+  super_admin: { label: 'Super Admin', job: 'One of the three website owners', permissions: ALL_PERMISSIONS, locked: true,
+    about: 'Everything, including staff accounts, roles, approvals, security settings, Website Health and backups. Only the three people in the Super Admin list.' },
+  head_of_media: { label: 'Head of Media', job: 'Head of Media & Communications', about: 'All content, matchday, broadcast, fans and Inbox, Rewards, partners, commerce and reports, plus site settings. Not staff, approvals, logs, security settings, Website Health or service keys.',
+    permissions: ALL_PERMISSIONS.filter(p => !['staff.manage', 'logs.view', 'approvals.approve'].includes(p)) },
   content_editor: { label: 'Content Editor', job: 'Media Officer / Club Writer', about: 'All website content (news, team news, programme, club pages, help, videos, gallery), uploads, and writing the newsletter (not sending it to subscribers).',
     permissions: [...starts('content.'), 'fans.newsletter.manage', 'media.upload', 'fans.inbox.read', 'fans.inbox.reply', 'fans.inbox.media'] },
   media_editor: { label: 'Media Editor', job: 'Social Media & Video Officer', about: 'Videos, gallery, uploads and live matchday updates (preview, report, fan alerts, sharing to socials).',

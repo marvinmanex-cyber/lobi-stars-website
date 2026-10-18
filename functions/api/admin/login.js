@@ -49,6 +49,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const code = typeof body.code === 'string' ? body.code.trim() : '';
   if (code) {
     if (ipFails >= CAPTCHA_AFTER && !(await captchaOk())) return needCaptcha();
+    // The Super Admins have switched the old emergency code off: refused, recorded and reported.
+    if ((await securitySettings(db)).admin_code_off === '1') {
+      await ipFail();
+      await logAdminAction(db, { id: 'unknown', name: 'Admin code' }, 'owner_code_refused', `the switched-off admin code was tried from ${ip}`);
+      if (code === env.ADMIN_CODE) later(alertAddresses(env).then(to => securityEmail(env, to, 'Lobi Stars admin: someone tried the old admin code', ['Someone typed the old emergency admin code (it was switched off, so it did not work).', loginDetails(request), 'If this wasn\'t one of you, change ADMIN_CODE in Cloudflare.'], origin)));
+      return json({ error: 'The admin code is no longer used. Sign in with your own email and password.' }, 403);
+    }
     if (code.length !== env.ADMIN_CODE.length || code !== env.ADMIN_CODE) {
       await ipFail();
       await logAdminAction(db, { id: 'unknown', name: 'Admin code' }, 'login_failed', `wrong admin code from ${ip}`);

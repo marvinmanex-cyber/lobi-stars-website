@@ -44,7 +44,8 @@ export async function ensureSecuritySchema(db) {
   ]);
   const cols = new Set((await db.prepare(`PRAGMA table_info(admin_users)`).all()).results.map(r => r.name));
   for (const [name, type] of [['failed_logins', 'INTEGER NOT NULL DEFAULT 0'], ['locked_until', 'INTEGER'], ['must_change_password', 'INTEGER NOT NULL DEFAULT 0'],
-    ['twostep_grace_until', 'INTEGER'], ['twostep_login_at', 'TEXT'], ['password_changed_at', 'TEXT'], ['email_code_hash', 'TEXT'], ['email_code_expires', 'INTEGER']]) {
+    ['twostep_grace_until', 'INTEGER'], ['twostep_login_at', 'TEXT'], ['password_changed_at', 'TEXT'], ['email_code_hash', 'TEXT'], ['email_code_expires', 'INTEGER'],
+    ['test_account', 'INTEGER NOT NULL DEFAULT 0'], ['gmail_notice_at', 'TEXT']]) {
     if (!cols.has(name)) {
       try { await db.prepare(`ALTER TABLE admin_users ADD COLUMN ${name} ${type}`).run(); }
       catch (err) { if (!/duplicate column/i.test(String(err))) throw err; }
@@ -63,6 +64,8 @@ export const SETTING_DEFAULTS = {
   ip_allowlist: '',           // one address or range per line
   alert_emails: '',           // extra addresses for security alerts (comma separated)
   access_review_month: '',    // the last month the access review was emailed (YYYY-MM)
+  super_admin_list: '',       // the Super Admin list last seen (to notice changes)
+  admin_code_off: '0',        // '1' = the old emergency admin code no longer works
 };
 let cache = null, cachedAt = 0;
 export async function securitySettings(db, { force = false } = {}) {

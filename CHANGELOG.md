@@ -8,6 +8,48 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Website Health project, Phase 1: the three Super Admins
+
+**What changed**
+- Only three people can be Super Admins: dkakaan2@gmail.com,
+  dkakaan@lobistarsfc.com and marvinmanex@gmail.com. The list is the
+  `SUPER_ADMIN_EMAILS` server setting in Cloudflare and can't be changed from
+  the website. Emails are matched ignoring capitals and spaces.
+- Full Super Admin access needs all three: the Super Admin role, an email on
+  the list, and the email proven by accepting the invite. A fourth Super Admin
+  can't be made, and listed Super Admins can't be given another role.
+- Their accounts are made automatically from the list (an existing account is
+  upgraded, never duplicated). **Send the Super Admin invites** on Login &
+  Security emails their invites. Super Admins must set up two-step login before
+  they can open anything (no 7-day grace).
+- A change to the list is recorded in the Activity Log and emailed to everyone
+  on the old and new list. If a Super Admin is disabled, the other two are
+  emailed.
+- **New role: Head of Media.** All content, matchday, broadcast, fans and
+  Inbox, Rewards, partners, commerce, reports and site settings; not staff,
+  approvals, logs, security settings, Website Health or service keys. Anyone
+  holding the Super Admin role who isn't on the list gets Head of Media rights
+  and is moved to Head of Media.
+- The @lobistarsfc.com email rule (when switched on) exempts only the three
+  Super Admin emails.
+- **The old emergency admin code** keeps working until the Super Admins are set
+  up. Once two of the three have signed in with two-step login, **Switch off the
+  admin code** retires it. After that it's refused, recorded and reported, and
+  the three Super Admins are each other's backup.
+- Super Admins with a Gmail address see a one-time reminder to switch on Google
+  2-Step Verification. Their confirmation is recorded.
+
+**Who it affects:** the three Super Admins. There were no staff accounts on
+the live site, so nobody had to be moved to Head of Media.
+
+**Staff need to:** the three Super Admins accept their invites (handover A19).
+
+**Handbook:** STAFF-GUIDE.md › Staff roles (Super Admin, Head of Media); Adding
+and removing staff (the three Super Admins, the old emergency admin code);
+section 25 (Gmail notice, Login & Security).
+
+---
+
 ## 2026-10-18: Staff access and security: staff account management, roles matched to the plan, login security gaps closed
 
 **Roles now follow the club's staff access plan exactly.** The permission

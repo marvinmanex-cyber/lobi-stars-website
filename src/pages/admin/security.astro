@@ -14,6 +14,17 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <p class="sec-msg" id="msg" role="status" aria-live="polite" hidden></p>
 
     <section class="panel">
+      <h2>The three Super Admins</h2>
+      <p class="muted">Only these people have full access (staff, security, Website Health). The list is the <strong>SUPER_ADMIN_EMAILS</strong> server setting in Cloudflare and can't be changed from the website; any change is recorded and emailed to all three. Each needs their own password and two-step login. They are each other's backup.</p>
+      <p class="sec-warn" id="saWarn" hidden></p>
+      <div class="scroll" id="saList"></div>
+      <div class="sec-row"><button type="button" class="btn-o" id="saInvite">Send the Super Admin invites</button></div>
+      <h3 class="sec-h3">The old emergency admin code</h3>
+      <p class="muted" id="codeState"></p>
+      <div class="sec-row"><button type="button" class="btn-p" id="codeOff" hidden>Switch off the admin code</button><button type="button" class="btn-o" id="codeOn" hidden>Switch the admin code back on</button></div>
+    </section>
+
+    <section class="panel">
       <h2>Two-step login for everyone</h2>
       <p class="muted">When this is on, every staff account must use a code from an authenticator app as well as its password. People without it get <span id="grace">7</span> days (they're emailed), then can only open My account until it's on.</p>
       <p class="sec-state" id="tsState"></p>
@@ -74,6 +85,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .panel { padding: 20px; margin-bottom: 16px; }
   .panel h2 { margin: 0 0 8px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .sec-state { font-weight: 700; }
+  .sec-h3 { margin: 18px 0 4px; font-size: 17px; }
   .sec-warn { padding: 10px 14px; border-radius: 8px; background: #FFF4E5; color: #7A4B00; }
   .sec-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; }
   .sec-form { display: grid; gap: 12px; max-width: 620px; }
@@ -112,6 +124,21 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     try {
       const d = await api();
       const R = d.rules, S = d.settings, T = d.twoStep;
+      // The three Super Admins.
+      const SA = d.superAdmins;
+      const st = { active: '<span class="ok">Active</span>', pending: 'Invite not accepted yet', disabled: '<span class="no">Disabled</span>', missing: 'No account yet' };
+      $('saWarn').hidden = !(SA.tooMany || SA.list.length < 3);
+      $('saWarn').textContent = SA.tooMany ? 'The SUPER_ADMIN_EMAILS setting lists more than three emails: only the first three count. Fix the setting in Cloudflare.' : `The SUPER_ADMIN_EMAILS setting lists ${SA.list.length} email(s); it should list three.`;
+      $('saList').innerHTML = SA.list.length ? '<table><thead><tr><th>Email</th><th>Account</th><th>Two-step login</th><th>Last login</th><th>Gmail 2-Step</th></tr></thead><tbody>' + SA.list.map(p =>
+        `<tr><td><strong>${esc(p.email)}</strong>${p.name ? `<br><small class="muted">${esc(p.name)}</small>` : ''}</td><td>${st[p.status] || esc(p.status)}${p.status === 'pending' && p.inviteExpires ? `<br><small class="muted">link until ${esc(when(p.inviteExpires))}</small>` : ''}</td>` +
+        `<td>${p.twoStep ? `<span class="ok">On</span>${p.usedTwoStep ? '' : ' (not used yet)'}` : '<span class="no">Off</span>'}</td><td>${p.lastLogin ? esc(when(p.lastLogin)) : '—'}</td>` +
+        `<td>${p.gmail ? (p.gmailNoticeAt ? `<span class="ok">Confirmed</span> ${esc(when(p.gmailNoticeAt))}` : 'Not confirmed yet') : '—'}</td></tr>`).join('') + '</tbody></table>'
+        : '<p class="no">No Super Admin list is set. Add SUPER_ADMIN_EMAILS in Cloudflare.</p>';
+      $('saInvite').hidden = !SA.list.some(p => p.status === 'pending' || p.status === 'missing');
+      $('codeState').textContent = SA.adminCodeOff
+        ? 'Switched off: the old admin code no longer works (its history stays in the Activity Log). The Super Admins are each other\'s backup.'
+        : `Still working, as the way in until the Super Admins are set up. It can be switched off once at least two of the three have signed in with two-step login (now: ${SA.readyCount}).`;
+      $('codeOff').hidden = SA.adminCodeOff; $('codeOff').disabled = !SA.canSwitchOff; $('codeOn').hidden = !SA.adminCodeOff;
       $('rules').textContent = `For everyone: passwords of at least ${R.minPassword} characters (leaked passwords refused); signed out after ${R.idleMinutes} minutes without activity and after ${R.sessionHours} hours at most; locked for 15 minutes after ${R.lockAfter} wrong attempts (a human check appears after 3).`;
       $('grace').textContent = R.graceDays;
       $('tsState').textContent = S.requireTwoStep ? `🔐 Required for every staff account since ${when(S.twoStepSince)}.` : 'Not required yet: each person chooses.';
@@ -138,6 +165,12 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const act = async (body, ok) => { try { await api(body); msg(ok, true); load(); } catch (e) { msg(e.message, false); } };
   $('tsOn').addEventListener('click', () => { if (confirm('Require two-step login for every staff account? People without it will be emailed and get 7 days to turn it on.')) act({ action: 'require_two_step', on: true }, 'Two-step login is now required. Staff without it have been emailed.'); });
   $('tsOff').addEventListener('click', () => { if (confirm('Stop requiring two-step login? People will be able to turn it off again.')) act({ action: 'require_two_step', on: false }, 'Two-step login is no longer required.'); });
+  $('saInvite').addEventListener('click', async () => {
+    if (!confirm('Email an invite to each Super Admin in the list who hasn\'t got an account yet?')) return;
+    try { const r = await fetch('/api/admin/staff', { method: 'POST', headers: H, body: JSON.stringify({ action: 'invite_super_admins' }) }).then(x => x.json()); msg(r.invited?.length ? `Invites sent to ${r.invited.map(i => i.email).join(', ')}.` : 'Nobody needed an invite.', true); load(); } catch (e) { msg(e.message, false); }
+  });
+  $('codeOff').addEventListener('click', () => { if (confirm('Switch off the old emergency admin code? From now on only the Super Admins\' own logins work, and they are each other\'s backup.')) act({ action: 'admin_code', off: true }, 'The old admin code is switched off.'); });
+  $('codeOn').addEventListener('click', () => { if (confirm('Switch the emergency admin code back on? All Super Admins will be emailed.')) act({ action: 'admin_code', off: false }, 'The admin code works again.'); });
   $('domainOnly').addEventListener('change', e => act({ action: 'email_domain_only', on: e.target.checked }, 'Saved.'));
   $('ipForm').addEventListener('submit', e => { e.preventDefault(); const f = e.target.elements; act({ action: 'ip_allowlist', scope: f.scope.value, list: f.list.value }, 'Saved.'); });
   $('alertForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'alert_emails', emails: e.target.elements.emails.value }, 'Saved.'); });

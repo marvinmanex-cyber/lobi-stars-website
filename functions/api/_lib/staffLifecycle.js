@@ -4,6 +4,7 @@
 // never deleted so their history stays) and the monthly access review.
 import { ensureAdminSchema, logAdminAction } from './adminSession.js';
 import { sha256Hex, randomHex, revokeSessions, securityEmail, alertAddresses, securitySettings, saveSecuritySetting } from './adminSecurity.js';
+const normE = e => String(e || '').trim().toLowerCase();
 import { ROLE_DEFAULTS, roleOf } from './adminRoles.js';
 
 export const INVITE_HOURS = 48;
@@ -74,6 +75,11 @@ export async function disableStaff(env, u, by, reason) {
   const n = await revokeSessions(env.DB, u.id, `account disabled by ${by.name}`);
   // The site has no other access tokens for staff (the content CMS uses each person's own GitHub access: remove them from GitHub too).
   await logAdminAction(env.DB, by, 'staff_disabled', `${u.name} <${u.email}>: disabled (${why}); signed out of ${n} device(s)`);
+  // A Super Admin disabled: the other Super Admins are told straight away.
+  if (u.role === 'super_admin') {
+    const to = (await alertAddresses(env)).filter(e => e !== normE(u.email));
+    await securityEmail(env, to, `Lobi Stars admin: Super Admin ${u.name} was disabled`, [`<strong>${esc(by.name)}</strong> disabled the Super Admin account of <strong>${esc(u.name)}</strong> (${esc(u.email)}).`, `Reason: ${esc(why)}`, "If this wasn't agreed, sign in and check Settings › Staff Users & Roles straight away."]);
+  }
   return n;
 }
 

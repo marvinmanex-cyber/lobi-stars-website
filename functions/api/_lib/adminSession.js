@@ -2,6 +2,7 @@ import { sign, verify } from './crypto.js';
 import { ensureSecuritySchema, liveSession, touchSession, securitySettings, ipAllowed, allowlistApplies, GRACE_DAYS } from './adminSecurity.js';
 import { clientIp } from './fans.js';
 import { roleOf } from './adminRoles.js';
+import { isFullSuperAdmin } from './superAdmins.js';
 
 // Staff (admin) sign-in.
 //
@@ -103,7 +104,12 @@ export async function getAdmin(request, env) {
 async function findAdmin(request, env) {
   // The owner's code in a header: for scripts and tests (the browser uses the session cookie).
   const code = request.headers.get('x-admin-code') || '';
-  if (code && code.length === env.ADMIN_CODE.length && code === env.ADMIN_CODE) return { ...OWNER };
+  if (code && code.length === env.ADMIN_CODE.length && code === env.ADMIN_CODE) {
+    // The old emergency admin code stops working once the Super Admins switch it off.
+    await ensureAdminSchema(env.DB);
+    if ((await securitySettings(env.DB)).admin_code_off === '1') return null;
+    return { ...OWNER };
+  }
 
   const sid = await cookieSessionId(request, env);
   if (!sid) return null;
@@ -111,15 +117,26 @@ async function findAdmin(request, env) {
   const s = await liveSession(env.DB, sid);
   if (!s) return null;
   if (isActivity(request)) await touchSession(env.DB, s);
-  if (s.user_id === 'owner') return { ...OWNER, sessionId: sid };
+  if (s.user_id === 'owner') {
+    if ((await securitySettings(env.DB)).admin_code_off === '1') return null;
+    return { ...OWNER, sessionId: sid };
+  }
 
-  const u = await env.DB.prepare(`SELECT id, name, email, role, can_export_fan_data, active, totp_enabled, must_change_password, twostep_grace_until, created_at FROM admin_users WHERE id = ?`).bind(s.user_id).first();
+  const u = await env.DB.prepare(`SELECT id, name, email, role, can_export_fan_data, active, totp_enabled, must_change_password, twostep_grace_until, created_at, password_hash, test_account, gmail_notice_at FROM admin_users WHERE id = ?`).bind(s.user_id).first();
   if (!u || !u.active) return null;
   const settings = await securitySettings(env.DB);
   if (allowlistApplies(settings, roleOf(u)) && !ipAllowed(clientIp(request), settings.ip_allowlist)) return null;
-  const admin = { id: u.id, name: u.name, email: u.email, role: u.role, canExport: !!u.can_export_fan_data, twoStep: !!u.totp_enabled, sessionId: sid };
+  // Super Admin only for the three people on the list (otherwise: Head of Media rights).
+  const full = isFullSuperAdmin(env, u);
+  const role = u.role === 'super_admin' && !full ? 'head_of_media' : u.role;
+  const admin = { id: u.id, name: u.name, email: u.email, role, canExport: !!u.can_export_fan_data, twoStep: !!u.totp_enabled, sessionId: sid };
+  if (u.role === 'super_admin' && !full) admin.superAdminBlocked = true;
+  // The one-time notice for Super Admins who sign in with a Gmail address.
+  if (full && /@gmail\.com$/i.test(u.email) && !u.gmail_notice_at) admin.gmailNotice = true;
   if (u.must_change_password) admin.restrict = 'password';
-  else if (settings.require_two_step === '1' && !u.totp_enabled) {
+  // Super Admins must set up two-step login before anything else (no 7 days' grace).
+  else if (full && !u.totp_enabled && !(env.STAFF_TEST_PASSWORDS === '1' && u.test_account)) admin.restrict = 'twostep';
+  if (!admin.restrict && settings.require_two_step === '1' && !u.totp_enabled) {
     const due = twoStepDeadline(u, settings);
     if (Date.now() > due) admin.restrict = 'twostep';
     else admin.twoStepDue = new Date(due).toISOString();

@@ -297,6 +297,11 @@ const showBack = here !== '/admin/dashboard/';
   .ash-out { border: 1px solid var(--d4); background: #fff; border-radius: 8px; padding: 7px 12px; cursor: pointer; font: 600 13px 'Barlow', sans-serif; white-space: nowrap; }
   .ash-denied { margin: 0 0 18px; padding: 12px 16px; border-radius: 10px; background: #FFF4E5; color: #7A4B00; }
   a.ash-due { display: block; font-weight: 700; text-decoration: none; }
+  .ash-gmail { position: fixed; inset: 0; z-index: 10000; background: rgba(15,17,21,.6); display: grid; place-items: center; padding: 16px; }
+  .ash-gmail-card { max-width: 440px; background: var(--a-card, #fff); color: var(--a-ink, #15181D); border-radius: 14px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,.35); }
+  .ash-gmail-card h2 { margin: 0 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ash-gmail-card p { margin: 0 0 16px; line-height: 1.55; }
+  .ash-gmail-card button { padding: 11px 18px; border: 0; border-radius: 8px; background: #E31E24; color: #fff; font-weight: 700; cursor: pointer; }
   .ash-idle { position: fixed; inset: auto 16px 16px auto; z-index: 9999; max-width: 340px; padding: 16px 18px; border-radius: 12px; background: #15181D; color: #fff; box-shadow: 0 12px 32px rgba(0,0,0,.3); }
   .ash-idle p { margin: 0 0 10px; font-size: 15px; line-height: 1.45; }
   .ash-idle button { padding: 9px 16px; border: 0; border-radius: 8px; background: #E31E24; color: #fff; font-weight: 700; cursor: pointer; }
@@ -370,6 +375,18 @@ const showBack = here !== '/admin/dashboard/';
     document.dispatchEvent(new CustomEvent('ls:admin', { detail: d.admin }));
     if (perms.has('commerce.kitchen.manage')) startFood();
     idleMinutes = d.admin.idleMinutes || 30;
+    // Super Admins on Gmail: a one-time reminder about Google 2-Step Verification (acknowledgement recorded).
+    if (d.admin.gmailNotice) {
+      const box = document.createElement('div');
+      box.className = 'ash-gmail'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'ashGmailH');
+      box.innerHTML = `<div class="ash-gmail-card"><h2 id="ashGmailH">Protect your Gmail account</h2><p>Your website access depends on your email account. Please make sure <strong>Google 2-Step Verification</strong> is switched on for <strong>${esc(d.admin.email)}</strong> (myaccount.google.com › Security › 2-Step Verification).</p><button type="button" id="ashGmailOk">It's switched on</button></div>`;
+      document.body.appendChild(box);
+      document.getElementById('ashGmailOk')!.addEventListener('click', async () => {
+        await fetch('/api/admin/account', { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'ack_gmail' }) }).catch(() => {});
+        box.remove();
+      });
+      (document.getElementById('ashGmailOk') as HTMLElement).focus();
+    }
     // Two-step login is required and this person hasn't set it up yet: remind them on every page.
     if (d.admin.twoStepDue && !location.pathname.startsWith('/admin/account')) {
       const n = document.createElement('a');
