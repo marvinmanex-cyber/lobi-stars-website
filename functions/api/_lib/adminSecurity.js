@@ -64,6 +64,8 @@ export const SETTING_DEFAULTS = {
   ip_allowlist: '',           // one address or range per line
   alert_emails: '',           // extra addresses for security alerts (comma separated)
   alert_only: '',             // one Super Admin's email: security alerts go only to them (empty = every Super Admin)
+  offsite_email: '',          // every Monday the encrypted backup is emailed here (empty = off)
+  offsite_email_day: '',      // the last day it was emailed (YYYY-MM-DD)
   offsite_copy_at: '',        // when an encrypted backup copy was last downloaded to keep outside Cloudflare (ISO time)
   security_events_cleared: '', // when the security contact last cleared the Recent security events list (ISO time)
   access_review_month: '',    // the last month the access review was emailed (YYYY-MM)

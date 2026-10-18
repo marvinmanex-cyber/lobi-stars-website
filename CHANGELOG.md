@@ -8,6 +8,23 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Weekly encrypted backup by email (and into Google Drive)
+
+**What changed**
+- Every Monday morning (after that night's backup) the website emails the
+  encrypted backup to the address set in Settings › Data Backup (set to
+  **dkakaan2@gmail.com**); **Send one now** sends one straight away. A failed
+  send is alerted like a failed backup.
+- New scripts/google-drive-backup-saver.gs: a free Google script for
+  dkakaan2@gmail.com that saves each emailed copy into the Drive folder "Lobi
+  Stars website backups" and keeps the newest 12.
+
+**Staff need to:** set up the Google script once (DISASTER-RECOVERY.md, Part 1).
+
+**Handbook:** STAFF-GUIDE.md › Data backup; DISASTER-RECOVERY.md.
+
+---
+
 ## 2026-10-18: Disaster recovery: encrypted copies outside Cloudflare
 
 **What changed**

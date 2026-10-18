@@ -14,7 +14,7 @@ export function categoryOf(action) {
   if (/^(login|logout|account_|owner_code|backup_code|sessions_revoked|password_|invite_accepted|helper_login|gmail_notice|security_settings|service_key|login_)/.test(a)) return 'security';
   if (/^(staff_|role_|super_admin|helper_|access_review)/.test(a)) return 'staff';
   if (/^approval/.test(a)) return 'approvals';
-  if (/^(export_|backup_download)/.test(a)) return 'exports';
+  if (/^(export_|backup_download|backup_offsite)/.test(a)) return 'exports';
   if (/^(match_|prediction|prize_|motm|league\.|fan_alert|commentary|programme_|share_|qr_)/.test(a)) return 'matchday';
   if (/^(food_|kitchen_|shirt_|season_|ticket|tickets\.|rewards\.|order)/.test(a)) return 'commerce';
   if (/^partner|^newsletter_sponsor/.test(a)) return 'partners';

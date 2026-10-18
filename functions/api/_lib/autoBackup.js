@@ -13,6 +13,7 @@
 //   media/<key>                     copies of the programme files
 import { securitySettings, saveSecuritySetting } from './adminSecurity.js';
 import { logAdminAction } from './adminSession.js';
+import { sendEmail } from './email.js';
 
 export const KEEP_DAYS = 30;
 const PAGE = 5000;
@@ -162,6 +163,64 @@ export async function mediaStep(env) {
 }
 
 /** The backups kept (newest first), from their manifests. */
+/** One finished backup, still ENCRYPTED, as a single file to keep outside Cloudflare (DISASTER-RECOVERY.md). */
+export async function encryptedCopy(env, day) {
+  const m = await env.BACKUP_BUCKET.get(`db/${day}/manifest.json`);
+  if (!m) return { error: 'That backup is not complete.' };
+  const man = await m.json();
+  const parts = [];
+  for (const p of man.parts) {
+    const obj = await env.BACKUP_BUCKET.get(p.key);
+    if (!obj) return { error: `A piece of this backup is missing (${p.table}).` };
+    const bytes = new Uint8Array(await obj.arrayBuffer());
+    let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    parts.push({ key: p.key, table: p.table, rows: p.rows, data: btoa(bin) });
+  }
+  const body = JSON.stringify({ format: 'lobi-stars-encrypted-backup', version: 1, site: 'lobistarsfc.com', day, finished: man.finished, tables: man.tables, rows: man.rows,
+    howToUnlock: 'node scripts/decrypt-backup.mjs <this file> <file containing the backup key> > restore.json (see DISASTER-RECOVERY.md)', parts });
+  return { body, rows: man.rows, filename: `lobi-stars-encrypted-backup-${day}.json` };
+}
+
+/**
+ * Every Monday (from 06:00 Nigeria time, once that night's backup has finished) the encrypted
+ * copy is emailed to the address in Settings › Data Backup, so a copy is always kept outside
+ * Cloudflare. force = send the newest backup now (the "Send one now" button).
+ */
+export async function weeklyOffsiteEmail(env, { force = false, by = 'Automatic backup' } = {}) {
+  const db = env.DB;
+  const s = await securitySettings(db);
+  const to = String(s.offsite_email || '').trim();
+  if (!to) return { skipped: 'off' };
+  if (!env.RESEND_API_KEY) return { skipped: 'email not set up' };
+  const now = new Date(Date.now() + 3600e3);
+  const today = now.toISOString().slice(0, 10);
+  let last = null; try { last = s.auto_backup_last ? JSON.parse(s.auto_backup_last) : null; } catch { last = null; }
+  if (!last) return { skipped: 'no backup yet' };
+  if (!force) {
+    if (now.getUTCDay() !== 1 || now.getUTCHours() < 6) return { skipped: 'not due' };
+    if (s.offsite_email_day === today) return { skipped: 'sent' };
+    if (last.day !== today) return { skipped: 'waiting for the night backup' };
+    // Marked first, so a failing email isn't retried every minute (the failure is alerted instead).
+    await saveSecuritySetting(db, 'offsite_email_day', today, by);
+  }
+  const copy = await encryptedCopy(env, last.day);
+  if (copy.error) { await logAdminAction(db, { id: 'system', name: 'Automatic backup' }, 'backup_failed', `weekly emailed copy: ${copy.error}`); return { error: copy.error }; }
+  try {
+    await sendEmail(env, { to, subject: `Lobi Stars website: weekly encrypted backup ${last.day}`,
+      html: `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#14171c;max-width:560px">
+        <p>The weekly encrypted backup of the Lobi Stars website database (${last.day}, ${Number(copy.rows).toLocaleString('en-GB')} rows) is attached.</p>
+        <p><strong>Keep this email</strong> (or let the Google Drive saver copy it to "Lobi Stars website backups"). It is a copy kept outside Cloudflare: if the Cloudflare account were ever lost, the website can be rebuilt from it.</p>
+        <p>The file is locked with the backup key, which is <strong>not</strong> in this email. Never send the key by email. Steps: DISASTER-RECOVERY.md.</p></div>`,
+      attachments: [{ filename: copy.filename, content: btoa(unescape(encodeURIComponent(copy.body))) }] });
+  } catch (err) {
+    await logAdminAction(db, { id: 'system', name: 'Automatic backup' }, 'backup_failed', `weekly emailed copy to ${to} failed: ${String(err.message || err).slice(0, 200)}`);
+    return { error: 'email failed' };
+  }
+  await saveSecuritySetting(db, 'offsite_copy_at', new Date().toISOString(), by);
+  await logAdminAction(db, { id: 'system', name: by }, 'backup_offsite_email', `encrypted backup ${last.day} emailed to ${to} (${copy.rows} rows)`);
+  return { sent: true, day: last.day, to };
+}
+
 export async function listBackups(env) {
   if (!backupReady(env)) return [];
   const list = await env.BACKUP_BUCKET.list({ prefix: 'db/', delimiter: '/' });

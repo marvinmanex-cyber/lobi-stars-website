@@ -20,12 +20,17 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <div class="bk-prog" id="prog" hidden><div class="bk-bar"><span id="bar"></span></div><p id="progText"></p></div>
 
     <section class="panel"><h2>Automatic backups</h2>
-      <p class="muted">Every night from 02:00 the website saves an <strong>encrypted</strong> copy of the database in separate storage, and copies the programme files every Sunday. Backups are kept for 30 days. If a backup fails, the Super Admins are emailed.</p>
+      <p class="muted">Every night from 02:00 the website saves an <strong>encrypted</strong> copy of the database in separate storage, and copies the programme files every Sunday. Backups are kept for 30 days. If a backup fails, the Super Admin who receives the security emails is emailed.</p>
       <p id="autoState" class="bk-state">Loading…</p>
       <div class="bk-acts"><button type="button" class="btn-o" id="autoNow">Start a backup now</button></div>
       <div class="scroll" id="autoList"></div>
       <p class="bk-small" id="offsite"></p>
-      <p class="muted bk-small"><strong>Download encrypted copy</strong> once a month and keep it outside Cloudflare (Google Drive, a USB stick): if the Cloudflare account were ever lost, the website can be rebuilt from it with the backup key (DISASTER-RECOVERY.md).</p>
+      <form id="offsiteForm" class="bk-off">
+        <label>Email the encrypted copy every Monday to<input class="form-inp" type="email" name="email" id="offsiteEmail" placeholder="e.g. dkakaan2@gmail.com" autocomplete="off" /></label>
+        <button type="submit" class="btn-o">Save</button>
+        <button type="button" class="btn-o" id="offsiteNow">Send one now</button>
+      </form>
+      <p class="muted bk-small">A copy outside Cloudflare is what lets the website be rebuilt if the Cloudflare account were ever lost (DISASTER-RECOVERY.md). The weekly email does it for you, and a small Google script can save each one into Google Drive. You can also press <strong>Download encrypted copy</strong> yourself. The files are locked with the backup key: keep the key somewhere else.</p>
       <p class="muted bk-small">To restore: download the backup for the day you need (a fresh two-step code is asked for) and give the file to the developer, with the steps in the Staff guide (section 25, Data backup). For the last 7 days Cloudflare can also put the whole database back to any minute.</p>
     </section>
     <section class="panel"><h2>Past backups</h2><div id="history"><p class="muted">Loading…</p></div></section>
@@ -45,6 +50,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .bk-bar { height: 12px; border-radius: 999px; background: var(--a-soft); border: 1px solid var(--a-line); overflow: hidden; }
   .bk-bar span { display: block; height: 100%; width: 0; background: #16A34A; transition: width .2s; }
   .panel { padding: 18px; margin-bottom: 16px; }
+  .bk-off { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-top: 14px; } .bk-off label { display: grid; gap: 4px; font-size: 14px; flex: 1 1 260px; }
   .bk-state { font-weight: 700; } .bk-state.bad, .bk-small.bad { color: #A3161B; } .bk-small.bad { font-weight: 700; } .bk-small { font-size: 13px; margin-top: 10px; }
   .bk :global(td button) { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--a-line); background: var(--a-card); cursor: pointer; font-size: 13px; }
   .panel h2 { margin: 0 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
@@ -132,11 +138,21 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('autoList').innerHTML = d.backups.length ? `<table><thead><tr><th>Day</th><th>Tables</th><th>Rows</th><th></th></tr></thead><tbody>${d.backups.map((b: any) =>
         `<tr><td>${esc(b.day)}</td><td>${b.complete ? b.tables : b.complete === false ? 'not finished' : ''}</td><td>${b.complete ? Number(b.rows).toLocaleString('en-NG') : ''}</td><td>${b.complete ? `<button type="button" data-day="${esc(b.day)}">Download for restoring</button> <button type="button" data-raw="${esc(b.day)}">Download encrypted copy</button>` : ''}</td></tr>`).join('')}</tbody></table>` : '';
       $('offsite').textContent = d.offsiteAt ? `Last encrypted copy kept outside Cloudflare: ${wat(d.offsiteAt)}${Date.now() - Date.parse(d.offsiteAt) > 35 * 864e5 ? ' (more than a month ago: download a new one)' : ''}.` : 'No encrypted copy has been kept outside Cloudflare yet: download one now and once a month.';
+      $('offsiteEmail').value = d.offsiteEmail || '';
       $('offsite').className = 'bk-small' + (!d.offsiteAt || Date.now() - Date.parse(d.offsiteAt) > 35 * 864e5 ? ' bad' : ' muted');
     } catch (err) { msg((err as Error).message, false); }
   }
   $('autoNow').addEventListener('click', async () => {
     try { await fetch('/api/admin/backup', { method: 'POST', headers: H, body: JSON.stringify({ action: 'backup_now' }) }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.error); }); msg('Backup started. It finishes over the next few minutes.', true); loadAuto(); }
+    catch (err) { msg((err as Error).message, false); }
+  });
+  $('offsiteForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    try { const r = await fetch('/api/admin/backup', { method: 'POST', headers: H, body: JSON.stringify({ action: 'offsite_email', email: $('offsiteEmail').value }) }); const d = await r.json(); if (!r.ok) throw new Error(d.error); msg($('offsiteEmail').value ? 'Saved: the encrypted copy is emailed every Monday.' : 'The weekly email is off.', true); loadAuto(); }
+    catch (err) { msg((err as Error).message, false); }
+  });
+  $('offsiteNow').addEventListener('click', async () => {
+    try { const r = await fetch('/api/admin/backup', { method: 'POST', headers: H, body: JSON.stringify({ action: 'offsite_send_now' }) }); const d = await r.json(); if (!r.ok) throw new Error(d.error); msg(`The encrypted backup of ${d.day} was emailed to ${d.to}.`, true); loadAuto(); }
     catch (err) { msg((err as Error).message, false); }
   });
   $('autoList').addEventListener('click', async e => {

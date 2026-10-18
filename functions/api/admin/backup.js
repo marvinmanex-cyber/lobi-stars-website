@@ -1,7 +1,7 @@
 import { freshCodeCheck, exportName } from '../_lib/exportGuard.js';
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { logAdminAction } from '../_lib/adminSession.js';
-import { backupReady, backupStep, listBackups, decryptPart, KEEP_DAYS } from '../_lib/autoBackup.js';
+import { backupReady, backupStep, listBackups, decryptPart, KEEP_DAYS, encryptedCopy, weeklyOffsiteEmail } from '../_lib/autoBackup.js';
 import { securitySettings, saveSecuritySetting } from '../_lib/adminSecurity.js';
 
 // Admin › Settings › Data Backup (Super Admin only). The page downloads the
@@ -18,6 +18,8 @@ import { securitySettings, saveSecuritySetting } from '../_lib/adminSecurity.js'
 //                                                    Cloudflare (fresh two-step code); unlock it with the key and
 //                                                    scripts/decrypt-backup.mjs (see DISASTER-RECOVERY.md)
 // POST /api/admin/backup { action: 'backup_now' }  -- start an automatic backup now (it finishes over the next minutes)
+// POST /api/admin/backup { action: 'offsite_email', email } -- email the encrypted copy here every Monday ('' = off)
+// POST /api/admin/backup { action: 'offsite_send_now' }     -- email the newest encrypted copy now
 // Passwords, sign-in tokens, two-step login secrets, push keys, private links
 // and stored pictures are never included.
 const SKIP_TABLES = new Set(['rate_limits', 'auth_tokens', 'food_photos', 'newsletter_assets', 'd1_migrations', 'sqlite_sequence']);
@@ -50,7 +52,7 @@ export async function onRequestGet({ request, env }) {
     const s = await securitySettings(db, { force: true });
     const parse = v => { try { return v ? JSON.parse(v) : null; } catch { return null; } };
     const prog = parse(s.auto_backup_progress);
-    return Response.json({ ready: backupReady(env), keepDays: KEEP_DAYS, last: parse(s.auto_backup_last), error: parse(s.auto_backup_error), offsiteAt: s.offsite_copy_at || null,
+    return Response.json({ ready: backupReady(env), keepDays: KEEP_DAYS, last: parse(s.auto_backup_last), error: parse(s.auto_backup_error), offsiteAt: s.offsite_copy_at || null, offsiteEmail: s.offsite_email || '',
       running: prog && !prog.done ? { day: prog.day, left: prog.todo.length + (prog.current ? 1 : 0), rows: prog.rows } : null,
       backups: await listBackups(env) }, { headers: noStore });
   }
@@ -67,22 +69,11 @@ export async function onRequestGet({ request, env }) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !backupReady(env)) return Response.json({ error: 'Not found' }, { status: 404 });
     const needCode = await freshCodeCheck(request, env, admin);
     if (needCode) return needCode;
-    const m = await env.BACKUP_BUCKET.get(`db/${day}/manifest.json`);
-    if (!m) return Response.json({ error: 'That backup is not complete.' }, { status: 404 });
-    const man = await m.json();
-    const parts = [];
-    for (const p of man.parts) {
-      const obj = await env.BACKUP_BUCKET.get(p.key);
-      if (!obj) return Response.json({ error: `A piece of this backup is missing (${p.table}).` }, { status: 500 });
-      const bytes = new Uint8Array(await obj.arrayBuffer());
-      let bin = ''; for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-      parts.push({ key: p.key, table: p.table, rows: p.rows, data: btoa(bin) });
-    }
+    const copy = await encryptedCopy(env, day);
+    if (copy.error) return Response.json({ error: copy.error }, { status: 404 });
     await saveSecuritySetting(env.DB, 'offsite_copy_at', new Date().toISOString(), admin.name);
-    await logAdminAction(env.DB, admin, 'backup_download', `automatic backup ${day} downloaded ENCRYPTED to keep outside Cloudflare: ${man.rows} rows`);
-    const body = JSON.stringify({ format: 'lobi-stars-encrypted-backup', version: 1, site: 'lobistarsfc.com', day, finished: man.finished, tables: man.tables, rows: man.rows,
-      howToUnlock: 'node scripts/decrypt-backup.mjs <this file> <file containing the backup key> > restore.json (see DISASTER-RECOVERY.md)', parts });
-    return new Response(body, { headers: { ...noStore, 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="lobi-stars-encrypted-backup-${day}.json"` } });
+    await logAdminAction(env.DB, admin, 'backup_download', `automatic backup ${day} downloaded ENCRYPTED to keep outside Cloudflare: ${copy.rows} rows`);
+    return new Response(copy.body, { headers: { ...noStore, 'Content-Type': 'application/json', 'Content-Disposition': `attachment; filename="${copy.filename}"` } });
   }
   if (u.searchParams.get('autopart')) {
     const k = u.searchParams.get('autopart');
@@ -122,6 +113,19 @@ export async function onRequestPost({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env, { ownerOnly: true });
   if (denied) return denied;
   const b = await request.json().catch(() => ({}));
+  if (b.action === 'offsite_email') {
+    const email = String(b.email || '').trim().toLowerCase();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return Response.json({ error: 'Not a valid email address.' }, { status: 400 });
+    await saveSecuritySetting(env.DB, 'offsite_email', email, admin.name);
+    await logAdminAction(env.DB, admin, 'backup_offsite_setting', email ? `weekly encrypted backup emailed to ${email}` : 'weekly emailed backup switched off');
+    return Response.json({ ok: true });
+  }
+  if (b.action === 'offsite_send_now') {
+    const r = await weeklyOffsiteEmail(env, { force: true, by: admin.name });
+    if (r.skipped) return Response.json({ error: r.skipped === 'off' ? 'Enter an email address first.' : r.skipped === 'no backup yet' ? 'There is no finished backup yet.' : 'Email is not set up.' }, { status: 400 });
+    if (r.error) return Response.json({ error: `Not sent: ${r.error}` }, { status: 500 });
+    return Response.json({ ok: true, ...r });
+  }
   if (b.action === 'backup_now') {
     const r = await backupStep(env, { force: true });
     if (!r.ready) return Response.json({ error: 'Automatic backups are not set up yet (BACKUP_BUCKET and BACKUP_KEY).' }, { status: 400 });

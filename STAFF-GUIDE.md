@@ -1802,10 +1802,14 @@ Until then the Newsletter screen shows a yellow note.
      backups, so staff may need new invites.
   3. Test a restore once every 3 months on a copy (the developer), so you know
      it works.
-- **Once a month: keep a copy outside Cloudflare.** The nightly backups are
-  stored in the same Cloudflare account as the website. Press **Download
-  encrypted copy** next to the newest day and upload the file to the club's
-  Google Drive folder "Lobi Stars website backups" (keep the last 3). It is
+- **A copy outside Cloudflare, every week.** The nightly backups are stored
+  in the same Cloudflare account as the website, so every Monday morning the
+  website emails the encrypted copy to the address under **Email the
+  encrypted copy every Monday to** (dkakaan2@gmail.com); **Send one now**
+  sends one straight away. A free Google script saves each one into the
+  Google Drive folder "Lobi Stars website backups" (setup in
+  DISASTER-RECOVERY.md, Part 1). You can also press **Download encrypted
+  copy** next to a day and upload it yourself. It is
   locked with the backup key, so it is safe there; keep the key somewhere
   else (a password manager). The page shows when the last copy was kept and
   turns red after a month. If the Cloudflare account were ever lost, the

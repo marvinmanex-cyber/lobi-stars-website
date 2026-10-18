@@ -14,8 +14,8 @@ steps and every table came back with the same number of rows.
 | What | Where it lives | Copy outside Cloudflare |
 |---|---|---|
 | The website itself (pages, design, code, news articles, photos in the site) | GitHub: github.com/marvinmanex-cyber/lobi-stars-website, and this computer | Yes (GitHub) |
-| The database (fans, contacts, newsletter, tickets, food orders, Rewards, votes, staff accounts, Activity Log, settings) | Cloudflare D1 `lobi-stars-tickets` | Only if the club downloads the **encrypted copy** every month (Part 1) |
-| Nightly backups of the database (kept 30 days) | Cloudflare R2 `lobistars-backups` | No: same Cloudflare account |
+| The database (fans, contacts, newsletter, tickets, food orders, Rewards, votes, staff accounts, Activity Log, settings) | Cloudflare D1 `lobi-stars-tickets` | Yes: the weekly **encrypted copy** (Part 1) |
+| Nightly backups of the database (kept 30 days) | Cloudflare R2 `lobistars-backups` | Weekly: emailed every Monday to dkakaan2@gmail.com, saved to Google Drive by the backup saver script |
 | Match Day Programme PDFs and pictures | Cloudflare R2 `lobistars-programmes` (weekly copy in `lobistars-backups`) | Keep the original PDFs in Google Drive |
 | The backup key | Cloudflare (secret `BACKUP_KEY`) and the club's password manager or paper copy | Yes (the club's copy) |
 | Passwords, PINs, two-step login secrets, sign-in links | Database, **never** in backups | No, on purpose: people set new ones after a rebuild |
@@ -23,8 +23,33 @@ steps and every table came back with the same number of rows.
 
 ---
 
-## Part 1. The club: once a month (10 minutes)
+## Part 1. The club: a copy outside Cloudflare
 
+### Automatic (set up once)
+**Every Monday morning** the website emails the encrypted copy of that night's
+backup to **dkakaan2@gmail.com** (Settings › Data Backup › "Email the
+encrypted copy every Monday to"; **Send one now** sends one straight away).
+Keep those emails. To have them saved into Google Drive automatically, set up
+the free Google script once (10 minutes), signed in to Google as
+dkakaan2@gmail.com:
+
+1. Go to **script.google.com** › **New project**. Name it
+   "Lobi Stars backup saver".
+2. Delete what is in the editor and paste the whole of
+   `scripts/google-drive-backup-saver.gs` (from the code folder or GitHub).
+   Press **Save** (the disk icon).
+3. Press **Run**. Google asks for permission: **Review permissions** › choose
+   dkakaan2@gmail.com › **Advanced** › **Go to Lobi Stars backup saver
+   (unsafe)** › **Allow**. (It says "unsafe" only because the script is your
+   own and not published; it can read Gmail and write to Drive in your own
+   account only.)
+4. Left menu › **Triggers** (alarm clock) › **Add Trigger**: function
+   `saveLobiBackups`, event source **Time-driven**, **Day timer**,
+   **9am to 10am** › **Save**.
+5. Check Google Drive: the folder **Lobi Stars website backups** appears with
+   the backup file(s). It keeps the newest 12 (about 3 months).
+
+### By hand (if the automatic email is off)
 1. Sign in at **lobistarsfc.com/admin** as a Super Admin.
 2. Open **Settings › Data Backup**. Under **Automatic backups**, press
    **Download encrypted copy** next to the newest day. Enter the 6-digit code

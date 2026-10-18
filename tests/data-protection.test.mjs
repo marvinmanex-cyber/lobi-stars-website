@@ -140,6 +140,18 @@ Keep it safe.`);
   assert.match(err, /wrong key/); assert.ok(!restore.includes(key) && !err.includes(key));
 });
 
+test('the weekly emailed encrypted copy: an address to send it to, validated, and "Send one now"', async () => {
+  assert.equal((await api('/api/admin/backup', 'POST', { action: 'offsite_email', email: 'not-an-email' })).status, 400);
+  assert.equal((await api('/api/admin/backup', 'POST', { action: 'offsite_email', email: 'Backups.Test@Example.com' })).status, 200);
+  assert.equal((await api('/api/admin/backup?auto=status')).data.offsiteEmail, 'backups.test@example.com');
+  const now = await api('/api/admin/backup', 'POST', { action: 'offsite_send_now' });
+  assert.ok([200, 400].includes(now.status), JSON.stringify(now.data)); // 400 only where email isn't set up (local test server)
+  // The every-minute job doesn't send outside Monday mornings, and never twice the same day.
+  assert.equal((await api('/api/internal/backup-run', 'POST', {}, CRON)).status, 200);
+  assert.ok((await api('/api/admin/activity?q=weekly encrypted backup emailed to')).data.log.length, 'the setting is logged');
+  assert.equal((await api('/api/admin/backup', 'POST', { action: 'offsite_email', email: '' })).status, 200, 'switched off');
+});
+
 test('Contractor: an end date (at most 14 days), no fans\' data, every sign-in reported, nothing after the end date', async () => {
   const email = `contractor-${uid()}@example.com`;
   assert.equal((await api('/api/admin/staff', 'POST', { name: 'Dev Contractor', email, role: 'contractor', password: PW })).status, 400, 'needs an end date');
