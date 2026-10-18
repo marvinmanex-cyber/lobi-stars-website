@@ -253,6 +253,7 @@ const sqlAgo = h => new Date(Date.now() - h * 3600e3).toISOString().replace('T',
 const lagosDay = (t = Date.now()) => new Date(t + 3600e3).toISOString().slice(0, 10);
 const list = (arr, n = 8) => arr.slice(0, n).join(', ') + (arr.length > n ? ` and ${arr.length - n} more` : '');
 const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+const secs = ms => (ms < 100 ? 'under 0.1 s' : `${(ms / 1000).toFixed(1)} s`);
 async function safeAll(db, sql, ...binds) { try { return (await db.prepare(sql).bind(...binds).all()).results || []; } catch { return null; } }
 async function safeFirst(db, sql, ...binds) { try { return await db.prepare(sql).bind(...binds).first(); } catch { return null; } }
 async function dohRecords(name, type) {
@@ -773,7 +774,7 @@ export async function stepSpeed(ctx, chunk) {
   if (chunk * 4 + 4 < pages.length) return { more: true, results: [] };
   const slow = state.speed.filter(s => s.error || s.ms > 1500 || s.kb > 3072);
   return { more: false, results: [result('speed', slow.some(s => s.error) ? 'FAIL' : slow.length ? 'WARNING' : 'PASS', {
-    problem: slow.length ? `${list(slow.map(s => s.error ? `${s.page} (${s.error})` : `${s.page} (${(s.ms / 1000).toFixed(1)} s, ${(s.kb / 1024).toFixed(1)} MB)`), 6)}.` : `Key pages answer in under 1.5 s and weigh under 3 MB (${state.speed.map(s => `${s.page} ${(s.ms / 1000).toFixed(1)} s`).join(', ')}).`,
+    problem: slow.length ? `${list(slow.map(s => s.error ? `${s.page} (${s.error})` : `${s.page} (${secs(s.ms)}, ${(s.kb / 1024).toFixed(1)} MB)`), 6)}.` : `Key pages answer in under 1.5 s and weigh under 3 MB (${state.speed.map(s => `${s.page} ${secs(s.ms)}`).join(', ')}).`,
     details: { pages: state.speed, note: 'Weight counts the page, its stylesheets, scripts and first pictures. A Google PageSpeed score can be added with a PAGESPEED_API_KEY (to do).' },
   })] };
 }
