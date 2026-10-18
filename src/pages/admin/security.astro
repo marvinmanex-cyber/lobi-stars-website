@@ -56,7 +56,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 
     <section class="panel">
       <h2>Security alerts</h2>
-      <p class="muted">These emails go to every Super Admin (Head of Media) staff account: the emergency admin code being used, accounts locked, two-step login resets, role changes, sign-ins from new devices, the monthly access review. Add <strong>club management</strong> here so they're told too (for example the club secretary or chairman).</p>
+      <p class="muted">Security emails: the emergency admin code being used, accounts locked, two-step login resets, role changes, sign-ins from new devices, fan data downloads, backups failing, the weekly summary, the monthly access review. Every Super Admin still sees them in the admin bell. Add <strong>club management</strong> below so they're told too (for example the club secretary or chairman).</p>
+      <form id="alertOnlyForm" class="sec-form">
+        <label>Send security emails to<select class="form-inp" name="email" id="alertOnly"><option value="">Every Super Admin</option></select></label>
+        <button class="btn-p" type="submit">Save</button>
+      </form>
       <form id="alertForm" class="sec-form">
         <label>Club management and other addresses (comma separated)<input class="form-inp" name="emails" type="text" autocomplete="off" /></label>
         <button class="btn-p" type="submit">Save</button>
@@ -154,6 +158,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('ipForm').elements.list.value = S.ipList || '';
       ($('ipForm').querySelector(`input[name="scope"][value="${S.ipScope}"]`) || $('ipForm').querySelector('input[value="off"]')).checked = true;
       $('alertForm').elements.emails.value = S.alertEmails || '';
+      $('alertOnly').innerHTML = '<option value="">Every Super Admin</option>' + (d.superAdmins?.list || []).map(p => `<option value="${p.email}">Only ${p.email}</option>`).join('');
+      $('alertOnly').value = S.alertOnly || '';
       $('sessions').innerHTML = d.sessions.length ? '<table><thead><tr><th>Who</th><th>Device</th><th>Network</th><th>Signed in</th><th>Last active</th><th></th></tr></thead><tbody>' + d.sessions.map(s =>
         `<tr><td>${esc(s.name)}<br><small class="muted">${esc(s.role)}</small></td><td>${esc(s.device)}${s.twoStep ? ' 🔐' : ''}${s.current ? ' <strong>(you, here)</strong>' : ''}</td><td>${esc(s.ip)}${s.country ? ' (' + esc(s.country) + ')' : ''}</td><td>${esc(when(s.signedIn))}</td><td>${esc(when(s.lastActive))}</td>` +
         `<td>${s.current ? '' : `<button type="button" data-sid="${esc(s.id)}">Sign out</button> <button type="button" data-uid="${esc(s.userId)}" data-name="${esc(s.name)}">Sign out everywhere</button>`}</td></tr>`).join('') + '</tbody></table>'
@@ -173,6 +179,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   $('codeOn').addEventListener('click', () => { if (confirm('Switch the emergency admin code back on? All Super Admins will be emailed.')) act({ action: 'admin_code', off: false }, 'The admin code works again.'); });
   $('domainOnly').addEventListener('change', e => act({ action: 'email_domain_only', on: e.target.checked }, 'Saved.'));
   $('ipForm').addEventListener('submit', e => { e.preventDefault(); const f = e.target.elements; act({ action: 'ip_allowlist', scope: f.scope.value, list: f.list.value }, 'Saved.'); });
+  $('alertOnlyForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'alert_only', email: e.target.elements.email.value }, 'Saved.'); });
   $('alertForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'alert_emails', emails: e.target.elements.emails.value }, 'Saved.'); });
   $('sessions').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;

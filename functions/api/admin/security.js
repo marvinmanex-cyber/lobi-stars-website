@@ -17,6 +17,7 @@ import {
 //   { action: 'email_domain_only', on }       new staff accounts must use a @lobistarsfc.com address
 //   { action: 'ip_allowlist', scope, list }   off | super_admin | super_admin_crm | all; one address or range per line
 //   { action: 'alert_emails', emails }        extra addresses for security alerts
+//   { action: 'alert_only', email }           send Super Admin security alerts only to this Super Admin ('' = all of them)
 //   { action: 'revoke_session', id }          sign out one device
 //   { action: 'revoke_user', userId }         sign someone out everywhere ('owner' = the admin code sessions)
 //   { action: 'admin_code', off }             switch the old emergency admin code off (needs at least two Super Admins
@@ -59,7 +60,7 @@ export async function onRequestGet({ request, env }) {
     rules: { idleMinutes: IDLE_MS / 60000, sessionHours: SESSION_MS / 3600e3, lockAfter: LOCK_AFTER, graceDays: GRACE_DAYS, minPassword: MIN_PASSWORD },
     settings: {
       requireTwoStep: required, twoStepSince: s.two_step_since ? new Date(Number(s.two_step_since)).toISOString() : null,
-      emailDomainOnly: s.email_domain_only === '1', ipScope: s.ip_allowlist_scope, ipList: s.ip_allowlist, alertEmails: s.alert_emails,
+      emailDomainOnly: s.email_domain_only === '1', ipScope: s.ip_allowlist_scope, ipList: s.ip_allowlist, alertEmails: s.alert_emails, alertOnly: s.alert_only || '',
     },
     twoStep: {
       readyToRequire: ready.length > 0, readyNames: ready.map(u => u.name),
@@ -146,6 +147,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (badEmails.length) return json({ error: `Not a valid email: ${badEmails.join(', ')}` }, 400);
     await saveSecuritySetting(db, 'alert_emails', list.slice(0, 10).join(', '), admin.name);
     await log(`security alert emails: ${list.length ? list.join(', ') : 'Super Admins only'}`);
+    return json({ ok: true });
+  }
+  if (b.action === 'alert_only') {
+    const email = String(b.email || '').trim().toLowerCase();
+    if (email && !superAdminEmails(env).includes(email)) return json({ error: 'Choose one of the Super Admins.' }, 400);
+    await saveSecuritySetting(db, 'alert_only', email, admin.name);
+    await log(`security alerts go to ${email || 'every Super Admin'}`);
     return json({ ok: true });
   }
   if (b.action === 'revoke_session') {

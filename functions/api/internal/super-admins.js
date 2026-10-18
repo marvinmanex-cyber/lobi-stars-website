@@ -1,6 +1,6 @@
-import { syncSuperAdmins, superAdminEmails } from '../_lib/superAdmins.js';
+import { syncSuperAdmins } from '../_lib/superAdmins.js';
 import { notifyPendingStatements } from '../_lib/approvals.js';
-import { securitySettings, saveSecuritySetting, securityEmail, sha256Hex } from '../_lib/adminSecurity.js';
+import { securitySettings, saveSecuritySetting, securityEmail, sha256Hex, alertAddresses } from '../_lib/adminSecurity.js';
 import { logAdminAction } from '../_lib/adminSession.js';
 import { deliverAlerts, weeklySummary, weeklySummaryHtml } from '../_lib/activityLog.js';
 
@@ -28,7 +28,7 @@ export async function onRequestPost({ request, env }) {
   } catch (err) { console.error('[security watch] super admins', err); out.superAdminsError = true; }
   try { out.statementsNotified = await notifyPendingStatements(env, origin); } catch (err) { console.error('[security watch] statements', err); }
   try { out.keysChanged = await watchKeys(env, origin); } catch (err) { console.error('[security watch] keys', err); }
-  try { out.alertsSent = await deliverAlerts(env, origin, superAdminEmails(env), (to, subject, lines) => securityEmail(env, to, subject, lines, origin)); } catch (err) { console.error('[security watch] alerts', err); }
+  try { out.alertsSent = await deliverAlerts(env, origin, await alertAddresses(env), (to, subject, lines) => securityEmail(env, to, subject, lines, origin)); } catch (err) { console.error('[security watch] alerts', err); }
   try { out.weekly = await weekly(env, origin, new URL(request.url).searchParams.get('weekly') === 'now'); } catch (err) { console.error('[security watch] weekly', err); }
   return Response.json({ ok: true, ...out });
 }
@@ -44,7 +44,7 @@ async function weekly(env, origin, now = false) {
   }
   await saveSecuritySetting(env.DB, 'weekly_summary_week', week, 'Weekly security summary');
   const w = await weeklySummary(env.DB);
-  await securityEmail(env, superAdminEmails(env), 'Lobi Stars admin: weekly security summary', weeklySummaryHtml(w, origin), origin);
+  await securityEmail(env, await alertAddresses(env), 'Lobi Stars admin: weekly security summary', weeklySummaryHtml(w, origin), origin);
   await logAdminAction(env.DB, { id: 'system', name: 'Weekly security summary' }, 'security_summary_sent', `week to ${week}`);
   return true;
 }
@@ -61,7 +61,7 @@ async function watchKeys(env, origin) {
   if (!changed.length) return [];
   const what = changed.map(k => `${k} ${now[k] ? (before[k] ? 'changed' : 'added') : 'removed'}${k === 'PAYSTACK_SECRET_KEY' && env[k] ? ` (now ${String(env[k]).startsWith('sk_live') ? 'LIVE' : 'TEST'} mode)` : ''}`);
   await logAdminAction(env.DB, { id: 'system', name: 'Security watch' }, 'service_key_changed', what.join('; '));
-  await securityEmail(env, superAdminEmails(env), 'Lobi Stars admin: a payment or email key was changed', [
+  await securityEmail(env, await alertAddresses(env), 'Lobi Stars admin: a payment or email key was changed', [
     'A service key in Cloudflare (Workers & Pages › lobi-stars-website › Settings › Variables and Secrets) was changed:',
     what.map(w => `• ${w}`).join('<br>'),
     "If one of you did this, there's nothing to do. If not, check the setting in Cloudflare straight away and tell the developer."], origin);

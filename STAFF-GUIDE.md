@@ -601,8 +601,9 @@ Files are named with today's date, e.g. `lobi-stars-fan-database-2026-10-09.xlsx
   settings) and dates. **Show older** loads more.
 - **Nobody can change or delete an entry**, not even the developer through the
   website, and entries are kept for at least 12 months.
-- **Security alerts** go to the Super Admins by email (within a minute) and
-  appear in the 🔔 bell: any fan-data download or backup, role and permission
+- **Security alerts** are emailed (within a minute) to the Super Admin chosen
+  in Login & Security › **Send security emails to** (now only
+  dkakaan@lobistarsfc.com), and appear in every Super Admin's 🔔 bell: any fan-data download or backup, role and permission
   changes, the emergency admin code, two-step login resets, lockouts, sign-ins
   from a new device by a Super Admin or CRM Manager, and more than 10 failed
   sign-ins on the whole site in 10 minutes.
@@ -1752,10 +1753,16 @@ Until then the Newsletter screen shows a yellow note.
   example the club office's internet connection; your own address is shown).
   The page won't save a list that would sign you out. The owner admin code
   always works from anywhere.
-- **Security alerts:** go to every Super Admin; add **club
-  management** addresses (e.g. the club secretary) so they're told too. Alerts:
-  the emergency admin code used, accounts locked, two-step login resets, role
-  changes, sign-ins from new devices, and the monthly access review.
+- **Security alerts:** **Send security emails to** chooses who is emailed:
+  every Super Admin, or only one of them (the club chose
+  dkakaan@lobistarsfc.com). The others still see every alert in the 🔔 bell.
+  Add **club management** addresses (e.g. the club secretary) so they're told
+  too. Alerts: the emergency admin code used, accounts locked, two-step login
+  resets, role changes, sign-ins from new devices, fan data downloads, backups
+  failing, the weekly summary and the monthly access review. Emails about
+  your **own** account (a new sign-in, a password change, your sign-in code)
+  always go to you, and approval requests go to the Super Admins who can
+  approve.
 - **Signed in now:** everyone signed in, with device and network. **Sign
   out** one device or **Sign out everywhere** for a person.
 - **Recent security events:** sign-ins, wrong attempts, lockouts, backup

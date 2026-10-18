@@ -8,6 +8,24 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Security emails to one chosen Super Admin
+
+**What changed**
+- New setting in Settings › Login & Security › Security alerts: **Send
+  security emails to** every Super Admin, or only one of them. Set to
+  **dkakaan@lobistarsfc.com**. It covers the alerts, the weekly security
+  summary, warnings about changed payment/email keys and the monthly access
+  review. Every Super Admin still sees the alerts in the 🔔 bell.
+- Unchanged: emails about a person's own account (new sign-in, password
+  changed, sign-in code) go to that person; approval requests go to the Super
+  Admins who can approve.
+
+**Staff need to:** nothing.
+
+**Handbook:** STAFF-GUIDE.md › Activity Log and security alerts; Login & Security.
+
+---
+
 ## 2026-10-18: Staff access plan, Phase 7: data protection and backups
 
 **What changed**

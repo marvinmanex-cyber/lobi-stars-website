@@ -63,6 +63,7 @@ export const SETTING_DEFAULTS = {
   ip_allowlist_scope: 'off',  // off | super_admin | super_admin_crm | all
   ip_allowlist: '',           // one address or range per line
   alert_emails: '',           // extra addresses for security alerts (comma separated)
+  alert_only: '',             // one Super Admin's email: security alerts go only to them (empty = every Super Admin)
   access_review_month: '',    // the last month the access review was emailed (YYYY-MM)
   super_admin_list: '',       // the Super Admin list last seen (to notice changes)
   admin_code_off: '0',        // '1' = the old emergency admin code no longer works
@@ -308,11 +309,13 @@ export const ADMIN_PAGE_HEADERS = {
 
 // ── Security emails ──
 
-/** Who gets alerts: active Super Admin staff accounts plus the extra addresses in the settings (or info@). */
+/** Who gets alerts: active Super Admin staff accounts (or only the one chosen in the settings) plus the extra addresses (or info@). */
 export async function alertAddresses(env) {
   const s = await securitySettings(env.DB);
-  const { results } = await env.DB.prepare(`SELECT email FROM admin_users WHERE active = 1 AND role = 'super_admin'`).all();
-  const list = [...results.map(r => r.email), ...String(s.alert_emails || '').split(/[\s,;]+/)].map(e => e.trim().toLowerCase()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e));
+  const { results } = await env.DB.prepare(`SELECT email FROM admin_users WHERE active = 1 AND disabled_at IS NULL AND role = 'super_admin'`).all();
+  const only = String(s.alert_only || '').trim().toLowerCase();
+  const admins = only && results.some(r => r.email.toLowerCase() === only) ? [only] : results.map(r => r.email);
+  const list = [...admins, ...String(s.alert_emails || '').split(/[\s,;]+/)].map(e => e.trim().toLowerCase()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e));
   return [...new Set(list.length ? list : [env.SECURITY_ALERT_EMAIL || 'info@lobistarsfc.com'])];
 }
 const when = (ms = Date.now()) => new Date(ms).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' (Nigeria time)';

@@ -122,6 +122,15 @@ test('the one-time Gmail notice for Super Admins on Gmail, with the acknowledgem
   assert.ok(sec.gmailNoticeAt);
 });
 
+test('security emails can go to only one chosen Super Admin (or all of them)', async () => {
+  assert.equal((await api('/api/admin/security', 'POST', { action: 'alert_only', email: 'someone.else@example.com' })).status, 400, 'only a listed Super Admin');
+  assert.equal((await api('/api/admin/security', 'POST', { action: 'alert_only', email: 'OWNER2@example.com' })).status, 200);
+  assert.equal((await api('/api/admin/security')).data.settings.alertOnly, 'owner2@example.com');
+  assert.ok((await api('/api/admin/activity?q=security alerts go to')).data.log.some(l => /owner2@example\.com/.test(l.detail)), 'logged');
+  assert.equal((await api('/api/admin/security', 'POST', { action: 'alert_only', email: '' })).status, 200, 'back to every Super Admin');
+  assert.equal((await api('/api/admin/security')).data.settings.alertOnly, '');
+});
+
 test('the old emergency admin code: only switched off once two Super Admins use two-step login; then refused and reported', async () => {
   const s2 = sa['owner2@example.com'], s3 = sa['lobi.test.owner3@gmail.com'];
   localSql(`UPDATE admin_users SET twostep_login_at = NULL WHERE email IN ('${LIST.join("','")}')`);
