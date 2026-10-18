@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Data Backup: clear confirmation when sending
+
+**What changed**
+- **Send one now** shows "Sending…" and can't be pressed again while it works,
+  then a green confirmation right under it (time, address, the email subject)
+  and a notice at the bottom of the screen. Pressing it again within 2 minutes
+  asks first. Every other message on the Data Backup page also appears as a
+  notice at the bottom, so it is seen wherever you are on the page.
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-18: Website Health (Super Admins only)
 
 **What changed**
