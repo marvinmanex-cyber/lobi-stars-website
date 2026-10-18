@@ -64,7 +64,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     const { deviceId, setDevice } = device(request);
     const sid = await createSession(db, request, 'owner', { deviceId });
     await rememberDevice(db, 'owner', deviceId, request);
-    await logAdminAction(db, OWNER, 'owner_code_login', `${describeDevice(request.headers.get('User-Agent') || '')}, ${ip}`);
+    await logAdminAction(db, { ...OWNER, sessionId: sid }, 'owner_code_login', `${describeDevice(request.headers.get('User-Agent') || '')}, ${ip}`);
     // The admin code is the way back in when nothing else works, so every use is reported.
     later(alertAddresses(env).then(to => securityEmail(env, to, 'URGENT: Lobi Stars emergency admin account used', [
       'Someone signed in to the Lobi Stars admin with the <strong>emergency (break-glass) admin code</strong>. It should only be used when no Super Admin can sign in.', loginDetails(request),
@@ -162,7 +162,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const { deviceId, setDevice } = device(request);
   const seen = await rememberDevice(db, u.id, deviceId, request);
   const sid = await createSession(db, request, u.id, { twoStep, deviceId });
-  await logAdminAction(db, { id: u.id, name: u.name }, 'login', `${describeDevice(request.headers.get('User-Agent') || '')}, ${ip}${twoStep ? ', two-step' : ''}${seen.isNew ? ', new device' : ''}`);
+  await logAdminAction(db, { id: u.id, name: u.name, role: roleOf(u), sessionId: sid }, 'login', `${describeDevice(request.headers.get('User-Agent') || '')}, ${ip}${twoStep ? ', two-step' : ''}${seen.isNew ? ', new device' : ''}`);
   if (seen.isNew && !seen.firstEver) {
     later(securityEmail(env, u.email, 'Lobi Stars admin: new sign-in to your account', [
       `Hello ${u.name.split(' ')[0]},`, 'Your Lobi Stars admin account was just signed in to on a device we haven\'t seen before.', loginDetails(request),

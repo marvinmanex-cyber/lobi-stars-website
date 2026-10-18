@@ -73,6 +73,7 @@ export const SETTING_DEFAULTS = {
   approvals_predict: '1',     //   the Prediction League prize: Super Admins only in the CMS
   statements_notified: '',    // official statements the approvers have been emailed about
   key_fingerprints: '',       // short fingerprints of the payment/email keys (to notice changes; never the keys)
+  weekly_summary_week: '',    // the last week the security summary was emailed (YYYY-MM-DD of that Monday)
 };
 let cache = null, cachedAt = 0;
 export async function securitySettings(db, { force = false } = {}) {

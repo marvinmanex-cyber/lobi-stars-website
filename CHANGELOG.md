@@ -8,6 +8,28 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Staff access plan, Phase 6: Activity Log and alerts
+
+**What changed**
+- **Activity Log** shows who, what, when and from where (device and country;
+  network address for Super Admins only), with filters for person, type and
+  dates, and "Show older". League, Rewards and ticket changes (refunds, points
+  adjustments) now appear there too, plus score and match status changes.
+- Entries **can't be changed or deleted** (enforced by the database) and are
+  kept for at least 12 months.
+- **Security alerts** to the Super Admins by email and in the bell: fan-data
+  downloads and backups, role and permission changes, emergency code use,
+  two-step login resets, lockouts, new-device sign-ins by Super Admins and CRM
+  Managers, and more than 10 failed sign-ins in 10 minutes.
+- **Weekly security summary** email every Monday from 08:00.
+- The Export Log also lists backups.
+
+**Staff need to:** nothing.
+
+**Handbook:** STAFF-GUIDE.md › Activity Log and security alerts.
+
+---
+
 ## 2026-10-18: Staff access plan, Phase 5: matchday helper accounts
 
 **What changed**

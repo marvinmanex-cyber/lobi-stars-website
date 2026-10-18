@@ -4,6 +4,7 @@ import { clientIp } from './fans.js';
 import { roleOf } from './adminRoles.js';
 import { isFullSuperAdmin } from './superAdmins.js';
 import { helperId, helperAdmin } from './helpers.js';
+import { writeLog } from './activityLog.js';
 
 // Staff (admin) sign-in.
 //
@@ -160,10 +161,10 @@ export async function hasAdminSession(request, env) {
   return !!(await getAdmin(request, env));
 }
 
+/** One Activity Log entry (append-only; see activityLog.js). Some entries are also security alerts. */
 export async function logAdminAction(db, admin, action, detail = '') {
   await ensureAdminSchema(db);
-  await db.prepare(`INSERT INTO admin_log (staff_id, staff_name, action, detail) VALUES (?, ?, ?, ?)`)
-    .bind(admin.id, admin.name, action, String(detail).slice(0, 500)).run();
+  await writeLog(db, admin, action, detail);
 }
 
 export function clearAdminCookie() {

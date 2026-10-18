@@ -2,6 +2,7 @@ import { syncSuperAdmins, superAdminEmails } from '../_lib/superAdmins.js';
 import { notifyPendingStatements } from '../_lib/approvals.js';
 import { securitySettings, saveSecuritySetting, securityEmail, sha256Hex } from '../_lib/adminSecurity.js';
 import { logAdminAction } from '../_lib/adminSession.js';
+import { deliverAlerts, weeklySummary, weeklySummaryHtml } from '../_lib/activityLog.js';
 
 // POST /api/internal/super-admins -- called every minute by the cron Worker
 // ("Authorization: Bearer <CRON_SECRET>"). The security watch:
@@ -10,7 +11,9 @@ import { logAdminAction } from '../_lib/adminSession.js';
 //   anyone else with the role moved to Head of Media);
 // - emails the Super Admins once about each new official statement waiting for approval;
 // - notices when a payment or email key is changed in Cloudflare (only a short
-//   fingerprint is kept, never the key) and tells the Super Admins.
+//   fingerprint is kept, never the key) and tells the Super Admins;
+// - emails the Super Admins the security alerts waiting (fan-data downloads, permission
+//   changes, many failed sign-ins…), and the weekly security summary on Mondays from 08:00.
 const WATCHED_KEYS = ['PAYSTACK_SECRET_KEY', 'PAYSTACK_PUBLIC_KEY', 'RESEND_API_KEY', 'RESEND_FROM', 'NEWSLETTER_FROM', 'TURNSTILE_SECRET_KEY'];
 
 export async function onRequestPost({ request, env }) {
@@ -25,7 +28,25 @@ export async function onRequestPost({ request, env }) {
   } catch (err) { console.error('[security watch] super admins', err); out.superAdminsError = true; }
   try { out.statementsNotified = await notifyPendingStatements(env, origin); } catch (err) { console.error('[security watch] statements', err); }
   try { out.keysChanged = await watchKeys(env, origin); } catch (err) { console.error('[security watch] keys', err); }
+  try { out.alertsSent = await deliverAlerts(env, origin, superAdminEmails(env), (to, subject, lines) => securityEmail(env, to, subject, lines, origin)); } catch (err) { console.error('[security watch] alerts', err); }
+  try { out.weekly = await weekly(env, origin, new URL(request.url).searchParams.get('weekly') === 'now'); } catch (err) { console.error('[security watch] weekly', err); }
   return Response.json({ ok: true, ...out });
+}
+
+/** The weekly security summary: Mondays from 08:00 Nigeria time, once a week. */
+async function weekly(env, origin, now = false) {
+  const lagos = new Date(Date.now() + 3600e3);
+  const week = lagos.toISOString().slice(0, 10);
+  if (!now) {
+    if (lagos.getUTCDay() !== 1 || lagos.getUTCHours() < 8) return false;
+    const s = await securitySettings(env.DB, { force: true });
+    if (s.weekly_summary_week === week) return false;
+  }
+  await saveSecuritySetting(env.DB, 'weekly_summary_week', week, 'Weekly security summary');
+  const w = await weeklySummary(env.DB);
+  await securityEmail(env, superAdminEmails(env), 'Lobi Stars admin: weekly security summary', weeklySummaryHtml(w, origin), origin);
+  await logAdminAction(env.DB, { id: 'system', name: 'Weekly security summary' }, 'security_summary_sent', `week to ${week}`);
+  return true;
 }
 
 /** Payment and email keys: which ones changed since last time (by name only). */

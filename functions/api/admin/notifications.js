@@ -1,6 +1,7 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { canAccess, inboxSources, can } from '../_lib/adminRoles.js';
 import { pendingCount, pendingStatements } from '../_lib/approvals.js';
+import { recentAlerts } from '../_lib/activityLog.js';
 import { syncEnquiries, maybeDailySummary } from '../_lib/inbox.js';
 import { ensureAnalyticsSchema } from '../_lib/analytics.js';
 import { sqlTs, isoTs } from '../_lib/reportRange.js';
@@ -44,6 +45,10 @@ export async function onRequestGet({ request, env, waitUntil }) {
   if (canAccess(admin, 'settings') && await tableExists('uptime_incidents')) {
     const h = await healthSummary(db);
     for (const i of h.open) items.push({ icon: '🚨', title: `Website problem: ${i.label}`, sub: `${i.error || 'Not responding'} since ${new Date(i.started_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`, href: '/admin/health/' });
+  }
+  // Security alerts from the last day (Super Admins).
+  if (can(admin, 'staff.manage')) {
+    for (const a of (await recentAlerts(db).catch(() => [])).slice(0, 5)) items.unshift({ icon: '🛡️', title: a.title, sub: `${new Date(a.ts).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${String(a.detail || '').slice(0, 90)}`, href: '/admin/activity/' });
   }
   if (can(admin, 'approvals.approve')) {
     const n = await pendingCount(db).catch(() => 0);

@@ -587,6 +587,30 @@ Files are named with today's date, e.g. `lobi-stars-fan-database-2026-10-09.xlsx
 - The old shared gate code still works for now (until it's removed from
   Cloudflare; see the handover list).
 
+### Activity Log and security alerts (Super Admins, Settings › Activity Log)
+
+- **Every action is listed:** who, what, when and **from where** (the device,
+  e.g. "Chrome on Android", and the country of the network they signed in
+  from; Super Admins also see the network address). Sign-ins and failed
+  sign-ins, two-step login changes, scores and match status, Predict & Win
+  prizes, Rewards points, refunds, menu prices, partner and settings changes,
+  roles and permissions, staff added or disabled, and every download.
+- **Filters:** search, person, type (sign-ins and security, staff and roles,
+  approvals, downloads and backups, matchday, commerce, fans, partners,
+  settings) and dates. **Show older** loads more.
+- **Nobody can change or delete an entry**, not even the developer through the
+  website, and entries are kept for at least 12 months.
+- **Security alerts** go to the Super Admins by email (within a minute) and
+  appear in the 🔔 bell: any fan-data download or backup, role and permission
+  changes, the emergency admin code, two-step login resets, lockouts, sign-ins
+  from a new device by a Super Admin or CRM Manager, and more than 10 failed
+  sign-ins on the whole site in 10 minutes.
+- **Weekly security summary:** every Monday morning the Super Admins get an
+  email with sign-ins per person, downloads, approvals, lockouts and anything
+  unusual.
+- **Export Log** (Settings › Export Log): every download and backup with who,
+  when, what and how many rows.
+
 ### Approvals (Super Admins, Settings › Approvals)
 
 Some actions don't happen straight away: another Super Admin must approve them.

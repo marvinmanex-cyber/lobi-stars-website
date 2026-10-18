@@ -176,6 +176,12 @@ export async function logLeague(db, staff, action, entity, entityId, before, aft
   const who = staff?.email || staff?.name || 'staff';
   await db.prepare(`INSERT INTO league_audit_log (staff_email, action, entity, entity_id, before_json, after_json) VALUES (?, ?, ?, ?, ?, ?)`)
     .bind(String(who).slice(0, 120), action, entity, entityId == null ? null : String(entityId), before == null ? null : JSON.stringify(before), after == null ? null : JSON.stringify(after)).run();
+  // Also in the main Activity Log (league, Rewards and ticket changes: refunds, point adjustments…).
+  try {
+    const { writeLog } = await import('./activityLog.js');
+    const summary = after && typeof after === 'object' ? Object.entries(after).slice(0, 6).map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', ') : '';
+    await writeLog(db, { id: staff?.id || 'staff', name: String(staff?.name || who).slice(0, 80), sessionId: staff?.sessionId }, action, `${entity}${entityId == null ? '' : ` ${entityId}`}${summary ? `: ${summary}` : ''}`);
+  } catch (err) { console.error('[log] mirror', err); }
 }
 
 /** Sensitive actions: only the emails in settings.league_admin_emails, when that list exists. */

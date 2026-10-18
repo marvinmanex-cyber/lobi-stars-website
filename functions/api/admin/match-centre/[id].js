@@ -1,5 +1,6 @@
 import { requireAdmin, requireAdminUser } from '../../_lib/adminEvents.js';
 import { can } from '../../_lib/adminRoles.js';
+import { logAdminAction } from '../../_lib/adminSession.js';
 import { parseStreams } from '../../_lib/streams.js';
 import { settlePredictions } from '../../_lib/predict.js';
 import { notifyFans } from '../../_lib/notify.js';
@@ -94,6 +95,11 @@ export async function onRequestPut({ request, env, params, waitUntil }) {
     v.lineups_json, v.timeline_json, v.stats_json, v.gallery_json, JSON.stringify(squad), kickoffAt, endedAt, s.youtube_url, s.facebook_url
   ).run();
 
+  // The Activity Log: status and score changes.
+  const label = `${m.event.home_team} v ${m.event.away_team}`;
+  if (v.status !== (old.status || 'scheduled') || v.home_score !== (old.home_score ?? null) || v.away_score !== (old.away_score ?? null)) {
+    await logAdminAction(env.DB, admin, 'match_update', `${label}: ${old.status || 'scheduled'} ${old.home_score ?? '-'}-${old.away_score ?? '-'} -> ${v.status} ${v.home_score ?? '-'}-${v.away_score ?? '-'}`);
+  }
   // Match alerts for fans: kick-off, goals, half-time, second half, full time (each once).
   const origin = new URL(request.url).origin;
   const ps = prev.status || 'scheduled', ph = Number(prev.home_score) || 0, pa = Number(prev.away_score) || 0;
@@ -140,6 +146,7 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
        ON CONFLICT(event_id) DO UPDATE SET status = 'live', kickoff_at = excluded.kickoff_at, ended_at = NULL,
          auto_closed = 0, updated_at = excluded.updated_at`
     ).bind(params.id, now).run();
+    await logAdminAction(env.DB, admin, 'match_kickoff', `${m.event.home_team} v ${m.event.away_team}`);
     // "Kick-off! Vote for Man of the Match" reminder for fans who opted in.
     waitUntil(notifyFans(env, m.event, 'kickoff'));
     waitUntil(autoAlert(env, 'kickoff', m.event, {}, { waitUntil, origin: new URL(request.url).origin }));
@@ -158,6 +165,7 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
       `UPDATE match_centre SET status = 'full-time', home_score = ?, away_score = ?, ended_at = ?, updated_at = datetime('now')
        WHERE event_id = ?`
     ).bind(home, away, endedAt, params.id).run();
+    await logAdminAction(env.DB, admin, 'match_fulltime', `${m.event.home_team} ${home}-${away} ${m.event.away_team}`);
     if (status !== 'full-time') waitUntil(autoAlert(env, 'fulltime', m.event, { home, away }, { waitUntil, origin: new URL(request.url).origin }));
     // Predict & Win: the winner is worked out as soon as the final score is in.
     const prediction = isHomeGame(m.event) ? await settlePredictions(env, { ...toPublic(m.event, m.centre), home_score: home, away_score: away }) : null;
