@@ -5,6 +5,8 @@ import { ROLE_DEFAULTS, ROLE_ALIASES, ASSIGNABLE_ROLES } from '../_lib/adminRole
 import { securitySettings, passwordProblem, IDLE_MS } from '../_lib/adminSecurity.js';
 import { hashPassword } from '../_lib/password.js';
 import { isSuperAdminEmail, superAdminProblem, syncSuperAdmins, superAdminEmails } from '../_lib/superAdmins.js';
+import { inviteStaff } from '../_lib/staffLifecycle.js';
+import { needsApproval, requestApproval, pendingResponse } from '../_lib/approvals.js';
 import { ensureLifecycleSchema, staffStatus, sendStaffLink, accessReviewList, sendAccessReview, reviewMonth, INVITE_HOURS, NO_PASSWORD } from '../_lib/staffLifecycle.js';
 import roleEmails from '../../../src/data/role-emails.json';
 
@@ -86,9 +88,9 @@ export async function onRequestPost({ request, env }) {
     await logAdminAction(db, admin, 'staff_created', `${name} <${email}> as ${ROLE_DEFAULTS[role].label} (test server)`);
     return json({ ok: true, id });
   }
-  await db.prepare(`INSERT INTO admin_users (id, name, email, password_hash, role, role_email) VALUES (?, ?, ?, ?, ?, ?)`)
-    .bind(id, name, email, NO_PASSWORD, role, roleEmail || null).run();
-  const link = await sendStaffLink(env, origin, { id, name, email, role }, 'invite', admin);
-  await logAdminAction(db, admin, 'staff_invited', `${name} <${email}> as ${ROLE_DEFAULTS[role].label}${roleEmail ? ` (${roleEmail})` : ''}${link.emailed ? '' : '; invite email not sent (Resend not set up)'}`);
-  return json({ ok: true, id, emailed: link.emailed, inviteUrl: link.url, expiresHours: INVITE_HOURS });
+  // A new staff account needs another Super Admin's approval (Settings › Approvals).
+  if (await needsApproval(env, 'staff_invite', admin)) {
+    return pendingResponse(await requestApproval(env, origin, { kind: 'staff_invite', summary: `Invite ${name} <${email}> as ${ROLE_DEFAULTS[role].label}`, payload: { name, email, role, roleEmail: roleEmail || null }, requester: admin }));
+  }
+  return json({ ok: true, ...(await inviteStaff(env, origin, { name, email, role, roleEmail }, admin)) });
 }

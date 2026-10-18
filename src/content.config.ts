@@ -20,6 +20,8 @@ const news = defineCollection({
     isBanner: z.boolean().default(false),
     // Drafts are hidden from the public site, sitemap and search (visible in admin).
     status: z.enum(['published', 'draft']).default('published'),
+    // Official statement: hidden until a Super Admin approves it (Admin › Settings › Approvals).
+    official: z.boolean().nullable().optional(),
     // Byline. Sveltia writes null/"" for empty optional fields.
     author: z.string().nullable().optional(),
     authorRole: z.string().nullable().optional(),

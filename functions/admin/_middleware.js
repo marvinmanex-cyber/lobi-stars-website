@@ -1,7 +1,7 @@
 import { getAdmin } from '../api/_lib/adminSession.js';
 import { allowedPath, loadRoles, roleLabel, cmsConfigFor } from '../api/_lib/adminRoles.js';
 import { withSecurityHeaders } from '../api/_lib/securityHeaders.js';
-import { ADMIN_PAGE_HEADERS } from '../api/_lib/adminSecurity.js';
+import { ADMIN_PAGE_HEADERS, securitySettings } from '../api/_lib/adminSecurity.js';
 
 // Every /admin page (the CMS, Manage Matches, Analytics...) needs a staff
 // login. Visitors without a valid staff cookie are sent to /admin/login, and
@@ -36,7 +36,8 @@ export async function onRequest({ request, env, next }) {
   // The content CMS reads its list of sections from config.yml: each person gets only the sections they may edit.
   if (admin && /^\/admin\/config\.yml$/.test(url.pathname) && res.ok) {
     const h = new Headers({ 'Content-Type': 'text/yaml; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' });
-    return new Response(cmsConfigFor(admin, await res.text()), { status: 200, headers: adminHeaders(h) });
+    const predictNeedsApproval = (await securitySettings(env.DB)).approvals_predict !== '0';
+    return new Response(cmsConfigFor(admin, await res.text(), { predictNeedsApproval }), { status: 200, headers: adminHeaders(h) });
   }
   const out = new Response(res.body, res);
   out.headers.set('X-Robots-Tag', 'noindex, nofollow');

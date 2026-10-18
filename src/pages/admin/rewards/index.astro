@@ -139,7 +139,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
         r.d.referrals.length ? LA.table(['Friend', 'Status', 'Note'], r.d.referrals.map(function (x) { return el('tr', {}, el('td', { text: x.email }), el('td', { text: x.status }), el('td', { text: x.reason || '' })); })) : null));
     });
   }
-  function act(body, q) { LA.api('/api/admin/rewards/member', { method: 'POST', body: body }).then(function (r) { r.ok ? (LA.toast('Done'), showMember(q), load()) : LA.toast(r.d.error || 'Could not do that.', true); }); }
+  function act(body, q) { LA.api('/api/admin/rewards/member', { method: 'POST', body: body }).then(function (r) { r.ok ? (LA.toast(r.d.pending ? r.d.message : 'Done'), showMember(q), load()) : LA.toast(r.d.error || 'Could not do that.', true); }); }
   $('find').addEventListener('submit', function (e) { e.preventDefault(); var q = this.elements.q.value.trim(); if (q) showMember(q); });
   $('runNow').addEventListener('click', function () { LA.api('/api/admin/rewards/run', { method: 'POST', body: {} }).then(function (r) { r.ok ? LA.toast('Done: ' + r.d.released + ' ticket points made available, ' + r.d.predictions + ' prediction results, ' + r.d.birthdays + ' birthdays') : LA.toast(r.d.error || 'Could not run.', true); }); });
   LA.api('/api/admin/rewards').then(function (r) { window.__rwWasLive = !!(r.ok && r.d.settings.live); });

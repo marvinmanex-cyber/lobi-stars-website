@@ -96,6 +96,7 @@ const CATEGORIES: Cat[] = [
     { id: 'cms-promo', label: 'Promo Bar', href: `${CMS}/settings/entries/promo`, perm: 'settings.promo_bar', ext: true },
     { id: 'commentary-settings', label: 'Commentary & Stream Settings', href: '/admin/commentary/', perm: 'settings.commentary|broadcast.commentary.manage' },
     { id: 'staff', label: 'Staff Users & Roles', href: '/admin/staff/', perm: 'staff.manage' },
+    { id: 'approvals', label: 'Approvals', href: '/admin/approvals/', perm: 'approvals.approve', hint: 'Requests waiting for a Super Admin: new staff, big points changes, official statements' },
     { id: 'security', label: 'Login & Security', href: '/admin/security/', perm: 'staff.manage', hint: 'Require two-step login, IP allowlist, security alerts, who is signed in' },
     { id: 'account', label: 'My Account (password, two-step login)', href: '/admin/account/', perm: '' },
     { id: 'inbox-settings', label: 'Inbox Emails & Templates', href: '/admin/inbox/?settings=1', perm: 'fans.inbox.reply', hint: 'New-message alerts, daily summary, saved replies' },

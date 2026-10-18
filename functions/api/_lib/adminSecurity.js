@@ -66,6 +66,13 @@ export const SETTING_DEFAULTS = {
   access_review_month: '',    // the last month the access review was emailed (YYYY-MM)
   super_admin_list: '',       // the Super Admin list last seen (to notice changes)
   admin_code_off: '0',        // '1' = the old emergency admin code no longer works
+  approvals_staff: '1',       // approvals (see approvals.js): new staff, Super Admin / download rights
+  approvals_points: '1',      //   Rewards points adjustments over 1,000
+  approvals_official: '1',    //   news marked "Official statement"
+  approvals_all_news: '0',    //   every news article
+  approvals_predict: '1',     //   the Prediction League prize: Super Admins only in the CMS
+  statements_notified: '',    // official statements the approvers have been emailed about
+  key_fingerprints: '',       // short fingerprints of the payment/email keys (to notice changes; never the keys)
 };
 let cache = null, cachedAt = 0;
 export async function securitySettings(db, { force = false } = {}) {

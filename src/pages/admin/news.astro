@@ -1,12 +1,15 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
-import { getAllNews, formatDate } from '../../lib/news';
+import { getAllNews, formatDate, newsApprovals, needsApproval, isApproved } from '../../lib/news';
 
 // Articles are edited in the content CMS (Sveltia, at /admin/), which saves
 // them to src/content/news and uploads images to public/images. This screen
 // lists what's published and jumps straight to the right CMS editor.
 const articles = await getAllNews();
+// Official statements (or every article, if switched on) wait for a Super Admin's approval.
+const ap = await newsApprovals();
+const waiting = (a: (typeof articles)[number]) => a.data.status !== 'draft' && needsApproval(a, ap) && !isApproved(a, ap);
 const CMS = '/admin/#/collections/news';
 ---
 <Layout title="Manage News | Lobi Stars Admin" description="Manage Lobi Stars FC news articles." noindex>
@@ -29,6 +32,7 @@ const CMS = '/admin/#/collections/news';
         <li><strong>Videos:</strong> tick <em>Is this a video?</em>, paste the YouTube/Vimeo link and the duration (e.g. 06:02).</li>
         <li><strong>Homepage:</strong> tick <em>Featured</em> to put the story in the big top section.</li>
         <li>Set <em>Status</em> to <strong>Published</strong> to show a story on the website; <strong>Draft</strong> keeps it hidden. Changes appear about a minute after saving.</li>
+        <li>Tick <em>Official statement</em> for official club statements: they stay hidden ("Waiting for approval") until a Super Admin approves them.</li>
       </ol>
       <p class="muted">The CMS asks for a GitHub access token the first time you use it on a device.</p>
     </details>
@@ -44,6 +48,7 @@ const CMS = '/admin/#/collections/news';
                 <span class="mn-title">{a.data.title}</span>
                 <span class="mn-flags">
                   {a.data.status === 'draft' && <span class="mn-flag sample">Draft</span>}
+                  {waiting(a) && <span class="mn-flag sample">Waiting for approval</span>}
                   {a.data.isFeatured && <span class="mn-flag">Featured</span>}
                   {a.data.isVideo && <span class="mn-flag">Video</span>}
                 </span>

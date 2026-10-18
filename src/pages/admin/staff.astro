@@ -171,13 +171,14 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   for (const box of ['list', 'reviewList']) $(box).addEventListener('click', e => { const b = e.target.closest('button[data-act]'); if (b) act(b); });
   $('list').addEventListener('change', async e => {
     const sel = e.target.closest('select[data-role]'); if (!sel) return;
-    try { await put(sel.closest('tr').dataset.id, { role: sel.value }); show('Role saved. It applies the next time they open a page, and the Super Admins have been told.', true); load(); }
+    try { const r = await put(sel.closest('tr').dataset.id, { role: sel.value }); show(r.pending ? r.message : 'Role saved. It applies the next time they open a page, and the Super Admins have been told.', true); load(); }
     catch (err) { show(err.message, false); load(); }
   });
   $('newForm').addEventListener('submit', async e => {
     e.preventDefault();
     try {
       const r = await api('/api/admin/staff', { method: 'POST', body: JSON.stringify({ name: $('n-name').value, email: $('n-email').value, role: $('n-role').value, roleEmail: $('n-remail').value }) });
+      if (r.pending) { show(r.message, true); e.target.reset(); load(); return; }
       show(r.emailed ? `Invite sent to ${$('n-email').value}. The link works for 48 hours.` : 'Account created, but the invite email could not be sent (email is not set up). Use "Resend invite" once email works.', !!r.emailed);
       e.target.reset(); load();
     } catch (err) { show(err.message, false); }
@@ -205,7 +206,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const d = btn.closest('details'); const id = d.dataset.role;
     const body = btn.hasAttribute('data-reset') ? { id, reset: true } : { id, permissions: [...d.querySelectorAll('input:checked')].map(i => i.value) };
     if (body.reset && !confirm('Put this role back to its default permissions?')) return;
-    try { await api('/api/admin/roles', { method: 'PUT', body: JSON.stringify(body) }); show('Role saved. It applies within a minute.', true); await loadRoles(); document.querySelector(`#roles details[data-role="${id}"]`)?.setAttribute('open', ''); }
+    try { const r = await api('/api/admin/roles', { method: 'PUT', body: JSON.stringify(body) }); show(r.pending ? r.message : 'Role saved. It applies within a minute.', true); await loadRoles(); document.querySelector(`#roles details[data-role="${id}"]`)?.setAttribute('open', ''); }
     catch (err) { show(err.message, false); }
   });
   load();

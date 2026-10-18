@@ -6,7 +6,7 @@
 // Control, match settings, the newsletter and Predict & Win.
 // Needs the local Pages dev server with ADMIN_CODE=test-code-123, FANS_DEV_LINKS=1,
 // STAFF_TEST_PASSWORDS=1, PASSWORD_BREACH_CHECK=off, CRON_SECRET=cron-test-secret. Edits the LOCAL D1.
-import { test, after } from 'node:test';
+import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execSync } from 'node:child_process';
 import { totpCode } from '../functions/api/_lib/totp.js';
@@ -27,6 +27,8 @@ async function login(body) {
 }
 const as = cookie => ({ Cookie: cookie });
 const made = [];
+// These tests check the direct path; approvals (tests/approvals.test.mjs) are switched off here.
+before(async () => { await api('/api/admin/approvals', 'POST', { switch: 'approvals_staff', on: false }); });
 after(async () => { for (const id of made) await api(`/api/admin/staff/${id}`, 'PUT', { active: false, reason: 'test finished' }); });
 async function invite(role, extra = {}) {
   const email = `inv-${role}-${uid()}@example.com`;

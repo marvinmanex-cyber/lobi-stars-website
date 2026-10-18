@@ -1,0 +1,113 @@
+---
+// Settings › Approvals (Super Admins): requests waiting for approval (new staff,
+// Super Admin or download rights, big Rewards points changes), official
+// statements waiting before they appear, recent decisions, and which actions
+// need approval.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Approvals | Lobi Stars Admin" description="Approve or reject sensitive actions." noindex>
+  <div class="wrap apv">
+    <AdminNav current="approvals" />
+    <div class="stag">Settings</div>
+    <h1 class="stitle">Appro<span class="r">vals</span></h1>
+    <p class="muted apv-lede">Some actions wait here for another Super Admin to approve them. Nobody can approve their own request. Everything is recorded in the Activity Log.</p>
+    <p class="apv-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="panel">
+      <h2>Waiting for approval</h2>
+      <div id="pending"><p class="muted">Loading…</p></div>
+    </section>
+
+    <section class="panel">
+      <h2>Official statements waiting</h2>
+      <p class="muted">Articles ticked <strong>Official statement</strong> in the Content CMS stay hidden until approved here. They appear at the next site update after approval <span id="hookNote"></span>. If the article is edited later, it needs approving again.</p>
+      <div id="statements"></div>
+    </section>
+
+    <section class="panel">
+      <h2>What needs approval</h2>
+      <div id="switches"></div>
+      <p class="muted apv-small">Predict &amp; Win: the prize for each home game is set in the website code, so only the developer can change it. Paystack and email keys live in Cloudflare and can't be changed from the website; any change is noticed within a minute, recorded and emailed to the Super Admins.</p>
+    </section>
+
+    <section class="panel">
+      <h2>Recent decisions</h2>
+      <div class="scroll" id="history"></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .apv { max-width: 980px; padding-top: 20px; padding-bottom: 80px; }
+  .apv-lede { max-width: 760px; }
+  .apv-msg { padding: 12px 16px; border-radius: 10px; }
+  .apv-msg.ok { background: #E8F7EE; color: #17643A; } .apv-msg.err { background: #FDECEC; color: #A3161B; }
+  .panel { padding: 20px; margin-bottom: 16px; }
+  .panel h2 { margin: 0 0 10px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .apv-small { font-size: 13px; margin-top: 12px; }
+  .apv :global(.req) { border: 1px solid var(--a-line); border-radius: 10px; padding: 14px; margin: 0 0 10px; background: var(--a-card); }
+  .apv :global(.req h3) { margin: 0 0 4px; font-size: 16px; }
+  .apv :global(.req p) { margin: 0 0 8px; font-size: 14px; color: var(--a-muted, #5B6470); }
+  .apv :global(.req .row) { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .apv :global(.req button) { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); cursor: pointer; font: inherit; font-size: 14px; font-weight: 700; }
+  .apv :global(.req button.yes) { background: #17643A; border-color: #17643A; color: #fff; }
+  .apv :global(.req button.no) { color: #A3161B; border-color: #E9A3A5; }
+  .apv :global(label.sw) { display: flex; gap: 10px; align-items: center; padding: 6px 0; font-size: 15px; }
+  .apv :global(label.sw input) { width: 18px; height: 18px; accent-color: var(--red); flex: none; }
+  .apv :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .apv :global(th), .apv :global(td) { padding: 8px 10px; border-bottom: 1px solid var(--a-line); text-align: left; vertical-align: top; }
+  .apv :global(thead th) { background: #15181D; color: #fff; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .apv :global(.st) { font-weight: 700; } .apv :global(.st.approved) { color: #17643A; } .apv :global(.st.rejected), .apv :global(.st.failed) { color: #A3161B; }
+  .scroll { overflow-x: auto; }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const when = iso => iso ? new Date(iso).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+  const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'apv-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  const KIND = { staff_invite: 'New staff account', role_change: 'Role change', role_permissions: 'Role permissions', points_adjust: 'Rewards points' };
+  async function api(body) {
+    const r = await fetch('/api/admin/approvals', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  let data;
+  async function load() {
+    try {
+      data = await api();
+      $('pending').innerHTML = data.pending.length ? data.pending.map(a => `<div class="req" data-id="${esc(a.id)}"><h3>${esc(KIND[a.kind] || a.kind)}: ${esc(a.summary)}</h3>` +
+        `<p>Asked by <strong>${esc(a.requested_by_name)}</strong> on ${esc(when(a.requested_at))}</p>` +
+        `<div class="row"><button type="button" class="yes" data-act="yes">Approve</button><button type="button" class="no" data-act="no">Reject…</button></div></div>`).join('')
+        : '<p class="muted">Nothing waiting. 🎉</p>';
+      $('hookNote').textContent = data.deployHook ? '(the site updates within about 2 minutes)' : '(the next time anyone saves in the Content CMS)';
+      $('statements').innerHTML = data.statements.length ? data.statements.map(s => `<div class="req" data-slug="${esc(s.slug)}" data-hash="${esc(s.hash)}" data-title="${esc(s.title)}"><h3>${esc(s.title)}</h3>` +
+        `<p>${esc(s.summary)}${s.author ? ` · by ${esc(s.author)}` : ''}${s.official ? '' : ' · (every article needs approval)'}</p><div class="row"><button type="button" class="yes" data-act="statement">Approve for publishing</button></div></div>`).join('')
+        : '<p class="muted">No official statements waiting.</p>';
+      $('switches').innerHTML = data.switches.map(s => `<label class="sw"><input type="checkbox" data-sw="${esc(s.key)}"${s.on ? ' checked' : ''} /> ${esc(s.label)}</label>`).join('');
+      $('history').innerHTML = data.history.length ? '<table><thead><tr><th>When</th><th>Request</th><th>Asked by</th><th>Decision</th></tr></thead><tbody>' + data.history.map(h =>
+        `<tr><td>${esc(when(h.decided_at || h.requested_at))}</td><td>${esc(h.summary)}</td><td>${esc(h.requested_by_name)}</td><td><span class="st ${esc(h.status)}">${esc(h.status === 'approved' ? 'Approved' : h.status === 'rejected' ? 'Rejected' : h.status === 'failed' ? 'Could not be done' : h.status)}</span>${h.decided_by ? ` by ${esc(h.decided_by)}` : ''}${h.reason ? `<br><small>${esc(h.reason)}</small>` : ''}${h.status === 'failed' && h.result ? `<br><small>${esc(h.result)}</small>` : ''}</td></tr>`).join('') + '</tbody></table>'
+        : '<p class="muted">No decisions yet.</p>';
+    } catch (e) { msg(e.message, false); }
+  }
+  document.querySelector('.apv').addEventListener('click', async e => {
+    const b = e.target.closest('button[data-act]'); if (!b) return;
+    const box = b.closest('.req');
+    try {
+      if (b.dataset.act === 'yes') { if (!confirm('Approve this? It takes effect straight away.')) return; const r = await api({ id: box.dataset.id, approve: true }); msg(`Approved. ${r.result || ''}`, true); }
+      if (b.dataset.act === 'no') { const reason = prompt('Why are you rejecting it? (the person asking is told)'); if (reason === null) return; await api({ id: box.dataset.id, approve: false, reason }); msg('Rejected. The person who asked has been told.', true); }
+      if (b.dataset.act === 'statement') { if (!confirm(`Approve "${box.dataset.title}" for publishing?`)) return; const r = await api({ statement: { slug: box.dataset.slug, hash: box.dataset.hash, title: box.dataset.title } }); msg(r.rebuilt ? 'Approved. The website is updating now (about 2 minutes).' : 'Approved. It appears at the next site update.', true); }
+      load();
+    } catch (err) { msg(err.message, false); }
+  });
+  $('switches').addEventListener('change', async e => {
+    const c = e.target.closest('input[data-sw]'); if (!c) return;
+    try { await api({ switch: c.dataset.sw, on: c.checked }); msg('Saved.', true); } catch (err) { msg(err.message, false); c.checked = !c.checked; }
+  });
+  load();
+})();
+</script>

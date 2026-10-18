@@ -6,6 +6,7 @@ import { ensureAdminSchema, logAdminAction } from './adminSession.js';
 import { sha256Hex, randomHex, revokeSessions, securityEmail, alertAddresses, securitySettings, saveSecuritySetting } from './adminSecurity.js';
 const normE = e => String(e || '').trim().toLowerCase();
 import { ROLE_DEFAULTS, roleOf } from './adminRoles.js';
+import { randomId } from './crypto.js';
 
 export const INVITE_HOURS = 48;
 export const RESET_HOURS = 2;
@@ -130,3 +131,29 @@ export async function sendAccessReview(env, origin, { force = false } = {}) {
   await logAdminAction(db, { id: 'system', name: 'Monthly access review' }, 'access_review_sent', `${list.length} account(s), ${unused} unused for 30+ days; emailed to ${to.length} address(es)${sent ? '' : ' (email not sent: Resend not set up)'}`);
   return { sent, accounts: list.length, unused };
 }
+
+// ── Shared steps (run straight away, or when an approval is approved) ──
+
+/** Makes the account (Pending invite) and emails the invite link. */
+export async function inviteStaff(env, origin, { name, email, role, roleEmail }, by) {
+  const db = env.DB;
+  await ensureLifecycleSchema(db);
+  if (await db.prepare(`SELECT id FROM admin_users WHERE email = ?`).bind(email).first()) throw new Error('A staff account with this email already exists.');
+  const id = randomId('adm', 10);
+  await db.prepare(`INSERT INTO admin_users (id, name, email, password_hash, role, role_email) VALUES (?, ?, ?, ?, ?, ?)`)
+    .bind(id, name, email, NO_PASSWORD, role, roleEmail || null).run();
+  const link = await sendStaffLink(env, origin, { id, name, email, role }, 'invite', by);
+  await logAdminAction(db, by, 'staff_invited', `${name} <${email}> as ${ROLE_DEFAULTS[role]?.label || role}${roleEmail ? ` (${roleEmail})` : ''}${link.emailed ? '' : '; invite email not sent (Resend not set up)'}`);
+  return { id, emailed: link.emailed, inviteUrl: link.url, expiresHours: INVITE_HOURS };
+}
+
+/** Changes someone's role: recorded, and the Super Admins are emailed. */
+export async function changeRole(env, origin, u, role, by) {
+  const db = env.DB;
+  await db.prepare(`UPDATE admin_users SET role = ? WHERE id = ?`).bind(role, u.id).run();
+  const from = ROLE_DEFAULTS[ROLE_ALIASES_LOCAL[u.role] || u.role]?.label || u.role, to = ROLE_DEFAULTS[role]?.label || role;
+  await logAdminAction(db, by, 'role_assigned', `${u.name} <${u.email}>: ${from} -> ${to}`);
+  await securityEmail(env, await alertAddresses(env), `Lobi Stars admin: ${u.name} is now ${to}`, [`<strong>${esc(by.name)}</strong> changed the role of <strong>${esc(u.name)}</strong> (${esc(u.email)}) to <strong>${esc(to)}</strong>.`], origin);
+  return `${u.name} is now ${to}`;
+}
+const ROLE_ALIASES_LOCAL = { media: 'content_editor', matchday: 'matchday_admin', commercial: 'commercial_manager', fan_relations: 'fan_support', kitchen: 'kitchen_staff' };

@@ -1,5 +1,6 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
-import { canAccess, inboxSources } from '../_lib/adminRoles.js';
+import { canAccess, inboxSources, can } from '../_lib/adminRoles.js';
+import { pendingCount, pendingStatements } from '../_lib/approvals.js';
 import { syncEnquiries, maybeDailySummary } from '../_lib/inbox.js';
 import { ensureAnalyticsSchema } from '../_lib/analytics.js';
 import { sqlTs, isoTs } from '../_lib/reportRange.js';
@@ -43,6 +44,11 @@ export async function onRequestGet({ request, env, waitUntil }) {
   if (canAccess(admin, 'settings') && await tableExists('uptime_incidents')) {
     const h = await healthSummary(db);
     for (const i of h.open) items.push({ icon: '🚨', title: `Website problem: ${i.label}`, sub: `${i.error || 'Not responding'} since ${new Date(i.started_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`, href: '/admin/health/' });
+  }
+  if (can(admin, 'approvals.approve')) {
+    const n = await pendingCount(db).catch(() => 0);
+    const st = (await pendingStatements(env, new URL(request.url).origin).catch(() => [])).length;
+    if (n + st) items.unshift({ icon: '✅', title: `${n + st} request${n + st === 1 ? '' : 's'} waiting for approval`, sub: [n && `${n} staff or points request${n === 1 ? '' : 's'}`, st && `${st} official statement${st === 1 ? '' : 's'}`].filter(Boolean).join(' · '), href: '/admin/approvals/' });
   }
   return Response.json({ items }, { headers: { 'Cache-Control': 'no-store' } });
 }

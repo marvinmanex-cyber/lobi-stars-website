@@ -1,6 +1,7 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { logAdminAction } from '../_lib/adminSession.js';
 import { PERMISSIONS, ALL_PERMISSIONS, ROLE_DEFAULTS, rolePermissions, roleChanged, saveRole, loadRoles } from '../_lib/adminRoles.js';
+import { needsApproval, requestApproval, pendingResponse } from '../_lib/approvals.js';
 
 const json = (d, status = 200) => Response.json(d, { status, headers: { 'Cache-Control': 'no-store' } });
 const labelOf = id => PERMISSIONS.flatMap(g => g.items).find(([p]) => p === id)?.[1] || id;
@@ -37,6 +38,11 @@ export async function onRequestPut({ request, env }) {
     // Managing staff and roles stays with Super Admins, so nobody can give themselves more access.
     if (b.permissions.includes('staff.manage')) return json({ error: 'Only the Super Admin role manages staff and roles.' }, 400);
     next = ALL_PERMISSIONS.filter(p => b.permissions.includes(p));
+  }
+  // Adding "Download fan contact data" to a role needs another Super Admin's approval.
+  const grantsExport = !before.includes('fans.export') && (next || def.permissions).includes('fans.export');
+  if (grantsExport && await needsApproval(env, 'role_permissions', admin)) {
+    return pendingResponse(await requestApproval(env, new URL(request.url).origin, { kind: 'role_permissions', summary: `Let the ${def.label} role download fan contact data (and its other changes)`, payload: { roleId: b.id, permissions: next || def.permissions }, requester: admin }));
   }
   await saveRole(env.DB, b.id, next, admin.name);
   const after = rolePermissions(b.id);

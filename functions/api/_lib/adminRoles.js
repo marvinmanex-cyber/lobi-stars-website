@@ -93,8 +93,8 @@ export const ROLE_DEFAULTS = {
   // Only the three people in the SUPER_ADMIN_EMAILS server setting (see superAdmins.js).
   super_admin: { label: 'Super Admin', job: 'One of the three website owners', permissions: ALL_PERMISSIONS, locked: true,
     about: 'Everything, including staff accounts, roles, approvals, security settings, Website Health and backups. Only the three people in the Super Admin list.' },
-  head_of_media: { label: 'Head of Media', job: 'Head of Media & Communications', about: 'All content, matchday, broadcast, fans and Inbox, Rewards, partners, commerce and reports, plus site settings. Not staff, approvals, logs, security settings, Website Health or service keys.',
-    permissions: ALL_PERMISSIONS.filter(p => !['staff.manage', 'logs.view', 'approvals.approve'].includes(p)) },
+  head_of_media: { label: 'Head of Media', job: 'Head of Media & Communications', about: 'All content, matchday, broadcast, fans and Inbox, Rewards, partners, commerce and reports, plus site settings. Not staff, approvals, logs, fan-data downloads, security settings, Website Health or service keys.',
+    permissions: ALL_PERMISSIONS.filter(p => !['staff.manage', 'logs.view', 'approvals.approve', 'fans.export'].includes(p)) },
   content_editor: { label: 'Content Editor', job: 'Media Officer / Club Writer', about: 'All website content (news, team news, programme, club pages, help, videos, gallery), uploads, and writing the newsletter (not sending it to subscribers).',
     permissions: [...starts('content.'), 'fans.newsletter.manage', 'media.upload', 'fans.inbox.read', 'fans.inbox.reply', 'fans.inbox.media'] },
   media_editor: { label: 'Media Editor', job: 'Social Media & Video Officer', about: 'Videos, gallery, uploads and live matchday updates (preview, report, fan alerts, sharing to socials).',
@@ -211,7 +211,7 @@ function CMS_ANY() {
   return [...new Set([...Object.values(CMS_COLLECTIONS), ...Object.values(CMS_SETTINGS)].join('|').split('|'))].join('|');
 }
 /** The CMS config (config.yml text) with only the sections this admin may edit. */
-export function cmsConfigFor(admin, yaml) {
+export function cmsConfigFor(admin, yaml, { predictNeedsApproval = false } = {}) {
   if (roleOf(admin) === 'super_admin') return yaml;
   const anyFile = Object.values(CMS_SETTINGS).some(p => can(admin, p));
   const out = [];
@@ -226,7 +226,7 @@ export function cmsConfigFor(admin, yaml) {
     }
     if (dropTop) continue;
     const file = line.match(/^ {6}- name: "?([A-Za-z0-9_]+)"?/);
-    if (file) dropFile = !(file[1] in CMS_SETTINGS && can(admin, CMS_SETTINGS[file[1]]));
+    if (file) dropFile = !(file[1] in CMS_SETTINGS && can(admin, file[1] === 'predictLeague' && predictNeedsApproval ? 'approvals.approve' : CMS_SETTINGS[file[1]]));
     if (dropFile) continue;
     out.push(line);
   }
@@ -292,6 +292,8 @@ const RULES = [
   [/^\/admin\/activity(\/|$)/, 'logs.view'],
   [/^\/admin\/health(\/|$)/, 'logs.view|settings.site'],
   [/^\/admin\/(staff|security|backup)(\/|$)/, 'staff.manage'],
+  [/^\/admin\/approvals(\/|$)/, 'approvals.approve'],
+  [/^\/admin\/news-approvals\.json$/, 'approvals.approve|content.news.edit|content.news.publish'],
   [/^\/admin\/?(index\.html|config\.yml)?$/, CMS_ANY()],
   // APIs
   [/^\/api\/admin\/(login|logout|me|dashboard|search|notifications|account|invite|reset)(\/|$)/, null],
@@ -338,6 +340,7 @@ const RULES = [
   [/^\/api\/admin\/activity(\/|$)/, 'logs.view'],
   [/^\/api\/admin\/health(\/|$)/, 'logs.view|settings.site'],
   [/^\/api\/admin\/(staff|roles|security|backup|access-review|role-emails)(\/|$)/, 'staff.manage'],
+  [/^\/api\/admin\/approvals(\/|$)/, 'approvals.approve'],
 ];
 
 /** The permission(s) a path needs; null = any signed-in staff; undefined = not listed (Super Admin only). */

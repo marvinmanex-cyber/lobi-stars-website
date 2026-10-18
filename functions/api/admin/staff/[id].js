@@ -2,7 +2,9 @@ import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { ROLE_DEFAULTS, ROLE_ALIASES, ASSIGNABLE_ROLES } from '../../_lib/adminRoles.js';
 import { revokeSessions, alertAddresses, securityEmail } from '../../_lib/adminSecurity.js';
-import { ensureLifecycleSchema, staffStatus, sendStaffLink, disableStaff } from '../../_lib/staffLifecycle.js';
+import { ensureLifecycleSchema, staffStatus, sendStaffLink, disableStaff, changeRole } from '../../_lib/staffLifecycle.js';
+import { needsApproval, requestApproval, pendingResponse } from '../../_lib/approvals.js';
+import { rolePermissions, loadRoles } from '../../_lib/adminRoles.js';
 import { isSuperAdminEmail, superAdminProblem } from '../../_lib/superAdmins.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -104,16 +106,19 @@ export async function onRequestPut({ request, env, params, waitUntil }) {
   // Super Admin is only for the three people in the list, and they stay Super Admins while they're on it.
   if (role !== u.role && role === 'super_admin' && !(env.STAFF_TEST_PASSWORDS === '1' && u.test_account) && superAdminProblem(env, u.email)) return json({ error: superAdminProblem(env, u.email) }, 400);
   if (role !== u.role && u.role === 'super_admin' && isSuperAdminEmail(env, u.email)) return json({ error: `${u.email} is in the Super Admin list, so they stay a Super Admin. To change that, edit the SUPER_ADMIN_EMAILS server setting.` }, 400);
-  await db.prepare(`UPDATE admin_users SET name = ?, role = ?, role_email = ? WHERE id = ?`).bind(name, role, roleEmail, u.id).run();
+  // Giving Super Admin or a role that can download fan data needs another Super Admin's approval.
+  await loadRoles(db);
+  const approvalNeeded = role !== u.role && (role === 'super_admin' || rolePermissions(role).includes('fans.export')) && await needsApproval(env, 'role_change', admin);
+  await db.prepare(`UPDATE admin_users SET name = ?, role_email = ? WHERE id = ?`).bind(name, roleEmail, u.id).run();
+  if (approvalNeeded) {
+    if (name !== u.name || roleEmail !== u.role_email) await log([name !== u.name && `name -> ${name}`, roleEmail !== u.role_email && `role email -> ${roleEmail || 'none'}`].filter(Boolean).join(', '));
+    return pendingResponse(await requestApproval(env, origin, { kind: 'role_change', summary: `Make ${u.name} <${u.email}> ${ROLE_DEFAULTS[role]?.label || role}`, payload: { userId: u.id, role }, requester: admin }));
+  }
   const changes = [
     name !== u.name && `name -> ${name}`,
-    role !== u.role && `role -> ${ROLE_DEFAULTS[role]?.label || role}`,
     roleEmail !== u.role_email && `role email -> ${roleEmail || 'none'}`,
   ].filter(Boolean);
   if (changes.length) await log(changes.join(', '));
-  if (role !== u.role) {
-    await logAdminAction(db, admin, 'role_assigned', `${u.name} <${u.email}>: ${ROLE_DEFAULTS[ROLE_ALIASES[u.role] || u.role]?.label || u.role} -> ${ROLE_DEFAULTS[role]?.label || role}`);
-    later(alertAddresses(env).then(to => securityEmail(env, to, `Lobi Stars admin: ${u.name} is now ${ROLE_DEFAULTS[role]?.label || role}`, [`<strong>${admin.name}</strong> changed the role of <strong>${u.name}</strong> (${u.email}) to <strong>${ROLE_DEFAULTS[role]?.label || role}</strong>.`], origin)));
-  }
+  if (role !== u.role) await changeRole(env, origin, u, role, admin);
   return json({ ok: true });
 }

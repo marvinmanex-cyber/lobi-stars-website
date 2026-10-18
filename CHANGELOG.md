@@ -8,6 +8,37 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Staff access plan, Phase 4: approvals for sensitive actions
+
+**What changed**
+- New **Settings › Approvals** page (Super Admins). These wait for another
+  Super Admin's approval: inviting new staff; giving someone Super Admin or a
+  role that can download fan data; adding "Download fan contact data" to a
+  role; adjusting Rewards points by more than 1,000; news articles ticked
+  **Official statement** (optionally every article). Each can be switched off.
+- Nobody approves their own request; rejecting needs a reason; the person
+  asking is emailed the decision; approvers get an email and a 🔔 notice; all
+  recorded in the Activity Log.
+- **Official statements:** a new tick in the Content CMS. The article stays off
+  the website until approved, and an edit needs approving again. The News
+  screen shows "Waiting for approval".
+- If nobody else could approve, the action goes ahead and is recorded (the club
+  is never stuck).
+- The season Prediction League prize (CMS) can only be changed by Super Admins.
+  The Predict & Win prize per game is fixed in the code.
+- Paystack and email keys (in Cloudflare): any change is noticed within a
+  minute, recorded and emailed to the Super Admins (keys never shown).
+
+**Also today:** the Live Order Board and Kitchen Screen always show the newest
+open orders (a limit could hide the newest on a very busy day).
+
+**Staff need to:** nothing. Optional: a Cloudflare deploy hook so approved
+statements appear within 2 minutes (handover A20).
+
+**Handbook:** STAFF-GUIDE.md › Approvals; section 1 (Official statements).
+
+---
+
 ## 2026-10-18: Website Health project, Phase 1: the three Super Admins
 
 **What changed**

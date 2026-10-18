@@ -4,6 +4,7 @@ import { ensureRewardsSchema, rewardsMember, memberNo, pointsSummary, ledgerFor 
 import { adjustPoints } from '../../_lib/rewardsEarn.js';
 import { ensureFanSchema } from '../../_lib/fans.js';
 import { tierStatus } from '../../_lib/rewardsTiers.js';
+import { needsApproval, requestApproval, pendingResponse, POINTS_LIMIT } from '../../_lib/approvals.js';
 
 // Admin › Rewards › Members.
 // GET ?q=<email or member number LSR-000123> -> the member, balance, points history and referrals.
@@ -61,6 +62,10 @@ export async function onRequestPost({ request, env }) {
     if (b.action === 'adjust') {
       const points = Number(b.points);
       if (!Number.isInteger(points) || points === 0 || Math.abs(points) > 100000) return fail('Points: a whole number, plus or minus (not 0), up to 100,000.');
+      // Big adjustments need another Super Admin's approval.
+      if (Math.abs(points) > POINTS_LIMIT && await needsApproval(env, 'points_adjust', admin)) {
+        return pendingResponse(await requestApproval(env, new URL(request.url).origin, { kind: 'points_adjust', summary: `${points > 0 ? 'Add' : 'Remove'} ${Math.abs(points).toLocaleString('en-GB')} Star Points ${points > 0 ? 'to' : 'from'} ${m.member_id} (${reason})`, payload: { memberId: m.member_id, points, reason, staff }, requester: admin }));
+      }
       await adjustPoints(db, { memberId: m.member_id, points, reason, staff });
       await logLeague(db, { email: staff }, 'rewards.adjust', 'rewards', m.member_id, { balance: (await pointsSummary(db, m.member_id)).balance - points }, { points, reason });
       return ok({ balance: (await pointsSummary(db, m.member_id)).balance });

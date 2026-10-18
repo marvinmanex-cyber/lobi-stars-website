@@ -159,6 +159,10 @@ membership changes, Inbox replies, notes, assignments and status changes).
 > but stay in the CMS and on Admin → Manage news (marked "Draft"). The starter
 > sample stories are all drafts, so you can use them as examples or delete them.
 > The homepage news rows appear once at least **3** stories are published.
+>
+> **Official statements:** tick **Official statement** for official club
+> statements. They stay hidden until a Super Admin approves them (Settings ›
+> Approvals); editing one afterwards needs approving again.
 
 
 1. Log in, then click **Manage news**.
@@ -561,6 +565,37 @@ Files are named with today's date, e.g. `lobi-stars-fan-database-2026-10-09.xlsx
   two-step login, press **Switch off the admin code** (Login & Security). From
   then on the three Super Admins are each other's backup. Its history stays in
   the Activity Log, and anyone who tries the old code is refused and reported.
+
+### Approvals (Super Admins, Settings › Approvals)
+
+Some actions don't happen straight away: another Super Admin must approve them.
+Nobody can approve their own request. The person asking sees "Sent for
+approval", the approvers get an email and a 🔔 notice, and everything is
+recorded in the Activity Log.
+
+- **What needs approval** (each can be switched off on the Approvals page):
+  - inviting a new staff member;
+  - giving someone the Super Admin role, or a role that can download fan data
+    (e.g. CRM Manager), or adding "Download fan contact data" to a role;
+  - adjusting a fan's Rewards points by more than 1,000;
+  - news articles ticked **Official statement** (and, if switched on, every
+    news article).
+- **Approve or reject:** open **Settings › Approvals**. Press **Approve** (it
+  happens at once) or **Reject…** and type why; the person who asked is told.
+- **Official statements:** writers tick **Official statement** in the Content
+  CMS. The article stays hidden ("Waiting for approval" on the News screen)
+  until a Super Admin presses **Approve for publishing**. It then appears at
+  the next site update. If someone edits it afterwards, it needs approving
+  again.
+- **If nobody else can approve** (for example only one Super Admin has set up
+  their account), the action goes ahead and is recorded, so the club is never
+  stuck.
+- **Predict & Win prize:** the prize for each home game is set in the website
+  code (only the developer can change it). The season Prediction League prize
+  in the Content CMS can only be changed by Super Admins.
+- **Paystack and email keys** are kept in Cloudflare and can't be changed from
+  the website. If one is changed, the Super Admins are emailed within a minute
+  and it's recorded (the keys themselves are never shown).
 
 **Import existing records** (on
 the Fan database page) pulls older records into the database; it is safe to
