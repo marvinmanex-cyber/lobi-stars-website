@@ -1,17 +1,28 @@
 import { runChecks } from '../_lib/uptime.js';
+import { healthTick } from '../_lib/healthRun.js';
 
 // POST /api/internal/health-check -- called every minute by the cron Worker
-// (workers/kitchen-cron) with "Authorization: Bearer <CRON_SECRET>". Runs the
-// website health checks at most every 5 minutes.
+// (workers/kitchen-cron) with "Authorization: Bearer <CRON_SECRET>".
+// - the 5-minute uptime checks (key pages, database, stream on match days);
+// - Website Health: one step of the run in progress, or start the hourly full
+//   check / the 15-minute matchday quick check, and the 08:00 daily summary.
+// Answers { more: true } while a run has steps left: the cron Worker then calls
+// again straight away (each call is a separate request, so each step stays within
+// Cloudflare's per-request limits).
 export async function onRequestPost({ request, env }) {
   if (!env.CRON_SECRET || request.headers.get('Authorization') !== `Bearer ${env.CRON_SECRET}`) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
+  const origin = new URL(request.url).origin;
+  const out = { ok: true };
   try {
-    const r = await runChecks(env, new URL(request.url).origin);
-    return Response.json({ ok: true, ran: !!r, opened: r?.opened || [], closed: r?.closed || [] });
-  } catch (err) {
-    console.error('[uptime] run', err);
-    return Response.json({ ok: false }, { status: 500 });
-  }
+    const r = await runChecks(env, origin);
+    Object.assign(out, { ran: !!r, opened: r?.opened || [], closed: r?.closed || [] });
+  } catch (err) { console.error('[uptime] run', err); out.uptimeError = true; }
+  try {
+    const h = await healthTick(env, origin);
+    out.more = !!h.more;
+    out.health = h.run ? { step: h.run.step, steps: h.run.steps, done: h.run.done } : null;
+  } catch (err) { console.error('[health] tick', err); out.more = false; }
+  return Response.json(out);
 }

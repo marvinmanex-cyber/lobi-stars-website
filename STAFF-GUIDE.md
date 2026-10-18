@@ -2002,14 +2002,88 @@ delete the person in the Fan Database (removes them everywhere).
 
 ## 29. Website Health (Settings › Website Health)
 
-The site checks itself every 5 minutes: the homepage, tickets page, Match Day
-Programme, fixtures data and database, and on match days the commentary
-stream. Each check shows **Working**, **Slow** or **Down**, its uptime for
-the last 24 hours and 7 days, and the average response time. When something
-goes down an incident opens: it shows in the bell (🚨 Website problem) and
-Super Admins get an email (once email is set up); it closes by itself when
-it works again. **Check now** runs the checks straight away. Who can see it:
-Super Admins.
+**Only the three Super Admins** can open it (everyone else gets "not
+allowed", from the page and the server). It finds problems anywhere on the
+website and says in plain English what is wrong, why it matters, how to fix
+it step by step and **who should fix it**. The checks only look: they never
+take payments, email fans or change data, and never show passwords or keys
+(only whether they are set and work).
+
+**Open it:** the **🩺 Website Health** button at the top of the Dashboard (its
+dot is green, amber or red, with the number of problems) or Settings ›
+Website Health.
+
+**What it checks (about 55 checks, 9 groups):**
+- **Pages and content:** every page in the sitemap and menu opens; broken
+  links and pictures; old aesonsports.com links outside Partners;
+  placeholder words ("Sample", "TODO", "Lorem", "₦0", "undefined");
+  titles, descriptions and share pictures; sitemap and robots.txt; out-of-date
+  fixtures and missing league results; shop products without a price or buy
+  link; partners without a logo; menu items without a price or photo.
+- **Fan journeys:** sign-up, login, password reset, contact, newsletter,
+  Predict & Win, Man of the Match and Rewards pages and forms (tested with an
+  empty form, nothing saved); the anti-spam key.
+- **Payments:** Paystack keys (warns if test keys are on the live site),
+  Paystack answering, payment confirmations arriving (fails if Paystack had
+  payments but sent the website no confirmation), unpaid food orders not
+  closing, paid food orders not delivered within an hour.
+- **Email:** Resend set up and the domain verified, failed emails, the SPF /
+  DKIM / DMARC / reply records, fans' messages waiting over 48 hours.
+- **Matchday and broadcast:** the commentary stream (played from 2 hours
+  before a match), the partner's address kept private, the next home match
+  ready (commentary, squad for voting, ticket sales), Predict & Win results and
+  prizes, the kitchen open on matchday.
+- **Background tasks and data:** the timer job, last backup, last restore
+  test, the weekly copy outside Cloudflare, scheduled jobs, the database
+  (speed and size), file storage.
+- **Security:** the secure connection, the domain's renewal date, two-step
+  login for all staff, unused accounts, disabled accounts still signed in,
+  bursts of failed sign-ins, security headers, the admin needing a login, the
+  three Super Admins, the old admin code, testing switches, private files.
+- **Outside services:** social media links, phone-notification keys, the
+  Telegram bot.
+- **Speed:** key pages' answer time and weight on a phone.
+
+**Using the page:**
+- The score card says **All systems working** (green), **X things need
+  attention** (amber) or **X things are broken** (red). **Run full check now**
+  takes 1 to 3 minutes and shows its progress (only one check runs at a time).
+- Click a group card to see only that group. Problems come first, the worst at
+  the top. Each has: **Check again** (re-checks that group), **Fix it** (only
+  for the safe fixes below, asks to confirm), **Copy details for developer**
+  (a summary without any secret), **Mark as acknowledged** (with a note: it
+  stays on the list but no repeat alerts for 24 hours) and **History** (when
+  it failed and when it was fixed, over 90 days).
+- **Everything that's working** is folded away underneath.
+- **Download report (PDF)** opens the print window: choose "Save as PDF" to
+  share it with the developer or management.
+- **Send test email** sends a test email to you.
+
+**Safe one-click fixes** (each confirmed and recorded in the Activity Log):
+check unpaid food orders with Paystack and close the expired ones; start a
+backup now; email the encrypted backup copy now; mark a restore as tested;
+calculate the Predict & Win result; sign out disabled accounts; run the
+Rewards job, the access review or a late scheduled newsletter now; rebuild
+the website (when the deploy hook is set up). Everything else is
+instructions only: nothing changes code, keys, DNS or deletes data.
+
+**Automatic checks and alerts:** a full check runs **every hour** (and a
+quick check of payments, matchday and background tasks every 15 minutes on
+home matchdays). When something turns **broken**, the Super Admin who
+receives the security emails (dkakaan@lobistarsfc.com) is emailed and it
+appears in every Super Admin's bell; the same alert is not repeated for 6
+hours unless it gets worse, and a short **Resolved** email follows when it is
+fixed. Things that **need attention** come in one **daily summary at
+08:00**. Results are kept for 90 days; the page shows the uptime over 30 days.
+
+**If the whole website goes down** it can't email anyone itself, so set up a
+free outside monitor once (HANDOVER-TODO.md A23): UptimeRobot, address
+`https://lobistarsfc.com/health/ping` (it only answers "ok"), every 5 minutes,
+alerting the Super Admins.
+
+The **Uptime** box underneath is the older 5-minute check (homepage, tickets,
+programme, fixtures data, database, the stream on match days) with its
+outages.
 
 
 

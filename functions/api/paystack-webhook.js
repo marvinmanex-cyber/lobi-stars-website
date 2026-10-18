@@ -24,6 +24,10 @@ export async function onRequestPost({ request, env, waitUntil }) {
   }
 
   const event = JSON.parse(rawBody);
+  // Website Health: when Paystack last sent a (signed) confirmation.
+  const seen = env.DB.prepare(`INSERT INTO settings (key, value, updated_at) VALUES ('paystack_last_webhook', ?, datetime('now')) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`)
+    .bind(JSON.stringify({ at: new Date().toISOString(), event: String(event.event || '').slice(0, 40) })).run().catch(() => {});
+  try { waitUntil(seen); } catch { /* recorded best-effort */ }
   // Lobi Stars Rewards: a refund or a chargeback/dispute on any payment takes
   // back the Star Points earned on it (the balance may go below zero).
   if (/^(refund\.processed|charge\.dispute\.create)$/.test(event.event || '')) {

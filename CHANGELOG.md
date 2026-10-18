@@ -8,6 +8,36 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-18: Website Health (Super Admins only)
+
+**What changed**
+- Settings › Website Health is rebuilt: about 55 read-only checks in 9 groups
+  (pages and content, fan journeys, payments, email, matchday and broadcast,
+  background tasks, security, outside services, speed). Each problem says what
+  is wrong, why it matters, numbered fix steps and who should fix it, with
+  Check again, Fix it (safe fixes only, confirmed and logged), Copy details
+  for developer, Mark as acknowledged and History. A score card, group cards,
+  "Run full check now" with progress, and a printable PDF report.
+- A **🩺 Website Health** button at the top of the Dashboard with a green /
+  amber / red dot and the number of problems.
+- Only the three Super Admins can open it (a new permission, refused to every
+  other role on the server; Head of Media no longer sees it).
+- Automatic: a full check every hour, a quick check every 15 minutes on home
+  matchdays, an email and a bell alert when something breaks (to
+  dkakaan@lobistarsfc.com; not repeated for 6 hours unless worse; "Resolved"
+  when fixed), a daily summary of warnings at 08:00, 90 days of history and the
+  30-day uptime.
+- New public address `/health/ping` (answers "ok") for an outside uptime
+  monitor. The website now records when Paystack last sent a payment
+  confirmation, so a missing webhook is noticed.
+
+**Staff need to:** nothing. Super Admins: set up the free outside monitor once
+(handover A23).
+
+**Handbook:** STAFF-GUIDE.md › 29. Website Health.
+
+---
+
 ## 2026-10-18: Weekly encrypted backup by email (and into Google Drive)
 
 **What changed**

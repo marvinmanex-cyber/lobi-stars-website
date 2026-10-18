@@ -37,6 +37,7 @@ export async function onRequestPut({ request, env }) {
     if (unknown.length) return json({ error: `Unknown permission: ${unknown.join(', ')}` }, 400);
     // Managing staff and roles stays with Super Admins, so nobody can give themselves more access.
     if (b.permissions.includes('staff.manage')) return json({ error: 'Only the Super Admin role manages staff and roles.' }, 400);
+    if (b.permissions.includes('website.health')) return json({ error: 'Only the three Super Admins can open Website Health.' }, 400);
     if (def.contractor && b.permissions.some(p => /^(fans\.|rewards\.|partners\.enquiries|logs\.|staff\.|approvals\.)/.test(p))) return json({ error: "The Contractor role can't have fans' data, downloads, logs, staff or approvals." }, 400);
     next = ALL_PERMISSIONS.filter(p => b.permissions.includes(p));
   }

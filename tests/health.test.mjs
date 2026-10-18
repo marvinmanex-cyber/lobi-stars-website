@@ -18,9 +18,10 @@ test('public health endpoint', async () => {
   assert.deepEqual(Object.keys(d).sort(), ['ok', 'time']);
 });
 
-test('check now, cron secret and 5-minute throttle, summary', async () => {
-  const now = await fetch(`${BASE}/api/admin/health`, { method: 'POST', headers: ADMIN }).then(r => r.json());
-  assert.equal(now.ok, true);
+test('the 5-minute uptime checks: cron secret, throttle, summary on the Website Health page', async () => {
+  // The timer job runs the uptime round (at most every 5 minutes); the page shows it under "Uptime".
+  await fetch(`${BASE}/api/internal/health-check`, { method: 'POST', headers: { Authorization: `Bearer ${CRON}` } });
+  const now = (await fetch(`${BASE}/api/admin/health`, { headers: ADMIN }).then(r => r.json())).uptime;
   const byKey = Object.fromEntries(now.checks.map(c => [c.key, c]));
   for (const k of ['home', 'tickets', 'programme', 'fixtures_api', 'database']) {
     assert.equal(byKey[k].ok, true, `${k}: ${byKey[k].error}`);

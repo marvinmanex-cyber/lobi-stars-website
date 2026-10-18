@@ -103,7 +103,7 @@ const CATEGORIES: Cat[] = [
     { id: 'inbox-settings', label: 'Inbox Emails & Templates', href: '/admin/inbox/?settings=1', perm: 'fans.inbox.reply', hint: 'New-message alerts, daily summary, saved replies' },
     { id: 'export-log', label: 'Export Log', href: '/admin/fans/#exportLog', perm: 'logs.view|fans.export' },
     { id: 'activity', label: 'Activity Log', href: '/admin/activity/', perm: 'logs.view' },
-    { id: 'health', label: 'Website Health', href: '/admin/health/', perm: 'logs.view|settings.site', hint: 'Is the site up? Checks every 5 minutes, incidents and response times' },
+    { id: 'health', label: '🩺 Website Health', href: '/admin/health/', perm: 'website.health', hint: 'Finds problems anywhere on the website and explains how to fix them (Super Admins only)' },
     { id: 'backup', label: 'Data Backup', href: '/admin/backup/', perm: 'staff.manage', hint: 'Download a copy of all website data (Super Admin)' },
   ] },
 ];

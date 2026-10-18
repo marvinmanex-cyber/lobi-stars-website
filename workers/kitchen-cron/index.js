@@ -5,7 +5,9 @@
 //    (/api/internal/kitchen-repeat);
 //  - post Match Day Programmes to Telegram / Facebook at their scheduled time
 //    (/api/internal/social-autopost, Share Hub);
-//  - check the website is up, every 5 minutes (/api/internal/health-check);
+//  - check the website is up, every 5 minutes, and run Website Health (hourly full check,
+//    matchday quick checks, 08:00 summary) one step per call (/api/internal/health-check:
+//    called again straight away while it answers { more: true }, at most 45 times);
 //  - send last month's partner reports from the 2nd, when switched on (/api/internal/partner-reports);
 //  - Lobi Stars Rewards: release ticket points of played matches, prediction results, birthdays (/api/internal/rewards-run, every 10 min).
 //  - the monthly staff access review email to the Super Admins, on the 1st (/api/internal/access-review);
@@ -20,8 +22,12 @@ export default {
     const site = env.SITE_URL || 'https://lobistarsfc.com';
     ctx.waitUntil(Promise.allSettled(CALLS.map(async path => {
       try {
-        const r = await fetch(`${site}${path}`, { method: 'POST', headers: { Authorization: `Bearer ${env.CRON_SECRET}` } });
-        if (!r.ok) console.error(path, r.status, await r.text());
+        // Website Health runs in steps: keep calling while there are steps left.
+        for (let i = 0; i < (path === '/api/internal/health-check' ? 45 : 1); i++) {
+          const r = await fetch(`${site}${path}`, { method: 'POST', headers: { Authorization: `Bearer ${env.CRON_SECRET}` } });
+          if (!r.ok) { console.error(path, r.status, await r.text()); break; }
+          if (path !== '/api/internal/health-check' || !(await r.json().catch(() => ({}))).more) break;
+        }
       } catch (err) {
         console.error(`${path} failed`, err);
       }

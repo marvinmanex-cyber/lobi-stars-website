@@ -15,6 +15,21 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       </div>
       <p class="db-date" id="today"></p>
     </div>
+    <a class="db-health" id="healthBtn" href="/admin/health/" hidden><span class="db-hdot" id="healthDot"></span><span><strong>🩺 Website Health</strong><small id="healthTxt">Checking…</small></span></a>
+    <script is:inline>
+    // Website Health button: only shown to the three Super Admins (the API answers 403 to everyone else).
+    (function () {
+      var code = sessionStorage.getItem('ls_admin_code') || '__session__';
+      fetch('/api/admin/health?brief=1', { headers: { 'x-admin-code': code }, cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+        if (!d) return;
+        var c = { FAIL: '#C11A1F', WARNING: '#D97706', PASS: '#15803D' }[d.status] || '#94A3B8';
+        var n = (d.fail || 0) + (d.warning || 0);
+        document.getElementById('healthDot').style.background = c;
+        document.getElementById('healthTxt').textContent = d.status == null ? 'Not checked yet' : n ? n + (n === 1 ? ' problem' : ' problems') + (d.fail ? ' (' + d.fail + ' broken)' : '') : 'All systems working';
+        document.getElementById('healthBtn').hidden = false;
+      }).catch(function () {});
+    })();
+    </script>
 
     <section class="db-match" id="match" hidden aria-label="Next match"></section>
     <section class="db-cards" id="cards" aria-label="Key figures"></section>
@@ -29,6 +44,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 <style>
   .db { max-width: 1200px; padding-top: 28px; padding-bottom: 80px; }
   .db-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .db-health { display: flex; align-items: center; gap: 14px; padding: 14px 18px; margin: 0 0 18px; border-radius: 16px; border: 1px solid var(--a-line); background: var(--a-card); color: inherit; text-decoration: none; }
+  .db-health:hover { border-color: #C11A1F; }
+  .db-health strong { display: block; font-size: 17px; } .db-health small { color: var(--a-muted); font-size: 14px; }
+  .db-hdot { width: 16px; height: 16px; border-radius: 50%; background: #94A3B8; flex: none; box-shadow: 0 0 0 5px rgba(148, 163, 184, .2); }
+  .db-health[hidden] { display: none; }
   .db-hello { margin: 0; color: var(--lt); font-weight: 600; }
   .db-title { margin: 2px 0 0; font: 400 44px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .db-date { margin: 0; color: var(--lt); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }

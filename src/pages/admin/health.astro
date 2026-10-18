@@ -1,98 +1,197 @@
 ---
-// Settings › Website Health: is the site up? The cron Worker checks the key
-// pages, the database and (on match days) the commentary stream every 5
-// minutes. Shows the latest result, uptime for 24 hours / 7 days, average
-// response time and incidents, with "Check now".
+// Settings › Website Health (only the three Super Admins). Finds problems anywhere
+// on the website and explains in plain English how to fix them: a score card,
+// category cards, problems first (why it matters, numbered fix steps, who should
+// fix it, Check again / Fix it / Copy details / Acknowledge / history), passed
+// checks folded away, a printable (PDF) report, plus the 5-minute uptime monitor.
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
 ---
-<Layout title="Website Health | Lobi Stars Admin" description="Website uptime and incidents." noindex>
+<Layout title="Website Health | Lobi Stars Admin" description="Website Health: problems and how to fix them." noindex>
   <div class="wrap wh">
     <AdminNav current="health" />
     <header class="wh-head">
-      <div><div class="stag">Settings</div><h1 class="stitle">Website <span class="r">Health</span></h1></div>
-      <button type="button" class="btn-p" id="now">Check now</button>
+      <div><div class="stag">Settings</div><h1 class="stitle">🩺 Website <span class="r">Health</span></h1></div>
+      <div class="wh-acts noprint">
+        <button type="button" class="btn-p" id="runAll">Run full check now</button>
+        <button type="button" class="btn-o" id="testEmail">Send test email</button>
+        <button type="button" class="btn-o" id="report">Download report (PDF)</button>
+      </div>
     </header>
-    <p class="wh-lede">The site checks itself every 5 minutes. If something stops working it appears here and in the bell, and Super Admins get an email (once email is set up). <span id="last"></span></p>
-    <p class="wh-warn" id="cronWarn" hidden>Automatic checks need the cron Worker (HANDOVER-TODO A14). Until then, use <b>Check now</b>.</p>
     <p class="wh-msg" id="msg" role="status" aria-live="polite" hidden></p>
-    <section class="wh-grid" id="grid" aria-label="Checks"><p class="muted">Loading…</p></section>
-    <section class="wh-card">
-      <h2>Incidents</h2>
-      <div id="inc"><p class="muted">Loading…</p></div>
+
+    <section class="wh-score" id="score" aria-live="polite">
+      <div class="wh-dot" id="scoreDot"></div>
+      <div><h2 id="scoreTitle">Loading…</h2><p id="scoreSub" class="wh-sub"></p></div>
     </section>
+    <div class="wh-prog noprint" id="prog" hidden><div class="wh-bar"><span id="bar"></span></div><p id="progText"></p></div>
+
+    <section class="wh-cats" id="cats" aria-label="Categories"></section>
+
+    <section class="wh-card"><h2>Needs attention</h2><div id="problems"><p class="muted">Loading…</p></div></section>
+    <details class="wh-card" id="okWrap"><summary><h2 id="okTitle">Everything that's working</h2></summary><div id="ok"></div></details>
+
     <section class="wh-card">
-      <h2>Outside monitor (optional)</h2>
-      <p class="wh-note">For a second opinion from outside Cloudflare, add a free monitor (e.g. UptimeRobot) for <code>https://lobistarsfc.com/api/health</code>: it answers 200 when the site and its database work.</p>
+      <h2>Uptime</h2>
+      <p class="wh-note" id="uptimeLine"></p>
+      <div id="inc"></div>
+    </section>
+    <section class="wh-card noprint">
+      <h2>If the whole website goes down</h2>
+      <p class="wh-note">The website can't report its own outage. Set up a free outside monitor once: <strong>UptimeRobot</strong> (uptimerobot.com) › Add New Monitor › type <strong>HTTP(s)</strong>, URL <code>https://lobistarsfc.com/health/ping</code>, every <strong>5 minutes</strong>, and add the Super Admins' email addresses as alert contacts. The address only answers "ok" and shows nothing else.</p>
     </section>
   </div>
 </Layout>
 
 <style>
-  .wh { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
-  .wh-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
-  .wh-lede { margin: 0 0 16px; color: var(--a-muted); line-height: 1.55; }
-  .wh-warn { margin: 0 0 16px; padding: 12px 16px; border-radius: 12px; background: #FFF7E6; border: 1px solid #F6D58E; color: #7A4B00; }
-  .wh-msg { margin: 0 0 14px; padding: 10px 14px; border-radius: 10px; background: #E8F7EE; color: #17643A; font-weight: 600; }
-  .wh-msg.err { background: #FDECEC; color: #A3161B; }
-  .wh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .wh :global(.wh-c) { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 14px; padding: 14px 16px; border-left: 5px solid var(--c); }
-  .wh :global(.wh-c b) { display: block; font-size: 16px; color: var(--a-ink); }
-  .wh :global(.wh-c .st) { display: inline-block; margin: 6px 0; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--bg); color: var(--fg); }
-  .wh :global(.wh-c small) { display: block; color: var(--a-muted); font-size: 13px; line-height: 1.5; }
+  .wh-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
+  .wh-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+  .wh-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; margin: 0 0 12px; }
+  .wh-msg.err { background: #FEE2E2; color: #991B1B; }
+  .wh-score { display: flex; gap: 16px; align-items: center; padding: 20px; border-radius: 18px; margin-bottom: 14px; background: var(--a-card); border: 2px solid var(--sc, #94A3B8); }
+  .wh-score h2 { margin: 0; font: 800 26px 'Barlow Condensed', 'Barlow', sans-serif; color: var(--sc, inherit); }
+  .wh-sub { margin: 4px 0 0; color: var(--a-muted); font-size: 14px; }
+  .wh-dot { width: 22px; height: 22px; border-radius: 50%; flex: none; background: var(--sc, #94A3B8); box-shadow: 0 0 0 6px color-mix(in srgb, var(--sc, #94A3B8) 20%, transparent); }
+  .wh-prog { margin: 0 0 14px; } .wh-bar { height: 10px; border-radius: 999px; background: var(--a-line); overflow: hidden; }
+  .wh-bar span { display: block; height: 100%; width: 0; background: #C11A1F; transition: width .3s; } .wh-prog p { margin: 6px 0 0; font-size: 13px; color: var(--a-muted); }
+  .wh-cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .wh :global(.wh-cat) { text-align: left; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--a-line); border-left: 6px solid var(--c, #94A3B8); background: var(--a-card); cursor: pointer; font: inherit; color: inherit; }
+  .wh :global(.wh-cat b) { display: block; font-size: 15px; } .wh :global(.wh-cat small) { color: var(--a-muted); font-size: 13px; }
+  .wh :global(.wh-cat.on) { outline: 2px solid var(--c); }
   .wh-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
-  .wh-card h2 { margin: 0 0 10px; font: 700 18px 'Barlow', sans-serif; }
-  .wh-note { margin: 0; color: var(--a-muted); font-size: 14px; line-height: 1.55; }
+  .wh-card h2 { margin: 0 0 10px; font: 700 18px 'Barlow', sans-serif; display: inline; }
+  .wh-card > h2 { display: block; } details.wh-card summary { cursor: pointer; }
+  .wh-note { margin: 0 0 8px; color: var(--a-muted); font-size: 14px; line-height: 1.55; }
+  .wh :global(.wh-item) { border: 1px solid var(--a-line); border-left: 6px solid var(--c); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+  .wh :global(.wh-item h3) { margin: 0 0 6px; font-size: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .wh :global(.badge) { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; color: #fff; background: var(--c); }
+  .wh :global(.wh-item p) { margin: 4px 0; font-size: 14px; line-height: 1.55; } .wh :global(.wh-item .muted) { color: var(--a-muted); }
+  .wh :global(.wh-item ol) { margin: 6px 0 6px 20px; padding: 0; font-size: 14px; line-height: 1.6; }
+  .wh :global(.wh-btns) { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .wh :global(.wh-btns button) { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: inherit; cursor: pointer; }
+  .wh :global(.wh-btns button.fix) { background: #C11A1F; border-color: #C11A1F; color: #fff; font-weight: 700; }
+  .wh :global(.wh-tech) { margin-top: 8px; font-size: 12px; } .wh :global(.wh-tech pre) { white-space: pre-wrap; word-break: break-word; background: var(--a-line); padding: 8px; border-radius: 8px; max-height: 260px; overflow: auto; }
+  .wh :global(.wh-ack) { font-size: 13px; color: #92400E; background: #FEF3C7; padding: 4px 10px; border-radius: 8px; display: inline-block; margin-top: 6px; }
+  .wh :global(.wh-hist) { font-size: 13px; margin-top: 6px; }
+  .wh :global(.wh-okrow) { display: flex; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--a-line); font-size: 14px; }
+  .wh :global(.wh-okrow span:last-child) { color: var(--a-muted); margin-left: auto; text-align: right; }
   .wh :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; }
-  .wh :global(th), .wh :global(td) { padding: 9px 12px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--a-line); }
-  .wh :global(.pill) { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
-  .wh :global(.pill.open) { background: #FEE2E2; color: #991B1B; } .wh :global(.pill.closed) { background: #DCFCE7; color: #166534; }
+  .wh :global(th), .wh :global(td) { padding: 8px 10px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--a-line); }
+  @media (max-width: 600px) { .wh-score h2 { font-size: 21px; } .wh-acts { width: 100%; } .wh-acts button { flex: 1 1 auto; } }
+  @media print {
+    :global(nav), :global(header.site-header), :global(.admin-nav), :global(aside), .noprint, .wh :global(.wh-btns) { display: none !important; }
+    details.wh-card { display: block; } details.wh-card > :global(*) { display: block !important; }
+    .wh-card, .wh :global(.wh-item) { break-inside: avoid; }
+  }
 </style>
 
 <script is:inline>
 (function () {
   const code = sessionStorage.getItem('ls_admin_code') || '__session__';
-  const H = { 'x-admin-code': code };
+  const H = { 'x-admin-code': code, 'Content-Type': 'application/json' };
   const $ = id => document.getElementById(id);
-  const el = (t, p = {}, ...k) => { const n = document.createElement(t); for (const [a, v] of Object.entries(p)) { if (a === 'class') n.className = v; else if (a === 'text') n.textContent = v; else if (a === 'style') n.setAttribute('style', v); else n.setAttribute(a, v); } k.forEach(x => x != null && n.append(x)); return n; };
-  // Database times are UTC "YYYY-MM-DD HH:MM:SS"; incident times are ISO.
-  const when = s => s ? new Date(/Z$/.test(s) ? s : s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '–';
-  const pct = v => v == null ? '–' : `${(v * 100).toFixed(v === 1 ? 0 : 1)}%`;
-  const dur = (a, b) => { const m = Math.round(((b ? new Date(b) : new Date()) - new Date(a)) / 60000); return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${m % 60} min`; };
+  const el = (t, p = {}, ...k) => { const n = document.createElement(t); for (const [a, v] of Object.entries(p)) { if (a === 'class') n.className = v; else if (a === 'text') n.textContent = v; else if (a === 'style') n.setAttribute('style', v); else if (a.startsWith('on')) n.addEventListener(a.slice(2), v); else n.setAttribute(a, v); } k.forEach(x => x != null && n.append(x)); return n; };
+  const COLOR = { FAIL: '#C11A1F', WARNING: '#D97706', PASS: '#15803D', SKIPPED: '#64748B' };
+  const LABEL = { FAIL: 'Broken', WARNING: 'Needs attention', PASS: 'Working', SKIPPED: 'Not checked' };
+  const when = s => s ? new Date(/Z$|[+-]\d\d:\d\d$/.test(s) ? s : s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '–';
+  let D = null, filter = null, running = false;
   function msg(t, ok = true) { $('msg').textContent = t; $('msg').className = 'wh-msg' + (ok ? '' : ' err'); $('msg').hidden = false; }
-  function draw(d) {
-    $('cronWarn').hidden = d.cron;
-    $('last').textContent = d.lastRun ? `Last check: ${when(d.lastRun)}.` : 'No check has run yet.';
-    $('grid').replaceChildren(...d.checks.map(c => {
-      const state = c.ok === null ? ['#94A3B8', '#F1F5F9', '#475569', c.key === 'stream' ? 'Checked on match days' : 'Not checked yet']
-        : c.ok ? (c.error ? ['#F59E0B', '#FEF3C7', '#92400E', 'Slow'] : ['#16A34A', '#DCFCE7', '#166534', 'Working']) : ['#DC2626', '#FEE2E2', '#991B1B', 'Down'];
-      return el('div', { class: 'wh-c', style: `--c:${state[0]};--bg:${state[1]};--fg:${state[2]}` },
-        el('b', { text: c.label }), el('span', { class: 'st', text: state[3] }),
-        c.error ? el('small', { text: c.error }) : null,
-        el('small', { text: `Uptime: ${pct(c.uptime24h)} (24 h) · ${pct(c.uptime7d)} (7 days)` }),
-        el('small', { text: `Average response: ${c.avgMs24h == null ? '–' : (c.avgMs24h / 1000).toFixed(2) + ' s'} · checked ${when(c.checkedAt)}` }));
-    }));
-    $('inc').replaceChildren(d.incidents.length ? el('div', { class: 'scroll' }, el('table', {},
-      el('thead', {}, el('tr', {}, ...['What', 'Started', 'Lasted', 'Problem', 'Status'].map(h => el('th', { text: h })))),
-      el('tbody', {}, ...d.incidents.map(i => el('tr', {}, el('td', { text: i.label }), el('td', { text: when(i.started_at) }),
-        el('td', { text: dur(i.started_at, i.ended_at) }), el('td', { text: i.error || '' }),
-        el('td', {}, el('span', { class: 'pill ' + (i.ended_at ? 'closed' : 'open'), text: i.ended_at ? 'Fixed' : 'Ongoing' }))))))) : el('p', { class: 'wh-note', text: 'No incidents. Everything has been working.' }));
+  async function api(body) {
+    const r = await fetch('/api/admin/health', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/health/'; throw new Error('Please sign in'); }
+    const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || d.message || 'Request failed'); return d;
   }
-  async function load() {
-    try {
-      const r = await fetch('/api/admin/health', { headers: H, cache: 'no-store' });
-      if (r.status === 401) { location.href = '/admin/login/?next=/admin/health/'; return; }
-      const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Failed'); draw(d);
-    } catch (e) { msg(e.message, false); }
+  function details(c) {
+    return [`Website Health: ${c.name} (${c.id})`, `Status: ${c.status} since ${when(c.since)}`, `Problem: ${c.problem}`, `Who: ${c.who}`, `Last checked: ${when(c.checkedAt)}`,
+      c.details ? `Technical details: ${JSON.stringify(c.details, null, 2)}` : ''].filter(Boolean).join('\n');
   }
-  $('now').addEventListener('click', async () => {
-    const b = $('now'); b.disabled = true; b.textContent = 'Checking…';
+  function item(c) {
+    const box = el('article', { class: 'wh-item', style: `--c:${COLOR[c.status]}` });
+    box.append(el('h3', {}, el('span', { class: 'badge', text: LABEL[c.status] }), el('span', { text: c.name })));
+    box.append(el('p', { text: c.problem }));
+    if (c.why) box.append(el('p', { class: 'muted', text: `Why it matters: ${c.why}` }));
+    if (c.fix && c.fix.length) box.append(el('p', {}, el('strong', { text: 'How to fix:' })), el('ol', {}, ...c.fix.map(f => el('li', { text: f }))));
+    box.append(el('p', { class: 'muted', text: `Who should fix this: ${c.who} · since ${when(c.since)} · checked ${when(c.checkedAt)}` }));
+    if (c.ack) box.append(el('span', { class: 'wh-ack', text: `Acknowledged by ${c.ack.by || 'a Super Admin'} until ${when(c.ack.until)}${c.ack.note ? `: ${c.ack.note}` : ''}` }));
+    const btns = el('div', { class: 'wh-btns' });
+    btns.append(el('button', { type: 'button', text: 'Check again', onclick: () => run('category', c.category) }));
+    if (c.fixId && D.fixes[c.fixId]) btns.append(el('button', { type: 'button', class: 'fix', text: `Fix it: ${D.fixes[c.fixId].label}`, onclick: () => fix(c) }));
+    btns.append(el('button', { type: 'button', text: 'Copy details for developer', onclick: async () => { try { await navigator.clipboard.writeText(details(c)); msg('Details copied (no passwords or keys are included).'); } catch { prompt('Copy these details:', details(c)); } } }));
+    if (!c.ack) btns.append(el('button', { type: 'button', text: 'Mark as acknowledged', onclick: () => ack(c) }));
+    const hist = el('div', { class: 'wh-hist' });
+    btns.append(el('button', { type: 'button', text: 'History', onclick: async () => {
+      try { const h = await fetch(`/api/admin/health?history=${encodeURIComponent(c.id)}`, { headers: H, cache: 'no-store' }).then(r => r.json());
+        hist.replaceChildren(h.changes.length ? el('p', { text: h.changes.map(x => `${when(x.from)}: ${LABEL[x.status]}`).join(' → ') }) : el('p', { text: 'No history yet.' }));
+      } catch (e) { msg(e.message, false); } } }));
+    box.append(btns, hist);
+    if (c.details) { const t = el('details', { class: 'wh-tech' }, el('summary', { text: 'Technical details (for the developer)' }), el('pre', { text: JSON.stringify(c.details, null, 2) })); box.append(t); }
+    return box;
+  }
+  function draw() {
+    const d = D;
+    const p = d.problems;
+    const status = p.fail ? 'FAIL' : p.warning ? 'WARNING' : d.checks.length ? 'PASS' : null;
+    $('score').style.setProperty('--sc', status ? COLOR[status] : '#94A3B8');
+    $('scoreTitle').textContent = !status ? 'Not checked yet: press "Run full check now"' : p.fail ? `${p.fail} ${p.fail === 1 ? 'thing is' : 'things are'} broken` : p.warning ? `${p.warning} ${p.warning === 1 ? 'thing needs' : 'things need'} attention` : 'All systems working';
+    $('scoreSub').textContent = [d.lastRun ? `Last full check ${when(d.lastRun.finishedAt)}` : '', p.fail && p.warning ? `plus ${p.warning} warning${p.warning === 1 ? '' : 's'}` : '', d.uptime30 != null ? `Uptime (30 days): ${(d.uptime30 * 100).toFixed(2)}%` : '', d.cron ? 'Checked automatically every hour' : 'Automatic checks need the timer job'].filter(Boolean).join(' · ');
+    $('cats').replaceChildren(...d.categories.map(c => el('button', { type: 'button', class: 'wh-cat' + (filter === c.key ? ' on' : ''), style: `--c:${c.status ? COLOR[c.status] : '#94A3B8'}`, onclick: () => { filter = filter === c.key ? null : c.key; draw(); } },
+      el('b', { text: `${c.icon} ${c.label}` }), el('small', { text: c.status ? [c.fail && `${c.fail} broken`, c.warning && `${c.warning} to look at`, `${c.pass} working`].filter(Boolean).join(' · ') : 'Not checked yet' }))));
+    const mine = d.checks.filter(c => !filter || c.category === filter);
+    const bad = mine.filter(c => c.status === 'FAIL' || c.status === 'WARNING');
+    $('problems').replaceChildren(...(bad.length ? bad.map(item) : [el('p', { class: 'wh-note', text: d.checks.length ? (filter ? 'Nothing to fix in this category.' : 'Nothing needs attention. 🎉') : 'Press "Run full check now" for the first check (about a minute).' })]));
+    const ok = mine.filter(c => c.status === 'PASS' || c.status === 'SKIPPED');
+    $('okTitle').textContent = `Everything that's working (${ok.filter(c => c.status === 'PASS').length})${ok.some(c => c.status === 'SKIPPED') ? ` · not checked (${ok.filter(c => c.status === 'SKIPPED').length})` : ''}`;
+    $('ok').replaceChildren(...ok.map(c => el('div', { class: 'wh-okrow' }, el('span', { text: c.status === 'PASS' ? '✅' : '➖' }), el('span', { text: c.name }), el('span', { text: c.problem }))));
+    const u = d.uptime;
+    $('uptimeLine').textContent = u ? `Checked every 5 minutes: ${u.checks.map(c => `${c.label} ${c.ok === null ? '–' : c.ok ? 'working' : 'DOWN'}`).join(' · ')}.` : '';
+    $('inc').replaceChildren(u && u.incidents.length ? el('div', { class: 'scroll' }, el('table', {}, el('thead', {}, el('tr', {}, ...['What', 'Started', 'Ended', 'Problem'].map(h => el('th', { text: h })))),
+      el('tbody', {}, ...u.incidents.slice(0, 10).map(i => el('tr', {}, el('td', { text: i.label }), el('td', { text: when(i.started_at) }), el('td', { text: i.ended_at ? when(i.ended_at) : 'Ongoing' }), el('td', { text: i.error || '' })))))) : el('p', { class: 'wh-note', text: 'No outages recorded.' }));
+    if (d.running && !running) follow(d.running);
+  }
+  async function load() { try { D = await api(); draw(); } catch (e) { msg(e.message, false); } }
+  function showProg(r) {
+    $('prog').hidden = false;
+    $('bar').style.width = `${Math.round((r.step / Math.max(1, r.steps)) * 100)}%`;
+    $('progText').textContent = r.done ? 'Finished.' : `Checking: ${r.current || '…'} (step ${r.step + 1} of ${r.steps})`;
+  }
+  async function follow(run) {
+    running = true; $('runAll').disabled = true;
     try {
-      const r = await fetch('/api/admin/health', { method: 'POST', headers: H });
-      const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Failed');
-      draw(d); msg('Checked just now.');
+      let r = run;
+      for (let i = 0; i < 200 && !r.done; i++) {
+        showProg(r);
+        const s = await api({ action: 'step', id: r.id });
+        r = s.run;
+        if (s.busy) await new Promise(res => setTimeout(res, 1500));
+      }
+      showProg(r);
+      await load();
+      msg(r.totals ? `Check finished: ${r.totals.pass} working, ${r.totals.warning} to look at, ${r.totals.fail} broken.` : 'Check finished.');
     } catch (e) { msg(e.message, false); }
-    finally { b.disabled = false; b.textContent = 'Check now'; }
+    finally { running = false; $('runAll').disabled = false; setTimeout(() => { $('prog').hidden = true; }, 2500); }
+  }
+  async function run(kind, only) {
+    if (running) return msg('A check is already running.', false);
+    try { const r = await api({ action: 'start', kind, only }); if (r.already) msg('A check was already running: following it.'); follow(r.run); }
+    catch (e) { msg(e.message, false); }
+  }
+  async function fix(c) {
+    const f = D.fixes[c.fixId];
+    if (!confirm(`${f.label}?\n\n${f.confirm}`)) return;
+    try { const r = await api({ action: 'fix', fixId: c.fixId, checkId: c.id, eventId: c.details && c.details.eventId }); msg(r.message || 'Done.'); run('category', c.category); }
+    catch (e) { msg(e.message, false); }
+  }
+  async function ack(c) {
+    const note = prompt(`Acknowledge "${c.name}"? It stays on the list but no repeat alerts for 24 hours.\n\nA short note (optional):`, '');
+    if (note === null) return;
+    try { await api({ action: 'ack', checkId: c.id, note }); msg('Acknowledged for 24 hours.'); load(); } catch (e) { msg(e.message, false); }
+  }
+  $('runAll').addEventListener('click', () => run('full'));
+  $('testEmail').addEventListener('click', async () => { try { const r = await api({ action: 'test_email' }); msg(r.message); } catch (e) { msg(e.message, false); } });
+  $('report').addEventListener('click', async () => {
+    $('okWrap').open = true;
+    try { await api({ action: 'report' }); } catch {}
+    window.print();
   });
   load();
 })();
