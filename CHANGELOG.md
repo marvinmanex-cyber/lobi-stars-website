@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: Footer: "Follow us on social media"
+
+**What changed**
+- The footer's social icons have one heading, **"Follow us on social media"**
+  (in gold), covering every account. The separate "Follow us on WhatsApp" line
+  is gone: the WhatsApp icon is with the others.
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-19: YouTube, TikTok and WhatsApp Channel shown before their links
 
 **What changed**

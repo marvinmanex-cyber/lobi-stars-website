@@ -2594,7 +2594,8 @@ and Website Health.
 The WhatsApp Channel items (shown now, clickable once its address is in):
 - the homepage shows the **"Join the Lobi Stars WhatsApp Channel"** card
   (just above the newsletter), with a green **Join WhatsApp Channel** button;
-- the footer shows a WhatsApp icon and a **"Follow us on WhatsApp"** link;
+- the footer's WhatsApp icon (with the other accounts under **"Follow us on
+  social media"**) opens the channel;
 - the "Join our WhatsApp Channel" strip appears on Watch Live and at the end
   of news articles.
 
