@@ -342,6 +342,7 @@ const RULES = [
   [/^\/api\/admin\/broadcast-report(\/|$)/, 'analytics.broadcast|analytics.view_all'],
   [/^\/api\/admin\/analytics-sync(\/|$)/, 'analytics.view_all'],
   [/^\/api\/admin\/analytics-google(\/|$)/, 'analytics.view_all'],
+  [/^\/api\/admin\/analytics-recommendations(\/|$)/, 'analytics.view_all'],
   [/^\/api\/admin\/analytics(\/|$)/, 'analytics.view_all'],
   [/^\/api\/admin\/export-log(\/|$)/, 'logs.view|fans.export'],
   [/^\/api\/admin\/activity(\/|$)/, 'logs.view'],

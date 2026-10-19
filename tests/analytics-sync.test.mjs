@@ -110,3 +110,30 @@ test('Google & Search figures for the Analytics page (Phase 3)', async () => {
   assert.equal(g.status.hasData, true);
   assert.ok(!JSON.stringify(g).includes('PRIVATE KEY'));
 });
+
+test('Recommendations: findings, step-by-step guides, mark as done and show again (Phase 4)', async () => {
+  assert.ok([401, 403].includes((await fetch(`${BASE}/api/admin/analytics-recommendations`)).status));
+  const get = () => fetch(`${BASE}/api/admin/analytics-recommendations`, { headers: ADMIN }).then(r => r.json());
+  const d = await get();
+  assert.ok(d.glance.length >= 3, 'at-a-glance findings');
+  assert.ok(d.glance.every(g => !/NaN|undefined|Infinity/.test(g)));
+  assert.ok(d.recs.length > 0 && d.recs.length <= 10);
+  for (const r of d.recs) {
+    assert.ok(r.id && r.title && r.finding && ['high', 'medium', 'low'].includes(r.priority));
+    assert.ok(r.steps.length >= 3, 'every recommendation has a step-by-step guide');
+    assert.ok(!/NaN|undefined/.test(r.finding + r.steps.join(' ')));
+  }
+  const kinds = {};
+  for (const r of d.recs) { const k = r.id.split(':')[0]; kinds[k] = (kinds[k] || 0) + 1; }
+  assert.ok(Object.values(kinds).every(n => n <= 3), 'no kind of advice crowds out the rest');
+  assert.equal(d.ai.enabled, false, 'the Claude summary is off by default');
+  assert.equal((await fetch(`${BASE}/api/admin/analytics-recommendations`, { method: 'POST', headers: ADMIN, body: JSON.stringify({ action: 'ai_summary' }) })).status, 409);
+
+  const first = d.recs[0];
+  await fetch(`${BASE}/api/admin/analytics-recommendations`, { method: 'POST', headers: ADMIN, body: JSON.stringify({ action: 'done', id: first.id }) });
+  const after = await get();
+  assert.ok(!after.recs.some(r => r.id === first.id), 'hidden after Mark as done');
+  assert.ok(after.done.some(r => r.id === first.id && r.done.by));
+  await fetch(`${BASE}/api/admin/analytics-recommendations`, { method: 'POST', headers: ADMIN, body: JSON.stringify({ action: 'undo', id: first.id }) });
+  assert.ok((await get()).recs.some(r => r.id === first.id), 'back after Show again');
+});

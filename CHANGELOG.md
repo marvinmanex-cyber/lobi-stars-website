@@ -8,6 +8,36 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-20: Recommendations box on the Analytics page (analytics intelligence, Phase 4)
+
+**What changed**
+- Admin › Analytics has a **Recommendations** box near the top. The website
+  analyses the last 28 days (Google search, GA4 and its own counting, compared
+  with the 28 days before) and shows:
+  - **At a glance:** a few plain-English sentences on how things are going;
+  - **recommendations**, each with a priority (Do this first / Worth doing /
+    When you have time), what was found (with the figures), a **"How to do it"
+    step-by-step guide** and a button to the right place (Search Console, News,
+    Newsletter, Share Hub…).
+- What it looks for: pages Google shows often but few people click (with a
+  suggested new title), search phrases just below the top of Google, busy
+  pages that don't appear in Google, a drop in Google clicks, phone visitors
+  leaving sooner than computer visitors, pages people leave quickly, ticket and
+  food checkouts started but not finished, few newsletter sign-ups, few visits
+  from WhatsApp and social media, supporters abroad, and a stopped sync.
+- **Mark as done** hides a recommendation for 30 days (recorded in the
+  Activity Log); **Show again** brings it back.
+- Optional **weekly summary written by Claude** (Mondays after 06:00). It is
+  **off** and costs nothing unless switched on (handover A28). It receives
+  only totals, never names, emails, phone numbers or orders.
+- Only staff with "All reports" analytics access see the box.
+
+**Staff need to:** nothing. To switch on the Claude summary, see handover A28.
+
+**Handbook:** STAFF-GUIDE.md › Recommendations.
+
+---
+
 ## 2026-10-19: "Google & Search" on the Analytics page (analytics intelligence, Phase 3)
 
 **What changed**

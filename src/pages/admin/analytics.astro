@@ -31,6 +31,15 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 
     <section class="kpis" id="kpis" aria-label="Key figures"></section>
 
+    <section class="panel recs" id="sec-recs" hidden>
+      <div class="ph"><h2>&#128161; Recommendations</h2><span class="gs-status" id="recWhen"></span></div>
+      <p class="muted small">The website looks at Google search, Google Analytics and its own figures for the <b>last 28 days</b> (compared with the 28 days before), and suggests what to do next. Open a card for a step-by-step guide. "Mark as done" hides it for 30 days.</p>
+      <div id="recAi"></div>
+      <div class="rec-glance" id="recGlance"></div>
+      <div class="rec-list" id="recList"></div>
+      <details class="rec-done" id="recDoneWrap" hidden><summary id="recDoneSum"></summary><div id="recDone"></div></details>
+    </section>
+
     <section class="panel" id="sec-sources">
       <div class="ph"><h2>Where our contacts come from</h2></div>
       <p class="muted small">Share of all contacts in the fan database that came through each source. One person can come through several sources (for example, a ticket buyer who also joined the newsletter), so these can add up to more than 100%.</p>
@@ -164,6 +173,26 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .gs :global(.gs-note) { border-radius: 10px; padding: 12px 14px; margin: 0 0 14px; font-size: 14px; background: color-mix(in srgb, #EAB308 14%, var(--a-card)); border: 1px solid color-mix(in srgb, #EAB308 40%, var(--a-line)); }
   .gs :global(.gs-note.bad) { background: #FDECEC; color: #A3161B; border-color: #F5B5B7; }
   .gs .kpis { margin-bottom: 8px; }
+  .recs { border-radius: 18px; padding: 18px 20px; background: linear-gradient(145deg, color-mix(in srgb, #EAB308 10%, var(--a-card)), var(--a-card) 70%); border: 1px solid color-mix(in srgb, #EAB308 35%, var(--a-line)); }
+  .recs :global(.rec-glance) { margin: 0 0 14px; }
+  .recs :global(.rec-glance h3) { margin-top: 4px; }
+  .recs :global(.rec-glance ul) { margin: 6px 0 0; padding-left: 20px; font-size: 15px; line-height: 1.5; }
+  .recs :global(.rec-list) { display: grid; gap: 12px; }
+  .recs :global(.rec) { border: 1px solid var(--a-line); border-left: 5px solid var(--pc, #0EA5E9); border-radius: 12px; background: var(--a-card); padding: 14px 16px; min-width: 0; }
+  .recs :global(.rec-top) { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
+  .recs :global(.pill) { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; padding: 5px 9px; border-radius: 999px; background: color-mix(in srgb, var(--pc, #0EA5E9) 16%, var(--a-card)); color: color-mix(in srgb, var(--pc, #0EA5E9) 85%, var(--a-ink)); }
+  .recs :global(.pill.area) { --pc: #64748B; }
+  .recs :global(.rec h4) { margin: 0 0 6px; font: 700 18px/1.25 'Barlow', sans-serif; }
+  .recs :global(.rec p) { margin: 0 0 8px; font-size: 14.5px; line-height: 1.5; }
+  .recs :global(.rec summary) { cursor: pointer; font-weight: 700; color: var(--red); padding: 4px 0; }
+  .recs :global(.rec ol) { margin: 8px 0 10px; padding-left: 22px; font-size: 14.5px; line-height: 1.55; }
+  .recs :global(.rec ol li) { margin-bottom: 6px; overflow-wrap: anywhere; }
+  .recs :global(.rec-act) { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .recs :global(.rec-none) { padding: 14px; border-radius: 12px; background: color-mix(in srgb, #10B981 12%, var(--a-card)); }
+  .recs :global(.rec-ai) { border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; background: color-mix(in srgb, #8B5CF6 10%, var(--a-card)); border: 1px solid color-mix(in srgb, #8B5CF6 30%, var(--a-line)); font-size: 14.5px; line-height: 1.55; white-space: pre-line; }
+  .recs .rec-done { margin-top: 14px; font-size: 14px; }
+  .recs .rec-done summary { cursor: pointer; color: var(--lt); }
+  @media (max-width: 760px) { .recs { padding: 14px 12px; } }
   /* Wide tables scroll sideways on phones instead of squeezing page addresses. */
   #gsPages :global(table) { min-width: 720px; }
   #gsQueries :global(table) { min-width: 460px; }
@@ -340,6 +369,66 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       G.countries.map(c => `<tr><td>${esc(countryName(c.value))}</td><td class="n">${fmt(c.clicks)}</td><td class="n">${fmt(c.impressions)}</td></tr>`), 'No search figures in this period.');
   }
 
+  // ── Recommendations (last 28 days; only for staff with "All reports") ──
+  const PRI = { high: ['Do this first', '#E31E24'], medium: ['Worth doing', '#EAB308'], low: ['When you have time', '#10B981'] };
+  async function recPost(body) {
+    const r = await fetch('/api/admin/analytics-recommendations', { method: 'POST', headers: { 'x-admin-code': code, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Something went wrong');
+    return d;
+  }
+  async function loadRecs() {
+    try {
+      const res = await fetch('/api/admin/analytics-recommendations', { headers: { 'x-admin-code': code } });
+      if (res.status === 403 || res.status === 401) { $('sec-recs').hidden = true; return; }
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || 'Could not load the recommendations');
+      $('sec-recs').hidden = false;
+      renderRecs(d);
+    } catch (e) {
+      $('sec-recs').hidden = false;
+      $('recList').innerHTML = `<p class="gs-note bad">${esc(e.message)}</p>`;
+    }
+  }
+  const linkBtn = l => l ? `<a class="btn-o sm" href="${esc(l.href)}"${l.external ? ' target="_blank" rel="noopener"' : ''}>${esc(l.label)}${l.external ? ' &#8599;' : ''}</a>` : '';
+  function recCard(r, isDone) {
+    const [pl, pc] = PRI[r.priority] || PRI.medium;
+    return `<article class="rec" style="--pc:${pc}">
+      <div class="rec-top"><span class="pill">${pl}</span><span class="pill area">${esc(r.area)}</span></div>
+      <h4>${esc(r.title)}</h4>
+      <p>${esc(r.finding)}</p>
+      <details${isDone ? '' : ''}><summary>How to do it (${r.steps.length} steps)</summary><ol>${r.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></details>
+      <div class="rec-act">${linkBtn(r.link)}${isDone
+        ? `<span class="gs-status">Marked done ${esc(fmtWat(r.done.at))} by ${esc(r.done.by)}</span><button type="button" class="btn-o sm" data-undo="${esc(r.id)}">Show again</button>`
+        : `<button type="button" class="btn-o sm" data-done="${esc(r.id)}">&#10003; Mark as done</button>`}</div>
+    </article>`;
+  }
+  function renderRecs(d) {
+    $('recWhen').textContent = d.latest.gsc ? `Search figures to ${d.latest.gsc}${d.latest.ga4 ? ', GA4 to ' + d.latest.ga4 : ''}` : '';
+    $('recGlance').innerHTML = d.glance.length ? `<h3>At a glance</h3><ul>${d.glance.map(g => `<li>${esc(g)}</li>`).join('')}</ul>` : '';
+    $('recList').innerHTML = d.recs.length ? d.recs.map(r => recCard(r, false)).join('')
+      : '<p class="rec-none">&#9989; Nothing needs attention right now. New recommendations appear here as the figures change (the figures are refreshed every morning).</p>';
+    $('recDoneWrap').hidden = !d.done.length;
+    $('recDoneSum').textContent = `Marked as done (${d.done.length})`;
+    $('recDone').innerHTML = d.done.map(r => recCard(r, true)).join('');
+    const ai = d.ai || {};
+    $('recAi').innerHTML = ai.summary && ai.summary.text
+      ? `<div class="rec-ai"><b>&#129302; Weekly summary by Claude</b> <span class="gs-status">(${esc(fmtWat(ai.summary.at))})</span>\n${esc(ai.summary.text)}</div>${ai.enabled ? '<p><button type="button" class="btn-o sm" id="aiNow">Write a new summary now</button></p>' : ''}`
+      : ai.enabled ? '<p><button type="button" class="btn-o sm" id="aiNow">Write the weekly summary now</button></p>' : '';
+    $('aiNow')?.addEventListener('click', async e => {
+      const b = e.currentTarget; b.disabled = true; b.textContent = 'Writing…';
+      try { await recPost({ action: 'ai_summary' }); loadRecs(); } catch (err) { b.textContent = err.message; }
+    });
+  }
+  $('sec-recs').addEventListener('click', async e => {
+    const b = e.target.closest('[data-done],[data-undo]');
+    if (!b) return;
+    b.disabled = true; b.textContent = 'Saving…';
+    const card = b.closest('.rec'); if (card) card.style.opacity = '.5';
+    try { await recPost(b.dataset.done ? { action: 'done', id: b.dataset.done } : { action: 'undo', id: b.dataset.undo }); loadRecs(); }
+    catch (err) { b.disabled = false; b.textContent = err.message; }
+  });
+
   // "Sync now": start a sync of the last 4 days, then step through it.
   $('gsSync').addEventListener('click', async () => {
     if (syncing) return;
@@ -358,7 +447,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('gsStatus').innerHTML = run && run.failures && run.failures.length ? `Finished with problems: ${esc(run.failures.map(f => f.task).join(', '))}` : `Sync finished: ${fmt(run ? run.rows : 0)} rows updated`;
       syncing = false;
       const q = new URLSearchParams({ range }); if (range === 'custom') { q.set('from', from); q.set('to', to); }
-      setTimeout(() => loadGoogle(q), 1500);
+      setTimeout(() => { loadGoogle(q); loadRecs(); }, 1500);
     } catch (e) {
       $('gsStatus').textContent = e.message;
     } finally { syncing = false; $('gsSync').disabled = false; }
@@ -419,5 +508,6 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   $('customForm').addEventListener('submit', e => { e.preventDefault(); range = 'custom'; from = $('from').value; to = $('to').value; load(); });
   document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x.dataset.range === range));
   load();
+  loadRecs();
 })();
 </script>

@@ -17,6 +17,7 @@
 // data: Google only returns totals per page, query, country, device, channel.
 import { accessToken, serviceAccount } from './googleAuth.js';
 import { logAdminAction } from './adminSession.js';
+import { weeklyAiTick } from './analyticsInsights.js';
 
 export const KEY_EVENTS = ['page_view', 'ticket_purchase_start', 'ticket_purchase_complete', 'kitchen_order_start', 'kitchen_order_complete',
   'newsletter_signup', 'membership_signup', 'watch_live_click', 'whatsapp_channel_join_click', 'social_click', 'prediction_submitted'];
@@ -180,6 +181,8 @@ export async function analyticsTick(env) {
     const s2 = await startSync(env, { trigger: 'daily', by: 'Daily sync' });
     return { more: !!s2.run && !s2.already };
   }
+  // Optional weekly Claude summary (off unless AI_SUMMARY=on): never stops the sync.
+  try { await weeklyAiTick(env); } catch (err) { console.error('[analytics] ai summary', err); }
   return { more: false };
 }
 

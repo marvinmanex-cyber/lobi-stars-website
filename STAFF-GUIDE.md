@@ -496,6 +496,30 @@ top of the page and compares with the period before):
 
 The last 2–3 days of search figures are always low: Google adds them late.
 
+### Recommendations (Admin → Analytics)
+
+Near the top of the Analytics page, the **Recommendations** box tells you
+what the figures mean and what to do about them. It always looks at the
+**last 28 days** compared with the 28 days before (the period buttons don't
+change it), and is refreshed every morning after the Google sync.
+
+- **At a glance:** short sentences: Google clicks and appearances, the
+  phrase people search most, how many visits come from abroad, GA4 visits,
+  phones vs computers, ticket checkouts.
+- **Each card** shows how urgent it is (**Do this first**, **Worth doing**,
+  **When you have time**), what was found, with the figures, and
+  **How to do it**: tap it for numbered steps. The button on the card opens
+  the right place (Search Console, Admin › News, Newsletter, Share Hub…).
+- **Mark as done** when you have dealt with it: the card is hidden for 30
+  days and listed under "Marked as done" (with who and when; also in the
+  Activity Log). **Show again** brings it back early. If the problem is still
+  there after 30 days, the card returns by itself.
+- Changes to page titles and descriptions are code changes: send the
+  suggested wording to your web developer, or ask Claude in VS Code.
+- Optional: a **weekly summary written by Claude** at the top of the box
+  (Mondays). It's off unless the club switches it on (handover A28; a small
+  monthly cost). It is sent only totals, never personal details.
+
 ### The analytics dashboard (Admin → Analytics)
 
 **Choose a period** at the top: Today, 7 days, 30 days, This season (from the

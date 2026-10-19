@@ -52,6 +52,8 @@ these in git.
 | `GA4_PROPERTY_ID` | Analytics › Google & Search (daily sync, Phase 2) | The GA4 property number (Admin › Property settings), e.g. `123456789`. |
 | `GSC_SITE_URL` | Analytics › Google & Search (daily sync, Phase 2) | `sc-domain:lobistarsfc.com`. |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | Analytics › Google & Search (daily sync, Phase 2) | **Secret.** The Google Cloud service account key (whole JSON). The account needs Viewer in GA4 and access in Search Console. |
+| `AI_SUMMARY` | Analytics › Recommendations: weekly Claude summary (optional) | `on` to switch on (needs `ANTHROPIC_API_KEY`). Anything else = off (default). |
+| `ANTHROPIC_API_KEY` | Weekly Claude summary (optional) | **Secret.** From console.anthropic.com › API keys. Only used when `AI_SUMMARY=on`. Optional `AI_SUMMARY_MODEL` (default `claude-haiku-5-5`). |
 | `ANALYTICS_SYNC_FAKE` | Local testing only | `1` = pretend Google answers (tests/analytics-sync.test.mjs). Never set on the live site. |
 | `FAN_EMAIL_FROM` | Fan account / reminder emails (optional) | Falls back to `RESEND_FROM`. |
 | `NEWSLETTER_FROM` | The weekly newsletter (optional) | e.g. `Lobi Stars FC <news@lobistarsfc.com>`; falls back to `RESEND_FROM`. |
