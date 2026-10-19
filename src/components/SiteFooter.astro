@@ -1,6 +1,6 @@
 ---
 import { FOOTER_TAGLINE } from '../lib/site';
-import { SOCIAL_VISIBLE, WHATSAPP_CHANNEL_URL, WHATSAPP_ICON } from '../data/social';
+import { SOCIAL_SHOWN, WHATSAPP_CHANNEL_URL, WHATSAPP_CHANNEL_SHOWN, WHATSAPP_ICON } from '../data/social';
 import { optionalClub } from '../lib/nav';
 import PartnerLogo from './partners/PartnerLogo.astro';
 import { getPartners } from '../lib/partners';
@@ -50,20 +50,26 @@ const year = new Date().getFullYear();
           <span>Lobi Stars<small>Football Club</small></span>
         </a>
         <p>{FOOTER_TAGLINE}</p>
-        {SOCIAL_VISIBLE.length > 0 && (
+        {SOCIAL_SHOWN.length > 0 && (
           <ul class="sf-social">
-            {SOCIAL_VISIBLE.map(s => (
-              <li><a class={`sf-s--${s.id}`} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={`Lobi Stars on ${s.label}`}>
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d={s.icon} /></svg>
-              </a></li>
+            {SOCIAL_SHOWN.map(s => (
+              <li>{s.live
+                ? <a class={`sf-s--${s.id}`} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={`Lobi Stars on ${s.label}`}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d={s.icon} /></svg>
+                  </a>
+                : <span class={`sf-s--${s.id} sf-soon`} role="img" aria-label={`Lobi Stars on ${s.label} (coming soon)`} title="Coming soon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d={s.icon} /></svg>
+                  </span>}</li>
             ))}
           </ul>
         )}
-        {WHATSAPP_CHANNEL_URL && (
-          <a class="sf-wa" href={WHATSAPP_CHANNEL_URL} target="_blank" rel="noopener noreferrer" data-track="whatsapp_click" data-track-label="channel-footer">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d={WHATSAPP_ICON} /></svg>Follow us on WhatsApp
-          </a>
-        )}
+        {WHATSAPP_CHANNEL_SHOWN && (WHATSAPP_CHANNEL_URL
+          ? <a class="sf-wa" href={WHATSAPP_CHANNEL_URL} target="_blank" rel="noopener noreferrer" data-track="whatsapp_click" data-track-label="channel-footer">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d={WHATSAPP_ICON} /></svg>Follow us on WhatsApp
+            </a>
+          : <span class="sf-wa sf-soon" title="Coming soon">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d={WHATSAPP_ICON} /></svg>Follow us on WhatsApp<span class="sr-only"> (coming soon)</span>
+            </span>)}
       </div>
 
       <form class="sf-news" id="newsletterForm" novalidate>
@@ -130,7 +136,7 @@ const year = new Date().getFullYear();
   .sf-brand p { margin: 16px 0 0; max-width: 420px; font-size: 14px; line-height: 1.7; color: rgba(255, 255, 255, .7); }
   .sf-social { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0 0; padding: 0; }
   /* Each platform in its own brand colours (white logo on the brand colour). */
-  .sf-social a {
+  .sf-social a, .sf-social .sf-soon {
     width: 44px; height: 44px; border-radius: 50%; border: 1px solid transparent;
     display: flex; align-items: center; justify-content: center; transition: transform .2s, filter .2s;
   }
@@ -139,6 +145,9 @@ const year = new Date().getFullYear();
   .sf-wa svg { width: 18px; height: 18px; fill: #25D366; flex-shrink: 0; }
   .sf-wa:hover, .sf-wa:focus-visible { text-decoration: underline; }
   .sf-social a:hover, .sf-social a:focus-visible { transform: translateY(-2px); filter: brightness(1.12); }
+  /* Not connected yet (address still to come): shown, but nothing happens on click. */
+  .sf-soon { cursor: default; }
+  .sf-wa.sf-soon:hover { text-decoration: none; }
   .sf-social .sf-s--facebook { background: #1877F2; }
   .sf-social .sf-s--x { background: #000; border-color: rgba(255, 255, 255, .35); }
   .sf-social .sf-s--instagram { background: radial-gradient(circle at 30% 107%, #FDF497 0%, #FDF497 5%, #FD5949 45%, #D6249F 60%, #285AEB 90%); }

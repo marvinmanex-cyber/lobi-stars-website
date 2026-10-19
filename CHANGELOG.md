@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: YouTube, TikTok and WhatsApp Channel shown before their links
+
+**What changed**
+- The YouTube, TikTok and WhatsApp Channel icons (footer), the "Follow us on
+  WhatsApp" link, the homepage "Join the Lobi Stars WhatsApp Channel" card and
+  the WhatsApp Channel strips (Watch Live, news articles) are now **visible**.
+  Until the club sends each address they are **not clickable** (nothing
+  happens; "Coming soon" on hover); the Contact page lists them as text.
+- When an address is put in (Content CMS › Social links, replacing the
+  `REPLACE_WITH_…` placeholder), that item becomes a working link with no other
+  change. Facebook, X and Instagram work as before.
+
+**Staff need to:** send or enter the three addresses (handover C5).
+
+---
+
 ## 2026-10-19: Homepage on phones: shorter match section
 
 **What changed**

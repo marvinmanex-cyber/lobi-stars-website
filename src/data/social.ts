@@ -34,11 +34,25 @@ export const SOCIAL: SocialLink[] = [
   { id: 'whatsappChannel', label: 'WhatsApp Channel', url: social.whatsappChannel || '', icon: ICONS.whatsappChannel },
 ].map(s => ({ ...s, url: s.url.trim() }));
 
-/** Only the platforms with a real address: what is shown on the site. */
+/** Still a "REPLACE_WITH_…" placeholder (the club will send the address)? */
+export const isPlaceholder = (url: string | undefined | null): boolean => /^REPLACE_WITH/i.test(String(url || '').trim());
+
+/** Only the platforms with a real address (links that work). */
 export const SOCIAL_VISIBLE: SocialLink[] = SOCIAL.filter(s => isRealUrl(s.url));
 
-/** The WhatsApp Channel address ('' while it is a placeholder): the homepage card and the footer link. */
+/**
+ * What the site shows: real addresses as links, and placeholders as the same icon
+ * that is not a link yet ("coming soon": nothing happens on click). An empty
+ * address means the club has no such account: not shown at all.
+ */
+export const SOCIAL_SHOWN: (SocialLink & { live: boolean })[] = SOCIAL
+  .filter(s => isRealUrl(s.url) || isPlaceholder(s.url))
+  .map(s => ({ ...s, url: isRealUrl(s.url) ? s.url : '', live: isRealUrl(s.url) }));
+
+/** The WhatsApp Channel address ('' while it is a placeholder). */
 export const WHATSAPP_CHANNEL_URL: string = isRealUrl(social.whatsappChannel) ? social.whatsappChannel.trim() : '';
+/** Show the WhatsApp Channel card and footer link (as a link once the address is real, before that not clickable). */
+export const WHATSAPP_CHANNEL_SHOWN: boolean = !!WHATSAPP_CHANNEL_URL || isPlaceholder(social.whatsappChannel);
 
 /** The WhatsApp icon on its own (for buttons). */
 export const WHATSAPP_ICON = ICONS.whatsappChannel;
