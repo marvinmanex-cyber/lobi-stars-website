@@ -58,7 +58,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | B2 | **Year founded** | The site says 1969 (footer and history); some sources differ. Confirm the year. |
 | B3 | **CAF appearances** | Which seasons (the site has 2019, unconfirmed). |
 | B4 | **History timeline** | Confirm or correct the four timeline entries (1999, 2003, 2018, 2019), or send a new list. |
-| B5 | **Club stats and tagline** | Confirm the footer tagline ("The Pride of Benue. Proudly representing Makurdi and Benue State since 1969."). |
+| B5 | **Club stats and tagline** | Confirm the footer tagline ("The Pride of Benue. Proudly representing Benue State since 1969."; Makurdi removed at the club's request, 19 Oct 2026). |
 | B6 | **Season start date** | First day of the 2026/27 season (used by "This season" in analytics). Currently 1 August 2026. |
 | B7 | **Stadium** | McCarthy Stadium capacity, opening year, directions. |
 

@@ -8,6 +8,18 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: Footer tagline: Makurdi removed
+
+**What changed**
+- The footer tagline on every page now reads "The Pride of Benue. Proudly
+  representing Benue State since 1969." (was "...representing Makurdi and
+  Benue State..."). It can be edited in the Content CMS (Site Settings & Shop ›
+  Season, Homepage Stats & Footer Text).
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-19: Footer social icons: even spacing on phones; new Instagram icon
 
 **What changed**
