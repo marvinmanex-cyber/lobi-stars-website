@@ -53,7 +53,7 @@ in HANDOVER-TODO.md.
 
 **What changed**
 - The small gold line above "Official 2026/27 Membership" on the homepage now
-  reads "Join Lobi Stars FC Club Membership" (was "Join the Red & Gold
+  reads "Join Lobi Stars Football Club Membership" (was "Join the Red & Gold
   family"), so fans know it is the club's own membership.
 
 **Staff need to:** nothing.
