@@ -8,6 +8,21 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: YouTube connected; Facebook and Instagram confirmed
+
+**What changed**
+- The club's YouTube channel (https://www.youtube.com/@lobistarsfootballclub4809)
+  is connected: the footer YouTube icon, the Contact page and the Share Hub
+  open it.
+- Facebook (https://www.facebook.com/LobiStars) and Instagram
+  (https://www.instagram.com/lobistarsfc) were confirmed by the club; the
+  website already linked to these exact pages.
+- Only TikTok is still "coming soon".
+
+**Staff need to:** send the TikTok address (handover C5).
+
+---
+
 ## 2026-10-19: WhatsApp Channel connected
 
 **What changed**
