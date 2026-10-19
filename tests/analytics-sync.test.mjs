@@ -92,3 +92,21 @@ test('Sync now: 90 days in steps, then a re-sync updates rows without duplicates
   const idle = await fetch(`${BASE}/api/internal/analytics-sync`, { method: 'POST', headers: { Authorization: `Bearer ${CRON}` } }).then(r => r.json());
   assert.equal(idle.more, false);
 });
+
+test('Google & Search figures for the Analytics page (Phase 3)', async () => {
+  assert.ok([401, 403].includes((await fetch(`${BASE}/api/admin/analytics-google`)).status));
+  const g = await fetch(`${BASE}/api/admin/analytics-google?range=30d`, { headers: ADMIN }).then(r => r.json());
+  assert.equal(g.daily.days.length, 30);
+  for (const k of ['views', 'sessions', 'clicks', 'impressions']) assert.equal(g.daily[k].length, 30);
+  assert.ok(g.gsc.now.impressions > 0 && g.gsc.now.clicks <= g.gsc.now.impressions);
+  assert.ok(g.gsc.now.position >= 1);
+  assert.ok(g.ga4.now.sessions > 0 && g.ga4.now.engagement <= 100);
+  assert.ok(g.gsc.queries.length > 0 && g.gsc.queries.length <= 20);
+  assert.equal(g.ga4.events.length, 10, 'the 10 key events, without page_view');
+  // Search Console page addresses are matched to the site's own paths.
+  const tickets = g.pages.find(p => p.path === '/tickets/');
+  assert.ok(tickets && tickets.clicks > 0 && tickets.sessions > 0);
+  assert.ok(!g.pages.some(p => /^https?:/.test(p.path)));
+  assert.equal(g.status.hasData, true);
+  assert.ok(!JSON.stringify(g).includes('PRIVATE KEY'));
+});

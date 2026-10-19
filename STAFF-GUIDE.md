@@ -471,8 +471,30 @@ refreshes the last 4 days, because Google adds search figures 2–3 days late.
 - If Google is busy, the sync tries again; if a part still fails, it is noted in
   the Activity Log ("Analytics sync failed") and the other parts carry on.
 - Only totals are copied: never names, emails, phone numbers or orders.
-- The figures appear under Admin › Analytics › Google & Search (being added in
-  the next step).
+- The figures appear under Admin › Analytics › **Google & Search** (only for
+  staff with "All reports" access).
+
+**Reading the Google & Search section** (it follows the period buttons at the
+top of the page and compares with the period before):
+
+- **Search clicks:** people who clicked through to the website from Google.
+- **Appearances in Google:** how often the site was shown in Google results,
+  clicked or not.
+- **Click rate:** clicks ÷ appearances.
+- **Average position:** where the site usually sits in Google's results;
+  1 is the top, so a **smaller number is better** ("places higher" = good).
+- **Sessions / Users (sum of days) / Engagement rate / Avg. session:** from GA4,
+  only visitors who accepted cookies. Users are added up day by day, so someone
+  who came on three days counts three times.
+- **Day by day:** the website's own page views (everyone), GA4 sessions,
+  Google clicks, and appearances (bars, right-hand scale).
+- **Top search phrases**, **How visitors arrived (GA4)**, **Key events**,
+  **Google search by country** and **Pages: search, visits and views** (one
+  row per page with all the figures together).
+- **Sync now** fetches the last 4 days straight away; the line next to it shows
+  the last sync, and a red note appears if Google refused something.
+
+The last 2–3 days of search figures are always low: Google adds them late.
 
 ### The analytics dashboard (Admin → Analytics)
 

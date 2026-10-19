@@ -8,6 +8,33 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: "Google & Search" on the Analytics page (analytics intelligence, Phase 3)
+
+**What changed**
+- Admin › Analytics has a new **Google & Search** section, using the same
+  period buttons (Today, 7 days, 30 days, This season, Custom) and comparing
+  with the period before:
+  - Google search: clicks, appearances in Google, click rate, average
+    position (lower is better: "2.8 places higher" is good news);
+  - GA4: sessions, users, engagement rate, average session length;
+  - one day-by-day chart with the website's own page views, GA4 sessions and
+    Google search clicks and appearances;
+  - top search phrases, GA4 channels (how visitors arrived), the 10 key
+    events, Google search by country;
+  - one table per page joining search clicks, appearances, click rate,
+    position, GA4 sessions and the website's own page views.
+- **Sync now** fetches the last 4 days from Google straight away (with
+  progress), and the section shows when the last sync ran and any problem.
+- Only staff with "All reports" analytics access see it; other roles that can
+  open Analytics (broadcast, partner reports) don't.
+
+**Staff need to:** nothing. GA4 figures appear 24–48 hours after GA4 was set
+up (19 Oct); search figures are already there from 30 Sep.
+
+**Handbook:** STAFF-GUIDE.md › Google & Search data.
+
+---
+
 ## 2026-10-19: Daily Search Console and GA4 sync (analytics intelligence, Phase 2)
 
 **What changed**

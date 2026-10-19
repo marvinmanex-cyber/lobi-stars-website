@@ -60,6 +60,33 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <div class="chart"><canvas id="traffic" aria-label="Traffic sources chart"></canvas></div>
     </section>
 
+    <section class="panel gs" id="sec-google" hidden>
+      <div class="ph">
+        <h2>Google &amp; Search</h2>
+        <div class="gs-act"><span class="gs-status" id="gsStatus" role="status"></span><button type="button" class="btn-o sm" id="gsSync">Sync now</button></div>
+      </div>
+      <p class="muted small">From Google Search Console (how the club shows up in Google search) and Google Analytics 4 (visitors who accepted cookies), copied every morning. Google adds search figures 2&ndash;3 days late, so the last days of a period are usually low.</p>
+      <div id="gsNote"></div>
+      <h3>Google search</h3>
+      <div class="kpis" id="gsKpis"></div>
+      <h3>Google Analytics 4</h3>
+      <div class="kpis" id="gaKpis"></div>
+      <h3>Day by day: all sources</h3>
+      <p class="muted small">Page views (the website's own counting, everyone), GA4 sessions (only visitors who accepted cookies), and clicks and appearances in Google search.</p>
+      <div class="chart"><canvas id="gsDaily" aria-label="Page views, GA4 sessions and Google search per day"></canvas></div>
+      <div class="two">
+        <div><h3>Top search phrases</h3><p class="muted small">What people typed in Google before seeing the club. Google hides rare phrases.</p><div id="gsQueries"></div></div>
+        <div><h3>How visitors arrived (GA4)</h3><p class="muted small">Sessions by channel.</p><div class="chart sq"><canvas id="gaChannels" aria-label="GA4 sessions by channel"></canvas></div></div>
+      </div>
+      <h3>Pages: search, visits and views</h3>
+      <p class="muted small">Each page with its Google search clicks and appearances, average position in Google (1 = top), GA4 sessions and the website's own page views.</p>
+      <div id="gsPages"></div>
+      <div class="two">
+        <div><h3>Key events (GA4)</h3><div id="gaEvents"></div></div>
+        <div><h3>Google search by country</h3><div id="gsCountries"></div></div>
+      </div>
+    </section>
+
     <div class="two">
       <section class="panel"><div class="ph"><h2>Top 10 pages</h2></div><div id="topPages"></div></section>
       <section class="panel"><div class="ph"><h2>Top states</h2></div><div id="locations"></div></section>
@@ -132,6 +159,15 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .panel :global(td.n), .panel :global(th.n) { text-align: right; font-variant-numeric: tabular-nums; }
   .panel :global(td.path) { word-break: break-all; }
   .sm { padding: 8px 14px; font-size: 13px; }
+  .gs-act { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .gs-status { font-size: 13px; color: var(--lt); }
+  .gs :global(.gs-note) { border-radius: 10px; padding: 12px 14px; margin: 0 0 14px; font-size: 14px; background: color-mix(in srgb, #EAB308 14%, var(--a-card)); border: 1px solid color-mix(in srgb, #EAB308 40%, var(--a-line)); }
+  .gs :global(.gs-note.bad) { background: #FDECEC; color: #A3161B; border-color: #F5B5B7; }
+  .gs .kpis { margin-bottom: 8px; }
+  /* Wide tables scroll sideways on phones instead of squeezing page addresses. */
+  #gsPages :global(table) { min-width: 720px; }
+  #gsQueries :global(table) { min-width: 460px; }
+  #gsPages :global(td.path) { word-break: normal; overflow-wrap: anywhere; min-width: 140px; }
   @media (max-width: 760px) {
     .two { grid-template-columns: 1fr; }
     .chart { height: 240px; }
@@ -187,7 +223,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     charts[id] = new Chart($(id), config);
   }
   // Redraw in the right colours when someone switches light/dark mode.
-  document.addEventListener('ls:theme', () => { if (lastData) render(lastData); });
+  document.addEventListener('ls:theme', () => { if (lastData) render(lastData); if (lastGoogle) renderGoogle(lastGoogle); });
   const fmtWat = iso => iso ? new Date(new Date(iso).getTime() + 3600000).toISOString().slice(0, 16).replace('T', ' ') : '';
 
   async function load() {
@@ -196,6 +232,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     $('partnerCsv').href = '/api/admin/partner-report?' + q;
     $('broadcastCsv').href = '/api/admin/broadcast-report?' + q;
     $('err').hidden = true;
+    loadGoogle(q);
     let d;
     try {
       const res = await fetch('/api/admin/analytics?' + q, { headers: { 'x-admin-code': code } });
@@ -209,6 +246,123 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     lastData = d;
     render(d);
   }
+
+  // ── Google & Search (only for staff with "All reports"; hidden otherwise) ──
+  let lastGoogle = null, syncing = false;
+  const EVENT_LABELS = {
+    ticket_purchase_start: 'Ticket checkout started', ticket_purchase_complete: 'Tickets bought', kitchen_order_start: 'Food order started',
+    kitchen_order_complete: 'Food orders placed', newsletter_signup: 'Newsletter sign-ups', membership_signup: 'Membership sign-ups',
+    watch_live_click: 'Watch live clicks', whatsapp_channel_join_click: 'WhatsApp Channel joins', social_click: 'Social media clicks', prediction_submitted: 'Predictions sent',
+  };
+  const ISO3 = { nga: 'NG', gbr: 'GB', usa: 'US', gha: 'GH', can: 'CA', zaf: 'ZA', ken: 'KE', deu: 'DE', fra: 'FR', irl: 'IE', ind: 'IN', are: 'AE', cmr: 'CM', ben: 'BJ', nld: 'NL', ita: 'IT', esp: 'ES', aus: 'AU', bra: 'BR', chn: 'CN', tur: 'TR', sau: 'SA', egy: 'EG', tgo: 'TG', civ: 'CI', sen: 'SN', bel: 'BE', swe: 'SE', nor: 'NO', pol: 'PL' };
+  let countryName = c => c.toUpperCase();
+  try { const dn = new Intl.DisplayNames(['en'], { type: 'region' }); countryName = c => (ISO3[c] ? dn.of(ISO3[c]) : c.toUpperCase()); } catch {}
+  const mins = s => `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`;
+  function kpiCard(label, now, prev, ic, color, opts = {}) {
+    const show = opts.fmt ? opts.fmt(now) : fmt(now);
+    let chg = change(now, prev);
+    if (opts.lowerIsBetter && prev && now && now !== prev) {
+      const better = now < prev, diff = Math.abs(Math.round((now - prev) * 10) / 10);
+      chg = `<span class="chg ${better ? 'up' : 'down'}">${better ? '&#9650; ' + diff + ' places higher' : '&#9660; ' + diff + ' places lower'}</span>`;
+    }
+    return `<div class="kpi" style="--c:${color}"><span class="kpi-ic" aria-hidden="true">${ic}</span><div class="kpi-l">${label}</div><div class="kpi-v">${show}</div>${chg}</div>`;
+  }
+
+  async function loadGoogle(q) {
+    try {
+      const res = await fetch('/api/admin/analytics-google?' + q, { headers: { 'x-admin-code': code } });
+      if (res.status === 403 || res.status === 401) { $('sec-google').hidden = true; return; }
+      const g = await res.json();
+      if (!res.ok) throw new Error(g.error || 'Could not load the Google figures');
+      lastGoogle = g;
+      $('sec-google').hidden = false;
+      renderGoogle(g);
+    } catch (e) {
+      $('sec-google').hidden = false;
+      $('gsNote').innerHTML = `<p class="gs-note bad">${esc(e.message)}</p>`;
+    }
+  }
+
+  function statusText(s) {
+    if (s.run && !s.run.done) return `Syncing&hellip; part ${Math.min(s.run.idx + 1, s.run.tasks)} of ${s.run.tasks}`;
+    if (s.lastSuccess) return `Last sync: ${esc(fmtWat(s.lastSuccess.at))} (${esc(s.lastSuccess.by)})`;
+    return 'Not synced yet';
+  }
+
+  function renderGoogle(g) {
+    const s = g.status;
+    $('gsStatus').innerHTML = statusText(s);
+    $('gsSync').disabled = syncing || (s.config.missing || []).length > 0 && !s.config.gsc && !s.config.ga4;
+    const notes = [];
+    if (!s.config.gsc && !s.config.ga4) notes.push(`<p class="gs-note bad">Not connected to Google yet: ${esc((s.config.missing || []).join('; '))}. See handover A27.</p>`);
+    if (s.lastError && (!s.lastSuccess || s.lastError.at > s.lastSuccess.at)) notes.push(`<p class="gs-note bad">The last sync (${esc(fmtWat(s.lastError.at))}) had a problem: ${esc(s.lastError.failures.map(f => f.task + ': ' + f.error).join(' | '))}</p>`);
+    if (s.hasData && !s.ga4Latest) notes.push('<p class="gs-note">No GA4 figures yet. Google needs 24&ndash;48 hours after GA4 is set up before they can be copied; the morning sync will pick them up.</p>');
+    if (s.gscLatest) notes.push(`<p class="muted small">Search figures up to ${esc(s.gscLatest)}${s.ga4Latest ? `; GA4 figures up to ${esc(s.ga4Latest)}` : ''}.</p>`);
+    $('gsNote').innerHTML = notes.join('');
+
+    const G = g.gsc, A = g.ga4;
+    $('gsKpis').innerHTML = [
+      kpiCard('Search clicks', G.now.clicks, G.prev.clicks, '🖱️', '#0EA5E9'),
+      kpiCard('Appearances in Google', G.now.impressions, G.prev.impressions, '👀', '#8B5CF6'),
+      kpiCard('Click rate', G.now.ctr, G.prev.ctr, '🎯', '#10B981', { fmt: v => v + '%' }),
+      kpiCard('Average position', G.now.position, G.prev.position, '🏁', '#EAB308', { fmt: v => (v ? v : '&ndash;'), lowerIsBetter: true }),
+    ].join('');
+    $('gaKpis').innerHTML = [
+      kpiCard('Sessions', A.now.sessions, A.prev.sessions, '📲', '#E31E24'),
+      kpiCard('Users (sum of days)', A.now.users, A.prev.users, '🧑‍🤝‍🧑', '#F97316'),
+      kpiCard('Engagement rate', A.now.engagement, A.prev.engagement, '💬', '#14B8A6', { fmt: v => v + '%' }),
+      kpiCard('Avg. session', A.now.duration, A.prev.duration, '⏱️', '#64748B', { fmt: mins }),
+    ].join('');
+
+    const dd = g.daily;
+    draw('gsDaily', { type: 'bar',
+      data: { labels: dd.days, datasets: [
+        { type: 'line', label: 'Page views (website)', data: dd.views, borderColor: '#E31E24', backgroundColor: 'rgba(227,30,36,.10)', fill: true, tension: .35, borderWidth: 3, pointRadius: 2, spanGaps: true, yAxisID: 'y' },
+        { type: 'line', label: 'GA4 sessions', data: dd.sessions, borderColor: '#F97316', tension: .35, borderWidth: 3, pointRadius: 2, spanGaps: true, yAxisID: 'y' },
+        { type: 'line', label: 'Google search clicks', data: dd.clicks, borderColor: '#0EA5E9', tension: .35, borderWidth: 3, pointRadius: 2, spanGaps: true, yAxisID: 'y' },
+        { type: 'bar', label: 'Appearances in Google', data: dd.impressions, backgroundColor: 'rgba(139,92,246,.22)', borderRadius: 4, yAxisID: 'y1' },
+      ] },
+      options: { interaction: { mode: 'index', intersect: false }, scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 }, title: { display: true, text: 'Views, sessions, clicks' } },
+        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { precision: 0 }, title: { display: true, text: 'Appearances' } },
+      } },
+    });
+    const ch = A.channels.filter(c => c.sessions > 0);
+    draw('gaChannels', { type: 'doughnut', data: { labels: ch.length ? ch.map(c => c.channel) : ['No GA4 sessions yet'], datasets: [{ data: ch.length ? ch.map(c => c.sessions) : [1], backgroundColor: ch.length ? COLORS : ['#E5E7EB'], borderWidth: 3, borderColor: cardColor(), hoverOffset: 10, borderRadius: 6 }] }, options: { cutout: '62%' } });
+
+    $('gsQueries').innerHTML = table([{ t: 'Search phrase' }, { t: 'Clicks', n: 1 }, { t: 'Appearances', n: 1 }, { t: 'Click rate', n: 1 }, { t: 'Position', n: 1 }],
+      G.queries.map(x => `<tr><td>${esc(x.value)}</td><td class="n">${fmt(x.clicks)}</td><td class="n">${fmt(x.impressions)}</td><td class="n">${x.ctr}%</td><td class="n">${x.position}</td></tr>`), 'No search phrases in this period.');
+    $('gsPages').innerHTML = table([{ t: 'Page' }, { t: 'Search clicks', n: 1 }, { t: 'Appearances', n: 1 }, { t: 'Click rate', n: 1 }, { t: 'Position', n: 1 }, { t: 'GA4 sessions', n: 1 }, { t: 'Page views', n: 1 }],
+      g.pages.map(p => `<tr><td class="path">${esc(p.path)}</td><td class="n">${fmt(p.clicks)}</td><td class="n">${fmt(p.impressions)}</td><td class="n">${p.impressions ? p.ctr + '%' : '&ndash;'}</td><td class="n">${p.position ?? '&ndash;'}</td><td class="n">${fmt(p.sessions)}</td><td class="n">${fmt(p.views)}</td></tr>`), 'No figures in this period.');
+    $('gaEvents').innerHTML = table([{ t: 'Event' }, { t: 'Count', n: 1 }, { t: 'Change', n: 1 }],
+      A.events.map(e => `<tr><td>${esc(EVENT_LABELS[e.name] || e.name)}</td><td class="n">${fmt(e.value)}</td><td class="n">${change(e.value, e.previous)}</td></tr>`), 'No GA4 events yet.');
+    $('gsCountries').innerHTML = table([{ t: 'Country' }, { t: 'Clicks', n: 1 }, { t: 'Appearances', n: 1 }],
+      G.countries.map(c => `<tr><td>${esc(countryName(c.value))}</td><td class="n">${fmt(c.clicks)}</td><td class="n">${fmt(c.impressions)}</td></tr>`), 'No search figures in this period.');
+  }
+
+  // "Sync now": start a sync of the last 4 days, then step through it.
+  $('gsSync').addEventListener('click', async () => {
+    if (syncing) return;
+    syncing = true; $('gsSync').disabled = true; $('gsStatus').textContent = 'Starting…';
+    const post = body => fetch('/api/admin/analytics-sync', { method: 'POST', headers: { 'x-admin-code': code, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => r.json().then(d => ({ ok: r.ok, d })));
+    try {
+      let { ok, d } = await post({ action: 'sync' });
+      if (!ok) throw new Error(d.error || 'Could not start the sync');
+      let run = d.run;
+      for (let i = 0; i < 200 && run && !run.done; i++) {
+        $('gsStatus').innerHTML = `Syncing&hellip; part ${Math.min(run.idx + 1, run.tasks)} of ${run.tasks} (${fmt(run.rows)} rows)`;
+        ({ ok, d } = await post({ action: 'step' }));
+        if (!ok) throw new Error(d.error || 'The sync stopped');
+        run = d.run;
+      }
+      $('gsStatus').innerHTML = run && run.failures && run.failures.length ? `Finished with problems: ${esc(run.failures.map(f => f.task).join(', '))}` : `Sync finished: ${fmt(run ? run.rows : 0)} rows updated`;
+      syncing = false;
+      const q = new URLSearchParams({ range }); if (range === 'custom') { q.set('from', from); q.set('to', to); }
+      setTimeout(() => loadGoogle(q), 1500);
+    } catch (e) {
+      $('gsStatus').textContent = e.message;
+    } finally { syncing = false; $('gsSync').disabled = false; }
+  });
 
   function render(d) {
     $('rangeLabel').textContent = `${d.range.label} (compared with the ${d.range.days} day${d.range.days === 1 ? '' : 's'} before)`;
