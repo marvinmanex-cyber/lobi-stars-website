@@ -8,6 +8,38 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: Phones: the footer no longer lifts when scrolling to the end
+
+**What changed**
+- On phones, scrolling past the end of a page no longer bounces the page and
+  shows a white strip under the black footer (which made the footer look as if
+  it was moving up). The elastic bounce at the page edges is switched off on
+  phones, and the area behind and below the footer is the footer's dark colour.
+  (On Android, this also turns off "pull down to refresh" on the website.)
+- Checked every page at phone, tablet and desktop width: no sideways
+  scrolling, broken pictures or failed files. The only messages came from
+  Cloudflare's anti-robot box itself (not the website).
+
+**Staff need to:** nothing.
+
+---
+
+## 2026-10-19: WhatsApp food orders go to 0708 009 4985
+
+**What changed**
+- "Order on WhatsApp" (MatchDay Kitchen) now sends fans' orders to
+  **0708 009 4985** (+234 708 009 4985) instead of 0903 039 9416. Changed in
+  the live kitchen settings (Admin › Food › Menu › Order on WhatsApp) and as the
+  built-in default; the programme editor's "Order food on WhatsApp" preset uses
+  it too.
+- The club management number 0903 039 9416 on the Contact and Help pages is
+  unchanged.
+
+**Staff need to:** make sure someone answers 0708 009 4985 on WhatsApp on
+matchdays (handover D7).
+
+---
+
 ## 2026-10-19: WhatsApp Channel changed
 
 **What changed**

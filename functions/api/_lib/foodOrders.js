@@ -126,7 +126,7 @@ export const WA_TEMPLATES = {
 export const FOOD_DEFAULTS = {
   paymentExpiryMinutes: 15, orderingMode: 'open', autoOpenMinutes: 90, stands: [], minOrderKobo: 0,
   // Order on WhatsApp. The number is the club WhatsApp shown on the site.
-  whatsappEnabled: true, whatsappNumber: '2349030399416', whatsappExpiryHours: 3, pickupPoints: [], bankDetails: '',
+  whatsappEnabled: true, whatsappNumber: '2347080094985', whatsappExpiryHours: 3, pickupPoints: [], bankDetails: '',
   ...WA_TEMPLATES,
 };
 export async function foodSettings(db) {

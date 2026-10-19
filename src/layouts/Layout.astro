@@ -194,6 +194,12 @@ main.bare{padding-top:0;min-height:0;}
 /* Phones: no stretched page height and a short, even space above the footer (no big empty gaps). */
 @media(max-width:767px){ main{min-height:0;} .page-content{padding-bottom:32px;} }
 @media(max-width:767px){ .page-content > :last-child, .page-content > :last-child > :last-child{margin-bottom:0;} }
+/* Phones: the footer stays put at the end of the page. No elastic bounce at the page edges, and behind and below the
+   black footer (the space kept for the bottom bar, and past the end of the page) is the footer's dark colour, never white. */
+@media(max-width:767px){
+  html{overscroll-behavior-y:none;background:#15181D;}
+  body{background:linear-gradient(var(--black),var(--black)) top/100% calc(100% - 60px - env(safe-area-inset-bottom)) no-repeat,#15181D;}
+}
 .empty-state{padding:60px 20px;text-align:center;color:var(--lt);border:1px dashed var(--d4);border-radius:10px;}
 
 /* FORMS (membership, contact, partners, food) */

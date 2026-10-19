@@ -185,7 +185,7 @@ export async function onRequestPost({ request, env }) {
       // Order on WhatsApp: the club number, pickup points, bank details and the staff reply messages.
       const w = b.settings || {};
       const num = normalizeNigerianPhone(w.whatsappNumber);
-      if (w.whatsappEnabled && !num) return bad('Please enter the club WhatsApp number (e.g. 0903 039 9416).');
+      if (w.whatsappEnabled && !num) return bad('Please enter the club WhatsApp number (e.g. 0708 009 4985).');
       const hours = Math.round(Number(w.whatsappExpiryHours));
       if (!(hours >= 1 && hours <= 48)) return bad('Unconfirmed WhatsApp orders must expire after 1 to 48 hours.');
       const points = (Array.isArray(w.pickupPoints) ? w.pickupPoints : String(w.pickupPoints || '').split('\n')).map(x => String(x).trim().slice(0, 60)).filter(Boolean).slice(0, 20);
