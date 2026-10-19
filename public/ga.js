@@ -36,6 +36,7 @@
   }
   function page() {
     if (state !== 'ready') return;
+    gtag('set', { page_location: pageLocation(), page_title: document.title });
     gtag('event', 'page_view', { page_location: pageLocation(), page_title: document.title });
   }
   window.__lsGaPage = page;
@@ -57,7 +58,8 @@
       gtag('consent', 'update', { analytics_storage: 'granted' });
       gtag('set', { allow_google_signals: false, allow_ad_personalization_signals: false });
       gtag('js', new Date());
-      gtag('config', id, { send_page_view: false });
+      // Every event (also Google's automatic ones) uses the page address without private ?query values.
+      gtag('config', id, { send_page_view: false, page_location: pageLocation(), page_referrer: document.referrer ? document.referrer.split('?')[0] : '' });
       var s = document.createElement('script');
       s.async = true;
       s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(id);
