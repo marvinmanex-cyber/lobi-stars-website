@@ -82,6 +82,15 @@ const show = WHATSAPP_CHANNEL_SHOWN;
     .wah-badge { width: 52px; height: 52px; } .wah-badge svg { width: 28px; height: 28px; }
     .wah-cta { width: 100%; } .wah-btn { width: 100%; }
   }
+  /* Phones (the site's 767px breakpoint): the card floats on a full-width WhatsApp-green band
+     (bright green on the left, fading lighter to the right) with green showing all round. */
+  @media (max-width: 767px) {
+    .wah { max-width: none; padding: 14px 12px; background: linear-gradient(100deg, #0FB341 0%, #2CC860 30%, #8FE3AC 68%, #E3F8EA 100%); }
+    .wah-card { border: none; border-radius: 22px; box-shadow: 0 10px 28px rgba(8, 72, 32, .14); }
+    .wah-btn { background: #0FB341; box-shadow: 0 8px 20px -6px rgba(15, 179, 65, .65); }
+    .wah-btn:hover, .wah-btn.wah-soon:hover { background: #0C9A37; }
+    .wah-badge svg { fill: #0FB341; }
+  }
   @media (prefers-reduced-motion: reduce) { .wah-btn { transition: none; } .wah-btn:hover { transform: none; } }
 
   /* Strip and compact card (Watch page, news articles). */

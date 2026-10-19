@@ -8,6 +8,18 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: WhatsApp Channel card on phones: green background
+
+**What changed**
+- On phones, the homepage "Join the Lobi Stars WhatsApp Channel" card sits on
+  a full-width WhatsApp-green band (bright green fading lighter to the right),
+  with the white card floating on it and green showing all round, instead of a
+  white box with a green stripe. Tablets and computers are unchanged.
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-19: Homepage hero: line removed
 
 **What changed**
