@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: Homepage membership: clearer heading
+
+**What changed**
+- The small gold line above "Official 2026/27 Membership" on the homepage now
+  reads "Join Lobi Stars FC Club Membership" (was "Join the Red & Gold
+  family"), so fans know it is the club's own membership.
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-19: Phones: no big empty space above the footer
 
 **What changed**
