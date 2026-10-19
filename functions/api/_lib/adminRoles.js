@@ -340,6 +340,7 @@ const RULES = [
   [/^\/api\/admin\/partner-report(\/|$)/, 'analytics.partners|partners.reports|analytics.view_all'],
   [/^\/api\/admin\/partner-reports(\/|$)/, 'partners.reports'],
   [/^\/api\/admin\/broadcast-report(\/|$)/, 'analytics.broadcast|analytics.view_all'],
+  [/^\/api\/admin\/analytics-sync(\/|$)/, 'analytics.view_all'],
   [/^\/api\/admin\/analytics(\/|$)/, 'analytics.view_all'],
   [/^\/api\/admin\/export-log(\/|$)/, 'logs.view|fans.export'],
   [/^\/api\/admin\/activity(\/|$)/, 'logs.view'],

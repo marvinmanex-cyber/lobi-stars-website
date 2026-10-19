@@ -52,6 +52,7 @@ these in git.
 | `GA4_PROPERTY_ID` | Analytics › Google & Search (daily sync, Phase 2) | The GA4 property number (Admin › Property settings), e.g. `123456789`. |
 | `GSC_SITE_URL` | Analytics › Google & Search (daily sync, Phase 2) | `sc-domain:lobistarsfc.com`. |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | Analytics › Google & Search (daily sync, Phase 2) | **Secret.** The Google Cloud service account key (whole JSON). The account needs Viewer in GA4 and access in Search Console. |
+| `ANALYTICS_SYNC_FAKE` | Local testing only | `1` = pretend Google answers (tests/analytics-sync.test.mjs). Never set on the live site. |
 | `FAN_EMAIL_FROM` | Fan account / reminder emails (optional) | Falls back to `RESEND_FROM`. |
 | `NEWSLETTER_FROM` | The weekly newsletter (optional) | e.g. `Lobi Stars FC <news@lobistarsfc.com>`; falls back to `RESEND_FROM`. |
 | `INBOX_FROM_EMAIL` | Inbox replies | e.g. `info@lobistarsfc.com`; staff first names are added ("Ade from Lobi Stars FC"). |
@@ -642,6 +643,17 @@ own Page used by people with a role on the app, App Review isn't needed.
 Before each post the site asks Facebook to re-read the link (scrape), then
 posts the caption (without the link line) with the link, so Facebook shows the
 card. Until these are set, Facebook uses its share window.
+
+### Analytics sync (Search Console and GA4)
+The cron Worker calls `/api/internal/analytics-sync` every minute (with
+`CRON_SECRET`), and again straight away (up to 12 times) while it answers
+`{ more: true }`. From 05:00 Lagos time it starts the daily sync (90 days the
+first time, then the last 4 days), one page of up to 1,000 Google rows per
+call, saved with upserts into `gsc_daily`, `ga4_daily` and
+`ga4_events_daily` (state in `analytics_sync`). Code:
+`functions/api/_lib/analyticsSync.js` and `googleAuth.js` (service-account
+JWT, no Google library). Without `GOOGLE_SERVICE_ACCOUNT_JSON` and
+`GA4_PROPERTY_ID` it does nothing.
 
 ### Scheduled posts
 The cron Worker `workers/kitchen-cron` (every minute) also calls

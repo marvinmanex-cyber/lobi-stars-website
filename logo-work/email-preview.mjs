@@ -1,0 +1,12 @@
+import { writeFileSync, readFileSync } from 'node:fs';
+import { ticketBlocksHtml } from '../functions/api/_lib/email.js';
+import { renderNewsletter } from '../functions/api/_lib/newsletter.js';
+const local = h => h.replaceAll('https://lobistarsfc.com', 'http://127.0.0.1:8843');
+const t = ticketBlocksHtml({ order: { id: 'o1', tier: 'VIP', quantity: 1, total_kobo: 500000, buyer_name: 'Ada' }, event: { home_team: 'Lobi Stars FC', away_team: 'Bichi First FC', event_date: '2026-11-08T15:00:00Z', venue: 'McCarthy Stadium, Makurdi, Benue State' }, tickets: [{ id: 'LS-TIX-AAAAAAAAAAAA' }] });
+const nl = renderNewsletter({ issue: { subject: 'Test', stories: [] }, sponsors: [{ name: 'Jumia', logo: '/images/Jumia-Logo.jpg', tier: 'principal' }], match: { home_team: 'Lobi Stars FC', away_team: 'Bichi First FC', event_date: '2026-11-08T15:00:00Z', venue: 'McCarthy Stadium' }, preview: true });
+const src = readFileSync('functions/api/_lib/fans.js', 'utf8');
+const fn = src.slice(src.indexOf('function layout('), src.indexOf('\n}\n', src.indexOf('function layout(')) + 2);
+const layout = new Function('SITE', fn + '; return layout;')('https://lobistarsfc.com');
+const fan = layout('Your sign-in link', '<p>Hello</p>');
+writeFileSync('logo-work/email-preview.html', local(`<!doctype html><meta charset="utf-8"><body style="margin:0;background:#ddd"><div style="max-width:620px;margin:10px auto">${t}</div><div style="max-width:640px;margin:10px auto">${nl}</div><div>${fan}</div></body>`));
+console.log('ok');

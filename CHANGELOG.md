@@ -8,6 +8,31 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: Daily Search Console and GA4 sync (analytics intelligence, Phase 2)
+
+**What changed**
+- The website can now copy Google Search Console figures (clicks,
+  impressions, click rate, position: in total and by page, search phrase,
+  country and device) and GA4 figures (sessions, users, engagement by page,
+  channel and device, plus the 10 key events) into its own database, once a
+  day. Nothing is shown on screen yet: the "Google & Search" part of
+  Admin › Analytics comes in Phase 3.
+- The first sync takes the last 90 days; after that a daily sync from 05:00
+  Nigeria time re-reads the last 4 days (Search Console figures arrive 2–3 days
+  late). It works in small steps, retries when Google is busy, and records any
+  failure in the Activity Log without stopping the rest.
+- Staff with "All reports" analytics access can press **Sync now** (Phase 3
+  page; the address is /api/admin/analytics-sync).
+- Only totals come from Google; no names, emails, phone numbers or orders.
+- The timer Worker (lobistars-kitchen-cron) calls the new sync job.
+
+**Staff need to:** set up the Google service account and give it access
+(handover A27). Until then the sync does nothing.
+
+**Handbook:** STAFF-GUIDE.md › Google & Search data.
+
+---
+
 ## 2026-10-19: Google Analytics 4 with consent (analytics intelligence, Phase 1)
 
 **What changed**

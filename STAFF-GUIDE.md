@@ -457,6 +457,23 @@ platform) and `prediction_submitted`. GA4 is switched on by the
 `GA4_MEASUREMENT_ID` setting in Cloudflare (handover A26). Pages visited
 without a full page load (the menu's quick navigation) are counted too.
 
+### Google & Search data (daily sync)
+
+Once a day (from 05:00) the website copies figures from **Google Search
+Console** (how often the club appears in Google search, the clicks, the search
+phrases, countries, devices and pages) and from **Google Analytics 4** (visits
+by page, where visitors came from, phone or computer, and the key events) into
+its own database. The first sync fetches the last 90 days; each daily sync then
+refreshes the last 4 days, because Google adds search figures 2–3 days late.
+
+- It needs a Google "service account" with read-only access (handover A27).
+  Until that is set up, nothing happens.
+- If Google is busy, the sync tries again; if a part still fails, it is noted in
+  the Activity Log ("Analytics sync failed") and the other parts carry on.
+- Only totals are copied: never names, emails, phone numbers or orders.
+- The figures appear under Admin › Analytics › Google & Search (being added in
+  the next step).
+
 ### The analytics dashboard (Admin → Analytics)
 
 **Choose a period** at the top: Today, 7 days, 30 days, This season (from the
