@@ -67,9 +67,10 @@ const teamJsonLd = {
   <MatchAlerts variant="band" />
   <MatchdayGames />
   <NewsCarousel title="Latest News" articles={latestNews} viewAllHref="/news" />
-  <WhatsAppChannel variant="band" />
   <NewsCarousel title="Video" articles={videoNews} viewAllHref="/video" viewAllLabel="All videos" tone="band" />
   <NewsCarousel title="Across the Club" articles={clubNews} viewAllHref="/news?category=club" viewAllLabel="All club news" />
+  <!-- Official WhatsApp Channel (hidden until its address is set in the CMS), then the newsletter. -->
+  <WhatsAppChannel variant="home" />
   <NewsletterCta />
 
   <section class="hp-sec hp-sec--shop" aria-labelledby="shop-title">

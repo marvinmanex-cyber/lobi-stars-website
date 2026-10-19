@@ -30,9 +30,9 @@
     "facebook": "https://www.facebook.com/LobiStars",
     "x": "https://x.com/LobiStars",
     "instagram": "https://www.instagram.com/lobistarsfc",
-    "youtube": "",
-    "tiktok": "",
-    "whatsappChannel": ""
+    "youtube": "REPLACE_WITH_YOUTUBE_URL",
+    "tiktok": "REPLACE_WITH_TIKTOK_URL",
+    "whatsappChannel": "REPLACE_WITH_LOBI_WHATSAPP_CHANNEL_URL"
   },
   "seasonStart": "2026-08-01"
 }

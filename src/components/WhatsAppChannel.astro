@@ -1,25 +1,77 @@
 ---
-// "Join our WhatsApp Channel" block. Hidden until the channel link is set in
-// the CMS (Site Settings -> Social links -> WhatsApp Channel).
-import site from '../data/site.json';
-interface Props { variant?: 'band' | 'card' | 'footer' }
+// "Join the Lobi Stars WhatsApp Channel". Not shown at all until the channel
+// address is set in the Content CMS (Site Settings & Shop › Season, Homepage
+// Stats & Footer Text › Social links › WhatsApp Channel): the address comes from
+// the shared list in src/data/social.ts, like the footer.
+//   home: the homepage card (between the Matchday Fan Zone and the newsletter)
+//   band: a full-width strip (Watch page)
+//   card: a compact card (news articles)
+import { WHATSAPP_CHANNEL_URL, WHATSAPP_ICON } from '../data/social';
+interface Props { variant?: 'home' | 'band' | 'card' }
 const { variant = 'card' } = Astro.props;
-const url = (site.social?.whatsappChannel || '').trim();
+const url = WHATSAPP_CHANNEL_URL;
 ---
-{url && (
+{url && variant === 'home' && (
+  <section class="wah" aria-labelledby="wah-title">
+    <div class="wah-card">
+      <div class="wah-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d={WHATSAPP_ICON} /></svg></div>
+      <div class="wah-text">
+        <p class="wah-eyebrow">Official channel</p>
+        <h2 id="wah-title">Join the Lobi Stars WhatsApp Channel</h2>
+        <p>Get match-day updates, team news, ticket releases and behind-the-scenes content straight to your phone.</p>
+      </div>
+      <div class="wah-cta">
+        <a class="wah-btn" href={url} target="_blank" rel="noopener noreferrer" data-track="whatsapp_click" data-track-label="channel-home">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d={WHATSAPP_ICON} /></svg>
+          Join WhatsApp Channel<span class="sr-only"> (opens WhatsApp)</span>
+        </a>
+        <p class="wah-note">Free to join. Your phone number stays private.</p>
+      </div>
+    </div>
+  </section>
+)}
+{url && variant !== 'home' && (
   <section class:list={['wac', `wac--${variant}`]} aria-label="WhatsApp Channel">
     <div class="wac-inner">
-      <svg class="wac-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 2.3A7.9 7.9 0 0 0 8 0C3.6 0 .1 3.6.1 7.9c0 1.4.4 2.8 1.1 4L0 16l4.2-1.1a7.9 7.9 0 0 0 3.8 1C12.4 15.9 16 12.3 16 7.9c0-2.1-.8-4.1-2.4-5.6zM8 14.5c-1.2 0-2.4-.3-3.4-.9l-.2-.1-2.5.6.7-2.4-.2-.3a6.6 6.6 0 0 1-1-3.5C1.4 4.3 4.4 1.3 8 1.3c1.8 0 3.4.7 4.7 1.9a6.6 6.6 0 0 1 1.9 4.7c0 3.6-3 6.6-6.6 6.6z"/></svg>
+      <svg class="wac-ic" viewBox="0 0 24 24" aria-hidden="true"><path d={WHATSAPP_ICON} /></svg>
       <div class="wac-text">
         <strong>Join our WhatsApp Channel</strong>
         <span>Get match updates, line-ups and goals straight to your phone.</span>
       </div>
-      <a class="wac-btn" href={url} target="_blank" rel="noopener" data-track="whatsapp_click" data-track-label={`channel-${variant}`}>Join the channel <span class="sr-only">(opens WhatsApp)</span></a>
+      <a class="wac-btn" href={url} target="_blank" rel="noopener noreferrer" data-track="whatsapp_click" data-track-label={`channel-${variant}`}>Join the channel <span class="sr-only">(opens WhatsApp)</span></a>
     </div>
   </section>
 )}
 
 <style>
+  /* Homepage card: white card with the site's rounded corners and soft shadow, WhatsApp-green button. */
+  .wah { max-width: 1280px; margin: 0 auto; padding: 40px 5%; }
+  .wah-card { display: flex; align-items: center; gap: 22px 28px; flex-wrap: wrap; background: #fff; border: 1px solid var(--d4);
+    border-left: 5px solid #25D366; border-radius: 14px; padding: clamp(20px, 3vw, 32px); box-shadow: 0 16px 40px rgba(15, 17, 21, .06); }
+  .wah-badge { width: 64px; height: 64px; border-radius: 50%; background: #E8F7EE; display: flex; align-items: center; justify-content: center; flex: none; }
+  .wah-badge svg { width: 34px; height: 34px; fill: #1DA851; }
+  .wah-text { flex: 1 1 380px; min-width: 0; }
+  .wah-eyebrow { margin: 0 0 6px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: var(--red); }
+  .wah-text h2 { margin: 0 0 8px; color: var(--white); font: 400 clamp(26px, 3.4vw, 36px)/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .wah-text p:last-child { margin: 0; color: var(--lt); line-height: 1.6; max-width: 640px; }
+  .wah-cta { flex: none; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .wah-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 0 24px; border-radius: 999px;
+    background: #25D366; color: #fff; text-decoration: none; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase;
+    box-shadow: 0 6px 18px -6px rgba(37, 211, 102, .7); transition: background .2s, transform .2s; }
+  .wah-btn svg { width: 20px; height: 20px; fill: #fff; flex: none; }
+  .wah-btn:hover { background: #1DA851; transform: translateY(-1px); }
+  .wah-btn:focus-visible { outline: 3px solid #FFC72C; outline-offset: 3px; }
+  .wah-note { margin: 0; font-size: 13px; color: var(--lt); text-align: center; }
+  @media (max-width: 600px) {
+    .wah { padding: 28px 16px; }
+    .wah-card { flex-direction: column; align-items: flex-start; }
+    .wah-text { flex: none; } /* stacked: the 380px basis would become a height */
+    .wah-badge { width: 52px; height: 52px; } .wah-badge svg { width: 28px; height: 28px; }
+    .wah-cta { width: 100%; } .wah-btn { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) { .wah-btn { transition: none; } .wah-btn:hover { transform: none; } }
+
+  /* Strip and compact card (Watch page, news articles). */
   .wac { background: #157A42; color: #fff; }
   .wac-inner { max-width: 1280px; margin: 0 auto; padding: 22px 5%; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
   .wac-ic { width: 36px; height: 36px; fill: #fff; flex-shrink: 0; }
@@ -31,6 +83,4 @@ const url = (site.social?.whatsappChannel || '').trim();
   .wac-btn:hover, .wac-btn:focus-visible { background: #E8F7EE; outline: 3px solid #FFC72C; outline-offset: 2px; }
   .wac--card { border-radius: 14px; margin: 32px 0; }
   .wac--card .wac-inner { padding: 20px 22px; }
-  .wac--footer { background: rgba(21, 122, 66, .9); border-radius: 12px; margin-bottom: 28px; }
-  .wac--footer .wac-inner { padding: 16px 18px; }
 </style>

@@ -188,4 +188,3 @@
   .kx-card:hover { transform: none; }
 }
 /* The page has its own WhatsApp ordering and a cart bar at the bottom. */
-body:has(.kx) .wa-float { display: none !important; }

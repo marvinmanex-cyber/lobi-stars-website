@@ -213,7 +213,7 @@ collections:
         fields:
           - {label: "Current Season (e.g. 2026/27)", name: "currentSeason", widget: "string"}
           - {label: "Footer Tagline", name: "footerTagline", widget: "text"}
-          - label: "Social links (leave blank to hide an icon)"
+          - label: "Social links (a blank or REPLACE_WITH_... address is hidden everywhere; paste the full https:// address to show it)"
             name: "social"
             widget: "object"
             fields:

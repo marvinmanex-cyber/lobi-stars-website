@@ -1,4 +1,5 @@
 import site from '../data/site.json';
+import { SOCIAL_VISIBLE } from '../data/social';
 
 // Change the season once in src/data/site.json and it updates everywhere.
 export const CURRENT_SEASON: string = site.currentSeason;
@@ -24,16 +25,5 @@ export function teamInitials(name: string): string {
 
 export const CONTACT: { address: string; email: string; phone: string; whatsapp: string } = site.contact;
 
-/** Social links; entries with an empty URL are hidden. */
-export const SOCIAL_LINKS = (
-  [
-    { key: 'facebook', label: 'Facebook' },
-    { key: 'x', label: 'X' },
-    { key: 'instagram', label: 'Instagram' },
-    { key: 'youtube', label: 'YouTube' },
-    { key: 'tiktok', label: 'TikTok' },
-    { key: 'whatsappChannel', label: 'WhatsApp Channel' },
-  ] as const
-)
-  .map(s => ({ ...s, url: (site.social as Record<string, string>)[s.key] || '' }))
-  .filter(s => s.url);
+/** Social links (from the shared list in src/data/social.ts); empty and placeholder addresses are hidden. */
+export const SOCIAL_LINKS = SOCIAL_VISIBLE.map(s => ({ key: s.id, label: s.label, url: s.url, icon: s.icon }));

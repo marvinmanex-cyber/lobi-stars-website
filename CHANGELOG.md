@@ -8,6 +8,32 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: WhatsApp button removed; one social links list; WhatsApp Channel card
+
+**What changed**
+- The floating green "Chat on WhatsApp" button is gone from every page. The
+  management number 0903 039 9416 is shown on the Contact page (next to
+  WhatsApp) and the Help page ("Still need help?"). MatchDay Kitchen WhatsApp
+  ordering is unchanged.
+- One shared list of the club's social links (src/data/social.ts), filled from
+  the Content CMS social links. YouTube, TikTok and WhatsApp Channel hold
+  `REPLACE_WITH_…` placeholders until the club sends the addresses; a
+  placeholder or empty address is never shown.
+- Footer social icons come from that list: "Lobi Stars on …" labels, open in
+  a new tab, 44 px touch targets; plus a "Follow us on WhatsApp" link once the
+  channel address is set.
+- Homepage: a new "Join the Lobi Stars WhatsApp Channel" card just above the
+  newsletter (Official channel, a green Join WhatsApp Channel button, "Free to
+  join. Your phone number stays private."), shown only once the channel
+  address is real.
+
+**Staff need to:** put the YouTube, TikTok and WhatsApp Channel addresses in
+the Content CMS (handover C5).
+
+**Handbook:** STAFF-GUIDE.md › Social links and the WhatsApp Channel.
+
+---
+
 ## 2026-10-19: Social links entered once
 
 **What changed**

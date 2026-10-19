@@ -413,7 +413,6 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     .tk-sheet-x { display: inline-flex; align-items: center; justify-content: center; }
     .tk-scrim:not([hidden]) { position: fixed; inset: 0; z-index: 1550; background: rgba(5, 8, 14, .55); }
     /* Keep the WhatsApp and MatchDay Kitchen buttons clear of the bar. */
-    :global(body:has(.tk-bar:not([hidden]))) :global(.wa-float) { bottom: calc(146px + env(safe-area-inset-bottom)) !important; }
     :global(body:has(.tk-bar:not([hidden]))) :global(.kfab:not([hidden])) { bottom: calc(210px + env(safe-area-inset-bottom)) !important; }
     .tk-wrap { padding-bottom: 90px; }
   }

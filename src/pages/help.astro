@@ -84,12 +84,15 @@ const faqJsonLd = {
         <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 2.3A7.9 7.9 0 0 0 8 0C3.6 0 .1 3.6.1 7.9c0 1.4.4 2.8 1 4L0 16l4.2-1.1a7.9 7.9 0 0 0 3.8 1C12.4 15.9 16 12.3 16 7.9a7.9 7.9 0 0 0-2.4-5.6zM8 14.5a6.6 6.6 0 0 1-3.4-.9l-.2-.1-2.5.6.7-2.4-.2-.3A6.6 6.6 0 1 1 8 14.5zm3.6-4.9c-.2-.1-1.2-.6-1.4-.6-.2-.1-.3-.1-.4.1l-.6.8c-.1.1-.2.1-.4 0-.2-.1-.8-.3-1.6-1-.6-.5-1-1.2-1.1-1.4-.1-.2 0-.3.1-.4l.3-.3.2-.3v-.4l-.6-1.5c-.2-.4-.3-.3-.4-.3h-.4c-.1 0-.4 0-.5.2-.2.2-.7.7-.7 1.7s.7 1.9.8 2c.1.1 1.4 2.1 3.4 3l1.1.4c.5.2.9.1 1.2.1.4-.1 1.2-.5 1.3-.9.2-.5.2-.9.1-.9l-.4-.3z"/></svg>
         Chat on WhatsApp
       </a>
+      <p class="hf-wa-num">Club management (call or WhatsApp): <a href={`tel:+${CONTACT.whatsapp}`}>{CONTACT.phone}</a></p>
     </section>
   </div>
 </Layout>
 
 <style>
   .hf-lede { font-size: 17px; color: var(--lt); }
+  .hf-wa-num { margin: 14px 0 0; font-size: 15px; }
+  .hf-wa-num a { font-weight: 700; white-space: nowrap; }
   .hf-lede a { color: var(--red-text); font-weight: 700; }
   .hf { max-width: 860px; }
   .hf-jump { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 30px; }

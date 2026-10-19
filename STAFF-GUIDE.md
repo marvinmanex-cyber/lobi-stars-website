@@ -2580,11 +2580,26 @@ Show until** dates (Nigerian time). Fans can close it; it stays closed until
 they next open the site. Untick to remove it.
 
 ### Social links and the WhatsApp Channel
-**CMS → Site Settings → Season, Homepage Stats & Footer Text → Social links**:
-add the Facebook, X, Instagram, YouTube, TikTok and **WhatsApp Channel** links.
-Empty ones are hidden. As soon as the WhatsApp Channel link is added, a
-"Join our WhatsApp Channel" block appears on the homepage, in the footer, at
-the end of every news article and on Watch Live.
+**CMS → Site Settings & Shop → Season, Homepage Stats & Footer Text → Social
+links**: the Facebook, X, Instagram, YouTube, TikTok and **WhatsApp Channel**
+addresses. Paste the full address starting with `https://`. A field that is
+empty or still says `REPLACE_WITH_…` is hidden everywhere (no broken icon or
+dead link). These addresses are the one list used for the footer icons, the
+Contact page, the Share Hub and Website Health.
+
+As soon as the real WhatsApp Channel address is in:
+- the homepage shows the **"Join the Lobi Stars WhatsApp Channel"** card
+  (just above the newsletter), with a green **Join WhatsApp Channel** button;
+- the footer shows a WhatsApp icon and a **"Follow us on WhatsApp"** link;
+- the "Join our WhatsApp Channel" strip appears on Watch Live and at the end
+  of news articles.
+
+To get the channel address: in WhatsApp, open the channel › tap its name ›
+**Channel link** › **Copy link**.
+
+There is no floating WhatsApp chat button any more (removed 19 Oct 2026). The
+club management number **0903 039 9416** is shown on the Contact and Help
+pages, and MatchDay Kitchen WhatsApp ordering is unchanged.
 
 ### Newsletter sign-ups
 (For the weekly newsletter itself, sign-up options and sponsor adverts, see section 24.)
