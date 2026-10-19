@@ -8,6 +8,18 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: WhatsApp Channel changed
+
+**What changed**
+- The website's WhatsApp Channel links now open the "Lobi Stars (Yes Father
+  Channel)" channel (https://whatsapp.com/channel/0029VaeAqYI8qIzwLEdy3E1o)
+  instead of the channel connected earlier today: the homepage card, the footer
+  icon, the channel strips, the Contact page and the Share Hub.
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-19: YouTube connected; Facebook and Instagram confirmed
 
 **What changed**
