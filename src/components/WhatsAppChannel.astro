@@ -14,7 +14,7 @@ const url = WHATSAPP_CHANNEL_URL;
 const show = WHATSAPP_CHANNEL_SHOWN;
 ---
 {show && variant === 'home' && (
-  <section class="wah" aria-labelledby="wah-title">
+  <div class="wah-bg"><section class="wah" aria-labelledby="wah-title">
     <div class="wah-card">
       <div class="wah-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d={WHATSAPP_ICON} /></svg></div>
       <div class="wah-text">
@@ -35,7 +35,7 @@ const show = WHATSAPP_CHANNEL_SHOWN;
         <p class="wah-note">Free to join. Your phone number stays private.</p>
       </div>
     </div>
-  </section>
+  </section></div>
 )}
 {show && variant !== 'home' && (
   <section class:list={['wac', `wac--${variant}`]} aria-label="WhatsApp Channel">
@@ -85,10 +85,11 @@ const show = WHATSAPP_CHANNEL_SHOWN;
   /* Phones (the site's 767px breakpoint): the card floats on a full-width WhatsApp-green band
      (bright green on the left, fading lighter to the right) with green showing all round. */
   @media (max-width: 767px) {
-    /* Rounded like the card inside (outer radius = card radius + the green gap), with a soft green glow so the edges fade into the page. */
-    .wah { max-width: none; margin: 18px 10px; padding: 12px; border-radius: 34px;
-      background: linear-gradient(100deg, #0FB341 0%, #2CC860 30%, #8FE3AC 68%, #E3F8EA 100%);
-      box-shadow: 0 0 0 1px rgba(15, 179, 65, .06), 0 10px 26px -6px rgba(15, 179, 65, .38), 0 0 34px rgba(143, 227, 172, .45); }
+    /* The box ends at its green edge: around it, the same dark as the sections above and below (no white). */
+    .wah-bg { background: #15181D; padding: 18px 10px; }
+    /* Rounded like the card inside (outer radius = card radius + the green gap). */
+    .wah { max-width: none; margin: 0; padding: 12px; border-radius: 34px;
+      background: linear-gradient(100deg, #0FB341 0%, #2CC860 30%, #8FE3AC 68%, #E3F8EA 100%); }
     .wah-card { border: none; border-radius: 22px; box-shadow: 0 10px 28px rgba(8, 72, 32, .14); }
     .wah-btn { background: #0FB341; box-shadow: 0 8px 20px -6px rgba(15, 179, 65, .65); }
     .wah-btn:hover, .wah-btn.wah-soon:hover { background: #0C9A37; }
