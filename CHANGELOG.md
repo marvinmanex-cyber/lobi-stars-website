@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: Footer social icons: even spacing on phones; new Instagram icon
+
+**What changed**
+- On phones the six social icons spread evenly across the full width (the
+  first at the left edge, the last at the right, equal gaps). Computers and
+  tablets are unchanged.
+- A new Instagram icon: a clean camera glyph on Instagram's own colours,
+  filling the circle to its edge (the old one showed a band at the top, so it
+  looked cut).
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-19: WhatsApp Channel card on phones: green background
 
 **What changed**

@@ -56,10 +56,10 @@ const year = new Date().getFullYear();
             {SOCIAL_SHOWN.map(s => (
               <li>{s.live
                 ? <a class={`sf-s--${s.id}`} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={`Lobi Stars on ${s.label}`}>
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d={s.icon} /></svg>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d={s.icon} fill-rule={s.evenodd ? 'evenodd' : undefined} /></svg>
                   </a>
                 : <span class={`sf-s--${s.id} sf-soon`} role="img" aria-label={`Lobi Stars on ${s.label} (coming soon)`} title="Coming soon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d={s.icon} /></svg>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d={s.icon} fill-rule={s.evenodd ? 'evenodd' : undefined} /></svg>
                   </span>}</li>
             ))}
           </ul>
@@ -130,9 +130,12 @@ const year = new Date().getFullYear();
   .sf-brand p { margin: 16px 0 0; max-width: 420px; font-size: 14px; line-height: 1.7; color: rgba(255, 255, 255, .7); }
   .sf-brand .sf-follow { margin: 20px 0 0; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
   .sf-social { list-style: none; display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0 0; padding: 0; }
+  /* Phones: the icons spread evenly across the full width (first at the left edge, last at the right). */
+  @media (max-width: 767px) { .sf-social { justify-content: space-between; gap: 8px; } }
   /* Each platform in its own brand colours (white logo on the brand colour). */
   .sf-social a, .sf-social .sf-soon {
     width: 44px; height: 44px; border-radius: 50%; border: 1px solid transparent;
+    background-origin: border-box; /* the colour fills the whole circle (no band at the edge) */
     display: flex; align-items: center; justify-content: center; transition: transform .2s, filter .2s;
   }
   .sf-social svg { width: 19px; height: 19px; fill: #fff; }
@@ -141,7 +144,8 @@ const year = new Date().getFullYear();
   .sf-soon { cursor: default; }
   .sf-social .sf-s--facebook { background: #1877F2; }
   .sf-social .sf-s--x { background: #000; border-color: rgba(255, 255, 255, .35); }
-  .sf-social .sf-s--instagram { background: radial-gradient(circle at 30% 107%, #FDF497 0%, #FDF497 5%, #FD5949 45%, #D6249F 60%, #285AEB 90%); }
+  /* Instagram's colours: a warm glow from the bottom left over a blue-to-purple base; no border, so the colour fills the circle to its edge. */
+  .sf-social .sf-s--instagram { border: 0; background: radial-gradient(circle farthest-corner at 28% 108%, #FFDC80 0%, #FCAF45 14%, #F77737 28%, #F56040 40%, rgba(253, 29, 29, 0) 72%), linear-gradient(140deg, #405DE6 0%, #5851DB 22%, #833AB4 46%, #C13584 70%, #E1306C 100%); background-repeat: no-repeat; }
   .sf-social .sf-s--youtube { background: #FF0000; }
   .sf-social .sf-s--tiktok { background: #000; border-color: rgba(255, 255, 255, .35); }
   .sf-social .sf-s--whatsappChannel { background: #25D366; }
