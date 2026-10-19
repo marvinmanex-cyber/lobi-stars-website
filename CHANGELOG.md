@@ -14,7 +14,9 @@ in HANDOVER-TODO.md.
 - On phones, the homepage "Join the Lobi Stars WhatsApp Channel" card sits on
   a full-width WhatsApp-green band (bright green fading lighter to the right),
   with the white card floating on it and green showing all round, instead of a
-  white box with a green stripe. Tablets and computers are unchanged.
+  white box with a green stripe. The green box has rounded corners that follow
+  the card's curve and a soft green glow, so its edges fade into the page.
+  Tablets and computers are unchanged.
 
 **Staff need to:** nothing.
 
