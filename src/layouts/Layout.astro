@@ -191,6 +191,9 @@ main.bare{padding-top:0;min-height:0;}
 .muted{color:var(--lt);}
 .page-hero{padding:70px 5% 40px;}
 .page-content{padding:0 5% 90px;}
+/* Phones: no stretched page height and a short, even space above the footer (no big empty gaps). */
+@media(max-width:767px){ main{min-height:0;} .page-content{padding-bottom:32px;} }
+@media(max-width:767px){ .page-content > :last-child, .page-content > :last-child > :last-child{margin-bottom:0;} }
 .empty-state{padding:60px 20px;text-align:center;color:var(--lt);border:1px dashed var(--d4);border-radius:10px;}
 
 /* FORMS (membership, contact, partners, food) */

@@ -57,6 +57,7 @@ const packages = ((data.packages || []) as Pkg[])
 
 <style>
   .hp { padding-bottom: 80px; }
+  @media (max-width: 767px) { .hp { padding-bottom: 32px; } } /* phones: short, even space above the footer */
   .hp-lede { max-width: 680px; font-size: 17px; line-height: 1.7; }
   .hp-h2 { margin: 0 0 16px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .hp-h3 { margin: 0 0 6px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }

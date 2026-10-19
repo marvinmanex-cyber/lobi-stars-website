@@ -168,6 +168,7 @@ const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity
   .rw-cta :global(a), .rw-acts a, .rw-page :global(.btn-p), .rw-page :global(.btn-o) { min-height: 44px; display: inline-flex; align-items: center; }
   .rw-hero :global(.rw-light) { color: #fff !important; border-color: rgba(255, 255, 255, .8) !important; }
   .rw-page { padding-top: 8px; padding-bottom: 64px; }
+  @media (max-width: 767px) { .rw-page { padding-bottom: 32px; } } /* phones: short, even space above the footer */
   .rw-sec { padding: 34px 0 6px; border-bottom: 1px solid var(--d4); }
   .rw-sec h2 { margin: 0 0 12px; font: 400 clamp(30px, 4.5vw, 42px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .rw-sec p { line-height: 1.6; }

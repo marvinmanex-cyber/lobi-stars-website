@@ -8,6 +8,23 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: Phones: no big empty space above the footer
+
+**What changed**
+- On phones, every page now ends with a short, even space (about 32 px)
+  before the black footer, instead of 120 to 400 px of empty space. Short pages
+  are no longer stretched to 60% of the screen height, the footer's 70 px top
+  margin is removed on phones, and the extra bottom padding of the page
+  containers (standard pages, legal pages, partners, Stats, Awards, Predict &
+  Win, Man of the Match, Commentary, Rewards, Hospitality, Season Tickets) is
+  the same 32 px. The Match Alerts box no longer keeps a blank line under its
+  button until there is a message.
+- Tablets and computers are unchanged.
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-19: Footer tagline: Makurdi removed
 
 **What changed**

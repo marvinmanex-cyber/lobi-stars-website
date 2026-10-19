@@ -42,6 +42,7 @@ import Layout from '../../layouts/Layout.astro';
 <style>
   .st { max-width: 760px; }
   .st-off { text-align: center; padding: 30px 0; display: grid; gap: 16px; justify-items: center; }
+  @media (max-width: 767px) { .st-off { padding-bottom: 0; } } /* phones: short, even space above the footer */
   .st-lede { font-size: 18px; line-height: 1.55; margin: 0 0 12px; }
   .st-info { background: var(--d3); border-radius: 12px; padding: 12px 16px; margin: 0 0 16px; line-height: 1.55; }
   .st-form { display: grid; gap: 14px; }

@@ -22,6 +22,7 @@ import MatchesTabs from '../components/MatchesTabs.astro';
 
 <style>
   .aw { padding-bottom: 80px; }
+  @media (max-width: 767px) { .aw { padding-bottom: 32px; } } /* phones: short, even space above the footer */
   .aw-lede { max-width: 760px; color: var(--lt); margin: 0 0 8px; }
   .aw-empty { color: var(--lt); padding: 18px 0; }
   .aw :global(.aw-h2) { margin: 34px 0 14px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }

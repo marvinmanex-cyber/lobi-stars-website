@@ -56,6 +56,7 @@ import MatchAlerts from '../../components/MatchAlerts.astro';
   .cm-title span { color: #FFC72C; }
   .cm-sub { margin: 0; font-size: 17px; color: rgba(255,255,255,.9); }
   .cm-body { margin-top: -84px; padding-bottom: 70px; position: relative; }
+  @media (max-width: 767px) { .cm-body { padding-bottom: 32px; } } /* phones: short, even space above the footer */
   .cm-data { margin: 12px 0 0; text-align: center; font-size: 13px; color: var(--lt); }
   .cm-sec { margin-top: 42px; }
   .cm-h2 { margin: 0 0 16px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }

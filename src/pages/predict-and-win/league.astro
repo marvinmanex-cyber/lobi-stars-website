@@ -40,6 +40,7 @@ const seasonPrize = league.seasonPrize > 0 ? formatNaira(league.seasonPrize) : '
 
 <style>
   .lg { padding-bottom: 80px; }
+  @media (max-width: 767px) { .lg { padding-bottom: 32px; } } /* phones: short, even space above the footer */
   .lg-intro { max-width: 760px; margin-bottom: 20px; }
   .lg-points { list-style: none; padding: 0; margin: 12px 0; display: flex; gap: 12px; flex-wrap: wrap; }
   .lg-points li { display: flex; align-items: center; gap: 10px; border: 1px solid var(--d4); border-radius: 12px; padding: 10px 16px; background: #fff; }

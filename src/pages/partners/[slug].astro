@@ -58,6 +58,7 @@ if (pageDesc.length > 160) pageDesc = pageDesc.slice(0, 157).replace(/\s+\S*$/, 
 
 <style>
   .pd { padding-top: 32px; padding-bottom: 50px; }
+  @media (max-width: 767px) { .pd { padding-bottom: 32px; } } /* phones: short, even space above the footer */
   .pd-back { display: inline-block; margin-bottom: 22px; color: var(--red-text); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; }
   .pd-top { display: grid; grid-template-columns: minmax(240px, 380px) 1fr; gap: 40px; align-items: center; }
   .pd-title { margin: 0 0 6px; font: 700 20px/1.2 'Barlow Condensed', sans-serif; color: var(--red-text); }

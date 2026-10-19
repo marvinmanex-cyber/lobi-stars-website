@@ -74,6 +74,7 @@ const live = kind === 'vote' ? settings.motmLive === true : settings.predictLive
   .mg-btn-o { color: #fff; border-color: rgba(255, 255, 255, .7); }
   .mg-btn-o:hover { background: #fff; color: var(--rdp); }
   .mg-body { padding-top: 36px; padding-bottom: 70px; }
+  @media (max-width: 767px) { .mg-body { padding-bottom: 32px; } } /* phones: short, even space above the footer */
   .mg-status { border: 1px solid var(--d4); border-left: 5px solid var(--red); border-radius: 14px; padding: 22px 24px; background: #fff; margin-bottom: 40px; }
   .mg-status-k { margin: 0; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: var(--red-text); }
   .mg-status-t { margin: 8px 0 6px; font: 400 clamp(24px, 3.4vw, 32px)/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }

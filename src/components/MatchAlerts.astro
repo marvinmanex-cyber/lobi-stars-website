@@ -46,6 +46,7 @@ const { variant = 'card' } = Astro.props;
   .ma-on { flex: 1; min-height: 48px; }
   .ma-band .ma-off { color: #fff; border-color: rgba(255, 255, 255, .5); }
   .ma-msg { margin: 10px 0 0; font-size: 14px; min-height: 1.2em; }
+  @media (max-width: 767px) { .ma-msg:empty { min-height: 0; margin: 0; } } /* phones: no blank line under the button until there is a message */
   .ma-msg.ok { color: #16A34A; font-weight: 700; } .ma-band .ma-msg.ok { color: #86EFAC; }
   .ma-msg.err { color: #B3161B; } .ma-band .ma-msg.err { color: #FCA5A5; }
   .ma [hidden] { display: none !important; }

@@ -26,6 +26,7 @@ import { CURRENT_SEASON } from '../lib/site';
 
 <style>
   .st { padding-bottom: 80px; }
+  @media (max-width: 767px) { .st { padding-bottom: 32px; } } /* phones: short, even space above the footer */
   .st-season { display: flex; align-items: center; gap: 10px; margin: 0 0 24px; }
   .st-season label { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
   .st-season select { padding: 9px 12px; border: 1px solid var(--d4); border-radius: 8px; font: 600 15px 'Barlow', sans-serif; background: #fff; color: var(--white); }
