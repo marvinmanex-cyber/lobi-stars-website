@@ -8,6 +8,21 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: Homepage on phones: shorter match section
+
+**What changed**
+- On phones (up to 767 px wide) the homepage "Upcoming Matches" section shows
+  only its heading and a full-width **See all matches** button (to /fixtures),
+  followed straight by MatchDay Kitchen. The next match is still the featured
+  match bar above it, chosen automatically as before.
+- Tablets and computers are unchanged (checked: identical screenshots). The
+  match cards stay in the page, only hidden on phones, so countdowns, share
+  buttons and search engines are unaffected.
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-19: WhatsApp button removed; one social links list; WhatsApp Channel card
 
 **What changed**

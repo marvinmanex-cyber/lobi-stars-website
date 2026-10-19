@@ -10,7 +10,8 @@ import '../../styles/fixture-card.css';
   <div class="nm-inner">
     <div class="nm-head">
       <h2 class="nm-title" id="nm-title">Upcoming Matches</h2>
-      <a class="nm-all" href="/fixtures/">See all fixtures <span aria-hidden="true">&rarr;</span></a>
+      <!-- One link: "See all fixtures →" on tablet and desktop, a full-width "See all matches" button on phones. -->
+      <a class="nm-all" href="/fixtures/"><span class="nm-all-d">See all fixtures <span aria-hidden="true">&rarr;</span></span><span class="nm-all-m">See all matches</span></a>
     </div>
     <ul class="nm-track" data-nm-track aria-live="polite">
       <li class="nm-empty" data-nm-status>Fixtures for the next round will be announced soon. <a href="/fixtures/">See all fixtures</a></li>
@@ -34,6 +35,21 @@ import '../../styles/fixture-card.css';
   }
   .nm-empty { color: var(--lt); font-size: 15px; padding: 18px 0; }
   .nm-empty a { color: var(--red-text); font-weight: 600; }
+  .nm-all-d { display: contents; } /* lays out exactly like the link's text before the phone version was added */
+  .nm-all-m { display: none; }
+  /* Phones (the site's 767px breakpoint): the next match stays in the match bar above; here only the
+     heading and a full-width "See all matches" button. The cards stay in the page (hidden), so the
+     countdowns, share buttons and search engines are unaffected. */
+  @media (max-width: 767px) {
+    .nm { padding-bottom: 32px; }
+    .nm-head { flex-direction: column; align-items: stretch; gap: 14px; margin-bottom: 0; }
+    .nm-track { display: none; }
+    .nm-all { justify-content: center; width: 100%; min-height: 48px; padding: 0 20px; border: 1.5px solid var(--red); border-radius: 3px;
+      font-size: 14px; letter-spacing: 2px; transition: background .2s, color .2s; }
+    .nm-all:hover, .nm-all:focus-visible { background: var(--red); color: #fff; text-decoration: none; }
+    .nm-all-d { display: none; }
+    .nm-all-m { display: inline; }
+  }
 </style>
 
 <script>
