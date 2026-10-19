@@ -7,7 +7,7 @@
 // Vanilla TypeScript, no libraries. The cart and seat are kept on the phone.
 import { upcomingMatches } from '../../functions/api/_lib/tickets/rules.js';
 
-type Item = { id: string; name: string; description: string; priceKobo: number; photo: string | null; soldOut: boolean; maxPerOrder: number; adult: boolean; spice?: number; badge?: string | null };
+type Item = { id: string; name: string; description: string; priceKobo: number; photo: string | null; emoji?: string; soldOut: boolean; maxPerOrder: number; adult: boolean; spice?: number; badge?: string | null };
 type Cat = { id: string; name: string; items: Item[] };
 type Menu = { open: boolean; reason: string; match: string | null; opensAt: string | null; closesAt: string | null; categories: Cat[]; stands: string[]; minOrderKobo: number; paymentExpiryMinutes: number; whatsapp: { number: string; display: string } | null };
 
@@ -81,7 +81,7 @@ function card(f: Item) {
     : q ? `<div class="kx-step" role="group" aria-label="${esc(f.name)} quantity"><button type="button" data-id="${esc(f.id)}" data-d="-1" aria-label="Remove one ${esc(f.name)}">−</button><output aria-live="polite">${q}</output><button type="button" data-id="${esc(f.id)}" data-d="1" aria-label="Add one more ${esc(f.name)}"${q >= f.maxPerOrder || closed ? ' disabled' : ''}>+</button></div>`
       : `<button type="button" class="kx-add" data-id="${esc(f.id)}" data-d="1"${closed ? ' disabled' : ''} aria-label="Add ${esc(f.name)}, ${naira(f.priceKobo)}">${closed ? 'Kitchen closed' : 'Add'}</button>`;
   return `<li class="kx-card${q ? ' is-picked' : ''}">
-<div class="kx-photo">${f.photo ? `<img src="${esc(f.photo)}" alt="" loading="lazy" decoding="async" width="400" height="300">` : `<div class="kx-ph" aria-hidden="true">${esc(f.name.split(/\s+/).slice(0, 2).map(w => w[0]).join(''))}</div>`}
+<div class="kx-photo">${f.photo ? `<img src="${esc(f.photo)}" alt="" loading="lazy" decoding="async" width="400" height="300">` : f.emoji ? `<div class="kx-ph kx-ph--emoji" aria-hidden="true">${esc(f.emoji)}</div>` : `<div class="kx-ph" aria-hidden="true">${esc(f.name.split(/\s+/).slice(0, 2).map(w => w[0]).join(''))}</div>`}
 ${f.badge && BADGE[f.badge] ? `<span class="kx-badge kx-badge--${esc(f.badge)}">${BADGE[f.badge]}</span>` : ''}${f.soldOut ? '<span class="kx-soldtag">Sold out</span>' : ''}</div>
 <div class="kx-body"><span class="kx-name">${esc(f.name)}</span>${f.description ? `<p class="kx-desc">${esc(f.description)}</p>` : ''}
 ${f.adult ? '<span class="kx-age">18+ | Drink Responsibly</span>' : ''}

@@ -8,6 +8,33 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: MatchDay Kitchen menu, stand drop-down; VIP tickets ₦500
+
+**What changed**
+- **Ticket prices:** every home match still to be played is now Popular Stand
+  ₦100, Cover Stand ₦200, **VIP ₦500** (VIP was ₦300). Tickets already bought
+  keep the price paid. Change any match in Commerce › Match Tickets.
+- **MatchDay Kitchen seat:** "Section" is a drop-down with **Popular Stand,
+  Cover Stand and VIP Seating** (it was free text, so fans didn't know what to
+  write). The phone number was already asked for (and required) at checkout,
+  next to the name, for both Pay Online and WhatsApp orders.
+- **New menu:** 39 items in 5 categories: MatchDay Combos (shown first),
+  Meals, Suya & Grills, Snacks, Drinks. Every item states its portion (for
+  example "3 skewers, about 300 g"), spice level and badges (Best Seller, New,
+  Spicy). Every combo is cheaper than buying its items separately. The old
+  sample items are archived (kept for past orders).
+- Until the kitchen uploads its own photos, each item shows a large food emoji
+  instead of initials.
+- **Brand promise** under the MatchDay Kitchen title: "Great Food. Every Match.
+  Order online. Enjoy from your seat."
+
+**Staff need to:** upload real photos of each dish and confirm prices and
+portions with the caterer (Admin › Food › Menu; handover D6).
+
+**Handbook:** STAFF-GUIDE.md › MatchDay Kitchen (stands list).
+
+---
+
 ## 2026-10-19: Phones: the footer no longer lifts when scrolling to the end
 
 **What changed**

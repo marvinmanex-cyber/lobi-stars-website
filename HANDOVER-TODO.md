@@ -110,7 +110,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | D8 | **Predict & Win and email-code accounts** | Fans who sign in for the programme with an emailed code get a fan account without confirming they are 18+ and without a phone number. Should Predict & Win (and Man of the Match) ask those fans to confirm 18+ and add a phone number before they can play? (Recommended: yes for Predict & Win, because winners must be contacted and the terms say 18+.) |
 | D9 | **Season tickets** | Built and switched off. Decide the season-ticket price for each stand (VIP Sitting, Cover Stand, Popular Stand), how many each stand has, whether cup matches are included, then switch it on in Admin › Commerce › Season Tickets (needs A4, the live Paystack key). |
 | D10 | **Match tickets at the gate** | **Done (12 Oct 2026):** you chose "only that very match". The scanner now refuses a ticket for a different match with "Wrong match: this ticket is for <match> on <date>"; the ticket stays valid for its own match day. |
-| D6 | **In-seat food** | The real menu (items, prices, photos, categories), the list of stands/blocks for seat delivery, and the alert email addresses / phone numbers for the kitchen. |
+| D6 | **In-seat food** | **Menu set (19 Oct 2026):** 39 items in 5 categories (MatchDay Combos, Meals, Suya & Grills, Snacks, Drinks) with suggested launch prices, and the seat Section drop-down (Popular Stand, Cover Stand, VIP Seating). Still needed: **the kitchen's own photos** of each item (Admin › Food › Menu, upload per item; until then a food emoji shows), the caterer to **confirm each price and portion** (edit in Admin › Food › Menu), and the alert email addresses / phone numbers for the kitchen. |
 
 ## L. League (fixtures, results, table)
 
@@ -121,7 +121,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | L3 | **Who may change rules** | Optional: the staff emails allowed to change rules, adjustments, tie decisions, the import and undo (setting `league_admin_emails`); otherwise every League user can. |
 | L4 | **First real results** | From Matchday 1 (Sat 7 / Sun 8 Nov 2026), enter all four results after each matchday. |
 | L5 | **The 23 October match** | **Done (13 Oct 2026):** its orders were test purchases, so the trial match is hidden. |
-| L6 | **Ticket prices** | **Done (15 Oct 2026):** every home match still to be played is now VIP Sitting ₦300, Cover Stand ₦200, Popular Stand ₦100 (club decision; before: ₦5,000 / ₦2,000 / ₦1,000). Tickets already bought keep the price paid. Change any match in Commerce › Match Tickets. Online payment needs the live Paystack key (A4). |
+| L6 | **Ticket prices** | **Done (19 Oct 2026):** every home match still to be played is now VIP ₦500, Cover Stand ₦200, Popular Stand ₦100 (VIP raised from ₦300 on 19 Oct; set on 15 Oct as VIP Sitting ₦300, Cover Stand ₦200, Popular Stand ₦100 (club decision; before: ₦5,000 / ₦2,000 / ₦1,000). Tickets already bought keep the price paid. Change any match in Commerce › Match Tickets. Online payment needs the live Paystack key (A4). |
 | L7 | **Seats per stand** | How many VIP Sitting, Cover Stand and Popular Stand seats can be sold for each home match (until set, there is no limit). Enter them in Commerce › Match Tickets (one form sets all matches) or send them to the website manager. |
 
 ## E. Legal

@@ -1047,7 +1047,8 @@ category can only be deleted when it has no items.
   (opens a set number of minutes before kick-off of a Lobi Stars home game
   and closes at full time).
 - **Unpaid orders expire after** (minutes), **Minimum order** (₦, 0 = none).
-- **Stands / sections:** one per line. Fans then pick their stand from a list
+- **Stands / sections:** one per line (set to **Popular Stand, Cover Stand, VIP
+  Seating**; this is also the default). Fans then pick their stand from a list
   instead of typing it.
 
 **💬 Order on WhatsApp** (same tab, below):

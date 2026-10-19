@@ -63,6 +63,13 @@ export async function ensureTicketShopSchema(db) {
       WHERE is_home = 1 AND event_date > ?`).bind(new Date().toISOString()).run();
     await db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES ('home_prices_2026_10', ?)`).bind(new Date().toISOString()).run();
   }
+  // 19 October 2026: the club raised VIP to N500 (Popular Stand N100 and Cover Stand N200 unchanged) for every
+  // home match still to be played. Once only, like the update above.
+  const vip500 = await db.prepare(`SELECT 1 FROM settings WHERE key = 'home_vip_500_2026_10'`).first();
+  if (!vip500) {
+    await db.prepare(`UPDATE events SET vip_price_kobo = 50000 WHERE is_home = 1 AND event_date > ?`).bind(new Date().toISOString()).run();
+    await db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES ('home_vip_500_2026_10', ?)`).bind(new Date().toISOString()).run();
+  }
   ready = true;
 }
 

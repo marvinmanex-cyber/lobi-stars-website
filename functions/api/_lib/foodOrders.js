@@ -116,7 +116,8 @@ export async function ensureFoodSchema(db) {
 
 // ── Settings ──
 // orderingMode: 'open' (always), 'closed', or 'auto' (from autoOpenMinutes before kick-off
-// of a home game until full time). stands: list for the seat form (empty = free text).
+// of a home game until full time). stands: list for the seat form's Section drop-down (default: the three
+// McCarthy Stadium stands; saved as an empty list = free text).
 export const WA_TEMPLATES = {
   msgConfirmed: 'Hi {name}, your Lobi Stars FC food order {ref} is confirmed. Total {total}. Please pay to {bank} and send your receipt here. Thank you!',
   msgPaid: "Hi {name}, we've received your payment for order {ref}. We're preparing your food now!",
@@ -124,7 +125,7 @@ export const WA_TEMPLATES = {
   msgCancelled: "Hi {name}, sorry, your Lobi Stars FC food order {ref} has been cancelled. Please message us if you have any questions.",
 };
 export const FOOD_DEFAULTS = {
-  paymentExpiryMinutes: 15, orderingMode: 'open', autoOpenMinutes: 90, stands: [], minOrderKobo: 0,
+  paymentExpiryMinutes: 15, orderingMode: 'open', autoOpenMinutes: 90, stands: ['Popular Stand', 'Cover Stand', 'VIP Seating'], minOrderKobo: 0,
   // Order on WhatsApp. The number is the club WhatsApp shown on the site.
   whatsappEnabled: true, whatsappNumber: '2347080094985', whatsappExpiryHours: 3, pickupPoints: [], bankDetails: '',
   ...WA_TEMPLATES,
@@ -132,7 +133,7 @@ export const FOOD_DEFAULTS = {
 export async function foodSettings(db) {
   await ensureFoodSchema(db);
   const { results } = await db.prepare(`SELECT key, value FROM food_settings`).all();
-  const s = { ...FOOD_DEFAULTS, stands: [], pickupPoints: [] };
+  const s = { ...FOOD_DEFAULTS, stands: [...FOOD_DEFAULTS.stands], pickupPoints: [] }; // a stands list saved in Admin › Food replaces the default
   for (const r of results) {
     if (r.key === 'whatsappEnabled') s.whatsappEnabled = r.value === '1';
     if (r.key === 'whatsappNumber' && /^234\d{10}$/.test(r.value || '')) s.whatsappNumber = r.value;
