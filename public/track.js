@@ -56,6 +56,9 @@
     } catch (e) { /* analytics must never break the page */ }
   }
   window.__lsPageview = pageview;
+  // In-page navigation (Astro): this script is not run again, so count each new page on Astro's page-load signal.
+  var counted = location.pathname;
+  document.addEventListener('astro:page-load', function () { if (location.pathname !== counted) { counted = location.pathname; pageview(true); } });
   pageview(false);
 
   // Events

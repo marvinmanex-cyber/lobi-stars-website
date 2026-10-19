@@ -26,3 +26,12 @@ CRON_SECRET=
 # SESSION_SECRET (the spec's AUTH_SECRET), email uses RESEND_API_KEY and the
 # human check TURNSTILE_SECRET_KEY. Files need the R2 binding PROGRAMME_BUCKET
 # (wrangler.toml); locally add  --r2=PROGRAMME_BUCKET  to "wrangler pages dev".
+
+# ── Analytics intelligence (Google Analytics 4 + Search Console) ──
+# GA4 tag (/ga.js loads it only after the visitor accepts analytics cookies). Public ID, e.g. G-XXXXXXXXXX. Empty = GA4 off.
+GA4_MEASUREMENT_ID=
+# Server-side data sync (admin Analytics › Google & Search): GA4 property number (Admin › Property settings, e.g. 123456789),
+# the Search Console property, and the Google Cloud service account key (the whole JSON on one line). Secrets: never commit.
+GA4_PROPERTY_ID=
+GSC_SITE_URL=sc-domain:lobistarsfc.com
+GOOGLE_SERVICE_ACCOUNT_JSON=

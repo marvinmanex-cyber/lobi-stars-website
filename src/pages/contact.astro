@@ -32,7 +32,7 @@ const mapQuery = encodeURIComponent('McCarthy Stadium, Makurdi, Benue State, Nig
       </ul>
       {SOCIAL_SHOWN.length > 0 && (
         <p class="ct-social">Follow us:
-          {SOCIAL_SHOWN.map((s, i) => <>{i > 0 && ' · '}{s.live ? <a href={s.url} target="_blank" rel="noopener noreferrer">{s.label}</a> : <span title="Coming soon">{s.label}</span>}</>)}
+          {SOCIAL_SHOWN.map((s, i) => <>{i > 0 && ' · '}{s.live ? <a href={s.url} target="_blank" rel="noopener noreferrer" data-social={s.id}>{s.label}</a> : <span title="Coming soon">{s.label}</span>}</>)}
         </p>
       )}
       <div class="ct-map">

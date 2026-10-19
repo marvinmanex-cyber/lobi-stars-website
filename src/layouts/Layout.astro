@@ -243,5 +243,6 @@ main.bare{padding-top:0;min-height:0;}
 {!bare && !adminPage && <CookieConsent />}
 {!bare && !adminPage && <InstallPrompt />}
 <script is:inline src="/track.js" defer></script>
+{!adminPage && <script is:inline src="/ga.js" defer></script>}
 </body>
 </html>

@@ -755,6 +755,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     if (!quote) { err.textContent = 'Working out your price. Please try again in a moment.'; return; }
     var tokenEl = f.querySelector('[name="cf-turnstile-response"]');
     $('payBtn').disabled = true;
+    if (window.lsGa) window.lsGa('ticket_purchase_start', { item_count: lines.length, value: quote.totalKobo / 100, currency: 'NGN' });
     fetch('/api/tickets/basket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines: lines, groupName: $('grpWrap').hidden ? '' : f.groupName.value, expectedTotalKobo: quote.totalKobo, usePoints: rw ? rw.values().usePoints : 0, buyerName: f.buyerName.value, buyerEmail: f.buyerEmail.value, buyerPhone: f.buyerPhone.value, turnstileToken: tokenEl ? tokenEl.value : '' }) })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {

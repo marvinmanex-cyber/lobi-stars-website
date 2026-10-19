@@ -133,6 +133,7 @@ import FanAuthShell from '../../components/fans/FanAuthShell.astro';
           try {
             const r = await fetch('/api/membership/checkout', { method: 'POST' }); const d = await r.json();
             if (!r.ok || !d.authorizationUrl) throw new Error(d.error || 'Payment could not be started.');
+            (window as any).lsGa?.('membership_signup', { method: 'online_payment' });
             location.href = d.authorizationUrl;
           } catch (err) { b.disabled = false; b.textContent = `Pay ${price} with Paystack`; alert((err as Error).message); }
         });

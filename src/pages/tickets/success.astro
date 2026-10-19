@@ -144,6 +144,7 @@ import TicketsView from '../../components/tickets/TicketsView.astro';
         const r = await fetch(`/api/tickets/basket?reference=${encodeURIComponent(basket)}`, { cache: 'no-store' });
         const d = await r.json();
         if (r.ok && d.paid) {
+          try { if (!localStorage.getItem('ga_tk_' + basket)) { localStorage.setItem('ga_tk_' + basket, '1'); if (window.lsGa) window.lsGa('ticket_purchase_complete', { item_count: (d.matches || []).length, currency: 'NGN' }); } } catch (e) {}
           loading.style.display = 'none';
           document.getElementById('state-basket').style.display = 'block';
           const n = window.lsRenderTickets(document.getElementById('basket-list'), d);
@@ -177,6 +178,7 @@ import TicketsView from '../../components/tickets/TicketsView.astro';
       errorMsg.textContent = data.error || 'Payment could not be confirmed. If you were charged, contact us with your reference: ' + reference;
       return;
     }
+    try { if (!localStorage.getItem('ga_tk_' + reference)) { localStorage.setItem('ga_tk_' + reference, '1'); if (window.lsGa) window.lsGa('ticket_purchase_complete', { item_count: 1, value: data.order && data.order.totalKobo ? data.order.totalKobo / 100 : undefined, currency: 'NGN' }); } } catch (e) {}
 
     const TEAM_LOGOS = {
       'Lobi Stars FC': '/images/lobi-stars-fc-transparent-256.png',

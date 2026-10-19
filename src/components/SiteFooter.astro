@@ -55,7 +55,7 @@ const year = new Date().getFullYear();
           <ul class="sf-social" aria-labelledby="sf-follow">
             {SOCIAL_SHOWN.map(s => (
               <li>{s.live
-                ? <a class={`sf-s--${s.id}`} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={`Lobi Stars on ${s.label}`}>
+                ? <a class={`sf-s--${s.id}`} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={`Lobi Stars on ${s.label}`} data-social={s.id}>
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d={s.icon} fill-rule={s.evenodd ? 'evenodd' : undefined} /></svg>
                   </a>
                 : <span class={`sf-s--${s.id} sf-soon`} role="img" aria-label={`Lobi Stars on ${s.label} (coming soon)`} title="Coming soon">
@@ -240,6 +240,7 @@ const year = new Date().getFullYear();
         const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Could not sign you up. Please try again.');
         show(data.message || "Thanks! You're on the list.", true);
+        (window as any).lsGa?.('newsletter_signup', { location: 'footer' });
         form.reset();
       } catch (err) {
         show((err as Error).message);

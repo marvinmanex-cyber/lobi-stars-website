@@ -251,11 +251,15 @@ async function post(url: string, body: unknown) {
 function remember() { ['kxName', 'kxPhone', 'kxEmail'].forEach(id => { try { localStorage.setItem(`ls_kitchen_${id}`, ($(id) as HTMLInputElement).value.trim()); } catch { /* ignore */ } }); }
 function recall() { ['kxName', 'kxPhone', 'kxEmail'].forEach(id => { try { const v = localStorage.getItem(`ls_kitchen_${id}`); if (v) ($(id) as HTMLInputElement).value = v; } catch { /* ignore */ } }); }
 
+/** GA4 key event (only sent if the visitor accepted analytics; no personal data). */
+const gaEvent = (name: string, params: Record<string, string | number> = {}) => (window as unknown as { lsGa?: (n: string, p: Record<string, string | number>) => void }).lsGa?.(name, params);
+
 async function payOnline(e: Event) {
   e.preventDefault();
   const body = collect(false); if (!body) return;
   const btn = $('kxPayBtn') as HTMLButtonElement;
   btn.disabled = true; btn.textContent = 'Opening payment…';
+  gaEvent('kitchen_order_start', { method: 'online', item_count: count() });
   try {
     const { ok, status, d } = await post('/api/food-checkout', { ...body, ...(rewardsBox?.values() || {}), returnTo: 'kitchen' });
     if (!ok || !d.authorizationUrl) { if (status === 409) loadMenu(); throw new Error(d.error || 'Payment could not be started. Please try again.'); }
@@ -273,6 +277,7 @@ async function orderWhatsApp() {
   const body = collect(true); if (!body) return;
   const btn = $('kxWaBtn') as HTMLButtonElement;
   btn.disabled = true; btn.textContent = 'Preparing your order…';
+  gaEvent('kitchen_order_start', { method: 'whatsapp', item_count: count() });
   try {
     const token = (document.querySelector('#kxWaBox [name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || '';
     const { ok, status, d } = await post('/api/food/whatsapp-order', { ...body, turnstileToken: token });
@@ -282,6 +287,7 @@ async function orderWhatsApp() {
       throw new Error(d.error || 'Your order could not be saved. Please try again.');
     }
     remember();
+    try { if (!localStorage.getItem(`ga_fd_${d.ref}`)) { localStorage.setItem(`ga_fd_${d.ref}`, '1'); gaEvent('kitchen_order_complete', { method: 'whatsapp' }); } } catch { /* private mode */ }
     waMessage = d.message;
     qty = {}; saveCart();
     ($('kxDrawer') as HTMLDialogElement).close();

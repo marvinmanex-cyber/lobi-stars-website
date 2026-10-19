@@ -123,6 +123,7 @@ import Layout from '../../layouts/Layout.astro';
       say(msg, d.message || "You're subscribed!", true);
       form.reset(); f.weekly.checked = true;
       (window as any).lsTrack?.('newsletter_signup', 'newsletter-page');
+      (window as any).lsGa?.('newsletter_signup', { location: 'newsletter_page' });
     } catch { say(msg, 'Sign-up failed. Please check your connection and try again.'); }
     finally { btn.disabled = false; btn.textContent = 'Sign me up'; }
   });

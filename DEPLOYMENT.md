@@ -48,6 +48,10 @@ these in git.
 | `PAYSTACK_SECRET_KEY` | Tickets, membership, shirts, food | Test key (`sk_test_`) while testing, then the live key. |
 | `RESEND_API_KEY` | All emails | From Resend → API Keys. |
 | `RESEND_FROM` | Ticket, food and general emails | e.g. `Lobi Stars FC <noreply@lobistarsfc.com>`. |
+| `GA4_MEASUREMENT_ID` | Google Analytics 4 (only after a visitor accepts cookies) | e.g. `G-XXXXXXXXXX` (GA4 › Admin › Data streams › the web stream). Empty = GA4 off. Not secret. |
+| `GA4_PROPERTY_ID` | Analytics › Google & Search (daily sync, Phase 2) | The GA4 property number (Admin › Property settings), e.g. `123456789`. |
+| `GSC_SITE_URL` | Analytics › Google & Search (daily sync, Phase 2) | `sc-domain:lobistarsfc.com`. |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | Analytics › Google & Search (daily sync, Phase 2) | **Secret.** The Google Cloud service account key (whole JSON). The account needs Viewer in GA4 and access in Search Console. |
 | `FAN_EMAIL_FROM` | Fan account / reminder emails (optional) | Falls back to `RESEND_FROM`. |
 | `NEWSLETTER_FROM` | The weekly newsletter (optional) | e.g. `Lobi Stars FC <news@lobistarsfc.com>`; falls back to `RESEND_FROM`. |
 | `INBOX_FROM_EMAIL` | Inbox replies | e.g. `info@lobistarsfc.com`; staff first names are added ("Ade from Lobi Stars FC"). |

@@ -439,6 +439,24 @@ partnership brochure PDF (the download button only shows once a file is added).
 
 ## 8. How to read the analytics dashboard and export the fan database
 
+### Google Analytics 4 (only with the visitor's consent)
+
+Besides the website's own anonymous counting, the site can use **Google
+Analytics 4**, but **only for visitors who press Accept** in the cookie banner.
+Before that nothing at all is sent to Google; pressing Reject later switches it
+off and removes its cookies. Google's advertising features are off, and the
+site never sends names, phone numbers, emails, payments or what someone ordered.
+
+Key events recorded in GA4 (Reports › Engagement › Events):
+`ticket_purchase_start` (Pay pressed on Tickets), `ticket_purchase_complete`
+(payment confirmed), `kitchen_order_start` / `kitchen_order_complete`
+(MatchDay Kitchen, online or WhatsApp), `newsletter_signup`,
+`membership_signup` (fan account created or online membership payment),
+`watch_live_click`, `whatsapp_channel_join_click`, `social_click` (with the
+platform) and `prediction_submitted`. GA4 is switched on by the
+`GA4_MEASUREMENT_ID` setting in Cloudflare (handover A26). Pages visited
+without a full page load (the menu's quick navigation) are counted too.
+
 ### The analytics dashboard (Admin → Analytics)
 
 **Choose a period** at the top: Today, 7 days, 30 days, This season (from the

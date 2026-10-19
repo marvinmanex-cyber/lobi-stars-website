@@ -119,6 +119,8 @@ import Layout from '../../layouts/Layout.astro';
     const stopped = o.status === 'CANCELLED' || o.status === 'REFUNDED';
     // Accepted by the kitchen counts as the "confirmed" step; WhatsApp orders before payment show no step yet.
     const at = STEPS.indexOf(o.status === 'ACCEPTED' ? 'PAID' : o.status);
+    // Paid (online): the kitchen order is complete. Once per order.
+    if (at >= 0 && !stopped) { try { if (!localStorage.getItem('ga_fd_' + o.ref)) { localStorage.setItem('ga_fd_' + o.ref, '1'); if (window.lsGa) window.lsGa('kitchen_order_complete', { method: 'online', value: o.totalKobo / 100, currency: 'NGN' }); } } catch (e) {} }
     document.querySelectorAll('#track li').forEach((li, n) => {
       li.classList.toggle('on', !stopped && n <= at);
       li.classList.toggle('now', !stopped && n === at);

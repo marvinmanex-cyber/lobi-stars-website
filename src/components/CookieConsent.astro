@@ -8,7 +8,8 @@
 <div class="cc" id="cookieBanner" role="dialog" aria-live="polite" aria-label="Cookie preferences" hidden>
   <p class="cc-text">
     We use essential cookies to keep the site working (like staying logged in) and count page views anonymously.
-    With your permission we'd also recognise returning visitors so we can improve the site. No advertising cookies.
+    With your permission we'd also use Google Analytics cookies to understand how the site is used and recognise returning visitors.
+    No advertising cookies. <a href="/privacy/#cookies">Privacy Policy</a>
   </p>
   <div class="cc-actions">
     <button type="button" class="cc-btn cc-reject" data-consent="rejected">Reject non-essential</button>
@@ -24,6 +25,7 @@
   }
   .cc[hidden] { display: none; }
   .cc-text { margin: 0; font-size: 14px; line-height: 1.5; color: rgba(255, 255, 255, .88); }
+  .cc-text a { color: #FFC72C; }
   .cc-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
   .cc-btn {
     border-radius: 6px; padding: 10px 16px; cursor: pointer; border: 1.5px solid rgba(255, 255, 255, .35);
@@ -46,6 +48,8 @@
   // id once ls_consent is "accepted".
   function apply(v) {
     if (v === 'rejected') { try { localStorage.removeItem('ls_vid'); sessionStorage.removeItem('ls_sid'); } catch (e) {} }
+    // Google Analytics (/ga.js) starts only after Accept, and stops and clears its cookies after Reject.
+    if (window.__lsGaConsent) window.__lsGaConsent(v);
   }
   banner.querySelectorAll('[data-consent]').forEach(function (b) {
     b.addEventListener('click', function () {

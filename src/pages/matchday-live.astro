@@ -543,6 +543,7 @@ import '../styles/fixture-card.css';
           const res = await fetch(`/api/matches/${encodeURIComponent(m.slug)}/predict`, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ home: hg, away: ag }) });
           const r = await res.json().catch(() => ({}));
           if (!res.ok && r.code !== 'predicted') throw new Error(r.error || 'Your prediction could not be saved. Please try again.');
+          if (res.ok) (window as any).lsGa?.('prediction_submitted', { location: 'match_page' });
           reload();
         } catch (e2) { cErr.textContent = (e2 as Error).message; cErr.hidden = false; yes.disabled = false; yes.textContent = 'Submit'; }
       });

@@ -8,6 +8,32 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: Google Analytics 4 with consent (analytics intelligence, Phase 1)
+
+**What changed**
+- Google Analytics 4 can be switched on with the `GA4_MEASUREMENT_ID` setting.
+  It loads **only after a visitor presses Accept** in the cookie banner
+  (Consent Mode: everything denied by default; only analytics granted after
+  Accept; advertising features off). Before that nothing is sent to Google;
+  choosing Reject later switches it off and removes its cookies.
+- Ten key events with no personal data: ticket_purchase_start,
+  ticket_purchase_complete, kitchen_order_start, kitchen_order_complete,
+  newsletter_signup, membership_signup, watch_live_click,
+  whatsapp_channel_join_click, social_click (platform) and
+  prediction_submitted. Page addresses are sent without their ?query part
+  (order and sign-in links carry private tokens).
+- Fixed: pages reached with the menu's quick (in-page) navigation were not
+  counted by the website's own visitor counting either; they now are.
+- The cookie banner mentions Google Analytics and links to the Privacy Policy;
+  the Privacy Policy (section 4) explains Google Analytics.
+
+**Staff need to:** create the GA4 property and add the Measurement ID in
+Cloudflare (handover A26). Until then GA4 stays off.
+
+**Handbook:** STAFF-GUIDE.md › Google Analytics 4.
+
+---
+
 ## 2026-10-19: MatchDay Kitchen menu, stand drop-down; VIP tickets ₦500
 
 **What changed**

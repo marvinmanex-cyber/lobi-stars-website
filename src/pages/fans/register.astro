@@ -147,6 +147,7 @@ const siteKey = settings.turnstileSiteKey;
       const data = await res.json().catch(() => ({}));
       if (res.status === 400 && data.errors) { showErrors(data.errors); (window as any).turnstile?.reset?.(); return; }
       if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+      (window as any).lsGa?.('membership_signup', { method: 'fan_account' });
       document.getElementById('doneEmail')!.textContent = val('email');
       document.getElementById('emailFailed')!.hidden = !data.emailFailed;
       form.hidden = true;
