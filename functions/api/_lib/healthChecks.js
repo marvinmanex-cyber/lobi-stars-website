@@ -198,7 +198,7 @@ export const INFO = {
     fix: ['No provider is connected: staff send airtime rewards by hand from the Rewards fulfilment queue.'] },
   social_links: { category: 'outside', name: 'Social media links work', who: 'Media team',
     why: 'Fans follow the club from the website\'s social links.',
-    fix: ['Admin › Share › Edit platforms.', 'Correct the profile address of each platform listed in the details.', 'Press "Check again".'] },
+    fix: ['Content CMS › Site Settings › Social links: add the club\'s address for each platform listed (used in the footer and the Share Hub).', 'For Telegram (Share Hub only): Admin › Matchday Programme › open a programme › Share Hub › "Edit platforms, captions and hashtags".', 'Save, wait about 2 minutes for the site to update, then press "Check again".'] },
   push_keys: { category: 'outside', name: 'Phone notification keys set', who: DEV,
     why: 'Match alerts and kitchen order alerts use phone notifications.',
     fix: ['Send the details to the developer (VAPID keys, HANDOVER-TODO.md A5).'] },
@@ -730,7 +730,8 @@ export async function stepOutside(ctx) {
   const db = env.DB;
   const out = [];
   out.push(result('vtu', 'SKIPPED', { problem: 'No airtime/data provider is connected; airtime rewards are sent by staff.' }));
-  const plats = await safeAll(db, `SELECT name, profile_url FROM social_platforms WHERE is_enabled = 1`);
+  const { platforms } = await import('./share.js');
+  const plats = await platforms(db, true).catch(() => null); // with the Content CMS social links as fallback
   if (!plats) out.push(result('social_links', 'SKIPPED', { problem: 'Share Hub platforms are not set up.' }));
   else {
     const withUrl = plats.filter(p => p.profile_url);

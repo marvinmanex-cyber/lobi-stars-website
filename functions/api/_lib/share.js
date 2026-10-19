@@ -6,6 +6,12 @@
 // platform in qr_events. Stats are totals only.
 import { validSrc, ensureQrSchema } from './qr.js';
 import { ensureProgrammeSchema } from './programme.js';
+import site from '../../../src/data/site.json' with { type: 'json' };
+
+// A platform without its own profile address uses the club's social link from the
+// Content CMS (Site Settings › Social links), so each address is entered once.
+const SITE_SOCIAL = { facebook: 'facebook', twitter: 'x', instagram: 'instagram', youtube: 'youtube', tiktok: 'tiktok', whatsapp: 'whatsappChannel' };
+const siteLink = key => { const v = String(site.social?.[SITE_SOCIAL[key]] || '').trim(); return /^https:\/\//i.test(v) ? v : null; };
 
 export const SITE = 'https://lobistarsfc.com';
 const HASHTAGS = '#LobiStarsFC #LobiStars #MatchDay #NNL';
@@ -169,7 +175,7 @@ export function effectiveMode(env, platform) {
 export async function platforms(db, enabledOnly = true) {
   await ensureShareSchema(db);
   const { results } = await db.prepare(`SELECT * FROM social_platforms ${enabledOnly ? 'WHERE is_enabled = 1' : ''} ORDER BY sort_order, id`).all();
-  return results;
+  return results.map(p => (p.profile_url ? p : { ...p, profile_url: siteLink(p.key), profile_from_site: !!siteLink(p.key) }));
 }
 
 /** The caption to post: the saved override, or the platform's template for the programme's state. */

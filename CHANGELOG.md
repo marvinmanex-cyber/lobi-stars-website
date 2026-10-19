@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: Social links entered once
+
+**What changed**
+- The Share Hub uses the club's social links from the Content CMS (Site
+  Settings › Social links) when a platform has no address of its own, so each
+  address is entered once (footer icons, Share Hub and Website Health). Facebook,
+  X and Instagram now show in the Share Hub.
+- Website Health's "Social media links work" check counts those links too.
+
+**Staff need to:** add the YouTube, TikTok and WhatsApp Channel addresses in
+the Content CMS (handover C5).
+
+---
+
 ## 2026-10-18: Data Backup: clear confirmation when sending
 
 **What changed**
