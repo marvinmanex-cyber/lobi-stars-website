@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: WhatsApp Channel connected
+
+**What changed**
+- The club's WhatsApp Channel (https://whatsapp.com/channel/0029VbDjpp55Ejxt1yY0g33E)
+  is connected: the homepage "Join WhatsApp Channel" button, the footer
+  WhatsApp icon, the "Join our WhatsApp Channel" strips on Watch Live and news
+  articles, the Contact page and the Share Hub now open it (in a new tab).
+- YouTube and TikTok are still shown as "coming soon" until their addresses
+  are sent.
+
+**Staff need to:** send the YouTube and TikTok addresses (handover C5).
+
+---
+
 ## 2026-10-19: Homepage membership: clearer heading
 
 **What changed**
