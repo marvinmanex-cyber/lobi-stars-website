@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-19: Homepage hero: line removed
+
+**What changed**
+- The small gold line "Pride of Benue · Makurdi, Nigeria" above "Lobi Stars"
+  in the homepage hero is removed. The hero now starts with the club name.
+  ("Pride of Benue" elsewhere, such as the footer tagline, is unchanged.)
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-19: Footer: "Follow us on social media"
 
 **What changed**
