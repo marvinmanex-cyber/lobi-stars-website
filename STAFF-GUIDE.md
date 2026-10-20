@@ -2675,11 +2675,18 @@ version.
 end-of-season prize in naira only once the club has confirmed it (0 hides it).
 See the Matchday guide, section 5a.
 
-### Homepage hero photo
-The big photo at the top of the homepage (with "LOBI STARS – Football Club")
-is the **first** photo in **CMS → Hero Slides** (the one with the lowest
-*order* number). To change it, upload a new wide photo (at least 1600 pixels
-wide) and give it order 1.
+### Homepage hero photos
+The big photos at the top of the homepage (behind "LOBI STARS – Football
+Club") come from **CMS → Hero Slides**. The homepage shows **all** of them,
+one after another every few seconds, in their *Display Order* (lowest first).
+Upload wide photos, at least 1600 pixels wide.
+
+**On phones and tablets** (a setting on each slide): phones show the photo in
+a tall, narrow box, so a wide photo loses its left and right sides.
+- **Fill the screen** (the default) is right for stadium and crowd photos.
+- **Show the whole photo** is for wide group or line-up photos: the whole
+  photo is shown across the screen and a soft, blurred copy of it fills the
+  space above and below, so nobody at the edges is cut off.
 
 ### Promo bar (thin announcement bar at the very top of every page)
 **CMS → Site Settings → Promo Bar**: tick **Show the promo bar**, type a short

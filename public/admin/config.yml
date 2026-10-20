@@ -124,6 +124,7 @@ collections:
     fields:
       - {label: "Photo", name: "photo", widget: "image"}
       - {label: "Display Order", name: "order", widget: "number", default: 10}
+      - {label: "On phones and tablets", name: "mobileFit", widget: "select", required: false, default: "cover", hint: "Wide group photos: choose \"Show the whole photo\" so nobody at the edges is cut off.", options: [{label: "Fill the screen (sides may be cropped)", value: "cover"}, {label: "Show the whole photo (blurred background fills the rest)", value: "contain"}]}
 
   - name: "partners"
     label: "Partners"

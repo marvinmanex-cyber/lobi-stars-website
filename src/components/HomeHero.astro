@@ -11,18 +11,23 @@ const photos = slides.length
 ---
 <section class="hh" aria-labelledby="hh-title" data-hero-slider>
   {photos.map((photo, i) => (
-    <img
-      class:list={['hh-bg', { active: i === 0 }]}
-      data-slide
-      data-mobile-fit={photo.mobileFit}
-      src={photo.src}
-      alt=""
-      width="1920" height="1080"
-      loading={i === 0 ? 'eager' : 'lazy'}
-      fetchpriority={i === 0 ? 'high' : 'auto'}
-      decoding="async"
-      sizes="100vw"
-    />
+    <div class:list={['hh-bg', { active: i === 0 }]} data-slide data-mobile-fit={photo.mobileFit}>
+      {photo.mobileFit === 'contain' && (
+        // Phones / upright tablets: a soft, blurred copy of the same photo fills the
+        // space above and below the whole (uncropped) photo, so there are no bands.
+        <img class="hh-fill" src={photo.src} alt="" aria-hidden="true" width="1920" height="1080" loading="lazy" decoding="async" sizes="100vw" />
+      )}
+      <img
+        class="hh-img"
+        src={photo.src}
+        alt=""
+        width="1920" height="1080"
+        loading={i === 0 ? 'eager' : 'lazy'}
+        fetchpriority={i === 0 ? 'high' : 'auto'}
+        decoding="async"
+        sizes="100vw"
+      />
+    </div>
   ))}
   <div class="hh-shade" aria-hidden="true"></div>
   <div class="hh-inner">
@@ -44,9 +49,11 @@ const photos = slides.length
 <style>
   .hh { position: relative; min-height: min(86vh, 820px); display: flex; align-items: center; justify-content: center; overflow: hidden; background: #0A0A0A; color: #fff; text-align: center; }
   .hh-bg {
-    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center;
+    position: absolute; inset: 0; overflow: hidden;
     opacity: 0; transition: opacity 1.3s ease; will-change: opacity, transform;
   }
+  .hh-bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+  .hh-fill { display: none; }
   .hh-bg.active { opacity: 1; animation: hh-kb 7s ease forwards; }
   @keyframes hh-kb { from { transform: scale(1); } to { transform: scale(1.06); } }
   @media (prefers-reduced-motion: reduce) {
@@ -68,10 +75,19 @@ const photos = slides.length
     .hh { min-height: 72svh; }
     .hh-inner { padding: 40px 18px; }
     .hh-acts a { flex: 1 1 140px; padding-left: 12px; padding-right: 12px; }
-    /* A wide group/lineup photo cropped to this tall, narrow box under the
-       default "cover" fit loses the people at each edge -- "contain" shows
-       the whole photo instead, letterboxed on the section's dark background. */
-    .hh-bg[data-mobile-fit="contain"] { object-fit: contain; }
+  }
+  /* A wide group/lineup photo cropped to a tall, narrow box (phones, tablets held
+     upright) under the default "cover" fit loses the people at each edge --
+     "contain" shows the whole photo, with a blurred copy of it filling the rest. */
+  @media (max-width: 600px), (orientation: portrait) and (max-width: 1100px) {
+    /* The whole photo (a touch wider than the screen), centred, its top and bottom
+       edges faded into the blurred copy behind it. */
+    .hh-bg[data-mobile-fit="contain"] .hh-img {
+      inset: auto; left: -8%; top: 50%; width: 116%; height: auto; transform: translateY(-50%);
+      -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 82%, transparent 100%);
+      mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 82%, transparent 100%);
+    }
+    .hh-bg[data-mobile-fit="contain"] .hh-fill { display: block; filter: blur(22px) brightness(.8) saturate(1.1); transform: scale(1.2); }
   }
 </style>
 

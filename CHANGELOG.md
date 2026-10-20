@@ -8,6 +8,26 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-20: Homepage group photo fixed on phones; full phone/tablet/desktop check
+
+**What changed**
+- The group photo slide (six fans in club shirts) on the homepage no longer
+  shows black above and dark red below on phones. The whole group is shown
+  across the screen, slightly larger, with its top and bottom edges fading
+  into a soft, blurred copy of the same photo. Tablets held upright get the
+  same treatment.
+- Each hero slide in the CMS has a new setting **On phones and tablets**:
+  "Fill the screen" (default) or "Show the whole photo" (for wide group
+  photos).
+- Every public page (80 pages) was checked on a phone, a tablet and a
+  computer screen: no sideways scrolling, broken pictures or page errors.
+
+**Staff need to:** nothing.
+
+**Handbook:** STAFF-GUIDE.md › Homepage hero photos.
+
+---
+
 ## 2026-10-20: TikTok connected (all social accounts now linked)
 
 **What changed**
