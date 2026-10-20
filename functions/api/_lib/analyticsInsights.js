@@ -284,12 +284,13 @@ export async function writeAiSummary(env, by = 'Weekly') {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model, max_tokens: 700, system: 'You write a short weekly website report for the staff of Lobi Stars FC, a Nigerian football club. Plain English for non-technical readers, no jargon. 120-200 words: what went well, what needs attention, and the three most useful actions this week. Use only the figures given; never invent numbers.',
+    body: JSON.stringify({ model, max_tokens: 4000, output_config: { effort: 'low' }, system: 'You write a short weekly website report for the staff of Lobi Stars FC, a Nigerian football club. Plain English for non-technical readers, no jargon. 120-200 words: what went well, what needs attention, and the three most useful actions this week. Use only the figures given; never invent numbers.',
       messages: [{ role: 'user', content: 'Figures (totals only):\n' + JSON.stringify(facts) }] }),
   });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) return { error: `Claude: ${(d.error && d.error.message) || r.status}` };
   const text = (d.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n').trim();
+  if (!text) return { error: 'Claude returned no summary text; try again later.' };
   const summary = { at: new Date().toISOString(), text, model, by };
   await setKey(db, 'ai_summary', summary);
   return summary;
