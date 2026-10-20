@@ -8,6 +8,38 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-20: Analytics charts and downloads (Excel, PowerPoint, PDF, PNG, CSV)
+
+**What changed**
+- More charts on Admin › Analytics:
+  - **pie charts:** Google search by device and by country, GA4 visits by
+    device (next to "How visitors arrived");
+  - **bar charts:** top search phrases (clicks and appearances), top pages
+    (search clicks, GA4 sessions and page views), key events this period
+    against the period before, top 10 pages and top states.
+- **Download & present** buttons at the top of the page:
+  - **Excel (all data):** one file, one sheet per section (21 sheets:
+    Summary, daily visits, sources, devices, pages, states, matchday,
+    commentary, partners, Google daily, search phrases, pages from all
+    sources, countries, GA4 channels and devices, key events, at a glance,
+    recommendations with their steps);
+  - **PowerPoint slides:** a ready-made deck in club colours: title,
+    key figures, at a glance, one slide per chart, one slide per
+    recommendation with its steps;
+  - **Print / PDF:** a clean printable report (no menus or buttons, every
+    "How to do it" guide open). Choose "Save as PDF" in the print window.
+- Under every chart a **Chart (PNG)** button (a picture with its title and
+  period, for WhatsApp or slides), and under every table a **Table (CSV)**
+  button (opens in Excel).
+- Downloads use the period chosen at the top. The fan sign-up list (names)
+  is never included in any download.
+
+**Staff need to:** nothing.
+
+**Handbook:** STAFF-GUIDE.md › Charts, downloads and presentations.
+
+---
+
 ## 2026-10-20: Recommendations box on the Analytics page (analytics intelligence, Phase 4)
 
 **What changed**

@@ -520,6 +520,32 @@ change it), and is refreshed every morning after the Google sync.
   (Mondays). It's off unless the club switches it on (handover A28; a small
   monthly cost). It is sent only totals, never personal details.
 
+### Charts, downloads and presentations (Admin → Analytics)
+
+Every part of the Analytics page is shown as a chart as well as a table:
+pie charts for shares (devices, countries, channels, contact sources) and
+bar charts for comparisons (top pages, states, search phrases, key events
+this period against the period before).
+
+First choose the period at the top (Today, 7 days, 30 days, This season or
+Custom), then use the **Download & present** buttons:
+
+- **Excel (all data):** every figure on the page in one Excel file, one sheet
+  per section, including the recommendations and their steps.
+- **PowerPoint slides:** a finished slide deck in club colours to present at a
+  meeting or send to partners: title, key figures, at a glance, one slide per
+  chart and one per recommendation. It opens in PowerPoint, Google Slides or
+  Keynote and can be edited.
+- **Print / PDF:** a clean report for printing; in the print window choose
+  "Save as PDF" to get a PDF.
+- **Chart (PNG)** under any chart: a picture of that chart with its title and
+  period, ready for WhatsApp or a slide.
+- **Table (CSV)** under any table: that table for Excel.
+
+The list of the latest fan sign-ups (names) is never included in downloads.
+If a button says "Loading the figures…", it waits until the page has
+finished loading and then downloads by itself.
+
 ### The analytics dashboard (Admin → Analytics)
 
 **Choose a period** at the top: Today, 7 days, 30 days, This season (from the

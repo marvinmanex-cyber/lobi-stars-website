@@ -27,6 +27,13 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       </form>
       <span class="ad-label" id="rangeLabel"></span>
     </div>
+    <div class="dl-top" role="group" aria-label="Download and present">
+      <span class="dl-top-l">Download &amp; present:</span>
+      <button type="button" class="btn-p sm" id="dlXlsx">&#128202; Excel (all data)</button>
+      <button type="button" class="btn-o sm" id="dlPptx">&#128253; PowerPoint slides</button>
+      <button type="button" class="btn-o sm" id="dlPrint">&#128424; Print / PDF</button>
+      <span class="gs-status" id="dlMsg" role="status"></span>
+    </div>
     <p class="ad-err" id="err" role="alert" hidden></p>
 
     <section class="kpis" id="kpis" aria-label="Key figures"></section>
@@ -83,22 +90,30 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <h3>Day by day: all sources</h3>
       <p class="muted small">Page views (the website's own counting, everyone), GA4 sessions (only visitors who accepted cookies), and clicks and appearances in Google search.</p>
       <div class="chart"><canvas id="gsDaily" aria-label="Page views, GA4 sessions and Google search per day"></canvas></div>
-      <div class="two">
-        <div><h3>Top search phrases</h3><p class="muted small">What people typed in Google before seeing the club. Google hides rare phrases.</p><div id="gsQueries"></div></div>
+      <div class="three">
         <div><h3>How visitors arrived (GA4)</h3><p class="muted small">Sessions by channel.</p><div class="chart sq"><canvas id="gaChannels" aria-label="GA4 sessions by channel"></canvas></div></div>
+        <div><h3>Google search by device</h3><p class="muted small">Appearances in Google.</p><div class="chart sq"><canvas id="gsDevicesChart" aria-label="Google search appearances by device"></canvas></div></div>
+        <div><h3>GA4 visits by device</h3><p class="muted small">Sessions.</p><div class="chart sq"><canvas id="gaDevicesChart" aria-label="GA4 sessions by device"></canvas></div></div>
       </div>
+      <h3>Top search phrases</h3>
+      <p class="muted small">What people typed in Google before seeing the club. Google hides rare phrases.</p>
+      <div class="chart tall"><canvas id="gsQueriesChart" aria-label="Top search phrases: clicks and appearances"></canvas></div>
+      <div id="gsQueries"></div>
       <h3>Pages: search, visits and views</h3>
       <p class="muted small">Each page with its Google search clicks and appearances, average position in Google (1 = top), GA4 sessions and the website's own page views.</p>
+      <div class="chart tall"><canvas id="gsPagesChart" aria-label="Top pages: search clicks, GA4 sessions and page views"></canvas></div>
       <div id="gsPages"></div>
+      <h3>Key events (GA4): this period and the one before</h3>
+      <div class="chart"><canvas id="gaEventsChart" aria-label="Key events this period and the period before"></canvas></div>
       <div class="two">
         <div><h3>Key events (GA4)</h3><div id="gaEvents"></div></div>
-        <div><h3>Google search by country</h3><div id="gsCountries"></div></div>
+        <div><h3>Google search by country</h3><div class="chart sq"><canvas id="gsCountriesChart" aria-label="Google search appearances by country"></canvas></div><div id="gsCountries"></div></div>
       </div>
     </section>
 
     <div class="two">
-      <section class="panel"><div class="ph"><h2>Top 10 pages</h2></div><div id="topPages"></div></section>
-      <section class="panel"><div class="ph"><h2>Top states</h2></div><div id="locations"></div></section>
+      <section class="panel"><div class="ph"><h2>Top 10 pages</h2></div><div class="chart"><canvas id="topPagesChart" aria-label="Top 10 pages by views"></canvas></div><div id="topPages"></div></section>
+      <section class="panel"><div class="ph"><h2>Top states</h2></div><div class="chart"><canvas id="locationsChart" aria-label="Top states by views"></canvas></div><div id="locations"></div></section>
     </div>
 
     <section class="panel">
@@ -193,6 +208,28 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .recs .rec-done { margin-top: 14px; font-size: 14px; }
   .recs .rec-done summary { cursor: pointer; color: var(--lt); }
   @media (max-width: 760px) { .recs { padding: 14px 12px; } }
+  .three { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+  .three > * { min-width: 0; }
+  .chart.tall { height: 380px; }
+  .dl-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: -6px 0 18px; }
+  .dl-top-l { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  /* Small download buttons under every chart (PNG) and table (CSV). */
+  :global(.dlbar) { display: flex; justify-content: flex-end; gap: 6px; margin: 4px 0 6px; }
+  :global(.dlbar button) { border: 1px solid var(--a-line); background: var(--a-card); color: var(--lt); border-radius: 999px; padding: 4px 10px; font: 600 12px/1 'Barlow', sans-serif; cursor: pointer; }
+  :global(.dlbar button:hover) { color: var(--red); border-color: var(--red); }
+  @media (max-width: 760px) { .chart.tall { height: 420px; } }
+  /* Print / Save as PDF: a clean report (no menus or buttons, every guide open). */
+  @media print {
+    :global(.ash), :global(.skip-link), :global(.dlbar), .dl-top, .ad-range, .ad-custom, :global(.rec-act), .gs-act button, .recs .rec-done { display: none !important; }
+    :global(body), :global(html) { background: #fff !important; }
+    .ad { padding: 0; max-width: none; }
+    .kpis :global(.kpi), .recs :global(.rec), .chart, .panel :global(tr) { break-inside: avoid; }
+    .ph, .panel h3 { break-after: avoid; }
+    .panel { margin-bottom: 14px; }
+    .two, .three { grid-template-columns: 1fr 1fr; }
+    .chart { height: 260px; } .chart.tall { height: 320px; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
   /* Wide tables scroll sideways on phones instead of squeezing page addresses. */
   #gsPages :global(table) { min-width: 720px; }
   #gsQueries :global(table) { min-width: 460px; }
@@ -251,6 +288,16 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     config.options = Object.assign({}, base, o, { plugins: Object.assign({}, base.plugins, o.plugins || {}) });
     charts[id] = new Chart($(id), config);
   }
+  // Pie (doughnut) and horizontal bar helpers for the new charts.
+  function pie(id, labels, values, emptyLabel) {
+    const has = values.some(v => v > 0);
+    draw(id, { type: 'doughnut', data: { labels: has ? labels : [emptyLabel], datasets: [{ data: has ? values : [1], backgroundColor: has ? COLORS : ['#E5E7EB'], borderWidth: 3, borderColor: cardColor(), hoverOffset: 10, borderRadius: 6 }] }, options: { cutout: '58%' } });
+  }
+  const short = s => (String(s).length > 34 ? String(s).slice(0, 32) + '…' : String(s));
+  function hbar(id, labels, datasets, legend = true) {
+    draw(id, { type: 'bar', data: { labels: labels.map(short), datasets: datasets.map(ds => Object.assign({ borderRadius: 6, borderSkipped: false, maxBarThickness: 22 }, ds)) },
+      options: { indexAxis: 'y', plugins: { legend: { display: legend, position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 } } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } }, y: { ticks: { autoSkip: false } } } } });
+  }
   // Redraw in the right colours when someone switches light/dark mode.
   document.addEventListener('ls:theme', () => { if (lastData) render(lastData); if (lastGoogle) renderGoogle(lastGoogle); });
   const fmtWat = iso => iso ? new Date(new Date(iso).getTime() + 3600000).toISOString().slice(0, 16).replace('T', ' ') : '';
@@ -277,7 +324,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   }
 
   // ── Google & Search (only for staff with "All reports"; hidden otherwise) ──
-  let lastGoogle = null, syncing = false;
+  let lastGoogle = null, syncing = false, googleTried = false, recsTried = false;
   const EVENT_LABELS = {
     ticket_purchase_start: 'Ticket checkout started', ticket_purchase_complete: 'Tickets bought', kitchen_order_start: 'Food order started',
     kitchen_order_complete: 'Food orders placed', newsletter_signup: 'Newsletter sign-ups', membership_signup: 'Membership sign-ups',
@@ -309,7 +356,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     } catch (e) {
       $('sec-google').hidden = false;
       $('gsNote').innerHTML = `<p class="gs-note bad">${esc(e.message)}</p>`;
-    }
+    } finally { googleTried = true; }
   }
 
   function statusText(s) {
@@ -359,6 +406,18 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const ch = A.channels.filter(c => c.sessions > 0);
     draw('gaChannels', { type: 'doughnut', data: { labels: ch.length ? ch.map(c => c.channel) : ['No GA4 sessions yet'], datasets: [{ data: ch.length ? ch.map(c => c.sessions) : [1], backgroundColor: ch.length ? COLORS : ['#E5E7EB'], borderWidth: 3, borderColor: cardColor(), hoverOffset: 10, borderRadius: 6 }] }, options: { cutout: '62%' } });
 
+    pie('gsDevicesChart', G.devices.map(x => x.value.charAt(0) + x.value.slice(1).toLowerCase()), G.devices.map(x => x.impressions), 'No search figures yet');
+    pie('gaDevicesChart', A.devices.map(x => x.device), A.devices.map(x => x.sessions), 'No GA4 sessions yet');
+    const tq = G.queries.slice(0, 10);
+    hbar('gsQueriesChart', tq.map(x => x.value), [{ label: 'Clicks', data: tq.map(x => x.clicks), backgroundColor: '#0EA5E9' }, { label: 'Appearances', data: tq.map(x => x.impressions), backgroundColor: 'rgba(139,92,246,.55)' }]);
+    const tp = g.pages.slice(0, 10);
+    hbar('gsPagesChart', tp.map(p => p.path), [{ label: 'Search clicks', data: tp.map(p => p.clicks), backgroundColor: '#0EA5E9' }, { label: 'GA4 sessions', data: tp.map(p => p.sessions), backgroundColor: '#F97316' }, { label: 'Page views', data: tp.map(p => p.views), backgroundColor: '#E31E24' }]);
+    draw('gaEventsChart', { type: 'bar', data: { labels: A.events.map(e => EVENT_LABELS[e.name] || e.name), datasets: [
+      { label: 'This period', data: A.events.map(e => e.value), backgroundColor: '#E31E24', borderRadius: 8, maxBarThickness: 30 },
+      { label: 'Period before', data: A.events.map(e => e.previous), backgroundColor: 'rgba(100,116,139,.45)', borderRadius: 8, maxBarThickness: 30 },
+    ] }, options: { scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { autoSkip: false, maxRotation: 50, minRotation: 30 } } } } });
+    const cs = G.countries.slice(0, 6), rest = G.countries.slice(6).reduce((s, c) => s + c.impressions, 0);
+    pie('gsCountriesChart', cs.map(c => countryName(c.value)).concat(rest ? ['Other'] : []), cs.map(c => c.impressions).concat(rest ? [rest] : []), 'No search figures yet');
     $('gsQueries').innerHTML = table([{ t: 'Search phrase' }, { t: 'Clicks', n: 1 }, { t: 'Appearances', n: 1 }, { t: 'Click rate', n: 1 }, { t: 'Position', n: 1 }],
       G.queries.map(x => `<tr><td>${esc(x.value)}</td><td class="n">${fmt(x.clicks)}</td><td class="n">${fmt(x.impressions)}</td><td class="n">${x.ctr}%</td><td class="n">${x.position}</td></tr>`), 'No search phrases in this period.');
     $('gsPages').innerHTML = table([{ t: 'Page' }, { t: 'Search clicks', n: 1 }, { t: 'Appearances', n: 1 }, { t: 'Click rate', n: 1 }, { t: 'Position', n: 1 }, { t: 'GA4 sessions', n: 1 }, { t: 'Page views', n: 1 }],
@@ -388,7 +447,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     } catch (e) {
       $('sec-recs').hidden = false;
       $('recList').innerHTML = `<p class="gs-note bad">${esc(e.message)}</p>`;
-    }
+    } finally { recsTried = true; }
   }
   const linkBtn = l => l ? `<a class="btn-o sm" href="${esc(l.href)}"${l.external ? ' target="_blank" rel="noopener"' : ''}>${esc(l.label)}${l.external ? ' &#8599;' : ''}</a>` : '';
   function recCard(r, isDone) {
@@ -403,7 +462,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         : `<button type="button" class="btn-o sm" data-done="${esc(r.id)}">&#10003; Mark as done</button>`}</div>
     </article>`;
   }
+  let lastRecs = null;
   function renderRecs(d) {
+    lastRecs = d;
     $('recWhen').textContent = d.latest.gsc ? `Search figures to ${d.latest.gsc}${d.latest.ga4 ? ', GA4 to ' + d.latest.ga4 : ''}` : '';
     $('recGlance').innerHTML = d.glance.length ? `<h3>At a glance</h3><ul>${d.glance.map(g => `<li>${esc(g)}</li>`).join('')}</ul>` : '';
     $('recList').innerHTML = d.recs.length ? d.recs.map(r => recCard(r, false)).join('')
@@ -483,6 +544,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
     });
 
+    hbar('topPagesChart', d.topPages.map(p => p.path), [{ label: 'Views', data: d.topPages.map(p => p.views), backgroundColor: '#0EA5E9' }, { label: 'Visitors', data: d.topPages.map(p => p.visitors), backgroundColor: '#8B5CF6' }]);
+    hbar('locationsChart', d.locations.map(l => l.region + (l.country ? ` (${l.country})` : '')), [{ label: 'Views', data: d.locations.map(l => l.views), backgroundColor: COLORS }], false);
     $('topPages').innerHTML = table([{ t: 'Page' }, { t: 'Views', n: 1 }, { t: 'Visitors', n: 1 }],
       d.topPages.map(p => `<tr><td class="path">${esc(p.path)}</td><td class="n">${fmt(p.views)}</td><td class="n">${fmt(p.visitors)}</td></tr>`), 'No page views in this period.');
     $('locations').innerHTML = table([{ t: 'State' }, { t: 'Country' }, { t: 'Views', n: 1 }],
@@ -507,6 +570,208 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   }));
   $('customForm').addEventListener('submit', e => { e.preventDefault(); range = 'custom'; from = $('from').value; to = $('to').value; load(); });
   document.querySelectorAll('[data-range]').forEach(x => x.classList.toggle('on', x.dataset.range === range));
+  // ── Download & present ──
+  // PNG under every chart, CSV under every table, and Excel / PowerPoint / Print
+  // for the whole page. The fan sign-up list is never included in downloads.
+  const CSV_TABLES = ['topPages', 'locations', 'matchday', 'broadcast', 'partners', 'gsQueries', 'gsPages', 'gaEvents', 'gsCountries'];
+  const fileTag = () => (lastData ? lastData.range.label.replace(/\s+to\s+/, '_to_') : new Date().toISOString().slice(0, 10));
+  const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
+  const titleOf = el => el.getAttribute('aria-label') || el.id;
+  function save(blob, name) {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+  /** The chart as a picture: its title on top, on the page's card colour. */
+  function chartPng(id, withTitle = true) {
+    const ch = charts[id]; if (!ch) return null;
+    const c = ch.canvas, r = window.devicePixelRatio || 1, head = withTitle ? Math.round(58 * r) : Math.round(8 * r);
+    const out = document.createElement('canvas'); out.width = c.width; out.height = c.height + head;
+    const x = out.getContext('2d');
+    x.fillStyle = cardColor(); x.fillRect(0, 0, out.width, out.height);
+    if (withTitle) {
+      // Title on the first line (shrunk to fit narrow charts), the period underneath.
+      const css = getComputedStyle(document.body), pad = Math.round(10 * r), room = out.width - 2 * pad;
+      x.fillStyle = css.getPropertyValue('--a-ink').trim() || '#15181D';
+      let size = 18; x.font = `700 ${Math.round(size * r)}px Barlow, sans-serif`;
+      while (size > 11 && x.measureText(titleOf(c)).width > room) { size--; x.font = `700 ${Math.round(size * r)}px Barlow, sans-serif`; }
+      x.fillText(titleOf(c), pad, Math.round(22 * r), room);
+      if (lastData) {
+        x.fillStyle = css.getPropertyValue('--a-muted').trim() || '#5B6472';
+        x.font = `500 ${Math.round(13 * r)}px Barlow, sans-serif`;
+        x.fillText(lastData.range.label, pad, Math.round(42 * r), room);
+      }
+    }
+    x.drawImage(c, 0, head);
+    return { url: out.toDataURL('image/png'), w: out.width, h: out.height };
+  }
+  function tableRows(id) {
+    const t = $(id)?.querySelector('table'); if (!t) return [];
+    return [...t.querySelectorAll('tr')].map(tr => [...tr.children].map(td => {
+      // Plain numbers (1,234 -> 1234) so Excel reads them as numbers.
+      const v = td.textContent.replace(/\s+/g, ' ').trim();
+      return /^-?\d{1,3}(,\d{3})+(\.\d+)?%?$/.test(v) ? v.replace(/,/g, '') : v;
+    }));
+  }
+  const toCsv = rows => '﻿' + rows.map(r => r.map(v => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v).join(',')).join('\r\n');
+  // Add the small buttons once (the charts and tables inside are redrawn, these stay).
+  document.querySelectorAll('.chart canvas').forEach(c => {
+    const bar = document.createElement('div'); bar.className = 'dlbar';
+    bar.innerHTML = `<button type="button" data-png="${c.id}" title="Download this chart as a picture">&#11015; Chart (PNG)</button>`;
+    c.closest('.chart').after(bar);
+  });
+  CSV_TABLES.forEach(id => {
+    const bar = document.createElement('div'); bar.className = 'dlbar';
+    bar.innerHTML = `<button type="button" data-csv="${id}" title="Download this table for Excel">&#11015; Table (CSV)</button>`;
+    $(id).after(bar);
+  });
+  document.addEventListener('click', e => {
+    const p = e.target.closest('[data-png]'), c = e.target.closest('[data-csv]');
+    if (p) { const img = chartPng(p.dataset.png); if (!img) return; fetch(img.url).then(r => r.blob()).then(b => save(b, `lobi-stars-${slug(titleOf($(p.dataset.png)))}-${fileTag()}.png`)); }
+    if (c) { const rows = tableRows(c.dataset.csv); if (rows.length) save(new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8' }), `lobi-stars-${slug(c.dataset.csv)}-${fileTag()}.csv`); }
+  });
+  const libs = {};
+  const loadLib = (name, src) => libs[name] || (libs[name] = new Promise((ok, bad) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => { delete libs[name]; bad(new Error('Could not load the download tool. Check the internet connection and try again.')); }; document.head.appendChild(s); }));
+  const msg = t => { $('dlMsg').textContent = t; };
+  const pctChange = (now, prev) => (prev ? Math.round(((now - prev) / prev) * 1000) / 10 + '%' : '');
+  /** Downloads wait until every section has loaded (at most a minute). */
+  const whenReady = () => new Promise(res => {
+    const t0 = Date.now();
+    (function wait() {
+      const ready = lastData && googleTried && recsTried;
+      if (ready || Date.now() - t0 > 60000) res(); else setTimeout(wait, 300);
+    })();
+  });
+
+  /** Every figure on the page as tables (also used for the slides). */
+  function sheets() {
+    const d = lastData, g = lastGoogle, r = lastRecs, S = {};
+    if (d) {
+      const K = d.kpis, KL = [['Page views', K.pageViews], ['Unique visitors', K.uniqueVisitors], ['Downloads', K.downloads], ['Enquiries', K.enquiries], ['Total contacts', K.totalContacts], ['New contacts', K.newContacts]];
+      S['Summary'] = [['Lobi Stars FC website analytics'], ['Period', d.range.label], ['Compared with', `the ${d.range.days} days before`], ['Downloaded', fmtWat(new Date().toISOString())], [],
+        ['Figure', 'This period', 'Period before', 'Change'], ...KL.map(([l, k]) => [l, k.value, k.previous, pctChange(k.value, k.previous)])];
+      if (g) {
+        const G = g.gsc, A = g.ga4;
+        S['Summary'].push([], ['Google search', 'This period', 'Period before', 'Change'],
+          ['Search clicks', G.now.clicks, G.prev.clicks, pctChange(G.now.clicks, G.prev.clicks)], ['Appearances in Google', G.now.impressions, G.prev.impressions, pctChange(G.now.impressions, G.prev.impressions)],
+          ['Click rate %', G.now.ctr, G.prev.ctr, ''], ['Average position (lower is better)', G.now.position, G.prev.position, ''],
+          [], ['Google Analytics 4', 'This period', 'Period before', 'Change'],
+          ['Sessions', A.now.sessions, A.prev.sessions, pctChange(A.now.sessions, A.prev.sessions)], ['Users (sum of days)', A.now.users, A.prev.users, pctChange(A.now.users, A.prev.users)],
+          ['Engagement rate %', A.now.engagement, A.prev.engagement, ''], ['Average session (seconds)', A.now.duration, A.prev.duration, '']);
+      }
+      S['Daily visits'] = [['Day', 'Page views', 'Unique visitors'], ...d.daily.map(x => [x.day, x.views, x.visitors])];
+      S['Traffic sources'] = [['Source', 'Page views'], ...Object.entries(d.traffic)];
+      S['Devices'] = [['Device', 'Page views'], ...d.devices.map(x => [x.device, x.views])];
+      S['Contact sources'] = [['Source', 'Contacts', '% of all contacts'], ...d.sources.map(s => [s.label, s.contacts, s.pct])];
+      S['First source'] = [['Source', 'Contacts'], ...d.firstTouch.map(f => [f.source, f.contacts])];
+      S['Top pages'] = [['Page', 'Views', 'Visitors'], ...d.topPages.map(p => [p.path, p.views, p.visitors])];
+      S['Top states'] = [['State', 'Country', 'Views'], ...d.locations.map(l => [l.region, l.country, l.views])];
+      S['Matchday'] = [['Match', 'Date', 'Live page visitors', 'Watch clicks', 'Commentary clicks', 'MOTM votes', 'Predictions'], ...d.matchday.map(m => [m.match, fmtWat(m.date), m.liveViewers, m.watchPlays, m.commentaryClicks, m.votes, m.predictions])];
+      S['Commentary'] = [['Match', 'Kick-off', 'Listens', 'Unique listeners', 'Avg. minutes', 'Peak'], ...(d.broadcast || []).map(b => [b.match, fmtWat(b.date), b.listens, b.uniqueListeners, b.avgMinutes, b.peak])];
+      S['Partners'] = [['Partner', 'Tier', 'Impressions', 'Clicks'], ...d.partners.map(p => [p.name, p.tier, d.partnerImpressions, p.clicks])];
+    }
+    if (g) {
+      const dd = g.daily;
+      S['Google daily'] = [['Day', 'Page views (website)', 'GA4 sessions', 'Search clicks', 'Appearances in Google'], ...dd.days.map((day, i) => [day, dd.views[i] ?? '', dd.sessions[i] ?? '', dd.clicks[i] ?? '', dd.impressions[i] ?? ''])];
+      S['Search phrases'] = [['Search phrase', 'Clicks', 'Appearances', 'Click rate %', 'Position'], ...g.gsc.queries.map(x => [x.value, x.clicks, x.impressions, x.ctr, x.position])];
+      S['Pages (all sources)'] = [['Page', 'Search clicks', 'Appearances', 'Click rate %', 'Position', 'GA4 sessions', 'Page views'], ...g.pages.map(p => [p.path, p.clicks, p.impressions, p.ctr, p.position ?? '', p.sessions, p.views])];
+      S['Search countries'] = [['Country', 'Clicks', 'Appearances'], ...g.gsc.countries.map(c => [countryName(c.value), c.clicks, c.impressions])];
+      S['Search devices'] = [['Device', 'Clicks', 'Appearances'], ...g.gsc.devices.map(c => [c.value, c.clicks, c.impressions])];
+      S['GA4 channels'] = [['Channel', 'Sessions', 'Users'], ...g.ga4.channels.map(c => [c.channel, c.sessions, c.users])];
+      S['GA4 devices'] = [['Device', 'Sessions'], ...g.ga4.devices.map(c => [c.device, c.sessions])];
+      S['Key events'] = [['Event', 'This period', 'Period before', 'Change'], ...g.ga4.events.map(e => [EVENT_LABELS[e.name] || e.name, e.value, e.previous, pctChange(e.value, e.previous)])];
+    }
+    if (r) {
+      S['At a glance'] = [['Last 28 days'], ...r.glance.map(x => [x])];
+      S['Recommendations'] = [['Priority', 'Area', 'Recommendation', 'What we found', 'How to do it', 'Link'],
+        ...r.recs.map(x => [(PRI[x.priority] || PRI.medium)[0], x.area, x.title, x.finding, x.steps.map((s, i) => `${i + 1}. ${s}`).join('\n'), x.link ? new URL(x.link.href, location.origin).href : ''])];
+    }
+    return S;
+  }
+
+  $('dlXlsx').addEventListener('click', async () => {
+    try {
+      if (!lastData || !googleTried || !recsTried) { msg('Loading the figures…'); await whenReady(); }
+      msg('Preparing the Excel file…');
+      await loadLib('xlsx', 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js');
+      const wb = XLSX.utils.book_new();
+      for (const [name, rows] of Object.entries(sheets())) {
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        ws['!cols'] = (rows.reduce((m, r) => (r.length > m.length ? r : m), [])).map((_, i) => ({ wch: Math.min(60, Math.max(10, ...rows.map(r => String(r[i] ?? '').length))) }));
+        XLSX.utils.book_append_sheet(wb, ws, name.slice(0, 31));
+      }
+      XLSX.writeFile(wb, `Lobi-Stars-Analytics-${fileTag()}.xlsx`);
+      msg('Excel file downloaded.');
+    } catch (e) { msg(e.message); }
+  });
+
+  $('dlPptx').addEventListener('click', async () => {
+    try {
+      if (!lastData || !googleTried || !recsTried) { msg('Loading the figures…'); await whenReady(); }
+      msg('Preparing the slides…');
+      await loadLib('pptx', 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
+      const pptx = new PptxGenJS(); pptx.layout = 'LAYOUT_WIDE'; pptx.title = 'Lobi Stars FC website report';
+      const RED = 'E31E24', INK = '15181D', MUTED = '5B6472', W = 13.33;
+      const header = (s, t) => { s.background = { color: 'FFFFFF' }; s.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: W, h: 0.12, fill: { color: RED } }); s.addText(t, { x: 0.5, y: 0.3, w: W - 1, h: 0.7, fontFace: 'Arial', fontSize: 26, bold: true, color: INK }); s.addText(`Lobi Stars FC · ${lastData ? lastData.range.label : ''}`, { x: 0.5, y: 6.95, w: W - 1, h: 0.35, fontSize: 11, color: MUTED }); };
+      // 1. Title
+      const t = pptx.addSlide(); t.background = { color: INK };
+      t.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.35, h: 7.5, fill: { color: RED } });
+      t.addText('LOBI STARS FC', { x: 0.9, y: 2.0, w: 11, h: 0.8, fontSize: 40, bold: true, color: 'FFFFFF' });
+      t.addText('Website report', { x: 0.9, y: 2.8, w: 11, h: 0.7, fontSize: 30, color: 'EAB308' });
+      t.addText(`${lastData ? lastData.range.label : ''}\nGoogle search, Google Analytics and the website's own figures\nDownloaded ${fmtWat(new Date().toISOString())}`, { x: 0.9, y: 3.8, w: 11, h: 1.4, fontSize: 16, color: 'D1D5DB' });
+      // 2. Key figures
+      const d = lastData, g = lastGoogle;
+      if (d) {
+        const K = d.kpis;
+        const cards = [['Page views', K.pageViews], ['Unique visitors', K.uniqueVisitors], ['Enquiries', K.enquiries], ['New contacts', K.newContacts]];
+        if (g) cards.push(['Search clicks', { value: g.gsc.now.clicks, previous: g.gsc.prev.clicks }], ['Appearances in Google', { value: g.gsc.now.impressions, previous: g.gsc.prev.impressions }], ['GA4 sessions', { value: g.ga4.now.sessions, previous: g.ga4.prev.sessions }], ['Engagement rate', { value: g.ga4.now.engagement, previous: g.ga4.prev.engagement, pct: 1 }]);
+        const s = pptx.addSlide(); header(s, 'Key figures');
+        cards.forEach(([label, k], i) => {
+          const x = 0.5 + (i % 4) * 3.1, y = 1.3 + Math.floor(i / 4) * 2.7, ch = pctChange(k.value, k.previous);
+          s.addShape(pptx.ShapeType.roundRect, { x, y, w: 2.9, h: 2.4, fill: { color: 'F5F6F8' }, line: { color: 'E3E6EA' }, rectRadius: 0.12 });
+          s.addText(label.toUpperCase(), { x: x + 0.2, y: y + 0.15, w: 2.5, h: 0.4, fontSize: 11, bold: true, color: MUTED });
+          s.addText(fmt(k.value) + (k.pct ? '%' : ''), { x: x + 0.2, y: y + 0.6, w: 2.5, h: 0.9, fontSize: 36, bold: true, color: RED });
+          s.addText(ch ? `${ch.startsWith('-') ? '▼' : '▲'} ${ch.replace('-', '')} vs period before` : 'No earlier figure', { x: x + 0.2, y: y + 1.6, w: 2.5, h: 0.5, fontSize: 12, color: ch.startsWith('-') ? 'A3161B' : '17643A' });
+        });
+      }
+      // 3. At a glance
+      if (lastRecs && lastRecs.glance.length) {
+        const s = pptx.addSlide(); header(s, 'At a glance (last 28 days)');
+        s.addText(lastRecs.glance.map(x => ({ text: x, options: { bullet: true, breakLine: true } })), { x: 0.6, y: 1.2, w: W - 1.2, h: 5.5, fontSize: 18, color: INK, valign: 'top', paraSpaceAfter: 10 });
+      }
+      // 4. One slide per chart
+      const order = ['daily', 'traffic', 'devices', 'firstTouch', 'topPagesChart', 'locationsChart', 'gsDaily', 'gaChannels', 'gsDevicesChart', 'gaDevicesChart', 'gsQueriesChart', 'gsPagesChart', 'gaEventsChart', 'gsCountriesChart'];
+      for (const id of order) {
+        const c = charts[id]; if (!c || !$(id) || $(id).closest('[hidden]')) continue;
+        const img = chartPng(id, false); if (!img) continue;
+        const s = pptx.addSlide(); header(s, titleOf($(id)));
+        const maxW = W - 1, maxH = 5.6, ratio = img.w / img.h;
+        const w = Math.min(maxW, maxH * ratio), h = w / ratio;
+        s.addImage({ data: img.url, x: (W - w) / 2, y: 1.15, w, h });
+      }
+      // 5. Recommendations, one per slide, with the steps
+      if (lastRecs) for (const r of lastRecs.recs) {
+        const s = pptx.addSlide(); header(s, r.title);
+        const [pl] = PRI[r.priority] || PRI.medium;
+        s.addText(`${pl.toUpperCase()} · ${r.area.toUpperCase()}`, { x: 0.5, y: 1.0, w: W - 1, h: 0.4, fontSize: 12, bold: true, color: RED });
+        s.addText(r.finding, { x: 0.5, y: 1.45, w: W - 1, h: 1.1, fontSize: 16, color: INK, valign: 'top' });
+        s.addText('How to do it', { x: 0.5, y: 2.6, w: W - 1, h: 0.4, fontSize: 14, bold: true, color: INK });
+        // Numbers written in the text, so every viewer (PowerPoint, Google Slides, Keynote) shows 1, 2, 3…
+        s.addText(r.steps.map((x, i) => ({ text: `${i + 1}.  ${x}`, options: { breakLine: true, indentLevel: 0 } })), { x: 0.6, y: 3.0, w: W - 1.2, h: 3.8, fontSize: 14, color: INK, valign: 'top', paraSpaceAfter: 8 });
+      }
+      await pptx.writeFile({ fileName: `Lobi-Stars-Website-Report-${fileTag()}.pptx` });
+      msg('PowerPoint downloaded.');
+    } catch (e) { msg(e.message); }
+  });
+
+  // Print / Save as PDF: every "How to do it" guide open while printing.
+  $('dlPrint').addEventListener('click', async () => {
+    if (!lastData || !googleTried || !recsTried) { msg('Loading the figures…'); await whenReady(); msg(''); }
+    const closed = [...document.querySelectorAll('#sec-recs details:not([open])')];
+    closed.forEach(dt => { dt.open = true; });
+    Object.values(charts).forEach(c => c.resize());
+    setTimeout(() => { window.print(); closed.forEach(dt => { dt.open = false; }); }, 300);
+  });
+
   load();
   loadRecs();
 })();
