@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-20: TikTok connected (all social accounts now linked)
+
+**What changed**
+- The club's TikTok account (https://www.tiktok.com/@lobistarsfc) is
+  connected: the TikTok icon in the footer, the Contact page, the "Follow us"
+  links, the newsletter footer and the Share Hub now open it.
+- All six accounts are now live: Facebook, X, Instagram, YouTube, TikTok and
+  the WhatsApp Channel. Nothing is shown as "coming soon" any more.
+
+**Staff need to:** nothing. To change an address later: Content CMS ›
+Site Settings › Social links.
+
+---
+
 ## 2026-10-20: Analytics charts and downloads (Excel, PowerPoint, PDF, PNG, CSV)
 
 **What changed**

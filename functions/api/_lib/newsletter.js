@@ -102,7 +102,8 @@ export const NL_DEFAULTS = {
   footerAddress: 'Lobi Stars FC, McCarthy Stadium, Makurdi, Benue State, Nigeria',
   footerNote: "You're receiving this because you signed up for Lobi Stars FC news by email.",
   facebook: 'https://www.facebook.com/LobiStars', x: 'https://x.com/LobiStars', instagram: 'https://www.instagram.com/lobistarsfc',
-  youtube: '', tiktok: '', whatsapp: '',
+  youtube: 'https://www.youtube.com/@lobistarsfootballclub4809', tiktok: 'https://www.tiktok.com/@lobistarsfc',
+  whatsapp: 'https://whatsapp.com/channel/0029VaeAqYI8qIzwLEdy3E1o',
 };
 export const NL_LIMITS = { title: 60, matchLabel: 40, storiesLabel: 40, partnersLabel: 40, partnersText: 200, featuredLabel: 40, footerAddress: 160, footerNote: 300 };
 export const NL_LINKS = ['facebook', 'x', 'instagram', 'youtube', 'tiktok', 'whatsapp'];
