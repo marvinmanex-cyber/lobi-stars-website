@@ -3,10 +3,11 @@
 // price or buy link and partners without a logo. The admin login protects /admin.
 import { getCollection } from 'astro:content';
 import shop from '../../data/shop.json';
+import { withSeason } from '../../lib/site';
 
 export async function GET() {
   const products = ((shop as any).products || []).map((p: any) => ({
-    id: p.id, name: p.name,
+    id: p.id, name: withSeason(String(p.name || '')),
     noPrice: !(Number(p.price) > 0),
     noBuyLink: !p.jumiaUrl && !p.personalisable,
     inStock: p.inStock !== false,

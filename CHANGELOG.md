@@ -8,6 +8,24 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-20: Website Health: "Request failed" fixed; Telegram and shop wording
+
+**What changed**
+- Pressing **Run full check now** could show "Request failed" when one step
+  of the check took longer than Cloudflare allows for a single request. The
+  check itself always finished in the background, but the page stopped
+  following it. The page now retries a slow step ("A slow step is being
+  retried…") and carries on to "Check finished".
+- "Social media links work" no longer warns about a missing Telegram address
+  while the club has no public Telegram channel connected (handover A12).
+  Once one is connected, its t.me link is used and checked.
+- Shop product names in Website Health now show the season ("2026/27 Away
+  Jersey") instead of "{season} Away Jersey", as on the shop page.
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-20: Backup restore tested (passed)
 
 **What changed**

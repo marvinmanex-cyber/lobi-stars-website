@@ -734,8 +734,12 @@ export async function stepOutside(ctx) {
   const plats = await platforms(db, true).catch(() => null); // with the Content CMS social links as fallback
   if (!plats) out.push(result('social_links', 'SKIPPED', { problem: 'Share Hub platforms are not set up.' }));
   else {
+    // Telegram: the public channel connected for automatic posts gives the address
+    // (@name -> t.me/name); with no channel connected yet (handover A12) it isn't expected.
+    const tgChannel = String(env.TELEGRAM_PUBLIC_CHANNEL || '').trim();
+    for (const p of plats) if (p.key === 'telegram' && !p.profile_url && /^@\w{4,}$/.test(tgChannel)) p.profile_url = `https://t.me/${tgChannel.slice(1)}`;
     const withUrl = plats.filter(p => p.profile_url);
-    const missing = plats.filter(p => !p.profile_url && !/whatsapp status|copy/i.test(p.name)).map(p => p.name);
+    const missing = plats.filter(p => !p.profile_url && !/whatsapp status|copy/i.test(p.name) && !(p.key === 'telegram' && !tgChannel)).map(p => p.name);
     const res = await Promise.all(withUrl.slice(0, 10).map(async p => { const f = await timedFetch(p.profile_url, { redirect: 'follow' }, 8000); await drain(f.res); return { name: p.name, status: f.res?.status || 0, error: f.error }; }));
     // Instagram, TikTok, X and Facebook often refuse automated checks (403/429): only "not found" counts.
     const broken = res.filter(r => r.status === 404 || r.status === 410 || (!r.status && !/No answer/.test(r.error || '')));

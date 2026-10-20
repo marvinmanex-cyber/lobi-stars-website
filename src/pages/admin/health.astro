@@ -99,7 +99,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   async function api(body) {
     const r = await fetch('/api/admin/health', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
     if (r.status === 401) { location.href = '/admin/login/?next=/admin/health/'; throw new Error('Please sign in'); }
-    const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || d.message || 'Request failed'); return d;
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || d.message || (r.status >= 500 ? 'The website took too long to answer. The check carries on in the background; reload this page in a minute to see the results.' : 'Request failed'));
+    return d;
   }
   function details(c) {
     return [`Website Health: ${c.name} (${c.id})`, `Status: ${c.status} since ${when(c.since)}`, `Problem: ${c.problem}`, `Who: ${c.who}`, `Last checked: ${when(c.checkedAt)}`,
@@ -160,7 +162,18 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       let r = run;
       for (let i = 0; i < 200 && !r.done; i++) {
         showProg(r);
-        const s = await api({ action: 'step', id: r.id });
+        // A step that is cut off by Cloudflare (time limit) comes back as an error
+        // page: the run itself is safe (the step is retried once its lock expires,
+        // and the timer job carries on in the background), so keep following it.
+        let s = null;
+        for (let t = 0; !s; t++) {
+          try { s = await api({ action: 'step', id: r.id }); }
+          catch (e) {
+            if (t >= 6 || /sign in/i.test(e.message)) throw e;
+            $('progText').textContent = `A slow step is being retried… (${t + 1})`;
+            await new Promise(res => setTimeout(res, 3000 + t * 2000));
+          }
+        }
         r = s.run;
         if (s.busy) await new Promise(res => setTimeout(res, 1500));
       }
