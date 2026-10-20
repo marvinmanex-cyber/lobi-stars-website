@@ -324,10 +324,14 @@ export async function stepSite(ctx) {
   })];
 }
 
-/** Step 'pages:<n>': fetch up to 8 pages, note status, speed, links, images, text problems, titles. */
+// Pages per step: reading and scanning a page's HTML costs CPU time, and on the
+// free plan each request gets about 10 ms, so a step reads only a few pages.
+export const PAGES_PER_STEP = 3;
+
+/** Step 'pages:<n>': fetch up to PAGES_PER_STEP pages, note status, speed, links, images, text problems, titles. */
 export async function stepPages(ctx, chunk) {
   const { origin, state } = ctx;
-  const batch = state.urls.slice(chunk * 8, chunk * 8 + 8);
+  const batch = state.urls.slice(chunk * PAGES_PER_STEP, chunk * PAGES_PER_STEP + PAGES_PER_STEP);
   await Promise.all(batch.map(async path => {
     const f = await timedFetch(`${origin}${path}`, { redirect: 'follow' });
     const p = { status: f.res?.status || 0, ms: f.ms, error: f.error || null };

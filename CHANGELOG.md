@@ -8,6 +8,27 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-20: Faster, sturdier site: only dynamic addresses run the website code
+
+**What changed**
+- Cloudflare was running the website's code for every single request,
+  including every font, picture and script (because the site has more than
+  100 dynamic addresses, Cloudflare's automatic setting falls back to "all").
+  Two consequences: in busy moments some requests were cut off for using too
+  much processing time (the Website Health "Request failed", and occasionally a
+  font, logo or match list), and the free plan's 100,000 requests a day would
+  have run out at around 3,000 page views, a real risk on a match day.
+- A routing file now sends only the dynamic addresses (data, admin, short
+  links, match pages and so on) through the code; pages, fonts, pictures
+  and scripts are served directly, faster, without using the daily allowance.
+  The build checks the file stays complete.
+- Website Health checks 3 pages per step instead of 8, so each step stays
+  within Cloudflare's per-request time limit (more, shorter steps).
+
+**Staff need to:** nothing.
+
+---
+
 ## 2026-10-20: Website Health: "Request failed" fixed; Telegram and shop wording
 
 **What changed**

@@ -11,7 +11,7 @@
 // it is fixed a short "Resolved" email follows. Results are kept for 90 days.
 import {
   CATEGORIES, INFO, stepSite, stepPages, stepLinks, linkChunks, stepPagesFinal, stepContent, stepFans,
-  stepPayments, stepEmail, stepMatchday, stepTasks, stepSecurity, stepOutside, stepSpeed,
+  stepPayments, stepEmail, stepMatchday, stepTasks, stepSecurity, stepOutside, stepSpeed, PAGES_PER_STEP,
 } from './healthChecks.js';
 import { alertAddresses, securitySettings, saveSecuritySetting } from './adminSecurity.js';
 import { sendEmail } from './email.js';
@@ -115,7 +115,7 @@ export async function stepRun(env, origin, id) {
     else if (step.startsWith('speed:')) { const o = await stepSpeed(ctx, Number(step.slice(6))); results = o.results; if (o.more) insert = [`speed:${Number(step.slice(6)) + 1}`]; }
     else if (STEP_FN[step]) results = await STEP_FN[step](ctx);
     if (step === 'site' && (r.kind === 'full' || r.only === 'pages')) {
-      const n = Math.ceil((state.urls || []).length / 8);
+      const n = Math.ceil((state.urls || []).length / PAGES_PER_STEP);
       insert = [...Array.from({ length: n }, (_, i) => `pages:${i}`), 'links_plan'];
     }
   } catch (err) {

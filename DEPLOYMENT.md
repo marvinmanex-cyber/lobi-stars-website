@@ -785,6 +785,18 @@ limited, stores only the push endpoint, keys and choices in `fan_push_subs`).
 
 ## Site (Astro + Cloudflare Pages)
 
+### Which requests run the website code (`public/_routes.json`)
+Pages Functions has 250+ routes. Above 100, Cloudflare stops guessing and runs
+the code for **every** request, including fonts, images and scripts. That
+uses the free plan's 100,000 function requests a day about 30 times faster
+(roughly 3,000 page views would use a day) and makes cold starts hit the
+10 ms CPU limit in busy moments ("Worker exceeded CPU time limit", seen on
+20 Oct 2026). `public/_routes.json` lists only the first path segment of each
+function route (`/api/*`, `/admin/*`, `/m/*`, `/matches/*` …, 47 rules);
+everything else is served as plain files. `npm run build` runs
+`scripts/check-routes.mjs`, which fails the build if a new top-level folder or
+file in `functions/` is missing from it: add `"/name"` and `"/name/*"`.
+
 Already live on `main`. Cloudflare Pages build settings (already configured):
 
 - **Framework preset:** Astro
