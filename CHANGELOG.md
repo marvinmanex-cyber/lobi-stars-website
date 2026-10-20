@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-20: Backup restore tested (passed)
+
+**What changed**
+- The newest automatic backup was unlocked with the club's backup key and
+  rebuilt into a separate test database (never the live one), following the
+  disaster-recovery steps. All 105 tables and 7,115 rows came back exactly,
+  and key tables matched the live site. The key file, the backup file and the
+  test database were deleted afterwards.
+- Recorded in DISASTER-RECOVERY.md › Restore tests.
+
+**Staff need to:** a Super Admin presses **Mark restore tested** in
+Admin › Website Health (the next test is due within 90 days, by mid-January
+2027).
+
+---
+
 ## 2026-10-20: Homepage group photo fixed on phones; full phone/tablet/desktop check
 
 **What changed**

@@ -201,3 +201,15 @@ Allow about half a day. Work through it in order.
   arrives.
 - A small real payment (or Paystack test keys first) completes.
 - The Activity Log shows the history from before the loss.
+
+## Restore tests (at least every 90 days)
+
+Website Health warns when no restore has been tested for 90 days. A test uses
+the real disaster steps (Part 3) on a separate, empty test database, never the
+live one, then compares every table. Afterwards the key file, the backup file
+and the test database are deleted, and a Super Admin presses **Mark restore
+tested** in Website Health.
+
+| Date | Backup | Result | Notes |
+|---|---|---|---|
+| 20 Oct 2026 | Automatic backup of 2026-10-20 (encrypted copy + the club's backup key) | **Passed**: 105 of 105 tables, 7,115 of 7,115 rows, every table exact; key tables (contacts, matches, food menu, food orders, staff) identical to the live site | Unlocked 106 tables / 7,293 rows; the difference is what restores deliberately leave out (sign-in codes, phone-alert subscriptions). Tip: if Notepad saves the key as `backup-key.txt;.txt`, it still works; use the name as shown. |
