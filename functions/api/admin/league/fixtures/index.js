@@ -1,4 +1,5 @@
 import { leagueAuth, body, ok, fail, snapshot, afterFixtureChange } from '../../../_lib/leagueAdmin.js';
+import { syncChecklistsQuietly } from '../../../_lib/matchChecklist.js';
 import { loadLeague, logLeague, fixtureJson, listCompetitions } from '../../../_lib/leagueDb.js';
 import { validateFixtureInput, STATUSES } from '../../../_lib/league/validate.js';
 import { isCounted } from '../../../_lib/league/standings.js';
@@ -65,6 +66,7 @@ export async function onRequestPost({ request, env }) {
     const f = await db.prepare(`SELECT * FROM league_fixtures WHERE id = ?`).bind(r.meta.last_row_id).first();
     await logLeague(db, staff, 'fixture.add', 'fixture', f.id, null, snapshot(f));
     await afterFixtureChange(env, f, []);
+    await syncChecklistsQuietly(env); // Match Checklist for a new upcoming Lobi Stars match
     return ok({ id: f.id, matchNo: f.match_no });
   } catch (err) {
     console.error('[league admin] add fixture', err);

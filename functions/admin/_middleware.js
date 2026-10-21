@@ -34,7 +34,7 @@ export async function onRequest({ request, env, next }) {
   if (admin && !allowedPath(admin, url.pathname)) {
     const h = new Headers({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' });
     adminHeaders(h);
-    return new Response(deniedPage(admin), { status: 403, headers: h });
+    return new Response(deniedPage(admin, url), { status: 403, headers: h });
   }
 
   const res = await next();
@@ -52,7 +52,12 @@ export async function onRequest({ request, env, next }) {
 }
 
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-function deniedPage(admin) {
+function deniedPage(admin, url) {
+  // Opened from a Match Checklist task ("Go to task"): offer the way back to it.
+  const task = url?.searchParams.get('from') === 'checklist' ? Number(url.searchParams.get('task')) : 0;
+  const back = Number.isInteger(task) && task > 0
+    ? `<a class="b" href="/admin/match-checklist/?task=${task}#task-${task}">Back to checklist</a> `
+    : '';
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>No access | Lobi Stars Admin</title><meta name="robots" content="noindex,nofollow">
 <style>
@@ -67,7 +72,7 @@ function deniedPage(admin) {
 <h1>You don't have access to this section</h1>
 <p>You're signed in as <strong>${esc(admin.name)}</strong> (${esc(roleLabel(admin))}). Your role doesn't include this screen.</p>
 <p>If you need it for your work, ask a Super Admin to change your role.</p>
-<a class="b" href="/admin/dashboard/">Back to the dashboard</a>
+${back}<a class="b" href="/admin/dashboard/">Back to the dashboard</a>
 </main></body></html>`;
 }
 

@@ -3,6 +3,7 @@ import { requireAdmin, requireAdminUser, parseEventPayload } from '../_lib/admin
 import { can } from '../_lib/adminRoles.js';
 import { ensureTable } from '../_lib/matchCentre.js';
 import { ensureCommentarySchema } from '../_lib/commentary.js';
+import { syncChecklistsQuietly } from '../_lib/matchChecklist.js';
 
 // GET /api/admin/events -- every match, past and future, active or not,
 // with a sold-ticket count so the UI can warn before deleting. Auth: the
@@ -56,5 +57,6 @@ export async function onRequestPost({ request, env }) {
     e.commentary_enabled, e.commentary_start_at, e.public_sale_at
   ).run();
 
+  await syncChecklistsQuietly(env); // Match Checklist for a new upcoming match
   return Response.json({ ok: true, id });
 }

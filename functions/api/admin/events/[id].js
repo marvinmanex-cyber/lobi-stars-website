@@ -5,6 +5,7 @@ const FIXTURE = 'matchday.fixtures.edit|matchday.live_control';
 import { ensureTable } from '../../_lib/matchCentre.js';
 import { ensureCommentarySchema } from '../../_lib/commentary.js';
 import { leagueFixtureForEvent } from '../../_lib/leagueDb.js';
+import { syncChecklistsQuietly } from '../../_lib/matchChecklist.js';
 
 // PUT /api/admin/events/:id -- overwrite a match's details.
 // Each part needs its own permission and parts you can't change are kept:
@@ -59,6 +60,7 @@ export async function onRequestPut({ request, env, params }) {
     e.commentary_enabled, e.commentary_start_at, e.public_sale_at, id
   ).run();
 
+  await syncChecklistsQuietly(env); // Match Checklist: new kick-off time moves the due times
   return Response.json({ ok: true, ...(managed ? { note: 'Saved. The teams, date, time and venue of league matches are changed in League > Fixtures, so those were kept.' } : {}) });
 }
 
@@ -89,5 +91,6 @@ export async function onRequestDelete({ request, env, params }) {
   }
 
   await env.DB.prepare(`DELETE FROM events WHERE id = ?`).bind(id).run();
+  await syncChecklistsQuietly(env); // its Match Checklist is closed (kept, not deleted)
   return Response.json({ ok: true });
 }

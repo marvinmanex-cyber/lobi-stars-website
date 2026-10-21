@@ -785,6 +785,27 @@ limited, stores only the push endpoint, keys and choices in `fan_push_subs`).
   `RESEND_API_KEY` for staff email alerts; VAPID keys for phone alerts.
 - Local: `npm run build` then the `wrangler pages dev dist …` command below.
 
+## Match Checklist (21 October 2026)
+
+Matchday › Match Checklist: a checklist per upcoming match from a master
+template, Super-Admin-only ticking, PDF / print / email, daily reminder
+emails, and "Go to task" links. Technical notes, the task-to-page mapping and
+tests: `docs/match-checklist.md`.
+
+- **Tables:** created automatically on first use; also in
+  `migrations/0006_match_checklist.sql`
+  (`npx wrangler d1 migrations apply lobi-stars-tickets --remote` if you use migrations).
+- **Timer:** `workers/kitchen-cron` now also calls `/api/internal/checklist-run`
+  every minute. Redeploy it after this change:
+  `cd workers/kitchen-cron && npx wrangler deploy`.
+- **Variables:** nothing new is required (`RESEND_API_KEY`, `CRON_SECRET` and the
+  `PROGRAMME_BUCKET` R2 binding already exist). Optional: `SITE_URL` (absolute
+  links in emails and PDFs, default https://lobistarsfc.com) and `CLUB_NAME`
+  (default `Lobi Stars`).
+- **Uploads** go to the private `checklist-files/` folder of the programme
+  bucket and are only served through the signed-in admin API.
+- **By hand:** `CRON_SECRET=... node scripts/checklist.mjs generate | remind --dry-run | remind --force`.
+
 ## Site (Astro + Cloudflare Pages)
 
 ### Which requests run the website code (`public/_routes.json`)

@@ -1,0 +1,199 @@
+---
+// Matchday › Match Checklist › Templates (Super Admins): the master list every
+// new match checklist is copied from. Add, edit, remove and reorder tasks;
+// due times are relative to kick-off; each task can link to an admin page
+// ("Go to task") or an external https:// address. Changes apply to checklists
+// made from now on, never to existing ones.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
+---
+<Layout title="Checklist Templates | Lobi Stars Admin" description="The master match checklist." noindex>
+  <div class="wrap mtp">
+    <AdminNav current="match-checklist" />
+    <header class="mtp-head">
+      <div><div class="stag">Matchday</div><h1 class="stitle">Checklist <span class="r">Templates</span></h1></div>
+      <ChecklistTabs current="templates" />
+    </header>
+    <p class="mtp-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <p class="mtp-lede">Every new match checklist is copied from this list. Changes apply to checklists made from now on; checklists that already exist keep their tasks.</p>
+    <div class="mtp-row"><button type="button" class="btn-p" id="addBtn">+ Add a task</button></div>
+    <div id="list"><p class="muted">Loading…</p></div>
+  </div>
+
+  <dialog class="mtp-dlg" id="dlg" aria-labelledby="dlgH">
+    <form id="form">
+      <h2 id="dlgH">Task</h2>
+      <label>Title<input name="title" maxlength="200" required /></label>
+      <label>Description (optional)<textarea name="description" rows="2" maxlength="1000"></textarea></label>
+      <div class="mtp-3">
+        <label>Phase<select name="phase"><option value="before">Before the match</option><option value="during">During the match</option><option value="after">After the match</option></select></label>
+        <label>Priority<select name="priority"><option value="normal">Normal</option><option value="critical">Critical</option></select></label>
+        <label>Matches<select name="applies_to"><option value="both">Home and away</option><option value="home">Home only</option><option value="away">Away only</option></select></label>
+      </div>
+      <fieldset><legend>Due</legend>
+        <div class="mtp-3"><input name="due_amount" type="number" min="0" max="60" step="1" aria-label="Due: how many" />
+          <select name="due_unit" aria-label="Due: unit"><option value="days">days</option><option value="hours">hours</option><option value="minutes">minutes</option></select>
+          <select name="due_when" aria-label="Due: before or after kick-off"><option value="before">before kick-off</option><option value="at">at kick-off</option><option value="after">after kick-off</option></select></div>
+      </fieldset>
+      <fieldset><legend>Remind from (optional; otherwise the normal reminder days)</legend>
+        <div class="mtp-3"><input name="rem_amount" type="number" min="0" max="60" step="1" aria-label="Remind from: how many" placeholder="—" />
+          <select name="rem_unit" aria-label="Remind from: unit"><option value="days">days</option><option value="hours">hours</option><option value="minutes">minutes</option></select>
+          <select name="rem_when" aria-label="Remind from: before or after kick-off"><option value="before">before kick-off</option><option value="at">at kick-off</option><option value="after">after kick-off</option></select></div>
+      </fieldset>
+      <label>Default owner (role or unit, optional)<input name="default_owner_role_or_unit" maxlength="60" placeholder="e.g. Media Team" /></label>
+      <fieldset><legend>Task link ("Go to task")</legend>
+        <label>Opens<select name="link_pick" id="linkPick"></select></label>
+        <label id="extWrap" hidden>External address (must start with https://)<input name="link_url" type="url" maxlength="500" placeholder="https://" /></label>
+        <label>Button text (optional)<input name="link_label" maxlength="40" placeholder="Go to task" /></label>
+        <div class="mtp-row"><button type="button" class="btn-o sm" id="testBtn">Test link</button><span class="mtp-test" id="testOut" aria-live="polite"></span></div>
+      </fieldset>
+      <div class="mtp-row end"><button type="button" class="btn-o" id="cancel">Cancel</button><button type="submit" class="btn-p">Save task</button></div>
+    </form>
+  </dialog>
+</Layout>
+
+<style>
+  .mtp { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; }
+  .mtp-head { display: flex; justify-content: space-between; align-items: end; gap: 12px 24px; flex-wrap: wrap; margin-bottom: 16px; }
+  .mtp-lede { margin: 0 0 12px; color: var(--a-muted); font-size: 15px; max-width: 760px; }
+  .mtp-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .mtp-msg.ok { background: #E8F7EE; color: #17643A; } .mtp-msg.err { background: #FDECEC; color: #A3161B; }
+  .mtp-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .mtp-row.end { justify-content: flex-end; margin: 0; }
+  .mtp :global(.mtp-card) { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px 18px; margin-bottom: 16px; }
+  .mtp :global(.mtp-card h2) { margin: 0 0 10px; font: 700 18px/1.2 'Barlow', sans-serif; color: var(--a-ink); }
+  .mtp :global(.mtp-t) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--a-line); }
+  .mtp :global(.mtp-t b) { color: var(--a-ink); }
+  .mtp :global(.mtp-t small) { display: block; color: var(--a-muted); font-size: 13px; margin-top: 2px; }
+  .mtp :global(.mtp-mv) { display: flex; flex-direction: column; gap: 2px; }
+  .mtp :global(.mtp-mv button) { width: 32px; height: 26px; border: 1px solid var(--a-line); border-radius: 6px; background: var(--a-soft); color: var(--a-ink); cursor: pointer; font-size: 12px; }
+  .mtp :global(.mtp-act) { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .mtp :global(.pill) { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; background: var(--a-soft); color: var(--a-muted); margin-left: 6px; }
+  .mtp :global(.pill.crit) { background: #FDECEC; color: #A3161B; }
+  .mtp :global(.pill.nolink) { background: #FEF3C7; color: #92400E; }
+  .sm, .mtp :global(.sm) { min-height: 34px; padding: 5px 11px; font-size: 13px; }
+  .mtp-dlg { border: 0; border-radius: 16px; padding: 22px; width: min(640px, calc(100vw - 32px)); max-height: calc(100vh - 40px); background: var(--a-card); color: var(--a-ink); box-shadow: 0 24px 60px rgba(0,0,0,.35); }
+  .mtp-dlg::backdrop { background: rgba(15,17,21,.55); }
+  .mtp-dlg h2 { margin: 0; font: 700 20px/1.2 'Barlow', sans-serif; }
+  .mtp-dlg form { display: grid; gap: 12px; }
+  .mtp-dlg label { display: grid; gap: 5px; font-size: 13px; font-weight: 700; color: var(--a-muted); }
+  .mtp-dlg fieldset { border: 1px solid var(--a-line); border-radius: 12px; padding: 10px 12px 12px; margin: 0; display: grid; gap: 10px; }
+  .mtp-dlg legend { font-size: 13px; font-weight: 700; color: var(--a-muted); padding: 0 4px; }
+  .mtp-dlg input, .mtp-dlg textarea, .mtp-dlg select { min-height: 40px; border: 1px solid var(--a-line); border-radius: 10px; padding: 7px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 15px; font-weight: 400; width: 100%; box-sizing: border-box; min-width: 0; }
+  .mtp-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .mtp-test { font-size: 13px; color: var(--a-muted); word-break: break-all; }
+  @media (max-width: 640px) {
+    .mtp-3 { grid-template-columns: 1fr; }
+    .mtp :global(.mtp-t) { grid-template-columns: auto minmax(0, 1fr); }
+    .mtp :global(.mtp-act) { grid-column: 2; justify-content: flex-start; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const PHASE = { before: 'Before the match', during: 'During the match', after: 'After the match' };
+  let data = null, editing = null, msgT;
+  function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'mtp-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 6000); }
+  async function api(body) {
+    const r = await fetch('/api/admin/match-checklist/templates', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/match-checklist/templates/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  const toOffset = (amount, unit, when) => when === 'at' ? 0 : (when === 'before' ? -1 : 1) * Math.max(0, Math.round(Number(amount) || 0)) * ({ minutes: 1, hours: 60, days: 1440 }[unit] || 1);
+  function split(min) {
+    if (min === null || min === undefined) return { amount: '', unit: 'days', when: 'before' };
+    if (min === 0) return { amount: 0, unit: 'hours', when: 'at' };
+    const a = Math.abs(min), when = min < 0 ? 'before' : 'after';
+    return a % 1440 === 0 ? { amount: a / 1440, unit: 'days', when } : a % 60 === 0 ? { amount: a / 60, unit: 'hours', when } : { amount: a, unit: 'minutes', when };
+  }
+  const targetOf = t => t.link_type === 'internal' ? (data.targets.find(x => x.route === t.link_route) || null) : null;
+
+  function draw() {
+    $('list').innerHTML = ['before', 'during', 'after'].map(ph => {
+      const list = data.tasks.filter(t => t.phase === ph);
+      return `<section class="mtp-card" aria-labelledby="h-${ph}"><h2 id="h-${ph}">${PHASE[ph]} (${list.length})</h2>${list.map((t, i) => {
+        const tg = targetOf(t);
+        const link = t.link_type === 'internal' ? `→ ${esc(tg ? tg.label : t.link_route)}` : t.link_type === 'external' ? `→ ${esc(t.link_url)} (external)` : '<span class="pill nolink">No link</span>';
+        return `<div class="mtp-t" data-id="${t.id}">
+          <div class="mtp-mv"><button type="button" data-mv="-1" aria-label="Move up: ${esc(t.title)}" ${i ? '' : 'disabled'}>▲</button><button type="button" data-mv="1" aria-label="Move down: ${esc(t.title)}" ${i < list.length - 1 ? '' : 'disabled'}>▼</button></div>
+          <div><b>${esc(t.title)}</b>${t.priority === 'critical' ? '<span class="pill crit">Critical</span>' : ''}${t.applies_to !== 'both' ? `<span class="pill">${t.applies_to === 'home' ? 'Home only' : 'Away only'}</span>` : ''}
+            <small>${esc(t.dueLabel)}${t.default_owner_role_or_unit ? ` · ${esc(t.default_owner_role_or_unit)}` : ''} · ${link}</small></div>
+          <div class="mtp-act"><button type="button" class="btn-o sm" data-edit>Edit</button><button type="button" class="btn-o sm" data-del>Remove</button></div></div>`;
+      }).join('') || '<p class="muted">No tasks.</p>'}</section>`;
+    }).join('');
+  }
+  async function load() {
+    try { data = await api(); draw(); fillPick(); } catch (e) { $('list').innerHTML = `<section class="mtp-card"><p>${esc(e.message)}</p></section>`; }
+  }
+  function fillPick() {
+    $('linkPick').innerHTML = '<option value="none">No link</option>' + data.targets.map(t => `<option value="t:${esc(t.id)}">${esc(t.label)}</option>`).join('') + '<option value="external">External address (https://)</option>';
+  }
+  function open(t) {
+    editing = t || null;
+    const f = $('form').elements;
+    $('dlgH').textContent = t ? 'Edit task' : 'Add a task';
+    f.title.value = t?.title || ''; f.description.value = t?.description || ''; f.phase.value = t?.phase || 'before';
+    f.priority.value = t?.priority || 'normal'; f.applies_to.value = t?.applies_to || 'both'; f.default_owner_role_or_unit.value = t?.default_owner_role_or_unit || '';
+    const d = split(t ? t.due_offset_minutes : -1440); f.due_amount.value = d.amount; f.due_unit.value = d.unit; f.due_when.value = d.when;
+    const r = split(t ? t.remind_from_offset_minutes : null); f.rem_amount.value = r.amount; f.rem_unit.value = r.unit; f.rem_when.value = r.when;
+    const tg = t ? targetOf(t) : null;
+    f.link_pick.value = t?.link_type === 'external' ? 'external' : tg ? `t:${tg.id}` : 'none';
+    f.link_url.value = t?.link_url || ''; f.link_label.value = t?.link_label || '';
+    $('extWrap').hidden = f.link_pick.value !== 'external'; $('testOut').textContent = '';
+    $('dlg').showModal(); f.title.focus();
+  }
+  function formTask() {
+    const f = $('form').elements, pick = f.link_pick.value;
+    const tg = pick.startsWith('t:') ? data.targets.find(x => x.id === pick.slice(2)) : null;
+    const remSet = f.rem_when.value === 'at' || f.rem_amount.value !== '';
+    return {
+      id: editing?.id, title: f.title.value, description: f.description.value, phase: f.phase.value, priority: f.priority.value, applies_to: f.applies_to.value,
+      default_owner_role_or_unit: f.default_owner_role_or_unit.value,
+      due_offset_minutes: toOffset(f.due_amount.value, f.due_unit.value, f.due_when.value),
+      remind_from_offset_minutes: remSet ? toOffset(f.rem_amount.value, f.rem_unit.value, f.rem_when.value) : null,
+      link_type: tg ? 'internal' : pick === 'external' ? 'external' : 'none', link_route: tg ? tg.route : null, link_url: pick === 'external' ? f.link_url.value.trim() : null, link_label: f.link_label.value,
+    };
+  }
+  $('addBtn').addEventListener('click', () => open(null));
+  $('cancel').addEventListener('click', () => $('dlg').close());
+  $('linkPick').addEventListener('change', e => { $('extWrap').hidden = e.target.value !== 'external'; $('testOut').textContent = ''; });
+  $('testBtn').addEventListener('click', async () => {
+    const out = $('testOut');
+    out.textContent = 'Testing…';
+    try {
+      const d = await api({ action: 'test_link', task: formTask() });
+      out.innerHTML = `With ${esc(d.match)}: <a href="${esc(d.url)}" target="_blank" rel="noopener noreferrer">${esc(d.url)}</a>`;
+    } catch (e) { out.textContent = '⚠ ' + e.message; }
+  });
+  $('form').addEventListener('submit', async e => {
+    e.preventDefault();
+    try { await api({ action: 'save', task: formTask() }); $('dlg').close(); msg('Task saved. New checklists will include it.', true); load(); }
+    catch (err) { msg(err.message, false); }
+  });
+  $('list').addEventListener('click', async e => {
+    const row = e.target.closest('.mtp-t'); if (!row) return;
+    const id = Number(row.dataset.id), t = data.tasks.find(x => x.id === id);
+    if (e.target.closest('[data-edit]')) return open(t);
+    if (e.target.closest('[data-del]')) {
+      if (!confirm(`Remove "${t.title}" from the template? Existing checklists keep it.`)) return;
+      try { await api({ action: 'delete', id }); msg('Task removed from the template.', true); load(); } catch (err) { msg(err.message, false); }
+      return;
+    }
+    const mv = e.target.closest('[data-mv]');
+    if (mv) {
+      const same = data.tasks.filter(x => x.phase === t.phase), i = same.indexOf(t), j = i + Number(mv.dataset.mv);
+      if (j < 0 || j >= same.length) return;
+      [same[i], same[j]] = [same[j], same[i]];
+      const ids = ['before', 'during', 'after'].flatMap(ph => ph === t.phase ? same : data.tasks.filter(x => x.phase === ph)).map(x => x.id);
+      try { await api({ action: 'reorder', ids }); await load(); document.querySelector(`.mtp-t[data-id="${id}"] [data-mv="${mv.dataset.mv}"]`)?.focus(); } catch (err) { msg(err.message, false); }
+    }
+  });
+  load();
+})();
+</script>

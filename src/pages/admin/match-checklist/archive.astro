@@ -1,0 +1,50 @@
+---
+// Matchday › Match Checklist › Archive: closed checklists (read-only), with
+// their final progress and a PDF of each.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
+---
+<Layout title="Checklist Archive | Lobi Stars Admin" description="Closed match checklists." noindex>
+  <div class="wrap mca">
+    <AdminNav current="match-checklist" />
+    <header class="mca-head">
+      <div><div class="stag">Matchday</div><h1 class="stitle">Checklist <span class="r">Archive</span></h1></div>
+      <ChecklistTabs current="archive" />
+    </header>
+    <section class="mca-card"><div id="list"><p class="muted">Loading…</p></div></section>
+  </div>
+</Layout>
+
+<style>
+  .mca { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; }
+  .mca-head { display: flex; justify-content: space-between; align-items: end; gap: 12px 24px; flex-wrap: wrap; margin-bottom: 16px; }
+  .mca-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; }
+  .mca :global(table) { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .mca :global(th), .mca :global(td) { padding: 10px 12px; text-align: left; font-size: 14px; vertical-align: middle; }
+  .mca :global(.bar) { width: 120px; height: 10px; border-radius: 999px; background: var(--a-soft); border: 1px solid var(--a-line); overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 8px; }
+  .mca :global(.bar i) { display: block; height: 100%; background: #16A34A; }
+  .mca :global(td.nw) { white-space: nowrap; }
+  .mca :global(.empty-state) { padding: 30px 16px; text-align: center; color: var(--a-muted); }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const day = iso => iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' }) : '';
+  fetch('/api/admin/match-checklist?view=archive', { headers: H, cache: 'no-store' }).then(async r => {
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/match-checklist/archive/'; return; }
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    document.getElementById('list').innerHTML = d.archive.length
+      ? `<div class="scroll"><table><thead><tr><th>Match</th><th>Kick-off</th><th>Finished</th><th>Closed</th><th><span class="sr-only">Open</span></th></tr></thead><tbody>${d.archive.map(a => `<tr>
+          <td><b>${esc(a.headline)}</b>${a.competition ? `<br><span class="muted">${esc(a.competition)}</span>` : ''}</td>
+          <td class="nw">${esc(day(a.kickoff))}</td>
+          <td class="nw"><span class="bar" aria-hidden="true"><i style="width:${a.pct}%"></i></span>${a.pct}% (${a.finished}/${a.total})</td>
+          <td>${esc(day(a.closedAt))}${a.note ? `<br><span class="muted">${esc(a.note)}</span>` : ''}</td>
+          <td class="nw"><a href="/admin/match-checklist/?id=${a.id}">View</a> · <a href="/api/admin/match-checklist/pdf?id=${a.id}&mode=report">PDF</a></td></tr>`).join('')}</tbody></table></div>`
+      : '<div class="empty-state"><b style="font-size:34px">🗂</b><p>No closed checklists yet. A checklist moves here when every task is finished, or when a Super Admin closes it.</p></div>';
+  }).catch(e => { document.getElementById('list').textContent = e.message; });
+})();
+</script>

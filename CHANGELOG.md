@@ -8,6 +8,41 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-21: Match Checklist (Matchday › Match Checklist)
+
+**What changed**
+- New **Match Checklist** in the Matchday menu: every upcoming Lobi Stars
+  match gets its own list of tasks (31 for a home match, 25 for an away match),
+  grouped Before / During / After the match, made by itself from a master
+  template as soon as the match is in the fixtures. Due times follow kick-off
+  if it moves.
+- Every staff login (except gate and kitchen helpers) can see it, add notes,
+  upload files (PDF, JPG, PNG, DOCX, XLSX, up to 10 MB) and set a task to
+  *Submitted for review*. **Only Super Admins tick tasks as done**, choose
+  owners and close checklists; the website refuses anyone else.
+- **Go to task →** buttons open the right admin page for the match (19 of the
+  33 tasks; the rest happen outside the website). A **Checklist task** bar on
+  that page has *Back to checklist* and *Mark as submitted for review* /
+  *Mark as done*.
+- **Download PDF**, **Print view** (empty tick boxes) and **Email PDF**.
+- A daily reminder email at 08:00 (Lagos time), from 3 days before kick-off:
+  one email per person listing what is overdue, due today and due in the next
+  3 days. Super Admins can change the time, days and recipients, and send a
+  test.
+- Super Admins edit the master list in **Templates** (with task links and a
+  *Test link* button) and see closed checklists in **Archive**.
+- Signing in from a link in an email now brings you back to that page (only
+  pages of the admin are allowed). The "no access" page has a *Back to
+  checklist* button when you came from a checklist task.
+
+**Who it affects:** all admin staff; Super Admins for ticking off tasks.
+
+**What staff need to do:** nothing to set up. Super Admins: look through
+**Templates** once and add owners; see HANDOVER-TODO.md (G1) for links to
+add to the tasks that have no page on the website.
+
+---
+
 ## 2026-10-21: Lobi Stars FC Live connected to Aeson Sports Radio's on-air status
 
 **What changed**

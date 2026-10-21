@@ -5,6 +5,7 @@
 // The sidebar only shows what the signed-in person's role can open (the
 // server enforces the same rules: functions/api/_lib/adminRoles.js).
 // Pages keep including it the same way: <AdminNav current="fans" />.
+import ChecklistBanner from './ChecklistBanner.astro';
 interface Props { current?: string }
 const { current = '' } = Astro.props;
 
@@ -19,6 +20,7 @@ const CATEGORIES: Cat[] = [
   { id: 'matchday', icon: '⚽', label: 'Matchday', color: '#10B981', items: [
     { id: 'matches', label: 'Match Tickets & Settings', href: '/admin/matches/', perm: 'matchday.fixtures.edit|commerce.tickets.manage|broadcast.commentary.manage|matchday.live_control', hint: 'Ticket prices, commentary and sale settings per match (dates and results: League)' },
     { id: 'match-centre', label: 'Live Match Control', href: '/admin/match-centre/', perm: 'matchday.live_control|matchday.squad.edit|matchday.stats.edit|matchday.live_updates|broadcast.watch_live.edit|matchday.fixtures.edit|matchday.motm.manage', hint: 'Kick-off, score, squad, Man of the Match, stats, streams, content checklist' },
+    { id: 'match-checklist', label: 'Match Checklist', href: '/admin/match-checklist/', perm: 'matchday.checklist.view', hint: 'Everything to do before, during and after the next match; PDF, email and daily reminders' },
     { id: 'predictions', label: 'Predict & Win', href: '/admin/predictions/', perm: 'matchday.predict.manage|matchday.predict.pay_prizes', hint: 'Entries, winners and prize payments' },
     { id: 'programmes', label: 'Matchday Programme', href: '/admin/programmes/', perm: 'content.programme.edit', hint: 'Upload the 4-page programme, publish or schedule it, QR codes and reading stats' },
     { id: 'share', label: 'Share any page', href: '/admin/share/', perm: 'matchday.live_updates|content.programme.edit|media.upload', hint: 'Check how any page of the site looks as a link card and post it to the club socials' },
@@ -166,6 +168,8 @@ const showBack = here !== '/admin/dashboard/';
     <button type="button" class="ash-out" id="anOut">Log out</button>
   </header>
 </div>
+
+<ChecklistBanner />
 
 <div class="ash-toasts" id="ashToasts" aria-live="assertive"></div>
 

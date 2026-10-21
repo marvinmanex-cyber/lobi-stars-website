@@ -90,7 +90,7 @@ Contributor sees Gallery, Homepage slides and Partners).
   | Section | Screens |
   |---|---|
   | 🏠 Overview | Dashboard |
-  | ⚽ Matchday | Match Tickets & Settings, Live Match Control, Predict & Win, Live Commentary |
+  | ⚽ Matchday | Match Tickets & Settings, Live Match Control, Match Checklist, Predict & Win, Live Commentary |
   | 🏆 League | League Dashboard, Fixtures, Results, Table & Rules, Clubs & Venues, Import & Export, League History |
   | 📰 Content | News & Articles (including Team News), Fan Awards, Squad & Players ↗, Videos ↗, Gallery ↗, Club Pages ↗, Content CMS ↗ |
   | 👥 Fans & Inbox | **Inbox**, Fan Database, Newsletter Subscribers, Fan Accounts, Contact Sources & Downloads, Possible Duplicates, Members |
@@ -138,7 +138,9 @@ Fan Relations → Fan Support, Kitchen → Kitchen Staff.
 Users & Roles › Roles and what they include**, opens a role, ticks or unticks
 permissions and presses **Save**. It applies to everyone with that role within
 a minute, and **Back to the default** undoes it. Every change is in the
-Activity Log. Only the Super Admin role can manage staff and roles.
+Activity Log. Only the Super Admin role can manage staff and roles. Seeing the
+**Match Checklist** is part of every staff role (not the gate and kitchen
+helper logins) and stays on whatever else a role includes.
 
 Downloading fan contact data needs the **Download fan contact data**
 permission: only the Super Admin and CRM Manager roles have it.
@@ -2690,6 +2692,80 @@ them in **Admin › Rewards › Rewards Terms** (simple format: "## " for a head
 "- " for a list item, a blank line between paragraphs; Preview, Save, or "Back
 to the approved text"). Saving dates them today, and new members accept that
 version.
+
+## 35. Match Checklist (Matchday › Match Checklist)
+
+Everything the club has to do for each match, in one list: **Before**,
+**During** and **After** the match. A checklist is made by itself as soon as
+the next Lobi Stars match is in the fixtures (and for any other match within
+the next 14 days). If kick-off moves, the due times move with it.
+
+**Who can do what**
+- **Everyone with a staff login** (except gate and kitchen helpers) can see
+  the checklist, add notes, upload a file to a task, download the PDF, print
+  it and email it.
+- When you have finished a task, set its status to **Submitted for review**
+  (open *Details, notes, file and history* under the task, choose the status
+  and press **Save**).
+- **Only Super Admins** tick a task as **Done** (or *Not applicable*). The
+  tick boxes are greyed out for everyone else. A Super Admin who unticks a
+  task must give a reason; it is kept in the task's history.
+- Super Admins also choose each task's owner and can close a checklist.
+
+**Reading the list**
+- The bar at the top shows how much is finished, how many tasks are overdue
+  and the time to kick-off.
+- Colours: **red** = overdue, **amber** = due within 24 hours, **green** =
+  done, **grey** = not applicable.
+- Filter by phase, status (for example *Overdue*), owner, or search by name.
+- With two matches close together, each has its own tab at the top.
+
+**Go to task**
+Most tasks have a **Go to task →** button that opens the right admin page
+for that match (for example *Match stats captured* opens the stats section of
+Live Match Control for this match). A blue **Checklist task** bar then shows
+at the top of that page with:
+- **Back to checklist** (takes you back to the same task), and
+- **Mark as submitted for review** (or **Mark as done** for Super Admins).
+
+Tasks done outside the website (travel, hotel, police, kit check and so on)
+have no button. A Super Admin can add a link to a shared form or document in
+Templates. Pages in the content editor (Squad & Players, News) don't show the
+Checklist task bar: go back to the checklist to update those tasks.
+
+**PDF, print and email**
+- **Download PDF**: the checklist with every task's status, owner, notes and
+  who ticked it. Task titles in the PDF are clickable.
+- **Print view**: the same with empty tick boxes, for a clipboard on matchday.
+- **Email PDF**: type one or more addresses (separated by commas) and an
+  optional message; the PDF is attached.
+
+**Daily reminder email**
+From 3 days before kick-off, everyone gets **one** email a day at 08:00
+(Lagos time) listing what is overdue, due today and due in the next 3 days,
+with a link to each task. On match day the subject starts with *MATCH DAY*.
+No email is sent on days when nothing is outstanding.
+
+**After the match**
+Three hours after kick-off (or at full time) the checklist shows *Match over:
+finish the after-match tasks*. When every task is done or not applicable it
+moves to the **Archive** by itself. A Super Admin can also close it early
+with **Close checklist** (with a short note).
+
+**Super Admins: Templates and Reminder settings**
+- **Templates**: the master list every new checklist is copied from. Add,
+  edit, remove or move tasks up and down; set when each is due (for example
+  *2 days before kick-off*), its default owner, whether it is critical, and
+  whether it applies to home matches, away matches or both. **Task link**
+  chooses the admin page the *Go to task* button opens, or an external
+  address (must start with https://). **Test link** shows the link with the
+  next match's details. Changes only affect checklists made afterwards.
+- **Reminder settings**: the time of the daily email, how many days before
+  and after the match to remind, who gets it (everyone, or only task owners
+  plus Super Admins), extra addresses, and **Send a test reminder to me**.
+  The page also shows a preview of today's email.
+
+---
 
 ## Other things you can update in the CMS
 

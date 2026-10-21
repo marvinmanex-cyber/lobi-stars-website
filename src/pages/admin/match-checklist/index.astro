@@ -1,0 +1,350 @@
+---
+// Matchday › Match Checklist: everything to do for the next match, Before /
+// During / After, made from the master template. Every admin can see it,
+// write notes, upload files and mark a task "submitted for review"; only Super
+// Admins tick tasks as done (the server checks this too). Download as PDF,
+// print, or email the PDF. Daily reminder emails start 3 days before kick-off.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
+---
+<Layout title="Match Checklist | Lobi Stars Admin" description="Before, during and after the match." noindex>
+  <div class="wrap mcl">
+    <AdminNav current="match-checklist" />
+    <header class="mcl-head">
+      <div><div class="stag">Matchday</div><h1 class="stitle">Match <span class="r">Checklist</span></h1></div>
+      <ChecklistTabs current="current" />
+    </header>
+    <p class="mcl-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <nav class="mcl-matches" id="matches" aria-label="Upcoming matches" hidden></nav>
+    <div id="view"><p class="muted">Loading…</p></div>
+  </div>
+
+  <dialog class="mcl-dlg" id="emailDlg" aria-labelledby="emailH">
+    <form method="dialog" id="emailForm">
+      <h2 id="emailH">Email this checklist</h2>
+      <p class="mcl-sub">The PDF is attached, with a short progress summary.</p>
+      <label>To (separate addresses with commas)<input name="to" type="text" required autocomplete="off" placeholder="coach@lobistarsfc.com, media@lobistarsfc.com" /></label>
+      <label>Message (optional)<textarea name="message" rows="3" maxlength="2000"></textarea></label>
+      <label>PDF<select name="mode"><option value="report">Report (status of every task)</option><option value="print">Print version (empty tick boxes)</option></select></label>
+      <div class="mcl-row end"><button type="button" class="btn-o" value="cancel" id="emailCancel">Cancel</button><button class="btn-p" type="submit" id="emailSend">Send email</button></div>
+    </form>
+  </dialog>
+</Layout>
+
+<style>
+  .mcl { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; }
+  .mcl-head { display: flex; justify-content: space-between; align-items: end; gap: 12px 24px; flex-wrap: wrap; margin-bottom: 16px; }
+  .mcl-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .mcl-msg.ok { background: #E8F7EE; color: #17643A; } .mcl-msg.err { background: #FDECEC; color: #A3161B; }
+  .mcl-matches { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+  .mcl-matches :global(button) { min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); font-weight: 700; font-size: 14px; cursor: pointer; }
+  .mcl-matches :global(button[aria-pressed="true"]) { background: #15181D; color: #fff; border-color: #15181D; }
+  .mcl :global(.mcl-card) { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; box-shadow: 0 6px 18px rgba(15,17,21,.04); margin-bottom: 16px; }
+  .mcl :global(.mcl-top) { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px 24px; align-items: start; }
+  .mcl :global(.mcl-top h2) { margin: 0; font: 400 34px/1.05 'Bebas Neue', sans-serif; letter-spacing: .5px; color: var(--a-ink); }
+  .mcl :global(.mcl-det) { margin: 4px 0 0; color: var(--a-muted); font-size: 15px; }
+  .mcl :global(.mcl-count) { text-align: right; }
+  .mcl :global(.mcl-count b) { display: block; font: 400 30px/1 'Bebas Neue', sans-serif; color: var(--a-ink); }
+  .mcl :global(.mcl-count span) { color: var(--a-muted); font-size: 13px; }
+  .mcl :global(.mcl-bar) { height: 12px; border-radius: 999px; background: var(--a-soft); border: 1px solid var(--a-line); overflow: hidden; margin: 16px 0 8px; }
+  .mcl :global(.mcl-bar i) { display: block; height: 100%; background: linear-gradient(90deg, #16A34A, #22C55E); }
+  .mcl :global(.mcl-stats) { display: flex; gap: 8px 18px; flex-wrap: wrap; font-size: 14px; color: var(--a-muted); }
+  .mcl :global(.mcl-stats b) { color: var(--a-ink); }
+  .mcl :global(.mcl-stats .bad b) { color: #DC2626; }
+  .mcl :global(.mcl-actions) { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .mcl :global(.mcl-note) { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: #FFF7E6; color: #7A4B00; font-size: 14px; }
+  :global(body.admin-dark) .mcl :global(.mcl-note) { background: #3A2E12; color: #F6D58E; }
+  .mcl :global(.mcl-filters) { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; margin-bottom: 14px; }
+  .mcl :global(.mcl-filters label) { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--a-muted); }
+  .mcl :global(.mcl-filters select), .mcl :global(.mcl-filters input) { min-height: 40px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 14px; }
+  .mcl :global(.mcl-phase h3) { margin: 0 0 10px; font: 700 18px/1.2 'Barlow', sans-serif; color: var(--a-ink); display: flex; justify-content: space-between; gap: 10px; }
+  .mcl :global(.mcl-phase h3 small) { font-weight: 600; color: var(--a-muted); font-size: 13px; }
+  .mcl :global(.mcl-task) { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 4px 12px; padding: 12px; border: 1px solid var(--a-line); border-left: 5px solid #CBD2DA; border-radius: 12px; margin-bottom: 8px; background: var(--a-card); scroll-margin-top: 90px; }
+  .mcl :global(.mcl-task.overdue) { border-left-color: #DC2626; background: color-mix(in srgb, #DC2626 5%, var(--a-card)); }
+  .mcl :global(.mcl-task.soon) { border-left-color: #F59E0B; }
+  .mcl :global(.mcl-task.done) { border-left-color: #16A34A; }
+  .mcl :global(.mcl-task.na) { border-left-color: #94A3B8; opacity: .8; }
+  .mcl :global(.mcl-task.flash) { outline: 3px solid #FFC72C; outline-offset: 2px; }
+  .mcl :global(.mcl-tick) { width: 26px; height: 26px; margin-top: 2px; accent-color: #16A34A; cursor: pointer; }
+  .mcl :global(.mcl-tick:disabled) { cursor: not-allowed; }
+  .mcl :global(.mcl-t) { margin: 0; font-size: 16px; font-weight: 700; color: var(--a-ink); line-height: 1.35; }
+  .mcl :global(.mcl-task.done .mcl-t) { text-decoration: line-through; text-decoration-color: #16A34A; }
+  .mcl :global(.mcl-meta) { margin: 3px 0 0; font-size: 13px; color: var(--a-muted); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+  .mcl :global(.mcl-meta .od) { color: #DC2626; font-weight: 700; }
+  .mcl :global(.mcl-meta .sn) { color: #B45309; font-weight: 700; }
+  .mcl :global(.mcl-desc) { margin: 4px 0 0; font-size: 14px; color: var(--a-muted); }
+  .mcl :global(.mcl-side) { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+  .mcl :global(.mcl-go) { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 6px 12px; border-radius: 9px; background: #15181D; color: #fff; text-decoration: none; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  :global(body.admin-dark) .mcl :global(.mcl-go) { background: #E8EAED; color: #15181D; }
+  .mcl :global(.mcl-go:focus-visible) { outline: 3px solid #FFC72C; outline-offset: 2px; }
+  .mcl :global(.pill) { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; background: var(--a-soft); color: var(--a-muted); }
+  .mcl :global(.pill.crit) { background: #FDECEC; color: #A3161B; }
+  .mcl :global(.pill.rev) { background: #DBEAFE; color: #1E40AF; }
+  .mcl :global(.pill.prog) { background: #FEF3C7; color: #92400E; }
+  .mcl :global(.pill.ok) { background: #DCFCE7; color: #166534; }
+  .mcl :global(.mcl-more) { grid-column: 2 / -1; }
+  .mcl :global(.mcl-more summary) { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--a-muted); padding: 4px 0; min-height: 28px; }
+  .mcl :global(.mcl-edit) { display: grid; gap: 10px; padding: 10px 0 2px; }
+  .mcl :global(.mcl-edit label) { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--a-muted); }
+  .mcl :global(.mcl-edit select), .mcl :global(.mcl-edit input), .mcl :global(.mcl-edit textarea) { min-height: 40px; border: 1px solid var(--a-line); border-radius: 10px; padding: 7px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 14px; font-weight: 400; width: 100%; min-width: 0; box-sizing: border-box; }
+  .mcl :global(.mcl-2) { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mcl :global(.mcl-row) { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .mcl :global(.mcl-row.end), .mcl-dlg .mcl-row.end { justify-content: flex-end; }
+  .mcl :global(.mcl-hist) { margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--a-muted); }
+  .mcl :global(.mcl-hist li) { padding: 5px 0; border-bottom: 1px solid var(--a-line); }
+  .mcl :global(.sm) { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+  .mcl :global(.empty-state) { padding: 30px 16px; text-align: center; color: var(--a-muted); }
+  .mcl-dlg { border: 0; border-radius: 16px; padding: 22px; width: min(520px, calc(100vw - 32px)); background: var(--a-card); color: var(--a-ink); box-shadow: 0 24px 60px rgba(0,0,0,.35); }
+  .mcl-dlg::backdrop { background: rgba(15,17,21,.55); }
+  .mcl-dlg h2 { margin: 0 0 4px; font: 700 20px/1.2 'Barlow', sans-serif; }
+  .mcl-dlg form { display: grid; gap: 12px; }
+  .mcl-dlg label { display: grid; gap: 5px; font-size: 13px; font-weight: 700; color: var(--a-muted); }
+  .mcl-dlg input, .mcl-dlg textarea, .mcl-dlg select { min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 15px; font-weight: 400; width: 100%; box-sizing: border-box; }
+  .mcl-sub { margin: 0; color: var(--a-muted); font-size: 14px; }
+  .mcl-dlg .mcl-row { display: flex; gap: 8px; }
+  @media (max-width: 720px) {
+    .mcl :global(.mcl-top) { grid-template-columns: 1fr; }
+    .mcl :global(.mcl-count) { text-align: left; }
+    .mcl :global(.mcl-task) { grid-template-columns: 30px minmax(0, 1fr); }
+    .mcl :global(.mcl-side) { grid-column: 2; align-items: flex-start; flex-direction: row; flex-wrap: wrap; }
+    .mcl :global(.mcl-2) { grid-template-columns: 1fr; }
+    .mcl :global(.mcl-actions .btn-o), .mcl :global(.mcl-actions .btn-p) { flex: 1 1 auto; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': code };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const wat = (iso, o) => iso ? new Date(iso).toLocaleString('en-GB', Object.assign({ weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }, o || {})) : '';
+  const SUPER_TIP = 'Only super admins can mark tasks as done.';
+  const params = new URLSearchParams(location.search);
+  let data = null, shown = null, filters = { phase: '', status: '', owner: '', q: '' };
+  let msgT;
+  function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'mcl-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 6000); }
+  async function api(url, opt) {
+    const r = await fetch(url, Object.assign({ headers: H, cache: 'no-store' }, opt || {}));
+    if (r.status === 401) { location.href = '/admin/login/?next=' + encodeURIComponent(location.pathname + location.search + location.hash); throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function countdown(iso) {
+    const ms = Date.parse(iso) - Date.now();
+    if (ms <= 0) return ms > -3 * 3600e3 ? 'Match in progress / just finished' : 'Kick-off has passed';
+    const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4);
+    return d ? `${d} day${d === 1 ? '' : 's'} ${h} h to kick-off` : `${h} h ${m} min to kick-off`;
+  }
+  const STATUS_PILL = { not_started: '', in_progress: 'prog', submitted_for_review: 'rev', done: 'ok', not_applicable: '' };
+
+  function taskHtml(t, c) {
+    const me = data.me, closed = c.status === 'closed';
+    const finished = t.status === 'done' || t.status === 'not_applicable';
+    const cls = t.status === 'done' ? 'done' : t.status === 'not_applicable' ? 'na' : t.overdue ? 'overdue' : t.dueSoon ? 'soon' : '';
+    const owner = t.owner_name || t.owner_unit || '';
+    const due = t.overdue ? `<span class="od">Overdue: ${esc(wat(t.due_at))}</span>` : t.dueSoon ? `<span class="sn">Due ${esc(wat(t.due_at))}</span>` : `<span>Due ${esc(wat(t.due_at))}</span>`;
+    const tickOk = me.isSuper && !closed;
+    const go = t.link && !t.link.broken && t.link.url
+      ? `<a class="mcl-go" href="${esc(t.link.url)}"${t.link.type === 'external' ? ' target="_blank" rel="noopener noreferrer"' : ''}>${esc(t.link.label || 'Go to task')} <span aria-hidden="true">→</span>${t.link.type === 'external' ? '<span class="sr-only"> (opens in a new tab)</span>' : ''}</a>` : '';
+    const statusOpts = (me.isSuper ? ['not_started', 'in_progress', 'submitted_for_review', 'done', 'not_applicable'] : ['not_started', 'in_progress', 'submitted_for_review'].concat(finished ? [t.status] : []))
+      .map(s => `<option value="${s}"${s === t.status ? ' selected' : ''}${!me.isSuper && (s === 'done' || s === 'not_applicable') ? ' disabled' : ''}>${esc(data.labels.status[s])}</option>`).join('');
+    const ownerSel = me.isSuper ? `<label>Owner (person)<select data-f="owner_admin_id"><option value="">Nobody yet</option>${data.staff.map(s => `<option value="${esc(s.id)}"${s.id === t.owner_admin_id ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>
+      <label>Owner (unit)<input data-f="owner_unit" maxlength="60" value="${esc(t.owner_unit || '')}" placeholder="e.g. Media Team" /></label>` : '';
+    const ro = closed || me.readOnly;
+    return `<article class="mcl-task ${cls}" id="task-${t.id}" data-id="${t.id}" data-phase="${t.phase}" data-status="${t.status}" data-owner="${esc(owner.toLowerCase())}">
+      <input type="checkbox" class="mcl-tick" aria-label="Done: ${esc(t.title)}" ${t.status === 'done' ? 'checked' : ''} ${tickOk ? '' : `disabled title="${esc(closed ? 'This checklist is closed.' : SUPER_TIP)}"`} />
+      <div>
+        <p class="mcl-t">${esc(t.title)}</p>
+        <p class="mcl-meta">${finished ? `<span>${esc(data.labels.status[t.status])}${t.completed_by_name ? ` by ${esc(t.completed_by_name)}` : ''}${t.completed_at ? `, ${esc(wat(t.completed_at))}` : ''}</span>` : due}${owner ? `<span>Owner: ${esc(owner)}</span>` : '<span>No owner yet</span>'}${t.hasAttachment ? `<span>📎 ${esc(t.attachment_name || 'File')}</span>` : ''}</p>
+        ${t.description ? `<p class="mcl-desc">${esc(t.description)}</p>` : ''}
+      </div>
+      <div class="mcl-side">
+        ${t.priority === 'critical' ? '<span class="pill crit">Critical</span>' : ''}
+        ${!finished && t.status !== 'not_started' ? `<span class="pill ${STATUS_PILL[t.status]}">${esc(data.labels.status[t.status])}</span>` : ''}
+        ${go}
+      </div>
+      <details class="mcl-more" data-id="${t.id}"><summary>Details, notes, file and history</summary>
+        <div class="mcl-edit">
+          ${t.notes && ro ? `<p class="mcl-desc">${esc(t.notes)}</p>` : ''}
+          ${ro ? '' : `<div class="mcl-2"><label>Status<select data-f="status">${statusOpts}</select></label>${me.isSuper ? '' : `<p class="mcl-desc" style="align-self:end">${esc(SUPER_TIP)} Choose <b>Submitted for review</b> when it's ready.</p>`}</div>
+          ${ownerSel ? `<div class="mcl-2">${ownerSel}</div>` : ''}
+          <label>Notes<textarea data-f="notes" rows="2" maxlength="2000">${esc(t.notes || '')}</textarea></label>
+          <div class="mcl-row"><button type="button" class="btn-p sm" data-act="save">Save</button>
+            <label class="btn-o sm" style="display:inline-flex;align-items:center;cursor:pointer">📎 ${t.hasAttachment ? 'Replace file' : 'Upload file'}<input type="file" data-act="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" hidden /></label>
+            <span class="mcl-desc">PDF, JPG, PNG, DOCX or XLSX, up to 10 MB</span></div>`}
+          ${t.hasAttachment ? `<p><a href="/api/admin/match-checklist/tasks/${t.id}/file">⬇ Download ${esc(t.attachment_name || 'file')}</a></p>` : ''}
+          <ul class="mcl-hist" data-hist="${t.id}"><li>History loads when you open this.</li></ul>
+        </div>
+      </details>
+    </article>`;
+  }
+
+  function visible(t) {
+    if (filters.phase && t.phase !== filters.phase) return false;
+    if (filters.status === 'open' && (t.status === 'done' || t.status === 'not_applicable')) return false;
+    if (filters.status === 'overdue' && !t.overdue) return false;
+    if (filters.status && !['open', 'overdue'].includes(filters.status) && t.status !== filters.status) return false;
+    const owner = (t.owner_name || t.owner_unit || '').toLowerCase();
+    if (filters.owner === '_none' && owner) return false;
+    if (filters.owner && filters.owner !== '_none' && owner !== filters.owner) return false;
+    if (filters.q && !t.title.toLowerCase().includes(filters.q)) return false;
+    return true;
+  }
+
+  function draw() {
+    const c = data.checklists.find(x => x.id === shown) || data.checklists[0];
+    if (!c) {
+      $('view').innerHTML = `<section class="mcl-card"><div class="empty-state"><b style="font-size:34px">📋</b><p>No checklist yet. One is made by itself for the next Lobi Stars match (and any within 14 days) as soon as it is in <a href="/admin/league/fixtures/">Fixtures</a>.</p></div></section>`;
+      return;
+    }
+    shown = c.id;
+    const m = c.match, p = c.progress, closed = c.status === 'closed';
+    const owners = [...new Set(c.tasks.map(t => t.owner_name || t.owner_unit).filter(Boolean))].sort();
+    const phases = ['before', 'during', 'after'].map(ph => {
+      const all = c.tasks.filter(t => t.phase === ph), list = all.filter(visible);
+      const fin = all.filter(t => t.status === 'done' || t.status === 'not_applicable').length;
+      if (!list.length && filters.phase && filters.phase !== ph) return '';
+      return `<section class="mcl-card mcl-phase" aria-labelledby="ph-${ph}"><h3 id="ph-${ph}">${esc(data.labels.phase[ph])}<small>${fin} of ${all.length} done</small></h3>${list.length ? list.map(t => taskHtml(t, c)).join('') : '<p class="muted">No tasks match the filters.</p>'}</section>`;
+    }).join('');
+    $('view').innerHTML = `<section class="mcl-card" aria-label="Match">
+        <div class="mcl-top">
+          <div><h2>${esc(m.home)}${m.away ? ` vs ${esc(m.away)}` : ''}</h2>
+            <p class="mcl-det">${[m.competition, m.matchday ? `Matchday ${m.matchday}` : '', wat(m.kickoff, { weekday: 'long', month: 'long' }) + ' (Lagos)', m.venue].filter(Boolean).map(esc).join(' · ')}</p></div>
+          <div class="mcl-count"><b>${closed ? 'Closed' : esc(countdown(m.kickoff))}</b><span>${c.status === 'awaiting_closeout' ? 'Match over: finish the after-match tasks' : closed ? esc(c.note || '') : c.isHome ? 'Home match' : 'Away match'}</span></div>
+        </div>
+        <div class="mcl-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${p.pct}" aria-label="Checklist progress"><i style="width:${p.pct}%"></i></div>
+        <div class="mcl-stats"><span><b>${p.pct}%</b> complete</span><span><b>${p.finished}</b> of ${p.total} tasks finished</span><span class="${p.overdue ? 'bad' : ''}"><b>${p.overdue}</b> overdue</span></div>
+        <div class="mcl-actions">
+          <a class="btn-o sm" href="/api/admin/match-checklist/pdf?id=${c.id}&mode=report">⬇ Download PDF</a>
+          <a class="btn-o sm" href="/api/admin/match-checklist/pdf?id=${c.id}&mode=print&inline=1" target="_blank" rel="noopener">🖨 Print view</a>
+          ${data.me.readOnly ? '' : '<button type="button" class="btn-o sm" id="emailBtn">✉ Email PDF</button>'}
+          ${data.me.isSuper && !closed ? '<button type="button" class="btn-o sm" id="closeBtn">Close checklist</button>' : ''}
+        </div>
+        ${closed ? '<p class="mcl-note">This checklist is closed (in the archive): it can no longer be changed.</p>' : ''}
+        ${!data.me.isSuper && !closed ? `<p class="mcl-note">${esc(SUPER_TIP)} You can update the status to <b>Submitted for review</b>, add notes and upload files.</p>` : ''}
+      </section>
+      <div class="mcl-filters" role="search" aria-label="Filter tasks">
+        <label>Phase<select data-filter="phase"><option value="">All</option><option value="before">Before</option><option value="during">During</option><option value="after">After</option></select></label>
+        <label>Status<select data-filter="status"><option value="">All</option><option value="open">Not finished</option><option value="overdue">Overdue</option><option value="submitted_for_review">Submitted for review</option><option value="in_progress">In progress</option><option value="done">Done</option></select></label>
+        <label>Owner<select data-filter="owner"><option value="">Anyone</option><option value="_none">No owner yet</option>${owners.map(o => `<option value="${esc(o.toLowerCase())}">${esc(o)}</option>`).join('')}</select></label>
+        <label>Search<input data-filter="q" type="search" placeholder="Task name" /></label>
+      </div>${phases}`;
+    document.querySelectorAll('[data-filter]').forEach(el => { el.value = filters[el.dataset.filter] || ''; });
+  }
+
+  function drawTabs() {
+    const box = $('matches');
+    const open = data.checklists.filter(c => c.status !== 'closed');
+    box.hidden = open.length < 2;
+    box.innerHTML = open.map(c => `<button type="button" data-cl="${c.id}" aria-pressed="${c.id === shown}">${esc(c.match.home)} vs ${esc(c.match.away)} · ${esc(wat(c.match.kickoff, { weekday: undefined, hour: undefined, minute: undefined }))}</button>`).join('');
+  }
+
+  async function load(first) {
+    try {
+      const q = first && /^\d+$/.test(params.get('task') || '') ? `?task=${params.get('task')}` : first && /^\d+$/.test(params.get('id') || '') ? `?id=${params.get('id')}` : '';
+      data = await api('/api/admin/match-checklist' + q);
+      if (q && data.checklists[0]) {
+        // Opened for one checklist: show it, with the other open ones as tabs.
+        shown = data.checklists[0].id;
+        if (data.checklists[0].status !== 'closed' && data.open.length > 1) {
+          const all = await api('/api/admin/match-checklist');
+          data.checklists = all.checklists;
+        }
+      }
+      if (!data.checklists.some(c => c.id === shown)) shown = data.checklists[0]?.id ?? null;
+      draw(); drawTabs();
+      if (first && location.hash) {
+        const el = document.getElementById(location.hash.slice(1));
+        if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 2500); }
+      }
+    } catch (e) { $('view').innerHTML = `<section class="mcl-card"><p>${esc(e.message)}</p></section>`; }
+  }
+  const findTask = id => data.checklists.flatMap(c => c.tasks).find(t => t.id === id);
+
+  async function patch(id, body, okText) {
+    try { await api(`/api/admin/match-checklist/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(body) }); msg(okText || 'Saved.', true); await load(); }
+    catch (e) { msg(e.message, false); await load(); }
+  }
+
+  $('matches').addEventListener('click', e => { const b = e.target.closest('[data-cl]'); if (!b) return; shown = Number(b.dataset.cl); draw(); drawTabs(); });
+  $('view').addEventListener('input', e => { const f = e.target.closest('[data-filter]'); if (!f) return; filters[f.dataset.filter] = f.dataset.filter === 'q' ? f.value.trim().toLowerCase() : f.value; const pos = f.selectionStart; draw(); const again = document.querySelector(`[data-filter="${f.dataset.filter}"]`); again.focus(); if (f.dataset.filter === 'q') try { again.setSelectionRange(pos, pos); } catch {} });
+  $('view').addEventListener('change', async e => {
+    const tick = e.target.closest('.mcl-tick');
+    if (tick) {
+      const id = Number(tick.closest('.mcl-task').dataset.id), t = findTask(id);
+      if (tick.checked) return patch(id, { status: 'done' }, 'Marked as done.');
+      const reason = prompt(`Untick "${t.title}"? Please give a reason (it is kept in the history).`);
+      if (!reason) { tick.checked = true; return; }
+      return patch(id, { status: 'in_progress', reason }, 'Unticked.');
+    }
+    const file = e.target.closest('[data-act="file"]');
+    if (file && file.files[0]) {
+      const id = Number(file.closest('.mcl-task').dataset.id), f = file.files[0];
+      if (f.size > 10 * 1024 * 1024) { msg('That file is bigger than 10 MB.', false); file.value = ''; return; }
+      const fd = new FormData(); fd.append('file', f);
+      try {
+        const r = await fetch(`/api/admin/match-checklist/tasks/${id}/file`, { method: 'POST', headers: { 'x-admin-code': code }, body: fd });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || 'Upload failed');
+        msg('File uploaded.', true); await load();
+      } catch (err) { msg(err.message, false); }
+      file.value = '';
+    }
+  });
+  $('view').addEventListener('click', async e => {
+    const save = e.target.closest('[data-act="save"]');
+    if (save) {
+      const box = save.closest('.mcl-task'), id = Number(box.dataset.id), t = findTask(id), body = {};
+      box.querySelectorAll('[data-f]').forEach(el => { body[el.dataset.f] = el.value; });
+      const finished = s => s === 'done' || s === 'not_applicable';
+      if (body.status === t.status) delete body.status;
+      else if (finished(t.status) && !finished(body.status)) {
+        const reason = prompt(`Untick "${t.title}"? Please give a reason (it is kept in the history).`);
+        if (!reason) return;
+        body.reason = reason;
+      }
+      if (body.owner_admin_id === (t.owner_admin_id || '') && body.owner_unit === (t.owner_unit || '')) { delete body.owner_admin_id; delete body.owner_unit; }
+      return patch(id, body, 'Task saved.');
+    }
+    if (e.target.id === 'emailBtn') { $('emailDlg').showModal(); $('emailForm').elements.to.focus(); }
+    if (e.target.id === 'closeBtn') {
+      const c = data.checklists.find(x => x.id === shown);
+      const left = c.progress.total - c.progress.finished;
+      const note = prompt(left ? `${left} task(s) are not finished. Close the checklist anyway? Add a short note (e.g. "Closed by Super Admin: remaining tasks not needed").` : 'Close this checklist? (optional note)', left ? 'Closed by Super Admin' : '');
+      if (note === null) return;
+      try { await api('/api/admin/match-checklist', { method: 'POST', body: JSON.stringify({ action: 'close', id: c.id, note }) }); msg('Checklist closed and moved to the archive.', true); await load(); }
+      catch (err) { msg(err.message, false); }
+    }
+  });
+  $('view').addEventListener('toggle', async e => {
+    const d = e.target;
+    if (!d.matches || !d.matches('details.mcl-more') || !d.open) return;
+    const ul = d.querySelector('[data-hist]');
+    try {
+      const { history } = await api(`/api/admin/match-checklist/tasks/${d.dataset.id}/history`);
+      const WHAT = { status_changed: 'Status', unticked: 'Unticked', note_added: 'Notes changed', owner_changed: 'Owner changed', file_uploaded: 'File uploaded', created: 'Created', rescheduled: 'Rescheduled' };
+      const lab = v => data.labels.status[v] || v || '';
+      ul.innerHTML = history.length ? history.map(h => `<li><b>${esc(wat(h.created_at))}</b> · ${esc(h.admin_name || 'Automatic')}: ${esc(WHAT[h.action] || h.action)}${h.action === 'status_changed' || h.action === 'unticked' ? ` (${esc(lab(h.old_value))} → ${esc(lab(h.new_value))})` : ''}${h.reason ? ` · reason: ${esc(h.reason)}` : ''}</li>`).join('') : '<li>No changes yet.</li>';
+    } catch (err) { ul.innerHTML = `<li>${esc(err.message)}</li>`; }
+  }, true);
+
+  $('emailCancel').addEventListener('click', () => $('emailDlg').close());
+  $('emailForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target.elements, btn = $('emailSend');
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const d = await api('/api/admin/match-checklist/email', { method: 'POST', body: JSON.stringify({ id: shown, to: f.to.value, message: f.message.value, mode: f.mode.value }) });
+      $('emailDlg').close(); e.target.reset(); msg(`Emailed to ${d.sentTo.join(', ')}.`, true);
+    } catch (err) { msg(err.message, false); }
+    btn.disabled = false; btn.textContent = 'Send email';
+  });
+  // Keep the countdown and overdue colours fresh while the page is open.
+  setInterval(() => { if (data && !document.querySelector('.mcl-task :focus, .mcl-filters :focus, details.mcl-more[open]') && !$('emailDlg').open) load(); }, 60000);
+  load(true);
+})();
+</script>

@@ -29,6 +29,7 @@ export const PERMISSIONS = [
     ['matchday.predict.manage', 'Predict & Win: entries, disqualify, rules'],
     ['matchday.predict.pay_prizes', 'Predict & Win: mark prizes as paid'],
     ['matchday.live_updates', 'Live updates: match preview and report, fan match alerts, sharing to socials'],
+    ['matchday.checklist.view', 'Match Checklist: view, notes, files, "in progress" / "submitted", PDF and email (ticking done: Super Admins only)'],
   ] },
   { group: 'Broadcast', items: [
     ['broadcast.watch_live.edit', 'Watch Live stream links'],
@@ -158,12 +159,16 @@ export async function saveRole(db, id, permissions, by) {
     .bind(id, JSON.stringify(permissions), new Date().toISOString(), by || null).run();
   await loadRoles(db, { force: true });
 }
+// Given to every staff role except the matchday helpers (gate, kitchen), also
+// when a Super Admin has customised the role: all admins see the Match Checklist.
+const EVERY_STAFF_ROLE = ['matchday.checklist.view'];
 /** The permissions of a role id right now (saved change or default). */
 export function rolePermissions(id) {
   const def = ROLE_DEFAULTS[id];
   if (!def) return [];
   if (def.locked) return ALL_PERMISSIONS;
-  return saved[id] || def.permissions;
+  const base = saved[id] || def.permissions;
+  return def.helper ? base : [...new Set([...base, ...EVERY_STAFF_ROLE])];
 }
 export const roleChanged = id => !!saved[id] && !ROLE_DEFAULTS[id]?.locked;
 
@@ -272,6 +277,8 @@ const RULES = [
   [/^\/admin\/predictions(\/|$)/, 'matchday.predict.manage|matchday.predict.pay_prizes'],
   [/^\/admin\/commentary(\/|$)/, 'broadcast.commentary.manage|settings.commentary'],
   [/^\/admin\/match-centre(\/|$)/, `${CENTRE_WRITE}|matchday.fixtures.edit|matchday.motm.manage`],
+  // Match Checklist: every staff role; Super-Admin-only actions are checked in the API itself.
+  [/^\/admin\/match-checklist(\/|$)/, 'matchday.checklist.view'],
   [/^\/admin\/(programmes|programme-preview)(\/|$)/, 'content.programme.edit'],
   [/^\/admin\/share(\/|$)/, 'matchday.live_updates|content.programme.edit|media.upload'],
   [/^\/admin\/league(\/|$)/, 'matchday.fixtures.edit|matchday.live_control'],
@@ -306,6 +313,7 @@ const RULES = [
   [/^\/api\/admin\/fan-alerts\/run(\/|$)/, null],
   [/^\/api\/admin\/fan-alerts(\/|$)/, 'matchday.live_updates'],
   [/^\/api\/admin\/match-centre(\/|$)/, `${CENTRE_WRITE}|matchday.fixtures.edit|matchday.motm.manage`, CENTRE_WRITE],
+  [/^\/api\/admin\/match-checklist(\/|$)/, 'matchday.checklist.view'],
   [/^\/api\/admin\/programmes(\/|$)/, 'content.programme.edit'],
   [/^\/api\/admin\/qr(\/|$)/, 'content.programme.edit|partners.reports|partners.manage'],
   [/^\/api\/admin\/share(\/|$)/, 'matchday.live_updates|content.programme.edit|media.upload'],

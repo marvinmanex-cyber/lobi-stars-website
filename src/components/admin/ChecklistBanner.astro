@@ -1,0 +1,69 @@
+---
+// The "Checklist task" banner. It appears on ANY admin page opened from a
+// Match Checklist "Go to task" button (the address has ?from=checklist&task=ID):
+// the task and match, "Back to checklist", and one button to report back —
+// "Mark as submitted for review" (admins) or "Mark as done" (Super Admins;
+// the server enforces this). Included once, in AdminNav.
+---
+<div class="mcb" id="mcBanner" role="region" aria-label="Checklist task" hidden>
+  <p class="mcb-t"><span aria-hidden="true">📋</span> <b>Checklist task:</b> <span id="mcbTitle"></span> <span class="mcb-m">— <span id="mcbMatch"></span></span> <span class="mcb-s" id="mcbStatus"></span></p>
+  <div class="mcb-a">
+    <a class="mcb-back" id="mcbBack" href="/admin/match-checklist/">← Back to checklist</a>
+    <button type="button" class="mcb-do" id="mcbDo" hidden></button>
+  </div>
+</div>
+<style is:global>
+  .mcb { display: flex; justify-content: space-between; align-items: center; gap: 10px 16px; flex-wrap: wrap; margin: 0 0 16px; padding: 12px 16px; border-radius: 12px; background: #EEF4FF; border: 1px solid #BFD3FB; color: #15233F; }
+  body.admin-dark .mcb { background: #16233A; border-color: #2B4470; color: #E3ECFF; }
+  .mcb[hidden] { display: none; }
+  .mcb-t { margin: 0; font-size: 15px; line-height: 1.45; min-width: 0; overflow-wrap: anywhere; }
+  .mcb-m { color: inherit; opacity: .8; }
+  .mcb-s { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; background: rgba(0,0,0,.07); }
+  .mcb-a { display: flex; gap: 8px; flex-wrap: wrap; }
+  .mcb-back, .mcb-do { display: inline-flex; align-items: center; min-height: 38px; padding: 6px 14px; border-radius: 9px; font-size: 14px; font-weight: 700; text-decoration: none; cursor: pointer; }
+  .mcb-back { background: #fff; color: #15233F; border: 1px solid #BFD3FB; }
+  .mcb-do { background: #16A34A; color: #fff; border: 0; }
+  .mcb-do:disabled { opacity: .6; cursor: default; }
+  .mcb-back:focus-visible, .mcb-do:focus-visible { outline: 3px solid #FFC72C; outline-offset: 2px; }
+  @media (max-width: 560px) { .mcb-a { width: 100%; } .mcb-back, .mcb-do { flex: 1 1 auto; justify-content: center; } }
+</style>
+<script>
+  // Only with ?from=checklist&task=<number>; nothing else on the page changes.
+  const q = new URLSearchParams(location.search);
+  const id = q.get('from') === 'checklist' ? q.get('task') || '' : '';
+  if (/^\d{1,9}$/.test(id)) {
+    const box = document.getElementById('mcBanner')!;
+    const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+    const back = document.getElementById('mcbBack') as HTMLAnchorElement;
+    const btn = document.getElementById('mcbDo') as HTMLButtonElement;
+    back.href = `/admin/match-checklist/?task=${id}#task-${id}`;
+    // Under the top bar, before the page's own content.
+    const shell = document.querySelector('.ash');
+    if (shell?.parentElement) shell.parentElement.insertBefore(box, shell.nextSibling);
+    const show = async () => {
+      const r = await fetch(`/api/admin/match-checklist/tasks/${id}`, { headers: H, cache: 'no-store' });
+      if (!r.ok) return;
+      const d = await r.json();
+      document.getElementById('mcbTitle')!.textContent = d.task.title;
+      document.getElementById('mcbMatch')!.textContent = d.headline;
+      document.getElementById('mcbStatus')!.textContent = d.task.statusLabel;
+      const closed = d.checklist.status === 'closed', finished = d.task.status === 'done' || d.task.status === 'not_applicable';
+      const target = d.me.isSuper ? 'done' : 'submitted_for_review';
+      btn.hidden = closed || d.me.readOnly || finished || d.task.status === target;
+      btn.textContent = d.me.isSuper ? '✓ Mark as done' : 'Mark as submitted for review';
+      btn.dataset.status = target;
+      box.hidden = false;
+    };
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        const r = await fetch(`/api/admin/match-checklist/tasks/${id}`, { method: 'PATCH', headers: H, body: JSON.stringify({ status: btn.dataset.status }) });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(d.error || 'Could not update the task.');
+        await show();
+      } catch (e) { alert((e as Error).message); }
+      btn.disabled = false;
+    });
+    show().catch(() => {});
+  }
+</script>

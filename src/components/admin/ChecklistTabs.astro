@@ -1,0 +1,28 @@
+---
+// The tabs at the top of the Match Checklist pages. Templates and Settings are
+// for Super Admins (hidden for others once we know who is signed in; the
+// server refuses them anyway).
+interface Props { current: 'current' | 'archive' | 'templates' | 'settings' }
+const { current } = Astro.props;
+const TABS = [
+  { id: 'current', label: 'Current match', href: '/admin/match-checklist/' },
+  { id: 'archive', label: 'Archive', href: '/admin/match-checklist/archive/' },
+  { id: 'templates', label: 'Templates', href: '/admin/match-checklist/templates/', super: true },
+  { id: 'settings', label: 'Reminder settings', href: '/admin/match-checklist/settings/', super: true },
+];
+---
+<nav class="mct" aria-label="Match Checklist">
+  {TABS.map(t => <a href={t.href} aria-current={t.id === current ? 'page' : undefined} data-super={t.super ? '1' : undefined}>{t.label}</a>)}
+</nav>
+<style>
+  .mct { display: flex; gap: 4px; flex-wrap: wrap; background: var(--a-soft); border: 1px solid var(--a-line); border-radius: 12px; padding: 4px; }
+  .mct a { padding: 8px 14px; border-radius: 9px; font-size: 14px; font-weight: 700; color: var(--a-muted); text-decoration: none; min-height: 22px; }
+  .mct a[aria-current="page"] { background: var(--a-card); color: var(--a-ink); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .mct a:focus-visible { outline: 3px solid #FFC72C; outline-offset: 1px; }
+</style>
+<script is:inline>
+  document.addEventListener('ls:admin', e => {
+    if (e.detail && e.detail.roleId === 'super_admin') return;
+    document.querySelectorAll('.mct [data-super]').forEach(a => { a.hidden = true; });
+  });
+</script>

@@ -49,7 +49,7 @@ test('broadcast operator: commentary and fan alerts only; other screens get the 
   const a = await me(c);
   assert.equal(a.roleId, 'broadcast_operator');
   assert.equal(a.roleLabel, 'Broadcast Operator');
-  assert.deepEqual([...a.permissions].sort(), ['analytics.broadcast', 'broadcast.commentary.manage', 'broadcast.watch_live.edit', 'settings.commentary']);
+  assert.deepEqual([...a.permissions].sort(), ['analytics.broadcast', 'broadcast.commentary.manage', 'broadcast.watch_live.edit', 'matchday.checklist.view', 'settings.commentary']);
   assert.equal((await call(c, '/admin/commentary/')).status, 200);
   assert.equal((await call(c, '/admin/fan-alerts/')).status, 403, 'fan alerts are live updates (Media Editor, Matchday Admin)');
   assert.equal((await call(c, '/admin/dashboard/')).status, 200);

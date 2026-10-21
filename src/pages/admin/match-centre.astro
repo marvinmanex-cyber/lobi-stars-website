@@ -88,7 +88,7 @@ const roster = (await getRoster())
         </div>
       </fieldset>
 
-      <fieldset class="mce-set">
+      <fieldset class="mce-set" id="mc-timeline">
         <legend>Live timeline</legend>
         <p class="muted mce-hint">Add goals, cards and substitutions as they happen, then press <strong>Save</strong>. The public page refreshes every 30 seconds while the status is Live.</p>
         <div id="timeline"></div>
@@ -159,7 +159,7 @@ const roster = (await getRoster())
         <div class="form-grp"><label class="form-lbl" for="report">Match report</label><textarea class="form-ta" id="report" rows="8"></textarea></div>
       </fieldset>
 
-      <fieldset class="mce-set">
+      <fieldset class="mce-set" id="mc-lineups">
         <legend>Line-ups (one player per line, e.g. "1 John Doe")</legend>
         <div class="mce-row2">
           <div class="form-grp"><label class="form-lbl" for="homeXI"><span data-home>Home</span> starting XI</label><textarea class="form-ta" id="homeXI" rows="11"></textarea></div>
@@ -169,12 +169,12 @@ const roster = (await getRoster())
         </div>
       </fieldset>
 
-      <fieldset class="mce-set">
+      <fieldset class="mce-set" id="mc-stats">
         <legend>Stats (home / away)</legend>
         <div class="mce-stats" id="stats"></div>
       </fieldset>
 
-      <fieldset class="mce-set">
+      <fieldset class="mce-set" id="mc-gallery">
         <legend>Gallery</legend>
         <div class="form-grp"><label class="form-lbl" for="gallery">One photo per line: image link | caption (upload photos in the Content CMS media library first)</label>
           <textarea class="form-ta" id="gallery" rows="5" placeholder="/images/match-photo-1.jpg | Celebrating the opener"></textarea></div>

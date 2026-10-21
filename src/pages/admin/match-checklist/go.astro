@@ -1,0 +1,39 @@
+---
+// /admin/match-checklist/go/?task=<id>: the "Go to task" address used in
+// emails and PDFs. It always opens the task's page as it is NOW (if the match
+// moved or the link was changed, the email still works). Signing in first
+// brings staff back here, then on to the task's page.
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="Opening task | Lobi Stars Admin" description="Opening the checklist task." noindex>
+  <main class="wrap mcg">
+    <p id="txt" role="status">Opening the task…</p>
+    <p><a href="/admin/match-checklist/" id="back">Back to checklist</a></p>
+  </main>
+</Layout>
+<style>
+  .mcg { max-width: 560px; padding: 60px 16px; text-align: center; font-size: 17px; }
+</style>
+<script is:inline>
+(function () {
+  const id = new URLSearchParams(location.search).get('task') || '';
+  const back = document.getElementById('back'), txt = document.getElementById('txt');
+  if (!/^\d+$/.test(id)) { txt.textContent = 'This link is not complete.'; return; }
+  back.href = `/admin/match-checklist/?task=${id}#task-${id}`;
+  fetch(`/api/admin/match-checklist/tasks/${id}`, { headers: { 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' }, cache: 'no-store' }).then(async r => {
+    if (r.status === 401) { location.replace('/admin/login/?next=' + encodeURIComponent(location.pathname + location.search)); return; }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { txt.textContent = d.error || 'This task could not be opened.'; return; }
+    const url = d.link && !d.link.broken && d.link.url;
+    // Internal pages only by replace(); an external link opens like a normal link.
+    if (url && d.link.type === 'internal' && url.startsWith('/admin')) { location.replace(url); return; }
+    if (url && d.link.type === 'external' && /^https:\/\//i.test(url)) {
+      txt.innerHTML = '';
+      const a = Object.assign(document.createElement('a'), { href: url, textContent: `${d.task.title}: open ${new URL(url).hostname}`, rel: 'noopener noreferrer', target: '_blank' });
+      txt.append(a);
+      return;
+    }
+    location.replace(back.href);
+  }).catch(() => { txt.textContent = 'This task could not be opened.'; });
+})();
+</script>

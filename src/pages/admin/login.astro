@@ -83,6 +83,7 @@ const siteKey = settings.turnstileSiteKey || '';
 </style>
 
 <script>
+  import { safeNext } from '../../lib/safeNext';
   const err = document.getElementById('err')!;
   const params = new URLSearchParams(location.search);
   const next = params.get('next') || '';
@@ -106,7 +107,7 @@ const siteKey = settings.turnstileSiteKey || '';
     sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; sc.async = true; sc.onload = draw;
     document.head.appendChild(sc);
   }
-  const target = /^\/admin(\/|$)/.test(next) && !next.startsWith('/admin/login') ? next : '/admin/dashboard/';
+  const target = safeNext(next, location.origin);
   const tabs = { staff: document.getElementById('tabStaff')!, owner: document.getElementById('tabOwner')! };
   const forms = { staff: document.getElementById('staffForm') as HTMLFormElement, owner: document.getElementById('ownerForm') as HTMLFormElement };
 

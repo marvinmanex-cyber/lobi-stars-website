@@ -147,6 +147,28 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 - F10. media@ mailbox (A15): with the routing rule set to **Send to a Worker → lobistars-media-mail** (done 17 Oct 2026), send an email to media@lobistarsfc.com from another account and check it arrives in lobistarsmedia@gmail.com **and** in the admin Inbox as "Media email". Postponed to be tested with the other pending checks.
 - F9. Admin › Share any page: add the "Share to club socials" bookmark on a computer and on a phone and try it once. After A12/A13, post one page with Post now (until then use Open post window and Mark as posted).
 
+## G. Match Checklist (Matchday › Match Checklist, added 21 Oct 2026)
+
+- G1. **Links for the 14 tasks that have no page on the website** (optional).
+  If the club keeps any of these in a shared form, sheet or document (Google
+  Forms, Google Sheets, Drive), send the https:// address, or a Super Admin
+  adds it in **Match Checklist › Templates** (Task link → External address):
+  opposition scouting report, medical and fitness report, travel booking,
+  hotel and feeding, stadium inspection, security and police liaison, match
+  officials' hosting, media accreditation list, pre-match press conference,
+  kit check, ambulance and medical team, crowd and security monitoring,
+  post-match analysis, disciplinary reports to the league.
+- G2. **Decide: tick some tasks automatically?** The website could mark a
+  task *Submitted for review* by itself when it sees the work is done (a
+  Super Admin still ticks it): programme published, line-up saved, squad
+  saved, stats entered, full-time result, highlights link added, match report
+  published. Not built yet; say yes or no.
+- G3. A Super Admin: open **Templates** once, check the due times, and set
+  the **default owner** (a unit such as "Media Team") of each task; then, on
+  the first checklist (Lobi Stars v Bichi First, 8 Nov), choose the owners.
+- G4. A Super Admin: on **Reminder settings**, press **Send a test reminder
+  to me** and check the email arrives.
+
 ---
 
 # Recommendations (best practice for football club websites)

@@ -1,5 +1,6 @@
 import { leagueAuth, body, ok, fail, getFixture, changeFixture, snapshot } from '../../../_lib/leagueAdmin.js';
 import { logLeague } from '../../../_lib/leagueDb.js';
+import { syncChecklistsQuietly } from '../../../_lib/matchChecklist.js';
 import { validateFixtureInput } from '../../../_lib/league/validate.js';
 
 // PATCH  /api/admin/league/fixtures/:id { date?, time?, venueId?, status?, note?, isPublished?, referee?, attendance?, reportUrl? }
@@ -27,6 +28,7 @@ export async function onRequestPatch({ request, env, params }) {
     if (c.status === 'cancelled' || c.status === 'postponed') { c.home_goals = null; c.away_goals = null; }
     if (!Object.keys(c).length) return fail('Nothing to change.');
     const after = await changeFixture(env, staff, f, c, 'fixture.update');
+    await syncChecklistsQuietly(env); // Match Checklist: reschedule, postpone or cancel
     return ok({ fixture: snapshot(after) });
   } catch (err) {
     console.error('[league admin] patch fixture', err);
@@ -51,6 +53,7 @@ export async function onRequestDelete({ request, env, params }) {
     }
     await db.prepare(`DELETE FROM league_fixtures WHERE id = ?`).bind(f.id).run();
     await logLeague(db, staff, 'fixture.delete', 'fixture', f.id, snapshot(f), null);
+    await syncChecklistsQuietly(env);
     return ok();
   } catch (err) {
     console.error('[league admin] delete fixture', err);

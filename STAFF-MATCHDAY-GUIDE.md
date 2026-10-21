@@ -34,6 +34,14 @@ STAFF-GUIDE section 26 (Admin → Matchday → Fan Match Alerts).
 
 ## 1. Before the match (a day or more ahead)
 
+**Start with the Match Checklist** (**Admin → Matchday → Match Checklist**):
+it lists everything to do before, during and after this match, with who owns
+each task and when it is due, and a **Go to task →** button to the right
+page. Set a task to *Submitted for review* when it's done; a Super Admin
+ticks it off. Print it (**Print view**) for a clipboard on matchday. A daily
+reminder email starts 3 days before kick-off. Full details: STAFF-GUIDE.md,
+section 35.
+
 1. **Check the match** in **Admin → League → Fixtures** (the whole season is
    loaded): date, kick-off time and venue. Ticket prices are set in
    **Admin → Matchday → Match Tickets & Settings**.
