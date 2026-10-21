@@ -14,9 +14,9 @@ record, no HTTPS certificate and no listen address saved. Fans would see "Off
 air" for the whole match. Once Aeson's server is up and the three manual steps
 below are done, this becomes READY (a re-check takes about 10 minutes).
 
-Note: the fixture on the site is **Sunday 8 November 2026**, kick-off 16:00
-(Nigerian time), commentary from 15:45, not 7 November. Check that the date is
-right in Admin › Fixtures.
+First home match: **Sunday 8 November 2026** (Lobi Stars FC v Bichi First FC),
+kick-off 16:00 Nigerian time, commentary from 15:45: confirmed by the club and
+matching the fixture on the website.
 
 ## 2. Results
 
@@ -89,9 +89,8 @@ keeping all current behaviour, then test and deploy.
 | 1 | Aeson + Marvin | Aeson sets up the stream server (guide: "Aeson Radio: live streaming for Lobi Stars FC Live") and sends the server IP. Marvin adds Cloudflare › lobistarsfc.com › DNS › Add record: **A**, name **stream**, value = that IP, proxy **DNS only (grey cloud)**. |
 | 2 | Aeson + Lobi Stars staff | Aeson issues the HTTPS certificate for stream.lobistarsfc.com and sends the Listen URL. Staff paste it into Admin › Live Commentary › **Primary listen address** (and a backup if Aeson has one), **Save settings**, then **Test stream**: every line should say working. |
 | 3 | Lobi Stars staff | Webhook secret: make a long random code, save it in Admin › Live Commentary › Broadcast partner, send it to Aeson privately with the webhook address shown there (handover A7a). |
-| 4 | Marvin | Confirm the fixture date (8 vs 7 November) in Admin › Fixtures. |
-| 5 | Club | Decide on the request budget (blocker 3) before the first match. |
-| 6 | Aeson + staff | A 5-minute live test at the stadium on the matchday internet connection, at least a few days before the match. |
+| 4 | Club | Decide on the request budget (blocker 3) before the first match. |
+| 5 | Aeson + staff | A 5-minute live test at the stadium on the matchday internet connection, at least a few days before the match. |
 
 ## 6. Matchday check for Lobi Stars staff
 
