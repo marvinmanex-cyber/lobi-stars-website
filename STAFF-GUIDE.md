@@ -806,14 +806,28 @@ does, commentary ends automatically 2 hours 30 minutes after kick-off.
 
 ### Test the stream (do this before every match)
 **Admin → Commentary** → **Test stream**. Each line says **working ✓** or
-**not working ✗**. If it's not working, contact the broadcast partner.
+**not working ✗**: the stream fans connect to, the backup, and **Aeson Sports
+Radio status feed** (whether Aeson's on-air signal can be read, and whether
+it says on air). If something is not working, contact Aeson Sports Radio.
 
-### Other settings
-- **Public stream address:** the Lobi Stars address fans' players connect to
-  (e.g. `https://stream.lobistarsfc.com/live`, or `/live/commentary`). Only
+### Broadcast partner: Aeson Sports Radio
+Aeson Sports Radio produces the commentary; fans only ever see and hear
+**Lobi Stars FC Live**. The **Broadcast partner** box on **Admin →
+Commentary** holds:
+- **Status address:** Aeson's on-air feed. Leave blank for Aeson's standard
+  address. The website reads it every 15 seconds; the player shows **Live now**
+  only while it says on air (during a match's commentary window). If it can't be
+  read, the player still lets fans listen during the window.
+- **Primary listen address:** the Lobi Stars address fans' players connect to
+  (e.g. `https://stream.lobistarsfc.com/…`, or `/live/commentary`). Only
   lobistarsfc.com addresses are accepted. Leave blank to use the default.
-- **Backup stream address:** optional. The player switches to it if the main
-  stream fails twice.
+- **Backup listen address:** optional. The player switches to it as soon as
+  the primary fails, and back again if needed.
+- **Webhook secret:** a long random code agreed with Aeson. Aeson signs every
+  on-air / off-air message with it, so the website updates within seconds.
+  It is saved encrypted and never shown again: type a new one only to replace
+  it. The **webhook address** to give Aeson is shown under it (Copy button).
+- The line under it shows the last status read: reachable or not, on air or off.
 - **Commentators:** optional names shown on the player.
 - **Maximum listeners:** only for the website relay; extra listeners see "full, try again".
 
@@ -822,6 +836,15 @@ does, commentary ends automatically 2 hours 30 minutes after kick-off.
 seconds) and the **peak** for the current match. After matches, see the
 **Lobi Stars FC Live** panel on **Admin → Analytics**, or download the
 **Broadcast Report (CSV)**.
+
+### What fans see on the player
+- **Live now** (red) while Aeson is on air during a match's commentary window,
+  with the score, the minute (e.g. "Live · 61'"), the goal scorers under each
+  team and the commentators' names. The score and scorers come from **Live
+  Match Control** first, so keep it up to date.
+- **Starting soon** when the commentary window is open but Aeson isn't on air
+  yet (fans can already press play).
+- **Off air – next match: …** with the next match and its commentary time.
 
 ### What fans see while listening
 - After pressing **Play**, a **"now playing" bar** appears at the bottom of

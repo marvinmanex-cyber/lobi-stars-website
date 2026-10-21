@@ -69,6 +69,8 @@ these in git.
 | `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_TOKEN`, `FACEBOOK_GRAPH_VERSION` | Share Hub: optional automatic posts to the Facebook Page | See "Share Hub". |
 | `TERMII_API_KEY`, `TERMII_SENDER_ID` | Food order SMS / WhatsApp (optional) | |
 | `PARTNER_ORIGIN_STREAM_URL` | Lobi Stars FC Live commentary | Server-only; see COMMENTARY-STREAM-SETUP.md. |
+| `AESON_WEBHOOK_SECRET` | Lobi Stars FC Live: signed on-air updates from Aeson Sports Radio (`POST /api/aeson-webhook`) | **Secret, optional.** Wins over a secret saved in Admin › Commentary › Broadcast partner (that one is stored AES-GCM encrypted with a key from `SESSION_SECRET`). |
+| `AESON_STATUS_URL` | Lobi Stars FC Live: Aeson's status feed | Optional; default `https://www.aesonsports.com/api/radio/status`, or set it in Admin › Commentary. |
 | `COMMENTARY_BRAND_NAME` | Commentary player name (optional) | |
 | `ANALYTICS_SALT` | Visitor analytics (optional) | Falls back to `SESSION_SECRET`. |
 

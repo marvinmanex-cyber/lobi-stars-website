@@ -289,6 +289,11 @@ exported files private and delete them when you no longer need them.
 11. **Lobi Stars FC Live stream:** the club chose Option A (our own
    stream.lobistarsfc.com address). Finish the partner and DNS checklist in
    COMMENTARY-STREAM-SETUP.md, then add the stream address on Admin → Commentary.
+   Before each match: **Admin → Commentary → Test stream** (the stream and
+   **Aeson Sports Radio status feed** should both say working). During the
+   match, the player shows **Live now** with the score, minute and scorers once
+   Aeson is on air; keep **Live Match Control** up to date, because the score and
+   scorers on the player come from it.
 12. **Inbox emails:** connect the email service (Resend key, sender address
     info@lobistarsfc.com, SPF/DKIM/DMARC records) so Inbox replies are
     emailed, and set up reply.lobistarsfc.com so fans' replies come back in.

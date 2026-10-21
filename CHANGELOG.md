@@ -8,6 +8,37 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-21: Lobi Stars FC Live connected to Aeson Sports Radio's on-air status
+
+**What changed**
+- **Admin → Commentary** has a **Broadcast partner: Aeson Sports Radio** box:
+  Aeson's status address, the primary and backup listen addresses (the same
+  fields as before), and a webhook secret saved encrypted and never shown again.
+- The commentary player (on /commentary, Matchday Live and the homepage
+  banner) now shows **Live now** only while Aeson is on air during a match's
+  commentary window, **Starting soon** when the window is open but Aeson isn't
+  on air yet, and **Off air – next match: …** otherwise. While live it shows
+  the score, the minute, the goal scorers and the commentators' names. The
+  score and scorers come from Live Match Control first.
+- If the primary listen address fails, the player switches to the backup
+  straight away (before: after two failures), and alternates if needed.
+- Aeson can push on-air / off-air changes to the website (signed with the
+  shared secret), so the player updates within seconds; otherwise the website
+  reads Aeson's status every 15 seconds. If Aeson's status can't be read, fans
+  see "Off air" outside match windows and can still listen during them.
+- **Test stream** and **Website Health** now also check Aeson's status feed.
+- Nothing on the public pages names Aeson or links to it (white-label).
+
+**Staff need to:** agree a webhook secret with Aeson and save it in the
+Broadcast partner box; give Aeson the webhook address shown there. The stream
+address itself still waits for Aeson's server (handover A7).
+
+**Handbook:** STAFF-GUIDE.md › 9 (Broadcast partner; What fans see on the
+player); STAFF-MATCHDAY-GUIDE.md › 11; technical: COMMENTARY-STREAM-SETUP.md ›
+Status feed and webhook; audit: docs/radio-audit.md.
+
+---
+
 ## 2026-10-20: Faster, sturdier site: only dynamic addresses run the website code
 
 **What changed**

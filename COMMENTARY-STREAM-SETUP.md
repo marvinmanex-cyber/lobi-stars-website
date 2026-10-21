@@ -115,6 +115,35 @@ What the relay does:
 
 ---
 
+## Status feed and webhook (Aeson Sports Radio)
+
+The website shows **Live now**, the commentators and listener numbers from
+Aeson's status feed, read server-side every 15 seconds:
+`GET https://www.aesonsports.com/api/radio/status` (changeable in Admin →
+Commentary → Broadcast partner). Fields read: `onAir`, `listeners`,
+`broadcast.title`, `broadcast.commentators` (list or text), `broadcast.startedAt`,
+and optionally `liveMatch` (top level or inside `broadcast`):
+`{ home, away, homeScore, awayScore, minute, status, scorers: [{ player, minute, team: "home"|"away" }] }`.
+`listenUrl` / `backupListenUrl` are never passed to fans. All text is cleaned
+(no partner names, AzuraCast, or links). If the feed can't be read, fans get
+`onAir: false, stale: true`.
+
+**Webhook** (on-air changes within seconds): `POST https://lobistarsfc.com/api/aeson-webhook`
+- Body: the same JSON as the status feed (or `{"event":"changed"}` to make the site re-read the feed).
+- `X-Aeson-Timestamp`: Unix time in seconds (must be within 5 minutes).
+- `X-Aeson-Signature`: `sha256=` + hex HMAC-SHA256 of `<timestamp>.<raw body>`, keyed with the shared secret.
+- Answers 200 `{"ok":true,"onAir":…}`; 401 for any signature problem.
+
+```js
+// Node example for Aeson
+import crypto from 'node:crypto';
+const body = JSON.stringify({ onAir: true, listeners: 120, broadcast: { title: 'Lobi Stars v Kada Warriors', commentators: ['Name One', 'Name Two'] } });
+const ts = Math.floor(Date.now() / 1000);
+const sig = crypto.createHmac('sha256', process.env.LOBI_WEBHOOK_SECRET).update(`${ts}.${body}`).digest('hex');
+await fetch('https://lobistarsfc.com/api/aeson-webhook', { method: 'POST', body,
+  headers: { 'Content-Type': 'application/json', 'X-Aeson-Timestamp': String(ts), 'X-Aeson-Signature': `sha256=${sig}` } });
+```
+
 ## Settings reference
 
 | Setting | Where | Example |
@@ -125,5 +154,7 @@ What the relay does:
 | `COMMENTARY_BRAND_NAME` | Cloudflare variable | `Lobi Stars FC Live` |
 | `COMMENTARY_MAX_LISTENERS` | Cloudflare variable, or Admin → Commentary | `500` |
 | `PARTNER_ORIGIN_STREAM_URL` | **Cloudflare secret only** (Option B) | the partner's private address |
+| Status address | Admin → Commentary → Broadcast partner (or `AESON_STATUS_URL`) | `https://www.aesonsports.com/api/radio/status` |
+| Webhook secret | Admin → Commentary → Broadcast partner (encrypted), or the `AESON_WEBHOOK_SECRET` secret | a long random code shared with Aeson |
 
 Public stream addresses must be on lobistarsfc.com. The website refuses any other address.
