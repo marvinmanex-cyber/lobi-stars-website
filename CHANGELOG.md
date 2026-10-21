@@ -8,6 +8,23 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-21: Content editor changes go live by themselves again
+
+**What changed**
+- Cloudflare's automatic build (after every save in the content editor or
+  push to GitHub) had been failing, because the website now needs Node.js 22
+  and Cloudflare was using an older default. The project now tells Cloudflare
+  to use Node 22 (`.node-version`); the first automatic build succeeded on
+  21 Oct 2026.
+
+**Who it affects:** everyone who edits News, Squad, Gallery or other pages in
+the content editor: changes appear about 2 minutes after saving, without
+waiting for the website manager.
+
+**What staff need to do:** nothing.
+
+---
+
 ## 2026-10-21: AI Fix (Settings › AI Fix and AI Settings, Super Admins)
 
 **What changed**
