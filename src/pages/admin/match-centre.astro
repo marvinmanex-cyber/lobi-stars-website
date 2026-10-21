@@ -274,7 +274,7 @@ const roster = (await getRoster())
 
 <script is:inline>
 (function () {
-  const code = sessionStorage.getItem('ls_admin_code') || '';
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
   const $ = id => document.getElementById(id);
   const msg = $('msg');
   const show = (text, ok) => { msg.textContent = text; msg.className = 'mce-msg ' + (ok ? 'ok' : 'err'); msg.hidden = false; };

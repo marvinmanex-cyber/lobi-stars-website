@@ -65,7 +65,8 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
   .mtp :global(.mtp-card h2) { margin: 0 0 10px; font: 700 18px/1.2 'Barlow', sans-serif; color: var(--a-ink); }
   .mtp :global(.mtp-t) { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--a-line); }
   .mtp :global(.mtp-t b) { color: var(--a-ink); }
-  .mtp :global(.mtp-t small) { display: block; color: var(--a-muted); font-size: 13px; margin-top: 2px; }
+  .mtp :global(.mtp-t small) { display: block; color: var(--a-muted); font-size: 13px; margin-top: 2px; overflow-wrap: anywhere; }
+  .mtp :global(.mtp-t > div) { min-width: 0; }
   .mtp :global(.mtp-mv) { display: flex; flex-direction: column; gap: 2px; }
   .mtp :global(.mtp-mv button) { width: 32px; height: 26px; border: 1px solid var(--a-line); border-radius: 6px; background: var(--a-soft); color: var(--a-ink); cursor: pointer; font-size: 12px; }
   .mtp :global(.mtp-act) { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }

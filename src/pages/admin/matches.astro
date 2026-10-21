@@ -206,7 +206,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 
   <script is:inline>
   (function () {
-    let code = sessionStorage.getItem('ls_admin_code') || '';
+    let code = sessionStorage.getItem('ls_admin_code') || '__session__';
 
     const $ = id => document.getElementById(id);
     const gate = $('gate'), manager = $('manager'), gateErr = $('gate-err');
