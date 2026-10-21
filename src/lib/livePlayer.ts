@@ -3,11 +3,14 @@
 // pop-out mini player). There is a single <audio> per page, so two players
 // can never play at once; a BroadcastChannel also pauses other tabs/windows.
 //
-// - The stream address comes from /api/commentary, which only hands it out
-//   while a match's commentary window is open (so nothing else is played).
+// - Everything comes from /api/live-status (polled every 20 s): the stream
+//   address (only while a match's commentary window is open, so nothing else is
+//   played), whether the broadcast is on air, the live score, minute and goal
+//   scorers, and the next match. /api/commentary is the fallback.
 // - Every Play reconnects to the live point (no seek, no stale buffer).
 // - On errors/stalls: "Reconnecting…" with 2s, 5s, 10s, then 15s retries for
-//   up to 5 minutes, switching to the backup stream after 2 failures.
+//   up to 5 minutes, switching to the backup stream on the first failure and
+//   alternating between the two after that.
 // - Lock screen / notification shows "Lobi Stars vs X – Live" via Media Session
 //   (keeps playing with the screen locked or in another app).
 // - A listening "session" starts with Play and ends with Stop. While it is
@@ -20,9 +23,15 @@ export type LiveFixture = {
   id: string; slug: string; home_team: string; away_team: string; competition: string; venue: string; event_date: string;
   is_home: boolean; status: string; home_score: number | null; away_score: number | null; commentaryStart: string | null; commentaryEnd: string | null;
 };
+export type LiveScorer = { player: string; minute: string; team: 'home' | 'away' };
+export type LiveMatch = { home: string; away: string; homeScore: number | null; awayScore: number | null; minute: string | null; status: string; scorers: LiveScorer[] };
 export type LiveInfo = {
   enabled: boolean; brand: string; state: 'live' | 'today' | 'off'; fixture: LiveFixture | null;
   streamUrl: string | null; backupUrl: string | null; commentators: string | null; upcoming: LiveFixture[]; serverTime: string;
+  // From /api/live-status (absent in the page's embedded first state):
+  live?: boolean; onAir?: boolean; stale?: boolean; listeners?: number | null;
+  broadcast?: { title: string; commentators: string[]; startedAt: string | null } | null;
+  liveMatch?: LiveMatch | null; nextMatch?: LiveFixture | null;
 };
 export type LiveStatus = 'idle' | 'connecting' | 'live' | 'reconnecting' | 'offair' | 'error';
 
@@ -53,6 +62,8 @@ class LiveEngine {
   private heartbeatTimer = 0;
   private refreshTimer = 0;
   private wantPlay = false;
+  /** One failed attempt is reported twice (the audio 'error' event and the rejected play()): count it once. */
+  private attemptFailed = false;
   private sid = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => b.toString(16).padStart(2, '0')).join('');
   private channel: BroadcastChannel | null = null;
   private hls: { destroy(): void } | null = null;
@@ -80,7 +91,8 @@ class LiveEngine {
         this.status = this.info!.streamUrl ? 'idle' : 'offair';
       } catch { /* fetch below */ }
     }
-    if (this.info) this.refreshTimer = window.setTimeout(() => this.refresh(), 20_000);
+    // The embedded state has no score/minute/scorers yet: fetch them shortly after load.
+    if (this.info) this.refreshTimer = window.setTimeout(() => this.refresh(), 2000);
     else this.refresh();
     document.addEventListener('visibilitychange', () => { if (!document.hidden) this.refresh(); });
   }
@@ -93,7 +105,8 @@ class LiveEngine {
   async refresh() {
     clearTimeout(this.refreshTimer);
     try {
-      const res = await fetch('/api/commentary', { cache: 'no-store' });
+      let res = await fetch('/api/live-status', { cache: 'no-store' }).catch(() => null);
+      if (!res || !res.ok) res = await fetch('/api/commentary', { cache: 'no-store' });
       if (res.ok) {
         this.info = await res.json();
         this.clockOffset = new Date(this.info!.serverTime).getTime() - Date.now();
@@ -103,7 +116,7 @@ class LiveEngine {
       }
     } catch { /* keep the last known state */ }
     this.emit();
-    this.refreshTimer = window.setTimeout(() => this.refresh(), this.info?.state === 'off' ? 60_000 : 20_000);
+    this.refreshTimer = window.setTimeout(() => this.refresh(), 20_000);
   }
 
   toggle() { this.wantPlay ? this.pause() : this.play(); }
@@ -161,6 +174,7 @@ class LiveEngine {
 
   private async connect() {
     clearTimeout(this.stallTimer);
+    this.attemptFailed = false;
     const base = (this.useBackup && this.info?.backupUrl) || this.info?.streamUrl;
     if (!base) { this.stop('offair'); return; }
     this.teardown();
@@ -201,13 +215,16 @@ class LiveEngine {
   }
 
   private async onFailure() {
+    if (this.attemptFailed) return;
+    this.attemptFailed = true;
     clearTimeout(this.retryTimer); clearTimeout(this.stallTimer);
     clearInterval(this.heartbeatTimer); this.heartbeatTimer = 0;
     this.playing = false;
     if (!this.firstFailureAt) { this.firstFailureAt = Date.now(); this.track('commentary_error'); }
     this.failures += 1;
     if (Date.now() - this.firstFailureAt > GIVE_UP_MS) { this.teardown(); this.stop('error'); return; }
-    if (this.failures >= 2 && this.info?.backupUrl && !this.useBackup) this.useBackup = true;
+    // Backup on the first failure; after that alternate, in case the primary comes back first.
+    if (this.info?.backupUrl) this.useBackup = !this.useBackup;
     this.status = 'reconnecting'; this.emit();
     const wait = (RETRY_S[this.failures - 1] ?? RETRY_EVERY_S) * 1000;
     this.retryTimer = window.setTimeout(async () => {

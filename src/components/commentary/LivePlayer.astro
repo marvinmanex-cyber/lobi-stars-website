@@ -90,6 +90,10 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
   .lp-match :global(.lpm-score) { font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: 2px; }
   .lp-match :global(.lpm-state) { display: block; margin-top: 4px; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: #FFC72C; }
   .lp-match :global(.lpm-meta) { margin: 10px 0 0; text-align: center; font-size: 13px; color: rgba(255,255,255,.8); }
+  .lp-match :global(.lpm-goals) { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-top: 10px; }
+  .lp-match :global(.lpm-g) { list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.5; color: rgba(255,255,255,.9); min-width: 0; overflow-wrap: anywhere; }
+  .lp-match :global(.lpm-g--home) { text-align: right; }
+  .lp--mini .lp-match :global(.lpm-goals) { display: none; }
   .lp-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
   .lp-vol { display: flex; align-items: center; gap: 10px; }
   .lp-mute { width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: transparent; color: #fff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
@@ -124,7 +128,7 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
 </style>
 
 <script>
-  import type { LiveFixture } from '../../lib/livePlayer';
+  import type { LiveFixture, LiveMatch } from '../../lib/livePlayer';
   import { crest, fmtDate, fmtTime } from '../../lib/matchUi';
 
   // The audio engine (and its checks with the commentary service) only starts
@@ -137,17 +141,35 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
   const when = (iso: string) => (today(iso) ? time(iso) : `${fmtDate(iso)}, ${time(iso)}`);
   const STATUS: Record<string, string> = { live: 'Live', 'half-time': 'Half-time', 'full-time': 'Full time', scheduled: 'Kick-off' };
 
-  function matchStrip(box: HTMLElement, f: LiveFixture) {
+  function matchStrip(box: HTMLElement, f: LiveFixture, lm: LiveMatch | null) {
     const team = (name: string) => { const d = document.createElement('div'); d.className = 'lpm-team'; d.append(crest(name, 46, 'lpm-crest'), name); return d; };
     const mid = document.createElement('div'); mid.className = 'lpm-mid';
     const started = ['live', 'half-time', 'full-time'].includes(f.status);
+    // Live details (/api/live-status): the club's score first, then the broadcast's.
+    const hs = lm?.homeScore ?? (started ? f.home_score : null), as = lm?.awayScore ?? (started ? f.away_score : null);
     const score = document.createElement('div'); score.className = 'lpm-score';
-    score.textContent = started && f.home_score !== null ? `${f.home_score} – ${f.away_score}` : time(f.event_date);
-    const st = document.createElement('span'); st.className = 'lpm-state'; st.textContent = STATUS[f.status] || 'Kick-off';
+    score.textContent = hs !== null && hs !== undefined && as !== null && as !== undefined ? `${hs} – ${as}` : time(f.event_date);
+    const st = document.createElement('span'); st.className = 'lpm-state';
+    st.textContent = lm?.minute && lm.minute !== 'HT' && lm.minute !== 'FT' ? `Live · ${lm.minute}` : STATUS[f.status] || 'Kick-off';
     mid.append(score, st);
     const row = document.createElement('div'); row.className = 'lpm-row'; row.append(team(f.home_team), mid, team(f.away_team));
+    const parts: HTMLElement[] = [row];
+    if (lm?.scorers?.length) {
+      // Goal scorers under each team: "Musa Ali 12'".
+      const goals = document.createElement('div'); goals.className = 'lpm-goals';
+      for (const side of ['home', 'away'] as const) {
+        const ul = document.createElement('ul'); ul.className = `lpm-g lpm-g--${side}`;
+        ul.setAttribute('aria-label', `${side === 'home' ? f.home_team : f.away_team} goals`);
+        for (const g of lm.scorers.filter(x => x.team === side)) {
+          const li = document.createElement('li'); li.textContent = `⚽ ${g.player}${g.minute ? ` ${g.minute}` : ''}`; ul.append(li);
+        }
+        goals.append(ul);
+      }
+      parts.push(goals);
+    }
     const meta = document.createElement('p'); meta.className = 'lpm-meta'; meta.textContent = `${f.competition} · ${f.venue} · Kick-off ${when(f.event_date)}`;
-    box.replaceChildren(row, meta);
+    parts.push(meta);
+    box.replaceChildren(...parts);
   }
 
   function bind(root: HTMLElement) {
@@ -207,8 +229,13 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
       eq!.classList.toggle('on', engine.playing);
 
       const state = otherMatch ? 'off' : info?.state || 'off';
-      badge!.className = `lp-badge ${state === 'live' ? 'live' : state === 'today' ? 'today' : ''}`;
-      badge!.textContent = state === 'live' ? 'Live now' : state === 'today' && f?.commentaryStart ? `Starts at ${time(f.commentaryStart)}` : 'Off air';
+      // On air: a commentary window is open AND the broadcast says it is on air
+      // (live-status's `live`; the page's first, embedded state only has the window).
+      const onAir = state === 'live' && (info?.live ?? true);
+      const waitingForBroadcast = state === 'live' && !onAir && canPlay;
+      badge!.className = `lp-badge ${onAir ? 'live' : state === 'today' || waitingForBroadcast ? 'today' : ''}`;
+      badge!.textContent = onAir ? 'Live now' : waitingForBroadcast ? 'Starting soon' : state === 'today' && f?.commentaryStart ? `Starts at ${time(f.commentaryStart)}` : 'Off air';
+      const next = info?.nextMatch || info?.upcoming?.[0] || null;
 
       let text: string;
       if (st === 'connecting') text = 'Connecting…';
@@ -218,12 +245,17 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
       else if (info && !info.enabled) text = 'Off air';
       else if (otherMatch) text = thisUpcoming?.commentaryStart ? `Off air – commentary starts at ${when(thisUpcoming.commentaryStart)}` : 'Live commentary for this match is not available.';
       else if (forSlug && !f && thisUpcoming?.commentaryStart) text = `Off air – commentary starts at ${when(thisUpcoming.commentaryStart)}`;
+      else if (waitingForBroadcast) text = 'Commentary is about to start – press play';
       else if (canPlay) text = 'Press play to listen live';
+      else if (state === 'today' && f?.commentaryStart) text = `Off air – commentary starts at ${when(f.commentaryStart)}`;
+      else if (next) text = `Off air – next match: ${next.home_team} vs ${next.away_team}, ${when(next.commentaryStart || next.event_date)}`;
       else if (f?.commentaryStart) text = `Off air – commentary starts at ${when(f.commentaryStart)}`;
       else text = 'Off air – check back on matchday';
       if (status!.textContent !== text) status!.textContent = text;
 
-      if (comm) { comm.hidden = !info?.commentators; comm.textContent = info?.commentators ? `Commentary: ${info.commentators}` : ''; }
+      // Commentator names: the broadcast's own list while live, else the ones set in the admin.
+      const names = info?.broadcast?.commentators?.length ? info.broadcast.commentators.join(' & ') : info?.commentators || '';
+      if (comm) { comm.hidden = !names; comm.textContent = names ? `Commentary: ${names}` : ''; }
       if (volWrap) volWrap.hidden = !engine.volumeSupported;
       if (vol && document.activeElement !== vol) vol.value = String(Math.round(engine.volume * 100));
       if (mute) { mute.setAttribute('aria-pressed', String(engine.muted)); mute.setAttribute('aria-label', engine.muted ? 'Unmute' : 'Mute'); }
@@ -232,8 +264,9 @@ const { variant = 'full', forSlug = '', popout = variant === 'full' } = Astro.pr
       const shown = otherMatch ? thisUpcoming || null : f;
       if (match) {
         match.hidden = !shown;
-        const key = shown ? `${shown.id}${shown.status}${shown.home_score}${shown.away_score}` : '';
-        if (shown && key !== lastMatchKey) matchStrip(match, shown);
+        const lm = !otherMatch && state === 'live' ? info?.liveMatch || null : null;
+        const key = shown ? `${shown.id}${shown.status}${shown.home_score}${shown.away_score}${JSON.stringify(lm)}` : '';
+        if (shown && key !== lastMatchKey) matchStrip(match, shown, lm);
         lastMatchKey = key;
       }
     });
