@@ -16,6 +16,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     </header>
     <p class="aif-msg" id="msg" role="status" aria-live="polite" hidden></p>
     <div class="aif-status" id="status"></div>
+    <p class="aif-note" id="allNote" role="status" aria-live="polite" hidden></p>
     <div id="list"><p class="muted">Loading…</p></div>
 
     <section class="aif-card" aria-labelledby="askH" id="askBox" hidden>
@@ -34,6 +35,8 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   .aif-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
   .aif-msg.ok { background: #E8F7EE; color: #17643A; } .aif-msg.err { background: #FDECEC; color: #A3161B; }
   .aif-status { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .aif-note { margin: -4px 0 14px; padding: 10px 14px; border-radius: 10px; background: #EEF4FF; border: 1px solid #BFD3FB; color: #15233F; font-size: 14px; font-weight: 600; }
+  :global(body.admin-dark) .aif-note { background: #16233A; border-color: #2B4470; color: #E3ECFF; }
   .aif :global(.chip) { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--a-soft); color: var(--a-muted); border: 1px solid var(--a-line); }
   .aif :global(.chip.ok) { background: #DCFCE7; color: #166534; border-color: #BBF7D0; } .aif :global(.chip.bad) { background: #FDECEC; color: #A3161B; border-color: #F8C9CB; }
   .aif :global(.aif-card), .aif-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px 18px; margin-bottom: 14px; }
@@ -117,9 +120,17 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       <div class="aif-badges"><span class="chip">${esc(CAT[it.category])}</span><span class="chip ${esc(it.risk)}">Risk: ${esc(it.risk)}</span><span class="chip">${esc(STATUS[st] || st)}</span>${it.minutes ? `<span class="chip">~${it.minutes} min</span>` : ''}${it.present ? '' : '<span class="chip">No longer on Analytics</span>'}</div>
       <h3>${esc(it.title)}</h3>${it.finding ? `<p>${esc(it.finding)}</p>` : ''}${f ? `<p><b>Fix:</b> ${esc(f.label)}</p>` : ''}${it.error && st === 'failed' ? `<p class="aif-err">${esc(it.error)}</p>` : ''}${actions}</article>`;
   }
+  let batchNote = '';
   function draw() {
     const ai = data.ai;
-    $('status').innerHTML = `<span class="chip ${ai.ready ? 'ok' : 'bad'}">${ai.ready ? 'Claude connected' : 'Claude not connected'}</span><span class="chip ${ai.github ? 'ok' : 'bad'}">${ai.github ? 'GitHub connected' : 'GitHub not connected (A29)'}</span><span class="chip ${ai.blocked ? 'bad' : ''}">This month: $${ai.spent.toFixed(3)} of $${ai.budget}</span>${ai.batchesRunning ? `<span class="chip">${ai.batchesRunning} batch(es) running</span>` : ''}<a class="btn-o sm" href="/admin/ai/settings/">AI Settings</a><button type="button" class="btn-p sm" id="allBtn" ${ai.ready && !ai.blocked ? '' : 'disabled'}>Prepare all automatic fixes (batch, half price)</button>`;
+    // "Prepare all" only covers fixes Claude can prepare without your words.
+    const waiting = data.items.filter(i => i.category === 'auto_fix' && i.fix && ['open', 'failed', 'undone'].includes(i.status)).length;
+    const preparing = data.items.filter(i => i.status === 'preparing').length;
+    const allLabel = !ai.ready ? 'Claude not connected' : ai.blocked ? 'Monthly AI budget reached' : waiting ? `Prepare all ${waiting} automatic fix${waiting === 1 ? '' : 'es'} (batch, half price)` : 'No automatic fixes to prepare right now';
+    $('status').innerHTML = `<span class="chip ${ai.ready ? 'ok' : 'bad'}">${ai.ready ? 'Claude connected' : 'Claude not connected'}</span><span class="chip ${ai.github ? 'ok' : 'bad'}">${ai.github ? 'GitHub connected' : 'GitHub not connected (A29)'}</span><span class="chip ${ai.blocked ? 'bad' : ''}">This month: $${ai.spent.toFixed(3)} of $${ai.budget}</span>${ai.batchesRunning ? `<span class="chip">⏳ ${ai.batchesRunning} batch(es) with Claude</span>` : ''}<a class="btn-o sm" href="/admin/ai/settings/">AI Settings</a><button type="button" class="btn-p sm" id="allBtn" ${ai.ready && !ai.blocked && waiting ? '' : 'disabled'}>${allLabel}</button>`;
+    const note = batchNote || (preparing ? `⏳ ${preparing} fix${preparing === 1 ? ' is' : 'es are'} with Claude in a batch. Results arrive within 24 hours (usually much sooner); this page shows them when they are ready.`
+      : !waiting && data.items.some(i => i.category === 'input_needed' && !['applied', 'verified', 'dismissed'].includes(i.status)) ? 'The recommendations below need a few words from you first: type them in the box and press "Write the draft with Claude".' : '');
+    $('allNote').textContent = note; $('allNote').hidden = !note;
     const sec = (cat, title, sub) => { const list = data.items.filter(i => i.category === cat && i.status !== 'dismissed'); return list.length ? `<section class="aif-sec"><h2>${title} (${list.length})</h2><p class="aif-sub">${sub}</p>${list.map(itemHtml).join('')}</section>` : ''; };
     const dismissed = data.items.filter(i => i.status === 'dismissed');
     $('list').innerHTML = (data.items.length ? '' : '<section class="aif-card"><p>No recommendations right now. They appear here when Analytics finds something.</p></section>')
@@ -133,8 +144,15 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   $('status').addEventListener('click', async e => {
     if (e.target.id !== 'allBtn') return;
     if (!confirm('Send every automatic fix to Claude in one batch? It costs half the normal price and the results are ready within 24 hours.')) return;
-    e.target.disabled = true;
-    try { const d = await api('/api/admin/ai', { action: 'prepare_all' }); msg(d.sent ? `${d.sent} fix(es) sent to Claude; ready within 24 hours.` : 'Nothing new to prepare.', true); load(); } catch (err) { msg(err.message, false); e.target.disabled = false; }
+    const b = e.target;
+    b.disabled = true; b.textContent = 'Sending to Claude…';
+    batchNote = '⏳ Sending the fixes to Claude…'; $('allNote').textContent = batchNote; $('allNote').hidden = false;
+    try {
+      const d = await api('/api/admin/ai', { action: 'prepare_all' });
+      batchNote = d.sent ? `✓ Received: ${d.sent} fix${d.sent === 1 ? '' : 'es'} sent to Claude (half price). Results arrive within 24 hours, usually much sooner; come back to this page to check and press Apply.`
+        : d.direct ? `✓ Done: ${d.direct} fix${d.direct === 1 ? '' : 'es'} prepared; check ${d.direct === 1 ? 'it' : 'them'} below.` : '✓ Checked: there was nothing new to prepare.';
+      msg(batchNote, true); await load();
+    } catch (err) { batchNote = `✗ ${err.message}`; msg(err.message, false); await load(); }
   });
   $('list').addEventListener('click', async e => {
     const cp = e.target.closest('[data-copy]');

@@ -42,6 +42,9 @@ waiting for the website manager.
   page text, never fans' details, and cannot change the website itself.
 - The weekly Analytics summary now counts towards the AI budget.
 - Analytics › Recommendations has a **Fix with AI** button (Super Admins).
+- **Prepare all automatic fixes** shows how many fixes it will send, confirms
+  your click in a blue line under it ("Sending…", then "Received…"), and says
+  when there is nothing automatic to prepare.
 - Pages can now take a Google title and description from `src/data/seo.json`
   (empty for now, so nothing changed on the public site).
 

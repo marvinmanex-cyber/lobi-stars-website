@@ -2799,7 +2799,10 @@ these pages.
 - **Undo** puts things back as they were.
 - **Not now** hides a recommendation until you press **Show again**.
 - **Prepare all automatic fixes** sends them all to Claude at once, at half
-  price. The results are ready within 24 hours.
+  price. The button shows how many there are; a blue line under it confirms
+  they were sent and says when results are expected (within 24 hours). When
+  it says **No automatic fixes to prepare right now**, the open
+  recommendations need a few words from you instead.
 - **Ask Claude** (at the bottom): ask a question about the website figures.
   It only sees totals, never fans' details.
 
