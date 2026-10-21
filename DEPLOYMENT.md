@@ -806,6 +806,23 @@ tests: `docs/match-checklist.md`.
   bucket and are only served through the signed-in admin API.
 - **By hand:** `CRON_SECRET=... node scripts/checklist.mjs generate | remind --dry-run | remind --force`.
 
+## AI Fix (21 October 2026)
+
+Settings › AI Fix and AI Settings (Super Admins). Claude prepares fixes for
+the Analytics recommendations; a Super Admin applies them. Details, the
+recommendation table and tests: `docs/ai-fix.md`.
+
+- **Secrets:** `ANTHROPIC_API_KEY` (set). `GITHUB_TOKEN` (fine-grained,
+  this repo only, Contents: read and write) is needed to apply page changes
+  and news drafts (handover A29). Optional: `CLAUDE_MODEL_DEFAULT`,
+  `CLAUDE_MODEL_ADVANCED`.
+- **Never set** `ANTHROPIC_BASE_URL` or `GITHUB_API_BASE` on the live site
+  (tests only).
+- **Tables:** created on first use; also `migrations/0007_ai_fix.sql`.
+- **Timer:** `workers/kitchen-cron` calls `/api/internal/ai-run` every
+  minute (it does nothing without the key). Redeploy the Worker after this
+  change.
+
 ## Site (Astro + Cloudflare Pages)
 
 ### Which requests run the website code (`public/_routes.json`)

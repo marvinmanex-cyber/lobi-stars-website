@@ -1,6 +1,7 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { roleOf, roleLabel, areasOf } from '../_lib/adminRoles.js';
 import { IDLE_MS } from '../_lib/adminSecurity.js';
+import { budgetBlocked } from '../_lib/claude.js';
 
 // GET /api/admin/me -- who is signed in: name, role, the admin areas they
 // can open, their permissions (both drive the sidebar), the export permission,
@@ -9,7 +10,9 @@ export async function onRequestGet({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env, { allowRestricted: true });
   if (denied) return denied;
   const { sessionId, ...rest } = admin;
-  return Response.json({ admin: { ...rest, roleId: roleOf(admin), roleLabel: roleLabel(admin), areas: admin.restrict ? [] : areasOf(admin), permissions: admin.restrict ? [] : admin.permissions, idleMinutes: IDLE_MS / 60000 } }, { headers: { 'Cache-Control': 'no-store' } });
+  // Super Admins see "Monthly AI budget reached" on every admin page (one small read).
+  const aiBudgetReached = !admin.restrict && admin.permissions?.includes('ai.fix') ? await budgetBlocked(env.DB) : false;
+  return Response.json({ admin: { ...rest, aiBudgetReached, roleId: roleOf(admin), roleLabel: roleLabel(admin), areas: admin.restrict ? [] : areasOf(admin), permissions: admin.restrict ? [] : admin.permissions, idleMinutes: IDLE_MS / 60000 } }, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 // POST /api/admin/me -- "still here": sent by admin pages while someone is using

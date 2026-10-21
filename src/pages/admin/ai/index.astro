@@ -1,0 +1,165 @@
+---
+// Settings › AI Fix (Super Admins): the Analytics recommendations, sorted into
+// what Claude can prepare by itself, what needs a few words from you first,
+// and what only a person can do. Claude only PREPARES: nothing on the website
+// changes until a Super Admin presses Apply (or a low-risk fix that is switched
+// on for auto-apply in AI Settings). Every change can be undone.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="AI Fix | Lobi Stars Admin" description="Claude prepares fixes for the Analytics recommendations." noindex>
+  <div class="wrap aif">
+    <AdminNav current="ai-fix" />
+    <header class="aif-head">
+      <div><div class="stag">Settings</div><h1 class="stitle">AI <span class="r">Fix</span></h1></div>
+      <p class="aif-lede">Claude prepares fixes for the <a href="/admin/analytics/">Analytics recommendations</a>. Nothing changes on the website until you press <b>Apply</b>, and every change can be undone.</p>
+    </header>
+    <p class="aif-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <div class="aif-status" id="status"></div>
+    <div id="list"><p class="muted">Loading…</p></div>
+
+    <section class="aif-card" aria-labelledby="askH" id="askBox" hidden>
+      <h2 id="askH">Ask Claude about the figures</h2>
+      <p class="aif-sub">Short answers from this month's figures (no personal data is sent). Only the last 6 messages are kept.</p>
+      <div class="aif-chat" id="chat" aria-live="polite"></div>
+      <form id="askForm" class="aif-row"><label class="sr-only" for="askQ">Your question</label><input id="askQ" maxlength="500" placeholder="e.g. Why did Google clicks go down?" autocomplete="off" /><button class="btn-p" type="submit">Ask</button></form>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .aif { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
+  .aif-head { display: grid; grid-template-columns: auto 1fr; gap: 8px 28px; align-items: end; margin-bottom: 14px; }
+  .aif-lede { margin: 0; color: var(--a-muted); font-size: 15px; line-height: 1.55; max-width: 620px; }
+  .aif-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .aif-msg.ok { background: #E8F7EE; color: #17643A; } .aif-msg.err { background: #FDECEC; color: #A3161B; }
+  .aif-status { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .aif :global(.chip) { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--a-soft); color: var(--a-muted); border: 1px solid var(--a-line); }
+  .aif :global(.chip.ok) { background: #DCFCE7; color: #166534; border-color: #BBF7D0; } .aif :global(.chip.bad) { background: #FDECEC; color: #A3161B; border-color: #F8C9CB; }
+  .aif :global(.aif-card), .aif-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px 18px; margin-bottom: 14px; }
+  .aif :global(h2) { margin: 0 0 6px; font: 700 19px/1.2 'Barlow', sans-serif; color: var(--a-ink); }
+  .aif :global(.aif-sec > h2) { margin: 22px 0 10px; }
+  .aif :global(.aif-sub), .aif-sub { margin: 0 0 12px; color: var(--a-muted); font-size: 14px; }
+  .aif :global(.aif-item) { border-left: 5px solid #CBD2DA; }
+  .aif :global(.aif-item.auto_fix) { border-left-color: #16A34A; } .aif :global(.aif-item.input_needed) { border-left-color: #2563EB; } .aif :global(.aif-item.manual_only) { border-left-color: #94A3B8; }
+  .aif :global(.aif-item h3) { margin: 6px 0 4px; font-size: 16px; color: var(--a-ink); }
+  .aif :global(.aif-item p) { margin: 0 0 8px; font-size: 14px; color: var(--a-muted); line-height: 1.5; }
+  .aif :global(.aif-badges) { display: flex; flex-wrap: wrap; gap: 6px; }
+  .aif :global(.chip.high) { background: #FDECEC; color: #A3161B; } .aif :global(.chip.normal) { background: #FEF3C7; color: #92400E; }
+  .aif :global(.aif-row) { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .aif :global(.aif-row input), .aif :global(textarea) { flex: 1 1 260px; min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 15px; min-width: 0; box-sizing: border-box; width: 100%; }
+  .aif :global(.aif-prop) { background: var(--a-soft); border: 1px solid var(--a-line); border-radius: 12px; padding: 12px; margin-top: 8px; font-size: 14px; color: var(--a-ink); }
+  .aif :global(.aif-prop b) { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--a-muted); margin: 8px 0 2px; }
+  .aif :global(.aif-prop b:first-child) { margin-top: 0; }
+  .aif :global(.aif-prop .old) { text-decoration: line-through; color: var(--a-muted); }
+  .aif :global(.aif-prop pre) { white-space: pre-wrap; font: inherit; margin: 0; overflow-wrap: anywhere; }
+  .aif :global(.aif-err) { color: #A3161B; font-weight: 600; }
+  .aif :global(ol) { margin: 6px 0 8px; padding-left: 20px; font-size: 14px; color: var(--a-muted); }
+  .aif :global(.sm) { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+  .aif :global(details > summary) { cursor: pointer; font-weight: 700; color: var(--a-muted); font-size: 14px; min-height: 30px; }
+  .aif-chat { display: grid; gap: 8px; margin-bottom: 8px; }
+  .aif :global(.aif-chat p) { margin: 0; padding: 10px 12px; border-radius: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+  .aif :global(.aif-chat .u) { background: #15181D; color: #fff; justify-self: end; max-width: 85%; }
+  .aif :global(.aif-chat .a) { background: var(--a-soft); color: var(--a-ink); max-width: 95%; }
+  @media (max-width: 760px) { .aif-head { grid-template-columns: 1fr; } }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const wat = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const CAT = { auto_fix: 'Claude can prepare it', input_needed: 'Needs a few words from you', manual_only: 'A person does this' };
+  const STATUS = { open: 'Open', preparing: 'Preparing…', awaiting_input: 'Waiting for your input', awaiting_approval: 'Ready: check and apply', applied: 'Applied', verified: 'Applied and checked live', failed: 'Failed', undone: 'Undone', dismissed: 'Dismissed' };
+  let data = null, chat = [], msgT;
+  function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'aif-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 7000); }
+  async function api(url, body) {
+    const r = await fetch(url, body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=' + encodeURIComponent(location.pathname); throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function proposalHtml(it) {
+    const p = it.proposal; if (!p) return '';
+    const copy = (k, label) => `<b>${label}</b><pre>${esc(p[k])}</pre><button type="button" class="btn-o sm" data-copy="${esc(k)}">Copy</button>`;
+    if (it.fix.type === 'seo_title_description') return `<div class="aif-prop"><b>Google title</b>${p.before?.title ? `<div class="old">${esc(p.before.title)}</div>` : ''}<div>${esc(p.title)}</div><b>Description</b>${p.before?.description ? `<div class="old">${esc(p.before.description)}</div>` : ''}<div>${esc(p.description)}</div></div>`;
+    if (it.fix.type === 'draft_news') return `<div class="aif-prop"><b>Headline</b><div>${esc(p.title)}</div><b>Summary</b><div>${esc(p.summary)}</div><details><summary>Read the article</summary><pre>${esc(p.body)}</pre></details></div>`;
+    if (it.fix.type === 'draft_social_post') return `<div class="aif-prop">${copy('whatsapp', 'WhatsApp Channel')}${copy('facebook', 'Facebook')}${copy('x', 'X (Twitter)')}</div>`;
+    if (it.fix.type === 'draft_newsletter_blurb') return `<div class="aif-prop">${copy('blurb', 'Sign-up message')}</div>`;
+    return `<div class="aif-prop">${esc(p.summary || '')}</div>`;
+  }
+  function itemHtml(it) {
+    const f = it.fix, st = it.status;
+    const applyLabel = !f ? '' : f.copyOnly ? '✓ Mark as used' : f.type === 'draft_news' ? 'Save as Draft in News' : f.type === 'rerun_sync' ? 'Run it now' : 'Apply (site updates in ~2 min)';
+    let actions = '';
+    if (f && it.category !== 'manual_only') {
+      if (['open', 'failed', 'undone', 'awaiting_input', 'dismissed'].includes(st) && st !== 'dismissed') {
+        actions += f.input ? `<label class="sr-only" for="in-${esc(it.id)}">${esc(f.input.label)}</label><textarea id="in-${esc(it.id)}" rows="3" maxlength="1500" placeholder="${esc(f.input.label)}">${esc(it.input?.text || '')}</textarea>` : '';
+        actions += `<div class="aif-row"><button type="button" class="btn-p sm" data-act="prepare">${f.claude ? (f.input ? 'Write the draft with Claude' : 'Prepare fix with Claude') : 'Prepare'}</button>${f.claude ? '<span class="muted">Costs a fraction of a US cent</span>' : ''}</div>`;
+      }
+      if (st === 'preparing') actions += '<p>Claude is preparing this in the weekly batch (half price). It will be ready within 24 hours.</p>';
+      if (st === 'awaiting_approval') {
+        actions += proposalHtml(it);
+        if (f.needsGithub && !f.githubReady) actions += '<p class="aif-err">Applying this needs the GitHub connection (handover A29). Until then, copy the text and make the change in the content editor.</p>';
+        actions += `<div class="aif-row"><button type="button" class="btn-p sm" data-act="apply" ${f.needsGithub && !f.githubReady ? 'disabled' : ''}>${applyLabel}</button><button type="button" class="btn-o sm" data-act="dismiss">Discard</button></div>`;
+      }
+      if (st === 'applied' || st === 'verified') {
+        actions += `<p>✓ ${esc(it.applied?.note || (f.type === 'seo_title_description' ? 'Saved; the page updates within about 2 minutes.' : 'Done'))}${it.applied?.at ? ` (${esc(wat(it.applied.at))}, ${esc(it.applied.by || '')})` : ''}</p>`;
+        if (f.undo) actions += '<div class="aif-row"><button type="button" class="btn-o sm" data-act="undo">Undo</button></div>';
+      }
+    }
+    if (it.category === 'manual_only' && it.steps.length) actions += `<details><summary>How to do it (${it.steps.length} steps)</summary><ol>${it.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></details>${it.link ? `<div class="aif-row"><a class="btn-o sm" href="${esc(it.link.href)}"${it.link.external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${esc(it.link.label)}</a></div>` : ''}`;
+    if (st === 'dismissed') actions += '<div class="aif-row"><button type="button" class="btn-o sm" data-act="reopen">Show again</button></div>';
+    else if (it.category !== 'manual_only' && !['awaiting_approval', 'applied', 'verified', 'preparing'].includes(st)) actions += '<div class="aif-row"><button type="button" class="btn-o sm" data-act="dismiss">Not now</button></div>';
+    return `<article class="aif-card aif-item ${esc(it.category)}" data-id="${esc(it.id)}">
+      <div class="aif-badges"><span class="chip">${esc(CAT[it.category])}</span><span class="chip ${esc(it.risk)}">Risk: ${esc(it.risk)}</span><span class="chip">${esc(STATUS[st] || st)}</span>${it.minutes ? `<span class="chip">~${it.minutes} min</span>` : ''}${it.present ? '' : '<span class="chip">No longer on Analytics</span>'}</div>
+      <h3>${esc(it.title)}</h3>${it.finding ? `<p>${esc(it.finding)}</p>` : ''}${f ? `<p><b>Fix:</b> ${esc(f.label)}</p>` : ''}${it.error && st === 'failed' ? `<p class="aif-err">${esc(it.error)}</p>` : ''}${actions}</article>`;
+  }
+  function draw() {
+    const ai = data.ai;
+    $('status').innerHTML = `<span class="chip ${ai.ready ? 'ok' : 'bad'}">${ai.ready ? 'Claude connected' : 'Claude not connected'}</span><span class="chip ${ai.github ? 'ok' : 'bad'}">${ai.github ? 'GitHub connected' : 'GitHub not connected (A29)'}</span><span class="chip ${ai.blocked ? 'bad' : ''}">This month: $${ai.spent.toFixed(3)} of $${ai.budget}</span>${ai.batchesRunning ? `<span class="chip">${ai.batchesRunning} batch(es) running</span>` : ''}<a class="btn-o sm" href="/admin/ai/settings/">AI Settings</a><button type="button" class="btn-p sm" id="allBtn" ${ai.ready && !ai.blocked ? '' : 'disabled'}>Prepare all automatic fixes (batch, half price)</button>`;
+    const sec = (cat, title, sub) => { const list = data.items.filter(i => i.category === cat && i.status !== 'dismissed'); return list.length ? `<section class="aif-sec"><h2>${title} (${list.length})</h2><p class="aif-sub">${sub}</p>${list.map(itemHtml).join('')}</section>` : ''; };
+    const dismissed = data.items.filter(i => i.status === 'dismissed');
+    $('list').innerHTML = (data.items.length ? '' : '<section class="aif-card"><p>No recommendations right now. They appear here when Analytics finds something.</p></section>')
+      + sec('auto_fix', 'Claude can prepare these', 'Press Prepare, check the result, then Apply.')
+      + sec('input_needed', 'Needs a few words from you first', 'Claude only uses the facts you give it.')
+      + sec('manual_only', 'A person needs to do these', 'Claude cannot do these safely (payments, phone testing, Google settings).')
+      + (dismissed.length ? `<section class="aif-sec"><details><summary>Not now / discarded (${dismissed.length})</summary>${dismissed.map(itemHtml).join('')}</details></section>` : '');
+    $('askBox').hidden = !(ai.ready && ai.askEnabled);
+  }
+  async function load() { try { data = await api('/api/admin/ai'); draw(); } catch (e) { $('list').innerHTML = `<section class="aif-card"><p>${esc(e.message)}</p></section>`; } }
+  $('status').addEventListener('click', async e => {
+    if (e.target.id !== 'allBtn') return;
+    if (!confirm('Send every automatic fix to Claude in one batch? It costs half the normal price and the results are ready within 24 hours.')) return;
+    e.target.disabled = true;
+    try { const d = await api('/api/admin/ai', { action: 'prepare_all' }); msg(d.sent ? `${d.sent} fix(es) sent to Claude; ready within 24 hours.` : 'Nothing new to prepare.', true); load(); } catch (err) { msg(err.message, false); e.target.disabled = false; }
+  });
+  $('list').addEventListener('click', async e => {
+    const cp = e.target.closest('[data-copy]');
+    if (cp) { const it = data.items.find(x => x.id === cp.closest('[data-id]').dataset.id); try { await navigator.clipboard.writeText(it.proposal[cp.dataset.copy]); msg('Copied.', true); } catch { msg('Copy failed: select the text and copy it.', false); } return; }
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const box = b.closest('[data-id]'), id = box.dataset.id, act = b.dataset.act;
+    if (act === 'apply' && !confirm('Apply this change?')) return;
+    if (act === 'undo' && !confirm('Undo this change?')) return;
+    const input = box.querySelector('textarea') ? { text: box.querySelector('textarea').value } : null;
+    b.disabled = true; const label = b.textContent; if (act === 'prepare') b.textContent = 'Asking Claude…';
+    try {
+      const d = await api('/api/admin/ai', { action: act, id, input });
+      msg(act === 'prepare' ? (d.cached ? 'Ready (from the earlier answer, no new cost).' : 'Ready: check it below.') : act === 'apply' ? (d.applied?.note || 'Applied.') : 'Done.', true);
+      await load();
+    } catch (err) { msg(err.message, false); b.disabled = false; b.textContent = label; }
+  });
+  $('askForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const q = $('askQ').value.trim(); if (!q) return;
+    chat.push({ role: 'user', content: q }); chat = chat.slice(-6); $('askQ').value = '';
+    const draw2 = extra => { $('chat').innerHTML = chat.map(m => `<p class="${m.role === 'user' ? 'u' : 'a'}">${esc(m.content)}</p>`).join('') + (extra || ''); };
+    draw2('<p class="a">Thinking…</p>');
+    try { const d = await api('/api/admin/ai/ask', { messages: chat }); chat.push({ role: 'assistant', content: d.reply }); chat = chat.slice(-6); draw2(); }
+    catch (err) { chat.pop(); draw2(`<p class="a aif-err">${esc(err.message)}</p>`); }
+  });
+  load();
+})();
+</script>

@@ -8,6 +8,34 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-21: AI Fix (Settings › AI Fix and AI Settings, Super Admins)
+
+**What changed**
+- New **AI Fix** page: the Analytics recommendations sorted into what Claude
+  can prepare, what needs a few words from staff first, and what only a person
+  can do. Claude prepares (better Google titles and descriptions, news drafts
+  saved as Draft, social media posts, a newsletter sign-up line); a Super
+  Admin checks and presses **Apply**. Everything can be undone.
+- New **AI Settings** page: monthly AI budget (default $10) with a warning
+  email at 80% and a stop at 100%, this month's spend by feature, the model
+  per feature (cheap by default), prices, the weekly scan and **Test
+  connection**.
+- Lowest cost: the cheap model everywhere, short answers, nothing sent twice,
+  bulk work at half price (Message Batches). Claude only ever gets totals and
+  page text, never fans' details, and cannot change the website itself.
+- The weekly Analytics summary now counts towards the AI budget.
+- Analytics › Recommendations has a **Fix with AI** button (Super Admins).
+- Pages can now take a Google title and description from `src/data/seo.json`
+  (empty for now, so nothing changed on the public site).
+
+**Who it affects:** the three Super Admins.
+
+**What staff need to do:** to let **Apply** change pages and save news
+drafts, add the GitHub token (HANDOVER-TODO.md, A29). Optionally enter the
+model prices on AI Settings (A30).
+
+---
+
 ## 2026-10-21: Weekly summary by Claude switched on
 
 **What changed**

@@ -39,7 +39,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <section class="kpis" id="kpis" aria-label="Key figures"></section>
 
     <section class="panel recs" id="sec-recs" hidden>
-      <div class="ph"><h2>&#128161; Recommendations</h2><span class="gs-status" id="recWhen"></span></div>
+      <div class="ph"><h2>&#128161; Recommendations</h2><span class="gs-status" id="recWhen"></span><a class="btn-o sm" id="aiFixLink" href="/admin/ai/" hidden>&#129302; Fix with AI</a></div>
       <p class="muted small">The website looks at Google search, Google Analytics and its own figures for the <b>last 28 days</b> (compared with the 28 days before), and suggests what to do next. Open a card for a step-by-step guide. "Mark as done" hides it for 30 days.</p>
       <div id="recAi"></div>
       <div class="rec-glance" id="recGlance"></div>
@@ -428,6 +428,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       G.countries.map(c => `<tr><td>${esc(countryName(c.value))}</td><td class="n">${fmt(c.clicks)}</td><td class="n">${fmt(c.impressions)}</td></tr>`), 'No search figures in this period.');
   }
 
+  // Super Admins: a shortcut to AI Fix (Claude prepares fixes for these).
+  document.addEventListener('ls:admin', e => { const a = e.detail; if (a && a.permissions && a.permissions.includes('ai.fix')) document.getElementById('aiFixLink').hidden = false; });
   // ── Recommendations (last 28 days; only for staff with "All reports") ──
   const PRI = { high: ['Do this first', '#E31E24'], medium: ['Worth doing', '#EAB308'], low: ['When you have time', '#10B981'] };
   async function recPost(body) {

@@ -1,0 +1,129 @@
+---
+// Settings › AI Settings (Super Admins): the monthly AI budget and warning,
+// this month's spend by feature, which model each feature uses (cheap by
+// default), prices per model, auto-apply, the weekly scan and Test connection.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="AI Settings | Lobi Stars Admin" description="Budget and settings for Claude." noindex>
+  <div class="wrap ais">
+    <AdminNav current="ai-settings" />
+    <header class="ais-head">
+      <div><div class="stag">Settings</div><h1 class="stitle">AI <span class="r">Settings</span></h1></div>
+      <a class="btn-o sm" href="/admin/ai/">← AI Fix</a>
+    </header>
+    <p class="ais-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <div class="ais-grid">
+      <section class="ais-card" aria-labelledby="spendH">
+        <h2 id="spendH">This month</h2>
+        <div id="spend"><p class="muted">Loading…</p></div>
+        <div class="ais-row"><button type="button" class="btn-o sm" id="testBtn">Test connection</button><span class="muted" id="testOut" aria-live="polite"></span></div>
+      </section>
+      <section class="ais-card" aria-labelledby="setH">
+        <h2 id="setH">Settings</h2>
+        <form id="form" class="ais-form">
+          <div class="ais-2">
+            <label>Monthly budget (US$)<input name="monthly_budget" type="number" min="0" max="1000" step="0.5" required /></label>
+            <label>Email the Super Admins at (%)<input name="warn_at_percent" type="number" min="10" max="100" step="5" required /></label>
+          </div>
+          <label class="ais-check"><input type="checkbox" name="auto_apply_enabled" /> Apply low-risk fixes automatically (only the ones ticked below)</label>
+          <fieldset><legend>Automatic fixes allowed</legend><div id="autoTypes"></div></fieldset>
+          <div class="ais-2">
+            <label>Weekly scan: day<select name="weekly_scan_day"><option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option></select></label>
+            <label>Time (Lagos)<input name="weekly_scan_time" type="time" required /></label>
+          </div>
+          <label>Most fixes in one batch<input name="max_items_per_batch" type="number" min="1" max="100" step="1" required /></label>
+          <label class="ais-check"><input type="checkbox" name="ask_claude_enabled" /> "Ask Claude" box on AI Fix</label>
+          <fieldset><legend>Model per feature (cheap is enough for almost everything)</legend><div id="modelRows"></div></fieldset>
+          <fieldset><legend>Prices (US$ per million tokens, from anthropic.com/pricing)</legend><p class="muted" id="priceNote"></p><div id="priceRows"></div></fieldset>
+          <div class="ais-row end"><button class="btn-p" type="submit">Save settings</button></div>
+        </form>
+      </section>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .ais { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
+  .ais-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; margin-bottom: 16px; }
+  .ais-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .ais-msg.ok { background: #E8F7EE; color: #17643A; } .ais-msg.err { background: #FDECEC; color: #A3161B; }
+  .ais-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 16px; align-items: start; }
+  .ais-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; }
+  .ais-card h2 { margin: 0 0 10px; font: 700 19px/1.2 'Barlow', sans-serif; color: var(--a-ink); }
+  .ais-form { display: grid; gap: 12px; }
+  .ais-form label { display: grid; gap: 5px; font-size: 13px; font-weight: 700; color: var(--a-muted); }
+  .ais-form .ais-check { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--a-ink); }
+  .ais-form input:not([type="checkbox"]), .ais-form select { min-height: 40px; border: 1px solid var(--a-line); border-radius: 10px; padding: 7px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 15px; font-weight: 400; width: 100%; box-sizing: border-box; min-width: 0; }
+  .ais-form fieldset { border: 1px solid var(--a-line); border-radius: 12px; padding: 10px 12px; margin: 0; display: grid; gap: 8px; }
+  .ais-form legend { font-size: 13px; font-weight: 700; color: var(--a-muted); padding: 0 4px; }
+  .ais-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ais :global(.ais-mrow) { display: grid; grid-template-columns: minmax(0, 1fr) 170px; gap: 8px; align-items: center; font-size: 14px; color: var(--a-ink); font-weight: 400; }
+  .ais :global(.ais-prow) { display: grid; grid-template-columns: minmax(0, 1fr) 90px 90px; gap: 8px; align-items: center; font-size: 13px; overflow-wrap: anywhere; }
+  .ais-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+  .ais-row.end { justify-content: flex-end; }
+  .ais :global(.bar) { height: 12px; border-radius: 999px; background: var(--a-soft); border: 1px solid var(--a-line); overflow: hidden; margin: 8px 0; }
+  .ais :global(.bar i) { display: block; height: 100%; background: #16A34A; }
+  .ais :global(.bar i.warn) { background: #F59E0B; } .ais :global(.bar i.full) { background: #DC2626; }
+  .ais :global(.big) { font: 400 34px/1 'Bebas Neue', sans-serif; color: var(--a-ink); }
+  .ais :global(table) { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 10px; }
+  .ais :global(th), .ais :global(td) { padding: 6px 8px; text-align: left; border-bottom: 1px solid var(--a-line); }
+  .sm { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+  @media (max-width: 900px) { .ais-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) { .ais-2 { grid-template-columns: 1fr; } .ais :global(.ais-mrow) { grid-template-columns: 1fr; } }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const usd = n => '$' + Number(n || 0).toFixed(Number(n) && Number(n) < 0.1 ? 4 : 2);
+  let data = null, msgT;
+  function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'ais-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 7000); }
+  async function api(method, body) {
+    const r = await fetch('/api/admin/ai/settings', method === 'GET' ? { headers: H, cache: 'no-store' } : { method, headers: H, body: JSON.stringify(body) });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/ai/settings/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  async function load() {
+    try {
+      data = await api('GET');
+      const s = data.settings, f = $('form').elements, pct = data.budget ? Math.min(100, data.spent / data.budget * 100) : 100;
+      const label = Object.fromEntries(data.features.map(x => [x.id, x.label]));
+      $('spend').innerHTML = `<div class="big">${usd(data.spent)} <span class="muted" style="font:inherit;font-size:18px">of $${esc(data.budget)}</span></div>
+        <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(pct)}" aria-label="Budget used"><i class="${pct >= 100 ? 'full' : pct >= Number(s.warn_at_percent) ? 'warn' : ''}" style="width:${pct}%"></i></div>
+        <p class="muted">${data.calls} call(s) in ${esc(data.month)} (Lagos time). ${data.keyReady ? 'Claude is connected.' : '<b>ANTHROPIC_API_KEY is not set.</b>'} ${data.githubReady ? 'GitHub is connected.' : 'GitHub is not connected yet (handover A29): fixes that change pages can be prepared but not applied.'}</p>
+        ${data.byFeature.length ? `<table><thead><tr><th>Feature</th><th>Calls</th><th>Tokens in / out</th><th>Cost</th></tr></thead><tbody>${data.byFeature.map(r => `<tr><td>${esc(label[r.feature] || r.feature)}</td><td>${r.calls}${r.failed ? ` (${r.failed} failed)` : ''}</td><td>${(r.input_tokens || 0).toLocaleString()} / ${(r.output_tokens || 0).toLocaleString()}</td><td>${usd(r.cost)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">No AI use yet this month.</p>'}
+        ${data.recent.length ? `<details><summary>Last ${data.recent.length} calls</summary><table><tbody>${data.recent.map(r => `<tr><td>${esc(new Date(r.created_at).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }))}</td><td>${esc(label[r.feature] || r.feature)}</td><td>${usd(r.estimated_cost)}</td><td>${r.success ? '✓' : `✗ ${esc(r.error_message || '')}`}</td></tr>`).join('')}</tbody></table></details>` : ''}`;
+      for (const k of ['monthly_budget', 'warn_at_percent', 'weekly_scan_day', 'weekly_scan_time', 'max_items_per_batch']) f[k].value = s[k];
+      f.auto_apply_enabled.checked = s.auto_apply_enabled === '1'; f.ask_claude_enabled.checked = s.ask_claude_enabled === '1';
+      const auto = String(s.auto_apply_types || '').split(',');
+      $('autoTypes').innerHTML = data.fixTypes.map(t => { const ok = t.id === 'rerun_sync'; return `<label class="ais-check"><input type="checkbox" name="auto" value="${esc(t.id)}" ${auto.includes(t.id) ? 'checked' : ''} ${ok ? '' : 'disabled'} /> ${esc(t.label)}${ok ? '' : ' <span class="muted">(always needs a Super Admin\'s approval)</span>'}</label>`; }).join('');
+      $('modelRows').innerHTML = data.features.filter(x => x.id !== 'test').map(x => `<label class="ais-mrow">${esc(x.label)}<select data-model="${esc(x.id)}" aria-label="Model for ${esc(x.label)}"><option value="default">Cheap (${esc(data.models.default)})</option><option value="advanced" ${s['model_' + x.id] === 'advanced' ? 'selected' : ''}>Advanced (${esc(data.models.advanced)})</option></select></label>`).join('');
+      const assumed = Object.values(data.prices).some(p => p.assumed);
+      $('priceNote').textContent = assumed ? `Until you enter the prices, the budget counts every model at $${data.assumedPrice.in} in / $${data.assumedPrice.out} out (on the high side, so the budget is never overspent). Batches count half.` : 'Batches are counted at half price.';
+      $('priceRows').innerHTML = '<div class="ais-prow"><b>Model</b><b>Input</b><b>Output</b></div>' + Object.keys(data.prices).map(m => `<div class="ais-prow"><span>${esc(m)}</span><input data-price="${esc(m)}" data-k="in" type="number" min="0" step="0.01" aria-label="${esc(m)} input price" value="${data.prices[m].assumed ? (s['price:' + m + ':in'] || '') : data.prices[m].in}" /><input data-price="${esc(m)}" data-k="out" type="number" min="0" step="0.01" aria-label="${esc(m)} output price" value="${data.prices[m].assumed ? (s['price:' + m + ':out'] || '') : data.prices[m].out}" /></div>`).join('');
+    } catch (e) { $('spend').textContent = e.message; }
+  }
+  $('form').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target.elements;
+    const models = {}; document.querySelectorAll('[data-model]').forEach(el => { models[el.dataset.model] = el.value; });
+    const prices = {}; document.querySelectorAll('[data-price]').forEach(el => { (prices[el.dataset.price] ||= {})[el.dataset.k] = el.value; });
+    try {
+      await api('PUT', { monthly_budget: f.monthly_budget.value, warn_at_percent: f.warn_at_percent.value, weekly_scan_day: f.weekly_scan_day.value, weekly_scan_time: f.weekly_scan_time.value,
+        max_items_per_batch: f.max_items_per_batch.value, auto_apply_enabled: f.auto_apply_enabled.checked, ask_claude_enabled: f.ask_claude_enabled.checked,
+        auto_apply_types: [...document.querySelectorAll('input[name="auto"]:checked')].map(x => x.value), models, prices });
+      msg('Settings saved.', true); load();
+    } catch (err) { msg(err.message, false); }
+  });
+  $('testBtn').addEventListener('click', async () => {
+    $('testOut').textContent = 'Testing…';
+    try { const d = await api('POST', { action: 'test' }); $('testOut').textContent = `✓ Connected (${d.model}, cost ${usd(d.cost)})`; load(); }
+    catch (err) { $('testOut').textContent = '✗ ' + err.message; }
+  });
+  load();
+})();
+</script>

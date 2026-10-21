@@ -83,6 +83,7 @@ export const PERMISSIONS = [
     ['logs.view', 'Activity log and export log'],
     ['approvals.approve', 'Approve or reject sensitive actions'],
     ['website.health', 'Website Health (only the three Super Admins)'],
+    ['ai.fix', 'AI Fix and AI Settings: Claude prepares fixes, a Super Admin approves (only the three Super Admins)'],
     ['helpers.create', 'Create matchday helper accounts (gate and kitchen)'],
   ] },
 ];
@@ -96,7 +97,7 @@ export const ROLE_DEFAULTS = {
   super_admin: { label: 'Super Admin', job: 'One of the three website owners', permissions: ALL_PERMISSIONS, locked: true,
     about: 'Everything, including staff accounts, roles, approvals, security settings, Website Health and backups. Only the three people in the Super Admin list.' },
   head_of_media: { label: 'Head of Media', job: 'Head of Media & Communications', about: 'All content, matchday, broadcast, fans and Inbox, Rewards, partners, commerce and reports, plus site settings. Not staff, approvals, logs, fan-data downloads, security settings, Website Health or service keys.',
-    permissions: ALL_PERMISSIONS.filter(p => !['staff.manage', 'logs.view', 'approvals.approve', 'fans.export', 'website.health'].includes(p)) },
+    permissions: ALL_PERMISSIONS.filter(p => !['staff.manage', 'logs.view', 'approvals.approve', 'fans.export', 'website.health', 'ai.fix'].includes(p)) },
   content_editor: { label: 'Content Editor', job: 'Media Officer / Club Writer', about: 'All website content (news, team news, programme, club pages, help, videos, gallery), uploads, and writing the newsletter (not sending it to subscribers).',
     permissions: [...starts('content.'), 'fans.newsletter.manage', 'media.upload', 'fans.inbox.read', 'fans.inbox.reply', 'fans.inbox.media'] },
   media_editor: { label: 'Media Editor', job: 'Social Media & Video Officer', about: 'Videos, gallery, uploads and live matchday updates (preview, report, fan alerts, sharing to socials).',
@@ -122,7 +123,7 @@ export const ROLE_DEFAULTS = {
   kitchen_staff: { label: 'Kitchen Staff', job: 'Matchday helper', helper: true, about: 'Only the Kitchen order board.', permissions: ['commerce.kitchen.board'] },
   // Older role names, kept so existing accounts keep working. Not offered for new accounts.
   staff: { label: 'All areas (old)', legacy: true, about: 'Accounts made before roles existed: everything except staff management, approvals and downloads.',
-    permissions: ALL_PERMISSIONS.filter(p => !['staff.manage', 'approvals.approve', 'fans.export'].includes(p)) },
+    permissions: ALL_PERMISSIONS.filter(p => !['staff.manage', 'approvals.approve', 'fans.export', 'ai.fix'].includes(p)) },
   analyst: { label: 'Analyst (read-only, old)', legacy: true, readOnly: true, about: 'Reports only; cannot change anything.',
     permissions: ['analytics.view_all', 'analytics.broadcast', 'analytics.partners'] },
 };
@@ -302,6 +303,7 @@ const RULES = [
   [/^\/admin\/analytics(\/|$)/, 'analytics.view_all|analytics.broadcast|analytics.partners'],
   [/^\/admin\/activity(\/|$)/, 'logs.view'],
   [/^\/admin\/health(\/|$)/, 'website.health'],
+  [/^\/admin\/ai(\/|$)/, 'ai.fix'],
   [/^\/admin\/(staff|security|backup)(\/|$)/, 'staff.manage'],
   [/^\/admin\/approvals(\/|$)/, 'approvals.approve'],
   [/^\/admin\/helpers(\/|$)/, 'helpers.create'],
@@ -355,6 +357,7 @@ const RULES = [
   [/^\/api\/admin\/export-log(\/|$)/, 'logs.view|fans.export'],
   [/^\/api\/admin\/activity(\/|$)/, 'logs.view'],
   [/^\/api\/admin\/health(\/|$)/, 'website.health'],
+  [/^\/api\/admin\/ai(\/|$)/, 'ai.fix'],
   [/^\/api\/admin\/(staff|roles|security|backup|access-review|role-emails)(\/|$)/, 'staff.manage'],
   [/^\/api\/admin\/approvals(\/|$)/, 'approvals.approve'],
   [/^\/api\/admin\/helpers(\/|$)/, 'helpers.create'],

@@ -10,6 +10,7 @@ import KitchenFab from '../components/KitchenFab.astro';
 import LiveBar from '../components/commentary/LiveBar.astro';
 import { ClientRouter } from 'astro:transitions';
 import '../styles/club-logo.css';
+import seoOverrides from '../data/seo.json';
 
 export interface Props {
   title: string;
@@ -32,8 +33,8 @@ export interface Props {
   share?: boolean;
 }
 const {
-  title,
-  description = "Official website of Lobi Stars Football Club - Pride of Benue",
+  title: pageTitle,
+  description: pageDescription = "Official website of Lobi Stars Football Club - Pride of Benue",
   image,
   imageAlt,
   type = 'website',
@@ -45,6 +46,11 @@ const {
   themeColor,
   share = true,
 } = Astro.props;
+// Google title and description overrides per page (src/data/seo.json, written
+// by Admin › AI Fix after a Super Admin approves; empty = the page's own).
+const seoOverride = (seoOverrides as Record<string, { title?: string; description?: string }>)[Astro.url.pathname.replace(/\/?$/, '/')] || {};
+const title = seoOverride.title || pageTitle;
+const description = seoOverride.description || pageDescription;
 // In-page navigation is only used while live commentary is playing (so the
 // audio keeps going between pages); otherwise every link is a normal page
 // load. Not on admin/staff pages or the pop-out player.
@@ -225,7 +231,7 @@ main.bare{padding-top:0;min-height:0;}
 <SiteHeader />
 
 <main id="main">
-  {showBack && <PageBack title={title} share={showShare} />}
+  {showBack && <PageBack title={pageTitle} share={showShare} />}
   <slot />
 </main>
 

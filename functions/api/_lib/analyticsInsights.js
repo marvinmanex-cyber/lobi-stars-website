@@ -13,6 +13,7 @@
 import { ensureAnalyticsSyncSchema } from './analyticsSync.js';
 import { ensureAnalyticsSchema } from './analytics.js';
 import { classifySource } from '../admin/analytics.js';
+import { callClaude } from './claude.js';
 
 const DAY = 864e5, WAT = 3600e3, WINDOW = 28;
 const SITE = 'https://lobistarsfc.com';
@@ -238,6 +239,12 @@ function analyse(f) {
   return { glance, recs: varied.slice(0, 10) };
 }
 
+/** The figures and recommendations as worked out now (AI Fix uses these; no Claude call). */
+export async function currentInsights(env) {
+  const f = await gather(env.DB);
+  return { f, out: analyse(f) };
+}
+
 /** Recommendations for the Analytics page (marked-done ones hidden for 30 days). */
 export async function recommendations(env) {
   const db = env.DB;
@@ -280,17 +287,11 @@ export async function writeAiSummary(env, by = 'Weekly') {
     ga4Channels: f.ga4.channels.slice(0, 6), keyEvents: f.ga4.events, keyEventsBefore: f.ga4.eventsPrev,
     recommendations: out.recs.map(r => ({ area: r.area, title: r.title, finding: r.finding })),
   };
-  const model = env.AI_SUMMARY_MODEL || 'claude-haiku-5-5';
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model, max_tokens: 4000, output_config: { effort: 'low' }, system: 'You write a short weekly website report for the staff of Lobi Stars FC, a Nigerian football club. Plain English for non-technical readers, no jargon. 120-200 words: what went well, what needs attention, and the three most useful actions this week. Use only the figures given; never invent numbers. Plain text only: no Markdown, no asterisks or # signs; write headings as a short line on their own.',
-      messages: [{ role: 'user', content: 'Figures (totals only):\n' + JSON.stringify(facts) }] }),
-  });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok) return { error: `Claude: ${(d.error && d.error.message) || r.status}` };
-  const text = (d.content || []).filter(c => c.type === 'text').map(c => c.text).join('\n').trim();
-  if (!text) return { error: 'Claude returned no summary text; try again later.' };
+  const r = await callClaude(env, { feature: 'weekly_summary', maxTokens: 700,
+    system: 'You write a short weekly website report for the staff of Lobi Stars FC, a Nigerian football club. Plain English for non-technical readers, no jargon. 120-200 words: what went well, what needs attention, and the three most useful actions this week. Use only the figures given; never invent numbers. Plain text only: no Markdown, no asterisks or # signs; write headings as a short line on their own.',
+    prompt: 'Figures (totals only):\n' + JSON.stringify(facts) });
+  if (!r.ok) return { error: r.error };
+  const text = r.text, model = r.model;
   const summary = { at: new Date().toISOString(), text, model, by };
   await setKey(db, 'ai_summary', summary);
   return summary;

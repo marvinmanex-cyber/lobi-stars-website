@@ -2773,6 +2773,56 @@ with **Close checklist** (with a short note).
 
 ---
 
+## 36. AI Fix and AI Settings (Super Admins, Settings › AI Fix)
+
+Claude (an AI) prepares fixes for the recommendations on **Admin ›
+Analytics**. **Nothing on the website changes until a Super Admin presses
+Apply**, and every change can be undone. Only the three Super Admins can open
+these pages.
+
+**The three groups on AI Fix**
+- **Claude can prepare these** (for example a better Google title and
+  description for a page few people click): press **Prepare fix with Claude**,
+  read the old and new wording, then press **Apply**. The page updates about
+  2 minutes later.
+- **Needs a few words from you first** (for example a news story using a
+  phrase people search for, social media posts, a newsletter sign-up line):
+  type the facts in the box and press **Write the draft with Claude**. Claude
+  only uses what you give it.
+  - A news story is saved as a **Draft** in News: check it, add a photo and
+    publish it in the content editor.
+  - Posts and sign-up lines are for you to **Copy** and use.
+- **A person needs to do these** (payments, testing on a phone, Google
+  settings): follow the steps. Claude doesn't touch these.
+
+**Other buttons**
+- **Undo** puts things back as they were.
+- **Not now** hides a recommendation until you press **Show again**.
+- **Prepare all automatic fixes** sends them all to Claude at once, at half
+  price. The results are ready within 24 hours.
+- **Ask Claude** (at the bottom): ask a question about the website figures.
+  It only sees totals, never fans' details.
+
+**Changing pages needs the GitHub connection** (handover A29). Until it is
+set up, you can prepare fixes and copy the text, but not press Apply on page
+changes.
+
+**AI Settings**
+- **This month**: what the AI has cost so far against the monthly budget
+  (default $10), and the cost of each feature.
+- **Test connection**: checks Claude answers (costs a tiny fraction of a cent).
+- **Monthly budget** and **Email the Super Admins at (%)**: at the warning
+  level you get one email. At 100% AI work stops until next month (a red bar
+  shows on every admin page) unless you raise the budget.
+- **Apply low-risk fixes automatically**: only fixes that can't change pages
+  (re-running the Google sync). Page changes always wait for you.
+- **Weekly scan**: day and time (Lagos). Claude prepares the automatic fixes
+  then, at half price.
+- **Model per feature**: keep **Cheap** (the lowest cost; enough for
+  everything here).
+- **Prices**: enter the prices from anthropic.com/pricing so the spend shown
+  is exact. Until then it is estimated on the high side.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize
