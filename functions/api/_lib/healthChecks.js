@@ -109,6 +109,9 @@ export const INFO = {
   stream: { category: 'matchday', name: 'Commentary stream set up (tested around match time)', who: 'Broadcast Operator',
     why: 'Fans who cannot get to the stadium listen to the live commentary.',
     fix: ['Go to Admin › Matchday › Live Commentary.', 'Check the stream address is set and the partner\'s stream is running.', 'Press "Check again".'] },
+  partner_status: { category: 'matchday', name: 'Broadcast partner status feed answers', who: 'Broadcast Operator',
+    why: 'The commentary player shows "Live now" only when the broadcast partner\'s status feed says it is on air; if the feed can\'t be read, fans see "Off air".',
+    fix: ['Go to Admin › Matchday › Live Commentary › Broadcast partner and check the status address.', 'Press "Test stream": it also tests the status feed.', 'If it still fails, ask Aeson Sports Radio whether their status feed is working.'] },
   stream_hidden: { category: 'matchday', name: 'Partner stream address not shown publicly', who: DEV,
     why: 'The partner\'s own stream address must stay private so the stream goes through the club\'s site.',
     fix: ['Send the details to the developer straight away.'] },
@@ -587,6 +590,17 @@ export async function stepMatchday(ctx) {
     const html = f.res && f.res.ok ? await f.res.text() : (await drain(f.res), '');
     out.push(result('stream_hidden', host && html.includes(host) ? 'FAIL' : 'PASS', { problem: host && html.includes(host) ? 'The partner\'s stream address appears in the public commentary page.' : 'The partner\'s address is not shown on the public pages.' }));
   } else out.push(result('stream_hidden', 'PASS', { problem: 'No partner stream address is used.' }));
+  // The broadcast partner's on-air status feed (read directly, not from the 15-second cache).
+  try {
+    const { partnerSettings, fetchPartnerStatus } = await import('./partnerRadio.js');
+    const ps = await partnerSettings(env);
+    const r = await fetchPartnerStatus(ps.statusUrl);
+    out.push(result('partner_status', r.ok ? 'PASS' : soon ? 'FAIL' : 'WARNING', {
+      problem: r.ok ? `The status feed answers (${r.ms} ms): ${r.status.onAir ? 'on air' : 'off air'}${r.status.listeners !== null ? `, ${r.status.listeners} listening` : ''}.${ps.secretSet ? '' : ' No webhook secret yet, so changes show within 15 seconds instead of at once.'}`
+        : `The status feed can't be read (${r.error})${soon ? ' and a match is on or about to start' : ''}. Fans see "Off air" until it answers.`,
+      details: { ms: r.ms, error: r.error || null, standardAddress: ps.isDefault, webhookSecret: ps.secretSet },
+    }));
+  } catch (err) { out.push(result('partner_status', 'WARNING', { problem: `The status feed check could not run (${String(err.message || err).slice(0, 80)}).` })); }
   // The next home match within 48 hours.
   const next = await safeAll(db, `SELECT e.id, e.home_team, e.away_team, e.event_date, e.commentary_enabled, e.public_sale_at, e.regular_price_kobo, m.squad_json FROM events e LEFT JOIN match_centre m ON m.event_id = e.id WHERE e.active = 1 AND e.is_home = 1 ORDER BY e.event_date`);
   const nh = (next || []).find(e => Date.parse(e.event_date) > now && Date.parse(e.event_date) < now + 48 * 3600e3);
