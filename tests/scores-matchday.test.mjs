@@ -77,7 +77,7 @@ test('club network: link and PIN shown once; sending works; the same person coun
   // Make the fixture "today" so it shows on the form.
   const fx = (await call('/api/admin/league/fixtures')).data;
   const row = (fx.fixtures || fx.items || []).find(f => f.id === fixture.id);
-  restoreKickoff = { id: fixture.id, at: row.kickoff_at };
+  restoreKickoff = { id: fixture.id, at: row.kickoff_at || row.kickoff };
   sql(`UPDATE league_fixtures SET kickoff_at = '${new Date(Date.now() - 30 * 60e3).toISOString()}' WHERE id = ${fixture.id};`);
 
   assert.equal((await call('/api/admin/scores/submitters', 'POST', { action: 'add', name: 'A', club: '' })).status, 400);

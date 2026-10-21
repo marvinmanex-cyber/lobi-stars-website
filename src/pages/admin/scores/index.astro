@@ -14,7 +14,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       <div><div class="stag">Matchday</div><h1 class="stitle">Other <span class="r">games</span></h1></div>
       <label class="og-round">Round <select id="round"></select></label>
     </header>
-    <p class="og-lede">Enter scores as they come in. A result counts when <b>two independent sources agree</b>, or when you mark an <b>official</b> or <b>verified</b> result. 🟢 agreed · 🟡 one source so far · 🔴 sources disagree.</p>
+    <p class="og-lede">Enter scores as they come in. A result counts in the table only when <b>two independent sources agree</b>, or when you mark an <b>official</b> or <b>verified</b> result. 🟢 confirmed · 🟡 one source so far · 🔴 sources disagree.</p>
     <p class="og-msg" id="msg" role="status" aria-live="polite" hidden></p>
     <div id="cards" class="og-cards"><p class="muted">Loading…</p></div>
   </div>
@@ -58,6 +58,16 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   .og :global(.gc-3) { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 8px; }
   .og :global(.gc-dec) { font-size: 13px; padding: 8px 10px; border-radius: 10px; background: #EEF4FF; color: #15233F; }
   :global(body.admin-dark) .og :global(.gc-dec) { background: #16233A; color: #E3ECFF; }
+  .og :global(.gc-state) { font-size: 13px; color: var(--a-muted); line-height: 1.4; }
+  .og :global(.gc-state b) { color: var(--a-ink); }
+  .og :global(.gc-cmp) { border: 2px solid #DC2626; border-radius: 12px; padding: 10px; display: grid; gap: 8px; background: #FFF5F5; }
+  :global(body.admin-dark) .og :global(.gc-cmp) { background: #2A1414; }
+  .og :global(.gc-cmp h3) { margin: 0; font-size: 15px; color: #A3161B; }
+  :global(body.admin-dark) .og :global(.gc-cmp h3) { color: #FF8A8A; }
+  .og :global(.gc-cmp-row) { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; }
+  .og :global(.gc-cmp-row b) { font: 400 24px/1 'Bebas Neue', sans-serif; margin-right: 6px; }
+  .og :global(.gc-cmp-btns) { display: flex; gap: 6px; flex-wrap: wrap; }
+  .og :global(.gc.focus) { outline: 3px solid #2563EB; outline-offset: 3px; }
   .sm, .og :global(.sm) { min-height: 36px; padding: 6px 12px; font-size: 13px; }
   @media (max-width: 420px) { .og-cards { grid-template-columns: 1fr; } .og :global(.gc-goals button) { width: 44px; height: 44px; } }
 </style>
@@ -72,10 +82,13 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   const LIGHT = { agreed: '🟢 Agreed', single: '🟡 One source', conflict: '🔴 Sources disagree', none: 'No reports yet' };
   const QUICK = [['LIVE', 'Kick-off'], ['HALF_TIME', 'Half-time'], ['FULL_TIME', 'Full-time'], ['POSTPONED', 'Postponed'], ['ABANDONED', 'Abandoned']];
   let data = null, msgT;
+  const params = new URLSearchParams(location.search), focusId = Number(params.get('fixture')) || null;
+  let first = params.get('fixture') ? `?fixture=${encodeURIComponent(params.get('fixture'))}` : params.get('conflicts') ? '?conflicts=1' : '';
   const draft = {}; // per card: { h, a, status }
   function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'og-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 6000); }
   async function api(body, round) {
-    const r = await fetch('/api/admin/scores/matchday' + (body ? '' : round ? `?round=${round}` : ''), body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    const qs = round ? `?round=${round}` : first ? first : '';
+    const r = await fetch('/api/admin/scores/matchday' + (body ? '' : qs), body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
     if (r.status === 401) { location.href = '/admin/login/?next=/admin/scores/'; throw new Error('Please sign in again.'); }
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.error || 'Request failed');
@@ -88,8 +101,12 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     return `<article class="gc ${esc(c.agreement)} ${c.home?.isLobi || c.away?.isLobi ? 'lobi' : ''}" data-id="${c.id}">
       <div class="gc-top"><span>${esc(wat(c.kickoff))}${c.venue ? ` · ${esc(c.venue)}` : ''}</span><span>${esc(LIGHT[c.agreement])}</span></div>
       <div class="gc-teams"><div class="gc-team">${crest(c.home)}<b>${esc(c.home?.short || c.home?.name)}</b></div>
-        <div class="gc-score">${conf ? `${esc(conf.home_goals ?? '–')}–${esc(conf.away_goals ?? '–')}` : '–'}<small>${conf ? `${esc(ST[conf.status] || conf.status)} · ${esc(conf.by)}` : 'Not confirmed'}</small></div>
+        <div class="gc-score">${conf ? `${esc(conf.home_goals ?? '–')}–${esc(conf.away_goals ?? '–')}` : c.provisional ? `<span style="opacity:.5">${esc(c.provisional.home_goals ?? '–')}–${esc(c.provisional.away_goals ?? '–')}</span>` : '–'}<small>${conf ? `${esc(ST[conf.status] || conf.status)}${conf.minute ? ` ${esc(conf.minute)}'` : ''}` : 'Not confirmed'}</small></div>
         <div class="gc-team">${crest(c.away)}<b>${esc(c.away?.short || c.away?.name)}</b></div></div>
+      <div class="gc-state"><b>${esc(c.stateLabel || '')}</b>${c.explanation && c.state !== 'NONE' ? ` · ${esc(c.explanation)}` : ''}</div>
+      ${c.state === 'CONFLICT' || c.state === 'PENDING' ? `<div class="gc-cmp"><h3>${c.state === 'CONFLICT' ? 'Sources disagree: choose the right score' : 'Sources disagree (waiting a few minutes in case one catches up)'}</h3>
+        ${c.reports.filter(r => r.latest).map(r => `<div class="gc-cmp-row"><span><b>${esc(r.home_goals ?? '–')}–${esc(r.away_goals ?? '–')}</b>${esc(ST[r.status] || r.status)}${r.minute ? ` ${esc(r.minute)}'` : ''} · ${esc(r.who || r.source)}</span><button type="button" class="btn-p sm" data-accept="${r.id}">Accept this score</button></div>`).join('')}
+        <div class="gc-cmp-btns"><button type="button" class="btn-o sm" data-correct>Enter correct score</button><a class="btn-o sm" href="/admin/league/fixtures/?matchday=${esc(c.round)}">Open match</a></div></div>` : ''}
       <div class="gc-entry"><div class="gc-goals"><button type="button" data-g="h" data-d="-1" aria-label="${esc(c.home?.name)} one goal less">−</button><output>${d.h}</output><button type="button" data-g="h" data-d="1" aria-label="${esc(c.home?.name)} one goal more">+</button></div>
         <span class="muted">score</span>
         <div class="gc-goals"><button type="button" data-g="a" data-d="-1" aria-label="${esc(c.away?.name)} one goal less">−</button><output>${d.a}</output><button type="button" data-g="a" data-d="1" aria-label="${esc(c.away?.name)} one goal more">+</button></div></div>
@@ -100,7 +117,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       <details><summary>Mark as official result</summary><div class="gc-form"><div class="gc-3"><input data-oh type="number" min="0" max="99" placeholder="${esc(c.home?.short)}" aria-label="Official home goals" /><input data-oa type="number" min="0" max="99" placeholder="${esc(c.away?.short)}" aria-label="Official away goals" />
         <select data-os aria-label="Official status"><option value="FULL_TIME">Full time</option><option value="AWARDED">Awarded</option><option value="POSTPONED">Postponed</option><option value="ABANDONED">Abandoned</option><option value="CANCELLED">Cancelled</option></select></div>
         <input data-onote maxlength="300" placeholder='Where from? e.g. "NNL website result, 21 Oct"' /><button type="button" class="btn-p sm" data-act="official">Save official result</button></div></details>
-      <details><summary>Set verified result (overrides all sources)</summary><div class="gc-form"><div class="gc-3"><input data-vh type="number" min="0" max="99" placeholder="${esc(c.home?.short)}" aria-label="Verified home goals" /><input data-va type="number" min="0" max="99" placeholder="${esc(c.away?.short)}" aria-label="Verified away goals" />
+      <details data-verify><summary>Set verified result (overrides all sources)</summary><div class="gc-form"><div class="gc-3"><input data-vh type="number" min="0" max="99" placeholder="${esc(c.home?.short)}" aria-label="Verified home goals" /><input data-va type="number" min="0" max="99" placeholder="${esc(c.away?.short)}" aria-label="Verified away goals" />
         <select data-vs aria-label="Verified status">${Object.entries(ST).map(([k, l]) => `<option value="${k}" ${k === 'FULL_TIME' ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
         <input data-vreason maxlength="300" placeholder="Reason (required), e.g. sources disagreed; confirmed with both clubs" /><button type="button" class="btn-p sm" data-act="verify">Save verified result</button></div></details>
     </article>`;
@@ -108,6 +125,8 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   function draw() {
     $('round').innerHTML = data.rounds.map(r => `<option value="${r}" ${r === data.round ? 'selected' : ''}>Round ${r}</option>`).join('');
     $('cards').innerHTML = data.cards.length ? data.cards.map(card).join('') : '<p class="muted">No matches in this round.</p>';
+    if (focusId && first) { const el = document.querySelector(`.gc[data-id="${focusId}"]`); if (el) { el.classList.add('focus'); el.scrollIntoView({ block: 'center' }); } }
+    first = '';
   }
   async function load(round) { try { data = await api(null, round); draw(); } catch (e) { $('cards').textContent = e.message; } }
   $('round').addEventListener('change', e => load(e.target.value));
@@ -118,6 +137,14 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     if (g) { d[g.dataset.g] = Math.max(0, Math.min(99, d[g.dataset.g] + Number(g.dataset.d))); g.parentElement.querySelector('output').textContent = d[g.dataset.g]; return; }
     const st = e.target.closest('[data-st]');
     if (st) { d.status = st.dataset.st; box.querySelectorAll('[data-st]').forEach(b => b.setAttribute('aria-pressed', String(b === st))); return; }
+    const acc = e.target.closest('[data-accept]');
+    if (acc) {
+      const card = data.cards.find(x => x.id === id), r = card.reports.find(x => x.id === Number(acc.dataset.accept));
+      if (!confirm(`Accept ${r.home_goals ?? '–'}–${r.away_goals ?? '–'} (${ST[r.status] || r.status}) from ${r.who || r.source}? It becomes the verified result.`)) return;
+      try { await api({ action: 'verify', fixtureId: id, homeGoals: r.home_goals, awayGoals: r.away_goals, status: r.status, reason: `Sources disagreed; accepted the score from ${r.who || r.source}` }); msg('Verified.', true); load(data.round); } catch (err) { msg(err.message, false); }
+      return;
+    }
+    if (e.target.closest('[data-correct]')) { const dv = box.querySelector('[data-verify]'); dv.open = true; dv.querySelector('input').focus(); return; }
     const w = e.target.closest('[data-withdraw]');
     if (w) { const reason = prompt('Why withdraw this result?'); if (!reason) return; try { await api({ action: 'withdraw', decisionId: Number(w.dataset.withdraw), reason }); msg('Withdrawn.', true); load(data.round); } catch (err) { msg(err.message, false); } return; }
     const b = e.target.closest('[data-act]'); if (!b) return;

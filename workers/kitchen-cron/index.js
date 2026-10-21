@@ -17,9 +17,10 @@
 //    (/api/internal/analytics-sync: called again straight away while it answers { more: true });
 //  - Match Checklist: keep checklists in step with the fixtures and send the daily reminder email (/api/internal/checklist-run);
 //  - AI Fix: collect finished Claude batches and run the weekly scan (/api/internal/ai-run; idle without ANTHROPIC_API_KEY).
+//  - Score verification: settle matches, conflicts after the grace window, missing-result reminders, licensed API checks (/api/internal/scores-run).
 // Pages Functions can't run on a timer, so this does it. The website checks
 // CRON_SECRET (same value in both places). One failing call never stops the other.
-const CALLS = ['/api/internal/kitchen-repeat', '/api/internal/social-autopost', '/api/internal/health-check', '/api/internal/partner-reports', '/api/internal/rewards-run', '/api/internal/newsletter-run', '/api/internal/access-review', '/api/internal/super-admins', '/api/internal/backup-run', '/api/internal/analytics-sync', '/api/internal/checklist-run', '/api/internal/ai-run'];
+const CALLS = ['/api/internal/kitchen-repeat', '/api/internal/social-autopost', '/api/internal/health-check', '/api/internal/partner-reports', '/api/internal/rewards-run', '/api/internal/newsletter-run', '/api/internal/access-review', '/api/internal/super-admins', '/api/internal/backup-run', '/api/internal/analytics-sync', '/api/internal/checklist-run', '/api/internal/ai-run', '/api/internal/scores-run'];
 // These run in steps: keep calling while they answer { more: true } (at most this many times a minute).
 const LOOPS = { '/api/internal/health-check': 45, '/api/internal/analytics-sync': 12 };
 

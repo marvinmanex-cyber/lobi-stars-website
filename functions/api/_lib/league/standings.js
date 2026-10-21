@@ -35,8 +35,13 @@ const LIVE = ['live', 'half_time'];
 const int = v => Number.isInteger(v);
 
 /** Does this result count towards the table? */
+// Score verification: a match the engine has looked at counts only when its
+// result is confirmed by two sources, verified by staff or official. (No value:
+// a result from before score verification, which counts as before.)
+export const COUNTED_VERIFICATION = ['CONFIRMED', 'VERIFIED', 'OFFICIAL'];
 export function isCounted(f, competition = {}) {
   if (!int(f.home_goals) || !int(f.away_goals)) return false;
+  if (f.verification && !COUNTED_VERIFICATION.includes(f.verification)) return false;
   if (f.status === 'full_time' || f.status === 'awarded') return true;
   return !!competition.include_live && LIVE.includes(f.status);
 }

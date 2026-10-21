@@ -6,6 +6,7 @@ import { settlePredictions } from '../../_lib/predict.js';
 import { notifyFans } from '../../_lib/notify.js';
 import { autoAlert } from '../../_lib/matchAlerts.js';
 import { parsePlayerStats, savePlayerStats, loadPlayerStats } from '../../_lib/stats.js';
+import { fromLiveMatchControl } from '../../_lib/scores/consensus.js';
 import { loadMatch, toPublic, parseCentrePayload, parseSquad, scoreInt, isHomeGame, LIVE_STATUSES } from '../../_lib/matchCentre.js';
 
 async function roster(request, env) {
@@ -95,6 +96,8 @@ export async function onRequestPut({ request, env, params, waitUntil }) {
     v.lineups_json, v.timeline_json, v.stats_json, v.gallery_json, JSON.stringify(squad), kickoffAt, endedAt, s.youtube_url, s.facebook_url
   ).run();
 
+  // Score verification: Live Match Control is one source for this match.
+  waitUntil(fromLiveMatchControl(env, params.id, { status: v.status, home: v.home_score, away: v.away_score, admin }));
   // The Activity Log: status and score changes.
   const label = `${m.event.home_team} v ${m.event.away_team}`;
   if (v.status !== (old.status || 'scheduled') || v.home_score !== (old.home_score ?? null) || v.away_score !== (old.away_score ?? null)) {
@@ -147,6 +150,7 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
          auto_closed = 0, updated_at = excluded.updated_at`
     ).bind(params.id, now).run();
     await logAdminAction(env.DB, admin, 'match_kickoff', `${m.event.home_team} v ${m.event.away_team}`);
+    waitUntil(fromLiveMatchControl(env, params.id, { status: 'live', home: 0, away: 0, admin }));
     // "Kick-off! Vote for Man of the Match" reminder for fans who opted in.
     waitUntil(notifyFans(env, m.event, 'kickoff'));
     waitUntil(autoAlert(env, 'kickoff', m.event, {}, { waitUntil, origin: new URL(request.url).origin }));
@@ -166,6 +170,7 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
        WHERE event_id = ?`
     ).bind(home, away, endedAt, params.id).run();
     await logAdminAction(env.DB, admin, 'match_fulltime', `${m.event.home_team} ${home}-${away} ${m.event.away_team}`);
+    waitUntil(fromLiveMatchControl(env, params.id, { status: 'full-time', home, away, admin }));
     if (status !== 'full-time') waitUntil(autoAlert(env, 'fulltime', m.event, { home, away }, { waitUntil, origin: new URL(request.url).origin }));
     // Predict & Win: the winner is worked out as soon as the final score is in.
     const prediction = isHomeGame(m.event) ? await settlePredictions(env, { ...toPublic(m.event, m.centre), home_score: home, away_score: away }) : null;

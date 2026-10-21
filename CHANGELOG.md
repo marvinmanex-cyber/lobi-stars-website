@@ -8,6 +8,36 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-21: Score verification, Phase 4 (the two-source rule now decides the table)
+
+**What changed**
+- A result now counts in the league table only when **two independent sources
+  agree**, or staff mark it **official** or **verified**. One source alone is
+  "Unconfirmed" and is not shown or counted (a setting can show unconfirmed
+  scores; they still never count).
+- **This includes Lobi Stars' own matches.** Live Match Control is one source;
+  enter the final score in Other Games too (second source), or set a verified
+  result.
+- Full-time results typed in **League › Results** still update the table at
+  once: they are saved as verified results.
+- **Conflicts:** when sources disagree for more than 3 minutes, the match card
+  turns red with each source's score side by side (**Accept this score**,
+  **Enter correct score**, **Open match**). The Data Officer and Super Admins
+  get a bell notification and an email.
+- **Official corrections** replace any earlier result; the table is worked out
+  again and the Super Admins are told.
+- **Missing-result reminder** 115 minutes after kick-off (adjustable).
+- New **Settings** at the bottom of League › Score Sources.
+- Every decision is written in plain English in League History.
+- The commentary partner's system can now send scores (Commentary Assist,
+  needs `COMMENTARY_ASSIST_SECRET`).
+- Fix: the "All Conference D" fixtures page no longer fails if a match has no
+  valid kick-off date.
+
+**Staff to do**
+- On matchday, enter our own final score in Other Games as well as Live Match
+  Control (see STAFF-MATCHDAY-GUIDE section 3a).
+
 ## 2026-10-21: Score verification, Phase 3 (score emails and WhatsApp messages)
 
 **What changed**

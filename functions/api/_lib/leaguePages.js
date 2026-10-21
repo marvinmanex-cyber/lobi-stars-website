@@ -169,7 +169,7 @@ ${comps.length > 1 ? select('comp', 'Competition', [['', 'All'], ...comps], comp
     let lastDay = '', lastMd = null, breakShown = false, open = false;
     for (const f of list) {
       const iso = f.kickoff_at || f.original_kickoff_at;
-      const day = toLagos(iso).date;
+      const day = toLagos(iso)?.date || ''; // date to be confirmed: no day
       // The mid-season break sits between the last match before it and the first after it.
       if (brk && !breakShown && lastDay && lastDay < brk.start && day >= brk.start) {
         if (open) { body += '</div>'; open = false; }

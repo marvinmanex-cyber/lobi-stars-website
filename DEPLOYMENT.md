@@ -73,6 +73,7 @@ these in git.
 | `AESON_STATUS_URL` | Lobi Stars FC Live: Aeson's status feed | Optional; default `https://www.aesonsports.com/api/radio/status`, or set it in Admin › Commentary. |
 | `COMMENTARY_BRAND_NAME` | Commentary player name (optional) | |
 | `ANALYTICS_SALT` | Visitor analytics (optional) | Falls back to `SESSION_SECRET`. |
+| `COMMENTARY_ASSIST_SECRET` | Score verification: the shared secret the commentary partner's system sends with scores | **Secret.** Optional; only when the partner connects their system. |
 | `COMMENTARY_SCORE_EMAILS` | Score verification: email address(es) of the commentary partner whose score emails count as Commentary Assist | Optional, plain text, comma separated. |
 | `SCORES_EMAIL` | Score verification: the address score emails go to | Optional; default scores@lobistarsfc.com. |
 | `LICENSED_API_KEY` | Score verification: optional paid football data API (API-Football or Sportmonks) | **Secret.** Only after the club buys a plan; the source also needs switching on in League › Score Sources. |
@@ -852,6 +853,7 @@ Multi-source results for every conference match; built in phases. Phase 1: `func
 - No new required secrets. Optional later: `LICENSED_API_KEY`.
 - Phase 2: `scores/matchday.js` (Other Games, official/verified decisions in `score_decisions`), `scores/submitters.js` + public `POST /api/scores/submit` (token or PIN, hashed; Turnstile; rate limits) and page `/scores/submit/`.
 - Phase 3: `scores/extract.js` reads messages (rules first, Claude feature `score_extract` only if needed; raw text kept in `score_messages`). Emails: `/api/inbox/inbound` sends anything addressed to `SCORES_EMAIL` (default scores@lobistarsfc.com) or posted with `?box=scores` to the score reader instead of the Inbox. Set up: Cloudflare Email Routing rule **scores@ → the media-mail Worker** (it already posts the `to` address; no redeploy). Optional `COMMENTARY_SCORE_EMAILS` (comma list): emails from these count as Commentary Assist.
+- Phase 4: `scores/consensus.js`: `decide()` (pure rule), `settleFixture()` (runs after every report and decision; writes `score_state`, applies CONFIRMED/VERIFIED/OFFICIAL results to `league_fixtures` and sets `league_fixtures.verification`, which `isCounted` in `league/standings.js` checks; empty = pre-verification result, still counted). League › Results final results become VERIFIED decisions; Live Match Control saves add LIVE_MATCH_CONTROL reports. Every minute: `POST /api/internal/scores-run` (cron Worker; until the Worker is redeployed, `/api/internal/kitchen-repeat` runs it as a fallback when it hasn't run for 90 s). Commentary Assist webhook: `POST /api/scores/commentary` with `Authorization: Bearer <COMMENTARY_ASSIST_SECRET>`, body `{ home, away, homeGoals, awayGoals, status, minute }` or `{ matches: [...] }`. Tables also in `migrations/0010_score_consensus.sql`.
 
 ## Site (Astro + Cloudflare Pages)
 

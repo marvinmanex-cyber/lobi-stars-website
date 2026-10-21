@@ -44,7 +44,7 @@ before(async () => {
   await new Promise(r => server.listen(8899, '127.0.0.1', r));
   fx = (await call('/api/admin/scores/matchday')).data.cards[0];
   const all = (await call('/api/admin/league/fixtures')).data;
-  restore = { id: fx.id, at: (all.fixtures || all.items).find(f => f.id === fx.id).kickoff_at };
+  restore = { id: fx.id, at: (all.fixtures || all.items).find(f => f.id === fx.id).kickoff };
   sql(`UPDATE league_fixtures SET kickoff_at = '${new Date(Date.now() - 100 * 60e3).toISOString()}' WHERE id = ${fx.id};`);
   sub = (await call('/api/admin/scores/submitters', 'POST', { action: 'add', name: 'Bala Test', club: `Kada ${TAG}`, email: `bala.${TAG}@example.com` })).data;
   const cur = (await call('/api/admin/scores/messages')).data;

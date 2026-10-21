@@ -2936,7 +2936,7 @@ The website is getting a system that collects scores for **every** NNL
 Conference D match (not only Lobi Stars) from several approved sources. A
 result is only accepted when **two independent sources agree**, or when staff
 mark an official or verified result. The table is always worked out from
-accepted results. It is being built in phases; this section grows with it.
+accepted results.
 
 Only the **Website & Data Officer** (Matchday Admin role) and the **Super
 Admins** can use it.
@@ -3080,6 +3080,67 @@ notification and an email:
   recognised) and press **Approve**. The report then counts as one source.
 - **Reject**: give the reason (e.g. "old score", "wrong match").
 - A message with no score in it can be marked **Mark as dealt with**.
+
+### How a result is accepted (the two-source rule)
+
+For every match the website looks at the **latest** report from each
+independent source and decides:
+- **Confirmed**: two or more sources agree. The result goes into the table.
+- **Unconfirmed**: only one source so far. It is **not** in the table and not
+  shown on the website (unless you switch on **Show unconfirmed scores** in
+  Score Sources › Settings; even then it doesn't count in the table).
+- **Official** or **Verified**: you entered it (see above). It always wins.
+- **Sources disagree**: see "Resolving score conflicts" below.
+
+This applies to **Lobi Stars' own matches too**. Live Match Control counts as
+one source. A second one is needed: the commentary partner, a club officer, or
+you entering the score in **Other Games** (that counts as a second source).
+Or use **Set verified result**.
+
+A full-time or awarded result typed in **League › Results** still goes into
+the table straight away: it is saved as a verified result "Entered in League
+› Results".
+
+During play, a source that hasn't updated yet is not a disagreement. For
+example, two sources say 1-0 and a third still says 0-0 from earlier: the
+score is confirmed at 1-0.
+
+Every decision is written in plain English in **League History** (who, what,
+which sources).
+
+**Reminders:** if a match kicked off more than 115 minutes ago and has no
+confirmed full-time result, you get a bell notification and an email. The
+time can be changed in **Score Sources › Settings**.
+
+### Resolving score conflicts
+
+When sources give different scores, the website first waits **3 minutes**
+(the grace window; one source is often a little behind). If they still
+disagree:
+- the match card in **Other Games** turns red with **Sources disagree:
+  choose the right score**;
+- you and the Super Admins get a bell notification and an email with a link
+  straight to the match;
+- the match is left out of the table until it is resolved.
+
+On the card you see each source's latest score side by side. Then:
+1. **Accept this score** next to the right one. It becomes the verified
+   result (the reason is filled in for you).
+2. Or **Enter correct score** if none of them is right: type the score and the
+   reason (e.g. "Confirmed with both club media officers").
+3. **Open match** opens the fixture in the League pages.
+
+A score you accept **during play** holds until newer reports arrive; then it
+counts as one more source. A **final** result you accept stays until you
+withdraw it or an official result replaces it.
+
+**Official corrections:** if the NNL later publishes a different result, use
+**Mark as official result**. It replaces whatever was there, the table is
+worked out again, and the Super Admins are told.
+
+**Settings** (League › Score Sources, at the bottom): grace window, reminder
+time, show unconfirmed scores, how often the licensed API is checked, and the
+matchday summary email.
 
 ## Other things you can update in the CMS
 

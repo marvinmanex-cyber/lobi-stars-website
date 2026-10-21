@@ -188,6 +188,15 @@ On every matchday, keep **Matchday › Other Games** open on your phone.
   Check **Waiting for you** there whenever the bell shows "score reports need
   checking".
 
+- **Our own match counts too:** Live Match Control is one source. At full
+  time, also enter the final score in Other Games (that is the second
+  source), or press **Set verified result**. Otherwise our result won't be in
+  the table.
+- A red card ("Sources disagree") means: compare the scores and press
+  **Accept this score** on the right one, or **Enter correct score**.
+- About two hours after kick-off you get a reminder for any match without a
+  confirmed result.
+
 Full instructions: STAFF-GUIDE.md section 37.
 
 ## 4. Check the Predict & Win winner and pay the prize

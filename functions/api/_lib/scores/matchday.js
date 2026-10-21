@@ -2,12 +2,12 @@
 // conference match of a round, with every report received, an agreement
 // indicator, quick staff entry, "Mark as official result" (OFFICIAL_NNL, with a
 // note) and a VERIFIED staff decision that overrides all sources (with a
-// reason). Decisions are stored and logged; the table only starts using them
-// in Phase 4/5 (consensus engine and table engine), so nothing here changes the
-// public table yet.
+// reason). Decisions are stored and logged; the consensus engine
+// (consensus.js) turns reports and decisions into the confirmed result.
 import { ensureScoreSchema, addReport, latestPerSource, independenceKey, SOURCE_TYPES, REPORT_STATUSES } from './model.js';
 import { getCompetition, logLeague } from '../leagueDb.js';
 import { logoFile } from '../logoFiles.js';
+import { settleFixture, ensureConsensusSchema, STATE_LABEL, COUNTED_STATES } from './consensus.js';
 
 let ready = false;
 export async function ensureDecisions(env) {
@@ -50,14 +50,21 @@ export function pickRound(fixtures, now = Date.now()) {
   return withKo.sort((a, b) => b.kickoff_at.localeCompare(a.kickoff_at))[0]?.matchday || 1;
 }
 
-export async function matchdayView(env, { round = null, now = Date.now() } = {}) {
-  await ensureDecisions(env);
+export async function matchdayView(env, { round = null, fixture = null, conflicts = false, now = Date.now() } = {}) {
+  await ensureConsensusSchema(env);
   const db = env.DB;
   const comp = await getCompetition(db, null);
   if (!comp) return { error: 'No competition set up.' };
   const fixtures = (await db.prepare(`SELECT * FROM league_fixtures WHERE competition_id = ? ORDER BY kickoff_at, match_no`).bind(comp.id).all()).results;
   const rounds = [...new Set(fixtures.map(f => f.matchday).filter(Boolean))].sort((a, b) => a - b);
-  const md = rounds.includes(Number(round)) ? Number(round) : pickRound(fixtures, now);
+  // Opened from an alert: the round of that match, or of the first match with a conflict.
+  let want = rounds.includes(Number(round)) ? Number(round) : null;
+  if (!want && fixture) want = fixtures.find(f => f.id === Number(fixture))?.matchday || null;
+  if (!want && conflicts) {
+    const c = await db.prepare(`SELECT s.fixture_id FROM score_state s JOIN league_fixtures f ON f.id = s.fixture_id WHERE s.state = 'CONFLICT' AND f.competition_id = ? ORDER BY f.kickoff_at LIMIT 1`).bind(comp.id).first();
+    if (c) want = fixtures.find(f => f.id === c.fixture_id)?.matchday || null;
+  }
+  const md = want || pickRound(fixtures, now);
   const list = fixtures.filter(f => f.matchday === md);
   const teams = new Map((await db.prepare(`SELECT * FROM league_teams`).all()).results.map(t => [t.id, t]));
   const venues = new Map((await db.prepare(`SELECT * FROM league_venues`).all()).results.map(v => [v.id, v.name]));
@@ -65,17 +72,19 @@ export async function matchdayView(env, { round = null, now = Date.now() } = {})
   const q = ids.map(() => '?').join(',') || 'NULL';
   const reports = ids.length ? (await db.prepare(`SELECT * FROM score_reports WHERE fixture_id IN (${q}) ORDER BY received_at DESC, id DESC`).bind(...ids).all()).results : [];
   const decisions = ids.length ? (await db.prepare(`SELECT * FROM score_decisions WHERE fixture_id IN (${q}) ORDER BY created_at DESC, id DESC`).bind(...ids).all()).results : [];
+  const states = new Map(ids.length ? (await db.prepare(`SELECT * FROM score_state WHERE fixture_id IN (${q})`).bind(...ids).all()).results.map(x => [x.fixture_id, x]) : []);
   const team = id => { const t = teams.get(id); return t ? { id: t.id, name: t.name, short: t.short_name, crest: logoFile(t.crest_url), isLobi: !!t.is_lobi } : null; };
   const cards = list.map(f => {
     const rs = reports.filter(r => r.fixture_id === f.id), counted = rs.filter(r => !r.needs_review);
     const latest = latestPerSource(counted);
-    const ag = agreement(latest), dec = decidedResult(decisions.filter(d => d.fixture_id === f.id));
-    const confirmed = dec ? { home_goals: dec.home_goals, away_goals: dec.away_goals, status: dec.status, by: dec.kind === 'OFFICIAL' ? 'Official NNL' : 'Verified by staff', reason: dec.reason, at: dec.created_at }
-      : ag.state === 'agreed' ? { home_goals: ag.result.home_goals, away_goals: ag.result.away_goals, status: ag.result.status, by: `${ag.sources} sources agree` } : null;
+    const st = states.get(f.id) || { state: 'NONE', explanation: 'No reports yet' };
+    const LIGHT = { OFFICIAL: 'agreed', VERIFIED: 'agreed', CONFIRMED: 'agreed', UNCONFIRMED: 'single', PENDING: 'conflict', CONFLICT: 'conflict', NONE: 'none' };
+    const confirmed = COUNTED_STATES.includes(st.state) ? { home_goals: st.home_goals, away_goals: st.away_goals, status: st.status, minute: st.minute, by: STATE_LABEL[st.state] } : null;
     return {
       id: f.id, matchNo: f.match_no, round: f.matchday, kickoff: f.kickoff_at, venue: venues.get(f.venue_id) || '', home: team(f.home_team_id), away: team(f.away_team_id),
       leagueStatus: f.status, leagueScore: f.home_goals === null ? null : `${f.home_goals}-${f.away_goals}`,
-      agreement: ag.state, confirmed,
+      agreement: LIGHT[st.state] || 'none', state: st.state, stateLabel: STATE_LABEL[st.state], explanation: st.explanation, conflictSince: st.conflict_since, confirmed,
+      provisional: st.state === 'UNCONFIRMED' ? { home_goals: st.home_goals, away_goals: st.away_goals, status: st.status } : null,
       reports: rs.slice(0, 30).map(r => ({ id: r.id, source: SOURCE_TYPES[r.source_type]?.label || r.source_type, type: r.source_type, who: r.source_label || '', home_goals: r.home_goals, away_goals: r.away_goals,
         status: r.status, minute: r.minute, at: r.received_at, review: r.needs_review === 1, reason: r.review_reason, latest: latest.some(l => l.id === r.id), independentAs: independenceKey(r) })),
       decisions: decisions.filter(d => d.fixture_id === f.id).slice(0, 10),
@@ -115,7 +124,8 @@ export async function officialResult(env, admin, b) {
   await env.DB.prepare(`INSERT INTO score_decisions (fixture_id, kind, home_goals, away_goals, status, reason, created_by, created_at) VALUES (?, 'OFFICIAL', ?, ?, ?, ?, ?, ?)`)
     .bind(f.id, b.homeGoals === '' || b.homeGoals === undefined ? null : Number(b.homeGoals), b.awayGoals === '' || b.awayGoals === undefined ? null : Number(b.awayGoals), status, note, admin.name, new Date().toISOString()).run();
   await logLeague(env.DB, admin, 'score.official', 'fixture', f.id, null, { result: `Official result ${words(f, b.homeGoals, b.awayGoals, status)} entered by ${admin.name}: ${note}` });
-  return { ok: true, reportId: r.id };
+  const settled = await settleFixture(env, f.id);
+  return { ok: true, reportId: r.id, state: settled?.state };
 }
 /** VERIFIED staff decision: overrides all sources (reason required, logged). */
 export async function verifiedResult(env, admin, b) {
@@ -133,7 +143,8 @@ export async function verifiedResult(env, admin, b) {
   await env.DB.prepare(`INSERT INTO score_decisions (fixture_id, kind, home_goals, away_goals, status, reason, created_by, created_at) VALUES (?, 'VERIFIED', ?, ?, ?, ?, ?, ?)`)
     .bind(f.id, hg, ag, status, reason, admin.name, new Date().toISOString()).run();
   await logLeague(env.DB, admin, 'score.verified', 'fixture', f.id, null, { result: `Verified result ${words(f, hg, ag, status)} set by ${admin.name}: ${reason}` });
-  return { ok: true };
+  const settled = await settleFixture(env, f.id);
+  return { ok: true, state: settled?.state };
 }
 /** Withdraw a decision (e.g. entered on the wrong match). Kept, marked inactive, logged. */
 export async function withdrawDecision(env, admin, id, why) {
@@ -145,6 +156,7 @@ export async function withdrawDecision(env, admin, id, why) {
   await env.DB.prepare(`UPDATE score_decisions SET active = 0 WHERE id = ?`).bind(d.id).run();
   const f = await fixtureNames(env, d.fixture_id);
   await logLeague(env.DB, admin, 'score.withdrawn', 'fixture', d.fixture_id, d, { result: `${d.kind === 'OFFICIAL' ? 'Official' : 'Verified'} result for ${f?.home_name} v ${f?.away_name} withdrawn by ${admin.name}: ${reason}` });
-  return { ok: true };
+  const settled = await settleFixture(env, d.fixture_id);
+  return { ok: true, state: settled?.state };
 }
 export { label };

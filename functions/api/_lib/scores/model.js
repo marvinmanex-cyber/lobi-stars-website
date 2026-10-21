@@ -11,6 +11,7 @@
 // permission confirmed" is ON with a written note (assertAdapterMayRun /
 // assertAllowedFetch).
 import { ensureLeagueSchema } from '../leagueDb.js';
+import { settleFixture } from './consensus.js';
 
 export const REPORT_STATUSES = ['SCHEDULED', 'LIVE', 'HALF_TIME', 'FULL_TIME', 'POSTPONED', 'ABANDONED', 'AWARDED', 'CANCELLED'];
 /** Report status → the league fixture status used by the table. */
@@ -223,7 +224,10 @@ export async function addReport(env, r) {
       typeof r.confidence === 'number' ? r.confidence : null, r.confidenceNotes ? String(r.confidenceNotes).slice(0, 500) : null, needsReview, reason,
       r.homeName ? String(r.homeName).slice(0, 80) : null, r.awayName ? String(r.awayName).slice(0, 80) : null, r.createdBy || null).first();
   await db.prepare(`UPDATE score_sources SET last_received_at = ? WHERE type = ?`).bind(receivedAt, r.sourceType).run();
-  return { ok: true, id: res.id, fixtureId, needsReview: !!needsReview, reason };
+  // The consensus engine looks at the match again (Phase 4).
+  let settled = null;
+  if (fixtureId && !needsReview && !r.noSettle) settled = await settleFixture(env, fixtureId);
+  return { ok: true, id: res.id, fixtureId, needsReview: !!needsReview, reason, state: settled?.state || null };
 }
 export async function reportsFor(env, fixtureId) {
   await ensureScoreSchema(env);

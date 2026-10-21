@@ -1,13 +1,14 @@
 import { leagueAuth, body, ok, fail, getFixture, snapshot, afterFixtureChange, tableSnapshot, tableChanges } from '../../../../_lib/leagueAdmin.js';
 import { getCompetition } from '../../../../_lib/leagueDb.js';
 import { validateResultInput } from '../../../../_lib/league/validate.js';
+import { fromLeagueResults } from '../../../../_lib/scores/consensus.js';
 
 // PUT /api/admin/league/results/matchday/:n { competition?, rows: [{ id, status, homeGoals, awayGoals,
 //      resultType?, awardedTo?, attendance?, referee?, reportUrl?, note? }] }
 // Checks every row first, saves them all in one batch, and answers with the
 // table before and after (position changes).
 export async function onRequestPut({ request, env, params }) {
-  const { staff, denied } = await leagueAuth(request, env);
+  const { admin, staff, denied } = await leagueAuth(request, env);
   if (denied) return denied;
   try {
     const db = env.DB;
@@ -41,6 +42,8 @@ export async function onRequestPut({ request, env, params }) {
       await db.prepare(`INSERT INTO league_audit_log (staff_email, action, entity, entity_id, before_json, after_json) VALUES (?, 'result.set', 'fixture', ?, ?, ?)`)
         .bind(staff.email, String(f.id), JSON.stringify(snapshot(f)), JSON.stringify(snapshot(after))).run();
       await afterFixtureChange(env, after, ['status', 'home_goals', 'away_goals']);
+      // Score verification: a final result typed here is a verified staff decision; a live score is a staff report.
+      if (['status', 'home_goals', 'away_goals'].some(k => (f[k] ?? null) !== (after[k] ?? null))) await fromLeagueResults(env, staff, admin, after, after);
       saved.push(f.id);
     }
     const afterTable = await tableSnapshot(env, comp.id);

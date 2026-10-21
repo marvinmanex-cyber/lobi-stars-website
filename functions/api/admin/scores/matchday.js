@@ -2,7 +2,7 @@ import { scoresGuard, json } from '../../_lib/scores/api.js';
 import { matchdayView, staffEntry, officialResult, verifiedResult, withdrawDecision } from '../../_lib/scores/matchday.js';
 
 // Admin › Matchday › Other Games (Website & Data Officer, Super Admins).
-// GET ?round=<n>                                         -- every match of the round as a card
+// GET ?round=<n> | ?fixture=<id> | ?conflicts=1           -- every match of the round as a card
 // POST { action: 'entry', fixtureId, homeGoals, awayGoals, status, minute }   -- quick staff report
 // POST { action: 'official', fixtureId, homeGoals, awayGoals, status, note }  -- official NNL result
 // POST { action: 'verify', fixtureId, homeGoals, awayGoals, status, reason }  -- verified result (overrides all sources)
@@ -10,7 +10,8 @@ import { matchdayView, staffEntry, officialResult, verifiedResult, withdrawDecis
 export async function onRequestGet({ request, env }) {
   const { denied } = await scoresGuard(request, env);
   if (denied) return denied;
-  const r = await matchdayView(env, { round: new URL(request.url).searchParams.get('round') });
+  const q = new URL(request.url).searchParams;
+  const r = await matchdayView(env, { round: q.get('round'), fixture: q.get('fixture'), conflicts: q.get('conflicts') === '1' });
   return r.error ? json(r, 404) : json(r);
 }
 
