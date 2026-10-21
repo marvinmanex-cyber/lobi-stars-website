@@ -73,6 +73,7 @@ these in git.
 | `AESON_STATUS_URL` | Lobi Stars FC Live: Aeson's status feed | Optional; default `https://www.aesonsports.com/api/radio/status`, or set it in Admin › Commentary. |
 | `COMMENTARY_BRAND_NAME` | Commentary player name (optional) | |
 | `ANALYTICS_SALT` | Visitor analytics (optional) | Falls back to `SESSION_SECRET`. |
+| `LICENSED_API_KEY` | Score verification: optional paid football data API (API-Football or Sportmonks) | **Secret.** Only after the club buys a plan; the source also needs switching on in League › Score Sources. |
 | `GITHUB_TOKEN` | AI Fix: applying page fixes, news drafts, checklist drafts, code proposals | **Secret.** Fine-grained, this repository only, Contents: Read and write (+ Pull requests: Read and write for automatic draft pull requests). Set 21 Oct 2026 (A29). |
 | `GITHUB_REPO`, `GITHUB_BRANCH` | AI Fix (optional) | Defaults `marvinmanex-cyber/lobi-stars-website` and `main`. |
 | `CLAUDE_MODEL_DEFAULT`, `CLAUDE_MODEL_ADVANCED` | AI Fix (optional) | Defaults `claude-haiku-5-5` (cheap, used everywhere) and `claude-sonnet-5-5` (only where a Super Admin chooses it). |
@@ -839,6 +840,14 @@ recommendation table and tests: `docs/ai-fix.md`.
   - Optional: give the GitHub token "Pull requests: Read and write" for
     automatic draft pull requests.
   - The timer address is unchanged, so the Worker doesn't need redeploying.
+
+## Score verification (from 21 October 2026)
+
+Multi-source results for every conference match; built in phases. Phase 1: `functions/api/_lib/scores/model.js` (sources, reports, team-name matching, the licence guard), `functions/api/admin/scores/`, pages `src/pages/admin/scores/`, tables in `migrations/0009_score_verification.sql` (also created on first use), tests `tests/scores*.test.mjs`.
+
+- Permission `matchday.scores`: Matchday Admin (Website & Data Officer) and Super Admins only.
+- Legal rule in code: `assertAdapterMayRun` / `assertAllowedFetch` refuse any automatic source without "licence / permission confirmed" + a note, and refuse prohibited hosts (Soccerway, Sofascore, Flashscore…) unless that is set.
+- No new required secrets. Optional later: `LICENSED_API_KEY`.
 
 ## Site (Astro + Cloudflare Pages)
 

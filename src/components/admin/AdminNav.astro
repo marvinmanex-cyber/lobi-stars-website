@@ -34,6 +34,8 @@ const CATEGORIES: Cat[] = [
     { id: 'league-table', label: 'Table & Rules', href: '/admin/league/table/', perm: 'matchday.fixtures.edit|matchday.live_control', hint: 'Points adjustments, tie decisions, rules and zones' },
     { id: 'league-teams', label: 'Clubs & Venues', href: '/admin/league/teams/', perm: 'matchday.fixtures.edit|matchday.live_control' },
     { id: 'league-import', label: 'Import & Export', href: '/admin/league/import/', perm: 'matchday.fixtures.edit', hint: 'Upload a revised fixture list (CSV); download fixtures and table' },
+    { id: 'score-sources', label: 'Score Sources', href: '/admin/scores/sources/', perm: 'matchday.scores', hint: 'Where results for every conference game come from (two sources must agree); licence settings' },
+    { id: 'score-unmatched', label: 'Unmatched Team Names', href: '/admin/scores/unmatched/', perm: 'matchday.scores', hint: 'Team names in score reports that match no team: link them once' },
     { id: 'league-audit', label: 'League History', href: '/admin/league/audit/', perm: 'matchday.fixtures.edit|matchday.live_control', hint: 'Every change, who and when; undo a mistake' },
   ] },
   { id: 'content', icon: '📰', label: 'Content', color: '#0EA5E9', items: [

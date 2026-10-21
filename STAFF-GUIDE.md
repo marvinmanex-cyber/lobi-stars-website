@@ -2930,6 +2930,60 @@ mistakes, so check important answers against Analytics.
 - **Prices**: enter the prices from anthropic.com/pricing so the spend shown is
   exact. Until then it is estimated on the high side.
 
+## 37. Score verification for all conference games (League › Score Sources)
+
+The website is getting a system that collects scores for **every** NNL
+Conference D match (not only Lobi Stars) from several approved sources. A
+result is only accepted when **two independent sources agree**, or when staff
+mark an official or verified result. The table is always worked out from
+accepted results. It is being built in phases; this section grows with it.
+
+Only the **Website & Data Officer** (Matchday Admin role) and the **Super
+Admins** can use it.
+
+**Score Sources** (League › Score Sources) lists where results can come from.
+Each source has **Use this source** (on/off), a **priority** and a
+description:
+- **Official NNL**: results you take from official NNL announcements.
+  Always wins.
+- **Live Match Control**: our own matches, from what you enter on matchday.
+- **Staff entry**: scores typed in by the Data Officer or a Super Admin.
+- **Commentary Assist**: scores sent by the commentary partner (when that link
+  is set up).
+- **Club network**: other clubs' media officers, through their own secure
+  link or PIN, or the scores email address.
+- **Licensed data API**: a paid football data service. Off until the club
+  buys one and adds its key; **Coverage test** checks it has our fixtures.
+- **Other licensed source**: off. For a website or feed the club gets
+  **written permission** or a licence to use.
+
+**The legal rule:** the website never reads Soccerway, Sofascore, Flashscore
+or similar websites by itself, because their terms don't allow it. You may
+look at them yourself.
+- A source like that can only be switched on after a **Super Admin** ticks
+  **Licence / written permission confirmed** and writes down who gave it,
+  when, and the reference.
+
+**How sources count:**
+- Two different sources count as two; so do two different approved club
+  officers.
+- The same staff member or club officer reporting twice counts once (their
+  latest report is used).
+- The licensed API counts once, however often it is checked.
+
+**Every report is kept.** Nothing is overwritten, so you can always see who
+reported what, and when.
+
+**Unmatched team names** (League › Unmatched Team Names):
+- Sources often spell team names differently ("Bida Lions", "Mighty Jets
+  Feeder / Bida Lions").
+- The website ignores capital letters, "FC" and punctuation, and knows each
+  team's other names.
+- A name it doesn't know appears on this list: choose the right team and
+  press **Link**. The name is saved as one of that team's names and
+  recognised automatically from then on.
+- **Dismiss** removes a name that is just wrong.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

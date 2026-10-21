@@ -1,0 +1,79 @@
+---
+// Admin › League › Unmatched team names: a score arrived with a team name the
+// website doesn't know (e.g. "Bida Lions"). Link it to the right team once:
+// it is saved as one of that team's names and recognised from then on.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Unmatched Team Names | Lobi Stars Admin" description="Team names to link." noindex>
+  <div class="wrap sun">
+    <AdminNav current="score-unmatched" />
+    <header class="sun-head">
+      <div><div class="stag">League</div><h1 class="stitle">Unmatched <span class="r">team names</span></h1></div>
+      <a class="btn-o sm" href="/admin/scores/sources/">Score sources</a>
+    </header>
+    <p class="sun-lede">These names came in with score reports and match no team. Choose the right team once: the name is saved as one of that team's names (an alias) and recognised automatically from then on. Matching ignores capital letters, "FC" and punctuation.</p>
+    <p class="sun-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <section class="sun-card"><h2>Waiting</h2><div id="open"><p class="muted">Loading…</p></div></section>
+    <section class="sun-card"><h2>Recently linked or dismissed</h2><div id="done"></div></section>
+  </div>
+</Layout>
+
+<style>
+  .sun { max-width: 1000px; padding-top: 20px; padding-bottom: 60px; }
+  .sun-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .sun-lede { margin: 0 0 16px; color: var(--a-muted); font-size: 15px; line-height: 1.55; max-width: 760px; }
+  .sun-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .sun-msg.ok { background: #E8F7EE; color: #17643A; } .sun-msg.err { background: #FDECEC; color: #A3161B; }
+  .sun-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 14px 16px; margin-bottom: 14px; }
+  .sun-card h2 { margin: 0 0 8px; font: 700 17px/1.2 'Barlow', sans-serif; color: var(--a-ink); }
+  .sun :global(.un) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 240px) auto auto; gap: 8px; align-items: center; padding: 10px 0; border-top: 1px solid var(--a-line); font-size: 14px; }
+  .sun :global(.un b) { color: var(--a-ink); font-size: 15px; }
+  .sun :global(.un small) { display: block; color: var(--a-muted); overflow-wrap: anywhere; }
+  .sun :global(.un select) { min-height: 38px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 8px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 14px; min-width: 0; }
+  .sm, .sun :global(.sm) { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+  @media (max-width: 640px) { .sun :global(.un) { grid-template-columns: 1fr 1fr; } .sun :global(.un > div:first-child) { grid-column: 1 / -1; } }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const wat = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const SRC = { STAFF_MANUAL: 'Staff', CLUB_NETWORK: 'Club network', COMMENTARY_ASSIST: 'Commentary Assist', LICENSED_API: 'Licensed API', OFFICIAL_NNL: 'Official NNL', LIVE_MATCH_CONTROL: 'Live Match Control', FUTURE_LICENSED: 'Licensed source' };
+  let msgT;
+  function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'sun-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 6000); }
+  async function api(body) {
+    const r = await fetch('/api/admin/scores/unmatched', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/scores/unmatched/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  async function load() {
+    try {
+      const d = await api();
+      const opts = '<option value="">Choose the team…</option>' + d.teams.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+      $('open').innerHTML = d.open.length ? d.open.map(u => `<div class="un" data-id="${u.id}"><div><b>${esc(u.name)}</b><small>Seen ${u.times_seen}× · last ${esc(wat(u.last_seen))}${u.source_type ? ` · from ${esc(SRC[u.source_type] || u.source_type)}` : ''}${u.sample ? ` · "${esc(String(u.sample).slice(0, 120))}"` : ''}</small></div>
+        <select aria-label="Team for ${esc(u.name)}">${opts}</select><button type="button" class="btn-p sm" data-link>Link</button><button type="button" class="btn-o sm" data-dismiss>Dismiss</button></div>`).join('')
+        : '<p class="muted">Nothing waiting: every team name in the score reports is recognised.</p>';
+      $('done').innerHTML = d.done.length ? d.done.map(u => `<div class="un" style="grid-template-columns:1fr"><div><b>${esc(u.name)}</b><small>${u.status === 'linked' ? `Linked to ${esc(u.team_name)}` : 'Dismissed'} by ${esc(u.resolved_by)} · ${esc(wat(u.resolved_at))}</small></div></div>`).join('') : '<p class="muted">None yet.</p>';
+    } catch (e) { $('open').textContent = e.message; }
+  }
+  $('open').addEventListener('click', async e => {
+    const row = e.target.closest('[data-id]'); if (!row) return;
+    try {
+      if (e.target.closest('[data-link]')) {
+        const teamId = row.querySelector('select').value;
+        if (!teamId) return msg('Choose the team first.', false);
+        const d = await api({ action: 'link', id: Number(row.dataset.id), teamId: Number(teamId) });
+        msg(`"${d.alias}" is now a name of ${d.team.name}.`, true);
+      } else if (e.target.closest('[data-dismiss]')) { await api({ action: 'dismiss', id: Number(row.dataset.id) }); msg('Dismissed.', true); }
+      else return;
+      load();
+    } catch (err) { msg(err.message, false); }
+  });
+  load();
+})();
+</script>

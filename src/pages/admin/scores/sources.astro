@@ -1,0 +1,90 @@
+---
+// Admin › League › Score Sources: where results for every conference match
+// come from. Each source: on/off, priority, description; automatic ones need a
+// licence or written permission confirmed (Super Admins) before they can run.
+// Prohibited websites (Soccerway, Sofascore, Flashscore…) are never fetched.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Score Sources | Lobi Stars Admin" description="Where conference results come from." noindex>
+  <div class="wrap scs">
+    <AdminNav current="score-sources" />
+    <header class="scs-head">
+      <div><div class="stag">League</div><h1 class="stitle">Score <span class="r">sources</span></h1></div>
+      <a class="btn-o sm" href="/admin/scores/unmatched/">Unmatched team names</a>
+    </header>
+    <p class="scs-lede">A result is only accepted when two independent sources agree (or staff mark an official or verified result). Here you choose which sources are used. The website never reads Soccerway, Sofascore, Flashscore or similar websites by itself; staff may look at them by hand.</p>
+    <p class="scs-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <div id="list"><p class="muted">Loading…</p></div>
+  </div>
+</Layout>
+
+<style>
+  .scs { max-width: 1000px; padding-top: 20px; padding-bottom: 60px; }
+  .scs-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .scs-lede { margin: 0 0 16px; color: var(--a-muted); font-size: 15px; line-height: 1.55; max-width: 760px; }
+  .scs-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .scs-msg.ok { background: #E8F7EE; color: #17643A; } .scs-msg.err { background: #FDECEC; color: #A3161B; }
+  .scs :global(.src) { background: var(--a-card); border: 1px solid var(--a-line); border-left: 5px solid #CBD2DA; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; }
+  .scs :global(.src.on) { border-left-color: #16A34A; }
+  .scs :global(.src h2) { margin: 0; font: 700 17px/1.3 'Barlow', sans-serif; color: var(--a-ink); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .scs :global(.src p) { margin: 6px 0; font-size: 14px; color: var(--a-muted); }
+  .scs :global(.chip) { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--a-soft); color: var(--a-muted); }
+  .scs :global(.chip.ok) { background: #DCFCE7; color: #166534; } .scs :global(.chip.warn) { background: #FEF3C7; color: #92400E; }
+  .scs :global(.src-form) { display: grid; grid-template-columns: auto 120px minmax(0, 1fr); gap: 10px; align-items: end; margin-top: 8px; }
+  .scs :global(.src-form label) { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--a-muted); }
+  .scs :global(.src-form .sw) { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--a-ink); }
+  .scs :global(.src-form input:not([type="checkbox"])), .scs :global(.src-form textarea) { min-height: 38px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 14px; font-weight: 400; width: 100%; box-sizing: border-box; }
+  .scs :global(.src-lic) { grid-column: 1 / -1; display: grid; gap: 8px; padding: 10px 12px; border-radius: 10px; background: #FFF7E6; border: 1px solid #F6D58E; }
+  :global(body.admin-dark) .scs :global(.src-lic) { background: #3A2E12; border-color: #5A4718; }
+  .scs :global(.src-row) { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .sm, .scs :global(.sm) { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+  @media (max-width: 640px) { .scs :global(.src-form) { grid-template-columns: 1fr 1fr; } .scs :global(.src-form .desc) { grid-column: 1 / -1; } }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const wat = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : 'never';
+  let data = null, msgT;
+  function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'scs-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 7000); }
+  async function api(method, body) {
+    const r = await fetch('/api/admin/scores/sources', method === 'GET' ? { headers: H, cache: 'no-store' } : { method, headers: H, body: JSON.stringify(body) });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/scores/sources/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function draw() {
+    const sup = data.me.superAdmin;
+    $('list').innerHTML = data.sources.map(s => `<section class="src ${s.enabled ? 'on' : ''}" data-type="${esc(s.type)}">
+      <h2>${esc(s.label)} <span class="chip ${s.enabled ? 'ok' : ''}">${s.enabled ? 'On' : 'Off'}</span>${s.automatic ? '<span class="chip">Automatic</span>' : ''}${s.needsLicence ? `<span class="chip ${s.licence_confirmed ? 'ok' : 'warn'}">${s.licence_confirmed ? 'Licence confirmed' : 'Needs licence / written permission'}</span>` : ''}</h2>
+      <p>Last data: ${esc(wat(s.last_received_at))}${s.last_error ? ` · <b>Last error:</b> ${esc(s.last_error)}` : ''}${s.type === 'LICENSED_API' ? ` · API key: ${data.keys.LICENSED_API ? 'set' : '<b>not set yet</b>'}` : ''}</p>
+      <form class="src-form">
+        <label class="sw"><input type="checkbox" name="enabled" ${s.enabled ? 'checked' : ''} /> Use this source</label>
+        <label>Priority<input name="priority" type="number" min="0" max="100" value="${esc(s.priority)}" /></label>
+        <label class="desc">Description<input name="description" maxlength="500" value="${esc(s.description || '')}" /></label>
+        ${s.needsLicence ? `<div class="src-lic"><label class="sw"><input type="checkbox" name="licenceConfirmed" ${s.licence_confirmed ? 'checked' : ''} ${sup ? '' : 'disabled'} /> Licence / written permission confirmed${sup ? '' : ' (Super Admins)'}</label>
+          <label>Licence or permission (who gave it, when, reference)<textarea name="licenceNote" rows="2" maxlength="1000" ${sup ? '' : 'disabled'}>${esc(s.licence_note || '')}</textarea></label></div>` : ''}
+        <div class="src-row"><button class="btn-p sm" type="submit">Save</button>${s.type === 'LICENSED_API' ? '<button type="button" class="btn-o sm" data-coverage>Coverage test</button><span class="muted" data-out></span>' : ''}</div>
+      </form></section>`).join('');
+  }
+  async function load() { try { data = await api('GET'); draw(); } catch (e) { $('list').textContent = e.message; } }
+  $('list').addEventListener('submit', async e => {
+    e.preventDefault();
+    const sec = e.target.closest('[data-type]'), f = e.target.elements;
+    const body = { type: sec.dataset.type, enabled: f.enabled.checked, priority: Number(f.priority.value), description: f.description.value };
+    if (f.licenceConfirmed && !f.licenceConfirmed.disabled) { body.licenceConfirmed = f.licenceConfirmed.checked; body.licenceNote = f.licenceNote.value; }
+    try { data = { ...data, ...(await api('PUT', body)) }; draw(); msg('Saved.', true); } catch (err) { msg(err.message, false); }
+  });
+  $('list').addEventListener('click', async e => {
+    if (!e.target.closest('[data-coverage]')) return;
+    const out = e.target.closest('form').querySelector('[data-out]');
+    out.textContent = 'Checking…';
+    try { const d = await api('POST', { action: 'coverage_test', type: 'LICENSED_API' }); out.textContent = (d.ok ? '✓ ' : '') + d.result; } catch (err) { out.textContent = err.message; }
+  });
+  load();
+})();
+</script>

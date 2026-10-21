@@ -22,6 +22,7 @@ export const PERMISSIONS = [
   ] },
   { group: 'Matchday', items: [
     ['matchday.fixtures.edit', 'Fixtures, results, the table and match settings'],
+    ['matchday.scores', 'Score verification for all conference games: score sources, reports, unmatched team names (Website & Data Officer, Super Admins)'],
     ['matchday.live_control', 'Live Match Control: kick-off, score, full time, timeline'],
     ['matchday.stats.edit', 'Match and player stats'],
     ['matchday.squad.edit', 'Matchday squad and line-ups'],
@@ -99,7 +100,7 @@ export const ROLE_DEFAULTS = {
   super_admin: { label: 'Super Admin', job: 'One of the three website owners', permissions: ALL_PERMISSIONS, locked: true,
     about: 'Everything, including staff accounts, roles, approvals, security settings, Website Health and backups. Only the three people in the Super Admin list.' },
   head_of_media: { label: 'Head of Media', job: 'Head of Media & Communications', about: 'All content, matchday, broadcast, fans and Inbox, Rewards, partners, commerce and reports, plus site settings. Not staff, approvals, logs, fan-data downloads, security settings, Website Health or service keys.',
-    permissions: ALL_PERMISSIONS.filter(p => !['staff.manage', 'logs.view', 'approvals.approve', 'fans.export', 'website.health', 'ai.fix'].includes(p)) },
+    permissions: ALL_PERMISSIONS.filter(p => !['staff.manage', 'logs.view', 'approvals.approve', 'fans.export', 'website.health', 'ai.fix', 'matchday.scores'].includes(p)) },
   content_editor: { label: 'Content Editor', job: 'Media Officer / Club Writer', about: 'All website content (news, team news, programme, club pages, help, videos, gallery), uploads, and writing the newsletter (not sending it to subscribers).',
     permissions: [...starts('content.'), 'fans.newsletter.manage', 'media.upload', 'fans.inbox.read', 'fans.inbox.reply', 'fans.inbox.media'] },
   media_editor: { label: 'Media Editor', job: 'Social Media & Video Officer', about: 'Videos, gallery, uploads and live matchday updates (preview, report, fan alerts, sharing to socials).',
@@ -120,12 +121,12 @@ export const ROLE_DEFAULTS = {
     permissions: ['commerce.tickets.manage', 'commerce.gate_scan', 'commerce.kitchen.manage', 'commerce.kitchen.board', 'helpers.create'] },
   // Temporary developer / contractor access: an end date (at most 14 days), no fans' personal data or downloads.
   contractor: { label: 'Contractor', job: 'Developer / contractor (temporary, max 14 days)', contractor: true, about: 'Temporary access for a developer or contractor: content, matchday, broadcast and site settings. No fans, Inbox, Rewards, downloads, staff or logs. Every sign-in is reported to the Super Admins.',
-    permissions: [...starts('content.', 'matchday.', 'broadcast.'), 'media.upload', 'settings.site', 'settings.promo_bar', 'settings.social_links', 'settings.commentary'] },
+    permissions: [...starts('content.', 'matchday.', 'broadcast.').filter(p => p !== 'matchday.scores'), 'media.upload', 'settings.site', 'settings.promo_bar', 'settings.social_links', 'settings.commentary'] },
   gate_staff: { label: 'Gate Staff', job: 'Matchday helper', helper: true, about: 'Only the gate ticket scanner.', permissions: ['commerce.gate_scan'] },
   kitchen_staff: { label: 'Kitchen Staff', job: 'Matchday helper', helper: true, about: 'Only the Kitchen order board.', permissions: ['commerce.kitchen.board'] },
   // Older role names, kept so existing accounts keep working. Not offered for new accounts.
   staff: { label: 'All areas (old)', legacy: true, about: 'Accounts made before roles existed: everything except staff management, approvals and downloads.',
-    permissions: ALL_PERMISSIONS.filter(p => !['staff.manage', 'approvals.approve', 'fans.export', 'ai.fix'].includes(p)) },
+    permissions: ALL_PERMISSIONS.filter(p => !['staff.manage', 'approvals.approve', 'fans.export', 'ai.fix', 'matchday.scores'].includes(p)) },
   analyst: { label: 'Analyst (read-only, old)', legacy: true, readOnly: true, about: 'Reports only; cannot change anything.',
     permissions: ['analytics.view_all', 'analytics.broadcast', 'analytics.partners'] },
 };
@@ -289,6 +290,7 @@ const RULES = [
   [/^\/admin\/match-checklist(\/|$)/, 'matchday.checklist.view'],
   [/^\/admin\/(programmes|programme-preview)(\/|$)/, 'content.programme.edit'],
   [/^\/admin\/share(\/|$)/, 'matchday.live_updates|content.programme.edit|media.upload'],
+  [/^\/admin\/scores(\/|$)/, 'matchday.scores'],
   [/^\/admin\/league(\/|$)/, 'matchday.fixtures.edit|matchday.live_control'],
   [/^\/admin\/news(\/|$)/, 'content.news.edit|content.news.publish|content.team_news.edit'],
   [/^\/admin\/awards(\/|$)/, 'content.club_pages.edit'],
@@ -327,6 +329,7 @@ const RULES = [
   [/^\/api\/admin\/programmes(\/|$)/, 'content.programme.edit'],
   [/^\/api\/admin\/qr(\/|$)/, 'content.programme.edit|partners.reports|partners.manage'],
   [/^\/api\/admin\/share(\/|$)/, 'matchday.live_updates|content.programme.edit|media.upload'],
+  [/^\/api\/admin\/scores(\/|$)/, 'matchday.scores'],
   [/^\/api\/admin\/league(\/|$)/, MATCH_ANY, 'matchday.fixtures.edit|matchday.live_control'],
   [/^\/api\/admin\/tickets(\/|$)/, 'commerce.tickets.manage'],
   [/^\/api\/admin\/rewards\/analytics(\/|$)/, 'analytics.view_all|rewards.settings'],

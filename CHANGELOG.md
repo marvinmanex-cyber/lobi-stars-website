@@ -8,6 +8,32 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-21: Score verification, Phase 1 (sources, score reports, team names)
+
+**What changed**
+- New **League › Score Sources** (Website & Data Officer and Super Admins):
+  the seven places results can come from, each with on/off, priority and
+  description.
+  - The licensed data API and any other licensed source stay off until a
+    Super Admin confirms a licence or written permission, with a note.
+  - Soccerway, Sofascore, Flashscore and similar websites can never be read
+    automatically without that.
+- New **League › Unmatched Team Names**: team names from score reports that
+  match no team. Link a name once and it is saved as one of that team's names.
+- Behind the scenes:
+  - every score report from every source is now stored and never overwritten;
+  - "two independent sources" is defined (the same person twice counts once;
+    the licensed API counts once).
+- Nothing changes on the public site yet. The matchday screen, club network
+  form, AI reading of score messages, the two-source rule and the automatic
+  table follow in the next phases.
+
+**Who it affects:** the Website & Data Officer and Super Admins.
+
+**What staff need to do:** nothing yet.
+
+---
+
 ## 2026-10-21: Phone header gets out of the way when scrolling
 
 **What changed**
