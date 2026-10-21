@@ -86,7 +86,7 @@ export function tablePayload(league, { scope = 'overall', upTo = null } = {}) {
   });
   const teamName = id => league.allTeams.find(t => t.id === id)?.name || '';
   const footnotes = [
-    ...(scope === 'overall' ? league.adjustments.filter(a => a.is_active === 1).map(a => `${teamName(a.team_id)}: ${a.points_delta > 0 ? '+' : ''}${a.points_delta} point${Math.abs(a.points_delta) === 1 ? '' : 's'} (${a.reason}).`) : []),
+    ...(scope === 'overall' ? league.adjustments.filter(a => a.is_active === 1).map(a => `${teamName(a.team_id)}: ${a.points_delta > 0 ? '+' : ''}${a.points_delta} point${Math.abs(a.points_delta) === 1 ? '' : 's'} (${a.reason}${a.official_ref ? `; ${a.official_ref}` : ''}).`) : []),
     tiebreakInWords(comp),
     `${comp.points_win} points for a win, ${comp.points_draw} for a draw${comp.points_loss ? `, ${comp.points_loss} for a defeat` : ''}. Only finished matches count${comp.include_live ? ' (live matches count as they stand)' : ''}; postponed, abandoned and cancelled matches don't.`,
   ];

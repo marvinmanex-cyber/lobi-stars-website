@@ -155,6 +155,9 @@ export async function ensureLeagueSchema(env) {
   if (!cols.some(c => c.name === 'event_id')) await db.prepare(`ALTER TABLE league_fixtures ADD COLUMN event_id TEXT`).run();
   const { results: ccols } = await db.prepare(`PRAGMA table_info(league_competitions)`).all();
   if (!ccols.some(c => c.name === 'rules_updated_at')) await db.prepare(`ALTER TABLE league_competitions ADD COLUMN rules_updated_at TEXT`).run();
+  // Points adjustments: the official reference (e.g. "NNL ruling 12/2026"), shown in the table note.
+  const { results: acols } = await db.prepare(`PRAGMA table_info(league_table_adjustments)`).all();
+  if (!acols.some(c => c.name === 'official_ref')) await db.prepare(`ALTER TABLE league_table_adjustments ADD COLUMN official_ref TEXT`).run();
   const seeded = await db.prepare(`SELECT id FROM league_competitions WHERE slug = ?`).bind(COMPETITION.slug).first();
   if (!seeded) {
     await db.batch(seedStatements().map(s => db.prepare(s)));

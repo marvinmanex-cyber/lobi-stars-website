@@ -1,0 +1,117 @@
+---
+// Admin › Matchday › Club Network Submitters: trusted people at other clubs who
+// send scores from the ground through /scores/submit/. Each gets a private link
+// and an 8-digit PIN (shown once; renew makes new ones and the old stop working).
+// Shows how many reports each sent and how often they matched the final result.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Club Network Submitters | Lobi Stars Admin" description="People at other clubs who send scores." noindex>
+  <div class="wrap cs">
+    <AdminNav current="score-submitters" />
+    <div class="stag">Matchday</div>
+    <h1 class="stitle">Club network <span class="r">submitters</span></h1>
+    <p class="cs-lede">Trusted people at other conference clubs who send us the score from their ground. Each person counts as <b>one</b> source, however many times they send. Their report alone never changes the table: a second independent source has to agree.</p>
+    <p class="cs-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="cs-card" aria-labelledby="h-add">
+      <h2 id="h-add">Add a submitter</h2>
+      <form id="add" class="cs-form">
+        <label>Name<input name="name" required maxlength="80" autocomplete="off" /></label>
+        <label>Club<input name="club" required maxlength="80" list="clubs" autocomplete="off" /></label>
+        <label>Team in our league list (optional)<select name="teamId"><option value="">—</option></select></label>
+        <label>Phone (optional)<input name="phone" maxlength="30" inputmode="tel" /></label>
+        <label>Email (optional)<input name="email" type="email" maxlength="120" /></label>
+        <label>Note (optional)<input name="note" maxlength="200" placeholder="e.g. club media officer" /></label>
+        <button class="btn-p" type="submit">Add and create link</button>
+      </form>
+      <datalist id="clubs"></datalist>
+      <div id="secret" class="cs-secret" hidden></div>
+    </section>
+
+    <section class="cs-card" aria-labelledby="h-list">
+      <h2 id="h-list">Submitters</h2>
+      <div id="list"><p class="muted">Loading…</p></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .cs { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
+  .cs-lede { color: var(--a-muted); max-width: 780px; line-height: 1.5; }
+  .cs-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 14px 0; }
+  .cs-card h2 { margin: 0 0 10px; font-size: 18px; }
+  .cs-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; align-items: end; }
+  .cs-form label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; color: var(--a-muted); }
+  .cs-form input, .cs-form select { min-height: 44px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 16px; }
+  .cs-form button { min-height: 44px; }
+  .cs-secret { margin-top: 14px; padding: 14px; border-radius: 12px; background: #FFF7E0; color: #5A4300; border: 1px solid #F2D27A; display: grid; gap: 8px; }
+  :global(body.admin-dark) .cs-secret { background: #2E2610; color: #FFE6A3; border-color: #6B5718; }
+  .cs-secret code { word-break: break-all; font-size: 14px; }
+  .cs-secret .pin { font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: 3px; }
+  .cs-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .cs-msg.ok { background: #E8F7EE; color: #17643A; } .cs-msg.err { background: #FDECEC; color: #A3161B; }
+  .cs :global(.sub) { border-top: 1px solid var(--a-line); padding: 12px 0; display: grid; gap: 6px; }
+  .cs :global(.sub.off) { opacity: .6; }
+  .cs :global(.sub-top) { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .cs :global(.sub-top b) { font-size: 16px; color: var(--a-ink); }
+  .cs :global(.sub-stats) { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; color: var(--a-muted); }
+  .cs :global(.sub-btns) { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cs :global(.sub-btns button) { min-height: 38px; }
+  .cs :global(.sub ul) { margin: 4px 0 0; padding-left: 18px; font-size: 13px; color: var(--a-muted); }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const when = iso => iso ? new Date(String(iso).replace(' ', 'T') + (/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? '' : 'Z')).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const ST = { LIVE: 'Live', HALF_TIME: 'Half-time', FULL_TIME: 'Full time', POSTPONED: 'Postponed', ABANDONED: 'Abandoned' };
+  let msgT;
+  function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'cs-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 6000); }
+  async function api(body) {
+    const r = await fetch('/api/admin/scores/submitters', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/scores/submitters/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function showSecret(name, r) {
+    const box = $('secret');
+    const text = `Hello ${name}, this is your private Lobi Stars score link: ${r.link}\nYour PIN (if the link doesn't open): ${r.pin}\nPlease don't share them. Send the score at kick-off, half-time and full time. Thank you!`;
+    box.innerHTML = `<b>Send these to ${esc(name)} now. They are shown only once.</b>
+      <div>Private link:<br /><code>${esc(r.link)}</code></div><div>PIN: <span class="pin">${esc(r.pin)}</span></div>
+      <div class="sub-btns"><button type="button" class="btn-p" id="copyMsg">Copy message</button><a class="btn-o" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(text)}">Send on WhatsApp</a></div>`;
+    box.hidden = false;
+    $('copyMsg').onclick = () => navigator.clipboard.writeText(text).then(() => msg('Copied.', true), () => msg('Could not copy; select the text instead.', false));
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function draw(d) {
+    $('add').teamId.innerHTML = '<option value="">—</option>' + d.teams.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('');
+    $('clubs').innerHTML = d.teams.map(t => `<option value="${esc(t.name)}"></option>`).join('');
+    $('list').innerHTML = d.submitters.length ? d.submitters.map(s => `<div class="sub ${s.active ? '' : 'off'}" data-id="${s.id}" data-name="${esc(s.name)}">
+      <div class="sub-top"><span><b>${esc(s.name)}</b> · ${esc(s.club)}${s.active ? '' : ' · <em>removed</em>'}</span>
+        <span class="sub-btns">${s.active ? `<button type="button" class="btn-o" data-act="renew">New link and PIN</button><button type="button" class="btn-o" data-act="revoke">Remove</button>` : ''}</span></div>
+      <div class="sub-stats"><span>${s.submissions} report${s.submissions === 1 ? '' : 's'}</span><span>Accuracy: ${s.accuracy == null ? 'not enough results yet' : `${s.accuracy}% of ${s.judged} final score${s.judged === 1 ? '' : 's'}`}</span><span>Last: ${esc(when(s.lastAt) || 'never')}</span>${s.phone ? `<span>${esc(s.phone)}</span>` : ''}${s.email ? `<span>${esc(s.email)}</span>` : ''}</div>
+      ${s.note ? `<div class="muted">${esc(s.note)}</div>` : ''}
+      ${s.recent.length ? `<details><summary>Recent reports</summary><ul>${s.recent.map(r => `<li>${esc(r.home || '?')} ${esc(r.home_goals ?? '–')}–${esc(r.away_goals ?? '–')} ${esc(r.away || '?')} · ${esc(ST[r.status] || r.status)} · ${esc(when(r.at))}${r.review ? ' · needs review' : ''}</li>`).join('')}</ul></details>` : ''}
+    </div>`).join('') : '<p class="muted">No submitters yet. Add the first one above.</p>';
+  }
+  async function load() { try { draw(await api()); } catch (e) { $('list').textContent = e.message; } }
+  $('add').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target, b = { action: 'add', name: f.name.value, club: f.club.value, teamId: f.teamId.value ? Number(f.teamId.value) : null, phone: f.phone.value, email: f.email.value, note: f.note.value };
+    const btn = f.querySelector('button'); btn.disabled = true;
+    try { const r = await api(b); showSecret(b.name, r); f.reset(); load(); } catch (err) { msg(err.message, false); } finally { btn.disabled = false; }
+  });
+  $('list').addEventListener('click', async e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const row = b.closest('[data-id]'), id = Number(row.dataset.id), name = row.dataset.name;
+    if (b.dataset.act === 'revoke' && !confirm(`Remove ${name}? Their link and PIN stop working. Their past reports stay in the history.`)) return;
+    if (b.dataset.act === 'renew' && !confirm(`Make a new link and PIN for ${name}? The old ones stop working at once.`)) return;
+    try { const r = await api({ action: b.dataset.act, id }); if (r.pin) showSecret(name, r); else msg(`${name} removed.`, true); load(); } catch (err) { msg(err.message, false); }
+  });
+  load();
+})();
+</script>

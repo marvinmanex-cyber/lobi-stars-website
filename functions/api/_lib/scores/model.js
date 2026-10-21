@@ -190,6 +190,8 @@ export async function addReport(env, r) {
   await ensureScoreSchema(env);
   const db = env.DB;
   if (!SOURCE_TYPES[r.sourceType]) return { error: 'Unknown source.' };
+  const src = await getSource(env, r.sourceType);
+  if (!src?.enabled) return { error: `${SOURCE_TYPES[r.sourceType].label} is switched off (League › Score Sources).` };
   const status = String(r.status || '').toUpperCase();
   if (!REPORT_STATUSES.includes(status)) return { error: 'Unknown status.' };
   const hg = int(r.homeGoals), ag = int(r.awayGoals);

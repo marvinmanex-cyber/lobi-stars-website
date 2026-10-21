@@ -2984,6 +2984,78 @@ reported what, and when.
   recognised automatically from then on.
 - **Dismiss** removes a name that is just wrong.
 
+### Updating other games' scores (Matchday › Other Games)
+
+Open **Matchday › Other Games** on your phone on matchday. Every match of the
+round is a card (choose another round at the top). Each card shows:
+- both crests, the kick-off time and the ground;
+- the **confirmed score**, or "Not confirmed";
+- a light: 🟢 two sources agree, 🟡 only one source so far, 🔴 sources
+  disagree;
+- **Reports received**: every report, from whom and when. Faded lines are
+  older reports from the same source (only the latest one counts).
+
+To send your own report:
+1. Use **−** and **+** to set the score.
+2. Press the status: **Kick-off**, **Half-time**, **Full-time**,
+   **Postponed** or **Abandoned**.
+3. Type the minute if you know it (optional).
+4. Press **Save my report**.
+
+Your report is **one** source. It doesn't change the table by itself: a second
+independent source has to agree (a club officer, the licensed API, or the
+commentary partner). The page refreshes itself every minute.
+
+### Entering official results and points deductions
+
+**Mark as official result** (open it under the card): use it when the NNL
+publishes the result.
+- Enter the score, choose the status (Full time, Awarded, Postponed,
+  Abandoned or Cancelled) and write **where it comes from**, e.g. "NNL
+  website result, 21 Oct". The note is required.
+- An official result always wins over every other source.
+
+**Set verified result (overrides all sources)**: use it when sources disagree
+and you have checked the real result yourself (for example with both clubs).
+A reason is required.
+
+Both are recorded with your name, time and note in **League History**. If you
+made a mistake, press **Withdraw** on the result and give the reason; the card
+goes back to what the sources say.
+
+**Points deductions or awards** (Matchday › Points Adjustments, which opens
+League › Table & Rules):
+1. Choose the club and the points (e.g. **-3** for a deduction).
+2. Write the reason. It is shown as a footnote under the public table.
+3. Add the **official reference** if there is one (NNL letter number, date or
+   link). It is shown next to the reason.
+4. Press **Add**. Adjustments are never deleted; **Void** one (with a reason)
+   if it is overturned.
+
+### Adding club network submitters (Matchday › Club Network Submitters)
+
+Submitters are trusted people at other conference clubs (usually the media
+officer) who send us the score from their ground.
+1. Fill in their name and club (phone, email and a note are optional) and
+   press **Add and create link**.
+2. A yellow box shows their **private link** and an **8-digit PIN**. They are
+   shown **only once**. Press **Send on WhatsApp** (or **Copy message**) and
+   send them straight away.
+3. They open the link on their phone, choose the match, set the score and
+   status and press **Send score**. If the link doesn't open, they can go to
+   lobistarsfc.com/scores/submit/ and type the PIN.
+
+Each submitter counts as **one** source, however many times they send. The
+list shows how many reports each one sent and their **accuracy** (how often
+their full-time score matched the final result).
+- **New link and PIN**: if they lose theirs or it was shared. The old ones
+  stop working at once.
+- **Remove**: when they leave the club. Their past reports stay in the
+  history.
+
+The form is protected: wrong links or PINs are blocked after a few tries, and
+there is a human check before sending.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

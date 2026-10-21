@@ -172,6 +172,21 @@ Press **■ End Match (Full-time)** and enter the **final score**, then
 
 ---
 
+## 3a. The other conference games (Website & Data Officer)
+
+On every matchday, keep **Matchday › Other Games** open on your phone.
+- At each kick-off, half-time and full time, set the score with **−** / **+**,
+  press the status and **Save my report**.
+- A result only counts when two independent sources agree (🟢). One report
+  alone (🟡) waits for a second source; 🔴 means sources disagree: check with
+  the clubs and use **Set verified result**.
+- Club officers send their scores through their private link; you see them
+  appear under **Reports received**.
+- When the NNL publishes a result, use **Mark as official result** with a note
+  of where it came from.
+
+Full instructions: STAFF-GUIDE.md section 37.
+
 ## 4. Check the Predict & Win winner and pay the prize
 
 Open **Admin → Predict & Win** and choose the match.

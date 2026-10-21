@@ -8,6 +8,31 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-21: Score verification, Phase 2 (Other Games, club network, official results)
+
+**What changed**
+- New **Matchday › Other Games** (Website & Data Officer and Super Admins):
+  every conference match of the round as a phone-friendly card, with the
+  confirmed score, every report received and a light (🟢 agreed, 🟡 one
+  source, 🔴 disagree).
+  - Quick entry: **−** / **+** for goals, status buttons, minute.
+  - **Mark as official result** (note required) and **Set verified result**
+    (reason required). Both are logged and can be withdrawn with a reason.
+- New **Matchday › Club Network Submitters**: add trusted club officers; each
+  gets a private link and an 8-digit PIN (shown once), with renew and remove,
+  and each one's number of reports and accuracy.
+- New public form **lobistarsfc.com/scores/submit/** for those officers:
+  made for phones, with a human check and limits on wrong links/PINs and on
+  how often a person can send.
+- **Points adjustments** now have an optional **official reference** (NNL
+  letter, date or link), shown with the reason under the public table. New
+  shortcut **Matchday › Points Adjustments**.
+- Nothing on the public table changes yet: the two-source rule that updates
+  the table comes in Phase 4.
+
+**Staff to do**
+- Send the list of club officers who may send scores (HANDOVER-TODO A32).
+
 ## 2026-10-21: Score verification, Phase 1 (sources, score reports, team names)
 
 **What changed**

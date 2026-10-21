@@ -33,8 +33,9 @@ export async function onRequestPost({ request, env }) {
     if (reason.length < 5 || reason.length > 200) return fail('Give the reason (5 to 200 characters), e.g. "Fielded an ineligible player, NNL ruling 12/2026".');
     const team = await db.prepare(`SELECT t.id, t.name FROM league_teams t JOIN league_competition_teams ct ON ct.team_id = t.id WHERE ct.competition_id = ? AND t.id = ?`).bind(comp.id, Number(b.teamId)).first();
     if (!team) return fail('Choose a club in this competition.');
-    const r = await db.prepare(`INSERT INTO league_table_adjustments (competition_id, team_id, points_delta, reason, created_by) VALUES (?, ?, ?, ?, ?)`).bind(comp.id, team.id, points, reason, staff.email).run();
-    await logLeague(db, staff, 'adjustment.add', 'adjustment', r.meta.last_row_id, null, { team: team.name, points, reason });
+    const officialRef = String(b.officialRef || '').replace(/[\x00-\x1F\x7F]/g, ' ').trim().slice(0, 120) || null;
+    const r = await db.prepare(`INSERT INTO league_table_adjustments (competition_id, team_id, points_delta, reason, created_by, official_ref) VALUES (?, ?, ?, ?, ?, ?)`).bind(comp.id, team.id, points, reason, staff.email, officialRef).run();
+    await logLeague(db, staff, 'adjustment.add', 'adjustment', r.meta.last_row_id, null, { team: team.name, points, reason, officialRef });
     return ok({ id: r.meta.last_row_id });
   } catch (err) {
     console.error('[league admin] add adjustment', err);

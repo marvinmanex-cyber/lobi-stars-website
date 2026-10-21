@@ -33,6 +33,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
           <label class="la-f">Club<select name="teamId" required></select></label>
           <label class="la-f">Points<input name="points" type="number" inputmode="numeric" required style="width:90px" placeholder="-3" /></label>
           <label class="la-f" style="flex:1 1 220px">Reason (shown on the table)<input name="reason" required minlength="5" maxlength="200" placeholder="Fielded an ineligible player (NNL ruling 12/2026)" /></label>
+          <label class="la-f" style="flex:1 1 180px">Official reference (optional)<input name="officialRef" maxlength="120" placeholder="NNL letter ref, date or link" /></label>
           <button class="btn-p" type="submit">Add</button>
         </form>
         <div id="adjList" style="margin-top:12px"></div>
@@ -105,7 +106,7 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
   function drawAdjustments() {
     var list = state.data.adjustments, name = function (id) { var t = state.data.teams.find(function (x) { return x.id === id; }); return t ? t.name : '?'; };
     $('adjList').replaceChildren(list.length ? LA.table(['Club', 'Points', 'Reason', 'Added', 'Status', ''], list.slice().reverse().map(function (a) {
-      return el('tr', {}, el('td', { text: name(a.team_id) }), el('td', { class: 'n', text: sign(a.points_delta) }), el('td', { text: a.reason }),
+      return el('tr', {}, el('td', { text: name(a.team_id) }), el('td', { class: 'n', text: sign(a.points_delta) }), el('td', { text: a.reason + (a.official_ref ? ' (ref: ' + a.official_ref + ')' : '') }),
         el('td', { class: 'la-muted', text: (a.created_by || '') + ', ' + LA.when(a.created_at) }),
         el('td', { text: a.is_active ? 'Active' : 'Voided by ' + (a.voided_by || '') + ', ' + LA.when(a.voided_at) + (a.void_reason ? ': ' + a.void_reason : '') }),
         el('td', {}, a.is_active ? el('button', { type: 'button', class: 'btn-o btn-sm', text: 'Void', onclick: function () {
@@ -118,9 +119,9 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
   }
   $('adjForm').addEventListener('submit', function (e) {
     e.preventDefault();
-    var f = this.elements, body = { teamId: Number(f.teamId.value), points: Number(f.points.value), reason: f.reason.value };
+    var f = this.elements, body = { teamId: Number(f.teamId.value), points: Number(f.points.value), reason: f.reason.value, officialRef: f.officialRef.value };
     var club = f.teamId.options[f.teamId.selectedIndex].text;
-    LA.confirm('Add ' + sign(body.points) + ' points for ' + club + '?', ['Reason: ' + body.reason, 'It shows as a footnote on the public table. It can be voided later but never deleted.'], 'Add adjustment').then(function (y) {
+    LA.confirm('Add ' + sign(body.points) + ' points for ' + club + '?', ['Reason: ' + body.reason + (body.officialRef ? ' (ref: ' + body.officialRef + ')' : ''), 'It shows as a footnote on the public table. It can be voided later but never deleted.'], 'Add adjustment').then(function (y) {
       if (!y) return;
       LA.api('/api/admin/league/adjustments', { method: 'POST', body: body }).then(function (r) { if (r.ok) { this.reset(); LA.toast('Adjustment added'); loadTable(); loadTie(); } else LA.toast(r.d.error || 'Could not save.', true); }.bind(this));
     }.bind(this));

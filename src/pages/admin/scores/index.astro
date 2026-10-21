@@ -1,0 +1,139 @@
+---
+// Admin › Matchday › Other Games: every conference match of the round as a big
+// card (made for a phone on matchday): crests, kick-off, status, the confirmed
+// score, every report received with an agreement light (🟢 agreed, 🟡 one
+// source, 🔴 conflict), quick entry (+/− goals, status buttons, minute),
+// "Mark as official result" (note) and "Set verified result" (reason).
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Other Games | Lobi Stars Admin" description="Scores for every conference match." noindex>
+  <div class="wrap og">
+    <AdminNav current="other-games" />
+    <header class="og-head">
+      <div><div class="stag">Matchday</div><h1 class="stitle">Other <span class="r">games</span></h1></div>
+      <label class="og-round">Round <select id="round"></select></label>
+    </header>
+    <p class="og-lede">Enter scores as they come in. A result counts when <b>two independent sources agree</b>, or when you mark an <b>official</b> or <b>verified</b> result. 🟢 agreed · 🟡 one source so far · 🔴 sources disagree.</p>
+    <p class="og-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <div id="cards" class="og-cards"><p class="muted">Loading…</p></div>
+  </div>
+</Layout>
+
+<style>
+  .og { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; }
+  .og-head { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .og-round { display: flex; gap: 8px; align-items: center; font-weight: 700; color: var(--a-muted); }
+  .og-round select { min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 16px; }
+  .og-lede { margin: 0 0 14px; color: var(--a-muted); font-size: 15px; line-height: 1.5; max-width: 800px; }
+  .og-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .og-msg.ok { background: #E8F7EE; color: #17643A; } .og-msg.err { background: #FDECEC; color: #A3161B; }
+  .og-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 14px; }
+  .og :global(.gc) { background: var(--a-card); border: 1px solid var(--a-line); border-top: 5px solid #CBD2DA; border-radius: 16px; padding: 14px; display: grid; gap: 10px; }
+  .og :global(.gc.agreed) { border-top-color: #16A34A; } .og :global(.gc.single) { border-top-color: #F59E0B; } .og :global(.gc.conflict) { border-top-color: #DC2626; }
+  .og :global(.gc.lobi) { box-shadow: 0 0 0 2px #E31E24 inset; }
+  .og :global(.gc-top) { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--a-muted); }
+  .og :global(.gc-teams) { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; text-align: center; }
+  .og :global(.gc-team img) { width: 44px; height: 44px; object-fit: contain; }
+  .og :global(.gc-team b) { display: block; font-size: 15px; color: var(--a-ink); line-height: 1.2; }
+  .og :global(.gc-score) { font: 400 40px/1 'Bebas Neue', sans-serif; color: var(--a-ink); min-width: 90px; }
+  .og :global(.gc-score small) { display: block; font: 600 12px/1.3 'Barlow', sans-serif; color: var(--a-muted); }
+  .og :global(.gc-entry) { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+  .og :global(.gc-goals) { display: flex; justify-content: center; align-items: center; gap: 6px; }
+  .og :global(.gc-goals button) { width: 48px; height: 48px; border-radius: 12px; border: 1px solid var(--a-line); background: var(--a-soft); color: var(--a-ink); font-size: 24px; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+  .og :global(.gc-goals output) { min-width: 32px; font: 400 34px/1 'Bebas Neue', sans-serif; color: var(--a-ink); text-align: center; }
+  .og :global(.gc-status) { display: flex; flex-wrap: wrap; gap: 6px; }
+  .og :global(.gc-status button) { flex: 1 1 auto; min-height: 44px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); font-weight: 700; font-size: 13px; cursor: pointer; }
+  .og :global(.gc-status button[aria-pressed="true"]) { background: #15181D; color: #fff; border-color: #15181D; }
+  .og :global(.gc-row) { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .og :global(.gc-row input) { min-height: 44px; width: 90px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 16px; }
+  .og :global(.gc-save) { flex: 1; min-height: 48px; font-size: 16px; }
+  .og :global(.gc-reports) { margin: 0; padding: 0; list-style: none; font-size: 13px; border-top: 1px solid var(--a-line); }
+  .og :global(.gc-reports li) { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--a-line); color: var(--a-muted); }
+  .og :global(.gc-reports li.old) { opacity: .55; }
+  .og :global(.gc-reports b) { color: var(--a-ink); }
+  .og :global(details summary) { cursor: pointer; font-weight: 700; color: var(--a-muted); font-size: 14px; min-height: 32px; }
+  .og :global(.gc-form) { display: grid; gap: 8px; margin-top: 6px; }
+  .og :global(.gc-form input), .og :global(.gc-form select) { min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 15px; width: 100%; box-sizing: border-box; }
+  .og :global(.gc-3) { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 8px; }
+  .og :global(.gc-dec) { font-size: 13px; padding: 8px 10px; border-radius: 10px; background: #EEF4FF; color: #15233F; }
+  :global(body.admin-dark) .og :global(.gc-dec) { background: #16233A; color: #E3ECFF; }
+  .sm, .og :global(.sm) { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+  @media (max-width: 420px) { .og-cards { grid-template-columns: 1fr; } .og :global(.gc-goals button) { width: 44px; height: 44px; } }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const wat = (iso, o) => iso ? new Date(iso).toLocaleString('en-GB', Object.assign({ weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }, o || {})) : '';
+  const ST = { SCHEDULED: 'Not started', LIVE: 'Live', HALF_TIME: 'Half-time', FULL_TIME: 'Full time', POSTPONED: 'Postponed', ABANDONED: 'Abandoned', AWARDED: 'Awarded', CANCELLED: 'Cancelled' };
+  const LIGHT = { agreed: '🟢 Agreed', single: '🟡 One source', conflict: '🔴 Sources disagree', none: 'No reports yet' };
+  const QUICK = [['LIVE', 'Kick-off'], ['HALF_TIME', 'Half-time'], ['FULL_TIME', 'Full-time'], ['POSTPONED', 'Postponed'], ['ABANDONED', 'Abandoned']];
+  let data = null, msgT;
+  const draft = {}; // per card: { h, a, status }
+  function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'og-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 6000); }
+  async function api(body, round) {
+    const r = await fetch('/api/admin/scores/matchday' + (body ? '' : round ? `?round=${round}` : ''), body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/scores/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  const crest = t => t && t.crest ? `<img src="${esc(t.crest)}" alt="" width="44" height="44" loading="lazy" />` : '';
+  function card(c) {
+    const d = draft[c.id] || (draft[c.id] = { h: c.confirmed?.home_goals ?? 0, a: c.confirmed?.away_goals ?? 0, status: c.confirmed?.status || 'LIVE' });
+    const conf = c.confirmed;
+    return `<article class="gc ${esc(c.agreement)} ${c.home?.isLobi || c.away?.isLobi ? 'lobi' : ''}" data-id="${c.id}">
+      <div class="gc-top"><span>${esc(wat(c.kickoff))}${c.venue ? ` · ${esc(c.venue)}` : ''}</span><span>${esc(LIGHT[c.agreement])}</span></div>
+      <div class="gc-teams"><div class="gc-team">${crest(c.home)}<b>${esc(c.home?.short || c.home?.name)}</b></div>
+        <div class="gc-score">${conf ? `${esc(conf.home_goals ?? '–')}–${esc(conf.away_goals ?? '–')}` : '–'}<small>${conf ? `${esc(ST[conf.status] || conf.status)} · ${esc(conf.by)}` : 'Not confirmed'}</small></div>
+        <div class="gc-team">${crest(c.away)}<b>${esc(c.away?.short || c.away?.name)}</b></div></div>
+      <div class="gc-entry"><div class="gc-goals"><button type="button" data-g="h" data-d="-1" aria-label="${esc(c.home?.name)} one goal less">−</button><output>${d.h}</output><button type="button" data-g="h" data-d="1" aria-label="${esc(c.home?.name)} one goal more">+</button></div>
+        <span class="muted">score</span>
+        <div class="gc-goals"><button type="button" data-g="a" data-d="-1" aria-label="${esc(c.away?.name)} one goal less">−</button><output>${d.a}</output><button type="button" data-g="a" data-d="1" aria-label="${esc(c.away?.name)} one goal more">+</button></div></div>
+      <div class="gc-status" role="group" aria-label="Status">${QUICK.map(([s, l]) => `<button type="button" data-st="${s}" aria-pressed="${d.status === s}">${l}</button>`).join('')}</div>
+      <div class="gc-row"><label class="sr-only" for="min-${c.id}">Minute</label><input id="min-${c.id}" data-min inputmode="numeric" maxlength="6" placeholder="Minute" /><button type="button" class="btn-p gc-save" data-act="entry">Save my report</button></div>
+      ${c.decisions.filter(x => x.active).slice(0, 2).map(x => `<div class="gc-dec"><b>${x.kind === 'OFFICIAL' ? 'Official result' : 'Verified result'}:</b> ${esc(x.home_goals ?? '–')}–${esc(x.away_goals ?? '–')} ${esc(ST[x.status] || x.status)} · ${esc(x.reason)} · ${esc(x.created_by)}, ${esc(wat(x.created_at))} <button type="button" class="btn-o sm" data-withdraw="${x.id}">Withdraw</button></div>`).join('')}
+      <details><summary>Reports received (${c.reports.length})</summary><ul class="gc-reports">${c.reports.map(r => `<li class="${r.latest ? '' : 'old'}"><span><b>${esc(r.source)}</b>${r.who ? ` · ${esc(r.who)}` : ''}${r.review ? ' · needs review' : ''}</span><span>${esc(r.home_goals ?? '–')}–${esc(r.away_goals ?? '–')} ${esc(ST[r.status] || r.status)}${r.minute ? ` ${esc(r.minute)}'` : ''} · ${esc(wat(r.at, { weekday: undefined, day: undefined, month: undefined }))}</span></li>`).join('') || '<li>None yet.</li>'}</ul><p class="muted">Faded: an older report from the same source (only the latest of each counts).</p></details>
+      <details><summary>Mark as official result</summary><div class="gc-form"><div class="gc-3"><input data-oh type="number" min="0" max="99" placeholder="${esc(c.home?.short)}" aria-label="Official home goals" /><input data-oa type="number" min="0" max="99" placeholder="${esc(c.away?.short)}" aria-label="Official away goals" />
+        <select data-os aria-label="Official status"><option value="FULL_TIME">Full time</option><option value="AWARDED">Awarded</option><option value="POSTPONED">Postponed</option><option value="ABANDONED">Abandoned</option><option value="CANCELLED">Cancelled</option></select></div>
+        <input data-onote maxlength="300" placeholder='Where from? e.g. "NNL website result, 21 Oct"' /><button type="button" class="btn-p sm" data-act="official">Save official result</button></div></details>
+      <details><summary>Set verified result (overrides all sources)</summary><div class="gc-form"><div class="gc-3"><input data-vh type="number" min="0" max="99" placeholder="${esc(c.home?.short)}" aria-label="Verified home goals" /><input data-va type="number" min="0" max="99" placeholder="${esc(c.away?.short)}" aria-label="Verified away goals" />
+        <select data-vs aria-label="Verified status">${Object.entries(ST).map(([k, l]) => `<option value="${k}" ${k === 'FULL_TIME' ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+        <input data-vreason maxlength="300" placeholder="Reason (required), e.g. sources disagreed; confirmed with both clubs" /><button type="button" class="btn-p sm" data-act="verify">Save verified result</button></div></details>
+    </article>`;
+  }
+  function draw() {
+    $('round').innerHTML = data.rounds.map(r => `<option value="${r}" ${r === data.round ? 'selected' : ''}>Round ${r}</option>`).join('');
+    $('cards').innerHTML = data.cards.length ? data.cards.map(card).join('') : '<p class="muted">No matches in this round.</p>';
+  }
+  async function load(round) { try { data = await api(null, round); draw(); } catch (e) { $('cards').textContent = e.message; } }
+  $('round').addEventListener('change', e => load(e.target.value));
+  $('cards').addEventListener('click', async e => {
+    const box = e.target.closest('[data-id]'); if (!box) return;
+    const id = Number(box.dataset.id), d = draft[id];
+    const g = e.target.closest('[data-g]');
+    if (g) { d[g.dataset.g] = Math.max(0, Math.min(99, d[g.dataset.g] + Number(g.dataset.d))); g.parentElement.querySelector('output').textContent = d[g.dataset.g]; return; }
+    const st = e.target.closest('[data-st]');
+    if (st) { d.status = st.dataset.st; box.querySelectorAll('[data-st]').forEach(b => b.setAttribute('aria-pressed', String(b === st))); return; }
+    const w = e.target.closest('[data-withdraw]');
+    if (w) { const reason = prompt('Why withdraw this result?'); if (!reason) return; try { await api({ action: 'withdraw', decisionId: Number(w.dataset.withdraw), reason }); msg('Withdrawn.', true); load(data.round); } catch (err) { msg(err.message, false); } return; }
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    let body;
+    if (b.dataset.act === 'entry') {
+      const noScore = d.status === 'POSTPONED';
+      body = { action: 'entry', fixtureId: id, homeGoals: noScore ? null : d.h, awayGoals: noScore ? null : d.a, status: d.status, minute: box.querySelector('[data-min]').value };
+    } else if (b.dataset.act === 'official') body = { action: 'official', fixtureId: id, homeGoals: box.querySelector('[data-oh]').value, awayGoals: box.querySelector('[data-oa]').value, status: box.querySelector('[data-os]').value, note: box.querySelector('[data-onote]').value };
+    else body = { action: 'verify', fixtureId: id, homeGoals: box.querySelector('[data-vh]').value, awayGoals: box.querySelector('[data-va]').value, status: box.querySelector('[data-vs]').value, reason: box.querySelector('[data-vreason]').value };
+    if (b.dataset.act !== 'entry' && !confirm(b.dataset.act === 'official' ? 'Save this as the OFFICIAL result? It wins over every other source.' : 'Save this VERIFIED result? It overrides all sources.')) return;
+    b.disabled = true;
+    try { await api(body); msg(b.dataset.act === 'entry' ? 'Report saved.' : 'Result saved.', true); delete draft[id]; await load(data.round); }
+    catch (err) { msg(err.message, false); b.disabled = false; }
+  });
+  load();
+  // Keep the cards fresh on matchday (not while typing).
+  setInterval(() => { if (data && !document.querySelector('.gc :focus, .gc details[open]')) load(data.round); }, 60000);
+})();
+</script>
