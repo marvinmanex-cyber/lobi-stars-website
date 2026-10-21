@@ -3056,6 +3056,31 @@ their full-time score matched the final result).
 The form is protected: wrong links or PINs are blocked after a few tries, and
 there is a human check before sending.
 
+### Score messages: emails and WhatsApp (Matchday › Score Messages)
+
+Club officers and the commentary partner can also send scores as a message:
+- **By email** to **scores@lobistarsfc.com** (once the club has switched that
+  address on; see HANDOVER-TODO A32).
+- **By WhatsApp** to you. Copy the message, open **Matchday › Score
+  Messages**, choose **who sent it**, paste it and press **Read this
+  message**.
+
+The website reads the score itself for the usual ways of writing it, for
+example "FT: Kada Warriors 2-1 Wikki Tourists", "HT ABS 0:0 Sokoto" or "Wikki
+v ABS postponed". Several matches in one message are fine. Only if it can't
+read a message does it ask Claude (AI), and Claude only reads; it never
+decides. The original message is always kept.
+
+A report counts straight away only when the sender is approved (a club
+network submitter, the commentary partner or staff) **and** the website is
+sure (both teams recognised and a status written: FT, HT, a minute,
+postponed…). Everything else goes to **Waiting for you**, and you get a bell
+notification and an email:
+- **Approve**: check the match in the list (choose it if the names weren't
+  recognised) and press **Approve**. The report then counts as one source.
+- **Reject**: give the reason (e.g. "old score", "wrong match").
+- A message with no score in it can be marked **Mark as dealt with**.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

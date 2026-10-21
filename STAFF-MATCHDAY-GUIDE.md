@@ -184,6 +184,9 @@ On every matchday, keep **Matchday › Other Games** open on your phone.
   appear under **Reports received**.
 - When the NNL publishes a result, use **Mark as official result** with a note
   of where it came from.
+- Scores sent to you on WhatsApp: paste them in **Matchday › Score Messages**.
+  Check **Waiting for you** there whenever the bell shows "score reports need
+  checking".
 
 Full instructions: STAFF-GUIDE.md section 37.
 

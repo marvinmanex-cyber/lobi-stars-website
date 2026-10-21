@@ -1,0 +1,139 @@
+---
+// Admin › Matchday › Score Messages: emails to the scores address and WhatsApp
+// messages staff paste in. The website reads the score (simple rules first,
+// Claude only if needed) and keeps the original message. Anything it isn't
+// sure about, or from an unknown sender, waits here: a person approves or
+// rejects it. The AI never decides.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Score Messages | Lobi Stars Admin" description="Score emails and WhatsApp messages." noindex>
+  <div class="wrap sm2">
+    <AdminNav current="score-messages" />
+    <div class="stag">Matchday</div>
+    <h1 class="stitle">Score <span class="r">messages</span></h1>
+    <p class="sm2-lede">Scores sent by email to <b>scores@lobistarsfc.com</b>, and WhatsApp messages you paste in below. The website reads the score and keeps the original message. If it isn't sure, or the sender isn't approved, the report waits for you here.</p>
+    <p class="sm2-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="sm2-card" aria-labelledby="h-paste">
+      <h2 id="h-paste">Paste a WhatsApp message</h2>
+      <form id="paste" class="sm2-form">
+        <label>Who sent it?<select name="from" id="from"></select></label>
+        <label id="otherBox" hidden>Their name<input name="fromName" maxlength="80" /></label>
+        <label class="wide">Message<textarea name="text" rows="5" required maxlength="10000" placeholder="e.g. FT: Kada Warriors 2-1 Wikki Tourists"></textarea></label>
+        <button class="btn-p" type="submit">Read this message</button>
+      </form>
+      <div id="pasteResult"></div>
+    </section>
+
+    <section class="sm2-card" aria-labelledby="h-wait">
+      <h2 id="h-wait">Waiting for you <span id="waitN" class="sm2-n"></span></h2>
+      <div id="waiting"><p class="muted">Loading…</p></div>
+    </section>
+
+    <section class="sm2-card" aria-labelledby="h-all">
+      <h2 id="h-all">Recent messages</h2>
+      <div id="messages"></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .sm2 { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
+  .sm2-lede { color: var(--a-muted); max-width: 800px; line-height: 1.5; }
+  .sm2-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 14px 0; }
+  .sm2-card h2 { margin: 0 0 10px; font-size: 18px; }
+  .sm2-n { display: inline-block; min-width: 24px; padding: 0 8px; border-radius: 999px; background: #E31E24; color: #fff; font-size: 14px; text-align: center; }
+  .sm2-n:empty { display: none; }
+  .sm2-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; align-items: end; }
+  .sm2-form .wide { grid-column: 1 / -1; }
+  .sm2-form label { display: grid; gap: 4px; font-weight: 600; font-size: 14px; color: var(--a-muted); }
+  .sm2-form input, .sm2-form select, .sm2-form textarea, .sm2 :global(.rv select), .sm2 :global(.rv input) { min-height: 44px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 16px; box-sizing: border-box; width: 100%; }
+  .sm2-form button { min-height: 44px; }
+  .sm2-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .sm2-msg.ok { background: #E8F7EE; color: #17643A; } .sm2-msg.err { background: #FDECEC; color: #A3161B; }
+  .sm2 :global(.rv) { border-top: 1px solid var(--a-line); padding: 12px 0; display: grid; gap: 8px; }
+  .sm2 :global(.rv-top) { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .sm2 :global(.rv-score) { font: 400 26px/1.1 'Bebas Neue', sans-serif; color: var(--a-ink); }
+  .sm2 :global(.rv-why) { font-size: 14px; color: #8A5300; background: #FFF4DE; border-radius: 8px; padding: 6px 10px; }
+  :global(body.admin-dark) .sm2 :global(.rv-why) { background: #33270F; color: #FFD58A; }
+  .sm2 :global(.rv-act) { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; }
+  .sm2 :global(.rv-act button) { min-height: 44px; }
+  .sm2 :global(.mg) { border-top: 1px solid var(--a-line); padding: 10px 0; font-size: 14px; }
+  .sm2 :global(.mg pre) { white-space: pre-wrap; word-break: break-word; font: inherit; margin: 6px 0; padding: 8px 10px; background: var(--a-soft); border-radius: 8px; color: var(--a-ink); max-height: 180px; overflow: auto; }
+  .sm2 :global(.chip) { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--a-soft); color: var(--a-ink); }
+  .sm2 :global(.chip.read) { background: #E8F7EE; color: #17643A; } .sm2 :global(.chip.needs_review) { background: #FFF4DE; color: #8A5300; }
+  @media (max-width: 560px) { .sm2 :global(.rv-act) { grid-template-columns: 1fr 1fr; } .sm2 :global(.rv-act select) { grid-column: 1 / -1; } }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const when = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const ST = { LIVE: 'Live', HALF_TIME: 'Half-time', FULL_TIME: 'Full time', POSTPONED: 'Postponed', ABANDONED: 'Abandoned' };
+  const CH = { EMAIL: 'Email', WHATSAPP: 'WhatsApp', PASTE: 'Pasted' };
+  let data = null, msgT;
+  function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'sm2-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 6000); }
+  async function api(body) {
+    const r = await fetch('/api/admin/scores/messages', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/scores/messages/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  const fxOptions = sel => '<option value="">Choose the match…</option>' + data.fixtures.map(f => `<option value="${f.id}" ${f.id === sel ? 'selected' : ''}>MD${esc(f.matchday)} · ${esc(f.home)} v ${esc(f.away)} · ${esc(when(f.kickoff_at))}</option>`).join('');
+  function draw() {
+    const from = $('from'), keep = from.value;
+    from.innerHTML = data.submitters.map(s => `<option value="submitter:${s.id}">${esc(s.club)} (${esc(s.name)})</option>`).join('') + '<option value="commentary">Commentary partner</option><option value="other">Someone else</option>';
+    if (keep) from.value = keep;
+    $('otherBox').hidden = from.value !== 'other';
+    $('waitN').textContent = data.waiting.length || '';
+    $('waiting').innerHTML = data.waiting.length ? data.waiting.map(r => `<div class="rv" data-id="${r.id}">
+      <div class="rv-top"><span><b>${esc(r.source_label)}</b> · ${esc(when(r.received_at))}${r.confidence != null ? ` · sure: ${Math.round(r.confidence * 100)}%` : ''}</span></div>
+      <div class="rv-score">${esc(r.fx_home || r.home_name || '?')} ${esc(r.home_goals ?? '–')}–${esc(r.away_goals ?? '–')} ${esc(r.fx_away || r.away_name || '?')} <small>${esc(ST[r.status] || r.status)}${r.minute ? ` ${esc(r.minute)}'` : ''}</small></div>
+      <div class="rv-why">${esc(r.review_reason || 'Needs checking')}${r.confidence_notes ? ` · ${esc(r.confidence_notes)}` : ''}</div>
+      <div class="rv-act"><select data-fx aria-label="Match">${fxOptions(r.fixture_id)}</select><button type="button" class="btn-p" data-act="approve">Approve</button><button type="button" class="btn-o" data-act="reject">Reject</button></div>
+    </div>`).join('') : '<p class="muted">Nothing waiting. 👍</p>';
+    $('messages').innerHTML = data.messages.length ? data.messages.map(m => `<div class="mg" data-mid="${m.id}">
+      <div><span class="chip ${esc(m.status)}">${esc({ read: 'Read', needs_review: 'Needs checking', closed: 'Closed', new: 'New' }[m.status] || m.status)}</span> ${esc(CH[m.channel] || m.channel)} from <b>${esc(m.sender_name || m.sender || 'unknown')}</b> · ${esc(when(m.received_at))}${m.method ? ` · read by ${m.method === 'claude' ? 'Claude' : 'rules'}` : ''}${m.entered_by ? ` · pasted by ${esc(m.entered_by)}` : ''}</div>
+      ${m.subject ? `<div><b>${esc(m.subject)}</b></div>` : ''}<pre>${esc(m.body)}</pre>
+      <div>${m.result.map(r => r.error ? `⚠️ ${esc(r.home)} v ${esc(r.away)}: ${esc(r.error)}` : `${r.needsReview ? '🟡' : '✅'} ${esc(r.home)} ${esc(r.homeGoals ?? '–')}–${esc(r.awayGoals ?? '–')} ${esc(r.away)} (${esc(ST[r.status] || r.status)})`).join('<br />') || esc(m.error || '')}</div>
+      ${m.status === 'needs_review' && !m.result.length ? '<button type="button" class="btn-o sm" data-close>Mark as dealt with</button>' : ''}
+    </div>`).join('') : '<p class="muted">No messages yet.</p>';
+  }
+  async function load() { try { data = await api(); draw(); } catch (e) { $('waiting').textContent = e.message; } }
+  $('from').addEventListener('change', () => { $('otherBox').hidden = $('from').value !== 'other'; });
+  $('paste').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = e.target, btn = f.querySelector('button'); btn.disabled = true;
+    try {
+      const r = await api({ action: 'paste', text: f.text.value, from: f.from.value, fromName: f.fromName.value });
+      $('pasteResult').innerHTML = `<p>${r.reports.length ? r.reports.map(x => x.error ? `⚠️ ${esc(x.home)} v ${esc(x.away)}: ${esc(x.error)}` : `${x.needsReview ? '🟡 waiting for you' : '✅ counted'}: ${esc(x.home)} ${esc(x.homeGoals ?? '–')}–${esc(x.awayGoals ?? '–')} ${esc(x.away)}${x.reason ? ` (${esc(x.reason)})` : ''}`).join('<br />') : `No score found: ${esc(r.error || '')}`}</p>`;
+      f.text.value = ''; load();
+    } catch (err) { msg(err.message, false); } finally { btn.disabled = false; }
+  });
+  $('waiting').addEventListener('click', async e => {
+    const b = e.target.closest('[data-act]'); if (!b) return;
+    const row = b.closest('[data-id]'), id = Number(row.dataset.id);
+    let body;
+    if (b.dataset.act === 'approve') {
+      const fx = Number(row.querySelector('[data-fx]').value);
+      if (!fx) return msg('Choose the match first.', false);
+      body = { action: 'approve', reportId: id, fixtureId: fx };
+    } else {
+      const reason = prompt('Why reject it? (e.g. wrong match, old score)'); if (!reason) return;
+      body = { action: 'reject', reportId: id, reason };
+    }
+    b.disabled = true;
+    try { await api(body); msg(body.action === 'approve' ? 'Approved: it now counts as one source.' : 'Rejected.', true); load(); } catch (err) { msg(err.message, false); b.disabled = false; }
+  });
+  $('messages').addEventListener('click', async e => {
+    const b = e.target.closest('[data-close]'); if (!b) return;
+    try { await api({ action: 'close', messageId: Number(b.closest('[data-mid]').dataset.mid) }); load(); } catch (err) { msg(err.message, false); }
+  });
+  load();
+  setInterval(() => { if (!document.querySelector('.sm2 :focus')) load(); }, 60000);
+})();
+</script>

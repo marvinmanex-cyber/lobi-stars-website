@@ -13,9 +13,9 @@ import { superAdminEmails } from './superAdmins.js';
 // ANTHROPIC_BASE_URL only for the local tests (a stand-in server); never set on the live site.
 const API = env => String(env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1').replace(/\/+$/, '');
 const HEADERS = env => ({ 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' });
-export const FEATURES = ['fix', 'batch_fix', 'weekly_scan', 'ask_claude', 'checklist_draft', 'code_proposal', 'weekly_summary', 'test'];
+export const FEATURES = ['fix', 'batch_fix', 'weekly_scan', 'ask_claude', 'checklist_draft', 'code_proposal', 'weekly_summary', 'score_extract', 'test'];
 export const FEATURE_LABEL = { fix: 'Prepare a fix (button)', batch_fix: 'Prepare all (batch)', weekly_scan: 'Weekly scan (batch)', ask_claude: 'Ask Claude', checklist_draft: 'Checklist drafts',
-  code_proposal: 'Code proposals', weekly_summary: 'Weekly Analytics summary', test: 'Test connection' };
+  code_proposal: 'Code proposals', weekly_summary: 'Weekly Analytics summary', score_extract: 'Reading score messages', test: 'Test connection' };
 // Lowest cost by default: every feature uses the cheap model unless a Super Admin switches it.
 export const AI_DEFAULTS = {
   monthly_budget: '10', warn_at_percent: '80', auto_apply_enabled: '1', auto_apply_types: 'rerun_sync',

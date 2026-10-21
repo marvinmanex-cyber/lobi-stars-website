@@ -8,6 +8,25 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-21: Score verification, Phase 3 (score emails and WhatsApp messages)
+
+**What changed**
+- New **Matchday › Score Messages** (Website & Data Officer and Super Admins).
+  - Paste a WhatsApp message and say who sent it.
+  - Emails to **scores@lobistarsfc.com** arrive here automatically once that
+    address is switched on.
+- The website reads the scores itself for the usual formats (several matches
+  per message). Only unclear messages go to Claude (AI), which reads but never
+  decides. Every original message is kept.
+- Unknown senders, unrecognised teams and anything the website isn't sure
+  about wait under **Waiting for you** (bell notification and email to the
+  Data Officer): **Approve** (choose the match) or **Reject** (with a reason).
+- AI usage for this appears as "Reading score messages" in AI Settings.
+
+**Staff to do**
+- Switch on the scores@ address (HANDOVER-TODO A32). Optional: the commentary
+  partner's email address for `COMMENTARY_SCORE_EMAILS`.
+
 ## 2026-10-21: Score verification, Phase 2 (Other Games, club network, official results)
 
 **What changed**

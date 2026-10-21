@@ -73,6 +73,8 @@ these in git.
 | `AESON_STATUS_URL` | Lobi Stars FC Live: Aeson's status feed | Optional; default `https://www.aesonsports.com/api/radio/status`, or set it in Admin › Commentary. |
 | `COMMENTARY_BRAND_NAME` | Commentary player name (optional) | |
 | `ANALYTICS_SALT` | Visitor analytics (optional) | Falls back to `SESSION_SECRET`. |
+| `COMMENTARY_SCORE_EMAILS` | Score verification: email address(es) of the commentary partner whose score emails count as Commentary Assist | Optional, plain text, comma separated. |
+| `SCORES_EMAIL` | Score verification: the address score emails go to | Optional; default scores@lobistarsfc.com. |
 | `LICENSED_API_KEY` | Score verification: optional paid football data API (API-Football or Sportmonks) | **Secret.** Only after the club buys a plan; the source also needs switching on in League › Score Sources. |
 | `GITHUB_TOKEN` | AI Fix: applying page fixes, news drafts, checklist drafts, code proposals | **Secret.** Fine-grained, this repository only, Contents: Read and write (+ Pull requests: Read and write for automatic draft pull requests). Set 21 Oct 2026 (A29). |
 | `GITHUB_REPO`, `GITHUB_BRANCH` | AI Fix (optional) | Defaults `marvinmanex-cyber/lobi-stars-website` and `main`. |
@@ -848,6 +850,8 @@ Multi-source results for every conference match; built in phases. Phase 1: `func
 - Permission `matchday.scores`: Matchday Admin (Website & Data Officer) and Super Admins only.
 - Legal rule in code: `assertAdapterMayRun` / `assertAllowedFetch` refuse any automatic source without "licence / permission confirmed" + a note, and refuse prohibited hosts (Soccerway, Sofascore, Flashscore…) unless that is set.
 - No new required secrets. Optional later: `LICENSED_API_KEY`.
+- Phase 2: `scores/matchday.js` (Other Games, official/verified decisions in `score_decisions`), `scores/submitters.js` + public `POST /api/scores/submit` (token or PIN, hashed; Turnstile; rate limits) and page `/scores/submit/`.
+- Phase 3: `scores/extract.js` reads messages (rules first, Claude feature `score_extract` only if needed; raw text kept in `score_messages`). Emails: `/api/inbox/inbound` sends anything addressed to `SCORES_EMAIL` (default scores@lobistarsfc.com) or posted with `?box=scores` to the score reader instead of the Inbox. Set up: Cloudflare Email Routing rule **scores@ → the media-mail Worker** (it already posts the `to` address; no redeploy). Optional `COMMENTARY_SCORE_EMAILS` (comma list): emails from these count as Commentary Assist.
 
 ## Site (Astro + Cloudflare Pages)
 

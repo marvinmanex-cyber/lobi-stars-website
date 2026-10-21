@@ -6,6 +6,7 @@ import { syncEnquiries, maybeDailySummary } from '../_lib/inbox.js';
 import { ensureAnalyticsSchema } from '../_lib/analytics.js';
 import { sqlTs, isoTs } from '../_lib/reportRange.js';
 import { healthSummary } from '../_lib/uptime.js';
+import { scoreBellItems } from '../_lib/scores/bell.js';
 
 // GET /api/admin/notifications -- the admin bell: unread / overdue Inbox messages,
 // Predict & Win prizes not yet paid, commentary stream errors today, and
@@ -46,6 +47,8 @@ export async function onRequestGet({ request, env, waitUntil }) {
     const h = await healthSummary(db);
     for (const i of h.open) items.push({ icon: '🚨', title: `Website problem: ${i.label}`, sub: `${i.error || 'Not responding'} since ${new Date(i.started_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`, href: '/admin/health/' });
   }
+  // Score verification: things waiting for the Website & Data Officer.
+  if (can(admin, 'matchday.scores')) items.push(...await scoreBellItems(env).catch(err => { console.error('[bell] scores', err); return []; }));
   // Security alerts from the last day (Super Admins).
   if (can(admin, 'staff.manage')) {
     for (const a of (await recentAlerts(db).catch(() => [])).slice(0, 5)) items.unshift({ icon: '🛡️', title: a.title, sub: `${new Date(a.ts).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${String(a.detail || '').slice(0, 90)}`, href: '/admin/activity/' });

@@ -77,7 +77,7 @@ export async function matchdayView(env, { round = null, now = Date.now() } = {})
       leagueStatus: f.status, leagueScore: f.home_goals === null ? null : `${f.home_goals}-${f.away_goals}`,
       agreement: ag.state, confirmed,
       reports: rs.slice(0, 30).map(r => ({ id: r.id, source: SOURCE_TYPES[r.source_type]?.label || r.source_type, type: r.source_type, who: r.source_label || '', home_goals: r.home_goals, away_goals: r.away_goals,
-        status: r.status, minute: r.minute, at: r.received_at, review: !!r.needs_review, reason: r.review_reason, latest: latest.some(l => l.id === r.id), independentAs: independenceKey(r) })),
+        status: r.status, minute: r.minute, at: r.received_at, review: r.needs_review === 1, reason: r.review_reason, latest: latest.some(l => l.id === r.id), independentAs: independenceKey(r) })),
       decisions: decisions.filter(d => d.fixture_id === f.id).slice(0, 10),
     };
   });
