@@ -17,6 +17,7 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
     </header>
     <p class="mtp-msg" id="msg" role="status" aria-live="polite" hidden></p>
     <p class="mtp-lede">Every new match checklist is copied from this list. Changes apply to checklists made from now on; checklists that already exist keep their tasks.</p>
+    <div class="mtp-row mtp-tpl" id="tplBar"></div>
     <div class="mtp-row"><button type="button" class="btn-p" id="addBtn">+ Add a task</button></div>
     <div id="list"><p class="muted">Loading…</p></div>
   </div>
@@ -60,6 +61,8 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
   .mtp-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
   .mtp-msg.ok { background: #E8F7EE; color: #17643A; } .mtp-msg.err { background: #FDECEC; color: #A3161B; }
   .mtp-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .mtp :global(.mtp-tpl label) { display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 700; color: var(--a-muted); }
+  .mtp :global(.mtp-tpl select) { min-height: 40px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 14px; }
   .mtp-row.end { justify-content: flex-end; margin: 0; }
   .mtp :global(.mtp-card) { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px 18px; margin-bottom: 16px; }
   .mtp :global(.mtp-card h2) { margin: 0 0 10px; font: 700 18px/1.2 'Barlow', sans-serif; color: var(--a-ink); }
@@ -99,8 +102,9 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
   const PHASE = { before: 'Before the match', during: 'During the match', after: 'After the match' };
   let data = null, editing = null, msgT;
   function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'mtp-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 6000); }
+  let templateId = Number(new URLSearchParams(location.search).get('template')) || null;
   async function api(body) {
-    const r = await fetch('/api/admin/match-checklist/templates', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    const r = await fetch('/api/admin/match-checklist/templates' + (body ? '' : templateId ? `?template=${templateId}` : ''), body ? { method: 'POST', headers: H, body: JSON.stringify({ templateId, ...body }) } : { headers: H, cache: 'no-store' });
     if (r.status === 401) { location.href = '/admin/login/?next=/admin/match-checklist/templates/'; throw new Error('Please sign in again.'); }
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(d.error || 'Request failed');
@@ -115,7 +119,18 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
   }
   const targetOf = t => t.link_type === 'internal' ? (data.targets.find(x => x.route === t.link_route) || null) : null;
 
+  // Which template: the shared one, or separate home / away ones.
+  const VENUE = { both: 'All matches (shared)', home: 'Home matches', away: 'Away matches' };
+  function drawTemplates() {
+    templateId = data.template?.id || null;
+    const have = new Set(data.templates.map(t => t.venue_type));
+    $('tplBar').innerHTML = `<label>Template<select id="tplPick">${data.templates.map(t => `<option value="${t.id}" ${t.id === templateId ? 'selected' : ''}>${esc(VENUE[t.venue_type] || t.name)}</option>`).join('')}</select></label>
+      ${['home', 'away'].filter(v => !have.has(v)).map(v => `<button type="button" class="btn-o sm" data-variant="${v}">+ Separate ${v} template</button>`).join('')}
+      ${data.template && data.template.venue_type !== 'both' ? '<button type="button" class="btn-o sm" id="tplRemove">Remove this template</button>' : ''}
+      <span class="muted">${data.template?.venue_type === 'both' ? (have.has('home') || have.has('away') ? 'Used for matches without their own template.' : 'Used for every match. Tasks marked "Home only" / "Away only" are skipped for the other kind.') : `Used for ${esc(data.template?.venue_type)} matches from now on.`}</span>`;
+  }
   function draw() {
+    drawTemplates();
     $('list').innerHTML = ['before', 'during', 'after'].map(ph => {
       const list = data.tasks.filter(t => t.phase === ph);
       return `<section class="mtp-card" aria-labelledby="h-${ph}"><h2 id="h-${ph}">${PHASE[ph]} (${list.length})</h2>${list.map((t, i) => {
@@ -162,6 +177,19 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
     };
   }
   $('addBtn').addEventListener('click', () => open(null));
+  $('tplBar').addEventListener('change', e => { if (e.target.id !== 'tplPick') return; templateId = Number(e.target.value); history.replaceState({}, '', `?template=${templateId}`); load(); });
+  $('tplBar').addEventListener('click', async e => {
+    const v = e.target.closest('[data-variant]');
+    if (v) {
+      if (!confirm(`Make a separate template for ${v.dataset.variant} matches? It starts as a copy of the shared one (only tasks for ${v.dataset.variant} matches). Existing checklists don't change.`)) return;
+      try { const d = await api({ action: 'create_variant', venue: v.dataset.variant }); templateId = d.id; history.replaceState({}, '', `?template=${d.id}`); msg(`Template made (${d.copied} tasks copied).`, true); load(); } catch (err) { msg(err.message, false); }
+      return;
+    }
+    if (e.target.id === 'tplRemove') {
+      if (!confirm('Remove this template? Those matches use the shared template again. Existing checklists don\'t change.')) return;
+      try { await api({ action: 'delete_template' }); templateId = null; history.replaceState({}, '', location.pathname); msg('Template removed.', true); load(); } catch (err) { msg(err.message, false); }
+    }
+  });
   $('cancel').addEventListener('click', () => $('dlg').close());
   $('linkPick').addEventListener('change', e => { $('extWrap').hidden = e.target.value !== 'external'; $('testOut').textContent = ''; });
   $('testBtn').addEventListener('click', async () => {

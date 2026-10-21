@@ -1,9 +1,10 @@
 import { aiGuard, json } from '../../_lib/aiApi.js';
-import { callClaude, getAiSettings, cleanText } from '../../_lib/claude.js';
+import { callClaude, getAiSettings, cleanText, scrubPersonal } from '../../_lib/claude.js';
 import { currentInsights } from '../../_lib/analyticsInsights.js';
 
 // POST /api/admin/ai/ask { messages: [{ role, content }] } -- "Ask Claude" on the AI Fix page.
-// Only the last 6 messages are sent, with the current findings (totals only, no personal data).
+// Only the last 6 messages are sent, with the current findings (totals only); emails and
+// phone numbers typed in are removed first. Read-only: Claude has no tools and changes nothing.
 export async function onRequestPost({ request, env }) {
   const { admin, denied } = await aiGuard(request, env, { write: true });
   if (denied) return denied;
@@ -11,7 +12,7 @@ export async function onRequestPost({ request, env }) {
   if (s.ask_claude_enabled !== '1') return json({ error: 'Ask Claude is switched off in AI Settings.' }, 403);
   const b = await request.json().catch(() => ({}));
   const msgs = (Array.isArray(b.messages) ? b.messages : []).slice(-6)
-    .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: cleanText(m.content, { multiline: true }).slice(0, 1500) }))
+    .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: scrubPersonal(cleanText(m.content, { multiline: true })).slice(0, 1500) }))
     .filter(m => m.content);
   while (msgs.length && msgs[0].role !== 'user') msgs.shift();
   if (!msgs.length || msgs[msgs.length - 1].role !== 'user') return json({ error: 'Type a question first.' }, 400);

@@ -135,7 +135,8 @@ CREATE TABLE IF NOT EXISTS match_centre (
 --   ALTER TABLE members ADD COLUMN marketing_opt_in INTEGER NOT NULL DEFAULT 0;
 --   ALTER TABLE members ADD COLUMN age_confirmed_at TEXT;
 --   ALTER TABLE members ADD COLUMN is_staff INTEGER NOT NULL DEFAULT 0;        -- club staff/players can't win prizes
-CREATE UNIQUE INDEX IF NOT EXISTS idx_members_phone_e164 ON members(phone_e164) WHERE phone_e164 IS NOT NULL;
+--   CREATE UNIQUE INDEX IF NOT EXISTS idx_members_phone_e164 ON members(phone_e164) WHERE phone_e164 IS NOT NULL;
+--   (made by ensureFanSchema right after it adds phone_e164; here it would fail on a new, empty database)
 
 CREATE TABLE IF NOT EXISTS auth_tokens (
   token_hash TEXT PRIMARY KEY,     -- SHA-256 of the one-time link token

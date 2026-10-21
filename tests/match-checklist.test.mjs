@@ -193,3 +193,38 @@ test('signing in from an emailed task link comes back to the task; no-access pag
   assert.doesNotMatch(plain, /Back to checklist/);
   assert.doesNotMatch(await (await as(bo, '/admin/tickets/?from=checklist&task=1%22%3E%3Cscript%3E')).text(), /<script>/, 'task id must be a number');
 });
+
+test('separate home template: home matches use it, others the shared one; removing it goes back', async () => {
+  const tpl = p => fetch(`${BASE}/api/admin/match-checklist/templates${p || ''}`, { headers: ADMIN }).then(r => r.json());
+  const post = b => fetch(`${BASE}/api/admin/match-checklist/templates`, { method: 'POST', headers: ADMIN, body: JSON.stringify(b) }).then(async r => ({ status: r.status, data: await r.json() }));
+  const before = await tpl();
+  for (const t of before.templates.filter(x => x.venue_type === 'home')) await post({ action: 'delete_template', templateId: t.id });
+  const made = await post({ action: 'create_variant', venue: 'home' });
+  assert.equal(made.status, 200, JSON.stringify(made.data));
+  assert.ok(made.data.copied > 20);
+  assert.equal((await post({ action: 'create_variant', venue: 'home' })).status, 409, 'only one home template');
+  const home = await tpl(`?template=${made.data.id}`);
+  assert.equal(home.template.venue_type, 'home');
+  assert.ok(!home.tasks.some(t => t.applies_to === 'away'), 'away-only tasks are not copied');
+  const kit = home.tasks.find(t => /^Kit check/.test(t.title));
+  assert.equal((await post({ action: 'save', templateId: made.data.id, task: { ...kit, title: 'HOME TEMPLATE kit check' } })).status, 200);
+  const m = await newMatch(4);
+  const c = await checklistFor(m.id);
+  assert.ok(c.tasks.some(t => t.title === 'HOME TEMPLATE kit check'), 'the new home match used the home template');
+  assert.equal((await post({ action: 'delete_template', templateId: made.data.id })).status, 200);
+  assert.ok(!(await tpl()).templates.some(t => t.venue_type === 'home'));
+  assert.equal((await post({ action: 'delete_template', templateId: (await tpl()).template.id })).status, 400, 'the shared template stays');
+});
+
+test('the "Checklist task" bar is on every admin page, hidden unless arriving from the checklist', async () => {
+  for (const p of ['/admin/tickets/', '/admin/match-centre/', '/admin/league/fixtures/']) {
+    const html = await (await fetch(`${BASE}${p}`, { headers: { 'x-admin-code': ADMIN['x-admin-code'] }, redirect: 'manual' })).text().catch(() => '');
+    if (!html.includes('id="mcBanner"')) continue; // pages behind the login cookie are checked in the browser
+    assert.match(html, /id="mcBanner"[^>]*hidden/, `${p}: hidden by default`);
+  }
+  const { readFileSync } = await import('node:fs');
+  const src = readFileSync(new URL('../src/components/admin/ChecklistBanner.astro', import.meta.url), 'utf8');
+  assert.match(src, /q\.get\('from'\) === 'checklist'/, 'only shown with ?from=checklist');
+  assert.ok(src.includes(String.raw`/^\d{1,9}$/.test(id)`), 'the task must be a number');
+  assert.match(readFileSync(new URL('../src/components/admin/AdminNav.astro', import.meta.url), 'utf8'), /<ChecklistBanner \/>/, 'part of the shared admin layout');
+});

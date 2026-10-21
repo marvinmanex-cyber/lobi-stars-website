@@ -52,12 +52,15 @@ export async function onRequestGet({ request, env }) {
   const { superAdmin, denied } = await guard(request, env);
   if (denied) return denied;
   if (!superAdmin) return json({ error: SUPER_ONLY }, 403);
-  const tpl = await env.DB.prepare(`SELECT * FROM checklist_templates WHERE is_active = 1 ORDER BY id LIMIT 1`).first();
+  const templates = (await env.DB.prepare(`SELECT * FROM checklist_templates WHERE is_active = 1 ORDER BY id`).all()).results;
+  const want = Number(new URL(request.url).searchParams.get('template'));
+  const tpl = templates.find(t => t.id === want) || templates.find(t => t.venue_type === 'both') || templates[0] || null;
   const { results: tasks } = tpl ? await env.DB.prepare(`SELECT * FROM checklist_template_tasks WHERE template_id = ? ORDER BY CASE phase WHEN 'before' THEN 0 WHEN 'during' THEN 1 ELSE 2 END, sort_order, id`).bind(tpl.id).all() : { results: [] };
   for (const t of tasks) { t.dueLabel = offsetLabel(t.due_offset_minutes); t.remindLabel = t.remind_from_offset_minutes === null ? null : offsetLabel(t.remind_from_offset_minutes); }
   const next = await nextMatchContext(env);
-  return json({ template: tpl, tasks, targets: LINK_TARGETS, placeholders: PLACEHOLDERS, nextMatch: next ? `${next.match.home} vs ${next.match.away}` : null });
+  return json({ template: tpl, templates, tasks, targets: LINK_TARGETS, placeholders: PLACEHOLDERS, nextMatch: next ? `${next.match.home} vs ${next.match.away}` : null });
 }
+const VENUE_NAME = { home: 'Home matches', away: 'Away matches', both: 'All matches (shared)' };
 
 export async function onRequestPost({ request, env }) {
   const { admin, superAdmin, denied } = await guard(request, env, { write: true });
@@ -65,9 +68,33 @@ export async function onRequestPost({ request, env }) {
   if (!superAdmin) return json({ error: SUPER_ONLY }, 403);
   const db = env.DB;
   const b = await request.json().catch(() => ({}));
-  const tpl = await db.prepare(`SELECT * FROM checklist_templates WHERE is_active = 1 ORDER BY id LIMIT 1`).first();
+  const templates = (await db.prepare(`SELECT * FROM checklist_templates WHERE is_active = 1 ORDER BY id`).all()).results;
+  const tpl = templates.find(t => t.id === Number(b.templateId)) || templates.find(t => t.venue_type === 'both') || templates[0];
   if (!tpl) return json({ error: 'No active template.' }, 409);
   const now = new Date().toISOString();
+
+  // Separate home / away template: a copy of the shared one, used for those matches from now on.
+  if (b.action === 'create_variant') {
+    const venue = b.venue === 'home' ? 'home' : b.venue === 'away' ? 'away' : null;
+    if (!venue) return json({ error: 'Choose home or away.' }, 400);
+    if (templates.some(t => t.venue_type === venue)) return json({ error: `There is already a template for ${venue} matches.` }, 409);
+    const base = templates.find(t => t.venue_type === 'both') || tpl;
+    const made = await db.prepare(`INSERT INTO checklist_templates (name, venue_type, is_active, created_at, updated_at) VALUES (?, ?, 1, ?, ?) RETURNING id`).bind(VENUE_NAME[venue], venue, now, now).first();
+    const { results: src } = await db.prepare(`SELECT * FROM checklist_template_tasks WHERE template_id = ? AND applies_to IN ('both', ?)`).bind(base.id, venue).all();
+    const cols = ['title', 'description', 'phase', 'due_offset_minutes', 'remind_from_offset_minutes', 'default_owner_role_or_unit', 'priority', 'applies_to', 'sort_order', 'link_type', 'link_route', 'link_params', 'link_url', 'link_label'];
+    for (let i = 0; i < src.length; i += 40) {
+      await db.batch(src.slice(i, i + 40).map(t => db.prepare(`INSERT INTO checklist_template_tasks (template_id, ${cols.join(', ')}, created_at, updated_at) VALUES (?, ${cols.map(() => '?').join(', ')}, ?, ?)`)
+        .bind(made.id, ...cols.map(c => t[c] ?? null), now, now)));
+    }
+    await logAdminAction(db, admin, 'checklist_template', `Made a separate template for ${venue} matches (${src.length} tasks copied)`);
+    return json({ ok: true, id: made.id, copied: src.length });
+  }
+  if (b.action === 'delete_template') {
+    if (tpl.venue_type === 'both') return json({ error: 'The shared template can\'t be removed.' }, 400);
+    await db.prepare(`UPDATE checklist_templates SET is_active = 0, updated_at = ? WHERE id = ?`).bind(now, tpl.id).run();
+    await logAdminAction(db, admin, 'checklist_template', `Removed the ${tpl.venue_type} template (those matches use the shared one again)`);
+    return json({ ok: true });
+  }
 
   if (b.action === 'test_link') {
     const v = cleanTask({ title: 'x', phase: 'before', due_offset_minutes: 0, ...b.task });

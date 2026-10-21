@@ -84,6 +84,8 @@ export const PERMISSIONS = [
     ['approvals.approve', 'Approve or reject sensitive actions'],
     ['website.health', 'Website Health (only the three Super Admins)'],
     ['ai.fix', 'AI Fix and AI Settings: Claude prepares fixes, a Super Admin approves (only the three Super Admins)'],
+    ['ai.prepare', 'AI Fix: ask Claude to prepare a fix, see Fix history and results (applying stays with the Super Admins)'],
+    ['ai.draft', 'Match Checklist: "Draft with Claude" on writing tasks (saved as Draft only)'],
     ['helpers.create', 'Create matchday helper accounts (gate and kitchen)'],
   ] },
 ];
@@ -169,7 +171,12 @@ export function rolePermissions(id) {
   if (!def) return [];
   if (def.locked) return ALL_PERMISSIONS;
   const base = saved[id] || def.permissions;
-  return def.helper ? base : [...new Set([...base, ...EVERY_STAFF_ROLE])];
+  if (def.helper) return base;
+  // AI help follows the reports and writing a role already has.
+  const derived = [];
+  if (base.includes('analytics.view_all')) derived.push('ai.prepare', 'ai.draft');
+  if (base.some(p => p === 'content.news.edit' || p === 'content.team_news.edit')) derived.push('ai.draft');
+  return [...new Set([...base, ...EVERY_STAFF_ROLE, ...derived])];
 }
 export const roleChanged = id => !!saved[id] && !ROLE_DEFAULTS[id]?.locked;
 
@@ -303,7 +310,8 @@ const RULES = [
   [/^\/admin\/analytics(\/|$)/, 'analytics.view_all|analytics.broadcast|analytics.partners'],
   [/^\/admin\/activity(\/|$)/, 'logs.view'],
   [/^\/admin\/health(\/|$)/, 'website.health'],
-  [/^\/admin\/ai(\/|$)/, 'ai.fix'],
+  [/^\/admin\/ai\/settings(\/|$)/, 'ai.fix'],
+  [/^\/admin\/ai(\/|$)/, 'ai.prepare|ai.fix'],
   [/^\/admin\/(staff|security|backup)(\/|$)/, 'staff.manage'],
   [/^\/admin\/approvals(\/|$)/, 'approvals.approve'],
   [/^\/admin\/helpers(\/|$)/, 'helpers.create'],
@@ -357,7 +365,8 @@ const RULES = [
   [/^\/api\/admin\/export-log(\/|$)/, 'logs.view|fans.export'],
   [/^\/api\/admin\/activity(\/|$)/, 'logs.view'],
   [/^\/api\/admin\/health(\/|$)/, 'website.health'],
-  [/^\/api\/admin\/ai(\/|$)/, 'ai.fix'],
+  [/^\/api\/admin\/ai\/(settings|code)(\/|$)/, 'ai.fix'],
+  [/^\/api\/admin\/ai(\/|$)/, 'ai.prepare|ai.fix'],
   [/^\/api\/admin\/(staff|roles|security|backup|access-review|role-emails)(\/|$)/, 'staff.manage'],
   [/^\/api\/admin\/approvals(\/|$)/, 'approvals.approve'],
   [/^\/api\/admin\/helpers(\/|$)/, 'helpers.create'],

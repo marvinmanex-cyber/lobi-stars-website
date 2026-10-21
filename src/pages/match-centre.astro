@@ -113,7 +113,7 @@ import '../styles/fixture-card.css';
   @media (max-width: 640px) {
     .mc :global(.mc-lineups) { grid-template-columns: 1fr; }
     .mc :global(.mc-board) { gap: 8px; }
-    .mc :global(.mc-tabs) { top: var(--header-h); }
+    .mc :global(.mc-tabs) { top: var(--header-vis, var(--header-h)); transition: top .25s ease; }
   }
 </style>
 

@@ -17,6 +17,47 @@ local stand-in for Claude and GitHub; the website's equivalent of
 
 ---
 
+## UPDATE (21 October 2026, later the same day): the open items are now built
+
+After this audit you asked for everything to be built. Every item that was
+⚠️ or ❌ has now been built and tested, apart from one ❓ that can only be
+checked on the live site (A16).
+
+| ID | Was | Now | Evidence |
+|---|---|---|---|
+| A3 | ⚠️ one template only | ✅ optional separate **home** and **away** templates (Templates › "+ Separate home template"); a match uses its own venue's template, otherwise the shared one | `pickTemplate` in `matchChecklist.js`; `create_variant` / `delete_template` in `templates.js`; server test "separate home template…" |
+| B7 | ⚠️ no bar in the content editor | ⚠️ unchanged (the content editor is a separate app); those tasks are updated from the checklist | Documented in STAFF-GUIDE.md section 35 |
+| B11 | ⚠️ only on digest days | ✅ broken links are emailed to the Super Admins every day, even when no reminder goes out | `checklistReminders.js` (no-digest branch) |
+| B12 | ⚠️ banner not in an automated test | ✅ test checks the bar is hidden by default, only shown with `?from=checklist` and a numeric task, and part of the shared layout | `tests/match-checklist.test.mjs` |
+| C3 | ⚠️ per feature only | ✅ model per **task type**; the advanced model can only be chosen for long writing (news and checklist drafts) and code proposals; cheap everywhere else | `modelFor`, AI Settings; server test "settings are checked…" |
+| C5 | ⚠️ staff text sent as typed | ✅ emails and phone or card numbers are removed from everything staff type (fixes, drafts, notes, Ask Claude) | `scrubPersonal`; unit and server tests |
+| C8 | ⚠️ warning email untested | ✅ the warning email is recorded in the fix log (mail log) even without email; tested at 85% (once a month) and the stop at 100% | `aiEmail`, `budgetCheck`; `tests/ai-fix-rules.unit.test.mjs` |
+| C11 | ⚠️ verify/undo partial | ✅ every fix type has gather, prompt, schema, input, preview, apply, backup/undo where it changes something, and the daily verify | `FIX_ACTIONS`, `verifyApplied` |
+| C12 | ⚠️ one link only | ✅ per-recommendation buttons on Analytics: Click to fix (Super Admins), Prepare fix (Head of Media, CRM Manager), Fix with my input; none for manual items | `analytics.astro` `aiButtons()`; permission `ai.prepare` |
+| C13 | ⚠️ no Edit / Try again | ✅ before/after with new words highlighted, ✎ Edit (checked again), Try again with a note (always a new call), Cancel | `editFix`, `prepareFix({ note })`; server test |
+| C14 | ⚠️ no "ask" rule | ✅ fact-based drafts may answer `{"needs": …}`; the question is shown ("Claude asks: …") | `NEEDS_HINT`, `allowNeeds`; tests |
+| C15 | ⚠️ no "field empty" check | ✅ `canAutoApply` needs: on + low risk + allowed + **nothing to overwrite** + valid + no facts; tested, including "low risk but the field has content → approval" | `canAutoApply`; unit test |
+| C16 | ⚠️ no facts banner | ✅ yellow "check the facts" banner on every fact text; fact texts can never auto-apply | AI Fix page, checklist drafts |
+| C18 | ⚠️ partial | ✅ backup before apply; status, log and results saved in one batch; undo restores the exact value and **asks first if edited since**; verify sets verified **or failed** by re-running the Analytics rule | `applyFix`, `undoFix`, `verifyApplied`; tests |
+| C19 | ❌ | ✅ `ai_fix_log` table and **Fix history** page with filters (what, fix type, who, dates, search) | `/admin/ai/history/` |
+| C20 | ⚠️ | ✅ grouped estimate with **cost shown and confirmed**, one batch, "ready" email, **Ready to apply** list with tick boxes | `planAll`, `prepareAll`, `runBatchPoll`, `applyMany`; server test |
+| C21 | ⚠️ | ✅ top 20 by batch, auto-apply, **summary email with spend**, once a week (claimed atomically); tested | `weeklyScan`; unit and server tests |
+| C22 | ❌ | ✅ figure saved on apply, re-measured at 14 and 30 days, **Fix results** page (better / worse / no change) | `aiMetrics.js`, `recheckResults`, `/admin/ai/results/` |
+| C23 | ❌ | ✅ **Draft with Claude** on 5 checklist writing tasks: match facts filled in, asks for missing facts, facts banner, saved as **Draft** only, task → submitted for review | `checklistDraft.js`, `tasks/[id]/draft.js`; server test |
+| C24 | ⚠️ no warning | ✅ "Claude can make mistakes" note; read-only (no tools; tested) | AI Fix page; server test |
+| C25 | ❌ | ✅ **code proposals** (Super Admins): one page file, checked edits, saved on an `ai-proposal/…` branch (never `main`), draft pull request when the token allows, download / email to a developer, "not live" label | `codeProposal.js`, `github.js`; server test |
+| C26 | ⚠️ | ✅ `CLAUDE_MOCK=true` (no AI, no cost, logged) and `scripts/ai-dry-run.mjs` / `?action=dry_run` | unit and server tests |
+| C27 | ⚠️ | ✅ tests added for verify, weekly duplicates, the auto-apply rule, edit checks, personal data, model choice, code edits, results | `tests/ai-fix-rules.unit.test.mjs` (10), `tests/ai-fix.test.mjs` (9) |
+| D2 | ⚠️ | ✅ the real fault was in `schema.sql` (an index on a column the code adds later). Fixed: `schema.sql` plus all 8 migrations now build a brand-new database cleanly (42 tables) | SQLite check |
+| D5 | ⚠️ | ✅ `.dev.vars.example` and the complete list in DEPLOYMENT.md now include every new variable | — |
+
+**Things you may still do** (optional):
+- add "Pull requests: Read and write" to the GitHub token, so code proposals
+  open a pull request by themselves (HANDOVER-TODO A31);
+- enter the model prices (A30).
+
+---
+
 ## 1. Summary
 
 The **Match Checklist** and the **"Go to task" links** are complete and

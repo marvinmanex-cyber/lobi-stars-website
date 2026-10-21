@@ -1,0 +1,50 @@
+---
+// Settings › AI Fix › Fix results: did each applied fix help? The figure the
+// recommendation was about, when the fix was applied and again after 14 and
+// 30 days (same 28-day figures as Analytics).
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import AiTabs from '../../../components/admin/AiTabs.astro';
+---
+<Layout title="Fix Results | Lobi Stars Admin" description="Did the AI fixes help?" noindex>
+  <div class="wrap air">
+    <AdminNav current="ai-fix" />
+    <header class="air-head">
+      <div><div class="stag">Settings</div><h1 class="stitle">Fix <span class="r">results</span></h1></div>
+      <AiTabs current="results" />
+    </header>
+    <p class="air-lede">Each applied fix is measured when it is applied and again after 14 and 30 days. Google figures move slowly, so give it the full 30 days before judging.</p>
+    <section class="air-card"><div id="list"><p class="muted">Loading…</p></div></section>
+  </div>
+</Layout>
+
+<style>
+  .air { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; }
+  .air-head { display: flex; justify-content: space-between; align-items: end; gap: 12px 24px; flex-wrap: wrap; margin-bottom: 10px; }
+  .air-lede { margin: 0 0 14px; color: var(--a-muted); font-size: 15px; max-width: 720px; }
+  .air-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 14px 16px; }
+  .air :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .air :global(th), .air :global(td) { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--a-line); vertical-align: top; overflow-wrap: anywhere; }
+  .air :global(.v) { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--a-soft); color: var(--a-muted); }
+  .air :global(.v.better) { background: #DCFCE7; color: #166534; } .air :global(.v.worse) { background: #FDECEC; color: #A3161B; }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const day = iso => iso ? new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' }) : '';
+  const val = m => m ? `${esc(m.value)}${esc(m.unit || '')}` : '<span class="muted">waiting</span>';
+  fetch('/api/admin/ai/results', { headers: H, cache: 'no-store' }).then(async r => {
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/ai/results/'; return; }
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    document.getElementById('list').innerHTML = d.results.length ? `<div class="scroll"><table><thead><tr><th>Fix</th><th>Measured</th><th>When applied</th><th>After 14 days</th><th>After 30 days</th><th>Result</th></tr></thead><tbody>${d.results.map(x => `<tr>
+      <td><b>${esc(x.title || x.recId)}</b><br><span class="muted">${esc(x.label)} · ${esc(day(x.appliedAt))}</span></td>
+      <td>${esc(x.before?.label || '–')}${x.before?.better === 'down' ? ' <span class="muted">(lower is better)</span>' : ''}</td>
+      <td>${val(x.before)}</td><td>${val(x.after14)}</td><td>${val(x.after30)}</td>
+      <td>${x.verdict ? `<span class="v ${esc(x.verdict.replace(' ', '-'))}">${esc(x.verdict)}</span>` : '<span class="muted">not yet</span>'}</td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="muted">No applied fixes yet. When a fix is applied, its figure is recorded here and checked again after 14 and 30 days.</p>';
+  }).catch(e => { document.getElementById('list').textContent = e.message; });
+})();
+</script>

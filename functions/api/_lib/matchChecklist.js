@@ -342,6 +342,12 @@ const isClubMatch = (e, club) => {
   return e.is_home === 1 || e.is_home === 0 || re.test(e.home_team || '') || re.test(e.away_team || '');
 };
 
+/** The template for a match: its own venue's (home/away) if there is one, otherwise the shared one ("both"). */
+export function pickTemplate(templates, isHome) {
+  const venue = isHome ? 'home' : 'away';
+  return templates.find(t => t.venue_type === venue) || templates.find(t => t.venue_type === 'both') || null;
+}
+
 /**
  * Keeps checklists in step with the fixtures (called by the daily job, the
  * timer, fixture saves and the checklist page). Generates checklists for the
@@ -367,13 +373,17 @@ export async function syncChecklists(env, { now = Date.now() } = {}) {
   // 1. Generate: the next upcoming match, and every match within 14 days.
   const upcoming = clubEvents.filter(e => Date.parse(e.event_date) > now && !['cancelled'].includes(e.match_status));
   const want = upcoming.filter((e, i) => i === 0 || Date.parse(e.event_date) - now <= GENERATE_WITHIN_DAYS * DAY_MS);
-  const template = await db.prepare(`SELECT * FROM checklist_templates WHERE is_active = 1 ORDER BY id LIMIT 1`).first();
-  if (template) {
-    const { results: tTasks } = await db.prepare(`SELECT * FROM checklist_template_tasks WHERE template_id = ? ORDER BY sort_order, id`).bind(template.id).all();
+  // A home (or away) match uses the home (or away) template when there is one, otherwise the shared one.
+  const { results: templates } = await db.prepare(`SELECT * FROM checklist_templates WHERE is_active = 1 ORDER BY id`).all();
+  const taskCache = new Map();
+  const tasksOf = async id => { if (!taskCache.has(id)) taskCache.set(id, (await db.prepare(`SELECT * FROM checklist_template_tasks WHERE template_id = ? ORDER BY sort_order, id`).bind(id).all()).results); return taskCache.get(id); };
+  if (templates.length) {
     for (const e of want) {
       if (listed.has(e.id)) continue;
       const home = isHomeGame(e);
-      if (template.venue_type !== 'both' && template.venue_type !== (home ? 'home' : 'away')) continue;
+      const template = pickTemplate(templates, home);
+      if (!template) continue;
+      const tTasks = await tasksOf(template.id);
       const created = await db.prepare(`INSERT INTO match_checklists (match_id, template_id, status, kickoff_at, is_home, created_at, updated_at) VALUES (?, ?, 'active', ?, ?, ?, ?)
         ON CONFLICT (match_id) DO NOTHING RETURNING id`).bind(e.id, template.id, e.event_date, home ? 1 : 0, nowIso, nowIso).first();
       if (!created) continue; // made by another request at the same moment

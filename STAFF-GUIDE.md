@@ -2773,72 +2773,162 @@ moves to the **Archive** by itself. A Super Admin can also close it early
 with **Close checklist** (with a short note).
 
 **Super Admins: Templates and Reminder settings**
-- **Templates**: the master list every new checklist is copied from. Add,
-  edit, remove or move tasks up and down; set when each is due (for example
-  *2 days before kick-off*), its default owner, whether it is critical, and
-  whether it applies to home matches, away matches or both. **Task link**
-  chooses the admin page the *Go to task* button opens, or an external
-  address (must start with https://). **Test link** shows the link with the
-  next match's details. Changes only affect checklists made afterwards.
-- **Reminder settings**: the time of the daily email, how many days before
-  and after the match to remind, who gets it (everyone, or only task owners
-  plus Super Admins), extra addresses, and **Send a test reminder to me**.
-  The page also shows a preview of today's email.
+- **Templates**: the master list every new checklist is copied from.
+  - Add, edit, remove or move tasks up and down.
+  - For each task, set when it is due (for example *2 days before
+    kick-off*), its default owner, whether it is critical, and whether it
+    applies to home matches, away matches or both.
+  - **Task link** chooses the admin page the *Go to task* button opens, or an
+    external address (must start with https://).
+  - **Test link** shows the link with the next match's details.
+
+  Changes only affect checklists made afterwards.
+- **Separate home and away templates** (optional):
+  - On Templates, press **+ Separate home template** (or away). It starts as a
+    copy of the shared list and is used for those matches from then on; the
+    shared one is used for the rest.
+  - Choose which one you are editing in **Template**.
+  - **Remove this template** goes back to the shared one.
+- **Reminder settings**:
+  - the time of the daily email;
+  - how many days before and after the match to remind;
+  - who gets it (everyone, or only task owners plus Super Admins);
+  - extra addresses;
+  - **Send a test reminder to me**.
+
+  The page also shows a preview of today's email. If a task link stops
+  working, the Super Admins get a short "broken task links" email that day,
+  even when there is no reminder.
+
+**✍ Draft with Claude (writing tasks)**
+These five tasks have it:
+- *Match report published*
+- *Post-match press conference / interviews*
+- *Injury report*
+- *Social media countdown and preview posts*
+- *Thank-you post for fans and sponsors*
+
+To use it, open **Details** under the task:
+1. The match details are already filled in: teams, kick-off, score, goals and
+   cards from Live Match Control, and stats.
+2. Type anything else Claude should use (for interviews: the real quotes and
+   who said them), then press **Write the draft with Claude**.
+   - If something important is missing, Claude asks a question instead of
+     guessing.
+3. Check the facts and change any wording in the boxes.
+4. Save it:
+   - **Save as Draft in News** for news texts. They are saved as a Draft and
+     never published by themselves: add a photo and publish it in the content
+     editor.
+   - **Mark posts as used** for social posts (copy them first).
+   - **Try again** with a short note gives a different version.
+
+The task then moves to *Submitted for review* for a Super Admin to tick.
+
+Content editors, report roles and Super Admins can use it. Emails and phone
+numbers you type are removed before anything is sent.
 
 ---
 
-## 36. AI Fix and AI Settings (Super Admins, Settings › AI Fix)
+## 36. AI Fix (Settings › AI Fix)
 
 Claude (an AI) prepares fixes for the recommendations on **Admin ›
 Analytics**. **Nothing on the website changes until a Super Admin presses
-Apply**, and every change can be undone. Only the three Super Admins can open
-these pages.
+Apply**, and every change can be undone.
+
+**Who can use it**
+- **Super Admins**: everything (apply, edit, undo, Fix all, AI Settings, code
+  proposals).
+- **Head of Media and CRM Manager** (roles with all reports) can:
+  - open AI Fix;
+  - ask Claude to **prepare** a fix;
+  - use Ask Claude;
+  - see Fix history and Fix results.
+
+  A Super Admin then checks and applies.
+
+**On the Analytics page** each recommendation has a button:
+- **🤖 Click to fix** (Super Admins) or **Prepare fix** (others) when Claude
+  can prepare it;
+- **Fix with my input** when it needs a few words from you;
+- no button when only a person can do it (open **How to do it** for the steps).
 
 **The three groups on AI Fix**
 - **Claude can prepare these** (for example a better Google title and
-  description for a page few people click): press **Prepare fix with Claude**,
-  read the old and new wording, then press **Apply**. The page updates about
-  2 minutes later.
-- **Needs a few words from you first** (for example a news story using a
-  phrase people search for, social media posts, a newsletter sign-up line):
-  type the facts in the box and press **Write the draft with Claude**. Claude
-  only uses what you give it.
-  - A news story is saved as a **Draft** in News: check it, add a photo and
-    publish it in the content editor.
-  - Posts and sign-up lines are for you to **Copy** and use.
+  description for a page few people click). Press **Click to fix**: you see
+  the old wording crossed out and the new one with new words highlighted.
+  Then choose one of:
+  - **Apply** (the page updates about 2 minutes later);
+  - **✎ Edit** to change the wording first;
+  - **Try again with a note** (for example "shorter") for a different version;
+  - **Cancel**.
+- **Needs a few words from you first** (a news story using a phrase people
+  search for, social media posts, a newsletter sign-up line). Type the facts
+  and press **Write the draft with Claude**.
+  - If something is missing, Claude asks ("Claude asks: …"): add it and try
+    again.
+  - Texts with facts show a yellow **check the facts** note: names, numbers
+    and quotes must be right before you use them.
+  - A news story is saved as a **Draft** in News. Posts and sign-up lines are
+    for you to **Copy**.
 - **A person needs to do these** (payments, testing on a phone, Google
-  settings): follow the steps. Claude doesn't touch these.
+  settings): follow the steps. For layout problems a Super Admin can also ask
+  for a **code proposal** (see below).
 
-**Other buttons**
-- **Undo** puts things back as they were.
-- **Not now** hides a recommendation until you press **Show again**.
-- **Prepare all automatic fixes** sends them all to Claude at once, at half
-  price. The button shows how many there are; a blue line under it confirms
-  they were sent and says when results are expected (within 24 hours). When
-  it says **No automatic fixes to prepare right now**, the open
-  recommendations need a few words from you instead.
-- **Ask Claude** (at the bottom): ask a question about the website figures.
-  It only sees totals, never fans' details.
+**Fix all**
+1. The button shows how many automatic fixes there are.
+2. It first shows the fixes grouped by type, with the **estimated cost**.
+   Untick any you don't want.
+3. Press **Send to Claude**. It costs half price, and you get an email when the
+   fixes are ready (within 24 hours).
+4. In **Ready to apply**, tick the ones you have checked and press **Apply
+   selected** (or **Discard selected**).
 
-**Changing pages needs the GitHub connection** (handover A29). Until it is
-set up, you can prepare fixes and copy the text, but not press Apply on page
-changes.
+**Undo** puts things back exactly as they were. If someone changed the same
+thing since, it asks first.
 
-**AI Settings**
+**Fix history** (tab) lists everything AI Fix has done, with filters (what,
+fix type, who, dates, search):
+- every step of every fix (prepared, edited, applied, undone, verified,
+  failed);
+- checklist drafts and code proposals;
+- every AI email.
+
+**Fix results** (tab) shows each applied fix's figure (for example the Google
+click rate of that page) when it was applied and again after 14 and 30 days.
+Each is marked **better**, **worse** or **no change**.
+
+Each day the website also checks applied fixes:
+- **verified** when Analytics no longer flags the problem;
+- **failed** if the change never showed on the website, or the problem is
+  still there after 30 days.
+
+**Code proposals** (Super Admins, layout problems only)
+- Claude proposes a small change to one page's code.
+- It is saved on a **separate GitHub branch**, marked *AI proposal, not live*,
+  for a developer to review. It never changes the website by itself.
+- Use **Download** or **Email to a developer**.
+
+**Ask Claude** (at the bottom): questions about the website figures. It only
+sees totals, never fans' details, and can't change anything. Claude can make
+mistakes, so check important answers against Analytics.
+
+**AI Settings** (Super Admins)
 - **This month**: what the AI has cost so far against the monthly budget
   (default $10), and the cost of each feature.
-- **Test connection**: checks Claude answers (costs a tiny fraction of a cent).
-- **Monthly budget** and **Email the Super Admins at (%)**: at the warning
-  level you get one email. At 100% AI work stops until next month (a red bar
-  shows on every admin page) unless you raise the budget.
-- **Apply low-risk fixes automatically**: only fixes that can't change pages
-  (re-running the Google sync). Page changes always wait for you.
-- **Weekly scan**: day and time (Lagos). Claude prepares the automatic fixes
-  then, at half price.
-- **Model per feature**: keep **Cheap** (the lowest cost; enough for
-  everything here).
-- **Prices**: enter the prices from anthropic.com/pricing so the spend shown
-  is exact. Until then it is estimated on the high side.
+- **Test connection** checks Claude answers (costs a tiny fraction of a cent).
+- **Monthly budget** and **Email the Super Admins at (%)**: you get one warning
+  email. At 100%, AI work stops until next month and a red bar shows on every
+  admin page, unless you raise the budget.
+- **Apply low-risk fixes automatically**: only fixes that change nothing that
+  is already there and contain no facts (today: re-running the Google sync).
+  Page changes and texts always wait for you.
+- **Weekly scan** (day and time, Lagos): once a week Claude prepares up to 20
+  automatic fixes at half price, and you get a summary email with the spend.
+- **Model**: keep **Cheap** (the lowest cost). The advanced model can only be
+  chosen for long writing (news drafts, checklist drafts) and code proposals.
+- **Prices**: enter the prices from anthropic.com/pricing so the spend shown is
+  exact. Until then it is estimated on the high side.
 
 ## Other things you can update in the CMS
 

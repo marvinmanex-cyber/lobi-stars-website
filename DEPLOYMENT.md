@@ -73,9 +73,17 @@ these in git.
 | `AESON_STATUS_URL` | Lobi Stars FC Live: Aeson's status feed | Optional; default `https://www.aesonsports.com/api/radio/status`, or set it in Admin › Commentary. |
 | `COMMENTARY_BRAND_NAME` | Commentary player name (optional) | |
 | `ANALYTICS_SALT` | Visitor analytics (optional) | Falls back to `SESSION_SECRET`. |
+| `GITHUB_TOKEN` | AI Fix: applying page fixes, news drafts, checklist drafts, code proposals | **Secret.** Fine-grained, this repository only, Contents: Read and write (+ Pull requests: Read and write for automatic draft pull requests). Set 21 Oct 2026 (A29). |
+| `GITHUB_REPO`, `GITHUB_BRANCH` | AI Fix (optional) | Defaults `marvinmanex-cyber/lobi-stars-website` and `main`. |
+| `CLAUDE_MODEL_DEFAULT`, `CLAUDE_MODEL_ADVANCED` | AI Fix (optional) | Defaults `claude-haiku-5-5` (cheap, used everywhere) and `claude-sonnet-5-5` (only where a Super Admin chooses it). |
+| `CLAUDE_MOCK` | AI Fix testing/training only | `true` = made-up answers, no AI, no cost. Don't leave on. |
+| `SITE_URL` | Absolute links in checklist emails/PDFs and AI Fix (optional) | Default `https://lobistarsfc.com`. |
+| `CLUB_NAME` | Match Checklist: which matches are the club's (optional) | Default `Lobi Stars`. |
+| `SUPER_ADMIN_EMAILS` | The three Super Admins (and who gets AI emails) | Up to three addresses, separated by commas. |
+| `PAGES_DEPLOY_HOOK` | Rebuild button (Website Health, approved statements) (optional) | Cloudflare deploy hook URL (A20). |
 
 **Local testing only, never in production:** `PAYSTACK_FAKE=1` (pretend
-payments) and `FANS_DEV_LINKS=1` (shows email links and counts Inbox replies
+payments), `ANTHROPIC_BASE_URL` / `GITHUB_API_BASE` (stand-ins for the AI tests) and `FANS_DEV_LINKS=1` (shows email links and counts Inbox replies
 as sent without an email service).
 
 ### Local test server and demo data
@@ -822,6 +830,15 @@ recommendation table and tests: `docs/ai-fix.md`.
 - **Timer:** `workers/kitchen-cron` calls `/api/internal/ai-run` every
   minute (it does nothing without the key). Redeploy the Worker after this
   change.
+- **Part 2 (21 Oct 2026):** Fix history and results, Fix all with cost
+  estimate and bulk review, checklist "Draft with Claude", code proposals on
+  `ai-proposal/…` branches, mock mode (`CLAUDE_MOCK`) and
+  `scripts/ai-dry-run.mjs`.
+  - Tables: `migrations/0008_ai_fix_history.sql`, also created on first use.
+  - No new secrets.
+  - Optional: give the GitHub token "Pull requests: Read and write" for
+    automatic draft pull requests.
+  - The timer address is unchanged, so the Worker doesn't need redeploying.
 
 ## Site (Astro + Cloudflare Pages)
 

@@ -113,9 +113,15 @@ const isActive = (href: string) => {
 <style>
   .sh {
     position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: rgba(255, 255, 255, .98);
-    border-bottom: 1px solid var(--d4); backdrop-filter: blur(8px); transition: box-shadow .2s;
+    border-bottom: 1px solid var(--d4); backdrop-filter: blur(8px); transition: box-shadow .2s, transform .25s ease;
   }
   .sh.scrolled { box-shadow: 0 6px 24px rgba(15, 17, 21, .07); }
+  /* Phones and tablets: the header slides away while scrolling down and comes back on any scroll up. */
+  @media (max-width: 1023px) {
+    .sh.sh-hide { transform: translateY(-100%); box-shadow: none; }
+    :global(html.sh-hidden) { --header-vis: 0px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .sh { transition: none; } }
   .sh-inner { max-width: 1320px; margin: 0 auto; padding: 0 3%; height: 72px; display: flex; align-items: center; gap: 18px; }
   .sh-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; flex-shrink: 0; }
   .sh-name { font: 400 19px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1.5px; color: var(--white); }
@@ -250,8 +256,30 @@ const isActive = (href: string) => {
   // Page-wide listeners are added once (this script runs again after an
   // in-page navigation) and always look up the current header.
   const w = window as any;
-  const onScroll = () => document.getElementById('siteHeader')?.classList.toggle('scrolled', window.scrollY > 8);
+  // On phones and tablets the header hides while scrolling down (more room to
+  // read) and shows again on any scroll up, near the top, or when the menu is open.
+  const small = window.matchMedia('(max-width: 1023px)');
+  const setHidden = (hide: boolean) => {
+    const h = document.getElementById('siteHeader');
+    if (!h) return;
+    const on = hide && small.matches && !h.contains(document.activeElement) && document.getElementById('mobileMenu')?.hidden !== false;
+    h.classList.toggle('sh-hide', on);
+    document.documentElement.classList.toggle('sh-hidden', on);
+  };
+  const onScroll = () => {
+    const y = window.scrollY, last = w.__lsLastY ?? y;
+    document.getElementById('siteHeader')?.classList.toggle('scrolled', y > 8);
+    if (y < 80) setHidden(false);
+    else if (y > last + 6) setHidden(true);
+    else if (y < last - 6) setHidden(false);
+    if (Math.abs(y - last) > 6 || y < 80) w.__lsLastY = y;
+  };
+  w.__lsLastY = window.scrollY;
+  w.__lsHeaderScroll = onScroll; // the page-wide listener (added once) calls the current page's version
   onScroll();
+  setHidden(false);
+  // Keyboard users: tabbing into the header always shows it.
+  document.getElementById('siteHeader')?.addEventListener('focusin', () => setHidden(false));
 
   // Desktop dropdowns: hover opens them; click/Enter toggles for touch and keyboard.
   const toggles = document.querySelectorAll<HTMLButtonElement>('[data-sub-toggle]');
@@ -275,6 +303,7 @@ const isActive = (href: string) => {
   const ov = document.getElementById('mobileMenuOv')!;
   const closeBtn = document.getElementById('menuClose') as HTMLButtonElement;
   const open = () => {
+    setHidden(false);
     menu.hidden = false; ov.hidden = false; btn.setAttribute('aria-expanded', 'true');
     document.body.style.overflow = 'hidden'; closeBtn.focus();
   };
@@ -289,7 +318,7 @@ const isActive = (href: string) => {
   Object.assign(w.__lsHeader, { close, btn, menu });
   if (!w.__lsHeaderGlobal) {
     w.__lsHeaderGlobal = true;
-    window.addEventListener('scroll', () => document.getElementById('siteHeader')?.classList.toggle('scrolled', window.scrollY > 8), { passive: true });
+    window.addEventListener('scroll', () => w.__lsHeaderScroll?.(), { passive: true });
     document.addEventListener('click', e => {
       if (!(e.target as HTMLElement).closest('.has-sub')) w.__lsHeader.closeAll();
     });

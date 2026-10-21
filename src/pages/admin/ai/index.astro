@@ -1,42 +1,73 @@
 ---
-// Settings › AI Fix (Super Admins): the Analytics recommendations, sorted into
-// what Claude can prepare by itself, what needs a few words from you first,
-// and what only a person can do. Claude only PREPARES: nothing on the website
-// changes until a Super Admin presses Apply (or a low-risk fix that is switched
-// on for auto-apply in AI Settings). Every change can be undone.
+// Settings › AI Fix: the Analytics recommendations, sorted into what Claude can
+// prepare by itself, what needs a few words from you first, and what only a
+// person can do. Claude only PREPARES: nothing on the website changes until a
+// Super Admin presses Apply (or a low-risk fix with nothing to overwrite is
+// switched on for auto-apply in AI Settings). Every change can be undone.
+// Staff with "AI Fix: prepare" (report roles) can prepare and look; applying,
+// editing, undoing, Fix all and code proposals are for Super Admins (server-checked).
 import Layout from '../../../layouts/Layout.astro';
 import AdminNav from '../../../components/admin/AdminNav.astro';
+import AiTabs from '../../../components/admin/AiTabs.astro';
 ---
 <Layout title="AI Fix | Lobi Stars Admin" description="Claude prepares fixes for the Analytics recommendations." noindex>
   <div class="wrap aif">
     <AdminNav current="ai-fix" />
     <header class="aif-head">
       <div><div class="stag">Settings</div><h1 class="stitle">AI <span class="r">Fix</span></h1></div>
-      <p class="aif-lede">Claude prepares fixes for the <a href="/admin/analytics/">Analytics recommendations</a>. Nothing changes on the website until you press <b>Apply</b>, and every change can be undone.</p>
+      <AiTabs current="fix" />
     </header>
+    <p class="aif-lede">Claude prepares fixes for the <a href="/admin/analytics/">Analytics recommendations</a>. Nothing changes on the website until a Super Admin presses <b>Apply</b>, and every change can be undone.</p>
     <p class="aif-msg" id="msg" role="status" aria-live="polite" hidden></p>
     <div class="aif-status" id="status"></div>
     <p class="aif-note" id="allNote" role="status" aria-live="polite" hidden></p>
+
+    <section class="aif-card" id="reviewBox" aria-labelledby="reviewH" hidden>
+      <h2 id="reviewH">Ready to apply</h2>
+      <p class="aif-sub">Tick the fixes you have checked, then apply or discard them together.</p>
+      <div id="reviewList"></div>
+      <div class="aif-row"><button type="button" class="btn-p sm" id="applySel">Apply selected</button><button type="button" class="btn-o sm" id="discardSel">Discard selected</button></div>
+    </section>
+
     <div id="list"><p class="muted">Loading…</p></div>
+
+    <section class="aif-card" id="codeBox" aria-labelledby="codeH" hidden>
+      <h2 id="codeH">Code proposals</h2>
+      <p class="aif-warn">⚠️ AI proposals, <b>not live</b>. They are saved on a separate GitHub branch for a developer to review and merge. Nothing here changes the website.</p>
+      <div id="codeList"></div>
+    </section>
 
     <section class="aif-card" aria-labelledby="askH" id="askBox" hidden>
       <h2 id="askH">Ask Claude about the figures</h2>
-      <p class="aif-sub">Short answers from this month's figures (no personal data is sent). Only the last 6 messages are kept.</p>
+      <p class="aif-sub">Short answers from this month's figures. No personal data is sent (emails and phone numbers you type are removed). Only the last 6 messages are kept.</p>
+      <p class="aif-warn">Claude can make mistakes. Check important answers against the figures on Analytics before acting on them.</p>
       <div class="aif-chat" id="chat" aria-live="polite"></div>
       <form id="askForm" class="aif-row"><label class="sr-only" for="askQ">Your question</label><input id="askQ" maxlength="500" placeholder="e.g. Why did Google clicks go down?" autocomplete="off" /><button class="btn-p" type="submit">Ask</button></form>
     </section>
   </div>
+
+  <dialog class="aif-dlg" id="allDlg" aria-labelledby="allH">
+    <form method="dialog" id="allForm">
+      <h2 id="allH">Fix all automatic fixes</h2>
+      <p class="aif-sub">Sent to Claude in one batch at half price. Results arrive within 24 hours; you then check and apply them.</p>
+      <div id="allGroups"></div>
+      <p class="aif-total" id="allTotal"></p>
+      <div class="aif-row end"><button type="button" class="btn-o" id="allCancel">Cancel</button><button type="submit" class="btn-p" id="allSend">Send to Claude</button></div>
+    </form>
+  </dialog>
 </Layout>
 
 <style>
   .aif { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
-  .aif-head { display: grid; grid-template-columns: auto 1fr; gap: 8px 28px; align-items: end; margin-bottom: 14px; }
-  .aif-lede { margin: 0; color: var(--a-muted); font-size: 15px; line-height: 1.55; max-width: 620px; }
+  .aif-head { display: flex; justify-content: space-between; align-items: end; gap: 12px 24px; flex-wrap: wrap; margin-bottom: 10px; }
+  .aif-lede { margin: 0 0 14px; color: var(--a-muted); font-size: 15px; line-height: 1.55; max-width: 720px; }
   .aif-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; width: max-content; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
   .aif-msg.ok { background: #E8F7EE; color: #17643A; } .aif-msg.err { background: #FDECEC; color: #A3161B; }
   .aif-status { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
   .aif-note { margin: -4px 0 14px; padding: 10px 14px; border-radius: 10px; background: #EEF4FF; border: 1px solid #BFD3FB; color: #15233F; font-size: 14px; font-weight: 600; }
   :global(body.admin-dark) .aif-note { background: #16233A; border-color: #2B4470; color: #E3ECFF; }
+  .aif :global(.aif-warn), .aif-dlg :global(.aif-warn) { margin: 0 0 10px; padding: 9px 12px; border-radius: 10px; background: #FFF7E6; border: 1px solid #F6D58E; color: #7A4B00; font-size: 13px; font-weight: 600; }
+  :global(body.admin-dark) .aif :global(.aif-warn) { background: #3A2E12; color: #F6D58E; border-color: #5A4718; }
   .aif :global(.chip) { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--a-soft); color: var(--a-muted); border: 1px solid var(--a-line); }
   .aif :global(.chip.ok) { background: #DCFCE7; color: #166534; border-color: #BBF7D0; } .aif :global(.chip.bad) { background: #FDECEC; color: #A3161B; border-color: #F8C9CB; }
   .aif :global(.aif-card), .aif-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px 18px; margin-bottom: 14px; }
@@ -50,21 +81,36 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   .aif :global(.aif-badges) { display: flex; flex-wrap: wrap; gap: 6px; }
   .aif :global(.chip.high) { background: #FDECEC; color: #A3161B; } .aif :global(.chip.normal) { background: #FEF3C7; color: #92400E; }
   .aif :global(.aif-row) { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
-  .aif :global(.aif-row input), .aif :global(textarea) { flex: 1 1 260px; min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 15px; min-width: 0; box-sizing: border-box; width: 100%; }
+  .aif :global(.aif-row.end), .aif-dlg .aif-row.end { justify-content: flex-end; }
+  .aif :global(.aif-row input), .aif :global(textarea), .aif :global(.aif-edit input) { flex: 1 1 260px; min-height: 42px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 15px; min-width: 0; box-sizing: border-box; width: 100%; }
   .aif :global(.aif-prop) { background: var(--a-soft); border: 1px solid var(--a-line); border-radius: 12px; padding: 12px; margin-top: 8px; font-size: 14px; color: var(--a-ink); }
-  .aif :global(.aif-prop b) { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--a-muted); margin: 8px 0 2px; }
-  .aif :global(.aif-prop b:first-child) { margin-top: 0; }
+  .aif :global(.aif-prop b.k) { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--a-muted); margin: 8px 0 2px; }
+  .aif :global(.aif-prop b.k:first-child) { margin-top: 0; }
   .aif :global(.aif-prop .old) { text-decoration: line-through; color: var(--a-muted); }
+  .aif :global(.aif-prop mark) { background: #FEF08A; color: inherit; border-radius: 3px; padding: 0 2px; }
+  :global(body.admin-dark) .aif :global(.aif-prop mark) { background: #5A4A00; }
   .aif :global(.aif-prop pre) { white-space: pre-wrap; font: inherit; margin: 0; overflow-wrap: anywhere; }
+  .aif :global(.aif-edit) { display: grid; gap: 8px; margin-top: 8px; }
+  .aif :global(.aif-edit label) { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--a-muted); }
   .aif :global(.aif-err) { color: #A3161B; font-weight: 600; }
+  .aif :global(.aif-ask) { padding: 10px 12px; border-radius: 10px; background: #EEF4FF; color: #15233F; font-weight: 600; }
   .aif :global(.aif-item ol) { margin: 6px 0 8px; padding-left: 20px; font-size: 14px; color: var(--a-muted); }
   .aif :global(.sm) { min-height: 36px; padding: 6px 12px; font-size: 13px; }
-  .aif :global(.aif-sec details > summary) { cursor: pointer; font-weight: 700; color: var(--a-muted); font-size: 14px; min-height: 30px; }
+  .aif :global(.aif-sec details > summary), .aif :global(.aif-item details > summary) { cursor: pointer; font-weight: 700; color: var(--a-muted); font-size: 14px; min-height: 30px; }
+  .aif :global(.aif-rv) { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 8px 0; border-top: 1px solid var(--a-line); font-size: 14px; }
+  .aif :global(.aif-rv input) { width: 22px; height: 22px; margin-top: 2px; }
   .aif-chat { display: grid; gap: 8px; margin-bottom: 8px; }
   .aif :global(.aif-chat p) { margin: 0; padding: 10px 12px; border-radius: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
   .aif :global(.aif-chat .u) { background: #15181D; color: #fff; justify-self: end; max-width: 85%; }
   .aif :global(.aif-chat .a) { background: var(--a-soft); color: var(--a-ink); max-width: 95%; }
-  @media (max-width: 760px) { .aif-head { grid-template-columns: 1fr; } }
+  .aif-dlg { border: 0; border-radius: 16px; padding: 22px; width: min(560px, calc(100vw - 32px)); background: var(--a-card); color: var(--a-ink); box-shadow: 0 24px 60px rgba(0,0,0,.35); }
+  .aif-dlg::backdrop { background: rgba(15,17,21,.55); }
+  .aif-dlg h2 { margin: 0 0 4px; font: 700 20px/1.2 'Barlow', sans-serif; }
+  .aif-dlg :global(label) { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-top: 1px solid var(--a-line); font-size: 14px; }
+  .aif-dlg :global(label input) { width: 20px; height: 20px; }
+  .aif-total { font-weight: 700; margin: 10px 0; }
+  .aif-dlg .aif-row { display: flex; gap: 8px; }
+  @media (max-width: 760px) { .aif-head { flex-direction: column; align-items: start; } }
 </style>
 
 <script is:inline>
@@ -73,99 +119,185 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const wat = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const usd = n => '$' + Number(n || 0).toFixed(Number(n) < 0.1 ? 4 : 2);
   const CAT = { auto_fix: 'Claude can prepare it', input_needed: 'Needs a few words from you', manual_only: 'A person does this' };
-  const STATUS = { open: 'Open', preparing: 'Preparing…', awaiting_input: 'Waiting for your input', awaiting_approval: 'Ready: check and apply', applied: 'Applied', verified: 'Applied and checked live', failed: 'Failed', undone: 'Undone', dismissed: 'Dismissed' };
-  let data = null, chat = [], msgT;
+  const STATUS = { open: 'Open', preparing: 'Preparing…', awaiting_input: 'Waiting for your input', awaiting_approval: 'Ready: check and apply', applied: 'Applied', verified: 'Applied and checked', failed: 'Failed', undone: 'Undone', dismissed: 'Dismissed' };
+  const FIELD = { title: 'Google title / headline', description: 'Google description', summary: 'Summary', body: 'Article', whatsapp: 'WhatsApp Channel', facebook: 'Facebook', x: 'X (Twitter)', blurb: 'Sign-up message' };
+  let data = null, chat = [], msgT, batchNote = '', editing = null, proposals = [];
   function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = 'aif-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 7000); }
   async function api(url, body) {
     const r = await fetch(url, body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
     if (r.status === 401) { location.href = '/admin/login/?next=' + encodeURIComponent(location.pathname); throw new Error('Please sign in again.'); }
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.error || 'Request failed');
+    if (!r.ok) { const e = new Error(d.error || 'Request failed'); e.data = d; e.status = r.status; throw e; }
     return d;
   }
+  // Highlights words in the new text that weren't in the old one.
+  function highlight(oldText, newText) {
+    const old = new Set(String(oldText || '').toLowerCase().split(/\s+/).filter(Boolean));
+    return String(newText || '').split(/(\s+)/).map(w => (/^\s+$/.test(w) || old.has(w.toLowerCase()) ? esc(w) : `<mark>${esc(w)}</mark>`)).join('');
+  }
   function proposalHtml(it) {
-    const p = it.proposal; if (!p) return '';
-    const copy = (k, label) => `<b>${label}</b><pre>${esc(p[k])}</pre><button type="button" class="btn-o sm" data-copy="${esc(k)}">Copy</button>`;
-    if (it.fix.type === 'seo_title_description') return `<div class="aif-prop"><b>Google title</b>${p.before?.title ? `<div class="old">${esc(p.before.title)}</div>` : ''}<div>${esc(p.title)}</div><b>Description</b>${p.before?.description ? `<div class="old">${esc(p.before.description)}</div>` : ''}<div>${esc(p.description)}</div></div>`;
-    if (it.fix.type === 'draft_news') return `<div class="aif-prop"><b>Headline</b><div>${esc(p.title)}</div><b>Summary</b><div>${esc(p.summary)}</div><details><summary>Read the article</summary><pre>${esc(p.body)}</pre></details></div>`;
-    if (it.fix.type === 'draft_social_post') return `<div class="aif-prop">${copy('whatsapp', 'WhatsApp Channel')}${copy('facebook', 'Facebook')}${copy('x', 'X (Twitter)')}</div>`;
-    if (it.fix.type === 'draft_newsletter_blurb') return `<div class="aif-prop">${copy('blurb', 'Sign-up message')}</div>`;
-    return `<div class="aif-prop">${esc(p.summary || '')}</div>`;
+    const p = it.proposal, f = it.fix; if (!p) return '';
+    const banner = (f.factual ? '<p class="aif-warn">⚠️ Check the facts before using this: Claude only had the facts given, but can still make mistakes. Names, numbers and quotes must be right.</p>' : '')
+      + (p.mock ? '<p class="aif-warn">Mock answer (CLAUDE_MOCK is on): no AI was used.</p>' : '') + (p.edited ? '<p class="muted">✎ Edited by staff.</p>' : '') + (p.note ? `<p class="muted">Tried again with the note: ${esc(p.note)}</p>` : '');
+    const copy = k => `<b class="k">${esc(FIELD[k] || k)}</b><pre>${esc(p[k])}</pre><button type="button" class="btn-o sm" data-copy="${esc(k)}">Copy</button>`;
+    let body;
+    if (f.preview === 'seo') body = `<b class="k">Google title</b>${p.before?.title ? `<div class="old">${esc(p.before.title)}</div>` : ''}<div>${highlight(p.before?.title, p.title)}</div><b class="k">Description</b>${p.before?.description ? `<div class="old">${esc(p.before.description)}</div>` : ''}<div>${highlight(p.before?.description, p.description)}</div><p class="muted" style="margin-top:6px">New words are highlighted.</p>`;
+    else if (f.preview === 'news') body = `<b class="k">Headline</b><div>${esc(p.title)}</div><b class="k">Summary</b><div>${esc(p.summary)}</div><details><summary>Read the article</summary><pre>${esc(p.body)}</pre></details>`;
+    else if (f.preview === 'copy') body = Object.keys(f.schema || {}).map(copy).join('');
+    else body = esc(p.summary || '');
+    return banner + `<div class="aif-prop">${body}</div>`;
+  }
+  function editHtml(it) {
+    const f = it.fix, p = it.proposal;
+    return `<div class="aif-edit">${Object.entries(f.schema || {}).map(([k, r]) => `<label>${esc(FIELD[k] || k)} (${r.min || 0}–${r.max} characters)${r.multiline || r.max > 200 ? `<textarea data-ed="${esc(k)}" rows="${r.max > 1000 ? 10 : 4}" maxlength="${r.max}">${esc(p[k])}</textarea>` : `<input data-ed="${esc(k)}" maxlength="${r.max}" value="${esc(p[k])}" />`}</label>`).join('')}
+      <div class="aif-row"><button type="button" class="btn-p sm" data-act="save_edit">Save changes</button><button type="button" class="btn-o sm" data-act="cancel_edit">Cancel</button></div></div>`;
   }
   function itemHtml(it) {
-    const f = it.fix, st = it.status;
+    const f = it.fix, st = it.status, sup = data.me.canApply;
     const applyLabel = !f ? '' : f.copyOnly ? '✓ Mark as used' : f.type === 'draft_news' ? 'Save as Draft in News' : f.type === 'rerun_sync' ? 'Run it now' : 'Apply (site updates in ~2 min)';
     let actions = '';
     if (f && it.category !== 'manual_only') {
-      if (['open', 'failed', 'undone', 'awaiting_input', 'dismissed'].includes(st) && st !== 'dismissed') {
-        actions += f.input ? `<label class="sr-only" for="in-${esc(it.id)}">${esc(f.input.label)}</label><textarea id="in-${esc(it.id)}" rows="3" maxlength="1500" placeholder="${esc(f.input.label)}">${esc(it.input?.text || '')}</textarea>` : '';
-        actions += `<div class="aif-row"><button type="button" class="btn-p sm" data-act="prepare">${f.claude ? (f.input ? 'Write the draft with Claude' : 'Prepare fix with Claude') : 'Prepare'}</button>${f.claude ? '<span class="muted">Costs a fraction of a US cent</span>' : ''}</div>`;
+      if (['open', 'failed', 'undone', 'awaiting_input'].includes(st)) {
+        if (it.input?.question) actions += `<p class="aif-ask">Claude asks: ${esc(it.input.question)}</p>`;
+        actions += f.input ? `<label class="sr-only" for="in-${esc(it.id)}">${esc(f.input.label)}</label><textarea id="in-${esc(it.id)}" data-input rows="3" maxlength="1500" placeholder="${esc(f.input.label)}">${esc(it.input?.text || '')}</textarea><p class="muted">Emails and phone numbers are removed before anything is sent to Claude.</p>` : '';
+        actions += `<div class="aif-row"><button type="button" class="btn-p sm" data-act="prepare">${f.claude ? (f.input ? 'Write the draft with Claude' : (sup ? 'Click to fix' : 'Prepare fix')) : 'Prepare'}</button>${f.claude ? '<span class="muted">Costs a fraction of a US cent</span>' : ''}</div>`;
       }
-      if (st === 'preparing') actions += '<p>Claude is preparing this in the weekly batch (half price). It will be ready within 24 hours.</p>';
+      if (st === 'preparing') actions += '<p>Claude is preparing this in a batch (half price). It will be ready within 24 hours.</p>';
       if (st === 'awaiting_approval') {
-        actions += proposalHtml(it);
+        actions += editing === it.id ? editHtml(it) : proposalHtml(it);
         if (f.needsGithub && !f.githubReady) actions += '<p class="aif-err">Applying this needs the GitHub connection (handover A29). Until then, copy the text and make the change in the content editor.</p>';
-        actions += `<div class="aif-row"><button type="button" class="btn-p sm" data-act="apply" ${f.needsGithub && !f.githubReady ? 'disabled' : ''}>${applyLabel}</button><button type="button" class="btn-o sm" data-act="dismiss">Discard</button></div>`;
+        if (sup && editing !== it.id) {
+          actions += `<div class="aif-row"><button type="button" class="btn-p sm" data-act="apply" ${f.needsGithub && !f.githubReady ? 'disabled' : ''}>${applyLabel}</button>${f.schema ? '<button type="button" class="btn-o sm" data-act="edit">✎ Edit</button>' : ''}<button type="button" class="btn-o sm" data-act="dismiss">Cancel</button></div>`;
+          if (f.claude) actions += `<details><summary>Try again with a note</summary><div class="aif-row"><input data-note maxlength="300" placeholder="e.g. shorter, mention the stadium, less formal" /><button type="button" class="btn-o sm" data-act="retry">Try again</button></div></details>`;
+        } else if (!sup) actions += '<p class="muted">Prepared. A Super Admin checks and applies it.</p>';
       }
       if (st === 'applied' || st === 'verified') {
-        actions += `<p>✓ ${esc(it.applied?.note || (f.type === 'seo_title_description' ? 'Saved; the page updates within about 2 minutes.' : 'Done'))}${it.applied?.at ? ` (${esc(wat(it.applied.at))}, ${esc(it.applied.by || '')})` : ''}</p>`;
-        if (f.undo) actions += '<div class="aif-row"><button type="button" class="btn-o sm" data-act="undo">Undo</button></div>';
+        actions += `<p>✓ ${esc(it.applied?.note || (f.type === 'seo_title_description' ? 'Saved; the page updates within about 2 minutes.' : 'Done'))}${it.applied?.at ? ` (${esc(wat(it.applied.at))}, ${esc(it.applied.by || '')}${it.applied.auto ? ', automatically' : ''})` : ''}</p>`;
+        if (f.undo && sup) actions += '<div class="aif-row"><button type="button" class="btn-o sm" data-act="undo">Undo</button></div>';
       }
+      if (st === 'failed' && it.applied && f.undo && sup) actions += '<div class="aif-row"><button type="button" class="btn-o sm" data-act="undo">Undo the change</button></div>';
     }
-    if (it.category === 'manual_only' && it.steps.length) actions += `<details><summary>How to do it (${it.steps.length} steps)</summary><ol>${it.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></details>${it.link ? `<div class="aif-row"><a class="btn-o sm" href="${esc(it.link.href)}"${it.link.external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${esc(it.link.label)}</a></div>` : ''}`;
-    if (st === 'dismissed') actions += '<div class="aif-row"><button type="button" class="btn-o sm" data-act="reopen">Show again</button></div>';
-    else if (it.category !== 'manual_only' && !['awaiting_approval', 'applied', 'verified', 'preparing'].includes(st)) actions += '<div class="aif-row"><button type="button" class="btn-o sm" data-act="dismiss">Not now</button></div>';
-    return `<article class="aif-card aif-item ${esc(it.category)}" data-id="${esc(it.id)}">
+    if (it.category === 'manual_only' && it.steps.length) actions += `<details><summary>How to fix (${it.steps.length} steps)</summary><ol>${it.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></details>${it.link ? `<div class="aif-row"><a class="btn-o sm" href="${esc(it.link.href)}"${it.link.external ? ' target="_blank" rel="noopener noreferrer"' : ''}>${esc(it.link.label)}</a></div>` : ''}`;
+    if (it.code && sup) actions += `<details><summary>Propose a code change (for a developer)</summary><p class="aif-warn">⚠️ AI proposal, not live: saved on a separate GitHub branch for a developer to review.</p>${it.id === 'ux:mobile' ? '<div class="aif-row"><input data-page placeholder="Which page? e.g. /tickets/" maxlength="100" /></div>' : ''}<div class="aif-row"><input data-cnote maxlength="400" placeholder="Anything to tell Claude (optional)" /></div><div class="aif-row"><button type="button" class="btn-o sm" data-act="code_estimate">Check cost</button><button type="button" class="btn-p sm" data-act="code_propose">Propose change</button><span class="muted" data-code-out></span></div></details>`;
+    if (sup) {
+      if (st === 'dismissed') actions += '<div class="aif-row"><button type="button" class="btn-o sm" data-act="reopen">Show again</button></div>';
+      else if (it.category !== 'manual_only' && !['awaiting_approval', 'applied', 'verified', 'preparing'].includes(st)) actions += '<div class="aif-row"><button type="button" class="btn-o sm" data-act="dismiss">Not now</button></div>';
+    }
+    return `<article class="aif-card aif-item ${esc(it.category)}" id="fix-${esc(it.id.replace(/[^\w-]/g, '_'))}" data-id="${esc(it.id)}">
       <div class="aif-badges"><span class="chip">${esc(CAT[it.category])}</span><span class="chip ${esc(it.risk)}">Risk: ${esc(it.risk)}</span><span class="chip">${esc(STATUS[st] || st)}</span>${it.minutes ? `<span class="chip">~${it.minutes} min</span>` : ''}${it.present ? '' : '<span class="chip">No longer on Analytics</span>'}</div>
       <h3>${esc(it.title)}</h3>${it.finding ? `<p>${esc(it.finding)}</p>` : ''}${f ? `<p><b>Fix:</b> ${esc(f.label)}</p>` : ''}${it.error && st === 'failed' ? `<p class="aif-err">${esc(it.error)}</p>` : ''}${actions}</article>`;
   }
-  let batchNote = '';
   function draw() {
-    const ai = data.ai;
-    // "Prepare all" only covers fixes Claude can prepare without your words.
+    const ai = data.ai, sup = data.me.canApply;
     const waiting = data.items.filter(i => i.category === 'auto_fix' && i.fix && ['open', 'failed', 'undone'].includes(i.status)).length;
     const preparing = data.items.filter(i => i.status === 'preparing').length;
-    const allLabel = !ai.ready ? 'Claude not connected' : ai.blocked ? 'Monthly AI budget reached' : waiting ? `Prepare all ${waiting} automatic fix${waiting === 1 ? '' : 'es'} (batch, half price)` : 'No automatic fixes to prepare right now';
-    $('status').innerHTML = `<span class="chip ${ai.ready ? 'ok' : 'bad'}">${ai.ready ? 'Claude connected' : 'Claude not connected'}</span><span class="chip ${ai.github ? 'ok' : 'bad'}">${ai.github ? 'GitHub connected' : 'GitHub not connected (A29)'}</span><span class="chip ${ai.blocked ? 'bad' : ''}">This month: $${ai.spent.toFixed(3)} of $${ai.budget}</span>${ai.batchesRunning ? `<span class="chip">⏳ ${ai.batchesRunning} batch(es) with Claude</span>` : ''}<a class="btn-o sm" href="/admin/ai/settings/">AI Settings</a><button type="button" class="btn-p sm" id="allBtn" ${ai.ready && !ai.blocked && waiting ? '' : 'disabled'}>${allLabel}</button>`;
-    const note = batchNote || (preparing ? `⏳ ${preparing} fix${preparing === 1 ? ' is' : 'es are'} with Claude in a batch. Results arrive within 24 hours (usually much sooner); this page shows them when they are ready.`
+    const allLabel = !ai.ready ? 'Claude not connected' : ai.blocked ? 'Monthly AI budget reached' : waiting ? `Fix all: ${waiting} automatic fix${waiting === 1 ? '' : 'es'}…` : 'No automatic fixes to prepare right now';
+    $('status').innerHTML = `<span class="chip ${ai.ready ? 'ok' : 'bad'}">${ai.mock ? 'Mock mode (no AI)' : ai.ready ? 'Claude connected' : 'Claude not connected'}</span><span class="chip ${ai.github ? 'ok' : 'bad'}">${ai.github ? 'GitHub connected' : 'GitHub not connected (A29)'}</span><span class="chip ${ai.blocked ? 'bad' : ''}">This month: ${usd(ai.spent)} of $${ai.budget}</span>${ai.batchesRunning ? `<span class="chip">⏳ ${ai.batchesRunning} batch(es) with Claude</span>` : ''}${sup ? `<a class="btn-o sm" href="/admin/ai/settings/">AI Settings</a><button type="button" class="btn-p sm" id="allBtn" ${ai.ready && !ai.blocked && waiting ? '' : 'disabled'}>${allLabel}</button>` : ''}`;
+    const note = batchNote || (preparing ? `⏳ ${preparing} fix${preparing === 1 ? ' is' : 'es are'} with Claude in a batch. Results arrive within 24 hours (usually much sooner); you'll get an email when they are ready.`
       : !waiting && data.items.some(i => i.category === 'input_needed' && !['applied', 'verified', 'dismissed'].includes(i.status)) ? 'The recommendations below need a few words from you first: type them in the box and press "Write the draft with Claude".' : '');
     $('allNote').textContent = note; $('allNote').hidden = !note;
+    // Bulk review (Super Admins).
+    const ready = data.items.filter(i => i.status === 'awaiting_approval' && i.fix && !(i.fix.needsGithub && !i.fix.githubReady));
+    $('reviewBox').hidden = !sup || ready.length < 2;
+    $('reviewList').innerHTML = ready.map(i => `<label class="aif-rv"><input type="checkbox" data-sel="${esc(i.id)}" /><span><b>${esc(i.title)}</b><br><span class="muted">${esc(i.fix.label)}${i.fix.factual ? ' · ⚠️ check the facts' : ''}</span> · <a href="#fix-${esc(i.id.replace(/[^\w-]/g, '_'))}">see it</a></span></label>`).join('');
     const sec = (cat, title, sub) => { const list = data.items.filter(i => i.category === cat && i.status !== 'dismissed'); return list.length ? `<section class="aif-sec"><h2>${title} (${list.length})</h2><p class="aif-sub">${sub}</p>${list.map(itemHtml).join('')}</section>` : ''; };
     const dismissed = data.items.filter(i => i.status === 'dismissed');
     $('list').innerHTML = (data.items.length ? '' : '<section class="aif-card"><p>No recommendations right now. They appear here when Analytics finds something.</p></section>')
-      + sec('auto_fix', 'Claude can prepare these', 'Press Prepare, check the result, then Apply.')
-      + sec('input_needed', 'Needs a few words from you first', 'Claude only uses the facts you give it.')
+      + sec('auto_fix', 'Claude can prepare these', sup ? 'Press Click to fix, check the result, then Apply.' : 'Press Prepare fix; a Super Admin checks and applies it.')
+      + sec('input_needed', 'Needs a few words from you first', 'Claude only uses the facts you give it, and asks if something is missing.')
       + sec('manual_only', 'A person needs to do these', 'Claude cannot do these safely (payments, phone testing, Google settings).')
       + (dismissed.length ? `<section class="aif-sec"><details><summary>Not now / discarded (${dismissed.length})</summary>${dismissed.map(itemHtml).join('')}</details></section>` : '');
     $('askBox').hidden = !(ai.ready && ai.askEnabled);
+    $('codeBox').hidden = !sup || !proposals.length;
+    $('codeList').innerHTML = proposals.map(p => `<div class="aif-rv" style="grid-template-columns:1fr"><span><b>${esc(p.path)}</b> · ${esc(wat(p.created_at))} · ${esc(p.created_by || '')}<br>${esc(p.summary)}<br>${p.pr_url ? `<a href="${esc(p.pr_url)}" target="_blank" rel="noopener noreferrer">Draft pull request ↗</a> · ` : ''}${p.branchUrl ? `<a href="${esc(p.branchUrl)}" target="_blank" rel="noopener noreferrer">Branch ↗</a> · ` : ''}<a href="/api/admin/ai/code?download=${p.id}">Download</a> · <a href="#" data-email-prop="${p.id}">Email to a developer</a>${p.note ? `<br><span class="muted">${esc(p.note)}</span>` : ''}</span></div>`).join('');
   }
-  async function load() { try { data = await api('/api/admin/ai'); draw(); } catch (e) { $('list').innerHTML = `<section class="aif-card"><p>${esc(e.message)}</p></section>`; } }
+  async function load() {
+    try {
+      data = await api('/api/admin/ai');
+      if (data.me.canApply) { try { proposals = (await api('/api/admin/ai/code')).proposals; } catch { proposals = []; } }
+      draw();
+      if (location.hash) document.querySelector(location.hash)?.scrollIntoView({ block: 'center' });
+    } catch (e) { $('list').innerHTML = `<section class="aif-card"><p>${esc(e.message)}</p></section>`; }
+  }
+  // Fix all: estimate first (grouped, with cost), then confirm.
   $('status').addEventListener('click', async e => {
     if (e.target.id !== 'allBtn') return;
-    if (!confirm('Send every automatic fix to Claude in one batch? It costs half the normal price and the results are ready within 24 hours.')) return;
-    const b = e.target;
-    b.disabled = true; b.textContent = 'Sending to Claude…';
+    const b = e.target; b.disabled = true; b.textContent = 'Working out the cost…';
+    try {
+      const d = await api('/api/admin/ai', { action: 'estimate_all' });
+      $('allGroups').innerHTML = d.groups.length ? d.groups.map(g => `<label><input type="checkbox" data-group="${esc(g.type)}" checked /> <span><b>${esc(g.label)}</b>: ${g.count} fix${g.count === 1 ? '' : 'es'}, about ${usd(g.cost)}</span></label>`).join('')
+        : `<p>Nothing needs Claude right now${d.direct ? `; ${d.direct} fix${d.direct === 1 ? '' : 'es'} can be done without AI` : ''}${d.cached ? `; ${d.cached} already prepared (no new cost)` : ''}.</p>`;
+      const total = () => { const on = [...document.querySelectorAll('[data-group]:checked')].map(x => x.dataset.group); const c = d.groups.filter(g => on.includes(g.type)).reduce((n, g) => n + g.cost, 0); $('allTotal').textContent = `Estimated total: ${usd(c)} (batch price). Nothing changes on the website until you apply.`; $('allSend').disabled = !on.length && !d.direct; };
+      $('allGroups').onchange = total; total();
+      $('allDlg').showModal();
+    } catch (err) { msg(err.message, false); }
+    b.disabled = false; draw();
+  });
+  $('allCancel').addEventListener('click', () => $('allDlg').close());
+  $('allForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const types = [...document.querySelectorAll('[data-group]:checked')].map(x => x.dataset.group);
+    $('allDlg').close();
     batchNote = '⏳ Sending the fixes to Claude…'; $('allNote').textContent = batchNote; $('allNote').hidden = false;
     try {
-      const d = await api('/api/admin/ai', { action: 'prepare_all' });
-      batchNote = d.sent ? `✓ Received: ${d.sent} fix${d.sent === 1 ? '' : 'es'} sent to Claude (half price). Results arrive within 24 hours, usually much sooner; come back to this page to check and press Apply.`
-        : d.direct ? `✓ Done: ${d.direct} fix${d.direct === 1 ? '' : 'es'} prepared; check ${d.direct === 1 ? 'it' : 'them'} below.` : '✓ Checked: there was nothing new to prepare.';
+      const d = await api('/api/admin/ai', { action: 'prepare_all', types });
+      batchNote = d.sent ? `✓ Received: ${d.sent} fix${d.sent === 1 ? '' : 'es'} sent to Claude (about ${usd(d.cost)}, half price). Results arrive within 24 hours; you'll get an email, then check and apply them here.`
+        : d.direct ? `✓ Done: ${d.direct} fix${d.direct === 1 ? '' : 'es'} prepared without AI; check ${d.direct === 1 ? 'it' : 'them'} below.` : '✓ Checked: there was nothing new to prepare.';
       msg(batchNote, true); await load();
     } catch (err) { batchNote = `✗ ${err.message}`; msg(err.message, false); await load(); }
+  });
+  // Bulk review.
+  const selected = () => [...document.querySelectorAll('[data-sel]:checked')].map(x => x.dataset.sel);
+  $('applySel').addEventListener('click', async () => {
+    const ids = selected(); if (!ids.length) return msg('Tick at least one fix first.', false);
+    if (!confirm(`Apply ${ids.length} fix${ids.length === 1 ? '' : 'es'}? Each can be undone afterwards.`)) return;
+    try { const d = await api('/api/admin/ai', { action: 'apply_many', ids }); msg(`Applied ${d.done}${d.failed.length ? `; ${d.failed.length} could not be applied` : ''}.`, !d.failed.length); await load(); } catch (err) { msg(err.message, false); }
+  });
+  $('discardSel').addEventListener('click', async () => {
+    const ids = selected(); if (!ids.length) return msg('Tick at least one fix first.', false);
+    try { const d = await api('/api/admin/ai', { action: 'dismiss_many', ids }); msg(`Discarded ${d.done}.`, true); await load(); } catch (err) { msg(err.message, false); }
+  });
+  $('codeList').addEventListener('click', async e => {
+    const a = e.target.closest('[data-email-prop]'); if (!a) return; e.preventDefault();
+    const to = prompt('Developer\'s email address:'); if (!to) return;
+    try { await api('/api/admin/ai/code', { action: 'email', id: Number(a.dataset.emailProp), to }); msg('Emailed.', true); } catch (err) { msg(err.message, false); }
   });
   $('list').addEventListener('click', async e => {
     const cp = e.target.closest('[data-copy]');
     if (cp) { const it = data.items.find(x => x.id === cp.closest('[data-id]').dataset.id); try { await navigator.clipboard.writeText(it.proposal[cp.dataset.copy]); msg('Copied.', true); } catch { msg('Copy failed: select the text and copy it.', false); } return; }
     const b = e.target.closest('[data-act]'); if (!b) return;
     const box = b.closest('[data-id]'), id = box.dataset.id, act = b.dataset.act;
+    if (act === 'edit') { editing = id; draw(); return; }
+    if (act === 'cancel_edit') { editing = null; draw(); return; }
+    if (act === 'code_estimate' || act === 'code_propose') {
+      const out = box.querySelector('[data-code-out]'), page = box.querySelector('[data-page]')?.value || '', note = box.querySelector('[data-cnote]')?.value || '';
+      try {
+        if (act === 'code_estimate') { const d = await api('/api/admin/ai/code', { action: 'estimate', recId: id, page }); out.textContent = `${d.path}: about ${usd(d.cost)}`; return; }
+        if (!confirm('Ask Claude to propose a code change? It is saved on a separate GitHub branch and does NOT change the website.')) return;
+        b.disabled = true; out.textContent = 'Asking Claude…';
+        const d = await api('/api/admin/ai/code', { action: 'propose', recId: id, page, note });
+        out.textContent = `Saved${d.prUrl ? ' with a draft pull request' : d.branch ? ' on a branch' : ''}. See "Code proposals" below.`; msg('Proposal saved (not live).', true); await load();
+      } catch (err) { out.textContent = '✗ ' + err.message; b.disabled = false; }
+      return;
+    }
+    let body = { action: act, id };
+    if (act === 'prepare') body.input = box.querySelector('[data-input]') ? { text: box.querySelector('[data-input]').value } : null;
+    if (act === 'retry') { body = { action: 'prepare', id, note: box.querySelector('[data-note]').value || 'Please try a different version.' }; }
+    if (act === 'save_edit') { const proposal = {}; box.querySelectorAll('[data-ed]').forEach(el => { proposal[el.dataset.ed] = el.value; }); body = { action: 'edit', id, proposal }; }
     if (act === 'apply' && !confirm('Apply this change?')) return;
     if (act === 'undo' && !confirm('Undo this change?')) return;
-    const input = box.querySelector('textarea') ? { text: box.querySelector('textarea').value } : null;
-    b.disabled = true; const label = b.textContent; if (act === 'prepare') b.textContent = 'Asking Claude…';
+    b.disabled = true; const label = b.textContent; if (act === 'prepare' || act === 'retry') b.textContent = 'Asking Claude…';
     try {
-      const d = await api('/api/admin/ai', { action: act, id, input });
-      msg(act === 'prepare' ? (d.cached ? 'Ready (from the earlier answer, no new cost).' : 'Ready: check it below.') : act === 'apply' ? (d.applied?.note || 'Applied.') : 'Done.', true);
+      let d;
+      try { d = await api('/api/admin/ai', body); }
+      catch (err) {
+        if (act === 'undo' && err.data?.editedSince && confirm(err.message)) d = await api('/api/admin/ai', { ...body, force: true });
+        else throw err;
+      }
+      if (act === 'save_edit') editing = null;
+      msg(d.needs ? 'Claude needs more facts: see its question.' : (act === 'prepare' || act === 'retry') ? (d.cached ? 'Ready (from the earlier answer, no new cost).' : 'Ready: check it below.') : act === 'apply' ? (d.applied?.note || 'Applied.') : act === 'save_edit' ? 'Changes saved.' : 'Done.', !d.needs);
       await load();
     } catch (err) { msg(err.message, false); b.disabled = false; b.textContent = label; }
   });

@@ -29,7 +29,9 @@ export const BATCH_DISCOUNT = 0.5;
 
 export const models = env => ({ default: env.CLAUDE_MODEL_DEFAULT || 'claude-haiku-5-5', advanced: env.CLAUDE_MODEL_ADVANCED || 'claude-sonnet-5-5' });
 export const lagosMonth = (ms = Date.now()) => new Date(ms + 3600e3).toISOString().slice(0, 7);
-export const aiReady = env => !!env.ANTHROPIC_API_KEY;
+// CLAUDE_MOCK=true: answers are made up locally (no API call, no cost), for testing and training.
+export const mockMode = env => ['1', 'true', 'yes', 'on'].includes(String(env.CLAUDE_MOCK || '').toLowerCase());
+export const aiReady = env => mockMode(env) || !!env.ANTHROPIC_API_KEY;
 
 // ── Tables ──
 let ready = false;
@@ -45,6 +47,13 @@ export async function ensureAiSchema(db) {
       present INTEGER NOT NULL DEFAULT 1, last_checked_at TEXT, updated_at TEXT, updated_by TEXT)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS ai_batches (id INTEGER PRIMARY KEY AUTOINCREMENT, anthropic_id TEXT NOT NULL UNIQUE, feature TEXT NOT NULL, model TEXT NOT NULL, items_json TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'in_progress', created_by TEXT, created_at TEXT NOT NULL, ended_at TEXT)`),
+    // Every step of every fix (Fix history page) and every AI email (the mail log).
+    db.prepare(`CREATE TABLE IF NOT EXISTS ai_fix_log (id INTEGER PRIMARY KEY AUTOINCREMENT, rec_id TEXT, fix_type TEXT, action TEXT NOT NULL, admin_id TEXT, admin_name TEXT,
+      detail TEXT, before_json TEXT, after_json TEXT, created_at TEXT NOT NULL)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_ai_fix_log_rec ON ai_fix_log (rec_id, id)`),
+    // Before/after figures of applied fixes (checked again at 14 and 30 days).
+    db.prepare(`CREATE TABLE IF NOT EXISTS ai_fix_results (id INTEGER PRIMARY KEY AUTOINCREMENT, rec_id TEXT NOT NULL, fix_type TEXT, title TEXT, applied_at TEXT NOT NULL,
+      metric TEXT, before_json TEXT, after14_json TEXT, after14_at TEXT, after30_json TEXT, after30_at TEXT, verdict TEXT)`),
   ]);
   ready = true;
 }
@@ -63,7 +72,13 @@ export async function saveAiSetting(db, key, value, by = 'Automatic') {
     .bind(key, value === null ? null : String(value), new Date().toISOString(), by).run();
 }
 /** The model for a feature ('default' = cheap, 'advanced' = only if a Super Admin chose it). */
-export const modelFor = (env, s, feature) => models(env)[s[`model_${feature}`] === 'advanced' ? 'advanced' : 'default'];
+// A task type (e.g. a news draft) can have its own choice; otherwise the feature's.
+export const modelFor = (env, s, feature, taskType = null) => {
+  if (mockMode(env)) return 'mock';
+  const task = taskType ? s[`model_task_${taskType}`] : '';
+  const tier = task === 'advanced' || task === 'default' ? task : s[`model_${feature}`] === 'advanced' ? 'advanced' : 'default';
+  return models(env)[tier];
+};
 /** US$ per million tokens for a model: the Super Admin's figures, or the safe assumption. */
 export function priceOf(s, model) {
   const n = k => { const v = Number(s[`price:${model}:${k}`]); return Number.isFinite(v) && v > 0 ? v : null; };
@@ -71,9 +86,43 @@ export function priceOf(s, model) {
   return { in: pin ?? ASSUMED_PRICE.in, out: pout ?? ASSUMED_PRICE.out, assumed: pin === null || pout === null };
 }
 export const costOf = (s, model, inTok, outTok, batch = false) => {
+  if (model === 'mock') return 0;
   const p = priceOf(s, model);
   return Math.round(((inTok * p.in + outTok * p.out) / 1e6) * (batch ? BATCH_DISCOUNT : 1) * 1e6) / 1e6;
 };
+
+/** Rough cost before sending (for "Fix all" and the dry run): about 3.5 characters per token, output assumed at 60% of the limit. */
+export function estimateCost(s, model, promptChars, maxTokens, batch = false) {
+  return costOf(s, model, Math.ceil(promptChars / 3.5) + 150, Math.ceil(maxTokens * 0.6), batch);
+}
+
+/**
+ * Removes email addresses and phone or card numbers from text staff type before it
+ * goes to Claude (dates, scores and times are kept: a number needs 10+ digits).
+ */
+export function scrubPersonal(text) {
+  return String(text ?? '')
+    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '[email removed]')
+    .replace(/\+?\d[\d\s().-]{7,}\d/g, m => (/\d{4}-\d{1,2}-\d{1,2}|\d{1,2}[./-]\d{1,2}[./-]\d{2,4}/.test(m) || m.replace(/\D/g, '').length < 10 ? m : '[number removed]'));
+}
+
+/** Writes one line to the fix log (Fix history). */
+export async function logFix(db, { recId = null, fixType = null, action, admin = null, detail = null, before = null, after = null }) {
+  await ensureAiSchema(db);
+  await db.prepare(`INSERT INTO ai_fix_log (rec_id, fix_type, action, admin_id, admin_name, detail, before_json, after_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(recId, fixType, action, admin?.id || 'system', admin?.name || 'Automatic', detail === null ? null : String(detail).slice(0, 500),
+      before === null ? null : JSON.stringify(before).slice(0, 8000), after === null ? null : JSON.stringify(after).slice(0, 8000), new Date().toISOString()).run();
+}
+/** An email to the Super Admins about AI work. Always recorded in the fix log (the mail log); sent when email is set up. */
+export async function aiEmail(env, { subject, html, kind }) {
+  const to = superAdminEmails(env);
+  let sent = false;
+  if (to.length && env.RESEND_API_KEY) {
+    try { await sendEmail(env, { to, subject, html }); sent = true; } catch (err) { console.error('[ai] email', kind, err); }
+  }
+  await logFix(env.DB, { action: 'email', detail: `${kind}: ${subject} (${sent ? `sent to ${to.length}` : 'not sent: email not set up'})` });
+  return sent;
+}
 
 // ── Usage and budget ──
 export async function logUsage(db, { feature, model, inTok = 0, outTok = 0, cost = 0, adminId = null, relatedId = null, ok = true, error = null }) {
@@ -97,12 +146,8 @@ export async function budgetCheck(env, { urgent = false } = {}) {
   const pct = budget ? (spent / budget) * 100 : 100;
   if (pct >= (Number(s.warn_at_percent) || 80) && s.warned_month !== month && budget) {
     await saveAiSetting(db, 'warned_month', month);
-    const to = superAdminEmails(env);
-    if (to.length && env.RESEND_API_KEY) {
-      try {
-        await sendEmail(env, { to, subject: `AI budget: ${Math.round(pct)}% of this month's $${budget} used`, html: `<p>The website's Claude (AI) use this month is about <b>$${spent.toFixed(2)}</b> of the <b>$${budget}</b> monthly budget (${Math.round(pct)}%).</p><p>At 100% the website stops non-urgent AI work until next month. You can change the budget in Admin › Settings › AI Settings.</p>` });
-      } catch (err) { console.error('[ai] budget warning email', err); }
-    }
+    await aiEmail(env, { kind: 'budget_warning', subject: `AI budget: ${Math.round(pct)}% of this month's $${budget} used`,
+      html: `<p>The website's Claude (AI) use this month is about <b>$${spent.toFixed(2)}</b> of the <b>$${budget}</b> monthly budget (${Math.round(pct)}%).</p><p>At 100% the website stops non-urgent AI work until next month. You can change the budget in Admin › Settings › AI Settings.</p>` });
   }
   const blocked = spent >= budget;
   await saveAiSetting(db, 'blocked_month', blocked ? month : '');
@@ -146,6 +191,20 @@ export function extractJson(text) {
   if (a < 0 || b <= a) return null;
   try { return JSON.parse(s.slice(a, b + 1)); } catch { return null; }
 }
+const NEEDS_HINT = 'If the facts given are not enough to write this without inventing anything, do NOT guess: reply instead with ONE JSON object {"needs": "a short question for the staff about what is missing"}.';
+/** Made-up answer that passes the schema (CLAUDE_MOCK). */
+export function mockFromSchema(schema) {
+  const out = {};
+  for (const [k, r] of Object.entries(schema || {})) {
+    if (r.optional) continue;
+    if (r.type === 'boolean') { out[k] = true; continue; }
+    if (r.type === 'number') { out[k] = 1; continue; }
+    let t = `Mock ${k} (CLAUDE_MOCK is on: no AI was used).`;
+    while (t.length < (r.min || 0)) t += ' Mock text.';
+    out[k] = r.max ? t.slice(0, r.max) : t;
+  }
+  return out;
+}
 const schemaHint = schema => `Reply with ONE JSON object only, no other text: {${Object.entries(schema).map(([k, r]) => `"${k}": ${r.type === 'string' ? `string${r.max ? ` (max ${r.max} characters)` : ''}` : r.type}${r.optional ? ' (optional)' : ''}`).join(', ')}}`;
 
 function errorMessage(status, d) {
@@ -162,14 +221,20 @@ function errorMessage(status, d) {
  * schema: check the reply as JSON (one retry); null: plain text.
  * Returns { ok, data | text, model, cost } or { ok: false, error }.
  */
-export async function callClaude(env, { feature, system, prompt, messages = null, schema = null, maxTokens = 400, adminId = null, relatedId = null, urgent = false }) {
+export async function callClaude(env, { feature, system, prompt, messages = null, schema = null, maxTokens = 400, adminId = null, relatedId = null, urgent = false, taskType = null, allowNeeds = false }) {
   if (!aiReady(env)) return { ok: false, error: 'Claude is not connected (ANTHROPIC_API_KEY is not set in Cloudflare).' };
   const db = env.DB;
   const b = await budgetCheck(env, { urgent });
   if (!b.ok) return { ok: false, error: b.error, budget: true };
-  const s = await getAiSettings(db), model = modelFor(env, s, feature);
-  const sys = schema ? `${system}\n\n${schemaHint(schema)}` : system;
+  const s = await getAiSettings(db), model = modelFor(env, s, feature, taskType);
+  const sys = schema ? `${system}\n\n${schemaHint(schema)}${allowNeeds ? `\n${NEEDS_HINT}` : ''}` : system;
   let msgs = messages || [{ role: 'user', content: prompt }];
+  if (model === 'mock') {
+    await logUsage(db, { feature, model, adminId, relatedId, ok: true });
+    if (allowNeeds && /needs-test/i.test(JSON.stringify(msgs))) return { ok: true, needs: 'Mock question: what was the final score? (CLAUDE_MOCK)', model, cost: 0 };
+    return schema ? { ok: true, data: validateJson(schema, mockFromSchema(schema)).value, model, cost: 0, mock: true }
+      : { ok: true, text: 'Mock answer: CLAUDE_MOCK is on, so no AI was used and nothing was spent.', model, cost: 0, mock: true };
+  }
   let lastErr = '';
   for (let attempt = 0; attempt < (schema ? 2 : 1); attempt++) {
     let r, d;
@@ -193,7 +258,13 @@ export async function callClaude(env, { feature, system, prompt, messages = null
       await logUsage(db, { feature, model, inTok, outTok, cost, adminId, relatedId, ok: !!text, error: text ? null : 'empty reply' });
       return text ? { ok: true, text, model, cost } : { ok: false, error: 'Claude returned an empty answer; please try again.' };
     }
-    const v = validateJson(schema, extractJson(text));
+    const parsed = extractJson(text);
+    // Claude asks for the missing facts instead of inventing them.
+    if (allowNeeds && parsed && typeof parsed.needs === 'string' && parsed.needs.trim()) {
+      await logUsage(db, { feature, model, inTok, outTok, cost, adminId, relatedId, ok: true });
+      return { ok: true, needs: cleanText(parsed.needs).slice(0, 300), model, cost };
+    }
+    const v = validateJson(schema, parsed);
     await logUsage(db, { feature, model, inTok, outTok, cost, adminId, relatedId, ok: !v.error, error: v.error ? `invalid JSON: ${v.error}` : null });
     if (!v.error) return { ok: true, data: v.value, model, cost };
     lastErr = v.error;
@@ -211,8 +282,14 @@ export async function submitBatch(env, { feature, items, createdBy = 'Automatic'
   const b = await budgetCheck(env);
   if (!b.ok) return { ok: false, error: b.error, budget: true };
   const s = await getAiSettings(db), model = modelFor(env, s, feature);
+  if (model === 'mock') {
+    const id = `mock_${crypto.randomUUID()}`;
+    await db.prepare(`INSERT INTO ai_batches (anthropic_id, feature, model, items_json, status, created_by, created_at) VALUES (?, ?, 'mock', ?, 'in_progress', ?, ?)`)
+      .bind(id, feature, JSON.stringify(items.map(it => ({ customId: it.customId, ...it.meta }))), createdBy, new Date().toISOString()).run();
+    return { ok: true, id, count: items.length, mock: true };
+  }
   const requests = items.map(it => ({ custom_id: it.customId, params: { model, max_tokens: it.maxTokens, output_config: { effort: 'low' },
-    system: it.schema ? `${it.system}\n\n${schemaHint(it.schema)}` : it.system, messages: [{ role: 'user', content: it.prompt }] } }));
+    system: it.schema ? `${it.system}\n\n${schemaHint(it.schema)}${it.allowNeeds ? `\n${NEEDS_HINT}` : ''}` : it.system, messages: [{ role: 'user', content: it.prompt }] } }));
   let r, d;
   try {
     r = await fetch(`${API(env)}/messages/batches`, { method: 'POST', headers: HEADERS(env), signal: AbortSignal.timeout(30000), body: JSON.stringify({ requests }) });
@@ -240,6 +317,14 @@ export async function pollBatches(env, onResult) {
   const s = await getAiSettings(db);
   let finished = 0;
   for (const bt of open) {
+    // CLAUDE_MOCK batches finish at once, with made-up answers (no API, no cost).
+    if (bt.model === 'mock') {
+      for (const item of JSON.parse(bt.items_json)) { try { await onResult({ item, text: '', ok: true, mock: true }); } catch (err) { console.error('[ai] mock batch result', err); } }
+      await logUsage(db, { feature: bt.feature, model: 'mock', relatedId: `batch:${bt.anthropic_id}` });
+      await db.prepare(`UPDATE ai_batches SET status = 'ended', ended_at = ? WHERE id = ?`).bind(new Date().toISOString(), bt.id).run();
+      finished++;
+      continue;
+    }
     let st;
     try { st = await (await fetch(`${API(env)}/messages/batches/${encodeURIComponent(bt.anthropic_id)}`, { headers: HEADERS(env), signal: AbortSignal.timeout(20000) })).json(); } catch { continue; }
     const stale = Date.now() - Date.parse(bt.created_at) > 30 * 3600e3;

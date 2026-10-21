@@ -93,6 +93,13 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
   .mcl :global(.mcl-row) { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .mcl :global(.mcl-row.end), .mcl-dlg .mcl-row.end { justify-content: flex-end; }
   .mcl :global(.mcl-hist) { margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--a-muted); }
+  .mcl :global(.mcl-dbox) { display: grid; gap: 8px; padding: 12px; border: 1px solid #BFD3FB; border-radius: 12px; background: color-mix(in srgb, #2563EB 5%, var(--a-card)); }
+  .mcl :global(.mcl-dh) { margin: 0; font-weight: 700; color: var(--a-ink); }
+  .mcl :global(.mcl-warn) { margin: 0; padding: 8px 10px; border-radius: 9px; background: #FFF7E6; color: #7A4B00; font-size: 13px; font-weight: 600; }
+  .mcl :global(.mcl-ask) { margin: 0; padding: 8px 10px; border-radius: 9px; background: #EEF4FF; color: #15233F; font-weight: 600; font-size: 14px; }
+  .mcl :global(.mcl-ok) { margin: 0; color: #166534; font-weight: 600; font-size: 14px; }
+  :global(body.admin-dark) .mcl :global(.mcl-warn) { background: #3A2E12; color: #F6D58E; }
+  :global(body.admin-dark) .mcl :global(.mcl-ask) { background: #16233A; color: #E3ECFF; }
   .mcl :global(.mcl-hist li) { padding: 5px 0; border-bottom: 1px solid var(--a-line); }
   .mcl :global(.sm) { min-height: 36px; padding: 6px 12px; font-size: 13px; }
   .mcl :global(.empty-state) { padding: 30px 16px; text-align: center; color: var(--a-muted); }
@@ -122,6 +129,8 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const wat = (iso, o) => iso ? new Date(iso).toLocaleString('en-GB', Object.assign({ weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }, o || {})) : '';
   const SUPER_TIP = 'Only super admins can mark tasks as done.';
+  // Writing tasks with "Draft with Claude" (functions/api/_lib/checklistDraft.js).
+  const WRITING = new Set(['Match report published', 'Post-match press conference / interviews', 'Injury report', 'Social media countdown and preview posts', 'Thank-you post for fans and sponsors']);
   const params = new URLSearchParams(location.search);
   let data = null, shown = null, filters = { phase: '', status: '', owner: '', q: '' };
   let msgT;
@@ -177,6 +186,7 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
             <label class="btn-o sm" style="display:inline-flex;align-items:center;cursor:pointer">📎 ${t.hasAttachment ? 'Replace file' : 'Upload file'}<input type="file" data-act="file" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx" hidden /></label>
             <span class="mcl-desc">PDF, JPG, PNG, DOCX or XLSX, up to 10 MB</span></div>`}
           ${t.hasAttachment ? `<p><a href="/api/admin/match-checklist/tasks/${t.id}/file">⬇ Download ${esc(t.attachment_name || 'file')}</a></p>` : ''}
+          ${WRITING.has(t.title) && !closed ? `<div class="mcl-draft" data-draft="${t.id}"><p class="mcl-desc">✍ Draft with Claude loads when you open this.</p></div>` : ''}
           <ul class="mcl-hist" data-hist="${t.id}"><li>History loads when you open this.</li></ul>
         </div>
       </details>
@@ -330,7 +340,51 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
       const lab = v => data.labels.status[v] || v || '';
       ul.innerHTML = history.length ? history.map(h => `<li><b>${esc(wat(h.created_at))}</b> · ${esc(h.admin_name || 'Automatic')}: ${esc(WHAT[h.action] || h.action)}${h.action === 'status_changed' || h.action === 'unticked' ? ` (${esc(lab(h.old_value))} → ${esc(lab(h.new_value))})` : ''}${h.reason ? ` · reason: ${esc(h.reason)}` : ''}</li>`).join('') : '<li>No changes yet.</li>';
     } catch (err) { ul.innerHTML = `<li>${esc(err.message)}</li>`; }
+    const box = d.querySelector('[data-draft]');
+    if (box) loadDraft(box);
   }, true);
+
+  // ── "Draft with Claude" on writing tasks (saved as Draft only; the task then goes to "submitted for review") ──
+  const FIELD = { title: 'Headline', summary: 'Summary', body: 'Article', whatsapp: 'WhatsApp Channel', facebook: 'Facebook', x: 'X (Twitter)' };
+  async function loadDraft(box) {
+    try { renderDraft(box, await api(`/api/admin/match-checklist/tasks/${box.dataset.draft}/draft`)); }
+    catch (err) { box.innerHTML = `<p class="mcl-desc">${esc(err.message)}</p>`; }
+  }
+  function renderDraft(box, d) {
+    if (!d.available) { box.innerHTML = ''; return; }
+    const f = d.facts || {};
+    const known = [f.match, f.competition, f.kickoffNigeriaTime, f.score ? `Score: ${f.score}` : '', f.timeline && f.timeline.length ? `${f.timeline.length} timeline events` : '', f.stats ? 'match stats' : ''].filter(Boolean).join(' · ');
+    let html = `<div class="mcl-dbox"><p class="mcl-dh">✍ Draft with Claude: ${esc(d.label)}</p>
+      <p class="mcl-desc">Already filled in from the fixtures and Live Match Control: ${esc(known || 'the match details')}.</p>`;
+    if (d.saved) html += `<p class="mcl-ok">✓ ${esc(d.saved.note || 'Saved')}${d.saved.path ? ` (${esc(d.saved.path.split('/').pop())})` : ''}, ${esc(wat(d.saved.at))}${d.saved.by ? `, ${esc(d.saved.by)}` : ''}</p>`;
+    if (!d.canDraft) { box.innerHTML = html + '<p class="mcl-desc">Drafting with Claude is for content editors and Super Admins.</p></div>'; return; }
+    if (d.question) html += `<p class="mcl-ask">Claude asks: ${esc(d.question)}</p>`;
+    html += `<label>${esc(d.ask)}<textarea data-dfacts rows="3" maxlength="2000">${esc(d.staffFacts || '')}</textarea></label>
+      <p class="mcl-desc">Emails and phone numbers are removed before anything is sent. Claude must not invent facts or quotes.</p>
+      <div class="mcl-row"><button type="button" class="btn-p sm" data-dact="prepare">${d.proposal ? 'Write it again' : 'Write the draft with Claude'}</button><span class="mcl-desc">Costs a fraction of a US cent</span></div>`;
+    if (d.proposal) {
+      html += `<p class="mcl-warn">⚠️ Check the facts before saving: names, the score, minutes and quotes must be right.${d.proposal.mock ? ' (Mock answer: CLAUDE_MOCK is on, no AI was used.)' : ''}</p>`
+        + Object.entries(d.schema).map(([k, r]) => `<label>${esc(FIELD[k] || k)} (${r.min}–${r.max} characters)${r.multiline || r.max > 300 ? `<textarea data-dfield="${esc(k)}" rows="${r.max > 1000 ? 10 : 4}" maxlength="${r.max}">${esc(d.proposal[k])}</textarea>` : `<input data-dfield="${esc(k)}" maxlength="${r.max}" value="${esc(d.proposal[k])}" />`}</label>`).join('')
+        + `<div class="mcl-row"><button type="button" class="btn-p sm" data-dact="save" ${d.kind === 'news' && !d.githubReady ? 'disabled title="Needs the GitHub connection"' : ''}>${d.kind === 'news' ? 'Save as Draft in News' : '✓ Mark posts as used'}</button>
+          <input data-dnote maxlength="300" placeholder="Try again with a note, e.g. shorter" /><button type="button" class="btn-o sm" data-dact="retry">Try again</button></div>`;
+    }
+    box.innerHTML = html + '</div>';
+  }
+  $('view').addEventListener('click', async e => {
+    const b = e.target.closest('[data-dact]'); if (!b) return;
+    const box = b.closest('[data-draft]'), id = box.dataset.draft, act = b.dataset.dact;
+    const body = act === 'save'
+      ? { action: 'save', proposal: Object.fromEntries([...box.querySelectorAll('[data-dfield]')].map(el => [el.dataset.dfield, el.value])) }
+      : { action: 'prepare', facts: box.querySelector('[data-dfacts]').value, note: act === 'retry' ? (box.querySelector('[data-dnote]').value || 'Please write a different version.') : '' };
+    if (act === 'save' && !confirm('Save this draft? A news text is saved as a Draft in News (not published); the task moves to "submitted for review".')) return;
+    b.disabled = true; const label = b.textContent; b.textContent = act === 'save' ? 'Saving…' : 'Asking Claude…';
+    try {
+      const d = await api(`/api/admin/match-checklist/tasks/${id}/draft`, { method: 'POST', body: JSON.stringify(body) });
+      if (act === 'save') { msg(d.saved.note || 'Saved.', true); await load(); return; }
+      msg(d.needs ? 'Claude needs more facts: see its question.' : 'Draft ready: check it below.', !d.needs);
+      await loadDraft(box);
+    } catch (err) { msg(err.message, false); b.disabled = false; b.textContent = label; }
+  });
 
   $('emailCancel').addEventListener('click', () => $('emailDlg').close());
   $('emailForm').addEventListener('submit', async e => {

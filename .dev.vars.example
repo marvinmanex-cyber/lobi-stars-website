@@ -35,3 +35,15 @@ GA4_MEASUREMENT_ID=
 GA4_PROPERTY_ID=
 GSC_SITE_URL=sc-domain:lobistarsfc.com
 GOOGLE_SERVICE_ACCOUNT_JSON=
+
+# AI (Analytics weekly summary, AI Fix). Locally, prefer CLAUDE_MOCK=true (no AI, no cost).
+ANTHROPIC_API_KEY=
+AI_SUMMARY=off
+CLAUDE_MOCK=true
+# CLAUDE_MODEL_DEFAULT=claude-haiku-5-5
+# CLAUDE_MODEL_ADVANCED=claude-sonnet-5-5
+# GitHub (AI Fix applies page fixes/drafts): fine-grained token, this repo only, Contents read+write
+GITHUB_TOKEN=
+# Absolute links in emails/PDFs; which matches are the club's
+SITE_URL=http://127.0.0.1:8788
+CLUB_NAME=Lobi Stars

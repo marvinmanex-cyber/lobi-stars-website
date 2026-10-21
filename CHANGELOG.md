@@ -8,6 +8,83 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-21: Phone header gets out of the way when scrolling
+
+**What changed**
+- On phones and tablets, the white header (logo, partner, search, basket,
+  account) now slides away while you scroll down the page and comes back as
+  soon as you scroll up a little. It is always shown at the top of a page,
+  when the menu is open and when using a keyboard. The computer view is
+  unchanged. Match Centre tabs and the programme reader bar move up with it.
+
+**Who it affects:** fans on phones and tablets.
+
+**What staff need to do:** nothing.
+
+---
+
+## 2026-10-21: AI Fix completed (everything from the audit)
+
+**What changed**
+- **Analytics** has a button on each recommendation:
+  - **Click to fix** for Super Admins, **Prepare fix** for the other report
+    roles (Head of Media, CRM Manager);
+  - **Fix with my input** when Claude needs a few words.
+
+  Those roles can now open AI Fix and prepare fixes; applying stays with the
+  Super Admins.
+- **Proposals**:
+  - the old and new wording are shown side by side, with the new words
+    highlighted;
+  - **✎ Edit** before applying (checked again);
+  - **Try again with a note**;
+  - a **check the facts** warning on texts with facts;
+  - Claude **asks for missing facts** instead of guessing.
+- **Fix all**:
+  - shows the fixes grouped by type, with the **estimated cost**, before
+    sending;
+  - an email when they are ready;
+  - a **Ready to apply** list with tick boxes (Apply selected / Discard
+    selected).
+- **Fix history** page (every step, every AI email, with filters) and **Fix
+  results** page (the figure each fix was meant to improve, at 0, 14 and 30
+  days: better / worse / no change).
+- **Applied fixes are checked daily:**
+  - **verified** when Analytics no longer flags the problem;
+  - **failed** if the change never went live, or the problem is still there
+    after 30 days.
+  - Undo asks first if the item was changed again since.
+- **Weekly check-up**: up to 20 automatic fixes at half price, and a summary
+  email with the month's spend. It runs once a week only.
+- **Match Checklist › Draft with Claude** on the five writing tasks:
+  - the match details are filled in automatically;
+  - the draft is saved as a Draft in News or as posts to copy;
+  - the task moves to *Submitted for review*.
+- **Code proposals** (Super Admins, layout problems): saved on a separate
+  GitHub branch for a developer, never live by themselves; download or email.
+- **Safety and cost**:
+  - emails and phone numbers typed by staff are removed before anything goes
+    to Claude;
+  - the advanced (dearer) model can only be chosen for long writing and code;
+  - a mock mode (`CLAUDE_MOCK`) and a dry-run command for testing without AI;
+  - the budget warning email is recorded even if email isn't set up.
+- **Match Checklist**:
+  - optional separate **home** and **away** templates;
+  - broken task links are reported to the Super Admins every day.
+- The base database file (`schema.sql`) now works on a brand-new database.
+
+**Who it affects:** Super Admins; Head of Media and CRM Manager (prepare
+fixes); content editors (Draft with Claude in the checklist).
+
+**What staff need to do:** nothing.
+
+Optional:
+- add "Pull requests: Read and write" to the GitHub token so code proposals
+  open a pull request automatically (HANDOVER-TODO.md A31);
+- enter the model prices on AI Settings (A30).
+
+---
+
 ## 2026-10-21: Delete messages in the Inbox
 
 **What changed**

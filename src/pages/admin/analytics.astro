@@ -429,7 +429,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   }
 
   // Super Admins: a shortcut to AI Fix (Claude prepares fixes for these).
-  document.addEventListener('ls:admin', e => { const a = e.detail; if (a && a.permissions && a.permissions.includes('ai.fix')) document.getElementById('aiFixLink').hidden = false; });
+  document.addEventListener('ls:admin', e => { const a = e.detail; if (a && a.permissions && (a.permissions.includes('ai.fix') || a.permissions.includes('ai.prepare'))) document.getElementById('aiFixLink').hidden = false; });
   // ── Recommendations (last 28 days; only for staff with "All reports") ──
   const PRI = { high: ['Do this first', '#E31E24'], medium: ['Worth doing', '#EAB308'], low: ['When you have time', '#10B981'] };
   async function recPost(body) {
@@ -454,7 +454,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const linkBtn = l => l ? `<a class="btn-o sm" href="${esc(l.href)}"${l.external ? ' target="_blank" rel="noopener"' : ''}>${esc(l.label)}${l.external ? ' &#8599;' : ''}</a>` : '';
   function recCard(r, isDone) {
     const [pl, pc] = PRI[r.priority] || PRI.medium;
-    return `<article class="rec" style="--pc:${pc}">
+    return `<article class="rec" style="--pc:${pc}" data-rec="${esc(r.id)}">
       <div class="rec-top"><span class="pill">${pl}</span><span class="pill area">${esc(r.area)}</span></div>
       <h4>${esc(r.title)}</h4>
       <p>${esc(r.finding)}</p>
@@ -464,6 +464,39 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         : `<button type="button" class="btn-o sm" data-done="${esc(r.id)}">&#10003; Mark as done</button>`}</div>
     </article>`;
   }
+  // AI Fix buttons on each recommendation (staff whose role includes AI Fix):
+  // Claude can prepare it → "Click to fix" (Super Admins) / "Prepare fix" (others);
+  // needs a few words → "Fix with my input"; a person does it → no button (steps above).
+  let aiPerms = null;
+  document.addEventListener('ls:admin', e => { aiPerms = (e.detail && e.detail.permissions) || []; if (lastRecs) aiButtons(); });
+  const fixAnchor = id => '/admin/ai/#fix-' + String(id).replace(/[^\w-]/g, '_');
+  async function aiButtons() {
+    if (!aiPerms || !(aiPerms.includes('ai.fix') || aiPerms.includes('ai.prepare'))) return;
+    let d;
+    try { const r = await fetch('/api/admin/ai', { headers: { 'x-admin-code': code }, cache: 'no-store' }); if (!r.ok) return; d = await r.json(); } catch { return; }
+    const items = new Map(d.items.map(i => [i.id, i]));
+    document.querySelectorAll('#recList .rec[data-rec]').forEach(card => {
+      const it = items.get(card.dataset.rec), act = card.querySelector('.rec-act');
+      if (!it || !act || card.querySelector('[data-aifix], .aifix-link')) return;
+      let html = '';
+      if (it.category === 'auto_fix' && it.fix) {
+        html = ['awaiting_approval', 'preparing', 'applied', 'verified'].includes(it.status)
+          ? `<a class="btn-o sm aifix-link" href="${fixAnchor(it.id)}">&#129302; ${it.status === 'awaiting_approval' ? 'Fix ready: check it' : it.status === 'preparing' ? 'Fix being prepared' : 'Fixed: see it'} &rarr;</a>`
+          : `<button type="button" class="btn-p sm" data-aifix="${esc(it.id)}">&#129302; ${d.me.canApply ? 'Click to fix' : 'Prepare fix'}</button>`;
+      } else if (it.category === 'input_needed' && it.fix) html = `<a class="btn-p sm aifix-link" href="${fixAnchor(it.id)}">&#129302; Fix with my input &rarr;</a>`;
+      if (html) act.insertAdjacentHTML('afterbegin', html);
+    });
+  }
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-aifix]'); if (!b) return;
+    b.disabled = true; b.textContent = 'Asking Claude…';
+    try {
+      const r = await fetch('/api/admin/ai', { method: 'POST', headers: { 'x-admin-code': code, 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'prepare', id: b.dataset.aifix }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || 'Could not prepare the fix');
+      location.href = fixAnchor(b.dataset.aifix);
+    } catch (err) { alert(err.message); b.disabled = false; b.textContent = 'Try again'; }
+  });
   let lastRecs = null;
   function renderRecs(d) {
     lastRecs = d;
@@ -474,6 +507,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     $('recDoneWrap').hidden = !d.done.length;
     $('recDoneSum').textContent = `Marked as done (${d.done.length})`;
     $('recDone').innerHTML = d.done.map(r => recCard(r, true)).join('');
+    aiButtons();
     const ai = d.ai || {};
     $('recAi').innerHTML = ai.summary && ai.summary.text
       ? `<div class="rec-ai"><b>&#129302; Weekly summary by Claude</b> <span class="gs-status">(${esc(fmtWat(ai.summary.at))})</span>\n${esc(ai.summary.text).replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>').replace(/^#+\s*/gm, '')}</div>${ai.enabled ? '<p><button type="button" class="btn-o sm" id="aiNow">Write a new summary now</button></p>' : ''}`

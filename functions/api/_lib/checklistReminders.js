@@ -40,8 +40,22 @@ export async function runReminders(env, { now = Date.now(), dryRun = false, forc
     .filter(x => x.sections.overdue.length + x.sections.today.length + x.sections.soon.length > 0);
   const count = items.reduce((n, x) => n + x.sections.overdue.length + x.sections.today.length + x.sections.soon.length, 0);
   if (!items.length) {
+    // No digest today, but broken task links are still reported to the Super Admins (once a day).
+    const brokenToday = brokenLinks(checklists);
+    let brokenSent = false;
+    if (!dryRun && brokenToday.length && env.RESEND_API_KEY) {
+      const supers = (await db.prepare(`SELECT email FROM admin_users WHERE active = 1 AND role = 'super_admin'`).all()).results.map(r => String(r.email || '').toLowerCase()).filter(e => EMAIL_RE.test(e));
+      if (supers.length) {
+        try {
+          const { sendEmail } = await import('./email.js');
+          await sendEmail(env, { to: supers, subject: `Match checklist: ${brokenToday.length} broken task link${brokenToday.length === 1 ? '' : 's'}`,
+            html: `<p>These "Go to task" links don't work. Fix them on Match Checklist › Templates:</p><ul>${brokenToday.map(b => `<li>${String(b).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))}</li>`).join('')}</ul><p><a href="${base}/admin/match-checklist/templates/">Open Templates</a></p>` });
+          brokenSent = true;
+        } catch (err) { console.error('[checklist] broken links email', err); }
+      }
+    }
     if (!dryRun) await saveSetting(db, 'last_sent_date', today, 'Automatic');
-    return { sent: [], skipped: 'Nothing outstanding: no email sent.', count: 0 };
+    return { sent: [], skipped: 'Nothing outstanding: no email sent.', count: 0, brokenLinks: brokenToday, brokenSent };
   }
   const recipients = await reminderRecipients(env, s, checklists);
   const supers = new Set((await db.prepare(`SELECT email FROM admin_users WHERE active = 1 AND role = 'super_admin'`).all()).results.map(r => String(r.email || '').toLowerCase()));

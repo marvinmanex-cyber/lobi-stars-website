@@ -4,13 +4,14 @@
 // default), prices per model, auto-apply, the weekly scan and Test connection.
 import Layout from '../../../layouts/Layout.astro';
 import AdminNav from '../../../components/admin/AdminNav.astro';
+import AiTabs from '../../../components/admin/AiTabs.astro';
 ---
 <Layout title="AI Settings | Lobi Stars Admin" description="Budget and settings for Claude." noindex>
   <div class="wrap ais">
     <AdminNav current="ai-settings" />
     <header class="ais-head">
       <div><div class="stag">Settings</div><h1 class="stitle">AI <span class="r">Settings</span></h1></div>
-      <a class="btn-o sm" href="/admin/ai/">← AI Fix</a>
+      <AiTabs current="settings" />
     </header>
     <p class="ais-msg" id="msg" role="status" aria-live="polite" hidden></p>
     <div class="ais-grid">
@@ -34,7 +35,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
           </div>
           <label>Most fixes in one batch<input name="max_items_per_batch" type="number" min="1" max="100" step="1" required /></label>
           <label class="ais-check"><input type="checkbox" name="ask_claude_enabled" /> "Ask Claude" box on AI Fix</label>
-          <fieldset><legend>Model per feature (cheap is enough for almost everything)</legend><div id="modelRows"></div></fieldset>
+          <fieldset><legend>Model per feature (cheap is enough for almost everything; the advanced model is only offered for long writing and code)</legend><div id="modelRows"></div><div id="taskRows"></div></fieldset>
           <fieldset><legend>Prices (US$ per million tokens, from anthropic.com/pricing)</legend><p class="muted" id="priceNote"></p><div id="priceRows"></div></fieldset>
           <div class="ais-row end"><button class="btn-p" type="submit">Save settings</button></div>
         </form>
@@ -101,8 +102,11 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       for (const k of ['monthly_budget', 'warn_at_percent', 'weekly_scan_day', 'weekly_scan_time', 'max_items_per_batch']) f[k].value = s[k];
       f.auto_apply_enabled.checked = s.auto_apply_enabled === '1'; f.ask_claude_enabled.checked = s.ask_claude_enabled === '1';
       const auto = String(s.auto_apply_types || '').split(',');
-      $('autoTypes').innerHTML = data.fixTypes.map(t => { const ok = t.id === 'rerun_sync'; return `<label class="ais-check"><input type="checkbox" name="auto" value="${esc(t.id)}" ${auto.includes(t.id) ? 'checked' : ''} ${ok ? '' : 'disabled'} /> ${esc(t.label)}${ok ? '' : ' <span class="muted">(always needs a Super Admin\'s approval)</span>'}</label>`; }).join('');
-      $('modelRows').innerHTML = data.features.filter(x => x.id !== 'test').map(x => `<label class="ais-mrow">${esc(x.label)}<select data-model="${esc(x.id)}" aria-label="Model for ${esc(x.label)}"><option value="default">Cheap (${esc(data.models.default)})</option><option value="advanced" ${s['model_' + x.id] === 'advanced' ? 'selected' : ''}>Advanced (${esc(data.models.advanced)})</option></select></label>`).join('');
+      $('autoTypes').innerHTML = data.fixTypes.map(t => { const ok = t.autoAllowed; return `<label class="ais-check"><input type="checkbox" name="auto" value="${esc(t.id)}" ${auto.includes(t.id) ? 'checked' : ''} ${ok ? '' : 'disabled'} /> ${esc(t.label)}${ok ? ' <span class="muted">(only when there is nothing to overwrite)</span>' : ' <span class="muted">(always needs a Super Admin\'s approval: changes pages or contains facts)</span>'}</label>`; }).join('');
+      $('modelRows').innerHTML = data.features.filter(x => x.id !== 'test').map(x => x.advancedAllowed
+        ? `<label class="ais-mrow">${esc(x.label)}<select data-model="${esc(x.id)}" aria-label="Model for ${esc(x.label)}"><option value="default">Cheap (${esc(data.models.default)})</option><option value="advanced" ${s['model_' + x.id] === 'advanced' ? 'selected' : ''}>Advanced (${esc(data.models.advanced)})</option></select></label>`
+        : `<div class="ais-mrow">${esc(x.label)}<span class="muted">Cheap (${esc(data.models.default)})</span></div>`).join('');
+      $('taskRows').innerHTML = data.taskTypes.map(t => `<label class="ais-mrow">Fix: ${esc(t.label)}<select data-task="${esc(t.id)}" aria-label="Model for ${esc(t.label)}"><option value="default">Cheap (${esc(data.models.default)})</option><option value="advanced" ${t.model === 'advanced' ? 'selected' : ''}>Advanced (${esc(data.models.advanced)})</option></select></label>`).join('');
       const assumed = Object.values(data.prices).some(p => p.assumed);
       $('priceNote').textContent = assumed ? `Until you enter the prices, the budget counts every model at $${data.assumedPrice.in} in / $${data.assumedPrice.out} out (on the high side, so the budget is never overspent). Batches count half.` : 'Batches are counted at half price.';
       $('priceRows').innerHTML = '<div class="ais-prow"><b>Model</b><b>Input</b><b>Output</b></div>' + Object.keys(data.prices).map(m => `<div class="ais-prow"><span>${esc(m)}</span><input data-price="${esc(m)}" data-k="in" type="number" min="0" step="0.01" aria-label="${esc(m)} input price" value="${data.prices[m].assumed ? (s['price:' + m + ':in'] || '') : data.prices[m].in}" /><input data-price="${esc(m)}" data-k="out" type="number" min="0" step="0.01" aria-label="${esc(m)} output price" value="${data.prices[m].assumed ? (s['price:' + m + ':out'] || '') : data.prices[m].out}" /></div>`).join('');
@@ -111,11 +115,12 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   $('form').addEventListener('submit', async e => {
     e.preventDefault(); const f = e.target.elements;
     const models = {}; document.querySelectorAll('[data-model]').forEach(el => { models[el.dataset.model] = el.value; });
+    const taskModels = {}; document.querySelectorAll('[data-task]').forEach(el => { taskModels[el.dataset.task] = el.value; });
     const prices = {}; document.querySelectorAll('[data-price]').forEach(el => { (prices[el.dataset.price] ||= {})[el.dataset.k] = el.value; });
     try {
       await api('PUT', { monthly_budget: f.monthly_budget.value, warn_at_percent: f.warn_at_percent.value, weekly_scan_day: f.weekly_scan_day.value, weekly_scan_time: f.weekly_scan_time.value,
         max_items_per_batch: f.max_items_per_batch.value, auto_apply_enabled: f.auto_apply_enabled.checked, ask_claude_enabled: f.ask_claude_enabled.checked,
-        auto_apply_types: [...document.querySelectorAll('input[name="auto"]:checked')].map(x => x.value), models, prices });
+        auto_apply_types: [...document.querySelectorAll('input[name="auto"]:checked')].map(x => x.value), models, taskModels, prices });
       msg('Settings saved.', true); load();
     } catch (err) { msg(err.message, false); }
   });

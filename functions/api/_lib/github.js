@@ -40,3 +40,48 @@ export async function deleteFile(env, path, message, sha) {
   if (!r.ok && r.status !== 404) throw new Error(`GitHub error ${r.status}.`);
   return true;
 }
+
+// ── Code proposals (Super Admins): NEVER on the live branch ──
+// Page code can be READ (to propose a change) and written only to a separate
+// branch named ai-proposal/…, from which a person opens or merges a pull request.
+const CODE_FILE = /^src\/(pages|components|layouts)\/[\w\-/[\].]+\.astro$/;
+const PROPOSAL_BRANCH = /^ai-proposal\/[a-z0-9-]{3,80}$/;
+const api = (env, p) => `${env.GITHUB_API_BASE || 'https://api.github.com'}/repos/${REPO(env)}${p}`;
+export const isCodeFile = path => CODE_FILE.test(path) && !path.includes('..');
+
+/** A page's code from the live branch (read-only). { sha, text } or null. */
+export async function readCodeFile(env, path) {
+  if (!isCodeFile(path)) throw new Error('Only page code (.astro files) can be read for a proposal.');
+  const r = await fetch(`${url(env, path)}?ref=${encodeURIComponent(BRANCH(env))}`, { headers: headers(env), signal: AbortSignal.timeout(20000) });
+  if (r.status === 404) return null;
+  if (!r.ok) throw new Error(`GitHub error ${r.status}.`);
+  const d = await r.json();
+  return { sha: d.sha, text: fromB64(d.content) };
+}
+/** Creates the proposal branch from the live branch and saves the changed file on it. Returns the commit id. */
+export async function commitToProposalBranch(env, branch, path, text, message) {
+  if (!PROPOSAL_BRANCH.test(branch) || branch === BRANCH(env)) throw new Error('Proposals only go to an ai-proposal/ branch.');
+  if (!isCodeFile(path)) throw new Error('Only page code can be proposed.');
+  const ref = await fetch(api(env, `/git/ref/heads/${encodeURIComponent(BRANCH(env))}`), { headers: headers(env), signal: AbortSignal.timeout(20000) });
+  if (!ref.ok) throw new Error(`GitHub error ${ref.status} (reading the live branch).`);
+  const base = (await ref.json()).object?.sha;
+  const mk = await fetch(api(env, '/git/refs'), { method: 'POST', headers: { ...headers(env), 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000), body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: base }) });
+  if (!mk.ok && mk.status !== 422) throw new Error(`GitHub error ${mk.status} (creating the branch).`);
+  const cur = await fetch(`${url(env, path)}?ref=${encodeURIComponent(branch)}`, { headers: headers(env), signal: AbortSignal.timeout(20000) });
+  const curSha = cur.ok ? (await cur.json()).sha : undefined;
+  const r = await fetch(url(env, path), { method: 'PUT', headers: { ...headers(env), 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
+    body: JSON.stringify({ message, content: toB64(text), branch, committer: COMMITTER, ...(curSha ? { sha: curSha } : {}) }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(`GitHub error ${r.status}${d.message ? `: ${d.message}` : ''} (saving on the branch).`);
+  return d.commit?.sha || null;
+}
+/** Opens a DRAFT pull request (never merged by the website). Needs "Pull requests: write" on the token; otherwise { url: null, note }. */
+export async function openDraftPullRequest(env, branch, title, body) {
+  if (!PROPOSAL_BRANCH.test(branch)) throw new Error('Proposals only go to an ai-proposal/ branch.');
+  const r = await fetch(api(env, '/pulls'), { method: 'POST', headers: { ...headers(env), 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(20000),
+    body: JSON.stringify({ title, body, head: branch, base: BRANCH(env), draft: true }) });
+  const d = await r.json().catch(() => ({}));
+  if (r.ok) return { url: d.html_url || null };
+  return { url: null, note: r.status === 403 || r.status === 404 ? 'The branch is saved. To open the pull request automatically, add "Pull requests: Read and write" to the GitHub token; or open it on GitHub yourself.' : `Pull request not opened (GitHub ${r.status}).` };
+}
+export const branchUrl = (env, branch) => `https://github.com/${REPO(env)}/tree/${branch}`;

@@ -1,0 +1,78 @@
+---
+// Settings › AI Fix › Fix history: every step of every AI fix (prepared,
+// edited, tried again, applied, undone, verified, failed…), the code
+// proposals, checklist drafts and every AI email, with filters.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import AiTabs from '../../../components/admin/AiTabs.astro';
+---
+<Layout title="Fix History | Lobi Stars Admin" description="Everything AI Fix has done." noindex>
+  <div class="wrap aih">
+    <AdminNav current="ai-fix" />
+    <header class="aih-head">
+      <div><div class="stag">Settings</div><h1 class="stitle">Fix <span class="r">history</span></h1></div>
+      <AiTabs current="history" />
+    </header>
+    <form class="aih-filters" id="filters" role="search" aria-label="Filter the history">
+      <label>What<select name="action">
+        <option value="">Everything</option><option value="prepared">Prepared</option><option value="retried">Tried again</option><option value="edited">Edited</option>
+        <option value="needs_input">Claude asked for facts</option><option value="applied">Applied</option><option value="auto_applied">Applied automatically</option>
+        <option value="undone">Undone</option><option value="verified">Verified</option><option value="failed">Failed</option><option value="dismissed">Discarded</option>
+        <option value="batch_sent">Sent in a batch</option><option value="draft_saved">Checklist draft saved</option><option value="code_proposed">Code proposal</option><option value="email">Emails</option>
+      </select></label>
+      <label>Fix type<select name="fixType" id="fixType"><option value="">All</option></select></label>
+      <label>Who<select name="who" id="who"><option value="">Anyone</option></select></label>
+      <label>From<input type="date" name="from" /></label>
+      <label>To<input type="date" name="to" /></label>
+      <label>Search<input type="search" name="q" placeholder="Page, phrase, detail" /></label>
+    </form>
+    <section class="aih-card"><div id="list"><p class="muted">Loading…</p></div></section>
+  </div>
+</Layout>
+
+<style>
+  .aih { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; }
+  .aih-head { display: flex; justify-content: space-between; align-items: end; gap: 12px 24px; flex-wrap: wrap; margin-bottom: 16px; }
+  .aih-filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .aih-filters label { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--a-muted); }
+  .aih-filters select, .aih-filters input { min-height: 40px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 14px; min-width: 0; }
+  .aih-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 14px 16px; }
+  .aih :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .aih :global(th), .aih :global(td) { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--a-line); vertical-align: top; overflow-wrap: anywhere; }
+  .aih :global(td.nw) { white-space: nowrap; }
+  .aih :global(details summary) { cursor: pointer; color: var(--a-muted); font-size: 13px; }
+  .aih :global(pre) { white-space: pre-wrap; font-size: 12px; margin: 4px 0 0; max-height: 240px; overflow: auto; }
+  .aih :global(.pill) { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--a-soft); color: var(--a-muted); white-space: nowrap; }
+  .aih :global(.pill.applied), .aih :global(.pill.auto_applied), .aih :global(.pill.verified) { background: #DCFCE7; color: #166534; }
+  .aih :global(.pill.failed), .aih :global(.pill.undone) { background: #FDECEC; color: #A3161B; }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const wat = iso => new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
+  const LABEL = { prepared: 'Prepared', retried: 'Tried again', edited: 'Edited', needs_input: 'Claude asked for facts', applied: 'Applied', auto_applied: 'Applied automatically', undone: 'Undone',
+    verified: 'Verified', failed: 'Failed', dismissed: 'Discarded', reopened: 'Shown again', batch_sent: 'Sent in a batch', draft_saved: 'Checklist draft saved', code_proposed: 'Code proposal', code_emailed: 'Proposal emailed', email: 'Email' };
+  const f = document.getElementById('filters');
+  let filled = false, t;
+  async function load() {
+    const q = new URLSearchParams([...new FormData(f)].filter(([, v]) => v));
+    const r = await fetch('/api/admin/ai/history?' + q, { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/ai/history/'; return; }
+    const d = await r.json();
+    if (!r.ok) { document.getElementById('list').textContent = d.error || 'Request failed'; return; }
+    if (!filled) {
+      document.getElementById('fixType').insertAdjacentHTML('beforeend', d.fixTypes.map(x => `<option value="${esc(x.id)}">${esc(x.label)}</option>`).join('') + '<option value="code_proposal">Code proposals</option><option value="checklist_news">Checklist news drafts</option><option value="checklist_social">Checklist posts</option>');
+      document.getElementById('who').insertAdjacentHTML('beforeend', d.people.map(p => `<option>${esc(p)}</option>`).join(''));
+      filled = true;
+    }
+    const show = v => v === null || v === undefined ? '' : `<details><summary>details</summary><pre>${esc(JSON.stringify(v, null, 2))}</pre></details>`;
+    document.getElementById('list').innerHTML = d.rows.length ? `<div class="scroll"><table><thead><tr><th>When (Lagos)</th><th>What</th><th>Recommendation</th><th>Who</th><th>Detail</th><th>Before</th><th>After</th></tr></thead><tbody>${d.rows.map(r => `<tr>
+      <td class="nw">${esc(wat(r.created_at))}</td><td><span class="pill ${esc(r.action)}">${esc(LABEL[r.action] || r.action)}</span></td><td>${esc(r.rec_id || '–')}</td><td>${esc(r.admin_name)}</td><td>${esc(r.detail || '')}</td><td>${show(r.before)}</td><td>${show(r.after)}</td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="muted">Nothing yet with these filters.</p>';
+  }
+  f.addEventListener('input', () => { clearTimeout(t); t = setTimeout(load, 300); });
+  load();
+})();
+</script>
