@@ -28,15 +28,33 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <form class="panel" id="form">
       <h2>Settings</h2>
       <label class="ac-check"><input type="checkbox" id="enabled" /> Lobi Stars FC Live is switched on</label>
-      <div class="form-grp">
-        <label class="form-lbl" for="streamUrl">Public stream address (what fans' players connect to)</label>
-        <input class="form-inp" id="streamUrl" placeholder="https://stream.lobistarsfc.com/live" />
-        <p class="muted small">Must be a lobistarsfc.com address, e.g. <code>https://stream.lobistarsfc.com/live</code>, or <code>/live/commentary</code> to use the website's own relay. Leave blank to use the server default.</p>
-      </div>
-      <div class="form-grp">
-        <label class="form-lbl" for="backupUrl">Backup stream address (optional)</label>
-        <input class="form-inp" id="backupUrl" placeholder="https://stream2.lobistarsfc.com/live" />
-      </div>
+      <fieldset class="ac-partner">
+        <legend>Broadcast partner: Aeson Sports Radio</legend>
+        <p class="muted small">Aeson produces the commentary; fans only ever see and hear "Lobi Stars FC Live". Aeson's own addresses and name are never shown on the website.</p>
+        <div class="form-grp">
+          <label class="form-lbl" for="statusUrl">Status address (Aeson's on-air feed)</label>
+          <input class="form-inp" id="statusUrl" inputmode="url" placeholder="https://www.aesonsports.com/api/radio/status" />
+          <p class="muted small">Read by the website every 15 seconds (never by fans' browsers). Leave blank for Aeson's standard address.</p>
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl" for="streamUrl">Primary listen address (what fans' players connect to)</label>
+          <input class="form-inp" id="streamUrl" inputmode="url" placeholder="https://stream.lobistarsfc.com/listen/lobi_stars_fc_live/radio.mp3" />
+          <p class="muted small">Must be a lobistarsfc.com address, e.g. <code>https://stream.lobistarsfc.com/…</code>, or <code>/live/commentary</code> to use the website's own relay. Leave blank to use the server default.</p>
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl" for="backupUrl">Backup listen address (optional)</label>
+          <input class="form-inp" id="backupUrl" inputmode="url" placeholder="https://stream2.lobistarsfc.com/…" />
+          <p class="muted small">Players switch to it straight away if the primary fails, and back again if needed.</p>
+        </div>
+        <div class="form-grp">
+          <label class="form-lbl" for="webhookSecret">Webhook secret (shared with Aeson)</label>
+          <input class="form-inp" id="webhookSecret" type="password" autocomplete="new-password" spellcheck="false" />
+          <p class="muted small" id="secretNote">Aeson signs each on-air/off-air message with it, so the status changes within seconds. Saved encrypted and never shown again: type a new one only to replace it.</p>
+          <label class="ac-check ac-check--sm" id="clearWrap" hidden><input type="checkbox" id="clearSecret" /> Remove the saved secret</label>
+        </div>
+        <p class="small">Webhook address for Aeson: <code id="webhookUrl">–</code> <button type="button" class="btn-o ac-copy" id="copyHook">Copy</button></p>
+        <p class="small" id="partnerLast" aria-live="polite"></p>
+      </fieldset>
       <div class="form-row">
         <div class="form-grp"><label class="form-lbl" for="commentators">Commentators (optional, shown on the player)</label><input class="form-inp" id="commentators" placeholder="e.g. Terna Akaa & Ngozi Bello" /></div>
         <div class="form-grp"><label class="form-lbl" for="maxListeners">Maximum listeners (relay only)</label><input class="form-inp" id="maxListeners" type="number" min="1" max="100000" /></div>
@@ -79,7 +97,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .ac-test { margin-top: 14px; }
   .ac-test :global(p) { margin: 6px 0; padding: 10px 12px; border-radius: 8px; }
   .ac-test :global(.ok) { background: #E8F7EE; color: #17643A; } .ac-test :global(.bad) { background: #FDECEC; color: #A3161B; }
-  code { background: var(--d3); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
+  code { background: var(--d3); padding: 1px 5px; border-radius: 4px; font-size: 13px; overflow-wrap: anywhere; }
+  .ac-partner { border: 1px solid var(--d4); border-radius: 12px; padding: 14px 16px 6px; margin: 4px 0 16px; min-width: 0; }
+  .ac-partner legend { padding: 0 6px; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .ac-check--sm { font-weight: 600; font-size: 14px; margin: 8px 0 0; }
+  .ac-copy { padding: 4px 10px; font-size: 12px; margin-left: 6px; }
 </style>
 
 <script is:inline>
@@ -110,12 +132,22 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('nowListeners').textContent = d.listeners;
       $('nowPeak').textContent = d.peak;
       $('delivery').textContent = DELIVERY[d.delivery] + (d.relayConfigured ? '' : ' (The relay needs PARTNER_ORIGIN_STREAM_URL on the server.)');
+      const p = d.partner || {};
+      $('webhookUrl').textContent = p.webhookUrl || '–';
+      $('webhookSecret').placeholder = p.webhookSecretSet ? '•••••••• saved (type a new one to replace)' : 'Not set: paste the secret agreed with Aeson';
+      $('clearWrap').hidden = !p.webhookSecretSet || p.webhookSecretFromEnv;
+      if (p.webhookSecretFromEnv) $('secretNote').textContent = 'Set in Cloudflare (AESON_WEBHOOK_SECRET), which takes priority over a secret saved here.';
+      const l = p.last;
+      $('partnerLast').textContent = !l ? 'Aeson status: not read yet.'
+        : l.ok ? `Aeson status: reachable (${l.source === 'webhook' ? 'last update pushed by webhook' : 'last read'} ${new Date(l.at).toLocaleTimeString('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit' })}) · ${l.onAir ? 'ON AIR' : 'off air'}${l.listeners !== null ? ` · ${l.listeners} listening on Aeson's count` : ''}`
+        : `Aeson status: not reachable (${l.error || 'no answer'})${l.lastOkAt ? `; last good read ${new Date(l.lastOkAt).toLocaleString('en-GB', { timeZone: 'Africa/Lagos' })}` : ''}. Fans see "Off air" while it is unreachable.`;
       if (!filled) {
         $('enabled').checked = d.settings.enabled;
         $('streamUrl').value = d.settings.streamUrl;
         $('backupUrl').value = d.settings.backupUrl;
         $('commentators').value = d.settings.commentators;
         $('maxListeners').value = d.settings.maxListeners;
+        $('statusUrl').value = p.statusUrl || '';
         filled = true;
       }
     } catch (e) { msg(e.message, false); }
@@ -126,7 +158,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       await api('/api/admin/commentary', { method: 'PUT', body: JSON.stringify({
         enabled: $('enabled').checked, streamUrl: $('streamUrl').value, backupUrl: $('backupUrl').value,
         commentators: $('commentators').value, maxListeners: $('maxListeners').value,
+        partnerStatusUrl: $('statusUrl').value, partnerWebhookSecret: $('webhookSecret').value, clearWebhookSecret: $('clearSecret').checked,
       }) });
+      $('webhookSecret').value = ''; $('clearSecret').checked = false;
       msg('Saved. Fans see the change within a few seconds.', true);
       filled = false; load();
     } catch (err) { msg(err.message, false); }
@@ -139,6 +173,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         (r.ok ? `working ✓ (${esc(r.contentType)}, answered in ${r.ms} ms)` : `not working ✗ ${esc(r.error || `(status ${r.status}, ${esc(r.contentType || 'no audio')})`)}`) + '</p>').join('');
     } catch (err) { $('testOut').innerHTML = `<p class="bad">${esc(err.message)}</p>`; }
     $('testBtn').disabled = false;
+  });
+  $('copyHook').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('webhookUrl').textContent); $('copyHook').textContent = 'Copied'; } catch { $('copyHook').textContent = 'Select and copy'; }
+    setTimeout(() => { $('copyHook').textContent = 'Copy'; }, 2500);
   });
   load();
   setInterval(load, 30000);
