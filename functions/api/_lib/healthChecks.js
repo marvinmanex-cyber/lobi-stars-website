@@ -576,7 +576,8 @@ export async function stepMatchday(ctx) {
   else if (!s.enabled) out.push(result('stream', 'PASS', { problem: 'Live Commentary is switched off.' }));
   else if (!s.streamUrl) out.push(result('stream', 'WARNING', { problem: 'No commentary stream address is set.' }));
   else {
-    const url = env.PARTNER_ORIGIN_STREAM_URL || new URL(s.streamUrl, origin).href;
+    // Test what fans connect to: the partner feed only when the website relay is the address in use.
+    const url = s.streamUrl.startsWith('/live/commentary') && env.PARTNER_ORIGIN_STREAM_URL ? env.PARTNER_ORIGIN_STREAM_URL : new URL(s.streamUrl, origin).href;
     const https = /^https:/i.test(url) || s.streamUrl.startsWith('/');
     if (!https) out.push(result('stream', 'WARNING', { problem: 'The stream address is not HTTPS: phones may refuse to play it.' }));
     else if (soon) {
