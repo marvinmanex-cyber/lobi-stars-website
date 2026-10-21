@@ -2733,6 +2733,12 @@ have no button. A Super Admin can add a link to a shared form or document in
 Templates. Pages in the content editor (Squad & Players, News) don't show the
 Checklist task bar: go back to the checklist to update those tasks.
 
+**Ticked for review by the website:** when the website can see the work is
+done, it sets the task to *Submitted for review* by itself (the history says
+"Automatic" and why): programme uploaded / published, line-ups saved,
+matchday squad saved, stats entered, match photos added, full-time result,
+match report saved in Live Match Control. A Super Admin still ticks it done.
+
 **PDF, print and email**
 - **Download PDF**: the checklist with every task's status, owner, notes and
   who ticked it. Task titles in the PDF are clickable.

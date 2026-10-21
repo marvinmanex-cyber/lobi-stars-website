@@ -158,11 +158,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
   officials' hosting, media accreditation list, pre-match press conference,
   kit check, ambulance and medical team, crowd and security monitoring,
   post-match analysis, disciplinary reports to the league.
-- G2. **Decide: tick some tasks automatically?** The website could mark a
-  task *Submitted for review* by itself when it sees the work is done (a
-  Super Admin still ticks it): programme published, line-up saved, squad
-  saved, stats entered, full-time result, highlights link added, match report
-  published. Not built yet; say yes or no.
+- G2. **Done (21 Oct 2026):** the website now sets 8 tasks to *Submitted for review* by itself when it sees the work done (see STAFF-GUIDE.md section 35). Nothing to do.
 - G3. A Super Admin: open **Templates** once, check the due times, and set
   the **default owner** (a unit such as "Media Team") of each task; then, on
   the first checklist (Lobi Stars v Bichi First, 8 Nov), choose the owners.

@@ -140,6 +140,28 @@ Note: pages in the content editor (Squad & Players, News) don't show the
 Checklist task banner, because the editor is a separate app. Use the
 checklist page to update those tasks.
 
+## Automatic "Submitted for review"
+
+Every sync also looks at Live Match Control and the Matchday Programme and
+moves these tasks from Not started / In progress to **Submitted for review**
+(never to Done; a Super Admin still ticks them). The history says
+"Automatic: …" with the reason. `autoChecks()` in `matchChecklist.js`.
+
+| Task | Seen as done when |
+|---|---|
+| Match day program: content written | the programme PDF for that match day is uploaded |
+| Match day program: design approved and printed/published | that programme is published or scheduled |
+| Starting line-up graphic ready | line-ups are saved in Live Match Control |
+| Team sheet submitted | the matchday squad is saved |
+| Match stats captured | stats are entered (after kick-off; zeros don't count) |
+| Photography and video coverage | the match gallery has photos (after kick-off) |
+| Full-time result posted | status is full time with both scores |
+| Match report published | a report of 80+ characters is saved in Live Match Control (after kick-off) |
+
+Not automatic: highlights (the Watch Live link is also used for the live
+stream) and news posts written in the content editor (not in the database).
+Tasks renamed in Templates stay manual.
+
 ## Reminders
 
 The timer Worker (`workers/kitchen-cron`) calls `/api/internal/checklist-run`

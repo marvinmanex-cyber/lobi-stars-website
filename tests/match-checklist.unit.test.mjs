@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { tasksFromTemplate, rescheduledTimes, tasksToRemind, digestSections, digestSubject, fillPlaceholders, buildTaskLink,
-  routeExists, offsetLabel, toOffset, SEED_TASKS, SEED_LINKS, LINK_TARGETS, lagosDay } from '../functions/api/_lib/matchChecklist.js';
+  routeExists, offsetLabel, toOffset, hasData, autoChecks, SEED_TASKS, SEED_LINKS, LINK_TARGETS, lagosDay } from '../functions/api/_lib/matchChecklist.js';
 import { digestEmail, checklistEmail, checklistPdf, pdfFilename, goLink } from '../functions/api/_lib/checklistOutput.js';
 import { brokenLinks } from '../functions/api/_lib/checklistReminders.js';
 import { safeNext } from '../src/lib/safeNext.ts';
@@ -168,4 +168,22 @@ test('after signing in: only pages of this admin, never another website', () => 
     assert.equal(safeNext(bad, O), '/admin/dashboard/', JSON.stringify(bad));
   }
   assert.equal(safeNext('/admin/../evil', O), '/admin/dashboard/', 'path escaping /admin');
+});
+
+test('automatic "Submitted for review": only real data counts, match-time tasks only after kick-off', () => {
+  assert.equal(hasData('{"home":{"shots":0},"away":{"shots":0}}'), false, 'zero stats');
+  assert.equal(hasData('{"starting":[],"bench":[]}'), false);
+  assert.equal(hasData('not json'), false);
+  assert.equal(hasData(null), false);
+  assert.equal(hasData('{"starting":["p1"],"bench":[]}'), true);
+  const ko = Date.parse(KO);
+  const centre = { lineups_json: '{"home":["A"]}', squad_json: '{"starting":["p1"]}', stats_json: '{"home":{"shots":4}}', gallery_json: '[{"src":"x.jpg"}]', status: 'scheduled', home_score: null, away_score: null, report: 'x'.repeat(100) };
+  const before = autoChecks({ centre, programme: { pdf_key: 'k', status: 'draft' }, kickoffMs: ko, now: ko - 3600e3 });
+  assert.deepEqual(Object.keys(before).sort(), ['Match day program: content written', 'Starting line-up graphic ready', 'Team sheet submitted']);
+  const afterFt = autoChecks({ centre: { ...centre, status: 'full-time', home_score: 2, away_score: 0 }, programme: { pdf_key: 'k', status: 'published' }, kickoffMs: ko, now: ko + 3 * 3600e3 });
+  assert.equal(afterFt['Full-time result posted'], 'Full time recorded (2-0)');
+  for (const t of ['Match stats captured', 'Photography and video coverage', 'Match report published', 'Match day program: design approved and printed/published']) assert.ok(afterFt[t], t);
+  assert.ok(!autoChecks({ centre: { ...centre, status: 'full-time' }, kickoffMs: ko, now: ko + 3 * 3600e3 })['Full-time result posted'], 'no score, no result');
+  const seed = new Set(SEED_TASKS.map(t => t[1]));
+  for (const t of Object.keys(afterFt)) assert.ok(seed.has(t), 'matches a seed task: ' + t);
 });

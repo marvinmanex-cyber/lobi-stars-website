@@ -353,7 +353,7 @@ export async function syncChecklists(env, { now = Date.now() } = {}) {
   const db = env.DB;
   await ensureChecklistSchema(db);
   const club = env.CLUB_NAME || 'Lobi Stars';
-  const done = { generated: [], rescheduled: [], awaiting: [], closed: [] };
+  const done = { generated: [], rescheduled: [], awaiting: [], closed: [], autoSubmitted: 0 };
   const hasCentre = !!(await db.prepare(`SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'match_centre'`).first());
   const { results: events } = await db.prepare(
     `SELECT e.*, ${hasCentre ? 'm.status AS match_status' : 'NULL AS match_status'} FROM events e ${hasCentre ? 'LEFT JOIN match_centre m ON m.event_id = e.id' : ''}
@@ -420,8 +420,64 @@ export async function syncChecklists(env, { now = Date.now() } = {}) {
       await logActivity(db, { checklistId: l.id, action: 'awaiting_closeout' });
       done.awaiting.push(l.id);
     }
+    try { done.autoSubmitted += await autoSubmit(db, l, nowIso, now); } catch (err) { console.error('[checklist] auto submit', err); }
   }
   return done;
+}
+
+// ── Automatic "Submitted for review" (never Done: a Super Admin still ticks) ──
+
+/** Does a saved JSON field hold anything real? (Empty lists, blanks and zero counts don't count.) */
+export function hasData(s) {
+  let v;
+  try { v = typeof s === 'string' ? JSON.parse(s) : s; } catch { return false; }
+  const real = x => x === null || x === undefined ? false
+    : typeof x === 'number' ? x > 0
+    : typeof x === 'string' ? x.trim() !== ''
+    : typeof x === 'boolean' ? x
+    : Array.isArray(x) ? x.some(real) : Object.values(x).some(real);
+  return real(v);
+}
+/**
+ * Seed tasks the website can see are done, from Live Match Control and the
+ * Matchday Programme. Returns { title: why }. Tasks renamed in Templates are
+ * no longer recognised (they just stay manual).
+ */
+export function autoChecks({ centre = null, programme = null, kickoffMs, now = Date.now() }) {
+  const out = {}, started = now >= kickoffMs;
+  if (programme?.pdf_key) out['Match day program: content written'] = 'The programme PDF is uploaded';
+  if (['published', 'scheduled'].includes(programme?.status)) out['Match day program: design approved and printed/published'] = programme.status === 'published' ? 'The programme is published' : 'The programme is scheduled to publish';
+  if (!centre) return out;
+  if (hasData(centre.lineups_json)) out['Starting line-up graphic ready'] = 'Line-ups are saved in Live Match Control';
+  if (hasData(centre.squad_json)) out['Team sheet submitted'] = 'The matchday squad is saved in Live Match Control';
+  if (started && hasData(centre.stats_json)) out['Match stats captured'] = 'Match stats are entered in Live Match Control';
+  if (started && hasData(centre.gallery_json)) out['Photography and video coverage'] = 'Photos are in the match gallery';
+  if (centre.status === 'full-time' && centre.home_score !== null && centre.home_score !== undefined && centre.away_score !== null && centre.away_score !== undefined) out['Full-time result posted'] = `Full time recorded (${centre.home_score}-${centre.away_score})`;
+  if (started && String(centre.report || '').trim().length >= 80) out['Match report published'] = 'A match report is saved in Live Match Control';
+  return out;
+}
+/** Applies autoChecks to one open checklist. Returns how many tasks it moved. */
+async function autoSubmit(db, l, nowIso, now) {
+  const { results: open } = await db.prepare(`SELECT id, title, status FROM match_checklist_tasks WHERE match_checklist_id = ? AND status IN ('not_started', 'in_progress')`).bind(l.id).all();
+  if (!open.length) return 0;
+  let centre = null, programme = null;
+  try { centre = await db.prepare(`SELECT * FROM match_centre WHERE event_id = ?`).bind(l.match_id).first(); } catch {}
+  try {
+    const day = lagosDay(Date.parse(l.kickoff_at));
+    const { results } = await db.prepare(`SELECT status, pdf_key, kickoff_at FROM programmes WHERE kickoff_at BETWEEN ? AND ? ORDER BY id DESC`)
+      .bind(new Date(Date.parse(l.kickoff_at) - DAY_MS).toISOString(), new Date(Date.parse(l.kickoff_at) + DAY_MS).toISOString()).all();
+    programme = results.find(p => p.kickoff_at && lagosDay(Date.parse(p.kickoff_at)) === day) || null;
+  } catch {}
+  const why = autoChecks({ centre, programme, kickoffMs: Date.parse(l.kickoff_at), now });
+  let n = 0;
+  for (const t of open) {
+    if (!why[t.title]) continue;
+    const u = await db.prepare(`UPDATE match_checklist_tasks SET status = 'submitted_for_review', updated_at = ? WHERE id = ? AND status IN ('not_started', 'in_progress')`).bind(nowIso, t.id).run();
+    if (!u.meta?.changes) continue;
+    await logActivity(db, { taskId: t.id, checklistId: l.id, action: 'status_changed', oldValue: t.status, newValue: 'submitted_for_review', reason: `Automatic: ${why[t.title]}` });
+    n++;
+  }
+  return n;
 }
 
 /** Closes a checklist when every task is done or not applicable. */

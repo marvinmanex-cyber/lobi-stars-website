@@ -34,6 +34,10 @@ in HANDOVER-TODO.md.
 - Signing in from a link in an email now brings you back to that page (only
   pages of the admin are allowed). The "no access" page has a *Back to
   checklist* button when you came from a checklist task.
+- The website sets some tasks to *Submitted for review* by itself when it
+  sees the work done in Live Match Control or the Matchday Programme
+  (line-ups, squad, stats, photos, full-time result, match report, programme).
+  A Super Admin still ticks them done.
 - Fix: **Live Match Control** and **Match Tickets & Settings** no longer
   send you to the login page when opened in a new tab while you are signed in
   (for example from a link in an email).
