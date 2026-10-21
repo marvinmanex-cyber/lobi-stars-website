@@ -1,10 +1,10 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { sourceLabels } from '../../_lib/contacts.js';
-import { canAccess, canSeeInboxSource } from '../../_lib/adminRoles.js';
+import { canAccess, canSeeInboxSource, roleOf } from '../../_lib/adminRoles.js';
 import { sendEmail } from '../../_lib/email.js';
 import {
-  ensureInboxSchema, inboxStaff, sanitizeHtml, textToHtml, composeReply, fill, staffFirstName, htmlToText, STATUSES,
+  ensureInboxSchema, inboxStaff, sanitizeHtml, textToHtml, composeReply, fill, staffFirstName, htmlToText, STATUSES, forgetThreads,
 } from '../../_lib/inbox.js';
 
 const FILE_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png', 'image/webp', 'image/gif']);
@@ -40,7 +40,7 @@ export async function onRequestGet({ request, env, params }) {
     if (c) {
       const labels = await sourceLabels(db);
       const { results } = await db.prepare(`SELECT DISTINCT source FROM contact_sources WHERE contact_id = ?`).bind(c.id).all();
-      const others = (await db.prepare(`SELECT COUNT(*) AS n FROM inbox_threads WHERE email = ? AND id != ? AND spam_at IS NULL`).bind(t.email, t.id).first()).n;
+      const others = (await db.prepare(`SELECT COUNT(*) AS n FROM inbox_threads WHERE email = ? AND id != ? AND spam_at IS NULL AND deleted_at IS NULL`).bind(t.email, t.id).first()).n;
       contact = { id: c.id, name: [c.first_name, c.surname].filter(Boolean).join(' '), email: c.email, phone: c.phone, state: c.state, firstSeen: c.first_seen, sources: results.map(r => labels[r.source] || r.source), otherConversations: others };
     }
   }
@@ -55,6 +55,8 @@ export async function onRequestGet({ request, env, params }) {
 //   { action: 'status', status }     new / open / replied / closed
 //   { action: 'assign', to }         staff id ('' = nobody)
 //   { action: 'spam' | 'notspam' | 'unread' }
+//   { action: 'delete' | 'restore' }  Deleted tab (kept 30 days, then removed for good)
+//   { action: 'delete_forever' }      Super Admins only: removed now, with its form record
 export async function onRequestPost({ request, env, params }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
@@ -65,6 +67,21 @@ export async function onRequestPost({ request, env, params }) {
   const b = await request.json().catch(() => ({}));
   const now = new Date().toISOString();
   const firstName = (t.name || '').split(/\s+/)[0] || 'there';
+
+  if (b.action === 'delete' || b.action === 'restore') {
+    const del = b.action === 'delete';
+    await db.prepare(`UPDATE inbox_threads SET deleted_at = ?, deleted_by = ?, unread = CASE WHEN ? THEN 0 ELSE unread END WHERE id = ?`).bind(del ? now : null, del ? admin.name : null, del ? 1 : 0, t.id).run();
+    await logAdminAction(db, admin, del ? 'inbox_delete' : 'inbox_restore', `${t.ref} (${t.email})`);
+    return json({ ok: true });
+  }
+  if (b.action === 'delete_forever') {
+    if (roleOf(admin) !== 'super_admin') return json({ error: 'Only Super Admins can delete a conversation for good.' }, 403);
+    if (!t.deleted_at) return json({ error: 'Delete the conversation first (it moves to Deleted), then delete it for good there.' }, 400);
+    await forgetThreads(db, [{ id: t.id, enquiry_id: t.enquiry_id }]);
+    await logAdminAction(db, admin, 'inbox_delete_forever', `${t.ref} (${t.email})`);
+    return json({ ok: true });
+  }
+  if (t.deleted_at && b.action !== 'unread') return json({ error: 'This conversation is in Deleted. Restore it first.' }, 409);
 
   if (b.action === 'reply' || b.action === 'preview') {
     const body = await sanitizeHtml(fill(b.html, { first_name: firstName, staff_name: staffFirstName(admin) || 'The Lobi Stars FC team', ref: t.ref }));

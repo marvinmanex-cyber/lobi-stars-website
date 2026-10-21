@@ -35,7 +35,7 @@ export async function onRequestGet({ request, env }) {
     await ensureInboxSchema(db);
     const scope = inboxSources(admin);
     const { results: th } = await db.prepare(
-      `SELECT id, ref, name, email, subject, status FROM inbox_threads WHERE spam_at IS NULL ${scope ? `AND source IN (${scope.map(() => '?').join(',') || "''"})` : ''} AND (lower(ref) LIKE ? OR lower(COALESCE(name,'')) LIKE ? OR lower(COALESCE(email,'')) LIKE ? OR lower(COALESCE(subject,'')) LIKE ?)
+      `SELECT id, ref, name, email, subject, status FROM inbox_threads WHERE spam_at IS NULL AND deleted_at IS NULL ${scope ? `AND source IN (${scope.map(() => '?').join(',') || "''"})` : ''} AND (lower(ref) LIKE ? OR lower(COALESCE(name,'')) LIKE ? OR lower(COALESCE(email,'')) LIKE ? OR lower(COALESCE(subject,'')) LIKE ?)
        ORDER BY last_message_at DESC LIMIT 5`
     ).bind(...(scope || []), like, like, like, like).all();
     for (const t of th) results.push({ type: 'Message', title: `${t.subject || '(no subject)'}`, sub: `${t.ref} · ${t.name || t.email} · ${t.status}`, href: `/admin/inbox/?t=${encodeURIComponent(t.id)}` });

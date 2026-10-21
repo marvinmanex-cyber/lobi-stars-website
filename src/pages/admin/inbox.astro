@@ -39,6 +39,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
             <div class="ib-ch-t">
               <h2 id="cSubject"></h2>
               <p class="ib-ch-meta" id="cMeta"></p>
+              <p class="ib-deleted" id="cDeleted" role="status" hidden></p>
             </div>
           </div>
           <div class="ib-actions">
@@ -46,6 +47,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
             <label>Assigned to <select id="cAssign"><option value="">Nobody</option></select></label>
             <button type="button" class="btn-o sm" id="cUnread">Mark unread</button>
             <button type="button" class="btn-o sm" id="cSpam">🚫 Mark as spam</button>
+            <button type="button" class="btn-o sm" id="cDelete">🗑 Delete</button>
+            <button type="button" class="btn-o sm ib-danger" id="cForever" hidden>Delete forever</button>
           </div>
           <div class="ib-scroll" id="scroll">
             <details class="ib-who" id="who" open><summary>Sender details</summary><div id="whoBody"></div></details>
@@ -169,6 +172,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .ib-ch h2 { margin: 0; font: 700 21px/1.25 'Barlow', sans-serif; overflow-wrap: anywhere; }
   .ib-ch-meta { margin: 4px 0 0; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--a-muted); }
   .ib-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 6px 16px 10px; border-bottom: 1px solid var(--a-line); }
+  .ib-actions .ib-danger { color: #A3161B; border-color: #F3B4B7; }
+  .ib-deleted { margin: 6px 0 0; padding: 8px 12px; border-radius: 10px; background: #FDECEC; color: #8F1419; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+  :global(body.admin-dark) .ib-deleted { background: #3A1A1C; color: #FFB3B6; }
+  :global(body.admin-dark) .ib-actions .ib-danger { color: #FF8A8E; border-color: #7A2A2E; }
   .ib-actions label { display: flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 700; color: var(--a-muted); }
   .btn-o.sm, .sm { min-height: 40px; padding: 6px 12px; font-size: 13px; }
   .ib-who { margin: 10px 16px 0; border: 1px solid var(--a-line); border-radius: 12px; background: var(--a-soft); }
@@ -268,7 +275,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const code = sessionStorage.getItem('ls_admin_code') || '__session__';
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const TABS = [['all', 'All'], ['unread', 'Unread'], ['new', 'New'], ['open', 'Open'], ['replied', 'Replied'], ['closed', 'Closed'], ['mine', 'Assigned to me'], ['spam', 'Spam']];
+  const TABS = [['all', 'All'], ['unread', 'Unread'], ['new', 'New'], ['open', 'Open'], ['replied', 'Replied'], ['closed', 'Closed'], ['mine', 'Assigned to me'], ['spam', 'Spam'], ['deleted', 'Deleted']];
   const STATUS = { new: 'New', open: 'Open', replied: 'Replied', closed: 'Closed' };
   const params = new URLSearchParams(location.search);
   const state = { tab: params.get('tab') || 'all', source: params.get('source') || '', q: '', offset: 0, threads: [], current: null, data: null, list: null, files: [], mode: 'reply' };
@@ -382,6 +389,14 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     if (t.assigned_to && !staff.some(x => x.id === t.assigned_to)) $('cAssign').add(new Option((t.assigned_name || 'Former staff') + ' (no longer active)', t.assigned_to));
     $('cAssign').value = t.assigned_to || '';
     $('cSpam').textContent = t.spam_at ? '✅ Not spam' : '🚫 Mark as spam';
+    // Deleted (Deleted tab): Restore, or Delete forever for Super Admins; nothing else can change.
+    const deleted = !!t.deleted_at;
+    $('cDelete').textContent = deleted ? '↩ Restore' : '🗑 Delete';
+    $('cForever').hidden = !(deleted && window.__lsAdmin && window.__lsAdmin.roleId === 'super_admin');
+    $('cSpam').hidden = deleted; $('cUnread').hidden = deleted;
+    $('cStatus').disabled = deleted; $('cAssign').disabled = deleted;
+    $('cDeleted').hidden = !deleted;
+    $('cDeleted').textContent = deleted ? `🗑 Deleted by ${t.deleted_by || 'staff'} on ${full(t.deleted_at)}. It is removed for good 30 days after that unless you press Restore.` : '';
     const det = Object.entries(t.details || {}).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
     const c = contact;
     $('whoBody').innerHTML = `<dl>
@@ -401,7 +416,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     $('tplPick').innerHTML = '<option value="">Insert template…</option>' + templates.map(x => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');
     $('editor').innerHTML = drafts[t.id] || '';
     $('note').value = '';
-    $('compose').hidden = !!t.spam_at;
+    $('compose').hidden = !!t.spam_at || !!t.deleted_at;
     if (!narrow()) $('scroll').scrollTop = $('scroll').scrollHeight; else window.scrollTo(0, 0);
   }
   function saveDraft() { if (state.current) drafts[state.current] = $('editor').innerHTML.trim(); }
@@ -493,6 +508,22 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const spam = !state.data.thread.spam_at;
     if (spam && !confirm('Move this conversation to Spam? It is kept for 30 days and then deleted.')) return;
     await act({ action: spam ? 'spam' : 'notspam' }, spam ? 'Moved to Spam (kept for 30 days).' : 'Moved back to the Inbox.');
+  });
+  const leaveThread = () => { backToList(); state.current = null; drawList(); $('pick').hidden = false; $('convIn').hidden = true; };
+  $('cDelete').addEventListener('click', async () => {
+    const t = state.data.thread;
+    if (t.deleted_at) { await act({ action: 'restore' }, 'Restored: the conversation is back in the Inbox.'); return; }
+    if (!confirm(`Delete the conversation with ${t.name || t.email}?\n\nIt moves to the Deleted tab, where it can be restored for 30 days. After that it is removed for good, with the original form message.`)) return;
+    await act({ action: 'delete' }, 'Deleted: moved to the Deleted tab (restore it there within 30 days).');
+    leaveThread();
+  });
+  $('cForever').addEventListener('click', async () => {
+    const t = state.data.thread;
+    if (!confirm(`Delete the conversation with ${t.name || t.email} FOR GOOD?\n\nAll its messages and the original form message are removed now and cannot be brought back. If this person has no other record (newsletter, tickets, account), they are also removed from the fan database.`)) return;
+    try {
+      await api('/api/admin/inbox/' + encodeURIComponent(state.current), { method: 'POST', body: JSON.stringify({ action: 'delete_forever' }) });
+      msg('Deleted for good.', true); leaveThread(); await loadList();
+    } catch (e) { msg(e.message, false); }
   });
   document.querySelectorAll('.ib-ctabs [data-mode]').forEach(b => b.addEventListener('click', () => {
     state.mode = b.dataset.mode;

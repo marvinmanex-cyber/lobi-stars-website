@@ -49,7 +49,7 @@ export async function onRequestGet({ request, env }) {
       one(`SELECT COUNT(*) AS n FROM enquiries WHERE created_at >= ?`, [isoTs(week)]),
       one(`SELECT COUNT(*) AS n FROM enquiries WHERE created_at >= ? AND created_at < ?`, [isoTs(week - 7 * 86400e3), isoTs(week)]),
     ]);
-    const w = await one(`SELECT COUNT(*) AS n, SUM(unread) AS u FROM inbox_threads WHERE spam_at IS NULL AND status IN ('new', 'open')`);
+    const w = await one(`SELECT COUNT(*) AS n, SUM(unread) AS u FROM inbox_threads WHERE spam_at IS NULL AND deleted_at IS NULL AND status IN ('new', 'open')`);
     out.messages = { week: n.n || 0, change: pct(n.n || 0, p.n || 0), waiting: w.n || 0, unread: w.u || 0 };
   }
 

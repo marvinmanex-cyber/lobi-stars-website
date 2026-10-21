@@ -20,6 +20,8 @@ export const MEDIA_EMAIL = 'media@lobistarsfc.com';
 export const STATUSES = ['new', 'open', 'replied', 'closed'];
 const SITE = 'https://lobistarsfc.com';
 export const SPAM_KEEP_DAYS = 30;
+// Deleted conversations stay in the Deleted tab (Restore possible) this long, then go for good.
+export const DELETED_KEEP_DAYS = 30;
 
 let ready = false;
 export async function ensureInboxSchema(db) {
@@ -62,6 +64,10 @@ export async function ensureInboxSchema(db) {
     db.prepare(`CREATE TABLE IF NOT EXISTS inbox_ref_counter (year TEXT PRIMARY KEY, n INTEGER NOT NULL)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS inbox_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT, updated_by TEXT)`),
   ]);
+  // Deleted tab: when and by whom a conversation was deleted (NULL = not deleted).
+  const cols = new Set((await db.prepare(`PRAGMA table_info(inbox_threads)`).all()).results.map(c => c.name));
+  if (!cols.has('deleted_at')) await db.prepare(`ALTER TABLE inbox_threads ADD COLUMN deleted_at TEXT`).run();
+  if (!cols.has('deleted_by')) await db.prepare(`ALTER TABLE inbox_threads ADD COLUMN deleted_by TEXT`).run();
   // Starter templates (staff can edit or delete them).
   const any = await db.prepare(`SELECT 1 FROM inbox_templates LIMIT 1`).first();
   if (!any) {
@@ -220,13 +226,15 @@ export async function syncEnquiries(db, enquiryId = null) {
   return made;
 }
 
-/** Spam is kept for 30 days, then deleted with the form record it came from. */
-export async function purgeSpam(db) {
-  const cutoff = new Date(Date.now() - SPAM_KEEP_DAYS * 864e5).toISOString();
-  const { results } = await db.prepare(`SELECT id, enquiry_id FROM inbox_threads WHERE spam_at IS NOT NULL AND spam_at < ? LIMIT 200`).bind(cutoff).all();
-  if (!results.length) return 0;
+/**
+ * Removes conversations for good, with the form record each came from (otherwise
+ * the form message would come back as a new conversation). People with no other
+ * record (newsletter, tickets, account…) disappear from the fan database too.
+ */
+export async function forgetThreads(db, rows) {
+  if (!rows.length) return 0;
   const stmts = [];
-  for (const t of results) {
+  for (const t of rows) {
     stmts.push(db.prepare(`DELETE FROM inbox_messages WHERE thread_id = ?`).bind(t.id));
     stmts.push(db.prepare(`DELETE FROM inbox_threads WHERE id = ?`).bind(t.id));
     if (t.enquiry_id) {
@@ -234,10 +242,22 @@ export async function purgeSpam(db) {
       stmts.push(db.prepare(`DELETE FROM contact_sources WHERE ref_table = 'enquiries' AND ref_id = ?`).bind(t.enquiry_id));
     }
   }
-  // People who only ever sent spam disappear from the fan database too.
   stmts.push(db.prepare(`DELETE FROM contacts WHERE id NOT IN (SELECT contact_id FROM contact_sources)`));
   await db.batch(stmts);
-  return results.length;
+  return rows.length;
+}
+
+/** Spam is kept for 30 days, then deleted with the form record it came from. */
+export async function purgeSpam(db) {
+  const cutoff = new Date(Date.now() - SPAM_KEEP_DAYS * 864e5).toISOString();
+  const { results } = await db.prepare(`SELECT id, enquiry_id FROM inbox_threads WHERE spam_at IS NOT NULL AND spam_at < ? LIMIT 200`).bind(cutoff).all();
+  return forgetThreads(db, results);
+}
+/** Deleted conversations are kept for 30 days (Restore), then removed for good. */
+export async function purgeDeleted(db) {
+  const cutoff = new Date(Date.now() - DELETED_KEEP_DAYS * 864e5).toISOString();
+  const { results } = await db.prepare(`SELECT id, enquiry_id FROM inbox_threads WHERE deleted_at IS NOT NULL AND deleted_at < ? LIMIT 200`).bind(cutoff).all();
+  return forgetThreads(db, results);
 }
 
 /** Statements that delete every conversation for these form records / this email (erasure). */
@@ -322,9 +342,9 @@ export async function maybeDailySummary(env) {
     const claim = await db.prepare(`INSERT INTO inbox_settings (key, value, updated_at, updated_by) VALUES ('daily_last', ?, ?, 'System')
       ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at WHERE inbox_settings.value IS NOT excluded.value`).bind(today, new Date().toISOString()).run();
     if (!claim.meta?.changes) return 'skip';
-    const { results } = await db.prepare(`SELECT * FROM inbox_threads WHERE spam_at IS NULL AND status IN ('new', 'open') ORDER BY last_in_at LIMIT 30`).all();
+    const { results } = await db.prepare(`SELECT * FROM inbox_threads WHERE spam_at IS NULL AND deleted_at IS NULL AND status IN ('new', 'open') ORDER BY last_in_at LIMIT 30`).all();
     if (!results.length) return 'nothing';
-    const total = (await db.prepare(`SELECT COUNT(*) AS n FROM inbox_threads WHERE spam_at IS NULL AND status IN ('new', 'open')`).first()).n;
+    const total = (await db.prepare(`SELECT COUNT(*) AS n FROM inbox_threads WHERE spam_at IS NULL AND deleted_at IS NULL AND status IN ('new', 'open')`).first()).n;
     const to = [...new Set([...(await alertRecipients(db, 'contact_form', s)), ...(await alertRecipients(db, 'sponsorship', s))])];
     if (!to.length) return 'no-recipients';
     const rows = results.map(t => `<tr><td style="padding:6px 8px;border-bottom:1px solid #eee">${esc(t.ref)}</td><td style="padding:6px 8px;border-bottom:1px solid #eee">${esc(INBOX_SOURCES[t.source])}</td><td style="padding:6px 8px;border-bottom:1px solid #eee"><b>${esc(t.name || t.email)}</b><br>${esc(t.subject)}</td><td style="padding:6px 8px;border-bottom:1px solid #eee;white-space:nowrap">${esc(ageText(t.last_in_at || t.created_at))}</td></tr>`).join('');
@@ -381,7 +401,7 @@ export async function addInbound(env, { from, to, subject, text, html, skipConta
   const ref = (String(to || '').match(REF_RE) || String(subject || '').match(REF_RE) || [])[0]?.toUpperCase();
   let t = ref ? await db.prepare(`SELECT * FROM inbox_threads WHERE ref = ?`).bind(ref).first() : null;
   // A new email to the media mailbox joins the sender's media conversation, never a contact-form one (and the other way round).
-  if (!t) t = await db.prepare(`SELECT * FROM inbox_threads WHERE email = ? AND spam_at IS NULL AND ${mailbox === 'media' ? "source = 'media_email'" : "source != 'media_email'"} ORDER BY last_message_at DESC LIMIT 1`).bind(fromEmail).first();
+  if (!t) t = await db.prepare(`SELECT * FROM inbox_threads WHERE email = ? AND spam_at IS NULL AND deleted_at IS NULL AND ${mailbox === 'media' ? "source = 'media_email'" : "source != 'media_email'"} ORDER BY last_message_at DESC LIMIT 1`).bind(fromEmail).first();
   const body = text ? textToHtml(stripQuoted(text)) : await sanitizeHtml(html);
   const safeBody = body || '<p><em>(Empty email)</em></p>';
   const now = new Date().toISOString();
@@ -400,7 +420,7 @@ export async function addInbound(env, { from, to, subject, text, html, skipConta
   await db.batch([
     db.prepare(`INSERT INTO inbox_messages (thread_id, direction, author_name, body_html, created_at) VALUES (?, 'in', ?, ?, ?)`)
       .bind(t.id, other ? `${fromName} (${fromEmail}, a different address)` : (t.name || fromName), safeBody, now),
-    db.prepare(`UPDATE inbox_threads SET status = 'open', unread = 1, spam_at = NULL, preview = ?, last_message_at = ?, last_in_at = ? WHERE id = ?`)
+    db.prepare(`UPDATE inbox_threads SET status = 'open', unread = 1, spam_at = NULL, deleted_at = NULL, deleted_by = NULL, preview = ?, last_message_at = ?, last_in_at = ? WHERE id = ?`)
       .bind(preview(safeBody), now, now, t.id),
   ]);
   return { ok: true, threadId: t.id, created: false };

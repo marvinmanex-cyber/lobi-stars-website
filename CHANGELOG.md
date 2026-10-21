@@ -8,6 +8,23 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-21: Delete messages in the Inbox
+
+**What changed**
+- **🗑 Delete** on any Inbox conversation moves it to a new **Deleted** tab,
+  where **↩ Restore** brings it back. Deleted conversations are removed for
+  good after 30 days, with the original form message.
+- **Delete forever** (Super Admins only) removes one straight away.
+- A fan's reply to a deleted conversation brings it back. Deleted
+  conversations don't count as unread or waiting anywhere (dashboard,
+  notifications, daily summary, Website Health, search).
+
+**Who it affects:** staff who answer the Inbox; Super Admins for Delete forever.
+
+**What staff need to do:** nothing. See STAFF-GUIDE.md, "Deleting a conversation".
+
+---
+
 ## 2026-10-21: Content editor changes go live by themselves again
 
 **What changed**

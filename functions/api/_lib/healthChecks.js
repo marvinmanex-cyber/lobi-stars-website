@@ -556,7 +556,7 @@ export async function stepEmail(ctx) {
   if (!dmarc.records?.some(r => /v=DMARC1/i.test(r))) missing.push(`DMARC (TXT on _dmarc.${domain})`);
   if (mx && !mx.records?.length) missing.push(`MX for replies (${env.INBOX_REPLY_DOMAIN})`);
   out.push(result('email_dns', missing.length ? (missing.length > 1 ? 'FAIL' : 'WARNING') : 'PASS', { problem: missing.length ? `Missing or wrong: ${missing.join(', ')}.` : `SPF, DKIM and DMARC are in place${mx ? ', and the reply address has its MX record' : ''}.`, details: { domain, dmarc: dmarc.records?.[0] || null } }));
-  const waiting = await safeAll(db, `SELECT ref, subject, last_in_at FROM inbox_threads WHERE status IN ('new', 'open') AND spam_at IS NULL AND last_in_at IS NOT NULL AND (last_out_at IS NULL OR last_out_at < last_in_at) AND last_in_at < ? ORDER BY last_in_at LIMIT 30`, ago(48));
+  const waiting = await safeAll(db, `SELECT ref, subject, last_in_at FROM inbox_threads WHERE status IN ('new', 'open') AND spam_at IS NULL AND deleted_at IS NULL AND last_in_at IS NOT NULL AND (last_out_at IS NULL OR last_out_at < last_in_at) AND last_in_at < ? ORDER BY last_in_at LIMIT 30`, ago(48));
   if (waiting === null) out.push(result('inbox_waiting', 'SKIPPED', { problem: 'The Inbox is not set up.' }));
   else out.push(result('inbox_waiting', waiting.length ? 'WARNING' : 'PASS', { problem: waiting.length ? `${plural(waiting.length, 'message')} waiting more than 48 hours for an answer (oldest ${String(waiting[0].last_in_at).slice(0, 10)}).` : 'No message waiting more than 48 hours.', details: { refs: waiting.map(w => w.ref) } }));
   return out;

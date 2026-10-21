@@ -1354,7 +1354,7 @@ Inbox staff can see them too (filter **Media email**).
 - **Left:** the list. Each message shows the sender, the subject, the first
   words, the type (**Contact Form**, **Sponsorship**, **Hospitality**), the
   time, a **blue dot** if nobody has opened it yet, and the status.
-- **Tabs:** All, Unread, New, Open, Replied, Closed, Assigned to me, Spam. The
+- **Tabs:** All, Unread, New, Open, Replied, Closed, Assigned to me, Spam, Deleted. The
   number on each tab is how many are in it. Use **All types** to show only
   one type, and the search box to find a name, email, subject, reference or
   any word in the messages.
@@ -1412,6 +1412,20 @@ did not get it.
 - Replies, notes, status changes, assignments, spam and template changes are
   recorded in the **Activity Log** (Settings › Activity Log). The content of
   private notes is not copied there.
+
+### Deleting a conversation
+- **🗑 Delete** (at the top of the conversation) moves it to the **Deleted**
+  tab, after you confirm. Anyone who can reply in the Inbox can do this.
+- In **Deleted**, press **↩ Restore** to bring it back. A deleted conversation
+  can't be answered, re-assigned or have its status changed until restored.
+- Deleted conversations are removed **for good after 30 days**, together with
+  the original form message.
+- **Delete forever** (Super Admins only, in the Deleted tab) removes it
+  straight away. This can't be undone. If the person has no other record
+  (newsletter, tickets, account…), they also leave the fan database.
+- If the fan writes back to a deleted conversation, it comes back to the
+  Inbox by itself.
+- Every delete, restore and delete-forever is in the Activity Log.
 
 ### Spam
 - **🚫 Mark as spam** moves a conversation to the **Spam** tab. It is kept for

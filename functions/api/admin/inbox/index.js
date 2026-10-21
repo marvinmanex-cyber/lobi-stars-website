@@ -1,32 +1,35 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { getSources } from '../../_lib/contacts.js';
-import { syncEnquiries, purgeSpam, inboxStaff, inboxSettings, INBOX_SOURCES } from '../../_lib/inbox.js';
+import { syncEnquiries, purgeSpam, purgeDeleted, inboxStaff, inboxSettings, INBOX_SOURCES } from '../../_lib/inbox.js';
 import { inboxSources } from '../../_lib/adminRoles.js';
 
 const PAGE = 50;
 
 // GET /api/admin/inbox -- the conversation list (Fans & Inbox › Inbox).
-//   tab     all | unread | new | open | replied | closed | mine | spam
+//   tab     all | unread | new | open | replied | closed | mine | spam | deleted
 //   source  contact_form | sponsorship | hospitality
 //   q       name, email, subject, reference or words in any message
 //   offset  for "Load more"
 // Also brings in any form messages that don't have a conversation yet, and
-// deletes spam older than 30 days.
+// deletes spam and deleted conversations older than 30 days.
 export async function onRequestGet({ request, env }) {
   const { admin, denied } = await requireAdminUser(request, env);
   if (denied) return denied;
   const db = env.DB;
   await syncEnquiries(db);
   await purgeSpam(db);
+  await purgeDeleted(db);
   const url = new URL(request.url);
   const tab = url.searchParams.get('tab') || 'all';
   const source = url.searchParams.get('source') || '';
   const q = (url.searchParams.get('q') || '').trim().toLowerCase().slice(0, 100);
   const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0);
 
+  // Shown = not spam and not deleted.
+  const LIVE = 't.spam_at IS NULL AND t.deleted_at IS NULL';
   const TAB = {
-    all: 't.spam_at IS NULL', unread: 't.spam_at IS NULL AND t.unread = 1', mine: 't.spam_at IS NULL AND t.assigned_to = ?', spam: 't.spam_at IS NOT NULL',
-    new: "t.spam_at IS NULL AND t.status = 'new'", open: "t.spam_at IS NULL AND t.status = 'open'", replied: "t.spam_at IS NULL AND t.status = 'replied'", closed: "t.spam_at IS NULL AND t.status = 'closed'",
+    all: LIVE, unread: `${LIVE} AND t.unread = 1`, mine: `${LIVE} AND t.assigned_to = ?`, spam: 't.spam_at IS NOT NULL AND t.deleted_at IS NULL', deleted: 't.deleted_at IS NOT NULL',
+    new: `${LIVE} AND t.status = 'new'`, open: `${LIVE} AND t.status = 'open'`, replied: `${LIVE} AND t.status = 'replied'`, closed: `${LIVE} AND t.status = 'closed'`,
   };
   const where = [TAB[tab] || TAB.all];
   const args = tab === 'mine' ? [admin.id] : [];
@@ -51,10 +54,10 @@ export async function onRequestGet({ request, env }) {
 
   const c = await db.prepare(
     `SELECT
-       SUM(spam_at IS NULL) AS "all", SUM(spam_at IS NULL AND unread = 1) AS unread,
-       SUM(spam_at IS NULL AND status = 'new') AS new, SUM(spam_at IS NULL AND status = 'open') AS open,
-       SUM(spam_at IS NULL AND status = 'replied') AS replied, SUM(spam_at IS NULL AND status = 'closed') AS closed,
-       SUM(spam_at IS NULL AND assigned_to = ?) AS mine, SUM(spam_at IS NOT NULL) AS spam
+       SUM(spam_at IS NULL AND deleted_at IS NULL) AS "all", SUM(spam_at IS NULL AND deleted_at IS NULL AND unread = 1) AS unread,
+       SUM(spam_at IS NULL AND deleted_at IS NULL AND status = 'new') AS new, SUM(spam_at IS NULL AND deleted_at IS NULL AND status = 'open') AS open,
+       SUM(spam_at IS NULL AND deleted_at IS NULL AND status = 'replied') AS replied, SUM(spam_at IS NULL AND deleted_at IS NULL AND status = 'closed') AS closed,
+       SUM(spam_at IS NULL AND deleted_at IS NULL AND assigned_to = ?) AS mine, SUM(spam_at IS NOT NULL AND deleted_at IS NULL) AS spam, SUM(deleted_at IS NOT NULL) AS deleted
      FROM inbox_threads ${scope ? 'WHERE ' + inScope : ''}`
   ).bind(admin.id, ...(scope || [])).first();
   const counts = Object.fromEntries(Object.entries(c).map(([k, v]) => [k, v || 0]));

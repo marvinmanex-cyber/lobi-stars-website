@@ -22,7 +22,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
     const scope = inboxSources(admin); // null = every kind of message; Media: only the media@ mailbox
     const r = await db.prepare(
       `SELECT SUM(unread) AS unread, SUM(status IN ('new', 'open') AND COALESCE(last_in_at, created_at) < ?) AS late
-       FROM inbox_threads WHERE spam_at IS NULL ${scope ? `AND source IN (${scope.map(() => '?').join(',') || "''"})` : ''}`
+       FROM inbox_threads WHERE spam_at IS NULL AND deleted_at IS NULL ${scope ? `AND source IN (${scope.map(() => '?').join(',') || "''"})` : ''}`
     ).bind(isoTs(Date.now() - 48 * 3600e3), ...(scope || [])).first();
     if (r.unread) items.push({ icon: '✉️', title: `${r.unread} unread message${r.unread === 1 ? '' : 's'} in the Inbox`, sub: scope?.length === 1 && scope[0] === 'media_email' ? 'Emails to media@lobistarsfc.com' : 'Contact, sponsorship, hospitality and media emails', href: '/admin/inbox/?tab=unread' });
     if (r.late) items.push({ icon: '⏰', title: `${r.late} message${r.late === 1 ? '' : 's'} waiting over 48 hours`, sub: 'Please reply or close them', href: '/admin/inbox/' });
