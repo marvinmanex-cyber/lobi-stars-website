@@ -65,6 +65,14 @@ const { which } = Astro.props;
 
   /* Table */
   .lg-status { margin: 0 0 12px; color: var(--lt); font-size: 14px; }
+  .lg-board { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--d4); border-radius: 12px; background: var(--d2); }
+  .lg-board h2 { margin: 0 0 8px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: var(--lt); }
+  .lg-board ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px 18px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+  .lg-board li { display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--d4); font-size: 14px; }
+  .lg-board li.is-lobi { font-weight: 700; }
+  .lg-board .h { text-align: right; } .lg-board b { min-width: 44px; text-align: center; font: 400 20px/1 'Bebas Neue', sans-serif; }
+  .lg-board-st { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
+  .lg-board-st.live { color: #E31E24; }
   .lg-table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--d4); border-radius: 12px; background: var(--d2); }
   .lg-table-wrap:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
   .lg-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 15px; }

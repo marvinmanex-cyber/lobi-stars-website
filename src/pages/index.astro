@@ -15,6 +15,7 @@ import MatchdayGames from '../components/fans/MatchdayGames.astro';
 import ClubAtAGlance from '../components/ClubAtAGlance.astro';
 import NewsletterCta from '../components/NewsletterCta.astro';
 import MatchAlerts from '../components/MatchAlerts.astro';
+import MiniTable from '../components/league/MiniTable.astro';
 import { getSortedNews } from '../lib/news';
 import shop from '../data/shop.json';
 import { CURRENT_SEASON } from '../lib/site';
@@ -62,6 +63,8 @@ const teamJsonLd = {
 
   <NewsHero articles={featuredNews} />
   <NextMatches />
+  <!-- League table widget: the same data as /table and Matchday Live. -->
+  <div class="wrap hp-table"><MiniTable /></div>
   <!-- Matchday services: In-Seat Food Ordering, next to the matches it is for. -->
   <FoodPromo />
   <MatchAlerts variant="band" />
@@ -109,6 +112,7 @@ const teamJsonLd = {
 </Layout>
 
 <style>
+  .hp-table { margin-top: 28px; margin-bottom: 28px; max-width: 760px; }
   .ftb { background: #15181D; color: #fff; padding: 10px 5%; text-align: center; font: 700 14px/1.4 'Barlow Condensed', sans-serif; letter-spacing: .8px; text-transform: uppercase; }
   .ftb :global(strong) { color: #FFC72C; margin-right: 6px; }
   .ftb :global(a) { color: #fff; text-decoration: underline; text-underline-offset: 3px; margin: 0 4px; }

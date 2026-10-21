@@ -3142,6 +3142,26 @@ worked out again, and the Super Admins are told.
 time, show unconfirmed scores, how often the licensed API is checked, and the
 matchday summary email.
 
+### The league table (public /table, homepage, Matchday Live)
+
+The table is always worked out by the website: nobody types it in. It uses
+only **confirmed, verified or official** results, the points adjustments and
+the rules in **League › Table & Rules** (points for a win/draw/loss and the
+tie-breaker order; the official NNL tie-breaker order still has to be checked
+and entered there).
+- **Postponed** and **cancelled** matches don't count. An **abandoned** match
+  doesn't count until the NNL decides: enter that as an official result
+  (**Awarded** with the awarded score, or the replay later).
+- **Live table:** if "count live matches" is on in Table & Rules, confirmed
+  scores of matches in play count as they stand. The table then says **Live
+  table**, and the arrows show places gained or lost since kick-off.
+- Above the table, a **mini scoreboard** shows the round being played.
+- The **homepage** and **Matchday Live** show a small version of the same
+  table.
+- **Saved tables:** when every match of a round is over and confirmed, the
+  table after that round is saved (Other Games › Saved tables, at the bottom).
+  If a result changes later, a new version is saved with the reason.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

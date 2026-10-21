@@ -82,7 +82,7 @@ export function tablePayload(league, { scope = 'overall', upTo = null } = {}) {
   const row = r => ({
     pos: r.pos, team: { id: r.team.id, code: r.team.code, name: r.team.name, shortName: r.team.short_name, crest: r.team.crest_url || `/api/league/crest/${r.team.code}`, isLobi: !!r.team.is_lobi },
     played: r.played, won: r.won, drawn: r.drawn, lost: r.lost, gf: r.gf, ga: r.ga, gd: r.gd, points: r.points, adjustment: r.adjustment,
-    form: r.form, movement: r.movement, level: r.level, tiedWith: r.tiedWith, decidedBy: r.decidedBy,
+    form: r.form, movement: liveMove ? liveMove.get(r.team.id) || 0 : r.movement, level: r.level, tiedWith: r.tiedWith, decidedBy: r.decidedBy,
   });
   const teamName = id => league.allTeams.find(t => t.id === id)?.name || '';
   const footnotes = [
@@ -91,6 +91,16 @@ export function tablePayload(league, { scope = 'overall', upTo = null } = {}) {
     `${comp.points_win} points for a win, ${comp.points_draw} for a draw${comp.points_loss ? `, ${comp.points_loss} for a defeat` : ''}. Only finished matches count${comp.include_live ? ' (live matches count as they stand)' : ''}; postponed, abandoned and cancelled matches don't.`,
   ];
   const fx = league.fixtures.filter(f => f.matchday != null);
+  // Live table: matches in play count as they stand (when the competition allows it).
+  // The arrows then show the change since those matches kicked off.
+  const LIVE_ST = ['live', 'half_time'];
+  const live = upTo == null && !!comp.include_live && league.fixtures.some(f => LIVE_ST.includes(f.status) && isCounted(f, comp));
+  let liveMove = null;
+  if (live) {
+    const before = standingsFor({ ...league, fixtures: league.fixtures.filter(f => !LIVE_ST.includes(f.status)) }, { scope, upTo });
+    const posBefore = new Map(before.rows.map(r => [r.team.id, r.pos]));
+    liveMove = new Map(s.rows.map(r => [r.team.id, (posBefore.get(r.team.id) || r.pos) - r.pos]));
+  }
   return {
     competition: { slug: comp.slug, name: comp.name, shortName: comp.short_name, season: comp.season, startDate: comp.start_date },
     scope, upto: upTo, rows: s.rows.map(row), footnotes, zones: comp.zones, matchday: s.matchday,
@@ -98,8 +108,29 @@ export function tablePayload(league, { scope = 'overall', upTo = null } = {}) {
     matchesTotal: upTo == null ? fx.length : fx.filter(f => f.matchday <= upTo).length,
     matchdayMatches: s.matchday == null ? 0 : fx.filter(f => f.matchday === s.matchday).length,
     matchdayPlayed: s.matchday == null ? 0 : fx.filter(f => f.matchday === s.matchday && isCounted(f, comp)).length,
-    preSeason: s.preSeason, updatedAt: tableUpdatedAt(league),
+    preSeason: s.preSeason, updatedAt: tableUpdatedAt(league), live, scoreboard: upTo == null ? scoreboard(league) : [],
   };
+}
+
+/**
+ * The round being played (one with a match in play, else the last one with a
+ * counted result, else the next one): its matches, with a score only when it is
+ * confirmed, verified or official ("unconfirmed" marks a match with one source).
+ */
+export function scoreboard(league) {
+  const comp = league.competition, fx = league.fixtures.filter(f => f.matchday != null);
+  const liveMd = fx.find(f => ['live', 'half_time'].includes(f.status))?.matchday;
+  const doneMds = fx.filter(f => isCounted(f, comp)).map(f => f.matchday);
+  const next = fx.filter(f => f.status === 'scheduled').sort(byKickoff)[0]?.matchday;
+  const md = liveMd ?? (doneMds.length ? Math.max(...doneMds) : next);
+  if (md == null) return [];
+  const side = t => ({ name: t?.name, shortName: t?.short_name, crest: t?.crest_url || (t ? `/api/league/crest/${t.code}` : null), isLobi: !!t?.is_lobi });
+  return fx.filter(f => f.matchday === md).sort(byKickoff).map(f => {
+    const counted = isCounted(f, { ...comp, include_live: 1 });
+    const showScore = f.home_goals != null && counted;
+    return { id: f.id, matchday: md, kickoff: f.kickoff_at, status: f.status, home: side(f.home), away: side(f.away),
+      homeGoals: showScore ? f.home_goals : null, awayGoals: showScore ? f.away_goals : null, unconfirmed: f.verification === 'UNCONFIRMED' };
+  });
 }
 
 export function overviewPayload(league, origin = '') {

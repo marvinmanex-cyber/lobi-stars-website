@@ -8,6 +8,24 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Score verification, Phase 5 (the table everywhere)
+
+**What changed**
+- **/table** now has a **mini scoreboard** of the round being played, and a
+  **Live table** mode (when "count live matches" is on): confirmed scores of
+  matches in play count as they stand, and the arrows show places gained or
+  lost since kick-off.
+- The **homepage** (under the next matches) and **Matchday Live** now show a
+  small league table: the same data as /table.
+- The table after each completed round is **saved** (Other Games › Saved
+  tables); a later correction saves a new version with the reason.
+- The table still can't be typed in by hand, and League › Results now goes
+  through score verification (Phase 4), so nothing bypasses the rules.
+
+**Staff to do**
+- Check the official NNL tie-breaker order and points in League › Table &
+  Rules (HANDOVER-TODO A32).
+
 ## 2026-10-21: Score verification, Phase 4 (the two-source rule now decides the table)
 
 **What changed**

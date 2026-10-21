@@ -238,6 +238,14 @@ ${select('upto', 'Table after', [['', 'Latest'], ...played.map(d => [d, `Matchda
   let status;
   if (t.preSeason) status = `The season starts on ${esc(formatDate(`${comp.start_date}T12:00:00Z`))}. Clubs are listed alphabetically until the first results.`;
   else status = `After Matchday ${esc(t.matchday)}, ${esc(t.matchdayPlayed)} of ${esc(t.matchdayMatches)} matches played${t.updatedAt ? `, updated ${esc(formatDateTime(t.updatedAt))}` : ''}.`;
+  if (t.live) status = `<span class="lg-chip live"><span class="lg-pulse" aria-hidden="true"></span>Live table</span> Matches in progress count as they stand; the arrows show changes since they kicked off${t.updatedAt ? `. Updated ${esc(formatDateTime(t.updatedAt))}` : ''}.`;
+  // Mini scoreboard: the round being played (confirmed scores only).
+  const SB = { live: 'LIVE', half_time: 'HT', full_time: 'FT', postponed: 'Postponed', abandoned: 'Abandoned', cancelled: 'Cancelled', awarded: 'Awarded' };
+  const board = (t.scoreboard || []).length ? `<section class="lg-board" aria-label="Matchday ${esc(t.scoreboard[0].matchday)} scores"><h2>Matchday ${esc(t.scoreboard[0].matchday)}</h2><ul>${t.scoreboard.map(m => {
+    const score = m.homeGoals != null ? `${esc(m.homeGoals)}–${esc(m.awayGoals)}` : m.status === 'scheduled' ? esc(toLagos(m.kickoff)?.time || '') : '–';
+    const tag = SB[m.status] ? `<span class="lg-board-st ${['live', 'half_time'].includes(m.status) ? 'live' : ''}">${SB[m.status]}</span>` : `<span class="lg-board-st">${esc(formatShortDate(m.kickoff || ''))}</span>`;
+    return `<li class="${m.home.isLobi || m.away.isLobi ? 'is-lobi' : ''}"><span class="h">${esc(m.home.shortName)}</span><b>${score}</b><span class="a">${esc(m.away.shortName)}</span>${tag}${m.unconfirmed ? '<span class="lg-board-st" title="Only one source so far">unconfirmed</span>' : ''}</li>`;
+  }).join('')}</ul></section>` : '';
   const zones = comp.zones || [];
   const zoneOf = pos => zones.find(z => pos >= z.from && pos <= z.to);
   const arrow = m => (m > 0 ? `<span class="lg-mv up" title="Up ${m}"><span aria-hidden="true">▲</span><span class="sr">Up ${m}</span></span>` : m < 0 ? `<span class="lg-mv down" title="Down ${-m}"><span aria-hidden="true">▼</span><span class="sr">Down ${-m}</span></span>` : '<span class="lg-mv same"><span aria-hidden="true">–</span><span class="sr">No change</span></span>');
@@ -255,7 +263,7 @@ ${select('upto', 'Table after', [['', 'Latest'], ...played.map(d => [d, `Matchda
   const caption = `${esc(comp.name)} ${esc(comp.season)}${scope !== 'overall' ? `, ${scope} matches only` : ''}${upTo ? `, after Matchday ${upTo}` : ''}`;
   const legend = zones.length ? `<ul class="lg-zones">${zones.map(z => `<li><span style="background:${esc(z.colour)}"></span>${esc(z.label)} (${z.from === z.to ? `position ${z.from}` : `positions ${z.from} to ${z.to}`})</li>`).join('')}</ul>` : '';
   const notes = t.footnotes.map((n, i) => `<li>${i < t.footnotes.length - 2 ? '<span aria-hidden="true">* </span>' : ''}${esc(n)}</li>`).join('');
-  return `${tabs}${upto}<p class="lg-status" role="status">${status}</p>
+  return `${tabs}${upto}<p class="lg-status" role="status">${status}</p>${board}
 <div class="lg-table-wrap" tabindex="0" role="region" aria-label="League table (scrolls sideways on small screens)">
 <table class="lg-table"><caption>${caption}</caption>
 <thead><tr><th scope="col" class="pos"><abbr title="Position">Pos</abbr></th><th scope="col" class="club">Club</th><th scope="col" class="p"><abbr title="Played">P</abbr></th>

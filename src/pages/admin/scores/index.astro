@@ -17,6 +17,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     <p class="og-lede">Enter scores as they come in. A result counts in the table only when <b>two independent sources agree</b>, or when you mark an <b>official</b> or <b>verified</b> result. 🟢 confirmed · 🟡 one source so far · 🔴 sources disagree.</p>
     <p class="og-msg" id="msg" role="status" aria-live="polite" hidden></p>
     <div id="cards" class="og-cards"><p class="muted">Loading…</p></div>
+    <details class="og-snaps" id="snaps"><summary>Saved tables (one per completed round)</summary><div id="snapList"><p class="muted">Loading…</p></div></details>
   </div>
 </Layout>
 
@@ -68,6 +69,10 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   .og :global(.gc-cmp-row b) { font: 400 24px/1 'Bebas Neue', sans-serif; margin-right: 6px; }
   .og :global(.gc-cmp-btns) { display: flex; gap: 6px; flex-wrap: wrap; }
   .og :global(.gc.focus) { outline: 3px solid #2563EB; outline-offset: 3px; }
+  .og-snaps { margin-top: 22px; background: var(--a-card); border: 1px solid var(--a-line); border-radius: 14px; padding: 12px 14px; }
+  .og-snaps summary { cursor: pointer; font-weight: 700; min-height: 32px; }
+  .og :global(.snap) { margin-top: 10px; } .og :global(.snap table) { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .og :global(.snap td), .og :global(.snap th) { padding: 4px 6px; border-bottom: 1px solid var(--a-line); text-align: center; } .og :global(.snap th[scope=row]) { text-align: left; }
   .sm, .og :global(.sm) { min-height: 36px; padding: 6px 12px; font-size: 13px; }
   @media (max-width: 420px) { .og-cards { grid-template-columns: 1fr; } .og :global(.gc-goals button) { width: 44px; height: 44px; } }
 </style>
@@ -158,6 +163,15 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     b.disabled = true;
     try { await api(body); msg(b.dataset.act === 'entry' ? 'Report saved.' : 'Result saved.', true); delete draft[id]; await load(data.round); }
     catch (err) { msg(err.message, false); b.disabled = false; }
+  });
+  $('snaps').addEventListener('toggle', async () => {
+    if (!$('snaps').open || $('snaps').dataset.loaded) return;
+    try {
+      const r = await fetch('/api/admin/scores/snapshots', { headers: H, cache: 'no-store' }); const d = await r.json();
+      $('snapList').innerHTML = d.snapshots.length ? d.snapshots.map(x => `<details class="snap"><summary>Matchday ${esc(x.matchday)}${x.version > 1 ? ` (version ${esc(x.version)})` : ''} · ${esc(wat(x.createdAt))} · ${esc(x.reason)}</summary>
+        <table><thead><tr><th>Pos</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead><tbody>${x.rows.map(r => `<tr><td>${r.pos}</td><th scope="row">${esc(r.team)}</th><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td>${r.gd}</td><td><b>${r.points}</b></td></tr>`).join('')}</tbody></table></details>`).join('') : '<p class="muted">None yet: a table is saved when every match of a round is over and confirmed.</p>';
+      $('snaps').dataset.loaded = '1';
+    } catch (e) { $('snapList').textContent = 'Could not load the saved tables.'; }
   });
   load();
   // Keep the cards fresh on matchday (not while typing).

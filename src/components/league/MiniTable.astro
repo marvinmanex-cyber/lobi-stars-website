@@ -1,7 +1,8 @@
 ---
 // A small league table (Pos, Club, P, GD, Pts) with Lobi Stars highlighted,
-// loaded from /api/league/table. If it can't load it says so and links to
-// /table. Not placed on the homepage yet: drop <MiniTable /> where it fits.
+// loaded from /api/league/table (the same data as /table: only confirmed,
+// verified or official results). Used on the homepage and Matchday Live.
+// While matches are in play it says "Live table". If it can't load it says so.
 ---
 <section class="mtb" data-mini-table aria-labelledby="mtb-h">
   <h2 id="mtb-h">League table</h2>
@@ -37,7 +38,7 @@
         tbody.append(el('tr', { class: r.team.isLobi ? 'is-lobi' : '' }, el('td', { text: String(r.pos) }), el('th', { scope: 'row' }, el('img', { class: 'club-logo', src: r.team.crest, alt: '', width: 22, height: 22, loading: 'lazy' }), r.team.shortName),
           el('td', { text: String(r.played) }), el('td', { text: sign(r.gd) }), el('td', {}, el('b', { text: String(r.points) }))));
       });
-      body.replaceChildren(el('table', {}, el('caption', { text: t.preSeason ? 'Before the first match' : 'After Matchday ' + t.matchday }), thead, tbody));
+      body.replaceChildren(el('table', {}, el('caption', { text: t.preSeason ? 'Before the first match' : t.live ? 'Live table: matches in play count as they stand' : 'After Matchday ' + t.matchday }), thead, tbody));
     }).catch(function () { body.replaceChildren(el('p', { class: 'mtb-msg', text: 'The table could not be loaded just now. ' }, el('a', { href: '/table/', text: 'See the full table' }))); });
   });
 })();

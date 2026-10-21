@@ -7,6 +7,7 @@ import Layout from '../layouts/Layout.astro';
 import settings from '../data/matchday.json';
 import LivePlayer from '../components/commentary/LivePlayer.astro';
 import MatchesTabs from '../components/MatchesTabs.astro';
+import MiniTable from '../components/league/MiniTable.astro';
 import '../styles/fixture-card.css';
 ---
 <Layout title="Matchday Live | Lobi Stars Football Club" description="Matchday Live: watch Lobi Stars home games, listen to live commentary, vote for Man of the Match and play Predict & Win." noindex whiteLabel>
@@ -15,9 +16,12 @@ import '../styles/fixture-card.css';
   <div id="ml" class="ml" data-settings={JSON.stringify(settings)}>
     <div class="wrap ml-loading" id="mlStatus" aria-live="polite">Loading Matchday Live&hellip;</div>
   </div>
+  <!-- The league table: the same data as /table (live while matches are in play). -->
+  <div class="wrap ml-table"><MiniTable /></div>
 </Layout>
 
 <style>
+  .ml-table { margin-top: 28px; margin-bottom: 28px; max-width: 760px; }
   .ml-loading { padding: 80px 5%; text-align: center; color: var(--lt); }
   .ml :global(.ml-head) { background: radial-gradient(120% 140% at 50% 0%, #7A0F12 0%, #2A0507 55%, #15181D 100%); color: #fff; padding: 26px 0 0; }
   .ml :global(.ml-inner) { max-width: 1000px; margin: 0 auto; padding: 0 5%; }

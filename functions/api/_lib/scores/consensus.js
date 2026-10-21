@@ -15,7 +15,8 @@
 // written to League History in plain English.
 import { ensureScoreSchema, addReport, latestPerSource, SOURCE_TYPES, TO_LEAGUE_STATUS } from './model.js';
 import { ensureDecisions, decidedResult } from './matchday.js';
-import { getCompetition, logLeague } from '../leagueDb.js';
+import { getCompetition, logLeague, loadLeague, standingsFor } from '../leagueDb.js';
+import { isCounted } from '../league/standings.js';
 import { afterFixtureChange } from '../leagueAdmin.js';
 import { scoreAlert } from './alerts.js';
 
@@ -278,6 +279,50 @@ export async function missingResults(env, { now = Date.now(), settings = null, a
   return missing;
 }
 
+// ── Table snapshots ──
+/**
+ * When every match of a round is over (and each played match is confirmed,
+ * verified or official), the table after that round is saved. If a later
+ * correction changes it, a new version is saved with the reason.
+ */
+export async function snapshotRounds(env, { now = Date.now() } = {}) {
+  const db = env.DB;
+  await db.prepare(`CREATE TABLE IF NOT EXISTS league_table_snapshots (id INTEGER PRIMARY KEY AUTOINCREMENT, competition_id INTEGER NOT NULL, matchday INTEGER NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1, rows_json TEXT NOT NULL, hash TEXT NOT NULL, reason TEXT, created_at TEXT NOT NULL)`).run();
+  const league = await loadLeague(env, { publishedOnly: false });
+  if (!league || !league.competition.has_table) return [];
+  const comp = league.competition;
+  const saved = [];
+  const mds = [...new Set(league.fixtures.map(f => f.matchday).filter(d => d != null))].sort((a, b) => a - b);
+  for (const md of mds) {
+    const list = league.fixtures.filter(f => f.matchday === md);
+    const over = list.every(f => ['full_time', 'awarded', 'postponed', 'cancelled', 'abandoned'].includes(f.status));
+    const settled = list.filter(f => ['full_time', 'awarded'].includes(f.status)).every(f => isCounted(f, { ...comp, include_live: 0 }));
+    if (!over || !settled) continue;
+    const st = standingsFor(league, { upTo: md });
+    const rows = st.rows.map(r => ({ pos: r.pos, teamId: r.team.id, team: r.team.name, played: r.played, won: r.won, drawn: r.drawn, lost: r.lost, gf: r.gf, ga: r.ga, gd: r.gd, points: r.points }));
+    const hash = rows.map(r => `${r.teamId}:${r.pos}:${r.points}:${r.gd}:${r.gf}:${r.played}`).join('|');
+    const last = await db.prepare(`SELECT version, hash FROM league_table_snapshots WHERE competition_id = ? AND matchday = ? ORDER BY version DESC LIMIT 1`).bind(comp.id, md).first();
+    if (last?.hash === hash) continue;
+    const version = (last?.version || 0) + 1;
+    const reason = last ? 'A result or points adjustment changed after the round was saved' : 'Round complete';
+    await db.prepare(`INSERT INTO league_table_snapshots (competition_id, matchday, version, rows_json, hash, reason, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+      .bind(comp.id, md, version, JSON.stringify(rows), hash, reason, new Date(now).toISOString()).run();
+    await logLeague(db, SYSTEM, 'table.snapshot', 'matchday', md, null, { result: `Table after Matchday ${md} saved${version > 1 ? ` (version ${version}: ${reason.toLowerCase()})` : ''}. Leaders: ${rows[0]?.team} (${rows[0]?.points} pts).` });
+    saved.push({ matchday: md, version });
+  }
+  return saved;
+}
+export async function listSnapshots(env) {
+  const db = env.DB;
+  await db.prepare(`CREATE TABLE IF NOT EXISTS league_table_snapshots (id INTEGER PRIMARY KEY AUTOINCREMENT, competition_id INTEGER NOT NULL, matchday INTEGER NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1, rows_json TEXT NOT NULL, hash TEXT NOT NULL, reason TEXT, created_at TEXT NOT NULL)`).run();
+  const comp = await getCompetition(db, null);
+  if (!comp) return [];
+  return (await db.prepare(`SELECT * FROM league_table_snapshots WHERE competition_id = ? ORDER BY matchday DESC, version DESC`).bind(comp.id).all()).results
+    .map(r => ({ id: r.id, matchday: r.matchday, version: r.version, reason: r.reason, createdAt: r.created_at, rows: JSON.parse(r.rows_json) }));
+}
+
 /** The every-minute run: settle matches around now and any still disagreeing, then the reminders. */
 export async function scoresTick(env, { now = Date.now() } = {}) {
   await ensureConsensusSchema(env);
@@ -288,7 +333,8 @@ export async function scoresTick(env, { now = Date.now() } = {}) {
   const settled = [];
   for (const id of ids) settled.push(await settleFixture(env, id, { now, settings: s }));
   const missing = await missingResults(env, { now, settings: s });
-  return { settled: settled.filter(Boolean).length, conflicts: settled.filter(x => x?.state === 'CONFLICT').length, missing: missing.length };
+  const snapshots = await snapshotRounds(env, { now }).catch(err => { console.error('[scores] snapshots', err); return []; });
+  return { snapshots: snapshots.length, settled: settled.filter(Boolean).length, conflicts: settled.filter(x => x?.state === 'CONFLICT').length, missing: missing.length };
 }
 /** Fallback until the cron Worker calls /api/internal/scores-run itself: run when the last run is over 90 seconds old. */
 export async function scoresTickIfDue(env, now = Date.now()) {
