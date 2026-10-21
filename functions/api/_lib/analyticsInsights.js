@@ -284,7 +284,7 @@ export async function writeAiSummary(env, by = 'Weekly') {
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model, max_tokens: 4000, output_config: { effort: 'low' }, system: 'You write a short weekly website report for the staff of Lobi Stars FC, a Nigerian football club. Plain English for non-technical readers, no jargon. 120-200 words: what went well, what needs attention, and the three most useful actions this week. Use only the figures given; never invent numbers.',
+    body: JSON.stringify({ model, max_tokens: 4000, output_config: { effort: 'low' }, system: 'You write a short weekly website report for the staff of Lobi Stars FC, a Nigerian football club. Plain English for non-technical readers, no jargon. 120-200 words: what went well, what needs attention, and the three most useful actions this week. Use only the figures given; never invent numbers. Plain text only: no Markdown, no asterisks or # signs; write headings as a short line on their own.',
       messages: [{ role: 'user', content: 'Figures (totals only):\n' + JSON.stringify(facts) }] }),
   });
   const d = await r.json().catch(() => ({}));

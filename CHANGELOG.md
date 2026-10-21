@@ -8,6 +8,24 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-21: Weekly summary by Claude switched on
+
+**What changed**
+- The optional weekly summary in **Admin › Analytics › Recommendations** is
+  now on (Anthropic key and `AI_SUMMARY` added in Cloudflare). Claude writes
+  a short plain-English report every Monday from the website's totals only (no
+  names, emails, phones or orders). **Write a new summary now** makes one at
+  any time.
+- Headings in the summary show in bold instead of with stars around them.
+
+**Who it affects:** staff who read Analytics.
+
+**What staff need to do:** nothing. The key uses prepaid credit at
+console.anthropic.com (a few US cents a week); top it up if the summary stops.
+To switch it off, delete `AI_SUMMARY` in Cloudflare.
+
+---
+
 ## 2026-10-21: Match Checklist (Matchday › Match Checklist)
 
 **What changed**

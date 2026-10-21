@@ -518,9 +518,9 @@ change it), and is refreshed every morning after the Google sync.
   there after 30 days, the card returns by itself.
 - Changes to page titles and descriptions are code changes: send the
   suggested wording to your web developer, or ask Claude in VS Code.
-- Optional: a **weekly summary written by Claude** at the top of the box
-  (Mondays). It's off unless the club switches it on (handover A28; a small
-  monthly cost). It is sent only totals, never personal details.
+- A **weekly summary written by Claude** at the top of the box (every
+  Monday; switched on 21 Oct 2026). Press **Write a new summary now** for a
+  fresh one at any time. It is sent only totals, never personal details.
 
 ### Charts, downloads and presentations (Admin → Analytics)
 

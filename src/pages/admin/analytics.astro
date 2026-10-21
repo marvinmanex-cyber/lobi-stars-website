@@ -474,7 +474,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     $('recDone').innerHTML = d.done.map(r => recCard(r, true)).join('');
     const ai = d.ai || {};
     $('recAi').innerHTML = ai.summary && ai.summary.text
-      ? `<div class="rec-ai"><b>&#129302; Weekly summary by Claude</b> <span class="gs-status">(${esc(fmtWat(ai.summary.at))})</span>\n${esc(ai.summary.text)}</div>${ai.enabled ? '<p><button type="button" class="btn-o sm" id="aiNow">Write a new summary now</button></p>' : ''}`
+      ? `<div class="rec-ai"><b>&#129302; Weekly summary by Claude</b> <span class="gs-status">(${esc(fmtWat(ai.summary.at))})</span>\n${esc(ai.summary.text).replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>').replace(/^#+\s*/gm, '')}</div>${ai.enabled ? '<p><button type="button" class="btn-o sm" id="aiNow">Write a new summary now</button></p>' : ''}`
       : ai.enabled ? '<p><button type="button" class="btn-o sm" id="aiNow">Write the weekly summary now</button></p>' : '';
     $('aiNow')?.addEventListener('click', async e => {
       const b = e.currentTarget; b.disabled = true; b.textContent = 'Writing…';
