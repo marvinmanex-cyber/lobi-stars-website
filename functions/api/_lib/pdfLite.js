@@ -84,6 +84,7 @@ export class PdfDoc {
     this.pages = [];
     this.annots = [];
     this.image = null;
+    this.extra = [];
     this.addPage();
   }
   addPage() { this.cur = []; this.pages.push(this.cur); this.annots.push([]); return this; }
@@ -112,11 +113,19 @@ export class PdfDoc {
     this.cur.push(`q ${rgb(color)} RG ${num(width)} w ${num(x1)} ${num(this.h - y1)} m ${num(x2)} ${num(this.h - y2)} l S Q`);
     return this;
   }
-  /** Places the document's one JPEG image (set with setJpeg) with its top-left at (x, y). */
-  drawImage(x, y, w, h) {
-    if (!this.image) return this;
-    this.cur.push(`q ${num(w)} 0 0 ${num(h)} ${num(x)} ${num(this.h - y - h)} cm /Im1 Do Q`);
+  /** Places a JPEG with its top-left at (x, y): the document's main one (setJpeg) or one added with addJpeg (its id). */
+  drawImage(x, y, w, h, id = 'Im1') {
+    if (id === 'Im1' ? !this.image : !this.extra.some(e => e.id === id)) return this;
+    this.cur.push(`q ${num(w)} 0 0 ${num(h)} ${num(x)} ${num(this.h - y - h)} cm /${id} Do Q`);
     return this;
+  }
+  /** Adds another JPEG (one photo per page in squad exports); returns { id, width, height } for drawImage, or null. */
+  addJpeg(bytes) {
+    const info = jpegInfo(bytes);
+    if (!info) return null;
+    const id = `Im${this.extra.length + 2}`;
+    this.extra.push({ id, bytes: bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), ...info });
+    return { id, width: info.width, height: info.height };
   }
   setJpeg(bytes) {
     const info = jpegInfo(bytes);
@@ -143,10 +152,12 @@ export class PdfDoc {
       const im = this.image;
       obj(6, [`<< /Type /XObject /Subtype /Image /Width ${im.width} /Height ${im.height} /ColorSpace /${im.components === 1 ? 'DeviceGray' : im.components === 4 ? 'DeviceCMYK' : 'DeviceRGB'} /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`, im.bytes, '\nendstream']);
     } else obj(6, '<< >>');
-    const res = `<< /Font << /F1 3 0 R /F2 4 0 R >>${this.image ? ' /XObject << /Im1 6 0 R >>' : ''} >>`;
-    // Link annotations get object numbers after the pages.
+    // Link annotations get object numbers after the pages, then the added images.
     let nextNo = first + this.pages.length * 2;
     const annotNos = this.annots.map(list => list.map(() => nextNo++));
+    const extraNos = this.extra.map(() => nextNo++);
+    const xobjects = [this.image ? '/Im1 6 0 R' : '', ...this.extra.map((e, i) => `/${e.id} ${extraNos[i]} 0 R`)].filter(Boolean).join(' ');
+    const res = `<< /Font << /F1 3 0 R /F2 4 0 R >>${xobjects ? ` /XObject << ${xobjects} >>` : ''} >>`;
     this.pages.forEach((ops, i) => {
       const pageNo = first + i * 2, contentNo = pageNo + 1;
       const annots = annotNos[i].length ? ` /Annots [${annotNos[i].map(n => `${n} 0 R`).join(' ')}]` : '';
@@ -157,6 +168,7 @@ export class PdfDoc {
     this.annots.forEach((list, i) => list.forEach((a, j) => {
       obj(annotNos[i][j], `<< /Type /Annot /Subtype /Link /Rect [${a.rect.map(num).join(' ')}] /Border [0 0 0] /A << /S /URI /URI (${a.url.replace(/[()\\]/g, c => `\\${c}`)}) >> >>`);
     }));
+    this.extra.forEach((im, i) => obj(extraNos[i], [`<< /Type /XObject /Subtype /Image /Width ${im.width} /Height ${im.height} /ColorSpace /${im.components === 1 ? 'DeviceGray' : im.components === 4 ? 'DeviceCMYK' : 'DeviceRGB'} /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`, im.bytes, '\nendstream']));
     const xref = length;
     const count = nextNo;
     let x = `xref\n0 ${count}\n0000000000 65535 f \n`;

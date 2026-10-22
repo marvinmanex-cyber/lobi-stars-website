@@ -1,0 +1,204 @@
+---
+// Squad › Profile Submissions (Website & Data Officer and Super Admins). Every
+// profile sent from the Squad & Staff Data Portal: the full answers (including
+// private details, for the club only), photos and the pronunciation recording;
+// Verify & publish, Request changes (the note shows in the portal), Mark as left
+// the club / Restore. Super Admins also: Remove, new season (carry over),
+// team details for the Data Package, Full club records. Exports as in the portal.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Squad Profile Submissions | Lobi Stars Admin" description="Squad and staff profiles from the data portal." noindex>
+  <div class="wrap sq">
+    <AdminNav current="squad-profiles" />
+    <div class="stag">Matchday › Squad</div>
+    <h1 class="stitle">Profile <span class="r">submissions</span></h1>
+    <p class="sq-lede">Profiles sent from the Squad &amp; Staff Data Portal. Only <b>verified</b> profiles appear on the website's Squad page (public details only; the age, never the date of birth).</p>
+    <p class="sq-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <ul class="sq-chips" id="chips"></ul>
+
+    <section class="sq-card">
+      <div class="sq-row">
+        <label class="sq-l">Season <select id="season"></select></label>
+        <label class="sq-l">Search <input id="q" type="search" placeholder="Name or shirt number" /></label>
+        <button class="btn-o" type="button" id="publish">Update the website now</button>
+      </div>
+      <div class="sq-filters" id="filters"></div>
+      <div class="sq-scroll"><table class="sq-table"><thead><tr><th>Photo</th><th>Name</th><th>Type</th><th>Number / position or role</th><th>Status</th><th>Last saved</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+    </section>
+
+    <section class="sq-card sq-detail" id="detail" hidden aria-live="polite"></section>
+
+    <section class="sq-card" aria-labelledby="h-ex">
+      <h2 id="h-ex">Export data</h2>
+      <div class="sq-row">
+        <label class="sq-l">Which profiles <select id="exWhich"><option value="verified">Verified only</option><option value="submitted">All submitted</option><option value="players">Players</option><option value="staff">Staff</option></select></label>
+        <label class="sq-l">Season <select id="exSeason"><option value="current">Current season</option><option value="all">All seasons</option></select></label>
+      </div>
+      <div class="sq-row">
+        <button class="btn-o" type="button" data-export="pdf">Download PDF</button><button class="btn-o" type="button" data-export="docx">Download Word</button>
+        <button class="btn-o" type="button" data-export="xlsx">Download Excel</button><button class="btn-o" type="button" data-export="csv">Download CSV</button>
+        <button class="btn-o" type="button" data-export="json">Download JSON</button><button class="btn-p" type="button" data-export="zip">Download Media Partner Data Package (ZIP)</button>
+      </div>
+      <p class="muted">These downloads contain Public and Media details only.</p>
+      <div id="fullBox" hidden>
+        <h3>Full club records (Super Admins)</h3>
+        <p class="muted">Every field including private details (legal name, date of birth, phone, email, emergency and guardian contacts). Needs your two-step code; recorded in the Activity Log.</p>
+        <div class="sq-row"><button class="btn-o" type="button" data-full="records-xlsx">Full records (Excel)</button><button class="btn-o" type="button" data-full="records-pdf">Full records (PDF)</button></div>
+      </div>
+      <p class="sq-exstatus" id="exStatus" role="status" aria-live="polite" hidden></p>
+    </section>
+
+    <section class="sq-card" id="superBox" hidden>
+      <h2>New season</h2>
+      <p class="muted">Copies every verified profile of a season into the new season as drafts for review (history and photos kept), and makes it the portal's current season.</p>
+      <form class="sq-row" id="carry"><label class="sq-l">From <select id="carryFrom"></select></label><label class="sq-l">New season <input id="carryTo" placeholder="2027/28" maxlength="7" /></label><button class="btn-p" type="submit">Carry over squad</button></form>
+      <h2>Team details (Data Package)</h2>
+      <form class="sq-team" id="team">
+        <label class="sq-l">Name <input name="name" /></label><label class="sq-l">Short name <input name="shortName" /></label><label class="sq-l">Nickname <input name="nickname" /></label>
+        <label class="sq-l">Stadium <input name="stadium" /></label><label class="sq-l">City <input name="city" /></label><label class="sq-l">State <input name="state" /></label>
+        <label class="sq-l">Competition <input name="competition" /></label>
+        <label class="sq-l">Home kit colours <input name="home" placeholder="#C4161C, #F2B705" /></label><label class="sq-l">Away kit colours <input name="away" placeholder="#FFFFFF, #F2B705" /></label>
+        <div><button class="btn-p" type="submit">Save team details</button></div>
+      </form>
+    </section>
+
+    <section class="sq-card"><h2>Export log</h2><div id="exLog"></div></section>
+  </div>
+</Layout>
+
+<style>
+  .sq { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; }
+  .sq-lede { color: var(--a-muted); max-width: 800px; line-height: 1.5; }
+  .sq-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 14px 0; display: grid; gap: 12px; }
+  .sq-card h2 { margin: 0; font-size: 18px; } .sq-card h3 { margin: 6px 0 0; font-size: 16px; }
+  .sq-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .sq-row button { min-height: 44px; }
+  .sq-l { display: grid; gap: 4px; font-weight: 600; font-size: 14px; color: var(--a-muted); }
+  .sq-l input, .sq-l select, .sq :global(.sq-note) { min-height: 44px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 15px; }
+  .sq-chips { list-style: none; padding: 0; margin: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+  .sq :global(.sq-chips li) { padding: 6px 12px; border-radius: 999px; background: var(--a-card); border: 1px solid var(--a-line); }
+  .sq-filters { display: flex; gap: 6px; flex-wrap: wrap; }
+  .sq :global(.sq-filters button) { min-height: 40px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); font-weight: 600; cursor: pointer; }
+  .sq :global(.sq-filters button[aria-pressed="true"]) { background: #15181D; color: #fff; }
+  .sq-scroll { overflow-x: auto; }
+  .sq-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px; }
+  .sq :global(.sq-table th), .sq :global(.sq-table td) { text-align: left; padding: 8px; border-bottom: 1px solid var(--a-line); vertical-align: middle; }
+  .sq :global(.sq-thumb) { width: 40px; height: 50px; object-fit: cover; border-radius: 6px; background: var(--a-line); display: inline-block; }
+  .sq :global(.st) { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .sq :global(.st.DRAFT) { background: #FEF3C7; color: #78350F; } .sq :global(.st.SUBMITTED) { background: #DBEAFE; color: #1E3A8A; } .sq :global(.st.VERIFIED) { background: #DCFCE7; color: #14532D; }
+  .sq :global(.st.CHANGES_REQUESTED) { background: #FEE2E2; color: #7F1D1D; } .sq :global(.st.LEFT_THE_CLUB) { background: #E5E7EB; color: #374151; }
+  .sq :global(.sq-dl) { display: grid; grid-template-columns: minmax(160px, 260px) 1fr; gap: 6px 14px; margin: 0; font-size: 14px; }
+  .sq :global(.sq-dl dt) { color: var(--a-muted); } .sq :global(.sq-dl dd) { margin: 0; }
+  .sq :global(.use) { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+  .sq :global(.use.public) { background: #DBEAFE; color: #1D4ED8; } .sq :global(.use.media) { background: #FEF3C7; color: #92400E; } .sq :global(.use.private) { background: #E5E7EB; color: #374151; }
+  .sq :global(.sq-photos) { display: flex; gap: 12px; flex-wrap: wrap; }
+  .sq :global(.sq-photos img) { width: 160px; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 12px; }
+  .sq :global(.sq-acts) { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .sq :global(.sq-acts button) { min-height: 44px; }
+  .sq :global(.sq-note) { flex: 1 1 280px; }
+  .sq-team { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; align-items: end; }
+  .sq-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .sq-msg.ok { background: #E8F7EE; color: #17643A; } .sq-msg.err { background: #FDECEC; color: #A3161B; }
+  .sq-exstatus { margin: 0; padding: 10px 12px; border-radius: 10px; background: #E8F7EE; color: #17643A; font-weight: 600; }
+  .sq-exstatus.err { background: #FDECEC; color: #A3161B; }
+  @media (max-width: 640px) { .sq :global(.sq-dl) { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  import { FIELDS, labelOf, ageOn } from '../../lib/squadFields.js';
+  import { runExport } from '../../scripts/squadPortal/exports';
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const when = (iso?: string) => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const FILTERS = [['submitted', 'Waiting for review'], ['all', 'All'], ['verified', 'Verified'], ['changes', 'Changes requested'], ['drafts', 'Drafts'], ['left', 'Left the club'], ['players', 'Players'], ['staff', 'Staff']];
+  const view = { season: '', filter: new URLSearchParams(location.search).get('filter') || 'submitted', q: '' };
+  let D: any = null, msgT = 0, qT = 0;
+  function msg(t: string, ok = true) { const m = $('msg'); m.textContent = t; m.className = `sq-msg ${ok ? 'ok' : 'err'}`; m.hidden = false; clearTimeout(msgT); msgT = window.setTimeout(() => { m.hidden = true; }, 7000); }
+  async function api(qs = '', body?: unknown) {
+    const r = await fetch(`/api/admin/squad-profiles${qs}`, body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/squad-profiles/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { const e: any = new Error(d.error || 'Request failed'); e.data = d; throw e; }
+    return d;
+  }
+  async function load() {
+    try {
+      const p = new URLSearchParams({ filter: view.filter, q: view.q, ...(view.season ? { season: view.season } : {}) });
+      D = await api(`?${p}`); view.season = D.season;
+      const c = D.counts;
+      $('chips').innerHTML = [['Players', c.players], ['Staff', c.staff], ['Drafts', c.drafts], ['Waiting for review', c.submitted], ['Verified', c.verified], ['Changes requested', c.changes], ['Left the club', c.left]].map(([l, n]) => `<li><b>${n}</b> ${l}</li>`).join('');
+      $('season').innerHTML = D.seasons.map((s: string) => `<option ${s === D.season ? 'selected' : ''}>${esc(s)}</option>`).join('');
+      $('carryFrom').innerHTML = $('season').innerHTML;
+      $('filters').innerHTML = FILTERS.map(([k, l]) => `<button type="button" data-f="${k}" aria-pressed="${k === view.filter}">${l}</button>`).join('');
+      $('rows').innerHTML = D.profiles.length ? D.profiles.map((p: any) => `<tr>
+        <td>${p.thumb ? `<img class="sq-thumb" src="${esc(p.thumb)}" alt="" loading="lazy" />` : '<span class="sq-thumb"></span>'}</td>
+        <td><b>${esc(p.name || 'Unnamed draft')}</b>${p.reviewNote ? `<br /><small>Note: ${esc(p.reviewNote)}</small>` : ''}</td><td>${p.type === 'player' ? 'Player' : 'Coach / staff'}</td>
+        <td>${p.type === 'player' ? `${p.shirtNumber ?? '–'} · ${esc(p.position || '')}` : esc(p.role || '')}</td><td><span class="st ${p.status}">${esc(p.statusLabel)}</span></td>
+        <td>${esc(when(p.updatedAt))}<br /><small>${esc(p.updatedBy || '')}</small></td><td><button class="btn-o" type="button" data-open="${p.id}">Open</button></td></tr>`).join('') : '<tr><td colspan="7" class="muted">Nothing here.</td></tr>';
+      $('fullBox').hidden = !D.canFull; $('superBox').hidden = !D.canSuper;
+      const t = D.team, f = $('team');
+      for (const k of ['name', 'shortName', 'nickname', 'stadium', 'city', 'state', 'competition']) f.elements[k].value = t[k] || '';
+      f.elements.home.value = (t.kitColours?.home || []).join(', '); f.elements.away.value = (t.kitColours?.away || []).join(', ');
+      $('exLog').innerHTML = D.exportLog.length ? `<div class="sq-scroll"><table class="sq-table"><thead><tr><th>When</th><th>Who</th><th>Where</th><th>Format</th><th>Profiles</th><th>Filters</th></tr></thead><tbody>${D.exportLog.map((x: any) => `<tr><td>${esc(when(x.at))}</td><td>${esc(x.by)}</td><td>${esc(x.place)}</td><td>${esc(x.format)}${x.ok ? '' : ' (failed)'}</td><td>${x.profiles}</td><td>${esc(x.filters)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No downloads yet.</p>';
+      const id = new URLSearchParams(location.search).get('id'); if (id && $('detail').hidden) open(id);
+    } catch (e: any) { msg(e.message, false); }
+  }
+  function value(f: any, v: any, type: string) {
+    if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) return '<span class="muted">–</span>';
+    if (f.type === 'rows') return `<ul>${v.map((r: any) => `<li>${f.columns.map((c: any) => esc(r[c.key] ?? '')).filter(Boolean).join(' · ')}</li>`).join('')}</ul>`;
+    if (f.type === 'checkbox') return v ? 'Yes' : 'No';
+    if (f.key === 'dob') return `${esc(v)} (age ${ageOn(v) ?? '–'})`;
+    return esc(Array.isArray(v) ? v.join(', ') : v);
+  }
+  async function open(id: string) {
+    try {
+      const { profile: p } = await api(`?id=${encodeURIComponent(id)}`);
+      const fields = FIELDS.filter((f: any) => f.for === 'all' || f.for === p.type);
+      const box = $('detail'); box.hidden = false;
+      const acts = [
+        ['SUBMITTED', 'CHANGES_REQUESTED'].includes(p.status) ? '<button class="btn-p" type="button" data-act="verify">Verify &amp; publish</button>' : '',
+        ['SUBMITTED', 'VERIFIED'].includes(p.status) ? '<input class="sq-note" id="note" maxlength="500" placeholder="What needs changing (shown in the portal)" /><button class="btn-o" type="button" data-act="request_changes">Request changes</button>' : '',
+        p.status !== 'DRAFT' && p.status !== 'LEFT_THE_CLUB' ? '<button class="btn-o" type="button" data-act="left">Mark as left the club</button>' : '',
+        p.status === 'LEFT_THE_CLUB' ? '<button class="btn-o" type="button" data-act="restore">Restore (back at the club)</button>' : '',
+        D?.canSuper ? '<button class="btn-o" type="button" data-act="remove">Remove profile</button>' : '',
+      ].join('');
+      box.innerHTML = `<div class="sq-row" style="justify-content:space-between"><h2>${esc(p.name || 'Unnamed')} <span class="st ${p.status}">${esc(p.statusLabel)}</span></h2><button class="btn-o" type="button" id="closeDetail">Close</button></div>
+        <p class="muted">${p.type === 'player' ? 'Player' : 'Coach / staff'} · ${esc(p.season)} · submitted ${esc(when(p.submittedAt))} by ${esc(p.submittedBy || '–')}${p.verifiedAt ? ` · verified ${esc(when(p.verifiedAt))} by ${esc(p.verifiedBy)}` : ''}${p.reviewNote ? ` · note: ${esc(p.reviewNote)}` : ''}</p>
+        <div class="sq-photos">${Object.entries(p.photos || {}).map(([k, ph]: any) => `<figure><img src="${esc(ph.url)}" alt="${k} photo" /><figcaption class="muted">${k === 'profile' ? 'Profile' : 'Action'} · ${esc(p.fileBase)}${k === 'action' ? '-action' : ''}.jpg ${(ph.warnings || []).length ? `· ⚠ ${esc(ph.warnings.join(' '))}` : ''}</figcaption></figure>`).join('') || '<p class="muted">No photo.</p>'}</div>
+        ${p.audio ? `<p>Pronunciation recording: <audio controls preload="none" src="${esc(p.audio.url)}"></audio></p>` : ''}
+        <dl class="sq-dl">${fields.map((f: any) => `<dt>${esc(labelOf(f, p.type))}<span class="use ${f.use}">${f.use}</span></dt><dd>${value(f, p.data[f.key], p.type)}</dd>`).join('')}</dl>
+        <div class="sq-acts" data-id="${p.id}">${acts}</div>`;
+      box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('closeDetail').onclick = () => { box.hidden = true; history.replaceState(null, '', location.pathname); };
+    } catch (e: any) { msg(e.message, false); }
+  }
+  $('detail').addEventListener('click', async (e: Event) => {
+    const b = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null; if (!b) return;
+    const id = (b.closest('[data-id]') as HTMLElement).dataset.id, act = b.dataset.act;
+    const sure = { verify: 'Verify and publish this profile? Its public details appear on the website Squad page.', left: 'Mark this person as having left the club? They disappear from the website Squad page but stay in the records.', remove: 'Remove this profile completely? This cannot be undone.' } as any;
+    if (sure[act!] && !confirm(sure[act!])) return;
+    try { await api('', { action: act, id, note: ($('note') as HTMLInputElement | null)?.value }); msg({ verify: 'Verified. The website updates in about 2 minutes.', request_changes: 'Changes requested. The portal shows your note.', left: 'Marked as left the club.', restore: 'Restored.', remove: 'Removed.' }[act!] || 'Done.'); $('detail').hidden = true; load(); }
+    catch (err: any) { msg(err.message, false); }
+  });
+  $('rows').addEventListener('click', (e: Event) => { const b = (e.target as HTMLElement).closest('[data-open]') as HTMLElement | null; if (b) open(b.dataset.open!); });
+  $('filters').addEventListener('click', (e: Event) => { const b = (e.target as HTMLElement).closest('[data-f]') as HTMLElement | null; if (b) { view.filter = b.dataset.f!; load(); } });
+  $('season').addEventListener('change', () => { view.season = $('season').value; load(); });
+  $('q').addEventListener('input', () => { clearTimeout(qT); qT = window.setTimeout(() => { view.q = $('q').value; load(); }, 300); });
+  $('publish').addEventListener('click', async () => { try { const r = await api('', { action: 'publish' }); msg(r.message); } catch (e: any) { msg(e.message, false); } });
+  $('carry').addEventListener('submit', async (e: Event) => { e.preventDefault(); if (!confirm(`Copy every verified profile of ${$('carryFrom').value} into ${$('carryTo').value} as drafts?`)) return; try { const r = await api('', { action: 'carry_over', from: $('carryFrom').value, to: $('carryTo').value }); msg(`${r.copied} profiles copied into the new season as drafts.`); view.season = ''; load(); } catch (err: any) { msg(err.message, false); } });
+  $('team').addEventListener('submit', async (e: Event) => {
+    e.preventDefault(); const f = (e.target as any).elements, list = (s: string) => s.split(/[\s,]+/).filter(Boolean);
+    try { await api('', { action: 'team', team: { name: f.name.value, shortName: f.shortName.value, nickname: f.nickname.value, stadium: f.stadium.value, city: f.city.value, state: f.state.value, competition: f.competition.value, kitColours: { home: list(f.home.value), away: list(f.away.value) } } }); msg('Team details saved.'); load(); }
+    catch (err: any) { msg(err.message, false); }
+  });
+  const status = (t: string, ok = true) => { const s = $('exStatus'); s.textContent = t; s.className = `sq-exstatus ${ok ? '' : 'err'}`; s.hidden = !t; };
+  document.querySelectorAll<HTMLButtonElement>('[data-export]').forEach(b => b.addEventListener('click', () => runExport({ place: 'admin', format: b.dataset.export as any, which: $('exWhich').value, season: $('exSeason').value, status, button: b })));
+  document.querySelectorAll<HTMLButtonElement>('[data-full]').forEach(b => b.addEventListener('click', () => {
+    const code = prompt('Enter the 6-digit code from your authenticator app (leave empty if you do not use two-step login):', '');
+    if (code === null) return;
+    runExport({ place: 'admin', format: b.dataset.full as any, which: 'submitted', season: $('exSeason').value, status, button: b, extra: { code } });
+  }));
+  load();
+</script>

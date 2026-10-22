@@ -8,6 +8,36 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Squad & Staff Data Portal, Phases 5–6 (review, publishing, exports, partner feed)
+
+**What changed**
+- **Review (Matchday › Squad: Profile Submissions):** the Website & Data
+  Officer and Super Admins see every submitted profile, with all answers,
+  photos and the recording. Buttons: Verify, Request changes (a note is
+  required, and the portal shows it), Left the club, Restore. Super Admins can
+  also remove a profile. The bell shows how many profiles are waiting, and
+  reviewers get an email when one is submitted.
+- **Publishing:** when a profile is verified, the website rebuilds (at most
+  every 2 minutes, once PAGES_DEPLOY_HOOK is set) and the person appears on
+  /squad with **public details only**: age instead of date of birth, never the
+  legal name, phone, email or emergency contact. A verified portal profile
+  replaces a hand-made squad entry with the same name. "Left the club" takes
+  them off the website.
+- **Exports (portal and review page):** PDF, Word, Excel, CSV, JSON and the
+  **Media Partner Data Package** (ZIP with data.json, CSVs, photos, recordings,
+  team details), schemaVersion 1.0. Every download is checked before it is
+  saved and is written to the export log. Private details are never in them.
+- **Full club records:** only Super Admins, with their sign-in code, can
+  download the version with private details (Excel or PDF). It is logged.
+- **Partner feed:** /api/partner/squad for the media partner, with a key
+  (LOBI_PARTNER_API_KEY), the same structure as data.json, `?since=` for
+  changes only, and photo and audio links that stop working after 24 hours.
+- **New season:** "Carry over" copies last season's verified profiles as
+  drafts for the new season.
+
+**Staff need to do:** nothing until the portal password is generated (see
+HANDOVER-TODO.md).
+
 ## 2026-10-22: Squad & Staff Data Portal, Phases 2–4 (screens, autosave, photos, recordings)
 
 **What changed**

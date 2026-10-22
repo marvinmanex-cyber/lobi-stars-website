@@ -35,6 +35,10 @@ function age(dob: Date) {
 const facts = [
   ['Position', position],
   ['Shirt number', String(p.number)],
+  // Profiles from the Squad & Staff Data Portal publish the age only, never the date of birth.
+  ['Age', !p.dateOfBirth && p.age ? String(p.age) : null],
+  ['Detailed position', p.positionDetail && p.positionDetail !== position ? p.positionDetail : null],
+  ['Hometown', p.hometown || null],
   ['Date of birth', p.dateOfBirth ? `${p.dateOfBirth.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })} (age ${age(p.dateOfBirth)})` : null],
   ['State / country', [p.stateOfOrigin, p.nationality].filter(Boolean).join(', ') || null],
   ['Height', p.height || null],

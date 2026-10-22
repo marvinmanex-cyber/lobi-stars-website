@@ -76,6 +76,13 @@ const players = defineCollection({
     cleanSheets: z.number().nullable().default(0),
     photo: z.string().nullable().optional(),
     isSample: z.boolean().default(false),
+    // From the Squad & Staff Data Portal (verified profiles; scripts/fetch-squad.mjs): the age only, never the date of birth.
+    portal: z.boolean().default(false),
+    age: z.number().nullable().optional(),
+    positionDetail: z.string().nullable().optional(),
+    hometown: z.string().nullable().optional(),
+    nickname: z.string().nullable().optional(),
+    social: z.string().nullable().optional(),
   }),
 });
 
@@ -98,6 +105,7 @@ const staff = defineCollection({
     order: z.number().default(0),
     // "Coaching Staff" appear on the Squad page. "Management" entries aren't shown publicly.
     group: z.enum(['Management', 'Coaching Staff']).default('Management'),
+    portal: z.boolean().default(false),
   }),
 });
 

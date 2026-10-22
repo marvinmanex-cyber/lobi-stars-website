@@ -14,3 +14,7 @@ dist/
 
 # Generated at build time (members-only story text)
 functions/api/_generated/
+
+# Generated before each build from the Squad & Staff Data Portal (verified profiles)
+src/content/players/portal/
+src/content/staff/portal/
