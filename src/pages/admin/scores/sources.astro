@@ -69,14 +69,15 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     const sup = data.me.superAdmin;
     $('list').innerHTML = data.sources.map(s => `<section class="src ${s.enabled ? 'on' : ''}" data-type="${esc(s.type)}">
       <h2>${esc(s.label)} <span class="chip ${s.enabled ? 'ok' : ''}">${s.enabled ? 'On' : 'Off'}</span>${s.automatic ? '<span class="chip">Automatic</span>' : ''}${s.needsLicence ? `<span class="chip ${s.licence_confirmed ? 'ok' : 'warn'}">${s.licence_confirmed ? 'Licence confirmed' : 'Needs licence / written permission'}</span>` : ''}</h2>
-      <p>Last data: ${esc(wat(s.last_received_at))}${s.last_error ? ` · <b>Last error:</b> ${esc(s.last_error)}` : ''}${s.type === 'LICENSED_API' ? ` · API key: ${data.keys.LICENSED_API ? 'set' : '<b>not set yet</b>'}` : ''}</p>
+      <p>Last data: ${esc(wat(s.last_received_at))}${s.automatic ? ` · Last checked: ${esc(wat(s.last_checked_at))} · Last success: ${esc(wat(s.last_success_at))}` : ''}${s.last_error ? ` · <b>Last error:</b> ${esc(s.last_error)}` : ''}${s.type === 'LICENSED_API' ? ` · API key: ${data.keys.LICENSED_API ? 'set' : '<b>not set yet</b>'}` : ''}</p>
+      ${s.automatic ? `<p>Status: ${!s.enabled ? '⚪ Off' : s.last_error && (!s.last_success_at || s.last_checked_at > s.last_success_at) ? '🔴 Not working (see the error)' : s.last_success_at ? '🟢 Working' : '🟡 Waiting for the first check'} · Checked every ${esc(data.poll?.matchday || 2)} minutes on matchdays, every ${esc(data.poll?.other || 6)} hours on other days.</p>` : ''}
       <form class="src-form">
         <label class="sw"><input type="checkbox" name="enabled" ${s.enabled ? 'checked' : ''} /> Use this source</label>
         <label>Priority<input name="priority" type="number" min="0" max="100" value="${esc(s.priority)}" /></label>
         <label class="desc">Description<input name="description" maxlength="500" value="${esc(s.description || '')}" /></label>
         ${s.needsLicence ? `<div class="src-lic"><label class="sw"><input type="checkbox" name="licenceConfirmed" ${s.licence_confirmed ? 'checked' : ''} ${sup ? '' : 'disabled'} /> Licence / written permission confirmed${sup ? '' : ' (Super Admins)'}</label>
           <label>Licence or permission (who gave it, when, reference)<textarea name="licenceNote" rows="2" maxlength="1000" ${sup ? '' : 'disabled'}>${esc(s.licence_note || '')}</textarea></label></div>` : ''}
-        <div class="src-row"><button class="btn-p sm" type="submit">Save</button>${s.type === 'LICENSED_API' ? '<button type="button" class="btn-o sm" data-coverage>Coverage test</button><span class="muted" data-out></span>' : ''}</div>
+        <div class="src-row"><button class="btn-p sm" type="submit">Save</button>${s.automatic ? '<button type="button" class="btn-o sm" data-coverage>Coverage test</button><span class="muted" data-out></span>' : ''}</div>
       </form></section>`).join('');
   }
   async function load() { try { data = await api('GET'); draw(); } catch (e) { $('list').textContent = e.message; } }
@@ -91,7 +92,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     if (!e.target.closest('[data-coverage]')) return;
     const out = e.target.closest('form').querySelector('[data-out]');
     out.textContent = 'Checking…';
-    try { const d = await api('POST', { action: 'coverage_test', type: 'LICENSED_API' }); out.textContent = (d.ok ? '✓ ' : '') + d.result; } catch (err) { out.textContent = err.message; }
+    try { const d = await api('POST', { action: 'coverage_test', type: e.target.closest('[data-type]').dataset.type }); out.textContent = (d.ok ? '✓ ' : '') + d.result; } catch (err) { out.textContent = err.message; }
   });
   async function loadSettings() {
     try {

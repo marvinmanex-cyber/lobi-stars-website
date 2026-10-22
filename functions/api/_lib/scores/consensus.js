@@ -19,6 +19,7 @@ import { getCompetition, logLeague, loadLeague, standingsFor } from '../leagueDb
 import { isCounted } from '../league/standings.js';
 import { afterFixtureChange } from '../leagueAdmin.js';
 import { scoreAlert } from './alerts.js';
+import { pollSources } from './adapters.js';
 
 export const COUNTED_STATES = ['CONFIRMED', 'VERIFIED', 'OFFICIAL'];
 export const STATE_LABEL = { OFFICIAL: 'Official result', VERIFIED: 'Verified by staff', CONFIRMED: 'Confirmed (sources agree)', UNCONFIRMED: 'Unconfirmed (one source)',
@@ -328,13 +329,15 @@ export async function scoresTick(env, { now = Date.now() } = {}) {
   await ensureConsensusSchema(env);
   const s = await getScoreSettings(env);
   await setInternal(env, '_last_tick', new Date(now).toISOString());
+  // Automatic licensed sources first (Phase 6), so their reports are settled below.
+  const polled = await pollSources(env, s, { now }).catch(err => { console.error('[scores] poll', err); return []; });
   const ids = (await env.DB.prepare(`SELECT f.id FROM league_fixtures f LEFT JOIN score_state st ON st.fixture_id = f.id
     WHERE f.kickoff_at BETWEEN ? AND ? OR st.state IN ('PENDING', 'CONFLICT')`).bind(new Date(now - 8 * 3600e3).toISOString(), new Date(now + 3600e3).toISOString()).all()).results.map(r => r.id);
   const settled = [];
   for (const id of ids) settled.push(await settleFixture(env, id, { now, settings: s }));
   const missing = await missingResults(env, { now, settings: s });
   const snapshots = await snapshotRounds(env, { now }).catch(err => { console.error('[scores] snapshots', err); return []; });
-  return { snapshots: snapshots.length, settled: settled.filter(Boolean).length, conflicts: settled.filter(x => x?.state === 'CONFLICT').length, missing: missing.length };
+  return { polled: polled.map(p => ({ type: p.type, ok: p.ok, error: p.error || null })), snapshots: snapshots.length, settled: settled.filter(Boolean).length, conflicts: settled.filter(x => x?.state === 'CONFLICT').length, missing: missing.length };
 }
 /** Fallback until the cron Worker calls /api/internal/scores-run itself: run when the last run is over 90 seconds old. */
 export async function scoresTickIfDue(env, now = Date.now()) {

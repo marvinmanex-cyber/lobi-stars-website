@@ -8,6 +8,24 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Score verification, Phase 6 (licensed data API)
+
+**What changed**
+- The website can now check a **licensed football data API** (API-Football
+  or Sportmonks) by itself: every 2 minutes on matchdays, every 6 hours
+  otherwise. It is one source and stays off until a Super Admin confirms the
+  licence with a note and the key is added.
+- **Coverage test** on League › Score Sources now really checks the service
+  (today's matches, recognised team names).
+- Each automatic source shows a status (working / not working / waiting /
+  off), last checked and last success.
+- The legal rule is built in and tested: no request is ever made to a source
+  that is off, has no confirmed licence, uses a non-secure address, or is a
+  prohibited website (Soccerway, Sofascore, Flashscore…).
+
+**Staff to do**
+- Only if the club buys a data plan: see HANDOVER-TODO A32 item (4).
+
 ## 2026-10-22: Score verification, Phase 5 (the table everywhere)
 
 **What changed**

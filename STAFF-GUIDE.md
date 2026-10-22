@@ -3162,6 +3162,32 @@ and entered there).
   table after that round is saved (Other Games › Saved tables, at the bottom).
   If a result changes later, a new version is saved with the reason.
 
+### Automatic sources (licensed data API)
+
+If the club buys a football data service (API-Football or Sportmonks), the
+website can check it automatically: **every 2 minutes on matchdays** and
+**every 6 hours** on other days (both adjustable in Settings). It counts as
+**one** source, however often it is checked, so a second source must still
+agree.
+
+To switch it on (Super Admin):
+1. Add the key and the provider's competition number in Cloudflare (see
+   HANDOVER-TODO A32).
+2. In **League › Score Sources › Licensed data API**, tick **Licence / written
+   permission confirmed** and write the plan or contract reference.
+3. Tick **Use this source** and **Save**, then press **Coverage test**: it
+   shows how many of today's conference matches the service has and which
+   team names it doesn't recognise (link those in Unmatched Team Names).
+
+Each automatic source shows a **status**: 🟢 working, 🔴 not working (with
+the error), 🟡 waiting for the first check, ⚪ off; plus when it was last
+checked and last worked.
+
+The website will **never** read Soccerway, Sofascore, Flashscore or similar
+websites by itself. The "Other licensed source" can only be used for a feed
+the club has **written permission** or a licence for, and only over a secure
+(https) address.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

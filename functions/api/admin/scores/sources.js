@@ -1,3 +1,5 @@
+import { coverageTest } from '../../_lib/scores/adapters.js';
+import { getScoreSettings } from '../../_lib/scores/consensus.js';
 import { scoresGuard, json } from '../../_lib/scores/api.js';
 import { listSources, getSource, SOURCE_TYPES, assertAdapterMayRun } from '../../_lib/scores/model.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
@@ -7,12 +9,13 @@ import { logAdminAction } from '../../_lib/adminSession.js';
 // PUT { type, enabled, priority, description, licenceConfirmed, licenceNote }
 //                             -- licence settings: Super Admins only
 // POST { action: 'coverage_test', type: 'LICENSED_API' }
-//                             -- do our conference fixtures exist in the licensed API? (needs the key)
+//                             -- does the licensed source have our conference matches today? (needs the licence and key)
 export async function onRequestGet({ request, env }) {
   const { denied, superAdmin } = await scoresGuard(request, env);
   if (denied) return denied;
   const sources = await listSources(env);
-  return json({ sources, me: { superAdmin }, keys: { LICENSED_API: !!env.LICENSED_API_KEY } });
+  const set = await getScoreSettings(env);
+  return json({ sources, me: { superAdmin }, keys: { LICENSED_API: !!env.LICENSED_API_KEY }, poll: { matchday: Number(set.poll_matchday_minutes), other: Number(set.poll_other_hours) } });
 }
 
 export async function onRequestPut({ request, env }) {
@@ -46,11 +49,7 @@ export async function onRequestPost({ request, env }) {
   const { denied } = await scoresGuard(request, env, { write: true });
   if (denied) return denied;
   const b = await request.json().catch(() => ({}));
-  if (b.action !== 'coverage_test' || b.type !== 'LICENSED_API') return json({ error: 'Unknown action' }, 400);
-  const src = await getSource(env, 'LICENSED_API');
-  try { assertAdapterMayRun(src); } catch (err) { return json({ ok: false, result: err.message }); }
-  if (!env.LICENSED_API_KEY) return json({ ok: false, result: 'The API key is not set yet (LICENSED_API_KEY in Cloudflare). See HANDOVER-TODO.md.' });
-  const { results } = await env.DB.prepare(`SELECT COUNT(*) AS n FROM league_fixtures f JOIN league_competitions c ON c.id = f.competition_id WHERE c.is_current = 1`).all();
-  // The provider-specific check is added with the provider (Phase 6) once one is chosen.
-  return json({ ok: false, result: `Key found. ${results[0]?.n || 0} conference fixtures to look for. The provider (API-Football or Sportmonks) still has to be chosen; the coverage check is added with it.` });
+  if (b.action !== 'coverage_test' || !['LICENSED_API', 'FUTURE_LICENSED'].includes(b.type)) return json({ error: 'Unknown action' }, 400);
+  // The legal rule and the key are checked inside (nothing is fetched unless the licence is confirmed).
+  return json(await coverageTest(env, b.type));
 }
