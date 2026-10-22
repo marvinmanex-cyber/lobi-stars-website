@@ -7,6 +7,7 @@
 <details class="pe" id="pe">
   <summary class="btn-o pe-btn" id="peBtn">🔔 Notifications</summary>
   <div class="pe-box">
+    <button type="button" class="pe-x" id="peClose" aria-label="Close">✕</button>
     <p class="pe-k">On this device</p>
     <p class="pe-state" id="peState">Checking…</p>
     <label><input type="checkbox" id="pePaid" checked /> 🟢 Paid orders (start preparing)</label>
@@ -25,6 +26,8 @@
   .pe > summary { list-style: none; cursor: pointer; }
   .pe > summary::-webkit-details-marker { display: none; }
   .pe-box { position: absolute; right: 0; top: calc(100% + 8px); z-index: 1500; width: min(340px, 92vw); padding: 16px; border-radius: 14px; background: var(--a-card, #fff); color: var(--a-ink, #15181D); border: 1px solid var(--a-line, #E3E6EA); box-shadow: 0 18px 40px rgba(15,17,21,.2); }
+  .pe-x { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--a-line, #E5E7EB); background: var(--a-card, #fff); color: inherit; font-size: 16px; line-height: 1; cursor: pointer; }
+  .pe-x:hover { background: var(--a-soft, #F3F4F6); }
   .pe-k { margin: 0 0 4px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); }
   .pe-state { margin: 0 0 10px; font-weight: 700; }
   .pe-box label { display: flex; gap: 8px; align-items: center; margin: 6px 0; font-size: 15px; }
@@ -86,8 +89,16 @@
       }) });
       if (!r.ok) throw new Error('Could not save');
       await refresh();
+      $('peState').textContent = '✅ Saved. Notifications are on.';
+      setTimeout(close, 1200);
     } catch (err) { $('peState').textContent = `Could not turn on notifications: ${(err as Error).message}`; }
   });
+  // Closing the box: ✕, a click outside it, or Esc.
+  const pe = $('pe') as HTMLDetailsElement;
+  function close() { pe.open = false; }
+  $('peClose').addEventListener('click', close);
+  document.addEventListener('click', e => { if (pe.open && !pe.contains(e.target as Node)) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && pe.open) close(); });
   $('peOff').addEventListener('click', async () => {
     const sub = await current();
     if (sub) { await fetch('/api/admin/food-alerts/subscribe', { method: 'DELETE', headers: H, body: JSON.stringify({ endpoint: sub.endpoint }) }); await sub.unsubscribe(); }

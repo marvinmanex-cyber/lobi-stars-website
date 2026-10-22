@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: The notification settings box can be closed
+
+**What changed**
+- The "On this device" notification box (Kitchen Alerts, Food Orders) now
+  has a **✕ Close** button, and closes when you click outside it, press Esc,
+  or after **Save choices**.
+
 ## 2026-10-22: Receipt buttons fixed: PDF saves to Downloads, WhatsApp sends only the PDF
 
 **What changed**

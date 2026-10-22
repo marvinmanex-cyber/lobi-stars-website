@@ -1085,7 +1085,7 @@ delivered, seat, payment, customer, the items with prices and the total.
 
 **Notifications**, **Kitchen Screen** and **Orders list** at the top open in
 a **new tab**, so the board stays open. Notifications opens Kitchen Alerts
-with this device's notification settings already showing.
+with this device's notification settings already showing (close the box with **✕**, a click outside it, or Esc).
 
 ### Kitchen alerts and the Kitchen Screen (Admin › Commerce › Kitchen Screen)
 
