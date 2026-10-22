@@ -73,6 +73,7 @@ these in git.
 | `AESON_STATUS_URL` | Lobi Stars FC Live: Aeson's status feed | Optional; default `https://www.aesonsports.com/api/radio/status`, or set it in Admin › Commentary. |
 | `COMMENTARY_BRAND_NAME` | Commentary player name (optional) | |
 | `ANALYTICS_SALT` | Visitor analytics (optional) | Falls back to `SESSION_SECRET`. |
+| `FOOD_ORDERS_EMAIL` | In-seat food: the address given to Paystack when a buyer leaves the email empty | Optional; default food-orders@lobistarsfc.com. |
 | `COMMENTARY_ASSIST_SECRET` | Score verification: the shared secret the commentary partner's system sends with scores | **Secret.** Optional; only when the partner connects their system. |
 | `COMMENTARY_SCORE_EMAILS` | Score verification: email address(es) of the commentary partner whose score emails count as Commentary Assist | Optional, plain text, comma separated. |
 | `SCORES_EMAIL` | Score verification: the address score emails go to | Optional; default scores@lobistarsfc.com. |

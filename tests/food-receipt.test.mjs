@@ -60,3 +60,29 @@ test('the Live Order Board opens Notifications, Kitchen Screen and Orders list i
   const html = readFileSync(new URL('../dist/admin/food-orders/live/index.html', import.meta.url), 'utf8');
   for (const href of ['/admin/food-orders/kitchen-alerts/#device', '/admin/kitchen/', '/admin/food-orders/']) assert.ok(html.includes(`href="${href}" target="_blank" rel="noopener"`), href);
 });
+
+test('the buyer\'s email is optional (card orders too); a wrong one is still refused', async () => {
+  await admin('/api/admin/food-menu', 'POST', { action: 'ordering_mode', mode: 'open' });
+  const base = { name: 'No Email', seat: 'C14', stand: 'Cover Stand', phone: `0803${r7()}`, items: [{ id: 'suya', qty: 1 }] };
+  const ok = await post('/api/food-checkout', base);
+  assert.notEqual(ok.status, 400, JSON.stringify(ok.data));
+  assert.ok(ok.data.ref, 'the order is created');
+  const bad = await post('/api/food-checkout', { ...base, phone: `0803${r7()}`, email: 'not-an-email' });
+  assert.equal(bad.status, 400);
+  assert.match(bad.data.error, /leave it empty/);
+});
+
+test('Kitchen Screen: orders coming in but not paid show as "don\'t cook yet"; paid ones go to NEW; live updates address', async () => {
+  const o = await post('/api/food/whatsapp-order', { name: 'Kit Coming', phone: `0803${r7()}`, fulfilment: 'seat', seat: 'K9', items: [{ id: 'suya', qty: 1 }] });
+  let k = (await admin('/api/admin/kitchen/orders')).data;
+  assert.ok(k.coming.some(c => c.ref === o.data.ref && /WhatsApp/.test(c.how)), 'shown as coming, not paid');
+  assert.ok(!k.orders.some(x => x.ref === o.data.ref), 'not in NEW yet');
+  const id = (await admin('/api/admin/food-orders?show=board')).data.orders.find(x => x.ref === o.data.ref).id;
+  await move(id, 'PAID');
+  k = (await admin('/api/admin/kitchen/orders')).data;
+  assert.ok(k.orders.some(x => x.ref === o.data.ref && x.status === 'PAID'), 'NEW once paid');
+  assert.ok(!k.coming.some(c => c.ref === o.data.ref));
+  const html = readFileSync(new URL('../dist/admin/kitchen/index.html', import.meta.url), 'utf8');
+  assert.ok(html.includes('/api/admin/kitchen/stream'), 'live updates');
+  await move(id, 'CANCELLED');
+});

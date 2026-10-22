@@ -8,6 +8,23 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Kitchen Screen shows incoming orders and updates at once; buyer email optional
+
+**What changed**
+- The **Kitchen Screen** now shows a grey strip **"Coming in, NOT PAID yet:
+  don't cook yet"** with WhatsApp orders waiting for payment and card payments
+  in progress, so the kitchen sees every order as soon as it is placed. Paid
+  orders still go to NEW as before.
+- The Kitchen Screen now updates **instantly** (the same live connection as
+  the Live Order Board) instead of every 10 seconds.
+- Why it looked dead before: it only shows paid orders, and WhatsApp orders
+  only become paid when staff press "Payment received" on the Live Order
+  Board; delivered orders leave the screen.
+- The buyer's **email is now optional** on the food order form and the
+  MatchDay Kitchen page ("only if you want your receipt by email"), also for
+  Pay Online. Paystack gets the club's orders address when the buyer gives
+  none.
+
 ## 2026-10-22: Food receipts by WhatsApp and email; board links open in a new tab
 
 **What changed**

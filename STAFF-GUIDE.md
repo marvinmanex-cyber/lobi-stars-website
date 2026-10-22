@@ -1084,6 +1084,19 @@ a **new tab**, so the board stays open. Notifications opens Kitchen Alerts
 with this device's notification settings already showing.
 
 ### Kitchen alerts and the Kitchen Screen (Admin › Commerce › Kitchen Screen)
+
+**What the Kitchen Screen shows:** only orders the kitchen should cook:
+**NEW** (paid), **COOKING** and **READY** (for 15 minutes). A WhatsApp order
+reaches NEW only after someone presses **Payment received** on the Live Order
+Board, and a website order only once Paystack confirms the payment. Delivered
+orders leave the screen. Above the columns, a grey strip **"Coming in, NOT
+PAID yet: don't cook yet"** shows orders on their way in, so the kitchen can
+get ready. The screen updates at once when an order is placed, paid or moved.
+
+**Buyer's email:** optional on both order forms (website and MatchDay
+Kitchen). Buyers only give it if they want the receipt by email; without it,
+staff can send the receipt on WhatsApp.
+
 When an order is **paid**, the kitchen is alerted straight away and must
 **accept** it, so no paid order is missed.
 - **The Kitchen Screen** (https://lobistarsfc.com/admin/kitchen/) is a

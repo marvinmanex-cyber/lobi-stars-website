@@ -50,7 +50,7 @@ const siteKey = fanSettings.turnstileSiteKey;
         </div>
         <div class="form-grp" id="pickupFields" hidden><label class="form-lbl" for="foodPickup">Collect from</label><select class="form-sel" id="foodPickup"><option value="">Choose a pickup point</option></select></div>
         <div class="form-grp"><label class="form-lbl" for="foodPhone">Phone Number</label><input class="form-inp" id="foodPhone" type="tel" autocomplete="tel" placeholder="e.g. 08012345678" required /></div>
-        <div class="form-grp"><label class="form-lbl" for="foodEmail">Email Address <span class="fd-opt" id="emailOpt" hidden>(not needed for WhatsApp orders)</span></label><input class="form-inp" id="foodEmail" type="email" autocomplete="email" placeholder="you@example.com" /></div>
+        <div class="form-grp"><label class="form-lbl" for="foodEmail">Email Address <span class="fd-opt">(optional: only if you want your receipt by email)</span></label><input class="form-inp" id="foodEmail" type="email" autocomplete="email" placeholder="you@example.com" /></div>
         <div class="form-grp"><label class="form-lbl" for="foodNotes">Note for the kitchen (optional)</label><input class="form-inp" id="foodNotes" maxlength="200" placeholder="e.g. no pepper, extra napkins" /></div>
         <div class="fd-hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" id="foodWebsite" tabindex="-1" autocomplete="off" /></label></div>
         <label class="fd-adult" id="adultWrap" hidden><input type="checkbox" id="foodAdult" /> I confirm I am 18 or older (your order includes alcohol). <b>18+ | Drink Responsibly</b></label>
@@ -247,7 +247,6 @@ const siteKey = fanSettings.turnstileSiteKey;
       syncFulfil();
       wa = d.whatsapp;
       $('waBox').hidden = !wa;
-      $('emailOpt').hidden = !wa;
       $('smallPrint').textContent = `Place Order & Pay: your order is confirmed once Paystack confirms your payment. Unpaid orders are cancelled automatically after ${d.paymentExpiryMinutes} minutes.`;
       renderMenu(); renderSummary();
     } catch { $('foodMenu').innerHTML = '<p class="muted">The menu could not be loaded. Please refresh the page.</p>'; }
@@ -268,7 +267,7 @@ const siteKey = fanSettings.turnstileSiteKey;
       if ($('foodStand').tagName === 'SELECT' && !v('foodStand')) return fail('Please choose your stand.');
     }
     if (!/^(\+?234|0)?[789][01]\d{8}$/.test(v('foodPhone').replace(/[\s-]/g, ''))) return fail('Please enter a valid Nigerian mobile number (e.g. 0803 123 4567).');
-    if (!viaWhatsApp && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('foodEmail'))) return fail('Please enter your email address for the payment receipt.');
+    if (v('foodEmail') && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('foodEmail'))) return fail('Please check your email address (or leave it empty).');
     if (!$('adultWrap').hidden && !$('foodAdult').checked) return fail('Please confirm you are 18 or older to order alcoholic drinks.');
     return {
       name: v('foodName'), seat: v('foodSeat'), stand: v('foodStand'), phone: v('foodPhone'), email: v('foodEmail'), notes: v('foodNotes'),

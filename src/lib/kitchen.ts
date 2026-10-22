@@ -229,8 +229,8 @@ function collect(viaWhatsApp: boolean) {
   const v = (id: string) => ($(id) as HTMLInputElement).value.trim();
   if (v('kxName').length < 2) return fail('Please enter your name.', 'kxName');
   if (!isPhone(v('kxPhone'))) return fail('Please enter a valid Nigerian mobile number, e.g. 0803 123 4567.', 'kxPhone');
-  if (!viaWhatsApp && !isEmail(v('kxEmail'))) return fail('Pay Online needs your email address for the payment receipt.', 'kxEmail');
-  if (viaWhatsApp && v('kxEmail') && !isEmail(v('kxEmail'))) return fail('Please check your email address (or leave it empty).', 'kxEmail');
+  // Email is optional: only for buyers who want the receipt by email.
+  if (v('kxEmail') && !isEmail(v('kxEmail'))) return fail('Please check your email address (or leave it empty).', 'kxEmail');
   if (!$('kxAdultWrap').hidden && !($('kxAdult') as HTMLInputElement).checked) return fail('Please confirm you are 18 or older to order alcoholic drinks.', 'kxAdult');
   const min = menu.minOrderKobo || 0;
   if (min && total() < min) return fail(`The minimum order is ${naira(min)}.`);

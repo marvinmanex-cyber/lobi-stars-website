@@ -33,6 +33,8 @@ import Layout from '../../layouts/Layout.astro';
     <button type="button" class="kt-sound" id="soundTap" hidden>🔈 Tap here to turn the order sound on</button>
     <p class="kt-msg" id="msg" role="alert" hidden></p>
 
+    <section class="kt-coming" id="coming" hidden aria-live="polite"><h2>⏳ Coming in, NOT PAID yet: don't cook yet <span id="nComing">0</span></h2><div class="kt-coming-list" id="listComing"></div></section>
+
     <main class="kt-cols" id="cols">
       <section class="kt-col kt-new" id="colNew" aria-labelledby="hNew"><h2 id="hNew">NEW <span id="nNew">0</span></h2><div class="kt-list" id="listNew"></div></section>
       <section class="kt-col kt-cook" aria-labelledby="hCook"><h2 id="hCook">COOKING <span id="nCook">0</span></h2><div class="kt-list" id="listCook"></div></section>
@@ -43,6 +45,13 @@ import Layout from '../../layouts/Layout.astro';
 
 <style is:global>
   body:has(.kt) { background: #0B0D10; }
+  .kt-coming { margin: 0 0 14px; padding: 12px 14px; border-radius: 14px; border: 2px dashed #6B7280; background: #12161C; }
+  .kt-coming h2 { margin: 0 0 8px; font: 700 15px/1.2 'Barlow', sans-serif; color: #D1D5DB; }
+  .kt-coming h2 span { display: inline-block; min-width: 26px; padding: 2px 8px; border-radius: 999px; background: #4B5563; color: #fff; text-align: center; }
+  .kt-coming-list { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
+  .kt-coming-card { flex: 0 0 auto; min-width: 210px; max-width: 280px; padding: 10px 12px; border-radius: 12px; background: #1F2937; color: #E5E7EB; opacity: .85; font-size: 14px; }
+  .kt-coming-card b { display: block; font-size: 16px; color: #fff; }
+  .kt-coming-card small { display: block; margin-top: 6px; color: #FBBF24; font-weight: 700; }
   body:has(.kt) .admin-main { padding: 0; max-width: none; }
   body:has(.kt) .skip-link { display: none; }
 </style>
@@ -236,7 +245,18 @@ import Layout from '../../layouts/Layout.astro';
     box.replaceChildren(...(list.length ? list.map(card) : [el('p', 'kt-empty', empty)]));
     $(countId).textContent = String(list.length);
   }
+  let coming = [];
+  function drawComing() {
+    $('coming').hidden = !coming.length;
+    $('nComing').textContent = String(coming.length);
+    $('listComing').replaceChildren(...coming.map(c => {
+      const d = el('div', 'kt-coming-card');
+      d.append(el('b', '', c.where), el('div', '', c.items.map(i => `${i.qty}× ${i.name}`).join(', ')), el('small', '', c.how));
+      return d;
+    }));
+  }
   function render() {
+    drawComing();
     fill('listNew', 'nNew', orders.filter(o => o.status === 'PAID'), 'No new orders');
     fill('listCook', 'nCook', orders.filter(o => o.status === 'ACCEPTED' || o.status === 'PREPARING'), 'Nothing cooking');
     fill('listReady', 'nReady', orders.filter(o => o.status === 'OUT_FOR_DELIVERY').reverse(), 'Nothing ready');
@@ -255,7 +275,7 @@ import Layout from '../../layouts/Layout.astro';
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'Could not load orders');
       offset = Date.parse(d.serverTime) - Date.now();
-      orders = d.orders; online(true); msg(''); render();
+      orders = d.orders; coming = d.coming || []; online(true); msg(''); render();
     } catch (e) { online(false); msg('Offline: trying again…'); }
     finally { loading = false; }
   }
@@ -290,6 +310,11 @@ import Layout from '../../layouts/Layout.astro';
   if (alertsOn) { $('soundTap').hidden = false; keepAwake(); }
   load();
   setInterval(load, 10000);
+  // Instant updates: the same live connection as the Live Order Board (a new, paid or moved order refreshes at once).
+  if ('EventSource' in window) {
+    const es = new EventSource('/api/admin/kitchen/stream');
+    es.addEventListener('change', () => load());
+  }
   // A kitchen tablet stays signed in while this screen is open (12 hours at most), even with nobody touching it.
   setInterval(() => fetch('/api/admin/me', { method: 'POST', headers: { 'x-admin-code': '__session__' } }).then(r => { if (r.status === 401) location.href = '/admin/login/?ended=1&next=/admin/kitchen/'; }).catch(() => {}), 4 * 60000);
 })();

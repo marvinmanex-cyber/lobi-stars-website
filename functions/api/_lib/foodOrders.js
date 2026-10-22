@@ -218,8 +218,8 @@ export async function confirmFoodPayment(env, order, { waitUntil, origin = 'http
   // Lobi Stars Rewards: Star Points / voucher used are taken, and food points are earned (on the part paid in naira).
   try { const { confirmCheckout } = await import('./rewardsCheckout.js'); await confirmCheckout(env, order.paystack_reference); const { earnFood } = await import('./rewardsEarn.js'); await earnFood(env, paid); } catch (err) { console.error('[food] rewards', err); }
   const n = splitName(order.customer_name || '');
-  await captureContact(env, { source: 'food_order', refTable: 'food_orders', refId: order.id, email: order.email, phone: order.phone, firstName: n.firstName, surname: n.surname, label: order.ref });
-  if (env.RESEND_API_KEY) {
+  await captureContact(env, { source: 'food_order', refTable: 'food_orders', refId: order.id, email: order.email || null, phone: order.phone, firstName: n.firstName, surname: n.surname, label: order.ref });
+  if (env.RESEND_API_KEY && order.email) {
     const send = sendEmail(env, {
       to: order.email, subject: `Lobi Stars food order ${order.ref} confirmed`,
       html: foodOrderEmailHtml({ order: paid, items: JSON.parse(order.items_json), trackUrl: trackUrl(origin, paid) }),
