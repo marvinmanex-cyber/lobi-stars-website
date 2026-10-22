@@ -8,6 +8,30 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Squad & Staff Data Portal, Phases 2–4 (screens, autosave, photos, recordings)
+
+**What changed**
+- **Portal home:** season, how it works, ADD A PLAYER / ADD A COACH / STAFF
+  MEMBER, live counts, and saved profiles with search (name or number),
+  filters, season, status badges, and Continue / View / Edit / Delete draft.
+- **Profile form:** Player or Coach / Staff Member (switching keeps the shared
+  answers), every field marked Public / Media / Private, career rows (add,
+  remove, drag or arrows), 300-character notes, live shirt-number and
+  "this person may already exist" warnings, and the under-18 guardian section
+  appears automatically.
+- **Saving:** every answer saves by itself. Changes are kept on the device if
+  the network or power goes off and are sent when the connection returns.
+  If two people edit one profile, the later answer wins and the other is told.
+- **Photos:** take or choose a photo; it is straightened, cropped 4:5,
+  location data removed, made in 3 sizes, and named after the person
+  (e.g. 09-musa-adeyemi.webp), with quality warnings.
+- **Name pronunciation:** record up to 10 seconds (an MP3 copy is made).
+- **Submit:** checks every required answer, the photo, the shirt number and
+  under-18 consent, highlights what is missing, then sends the profile for
+  club review. Submitted profiles are view-only; only drafts can be deleted.
+- Every change is in the Activity Log in plain English (private details are
+  never written there).
+
 ## 2026-10-22: Squad & Staff Data Portal, Phase 1 (private link, login, access)
 
 **What changed**

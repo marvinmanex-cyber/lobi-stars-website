@@ -2,6 +2,7 @@
 // sign-out (60 minutes without activity, with a 2-minute warning).
 import { api, state, $, toast, ApiError } from './api';
 import { showHome } from './home';
+import { startForms } from './form';
 
 const IDLE_MS = 60 * 60e3, WARN_MS = 2 * 60e3;
 let lastActivity = Date.now(), lastPing = Date.now(), idleTimer = 0, warnTimer = 0;
@@ -45,6 +46,7 @@ async function signedIn() {
   document.title = 'Squad & Staff Data Portal | Lobi Stars FC';
   lastActivity = Date.now();
   clearInterval(idleTimer); idleTimer = window.setInterval(checkIdle, 15000);
+  startForms();
   await showHome();
 }
 
