@@ -1,7 +1,7 @@
 // Automatic daily backups of the database to a separate storage bucket
 // (R2 binding BACKUP_BUCKET), encrypted with the BACKUP_KEY secret (AES-256-GCM),
-// kept for 30 days. Uploaded media (the Matchday Programme files) are copied
-// weekly. Passwords, sign-in tokens and two-step secrets are never included.
+// kept for 30 days. Uploaded media (the Matchday Programme files, and the Squad
+// & Staff Data Portal photos and name recordings) are copied weekly. Passwords, sign-in tokens and two-step secrets are never included.
 //
 // Cloudflare limits the queries and storage calls one request can make, so a
 // backup runs in small steps (a few tables each minute, called by the timer
@@ -11,6 +11,7 @@
 //                                   brand-new database can be rebuilt (DISASTER-RECOVERY.md)
 //   db/YYYY-MM-DD/manifest.json     (plain) tables, row counts, finished time
 //   media/<key>                     copies of the programme files
+//   squad/<key>                     copies of the squad portal photos and recordings
 import { securitySettings, saveSecuritySetting } from './adminSecurity.js';
 import { logAdminAction } from './adminSession.js';
 import { sendEmail } from './email.js';
@@ -18,7 +19,7 @@ import { sendEmail } from './email.js';
 export const KEEP_DAYS = 30;
 const PAGE = 5000;
 const TABLES_PER_STEP = 12;
-const SKIP_TABLES = new Set(['rate_limits', 'auth_tokens', 'food_photos', 'newsletter_assets', 'd1_migrations', 'sqlite_sequence', 'export_tickets', 'admin_sessions', 'admin_backup_codes']);
+const SKIP_TABLES = new Set(['rate_limits', 'auth_tokens', 'food_photos', 'newsletter_assets', 'd1_migrations', 'sqlite_sequence', 'export_tickets', 'admin_sessions', 'admin_backup_codes', 'squad_portal_settings', 'squad_portal_sessions', 'squad_portal_devices']);
 const SKIP_COLUMNS = /password|token_hash|secret|keys_json|^data$|totp|unsub_token|view_token|^token$|pin_hash|link_hash|invite_hash|code_hash/i;
 const lagosDay = (t = Date.now()) => new Date(t + 3600e3).toISOString().slice(0, 10);
 
@@ -145,21 +146,35 @@ async function pruneOld(env) {
   }
 }
 
-/** Weekly (Sundays): copies new programme files into the backup bucket (a few each minute). */
-export async function mediaStep(env) {
-  if (!backupReady(env) || !env.PROGRAMME_BUCKET) return { ready: false };
-  if (new Date(Date.now() + 3600e3).getUTCDay() !== 0) return { idle: true };
-  const db = env.DB;
-  const s = await securitySettings(db, { force: true });
-  const since = s.media_backup_since || '1970-01-01T00:00:00.000Z';
-  const list = await env.PROGRAMME_BUCKET.list({ limit: 200 });
-  const fresh = list.objects.filter(o => new Date(o.uploaded).toISOString() > since).sort((a, b) => a.uploaded - b.uploaded).slice(0, 8);
-  for (const o of fresh) {
-    const obj = await env.PROGRAMME_BUCKET.get(o.key);
-    if (obj) await env.BACKUP_BUCKET.put(`media/${o.key}`, obj.body, { httpMetadata: obj.httpMetadata });
+/** Copies up to `max` files uploaded after the saved time from `bucket` into the backup bucket under `prefix`. */
+async function copyNew(env, bucket, prefix, sinceKey, s, max) {
+  const since = s[sinceKey] || '1970-01-01T00:00:00.000Z';
+  const fresh = [];
+  let cursor;
+  for (let page = 0; page < 5; page++) {
+    const list = await bucket.list({ limit: 500, cursor });
+    fresh.push(...list.objects.filter(o => new Date(o.uploaded).toISOString() > since));
+    if (!list.truncated) break;
+    cursor = list.cursor;
   }
-  if (fresh.length) await save(db, 'media_backup_since', new Date(fresh[fresh.length - 1].uploaded).toISOString());
-  return { copied: fresh.length };
+  fresh.sort((a, b) => a.uploaded - b.uploaded).splice(max);
+  for (const o of fresh) {
+    const obj = await bucket.get(o.key);
+    if (obj) await env.BACKUP_BUCKET.put(`${prefix}/${o.key}`, obj.body, { httpMetadata: obj.httpMetadata });
+  }
+  if (fresh.length) await save(env.DB, sinceKey, new Date(fresh[fresh.length - 1].uploaded).toISOString());
+  return fresh.length;
+}
+
+/** Weekly (Sundays): copies new programme files and squad portal photos and recordings into the backup bucket (a few each minute). */
+export async function mediaStep(env) {
+  if (!backupReady(env) || !(env.PROGRAMME_BUCKET || env.SQUAD_BUCKET)) return { ready: false };
+  if (new Date(Date.now() + 3600e3).getUTCDay() !== 0) return { idle: true };
+  const s = await securitySettings(env.DB, { force: true });
+  const out = {};
+  if (env.PROGRAMME_BUCKET) out.copied = await copyNew(env, env.PROGRAMME_BUCKET, 'media', 'media_backup_since', s, 8);
+  if (env.SQUAD_BUCKET) out.squad = await copyNew(env, env.SQUAD_BUCKET, 'squad', 'squad_backup_since', s, 12);
+  return out;
 }
 
 /** The backups kept (newest first), from their manifests. */

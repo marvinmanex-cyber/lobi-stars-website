@@ -89,7 +89,10 @@ these in git.
 | `SITE_URL` | Absolute links in checklist emails/PDFs and AI Fix (optional) | Default `https://lobistarsfc.com`. |
 | `CLUB_NAME` | Match Checklist: which matches are the club's (optional) | Default `Lobi Stars`. |
 | `SUPER_ADMIN_EMAILS` | The three Super Admins (and who gets AI emails) | Up to three addresses, separated by commas. |
-| `PAGES_DEPLOY_HOOK` | Rebuild button (Website Health, approved statements) (optional) | Cloudflare deploy hook URL (A20). |
+| `PAGES_DEPLOY_HOOK` | Rebuild button (Website Health, approved statements, verified squad profiles) (optional) | Cloudflare deploy hook URL (A20). |
+| `LOBI_PARTNER_API_KEY` | Squad partner feed /api/partner/squad (and its 24-hour photo links) | A long random key (secret); give it to the media partner (A34). |
+| `SQUAD_REVIEWER_EMAILS` | Who is emailed when a squad profile is submitted (optional) | Comma-separated; default: Website & Data Officers and Super Admins. |
+| `PORTAL_PATH` | Address of the Squad & Staff Data Portal (optional) | Default `/staff/squad-data`. Changing it also needs the page moved in `src/pages/staff/`. |
 
 **Local testing only, never in production:** `PAYSTACK_FAKE=1` (pretend
 payments), `ANTHROPIC_BASE_URL` / `GITHUB_API_BASE` (stand-ins for the AI tests) and `FANS_DEV_LINKS=1` (shows email links and counts Inbox replies
@@ -866,6 +869,18 @@ Multi-source results for every conference match; built in phases. Phase 1: `func
 - Phase 5: `tablePayload` (leagueApi.js) adds `live` and `scoreboard`; with `include_live` on, `movement` is the change since the live matches kicked off. /table renders the scoreboard (`.lg-board`). `MiniTable.astro` (homepage, Matchday Live) reads `/api/league/table`. `snapshotRounds()` (every minute) saves `league_table_snapshots` per completed round (new version when it changes); admin `GET /api/admin/scores/snapshots`.
 - Phase 6: `scores/adapters.js`: `runAdapter()` (legal checks `assertAdapterMayRun` + `assertAllowedFetch` before any request; injectable fetcher), `requestFor()` (API-Football `v3.football.api-sports.io/fixtures?league&season&date`, header `x-apisports-key`; Sportmonks `api.sportmonks.com/v3/football/fixtures/date/…`, header `Authorization`; licensed JSON feed `FUTURE_SOURCE_URL`), `pollSources()` from `scoresTick` (2 min on matchdays, 6 h otherwise), `coverageTest()`. Records `last_checked_at`, `last_success_at`, `last_error` on `score_sources`.
 - Phase 7: `scores/summary.js`: `maybeDailySummary()` from `scoresTick` (alert key `summary:<date>`, once per day), `scoreHealth()` adds `scores_run`, `score_sources`, `score_backlog` to Website Health (`stepMatchday`). Tests: `tests/scores*.test.mjs` (server) and `tests/scores*.unit.test.mjs` (no server).
+
+## Squad & Staff Data Portal (22 October 2026)
+
+- **Address:** `/staff/squad-data` (`PORTAL_PATH`), served by `functions/staff/[[path]].js` with its own strict headers (CSP, no framing, no-store, noindex); every other `/staff/` address is 404. `robots.txt` disallows `/staff/`. `public/_routes.json` includes `/staff` and `/staff/*`.
+- **Login:** `functions/api/_lib/squadPortal.js` – one shared username/password (PBKDF2), cookie `ls_squad`, CSRF header, lock after 5 wrong passwords, Turnstile after 3. Portal sessions get 403 from the admin and its API.
+- **Data:** D1 tables `squad_profiles`, `squad_export_log`, `squad_team`, `squad_portal_settings`, `squad_portal_sessions`, `squad_portal_devices`. Field list and Public / Media / Private use: `src/lib/squadFields.js`.
+- **Files:** R2 bucket `lobistars-squad-data`, binding `SQUAD_BUCKET` (wrangler.toml): `profiles/<id>/<kind>/<variant>`. Photos and MP3s are made in the browser (Workers free-plan CPU limit).
+- **Website:** `scripts/fetch-squad.mjs` (prebuild) reads `${SQUAD_SOURCE_URL || https://lobistarsfc.com}/api/squad/public` and writes `src/content/players/portal/` and `src/content/staff/portal/` (gitignored) plus `_left.json`. If the source is unreachable the last files are kept. Verifying a profile calls `PAGES_DEPLOY_HOOK` (at most every 2 minutes). For a local test build: `SQUAD_SOURCE_URL=http://127.0.0.1:8788 npm run build`; delete the two portal folders before a production build from a test machine.
+- **Data Package:** `src/lib/squadPackage.js` (schemaVersion `1.0`, JSON Schema, `validatePackage`). Partner feed `/api/partner/squad` (Bearer `LOBI_PARTNER_API_KEY`), signed file links `/api/partner/file/…` (HMAC, 24 h).
+- **Privacy:** private details of people who left are erased after `retention_seasons` (default 2) by `erasePrivateAfterLeaving`, run daily from `/api/internal/backup-run`. Profiles are in the nightly encrypted backup; photos and recordings are copied weekly to `BACKUP_BUCKET` under `squad/`; the portal settings, sessions and devices tables are not backed up.
+- **Website Health:** squad_portal, squad_signins, squad_saves, squad_export, squad_photos.
+- **Tests:** `tests/squad-portal`, `squad-profiles`, `squad-review`, `squad-privacy` (`.test.mjs`).
 
 ## Site (Astro + Cloudflare Pages)
 

@@ -49,7 +49,8 @@ section 35.
 3. **Matchday squad:** in *Matchday squad*, set each player to **Starting XI**,
    **Bench** or *Not selected*. Only these players appear in Man of the Match
    voting. Press **Save Match Centre**.
-   - Players come from the Squad in the Content CMS. Add new players there first.
+   - Players come from the Squad (the Content CMS, or profiles verified in
+     Matchday › Squad: Profile Submissions). Add new players there first.
 4. **Stream links:** in *Live stream (Watch Live)*, paste the **YouTube live
    link** and/or the **Facebook live link** for this game and press **Save**.
    Leave them empty to show links to the official channels instead.

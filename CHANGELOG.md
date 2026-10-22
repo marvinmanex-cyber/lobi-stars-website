@@ -8,6 +8,37 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Squad & Staff Data Portal, Phase 7 (privacy, backups, health checks, guides)
+
+**What changed**
+- **Privacy Policy:** new section "Player and staff profiles" (/privacy/#squad-profiles),
+  a **draft for legal review**: what is collected, what is public, sharing
+  with the media partner for match coverage, legal basis, who sees private
+  details, and erasing private details 2 seasons after someone leaves. It is
+  linked from the portal footer (the policy itself never shows the portal address).
+- **Keeping private details:** every day, the private details of people
+  marked "Left the club" more than 2 seasons ago are erased automatically,
+  also from earlier seasons' copies of their profile; the public profile stays
+  as club history. Super Admins can change the period (1–5 seasons) in
+  Settings › Squad & Staff Data Portal. Each erasure is in the Activity Log.
+- **Backups:** squad profiles are in the nightly encrypted backup; the photos
+  and recordings are now copied weekly (Sundays) too. The portal password,
+  sessions and devices are left out.
+- **Website Health:** five new checks: the portal stays private (not linked,
+  not in the sitemap, hidden from search engines; password made), repeated
+  wrong portal passwords, answers refused or stuck on a device, the Data
+  Package matches schemaVersion 1.0, and every submitted or verified profile
+  has its photo. The storage check now includes the squad photo storage.
+- The portal now tells the club when an answer or photo is refused, or stays
+  waiting on a device for more than 30 minutes while online (Activity Log,
+  without the answer).
+- Fixed: people marked "Left the club" were not hidden from a hand-made
+  Squad entry with the same name.
+- Staff guide: new sections 38 (Squad & Staff Data Portal) and 39 (Data
+  Package format). HANDOVER-TODO: A34 (switch the portal on) and E2 (legal review).
+
+**Staff need to do:** HANDOVER-TODO.md A34 and E2.
+
 ## 2026-10-22: Squad & Staff Data Portal, Phases 5–6 (review, publishing, exports, partner feed)
 
 **What changed**

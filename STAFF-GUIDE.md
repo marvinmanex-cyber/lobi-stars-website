@@ -3269,6 +3269,150 @@ checks that:
 - no score conflict has been open for over 30 minutes and no report has
   waited for review for over 2 hours.
 
+## 38. Squad & Staff Data Portal
+
+The private portal where the media team collects every player's and staff
+member's details, photos and a recording of how to say their name. The club
+reviews each profile; verified profiles appear on the Squad page (public
+details only) and go to the club's media partner in the Data Package.
+
+**The link:** https://lobistarsfc.com/staff/squad-data
+
+- It is **not linked anywhere** on the website and search engines are told to
+  stay away. Send it only to the people who fill in profiles.
+- To copy it: **Settings › Squad & Staff Data Portal › Copy link** (only the
+  three Super Admins see this page).
+- The portal has **its own login**: one shared username and password, plus
+  "Your name", which is recorded with everything that person does. Portal
+  users cannot open the admin, and admin logins do not open the portal.
+
+### Settings (Super Admins: Settings › Squad & Staff Data Portal)
+
+| Setting | What it does |
+| --- | --- |
+| Copy link | Copies the portal address. |
+| Portal open | Off = the sign-in page says the portal is closed and everyone is signed out. |
+| Username | The shared username (default `lobi-squad`). |
+| Generate new password | Makes a new password and shows it **once** (Copy it straight away). Everyone using the portal is signed out. Send it by WhatsApp or say it in person; never email it. |
+| Current season | The season new profiles belong to, e.g. 2026/27. |
+| Keeping private details | How long after someone leaves their private details are erased (default 2 seasons). |
+| Signed in now | Who is in the portal and on which device; **Sign out** one or **Sign out all**. |
+| Devices | Every phone or computer used. A new one also shows on the bell. |
+
+Five wrong passwords lock the sign-in for 15 minutes; after three, a human
+check appears. Portal sessions end after 60 minutes without activity (with a
+2-minute warning) and after 12 hours in any case.
+
+### Filling in a profile (portal users)
+
+1. Open the link, sign in with the username, password and your own name.
+2. Press **ADD A PLAYER** or **ADD A COACH / STAFF MEMBER**.
+3. Answer the questions. Every answer **saves by itself** ("All changes
+   saved"). If the network goes, answers are kept on the phone and sent when
+   it returns ("Offline · saved on this device"). Do not clear the browser
+   until the pill says "All changes saved".
+4. Each question is marked **Public** (on the website), **Media** (for the
+   media partner only) or **Private** (club records only, never published).
+5. **Photo:** take or choose one, face and shoulders, plain background. The
+   portal crops it, removes location data and names it after the person
+   (e.g. `09-musa-adeyemi.webp`). Read any quality warnings.
+6. **Name pronunciation:** press record and say the name (up to 10 seconds).
+7. Under-18s: the guardian section appears by itself and must be completed.
+8. Press **Submit for review**. Anything missing is highlighted. After
+   submitting, the profile can only be viewed until the club asks for changes.
+
+Only drafts can be deleted from the portal.
+
+### Reviewing (Website & Data Officer and Super Admins: Matchday › Squad: Profile Submissions)
+
+The bell shows "N squad profiles waiting for review", and reviewers get an
+email when one is submitted.
+
+| Button | Result |
+| --- | --- |
+| Verify | The person appears on /squad within a few minutes (public details only: age instead of date of birth). |
+| Request changes | Write a note; the portal shows it and the profile can be edited again. |
+| Left the club | Off the website and the partner feed straight away. Kept in "all seasons" downloads. Private details are erased after the retention period. |
+| Restore | Undoes "Left the club". |
+| Remove (Super Admins) | Deletes the profile. |
+| Carry over | At the start of a new season, copies last season's verified profiles as drafts (consent must be ticked again). |
+
+**Full club records** (with private details, Excel or PDF): Super Admins
+only, after entering their sign-in code. Every download is logged.
+
+### Downloads
+
+From the portal home or the review page: **PDF**, **Word**, **Excel**,
+**CSV**, **JSON** and the **Media Partner Data Package** (ZIP). Choose
+verified / submitted / players / staff and the season. Every download is
+checked before it is saved and appears in the export log. None of these
+contain private details.
+
+### If something goes wrong
+
+- **"Not saved yet · kept on this device"**: stay on the page with a
+  connection; it sends by itself. Website Health (Squad portal answers reach
+  the club) lists answers that were refused or kept waiting.
+- **Locked sign-in**: wait 15 minutes, or a Super Admin generates a new
+  password. If it happens often, Website Health warns ("No repeated wrong
+  portal passwords").
+- **No photo on the Squad page**: Website Health ("Squad photos are all
+  there") names the profile; add the photo again in the portal.
+
+Photos, recordings and profiles are in the nightly encrypted backup (photos
+and recordings are copied weekly on Sundays). The portal password and
+sessions are never backed up.
+
+## 39. Data Package format
+
+The Data Package is what the media partner's systems read. Its format is
+fixed: **schemaVersion "1.0"**. Do not rename files inside the ZIP.
+
+**The ZIP contains:**
+
+| File | What |
+| --- | --- |
+| `data.json` | Everything below, in one file. |
+| `players.csv`, `staff.csv` | The same in spreadsheet form (UTF-8). |
+| `photos/<name>.jpg` and `.webp` | 1200 px photos, e.g. `photos/09-musa-adeyemi.jpg`, `photos/09-musa-adeyemi-action.jpg`, `photos/staff-headcoach-name.jpg`. |
+| `audio/<name>-pronunciation.mp3` | Name recordings. |
+| `team/lobi-stars-crest.png` | The club crest. |
+| `schema.json` | The formal description (JSON Schema) of data.json. |
+| `README.txt` | What is inside, when and by whom it was made. |
+
+**data.json, top level:** `schemaVersion` ("1.0"), `exportedAt` (Lagos time,
+e.g. 2026-10-22T11:42:00+01:00), `source` ("lobistarsfc.com"), `season`,
+`filters`, `team`, `players`, `staff`.
+
+- **team:** `id`, `name`, `shortName`, `nickname`, `crest`, `kitColours`
+  (`home`, `away`), `stadium`, `city`, `state`, `competition`.
+- **players** (by position, then shirt number): `id`, `status` (verified,
+  submitted, left_the_club), `updatedAt`, `displayName`, `nickname`,
+  `pronunciation`, `pronunciationAudio`, `shirtNumber`, `primaryPosition`,
+  `secondaryPositions`, `preferredFoot`, `heightCm`, `age`, `nationality`,
+  `stateOfOrigin`, `hometown`, `socialHandle`, `joinedClub`,
+  `internationalExperience`, `previousClubs` (`club`, `startYear`, `endYear`),
+  `honours` (`title`, `seasonOrYear`, `clubOrTeam`), `notes`
+  (`careerHighlight`, `roleModel`, `interestingFact`), `photos` (`profile`,
+  `action`).
+- **staff** (by role): `id`, `status`, `updatedAt`, `displayName`, `nickname`,
+  `pronunciation`, `pronunciationAudio`, `role`, `age`, `nationality`,
+  `stateOfOrigin`, `hometown`, `socialHandle`, `joinedClub`,
+  `qualifications`, `playingCareer`, `previousRoles` (`club`, `position`,
+  `period`), `honours`, `notes` (`philosophy`, `careerHighlight`,
+  `interestingFact`), `photos` (`profile`).
+
+Never included: legal name, phone, email, emergency contact, guardian
+details, exact date of birth.
+
+**Partner feed (for the partner's developers):** `GET
+https://lobistarsfc.com/api/partner/squad` with the header
+`Authorization: Bearer <key>` (or `X-API-Key: <key>`). It returns the same
+data.json (verified profiles of the current season). Photo and audio entries
+are links that work for 24 hours. Add `?since=2026-10-22T00:00:00Z` to get
+only profiles changed after that time. The key is the LOBI_PARTNER_API_KEY
+secret in Cloudflare; a new key stops the old one working.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

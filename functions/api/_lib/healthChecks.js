@@ -218,6 +218,23 @@ export const INFO = {
     why: 'The kitchen is alerted about new paid orders on Telegram.',
     fix: ['Check the bot in Telegram (@BotFather › your bot).', 'If you made a new token, save it in Cloudflare as TELEGRAM_BOT_TOKEN.'] },
 
+  // ── Squad & Staff Data Portal ──
+  squad_portal: { category: 'security', name: 'Squad & Staff Data Portal stays private', who: SA,
+    why: 'The portal holds private details of players and staff. It must never be linked from the website or found by search engines.',
+    fix: ['Send the details to the developer straight away if the portal link appears on a public page or in the sitemap.', 'If no password has been made yet: Settings › Squad & Staff Data Portal › "Generate new password".'] },
+  squad_signins: { category: 'security', name: 'No repeated wrong portal passwords', who: SA,
+    why: 'Many wrong passwords can mean someone is trying to guess the shared portal password.',
+    fix: ['Settings › Squad & Staff Data Portal: press "Generate new password" and give it only to the people who need it.', 'Press "Sign out all" to end every open portal session.', 'Look at the Activity Log for the names and devices used.'] },
+  squad_saves: { category: 'tasks', name: 'Squad portal answers reach the club', who: 'Website & Data Officer',
+    why: 'An answer that is refused or stays on a phone never reaches the club, so a profile can be submitted incomplete.',
+    fix: ['Ask the person named in the details to open the portal on the same phone or computer while connected, so the waiting answers are sent.', 'If an answer was refused, open that profile and type it again.', 'If it keeps happening, send the details to the developer.'] },
+  squad_export: { category: 'tasks', name: 'Media Partner Data Package is valid', who: DEV,
+    why: 'The media partner’s systems read the Data Package automatically; a file that does not match the agreed format (schemaVersion 1.0) is rejected.',
+    fix: ['Send the details to the developer.'] },
+  squad_photos: { category: 'tasks', name: 'Squad photos are all there', who: 'Website & Data Officer',
+    why: 'A submitted or verified profile without its photo shows a blank on the Squad page and in the Data Package.',
+    fix: ['Open the profile named in the details in the portal and add the photo again.', 'If the photo keeps failing, try a different photo or another phone.'] },
+
   // ── Speed ──
   speed: { category: 'speed', name: 'Key pages load fast on a phone', who: DEV,
     why: 'Most fans use mobile data; slow pages are abandoned.',
@@ -684,11 +701,70 @@ export async function stepTasks(ctx) {
   const dbMs = Date.now() - t0;
   const limit = Number(env.D1_LIMIT_MB || 500) * 1024 * 1024;
   out.push(result('database', dbErr ? 'FAIL' : size && size / limit > 0.8 ? 'WARNING' : dbMs > 2000 ? 'WARNING' : 'PASS', { problem: dbErr ? `The database did not answer: ${dbErr}.` : `Answered in ${dbMs} ms${size ? `; ${(size / 1048576).toFixed(1)} MB used of ${Math.round(limit / 1048576)} MB (${((size / limit) * 100).toFixed(0)}%)` : ''}.`, details: { ms: dbMs, bytes: size } }));
-  const buckets = [['PROGRAMME_BUCKET', 'Programme files'], ['BACKUP_BUCKET', 'Backups']];
+  const buckets = [['PROGRAMME_BUCKET', 'Programme files'], ['BACKUP_BUCKET', 'Backups'], ['SQUAD_BUCKET', 'Squad portal photos']];
   const bs = await Promise.all(buckets.map(async ([b, label]) => { if (!env[b]) return { label, ok: null }; try { await withTimeout(env[b].list({ limit: 1 }), 6000, label); return { label, ok: true }; } catch (e) { return { label, ok: false, error: String(e.message || e) }; } }));
   const badB = bs.filter(b => b.ok === false), unset = bs.filter(b => b.ok === null);
-  out.push(result('storage', badB.length ? 'FAIL' : unset.length ? 'WARNING' : 'PASS', { problem: badB.length ? `Not reachable: ${badB.map(b => b.label).join(', ')}.` : unset.length ? `Not set up: ${unset.map(b => b.label).join(', ')}.` : 'Programme and backup storage reachable.', details: bs }));
+  out.push(result('storage', badB.length ? 'FAIL' : unset.length ? 'WARNING' : 'PASS', { problem: badB.length ? `Not reachable: ${badB.map(b => b.label).join(', ')}.` : unset.length ? `Not set up: ${unset.map(b => b.label).join(', ')}.` : 'All file storage reachable (programme files, backups, squad photos).', details: bs }));
+  out.push(...await squadChecks(ctx));
   out.push(result('error_log', 'SKIPPED', { problem: 'Error logs are kept by Cloudflare, not readable from the website. Look at them in the Cloudflare dashboard (fix steps).', fix: INFO.error_log.fix }));
+  return out;
+}
+
+// ── SQUAD & STAFF DATA PORTAL ──
+async function squadChecks(ctx) {
+  const { env, origin } = ctx;
+  const db = env.DB;
+  const out = [];
+  const { getPortalSettings, portalPath } = await import('./squadPortal.js');
+  const s = await getPortalSettings(db).catch(() => null);
+  if (!s) return [result('squad_portal', 'SKIPPED', { problem: 'The portal tables could not be read.' })];
+  // Private: noindex, not in the sitemap, not linked from the homepage.
+  const path = portalPath(env);
+  const [page, map, home] = await Promise.all([timedFetch(`${origin}${path.replace(/\/?$/, '/')}`), timedFetch(`${origin}/sitemap.xml`), timedFetch(`${origin}/`)]);
+  const leaks = [];
+  if (page.res && !/noindex/i.test(page.res.headers.get('X-Robots-Tag') || '')) leaks.push('the portal page does not tell search engines to stay away');
+  await drain(page.res);
+  const text = async f => { if (!f.res?.ok) { await drain(f.res); return ''; } return f.res.text().catch(() => ''); };
+  const [mapText, homeText] = await Promise.all([text(map), text(home)]);
+  if (mapText.includes(path)) leaks.push('the portal is listed in sitemap.xml');
+  if (homeText.includes(path)) leaks.push('the homepage links to the portal');
+  out.push(result('squad_portal', leaks.length ? 'FAIL' : !s.password_hash && s.enabled === '1' ? 'WARNING' : 'PASS', {
+    problem: leaks.length ? `Not private: ${leaks.join('; ')}.` : s.enabled !== '1' ? 'The portal is switched off (nobody can sign in). Not linked anywhere and hidden from search engines.' : !s.password_hash ? 'The portal is on, but no password has been made yet, so nobody can sign in.' : 'The portal is on, not linked anywhere and hidden from search engines.',
+    details: { open: s.enabled === '1', password: !!s.password_hash, season: s.season } }));
+  // Wrong-password bursts (5 wrong passwords lock the sign-in for 15 minutes).
+  const locks = (await safeFirst(db, `SELECT COUNT(*) AS n FROM admin_log WHERE action = 'squad_portal_locked' AND ts >= ?`, ago(24)))?.n || 0;
+  const lockedNow = !!s.locked_until && Date.parse(s.locked_until) > Date.now();
+  out.push(result('squad_signins', locks >= 3 ? 'FAIL' : locks || lockedNow ? 'WARNING' : 'PASS', {
+    problem: locks ? `The portal sign-in was locked ${plural(locks, 'time')} in the last 24 hours after 5 wrong passwords${lockedNow ? ' (locked now)' : ''}.` : lockedNow ? 'The portal sign-in is locked now after wrong passwords.' : `No portal lock in the last 24 hours (${Number(s.failed) || 0} wrong password${Number(s.failed) === 1 ? '' : 's'} since the last good sign-in).` }));
+  // Answers refused, or waiting on a device (reported by the portal).
+  const bad = await safeAll(db, `SELECT action, detail, ts FROM admin_log WHERE action IN ('squad_save_failed', 'squad_save_unsynced') AND ts >= ? ORDER BY ts DESC LIMIT 20`, ago(24 * 7)) || [];
+  out.push(result('squad_saves', bad.length ? 'WARNING' : 'PASS', {
+    problem: bad.length ? `${plural(bad.length, 'problem')} in the last 7 days: ${list(bad.map(b => b.detail), 3)}.` : 'Every portal answer in the last 7 days reached the club.', details: bad.slice(0, 10) }));
+  // The Data Package built from the verified profiles matches schemaVersion 1.0.
+  try {
+    const { profilesFor, packageInput } = await import('./squadPublish.js');
+    const { getTeam } = await import('./squadProfiles.js');
+    const { buildPackage, validatePackage, SCHEMA_VERSION } = await import('../../../src/lib/squadPackage.js');
+    const rows = (await profilesFor(db, { season: s.season })).map(packageInput);
+    const files = { photo: (p, kind) => `photos/${p.fileBase}${kind === 'action' ? '-action' : ''}.jpg`, audio: p => `audio/${p.fileBase}.mp3` };
+    const problems = validatePackage(buildPackage({ profiles: rows, team: await getTeam(db), season: s.season, filters: { status: 'verified', type: 'all' }, files }));
+    const failed = await safeAll(db, `SELECT format, by, at, note FROM squad_export_log WHERE ok = 0 AND at >= ? ORDER BY at DESC LIMIT 5`, ago(24 * 7)) || [];
+    out.push(result('squad_export', problems.length ? 'FAIL' : failed.length ? 'WARNING' : 'PASS', {
+      problem: problems.length ? `The Data Package does not match schemaVersion ${SCHEMA_VERSION}: ${list(problems, 3)}.` : failed.length ? `${plural(failed.length, 'download')} failed its check in the last 7 days (${list(failed.map(f => `${f.format} by ${f.by}`), 3)}).` : `The Data Package for ${plural(rows.length, 'verified profile')} matches schemaVersion ${SCHEMA_VERSION}.`,
+      details: { problems: problems.slice(0, 10), failed } }));
+  } catch (e) { out.push(result('squad_export', 'WARNING', { problem: `The Data Package could not be built: ${String(e.message || e).slice(0, 160)}.` })); }
+  // Photos: submitted / verified profiles have their photo, and the files are in storage.
+  const want = await safeAll(db, `SELECT id, display_name, photos_json FROM squad_profiles WHERE season = ? AND deleted_at IS NULL AND status IN ('SUBMITTED', 'VERIFIED') LIMIT 200`, s.season) || [];
+  const noPhoto = want.filter(p => { try { return !JSON.parse(p.photos_json || '{}').profile; } catch { return true; } });
+  const missing = [];
+  if (env.SQUAD_BUCKET) for (const p of want.filter(x => !noPhoto.includes(x)).slice(0, 20)) {
+    if (!(await env.SQUAD_BUCKET.head(`profiles/${p.id}/profile/w1200.jpg`).catch(() => null))) missing.push(p);
+  }
+  const fails = (await safeFirst(db, `SELECT COUNT(*) AS n FROM admin_log WHERE action = 'squad_photo_failed' AND ts >= ?`, ago(24 * 7)))?.n || 0;
+  const gone = [...noPhoto, ...missing];
+  out.push(result('squad_photos', !env.SQUAD_BUCKET ? 'FAIL' : gone.length || fails ? 'WARNING' : 'PASS', {
+    problem: !env.SQUAD_BUCKET ? 'Photo storage (SQUAD_BUCKET) is not connected.' : gone.length ? `Without a photo: ${list(gone.map(p => p.display_name || p.id), 5)}.` : fails ? `${plural(fails, 'photo or recording')} could not be saved in the last 7 days.` : `All ${plural(want.length, 'submitted or verified profile')} have their photo.`,
+    details: { noPhoto: noPhoto.map(p => p.id), missingFiles: missing.map(p => p.id), failedUploads: fails } }));
   return out;
 }
 

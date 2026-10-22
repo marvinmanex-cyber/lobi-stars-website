@@ -1,6 +1,7 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { can } from '../_lib/adminRoles.js';
 import { logAdminAction } from '../_lib/adminSession.js';
+import { RETENTION_DEFAULT } from '../_lib/squadProfiles.js';
 import { getPortalSettings, setPortalSetting, resetPortalPassword, openSessions, signOutAll, unseenDevices, ensurePortalSchema, portalLink, portalPath } from '../_lib/squadPortal.js';
 
 // Settings › Squad & Staff Data Portal (only the three Super Admins: squad.portal.manage).
@@ -9,6 +10,7 @@ import { getPortalSettings, setPortalSetting, resetPortalPassword, openSessions,
 // POST { action: 'new_password' }             -- returns the new password ONCE; signs out every portal session
 // POST { action: 'enabled', enabled }         -- open / close the portal
 // POST { action: 'season', season }           -- e.g. "2026/27"
+// POST { action: 'retention', seasons }       -- erase private details of people who left after 1-5 seasons
 // POST { action: 'sign_out_all' } | { action: 'sign_out', id }
 // POST { action: 'devices_seen' }             -- clears the "new device" bell
 const json = (d, status = 200) => Response.json(d, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -27,6 +29,7 @@ async function view(env, request) {
   return {
     link: portalLink(env, new URL(request.url).origin), path: portalPath(env),
     username: s.username, hasPassword: !!s.password_hash, enabled: s.enabled === '1', season: s.season,
+    retentionSeasons: Number(s.retention_seasons) || RETENTION_DEFAULT,
     lockedUntil: s.locked_until && Date.parse(s.locked_until) > Date.now() ? s.locked_until : null,
     sessions: await openSessions(db), devices, unseen: (await unseenDevices(db)).length,
   };
@@ -62,6 +65,11 @@ export async function onRequestPost({ request, env }) {
     if (!/^20\d\d\/\d\d$/.test(season)) return json({ error: 'Write the season like 2026/27.' }, 400);
     await setPortalSetting(db, 'season', season, admin.name);
     await logAdminAction(db, admin, 'squad_portal_season', `Squad Data Portal season set to ${season}`);
+  } else if (b.action === 'retention') {
+    const n = Number(b.seasons);
+    if (!Number.isInteger(n) || n < 1 || n > 5) return json({ error: 'Choose 1 to 5 seasons.' }, 400);
+    await setPortalSetting(db, 'retention_seasons', n, admin.name);
+    await logAdminAction(db, admin, 'squad_portal_retention', `Squad Data Portal: private details of people who left are now erased after ${n} season${n === 1 ? '' : 's'}`);
   } else if (b.action === 'sign_out_all') {
     const n = await signOutAll(env, admin);
     await logAdminAction(db, admin, 'squad_portal_signout_all', `Signed out ${n} Squad Data Portal session${n === 1 ? '' : 's'}`);

@@ -34,6 +34,12 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <form class="spa-row" id="seasonForm"><label class="spa-l">Season<input id="season" placeholder="2026/27" maxlength="7" /></label><button class="btn-o" type="submit">Save season</button></form>
     </section>
 
+    <section class="spa-card" aria-labelledby="h-keep">
+      <h2 id="h-keep">Keeping private details</h2>
+      <p class="muted">Private details (legal name, phone, email, emergency contact, guardian, exact date of birth) of people marked "Left the club" are erased automatically this long after they left. Their public profile stays as club history. See the <a href="/privacy/#squad-profiles" target="_blank" rel="noopener">Privacy Policy</a>.</p>
+      <form class="spa-row" id="keepForm"><label class="spa-l">Erase after<select id="keep"><option value="1">1 season</option><option value="2">2 seasons (recommended)</option><option value="3">3 seasons</option><option value="4">4 seasons</option><option value="5">5 seasons</option></select></label><button class="btn-o" type="submit">Save</button></form>
+    </section>
+
     <section class="spa-card" aria-labelledby="h-sess">
       <h2 id="h-sess">Signed in now</h2>
       <div id="sessions"><p class="muted">Loading…</p></div>
@@ -91,6 +97,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     $('username').value = d.username;
     $('passState').textContent = d.hasPassword ? (d.lockedUntil ? `Sign-in locked until ${when(d.lockedUntil)} (too many wrong passwords).` : 'A password is set.') : 'No password yet: generate one before sending the link.';
     $('season').value = d.season;
+    $('keep').value = String(d.retentionSeasons);
     $('sessions').innerHTML = d.sessions.length ? `<div class="scroll"><table><thead><tr><th>Name entered</th><th>Device</th><th>Since</th><th>Last active</th><th></th></tr></thead><tbody>${d.sessions.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.device)}</td><td>${esc(when(s.created_at))}</td><td>${esc(when(s.last_seen))}</td><td><button class="btn-o" type="button" data-out="${esc(s.id)}">Sign out</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Nobody is signed in to the portal.</p>';
     $('devices').innerHTML = d.devices.length ? `<div class="scroll"><table><thead><tr><th>Device</th><th>First used by</th><th>First used</th><th>Last used</th></tr></thead><tbody>${d.devices.map(x => `<tr><td>${esc(x.device)} ${x.seen_by_admin ? '' : '<span class="new">New</span>'}</td><td>${esc(x.first_name)}</td><td>${esc(when(x.first_seen))}</td><td>${esc(when(x.last_seen))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No device has signed in yet.</p>';
   }
@@ -100,6 +107,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   $('enabled').addEventListener('change', e => act({ action: 'enabled', enabled: e.target.checked }, e.target.checked ? 'Portal opened.' : 'Portal closed; everyone signed out.'));
   $('userForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'username', username: $('username').value }, 'Username saved.'); });
   $('seasonForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'season', season: $('season').value }, 'Season saved.'); });
+  $('keepForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'retention', seasons: Number($('keep').value) }, 'Saved.'); });
   $('signOutAll').addEventListener('click', () => { if (confirm('Sign out everyone using the portal?')) act({ action: 'sign_out_all' }, 'Everyone signed out.'); });
   $('sessions').addEventListener('click', e => { const b = e.target.closest('[data-out]'); if (b) act({ action: 'sign_out', id: b.dataset.out }, 'Signed out.'); });
   $('newPass').addEventListener('click', async () => {

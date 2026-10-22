@@ -6,7 +6,7 @@
 // same profile, their answer is shown with "updated by … just now".
 import { FIELDS, FIELD, SECTIONS, STATUSES, NOTE_MAX, labelOf, activeFields, missingForSubmit, isMinor, ageOn } from '../../lib/squadFields.js';
 import { api, state, $, esc, toast, lagos, ApiError } from './api';
-import { queueAdd, flush, queueCount, keepProfile, keptProfile, uploadKeep, uploadsAll, uploadDone, uploadsCount, type Change } from './offline';
+import { queueAdd, flush, queueCount, queueAll, keepProfile, keptProfile, uploadKeep, uploadsAll, uploadDone, uploadsCount, type Change } from './offline';
 import { processPhoto, Recorder } from './media';
 import { showHome } from './home';
 
@@ -30,6 +30,14 @@ async function refreshPill() {
 }
 
 // ── Sending ──
+/** Tells the club (Activity Log, Website Health) about a refused or long-waiting change; never the answers. */
+const reported = new Set<string>();
+function report(kind: 'save_failed' | 'photo_failed' | 'unsynced', body: Record<string, unknown>) {
+  const key = `${kind}:${body.profile}`;
+  if (reported.has(key)) return;
+  reported.add(key);
+  api('session', { method: 'POST', body: { report: kind, ...body }, activity: false }).catch(() => reported.delete(key));
+}
 async function send(c: Change): Promise<'ok' | 'retry' | 'drop'> {
   try {
     const r = await api(`profiles/${c.id}`, { method: 'PATCH', body: { changes: c.changes, commit: c.commit, type: c.type, since: lastSync } });
@@ -45,7 +53,7 @@ async function send(c: Change): Promise<'ok' | 'retry' | 'drop'> {
     return 'ok';
   } catch (e) {
     if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429) {
-      if (e.status !== 401) toast(e.message);
+      if (e.status !== 401) { toast(e.message); report('save_failed', { profile: c.id, detail: e.message }); }
       return e.status === 401 ? 'retry' : 'drop';
     }
     return 'retry';
@@ -63,7 +71,7 @@ async function sendUploads() {
         else { P.audio = r.audio; }
       }
     } catch (e) {
-      if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 401 && e.status !== 429) { await uploadDone(u.key); toast(e.message); }
+      if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 401 && e.status !== 429) { await uploadDone(u.key); toast(e.message); report('photo_failed', { profile: u.id, detail: e.message }); }
       else return;
     }
   }
@@ -73,6 +81,11 @@ async function pump() {
   sending = true;
   try { await flush(send); await sendUploads(); } finally { sending = false; refreshPill(); }
   clearTimeout(retryTimer);
+  if (navigator.onLine) {
+    const waiting = await queueAll();
+    const oldest = Math.min(...waiting.map(c => c.at || Date.now()));
+    if (waiting.length && Date.now() - oldest > 30 * 60e3) report('unsynced', { profile: waiting[0].id, waiting: waiting.length, minutes: Math.round((Date.now() - oldest) / 60e3) });
+  }
   if ((await queueCount()) + (await uploadsCount())) retryTimer = window.setTimeout(pump, 15000);
 }
 async function save(changes: Record<string, unknown>, commit: boolean, type?: string) {

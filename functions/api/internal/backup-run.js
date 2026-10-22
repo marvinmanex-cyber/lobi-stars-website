@@ -1,18 +1,22 @@
 import { backupStep, mediaStep, backupReady, weeklyOffsiteEmail } from '../_lib/autoBackup.js';
 import { securitySettings, saveSecuritySetting } from '../_lib/adminSecurity.js';
 import { logAdminAction } from '../_lib/adminSession.js';
+import { erasePrivateAfterLeaving } from '../_lib/squadProfiles.js';
 
 // POST /api/internal/backup-run -- called every minute by the cron Worker
 // ("Authorization: Bearer <CRON_SECRET>"). Runs the next step of today's automatic
 // backup (from 02:00 Nigeria time), the weekly media copy (Sundays), the weekly emailed
-// encrypted copy (Mondays, to keep outside Cloudflare), and alerts
+// encrypted copy (Mondays, to keep outside Cloudflare), the daily squad portal privacy
+// clean-up (private details of people who left, after the retention period), and alerts
 // the Super Admins if no backup has finished for more than 26 hours.
 export async function onRequestPost({ request, env }) {
   if (!env.CRON_SECRET || request.headers.get('Authorization') !== `Bearer ${env.CRON_SECRET}`) {
     return Response.json({ error: 'Forbidden' }, { status: 403 });
   }
-  if (!backupReady(env)) return Response.json({ ok: true, ready: false });
-  const out = { db: await backupStep(env) };
+  let privacy = null;
+  try { privacy = await erasePrivateAfterLeaving(env.DB); } catch (err) { console.error('[squad] privacy clean-up', err); }
+  if (!backupReady(env)) return Response.json({ ok: true, ready: false, privacy });
+  const out = { privacy, db: await backupStep(env) };
   try { out.media = await mediaStep(env); } catch (err) { console.error('[backup] media', err); }
   try { out.offsite = await weeklyOffsiteEmail(env); } catch (err) { console.error('[backup] weekly email', err); }
   try {

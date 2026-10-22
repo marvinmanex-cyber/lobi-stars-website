@@ -387,6 +387,43 @@ export async function carryOver(env, admin, { from, to }) {
   return { ok: true, copied: n };
 }
 
+// ── Keeping private details (Privacy Policy: player and staff profiles) ──
+// The private details (legal name, phone, email, emergency contact, guardian,
+// exact date of birth) of people marked "left the club" are erased a set number
+// of seasons after they left (portal setting retention_seasons, default 2), also
+// from the earlier seasons' copies of their profile. The public profile stays as
+// club history. Runs once a day from the timer (/api/internal/backup-run).
+export const RETENTION_DEFAULT = 2;
+export async function erasePrivateAfterLeaving(db, { now = Date.now(), force = false } = {}) {
+  await ensureProfileSchema(db);
+  const s = await getPortalSettings(db);
+  const day = new Date(now + 3600e3).toISOString().slice(0, 10);
+  if (!force && s.retention_day === day) return { skipped: 'done today' };
+  const seasons = Math.min(10, Math.max(1, Number(s.retention_seasons) || RETENTION_DEFAULT));
+  const cutoff = new Date(now - seasons * 365 * 864e5).toISOString();
+  const left = (await db.prepare(`SELECT id, carried_from FROM squad_profiles WHERE status = 'LEFT_THE_CLUB' AND left_at IS NOT NULL AND left_at < ?`).bind(cutoff).all()).results;
+  const ids = new Set();
+  for (const p of left) {
+    ids.add(p.id);
+    let from = p.carried_from;
+    for (let i = 0; from && i < 20 && !ids.has(from); i++) { ids.add(from); from = (await db.prepare(`SELECT carried_from FROM squad_profiles WHERE id = ?`).bind(from).first())?.carried_from; }
+  }
+  let n = 0;
+  for (const id of ids) {
+    const p = await db.prepare(`SELECT id, data_json, meta_json, display_name, season FROM squad_profiles WHERE id = ?`).bind(id).first();
+    if (!p) continue;
+    const data = parse(p.data_json, {}), meta = parse(p.meta_json, {});
+    if (meta._privateErased && !PRIVATE_KEYS.some(k => k in data)) continue;
+    for (const k of PRIVATE_KEYS) { delete data[k]; delete meta[k]; }
+    meta._privateErased = nowIso();
+    await db.prepare(`UPDATE squad_profiles SET data_json = ?, meta_json = ?, full_name = NULL, dob = NULL WHERE id = ?`).bind(JSON.stringify(data), JSON.stringify(meta), id).run();
+    await logProfile(db, { id: 'system', name: 'Privacy clean-up' }, 'squad_private_erased', `Private details of ${p.display_name || 'a former profile'} (${p.season}) erased: left the club more than ${seasons} season${seasons === 1 ? '' : 's'} ago`);
+    n++;
+  }
+  await setPortalSetting(db, 'retention_day', day);
+  return { erased: n, seasons };
+}
+
 // ── Team details (for the Data Package) ──
 export const TEAM_DEFAULT = {
   id: 'lobi-stars-fc', name: 'Lobi Stars FC', shortName: 'Lobi Stars', nickname: 'Pride of Benue', crest: 'team/lobi-stars-crest.png',

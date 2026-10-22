@@ -86,6 +86,7 @@ export const SETTING_DEFAULTS = {
   auto_backup_last: '',       //   the last finished backup (day, tables, rows, size)
   auto_backup_error: '',      //   the last failure (cleared when a backup finishes)
   media_backup_since: '',     //   programme files copied up to this upload time
+  squad_backup_since: '',     //   squad portal photos and recordings copied up to this upload time
   backup_overdue_alert: '',   //   the day an overdue-backup alert was last sent
 };
 let cache = null, cachedAt = 0;
