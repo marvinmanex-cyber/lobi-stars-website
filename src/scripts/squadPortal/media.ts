@@ -1,4 +1,4 @@
-// Squad & Staff Data Portal: photos and name pronunciation recordings.
+// Squad & Staff Data Portal and the club review page: photos.
 //
 // Photos are processed on this device before upload (the website's server has
 // no image tools): the browser applies the camera's rotation, re-drawing the
@@ -8,12 +8,12 @@
 // browser has a built-in face finder it is used ONLY to centre the crop:
 // nothing about the face is stored or sent, and there is no face recognition.
 // Quality warnings (never blocks): small, very dark, very blurry.
-//
-// Recordings: up to 10 seconds in the browser; an MP3 copy is made on this
-// device (lamejs, loaded from cdnjs with an integrity check).
+// The hero photo (wide header of a profile page, added by the club) is cropped
+// 16:9 around the middle and also made 2000 px wide.
 const MAX_BYTES = 10 * 1024 * 1024;
 
-export type Processed = { w400: Blob; w1200: Blob; jpg: Blob; width: number; height: number; warnings: string[]; preview: string };
+export type PhotoKind = 'profile' | 'action' | 'hero';
+export type Processed = { w400: Blob; w1200: Blob; jpg: Blob; w2000?: Blob; width: number; height: number; warnings: string[]; preview: string };
 
 async function loadImage(file: File): Promise<HTMLImageElement> {
   const url = URL.createObjectURL(file);
@@ -31,11 +31,11 @@ async function loadImage(file: File): Promise<HTMLImageElement> {
   } finally { setTimeout(() => URL.revokeObjectURL(url), 1000); }
 }
 
-/** The 4:5 crop box: around the face if the browser can find one, otherwise the upper middle of the picture. */
-async function cropBox(img: HTMLImageElement, kind: 'profile' | 'action') {
-  const w = img.naturalWidth, h = img.naturalHeight;
-  let cw = Math.min(w, Math.round(h * 0.8)), ch = Math.round(cw * 1.25);
-  if (ch > h) { ch = h; cw = Math.round(h * 0.8); }
+/** The crop box (4:5, or 16:9 for the hero photo): around the face if the browser can find one, otherwise the upper middle of the picture. */
+async function cropBox(img: HTMLImageElement, kind: PhotoKind) {
+  const w = img.naturalWidth, h = img.naturalHeight, r = kind === 'hero' ? 9 / 16 : 1.25;
+  let cw = Math.min(w, Math.round(h / r)), ch = Math.round(cw * r);
+  if (ch > h) { ch = h; cw = Math.round(h / r); }
   let cx = (w - cw) / 2, cy = kind === 'profile' ? (h - ch) * 0.2 : (h - ch) / 2;
   const FD = (window as any).FaceDetector;
   if (kind === 'profile' && FD) {
@@ -85,78 +85,18 @@ function quality(c: HTMLCanvasElement) {
   return { brightness: sum / g.length, sharpness: lap2 / n - mean * mean };
 }
 
-export async function processPhoto(file: File, kind: 'profile' | 'action'): Promise<Processed> {
+export async function processPhoto(file: File, kind: PhotoKind): Promise<Processed> {
   if (file.size > MAX_BYTES) throw new Error('That photo is larger than 10 MB. Choose a smaller one.');
   if (!/^image\//.test(file.type) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name)) throw new Error('Choose a JPG, PNG, WebP or HEIC photo.');
   const img = await loadImage(file);
   const box = await cropBox(img, kind);
   const big = draw(img, box, 1200), small = draw(img, box, 400);
-  const [w1200, w400, jpg] = await Promise.all([webpOrJpeg(big), webpOrJpeg(small), toBlob(big, 'image/jpeg', 0.86)]);
+  const [w1200, w400, jpg, w2000] = await Promise.all([webpOrJpeg(big), webpOrJpeg(small), toBlob(big, 'image/jpeg', 0.86), kind === 'hero' ? webpOrJpeg(draw(img, box, 2000)) : Promise.resolve(undefined)]);
   const warnings: string[] = [];
   if (Math.min(img.naturalWidth, img.naturalHeight) < 600 || box.sw < 600) warnings.push('The photo is small (under 600 pixels): it may look blurry on the website.');
+  if (kind === 'hero' && box.sw < 1600) warnings.push('For the wide header, a photo at least 1600 pixels wide looks best.');
   const q = quality(big);
   if (q.brightness < 55) warnings.push('The photo is very dark. Good daylight works best.');
   if (q.sharpness < 40) warnings.push('The photo looks blurry. Hold the phone still and tap to focus.');
-  return { w400, w1200, jpg, width: big.width, height: big.height, warnings, preview: URL.createObjectURL(w1200) };
-}
-
-// ── Pronunciation recording ──
-export type Recording = { original: Blob; mp3: Blob | null; seconds: number; url: string };
-export class Recorder {
-  private rec: MediaRecorder | null = null; private chunks: Blob[] = []; private stream: MediaStream | null = null;
-  private started = 0; private timer = 0;
-  onTick: (s: number) => void = () => {};
-  async start(maxSeconds = 10): Promise<Recording> {
-    if (!navigator.mediaDevices?.getUserMedia || !(window as any).MediaRecorder) throw new Error('This browser cannot record sound. Type the pronunciation instead.');
-    try { this.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }); }
-    catch { throw new Error('The microphone is blocked. Allow the microphone for this page in the browser settings, then try again.'); }
-    const type = ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/webm'].find(t => (window as any).MediaRecorder.isTypeSupported?.(t)) || '';
-    this.rec = new MediaRecorder(this.stream, type ? { mimeType: type, audioBitsPerSecond: 48000 } : undefined);
-    this.chunks = [];
-    return new Promise((resolve, reject) => {
-      this.rec!.ondataavailable = e => { if (e.data.size) this.chunks.push(e.data); };
-      this.rec!.onstop = async () => {
-        clearInterval(this.timer);
-        this.stream?.getTracks().forEach(t => t.stop());
-        const seconds = Math.min(10, (Date.now() - this.started) / 1000);
-        const original = new Blob(this.chunks, { type: (this.rec!.mimeType || 'audio/webm').split(';')[0] });
-        if (!original.size) return reject(new Error('Nothing was recorded. Try again.'));
-        const mp3 = await toMp3(original).catch(() => null);
-        resolve({ original, mp3, seconds: Math.max(0.5, seconds), url: URL.createObjectURL(original) });
-      };
-      this.started = Date.now();
-      this.rec!.start(250);
-      this.timer = window.setInterval(() => { const s = (Date.now() - this.started) / 1000; this.onTick(s); if (s >= maxSeconds) this.stop(); }, 200);
-    });
-  }
-  stop() { if (this.rec && this.rec.state !== 'inactive') this.rec.stop(); }
-}
-
-let lame: Promise<any> | null = null;
-function loadLame() {
-  if ((window as any).lamejs) return Promise.resolve((window as any).lamejs);
-  if (!lame) lame = new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js';
-    s.integrity = 'sha384-xuasJXVcyv3hZq0eYpelEkBC8l4yufatZXDsKuyCU2rqfhDCb+ftuE/mSfZAteiK';
-    s.crossOrigin = 'anonymous';
-    s.onload = () => resolve((window as any).lamejs); s.onerror = () => { lame = null; reject(new Error('MP3 maker not available')); };
-    document.head.append(s);
-  });
-  return lame;
-}
-/** The recording as MP3 (mono, 64 kbit/s). */
-async function toMp3(blob: Blob): Promise<Blob> {
-  const lamejs = await loadLame();
-  const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
-  const ctx = new AC();
-  const buf: AudioBuffer = await ctx.decodeAudioData(await blob.arrayBuffer());
-  ctx.close?.();
-  const ch = buf.getChannelData(0), rate = buf.sampleRate;
-  const pcm = new Int16Array(ch.length);
-  for (let i = 0; i < ch.length; i++) pcm[i] = Math.max(-1, Math.min(1, ch[i])) * 0x7fff;
-  const enc = new lamejs.Mp3Encoder(1, rate, 64), out: Int8Array[] = [];
-  for (let i = 0; i < pcm.length; i += 1152) { const b = enc.encodeBuffer(pcm.subarray(i, i + 1152)); if (b.length) out.push(b); }
-  const end = enc.flush(); if (end.length) out.push(end);
-  return new Blob(out as BlobPart[], { type: 'audio/mpeg' });
+  return { w400, w1200, jpg, w2000, width: big.width, height: big.height, warnings, preview: URL.createObjectURL(w1200) };
 }

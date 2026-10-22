@@ -229,7 +229,7 @@ export const INFO = {
     why: 'An answer that is refused or stays on a phone never reaches the club, so a profile can be submitted incomplete.',
     fix: ['Ask the person named in the details to open the portal on the same phone or computer while connected, so the waiting answers are sent.', 'If an answer was refused, open that profile and type it again.', 'If it keeps happening, send the details to the developer.'] },
   squad_export: { category: 'tasks', name: 'Media Partner Data Package is valid', who: DEV,
-    why: 'The media partner’s systems read the Data Package automatically; a file that does not match the agreed format (schemaVersion 1.0) is rejected.',
+    why: 'The media partner’s systems read the Data Package automatically; a file that does not match the agreed format (schemaVersion 1.1) is rejected.',
     fix: ['Send the details to the developer.'] },
   squad_photos: { category: 'tasks', name: 'Squad photos are all there', who: 'Website & Data Officer',
     why: 'A submitted or verified profile without its photo shows a blank on the Squad page and in the Data Package.',
@@ -740,7 +740,7 @@ async function squadChecks(ctx) {
   const bad = await safeAll(db, `SELECT action, detail, ts FROM admin_log WHERE action IN ('squad_save_failed', 'squad_save_unsynced') AND ts >= ? ORDER BY ts DESC LIMIT 20`, ago(24 * 7)) || [];
   out.push(result('squad_saves', bad.length ? 'WARNING' : 'PASS', {
     problem: bad.length ? `${plural(bad.length, 'problem')} in the last 7 days: ${list(bad.map(b => b.detail), 3)}.` : 'Every portal answer in the last 7 days reached the club.', details: bad.slice(0, 10) }));
-  // The Data Package built from the verified profiles matches schemaVersion 1.0.
+  // The Data Package built from the verified profiles matches schemaVersion 1.1.
   try {
     const { profilesFor, packageInput } = await import('./squadPublish.js');
     const { getTeam } = await import('./squadProfiles.js');
@@ -754,7 +754,7 @@ async function squadChecks(ctx) {
       details: { problems: problems.slice(0, 10), failed } }));
   } catch (e) { out.push(result('squad_export', 'WARNING', { problem: `The Data Package could not be built: ${String(e.message || e).slice(0, 160)}.` })); }
   // Photos: submitted / verified profiles have their photo, and the files are in storage.
-  const want = await safeAll(db, `SELECT id, display_name, photos_json FROM squad_profiles WHERE season = ? AND deleted_at IS NULL AND status IN ('SUBMITTED', 'VERIFIED') LIMIT 200`, s.season) || [];
+  const want = await safeAll(db, `SELECT id, COALESCE(public_name, display_name) AS name, photos_json FROM squad_profiles WHERE season = ? AND deleted_at IS NULL AND status IN ('SUBMITTED', 'VERIFIED') LIMIT 200`, s.season) || [];
   const noPhoto = want.filter(p => { try { return !JSON.parse(p.photos_json || '{}').profile; } catch { return true; } });
   const missing = [];
   if (env.SQUAD_BUCKET) for (const p of want.filter(x => !noPhoto.includes(x)).slice(0, 20)) {
@@ -763,7 +763,7 @@ async function squadChecks(ctx) {
   const fails = (await safeFirst(db, `SELECT COUNT(*) AS n FROM admin_log WHERE action = 'squad_photo_failed' AND ts >= ?`, ago(24 * 7)))?.n || 0;
   const gone = [...noPhoto, ...missing];
   out.push(result('squad_photos', !env.SQUAD_BUCKET ? 'FAIL' : gone.length || fails ? 'WARNING' : 'PASS', {
-    problem: !env.SQUAD_BUCKET ? 'Photo storage (SQUAD_BUCKET) is not connected.' : gone.length ? `Without a photo: ${list(gone.map(p => p.display_name || p.id), 5)}.` : fails ? `${plural(fails, 'photo or recording')} could not be saved in the last 7 days.` : `All ${plural(want.length, 'submitted or verified profile')} have their photo.`,
+    problem: !env.SQUAD_BUCKET ? 'Photo storage (SQUAD_BUCKET) is not connected.' : gone.length ? `Without a photo: ${list(gone.map(p => p.name || p.id), 5)}.` : fails ? `${plural(fails, 'photo or recording')} could not be saved in the last 7 days.` : `All ${plural(want.length, 'submitted or verified profile')} have their photo.`,
     details: { noPhoto: noPhoto.map(p => p.id), missingFiles: missing.map(p => p.id), failedUploads: fails } }));
   return out;
 }

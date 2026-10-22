@@ -1,54 +1,42 @@
 ---
-import { getPlayers, getCoaches } from '../../lib/players';
+// /squad — the First Team squad: Goalkeepers, Defenders, Midfielders, Forwards
+// (by shirt number) and Coaching Staff (Head Coach first). Only public people
+// (verified in the portal and not hidden, or added in the Content CMS).
 import Layout from '../../layouts/Layout.astro';
-import PersonCard from '../../components/PersonCard.astro';
-import { getCollection } from 'astro:content';
+import SquadCard from '../../components/squad/SquadCard.astro';
+import { squadPlayers, squadStaff, GROUPS } from '../../lib/squadPeople';
 import { CURRENT_SEASON } from '../../lib/site';
 
-const players = (await getPlayers()).sort((a, b) => a.data.number - b.data.number);
-const coaches = await getCoaches();
-
-const GROUPS = [
-  { pos: 'GK', title: 'Goalkeepers', label: 'Goalkeeper' },
-  { pos: 'DEF', title: 'Defenders', label: 'Defender' },
-  { pos: 'MID', title: 'Midfielders', label: 'Midfielder' },
-  { pos: 'FWD', title: 'Forwards', label: 'Forward' },
-] as const;
+const players = await squadPlayers();
+const staff = await squadStaff();
 ---
-<Layout title="Squad | Lobi Stars Football Club" description={`Meet the Lobi Stars FC First Team squad for ${CURRENT_SEASON}: goalkeepers, defenders, midfielders, forwards and coaching staff.`}>
+<Layout title="First Team Squad | Lobi Stars FC" description={`Meet the Lobi Stars FC First Team squad for ${CURRENT_SEASON}: goalkeepers, defenders, midfielders, forwards and coaching staff.`}>
   <div class="page-hero wrap">
-    <div class="stag">{CURRENT_SEASON} First Team</div>
-    <h1 class="stitle">The <span class="r">Squad</span></h1>
+    <div class="stag">Lobi Stars FC · {CURRENT_SEASON}</div>
+    <h1 class="stitle">First Team <span class="r">Squad</span></h1>
     <div class="divr"></div>
   </div>
 
-  <div class="page-content wrap">
-    {players.length === 0 && (
-      <div class="empty-state">The {CURRENT_SEASON} squad will be announced soon.</div>
-    )}
+  <div class="page-content wrap sq">
+    {players.length === 0 && staff.length === 0 && <div class="empty-state">The {CURRENT_SEASON} squad will be announced soon.</div>}
 
     {GROUPS.map(g => {
-      const list = players.filter(p => p.data.position === g.pos);
+      const list = players.filter(p => p.group === g.key);
       return list.length > 0 && (
-        <section class="sq-group" aria-labelledby={`g-${g.pos}`}>
-          <h2 class="sq-title" id={`g-${g.pos}`}>{g.title}</h2>
+        <section class="sq-group" aria-labelledby={`g-${g.key}`}>
+          <h2 class="sq-title" id={`g-${g.key}`}>{g.title}</h2>
           <ul class="sq-grid">
-            {list.map(p => (
-              <li><PersonCard name={p.data.name} subtitle={g.label} photo={p.data.photo} number={p.data.number}
-                href={`/squad/${p.id}`} /></li>
-            ))}
+            {list.map(p => <li><SquadCard href={p.href} firstName={p.firstName} surname={p.surname} name={p.name} subtitle={p.position || g.label} photo={p.photoSmall} number={p.number} /></li>)}
           </ul>
         </section>
       );
     })}
 
-    {coaches.length > 0 && (
+    {staff.length > 0 && (
       <section class="sq-group" aria-labelledby="g-staff">
         <h2 class="sq-title" id="g-staff">Coaching Staff</h2>
         <ul class="sq-grid">
-          {coaches.map(c => (
-            <li><PersonCard name={c.data.name} subtitle={c.data.role} photo={c.data.photo} /></li>
-          ))}
+          {staff.map(s => <li><SquadCard href={s.href} firstName={s.firstName} surname={s.surname} name={s.name} subtitle={s.role} photo={s.photoSmall} /></li>)}
         </ul>
       </section>
     )}
@@ -56,8 +44,10 @@ const GROUPS = [
 </Layout>
 
 <style>
-  .sq-group { margin-bottom: 44px; }
-  .sq-title { margin: 0 0 18px; padding-bottom: 10px; border-bottom: 2px solid var(--d4); font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
-  .sq-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 18px; }
-  @media (max-width: 480px) { .sq-grid { grid-template-columns: 1fr 1fr; gap: 12px; } }
+  .sq-group { margin-bottom: 48px; }
+  .sq-title { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; font: 400 clamp(30px, 4vw, 40px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .sq-title::after { content: ''; flex: 1; height: 3px; background: linear-gradient(90deg, var(--red), transparent); border-radius: 3px; }
+  .sq-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+  @media (max-width: 1024px) { .sq-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .sq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
 </style>

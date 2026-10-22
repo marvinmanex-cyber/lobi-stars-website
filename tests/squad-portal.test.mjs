@@ -29,7 +29,7 @@ test('the portal page: private, never indexed, strict headers; other /staff/ add
   assert.match(html, /SQUAD &amp; STAFF DATA PORTAL/);
   assert.equal(r.headers.get('x-frame-options'), 'DENY');
   assert.match(r.headers.get('content-security-policy') || '', /frame-ancestors 'none'/);
-  assert.match(r.headers.get('permissions-policy') || '', /microphone=\(self\)/);
+  assert.match(r.headers.get('permissions-policy') || '', /camera=\(self\), microphone=\(\)/, 'camera for photos; no microphone (name recordings removed)');
   assert.equal(r.headers.get('referrer-policy'), 'no-referrer');
   assert.equal((await fetch(`${BASE}/staff/squad-data`, { redirect: 'manual' })).status, 301);
   assert.equal((await fetch(`${BASE}/staff/anything-else/`)).status, 404);

@@ -8,6 +8,52 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Squad names, new player and coach profile pages
+
+**What changed**
+- **Portal form:** "Full name" is now **Surname**, **First name** and
+  **Middle name** ("Enter your names exactly as they appear on your passport
+  or official ID"). **Display name** and **Name pronunciation** (including the
+  recorder) are removed; old answers and recordings are kept, never deleted,
+  but no longer used. New questions: place of birth, second nationality,
+  national team, position group (Goalkeeper / Defender / Midfielder / Forward)
+  plus specific position, international career (level, caps, goals,
+  tournaments), country of each previous club, Instagram / X / TikTok.
+  Countries come from a list (ISO codes). "An interesting fact about them" is
+  now "...about the player" / "...about the coach" and shows on the website.
+- **Name check (Super Admins):** profiles with an old single name wait at the
+  top of Matchday › Squad: Profile Submissions with a proposed split and a
+  confidence ("High" / "Needs review"); nothing is saved until a Super Admin
+  confirms. CSV download of the list. They cannot be verified before that.
+- **Edit (Super Admins):** names, Name on website, shirt number (warning if
+  used twice), debut date, bio and headline, shirt shop link, hide from the
+  website, and three photos (profile, wide header, action).
+- **Draft bio with Claude:** a preview from the public facts only, never
+  saved until a Super Admin uses it and presses Save. Budget guard as for
+  every AI feature (AI Settings › "Squad bios").
+- **Names everywhere** come from one set of helpers: website name ("First
+  Surname" or the Name on website), official name ("SURNAME, First Middle")
+  and short name (surname).
+- **Website:** new **/squad** "First Team Squad" page (Goalkeepers,
+  Defenders, Midfielders, Forwards, Coaching Staff; big shirt numbers on club
+  red; 4/3/2 cards a row) and new **player** (/squad/firstname-surname/) and
+  **coach** (/squad/staff/firstname-surname/) pages: wide header, quick facts
+  with flags, "Buy [Surname]'s shirt", bio, interesting fact, details panel,
+  tabs (this season's stats from Live Match Control, Before Lobi Stars,
+  International career / Career, Honours), social links, other players,
+  sharing. Own share image (photo, name and number), title, description and
+  schema.org data; in the sitemap.
+- **Public from age 18:** the full date of birth and middle name; under-18s
+  show the age only. Phone, email, emergency and guardian contacts are never
+  published. Privacy Policy section updated (draft for legal review).
+- **Live Match Control › Player stats:** new **Minutes** column.
+- **Media Partner Data Package: schemaVersion 1.1** (name parts, countries,
+  place of birth, national team, international career, debut, bio, hero
+  photo, social links; pronunciation removed).
+
+**Staff need to do:** HANDOVER-TODO.md A35 (name check, then debut, bio,
+shirt link and photos for each player).
+
 ## 2026-10-22: Squad & Staff Data Portal: choose your own password; forgotten password emailed to Super Admins
 
 **What changed**

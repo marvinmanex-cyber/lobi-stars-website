@@ -242,9 +242,10 @@ can't be deleted, only hidden.
 ### Entering player stats (for the Stats page)
 After each match (home **or** away), open **Admin → Match Centre**, choose the
 match and scroll to **Player stats**. Press **Fill from matchday squad** to tick
-the starting XI, then tick anyone who came on, and enter goals, assists and
-yellow/red cards. Press **Save Match Centre**. The **/stats** page updates
-straight away:
+the starting XI, then tick anyone who came on, and enter **minutes played**,
+goals, assists and yellow/red cards. Press **Save Match Centre**. The
+**/stats** page and the season tab on each player's profile page update
+straight away (minutes appear only on the profile pages):
 - Top Scorers, Assists, Appearances, Yellow and Red Cards come from these entries.
 - **Clean Sheets** are worked out automatically for goalkeepers who played when Lobi Stars conceded nothing.
 - **Man of the Match** wins come from the fan vote.
@@ -308,6 +309,11 @@ The old "League Table" form in the Content CMS has been removed.
 > don't pick them for a real match. The squad page shows "The squad will be
 > announced soon" until you add real players.
 
+
+> **Since 22 October 2026 the Squad & Staff Data Portal is the normal way to add
+> players and staff** (section 38): their verified profiles build the Squad
+> pages, profile pages, share images and stats automatically. Use the Content
+> CMS only for a quick placeholder.
 
 1. Open the **Content CMS** and click **Squad / Players**, then **New**.
 2. Fill in the name, position, shirt number, and upload a **photo**. Portrait
@@ -3338,14 +3344,23 @@ check appears. Portal sessions end after 60 minutes without activity (with a
    saved"). If the network goes, answers are kept on the phone and sent when
    it returns ("Offline · saved on this device"). Do not clear the browser
    until the pill says "All changes saved".
-4. Each question is marked **Public** (on the website), **Media** (for the
-   media partner only) or **Private** (club records only, never published).
-5. **Photo:** take or choose one, face and shoulders, plain background. The
+4. **Names:** **Surname**, **First name** and (if any) **Middle name**, exactly
+   as on the passport or official ID. Capitals are tidied automatically
+   ("ADEYEMI" becomes "Adeyemi").
+5. Each question is marked **Public** (on the website), **Public from age 18**
+   (date of birth and middle name: for under-18s only the age is shown),
+   **Media** (for the media partner only) or **Private** (club records only,
+   never published).
+6. Countries (nationality, second nationality, national team, place of birth,
+   previous clubs) are chosen from a list. Positions: choose **Goalkeeper,
+   Defender, Midfielder or Forward**, then the specific position if known.
+   Height in centimetres (140 to 220). Social media: Instagram, X and TikTok
+   handles (a pasted link is turned into the handle).
+7. **Photo:** take or choose one, face and shoulders, plain background. The
    portal crops it, removes location data and names it after the person
    (e.g. `09-musa-adeyemi.webp`). Read any quality warnings.
-6. **Name pronunciation:** press record and say the name (up to 10 seconds).
-7. Under-18s: the guardian section appears by itself and must be completed.
-8. Press **Submit for review**. Anything missing is highlighted. After
+8. Under-18s: the guardian section appears by itself and must be completed.
+9. Press **Submit for review**. Anything missing is highlighted. After
    submitting, the profile can only be viewed until the club asks for changes.
 
 Only drafts can be deleted from the portal.
@@ -3357,7 +3372,7 @@ email when one is submitted.
 
 | Button | Result |
 | --- | --- |
-| Verify | The person appears on /squad within a few minutes (public details only: age instead of date of birth). |
+| Verify | The person appears on /squad within a few minutes (public details only; full date of birth and middle name only from 18). Not possible while their name still waits in the Name check. |
 | Request changes | Write a note; the portal shows it and the profile can be edited again. |
 | Left the club | Off the website and the partner feed straight away. Kept in "all seasons" downloads. Private details are erased after the retention period. |
 | Restore | Undoes "Left the club". |
@@ -3366,6 +3381,81 @@ email when one is submitted.
 
 **Full club records** (with private details, Excel or PDF): Super Admins
 only, after entering their sign-in code. Every download is logged.
+
+### Name check, editing and bios (Super Admins, on the same page)
+
+**Name check.** Profiles saved before 22 Oct 2026 had one "Full name" box.
+They now wait in a **Name check** box at the top of the page with a proposal:
+Surname, First name, Middle name and (if their old display name was different)
+Name on website. "High" confidence = two names or "SURNAME, First name";
+**"Needs review"** = three or more names, where the order is not certain (in
+Nigeria the surname is often written first). Check each against the passport
+or ID, correct the boxes, press **Confirm**. Nothing changes until you
+confirm. **Download this list (CSV)** gives the same list as a spreadsheet.
+The old answers are kept and shown under "Old answers" on the profile.
+
+**Edit** (open a profile › **Edit**). For any profile, in any status:
+- names, **Name on website** (only for someone publicly known by a different
+  name, e.g. a nickname; leave empty otherwise), shirt number, position, role,
+  date of birth, countries, place of birth, height, joined, licence, social
+  handles, interesting fact;
+- the club-only details: **Lobi Stars debut** (empty = "Yet to debut"),
+  **Bio headline** and **Bio** (paragraphs separated by an empty line; a line
+  starting with "## " is a small heading), **Shirt shop link** (shows "Buy
+  [Surname]'s shirt"), **Hide from the website** (takes them off the Squad
+  pages without deleting anything);
+- photos: **Profile photo** (cards, 4:5), **Wide header photo** (16:9, the top
+  of the profile page; at least 1600 px wide looks best) and **Action photo**.
+Press **Save changes**. A shirt number given to two players this season shows
+a warning (it is saved; fix one of them). Changes to a verified profile update
+the website in about 2 minutes. Previous clubs, international career and
+honours are changed in the portal (press **Request changes**).
+
+**Draft bio with Claude.** In Edit, press **Draft bio with Claude**, add any
+**Extra details** the record does not have (how they joined, a favourite
+moment; no phone numbers or private details) and press **Draft now**. Claude
+uses only the public facts in the profile, never invents achievements,
+statistics or quotes, and lists what extra details would improve a short bio.
+Read the preview (it says **check every fact**), press **Use this draft** to
+put it in the Bio boxes, correct anything, then press **Save changes**.
+Nothing is saved or published until you do. It counts towards the monthly AI
+budget (Settings › AI Settings, "Squad bios").
+
+### What admins fill in for each player
+
+| What | Where | Who |
+| --- | --- | --- |
+| Surname, first name, middle name, date of birth, nationality, place of birth, position, height, previous clubs, international career, interesting fact, photo | Portal form | Media team |
+| Shirt number | Portal form; correct in Edit | Media team / Super Admin |
+| Name check (old profiles only) | Name check box | Super Admin |
+| Lobi Stars debut date, bio (or Draft bio with Claude), shirt shop link, wide header photo | Edit | Super Admin |
+| Minutes, goals, assists, cards per match | Live Match Control › Player stats | Website & Data Officer |
+
+### The public Squad pages
+
+- **/squad** "First Team Squad" with the season: Goalkeepers, Defenders,
+  Midfielders, Forwards (by shirt number) and Coaching Staff (Head Coach
+  first). Each card: photo on club red, big shirt number, first name small
+  above the surname, position. 4 cards a row on computers, 3 on tablets, 2 on
+  phones.
+- **Player page** /squad/firstname-surname/ (a number is added if two people
+  share a name): wide header or photo, big shirt number, quick facts
+  (nationality with flag, position, age), "Buy [Surname]'s shirt" (if a link
+  is set), bio, interesting fact, details (official name "SURNAME, First
+  Middle", nationality, national team, place of birth, position, date of birth
+  "24 April, 2007 (age 19)" for 18+, height "1.78m (5ft 10in)", debut,
+  joined), tabs: **2026/27** (appearances, starts, goals, assists, clean
+  sheets for goalkeepers, minutes, cards, Man of the Match, worked out from
+  Live Match Control), **Before Lobi Stars** (previous clubs) and
+  **International career** (hidden if empty), social links, other players,
+  Share.
+- **Coach page** /squad/staff/firstname-surname/: the same, with the role
+  instead of position, no shirt number, Career and Honours tabs and "An
+  interesting fact about the coach".
+- Ages are worked out from the date of birth (Lagos time) every time the page
+  opens. Each page has its own title, description (from the bio), share image
+  (photo with name and number) and search-engine details, and is in the
+  sitemap.
 
 ### Downloads
 
@@ -3386,14 +3476,17 @@ contain private details.
 - **No photo on the Squad page**: Website Health ("Squad photos are all
   there") names the profile; add the photo again in the portal.
 
-Photos, recordings and profiles are in the nightly encrypted backup (photos
-and recordings are copied weekly on Sundays). The portal password and
-sessions are never backed up.
+Photos and profiles are in the nightly encrypted backup (photos are copied
+weekly on Sundays). The portal password and sessions are never backed up.
+Name recordings were removed on 22 Oct 2026; old recordings stay in storage
+but are not used anywhere.
 
 ## 39. Data Package format
 
 The Data Package is what the media partner's systems read. Its format is
-fixed: **schemaVersion "1.0"**. Do not rename files inside the ZIP.
+fixed: **schemaVersion "1.1"** (since 22 Oct 2026; 1.0 had the name
+pronunciation and recordings, which were removed). Do not rename files inside
+the ZIP.
 
 **The ZIP contains:**
 
@@ -3401,44 +3494,48 @@ fixed: **schemaVersion "1.0"**. Do not rename files inside the ZIP.
 | --- | --- |
 | `data.json` | Everything below, in one file. |
 | `players.csv`, `staff.csv` | The same in spreadsheet form (UTF-8). |
-| `photos/<name>.jpg` and `.webp` | 1200 px photos, e.g. `photos/09-musa-adeyemi.jpg`, `photos/09-musa-adeyemi-action.jpg`, `photos/staff-headcoach-name.jpg`. |
-| `audio/<name>-pronunciation.mp3` | Name recordings. |
+| `career.csv`, `international.csv`, `honours.csv` | Previous clubs, international career, honours. |
+| `photos/<name>.jpg` and `.webp` | 1200 px photos, e.g. `photos/09-musa-adeyemi.jpg`, `photos/09-musa-adeyemi-action.jpg`, `photos/09-musa-adeyemi-hero.jpg`, `photos/staff-headcoach-name.jpg`. |
 | `team/lobi-stars-crest.png` | The club crest. |
 | `schema.json` | The formal description (JSON Schema) of data.json. |
 | `README.txt` | What is inside, when and by whom it was made. |
 
-**data.json, top level:** `schemaVersion` ("1.0"), `exportedAt` (Lagos time,
+**data.json, top level:** `schemaVersion` ("1.1"), `exportedAt` (Lagos time,
 e.g. 2026-10-22T11:42:00+01:00), `source` ("lobistarsfc.com"), `season`,
 `filters`, `team`, `players`, `staff`.
 
 - **team:** `id`, `name`, `shortName`, `nickname`, `crest`, `kitColours`
   (`home`, `away`), `stadium`, `city`, `state`, `competition`.
-- **players** (by position, then shirt number): `id`, `status` (verified,
-  submitted, left_the_club), `updatedAt`, `displayName`, `nickname`,
-  `pronunciation`, `pronunciationAudio`, `shirtNumber`, `primaryPosition`,
-  `secondaryPositions`, `preferredFoot`, `heightCm`, `age`, `nationality`,
-  `stateOfOrigin`, `hometown`, `socialHandle`, `joinedClub`,
-  `internationalExperience`, `previousClubs` (`club`, `startYear`, `endYear`),
-  `honours` (`title`, `seasonOrYear`, `clubOrTeam`), `notes`
-  (`careerHighlight`, `roleModel`, `interestingFact`), `photos` (`profile`,
-  `action`).
-- **staff** (by role): `id`, `status`, `updatedAt`, `displayName`, `nickname`,
-  `pronunciation`, `pronunciationAudio`, `role`, `age`, `nationality`,
-  `stateOfOrigin`, `hometown`, `socialHandle`, `joinedClub`,
-  `qualifications`, `playingCareer`, `previousRoles` (`club`, `position`,
-  `period`), `honours`, `notes` (`philosophy`, `careerHighlight`,
-  `interestingFact`), `photos` (`profile`).
+- **Everyone (players and staff):** `id`, `status` (verified, submitted,
+  left_the_club), `updatedAt`, `displayName` (the name to show), `surname`,
+  `firstName`, `officialName` ("SURNAME, First Middle"; no middle name for
+  under-18s), `shortName` (surname), `nickname`, `dateOfBirth` (empty for
+  under-18s), `age`, `nationality`, `secondNationality` (each `code`, ISO
+  e.g. "NG", and `name`), `placeOfBirth` (`town`, `country`),
+  `stateOfOrigin`, `hometown`, `social` (`instagram`, `x`, `tiktok`),
+  `joinedClub`, `honours` (`title`, `seasonOrYear`, `clubOrTeam`), `bio`
+  (`headline`, `text`).
+- **players** (by position group, position, then shirt number), also:
+  `shirtNumber`, `positionGroup` (Goalkeeper, Defender, Midfielder, Forward),
+  `primaryPosition`, `secondaryPositions`, `preferredFoot`, `heightCm`,
+  `debut`, `nationalTeam`, `previousClubs` (`club`, `country`, `startYear`,
+  `endYear`), `internationalCareer` (`level`, `caps`, `goals`,
+  `tournaments`), `notes` (`careerHighlight`, `roleModel`,
+  `interestingFact`), `photos` (`profile`, `action`, `hero`).
+- **staff** (by role), also: `role`, `licence`, `playingCareer`,
+  `previousRoles` (`club`, `position`, `period`), `notes` (`philosophy`,
+  `careerHighlight`, `interestingFact`), `photos` (`profile`, `hero`).
 
-Never included: legal name, phone, email, emergency contact, guardian
-details, exact date of birth.
+Never included: phone, email, emergency contact, guardian details, and for
+under-18s the date of birth and middle name.
 
 **Partner feed (for the partner's developers):** `GET
 https://lobistarsfc.com/api/partner/squad` with the header
 `Authorization: Bearer <key>` (or `X-API-Key: <key>`). It returns the same
-data.json (verified profiles of the current season). Photo and audio entries
-are links that work for 24 hours. Add `?since=2026-10-22T00:00:00Z` to get
-only profiles changed after that time. The key is the LOBI_PARTNER_API_KEY
-secret in Cloudflare; a new key stops the old one working.
+data.json (verified profiles of the current season). Photo entries are links
+that work for 24 hours. Add `?since=2026-10-22T00:00:00Z` to get only
+profiles changed after that time. The key is the LOBI_PARTNER_API_KEY secret
+in Cloudflare; a new key stops the old one working.
 
 ## Other things you can update in the CMS
 

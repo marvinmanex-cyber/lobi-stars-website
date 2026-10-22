@@ -20,7 +20,7 @@ test('player stats are validated against the squad and empty rows dropped', () =
   const rows = parsePlayerStats([
     { player: 'a', started: true, goals: 2, yellow: 5 }, { player: 'b' }, { player: 'nobody', goals: 3 },
   ], roster);
-  assert.deepEqual(rows, [{ player: 'a', played: 1, started: 1, goals: 2, assists: 0, yellow: 2, red: 0 }]);
+  assert.deepEqual(rows, [{ player: 'a', played: 1, started: 1, goals: 2, assists: 0, yellow: 2, red: 0, minutes: 0 }]);
 });
 
 test('Matchday Live buttons only around match day', () => {

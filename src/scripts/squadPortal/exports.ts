@@ -2,18 +2,20 @@
 // server only sends the profiles and their photos). PDF and Word to read and
 // print; Excel and CSV; JSON; and the Media Partner Data Package (ZIP) with
 // data.json (checked against schema.json before download), CSV files, photos,
-// recordings, the club badge, schema.json and README.txt. Portal and normal
+// the club badge, schema.json and README.txt. Portal and normal
 // admin downloads never contain private details (the server removes them).
 // "Full club records" (Super Admins) is the only download with private details.
 import { zipSync, strToU8 } from 'fflate';
-import { FIELDS, labelOf, ageOn } from '../../lib/squadFields.js';
+import { FIELDS, labelOf, ageOn, profileName, nameOf } from '../../lib/squadFields.js';
+import { officialName } from '../../lib/names.js';
+import { countryName } from '../../lib/countries.js';
 import { buildPackage, validatePackage, SCHEMA, SCHEMA_VERSION, lagosIso, sortPlayers, sortStaff } from '../../lib/squadPackage.js';
 import { buildXlsx, buildCsv } from '../../../functions/api/_lib/xlsx.js';
 import { PdfDoc, wrap, jpegInfo } from '../../../functions/api/_lib/pdfLite.js';
 
 type Format = 'pdf' | 'docx' | 'xlsx' | 'csv' | 'json' | 'zip' | 'records-xlsx' | 'records-pdf';
 export type ExportOpts = { place: 'portal' | 'admin'; format: Format; which: string; season: string; status: (t: string, ok?: boolean) => void; button?: HTMLButtonElement; extra?: Record<string, string> };
-type Prof = { id: string; type: 'player' | 'staff'; status: string; statusLabel: string; season: string; updatedAt: string; updatedBy: string; fileBase: string; data: any; hasAudio: boolean; hasAction: boolean; hasPhoto: boolean; files: any };
+type Prof = { id: string; type: 'player' | 'staff'; status: string; statusLabel: string; season: string; updatedAt: string; updatedBy: string; fileBase: string; data: any; hasAction: boolean; hasHero: boolean; hasPhoto: boolean; files: any };
 
 const adminHeaders = () => ({ 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' });
 const today = () => new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
@@ -57,31 +59,41 @@ function save(name: string, data: Uint8Array | string, type: string) {
 
 // ── Table layouts (shared by Excel and CSV) ──
 const sv = (v: unknown) => (v === null || v === undefined ? '' : Array.isArray(v) ? v.join(', ') : typeof v === 'boolean' ? (v ? 'Yes' : 'No') : v);
-const PRIVATE_COLS = ['fullName', 'dob', 'phone', 'email', 'emergencyName', 'emergencyPhone', 'guardianName', 'guardianPhone'];
+const cn = (c: unknown) => countryName(c) || '';
+const nm = (p: Prof) => profileName(p.data) || 'Unnamed';
+const PRIVATE_COLS = ['phone', 'email', 'emergencyName', 'emergencyPhone', 'guardianName', 'guardianPhone'];
+const PRIVATE_LABELS = ['Phone', 'Email', 'Emergency contact', 'Emergency phone', 'Guardian name', 'Guardian phone'];
+/** Name and personal columns shared by players and staff. The date of birth is only there for people aged 18+ (or in the full club records). */
+const personCols = ['Name', 'Surname', 'First name', 'Official name', 'Nickname', 'Age', 'Date of birth', 'Nationality', 'Second nationality', 'Place of birth', 'State of origin', 'Hometown and LGA', 'Instagram', 'X', 'TikTok'];
+const person = (p: Prof) => { const d = p.data; return [nm(p), d.surname, d.firstName, officialName(nameOf(d)), d.nickname, d.dob ? ageOn(d.dob) : d.age, d.dob, cn(d.nationality), cn(d.nationality2), [d.birthTown, cn(d.birthCountry)].filter(Boolean).join(', '), d.stateOfOrigin, d.hometown, d.socialInstagram, d.socialX, d.socialTiktok]; };
 function playerRows(ps: Prof[], full: boolean) {
-  const cols = ['ID', 'Season', 'Status', 'Display name', 'Nickname', 'Shirt number', 'Primary position', 'Secondary positions', 'Preferred foot', 'Height (cm)', 'Age', 'Nationality', 'State of origin', 'Hometown and LGA', 'Social handle', 'Joined', 'International experience', 'Pronunciation', 'Career highlight', 'Role model', 'Interesting fact', 'Last updated'];
-  const priv = full ? ['Full legal name', 'Date of birth', 'Phone', 'Email', 'Emergency contact', 'Emergency phone', 'Guardian name', 'Guardian phone'] : [];
-  const rows = ps.map(p => { const d = p.data; return [p.id, p.season, p.statusLabel, d.displayName, d.nickname, d.shirtNumber, d.primaryPosition, d.secondaryPositions, d.preferredFoot, d.heightCm, d.dob ? ageOn(d.dob) : d.age, d.nationality === 'Other' ? d.nationalityOther : d.nationality, d.stateOfOrigin, d.hometown, d.social, d.joined, d.international, d.pronunciation, d.careerHighlight, d.roleModel, d.interestingFact, lagosDate(p.updatedAt), ...(full ? PRIVATE_COLS.map(k => d[k]) : [])].map(sv); });
-  return { columns: [...cols, ...priv], rows };
+  const cols = ['ID', 'Season', 'Status', ...personCols, 'Shirt number', 'Position', 'Specific position', 'Other positions', 'Preferred foot', 'Height (cm)', 'National team', 'Joined', 'Lobi Stars debut', 'Career highlight', 'Role model', 'Interesting fact', 'Last updated'];
+  const rows = ps.map(p => { const d = p.data; return [p.id, p.season, p.statusLabel, ...person(p), d.shirtNumber, d.positionGroup, d.primaryPosition, d.secondaryPositions, d.preferredFoot, d.heightCm, cn(d.nationalTeam), d.joined, d.debutDate, d.careerHighlight, d.roleModel, d.interestingFact, lagosDate(p.updatedAt), ...(full ? PRIVATE_COLS.map(k => d[k]) : [])].map(sv); });
+  return { columns: [...cols, ...(full ? PRIVATE_LABELS : [])], rows };
 }
 function staffRows(ps: Prof[], full: boolean) {
-  const cols = ['ID', 'Season', 'Status', 'Display name', 'Nickname', 'Role', 'Age', 'Nationality', 'State of origin', 'Hometown and LGA', 'Social handle', 'Joined', 'Qualifications', 'Playing career', 'Pronunciation', 'Philosophy', 'Career highlight', 'Interesting fact', 'Last updated'];
-  const priv = full ? ['Full legal name', 'Date of birth', 'Phone', 'Email', 'Emergency contact', 'Emergency phone'] : [];
-  const rows = ps.map(p => { const d = p.data; return [p.id, p.season, p.statusLabel, d.displayName, d.nickname, d.role === 'Other' ? d.roleOther : d.role, d.dob ? ageOn(d.dob) : d.age, d.nationality === 'Other' ? d.nationalityOther : d.nationality, d.stateOfOrigin, d.hometown, d.social, d.joinedStaff, d.qualifications, d.playingCareer, d.pronunciation, d.philosophy, d.careerHighlight, d.interestingFact, lagosDate(p.updatedAt), ...(full ? PRIVATE_COLS.slice(0, 6).map(k => d[k]) : [])].map(sv); });
-  return { columns: [...cols, ...priv], rows };
+  const cols = ['ID', 'Season', 'Status', ...personCols, 'Role', 'Joined', 'Coaching licence and qualifications', 'Playing career', 'Philosophy', 'Career highlight', 'Interesting fact', 'Last updated'];
+  const rows = ps.map(p => { const d = p.data; return [p.id, p.season, p.statusLabel, ...person(p), d.role === 'Other' ? d.roleOther : d.role, d.joinedStaff, d.qualifications, d.playingCareer, d.philosophy, d.careerHighlight, d.interestingFact, lagosDate(p.updatedAt), ...(full ? PRIVATE_COLS.slice(0, 4).map(k => d[k]) : [])].map(sv); });
+  return { columns: [...cols, ...(full ? PRIVATE_LABELS.slice(0, 4) : [])], rows };
 }
 function careerRows(ps: Prof[]) {
-  return { columns: ['Profile ID', 'Name', 'Type', 'Club', 'Start year', 'End year', 'Position held', 'Period'], rows: ps.flatMap(p => p.type === 'player'
-    ? (p.data.previousClubs || []).map((r: any) => [p.id, p.data.displayName, 'Player', r.club, r.startYear ?? '', r.endYear ?? '', '', ''])
-    : (p.data.previousRoles || []).map((r: any) => [p.id, p.data.displayName, 'Staff', r.club, '', '', r.position, r.period])) };
+  return { columns: ['Profile ID', 'Name', 'Type', 'Club', 'Country', 'From (year)', 'To (year)', 'Position held', 'Period'], rows: ps.flatMap(p => p.type === 'player'
+    ? (p.data.previousClubs || []).map((r: any) => [p.id, nm(p), 'Player', r.club, cn(r.country), r.startYear ?? '', r.endYear ?? '', '', ''])
+    : (p.data.previousRoles || []).map((r: any) => [p.id, nm(p), 'Staff', r.club, '', '', '', r.position, r.period])) };
+}
+function intlRows(ps: Prof[]) {
+  return { columns: ['Profile ID', 'Name', 'Level', 'Caps', 'Goals', 'Notable tournaments'], rows: ps.flatMap(p => (p.data.internationalCareer || []).map((r: any) => [p.id, nm(p), r.level, r.caps ?? '', r.goals ?? '', r.tournaments])) };
 }
 function honourRows(ps: Prof[]) {
-  return { columns: ['Profile ID', 'Name', 'Type', 'Honour or award', 'Season or year', 'Club or team'], rows: ps.flatMap(p => (p.data.honours || []).map((r: any) => [p.id, p.data.displayName, p.type === 'player' ? 'Player' : 'Staff', r.title, r.seasonOrYear, r.clubOrTeam])) };
+  return { columns: ['Profile ID', 'Name', 'Type', 'Honour or award', 'Season or year', 'Club or team'], rows: ps.flatMap(p => (p.data.honours || []).map((r: any) => [p.id, nm(p), p.type === 'player' ? 'Player' : 'Staff', r.title, r.seasonOrYear, r.clubOrTeam])) };
 }
+/** The questions shown in PDF and Word (not rows, ticks or retired questions; private ones only in the full records). */
+const factFields = (type: string, full: boolean) => FIELDS.filter((f: any) => !f.retired && (f.for === 'all' || f.for === type) && f.type !== 'rows' && f.type !== 'checkbox' && (full || f.use !== 'private'));
+const factValue = (f: any, v: any) => (f.type === 'country' ? cn(v) : Array.isArray(v) ? v.join(', ') : String(v));
 const ordered = (ps: Prof[]) => {
   const pl = ps.filter(p => p.type === 'player'), st = ps.filter(p => p.type === 'staff');
   const byId = new Map(ps.map(p => [p.id, p]));
-  const fake = (p: Prof) => ({ id: p.id, primaryPosition: p.data.primaryPosition || '', shirtNumber: p.data.shirtNumber ?? null, role: p.data.role || '', displayName: p.data.displayName || '' });
+  const fake = (p: Prof) => ({ id: p.id, positionGroup: p.data.positionGroup || '', primaryPosition: p.data.primaryPosition || '', shirtNumber: p.data.shirtNumber ?? null, role: p.data.role || '', displayName: nm(p) });
   return [...sortPlayers(pl.map(fake)).map((x: any) => byId.get(x.id)!), ...sortStaff(st.map(fake)).map((x: any) => byId.get(x.id)!)];
 };
 
@@ -110,17 +122,15 @@ async function buildPdf(d: Awaited<ReturnType<typeof getData>>, full: boolean) {
     if (img) doc.drawImage(M, y, 136, 170, img.id);
     else doc.rect(M, y, 136, 170, { fill: '#F3F4F6' });
     const x = M + 156, dd = p.data;
-    doc.text(plain(dd.displayName || 'Unnamed').toUpperCase(), x, y + 26, { size: 22, bold: true });
-    const sub = p.type === 'player' ? `#${dd.shirtNumber ?? '-'} · ${plain(dd.primaryPosition || '')}` : plain(dd.role === 'Other' ? dd.roleOther : dd.role || '');
+    doc.text(plain(nm(p)).toUpperCase(), x, y + 26, { size: 22, bold: true });
+    const sub = p.type === 'player' ? `#${dd.shirtNumber ?? '-'} · ${plain(dd.primaryPosition || dd.positionGroup || '')}` : plain(dd.role === 'Other' ? dd.roleOther : dd.role || '');
     doc.text(sub, x, y + 50, { size: 14, color: '#B3121A', bold: true });
     doc.text(`${p.statusLabel} · last updated ${lagosDate(p.updatedAt)}`, x, y + 70, { size: 9, color: '#4A505C' });
     y += 190;
-    const fields = FIELDS.filter((f: any) => (f.for === 'all' || f.for === p.type) && f.type !== 'rows' && f.type !== 'checkbox' && (full || f.use !== 'private'));
-    for (const f of fields) {
+    for (const f of factFields(p.type, full)) {
       let v = dd[f.key];
-      if (f.key === 'dob' && !full) continue;
       if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) continue;
-      v = Array.isArray(v) ? v.join(', ') : String(v);
+      v = factValue(f, v);
       const lines = wrap(plain(v), W - M * 2 - 170, 10);
       if (y + lines.length * 13 > 790) { foot(); doc.addPage(); y = M; }
       doc.text(plain(labelOf(f, p.type)), M, y, { size: 9, color: '#4A505C' });
@@ -144,7 +154,10 @@ async function buildPdf(d: Awaited<ReturnType<typeof getData>>, full: boolean) {
         y += 15;
       }
     };
-    if (p.type === 'player') table('Previous clubs', ['Club', 'Start year', 'End year'], (dd.previousClubs || []).map((r: any) => [r.club, r.startYear ?? '', r.endYear ?? ''].map(String)));
+    if (p.type === 'player') {
+      table('Previous clubs', ['Club', 'Country', 'From', 'To'], (dd.previousClubs || []).map((r: any) => [r.club, cn(r.country), r.startYear ?? '', r.endYear ?? ''].map(String)));
+      table('International career', ['Level', 'Caps', 'Goals', 'Notable tournaments'], (dd.internationalCareer || []).map((r: any) => [r.level, r.caps ?? '', r.goals ?? '', r.tournaments].map(String)));
+    }
     else table('Previous clubs and positions', ['Club', 'Position held', 'Period'], (dd.previousRoles || []).map((r: any) => [r.club, r.position, r.period].map(String)));
     table(p.type === 'player' ? 'Honours and individual awards' : 'Honours and achievements', ['Honour or award', 'Season or year', 'Club or team'], (dd.honours || []).map((r: any) => [r.title, r.seasonOrYear, r.clubOrTeam].map(String)));
     foot();
@@ -182,15 +195,17 @@ async function buildDocx(d: Awaited<ReturnType<typeof getData>>, full: boolean) 
     body.push(pageBreak);
     const photo = p.files?.profile?.jpg ? await bytesOf(p.files.profile.jpg) : null;
     if (photo) body.push(para(image(photo.bytes, 180)));
-    body.push(para(run(String(dd.displayName || 'Unnamed').toUpperCase(), { b: true, sz: 44 })));
-    body.push(para(run(p.type === 'player' ? `#${dd.shirtNumber ?? '–'} · ${dd.primaryPosition || ''}` : String(dd.role === 'Other' ? dd.roleOther : dd.role || ''), { b: true, sz: 28, color: 'B3121A' })));
+    body.push(para(run(nm(p).toUpperCase(), { b: true, sz: 44 })));
+    body.push(para(run(p.type === 'player' ? `#${dd.shirtNumber ?? '–'} · ${dd.primaryPosition || dd.positionGroup || ''}` : String(dd.role === 'Other' ? dd.roleOther : dd.role || ''), { b: true, sz: 28, color: 'B3121A' })));
     body.push(para(run(`${p.statusLabel} · last updated ${lagosDate(p.updatedAt)}`, { sz: 18, color: '4A505C' })));
-    const fields = FIELDS.filter((f: any) => (f.for === 'all' || f.for === p.type) && f.type !== 'rows' && f.type !== 'checkbox' && (full || f.use !== 'private'));
     const facts: string[][] = [];
-    for (const f of fields) { const v = dd[f.key]; if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) continue; facts.push([labelOf(f, p.type), Array.isArray(v) ? v.join(', ') : String(v)]); }
+    for (const f of factFields(p.type, full)) { const v = dd[f.key]; if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) continue; facts.push([labelOf(f, p.type), factValue(f, v)]); }
     const age = dd.dob ? ageOn(dd.dob) : dd.age; if (age != null && !full) facts.push(['Age', String(age)]);
     body.push(tbl(['Detail', 'Answer'], facts));
-    if (p.type === 'player') { body.push(para(run('Previous clubs', { b: true, sz: 24, color: 'B3121A' }))); body.push(tbl(['Club', 'Start year', 'End year'], (dd.previousClubs || []).map((r: any) => [r.club, r.startYear ?? '', r.endYear ?? ''].map(String)))); }
+    if (p.type === 'player') {
+      body.push(para(run('Previous clubs', { b: true, sz: 24, color: 'B3121A' }))); body.push(tbl(['Club', 'Country', 'From', 'To'], (dd.previousClubs || []).map((r: any) => [r.club, cn(r.country), r.startYear ?? '', r.endYear ?? ''].map(String))));
+      if ((dd.internationalCareer || []).length) { body.push(para(run('International career', { b: true, sz: 24, color: 'B3121A' }))); body.push(tbl(['Level', 'Caps', 'Goals', 'Notable tournaments'], dd.internationalCareer.map((r: any) => [r.level, r.caps ?? '', r.goals ?? '', r.tournaments].map(String)))); }
+    }
     else { body.push(para(run('Previous clubs and positions', { b: true, sz: 24, color: 'B3121A' }))); body.push(tbl(['Club', 'Position held', 'Period'], (dd.previousRoles || []).map((r: any) => [r.club, r.position, r.period].map(String)))); }
     body.push(para(run(p.type === 'player' ? 'Honours and individual awards' : 'Honours and achievements', { b: true, sz: 24, color: 'B3121A' })));
     body.push(tbl(['Honour or award', 'Season or year', 'Club or team'], (dd.honours || []).map((r: any) => [r.title, r.seasonOrYear, r.clubOrTeam].map(String))));
@@ -209,22 +224,19 @@ async function buildDocx(d: Awaited<ReturnType<typeof getData>>, full: boolean) 
 
 // ── The Data Package and JSON ──
 function packageFor(d: Awaited<ReturnType<typeof getData>>, relative: boolean) {
-  const files = relative
-    ? { photo: (p: any, kind: string) => (kind === 'profile' ? (p.hasPhoto ? `photos/${p.fileBase}.jpg` : null) : `photos/${p.fileBase}-action.jpg`), audio: (p: any) => `audio/${p.fileBase}-pronunciation.mp3` }
-    : { photo: (p: any, kind: string) => (kind === 'profile' ? (p.hasPhoto ? `photos/${p.fileBase}.jpg` : null) : `photos/${p.fileBase}-action.jpg`), audio: (p: any) => `audio/${p.fileBase}-pronunciation.mp3` };
+  const files = { photo: (p: any, kind: string) => (kind === 'profile' ? (p.hasPhoto ? `photos/${p.fileBase}.jpg` : null) : `photos/${p.fileBase}-${kind}.jpg`) };
   return buildPackage({ profiles: d.profiles, team: d.team, season: d.seasonKey === 'all' ? 'all' : d.season, filters: d.filters, files });
 }
-function readme(d: Awaited<ReturnType<typeof getData>>, counts: { photos: number; audio: number }) {
+function readme(d: Awaited<ReturnType<typeof getData>>, counts: { photos: number }) {
   return [
     'LOBI STARS FC – MEDIA PARTNER DATA PACKAGE', '', `Exported: ${lagosIso()} (Africa/Lagos)`, `Season: ${d.season}`, `Filters: ${d.filters.status} profiles, ${d.filters.type}`, `schemaVersion: ${SCHEMA_VERSION}`, '',
-    'FILES', 'data.json      All profiles: players and staff with previous clubs, honours, notes and photo/audio paths (see schema.json).',
+    'FILES', 'data.json      All profiles: players and staff with names, countries, previous clubs, international career, honours, notes, bios and photo paths (see schema.json).',
     'schema.json    JSON Schema describing data.json. data.json was checked against it before download.',
-    'players.csv    One row per player (UTF-8).', 'staff.csv      One row per coach / staff member (UTF-8).', 'career.csv     Previous clubs (players) and previous clubs and positions (staff).', 'honours.csv    Honours and awards.',
-    `photos/        Profile and action photos: 1200 px JPG and WebP, named like 09-musa-adeyemi.jpg (${counts.photos} files).`,
-    `audio/         Name pronunciation recordings (MP3), e.g. 09-musa-adeyemi-pronunciation.mp3 (${counts.audio} files).`,
+    'players.csv    One row per player (UTF-8).', 'staff.csv      One row per coach / staff member (UTF-8).', 'career.csv     Previous clubs (players) and previous clubs and positions (staff).', 'international.csv  International career (players).', 'honours.csv    Honours and awards.',
+    `photos/        Profile, action and wide header (hero) photos: 1200 px JPG and WebP, named like 09-musa-adeyemi.jpg, 09-musa-adeyemi-action.jpg, 09-musa-adeyemi-hero.jpg (${counts.photos} files).`,
     'team/          The club badge (lobi-stars-crest.png).', '',
-    'Photo and audio paths in data.json are relative to this ZIP (e.g. "photos/09-musa-adeyemi.jpg").',
-    'Private details (legal names, dates of birth, phone numbers, email addresses, emergency and guardian contacts) are held by the club and are not included.', '',
+    'Photo paths in data.json are relative to this ZIP (e.g. "photos/09-musa-adeyemi.jpg").',
+    'Private details (phone numbers, email addresses, emergency and guardian contacts) are held by the club and are not included. For people under 18 the date of birth and middle name are not included (age only).', '',
   ].join('\r\n');
 }
 
@@ -249,34 +261,35 @@ export async function runExport(o: ExportOpts) {
         const files: Record<string, Uint8Array> = {
           'data.json': strToU8(JSON.stringify(pkg, null, 2)), 'schema.json': strToU8(JSON.stringify(SCHEMA, null, 2)),
           'players.csv': strToU8(buildCsv(playerRows(pl, false).columns, playerRows(pl, false).rows)), 'staff.csv': strToU8(buildCsv(staffRows(st, false).columns, staffRows(st, false).rows)),
-          'career.csv': strToU8(buildCsv(careerRows(d.profiles).columns, careerRows(d.profiles).rows)), 'honours.csv': strToU8(buildCsv(honourRows(d.profiles).columns, honourRows(d.profiles).rows)),
+          'career.csv': strToU8(buildCsv(careerRows(d.profiles).columns, careerRows(d.profiles).rows)), 'international.csv': strToU8(buildCsv(intlRows(d.profiles).columns, intlRows(d.profiles).rows)),
+          'honours.csv': strToU8(buildCsv(honourRows(d.profiles).columns, honourRows(d.profiles).rows)),
         };
-        let photos = 0, audio = 0, i = 0;
+        let photos = 0, i = 0;
         for (const p of d.profiles) {
-          o.status(`Adding photos and recordings… ${++i} of ${count}`);
-          for (const kind of ['profile', 'action']) {
+          o.status(`Adding photos… ${++i} of ${count}`);
+          for (const kind of ['profile', 'action', 'hero']) {
             const f = p.files?.[kind]; if (!f) continue;
-            const name = `${p.fileBase}${kind === 'action' ? '-action' : ''}`;
+            const name = `${p.fileBase}${kind === 'profile' ? '' : `-${kind}`}`;
             const jpg = await bytesOf(f.jpg); if (jpg) { files[`photos/${name}.jpg`] = jpg.bytes; photos++; }
             const webp = await bytesOf(f.webp); if (webp && webp.type.includes('webp')) { files[`photos/${name}.webp`] = webp.bytes; photos++; }
           }
-          if (p.files?.audio) { const a = await bytesOf(p.files.audio); if (a) { files[`audio/${p.fileBase}-pronunciation.mp3`] = a.bytes; audio++; } }
         }
         const crest = await bytesOf('/images/lobi-stars-crest.png'); if (crest) files['team/lobi-stars-crest.png'] = crest.bytes;
-        files['README.txt'] = strToU8(readme(d, { photos, audio }));
+        files['README.txt'] = strToU8(readme(d, { photos }));
         // Every relative path in data.json must exist in the ZIP.
-        const missing = [...pkg.players, ...pkg.staff].flatMap((x: any) => [x.photos?.profile, x.photos?.action, x.pronunciationAudio]).filter((pth: any) => pth && !files[pth]);
+        const missing = [...pkg.players, ...pkg.staff].flatMap((x: any) => [x.photos?.profile, x.photos?.action, x.photos?.hero]).filter((pth: any) => pth && !files[pth]);
         if (missing.length) { o.status(`Not downloaded: these files could not be fetched: ${missing.slice(0, 4).join(', ')}. Check the connection and try again.`, false); await log(o, count, false, `missing ${missing.length} files`); return; }
         save(`lobi-stars-data-package-${date}.zip`, zipSync(files, { level: 6 }), 'application/zip');
       }
     } else if (o.format === 'csv') {
       const files = { 'players.csv': strToU8(buildCsv(playerRows(pl, false).columns, playerRows(pl, false).rows)), 'staff.csv': strToU8(buildCsv(staffRows(st, false).columns, staffRows(st, false).rows)),
-        'career.csv': strToU8(buildCsv(careerRows(d.profiles).columns, careerRows(d.profiles).rows)), 'honours.csv': strToU8(buildCsv(honourRows(d.profiles).columns, honourRows(d.profiles).rows)) };
+        'career.csv': strToU8(buildCsv(careerRows(d.profiles).columns, careerRows(d.profiles).rows)), 'international.csv': strToU8(buildCsv(intlRows(d.profiles).columns, intlRows(d.profiles).rows)),
+        'honours.csv': strToU8(buildCsv(honourRows(d.profiles).columns, honourRows(d.profiles).rows)) };
       save(`${base}-csv.zip`, zipSync(files, { level: 6 }), 'application/zip');
     } else if (o.format === 'xlsx' || o.format === 'records-xlsx') {
-      const p1 = playerRows(pl, full), s1 = staffRows(st, full), c1 = careerRows(d.profiles), h1 = honourRows(d.profiles);
+      const p1 = playerRows(pl, full), s1 = staffRows(st, full), c1 = careerRows(d.profiles), i1 = intlRows(d.profiles), h1 = honourRows(d.profiles);
       const summary = { columns: ['Item', 'Value'], rows: [['Club', 'Lobi Stars FC'], ['Season', d.season], ['Exported', lagosDate(new Date().toISOString())], ['Profiles', count], ['Players', pl.length], ['Staff', st.length], ['Filters', `${d.filters.status}, ${d.filters.type}`], ['Note', full ? 'CONFIDENTIAL: includes private details. Club use only.' : 'Private details are held by the club.']] };
-      save(`${base}.xlsx`, buildXlsx([{ name: 'Players', ...p1 }, { name: 'Staff', ...s1 }, { name: 'Previous clubs', ...c1 }, { name: 'Honours', ...h1 }, { name: 'Summary', ...summary }]), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      save(`${base}.xlsx`, buildXlsx([{ name: 'Players', ...p1 }, { name: 'Staff', ...s1 }, { name: 'Previous clubs', ...c1 }, { name: 'International career', ...i1 }, { name: 'Honours', ...h1 }, { name: 'Summary', ...summary }]), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     } else if (o.format === 'pdf' || o.format === 'records-pdf') {
       save(`${base}.pdf`, await buildPdf(d, full), 'application/pdf');
     } else if (o.format === 'docx') {

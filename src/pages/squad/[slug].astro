@@ -1,141 +1,34 @@
 ---
-import { getPlayers } from '../../lib/players';
+// /squad/<firstname-surname>/ — a player's profile page (layout in
+// components/squad/SquadProfile.astro). Title "[Name] | Lobi Stars FC", the
+// description from the bio, a share image with the name and number, and
+// schema.org Person data (member of the Lobi Stars FC SportsTeam).
 import Layout from '../../layouts/Layout.astro';
+import SquadProfile from '../../components/squad/SquadProfile.astro';
 import NewsCarousel from '../../components/news/NewsCarousel.astro';
 import { render } from 'astro:content';
 import { getSortedNews } from '../../lib/news';
+import { squadPlayers, type Person } from '../../lib/squadPeople';
+import { profileDescription, personJsonLd, shareImage } from '../../lib/squadSeo';
 
 export async function getStaticPaths() {
-  const players = await getPlayers();
+  const players = await squadPlayers();
   const news = await getSortedNews();
-  return players.map(player => {
-    // Latest news about the player: stories tagged with them first, then
-    // stories that mention their name.
-    const name = player.data.name.toLowerCase();
-    const tagged = news.filter(a => (a.data.players || []).includes(player.id));
+  return players.map((person, i) => {
+    // Latest news about the player: stories tagged with them first, then stories that mention their name.
+    const name = person.name.toLowerCase();
+    const tagged = news.filter(a => (a.data.players || []).includes(person.slug));
     const mentions = news.filter(a => !tagged.includes(a) && `${a.data.title} ${a.data.summary} ${a.body ?? ''}`.toLowerCase().includes(name));
-    const related = player.data.isSample ? [] : [...tagged, ...mentions].slice(0, 8);
-    return { params: { slug: player.id }, props: { player, related } };
+    const teammates = players.filter(x => x !== person && x.group === person.group).slice(0, 4);
+    return { params: { slug: person.slug }, props: { person, prev: players[i - 1] || null, next: players[i + 1] || null, teammates, related: person.isSample ? [] : [...tagged, ...mentions].slice(0, 8) } };
   });
 }
 
-const { player, related } = Astro.props;
-const p = player.data;
-const { Content } = await render(player);
-
-const POSITIONS = { GK: 'Goalkeeper', DEF: 'Defender', MID: 'Midfielder', FWD: 'Forward' } as const;
-const position = POSITIONS[p.position];
-
-function age(dob: Date) {
-  const now = new Date();
-  let a = now.getFullYear() - dob.getFullYear();
-  if (now < new Date(now.getFullYear(), dob.getMonth(), dob.getDate())) a--;
-  return a;
-}
-const facts = [
-  ['Position', position],
-  ['Shirt number', String(p.number)],
-  // Profiles from the Squad & Staff Data Portal publish the age only, never the date of birth.
-  ['Age', !p.dateOfBirth && p.age ? String(p.age) : null],
-  ['Detailed position', p.positionDetail && p.positionDetail !== position ? p.positionDetail : null],
-  ['Hometown', p.hometown || null],
-  ['Date of birth', p.dateOfBirth ? `${p.dateOfBirth.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })} (age ${age(p.dateOfBirth)})` : null],
-  ['State / country', [p.stateOfOrigin, p.nationality].filter(Boolean).join(', ') || null],
-  ['Height', p.height || null],
-  ['Preferred foot', p.preferredFoot || null],
-].filter((f): f is [string, string] => !!f[1]);
-
-const stats = [
-  ['Appearances', p.apps],
-  ['Goals', p.goals],
-  ['Assists', p.assists],
-  ...(p.position === 'GK' ? [['Clean sheets', p.cleanSheets]] : []),
-] as [string, number | null][];
-const hasStats = stats.some(([, v]) => (v ?? 0) > 0);
-
-// Structured data for search engines (real players only).
-const personJsonLd = {
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  name: p.name,
-  url: new URL(`/squad/${player.id}/`, Astro.site).toString(),
-  ...(p.photo ? { image: new URL(p.photo, Astro.site).toString() } : {}),
-  jobTitle: `${position}, Lobi Stars FC`,
-  ...(p.dateOfBirth ? { birthDate: p.dateOfBirth.toISOString().slice(0, 10) } : {}),
-  ...(p.nationality ? { nationality: { '@type': 'Country', name: p.nationality } } : {}),
-  ...(p.height ? { height: p.height } : {}),
-  memberOf: { '@type': 'SportsTeam', name: 'Lobi Stars Football Club', url: new URL('/', Astro.site).toString() },
-};
+const { person, prev, next, teammates, related } = Astro.props as { person: Person; prev: Person | null; next: Person | null; teammates: Person[]; related: any[] };
+const { Content } = await render(person.entry);
+const hasBody = !!(person.entry.body ?? '').trim();
 ---
-<Layout title={`${p.name} | Lobi Stars Squad`} description={`${p.name}, ${position} (#${p.number}) for Lobi Stars FC: profile, appearances, goals and news.`} image={p.photo || undefined} noindex={!!p.isSample} jsonLd={p.isSample ? [] : [personJsonLd]}>
-  <div class="wrap pl">
-
-    <div class="pl-top">
-      <div class="pl-photo">
-        {p.photo
-          ? <img src={p.photo} alt={p.name} width="600" height="750" />
-          : <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="36" r="18" /><path d="M14 100c0-22 16-36 36-36s36 14 36 36z" /></svg>}
-        <span class="pl-num" aria-hidden="true">{p.number}</span>
-      </div>
-      <div>
-        <div class="stag">{position}</div>
-        <h1 class="stitle">{p.name}</h1>
-        <dl class="pl-facts">
-          {facts.map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
-          <div data-motm-awards={player.id} hidden><dt>Man of the Match awards</dt><dd>&#11088; <span></span></dd></div>
-        </dl>
-      </div>
-    </div>
-
-    {hasStats && (
-      <section class="pl-sec" aria-labelledby="stats-h">
-        <h2 class="pl-h2" id="stats-h">Season stats</h2>
-        <ul class="pl-stats">
-          {stats.map(([k, v]) => <li><span class="pl-stat-v">{v ?? 0}</span><span class="pl-stat-k">{k}</span></li>)}
-        </ul>
-      </section>
-    )}
-
-    {(player.body ?? '').trim() && (
-      <section class="pl-sec pl-bio" aria-labelledby="bio-h">
-        <h2 class="pl-h2" id="bio-h">Biography</h2>
-        <Content />
-      </section>
-    )}
-  </div>
-
-  {related.length > 0 && <NewsCarousel title={`Latest news about ${p.name}`} articles={related} viewAllHref="/news" tone="band" />}
+<Layout title={`${person.name} | Lobi Stars FC`} description={profileDescription(person)} image={shareImage(person)} imageAlt={`${person.name}, Lobi Stars FC`} noindex={person.isSample} jsonLd={person.isSample ? [] : [personJsonLd(person, Astro.site!)]}>
+  <SquadProfile person={person} Content={Content} hasBody={hasBody} prev={prev} next={next} teammates={teammates} />
+  {related.length > 0 && <NewsCarousel title={`Latest news about ${person.name}`} articles={related} viewAllHref="/news" tone="band" />}
 </Layout>
-
-<style>
-  .pl { padding-top: 32px; padding-bottom: 40px; }
-  .pl-back { display: inline-block; margin-bottom: 18px; color: var(--red-text); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; }
-  .pl-sample { margin: 0 0 20px; padding: 12px 16px; border-radius: 8px; background: #FFF6D6; border: 1px solid #F2D27A; color: #5C4300; }
-  .pl-top { display: grid; grid-template-columns: minmax(220px, 360px) 1fr; gap: 36px; align-items: start; }
-  .pl-photo { position: relative; aspect-ratio: 4 / 5; border-radius: 14px; overflow: hidden; background: linear-gradient(160deg, #F1F3F5, #E3E6EA); }
-  .pl-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; }
-  .pl-photo svg { position: absolute; left: 15%; bottom: 0; width: 70%; fill: #C9CED6; }
-  .pl-num { position: absolute; right: 14px; bottom: 4px; font: 400 96px/1 'Bebas Neue', sans-serif; color: var(--red-text); }
-  .pl-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0; margin: 10px 0 0; border-top: 1px solid var(--d4); }
-  .pl-facts div { padding: 14px 0; border-bottom: 1px solid var(--d4); }
-  .pl-facts dt { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); margin-bottom: 6px; }
-  .pl-facts dd { margin: 0; font-size: 17px; font-weight: 600; }
-  .pl-sec { margin-top: 40px; }
-  .pl-h2 { margin: 0 0 16px; font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .pl-stats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
-  .pl-stats li { background: #15181D; color: #fff; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
-  .pl-stat-v { font: 400 44px/1 'Bebas Neue', sans-serif; color: #FFC72C; }
-  .pl-stat-k { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255, 255, 255, .8); }
-  .pl-bio { max-width: 720px; font-size: 17px; line-height: 1.8; }
-  .pl-bio :global(p) { margin: 0 0 1.2em; }
-  @media (max-width: 760px) { .pl-top { grid-template-columns: 1fr; } .pl-photo { max-width: 360px; } }
-</style>
-
-<script>
-  // Man of the Match awards come from fans' votes (server), so they're loaded live.
-  const awardsBox = document.querySelector<HTMLElement>('[data-motm-awards]');
-  if (awardsBox) fetch('/api/motm/awards').then(r => r.json()).then(({ awards }) => {
-    const n = awards?.[awardsBox.dataset.motmAwards!] || 0;
-    if (n > 0) { awardsBox.querySelector('span')!.textContent = String(n); awardsBox.hidden = false; }
-  }).catch(() => {});
-</script>

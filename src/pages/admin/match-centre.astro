@@ -123,16 +123,17 @@ const roster = (await getRoster())
 
       <fieldset class="mce-set" id="statsSet">
         <legend>Player stats (for the Stats page)</legend>
-        <p class="muted mce-hint">After the match, tick who played and started and enter goals, assists and cards. These feed the season leaderboards on <a href="/stats" target="_blank" rel="noopener">/stats</a> (clean sheets are worked out automatically for goalkeepers). Works for home and away games. <button type="button" class="btn-o mce-mini" id="statsFromSquad">Fill from matchday squad</button></p>
+        <p class="muted mce-hint">After the match, tick who played and started and enter minutes, goals, assists and cards. These feed the season leaderboards on <a href="/stats" target="_blank" rel="noopener">/stats</a> (clean sheets are worked out automatically for goalkeepers). Works for home and away games. <button type="button" class="btn-o mce-mini" id="statsFromSquad">Fill from matchday squad</button></p>
         {roster.length === 0 ? <p class="muted">No players yet. Add the squad in the Content CMS (Squad / Players) first.</p> : (
           <div class="sq-scroll"><table class="sq-table st-table">
-            <thead><tr><th scope="col">Player</th><th scope="col">Played</th><th scope="col">Started</th><th scope="col">Goals</th><th scope="col">Assists</th><th scope="col">Yellow</th><th scope="col">Red</th></tr></thead>
+            <thead><tr><th scope="col">Player</th><th scope="col">Played</th><th scope="col">Started</th><th scope="col">Minutes</th><th scope="col">Goals</th><th scope="col">Assists</th><th scope="col">Yellow</th><th scope="col">Red</th></tr></thead>
             <tbody>
               {roster.map(p => (
                 <tr data-stat-row={p.slug}>
                   <th scope="row">#{p.number} {p.name} <span class="muted">({p.position}){p.isSample && ' – sample'}</span></th>
                   <td><input type="checkbox" data-k="played" aria-label={`${p.name} played`} /></td>
                   <td><input type="checkbox" data-k="started" aria-label={`${p.name} started`} /></td>
+                  <td><input type="number" min="0" max="130" data-k="minutes" aria-label={`${p.name} minutes played`} /></td>
                   <td><input type="number" min="0" max="30" data-k="goals" aria-label={`${p.name} goals`} /></td>
                   <td><input type="number" min="0" max="30" data-k="assists" aria-label={`${p.name} assists`} /></td>
                   <td><input type="number" min="0" max="2" data-k="yellow" aria-label={`${p.name} yellow cards`} /></td>

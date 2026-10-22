@@ -7,7 +7,7 @@ import { getProfile, profileView, saveFields, deleteProfile, shirtTaken, samePer
 async function checks(env, p) {
   return {
     shirtTaken: p.type === 'player' ? await shirtTaken(env.DB, { season: p.season, number: p.shirt_number, exceptId: p.id }) : null,
-    samePerson: await samePerson(env.DB, { name: p.display_name, fullName: p.full_name, dob: p.dob, exceptId: p.id }),
+    samePerson: await samePerson(env.DB, { surname: p.surname, firstName: p.first_name, dob: p.dob, exceptId: p.id }),
   };
 }
 export async function onRequestGet({ request, env, params }) {

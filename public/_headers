@@ -10,11 +10,10 @@
   Strict-Transport-Security: max-age=15552000
   Permissions-Policy: camera=(self), microphone=(), geolocation=(), usb=(), interest-cohort=()
 
-# Squad & Staff Data Portal: never framed, camera and microphone allowed (photos,
-# name pronunciation). Functions add the full header set (functions/staff/[[path]].js).
+# Squad & Staff Data Portal: never framed, camera allowed (profile photos). Functions add the full header set (functions/staff/[[path]].js).
 /staff/*
   ! X-Frame-Options
   ! Permissions-Policy
   X-Frame-Options: DENY
-  Permissions-Policy: camera=(self), microphone=(self), geolocation=(), usb=(), interest-cohort=()
+  Permissions-Policy: camera=(self), microphone=(), geolocation=(), usb=(), interest-cohort=()
   X-Robots-Tag: noindex, nofollow

@@ -10,7 +10,7 @@ import { logAdminAction } from '../../_lib/adminSession.js';
 // POST { action: 'test' }  -- Test connection (the smallest possible call)
 const DAYS = ['0', '1', '2', '3', '4', '5', '6'];
 // The advanced (dearer) model is only allowed for long writing and code; everything else is always the cheap one.
-const ADVANCED_FEATURES = ['checklist_draft', 'code_proposal'];
+const ADVANCED_FEATURES = ['checklist_draft', 'squad_bio', 'code_proposal'];
 
 export async function onRequestGet({ request, env }) {
   const { denied } = await aiGuard(request, env, { superOnly: true });

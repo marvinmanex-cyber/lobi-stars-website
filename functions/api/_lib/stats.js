@@ -21,6 +21,9 @@ export async function ensureStatsSchema(db) {
     updated_at TEXT,
     PRIMARY KEY (event_id, player_slug)
   )`).run();
+  // Minutes played (added 22 Oct 2026 for the player profile pages).
+  const cols = (await db.prepare(`PRAGMA table_info(player_match_stats)`).all()).results.map(c => c.name);
+  if (!cols.includes('minutes')) await db.prepare(`ALTER TABLE player_match_stats ADD COLUMN minutes INTEGER NOT NULL DEFAULT 0`).run();
   ready = true;
 }
 
@@ -33,8 +36,8 @@ export function parsePlayerStats(input, roster) {
   for (const r of Array.isArray(input) ? input : []) {
     const slug = String(r?.player || '');
     if (!known.has(slug)) continue;
-    const row = { player: slug, played: r.played ? 1 : 0, started: r.started ? 1 : 0, goals: int(r.goals), assists: int(r.assists), yellow: int(r.yellow, 2), red: int(r.red, 1) };
-    if (row.started) row.played = 1;
+    const row = { player: slug, played: r.played ? 1 : 0, started: r.started ? 1 : 0, goals: int(r.goals), assists: int(r.assists), yellow: int(r.yellow, 2), red: int(r.red, 1), minutes: int(r.minutes, 130) };
+    if (row.started || row.minutes) row.played = 1;
     if (row.played || row.goals || row.assists || row.yellow || row.red) out.set(slug, row);
   }
   return [...out.values()];
@@ -46,15 +49,15 @@ export async function savePlayerStats(db, eventId, rows) {
   await db.batch([
     db.prepare(`DELETE FROM player_match_stats WHERE event_id = ?`).bind(eventId),
     ...rows.map(r => db.prepare(
-      `INSERT INTO player_match_stats (event_id, player_slug, played, started, goals, assists, yellow, red, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    ).bind(eventId, r.player, r.played, r.started, r.goals, r.assists, r.yellow, r.red, now)),
+      `INSERT INTO player_match_stats (event_id, player_slug, played, started, goals, assists, yellow, red, minutes, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(eventId, r.player, r.played, r.started, r.goals, r.assists, r.yellow, r.red, r.minutes || 0, now)),
   ]);
 }
 
 export async function loadPlayerStats(db, eventId) {
   await ensureStatsSchema(db);
   const { results } = await db.prepare(`SELECT * FROM player_match_stats WHERE event_id = ?`).bind(eventId).all();
-  return results.map(r => ({ player: r.player_slug, played: !!r.played, started: !!r.started, goals: r.goals, assists: r.assists, yellow: r.yellow, red: r.red }));
+  return results.map(r => ({ player: r.player_slug, played: !!r.played, started: !!r.started, goals: r.goals, assists: r.assists, yellow: r.yellow, red: r.red, minutes: r.minutes || 0 }));
 }
 
 /** "2026/27" for a date, with seasons starting in `startMonth` (1-12, default August). */
@@ -103,12 +106,12 @@ export async function seasonStats(db, roster, { season, currentSeason, startMont
   const stats = ids.size ? (await db.prepare(`SELECT * FROM player_match_stats`).all()).results.filter(r => ids.has(r.event_id)) : [];
   const people = new Map(roster.filter(p => !p.isSample).map(p => [p.slug, p]));
   const agg = new Map();
-  const get = slug => { if (!agg.has(slug)) agg.set(slug, { apps: 0, starts: 0, goals: 0, assists: 0, yellow: 0, red: 0, cleanSheets: 0, motm: 0 }); return agg.get(slug); };
+  const get = slug => { if (!agg.has(slug)) agg.set(slug, { apps: 0, starts: 0, goals: 0, assists: 0, yellow: 0, red: 0, cleanSheets: 0, minutes: 0, motm: 0 }); return agg.get(slug); };
   for (const s of stats) {
     const p = people.get(s.player_slug);
     if (!p) continue;
     const a = get(s.player_slug);
-    a.apps += s.played; a.starts += s.started; a.goals += s.goals; a.assists += s.assists; a.yellow += s.yellow; a.red += s.red;
+    a.apps += s.played; a.starts += s.started; a.goals += s.goals; a.assists += s.assists; a.yellow += s.yellow; a.red += s.red; a.minutes += s.minutes || 0;
     if (p.position === 'GK' && s.played && concededNone.has(s.event_id)) a.cleanSheets++;
   }
 
@@ -144,5 +147,6 @@ export async function seasonStats(db, roster, { season, currentSeason, startMont
     board('red', 'Red Cards', 'red'),
   ].filter(b => b.rows.length);
 
-  return { season: chosen, seasons, team, played: finished.length, boards };
+  // Every player's totals (the player profile pages).
+  return { season: chosen, seasons, team, played: finished.length, boards, players: Object.fromEntries(agg) };
 }

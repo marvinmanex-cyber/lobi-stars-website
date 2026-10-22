@@ -1,10 +1,12 @@
 ---
 // Squad › Profile Submissions (Website & Data Officer and Super Admins). Every
 // profile sent from the Squad & Staff Data Portal: the full answers (including
-// private details, for the club only), photos and the pronunciation recording;
-// Verify & publish, Request changes (the note shows in the portal), Mark as left
-// the club / Restore. Super Admins also: Remove, new season (carry over),
-// team details for the Data Package, Full club records. Exports as in the portal.
+// private details, for the club only) and photos; Verify & publish, Request
+// changes (the note shows in the portal), Mark as left the club / Restore.
+// Super Admins also: the name check (old single names → surname / first / middle),
+// Edit (any answer and the club-only fields: name on website, debut, bio, shirt
+// link, hide; photos incl. the wide hero photo; "Draft bio with Claude"), Remove,
+// new season (carry over), team details for the Data Package, Full club records.
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
 ---
@@ -13,9 +15,16 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <AdminNav current="squad-profiles" />
     <div class="stag">Matchday › Squad</div>
     <h1 class="stitle">Profile <span class="r">submissions</span></h1>
-    <p class="sq-lede">Profiles sent from the Squad &amp; Staff Data Portal. Only <b>verified</b> profiles appear on the website's Squad page (public details only; the age, never the date of birth).</p>
+    <p class="sq-lede">Profiles sent from the Squad &amp; Staff Data Portal. Only <b>verified</b> profiles appear on the website's Squad pages (public details only; the full date of birth and middle name only for people aged 18 and over).</p>
     <p class="sq-msg" id="msg" role="status" aria-live="polite" hidden></p>
     <ul class="sq-chips" id="chips"></ul>
+
+    <section class="sq-card sq-names" id="namesBox" hidden aria-labelledby="h-names">
+      <h2 id="h-names">Name check <span class="st CHANGES_REQUESTED" id="namesCount"></span></h2>
+      <p class="muted">The form now asks for Surname, First name and Middle name. These profiles still have the old single name. Check each proposal against the passport or ID, correct it if needed, and press <b>Confirm</b>. Nothing is saved until you confirm. "Name on website" is only for someone publicly known by a different name; leave it empty otherwise.</p>
+      <div class="sq-row"><button class="btn-o" type="button" id="namesCsv">Download this list (CSV)</button></div>
+      <div class="sq-scroll"><table class="sq-table"><thead><tr><th>Original name</th><th>Surname</th><th>First name</th><th>Middle name</th><th>Name on website</th><th>Confidence</th><th></th></tr></thead><tbody id="namesRows"></tbody></table></div>
+    </section>
 
     <section class="sq-card">
       <div class="sq-row">
@@ -102,12 +111,29 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .sq-msg.ok { background: #E8F7EE; color: #17643A; } .sq-msg.err { background: #FDECEC; color: #A3161B; }
   .sq-exstatus { margin: 0; padding: 10px 12px; border-radius: 10px; background: #E8F7EE; color: #17643A; font-weight: 600; }
   .sq-exstatus.err { background: #FDECEC; color: #A3161B; }
+  .sq :global(.sq-names input) { min-height: 40px; width: 100%; min-width: 110px; border: 1px solid var(--a-line); border-radius: 8px; padding: 4px 8px; font: inherit; background: var(--a-card); color: var(--a-ink); }
+  .sq :global(.conf-high) { color: #17643A; font-weight: 700; } .sq :global(.conf-review) { color: #A3161B; font-weight: 700; }
+  .sq :global(.sq-edit) { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; align-items: start; border-top: 1px solid var(--a-line); padding-top: 12px; }
+  .sq :global(.sq-edit .wide) { grid-column: 1 / -1; }
+  .sq :global(.sq-edit label) { display: grid; gap: 4px; min-width: 0; font-weight: 600; font-size: 14px; color: var(--a-muted); }
+  .sq :global(.sq-edit input:not([type=checkbox])), .sq :global(.sq-edit select), .sq :global(.sq-edit textarea) { width: 100%; max-width: 100%; box-sizing: border-box; }
+  .sq :global(.sq-edit input:not([type=checkbox])), .sq :global(.sq-edit select), .sq :global(.sq-edit textarea) { min-height: 44px; border: 1px solid var(--a-line); border-radius: 10px; padding: 6px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 15px; }
+  .sq :global(.sq-edit textarea) { min-height: 220px; line-height: 1.5; }
+  .sq :global(.sq-edit small) { font-weight: 400; }
+  .sq :global(.sq-edit .chk) { display: flex; gap: 8px; align-items: center; }
+  .sq :global(.sq-old) { background: #FFF8E6; border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+  .sq :global(.sq-draft) { border: 2px solid #F2B705; border-radius: 12px; padding: 12px; display: grid; gap: 8px; }
+  .sq :global(.sq-draft .warn) { background: #FEF3C7; color: #78350F; padding: 8px 10px; border-radius: 8px; font-weight: 600; }
+  .sq :global(.sq-photos .ph-btns) { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
   @media (max-width: 640px) { .sq :global(.sq-dl) { grid-template-columns: 1fr; } }
 </style>
 
 <script>
-  import { FIELDS, labelOf, ageOn } from '../../lib/squadFields.js';
+  import { FIELDS, FIELD, labelOf, ageOn, fieldsFor, profileName } from '../../lib/squadFields.js';
+  import { COUNTRY_OPTIONS, countryName } from '../../lib/countries.js';
+  import { officialName } from '../../lib/names.js';
   import { runExport } from '../../scripts/squadPortal/exports';
+  import { processPhoto } from '../../scripts/squadPortal/media';
   const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
   const $ = (id: string) => document.getElementById(id) as any;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
@@ -143,6 +169,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       f.elements.home.value = (t.kitColours?.home || []).join(', '); f.elements.away.value = (t.kitColours?.away || []).join(', ');
       $('exLog').innerHTML = D.exportLog.length ? `<div class="sq-scroll"><table class="sq-table"><thead><tr><th>When</th><th>Who</th><th>Where</th><th>Format</th><th>Profiles</th><th>Filters</th></tr></thead><tbody>${D.exportLog.map((x: any) => `<tr><td>${esc(when(x.at))}</td><td>${esc(x.by)}</td><td>${esc(x.place)}</td><td>${esc(x.format)}${x.ok ? '' : ' (failed)'}</td><td>${x.profiles}</td><td>${esc(x.filters)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No downloads yet.</p>';
       const id = new URLSearchParams(location.search).get('id'); if (id && $('detail').hidden) open(id);
+      $('namesBox').hidden = !(D.canEdit && D.pendingNames);
+      if (D.canEdit && D.pendingNames) loadNames();
     } catch (e: any) { msg(e.message, false); }
   }
   function value(f: any, v: any, type: string) {
@@ -150,12 +178,83 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     if (f.type === 'rows') return `<ul>${v.map((r: any) => `<li>${f.columns.map((c: any) => esc(r[c.key] ?? '')).filter(Boolean).join(' · ')}</li>`).join('')}</ul>`;
     if (f.type === 'checkbox') return v ? 'Yes' : 'No';
     if (f.key === 'dob') return `${esc(v)} (age ${ageOn(v) ?? '–'})`;
+    if (f.type === 'country') return esc(countryName(v) || v);
+    if (f.type === 'richtext') return `<div style="white-space:pre-wrap">${esc(v)}</div>`;
     return esc(Array.isArray(v) ? v.join(', ') : v);
+  }
+  const rowValue = (c: any, x: any) => c.type === 'country' ? countryName(x) || '' : x ?? '';
+
+  // ── Name check (Super Admins) ──
+  let NAMES: any[] = [];
+  async function loadNames() {
+    try {
+      NAMES = (await api('?names=1')).names;
+      $('namesCount').textContent = `${NAMES.length} to confirm`;
+      const inp = (n: any, k: string) => `<input data-k="${k}" value="${esc(n[k] || '')}" aria-label="${k} for ${esc(n.original)}" />`;
+      $('namesRows').innerHTML = NAMES.map(n => `<tr data-nid="${n.id}"><td><b>${esc(n.original || '–')}</b><br /><small class="muted">${n.type === 'player' ? `Player${n.shirtNumber ? ` #${n.shirtNumber}` : ''}` : 'Coach / staff'} · ${esc(n.statusLabel)} · ${esc(n.season)}${n.oldDisplayName && n.oldDisplayName !== n.original ? ` · was shown as "${esc(n.oldDisplayName)}"` : ''}</small></td>
+        <td>${inp(n, 'surname')}</td><td>${inp(n, 'firstName')}</td><td>${inp(n, 'middleName')}</td><td>${inp(n, 'websiteName')}</td>
+        <td><span class="${n.confidence === 'high' ? 'conf-high' : 'conf-review'}">${n.confidence === 'high' ? 'High' : 'Needs review'}</span><br /><small class="muted">${esc(n.reason)}</small></td>
+        <td><button class="btn-p" type="button" data-confirm="${n.id}">Confirm</button></td></tr>`).join('') || '<tr><td colspan="7" class="muted">All names are confirmed.</td></tr>';
+    } catch (e: any) { msg(e.message, false); }
+  }
+  $('namesRows').addEventListener('click', async (e: Event) => {
+    const b = (e.target as HTMLElement).closest('[data-confirm]') as HTMLButtonElement | null; if (!b) return;
+    const tr = b.closest('tr')!, v = (k: string) => (tr.querySelector(`[data-k="${k}"]`) as HTMLInputElement).value.trim();
+    const body = { action: 'confirm_name', id: b.dataset.confirm, surname: v('surname'), firstName: v('firstName'), middleName: v('middleName'), websiteName: v('websiteName') };
+    if (!confirm(`Save the name as ${officialName(body)}${body.websiteName ? `, shown on the website as "${body.websiteName}"` : ''}?`)) return;
+    b.disabled = true;
+    try { await api('', body); msg('Name confirmed.'); load(); } catch (err: any) { msg(err.message, false); b.disabled = false; }
+  });
+  $('namesCsv').addEventListener('click', () => {
+    const rows = [['Profile ID', 'Season', 'Type', 'Status', 'Original full name', 'Proposed surname', 'Proposed first name', 'Proposed middle name', 'Proposed name on website', 'Confidence', 'Why']]
+      .concat(NAMES.map(n => [n.id, n.season, n.type, n.statusLabel, n.original, n.surname, n.firstName, n.middleName, n.websiteName, n.confidence, n.reason]));
+    const csv = '\ufeff' + rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `lobi-stars-name-check-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+  });
+
+  // ── Edit (Super Admins) ──
+  // The answers the club edits here; repeatable rows (previous clubs, honours, international career) are changed in the portal (Request changes).
+  const EDIT_KEYS = ['surname', 'firstName', 'middleName', 'websiteName', 'shirtNumber', 'positionGroup', 'primaryPosition', 'role', 'roleOther', 'dob', 'nationality', 'nationality2', 'nationalTeam', 'birthTown', 'birthCountry',
+    'heightCm', 'joined', 'joinedStaff', 'debutDate', 'qualifications', 'socialInstagram', 'socialX', 'socialTiktok', 'interestingFact', 'bioHeadline', 'bio', 'shirtShopUrl', 'hideFromWebsite'];
+  function editInput(f: any, v: any, type: string) {
+    const id = `ed_${f.key}`, val = v ?? '';
+    const lab = `${esc(labelOf(f, type))}${f.required ? ' *' : ''}${f.hint ? `<small>${esc(f.hint)}</small>` : ''}`;
+    if (f.type === 'checkbox') return `<label class="chk wide"><input type="checkbox" id="${id}" data-ek="${f.key}" ${v ? 'checked' : ''} /> ${lab}</label>`;
+    let el: string;
+    if (f.type === 'country') el = `<select id="${id}" data-ek="${f.key}"><option value="">–</option>${COUNTRY_OPTIONS.map(([c, n]) => `<option value="${c}" ${c === val ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
+    else if (f.type === 'select') el = `<select id="${id}" data-ek="${f.key}"><option value="">–</option>${f.options.map((o: string) => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+    else if (f.type === 'textarea' || f.type === 'richtext') el = `<textarea id="${id}" data-ek="${f.key}" maxlength="${f.max || 400}">${esc(val)}</textarea>`;
+    else el = `<input id="${id}" data-ek="${f.key}" type="${f.type === 'number' ? 'number' : f.type === 'date' || f.type === 'day' ? 'date' : f.type === 'month' ? 'month' : f.type === 'url' ? 'url' : 'text'}" value="${esc(val)}" maxlength="${f.max || 200}" />`;
+    return `<label class="${f.type === 'richtext' || f.type === 'textarea' ? 'wide' : ''}">${lab}${el}</label>`;
+  }
+  function editPanel(p: any) {
+    const fields = EDIT_KEYS.map(k => FIELD[k]).filter((f: any) => f && (f.for === 'all' || f.for === p.type) && !(f.showIf && !Object.entries(f.showIf).every(([k, v]) => p.data[k] === v)));
+    const photo = (kind: string, label: string) => `<div><b>${label}</b><div class="ph-btns"><label class="btn-o" style="display:inline-flex;align-items:center;cursor:pointer">Upload<input type="file" accept="image/*" data-up="${kind}" hidden /></label>${p.photos?.[kind] ? `<button class="btn-o" type="button" data-delph="${kind}">Remove</button>` : ''}</div></div>`;
+    return `<div class="sq-edit" id="editBox" data-eid="${p.id}">
+      <p class="wide muted">Changes are saved for everyone straight away${p.status === 'VERIFIED' ? ' and the website updates in about 2 minutes' : ''}. Every change is in the Activity Log.</p>
+      ${fields.map((f: any) => editInput(f, p.data[f.key], p.type)).join('')}
+      <div class="wide sq-row">${photo('profile', 'Profile photo (cards, 4:5)')}${photo('hero', 'Wide header photo (16:9)')}${p.type === 'player' ? photo('action', 'Action photo') : ''}</div>
+      <div class="wide sq-row"><button class="btn-p" type="button" id="saveEdit">Save changes</button><button class="btn-o" type="button" id="draftBio">Draft bio with Claude</button></div>
+      <div class="wide" id="draftBox"></div>
+    </div>`;
+  }
+  async function saveEdit(id: string) {
+    const changes: Record<string, unknown> = {};
+    document.querySelectorAll<HTMLInputElement>('#editBox [data-ek]').forEach(el => {
+      const k = el.dataset.ek!, f = FIELD[k];
+      changes[k] = el.type === 'checkbox' ? el.checked : f.type === 'number' ? (el.value === '' ? null : Number(el.value)) : el.value;
+    });
+    const r = await api('', { action: 'edit', id, changes });
+    const bad = Object.entries(r.errors || {});
+    if (bad.length) msg(bad.map(([k, m]) => `${labelOf(FIELD[k], r.profile.type)}: ${m}`).join(' '), false);
+    else msg(r.warnings?.length ? `Saved. ${r.warnings.join(' ')}` : 'Saved.', !r.warnings?.length);
+    return r;
   }
   async function open(id: string) {
     try {
       const { profile: p } = await api(`?id=${encodeURIComponent(id)}`);
-      const fields = FIELDS.filter((f: any) => f.for === 'all' || f.for === p.type);
+      const fields = fieldsFor(p.type, { admin: true });
+      const old = FIELDS.filter((f: any) => f.retired && p.data[f.key] != null && p.data[f.key] !== '');
       const box = $('detail'); box.hidden = false;
       const acts = [
         ['SUBMITTED', 'CHANGES_REQUESTED'].includes(p.status) ? '<button class="btn-p" type="button" data-act="verify">Verify &amp; publish</button>' : '',
@@ -164,12 +263,14 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         p.status === 'LEFT_THE_CLUB' ? '<button class="btn-o" type="button" data-act="restore">Restore (back at the club)</button>' : '',
         D?.canSuper ? '<button class="btn-o" type="button" data-act="remove">Remove profile</button>' : '',
       ].join('');
-      box.innerHTML = `<div class="sq-row" style="justify-content:space-between"><h2>${esc(p.name || 'Unnamed')} <span class="st ${p.status}">${esc(p.statusLabel)}</span></h2><button class="btn-o" type="button" id="closeDetail">Close</button></div>
+      box.innerHTML = `<div class="sq-row" style="justify-content:space-between"><h2>${esc(p.name || 'Unnamed')} <span class="st ${p.status}">${esc(p.statusLabel)}</span>${p.nameStatus === 'pending' ? ' <span class="st CHANGES_REQUESTED">Name not confirmed</span>' : ''}</h2><button class="btn-o" type="button" id="closeDetail">Close</button></div>
         <p class="muted">${p.type === 'player' ? 'Player' : 'Coach / staff'} · ${esc(p.season)} · submitted ${esc(when(p.submittedAt))} by ${esc(p.submittedBy || '–')}${p.verifiedAt ? ` · verified ${esc(when(p.verifiedAt))} by ${esc(p.verifiedBy)}` : ''}${p.reviewNote ? ` · note: ${esc(p.reviewNote)}` : ''}</p>
-        <div class="sq-photos">${Object.entries(p.photos || {}).map(([k, ph]: any) => `<figure><img src="${esc(ph.url)}" alt="${k} photo" /><figcaption class="muted">${k === 'profile' ? 'Profile' : 'Action'} · ${esc(p.fileBase)}${k === 'action' ? '-action' : ''}.jpg ${(ph.warnings || []).length ? `· ⚠ ${esc(ph.warnings.join(' '))}` : ''}</figcaption></figure>`).join('') || '<p class="muted">No photo.</p>'}</div>
-        ${p.audio ? `<p>Pronunciation recording: <audio controls preload="none" src="${esc(p.audio.url)}"></audio></p>` : ''}
-        <dl class="sq-dl">${fields.map((f: any) => `<dt>${esc(labelOf(f, p.type))}<span class="use ${f.use}">${f.use}</span></dt><dd>${value(f, p.data[f.key], p.type)}</dd>`).join('')}</dl>
-        <div class="sq-acts" data-id="${p.id}">${acts}</div>`;
+        <div class="sq-photos">${Object.entries(p.photos || {}).map(([k, ph]: any) => `<figure><img src="${esc(ph.url)}" alt="${k} photo" ${k === 'hero' ? 'style="aspect-ratio:16/9;width:280px"' : ''} /><figcaption class="muted">${k === 'profile' ? 'Profile' : k === 'hero' ? 'Wide header' : 'Action'} · ${esc(p.fileBase)}${k === 'profile' ? '' : `-${k}`}.jpg ${(ph.warnings || []).length ? `· ⚠ ${esc(ph.warnings.join(' '))}` : ''}</figcaption></figure>`).join('') || '<p class="muted">No photo.</p>'}</div>
+        <dl class="sq-dl">${fields.map((f: any) => `<dt>${esc(labelOf(f, p.type))}<span class="use ${f.use}">${f.admin ? 'club' : f.use}</span></dt><dd>${f.type === 'rows' && p.data[f.key]?.length ? `<ul>${p.data[f.key].map((r: any) => `<li>${f.columns.map((c: any) => esc(rowValue(c, r[c.key]))).filter(Boolean).join(' · ')}</li>`).join('')}</ul>` : value(f, p.data[f.key], p.type)}</dd>`).join('')}</dl>
+        ${old.length ? `<div class="sq-old"><b>Old answers</b> (questions no longer asked; kept for the club, never published): ${old.map((f: any) => `${esc(f.label.replace(/ \(old.*\)$/, ''))}: <b>${esc(p.data[f.key])}</b>`).join(' · ')}</div>` : ''}
+        <div class="sq-acts" data-id="${p.id}">${acts}${D?.canEdit ? '<button class="btn-o" type="button" id="editBtn">Edit</button>' : ''}</div>
+        <div id="editWrap"></div>`;
+      $('editBtn')?.addEventListener('click', () => { $('editWrap').innerHTML = editPanel(p); $('editBtn').hidden = true; wireEdit(p); $('editWrap').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
       box.scrollIntoView({ behavior: 'smooth', block: 'start' });
       $('closeDetail').onclick = () => { box.hidden = true; history.replaceState(null, '', location.pathname); };
     } catch (e: any) { msg(e.message, false); }
@@ -182,6 +283,57 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     try { await api('', { action: act, id, note: ($('note') as HTMLInputElement | null)?.value }); msg({ verify: 'Verified. The website updates in about 2 minutes.', request_changes: 'Changes requested. The portal shows your note.', left: 'Marked as left the club.', restore: 'Restored.', remove: 'Removed.' }[act!] || 'Done.'); $('detail').hidden = true; load(); }
     catch (err: any) { msg(err.message, false); }
   });
+  function wireEdit(p: any) {
+    $('saveEdit').onclick = async () => { try { await saveEdit(p.id); open(p.id); load(); } catch (e: any) { msg(e.message, false); } };
+    document.querySelectorAll<HTMLInputElement>('#editBox [data-up]').forEach(inp => inp.addEventListener('change', async () => {
+      const file = inp.files?.[0]; inp.value = ''; if (!file) return;
+      const kind = inp.dataset.up as 'profile' | 'action' | 'hero';
+      try {
+        msg('Preparing the photo…');
+        const r = await processPhoto(file, kind);
+        const form = new FormData();
+        form.append('id', p.id); form.append('kind', kind); form.append('width', String(r.width)); form.append('height', String(r.height)); form.append('warnings', JSON.stringify(r.warnings));
+        form.append('w400', r.w400, 'w400'); form.append('w1200', r.w1200, 'w1200'); form.append('jpg', r.jpg, 'jpg'); if (r.w2000) form.append('w2000', r.w2000, 'w2000');
+        const res = await fetch('/api/admin/squad-profiles', { method: 'POST', headers: { 'x-admin-code': H['x-admin-code'] }, body: form });
+        const d = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(d.error || 'The photo could not be saved.');
+        msg(r.warnings.length ? `Photo saved. ${r.warnings.join(' ')}` : 'Photo saved.', !r.warnings.length); open(p.id);
+      } catch (e: any) { msg(e.message, false); }
+    }));
+    document.querySelectorAll<HTMLButtonElement>('#editBox [data-delph]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('Remove this photo?')) return;
+      try { await api('', { action: 'delete_photo', id: p.id, kind: b.dataset.delph }); msg('Photo removed.'); open(p.id); } catch (e: any) { msg(e.message, false); }
+    }));
+    $('draftBio').onclick = () => draftBio(p);
+  }
+  // "Draft bio with Claude": a preview only. "Use this draft" fills the Bio boxes; nothing is saved until "Save changes".
+  function draftBio(p: any) {
+    const box = $('draftBox');
+    box.innerHTML = `<div class="sq-draft">
+      <label class="sq-l">Extra details for Claude <small>(optional: facts the record does not have, e.g. how they joined, a favourite moment. No phone numbers, addresses or private details.)</small><textarea id="bioExtra" maxlength="1500" rows="4"></textarea></label>
+      <div class="sq-row"><button class="btn-p" type="button" id="bioGo">Draft now</button><span class="muted">Uses only the public facts in this profile. Counts towards the monthly AI budget.</span></div>
+      <div id="bioOut" aria-live="polite"></div></div>`;
+    $('bioGo').onclick = async () => {
+      const out = $('bioOut'), btn = $('bioGo');
+      btn.disabled = true; btn.textContent = 'Drafting…'; out.innerHTML = '';
+      try {
+        const r = await api('', { action: 'draft_bio', id: p.id, extra: $('bioExtra').value });
+        const d = r.proposal;
+        out.innerHTML = `<p class="warn">Check every fact before using this bio. Claude only had the details in this profile; correct anything that is not right.${d.mock ? ' (Test mode: no AI was used.)' : ''}</p>
+          <h3>${esc(d.headline)}</h3><div style="white-space:pre-wrap;line-height:1.6">${esc(d.bio)}</div>
+          ${d.missing ? `<p class="muted"><b>Details that would improve it:</b> ${esc(d.missing)}</p>` : ''}
+          <div class="sq-row"><button class="btn-p" type="button" id="bioUse">Use this draft</button><button class="btn-o" type="button" id="bioDiscard">Discard</button></div>`;
+        $('bioUse').onclick = () => {
+          const h = document.querySelector<HTMLInputElement>('#editBox [data-ek="bioHeadline"]'), b = document.querySelector<HTMLTextAreaElement>('#editBox [data-ek="bio"]');
+          if (h) h.value = d.headline; if (b) b.value = d.bio;
+          b?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          msg('The draft is in the Bio boxes. Read it, correct anything, then press "Save changes".');
+        };
+        $('bioDiscard').onclick = () => { box.innerHTML = ''; };
+      } catch (e: any) { out.innerHTML = `<p class="warn">${esc(e.message)}</p>`; }
+      finally { btn.disabled = false; btn.textContent = 'Draft again'; }
+    };
+  }
   $('rows').addEventListener('click', (e: Event) => { const b = (e.target as HTMLElement).closest('[data-open]') as HTMLElement | null; if (b) open(b.dataset.open!); });
   $('filters').addEventListener('click', (e: Event) => { const b = (e.target as HTMLElement).closest('[data-f]') as HTMLElement | null; if (b) { view.filter = b.dataset.f!; load(); } });
   $('season').addEventListener('change', () => { view.season = $('season').value; load(); });

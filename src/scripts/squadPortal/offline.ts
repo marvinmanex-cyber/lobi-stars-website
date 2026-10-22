@@ -61,6 +61,7 @@ export function flush(send: (c: Change) => Promise<'ok' | 'retry' | 'drop'>) {
 }
 
 /** Photos and recordings waiting to be sent (kept as files on this device). */
+// what 'audio': an old name recording still queued on a device (the server answers 410 and it is dropped).
 export type Upload = { key: string; id: string; what: 'photo' | 'audio'; fields: Record<string, Blob | string>; at: number };
 export const uploadKeep = (u: Upload) => tx('uploads', 'readwrite', s => s.put(u));
 export async function uploadsAll(): Promise<Upload[]> { return (await tx<Upload[]>('uploads', 'readonly', s => s.getAll())) || []; }

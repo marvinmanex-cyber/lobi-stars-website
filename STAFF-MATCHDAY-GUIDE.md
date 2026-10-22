@@ -174,6 +174,10 @@ Press **■ End Match (Full-time)** and enter the **final score**, then
   (this is what decides the Predict & Win winner).
 - **Score entered wrongly?** Correct the score in *Status & score* and press
   **Save Match Centre**. The Predict & Win winner is recalculated.
+- **Player stats** (the same evening): in *Player stats* press **Fill from
+  matchday squad**, then enter each player's **minutes**, goals, assists and
+  cards and press **Save Match Centre**. They feed /stats and the season tab on
+  every player's profile page (staff guide, "Entering player stats").
 
 ---
 

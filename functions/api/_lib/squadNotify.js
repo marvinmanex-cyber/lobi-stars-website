@@ -5,6 +5,7 @@
 // active Matchday Admin (Website & Data Officer) and the Super Admins.
 import { sendEmail } from './email.js';
 import { superAdminEmails } from './superAdmins.js';
+import { rowName } from './squadProfiles.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -23,9 +24,9 @@ export async function notifyReviewers(env, profile, byName) {
   const site = String(env.SITE_URL || 'https://lobistarsfc.com').replace(/\/+$/, '');
   const what = profile.type === 'staff' ? 'coach / staff' : 'player';
   await sendEmail(env, {
-    to, subject: `Squad profile submitted for review: ${profile.display_name}`,
+    to, subject: `Squad profile submitted for review: ${rowName(profile)}`,
     html: `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#16181D">
-      <p><b>${esc(byName)}</b> submitted the ${what} profile of <b>${esc(profile.display_name)}</b> (${esc(profile.season)}) for club review.</p>
+      <p><b>${esc(byName)}</b> submitted the ${what} profile of <b>${esc(rowName(profile))}</b> (${esc(profile.season)}) for club review.</p>
       <p><a href="${esc(site)}/admin/squad-profiles/?id=${encodeURIComponent(profile.id)}" style="display:inline-block;background:#B3121A;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold">Review the profile</a></p>
       <p style="color:#4A505C;font-size:13px">Lobi Stars FC website · Squad profile submissions</p></div>`,
   });

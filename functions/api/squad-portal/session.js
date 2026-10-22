@@ -21,8 +21,8 @@ export async function onRequestPost({ request, env }) {
     const clip = (v, n) => String(v ?? '').replace(/\s+/g, ' ').slice(0, n);
     let who = 'a profile';
     if (/^sp_[a-z0-9]+$/.test(String(body.profile || ''))) {
-      const p = await env.DB.prepare('SELECT display_name, type FROM squad_profiles WHERE id = ?').bind(body.profile).first().catch(() => null);
-      if (p) who = p.display_name || (p.type === 'staff' ? 'a staff member' : 'a player');
+      const p = await env.DB.prepare('SELECT COALESCE(public_name, display_name) AS name, type FROM squad_profiles WHERE id = ?').bind(body.profile).first().catch(() => null);
+      if (p) who = p.name || (p.type === 'staff' ? 'a staff member' : 'a player');
     }
     const text = body.report === 'unsynced'
       ? `${session.name}: ${Number(body.waiting) || 0} change(s) to ${who} waiting on their device for ${Number(body.minutes) || 0} minutes while online`

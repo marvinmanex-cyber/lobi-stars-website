@@ -4,15 +4,20 @@
 // (offline.ts) and sent in order; the status pill shows "All changes saved",
 // "Saving…" or "Offline · saved on this device". If someone else changes the
 // same profile, their answer is shown with "updated by … just now".
-import { FIELDS, FIELD, SECTIONS, STATUSES, NOTE_MAX, labelOf, activeFields, missingForSubmit, isMinor, ageOn } from '../../lib/squadFields.js';
+import { FIELDS, FIELD, SECTIONS, STATUSES, NOTE_MAX, labelOf, activeFields, missingForSubmit, isMinor, ageOn, profileName } from '../../lib/squadFields.js';
+import { COUNTRY_OPTIONS } from '../../lib/countries.js';
 import { api, state, $, esc, toast, lagos, ApiError } from './api';
 import { queueAdd, flush, queueCount, queueAll, keepProfile, keptProfile, uploadKeep, uploadsAll, uploadDone, uploadsCount, type Change } from './offline';
-import { processPhoto, Recorder } from './media';
+
+/** The questions on this form (not the club-only or retired ones). */
+const FORM_FIELDS = FIELDS.filter((f: any) => !f.retired && !f.admin);
+const countryOpts = (sel = '') => `<option value="">Choose…</option>${COUNTRY_OPTIONS.map(([c, n]) => `<option value="${c}"${c === sel ? ' selected' : ''}>${esc(n)}</option>`).join('')}`;
+import { processPhoto } from './media';
 import { showHome } from './home';
 
 const USE: Record<string, [string, string]> = { public: ['Public', 'pub'], media: ['Media', 'med'], private: ['Private', 'prv'] };
 const BADGE: Record<string, string> = { DRAFT: 'amber', SUBMITTED: 'blue', VERIFIED: 'green', CHANGES_REQUESTED: 'red', LEFT_THE_CLUB: 'grey' };
-type P = { id: string; type: 'player' | 'staff'; status: string; season: string; data: Record<string, any>; photos: any; audio: any; editable: boolean; name: string; fileBase: string; reviewNote?: string; reviewBy?: string };
+type P = { id: string; type: 'player' | 'staff'; status: string; season: string; data: Record<string, any>; photos: any; editable: boolean; name: string; nameStatus?: string | null; fileBase: string; reviewNote?: string; reviewBy?: string };
 let P: P | null = null;
 let lastSync = '', pollTimer = 0, retryTimer = 0, sending = false, pendingText = new Map<string, number>(), dirty = false;
 
@@ -68,7 +73,6 @@ async function sendUploads() {
       await uploadDone(u.key);
       if (P && P.id === u.id) {
         if (u.what === 'photo') { P.photos[String(u.fields.kind)] = r.photo; renderPhoto(String(u.fields.kind)); }
-        else { P.audio = r.audio; }
       }
     } catch (e) {
       if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 401 && e.status !== 429) { await uploadDone(u.key); toast(e.message); report('photo_failed', { profile: u.id, detail: e.message }); }
@@ -105,7 +109,7 @@ function readField(key: string): unknown {
   if (!root) return undefined;
   if (f.type === 'checkbox') return (root.querySelector('input') as HTMLInputElement).checked;
   if (f.type === 'multiselect') return [...root.querySelectorAll<HTMLInputElement>('input:checked')].map(i => i.value);
-  if (f.type === 'rows') return [...root.querySelectorAll('.sp-row')].map(r => Object.fromEntries([...r.querySelectorAll<HTMLInputElement>('[data-col]')].map(i => [i.dataset.col, i.value])));
+  if (f.type === 'rows') return [...root.querySelectorAll('.sp-row')].map(r => Object.fromEntries([...r.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-col]')].map(i => [i.dataset.col, i.value])));
   const el = root.querySelector('input, select, textarea') as HTMLInputElement;
   if (f.type === 'number') return el.value === '' ? null : Number(el.value);
   return el.value;
@@ -159,11 +163,14 @@ function checks(r: any) {
 }
 
 // ── Rendering ──
-function chip(use: string, f?: any) { const [l, c] = USE[use]; return `<span class="sp-use ${c}">${f?.publicAs === 'age' ? 'Public: age only' : l}</span>`; }
+function chip(use: string, f?: any) { const [l, c] = USE[use]; return `<span class="sp-use ${c}">${f?.adultOnly ? 'Public from age 18' : l}</span>`; }
 function rowHtml(f: any, r: any = {}) {
   return `<div class="sp-row" draggable="true">
     <span class="sp-drag" aria-hidden="true" title="Drag to reorder">⋮⋮</span>
-    ${f.columns.map((c: any) => `<label class="sp-cell"><span>${esc(c.label)}</span><input data-col="${c.key}" ${c.type === 'year' ? 'inputmode="numeric" maxlength="4" pattern="[0-9]{4}"' : `maxlength="${c.max || 80}"`} placeholder="${esc(c.placeholder || '')}" value="${esc(r[c.key] ?? '')}" /></label>`).join('')}
+    ${f.columns.map((c: any) => `<label class="sp-cell"><span>${esc(c.label)}</span>${
+      c.type === 'country' ? `<select data-col="${c.key}">${countryOpts(r[c.key] || '')}</select>`
+      : c.type === 'select' ? `<select data-col="${c.key}"><option value="">Choose…</option>${c.options.map((o: string) => `<option${o === r[c.key] ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`
+      : `<input data-col="${c.key}" ${c.type === 'year' ? 'inputmode="numeric" maxlength="4" pattern="[0-9]{4}"' : c.type === 'int' ? 'inputmode="numeric" maxlength="3" pattern="[0-9]*"' : `maxlength="${c.max || 80}"`} placeholder="${esc(c.placeholder || '')}" value="${esc(r[c.key] ?? '')}" />`}</label>`).join('')}
     <span class="sp-row-btns"><button type="button" class="sp-mini" data-move="-1" aria-label="Move up">↑</button><button type="button" class="sp-mini" data-move="1" aria-label="Move down">↓</button><button type="button" class="sp-mini sp-danger" data-remove aria-label="Remove this row">×</button></span>
   </div>`;
 }
@@ -177,6 +184,9 @@ function fieldHtml(f: any, type: string) {
   let input = '';
   switch (f.type) {
     case 'select': input = `<select id="${id}" ${reqA} ${desc}><option value="">Choose…</option>${f.options.map((o: string) => `<option>${esc(o)}</option>`).join('')}</select>`; break;
+    case 'country': input = `<select id="${id}" ${reqA} ${desc}>${countryOpts()}</select>`; break;
+    case 'name': input = `<input id="${id}" type="text" maxlength="${f.max || 60}" autocomplete="off" autocapitalize="words" spellcheck="false" ${reqA} ${desc} />`; break;
+    case 'handle': input = `<input id="${id}" type="text" maxlength="${f.max || 40}" placeholder="${esc(ph)}" autocomplete="off" autocapitalize="none" spellcheck="false" ${desc} />`; break;
     case 'multiselect': return `<fieldset class="sp-field" data-field="${f.key}" data-for="${f.for}"><legend class="sp-flabel"><span>${esc(label)}${f.optional ? ' <span class="sp-opt">(optional)</span>' : ''}</span>${chip(f.use)}</legend><div class="sp-checks">${f.options.map((o: string) => `<label class="sp-check"><input type="checkbox" value="${esc(o)}" /> ${esc(o)}</label>`).join('')}</div></fieldset>`;
     case 'textarea': input = `<textarea id="${id}" rows="3" maxlength="${f.max}" placeholder="${esc(ph)}" ${reqA} ${desc}></textarea><p class="sp-count" aria-live="polite"></p>`; break;
     case 'checkbox': return `<div class="sp-field sp-confirm" data-field="${f.key}" data-for="${f.for}" ${f.minorOnly ? 'data-minor' : ''}><label class="sp-check sp-check-lg"><input type="checkbox" id="${id}" ${reqA} /> <span>${esc(label)}${req}</span></label></div>`;
@@ -188,13 +198,8 @@ function fieldHtml(f: any, type: string) {
     case 'email': input = `<input id="${id}" type="email" inputmode="email" autocomplete="off" ${reqA} ${desc} />`; break;
     default: input = `<input id="${id}" type="text" maxlength="${f.max || 120}" placeholder="${esc(ph)}" autocomplete="off" ${reqA} ${desc} />`;
   }
-  const extra = f.key === 'shirtNumber' ? '<p class="sp-warn" id="shirtWarn" role="status" hidden></p>' : f.key === 'pronunciation' ? audioHtml() : '';
+  const extra = f.key === 'shirtNumber' ? '<p class="sp-warn" id="shirtWarn" role="status" hidden></p>' : '';
   return `<div class="sp-field" data-field="${f.key}" data-for="${f.for}" ${f.showIf ? `data-showif='${esc(JSON.stringify(f.showIf))}'` : ''} ${f.minorOnly ? 'data-minor' : ''}>${head}${input}${hint}${extra}</div>`;
-}
-function audioHtml() {
-  return `<div class="sp-audio" id="audioBox"><span class="sp-label">Record pronunciation (optional)</span>
-    <div class="sp-audio-row"><button type="button" class="sp-btn sp-btn-outline" id="recBtn">● Record (up to 10 seconds)</button><span id="recState" class="sp-hint"></span></div>
-    <div id="recPlayer"></div></div>`;
 }
 function photoHtml(kind: 'profile' | 'action', type: string) {
   return `<div class="sp-photo" data-photo="${kind}" ${kind === 'action' ? 'data-for="player"' : ''}>
@@ -230,7 +235,7 @@ export async function openForm(id: string) {
 function render(extra: any) {
   const p = P!, view = !p.editable;
   document.title = `${p.name || 'New profile'} | Squad & Staff Data Portal`;
-  const fields = FIELDS;
+  const fields = FORM_FIELDS;
   const sec = (id: string) => fields.filter(f => f.section === id).map(f => fieldHtml(f, p.type)).join('');
   $('main').innerHTML = `
     <div class="sp-form-head">
@@ -240,6 +245,7 @@ function render(extra: any) {
       <span class="sp-badge-st ${BADGE[p.status]}">${esc(STATUSES[p.status])}</span>
       <span class="sp-pill saved" id="savePill" role="status" aria-live="polite"><span class="dot"></span>All changes saved</span>
     </div>
+    ${p.nameStatus === 'pending' && p.editable ? `<p class="sp-review"><b>Names have changed:</b> please fill in Surname, First name and (if any) Middle name exactly as on their passport or ID. The club will check them.</p>` : ''}
     ${p.status === 'CHANGES_REQUESTED' && p.reviewNote ? `<p class="sp-review"><b>Changes requested by ${esc(p.reviewBy || 'the club')}:</b> ${esc(p.reviewNote)}</p>` : ''}
     ${view ? `<p class="sp-review sp-view">This profile is ${esc(STATUSES[p.status].toLowerCase())} and can only be viewed.${p.status === 'SUBMITTED' ? ' The club will review it.' : ''}</p>` : ''}
     <p class="sp-dup" id="dupWarn" role="status" hidden></p>
@@ -277,9 +283,8 @@ function render(extra: any) {
       ${view ? '<button type="button" class="sp-btn sp-btn-outline-light" id="barBack">Back to profiles</button>'
     : '<button type="button" class="sp-btn sp-btn-outline-light" id="draftBtn">Save as draft</button><button type="button" class="sp-btn sp-btn-gold" id="submitBtn">SUBMIT PROFILE</button>'}
     </div>`;
-  for (const f of FIELDS) writeField(f.key, p.data[f.key]);
+  for (const f of FORM_FIELDS) writeField(f.key, p.data[f.key]);
   for (const k of ['profile', 'action']) renderPhoto(k);
-  renderAudio();
   visibility();
   checks(extra);
   wire();
@@ -297,16 +302,15 @@ function visibility() {
   });
   const mb = document.getElementById('minorBox'); if (mb) mb.hidden = !minor;
   document.querySelectorAll<HTMLElement>('.sp-type').forEach(b => b.setAttribute('aria-checked', String(b.dataset.type === type)));
-  const dn = document.getElementById('f_displayName') as HTMLInputElement | null;
-  if (dn) dn.placeholder = type === 'staff' ? 'e.g. Coach Terver' : 'Name printed on the shirt';
   const hon = document.querySelector('[data-field="honours"] .sp-label'); if (hon) hon.textContent = labelOf(FIELD.honours, type);
+  const fact = document.querySelector('label[for="f_interestingFact"]'); if (fact) fact.textContent = labelOf(FIELD.interestingFact, type);
   const kit = document.getElementById('kitGuide'); if (kit) kit.textContent = type === 'staff' ? 'Wearing club staff wear' : 'Wearing the official Lobi Stars kit';
-  const t = document.getElementById('formTitle'); if (t) t.textContent = P.data.displayName ? String(P.data.displayName).toUpperCase() : 'NEW PROFILE';
+  const t = document.getElementById('formTitle'); if (t) t.textContent = profileName(P.data) ? profileName(P.data).toUpperCase() : 'NEW PROFILE';
   document.querySelectorAll('[data-filename]').forEach(el => updateFileName(el as HTMLElement));
 }
 function fileBaseLocal() {
   const d = P!.data, s = (x: string) => String(x || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  const name = s(d.displayName) || 'profile';
+  const name = s(profileName(d)) || 'profile';
   if (P!.type === 'staff') return `staff-${String(d.role === 'Other' ? d.roleOther || 'staff' : d.role || 'staff').toLowerCase().replace(/[^a-z]/g, '') || 'staff'}-${name}`;
   const n = Number(d.shirtNumber);
   return `${Number.isInteger(n) && n > 0 ? String(n).padStart(2, '0') : 'xx'}-${name}`;
@@ -322,17 +326,6 @@ function renderPhoto(kind: string) {
   const w = document.getElementById(`warn_${kind}`); if (w) w.innerHTML = (ph?.warnings || []).map((x: string) => `<li>${esc(x)}</li>`).join('');
   const fn = document.querySelector<HTMLElement>(`[data-filename="${kind}"]`); if (fn) updateFileName(fn);
 }
-function renderAudio() {
-  const box = document.getElementById('recPlayer'); if (!box || !P) return;
-  const a = P.audio;
-  box.innerHTML = a && (a.url || a.local) ? `<audio controls preload="none" src="${esc(a.local || a.url)}"></audio>${P.editable ? '<button type="button" class="sp-link sp-danger" id="recDel">Delete recording</button>' : ''}` : '';
-  const btn = document.getElementById('recBtn'); if (btn) btn.textContent = a ? '● Re-record' : '● Record (up to 10 seconds)';
-  document.getElementById('recDel')?.addEventListener('click', async () => {
-    if (!confirm('Delete the pronunciation recording?')) return;
-    try { await api(`profiles/${P!.id}/audio`, { method: 'DELETE' }); P!.audio = null; renderAudio(); } catch (e: any) { toast(e.message); }
-  });
-}
-
 // ── Events ──
 function wire() {
   const form = $('pform');
@@ -351,7 +344,7 @@ function wire() {
     if (f.type === 'textarea') counter(root);
     if (['checkbox', 'multiselect', 'select'].includes(f.type)) return; // saved on change
     clearTimeout(pendingText.get(key));
-    pendingText.set(key, window.setTimeout(() => { pendingText.delete(key); P!.data[key] = readField(key); save({ [key]: readField(key) }, false); if (key === 'dob' || key === 'displayName' || key === 'shirtNumber' || key === 'role') visibility(); }, 800));
+    pendingText.set(key, window.setTimeout(() => { pendingText.delete(key); P!.data[key] = readField(key); save({ [key]: readField(key) }, false); if (['dob', 'surname', 'firstName', 'shirtNumber', 'role'].includes(key)) visibility(); }, 800));
     pill('saving');
   });
   form.addEventListener('change', e => {
@@ -386,26 +379,6 @@ function wire() {
     if (!confirm('Remove this photo?')) return;
     try { await api(`profiles/${P!.id}/photo?kind=${kind}`, { method: 'DELETE' }); delete P!.photos[kind]; renderPhoto(kind); } catch (e: any) { toast(e.message); }
   }));
-  // Recording.
-  const rec = new Recorder();
-  let recording = false;
-  document.getElementById('recBtn')?.addEventListener('click', async () => {
-    const btn = document.getElementById('recBtn')!, st = document.getElementById('recState')!;
-    if (recording) { rec.stop(); return; }
-    recording = true; btn.textContent = '■ Stop'; st.textContent = 'Recording… 0 s';
-    rec.onTick = s => { st.textContent = `Recording… ${Math.floor(s)} s of 10`; };
-    try {
-      const r = await rec.start(10);
-      st.textContent = `Recorded ${r.seconds.toFixed(1)} s.`;
-      P!.audio = { local: r.url, seconds: r.seconds };
-      renderAudio();
-      const fields: Record<string, Blob | string> = { original: r.original, seconds: String(r.seconds) };
-      if (r.mp3) fields.mp3 = r.mp3;
-      await uploadKeep({ key: `${P!.id}:audio`, id: P!.id, what: 'audio', fields, at: Date.now() });
-      pump();
-    } catch (e: any) { st.textContent = e.message; }
-    finally { recording = false; renderAudio(); }
-  });
 }
 
 async function addPhoto(kind: 'profile' | 'action', file: File) {
@@ -459,7 +432,7 @@ function highlight(missing: { key: string; label: string; section: string }[], m
   toast(message || `Please complete: ${missing.slice(0, 3).map(m => m.label).join(', ')}${missing.length > 3 ? ` and ${missing.length - 3} more` : ''}.`, 8000);
 }
 function done() {
-  const name = P!.data.displayName || 'The profile';
+  const name = profileName(P!.data) || 'The profile';
   P = null;
   $('main').innerHTML = `<section class="sp-card sp-done" aria-labelledby="doneTitle">
     <p class="sp-done-icon" aria-hidden="true">✓</p><h1 class="sp-h2" id="doneTitle">Profile submitted for club review</h1>

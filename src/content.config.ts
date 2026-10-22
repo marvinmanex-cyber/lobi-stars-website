@@ -83,6 +83,9 @@ const players = defineCollection({
     hometown: z.string().nullable().optional(),
     nickname: z.string().nullable().optional(),
     social: z.string().nullable().optional(),
+    // 22 Oct 2026: everything public from the portal profile (names, countries, bio,
+    // debut, careers, photos…), read through src/lib/squadPeople.ts.
+    profile: z.record(z.string(), z.any()).nullable().optional(),
   }),
 });
 
@@ -106,6 +109,7 @@ const staff = defineCollection({
     // "Coaching Staff" appear on the Squad page. "Management" entries aren't shown publicly.
     group: z.enum(['Management', 'Coaching Staff']).default('Management'),
     portal: z.boolean().default(false),
+    profile: z.record(z.string(), z.any()).nullable().optional(),
   }),
 });
 

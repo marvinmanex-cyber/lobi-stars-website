@@ -25,9 +25,11 @@ const sql = command => {
   finally { rmSync(file, { force: true }); }
 };
 const TAG = `R${uid()}`;
+const L = TAG.toLowerCase().replace(/[0-9]/g, d => 'abcdefghij'[d]); // names are letters only
 const adm = b => fetch(`${BASE}/api/admin/squad-portal`, { method: 'POST', headers: ADMIN, body: JSON.stringify(b) }).then(r => r.json());
 const rev = (b, qs = '') => fetch(`${BASE}/api/admin/squad-profiles${qs}`, b ? { method: 'POST', headers: ADMIN, body: JSON.stringify(b) } : { headers: ADMIN }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
-const PRIV = ['fullName', 'dob', 'phone', 'email', 'emergencyName', 'emergencyPhone', 'guardianName', 'guardianPhone', 'confirmAccurate', 'confirmConsent', 'guardianConsent'];
+// Never shared (the full date of birth is public from age 18, so it is not in this list).
+const PRIV = ['fullName', 'displayName', 'pronunciation', 'phone', 'email', 'emergencyName', 'emergencyPhone', 'guardianName', 'guardianPhone', 'confirmAccurate', 'confirmConsent', 'guardianConsent'];
 let P, season, prevSeason, id, staffId;
 async function portal() {
   const pw = (await adm({ action: 'new_password' })).password;
@@ -37,8 +39,8 @@ async function portal() {
     .then(async x => ({ status: x.status, data: await x.json().catch(() => ({})), raw: x }));
 }
 const photo = () => { const f = new FormData(), j = readFileSync(new URL('../public/images/lobi-stars-badge-print.jpg', import.meta.url)); f.append('kind', 'profile'); for (const k of ['w400', 'w1200', 'jpg']) f.append(k, new Blob([j], { type: 'image/jpeg' }), k); f.append('width', '1200'); f.append('height', '1500'); f.append('warnings', '[]'); return f; };
-const answers = { fullName: `Secret Legal ${TAG}`, displayName: `Pub ${TAG}`, pronunciation: 'PUB', dob: '2000-02-02', nationality: 'Nigerian', phone: '08035551111', email: `p.${TAG.toLowerCase()}@example.com`,
-  emergencyName: `Mama ${TAG}`, emergencyPhone: '08035552222', primaryPosition: 'Centre back', preferredFoot: 'Left', shirtNumber: 44, confirmAccurate: true, confirmConsent: true, careerHighlight: 'Captain in 2025', hometown: 'Otukpo, Otukpo LGA' };
+const answers = { surname: `Pub${L}`, firstName: 'Ade', middleName: 'Okoh', dob: '2000-02-02', nationality: 'NG', phone: '08035551111', email: `p.${TAG.toLowerCase()}@example.com`,
+  emergencyName: `Mama ${TAG}`, emergencyPhone: '08035552222', positionGroup: 'Defender', primaryPosition: 'Centre back', preferredFoot: 'Left', shirtNumber: 44, confirmAccurate: true, confirmConsent: true, careerHighlight: 'Captain in 2025', hometown: 'Otukpo, Otukpo LGA' };
 
 before(async () => {
   const cur = (await rev(null, '?filter=all')).data;
@@ -51,7 +53,7 @@ before(async () => {
   await P(`profiles/${id}/photo`, 'POST', photo());
   assert.equal((await P(`profiles/${id}/submit`, 'POST')).status, 200);
   staffId = (await P('profiles', 'POST', { type: 'staff' })).data.id;
-  await P(`profiles/${staffId}`, 'PATCH', { changes: { ...answers, displayName: `Coach ${TAG}`, fullName: `Coach Legal ${TAG}`, role: 'Head Coach', qualifications: 'CAF B Licence', philosophy: 'Press high' }, commit: true, type: 'staff' });
+  await P(`profiles/${staffId}`, 'PATCH', { changes: { ...answers, surname: `Coach${L}`, firstName: 'Tom', role: 'Head Coach', qualifications: 'CAF B Licence', philosophy: 'Press high' }, commit: true, type: 'staff' });
   await P(`profiles/${staffId}/photo`, 'POST', photo());
   assert.equal((await P(`profiles/${staffId}/submit`, 'POST')).status, 200);
 });
@@ -63,7 +65,7 @@ test('waiting for review: on the bell and in the list; the reviewer sees everyth
   const l = (await rev(null, `?season=${encodeURIComponent(season)}&filter=submitted`)).data;
   assert.ok(l.profiles.some(p => p.id === id));
   const one = (await rev(null, `?id=${id}`)).data.profile;
-  assert.equal(one.data.fullName, answers.fullName, 'private details visible to the club reviewer');
+  assert.equal(one.data.phone, '+2348035551111', 'private details visible to the club reviewer');
 });
 
 test('request changes → the portal sees the note and can edit; verify → public (public fields only)', async () => {
@@ -80,7 +82,8 @@ test('request changes → the portal sees the note and can edit; verify → publ
   assert.ok(p && s, 'published');
   assert.equal(p.age, 26); assert.equal(p.heightCm, 186); assert.equal(p.group, 'DEF');
   const text = JSON.stringify(pub);
-  for (const secret of [answers.fullName, '2000-02-02', '+2348035551111', answers.email, `Mama ${TAG}`, 'Captain in 2025', 'PUB', 'Press high']) assert.ok(!text.includes(secret), `not public: ${secret}`);
+  assert.equal(p.dob, '2000-02-02', 'full date of birth public from 18'); assert.equal(p.officialName, `PUB${L.toUpperCase()}, Ade Okoh`);
+  for (const secret of ['+2348035551111', answers.email, `Mama ${TAG}`, 'Captain in 2025', 'Press high']) assert.ok(!text.includes(secret), `not public: ${secret}`);
   assert.equal((await fetch(`${BASE}${p.photo}`)).status, 200, 'public photo of a verified profile');
 });
 
@@ -88,12 +91,12 @@ test('partner API: key needed; Public + Media only in the Data Package structure
   assert.equal((await fetch(`${BASE}/api/partner/squad`)).status, 401);
   assert.equal((await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: 'Bearer wrong' } })).status, 401);
   const doc = await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: `Bearer ${KEY}` } }).then(r => r.json());
-  assert.equal(doc.schemaVersion, '1.0'); assert.deepEqual(validatePackage(doc), []);
+  assert.equal(doc.schemaVersion, '1.1'); assert.deepEqual(validatePackage(doc), []);
   const pl = doc.players.find(x => x.id === id), st = doc.staff.find(x => x.id === staffId);
-  assert.equal(pl.notes.careerHighlight, 'Captain in 2025', 'media notes included'); assert.equal(pl.pronunciation, 'PUB');
+  assert.equal(pl.notes.careerHighlight, 'Captain in 2025', 'media notes included'); assert.ok(!('pronunciation' in pl), 'no pronunciation any more');
   assert.equal(st.notes.philosophy, 'Press high'); assert.equal(st.role, 'Head Coach');
   const text = JSON.stringify(doc);
-  for (const secret of [answers.fullName, '2000-02-02', '+2348035551111', answers.email, `Mama ${TAG}`]) assert.ok(!text.includes(secret), `never in the partner API: ${secret}`);
+  for (const secret of ['+2348035551111', answers.email, `Mama ${TAG}`]) assert.ok(!text.includes(secret), `never in the partner API: ${secret}`);
   const r = await fetch(pl.photos.profile.replace(/^https?:\/\/[^/]+/, BASE));
   assert.equal(r.status, 200, 'signed photo link works');
   assert.equal((await fetch(pl.photos.profile.replace(/^https?:\/\/[^/]+/, BASE).replace(/sig=\w+/, 'sig=bad'))).status, 403, 'tampered link refused');
@@ -112,7 +115,7 @@ test('export data: Public and Media only from the portal and the admin; full rec
   }
   const full = await rev({ action: 'full_records', which: 'verified', season: 'current' });
   assert.equal(full.status, 200, JSON.stringify(full.data));
-  assert.equal(full.data.profiles.find(x => x.id === id).data.fullName, answers.fullName);
+  assert.equal(full.data.profiles.find(x => x.id === id).data.phone, '+2348035551111', 'full records include private details');
   const email = `sr-${uid()}@example.com`;
   const made = await fetch(`${BASE}/api/admin/staff`, { method: 'POST', headers: ADMIN, body: JSON.stringify({ name: 'Data Officer', email, password: 'Role-Test-2026!', role: 'matchday_admin' }) }).then(r => r.json());
   const l = await fetch(`${BASE}/api/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ email, password: 'Role-Test-2026!' }) });

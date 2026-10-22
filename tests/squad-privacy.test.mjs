@@ -26,6 +26,7 @@ const sql = command => {
   finally { rmSync(file, { force: true }); }
 };
 const TAG = `V${uid()}`;
+const L = TAG.toLowerCase().replace(/[0-9]/g, d => 'abcdefghij'[d]); // names are letters only
 const adm = b => fetch(`${BASE}/api/admin/squad-portal`, { method: b ? 'POST' : 'GET', headers: ADMIN, body: b ? JSON.stringify(b) : undefined }).then(r => r.json());
 const rev = b => fetch(`${BASE}/api/admin/squad-profiles`, { method: 'POST', headers: ADMIN, body: JSON.stringify(b) }).then(async r => ({ status: r.status, data: await r.json() }));
 const dist = new URL('../dist/', import.meta.url);
@@ -40,20 +41,21 @@ before(async () => {
   const cookie = r.headers.get('set-cookie').match(/ls_squad=[^;]+/)[0], d = await r.json();
   P = (p, method = 'GET', body) => fetch(`${BASE}/api/squad-portal/${p}`, { method, headers: { Cookie: cookie, 'X-CSRF-Token': d.csrf, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then(async x => ({ status: x.status, data: await x.json().catch(() => ({})) }));
   id = (await P('profiles', 'POST', { type: 'player' })).data.id;
-  await P(`profiles/${id}`, 'PATCH', { changes: { displayName: `Left ${TAG}`, fullName: `Legal ${TAG}`, dob: '1999-01-01', phone: '08035553333', email: `l.${TAG.toLowerCase()}@example.com`, emergencyName: `Kin ${TAG}`, emergencyPhone: '08035554444', primaryPosition: 'Striker' }, commit: true });
+  await P(`profiles/${id}`, 'PATCH', { changes: { firstName: 'Sam', surname: `Left${L}`, dob: '1999-01-01', phone: '08035553333', email: `l.${TAG.toLowerCase()}@example.com`, emergencyName: `Kin ${TAG}`, emergencyPhone: '08035554444', primaryPosition: 'Striker' }, commit: true });
   // An earlier season's copy of the same person (carried over).
   oldId = `sp_old${uid()}`;
   sql(`INSERT INTO squad_profiles (id, season, type, status, data_json, display_name, full_name, dob, created_at, updated_at) VALUES ('${oldId}', '2001/02', 'player', 'VERIFIED', '{"displayName":"Left ${TAG}","fullName":"Legal ${TAG}","phone":"+2348035553333"}', 'Left ${TAG}', 'Legal ${TAG}', '1999-01-01', '2001-08-01T00:00:00Z', '2001-08-01T00:00:00Z');
     UPDATE squad_profiles SET carried_from = '${oldId}' WHERE id = '${id}';`);
 });
-after(async () => { sql(`DELETE FROM squad_profiles WHERE display_name LIKE '%${TAG}%' OR id = '${oldId}'; DELETE FROM squad_portal_settings WHERE key = 'retention_seasons';`); await adm({ action: 'season', season: prevSeason || '2026/27' }); });
+after(async () => { sql(`DELETE FROM squad_profiles WHERE display_name LIKE '%${TAG}%' OR public_name LIKE '%${L}%' OR id = '${oldId}'; DELETE FROM squad_portal_settings WHERE key = 'retention_seasons';`); await adm({ action: 'season', season: prevSeason || '2026/27' }); });
 
 test('the portal link is on no public page and not in the sitemap; robots.txt and the page keep search engines out', async () => {
   assert.ok(existsSync(dist), 'build first (npm run build)');
   const pages = walk(fileURLToPath(dist)).filter(f => /\.(html|xml|txt|js)$/.test(f) && !/[\\/]staff[\\/]/.test(f));
   const hits = pages.filter(f => readFileSync(f, 'utf8').includes(PORTAL) && !/robots\.txt$/.test(f) && !/[\\/]_astro[\\/]/.test(f));
   assert.deepEqual(hits, [], 'no public page mentions the portal address');
-  assert.ok(!readFileSync(new URL('sitemap.xml', dist), 'utf8').includes('/staff/'));
+  // (Coaching staff profiles live at /squad/staff/…; robots.txt blocks only addresses starting with /staff/.)
+  assert.ok(!/<loc>[^<]*\.com\/staff\//.test(readFileSync(new URL('sitemap.xml', dist), 'utf8')), 'the portal is not in the sitemap');
   assert.match(readFileSync(new URL('robots.txt', dist), 'utf8'), /Disallow: \/staff\//);
   const r = await fetch(`${BASE}${PORTAL}/`);
   assert.match(r.headers.get('x-robots-tag') || '', /noindex/);
@@ -81,8 +83,8 @@ test('a refused save is reported to the Activity Log without the answer', async 
   const log = await fetch(`${BASE}/api/admin/activity-log?q=${encodeURIComponent(TAG)}`, { headers: ADMIN }).then(r => r.ok ? r.json() : null).catch(() => null);
   const rows = JSON.parse(sql(`SELECT detail FROM admin_log WHERE action = 'squad_save_failed' AND detail LIKE '%${TAG}%';`))[0].results;
   assert.equal(rows.length, 1, JSON.stringify(log));
-  assert.match(rows[0].detail, new RegExp(`Ada ${TAG}: a change for Left ${TAG} could not be saved`));
-  assert.ok(!rows[0].detail.includes('Legal'), 'no private answer in the log');
+  assert.match(rows[0].detail, new RegExp(`Ada ${TAG}: a change for Sam Left${L} could not be saved`));
+  assert.ok(!rows[0].detail.includes('Kin'), 'no private answer in the log');
 });
 
 test('retention: private details of people who left are erased after the set seasons, also from earlier copies', async () => {
@@ -101,7 +103,7 @@ test('retention: private details of people who left are erased after the set sea
     const d = JSON.parse(row.data_json);
     assert.equal(row.full_name, null); assert.equal(row.dob, null);
     for (const k of ['fullName', 'dob', 'phone', 'email', 'emergencyName', 'emergencyPhone']) assert.ok(!(k in d), `${k} erased`);
-    assert.equal(d.displayName, `Left ${TAG}`, 'public profile kept');
+    assert.ok(d.surname === `Left${L}` || d.displayName === `Left ${TAG}`, 'public profile kept');
   }
   assert.equal((await run()).privacy.erased, 0, 'nothing left to erase');
 });
@@ -120,6 +122,6 @@ test('Website Health checks the portal: private, sign-in bursts, refused saves, 
   for (const id of ['squad_portal', 'squad_signins', 'squad_saves', 'squad_export', 'squad_photos']) assert.ok(checks[id], id);
   assert.equal(checks.squad_portal.status, 'PASS', checks.squad_portal.problem);
   assert.equal(checks.squad_export.status, 'PASS', checks.squad_export.problem);
-  assert.match(checks.squad_export.problem, /schemaVersion 1\.0/);
+  assert.match(checks.squad_export.problem, /schemaVersion 1\.1/);
   assert.equal(checks.squad_saves.status, 'WARNING', 'the refused save above is reported');
 });

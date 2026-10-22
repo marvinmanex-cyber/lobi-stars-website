@@ -6,7 +6,8 @@
 // The portal deletes drafts only; Super Admins can remove any profile (logged).
 // Photos and recordings live in the private R2 bucket SQUAD_BUCKET.
 // Every change is written to the Activity Log in plain English.
-import { FIELD, FIELDS, STATUSES, EDITABLE, cleanValue, missingForSubmit, labelOf, ageOn, PRIVATE_KEYS } from '../../../src/lib/squadFields.js';
+import { FIELD, FIELDS, STATUSES, EDITABLE, cleanValue, missingForSubmit, labelOf, ageOn, PRIVATE_KEYS, RETENTION_KEYS, profileName, upgradeData } from '../../../src/lib/squadFields.js';
+import { nameSlug, splitFullName, officialName } from '../../../src/lib/names.js';
 import { logAdminAction } from './adminSession.js';
 import { getPortalSettings, setPortalSetting } from './squadPortal.js';
 
@@ -29,12 +30,39 @@ export async function ensureProfileSchema(db) {
       filters TEXT, profiles INTEGER, ok INTEGER NOT NULL DEFAULT 1, note TEXT)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS squad_team (id INTEGER PRIMARY KEY CHECK (id = 1), json TEXT NOT NULL, updated_by TEXT, updated_at TEXT)`),
   ]);
+  // 22 Oct 2026 (migrations/0011_squad_names.sql): the name in three parts. display_name
+  // and full_name are kept as they were (never written again); public_name is the cache.
+  const have = new Set((await db.prepare(`PRAGMA table_info(squad_profiles)`).all()).results.map(c => c.name));
+  for (const [col, def] of NEW_COLUMNS) if (!have.has(col)) await db.prepare(`ALTER TABLE squad_profiles ADD COLUMN ${col} ${def}`).run();
+  await upgradeOldAnswers(db);
   ready = true;
+}
+const NEW_COLUMNS = [['surname', 'TEXT'], ['first_name', 'TEXT'], ['middle_name', 'TEXT'], ['website_name', 'TEXT'], ['public_name', 'TEXT'], ['name_status', 'TEXT']];
+
+/**
+ * Once: answers saved before the form changed are tidied (nationality as a country
+ * code, the social handle as Instagram, the position group), and profiles with an
+ * old single name are marked name_status = 'pending' for the Super Admin's name
+ * check. Nothing is deleted. Marked done in squad_portal_settings (data_v2).
+ */
+async function upgradeOldAnswers(db) {
+  const s = await getPortalSettings(db);
+  if (s.data_v2) return;
+  const rows = (await db.prepare(`SELECT id, type, data_json, surname FROM squad_profiles`).all()).results;
+  for (const r of rows) {
+    const data = parse(r.data_json, {});
+    const up = upgradeData(r.type, data);
+    const pending = !r.surname && !data.surname && !!(data.fullName || data.displayName);
+    if (up || pending) await db.prepare(`UPDATE squad_profiles SET data_json = ?, name_status = COALESCE(name_status, ?) WHERE id = ?`).bind(JSON.stringify(up || data), pending ? 'pending' : null, r.id).run();
+  }
+  await setPortalSetting(db, 'data_v2', new Date().toISOString(), 'system');
 }
 
 /** Plain-English activity log line for a profile ("Grace (Squad Data Portal) changed …"). */
 export async function logProfile(db, actor, action, text) { await logAdminAction(db, actor, action, text); }
-const whoName = p => p.display_name || (p.type === 'staff' ? 'a staff member' : 'a player') ;
+/** The name of a profile row: the new name fields, else the old display name (before the name check). */
+export const rowName = p => p?.public_name || p?.display_name || '';
+const whoName = p => rowName(p) || (p.type === 'staff' ? 'a staff member' : 'a player');
 const fmtVal = (key, v) => {
   if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) return 'blank';
   if (Array.isArray(v)) return FIELD[key]?.type === 'rows' ? `${v.length} row${v.length === 1 ? '' : 's'}` : v.join(', ');
@@ -44,14 +72,14 @@ const fmtVal = (key, v) => {
 
 /** The view of a profile for the portal / the club review (everything, including private details). */
 export function profileView(p, { thumbs = 'portal' } = {}) {
-  const data = parse(p.data_json, {}), photos = parse(p.photos_json, {}), audio = parse(p.audio_json, {});
+  const data = parse(p.data_json, {}), photos = parse(p.photos_json, {});
   const file = (kind, variant) => `/api/squad-portal/file/${p.id}/${kind}/${variant}`;
   return {
     id: p.id, season: p.season, type: p.type, status: p.status, statusLabel: STATUSES[p.status] || p.status, version: p.version,
-    data, meta: parse(p.meta_json, {}), name: p.display_name || '', fileBase: fileBase(p, data),
+    data, meta: parse(p.meta_json, {}), name: profileName(data) || rowName(p), nameStatus: p.name_status || null, fileBase: fileBase(p, data),
     shirtNumber: p.shirt_number, role: p.role, position: p.position,
     photos: Object.fromEntries(Object.entries(photos).map(([k, v]) => [k, { ...v, url: file(k, 'w1200.webp'), thumb: file(k, 'w400.webp'), jpg: file(k, 'w1200.jpg') }])),
-    audio: audio.mp3 || audio.original ? { ...audio, url: file('audio', audio.mp3 ? 'mp3' : 'original') } : null,
+    // Name recordings are no longer used (22 Oct 2026); old ones stay in storage, unused.
     createdAt: p.created_at, createdBy: p.created_by, updatedAt: p.updated_at, updatedBy: p.updated_by,
     submittedAt: p.submitted_at, submittedBy: p.submitted_by, verifiedAt: p.verified_at, verifiedBy: p.verified_by,
     reviewNote: p.review_note, reviewBy: p.review_by, reviewAt: p.review_at, leftAt: p.left_at, carriedFrom: p.carried_from,
@@ -59,10 +87,9 @@ export function profileView(p, { thumbs = 'portal' } = {}) {
   };
 }
 
-// ── File names: players "09-musa-adeyemi", staff "staff-headcoach-terver-iorliam" (from the public display name) ──
-const slug = s => String(s || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+// ── File names: players "09-musa-adeyemi", staff "staff-headcoach-terver-iorliam" (from the public name) ──
 export function fileBase(p, data = parse(p.data_json, {})) {
-  const name = slug(data.displayName || p.display_name) || 'profile';
+  const name = nameSlug(profileName(data) || rowName(p)) || 'profile';
   if (p.type === 'staff') {
     const role = String(data.role === 'Other' ? data.roleOther || 'staff' : data.role || 'staff').toLowerCase().replace(/[^a-z]/g, '');
     return `staff-${role || 'staff'}-${name}`;
@@ -70,11 +97,11 @@ export function fileBase(p, data = parse(p.data_json, {})) {
   const n = Number(data.shirtNumber);
   return `${Number.isInteger(n) && n > 0 ? String(n).padStart(2, '0') : 'xx'}-${name}`;
 }
-export const photoName = (p, kind, ext, data) => `${fileBase(p, data)}${kind === 'action' ? '-action' : ''}.${ext}`;
-export const audioName = (p, ext, data) => `${fileBase(p, data)}-pronunciation.${ext}`;
+export const photoName = (p, kind, ext, data) => `${fileBase(p, data)}${kind === 'profile' ? '' : `-${kind}`}.${ext}`;
 
 const cached = (type, data) => ({
-  display_name: data.displayName || null, full_name: data.fullName || null, dob: data.dob || null,
+  surname: data.surname || null, first_name: data.firstName || null, middle_name: data.middleName || null, website_name: data.websiteName || null,
+  public_name: profileName(data) || null, dob: data.dob || null,
   shirt_number: type === 'player' && Number.isInteger(data.shirtNumber) ? data.shirtNumber : null,
   role: type === 'staff' ? (data.role === 'Other' ? data.roleOther || 'Other' : data.role || null) : null,
   position: type === 'player' ? data.primaryPosition || null : null,
@@ -104,7 +131,9 @@ export async function createProfile(env, actor, { type, season }) {
  * else changed since `since` (so the page can show "updated by … just now").
  * commit: the person left the field (or chose an option): written to the Activity Log.
  */
-export async function saveFields(env, actor, id, { changes = {}, since = null, commit = false, sessionId = null, type: newType = null, allowAnyStatus = false }) {
+// admin: the club's review page (any status; the club-only fields too). The portal can
+// never write club-only or retired fields.
+export async function saveFields(env, actor, id, { changes = {}, since = null, commit = false, sessionId = null, type: newType = null, allowAnyStatus = false, admin = false }) {
   const db = env.DB;
   for (let attempt = 0; attempt < 4; attempt++) {
     const p = await getProfile(db, id);
@@ -115,7 +144,7 @@ export async function saveFields(env, actor, id, { changes = {}, since = null, c
     let type = p.type;
     if (newType && newType !== p.type && ['player', 'staff'].includes(newType)) type = newType;
     for (const [key, raw] of Object.entries(changes || {})) {
-      if (!FIELD[key]) { errors[key] = 'Unknown field.'; continue; }
+      if (!FIELD[key] || (FIELD[key].admin && !admin)) { errors[key] = 'Unknown field.'; continue; }
       const r = cleanValue(key, raw);
       if (r.error) { errors[key] = r.error; continue; }
       const before = data[key];
@@ -131,11 +160,12 @@ export async function saveFields(env, actor, id, { changes = {}, since = null, c
       return { ok: true, version: p.version, updatedAt: p.updated_at, saved, errors, others, type, fileBase: fileBase(p, data) };
     }
     const c = cached(type, data);
-    const res = await db.prepare(`UPDATE squad_profiles SET type = ?, data_json = ?, meta_json = ?, display_name = ?, full_name = ?, dob = ?, shirt_number = ?, role = ?, position = ?,
-      updated_at = ?, updated_by = ?, version = version + 1 WHERE id = ? AND version = ?`)
-      .bind(type, JSON.stringify(data), JSON.stringify(meta), c.display_name, c.full_name, c.dob, c.shirt_number, c.role, c.position, at, actor.name, p.id, p.version).run();
+    const res = await db.prepare(`UPDATE squad_profiles SET type = ?, data_json = ?, meta_json = ?, surname = ?, first_name = ?, middle_name = ?, website_name = ?, public_name = ?,
+      dob = ?, shirt_number = ?, role = ?, position = ?, updated_at = ?, updated_by = ?, version = version + 1 WHERE id = ? AND version = ?`)
+      .bind(type, JSON.stringify(data), JSON.stringify(meta), c.surname, c.first_name, c.middle_name, c.website_name, c.public_name,
+        c.dob, c.shirt_number, c.role, c.position, at, actor.name, p.id, p.version).run();
     if (!res.meta?.changes) continue; // someone saved at the same moment: read again and re-apply
-    const name = c.display_name || whoName(p);
+    const name = c.public_name || whoName(p);
     if (type !== p.type) await logProfile(db, actor, 'squad_profile_edit', `${actor.name} changed the profile type of ${name} to ${type === 'staff' ? 'coach / staff member' : 'player'}`);
     for (const l of logged) {
       const f = FIELD[l.key], label = (f.short || labelOf(f, type)).toLowerCase();
@@ -153,16 +183,16 @@ export async function saveFields(env, actor, id, { changes = {}, since = null, c
 // While typing, any other profile with the number is a warning; to submit, only submitted / verified ones block (drafts don't).
 export async function shirtTaken(db, { season, number, exceptId, forSubmit = false }) {
   if (!Number.isInteger(Number(number))) return null;
-  return db.prepare(`SELECT id, display_name, status FROM squad_profiles WHERE season = ? AND type = 'player' AND shirt_number = ? AND id != ? AND deleted_at IS NULL
+  return db.prepare(`SELECT id, COALESCE(public_name, display_name) AS display_name, status FROM squad_profiles WHERE season = ? AND type = 'player' AND shirt_number = ? AND id != ? AND deleted_at IS NULL
     AND status NOT IN ('LEFT_THE_CLUB'${forSubmit ? ", 'DRAFT'" : ''}) ORDER BY CASE status WHEN 'VERIFIED' THEN 0 WHEN 'SUBMITTED' THEN 1 ELSE 2 END LIMIT 1`)
     .bind(season, Number(number), String(exceptId || '')).first();
 }
-/** "A profile for this person may already exist": same display or legal name and the same date of birth. */
-export async function samePerson(db, { name, fullName, dob, exceptId }) {
-  if (!dob || (!name && !fullName)) return null;
-  return db.prepare(`SELECT id, display_name, season, status FROM squad_profiles WHERE dob = ? AND id != ? AND deleted_at IS NULL
-    AND (lower(display_name) = lower(?) OR lower(full_name) = lower(?) OR lower(display_name) = lower(?) OR lower(full_name) = lower(?)) ORDER BY updated_at DESC LIMIT 1`)
-    .bind(dob, String(exceptId || ''), name || '', name || '', fullName || '', fullName || '').first();
+/** "A profile for this person may already exist": the same surname and first name (or old name) and the same date of birth. */
+export async function samePerson(db, { surname, firstName, dob, exceptId }) {
+  if (!dob || !surname || !firstName) return null;
+  return db.prepare(`SELECT id, COALESCE(public_name, display_name) AS display_name, season, status FROM squad_profiles WHERE dob = ? AND id != ? AND deleted_at IS NULL
+    AND ((lower(surname) = lower(?) AND lower(first_name) = lower(?)) OR lower(display_name) = lower(?) OR lower(full_name) LIKE lower(?)) ORDER BY updated_at DESC LIMIT 1`)
+    .bind(dob, String(exceptId || ''), surname, firstName, `${firstName} ${surname}`, `%${surname}%`).first();
 }
 
 /** Submit for club review: everything required, the profile photo, a free shirt number. */
@@ -181,7 +211,7 @@ export async function submitProfile(env, actor, id) {
   }
   const at = nowIso();
   await db.prepare(`UPDATE squad_profiles SET status = 'SUBMITTED', submitted_at = ?, submitted_by = ?, updated_at = ?, updated_by = ?, version = version + 1 WHERE id = ?`).bind(at, actor.name, at, actor.name, p.id).run();
-  await logProfile(db, actor, 'squad_profile_submit', `${actor.name} submitted the profile of ${p.display_name} for club review (${p.season})`);
+  await logProfile(db, actor, 'squad_profile_submit', `${actor.name} submitted the profile of ${whoName(p)} for club review (${p.season})`);
   return { ok: true, profile: { ...p, status: 'SUBMITTED' } };
 }
 
@@ -193,12 +223,16 @@ export async function deleteProfile(env, actor, id, { force = false } = {}) {
   if (!force && p.status !== 'DRAFT') return { error: 'Only drafts can be deleted here. Ask a Super Admin to remove a submitted profile.', status: 409 };
   await db.prepare(`UPDATE squad_profiles SET deleted_at = ?, deleted_by = ? WHERE id = ?`).bind(nowIso(), actor.name, p.id).run();
   await deleteFiles(env, p.id);
-  await logProfile(db, actor, 'squad_profile_delete', `${actor.name} deleted the ${STATUSES[p.status].toLowerCase()} profile of ${p.display_name || 'an unnamed person'} (${p.season})`);
+  await logProfile(db, actor, 'squad_profile_delete', `${actor.name} deleted the ${STATUSES[p.status].toLowerCase()} profile of ${rowName(p) || 'an unnamed person'} (${p.season})`);
   return { ok: true };
 }
 
 // ── Files (private R2) ──
-const KINDS = { profile: ['w400.webp', 'w1200.webp', 'w1200.jpg'], action: ['w400.webp', 'w1200.webp', 'w1200.jpg'], audio: ['original', 'mp3'] };
+// hero: the wide header photo of a profile page (added by the club on the review page).
+// audio: old name recordings, kept in storage but no longer offered (22 Oct 2026).
+const PHOTO = ['w400.webp', 'w1200.webp', 'w1200.jpg'];
+const KINDS = { profile: PHOTO, action: PHOTO, hero: [...PHOTO, 'w2000.webp'], audio: ['original', 'mp3'] };
+export const PHOTO_KINDS = ['profile', 'action', 'hero'];
 const keyOf = (id, kind, variant) => `profiles/${id}/${kind}/${variant}`;
 export const validFile = (kind, variant) => !!KINDS[kind]?.includes(variant);
 export async function readFile(env, id, kind, variant) {
@@ -225,16 +259,17 @@ const magic = async (blob, kind) => {
  * removed by re-drawing, 4:5 crop, 400 px and 1200 px WebP + 1200 px JPG).
  * form: kind, w400 (webp), w1200 (webp), jpg (jpeg), width, height, warnings (JSON).
  */
-export async function savePhoto(env, actor, id, form) {
+export async function savePhoto(env, actor, id, form, { admin = false } = {}) {
   const db = env.DB;
   if (!env.SQUAD_BUCKET) return { error: 'Photo storage is not set up yet (SQUAD_BUCKET).', status: 503 };
   const p = await getProfile(db, id);
   if (!p) return { error: 'Profile not found.', status: 404 };
-  if (!EDITABLE.includes(p.status)) return { error: 'This profile can only be viewed.', status: 409 };
+  if (!admin && !EDITABLE.includes(p.status)) return { error: 'This profile can only be viewed.', status: 409 };
   const kind = String(form.get('kind') || '');
-  if (!['profile', 'action'].includes(kind)) return { error: 'Unknown photo.', status: 400 };
+  if (!PHOTO_KINDS.includes(kind) || (kind === 'hero' && !admin)) return { error: 'Unknown photo.', status: 400 };
   if (kind === 'action' && p.type !== 'player') return { error: 'Action photos are for players.', status: 400 };
   const parts = { 'w400.webp': form.get('w400'), 'w1200.webp': form.get('w1200'), 'w1200.jpg': form.get('jpg') };
+  if (kind === 'hero') parts['w2000.webp'] = form.get('w2000');
   for (const [v, f] of Object.entries(parts)) {
     if (!f || typeof f === 'string' || !f.size) return { error: 'The photo did not arrive. Please try again.', status: 400 };
     if (f.size > 4 * 1024 * 1024) return { error: 'The processed photo is too large.', status: 413 };
@@ -251,47 +286,23 @@ export async function savePhoto(env, actor, id, form) {
   photos[kind] = { width: Number(form.get('width')) || null, height: Number(form.get('height')) || null, warnings: warnings.slice(0, 5).map(w => String(w).slice(0, 120)),
     sizes: Object.fromEntries(Object.entries(parts).map(([v, f]) => [v, f.size])), uploadedAt: nowIso(), by: actor.name };
   await db.prepare(`UPDATE squad_profiles SET photos_json = ?, updated_at = ?, updated_by = ?, version = version + 1 WHERE id = ?`).bind(JSON.stringify(photos), nowIso(), actor.name, p.id).run();
-  await logProfile(db, actor, 'squad_profile_photo', `${actor.name} added the ${kind} photo for ${p.display_name || 'a new profile'} (${p.season})`);
+  await logProfile(db, actor, 'squad_profile_photo', `${actor.name} added the ${kind} photo for ${rowName(p) || 'a new profile'} (${p.season})`);
   return { ok: true, photo: photos[kind], name: photoName(p, kind, 'webp') };
 }
-export async function deletePhoto(env, actor, id, kind) {
+export async function deletePhoto(env, actor, id, kind, { admin = false } = {}) {
   const db = env.DB;
   const p = await getProfile(db, id);
   if (!p) return { error: 'Profile not found.', status: 404 };
-  if (!EDITABLE.includes(p.status)) return { error: 'This profile can only be viewed.', status: 409 };
-  if (!['profile', 'action', 'audio'].includes(kind)) return { error: 'Unknown file.', status: 400 };
+  if (!admin && !EDITABLE.includes(p.status)) return { error: 'This profile can only be viewed.', status: 409 };
+  if (!PHOTO_KINDS.includes(kind) || (kind === 'hero' && !admin)) return { error: 'Unknown file.', status: 400 };
   await deleteFiles(env, p.id, kind);
-  if (kind === 'audio') await db.prepare(`UPDATE squad_profiles SET audio_json = '{}', updated_at = ?, updated_by = ?, version = version + 1 WHERE id = ?`).bind(nowIso(), actor.name, p.id).run();
-  else {
-    const photos = parse(p.photos_json, {}); delete photos[kind];
-    await db.prepare(`UPDATE squad_profiles SET photos_json = ?, updated_at = ?, updated_by = ?, version = version + 1 WHERE id = ?`).bind(JSON.stringify(photos), nowIso(), actor.name, p.id).run();
-  }
-  await logProfile(db, actor, 'squad_profile_photo', `${actor.name} removed the ${kind === 'audio' ? 'pronunciation recording' : `${kind} photo`} for ${p.display_name || 'a profile'}`);
+  const photos = parse(p.photos_json, {}); delete photos[kind];
+  await db.prepare(`UPDATE squad_profiles SET photos_json = ?, updated_at = ?, updated_by = ?, version = version + 1 WHERE id = ?`).bind(JSON.stringify(photos), nowIso(), actor.name, p.id).run();
+  await logProfile(db, actor, 'squad_profile_photo', `${actor.name} removed the ${kind} photo for ${rowName(p) || 'a profile'}`);
   return { ok: true };
 }
-/** Name pronunciation (up to 10 seconds): the recording as made and an MP3 copy (made in the browser). */
-export async function saveAudio(env, actor, id, form) {
-  const db = env.DB;
-  if (!env.SQUAD_BUCKET) return { error: 'Recording storage is not set up yet (SQUAD_BUCKET).', status: 503 };
-  const p = await getProfile(db, id);
-  if (!p) return { error: 'Profile not found.', status: 404 };
-  if (!EDITABLE.includes(p.status)) return { error: 'This profile can only be viewed.', status: 409 };
-  const original = form.get('original'), mp3 = form.get('mp3');
-  const seconds = Number(form.get('seconds'));
-  if (!original || typeof original === 'string' || !original.size || original.size > 1024 * 1024) return { error: 'The recording did not arrive or is too long.', status: 400 };
-  if (!(await magic(original, 'audio'))) return { error: 'That file is not a recording.', status: 400 };
-  if (!(seconds > 0 && seconds <= 10.6)) return { error: 'Recordings can be up to 10 seconds.', status: 400 };
-  await env.SQUAD_BUCKET.put(keyOf(p.id, 'audio', 'original'), await original.arrayBuffer(), { httpMetadata: { contentType: (original.type || 'audio/webm').split(';')[0] } });
-  let hasMp3 = false;
-  if (mp3 && typeof mp3 !== 'string' && mp3.size && mp3.size < 1024 * 1024 && await magic(mp3, 'mp3')) {
-    await env.SQUAD_BUCKET.put(keyOf(p.id, 'audio', 'mp3'), await mp3.arrayBuffer(), { httpMetadata: { contentType: 'audio/mpeg' } });
-    hasMp3 = true;
-  }
-  const audio = { original: { type: (original.type || 'audio/webm').split(';')[0], size: original.size }, mp3: hasMp3 ? { size: mp3.size } : null, seconds: Math.round(seconds * 10) / 10, uploadedAt: nowIso(), by: actor.name };
-  await db.prepare(`UPDATE squad_profiles SET audio_json = ?, updated_at = ?, updated_by = ?, version = version + 1 WHERE id = ?`).bind(JSON.stringify(audio), nowIso(), actor.name, p.id).run();
-  await logProfile(db, actor, 'squad_profile_audio', `${actor.name} recorded the name pronunciation for ${p.display_name || 'a profile'}`);
-  return { ok: true, audio };
-}
+// Name recordings were removed from the form on 22 Oct 2026: nothing new is accepted;
+// old recordings are kept in storage (never deleted) but not offered anywhere.
 
 // ── Lists and counts ──
 const FILTERS = {
@@ -303,11 +314,11 @@ export async function listProfiles(db, { season, filter = 'all', q = '' } = {}) 
   const where = [`deleted_at IS NULL`, FILTERS[filter] || FILTERS.all], binds = [];
   if (season && season !== 'all') { where.push(`season = ?`); binds.push(season); }
   const s = String(q || '').trim().toLowerCase();
-  if (s) { where.push(/^\d{1,2}$/.test(s) ? `shirt_number = ?` : `lower(COALESCE(display_name, '')) LIKE ?`); binds.push(/^\d{1,2}$/.test(s) ? Number(s) : `%${s.replace(/[%_]/g, '')}%`); }
-  const rows = (await db.prepare(`SELECT * FROM squad_profiles WHERE ${where.join(' AND ')} ORDER BY CASE type WHEN 'player' THEN 0 ELSE 1 END, COALESCE(shirt_number, 999), display_name LIMIT 500`).bind(...binds).all()).results;
+  if (s) { where.push(/^\d{1,2}$/.test(s) ? `shirt_number = ?` : `lower(COALESCE(public_name, display_name, '') || ' ' || COALESCE(surname, '')) LIKE ?`); binds.push(/^\d{1,2}$/.test(s) ? Number(s) : `%${s.replace(/[%_]/g, '')}%`); }
+  const rows = (await db.prepare(`SELECT * FROM squad_profiles WHERE ${where.join(' AND ')} ORDER BY CASE type WHEN 'player' THEN 0 ELSE 1 END, COALESCE(shirt_number, 999), COALESCE(surname, public_name, display_name) LIMIT 500`).bind(...binds).all()).results;
   return rows.map(p => {
     const photos = parse(p.photos_json, {});
-    return { id: p.id, season: p.season, type: p.type, status: p.status, statusLabel: STATUSES[p.status], name: p.display_name || '', shirtNumber: p.shirt_number, position: p.position, role: p.role,
+    return { id: p.id, season: p.season, type: p.type, status: p.status, statusLabel: STATUSES[p.status], name: rowName(p), nameStatus: p.name_status || null, shirtNumber: p.shirt_number, position: p.position, role: p.role,
       thumb: photos.profile ? `/api/squad-portal/file/${p.id}/profile/w400.webp?v=${encodeURIComponent(photos.profile.uploadedAt || '')}` : null,
       updatedAt: p.updated_at, updatedBy: p.updated_by, reviewNote: p.status === 'CHANGES_REQUESTED' ? p.review_note : null, editable: EDITABLE.includes(p.status) };
   });
@@ -333,13 +344,14 @@ export async function reviewAction(env, admin, id, action, note = '') {
   const db = env.DB;
   const p = await getProfile(db, id);
   if (!p) return { error: 'Profile not found.', status: 404 };
-  const at = nowIso(), name = p.display_name || 'a profile';
+  const at = nowIso(), name = rowName(p) || 'a profile';
   const actor = { ...admin };
   if (action === 'verify') {
     if (!['SUBMITTED', 'CHANGES_REQUESTED'].includes(p.status)) return { error: 'Only submitted profiles can be verified.', status: 409 };
     if (p.type === 'player') {
       const data = parse(p.data_json, {});
-      const taken = await db.prepare(`SELECT display_name FROM squad_profiles WHERE season = ? AND type = 'player' AND shirt_number = ? AND id != ? AND deleted_at IS NULL AND status = 'VERIFIED' LIMIT 1`).bind(p.season, data.shirtNumber, p.id).first();
+      if (p.name_status === 'pending') return { error: 'Confirm this person’s name first (Name check, at the top of this page).', status: 409 };
+      const taken = await db.prepare(`SELECT COALESCE(public_name, display_name) AS display_name FROM squad_profiles WHERE season = ? AND type = 'player' AND shirt_number = ? AND id != ? AND deleted_at IS NULL AND status = 'VERIFIED' LIMIT 1`).bind(p.season, data.shirtNumber, p.id).first();
       if (taken) return { error: `Shirt number ${data.shirtNumber} is already used by ${taken.display_name} (verified). Request a change first.`, status: 409 };
     }
     await db.prepare(`UPDATE squad_profiles SET status = 'VERIFIED', verified_at = ?, verified_by = ?, review_note = NULL, review_by = ?, review_at = ?, left_at = NULL, version = version + 1 WHERE id = ?`).bind(at, admin.name, admin.name, at, p.id).run();
@@ -373,9 +385,10 @@ export async function carryOver(env, admin, { from, to }) {
     if (await db.prepare(`SELECT 1 FROM squad_profiles WHERE carried_from = ? AND season = ? AND deleted_at IS NULL`).bind(p.id, to).first()) continue;
     const id = rid(), at = nowIso(), data = parse(p.data_json, {});
     for (const k of ['confirmAccurate', 'confirmConsent', 'guardianConsent']) data[k] = false; // confirmed again each season
-    await db.prepare(`INSERT INTO squad_profiles (id, season, type, status, data_json, meta_json, photos_json, audio_json, display_name, full_name, dob, shirt_number, role, position,
-      created_at, created_by, updated_at, updated_by, carried_from) VALUES (?, ?, ?, 'DRAFT', ?, '{}', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(id, to, p.type, JSON.stringify(data), p.photos_json, p.audio_json, p.display_name, p.full_name, p.dob, p.shirt_number, p.role, p.position, at, admin.name, at, admin.name, p.id).run();
+    await db.prepare(`INSERT INTO squad_profiles (id, season, type, status, data_json, meta_json, photos_json, audio_json, display_name, full_name, surname, first_name, middle_name, website_name, public_name, name_status,
+      dob, shirt_number, role, position, created_at, created_by, updated_at, updated_by, carried_from) VALUES (?, ?, ?, 'DRAFT', ?, '{}', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(id, to, p.type, JSON.stringify(data), p.photos_json, p.audio_json, p.display_name, p.full_name, p.surname, p.first_name, p.middle_name, p.website_name, p.public_name, p.name_status,
+        p.dob, p.shirt_number, p.role, p.position, at, admin.name, at, admin.name, p.id).run();
     if (env.SQUAD_BUCKET) for (const kind of Object.keys(KINDS)) for (const v of KINDS[kind]) {
       const o = await env.SQUAD_BUCKET.get(keyOf(p.id, kind, v)).catch(() => null);
       if (o) await env.SQUAD_BUCKET.put(keyOf(id, kind, v), await o.arrayBuffer(), { httpMetadata: o.httpMetadata });
@@ -410,18 +423,50 @@ export async function erasePrivateAfterLeaving(db, { now = Date.now(), force = f
   }
   let n = 0;
   for (const id of ids) {
-    const p = await db.prepare(`SELECT id, data_json, meta_json, display_name, season FROM squad_profiles WHERE id = ?`).bind(id).first();
+    const p = await db.prepare(`SELECT id, data_json, meta_json, display_name, public_name, season FROM squad_profiles WHERE id = ?`).bind(id).first();
     if (!p) continue;
     const data = parse(p.data_json, {}), meta = parse(p.meta_json, {});
-    if (meta._privateErased && !PRIVATE_KEYS.some(k => k in data)) continue;
-    for (const k of PRIVATE_KEYS) { delete data[k]; delete meta[k]; }
+    if (meta._privateErased && !RETENTION_KEYS.some(k => k in data)) continue;
+    for (const k of RETENTION_KEYS) { delete data[k]; delete meta[k]; }
     meta._privateErased = nowIso();
     await db.prepare(`UPDATE squad_profiles SET data_json = ?, meta_json = ?, full_name = NULL, dob = NULL WHERE id = ?`).bind(JSON.stringify(data), JSON.stringify(meta), id).run();
-    await logProfile(db, { id: 'system', name: 'Privacy clean-up' }, 'squad_private_erased', `Private details of ${p.display_name || 'a former profile'} (${p.season}) erased: left the club more than ${seasons} season${seasons === 1 ? '' : 's'} ago`);
+    await logProfile(db, { id: 'system', name: 'Privacy clean-up' }, 'squad_private_erased', `Private details of ${rowName(p) || 'a former profile'} (${p.season}) erased: left the club more than ${seasons} season${seasons === 1 ? '' : 's'} ago`);
     n++;
   }
   await setPortalSetting(db, 'retention_day', day);
   return { erased: n, seasons };
+}
+
+// ── Name check (Super Admins): old single names → surname / first name / middle name ──
+// Nothing is guessed silently: every profile with an old name waits here with a
+// proposal until a Super Admin confirms or corrects it. The old answers are kept.
+export async function nameCheckList(db) {
+  await ensureProfileSchema(db);
+  const rows = (await db.prepare(`SELECT * FROM squad_profiles WHERE name_status = 'pending' AND deleted_at IS NULL ORDER BY season DESC, type, COALESCE(shirt_number, 999)`).all()).results;
+  return rows.map(p => {
+    const d = parse(p.data_json, {}), original = d.fullName || d.displayName || '';
+    // Already typed into the new name fields (in the portal): offered as entered.
+    const prop = d.surname && d.firstName ? { surname: d.surname, firstName: d.firstName, middleName: d.middleName || '', confidence: 'high', reason: 'Entered in the new name fields.' } : splitFullName(original);
+    const plain = [prop.firstName, prop.surname].filter(Boolean).join(' ');
+    const website = d.displayName && d.displayName.trim().toLowerCase() !== plain.toLowerCase() ? d.displayName.trim() : '';
+    return { id: p.id, type: p.type, status: p.status, statusLabel: STATUSES[p.status], season: p.season, shirtNumber: p.shirt_number,
+      original, oldDisplayName: d.displayName || '', surname: prop.surname, firstName: prop.firstName, middleName: prop.middleName, websiteName: website,
+      confidence: prop.confidence, reason: prop.reason };
+  });
+}
+export async function confirmName(env, admin, { id, surname, firstName, middleName = '', websiteName = '' }) {
+  const db = env.DB;
+  const p = await getProfile(db, id);
+  if (!p) return { error: 'Profile not found.', status: 404 };
+  if (!String(surname || '').trim() || !String(firstName || '').trim()) return { error: 'Surname and first name are both needed.', status: 400 };
+  const r = await saveFields(env, admin, id, { changes: { surname, firstName, middleName, websiteName }, commit: true, allowAnyStatus: true, admin: true });
+  if (r.error) return r;
+  const bad = Object.entries(r.errors || {});
+  if (bad.length) return { error: bad.map(([, m]) => m).join(' '), status: 400 };
+  await db.prepare(`UPDATE squad_profiles SET name_status = 'confirmed' WHERE id = ?`).bind(id).run();
+  const d = parse(p.data_json, {});
+  await logProfile(db, admin, 'squad_name_confirmed', `${admin.name} confirmed the name of "${d.fullName || d.displayName || 'a profile'}" as ${officialName({ surname, firstName, middleName })}${websiteName ? ` (on the website: ${websiteName})` : ''} (${p.season})`);
+  return { ok: true, status: p.status };
 }
 
 // ── Team details (for the Data Package) ──

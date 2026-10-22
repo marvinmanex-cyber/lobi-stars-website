@@ -1,0 +1,312 @@
+---
+// One player or coaching staff profile page: hero (photo, name, big shirt
+// number), quick facts, "Buy [Surname]'s shirt", bio, interesting fact, the
+// details panel, tabs (season stats / Before Lobi Stars / International career,
+// or Career / Honours for staff), social links, other players and sharing.
+// Only details that have a value are shown. Ages are worked out again in the
+// browser so they are always right (Africa/Lagos).
+import type { Person } from '../../lib/squadPeople';
+import Flag from './Flag.astro';
+import SquadCard from './SquadCard.astro';
+import ShareButton from '../ShareButton.astro';
+import { longDate, birthLine, heightText } from '../../lib/format.js';
+import { countryName } from '../../lib/countries.js';
+import { CURRENT_SEASON } from '../../lib/site';
+
+interface Props {
+  person: Person;
+  Content?: any;
+  hasBody: boolean;
+  prev?: Person | null;
+  next?: Person | null;
+  teammates?: Person[];
+}
+const { person: p, Content, hasBody, prev, next, teammates = [] } = Astro.props;
+const isPlayer = p.kind === 'player';
+const isGk = p.group === 'GK';
+const handle = (h?: string | null) => String(h || '').replace(/^@/, '');
+const socials = [
+  p.socials.instagram && { key: 'instagram', label: 'Instagram', href: `https://www.instagram.com/${handle(p.socials.instagram)}/` },
+  p.socials.x && { key: 'x', label: 'X', href: `https://x.com/${handle(p.socials.x)}` },
+  p.socials.tiktok && { key: 'tiktok', label: 'TikTok', href: `https://www.tiktok.com/@${handle(p.socials.tiktok)}` },
+].filter(Boolean) as { key: string; label: string; href: string }[];
+const birthPlace = [p.birthTown, countryName(p.birthCountry)].filter(Boolean).join(', ');
+const career = isPlayer ? p.previousClubs : p.previousRoles;
+const plainName = `${p.firstName} ${p.surname}`.trim();
+const twoLine = !!p.surname && p.name === plainName;
+const heroImg = p.hero || null;
+---
+<article class="pf" data-kind={p.kind}>
+  <header class:list={['pf-hero', { 'pf-hero--wide': !!heroImg }]}>
+    {heroImg && <img class="pf-hero-bg" src={heroImg} alt="" fetchpriority="high" decoding="async" />}
+    <div class="wrap pf-hero-in">
+      {!heroImg && (
+        <div class="pf-portrait">
+          {p.photo
+            ? <img src={p.photo} alt={p.name} width="600" height="750" fetchpriority="high" />
+            : <svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="36" r="18" /><path d="M14 100c0-22 16-36 36-36s36 14 36 36z" /></svg>}
+        </div>
+      )}
+      <div class="pf-title">
+        {isPlayer && p.number != null && <span class="pf-num" aria-hidden="true">{p.number}</span>}
+        <p class="pf-kicker">{isPlayer ? `${p.position || p.groupLabel}${p.number != null ? ` · #${p.number}` : ''}` : p.role}</p>
+        <h1 class="pf-name">
+          {twoLine ? <><span class="pf-first">{p.firstName}</span><span class="pf-last">{p.surname}</span></> : <span class="pf-last">{p.name}</span>}
+          {isPlayer && p.number != null && <span class="sr-only">, number {p.number}</span>}
+        </h1>
+        <ul class="pf-quick">
+          {p.nationality[0] && <li><span class="pf-q-k">Nationality</span><span class="pf-q-v"><Flag code={p.nationality[0]} /></span></li>}
+          <li><span class="pf-q-k">{isPlayer ? 'Position' : 'Role'}</span><span class="pf-q-v">{isPlayer ? p.position || p.groupLabel : p.role}</span></li>
+          {p.age != null && <li><span class="pf-q-k">Age</span><span class="pf-q-v" data-age-of={p.dob || ''}>{p.age}</span></li>}
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <div class="wrap pf-main">
+    <div class="pf-col">
+      {p.shirtUrl && (
+        <a class="pf-shirt" href={p.shirtUrl} target="_blank" rel="noopener">
+          <span class="pf-shirt-num" aria-hidden="true">{p.number ?? ''}</span>
+          <span><b>Buy {p.shortName}'s shirt</b><small>Official Lobi Stars FC shirt</small></span>
+          <span aria-hidden="true">→</span>
+        </a>
+      )}
+
+      {(hasBody || p.bioHeadline || p.shortBio) && (
+        <section class="pf-sec pf-bio" aria-labelledby="bio-h">
+          <h2 class="pf-h2" id="bio-h">{p.bioHeadline || 'Biography'}</h2>
+          {hasBody && Content ? <Content /> : p.shortBio && <p>{p.shortBio}</p>}
+        </section>
+      )}
+
+      {p.interestingFact && (
+        <aside class="pf-fact" aria-labelledby="fact-h">
+          <h2 id="fact-h">{isPlayer ? 'An interesting fact' : 'An interesting fact about the coach'}</h2>
+          <p>{p.interestingFact}</p>
+        </aside>
+      )}
+
+      <section class="pf-sec" aria-labelledby="det-h">
+        <h2 class="pf-h2" id="det-h">Details</h2>
+        <dl class="pf-details">
+          {p.officialName && <div><dt>Name</dt><dd>{p.officialName}</dd></div>}
+          {p.nationality.length > 0 && <div><dt>Nationality</dt><dd class="pf-flags">{p.nationality.map(c => <Flag code={c} />)}</dd></div>}
+          {isPlayer && p.nationalTeam && <div><dt>National team</dt><dd><Flag code={p.nationalTeam} /></dd></div>}
+          {birthPlace && <div><dt>Place of birth</dt><dd>{birthPlace}</dd></div>}
+          <div><dt>{isPlayer ? 'Position' : 'Role'}</dt><dd>{isPlayer ? p.position || p.groupLabel : p.role}</dd></div>
+          {p.dob ? <div><dt>Date of birth</dt><dd data-birth={p.dob}>{birthLine(p.dob)}</dd></div> : p.age != null && <div><dt>Age</dt><dd>{p.age}</dd></div>}
+          {isPlayer && p.heightCm && <div><dt>Height</dt><dd>{heightText(p.heightCm)}</dd></div>}
+          {isPlayer && p.preferredFoot && <div><dt>Preferred foot</dt><dd>{p.preferredFoot}</dd></div>}
+          {!isPlayer && p.licence && <div><dt>Licence</dt><dd>{p.licence}</dd></div>}
+          {isPlayer && <div><dt>Lobi Stars debut</dt><dd>{p.debut ? longDate(p.debut) : 'Yet to debut'}</dd></div>}
+          {p.joined && <div><dt>Joined</dt><dd>{longDate(p.joined)}</dd></div>}
+        </dl>
+      </section>
+
+      <section class="pf-sec pf-tabs" data-tabs>
+        <div class="pf-tablist" role="tablist" aria-label="More about this person" hidden>
+          {isPlayer && <button role="tab" type="button" id="t-season" aria-controls="p-season">{CURRENT_SEASON}</button>}
+          <button role="tab" type="button" id="t-career" aria-controls="p-career">{isPlayer ? 'Before Lobi Stars' : 'Career'}</button>
+          {isPlayer && p.internationalCareer.length > 0 && <button role="tab" type="button" id="t-intl" aria-controls="p-intl">International career</button>}
+          {p.honours.length > 0 && <button role="tab" type="button" id="t-hon" aria-controls="p-hon">Honours</button>}
+        </div>
+
+        {isPlayer && (
+          <div class="pf-panel" role="tabpanel" id="p-season" aria-labelledby="t-season">
+            <h2 class="pf-h3">{CURRENT_SEASON} season</h2>
+            <ul class="pf-stats" data-stats={p.slug}>
+              {[['apps', 'Appearances'], ['starts', 'Starts'], ['goals', 'Goals'], ['assists', 'Assists'], ...(isGk ? [['cleanSheets', 'Clean sheets']] : []), ['minutes', 'Minutes'], ['yellow', 'Yellow cards'], ['red', 'Red cards'], ['motm', 'Man of the Match']].map(([k, l]) => (
+                <li><span class="pf-stat-v" data-stat={k}>–</span><span class="pf-stat-k">{l}</span></li>
+              ))}
+            </ul>
+            <p class="pf-note" data-stats-note>Worked out automatically from the club's match records.</p>
+          </div>
+        )}
+
+        <div class="pf-panel" role="tabpanel" id="p-career" aria-labelledby="t-career">
+          <h2 class="pf-h3">{isPlayer ? 'Before Lobi Stars' : 'Career'}</h2>
+          {career.length > 0 ? (
+            <ol class="pf-timeline">
+              {isPlayer
+                ? p.previousClubs.map(c => <li><span class="pf-tl-years">{[c.startYear, c.endYear].filter(Boolean).join('–') || '–'}</span><span class="pf-tl-club">{c.club}</span>{c.country && <span class="pf-tl-country"><Flag code={c.country} size={14} /></span>}</li>)
+                : p.previousRoles.map(r => <li><span class="pf-tl-years">{r.period || '–'}</span><span class="pf-tl-club">{r.club}</span><span class="pf-tl-country">{r.position}</span></li>)}
+            </ol>
+          ) : <p class="pf-note">{isPlayer ? 'No previous clubs listed yet.' : 'No previous clubs listed yet.'}</p>}
+        </div>
+
+        {isPlayer && p.internationalCareer.length > 0 && (
+          <div class="pf-panel" role="tabpanel" id="p-intl" aria-labelledby="t-intl">
+            <h2 class="pf-h3">International career{p.nationalTeam ? <> · <Flag code={p.nationalTeam} size={14} /></> : ''}</h2>
+            <div class="pf-tablewrap"><table class="pf-table">
+              <thead><tr><th scope="col">Level</th><th scope="col">Caps</th><th scope="col">Goals</th><th scope="col">Notable tournaments</th></tr></thead>
+              <tbody>{p.internationalCareer.map(r => <tr><th scope="row">{r.level}</th><td>{r.caps ?? '–'}</td><td>{r.goals ?? '–'}</td><td>{r.tournaments || '–'}</td></tr>)}</tbody>
+            </table></div>
+          </div>
+        )}
+
+        {p.honours.length > 0 && (
+          <div class="pf-panel" role="tabpanel" id="p-hon" aria-labelledby="t-hon">
+            <h2 class="pf-h3">Honours</h2>
+            <ul class="pf-honours">{p.honours.map(h => <li><b>{h.title}</b>{[h.seasonOrYear, h.clubOrTeam].filter(Boolean).length > 0 && <span> · {[h.seasonOrYear, h.clubOrTeam].filter(Boolean).join(', ')}</span>}</li>)}</ul>
+          </div>
+        )}
+      </section>
+
+      <div class="pf-actions">
+        {socials.length > 0 && (
+          <ul class="pf-social" aria-label={`${p.name} on social media`}>
+            {socials.map(s => <li><a href={s.href} target="_blank" rel="noopener noreferrer me" aria-label={`${p.name} on ${s.label}`} class={`pf-soc pf-soc--${s.key}`}>
+              {s.key === 'instagram' && <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10zm0 8.2A3.2 3.2 0 1 1 12 8.8a3.2 3.2 0 0 1 0 6.4zM17.3 5.5a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4zM12 2c-2.7 0-3 0-4.1.1C4.3 2.3 2.3 4.3 2.1 7.9 2 9 2 9.3 2 12s0 3 .1 4.1c.2 3.6 2.2 5.6 5.8 5.8 1.1.1 1.4.1 4.1.1s3 0 4.1-.1c3.6-.2 5.6-2.2 5.8-5.8.1-1.1.1-1.4.1-4.1s0-3-.1-4.1c-.2-3.6-2.2-5.6-5.8-5.8C15 2 14.7 2 12 2zm0 1.8c2.7 0 3 0 4 .1 2.6.1 3.9 1.4 4 4 .1 1 .1 1.3.1 4s0 3-.1 4c-.1 2.6-1.4 3.9-4 4-1 .1-1.3.1-4 .1s-3 0-4-.1c-2.6-.1-3.9-1.4-4-4-.1-1-.1-1.3-.1-4s0-3 .1-4c.1-2.6 1.4-3.9 4-4 1-.1 1.3-.1 4-.1z"/></svg>}
+              {s.key === 'x' && <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.2-8.3L1.8 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>}
+              {s.key === 'tiktok' && <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.6 2h-3.3v13.4a2.9 2.9 0 1 1-2.9-2.9c.3 0 .6 0 .9.1V9.2a6.3 6.3 0 1 0 5.3 6.2V8.7a8 8 0 0 0 4.4 1.3V6.7a4.6 4.6 0 0 1-4.4-4.7z"/></svg>}
+            </a></li>)}
+          </ul>
+        )}
+        <ShareButton title={`${p.name} | Lobi Stars FC`} text={isPlayer ? `${p.name}, ${p.position || p.groupLabel} for Lobi Stars FC` : `${p.name}, ${p.role} at Lobi Stars FC`} />
+      </div>
+    </div>
+  </div>
+
+  {(prev || next || teammates.length > 0) && (
+    <section class="pf-others" aria-labelledby="others-h">
+      <div class="wrap">
+        <div class="pf-others-head">
+          <h2 class="pf-h2" id="others-h">{isPlayer ? 'Other players' : 'Coaching staff'}</h2>
+          <nav class="pf-prevnext" aria-label={isPlayer ? 'Previous and next player' : 'Previous and next staff member'}>
+            {prev && <a href={prev.href} rel="prev">← {prev.name}</a>}
+            {next && <a href={next.href} rel="next">{next.name} →</a>}
+          </nav>
+        </div>
+        {teammates.length > 0 && (
+          <ul class="pf-others-grid">
+            {teammates.map(t => <li><SquadCard href={t.href} firstName={t.firstName} surname={t.surname} name={t.name} subtitle={t.kind === 'player' ? t.position || t.groupLabel : t.role} photo={t.photoSmall} number={t.number} /></li>)}
+          </ul>
+        )}
+        <p><a class="pf-all" href="/squad/">See the full squad</a></p>
+      </div>
+    </section>
+  )}
+</article>
+
+<style>
+  .pf-hero { position: relative; overflow: hidden; color: #fff; background: radial-gradient(120% 100% at 80% 0%, #F0353B 0%, #C11A1F 45%, #4D0B0D 100%); }
+  .pf-hero--wide { min-height: clamp(380px, 56vw, 620px); display: flex; align-items: flex-end; }
+  .pf-hero-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; }
+  .pf-hero--wide::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(21, 24, 29, .92) 0%, rgba(77, 11, 13, .55) 45%, rgba(0, 0, 0, .05) 100%); }
+  .pf-hero-in { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(220px, 380px) 1fr; gap: 40px; align-items: end; padding-top: 32px; }
+  .pf-hero--wide .pf-hero-in { grid-template-columns: 1fr; padding-bottom: 36px; }
+  .pf-portrait { position: relative; aspect-ratio: 4 / 5; align-self: end; }
+  .pf-portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 14px 14px 0 0; }
+  .pf-portrait svg { position: absolute; left: 12%; bottom: 0; width: 76%; fill: rgba(255, 255, 255, .3); }
+  .pf-title { position: relative; padding-bottom: 32px; }
+  .pf-num { position: absolute; right: 0; top: -12px; z-index: 0; font: 400 clamp(150px, 22vw, 300px)/.8 'Bebas Neue', sans-serif; color: transparent; -webkit-text-stroke: 3px rgba(255, 199, 44, .85); pointer-events: none; }
+  .pf-kicker { position: relative; margin: 0 0 8px; font: 700 14px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .pf-name { position: relative; margin: 0; display: flex; flex-direction: column; font-weight: 400; }
+  .pf-first { font: 600 clamp(22px, 3vw, 32px)/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: rgba(255, 255, 255, .9); }
+  .pf-last { font: 400 clamp(56px, 9vw, 116px)/.9 'Bebas Neue', sans-serif; letter-spacing: 1px; overflow-wrap: anywhere; }
+  .pf-quick { position: relative; list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 28px; }
+  .pf-quick li { display: flex; flex-direction: column; gap: 4px; padding-left: 12px; border-left: 3px solid #FFC72C; }
+  .pf-q-k { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255, 255, 255, .75); }
+  .pf-q-v { font: 700 18px/1.2 'Barlow Condensed', sans-serif; }
+  .pf-main { padding-top: 32px; padding-bottom: 32px; }
+  .pf-col { max-width: 860px; }
+  .pf-shirt { display: flex; align-items: center; gap: 16px; padding: 16px 20px; border-radius: 14px; text-decoration: none; color: #15181D; background: linear-gradient(100deg, #FFC72C, #FFD966); box-shadow: 0 10px 24px rgba(156, 107, 10, .25); font-size: 18px; margin-bottom: 8px; }
+  .pf-shirt b { display: block; font: 700 22px/1.1 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .5px; }
+  .pf-shirt small { color: #4D3A05; }
+  .pf-shirt > span:last-child { margin-left: auto; font-size: 26px; }
+  .pf-shirt-num { flex: none; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 10px; background: #C11A1F; color: #fff; font: 400 32px/1 'Bebas Neue', sans-serif; }
+  .pf-shirt:focus-visible { outline: 3px solid var(--red); outline-offset: 3px; }
+  .pf-sec { margin-top: 40px; }
+  .pf-h2 { margin: 0 0 16px; font: 400 clamp(28px, 3.5vw, 36px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
+  .pf-h3 { margin: 0 0 14px; font: 700 20px/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px; }
+  .pf-bio { max-width: 68ch; font-size: 18px; line-height: 1.75; }
+  .pf-bio :global(p) { margin: 0 0 1.1em; }
+  .pf-bio :global(h2), .pf-bio :global(h3) { margin: 1.4em 0 .5em; font: 700 22px/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .5px; }
+  .pf-fact { margin-top: 32px; padding: 20px 22px 20px 26px; border-radius: 14px; background: #15181D; color: #fff; border-left: 6px solid #FFC72C; }
+  .pf-fact h2 { margin: 0 0 6px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .pf-fact p { margin: 0; font-size: 19px; line-height: 1.55; }
+  .pf-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; margin: 0; border-top: 1px solid var(--d4); }
+  .pf-details div { padding: 14px 0; border-bottom: 1px solid var(--d4); }
+  .pf-details dt { margin-bottom: 6px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); }
+  .pf-details dd { margin: 0; font-size: 17px; font-weight: 600; }
+  .pf-flags { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  .pf-tablist { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 2px solid var(--d4); margin-bottom: 20px; }
+  .pf-tablist button { min-height: 46px; padding: 8px 16px; border: 0; background: none; color: var(--lt); font: 700 16px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+  .pf-tablist button[aria-selected="true"] { color: var(--red-text); border-bottom-color: var(--red); }
+  .pf-tablist button:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+  .pf-tabs.is-tabbed .pf-h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .pf-panel + .pf-panel { margin-top: 28px; }
+  .pf-tabs.is-tabbed .pf-panel + .pf-panel { margin-top: 0; }
+  .pf-stats { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+  .pf-stats li { background: #15181D; color: #fff; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 6px; }
+  .pf-stat-v { font: 400 44px/1 'Bebas Neue', sans-serif; color: #FFC72C; }
+  .pf-stat-k { font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(255, 255, 255, .8); }
+  .pf-note { color: var(--lt); font-size: 14px; margin: 12px 0 0; }
+  .pf-timeline { list-style: none; margin: 0; padding: 0 0 0 20px; border-left: 3px solid var(--red); display: grid; gap: 18px; }
+  .pf-timeline li { position: relative; display: grid; gap: 2px; }
+  .pf-timeline li::before { content: ''; position: absolute; left: -29px; top: 4px; width: 15px; height: 15px; border-radius: 50%; background: #FFC72C; border: 3px solid var(--black); box-shadow: 0 0 0 2px var(--red); }
+  .pf-tl-years { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; color: var(--red-text); }
+  .pf-tl-club { font: 700 20px/1.2 'Barlow Condensed', sans-serif; }
+  .pf-tl-country { color: var(--lt); font-size: 15px; }
+  .pf-tablewrap { overflow-x: auto; }
+  .pf-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  .pf-table th, .pf-table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--d4); }
+  .pf-table thead th { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; color: var(--lt); }
+  .pf-honours { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: 17px; }
+  .pf-actions { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+  .pf-social { list-style: none; margin: 0; padding: 0; display: flex; gap: 10px; }
+  .pf-soc { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: #15181D; color: #fff; }
+  .pf-soc svg { width: 22px; height: 22px; fill: currentColor; }
+  .pf-soc:hover, .pf-soc:focus-visible { background: var(--red); }
+  .pf-others { margin-top: 24px; padding: 40px 0 48px; background: var(--dark); border-top: 1px solid var(--d4); }
+  .pf-others-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .pf-prevnext { display: flex; gap: 18px; flex-wrap: wrap; }
+  .pf-prevnext a, .pf-all { color: var(--red-text); font: 700 16px/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; }
+  .pf-prevnext a:hover, .pf-all:hover { text-decoration: underline; }
+  .pf-others-grid { list-style: none; margin: 16px 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 1024px) { .pf-others-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 760px) {
+    .pf-hero-in { grid-template-columns: 1fr; gap: 0; }
+    .pf-portrait { max-width: 320px; width: 78%; margin: 0 auto; order: 2; }
+    .pf-title { padding-bottom: 20px; }
+    .pf-details { grid-template-columns: 1fr; }
+    .pf-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pf-others-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .pf-shirt { font-size: 16px; }
+  }
+</style>
+
+<script>
+  // Ages from the date of birth, today in Lagos (the page may have been built days ago).
+  import { ageFrom, birthLine } from '../../lib/format.js';
+  document.querySelectorAll<HTMLElement>('[data-age-of]').forEach(el => { const a = el.dataset.ageOf && ageFrom(el.dataset.ageOf); if (a != null && a !== '') el.textContent = String(a); });
+  document.querySelectorAll<HTMLElement>('[data-birth]').forEach(el => { el.textContent = birthLine(el.dataset.birth!); });
+
+  // Tabs (without JavaScript every section simply shows one after another).
+  document.querySelectorAll<HTMLElement>('[data-tabs]').forEach(box => {
+    const list = box.querySelector<HTMLElement>('[role="tablist"]')!, tabs = [...list.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    if (tabs.length < 2) return;
+    list.hidden = false; box.classList.add('is-tabbed');
+    const pick = (t: HTMLButtonElement, focus = false) => {
+      tabs.forEach(x => { const on = x === t; x.setAttribute('aria-selected', String(on)); x.tabIndex = on ? 0 : -1; document.getElementById(x.getAttribute('aria-controls')!)!.hidden = !on; });
+      if (focus) t.focus();
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => pick(t));
+      t.addEventListener('keydown', e => {
+        const k = (e as KeyboardEvent).key, j = k === 'ArrowRight' ? (i + 1) % tabs.length : k === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length : k === 'Home' ? 0 : k === 'End' ? tabs.length - 1 : -1;
+        if (j >= 0) { e.preventDefault(); pick(tabs[j], true); }
+      });
+    });
+    pick(tabs[0]);
+  });
+
+  // This season's numbers, worked out from the match records.
+  const box = document.querySelector<HTMLElement>('[data-stats]');
+  if (box) fetch(`/api/squad/stats?player=${encodeURIComponent(box.dataset.stats!)}`).then(r => r.json()).then(d => {
+    box.querySelectorAll<HTMLElement>('[data-stat]').forEach(el => { el.textContent = String(d.stats?.[el.dataset.stat!] ?? 0); });
+    const note = document.querySelector<HTMLElement>('[data-stats-note]');
+    if (note && !d.matches) note.textContent = 'No matches played yet this season.';
+  }).catch(() => {});
+</script>
