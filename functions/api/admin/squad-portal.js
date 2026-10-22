@@ -2,12 +2,13 @@ import { requireAdminUser } from '../_lib/adminEvents.js';
 import { can } from '../_lib/adminRoles.js';
 import { logAdminAction } from '../_lib/adminSession.js';
 import { RETENTION_DEFAULT } from '../_lib/squadProfiles.js';
-import { resetRequest, getPortalSettings, setPortalSetting, resetPortalPassword, openSessions, signOutAll, unseenDevices, ensurePortalSchema, portalLink, portalPath } from '../_lib/squadPortal.js';
+import { resetRequest, passwordProblem, getPortalSettings, setPortalSetting, resetPortalPassword, openSessions, signOutAll, unseenDevices, ensurePortalSchema, portalLink, portalPath } from '../_lib/squadPortal.js';
 
 // Settings › Squad & Staff Data Portal (only the three Super Admins: squad.portal.manage).
 // GET                                         -- link, username, on/off, season, open sessions, new devices
 // POST { action: 'username', username }
 // POST { action: 'new_password' }             -- returns the new password ONCE; signs out every portal session
+// POST { action: 'set_password', password }   -- a password the Super Admin chose (12+ characters, letters and numbers); signs everyone out
 // POST { action: 'enabled', enabled }         -- open / close the portal
 // POST { action: 'season', season }           -- e.g. "2026/27"
 // POST { action: 'dismiss_request' }          -- ignore a "Forgot the password?" request
@@ -58,6 +59,11 @@ export async function onRequestPost({ request, env }) {
     await logAdminAction(db, admin, 'squad_portal_username', `Squad Data Portal username changed to "${u}"`);
   } else if (b.action === 'new_password') {
     out.password = await resetPortalPassword(env, admin);
+  } else if (b.action === 'set_password') {
+    const problem = passwordProblem(b.password, (await getPortalSettings(db)).username);
+    if (problem) return json({ error: problem }, 400);
+    await resetPortalPassword(env, admin, String(b.password));
+    out.chosen = true;
   } else if (b.action === 'enabled') {
     await setPortalSetting(db, 'enabled', b.enabled ? '1' : '0', admin.name);
     if (!b.enabled) await signOutAll(env, admin, 'portal closed');

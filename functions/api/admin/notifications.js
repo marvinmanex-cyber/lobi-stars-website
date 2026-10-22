@@ -53,7 +53,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   if (can(admin, 'squad.portal.manage')) {
     const dev = await unseenDevices(db).catch(() => []);
     const req = resetRequest(await getPortalSettings(db).catch(() => ({})));
-    if (req) items.unshift({ icon: '🔑', title: `Squad Data Portal: ${req.name} asked for a new password`, sub: `Reach them on ${req.contact}`, href: '/admin/squad-portal/' });
+    if (req) items.unshift({ icon: '🔑', title: `Squad Data Portal: ${req.name} ${req.emailed ? 'needs the new password' : 'asked for a new password'}`, sub: req.emailed ? `The new password is in your email. Give it to them on ${req.contact}` : `Reach them on ${req.contact}`, href: '/admin/squad-portal/' });
     if (dev.length) items.unshift({ icon: '🔐', title: `Squad Data Portal: signed in from ${dev.length === 1 ? 'a new device' : `${dev.length} new devices`}`, sub: dev.slice(0, 3).map(d => `${d.first_name} on ${d.device}`).join(' · '), href: '/admin/squad-portal/' });
   }
   // Squad profiles submitted from the portal, waiting for club review.

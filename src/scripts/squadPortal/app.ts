@@ -105,7 +105,7 @@ export function startPortal() {
       const r = await fetch('/api/squad-portal/forgot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ name, contact, turnstile }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { show(d.error || 'The request could not be sent. Please try again.', false); if (d.needTurnstile) showTurnstile(); return; }
-      show('Request sent. A Super Admin will send you the new password on WhatsApp or in person.', true);
+      show(d.message || 'Contact your admin for your new password.', true);
     } catch { show('No connection. Please try again when you are online.', false); }
     finally { btn.disabled = false; }
   });

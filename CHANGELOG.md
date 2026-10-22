@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Squad & Staff Data Portal: choose your own password; forgotten password emailed to Super Admins
+
+**What changed**
+- Settings › Squad & Staff Data Portal › Login: **Or choose your own
+  password** (type it twice; at least 12 characters with letters and numbers,
+  not containing the username). It signs everyone out, like Generate.
+- **Forgot the password?** now makes a new password straight away and emails
+  it **only to the three Super Admins**, who give it to the staff member. The
+  portal shows "Contact your admin for your new password." People already
+  signed in stay signed in. If the email cannot be sent, the password is not
+  changed and the request waits on the settings page and the bell.
+
+**Staff need to do:** nothing. Staff guide §38 updated.
+
 ## 2026-10-22: Squad & Staff Data Portal: "Forgot the password?"
 
 **What changed**

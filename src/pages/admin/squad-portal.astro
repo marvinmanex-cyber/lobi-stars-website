@@ -1,7 +1,7 @@
 ---
 // Settings › Squad & Staff Data Portal (only the three Super Admins). The
 // private portal link to copy and send to the admin in charge, the shared
-// login (username, generate a new password: shown once), open/close, the
+// login (username, generate a new password: shown once, or choose one), open/close, the
 // current season, open portal sessions (sign out all) and new devices.
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
@@ -17,7 +17,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <section class="spa-card spa-request" id="resetReq" aria-labelledby="h-req" hidden>
       <h2 id="h-req">New password requested</h2>
       <p id="reqText"></p>
-      <p class="muted">If you know this person, press <b>Generate new password</b> below and send it to them by WhatsApp or in person (never by email). Everyone using the portal is signed out and needs the new password.</p>
+      <p class="muted" id="reqHow"></p>
       <div class="spa-row"><button class="btn-p" type="button" id="reqNew">Generate new password</button><button class="btn-o" type="button" id="reqIgnore">Ignore this request</button></div>
     </section>
 
@@ -33,7 +33,17 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <form class="spa-row" id="userForm"><label class="spa-l">Username<input id="username" maxlength="32" autocomplete="off" /></label><button class="btn-o" type="submit">Save username</button></form>
       <div class="spa-row"><button class="btn-p" type="button" id="newPass">Generate new password</button><span class="muted" id="passState"></span></div>
       <div class="spa-secret" id="secret" hidden></div>
-      <p class="muted">The password is shown once and never emailed. A new password signs out everyone using the portal.</p>
+      <form class="spa-own" id="ownForm" novalidate>
+        <h3>Or choose your own password</h3>
+        <div class="spa-row">
+          <label class="spa-l">New password<input id="ownPass" type="password" autocomplete="new-password" minlength="12" maxlength="64" /></label>
+          <label class="spa-l">Type it again<input id="ownPass2" type="password" autocomplete="new-password" maxlength="64" /></label>
+        </div>
+        <label class="spa-switch"><input type="checkbox" id="ownShow" /> <span>Show the password</span></label>
+        <p class="muted">At least 12 characters, with letters and numbers, and not containing the username.</p>
+        <div class="spa-row"><button class="btn-p" type="submit">Save this password</button></div>
+      </form>
+      <p class="muted">A new password signs out everyone using the portal. It is never shown again here, so keep it somewhere safe and give it to the media team on WhatsApp or in person. If someone uses "Forgot the password?" on the portal, a new password is made and emailed only to the three Super Admins.</p>
     </section>
 
     <section class="spa-card" aria-labelledby="h-season">
@@ -63,6 +73,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 <style>
   .spa { max-width: 900px; padding-top: 20px; padding-bottom: 60px; }
   .spa-lede { color: var(--a-muted); max-width: 720px; line-height: 1.5; }
+  .spa-own { display: grid; gap: 10px; border-top: 1px solid var(--a-line); padding-top: 12px; }
+  .spa-own h3 { margin: 0; font-size: 16px; }
   .spa-card.spa-request { border: 2px solid #F2B705; }
   .spa-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 14px 0; display: grid; gap: 12px; }
   .spa-card h2 { margin: 0; font-size: 18px; }
@@ -107,7 +119,16 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     $('season').value = d.season;
     $('keep').value = String(d.retentionSeasons);
     $('resetReq').hidden = !d.resetRequest;
-    if (d.resetRequest) $('reqText').textContent = `${d.resetRequest.name} forgot the password on ${when(d.resetRequest.at)} (${d.resetRequest.device}). Reach them on: ${d.resetRequest.contact}`;
+    if (d.resetRequest) {
+      const r = d.resetRequest;
+      $('h-req').textContent = r.emailed ? 'New password sent to your email' : 'New password requested';
+      $('reqText').textContent = `${r.name} forgot the password on ${when(r.at)} (${r.device}). Reach them on: ${r.contact}`;
+      $('reqHow').innerHTML = r.emailed
+        ? 'A new password was made and emailed to the three Super Admins (look for "Squad Data Portal: new password"). Give it to them on WhatsApp or in person, then press <b>Done</b>. People already signed in stay signed in.'
+        : 'The email could not be sent, so the password was <b>not</b> changed. If you know this person, press <b>Generate new password</b> (or choose one below) and give it to them on WhatsApp or in person.';
+      $('reqNew').hidden = !!r.emailed;
+      $('reqIgnore').textContent = r.emailed ? 'Done' : 'Ignore this request';
+    }
     $('sessions').innerHTML = d.sessions.length ? `<div class="scroll"><table><thead><tr><th>Name entered</th><th>Device</th><th>Since</th><th>Last active</th><th></th></tr></thead><tbody>${d.sessions.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.device)}</td><td>${esc(when(s.created_at))}</td><td>${esc(when(s.last_seen))}</td><td><button class="btn-o" type="button" data-out="${esc(s.id)}">Sign out</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Nobody is signed in to the portal.</p>';
     $('devices').innerHTML = d.devices.length ? `<div class="scroll"><table><thead><tr><th>Device</th><th>First used by</th><th>First used</th><th>Last used</th></tr></thead><tbody>${d.devices.map(x => `<tr><td>${esc(x.device)} ${x.seen_by_admin ? '' : '<span class="new">New</span>'}</td><td>${esc(x.first_name)}</td><td>${esc(when(x.first_seen))}</td><td>${esc(when(x.last_seen))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No device has signed in yet.</p>';
   }
@@ -119,6 +140,16 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   $('seasonForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'season', season: $('season').value }, 'Season saved.'); });
   $('reqNew').addEventListener('click', () => { $('newPass').click(); $('newPass').scrollIntoView({ block: 'center' }); });
   $('reqIgnore').addEventListener('click', () => act({ action: 'dismiss_request' }, 'Request ignored.'));
+  $('ownShow').addEventListener('change', e => { for (const id of ['ownPass', 'ownPass2']) $(id).type = e.target.checked ? 'text' : 'password'; });
+  $('ownForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const p1 = $('ownPass').value, p2 = $('ownPass2').value;
+    if (p1.length < 12) return msg('The password must have at least 12 characters.', false);
+    if (p1 !== p2) return msg('The two passwords are not the same.', false);
+    if (!confirm('Save this as the new portal password? Everyone using the portal is signed out, and the old password stops working.')) return;
+    const d = await act({ action: 'set_password', password: p1 }, 'New password saved. Give it to the media team on WhatsApp or in person.');
+    if (d) { $('ownPass').value = ''; $('ownPass2').value = ''; $('ownShow').checked = false; $('ownPass').type = $('ownPass2').type = 'password'; }
+  });
   $('keepForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'retention', seasons: Number($('keep').value) }, 'Saved.'); });
   $('signOutAll').addEventListener('click', () => { if (confirm('Sign out everyone using the portal?')) act({ action: 'sign_out_all' }, 'Everyone signed out.'); });
   $('sessions').addEventListener('click', e => { const b = e.target.closest('[data-out]'); if (b) act({ action: 'sign_out', id: b.dataset.out }, 'Signed out.'); });

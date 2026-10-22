@@ -5,7 +5,9 @@
 // Needs the local Pages dev server with ADMIN_CODE=test-code-123 and a fresh build in dist/.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, writeFileSync, rmSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -110,23 +112,36 @@ test('portal off: the sign-in page says it is closed and open sessions end', asy
   await adminCall({ action: 'enabled', enabled: true });
 });
 
-test('forgot the password: the request reaches the Super Admins (settings, bell, log); nothing secret comes back; limited', async () => {
+test('forgot the password: "Contact your admin"; new password only by email to the Super Admins (kept if email fails); bell; limited', async () => {
   const forgot = (b, from = ip()) => fetch(`${BASE}/api/squad-portal/forgot`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': from }, body: JSON.stringify(b) }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
+  // The 10-a-day limit is shared by everyone: start from zero.
+  const file = path.join(tmpdir(), `squad-forgot-${uid()}.sql`);
+  writeFileSync(file, "DELETE FROM rate_limits WHERE key LIKE 'squadforgot:%';");
+  try { execFileSync('npx', ['wrangler', 'd1', 'execute', 'DB', '--local', '--file', `"${file}"`], { stdio: 'pipe', shell: true }); } finally { rmSync(file, { force: true }); }
   await adminCall({ action: 'enabled', enabled: true });
+  const s0 = (await adminCall()).data;
+  password = (await adminCall({ action: 'new_password' })).data.password;
   assert.equal((await forgot({ name: '', contact: '08035550000' })).data.field, 'name');
   assert.equal((await forgot({ name: 'Grace', contact: '' })).data.field, 'contact');
   const who = `Forgetful ${uid()}`;
   const r = await forgot({ name: who, contact: '0803 555 0000' });
   assert.equal(r.status, 200, JSON.stringify(r.data));
-  assert.deepEqual(Object.keys(r.data), ['ok'], 'no password or secret in the answer');
+  assert.deepEqual(r.data, { ok: true, message: 'Contact your admin for your new password.' }, 'no password in the answer');
   const s = (await adminCall()).data;
   assert.equal(s.resetRequest.name, who); assert.equal(s.resetRequest.contact, '0803 555 0000');
+  assert.equal(s.resetRequest.emailed, false, 'no email service on the test server');
+  assert.equal((await login({ username: s0.username, password, name: 'Still works' })).status, 200, 'email not sent, so the old password still works');
   const bell = (await fetch(`${BASE}/api/admin/notifications`, { headers: ADMIN }).then(x => x.json())).items;
   assert.ok(bell.some(i => i.title === `Squad Data Portal: ${who} asked for a new password`));
-  // A new password clears the request; "Ignore" also does.
-  const fresh = await adminCall({ action: 'new_password' });
-  password = fresh.data.password;
-  assert.equal(fresh.data.resetRequest, null);
+  // Choosing a password: rules, then it works and the request is cleared.
+  for (const bad of ['short1', 'onlyletterslong', `${s0.username}2026xyz`, '123456789012345']) assert.equal((await adminCall({ action: 'set_password', password: bad })).status, 400, bad);
+  const mine = `Golden Eagles 2026 ${uid()}`;
+  const set = await adminCall({ action: 'set_password', password: mine });
+  assert.equal(set.status, 200, JSON.stringify(set.data)); assert.equal(set.data.password, undefined, 'a chosen password is not sent back');
+  assert.equal(set.data.resetRequest, null);
+  assert.equal((await login({ username: s0.username, password, name: 'Old' })).status, 401, 'old password stops working');
+  assert.equal((await login({ username: s0.username, password: mine, name: 'Mine' })).status, 200, 'chosen password works');
+  password = (await adminCall({ action: 'new_password' })).data.password;
   await forgot({ name: who, contact: '0803 555 0000' });
   assert.equal((await adminCall({ action: 'dismiss_request' })).data.resetRequest, null);
   // 3 an hour per connection.
@@ -134,6 +149,5 @@ test('forgot the password: the request reaches the Super Admins (settings, bell,
   for (let i = 0; i < 3; i++) assert.equal((await forgot({ name: who, contact: '08035550000' }, one)).status, 200);
   assert.equal((await forgot({ name: who, contact: '08035550000' }, one)).status, 429);
   await adminCall({ action: 'dismiss_request' });
-  // The sign-in page has the link.
   assert.match(await fetch(`${BASE}/staff/squad-data/`).then(x => x.text()), /Forgot the password\?/);
 });

@@ -3302,18 +3302,29 @@ details only) and go to the club's media partner in the Data Package.
 **Changing the username:** type the new one under **Login › Username** and
 press **Save username**. Tell the media team the new username.
 
-**Changing the password:** press **Generate new password**, confirm, then
-**Copy password** (it is shown only once). Everyone using the portal is
-signed out. Send the new password by WhatsApp or in person.
+**Changing the password**, either way signs out everyone using the portal:
+- **Generate new password:** the website makes a strong one. Press **Copy
+  password** straight away (it is shown only once).
+- **Or choose your own password:** type it twice (at least 12 characters,
+  letters and numbers, not containing the username; tick **Show the
+  password** to check it) and press **Save this password**.
 
-**Forgotten password:** on the portal sign-in page, the person presses
+Give the new password to the media team on WhatsApp or in person.
+
+**Forgotten password:** on the portal sign-in page the person presses
 **Forgot the password?**, fills in their name and WhatsApp number or email,
-and presses **Ask for a new password**. The three Super Admins get an email
-and a bell alert ("… asked for a new password"), and a yellow **New password
-requested** box appears at the top of this settings page with their name and
-number. If you know them, press **Generate new password** in that box and
-send it to them on WhatsApp. If you don't know them, press **Ignore this
-request**. The password is never sent by email, because everyone shares it.
+and presses **Ask for a new password**. They see **"Contact your admin for
+your new password."**
+- A new password is made straight away and **emailed only to the three Super
+  Admins** (subject "Squad Data Portal: new password …"). It works from then
+  on; people already signed in stay signed in.
+- The bell shows "… needs the new password", and a yellow box at the top of
+  this settings page shows who asked and their number. Give them the password
+  on WhatsApp or in person, then press **Done**.
+- If the email could not be sent, the password is **not** changed; the box
+  says so, and you press **Generate new password** (or choose one) instead.
+- If you don't know the person who asked, choose a new password so only your
+  team has it.
 
 Five wrong passwords lock the sign-in for 15 minutes; after three, a human
 check appears. Portal sessions end after 60 minutes without activity (with a

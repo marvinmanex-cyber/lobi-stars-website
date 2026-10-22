@@ -14,6 +14,7 @@
 import { hashPassword, verifyPassword } from './password.js';
 import { ensureFanSchema, rateLimit, checkTurnstile } from './fans.js';
 import { logAdminAction } from './adminSession.js';
+import { emailNewPassword } from './squadNotify.js';
 
 export const PORTAL_DEFAULT_PATH = '/staff/squad-data';
 /** The portal address (PORTAL_PATH, under /staff/; default /staff/squad-data). */
@@ -201,25 +202,42 @@ export async function unseenDevices(db) {
   return (await db.prepare(`SELECT * FROM squad_portal_devices WHERE seen_by_admin = 0 ORDER BY first_seen DESC LIMIT 20`).all()).results;
 }
 
-/** Super Admin: a new password (returned once). Every portal session is signed out. */
-export async function resetPortalPassword(env, admin) {
+/** A password a Super Admin chose: null if it is acceptable, otherwise the reason. */
+export function passwordProblem(password, username) {
+  const p = String(password || '');
+  if (p.length < 12) return 'The password must have at least 12 characters.';
+  if (p.length > 64) return 'The password can have at most 64 characters.';
+  if (/^\s|\s$/.test(p)) return 'The password cannot start or end with a space.';
+  if (username && p.toLowerCase().includes(String(username).toLowerCase())) return 'The password cannot contain the username.';
+  if (/^(.)\1+$/.test(p) || /^(?:0123456789|1234567890|password|qwerty|lobistars|lobi stars)/i.test(p)) return 'That password is too easy to guess.';
+  if (!/[A-Za-z]/.test(p) || !/[0-9]/.test(p)) return 'Use both letters and numbers.';
+  return null;
+}
+
+/**
+ * Super Admin: a new password (generated, or `chosen` by them), returned once.
+ * Every portal session is signed out.
+ */
+export async function resetPortalPassword(env, admin, chosen = null) {
   const db = env.DB;
   const s = await getPortalSettings(db);
-  const password = newPortalPassword();
+  const password = chosen || newPortalPassword();
   await setPortalSetting(db, 'password_hash', await hashPassword(password), admin.name);
   await setPortalSetting(db, 'pw_version', (Number(s.pw_version) || 1) + 1, admin.name);
   await setPortalSetting(db, 'failed', 0, admin.name);
   await setPortalSetting(db, 'locked_until', '', admin.name);
   await setPortalSetting(db, 'reset_request', '', admin.name);
   const n = await signOutAll(env, admin, 'password changed');
-  await logAdminAction(db, admin, 'squad_portal_password', `New Squad Data Portal password generated${n ? ` (${n} portal session${n === 1 ? '' : 's'} signed out)` : ''}`);
+  await logAdminAction(db, admin, 'squad_portal_password', `New Squad Data Portal password ${chosen ? 'chosen' : 'generated'}${n ? ` (${n} portal session${n === 1 ? '' : 's'} signed out)` : ''}`);
   return password;
 }
 /**
- * "Forgot the password?" on the sign-in page. The password is shared, so it is
- * never sent out: the request (name, how to reach them, device) goes to the
- * Super Admins (email + bell), who generate a new password on the settings page
- * and send it by WhatsApp. Limited to 3 an hour per connection and 10 a day.
+ * "Forgot the password?" on the sign-in page. A new password is made and emailed
+ * ONLY to the three Super Admins, who give it to the staff member; the person
+ * asking is told "Contact your admin for your new password". The new password
+ * takes effect only once that email has been sent (otherwise the old one keeps
+ * working and the request waits on the settings page and the bell). People
+ * already signed in stay signed in. Limited to 3 an hour per connection and 10 a day.
  */
 export async function requestNewPassword(env, request, { name, contact, turnstile }) {
   const db = env.DB;
@@ -232,9 +250,21 @@ export async function requestNewPassword(env, request, { name, contact, turnstil
   if (!(await rateLimit(db, `squadforgot:${ip}`, 3, 3600)) || !(await rateLimit(db, 'squadforgot:all', 10, 86400))) return { error: 'A request was already sent. A Super Admin will contact you.', status: 429 };
   const s = await getPortalSettings(db);
   if (Number(s.failed) >= TURNSTILE_AFTER && !(await checkTurnstile(env, turnstile, ip))) return { error: 'Please complete the human check.', status: 400, needTurnstile: true };
-  const req = { name: who, contact: reach, device: deviceLabel(request.headers.get('User-Agent')), at: new Date().toISOString() };
+  const req = { name: who, contact: reach, device: deviceLabel(request.headers.get('User-Agent')), at: new Date().toISOString(), emailed: false };
+  const actor = { id: 'squad-portal', name: `${who} (Squad Data Portal)`, email: 'squad-portal' };
+  const password = newPortalPassword();
+  let sentTo = [];
+  try { sentTo = await emailNewPassword(env, req, password, s.username); } catch (err) { console.error('[squad] new password email', err); }
+  if (sentTo.length) {
+    await setPortalSetting(db, 'password_hash', await hashPassword(password), who);
+    await setPortalSetting(db, 'failed', 0, who);
+    await setPortalSetting(db, 'locked_until', '', who);
+    req.emailed = true;
+  }
   await setPortalSetting(db, 'reset_request', JSON.stringify(req), who);
-  await logAdminAction(db, { id: 'squad-portal', name: `${who} (Squad Data Portal)`, email: 'squad-portal' }, 'squad_portal_reset_request', `${who} asked for a new Squad Data Portal password (reach them on ${reach}; ${req.device})`);
+  await logAdminAction(db, actor, 'squad_portal_reset_request', req.emailed
+    ? `${who} forgot the Squad Data Portal password: a new password was made and emailed to the Super Admins (reach ${who} on ${reach}; ${req.device})`
+    : `${who} asked for a new Squad Data Portal password; the email to the Super Admins could not be sent, so the password was NOT changed (reach them on ${reach}; ${req.device})`);
   return { ok: true, request: req };
 }
 export function resetRequest(s) { try { return s.reset_request ? JSON.parse(s.reset_request) : null; } catch { return null; } }

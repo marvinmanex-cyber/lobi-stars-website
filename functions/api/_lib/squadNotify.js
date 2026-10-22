@@ -32,20 +32,25 @@ export async function notifyReviewers(env, profile, byName) {
   return true;
 }
 
-/** "Forgot the password?" in the portal: tells the three Super Admins (who make a new password). */
-export async function notifyPasswordRequest(env, req) {
-  if (!env.RESEND_API_KEY) return false;
+/**
+ * "Forgot the password?" in the portal: the NEW password goes only to the three
+ * Super Admins, who give it to the staff member. Returns the addresses it went to
+ * ([] if email is not set up or failed; the caller then keeps the old password).
+ */
+export async function emailNewPassword(env, req, password, username) {
+  if (!env.RESEND_API_KEY) return [];
   const to = superAdminEmails(env);
-  if (!to.length) return false;
+  if (!to.length) return [];
   const site = String(env.SITE_URL || 'https://lobistarsfc.com').replace(/\/+$/, '');
   await sendEmail(env, {
-    to, subject: `Squad Data Portal: ${req.name} asked for a new password`,
+    to, subject: `Squad Data Portal: new password (asked for by ${req.name})`,
     html: `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#16181D">
-      <p><b>${esc(req.name)}</b> forgot the Squad & Staff Data Portal password and asked for a new one (${esc(req.device)}).</p>
-      <p>Reach them on: <b>${esc(req.contact)}</b></p>
-      <p>If you know this person: open the portal settings, press <b>Generate new password</b> and send it to them by WhatsApp or in person (never by email). If you don't know them, ignore this request.</p>
+      <p><b>${esc(req.name)}</b> forgot the Squad & Staff Data Portal password (${esc(req.device)}). A new password has been made and <b>works from now</b>; the old one no longer works for new sign-ins. People already signed in stay signed in.</p>
+      <p style="font-size:16px">Username: <b>${esc(username)}</b><br>New password: <b style="font-family:Consolas,monospace;font-size:18px;letter-spacing:.04em">${esc(password)}</b></p>
+      <p>Give it to ${esc(req.name)} on WhatsApp or in person: <b>${esc(req.contact)}</b>. They were told to contact their admin. Please don't forward this email.</p>
+      <p>If you don't know this person, open the portal settings and choose a new password so that only your team has it.</p>
       <p><a href="${esc(site)}/admin/squad-portal/" style="display:inline-block;background:#B3121A;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold">Open portal settings</a></p>
-      <p style="color:#4A505C;font-size:13px">Lobi Stars FC website · Squad & Staff Data Portal</p></div>`,
+      <p style="color:#4A505C;font-size:13px">Sent only to the Lobi Stars Super Admins · Squad & Staff Data Portal</p></div>`,
   });
-  return true;
+  return to;
 }
