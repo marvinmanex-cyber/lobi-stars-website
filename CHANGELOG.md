@@ -8,6 +8,23 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Website down for database reads — fewer rows read
+
+**What happened:** from the evening of 22 Oct the parts of the website that use
+the database (food menu, Man of the Match, league table, portal sign-in…)
+answered with errors. Cloudflare's free plan allows **5 million database rows
+read per day** for the whole site, and that was used up. It resets at
+midnight UTC (1 a.m. Lagos).
+
+**What changed:** most of the reads (about 3.7 million a day) came from the
+uptime percentages, which the admin bell and Website Health worked out by
+reading every 5-minute check of the last 30 days on each refresh. They now come
+from small hourly totals (about 10 times fewer rows), and the Website Health
+run lookups use indexes. Same numbers on screen.
+
+**Staff need to do:** HANDOVER-TODO.md A33 (the Workers Paid plan, US$5 a
+month, also raises this database limit to 25 billion rows a month).
+
 ## 2026-10-22: Squad names, new player and coach profile pages
 
 **What changed**

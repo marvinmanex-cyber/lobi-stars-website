@@ -32,6 +32,9 @@ export async function ensureHealthSchema(db) {
       started_at TEXT NOT NULL, updated_at TEXT NOT NULL, finished_at TEXT,
       steps TEXT NOT NULL, idx INTEGER NOT NULL DEFAULT 0, state TEXT NOT NULL DEFAULT '{}', lock_until INTEGER, totals TEXT)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_health_runs_started ON health_runs (started_at)`),
+    // The run in progress and the last full run are looked up every minute (22 Oct 2026).
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_health_runs_open ON health_runs (finished_at, started_at)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_health_runs_kind ON health_runs (kind, started_at)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS health_results (
       id INTEGER PRIMARY KEY AUTOINCREMENT, run_id TEXT NOT NULL, check_id TEXT NOT NULL, category TEXT NOT NULL,
       status TEXT NOT NULL, result TEXT NOT NULL, checked_at TEXT NOT NULL)`),
@@ -252,7 +255,7 @@ export async function healthOverview(env) {
   });
   // Uptime (homepage) over 30 days from the 5-minute checks.
   let uptime30 = null;
-  try { const u = await db.prepare(`SELECT AVG(ok) AS up, COUNT(*) AS n FROM uptime_checks WHERE check_key = 'home' AND checked_at >= datetime('now', '-30 days')`).first(); if (u?.n) uptime30 = u.up; } catch {}
+  try { const u = await db.prepare(`SELECT SUM(ok) * 1.0 / SUM(n) AS up, SUM(n) AS n FROM uptime_hourly WHERE check_key = 'home' AND hour >= ?`).bind(new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 13).replace('T', ' ')).first(); if (u?.n) uptime30 = u.up; } catch {}
   const open = checks.filter(c => c.status === 'FAIL' || c.status === 'WARNING');
   return {
     checks, categories: cats, uptime30,
