@@ -8,6 +8,16 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Receipts saved with the customer's name; WhatsApp on computers
+
+**What changed**
+- Receipt PDFs are saved with the customer's name, e.g.
+  `Achigbe-George-Alexander-Receipt-FD-20261022-0004.pdf`.
+- **WhatsApp on a computer:** Windows' Share window often doesn't offer
+  WhatsApp, so the board now saves the PDF and shows **Open WhatsApp chat
+  with …**; attach the saved receipt (📎 › Document › Downloads) and send.
+  On phones and tablets the PDF itself still goes through the Share sheet.
+
 ## 2026-10-22: "Request failed" on the Live Order Board: less load on the server
 
 **What happened**

@@ -66,7 +66,11 @@ export function waNumber(phone) {
 // ── The PDF receipt: one compact page, exactly as tall as its content (no empty space) ──
 export const LOGO_JPEG = '/images/matchday-kitchen-logo-receipt.jpg';
 export const receiptPdfUrl = (site, o) => `${site}/api/food/receipt?ref=${encodeURIComponent(o.ref)}&t=${encodeURIComponent(o.view_token || '')}`;
-export const receiptPdfName = o => `MatchDay-Kitchen-Receipt-${String(o.ref || 'order').replace(/[^\w-]/g, '')}.pdf`;
+/** "Achigbe-George-Alexander-Receipt-FD-20261022-0004.pdf": the customer's name first, so receipts are easy to find in a folder. */
+export const receiptPdfName = o => {
+  const name = String(o.customer_name || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9 -]+/g, ' ').trim().replace(/\s+/g, '-').slice(0, 60);
+  return `${name ? `${name}-` : ''}Receipt-${String(o.ref || 'order').replace(/[^\w-]/g, '')}.pdf`;
+};
 const N = kobo => `NGN ${pdfSafe(formatNaira(kobo)).replace(/^N/, '')}`; // the built-in PDF font has no ₦
 
 /** logo: the JPEG bytes (or null). Returns the PDF as a Uint8Array. */

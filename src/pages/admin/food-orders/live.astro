@@ -260,13 +260,17 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
           r = await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ ...body, phone }) });
         }
         const file = await pdfFile(r);
-        if (navigator.canShare && navigator.canShare({ files: [file] }) && await shareFile(file, r, o)) { load(); return; }
+        // Phones and tablets: the PDF itself goes through the Share sheet (choose WhatsApp, then the customer).
+        // Computers: Windows' Share window often doesn't offer WhatsApp, so the PDF is saved and the chat opened instead.
+        const phone = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent));
+        if (phone && navigator.canShare && navigator.canShare({ files: [file] }) && await shareFile(file, r, o)) { load(); return; }
         // This device can't share files: save the PDF and open the customer's chat with one tap.
         saveFile(file);
         // The chat opens empty (no typed message): only the PDF is sent.
         const chat = document.createElement('a'); chat.className = 'btn-p'; chat.href = `https://wa.me/${r.phone}`; chat.target = '_blank'; chat.rel = 'noopener';
         chat.textContent = `💬 Open WhatsApp chat with ${o.name || 'the customer'}`;
-        say(txt(`The receipt PDF is saved in your Downloads folder (${file.name}). `), chat, txt(' Then attach the PDF in the chat (📎, or drag it in) and send.'));
+        say(txt(`1. The receipt PDF is saved in your Downloads folder (${file.name}). `), chat,
+          txt(' 2. In the chat, click 📎 (or +) › Document, open Downloads, choose the receipt and press Send. You can also drag the file from the download bar straight into the chat.'));
         load(); return;
       }
       let email = o.email && o.email.includes('@') ? o.email : '';
