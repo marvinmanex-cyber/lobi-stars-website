@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Receipt buttons fixed: PDF saves to Downloads, WhatsApp sends only the PDF
+
+**What changed**
+- **PDF** now saves the receipt straight into the Downloads folder (it opened
+  a blank tab before).
+- **WhatsApp** now sends **only the PDF file** through the device's Share
+  window (choose WhatsApp, then the customer): no message text. On a Windows
+  computer this needs the WhatsApp app. Without file sharing, the PDF is
+  saved and a button opens the customer's chat to attach it. No more blank
+  tabs.
+
 ## 2026-10-22: Food receipts are now a compact PDF
 
 **What changed**

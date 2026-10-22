@@ -1070,15 +1070,17 @@ updates by itself (the top shows **● Live**); there is no need to refresh.
 the buyer: WhatsApp | Email | PDF**. The receipt is a compact **PDF** (one
 square-ish page): the MatchDay Kitchen logo, order number, when paid and
 delivered, seat, payment, customer, the items with prices and the total.
-- **WhatsApp on a phone:** the PDF file itself is shared. Choose
-  **WhatsApp**, then the buyer, and send. If your phone asks you to tap once
-  more, press **Share the receipt PDF on WhatsApp**.
-- **WhatsApp on a computer:** WhatsApp opens a chat with the buyer with the
-  receipt and a link to the PDF; press **Send**. To attach the file itself,
-  press **PDF** first to download it, then attach it in WhatsApp.
+- **WhatsApp:** sends **only the PDF** (no message). The Share window of
+  your phone or computer opens: choose **WhatsApp**, then the customer, and
+  send. On a Windows computer this needs the **WhatsApp app** installed (from
+  the Microsoft Store). If the device can't share files, the PDF is saved to
+  your **Downloads** folder and a button **Open WhatsApp chat with …** opens
+  the customer's chat (empty): attach the PDF (📎 or drag it in) and send.
+  If your device asks you to tap once more, press **Send the receipt PDF on
+  WhatsApp**.
 - **Email:** type or check the buyer's address; the website sends the
   receipt with the PDF attached (needs Resend).
-- **PDF:** opens the receipt PDF to save, print or attach.
+- **PDF:** saves the receipt PDF straight into your **Downloads** folder.
 - A ✓ and the time show once a receipt was sent.
 
 **Notifications**, **Kitchen Screen** and **Orders list** at the top open in

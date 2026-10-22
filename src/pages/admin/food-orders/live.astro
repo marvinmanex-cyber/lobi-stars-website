@@ -58,6 +58,8 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   .lb :global(.lb-tag-wa) { display: inline-block; padding: 1px 7px; border-radius: 999px; background: #25D366; color: #fff; font-size: 11px; font-weight: 700; margin-left: 6px; vertical-align: middle; }
   .lb-live.on { color: #16A34A; }
   .lb-msg { padding: 12px 16px; border-radius: 8px; margin: 0 0 14px; background: #FDECEC; color: #A3161B; }
+  .lb-msg.ok { background: #E8F7EE; color: #17643A; line-height: 1.6; }
+  .lb-msg.ok .btn-p { margin: 6px 6px 6px 0; }
   .lb-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: start; }
   .lb-col { background: color-mix(in srgb, var(--c) 7%, var(--a-bg)); border: 1px solid color-mix(in srgb, var(--c) 25%, var(--a-line)); border-radius: 16px; padding: 12px; min-height: 200px; }
   .lb-col h2, .lb-await h2 { margin: 0 0 10px; font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: color-mix(in srgb, var(--c, #6B7280) 85%, var(--a-ink)); }
@@ -166,8 +168,8 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     try {
       const d = await api('/api/admin/food-orders?show=board');
       offset = new Date(d.serverTime).getTime() - Date.now();
-      orders = d.orders; settings = d.settings || {}; render(); drawOpen(); $('msg').hidden = true;
-    } catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; }
+      orders = d.orders; settings = d.settings || {}; render(); drawOpen(); if (!$('msg').classList.contains('ok')) $('msg').hidden = true; // keep receipt messages (and their buttons) on screen
+    } catch (err) { $('msg').className = 'lb-msg'; $('msg').textContent = err.message; $('msg').hidden = false; }
   }
   // Timers tick every 20 seconds without reloading.
   setInterval(() => document.querySelectorAll('[data-timer]').forEach(t => {
@@ -188,7 +190,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     if (b.dataset.s === 'CANCELLED' && !confirm(`Cancel order ${o.ref}?`)) return;
     b.disabled = true;
     try { await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ id: o.id, status: b.dataset.s }) }); await load(); }
-    catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; b.disabled = false; load(); }
+    catch (err) { $('msg').className = 'lb-msg'; $('msg').textContent = err.message; $('msg').hidden = false; b.disabled = false; load(); }
   }
 
   // Big OPEN / CLOSED switch for matchdays.
@@ -204,60 +206,76 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       const res = await fetch('/api/admin/food-menu', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-admin-code': code }, body: JSON.stringify({ action: 'ordering_mode', mode: to }) });
       if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Could not change ordering.');
       settings.orderingMode = to; drawOpen();
-    } catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; }
+    } catch (err) { $('msg').className = 'lb-msg'; $('msg').textContent = err.message; $('msg').hidden = false; }
   });
   // Receipt to the buyer: WhatsApp opens a chat with the buyer with the receipt ready to send; email is sent by the website.
-  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  let shareFile = null;
-  async function sharePdf(r) {
-    try { await navigator.share({ files: [shareFile], text: r.caption }); $('msg').textContent = 'Shared. In WhatsApp, choose the buyer and send.'; $('msg').hidden = false; }
+  // ── Receipt to the buyer (a compact PDF with the MatchDay Kitchen logo) ──
+  // PDF: saved straight into the Downloads folder. WhatsApp: ONLY the PDF file is sent, through this
+  // device's Share window (choose WhatsApp, then the customer); no message text. Where sharing files isn't
+  // possible, the PDF is saved and a button opens the customer's (empty) WhatsApp chat to attach it.
+  const say = (...nodes) => { const m = $('msg'); m.replaceChildren(...nodes); m.className = 'lb-msg ok'; m.hidden = false; m.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+  const sayErr = t => { const m = $('msg'); m.textContent = t; m.className = 'lb-msg'; m.hidden = false; m.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+  const txt = t => document.createTextNode(t);
+  async function pdfFile(r) {
+    const res = await fetch(r.pdf, { cache: 'no-store' });
+    if (!res.ok) throw new Error('The receipt PDF could not be made. Please try again.');
+    return new File([await res.blob()], r.pdfName, { type: 'application/pdf' });
+  }
+  function saveFile(file) {
+    const url = URL.createObjectURL(file), a = document.createElement('a');
+    a.href = url; a.download = file.name; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+  async function shareFile(file, r, o) {
+    // Only the PDF file: no message text with it.
+    try { await navigator.share({ files: [file] }); say(txt(`Receipt PDF for ${o.ref}: in the Share window choose WhatsApp, then ${o.name || 'the customer'}${o.phone ? ` (${o.phone})` : ''}, and send.`)); return true; }
     catch (e) {
-      if (e && e.name === 'AbortError') return;
-      if (e && e.name === 'NotAllowedError') {   // the tap "expired" while the PDF was loading: one more tap
-        $('msg').innerHTML = ''; const go = document.createElement('button'); go.className = 'btn-p'; go.textContent = '📎 Share the receipt PDF on WhatsApp';
-        go.onclick = () => sharePdf(r); $('msg').append(go); $('msg').hidden = false; return;
+      if (e && e.name === 'AbortError') return true;
+      if (e && e.name === 'NotAllowedError') {   // the tap "expired" while the PDF was being made: one more tap
+        const go = document.createElement('button'); go.type = 'button'; go.className = 'btn-p'; go.textContent = '📎 Send the receipt PDF on WhatsApp';
+        go.onclick = () => shareFile(file, r, o);
+        say(txt('The receipt is ready. '), go); return true;
       }
-      window.open(r.url, '_blank', 'noopener');
+      return false;
     }
   }
-  // Receipt to the buyer. WhatsApp: on a phone the PDF file itself is shared (choose WhatsApp, then the buyer);
-  // on a computer WhatsApp opens a chat with the buyer with the receipt and a link to the PDF. Email: sent by the website with the PDF attached.
   async function sendReceipt(o, how, btn) {
     btn.disabled = true;
     try {
       if (how === 'pdf') {
-        const win = window.open('', '_blank');
         const r = await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ action: 'receipt_pdf', id: o.id }) });
-        if (win) win.location = r.pdf; else location.href = r.pdf;
+        const file = await pdfFile(r);
+        saveFile(file);
+        say(txt(`Saved to your Downloads folder: ${file.name}`));
         return;
       }
       if (how === 'whatsapp') {
-        const win = mobile ? null : window.open('', '_blank');   // opened now, so the browser doesn't block it
         const body = { action: 'receipt_whatsapp', id: o.id };
         let r;
         try { r = await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify(body) }); }
         catch (err) {
           if (!/number/i.test(err.message)) throw err;
-          const phone = prompt('The buyer’s WhatsApp number (e.g. 0803 123 4567):', '');
-          if (!phone) { if (win) win.close(); return; }
+          const phone = prompt('The customer’s WhatsApp number (e.g. 0803 123 4567):', '');
+          if (!phone) return;
           r = await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ ...body, phone }) });
         }
-        if (mobile && navigator.canShare) {
-          const blob = await fetch(r.pdf, { cache: 'no-store' }).then(x => x.blob());
-          shareFile = new File([blob], r.pdfName, { type: 'application/pdf' });
-          if (navigator.canShare({ files: [shareFile] })) { await sharePdf(r); load(); return; }
-        }
-        if (win) win.location = r.url; else window.open(r.url, '_blank', 'noopener');
-        $('msg').textContent = `WhatsApp opened with the receipt for ${o.ref} (with a link to the PDF): press Send there. Tip: press "PDF" to download the file if you want to attach it.`; $('msg').hidden = false;
-      } else {
-        let email = o.email && o.email.includes('@') ? o.email : '';
-        email = prompt('Send the receipt (PDF attached) to this email address:', email);
-        if (!email) return;
-        const r = await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ action: 'receipt_email', id: o.id, email }) });
-        $('msg').textContent = `Receipt for ${o.ref} emailed to ${r.sentTo} (PDF attached).`; $('msg').hidden = false;
+        const file = await pdfFile(r);
+        if (navigator.canShare && navigator.canShare({ files: [file] }) && await shareFile(file, r, o)) { load(); return; }
+        // This device can't share files: save the PDF and open the customer's chat with one tap.
+        saveFile(file);
+        // The chat opens empty (no typed message): only the PDF is sent.
+        const chat = document.createElement('a'); chat.className = 'btn-p'; chat.href = `https://wa.me/${r.phone}`; chat.target = '_blank'; chat.rel = 'noopener';
+        chat.textContent = `💬 Open WhatsApp chat with ${o.name || 'the customer'}`;
+        say(txt(`The receipt PDF is saved in your Downloads folder (${file.name}). `), chat, txt(' Then attach the PDF in the chat (📎, or drag it in) and send.'));
+        load(); return;
       }
+      let email = o.email && o.email.includes('@') ? o.email : '';
+      email = prompt('Send the receipt (PDF attached) to this email address:', email);
+      if (!email) return;
+      const r = await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ action: 'receipt_email', id: o.id, email }) });
+      say(txt(`Receipt for ${o.ref} emailed to ${r.sentTo} (PDF attached).`));
       load();
-    } catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; }
+    } catch (err) { sayErr(err.message); }
     finally { btn.disabled = false; }
   }
   function printTicket(o) {
