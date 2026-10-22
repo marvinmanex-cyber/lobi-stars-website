@@ -106,6 +106,15 @@ export const INFO = {
     fix: ['Open Admin › Inbox.', 'Answer the oldest messages first (listed in the details).'] },
 
   // ── Matchday and broadcast ──
+  scores_run: { category: 'matchday', name: 'Score check runs every minute', who: DEV,
+    why: 'It turns score reports into confirmed results, raises conflicts and sends missing-result reminders. If it stops, the table stops updating.',
+    fix: ['Check the cron Worker (workers/kitchen-cron) is deployed and CRON_SECRET matches.', 'Open League › Score Sources: "Automatic check last ran" should be within a minute or two.', 'If it still fails, send the details to the developer.'] },
+  score_sources: { category: 'matchday', name: 'Automatic score sources work', who: SA,
+    why: 'A licensed data source that keeps failing means one source fewer on matchday.',
+    fix: ['Open League › Score Sources and read the error on the source.', 'Check the API key and the plan with the provider; press Coverage test.', 'Switch the source off if the plan has ended.'] },
+  score_backlog: { category: 'matchday', name: 'No old score conflicts or reports waiting', who: 'Website & Data Officer',
+    why: 'Matches with a conflict, or reports waiting for review, are left out of the table until someone decides.',
+    fix: ['Open Matchday › Other Games and resolve the red cards (Accept this score / Enter correct score).', 'Open Matchday › Score Messages and approve or reject what is waiting.'] },
   stream: { category: 'matchday', name: 'Commentary stream set up (tested around match time)', who: 'Broadcast Operator',
     why: 'Fans who cannot get to the stadium listen to the live commentary.',
     fix: ['Go to Admin › Matchday › Live Commentary.', 'Check the stream address is set and the partner\'s stream is running.', 'Press "Check again".'] },
@@ -632,6 +641,9 @@ export async function stepMatchday(ctx) {
     if (!avail?.n) miss.push('no menu items are available');
     out.push(result('kitchen', miss.length ? 'WARNING' : 'PASS', { problem: miss.length ? `Home matchday today: ${miss.join('; ')}.` : `Ordering is ${mode?.value || 'automatic'} with ${avail.n} items available.` }));
   }
+  // Score verification for all conference games.
+  try { const { scoreHealth } = await import('./scores/summary.js'); out.push(...await scoreHealth(env, result, now)); }
+  catch (err) { out.push(result('scores_run', 'WARNING', { problem: `The score verification checks could not run: ${String(err.message || err).slice(0, 120)}.` })); }
   return out;
 }
 

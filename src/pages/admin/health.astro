@@ -14,6 +14,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <div><div class="stag">Settings</div><h1 class="stitle">🩺 Website <span class="r">Health</span></h1></div>
       <div class="wh-acts noprint">
         <button type="button" class="btn-p" id="runAll">Run full check now</button>
+        <button type="button" class="btn-p wh-ai-all" id="aiAll">🤖 Fix everything I can</button>
         <button type="button" class="btn-o" id="testEmail">Send test email</button>
         <button type="button" class="btn-o" id="report">Download report (PDF)</button>
       </div>
@@ -69,6 +70,19 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .wh :global(.wh-item ol) { margin: 6px 0 6px 20px; padding: 0; font-size: 14px; line-height: 1.6; }
   .wh :global(.wh-btns) { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .wh :global(.wh-btns button) { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: inherit; cursor: pointer; }
+  .wh :global(.wh-three) { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 10px 0 6px; }
+  .wh :global(.wh-three button) { min-height: 48px; padding: 8px 10px; border-radius: 10px; border: 0; color: #fff; font: inherit; font-weight: 700; font-size: 14px; cursor: pointer; line-height: 1.2; }
+  .wh :global(.wh-three .o1) { background: #15803D; } .wh :global(.wh-three .o2) { background: #1D4ED8; } .wh :global(.wh-three .o3) { background: #475569; }
+  .wh :global(.wh-three button:disabled) { opacity: .6; }
+  @media (max-width: 600px) { .wh :global(.wh-three) { grid-template-columns: 1fr; } }
+  .wh-ai-all { background: #15803D !important; border-color: #15803D !important; }
+  .wh :global(.wh-ai) { margin-top: 10px; padding: 12px 14px; border-radius: 12px; background: #EFF6FF; border: 1px solid #BFDBFE; color: #1E3A8A; }
+  :global(body.admin-dark) .wh :global(.wh-ai) { background: #172554; border-color: #1E40AF; color: #DBEAFE; }
+  .wh :global(.wh-ai.ok) { background: #DCFCE7; border-color: #86EFAC; color: #166534; }
+  .wh :global(.wh-ai.no) { background: #FEF3C7; border-color: #FCD34D; color: #78350F; }
+  .wh :global(.wh-ai h4) { margin: 0 0 6px; font-size: 15px; } .wh :global(.wh-ai ol) { margin: 6px 0; padding-left: 22px; } .wh :global(.wh-ai li) { margin: 4px 0; line-height: 1.45; }
+  .wh :global(.wh-ai small) { display: block; opacity: .8; margin-top: 6px; }
+  .wh :global(.wh-ai button) { margin-top: 8px; margin-right: 6px; min-height: 40px; padding: 6px 12px; border-radius: 8px; border: 1px solid currentColor; background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
   .wh :global(.wh-btns button.fix) { background: #C11A1F; border-color: #C11A1F; color: #fff; font-weight: 700; }
   .wh :global(.wh-tech) { margin-top: 8px; font-size: 12px; } .wh :global(.wh-tech pre) { white-space: pre-wrap; word-break: break-word; background: var(--a-line); padding: 8px; border-radius: 8px; max-height: 260px; overflow: auto; }
   .wh :global(.wh-ack) { font-size: 13px; color: #92400E; background: #FEF3C7; padding: 4px 10px; border-radius: 8px; display: inline-block; margin-top: 6px; }
@@ -95,6 +109,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const LABEL = { FAIL: 'Broken', WARNING: 'Needs attention', PASS: 'Working', SKIPPED: 'Not checked' };
   const when = s => s ? new Date(/Z$|[+-]\d\d:\d\d$/.test(s) ? s : s.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '–';
   let D = null, filter = null, running = false;
+  const G = {}; // the answer of the last button pressed, shown under each problem (by check id)
   function msg(t, ok = true) { $('msg').textContent = t; $('msg').className = 'wh-msg' + (ok ? '' : ' err'); $('msg').hidden = false; }
   async function api(body) {
     const r = await fetch('/api/admin/health', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
@@ -115,6 +130,12 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     if (c.fix && c.fix.length) box.append(el('p', {}, el('strong', { text: 'How to fix:' })), el('ol', {}, ...c.fix.map(f => el('li', { text: f }))));
     box.append(el('p', { class: 'muted', text: `Who should fix this: ${c.who} · since ${when(c.since)} · checked ${when(c.checkedAt)}` }));
     if (c.ack) box.append(el('span', { class: 'wh-ack', text: `Acknowledged by ${c.ack.by || 'a Super Admin'} until ${when(c.ack.until)}${c.ack.note ? `: ${c.ack.note}` : ''}` }));
+    box.append(el('div', { class: 'wh-three' },
+      el('button', { type: 'button', class: 'o1', text: '1. Fix it for me', onclick: e => ask('ai_fix', c, e.target) }),
+      el('button', { type: 'button', class: 'o2', text: '2. Teach AI to fix this next time', onclick: e => ask('ai_teach', c, e.target) }),
+      el('button', { type: 'button', class: 'o3', text: '3. Show me how to fix it myself', onclick: e => ask('ai_self', c, e.target) })));
+    if (D.autoFix && c.fixId && D.autoFix.includes(c.fixId)) box.append(el('p', { class: 'muted', text: '🤖 AI fixes this automatically when it happens (every 6 hours at most).' }));
+    if (G[c.id]) box.append(aiBox(c, G[c.id]));
     const btns = el('div', { class: 'wh-btns' });
     btns.append(el('button', { type: 'button', text: 'Check again', onclick: () => run('category', c.category) }));
     if (c.fixId && D.fixes[c.fixId]) btns.append(el('button', { type: 'button', class: 'fix', text: `Fix it: ${D.fixes[c.fixId].label}`, onclick: () => fix(c) }));
@@ -194,12 +215,63 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     try { const r = await api({ action: 'fix', fixId: c.fixId, checkId: c.id, eventId: c.details && c.details.eventId }); msg(r.message || 'Done.'); run('category', c.category); }
     catch (e) { msg(e.message, false); }
   }
+  const steps = (c, g, title) => {
+    const src = g.source === 'claude' ? 'Written by Claude for this problem.' : g.source === 'saved' ? `Written by Claude on ${when(g.savedAt)} for this same problem (no new cost).` : (g.note || 'The standard steps.');
+    return [el('h4', { text: title }), g.summary ? el('p', { text: g.summary }) : null, el('ol', {}, ...(g.steps || []).map(s => el('li', { text: s }))),
+      el('p', { text: `Who: ${g.who || c.who}${g.minutes ? ` · about ${g.minutes} minutes` : ''}` }), el('small', { text: src })];
+  };
+  function aiBox(c, r) {
+    if (r.mode === 'fixed') return el('div', { class: 'wh-ai ok' }, el('h4', { text: `✅ Fixed: ${r.fix}` }), el('p', { text: r.message || 'Done.' }), el('small', { text: 'The check is being run again to confirm.' }));
+    if (r.mode === 'failed') return el('div', { class: 'wh-ai no' }, el('h4', { text: `The fix "${r.fix}" didn't work` }), el('p', { text: r.message || '' }), el('p', { text: 'Try option 2 or 3.' }));
+    if (r.mode === 'cannot') return el('div', { class: 'wh-ai no' }, el('h4', { text: 'AI can\'t fix this one by itself' }), el('p', { text: r.message }), el('p', { text: 'Press 2 to see how to make it fix itself next time, or 3 for the steps to fix it yourself.' }));
+    if (r.mode === 'switch') return el('div', { class: r.enabled ? 'wh-ai ok' : 'wh-ai' },
+      el('h4', { text: r.enabled ? '✅ AI already fixes this automatically' : 'AI can fix this automatically from now on' }),
+      el('p', { text: r.enabled ? `Whenever this problem appears, "${r.fix}" runs by itself (at most every 6 hours), and it is written in the Activity Log.` : `Switch it on and "${r.fix}" will run by itself whenever this problem appears (at most every 6 hours). Every run is written in the Activity Log, and you can switch it off here at any time.` }),
+      el('button', { type: 'button', text: r.enabled ? 'Switch off' : '🤖 Yes, fix it automatically from now on', onclick: async () => {
+        try { const s = await api({ action: 'auto_fix', fixId: r.fixId, enabled: !r.enabled }); D.autoFix = s.enabled ? [...(D.autoFix || []), r.fixId] : (D.autoFix || []).filter(x => x !== r.fixId); G[c.id] = { ...r, enabled: s.enabled }; draw(); msg(s.enabled ? 'Done: AI will fix this automatically from now on.' : 'Switched off.'); }
+        catch (e) { msg(e.message, false); } } }));
+    const g = r.guide || {};
+    if (g.kind === 'teach') return el('div', { class: 'wh-ai' }, ...steps(c, g, 'How to make this fix itself next time'),
+      el('button', { type: 'button', text: 'Copy the request for the developer', onclick: async () => { const t = g.request ? `${r.developerRequest}\nSuggested fix: ${g.request}` : r.developerRequest; try { await navigator.clipboard.writeText(t); msg('Copied. Send it to the developer.'); } catch { prompt('Copy this:', t); } } }),
+      g.source === 'saved' ? el('button', { type: 'button', text: 'Write again', onclick: e => ask('ai_teach', c, e.target, true) }) : null);
+    return el('div', { class: 'wh-ai' }, ...steps(c, g, 'How to fix it yourself'),
+      g.source === 'saved' ? el('button', { type: 'button', text: 'Write again', onclick: e => ask('ai_self', c, e.target, true) }) : null);
+  }
+  async function ask(action, c, btn, fresh = false) {
+    const label = btn && btn.textContent;
+    if (btn) { btn.disabled = true; btn.textContent = '🤖 Working…'; }
+    try {
+      const r = await api({ action, checkId: c.id, fresh });
+      G[c.id] = r;
+      if (r.mode === 'nothing') msg(r.message);
+      draw();
+      if (r.mode === 'fixed') { msg(`Fixed: ${r.fix}. Checking again…`); run('category', r.category); }
+      return r;
+    } catch (e) { msg(e.message, false); if (btn) { btn.disabled = false; btn.textContent = label; } }
+  }
   async function ack(c) {
     const note = prompt(`Acknowledge "${c.name}"? It stays on the list but no repeat alerts for 24 hours.\n\nA short note (optional):`, '');
     if (note === null) return;
     try { await api({ action: 'ack', checkId: c.id, note }); msg('Acknowledged for 24 hours.'); load(); } catch (e) { msg(e.message, false); }
   }
   $('runAll').addEventListener('click', () => run('full'));
+  $('aiAll').addEventListener('click', async () => {
+    if (running) return msg('A check is running: wait for it to finish.', false);
+    const bad = D.checks.filter(c => (c.status === 'FAIL' || c.status === 'WARNING') && c.fixId && D.fixes[c.fixId] && !(D.notAutomatic || []).includes(c.fixId));
+    if (!bad.length) return msg('AI has nothing it can fix by itself right now. Use buttons 2 and 3 on each problem.');
+    if (!confirm(`Fix these now?\n\n${bad.map(c => `• ${c.name}: ${D.fixes[c.fixId].label}`).join('\n')}`)) return;
+    const btn = $('aiAll'); btn.disabled = true;
+    let fixed = 0; const cats = new Set();
+    for (let i = 0; i < bad.length; i++) {
+      btn.textContent = `🤖 ${i + 1} of ${bad.length}…`;
+      try { const r = await api({ action: 'ai_fix', checkId: bad[i].id }); G[bad[i].id] = r; if (r.mode === 'fixed') { fixed++; cats.add(r.category); } } catch (e) { msg(e.message, false); }
+      draw();
+    }
+    btn.disabled = false; btn.textContent = '🤖 Fix everything I can';
+    const rest = D.checks.filter(c => c.status === 'FAIL' || c.status === 'WARNING').length - fixed;
+    msg(`${fixed} fixed.${rest > 0 ? ` For the other ${rest}, use 2 or 3 on each problem.` : ''}`);
+    if (cats.size) run(cats.size > 1 ? 'full' : 'category', [...cats][0]);
+  });
   $('testEmail').addEventListener('click', async () => { try { const r = await api({ action: 'test_email' }); msg(r.message); } catch (e) { msg(e.message, false); } });
   $('report').addEventListener('click', async () => {
     $('okWrap').open = true;

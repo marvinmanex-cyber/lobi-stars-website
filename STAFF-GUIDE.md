@@ -2235,6 +2235,38 @@ outages.
 
 
 
+### The three AI buttons on every problem
+
+Each problem under **Needs attention** has three big buttons:
+
+1. **Fix it for me** (green): if the website has a safe fix for this problem
+   (for example "Start a backup now" or "Rebuild the website"), it runs at
+   once and the check runs again to confirm. If there is no safe fix, it
+   tells you so; then use 2 or 3. This button never costs anything.
+2. **Teach AI to fix this next time** (blue):
+   - if the website has a safe fix, press **Yes, fix it automatically from now
+     on**. Whenever the problem appears again, it is fixed by itself (at most
+     every 6 hours per problem) and written in the Activity Log. Press
+     **Switch off** to stop it;
+   - if not, Claude explains the one-time setup that stops the problem coming
+     back or makes it fix itself, and **Copy the request for the developer**
+     gives you a message to send if only the developer can add an automatic
+     fix.
+3. **Show me how to fix it myself** (grey): numbered steps written by Claude
+   for this exact problem: which menu or website, which button, who should
+   do it and about how long it takes.
+
+**Fix everything I can** (top of the page) runs button 1 for every problem
+that has a safe fix, after showing you the list.
+
+**Cost:** Claude is only asked when you press 2 or 3, with the cheapest
+model. The answer is saved and reused for 30 days while the problem stays
+the same (it says "no new cost"); **Write again** asks for a new one. If
+Claude is not connected or the monthly AI budget is used up, you get the
+standard steps instead. Claude only writes instructions: it never changes
+anything on the website. "Mark restore tested" is never done by AI, because
+a person has to confirm a restore was really tested.
+
 ## 30. Monthly partner reports (Partners › Monthly partner reports)
 
 Every sponsor can get a short branded report each month: website impressions
@@ -3187,6 +3219,21 @@ The website will **never** read Soccerway, Sofascore, Flashscore or similar
 websites by itself. The "Other licensed source" can only be used for a feed
 the club has **written permission** or a licence for, and only over a secure
 (https) address.
+
+### Matchday summary email and health checks
+
+**Matchday summary:** on each matchday, once every conference match has a
+confirmed final result (or at the latest 4 hours after the last kick-off),
+the Data Officer and the Super Admins get one email: every result, how many
+sources confirmed it, anything still open, and the top of the table with
+Lobi Stars' position. It can be switched off in Score Sources › Settings.
+
+**Website Health** (Settings › Website Health, Matchday section) now also
+checks that:
+- the every-minute score check is running;
+- automatic score sources are working;
+- no score conflict has been open for over 30 minutes and no report has
+  waited for review for over 2 hours.
 
 ## Other things you can update in the CMS
 

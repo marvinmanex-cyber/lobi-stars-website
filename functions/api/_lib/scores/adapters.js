@@ -70,7 +70,7 @@ export function requestFor(env, type, ms) {
   throw new Error('This source has no automatic adapter.');
 }
 
-async function ensureAdapterColumns(env) {
+export async function ensureAdapterColumns(env) {
   await ensureScoreSchema(env);
   const cols = (await env.DB.prepare(`PRAGMA table_info(score_sources)`).all()).results.map(c => c.name);
   for (const c of ['last_checked_at', 'last_success_at', 'last_error']) if (!cols.includes(c)) await env.DB.prepare(`ALTER TABLE score_sources ADD COLUMN ${c} TEXT`).run();

@@ -210,6 +210,8 @@ export async function healthTick(env, origin) {
   const busy = await activeRun(db);
   if (busy) { const r = await stepRun(env, origin, busy.id); return { more: !!r.run && !r.run.done && !r.busy, run: r.run }; }
   try { await maybeDailySummary(env, origin); } catch (err) { console.error('[health] summary', err); }
+  // Fixes a Super Admin switched to "fix automatically from now on" (Website Health › Teach AI).
+  try { await (await import('./healthAi.js')).runAutoFixes(env, origin); } catch (err) { console.error('[health] auto fixes', err); }
   const lastFull = await db.prepare(`SELECT started_at FROM health_runs WHERE kind = 'full' ORDER BY started_at DESC LIMIT 1`).first();
   if (!lastFull || Date.now() - Date.parse(lastFull.started_at) > FULL_EVERY_MS) {
     const { run } = await startRun(env, { kind: 'full', trigger: 'auto', by: 'Automatic check' });

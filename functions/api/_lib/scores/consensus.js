@@ -337,7 +337,8 @@ export async function scoresTick(env, { now = Date.now() } = {}) {
   for (const id of ids) settled.push(await settleFixture(env, id, { now, settings: s }));
   const missing = await missingResults(env, { now, settings: s });
   const snapshots = await snapshotRounds(env, { now }).catch(err => { console.error('[scores] snapshots', err); return []; });
-  return { polled: polled.map(p => ({ type: p.type, ok: p.ok, error: p.error || null })), snapshots: snapshots.length, settled: settled.filter(Boolean).length, conflicts: settled.filter(x => x?.state === 'CONFLICT').length, missing: missing.length };
+  const summary = await (await import('./summary.js')).maybeDailySummary(env, { now, settings: s }).catch(err => { console.error('[scores] summary', err); return null; });
+  return { summary, polled: polled.map(p => ({ type: p.type, ok: p.ok, error: p.error || null })), snapshots: snapshots.length, settled: settled.filter(Boolean).length, conflicts: settled.filter(x => x?.state === 'CONFLICT').length, missing: missing.length };
 }
 /** Fallback until the cron Worker calls /api/internal/scores-run itself: run when the last run is over 90 seconds old. */
 export async function scoresTickIfDue(env, now = Date.now()) {

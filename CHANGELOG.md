@@ -8,6 +8,40 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Website Health: three AI buttons on every problem
+
+**What changed**
+- Every problem on **Settings › Website Health** now has three buttons:
+  **1. Fix it for me** (runs the website's safe fix, no AI cost),
+  **2. Teach AI to fix this next time** (switch the safe fix to run by itself
+  whenever the problem appears, or Claude's one-time setup steps and a
+  request for the developer), and **3. Show me how to fix it myself**
+  (numbered steps written by Claude for that exact problem).
+- **Fix everything I can** at the top runs every safe fix at once.
+- Lowest cost: Claude only when you press 2 or 3, the cheapest model, and
+  each answer is saved and reused while the problem is the same. AI usage
+  shows as "Website Health steps" in AI Settings.
+- Switched-on automatic fixes run from the every-minute health job (at most
+  every 6 hours per problem) and are written in the Activity Log.
+
+## 2026-10-22: Score verification, Phase 7 (summary email, health checks, tests)
+
+**What changed**
+- **Matchday summary email** to the Data Officer and Super Admins once the
+  day's conference matches are confirmed (or 4 hours after the last
+  kick-off): results, sources, what is still open, the top of the table and
+  Lobi Stars' position.
+- **Website Health** checks the every-minute score check, automatic score
+  sources, and old conflicts or reports waiting for review.
+- Tests cover the whole flow: two sources agree → table; one source → no
+  change; conflict alert; verified override; official correction; the same
+  submitter counts once; message formats read by rules or Claude; team-name
+  aliases and unmatched names; postponed / abandoned / awarded; points
+  deductions; tie-breakers; the live table arrows; the missing-result
+  reminder; and that prohibited websites can never be fetched.
+- Score verification is now complete (Phases 1 to 7). The STAFF-GUIDE section
+  37 explains every screen.
+
 ## 2026-10-22: Score verification, Phase 6 (licensed data API)
 
 **What changed**

@@ -3,6 +3,8 @@ import { logAdminAction } from '../_lib/adminSession.js';
 import { healthSummary } from '../_lib/uptime.js';
 import { healthOverview, startRun, stepRun, checkHistory, acknowledge, ensureHealthSchema } from '../_lib/healthRun.js';
 import { FIXES, runFix } from '../_lib/healthFixes.js';
+import { fixForMe, teachAi, setAutoFix, autoFixList, fixMyself, NOT_AUTOMATIC } from '../_lib/healthAi.js';
+import { aiReady } from '../_lib/claude.js';
 import { CATEGORIES, INFO } from '../_lib/healthChecks.js';
 import { sendEmail } from '../_lib/email.js';
 
@@ -15,6 +17,10 @@ import { sendEmail } from '../_lib/email.js';
 // POST { action: 'start', kind: 'full' | 'category', only }  -- "Run full check now" / "Check again" (one category)
 // POST { action: 'step', id }                -- the next step of a run (the page calls it until done)
 // POST { action: 'fix', fixId, checkId, eventId }  -- a safe one-click fix (confirmed on the page)
+// POST { action: 'ai_fix', checkId }        -- 1. "Fix it for me": the website's safe fix for that check, if it has one
+// POST { action: 'ai_teach', checkId, fresh? } -- 2. "Teach AI to fix this next time": switch for a safe fix, or Claude's one-time setup steps
+// POST { action: 'auto_fix', fixId, enabled } -- switch a safe fix to run by itself whenever its check fails
+// POST { action: 'ai_self', checkId, fresh? } -- 3. "Show me how to fix it myself": steps written by Claude (kept and reused)
 // POST { action: 'ack', checkId, note }      -- acknowledge: stays visible, no repeat alerts for 24 hours
 // POST { action: 'test_email' }              -- a test email to the Super Admin pressing it
 // POST { action: 'report' }                  -- records a report download (PDF) in the Activity Log
@@ -49,7 +55,7 @@ export async function onRequestGet({ request, env }) {
   }
   let uptime = null;
   try { uptime = await healthSummary(env.DB); } catch {}
-  return json({ ...o, uptime, fixes: Object.fromEntries(Object.entries(FIXES).map(([k, v]) => [k, v])), categoriesInfo: CATEGORIES, cron: !!env.CRON_SECRET, deployHook: !!env.PAGES_DEPLOY_HOOK });
+  return json({ ...o, uptime, fixes: Object.fromEntries(Object.entries(FIXES).map(([k, v]) => [k, v])), categoriesInfo: CATEGORIES, cron: !!env.CRON_SECRET, deployHook: !!env.PAGES_DEPLOY_HOOK, ai: aiReady(env), notAutomatic: [...NOT_AUTOMATIC], autoFix: await autoFixList(env) });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -74,6 +80,21 @@ export async function onRequestPost({ request, env }) {
     const r = await runFix(env, origin, b.fixId, admin, { eventId: b.eventId });
     await logAdminAction(env.DB, admin, 'health_fix', `Website Health fix "${FIXES[b.fixId].label}"${b.checkId ? ` (${b.checkId})` : ''}: ${r.message}`);
     return json(r, r.ok ? 200 : 400);
+  }
+  if (['ai_fix', 'ai_teach', 'ai_self', 'auto_fix'].includes(b.action)) {
+    if (b.action !== 'auto_fix' && !INFO[b.checkId]) return json({ error: 'Unknown check' }, 400);
+    try {
+      const r = b.action === 'ai_fix' ? await fixForMe(env, origin, b.checkId, admin)
+        : b.action === 'ai_teach' ? await teachAi(env, b.checkId, admin, { fresh: !!b.fresh })
+          : b.action === 'ai_self' ? await fixMyself(env, b.checkId, admin, { fresh: !!b.fresh })
+            : await setAutoFix(env, admin, b.fixId, !!b.enabled);
+      if (r.error) return json(r, 400);
+      if (b.action !== 'auto_fix') await logAdminAction(env.DB, admin, 'health_ai', `Website Health ${b.action === 'ai_fix' ? '"Fix it for me"' : b.action === 'ai_teach' ? '"Teach AI"' : '"How to fix it myself"'} for ${b.checkId}: ${r.mode}`);
+      return json(r);
+    } catch (err) {
+      console.error('[health] ai', err);
+      return json({ error: 'Something went wrong; nothing was changed.' }, 500);
+    }
   }
   if (b.action === 'ack') {
     if (!INFO[b.checkId]) return json({ error: 'Unknown check' }, 400);

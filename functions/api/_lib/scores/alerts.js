@@ -9,7 +9,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 export async function scoreAlertRecipients(env, { superAdmins = false } = {}) {
-  const rows = (await env.DB.prepare(`SELECT email FROM admin_users WHERE active = 1 AND role IN (${superAdmins ? "'matchday_admin', 'super_admin'" : "'matchday_admin'"})`).all()).results;
+  const rows = (await env.DB.prepare(`SELECT email FROM admin_users WHERE active = 1 AND role IN (${superAdmins ? "'matchday_admin', 'super_admin'" : "'matchday_admin'"})`).all().catch(() => ({ results: [] }))).results;
   const list = rows.map(r => String(r.email || '').toLowerCase());
   if (superAdmins || !list.length) list.push(...superAdminEmails(env));
   return [...new Set(list.filter(e => EMAIL_RE.test(e)))];

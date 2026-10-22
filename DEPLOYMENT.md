@@ -848,6 +848,10 @@ recommendation table and tests: `docs/ai-fix.md`.
     automatic draft pull requests.
   - The timer address is unchanged, so the Worker doesn't need redeploying.
 
+## Website Health AI buttons (from 22 October 2026)
+
+`functions/api/_lib/healthAi.js`: `fixForMe` (runs `healthFixes.js` `runFix` for the check's `fixId`, no AI), `teachAi` / `setAutoFix` (table `health_auto_fix`; `runAutoFixes` is called from `healthTick` and retries a check at most every 6 h, `health_auto_attempts`), `fixMyself` / `aiGuide` (Claude feature `health_help`, cheap model, `maxTokens` 500, answers cached in `health_ai_help` by check + problem hash for 30 days; built-in `INFO.fix` steps without Claude). `NOT_AUTOMATIC` = `mark_restore_tested`. API actions `ai_fix`, `ai_teach`, `auto_fix`, `ai_self` on `/api/admin/health` (Super Admins). Test: `tests/health-ai.test.mjs`.
+
 ## Score verification (from 21 October 2026)
 
 Multi-source results for every conference match; built in phases. Phase 1: `functions/api/_lib/scores/model.js` (sources, reports, team-name matching, the licence guard), `functions/api/admin/scores/`, pages `src/pages/admin/scores/`, tables in `migrations/0009_score_verification.sql` (also created on first use), tests `tests/scores*.test.mjs`.
@@ -860,6 +864,7 @@ Multi-source results for every conference match; built in phases. Phase 1: `func
 - Phase 4: `scores/consensus.js`: `decide()` (pure rule), `settleFixture()` (runs after every report and decision; writes `score_state`, applies CONFIRMED/VERIFIED/OFFICIAL results to `league_fixtures` and sets `league_fixtures.verification`, which `isCounted` in `league/standings.js` checks; empty = pre-verification result, still counted). League › Results final results become VERIFIED decisions; Live Match Control saves add LIVE_MATCH_CONTROL reports. Every minute: `POST /api/internal/scores-run` (cron Worker; until the Worker is redeployed, `/api/internal/kitchen-repeat` runs it as a fallback when it hasn't run for 90 s). Commentary Assist webhook: `POST /api/scores/commentary` with `Authorization: Bearer <COMMENTARY_ASSIST_SECRET>`, body `{ home, away, homeGoals, awayGoals, status, minute }` or `{ matches: [...] }`. Tables also in `migrations/0010_score_consensus.sql`.
 - Phase 5: `tablePayload` (leagueApi.js) adds `live` and `scoreboard`; with `include_live` on, `movement` is the change since the live matches kicked off. /table renders the scoreboard (`.lg-board`). `MiniTable.astro` (homepage, Matchday Live) reads `/api/league/table`. `snapshotRounds()` (every minute) saves `league_table_snapshots` per completed round (new version when it changes); admin `GET /api/admin/scores/snapshots`.
 - Phase 6: `scores/adapters.js`: `runAdapter()` (legal checks `assertAdapterMayRun` + `assertAllowedFetch` before any request; injectable fetcher), `requestFor()` (API-Football `v3.football.api-sports.io/fixtures?league&season&date`, header `x-apisports-key`; Sportmonks `api.sportmonks.com/v3/football/fixtures/date/…`, header `Authorization`; licensed JSON feed `FUTURE_SOURCE_URL`), `pollSources()` from `scoresTick` (2 min on matchdays, 6 h otherwise), `coverageTest()`. Records `last_checked_at`, `last_success_at`, `last_error` on `score_sources`.
+- Phase 7: `scores/summary.js`: `maybeDailySummary()` from `scoresTick` (alert key `summary:<date>`, once per day), `scoreHealth()` adds `scores_run`, `score_sources`, `score_backlog` to Website Health (`stepMatchday`). Tests: `tests/scores*.test.mjs` (server) and `tests/scores*.unit.test.mjs` (no server).
 
 ## Site (Astro + Cloudflare Pages)
 
