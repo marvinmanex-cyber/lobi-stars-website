@@ -869,6 +869,9 @@ Multi-source results for every conference match; built in phases. Phase 1: `func
 
 ## Site (Astro + Cloudflare Pages)
 
+### CPU limit (free plan) and background polling
+On the Workers free plan a request may use 10 ms CPU; typical requests here use 15–70 ms (tail on 22 Oct 2026). Cloudflare tolerates bursts, then returns `exceededCpu` for every request for a while. Mitigations in code: admin polling (`AdminNav.astro` food alerts, fan-alert runs) pauses while `document.hidden`; the food-orders / kitchen SSE streams last 24 s, check every 4 s and close in hidden tabs. The real fix is the Workers Paid plan (HANDOVER-TODO A33). Check with `wrangler pages deployment tail <deployment-url> --format json` (outcome `exceededCpu`).
+
 ### Which requests run the website code (`public/_routes.json`)
 Pages Functions has 250+ routes. Above 100, Cloudflare stops guessing and runs
 the code for **every** request, including fonts, images and scripts. That

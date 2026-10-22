@@ -288,14 +288,23 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
 
   // Real-time updates: Server-Sent Events, falling back to polling every 10 seconds.
   let poll = 0;
-  function startPolling() { if (!poll) poll = setInterval(load, 10000); $('liveState').textContent = '● Updating every 10 s'; $('liveState').className = 'lb-live'; }
-  if ('EventSource' in window) {
-    const es = new EventSource('/api/admin/food-orders/stream');
+  function startPolling() { if (!poll) poll = setInterval(() => { if (!document.hidden) load(); }, 10000); $('liveState').textContent = '● Updating every 10 s'; $('liveState').className = 'lb-live'; }
+  // The live connection is closed while this tab is hidden (less work for the server on Cloudflare's
+  // free plan) and reopened, with a refresh, as soon as the tab is shown again.
+  let es = null;
+  function openLive() {
+    if (!('EventSource' in window)) return startPolling();
+    if (es) return;
+    es = new EventSource('/api/admin/food-orders/stream');
     es.addEventListener('change', () => { load(); document.dispatchEvent(new Event('ls:food-poll')); });
     es.onopen = () => { $('liveState').textContent = '● Live'; $('liveState').className = 'lb-live on'; if (poll) { clearInterval(poll); poll = 0; } };
-    es.onerror = () => { if (es.readyState === EventSource.CLOSED) startPolling(); else { $('liveState').textContent = '● Reconnecting…'; $('liveState').className = 'lb-live'; } };
-    setInterval(() => { if (es.readyState !== EventSource.OPEN) startPolling(); }, 15000);
-  } else startPolling();
+    // Each connection is short; the browser reconnects within seconds, so only a closed connection is shown.
+    es.onerror = () => { if (es && es.readyState === EventSource.CLOSED) { es = null; startPolling(); } };
+  }
+  function closeLive() { if (es) { es.close(); es = null; } if (poll) { clearInterval(poll); poll = 0; } }
+  setInterval(() => { if (!document.hidden && (!es || es.readyState === EventSource.CLOSED)) startPolling(); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) closeLive(); else { openLive(); load(); } });
+  openLive();
   load();
 })();
 </script>

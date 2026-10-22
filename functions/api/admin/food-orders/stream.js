@@ -4,7 +4,7 @@ import { ensureAlertsSchema } from '../../_lib/foodAlerts.js';
 
 // GET /api/admin/food-orders/stream -- live updates for the order board
 // (Server-Sent Events). Sends "change" whenever an order is placed, paid or
-// moved. Each connection lasts about a minute; the browser reconnects by itself.
+// moved. Each connection lasts about 24 seconds; the browser reconnects by itself.
 export async function onRequestGet({ request, env }) {
   const { denied } = await requireAdminUser(request, env);
   if (denied) return denied;
@@ -22,15 +22,17 @@ export async function onRequestGet({ request, env }) {
   };
   (async () => {
     let last = '', tick = 0;
-    const end = Date.now() + 55_000;
+    // Short connections (the browser reconnects by itself): each one is a single request on Cloudflare's
+    // free plan, so it has to stay light. Checks every 4 seconds for 24 seconds.
+    const end = Date.now() + 24_000;
     try {
       await w.write(enc.encode('retry: 3000\n\n'));
       while (Date.now() < end) {
-        if (tick++ % 10 === 0) await expireStale(env.DB);
+        if (tick++ === 0) await expireStale(env.DB);
         const s = await sig();
         await w.write(enc.encode(s !== last ? `event: change\ndata: ${s}\n\n` : ': ping\n\n'));
         last = s;
-        await new Promise(r => setTimeout(r, 3000));
+        await new Promise(r => setTimeout(r, 4000));
       }
     } catch { /* the board was closed */ }
     try { await w.close(); } catch { /* already closed */ }

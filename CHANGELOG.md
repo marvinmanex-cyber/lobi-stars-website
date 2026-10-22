@@ -8,6 +8,25 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: "Request failed" on the Live Order Board: less load on the server
+
+**What happened**
+- Cloudflare's free plan allows 10 ms of computing per request; the website
+  normally uses 15–70 ms. After a busy spell (several admin tabs open, each
+  checking every 8 seconds, plus the live connections) Cloudflare cut every
+  admin request off at 10 ms: "Request failed" and "Reconnecting…".
+
+**What changed**
+- Admin tabs you are not looking at no longer ask the server anything; they
+  catch up the moment you switch back. Phone push notifications still arrive.
+- The live connections of the Live Order Board and the Kitchen Screen are
+  shorter and lighter, close while the tab is hidden, and no longer flash
+  "Reconnecting…" on every routine reconnect.
+
+**Staff to do**
+- Move Cloudflare to the **Workers Paid plan (US$5/month)** before the first
+  home match: HANDOVER-TODO A33. This is the real fix.
+
 ## 2026-10-22: The notification settings box can be closed
 
 **What changed**

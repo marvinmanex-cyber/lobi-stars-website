@@ -533,6 +533,9 @@ const showBack = here !== '/admin/dashboard/';
   }
   async function foodPoll() {
     if (!w.__lsAdmin) return;
+    // Only the tab you are looking at asks the server (Cloudflare's free plan allows little computing per
+    // request); a hidden tab catches up as soon as it is shown again. Phone push notifications still arrive.
+    if (document.hidden) return;
     let seen = 0;
     try { seen = Number(localStorage.getItem('ls_food_seen:' + w.__lsAdmin.id)) || 0; } catch {}
     try {
@@ -556,7 +559,8 @@ const showBack = here !== '/admin/dashboard/';
     const setMute = (m: boolean) => { $('ashMute').textContent = m ? '🔇' : '🔊'; $('ashMute').setAttribute('aria-label', m ? 'Unmute food order sounds' : 'Mute food order sounds'); };
     setMute(muted());
     $('ashMute').addEventListener('click', () => { const m = !muted(); try { localStorage.setItem('ls_food_mute:' + w.__lsAdmin.id, m ? '1' : '0'); } catch {} setMute(m); unlock(); });
-    foodPoll(); window.setInterval(foodPoll, 8000);
+    foodPoll(); window.setInterval(foodPoll, 10000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) foodPoll(); });
     document.addEventListener('ls:food-poll', foodPoll);
   }
   w.__lsFoodChime = chime;
@@ -566,6 +570,7 @@ const showBack = here !== '/admin/dashboard/';
     w.__lsFanPush = true;
     let fanTimer = 0;
     const fanTick = async () => {
+      if (document.hidden) { clearTimeout(fanTimer); fanTimer = setTimeout(fanTick, 60000); return; }
       let pending = 0;
       try { pending = (await (await fetch('/api/admin/fan-alerts/run', { method: 'POST', headers: H, cache: 'no-store' })).json()).pending || 0; } catch {}
       clearTimeout(fanTimer); fanTimer = setTimeout(fanTick, pending ? 4000 : 60000);

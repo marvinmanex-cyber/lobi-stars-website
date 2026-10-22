@@ -309,12 +309,13 @@ import Layout from '../../layouts/Layout.astro';
   drawAlerts();
   if (alertsOn) { $('soundTap').hidden = false; keepAwake(); }
   load();
-  setInterval(load, 10000);
+  setInterval(() => { if (!document.hidden) load(); }, 15000);
   // Instant updates: the same live connection as the Live Order Board (a new, paid or moved order refreshes at once).
-  if ('EventSource' in window) {
-    const es = new EventSource('/api/admin/kitchen/stream');
-    es.addEventListener('change', () => load());
-  }
+  // Closed while the screen is hidden (less work for the server), reopened with a refresh when shown.
+  let es = null;
+  const openLive = () => { if (!('EventSource' in window) || es) return; es = new EventSource('/api/admin/kitchen/stream'); es.addEventListener('change', () => load()); };
+  document.addEventListener('visibilitychange', () => { if (document.hidden) { if (es) { es.close(); es = null; } } else { openLive(); load(); } });
+  openLive();
   // A kitchen tablet stays signed in while this screen is open (12 hours at most), even with nobody touching it.
   setInterval(() => fetch('/api/admin/me', { method: 'POST', headers: { 'x-admin-code': '__session__' } }).then(r => { if (r.status === 401) location.href = '/admin/login/?ended=1&next=/admin/kitchen/'; }).catch(() => {}), 4 * 60000);
 })();
