@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Food receipts by WhatsApp and email; board links open in a new tab
+
+**What changed**
+- On the **Live Order Board**, delivered orders have **Receipt to the buyer:
+  WhatsApp | Email**. WhatsApp opens a chat with the buyer with the receipt
+  ready to send; Email sends a receipt with the **MatchDay Kitchen logo**
+  (needs Resend). Each shows a ✓ with the time once sent.
+- New receipt page for buyers (from the link in the message): logo, items,
+  total, seat, payment, and **Print or save as PDF**.
+- **Notifications**, **Kitchen Screen** and **Orders list** on the board now
+  open in a new tab, so the board stays open. Notifications opens Kitchen
+  Alerts with this device's notification settings.
+
+**Staff to do**
+- Nothing. Email receipts start working once Resend is set up (HANDOVER-TODO).
+
 ## 2026-10-22: Website Health: three AI buttons on every problem
 
 **What changed**

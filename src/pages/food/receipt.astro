@@ -1,0 +1,90 @@
+---
+// /food/receipt/?ref=FD-...&t=... -- the buyer's MatchDay Kitchen receipt
+// (sent by staff on WhatsApp or by email from the Live Order Board). Branded,
+// made for phones, and prints / saves as PDF on one page. Uses the same private
+// link token as the order status page; only paid orders show a receipt.
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Receipt | MatchDay Kitchen | Lobi Stars FC" description="Your MatchDay Kitchen receipt." noindex>
+  <main class="rc-wrap">
+    <p class="rc-msg" id="msg">Loading your receipt…</p>
+    <article class="rc" id="rc" hidden>
+      <header class="rc-head">
+        <img src="/images/matchday-kitchen-logo.png" alt="MatchDay Kitchen" width="170" height="170" />
+        <p>Lobi Stars FC · In-Seat Food</p>
+      </header>
+      <div class="rc-body">
+        <h1>Receipt</h1>
+        <p class="rc-thanks" id="thanks"></p>
+        <dl class="rc-meta" id="meta"></dl>
+        <table class="rc-items"><tbody id="items"></tbody><tfoot><tr><th scope="row">Total paid</th><td id="total"></td></tr></tfoot></table>
+        <p class="rc-note" id="note" hidden></p>
+      </div>
+      <footer class="rc-foot">MatchDay Kitchen · Lobi Stars Football Club, Makurdi · Pride of Benue<br />lobistarsfc.com</footer>
+    </article>
+    <div class="rc-acts" id="acts" hidden>
+      <button type="button" class="btn-p" id="print">Print or save as PDF</button>
+      <a class="btn-o" id="track" href="/food/">See the order</a>
+    </div>
+  </main>
+</Layout>
+
+<style>
+  .rc-wrap { max-width: 520px; margin: 0 auto; padding: 24px 16px 60px; }
+  .rc-msg { text-align: center; color: var(--lt); }
+  .rc { background: #fff; color: #15181D; border-radius: 18px; overflow: hidden; border: 1px solid #E7E1D8; box-shadow: 0 10px 30px rgba(0,0,0,.12); }
+  .rc-head { background: #15181D; padding: 22px 20px 16px; text-align: center; }
+  .rc-head img { display: block; margin: 0 auto; width: 150px; height: auto; }
+  .rc-head p { margin: 10px 0 0; color: #F5C518; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 3px; text-transform: uppercase; }
+  .rc-body { padding: 20px; }
+  .rc-body h1 { margin: 0; font: 400 34px/1 'Bebas Neue', sans-serif; color: #D4202B; letter-spacing: 1px; }
+  .rc-thanks { margin: 4px 0 16px; color: #5B6470; }
+  .rc-meta { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 0 0 16px; font-size: 14px; }
+  .rc-meta dt { color: #5B6470; } .rc-meta dd { margin: 0; text-align: right; font-weight: 600; }
+  .rc-items { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .rc-items td, .rc-items th { padding: 9px 0; border-bottom: 1px solid #EEE; text-align: left; }
+  .rc-items td:last-child { text-align: right; white-space: nowrap; }
+  .rc-items tfoot th, .rc-items tfoot td { border: 0; padding-top: 12px; font-size: 18px; font-weight: 800; }
+  .rc-items tfoot td { text-align: right; }
+  .rc-note { margin: 14px 0 0; padding: 10px 12px; background: #FFF7E0; border-radius: 8px; font-size: 14px; }
+  .rc-foot { background: #FAF8F4; padding: 14px 20px; text-align: center; font-size: 12px; color: #5B6470; }
+  .rc-acts { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+  .rc-acts > * { min-height: 46px; }
+  @media print {
+    :global(body > *:not(main)), :global(header.site-header), :global(footer), :global(nav), .rc-acts, :global(.cookie-banner), :global([class*="cookie"]) { display: none !important; }
+    :global(body) { background: #fff !important; }
+    .rc-wrap { padding: 0; max-width: none; }
+    .rc { box-shadow: none; border: 0; }
+    .rc-head { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+
+<script is:inline>
+(function () {
+  const $ = id => document.getElementById(id);
+  const q = new URLSearchParams(location.search), ref = q.get('ref') || '', t = q.get('t') || '';
+  const naira = k => '₦' + (Number(k || 0) / 100).toLocaleString('en-NG', { maximumFractionDigits: 2 });
+  const when = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const add = (parent, tag, text) => { const n = document.createElement(tag); n.textContent = text; parent.append(n); return n; };
+  if (!ref || !t) { $('msg').textContent = 'This receipt link is not complete. Please use the link you were sent.'; return; }
+  fetch(`/api/food/order?ref=${encodeURIComponent(ref)}&t=${encodeURIComponent(t)}`, { cache: 'no-store' }).then(r => r.json().then(d => ({ ok: r.ok, d }))).then(({ ok, d }) => {
+    const o = d.order;
+    if (!ok || !o) { $('msg').textContent = d.error || 'Receipt not found.'; return; }
+    if (!o.paidAt || ['CANCELLED', 'REFUNDED', 'EXPIRED', 'AWAITING_PAYMENT', 'AWAITING_WHATSAPP', 'CONFIRMED'].includes(o.status)) { $('msg').textContent = 'There is no receipt for this order yet: it has not been paid.'; return; }
+    $('thanks').textContent = `Thank you${o.name ? `, ${o.name}` : ''}! Enjoy the match.`;
+    const meta = $('meta');
+    const row = (k, v) => { if (!v) return; add(meta, 'dt', k); add(meta, 'dd', v); };
+    row('Order', o.ref);
+    row('Paid', when(o.paidAt));
+    row(o.fulfilment === 'pickup' ? 'Collected at' : 'Delivered to', o.fulfilment === 'pickup' ? (o.pickupPoint || 'Pickup point') : `Seat ${o.seat}${o.stand ? `, ${o.stand}` : ''}`);
+    row(o.fulfilment === 'pickup' ? 'Collected' : 'Delivered', when(o.deliveredAt));
+    row('Payment', o.channel === 'whatsapp' ? 'Bank transfer / cash' : 'Card / bank (Paystack)');
+    for (const i of o.items) { const tr = document.createElement('tr'); add(tr, 'td', `${i.qty} × ${i.name}`); add(tr, 'td', naira((i.priceKobo || 0) * (i.qty || 1))); $('items').append(tr); }
+    $('total').textContent = naira(o.totalKobo);
+    if (o.notes) { $('note').textContent = `Your note: ${o.notes}`; $('note').hidden = false; }
+    $('track').href = `/food/order/?ref=${encodeURIComponent(ref)}&t=${encodeURIComponent(t)}`;
+    $('msg').hidden = true; $('rc').hidden = false; $('acts').hidden = false;
+  }).catch(() => { $('msg').textContent = 'The receipt could not be loaded. Check your connection and try again.'; });
+  $('print').addEventListener('click', () => window.print());
+})();
+</script>

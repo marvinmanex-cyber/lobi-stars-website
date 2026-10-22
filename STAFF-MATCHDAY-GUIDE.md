@@ -153,6 +153,10 @@ half-time and second-half alerts, so check the score before saving.
 
 ---
 
+**Receipts:** after delivery, press **WhatsApp** (or **Email**) under
+"Receipt to the buyer" on the Delivered card to send the buyer their
+MatchDay Kitchen receipt.
+
 **During the match (in-seat food):** keep the Live Order Board open; prepare
 only **Paid** orders; switch items to **Sold out** as soon as they run out.
 

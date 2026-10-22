@@ -1066,6 +1066,23 @@ updates by itself (the top shows **● Live**); there is no need to refresh.
   urgent beep for a **PAID** order (🟢, start preparing). Tap anywhere on the
   page once so the browser allows sounds. **🔊** in the top bar mutes them.
 
+**Receipts for the buyer:** every card in **Delivered** has **🧾 Receipt to
+the buyer: WhatsApp | Email**.
+- **WhatsApp** opens WhatsApp on this device with a chat to the buyer's
+  number and the receipt already typed (items, total, seat and a link to the
+  receipt with the MatchDay Kitchen logo). Press **Send** in WhatsApp. If the
+  order has no number, you are asked for it.
+- **Email** asks for the buyer's address (filled in when the order has one)
+  and the website sends a receipt email with the MatchDay Kitchen logo. This
+  needs the email service (Resend) to be set up; until then it says so, so
+  use WhatsApp.
+- A ✓ and the time show on the button once a receipt was sent. The buyer can
+  open the receipt link to print it or save it as a PDF.
+
+**Notifications**, **Kitchen Screen** and **Orders list** at the top open in
+a **new tab**, so the board stays open. Notifications opens Kitchen Alerts
+with this device's notification settings already showing.
+
 ### Kitchen alerts and the Kitchen Screen (Admin › Commerce › Kitchen Screen)
 When an order is **paid**, the kitchen is alerted straight away and must
 **accept** it, so no paid order is missed.

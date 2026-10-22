@@ -4,6 +4,8 @@ import { logAdminAction } from '../../_lib/adminSession.js';
 import { ensureFoodSchema, expireStale, moveOrder, STATUS, foodSettings, saveFoodSetting, staffMessage, whereText } from '../../_lib/foodOrders.js';
 import { buildXlsx } from '../../_lib/xlsx.js';
 import { kitchenStatus } from '../../_lib/kitchenNotify.js';
+import { receiptEmailHtml, receiptWhatsappText, receiptUrl, waNumber, canReceipt } from '../../_lib/foodReceipt.js';
+import { sendEmail } from '../../_lib/email.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
 const json = s => { try { return JSON.parse(s); } catch { return []; } };
@@ -24,6 +26,7 @@ const view = (o, settings) => ({
   channel: o.channel || 'paystack', fulfilment: o.fulfilment || 'seat', pickupPoint: o.pickup_point || '', where: whereText(o), confirmedAt: o.confirmed_at,
   wa: waReplies(o, settings),
   kitchen: kitchenStatus(o),
+  receipt: { emailAt: o.receipt_email_at || null, emailTo: o.receipt_email_to || null, whatsappAt: o.receipt_wa_at || null, by: o.receipt_by || null },
 });
 
 // GET /api/admin/food-orders
@@ -131,6 +134,33 @@ export async function onRequestPost({ request, env, waitUntil }) {
     await saveFoodSetting(env.DB, 'paymentExpiryMinutes', m, admin.name);
     await logAdminAction(env.DB, admin, 'food_settings', `payment time limit ${m} min`);
     return Response.json({ ok: true, settings: await foodSettings(env.DB) }, { headers: noStore });
+  }
+  // Receipt to the buyer: { action: 'receipt_email', id, email? } sends the branded email;
+  // { action: 'receipt_whatsapp', id } returns the WhatsApp link (opened on the staff phone) and records it.
+  if (b.action === 'receipt_email' || b.action === 'receipt_whatsapp') {
+    const o = await env.DB.prepare(`SELECT * FROM food_orders WHERE id = ?`).bind(String(b.id || '')).first();
+    if (!o) return Response.json({ error: 'Order not found' }, { status: 404 });
+    if (!canReceipt(o)) return Response.json({ error: 'A receipt can only be sent for a paid order.' }, { status: 409 });
+    const site = String(env.SITE_URL || new URL(request.url).origin).replace(/\/+$/, '');
+    if (b.action === 'receipt_whatsapp') {
+      const to = waNumber(b.phone || o.phone);
+      if (!to) return Response.json({ error: 'There is no WhatsApp number for this order. Type the buyer’s number.' }, { status: 400 });
+      await env.DB.prepare(`UPDATE food_orders SET receipt_wa_at = ?, receipt_by = ? WHERE id = ?`).bind(new Date().toISOString(), admin.name, o.id).run();
+      await logAdminAction(env.DB, admin, 'food_receipt', `${o.ref}: receipt sent on WhatsApp`);
+      return Response.json({ ok: true, url: `https://wa.me/${to}?text=${encodeURIComponent(receiptWhatsappText(env, o))}`, receipt: receiptUrl(site, o) }, { headers: noStore });
+    }
+    const email = String(b.email || o.email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.json({ error: 'There is no email address for this order. Type the buyer’s email.', needEmail: true }, { status: 400 });
+    if (!env.RESEND_API_KEY) return Response.json({ error: 'Email is not set up yet (the Resend key is missing in Cloudflare). Use WhatsApp for now.' }, { status: 503 });
+    try {
+      await sendEmail(env, { to: email, subject: `Your MatchDay Kitchen receipt – ${o.ref}`, html: receiptEmailHtml(env, o) });
+    } catch (err) {
+      console.error('[food] receipt email', err);
+      return Response.json({ error: 'The email could not be sent. Please try again, or use WhatsApp.' }, { status: 502 });
+    }
+    await env.DB.prepare(`UPDATE food_orders SET receipt_email_at = ?, receipt_email_to = ?, receipt_by = ? WHERE id = ?`).bind(new Date().toISOString(), email, admin.name, o.id).run();
+    await logAdminAction(env.DB, admin, 'food_receipt', `${o.ref}: receipt emailed`);
+    return Response.json({ ok: true, sentTo: email }, { headers: noStore });
   }
   if (b.action === 'resend_kitchen') {
     const o = await env.DB.prepare(`SELECT * FROM food_orders WHERE id = ?`).bind(String(b.id || '')).first();

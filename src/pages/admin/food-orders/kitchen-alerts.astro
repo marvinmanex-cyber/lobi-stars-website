@@ -4,13 +4,14 @@
 // Screen devices, a test alert and the last 50 alerts sent.
 import Layout from '../../../layouts/Layout.astro';
 import AdminNav from '../../../components/admin/AdminNav.astro';
+import PushEnable from '../../../components/admin/PushEnable.astro';
 ---
 <Layout title="Kitchen Alerts | Lobi Stars Admin" description="Kitchen order alerts." noindex>
   <div class="wrap ka">
     <AdminNav current="kitchen-alerts" />
     <header class="ka-head">
       <div><div class="stag">Commerce › In-Seat Food</div><h1 class="stitle">Kitchen <span class="r">Alerts</span></h1></div>
-      <div class="ka-tools"><a class="btn-p" href="/admin/kitchen/">👩‍🍳 Open the Kitchen Screen</a><button type="button" class="btn-o" id="test">🔔 Send test alert</button></div>
+      <div class="ka-tools" id="device"><PushEnable /><a class="btn-p" href="/admin/kitchen/" target="_blank" rel="noopener">👩‍🍳 Open the Kitchen Screen</a><button type="button" class="btn-o" id="test">🔔 Send test alert</button></div>
     </header>
     <ol class="ka-flow" aria-label="How kitchen alerts work">
       <li><b>1</b><span>A fan <strong>pays</strong> for an order</span></li>
@@ -197,4 +198,9 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   });
   load();
 })();
+</script>
+
+<script is:inline>
+  // Opened from "Notifications" on the Live Order Board: show the device notification settings straight away.
+  if (location.hash === "#device") { const pe = document.getElementById("pe"); if (pe) pe.open = true; }
 </script>

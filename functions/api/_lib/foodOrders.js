@@ -91,6 +91,8 @@ export async function ensureFoodSchema(db) {
     // Kitchen alerts: first alert (stops duplicates), who accepted and when, repeat alerts.
     ['kitchen_alerted_at', 'TEXT'], ['kitchen_ack_at', 'TEXT'], ['kitchen_ack_by', 'TEXT'],
     ['repeat_count', 'INTEGER NOT NULL DEFAULT 0'], ['last_alert_at', 'TEXT'],
+    // Receipts sent to the buyer from the Live Order Board (when, and by whom).
+    ['receipt_email_at', 'TEXT'], ['receipt_email_to', 'TEXT'], ['receipt_wa_at', 'TEXT'], ['receipt_by', 'TEXT'],
   ]) if (!cols.has(name)) await db.prepare(`ALTER TABLE food_orders ADD COLUMN ${name} ${type}`).run();
   await db.batch([
     db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_food_ref ON food_orders(ref) WHERE ref IS NOT NULL`),
