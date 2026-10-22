@@ -1,0 +1,117 @@
+---
+// Settings › Squad & Staff Data Portal (only the three Super Admins). The
+// private portal link to copy and send to the admin in charge, the shared
+// login (username, generate a new password: shown once), open/close, the
+// current season, open portal sessions (sign out all) and new devices.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Squad & Staff Data Portal | Lobi Stars Admin" description="Squad & Staff Data Portal settings." noindex>
+  <div class="wrap spa">
+    <AdminNav current="squad-portal" />
+    <div class="stag">Settings</div>
+    <h1 class="stitle">Squad &amp; Staff <span class="r">Data Portal</span></h1>
+    <p class="spa-lede">A private page where the admin in charge records player, coach and staff profiles and photos. It is not linked anywhere on the website. Copy the link and the login below and send them to that person yourself.</p>
+    <p class="spa-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="spa-card" aria-labelledby="h-link">
+      <h2 id="h-link">Portal link</h2>
+      <div class="spa-row"><input id="link" readonly aria-label="Portal link" /><button class="btn-p" type="button" id="copyLink">Copy link</button></div>
+      <label class="spa-switch"><input type="checkbox" id="enabled" /> <span>Portal open</span></label>
+      <p class="muted" id="enabledHint"></p>
+    </section>
+
+    <section class="spa-card" aria-labelledby="h-login">
+      <h2 id="h-login">Login</h2>
+      <form class="spa-row" id="userForm"><label class="spa-l">Username<input id="username" maxlength="32" autocomplete="off" /></label><button class="btn-o" type="submit">Save username</button></form>
+      <div class="spa-row"><button class="btn-p" type="button" id="newPass">Generate new password</button><span class="muted" id="passState"></span></div>
+      <div class="spa-secret" id="secret" hidden></div>
+      <p class="muted">The password is shown once and never emailed. A new password signs out everyone using the portal.</p>
+    </section>
+
+    <section class="spa-card" aria-labelledby="h-season">
+      <h2 id="h-season">Current season</h2>
+      <form class="spa-row" id="seasonForm"><label class="spa-l">Season<input id="season" placeholder="2026/27" maxlength="7" /></label><button class="btn-o" type="submit">Save season</button></form>
+    </section>
+
+    <section class="spa-card" aria-labelledby="h-sess">
+      <h2 id="h-sess">Signed in now</h2>
+      <div id="sessions"><p class="muted">Loading…</p></div>
+      <button class="btn-o" type="button" id="signOutAll">Sign out all</button>
+    </section>
+
+    <section class="spa-card" aria-labelledby="h-dev">
+      <h2 id="h-dev">Devices used</h2>
+      <div id="devices"></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .spa { max-width: 900px; padding-top: 20px; padding-bottom: 60px; }
+  .spa-lede { color: var(--a-muted); max-width: 720px; line-height: 1.5; }
+  .spa-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 14px 0; display: grid; gap: 12px; }
+  .spa-card h2 { margin: 0; font-size: 18px; }
+  .spa-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+  .spa-row input { flex: 1 1 260px; min-height: 44px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 12px; background: var(--a-card); color: var(--a-ink); font: inherit; font-size: 16px; }
+  .spa-l { display: grid; gap: 4px; font-weight: 600; font-size: 14px; color: var(--a-muted); flex: 1 1 220px; }
+  .spa-row button { min-height: 44px; }
+  .spa-switch { display: flex; gap: 10px; align-items: center; font-weight: 700; font-size: 16px; }
+  .spa-switch input { width: 22px; height: 22px; }
+  .spa-secret { padding: 14px; border-radius: 12px; background: #FFF7E0; color: #5A4300; border: 1px solid #F2D27A; display: grid; gap: 8px; }
+  :global(body.admin-dark) .spa-secret { background: #2E2610; color: #FFE6A3; border-color: #6B5718; }
+  .spa-secret code { font-size: 22px; letter-spacing: 1px; word-break: break-all; }
+  .spa-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
+  .spa-msg.ok { background: #E8F7EE; color: #17643A; } .spa-msg.err { background: #FDECEC; color: #A3161B; }
+  .spa :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .spa :global(th), .spa :global(td) { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--a-line); }
+  .spa :global(.scroll) { overflow-x: auto; }
+  .spa :global(.new) { display: inline-block; padding: 1px 8px; border-radius: 999px; background: #FEF3C7; color: #92400E; font-size: 12px; font-weight: 700; }
+</style>
+
+<script is:inline>
+(function () {
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const when = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  let msgT;
+  function msg(t, ok = true) { const m = $('msg'); m.textContent = t; m.className = 'spa-msg ' + (ok ? 'ok' : 'err'); m.hidden = false; clearTimeout(msgT); msgT = setTimeout(() => { m.hidden = true; }, 6000); }
+  async function api(body) {
+    const r = await fetch('/api/admin/squad-portal', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/squad-portal/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function draw(d) {
+    $('link').value = d.link;
+    $('enabled').checked = d.enabled;
+    $('enabledHint').textContent = d.enabled ? 'Open: the link shows the sign-in page.' : 'Closed: the sign-in page says "The portal is currently closed" and nobody can sign in.';
+    $('username').value = d.username;
+    $('passState').textContent = d.hasPassword ? (d.lockedUntil ? `Sign-in locked until ${when(d.lockedUntil)} (too many wrong passwords).` : 'A password is set.') : 'No password yet: generate one before sending the link.';
+    $('season').value = d.season;
+    $('sessions').innerHTML = d.sessions.length ? `<div class="scroll"><table><thead><tr><th>Name entered</th><th>Device</th><th>Since</th><th>Last active</th><th></th></tr></thead><tbody>${d.sessions.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.device)}</td><td>${esc(when(s.created_at))}</td><td>${esc(when(s.last_seen))}</td><td><button class="btn-o" type="button" data-out="${esc(s.id)}">Sign out</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Nobody is signed in to the portal.</p>';
+    $('devices').innerHTML = d.devices.length ? `<div class="scroll"><table><thead><tr><th>Device</th><th>First used by</th><th>First used</th><th>Last used</th></tr></thead><tbody>${d.devices.map(x => `<tr><td>${esc(x.device)} ${x.seen_by_admin ? '' : '<span class="new">New</span>'}</td><td>${esc(x.first_name)}</td><td>${esc(when(x.first_seen))}</td><td>${esc(when(x.last_seen))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No device has signed in yet.</p>';
+  }
+  async function load() { try { const d = await api(); draw(d); if (d.unseen) await api({ action: 'devices_seen' }); } catch (e) { msg(e.message, false); } }
+  async function act(body, ok) { try { const d = await api(body); draw(d); if (ok) msg(ok); return d; } catch (e) { msg(e.message, false); } }
+  $('copyLink').addEventListener('click', () => navigator.clipboard.writeText($('link').value).then(() => msg('Link copied.'), () => { $('link').select(); msg('Select the link and copy it.', false); }));
+  $('enabled').addEventListener('change', e => act({ action: 'enabled', enabled: e.target.checked }, e.target.checked ? 'Portal opened.' : 'Portal closed; everyone signed out.'));
+  $('userForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'username', username: $('username').value }, 'Username saved.'); });
+  $('seasonForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'season', season: $('season').value }, 'Season saved.'); });
+  $('signOutAll').addEventListener('click', () => { if (confirm('Sign out everyone using the portal?')) act({ action: 'sign_out_all' }, 'Everyone signed out.'); });
+  $('sessions').addEventListener('click', e => { const b = e.target.closest('[data-out]'); if (b) act({ action: 'sign_out', id: b.dataset.out }, 'Signed out.'); });
+  $('newPass').addEventListener('click', async () => {
+    if (!confirm('Generate a new password? Everyone using the portal is signed out, and the old password stops working.')) return;
+    const d = await act({ action: 'new_password' });
+    if (!d || !d.password) return;
+    const box = $('secret');
+    box.innerHTML = `<b>New password (shown only now):</b><code id="pw"></code><div class="spa-row"><button class="btn-p" type="button" id="copyPw">Copy password</button><button class="btn-o" type="button" id="hidePw">I have saved it</button></div>`;
+    $('pw').textContent = d.password; box.hidden = false;
+    $('copyPw').onclick = () => navigator.clipboard.writeText(d.password).then(() => msg('Password copied.'), () => msg('Select the password and copy it.', false));
+    $('hidePw').onclick = () => { box.hidden = true; box.innerHTML = ''; };
+  });
+  load();
+})();
+</script>

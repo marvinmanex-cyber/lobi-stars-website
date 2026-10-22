@@ -39,6 +39,8 @@
     "/results/*",
     "/sitemap.xml",
     "/sitemap.xml/*",
+    "/staff",
+    "/staff/*",
     "/stats",
     "/stats/*",
     "/table",

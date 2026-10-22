@@ -7,6 +7,7 @@ import { ensureAnalyticsSchema } from '../_lib/analytics.js';
 import { sqlTs, isoTs } from '../_lib/reportRange.js';
 import { healthSummary } from '../_lib/uptime.js';
 import { scoreBellItems } from '../_lib/scores/bell.js';
+import { unseenDevices } from '../_lib/squadPortal.js';
 
 // GET /api/admin/notifications -- the admin bell: unread / overdue Inbox messages,
 // Predict & Win prizes not yet paid, commentary stream errors today, and
@@ -46,6 +47,11 @@ export async function onRequestGet({ request, env, waitUntil }) {
   if (canAccess(admin, 'settings') && await tableExists('uptime_incidents')) {
     const h = await healthSummary(db);
     for (const i of h.open) items.push({ icon: '🚨', title: `Website problem: ${i.label}`, sub: `${i.error || 'Not responding'} since ${new Date(i.started_at).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`, href: '/admin/health/' });
+  }
+  // Squad & Staff Data Portal: signed in from a device never seen before (Super Admins).
+  if (can(admin, 'squad.portal.manage')) {
+    const dev = await unseenDevices(db).catch(() => []);
+    if (dev.length) items.unshift({ icon: '🔐', title: `Squad Data Portal: signed in from ${dev.length === 1 ? 'a new device' : `${dev.length} new devices`}`, sub: dev.slice(0, 3).map(d => `${d.first_name} on ${d.device}`).join(' · '), href: '/admin/squad-portal/' });
   }
   // Score verification: things waiting for the Website & Data Officer.
   if (can(admin, 'matchday.scores')) items.push(...await scoreBellItems(env).catch(err => { console.error('[bell] scores', err); return []; }));

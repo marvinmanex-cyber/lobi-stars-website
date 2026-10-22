@@ -3,6 +3,7 @@ import { allowedPath, loadRoles, roleLabel, cmsConfigFor } from '../api/_lib/adm
 import { withSecurityHeaders } from '../api/_lib/securityHeaders.js';
 import { ADMIN_PAGE_HEADERS, securitySettings } from '../api/_lib/adminSecurity.js';
 import { helperMayOpen } from '../api/_lib/helpers.js';
+import { hasPortalCookie, getPortalSession } from '../api/_lib/squadPortal.js';
 
 // Every /admin page (the CMS, Manage Matches, Analytics...) needs a staff
 // login. Visitors without a valid staff cookie are sent to /admin/login, and
@@ -14,6 +15,11 @@ export async function onRequest({ request, env, next }) {
   const isLoginPage = /^\/admin\/(login|invite)\/?$/.test(url.pathname);
   const admin = isLoginPage ? null : await getAdmin(request, env);
 
+  // The Squad & Staff Data Portal login never opens the admin back end.
+  if (!admin && !isLoginPage && hasPortalCookie(request) && await getPortalSession(request, env, { touch: false })) {
+    return new Response('<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>No access</title><p style="font:16px/1.5 sans-serif;padding:24px">The Squad &amp; Staff Data Portal login only opens the portal. It has no access to any other part of the website.</p>',
+      { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' } });
+  }
   if (!isLoginPage && !admin) {
     const login = new URL('/admin/login/', url);
     login.searchParams.set('next', url.pathname + url.search);

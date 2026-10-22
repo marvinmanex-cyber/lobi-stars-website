@@ -2,6 +2,7 @@ import { getAdmin } from '../_lib/adminSession.js';
 import { allowedPath, loadRoles } from '../_lib/adminRoles.js';
 import { crossSiteWrite } from '../_lib/adminSecurity.js';
 import { helperMayOpen } from '../_lib/helpers.js';
+import { hasPortalCookie, getPortalSession } from '../_lib/squadPortal.js';
 
 // Role check for every admin API (the endpoints themselves check the login).
 // A signed-in staff member calling an API outside their role gets 403.
@@ -14,6 +15,10 @@ export async function onRequest({ request, env, next, waitUntil }) {
   const url = new URL(request.url);
   if (crossSiteWrite(request)) return Response.json({ error: 'This request came from another website and was refused.' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
   const admin = await getAdmin(request, env);
+  // The Squad & Staff Data Portal login never opens any admin API.
+  if (!admin && !/^\/api\/admin\/(login|logout|invite|password-reset)(\/|$)/.test(url.pathname) && hasPortalCookie(request) && await getPortalSession(request, env, { touch: false })) {
+    return Response.json({ error: 'The Squad & Staff Data Portal login only opens the portal.' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
+  }
   // Matchday helpers only use their own screen's APIs.
   if (admin?.helper && !helperMayOpen(admin, url.pathname)) return Response.json({ error: 'Helper accounts only open their own screen.' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
   if (admin?.restrict && !/^\/api\/admin\/(account|me|logout|login)(\/|$)/.test(url.pathname)) {

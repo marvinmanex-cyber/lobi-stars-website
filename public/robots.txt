@@ -2,5 +2,6 @@ User-agent: *
 Disallow: /admin
 Disallow: /api/
 Disallow: /scan
+Disallow: /staff/
 
 Sitemap: https://lobistarsfc.com/sitemap.xml

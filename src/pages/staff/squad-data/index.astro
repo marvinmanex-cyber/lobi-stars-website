@@ -1,0 +1,144 @@
+---
+// The Squad & Staff Data Portal (private; served by functions/staff/[[path]].js at
+// PORTAL_PATH, default /staff/squad-data). A standalone page: none of the public
+// site's menus, links, search or analytics, never indexed. Its own login (one
+// shared account set by a Super Admin); the app itself is in src/scripts/squadPortal/.
+import settings from '../../../data/fan-settings.json';
+const siteKey = settings.turnstileSiteKey;
+---
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="theme-color" content="#B3121A" />
+  <title>Squad &amp; Staff Data Portal | Lobi Stars FC</title>
+  <link rel="icon" href="/images/lobi-stars-badge.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="app" data-turnstile={siteKey}>
+    <!-- SCREEN 1: SIGN IN -->
+    <section class="sp-signin" id="signin" hidden>
+      <div class="sp-brand">
+        <span class="sp-badge sp-badge-lg"><img src="/images/lobi-stars-badge.webp" alt="Lobi Stars FC badge" width="96" height="96" /></span>
+        <p class="sp-club">LOBI STARS FC</p>
+        <p class="sp-pride">PRIDE OF BENUE</p>
+        <h1 class="sp-h1">SQUAD &amp; STAFF DATA PORTAL</h1>
+        <span class="sp-goldbar" aria-hidden="true"></span>
+      </div>
+      <div class="sp-signin-side">
+        <form class="sp-card sp-signin-card" id="signinForm" novalidate>
+          <h2 class="sp-h2">Sign in</h2>
+          <p class="sp-muted">Use the portal username and password provided by the club.</p>
+          <p class="sp-alert" id="signinMsg" role="alert" hidden></p>
+          <div class="sp-field"><label for="siUser">Username</label><input id="siUser" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required /></div>
+          <div class="sp-field"><label for="siPass">Password</label>
+            <div class="sp-pw"><input id="siPass" name="password" type="password" autocomplete="current-password" required /><button type="button" class="sp-pw-show" id="siShow" aria-label="Show password" aria-pressed="false">Show</button></div></div>
+          <div class="sp-field"><label for="siName">Your name</label><input id="siName" name="name" autocomplete="name" placeholder="Who is entering data today?" required maxlength="60" aria-describedby="siNameHint" />
+            <p class="sp-hint" id="siNameHint">Recorded with every profile you add or change.</p></div>
+          <div class="sp-turnstile" id="siTurnstile" hidden></div>
+          <button class="sp-btn sp-btn-red sp-btn-block" type="submit" id="siBtn">SIGN IN</button>
+          <p class="sp-note"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5Zm-3 8V6a3 3 0 0 1 6 0v3H9Z"/></svg>
+            This login only opens the Squad &amp; Staff Data Portal. It has no access to any other part of the website.</p>
+        </form>
+      </div>
+    </section>
+
+    <!-- SIGNED IN -->
+    <div id="portal" hidden>
+      <header class="sp-header">
+        <div class="sp-header-in">
+          <span class="sp-badge"><img src="/images/lobi-stars-badge.webp" alt="" width="44" height="44" /></span>
+          <div class="sp-header-titles"><b>LOBI STARS FC</b><span>Squad &amp; Staff Data Portal</span></div>
+          <div class="sp-header-user"><span>Signed in as <b id="whoName"></b></span><button type="button" class="sp-btn sp-btn-ghost" id="signOut">Sign out</button></div>
+        </div>
+      </header>
+      <main class="sp-main" id="main"></main>
+      <footer class="sp-footer"><a href="/privacy/" target="_blank" rel="noopener">Privacy Policy</a></footer>
+    </div>
+
+    <!-- 2-minute warning before signing out after 60 minutes without activity -->
+    <div class="sp-modal" id="idleWarn" role="alertdialog" aria-modal="true" aria-labelledby="idleTitle" hidden>
+      <div class="sp-card sp-modal-card">
+        <h2 class="sp-h2" id="idleTitle">Still there?</h2>
+        <p>You will be signed out in <b id="idleLeft">2:00</b> because nothing has happened for a while. Your saved answers are kept.</p>
+        <button type="button" class="sp-btn sp-btn-red" id="idleStay">Stay signed in</button>
+      </div>
+    </div>
+    <p class="sp-toast" id="toast" role="status" aria-live="polite" hidden></p>
+  </div>
+  <script>
+    import { startPortal } from '../../../scripts/squadPortal/app';
+    startPortal();
+  </script>
+</body>
+</html>
+
+<style is:global>
+  :root { --red: #B3121A; --red-d: #8E0E14; --gold: #F2B705; --ink: #16181D; --grey: #4A505C; --bg: #F3F4F6; --line: #E2E4E9; --white: #fff;
+    --pub: #1D4ED8; --pub-bg: #DBEAFE; --med: #92400E; --med-bg: #FEF3C7; --prv: #374151; --prv-bg: #E5E7EB; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-text-size-adjust: 100%; }
+  [hidden] { display: none !important; }
+  :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+  a { color: var(--red); }
+  .sp-h1, .sp-h2, .sp-h3, .sp-kicker { font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; margin: 0; }
+  .sp-h2 { font-size: 26px; line-height: 1.1; }
+  .sp-h3 { font-size: 20px; line-height: 1.15; }
+  .sp-muted { color: var(--grey); margin: 6px 0 16px; }
+  .sp-card { background: var(--white); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+  .sp-badge { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: #fff; border: 3px solid var(--gold); overflow: hidden; flex: none; }
+  .sp-badge img { width: 84%; height: 84%; object-fit: contain; }
+  .sp-badge-lg { width: 112px; height: 112px; border-width: 4px; }
+  .sp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 18px; border-radius: 12px; border: 2px solid transparent; font: 700 16px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; text-decoration: none; }
+  .sp-btn:disabled { opacity: .6; cursor: wait; }
+  .sp-btn-red { background: var(--red); color: #fff; } .sp-btn-red:hover { background: var(--red-d); }
+  .sp-btn-dark { background: var(--ink); color: #fff; }
+  .sp-btn-gold { background: var(--gold); color: var(--ink); }
+  .sp-btn-outline { background: transparent; border-color: currentColor; color: inherit; }
+  .sp-btn-ghost { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.5); min-height: 44px; }
+  .sp-btn-block { width: 100%; }
+  .sp-field { display: grid; gap: 6px; margin: 0 0 16px; }
+  .sp-field > label, .sp-label { font-weight: 600; font-size: 15px; }
+  .sp-field input, .sp-field select, .sp-field textarea { width: 100%; min-height: 48px; padding: 10px 12px; border: 1.5px solid #C9CDD4; border-radius: 10px; background: #fff; color: var(--ink); font: inherit; font-size: 16px; }
+  .sp-field input:focus, .sp-field select:focus, .sp-field textarea:focus { border-color: var(--ink); outline: 3px solid var(--gold); outline-offset: 1px; }
+  .sp-hint { margin: 0; font-size: 14px; color: var(--grey); }
+  .sp-alert { margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; background: #FDECEC; color: #8E0E14; font-weight: 600; }
+  .sp-pw { display: flex; gap: 6px; } .sp-pw input { flex: 1; }
+  .sp-pw-show { min-width: 64px; min-height: 48px; border-radius: 10px; border: 1.5px solid #C9CDD4; background: #fff; font: 600 14px 'Barlow', sans-serif; cursor: pointer; }
+  .sp-note { display: flex; gap: 8px; align-items: flex-start; margin: 16px 0 0; padding: 12px; border-radius: 10px; background: var(--bg); color: var(--grey); font-size: 14px; }
+  .sp-note svg { flex: none; margin-top: 2px; }
+  .sp-turnstile { margin: 0 0 16px; min-height: 65px; }
+
+  /* Sign in */
+  .sp-signin { min-height: 100vh; display: grid; grid-template-columns: 1fr; }
+  .sp-brand { background: var(--red); color: #fff; padding: 36px 24px; display: grid; justify-items: center; align-content: center; text-align: center; gap: 4px; }
+  .sp-club { margin: 14px 0 0; font: 700 22px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; }
+  .sp-pride { margin: 0; font: 600 13px/1 'Barlow', sans-serif; letter-spacing: .24em; color: #FFE7A0; }
+  .sp-brand .sp-h1 { margin-top: 18px; font-size: 32px; line-height: 1.05; max-width: 14ch; }
+  .sp-goldbar { display: block; width: 64px; height: 5px; border-radius: 3px; background: var(--gold); margin-top: 14px; }
+  .sp-signin-side { padding: 24px 16px 40px; display: grid; place-items: start center; }
+  .sp-signin-card { width: 100%; max-width: 440px; }
+  @media (min-width: 900px) {
+    .sp-signin { grid-template-columns: minmax(360px, 44%) 1fr; }
+    .sp-brand { padding: 48px; } .sp-brand .sp-h1 { font-size: 44px; }
+    .sp-signin-side { place-items: center; padding: 48px; }
+  }
+
+  /* Signed in */
+  .sp-header { background: var(--red); color: #fff; position: sticky; top: 0; z-index: 50; }
+  .sp-header-in { max-width: 1200px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .sp-header-titles { display: grid; line-height: 1.15; } .sp-header-titles b { font: 700 18px 'Barlow Condensed', sans-serif; letter-spacing: .06em; } .sp-header-titles span { font-size: 14px; opacity: .92; }
+  .sp-header-user { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 14px; flex-wrap: wrap; }
+  .sp-main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 120px; }
+  .sp-footer { max-width: 1200px; margin: 0 auto; padding: 0 16px 28px; font-size: 14px; color: var(--grey); }
+  .sp-modal { position: fixed; inset: 0; background: rgba(22,24,29,.6); display: grid; place-items: center; padding: 16px; z-index: 200; }
+  .sp-modal-card { max-width: 420px; display: grid; gap: 12px; }
+  .sp-toast { position: fixed; left: 50%; bottom: 96px; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; background: var(--ink); color: #fff; font-weight: 600; z-index: 150; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+</style>

@@ -21,3 +21,8 @@ bucket_name = "lobistars-programmes"
 [[r2_buckets]]
 binding = "BACKUP_BUCKET"
 bucket_name = "lobistars-backups"
+
+# Squad & Staff Data Portal: profile photos and name pronunciation recordings (private).
+[[r2_buckets]]
+binding = "SQUAD_BUCKET"
+bucket_name = "lobistars-squad-data"

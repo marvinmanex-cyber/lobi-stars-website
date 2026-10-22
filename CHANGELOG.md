@@ -8,6 +8,24 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Squad & Staff Data Portal, Phase 1 (private link, login, access)
+
+**What changed**
+- New private **Squad & Staff Data Portal** at /staff/squad-data (not linked
+  anywhere, never indexed). Its own login: one shared username and password,
+  plus "Your name", which is recorded with every action.
+- Locked for 15 minutes after 5 wrong passwords, human check after 3, signed
+  out after 60 minutes without activity (2-minute warning). The portal login
+  opens nothing else: every admin page and API answers "no access".
+- New **Settings › Squad & Staff Data Portal** (Super Admins): copy the link,
+  set the username, generate a new password (shown once; signs everyone out),
+  open/close the portal, current season, who is signed in (sign out all), and
+  devices used. A sign-in from a new device appears on the bell.
+
+**Staff to do**
+- A Super Admin generates the portal password and sends the link and login
+  to the admin in charge (STAFF-GUIDE "Squad & Staff Data Portal").
+
 ## 2026-10-22: Receipts saved with the customer's name; WhatsApp on computers
 
 **What changed**
