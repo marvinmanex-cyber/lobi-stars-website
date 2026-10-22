@@ -109,3 +109,31 @@ test('portal off: the sign-in page says it is closed and open sessions end', asy
   assert.equal((await fetch(`${BASE}/api/squad-portal/session`, { headers: { Cookie: ok.cookie } })).status, 401);
   await adminCall({ action: 'enabled', enabled: true });
 });
+
+test('forgot the password: the request reaches the Super Admins (settings, bell, log); nothing secret comes back; limited', async () => {
+  const forgot = (b, from = ip()) => fetch(`${BASE}/api/squad-portal/forgot`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': from }, body: JSON.stringify(b) }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
+  await adminCall({ action: 'enabled', enabled: true });
+  assert.equal((await forgot({ name: '', contact: '08035550000' })).data.field, 'name');
+  assert.equal((await forgot({ name: 'Grace', contact: '' })).data.field, 'contact');
+  const who = `Forgetful ${uid()}`;
+  const r = await forgot({ name: who, contact: '0803 555 0000' });
+  assert.equal(r.status, 200, JSON.stringify(r.data));
+  assert.deepEqual(Object.keys(r.data), ['ok'], 'no password or secret in the answer');
+  const s = (await adminCall()).data;
+  assert.equal(s.resetRequest.name, who); assert.equal(s.resetRequest.contact, '0803 555 0000');
+  const bell = (await fetch(`${BASE}/api/admin/notifications`, { headers: ADMIN }).then(x => x.json())).items;
+  assert.ok(bell.some(i => i.title === `Squad Data Portal: ${who} asked for a new password`));
+  // A new password clears the request; "Ignore" also does.
+  const fresh = await adminCall({ action: 'new_password' });
+  password = fresh.data.password;
+  assert.equal(fresh.data.resetRequest, null);
+  await forgot({ name: who, contact: '0803 555 0000' });
+  assert.equal((await adminCall({ action: 'dismiss_request' })).data.resetRequest, null);
+  // 3 an hour per connection.
+  const one = ip();
+  for (let i = 0; i < 3; i++) assert.equal((await forgot({ name: who, contact: '08035550000' }, one)).status, 200);
+  assert.equal((await forgot({ name: who, contact: '08035550000' }, one)).status, 429);
+  await adminCall({ action: 'dismiss_request' });
+  // The sign-in page has the link.
+  assert.match(await fetch(`${BASE}/staff/squad-data/`).then(x => x.text()), /Forgot the password\?/);
+});

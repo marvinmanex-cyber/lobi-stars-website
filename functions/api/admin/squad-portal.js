@@ -2,7 +2,7 @@ import { requireAdminUser } from '../_lib/adminEvents.js';
 import { can } from '../_lib/adminRoles.js';
 import { logAdminAction } from '../_lib/adminSession.js';
 import { RETENTION_DEFAULT } from '../_lib/squadProfiles.js';
-import { getPortalSettings, setPortalSetting, resetPortalPassword, openSessions, signOutAll, unseenDevices, ensurePortalSchema, portalLink, portalPath } from '../_lib/squadPortal.js';
+import { resetRequest, getPortalSettings, setPortalSetting, resetPortalPassword, openSessions, signOutAll, unseenDevices, ensurePortalSchema, portalLink, portalPath } from '../_lib/squadPortal.js';
 
 // Settings › Squad & Staff Data Portal (only the three Super Admins: squad.portal.manage).
 // GET                                         -- link, username, on/off, season, open sessions, new devices
@@ -10,6 +10,7 @@ import { getPortalSettings, setPortalSetting, resetPortalPassword, openSessions,
 // POST { action: 'new_password' }             -- returns the new password ONCE; signs out every portal session
 // POST { action: 'enabled', enabled }         -- open / close the portal
 // POST { action: 'season', season }           -- e.g. "2026/27"
+// POST { action: 'dismiss_request' }          -- ignore a "Forgot the password?" request
 // POST { action: 'retention', seasons }       -- erase private details of people who left after 1-5 seasons
 // POST { action: 'sign_out_all' } | { action: 'sign_out', id }
 // POST { action: 'devices_seen' }             -- clears the "new device" bell
@@ -29,6 +30,7 @@ async function view(env, request) {
   return {
     link: portalLink(env, new URL(request.url).origin), path: portalPath(env),
     username: s.username, hasPassword: !!s.password_hash, enabled: s.enabled === '1', season: s.season,
+    resetRequest: resetRequest(s),
     retentionSeasons: Number(s.retention_seasons) || RETENTION_DEFAULT,
     lockedUntil: s.locked_until && Date.parse(s.locked_until) > Date.now() ? s.locked_until : null,
     sessions: await openSessions(db), devices, unseen: (await unseenDevices(db)).length,
@@ -65,6 +67,10 @@ export async function onRequestPost({ request, env }) {
     if (!/^20\d\d\/\d\d$/.test(season)) return json({ error: 'Write the season like 2026/27.' }, 400);
     await setPortalSetting(db, 'season', season, admin.name);
     await logAdminAction(db, admin, 'squad_portal_season', `Squad Data Portal season set to ${season}`);
+  } else if (b.action === 'dismiss_request') {
+    const req = resetRequest(await getPortalSettings(db));
+    await setPortalSetting(db, 'reset_request', '', admin.name);
+    if (req) await logAdminAction(db, admin, 'squad_portal_reset_dismissed', `Ignored the request for a new Squad Data Portal password from ${req.name}`);
   } else if (b.action === 'retention') {
     const n = Number(b.seasons);
     if (!Number.isInteger(n) || n < 1 || n > 5) return json({ error: 'Choose 1 to 5 seasons.' }, 400);

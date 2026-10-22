@@ -210,8 +210,33 @@ export async function resetPortalPassword(env, admin) {
   await setPortalSetting(db, 'pw_version', (Number(s.pw_version) || 1) + 1, admin.name);
   await setPortalSetting(db, 'failed', 0, admin.name);
   await setPortalSetting(db, 'locked_until', '', admin.name);
+  await setPortalSetting(db, 'reset_request', '', admin.name);
   const n = await signOutAll(env, admin, 'password changed');
   await logAdminAction(db, admin, 'squad_portal_password', `New Squad Data Portal password generated${n ? ` (${n} portal session${n === 1 ? '' : 's'} signed out)` : ''}`);
   return password;
 }
+/**
+ * "Forgot the password?" on the sign-in page. The password is shared, so it is
+ * never sent out: the request (name, how to reach them, device) goes to the
+ * Super Admins (email + bell), who generate a new password on the settings page
+ * and send it by WhatsApp. Limited to 3 an hour per connection and 10 a day.
+ */
+export async function requestNewPassword(env, request, { name, contact, turnstile }) {
+  const db = env.DB;
+  await ensureFanSchema(db);
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  const clean = (v, n) => String(v || '').replace(/[\u0000-\u001F\u007F<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
+  const who = clean(name, 60), reach = clean(contact, 80);
+  if (who.length < 2) return { error: 'Please enter your name.', status: 400, field: 'name' };
+  if (reach.length < 5) return { error: 'Please enter your WhatsApp number or email, so the new password can reach you.', status: 400, field: 'contact' };
+  if (!(await rateLimit(db, `squadforgot:${ip}`, 3, 3600)) || !(await rateLimit(db, 'squadforgot:all', 10, 86400))) return { error: 'A request was already sent. A Super Admin will contact you.', status: 429 };
+  const s = await getPortalSettings(db);
+  if (Number(s.failed) >= TURNSTILE_AFTER && !(await checkTurnstile(env, turnstile, ip))) return { error: 'Please complete the human check.', status: 400, needTurnstile: true };
+  const req = { name: who, contact: reach, device: deviceLabel(request.headers.get('User-Agent')), at: new Date().toISOString() };
+  await setPortalSetting(db, 'reset_request', JSON.stringify(req), who);
+  await logAdminAction(db, { id: 'squad-portal', name: `${who} (Squad Data Portal)`, email: 'squad-portal' }, 'squad_portal_reset_request', `${who} asked for a new Squad Data Portal password (reach them on ${reach}; ${req.device})`);
+  return { ok: true, request: req };
+}
+export function resetRequest(s) { try { return s.reset_request ? JSON.parse(s.reset_request) : null; } catch { return null; } }
+
 export { newPortalPassword as _newPortalPassword, randomToken };

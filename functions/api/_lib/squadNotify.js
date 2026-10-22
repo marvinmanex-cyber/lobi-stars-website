@@ -31,3 +31,21 @@ export async function notifyReviewers(env, profile, byName) {
   });
   return true;
 }
+
+/** "Forgot the password?" in the portal: tells the three Super Admins (who make a new password). */
+export async function notifyPasswordRequest(env, req) {
+  if (!env.RESEND_API_KEY) return false;
+  const to = superAdminEmails(env);
+  if (!to.length) return false;
+  const site = String(env.SITE_URL || 'https://lobistarsfc.com').replace(/\/+$/, '');
+  await sendEmail(env, {
+    to, subject: `Squad Data Portal: ${req.name} asked for a new password`,
+    html: `<div style="font-family:Arial,sans-serif;font-size:15px;line-height:1.5;color:#16181D">
+      <p><b>${esc(req.name)}</b> forgot the Squad & Staff Data Portal password and asked for a new one (${esc(req.device)}).</p>
+      <p>Reach them on: <b>${esc(req.contact)}</b></p>
+      <p>If you know this person: open the portal settings, press <b>Generate new password</b> and send it to them by WhatsApp or in person (never by email). If you don't know them, ignore this request.</p>
+      <p><a href="${esc(site)}/admin/squad-portal/" style="display:inline-block;background:#B3121A;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:bold">Open portal settings</a></p>
+      <p style="color:#4A505C;font-size:13px">Lobi Stars FC website · Squad & Staff Data Portal</p></div>`,
+  });
+  return true;
+}

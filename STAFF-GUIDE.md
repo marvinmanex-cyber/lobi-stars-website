@@ -3299,6 +3299,22 @@ details only) and go to the club's media partner in the Data Package.
 | Signed in now | Who is in the portal and on which device; **Sign out** one or **Sign out all**. |
 | Devices | Every phone or computer used. A new one also shows on the bell. |
 
+**Changing the username:** type the new one under **Login › Username** and
+press **Save username**. Tell the media team the new username.
+
+**Changing the password:** press **Generate new password**, confirm, then
+**Copy password** (it is shown only once). Everyone using the portal is
+signed out. Send the new password by WhatsApp or in person.
+
+**Forgotten password:** on the portal sign-in page, the person presses
+**Forgot the password?**, fills in their name and WhatsApp number or email,
+and presses **Ask for a new password**. The three Super Admins get an email
+and a bell alert ("… asked for a new password"), and a yellow **New password
+requested** box appears at the top of this settings page with their name and
+number. If you know them, press **Generate new password** in that box and
+send it to them on WhatsApp. If you don't know them, press **Ignore this
+request**. The password is never sent by email, because everyone shares it.
+
 Five wrong passwords lock the sign-in for 15 minutes; after three, a human
 check appears. Portal sessions end after 60 minutes without activity (with a
 2-minute warning) and after 12 hours in any case.

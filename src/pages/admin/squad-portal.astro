@@ -14,6 +14,13 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <p class="spa-lede">A private page where the admin in charge records player, coach and staff profiles and photos. It is not linked anywhere on the website. Copy the link and the login below and send them to that person yourself.</p>
     <p class="spa-msg" id="msg" role="status" aria-live="polite" hidden></p>
 
+    <section class="spa-card spa-request" id="resetReq" aria-labelledby="h-req" hidden>
+      <h2 id="h-req">New password requested</h2>
+      <p id="reqText"></p>
+      <p class="muted">If you know this person, press <b>Generate new password</b> below and send it to them by WhatsApp or in person (never by email). Everyone using the portal is signed out and needs the new password.</p>
+      <div class="spa-row"><button class="btn-p" type="button" id="reqNew">Generate new password</button><button class="btn-o" type="button" id="reqIgnore">Ignore this request</button></div>
+    </section>
+
     <section class="spa-card" aria-labelledby="h-link">
       <h2 id="h-link">Portal link</h2>
       <div class="spa-row"><input id="link" readonly aria-label="Portal link" /><button class="btn-p" type="button" id="copyLink">Copy link</button></div>
@@ -56,6 +63,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 <style>
   .spa { max-width: 900px; padding-top: 20px; padding-bottom: 60px; }
   .spa-lede { color: var(--a-muted); max-width: 720px; line-height: 1.5; }
+  .spa-card.spa-request { border: 2px solid #F2B705; }
   .spa-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 14px 0; display: grid; gap: 12px; }
   .spa-card h2 { margin: 0; font-size: 18px; }
   .spa-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
@@ -98,6 +106,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     $('passState').textContent = d.hasPassword ? (d.lockedUntil ? `Sign-in locked until ${when(d.lockedUntil)} (too many wrong passwords).` : 'A password is set.') : 'No password yet: generate one before sending the link.';
     $('season').value = d.season;
     $('keep').value = String(d.retentionSeasons);
+    $('resetReq').hidden = !d.resetRequest;
+    if (d.resetRequest) $('reqText').textContent = `${d.resetRequest.name} forgot the password on ${when(d.resetRequest.at)} (${d.resetRequest.device}). Reach them on: ${d.resetRequest.contact}`;
     $('sessions').innerHTML = d.sessions.length ? `<div class="scroll"><table><thead><tr><th>Name entered</th><th>Device</th><th>Since</th><th>Last active</th><th></th></tr></thead><tbody>${d.sessions.map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.device)}</td><td>${esc(when(s.created_at))}</td><td>${esc(when(s.last_seen))}</td><td><button class="btn-o" type="button" data-out="${esc(s.id)}">Sign out</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Nobody is signed in to the portal.</p>';
     $('devices').innerHTML = d.devices.length ? `<div class="scroll"><table><thead><tr><th>Device</th><th>First used by</th><th>First used</th><th>Last used</th></tr></thead><tbody>${d.devices.map(x => `<tr><td>${esc(x.device)} ${x.seen_by_admin ? '' : '<span class="new">New</span>'}</td><td>${esc(x.first_name)}</td><td>${esc(when(x.first_seen))}</td><td>${esc(when(x.last_seen))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No device has signed in yet.</p>';
   }
@@ -107,6 +117,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   $('enabled').addEventListener('change', e => act({ action: 'enabled', enabled: e.target.checked }, e.target.checked ? 'Portal opened.' : 'Portal closed; everyone signed out.'));
   $('userForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'username', username: $('username').value }, 'Username saved.'); });
   $('seasonForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'season', season: $('season').value }, 'Season saved.'); });
+  $('reqNew').addEventListener('click', () => { $('newPass').click(); $('newPass').scrollIntoView({ block: 'center' }); });
+  $('reqIgnore').addEventListener('click', () => act({ action: 'dismiss_request' }, 'Request ignored.'));
   $('keepForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'retention', seasons: Number($('keep').value) }, 'Saved.'); });
   $('signOutAll').addEventListener('click', () => { if (confirm('Sign out everyone using the portal?')) act({ action: 'sign_out_all' }, 'Everyone signed out.'); });
   $('sessions').addEventListener('click', e => { const b = e.target.closest('[data-out]'); if (b) act({ action: 'sign_out', id: b.dataset.out }, 'Signed out.'); });

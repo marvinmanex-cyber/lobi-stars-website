@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Squad & Staff Data Portal: "Forgot the password?"
+
+**What changed**
+- The portal sign-in page has a **Forgot the password?** link. The person
+  enters their name and WhatsApp number or email and presses **Ask for a new
+  password**.
+- The three Super Admins get an email and a bell alert, and a **New password
+  requested** box appears on Settings › Squad & Staff Data Portal with
+  **Generate new password** and **Ignore this request**. Making a new
+  password clears the request. Every request is in the Activity Log.
+- The password is never sent out automatically (it is shared by everyone who
+  uses the portal). Requests are limited to 3 an hour per connection and 10 a day.
+
+**Staff need to do:** nothing. Staff guide §38 explains changing the
+username and password and answering a request.
+
 ## 2026-10-22: Squad & Staff Data Portal, Phase 7 (privacy, backups, health checks, guides)
 
 **What changed**

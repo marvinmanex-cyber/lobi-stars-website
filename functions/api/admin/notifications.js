@@ -7,7 +7,7 @@ import { ensureAnalyticsSchema } from '../_lib/analytics.js';
 import { sqlTs, isoTs } from '../_lib/reportRange.js';
 import { healthSummary } from '../_lib/uptime.js';
 import { scoreBellItems } from '../_lib/scores/bell.js';
-import { unseenDevices } from '../_lib/squadPortal.js';
+import { unseenDevices, getPortalSettings, resetRequest } from '../_lib/squadPortal.js';
 import { counts as squadCounts } from '../_lib/squadProfiles.js';
 
 // GET /api/admin/notifications -- the admin bell: unread / overdue Inbox messages,
@@ -52,6 +52,8 @@ export async function onRequestGet({ request, env, waitUntil }) {
   // Squad & Staff Data Portal: signed in from a device never seen before (Super Admins).
   if (can(admin, 'squad.portal.manage')) {
     const dev = await unseenDevices(db).catch(() => []);
+    const req = resetRequest(await getPortalSettings(db).catch(() => ({})));
+    if (req) items.unshift({ icon: '🔑', title: `Squad Data Portal: ${req.name} asked for a new password`, sub: `Reach them on ${req.contact}`, href: '/admin/squad-portal/' });
     if (dev.length) items.unshift({ icon: '🔐', title: `Squad Data Portal: signed in from ${dev.length === 1 ? 'a new device' : `${dev.length} new devices`}`, sub: dev.slice(0, 3).map(d => `${d.first_name} on ${d.device}`).join(' · '), href: '/admin/squad-portal/' });
   }
   // Squad profiles submitted from the portal, waiting for club review.

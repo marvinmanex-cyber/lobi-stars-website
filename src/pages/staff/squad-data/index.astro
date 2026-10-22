@@ -43,6 +43,13 @@ const siteKey = settings.turnstileSiteKey;
             <p class="sp-hint" id="siNameHint">Recorded with every profile you add or change.</p></div>
           <div class="sp-turnstile" id="siTurnstile" hidden></div>
           <button class="sp-btn sp-btn-red sp-btn-block" type="submit" id="siBtn">SIGN IN</button>
+          <p class="sp-forgot-link"><button type="button" class="sp-link" id="siForgot" aria-expanded="false" aria-controls="forgotBox">Forgot the password?</button></p>
+          <div class="sp-forgot" id="forgotBox" hidden>
+            <p class="sp-hint">The password is shared, so it is never sent by email. A Super Admin will make a new one and send it to you on WhatsApp. Fill in <b>Your name</b> above, then:</p>
+            <div class="sp-field"><label for="fgContact">Your WhatsApp number or email</label><input id="fgContact" autocomplete="tel" maxlength="80" placeholder="e.g. 0803 555 1234" /></div>
+            <button class="sp-btn sp-btn-outline sp-btn-block" type="button" id="fgBtn">ASK FOR A NEW PASSWORD</button>
+            <p class="sp-alert sp-ok" id="fgMsg" role="status" hidden></p>
+          </div>
           <p class="sp-note"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5Zm-3 8V6a3 3 0 0 1 6 0v3H9Z"/></svg>
             This login only opens the Squad &amp; Staff Data Portal. It has no access to any other part of the website.</p>
         </form>
@@ -125,6 +132,10 @@ const siteKey = settings.turnstileSiteKey;
   .sp-goldbar { display: block; width: 64px; height: 5px; border-radius: 3px; background: var(--gold); margin-top: 14px; }
   .sp-signin-side { padding: 24px 16px 40px; display: grid; place-items: start center; }
   .sp-signin-card { width: 100%; max-width: 440px; }
+  .sp-alert.sp-ok { background: #E7F6EC; color: #145A2E; margin: 0; }
+  .sp-forgot-link { margin: 0; text-align: center; }
+  .sp-forgot { display: grid; gap: 12px; border-top: 1px solid var(--line, #dde1e7); padding-top: 14px; }
+  .sp-forgot[hidden] { display: none; }
   @media (min-width: 900px) {
     .sp-signin { grid-template-columns: minmax(360px, 44%) 1fr; }
     .sp-brand { padding: 48px; } .sp-brand .sp-h1 { font-size: 44px; }

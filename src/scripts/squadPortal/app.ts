@@ -88,6 +88,27 @@ export function startPortal() {
     const p = $<HTMLInputElement>('siPass'), show = p.type === 'password';
     p.type = show ? 'text' : 'password'; $('siShow').textContent = show ? 'Hide' : 'Show'; $('siShow').setAttribute('aria-pressed', String(show));
   });
+  $('siForgot').addEventListener('click', () => {
+    const box = $('forgotBox'), open = box.hidden;
+    box.hidden = !open; $('siForgot').setAttribute('aria-expanded', String(open));
+    if (open) ($('siName') as HTMLInputElement).value.trim() ? $('fgContact').focus() : $('siName').focus();
+  });
+  $('fgBtn').addEventListener('click', async () => {
+    const btn = $<HTMLButtonElement>('fgBtn'), msg = $('fgMsg');
+    const name = $<HTMLInputElement>('siName').value.trim(), contact = $<HTMLInputElement>('fgContact').value.trim();
+    const show = (t: string, ok: boolean) => { msg.textContent = t; msg.classList.toggle('sp-ok', ok); msg.hidden = false; };
+    if (!name) { show('Please enter your name in "Your name" above.', false); $('siName').focus(); return; }
+    if (!contact) { show('Please enter your WhatsApp number or email.', false); $('fgContact').focus(); return; }
+    btn.disabled = true;
+    try {
+      const turnstile = (document.querySelector('#signinForm [name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || '';
+      const r = await fetch('/api/squad-portal/forgot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ name, contact, turnstile }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { show(d.error || 'The request could not be sent. Please try again.', false); if (d.needTurnstile) showTurnstile(); return; }
+      show('Request sent. A Super Admin will send you the new password on WhatsApp or in person.', true);
+    } catch { show('No connection. Please try again when you are online.', false); }
+    finally { btn.disabled = false; }
+  });
   $('signinForm').addEventListener('submit', async e => {
     e.preventDefault();
     const f = e.target as HTMLFormElement, btn = $<HTMLButtonElement>('siBtn');
