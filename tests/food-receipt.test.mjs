@@ -34,7 +34,17 @@ test('receipts: only for paid orders; WhatsApp opens a chat with the buyer with 
   const text = decodeURIComponent(wa.data.url.split('?text=')[1]);
   assert.match(text, /MatchDay Kitchen/);
   assert.match(text, new RegExp(o.data.ref));
-  assert.match(text, /\/food\/receipt\/\?ref=/);
+  assert.match(text, /\/api\/food\/receipt\?ref=/, 'a link to the PDF');
+  assert.ok(!/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]/u.test(text), 'no emojis (they arrive broken through wa.me)');
+  // The PDF: one compact page with the logo; only with the private link.
+  const pdf = await fetch(wa.data.pdf.replace(/^https?:\/\/[^/]+/, BASE));
+  assert.equal(pdf.status, 200);
+  assert.equal(pdf.headers.get('content-type'), 'application/pdf');
+  const bytes = Buffer.from(await pdf.arrayBuffer());
+  assert.equal(bytes.subarray(0, 5).toString(), '%PDF-');
+  assert.ok(bytes.length > 20000, 'the logo is included');
+  assert.ok(/MediaBox \[0 0 300 /.test(bytes.toString('latin1')), 'a compact 300-point-wide page');
+  assert.equal((await fetch(`${BASE}/api/food/receipt?ref=${encodeURIComponent(o.data.ref)}&t=wrong`)).status, 404);
   const after1 = (await admin('/api/admin/food-orders?show=board')).data.orders.find(x => x.id === order.id);
   assert.ok(after1.receipt.whatsappAt, 'recorded on the board');
 

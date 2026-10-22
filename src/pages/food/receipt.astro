@@ -23,7 +23,8 @@ import Layout from '../../layouts/Layout.astro';
       <footer class="rc-foot">MatchDay Kitchen · Lobi Stars Football Club, Makurdi · Pride of Benue<br />lobistarsfc.com</footer>
     </article>
     <div class="rc-acts" id="acts" hidden>
-      <button type="button" class="btn-p" id="print">Print or save as PDF</button>
+      <a class="btn-p" id="pdf" href="#">Download the receipt (PDF)</a>
+      <button type="button" class="btn-o" id="print">Print</button>
       <a class="btn-o" id="track" href="/food/">See the order</a>
     </div>
   </main>
@@ -83,6 +84,7 @@ import Layout from '../../layouts/Layout.astro';
     $('total').textContent = naira(o.totalKobo);
     if (o.notes) { $('note').textContent = `Your note: ${o.notes}`; $('note').hidden = false; }
     $('track').href = `/food/order/?ref=${encodeURIComponent(ref)}&t=${encodeURIComponent(t)}`;
+    $('pdf').href = `/api/food/receipt?ref=${encodeURIComponent(ref)}&t=${encodeURIComponent(t)}&download=1`;
     $('msg').hidden = true; $('rc').hidden = false; $('acts').hidden = false;
   }).catch(() => { $('msg').textContent = 'The receipt could not be loaded. Check your connection and try again.'; });
   $('print').addEventListener('click', () => window.print());

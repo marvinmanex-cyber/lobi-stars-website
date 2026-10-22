@@ -143,7 +143,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       ${o.kitchen ? `<p class="lb-kitchen ${esc(o.kitchen.state)}">👩‍🍳 ${esc(o.kitchen.text)}</p>` : ''}
       <p class="lb-meta">${esc(o.ref)}${o.channel === 'whatsapp' ? '<span class="lb-tag-wa">WhatsApp</span>' : ''} · ${esc(o.name || '–')} · ${naira(o.totalKobo)}${o.statusBy ? ` · ${esc(o.statusBy)} ${esc(time(o.statusAt))}` : ''}</p>
       <div class="lb-acts">${nx ? `<button class="go" style="--g:${nx[2]}" data-s="${nx[1]}">${o.status === 'PREPARING' && o.fulfilment === 'pickup' ? 'Ready for pickup' : o.status === 'OUT_FOR_DELIVERY' && o.fulfilment === 'pickup' ? 'Collected' : nx[0]}</button>` : ''}${o.channel === 'whatsapp' && o.status === 'PAID' ? chat(o, 'PAID') : ''}${o.channel === 'whatsapp' && o.status === 'OUT_FOR_DELIVERY' ? chat(o, 'READY') : ''}${BACK[o.status] ? `<button data-s="${BACK[o.status]}" aria-label="Move back">↩</button>` : ''}<button data-print aria-label="Print kitchen ticket">🖨</button></div>
-      ${o.status === 'DELIVERED' ? `<div class="lb-receipt"><span>🧾 Receipt to the buyer:</span><button type="button" data-rc="whatsapp" class="wa">WhatsApp${o.receipt && o.receipt.whatsappAt ? ` ✓ ${esc(time(o.receipt.whatsappAt))}` : ''}</button><button type="button" data-rc="email">Email${o.receipt && o.receipt.emailAt ? ` ✓ ${esc(time(o.receipt.emailAt))}` : ''}</button></div>` : ''}
+      ${o.status === 'DELIVERED' ? `<div class="lb-receipt"><span>🧾 Receipt to the buyer:</span><button type="button" data-rc="whatsapp" class="wa">WhatsApp${o.receipt && o.receipt.whatsappAt ? ` ✓ ${esc(time(o.receipt.whatsappAt))}` : ''}</button><button type="button" data-rc="email">Email${o.receipt && o.receipt.emailAt ? ` ✓ ${esc(time(o.receipt.emailAt))}` : ''}</button><button type="button" data-rc="pdf">PDF</button></div>` : ''}
     </article>`;
   }
   function render() {
@@ -207,12 +207,33 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     } catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; }
   });
   // Receipt to the buyer: WhatsApp opens a chat with the buyer with the receipt ready to send; email is sent by the website.
+  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  let shareFile = null;
+  async function sharePdf(r) {
+    try { await navigator.share({ files: [shareFile], text: r.caption }); $('msg').textContent = 'Shared. In WhatsApp, choose the buyer and send.'; $('msg').hidden = false; }
+    catch (e) {
+      if (e && e.name === 'AbortError') return;
+      if (e && e.name === 'NotAllowedError') {   // the tap "expired" while the PDF was loading: one more tap
+        $('msg').innerHTML = ''; const go = document.createElement('button'); go.className = 'btn-p'; go.textContent = '📎 Share the receipt PDF on WhatsApp';
+        go.onclick = () => sharePdf(r); $('msg').append(go); $('msg').hidden = false; return;
+      }
+      window.open(r.url, '_blank', 'noopener');
+    }
+  }
+  // Receipt to the buyer. WhatsApp: on a phone the PDF file itself is shared (choose WhatsApp, then the buyer);
+  // on a computer WhatsApp opens a chat with the buyer with the receipt and a link to the PDF. Email: sent by the website with the PDF attached.
   async function sendReceipt(o, how, btn) {
     btn.disabled = true;
     try {
+      if (how === 'pdf') {
+        const win = window.open('', '_blank');
+        const r = await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ action: 'receipt_pdf', id: o.id }) });
+        if (win) win.location = r.pdf; else location.href = r.pdf;
+        return;
+      }
       if (how === 'whatsapp') {
-        const win = window.open('', '_blank');   // opened now, so the browser doesn't block it
-        let body = { action: 'receipt_whatsapp', id: o.id };
+        const win = mobile ? null : window.open('', '_blank');   // opened now, so the browser doesn't block it
+        const body = { action: 'receipt_whatsapp', id: o.id };
         let r;
         try { r = await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify(body) }); }
         catch (err) {
@@ -221,14 +242,19 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
           if (!phone) { if (win) win.close(); return; }
           r = await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ ...body, phone }) });
         }
-        if (win) win.location = r.url; else location.href = r.url;
-        $('msg').textContent = `Receipt for ${o.ref} opened in WhatsApp: press Send there.`; $('msg').hidden = false;
+        if (mobile && navigator.canShare) {
+          const blob = await fetch(r.pdf, { cache: 'no-store' }).then(x => x.blob());
+          shareFile = new File([blob], r.pdfName, { type: 'application/pdf' });
+          if (navigator.canShare({ files: [shareFile] })) { await sharePdf(r); load(); return; }
+        }
+        if (win) win.location = r.url; else window.open(r.url, '_blank', 'noopener');
+        $('msg').textContent = `WhatsApp opened with the receipt for ${o.ref} (with a link to the PDF): press Send there. Tip: press "PDF" to download the file if you want to attach it.`; $('msg').hidden = false;
       } else {
         let email = o.email && o.email.includes('@') ? o.email : '';
-        email = prompt('Send the receipt to this email address:', email);
+        email = prompt('Send the receipt (PDF attached) to this email address:', email);
         if (!email) return;
         const r = await api('/api/admin/food-orders', { method: 'POST', body: JSON.stringify({ action: 'receipt_email', id: o.id, email }) });
-        $('msg').textContent = `Receipt for ${o.ref} emailed to ${r.sentTo}.`; $('msg').hidden = false;
+        $('msg').textContent = `Receipt for ${o.ref} emailed to ${r.sentTo} (PDF attached).`; $('msg').hidden = false;
       }
       load();
     } catch (err) { $('msg').textContent = err.message; $('msg').hidden = false; }

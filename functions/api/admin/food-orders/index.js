@@ -4,7 +4,7 @@ import { logAdminAction } from '../../_lib/adminSession.js';
 import { ensureFoodSchema, expireStale, moveOrder, STATUS, foodSettings, saveFoodSetting, staffMessage, whereText } from '../../_lib/foodOrders.js';
 import { buildXlsx } from '../../_lib/xlsx.js';
 import { kitchenStatus } from '../../_lib/kitchenNotify.js';
-import { receiptEmailHtml, receiptWhatsappText, receiptUrl, waNumber, canReceipt } from '../../_lib/foodReceipt.js';
+import { receiptEmailHtml, receiptWhatsappText, receiptUrl, receiptPdf, receiptPdfUrl, receiptPdfName, waNumber, canReceipt, LOGO_JPEG } from '../../_lib/foodReceipt.js';
 import { sendEmail } from '../../_lib/email.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
@@ -137,23 +137,31 @@ export async function onRequestPost({ request, env, waitUntil }) {
   }
   // Receipt to the buyer: { action: 'receipt_email', id, email? } sends the branded email;
   // { action: 'receipt_whatsapp', id } returns the WhatsApp link (opened on the staff phone) and records it.
-  if (b.action === 'receipt_email' || b.action === 'receipt_whatsapp') {
+  if (b.action === 'receipt_email' || b.action === 'receipt_whatsapp' || b.action === 'receipt_pdf') {
     const o = await env.DB.prepare(`SELECT * FROM food_orders WHERE id = ?`).bind(String(b.id || '')).first();
     if (!o) return Response.json({ error: 'Order not found' }, { status: 404 });
     if (!canReceipt(o)) return Response.json({ error: 'A receipt can only be sent for a paid order.' }, { status: 409 });
     const site = String(env.SITE_URL || new URL(request.url).origin).replace(/\/+$/, '');
+    if (b.action === 'receipt_pdf') return Response.json({ ok: true, pdf: receiptPdfUrl(site, o), pdfName: receiptPdfName(o) }, { headers: noStore });
     if (b.action === 'receipt_whatsapp') {
       const to = waNumber(b.phone || o.phone);
       if (!to) return Response.json({ error: 'There is no WhatsApp number for this order. Type the buyer’s number.' }, { status: 400 });
       await env.DB.prepare(`UPDATE food_orders SET receipt_wa_at = ?, receipt_by = ? WHERE id = ?`).bind(new Date().toISOString(), admin.name, o.id).run();
       await logAdminAction(env.DB, admin, 'food_receipt', `${o.ref}: receipt sent on WhatsApp`);
-      return Response.json({ ok: true, url: `https://wa.me/${to}?text=${encodeURIComponent(receiptWhatsappText(env, o))}`, receipt: receiptUrl(site, o) }, { headers: noStore });
+      // On phones the board shares the PDF file itself to WhatsApp; otherwise this link opens a chat with the receipt text and the PDF link.
+      return Response.json({ ok: true, url: `https://wa.me/${to}?text=${encodeURIComponent(receiptWhatsappText(env, o))}`, receipt: receiptUrl(site, o),
+        pdf: receiptPdfUrl(site, o), pdfName: receiptPdfName(o), phone: to, caption: `MatchDay Kitchen receipt for order ${o.ref}. Thank you and enjoy the match!` }, { headers: noStore });
     }
     const email = String(b.email || o.email || '').trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.json({ error: 'There is no email address for this order. Type the buyer’s email.', needEmail: true }, { status: 400 });
     if (!env.RESEND_API_KEY) return Response.json({ error: 'Email is not set up yet (the Resend key is missing in Cloudflare). Use WhatsApp for now.' }, { status: 503 });
     try {
-      await sendEmail(env, { to: email, subject: `Your MatchDay Kitchen receipt – ${o.ref}`, html: receiptEmailHtml(env, o) });
+      // The receipt PDF is attached too.
+      let logo = null;
+      try { const r = await env.ASSETS.fetch(new URL(LOGO_JPEG, site)); if (r.ok) logo = new Uint8Array(await r.arrayBuffer()); } catch { /* without the logo */ }
+      const pdf = receiptPdf(o, logo);
+      let bin = ''; for (let i = 0; i < pdf.length; i += 0x8000) bin += String.fromCharCode(...pdf.subarray(i, i + 0x8000));
+      await sendEmail(env, { to: email, subject: `Your MatchDay Kitchen receipt – ${o.ref}`, html: receiptEmailHtml(env, o), attachments: [{ filename: receiptPdfName(o), content: btoa(bin) }] });
     } catch (err) {
       console.error('[food] receipt email', err);
       return Response.json({ error: 'The email could not be sent. Please try again, or use WhatsApp.' }, { status: 502 });

@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-22: Food receipts are now a compact PDF
+
+**What changed**
+- The buyer's receipt is now a **PDF**: one compact page (no empty space)
+  with the MatchDay Kitchen logo and only the payment details.
+- **WhatsApp:** on a phone the PDF file itself is shared to WhatsApp (choose
+  the buyer); on a computer the chat opens with the receipt and a PDF link.
+  The broken characters (�) in the WhatsApp message are fixed (no emojis).
+- **Email:** the PDF is attached. New **PDF** button on delivered orders.
+- The receipt page has **Download the receipt (PDF)**.
+
 ## 2026-10-22: Kitchen Screen shows incoming orders and updates at once; buyer email optional
 
 **What changed**

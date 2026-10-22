@@ -4,6 +4,7 @@
 // /food/receipt/?ref=…&t=… (the order's private view token, like the order
 // status page).
 import { formatNaira, whereText } from './foodOrders.js';
+import { PdfDoc, wrap, pdfSafe } from './pdfLite.js';
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const SITE = env => String(env.SITE_URL || 'https://lobistarsfc.com').replace(/\/+$/, '');
@@ -40,7 +41,7 @@ export function receiptEmailHtml(env, o) {
         <tr><td style="padding:12px 0 0;font-weight:bold;font-size:17px;">Total paid</td><td style="padding:12px 0 0;text-align:right;font-weight:bold;font-size:17px;">${esc(formatNaira(o.total_kobo))}</td></tr>
       </table>
       ${o.notes ? `<p style="margin:14px 0 0;padding:10px 12px;background:#FFF7E0;border-radius:8px;font-size:13px;">Your note: ${esc(o.notes)}</p>` : ''}
-      <p style="margin:20px 0 0;text-align:center;"><a href="${esc(receiptUrl(site, o))}" style="display:inline-block;background:#D4202B;color:#FFFFFF;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:bold;">View, print or save this receipt</a></p>
+      <p style="margin:20px 0 0;text-align:center;"><a href="${esc(receiptPdfUrl(site, o))}&amp;download=1" style="display:inline-block;background:#D4202B;color:#FFFFFF;padding:11px 20px;border-radius:8px;text-decoration:none;font-weight:bold;">Download your receipt (PDF)</a></p>
     </div>
     <div style="background:#FAF8F4;padding:14px 20px;text-align:center;font-size:12px;color:#5B6470;">MatchDay Kitchen &middot; Lobi Stars Football Club, Makurdi &middot; Pride of Benue<br /><a href="${esc(site)}" style="color:#5B6470;">lobistarsfc.com</a></div>
   </div></div>`;
@@ -48,9 +49,11 @@ export function receiptEmailHtml(env, o) {
 
 /** The WhatsApp message (plain text with the link to the branded receipt page). */
 export function receiptWhatsappText(env, o) {
-  const lines = items(o).map(i => `${i.qty} × ${i.name} – ${formatNaira((i.priceKobo || 0) * (i.qty || 1))}`);
-  return [`*MatchDay Kitchen – Lobi Stars FC*`, `🧾 Receipt for order ${o.ref}`, '', ...lines, '', `*Total paid: ${formatNaira(o.total_kobo)}*`, whereText(o),
-    '', `Your receipt (with our logo, to print or save): ${receiptUrl(SITE(env), o)}`, '', 'Thank you and enjoy the match! 💙❤️'].join('\n');
+  const site = SITE(env);
+  const lines = items(o).map(i => `${i.qty} x ${i.name} - ${formatNaira((i.priceKobo || 0) * (i.qty || 1))}`);
+  // Plain text only: emojis in a wa.me link can arrive as broken characters.
+  return [`*MatchDay Kitchen - Lobi Stars FC*`, `Receipt for order ${o.ref}`, '', ...lines, '', `*Total paid: ${formatNaira(o.total_kobo)}*`, whereText(o),
+    '', `Your receipt (PDF): ${receiptPdfUrl(site, o)}`, '', 'Thank you and enjoy the match!'].join('\n');
 }
 
 /** "234…" for wa.me from the number the buyer gave (Nigerian numbers starting 0 → 234). */
@@ -58,4 +61,64 @@ export function waNumber(phone) {
   let d = String(phone || '').replace(/\D/g, '');
   if (d.startsWith('0') && d.length === 11) d = `234${d.slice(1)}`;
   return d.length >= 10 ? d : null;
+}
+
+// ── The PDF receipt: one compact page, exactly as tall as its content (no empty space) ──
+export const LOGO_JPEG = '/images/matchday-kitchen-logo-receipt.jpg';
+export const receiptPdfUrl = (site, o) => `${site}/api/food/receipt?ref=${encodeURIComponent(o.ref)}&t=${encodeURIComponent(o.view_token || '')}`;
+export const receiptPdfName = o => `MatchDay-Kitchen-Receipt-${String(o.ref || 'order').replace(/[^\w-]/g, '')}.pdf`;
+const N = kobo => `NGN ${pdfSafe(formatNaira(kobo)).replace(/^N/, '')}`; // the built-in PDF font has no ₦
+
+/** logo: the JPEG bytes (or null). Returns the PDF as a Uint8Array. */
+export function receiptPdf(o, logo = null) {
+  const W = 300, PAD = 18, INNER = W - PAD * 2;
+  const its = items(o);
+  const rows = [
+    ['Order', o.ref],
+    ['Paid', when(o.paid_iso || o.created_iso)],
+    [o.fulfilment === 'pickup' ? 'Collected at' : 'Seat', o.fulfilment === 'pickup' ? (o.pickup_point || 'Pickup point') : `${o.seat}${o.stand ? `, ${o.stand}` : ''}`],
+    ...(o.delivered_at ? [[o.fulfilment === 'pickup' ? 'Collected' : 'Delivered', when(o.delivered_at)]] : []),
+    ['Payment', o.channel === 'whatsapp' ? 'Bank transfer / cash' : 'Card / bank (Paystack)'],
+    ...(o.customer_name ? [['Customer', o.customer_name]] : []),
+  ];
+  // Measure first, so the page is exactly as tall as the receipt.
+  const itemLines = its.map(i => wrap(`${i.qty} x ${i.name}`, INNER - 70, 9.5));
+  const metaLines = rows.map(([, v]) => wrap(String(v), INNER - 78, 8.5));
+  const HEAD = 96;
+  let h = HEAD + 22 + 8;                                            // header, title, gap
+  h += metaLines.reduce((n, l) => n + l.length * 11 + 2, 0) + 8;   // details
+  h += itemLines.reduce((n, l) => n + l.length * 12 + 4, 0) + 6;   // items
+  h += 26 + 22;                                                     // total, footer
+  const doc = new PdfDoc({ width: W, height: h });
+  // Header: dark band with the logo.
+  doc.rect(0, 0, W, HEAD, { fill: '#15181D' });
+  if (logo && doc.setJpeg(logo)) doc.drawImage((W - 66) / 2, 8, 66, 66);
+  doc.text('LOBI STARS FC  ·  IN-SEAT FOOD', W / 2, 88, { size: 7, bold: true, color: '#F5C518', align: 'center' });
+  let y = HEAD + 20;
+  doc.text('RECEIPT', PAD, y, { size: 15, bold: true, color: '#D4202B' });
+  doc.text('MatchDay Kitchen', W - PAD, y, { size: 8, color: '#5B6470', align: 'right' });
+  y += 12;
+  rows.forEach(([k], i) => {
+    y += 10;
+    doc.text(k, PAD, y, { size: 8.5, color: '#5B6470' });
+    metaLines[i].forEach((line, j) => doc.text(line, W - PAD, y + j * 11, { size: 8.5, bold: k === 'Order', align: 'right' }));
+    y += (metaLines[i].length - 1) * 11 + 2;
+  });
+  y += 8;
+  doc.line(PAD, y, W - PAD, y, { color: '#E5E1DA' });
+  its.forEach((i, n) => {
+    y += 14;
+    itemLines[n].forEach((line, j) => doc.text(line, PAD, y + j * 12, { size: 9.5 }));
+    doc.text(N((i.priceKobo || 0) * (i.qty || 1)), W - PAD, y, { size: 9.5, align: 'right' });
+    y += (itemLines[n].length - 1) * 12 + 2;
+  });
+  y += 8;
+  doc.line(PAD, y, W - PAD, y, { color: '#15181D', width: 1 });
+  y += 17;
+  doc.text('TOTAL PAID', PAD, y, { size: 11, bold: true });
+  doc.text(N(o.total_kobo), W - PAD, y, { size: 12, bold: true, align: 'right' });
+  // Footer band.
+  doc.rect(0, h - 20, W, 20, { fill: '#FAF8F4' });
+  doc.text('Thank you! Enjoy the match  ·  lobistarsfc.com', W / 2, h - 7, { size: 7, color: '#5B6470', align: 'center' });
+  return doc.toBytes({ title: `MatchDay Kitchen receipt ${o.ref}` });
 }
