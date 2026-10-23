@@ -8,6 +8,21 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-23: Printable player and staff forms in the portal
+
+**What changed**
+- The Squad & Staff Data Portal home page has **Printable forms**: a
+  **Player form (PDF)** and a **Coach & staff form (PDF)** with every question,
+  tick boxes for choices, tables for previous clubs, international career and
+  honours, the documents to attach, signatures, a parent/guardian section
+  (players) and a "For club use" box.
+- They are made from the same question list as the online form, so editing a
+  question updates the printed forms automatically.
+- Hints no longer say what appears on the website, and the consent tick no
+  longer mentions "details marked Public".
+
+**Staff need to do:** nothing.
+
 ## 2026-10-23: Squad data exports: Super Admins only, sent by email
 
 **What changed**

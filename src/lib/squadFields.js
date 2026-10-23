@@ -40,7 +40,7 @@ export const FIELDS = [
   { key: 'displayName', section: 'personal', label: 'Display name (old question)', use: 'public', for: 'all', type: 'text', max: 60, retired: true },
   { key: 'nickname', section: 'personal', label: 'Nickname', use: 'public', for: 'all', type: 'text', max: 40, optional: true },
   { key: 'pronunciation', section: 'personal', label: 'Name pronunciation (old question)', use: 'media', for: 'all', type: 'text', max: 80, retired: true },
-  { key: 'dob', section: 'personal', label: 'Date of birth', use: 'public', adultOnly: true, for: 'all', required: true, type: 'date', hint: 'The age is worked out automatically. The full date is shown on the website only for people aged 18 and over; for under-18s only the age.' },
+  { key: 'dob', section: 'personal', label: 'Date of birth', use: 'public', adultOnly: true, for: 'all', required: true, type: 'date', hint: 'The age is worked out automatically.' },
   { key: 'birthTown', section: 'personal', label: 'Place of birth: town or city', use: 'public', for: 'all', type: 'text', max: 60, placeholder: 'e.g. Makurdi' },
   { key: 'birthCountry', section: 'personal', label: 'Place of birth: country', use: 'public', for: 'all', type: 'country' },
   { key: 'nationality', section: 'personal', label: 'Nationality', use: 'public', for: 'all', required: true, type: 'country' },
@@ -54,10 +54,10 @@ export const FIELDS = [
   { key: 'emergencyPhone', section: 'personal', label: 'Emergency contact phone', use: 'private', for: 'all', required: true, type: 'tel', placeholder: '0803 123 4567' },
   { key: 'socialInstagram', section: 'personal', label: 'Instagram', use: 'public', for: 'all', type: 'handle', max: 40, optional: true, placeholder: '@handle' },
   { key: 'socialX', section: 'personal', label: 'X (Twitter)', use: 'public', for: 'all', type: 'handle', max: 40, optional: true, placeholder: '@handle' },
-  { key: 'socialTiktok', section: 'personal', label: 'TikTok', use: 'public', for: 'all', type: 'handle', max: 40, optional: true, placeholder: '@handle', hint: 'Shown on the profile page and used to tag them in club posts.' },
+  { key: 'socialTiktok', section: 'personal', label: 'TikTok', use: 'public', for: 'all', type: 'handle', max: 40, optional: true, placeholder: '@handle', hint: 'Used to tag them in club posts.' },
   { key: 'social', section: 'personal', label: 'Instagram or X handle (old question)', use: 'public', for: 'all', type: 'text', max: 40, retired: true },
   // 2 · Playing profile (players)
-  { key: 'shirtNumber', section: 'playing', label: 'Shirt number', use: 'public', for: 'player', required: true, type: 'number', min: 1, max: 99, hint: 'A warning appears if the number is already assigned.' },
+  { key: 'shirtNumber', section: 'playing', label: 'Shirt number', use: 'public', for: 'player', required: true, type: 'number', min: 1, max: 99, hint: 'A warning appears if the number is already assigned.', paperHint: '' },
   { key: 'positionGroup', section: 'playing', label: 'Position', use: 'public', for: 'player', required: true, type: 'select', options: POSITION_GROUPS },
   { key: 'primaryPosition', section: 'playing', label: 'Specific position', use: 'public', for: 'player', type: 'select', options: POSITIONS, optional: true },
   { key: 'secondaryPositions', section: 'playing', label: 'Other position(s)', use: 'public', for: 'player', type: 'multiselect', options: POSITIONS, optional: true },
@@ -77,14 +77,15 @@ export const FIELDS = [
   { key: 'internationalCareer', section: 'career', label: 'International career', use: 'public', for: 'player', type: 'rows', optional: true, columns: [{ key: 'level', label: 'Level', type: 'select', options: INTL_LEVELS }, { key: 'caps', label: 'Caps', type: 'int', max: 300 }, { key: 'goals', label: 'Goals', type: 'int', max: 300 }, { key: 'tournaments', label: 'Notable tournaments', max: 120, placeholder: 'e.g. U-17 AFCON 2023' }] },
   // International claims are checked by the club before they appear anywhere public (intlVerified).
   { key: 'intlEvidence', section: 'career', label: 'Evidence for the international career', use: 'private', for: 'player', type: 'textarea', max: 400, optional: true, evidence: true,
-    hint: 'A link to the federation squad list or a news report, or the document you can show the club (you can also upload a photo or PDF below). The international career and national team appear on the website only after the club has checked the evidence.' },
+    hint: 'A link to the federation squad list or a news report, or the document you can show the club (you can also upload a photo or PDF below). The club checks the evidence.',
+    paperHint: 'A link to the federation squad list or a news report. Attach a copy of the call-up letter or other proof. The club checks the evidence.' },
   { key: 'previousRoles', section: 'career', label: 'Previous clubs and positions', use: 'public', for: 'staff', type: 'rows', columns: [{ key: 'club', label: 'Club', max: 80 }, { key: 'position', label: 'Position held', max: 60 }, { key: 'period', label: 'Period', max: 20, placeholder: 'e.g. 2019–2023' }] },
   { key: 'honours', section: 'career', label: { player: 'Honours and individual awards', staff: 'Honours and achievements' }, use: 'public', for: 'all', type: 'rows', columns: [{ key: 'title', label: 'Honour or award', max: 100 }, { key: 'seasonOrYear', label: 'Season or year', max: 20 }, { key: 'clubOrTeam', label: 'Club or team', max: 80 }] },
   // 4 · Profile notes (media)
   { key: 'philosophy', section: 'notes', label: 'Coaching or working philosophy', use: 'media', for: 'staff', type: 'textarea', max: NOTE_MAX },
   { key: 'careerHighlight', section: 'notes', label: 'Career highlight', use: 'media', for: 'all', type: 'textarea', max: NOTE_MAX },
   { key: 'roleModel', section: 'notes', label: 'Football role model (old question)', use: 'media', for: 'player', type: 'textarea', max: NOTE_MAX, retired: true }, // removed 23 Oct 2026
-  { key: 'interestingFact', section: 'notes', label: { player: 'An interesting fact about the player', coach: 'An interesting fact about the coach', staff: 'An interesting fact about the staff member' }, use: 'public', for: 'all', type: 'textarea', max: NOTE_MAX, hint: 'Shown in a highlight box on their profile page.' },
+  { key: 'interestingFact', section: 'notes', label: { player: 'An interesting fact about the player', coach: 'An interesting fact about the coach', staff: 'An interesting fact about the staff member' }, use: 'public', for: 'all', type: 'textarea', max: NOTE_MAX },
   // The club only (review page): name on website, debut, bio, shirt link, show / hide.
   { key: 'websiteName', section: 'admin', label: 'Name on website', use: 'public', for: 'all', type: 'text', max: 60, admin: true, optional: true, hint: 'Only fill this if the player is publicly known by a different name, e.g. a nickname.' },
   { key: 'debutDate', section: 'admin', label: 'Lobi Stars debut', use: 'public', for: 'player', type: 'day', admin: true, optional: true, hint: 'Leave empty if they have not played yet ("Yet to debut").' },
@@ -96,7 +97,7 @@ export const FIELDS = [
   { key: 'hideFromWebsite', section: 'admin', label: 'Hide from the website', use: 'public', for: 'all', type: 'checkbox', admin: true, hint: 'Takes them off the Squad pages without deleting anything.' },
   // 6 · Confirmation
   { key: 'confirmAccurate', short: 'Accuracy confirmation', section: 'confirm', label: 'I confirm that the information provided is accurate and complete, as given by the profile holder.', use: 'private', for: 'all', required: true, type: 'checkbox' },
-  { key: 'confirmConsent', short: 'Publication consent', section: 'confirm', label: 'The profile holder consents to details marked Public, and their photos, being published on the Lobi Stars FC website and used in official club media. Private details are used only by the club.', use: 'private', for: 'all', required: true, type: 'checkbox' },
+  { key: 'confirmConsent', short: 'Publication consent', section: 'confirm', label: 'The profile holder consents to their profile and photos being published on the Lobi Stars FC website and used in official club media, as explained in the club\'s Privacy Policy. Contact details are used only by the club.', use: 'private', for: 'all', required: true, type: 'checkbox' },
   { key: 'guardianName', section: 'confirm', label: 'Parent or guardian name', use: 'private', for: 'player', type: 'text', max: 100, minorOnly: true, required: true },
   { key: 'guardianPhone', section: 'confirm', label: 'Parent or guardian phone', use: 'private', for: 'player', type: 'tel', minorOnly: true, required: true },
   { key: 'guardianConsent', short: 'Parent or guardian consent', section: 'confirm', label: 'The parent or guardian has given consent for this profile.', use: 'private', for: 'player', type: 'checkbox', minorOnly: true, required: true },

@@ -3,6 +3,7 @@
 // Exports are not offered here: only Super Admins export, from the admin (23 Oct 2026).
 import { api, state, $, esc, toast, lagos } from './api';
 import { openForm } from './form';
+import { blankFormPdf } from './blankForm';
 
 const FILTERS: [string, string][] = [['all', 'All'], ['players', 'Players'], ['staff', 'Staff'], ['drafts', 'Drafts'], ['submitted', 'Submitted'], ['verified', 'Verified'], ['changes', 'Changes requested'], ['left', 'Left the club']];
 const BADGE: Record<string, string> = { DRAFT: 'amber', SUBMITTED: 'blue', VERIFIED: 'green', CHANGES_REQUESTED: 'red', LEFT_THE_CLUB: 'grey' };
@@ -26,6 +27,14 @@ export async function showHome() {
       <button type="button" class="sp-add sp-add-red" data-add="player"><b>ADD A PLAYER</b><span>Shirt number, position, career, achievements, photo</span></button>
       <button type="button" class="sp-add sp-add-dark" data-add="staff"><b>ADD A COACH / STAFF MEMBER</b><span>Role, experience, qualifications, achievements, photo</span></button>
     </div>
+    <section class="sp-card sp-forms" aria-labelledby="formsTitle">
+      <h2 class="sp-h3" id="formsTitle">PRINTABLE FORMS</h2>
+      <p class="sp-muted">Print a form, give it to the player or staff member to fill in by hand, and collect it with the documents it lists. Then type the answers in here. The forms always have the same questions as this portal.</p>
+      <div class="sp-forms-btns">
+        <button type="button" class="sp-btn sp-btn-red" data-blank="player">Player form (PDF)</button>
+        <button type="button" class="sp-btn sp-btn-dark" data-blank="staff">Coach &amp; staff form (PDF)</button>
+      </div>
+    </section>
     <ul class="sp-chips" id="chips" aria-label="Summary"></ul>
     <section class="sp-card sp-saved" aria-labelledby="savedTitle">
       <div class="sp-saved-head"><h2 class="sp-h3" id="savedTitle">SAVED PROFILES</h2>
@@ -44,6 +53,17 @@ export async function showHome() {
   $('q').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = window.setTimeout(() => { view.q = $<HTMLInputElement>('q').value; load(); }, 300); });
   $('seasonSel').addEventListener('change', e => { view.season = (e.target as HTMLSelectElement).value; load(); });
   $('rows').addEventListener('click', onRowClick);
+  $('main').querySelectorAll<HTMLButtonElement>('[data-blank]').forEach(b => b.addEventListener('click', async () => {
+    const kind = b.dataset.blank as 'player' | 'staff', label = b.textContent;
+    b.disabled = true; b.textContent = 'Preparing…';
+    try {
+      const bytes = await blankFormPdf(kind, state.season);
+      const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/pdf' })), a = document.createElement('a');
+      a.href = url; a.download = `lobi-stars-${kind === 'player' ? 'player' : 'coach-and-staff'}-profile-form-${String(state.season).replace('/', '-')}.pdf`;
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e: any) { toast(e.message || 'The form could not be made.'); }
+    finally { b.disabled = false; b.textContent = label; }
+  }));
   await load();
   window.scrollTo(0, 0);
 }
