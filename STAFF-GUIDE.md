@@ -3402,15 +3402,53 @@ use" box for who received and who entered them.
    portal crops it, removes location data and names it after the person
    (e.g. `09-musa-adeyemi.webp`). Read any quality warnings.
 8. Under-18s: the guardian section appears by itself and must be completed.
-9. Press **Submit for review**. Anything missing is highlighted. After
-   submitting, the profile can only be viewed until the club approves it or
-   asks for changes.
+9. Press **Submit for approval**. Anything missing is highlighted. The
+   portal says "Submitted for approval. It will appear on the website once
+   approved by the club." Until then the profile can only be viewed.
 10. Live profile: change what is needed (it saves as a change, not on the
-   website yet), then press **Submit for review** again to send the change.
+   website yet), then press **Submit for approval** again to send the change.
 
 Only drafts can be deleted from the portal.
 
+### Approving (only the three Super Admins: Matchday › Squad: Approvals)
+
+Nothing from the portal reaches the website before a Super Admin approves it.
+The menu item **Squad: Approvals** shows a red count, the bell says "N squad
+profiles or changes waiting for your approval", and the Super Admins get an
+email digest at most every 30 minutes while something new is waiting (requests
+to remove someone are emailed at once), plus a reminder for anything waiting
+more than 48 hours.
+
+Each line shows the kind of request (New profile, Edit, and later Left the
+club, Loan, Delete, Restore, New role), the person, who sent it and how long it
+has waited. **Open** shows:
+- **New profile:** a preview of the page exactly as it will look on the website.
+- **Edit:** a table of what changes, before (on the website now) and after,
+  with the changed answers highlighted (private answers are marked "private,
+  never shown"), and the old and new photos side by side.
+
+Buttons:
+| Button | Result |
+| --- | --- |
+| Approve & publish / Approve changes | Live on the website within about 10 seconds (no rebuild needed). |
+| Request changes | Write a note; the profile goes back to the portal with the note at the top. |
+| Reject (requests) | Write why; the request is closed and the portal shows the note. |
+| Approve selected new profiles | Tick several new profiles, then approve them together (you confirm first). |
+
+Every decision is in the Activity Log in plain English, e.g. "Marvin (Super
+Admin) approved Grace's change to Musa Adeyemi: shirt number 19 → 9, 22 Oct
+2026, 12:40."
+
+**How the Squad pages update:** /squad and every profile page are filled from
+the approved profiles each time someone opens them (kept for 10 seconds), so an
+approval shows straight away; the built pages are only a backup. The sitemap
+lists the live profiles too.
+
 ### Reviewing (Website & Data Officer and Super Admins: Matchday › Squad: Profile Submissions)
+
+The Website & Data Officer sees every profile here (and the bell shows what is
+waiting for a Super Admin) but cannot approve; the approve buttons are for the
+Super Admins only.
 
 The bell shows "N squad profiles waiting for review", and reviewers get an
 email when one is submitted.

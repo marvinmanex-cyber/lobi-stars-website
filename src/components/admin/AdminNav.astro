@@ -21,7 +21,8 @@ const CATEGORIES: Cat[] = [
     { id: 'matches', label: 'Match Tickets & Settings', href: '/admin/matches/', perm: 'matchday.fixtures.edit|commerce.tickets.manage|broadcast.commentary.manage|matchday.live_control', hint: 'Ticket prices, commentary and sale settings per match (dates and results: League)' },
     { id: 'match-centre', label: 'Live Match Control', href: '/admin/match-centre/', perm: 'matchday.live_control|matchday.squad.edit|matchday.stats.edit|matchday.live_updates|broadcast.watch_live.edit|matchday.fixtures.edit|matchday.motm.manage', hint: 'Kick-off, score, squad, Man of the Match, stats, streams, content checklist' },
     { id: 'match-checklist', label: 'Match Checklist', href: '/admin/match-checklist/', perm: 'matchday.checklist.view', hint: 'Everything to do before, during and after the next match; PDF, email and daily reminders' },
-    { id: 'squad-profiles', label: 'Squad: Profile Submissions', href: '/admin/squad-profiles/', perm: 'squad.review', hint: 'Profiles from the Squad & Staff Data Portal: verify and publish, request changes, left the club, exports' },
+    { id: 'squad-approvals', label: 'Squad: Approvals', href: '/admin/squad-approvals/', perm: 'squad.approve', badge: 'squadApprovals', hint: 'Super Admins: approve new squad profiles and changes; nothing goes on the website before this' },
+    { id: 'squad-profiles', label: 'Squad: Profile Submissions', href: '/admin/squad-profiles/', perm: 'squad.review', hint: 'Profiles from the Squad & Staff Data Portal: see them, edit, versions, exports' },
     { id: 'other-games', label: 'Other Games', href: '/admin/scores/', perm: 'matchday.scores', hint: 'Scores for every conference match: reports from each source, official and verified results' },
     { id: 'score-adjustments', label: 'Points Adjustments', href: '/admin/league/table/#h-adj', perm: 'matchday.fixtures.edit', hint: 'Points deductions or awards, with reason and official reference (footnote on the public table)' },
     { id: 'score-messages', label: 'Score Messages', href: '/admin/scores/messages/', perm: 'matchday.scores', hint: 'Score emails and pasted WhatsApp messages; approve or reject the ones the website was not sure about' },
@@ -147,7 +148,7 @@ const showBack = here !== '/admin/dashboard/';
             {c.items.map(i => (
               <li data-perm={i.perm} hidden>
                 <a href={i.href} aria-current={i.id === current ? 'page' : undefined} title={i.hint || i.label} target={i.ext && i.href.startsWith('/scan') ? '_blank' : undefined}>
-                  <span class="ash-dot" aria-hidden="true"></span><span class="ash-lbl">{i.label}</span>{i.ext && <span class="ash-ext" aria-label="(opens the CMS or another tool)">↗</span>}
+                  <span class="ash-dot" aria-hidden="true"></span><span class="ash-lbl">{i.label}</span>{i.ext && <span class="ash-ext" aria-label="(opens the CMS or another tool)">↗</span>}{(i as any).badge && <span class="ash-nbadge" data-nav-badge={(i as any).badge} hidden></span>}
                 </a>
               </li>
             ))}
@@ -305,6 +306,7 @@ const showBack = here !== '/admin/dashboard/';
   .ash-empty { margin: 0; padding: 12px; color: var(--lt); font-size: 14px; }
   .ash-bell-wrap { position: relative; }
   .ash-bell { position: relative; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--d4); background: #fff; cursor: pointer; font-size: 17px; }
+  .ash-nbadge { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--red); color: #fff; font: 700 11px/20px 'Barlow', sans-serif; text-align: center; }
   .ash-badge { position: absolute; top: -4px; right: -4px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: var(--red); color: #fff; font: 700 11px/19px 'Barlow', sans-serif; }
   .ash-user { display: flex; flex-direction: column; line-height: 1.2; text-align: right; min-width: 0; }
   .ash-name { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
@@ -495,6 +497,8 @@ const showBack = here !== '/admin/dashboard/';
       const d = await (await fetch('/api/admin/notifications', { headers: H })).json();
       serverNotes = d.items || [];
       renderBell();
+      // Counts on menu items (e.g. Squad: Approvals).
+      document.querySelectorAll<HTMLElement>('[data-nav-badge]').forEach(el => { const n = Number(d.counts?.[el.dataset.navBadge!] || 0); el.textContent = String(n); el.hidden = !n; el.setAttribute('aria-label', `${n} waiting`); });
     } catch { /* keep quiet */ }
   }
   $('ashBell').addEventListener('click', () => {

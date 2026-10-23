@@ -61,7 +61,7 @@ after(async () => { sql(`DELETE FROM squad_profiles WHERE season = '${season}' O
 
 test('waiting for review: on the bell and in the list; the reviewer sees everything, including private details', async () => {
   const bell = (await fetch(`${BASE}/api/admin/notifications`, { headers: ADMIN }).then(r => r.json())).items;
-  assert.ok(bell.some(i => /squad profile.*waiting for review/.test(i.title)));
+  assert.ok(bell.some(i => /squad profiles? or changes? waiting for your approval/.test(i.title)), 'Super Admins: waiting for approval');
   const l = (await rev(null, `?season=${encodeURIComponent(season)}&filter=submitted`)).data;
   assert.ok(l.profiles.some(p => p.id === id));
   const one = (await rev(null, `?id=${id}`)).data.profile;

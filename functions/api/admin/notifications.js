@@ -8,7 +8,7 @@ import { sqlTs, isoTs } from '../_lib/reportRange.js';
 import { healthSummary } from '../_lib/uptime.js';
 import { scoreBellItems } from '../_lib/scores/bell.js';
 import { unseenDevices, getPortalSettings, resetRequest } from '../_lib/squadPortal.js';
-import { counts as squadCounts } from '../_lib/squadProfiles.js';
+import { queueCount as squadQueueCount } from '../_lib/squadApprovals.js';
 
 // GET /api/admin/notifications -- the admin bell: unread / overdue Inbox messages,
 // Predict & Win prizes not yet paid, commentary stream errors today, and
@@ -56,10 +56,14 @@ export async function onRequestGet({ request, env, waitUntil }) {
     if (req) items.unshift({ icon: '🔑', title: `Squad Data Portal: ${req.name} ${req.emailed ? 'needs the new password' : 'asked for a new password'}`, sub: req.emailed ? `The new password is in your email. Give it to them on ${req.contact}` : `Reach them on ${req.contact}`, href: '/admin/squad-portal/' });
     if (dev.length) items.unshift({ icon: '🔐', title: `Squad Data Portal: signed in from ${dev.length === 1 ? 'a new device' : `${dev.length} new devices`}`, sub: dev.slice(0, 3).map(d => `${d.first_name} on ${d.device}`).join(' · '), href: '/admin/squad-portal/' });
   }
-  // Squad profiles submitted from the portal, waiting for club review.
-  if (can(admin, 'squad.review')) {
-    const c = await squadCounts(db, 'all').catch(() => null);
-    if (c?.submitted) items.push({ icon: '🧾', title: `${c.submitted} squad profile${c.submitted === 1 ? '' : 's'} waiting for review`, sub: 'Submitted from the Squad & Staff Data Portal', href: '/admin/squad-profiles/' });
+  // Squad profiles and changes waiting for a Super Admin's approval (Squad › Approvals).
+  const counts = {};
+  if (can(admin, 'squad.approve') || can(admin, 'squad.review')) {
+    const n = await squadQueueCount(db);
+    if (can(admin, 'squad.approve')) counts.squadApprovals = n;
+    if (n) items.unshift(can(admin, 'squad.approve')
+      ? { icon: '🧾', title: `${n} squad ${n === 1 ? 'profile or change' : 'profiles or changes'} waiting for your approval`, sub: 'Nothing goes on the website before a Super Admin approves it', href: '/admin/squad-approvals/' }
+      : { icon: '🧾', title: `${n} squad ${n === 1 ? 'profile or change' : 'profiles or changes'} waiting for a Super Admin`, sub: 'Sent from the Squad & Staff Data Portal', href: '/admin/squad-profiles/' });
   }
   // Score verification: things waiting for the Website & Data Officer.
   if (can(admin, 'matchday.scores')) items.push(...await scoreBellItems(env).catch(err => { console.error('[bell] scores', err); return []; }));
@@ -79,5 +83,5 @@ export async function onRequestGet({ request, env, waitUntil }) {
     const st = (await pendingStatements(env, new URL(request.url).origin).catch(() => [])).length;
     if (n + st) items.unshift({ icon: '✅', title: `${n + st} request${n + st === 1 ? '' : 's'} waiting for approval`, sub: [n && `${n} staff or points request${n === 1 ? '' : 's'}`, st && `${st} official statement${st === 1 ? '' : 's'}`].filter(Boolean).join(' · '), href: '/admin/approvals/' });
   }
-  return Response.json({ items }, { headers: { 'Cache-Control': 'no-store' } });
+  return Response.json({ items, counts }, { headers: { 'Cache-Control': 'no-store' } });
 }

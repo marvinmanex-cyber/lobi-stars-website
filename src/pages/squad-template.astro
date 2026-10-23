@@ -1,0 +1,14 @@
+---
+// /squad-template/ — not a real page (noindex): the template the server fills
+// with a live profile (functions/squad/[[path]].js), so a newly approved player
+// or coach has a page within seconds, without a website rebuild. It carries the
+// profile's styles and scripts; the placeholder below is always replaced.
+import Layout from '../layouts/Layout.astro';
+import SquadProfile from '../components/squad/SquadProfile.astro';
+import { personFromFeed } from '../lib/squadRender.js';
+
+const person = personFromFeed({ slug: 'squad-template', name: 'Squad profile', firstName: 'Squad', surname: 'Profile', group: 'MID', position: 'Midfielder', number: null }, 'player');
+---
+<Layout title="Squad profile | Lobi Stars FC" description="Lobi Stars FC squad profile." noindex>
+  <SquadProfile person={person} />
+</Layout>

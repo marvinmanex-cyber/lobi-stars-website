@@ -15,6 +15,7 @@
 // Every change is written to the Activity Log in plain English.
 import { FIELD, FIELDS, STATUSES, EDITABLE, PUBLIC_STATUSES, OLD_STATUS, isEditable, statusOf, cleanValue, missingForSubmit, labelOf, ageOn, PRIVATE_KEYS, RETENTION_KEYS, profileName, upgradeData } from '../../../src/lib/squadFields.js';
 import { nameSlug, migrateName, officialName, publicName } from '../../../src/lib/names.js';
+import { countryName } from '../../../src/lib/countries.js';
 import { logAdminAction } from './adminSession.js';
 import { getPortalSettings, setPortalSetting } from './squadPortal.js';
 
@@ -136,6 +137,26 @@ const fmtVal = (key, v) => {
   if (v === true) return 'ticked'; if (v === false) return 'not ticked';
   return String(v).length > 60 ? `${String(v).slice(0, 57)}…` : String(v);
 };
+
+/**
+ * What a change to a live profile changes: [{ key, label, before, after, fromText, toText, private }]
+ * (the live version against the working copy). Used by the Approval Queue and the approval's log line.
+ */
+export function changeList(p) {
+  const live = liveOf(p);
+  if (!live) return [];
+  const a = live.data || {}, b = parse(p.data_json, {}), type = p.type;
+  const text = (key, v) => FIELD[key]?.type === 'country' && v ? countryName(v) || v : fmtVal(key, v);
+  const out = [];
+  if (live.type && live.type !== type) out.push({ key: '_type', label: 'Profile type', before: live.type, after: type, fromText: live.type, toText: type, private: false });
+  for (const f of FIELDS) {
+    if (f.retired || f.type === 'heading') continue;
+    const x = a[f.key] ?? null, y = b[f.key] ?? null;
+    if (JSON.stringify(x) === JSON.stringify(y) || ((x === '' || x === null) && (y === '' || y === null))) continue;
+    out.push({ key: f.key, label: f.short || labelOf(f, type, b), before: x, after: y, fromText: text(f.key, x), toText: text(f.key, y), private: f.use === 'private' });
+  }
+  return out;
+}
 
 /** The view of a profile for the portal / the club review (everything, including private details). */
 export function profileView(p, { thumbs = 'portal' } = {}) {
@@ -509,7 +530,7 @@ export async function slugFor(db, p, data) {
 }
 
 /** Approve: the working copy becomes the LIVE version (kept in the version history). */
-async function approve(env, admin, p, note = '') {
+async function approve(env, admin, p, note = '', { summary = '' } = {}) {
   const db = env.DB;
   const at = nowIso(), name = rowName(p) || 'a profile';
   const isLive = PUBLIC_STATUSES.includes(p.status);
@@ -530,17 +551,17 @@ async function approve(env, admin, p, note = '') {
     db.prepare(`INSERT INTO squad_profile_versions (profile_id, n, snapshot_json, submitted_by, approved_by, approved_at, note) VALUES (?, ?, ?, ?, ?, ?, ?)`)
       .bind(p.id, n, JSON.stringify(snap), p.submitted_by, admin.name, at, note ? String(note).slice(0, 300) : null),
   ]);
-  await logProfile(db, admin, 'squad_profile_verify', `${admin.name} approved ${isLive ? 'the changes to' : 'and published'} the profile of ${name} (version ${n}, ${p.season})`);
+  await logProfile(db, admin, 'squad_profile_verify', summary ? `${summary} (version ${n}, ${p.season})` : `${admin.name} approved ${isLive ? 'the changes to' : 'and published'} the profile of ${name} (version ${n}, ${p.season})`);
   return { ok: true, n, slug };
 }
 
-export async function reviewAction(env, admin, id, action, note = '') {
+export async function reviewAction(env, admin, id, action, note = '', opts = {}) {
   const db = env.DB;
   const p = await getProfile(db, id);
   if (!p) return { error: 'Profile not found.', status: 404 };
   const at = nowIso(), name = rowName(p) || 'a profile';
   const isLive = PUBLIC_STATUSES.includes(p.status);
-  if (action === 'verify' || action === 'approve') return approve(env, admin, p, note);
+  if (action === 'verify' || action === 'approve') return approve(env, admin, p, note, opts);
   if (action === 'request_changes') {
     const n = String(note || '').replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, 500);
     if (n.length < 5) return { error: 'Write what needs changing (the portal shows this note).', status: 400 };

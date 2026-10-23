@@ -1,0 +1,150 @@
+---
+// Matchday › Squad: Approvals (only the three Super Admins). Everything waiting
+// for approval: new profiles (preview exactly as it will look on the website),
+// changes to live profiles (before / after, changed fields highlighted, old and
+// new photo), and requests (left the club, loan, delete, restore, new role).
+// Approve (live within about 10 seconds), Request changes (note shown in the
+// portal), Reject (requests), and Approve selected for several new profiles.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Squad approvals | Lobi Stars Admin" description="Approve squad profiles and changes." noindex>
+  <div class="wrap sa">
+    <AdminNav current="squad-approvals" />
+    <header class="sa-head">
+      <div><div class="stag">Matchday · Super Admins</div><h1 class="stitle">Squad <span class="r">approvals</span></h1></div>
+      <a class="btn-o" href="/admin/squad-profiles/">All profiles</a>
+    </header>
+    <p class="sa-lede">Nothing from the Squad &amp; Staff Data Portal reaches the website before one of the Super Admins approves it here. Approved profiles show on the website within about 10 seconds.</p>
+    <p class="sa-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="sa-card">
+      <div class="sa-row"><h2 id="countH">Waiting</h2><button class="btn-p" type="button" id="bulk" hidden>Approve selected new profiles</button></div>
+      <div class="sa-scroll"><table class="sa-table"><thead><tr><th><span class="sr-only">Select</span></th><th>Request</th><th>Person</th><th>Sent by</th><th>Waiting</th><th></th></tr></thead><tbody id="rows"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody></table></div>
+    </section>
+
+    <section class="sa-card" id="detail" hidden aria-live="polite"></section>
+  </div>
+</Layout>
+
+<style>
+  .sa { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; --blue: #1C3F7A; }
+  .sa-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-end; }
+  .sa-head a { text-decoration: none; }
+  .sa-lede { color: var(--a-muted); max-width: 820px; line-height: 1.5; }
+  .sa-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: sticky; top: 8px; z-index: 5; } .sa-msg.err { background: #FEE2E2; color: #991B1B; }
+  .sa-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 14px 0; display: grid; gap: 12px; }
+  .sa-card > :global(*) { min-width: 0; }
+  .sa-card h2 { margin: 0; font-size: 18px; } .sa :global(h3) { margin: 6px 0 0; font-size: 16px; }
+  .sa-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+  .sa-scroll { overflow-x: auto; }
+  .sa :global(.sa-table) { width: 100%; border-collapse: collapse; }
+  .sa :global(.sa-table th), .sa :global(.sa-table td) { padding: 8px 10px; text-align: left; font-size: 14px; border-bottom: 1px solid var(--a-line); vertical-align: middle; }
+  .sa :global(.muted) { color: var(--a-muted); }
+  .sa :global(.k) { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; background: #DBEAFE; color: #1E3A8A; }
+  .sa :global(.k.edit) { background: #FEF3C7; color: #78350F; } .sa :global(.k.left), .sa :global(.k.delete) { background: #FEE2E2; color: #7F1D1D; }
+  .sa :global(.thumb) { width: 40px; height: 50px; object-fit: cover; border-radius: 6px; vertical-align: middle; margin-right: 8px; background: var(--a-line); }
+  .sa :global(.old) { color: #B45309; font-weight: 700; }
+  .sa :global(.cmp) { width: 100%; border-collapse: collapse; }
+  .sa :global(.cmp th), .sa :global(.cmp td) { padding: 8px 10px; border-bottom: 1px solid var(--a-line); text-align: left; vertical-align: top; font-size: 14px; }
+  .sa :global(.cmp td.b) { background: color-mix(in srgb, #EF4444 10%, transparent); text-decoration: line-through; text-decoration-color: rgba(185, 28, 28, .5); }
+  .sa :global(.cmp td.a) { background: color-mix(in srgb, #22C55E 14%, transparent); font-weight: 600; }
+  .sa :global(.priv) { font-size: 11px; padding: 1px 6px; border-radius: 6px; background: #E5E7EB; color: #374151; margin-left: 6px; }
+  .sa :global(.photos) { display: flex; gap: 14px; flex-wrap: wrap; }
+  .sa :global(.photos figure) { margin: 0; display: grid; gap: 4px; } .sa :global(.photos img) { width: 140px; height: 175px; object-fit: cover; border-radius: 8px; border: 3px solid var(--a-line); }
+  .sa :global(.photos .new img) { border-color: #22C55E; } .sa :global(.photos .gone) { width: 140px; height: 175px; display: grid; place-items: center; border-radius: 8px; border: 2px dashed var(--a-line); color: var(--a-muted); font-size: 13px; }
+  .sa :global(.preview) { width: 100%; height: 900px; border: 1px solid var(--a-line); border-radius: 12px; background: #fff; }
+  .sa :global(.acts) { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .sa :global(.acts textarea) { flex: 1 1 320px; min-height: 44px; border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; background: var(--a-card); color: var(--a-ink); font: inherit; }
+  .sa :global(.acts button) { min-height: 44px; }
+  .sa :global(.go) { background: #15803D !important; border-color: #15803D !important; color: #fff !important; }
+  @media (max-width: 700px) { .sa :global(.preview) { height: 700px; } }
+</style>
+
+<script>
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const when = (iso?: string) => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  const waited = (h: number) => h < 1 ? 'under an hour' : h < 48 ? `${h} hour${h === 1 ? '' : 's'}` : `${Math.floor(h / 24)} days`;
+  const who = (s?: string) => String(s || '–').replace(/ \(Squad Data Portal\)$/, ' (portal)');
+  let ITEMS: any[] = [], msgT = 0;
+  function msg(t: string, ok = true) { const m = $('msg'); m.textContent = t; m.className = `sa-msg${ok ? '' : ' err'}`; m.hidden = false; clearTimeout(msgT); msgT = window.setTimeout(() => { m.hidden = true; }, 8000); }
+  async function api(qs = '', body?: unknown) {
+    const r = await fetch(`/api/admin/squad-approvals${qs}`, body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/squad-approvals/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  async function load() {
+    try {
+      ITEMS = (await api()).items;
+      $('countH').textContent = ITEMS.length ? `Waiting (${ITEMS.length})` : 'Waiting';
+      $('rows').innerHTML = ITEMS.length ? ITEMS.map(i => `<tr>
+        <td>${i.kind === 'new' ? `<input type="checkbox" data-pick="${esc(i.profileId)}" aria-label="Select ${esc(i.name)}" />` : ''}</td>
+        <td><span class="k ${esc(i.kind)}">${esc(i.kindLabel)}</span></td>
+        <td>${i.thumb ? `<img class="thumb" src="${esc(i.thumb)}" alt="" loading="lazy" />` : ''}<b>${esc(i.name)}</b><br /><small class="muted">${i.type === 'staff' ? 'Coach / staff' : 'Player'}${i.season ? ` · ${esc(i.season)}` : ''}</small></td>
+        <td>${esc(who(i.submittedBy))}<br /><small class="muted">${esc(when(i.submittedAt))}</small></td>
+        <td class="${i.waitingHours >= 48 ? 'old' : ''}">${esc(waited(i.waitingHours))}</td>
+        <td><button class="btn-o" type="button" data-open="${esc(i.key)}">Open</button></td></tr>`).join('')
+        : '<tr><td colspan="6" class="muted">Nothing is waiting. 🎉</td></tr>';
+      updateBulk();
+      const want = new URLSearchParams(location.search).get('id');
+      if (want && $('detail').hidden) { const it = ITEMS.find(i => i.profileId === want); if (it) open(it); }
+    } catch (e: any) { msg(e.message, false); }
+  }
+  const picked = () => [...document.querySelectorAll<HTMLInputElement>('[data-pick]:checked')].map(i => i.dataset.pick!);
+  function updateBulk() { const n = picked().length; $('bulk').hidden = !n; $('bulk').textContent = `Approve ${n} selected new profile${n === 1 ? '' : 's'}`; }
+  $('rows').addEventListener('change', updateBulk);
+  $('rows').addEventListener('click', (e: Event) => { const b = (e.target as HTMLElement).closest('[data-open]') as HTMLElement | null; if (b) open(ITEMS.find(i => i.key === b.dataset.open)); });
+  $('bulk').addEventListener('click', async () => {
+    const ids = picked(), names = ITEMS.filter(i => ids.includes(i.profileId)).map(i => i.name);
+    if (!confirm(`Approve these ${ids.length} new profiles? They go live on the website straight away:\n\n${names.join('\n')}`)) return;
+    try { const r = await api('', { action: 'approve_many', ids }); msg(`Approved: ${r.approved.join(', ') || 'none'}.${r.failed.length ? ` Not approved: ${r.failed.map((f: any) => `${f.name || f.id} (${f.error})`).join('; ')}` : ''}`, !r.failed.length); $('detail').hidden = true; load(); }
+    catch (e: any) { msg(e.message, false); }
+  });
+
+  const actsHtml = (it: any) => it.requestId
+    ? `<div class="acts" data-req="${it.requestId}"><textarea id="note" maxlength="500" placeholder="Note (required to reject; shown in the portal)"></textarea><button class="btn-p go" type="button" data-do="req-approve">Approve</button><button class="btn-o" type="button" data-do="req-reject">Reject</button></div>`
+    : `<div class="acts" data-pid="${esc(it.profileId)}"><button class="btn-p go" type="button" data-do="approve">${it.kind === 'new' ? 'Approve &amp; publish' : 'Approve changes'}</button><textarea id="note" maxlength="500" placeholder="What needs changing (shown at the top of the profile in the portal)"></textarea><button class="btn-o" type="button" data-do="changes">Request changes</button></div>`;
+
+  async function open(it: any) {
+    if (!it) return;
+    const box = $('detail'); box.hidden = false; box.innerHTML = '<p class="muted">Loading…</p>';
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    try {
+      if (it.requestId) {
+        box.innerHTML = `<div class="sa-row"><h2><span class="k ${esc(it.kind)}">${esc(it.kindLabel)}</span> ${esc(it.name)}</h2><button class="btn-o" type="button" data-close>Close</button></div>
+          <p class="muted">Sent by ${esc(who(it.submittedBy))} · ${esc(when(it.submittedAt))}</p>
+          <table class="cmp"><tbody>${Object.entries(it.payload || {}).map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</td></tr>`).join('') || '<tr><td class="muted">No details.</td></tr>'}</tbody></table>${actsHtml(it)}`;
+        return;
+      }
+      const d = await api(`?id=${encodeURIComponent(it.profileId)}`);
+      const head = `<div class="sa-row"><h2><span class="k ${d.kind}">${d.kind === 'new' ? 'New profile' : 'Edit'}</span> ${esc(d.profile.name || it.name)}</h2><button class="btn-o" type="button" data-close>Close</button></div>
+        <p class="muted">${d.profile.type === 'staff' ? 'Coach / staff' : 'Player'} · ${esc(d.profile.season)} · sent by ${esc(who(d.profile.submittedBy))} ${esc(when(d.profile.submittedAt))}${d.liveN ? ` · on the website now: version ${d.liveN}` : ''}</p>`;
+      const photos = d.photos.length ? `<h3>Photos</h3><div class="photos">${d.photos.map((p: any) => `<div><small class="muted">${p.kind === 'profile' ? 'Profile' : p.kind === 'hero' ? 'Wide header' : 'Action'}${p.changed && d.kind === 'edit' ? ' · changed' : ''}</small><div class="photos">${d.kind === 'edit' ? `<figure>${p.before ? `<img src="${esc(p.before)}" alt="Old ${p.kind} photo" />` : '<span class="gone">none</span>'}<figcaption class="muted">Before</figcaption></figure>` : ''}<figure class="${p.changed ? 'new' : ''}">${p.after ? `<img src="${esc(p.after)}" alt="New ${p.kind} photo" />` : '<span class="gone">removed</span>'}<figcaption class="muted">${d.kind === 'edit' ? 'After' : ''}</figcaption></figure></div></div>`).join('')}</div>` : '';
+      const cmp = d.kind === 'edit' ? `<h3>What changes (${d.changes.length})</h3>${d.changes.length ? `<div class="sa-scroll"><table class="cmp"><thead><tr><th>Answer</th><th>Before (on the website now)</th><th>After</th></tr></thead><tbody>${d.changes.map((c: any) => `<tr><th>${esc(c.label)}${c.private ? '<span class="priv">private, never shown</span>' : ''}</th><td class="b">${esc(c.fromText)}</td><td class="a">${esc(c.toText)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Only photos changed.</p>'}` : '';
+      const preview = `<h3>${d.kind === 'new' ? 'Preview: exactly as it will look on the website' : 'Preview of the page after approval'}</h3>${d.kind === 'edit' ? '<details><summary>Show the preview</summary>' : ''}<iframe class="preview" src="${esc(d.previewUrl)}" title="Preview of the profile page" loading="lazy"></iframe>${d.kind === 'edit' ? '</details>' : ''}`;
+      box.innerHTML = head + actsHtml({ ...it, kind: d.kind }) + cmp + photos + preview;
+    } catch (e: any) { box.innerHTML = `<p class="muted">${esc(e.message)}</p>`; }
+  }
+  $('detail').addEventListener('click', async (e: Event) => {
+    const t = e.target as HTMLElement;
+    if (t.closest('[data-close]')) { $('detail').hidden = true; return; }
+    const b = t.closest('[data-do]') as HTMLButtonElement | null; if (!b) return;
+    const note = ($('note') as HTMLTextAreaElement | null)?.value || '';
+    const pid = (b.closest('[data-pid]') as HTMLElement | null)?.dataset.pid, rid = (b.closest('[data-req]') as HTMLElement | null)?.dataset.req;
+    const act = b.dataset.do;
+    if (act === 'approve' && !confirm('Approve? It goes live on the website straight away.')) return;
+    if ((act === 'changes' || act === 'req-reject') && note.trim().length < 5) { msg('Write a short note first (the portal shows it).', false); return; }
+    b.disabled = true;
+    try {
+      if (act === 'approve') { await api('', { action: 'approve', id: pid }); msg('Approved. It is on the website within about 10 seconds.'); }
+      else if (act === 'changes') { await api('', { action: 'request_changes', id: pid, note }); msg('Changes requested. The portal shows your note.'); }
+      else { await api('', { action: 'request', requestId: Number(rid), decision: act === 'req-approve' ? 'approve' : 'reject', note }); msg(act === 'req-approve' ? 'Approved.' : 'Rejected.'); }
+      $('detail').hidden = true; load();
+    } catch (err: any) { msg(err.message, false); b.disabled = false; }
+  });
+  load();
+</script>

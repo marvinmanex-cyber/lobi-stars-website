@@ -1,6 +1,7 @@
 import { runChecks } from '../_lib/uptime.js';
 import { healthTick } from '../_lib/healthRun.js';
 import { seoTick } from '../_lib/seoRun.js';
+import { digestTick } from '../_lib/squadApprovals.js';
 
 // POST /api/internal/health-check -- called every minute by the cron Worker
 // (workers/kitchen-cron) with "Authorization: Bearer <CRON_SECRET>".
@@ -27,6 +28,8 @@ export async function onRequestPost({ request, env }) {
     out.more = !!h.more;
     out.health = h.run ? { step: h.run.step, steps: h.run.steps, done: h.run.done } : null;
   } catch (err) { console.error('[health] tick', err); out.more = false; }
+  // Squad approvals: the Super Admins' email digest (at most every 30 minutes) and 48-hour reminders.
+  try { out.squadDigest = await digestTick(env); } catch (err) { console.error('[squad] digest', err); }
   // SEO Scanner: one step when Website Health has nothing running (so one request never does too much).
   if (!out.more) {
     try {

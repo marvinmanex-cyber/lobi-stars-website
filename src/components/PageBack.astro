@@ -35,6 +35,7 @@ const parent = crumbs[crumbs.length - 1][1];
 </nav>
 
 <style>
+  /* The trail can be rebuilt by the script below (pages served from a shared template), so its items are styled globally. */
   .pback { background: var(--d2); border-bottom: 1px solid var(--d4); }
   .pback-in { max-width: 1280px; margin: 0 auto; padding: 8px 5%; display: flex; align-items: center; gap: 14px; min-height: 48px; }
   .pback-btn { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px 6px 12px; border-radius: 999px; border: 1.5px solid var(--d4); color: var(--white); text-decoration: none; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; transition: border-color .15s, color .15s; }
@@ -42,18 +43,18 @@ const parent = crumbs[crumbs.length - 1][1];
   .pback-btn span { font-size: 16px; }
   .pback-in :global(.pback-share) { margin-left: auto; }
   .pback-trail { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; min-width: 0; flex: 1 1 auto; overflow: hidden; white-space: nowrap; font-size: 14px; color: var(--lt); }
-  .pback-trail li { display: flex; align-items: center; min-width: 0; }
-  .pback-trail li + li::before { content: '›'; margin: 0 8px; color: var(--d4); font-weight: 700; }
-  .pback-trail a { color: var(--lt); text-decoration: none; }
-  .pback-trail a:hover { color: var(--white); text-decoration: underline; }
-  .pback-trail [aria-current] { color: var(--white); font-weight: 600; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .pback-trail :global(li) { display: flex; align-items: center; min-width: 0; }
+  .pback-trail :global(li + li)::before { content: '›'; margin: 0 8px; color: var(--d4); font-weight: 700; }
+  .pback-trail :global(a) { color: var(--lt); text-decoration: none; }
+  .pback-trail :global(a:hover) { color: var(--white); text-decoration: underline; }
+  .pback-trail :global([aria-current]) { color: var(--white); font-weight: 600; overflow: hidden; text-overflow: ellipsis; display: block; }
   @media (max-width: 640px) {
     .pback-in { padding: 6px 16px; gap: 10px; min-height: 44px; }
-    .pback-trail li:not(:last-child):not(:nth-last-child(2)) { display: none; }
-    .pback-trail li:nth-last-child(2)::before { display: none; }
+    .pback-trail :global(li:not(:last-child):not(:nth-last-child(2))) { display: none; }
+    .pback-trail :global(li:nth-last-child(2))::before { display: none; }
     .pback-trail { font-size: 13px; }
     /* With the Share button there is room for the page name only. */
-    .pback-in:has(.pback-share) .pback-trail li:not(:last-child) { display: none; }
+    .pback-in:has(.pback-share) .pback-trail :global(li:not(:last-child)) { display: none; }
   }
 </style>
 

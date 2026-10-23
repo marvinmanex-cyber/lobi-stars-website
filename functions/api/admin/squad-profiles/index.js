@@ -70,7 +70,7 @@ export async function onRequestGet({ request, env }) {
   const season = u.searchParams.get('season') || cur;
   const log = (await db.prepare(`SELECT * FROM squad_export_log ORDER BY id DESC LIMIT 30`).all()).results;
   return json({ season, current: cur, seasons: await seasons(db), counts: await counts(db, season), team: await getTeam(db), exportLog: superOnly(admin) ? log : [],
-    canSuper: superOnly(admin), canExport: superOnly(admin), exportTo: superOnly(admin) ? await exportRecipients(db) : [], canFull: can(admin, 'squad.records.full'), canEdit: can(admin, 'squad.records.full'), deployHook: !!env.PAGES_DEPLOY_HOOK,
+    canApprove: can(admin, 'squad.approve'), canSuper: superOnly(admin), canExport: superOnly(admin), exportTo: superOnly(admin) ? await exportRecipients(db) : [], canFull: can(admin, 'squad.records.full'), canEdit: can(admin, 'squad.records.full'), deployHook: !!env.PAGES_DEPLOY_HOOK,
     pendingNames: (await db.prepare(`SELECT COUNT(*) AS n FROM squad_profiles WHERE name_status IN ('pending', 'check') AND deleted_at IS NULL`).first())?.n || 0,
     profiles: await listProfiles(db, { season, filter: u.searchParams.get('filter') || 'submitted', q: u.searchParams.get('q') || '' }) });
 }
@@ -96,6 +96,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const b = await request.json().catch(() => ({}));
   let r;
   if (['verify', 'approve', 'request_changes', 'left', 'restore', 'discard'].includes(b.action)) {
+    // Approving and everything that changes the website: Super Admins only (Approval Queue, 23 Oct 2026).
+    if (!can(admin, 'squad.approve')) return json({ error: 'Only the Super Admins can approve or change what is on the website (Squad › Approvals).' }, 403);
     const before = await getProfile(db, b.id);
     r = await reviewAction(env, admin, b.id, b.action, b.note);
     // The website changes only when a live version changes (approve, left, restore).

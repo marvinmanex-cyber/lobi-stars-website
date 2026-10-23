@@ -309,8 +309,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       const old = FIELDS.filter((f: any) => f.retired && p.data[f.key] != null && p.data[f.key] !== '');
       const box = $('detail'); box.hidden = false;
       const live = ['LIVE', 'ON_LOAN'].includes(p.status), waiting = live ? ['PENDING_APPROVAL', 'CHANGES_REQUESTED'].includes(p.pending) : ['PENDING_APPROVAL', 'CHANGES_REQUESTED'].includes(p.status);
-      const acts = [
-        waiting ? `<button class="btn-p" type="button" data-act="approve">${live ? 'Approve changes' : 'Approve &amp; publish'}</button>` : '',
+      // Approving and anything that changes the website: Super Admins only (also Squad › Approvals).
+      const acts = !D?.canApprove ? [waiting ? '<p class="muted">Waiting for a Super Admin to approve it (Squad › Approvals).</p>' : ''] : [
+        waiting ? `<button class="btn-p" type="button" data-act="approve">${live ? 'Approve changes' : 'Approve &amp; publish'}</button> <a class="btn-o" href="/admin/squad-approvals/?id=${encodeURIComponent(p.id)}">Compare in Approvals</a>` : '',
         (live ? p.pending === 'PENDING_APPROVAL' : p.status === 'PENDING_APPROVAL') ? '<input class="sq-note" id="note" maxlength="500" placeholder="What needs changing (shown in the portal)" /><button class="btn-o" type="button" data-act="request_changes">Request changes</button>' : '',
         live && p.pending ? '<button class="btn-o" type="button" data-act="discard">Discard the changes (keep the live version)</button>' : '',
         live ? '<button class="btn-o" type="button" data-act="left">Mark as left the club</button>' : '',

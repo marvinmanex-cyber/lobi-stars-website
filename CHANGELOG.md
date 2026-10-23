@@ -8,6 +8,29 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-23: Squad approvals by the Super Admins; Squad pages update within seconds (Approved live squad, phase 2)
+
+**What changed**
+- New **Matchday › Squad: Approvals** for the three Super Admins only (with a
+  red count in the menu): new profiles with a preview of the page as it will
+  look, changes with before / after (changed answers highlighted, old and new
+  photo), Approve, Request changes (with a note), Reject (requests) and Approve
+  selected new profiles. The Website & Data Officer can no longer approve.
+- The portal button is now **Submit for approval**; afterwards: "Submitted for
+  approval. It will appear on the website once approved by the club."
+- The Super Admins get an email digest at most every 30 minutes while something
+  new is waiting (removals at once) and a reminder after 48 hours, instead of
+  one email per profile.
+- The Squad list and profile pages are now filled from the approved profiles
+  when they are opened, so an approval shows within about 10 seconds; old
+  addresses forward to new ones; the sitemap lists the live profiles.
+- Activity Log lines for approvals say what changed, e.g. "shirt number 19 → 9".
+- The breadcrumb bar shows its › separators on pages served from a shared
+  template (squad profiles, match pages).
+
+**Staff need to do:** nothing. Super Admins: approvals are now in Squad:
+Approvals. Guide: STAFF-GUIDE §38.
+
 ## 2026-10-23: Squad pages from the portal only; live versions (Approved live squad, phase 1)
 
 **What changed**

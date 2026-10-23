@@ -1,8 +1,7 @@
 import { requirePortal, portalJson, portalActor } from '../../../_lib/squadPortal.js';
 import { submitProfile, savePhoto, deletePhoto, saveEvidence, deleteEvidence } from '../../../_lib/squadProfiles.js';
-import { notifyReviewers } from '../../../_lib/squadNotify.js';
 
-// POST   /api/squad-portal/profiles/:id/submit           -- for club review (all required answers, photo, free shirt number)
+// POST   /api/squad-portal/profiles/:id/submit           -- for approval by a Super Admin (all required answers, photo, free shirt number)
 // POST   /api/squad-portal/profiles/:id/photo  (form)    -- kind, w400, w1200, jpg, width, height, warnings
 // POST   /api/squad-portal/profiles/:id/evidence (form) -- file: a photo or PDF backing the international career
 // DELETE /api/squad-portal/profiles/:id/photo?kind=profile|action   or   /evidence
@@ -15,8 +14,7 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
   if (params.action === 'submit') {
     r = await submitProfile(env, actor, params.id);
     if (r.ok) {
-      const job = notifyReviewers(env, r.profile, session.name).catch(err => console.error('[squad] notify', err));
-      if (waitUntil) waitUntil(job); else await job;
+      // The Super Admins are told by the admin bell and the 30-minute digest (squadApprovals.js digestTick).
       delete r.profile;
     }
   } else if (params.action === 'photo') {

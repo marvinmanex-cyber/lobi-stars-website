@@ -1,24 +1,19 @@
 ---
 // /squad/staff/<firstname-surname>/ — a coaching staff member's profile page:
 // the player layout with the role instead of position, no shirt number, and
-// Career / Honours tabs.
+// Career / Honours tabs. The server shows newer approved versions straight away.
 import Layout from '../../../layouts/Layout.astro';
 import SquadProfile from '../../../components/squad/SquadProfile.astro';
-import { render } from 'astro:content';
 import { squadStaff, type Person } from '../../../lib/squadPeople';
 import { profileDescription, personJsonLd, shareImage } from '../../../lib/squadSeo';
+import { neighbours } from '../../../lib/squadRender.js';
 
 export async function getStaticPaths() {
   const staff = await squadStaff();
-  return staff.map((person, i) => ({
-    params: { slug: person.slug },
-    props: { person, prev: staff[i - 1] || null, next: staff[i + 1] || null, teammates: staff.filter(x => x !== person).slice(0, 4) },
-  }));
+  return staff.map(person => ({ params: { slug: person.slug }, props: { person, ...neighbours(staff, person) } }));
 }
 const { person, prev, next, teammates } = Astro.props as { person: Person; prev: Person | null; next: Person | null; teammates: Person[] };
-const { Content } = await render(person.entry);
-const hasBody = !!(person.entry.body ?? '').trim();
 ---
 <Layout title={`${person.name} | Lobi Stars FC`} description={profileDescription(person)} image={shareImage(person)} imageAlt={`${person.name}, Lobi Stars FC`} jsonLd={[personJsonLd(person, Astro.site!)]}>
-  <SquadProfile person={person} Content={Content} hasBody={hasBody} prev={prev} next={next} teammates={teammates} />
+  <SquadProfile person={person} prev={prev} next={next} teammates={teammates} />
 </Layout>

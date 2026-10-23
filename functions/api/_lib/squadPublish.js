@@ -35,6 +35,36 @@ export const packageInput = r => {
   return { id: r.id, type: r.type, status: r.status, updatedAt: r.updated_at, data: parseJson(r.data_json, {}), hasAction: !!photos.action, hasHero: !!photos.hero, hasPhoto: !!photos.profile, fileBase: fileBase(r), season: r.season, photos };
 };
 
+// The public photo of a live profile (the version on the website: ?v= changes when the photo does).
+const livePhoto = (r, kind, variant = 'w1200.webp') => { const ph = parseJson(r.photos_json, {})[kind]; return ph ? `/api/squad/photo/${r.id}/${kind}/${variant}?v=${encodeURIComponent(ph.rev || ph.uploadedAt || '')}` : null; };
+
+/** One person as the website shows them (public fields only). photo(r, kind, variant) gives the photo addresses. */
+export function feedItem(r, slug, photo = livePhoto) {
+  const d = shareable(r.type, parseJson(r.data_json, {}), { media: false });
+  // Before the name check (old single name): best-effort parts, so nothing disappears.
+  const n = d.surname && d.firstName ? nameOf(d) : { ...partsFromName(profileName(parseJson(r.data_json, {}))), middleName: '', websiteName: d.websiteName || '' };
+  const name = profileName({ ...n }) || rowName(r);
+  const base = { id: r.id, slug, name, firstName: n.firstName, surname: n.surname, websiteName: d.websiteName || null,
+    officialName: officialName(n), shortName: shortName(n), nickname: d.nickname || null, dob: d.dob || null, age: d.age,
+    nationality: d.nationality || null, nationality2: d.nationality2 || null, birthTown: d.birthTown || null, birthCountry: d.birthCountry || null, stateOfOrigin: d.stateOfOrigin, hometown: d.hometown,
+    socials: { instagram: d.socialInstagram || null, x: d.socialX || null, tiktok: d.socialTiktok || null }, honours: d.honours || [], interestingFact: d.interestingFact || null,
+    bioHeadline: d.bioHeadline || null, bio: d.bio || null, shirtShopUrl: d.shirtShopUrl || null,
+    photo: photo(r, 'profile'), photoSmall: photo(r, 'profile', 'w400.webp'), heroPhoto: photo(r, 'hero', 'w2000.webp') || photo(r, 'hero'), updatedAt: r.updated_at,
+    oldSlugs: parseJson(r.old_slugs, []).filter(x => x !== slug) };
+  if (r.type === 'player') return { ...base, number: d.shirtNumber, positionGroup: d.positionGroup || null, group: GROUP[d.positionGroup] || 'MID', position: d.primaryPosition || null,
+    secondaryPositions: d.secondaryPositions || [], preferredFoot: d.preferredFoot, heightCm: d.heightCm, joined: d.joined, debutDate: d.debutDate || null, nationalTeam: d.nationalTeam || null,
+    previousClubs: d.previousClubs || [], internationalCareer: d.internationalCareer || [], actionPhoto: photo(r, 'action') };
+  return { ...base, role: d.role === 'Other' ? d.roleOther || 'Staff' : d.role, joined: d.joinedStaff, licence: d.qualifications || null, playingCareer: d.playingCareer, previousRoles: d.previousRoles || [] };
+}
+
+/** The working copy (what is waiting for approval) as the website would show it: the Approval Queue preview. */
+export async function previewItem(env, r) {
+  const season = r.season;
+  const photo = (row, kind, variant = 'w1200.webp') => { const ph = parseJson(row.photos_json, {})[kind]; return ph ? `/api/squad-portal/file/${row.id}/${kind}/${variant}${ph.rev ? `?rev=${ph.rev}` : ''}` : null; };
+  const slug = r.public_slug || (await slugFor(env.DB, r, parseJson(r.data_json, {}))).slug;
+  return { ...feedItem(r, slug, photo), season };
+}
+
 /** For the website: the live, not hidden profiles of the current season, public fields only. */
 export async function publicSquad(env) {
   const db = env.DB;
@@ -44,15 +74,10 @@ export async function publicSquad(env) {
   const settings = await getPortalSettings(db);
   const used = new Set();
   const uniq = s => { let x = s || 'profile', i = 2; while (used.has(x)) x = `${s}-${i++}`; used.add(x); return x; };
-  const photo = (r, kind, variant = 'w1200.webp') => { const ph = parseJson(r.photos_json, {})[kind]; return ph ? `/api/squad/photo/${r.id}/${kind}/${variant}?v=${encodeURIComponent(ph.uploadedAt || '')}` : null; };
   // legacyOff: the old hand-made squad files are switched off (Super Admin, after the migration list).
   const out = { season, updatedAt: new Date().toISOString(), players: [], staff: [], left: left.map(rowName).filter(Boolean), redirects: [], legacyOff: settings.legacy_off === '1' };
   const slugWrites = [];
   for (const r of rows) {
-    const d = shareable(r.type, parseJson(r.data_json, {}), { media: false });
-    // Before the name check (old single name): best-effort parts, so nothing disappears.
-    const n = d.surname && d.firstName ? nameOf(d) : { ...partsFromName(profileName(parseJson(r.data_json, {}))), middleName: '', websiteName: d.websiteName || '' };
-    const name = profileName({ ...n }) || rowName(r);
     // The web address is fixed when a profile is approved (slugFor); older live profiles get theirs now.
     let slug = r.public_slug;
     if (!slug) {
@@ -61,18 +86,8 @@ export async function publicSquad(env) {
       slugWrites.push(db.prepare(`UPDATE squad_profiles SET public_slug = ?, old_slugs = ? WHERE id = ?`).bind(f.slug, JSON.stringify(f.olds), r.id));
       r.old_slugs = JSON.stringify(f.olds);
     }
-    const base = { id: r.id, slug: uniq(slug), name, firstName: n.firstName, surname: n.surname, websiteName: d.websiteName || null,
-      officialName: officialName(n), shortName: shortName(n), nickname: d.nickname || null, dob: d.dob || null, age: d.age,
-      nationality: d.nationality || null, nationality2: d.nationality2 || null, birthTown: d.birthTown || null, birthCountry: d.birthCountry || null, stateOfOrigin: d.stateOfOrigin, hometown: d.hometown,
-      socials: { instagram: d.socialInstagram || null, x: d.socialX || null, tiktok: d.socialTiktok || null }, honours: d.honours || [], interestingFact: d.interestingFact || null,
-      bioHeadline: d.bioHeadline || null, bio: d.bio || null, shirtShopUrl: d.shirtShopUrl || null,
-      photo: photo(r, 'profile'), photoSmall: photo(r, 'profile', 'w400.webp'), heroPhoto: photo(r, 'hero', 'w2000.webp') || photo(r, 'hero'), updatedAt: r.updated_at };
-    // Earlier addresses 301-redirect to this one.
-    base.oldSlugs = parseJson(r.old_slugs, []).filter(x => x !== base.slug);
-    if (r.type === 'player') out.players.push({ ...base, number: d.shirtNumber, positionGroup: d.positionGroup || null, group: GROUP[d.positionGroup] || 'MID', position: d.primaryPosition || null,
-      secondaryPositions: d.secondaryPositions || [], preferredFoot: d.preferredFoot, heightCm: d.heightCm, joined: d.joined, debutDate: d.debutDate || null, nationalTeam: d.nationalTeam || null,
-      previousClubs: d.previousClubs || [], internationalCareer: d.internationalCareer || [], actionPhoto: photo(r, 'action') });
-    else out.staff.push({ ...base, role: d.role === 'Other' ? d.roleOther || 'Staff' : d.role, joined: d.joinedStaff, licence: d.qualifications || null, playingCareer: d.playingCareer, previousRoles: d.previousRoles || [] });
+    const item = feedItem(r, uniq(slug));
+    (r.type === 'player' ? out.players : out.staff).push(item);
   }
   if (slugWrites.length) await db.batch(slugWrites);
   // Old addresses → current ones (never an address someone else uses now).

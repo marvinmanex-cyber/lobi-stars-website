@@ -1,5 +1,6 @@
 import { ensureTable } from './api/_lib/matchCentre.js';
 import { matchSlug } from './api/_lib/matchSlug.js';
+import { publicSquad } from './api/_lib/squadPublish.js';
 
 // /sitemap.xml -- the build's list of pages (drafts, admin and noindex pages
 // are already left out) plus every active match page, which are made on the
@@ -21,6 +22,15 @@ export async function onRequestGet({ request, env, waitUntil }) {
     const entries = results.map(e => `  <url><loc>https://lobistarsfc.com/matches/${matchSlug(e)}/</loc><lastmod>${String(e.updated_at || e.event_date || '').slice(0, 10) || new Date().toISOString().slice(0, 10)}</lastmod></url>`);
     if (entries.length) xml = xml.replace('</urlset>', `${entries.join('\n')}\n</urlset>`);
   } catch (err) { console.log("[sitemap] matches skipped:", err.message); }
+  // The squad profiles that are live now (not those of the last build): approved players and coaches only.
+  try {
+    const sq = await publicSquad(env);
+    const day = new Date().toISOString().slice(0, 10);
+    const live = [...sq.players.map(p => `/squad/${p.slug}/`), ...sq.staff.map(s => `/squad/staff/${s.slug}/`)]
+      .map(path => `  <url><loc>https://lobistarsfc.com${path}</loc><lastmod>${day}</lastmod></url>`);
+    xml = xml.replace(/\s*<url><loc>https:\/\/lobistarsfc\.com\/squad\/[^<]+\/<\/loc>(<lastmod>[^<]*<\/lastmod>)?<\/url>/g, '');
+    if (live.length) xml = xml.replace('</urlset>', `${live.join('\n')}\n</urlset>`);
+  } catch (err) { console.log('[sitemap] squad skipped:', err.message); }
   const out = new Response(xml, { headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=600' } });
   if (cache) { const p = cache.put(key, out.clone()).catch(() => null); if (waitUntil) waitUntil(p); }
   return out;

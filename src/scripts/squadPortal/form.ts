@@ -284,7 +284,7 @@ function render(extra: any) {
     <div class="sp-bar" role="region" aria-label="Save">
       <span class="sp-bar-status"><span id="barStatus">All changes saved</span> · Every answer saves automatically.</span>
       ${view ? '<button type="button" class="sp-btn sp-btn-outline-light" id="barBack">Back to profiles</button>'
-    : '<button type="button" class="sp-btn sp-btn-outline-light" id="draftBtn">Save as draft</button><button type="button" class="sp-btn sp-btn-red" id="submitBtn">Submit profile</button>'}
+    : '<button type="button" class="sp-btn sp-btn-outline-light" id="draftBtn">Save as draft</button><button type="button" class="sp-btn sp-btn-red" id="submitBtn">Submit for approval</button>'}
     </div>`;
   for (const f of FORM_FIELDS) writeField(f.key, p.data[f.key]);
   for (const k of ['profile', 'action']) renderPhoto(k);
@@ -444,7 +444,7 @@ async function submit() {
   } catch (e: any) {
     if (e instanceof ApiError && e.data?.missing) highlight(e.data.missing, e.message);
     else toast(e.message, 8000);
-  } finally { if (document.getElementById('submitBtn')) { btn.disabled = false; btn.textContent = 'Submit profile'; } }
+  } finally { if (document.getElementById('submitBtn')) { btn.disabled = false; btn.textContent = 'Submit for approval'; } }
 }
 function highlight(missing: { key: string; label: string; section: string }[], message?: string) {
   for (const m of missing) {
@@ -463,8 +463,9 @@ function done() {
   const name = profileName(P!.data) || 'The profile';
   P = null;
   $('main').innerHTML = `<section class="sp-card sp-done" aria-labelledby="doneTitle">
-    <p class="sp-done-icon" aria-hidden="true">✓</p><h1 class="sp-h2" id="doneTitle">Profile submitted for club review</h1>
-    <p class="sp-muted"><b class="sp-pname">${esc(name)}</b> has been sent to the club for review. You will see the status change in Saved profiles.</p>
+    <p class="sp-done-icon" aria-hidden="true">✓</p><h1 class="sp-h2" id="doneTitle">Submitted for approval</h1>
+    <p class="sp-muted">It will appear on the website once approved by the club.</p>
+    <p class="sp-muted"><b class="sp-pname">${esc(name)}</b>: you will see the status change in Saved profiles.</p>
     <div class="sp-done-btns"><button type="button" class="sp-btn sp-btn-red" data-new="player">Add another player</button>
       <button type="button" class="sp-btn sp-btn-dark" data-new="staff">Add a coach / staff member</button>
       <button type="button" class="sp-btn sp-btn-outline" id="doneBack">Back to profiles</button></div></section>`;

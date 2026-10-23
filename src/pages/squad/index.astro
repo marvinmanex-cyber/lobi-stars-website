@@ -1,10 +1,13 @@
 ---
 // /squad — the First Team squad: Goalkeepers, Defenders, Midfielders, Forwards
 // (by shirt number) and Coaching Staff (Head Coach first). Only public people
-// (verified in the portal and not hidden, or added in the Content CMS).
+// (approved in the portal and not hidden). The list markup comes from
+// src/lib/squadRender.js; the server (functions/squad/[[path]].js) fills the same
+// box with the live list, so an approval shows within seconds.
 import Layout from '../../layouts/Layout.astro';
-import SquadCard from '../../components/squad/SquadCard.astro';
-import { squadPlayers, squadStaff, GROUPS } from '../../lib/squadPeople';
+import '../../styles/squad.css';
+import { squadPlayers, squadStaff } from '../../lib/squadPeople';
+import { renderList } from '../../lib/squadRender.js';
 import { CURRENT_SEASON } from '../../lib/site';
 
 const players = await squadPlayers();
@@ -17,37 +20,5 @@ const staff = await squadStaff();
     <div class="divr"></div>
   </div>
 
-  <div class="page-content wrap sq">
-    {players.length === 0 && staff.length === 0 && <div class="empty-state">The {CURRENT_SEASON} squad will be announced soon.</div>}
-
-    {GROUPS.map(g => {
-      const list = players.filter(p => p.group === g.key);
-      return list.length > 0 && (
-        <section class="sq-group" aria-labelledby={`g-${g.key}`}>
-          <h2 class="sq-title" id={`g-${g.key}`}>{g.title}</h2>
-          <ul class="sq-grid">
-            {list.map(p => <li><SquadCard href={p.href} firstName={p.firstName} surname={p.surname} name={p.name} subtitle={p.position || g.label} photo={p.photoSmall} number={p.number} /></li>)}
-          </ul>
-        </section>
-      );
-    })}
-
-    {staff.length > 0 && (
-      <section class="sq-group" aria-labelledby="g-staff">
-        <h2 class="sq-title" id="g-staff">Coaching Staff</h2>
-        <ul class="sq-grid">
-          {staff.map(s => <li><SquadCard href={s.href} firstName={s.firstName} surname={s.surname} name={s.name} subtitle={s.role} photo={s.photoSmall} /></li>)}
-        </ul>
-      </section>
-    )}
-  </div>
+  <div class="page-content wrap sq" data-squad-root set:html={renderList({ players, staff, season: CURRENT_SEASON })} />
 </Layout>
-
-<style>
-  .sq-group { margin-bottom: 48px; }
-  .sq-title { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; font: 400 clamp(30px, 4vw, 40px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--white); }
-  .sq-title::after { content: ''; flex: 1; height: 3px; background: linear-gradient(90deg, var(--red), transparent); border-radius: 3px; }
-  .sq-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
-  @media (max-width: 1024px) { .sq-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  @media (max-width: 640px) { .sq-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
-</style>
