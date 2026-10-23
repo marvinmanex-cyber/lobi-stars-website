@@ -31,7 +31,7 @@ export function progressOf(r) {
   const steps = st.steps || [];
   return { id: r.id, kind: r.kind, trigger: r.trigger, startedBy: r.started_by, startedAt: r.started_at, finishedAt: r.finished_at, done: !!r.finished_at,
     step: Math.min(st.i || 0, steps.length), steps: steps.length, current: r.finished_at ? null : STEP_LABEL[steps[st.i || 0]] || '',
-    pagesDone: st.idx || 0, pagesTotal: (st.queue || []).length, score: r.score, counts: parse(r.counts), summary: parse(r.summary) };
+    pagesDone: st.idx || 0, pagesTotal: (st.queue || []).length, pages: r.pages || 0, score: r.score, counts: parse(r.counts), summary: parse(r.summary) };
 }
 
 async function activeScan(db) {

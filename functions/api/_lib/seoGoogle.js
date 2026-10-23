@@ -115,7 +115,8 @@ export async function submitSitemap(env) {
     const t = await token(env, 'https://www.googleapis.com/auth/webmasters');
     const r = await fetch(`https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrlGsc(env))}/sitemaps/${encodeURIComponent(`${SITE(env)}/sitemap.xml`)}`, { method: 'PUT', headers: { Authorization: `Bearer ${t}` }, signal: AbortSignal.timeout(15000) });
     if (r.ok) return { ok: true };
-    return { ok: false, error: r.status === 403 ? 'Google refused: give the service account "Full" permission in Search Console (Settings › Users and permissions) so it can resubmit the sitemap.' : `Google answered ${r.status}.` };
+    const sa = serviceAccount(env);
+    return { ok: false, error: r.status === 403 ? `Google refused: in Search Console › Settings › Users and permissions, give ${sa.email || 'the website’s service account'} "Full" permission (it has read-only now), then press Approve again.` : `Google answered ${r.status}.` };
   } catch (e) { return { ok: false, error: String(e.message || e).slice(0, 200) }; }
 }
 
