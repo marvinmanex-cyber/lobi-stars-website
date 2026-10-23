@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-23: Profile pages show every "Public" answer
+
+**What changed**
+- The details panel on player and coach pages now also shows **Nickname**,
+  **State of origin**, **Hometown** and (players) **Other positions**; the
+  coach's **Career** tab shows their **Playing career**. Each appears only
+  when it has been filled in.
+- So every question the portal marks **Public** now appears on the website.
+  Media notes (career highlight, role model, coaching philosophy) stay for the
+  media partner only.
+
+**Staff need to do:** nothing.
+
 ## 2026-10-23: Squad profiles: every detail on the pages checked
 
 **What changed**

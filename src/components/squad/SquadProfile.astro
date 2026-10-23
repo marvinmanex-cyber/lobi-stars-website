@@ -91,10 +91,14 @@ const heroImg = p.hero || null;
         <h2 class="pf-h2" id="det-h">Details</h2>
         <dl class="pf-details">
           {p.officialName && <div><dt>Name</dt><dd>{p.officialName}</dd></div>}
+          {p.nickname && <div><dt>Nickname</dt><dd>{p.nickname}</dd></div>}
           {p.nationality.length > 0 && <div><dt>Nationality</dt><dd class="pf-flags">{p.nationality.map(c => <Flag code={c} />)}</dd></div>}
           {isPlayer && p.nationalTeam && <div><dt>National team</dt><dd><Flag code={p.nationalTeam} /></dd></div>}
           {birthPlace && <div><dt>Place of birth</dt><dd>{birthPlace}</dd></div>}
+          {p.stateOfOrigin && <div><dt>State of origin</dt><dd>{p.stateOfOrigin}</dd></div>}
+          {p.hometown && <div><dt>Hometown</dt><dd>{p.hometown}</dd></div>}
           <div><dt>{isPlayer ? 'Position' : 'Role'}</dt><dd>{isPlayer ? p.position || p.groupLabel : p.role}</dd></div>
+          {isPlayer && p.secondaryPositions.length > 0 && <div><dt>Other positions</dt><dd>{p.secondaryPositions.join(', ')}</dd></div>}
           {p.dob ? <div><dt>Date of birth</dt><dd data-birth={p.dob}>{birthLine(p.dob)}</dd></div> : p.age != null && <div><dt>Age</dt><dd>{p.age}</dd></div>}
           {isPlayer && p.heightCm && <div><dt>Height</dt><dd>{heightText(p.heightCm)}</dd></div>}
           {isPlayer && p.preferredFoot && <div><dt>Preferred foot</dt><dd>{p.preferredFoot}</dd></div>}
@@ -132,7 +136,8 @@ const heroImg = p.hero || null;
                 ? p.previousClubs.map(c => <li><span class="pf-tl-years">{[c.startYear, c.endYear].filter(Boolean).join('–') || '–'}</span><span class="pf-tl-club">{c.club}</span>{c.country && <span class="pf-tl-country"><Flag code={c.country} size={14} /></span>}</li>)
                 : p.previousRoles.map(r => <li><span class="pf-tl-years">{r.period || '–'}</span><span class="pf-tl-club">{r.club}</span><span class="pf-tl-country">{r.position}</span></li>)}
             </ol>
-          ) : <p class="pf-note">{isPlayer ? 'No previous clubs listed yet.' : 'No previous clubs listed yet.'}</p>}
+          ) : !p.playingCareer && <p class="pf-note">No previous clubs listed yet.</p>}
+          {!isPlayer && p.playingCareer && <div class="pf-playing"><h3 class="pf-h3 pf-h3-sub">Playing career</h3><p>{p.playingCareer}</p></div>}
         </div>
 
         {isPlayer && p.internationalCareer.length > 0 && (
@@ -249,6 +254,9 @@ const heroImg = p.hero || null;
   .pf-tl-years { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; color: var(--red-text); }
   .pf-tl-club { font: 700 20px/1.2 'Barlow Condensed', sans-serif; }
   .pf-tl-country { color: var(--lt); font-size: 15px; }
+  .pf-playing { margin-top: 24px; }
+  .pf-playing p { margin: 0; font-size: 17px; line-height: 1.6; max-width: 68ch; }
+  .pf-tabs.is-tabbed .pf-h3.pf-h3-sub { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
   .pf-tablewrap { overflow-x: auto; }
   .pf-table { width: 100%; border-collapse: collapse; font-size: 16px; }
   .pf-table th, .pf-table td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--d4); }

@@ -3442,7 +3442,8 @@ budget (Settings › AI Settings, "Squad bios").
   share a name): wide header or photo, big shirt number, quick facts
   (nationality with flag, position, age), "Buy [Surname]'s shirt" (if a link
   is set), bio, interesting fact, details (official name "SURNAME, First
-  Middle", nationality, national team, place of birth, position, date of birth
+  Middle", nickname, nationality, national team, place of birth, state of
+  origin, hometown, position and other positions, date of birth
   "24 April, 2007 (age 19)" for 18+, height "1.78m (5ft 10in)", debut,
   joined), tabs: **2026/27** (appearances, starts, goals, assists, clean
   sheets for goalkeepers, minutes, cards, Man of the Match, worked out from
@@ -3450,7 +3451,8 @@ budget (Settings › AI Settings, "Squad bios").
   **International career** (hidden if empty), social links, other players,
   Share.
 - **Coach page** /squad/staff/firstname-surname/: the same, with the role
-  instead of position, no shirt number, Career and Honours tabs and "An
+  instead of position, no shirt number, Career (previous clubs and roles, and
+  their playing career) and Honours tabs and "An
   interesting fact about the coach".
 - Ages are worked out from the date of birth (Lagos time) every time the page
   opens. Each page has its own title, description (from the bio), share image

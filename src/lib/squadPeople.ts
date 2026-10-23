@@ -25,6 +25,7 @@ export type Person = {
   photo: string | null; photoSmall: string | null; hero: string | null;
   nationality: string[]; nationalTeam: string | null; birthTown: string | null; birthCountry: string | null;
   dob: string | null; age: number | null; heightCm: number | null; preferredFoot: string | null;
+  nickname: string | null; stateOfOrigin: string | null; hometown: string | null; secondaryPositions: string[]; playingCareer: string | null;
   joined: string | null; debut: string | null; licence: string | null;
   bioHeadline: string | null; bioText: string | null; shortBio: string | null; interestingFact: string | null; shirtUrl: string | null;
   socials: { instagram?: string | null; x?: string | null; tiktok?: string | null };
@@ -52,6 +53,8 @@ function playerOf(e: CollectionEntry<'players'>): Person {
     nationality: [pr.nationality || countryFromText(d.nationality), pr.nationality2].filter(Boolean) as string[], nationalTeam: pr.nationalTeam || null,
     birthTown: pr.birthTown || null, birthCountry: pr.birthCountry || null,
     dob, age: dob ? ageFrom(dob) : (pr.age ?? d.age ?? null), heightCm: pr.heightCm ?? heightToCm(d.height), preferredFoot: d.preferredFoot || null,
+    nickname: pr.nickname || d.nickname || null, stateOfOrigin: pr.stateOfOrigin || d.stateOfOrigin || null, hometown: pr.hometown || d.hometown || null,
+    secondaryPositions: (pr.secondaryPositions || []).filter((x: string) => x && x !== (pr.position || d.positionDetail)), playingCareer: null,
     joined: pr.joined || null, debut: pr.debutDate || null, licence: null,
     bioHeadline: pr.bioHeadline || null, bioText: pr.bio || null, shortBio: null, interestingFact: pr.interestingFact || null, shirtUrl: pr.shirtShopUrl || null,
     socials: pr.socials || {}, previousClubs: pr.previousClubs || [], previousRoles: [], internationalCareer: pr.internationalCareer || [], honours: pr.honours || [],
@@ -69,6 +72,7 @@ function staffOf(e: CollectionEntry<'staff'>): Person {
     photo: d.photo || null, photoSmall: pr.photoSmall || d.photo || null, hero: pr.heroPhoto || null,
     nationality: [pr.nationality, pr.nationality2].filter(Boolean) as string[], nationalTeam: null, birthTown: pr.birthTown || null, birthCountry: pr.birthCountry || null,
     dob: pr.dob || null, age: pr.dob ? ageFrom(pr.dob) : pr.age ?? null, heightCm: null, preferredFoot: null,
+    nickname: pr.nickname || null, stateOfOrigin: pr.stateOfOrigin || null, hometown: pr.hometown || null, secondaryPositions: [], playingCareer: pr.playingCareer || null,
     joined: pr.joined || null, debut: null, licence: pr.licence || null,
     // The short CMS bio only for hand-made entries (for portal staff it just repeats the licence or role).
     bioHeadline: pr.bioHeadline || null, bioText: pr.bio || null, shortBio: pr.surname ? null : d.bio || null, interestingFact: pr.interestingFact || null, shirtUrl: pr.shirtShopUrl || null,
