@@ -2,5 +2,9 @@
   "/": {
     "title": "Lobi Stars FC | Official Club Website | Pride of Benue",
     "description": "Official website of Lobi Stars FC in Makurdi, Benue State: find fixtures, results, news, tickets, membership details and the club shop."
+  },
+  "/fixtures/": {
+    "title": "Lobi Stars Fixtures 2026/27 | Lobi Stars FC",
+    "description": "Find Lobi Stars FC fixtures for the 2026/27 NNL Conference D season, with dates, kick-off times, venues, and calendar downloads."
   }
 }
