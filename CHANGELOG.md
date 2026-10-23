@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-23: Data forms and portal in club colours, sentence case
+
+**What changed**
+- The printable forms are now called **Players data form** and **Staff data
+  form**, in blue, red and white, with the club crest on the blue header (no
+  white box around it). Headings are in sentence case.
+- The Squad & staff data portal (/staff/squad-data) uses blue, red and white
+  (blue panels and header with a red stripe, red and blue buttons) and
+  sentence case everywhere; names of players and staff are shown in capital
+  letters (the name boxes type in capitals; the website keeps the normal
+  spelling).
+
+**Staff need to do:** nothing.
+
 ## 2026-10-23: Printable player and staff forms in the portal
 
 **What changed**

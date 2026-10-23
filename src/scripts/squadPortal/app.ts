@@ -116,7 +116,7 @@ export function startPortal() {
     for (const [n, label] of [['username', 'your username'], ['password', 'the password'], ['name', 'your name']]) {
       if (!val(n)) { $('signinMsg').textContent = `Please enter ${label}.`; $('signinMsg').hidden = false; (f.elements.namedItem(n) as HTMLInputElement).focus(); return; }
     }
-    btn.disabled = true; btn.textContent = 'SIGNING IN…'; $('signinMsg').hidden = true;
+    btn.disabled = true; btn.textContent = 'Signing in…'; $('signinMsg').hidden = true;
     try {
       const turnstile = (f.querySelector('[name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || '';
       const r = await fetch('/api/squad-portal/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
@@ -135,7 +135,7 @@ export function startPortal() {
       await signedIn();
     } catch (err) {
       $('signinMsg').textContent = err instanceof ApiError ? err.message : 'No connection. Please try again.'; $('signinMsg').hidden = false;
-    } finally { btn.disabled = false; btn.textContent = 'SIGN IN'; }
+    } finally { btn.disabled = false; btn.textContent = 'Sign in'; }
   });
   // Already signed in (page reloaded)?
   (async () => {

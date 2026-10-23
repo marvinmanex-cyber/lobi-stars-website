@@ -13,8 +13,8 @@ const siteKey = settings.turnstileSiteKey;
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="referrer" content="no-referrer" />
-  <meta name="theme-color" content="#B3121A" />
-  <title>Squad &amp; Staff Data Portal | Lobi Stars FC</title>
+  <meta name="theme-color" content="#1C3F7A" />
+  <title>Squad &amp; staff data portal | Lobi Stars FC</title>
   <link rel="icon" href="/images/lobi-stars-badge.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,9 +26,9 @@ const siteKey = settings.turnstileSiteKey;
     <section class="sp-signin" id="signin" hidden>
       <div class="sp-brand">
         <span class="sp-badge sp-badge-lg"><img src="/images/lobi-stars-badge.webp" alt="Lobi Stars FC badge" width="96" height="96" /></span>
-        <p class="sp-club">LOBI STARS FC</p>
-        <p class="sp-pride">PRIDE OF BENUE</p>
-        <h1 class="sp-h1">SQUAD &amp; STAFF DATA PORTAL</h1>
+        <p class="sp-club">Lobi Stars FC</p>
+        <p class="sp-pride">Pride of Benue</p>
+        <h1 class="sp-h1">Squad &amp; staff data portal</h1>
         <span class="sp-goldbar" aria-hidden="true"></span>
       </div>
       <div class="sp-signin-side">
@@ -42,16 +42,16 @@ const siteKey = settings.turnstileSiteKey;
           <div class="sp-field"><label for="siName">Your name</label><input id="siName" name="name" autocomplete="name" placeholder="Who is entering data today?" required maxlength="60" aria-describedby="siNameHint" />
             <p class="sp-hint" id="siNameHint">Recorded with every profile you add or change.</p></div>
           <div class="sp-turnstile" id="siTurnstile" hidden></div>
-          <button class="sp-btn sp-btn-red sp-btn-block" type="submit" id="siBtn">SIGN IN</button>
+          <button class="sp-btn sp-btn-red sp-btn-block" type="submit" id="siBtn">Sign in</button>
           <p class="sp-forgot-link"><button type="button" class="sp-link" id="siForgot" aria-expanded="false" aria-controls="forgotBox">Forgot the password?</button></p>
           <div class="sp-forgot" id="forgotBox" hidden>
             <p class="sp-hint">A new password will be made and sent to the club's admins, who will give it to you. Fill in <b>Your name</b> above, then:</p>
             <div class="sp-field"><label for="fgContact">Your WhatsApp number or email</label><input id="fgContact" autocomplete="tel" maxlength="80" placeholder="e.g. 0803 555 1234" /></div>
-            <button class="sp-btn sp-btn-outline sp-btn-block" type="button" id="fgBtn">ASK FOR A NEW PASSWORD</button>
+            <button class="sp-btn sp-btn-outline sp-btn-block" type="button" id="fgBtn">Ask for a new password</button>
             <p class="sp-alert sp-ok" id="fgMsg" role="status" hidden></p>
           </div>
           <p class="sp-note"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M12 1a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2h-1V6a5 5 0 0 0-5-5Zm-3 8V6a3 3 0 0 1 6 0v3H9Z"/></svg>
-            This login only opens the Squad &amp; Staff Data Portal. It has no access to any other part of the website.</p>
+            This login only opens the squad &amp; staff data portal. It has no access to any other part of the website.</p>
         </form>
       </div>
     </section>
@@ -61,7 +61,7 @@ const siteKey = settings.turnstileSiteKey;
       <header class="sp-header">
         <div class="sp-header-in">
           <span class="sp-badge"><img src="/images/lobi-stars-badge.webp" alt="" width="44" height="44" /></span>
-          <div class="sp-header-titles"><b>LOBI STARS FC</b><span>Squad &amp; Staff Data Portal</span></div>
+          <div class="sp-header-titles"><b>Lobi Stars FC</b><span>Squad &amp; staff data portal</span></div>
           <div class="sp-header-user"><span>Signed in as <b id="whoName"></b></span><button type="button" class="sp-btn sp-btn-ghost" id="signOut">Sign out</button></div>
         </div>
       </header>
@@ -87,7 +87,7 @@ const siteKey = settings.turnstileSiteKey;
 </html>
 
 <style is:global>
-  :root { --red: #B3121A; --red-d: #8E0E14; --gold: #F2B705; --ink: #16181D; --grey: #4A505C; --bg: #F3F4F6; --line: #E2E4E9; --white: #fff;
+  :root { --red: #C8102E; --red-d: #A00D24; --blue: #1C3F7A; --blue-d: #142E5A; --blue-l: #E8EEF8; --gold: #F2B705; --ink: #16181D; --grey: #4A505C; --bg: #F3F4F6; --line: #E2E4E9; --white: #fff;
     --pub: #1D4ED8; --pub-bg: #DBEAFE; --med: #92400E; --med-bg: #FEF3C7; --prv: #374151; --prv-bg: #E5E7EB; }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -95,18 +95,19 @@ const siteKey = settings.turnstileSiteKey;
   [hidden] { display: none !important; }
   :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
   a { color: var(--red); }
-  .sp-h1, .sp-h2, .sp-h3, .sp-kicker { font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; margin: 0; }
+  /* Sentence case everywhere on this page (names of players and staff are written in capitals). */
+  .sp-h1, .sp-h2, .sp-h3, .sp-kicker { font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; text-transform: none; letter-spacing: .01em; margin: 0; }
   .sp-h2 { font-size: 26px; line-height: 1.1; }
   .sp-h3 { font-size: 20px; line-height: 1.15; }
   .sp-muted { color: var(--grey); margin: 6px 0 16px; }
   .sp-card { background: var(--white); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
-  .sp-badge { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: #fff; border: 3px solid var(--gold); overflow: hidden; flex: none; }
+  .sp-badge { display: inline-grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; background: #fff; border: 3px solid #fff; box-shadow: 0 0 0 2px var(--red); overflow: hidden; flex: none; }
   .sp-badge img { width: 84%; height: 84%; object-fit: contain; }
   .sp-badge-lg { width: 112px; height: 112px; border-width: 4px; }
-  .sp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 18px; border-radius: 12px; border: 2px solid transparent; font: 700 16px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; text-decoration: none; }
+  .sp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 18px; border-radius: 12px; border: 2px solid transparent; font: 700 16px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: none; cursor: pointer; text-decoration: none; }
   .sp-btn:disabled { opacity: .6; cursor: wait; }
   .sp-btn-red { background: var(--red); color: #fff; } .sp-btn-red:hover { background: var(--red-d); }
-  .sp-btn-dark { background: var(--ink); color: #fff; }
+  .sp-btn-dark { background: var(--blue); color: #fff; } .sp-btn-dark:hover { background: var(--blue-d); }
   .sp-btn-gold { background: var(--gold); color: var(--ink); }
   .sp-btn-outline { background: transparent; border-color: currentColor; color: inherit; }
   .sp-btn-ghost { background: rgba(255,255,255,.12); color: #fff; border-color: rgba(255,255,255,.5); min-height: 44px; }
@@ -125,11 +126,11 @@ const siteKey = settings.turnstileSiteKey;
 
   /* Sign in */
   .sp-signin { min-height: 100vh; display: grid; grid-template-columns: 1fr; }
-  .sp-brand { background: var(--red); color: #fff; padding: 36px 24px; display: grid; justify-items: center; align-content: center; text-align: center; gap: 4px; }
+  .sp-brand { background: linear-gradient(160deg, var(--blue) 0%, var(--blue-d) 100%); border-bottom: 6px solid var(--red); color: #fff; padding: 36px 24px; display: grid; justify-items: center; align-content: center; text-align: center; gap: 4px; }
   .sp-club { margin: 14px 0 0; font: 700 22px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; }
-  .sp-pride { margin: 0; font: 600 13px/1 'Barlow', sans-serif; letter-spacing: .24em; color: #FFE7A0; }
+  .sp-pride { margin: 0; font: 600 14px/1 'Barlow', sans-serif; letter-spacing: .06em; color: #C9D8F2; }
   .sp-brand .sp-h1 { margin-top: 18px; font-size: 32px; line-height: 1.05; max-width: 14ch; }
-  .sp-goldbar { display: block; width: 64px; height: 5px; border-radius: 3px; background: var(--gold); margin-top: 14px; }
+  .sp-goldbar { display: block; width: 64px; height: 5px; border-radius: 3px; background: var(--red); margin-top: 14px; box-shadow: 0 0 0 2px #fff; }
   .sp-signin-side { padding: 24px 16px 40px; display: grid; place-items: start center; }
   .sp-signin-card { width: 100%; max-width: 440px; }
   .sp-alert.sp-ok { background: #E7F6EC; color: #145A2E; margin: 0; }
@@ -143,7 +144,7 @@ const siteKey = settings.turnstileSiteKey;
   }
 
   /* Signed in */
-  .sp-header { background: var(--red); color: #fff; position: sticky; top: 0; z-index: 50; }
+  .sp-header { background: var(--blue); border-bottom: 4px solid var(--red); color: #fff; position: sticky; top: 0; z-index: 50; }
   .sp-header-in { max-width: 1200px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .sp-header-titles { display: grid; line-height: 1.15; } .sp-header-titles b { font: 700 18px 'Barlow Condensed', sans-serif; letter-spacing: .06em; } .sp-header-titles span { font-size: 14px; opacity: .92; }
   .sp-header-user { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 14px; flex-wrap: wrap; }
@@ -152,21 +153,21 @@ const siteKey = settings.turnstileSiteKey;
   .sp-modal { position: fixed; inset: 0; background: rgba(22,24,29,.6); display: grid; place-items: center; padding: 16px; z-index: 200; }
   .sp-modal-card { max-width: 420px; display: grid; gap: 12px; }
   /* Home */
-  .sp-kicker { font-size: 15px; letter-spacing: .14em; }
-  .sp-gold { color: #8A6400; }
+  .sp-kicker { font-size: 15px; letter-spacing: .04em; }
+  .sp-gold { color: var(--red); }
   .sp-page-title { font-size: 34px; line-height: 1.05; margin: 4px 0 10px; }
   .sp-intro { max-width: 760px; color: var(--grey); margin: 0 0 18px; font-size: 17px; }
   .sp-how { margin: 0 0 18px; }
   .sp-steps { list-style: none; padding: 0; margin: 10px 0 0; display: grid; gap: 10px; grid-template-columns: 1fr; }
   .sp-steps li { display: grid; gap: 4px; padding: 16px; }
   .sp-steps li span:last-child { color: var(--grey); }
-  .sp-step { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--gold); color: var(--ink); font: 700 18px 'Barlow Condensed', sans-serif; }
+  .sp-step { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--blue); color: #fff; font: 700 18px 'Barlow Condensed', sans-serif; }
   .sp-adds { display: grid; gap: 12px; grid-template-columns: 1fr; margin: 0 0 16px; }
   .sp-add { display: grid; gap: 4px; text-align: left; padding: 20px; border-radius: 16px; border: 0; color: #fff; cursor: pointer; min-height: 92px; }
   .sp-add b { font: 700 24px/1.05 'Barlow Condensed', sans-serif; letter-spacing: .03em; }
   .sp-add span { font-size: 15px; opacity: .92; }
   .sp-add-red { background: var(--red); } .sp-add-red:hover { background: var(--red-d); }
-  .sp-add-dark { background: var(--ink); } .sp-add-dark:hover { background: #000; }
+  .sp-add-dark { background: var(--blue); } .sp-add-dark:hover { background: var(--blue-d); }
   .sp-chips { list-style: none; padding: 0; margin: 0 0 16px; display: flex; flex-wrap: wrap; gap: 8px; }
   .sp-chip { background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; color: var(--grey); }
   .sp-chip b { color: var(--ink); font-size: 18px; margin-right: 2px; }
@@ -180,7 +181,7 @@ const siteKey = settings.turnstileSiteKey;
   .sp-filter[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
   .sp-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .sp-table { width: 100%; min-width: 760px; border-collapse: collapse; font-size: 15px; }
-  .sp-table th { text-align: left; font: 700 13px 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--grey); padding: 8px; border-bottom: 2px solid var(--line); }
+  .sp-table th { text-align: left; font: 700 13px 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: none; color: var(--grey); padding: 8px; border-bottom: 2px solid var(--line); }
   .sp-table td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
   .sp-thumb { width: 44px; height: 55px; object-fit: cover; border-radius: 8px; background: var(--bg); display: inline-grid; place-items: center; color: var(--grey); }
   .sp-badge-st { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 600; white-space: nowrap; }
@@ -190,6 +191,8 @@ const siteKey = settings.turnstileSiteKey;
   .sp-forms { margin-top: 18px; display: grid; gap: 10px; }
   .sp-forms-btns { display: flex; gap: 10px; flex-wrap: wrap; }
   .sp-forms-btns .sp-btn { flex: 1 1 220px; }
+  /* Names of players and staff in capitals (the saved answer keeps its normal spelling for the website). */
+  .sp-field[data-field="surname"] input, .sp-field[data-field="firstName"] input, .sp-field[data-field="middleName"] input, .sp-pname { text-transform: uppercase; }
   .sp-namecheck { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: #FEF3C7; color: #78350F; font-size: 12px; font-weight: 700; }
   .sp-actions { white-space: nowrap; }
   .sp-link { background: none; border: 0; color: var(--red); font: 600 15px 'Barlow', sans-serif; text-decoration: underline; cursor: pointer; min-height: 44px; padding: 0 6px; }
@@ -235,7 +238,7 @@ const siteKey = settings.turnstileSiteKey;
   .sp-opt { color: var(--grey); font-weight: 400; }
   .sp-count { margin: 0; text-align: right; font-size: 13px; color: var(--grey); }
   .sp-types { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .sp-type { min-height: 64px; border-radius: 14px; border: 2px solid #C9CDD4; background: #fff; font: 700 20px 'Barlow Condensed', sans-serif; letter-spacing: .03em; text-transform: uppercase; cursor: pointer; color: var(--ink); }
+  .sp-type { min-height: 64px; border-radius: 14px; border: 2px solid #C9CDD4; background: #fff; font: 700 20px 'Barlow Condensed', sans-serif; letter-spacing: .03em; text-transform: none; cursor: pointer; color: var(--ink); }
   .sp-type[aria-checked="true"] { border-color: var(--red); background: #FDECEC; color: var(--red); box-shadow: inset 0 0 0 1px var(--red); }
   .sp-checks { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
   .sp-check { display: flex; gap: 10px; align-items: center; min-height: 44px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; cursor: pointer; }
@@ -267,7 +270,7 @@ const siteKey = settings.turnstileSiteKey;
   .sp-guides { margin: 0; padding-left: 20px; color: var(--grey); }
   .sp-minor { margin-top: 12px; padding: 14px; border-radius: 12px; border: 2px solid var(--gold); background: #FFFBEB; }
   .sp-minor .sp-h3 { margin-bottom: 10px; font-size: 18px; }
-  .sp-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; background: var(--ink); color: #fff; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .sp-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; background: var(--blue); border-top: 4px solid var(--red); color: #fff; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
   .sp-bar-status { margin-right: auto; font-size: 14px; color: #D1D5DB; }
   .sp-btn-outline-light { background: transparent; border-color: rgba(255,255,255,.7); color: #fff; }
   .sp-done { text-align: center; display: grid; gap: 10px; justify-items: center; padding: 32px 20px; }

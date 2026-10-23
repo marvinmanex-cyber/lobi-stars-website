@@ -3338,8 +3338,8 @@ check appears. Portal sessions end after 60 minutes without activity (with a
 
 ### Printable forms (paper first, then the portal)
 
-On the portal home page, **Printable forms** has two downloads: **Player form
-(PDF)** and **Coach & staff form (PDF)**. Print one, give it to the player or
+On the portal home page, **Printable forms** has two downloads: **Players
+data form (PDF)** and **Staff data form (PDF)**. Print one, give it to the player or
 staff member to fill in by hand, and collect it with the documents it lists
 (passport or ID copy, a photo, evidence of any international career, coaching
 licences, and for under-18s the parent or guardian's signature). Then type the

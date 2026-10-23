@@ -10,13 +10,34 @@ import { PdfDoc, wrap, textWidth } from '../../../functions/api/_lib/pdfLite.js'
 
 type Kind = 'player' | 'staff';
 const W = 595.28, H = 841.89, M = 40, BOTTOM = H - 46, LABEL_W = 200;
-const RED = '#B3121A', INK = '#15181D', GREY = '#5B6472', LINE = '#9AA1AC';
+// Club colours: blue, red and white.
+const BLUE = '#1C3F7A', RED = '#C8102E', INK = '#15181D', GREY = '#5B6472', LINE = '#9AA1AC';
 const plain = (s: unknown) => String(s ?? '').replace(/›/g, '>').replace(/[‘’]/g, "'").replace(/[“”]/g, '"');
+
+/**
+ * The club crest (transparent PNG) drawn on the header colour and made a JPEG
+ * (the PDF holds JPEG images only), so it sits on the band with no white square.
+ * Only in a browser; elsewhere the form has no crest.
+ */
+async function crestOn(bg: string): Promise<Uint8Array | null> {
+  if (typeof document === 'undefined') return null;
+  try {
+    const img = new Image();
+    img.src = '/images/lobi-stars-fc-transparent.png';
+    await img.decode();
+    const c = document.createElement('canvas'); c.width = c.height = 320;
+    const ctx = c.getContext('2d')!;
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, 320, 320);
+    ctx.drawImage(img, 0, 0, 320, 320);
+    const blob: Blob | null = await new Promise(res => c.toBlob(res, 'image/jpeg', 0.92));
+    return blob ? new Uint8Array(await blob.arrayBuffer()) : null;
+  } catch { return null; }
+}
 
 export async function blankFormPdf(kind: Kind, season: string): Promise<Uint8Array> {
   const doc = new PdfDoc();
   let page = 1, y = M;
-  const title = kind === 'player' ? 'Player profile form' : 'Coach & staff profile form';
+  const title = kind === 'player' ? 'Players data form' : 'Staff data form';
   const footer = () => {
     doc.line(M, H - 34, W - M, H - 34, { color: '#E2E4E9' });
     doc.text(`Lobi Stars FC · ${title} · ${season} season`, M, H - 20, { size: 8, color: GREY });
@@ -33,25 +54,28 @@ export async function blankFormPdf(kind: Kind, season: string): Promise<Uint8Arr
   const writeLine = (x: number, w: number) => doc.line(x, y + 16, x + w, y + 16, { color: LINE, width: 0.7 });
   const heading = (t: string) => {
     need(40); y += 6;
-    doc.rect(M, y, W - 2 * M, 20, { fill: RED });
-    doc.text(plain(t).toUpperCase(), M + 8, y + 14, { size: 10.5, bold: true, color: '#FFFFFF' });
+    doc.rect(M, y, W - 2 * M, 20, { fill: BLUE });
+    doc.rect(M, y, 5, 20, { fill: RED });
+    doc.text(plain(t), M + 12, y + 14, { size: 10.5, bold: true, color: '#FFFFFF' });
     y += 28;
   };
 
-  // ── Header ──
-  const badge = await fetch('/images/lobi-stars-badge-print.jpg').then(r => (r.ok ? r.arrayBuffer() : null)).catch(() => null);
-  doc.rect(0, 0, W, 92, { fill: RED });
-  if (badge && doc.setJpeg(new Uint8Array(badge))) doc.drawImage(M, 14, 64, 64);
-  doc.text('LOBI STARS FC', M + 78, 40, { size: 20, bold: true, color: '#FFFFFF' });
-  doc.text(`${title.toUpperCase()} · ${season}`, M + 78, 62, { size: 12, bold: true, color: '#FFE7A0' });
-  doc.text('Squad & Staff Data Portal', M + 78, 78, { size: 9, color: '#FFFFFF' });
-  y = 108;
+  // ── Header: blue band, red and white stripes, the crest with no box around it ──
+  doc.rect(0, 0, W, 92, { fill: BLUE });
+  doc.rect(0, 92, W, 6, { fill: RED });
+  doc.rect(0, 98, W, 2, { fill: '#FFFFFF' });
+  const crest = await crestOn(BLUE);
+  if (crest && doc.setJpeg(crest)) doc.drawImage(M - 4, 10, 72, 72);
+  doc.text('Lobi Stars FC', M + 80, 36, { size: 20, bold: true, color: '#FFFFFF' });
+  doc.text(title, M + 80, 58, { size: 14, bold: true, color: '#FFFFFF' });
+  doc.text(`${season} season`, M + 80, 76, { size: 9.5, color: '#C9D8F2' });
+  y = 114;
   para(`Please write clearly in CAPITAL LETTERS and answer every question marked *. Return this form to the club with the documents listed below. The club types your answers into its records and checks them.`, { size: 9.5 });
 
   // Office use.
   need(46);
   doc.rect(M, y, W - 2 * M, 40, { stroke: '#D0D5DD' });
-  doc.text('FOR CLUB USE', M + 8, y + 12, { size: 8, bold: true, color: GREY });
+  doc.text('For club use', M + 8, y + 12, { size: 8, bold: true, color: BLUE });
   const half = (W - 2 * M - 16) / 2;
   doc.text('Received by / date:', M + 8, y + 30, { size: 8.5, color: GREY }); doc.line(M + 92, y + 31, M + half, y + 31, { color: LINE });
   doc.text('Entered online by / date:', M + 16 + half, y + 30, { size: 8.5, color: GREY }); doc.line(M + 120 + half, y + 31, W - M - 8, y + 31, { color: LINE });
@@ -134,7 +158,7 @@ export async function blankFormPdf(kind: Kind, season: string): Promise<Uint8Arr
       const cols = f.columns || [], rows = f.key === 'honours' ? 3 : 4;
       const cw = (W - 2 * M) / cols.length;
       need(18 + rows * 20);
-      doc.rect(M, y, W - 2 * M, 16, { fill: '#16181D' });
+      doc.rect(M, y, W - 2 * M, 16, { fill: BLUE });
       cols.forEach((c, i) => doc.text(plain(c.type === 'select' ? `${c.label} (${(c.options || []).join(' / ')})` : c.label), M + 4 + i * cw, y + 11, { size: 7.5, bold: true, color: '#FFFFFF' }));
       y += 16;
       for (let r = 0; r < rows; r++) {

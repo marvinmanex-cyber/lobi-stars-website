@@ -154,11 +154,11 @@ function applyOthers(others: { key: string; value: any; by: string }[]) {
 }
 function checks(r: any) {
   const warn = document.getElementById('shirtWarn');
-  if (warn) { warn.hidden = !r.shirtTaken; if (r.shirtTaken) warn.textContent = `Number ${P?.data.shirtNumber} is already assigned to ${r.shirtTaken.display_name || 'another player'} this season. You can keep the draft, but it cannot be submitted with this number.`; }
+  if (warn) { warn.hidden = !r.shirtTaken; if (r.shirtTaken) warn.textContent = `Number ${P?.data.shirtNumber} is already assigned to ${String(r.shirtTaken.display_name || 'another player').toUpperCase()} this season. You can keep the draft, but it cannot be submitted with this number.`; }
   const dup = document.getElementById('dupWarn');
   if (dup) {
     dup.hidden = !r.samePerson;
-    if (r.samePerson) dup.innerHTML = `<b>A profile for this person may already exist:</b> ${esc(r.samePerson.display_name || 'unnamed')} (${esc(r.samePerson.season)}, ${esc(STATUSES[r.samePerson.status] || r.samePerson.status)}). <button type="button" class="sp-link" data-goto="${esc(r.samePerson.id)}">Open it</button>`;
+    if (r.samePerson) dup.innerHTML = `<b>A profile for this person may already exist:</b> ${esc(String(r.samePerson.display_name || 'unnamed').toUpperCase())} (${esc(r.samePerson.season)}, ${esc(STATUSES[r.samePerson.status] || r.samePerson.status)}). <button type="button" class="sp-link" data-goto="${esc(r.samePerson.id)}">Open it</button>`;
   }
 }
 
@@ -242,7 +242,7 @@ function render(extra: any) {
     <div class="sp-form-head">
       <button type="button" class="sp-back" id="back" aria-label="Back to profiles">←</button>
       <span class="sp-badge sp-badge-sm"><img src="/images/lobi-stars-badge.webp" alt="" width="34" height="34" /></span>
-      <h1 class="sp-h2" id="formTitle">${esc(p.name ? p.name.toUpperCase() : 'NEW PROFILE')}</h1>
+      <h1 class="sp-h2" id="formTitle">${esc(p.name ? p.name.toUpperCase() : 'New profile')}</h1>
       <span class="sp-badge-st ${BADGE[p.status]}">${esc(STATUSES[p.status])}</span>
       <span class="sp-pill saved" id="savePill" role="status" aria-live="polite"><span class="dot"></span>All changes saved</span>
     </div>
@@ -256,23 +256,23 @@ function render(extra: any) {
       </nav>
       <form class="sp-sections" id="pform" novalidate ${view ? 'inert' : ''}>
         <section class="sp-card sp-sec" id="sec_type" aria-labelledby="h_type">
-          <h2 class="sp-h3" id="h_type">PROFILE TYPE</h2>
+          <h2 class="sp-h3" id="h_type">Profile type</h2>
           <p class="sp-muted">Select the type of profile you are creating. The form will show only the relevant questions.</p>
           <div class="sp-types" role="radiogroup" aria-label="Profile type">
             <button type="button" role="radio" class="sp-type" data-type="player" aria-checked="${p.type === 'player'}">Player</button>
-            <button type="button" role="radio" class="sp-type" data-type="staff" aria-checked="${p.type === 'staff'}">Coach / Staff Member</button>
+            <button type="button" role="radio" class="sp-type" data-type="staff" aria-checked="${p.type === 'staff'}">Coach / staff member</button>
           </div>
         </section>
-        <section class="sp-card sp-sec" id="sec_personal" aria-labelledby="h_personal"><h2 class="sp-h3" id="h_personal">1 · PERSONAL DETAILS</h2>${sec('personal')}</section>
-        <section class="sp-card sp-sec" id="sec_playing" data-for="player" aria-labelledby="h_playing"><h2 class="sp-h3" id="h_playing">2 · PLAYING PROFILE</h2>${sec('playing')}</section>
-        <section class="sp-card sp-sec" id="sec_role" data-for="staff" aria-labelledby="h_role"><h2 class="sp-h3" id="h_role">2 · ROLE &amp; QUALIFICATIONS</h2>${sec('role')}</section>
-        <section class="sp-card sp-sec" id="sec_career" aria-labelledby="h_career"><h2 class="sp-h3" id="h_career">3 · CAREER HISTORY &amp; HONOURS ${chip('public')}</h2>${sec('career')}</section>
-        <section class="sp-card sp-sec" id="sec_notes" aria-labelledby="h_notes"><h2 class="sp-h3" id="h_notes">4 · PROFILE NOTES ${chip('media')}</h2>
+        <section class="sp-card sp-sec" id="sec_personal" aria-labelledby="h_personal"><h2 class="sp-h3" id="h_personal">1 · Personal details</h2>${sec('personal')}</section>
+        <section class="sp-card sp-sec" id="sec_playing" data-for="player" aria-labelledby="h_playing"><h2 class="sp-h3" id="h_playing">2 · Playing profile</h2>${sec('playing')}</section>
+        <section class="sp-card sp-sec" id="sec_role" data-for="staff" aria-labelledby="h_role"><h2 class="sp-h3" id="h_role">2 · Role &amp; qualifications</h2>${sec('role')}</section>
+        <section class="sp-card sp-sec" id="sec_career" aria-labelledby="h_career"><h2 class="sp-h3" id="h_career">3 · Career history &amp; honours ${chip('public')}</h2>${sec('career')}</section>
+        <section class="sp-card sp-sec" id="sec_notes" aria-labelledby="h_notes"><h2 class="sp-h3" id="h_notes">4 · Profile notes ${chip('media')}</h2>
           <p class="sp-muted">Short, factual and positive notes for the club's media team. One or two sentences each.</p>${sec('notes')}</section>
-        <section class="sp-card sp-sec" id="sec_photos" aria-labelledby="h_photos"><h2 class="sp-h3" id="h_photos">5 · PHOTOS</h2>
+        <section class="sp-card sp-sec" id="sec_photos" aria-labelledby="h_photos"><h2 class="sp-h3" id="h_photos">5 · Photos</h2>
           ${photoHtml('profile', p.type)}${photoHtml('action', p.type)}
           <ul class="sp-guides"><li>Shoulders up, facing the camera, plain light background</li><li id="kitGuide"></li><li>Good daylight. No filters, caps or sunglasses</li></ul></section>
-        <section class="sp-card sp-sec" id="sec_confirm" aria-labelledby="h_confirm"><h2 class="sp-h3" id="h_confirm">6 · CONFIRMATION</h2>
+        <section class="sp-card sp-sec" id="sec_confirm" aria-labelledby="h_confirm"><h2 class="sp-h3" id="h_confirm">6 · Confirmation</h2>
           ${fields.filter(f => f.section === 'confirm' && !f.minorOnly).map(f => fieldHtml(f, p.type)).join('')}
           <div class="sp-minor" id="minorBox" hidden><h3 class="sp-h3">Parent or guardian consent (players under 18 only)</h3>${fields.filter(f => f.minorOnly).map(f => fieldHtml(f, p.type)).join('')}</div>
         </section>
@@ -281,7 +281,7 @@ function render(extra: any) {
     <div class="sp-bar" role="region" aria-label="Save">
       <span class="sp-bar-status"><span id="barStatus">All changes saved</span> · Every answer saves automatically.</span>
       ${view ? '<button type="button" class="sp-btn sp-btn-outline-light" id="barBack">Back to profiles</button>'
-    : '<button type="button" class="sp-btn sp-btn-outline-light" id="draftBtn">Save as draft</button><button type="button" class="sp-btn sp-btn-gold" id="submitBtn">SUBMIT PROFILE</button>'}
+    : '<button type="button" class="sp-btn sp-btn-outline-light" id="draftBtn">Save as draft</button><button type="button" class="sp-btn sp-btn-red" id="submitBtn">Submit profile</button>'}
     </div>`;
   for (const f of FORM_FIELDS) writeField(f.key, p.data[f.key]);
   for (const k of ['profile', 'action']) renderPhoto(k);
@@ -306,7 +306,7 @@ function visibility() {
   const hon = document.querySelector('[data-field="honours"] .sp-label'); if (hon) hon.textContent = labelOf(FIELD.honours, type, P.data);
   const fact = document.querySelector('label[for="f_interestingFact"]'); if (fact) fact.textContent = labelOf(FIELD.interestingFact, type, P.data);
   const kit = document.getElementById('kitGuide'); if (kit) kit.textContent = type === 'staff' ? 'Wearing club staff wear' : 'Wearing the official Lobi Stars kit';
-  const t = document.getElementById('formTitle'); if (t) t.textContent = profileName(P.data) ? profileName(P.data).toUpperCase() : 'NEW PROFILE';
+  const t = document.getElementById('formTitle'); if (t) t.textContent = profileName(P.data) ? profileName(P.data).toUpperCase() : 'New profile';
   document.querySelectorAll('[data-filename]').forEach(el => updateFileName(el as HTMLElement));
 }
 function fileBaseLocal() {
@@ -432,7 +432,7 @@ async function submit() {
   const missing = missingForSubmit(P!.type, P!.data);
   if (!P!.photos?.profile) missing.push({ key: 'photo_profile', label: 'Profile photo', section: 'photos' });
   if (missing.length) return highlight(missing);
-  const btn = $<HTMLButtonElement>('submitBtn'); btn.disabled = true; btn.textContent = 'SUBMITTING…';
+  const btn = $<HTMLButtonElement>('submitBtn'); btn.disabled = true; btn.textContent = 'Submitting…';
   try {
     await pump();
     if ((await queueCount()) + (await uploadsCount())) throw new Error('Some answers are still waiting to be sent. Check the connection, then submit again.');
@@ -441,7 +441,7 @@ async function submit() {
   } catch (e: any) {
     if (e instanceof ApiError && e.data?.missing) highlight(e.data.missing, e.message);
     else toast(e.message, 8000);
-  } finally { if (document.getElementById('submitBtn')) { btn.disabled = false; btn.textContent = 'SUBMIT PROFILE'; } }
+  } finally { if (document.getElementById('submitBtn')) { btn.disabled = false; btn.textContent = 'Submit profile'; } }
 }
 function highlight(missing: { key: string; label: string; section: string }[], message?: string) {
   for (const m of missing) {
@@ -461,7 +461,7 @@ function done() {
   P = null;
   $('main').innerHTML = `<section class="sp-card sp-done" aria-labelledby="doneTitle">
     <p class="sp-done-icon" aria-hidden="true">✓</p><h1 class="sp-h2" id="doneTitle">Profile submitted for club review</h1>
-    <p class="sp-muted">${esc(name)} has been sent to the club for review. You will see the status change in Saved profiles.</p>
+    <p class="sp-muted"><b class="sp-pname">${esc(name)}</b> has been sent to the club for review. You will see the status change in Saved profiles.</p>
     <div class="sp-done-btns"><button type="button" class="sp-btn sp-btn-red" data-new="player">Add another player</button>
       <button type="button" class="sp-btn sp-btn-dark" data-new="staff">Add a coach / staff member</button>
       <button type="button" class="sp-btn sp-btn-outline" id="doneBack">Back to profiles</button></div></section>`;

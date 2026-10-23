@@ -26,7 +26,7 @@ test('the portal page: private, never indexed, strict headers; other /staff/ add
   assert.equal(r.status, 200);
   const html = await r.text();
   assert.match(html, /<meta name="robots" content="noindex, nofollow"/);
-  assert.match(html, /SQUAD &amp; STAFF DATA PORTAL/);
+  assert.match(html, /Squad &amp; staff data portal/);
   assert.equal(r.headers.get('x-frame-options'), 'DENY');
   assert.match(r.headers.get('content-security-policy') || '', /frame-ancestors 'none'/);
   assert.match(r.headers.get('permissions-policy') || '', /camera=\(self\), microphone=\(\)/, 'camera for photos; no microphone (name recordings removed)');

@@ -14,8 +14,8 @@ export async function showHome() {
   view.season = view.season || state.season;
   document.title = 'Squad & Staff Data Portal | Lobi Stars FC';
   $('main').innerHTML = `
-    <p class="sp-kicker sp-gold">${esc(state.season)} SEASON</p>
-    <h1 class="sp-h1 sp-page-title">SQUAD &amp; STAFF PROFILES</h1>
+    <p class="sp-kicker sp-gold">${esc(state.season)} season</p>
+    <h1 class="sp-h1 sp-page-title">Squad &amp; staff profiles</h1>
     <p class="sp-intro">Capture each player's and staff member's details and photo in one sitting. Every answer saves automatically, so nothing is lost if the network or power goes off.</p>
     <section class="sp-how" aria-labelledby="howTitle"><h2 class="sp-h3" id="howTitle">How it works</h2>
       <ol class="sp-steps">
@@ -24,20 +24,20 @@ export async function showHome() {
         <li class="sp-card"><span class="sp-step">3</span><b>Save as draft or submit</b><span>Drafts can be finished later. Submitted profiles go for club review.</span></li>
       </ol></section>
     <div class="sp-adds">
-      <button type="button" class="sp-add sp-add-red" data-add="player"><b>ADD A PLAYER</b><span>Shirt number, position, career, achievements, photo</span></button>
-      <button type="button" class="sp-add sp-add-dark" data-add="staff"><b>ADD A COACH / STAFF MEMBER</b><span>Role, experience, qualifications, achievements, photo</span></button>
+      <button type="button" class="sp-add sp-add-red" data-add="player"><b>Add a player</b><span>Shirt number, position, career, achievements, photo</span></button>
+      <button type="button" class="sp-add sp-add-dark" data-add="staff"><b>Add a coach / staff member</b><span>Role, experience, qualifications, achievements, photo</span></button>
     </div>
     <section class="sp-card sp-forms" aria-labelledby="formsTitle">
-      <h2 class="sp-h3" id="formsTitle">PRINTABLE FORMS</h2>
+      <h2 class="sp-h3" id="formsTitle">Printable forms</h2>
       <p class="sp-muted">Print a form, give it to the player or staff member to fill in by hand, and collect it with the documents it lists. Then type the answers in here. The forms always have the same questions as this portal.</p>
       <div class="sp-forms-btns">
-        <button type="button" class="sp-btn sp-btn-red" data-blank="player">Player form (PDF)</button>
-        <button type="button" class="sp-btn sp-btn-dark" data-blank="staff">Coach &amp; staff form (PDF)</button>
+        <button type="button" class="sp-btn sp-btn-red" data-blank="player">Players data form (PDF)</button>
+        <button type="button" class="sp-btn sp-btn-dark" data-blank="staff">Staff data form (PDF)</button>
       </div>
     </section>
     <ul class="sp-chips" id="chips" aria-label="Summary"></ul>
     <section class="sp-card sp-saved" aria-labelledby="savedTitle">
-      <div class="sp-saved-head"><h2 class="sp-h3" id="savedTitle">SAVED PROFILES</h2>
+      <div class="sp-saved-head"><h2 class="sp-h3" id="savedTitle">Saved profiles</h2>
         <label class="sp-season">Season <select id="seasonSel"></select></label></div>
       <div class="sp-field sp-search"><label for="q">Search</label><input id="q" type="search" placeholder="Name or shirt number" value="${esc(view.q)}" /></div>
       <div class="sp-filters" role="group" aria-label="Show">${FILTERS.map(([k, l]) => `<button type="button" class="sp-filter" data-filter="${k}" aria-pressed="${k === view.filter}">${l}</button>`).join('')}</div>
@@ -59,7 +59,7 @@ export async function showHome() {
     try {
       const bytes = await blankFormPdf(kind, state.season);
       const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: 'application/pdf' })), a = document.createElement('a');
-      a.href = url; a.download = `lobi-stars-${kind === 'player' ? 'player' : 'coach-and-staff'}-profile-form-${String(state.season).replace('/', '-')}.pdf`;
+      a.href = url; a.download = `lobi-stars-${kind === 'player' ? 'players' : 'staff'}-data-form-${String(state.season).replace('/', '-')}.pdf`;
       document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch (e: any) { toast(e.message || 'The form could not be made.'); }
     finally { b.disabled = false; b.textContent = label; }
@@ -94,7 +94,7 @@ function row(p: any) {
     : `<button type="button" class="sp-link" data-open="${p.id}">View</button>`;
   return `<tr>
     <td>${p.thumb ? `<img class="sp-thumb" src="${esc(p.thumb)}" alt="" width="44" height="55" loading="lazy" />` : '<span class="sp-thumb sp-thumb-empty" aria-hidden="true">?</span>'}</td>
-    <td><b>${esc(p.name || 'Unnamed draft')}</b>${p.nameStatus === 'check' ? ' <span class="sp-namecheck">Please check name order</span>' : ''}${p.reviewNote ? `<p class="sp-review-note">Reviewer: ${esc(p.reviewNote)}</p>` : ''}</td>
+    <td><b class="sp-pname">${esc(p.name || 'Unnamed draft')}</b>${p.nameStatus === 'check' ? ' <span class="sp-namecheck">Please check name order</span>' : ''}${p.reviewNote ? `<p class="sp-review-note">Reviewer: ${esc(p.reviewNote)}</p>` : ''}</td>
     <td>${p.type === 'player' ? 'Player' : 'Coach / staff'}</td><td>${what}</td>
     <td><span class="sp-badge-st ${BADGE[p.status]}">${esc(p.statusLabel)}</span></td>
     <td>${esc(lagos(p.updatedAt))}<br /><small>by ${esc(p.updatedBy || '')}</small></td>
