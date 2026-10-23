@@ -1,0 +1,145 @@
+// SEO Scanner › "Fix it myself": plain-English steps for every issue type, with
+// the admin page to use and Google's own help page. For code-level issues, a
+// ready-to-paste instruction for VS Code (Claude Code) with the exact page,
+// the likely file and what "done" looks like. Written once here (no AI cost).
+import { info } from './seoChecks.js';
+
+const G = {
+  titles: 'https://developers.google.com/search/docs/appearance/title-link',
+  snippets: 'https://developers.google.com/search/docs/appearance/snippet',
+  images: 'https://developers.google.com/search/docs/appearance/google-images',
+  canonical: 'https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls',
+  noindex: 'https://developers.google.com/search/docs/crawling-indexing/block-indexing',
+  robots: 'https://developers.google.com/search/docs/crawling-indexing/robots/intro',
+  sitemaps: 'https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview',
+  structured: 'https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data',
+  richTest: 'https://search.google.com/test/rich-results',
+  redirects: 'https://developers.google.com/search/docs/crawling-indexing/301-redirects',
+  links: 'https://developers.google.com/search/docs/crawling-indexing/links-crawlable',
+  mobile: 'https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing',
+  cwv: 'https://web.dev/articles/vitals',
+  psi: 'https://pagespeed.web.dev/',
+  helpful: 'https://developers.google.com/search/docs/fundamentals/creating-helpful-content',
+  essentials: 'https://developers.google.com/search/docs/essentials',
+  inspect: 'https://support.google.com/webmasters/answer/9012289',
+  indexing: 'https://support.google.com/webmasters/answer/7440203',
+  https: 'https://web.dev/articles/what-is-mixed-content',
+  og: 'https://ogp.me/',
+  gbp: 'https://support.google.com/business/answer/3038177',
+  gsc: 'https://search.google.com/search-console',
+  headings: 'https://developers.google.com/search/docs/appearance/title-link#page-titles',
+};
+
+// steps: what to do; admin: where on our admin; help: Google's page; who: who usually does it.
+const GUIDES = {
+  title_missing: { who: 'Website & Data Officer', admin: ['/admin/seo/', 'SEO Scanner (AI Fix)'], help: G.titles, steps: ['Press "AI Fix" to get a suggested title, or write one yourself: 30–60 characters, what the page is about first, then "| Lobi Stars FC".', 'For a news story, change the headline in Admin › News; the title follows it.', 'Press "Check again".'] },
+  title_duplicate: { who: 'Website & Data Officer', admin: ['/admin/seo/', 'SEO Scanner (AI Fix)'], help: G.titles, steps: ['Give each page its own title that says what is different about it (the match, the player, the date).', 'Use "AI Fix" for a suggestion you can edit before it is saved.', 'Press "Check again".'] },
+  title_length: { who: 'Website & Data Officer', admin: ['/admin/seo/', 'SEO Scanner (AI Fix)'], help: G.titles, steps: ['Aim for 30–60 characters: Google cuts longer titles with "…".', 'Put the most important words first (e.g. "Lobi Stars v Kano Pillars: match report").', 'Press "Check again".'] },
+  desc_missing: { who: 'Website & Data Officer', admin: ['/admin/seo/', 'SEO Scanner (AI Fix)'], help: G.snippets, steps: ['Write one or two sentences (70–160 characters) that tell a fan what they get on the page.', 'For a news story, fill in the "Summary" field in Admin › News.', 'Press "Check again".'] },
+  desc_duplicate: { who: 'Website & Data Officer', admin: ['/admin/seo/', 'SEO Scanner (AI Fix)'], help: G.snippets, steps: ['Make each description specific to its page.', 'Press "Check again".'] },
+  desc_length: { who: 'Website & Data Officer', admin: ['/admin/seo/', 'SEO Scanner (AI Fix)'], help: G.snippets, steps: ['Aim for 70–160 characters.', 'Press "Check again".'] },
+  img_alt: { who: 'Media Officer', admin: ['/admin/news/', 'News'], help: G.images, steps: ['Describe what is in the photo in a few words, e.g. "Lobi Stars captain lifts the trophy at McCarthy Stadium".', 'In a news story, add the description in the picture field or as ![description](picture) in the text.', 'Decorative pictures (patterns, icons) can have an empty description.', 'Or press "AI Fix": Claude looks at each photo and suggests a description for you to approve.'] },
+  broken_link: { who: 'Website & Data Officer', admin: ['/admin/news/', 'News'], help: G.redirects, steps: ['Open each page listed and find the link to the missing page.', 'Change the link to the right page, or remove it.', 'If the page moved, press "AI Fix" to send old visitors (and Google) to the new address with a redirect.', 'Press "Check again".'] },
+  broken_external: { who: 'Media Officer', admin: ['/admin/news/', 'News'], help: G.links, steps: ['Open the page and find the link to the other website.', 'Replace it with the website’s new address, or remove the link.', 'Press "Check again".'] },
+  http_error: { who: 'Developer', admin: ['/admin/health/', 'Website Health'], help: G.redirects, steps: ['Open the page yourself to see the error.', 'If the page was removed on purpose, press "AI Fix" to redirect it to the closest page.', 'If it should work, send the details to the developer ("Send to developer").'] },
+  redirect_chain: { who: 'Developer', help: G.redirects, steps: ['Send the instruction to the developer: each old address should go straight to the final page in one step.'] },
+  redirect_loop: { who: 'Developer', help: G.redirects, steps: ['This needs the developer: send the instruction ("Send to developer").'] },
+  h1_missing: { who: 'Developer', help: G.headings, steps: ['Each page needs one main heading that says what it is about.', 'Send the instruction to the developer.'] },
+  h1_multiple: { who: 'Developer', help: G.headings, steps: ['Keep one main heading (H1); the others become sub-headings (H2).', 'In a news story, use "##" for sub-headings, never "#".'] },
+  heading_order: { who: 'Media Officer', help: G.headings, steps: ['In news stories use "##" for sections and "###" inside them, without skipping a level.'] },
+  img_large: { who: 'Website & Data Officer', help: G.cwv, steps: ['Before uploading, resize photos to at most 1600 pixels wide and save as JPEG at about 80% quality (or use squoosh.app).', 'Pictures in the website’s own folder are shrunk by the developer command in the instruction below.'] },
+  img_format: { who: 'Developer', help: G.cwv, steps: ['The developer runs the picture optimiser once (instruction below); every photo then gets a smaller WebP copy.'] },
+  img_size_attr: { who: 'Developer', help: G.cwv, steps: ['Send the instruction to the developer.'] },
+  canonical_missing: { who: 'Developer', help: G.canonical, steps: ['Send the instruction to the developer.'] },
+  canonical_wrong: { who: 'Developer', help: G.canonical, steps: ['Send the instruction to the developer.'] },
+  noindex_public: { who: 'Developer', help: G.noindex, steps: ['This page tells Google to stay away. If that is a mistake, send the instruction to the developer straight away.'] },
+  private_indexable: { who: 'Developer', help: G.noindex, steps: ['Urgent: a private page could be listed by Google. Send the instruction to the developer now.', 'Then in Google Search Console › Removals, ask Google to hide the address while it is fixed.'] },
+  schema_missing: { who: 'Website & Data Officer', admin: ['/admin/seo/', 'SEO Scanner (AI Fix)'], help: G.structured, steps: ['Press "AI Fix" to add the structured data our pages support (club, article, player).', 'Match listings need code: send the instruction to the developer.', `Test the page in Google's Rich Results Test: ${G.richTest}`] },
+  schema_invalid: { who: 'Developer', help: G.richTest, steps: [`Paste the page address into the Rich Results Test (${G.richTest}) to see the error.`, 'Send the instruction to the developer.'] },
+  sitemap_missing_page: { who: 'Website & Data Officer', admin: ['/admin/seo/', 'SEO Scanner (AI Fix)'], help: G.sitemaps, steps: ['Press "AI Fix" to rebuild the sitemap and send it to Google again.', 'If the page is still missing, it is probably marked "noindex" or made on request: send the instruction to the developer.'] },
+  sitemap_bad_entry: { who: 'Website & Data Officer', admin: ['/admin/seo/', 'SEO Scanner (AI Fix)'], help: G.sitemaps, steps: ['Press "AI Fix" to rebuild the sitemap.', 'If a page in it is broken, fix or redirect the page first.'] },
+  sitemap_errors: { who: 'Website & Data Officer', help: G.sitemaps, steps: [`Open Google Search Console (${G.gsc}) › Sitemaps and click sitemap.xml to read the errors.`, 'Press "AI Fix" to rebuild and resubmit it.'] },
+  sitemap_unread: { who: 'Website & Data Officer', help: G.sitemaps, steps: ['Press "AI Fix" to resubmit sitemap.xml to Google.', `Or in Search Console (${G.gsc}) › Sitemaps, type sitemap.xml and press Submit.`] },
+  robots_blocking: { who: 'Developer', help: G.robots, steps: ['Urgent: Google cannot read the website. Press "AI Fix" to see the corrected robots.txt and approve it, or send the instruction to the developer.'] },
+  robots_problem: { who: 'Website & Data Officer', help: G.robots, steps: ['Press "AI Fix" to see the suggested robots.txt next to the current one before anything changes.'] },
+  https_problem: { who: 'Developer', help: G.https, steps: ['Change http:// to https:// for each file listed (pictures, videos, embeds).', 'In a news story, re-insert the picture or embed with its https:// address.'] },
+  viewport_missing: { who: 'Developer', help: G.mobile, steps: ['Send the instruction to the developer.'] },
+  social_tags: { who: 'Developer', help: G.og, steps: ['Send the instruction to the developer.'] },
+  hreflang_invalid: { who: 'Developer', help: 'https://developers.google.com/search/docs/specialty/international/localized-versions', steps: ['The site is English only: the language tags can be removed. Send the instruction to the developer.'] },
+  speed_poor: { who: 'Developer', help: G.psi, steps: [`Open ${G.psi} and test the page to see what slows it down.`, 'Big photos are the usual cause: upload smaller ones.', 'Send the instruction to the developer for the rest.'] },
+  speed_fair: { who: 'Developer', help: G.psi, steps: [`Test the page at ${G.psi}.`, 'Send the instruction to the developer if you want it faster.'] },
+  cwv_poor: { who: 'Developer', help: G.cwv, steps: ['Send the instruction to the developer (LCP: the biggest picture or heading loads late; CLS: things move while loading; INP: the page reacts slowly to taps).'] },
+  thin_page: { who: 'Media Officer', admin: ['/admin/news/', 'News'], help: G.helpful, steps: ['Add useful text a fan would want: what happened, who played, quotes, what comes next.', 'Press "AI Fix" for a draft built only from what is already on the page; check it, then add it yourself.', 'Never copy text from other websites.'] },
+  stale_fixtures: { who: 'Matchday Ops Manager', admin: ['/admin/matches/', 'Matchday › Matches'], help: G.helpful, steps: ['Mark finished matches as full-time and enter the result.', 'For league matches, enter the result in Admin › League.', 'Press "Check again".'] },
+  keyword_missing: { who: 'Website & Data Officer', admin: ['/admin/seo/', 'SEO Scanner (AI Fix)'], help: G.titles, steps: ['Use the phrase naturally once in the page title and once in the main heading or first paragraph.', 'Do not repeat it again and again: Google treats that as spam.', 'Press "AI Fix" for a suggested title and description.'] },
+  orphan_page: { who: 'Media Officer', admin: ['/admin/news/', 'News'], help: G.links, steps: ['Link to this page from a related page: a news story, the menu or a section page.', 'Press "AI Fix" for suggestions of where to link from.'] },
+  news_player_links: { who: 'Media Officer', admin: ['/admin/news/', 'News'], help: G.links, steps: ['Link the first mention of each player to their profile page (at most 3 links per story).', 'Or press "AI Fix": you see the links before they are added.'] },
+  duplicate_content: { who: 'Media Officer', admin: ['/admin/news/', 'News'], help: G.canonical, steps: ['Merge the two pages, or rewrite one so each has its own purpose.', 'If one should disappear, ask for a redirect to the other.'] },
+  cannibal: { who: 'Website & Data Officer', help: G.links, steps: ['Make the target page the clear best answer: use the phrase in its title and heading.', 'From the page Google shows instead, add a link to the target page with the phrase as the link text.'] },
+  rank_drop: { who: 'Website & Data Officer', help: G.helpful, steps: ['Open the page and check it is still up to date and opens quickly.', 'Press "AI Fix" for a clearer title and description.', 'Give it a few weeks: positions move up and down.'] },
+  clicks_drop: { who: 'Website & Data Officer', help: G.helpful, steps: ['Check the page still opens and is up to date.', 'Press "AI Fix" for a clearer title and description.'] },
+  low_ctr: { who: 'Website & Data Officer', help: G.snippets, steps: ['Press "AI Fix" for a clearer title and description that match what people search for.', 'Check the result again in 2–4 weeks (History shows the before and after).'] },
+  almost_top: { who: 'Website & Data Officer', help: G.helpful, steps: ['Improve the page a little: the phrase in the title, a better description, fresh content, links from other pages.', 'Press "AI Fix" for a suggested title and description.'] },
+  not_indexed: { who: 'Website & Data Officer', help: G.indexing, steps: [`In Search Console (${G.gsc}), paste the page address into the search bar at the top (URL Inspection).`, 'Press "Request indexing".', 'If Google says why it is not indexed (e.g. "Duplicate", "noindex"), fix that first.'] },
+  deindexed: { who: 'Super Admin', help: G.essentials, steps: [`Open Search Console (${G.gsc}) › Security & Manual actions: check there is no penalty or hacking warning.`, 'Check robots.txt and the homepage open normally (Website Health).', 'Send the details to the developer at once.'] },
+  gbp_checklist: { who: 'Commercial / Media', help: G.gbp, steps: ['Sign in at business.google.com with the club account (or claim the profile).', 'Check the name "Lobi Stars FC", address "McCarthy Stadium, Makurdi, Benue State", phone and website lobistarsfc.com.', 'Add matchday opening hours, recent photos and a post before each home match.', 'Do the same for McCarthy Stadium if it has its own listing.', 'Ask fans for honest reviews (never write or buy reviews).', 'When done, press "Mark as ignored" with the reason "Checked".'] },
+  nap_inconsistent: { who: 'Website & Data Officer', help: G.gbp, steps: ['Use the same club name, address and phone everywhere: the website footer, Google Business Profile and social pages.'] },
+  org_social: { who: 'Website & Data Officer', admin: ['/admin/seo/', 'SEO Scanner (AI Fix)'], help: G.structured, steps: ['Press "AI Fix" to add the club’s social profiles to its structured data.'] },
+};
+
+export function guideFor(type) {
+  const g = GUIDES[type] || { who: 'Developer', steps: ['Send the details to the developer.'], help: G.essentials };
+  return { ...g, name: info(type).name, why: info(type).why, admin: g.admin ? { href: g.admin[0], label: g.admin[1] } : null, essentials: G.essentials };
+}
+
+// ── VS Code instructions (code-level issues: nothing on the live site is changed) ──
+const FILES = {
+  layout: 'src/layouts/Layout.astro and src/components/HeadMeta.astro',
+  head: 'src/components/HeadMeta.astro',
+  postbuild: 'integrations/postbuild.mjs',
+  redirects: 'public/_redirects (and integrations/postbuild.mjs for generated ones)',
+  fixtures: 'src/pages/fixtures/ (the fixtures page) and src/components/HeadMeta.astro',
+};
+const pageFile = p => !p || p === '/' ? 'src/pages/index.astro' : /^\/news\/[^/]+\/$/.test(p) ? 'src/pages/news/[slug].astro (the story page) and the story in src/content/news/' : /^\/squad\//.test(p) ? 'src/pages/squad/[slug].astro / src/components/squad/SquadProfile.astro' : `src/pages${p.replace(/\/$/, '')}.astro or src/pages${p}index.astro`;
+const WHAT = {
+  redirect_chain: i => [`Make each old address in the chain redirect straight to the final page in one 301 step: ${(i.data?.hops || []).map(h => `${h.from} → ${h.to}`).join(', ')}.`, `Look in ${FILES.redirects}.`],
+  redirect_loop: i => [`${i.path} redirects in a loop (${(i.data?.hops || []).map(h => h.to).join(' → ')}). Find the rule(s) in ${FILES.redirects} or in functions/ that cause it and make the page open normally.`],
+  http_error: i => [`${i.path} answers ${i.data?.status || 'an error'}. Find out why (page file: ${pageFile(i.path)}; or a Pages Function in functions/) and make it answer 200, or add a 301 redirect to the right page.`],
+  h1_missing: i => [`Give ${i.path} exactly one <h1> that says what the page is about. Page file: ${pageFile(i.path)}.`],
+  h1_multiple: i => [`${i.path} has several <h1>s (${(i.data?.h1 || []).join(' / ')}). Keep the main one as <h1> and change the others to <h2> (same look via CSS). Page file: ${pageFile(i.path)}.`],
+  heading_order: i => [`On ${i.path} the headings skip a level. Make them go in order (h1 → h2 → h3) without changing how they look. Page file: ${pageFile(i.path)}.`],
+  img_large: i => [`${i.data?.src || 'A picture'} is ${i.data?.kb || 'over 300'} KB. If it is in public/images, run "npm run optimize-images" (it shrinks photos to at most 1600 px and writes WebP copies), then commit the changed images and src/data/image-sizes.json. If it comes from somewhere else, upload a smaller copy.`],
+  img_format: () => ['Run "npm run optimize-images" once (on Windows first: npm install --no-save @img/sharp-win32-x64). It writes a .webp copy of each photo in public/images; integrations/postbuild.mjs then serves them with <picture>. Commit the new files.'],
+  img_size_attr: i => [`On ${i.path}, give each <img> width and height attributes (or CSS aspect-ratio) so the page does not jump while loading. Pictures from public/images get them automatically from src/data/image-sizes.json (npm run optimize-images); for the others add them in ${pageFile(i.path)}.`],
+  canonical_missing: i => [`${i.path} has no <link rel="canonical">. Pages that use Layout get it from ${FILES.head}; make this page use Layout or add the tag. Page file: ${pageFile(i.path)}.`],
+  canonical_wrong: i => [`The canonical tag of ${i.path} points to ${i.data?.canonical}. It must point to the page itself (https://lobistarsfc.com${i.path}) unless that is a true duplicate. See ${FILES.head} and ${pageFile(i.path)}.`],
+  noindex_public: i => [`${i.path} has "noindex" but is a public page. Find where noindex is set for it (the noindex prop on <Layout>, or an X-Robots-Tag in public/_headers or functions/) and remove it for this page only.`],
+  private_indexable: i => [`${i.path} opens without signing in and without "noindex". Make it send "X-Robots-Tag: noindex, nofollow" (public/_headers) and <meta name="robots" content="noindex, nofollow"> (the noindex prop on <Layout>), and check it asks for a sign-in.`],
+  schema_missing: i => [`Add the missing structured data (${(i.data?.need || []).join(', ')}) to ${i.path} as JSON-LD through the jsonLd prop of <Layout>. For matches use SportsEvent built from the fixture data at build time (name, startDate, location McCarthy Stadium for home matches, homeTeam, awayTeam). Check it with the Rich Results Test. Files: ${pageFile(i.path)}, ${FILES.head}.`],
+  schema_invalid: i => [`Fix the structured data on ${i.path}: ${(i.data?.errors || []).join('; ')}. Files: ${pageFile(i.path)}, ${FILES.head}. Check with https://search.google.com/test/rich-results.`],
+  https_problem: i => [`${i.path} loads files over http:// (${(i.data?.files || []).join(', ')}). Change them to https:// (or a relative address). Page file: ${pageFile(i.path)}.`],
+  viewport_missing: i => [`${i.path} has no <meta name="viewport" content="width=device-width, initial-scale=1">. Pages that use ${FILES.layout} get it; make this page use Layout. Page file: ${pageFile(i.path)}.`],
+  social_tags: i => [`${i.path} is missing ${(i.data?.missing || []).join(', ')}. These come from ${FILES.head}; make the page use Layout with a title, description and image. Page file: ${pageFile(i.path)}.`],
+  hreflang_invalid: i => [`Remove the invalid hreflang tags on ${i.path} (the site is English only). Page file: ${pageFile(i.path)}.`],
+  speed_poor: i => [`Make ${i.path} faster on mobile (PageSpeed Insights score ${i.data?.mobile?.score ?? '?'}). Run Lighthouse on it, then fix the biggest items: oversized or unoptimised pictures, render-blocking scripts or fonts, too much JavaScript. Page file: ${pageFile(i.path)}.`],
+  speed_fair: i => [`Improve the speed of ${i.path} (mobile score ${i.data?.mobile?.score ?? '?'}). Same approach: Lighthouse, then the top 3 items. Page file: ${pageFile(i.path)}.`],
+  cwv_poor: i => [`Improve Core Web Vitals on ${i.path}: ${i.problem} Page file: ${pageFile(i.path)}. LCP: preload/size the main picture; CLS: width/height on media, no late banners; INP: less work on tap.`],
+  sitemap_missing_page: i => [`These public pages are not in sitemap.xml: ${(i.data?.pages || i.urls || []).join(', ')}. The sitemap is written by ${FILES.postbuild} from the built pages that are not noindex; pages made on request by functions/ need adding there by hand.`],
+  orphan_page: i => [`No page links to ${i.path}. Add a sensible link to it (from its section page, the footer or a related page) without changing the design.`],
+  duplicate_content: i => [`${(i.urls || []).join(' and ')} are near-duplicates. Decide which one stays; give the other a canonical tag pointing to it, or redirect it (301).`],
+};
+export function vscodeInstruction(issue) {
+  const what = (WHAT[issue.type] || (i => [`Fix "${info(i.type).name}" on ${i.path || 'the website'}: ${i.problem}`]))(issue);
+  return [
+    `Lobi Stars website (Astro + Cloudflare Pages). SEO Scanner issue: ${info(issue.type).name} (${issue.severityLabel || issue.severity}).`,
+    `Page: ${issue.path ? `https://lobistarsfc.com${issue.path}` : 'whole website'}`,
+    `Problem: ${issue.problem}`,
+    '',
+    'Please:',
+    ...what.map((w, n) => `${n + 1}. ${w}`),
+    `${what.length + 1}. Follow Google Search Essentials (no hidden text, no keyword stuffing). Keep the design the same.`,
+    `${what.length + 2}. Run "npm run build" and "npm test", then commit, deploy and push as usual, and update CHANGELOG.md.`,
+    '',
+    'Done when: the SEO Scanner shows this issue as fixed after "Check again".',
+  ].join('\n');
+}

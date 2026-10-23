@@ -8,6 +8,33 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-23: SEO Scanner (Super Admins)
+
+**What changed**
+- New **Settings › SEO Scanner** (next to Website Health), for the three Super
+  Admins only: a 0–100 score with trend, target keywords on Google (Search
+  Console average position, or a licensed rank tracker if switched on), top 5
+  opportunities, every issue with **AI Fix / Set up AI to fix this next time /
+  Fix it myself**, fixes waiting for approval, page details, history with
+  Google figures before and after and one-click **Undo**, alerts, a Monday
+  email report and a PDF report.
+- Our own polite checker reads every public page each night at 03:00 (titles,
+  descriptions, headings, alt text, canonical, noindex, structured data,
+  sitemap, robots.txt, broken links, redirects, mixed content, mobile, sharing
+  tags, thin or duplicate pages, orphan pages, news not linking to players,
+  stale fixtures) and checks new pages within about 10 minutes. Private areas
+  (admin, staff portal, helpers, scanner, fan accounts) are checked to stay
+  hidden from Google.
+- AI fixes are previewed before and after and applied only after approval (or
+  by an automation rule, for safe types only), saved in the site's content
+  files and reversible; code problems get a VS Code instruction instead.
+- **SEO basics for Lobi Stars**: a plain-English guide for staff.
+- The website build now applies approved alt text (src/data/image-alt.json),
+  redirects (src/data/redirects.json) and extra structured data (seo.json).
+
+**Staff need to do:** Super Admins: see HANDOVER-TODO A36 (Search Console,
+PageSpeed key, confirm the keyword list). Guide: STAFF-GUIDE §40.
+
 ## 2026-10-23: Data forms and portal in club colours, sentence case
 
 **What changed**

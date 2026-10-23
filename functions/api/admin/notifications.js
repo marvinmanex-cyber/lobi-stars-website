@@ -67,6 +67,13 @@ export async function onRequestGet({ request, env, waitUntil }) {
   if (can(admin, 'staff.manage')) {
     for (const a of (await recentAlerts(db).catch(() => [])).slice(0, 5)) items.unshift({ icon: '🛡️', title: a.title, sub: `${new Date(a.ts).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${String(a.detail || '').slice(0, 90)}`, href: '/admin/activity/' });
   }
+  // SEO Scanner (Super Admins): fixes waiting for approval and today's alerts.
+  if (can(admin, 'seo.scanner') && await tableExists('seo_fixes')) {
+    const w = (await db.prepare(`SELECT COUNT(*) AS n FROM seo_fixes WHERE status = 'proposed'`).first().catch(() => null))?.n || 0;
+    if (w) items.push({ icon: '🔎', title: `SEO Scanner: ${w} fix${w === 1 ? '' : 'es'} waiting for approval`, sub: 'Prepared by the AI; nothing changes until you approve', href: '/admin/seo/#waiting' });
+    const day = new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
+    for (const a of (await db.prepare(`SELECT kind, message FROM seo_alerts WHERE day = ? ORDER BY id DESC LIMIT 3`).bind(day).all().catch(() => ({ results: [] }))).results) items.unshift({ icon: '📉', title: `SEO alert: ${a.kind.replace(/_/g, ' ')}`, sub: String(a.message || '').slice(0, 100), href: '/admin/seo/' });
+  }
   if (can(admin, 'approvals.approve')) {
     const n = await pendingCount(db).catch(() => 0);
     const st = (await pendingStatements(env, new URL(request.url).origin).catch(() => [])).length;

@@ -1,0 +1,199 @@
+---
+// Admin › SEO Scanner › Settings (only the Super Admins): the connections and how
+// to set each one up, the target keywords (each mapped to the page meant to rank
+// for it), competitor websites, alerts and reports, AI spending limits, and the
+// automation rules with their 5-step wizard. Keys are never shown here: they are
+// set in Cloudflare and this page only says whether each one is connected.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="SEO Scanner settings | Lobi Stars Admin" description="SEO Scanner: connections, keywords and automation." noindex>
+  <div class="wrap seo">
+    <AdminNav current="seo" />
+    <header class="seo-head">
+      <div><div class="stag"><a href="/admin/seo/">SEO Scanner</a></div><h1 class="stitle">Settings &amp; <span class="r">connections</span></h1></div>
+    </header>
+    <p class="seo-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="seo-card" id="connections"><h2>Connections</h2><p class="muted">Ranking figures come only from Google's own tools (Search Console and PageSpeed Insights), our own checker of our own website and, if you choose, a paid licensed rank tracker. Google search results are never copied automatically.</p><div id="conn">Loading…</div></section>
+
+    <section class="seo-card" id="keywords"><h2>Target keywords</h2>
+      <p class="muted">The searches we want fans to find us for, each with the page that should come up. Suggestions are marked "Suggested" until you confirm them. Lobi Stars has no academy or women's team, so those phrases are not used.</p>
+      <div class="seo-scroll"><table id="kw"><thead><tr><th>Search phrase</th><th>Page</th><th>Priority</th><th>Status</th><th></th></tr></thead><tbody></tbody></table></div>
+      <form id="kwForm" class="seo-form">
+        <input name="keyword" placeholder="New search phrase, e.g. Lobi Stars match today" required maxlength="80" />
+        <input name="target_path" placeholder="Page, e.g. /fixtures/" />
+        <select name="priority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
+        <button class="btn-p" type="submit">Add</button>
+        <button class="btn-o" type="button" id="kwConfirm">Confirm the whole list</button>
+      </form>
+    </section>
+
+    <section class="seo-card"><h2>Competitor websites</h2><p class="muted">Other clubs' websites to compare with. Only used by the licensed rank tracker, if you switch it on.</p>
+      <div id="comp"></div>
+      <form id="compForm" class="seo-form"><input name="domain" placeholder="e.g. kwaraunitedfc.com" required /><input name="note" placeholder="Note (optional)" /><button class="btn-p" type="submit">Add</button></form>
+    </section>
+
+    <section class="seo-card" id="alerts"><h2>Scans, alerts and reports</h2>
+      <form id="setForm" class="seo-grid">
+        <label>Daily full scan at (Nigeria time)<select name="scan_hour"></select></label>
+        <label>Extra addresses for SEO alerts and the weekly report <small>(the Super Admins always get them)</small><input name="alert_emails" placeholder="name@lobistarsfc.com, …" /></label>
+        <label>Developer's email ("Send to developer")<input name="developer_email" type="email" placeholder="developer@…" /></label>
+        <label class="row"><input type="checkbox" name="weekly_report" /> Weekly email report every Monday morning</label>
+        <label>AI limit per day (US$)<input name="ai_daily_limit_usd" type="number" min="0" max="200" step="0.5" /></label>
+        <label>AI limit per month (US$)<input name="ai_monthly_limit_usd" type="number" min="0" max="200" step="0.5" /></label>
+        <label>Licensed rank tracker<select name="rank_provider"><option value="off">Off (use Search Console average position)</option><option value="dataforseo">DataForSEO</option><option value="serpapi">SerpApi</option></select></label>
+        <div><button class="btn-p" type="submit">Save</button></div>
+      </form>
+      <p class="muted" id="usage"></p>
+    </section>
+
+    <section class="seo-card" id="rules"><h2>Automation rules</h2>
+      <p class="muted">Tell the AI what to do when a scan finds a new issue of a type: nothing (off), prepare the fix for a Super Admin to approve, or fix it automatically. Automatic fixing is only offered for safe, reversible fixes; every automatic fix appears in History with Undo.</p>
+      <div class="seo-scroll"><table id="ruleTable"><thead><tr><th>Issue type</th><th>What happens</th><th>Pages</th><th>Most a day</th><th>Tell me</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div id="wizard" class="wiz" hidden></div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .seo { --blue: #1C3F7A; --red: #C8102E; }
+  .seo-head { margin-bottom: 14px; } .stag a { color: inherit; }
+  .seo-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; margin: 0 0 12px; position: sticky; top: 8px; z-index: 5; } .seo-msg.err { background: #FEE2E2; color: #991B1B; }
+  .seo-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
+  .seo-card h2 { margin: 0 0 6px; font: 700 18px 'Barlow', sans-serif; color: var(--blue); } :global(body.admin-dark) .seo-card h2 { color: #93C5FD; }
+  .seo :global(.muted) { color: var(--a-muted); font-size: 14px; margin: 0 0 10px; line-height: 1.5; }
+  .seo { min-width: 0; } .seo-card { min-width: 0; } .seo-scroll { overflow-x: auto; max-width: calc(100vw - 32px); } .seo :global(table) { width: 100%; border-collapse: collapse; }
+  .seo :global(th), .seo :global(td) { padding: 8px 10px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--a-line); vertical-align: middle; }
+  .seo :global(td input), .seo :global(td select), .seo-form input, .seo-form select, .seo-grid input, .seo-grid select { font: inherit; font-size: 14px; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: inherit; max-width: 100%; box-sizing: border-box; }
+  .seo-form { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; } .seo-form input { flex: 1 1 180px; }
+  .seo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+  .seo-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; } .seo-grid label small { font-weight: 400; color: var(--a-muted); }
+  .seo-grid label.row { flex-direction: row; align-items: center; gap: 8px; }
+  .seo :global(.conn) { border: 1px solid var(--a-line); border-left: 6px solid var(--c); border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+  .seo :global(.conn h3) { margin: 0 0 4px; font-size: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .seo :global(.conn p) { margin: 4px 0; font-size: 14px; } .seo :global(.conn ol) { margin: 6px 0 0 20px; padding: 0; font-size: 14px; line-height: 1.6; }
+  .seo :global(.conn code) { background: var(--a-line); padding: 1px 5px; border-radius: 5px; font-size: 12.5px; word-break: break-all; }
+  .seo :global(.badge) { padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; color: #fff; background: var(--c); }
+  .seo :global(.chip) { padding: 2px 8px; border-radius: 999px; font-size: 12px; background: #FEF3C7; color: #78350F; }
+  .seo :global(.chip.ok) { background: #DCFCE7; color: #166534; }
+  .seo :global(td button), .seo :global(.wiz button) { font: inherit; font-size: 13px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: inherit; cursor: pointer; min-height: 36px; }
+  .wiz { margin-top: 14px; padding: 16px; border-radius: 14px; border: 2px solid var(--blue); background: #EFF6FF; color: #1E3A8A; }
+  :global(body.admin-dark) .wiz { background: #172554; color: #DBEAFE; }
+  .seo :global(.wiz h3) { margin: 0 0 4px; } .seo :global(.wiz .steps) { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+  .seo :global(.wiz .steps span) { padding: 3px 10px; border-radius: 999px; font-size: 12px; background: rgba(28,63,122,.12); } .seo :global(.wiz .steps span.on) { background: var(--blue); color: #fff; }
+  .seo :global(.wiz label.opt) { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 10px; background: rgba(255,255,255,.7); color: #0f172a; margin: 6px 0; cursor: pointer; font-size: 14px; }
+  .seo :global(.wiz label.opt.off) { opacity: .5; cursor: not-allowed; }
+  .seo :global(.wiz select), .seo :global(.wiz input[type=number]) { font: inherit; padding: 7px 9px; border-radius: 8px; border: 1px solid #93C5FD; background: #fff; color: #0f172a; }
+  .seo :global(.wiz .go) { background: #15803D; border-color: #15803D; color: #fff; font-weight: 700; }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'x-admin-code': code, 'Content-Type': 'application/json' };
+  const $ = id => document.getElementById(id);
+  const el = (t, p = {}, ...k) => { const n = document.createElement(t); for (const [a, v] of Object.entries(p)) { if (v == null) continue; if (a === 'class') n.className = v; else if (a === 'text') n.textContent = v; else if (a === 'html') n.innerHTML = v; else if (a.startsWith('on')) n.addEventListener(a.slice(2), v); else n.setAttribute(a, v); } k.flat().forEach(x => x != null && x !== false && n.append(x)); return n; };
+  let D = null;
+  function msg(t, ok = true) { $('msg').textContent = t; $('msg').className = 'seo-msg' + (ok ? '' : ' err'); $('msg').hidden = false; }
+  async function api(body, q = '') {
+    const r = await fetch('/api/admin/seo' + q, body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/seo/settings/'; throw new Error('Please sign in'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  const MODE = { off: 'Off', approve: 'AI prepares, a Super Admin approves', auto: 'AI fixes automatically' };
+  const NOTIFY = { email: 'Email', bell: 'Admin bell only', none: 'Nothing (History only)' };
+
+  function connCard(title, ok, lines, steps, optional = false) {
+    return el('div', { class: 'conn', style: `--c:${ok ? '#15803D' : optional ? '#64748B' : '#D97706'}` },
+      el('h3', {}, title, el('span', { class: 'badge', text: ok ? 'Connected' : optional ? 'Optional: off' : 'Not connected' })),
+      ...lines.filter(Boolean).map(l => el('p', { html: l })),
+      steps && !ok ? el('details', {}, el('summary', { text: 'How to set it up' }), el('ol', {}, ...steps.map(s => el('li', { html: s })))) : null);
+  }
+  function render() {
+    const c = D.connections;
+    $('conn').replaceChildren(
+      connCard('Google Search Console', c.gsc.connected, [
+        `Property: <code>${c.gsc.property}</code>`, c.gsc.serviceAccount ? `Reads as: <code>${c.gsc.serviceAccount}</code>` : null,
+        c.gsc.lastDataDate ? `Latest daily figures: ${c.gsc.lastDataDate}` : null, c.gsc.lastKeywordData ? `Keyword figures up to ${c.gsc.lastKeywordData}` : 'Keyword figures: after the first daily scan.',
+        'Manual actions and security warnings are not available through Google\'s API: Search Console emails them to the property\'s owners, so make sure the Super Admins are owners there.',
+        c.gsc.connected ? 'To let the scanner <b>resubmit the sitemap</b>, the service account needs <b>Full</b> permission (Search Console › Settings › Users and permissions).' : null],
+        ['Go to <a href="https://search.google.com/search-console" target="_blank" rel="noopener">search.google.com/search-console</a> and add the property <b>Domain: lobistarsfc.com</b>.', 'Google gives you a TXT record: add it in Cloudflare › lobistarsfc.com › DNS › Add record (type TXT, name @). Press Verify in Search Console.', 'The website already has a Google service account (used by Analytics). In Search Console › Settings › Users and permissions › Add user, paste the service account email and choose <b>Full</b>.', 'Come back here and reload: it shows Connected.']),
+      connCard('Google PageSpeed Insights', c.pagespeed.connected, [c.pagespeed.lastRun ? `Last speed check: ${c.pagespeed.lastRun} (weekly)` : 'Speed is checked once a week.', c.pagespeed.note],
+        ['Open <a href="https://console.cloud.google.com/apis/library/pagespeedonline.googleapis.com" target="_blank" rel="noopener">Google Cloud › PageSpeed Insights API</a> (same Google account as Analytics) and press Enable.', 'Go to APIs &amp; Services › Credentials › Create credentials › API key. Restrict it to the PageSpeed Insights API.', 'In Cloudflare › Workers &amp; Pages › lobi-stars-website › Settings › Variables and secrets, add a secret <code>PAGESPEED_API_KEY</code> with the key, then redeploy.'], false),
+      connCard(`Licensed rank tracker${c.rank.provider !== 'off' ? ` (${c.rank.provider})` : ''}`, c.rank.connected, [c.rank.connected ? `Live positions on Google ${c.rank.country}, ${c.rank.language}, mobile and desktop, checked daily.` : 'Without it, the dashboard shows Search Console\'s <b>average position</b> (free, a little delayed). A tracker costs money per check.'],
+        ['Optional. Choose one: <b>DataForSEO</b> (pay as you go, about $0.002 per check) or <b>SerpApi</b> (monthly plan).', 'Create an account with the provider and copy the API login/key.', 'In Cloudflare add the secrets: DataForSEO: <code>DATAFORSEO_LOGIN</code> and <code>DATAFORSEO_PASSWORD</code>; SerpApi: <code>SERPAPI_KEY</code>. Redeploy.', 'Choose the provider below under "Licensed rank tracker" and Save.'], true),
+      connCard('Claude (AI)', c.ai.connected, ['Writes suggested titles, descriptions, alt text and drafts. Limits below.'], ['Already set up for AI Fix: see Admin › AI Settings.']),
+      connCard('GitHub (to apply fixes)', c.github.connected, ['Approved fixes are saved in the website\'s content files and the site rebuilds by itself (about 2–3 minutes).'], ['Already used by AI Fix (GITHUB_TOKEN). See HANDOVER-TODO A29.']),
+      connCard('Rebuild button', c.rebuild.connected, ['Lets "rebuild the sitemap" start a fresh build straight away. Without it, the sitemap is resubmitted and rebuilt at the next change.'],
+        ['Cloudflare › Workers &amp; Pages › lobi-stars-website › Settings › Builds › Deploy hooks › Add (branch main). Copy the address.', 'Add it as a secret <code>PAGES_DEPLOY_HOOK</code> and redeploy.'], true));
+    // Keywords
+    const tb = $('kw').querySelector('tbody');
+    tb.replaceChildren(...D.keywords.map(k => {
+      const kw = el('input', { value: k.keyword, maxlength: 80, 'aria-label': 'Search phrase' }), pth = el('input', { value: k.target_path || '', 'aria-label': 'Page', size: 16 });
+      const pr = el('select', { 'aria-label': 'Priority' }, ...['high', 'medium', 'low'].map(p => el('option', { value: p, text: p[0].toUpperCase() + p.slice(1), selected: k.priority === p ? '' : null })));
+      return el('tr', {}, el('td', {}, kw), el('td', {}, pth), el('td', {}, pr), el('td', {}, el('span', { class: `chip${k.confirmed ? ' ok' : ''}`, text: k.confirmed ? 'Confirmed' : 'Suggested' })),
+        el('td', {}, el('button', { type: 'button', onclick: async () => { try { await api({ action: 'keyword', id: k.id, keyword: kw.value, target_path: pth.value, priority: pr.value, confirmed: true }); msg('Saved and confirmed.'); load(); } catch (e) { msg(e.message, false); } } }, k.confirmed ? 'Save' : 'Confirm'),
+          el('button', { type: 'button', onclick: async () => { if (!confirm(`Remove "${k.keyword}"?`)) return; try { await api({ action: 'keyword_delete', id: k.id }); load(); } catch (e) { msg(e.message, false); } } }, 'Remove')));
+    }));
+    $('comp').replaceChildren(...(D.competitors.length ? D.competitors.map(c => el('p', {}, el('b', { text: c.domain }), c.note ? ` · ${c.note} ` : ' ', el('button', { type: 'button', class: 'btn-o', onclick: async () => { try { await api({ action: 'competitor_delete', domain: c.domain }); load(); } catch (e) { msg(e.message, false); } } }, 'Remove'))) : [el('p', { class: 'muted', text: 'None yet.' })]));
+    // Settings
+    const f = $('setForm');
+    if (!f.scan_hour.options.length) for (let h = 0; h < 24; h++) f.scan_hour.append(el('option', { value: h, text: `${String(h).padStart(2, '0')}:00` }));
+    const s = D.settings;
+    f.scan_hour.value = s.scan_hour; f.alert_emails.value = s.alert_emails || ''; f.developer_email.value = s.developer_email || ''; f.weekly_report.checked = s.weekly_report === '1';
+    f.ai_daily_limit_usd.value = s.ai_daily_limit_usd; f.ai_monthly_limit_usd.value = s.ai_monthly_limit_usd; f.rank_provider.value = s.rank_provider;
+    const u = D.usage;
+    $('usage').textContent = `AI used by the SEO Scanner: today $${u.today.toFixed(3)} (${u.todayCalls} calls), this month $${u.month.toFixed(3)} (${u.monthCalls} calls).`;
+    // Rules
+    $('ruleTable').querySelector('tbody').replaceChildren(...D.types.map(t => {
+      const r = t.rule;
+      return el('tr', {}, el('td', { text: t.name }), el('td', { text: MODE[r?.mode || 'off'] }), el('td', { text: r ? D.scopes[r.scope] : '–' }), el('td', { text: r && r.mode !== 'off' ? r.daily_max : '–' }), el('td', { text: r && r.mode !== 'off' ? NOTIFY[r.notify] : '–' }),
+        el('td', {}, el('button', { type: 'button', onclick: () => wizard(t.type) }, r && r.mode !== 'off' ? 'Change' : 'Set up')));
+    }));
+  }
+  // ── The 5-step wizard ──
+  function wizard(type) {
+    const t = D.types.find(x => x.type === type);
+    if (!t) { msg('This kind of issue needs a person or code, so it cannot be automated.', false); return; }
+    const r = t.rule || {};
+    const st = { step: 1, mode: r.mode && r.mode !== 'off' ? r.mode : 'approve', scope: r.scope || 'all', daily_max: r.daily_max || 5, notify: r.notify || 'email' };
+    const W = $('wizard'); W.hidden = false; W.scrollIntoView({ behavior: 'smooth' });
+    const STEPS = ['Issue', 'What the AI does', 'Which pages', 'Limits & alerts', 'Check & save'];
+    const opt = (name, value, title, sub, disabled) => el('label', { class: `opt${disabled ? ' off' : ''}` }, el('input', { type: 'radio', name, value, checked: st[name] === value ? '' : null, disabled: disabled ? '' : null, onchange: () => { st[name] = value; } }), el('span', {}, el('b', { text: title }), el('br'), el('small', { text: sub })));
+    function draw() {
+      const body = [];
+      if (st.step === 1) body.push(el('p', {}, 'Issue type: ', el('b', { text: t.name })), el('p', { text: t.autoAllowed ? 'This fix is safe and reversible, so it may be applied automatically.' : 'This fix changes what fans read on Google, so a Super Admin always approves it.' }));
+      if (st.step === 2) body.push(opt('mode', 'off', 'Off', 'Nothing happens by itself; you can still press AI Fix.'), opt('mode', 'approve', 'AI prepares, a Super Admin approves', 'The fix is ready and waiting (bell + email); nothing changes until someone presses Approve.'), opt('mode', 'auto', 'AI fixes automatically', t.autoAllowed ? 'Applied straight away, shown in History with Undo.' : 'Not allowed for this type.', !t.autoAllowed));
+      if (st.step === 3) body.push(...Object.entries(D.scopes).map(([k, v]) => opt('scope', k, v, k === 'new' ? 'Only for pages published in the last 7 days.' : k === 'news' ? 'Only news stories.' : 'Any page where the issue is found.')));
+      if (st.step === 4) {
+        const n = el('input', { type: 'number', min: 1, max: 50, value: st.daily_max, oninput: e => { st.daily_max = Number(e.target.value) || 5; } });
+        const s = el('select', { onchange: e => { st.notify = e.target.value; } }, ...Object.entries(NOTIFY).map(([k, v]) => el('option', { value: k, text: v, selected: st.notify === k ? '' : null })));
+        body.push(el('p', {}, 'At most ', n, ' fixes of this type a day (the rest wait for the next day).'), el('p', {}, 'Tell the Super Admins by ', s));
+      }
+      if (st.step === 5) body.push(el('p', {}, el('b', { text: t.name }), ': ', MODE[st.mode], st.mode === 'off' ? '' : ` · ${D.scopes[st.scope]} · at most ${st.daily_max} a day · tell me: ${NOTIFY[st.notify]}`), el('p', { class: 'muted', text: 'Every fix follows Google Search Essentials, is logged in History and can be undone with one click.' }));
+      W.replaceChildren(el('h3', { text: 'Set up AI to fix this next time' }), el('div', { class: 'steps' }, ...STEPS.map((s, i) => el('span', { class: i + 1 === st.step ? 'on' : '', text: `${i + 1}. ${s}` }))), ...body,
+        el('div', {}, st.step > 1 ? el('button', { type: 'button', onclick: () => { st.step--; draw(); } }, '← Back') : null,
+          st.step < 5 ? el('button', { type: 'button', class: 'go', onclick: () => { st.step = st.mode === 'off' && st.step === 2 ? 5 : st.step + 1; draw(); } }, 'Next →')
+            : el('button', { type: 'button', class: 'go', onclick: async () => { try { await api({ action: 'rule', type, ...st }); msg('Rule saved.'); W.hidden = true; load(); } catch (e) { msg(e.message, false); } } }, 'Save rule'),
+          el('button', { type: 'button', onclick: () => { W.hidden = true; } }, 'Close')));
+    }
+    draw();
+  }
+  async function load() {
+    try { D = await api(null, '?view=settings'); render(); } catch (e) { msg(e.message, false); return; }
+    const want = new URLSearchParams(location.search).get('rule');
+    if (want && !load.done) { load.done = true; wizard(want); }
+  }
+  $('kwForm').addEventListener('submit', async e => { e.preventDefault(); const f = e.target; try { await api({ action: 'keyword', keyword: f.keyword.value, target_path: f.target_path.value, priority: f.priority.value, confirmed: true }); f.reset(); msg('Added.'); load(); } catch (err) { msg(err.message, false); } });
+  $('kwConfirm').addEventListener('click', async () => { if (!confirm('Confirm every keyword on the list?')) return; try { await api({ action: 'keywords_confirm' }); msg('All confirmed.'); load(); } catch (e) { msg(e.message, false); } });
+  $('compForm').addEventListener('submit', async e => { e.preventDefault(); const f = e.target; try { await api({ action: 'competitor', domain: f.domain.value, note: f.note.value }); f.reset(); load(); } catch (err) { msg(err.message, false); } });
+  $('setForm').addEventListener('submit', async e => {
+    e.preventDefault(); const f = e.target;
+    try { await api({ action: 'settings', values: { scan_hour: f.scan_hour.value, alert_emails: f.alert_emails.value, developer_email: f.developer_email.value, weekly_report: f.weekly_report.checked, ai_daily_limit_usd: f.ai_daily_limit_usd.value, ai_monthly_limit_usd: f.ai_monthly_limit_usd.value, rank_provider: f.rank_provider.value } }); msg('Saved.'); load(); } catch (err) { msg(err.message, false); }
+  });
+  load();
+})();
+</script>

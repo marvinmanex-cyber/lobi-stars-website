@@ -39,6 +39,7 @@ function ranges(html, open, close) {
 }
 const inside = (pos, list) => list.some(([a, b]) => pos >= a && pos < b);
 
+let imageAlt = {};
 function rewriteImages(html, dist, sizes) {
   const scripts = ranges(html, '<script', '</script>');
   const pictures = ranges(html, '<picture', '</picture>');
@@ -54,6 +55,12 @@ function rewriteImages(html, dist, sizes) {
     let out = tag;
     const add = s => { out = out.replace(/\s*\/?>$/, m => ` ${s}${m.trim() === '/>' ? ' />' : '>'}`); };
 
+    // Alt text approved in the SEO Scanner (src/data/image-alt.json), only where the picture has none.
+    const altText = imageAlt[key];
+    if (altText && !(attr(tag, 'alt') || '').trim()) {
+      const safe = String(altText).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+      if (hasAttr(out, 'alt')) out = out.replace(/\salt\s*=\s*("[^"]*"|'[^']*')/i, ` alt="${safe}"`); else add(`alt="${safe}"`);
+    }
     const dims = sizes[key];
     if (dims && !hasAttr(tag, 'width') && !hasAttr(tag, 'height')) add(`width="${dims[0]}" height="${dims[1]}"`);
     const aboveFold = (navEnd !== -1 && pos < navEnd) || inside(pos, hero);
@@ -96,6 +103,8 @@ export default function postbuild() {
         const dist = fileURLToPath(dir);
         const sizesFile = path.resolve(dist, '..', 'src', 'data', 'image-sizes.json');
         const sizes = existsSync(sizesFile) ? JSON.parse(await readFile(sizesFile, 'utf8')) : {};
+        const altFile = path.resolve(dist, '..', 'src', 'data', 'image-alt.json');
+        imageAlt = existsSync(altFile) ? JSON.parse(await readFile(altFile, 'utf8')) : {};
         const files = await walk(dist);
         const urls = [];
         const membersContent = {};
@@ -140,6 +149,18 @@ export default function postbuild() {
             const lines = list.flatMap(r => [`${r.from} ${r.to} 301`, `${r.from.replace(/\/$/, '')} ${r.to} 301`]);
             await writeFile(file, `${before.replace(/\s*$/, '\n')}# Squad profiles: old web addresses\n${lines.join('\n')}\n`);
             logger.info(`${list.length} squad profile redirect(s) added`);
+          }
+        }
+
+        // Redirects approved in the SEO Scanner (src/data/redirects.json: [{ from, to }]), 301.
+        const seoRedirects = path.resolve(dist, '..', 'src', 'data', 'redirects.json');
+        if (existsSync(seoRedirects)) {
+          const list = JSON.parse(await readFile(seoRedirects, 'utf8')).filter(r => /^\/[^\s]*$/.test(r?.from || '') && /^\/[^\s]*$/.test(r?.to || '') && r.from !== r.to);
+          if (list.length) {
+            const file = path.join(dist, '_redirects');
+            const before = existsSync(file) ? await readFile(file, 'utf8') : '';
+            await writeFile(file, `${before.replace(/\s*$/, '\n')}# SEO Scanner: approved redirects\n${list.map(r => `${r.from} ${r.to} 301`).join('\n')}\n`);
+            logger.info(`${list.length} SEO redirect(s) added`);
           }
         }
 

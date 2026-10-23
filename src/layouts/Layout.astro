@@ -48,7 +48,9 @@ const {
 } = Astro.props;
 // Google title and description overrides per page (src/data/seo.json, written
 // by Admin › AI Fix after a Super Admin approves; empty = the page's own).
-const seoOverride = (seoOverrides as Record<string, { title?: string; description?: string }>)[Astro.url.pathname.replace(/\/?$/, '/')] || {};
+const seoOverride = (seoOverrides as Record<string, { title?: string; description?: string; jsonLd?: Record<string, unknown>[] }>)[Astro.url.pathname.replace(/\/?$/, '/')] || {};
+// Structured data added by the SEO Scanner (after a Super Admin approves, or an automation rule).
+const allJsonLd = [...jsonLd, ...(Array.isArray(seoOverride.jsonLd) && !noindex ? seoOverride.jsonLd : [])];
 const title = seoOverride.title || pageTitle;
 const description = seoOverride.description || pageDescription;
 // In-page navigation is only used while live commentary is playing (so the
@@ -68,7 +70,7 @@ const showShare = share && showBack && !noindex && !/^\/(admin|scan|fans|payment
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-<HeadMeta title={title} description={description} image={image} imageAlt={imageAlt} type={type} noindex={noindex} jsonLd={jsonLd} manifest={manifest} themeColor={themeColor} />
+<HeadMeta title={title} description={description} image={image} imageAlt={imageAlt} type={type} noindex={noindex} jsonLd={allJsonLd} manifest={manifest} themeColor={themeColor} />
 <slot name="head" />
 {softNav && <ClientRouter fallback="swap" />}
 <script is:inline>

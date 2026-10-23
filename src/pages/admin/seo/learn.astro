@@ -1,0 +1,81 @@
+---
+// Admin › SEO Scanner › SEO Basics for Lobi Stars: a plain-English guide for the
+// Super Admins and the media team (no code). Same rules the AI follows.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="SEO basics | Lobi Stars Admin" description="SEO basics for Lobi Stars FC staff." noindex>
+  <div class="wrap seo">
+    <AdminNav current="seo" />
+    <header><div class="stag"><a href="/admin/seo/">SEO Scanner</a></div><h1 class="stitle">SEO basics for <span class="r">Lobi Stars</span></h1></header>
+    <p class="lead">SEO (search engine optimisation) means making it easy for Google to understand our pages and show them to fans who search. There are no tricks: Google rewards pages that are useful, accurate, fast and easy to read. Ten minutes here will make the SEO Scanner make sense.</p>
+
+    <section class="card"><h2>1. How Google finds and ranks a page</h2>
+      <ol>
+        <li><b>Finding:</b> Google follows links and reads our <code>sitemap.xml</code> (a list of every public page, made automatically).</li>
+        <li><b>Reading (indexing):</b> it reads the title, headings, text and pictures, and stores the page. A page that is not indexed can never appear.</li>
+        <li><b>Ranking:</b> for each search it picks the most helpful pages. Position 1–3 gets most of the clicks; page two (position 11+) gets very few.</li>
+      </ol>
+      <p>"Average position" in the scanner comes from Google Search Console: the average place our page appeared for that search over the day. It moves up and down; look at the trend over weeks, not one day.</p>
+    </section>
+
+    <section class="card"><h2>2. The five things staff control</h2>
+      <dl>
+        <dt>Page title (30–60 characters)</dt><dd>The blue headline in Google. Say what the page is, most important words first: <i>"Lobi Stars 2–0 Kano Pillars: match report | Lobi Stars FC"</i>.</dd>
+        <dt>Description (70–160 characters)</dt><dd>The grey text under the title. One or two sentences that make a fan want to click: <i>"Goals, photos and the coach's reaction from Sunday's win at McCarthy Stadium."</i> For news it is the "Summary" field.</dd>
+        <dt>Main heading and first paragraph</dt><dd>Use the words fans search for, naturally, once. Never repeat them again and again.</dd>
+        <dt>Picture descriptions (alt text)</dt><dd>A few words saying what is in the photo: <i>"Lobi Stars players celebrate a goal in front of the home fans"</i>. Helps blind fans and Google Images.</dd>
+        <dt>Links</dt><dd>Link the first mention of a player to their profile, a match to its fixture, and so on (at most a few per story). Pages nobody links to are hard for Google to find.</dd>
+      </dl>
+    </section>
+
+    <section class="card"><h2>3. Never do these (Google can remove the whole site)</h2>
+      <ul class="no">
+        <li>Keyword stuffing: repeating "Lobi Stars tickets Lobi Stars tickets…".</li>
+        <li>Hidden text or links (white text on white, tiny fonts).</li>
+        <li>Fake or bought reviews and star ratings, or reviews written by staff.</li>
+        <li>Copying stories from other websites, or publishing hundreds of near-empty AI-written pages.</li>
+        <li>Showing Google something different from what fans see (cloaking), or pages made only to catch searches (doorway pages).</li>
+        <li>Buying links, or swapping links just for Google.</li>
+      </ul>
+      <p>The SEO Scanner's AI follows these rules. It never publishes news: it can only suggest drafts for the Media Officer, and every change is shown before and after and waits for a Super Admin's approval (unless an automation rule allows a safe type), and can be undone with one click.</p>
+    </section>
+
+    <section class="card"><h2>4. Speed and mobile</h2>
+      <p>Most fans visit on a phone with mobile data. Google measures three things (Core Web Vitals): how fast the main content appears (LCP, under 2.5 seconds), whether the page jumps while loading (CLS) and how quickly it reacts to a tap (INP). The biggest cause of slow pages is large photos: resize photos to at most 1600 pixels wide before uploading.</p>
+    </section>
+
+    <section class="card"><h2>5. Fresh and accurate</h2>
+      <p>Old fixtures shown as "upcoming", a league table weeks out of date or a squad list with players who left all tell fans and Google the site is not looked after. Enter results on matchday, and keep the squad and fixtures current.</p>
+    </section>
+
+    <section class="card"><h2>6. Off the website</h2>
+      <ul>
+        <li><b>Google Business Profile</b> for Lobi Stars FC and McCarthy Stadium: correct name, address, phone, website, matchday hours, recent photos and a post before each home match.</li>
+        <li>Use the same club name, address and phone everywhere (website footer, Google, Facebook, X, Instagram).</li>
+        <li>Ask for honest reviews; reply politely to all of them.</li>
+        <li>Good links come naturally: league and federation pages, local news, partners. Ask partners to link to <code>lobistarsfc.com</code>.</li>
+      </ul>
+    </section>
+
+    <section class="card"><h2>7. Using the SEO Scanner, in one minute</h2>
+      <ol>
+        <li>Look at the <b>score</b> and the <b>Top 5 opportunities</b> first.</li>
+        <li>For each issue choose: <b>🤖 AI Fix</b> (see the change, then Approve, Edit or Cancel), <b>⚙️ Set up AI to fix this next time</b> (an automation rule) or <b>🛠️ Fix it myself</b> (steps, links and, for code, a VS Code instruction to copy or send to the developer).</li>
+        <li>After a fix the site rebuilds (2–3 minutes) and the page is checked again by itself. <b>History</b> shows Google's figures before and after, with <b>Undo</b>.</li>
+        <li>If an issue is not a real problem, press <b>Mark as ignored</b> and say why.</li>
+      </ol>
+      <p>Google's own guide: <a href="https://developers.google.com/search/docs/fundamentals/seo-starter-guide" target="_blank" rel="noopener">SEO Starter Guide</a> · <a href="https://developers.google.com/search/docs/essentials" target="_blank" rel="noopener">Google Search Essentials</a>.</p>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .seo { --blue: #1C3F7A; --red: #C8102E; max-width: 900px; } .stag a { color: inherit; }
+  .lead { font-size: 16px; line-height: 1.6; margin: 10px 0 18px; }
+  .card { background: var(--a-card); border: 1px solid var(--a-line); border-left: 6px solid var(--blue); border-radius: 16px; padding: 16px 20px; margin-bottom: 14px; line-height: 1.6; font-size: 15px; }
+  .card h2 { margin: 0 0 8px; font: 700 19px 'Barlow', sans-serif; color: var(--blue); } :global(body.admin-dark) .card h2 { color: #93C5FD; }
+  .card dt { font-weight: 800; margin-top: 10px; } .card dd { margin: 2px 0 0; }
+  .card code { background: var(--a-line); padding: 1px 5px; border-radius: 5px; }
+  .no li::marker { content: '✖  '; color: var(--red); }
+</style>

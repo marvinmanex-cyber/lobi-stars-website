@@ -3587,6 +3587,96 @@ that work for 24 hours. Add `?since=2026-10-22T00:00:00Z` to get only
 profiles changed after that time. The key is the LOBI_PARTNER_API_KEY secret
 in Cloudflare; a new key stops the old one working.
 
+## 40. Using the SEO Scanner (Settings › SEO Scanner)
+
+**Who:** only the three Super Admins (the menu item, the pages and every action
+are refused for everyone else). Other staff hear about SEO work from a Super
+Admin; the Media Officer gets drafts and link suggestions to add themselves.
+
+**What it does:** checks how the website does on Google and what to fix. It
+uses only Google's own tools (Search Console and PageSpeed Insights), our own
+checker reading our own pages (politely: 2 pages a second, following
+robots.txt) and, only if you switch it on, a paid licensed rank tracker. It
+never copies Google search results.
+
+**When it runs**
+- A full scan every night at **03:00** Nigeria time (Search Console figures
+  daily; speed once a week).
+- A quick scan of any **new or changed page** within about 10 minutes of it
+  appearing on the site (e.g. a news story).
+- A page is checked again about 4 minutes after a fix (once the site has rebuilt).
+- **Scan now** (whole site) and **Check again** (one page) at any time. A full
+  scan takes a few minutes; you can leave the page, it carries on.
+
+**The dashboard**
+1. **Score (0–100)** with its trend over 90 days, and the number of Critical,
+   High, Medium and Low issues (press a number to see those issues).
+2. **Waiting for your approval:** fixes the AI prepared (by a button or an
+   automation rule). Nothing changes until someone presses **Approve**.
+3. **Top 5 opportunities:** what would help most now.
+4. **Target keywords on Google:** position, change over 7 days, a 28-day line
+   (up = better), the page Google shows and clicks. Filter by device. Without a
+   rank tracker this is Search Console's **average position** (a little delayed).
+5. **Issues:** filter by category, severity or status, or search. Each issue
+   says the page, the problem and why it matters, with three buttons:
+   - **🤖 AI Fix:** shows the change **before and after**. You can edit it, then
+     **Approve** or **Cancel**. For problems in the website's code it gives a
+     **VS Code instruction** instead (Copy, or Send to developer): nothing on the
+     live site changes.
+   - **⚙️ Set up AI to fix this next time:** opens the automation wizard for that
+     kind of issue.
+   - **🛠️ Fix it myself:** plain steps, the admin page to use, Google's help page
+     and, for code, the VS Code instruction.
+   Also **Check again**, **Page details** and **Mark as ignored** (you must say
+   why; everyone sees the reason; **Stop ignoring** brings it back).
+6. **History:** every fix (yours or automatic), Google's figures for the page
+   28 days before and, 30 days later, after, and **↩️ Undo** (puts the file back).
+7. **Download report (PDF):** print or save the dashboard as a PDF.
+
+**What the AI can change (only after approval, or by a rule for safe types)**
+Google titles and descriptions (src/data/seo.json), picture descriptions (alt
+text), structured data for the club, news stories and player profiles,
+redirects for broken addresses, up to 3 links from a news story to the
+players it mentions, removing dead links in a story, robots.txt (shown side by
+side first) and resubmitting the sitemap to Google. Changes are saved in the
+website's files on GitHub and the site rebuilds in 2–3 minutes. It never edits
+code, never publishes news (drafts only, for the Media Officer) and follows
+Google Search Essentials: no keyword stuffing (suggestions that repeat a phrase
+are thrown away), no hidden text, no fake reviews or ratings. It never mentions
+an academy or a women's team.
+
+**Automation rules (Settings & connections › Automation rules)**
+For each kind of issue: **Off**, **AI prepares, a Super Admin approves**, or
+**AI fixes automatically**. Automatic is only offered for safe, reversible
+fixes: missing alt text, missing or repeated descriptions, structured data,
+the sitemap, redirects for broken internal links. Titles, robots.txt and
+content drafts always need approval. The 5-step wizard asks: the issue, what
+the AI does, which pages (all / new pages / news only), the most per day, and
+how to tell you (email, bell or nothing). Every automatic fix is in History
+with Undo. (Picture compression can't run on the server: it is done with
+`npm run optimize-images` on the computer; the scanner gives the instruction.)
+
+**Settings & connections**
+- **Connections:** Search Console, PageSpeed, rank tracker, Claude, GitHub and
+  the rebuild button, each with "How to set it up". No key is ever shown.
+- **Target keywords:** the searches we want to be found for, each with its
+  page and priority. The first list is suggestions until you **Confirm**.
+- **Competitor websites** (only used by a rank tracker).
+- **Scans, alerts and reports:** scan time, extra alert addresses, the
+  developer's email, the Monday report, and the AI limits (default US$1 a day
+  and US$5 a month for the SEO Scanner; the site-wide AI budget also applies).
+
+**Alerts** (email to the Super Admins and the alert list, and the bell; at most
+once a day each): the site disappearing from Google (impressions down over
+40%), robots.txt blocking Google, sitemap errors, the homepage not working, a
+private page that Google could list, an important page set to "noindex", poor
+Core Web Vitals, the homepage not indexed. Manual actions and hacking warnings
+are not available through Google's API: Search Console emails its owners, so
+the Super Admins should be owners of the Search Console property.
+
+**Learn:** **SEO basics** (button at the top) explains all of this in plain
+English for anyone on the media team.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

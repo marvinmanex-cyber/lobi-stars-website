@@ -5,7 +5,8 @@
 // Only paths on ALLOWED are ever written.
 const REPO = env => env.GITHUB_REPO || 'marvinmanex-cyber/lobi-stars-website';
 const BRANCH = env => env.GITHUB_BRANCH || 'main';
-const ALLOWED = [/^src\/data\/seo\.json$/, /^src\/content\/news\/[a-z0-9-]{3,100}\.md$/];
+// SEO Scanner fixes: redirects, picture descriptions (alt text) and robots.txt.
+const ALLOWED = [/^src\/data\/seo\.json$/, /^src\/data\/redirects\.json$/, /^src\/data\/image-alt\.json$/, /^public\/robots\.txt$/, /^src\/content\/news\/[a-z0-9-]{3,100}\.md$/];
 export const githubReady = env => !!env.GITHUB_TOKEN;
 const headers = env => ({ Authorization: `Bearer ${env.GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'User-Agent': 'lobistarsfc-admin', 'X-GitHub-Api-Version': '2022-11-28' });
 // GITHUB_API_BASE only for the local tests (a stand-in server).
