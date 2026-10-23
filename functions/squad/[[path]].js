@@ -120,6 +120,8 @@ export async function onRequestGet({ request, env, params, next }) {
     const list = isStaff ? staff : players;
     const person = list.find(p => p.slug === slug);
     if (person) return profilePage(request, env, url, person, list, feed.season);
+    // Club staff (not coaching) have no public page.
+    if (isStaff && (feed.clubStaff || []).includes(slug)) return Response.redirect(`${url.origin}/squad/`, 301);
     // An earlier address of someone: 301 to the current one.
     const prefix = isStaff ? '/squad/staff/' : '/squad/';
     const moved = (feed.redirects || []).find(r => r.from === `${prefix}${slug}/`);

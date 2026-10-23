@@ -131,7 +131,7 @@ export function startPortal() {
       state.csrf = d.csrf; state.name = d.name;
       (f.elements.namedItem('password') as HTMLInputElement).value = '';
       const s = await api('session');
-      state.season = s.season;
+      state.season = s.season; state.roles = s.roles || [];
       await signedIn();
     } catch (err) {
       $('signinMsg').textContent = err instanceof ApiError ? err.message : 'No connection. Please try again.'; $('signinMsg').hidden = false;
@@ -141,7 +141,7 @@ export function startPortal() {
   (async () => {
     try {
       const r = await fetch('/api/squad-portal/session', { cache: 'no-store', credentials: 'same-origin' });
-      if (r.ok) { const s = await r.json(); state.csrf = s.csrf; state.name = s.name; state.season = s.season; await signedIn(); return; }
+      if (r.ok) { const s = await r.json(); state.csrf = s.csrf; state.name = s.name; state.season = s.season; state.roles = s.roles || []; await signedIn(); return; }
     } catch { /* offline */ }
     showSignIn();
   })();

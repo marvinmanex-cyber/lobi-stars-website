@@ -1,7 +1,8 @@
 // Squad & Staff Data Portal: talking to the portal API (/api/squad-portal/*).
 // Every change carries the session's CSRF token; a signed-out answer (401)
 // sends the page back to the sign-in screen.
-export const state = { csrf: '', name: '', season: '', onSignedOut: (_msg?: string) => {} };
+// roles: the club's list for "Position at the club" ([{ name, category }], Squad › Roles).
+export const state = { csrf: '', name: '', season: '', roles: [] as { name: string; category: string }[], onSignedOut: (_msg?: string) => {} };
 
 export class ApiError extends Error {
   status: number; data: any;

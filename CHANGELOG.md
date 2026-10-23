@@ -8,6 +8,24 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-23: Squad roles: coaching staff and club staff (Approved live squad, phase 3)
+
+**What changed**
+- "Position at the club" is now a list kept in **Matchday › Squad: Roles**
+  (Super Admins): Coaching staff (Head Coach, Assistant Coach, Goalkeeper Coach,
+  Fitness Coach, Technical Adviser, Performance Analyst) and Club staff (Team
+  Manager, Team Doctor, Physiotherapist, Kit Manager, Media Officer, Welfare
+  Officer, Team Secretary, Driver). "Goalkeeper Trainer" is now "Goalkeeper
+  Coach" (profiles moved).
+- Only coaching staff are on the Squad page; club staff have no public page (an
+  old link goes to /squad).
+- "Other" asks for the role and whether it is a coaching role; an existing role
+  with the same words is reused, a new one goes to Squad: Approvals.
+- Super Admins can rename, merge, re-order, move between the groups and switch
+  roles off; the Squad page follows within about 10 seconds.
+
+**Staff need to do:** nothing. Guide: STAFF-GUIDE §38 (Roles).
+
 ## 2026-10-23: Squad approvals by the Super Admins; Squad pages update within seconds (Approved live squad, phase 2)
 
 **What changed**

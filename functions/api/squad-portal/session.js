@@ -1,7 +1,8 @@
 import { requirePortal, portalJson, portalActor, IDLE_MS } from '../_lib/squadPortal.js';
 import { logAdminAction } from '../_lib/adminSession.js';
+import { pickList } from '../_lib/squadRoles.js';
 
-// GET  /api/squad-portal/session -- who is signed in, the CSRF token for changes, the current season.
+// GET  /api/squad-portal/session -- who is signed in, the CSRF token for changes, the current season, the roles list.
 // POST /api/squad-portal/session -- "Stay signed in" (keeps the session alive). With
 //   { report: 'save_failed' | 'photo_failed' | 'unsynced', profile, detail, waiting, minutes }
 //   the portal tells the club that a change was refused or has been waiting on the
@@ -10,7 +11,8 @@ const REPORTS = { save_failed: 'squad_save_failed', photo_failed: 'squad_photo_f
 export async function onRequestGet({ request, env }) {
   const { session, denied } = await requirePortal(request, env);
   if (denied) return denied;
-  return portalJson({ name: session.name, csrf: session.csrf, season: session.season, device: session.device, since: session.since, idleMinutes: IDLE_MS / 60000 });
+  const roles = await pickList(env.DB).catch(() => []);
+  return portalJson({ name: session.name, csrf: session.csrf, season: session.season, device: session.device, since: session.since, idleMinutes: IDLE_MS / 60000, roles });
 }
 export async function onRequestPost({ request, env }) {
   const { session, denied } = await requirePortal(request, env, { write: true });

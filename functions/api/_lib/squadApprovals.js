@@ -14,6 +14,7 @@ import { getPortalSettings, setPortalSetting } from './squadPortal.js';
 import { requestRebuild } from './squadPublish.js';
 import { superAdminEmails } from './superAdmins.js';
 import { sendEmail } from './email.js';
+import { approveNewRole, rejectNewRole } from './squadRoles.js';
 
 const nowIso = () => new Date().toISOString();
 const parse = (s, d) => { try { return s ? JSON.parse(s) : d; } catch { return d; } };
@@ -21,8 +22,9 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const SITE = env => String(env.SITE_URL || 'https://lobistarsfc.com').replace(/\/+$/, '');
 
 export const KIND_LABEL = { new: 'New profile', edit: 'Edit', left: 'Left the club', loan: 'Out on loan', return: 'Back from loan', delete: 'Delete', restore: 'Restore', new_role: 'New role' };
-// What approving a request does, per kind (filled in by later phases).
-export const REQUEST_KINDS = {};
+// What approving (and rejecting) a request does, per kind (more kinds come with later phases).
+export const REQUEST_KINDS = { new_role: approveNewRole };
+export const REJECT_HOOKS = { new_role: rejectNewRole };
 export const REMOVALS = ['left', 'delete'];
 
 let ready = false;
@@ -126,6 +128,7 @@ export async function decideRequest(env, admin, requestId, decision, note = '') 
   const name = rowName(p) || parse(r.payload_json, {}).name || 'a profile';
   if (decision === 'reject') {
     if (n.length < 5) return { error: 'Write why it is rejected (the portal shows the note).', status: 400 };
+    if (REJECT_HOOKS[r.kind]) await REJECT_HOOKS[r.kind](env, admin, r, parse(r.payload_json, {}));
     await db.prepare(`UPDATE squad_requests SET status = 'rejected', decided_by = ?, decided_at = ?, note = ? WHERE id = ?`).bind(admin.name, nowIso(), n, r.id).run();
     await logProfile(db, admin, 'squad_request', `${admin.name} (Super Admin) rejected the "${KIND_LABEL[r.kind] || r.kind}" request for ${name} sent by ${r.submitted_by || 'the portal'}: ${n}, ${lagosWhen()}`);
     return { ok: true };

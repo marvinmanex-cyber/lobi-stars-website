@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PLAYERS = path.join(root, 'src/content/players/portal'), STAFF = path.join(root, 'src/content/staff/portal');
 const SOURCE = String(process.env.SQUAD_SOURCE_URL || 'https://lobistarsfc.com').replace(/\/+$/, '');
-const ROLE_ORDER = ['Head Coach', 'Assistant Coach', 'Goalkeeper Trainer', 'Fitness Coach', 'Team Manager', 'Team Doctor', 'Physiotherapist', 'Kit Manager', 'Media Officer'];
+const ROLE_ORDER = ['Head Coach', 'Assistant Coach', 'Goalkeeper Coach', 'Fitness Coach', 'Technical Adviser', 'Performance Analyst'];
 const y = v => JSON.stringify(v ?? null); // JSON values are valid YAML
 const initials = n => String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'LS';
 const COUNTRY = { NG: 'Nigeria' };
@@ -80,7 +80,8 @@ async function main() {
     await writeFile(path.join(PLAYERS, `${p.slug}.md`), front(fm) + body(p));
   }
   for (const s of data.staff) {
-    const idx = ROLE_ORDER.indexOf(s.role);
+    // The order set in Squad › Roles (only coaching staff are in the feed).
+    const idx = s.roleOrder != null ? s.roleOrder / 10 : ROLE_ORDER.indexOf(s.role);
     const fm = { slug: `staff-${s.slug}`, name: s.name, role: s.role || 'Staff', initials: initials(s.name), bio: s.bioHeadline || s.licence || s.role || '',
       photo: s.photo || undefined, order: 100 + (idx < 0 ? ROLE_ORDER.length : idx), group: 'Coaching Staff', portal: true, profile: s };
     await writeFile(path.join(STAFF, `${fm.slug}.md`), front(fm) + body(s));

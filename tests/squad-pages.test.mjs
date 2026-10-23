@@ -275,8 +275,8 @@ test('built pages: squad list sections, player and coach profiles (no number for
   assert.match(kid, /Yet to debut/);
   const co = readFileSync(new URL(`squad/staff/terver-${COACH.toLowerCase()}/index.html`, dist), 'utf8');
   assert.ok(!co.includes('class="pf-num"'), 'no shirt number for a coach'); assert.match(co, /An interesting fact about the coach/); assert.match(co, /Kano Pillars/); assert.ok(!co.includes('Hidden'));
-  const st = readFileSync(new URL(`squad/staff/ada-kit${T}/index.html`, dist), 'utf8');
-  assert.match(st, /An interesting fact about the staff member/, 'club staff wording');
+  // Club staff (here a Kit Manager) have no public page since Phase 3 (23 Oct 2026): only coaching roles are on the Squad page.
+  assert.ok(!existsSync(new URL(`squad/staff/ada-kit${T}/index.html`, dist)), 'no page for club staff');
   assert.match(readFileSync(new URL('_redirects', dist), 'utf8'), new RegExp(`/squad/chidiebere-${SUR.toLowerCase()}/ /squad/chidi-${SUR.toLowerCase()}/ 301`), 'old address redirects');
   assert.ok(!existsSync(new URL('squad/musa-bello/index.html', dist)), 'hidden profile has no page');
   assert.match(readFileSync(new URL('sitemap.xml', dist), 'utf8'), new RegExp(`/squad/chidi-${SUR.toLowerCase()}/`));

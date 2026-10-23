@@ -99,7 +99,7 @@ export async function blankFormPdf(kind: Kind, season: string): Promise<Uint8Arr
   // On paper some hints are worded differently (paperHint), or left out (empty).
   const paperHint = (f: FieldDef): string => (f.paperHint !== undefined ? f.paperHint : f.hint) || '';
   const label = (f: FieldDef) => (f.key === 'interestingFact' && kind === 'staff' ? 'An interesting fact about the coach / staff member' : labelOf(f, kind));
-  const short = (f: FieldDef) => ['text', 'name', 'handle', 'email', 'tel', 'url', 'number', 'date', 'day', 'month', 'country'].includes(f.type) || (f.type === 'select' && (f.options || []).length > 12);
+  const short = (f: FieldDef) => ['text', 'name', 'handle', 'email', 'tel', 'url', 'number', 'date', 'day', 'month', 'country'].includes(f.type) || ((f.type === 'select' || f.type === 'role') && (f.options || []).length > 12);
   const labelCell = (f: FieldDef, width = LABEL_W - 8) => {
     const t = `${label(f)}${f.required ? ' *' : f.optional ? ' (optional)' : ''}`;
     return wrap(plain(t), width, 9, true);
@@ -139,7 +139,7 @@ export async function blankFormPdf(kind: Kind, season: string): Promise<Uint8Arr
     const fullHint = paperHint(f) ? wrap(plain(paperHint(f)), W - 2 * M, 7.5) : [];
     fullHint.forEach(l => { doc.text(l, M, y + 8, { size: 7.5, color: GREY }); y += 9; });
     y += 4;
-    if (f.type === 'select' || f.type === 'multiselect') {
+    if (f.type === 'select' || f.type === 'role' || f.type === 'multiselect') {
       if (f.type === 'multiselect') { doc.text('(tick all that apply)', M, y + 8, { size: 7.5, color: GREY }); y += 11; }
       let x = M;
       for (const o of f.options || []) {

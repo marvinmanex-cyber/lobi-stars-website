@@ -4,7 +4,7 @@
 // (offline.ts) and sent in order; the status pill shows "All changes saved",
 // "Saving…" or "Offline · saved on this device". If someone else changes the
 // same profile, their answer is shown with "updated by … just now".
-import { FIELDS, FIELD, SECTIONS, STATUSES, NOTE_MAX, labelOf, activeFields, missingForSubmit, isMinor, ageOn, profileName } from '../../lib/squadFields.js';
+import { FIELDS, FIELD, SECTIONS, STATUSES, NOTE_MAX, labelOf, activeFields, missingForSubmit, isMinor, ageOn, profileName, COACHING_ROLES } from '../../lib/squadFields.js';
 import { COUNTRY_OPTIONS } from '../../lib/countries.js';
 import { api, state, $, esc, toast, lagos, ApiError } from './api';
 import { queueAdd, flush, queueCount, queueAll, keepProfile, keptProfile, uploadKeep, uploadsAll, uploadDone, uploadsCount, type Change } from './offline';
@@ -177,6 +177,13 @@ function rowHtml(f: any, r: any = {}) {
     <span class="sp-row-btns"><button type="button" class="sp-mini" data-move="-1" aria-label="Move up">↑</button><button type="button" class="sp-mini" data-move="1" aria-label="Move down">↓</button><button type="button" class="sp-mini sp-danger" data-remove aria-label="Remove this row">×</button></span>
   </div>`;
 }
+/** "Position at the club": the club's roles grouped Coaching staff / Club staff, then Other (a role no longer listed stays shown). */
+function roleOptions(current?: string) {
+  const list = state.roles.length ? state.roles : FIELD.role.options.filter((o: string) => o !== 'Other').map((name: string) => ({ name, category: COACHING_ROLES.includes(name) ? 'COACHING' : 'CLUB_STAFF' }));
+  const group = (cat: string, label: string) => { const g = list.filter(r => r.category === cat); return g.length ? `<optgroup label="${label}">${g.map(r => `<option>${esc(r.name)}</option>`).join('')}</optgroup>` : ''; };
+  const extra = current && current !== 'Other' && !list.some(r => r.name === current) ? `<option>${esc(current)}</option>` : '';
+  return `${extra}${group('COACHING', 'Coaching staff')}${group('CLUB_STAFF', 'Club staff')}<option>Other</option>`;
+}
 function fieldHtml(f: any, type: string) {
   const id = `f_${f.key}`, label = labelOf(f, type, P?.data), req = f.required ? '<span class="sp-req" aria-hidden="true">*</span>' : '';
   const ph = typeof f.placeholder === 'object' ? (f.placeholder[type] || '') : (f.placeholder || '');
@@ -187,6 +194,7 @@ function fieldHtml(f: any, type: string) {
   let input = '';
   switch (f.type) {
     case 'select': input = `<select id="${id}" ${reqA} ${desc}><option value="">Choose…</option>${f.options.map((o: string) => `<option>${esc(o)}</option>`).join('')}</select>`; break;
+    case 'role': input = `<select id="${id}" ${reqA} ${desc}><option value="">Choose…</option>${roleOptions(P?.data?.role)}</select>`; break;
     case 'country': input = `<select id="${id}" ${reqA} ${desc}>${countryOpts()}</select>`; break;
     case 'name': input = `<input id="${id}" type="text" maxlength="${f.max || 60}" autocomplete="off" autocapitalize="words" spellcheck="false" ${reqA} ${desc} />`; break;
     case 'handle': input = `<input id="${id}" type="text" maxlength="${f.max || 40}" placeholder="${esc(ph)}" autocomplete="off" autocapitalize="none" spellcheck="false" ${desc} />`; break;
@@ -358,7 +366,7 @@ function wire() {
     const root = (e.target as HTMLElement).closest<HTMLElement>('[data-field]'); if (!root) return;
     const key = root.dataset.field!, f = FIELD[key];
     if (f.type === 'textarea') counter(root);
-    if (['checkbox', 'multiselect', 'select'].includes(f.type)) return; // saved on change
+    if (['checkbox', 'multiselect', 'select', 'role'].includes(f.type)) return; // saved on change
     clearTimeout(pendingText.get(key));
     pendingText.set(key, window.setTimeout(() => { pendingText.delete(key); P!.data[key] = readField(key); save({ [key]: readField(key) }, false); if (['dob', 'surname', 'firstName', 'shirtNumber', 'role'].includes(key)) visibility(); }, 800));
     pill('saving');

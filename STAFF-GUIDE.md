@@ -3444,6 +3444,30 @@ the approved profiles each time someone opens them (kept for 10 seconds), so an
 approval shows straight away; the built pages are only a backup. The sitemap
 lists the live profiles too.
 
+### Roles (only the three Super Admins: Matchday › Squad: Roles)
+
+"Position at the club" in the portal is a list in two groups:
+- **Coaching staff** (shown on the website's Squad page, in the order set here):
+  Head Coach, Assistant Coach, Goalkeeper Coach, Fitness Coach, Technical
+  Adviser, Performance Analyst.
+- **Club staff** (club records only, no public page): Team Manager, Team Doctor,
+  Physiotherapist, Kit Manager, Media Officer, Welfare Officer, Team Secretary,
+  Driver.
+
+("Goalkeeper Trainer" became "Goalkeeper Coach"; existing profiles were moved.)
+
+**Other:** the portal asks "Enter the role" (up to 40 letters) and "Is this a
+coaching role?". When the profile is sent for approval, the role is tidied
+(capital first letters, single spaces) and compared with the list ignoring
+capitals, hyphens and punctuation: if it already exists, that role is used. A
+new one appears in **Squad: Approvals** as a "New role" request; once approved,
+everyone can pick it.
+
+On the Roles page: ↑ ↓ to change the order, **Rename** (everyone with the role
+follows), **Move to club staff / coaching staff** (people move on or off the
+Squad page at once), **Switch off** (no longer offered; people keep it) and
+**Merge into…** (everyone moves to the other role and this one is removed).
+
 ### Reviewing (Website & Data Officer and Super Admins: Matchday › Squad: Profile Submissions)
 
 The Website & Data Officer sees every profile here (and the bell shows what is

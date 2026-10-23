@@ -15,7 +15,7 @@ export const GROUPS: { key: Group; title: string; label: string }[] = [
   { key: 'MID', title: 'Midfielders', label: 'Midfielder' },
   { key: 'FWD', title: 'Forwards', label: 'Forward' },
 ];
-export const ROLE_ORDER = ['Head Coach', 'Assistant Coach', 'Goalkeeper Trainer', 'Goalkeeper Coach', 'Fitness Coach', 'Team Manager', 'Team Doctor', 'Physiotherapist', 'Kit Manager', 'Media Officer'];
+export const ROLE_ORDER = ['Head Coach', 'Assistant Coach', 'Goalkeeper Coach', 'Fitness Coach', 'Technical Adviser', 'Performance Analyst'];
 
 export type Person = {
   kind: 'player' | 'staff';
@@ -90,6 +90,7 @@ export async function squadPlayers(): Promise<Person[]> {
 }
 /** Coaching staff: Head Coach first, then by role. */
 export async function squadStaff(): Promise<Person[]> {
+  // The order from Squad › Roles (written as `order` by scripts/fetch-squad.mjs), then the starting list.
   const idx = (r: string) => { const i = ROLE_ORDER.indexOf(r); return i < 0 ? ROLE_ORDER.length : i; };
-  return (await getCoaches()).map(staffOf).sort((a, b) => idx(a.role) - idx(b.role) || (a.entry.data as any).order - (b.entry.data as any).order || a.surname.localeCompare(b.surname));
+  return (await getCoaches()).map(staffOf).sort((a, b) => (a.entry.data as any).order - (b.entry.data as any).order || idx(a.role) - idx(b.role) || a.surname.localeCompare(b.surname));
 }

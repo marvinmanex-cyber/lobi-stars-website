@@ -11,6 +11,7 @@ import { buildPackage } from '../../../src/lib/squadPackage.js';
 import { officialName, shortName, nameSlug, partsFromName } from '../../../src/lib/names.js';
 import { ensureProfileSchema, getTeam, fileBase, parseJson, rowName, liveOf, slugFor } from './squadProfiles.js';
 import { getPortalSettings, setPortalSetting } from './squadPortal.js';
+import { roleMap } from './squadRoles.js';
 
 const GROUP = { Goalkeeper: 'GK', Defender: 'DEF', Midfielder: 'MID', Forward: 'FWD' };
 
@@ -75,7 +76,9 @@ export async function publicSquad(env) {
   const used = new Set();
   const uniq = s => { let x = s || 'profile', i = 2; while (used.has(x)) x = `${s}-${i++}`; used.add(x); return x; };
   // legacyOff: the old hand-made squad files are switched off (Super Admin, after the migration list).
-  const out = { season, updatedAt: new Date().toISOString(), players: [], staff: [], left: left.map(rowName).filter(Boolean), redirects: [], legacyOff: settings.legacy_off === '1' };
+  // clubStaff: the web addresses of non-coaching staff (they have no public page: /squad/staff/<slug>/ goes to /squad/).
+  const out = { season, updatedAt: new Date().toISOString(), players: [], staff: [], clubStaff: [], left: left.map(rowName).filter(Boolean), redirects: [], legacyOff: settings.legacy_off === '1' };
+  const roles = await roleMap(db);
   const slugWrites = [];
   for (const r of rows) {
     // The web address is fixed when a profile is approved (slugFor); older live profiles get theirs now.
@@ -87,7 +90,11 @@ export async function publicSquad(env) {
       r.old_slugs = JSON.stringify(f.olds);
     }
     const item = feedItem(r, uniq(slug));
-    (r.type === 'player' ? out.players : out.staff).push(item);
+    if (r.type === 'player') { out.players.push(item); continue; }
+    // Only COACHING roles are on the Squad page (Squad › Roles); club staff and roles still waiting for approval are not.
+    const role = roles.get(item.role);
+    if (role?.category === 'COACHING') out.staff.push({ ...item, roleCategory: 'COACHING', roleOrder: role.sort });
+    else out.clubStaff.push(item.slug);
   }
   if (slugWrites.length) await db.batch(slugWrites);
   // Old addresses → current ones (never an address someone else uses now).

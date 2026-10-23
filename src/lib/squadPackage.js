@@ -69,7 +69,7 @@ export function staffJson(p, files) {
 }
 
 export const POSITION_ORDER = ['Goalkeeper', 'Right back', 'Centre back', 'Left back', 'Defensive midfielder', 'Central midfielder', 'Attacking midfielder', 'Right winger', 'Left winger', 'Striker'];
-export const ROLE_ORDER = ['Head Coach', 'Assistant Coach', 'Goalkeeper Trainer', 'Fitness Coach', 'Team Manager', 'Team Doctor', 'Physiotherapist', 'Kit Manager', 'Media Officer', 'Other'];
+export const ROLE_ORDER = ['Head Coach', 'Assistant Coach', 'Goalkeeper Coach', 'Fitness Coach', 'Technical Adviser', 'Performance Analyst', 'Team Manager', 'Team Doctor', 'Physiotherapist', 'Kit Manager', 'Media Officer', 'Welfare Officer', 'Team Secretary', 'Driver', 'Other'];
 const GROUP_ORDER = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward'];
 const posIdx = (g, x) => { const a = GROUP_ORDER.indexOf(g), i = POSITION_ORDER.indexOf(x); return (a < 0 ? 9 : a) * 100 + (i < 0 ? 99 : i); };
 const roleIdx = x => { const i = ROLE_ORDER.indexOf(x); return i < 0 ? ROLE_ORDER.length : i; };

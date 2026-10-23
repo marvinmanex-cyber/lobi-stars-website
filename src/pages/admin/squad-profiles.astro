@@ -266,7 +266,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 
   // ── Edit (Super Admins) ──
   // The answers the club edits here; repeatable rows (previous clubs, honours, international career) are changed in the portal (Request changes).
-  const EDIT_KEYS = ['surname', 'firstName', 'middleName', 'websiteName', 'shirtNumber', 'positionGroup', 'primaryPosition', 'preferredFoot', 'role', 'roleOther', 'dob', 'nationality', 'nationality2', 'nationalTeam', 'birthTown', 'birthCountry',
+  const EDIT_KEYS = ['surname', 'firstName', 'middleName', 'websiteName', 'shirtNumber', 'positionGroup', 'primaryPosition', 'preferredFoot', 'role', 'roleOther', 'roleCoaching', 'dob', 'nationality', 'nationality2', 'nationalTeam', 'birthTown', 'birthCountry',
     'heightCm', 'joined', 'joinedStaff', 'debutDate', 'intlVerified', 'qualifications', 'socialInstagram', 'socialX', 'socialTiktok', 'interestingFact', 'bioHeadline', 'bio', 'shirtShopUrl', 'hideFromWebsite'];
   function editInput(f: any, v: any, type: string, data: any = {}) {
     const id = `ed_${f.key}`, val = v ?? '';
@@ -275,6 +275,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     let el: string;
     if (f.type === 'country') el = `<select id="${id}" data-ek="${f.key}"><option value="">–</option>${COUNTRY_OPTIONS.map(([c, n]) => `<option value="${c}" ${c === val ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
     else if (f.type === 'select') el = `<select id="${id}" data-ek="${f.key}"><option value="">–</option>${f.options.map((o: string) => `<option ${o === val ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
+    else if (f.type === 'role') { const rs: any[] = D?.roles || [], opt = (n: string) => `<option ${n === val ? 'selected' : ''}>${esc(n)}</option>`; el = `<select id="${id}" data-ek="${f.key}"><option value="">–</option>${val && val !== 'Other' && !rs.some(r => r.name === val) ? opt(val) : ''}<optgroup label="Coaching staff">${rs.filter(r => r.category === 'COACHING').map(r => opt(r.name)).join('')}</optgroup><optgroup label="Club staff">${rs.filter(r => r.category !== 'COACHING').map(r => opt(r.name)).join('')}</optgroup>${opt('Other')}</select>`; }
     else if (f.type === 'textarea' || f.type === 'richtext') el = `<textarea id="${id}" data-ek="${f.key}" maxlength="${f.max || 400}">${esc(val)}</textarea>`;
     else el = `<input id="${id}" data-ek="${f.key}" type="${f.type === 'number' ? 'number' : f.type === 'date' || f.type === 'day' ? 'date' : f.type === 'month' ? 'month' : f.type === 'url' ? 'url' : 'text'}" value="${esc(val)}" maxlength="${f.max || 200}" />`;
     return `<label class="${f.type === 'richtext' || f.type === 'textarea' ? 'wide' : ''}">${lab}${el}</label>`;

@@ -1,0 +1,86 @@
+---
+// Matchday › Squad: Roles (only the three Super Admins). The list behind
+// "Position at the club" in the Squad & Staff Data Portal, in two groups:
+// Coaching staff (shown on the website's Squad page) and Club staff (club records
+// only). Rename, merge, move between the groups, reorder (↑ ↓) and switch off.
+// New roles typed under "Other" arrive in Squad: Approvals.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Squad roles | Lobi Stars Admin" description="Squad roles: coaching staff and club staff." noindex>
+  <div class="wrap sr">
+    <AdminNav current="squad-roles" />
+    <header><div class="stag">Matchday · Super Admins</div><h1 class="stitle">Squad <span class="r">roles</span></h1></header>
+    <p class="sr-lede">These are the choices for "Position at the club" in the portal. People with a <b>Coaching staff</b> role appear on the website's Squad page; <b>Club staff</b> stay in the club's records only. Changes take effect at once (the Squad page within about 10 seconds). Roles typed under "Other" wait in <a href="/admin/squad-approvals/">Squad: Approvals</a>.</p>
+    <p class="sr-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <div id="groups"><p class="muted">Loading…</p></div>
+  </div>
+</Layout>
+
+<style>
+  .sr { max-width: 1000px; padding-top: 20px; padding-bottom: 60px; }
+  .sr-lede { color: var(--a-muted); line-height: 1.5; } .sr-lede a { color: inherit; font-weight: 700; }
+  .sr-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: sticky; top: 8px; z-index: 5; } .sr-msg.err { background: #FEE2E2; color: #991B1B; }
+  .sr :global(.grp) { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 14px 0; }
+  .sr :global(.grp h2) { margin: 0 0 4px; font-size: 18px; } .sr :global(.grp > p) { margin: 0 0 10px; color: var(--a-muted); font-size: 14px; }
+  .sr :global(.role) { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 0; border-top: 1px solid var(--a-line); }
+  .sr :global(.role.off) { opacity: .55; }
+  .sr :global(.role .nm) { flex: 1 1 180px; font-weight: 700; } .sr :global(.role .nm small) { display: block; font-weight: 400; color: var(--a-muted); }
+  .sr :global(.role button), .sr :global(.role select) { min-height: 38px; font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; }
+  .sr :global(.pend) { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #FEF3C7; color: #78350F; margin-left: 6px; }
+</style>
+
+<script>
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  let R: any[] = [], msgT = 0;
+  function msg(t: string, ok = true) { const m = $('msg'); m.textContent = t; m.className = `sr-msg${ok ? '' : ' err'}`; m.hidden = false; clearTimeout(msgT); msgT = window.setTimeout(() => { m.hidden = true; }, 7000); }
+  async function api(body?: unknown) {
+    const r = await fetch('/api/admin/squad-roles', body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/squad-roles/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function row(r: any, list: any[], i: number) {
+    const others = R.filter(x => x.id !== r.id && x.status === 'active');
+    return `<div class="role${r.active ? '' : ' off'}" data-id="${r.id}">
+      <span class="nm">${esc(r.name)}${r.status === 'pending' ? '<span class="pend">waiting for approval</span>' : ''}<small>${r.people} ${r.people === 1 ? 'person' : 'people'}${r.active ? '' : ' · switched off (not in the portal list)'}</small></span>
+      <button type="button" data-a="up" ${i === 0 ? 'disabled' : ''} aria-label="Move ${esc(r.name)} up">↑</button><button type="button" data-a="down" ${i === list.length - 1 ? 'disabled' : ''} aria-label="Move ${esc(r.name)} down">↓</button>
+      <button type="button" data-a="rename">Rename</button>
+      <button type="button" data-a="move">${r.category === 'COACHING' ? 'Move to club staff' : 'Move to coaching staff'}</button>
+      <button type="button" data-a="active">${r.active ? 'Switch off' : 'Switch on'}</button>
+      <select data-a="merge" aria-label="Merge ${esc(r.name)} into another role"><option value="">Merge into…</option>${others.map(o => `<option value="${o.id}">${esc(o.name)}</option>`).join('')}</select>
+    </div>`;
+  }
+  async function load() {
+    try {
+      R = (await api()).roles;
+      const grp = (cat: string, title: string, note: string) => { const list = R.filter(r => r.category === cat); return `<section class="grp"><h2>${title} (${list.length})</h2><p>${note}</p>${list.map((r, i) => row(r, list, i)).join('') || '<p class="muted">None.</p>'}</section>`; };
+      $('groups').innerHTML = grp('COACHING', 'Coaching staff', 'Shown on the website’s Squad page, in this order.') + grp('CLUB_STAFF', 'Club staff', 'Kept in the club’s records only; no public page.');
+    } catch (e: any) { msg(e.message, false); }
+  }
+  $('groups').addEventListener('click', async (e: Event) => {
+    const b = (e.target as HTMLElement).closest('button[data-a]') as HTMLButtonElement | null; if (!b) return;
+    const id = Number((b.closest('[data-id]') as HTMLElement).dataset.id), r = R.find(x => x.id === id), a = b.dataset.a;
+    try {
+      if (a === 'rename') { const n = prompt(`New name for "${r.name}" (everyone with this role follows):`, r.name); if (!n || n === r.name) return; await api({ action: 'rename', id, name: n }); msg('Renamed.'); }
+      else if (a === 'move') { const to = r.category === 'COACHING' ? 'CLUB_STAFF' : 'COACHING'; if (!confirm(`${to === 'COACHING' ? 'Show' : 'Stop showing'} people with the role "${r.name}" on the website's Squad page?`)) return; await api({ action: 'category', id, category: to }); msg('Moved. The Squad page changes within about 10 seconds.'); }
+      else if (a === 'active') { await api({ action: 'active', id, active: !r.active }); msg(r.active ? 'Switched off: no longer offered in the portal (people keep it).' : 'Switched on.'); }
+      else if (a === 'up' || a === 'down') {
+        const list = R.filter(x => x.category === r.category), i = list.indexOf(r), j = a === 'up' ? i - 1 : i + 1;
+        [list[i], list[j]] = [list[j], list[i]];
+        await api({ action: 'order', ids: list.map(x => x.id) });
+      }
+      load();
+    } catch (err: any) { msg(err.message, false); }
+  });
+  $('groups').addEventListener('change', async (e: Event) => {
+    const s = e.target as HTMLSelectElement; if (s.dataset.a !== 'merge' || !s.value) return;
+    const id = Number((s.closest('[data-id]') as HTMLElement).dataset.id), r = R.find(x => x.id === id), into = R.find(x => x.id === Number(s.value));
+    if (!confirm(`Merge "${r.name}" into "${into.name}"? Everyone with "${r.name}" gets "${into.name}" and "${r.name}" is removed.`)) { s.value = ''; return; }
+    try { const d = await api({ action: 'merge', id, into: into.id }); msg(`Merged (${d.moved} profile${d.moved === 1 ? '' : 's'} moved).`); load(); } catch (err: any) { msg(err.message, false); s.value = ''; }
+  });
+  load();
+</script>

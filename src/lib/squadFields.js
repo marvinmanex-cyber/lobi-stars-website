@@ -17,9 +17,12 @@ export const POSITION_GROUPS = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward
 /** The group of a specific position (for old answers that have no group). */
 export const groupOf = pos => (pos === 'Goalkeeper' ? 'Goalkeeper' : /back/i.test(pos || '') ? 'Defender' : /midfielder/i.test(pos || '') ? 'Midfielder' : /winger|striker|forward/i.test(pos || '') ? 'Forward' : null);
 export const INTL_LEVELS = ['U17', 'U20', 'U23', 'Senior'];
-export const STAFF_ROLES = ['Head Coach', 'Assistant Coach', 'Goalkeeper Trainer', 'Fitness Coach', 'Team Manager', 'Team Doctor', 'Physiotherapist', 'Kit Manager', 'Media Officer', 'Other'];
+// The starting list of roles. The real list lives in the database (Squad › Roles,
+// functions/api/_lib/squadRoles.js); these are only used when it cannot be read.
+export const STAFF_ROLES = ['Head Coach', 'Assistant Coach', 'Goalkeeper Coach', 'Fitness Coach', 'Technical Adviser', 'Performance Analyst',
+  'Team Manager', 'Team Doctor', 'Physiotherapist', 'Kit Manager', 'Media Officer', 'Welfare Officer', 'Team Secretary', 'Driver', 'Other'];
 /** Role categories: COACHING (the coaching staff) or CLUB_STAFF (everyone else at the club). */
-export const COACHING_ROLES = ['Head Coach', 'Assistant Coach', 'Goalkeeper Trainer', 'Fitness Coach'];
+export const COACHING_ROLES = ['Head Coach', 'Assistant Coach', 'Goalkeeper Coach', 'Fitness Coach', 'Technical Adviser', 'Performance Analyst'];
 export const roleCategory = role => (COACHING_ROLES.includes(role) ? 'COACHING' : role ? 'CLUB_STAFF' : null);
 export const STATES = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa',
   'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'FCT (Abuja)', 'Outside Nigeria'];
@@ -82,8 +85,10 @@ export const FIELDS = [
   { key: 'nationalTeam', section: 'playing', label: 'National team', use: 'public', for: 'player', type: 'country', optional: true, hint: 'The country they play for internationally, if any.' },
   { key: 'international', section: 'playing', label: 'International experience (old question)', use: 'public', for: 'player', type: 'text', max: 160, retired: true },
   // 2 · Role & qualifications (staff)
-  { key: 'role', section: 'role', label: 'Position at the club', use: 'public', for: 'staff', required: true, type: 'select', options: STAFF_ROLES },
-  { key: 'roleOther', section: 'role', label: 'Position at the club (other)', use: 'public', for: 'staff', type: 'text', max: 60, showIf: { role: 'Other' } },
+  // type 'role': a dropdown grouped "Coaching staff" / "Club staff" from Squad › Roles, plus "Other".
+  { key: 'role', section: 'role', label: 'Position at the club', use: 'public', for: 'staff', required: true, type: 'role', options: STAFF_ROLES },
+  { key: 'roleOther', section: 'role', label: 'Enter the role', short: 'The role', use: 'public', for: 'staff', required: true, type: 'text', max: 40, showIf: { role: 'Other' }, hint: 'A new role is checked by the club before it is used.' },
+  { key: 'roleCoaching', section: 'role', label: 'Is this a coaching role?', short: 'Coaching role?', use: 'private', for: 'staff', required: true, type: 'select', options: ['Yes', 'No'], showIf: { role: 'Other' } },
   { key: 'joinedStaff', section: 'role', label: 'Date joined Lobi Stars', use: 'public', for: 'staff', type: 'month' },
   { key: 'qualifications', section: 'role', label: 'Coaching licence and qualifications', use: 'public', for: 'staff', type: 'textarea', max: 400, optional: true, placeholder: 'e.g. CAF B Licence, BSc Physiotherapy' },
   { key: 'playingCareer', section: 'role', label: 'Playing career', use: 'public', for: 'staff', type: 'textarea', max: 400, optional: true, placeholder: 'Clubs and years, if they played professionally' },
@@ -185,6 +190,8 @@ export function cleanValue(key, v) {
     case 'day': return isDay(v) ? { value: String(v) } : { error: 'Enter a valid date.' };
     case 'month': return /^\d{4}-(0[1-9]|1[0-2])$/.test(String(v)) ? { value: String(v) } : { error: 'Enter the month and year.' };
     case 'select': return f.options.includes(String(v)) ? { value: String(v) } : { error: `Choose one of the options for ${label}.` };
+    // Checked against the club's list on the server (squadProfiles.js saveFields).
+    case 'role': { const s = txt(v, 40); return s ? { value: s } : { error: `Choose ${label.toLowerCase()}.` }; }
     case 'country': return isCountry(v) ? { value: String(v).toUpperCase() } : { error: `Choose a country from the list for ${label}.` };
     case 'multiselect': return { value: [...new Set([].concat(v).map(String).filter(x => f.options.includes(x)))] };
     case 'tel': { const p = normPhone(v); return p ? { value: p } : { error: 'Enter a Nigerian mobile number, e.g. 0803 123 4567.' }; }

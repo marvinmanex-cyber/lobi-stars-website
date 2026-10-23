@@ -15,7 +15,7 @@ export const GROUPS = [
   { key: 'MID', title: 'Midfielders', label: 'Midfielder' },
   { key: 'FWD', title: 'Forwards', label: 'Forward' },
 ];
-export const ROLE_ORDER = ['Head Coach', 'Assistant Coach', 'Goalkeeper Trainer', 'Goalkeeper Coach', 'Fitness Coach', 'Team Manager', 'Team Doctor', 'Physiotherapist', 'Kit Manager', 'Media Officer'];
+export const ROLE_ORDER = ['Head Coach', 'Assistant Coach', 'Goalkeeper Coach', 'Fitness Coach', 'Technical Adviser', 'Performance Analyst'];
 
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const clip = (s, n = 155) => (s.length <= n ? s : `${s.slice(0, n - 1).replace(/\s+\S*$/, '')}…`);
@@ -29,7 +29,7 @@ export function personFromFeed(x, kind) {
     kind, slug, href: kind === 'player' ? `/squad/${slug}/` : `/squad/staff/${slug}/`, oldSlugs: x.oldSlugs || [],
     firstName: parts.firstName, surname: parts.surname, name: x.name || publicName(parts), officialName: x.officialName || officialName(parts), shortName: x.shortName || shortName(parts) || x.name,
     number: kind === 'player' && Number.isFinite(x.number) ? x.number : null, group: kind === 'player' ? x.group || null : null, groupLabel: label,
-    position: kind === 'player' ? x.position || label : '', role: kind === 'staff' ? x.role || 'Staff' : '',
+    position: kind === 'player' ? x.position || label : '', role: kind === 'staff' ? x.role || 'Staff' : '', roleCategory: x.roleCategory || null, roleOrder: x.roleOrder ?? null,
     photo: x.photo || null, photoSmall: x.photoSmall || x.photo || null, hero: x.heroPhoto || null,
     nationality: [x.nationality, x.nationality2].filter(Boolean), nationalTeam: x.nationalTeam || null, birthTown: x.birthTown || null, birthCountry: x.birthCountry || null,
     dob: x.dob || null, age: x.age ?? null, heightCm: x.heightCm ?? null, preferredFoot: x.preferredFoot || null,
@@ -47,8 +47,9 @@ export function sortPlayers(list) {
   return [...list].sort((a, b) => order(a.group) - order(b.group) || (a.number ?? 999) - (b.number ?? 999) || a.surname.localeCompare(b.surname));
 }
 export function sortStaff(list) {
-  const idx = r => { const i = ROLE_ORDER.indexOf(r); return i < 0 ? ROLE_ORDER.length : i; };
-  return [...list].sort((a, b) => idx(a.role) - idx(b.role) || a.surname.localeCompare(b.surname));
+  // The order set in Squad › Roles (roleOrder), else the starting list.
+  const idx = p => { if (p.roleOrder != null) return p.roleOrder; const i = ROLE_ORDER.indexOf(p.role); return 1000 + (i < 0 ? ROLE_ORDER.length : i); };
+  return [...list].sort((a, b) => idx(a) - idx(b) || a.surname.localeCompare(b.surname));
 }
 
 // ── Pieces ──
@@ -123,7 +124,7 @@ export function renderProfile(p, { prev = null, next = null, teammates = [], sea
   ].filter(Boolean);
   const career = isPlayer ? p.previousClubs : p.previousRoles;
   const stats = [['apps', 'Appearances'], ['starts', 'Starts'], ['goals', 'Goals'], ['assists', 'Assists'], ...(isGk ? [['cleanSheets', 'Clean sheets']] : []), ['minutes', 'Minutes'], ['yellow', 'Yellow cards'], ['red', 'Red cards'], ['motm', 'Man of the Match']];
-  const fact = !isPlayer && roleCategory(p.role) === 'CLUB_STAFF' ? 'An interesting fact about the staff member' : isPlayer ? 'An interesting fact' : 'An interesting fact about the coach';
+  const fact = !isPlayer && (p.roleCategory || roleCategory(p.role)) === 'CLUB_STAFF' ? 'An interesting fact about the staff member' : isPlayer ? 'An interesting fact' : 'An interesting fact about the coach';
   return `<article class="pf" data-kind="${p.kind}">
   <header class="pf-hero${p.hero ? ' pf-hero--wide' : ''}">${p.hero ? `<img class="pf-hero-bg" src="${esc(p.hero)}" alt="" fetchpriority="high" decoding="async" />` : ''}
     <div class="wrap pf-hero-in">${p.hero ? '' : `<div class="pf-portrait">${p.photo ? `<img src="${esc(p.photo)}" alt="${esc(p.name)}" width="600" height="750" fetchpriority="high" />` : `<svg viewBox="0 0 100 100" aria-hidden="true">${SIL}</svg>`}</div>`}

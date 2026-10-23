@@ -237,6 +237,11 @@ export async function saveFields(env, actor, id, { changes = {}, since = null, c
       if (!FIELD[key] || (FIELD[key].admin && !admin)) { errors[key] = 'Unknown field.'; continue; }
       const r = cleanValue(key, raw);
       if (r.error) { errors[key] = r.error; continue; }
+      // "Position at the club": a role from the club's list (Squad › Roles) or "Other".
+      if (key === 'role' && r.value && r.value !== 'Other' && r.value !== data.role) {
+        const { isPickable } = await import('./squadRoles.js');
+        if (!(await isPickable(db, r.value))) { errors[key] = 'Choose a role from the list, or "Other".'; continue; }
+      }
       const before = data[key];
       if (JSON.stringify(before ?? null) === JSON.stringify(r.value ?? null)) { saved[key] = r.value; continue; }
       data[key] = r.value; saved[key] = r.value;
@@ -308,6 +313,19 @@ export async function submitProfile(env, actor, id) {
   if (p.type === 'player') {
     const taken = await shirtTaken(db, { season: p.season, number: data.shirtNumber, exceptId: p.id, forSubmit: true });
     if (taken) return { error: `Shirt number ${data.shirtNumber} is already assigned to ${taken.display_name || 'another player'} this season.`, missing: [{ key: 'shirtNumber', label: 'Shirt number', section: 'playing' }], status: 409 };
+  }
+  // "Other" role: an existing role with the same words is used; a new one waits for a Super Admin (New role request).
+  if (p.type === 'staff' && data.role === 'Other' && data.roleOther) {
+    const { resolveOther } = await import('./squadRoles.js');
+    const res = await resolveOther(env, actor, p, data.roleOther, data.roleCoaching);
+    if (res.error) return { error: res.error, missing: [{ key: 'roleOther', label: 'The role', section: 'role' }], status: 400 };
+    if (res.role) {
+      data.role = res.role; delete data.roleOther; delete data.roleCoaching;
+      await db.prepare(`UPDATE squad_profiles SET data_json = ?, role = ? WHERE id = ?`).bind(JSON.stringify(data), res.role, p.id).run();
+    } else if (res.pending && data.roleOther !== res.pending) {
+      data.roleOther = res.pending;
+      await db.prepare(`UPDATE squad_profiles SET data_json = ?, role = ? WHERE id = ?`).bind(JSON.stringify(data), res.pending, p.id).run();
+    }
   }
   const at = nowIso();
   if (live) await db.prepare(`UPDATE squad_profiles SET pending = 'PENDING_APPROVAL', submitted_at = ?, submitted_by = ?, updated_at = ?, updated_by = ?, version = version + 1 WHERE id = ?`).bind(at, actor.name, at, actor.name, p.id).run();
@@ -537,6 +555,12 @@ async function approve(env, admin, p, note = '', { summary = '' } = {}) {
   const waiting = isLive ? ['PENDING_APPROVAL', 'CHANGES_REQUESTED'].includes(p.pending) : ['PENDING_APPROVAL', 'CHANGES_REQUESTED'].includes(p.status);
   if (!waiting) return { error: 'Only profiles waiting for approval can be approved.', status: 409 };
   const data = parse(p.data_json, {});
+  // A role typed under "Other" (e.g. by a Super Admin's edit): an existing role is used; a new one waits for approval.
+  if (p.type === 'staff' && data.role === 'Other' && data.roleOther) {
+    const { resolveOther } = await import('./squadRoles.js');
+    const res = await resolveOther(env, admin, p, data.roleOther, data.roleCoaching);
+    if (res.role) { data.role = res.role; delete data.roleOther; delete data.roleCoaching; p = { ...p, data_json: JSON.stringify(data) }; await db.prepare(`UPDATE squad_profiles SET data_json = ?, role = ? WHERE id = ?`).bind(p.data_json, res.role, p.id).run(); }
+  }
   if (p.type === 'player' && p.status !== 'ON_LOAN' && Number.isInteger(data.shirtNumber)) {
     const taken = await db.prepare(`SELECT COALESCE(public_name, display_name) AS display_name FROM squad_profiles WHERE season = ? AND type = 'player' AND shirt_number = ? AND id != ? AND deleted_at IS NULL AND status = 'LIVE' LIMIT 1`).bind(p.season, data.shirtNumber, p.id).first();
     if (taken) return { error: `Shirt number ${data.shirtNumber} is already used by ${taken.display_name} (live). Request a change first.`, status: 409 };
