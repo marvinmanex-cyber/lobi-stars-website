@@ -3278,9 +3278,31 @@ checks that:
 ## 38. Squad & Staff Data Portal
 
 The private portal where the media team collects every player's and staff
-member's details, photos and a recording of how to say their name. The club
-reviews each profile; verified profiles appear on the Squad page (public
-details only) and go to the club's media partner in the Data Package.
+member's details and photos. Since 23 Oct 2026 it is the **only** source of the
+Squad pages: nothing reaches the website until the club approves it. Approved
+(live) profiles appear on the Squad page (public details only) and go to the
+club's media partner in the Data Package.
+
+**Statuses**
+
+| Status | Meaning |
+| --- | --- |
+| Draft | Being filled in; not sent yet. |
+| Awaiting approval | Sent to the club; can only be viewed until it is approved or sent back. |
+| Live | On the website (the approved version). |
+| Changes requested | Sent back with a note; can be edited and sent again. |
+| On loan / Former / Deleted | Out on loan, left the club, or removed (these steps come with the next update). |
+
+**Live profiles keep their live version.** A live profile can still be edited
+in the portal (or by a Super Admin). The website keeps showing the approved
+version, answers **and photo**, until the change is sent and approved. The
+status then reads e.g. "Live · edit not sent yet" or "Live · edit awaiting
+approval". Every approved version is kept (see "Versions" below).
+
+**Web address:** fixed when a profile is first approved (e.g.
+/squad/musa-adeyemi/). It changes only if the name changes; the old address
+then forwards to the new one. A second person with the same name gets -2, and
+an address that belonged to someone else (even a former player) is never reused.
 
 **The link:** https://lobistarsfc.com/staff/squad-data
 
@@ -3381,7 +3403,10 @@ use" box for who received and who entered them.
    (e.g. `09-musa-adeyemi.webp`). Read any quality warnings.
 8. Under-18s: the guardian section appears by itself and must be completed.
 9. Press **Submit for review**. Anything missing is highlighted. After
-   submitting, the profile can only be viewed until the club asks for changes.
+   submitting, the profile can only be viewed until the club approves it or
+   asks for changes.
+10. Live profile: change what is needed (it saves as a change, not on the
+   website yet), then press **Submit for review** again to send the change.
 
 Only drafts can be deleted from the portal.
 
@@ -3392,12 +3417,29 @@ email when one is submitted.
 
 | Button | Result |
 | --- | --- |
-| Verify | The person appears on /squad within a few minutes (public details only; full date of birth only from 18; never the middle name). |
-| Request changes | Write a note; the portal shows it and the profile can be edited again. |
-| Left the club | Off the website and the partner feed straight away. Kept in "all seasons" downloads. Private details are erased after the retention period. |
+| Approve & publish / Approve changes | The new profile or the change goes live (a new live version); /squad updates within a few minutes (public details only; full date of birth only from 18; never the middle name). |
+| Request changes | Write a note; the portal shows it and the profile can be edited again. A live profile stays live meanwhile. |
+| Discard the changes | Throws away a change that is not approved; the live version stays. |
+| Left the club | Off the website and the partner feed straight away (status Former). Kept in "all seasons" downloads. Private details are erased after the retention period. |
 | Restore | Undoes "Left the club". |
 | Remove (Super Admins) | Deletes the profile. |
-| Carry over | At the start of a new season, copies last season's verified profiles as drafts (consent must be ticked again). |
+| Carry over | At the start of a new season, copies last season's live profiles into the new season. They stay live (same web address); the portal asks for the season's confirmations again as a change to send. |
+
+Filters: Awaiting approval, All current, Live, Changes requested, Drafts, On
+loan, Former, Migrated – please review, Players, Staff.
+
+**Versions (Super Admins):** open a profile to see every live version (who sent
+it, who approved it, when). **Restore this version** makes an earlier version
+the one waiting for approval; the website keeps the live one until it is
+approved.
+
+**Old squad files (Super Admins, once):** the box "Old squad files" lists people
+still kept as hand-made files in the website (at the start: "Sample Forward",
+"Sample Defender", "Sample Goalkeeper" and a "Head Coach" file, all
+placeholders). Tick real people to move them into the portal (they go live,
+marked "Migrated – please review": check and complete them, add a photo). Press
+**Move and switch off the old files**: anything not moved disappears from the
+website, and from then on the Squad page shows portal profiles only.
 
 **Full club records** (with private details, Excel or PDF): Super Admins
 only, after entering their sign-in code. Every download is logged.
@@ -3441,8 +3483,8 @@ news tags and match stats still count for the player.
 - photos: **Profile photo** (cards, 4:5), **Wide header photo** (16:9, the top
   of the profile page; at least 1600 px wide looks best) and **Action photo**.
 Press **Save changes**. A shirt number given to two players this season shows
-a warning (it is saved; fix one of them). Changes to a verified profile update
-the website in about 2 minutes. Previous clubs, international career and
+a warning (it is saved; fix one of them). A change to a live profile waits for
+approval: press **Approve changes** (the website updates in about 2 minutes). Previous clubs, international career and
 honours are changed in the portal (press **Request changes**).
 
 **Draft bio with Claude.** In Edit, press **Draft bio with Claude**, add any

@@ -6,7 +6,9 @@ import { openForm } from './form';
 import { blankFormPdf } from './blankForm';
 
 const FILTERS: [string, string][] = [['all', 'All'], ['players', 'Players'], ['staff', 'Staff'], ['drafts', 'Drafts'], ['submitted', 'Submitted'], ['verified', 'Verified'], ['changes', 'Changes requested'], ['left', 'Left the club']];
-const BADGE: Record<string, string> = { DRAFT: 'amber', SUBMITTED: 'blue', VERIFIED: 'green', CHANGES_REQUESTED: 'red', LEFT_THE_CLUB: 'grey' };
+const BADGE: Record<string, string> = { DRAFT: 'amber', PENDING_APPROVAL: 'blue', LIVE: 'green', CHANGES_REQUESTED: 'red', ON_LOAN: 'grey', FORMER: 'grey', DELETED: 'grey' };
+// A live profile being edited shows the state of the edit.
+const stKey = (p: any) => (p.pending && ['LIVE', 'ON_LOAN'].includes(p.status) ? p.pending : p.status);
 const view = { filter: 'all', q: '', season: '' };
 let searchTimer = 0;
 
@@ -96,7 +98,7 @@ function row(p: any) {
     <td>${p.thumb ? `<img class="sp-thumb" src="${esc(p.thumb)}" alt="" width="44" height="55" loading="lazy" />` : '<span class="sp-thumb sp-thumb-empty" aria-hidden="true">?</span>'}</td>
     <td><b class="sp-pname">${esc(p.name || 'Unnamed draft')}</b>${p.nameStatus === 'check' ? ' <span class="sp-namecheck">Please check name order</span>' : ''}${p.reviewNote ? `<p class="sp-review-note">Reviewer: ${esc(p.reviewNote)}</p>` : ''}</td>
     <td>${p.type === 'player' ? 'Player' : 'Coach / staff'}</td><td>${what}</td>
-    <td><span class="sp-badge-st ${BADGE[p.status]}">${esc(p.statusLabel)}</span></td>
+    <td><span class="sp-badge-st ${BADGE[stKey(p)]}">${esc(p.statusLabel)}</span></td>
     <td>${esc(lagos(p.updatedAt))}<br /><small>by ${esc(p.updatedBy || '')}</small></td>
     <td class="sp-actions">${actions}</td></tr>`;
 }

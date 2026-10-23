@@ -11,10 +11,11 @@ import { getTeam, parseJson } from './squadProfiles.js';
 import { getPortalSettings } from './squadPortal.js';
 
 export const WHICH = {
-  verified: { statuses: ['VERIFIED'], type: null, label: 'verified' },
-  submitted: { statuses: ['SUBMITTED', 'CHANGES_REQUESTED', 'VERIFIED'], type: null, label: 'submitted' },
-  players: { statuses: ['VERIFIED'], type: 'player', label: 'verified' },
-  staff: { statuses: ['VERIFIED'], type: 'staff', label: 'verified' },
+  // Live = the approved versions; "submitted" = the working copies, including changes waiting for approval.
+  verified: { statuses: ['LIVE', 'ON_LOAN'], type: null, label: 'verified' },
+  submitted: { statuses: ['PENDING_APPROVAL', 'CHANGES_REQUESTED', 'LIVE', 'ON_LOAN'], type: null, label: 'submitted', working: true },
+  players: { statuses: ['LIVE', 'ON_LOAN'], type: 'player', label: 'verified' },
+  staff: { statuses: ['LIVE', 'ON_LOAN'], type: 'staff', label: 'verified' },
 };
 
 export async function exportData(env, { which = 'verified', season = 'current', full = false, fileBase = '/api/squad-portal/file' } = {}) {
@@ -22,8 +23,8 @@ export async function exportData(env, { which = 'verified', season = 'current', 
   const w = WHICH[which] || WHICH.verified;
   const cur = (await getPortalSettings(db)).season;
   const s = season === 'all' ? 'all' : season === 'current' || !season ? cur : season;
-  const statuses = s === 'all' ? [...w.statuses, 'LEFT_THE_CLUB'] : w.statuses;
-  const rows = await profilesFor(db, { season: s, statuses, type: w.type });
+  const statuses = s === 'all' ? [...w.statuses, 'FORMER'] : w.statuses;
+  const rows = await profilesFor(db, { season: s, statuses, type: w.type, live: !w.working });
   const profiles = rows.map(r => {
     const p = packageInput(r);
     const data = full ? p.data : shareable(r.type, p.data, { media: true });

@@ -44,7 +44,7 @@ before(async () => {
   await P(`profiles/${id}`, 'PATCH', { changes: { firstName: 'Sam', surname: `Left${L}`, dob: '1999-01-01', phone: '08035553333', email: `l.${TAG.toLowerCase()}@example.com`, emergencyName: `Kin ${TAG}`, emergencyPhone: '08035554444', primaryPosition: 'Striker' }, commit: true });
   // An earlier season's copy of the same person (carried over).
   oldId = `sp_old${uid()}`;
-  sql(`INSERT INTO squad_profiles (id, season, type, status, data_json, display_name, full_name, dob, created_at, updated_at) VALUES ('${oldId}', '2001/02', 'player', 'VERIFIED', '{"displayName":"Left ${TAG}","fullName":"Legal ${TAG}","phone":"+2348035553333"}', 'Left ${TAG}', 'Legal ${TAG}', '1999-01-01', '2001-08-01T00:00:00Z', '2001-08-01T00:00:00Z');
+  sql(`INSERT INTO squad_profiles (id, season, type, status, data_json, display_name, full_name, dob, created_at, updated_at) VALUES ('${oldId}', '2001/02', 'player', 'LIVE', '{"displayName":"Left ${TAG}","fullName":"Legal ${TAG}","phone":"+2348035553333"}', 'Left ${TAG}', 'Legal ${TAG}', '1999-01-01', '2001-08-01T00:00:00Z', '2001-08-01T00:00:00Z');
     UPDATE squad_profiles SET carried_from = '${oldId}' WHERE id = '${id}';`);
 });
 after(async () => { sql(`DELETE FROM squad_profiles WHERE display_name LIKE '%${TAG}%' OR public_name LIKE '%${L}%' OR id = '${oldId}'; DELETE FROM squad_portal_settings WHERE key = 'retention_seasons';`); await adm({ action: 'season', season: prevSeason || '2026/27' }); });
@@ -92,7 +92,8 @@ test('retention: private details of people who left are erased after the set sea
   assert.equal((await adm({ action: 'retention', seasons: 9 })).error, 'Choose 1 to 5 seasons.');
   assert.equal((await adm({ action: 'retention', seasons: 2 })).retentionSeasons, 2);
   assert.equal((await P(`profiles/${id}/submit`, 'POST')).status >= 200, true);
-  sql(`UPDATE squad_profiles SET status = 'VERIFIED' WHERE id = '${id}';`);
+  sql(`UPDATE squad_profiles SET status = 'PENDING_APPROVAL' WHERE id = '${id}';`); // (incomplete answers: sent for approval by hand)
+  assert.equal((await rev({ action: 'approve', id })).status, 200, 'approved: live');
   assert.equal((await rev({ action: 'left', id })).status, 200);
   const run = () => { sql(`DELETE FROM squad_portal_settings WHERE key = 'retention_day';`); return fetch(`${BASE}/api/internal/backup-run`, { method: 'POST', headers: CRON }).then(r => r.json()); };
   assert.equal((await run()).privacy.erased, 0, 'not yet: left today');

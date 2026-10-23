@@ -1,4 +1,4 @@
-// Before each build: the VERIFIED player and staff profiles from the Squad & Staff
+// Before each build: the LIVE player and staff profiles (their approved version) from the Squad & Staff
 // Data Portal (public details only; the full date of birth and middle name only
 // from age 18; hidden profiles left out) become squad entries, so the Squad pages
 // show them like any other player or staff member. Everything public is kept in
@@ -87,6 +87,8 @@ async function main() {
   }
   await writeFile(path.join(PLAYERS, '_left.json'), JSON.stringify(data.left || []));
   await writeFile(path.join(PLAYERS, '_redirects.json'), JSON.stringify(data.redirects || []));
+  // The old hand-made squad files are switched off once a Super Admin has gone through the migration list.
+  await writeFile(path.join(PLAYERS, '_source.json'), JSON.stringify({ legacyOff: !!data.legacyOff }));
   await shareImages([...data.players.map(p => ({ ...p, kind: 'player' })), ...data.staff.map(s => ({ ...s, kind: 'staff' }))]);
   console.log(`[fetch-squad] ${data.players.length} player(s) and ${data.staff.length} staff from the portal (${data.season}).`);
 }

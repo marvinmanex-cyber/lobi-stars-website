@@ -8,6 +8,31 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-23: Squad pages from the portal only; live versions (Approved live squad, phase 1)
+
+**What changed**
+- The Squad & Staff Data Portal is now the only source of the Squad pages. New
+  statuses: Draft, Awaiting approval, Live, Changes requested (On loan, Former
+  and Deleted follow). Earlier statuses were converted automatically
+  (Submitted → Awaiting approval, Verified → Live, Left the club → Former).
+- A live profile keeps its approved version on the website, answers and photo,
+  while a change is made, sent and approved. Every approved version is kept;
+  Super Admins can see them and restore an earlier one (through approval), or
+  discard a change.
+- Web addresses are fixed at approval, change only with the name (the old one
+  forwards), get -2 for a second person with the same name and never reuse a
+  former person's address.
+- New "Old squad files" box (Super Admins): lists the people still kept as
+  hand-made files (currently only placeholders) to move into the portal, then
+  switches the old files off. Until then the placeholder "Head Coach" card can
+  still show on /squad.
+- A new season's carry-over keeps people live (no blank Squad page at the start
+  of a season).
+
+**Staff need to do:** Super Admins: HANDOVER-TODO A37 (go through the Old squad
+files box). Media team: nothing new; a change to a live profile now has to be
+sent with Submit for review. Guide: STAFF-GUIDE §38.
+
 ## 2026-10-23: SEO Scanner (Super Admins)
 
 **What changed**

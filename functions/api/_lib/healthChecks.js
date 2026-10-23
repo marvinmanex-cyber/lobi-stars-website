@@ -754,16 +754,17 @@ async function squadChecks(ctx) {
       details: { problems: problems.slice(0, 10), failed } }));
   } catch (e) { out.push(result('squad_export', 'WARNING', { problem: `The Data Package could not be built: ${String(e.message || e).slice(0, 160)}.` })); }
   // Photos: submitted / verified profiles have their photo, and the files are in storage.
-  const want = await safeAll(db, `SELECT id, COALESCE(public_name, display_name) AS name, photos_json FROM squad_profiles WHERE season = ? AND deleted_at IS NULL AND status IN ('SUBMITTED', 'VERIFIED') LIMIT 200`, s.season) || [];
+  const want = await safeAll(db, `SELECT id, COALESCE(public_name, display_name) AS name, photos_json FROM squad_profiles WHERE season = ? AND deleted_at IS NULL AND status IN ('PENDING_APPROVAL', 'LIVE', 'ON_LOAN') LIMIT 200`, s.season) || [];
   const noPhoto = want.filter(p => { try { return !JSON.parse(p.photos_json || '{}').profile; } catch { return true; } });
   const missing = [];
   if (env.SQUAD_BUCKET) for (const p of want.filter(x => !noPhoto.includes(x)).slice(0, 20)) {
-    if (!(await env.SQUAD_BUCKET.head(`profiles/${p.id}/profile/w1200.jpg`).catch(() => null))) missing.push(p);
+    const rev = (() => { try { return JSON.parse(p.photos_json || '{}').profile?.rev || ''; } catch { return ''; } })();
+    if (!(await env.SQUAD_BUCKET.head(`profiles/${p.id}/profile/${rev ? `${rev}/` : ''}w1200.jpg`).catch(() => null))) missing.push(p);
   }
   const fails = (await safeFirst(db, `SELECT COUNT(*) AS n FROM admin_log WHERE action = 'squad_photo_failed' AND ts >= ?`, ago(24 * 7)))?.n || 0;
   const gone = [...noPhoto, ...missing];
   out.push(result('squad_photos', !env.SQUAD_BUCKET ? 'FAIL' : gone.length || fails ? 'WARNING' : 'PASS', {
-    problem: !env.SQUAD_BUCKET ? 'Photo storage (SQUAD_BUCKET) is not connected.' : gone.length ? `Without a photo: ${list(gone.map(p => p.name || p.id), 5)}.` : fails ? `${plural(fails, 'photo or recording')} could not be saved in the last 7 days.` : `All ${plural(want.length, 'submitted or verified profile')} have their photo.`,
+    problem: !env.SQUAD_BUCKET ? 'Photo storage (SQUAD_BUCKET) is not connected.' : gone.length ? `Without a photo: ${list(gone.map(p => p.name || p.id), 5)}.` : fails ? `${plural(fails, 'photo or recording')} could not be saved in the last 7 days.` : `All ${plural(want.length, 'live or waiting profile')} have their photo.`,
     details: { noPhoto: noPhoto.map(p => p.id), missingFiles: missing.map(p => p.id), failedUploads: fails } }));
   return out;
 }

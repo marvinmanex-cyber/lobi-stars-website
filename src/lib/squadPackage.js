@@ -15,7 +15,9 @@ import { officialName, shortName } from './names.js';
 import { countryName } from './countries.js';
 
 export const SCHEMA_VERSION = '1.2';
-const STATUS = { VERIFIED: 'verified', SUBMITTED: 'submitted', LEFT_THE_CLUB: 'left_the_club', CHANGES_REQUESTED: 'submitted', DRAFT: 'draft' };
+// The package keeps its status words; LIVE and ON_LOAN are "verified" (approved), FORMER is "left_the_club".
+const STATUS = { LIVE: 'verified', ON_LOAN: 'verified', PENDING_APPROVAL: 'submitted', FORMER: 'left_the_club', CHANGES_REQUESTED: 'submitted', DRAFT: 'draft',
+  VERIFIED: 'verified', SUBMITTED: 'submitted', LEFT_THE_CLUB: 'left_the_club' };
 const s = v => (v == null ? '' : String(v));
 const n = v => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : null);
 

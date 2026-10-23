@@ -12,11 +12,15 @@ function leftNames(): Set<string> {
   try { return new Set((JSON.parse(readFileSync(join(process.cwd(), 'src/content/players/portal/_left.json'), 'utf8')) as string[]).map(norm)); }
   catch { return new Set(); }
 }
-/** A verified portal profile replaces a hand-made entry with the same name; people who left are not shown. */
+/** Once the old hand-made squad files are switched off (Squad › Profile Submissions › Old squad files), only portal profiles show. */
+function legacyOff(): boolean {
+  try { return !!JSON.parse(readFileSync(join(process.cwd(), 'src/content/players/portal/_source.json'), 'utf8')).legacyOff; } catch { return false; }
+}
+/** A live portal profile replaces a hand-made entry with the same name; people who left are not shown. */
 function merge<T extends { data: { name: string; portal?: boolean } }>(list: T[]): T[] {
   const portal = new Set(list.filter(e => e.data.portal).map(e => norm(e.data.name)));
-  const left = leftNames();
-  return list.filter(e => (e.data.portal || !portal.has(norm(e.data.name))) && !left.has(norm(e.data.name)));
+  const left = leftNames(), off = legacyOff();
+  return list.filter(e => (e.data.portal || (!off && !portal.has(norm(e.data.name)))) && !left.has(norm(e.data.name)));
 }
 
 /**

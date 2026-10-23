@@ -1,7 +1,9 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { can } from '../../_lib/adminRoles.js';
 import { listProfiles, counts, seasons, getProfile, profileView, reviewAction, deleteProfile, carryOver, getTeam, saveTeam, logExport, logProfile, ensureProfileSchema,
-  nameCheckList, confirmName, saveFields, savePhoto, deletePhoto, shirtTaken, rowName } from '../../_lib/squadProfiles.js';
+  nameCheckList, confirmName, saveFields, savePhoto, deletePhoto, shirtTaken, rowName, versionList, restoreVersion } from '../../_lib/squadProfiles.js';
+import { legacyList, migrateLegacy } from '../../_lib/squadMigrate.js';
+import { PUBLIC_STATUSES } from '../../../../src/lib/squadFields.js';
 import { requestRebuild } from '../../_lib/squadPublish.js';
 import { draftBio } from '../../_lib/squadBio.js';
 import { exportData } from '../../_lib/squadExportData.js';
@@ -12,9 +14,14 @@ import { verifyTotp } from '../../_lib/totp.js';
 // GET  ?season=&filter=&q=                  -- list, counts, seasons, team details, export log
 // GET  ?id=                                 -- one profile with everything (photos, recording, private details)
 // GET  ?export=1&which=&season=             -- data for an export (Public and Media fields only)
-// POST { action: 'verify' | 'request_changes' | 'left' | 'restore', id, note }
+// POST { action: 'approve' (old name 'verify') | 'request_changes' | 'left' | 'restore' | 'discard', id, note }
+// GET  ?versions=<id>                       -- the live versions of a profile (Super Admins)
+// POST { action: 'restore_version', id, n } -- an earlier version becomes the working copy, waiting for approval (Super Admins)
+// GET  ?legacy=1                            -- the old hand-made squad files (the migration list; Super Admins)
+// POST { action: 'migrate', keys, switchOff } -- move the chosen ones into the portal (live, "migrated – please review"),
+//                                              and/or switch the old files off (Super Admins)
 // POST { action: 'remove', id }             -- Super Admins only (any status; logged)
-// POST { action: 'carry_over', from, to }   -- Super Admins: verified profiles into a new season as drafts
+// POST { action: 'carry_over', from, to }   -- Super Admins: live profiles into a new season (still live)
 // POST { action: 'team', team }             -- Super Admins: team details in the Data Package
 // POST { action: 'publish' }                -- rebuild the website now (Squad pages)
 // POST { action: 'export_log', format, which, season, profiles, ok, note }
@@ -41,6 +48,14 @@ export async function onRequestGet({ request, env }) {
   if (u.searchParams.get('id')) {
     const p = await getProfile(db, u.searchParams.get('id'));
     return p ? json({ profile: profileView(p) }) : json({ error: 'Profile not found.' }, 404);
+  }
+  if (u.searchParams.get('versions')) {
+    if (!superOnly(admin)) return json({ error: 'Only Super Admins can see earlier versions.' }, 403);
+    return json({ versions: await versionList(db, u.searchParams.get('versions')) });
+  }
+  if (u.searchParams.get('legacy')) {
+    if (!superOnly(admin)) return json({ error: 'Only Super Admins can move the old squad files.' }, 403);
+    return json(await legacyList(env, u.origin));
   }
   if (u.searchParams.get('export')) {
     // Exports: Super Admins only (23 Oct 2026).
@@ -75,15 +90,23 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (!form) return json({ error: 'The upload did not arrive. Please try again.' }, 400);
     const id = String(form.get('id') || '');
     const r = await savePhoto(env, admin, id, form, { admin: true });
-    if (r.ok && (await getProfile(db, id))?.status === 'VERIFIED') rebuild('photo changed');
+    if (r.ok && PUBLIC_STATUSES.includes((await getProfile(db, id))?.status)) rebuild('photo changed');
     return r.error ? json(r, r.status || 400) : json(r);
   }
   const b = await request.json().catch(() => ({}));
   let r;
-  if (['verify', 'request_changes', 'left', 'restore'].includes(b.action)) {
+  if (['verify', 'approve', 'request_changes', 'left', 'restore', 'discard'].includes(b.action)) {
     const before = await getProfile(db, b.id);
     r = await reviewAction(env, admin, b.id, b.action, b.note);
-    if (r.ok && (b.action === 'verify' || b.action === 'restore' || before?.status === 'VERIFIED')) rebuild(`${b.action} ${rowName(before)}`);
+    // The website changes only when a live version changes (approve, left, restore).
+    if (r.ok && ['verify', 'approve', 'left', 'restore'].includes(b.action)) rebuild(`${b.action} ${rowName(before)}`);
+  } else if (b.action === 'restore_version') {
+    if (!superOnly(admin)) return json({ error: 'Only Super Admins can restore an earlier version.' }, 403);
+    r = await restoreVersion(env, admin, b.id, b.n);
+  } else if (b.action === 'migrate') {
+    if (!superOnly(admin)) return json({ error: 'Only Super Admins can move the old squad files.' }, 403);
+    r = await migrateLegacy(env, admin, new URL(request.url).origin, { keys: Array.isArray(b.keys) ? b.keys.map(String) : [], switchOff: !!b.switchOff });
+    if (r.ok) rebuild('old squad files');
   } else if (b.action === 'draft_bio') {
     if (!editor()) return json({ error: 'Only Super Admins can change profiles.' }, 403);
     r = await draftBio(env, admin, b.id, b.extra);
@@ -104,12 +127,12 @@ export async function onRequestPost({ request, env, waitUntil }) {
         r = { ok: true, saved: r.saved, errors: r.errors, warnings, profile: profileView(p) };
       }
     }
-    if (r.ok && before.status === 'VERIFIED') rebuild(`${b.action} ${rowName(before)}`);
+    // An edit of a live profile waits for approval: the website does not change yet.
   } else if (b.action === 'remove') {
     if (!superOnly(admin)) return json({ error: 'Only Super Admins can remove a submitted or verified profile.' }, 403);
     const before = await getProfile(db, b.id);
     r = await deleteProfile(env, admin, b.id, { force: true });
-    if (r.ok && before?.status === 'VERIFIED') rebuild('removed a verified profile');
+    if (r.ok && PUBLIC_STATUSES.includes(before?.status)) rebuild('removed a live profile');
   } else if (b.action === 'carry_over') {
     if (!superOnly(admin)) return json({ error: 'Only Super Admins can start a new season.' }, 403);
     r = await carryOver(env, admin, { from: b.from, to: b.to });

@@ -26,6 +26,13 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <div class="sq-scroll"><table class="sq-table"><thead><tr><th>Old answers</th><th>Surname</th><th>First name</th><th>Middle name</th><th>Name on website</th><th>How it was filled in</th><th></th></tr></thead><tbody id="namesRows"></tbody></table></div>
     </section>
 
+    <section class="sq-card sq-legacy" id="legacyBox" hidden aria-labelledby="h-legacy">
+      <h2 id="h-legacy">Old squad files <span class="st PENDING_APPROVAL" id="legacyCount"></span></h2>
+      <p class="muted">The Squad pages now come only from the Squad &amp; Staff Data Portal. These people are still kept as old hand-made files in the website. Tick the real people to move them into the portal (they go live straight away, marked “migrated – please review”, so check and complete each one). Placeholders are not people: leave them unticked. Then press <b>Move and switch off the old files</b>: anything not moved disappears from the website.</p>
+      <div class="sq-scroll"><table class="sq-table"><thead><tr><th>Move</th><th>Name</th><th>Type</th><th>Details</th><th>Note</th></tr></thead><tbody id="legacyRows"></tbody></table></div>
+      <div class="sq-row"><button class="btn-p" type="button" id="legacyGo">Move and switch off the old files</button></div>
+    </section>
+
     <section class="sq-card">
       <div class="sq-row">
         <label class="sq-l">Season <select id="season"></select></label>
@@ -45,7 +52,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <label><input type="radio" name="deliver" value="download" /> <b>Download to this computer</b></label>
       </fieldset>
       <div class="sq-row">
-        <label class="sq-l">Which profiles <select id="exWhich"><option value="verified">Verified only</option><option value="submitted">All submitted</option><option value="players">Players</option><option value="staff">Staff</option></select></label>
+        <label class="sq-l">Which profiles <select id="exWhich"><option value="verified">Live only</option><option value="submitted">Live and waiting for approval</option><option value="players">Players</option><option value="staff">Staff</option></select></label>
         <label class="sq-l">Season <select id="exSeason"><option value="current">Current season</option><option value="all">All seasons</option></select></label>
       </div>
       <div class="sq-row">
@@ -64,7 +71,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 
     <section class="sq-card" id="superBox" hidden>
       <h2>New season</h2>
-      <p class="muted">Copies every verified profile of a season into the new season as drafts for review (history and photos kept), and makes it the portal's current season.</p>
+      <p class="muted">Copies every live profile of a season into the new season (still live on the website, history and photos kept; the season's confirmations are asked again in the portal), and makes it the portal's current season.</p>
       <form class="sq-row" id="carry"><label class="sq-l">From <select id="carryFrom"></select></label><label class="sq-l">New season <input id="carryTo" placeholder="2027/28" maxlength="7" /></label><button class="btn-p" type="submit">Carry over squad</button></form>
       <h2>Team details (Data Package)</h2>
       <form class="sq-team" id="team">
@@ -84,6 +91,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .sq { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; }
   .sq-lede { color: var(--a-muted); max-width: 800px; line-height: 1.5; }
   .sq-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 14px 0; display: grid; gap: 12px; }
+  .sq-card > :global(*) { min-width: 0; } /* wide tables scroll inside the card instead of widening the page */
   .sq-card h2 { margin: 0; font-size: 18px; } .sq-card h3 { margin: 6px 0 0; font-size: 16px; }
   .sq-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
   .sq-row button { min-height: 44px; }
@@ -99,8 +107,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .sq :global(.sq-table th), .sq :global(.sq-table td) { text-align: left; padding: 8px; border-bottom: 1px solid var(--a-line); vertical-align: middle; }
   .sq :global(.sq-thumb) { width: 40px; height: 50px; object-fit: cover; border-radius: 6px; background: var(--a-line); display: inline-block; }
   .sq :global(.st) { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
-  .sq :global(.st.DRAFT) { background: #FEF3C7; color: #78350F; } .sq :global(.st.SUBMITTED) { background: #DBEAFE; color: #1E3A8A; } .sq :global(.st.VERIFIED) { background: #DCFCE7; color: #14532D; }
-  .sq :global(.st.CHANGES_REQUESTED) { background: #FEE2E2; color: #7F1D1D; } .sq :global(.st.LEFT_THE_CLUB) { background: #E5E7EB; color: #374151; }
+  .sq :global(.st.DRAFT) { background: #FEF3C7; color: #78350F; } .sq :global(.st.PENDING_APPROVAL) { background: #DBEAFE; color: #1E3A8A; } .sq :global(.st.LIVE) { background: #DCFCE7; color: #14532D; }
+  .sq :global(.st.CHANGES_REQUESTED) { background: #FEE2E2; color: #7F1D1D; } .sq :global(.st.FORMER), .sq :global(.st.DELETED) { background: #E5E7EB; color: #374151; } .sq :global(.st.ON_LOAN) { background: #EDE9FE; color: #4C1D95; }
+  .sq :global(.st.MIGRATED) { background: #FFEDD5; color: #7C2D12; }
+  .sq :global(.sq-versions) { display: grid; gap: 6px; } .sq :global(.sq-versions li) { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .sq :global(.sq-dl) { display: grid; grid-template-columns: minmax(160px, 260px) 1fr; gap: 6px 14px; margin: 0; font-size: 14px; }
   .sq :global(.sq-dl dt) { color: var(--a-muted); } .sq :global(.sq-dl dd) { margin: 0; }
   .sq :global(.use) { display: inline-block; margin-left: 6px; padding: 0 7px; border-radius: 999px; font-size: 11px; font-weight: 700; }
@@ -145,7 +155,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   const $ = (id: string) => document.getElementById(id) as any;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
   const when = (iso?: string) => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
-  const FILTERS = [['submitted', 'Waiting for review'], ['all', 'All'], ['verified', 'Verified'], ['changes', 'Changes requested'], ['drafts', 'Drafts'], ['left', 'Left the club'], ['players', 'Players'], ['staff', 'Staff']];
+  const FILTERS = [['submitted', 'Awaiting approval'], ['all', 'All current'], ['live', 'Live'], ['changes', 'Changes requested'], ['drafts', 'Drafts'], ['loan', 'On loan'], ['former', 'Former'], ['migrated', 'Migrated – please review'], ['players', 'Players'], ['staff', 'Staff']];
+  // The status shown: a live profile with an edit shows the edit's state as well.
+  const stKey = (p: any) => (p.pending && ['LIVE', 'ON_LOAN'].includes(p.status) ? p.pending : p.status);
   const view = { season: '', filter: new URLSearchParams(location.search).get('filter') || 'submitted', q: '' };
   let D: any = null, msgT = 0, qT = 0;
   function msg(t: string, ok = true) { const m = $('msg'); m.textContent = t; m.className = `sq-msg ${ok ? 'ok' : 'err'}`; m.hidden = false; clearTimeout(msgT); msgT = window.setTimeout(() => { m.hidden = true; }, 7000); }
@@ -161,14 +173,14 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       const p = new URLSearchParams({ filter: view.filter, q: view.q, ...(view.season ? { season: view.season } : {}) });
       D = await api(`?${p}`); view.season = D.season;
       const c = D.counts;
-      $('chips').innerHTML = [['Players', c.players], ['Staff', c.staff], ['Drafts', c.drafts], ['Waiting for review', c.submitted], ['Verified', c.verified], ['Changes requested', c.changes], ['Left the club', c.left]].map(([l, n]) => `<li><b>${n}</b> ${l}</li>`).join('');
+      $('chips').innerHTML = [['Players', c.players], ['Staff', c.staff], ['Live', c.live], ['Awaiting approval', c.submitted], ['Changes requested', c.changes], ['Drafts', c.drafts], ['On loan', c.loan], ['Former', c.former], ['Migrated – please review', c.migrated]].filter(([, n], i) => i < 3 || n).map(([l, n]) => `<li><b>${n}</b> ${l}</li>`).join('');
       $('season').innerHTML = D.seasons.map((s: string) => `<option ${s === D.season ? 'selected' : ''}>${esc(s)}</option>`).join('');
       $('carryFrom').innerHTML = $('season').innerHTML;
       $('filters').innerHTML = FILTERS.map(([k, l]) => `<button type="button" data-f="${k}" aria-pressed="${k === view.filter}">${l}</button>`).join('');
       $('rows').innerHTML = D.profiles.length ? D.profiles.map((p: any) => `<tr>
         <td>${p.thumb ? `<img class="sq-thumb" src="${esc(p.thumb)}" alt="" loading="lazy" />` : '<span class="sq-thumb"></span>'}</td>
-        <td><b>${esc(p.name || 'Unnamed draft')}</b>${p.nameStatus === 'check' ? ' <span class="st CHANGES_REQUESTED">Please check name order</span>' : ''}${p.reviewNote ? `<br /><small>Note: ${esc(p.reviewNote)}</small>` : ''}</td><td>${p.type === 'player' ? 'Player' : 'Coach / staff'}</td>
-        <td>${p.type === 'player' ? `${p.shirtNumber ?? '–'} · ${esc(p.position || '')}` : esc(p.role || '')}</td><td><span class="st ${p.status}">${esc(p.statusLabel)}</span></td>
+        <td><b>${esc(p.name || 'Unnamed draft')}</b>${p.nameStatus === 'check' ? ' <span class="st CHANGES_REQUESTED">Please check name order</span>' : ''}${p.migrated ? ' <span class="st MIGRATED">Migrated – please review</span>' : ''}${p.reviewNote ? `<br /><small>Note: ${esc(p.reviewNote)}</small>` : ''}</td><td>${p.type === 'player' ? 'Player' : 'Coach / staff'}</td>
+        <td>${p.type === 'player' ? `${p.shirtNumber ?? '–'} · ${esc(p.position || '')}` : esc(p.role || '')}</td><td><span class="st ${stKey(p)}">${esc(p.statusLabel)}</span>${p.liveN ? `<br /><small class="muted">live version ${p.liveN}</small>` : ''}</td>
         <td>${esc(when(p.updatedAt))}<br /><small>${esc(p.updatedBy || '')}</small></td><td><button class="btn-o" type="button" data-open="${p.id}">Open</button></td></tr>`).join('') : '<tr><td colspan="7" class="muted">Nothing here.</td></tr>';
       $('fullBox').hidden = !D.canFull; $('superBox').hidden = !D.canSuper;
       $('exportBox').hidden = !D.canExport; $('exLogBox').hidden = !D.canExport;
@@ -180,6 +192,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       const id = new URLSearchParams(location.search).get('id'); if (id && $('detail').hidden) open(id);
       $('namesBox').hidden = !(D.canEdit && D.pendingNames);
       if (D.canEdit && D.pendingNames) loadNames();
+      if (D.canSuper) loadLegacy();
     } catch (e: any) { msg(e.message, false); }
   }
   function value(f: any, v: any, type: string) {
@@ -221,6 +234,36 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `lobi-stars-name-check-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
   });
 
+  // ── Old squad files: the migration list (Super Admins) ──
+  async function loadLegacy() {
+    try {
+      const L = await api('?legacy=1');
+      const todo = (L.list || []).filter((e: any) => !e.migrated);
+      $('legacyBox').hidden = L.legacyOff || !todo.length;
+      if ($('legacyBox').hidden) return;
+      $('legacyCount').textContent = `${todo.length} still in the old files`;
+      $('legacyRows').innerHTML = todo.map((e: any) => `<tr><td><input type="checkbox" data-lk="${esc(e.key)}" ${e.isSample ? '' : 'checked'} aria-label="Move ${esc(e.name)}" /></td>
+        <td><b>${esc(e.name)}</b></td><td>${e.kind === 'player' ? 'Player' : 'Coach / staff'}</td>
+        <td>${e.kind === 'player' ? `#${esc(e.number)} · ${esc(e.position)}${e.dob ? ` · born ${esc(e.dob)}` : ''}` : esc(e.role || e.group || '')}</td>
+        <td>${e.isSample ? '<span class="st DRAFT">Placeholder, not a real person</span>' : 'Real person? Then move.'}</td></tr>`).join('');
+    } catch (e: any) { msg(e.message, false); }
+  }
+  $('legacyGo').addEventListener('click', async () => {
+    const keys = [...document.querySelectorAll<HTMLInputElement>('#legacyRows [data-lk]:checked')].map(i => i.dataset.lk!);
+    if (!confirm(`${keys.length ? `Move ${keys.length} ${keys.length === 1 ? 'person' : 'people'} into the portal (live, marked "migrated – please review") and ` : ''}switch off the old squad files? Anything not moved disappears from the website Squad page.`)) return;
+    try { const r = await api('', { action: 'migrate', keys, switchOff: true }); msg(`${r.migrated.length ? `Moved: ${r.migrated.join(', ')}. ` : ''}The old squad files are switched off.`); load(); }
+    catch (e: any) { msg(e.message, false); }
+  });
+
+  // ── Earlier versions (Super Admins) ──
+  async function showVersions(id: string) {
+    const box = $('versionsBox'); if (!box) return;
+    try {
+      const { versions } = await api(`?versions=${encodeURIComponent(id)}`);
+      box.innerHTML = versions.length ? `<h3>Live versions</h3><ul class="sq-versions">${versions.map((v: any, i: number) => `<li><b>Version ${v.n}</b> ${i === 0 ? '<span class="st LIVE">on the website</span>' : ''} approved ${esc(when(v.approvedAt))} by ${esc(v.approvedBy || '–')}${v.submittedBy ? ` · sent by ${esc(v.submittedBy)}` : ''}${v.note ? ` · ${esc(v.note)}` : ''}${i > 0 ? ` <button class="btn-o" type="button" data-restorev="${v.n}">Restore this version</button>` : ''}</li>`).join('')}</ul><p class="muted">Restoring makes that version the one waiting for approval; the website keeps the live one until it is approved.</p>` : '<p class="muted">No live version yet.</p>';
+    } catch (e: any) { box.innerHTML = `<p class="muted">${esc(e.message)}</p>`; }
+  }
+
   // ── Edit (Super Admins) ──
   // The answers the club edits here; repeatable rows (previous clubs, honours, international career) are changed in the portal (Request changes).
   const EDIT_KEYS = ['surname', 'firstName', 'middleName', 'websiteName', 'shirtNumber', 'positionGroup', 'primaryPosition', 'preferredFoot', 'role', 'roleOther', 'dob', 'nationality', 'nationality2', 'nationalTeam', 'birthTown', 'birthCountry',
@@ -240,7 +283,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const fields = EDIT_KEYS.map(k => FIELD[k]).filter((f: any) => f && (f.for === 'all' || f.for === p.type) && !(f.showIf && !Object.entries(f.showIf).every(([k, v]) => p.data[k] === v)));
     const photo = (kind: string, label: string) => `<div><b>${label}</b><div class="ph-btns"><label class="btn-o" style="display:inline-flex;align-items:center;cursor:pointer">Upload<input type="file" accept="image/*" data-up="${kind}" hidden /></label>${p.photos?.[kind] ? `<button class="btn-o" type="button" data-delph="${kind}">Remove</button>` : ''}</div></div>`;
     return `<div class="sq-edit" id="editBox" data-eid="${p.id}">
-      <p class="wide muted">Changes are saved for everyone straight away${p.status === 'VERIFIED' ? ' and the website updates in about 2 minutes' : ''}. Every change is in the Activity Log.</p>
+      <p class="wide muted">Changes are saved straight away${['LIVE', 'ON_LOAN'].includes(p.status) ? '; the website keeps the live version until the change is approved' : ''}. Every change is in the Activity Log.</p>
       ${fields.map((f: any) => editInput(f, p.data[f.key], p.type, p.data)).join('')}
       <div class="wide sq-row">${photo('profile', 'Profile photo (cards, 4:5)')}${photo('hero', 'Wide header photo (16:9)')}${p.type === 'player' ? photo('action', 'Action photo') : ''}</div>
       <div class="wide sq-row"><button class="btn-p" type="button" id="saveEdit">Save changes</button><button class="btn-o" type="button" id="draftBio">Draft bio with Claude</button></div>
@@ -265,32 +308,44 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       const fields = fieldsFor(p.type, { admin: true });
       const old = FIELDS.filter((f: any) => f.retired && p.data[f.key] != null && p.data[f.key] !== '');
       const box = $('detail'); box.hidden = false;
+      const live = ['LIVE', 'ON_LOAN'].includes(p.status), waiting = live ? ['PENDING_APPROVAL', 'CHANGES_REQUESTED'].includes(p.pending) : ['PENDING_APPROVAL', 'CHANGES_REQUESTED'].includes(p.status);
       const acts = [
-        ['SUBMITTED', 'CHANGES_REQUESTED'].includes(p.status) ? '<button class="btn-p" type="button" data-act="verify">Verify &amp; publish</button>' : '',
-        ['SUBMITTED', 'VERIFIED'].includes(p.status) ? '<input class="sq-note" id="note" maxlength="500" placeholder="What needs changing (shown in the portal)" /><button class="btn-o" type="button" data-act="request_changes">Request changes</button>' : '',
-        p.status !== 'DRAFT' && p.status !== 'LEFT_THE_CLUB' ? '<button class="btn-o" type="button" data-act="left">Mark as left the club</button>' : '',
-        p.status === 'LEFT_THE_CLUB' ? '<button class="btn-o" type="button" data-act="restore">Restore (back at the club)</button>' : '',
+        waiting ? `<button class="btn-p" type="button" data-act="approve">${live ? 'Approve changes' : 'Approve &amp; publish'}</button>` : '',
+        (live ? p.pending === 'PENDING_APPROVAL' : p.status === 'PENDING_APPROVAL') ? '<input class="sq-note" id="note" maxlength="500" placeholder="What needs changing (shown in the portal)" /><button class="btn-o" type="button" data-act="request_changes">Request changes</button>' : '',
+        live && p.pending ? '<button class="btn-o" type="button" data-act="discard">Discard the changes (keep the live version)</button>' : '',
+        live ? '<button class="btn-o" type="button" data-act="left">Mark as left the club</button>' : '',
+        p.status === 'FORMER' ? '<button class="btn-o" type="button" data-act="restore">Restore (back at the club)</button>' : '',
         D?.canSuper ? '<button class="btn-o" type="button" data-act="remove">Remove profile</button>' : '',
       ].join('');
-      box.innerHTML = `<div class="sq-row" style="justify-content:space-between"><h2>${esc(p.name || 'Unnamed')} <span class="st ${p.status}">${esc(p.statusLabel)}</span>${p.nameStatus === 'check' ? ' <span class="st CHANGES_REQUESTED">Please check name order</span>' : ''}</h2><button class="btn-o" type="button" id="closeDetail">Close</button></div>
-        <p class="muted">${p.type === 'player' ? 'Player' : 'Coach / staff'} · ${esc(p.season)} · submitted ${esc(when(p.submittedAt))} by ${esc(p.submittedBy || '–')}${p.verifiedAt ? ` · verified ${esc(when(p.verifiedAt))} by ${esc(p.verifiedBy)}` : ''}${p.reviewNote ? ` · note: ${esc(p.reviewNote)}` : ''}</p>
+      box.innerHTML = `<div class="sq-row" style="justify-content:space-between"><h2>${esc(p.name || 'Unnamed')} <span class="st ${stKey(p)}">${esc(p.statusLabel)}</span>${p.nameStatus === 'check' ? ' <span class="st CHANGES_REQUESTED">Please check name order</span>' : ''}${p.migrated ? ' <span class="st MIGRATED">Migrated – please review</span>' : ''}</h2><button class="btn-o" type="button" id="closeDetail">Close</button></div>
+        <p class="muted">${p.type === 'player' ? 'Player' : 'Coach / staff'} · ${esc(p.season)} · submitted ${esc(when(p.submittedAt))} by ${esc(p.submittedBy || '–')}${p.verifiedAt ? ` · last approved ${esc(when(p.verifiedAt))} by ${esc(p.verifiedBy)}` : ''}${p.liveN ? ` · live version ${p.liveN}` : ''}${p.reviewNote ? ` · note: ${esc(p.reviewNote)}` : ''}</p>
+        ${live && p.pending ? `<p class="sq-old"><b>${p.pending === 'DRAFT' ? 'Changes being made in the portal (not sent yet).' : p.pending === 'CHANGES_REQUESTED' ? 'Changes were sent back to the portal.' : 'Changes are waiting for approval.'}</b> Below are the new answers; the website still shows live version ${p.liveN}.</p>` : ''}
         <div class="sq-photos">${Object.entries(p.photos || {}).map(([k, ph]: any) => `<figure><img src="${esc(ph.url)}" alt="${k} photo" ${k === 'hero' ? 'style="aspect-ratio:16/9;width:280px"' : ''} /><figcaption class="muted">${k === 'profile' ? 'Profile' : k === 'hero' ? 'Wide header' : 'Action'} · ${esc(p.fileBase)}${k === 'profile' ? '' : `-${k}`}.jpg ${(ph.warnings || []).length ? `· ⚠ ${esc(ph.warnings.join(' '))}` : ''}</figcaption></figure>`).join('') || '<p class="muted">No photo.</p>'}</div>
         <dl class="sq-dl">${fields.map((f: any) => `<dt>${esc(labelOf(f, p.type, p.data))}<span class="use ${f.use}">${f.admin ? 'club' : f.use}</span></dt><dd>${f.type === 'rows' && p.data[f.key]?.length ? `<ul>${p.data[f.key].map((r: any) => `<li>${f.columns.map((c: any) => esc(rowValue(c, r[c.key]))).filter(Boolean).join(' · ')}</li>`).join('')}</ul>` : value(f, p.data[f.key], p.type)}</dd>`).join('')}</dl>
         ${p.type === 'player' && (p.data.internationalCareer?.length || p.data.nationalTeam) ? `<div class="sq-old"><b>International career:</b> ${p.data.intlVerified ? '✓ checked, shown on the website.' : 'not checked yet, so it is <b>not shown</b> anywhere public.'} Evidence: ${p.evidence ? `<a href="${esc(p.evidence.url)}" target="_blank" rel="noopener">${esc(p.evidence.name || 'file')}</a> (uploaded ${esc(when(p.evidence.uploadedAt))} by ${esc(p.evidence.by || '')})` : 'no file'}${p.data.intlEvidence ? ` · note: ${esc(p.data.intlEvidence)}` : ''}${D?.canEdit ? ' · tick “International career checked” in Edit once the evidence is seen.' : ''}</div>` : ''}
         ${old.length ? `<div class="sq-old"><b>Old answers</b> (questions no longer asked; kept for the club, never published): ${old.map((f: any) => `${esc(f.label.replace(/ \(old.*\)$/, ''))}: <b>${esc(p.data[f.key])}</b>`).join(' · ')}</div>` : ''}
         <div class="sq-acts" data-id="${p.id}">${acts}${D?.canEdit ? '<button class="btn-o" type="button" id="editBtn">Edit</button>' : ''}</div>
+        ${D?.canSuper ? `<div id="versionsBox" data-id="${p.id}"></div>` : ''}
         <div id="editWrap"></div>`;
+      if (D?.canSuper) showVersions(p.id);
       $('editBtn')?.addEventListener('click', () => { $('editWrap').innerHTML = editPanel(p); $('editBtn').hidden = true; wireEdit(p); $('editWrap').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
       box.scrollIntoView({ behavior: 'smooth', block: 'start' });
       $('closeDetail').onclick = () => { box.hidden = true; history.replaceState(null, '', location.pathname); };
     } catch (e: any) { msg(e.message, false); }
   }
   $('detail').addEventListener('click', async (e: Event) => {
+    const rv = (e.target as HTMLElement).closest('[data-restorev]') as HTMLElement | null;
+    if (rv) {
+      const id = (rv.closest('[data-id]') as HTMLElement).dataset.id;
+      if (!confirm(`Restore version ${rv.dataset.restorev}? It will wait for approval; the website keeps the live version until then.`)) return;
+      try { await api('', { action: 'restore_version', id, n: Number(rv.dataset.restorev) }); msg('Restored: it is waiting for approval.'); open(id!); load(); } catch (err: any) { msg(err.message, false); }
+      return;
+    }
     const b = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null; if (!b) return;
     const id = (b.closest('[data-id]') as HTMLElement).dataset.id, act = b.dataset.act;
-    const sure = { verify: 'Verify and publish this profile? Its public details appear on the website Squad page.', left: 'Mark this person as having left the club? They disappear from the website Squad page but stay in the records.', remove: 'Remove this profile completely? This cannot be undone.' } as any;
+    const sure = { approve: 'Approve this profile? Its public details go live on the website Squad page.', discard: 'Throw away the changes that are not approved? The live version stays as it is.', left: 'Mark this person as having left the club? They disappear from the website Squad page but stay in the records.', remove: 'Remove this profile? This cannot be undone.' } as any;
     if (sure[act!] && !confirm(sure[act!])) return;
-    try { await api('', { action: act, id, note: ($('note') as HTMLInputElement | null)?.value }); msg({ verify: 'Verified. The website updates in about 2 minutes.', request_changes: 'Changes requested. The portal shows your note.', left: 'Marked as left the club.', restore: 'Restored.', remove: 'Removed.' }[act!] || 'Done.'); $('detail').hidden = true; load(); }
+    try { await api('', { action: act, id, note: ($('note') as HTMLInputElement | null)?.value }); msg({ approve: 'Approved. It is live; the website updates in about 2 minutes.', request_changes: 'Changes requested. The portal shows your note.', discard: 'Changes discarded; the live version stays.', left: 'Marked as left the club.', restore: 'Restored.', remove: 'Removed.' }[act!] || 'Done.'); $('detail').hidden = true; load(); }
     catch (err: any) { msg(err.message, false); }
   });
   function wireEdit(p: any) {

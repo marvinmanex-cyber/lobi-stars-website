@@ -78,8 +78,10 @@ test('portal form: names tidied; display name, pronunciation and club-only field
   assert.equal(p.data.surname, SUR, 'capitals tidied'); assert.equal(p.data.firstName, 'Chidi'); assert.equal(p.name, `Chidi ${SUR}`);
   assert.equal(p.data.socialInstagram, '@okon_test', 'a link becomes the handle');
   assert.match(p.fileBase, new RegExp(`^05-chidi-${SUR.toLowerCase()}$`));
+  // A live profile can be edited in the portal (as a change waiting for approval); club-only and retired fields never.
   const r = await P(`profiles/${minor}`, 'PATCH', { changes: { displayName: 'X', pronunciation: 'Y', websiteName: 'Z', bio: 'W' }, commit: true });
-  assert.equal(r.status, 409, 'a verified profile cannot be changed from the portal');
+  assert.equal(r.status, 200);
+  assert.deepEqual(Object.keys(r.data.errors).sort(), ['bio', 'displayName', 'pronunciation', 'websiteName']);
   const draft = (await P('profiles', 'POST', { type: 'player' })).data.id;
   const e = (await P(`profiles/${draft}`, 'PATCH', { changes: { displayName: 'X', pronunciation: 'Y', websiteName: 'Z', bio: 'W', surname: 'Ok' }, commit: true })).data;
   assert.deepEqual(Object.keys(e.errors).sort(), ['bio', 'displayName', 'pronunciation', 'websiteName']);
@@ -94,7 +96,7 @@ test('migration: old single names are filled in (Nigerian order only where clear
   oldId = `sp_old${T}`;
   const at = new Date().toISOString();
   sql(`INSERT INTO squad_profiles (id, season, type, status, data_json, display_name, full_name, dob, shirt_number, name_status, created_at, updated_at, submitted_at)
-    VALUES ('${oldId}', '${season}', 'player', 'SUBMITTED', '{"fullName":"Bello Musa Ibrahim","displayName":"Musa Bello","dob":"2000-01-01","nationality":"NG","shirtNumber":30,"positionGroup":"Midfielder","preferredFoot":"Left","phone":"+2348031111111","emergencyName":"x","emergencyPhone":"+2348032222222","confirmAccurate":true,"confirmConsent":true}', 'Musa Bello', 'Bello Musa Ibrahim', '2000-01-01', 30, 'pending', '${at}', '${at}', '${at}');`);
+    VALUES ('${oldId}', '${season}', 'player', 'PENDING_APPROVAL', '{"fullName":"Bello Musa Ibrahim","displayName":"Musa Bello","dob":"2000-01-01","nationality":"NG","shirtNumber":30,"positionGroup":"Midfielder","preferredFoot":"Left","phone":"+2348031111111","emergencyName":"x","emergencyPhone":"+2348032222222","confirmAccurate":true,"confirmConsent":true}', 'Musa Bello', 'Bello Musa Ibrahim', '2000-01-01', 30, 'pending', '${at}', '${at}', '${at}');`);
   const list = (await rev(null, '?names=1')).data.names;
   const row = list.find(n => n.id === oldId);
   assert.ok(row, 'listed under "Please check name order"');
@@ -119,18 +121,37 @@ test('duplicate person: surname + first name + date of birth, capitals ignored',
   await P(`profiles/${dup}`, 'DELETE');
 });
 
+test('versions: each approval is a live version; an earlier one can be restored (through approval); an edit can be discarded', async () => {
+  const v = (await rev(null, `?versions=${minor}`)).data.versions;
+  assert.equal(v.length, 1); assert.equal(v[0].n, 1);
+  await rev({ action: 'edit', id: minor, changes: { interestingFact: 'Version two fact.' } });
+  assert.equal((await rev({ action: 'approve', id: minor })).data.n, 2);
+  assert.equal((await rev(null, `?versions=${minor}`)).data.versions.length, 2);
+  assert.equal((await rev({ action: 'restore_version', id: minor, n: 1 })).status, 200);
+  const p = (await rev(null, `?id=${minor}`)).data.profile;
+  assert.equal(p.status, 'LIVE'); assert.equal(p.pending, 'PENDING_APPROVAL'); assert.equal(p.data.interestingFact, undefined);
+  assert.equal((await fetch(`${BASE}/api/squad/public`).then(x => x.json())).players.find(x => x.id === minor).interestingFact, 'Version two fact.', 'the website keeps version 2 until approved');
+  assert.equal((await rev({ action: 'discard', id: minor })).status, 200);
+  const d = (await rev(null, `?id=${minor}`)).data.profile;
+  assert.equal(d.pending, null); assert.equal(d.data.interestingFact, 'Version two fact.', 'back to the live version');
+});
+
 test('Super Admin edit: club-only fields, duplicate shirt number warning, hide from the website', async () => {
   const r = await rev({ action: 'edit', id: adult, changes: { debutDate: '2025-08-17', bioHeadline: 'Composed defender', bio: '## Early years\nBorn in Makurdi.\n\nJoined in 2023.', shirtShopUrl: 'https://shop.example.com/okon', shirtNumber: 17 } });
   assert.equal(r.status, 200, JSON.stringify(r.data)); assert.deepEqual(r.data.errors, {});
   assert.match(r.data.warnings[0], /Shirt number 17 is also given to Tunde/);
   await rev({ action: 'edit', id: adult, changes: { shirtNumber: 5 } });
   assert.equal((await rev({ action: 'edit', id: adult, changes: { shirtShopUrl: 'http://not-secure.example' } })).data.errors.shirtShopUrl.includes('https'), true);
+  // A Super Admin's edit of a live profile waits for approval too: approved here.
+  assert.equal((await rev({ action: 'approve', id: adult })).status, 200);
   await rev({ action: 'edit', id: oldId, changes: { hideFromWebsite: true } });
+  assert.ok((await fetch(`${BASE}/api/squad/public`).then(x => x.json())).players.some(x => x.id === oldId), 'still shown until the change is approved');
+  assert.equal((await rev({ action: 'approve', id: oldId })).status, 200);
   const pub = await fetch(`${BASE}/api/squad/public`).then(x => x.json());
   assert.ok(!pub.players.some(x => x.id === oldId), 'hidden from the website');
   const pp = (await rev(null, `?id=${oldId}`)).data.profile;
   assert.equal((await fetch(`${BASE}/api/squad/photo/${oldId}/profile/w400.webp`)).status, 404);
-  assert.equal(pp.status, 'VERIFIED', 'still verified, only hidden');
+  assert.equal(pp.status, 'LIVE', 'still live, only hidden');
 });
 
 test('international career and national team: hidden until a Super Admin has checked the evidence; a change makes it unchecked again', async () => {
@@ -151,15 +172,20 @@ test('international career and national team: hidden until a Super Admin has che
   await P(`profiles/${draft}`, 'DELETE');
   // The Super Admin ticks "checked": shown.
   assert.deepEqual((await rev({ action: 'edit', id: adult, changes: { intlVerified: true } })).data.errors, {});
+  await rev({ action: 'approve', id: adult });
   a = await pub();
   assert.equal(a.internationalCareer[0].level, 'U20'); assert.equal(a.nationalTeam, 'NG');
-  // The player changes it (after "Request changes"): unchecked again until checked.
-  await rev({ action: 'request_changes', id: adult, note: 'Please add your U23 caps.' });
+  // The player changes it in the portal: unchecked again until checked; shown on the website only after approval.
   const ch = await P(`profiles/${adult}`, 'PATCH', { changes: { internationalCareer: [{ level: 'U23', caps: 9, goals: 0, tournaments: '' }] }, commit: true });
   assert.equal(ch.data.saved.intlVerified, false);
-  await P(`profiles/${adult}/submit`, 'POST'); await rev({ action: 'verify', id: adult });
+  assert.equal((await pub()).internationalCareer[0].level, 'U20', 'the live version stays until the change is approved');
+  assert.equal((await P(`profiles/${adult}/submit`, 'POST')).status, 200);
+  assert.equal((await rev({ action: 'request_changes', id: adult, note: 'Please add the tournament too.' })).status, 200);
+  assert.equal((await P(`profiles/${adult}/submit`, 'POST')).status, 200);
+  await rev({ action: 'approve', id: adult });
   assert.deepEqual((await pub()).internationalCareer, [], 'hidden again after the change');
   await rev({ action: 'edit', id: adult, changes: { intlVerified: true, internationalCareer: [{ level: 'U20', caps: 4, goals: 1, tournaments: 'U-20 AFCON 2017' }] } });
+  await rev({ action: 'approve', id: adult });
   assert.equal((await pub()).internationalCareer[0].level, 'U20', 'a Super Admin edit keeps it checked');
 });
 
@@ -206,11 +232,14 @@ test('a corrected name moves the web address; the old one is kept for a 301 redi
   await fetch(`${BASE}/api/squad/public`); // the address the website has now
   const e = await rev({ action: 'edit', id: adult, changes: { firstName: 'Chidiebere' } });
   assert.deepEqual(e.data.errors, {});
+  assert.equal((await fetch(`${BASE}/api/squad/public`).then(x => x.json())).players.find(x => x.id === adult).slug, `chidi-${SUR.toLowerCase()}`, 'the address moves only when approved');
+  await rev({ action: 'approve', id: adult });
   const pub = await fetch(`${BASE}/api/squad/public`).then(x => x.json());
   const a = pub.players.find(x => x.id === adult);
   assert.equal(a.slug, `chidiebere-${SUR.toLowerCase()}`); assert.deepEqual(a.oldSlugs, [`chidi-${SUR.toLowerCase()}`]);
   assert.ok(pub.redirects.some(r => r.from === `/squad/chidi-${SUR.toLowerCase()}/` && r.to === `/squad/chidiebere-${SUR.toLowerCase()}/`));
   await rev({ action: 'edit', id: adult, changes: { firstName: 'Chidi' } });
+  await rev({ action: 'approve', id: adult });
   const back = (await fetch(`${BASE}/api/squad/public`).then(x => x.json())).players.find(x => x.id === adult);
   assert.equal(back.slug, `chidi-${SUR.toLowerCase()}`); assert.deepEqual(back.oldSlugs, [`chidiebere-${SUR.toLowerCase()}`], 'changing back: the current address is never also an old one');
 });

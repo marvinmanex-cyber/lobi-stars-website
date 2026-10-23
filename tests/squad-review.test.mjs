@@ -142,17 +142,18 @@ test('export data: Super Admins only (never the portal or the Website & Data Off
   assert.ok((await rev(null, '?filter=all')).data.exportLog.some(x => x.format === 'zip'), 'export logged');
 });
 
-test('left the club → off the website and the partner API; restore; new season carries verified profiles over as drafts', async () => {
+test('left the club → off the website and the partner API; restore; new season carries live profiles over (still live, confirmations asked again)', async () => {
   assert.equal((await rev({ action: 'left', id })).status, 200);
   assert.ok(!(await fetch(`${BASE}/api/squad/public`).then(r => r.json())).players.some(x => x.id === id));
   assert.ok(!(await fetch(`${BASE}/api/partner/squad`, { headers: { 'X-API-Key': KEY } }).then(r => r.json())).players.some(x => x.id === id));
   const all = (await rev(null, '?export=1&which=verified&season=all')).data;
-  assert.ok(all.profiles.some(x => x.id === id && x.status === 'LEFT_THE_CLUB'), 'kept in "all seasons" exports');
+  assert.ok(all.profiles.some(x => x.id === id && x.status === 'FORMER'), 'kept in "all seasons" exports');
   assert.equal((await rev({ action: 'restore', id })).status, 200);
   const next = `${season.slice(0, 4)}/99`;
   const c = await rev({ action: 'carry_over', from: season, to: next });
   assert.equal(c.status, 200, JSON.stringify(c.data)); assert.equal(c.data.copied, 2);
   const drafts = (await rev(null, `?season=${encodeURIComponent(next)}&filter=drafts`)).data.profiles;
   assert.equal(drafts.length, 2);
+  assert.ok(drafts.every(x => x.status === 'LIVE' && x.pending === 'DRAFT'), 'still live; an edit waits for the season confirmations');
   sql(`DELETE FROM squad_profiles WHERE season = '${next}';`);
 });

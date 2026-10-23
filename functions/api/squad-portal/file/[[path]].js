@@ -1,9 +1,9 @@
 import { getPortalSession } from '../../_lib/squadPortal.js';
 import { getAdmin } from '../../_lib/adminSession.js';
 import { can, loadRoles } from '../../_lib/adminRoles.js';
-import { getProfile, readFile, validFile, photoName, parseJson } from '../../_lib/squadProfiles.js';
+import { getProfile, readFile, validFile, photoName, parseJson, liveOf } from '../../_lib/squadProfiles.js';
 
-// GET /api/squad-portal/file/:id/:kind/:variant[?download=1] -- a profile photo (profile,
+// GET /api/squad-portal/file/:id/:kind/:variant[?rev=][&live=1][&download=1] -- a profile photo (profile,
 // action, hero), for the portal (signed in) or the club review (squad.review). Old name
 // recordings are kept in storage but no longer served (22 Oct 2026).
 // Private: only the browser may keep a short copy. Downloads get the profile's file
@@ -19,7 +19,11 @@ export async function onRequestGet({ request, env, params }) {
   if (!ok) return new Response('Sign in first', { status: 401 });
   const p = await getProfile(env.DB, id);
   if (!p) return new Response('Not found', { status: 404 });
-  const o = await readFile(env, p.id, kind, variant);
+  // The photo of the working copy (being edited), or with live=1 the one on the website.
+  const u = new URL(request.url), live = u.searchParams.get('live') === '1';
+  const photos = live ? liveOf(p)?.photos || {} : parseJson(p.photos_json, {});
+  const rev = kind === 'evidence' ? null : photos[kind]?.rev || null;
+  const o = await readFile(env, p.id, kind, variant, rev);
   if (!o) return new Response('Not found', { status: 404 });
   const data = parseJson(p.data_json, {});
   const type = o.httpMetadata?.contentType || 'application/octet-stream';

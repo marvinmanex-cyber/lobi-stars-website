@@ -24,8 +24,23 @@ export const roleCategory = role => (COACHING_ROLES.includes(role) ? 'COACHING' 
 export const STATES = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa',
   'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'FCT (Abuja)', 'Outside Nigeria'];
 export const FEET = ['Right', 'Left', 'Both'];
-export const STATUSES = { DRAFT: 'Draft', SUBMITTED: 'Submitted', VERIFIED: 'Verified', CHANGES_REQUESTED: 'Changes requested', LEFT_THE_CLUB: 'Left the club' };
+// Profile life (23 Oct 2026): DRAFT → PENDING_APPROVAL → LIVE, or CHANGES_REQUESTED;
+// ON_LOAN, FORMER (left the club) and DELETED (restorable for 30 days).
+// A LIVE or ON_LOAN profile that is being edited keeps its live version on the
+// website; the edit is its "pending" version (column pending: DRAFT,
+// PENDING_APPROVAL or CHANGES_REQUESTED) until a Super Admin approves it.
+export const STATUSES = { DRAFT: 'Draft', PENDING_APPROVAL: 'Awaiting approval', LIVE: 'Live', CHANGES_REQUESTED: 'Changes requested', ON_LOAN: 'On loan', FORMER: 'Former', DELETED: 'Deleted' };
+// Before 23 Oct 2026 → now.
+export const OLD_STATUS = { SUBMITTED: 'PENDING_APPROVAL', VERIFIED: 'LIVE', LEFT_THE_CLUB: 'FORMER' };
 export const EDITABLE = ['DRAFT', 'CHANGES_REQUESTED'];
+export const PUBLIC_STATUSES = ['LIVE', 'ON_LOAN'];
+/** Can the portal edit it? New profiles while a draft or sent back; live ones unless an edit is waiting for approval. */
+export const isEditable = p => EDITABLE.includes(p.status) || (PUBLIC_STATUSES.includes(p.status) && p.pending !== 'PENDING_APPROVAL');
+/** The status shown in the portal and the admin: a live profile with an edit shows the edit's state. */
+export function statusOf(p) {
+  if (PUBLIC_STATUSES.includes(p.status) && p.pending) return { key: p.pending, label: `${STATUSES[p.status]} · edit ${p.pending === 'DRAFT' ? 'not sent yet' : STATUSES[p.pending].toLowerCase()}` };
+  return { key: p.status, label: STATUSES[p.status] || p.status };
+}
 export const NOTE_MAX = 300;
 
 export const NAME_HINT = 'As it appears on official documents.';

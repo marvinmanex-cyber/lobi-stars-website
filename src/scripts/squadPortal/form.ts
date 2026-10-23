@@ -15,8 +15,10 @@ const countryOpts = (sel = '') => `<option value="">Choose…</option>${COUNTRY_
 import { processPhoto } from './media';
 import { showHome } from './home';
 
-const BADGE: Record<string, string> = { DRAFT: 'amber', SUBMITTED: 'blue', VERIFIED: 'green', CHANGES_REQUESTED: 'red', LEFT_THE_CLUB: 'grey' };
-type P = { id: string; type: 'player' | 'staff'; status: string; season: string; data: Record<string, any>; photos: any; editable: boolean; name: string; nameStatus?: string | null; fileBase: string; reviewNote?: string; reviewBy?: string };
+const BADGE: Record<string, string> = { DRAFT: 'amber', PENDING_APPROVAL: 'blue', LIVE: 'green', CHANGES_REQUESTED: 'red', ON_LOAN: 'grey', FORMER: 'grey', DELETED: 'grey' };
+// A live profile being edited shows the state of the edit.
+const stKey = (p: any) => (p.pending && ['LIVE', 'ON_LOAN'].includes(p.status) ? p.pending : p.status);
+type P = { id: string; type: 'player' | 'staff'; status: string; pending?: string | null; statusLabel?: string; liveN?: number | null; season: string; data: Record<string, any>; photos: any; editable: boolean; name: string; nameStatus?: string | null; fileBase: string; reviewNote?: string; reviewBy?: string };
 let P: P | null = null;
 let lastSync = '', pollTimer = 0, retryTimer = 0, sending = false, pendingText = new Map<string, number>(), dirty = false;
 
@@ -243,12 +245,13 @@ function render(extra: any) {
       <button type="button" class="sp-back" id="back" aria-label="Back to profiles">←</button>
       <span class="sp-badge sp-badge-sm"><img src="/images/lobi-stars-badge.webp" alt="" width="34" height="34" /></span>
       <h1 class="sp-h2" id="formTitle">${esc(p.name ? p.name.toUpperCase() : 'New profile')}</h1>
-      <span class="sp-badge-st ${BADGE[p.status]}">${esc(STATUSES[p.status])}</span>
+      <span class="sp-badge-st ${BADGE[stKey(p)]}">${esc(p.statusLabel || STATUSES[p.status])}</span>
       <span class="sp-pill saved" id="savePill" role="status" aria-live="polite"><span class="dot"></span>All changes saved</span>
     </div>
     ${p.nameStatus === 'check' ? `<p class="sp-review"><b>Please check name order.</b> The form now has Surname, First name and Middle name; they were filled in from the old answers. Check them against the passport or official ID${p.editable ? ' and correct them if needed' : ''}. The club confirms them.</p>` : ''}
-    ${p.status === 'CHANGES_REQUESTED' && p.reviewNote ? `<p class="sp-review"><b>Changes requested by ${esc(p.reviewBy || 'the club')}:</b> ${esc(p.reviewNote)}</p>` : ''}
-    ${view ? `<p class="sp-review sp-view">This profile is ${esc(STATUSES[p.status].toLowerCase())} and can only be viewed.${p.status === 'SUBMITTED' ? ' The club will review it.' : ''}</p>` : ''}
+    ${stKey(p) === 'CHANGES_REQUESTED' && p.reviewNote ? `<p class="sp-review"><b>Changes requested by ${esc(p.reviewBy || 'the club')}:</b> ${esc(p.reviewNote)}</p>` : ''}
+    ${['LIVE', 'ON_LOAN'].includes(p.status) && !view ? `<p class="sp-review sp-view">This profile is live on the website. Changes you make here are saved but only appear on the website after you send them and the club approves them.</p>` : ''}
+    ${view ? `<p class="sp-review sp-view">${stKey(p) === 'PENDING_APPROVAL' ? 'This profile is waiting for approval by the club and can only be viewed until then.' : `This profile is ${esc((p.statusLabel || STATUSES[p.status]).toLowerCase())} and can only be viewed.`}</p>` : ''}
     <p class="sp-dup" id="dupWarn" role="status" hidden></p>
     <div class="sp-form">
       <nav class="sp-secnav" aria-label="Sections">
