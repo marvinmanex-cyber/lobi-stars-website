@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-23: Squad profiles: every detail on the pages checked
+
+**What changed**
+- Checked that every detail shown on the player and coach profile pages (41
+  in all) is collected in the portal form, the Super Admin Edit panel or Live
+  Match Control, and appears on the built pages; private details never do.
+- Super Admin **Edit** can now also change **Preferred foot** (shown on player
+  pages).
+- A coach without a bio no longer gets a "Biography" box that only repeated
+  their licence.
+
+**Staff need to do:** nothing.
+
 ## 2026-10-22: Website down for database reads — fewer rows read
 
 **What happened:** from the evening of 22 Oct the parts of the website that use

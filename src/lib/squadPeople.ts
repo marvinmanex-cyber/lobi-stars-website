@@ -70,7 +70,8 @@ function staffOf(e: CollectionEntry<'staff'>): Person {
     nationality: [pr.nationality, pr.nationality2].filter(Boolean) as string[], nationalTeam: null, birthTown: pr.birthTown || null, birthCountry: pr.birthCountry || null,
     dob: pr.dob || null, age: pr.dob ? ageFrom(pr.dob) : pr.age ?? null, heightCm: null, preferredFoot: null,
     joined: pr.joined || null, debut: null, licence: pr.licence || null,
-    bioHeadline: pr.bioHeadline || null, bioText: pr.bio || null, shortBio: d.bio || null, interestingFact: pr.interestingFact || null, shirtUrl: pr.shirtShopUrl || null,
+    // The short CMS bio only for hand-made entries (for portal staff it just repeats the licence or role).
+    bioHeadline: pr.bioHeadline || null, bioText: pr.bio || null, shortBio: pr.surname ? null : d.bio || null, interestingFact: pr.interestingFact || null, shirtUrl: pr.shirtShopUrl || null,
     socials: pr.socials || {}, previousClubs: [], previousRoles: pr.previousRoles || [], internationalCareer: [], honours: pr.honours || [],
     isSample: false, entry: e,
   };

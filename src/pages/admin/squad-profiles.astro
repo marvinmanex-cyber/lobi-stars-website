@@ -214,7 +214,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 
   // ── Edit (Super Admins) ──
   // The answers the club edits here; repeatable rows (previous clubs, honours, international career) are changed in the portal (Request changes).
-  const EDIT_KEYS = ['surname', 'firstName', 'middleName', 'websiteName', 'shirtNumber', 'positionGroup', 'primaryPosition', 'role', 'roleOther', 'dob', 'nationality', 'nationality2', 'nationalTeam', 'birthTown', 'birthCountry',
+  const EDIT_KEYS = ['surname', 'firstName', 'middleName', 'websiteName', 'shirtNumber', 'positionGroup', 'primaryPosition', 'preferredFoot', 'role', 'roleOther', 'dob', 'nationality', 'nationality2', 'nationalTeam', 'birthTown', 'birthCountry',
     'heightCm', 'joined', 'joinedStaff', 'debutDate', 'qualifications', 'socialInstagram', 'socialX', 'socialTiktok', 'interestingFact', 'bioHeadline', 'bio', 'shirtShopUrl', 'hideFromWebsite'];
   function editInput(f: any, v: any, type: string) {
     const id = `ed_${f.key}`, val = v ?? '';

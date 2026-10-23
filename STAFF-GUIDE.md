@@ -3396,7 +3396,7 @@ The old answers are kept and shown under "Old answers" on the profile.
 
 **Edit** (open a profile › **Edit**). For any profile, in any status:
 - names, **Name on website** (only for someone publicly known by a different
-  name, e.g. a nickname; leave empty otherwise), shirt number, position, role,
+  name, e.g. a nickname; leave empty otherwise), shirt number, position, preferred foot, role,
   date of birth, countries, place of birth, height, joined, licence, social
   handles, interesting fact;
 - the club-only details: **Lobi Stars debut** (empty = "Yet to debut"),
