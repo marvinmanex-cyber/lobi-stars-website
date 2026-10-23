@@ -82,7 +82,7 @@ test('request changes → the portal sees the note and can edit; verify → publ
   assert.ok(p && s, 'published');
   assert.equal(p.age, 26); assert.equal(p.heightCm, 186); assert.equal(p.group, 'DEF');
   const text = JSON.stringify(pub);
-  assert.equal(p.dob, '2000-02-02', 'full date of birth public from 18'); assert.equal(p.officialName, `PUB${L.toUpperCase()}, Ade Okoh`);
+  assert.equal(p.dob, '2000-02-02', 'full date of birth public from 18'); assert.equal(p.officialName, `PUB${L.toUpperCase()}, Ade`, 'middle name never public'); assert.ok(!JSON.stringify(pub).includes('Okoh'));
   for (const secret of ['+2348035551111', answers.email, `Mama ${TAG}`, 'Captain in 2025', 'Press high']) assert.ok(!text.includes(secret), `not public: ${secret}`);
   assert.equal((await fetch(`${BASE}${p.photo}`)).status, 200, 'public photo of a verified profile');
 });
@@ -91,9 +91,9 @@ test('partner API: key needed; Public + Media only in the Data Package structure
   assert.equal((await fetch(`${BASE}/api/partner/squad`)).status, 401);
   assert.equal((await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: 'Bearer wrong' } })).status, 401);
   const doc = await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: `Bearer ${KEY}` } }).then(r => r.json());
-  assert.equal(doc.schemaVersion, '1.1'); assert.deepEqual(validatePackage(doc), []);
+  assert.equal(doc.schemaVersion, '1.2'); assert.deepEqual(validatePackage(doc), []);
   const pl = doc.players.find(x => x.id === id), st = doc.staff.find(x => x.id === staffId);
-  assert.equal(pl.notes.careerHighlight, 'Captain in 2025', 'media notes included'); assert.ok(!('pronunciation' in pl), 'no pronunciation any more');
+  assert.equal(pl.notes.careerHighlight, 'Captain in 2025', 'media notes included'); assert.equal(pl.pronunciation, null, 'no pronunciation any more (null in 1.2)');
   assert.equal(st.notes.philosophy, 'Press high'); assert.equal(st.role, 'Head Coach');
   const text = JSON.stringify(doc);
   for (const secret of ['+2348035551111', answers.email, `Mama ${TAG}`]) assert.ok(!text.includes(secret), `never in the partner API: ${secret}`);

@@ -122,6 +122,6 @@ test('Website Health checks the portal: private, sign-in bursts, refused saves, 
   for (const id of ['squad_portal', 'squad_signins', 'squad_saves', 'squad_export', 'squad_photos']) assert.ok(checks[id], id);
   assert.equal(checks.squad_portal.status, 'PASS', checks.squad_portal.problem);
   assert.equal(checks.squad_export.status, 'PASS', checks.squad_export.problem);
-  assert.match(checks.squad_export.problem, /schemaVersion 1\.1/);
+  assert.match(checks.squad_export.problem, /schemaVersion 1\.2/);
   assert.equal(checks.squad_saves.status, 'WARNING', 'the refused save above is reported');
 });

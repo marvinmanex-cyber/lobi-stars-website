@@ -7,7 +7,7 @@
 // Photos and recordings live in the private R2 bucket SQUAD_BUCKET.
 // Every change is written to the Activity Log in plain English.
 import { FIELD, FIELDS, STATUSES, EDITABLE, cleanValue, missingForSubmit, labelOf, ageOn, PRIVATE_KEYS, RETENTION_KEYS, profileName, upgradeData } from '../../../src/lib/squadFields.js';
-import { nameSlug, splitFullName, officialName } from '../../../src/lib/names.js';
+import { nameSlug, migrateName, officialName, publicName } from '../../../src/lib/names.js';
 import { logAdminAction } from './adminSession.js';
 import { getPortalSettings, setPortalSetting } from './squadPortal.js';
 
@@ -35,9 +35,31 @@ export async function ensureProfileSchema(db) {
   const have = new Set((await db.prepare(`PRAGMA table_info(squad_profiles)`).all()).results.map(c => c.name));
   for (const [col, def] of NEW_COLUMNS) if (!have.has(col)) await db.prepare(`ALTER TABLE squad_profiles ADD COLUMN ${col} ${def}`).run();
   await upgradeOldAnswers(db);
+  await migrateOldNames(db);
   ready = true;
 }
-const NEW_COLUMNS = [['surname', 'TEXT'], ['first_name', 'TEXT'], ['middle_name', 'TEXT'], ['website_name', 'TEXT'], ['public_name', 'TEXT'], ['name_status', 'TEXT']];
+// public_slug: the web address last published (/squad/<slug>/); old_slugs: earlier ones (JSON), which 301-redirect.
+const NEW_COLUMNS = [['surname', 'TEXT'], ['first_name', 'TEXT'], ['middle_name', 'TEXT'], ['website_name', 'TEXT'], ['public_name', 'TEXT'], ['name_status', 'TEXT'],
+  ['public_slug', 'TEXT'], ['old_slugs', 'TEXT']];
+
+/**
+ * Old single names (name_status 'pending') → surname / first name / middle name
+ * (names.js migrateName), saved straight away and marked name_status 'check':
+ * "Please check name order" in the portal and the review page until a Super Admin
+ * confirms. The old answers stay in data_json. Safe to run again (only 'pending' rows).
+ */
+export async function migrateOldNames(db) {
+  const rows = (await db.prepare(`SELECT id, data_json, meta_json, type FROM squad_profiles WHERE name_status = 'pending'`).all()).results;
+  for (const r of rows) {
+    const d = parse(r.data_json, {}), meta = parse(r.meta_json, {});
+    const m = d.surname && d.firstName ? { surname: d.surname, firstName: d.firstName, middleName: d.middleName || '', rule: 'Typed into the new name fields.' } : migrateName(d.fullName, d.displayName);
+    Object.assign(d, { surname: m.surname || null, firstName: m.firstName || null, middleName: m.middleName || null });
+    meta._nameMigrated = { from: { fullName: d.fullName || null, displayName: d.displayName || null }, rule: m.rule, at: nowIso() };
+    await db.prepare(`UPDATE squad_profiles SET data_json = ?, meta_json = ?, surname = ?, first_name = ?, middle_name = ?, public_name = ?, name_status = 'check' WHERE id = ? AND name_status = 'pending'`)
+      .bind(JSON.stringify(d), JSON.stringify(meta), d.surname, d.firstName, d.middleName, publicName(d) || null, r.id).run();
+  }
+  return rows.length;
+}
 
 /**
  * Once: answers saved before the form changed are tidied (nationality as a country
@@ -80,6 +102,8 @@ export function profileView(p, { thumbs = 'portal' } = {}) {
     shirtNumber: p.shirt_number, role: p.role, position: p.position,
     photos: Object.fromEntries(Object.entries(photos).map(([k, v]) => [k, { ...v, url: file(k, 'w1200.webp'), thumb: file(k, 'w400.webp'), jpg: file(k, 'w1200.jpg') }])),
     // Name recordings are no longer used (22 Oct 2026); old ones stay in storage, unused.
+    // Evidence for the international career (a photo or PDF), private: portal and club reviewers only.
+    evidence: parse(p.meta_json, {})._evidence ? { ...parse(p.meta_json, {})._evidence, url: file('evidence', 'file') } : null,
     createdAt: p.created_at, createdBy: p.created_by, updatedAt: p.updated_at, updatedBy: p.updated_by,
     submittedAt: p.submitted_at, submittedBy: p.submitted_by, verifiedAt: p.verified_at, verifiedBy: p.verified_by,
     reviewNote: p.review_note, reviewBy: p.review_by, reviewAt: p.review_at, leftAt: p.left_at, carriedFrom: p.carried_from,
@@ -153,6 +177,12 @@ export async function saveFields(env, actor, id, { changes = {}, since = null, c
       const prevCommitted = meta[key]?.committed;
       meta[key] = { at, by: actor.name, sid: sessionId, committed: commit ? r.value : prevCommitted !== undefined ? prevCommitted : before ?? null };
       if (commit) logged.push({ key, from: prevCommitted !== undefined ? prevCommitted : before, to: r.value });
+      // A changed international claim must be checked again before it is shown.
+      if (!admin && (key === 'internationalCareer' || key === 'nationalTeam') && data.intlVerified) {
+        data.intlVerified = false; saved.intlVerified = false;
+        meta.intlVerified = { at, by: actor.name, sid: sessionId, committed: false };
+        logged.push({ key: 'intlVerified', from: true, to: false });
+      }
     }
     // Nothing new (a check for other people's changes): nothing is written.
     if (!Object.keys(saved).some(k => JSON.stringify(parse(p.data_json, {})[k] ?? null) !== JSON.stringify(saved[k] ?? null)) && type === p.type) {
@@ -168,7 +198,7 @@ export async function saveFields(env, actor, id, { changes = {}, since = null, c
     const name = c.public_name || whoName(p);
     if (type !== p.type) await logProfile(db, actor, 'squad_profile_edit', `${actor.name} changed the profile type of ${name} to ${type === 'staff' ? 'coach / staff member' : 'player'}`);
     for (const l of logged) {
-      const f = FIELD[l.key], label = (f.short || labelOf(f, type)).toLowerCase();
+      const f = FIELD[l.key], label = (f.short || labelOf(f, type, data)).toLowerCase();
       const text = f.use === 'private' ? `${actor.name} updated the ${label} for ${name}` // private values never go in the log
         : `${actor.name} changed the ${label} for ${name} from ${fmtVal(l.key, l.from)} to ${fmtVal(l.key, l.to)}`;
       await logProfile(db, actor, 'squad_profile_edit', `${text} (${p.season})`);
@@ -187,12 +217,12 @@ export async function shirtTaken(db, { season, number, exceptId, forSubmit = fal
     AND status NOT IN ('LEFT_THE_CLUB'${forSubmit ? ", 'DRAFT'" : ''}) ORDER BY CASE status WHEN 'VERIFIED' THEN 0 WHEN 'SUBMITTED' THEN 1 ELSE 2 END LIMIT 1`)
     .bind(season, Number(number), String(exceptId || '')).first();
 }
-/** "A profile for this person may already exist": the same surname and first name (or old name) and the same date of birth. */
+/** "A profile for this person may already exist": the same surname, first name and date of birth (capitals ignored). */
 export async function samePerson(db, { surname, firstName, dob, exceptId }) {
   if (!dob || !surname || !firstName) return null;
   return db.prepare(`SELECT id, COALESCE(public_name, display_name) AS display_name, season, status FROM squad_profiles WHERE dob = ? AND id != ? AND deleted_at IS NULL
-    AND ((lower(surname) = lower(?) AND lower(first_name) = lower(?)) OR lower(display_name) = lower(?) OR lower(full_name) LIKE lower(?)) ORDER BY updated_at DESC LIMIT 1`)
-    .bind(dob, String(exceptId || ''), surname, firstName, `${firstName} ${surname}`, `%${surname}%`).first();
+    AND lower(trim(surname)) = lower(trim(?)) AND lower(trim(first_name)) = lower(trim(?)) ORDER BY updated_at DESC LIMIT 1`)
+    .bind(dob, String(exceptId || ''), surname, firstName).first();
 }
 
 /** Submit for club review: everything required, the profile photo, a free shirt number. */
@@ -231,7 +261,8 @@ export async function deleteProfile(env, actor, id, { force = false } = {}) {
 // hero: the wide header photo of a profile page (added by the club on the review page).
 // audio: old name recordings, kept in storage but no longer offered (22 Oct 2026).
 const PHOTO = ['w400.webp', 'w1200.webp', 'w1200.jpg'];
-const KINDS = { profile: PHOTO, action: PHOTO, hero: [...PHOTO, 'w2000.webp'], audio: ['original', 'mp3'] };
+// evidence: one photo or PDF backing the international career (private).
+const KINDS = { profile: PHOTO, action: PHOTO, hero: [...PHOTO, 'w2000.webp'], audio: ['original', 'mp3'], evidence: ['file'] };
 export const PHOTO_KINDS = ['profile', 'action', 'hero'];
 const keyOf = (id, kind, variant) => `profiles/${id}/${kind}/${variant}`;
 export const validFile = (kind, variant) => !!KINDS[kind]?.includes(variant);
@@ -251,8 +282,45 @@ const magic = async (blob, kind) => {
   if (kind === 'jpeg') return b[0] === 0xFF && b[1] === 0xD8;
   if (kind === 'mp3') return s.startsWith('ID3') || (b[0] === 0xFF && (b[1] & 0xE0) === 0xE0);
   if (kind === 'audio') return s.slice(4, 8) === 'ftyp' || (b[0] === 0x1A && b[1] === 0x45) || s.startsWith('OggS') || s.startsWith('RIFF');
+  if (kind === 'pdf') return s.startsWith('%PDF');
+  if (kind === 'png') return b[0] === 0x89 && s.slice(1, 4) === 'PNG';
   return false;
 };
+
+/**
+ * Evidence for the international career: one photo (JPG, PNG, WebP) or PDF up to
+ * 5 MB, e.g. a call-up letter or a federation squad list. Replaces the previous
+ * one. Private (portal and club reviewers only); never published.
+ */
+export async function saveEvidence(env, actor, id, form, { admin = false } = {}) {
+  const db = env.DB;
+  if (!env.SQUAD_BUCKET) return { error: 'File storage is not set up yet (SQUAD_BUCKET).', status: 503 };
+  const p = await getProfile(db, id);
+  if (!p) return { error: 'Profile not found.', status: 404 };
+  if (!admin && !EDITABLE.includes(p.status)) return { error: 'This profile can only be viewed.', status: 409 };
+  const f = form.get('file');
+  if (!f || typeof f === 'string' || !f.size) return { error: 'The file did not arrive. Please try again.', status: 400 };
+  if (f.size > 5 * 1024 * 1024) return { error: 'The file is larger than 5 MB. Take a photo of the document instead.', status: 413 };
+  const type = (await magic(f, 'pdf')) ? 'application/pdf' : (await magic(f, 'jpeg')) ? 'image/jpeg' : (await magic(f, 'png')) ? 'image/png' : (await magic(f, 'webp')) ? 'image/webp' : null;
+  if (!type) return { error: 'Upload a photo (JPG, PNG or WebP) or a PDF.', status: 400 };
+  await env.SQUAD_BUCKET.put(keyOf(p.id, 'evidence', 'file'), await f.arrayBuffer(), { httpMetadata: { contentType: type } });
+  const meta = parse(p.meta_json, {});
+  meta._evidence = { type, size: f.size, name: String(f.name || 'evidence').replace(/[^\w.\- ]+/g, '').slice(0, 80), uploadedAt: nowIso(), by: actor.name };
+  await db.prepare(`UPDATE squad_profiles SET meta_json = ?, updated_at = ?, updated_by = ?, version = version + 1 WHERE id = ?`).bind(JSON.stringify(meta), nowIso(), actor.name, p.id).run();
+  await logProfile(db, actor, 'squad_profile_evidence', `${actor.name} uploaded evidence for the international career of ${rowName(p) || 'a profile'} (${p.season})`);
+  return { ok: true, evidence: { ...meta._evidence, url: `/api/squad-portal/file/${p.id}/evidence/file` } };
+}
+export async function deleteEvidence(env, actor, id, { admin = false } = {}) {
+  const db = env.DB;
+  const p = await getProfile(db, id);
+  if (!p) return { error: 'Profile not found.', status: 404 };
+  if (!admin && !EDITABLE.includes(p.status)) return { error: 'This profile can only be viewed.', status: 409 };
+  await deleteFiles(env, p.id, 'evidence');
+  const meta = parse(p.meta_json, {}); delete meta._evidence;
+  await db.prepare(`UPDATE squad_profiles SET meta_json = ?, updated_at = ?, updated_by = ?, version = version + 1 WHERE id = ?`).bind(JSON.stringify(meta), nowIso(), actor.name, p.id).run();
+  await logProfile(db, actor, 'squad_profile_evidence', `${actor.name} removed the international career evidence of ${rowName(p) || 'a profile'}`);
+  return { ok: true };
+}
 
 /**
  * A photo, already processed in the browser (rotation fixed, location/EXIF data
@@ -350,7 +418,6 @@ export async function reviewAction(env, admin, id, action, note = '') {
     if (!['SUBMITTED', 'CHANGES_REQUESTED'].includes(p.status)) return { error: 'Only submitted profiles can be verified.', status: 409 };
     if (p.type === 'player') {
       const data = parse(p.data_json, {});
-      if (p.name_status === 'pending') return { error: 'Confirm this person’s name first (Name check, at the top of this page).', status: 409 };
       const taken = await db.prepare(`SELECT COALESCE(public_name, display_name) AS display_name FROM squad_profiles WHERE season = ? AND type = 'player' AND shirt_number = ? AND id != ? AND deleted_at IS NULL AND status = 'VERIFIED' LIMIT 1`).bind(p.season, data.shirtNumber, p.id).first();
       if (taken) return { error: `Shirt number ${data.shirtNumber} is already used by ${taken.display_name} (verified). Request a change first.`, status: 409 };
     }
@@ -442,16 +509,13 @@ export async function erasePrivateAfterLeaving(db, { now = Date.now(), force = f
 // proposal until a Super Admin confirms or corrects it. The old answers are kept.
 export async function nameCheckList(db) {
   await ensureProfileSchema(db);
-  const rows = (await db.prepare(`SELECT * FROM squad_profiles WHERE name_status = 'pending' AND deleted_at IS NULL ORDER BY season DESC, type, COALESCE(shirt_number, 999)`).all()).results;
+  await migrateOldNames(db);
+  const rows = (await db.prepare(`SELECT * FROM squad_profiles WHERE name_status = 'check' AND deleted_at IS NULL ORDER BY season DESC, type, COALESCE(shirt_number, 999)`).all()).results;
   return rows.map(p => {
-    const d = parse(p.data_json, {}), original = d.fullName || d.displayName || '';
-    // Already typed into the new name fields (in the portal): offered as entered.
-    const prop = d.surname && d.firstName ? { surname: d.surname, firstName: d.firstName, middleName: d.middleName || '', confidence: 'high', reason: 'Entered in the new name fields.' } : splitFullName(original);
-    const plain = [prop.firstName, prop.surname].filter(Boolean).join(' ');
-    const website = d.displayName && d.displayName.trim().toLowerCase() !== plain.toLowerCase() ? d.displayName.trim() : '';
+    const d = parse(p.data_json, {}), m = parse(p.meta_json, {})._nameMigrated || {};
     return { id: p.id, type: p.type, status: p.status, statusLabel: STATUSES[p.status], season: p.season, shirtNumber: p.shirt_number,
-      original, oldDisplayName: d.displayName || '', surname: prop.surname, firstName: prop.firstName, middleName: prop.middleName, websiteName: website,
-      confidence: prop.confidence, reason: prop.reason };
+      original: d.fullName || '', oldDisplayName: d.displayName || '', surname: d.surname || '', firstName: d.firstName || '', middleName: d.middleName || '',
+      websiteName: d.websiteName || '', rule: m.rule || '' };
   });
 }
 export async function confirmName(env, admin, { id, surname, firstName, middleName = '', websiteName = '' }) {

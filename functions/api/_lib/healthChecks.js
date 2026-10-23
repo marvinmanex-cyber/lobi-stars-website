@@ -229,7 +229,7 @@ export const INFO = {
     why: 'An answer that is refused or stays on a phone never reaches the club, so a profile can be submitted incomplete.',
     fix: ['Ask the person named in the details to open the portal on the same phone or computer while connected, so the waiting answers are sent.', 'If an answer was refused, open that profile and type it again.', 'If it keeps happening, send the details to the developer.'] },
   squad_export: { category: 'tasks', name: 'Media Partner Data Package is valid', who: DEV,
-    why: 'The media partner’s systems read the Data Package automatically; a file that does not match the agreed format (schemaVersion 1.1) is rejected.',
+    why: 'The media partner’s systems read the Data Package automatically; a file that does not match the agreed format (schemaVersion 1.2) is rejected.',
     fix: ['Send the details to the developer.'] },
   squad_photos: { category: 'tasks', name: 'Squad photos are all there', who: 'Website & Data Officer',
     why: 'A submitted or verified profile without its photo shows a blank on the Squad page and in the Data Package.',
@@ -740,7 +740,7 @@ async function squadChecks(ctx) {
   const bad = await safeAll(db, `SELECT action, detail, ts FROM admin_log WHERE action IN ('squad_save_failed', 'squad_save_unsynced') AND ts >= ? ORDER BY ts DESC LIMIT 20`, ago(24 * 7)) || [];
   out.push(result('squad_saves', bad.length ? 'WARNING' : 'PASS', {
     problem: bad.length ? `${plural(bad.length, 'problem')} in the last 7 days: ${list(bad.map(b => b.detail), 3)}.` : 'Every portal answer in the last 7 days reached the club.', details: bad.slice(0, 10) }));
-  // The Data Package built from the verified profiles matches schemaVersion 1.1.
+  // The Data Package built from the verified profiles matches schemaVersion 1.2.
   try {
     const { profilesFor, packageInput } = await import('./squadPublish.js');
     const { getTeam } = await import('./squadProfiles.js');

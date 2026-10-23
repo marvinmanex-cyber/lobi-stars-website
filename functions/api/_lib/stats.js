@@ -105,12 +105,15 @@ export async function seasonStats(db, roster, { season, currentSeason, startMont
   const ids = new Set(inSeason.map(m => m.id));
   const stats = ids.size ? (await db.prepare(`SELECT * FROM player_match_stats`).all()).results.filter(r => ids.has(r.event_id)) : [];
   const people = new Map(roster.filter(p => !p.isSample).map(p => [p.slug, p]));
+  // Stats saved under an earlier web address (before a name correction) count for the player now.
+  const alias = new Map(roster.filter(p => !p.isSample).flatMap(p => (p.aliases || []).map(a => [a, p.slug])));
   const agg = new Map();
   const get = slug => { if (!agg.has(slug)) agg.set(slug, { apps: 0, starts: 0, goals: 0, assists: 0, yellow: 0, red: 0, cleanSheets: 0, minutes: 0, motm: 0 }); return agg.get(slug); };
   for (const s of stats) {
-    const p = people.get(s.player_slug);
+    const slug = people.has(s.player_slug) ? s.player_slug : alias.get(s.player_slug);
+    const p = people.get(slug);
     if (!p) continue;
-    const a = get(s.player_slug);
+    const a = get(slug);
     a.apps += s.played; a.starts += s.started; a.goals += s.goals; a.assists += s.assists; a.yellow += s.yellow; a.red += s.red; a.minutes += s.minutes || 0;
     if (p.position === 'GK' && s.played && concededNone.has(s.event_id)) a.cleanSheets++;
   }
@@ -126,7 +129,7 @@ export async function seasonStats(db, roster, { season, currentSeason, startMont
     for (const r of results) { const l = byEvent.get(r.event_id) || []; l.push(r); byEvent.set(r.event_id, l); }
     for (const list of byEvent.values()) {
       const top = Math.max(...list.map(r => r.votes));
-      for (const r of list) if (r.votes === top && people.has(r.player_slug)) get(r.player_slug).motm++;
+      for (const r of list) { const slug = people.has(r.player_slug) ? r.player_slug : alias.get(r.player_slug); if (r.votes === top && slug) get(slug).motm++; }
     }
   }
 

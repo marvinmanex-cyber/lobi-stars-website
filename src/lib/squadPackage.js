@@ -1,16 +1,20 @@
 // Squad & Staff Data Portal: the Data Package format (data.json, schemaVersion
-// 1.1). Used by the partner API (/api/partner/squad) and every portal / admin
+// 1.2). Used by the partner API (/api/partner/squad) and every portal / admin
 // export, so they always match. Only Public and Media fields: nothing Private
-// (phone, email, emergency contact, guardian) can get in, because only the keys
-// below are copied. The full date of birth and middle name only from age 18.
+// (phone, email, emergency contact, guardian, middle name) can get in, because
+// only the keys below are copied. The full date of birth only from age 18.
 // 1.1 (22 Oct 2026): name in parts (surname, firstName, officialName, shortName),
 // countries as ISO codes and names, place of birth, national team, international
 // career, debut, bio, hero photo, social links; name pronunciation removed.
+// 1.2 (23 Oct 2026): the middle name is never included (officialName is
+// "SURNAME, First"); "pronunciation" and "pronunciationAudio" are back as null for
+// systems that expect them; displayName stays "First name Surname"; the player
+// note "roleModel" is removed (no longer asked).
 import { ageOn, isAdult, nameOf, profileName, groupOf } from './squadFields.js';
 import { officialName, shortName } from './names.js';
 import { countryName } from './countries.js';
 
-export const SCHEMA_VERSION = '1.1';
+export const SCHEMA_VERSION = '1.2';
 const STATUS = { VERIFIED: 'verified', SUBMITTED: 'submitted', LEFT_THE_CLUB: 'left_the_club', CHANGES_REQUESTED: 'submitted', DRAFT: 'draft' };
 const s = v => (v == null ? '' : String(v));
 const n = v => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : null);
@@ -25,10 +29,11 @@ const country = c => ({ code: s(c), name: countryName(c) });
 /** What every person has (players and staff). */
 function personJson(p, files) {
   const d = p.data || {}, adult = isAdult(d);
-  const nm = nameOf(adult ? d : { ...d, middleName: '' });
+  const nm = { ...nameOf(d), middleName: '' }; // the middle name is private
   return {
     id: p.id, status: STATUS[p.status] || 'submitted', updatedAt: lagosIso(p.updatedAt),
     displayName: profileName(d), surname: s(d.surname), firstName: s(d.firstName), officialName: officialName(nm), shortName: shortName(nm), nickname: s(d.nickname),
+    pronunciation: null, pronunciationAudio: null,
     dateOfBirth: adult ? s(d.dob) : '', age: d.dob ? ageOn(d.dob) : (Number.isInteger(d.age) ? d.age : null),
     nationality: country(d.nationality), secondNationality: country(d.nationality2), placeOfBirth: { town: s(d.birthTown), country: country(d.birthCountry) },
     stateOfOrigin: s(d.stateOfOrigin), hometown: s(d.hometown), social: { instagram: s(d.socialInstagram), x: s(d.socialX), tiktok: s(d.socialTiktok) },
@@ -42,10 +47,11 @@ export function playerJson(p, files) {
     ...personJson(p, files),
     shirtNumber: n(d.shirtNumber), positionGroup: s(d.positionGroup || groupOf(d.primaryPosition)), primaryPosition: s(d.primaryPosition),
     secondaryPositions: Array.isArray(d.secondaryPositions) ? d.secondaryPositions.map(String) : [], preferredFoot: s(d.preferredFoot), heightCm: n(d.heightCm),
-    joinedClub: s(d.joined), debut: s(d.debutDate), nationalTeam: country(d.nationalTeam),
+    joinedClub: s(d.joined), debut: s(d.debutDate), nationalTeam: country(d.intlVerified ? d.nationalTeam : null),
     previousClubs: (d.previousClubs || []).map(r => ({ club: s(r.club), country: country(r.country), startYear: n(r.startYear), endYear: n(r.endYear) })),
-    internationalCareer: (d.internationalCareer || []).map(r => ({ level: s(r.level), caps: n(r.caps), goals: n(r.goals), tournaments: s(r.tournaments) })),
-    notes: { careerHighlight: s(d.careerHighlight), roleModel: s(d.roleModel), interestingFact: s(d.interestingFact) },
+    // Only once the club has checked the evidence (intlVerified).
+    internationalCareer: (d.intlVerified ? d.internationalCareer || [] : []).map(r => ({ level: s(r.level), caps: n(r.caps), goals: n(r.goals), tournaments: s(r.tournaments) })),
+    notes: { careerHighlight: s(d.careerHighlight), interestingFact: s(d.interestingFact) },
     photos: { profile: files.photo(p, 'profile'), action: p.hasAction ? files.photo(p, 'action') : null, hero: p.hasHero ? files.photo(p, 'hero') : null },
   };
 }
@@ -84,13 +90,14 @@ const honours = { type: 'array', items: obj({ title: str, seasonOrYear: str, clu
 const common = {
   id: { type: 'string', minLength: 1 }, status: { enum: ['verified', 'submitted', 'left_the_club', 'draft'] }, updatedAt: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+01:00$' },
   displayName: { type: 'string', minLength: 1 }, surname: str, firstName: str, officialName: str, shortName: str, nickname: str,
+  pronunciation: { type: 'null' }, pronunciationAudio: { type: 'null' },
   dateOfBirth: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' }, age: intN, nationality: cty, secondNationality: cty, placeOfBirth: obj({ town: str, country: cty }),
   stateOfOrigin: str, hometown: str, social: obj({ instagram: str, x: str, tiktok: str }), joinedClub: { type: 'string', pattern: '^(\\d{4}-\\d{2})?$' }, honours,
   bio: obj({ headline: str, text: { type: 'string', maxLength: 5000 } }),
 };
 const COMMON_REQ = Object.keys(common);
 export const SCHEMA = {
-  $schema: 'https://json-schema.org/draft/2020-12/schema', $id: 'https://lobistarsfc.com/schemas/squad-data-package-1.1.json',
+  $schema: 'https://json-schema.org/draft/2020-12/schema', $id: 'https://lobistarsfc.com/schemas/squad-data-package-1.2.json',
   title: 'Lobi Stars FC – Media Partner Data Package (data.json)', type: 'object', additionalProperties: false,
   required: ['schemaVersion', 'exportedAt', 'source', 'season', 'filters', 'team', 'players', 'staff'],
   properties: {
@@ -102,7 +109,7 @@ export const SCHEMA = {
       secondaryPositions: { type: 'array', items: str }, preferredFoot: str, heightCm: intN, debut: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' }, nationalTeam: cty,
       previousClubs: { type: 'array', items: obj({ club: str, country: cty, startYear: intN, endYear: intN }) },
       internationalCareer: { type: 'array', items: obj({ level: str, caps: intN, goals: intN, tournaments: str }) },
-      notes: obj({ careerHighlight: { type: 'string', maxLength: 300 }, roleModel: { type: 'string', maxLength: 300 }, interestingFact: { type: 'string', maxLength: 300 } }),
+      notes: obj({ careerHighlight: { type: 'string', maxLength: 300 }, interestingFact: { type: 'string', maxLength: 300 } }),
       photos: obj({ profile: strN, action: strN, hero: strN }) }) },
     staff: { type: 'array', items: obj({ ...common, role: str, licence: str, playingCareer: str,
       previousRoles: { type: 'array', items: obj({ club: str, position: str, period: str }) },

@@ -145,6 +145,17 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
       $('pzName').focus();
     }));
     dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    // From a player's profile ("Buy [Surname]'s shirt"): /shop/?print=SURNAME&number=9#personalise
+    // opens the personalisation with that name and number filled in.
+    const q = new URLSearchParams(location.search);
+    if (location.hash === '#personalise' && q.get('print')) {
+      const first = document.querySelector<HTMLButtonElement>('[data-personalise]');
+      if (first) {
+        first.click();
+        $('pzName').value = q.get('print') || ''; $('pzNum').value = q.get('number') || '';
+        preview();
+      }
+    }
     $<HTMLFormElement>('pzForm').addEventListener('submit', async e => {
       e.preventDefault();
       const btn = $<HTMLButtonElement>('pzPay'), err = $('pzErr');

@@ -50,6 +50,41 @@ export function splitFullName(full) {
   return { surname: tidyName(w[w.length - 1]), firstName: tidyName(w[0]), middleName: tidyName(w.slice(1, -1).join(' ')), confidence: 'needs review', reason: `${w.length} names: the order is not certain (in Nigeria the surname is often written first).` };
 }
 
+/**
+ * The name migration (23 Oct 2026): the old "Full legal name" + "Display name" →
+ * surname / first name / middle name, saved straight away and marked "Please check
+ * name order" for the Super Admin. The Nigerian order "Surname First Middle" is
+ * used only where the old full name clearly used it:
+ *   - written "SURNAME, First Middle", or
+ *   - the first word is in capitals and the others are not ("ADEYEMI Musa Ibrahim"), or
+ *   - its first word is the display name's last word ("Adeyemi Musa Ibrahim" / "Musa Adeyemi").
+ * Otherwise the old display name is read as "First Surname"; any other words of
+ * the full name become the middle name. Returns { surname, firstName, middleName, rule }.
+ */
+export function migrateName(full, display) {
+  const fw = squash(full).replace(/,/g, ' , ').split(' ').filter(Boolean), dw = squash(display).split(' ').filter(Boolean);
+  const eq = (a, b) => String(a || '').toLowerCase() === String(b || '').toLowerCase();
+  const caps = w => w.length > 1 && w === w.toUpperCase() && /\p{L}/u.test(w);
+  const words = fw.filter(w => w !== ',');
+  const out = (surname, firstName, middle, rule) => ({ surname: tidyName(surname), firstName: tidyName(firstName), middleName: tidyName(middle.join(' ')), rule });
+  const surnameFirst = (rule) => {
+    const rest = words.slice(1);
+    const first = rest.find(w => eq(w, dw[0])) || rest[0] || '';
+    const i = rest.findIndex(w => eq(w, first));
+    return out(words[0], first, rest.filter((_, j) => j !== i), rule);
+  };
+  if (fw.length > 2 && fw[1] === ',') return surnameFirst('Written "SURNAME, First Middle".');
+  if (words.length >= 2 && caps(words[0]) && words.slice(1).some(w => !caps(w))) return surnameFirst('The first word was in capitals, so it was taken as the surname.');
+  if (words.length >= 2 && dw.length >= 2 && eq(words[0], dw[dw.length - 1]) && words.slice(1).some(w => eq(w, dw[0]))) return surnameFirst('The full name started with the surname (as in the display name).');
+  if (dw.length >= 2) {
+    const first = dw[0], surname = dw[dw.length - 1];
+    const middle = words.filter(w => !eq(w, first) && !eq(w, surname) && !dw.some(d => eq(d, w)));
+    return out(surname, first, middle, 'From the display name, read as "First name Surname".');
+  }
+  if (words.length >= 2) return out(words[words.length - 1], words[0], words.slice(1, -1), 'From the full name, read as "First name … Surname".');
+  return out(words[0] || dw[0] || '', '', [], 'Only one name was given.');
+}
+
 /** A website squad entry with only one "name" (made by hand in the Content CMS): best-effort parts. */
 export function partsFromName(name) {
   const w = squash(name).split(' ').filter(Boolean);

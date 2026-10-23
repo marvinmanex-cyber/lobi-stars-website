@@ -20,6 +20,8 @@ export const ROLE_ORDER = ['Head Coach', 'Assistant Coach', 'Goalkeeper Trainer'
 export type Person = {
   kind: 'player' | 'staff';
   slug: string; href: string;
+  /** Earlier web addresses (before a name correction): their news tags and match stats still count. */
+  oldSlugs: string[];
   firstName: string; surname: string; name: string; officialName: string; shortName: string;
   number: number | null; group: Group | null; groupLabel: string; position: string; role: string;
   photo: string | null; photoSmall: string | null; hero: string | null;
@@ -42,11 +44,11 @@ const ymd = (d: unknown) => (d instanceof Date && !isNaN(d.getTime()) ? d.toISOS
 
 function playerOf(e: CollectionEntry<'players'>): Person {
   const d = e.data, pr = (d.profile || {}) as Record<string, any>;
-  const parts = pr.surname ? { firstName: pr.firstName || '', surname: pr.surname, middleName: '', websiteName: pr.websiteName || '' } : { ...partsFromName(d.name), websiteName: '' };
+  const parts = pr.surname ? { firstName: pr.firstName || '', surname: pr.surname, middleName: '', websiteName: pr.websiteName || '' } : { ...partsFromName(d.name), middleName: '', websiteName: '' }; // middle names are never public
   const label = GROUPS.find(g => g.key === d.position)?.label || '';
   const dob = pr.surname ? pr.dob || null : adultDob(ymd(d.dateOfBirth));
   return {
-    kind: 'player', slug: e.id, href: `/squad/${e.id}/`,
+    kind: 'player', slug: e.id, href: `/squad/${e.id}/`, oldSlugs: pr.oldSlugs || [],
     firstName: parts.firstName, surname: parts.surname, name: pr.name || publicName(parts) || d.name, officialName: pr.officialName || officialName(parts), shortName: pr.shortName || shortName(parts) || d.name,
     number: Number.isFinite(d.number) ? d.number : null, group: d.position, groupLabel: label, position: pr.position || d.positionDetail || label, role: '',
     photo: d.photo || null, photoSmall: pr.photoSmall || d.photo || null, hero: pr.heroPhoto || null,
@@ -63,10 +65,10 @@ function playerOf(e: CollectionEntry<'players'>): Person {
 }
 function staffOf(e: CollectionEntry<'staff'>): Person {
   const d = e.data, pr = (d.profile || {}) as Record<string, any>;
-  const parts = pr.surname ? { firstName: pr.firstName || '', surname: pr.surname, middleName: '', websiteName: pr.websiteName || '' } : { ...partsFromName(d.name), websiteName: '' };
+  const parts = pr.surname ? { firstName: pr.firstName || '', surname: pr.surname, middleName: '', websiteName: pr.websiteName || '' } : { ...partsFromName(d.name), middleName: '', websiteName: '' }; // middle names are never public
   const slug = pr.slug || nameSlug(d.name) || e.id;
   return {
-    kind: 'staff', slug, href: `/squad/staff/${slug}/`,
+    kind: 'staff', slug, href: `/squad/staff/${slug}/`, oldSlugs: pr.oldSlugs || [],
     firstName: parts.firstName, surname: parts.surname, name: pr.name || publicName(parts) || d.name, officialName: pr.officialName || officialName(parts), shortName: pr.shortName || shortName(parts) || d.name,
     number: null, group: null, groupLabel: '', position: '', role: d.role,
     photo: d.photo || null, photoSmall: pr.photoSmall || d.photo || null, hero: pr.heroPhoto || null,

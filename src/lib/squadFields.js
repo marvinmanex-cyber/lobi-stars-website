@@ -18,6 +18,9 @@ export const POSITION_GROUPS = ['Goalkeeper', 'Defender', 'Midfielder', 'Forward
 export const groupOf = pos => (pos === 'Goalkeeper' ? 'Goalkeeper' : /back/i.test(pos || '') ? 'Defender' : /midfielder/i.test(pos || '') ? 'Midfielder' : /winger|striker|forward/i.test(pos || '') ? 'Forward' : null);
 export const INTL_LEVELS = ['U17', 'U20', 'U23', 'Senior'];
 export const STAFF_ROLES = ['Head Coach', 'Assistant Coach', 'Goalkeeper Trainer', 'Fitness Coach', 'Team Manager', 'Team Doctor', 'Physiotherapist', 'Kit Manager', 'Media Officer', 'Other'];
+/** Role categories: COACHING (the coaching staff) or CLUB_STAFF (everyone else at the club). */
+export const COACHING_ROLES = ['Head Coach', 'Assistant Coach', 'Goalkeeper Trainer', 'Fitness Coach'];
+export const roleCategory = role => (COACHING_ROLES.includes(role) ? 'COACHING' : role ? 'CLUB_STAFF' : null);
 export const STATES = ['Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno', 'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo', 'Jigawa',
   'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'FCT (Abuja)', 'Outside Nigeria'];
 export const FEET = ['Right', 'Left', 'Both'];
@@ -25,13 +28,14 @@ export const STATUSES = { DRAFT: 'Draft', SUBMITTED: 'Submitted', VERIFIED: 'Ver
 export const EDITABLE = ['DRAFT', 'CHANGES_REQUESTED'];
 export const NOTE_MAX = 300;
 
-export const NAME_HINT = 'Enter your names exactly as they appear on your passport or official ID.';
+export const NAME_HINT = 'As it appears on official documents.';
 /** The fields, in form order. type: text | email | tel | date | day | month | number | select | country | multiselect | textarea | richtext | url | checkbox | rows */
 export const FIELDS = [
   // 1 · Personal details (everyone)
-  { key: 'surname', section: 'personal', label: 'Surname', use: 'public', for: 'all', required: true, type: 'name', max: 60 },
+  { key: 'surname', section: 'personal', label: 'Surname', use: 'public', for: 'all', required: true, type: 'name', max: 60, hint: NAME_HINT },
   { key: 'firstName', section: 'personal', label: 'First name', use: 'public', for: 'all', required: true, type: 'name', max: 60 },
-  { key: 'middleName', section: 'personal', label: 'Middle name', use: 'public', adultOnly: true, for: 'all', type: 'name', max: 80, optional: true, hint: NAME_HINT },
+  // Private: never on the website, in the partner API or the Data Package (club records only).
+  { key: 'middleName', section: 'personal', label: 'Middle name', use: 'private', for: 'all', type: 'name', max: 80, optional: true },
   { key: 'fullName', section: 'personal', label: 'Full legal name (old question)', use: 'private', for: 'all', type: 'text', max: 120, retired: true },
   { key: 'displayName', section: 'personal', label: 'Display name (old question)', use: 'public', for: 'all', type: 'text', max: 60, retired: true },
   { key: 'nickname', section: 'personal', label: 'Nickname', use: 'public', for: 'all', type: 'text', max: 40, optional: true },
@@ -71,19 +75,24 @@ export const FIELDS = [
   // 3 · Career history & honours (repeatable rows)
   { key: 'previousClubs', section: 'career', label: 'Previous clubs', use: 'public', for: 'player', type: 'rows', columns: [{ key: 'club', label: 'Club', max: 80 }, { key: 'country', label: 'Country', type: 'country' }, { key: 'startYear', label: 'From (year)', type: 'year' }, { key: 'endYear', label: 'To (year)', type: 'year' }] },
   { key: 'internationalCareer', section: 'career', label: 'International career', use: 'public', for: 'player', type: 'rows', optional: true, columns: [{ key: 'level', label: 'Level', type: 'select', options: INTL_LEVELS }, { key: 'caps', label: 'Caps', type: 'int', max: 300 }, { key: 'goals', label: 'Goals', type: 'int', max: 300 }, { key: 'tournaments', label: 'Notable tournaments', max: 120, placeholder: 'e.g. U-17 AFCON 2023' }] },
+  // International claims are checked by the club before they appear anywhere public (intlVerified).
+  { key: 'intlEvidence', section: 'career', label: 'Evidence for the international career', use: 'private', for: 'player', type: 'textarea', max: 400, optional: true, evidence: true,
+    hint: 'A link to the federation squad list or a news report, or the document you can show the club (you can also upload a photo or PDF below). The international career and national team appear on the website only after the club has checked the evidence.' },
   { key: 'previousRoles', section: 'career', label: 'Previous clubs and positions', use: 'public', for: 'staff', type: 'rows', columns: [{ key: 'club', label: 'Club', max: 80 }, { key: 'position', label: 'Position held', max: 60 }, { key: 'period', label: 'Period', max: 20, placeholder: 'e.g. 2019–2023' }] },
   { key: 'honours', section: 'career', label: { player: 'Honours and individual awards', staff: 'Honours and achievements' }, use: 'public', for: 'all', type: 'rows', columns: [{ key: 'title', label: 'Honour or award', max: 100 }, { key: 'seasonOrYear', label: 'Season or year', max: 20 }, { key: 'clubOrTeam', label: 'Club or team', max: 80 }] },
   // 4 · Profile notes (media)
   { key: 'philosophy', section: 'notes', label: 'Coaching or working philosophy', use: 'media', for: 'staff', type: 'textarea', max: NOTE_MAX },
   { key: 'careerHighlight', section: 'notes', label: 'Career highlight', use: 'media', for: 'all', type: 'textarea', max: NOTE_MAX },
-  { key: 'roleModel', section: 'notes', label: 'Football role model', use: 'media', for: 'player', type: 'textarea', max: NOTE_MAX },
-  { key: 'interestingFact', section: 'notes', label: { player: 'An interesting fact about the player', staff: 'An interesting fact about the coach' }, use: 'public', for: 'all', type: 'textarea', max: NOTE_MAX, hint: 'Shown in a highlight box on their profile page.' },
+  { key: 'roleModel', section: 'notes', label: 'Football role model (old question)', use: 'media', for: 'player', type: 'textarea', max: NOTE_MAX, retired: true }, // removed 23 Oct 2026
+  { key: 'interestingFact', section: 'notes', label: { player: 'An interesting fact about the player', coach: 'An interesting fact about the coach', staff: 'An interesting fact about the staff member' }, use: 'public', for: 'all', type: 'textarea', max: NOTE_MAX, hint: 'Shown in a highlight box on their profile page.' },
   // The club only (review page): name on website, debut, bio, shirt link, show / hide.
   { key: 'websiteName', section: 'admin', label: 'Name on website', use: 'public', for: 'all', type: 'text', max: 60, admin: true, optional: true, hint: 'Only fill this if the player is publicly known by a different name, e.g. a nickname.' },
   { key: 'debutDate', section: 'admin', label: 'Lobi Stars debut', use: 'public', for: 'player', type: 'day', admin: true, optional: true, hint: 'Leave empty if they have not played yet ("Yet to debut").' },
   { key: 'bioHeadline', section: 'admin', label: 'Bio headline', use: 'public', for: 'all', type: 'text', max: 80, admin: true, optional: true, placeholder: 'e.g. Accomplished keeper' },
   { key: 'bio', section: 'admin', label: 'Bio', use: 'public', for: 'all', type: 'richtext', max: 5000, admin: true, optional: true, hint: 'Paragraphs separated by an empty line. A line starting with "## " is a heading.' },
   { key: 'shirtShopUrl', section: 'admin', label: 'Shirt shop link', use: 'public', for: 'all', type: 'url', max: 300, admin: true, optional: true, hint: 'Shows "Buy [Surname]\'s shirt" on the profile. Leave empty for none.' },
+  { key: 'intlVerified', section: 'admin', label: 'International career checked (evidence seen)', use: 'public', for: 'player', type: 'checkbox', admin: true,
+    hint: 'Tick only after checking the evidence. Until then the international career and national team are not shown anywhere public. It is cleared if the player changes them.' },
   { key: 'hideFromWebsite', section: 'admin', label: 'Hide from the website', use: 'public', for: 'all', type: 'checkbox', admin: true, hint: 'Takes them off the Squad pages without deleting anything.' },
   // 6 · Confirmation
   { key: 'confirmAccurate', short: 'Accuracy confirmation', section: 'confirm', label: 'I confirm that the information provided is accurate and complete, as given by the profile holder.', use: 'private', for: 'all', required: true, type: 'checkbox' },
@@ -111,7 +120,17 @@ export const RETIRED_KEYS = FIELDS.filter(f => f.retired).map(f => f.key);
 export const nameOf = data => ({ surname: data?.surname || '', firstName: data?.firstName || '', middleName: data?.middleName || '', websiteName: data?.websiteName || '' });
 /** The name to show for a profile: the new name fields, else (before the name check) the old display name. */
 export const profileName = data => publicName(nameOf(data)) || String(data?.displayName || '');
-export const labelOf = (f, type) => (typeof f.label === 'object' ? f.label[type] || f.label.player : f.label);
+/**
+ * A question's label for this profile. Staff labels can differ for the coaching
+ * staff ("coach") and other club staff ("staff"), by role; before a role is chosen
+ * the coaching wording is used.
+ */
+export function labelOf(f, type, data = null) {
+  if (typeof f.label !== 'object') return f.label;
+  if (type !== 'staff') return f.label.player;
+  const key = roleCategory(data?.role) === 'CLUB_STAFF' ? 'staff' : 'coach';
+  return f.label[key] || f.label.staff || f.label.player;
+}
 
 /** Age in whole years on a date (Africa/Lagos). */
 export function ageOn(dob, at = new Date()) {
@@ -195,7 +214,7 @@ export function missingForSubmit(type, data) {
   return activeFields(type, data).filter(f => f.required).filter(f => {
     const v = data?.[f.key];
     return f.type === 'checkbox' ? v !== true : v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length);
-  }).map(f => ({ key: f.key, label: f.short || labelOf(f, type), section: f.section }));
+  }).map(f => ({ key: f.key, label: f.short || labelOf(f, type, data), section: f.section }));
 }
 
 /**
@@ -212,6 +231,9 @@ export function shareable(type, data, { media = true } = {}) {
     out[f.key] = data?.[f.key] ?? (f.type === 'rows' || f.type === 'multiselect' ? [] : null);
   }
   out.age = ageOn(data?.dob);
+  // International claims only once the club has checked the evidence.
+  if (type === 'player' && !data?.intlVerified) { out.internationalCareer = []; out.nationalTeam = null; }
+  delete out.intlVerified;
   if (type === 'player' && !out.positionGroup) out.positionGroup = groupOf(data?.primaryPosition);
   return out;
 }

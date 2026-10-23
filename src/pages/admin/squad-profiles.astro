@@ -20,10 +20,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <ul class="sq-chips" id="chips"></ul>
 
     <section class="sq-card sq-names" id="namesBox" hidden aria-labelledby="h-names">
-      <h2 id="h-names">Name check <span class="st CHANGES_REQUESTED" id="namesCount"></span></h2>
-      <p class="muted">The form now asks for Surname, First name and Middle name. These profiles still have the old single name. Check each proposal against the passport or ID, correct it if needed, and press <b>Confirm</b>. Nothing is saved until you confirm. "Name on website" is only for someone publicly known by a different name; leave it empty otherwise.</p>
+      <h2 id="h-names">Please check name order <span class="st CHANGES_REQUESTED" id="namesCount"></span></h2>
+      <p class="muted">The form now asks for Surname, First name and Middle name. These profiles had the old single name, so the new fields were filled in from it (the reason is shown for each). They are already used on the website as "First name Surname". Check each against the passport or ID, correct it if needed, and press <b>Confirm</b>. The middle name is private. "Name on website" is only for someone publicly known by a different name; leave it empty otherwise.</p>
       <div class="sq-row"><button class="btn-o" type="button" id="namesCsv">Download this list (CSV)</button></div>
-      <div class="sq-scroll"><table class="sq-table"><thead><tr><th>Original name</th><th>Surname</th><th>First name</th><th>Middle name</th><th>Name on website</th><th>Confidence</th><th></th></tr></thead><tbody id="namesRows"></tbody></table></div>
+      <div class="sq-scroll"><table class="sq-table"><thead><tr><th>Old answers</th><th>Surname</th><th>First name</th><th>Middle name</th><th>Name on website</th><th>How it was filled in</th><th></th></tr></thead><tbody id="namesRows"></tbody></table></div>
     </section>
 
     <section class="sq-card">
@@ -160,7 +160,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('filters').innerHTML = FILTERS.map(([k, l]) => `<button type="button" data-f="${k}" aria-pressed="${k === view.filter}">${l}</button>`).join('');
       $('rows').innerHTML = D.profiles.length ? D.profiles.map((p: any) => `<tr>
         <td>${p.thumb ? `<img class="sq-thumb" src="${esc(p.thumb)}" alt="" loading="lazy" />` : '<span class="sq-thumb"></span>'}</td>
-        <td><b>${esc(p.name || 'Unnamed draft')}</b>${p.reviewNote ? `<br /><small>Note: ${esc(p.reviewNote)}</small>` : ''}</td><td>${p.type === 'player' ? 'Player' : 'Coach / staff'}</td>
+        <td><b>${esc(p.name || 'Unnamed draft')}</b>${p.nameStatus === 'check' ? ' <span class="st CHANGES_REQUESTED">Please check name order</span>' : ''}${p.reviewNote ? `<br /><small>Note: ${esc(p.reviewNote)}</small>` : ''}</td><td>${p.type === 'player' ? 'Player' : 'Coach / staff'}</td>
         <td>${p.type === 'player' ? `${p.shirtNumber ?? '–'} · ${esc(p.position || '')}` : esc(p.role || '')}</td><td><span class="st ${p.status}">${esc(p.statusLabel)}</span></td>
         <td>${esc(when(p.updatedAt))}<br /><small>${esc(p.updatedBy || '')}</small></td><td><button class="btn-o" type="button" data-open="${p.id}">Open</button></td></tr>`).join('') : '<tr><td colspan="7" class="muted">Nothing here.</td></tr>';
       $('fullBox').hidden = !D.canFull; $('superBox').hidden = !D.canSuper;
@@ -189,11 +189,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   async function loadNames() {
     try {
       NAMES = (await api('?names=1')).names;
-      $('namesCount').textContent = `${NAMES.length} to confirm`;
+      $('namesCount').textContent = `${NAMES.length} to check`;
       const inp = (n: any, k: string) => `<input data-k="${k}" value="${esc(n[k] || '')}" aria-label="${k} for ${esc(n.original)}" />`;
-      $('namesRows').innerHTML = NAMES.map(n => `<tr data-nid="${n.id}"><td><b>${esc(n.original || '–')}</b><br /><small class="muted">${n.type === 'player' ? `Player${n.shirtNumber ? ` #${n.shirtNumber}` : ''}` : 'Coach / staff'} · ${esc(n.statusLabel)} · ${esc(n.season)}${n.oldDisplayName && n.oldDisplayName !== n.original ? ` · was shown as "${esc(n.oldDisplayName)}"` : ''}</small></td>
+      $('namesRows').innerHTML = NAMES.map(n => `<tr data-nid="${n.id}"><td>Full name: <b>${esc(n.original || '–')}</b><br />Display name: <b>${esc(n.oldDisplayName || '–')}</b><br /><small class="muted">${n.type === 'player' ? `Player${n.shirtNumber ? ` #${n.shirtNumber}` : ''}` : 'Coach / staff'} · ${esc(n.statusLabel)} · ${esc(n.season)}</small></td>
         <td>${inp(n, 'surname')}</td><td>${inp(n, 'firstName')}</td><td>${inp(n, 'middleName')}</td><td>${inp(n, 'websiteName')}</td>
-        <td><span class="${n.confidence === 'high' ? 'conf-high' : 'conf-review'}">${n.confidence === 'high' ? 'High' : 'Needs review'}</span><br /><small class="muted">${esc(n.reason)}</small></td>
+        <td><small class="muted">${esc(n.rule || '')}</small></td>
         <td><button class="btn-p" type="button" data-confirm="${n.id}">Confirm</button></td></tr>`).join('') || '<tr><td colspan="7" class="muted">All names are confirmed.</td></tr>';
     } catch (e: any) { msg(e.message, false); }
   }
@@ -201,13 +201,13 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const b = (e.target as HTMLElement).closest('[data-confirm]') as HTMLButtonElement | null; if (!b) return;
     const tr = b.closest('tr')!, v = (k: string) => (tr.querySelector(`[data-k="${k}"]`) as HTMLInputElement).value.trim();
     const body = { action: 'confirm_name', id: b.dataset.confirm, surname: v('surname'), firstName: v('firstName'), middleName: v('middleName'), websiteName: v('websiteName') };
-    if (!confirm(`Save the name as ${officialName(body)}${body.websiteName ? `, shown on the website as "${body.websiteName}"` : ''}?`)) return;
+    if (!confirm(`Save the name as ${officialName(body)} (shown on the website as "${body.websiteName || `${body.firstName} ${body.surname}`}")?`)) return;
     b.disabled = true;
     try { await api('', body); msg('Name confirmed.'); load(); } catch (err: any) { msg(err.message, false); b.disabled = false; }
   });
   $('namesCsv').addEventListener('click', () => {
-    const rows = [['Profile ID', 'Season', 'Type', 'Status', 'Original full name', 'Proposed surname', 'Proposed first name', 'Proposed middle name', 'Proposed name on website', 'Confidence', 'Why']]
-      .concat(NAMES.map(n => [n.id, n.season, n.type, n.statusLabel, n.original, n.surname, n.firstName, n.middleName, n.websiteName, n.confidence, n.reason]));
+    const rows = [['Profile ID', 'Season', 'Type', 'Status', 'Old full name', 'Old display name', 'Surname', 'First name', 'Middle name', 'Name on website', 'How it was filled in']]
+      .concat(NAMES.map(n => [n.id, n.season, n.type, n.statusLabel, n.original, n.oldDisplayName, n.surname, n.firstName, n.middleName, n.websiteName, n.rule]));
     const csv = '\ufeff' + rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = `lobi-stars-name-check-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
   });
@@ -215,10 +215,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   // ── Edit (Super Admins) ──
   // The answers the club edits here; repeatable rows (previous clubs, honours, international career) are changed in the portal (Request changes).
   const EDIT_KEYS = ['surname', 'firstName', 'middleName', 'websiteName', 'shirtNumber', 'positionGroup', 'primaryPosition', 'preferredFoot', 'role', 'roleOther', 'dob', 'nationality', 'nationality2', 'nationalTeam', 'birthTown', 'birthCountry',
-    'heightCm', 'joined', 'joinedStaff', 'debutDate', 'qualifications', 'socialInstagram', 'socialX', 'socialTiktok', 'interestingFact', 'bioHeadline', 'bio', 'shirtShopUrl', 'hideFromWebsite'];
-  function editInput(f: any, v: any, type: string) {
+    'heightCm', 'joined', 'joinedStaff', 'debutDate', 'intlVerified', 'qualifications', 'socialInstagram', 'socialX', 'socialTiktok', 'interestingFact', 'bioHeadline', 'bio', 'shirtShopUrl', 'hideFromWebsite'];
+  function editInput(f: any, v: any, type: string, data: any = {}) {
     const id = `ed_${f.key}`, val = v ?? '';
-    const lab = `${esc(labelOf(f, type))}${f.required ? ' *' : ''}${f.hint ? `<small>${esc(f.hint)}</small>` : ''}`;
+    const lab = `${esc(labelOf(f, type, data))}${f.required ? ' *' : ''}${f.hint ? `<small>${esc(f.hint)}</small>` : ''}`;
     if (f.type === 'checkbox') return `<label class="chk wide"><input type="checkbox" id="${id}" data-ek="${f.key}" ${v ? 'checked' : ''} /> ${lab}</label>`;
     let el: string;
     if (f.type === 'country') el = `<select id="${id}" data-ek="${f.key}"><option value="">–</option>${COUNTRY_OPTIONS.map(([c, n]) => `<option value="${c}" ${c === val ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>`;
@@ -232,7 +232,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const photo = (kind: string, label: string) => `<div><b>${label}</b><div class="ph-btns"><label class="btn-o" style="display:inline-flex;align-items:center;cursor:pointer">Upload<input type="file" accept="image/*" data-up="${kind}" hidden /></label>${p.photos?.[kind] ? `<button class="btn-o" type="button" data-delph="${kind}">Remove</button>` : ''}</div></div>`;
     return `<div class="sq-edit" id="editBox" data-eid="${p.id}">
       <p class="wide muted">Changes are saved for everyone straight away${p.status === 'VERIFIED' ? ' and the website updates in about 2 minutes' : ''}. Every change is in the Activity Log.</p>
-      ${fields.map((f: any) => editInput(f, p.data[f.key], p.type)).join('')}
+      ${fields.map((f: any) => editInput(f, p.data[f.key], p.type, p.data)).join('')}
       <div class="wide sq-row">${photo('profile', 'Profile photo (cards, 4:5)')}${photo('hero', 'Wide header photo (16:9)')}${p.type === 'player' ? photo('action', 'Action photo') : ''}</div>
       <div class="wide sq-row"><button class="btn-p" type="button" id="saveEdit">Save changes</button><button class="btn-o" type="button" id="draftBio">Draft bio with Claude</button></div>
       <div class="wide" id="draftBox"></div>
@@ -246,7 +246,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     });
     const r = await api('', { action: 'edit', id, changes });
     const bad = Object.entries(r.errors || {});
-    if (bad.length) msg(bad.map(([k, m]) => `${labelOf(FIELD[k], r.profile.type)}: ${m}`).join(' '), false);
+    if (bad.length) msg(bad.map(([k, m]) => `${labelOf(FIELD[k], r.profile.type, r.profile.data)}: ${m}`).join(' '), false);
     else msg(r.warnings?.length ? `Saved. ${r.warnings.join(' ')}` : 'Saved.', !r.warnings?.length);
     return r;
   }
@@ -263,10 +263,11 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         p.status === 'LEFT_THE_CLUB' ? '<button class="btn-o" type="button" data-act="restore">Restore (back at the club)</button>' : '',
         D?.canSuper ? '<button class="btn-o" type="button" data-act="remove">Remove profile</button>' : '',
       ].join('');
-      box.innerHTML = `<div class="sq-row" style="justify-content:space-between"><h2>${esc(p.name || 'Unnamed')} <span class="st ${p.status}">${esc(p.statusLabel)}</span>${p.nameStatus === 'pending' ? ' <span class="st CHANGES_REQUESTED">Name not confirmed</span>' : ''}</h2><button class="btn-o" type="button" id="closeDetail">Close</button></div>
+      box.innerHTML = `<div class="sq-row" style="justify-content:space-between"><h2>${esc(p.name || 'Unnamed')} <span class="st ${p.status}">${esc(p.statusLabel)}</span>${p.nameStatus === 'check' ? ' <span class="st CHANGES_REQUESTED">Please check name order</span>' : ''}</h2><button class="btn-o" type="button" id="closeDetail">Close</button></div>
         <p class="muted">${p.type === 'player' ? 'Player' : 'Coach / staff'} · ${esc(p.season)} · submitted ${esc(when(p.submittedAt))} by ${esc(p.submittedBy || '–')}${p.verifiedAt ? ` · verified ${esc(when(p.verifiedAt))} by ${esc(p.verifiedBy)}` : ''}${p.reviewNote ? ` · note: ${esc(p.reviewNote)}` : ''}</p>
         <div class="sq-photos">${Object.entries(p.photos || {}).map(([k, ph]: any) => `<figure><img src="${esc(ph.url)}" alt="${k} photo" ${k === 'hero' ? 'style="aspect-ratio:16/9;width:280px"' : ''} /><figcaption class="muted">${k === 'profile' ? 'Profile' : k === 'hero' ? 'Wide header' : 'Action'} · ${esc(p.fileBase)}${k === 'profile' ? '' : `-${k}`}.jpg ${(ph.warnings || []).length ? `· ⚠ ${esc(ph.warnings.join(' '))}` : ''}</figcaption></figure>`).join('') || '<p class="muted">No photo.</p>'}</div>
-        <dl class="sq-dl">${fields.map((f: any) => `<dt>${esc(labelOf(f, p.type))}<span class="use ${f.use}">${f.admin ? 'club' : f.use}</span></dt><dd>${f.type === 'rows' && p.data[f.key]?.length ? `<ul>${p.data[f.key].map((r: any) => `<li>${f.columns.map((c: any) => esc(rowValue(c, r[c.key]))).filter(Boolean).join(' · ')}</li>`).join('')}</ul>` : value(f, p.data[f.key], p.type)}</dd>`).join('')}</dl>
+        <dl class="sq-dl">${fields.map((f: any) => `<dt>${esc(labelOf(f, p.type, p.data))}<span class="use ${f.use}">${f.admin ? 'club' : f.use}</span></dt><dd>${f.type === 'rows' && p.data[f.key]?.length ? `<ul>${p.data[f.key].map((r: any) => `<li>${f.columns.map((c: any) => esc(rowValue(c, r[c.key]))).filter(Boolean).join(' · ')}</li>`).join('')}</ul>` : value(f, p.data[f.key], p.type)}</dd>`).join('')}</dl>
+        ${p.type === 'player' && (p.data.internationalCareer?.length || p.data.nationalTeam) ? `<div class="sq-old"><b>International career:</b> ${p.data.intlVerified ? '✓ checked, shown on the website.' : 'not checked yet, so it is <b>not shown</b> anywhere public.'} Evidence: ${p.evidence ? `<a href="${esc(p.evidence.url)}" target="_blank" rel="noopener">${esc(p.evidence.name || 'file')}</a> (uploaded ${esc(when(p.evidence.uploadedAt))} by ${esc(p.evidence.by || '')})` : 'no file'}${p.data.intlEvidence ? ` · note: ${esc(p.data.intlEvidence)}` : ''}${D?.canEdit ? ' · tick “International career checked” in Edit once the evidence is seen.' : ''}</div>` : ''}
         ${old.length ? `<div class="sq-old"><b>Old answers</b> (questions no longer asked; kept for the club, never published): ${old.map((f: any) => `${esc(f.label.replace(/ \(old.*\)$/, ''))}: <b>${esc(p.data[f.key])}</b>`).join(' · ')}</div>` : ''}
         <div class="sq-acts" data-id="${p.id}">${acts}${D?.canEdit ? '<button class="btn-o" type="button" id="editBtn">Edit</button>' : ''}</div>
         <div id="editWrap"></div>`;

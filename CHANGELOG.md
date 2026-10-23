@@ -8,6 +8,41 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-23: Squad portal: name fields, question wording, name migration
+
+**What changed**
+- **Names:** Surname (hint "As it appears on official documents."), First
+  name, and Middle name (optional, now **Private**: never on the website, in
+  the partner API or the Data Package). The website name is always "First
+  name Surname"; official name "SURNAME, First name".
+- **"Interesting fact"** reads "…about the player", "…about the coach"
+  (coaching roles: Head Coach, Assistant Coach, Goalkeeper Trainer, Fitness
+  Coach) or "…about the staff member" (other club staff), on the form and
+  the website.
+- **"Football role model"** removed from the questions (old answers kept,
+  not used).
+- **Old names** are filled in automatically (Nigerian order "Surname First
+  Middle" only where the old full name clearly used it, otherwise the old
+  display name as "First Surname") and marked **Please check name order** in
+  the portal and on the review page until a Super Admin confirms.
+- **Duplicate person** warning: surname + first name + date of birth
+  (capitals ignored).
+- **Changed web addresses** (after a name correction) redirect from the old
+  address (301); news tags, match stats and Man of the Match wins follow.
+- **"Buy [Surname]'s shirt"**: when no shop link is set and shirt
+  personalisation is on, it opens the shop's personalisation with the
+  SURNAME in capitals and the shirt number filled in.
+- **No "Public / Media / Private" labels** on the portal form any more.
+- **International career and national team need evidence:** an Evidence box
+  and a photo/PDF upload in the portal; shown on the website, the partner
+  feed and the Data Package only after a Super Admin ticks "International
+  career checked (evidence seen)". A later change in the portal unticks it.
+- **Data Package schemaVersion 1.2:** no middle name; `pronunciation` and
+  `pronunciationAudio` present as null; `roleModel` removed; README updated.
+
+**Staff need to do:** a Super Admin checks the profiles marked "Please check
+name order" (Matchday › Squad: Profile Submissions).
+
 ## 2026-10-23: Profile pages show every "Public" answer
 
 **What changed**

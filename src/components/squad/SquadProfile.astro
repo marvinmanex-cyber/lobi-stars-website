@@ -12,6 +12,8 @@ import ShareButton from '../ShareButton.astro';
 import { longDate, birthLine, heightText } from '../../lib/format.js';
 import { countryName } from '../../lib/countries.js';
 import { CURRENT_SEASON } from '../../lib/site';
+import { roleCategory } from '../../lib/squadFields.js';
+import { PERSONALISATION } from '../../../functions/api/_lib/shirtOrders.js';
 
 interface Props {
   person: Person;
@@ -35,6 +37,10 @@ const career = isPlayer ? p.previousClubs : p.previousRoles;
 const plainName = `${p.firstName} ${p.surname}`.trim();
 const twoLine = !!p.surname && p.name === plainName;
 const heroImg = p.hero || null;
+// "Buy [Surname]'s shirt": the club's shop link, or (players, when shirt personalisation
+// is switched on) the shop's personalisation with the surname in capitals and the number.
+const printName = (p.surname || p.shortName || '').toUpperCase().replace(/[^A-Z .'-]/g, '').slice(0, PERSONALISATION.maxLetters);
+const shirtHref = p.shirtUrl || (isPlayer && PERSONALISATION.enabled && printName && p.number != null ? `/shop/?print=${encodeURIComponent(printName)}&number=${p.number}#personalise` : null);
 ---
 <article class="pf" data-kind={p.kind}>
   <header class:list={['pf-hero', { 'pf-hero--wide': !!heroImg }]}>
@@ -65,8 +71,8 @@ const heroImg = p.hero || null;
 
   <div class="wrap pf-main">
     <div class="pf-col">
-      {p.shirtUrl && (
-        <a class="pf-shirt" href={p.shirtUrl} target="_blank" rel="noopener">
+      {shirtHref && (
+        <a class="pf-shirt" href={shirtHref} {...(p.shirtUrl ? { target: '_blank', rel: 'noopener' } : {})}>
           <span class="pf-shirt-num" aria-hidden="true">{p.number ?? ''}</span>
           <span><b>Buy {p.shortName}'s shirt</b><small>Official Lobi Stars FC shirt</small></span>
           <span aria-hidden="true">→</span>
@@ -82,7 +88,7 @@ const heroImg = p.hero || null;
 
       {p.interestingFact && (
         <aside class="pf-fact" aria-labelledby="fact-h">
-          <h2 id="fact-h">{isPlayer ? 'An interesting fact' : 'An interesting fact about the coach'}</h2>
+          <h2 id="fact-h">{isPlayer ? 'An interesting fact' : roleCategory(p.role) === 'CLUB_STAFF' ? 'An interesting fact about the staff member' : 'An interesting fact about the coach'}</h2>
           <p>{p.interestingFact}</p>
         </aside>
       )}
@@ -119,7 +125,7 @@ const heroImg = p.hero || null;
         {isPlayer && (
           <div class="pf-panel" role="tabpanel" id="p-season" aria-labelledby="t-season">
             <h2 class="pf-h3">{CURRENT_SEASON} season</h2>
-            <ul class="pf-stats" data-stats={p.slug}>
+            <ul class="pf-stats" data-stats={[p.slug, ...p.oldSlugs].join(',')}>
               {[['apps', 'Appearances'], ['starts', 'Starts'], ['goals', 'Goals'], ['assists', 'Assists'], ...(isGk ? [['cleanSheets', 'Clean sheets']] : []), ['minutes', 'Minutes'], ['yellow', 'Yellow cards'], ['red', 'Red cards'], ['motm', 'Man of the Match']].map(([k, l]) => (
                 <li><span class="pf-stat-v" data-stat={k}>–</span><span class="pf-stat-k">{l}</span></li>
               ))}

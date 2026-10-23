@@ -1,7 +1,7 @@
 // Squad names, ages, heights and the form rules (22 Oct 2026), without a server.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { publicName, officialName, shortName, splitFullName, tidyName, partsFromName } from '../src/lib/names.js';
+import { publicName, officialName, shortName, splitFullName, migrateName, tidyName, partsFromName } from '../src/lib/names.js';
 import { longDate, ageFrom, birthLine, heightText, heightToCm } from '../src/lib/format.js';
 import { FIELDS, FIELD, fieldsFor, missingForSubmit, cleanValue, shareable, labelOf, upgradeData, NEVER_SHARED } from '../src/lib/squadFields.js';
 import { countryName, flagUrl, countryFromText } from '../src/lib/countries.js';
@@ -30,6 +30,16 @@ test('splitting old full names: 2 words high confidence; 3+ words or unclear ord
   assert.equal(splitFullName('').confidence, 'needs review');
 });
 
+test('name migration: Nigerian order only where the old full name clearly used it, otherwise the display name as "First Surname"', () => {
+  assert.deepEqual(migrateName('ADEYEMI, Musa Ibrahim', 'Musa Adeyemi').surname, 'Adeyemi');
+  assert.deepEqual(migrateName('ADEYEMI Musa Ibrahim', '').firstName, 'Musa');
+  const m = migrateName('Adeyemi Musa Ibrahim', 'Musa Adeyemi');
+  assert.deepEqual([m.surname, m.firstName, m.middleName], ['Adeyemi', 'Musa', 'Ibrahim']);
+  const d = migrateName('Musa Ibrahim Adeyemi', 'Musa Adeyemi');
+  assert.deepEqual([d.surname, d.firstName, d.middleName], ['Adeyemi', 'Musa', 'Ibrahim']); assert.match(d.rule, /display name/);
+  assert.deepEqual([migrateName('', 'Chidi Okon').firstName, migrateName('', 'Chidi Okon').surname], ['Chidi', 'Okon']);
+});
+
 test('age (Africa/Lagos), height and dates', () => {
   assert.equal(ageFrom('2007-04-24', '2026-04-23'), 18); assert.equal(ageFrom('2007-04-24', '2026-04-24'), 19);
   assert.equal(ageFrom('2008-02-29', '2026-02-28'), 17); assert.equal(ageFrom('bad'), null);
@@ -42,7 +52,7 @@ test('age (Africa/Lagos), height and dates', () => {
 test('form: surname and first name required, middle name optional; Display name and pronunciation gone (old answers kept, never saved again)', () => {
   const form = fieldsFor('player').map(f => f.key);
   assert.deepEqual(form.slice(0, 3), ['surname', 'firstName', 'middleName']);
-  for (const k of ['fullName', 'displayName', 'pronunciation']) assert.ok(!form.includes(k), `${k} not on the form`);
+  for (const k of ['fullName', 'displayName', 'pronunciation', 'roleModel']) assert.ok(!form.includes(k), `${k} not on the form`);
   assert.ok(FIELD.fullName && FIELD.displayName && FIELD.pronunciation, 'old questions kept so old answers can be read');
   const missing = missingForSubmit('player', {}).map(m => m.key);
   assert.ok(missing.includes('surname') && missing.includes('firstName')); assert.ok(!missing.includes('middleName'));
@@ -52,7 +62,10 @@ test('form: surname and first name required, middle name optional; Display name 
   assert.equal(cleanValue('heightCm', 139).error ? 'bad' : 'ok', 'bad'); assert.equal(cleanValue('heightCm', 221).error ? 'bad' : 'ok', 'bad');
   assert.equal(labelOf(FIELD.interestingFact, 'player'), 'An interesting fact about the player');
   assert.equal(labelOf(FIELD.interestingFact, 'staff'), 'An interesting fact about the coach');
-  assert.match(FIELD.middleName.hint, /exactly as they appear on your passport or official ID/);
+  assert.equal(FIELD.surname.hint, 'As it appears on official documents.');
+  assert.equal(FIELD.surname.use, 'public'); assert.equal(FIELD.firstName.use, 'public'); assert.equal(FIELD.middleName.use, 'private', 'middle name is private');
+  assert.equal(labelOf(FIELD.interestingFact, 'staff', { role: 'Kit Manager' }), 'An interesting fact about the staff member');
+  assert.equal(labelOf(FIELD.interestingFact, 'staff', { role: 'Assistant Coach' }), 'An interesting fact about the coach');
   assert.ok(!fieldsFor('player').some(f => f.admin), 'club-only fields are not on the portal form');
   assert.ok(!fieldsFor('staff').some(f => f.key === 'shirtNumber'), 'no jersey number for staff');
 });
@@ -63,7 +76,7 @@ test('publishing: private details never; full date of birth and middle name only
   for (const k of [...NEVER_SHARED, 'dob', 'middleName']) assert.ok(!(k in minor), `${k} not shared for an under-18`);
   assert.equal(minor.age, 16);
   const adult = shareable('player', { ...data, dob: '1999-05-05' });
-  assert.equal(adult.dob, '1999-05-05'); assert.equal(adult.middleName, 'Ibrahim');
+  assert.equal(adult.dob, '1999-05-05'); assert.ok(!('middleName' in adult), 'middle name never shared, even from 18');
   for (const k of NEVER_SHARED) assert.ok(!(k in adult), `${k} never shared`);
   assert.equal(countryName('NG'), 'Nigeria'); assert.equal(flagUrl('ng'), '/flags/ng.svg'); assert.ok(existsSync(new URL('../public/flags/ng.svg', import.meta.url)));
   assert.equal(countryFromText('Nigerian'), 'NG'); assert.equal(countryFromText('Ghana'), 'GH');

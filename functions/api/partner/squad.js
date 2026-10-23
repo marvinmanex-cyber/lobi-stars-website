@@ -4,7 +4,7 @@ import { partnerFeed } from '../_lib/squadPublish.js';
 // Protected by LOBI_PARTNER_API_KEY (header "Authorization: Bearer <key>" or
 // "X-API-Key: <key>"). Verified profiles of the current season with Public and
 // Media fields only (never private details), in the SAME structure as data.json
-// in the Data Package (schemaVersion 1.1), with photo links that
+// in the Data Package (schemaVersion 1.2), with photo links that
 // expire after 24 hours and "updatedAt" per profile. ?since= returns only
 // profiles changed after that time.
 export async function onRequestGet({ request, env }) {

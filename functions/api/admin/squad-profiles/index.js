@@ -52,7 +52,7 @@ export async function onRequestGet({ request, env }) {
   const log = (await db.prepare(`SELECT * FROM squad_export_log ORDER BY id DESC LIMIT 30`).all()).results;
   return json({ season, current: cur, seasons: await seasons(db), counts: await counts(db, season), team: await getTeam(db), exportLog: log,
     canSuper: superOnly(admin), canFull: can(admin, 'squad.records.full'), canEdit: can(admin, 'squad.records.full'), deployHook: !!env.PAGES_DEPLOY_HOOK,
-    pendingNames: (await db.prepare(`SELECT COUNT(*) AS n FROM squad_profiles WHERE name_status = 'pending' AND deleted_at IS NULL`).first())?.n || 0,
+    pendingNames: (await db.prepare(`SELECT COUNT(*) AS n FROM squad_profiles WHERE name_status IN ('pending', 'check') AND deleted_at IS NULL`).first())?.n || 0,
     profiles: await listProfiles(db, { season, filter: u.searchParams.get('filter') || 'submitted', q: u.searchParams.get('q') || '' }) });
 }
 

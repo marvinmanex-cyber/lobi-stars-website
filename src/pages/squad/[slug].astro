@@ -17,7 +17,7 @@ export async function getStaticPaths() {
   return players.map((person, i) => {
     // Latest news about the player: stories tagged with them first, then stories that mention their name.
     const name = person.name.toLowerCase();
-    const tagged = news.filter(a => (a.data.players || []).includes(person.slug));
+    const tagged = news.filter(a => (a.data.players || []).some((s: string) => s === person.slug || person.oldSlugs.includes(s)));
     const mentions = news.filter(a => !tagged.includes(a) && `${a.data.title} ${a.data.summary} ${a.body ?? ''}`.toLowerCase().includes(name));
     const teammates = players.filter(x => x !== person && x.group === person.group).slice(0, 4);
     return { params: { slug: person.slug }, props: { person, prev: players[i - 1] || null, next: players[i + 1] || null, teammates, related: person.isSample ? [] : [...tagged, ...mentions].slice(0, 8) } };

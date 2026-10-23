@@ -36,7 +36,8 @@ export async function publicSquad(env) {
   const used = new Set();
   const uniq = s => { let x = s || 'profile', i = 2; while (used.has(x)) x = `${s}-${i++}`; used.add(x); return x; };
   const photo = (r, kind, variant = 'w1200.webp') => { const ph = parseJson(r.photos_json, {})[kind]; return ph ? `/api/squad/photo/${r.id}/${kind}/${variant}?v=${encodeURIComponent(ph.uploadedAt || '')}` : null; };
-  const out = { season, updatedAt: new Date().toISOString(), players: [], staff: [], left: left.map(rowName).filter(Boolean) };
+  const out = { season, updatedAt: new Date().toISOString(), players: [], staff: [], left: left.map(rowName).filter(Boolean), redirects: [] };
+  const slugWrites = [];
   for (const r of rows) {
     const d = shareable(r.type, parseJson(r.data_json, {}), { media: false });
     // Before the name check (old single name): best-effort parts, so nothing disappears.
@@ -48,10 +49,21 @@ export async function publicSquad(env) {
       socials: { instagram: d.socialInstagram || null, x: d.socialX || null, tiktok: d.socialTiktok || null }, honours: d.honours || [], interestingFact: d.interestingFact || null,
       bioHeadline: d.bioHeadline || null, bio: d.bio || null, shirtShopUrl: d.shirtShopUrl || null,
       photo: photo(r, 'profile'), photoSmall: photo(r, 'profile', 'w400.webp'), heroPhoto: photo(r, 'hero', 'w2000.webp') || photo(r, 'hero'), updatedAt: r.updated_at };
+    // Web address history: a changed address is remembered so the old one 301-redirects.
+    const olds = parseJson(r.old_slugs, []).filter(x => x !== base.slug);
+    if (r.public_slug && r.public_slug !== base.slug && !olds.includes(r.public_slug)) olds.push(r.public_slug);
+    if (r.public_slug !== base.slug || olds.length !== parseJson(r.old_slugs, []).length) slugWrites.push(db.prepare(`UPDATE squad_profiles SET public_slug = ?, old_slugs = ? WHERE id = ?`).bind(base.slug, JSON.stringify(olds), r.id));
+    base.oldSlugs = olds;
     if (r.type === 'player') out.players.push({ ...base, number: d.shirtNumber, positionGroup: d.positionGroup || null, group: GROUP[d.positionGroup] || 'MID', position: d.primaryPosition || null,
       secondaryPositions: d.secondaryPositions || [], preferredFoot: d.preferredFoot, heightCm: d.heightCm, joined: d.joined, debutDate: d.debutDate || null, nationalTeam: d.nationalTeam || null,
       previousClubs: d.previousClubs || [], internationalCareer: d.internationalCareer || [], actionPhoto: photo(r, 'action') });
     else out.staff.push({ ...base, role: d.role === 'Other' ? d.roleOther || 'Staff' : d.role, joined: d.joinedStaff, licence: d.qualifications || null, playingCareer: d.playingCareer, previousRoles: d.previousRoles || [] });
+  }
+  if (slugWrites.length) await db.batch(slugWrites);
+  // Old addresses → current ones (never an address someone else uses now).
+  for (const [list, prefix] of [[out.players, '/squad/'], [out.staff, '/squad/staff/']]) {
+    const current = new Set(list.map(x => x.slug));
+    for (const x of list) for (const o of x.oldSlugs) if (!current.has(o)) out.redirects.push({ from: `${prefix}${o}/`, to: `${prefix}${x.slug}/` });
   }
   return out;
 }

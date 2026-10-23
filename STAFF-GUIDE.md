@@ -3344,13 +3344,21 @@ check appears. Portal sessions end after 60 minutes without activity (with a
    saved"). If the network goes, answers are kept on the phone and sent when
    it returns ("Offline · saved on this device"). Do not clear the browser
    until the pill says "All changes saved".
-4. **Names:** **Surname**, **First name** and (if any) **Middle name**, exactly
-   as on the passport or official ID. Capitals are tidied automatically
-   ("ADEYEMI" becomes "Adeyemi").
-5. Each question is marked **Public** (on the website), **Public from age 18**
-   (date of birth and middle name: for under-18s only the age is shown),
-   **Media** (for the media partner only) or **Private** (club records only,
-   never published).
+4. **Names:** **Surname** (as it appears on official documents), **First
+   name** and (if any) **Middle name**. Capitals are tidied automatically
+   ("ADEYEMI" becomes "Adeyemi"). The website shows "First name Surname"
+   (e.g. "Musa Adeyemi"); the **middle name is private** and never shown.
+5. The form no longer shows which answers are public. For the club: phone,
+   email, emergency and guardian contacts and the middle name are never
+   published; the date of birth only from age 18 (under-18s: age only); career
+   highlight and coaching philosophy go to the media partner only.
+   **International career and national team** are shown only after a Super
+   Admin has checked the evidence: under the international career the portal
+   has an **Evidence** box (a link or description) and **Upload a photo or
+   PDF** (e.g. a call-up letter or federation squad list, up to 5 MB).
+   The "interesting fact" question reads "…about the player", "…about the
+   coach" (coaching roles) or "…about the staff member" (other club staff).
+   Name pronunciation and "Football role model" are no longer asked.
 6. Countries (nationality, second nationality, national team, place of birth,
    previous clubs) are chosen from a list. Positions: choose **Goalkeeper,
    Defender, Midfielder or Forward**, then the specific position if known.
@@ -3372,7 +3380,7 @@ email when one is submitted.
 
 | Button | Result |
 | --- | --- |
-| Verify | The person appears on /squad within a few minutes (public details only; full date of birth and middle name only from 18). Not possible while their name still waits in the Name check. |
+| Verify | The person appears on /squad within a few minutes (public details only; full date of birth only from 18; never the middle name). |
 | Request changes | Write a note; the portal shows it and the profile can be edited again. |
 | Left the club | Off the website and the partner feed straight away. Kept in "all seasons" downloads. Private details are erased after the retention period. |
 | Restore | Undoes "Left the club". |
@@ -3384,15 +3392,24 @@ only, after entering their sign-in code. Every download is logged.
 
 ### Name check, editing and bios (Super Admins, on the same page)
 
-**Name check.** Profiles saved before 22 Oct 2026 had one "Full name" box.
-They now wait in a **Name check** box at the top of the page with a proposal:
-Surname, First name, Middle name and (if their old display name was different)
-Name on website. "High" confidence = two names or "SURNAME, First name";
-**"Needs review"** = three or more names, where the order is not certain (in
-Nigeria the surname is often written first). Check each against the passport
-or ID, correct the boxes, press **Confirm**. Nothing changes until you
-confirm. **Download this list (CSV)** gives the same list as a spreadsheet.
-The old answers are kept and shown under "Old answers" on the profile.
+**Please check name order.** Profiles saved before the change had one "Full
+legal name" and a "Display name". Their Surname, First name and Middle name
+were filled in automatically: the Nigerian order "Surname First Middle" is used
+only where the old full name clearly used it (e.g. "ADEYEMI, Musa Ibrahim",
+"ADEYEMI Musa", or starting with the display name's surname); otherwise the old
+display name is read as "First name Surname". Each such profile is marked
+**Please check name order** here, in the portal and in a yellow box at the top
+of this page, which shows the old answers and how the names were filled in.
+Check against the passport or ID, correct if needed, press **Confirm**.
+**Download this list (CSV)** gives the same list as a spreadsheet. The old
+answers are kept (shown under "Old answers" on the profile).
+
+**Name corrections on live profiles** go through review like any other
+change: the club presses **Request changes**, the portal corrects the name,
+and the profile is verified again (or a Super Admin corrects it in **Edit**).
+If the web address changes (e.g. /squad/chidi-okon/ to
+/squad/chidiebere-okon/), the old address **redirects** to the new one, and
+news tags and match stats still count for the player.
 
 **Edit** (open a profile › **Edit**). For any profile, in any status:
 - names, **Name on website** (only for someone publicly known by a different
@@ -3404,6 +3421,11 @@ The old answers are kept and shown under "Old answers" on the profile.
   starting with "## " is a small heading), **Shirt shop link** (shows "Buy
   [Surname]'s shirt"), **Hide from the website** (takes them off the Squad
   pages without deleting anything);
+- **International career checked (evidence seen)**: tick only after looking
+  at the evidence (the box "International career" on the profile shows the
+  file and note). Until then the international career and national team are
+  hidden from the website, the partner feed and the Data Package. If the
+  player changes them in the portal, the tick is removed automatically.
 - photos: **Profile photo** (cards, 4:5), **Wide header photo** (16:9, the top
   of the profile page; at least 1600 px wide looks best) and **Action photo**.
 Press **Save changes**. A shirt number given to two players this season shows
@@ -3441,8 +3463,10 @@ budget (Settings › AI Settings, "Squad bios").
 - **Player page** /squad/firstname-surname/ (a number is added if two people
   share a name): wide header or photo, big shirt number, quick facts
   (nationality with flag, position, age), "Buy [Surname]'s shirt" (if a link
-  is set), bio, interesting fact, details (official name "SURNAME, First
-  Middle", nickname, nationality, national team, place of birth, state of
+  is set; otherwise, when shirt personalisation is switched on in the shop,
+  it opens the personalisation with the SURNAME in capitals and the shirt
+  number filled in), bio, interesting fact, details (official name "SURNAME,
+  First name", nickname, nationality, national team, place of birth, state of
   origin, hometown, position and other positions, date of birth
   "24 April, 2007 (age 19)" for 18+, height "1.78m (5ft 10in)", debut,
   joined), tabs: **2026/27** (appearances, starts, goals, assists, clean
@@ -3486,8 +3510,9 @@ but are not used anywhere.
 ## 39. Data Package format
 
 The Data Package is what the media partner's systems read. Its format is
-fixed: **schemaVersion "1.1"** (since 22 Oct 2026; 1.0 had the name
-pronunciation and recordings, which were removed). Do not rename files inside
+fixed: **schemaVersion "1.2"** (since 23 Oct 2026; 1.0 had the name
+pronunciation and recordings, which were removed; 1.1 had the middle name for
+over-18s). Do not rename files inside
 the ZIP.
 
 **The ZIP contains:**
@@ -3502,16 +3527,17 @@ the ZIP.
 | `schema.json` | The formal description (JSON Schema) of data.json. |
 | `README.txt` | What is inside, when and by whom it was made. |
 
-**data.json, top level:** `schemaVersion` ("1.1"), `exportedAt` (Lagos time,
+**data.json, top level:** `schemaVersion` ("1.2"), `exportedAt` (Lagos time,
 e.g. 2026-10-22T11:42:00+01:00), `source` ("lobistarsfc.com"), `season`,
 `filters`, `team`, `players`, `staff`.
 
 - **team:** `id`, `name`, `shortName`, `nickname`, `crest`, `kitColours`
   (`home`, `away`), `stadium`, `city`, `state`, `competition`.
 - **Everyone (players and staff):** `id`, `status` (verified, submitted,
-  left_the_club), `updatedAt`, `displayName` (the name to show), `surname`,
-  `firstName`, `officialName` ("SURNAME, First Middle"; no middle name for
-  under-18s), `shortName` (surname), `nickname`, `dateOfBirth` (empty for
+  left_the_club), `updatedAt`, `displayName` ("First name Surname"),
+  `surname`, `firstName`, `officialName` ("SURNAME, First name"), `shortName`
+  (surname), `nickname`, `pronunciation` and `pronunciationAudio` (always
+  null: kept for systems that expect them), `dateOfBirth` (empty for
   under-18s), `age`, `nationality`, `secondNationality` (each `code`, ISO
   e.g. "NG", and `name`), `placeOfBirth` (`town`, `country`),
   `stateOfOrigin`, `hometown`, `social` (`instagram`, `x`, `tiktok`),
@@ -3522,14 +3548,13 @@ e.g. 2026-10-22T11:42:00+01:00), `source` ("lobistarsfc.com"), `season`,
   `primaryPosition`, `secondaryPositions`, `preferredFoot`, `heightCm`,
   `debut`, `nationalTeam`, `previousClubs` (`club`, `country`, `startYear`,
   `endYear`), `internationalCareer` (`level`, `caps`, `goals`,
-  `tournaments`), `notes` (`careerHighlight`, `roleModel`,
-  `interestingFact`), `photos` (`profile`, `action`, `hero`).
+  `tournaments`), `notes` (`careerHighlight`, `interestingFact`), `photos` (`profile`, `action`, `hero`).
 - **staff** (by role), also: `role`, `licence`, `playingCareer`,
   `previousRoles` (`club`, `position`, `period`), `notes` (`philosophy`,
   `careerHighlight`, `interestingFact`), `photos` (`profile`, `hero`).
 
-Never included: phone, email, emergency contact, guardian details, and for
-under-18s the date of birth and middle name.
+Never included: middle name, phone, email, emergency contact, guardian
+details, and for under-18s the date of birth. There is no audio/ folder.
 
 **Partner feed (for the partner's developers):** `GET
 https://lobistarsfc.com/api/partner/squad` with the header

@@ -86,6 +86,7 @@ async function main() {
     await writeFile(path.join(STAFF, `${fm.slug}.md`), front(fm) + body(s));
   }
   await writeFile(path.join(PLAYERS, '_left.json'), JSON.stringify(data.left || []));
+  await writeFile(path.join(PLAYERS, '_redirects.json'), JSON.stringify(data.redirects || []));
   await shareImages([...data.players.map(p => ({ ...p, kind: 'player' })), ...data.staff.map(s => ({ ...s, kind: 'staff' }))]);
   console.log(`[fetch-squad] ${data.players.length} player(s) and ${data.staff.length} staff from the portal (${data.season}).`);
 }

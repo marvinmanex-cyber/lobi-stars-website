@@ -95,7 +95,7 @@ function row(p: any) {
     : `<button type="button" class="sp-link" data-open="${p.id}">View</button>`;
   return `<tr>
     <td>${p.thumb ? `<img class="sp-thumb" src="${esc(p.thumb)}" alt="" width="44" height="55" loading="lazy" />` : '<span class="sp-thumb sp-thumb-empty" aria-hidden="true">?</span>'}</td>
-    <td><b>${esc(p.name || 'Unnamed draft')}</b>${p.reviewNote ? `<p class="sp-review-note">Reviewer: ${esc(p.reviewNote)}</p>` : ''}</td>
+    <td><b>${esc(p.name || 'Unnamed draft')}</b>${p.nameStatus === 'check' ? ' <span class="sp-namecheck">Please check name order</span>' : ''}${p.reviewNote ? `<p class="sp-review-note">Reviewer: ${esc(p.reviewNote)}</p>` : ''}</td>
     <td>${p.type === 'player' ? 'Player' : 'Coach / staff'}</td><td>${what}</td>
     <td><span class="sp-badge-st ${BADGE[p.status]}">${esc(p.statusLabel)}</span></td>
     <td>${esc(lagos(p.updatedAt))}<br /><small>by ${esc(p.updatedBy || '')}</small></td>

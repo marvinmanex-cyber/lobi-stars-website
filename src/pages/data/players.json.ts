@@ -14,6 +14,8 @@ export async function GET() {
       position: p.data.position,
       photo: p.data.photo || null,
       isSample: p.data.isSample,
+      // Earlier web addresses (a corrected name): match stats saved under them still count.
+      aliases: ((p.data.profile as any)?.oldSlugs || []) as string[],
     }));
   return new Response(JSON.stringify(players), { headers: { 'Content-Type': 'application/json' } });
 }

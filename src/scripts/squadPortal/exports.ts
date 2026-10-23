@@ -67,8 +67,8 @@ const PRIVATE_LABELS = ['Phone', 'Email', 'Emergency contact', 'Emergency phone'
 const personCols = ['Name', 'Surname', 'First name', 'Official name', 'Nickname', 'Age', 'Date of birth', 'Nationality', 'Second nationality', 'Place of birth', 'State of origin', 'Hometown and LGA', 'Instagram', 'X', 'TikTok'];
 const person = (p: Prof) => { const d = p.data; return [nm(p), d.surname, d.firstName, officialName(nameOf(d)), d.nickname, d.dob ? ageOn(d.dob) : d.age, d.dob, cn(d.nationality), cn(d.nationality2), [d.birthTown, cn(d.birthCountry)].filter(Boolean).join(', '), d.stateOfOrigin, d.hometown, d.socialInstagram, d.socialX, d.socialTiktok]; };
 function playerRows(ps: Prof[], full: boolean) {
-  const cols = ['ID', 'Season', 'Status', ...personCols, 'Shirt number', 'Position', 'Specific position', 'Other positions', 'Preferred foot', 'Height (cm)', 'National team', 'Joined', 'Lobi Stars debut', 'Career highlight', 'Role model', 'Interesting fact', 'Last updated'];
-  const rows = ps.map(p => { const d = p.data; return [p.id, p.season, p.statusLabel, ...person(p), d.shirtNumber, d.positionGroup, d.primaryPosition, d.secondaryPositions, d.preferredFoot, d.heightCm, cn(d.nationalTeam), d.joined, d.debutDate, d.careerHighlight, d.roleModel, d.interestingFact, lagosDate(p.updatedAt), ...(full ? PRIVATE_COLS.map(k => d[k]) : [])].map(sv); });
+  const cols = ['ID', 'Season', 'Status', ...personCols, 'Shirt number', 'Position', 'Specific position', 'Other positions', 'Preferred foot', 'Height (cm)', 'National team', 'Joined', 'Lobi Stars debut', 'Career highlight', 'Interesting fact', 'Last updated'];
+  const rows = ps.map(p => { const d = p.data; return [p.id, p.season, p.statusLabel, ...person(p), d.shirtNumber, d.positionGroup, d.primaryPosition, d.secondaryPositions, d.preferredFoot, d.heightCm, cn(d.nationalTeam), d.joined, d.debutDate, d.careerHighlight, d.interestingFact, lagosDate(p.updatedAt), ...(full ? PRIVATE_COLS.map(k => d[k]) : [])].map(sv); });
   return { columns: [...cols, ...(full ? PRIVATE_LABELS : [])], rows };
 }
 function staffRows(ps: Prof[], full: boolean) {
@@ -133,7 +133,7 @@ async function buildPdf(d: Awaited<ReturnType<typeof getData>>, full: boolean) {
       v = factValue(f, v);
       const lines = wrap(plain(v), W - M * 2 - 170, 10);
       if (y + lines.length * 13 > 790) { foot(); doc.addPage(); y = M; }
-      doc.text(plain(labelOf(f, p.type)), M, y, { size: 9, color: '#4A505C' });
+      doc.text(plain(labelOf(f, p.type, dd)), M, y, { size: 9, color: '#4A505C' });
       lines.forEach((l: string, i: number) => doc.text(l, M + 170, y + i * 13, { size: 10 }));
       y += lines.length * 13 + 5;
     }
@@ -199,7 +199,7 @@ async function buildDocx(d: Awaited<ReturnType<typeof getData>>, full: boolean) 
     body.push(para(run(p.type === 'player' ? `#${dd.shirtNumber ?? '–'} · ${dd.primaryPosition || dd.positionGroup || ''}` : String(dd.role === 'Other' ? dd.roleOther : dd.role || ''), { b: true, sz: 28, color: 'B3121A' })));
     body.push(para(run(`${p.statusLabel} · last updated ${lagosDate(p.updatedAt)}`, { sz: 18, color: '4A505C' })));
     const facts: string[][] = [];
-    for (const f of factFields(p.type, full)) { const v = dd[f.key]; if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) continue; facts.push([labelOf(f, p.type), factValue(f, v)]); }
+    for (const f of factFields(p.type, full)) { const v = dd[f.key]; if (v === null || v === undefined || v === '' || (Array.isArray(v) && !v.length)) continue; facts.push([labelOf(f, p.type, dd), factValue(f, v)]); }
     const age = dd.dob ? ageOn(dd.dob) : dd.age; if (age != null && !full) facts.push(['Age', String(age)]);
     body.push(tbl(['Detail', 'Answer'], facts));
     if (p.type === 'player') {
@@ -236,7 +236,7 @@ function readme(d: Awaited<ReturnType<typeof getData>>, counts: { photos: number
     `photos/        Profile, action and wide header (hero) photos: 1200 px JPG and WebP, named like 09-musa-adeyemi.jpg, 09-musa-adeyemi-action.jpg, 09-musa-adeyemi-hero.jpg (${counts.photos} files).`,
     'team/          The club badge (lobi-stars-crest.png).', '',
     'Photo paths in data.json are relative to this ZIP (e.g. "photos/09-musa-adeyemi.jpg").',
-    'Private details (phone numbers, email addresses, emergency and guardian contacts) are held by the club and are not included. For people under 18 the date of birth and middle name are not included (age only).', '',
+    'Private details (middle names, phone numbers, email addresses, emergency and guardian contacts) are held by the club and are not included. For people under 18 the date of birth is not included (age only). "pronunciation" and "pronunciationAudio" are always null (no longer collected); there is no audio/ folder.', '',
   ].join('\r\n');
 }
 

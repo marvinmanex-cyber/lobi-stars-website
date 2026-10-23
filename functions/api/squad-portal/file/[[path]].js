@@ -23,7 +23,7 @@ export async function onRequestGet({ request, env, params }) {
   if (!o) return new Response('Not found', { status: 404 });
   const data = parseJson(p.data_json, {});
   const type = o.httpMetadata?.contentType || 'application/octet-stream';
-  const ext = variant.endsWith('.jpg') || type === 'image/jpeg' ? 'jpg' : 'webp';
+  const ext = type === 'application/pdf' ? 'pdf' : type === 'image/png' ? 'png' : variant.endsWith('.jpg') || type === 'image/jpeg' ? 'jpg' : 'webp';
   const name = photoName(p, kind, ext, data);
   return new Response(o.body, { headers: {
     'Content-Type': type, 'Cache-Control': 'private, max-age=300', 'X-Robots-Tag': 'noindex, nofollow',

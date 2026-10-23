@@ -129,6 +129,20 @@ export default function postbuild() {
           `\n</urlset>\n`;
         await writeFile(path.join(dist, 'sitemap.xml'), xml);
 
+        // Squad profiles whose web address changed (e.g. a corrected name): old address → new (301),
+        // from scripts/fetch-squad.mjs. Added to the end of dist/_redirects.
+        const squadRedirects = path.resolve(dist, '..', 'src', 'content', 'players', 'portal', '_redirects.json');
+        if (existsSync(squadRedirects)) {
+          const list = JSON.parse(await readFile(squadRedirects, 'utf8'));
+          if (list.length) {
+            const file = path.join(dist, '_redirects');
+            const before = existsSync(file) ? await readFile(file, 'utf8') : '';
+            const lines = list.flatMap(r => [`${r.from} ${r.to} 301`, `${r.from.replace(/\/$/, '')} ${r.to} 301`]);
+            await writeFile(file, `${before.replace(/\s*$/, '\n')}# Squad profiles: old web addresses\n${lines.join('\n')}\n`);
+            logger.info(`${list.length} squad profile redirect(s) added`);
+          }
+        }
+
         const genDir = path.resolve(dist, '..', 'functions', 'api', '_generated');
         await mkdir(genDir, { recursive: true });
         await writeFile(path.join(genDir, 'membersContent.js'),

@@ -15,7 +15,6 @@ const countryOpts = (sel = '') => `<option value="">Choose…</option>${COUNTRY_
 import { processPhoto } from './media';
 import { showHome } from './home';
 
-const USE: Record<string, [string, string]> = { public: ['Public', 'pub'], media: ['Media', 'med'], private: ['Private', 'prv'] };
 const BADGE: Record<string, string> = { DRAFT: 'amber', SUBMITTED: 'blue', VERIFIED: 'green', CHANGES_REQUESTED: 'red', LEFT_THE_CLUB: 'grey' };
 type P = { id: string; type: 'player' | 'staff'; status: string; season: string; data: Record<string, any>; photos: any; editable: boolean; name: string; nameStatus?: string | null; fileBase: string; reviewNote?: string; reviewBy?: string };
 let P: P | null = null;
@@ -73,6 +72,7 @@ async function sendUploads() {
       await uploadDone(u.key);
       if (P && P.id === u.id) {
         if (u.what === 'photo') { P.photos[String(u.fields.kind)] = r.photo; renderPhoto(String(u.fields.kind)); }
+        else if (u.what === 'evidence') { (P as any).evidence = r.evidence; renderEvidence(); }
       }
     } catch (e) {
       if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 401 && e.status !== 429) { await uploadDone(u.key); toast(e.message); report('photo_failed', { profile: u.id, detail: e.message }); }
@@ -163,7 +163,8 @@ function checks(r: any) {
 }
 
 // ── Rendering ──
-function chip(use: string, f?: any) { const [l, c] = USE[use]; return `<span class="sp-use ${c}">${f?.adultOnly ? 'Public from age 18' : l}</span>`; }
+// Where an answer is used (Public / Media / Private) is no longer shown on the form (23 Oct 2026).
+function chip(_use?: string, _f?: any) { return ''; }
 function rowHtml(f: any, r: any = {}) {
   return `<div class="sp-row" draggable="true">
     <span class="sp-drag" aria-hidden="true" title="Drag to reorder">⋮⋮</span>
@@ -175,7 +176,7 @@ function rowHtml(f: any, r: any = {}) {
   </div>`;
 }
 function fieldHtml(f: any, type: string) {
-  const id = `f_${f.key}`, label = labelOf(f, type), req = f.required ? '<span class="sp-req" aria-hidden="true">*</span>' : '';
+  const id = `f_${f.key}`, label = labelOf(f, type, P?.data), req = f.required ? '<span class="sp-req" aria-hidden="true">*</span>' : '';
   const ph = typeof f.placeholder === 'object' ? (f.placeholder[type] || '') : (f.placeholder || '');
   const hint = f.hint ? `<p class="sp-hint" id="${id}_h">${esc(f.hint)}</p>` : '';
   const desc = f.hint ? `aria-describedby="${id}_h"` : '';
@@ -198,7 +199,7 @@ function fieldHtml(f: any, type: string) {
     case 'email': input = `<input id="${id}" type="email" inputmode="email" autocomplete="off" ${reqA} ${desc} />`; break;
     default: input = `<input id="${id}" type="text" maxlength="${f.max || 120}" placeholder="${esc(ph)}" autocomplete="off" ${reqA} ${desc} />`;
   }
-  const extra = f.key === 'shirtNumber' ? '<p class="sp-warn" id="shirtWarn" role="status" hidden></p>' : '';
+  const extra = f.key === 'shirtNumber' ? '<p class="sp-warn" id="shirtWarn" role="status" hidden></p>' : f.key === 'intlEvidence' ? evidenceHtml() : '';
   return `<div class="sp-field" data-field="${f.key}" data-for="${f.for}" ${f.showIf ? `data-showif='${esc(JSON.stringify(f.showIf))}'` : ''} ${f.minorOnly ? 'data-minor' : ''}>${head}${input}${hint}${extra}</div>`;
 }
 function photoHtml(kind: 'profile' | 'action', type: string) {
@@ -245,14 +246,13 @@ function render(extra: any) {
       <span class="sp-badge-st ${BADGE[p.status]}">${esc(STATUSES[p.status])}</span>
       <span class="sp-pill saved" id="savePill" role="status" aria-live="polite"><span class="dot"></span>All changes saved</span>
     </div>
-    ${p.nameStatus === 'pending' && p.editable ? `<p class="sp-review"><b>Names have changed:</b> please fill in Surname, First name and (if any) Middle name exactly as on their passport or ID. The club will check them.</p>` : ''}
+    ${p.nameStatus === 'check' ? `<p class="sp-review"><b>Please check name order.</b> The form now has Surname, First name and Middle name; they were filled in from the old answers. Check them against the passport or official ID${p.editable ? ' and correct them if needed' : ''}. The club confirms them.</p>` : ''}
     ${p.status === 'CHANGES_REQUESTED' && p.reviewNote ? `<p class="sp-review"><b>Changes requested by ${esc(p.reviewBy || 'the club')}:</b> ${esc(p.reviewNote)}</p>` : ''}
     ${view ? `<p class="sp-review sp-view">This profile is ${esc(STATUSES[p.status].toLowerCase())} and can only be viewed.${p.status === 'SUBMITTED' ? ' The club will review it.' : ''}</p>` : ''}
     <p class="sp-dup" id="dupWarn" role="status" hidden></p>
     <div class="sp-form">
       <nav class="sp-secnav" aria-label="Sections">
         <ol>${SECTIONS.map(s => `<li data-for="${s.for}"><a href="#sec_${s.id}">${esc(s.label)}</a></li>`).join('')}</ol>
-        <div class="sp-key"><p>Key</p><span class="sp-use pub">Public</span> shown on website<br /><span class="sp-use med">Media</span> club media team<br /><span class="sp-use prv">Private</span> club only</div>
       </nav>
       <form class="sp-sections" id="pform" novalidate ${view ? 'inert' : ''}>
         <section class="sp-card sp-sec" id="sec_type" aria-labelledby="h_type">
@@ -285,6 +285,7 @@ function render(extra: any) {
     </div>`;
   for (const f of FORM_FIELDS) writeField(f.key, p.data[f.key]);
   for (const k of ['profile', 'action']) renderPhoto(k);
+  renderEvidence();
   visibility();
   checks(extra);
   wire();
@@ -302,8 +303,8 @@ function visibility() {
   });
   const mb = document.getElementById('minorBox'); if (mb) mb.hidden = !minor;
   document.querySelectorAll<HTMLElement>('.sp-type').forEach(b => b.setAttribute('aria-checked', String(b.dataset.type === type)));
-  const hon = document.querySelector('[data-field="honours"] .sp-label'); if (hon) hon.textContent = labelOf(FIELD.honours, type);
-  const fact = document.querySelector('label[for="f_interestingFact"]'); if (fact) fact.textContent = labelOf(FIELD.interestingFact, type);
+  const hon = document.querySelector('[data-field="honours"] .sp-label'); if (hon) hon.textContent = labelOf(FIELD.honours, type, P.data);
+  const fact = document.querySelector('label[for="f_interestingFact"]'); if (fact) fact.textContent = labelOf(FIELD.interestingFact, type, P.data);
   const kit = document.getElementById('kitGuide'); if (kit) kit.textContent = type === 'staff' ? 'Wearing club staff wear' : 'Wearing the official Lobi Stars kit';
   const t = document.getElementById('formTitle'); if (t) t.textContent = profileName(P.data) ? profileName(P.data).toUpperCase() : 'NEW PROFILE';
   document.querySelectorAll('[data-filename]').forEach(el => updateFileName(el as HTMLElement));
@@ -318,6 +319,18 @@ function fileBaseLocal() {
 function updateFileName(el: HTMLElement) {
   const kind = el.dataset.filename!;
   el.textContent = P?.photos?.[kind] ? `Saved as ${fileBaseLocal()}${kind === 'action' ? '-action' : ''}.webp` : '';
+}
+function evidenceHtml() {
+  return `<div class="sp-evidence"><div class="sp-photo-btns">
+      <label class="sp-btn sp-btn-outline"><input type="file" accept="image/jpeg,image/png,image/webp,application/pdf,.pdf" data-evidence hidden />Upload a photo or PDF</label>
+      <button type="button" class="sp-link sp-danger" id="evDel" hidden>Remove file</button></div>
+    <p class="sp-hint" id="evState">JPG, PNG, WebP or PDF, up to 5 MB.</p></div>`;
+}
+function renderEvidence() {
+  const st = document.getElementById('evState'), del = document.getElementById('evDel'); if (!st || !P) return;
+  const ev = (P as any).evidence;
+  st.innerHTML = ev ? `Uploaded: ${ev.url ? `<a href="${esc(ev.url)}" target="_blank" rel="noopener">${esc(ev.name || 'evidence')}</a>` : esc(ev.name || 'evidence')}` : 'JPG, PNG, WebP or PDF, up to 5 MB.';
+  if (del) del.hidden = !ev || !P.editable;
 }
 function renderPhoto(kind: string) {
   const ph = P?.photos?.[kind], box = document.getElementById(`prev_${kind}`); if (!box) return;
@@ -372,6 +385,18 @@ function wire() {
   form.addEventListener('dragstart', e => { dragRow = (e.target as HTMLElement).closest('.sp-row'); });
   form.addEventListener('dragover', e => { const over = (e.target as HTMLElement).closest('.sp-row'); if (dragRow && over && over !== dragRow && over.parentElement === dragRow.parentElement) { e.preventDefault(); const r = over.getBoundingClientRect(); (e as DragEvent).clientY < r.top + r.height / 2 ? over.before(dragRow) : over.after(dragRow); } });
   form.addEventListener('dragend', () => { if (!dragRow) return; const key = dragRow.closest<HTMLElement>('[data-field]')!.dataset.field!; dragRow = null; const v = readField(key); P!.data[key] = v; save({ [key]: v }, true); });
+  // Evidence for the international career (a photo or PDF).
+  form.querySelector<HTMLInputElement>('[data-evidence]')?.addEventListener('change', async e => {
+    const inp = e.target as HTMLInputElement, f = inp.files?.[0]; inp.value = ''; if (!f) return;
+    if (f.size > 5 * 1024 * 1024) { toast('The file is larger than 5 MB. Take a photo of the document instead.', 8000); return; }
+    (P as any).evidence = { name: f.name }; renderEvidence();
+    await uploadKeep({ key: `${P!.id}:evidence`, id: P!.id, what: 'evidence', at: Date.now(), fields: { file: f } });
+    pill(navigator.onLine ? 'saving' : 'offline'); pump();
+  });
+  document.getElementById('evDel')?.addEventListener('click', async () => {
+    if (!confirm('Remove the evidence file?')) return;
+    try { await api(`profiles/${P!.id}/evidence`, { method: 'DELETE' }); (P as any).evidence = null; renderEvidence(); } catch (err: any) { toast(err.message); }
+  });
   // Photos.
   form.querySelectorAll<HTMLInputElement>('[data-pick]').forEach(inp => inp.addEventListener('change', () => { const f = inp.files?.[0]; inp.value = ''; if (f) addPhoto(inp.dataset.pick as 'profile' | 'action', f); }));
   form.querySelectorAll<HTMLButtonElement>('[data-delphoto]').forEach(b => b.addEventListener('click', async () => {
