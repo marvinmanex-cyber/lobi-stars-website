@@ -1,9 +1,8 @@
 // Squad & Staff Data Portal: the home screen (Screen 2) – how it works, the two
-// "add" buttons, live counts, saved profiles (search, filters, season) and the
-// export card.
+// "add" buttons, live counts and saved profiles (search, filters, season).
+// Exports are not offered here: only Super Admins export, from the admin (23 Oct 2026).
 import { api, state, $, esc, toast, lagos } from './api';
 import { openForm } from './form';
-import { runExport } from './exports';
 
 const FILTERS: [string, string][] = [['all', 'All'], ['players', 'Players'], ['staff', 'Staff'], ['drafts', 'Drafts'], ['submitted', 'Submitted'], ['verified', 'Verified'], ['changes', 'Changes requested'], ['left', 'Left the club']];
 const BADGE: Record<string, string> = { DRAFT: 'amber', SUBMITTED: 'blue', VERIFIED: 'green', CHANGES_REQUESTED: 'red', LEFT_THE_CLUB: 'grey' };
@@ -37,23 +36,7 @@ export async function showHome() {
         <th scope="col">Photo</th><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Number / position or role</th><th scope="col">Status</th><th scope="col">Last saved</th><th scope="col">Actions</th>
       </tr></thead><tbody id="rows"><tr><td colspan="7">Loading…</td></tr></tbody></table></div>
     </section>
-    <section class="sp-card sp-export" aria-labelledby="exportTitle">
-      <h2 class="sp-h3" id="exportTitle">EXPORT DATA</h2>
-      <div class="sp-export-opts">
-        <div class="sp-field"><label for="exWhich">Which profiles</label><select id="exWhich"><option value="verified">Verified only</option><option value="submitted">All submitted</option><option value="players">Players</option><option value="staff">Staff</option></select></div>
-        <div class="sp-field"><label for="exSeason">Season</label><select id="exSeason"><option value="current">Current season</option><option value="all">All seasons</option></select></div>
-      </div>
-      <div class="sp-export-btns">
-        <button type="button" class="sp-btn sp-btn-outline" data-export="pdf">Download PDF</button>
-        <button type="button" class="sp-btn sp-btn-outline" data-export="docx">Download Word</button>
-        <button type="button" class="sp-btn sp-btn-outline" data-export="xlsx">Download Excel</button>
-        <button type="button" class="sp-btn sp-btn-outline" data-export="csv">Download CSV</button>
-        <button type="button" class="sp-btn sp-btn-outline" data-export="json">Download JSON</button>
-        <button type="button" class="sp-btn sp-btn-gold sp-export-zip" data-export="zip">Download Media Partner Data Package (ZIP)</button>
-      </div>
-      <p class="sp-hint">Private contact details are not included in downloads from this portal.</p>
-      <p class="sp-export-status" id="exStatus" role="status" aria-live="polite" hidden></p>
-    </section>`;
+`;
   $('main').querySelectorAll<HTMLButtonElement>('[data-add]').forEach(b => b.addEventListener('click', () => startNew(b.dataset.add as 'player' | 'staff', b)));
   $('main').querySelectorAll<HTMLButtonElement>('[data-filter]').forEach(b => b.addEventListener('click', () => {
     view.filter = b.dataset.filter!; $('main').querySelectorAll('[data-filter]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); load();
@@ -61,10 +44,6 @@ export async function showHome() {
   $('q').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = window.setTimeout(() => { view.q = $<HTMLInputElement>('q').value; load(); }, 300); });
   $('seasonSel').addEventListener('change', e => { view.season = (e.target as HTMLSelectElement).value; load(); });
   $('rows').addEventListener('click', onRowClick);
-  $('main').querySelectorAll<HTMLButtonElement>('[data-export]').forEach(b => b.addEventListener('click', () => runExport({
-    place: 'portal', format: b.dataset.export as any, which: $<HTMLSelectElement>('exWhich').value, season: $<HTMLSelectElement>('exSeason').value === 'all' ? 'all' : state.season,
-    status: (t: string, ok = true) => { const s = $('exStatus'); s.textContent = t; s.className = `sp-export-status ${ok ? '' : 'err'}`; s.hidden = !t; }, button: b,
-  })));
   await load();
   window.scrollTo(0, 0);
 }

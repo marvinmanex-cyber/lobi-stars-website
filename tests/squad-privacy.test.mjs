@@ -74,8 +74,9 @@ test('portal scripts and downloads (export data, partner feed) never use the for
   const read = rel => { if (seen.has(rel)) return; seen.add(rel); const t = readFileSync(new URL(`.${rel}`, dist), 'utf8'); assert.ok(!FORBIDDEN.test(t), `forbidden word in ${rel}`); for (const m of t.matchAll(/["'(]\.\/([\w.-]+\.js)["')]/g)) read(`/_astro/${m[1]}`); };
   scripts.forEach(read);
   assert.ok(seen.size > 0, 'portal scripts found');
-  const ex = await P('export-data?which=all&season=current');
-  assert.equal(ex.status, 200); assert.ok(!FORBIDDEN.test(JSON.stringify(ex.data)));
+  assert.equal((await P('export-data?which=all&season=current')).status, 403, 'no exports from the portal');
+  const ex = await fetch(`${BASE}/api/admin/squad-profiles?export=1&which=verified&season=current`, { headers: ADMIN }).then(r => r.json());
+  assert.ok(!FORBIDDEN.test(JSON.stringify(ex)));
 });
 
 test('a refused save is reported to the Activity Log without the answer', async () => {

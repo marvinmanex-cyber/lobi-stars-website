@@ -51,6 +51,12 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <form class="spa-row" id="seasonForm"><label class="spa-l">Season<input id="season" placeholder="2026/27" maxlength="7" /></label><button class="btn-o" type="submit">Save season</button></form>
     </section>
 
+    <section class="spa-card" aria-labelledby="h-exp">
+      <h2 id="h-exp">Who receives squad data exports</h2>
+      <p class="muted">Only Super Admins can export player and staff data (Matchday › Squad: Profile Submissions). Each export is emailed to the addresses below; nobody else can download it. dkakaan@lobistarsfc.com always receives it. Tick other admins who should also receive it.</p>
+      <form id="expForm"><ul class="spa-exp" id="expList"></ul><div class="spa-row"><button class="btn-p" type="submit">Save</button></div></form>
+    </section>
+
     <section class="spa-card" aria-labelledby="h-keep">
       <h2 id="h-keep">Keeping private details</h2>
       <p class="muted">Private details (legal name, phone, email, emergency contact, guardian, exact date of birth) of people marked "Left the club" are erased automatically this long after they left. Their public profile stays as club history. See the <a href="/privacy/#squad-profiles" target="_blank" rel="noopener">Privacy Policy</a>.</p>
@@ -73,6 +79,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 <style>
   .spa { max-width: 900px; padding-top: 20px; padding-bottom: 60px; }
   .spa-lede { color: var(--a-muted); max-width: 720px; line-height: 1.5; }
+  .spa-exp { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 340px; overflow: auto; }
+  .spa-exp label { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
   .spa-own { display: grid; gap: 10px; border-top: 1px solid var(--a-line); padding-top: 12px; }
   .spa-own h3 { margin: 0; font-size: 16px; }
   .spa-card.spa-request { border: 2px solid #F2B705; }
@@ -118,6 +126,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     $('passState').textContent = d.hasPassword ? (d.lockedUntil ? `Sign-in locked until ${when(d.lockedUntil)} (too many wrong passwords).` : 'A password is set.') : 'No password yet: generate one before sending the link.';
     $('season').value = d.season;
     $('keep').value = String(d.retentionSeasons);
+    const chosen = new Set(d.exportRecipients || []);
+    $('expList').innerHTML = `<li><label><input type="checkbox" checked disabled /> <b>${esc(d.exportAlways)}</b> <span class="muted">(always)</span></label></li>`
+      + (d.admins || []).filter(a => a.email !== d.exportAlways).map(a => `<li><label><input type="checkbox" value="${esc(a.email)}" ${chosen.has(a.email) ? 'checked' : ''} /> ${esc(a.name)} <span class="muted">${esc(a.email)} · ${esc(a.role.replace(/_/g, ' '))}</span></label></li>`).join('');
     $('resetReq').hidden = !d.resetRequest;
     if (d.resetRequest) {
       const r = d.resetRequest;
@@ -150,6 +161,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const d = await act({ action: 'set_password', password: p1 }, 'New password saved. Give it to the media team on WhatsApp or in person.');
     if (d) { $('ownPass').value = ''; $('ownPass2').value = ''; $('ownShow').checked = false; $('ownPass').type = $('ownPass2').type = 'password'; }
   });
+  $('expForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'export_recipients', emails: [...document.querySelectorAll('#expList input:checked:not(:disabled)')].map(i => i.value) }, 'Saved: exports go to the ticked addresses.'); });
   $('keepForm').addEventListener('submit', e => { e.preventDefault(); act({ action: 'retention', seasons: Number($('keep').value) }, 'Saved.'); });
   $('signOutAll').addEventListener('click', () => { if (confirm('Sign out everyone using the portal?')) act({ action: 'sign_out_all' }, 'Everyone signed out.'); });
   $('sessions').addEventListener('click', e => { const b = e.target.closest('[data-out]'); if (b) act({ action: 'sign_out', id: b.dataset.out }, 'Signed out.'); });

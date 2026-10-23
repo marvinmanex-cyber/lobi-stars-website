@@ -2,7 +2,7 @@ import { requireAdminUser } from '../_lib/adminEvents.js';
 import { can } from '../_lib/adminRoles.js';
 import { logAdminAction } from '../_lib/adminSession.js';
 import { RETENTION_DEFAULT } from '../_lib/squadProfiles.js';
-import { resetRequest, passwordProblem, getPortalSettings, setPortalSetting, resetPortalPassword, openSessions, signOutAll, unseenDevices, ensurePortalSchema, portalLink, portalPath } from '../_lib/squadPortal.js';
+import { resetRequest, passwordProblem, exportRecipients, setExportRecipients, EXPORT_ALWAYS, getPortalSettings, setPortalSetting, resetPortalPassword, openSessions, signOutAll, unseenDevices, ensurePortalSchema, portalLink, portalPath } from '../_lib/squadPortal.js';
 
 // Settings › Squad & Staff Data Portal (only the three Super Admins: squad.portal.manage).
 // GET                                         -- link, username, on/off, season, open sessions, new devices
@@ -11,6 +11,7 @@ import { resetRequest, passwordProblem, getPortalSettings, setPortalSetting, res
 // POST { action: 'set_password', password }   -- a password the Super Admin chose (12+ characters, letters and numbers); signs everyone out
 // POST { action: 'enabled', enabled }         -- open / close the portal
 // POST { action: 'season', season }           -- e.g. "2026/27"
+// POST { action: 'export_recipients', emails }  -- admin accounts that also receive squad data exports
 // POST { action: 'dismiss_request' }          -- ignore a "Forgot the password?" request
 // POST { action: 'retention', seasons }       -- erase private details of people who left after 1-5 seasons
 // POST { action: 'sign_out_all' } | { action: 'sign_out', id }
@@ -32,6 +33,8 @@ async function view(env, request) {
     link: portalLink(env, new URL(request.url).origin), path: portalPath(env),
     username: s.username, hasPassword: !!s.password_hash, enabled: s.enabled === '1', season: s.season,
     resetRequest: resetRequest(s),
+    exportAlways: EXPORT_ALWAYS, exportRecipients: await exportRecipients(db),
+    admins: (await db.prepare(`SELECT name, lower(email) AS email, role FROM admin_users WHERE active = 1 AND disabled_at IS NULL AND email IS NOT NULL AND email != '' ORDER BY name`).all()).results,
     retentionSeasons: Number(s.retention_seasons) || RETENTION_DEFAULT,
     lockedUntil: s.locked_until && Date.parse(s.locked_until) > Date.now() ? s.locked_until : null,
     sessions: await openSessions(db), devices, unseen: (await unseenDevices(db)).length,
@@ -73,6 +76,9 @@ export async function onRequestPost({ request, env }) {
     if (!/^20\d\d\/\d\d$/.test(season)) return json({ error: 'Write the season like 2026/27.' }, 400);
     await setPortalSetting(db, 'season', season, admin.name);
     await logAdminAction(db, admin, 'squad_portal_season', `Squad Data Portal season set to ${season}`);
+  } else if (b.action === 'export_recipients') {
+    const r = await setExportRecipients(db, admin, b.emails);
+    if (r.error) return json({ error: r.error }, r.status || 400);
   } else if (b.action === 'dismiss_request') {
     const req = resetRequest(await getPortalSettings(db));
     await setPortalSetting(db, 'reset_request', '', admin.name);

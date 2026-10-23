@@ -269,4 +269,24 @@ export async function requestNewPassword(env, request, { name, contact, turnstil
 }
 export function resetRequest(s) { try { return s.reset_request ? JSON.parse(s.reset_request) : null; } catch { return null; } }
 
+// ── Who receives squad data exports (Super Admins choose; 23 Oct 2026) ──
+// Always dkakaan@lobistarsfc.com; Super Admins may add other admin accounts. Exports are
+// emailed only to these addresses (Super Admins can also save a copy on their own computer).
+export const EXPORT_ALWAYS = 'dkakaan@lobistarsfc.com';
+export async function exportRecipients(db) {
+  const s = await getPortalSettings(db);
+  let extra = []; try { extra = JSON.parse(s.export_recipients || '[]'); } catch { extra = []; }
+  return [...new Set([EXPORT_ALWAYS, ...extra.map(e => String(e).toLowerCase())])];
+}
+/** Only the email addresses of active admin accounts can be added. */
+export async function setExportRecipients(db, admin, emails) {
+  const active = new Set((await db.prepare(`SELECT lower(email) AS e FROM admin_users WHERE active = 1 AND disabled_at IS NULL AND email IS NOT NULL`).all()).results.map(r => r.e));
+  const list = [...new Set([].concat(emails || []).map(e => String(e).trim().toLowerCase()).filter(e => e && e !== EXPORT_ALWAYS))];
+  const bad = list.filter(e => !active.has(e));
+  if (bad.length) return { error: `Only admin accounts can receive squad data: ${bad.join(', ')} is not one.`, status: 400 };
+  await setPortalSetting(db, 'export_recipients', JSON.stringify(list), admin.name);
+  await logAdminAction(db, admin, 'squad_export_recipients', `Squad data exports now go to ${[EXPORT_ALWAYS, ...list].join(', ')}`);
+  return { ok: true };
+}
+
 export { newPortalPassword as _newPortalPassword, randomToken };

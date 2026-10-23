@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-23: Squad data exports: Super Admins only, sent by email
+
+**What changed**
+- The **Export data** card is removed from the Squad & Staff Data Portal
+  (/staff/squad-data), and the portal can no longer fetch export data.
+- In the admin (Matchday › Squad: Profile Submissions), exports and the
+  export log are **Super Admins only**; the Website & Data Officer still
+  reviews profiles but cannot export.
+- A Super Admin's export is **emailed** to dkakaan@lobistarsfc.com and the
+  admins ticked in Settings › Squad & Staff Data Portal (admin accounts
+  only), or saved on their own computer if they choose "Download to this
+  computer". Every export is logged with the recipients.
+
+**Staff need to do:** a Super Admin may tick other admins who should also
+receive exports (Settings › Squad & Staff Data Portal).
+
 ## 2026-10-23: Squad portal: name fields, question wording, name migration
 
 **What changed**

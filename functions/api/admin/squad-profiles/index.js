@@ -5,7 +5,7 @@ import { listProfiles, counts, seasons, getProfile, profileView, reviewAction, d
 import { requestRebuild } from '../../_lib/squadPublish.js';
 import { draftBio } from '../../_lib/squadBio.js';
 import { exportData } from '../../_lib/squadExportData.js';
-import { getPortalSettings } from '../../_lib/squadPortal.js';
+import { getPortalSettings, exportRecipients } from '../../_lib/squadPortal.js';
 import { verifyTotp } from '../../_lib/totp.js';
 
 // Squad › Profile Submissions (Website & Data Officer and Super Admins: squad.review).
@@ -42,7 +42,11 @@ export async function onRequestGet({ request, env }) {
     const p = await getProfile(db, u.searchParams.get('id'));
     return p ? json({ profile: profileView(p) }) : json({ error: 'Profile not found.' }, 404);
   }
-  if (u.searchParams.get('export')) return json(await exportData(env, { which: u.searchParams.get('which') || 'verified', season: u.searchParams.get('season') || 'current' }));
+  if (u.searchParams.get('export')) {
+    // Exports: Super Admins only (23 Oct 2026).
+    if (!superOnly(admin)) return json({ error: 'Only Super Admins can export squad data.' }, 403);
+    return json(await exportData(env, { which: u.searchParams.get('which') || 'verified', season: u.searchParams.get('season') || 'current' }));
+  }
   if (u.searchParams.get('names')) {
     if (!can(admin, 'squad.records.full')) return json({ error: 'Only Super Admins can confirm names.' }, 403);
     return json({ names: await nameCheckList(db) });
@@ -50,8 +54,8 @@ export async function onRequestGet({ request, env }) {
   const cur = (await getPortalSettings(db)).season;
   const season = u.searchParams.get('season') || cur;
   const log = (await db.prepare(`SELECT * FROM squad_export_log ORDER BY id DESC LIMIT 30`).all()).results;
-  return json({ season, current: cur, seasons: await seasons(db), counts: await counts(db, season), team: await getTeam(db), exportLog: log,
-    canSuper: superOnly(admin), canFull: can(admin, 'squad.records.full'), canEdit: can(admin, 'squad.records.full'), deployHook: !!env.PAGES_DEPLOY_HOOK,
+  return json({ season, current: cur, seasons: await seasons(db), counts: await counts(db, season), team: await getTeam(db), exportLog: superOnly(admin) ? log : [],
+    canSuper: superOnly(admin), canExport: superOnly(admin), exportTo: superOnly(admin) ? await exportRecipients(db) : [], canFull: can(admin, 'squad.records.full'), canEdit: can(admin, 'squad.records.full'), deployHook: !!env.PAGES_DEPLOY_HOOK,
     pendingNames: (await db.prepare(`SELECT COUNT(*) AS n FROM squad_profiles WHERE name_status IN ('pending', 'check') AND deleted_at IS NULL`).first())?.n || 0,
     profiles: await listProfiles(db, { season, filter: u.searchParams.get('filter') || 'submitted', q: u.searchParams.get('q') || '' }) });
 }
@@ -117,6 +121,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (!r.ok && r.reason) return json({ error: 'The website rebuild hook is not set up (PAGES_DEPLOY_HOOK). The Squad pages update with the next website update.' }, 503);
     r = { ok: true, message: r.skipped ? 'The website was asked to update a moment ago; it takes about 2 minutes.' : 'The website is updating; the Squad pages change in about 2 minutes.' };
   } else if (b.action === 'export_log') {
+    if (!superOnly(admin)) return json({ error: 'Only Super Admins can export squad data.' }, 403);
     const format = String(b.format || '').slice(0, 20);
     await logExport(db, { by: admin.name, place: 'admin', format, filters: { which: b.which, season: b.season }, profiles: b.profiles, ok: b.ok !== false, note: b.note ? String(b.note).slice(0, 300) : null });
     if (b.ok !== false) await logProfile(db, admin, 'squad_export', `${admin.name} downloaded ${format === 'zip' ? 'the Media Partner Data Package' : /^records/.test(format) ? 'the full club records (including private details)' : `a ${format.toUpperCase()} export`} of ${Number(b.profiles) || 0} profiles`);

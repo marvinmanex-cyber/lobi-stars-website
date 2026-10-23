@@ -3483,13 +3483,24 @@ budget (Settings › AI Settings, "Squad bios").
   (photo with name and number) and search-engine details, and is in the
   sitemap.
 
-### Downloads
+### Exporting the data (Super Admins only)
 
-From the portal home or the review page: **PDF**, **Word**, **Excel**,
-**CSV**, **JSON** and the **Media Partner Data Package** (ZIP). Choose
-verified / submitted / players / staff and the season. Every download is
-checked before it is saved and appears in the export log. None of these
-contain private details.
+Only the three **Super Admins** can export player, coach and staff data:
+**Matchday › Squad: Profile Submissions › Export data**. The portal and the
+Website & Data Officer cannot export or download it.
+
+1. Choose **By email** (the default) or **Download to this computer**.
+2. Choose which profiles (verified / submitted / players / staff) and the season.
+3. Press **PDF**, **Word**, **Excel**, **CSV**, **JSON** or **Media Partner
+   Data Package (ZIP)** (or **Full records** for private details).
+4. By email, the file is sent to **dkakaan@lobistarsfc.com** and to any other
+   admins ticked in **Settings › Squad & Staff Data Portal › Who receives
+   squad data exports** (only admin accounts can be added). Files over about
+   22 MB cannot be emailed; choose fewer profiles or download instead.
+
+Every file is checked before it is sent, and every export (who, what, to
+whom) is in the export log and the Activity Log. Except the full records,
+exports never contain private details.
 
 ### If something goes wrong
 

@@ -104,10 +104,11 @@ test('partner API: key needed; Public + Media only in the Data Package structure
   assert.ok(!later.players.some(x => x.id === id), '?since= returns only changes');
 });
 
-test('export data: Public and Media only from the portal and the admin; full records only for Super Admins', async () => {
-  const pe = (await P(`export-data?which=verified&season=current`)).data;
+test('export data: Super Admins only (never the portal or the Website & Data Officer); Public and Media only; emailed to the chosen admins', async () => {
+  assert.equal((await P(`export-data?which=verified&season=current`)).status, 403, 'no exports from the portal');
+  assert.equal((await P('export-data', 'POST', { format: 'zip' })).status, 403);
   const ae = (await rev(null, '?export=1&which=verified&season=current')).data;
-  for (const d of [pe, ae]) {
+  for (const d of [ae]) {
     const p = d.profiles.find(x => x.id === id);
     assert.ok(p, 'included');
     for (const k of PRIV) assert.ok(!(k in p.data), `no ${k}`);
@@ -120,12 +121,25 @@ test('export data: Public and Media only from the portal and the admin; full rec
   const made = await fetch(`${BASE}/api/admin/staff`, { method: 'POST', headers: ADMIN, body: JSON.stringify({ name: 'Data Officer', email, password: 'Role-Test-2026!', role: 'matchday_admin' }) }).then(r => r.json());
   const l = await fetch(`${BASE}/api/admin/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ email, password: 'Role-Test-2026!' }) });
   const H = { Cookie: l.headers.get('set-cookie').split(';')[0], 'Content-Type': 'application/json' };
-  assert.equal((await fetch(`${BASE}/api/admin/squad-profiles?filter=all`, { headers: H })).status, 200, 'the Website & Data Officer reviews');
+  const officer = await fetch(`${BASE}/api/admin/squad-profiles?filter=all`, { headers: H });
+  assert.equal(officer.status, 200, 'the Website & Data Officer reviews');
+  const od = await officer.json(); assert.equal(od.canExport, false); assert.deepEqual(od.exportLog, [], 'no export log for them');
+  assert.equal((await fetch(`${BASE}/api/admin/squad-profiles?export=1&which=verified&season=current`, { headers: H })).status, 403, 'no export data for them');
+  assert.equal((await fetch(`${BASE}/api/admin/squad-profiles/export-email`, { method: 'POST', headers: { ...H, 'Content-Type': 'text/plain', 'X-File-Name': 'x.pdf', 'X-Format': 'pdf' }, body: 'JVBERi0=' })).status, 403, 'nor email one');
   assert.equal((await fetch(`${BASE}/api/admin/squad-profiles`, { method: 'POST', headers: H, body: JSON.stringify({ action: 'full_records' }) })).status, 403, 'but not the full records');
   assert.equal((await fetch(`${BASE}/api/admin/squad-profiles`, { method: 'POST', headers: H, body: JSON.stringify({ action: 'remove', id }) })).status, 403, 'nor remove');
   await fetch(`${BASE}/api/admin/staff/${made.id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false, reason: 'test finished' }) });
-  await P('export-data', 'POST', { format: 'zip', which: 'verified', season: 'current', profiles: 2, ok: true });
-  assert.ok((await rev(null, '?filter=all')).data.exportLog.some(x => x.format === 'zip' && /Grace/.test(x.by)), 'export logged');
+  // A Super Admin's export is emailed (no email service on the test server: a clear message).
+  const em = await fetch(`${BASE}/api/admin/squad-profiles/export-email`, { method: 'POST', headers: { 'x-admin-code': ADMIN['x-admin-code'], 'Content-Type': 'text/plain', 'X-File-Name': 'lobi.pdf', 'X-Format': 'pdf', 'X-Profiles': '2' }, body: 'JVBERi0=' });
+  assert.equal(em.status, 503); assert.match((await em.json()).error, /Download to this computer/);
+  // Recipients: dkakaan@lobistarsfc.com always; others only if they are admin accounts.
+  const s0 = await fetch(`${BASE}/api/admin/squad-portal`, { headers: ADMIN }).then(r => r.json());
+  assert.ok(s0.exportRecipients.includes('dkakaan@lobistarsfc.com'));
+  assert.equal((await adm({ action: 'export_recipients', emails: ['stranger@example.com'] })).error.includes('Only admin accounts'), true);
+  const anAdmin = s0.admins.find(a => a.email !== 'dkakaan@lobistarsfc.com')?.email;
+  if (anAdmin) { const ok = await adm({ action: 'export_recipients', emails: [anAdmin] }); assert.ok(ok.exportRecipients.includes(anAdmin)); await adm({ action: 'export_recipients', emails: [] }); }
+  await rev({ action: 'export_log', format: 'zip', which: 'verified', season: 'current', profiles: 2, ok: true });
+  assert.ok((await rev(null, '?filter=all')).data.exportLog.some(x => x.format === 'zip'), 'export logged');
 });
 
 test('left the club → off the website and the partner API; restore; new season carries verified profiles over as drafts', async () => {

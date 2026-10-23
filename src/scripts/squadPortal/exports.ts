@@ -1,5 +1,7 @@
-// Squad & Staff Data Portal: downloads, made on this device (the website's
-// server only sends the profiles and their photos). PDF and Word to read and
+// Squad data exports (Super Admins only, in the admin; 23 Oct 2026), made on this
+// device (the website's server only sends the profiles and their photos), then
+// EMAILED to dkakaan@lobistarsfc.com and the admins chosen in Settings › Squad & Staff
+// Data Portal, or saved on this computer if the Super Admin chooses that. PDF and Word to read and
 // print; Excel and CSV; JSON; and the Media Partner Data Package (ZIP) with
 // data.json (checked against schema.json before download), CSV files, photos,
 // the club badge, schema.json and README.txt. Portal and normal
@@ -14,21 +16,19 @@ import { buildXlsx, buildCsv } from '../../../functions/api/_lib/xlsx.js';
 import { PdfDoc, wrap, jpegInfo } from '../../../functions/api/_lib/pdfLite.js';
 
 type Format = 'pdf' | 'docx' | 'xlsx' | 'csv' | 'json' | 'zip' | 'records-xlsx' | 'records-pdf';
-export type ExportOpts = { place: 'portal' | 'admin'; format: Format; which: string; season: string; status: (t: string, ok?: boolean) => void; button?: HTMLButtonElement; extra?: Record<string, string> };
+export type ExportOpts = { deliver?: 'email' | 'download'; place: 'portal' | 'admin'; format: Format; which: string; season: string; status: (t: string, ok?: boolean) => void; button?: HTMLButtonElement; extra?: Record<string, string> };
 type Prof = { id: string; type: 'player' | 'staff'; status: string; statusLabel: string; season: string; updatedAt: string; updatedBy: string; fileBase: string; data: any; hasAction: boolean; hasHero: boolean; hasPhoto: boolean; files: any };
 
 const adminHeaders = () => ({ 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' });
 const today = () => new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
 const lagosDate = (iso?: string) => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
 const plain = (s: unknown) => String(s ?? '').normalize('NFKD').replace(/[̀-ͯ]/g, ''); // PDF built-in fonts: no accents
-const csrf = () => (window as any).__squadCsrf || '';
 
 async function getData(o: ExportOpts) {
   const full = o.format.startsWith('records');
   const qs = new URLSearchParams({ which: o.which, season: o.season });
   let r: Response;
-  if (o.place === 'portal') r = await fetch(`/api/squad-portal/export-data?${qs}`, { credentials: 'same-origin', cache: 'no-store' });
-  else if (full) r = await fetch('/api/admin/squad-profiles', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action: 'full_records', which: o.which, season: o.season, code: o.extra?.code || '' }) });
+  if (full) r = await fetch('/api/admin/squad-profiles', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action: 'full_records', which: o.which, season: o.season, code: o.extra?.code || '' }) });
   else r = await fetch(`/api/admin/squad-profiles?export=1&${qs}`, { headers: adminHeaders(), cache: 'no-store' });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || 'The profiles could not be loaded.');
@@ -36,12 +36,8 @@ async function getData(o: ExportOpts) {
 }
 async function log(o: ExportOpts, profiles: number, ok: boolean, note?: string) {
   const body = { format: o.format, which: o.which, season: o.season, profiles, ok, note };
-  try {
-    if (o.place === 'portal') {
-      const { state } = await import('./api');
-      await fetch('/api/squad-portal/export-data', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': state.csrf || csrf() }, body: JSON.stringify(body) });
-    } else await fetch('/api/admin/squad-profiles', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action: 'export_log', ...body }) });
-  } catch { /* the download itself worked */ }
+  try { await fetch('/api/admin/squad-profiles', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ action: 'export_log', ...body }) }); }
+  catch { /* the download itself worked */ }
 }
 async function bytesOf(url: string): Promise<{ bytes: Uint8Array; type: string } | null> {
   try {
@@ -50,7 +46,16 @@ async function bytesOf(url: string): Promise<{ bytes: Uint8Array; type: string }
     return { bytes: new Uint8Array(await r.arrayBuffer()), type: r.headers.get('Content-Type') || '' };
   } catch { return null; }
 }
-function save(name: string, data: Uint8Array | string, type: string) {
+/** The finished file to the export email (base64 text; the server attaches it as it is). */
+async function emailFile(o: ExportOpts, name: string, data: Uint8Array | string, type: string, profiles: number, filters: any): Promise<string[]> {
+  const b64: string = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(new Error('The file could not be prepared.')); r.readAsDataURL(new Blob([data as BlobPart], { type })); });
+  const r = await fetch('/api/admin/squad-profiles/export-email', { method: 'POST', body: b64,
+    headers: { 'Content-Type': 'text/plain', 'x-admin-code': adminHeaders()['x-admin-code'], 'X-File-Name': name, 'X-Format': o.format, 'X-Profiles': String(profiles), 'X-Filters': JSON.stringify(filters) } });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || 'The email could not be sent.');
+  return d.to || [];
+}
+function saveFile(name: string, data: Uint8Array | string, type: string) {
   const blob = new Blob([data as BlobPart], { type });
   const url = URL.createObjectURL(blob), a = document.createElement('a');
   a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
@@ -244,9 +249,15 @@ export async function runExport(o: ExportOpts) {
   const label = o.button?.textContent || '';
   if (o.button) { o.button.disabled = true; o.button.textContent = 'Preparing…'; }
   o.status('Preparing the download…');
-  let count = 0;
+  let count = 0, sentTo: string[] | null = null;
   try {
     const d = await getData(o);
+    // Every finished file goes by email (default) or, if chosen, to this computer.
+    const save = async (name: string, data: Uint8Array | string, type: string) => {
+      if (o.deliver === 'download') return saveFile(name, data, type);
+      o.status('Sending the email…');
+      sentTo = await emailFile(o, name, data, type, d.profiles.length, { which: o.which, season: o.season });
+    };
     count = d.profiles.length;
     if (!count) { o.status('No profiles match these choices.', false); return; }
     const full = o.format.startsWith('records');
@@ -256,7 +267,7 @@ export async function runExport(o: ExportOpts) {
       const pkg = packageFor(d, true);
       const errs = validatePackage(pkg);
       if (errs.length) { o.status(`Not downloaded: ${errs.length} problem${errs.length === 1 ? '' : 's'} found. ${errs.slice(0, 4).join(' · ')}`, false); await log(o, count, false, errs.slice(0, 5).join(' | ')); return; }
-      if (o.format === 'json') save(`${base}.json`, JSON.stringify(pkg, null, 2), 'application/json');
+      if (o.format === 'json') await save(`${base}.json`, JSON.stringify(pkg, null, 2), 'application/json');
       else {
         const files: Record<string, Uint8Array> = {
           'data.json': strToU8(JSON.stringify(pkg, null, 2)), 'schema.json': strToU8(JSON.stringify(SCHEMA, null, 2)),
@@ -279,24 +290,24 @@ export async function runExport(o: ExportOpts) {
         // Every relative path in data.json must exist in the ZIP.
         const missing = [...pkg.players, ...pkg.staff].flatMap((x: any) => [x.photos?.profile, x.photos?.action, x.photos?.hero]).filter((pth: any) => pth && !files[pth]);
         if (missing.length) { o.status(`Not downloaded: these files could not be fetched: ${missing.slice(0, 4).join(', ')}. Check the connection and try again.`, false); await log(o, count, false, `missing ${missing.length} files`); return; }
-        save(`lobi-stars-data-package-${date}.zip`, zipSync(files, { level: 6 }), 'application/zip');
+        await save(`lobi-stars-data-package-${date}.zip`, zipSync(files, { level: 6 }), 'application/zip');
       }
     } else if (o.format === 'csv') {
       const files = { 'players.csv': strToU8(buildCsv(playerRows(pl, false).columns, playerRows(pl, false).rows)), 'staff.csv': strToU8(buildCsv(staffRows(st, false).columns, staffRows(st, false).rows)),
         'career.csv': strToU8(buildCsv(careerRows(d.profiles).columns, careerRows(d.profiles).rows)), 'international.csv': strToU8(buildCsv(intlRows(d.profiles).columns, intlRows(d.profiles).rows)),
         'honours.csv': strToU8(buildCsv(honourRows(d.profiles).columns, honourRows(d.profiles).rows)) };
-      save(`${base}-csv.zip`, zipSync(files, { level: 6 }), 'application/zip');
+      await save(`${base}-csv.zip`, zipSync(files, { level: 6 }), 'application/zip');
     } else if (o.format === 'xlsx' || o.format === 'records-xlsx') {
       const p1 = playerRows(pl, full), s1 = staffRows(st, full), c1 = careerRows(d.profiles), i1 = intlRows(d.profiles), h1 = honourRows(d.profiles);
       const summary = { columns: ['Item', 'Value'], rows: [['Club', 'Lobi Stars FC'], ['Season', d.season], ['Exported', lagosDate(new Date().toISOString())], ['Profiles', count], ['Players', pl.length], ['Staff', st.length], ['Filters', `${d.filters.status}, ${d.filters.type}`], ['Note', full ? 'CONFIDENTIAL: includes private details. Club use only.' : 'Private details are held by the club.']] };
-      save(`${base}.xlsx`, buildXlsx([{ name: 'Players', ...p1 }, { name: 'Staff', ...s1 }, { name: 'Previous clubs', ...c1 }, { name: 'International career', ...i1 }, { name: 'Honours', ...h1 }, { name: 'Summary', ...summary }]), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      await save(`${base}.xlsx`, buildXlsx([{ name: 'Players', ...p1 }, { name: 'Staff', ...s1 }, { name: 'Previous clubs', ...c1 }, { name: 'International career', ...i1 }, { name: 'Honours', ...h1 }, { name: 'Summary', ...summary }]), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     } else if (o.format === 'pdf' || o.format === 'records-pdf') {
-      save(`${base}.pdf`, await buildPdf(d, full), 'application/pdf');
+      await save(`${base}.pdf`, await buildPdf(d, full), 'application/pdf');
     } else if (o.format === 'docx') {
-      save(`${base}.docx`, await buildDocx(d, false), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      await save(`${base}.docx`, await buildDocx(d, false), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     }
-    o.status(`Downloaded: ${count} profile${count === 1 ? '' : 's'}.`);
-    await log(o, count, true);
+    if (sentTo) o.status(`Emailed: ${count} profile${count === 1 ? '' : 's'} sent to ${(sentTo as string[]).join(', ')}.`);
+    else { o.status(`Saved on this computer: ${count} profile${count === 1 ? '' : 's'}.`); await log(o, count, true); } // the email route logs itself
   } catch (e: any) {
     o.status(e.message || 'The download could not be made.', false);
     await log(o, count, false, String(e.message || '').slice(0, 200));

@@ -195,8 +195,8 @@ test('season stats endpoint answers for any player (zeros before matches)', asyn
   for (const k of ['apps', 'starts', 'goals', 'assists', 'cleanSheets', 'minutes', 'yellow', 'red']) assert.equal(typeof r.stats[k], 'number', k);
 });
 
-test('exports from the portal: no middle name, no pronunciation', async () => {
-  const ex = (await P('export-data?which=verified&season=current')).data;
+test('exports (Super Admins): no middle name, no pronunciation', async () => {
+  const ex = await fetch(`${BASE}/api/admin/squad-profiles?export=1&which=verified&season=current`, { headers: ADMIN }).then(r => r.json());
   const a = ex.profiles.find(x => x.id === adult);
   assert.ok(a); assert.ok(!('middleName' in a.data) && !('pronunciation' in a.data) && !('displayName' in a.data));
   assert.ok(!JSON.stringify(ex).includes('Emeka'));

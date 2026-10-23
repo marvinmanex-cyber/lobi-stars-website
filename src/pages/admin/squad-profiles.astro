@@ -38,21 +38,25 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 
     <section class="sq-card sq-detail" id="detail" hidden aria-live="polite"></section>
 
-    <section class="sq-card" aria-labelledby="h-ex">
-      <h2 id="h-ex">Export data</h2>
+    <section class="sq-card" id="exportBox" aria-labelledby="h-ex" hidden>
+      <h2 id="h-ex">Export data <span class="muted" style="font-size:14px;font-weight:600">(Super Admins only)</span></h2>
+      <fieldset class="sq-deliver"><legend>Send the file</legend>
+        <label><input type="radio" name="deliver" value="email" checked /> <b>By email</b> to <span id="exTo">dkakaan@lobistarsfc.com</span> <small class="muted">(change the list in Settings › Squad &amp; Staff Data Portal)</small></label>
+        <label><input type="radio" name="deliver" value="download" /> <b>Download to this computer</b></label>
+      </fieldset>
       <div class="sq-row">
         <label class="sq-l">Which profiles <select id="exWhich"><option value="verified">Verified only</option><option value="submitted">All submitted</option><option value="players">Players</option><option value="staff">Staff</option></select></label>
         <label class="sq-l">Season <select id="exSeason"><option value="current">Current season</option><option value="all">All seasons</option></select></label>
       </div>
       <div class="sq-row">
-        <button class="btn-o" type="button" data-export="pdf">Download PDF</button><button class="btn-o" type="button" data-export="docx">Download Word</button>
-        <button class="btn-o" type="button" data-export="xlsx">Download Excel</button><button class="btn-o" type="button" data-export="csv">Download CSV</button>
-        <button class="btn-o" type="button" data-export="json">Download JSON</button><button class="btn-p" type="button" data-export="zip">Download Media Partner Data Package (ZIP)</button>
+        <button class="btn-o" type="button" data-export="pdf">PDF</button><button class="btn-o" type="button" data-export="docx">Word</button>
+        <button class="btn-o" type="button" data-export="xlsx">Excel</button><button class="btn-o" type="button" data-export="csv">CSV</button>
+        <button class="btn-o" type="button" data-export="json">JSON</button><button class="btn-p" type="button" data-export="zip">Media Partner Data Package (ZIP)</button>
       </div>
-      <p class="muted">These downloads contain Public and Media details only.</p>
+      <p class="muted">These files contain Public and Media details only. Nobody else can export squad data: the Website &amp; Data Officer and the portal cannot.</p>
       <div id="fullBox" hidden>
         <h3>Full club records (Super Admins)</h3>
-        <p class="muted">Every field including private details (legal name, date of birth, phone, email, emergency and guardian contacts). Needs your two-step code; recorded in the Activity Log.</p>
+        <p class="muted">Every field including private details (middle name, date of birth, phone, email, emergency and guardian contacts). Needs your two-step code; recorded in the Activity Log.</p>
         <div class="sq-row"><button class="btn-o" type="button" data-full="records-xlsx">Full records (Excel)</button><button class="btn-o" type="button" data-full="records-pdf">Full records (PDF)</button></div>
       </div>
       <p class="sq-exstatus" id="exStatus" role="status" aria-live="polite" hidden></p>
@@ -72,7 +76,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       </form>
     </section>
 
-    <section class="sq-card"><h2>Export log</h2><div id="exLog"></div></section>
+    <section class="sq-card" id="exLogBox" hidden><h2>Export log</h2><div id="exLog"></div></section>
   </div>
 </Layout>
 
@@ -106,6 +110,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   .sq :global(.sq-acts) { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
   .sq :global(.sq-acts button) { min-height: 44px; }
   .sq :global(.sq-note) { flex: 1 1 280px; }
+  .sq-deliver { border: 1px solid var(--a-line); border-radius: 12px; padding: 10px 14px; display: grid; gap: 8px; margin: 0; }
+  .sq-deliver legend { font-weight: 700; padding: 0 6px; }
+  .sq-deliver label { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
   .sq-team { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; align-items: end; }
   .sq-msg { position: fixed; left: 50%; transform: translateX(-50%); bottom: 18px; z-index: 1500; max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; margin: 0; box-shadow: 0 14px 34px rgba(0,0,0,.22); font-weight: 600; }
   .sq-msg.ok { background: #E8F7EE; color: #17643A; } .sq-msg.err { background: #FDECEC; color: #A3161B; }
@@ -164,6 +171,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <td>${p.type === 'player' ? `${p.shirtNumber ?? '–'} · ${esc(p.position || '')}` : esc(p.role || '')}</td><td><span class="st ${p.status}">${esc(p.statusLabel)}</span></td>
         <td>${esc(when(p.updatedAt))}<br /><small>${esc(p.updatedBy || '')}</small></td><td><button class="btn-o" type="button" data-open="${p.id}">Open</button></td></tr>`).join('') : '<tr><td colspan="7" class="muted">Nothing here.</td></tr>';
       $('fullBox').hidden = !D.canFull; $('superBox').hidden = !D.canSuper;
+      $('exportBox').hidden = !D.canExport; $('exLogBox').hidden = !D.canExport;
+      if (D.exportTo?.length) $('exTo').textContent = D.exportTo.join(', ');
       const t = D.team, f = $('team');
       for (const k of ['name', 'shortName', 'nickname', 'stadium', 'city', 'state', 'competition']) f.elements[k].value = t[k] || '';
       f.elements.home.value = (t.kitColours?.home || []).join(', '); f.elements.away.value = (t.kitColours?.away || []).join(', ');
@@ -347,11 +356,12 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     catch (err: any) { msg(err.message, false); }
   });
   const status = (t: string, ok = true) => { const s = $('exStatus'); s.textContent = t; s.className = `sq-exstatus ${ok ? '' : 'err'}`; s.hidden = !t; };
-  document.querySelectorAll<HTMLButtonElement>('[data-export]').forEach(b => b.addEventListener('click', () => runExport({ place: 'admin', format: b.dataset.export as any, which: $('exWhich').value, season: $('exSeason').value, status, button: b })));
+  const deliver = () => ((document.querySelector('input[name="deliver"]:checked') as HTMLInputElement | null)?.value === 'download' ? 'download' : 'email') as 'email' | 'download';
+  document.querySelectorAll<HTMLButtonElement>('[data-export]').forEach(b => b.addEventListener('click', () => runExport({ deliver: deliver(), place: 'admin', format: b.dataset.export as any, which: $('exWhich').value, season: $('exSeason').value, status, button: b })));
   document.querySelectorAll<HTMLButtonElement>('[data-full]').forEach(b => b.addEventListener('click', () => {
     const code = prompt('Enter the 6-digit code from your authenticator app (leave empty if you do not use two-step login):', '');
     if (code === null) return;
-    runExport({ place: 'admin', format: b.dataset.full as any, which: 'submitted', season: $('exSeason').value, status, button: b, extra: { code } });
+    runExport({ deliver: deliver(), place: 'admin', format: b.dataset.full as any, which: 'submitted', season: $('exSeason').value, status, button: b, extra: { code } });
   }));
   load();
 </script>
