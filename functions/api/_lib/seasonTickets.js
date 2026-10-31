@@ -1,5 +1,5 @@
 // Season tickets: one pass per seat for every Lobi Stars home match of a
-// season, in a stand (VIP Sitting, Grandstand, Popular Stand). Bought with
+// season, in a stand (VIP Sitting, Grand Stand, Popular Stand). Bought with
 // Paystack like match tickets; each pass has its own QR code (LS-SZN-…). At
 // the gate the scanner admits a pass once per home match, only on a match
 // day. Staff set the season, prices and how many passes each stand has in
@@ -10,7 +10,7 @@ import { captureContact, splitName } from './contacts.js';
 import { isHomeGame } from './matchCentre.js';
 
 export const TIERS = ['VIP', 'Premium', 'Regular'];
-export const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Grandstand', Regular: 'Popular Stand' };
+export const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
 export const MAX_PER_ORDER = 4;
 const SITE = 'https://lobistarsfc.com';
 

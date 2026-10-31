@@ -24,7 +24,7 @@ const admin = (path, method = 'GET', body) => fetch(BASE + path, { method, heade
 
 async function order(over = {}) {
   const email = `food-${uid()}@example.com`;
-  const r = await post('/api/food-checkout', { name: 'Terna Akaa', seat: 'C14', stand: 'Grandstand', phone: `0803${r7()}`, email, notes: 'No pepper', items: [{ id: 'suya', qty: 2 }, { id: 'water', qty: 1 }], ...over });
+  const r = await post('/api/food-checkout', { name: 'Terna Akaa', seat: 'C14', stand: 'Grand Stand', phone: `0803${r7()}`, email, notes: 'No pepper', items: [{ id: 'suya', qty: 2 }, { id: 'water', qty: 1 }], ...over });
   assert.equal(r.status, 200, JSON.stringify(r.data));
   const u = new URL(r.data.authorizationUrl);
   return { ref: r.data.ref, id: r.data.orderId, token: u.searchParams.get('t'), email, total: 2 * 150000 + 30000 };

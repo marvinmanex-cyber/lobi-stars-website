@@ -1,7 +1,7 @@
 import { ensureSeasonSchema, TIER_LABELS as SEASON_TIERS } from '../api/_lib/seasonTickets.js';
 import { TEAM_LOGOS } from '../api/_lib/teamLogos.js';
 
-const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Grandstand', Regular: 'Popular Stand' };
+const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
 // Everything shown comes from the address or the database: always escaped.
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 

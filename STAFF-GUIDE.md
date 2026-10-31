@@ -1011,7 +1011,7 @@ page.
 2. The order is saved with a reference (FD-…) and the prices from the menu,
    and **WhatsApp opens** with a ready-made message to the club number, for
    example *"Order: FD-20261011-0042, 2 × Beef Suya: ₦3,000 … Total ₦3,300,
-   Seat C14, Grandstand"*. The fan presses Send. If WhatsApp doesn't open,
+   Seat C14, Grand Stand"*. The fan presses Send. If WhatsApp doesn't open,
    the page has a "Tap here" button, a **Copy order message** button and the
    club number.
 3. On the **Live Order Board** the order appears in the green **WhatsApp
@@ -1219,7 +1219,7 @@ category can only be deleted when it has no items.
   (opens a set number of minutes before kick-off of a Lobi Stars home game
   and closes at full time).
 - **Unpaid orders expire after** (minutes), **Minimum order** (₦, 0 = none).
-- **Stands / sections:** one per line (set to **Popular Stand, Grandstand, VIP
+- **Stands / sections:** one per line (set to **Popular Stand, Grand Stand, VIP
   Seating**; this is also the default). Fans then pick their stand from a list
   instead of typing it.
 
@@ -2481,7 +2481,7 @@ Away matches are never sold here: the home club sells those.
 **Nothing is on sale until you switch it on.** Open **Admin › Commerce › Match
 Tickets**. Each home match has:
 
-- **Prices** in naira for VIP Sitting, Grandstand and Popular Stand (0 = that stand is not sold).
+- **Prices** in naira for VIP Sitting, Grand Stand and Popular Stand (0 = that stand is not sold).
 - **Seats** per stand. Empty = no limit. When the seats run out the stand shows "Sold out";
   the website never sells more than the number you set, even if two fans pay at the same moment.
 - **On sale** tick box, plus optional **Sales open** and **Sales close** times (Nigerian time).
@@ -2500,7 +2500,7 @@ countdown with seconds; a 3-step progress bar
 (Choose matches, Choose your stand, Pay); each home match as a ticket card
 with a coloured date block (red, gold, navy, maroon and black in turn) and a
 round **Select** button, "Next match" / "This week" labels, a stand
-switch and a − 1 + ticket counter; stand cards (VIP Sitting, Grandstand,
+switch and a − 1 + ticket counter; stand cards (VIP Sitting, Grand Stand,
 Popular Stand, with the price per ticket; picking one sets that stand on every
 ticked match, and each match card can still be changed on its own);
 the order and checkout on the right (a slide-up sheet with a bottom bar on

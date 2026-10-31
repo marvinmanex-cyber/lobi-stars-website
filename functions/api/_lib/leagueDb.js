@@ -363,7 +363,7 @@ async function linkLobiFixtures(env) {
     }
     // Ticket prices the club set for the 2026/27 home league matches (once; later
     // changes in Match Tickets & Settings are never overwritten): VIP Sitting
-    // N5,000, Grandstand N2,000, Popular Stand N1,000.
+    // N5,000, Grand Stand N2,000, Popular Stand N1,000.
     const done = await db.prepare(`SELECT value FROM settings WHERE key = 'league_home_prices_2026_27'`).first().catch(() => null);
     if (!done) {
       await db.prepare(`UPDATE events SET vip_price_kobo = 500000, premium_price_kobo = 200000, regular_price_kobo = 100000

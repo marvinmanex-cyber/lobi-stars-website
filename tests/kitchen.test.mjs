@@ -46,12 +46,12 @@ const tg = (body, secret = TG_SECRET) => fetch(`${BASE}/api/telegram/webhook`, {
 const press = (ref, chat = CHAT, name = 'Ada') => tg({ update_id: 1, callback_query: { id: uid(), from: { id: 5, first_name: name }, data: `ack:${ref}`, message: { message_id: 10, chat: { id: Number(chat) }, text: `NEW PAID ORDER ${ref}` } } });
 
 test('kitchen ticket: items, note, first name, place and time; never phone numbers, totals or payment details', () => {
-  const o = { ref: 'FD-20261011-0042', customer_name: 'Emeka Okafor', phone: '+2348031234567', total_kobo: 330000, paid_reference: 'PSK_123', notes: 'No pepper', seat: 'C14', stand: 'Grandstand', fulfilment: 'seat', paid_iso: new Date(Date.now() - 6 * 60000).toISOString(),
+  const o = { ref: 'FD-20261011-0042', customer_name: 'Emeka Okafor', phone: '+2348031234567', total_kobo: 330000, paid_reference: 'PSK_123', notes: 'No pepper', seat: 'C14', stand: 'Grand Stand', fulfilment: 'seat', paid_iso: new Date(Date.now() - 6 * 60000).toISOString(),
     items_json: JSON.stringify([{ name: 'Beef Suya', qty: 2, priceKobo: 150000 }, { name: 'Bottled Water', qty: 1, priceKobo: 30000 }]) };
   const t = buildKitchenTicket(o);
   assert.equal(t.title, '🍽️ NEW PAID ORDER FD-20261011-0042');
-  assert.equal(t.body, '2× Beef Suya, 1× Bottled Water | Seat C14, Grandstand');
-  for (const line of ['2× Beef Suya', '📝 Note: No pepper', '👤 Emeka', '📍 Seat C14, Grandstand', '🕒 Paid']) assert.ok(t.longText.includes(line), line);
+  assert.equal(t.body, '2× Beef Suya, 1× Bottled Water | Seat C14, Grand Stand');
+  for (const line of ['2× Beef Suya', '📝 Note: No pepper', '👤 Emeka', '📍 Seat C14, Grand Stand', '🕒 Paid']) assert.ok(t.longText.includes(line), line);
   const all = JSON.stringify(t);
   for (const secret of ['0803', '+234', '3,300', '3300', '1500', 'PSK_123', 'Okafor', '₦']) assert.ok(!all.includes(secret), `no ${secret}`);
   assert.match(buildKitchenTicket(o, 'repeat').title, /^⚠️ STILL WAITING: FD-20261011-0042 \(paid 6 min ago\)$/);

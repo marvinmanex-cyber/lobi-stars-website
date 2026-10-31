@@ -54,7 +54,7 @@ export async function ensureTicketShopSchema(db) {
     await db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES ('ticket_switch_initialised', ?)`).bind(new Date().toISOString()).run();
   }
   // October 2026: the club set new matchday prices for every home match still
-  // to be played: VIP Sitting N300, Grandstand N200, Popular Stand N100.
+  // to be played: VIP Sitting N300, Grand Stand N200, Popular Stand N100.
   // Once only; later changes in Match Tickets & Settings are never overwritten.
   // Tickets already bought keep the price that was paid.
   const priced = await db.prepare(`SELECT 1 FROM settings WHERE key = 'home_prices_2026_10'`).first();
@@ -63,7 +63,7 @@ export async function ensureTicketShopSchema(db) {
       WHERE is_home = 1 AND event_date > ?`).bind(new Date().toISOString()).run();
     await db.prepare(`INSERT OR REPLACE INTO settings (key, value) VALUES ('home_prices_2026_10', ?)`).bind(new Date().toISOString()).run();
   }
-  // 19 October 2026: the club raised VIP to N500 (Popular Stand N100 and Grandstand N200 unchanged) for every
+  // 19 October 2026: the club raised VIP to N500 (Popular Stand N100 and Grand Stand N200 unchanged) for every
   // home match still to be played. Once only, like the update above.
   const vip500 = await db.prepare(`SELECT 1 FROM settings WHERE key = 'home_vip_500_2026_10'`).first();
   if (!vip500) {

@@ -27,7 +27,7 @@
 (function () {
   if (window.lsRenderTickets) return;
   var TZ = 'Africa/Lagos';
-  var STAND = { VIP: 'VIP Sitting', Premium: 'Grandstand', Regular: 'Popular Stand' };
+  var STAND = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
   var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else n.setAttribute(k, v); }); for (var i = 2; i < arguments.length; i++) if (arguments[i] != null) n.append(arguments[i]); return n; };
   window.lsRenderTickets = function (box, data) {
     var count = data.matches.reduce(function (s, m) { return s + m.tickets.length; }, 0);

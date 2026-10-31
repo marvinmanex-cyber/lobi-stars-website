@@ -5,7 +5,7 @@
 import { lagosParts, splitVenue } from './fixtureCard.js';
 import { TEAM_LOGOS } from './teamLogos.js';
 
-const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Grandstand', Regular: 'Popular Stand' };
+const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
 const TIER_BADGES = { VIP: '/images/vip-siting.png', Regular: '/images/popular-stand.png' };
 const SITE_ORIGIN = 'https://lobistarsfc.com';
 // Automatic emails (receipts, codes, alerts). Conversations use info@ (Inbox).

@@ -13,7 +13,7 @@ const post = (path, body) => fetch(BASE + path, { method: 'POST', headers: { 'Co
   .then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
 const admin = (path, method = 'GET', body) => fetch(BASE + path, { method, headers: ADMIN, body: body ? JSON.stringify(body) : undefined }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
 const waSettings = s => admin('/api/admin/food-menu', 'POST', { action: 'whatsapp_settings', settings: { whatsappEnabled: true, whatsappNumber: '0903 039 9416', whatsappExpiryHours: 3, pickupPoints: [], bankDetails: '', ...s } });
-const waOrder = over => post('/api/food/whatsapp-order', { name: 'Emeka Okafor', phone: `0803${r7()}`, fulfilment: 'seat', seat: 'C14', stand: 'Grandstand', notes: 'No pepper please', items: [{ id: 'suya', qty: 2, priceKobo: 1 }, { id: 'water', qty: 1 }], ...over });
+const waOrder = over => post('/api/food/whatsapp-order', { name: 'Emeka Okafor', phone: `0803${r7()}`, fulfilment: 'seat', seat: 'C14', stand: 'Grand Stand', notes: 'No pepper please', items: [{ id: 'suya', qty: 2, priceKobo: 1 }, { id: 'water', qty: 1 }], ...over });
 const board = () => admin('/api/admin/food-orders?show=board');
 const move = (id, status) => admin('/api/admin/food-orders', 'POST', { id, status });
 
@@ -42,7 +42,7 @@ test('WhatsApp order: checked on the server, prices from the menu, order message
   assert.match(d.ref, /^FD-\d{8}-\d{4}$/);
   assert.equal(d.totalKobo, 2 * 150000 + 30000, 'browser prices ignored');
   assert.equal(d.total, '₦3,300');
-  for (const line of ['Hello Lobi Stars FC!', `Order: ${d.ref}`, 'Name: Emeka Okafor', '2 × Beef Suya: ₦3,000', 'Total: ₦3,300', 'Seat C14, Grandstand', 'Note: No pepper please', 'Please confirm my order']) assert.ok(d.message.includes(line), line);
+  for (const line of ['Hello Lobi Stars FC!', `Order: ${d.ref}`, 'Name: Emeka Okafor', '2 × Beef Suya: ₦3,000', 'Total: ₦3,300', 'Seat C14, Grand Stand', 'Note: No pepper please', 'Please confirm my order']) assert.ok(d.message.includes(line), line);
   assert.ok(d.whatsappUrl.startsWith('https://wa.me/2349030399416?text='));
   assert.equal(decodeURIComponent(d.whatsappUrl.split('?text=')[1]), d.message);
   const track = new URL(d.trackUrl);

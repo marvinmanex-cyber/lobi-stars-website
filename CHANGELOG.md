@@ -39,22 +39,25 @@ in HANDOVER-TODO.md.
 
 ---
 
-## 2026-10-31: "Cover Stand" is now "Grandstand"
+## 2026-10-31: "Cover Stand" is now "Grand Stand"
 
 **What changed**
-- The three stands are **VIP Sitting, Grandstand and Popular Stand**. "Cover
-  Stand" is renamed "Grandstand" everywhere on the website: the Tickets page,
+- The three stands are **VIP Sitting, Grand Stand and Popular Stand**. "Cover
+  Stand" is renamed "Grand Stand" everywhere on the website: the Tickets page,
   ticket emails, the ticket check (verify) page, the ticket success page, season
   tickets, Rewards ticket prizes, Admin › Commerce › Match Tickets (prices and
   seats), and the in-seat food "Section" drop-down (the saved list in Admin ›
   Food was updated too).
 - Prices, seat limits and tickets already bought are unchanged (only the name
-  changed). Old Cover Stand tickets now show as Grandstand.
-- The old round "COVER STAND" badge picture no longer shows on Grandstand
-  tickets and emails (VIP and Popular Stand keep theirs) until a Grandstand
+  changed). Old Cover Stand tickets now show as Grand Stand.
+- The old round "COVER STAND" badge picture no longer shows on Grand Stand
+  tickets and emails (VIP and Popular Stand keep theirs) until a Grand Stand
   badge is made (HANDOVER-TODO C31).
 
-**Staff:** nothing to do. Say "Grandstand" to fans from now on.
+- The name is two words, **Grand Stand** (it first went live as "Grandstand"
+  and was corrected the same day).
+
+**Staff:** nothing to do. Say "Grand Stand" to fans from now on.
 
 ---
 

@@ -32,7 +32,7 @@ test('Pay Online comes back to /kitchen/, and the price is worked out on the ser
   if (!d.open) return t.skip('ordering is closed on this server');
   const item = d.categories.flatMap(c => c.items).find(i => !i.soldOut && !i.adult);
   const r = await post('/api/food-checkout', {
-    name: 'Kitchen Test', phone: '08031234567', email: 'kitchen-test@example.com', stand: d.stands[0] || 'Grandstand', seat: 'Row 1, Seat 2',
+    name: 'Kitchen Test', phone: '08031234567', email: 'kitchen-test@example.com', stand: d.stands[0] || 'Grand Stand', seat: 'Row 1, Seat 2',
     notes: 'Deliver at half-time.', fulfilment: 'seat', returnTo: 'kitchen',
     items: [{ id: item.id, qty: 2, priceKobo: 1 }], totalKobo: 2, // a tampered price from the browser
   });
