@@ -88,6 +88,33 @@ STAFF-GUIDE.md section 41 explains every screen in plain English.
   - `functions/api/_lib/mediaKinds.js`: each content type and how it
     publishes.
 
+### Latest News (phase 2)
+- **Editor:** `src/scripts/mediaCentre/news.ts`.
+- **Live preview:** loads `/news/mc-preview-template/`, a hidden noindex
+  page built from the real article template
+  (`src/content/news/mc-preview-template.md`, a draft), and puts the story
+  into it.
+- **Rich text:** cleaned in the browser (`files.ts`) and again on the server
+  with HTMLRewriter (`functions/api/_lib/mediaSanitize.js`). Only these tags
+  are kept: p, br, b/strong, i/em, u, h2, h3, blockquote, ul, ol, li,
+  a[href http(s)/mailto/site], img[src Media Centre upload / site image,
+  alt].
+- **Uploads:** `/api/media-centre/upload`. The file type is checked from its
+  first bytes; the limit is 5 MB. Files are stored in R2 (`SQUAD_BUCKET`,
+  `media-centre/`) and served by `/api/media-file/<id>` (staff only unless
+  public).
+- **Publishing** (`functions/api/_lib/mediaNews.js`):
+  - Approval writes `src/content/news/<date>-<slug>.md` (with `mcId`,
+    `newsTab`, `coverCaption`, `coverCredit`, `isBanner` for breaking news,
+    `players`, `matchDate`/`contentType` for the match) plus the photos
+    (`public/images/news/mc/`).
+  - Everything goes in ONE GitHub commit (`commitFiles` in `github.js`,
+    which needs `GITHUB_TOKEN` with Contents read/write). Cloudflare Pages
+    rebuilds in about 3 minutes.
+  - Unpublish rewrites the file with `status: draft`.
+- **Scheduled stories:** published by the every-minute timer
+  (`/api/internal/newsletter-run` → `mediaCron.js`).
+
 ### Email
 Accreditation emails, reminders and the newsletter use the site's existing
 Resend setup. These are Cloudflare secrets:

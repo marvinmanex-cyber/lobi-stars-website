@@ -86,3 +86,46 @@ export async function openDraftPullRequest(env, branch, title, body) {
   return { url: null, note: r.status === 403 || r.status === 404 ? 'The branch is saved. To open the pull request automatically, add "Pull requests: Read and write" to the GitHub token; or open it on GitHub yourself.' : `Pull request not opened (GitHub ${r.status}).` };
 }
 export const branchUrl = (env, branch) => `https://github.com/${REPO(env)}/tree/${branch}`;
+
+// ── Media Centre: approved news stories and photo albums ──
+// Several files (the story and its photos) in ONE commit, so the site rebuilds
+// once. Only these paths can be written.
+const MEDIA_ALLOWED = [/^src\/content\/news\/[a-z0-9-]{3,100}\.md$/, /^src\/content\/gallery\/[a-z0-9-]{3,120}\.md$/, /^public\/images\/(news|gallery)\/mc\/[a-z0-9_-]{3,80}\.(webp|jpg|png)$/];
+const MEDIA_COMMITTER = { name: 'Lobi Stars Media Centre', email: 'noreply@lobistarsfc.com' };
+export const mediaPathAllowed = path => MEDIA_ALLOWED.some(r => r.test(path)) && !path.includes('..');
+const bytesB64 = bytes => { let x = ''; for (let i = 0; i < bytes.length; i += 0x8000) x += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(x); };
+/** files: [{ path, text } | { path, bytes: Uint8Array }]. Returns the commit id. */
+export async function commitFiles(env, files, message) {
+  if (!files.length) throw new Error('Nothing to save.');
+  for (const f of files) if (!mediaPathAllowed(f.path)) throw new Error(`The Media Centre may not write ${f.path}.`);
+  const H = { ...headers(env), 'Content-Type': 'application/json' };
+  const call = async (p, init = {}) => {
+    const r = await fetch(api(env, p), { headers: H, signal: AbortSignal.timeout(25000), ...init });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw Object.assign(new Error(r.status === 401 || r.status === 403 ? 'GitHub did not accept the token (GITHUB_TOKEN).' : `GitHub error ${r.status}${d.message ? `: ${d.message}` : ''}.`), { status: r.status });
+    return d;
+  };
+  const tree = [];
+  for (const f of files) {
+    const blob = await call('/git/blobs', { method: 'POST', body: JSON.stringify(f.bytes ? { content: bytesB64(f.bytes), encoding: 'base64' } : { content: f.text, encoding: 'utf-8' }) });
+    tree.push({ path: f.path, mode: '100644', type: 'blob', sha: blob.sha });
+  }
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const ref = await call(`/git/ref/heads/${encodeURIComponent(BRANCH(env))}`);
+    const head = ref.object.sha;
+    const base = await call(`/git/commits/${head}`);
+    const t = await call('/git/trees', { method: 'POST', body: JSON.stringify({ base_tree: base.tree.sha, tree }) });
+    const c = await call('/git/commits', { method: 'POST', body: JSON.stringify({ message, tree: t.sha, parents: [head], committer: MEDIA_COMMITTER, author: MEDIA_COMMITTER }) });
+    try {
+      await call(`/git/refs/heads/${encodeURIComponent(BRANCH(env))}`, { method: 'PATCH', body: JSON.stringify({ sha: c.sha, force: false }) });
+      return c.sha;
+    } catch (e) { if (e.status !== 422 || attempt === 2) throw e; /* someone else committed meanwhile: rebuild on the new head */ }
+  }
+  return null;
+}
+/** Does this repository file exist (on the live branch)? */
+export async function mediaFileExists(env, path) {
+  if (!mediaPathAllowed(path)) return false;
+  const r = await fetch(`${url(env, path)}?ref=${encodeURIComponent(BRANCH(env))}`, { method: 'GET', headers: headers(env), signal: AbortSignal.timeout(20000) });
+  return r.ok;
+}

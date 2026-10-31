@@ -78,11 +78,19 @@ async function profilePage(request, env, url, person, list, season, { index = tr
   const title = `${person.name} | Lobi Stars FC`;
   const { prev, next, teammates } = neighbours(list, person);
   const page = `${url.origin}${person.href}`;
+  // Stories tagged with this player (news file "players" list), newest first.
+  let news = [];
+  if (person.kind === 'player') {
+    try {
+      const idx = await env.ASSETS.fetch(new URL('/data/news-index.json', url));
+      if (idx.ok) news = (await idx.json()).filter(n => (n.players || []).some(s => s === person.slug || (person.oldSlugs || []).includes(s)));
+    } catch { /* no news list */ }
+  }
   const res = rewrite(shell, {
     title, description: profileDescription(person), url: page, index,
     image: person.photo ? new URL(person.photo.replace('w1200.webp', 'w1200.jpg'), url).toString() : null, imageAlt: `${person.name}, Lobi Stars FC`,
     ld: [personJsonLd(person, url.origin), breadcrumbs(url.origin, [['Squad', '/squad/'], [person.name, person.href]])],
-    rootHtml: renderProfile(person, { prev, next, teammates, season, share: '<div class="pf-share-slot"></div>', personalisation: PERSONALISATION }),
+    rootHtml: renderProfile(person, { prev, next, teammates, season, share: '<div class="pf-share-slot"></div>', personalisation: PERSONALISATION, news }),
     shareTitle: title, shareText: person.kind === 'player' ? `${person.name}, ${person.position || person.groupLabel} for Lobi Stars FC` : `${person.name}, ${person.role} at Lobi Stars FC`,
     templateUrl: useOwn ? page : `${url.origin}/squad-template/`,
   });

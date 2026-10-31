@@ -1,6 +1,6 @@
 ---
 import type { Article } from '../../lib/news';
-import { categoryHref } from '../../lib/news';
+import { categoryHref, tabOf } from '../../lib/news';
 
 interface Props { article?: Article }
 const { article } = Astro.props;
@@ -13,7 +13,7 @@ const a = article?.data;
         <img src={a.coverImage} alt="" loading="lazy" decoding="async" width="1200" height="675" />
       </a>
       <div class="fb-body">
-        <a class="fb-cat" href={categoryHref(a.category)}>{a.category}</a>
+        <a class="fb-cat" href={categoryHref(tabOf(a))}>{a.category}</a>
         <h2 class="fb-title">{a.title}</h2>
         <p class="fb-summary">{a.summary}</p>
         <a class="fb-btn" href={`/news/${article.id}`} aria-label={`${a.isVideo ? 'Watch' : 'Read'}: ${a.title}`}>

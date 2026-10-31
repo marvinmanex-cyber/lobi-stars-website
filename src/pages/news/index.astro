@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import NewsCard from '../../components/news/NewsCard.astro';
-import { getSortedNews, NEWS_CATEGORIES, categorySlug } from '../../lib/news';
+import { getSortedNews, NEWS_CATEGORIES, categorySlug, tabOf } from '../../lib/news';
 
 const articles = await getSortedNews();
 const tabs = [{ name: 'All', slug: 'all' }, ...NEWS_CATEGORIES];
@@ -46,7 +46,7 @@ const tabs = [{ name: 'All', slug: 'all' }, ...NEWS_CATEGORIES];
     {articles.length === 0 && <p class="nl-empty">Club news is on its way. Follow us on social media for the latest updates in the meantime.</p>}
     <ul class="nl-grid" data-grid>
       {articles.map((article, i) => (
-        <li data-cat={categorySlug(article.data.category)}><NewsCard article={article} priority={i === 0} /></li>
+        <li data-cat={categorySlug(tabOf(article.data))}><NewsCard article={article} priority={i === 0} /></li>
       ))}
     </ul>
     <p class="nl-empty" data-empty hidden>There are no stories in this category yet. <a href="/news">See all news</a></p>

@@ -3,7 +3,7 @@
 // lead story. The thumbnail of the story currently shown is hidden, so the
 // row always lists the *other* featured stories.
 import type { Article } from '../../lib/news';
-import { categoryHref } from '../../lib/news';
+import { categoryHref, tabOf } from '../../lib/news';
 import RelativeTime from './RelativeTime.astro';
 
 interface Props { articles: Article[] }
@@ -20,7 +20,7 @@ const { articles } = Astro.props;
             <div class="nh-grad" aria-hidden="true"></div>
             <div class="nh-body">
               <div class="nh-meta">
-                <a class="nh-cat" href={categoryHref(a.category)}>{a.category}</a>
+                <a class="nh-cat" href={categoryHref(tabOf(a))}>{a.category}</a>
                 <RelativeTime date={a.publishedAt} class="nh-time" />
                 {a.isVideo && a.videoDuration && <span class="nh-dur">{a.videoDuration}</span>}
               </div>

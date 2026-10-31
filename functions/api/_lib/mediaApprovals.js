@@ -80,7 +80,7 @@ export async function decide(env, admin, request, id, { decision, comment = '', 
   // Edit-then-approve: the Super Admin's edited version replaces the working copy.
   let content = parseJson(r.data_json, {});
   if (data && typeof data === 'object') {
-    const checked = kind?.normalise ? kind.normalise(data, { admin: true }) : { value: data };
+    const checked = kind?.normalise ? await kind.normalise(data, { admin: true }) : { value: data };
     if (checked.error) return { error: checked.error };
     content = checked.value;
     await db.prepare(`UPDATE mc_items SET data_json = ?, title = ? WHERE id = ?`).bind(JSON.stringify(content), (kind?.titleOf?.(content) || r.title || '').slice(0, 200), r.id).run();

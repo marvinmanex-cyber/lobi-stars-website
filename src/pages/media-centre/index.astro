@@ -131,6 +131,33 @@
     .mc-table { width: 100%; border-collapse: collapse; font-size: 14px; } .mc-table th, .mc-table td { text-align: left; padding: 8px; border-top: 1px solid var(--line); vertical-align: top; } .mc-table th { border-top: 0; font-size: 12px; text-transform: uppercase; color: var(--grey); }
     .mc-scroll { overflow-x: auto; }
     .mc-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; } .mc-tabs button { min-height: 38px; padding: 4px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-weight: 600; } .mc-tabs button.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+    /* Editors */
+    .mc-ed { display: grid; gap: 16px; }
+    .mc-ed-form { min-width: 0; }
+    .mc-check { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 500; margin: 6px 0; } .mc-check input[type=checkbox], .mc-check input[type=radio] { width: 20px; height: 20px; }
+    .mc-tb { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px; border: 1.5px solid var(--line); border-bottom: 0; border-radius: 10px 10px 0 0; background: var(--blue-l); }
+    .mc-tb button { min-width: 40px; min-height: 38px; border: 1px solid var(--line); background: #fff; border-radius: 8px; cursor: pointer; font-weight: 700; }
+    .mc-rte { min-height: 260px; padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 0 0 10px 10px; background: #fff; line-height: 1.65; overflow-wrap: anywhere; }
+    .mc-rte[contenteditable="false"] { border-radius: 10px; background: #FAFBFC; }
+    .mc-rte:focus { outline: 3px solid rgba(76,118,178,.35); }
+    .mc-rte img { max-width: 100%; height: auto; border-radius: 8px; } .mc-rte blockquote { border-left: 4px solid var(--red); margin: 10px 0; padding: 4px 12px; color: var(--grey); }
+    .mc-photo img { display: block; max-width: 100%; max-height: 260px; border-radius: 10px; margin: 0 0 8px; }
+    .mc-gal { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 0 0 8px; }
+    .mc-gal figure { margin: 0; position: relative; } .mc-gal img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 8px; display: block; }
+    .mc-gal input { width: 100%; margin-top: 4px; min-height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 4px 8px; font-size: 14px; }
+    .mc-gal button { position: absolute; top: 4px; right: 4px; border: 0; background: rgba(0,0,0,.65); color: #fff; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; }
+    .mc-chips { display: flex; flex-wrap: wrap; gap: 6px; max-height: 210px; overflow: auto; padding: 4px 0; }
+    .mc-chips input[type=checkbox] { width: 18px; height: 18px; min-height: 0; padding: 0; flex: none; }
+    .mc-chips label { display: inline-flex; gap: 6px; align-items: center; padding: 6px 10px; border: 1px solid var(--line); border-radius: 999px; background: #fff; font-size: 14px; }
+    .mc-tags summary { cursor: pointer; }
+    .mc-wf { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; }
+    .mc-pv { min-width: 0; }
+    .mc-pv-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+    .mc-pv-frame { margin: 0 auto; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #fff; transition: width .2s; }
+    .mc-pv-frame.phone { width: 390px; max-width: 100%; } .mc-pv-frame.desktop { width: 100%; }
+    .mc-pv-frame iframe { display: block; width: 100%; height: 760px; border: 0; }
+    .mc-pv-frame.desktop iframe { width: 1280px; height: 1400px; transform: scale(var(--pv-scale, .5)); transform-origin: 0 0; margin-bottom: calc(1400px * (var(--pv-scale, .5) - 1)); }
+    @media (min-width: 1200px) { .mc-ed { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; } .mc-pv { position: sticky; top: 78px; } }
     @media (min-width: 700px) { .mc-who span { display: inline; } .mc-main { padding: 22px 22px 60px; } .mc-grid.two { grid-template-columns: 1fr 1fr; } }
     @media (min-width: 1000px) {
       .mc-menu { display: none; }

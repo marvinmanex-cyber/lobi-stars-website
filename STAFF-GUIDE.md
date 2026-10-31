@@ -3914,6 +3914,55 @@ address and the device.
 - **Media team email:** where the Monday newsletter reminder goes.
 - **Media contact:** shown on press releases.
 
+### Latest News (media staff write; Super Admins approve)
+1. **Media Centre › Latest News › + New story.** The editor is on the left
+   and a **live preview** on the right. The preview is a real page of the
+   website, in the same design readers see, with **Phone / Desktop**
+   buttons. Everything **saves automatically** ("Saved 14:05").
+2. **Fields:**
+   - **Category:** the 17 presets plus any added by a Super Admin.
+   - **Headline:** a counter warns above 70 characters.
+   - **Summary:** 1–2 sentences, used on news cards and when the story is
+     shared on WhatsApp or Facebook.
+   - **Main photo** with a **caption** and a **photo credit**.
+   - **The story:** bold, H2/H3 headings, quotes, lists, links and pictures.
+   - **Photo gallery** (optional).
+   - **Video link** (optional): YouTube or Facebook.
+   - **Tags:**
+     - **match:** the story is listed on that match's page; a Match Preview
+       also gets the "Match Preview" button;
+     - **players:** listed on their Squad pages under "Latest news";
+     - **staff.**
+   - **Breaking news:** the writer can only *ask* for it; a Super Admin
+     switches it on.
+   - **When to publish:** as soon as it is approved, or at a chosen date
+     and time.
+   - The web address is made from the headline and fixed at the first
+     publication.
+3. **Send for approval.** The story is locked until a Super Admin decides.
+   **Withdraw** unlocks it.
+4. **The Super Admin** approves it, edits then approves it (this is where
+   they switch on **Breaking news**, which shows the homepage banner),
+   returns it with a comment, or rejects it.
+5. **Once approved,** the story is published to the website automatically:
+   - It is saved as a news file in the website's code store (GitHub), with
+     its photos, in one go.
+   - The site rebuilds in about **3 minutes**.
+   - It then shows on the **News page**, the **homepage latest news**, the
+     **tagged match and player pages**, and with the right share preview
+     for WhatsApp and Facebook.
+   - Scheduled stories publish themselves at their time (checked every
+     minute).
+6. **Corrections:** open a published story and change it, then press **Send
+   correction for approval**. The live story stays as it is until the
+   correction is approved; the page then shows "Updated …".
+7. **Unpublish** (Super Admins, in the Approval Queue): the story disappears
+   from the website. It is kept in the Media Centre, never deleted.
+
+Pictures (JPG, PNG or WebP up to 5 MB) are resized on the phone or computer
+before upload. Pasted text is cleaned: scripts, hidden code and unsafe links
+are removed, and the server cleans it again.
+
 ### The Media Centre home (for media staff)
 After signing in: **Returned to me** (with the Super Admin's comment),
 **Waiting for approval**, **My drafts**, **Upcoming deadlines** and

@@ -396,11 +396,11 @@ export async function addRevision(db, r, event, data, byName, comment = null) {
   await db.prepare(`INSERT INTO mc_revisions (item_id, version, event, data_json, by_name, at, comment) VALUES (?, ?, ?, ?, ?, ?, ?)`)
     .bind(r.id, r.version || 0, event, typeof data === 'string' ? data : JSON.stringify(data), byName, nowIso(), comment).run();
 }
-export async function submitItem(db, user, r, { scheduledAt = null } = {}) {
+export async function submitItem(db, user, r, { scheduledAt = null, setSchedule = false } = {}) {
   if (!editable(r)) return { error: 'This is already waiting for approval.' };
   const at = nowIso(), live = ['published', 'scheduled'].includes(r.status);
   const version = (r.version || 0) + 1;
-  await db.prepare(`UPDATE mc_items SET ${live ? "correction = 'submitted'" : "status = 'submitted'"}, submitted_at = ?, submitted_by_name = ?, version = ?, comment = NULL, scheduled_at = COALESCE(?, scheduled_at) WHERE id = ?`)
+  await db.prepare(`UPDATE mc_items SET ${live ? "correction = 'submitted'" : "status = 'submitted'"}, submitted_at = ?, submitted_by_name = ?, version = ?, comment = NULL, scheduled_at = ${setSchedule ? '?' : 'COALESCE(?, scheduled_at)'} WHERE id = ?`)
     .bind(at, user.fullName, version, scheduledAt, r.id).run();
   await addRevision(db, { ...r, version }, live ? 'correction_submitted' : 'submitted', r.data_json, user.fullName);
   return { ok: true };

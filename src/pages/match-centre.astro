@@ -115,6 +115,10 @@ import '../styles/fixture-card.css';
     .mc :global(.mc-board) { gap: 8px; }
     .mc :global(.mc-tabs) { top: var(--header-vis, var(--header-h)); transition: top .25s ease; }
   }
+  .mc :global(.mc-stories) { margin: 22px 0 0; padding: 16px 18px; border: 1px solid var(--d4); border-radius: 12px; background: #fff; }
+  .mc :global(.mc-stories h3) { margin: 0 0 10px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .mc :global(.mc-stories ul) { margin: 0; padding-left: 18px; } .mc :global(.mc-stories li) { margin: 6px 0; }
+  .mc :global(.mc-accred) { margin: 18px 0 0; font-size: 14px; } .mc :global(.mc-accred a) { font-weight: 700; }
 </style>
 
 <script>
@@ -403,6 +407,22 @@ import '../styles/fixture-card.css';
     panelBox.setAttribute('aria-labelledby', `tab-${activeTab}`);
     panelBox.append(panel(activeTab, m));
     body.append(tabs, panelBox);
+    // Club stories tagged with this match (published from the news editor or the Media Centre).
+    const stories = newsIndex.filter(n => n.matchDate === watDay(m.event_date)).slice(0, 6);
+    if (stories.length) {
+      const box = el('section', 'mc-stories');
+      box.append(el('h3', '', 'Stories about this match'));
+      const ul = el('ul');
+      stories.forEach(n => { const li = el('li'); const a = el('a', '', n.title) as HTMLAnchorElement; a.href = `/news/${n.slug}/`; li.append(a); ul.append(li); });
+      box.append(ul); body.append(box);
+    }
+    // Journalists: accreditation for upcoming home matches.
+    if (m.is_home && m.status === 'scheduled') {
+      const p = el('p', 'mc-accred');
+      const a = el('a', '', 'Media: request accreditation for this match →') as HTMLAnchorElement;
+      a.href = `/media/accreditation/?match=${encodeURIComponent(m.slug)}`;
+      p.append(a); body.append(p);
+    }
     root.replaceChildren(header(m), body);
     document.title = `${m.home_team} vs ${m.away_team} | Match Centre | Lobi Stars FC`;
     if (m.status === 'live' || m.status === 'half-time') timers.push(window.setInterval(load, 30_000));

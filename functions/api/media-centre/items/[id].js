@@ -15,13 +15,14 @@ export async function onRequestPut({ request, env, params, data }) {
   if (!r) return json({ error: 'Not found.' }, 404);
   const kind = KINDS[r.kind];
   const b = await request.json().catch(() => ({}));
-  const checked = kind?.normalise ? kind.normalise(b.data || {}, { user: data.mc.user }) : { value: b.data || {} };
+  const checked = kind?.normalise ? await kind.normalise(b.data || {}, { user: data.mc.user }) : { value: b.data || {} };
   if (checked.error) return json({ error: checked.error }, 400);
   const title = kind?.titleOf ? kind.titleOf(checked.value) : r.title;
   const res = await saveItem(env.DB, data.mc.user, r, { title, data: checked.value, ref: b.ref ? oneLine(b.ref, 80) : null });
   if (res.error) return json({ error: res.error }, 409);
   // Autosaves are frequent: log an edit at most once per 10 minutes per item.
-  if (!r.updated_at || Date.now() - Date.parse(r.updated_at) > 10 * 60e3 || r.updated_by_name !== data.mc.user.fullName) {
+  const lastEdit = await env.DB.prepare(`SELECT at FROM mc_activity WHERE item_id = ? AND actor_id = ? AND action = 'edit' ORDER BY id DESC LIMIT 1`).bind(r.id, data.mc.user.id).first();
+  if (!lastEdit || Date.now() - Date.parse(lastEdit.at) > 10 * 60e3) {
     await mcLog(env.DB, mediaActor(data.mc.user), 'edit', { section: kind?.section, itemType: r.kind, itemId: r.id, itemTitle: title, details: res.correction ? 'Correction to published content' : null, request });
   }
   return json({ ok: true, savedAt: res.at, correction: res.correction });
@@ -43,7 +44,7 @@ export async function onRequestPost({ request, env, params, data }) {
       if (!t || t < Date.now() + 5 * 60e3) return json({ error: 'Choose a publish time at least 5 minutes from now, or publish on approval.' }, 400);
       scheduledAt = new Date(t).toISOString();
     }
-    const res = await submitItem(env.DB, data.mc.user, r, { scheduledAt });
+    const res = await submitItem(env.DB, data.mc.user, r, { scheduledAt, setSchedule: !!kind?.schedulable });
     if (res.error) return json({ error: res.error }, 409);
     await mcLog(env.DB, A, 'submit', { ...meta, details: [r.correction || ['published', 'scheduled'].includes(r.status) ? 'Correction' : null, scheduledAt ? `Publish at ${scheduledAt}` : null].filter(Boolean).join('; ') || null });
     return json({ ok: true });

@@ -1,6 +1,6 @@
 ---
 import type { Article } from '../../lib/news';
-import { categoryHref } from '../../lib/news';
+import { categoryHref, tabOf } from '../../lib/news';
 import RelativeTime from './RelativeTime.astro';
 
 // priority: the first card at the top of a page loads its image straight away.
@@ -21,7 +21,7 @@ const href = `/news/${article.id}`;
     )}
   </div>
   <div class="nc-meta">
-    <a class="nc-cat" href={categoryHref(a.category)}>{a.category}</a>
+    <a class="nc-cat" href={categoryHref(tabOf(a))}>{a.category}</a>
     <RelativeTime date={a.publishedAt} class="nc-time" />
   </div>
   <h3 class="nc-title"><a class="nc-link" href={href}>{a.title}</a></h3>

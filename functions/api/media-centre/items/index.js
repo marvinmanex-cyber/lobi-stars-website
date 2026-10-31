@@ -18,7 +18,7 @@ export async function onRequestPost({ request, env, data }) {
   const b = await request.json().catch(() => ({}));
   const kind = KINDS[b.kind];
   if (!kind || kind.mediaCreate === false) return json({ error: 'Unknown kind.' }, 400);
-  const checked = kind.normalise ? kind.normalise(b.data || {}, { user: data.mc.user }) : { value: b.data || {} };
+  const checked = kind.normalise ? await kind.normalise(b.data || {}, { user: data.mc.user }) : { value: b.data || {} };
   if (checked.error) return json({ error: checked.error }, 400);
   const title = kind.titleOf ? kind.titleOf(checked.value) : oneLine(b.title, 200);
   const id = await createItem(env.DB, data.mc.user, b.kind, { title, data: checked.value, ref: b.ref ? oneLine(b.ref, 80) : null });

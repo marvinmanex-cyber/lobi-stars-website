@@ -39,7 +39,8 @@ export function newsApprovals(): Promise<Approvals> {
 }
 /** A fingerprint of the wording: an edit after approval needs approving again. */
 export const articleHash = (a: Article) => createHash('sha256').update(`${a.data.title}\n${a.data.summary || ''}\n${a.body || ''}`).digest('hex').slice(0, 20);
-export const needsApproval = (a: Article, ap: Approvals) => ap.enforce.all || (!!a.data.official && ap.enforce.official);
+// Stories from the Media Centre were already approved by a Super Admin there.
+export const needsApproval = (a: Article, ap: Approvals) => !a.data.mcId && (ap.enforce.all || (!!a.data.official && ap.enforce.official));
 export const isApproved = (a: Article, ap: Approvals) => ap.approved.some(x => x.slug === a.id && x.hash === articleHash(a));
 
 /** Every story including drafts, newest first (admin only). */

@@ -7,7 +7,15 @@ const news = defineCollection({
   schema: z.object({
     title: z.string(),
     summary: z.string(),
-    category: z.enum(['First Team', 'Team News', 'Club', 'Features', 'Tickets', 'Media Watch']),
+    // One of the /news tabs (First Team, Team News, Club, Features, Tickets, Media Watch), or a
+    // Media Centre category (e.g. "Match Report") with the tab it is listed under in newsTab.
+    category: z.string().min(1),
+    newsTab: z.enum(['First Team', 'Team News', 'Club', 'Features', 'Tickets', 'Media Watch']).nullable().optional(),
+    // Main photo caption and credit (shown under the photo when set).
+    coverCaption: z.string().nullable().optional(),
+    coverCredit: z.string().nullable().optional(),
+    // Set on stories approved in the Media Centre (a Super Admin approved them there).
+    mcId: z.string().nullable().optional(),
     coverImage: z.string(),
     imageAlt: z.string(),
     publishedAt: z.coerce.date(),

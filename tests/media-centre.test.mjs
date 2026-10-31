@@ -4,21 +4,12 @@
 // Run against a local server: BASE=http://127.0.0.1:8844 node --test tests/media-centre.test.mjs
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
-import { writeFileSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
+import { sql } from './media-helpers.mjs';
 
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
 const ADMIN = { 'Content-Type': 'application/json', 'x-admin-code': process.env.ADMIN_CODE || 'test-code-123' };
 const uid = () => Math.random().toString(36).slice(2, 8);
 const ip = () => `10.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 0}`;
-export const sql = command => {
-  const file = path.join(tmpdir(), `mc-${uid()}.sql`);
-  writeFileSync(file, command);
-  try { return execFileSync('npx', ['wrangler', 'd1', 'execute', 'DB', '--local', '--json', '--file', `"${file}"`], { stdio: 'pipe', shell: true }).toString(); }
-  finally { rmSync(file, { force: true }); }
-};
 const T = uid().replace(/\d/g, 'q');
 const LOGIN = `Tester${T}${String(Math.floor(Math.random() * 90) + 10)}`;
 const admin = (p, body) => fetch(`${BASE}/api/admin/media-centre/${p}`, body ? { method: 'POST', headers: ADMIN, body: JSON.stringify(body) } : { headers: ADMIN }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})), r }));

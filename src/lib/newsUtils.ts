@@ -17,6 +17,9 @@ export function categorySlug(name: string): string {
   return NEWS_CATEGORIES.find(c => c.name === name)?.slug ?? 'all';
 }
 
+/** The /news tab a story is listed under: its Media Centre tab (newsTab) or its category. */
+export const tabOf = (d: { category: string; newsTab?: string | null }): string => d.newsTab || d.category;
+
 export function categoryHref(name: string): string {
   return `/news?category=${categorySlug(name)}`;
 }
@@ -52,6 +55,8 @@ export function formatDate(date: Date): string {
 /** Turns a YouTube/Vimeo link into an embeddable URL; null if it isn't one. */
 export function videoEmbedUrl(url?: string | null): string | null {
   if (!url) return null;
+  const fb = url.match(/^https:\/\/(?:www\.|m\.)?(?:facebook\.com|fb\.watch)\/\S+$/i);
+  if (fb) return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false`;
   const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
   if (yt) return `https://www.youtube-nocookie.com/embed/${yt[1]}`;
   const vimeo = url.match(/vimeo\.com\/(\d+)/);

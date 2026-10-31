@@ -8,6 +8,31 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-31: Media Centre, phase 2: Latest News
+
+**What changed**
+- **Media Centre › Latest News:** media staff write stories with a live
+  preview in the website's own article design (phone/desktop), with
+  autosave. The editor has the 17 categories, a headline counter (warns
+  above 70 characters), summary, main photo with caption and credit, rich
+  text (headings, quotes, lists, links, pictures), photo gallery,
+  YouTube/Facebook video, tags (players, staff, match), a request for
+  breaking news, and publish now or at a set time.
+- **Publishing:** approved stories appear automatically (about 3 minutes
+  later) on the News page, homepage latest news, tagged match pages
+  ("Stories about this match") and tagged players' Squad pages ("Latest
+  news"). Breaking news (a Super Admin switches it on) shows the homepage
+  banner. Scheduled stories publish themselves.
+- **Corrections:** the live story stays until the correction is approved.
+  Unpublishing hides a story (never deleted).
+- **News pages:** a main photo caption and credit can show under the photo,
+  and Facebook video links play on news pages. Existing stories look the
+  same.
+
+**Staff:** see STAFF-GUIDE section 41 "Latest News".
+
+---
+
 ## 2026-10-31: Media Centre, phase 1: users, sign-in, activity log, Approval Queue
 
 **What changed**
