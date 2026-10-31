@@ -25,6 +25,7 @@ import { verifyTotp } from '../../_lib/totp.js';
 // POST { action: 'lifecycle', id, kind: left|loan|return|delete|restore, … } -- a Super Admin's own request, approved at once
 // POST { action: 'restore_deleted', id }    -- a deleted profile back (within 30 days; Super Admins)
 // POST { action: 'former_page', on }        -- the public Former Players & Legends page on / off (Super Admins)
+// POST { action: 'staff_age', on }          -- show coaches' ages on the website (default off; Super Admins)
 // POST { action: 'migrate', keys, switchOff } -- move the chosen ones into the portal (live, "migrated – please review"),
 //                                              and/or switch the old files off (Super Admins)
 // POST { action: 'remove', id }             -- Super Admins only (any status; logged)
@@ -82,7 +83,7 @@ export async function onRequestGet({ request, env }) {
   const season = u.searchParams.get('season') || cur;
   const log = (await db.prepare(`SELECT * FROM squad_export_log ORDER BY id DESC LIMIT 30`).all()).results;
   return json({ season, current: cur, seasons: await seasons(db), counts: await counts(db, season), team: await getTeam(db), exportLog: superOnly(admin) ? log : [],
-    deleted: superOnly(admin) ? await deletedList(db) : [], formerPage: (await getPortalSettings(db)).former_page === '1',
+    deleted: superOnly(admin) ? await deletedList(db) : [], formerPage: (await getPortalSettings(db)).former_page === '1', staffAge: (await getPortalSettings(db)).staff_age_public === '1',
     roles: await pickList(db).catch(() => []), canApprove: can(admin, 'squad.approve'), canSuper: superOnly(admin), canExport: superOnly(admin), exportTo: superOnly(admin) ? await exportRecipients(db) : [], canFull: can(admin, 'squad.records.full'), canEdit: can(admin, 'squad.records.full'), deployHook: !!env.PAGES_DEPLOY_HOOK,
     pendingNames: (await db.prepare(`SELECT COUNT(*) AS n FROM squad_profiles WHERE name_status IN ('pending', 'check') AND deleted_at IS NULL`).first())?.n || 0,
     profiles: await listProfiles(db, { season, filter: u.searchParams.get('filter') || 'submitted', q: u.searchParams.get('q') || '' }) });
@@ -126,6 +127,11 @@ export async function onRequestPost({ request, env, waitUntil }) {
     if (!superOnly(admin)) return json({ error: 'Only the Super Admins can change this.' }, 403);
     await setPortalSetting(db, 'former_page', b.on ? '1' : '0', admin.name);
     await logProfile(db, admin, 'squad_former_page', `${admin.name} switched the public Former Players & Legends page ${b.on ? 'on' : 'off'}`);
+    r = { ok: true };
+  } else if (b.action === 'staff_age') {
+    if (!superOnly(admin)) return json({ error: 'Only the Super Admins can change this.' }, 403);
+    await setPortalSetting(db, 'staff_age_public', b.on ? '1' : '0', admin.name);
+    await logProfile(db, admin, 'squad_staff_age', `${admin.name} ${b.on ? 'showed' : 'hid'} coaches' ages on the website`);
     r = { ok: true };
   } else if (b.action === 'restore_version') {
     if (!superOnly(admin)) return json({ error: 'Only Super Admins can restore an earlier version.' }, 403);

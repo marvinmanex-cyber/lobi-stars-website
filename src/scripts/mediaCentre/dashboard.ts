@@ -14,6 +14,7 @@ register({ path: '', label: 'Dashboard', icon: '🏠', async render(main) {
       ${box('Returned to me', d.returned, 'Nothing returned. 👍', d.returned.length ? '<p class="mc-small mc-muted">A Super Admin sent these back with a comment. Make the changes and send again.</p>' : '')}
       ${box('Waiting for approval', d.waiting, 'Nothing waiting.')}
       ${box('My drafts', d.drafts, 'No drafts.')}
+      ${d.suggestions?.length ? box('Story suggestions (milestones)', d.suggestions, '', '<p class="mc-small mc-muted">Milestones from the match records (debut, first goal, 50 appearances…). Open one, write the story and send it for approval. Nothing is published automatically.</p>') : ''}
       <section class="mc-card"><h2 class="mc-h3">Upcoming deadlines</h2>${deadlines ? `<ul class="mc-list">${deadlines}</ul>` : '<p class="mc-empty">No deadlines.</p>'}</section>
     </div>
     <section class="mc-card" style="margin-top:14px"><h2 class="mc-h3">Recently published</h2>${d.published.length ? `<ul class="mc-list">${d.published.map((i: any) => `<li><div class="t"><b>${esc(i.title)}</b><small>${esc(i.kindLabel)} · ${i.status === 'scheduled' ? `scheduled for ${esc(when(i.scheduledAt))}` : esc(day(i.publishedAt))}</small></div>${statusPill(i)}</li>`).join('')}</ul>` : '<p class="mc-empty">Nothing published from the Media Centre yet.</p>'}</section>`;

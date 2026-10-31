@@ -424,10 +424,12 @@ export async function dashboard(db, user) {
   await ensureMediaSchema(db);
   const mine = (await db.prepare(`SELECT * FROM mc_items WHERE created_by = ? AND status IN ('draft', 'returned', 'submitted') OR (created_by = ? AND correction IS NOT NULL) ORDER BY updated_at DESC LIMIT 80`).bind(user.id, user.id).all()).results.map(r => itemView(r, { full: false }));
   const published = (await db.prepare(`SELECT * FROM mc_items WHERE status IN ('published', 'scheduled') ORDER BY COALESCE(published_at, scheduled_at) DESC LIMIT 12`).all()).results.map(r => itemView(r, { full: false }));
+  // Draft stories suggested automatically (squad milestones) for anyone in the team to write.
+  const suggestions = (await db.prepare(`SELECT * FROM mc_items WHERE created_by = 'system' AND status = 'draft' ORDER BY created_at DESC LIMIT 12`).all()).results.map(r => itemView(r, { full: false }));
   return {
     drafts: mine.filter(i => i.status === 'draft' || i.correction === 'draft'),
     waiting: mine.filter(i => i.status === 'submitted' || i.correction === 'submitted'),
     returned: mine.filter(i => i.status === 'returned' || i.correction === 'returned'),
-    published,
+    published, suggestions,
   };
 }

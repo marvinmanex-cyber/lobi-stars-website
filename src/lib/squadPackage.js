@@ -13,11 +13,15 @@
 // 1.3 (31 Oct 2026): status "on_loan" and "former" (people who left stay in the feed so
 // the partner can still find them by name); "leaving" { reason, date, newClub } and
 // "loan" { club, start, until } (empty strings when not relevant).
+// 1.4 (31 Oct 2026): "availability" ("Available" / "Unavailable" / "", never a medical
+// reason); players: "milestones" [{ key, label, date }] (verified, from the official
+// match records) and "upcomingMilestones" [{ key, label }] (e.g. "1 goal away from 10
+// for the club": for the media partner, not shown on the website).
 import { ageOn, isAdult, nameOf, profileName, groupOf } from './squadFields.js';
 import { officialName, shortName } from './names.js';
 import { countryName } from './countries.js';
 
-export const SCHEMA_VERSION = '1.3';
+export const SCHEMA_VERSION = '1.4';
 // LIVE is "verified" (approved and on the website), ON_LOAN "on_loan", FORMER "former".
 const STATUS = { LIVE: 'verified', ON_LOAN: 'on_loan', PENDING_APPROVAL: 'submitted', FORMER: 'former', CHANGES_REQUESTED: 'submitted', DRAFT: 'draft',
   VERIFIED: 'verified', SUBMITTED: 'submitted', LEFT_THE_CLUB: 'former' };
@@ -46,6 +50,7 @@ function personJson(p, files) {
     bio: { headline: s(d.bioHeadline), text: s(d.bio) },
     leaving: { reason: s(p.leave?.reason === 'Other' ? p.leave?.reasonOther || 'Other' : p.leave?.reason), date: s(p.leave?.date), newClub: s(p.leave?.newClub) },
     loan: { club: s(p.loan?.club), start: s(p.loan?.start), until: s(p.loan?.until) },
+    availability: ['Available', 'Unavailable'].includes(d.availability) ? d.availability : '',
   };
 }
 export function playerJson(p, files) {
@@ -59,6 +64,8 @@ export function playerJson(p, files) {
     // Only once the club has checked the evidence (intlVerified).
     internationalCareer: (d.intlVerified ? d.internationalCareer || [] : []).map(r => ({ level: s(r.level), caps: n(r.caps), goals: n(r.goals), tournaments: s(r.tournaments) })),
     notes: { careerHighlight: s(d.careerHighlight), interestingFact: s(d.interestingFact) },
+    milestones: (p.milestones || []).map(m => ({ key: s(m.key), label: s(m.label), date: s(m.date ? String(m.date).slice(0, 10) : '') })),
+    upcomingMilestones: (p.upcoming || []).map(m => ({ key: s(m.key), label: s(m.label) })),
     photos: { profile: files.photo(p, 'profile'), action: p.hasAction ? files.photo(p, 'action') : null, hero: p.hasHero ? files.photo(p, 'hero') : null },
   };
 }
@@ -103,10 +110,11 @@ const common = {
   bio: obj({ headline: str, text: { type: 'string', maxLength: 5000 } }),
   leaving: obj({ reason: str, date: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' }, newClub: str }),
   loan: obj({ club: str, start: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' }, until: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' } }),
+  availability: { enum: ['Available', 'Unavailable', ''] },
 };
 const COMMON_REQ = Object.keys(common);
 export const SCHEMA = {
-  $schema: 'https://json-schema.org/draft/2020-12/schema', $id: 'https://lobistarsfc.com/schemas/squad-data-package-1.3.json',
+  $schema: 'https://json-schema.org/draft/2020-12/schema', $id: 'https://lobistarsfc.com/schemas/squad-data-package-1.4.json',
   title: 'Lobi Stars FC – Media Partner Data Package (data.json)', type: 'object', additionalProperties: false,
   required: ['schemaVersion', 'exportedAt', 'source', 'season', 'filters', 'team', 'players', 'staff'],
   properties: {
@@ -119,6 +127,8 @@ export const SCHEMA = {
       previousClubs: { type: 'array', items: obj({ club: str, country: cty, startYear: intN, endYear: intN }) },
       internationalCareer: { type: 'array', items: obj({ level: str, caps: intN, goals: intN, tournaments: str }) },
       notes: obj({ careerHighlight: { type: 'string', maxLength: 300 }, interestingFact: { type: 'string', maxLength: 300 } }),
+      milestones: { type: 'array', items: obj({ key: str, label: str, date: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' } }) },
+      upcomingMilestones: { type: 'array', items: obj({ key: str, label: str }) },
       photos: obj({ profile: strN, action: strN, hero: strN }) }) },
     staff: { type: 'array', items: obj({ ...common, role: str, licence: str, playingCareer: str,
       previousRoles: { type: 'array', items: obj({ club: str, position: str, period: str }) },

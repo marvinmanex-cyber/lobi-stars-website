@@ -22,3 +22,27 @@ const staff = await squadStaff();
 
   <div class="page-content wrap sq" data-squad-root set:html={renderList({ players, staff, season: CURRENT_SEASON })} />
 </Layout>
+<script>
+  // Tabs (All / Goalkeepers / … / Coaching Staff) and this season's highlights on the cards ("5 goals", "2× MOTM").
+  const root = document.querySelector<HTMLElement>('[data-squad-root]');
+  const tabs = [...(root?.querySelectorAll<HTMLButtonElement>('[data-sq-tab]') || [])];
+  const show = (id: string) => {
+    tabs.forEach(t => t.setAttribute('aria-selected', String(t.dataset.sqTab === id)));
+    root!.querySelectorAll<HTMLElement>('.sq-group').forEach(g => { g.hidden = !!id && g.getAttribute('aria-labelledby') !== id; });
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => show(t.dataset.sqTab!));
+    t.addEventListener('keydown', e => { const k = e.key, j = k === 'ArrowRight' ? (i + 1) % tabs.length : k === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length : -1; if (j >= 0) { e.preventDefault(); tabs[j].focus(); show(tabs[j].dataset.sqTab!); } });
+  });
+  if (root && root.querySelector('.sq-grid')) fetch('/api/squad/highlights').then(r => r.json()).then(d => {
+    root.querySelectorAll<HTMLAnchorElement>('a.sc[href^="/squad/"]').forEach(a => {
+      const slug = a.getAttribute('href')!.replace(/^\/squad\/|\/$/g, ''), h = d.players?.[slug];
+      if (!h) return;
+      const badges = [h.goals ? `${h.goals} goal${h.goals === 1 ? '' : 's'}` : '', h.cleanSheets ? `${h.cleanSheets} clean sheet${h.cleanSheets === 1 ? '' : 's'}` : '', h.motm ? `${h.motm > 1 ? `${h.motm}× ` : ''}MOTM` : ''].filter(Boolean);
+      if (!badges.length) return;
+      const box = document.createElement('span'); box.className = 'sc-badges';
+      for (const b of badges) { const s = document.createElement('span'); s.textContent = b; box.append(s); }
+      a.querySelector('.sc-body')?.append(box);
+    });
+  }).catch(() => {});
+</script>

@@ -3619,33 +3619,75 @@ budget (Settings › AI Settings, "Squad bios").
 
 ### The public Squad pages
 
-- **/squad** "First Team Squad" with the season: Goalkeepers, Defenders,
-  Midfielders, Forwards (by shirt number) and Coaching Staff (Head Coach
-  first). Each card: photo on club red, big shirt number, first name small
-  above the surname, position. 4 cards a row on computers, 3 on tablets, 2 on
-  phones.
-- **Player page** /squad/firstname-surname/ (a number is added if two people
-  share a name): wide header or photo, big shirt number, quick facts
-  (nationality with flag, position, age), "Buy [Surname]'s shirt" (if a link
-  is set; otherwise, when shirt personalisation is switched on in the shop,
-  it opens the personalisation with the SURNAME in capitals and the shirt
-  number filled in), bio, interesting fact, details (official name "SURNAME,
-  First name", nickname, nationality, national team, place of birth, state of
-  origin, hometown, position and other positions, date of birth
-  "24 April, 2007 (age 19)" for 18+, height "1.78m (5ft 10in)", debut,
-  joined), tabs: **2026/27** (appearances, starts, goals, assists, clean
-  sheets for goalkeepers, minutes, cards, Man of the Match, worked out from
-  Live Match Control), **Before Lobi Stars** (previous clubs) and
-  **International career** (hidden if empty), social links, other players,
-  Share.
-- **Coach page** /squad/staff/firstname-surname/: the same, with the role
-  instead of position, no shirt number, Career (previous clubs and roles, and
-  their playing career) and Honours tabs and "An
-  interesting fact about the coach".
-- Ages are worked out from the date of birth (Lagos time) every time the page
-  opens. Each page has its own title, description (from the bio), share image
-  (photo with name and number) and search-engine details, and is in the
-  sitemap.
+**/squad: "First Team Squad".**
+- **Tabs:** All, Goalkeepers, Defenders, Midfielders, Forwards and Coaching
+  Staff (only the groups that have people). The groups are Goalkeepers,
+  Defenders, Midfielders and Forwards (by shirt number), then Coaching Staff
+  (in the Squad: Roles order), then Out on Loan.
+- **Cards:** photo on club red, big shirt number, name and position. Small
+  **badges** show this season's highlights from the match records: "5
+  goals", "2× MOTM", or clean sheets for goalkeepers.
+- **Layout:** 2 cards a row on phones, 3 on tablets, 4 on computers.
+- **No profiles yet:** the page says "The squad for the [season] season will
+  be announced soon."
+
+**Player page** (/squad/firstname-surname/):
+- **The top:** photo header, shirt number, name, position and the "Buy
+  [Surname]'s shirt" button.
+- **Below it:** the bio, then the **details** (official name, nickname,
+  nationality, national team, place of birth, state of origin, positions, age
+  or date of birth for 18+, height, preferred foot, debut, joined).
+- **Then the tabs:**
+  - **This season** (2026/27): appearances, starts, goals, assists, clean
+    sheets for goalkeepers, minutes, cards, Man of the Match.
+  - **Lobi Stars career:** career totals (including appearances as
+    substitute), debut and first goal (date and opponent), **shirt numbers
+    by season** ("#19 in 2025/26, #9 in 2026/27"), and a **season-by-season
+    table**.
+  - **Awards & honours:** Man of the Match wins (fan vote), Goal / Player of
+    the Month and Player of the Season (closed fan votes), plus the honours
+    from the profile.
+  - **Milestones:** debut, first goal, first assist, first clean sheet,
+    25/50/100/150/200 appearances, 5/10/25/50/100 goals, first Man of the
+    Match, first award, hat-tricks, 10th goal of a season.
+  - **Before Lobi Stars** (previous clubs) and **International career**.
+- **The rest:** latest news tagged with the player, social links, the
+  previous and next player, and other players.
+- **Where the numbers come from:** every figure comes from the official match
+  records (Live Match Control, the Man of the Match vote and the award
+  votes). A corrected result or stat updates everything automatically. The
+  page says "Stats updated automatically from official match records".
+
+**Coach page** (/squad/staff/…):
+- photo, name, role, nationality, joined, licence, career and playing career,
+  and honours;
+- for the **Head Coach and Assistant Coach**, a **Record at Lobi Stars** tab:
+  matches, wins, draws, losses, goals for and against, from the results since
+  they joined.
+
+Club staff (not coaching) have no public page.
+
+**What is not on the website** (31 Oct 2026):
+- **Media only:** **hometown and LGA**, the **interesting fact**, career
+  highlight, philosophy and **availability**. These go to the media team and
+  the media partner's Data Package, not the website.
+- **Private:** legal name, date of birth for under-18s, phone, email,
+  emergency and guardian details.
+- **Coaches' and staff ages** are hidden unless a Super Admin ticks "Show
+  coaches' and staff ages on the website" (Squad: Profile Submissions).
+
+**Milestone story suggestions:**
+- When a player reaches a milestone (checked every 10 minutes), a **draft
+  story suggestion** appears in the **Media Centre** (Latest News, and
+  "Story suggestions" on the home page), e.g. "Musa Adeyemi reaches 50
+  appearances for Lobi Stars". The media team writes the story and sends it
+  for approval. Nothing is published automatically.
+- **Upcoming milestones** ("1 goal away from 10 for the club") are only in
+  the media partner's feed.
+
+**Search engines:** each page has its own title, description (from the bio),
+share image and details, and is in the sitemap. Ages are worked out from
+the date of birth (Lagos time) each time the page opens.
 
 ### Exporting the data (Super Admins only)
 
@@ -3685,8 +3727,8 @@ but are not used anywhere.
 ## 39. Data Package format
 
 The Data Package is what the media partner's systems read. Its format is
-fixed: **schemaVersion "1.3"** (since 31 Oct 2026; 1.2 had no loans or
-former people; 1.0 had the name pronunciation and recordings, which were
+fixed: **schemaVersion "1.4"** (since 31 Oct 2026; 1.3 had no
+availability or milestones; 1.2 had no loans or former people; 1.0 had the name pronunciation and recordings, which were
 removed; 1.1 had the middle name for over-18s). Do not rename files inside
 the ZIP.
 
@@ -3702,7 +3744,7 @@ the ZIP.
 | `schema.json` | The formal description (JSON Schema) of data.json. |
 | `README.txt` | What is inside, when and by whom it was made. |
 
-**data.json, top level:** `schemaVersion` ("1.3"), `exportedAt` (Lagos time,
+**data.json, top level:** `schemaVersion` ("1.4"), `exportedAt` (Lagos time,
 e.g. 2026-10-22T11:42:00+01:00), `source` ("lobistarsfc.com"), `season`,
 `filters`, `team`, `players`, `staff`.
 
@@ -3719,13 +3761,18 @@ e.g. 2026-10-22T11:42:00+01:00), `source` ("lobistarsfc.com"), `season`,
   `joinedClub`, `honours` (`title`, `seasonOrYear`, `clubOrTeam`), `bio`
   (`headline`, `text`), `leaving` (`reason`, `date`, `newClub`: filled in
   for former people) and `loan` (`club`, `start`, `until`: filled in when on
-  loan); empty strings otherwise.
+  loan); empty strings otherwise; `availability` ("Available",
+  "Unavailable" or empty; never a medical reason).
 - **players** (by position group, position, then shirt number), also:
   `shirtNumber`, `positionGroup` (Goalkeeper, Defender, Midfielder, Forward),
   `primaryPosition`, `secondaryPositions`, `preferredFoot`, `heightCm`,
   `debut`, `nationalTeam`, `previousClubs` (`club`, `country`, `startYear`,
   `endYear`), `internationalCareer` (`level`, `caps`, `goals`,
-  `tournaments`), `notes` (`careerHighlight`, `interestingFact`), `photos` (`profile`, `action`, `hero`).
+  `tournaments`), `notes` (`careerHighlight`, `interestingFact`),
+  `milestones` (`key`, `label`, `date`: verified, from the official match
+  records), `upcomingMilestones` (`key`, `label`, e.g. "1 goal away from 10
+  for the club": for the partner only), `photos` (`profile`, `action`,
+  `hero`).
 - **staff** (by role), also: `role`, `licence`, `playingCareer`,
   `previousRoles` (`club`, `position`, `period`), `notes` (`philosophy`,
   `careerHighlight`, `interestingFact`), `photos` (`profile`, `hero`).

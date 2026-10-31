@@ -124,16 +124,16 @@ test('duplicate person: surname + first name + date of birth, capitals ignored',
 test('versions: each approval is a live version; an earlier one can be restored (through approval); an edit can be discarded', async () => {
   const v = (await rev(null, `?versions=${minor}`)).data.versions;
   assert.equal(v.length, 1); assert.equal(v[0].n, 1);
-  await rev({ action: 'edit', id: minor, changes: { interestingFact: 'Version two fact.' } });
+  await rev({ action: 'edit', id: minor, changes: { bio: 'Version two bio.' } });
   assert.equal((await rev({ action: 'approve', id: minor })).data.n, 2);
   assert.equal((await rev(null, `?versions=${minor}`)).data.versions.length, 2);
   assert.equal((await rev({ action: 'restore_version', id: minor, n: 1 })).status, 200);
   const p = (await rev(null, `?id=${minor}`)).data.profile;
-  assert.equal(p.status, 'LIVE'); assert.equal(p.pending, 'PENDING_APPROVAL'); assert.equal(p.data.interestingFact, undefined);
-  assert.equal((await fetch(`${BASE}/api/squad/public`).then(x => x.json())).players.find(x => x.id === minor).interestingFact, 'Version two fact.', 'the website keeps version 2 until approved');
+  assert.equal(p.status, 'LIVE'); assert.equal(p.pending, 'PENDING_APPROVAL'); assert.notEqual(p.data.bio, 'Version two bio.');
+  assert.equal((await fetch(`${BASE}/api/squad/public`).then(x => x.json())).players.find(x => x.id === minor).bio, 'Version two bio.', 'the website keeps version 2 until approved');
   assert.equal((await rev({ action: 'discard', id: minor })).status, 200);
   const d = (await rev(null, `?id=${minor}`)).data.profile;
-  assert.equal(d.pending, null); assert.equal(d.data.interestingFact, 'Version two fact.', 'back to the live version');
+  assert.equal(d.pending, null); assert.equal(d.data.bio, 'Version two bio.', 'back to the live version');
 });
 
 test('Super Admin edit: club-only fields, duplicate shirt number warning, hide from the website', async () => {
@@ -208,7 +208,7 @@ test('website feed: "First Surname"; middle name never; full date of birth only 
 
 test(`partner feed: schemaVersion ${SCHEMA_VERSION}: first name and surname, no middle name, pronunciation null`, async () => {
   const doc = await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: `Bearer ${KEY}` } }).then(x => x.json());
-  assert.equal(doc.schemaVersion, '1.3'); assert.deepEqual(validatePackage(doc), []);
+  assert.equal(doc.schemaVersion, '1.4'); assert.deepEqual(validatePackage(doc), []);
   const a = doc.players.find(x => x.id === adult);
   assert.equal(a.firstName, 'Chidi'); assert.equal(a.surname, SUR); assert.equal(a.displayName, `Chidi ${SUR}`); assert.equal(a.officialName, `${SUR.toUpperCase()}, Chidi`); assert.equal(a.nationality.name, 'Nigeria'); assert.equal(a.previousClubs[0].country.code, 'NG');
   assert.equal(a.pronunciation, null); assert.equal(a.pronunciationAudio, null);
@@ -267,14 +267,14 @@ test('built pages: squad list sections, player and coach profiles (no number for
   const pl = readFileSync(new URL(`squad/chidi-${SUR.toLowerCase()}/index.html`, dist), 'utf8');
   assert.match(pl, new RegExp(`<title>Chidi ${SUR} \\| Lobi Stars FC</title>`));
   assert.match(pl, new RegExp(`${SUR.toUpperCase()}, Chidi<`)); assert.ok(!pl.includes('Emeka'), 'middle name never on the page'); assert.match(pl, /14 March, 1998/); assert.match(pl, /1\.86m \(6ft 1in\)/); assert.match(pl, /17 August, 2025/);
-  assert.match(pl, /Buy [A-Za-z]+'s shirt/); assert.match(pl, /alt="Nigeria flag"/); assert.match(pl, /An interesting fact/); assert.match(pl, /Before Lobi Stars/); assert.match(pl, /International career/);
+  assert.match(pl, /Buy [A-Za-z]+'s shirt/); assert.match(pl, /alt="Nigeria flag"/); assert.ok(!/An interesting fact/.test(pl), 'interesting fact is media only'); assert.match(pl, /Lobi Stars career/); assert.match(pl, /Awards &amp; honours/); assert.match(pl, /Milestones/); assert.match(pl, /Before Lobi Stars/); assert.match(pl, /International career/);
   assert.match(pl, /"@type":"Person"/); assert.match(pl, /"memberOf":\{"@type":"SportsTeam","name":"Lobi Stars FC"/);
   for (const secret of ['+2348035551111', 'Mama Test']) assert.ok(!pl.includes(secret));
   const kid = readFileSync(new URL(`squad/tunde-${KID.toLowerCase()}/index.html`, dist), 'utf8');
   assert.ok(!kid.includes('2011') && !kid.includes('Secret'), 'no date of birth or middle name for an under-18');
   assert.match(kid, /Yet to debut/);
   const co = readFileSync(new URL(`squad/staff/terver-${COACH.toLowerCase()}/index.html`, dist), 'utf8');
-  assert.ok(!co.includes('class="pf-num"'), 'no shirt number for a coach'); assert.match(co, /An interesting fact about the coach/); assert.match(co, /Kano Pillars/); assert.ok(!co.includes('Hidden'));
+  assert.ok(!co.includes('class="pf-num"'), 'no shirt number for a coach'); assert.ok(!/An interesting fact/.test(co), 'media only'); assert.match(co, /Record at Lobi Stars/); assert.match(co, /Kano Pillars/); assert.ok(!co.includes('Hidden'));
   // Club staff (here a Kit Manager) have no public page since Phase 3 (23 Oct 2026): only coaching roles are on the Squad page.
   assert.ok(!existsSync(new URL(`squad/staff/ada-kit${T}/index.html`, dist)), 'no page for club staff');
   assert.match(readFileSync(new URL('_redirects', dist), 'utf8'), new RegExp(`/squad/chidiebere-${SUR.toLowerCase()}/ /squad/chidi-${SUR.toLowerCase()}/ 301`), 'old address redirects');

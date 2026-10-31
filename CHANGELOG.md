@@ -8,6 +8,41 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-31: Squad pages: tabs, careers, awards, milestones (Approved live squad, phases 5 and 6)
+
+**What changed**
+- **/squad:**
+  - tabs (All, Goalkeepers, Defenders, Midfielders, Forwards, Coaching
+    Staff);
+  - this season's highlight badges on the cards ("5 goals", "2× MOTM", clean
+    sheets).
+- **Player pages:** new tabs:
+  - **Lobi Stars career:** totals, debut, first goal, shirt numbers by
+    season, a season-by-season table;
+  - **Awards & honours:** Man of the Match and the monthly and season
+    awards, added automatically;
+  - **Milestones:** debut, first goal, 50 appearances, hat-tricks and more.
+  - Everything comes from the official match records and updates itself
+    when a result or stat is corrected: "Stats updated automatically from
+    official match records".
+- **Coach pages:** the Head Coach and Assistant Coach have a **Record at
+  Lobi Stars** (matches, wins, draws, losses).
+- **New milestones** become **draft story suggestions** in the Media Centre
+  for the media team to write (never published automatically).
+- **Partner Data Package 1.4:** verified milestones, upcoming milestones (for
+  the partner only) and availability.
+- **What the website shows (brief's data rules):**
+  - Hometown/LGA and the interesting fact are now **media only** (the media
+    team and partner, not the website);
+  - a new media-only **Availability** question (Available / Unavailable;
+    never a medical reason);
+  - coaches' and staff ages are hidden unless a Super Admin switches them on.
+
+**Staff:** see STAFF-GUIDE section 38 "The public Squad pages". **Partner:**
+the format is now schemaVersion 1.4 (section 39).
+
+---
+
 ## 2026-10-31: Media Centre: fixes from the QA audit
 
 **What changed**

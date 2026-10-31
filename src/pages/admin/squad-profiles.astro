@@ -76,6 +76,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <h2>Former Players &amp; Legends page</h2>
       <p class="muted">A public page at /squad/former/ with each former player's and staff member's photo, position, years at the club, appearances and goals. Off by default; when off, a former player's old address goes to /squad/.</p>
       <label class="sq-l" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="formerPage" /> Show the Former Players &amp; Legends page</label>
+      <label class="sq-l" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="staffAge" /> Show coaches' and staff ages on the website (off by default)</label>
       <h2>Team details (Data Package)</h2>
       <form class="sq-team" id="team">
         <label class="sq-l">Name <input name="name" /></label><label class="sq-l">Short name <input name="shortName" /></label><label class="sq-l">Nickname <input name="nickname" /></label>
@@ -192,7 +193,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <td>${p.type === 'player' ? `${p.shirtNumber ?? '–'} · ${esc(p.position || '')}` : esc(p.role || '')}</td><td><span class="st ${stKey(p)}">${esc(p.statusLabel)}</span>${p.liveN ? `<br /><small class="muted">live version ${p.liveN}</small>` : ''}</td>
         <td>${esc(when(p.updatedAt))}<br /><small>${esc(p.updatedBy || '')}</small></td><td><button class="btn-o" type="button" data-open="${p.id}">Open</button></td></tr>`).join('') : '<tr><td colspan="7" class="muted">Nothing here.</td></tr>';
       $('fullBox').hidden = !D.canFull; $('superBox').hidden = !D.canSuper;
-      $('formerPage').checked = !!D.formerPage;
+      $('formerPage').checked = !!D.formerPage; $('staffAge').checked = !!D.staffAge;
       $('deletedBox').hidden = !(D.canSuper && D.deleted?.length);
       $('deletedRows').innerHTML = (D.deleted || []).map((x: any) => `<tr><td><b>${esc(x.name)}</b><br /><small class="muted">${x.type === 'player' ? 'Player' : 'Coach / staff'}</small></td><td>${esc(x.season)}</td><td>${esc(when(x.deletedAt))}<br /><small class="muted">${esc(x.deletedBy || '')}</small></td><td>${esc(x.eraseOn)}</td><td><button class="btn-o" type="button" data-undelete="${esc(x.id)}">Restore</button></td></tr>`).join('');
       $('exportBox').hidden = !D.canExport; $('exLogBox').hidden = !D.canExport;
@@ -394,6 +395,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const b = (e.target as HTMLElement).closest('[data-undelete]') as HTMLElement | null; if (!b) return;
     if (!confirm('Bring this profile back?')) return;
     try { const r = await api('', { action: 'restore_deleted', id: b.dataset.undelete }); msg(`Restored (${r.status === 'LIVE' ? 'live again' : 'as a draft'}).`); load(); } catch (err: any) { msg(err.message, false); }
+  });
+  $('staffAge').addEventListener('change', async () => {
+    try { await api('', { action: 'staff_age', on: $('staffAge').checked }); msg($('staffAge').checked ? "Coaches' ages now show on the website." : "Coaches' ages are hidden on the website."); } catch (err: any) { msg(err.message, false); }
   });
   $('formerPage').addEventListener('change', async () => {
     try { await api('', { action: 'former_page', on: $('formerPage').checked }); msg($('formerPage').checked ? 'The Former Players & Legends page is on (/squad/former/).' : 'The Former Players & Legends page is off.'); } catch (err: any) { msg(err.message, false); }

@@ -3,12 +3,14 @@
 //  - Lobi Stars Weekly reminders: Monday (from 09:00 Lagos) to the media team
 //    if this week's newsletter has not been started; Tuesday evening (after
 //    the deadline) to the Super Admins if one is waiting for approval. Each
-//    reminder goes once a week (remembered in mc_settings).
+//    reminder goes once a week (remembered in mc_settings);
+//  - squad milestones (every 10 minutes): new ones become draft story suggestions (squadMilestones.js).
 import { publishDue } from './mediaApprovals.js';
 import { ensureMediaSchema, mcSettings, setMcSetting, mcLog, SYSTEM } from './mediaCentre.js';
 import { weekStart, nextWeekly } from './mediaDeadlines.js';
 import { sendEmail } from './email.js';
 import { superAdminEmails } from './superAdmins.js';
+import { detectMilestones } from './squadMilestones.js';
 
 const LAGOS = 3600e3;
 const SITE = 'https://lobistarsfc.com';
@@ -50,5 +52,6 @@ export async function newsletterReminders(env, now = Date.now()) {
 export async function mediaCentreTick(env, now = Date.now()) {
   const out = { scheduled: await publishDue(env) };
   try { Object.assign(out, await newsletterReminders(env, now)); } catch (e) { console.error('[media centre] reminders', e); out.reminderError = String(e?.message || e).slice(0, 200); }
+  try { out.milestones = await detectMilestones(env, { now }); } catch (e) { console.error('[squad] milestones', e); out.milestoneError = String(e?.message || e).slice(0, 200); }
   return out;
 }

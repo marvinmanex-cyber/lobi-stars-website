@@ -65,7 +65,8 @@ export const FIELDS = [
   { key: 'nationality2', section: 'personal', label: 'Second nationality', use: 'public', for: 'all', type: 'country', optional: true },
   { key: 'nationalityOther', section: 'personal', label: 'Nationality (old answer)', use: 'public', for: 'all', type: 'text', max: 40, retired: true },
   { key: 'stateOfOrigin', section: 'personal', label: 'State of origin', use: 'public', for: 'all', type: 'select', options: STATES },
-  { key: 'hometown', section: 'personal', label: 'Hometown and LGA', use: 'public', for: 'all', type: 'text', max: 80, placeholder: 'e.g. Gboko, Gboko LGA' },
+  // Media only since 31 Oct 2026 (club media team and the media partner; not on the website).
+  { key: 'hometown', section: 'personal', label: 'Hometown and LGA', use: 'media', for: 'all', type: 'text', max: 80, placeholder: 'e.g. Gboko, Gboko LGA' },
   { key: 'phone', section: 'personal', label: 'Phone number', use: 'private', for: 'all', required: true, type: 'tel', placeholder: '0803 123 4567' },
   { key: 'email', section: 'personal', label: 'Email address', use: 'private', for: 'all', type: 'email', max: 120 },
   { key: 'emergencyName', section: 'personal', label: 'Emergency contact name and relationship', use: 'private', for: 'all', required: true, type: 'text', max: 100, placeholder: 'e.g. Grace Adakole, mother' },
@@ -105,7 +106,9 @@ export const FIELDS = [
   { key: 'philosophy', section: 'notes', label: 'Coaching or working philosophy', use: 'media', for: 'staff', type: 'textarea', max: NOTE_MAX },
   { key: 'careerHighlight', section: 'notes', label: 'Career highlight', use: 'media', for: 'all', type: 'textarea', max: NOTE_MAX },
   { key: 'roleModel', section: 'notes', label: 'Football role model (old question)', use: 'media', for: 'player', type: 'textarea', max: NOTE_MAX, retired: true }, // removed 23 Oct 2026
-  { key: 'interestingFact', section: 'notes', label: { player: 'An interesting fact about the player', coach: 'An interesting fact about the coach', staff: 'An interesting fact about the staff member' }, use: 'public', for: 'all', type: 'textarea', max: NOTE_MAX },
+  { key: 'interestingFact', section: 'notes', label: { player: 'An interesting fact about the player', coach: 'An interesting fact about the coach', staff: 'An interesting fact about the staff member' }, use: 'media', for: 'all', type: 'textarea', max: NOTE_MAX },
+  // For the media team and partner: is the person available? Never a medical reason.
+  { key: 'availability', section: 'notes', label: 'Availability', use: 'media', for: 'all', type: 'select', options: ['Available', 'Unavailable'], optional: true, hint: 'Available or unavailable only: never write a medical reason.' },
   // The club only (review page): name on website, debut, bio, shirt link, show / hide.
   { key: 'websiteName', section: 'admin', label: 'Name on website', use: 'public', for: 'all', type: 'text', max: 60, admin: true, optional: true, hint: 'Only fill this if the player is publicly known by a different name, e.g. a nickname.' },
   { key: 'debutDate', section: 'admin', label: 'Lobi Stars debut', use: 'public', for: 'player', type: 'day', admin: true, optional: true, hint: 'Leave empty if they have not played yet ("Yet to debut").' },

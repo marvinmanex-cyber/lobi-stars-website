@@ -133,3 +133,13 @@
 .pf-news-list { list-style: none; margin: 0; padding: 0; }
 .pf-news-list li { padding: 8px 0; border-top: 1px solid rgba(127,127,127,.25); }
 .pf-news-list a { font-weight: 700; color: inherit; } .pf-news-list time { display: block; font-size: 13px; opacity: .75; }
+/* Lobi Stars career: debut, first goal and shirt numbers under the totals. */
+.pf-facts { list-style: none; margin: 14px 0; padding: 0; display: grid; gap: 6px; font-size: 16px; }
+.pf-facts li::before { content: '•'; color: var(--red, #C8102E); margin-right: 8px; }
+.pf-miles .pf-note { list-style: none; }
+/* Squad page tabs and this season's highlight badges on the cards. */
+.sq-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 28px; }
+.sq-tabs button { min-height: 40px; padding: 6px 16px; border-radius: 999px; border: 1.5px solid rgba(127,127,127,.35); background: transparent; color: inherit; font: 600 15px 'Barlow', sans-serif; cursor: pointer; }
+.sq-tabs button[aria-selected="true"] { background: var(--red, #C8102E); border-color: var(--red, #C8102E); color: #fff; }
+.sc-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.sc-badges span { font: 700 11px/1 'Barlow', sans-serif; letter-spacing: .02em; padding: 4px 7px; border-radius: 999px; background: rgba(200,16,46,.14); color: var(--red, #C8102E); }

@@ -112,7 +112,7 @@ test('left the club: FORMER, off /squad, address 301s, in the partner feed as "f
   assert.equal(one.profile.status, 'FORMER'); assert.equal(one.profile.leave.newClub, 'Enyimba FC');
   assert.match(one.eraseOn, /^20\d\d-\d\d-\d\d$/, 'Super Admins see when private details will be erased');
   const doc = await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: `Bearer ${KEY}` } }).then(x => x.json());
-  assert.equal(doc.schemaVersion, SCHEMA_VERSION); assert.equal(SCHEMA_VERSION, '1.3'); assert.deepEqual(validatePackage(doc), []);
+  assert.equal(doc.schemaVersion, SCHEMA_VERSION); assert.equal(SCHEMA_VERSION, '1.4'); assert.deepEqual(validatePackage(doc), []);
   const x = doc.players.find(p => p.id === leaver);
   assert.ok(x, 'still in the partner feed'); assert.equal(x.status, 'former'); assert.equal(x.leaving.reason, 'Transfer'); assert.equal(x.leaving.newClub, 'Enyimba FC');
   // The forgiving search finds former people too (portal and admin).

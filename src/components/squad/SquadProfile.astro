@@ -54,6 +54,36 @@ const isPlayer = p.kind === 'player';
     pick(tabs[0]);
   });
 
+  // Lobi Stars career, awards and milestones (players) or the record in the role (coaches), from /api/squad/career.
+  const esc = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const day = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' });
+  const art = document.querySelector<HTMLElement>('article.pf');
+  if (art?.dataset.career) fetch(`/api/squad/career?player=${encodeURIComponent(art.dataset.career)}`).then(r => r.json()).then(d => {
+    const lobi = document.querySelector<HTMLElement>('[data-lobi]');
+    if (lobi) {
+      const t = d.total, gk = (d.seasons || []).some((s: any) => s.cleanSheets);
+      const facts = [d.debut && `Debut: ${day(d.debut.date)}, ${d.debut.match}`, d.firstGoal && `First goal: ${day(d.firstGoal.date)}, ${d.firstGoal.match}`,
+        d.shirts?.length && `Shirt number: ${d.shirts.map((x: any) => `#${x.number} in ${x.season}`).join(', ')}`].filter(Boolean);
+      lobi.innerHTML = !t || !t.apps && !d.shirts?.length ? '<p class="pf-note">No appearances for Lobi Stars yet.</p>'
+        : `${t && t.apps ? `<ul class="pf-stats">${[['apps', 'Appearances'], ['starts', 'Starts'], ['subs', 'As substitute'], ['goals', 'Goals'], ['assists', 'Assists'], ...(gk ? [['cleanSheets', 'Clean sheets']] : []), ['minutes', 'Minutes'], ['motm', 'Man of the Match']].map(([k, l]) => `<li><span class="pf-stat-v">${esc(t[k])}</span><span class="pf-stat-k">${l}</span></li>`).join('')}</ul>` : ''}
+          ${facts.length ? `<ul class="pf-facts">${facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}
+          ${d.seasons?.length ? `<div class="pf-tablewrap"><table class="pf-table"><caption class="sr-only">Season by season</caption><thead><tr><th scope="col">Season</th><th scope="col">Apps</th><th scope="col">Starts</th><th scope="col">Sub</th><th scope="col">Mins</th><th scope="col">Goals</th><th scope="col">Assists</th>${gk ? '<th scope="col">Clean sheets</th>' : ''}<th scope="col">Yellow</th><th scope="col">Red</th><th scope="col">MOTM</th></tr></thead><tbody>${d.seasons.map((s: any) => `<tr><th scope="row">${esc(s.season)}</th><td>${s.apps}</td><td>${s.starts}</td><td>${s.subs}</td><td>${s.minutes}</td><td>${s.goals}</td><td>${s.assists}</td>${gk ? `<td>${s.cleanSheets}</td>` : ''}<td>${s.yellow}</td><td>${s.red}</td><td>${s.motm}</td></tr>`).join('')}</tbody></table></div>` : ''}`;
+    }
+    const aw = document.querySelector<HTMLElement>('[data-awards]');
+    if (aw) {
+      aw.innerHTML = (d.awards || []).slice().reverse().map((a: any) => `<li><b>${esc(a.title)}</b><span> · ${esc(a.detail)}${a.date ? `, ${esc(day(a.date))}` : ''}</span></li>`).join('');
+      const empty = document.querySelector<HTMLElement>('[data-awards-empty]');
+      if (empty) empty.hidden = !!(d.awards?.length || aw.parentElement?.querySelectorAll('.pf-honours li').length);
+    }
+    const ms = document.querySelector<HTMLElement>('[data-miles]');
+    if (ms) ms.innerHTML = (d.milestones || []).length ? d.milestones.slice().reverse().map((m: any) => `<li><span class="pf-tl-years">${m.date ? esc(day(m.date)) : ''}</span><span class="pf-tl-club">${esc(m.label)}</span>${m.match ? `<span class="pf-tl-country">${esc(m.match)}</span>` : ''}</li>`).join('') : '<li class="pf-note">Milestones appear here automatically after matches (debut, first goal, 50 appearances and more).</li>';
+  }).catch(() => { const l = document.querySelector('[data-lobi]'); if (l) l.innerHTML = '<p class="pf-note">The career figures could not load. Please refresh the page.</p>'; });
+  if (art?.dataset.staff && document.querySelector('[data-record]')) fetch(`/api/squad/career?staff=${encodeURIComponent(art.dataset.staff)}`).then(r => r.json()).then(d => {
+    const box = document.querySelector<HTMLElement>('[data-record]')!, r = d.record;
+    box.innerHTML = !r || !r.matches ? '<p class="pf-note">No matches yet in this role.</p>'
+      : `<ul class="pf-stats">${[['matches', 'Matches'], ['wins', 'Wins'], ['draws', 'Draws'], ['losses', 'Losses'], ['goalsFor', 'Goals for'], ['goalsAgainst', 'Goals against']].map(([k, l]) => `<li><span class="pf-stat-v">${esc(r[k])}</span><span class="pf-stat-k">${l}</span></li>`).join('')}</ul>${d.since ? `<p class="pf-note">Since ${esc(day(d.since))}.</p>` : ''}`;
+  }).catch(() => {});
+
   // This season's numbers, worked out from the match records.
   const box = document.querySelector<HTMLElement>('[data-stats]');
   if (box) fetch(`/api/squad/stats?player=${encodeURIComponent(box.dataset.stats!)}`).then(r => r.json()).then(d => {

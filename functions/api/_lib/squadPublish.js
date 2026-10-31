@@ -12,6 +12,7 @@ import { officialName, shortName, nameSlug, partsFromName } from '../../../src/l
 import { ensureProfileSchema, getTeam, fileBase, parseJson, rowName, liveOf, slugFor } from './squadProfiles.js';
 import { getPortalSettings, setPortalSetting } from './squadPortal.js';
 import { roleMap } from './squadRoles.js';
+import { careerData, careerFor } from './squadCareer.js';
 
 const GROUP = { Goalkeeper: 'GK', Defender: 'DEF', Midfielder: 'MID', Forward: 'FWD' };
 
@@ -41,21 +42,23 @@ export const packageInput = r => {
 const livePhoto = (r, kind, variant = 'w1200.webp') => { const ph = parseJson(r.photos_json, {})[kind]; return ph ? `/api/squad/photo/${r.id}/${kind}/${variant}?v=${encodeURIComponent(ph.rev || ph.uploadedAt || '')}` : null; };
 
 /** One person as the website shows them (public fields only). photo(r, kind, variant) gives the photo addresses. */
-export function feedItem(r, slug, photo = livePhoto) {
+// staffAge: a coach's age and date of birth are shown only when a Super Admin switched it on (default off).
+export function feedItem(r, slug, photo = livePhoto, { staffAge = false } = {}) {
   const d = shareable(r.type, parseJson(r.data_json, {}), { media: false });
   // Before the name check (old single name): best-effort parts, so nothing disappears.
   const n = d.surname && d.firstName ? nameOf(d) : { ...partsFromName(profileName(parseJson(r.data_json, {}))), middleName: '', websiteName: d.websiteName || '' };
   const name = profileName({ ...n }) || rowName(r);
   const base = { id: r.id, slug, name, firstName: n.firstName, surname: n.surname, websiteName: d.websiteName || null,
     officialName: officialName(n), shortName: shortName(n), nickname: d.nickname || null, dob: d.dob || null, age: d.age,
-    nationality: d.nationality || null, nationality2: d.nationality2 || null, birthTown: d.birthTown || null, birthCountry: d.birthCountry || null, stateOfOrigin: d.stateOfOrigin, hometown: d.hometown,
-    socials: { instagram: d.socialInstagram || null, x: d.socialX || null, tiktok: d.socialTiktok || null }, honours: d.honours || [], interestingFact: d.interestingFact || null,
+    nationality: d.nationality || null, nationality2: d.nationality2 || null, birthTown: d.birthTown || null, birthCountry: d.birthCountry || null, stateOfOrigin: d.stateOfOrigin,
+    socials: { instagram: d.socialInstagram || null, x: d.socialX || null, tiktok: d.socialTiktok || null }, honours: d.honours || [],
     bioHeadline: d.bioHeadline || null, bio: d.bio || null, shirtShopUrl: d.shirtShopUrl || null,
     photo: photo(r, 'profile'), photoSmall: photo(r, 'profile', 'w400.webp'), heroPhoto: photo(r, 'hero', 'w2000.webp') || photo(r, 'hero'), updatedAt: r.updated_at,
     oldSlugs: parseJson(r.old_slugs, []).filter(x => x !== slug) };
   if (r.type === 'player') return { ...base, number: d.shirtNumber, positionGroup: d.positionGroup || null, group: GROUP[d.positionGroup] || 'MID', position: d.primaryPosition || null,
     secondaryPositions: d.secondaryPositions || [], preferredFoot: d.preferredFoot, heightCm: d.heightCm, joined: d.joined, debutDate: d.debutDate || null, nationalTeam: d.nationalTeam || null,
     previousClubs: d.previousClubs || [], internationalCareer: d.internationalCareer || [], actionPhoto: photo(r, 'action') };
+  if (!staffAge) { base.dob = null; base.age = null; }
   return { ...base, role: d.role === 'Other' ? d.roleOther || 'Staff' : d.role, joined: d.joinedStaff, licence: d.qualifications || null, playingCareer: d.playingCareer, previousRoles: d.previousRoles || [] };
 }
 
@@ -95,7 +98,7 @@ export async function publicSquad(env) {
       slugWrites.push(db.prepare(`UPDATE squad_profiles SET public_slug = ?, old_slugs = ? WHERE id = ?`).bind(f.slug, JSON.stringify(f.olds), r.id));
       r.old_slugs = JSON.stringify(f.olds);
     }
-    const item = feedItem(r, uniq(slug));
+    const item = feedItem(r, uniq(slug), livePhoto, { staffAge: settings.staff_age_public === '1' });
     let keep = item;
     if (r.type === 'staff') {
       // Only COACHING roles are on the Squad page (Squad › Roles); club staff and roles still waiting for approval are not.
@@ -181,7 +184,16 @@ export async function partnerFeed(env, origin, { since = null } = {}) {
   const seen = new Set(), former = [];
   // (a profile with no name left -- e.g. its details were erased -- can't be found by name, so it is left out)
   for (const r of await profilesFor(db, { since, statuses: ['FORMER'] })) { const k = r.person_id || r.id; if (!seen.has(k) && profileName(parseJson(r.data_json, {}))) { seen.add(k); former.push(r); } }
-  const rows = [...current, ...former].map(packageInput);
+  const raw = [...current, ...former], rows = raw.map(packageInput);
+  // Players' verified milestones and upcoming ones (from the official match records).
+  try {
+    const data = await careerData(db);
+    raw.forEach((r, i) => {
+      if (r.type !== 'player' || !r.public_slug) return;
+      const c = careerFor(data, [r.public_slug, ...parseJson(r.old_slugs, [])], { goalkeeper: parseJson(r.data_json, {}).positionGroup === 'Goalkeeper' });
+      rows[i].milestones = c.milestones; rows[i].upcoming = c.upcoming;
+    });
+  } catch (e) { console.error('[partner feed] milestones', e); }
   const links = new Map();
   for (const p of rows) {
     links.set(`${p.id}:profile`, p.hasPhoto ? await signedFileUrl(env, origin, p.id, 'profile', 'w1200.jpg') : null);
