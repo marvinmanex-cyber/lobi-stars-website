@@ -32,7 +32,7 @@ const people = [
 ];
 const messages = [
   { form: 'contact', subject: 'Season tickets', message: 'When do season tickets for the new season go on sale?' },
-  { form: 'contact', subject: 'Lost property', message: 'I left a blue cap in the Cover Stand at the last home match.' },
+  { form: 'contact', subject: 'Lost property', message: 'I left a blue cap in the Grandstand at the last home match.' },
   { form: 'contact', subject: 'Fan club in Abuja', message: 'We would like to register our supporters club in Abuja. Who should we speak to?' },
   { form: 'partnership', interest: 'Official Supplier', company: 'Demo Water Ltd', message: 'We supply bottled water and would like to talk about a partnership.' },
   { form: 'partnership', interest: 'Digital & Social Media Activation', company: 'Demo Media', message: 'Interested in a social media campaign this season.' },

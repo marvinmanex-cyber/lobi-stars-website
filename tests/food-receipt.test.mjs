@@ -73,7 +73,7 @@ test('the Live Order Board opens Notifications, Kitchen Screen and Orders list i
 
 test('the buyer\'s email is optional (card orders too); a wrong one is still refused', async () => {
   await admin('/api/admin/food-menu', 'POST', { action: 'ordering_mode', mode: 'open' });
-  const base = { name: 'No Email', seat: 'C14', stand: 'Cover Stand', phone: `0803${r7()}`, items: [{ id: 'suya', qty: 1 }] };
+  const base = { name: 'No Email', seat: 'C14', stand: 'Grandstand', phone: `0803${r7()}`, items: [{ id: 'suya', qty: 1 }] };
   const ok = await post('/api/food-checkout', base);
   assert.notEqual(ok.status, 400, JSON.stringify(ok.data));
   assert.ok(ok.data.ref, 'the order is created');

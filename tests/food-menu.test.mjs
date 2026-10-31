@@ -147,8 +147,8 @@ test('ordering closed: the public page says so and orders are refused; stands li
   const r = await checkout([{ id: 'water', qty: 1 }]);
   assert.equal(r.status, 409);
   assert.equal(r.data.code, 'closed');
-  await menuApi({ action: 'settings', settings: { orderingMode: 'open', autoOpenMinutes: 90, paymentExpiryMinutes: 15, minOrder: 0, stands: ['Cover Stand', 'VIP'] } });
-  assert.deepEqual((await pub()).stands, ['Cover Stand', 'VIP']);
+  await menuApi({ action: 'settings', settings: { orderingMode: 'open', autoOpenMinutes: 90, paymentExpiryMinutes: 15, minOrder: 0, stands: ['Grandstand', 'VIP'] } });
+  assert.deepEqual((await pub()).stands, ['Grandstand', 'VIP']);
   assert.equal((await checkout([{ id: 'water', qty: 1 }], { stand: 'Somewhere' })).status, 400);
   assert.equal((await checkout([{ id: 'water', qty: 1 }], { stand: 'VIP' })).status, 200);
   assert.equal((await menuApi({ action: 'settings', settings: { orderingMode: 'sometimes' } })).status, 400);

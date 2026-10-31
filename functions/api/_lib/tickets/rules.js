@@ -2,7 +2,7 @@
 // Cloudflare-only APIs) so Functions, pages and Node tests share them.
 
 export const TIERS = ['VIP', 'Premium', 'Regular'];
-export const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Cover Stand', Regular: 'Popular Stand' };
+export const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Grandstand', Regular: 'Popular Stand' };
 export const PRICE_COL = { VIP: 'vip_price_kobo', Premium: 'premium_price_kobo', Regular: 'regular_price_kobo' };
 export const CAP_COL = { VIP: 'vip_capacity', Premium: 'premium_capacity', Regular: 'regular_capacity' };
 export const DEFAULT_MAX_PER_ORDER = 10;

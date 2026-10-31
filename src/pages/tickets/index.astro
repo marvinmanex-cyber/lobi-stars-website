@@ -82,7 +82,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
           </div>
           <!-- The existing "Stand for all ticked" control (hidden; the stand cards drive it). -->
           <label class="tk-sr">Stand for all ticked
-            <select id="allTier" tabindex="-1"><option value="">Not chosen</option><option value="VIP">VIP Sitting</option><option value="Premium">Cover Stand</option><option value="Regular">Popular Stand</option></select>
+            <select id="allTier" tabindex="-1"><option value="">Not chosen</option><option value="VIP">VIP Sitting</option><option value="Premium">Grandstand</option><option value="Regular">Popular Stand</option></select>
           </label>
         </div>
 
@@ -431,9 +431,9 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   var svg = function (html) { var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = html; return s; };
   var TZ = 'Africa/Lagos';
   var STATE = { on_sale: '', sold_out: 'Sold out', not_on_sale: 'Not on sale yet', closed: 'Played or closed' };
-  var TIERS = [['VIP', 'VIP Sitting'], ['Premium', 'Cover Stand'], ['Regular', 'Popular Stand']];
+  var TIERS = [['VIP', 'VIP Sitting'], ['Premium', 'Grandstand'], ['Regular', 'Popular Stand']];
   // TODO (Marvin to confirm): stand descriptions. Neutral wording only; no perks the club has not confirmed.
-  var STAND_TEXT = { VIP: 'Seats in the VIP section.', Premium: 'Seats in the covered stand.', Regular: 'Seats in the Popular Stand.' };
+  var STAND_TEXT = { VIP: 'Seats in the VIP section.', Premium: 'Seats in the Grandstand.', Regular: 'Seats in the Popular Stand.' };
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var matches = [], rows = new Map(), season = null;
   var pre = new URLSearchParams(location.search).get('event');

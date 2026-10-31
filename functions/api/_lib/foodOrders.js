@@ -127,7 +127,7 @@ export const WA_TEMPLATES = {
   msgCancelled: "Hi {name}, sorry, your Lobi Stars FC food order {ref} has been cancelled. Please message us if you have any questions.",
 };
 export const FOOD_DEFAULTS = {
-  paymentExpiryMinutes: 15, orderingMode: 'open', autoOpenMinutes: 90, stands: ['Popular Stand', 'Cover Stand', 'VIP Seating'], minOrderKobo: 0,
+  paymentExpiryMinutes: 15, orderingMode: 'open', autoOpenMinutes: 90, stands: ['Popular Stand', 'Grandstand', 'VIP Seating'], minOrderKobo: 0,
   // Order on WhatsApp. The number is the club WhatsApp shown on the site.
   whatsappEnabled: true, whatsappNumber: '2347080094985', whatsappExpiryHours: 3, pickupPoints: [], bankDetails: '',
   ...WA_TEMPLATES,
