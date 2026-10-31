@@ -20,7 +20,9 @@ import Layout from '../../layouts/Layout.astro';
       <p class="ac-info" id="infoReq" hidden></p>
       <div class="ac-f"><label for="eventId">Match <span class="req">*</span></label><select id="eventId" name="eventId" required><option value="">Loading the home matches…</option></select><small id="evHint"></small></div>
       <div class="ac-two">
-        <div class="ac-f"><label for="email">Email <span class="req">*</span></label><input id="email" name="email" type="email" autocomplete="email" required /><small id="known"></small></div>
+        <div class="ac-f"><label for="email">Email <span class="req">*</span></label><input id="email" name="email" type="email" autocomplete="email" required /><small id="known"></small>
+          <div class="ac-code" id="codeBox"><button type="button" class="ac-link" id="askCode">Applied before? Email me a code to fill in my details</button>
+            <span id="codeRow" hidden><input id="code" inputmode="numeric" maxlength="6" placeholder="6-digit code" aria-label="Code from the email" /><button type="button" class="btn-o" id="useCode">Fill in</button></span></div></div>
         <div class="ac-f"><label for="fullName">Full name <span class="req">*</span></label><input id="fullName" name="fullName" autocomplete="name" maxlength="80" required /></div>
         <div class="ac-f"><label for="phone">Phone <span class="req">*</span></label><input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="24" required placeholder="e.g. 0803 123 4567" /></div>
         <div class="ac-f"><label for="organisation">Media organisation <span class="req">*</span></label><input id="organisation" name="organisation" maxlength="120" required placeholder="or Freelance" /></div>
@@ -58,12 +60,15 @@ import Layout from '../../layouts/Layout.astro';
   .ac-agree { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 16px; line-height: 1.5; } .ac-agree input { width: 20px; height: 20px; flex: none; margin-top: 3px; }
   .ac-info { padding: 12px 14px; border-left: 4px solid #EE343C; background: #FFF6F6; border-radius: 8px; }
   .ac-small { font-size: 13px; } .req { color: #C9242C; }
+  .ac-code { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; } .ac-link { background: none; border: 0; padding: 0; color: #1C3F7A; text-decoration: underline; font: inherit; font-size: 14px; cursor: pointer; text-align: left; }
+  .ac-code input { width: 130px !important; min-height: 40px !important; } .ac-code span { display: inline-flex; gap: 6px; }
 </style>
 <script>
   const $ = (id: string) => document.getElementById(id) as any;
   const q = new URLSearchParams(location.search);
   const msg = (t: string) => { const m = $('msg'); m.textContent = t; m.hidden = !t; if (t) m.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
   let photoBlob: Blob | null = null, img: ImageBitmap | null = null, zoom = 1, ox = 0, oy = 0;
+  let formTok = '';
   const update = q.get('update');
   (async () => {
     const d = await fetch(`/api/media/accreditation?${new URLSearchParams([...(q.get('match') ? [['match', q.get('match')!]] : []), ...(update ? [['update', update]] : [])])}`).then(r => r.json()).catch(() => null);
@@ -75,6 +80,8 @@ import Layout from '../../layouts/Layout.astro';
     const closed = d.matches.filter((m: any) => !m.open);
     if (closed.length) $('evHint').textContent = `Closed (less than ${d.closeHours} hours to kick-off): ${closed.map((m: any) => m.label).join(', ')}.`;
     if (d.selected) $('eventId').value = d.selected;
+    formTok = d.formToken || '';
+    if (d.invited?.email && !update) { $('email').value = d.invited.email; fillFrom(d.invited); }
     if (update) {
       if (!d.update) { msg('This link has already been used or is no longer valid.'); $('f').hidden = true; return; }
       const u = d.update;
@@ -85,17 +92,28 @@ import Layout from '../../layouts/Layout.astro';
     }
   })();
   // Returning journalists: details prefilled from the email address.
-  $('email').addEventListener('change', async () => {
-    if (update) return;
-    const e = $('email').value.trim(); if (!/^\S+@\S+\.\S+$/.test(e)) return;
-    const d = await fetch(`/api/media/accreditation/prefill?email=${encodeURIComponent(e)}`).then(r => r.json()).catch(() => ({ known: false }));
-    if (!d.known) { $('known').textContent = ''; $('photoOnFile').hidden = true; return; }
+  // Returning journalists: a code emailed to the address unlocks the saved details (never shown to anyone else).
+  function fillFrom(d: any) {
+    if (!d?.known) return;
     $('known').textContent = 'Welcome back: we filled in your details from your last request. Please check them.';
     if (!$('fullName').value) $('fullName').value = d.fullName || '';
     if (!$('organisation').value) $('organisation').value = d.organisation || '';
     if (d.role && !$('role').value) $('role').value = d.role;
     if (d.employment) (document.querySelector(`input[name=employment][value="${d.employment}"]`) as HTMLInputElement | null)?.click();
     $('photoOnFile').hidden = !d.hasPhoto;
+    $('codeBox').hidden = true;
+  }
+  const post = (body: any) => fetch('/api/media/accreditation/prefill', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(async r => ({ ok: r.ok, d: await r.json().catch(() => ({})) }));
+  $('askCode').addEventListener('click', async () => {
+    const e = $('email').value.trim(); if (!/^\S+@\S+\.\S+$/.test(e)) { msg('Enter your email address first.'); $('email').focus(); return; }
+    const r = await post({ email: e });
+    msg(''); $('known').textContent = r.ok ? r.d.message : (r.d.error || 'Could not send a code.');
+    if (r.ok) { $('codeRow').hidden = false; $('code').focus(); }
+  });
+  $('useCode').addEventListener('click', async () => {
+    const r = await post({ email: $('email').value.trim(), code: $('code').value.trim() });
+    if (!r.ok || !r.d.known) { $('known').textContent = r.d.error || 'We could not find saved details for this email.'; return; }
+    fillFrom(r.d);
   });
   // Passport photo: crop to 3:4 with drag and zoom, then a JPEG.
   const cv = $('cv') as HTMLCanvasElement, g = cv.getContext('2d')!;
@@ -143,6 +161,7 @@ import Layout from '../../layouts/Layout.astro';
     if (update) fd.set('update', update);
     if (q.get('invite')) fd.set('invite', q.get('invite')!);
     fd.set('agree', '1');
+    fd.set('formToken', formTok);
     $('send').disabled = true; $('send').textContent = 'Sending…';
     try {
       const r = await fetch('/api/media/accreditation', { method: 'POST', body: fd });

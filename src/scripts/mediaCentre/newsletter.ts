@@ -75,7 +75,7 @@ async function editor(main: HTMLElement, id: string) {
   main.innerHTML = `<div class="mc-page-head"><h1>Lobi Stars Weekly</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/newsletter/" data-go="/newsletter">← All newsletters</a></div>
     ${statusBanner(item, editable)}
     <div class="mc-ed">
-      <form class="mc-ed-form" id="f" onsubmit="return false">
+      <form class="mc-ed-form" id="f">
         <section class="mc-card mc-nl-sec"><h2 class="mc-h3">1 · Masthead <small class="mc-muted">automatic</small></h2><p class="mc-small mc-muted">The edition number and date are added automatically.</p></section>
         <label class="mc-check mc-card" style="margin:12px 0"><input type="checkbox" id="noMatch" ${d.noMatch ? 'checked' : ''} ${ro} /> <b>No match this week</b> (hides sections 3–5 and offers "Training & Preparation")</label>
         ${editable ? '<p><button class="mc-btn mc-btn-o mc-btn-sm" type="button" id="fillLast">Fill in the last result</button> <button class="mc-btn mc-btn-o mc-btn-sm" type="button" id="fillNext">Fill in the next match</button></p>' : ''}

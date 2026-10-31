@@ -37,6 +37,8 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   .mca :global(.acts) { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; align-items: center; }
   .mca :global(textarea), .mca :global(input), .mca :global(select) { width: 100%; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--a-line); border-radius: 8px; background: var(--a-card); color: var(--a-ink); box-sizing: border-box; }
   .mca :global(.ed label) { display: block; font-size: 13px; font-weight: 700; margin: 10px 0 4px; }
+  .mca :global(.tb) { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 4px; } .mca :global(.tb button) { padding: 4px 9px; }
+  .mca :global(.rte) { min-height: 220px; padding: 10px 12px; border: 1px solid var(--a-line); border-radius: 8px; background: #fff; color: #15181D; line-height: 1.6; overflow-wrap: anywhere; } .mca :global(.rte img) { max-width: 100%; }
   .mca :global(.rev) { font-size: 13px; padding: 8px 0; border-top: 1px solid var(--a-line); } .mca :global(.diff) { font-size: 13px; margin: 6px 0 0; padding-left: 16px; } .mca :global(.diff del) { color: #B91C1C; } .mca :global(.diff ins) { color: #047857; text-decoration: none; }
 </style>
 
@@ -77,7 +79,9 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     const fields = (cur.fields || Object.keys(item.data || {}).map((k: string) => ({ key: k, label: k, type: typeof item.data[k] === 'string' && item.data[k].length > 120 ? 'textarea' : typeof item.data[k] === 'string' ? 'text' : 'json' })));
     return `<div class="ed" id="ed">${fields.map((f: any) => {
       const v = item.data?.[f.key];
-      if (f.type === 'textarea' || f.type === 'html') return `<label>${esc(f.label)}</label><textarea data-k="${esc(f.key)}" data-t="text" rows="${f.type === 'html' ? 12 : 4}">${esc(v ?? '')}</textarea>`;
+      // The story text: a formatting editor (the server cleans it again when saving).
+      if (f.type === 'html') return `<label>${esc(f.label.replace(/ \(HTML\)$/, ''))}</label><div class="tb" role="toolbar" aria-label="Formatting"><button type="button" data-cmd="bold"><b>B</b></button><button type="button" data-cmd="h2">H2</button><button type="button" data-cmd="h3">H3</button><button type="button" data-cmd="p">¶</button><button type="button" data-cmd="blockquote">❝</button><button type="button" data-cmd="ul">• List</button><button type="button" data-cmd="ol">1. List</button><button type="button" data-cmd="link">🔗</button></div><div class="rte" contenteditable="true" data-k="${esc(f.key)}" data-t="html">${v || '<p><br></p>'}</div>`;
+      if (f.type === 'textarea') return `<label>${esc(f.label)}</label><textarea data-k="${esc(f.key)}" data-t="text" rows="4">${esc(v ?? '')}</textarea>`;
       if (f.type === 'json') return `<label>${esc(f.label)} <small class="muted">(JSON)</small></label><textarea data-k="${esc(f.key)}" data-t="json" rows="4">${esc(JSON.stringify(v ?? null, null, 1))}</textarea>`;
       if (f.type === 'bool') return `<label><input type="checkbox" data-k="${esc(f.key)}" data-t="bool" ${v ? 'checked' : ''} style="width:auto" /> ${esc(f.label)}</label>`;
       return `<label>${esc(f.label)}</label><input data-k="${esc(f.key)}" data-t="text" value="${esc(v ?? '')}" />`;
@@ -112,6 +116,17 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   document.addEventListener('click', (e: Event) => {
     const t = e.target as HTMLElement;
     const o = t.closest('[data-open]') as HTMLElement | null; if (o) { open(o.dataset.open!); return; }
+    const cmd = t.closest('[data-cmd]') as HTMLElement | null;
+    if (cmd) {
+      const box = cmd.closest('.ed')?.querySelector('.rte') as HTMLElement | null; box?.focus();
+      const c = cmd.dataset.cmd!;
+      if (c === 'bold') document.execCommand('bold');
+      else if (c === 'ul') document.execCommand('insertUnorderedList');
+      else if (c === 'ol') document.execCommand('insertOrderedList');
+      else if (c === 'link') { const u = prompt('Link address (https://…)'); if (u && /^(https?:\/\/|mailto:|\/)/i.test(u.trim())) document.execCommand('createLink', false, u.trim()); }
+      else document.execCommand('formatBlock', false, c);
+      return;
+    }
     const b = t.closest('[data-do]') as HTMLElement | null; if (!b || !cur) return;
     const what = b.dataset.do!;
     if (what === 'edit') { $('edBox').innerHTML = editor(cur.item); return; }
@@ -119,7 +134,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     if (what === 'approve-edited') {
       const data = { ...cur.item.data };
       try {
-        document.querySelectorAll<HTMLInputElement>('#ed [data-k]').forEach(el => { const k = el.dataset.k!; data[k] = el.dataset.t === 'json' ? JSON.parse(el.value || 'null') : el.dataset.t === 'bool' ? el.checked : el.value; });
+        document.querySelectorAll<HTMLInputElement>('#ed [data-k]').forEach(el => { const k = el.dataset.k!; data[k] = el.dataset.t === 'json' ? JSON.parse(el.value || 'null') : el.dataset.t === 'bool' ? el.checked : el.dataset.t === 'html' ? el.innerHTML : el.value; });
       } catch { msg('One of the JSON boxes is not valid.', false); return; }
       act('approve', { data }); return;
     }

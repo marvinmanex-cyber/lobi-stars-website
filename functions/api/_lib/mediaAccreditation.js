@@ -52,6 +52,8 @@ export async function ensureAccreditationSchema(db) {
       accreditations INTEGER NOT NULL DEFAULT 0, interviews INTEGER NOT NULL DEFAULT 0, history TEXT,
       first_seen TEXT NOT NULL, last_seen TEXT NOT NULL)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS mc_invites (token TEXT PRIMARY KEY, event_id TEXT NOT NULL, created_by TEXT, created_by_name TEXT, sent_to TEXT, created_at TEXT NOT NULL)`),
+    // Returning journalists: a 6-digit code emailed to them unlocks their saved details (15 minutes, 5 tries).
+    db.prepare(`CREATE TABLE IF NOT EXISTS mc_prefill_codes (email TEXT PRIMARY KEY, code_hash TEXT NOT NULL, expires_at TEXT NOT NULL, tries INTEGER NOT NULL DEFAULT 0)`),
   ]);
   ready = true;
 }
@@ -109,11 +111,49 @@ export function checkApplication(b) {
   if (!v.agree) return { error: 'Please agree to the club\'s media rules.' };
   return { value: v };
 }
-/** Returning applicant (recognised by email): business details only, never the phone. */
-export async function prefill(db, email) {
+/**
+ * Returning applicants (recognised by email). The saved details (name, organisation,
+ * staff/freelance, role, whether a passport photo is on file; never the phone) are
+ * only given back with a code emailed to that address, or through an invitation
+ * that was emailed to it. Asking for a code never reveals whether the email is known.
+ */
+async function codeHash(email, code) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${email}|${code}`));
+  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+const contactDetails = c => ({ known: true, fullName: c.full_name, organisation: c.organisation, employment: c.employment, role: c.role, hasPhoto: !!c.photo_id });
+export async function sendPrefillCode(env, email) {
+  const db = env.DB;
   await ensureAccreditationSchema(db);
-  const c = await db.prepare(`SELECT full_name, organisation, employment, role, photo_id FROM mc_contacts WHERE email = ?`).bind(String(email || '').trim().toLowerCase()).first();
-  return c ? { known: true, fullName: c.full_name, organisation: c.organisation, employment: c.employment, role: c.role, hasPhoto: !!c.photo_id } : { known: false };
+  email = String(email || '').trim().toLowerCase();
+  const c = await db.prepare(`SELECT full_name FROM mc_contacts WHERE email = ?`).bind(email).first();
+  if (!c) return { ok: true };
+  const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
+  await db.prepare(`INSERT INTO mc_prefill_codes (email, code_hash, expires_at, tries) VALUES (?, ?, ?, 0) ON CONFLICT(email) DO UPDATE SET code_hash = excluded.code_hash, expires_at = excluded.expires_at, tries = 0`)
+    .bind(email, await codeHash(email, code), new Date(Date.now() + 15 * 60e3).toISOString()).run();
+  await mail(env, email, `Your Lobi Stars FC media code: ${code}`, 'Your code', `${p(`Dear ${esc(c.full_name)},`)}${p(`Your code to fill in the accreditation form with your saved details is <b style="font-size:22px;letter-spacing:3px">${code}</b>.`)}${p('It works for 15 minutes. If you did not ask for it, ignore this email.')}`);
+  return { ok: true };
+}
+export async function prefillWithCode(db, email, code) {
+  await ensureAccreditationSchema(db);
+  email = String(email || '').trim().toLowerCase();
+  const row = await db.prepare(`SELECT * FROM mc_prefill_codes WHERE email = ?`).bind(email).first();
+  if (!row || Date.parse(row.expires_at) < Date.now() || row.tries >= 5) return { known: false, error: 'The code has expired. Ask for a new one.' };
+  if (row.code_hash !== await codeHash(email, String(code || '').trim())) {
+    await db.prepare(`UPDATE mc_prefill_codes SET tries = tries + 1 WHERE email = ?`).bind(email).run();
+    return { known: false, error: 'That code is not right.' };
+  }
+  await db.prepare(`DELETE FROM mc_prefill_codes WHERE email = ?`).bind(email).run();
+  const c = await db.prepare(`SELECT full_name, organisation, employment, role, photo_id FROM mc_contacts WHERE email = ?`).bind(email).first();
+  return c ? contactDetails(c) : { known: false };
+}
+/** An invitation emailed to a known journalist fills in their details. */
+export async function prefillFromInvite(db, token) {
+  await ensureAccreditationSchema(db);
+  const inv = await db.prepare(`SELECT sent_to FROM mc_invites WHERE token = ?`).bind(String(token || '')).first();
+  if (!inv?.sent_to) return null;
+  const c = await db.prepare(`SELECT full_name, organisation, employment, role, photo_id FROM mc_contacts WHERE email = ?`).bind(inv.sent_to).first();
+  return c ? { ...contactDetails(c), email: inv.sent_to } : { known: false, email: inv.sent_to };
 }
 export async function apply(env, request, v, { pressDocId, photoId, inviteToken = null }) {
   const db = env.DB;

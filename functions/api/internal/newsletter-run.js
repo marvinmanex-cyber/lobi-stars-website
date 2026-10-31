@@ -11,6 +11,8 @@ export async function onRequestPost({ request, env }) {
   if (!env.CRON_SECRET || request.headers.get('Authorization') !== `Bearer ${env.CRON_SECRET}`) {
     return new Response('Unauthorized', { status: 401 });
   }
-  const media = await mediaCentreTick(env).catch(e => ({ error: String(e?.message || e) }));
+  // Local tests only (ALLOW_TEST_CLOCK=1, never set on the live site): ?now=<ISO time> runs the reminders as if it were then.
+  const testNow = env.ALLOW_TEST_CLOCK === '1' ? Date.parse(new URL(request.url).searchParams.get('now') || '') : NaN;
+  const media = await mediaCentreTick(env, Number.isFinite(testNow) ? testNow : Date.now()).catch(e => ({ error: String(e?.message || e) }));
   return Response.json({ ok: true, ...(await runScheduledNewsletters(env)), media });
 }

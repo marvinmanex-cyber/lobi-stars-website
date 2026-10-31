@@ -5,6 +5,14 @@ import { getCollection } from 'astro:content';
 const photos = (await getCollection('gallery')).filter(p => !p.data.hidden).sort(
   (a, b) => b.id.localeCompare(a.id)
 );
+// Media Centre albums are shown together under their name (newest first), with their video links;
+// photos without an album keep the plain grid.
+const albums = new Map<string, typeof photos>();
+for (const p of photos) if (p.data.album) albums.set(p.data.album, [...(albums.get(p.data.album) || []), p]);
+for (const list of albums.values()) list.sort((a, b) => a.id.localeCompare(b.id));
+const loose = photos.filter(p => !p.data.album);
+const videosOf = (list: typeof photos) => list.flatMap(p => p.data.videos || []);
+const captionOf = (p: (typeof photos)[number]) => p.data.album && p.data.caption.startsWith(`${p.data.album}: `) ? p.data.caption.slice(p.data.album.length + 2) : p.data.caption;
 ---
 <Layout title="Photo Gallery | Lobi Stars Football Club" description="Photos from Lobi Stars FC matchdays, training and club events at McCarthy Stadium and beyond.">
   <div class="page-hero wrap">
@@ -19,8 +27,25 @@ const photos = (await getCollection('gallery')).filter(p => !p.data.hidden).sort
         No photos have been added yet &mdash; check back soon.
       </div>
     )}
+    {[...albums.entries()].map(([name, list]) => (
+      <section class="gl-album">
+        <h2 class="gl-h">{name}</h2>
+        {videosOf(list).length > 0 && <ul class="gl-videos">{videosOf(list).map(v => <li><a href={v.url} target="_blank" rel="noopener">▶ {v.caption || 'Watch the video'}<span class="sr-only"> (opens in a new tab)</span></a></li>)}</ul>}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;">
+          {list.map(photo => (
+            <div class="card" style="height:200px;position:relative;">
+              <img src={photo.data.photo} alt={captionOf(photo)} style="width:100%;height:100%;object-fit:cover;" loading="lazy"/>
+              <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:rgba(255,255,255,.85);font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;padding:8px 10px;">
+                {captionOf(photo)}{photo.data.credit && <> · Photo: {photo.data.credit}</>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    ))}
+    {albums.size > 0 && loose.length > 0 && <h2 class="gl-h">More photos</h2>}
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;">
-      {photos.map(photo => (
+      {loose.map(photo => (
         <div class="card" style="height:200px;position:relative;">
           <img src={photo.data.photo} alt={photo.data.caption} style="width:100%;height:100%;object-fit:cover;"/>
           <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:rgba(255,255,255,.85);font-size:11px;font-family:'Barlow Condensed',sans-serif;letter-spacing:1px;padding:8px 10px;">
@@ -31,3 +56,8 @@ const photos = (await getCollection('gallery')).filter(p => !p.data.hidden).sort
     </div>
   </div>
 </Layout>
+<style>
+  .gl-album { margin: 0 0 32px; }
+  .gl-h { margin: 0 0 12px; font-size: 24px; }
+  .gl-videos { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 10px 18px; } .gl-videos a { font-weight: 700; }
+</style>

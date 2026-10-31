@@ -110,6 +110,8 @@ function bumpIdle() {
 for (const ev of ['pointerdown', 'keydown', 'scroll', 'touchstart']) window.addEventListener(ev, () => { if (state.user) bumpIdle(); }, { passive: true });
 // Keep the server session alive while the person is active on this page (a quiet check otherwise).
 setInterval(() => { if (state.user && Date.now() - lastBump < 5 * 60e3) fetch('/api/media-centre/session', { cache: 'no-store' }).catch(() => {}); }, 5 * 60e3);
+// Editor forms never submit (they save as you type); Enter in a field must not reload the page.
+document.addEventListener('submit', e => { const f = e.target as HTMLFormElement; if (f.closest('#main') && f.method !== 'dialog') e.preventDefault(); });
 window.addEventListener('beforeunload', e => { if (guard.dirty()) { e.preventDefault(); e.returnValue = ''; } });
 
 start();

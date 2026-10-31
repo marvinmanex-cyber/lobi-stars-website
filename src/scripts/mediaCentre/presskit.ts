@@ -19,7 +19,7 @@ async function editor(main: HTMLElement, id: string) {
   let files: any[] = Array.isArray(d.files) ? [...d.files] : [];
   main.innerHTML = `<div class="mc-page-head"><h1>Press kit item</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/press-kit/" data-go="/press-kit">← Press Kit</a></div>
     ${statusBanner(item, editable)}
-    <form class="mc-card" id="f" onsubmit="return false">
+    <form class="mc-card" id="f">
       <div class="mc-field"><label for="section">Section</label><select id="section" ${ro}>${Object.entries(SECTIONS).map(([k, l]) => `<option value="${k}" ${d.section === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
       <div class="mc-field"><label for="title">Title <span class="mc-req">*</span></label><input id="title" maxlength="120" value="${esc(d.title || '')}" ${ro} placeholder="e.g. Club badge (full colour, PNG)" /></div>
       <div class="mc-field"><label for="text">Text <small>(e.g. the colour codes, how to write "Lobi Stars FC", the rules)</small></label><textarea id="text" rows="6" maxlength="3000" ${ro}>${esc(d.text || '')}</textarea></div>

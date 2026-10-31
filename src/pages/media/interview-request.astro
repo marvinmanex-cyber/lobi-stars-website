@@ -45,10 +45,12 @@ import Layout from '../../layouts/Layout.astro';
 </style>
 <script>
   const $ = (id: string) => document.getElementById(id) as any;
+  let formTok = '';
+  fetch('/api/media/interview-request').then(r => r.json()).then(d => { formTok = d.formToken || ''; }).catch(() => {});
   const msg = (t: string) => { $('msg').textContent = t; $('msg').hidden = !t; if (t) $('msg').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
   $('f').addEventListener('submit', async (e: Event) => {
     e.preventDefault(); msg('');
-    const body = Object.fromEntries(new FormData($('f')).entries());
+    const body = { ...Object.fromEntries(new FormData($('f')).entries()), formToken: formTok };
     $('send').disabled = true;
     try {
       const r = await fetch('/api/media/interview-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });

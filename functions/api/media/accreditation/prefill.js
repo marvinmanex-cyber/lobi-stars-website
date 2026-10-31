@@ -1,14 +1,24 @@
-import { prefill } from '../../_lib/mediaAccreditation.js';
+import { sendPrefillCode, prefillWithCode } from '../../_lib/mediaAccreditation.js';
 import { ensureFanSchema, rateLimit } from '../../_lib/fans.js';
 
-// GET /api/media/accreditation/prefill?email= -- a returning journalist (recognised by
-// email): name, organisation, staff/freelance and role to prefill the form, and
-// whether a passport photo is on file. Never the phone number or the photo itself.
-export async function onRequestGet({ request, env }) {
+// POST /api/media/accreditation/prefill
+//   { email }        -- emails a 6-digit code if the address is a known journalist (the answer is the same either way)
+//   { email, code }  -- the saved details (name, organisation, staff/freelance, role, photo on file; never the phone)
+const J = (d, s = 200) => Response.json(d, { status: s, headers: { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
+export async function onRequestPost({ request, env }) {
   await ensureFanSchema(env.DB);
+  const origin = request.headers.get('Origin');
+  if (origin && origin !== new URL(request.url).origin) return J({ error: 'This request came from another website and was refused.' }, 403);
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
-  if (!(await rateLimit(env.DB, `accredpre:${ip}`, 20, 3600))) return Response.json({ known: false }, { headers: { 'Cache-Control': 'no-store' } });
-  const email = new URL(request.url).searchParams.get('email') || '';
-  if (!/^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/.test(email)) return Response.json({ known: false });
-  return Response.json(await prefill(env.DB, email), { headers: { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
+  const b = await request.json().catch(() => ({}));
+  const email = String(b.email || '').trim().toLowerCase();
+  if (!/^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/.test(email)) return J({ error: 'Enter a valid email address.' }, 400);
+  if (b.code) {
+    if (!(await rateLimit(env.DB, `accredcode:${ip}`, 20, 3600))) return J({ error: 'Too many tries. Please wait an hour.' }, 429);
+    const r = await prefillWithCode(env.DB, email, b.code);
+    return r.error ? J({ error: r.error }, 400) : J(r);
+  }
+  if (!(await rateLimit(env.DB, `accredpre:${ip}`, 5, 3600)) || !(await rateLimit(env.DB, `accredpre:${email}`, 3, 3600))) return J({ error: 'Too many codes asked for. Please wait an hour.' }, 429);
+  await sendPrefillCode(env, email);
+  return J({ ok: true, message: 'If you have applied before with this email address, we have emailed you a code.' });
 }

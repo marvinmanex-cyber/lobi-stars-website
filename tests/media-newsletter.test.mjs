@@ -28,7 +28,7 @@ before(async () => {
 after(() => {
   sql(`DELETE FROM newsletter_deliveries WHERE issue_id IN (SELECT id FROM newsletter_issues WHERE subject LIKE '%Test week ${T}%'); DELETE FROM newsletter_issues WHERE subject LIKE '%Test week ${T}%';
     DELETE FROM mc_revisions WHERE item_id IN (SELECT id FROM mc_items WHERE created_by_name = 'Wendy Weekly'); DELETE FROM mc_items WHERE created_by_name = 'Wendy Weekly';
-    DELETE FROM mc_sessions WHERE user_id IN (SELECT id FROM mc_users WHERE login_key = '${LOGIN.toLowerCase()}'); DELETE FROM mc_users WHERE login_key = '${LOGIN.toLowerCase()}';`);
+    DELETE FROM mc_settings WHERE key IN ('reminded_monday', 'reminded_tuesday'); DELETE FROM mc_sessions WHERE user_id IN (SELECT id FROM mc_users WHERE login_key = '${LOGIN.toLowerCase()}'); DELETE FROM mc_users WHERE login_key = '${LOGIN.toLowerCase()}';`);
 });
 
 test('deadline and publishing dates (Lagos time)', () => {
@@ -85,4 +85,23 @@ test('approved before its Wednesday: scheduled for Wednesday 8 AM', async () => 
   assert.equal(row.status, 'scheduled');
   const local = new Date(Date.parse(row.scheduled_at) + 3600e3);
   assert.equal(local.getUTCDay(), 3, 'a Wednesday'); assert.equal(local.getUTCHours(), 8, 'at 8 AM Lagos');
+});
+
+test('reminders: Monday to the media team when nothing is started; Tuesday evening to the Super Admins when one is waiting; once each', async () => {
+  sql(`DELETE FROM mc_settings WHERE key IN ('reminded_monday', 'reminded_tuesday');`);
+  // A week with nothing in it: three weeks from now.
+  const monday = Date.parse(weekStart(Date.now() + 21 * 86400e3)) + 10 * 3600e3; // Monday 10:00 Lagos
+  const run = at => fetch(`${BASE}/api/internal/newsletter-run?now=${new Date(at).toISOString()}`, { method: 'POST', headers: CRON }).then(x => x.json());
+  assert.equal((await run(monday - 3 * 3600e3)).media.mondayReminder, undefined, 'not before 9 AM');
+  assert.equal((await run(monday)).media.mondayReminder, true, 'Monday reminder');
+  assert.equal((await run(monday + 60e3)).media.mondayReminder, false, 'only once a week');
+  // Tuesday 18:30 Lagos of that week, with a newsletter waiting for approval.
+  const id = (await mc('items', 'POST', { kind: 'newsletter', data: { ...BASIC, headline: `Test week ${T} three` } })).data.id;
+  sql(`UPDATE mc_items SET status = 'submitted', created_at = '${new Date(monday + 3600e3).toISOString()}' WHERE id = '${id}';`);
+  const tuesday = monday + 86400e3 + 8.5 * 3600e3;
+  assert.equal((await run(tuesday - 3600e3)).media.tuesdayReminder, undefined, 'not before the deadline');
+  assert.equal((await run(tuesday)).media.tuesdayReminder, true, 'Tuesday reminder to the Super Admins');
+  assert.equal((await run(tuesday + 60e3)).media.tuesdayReminder, false, 'only once');
+  const logged = (await admin('activity?action=reminder')).data.rows;
+  assert.ok(logged.length >= 2, 'reminders are logged');
 });

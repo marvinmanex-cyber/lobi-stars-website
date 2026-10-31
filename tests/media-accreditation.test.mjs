@@ -16,7 +16,7 @@ const LOGIN = `Accred${T}${String(Math.floor(Math.random() * 90) + 10)}`;
 const HOME = `acc-home-${T}`, AWAY = `acc-away-${T}`, SOON = `acc-soon-${T}`;
 const ip = () => `10.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 0}`;
 const admin = (p, body) => fetch(`${BASE}/api/admin/media-centre/${p}`, body ? { method: 'POST', headers: ADMIN, body: JSON.stringify(body) } : { headers: ADMIN }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
-let S;
+let S, FT = '';
 const mc = (p, method = 'GET', body) => fetch(`${BASE}/api/media-centre/${p}`, { method, headers: { Cookie: S.cookie, 'X-CSRF-Token': S.csrf, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
   .then(async r => ({ status: r.status, data: await r.json().catch(() => ({})), r }));
 const jpg = readFileSync(new URL('../public/images/lobi-stars-badge-print.jpg', import.meta.url));
@@ -25,6 +25,7 @@ function form(over = {}, files = { photo: true, doc: true }) {
   const f = new FormData();
   const v = { eventId: HOME, fullName: 'Ada Reporter', phone: '0803 123 4567', email: `ada.${T}@example.com`, organisation: 'Benue Daily', employment: 'staff', role: 'Photographer', equipment: '2 cameras', agree: '1', website: '', ...over };
   for (const [k, x] of Object.entries(v)) f.append(k, x);
+  if (!('formToken' in over)) f.append('formToken', FT);
   if (files.photo) f.append('photo', new Blob([jpg], { type: 'image/jpeg' }), 'passport.jpg');
   if (files.doc) f.append('pressDoc', new Blob([pdf], { type: 'application/pdf' }), 'letter.pdf');
   return f;
@@ -38,12 +39,14 @@ before(async () => {
     ('${AWAY}', 'Away City ${T}', 'Lobi Stars FC', 'NNL', '${d(12)}', 'Away Ground', 0, 0, 0, 1),
     ('${SOON}', 'Lobi Stars FC', 'Soon Rovers ${T}', 'NNL', '${new Date(Date.now() + 20 * 3600e3).toISOString()}', 'McCarthy Stadium, Makurdi', 50000, 20000, 10000, 1);`);
   assert.equal((await admin('users', { action: 'create', loginId: LOGIN, fullName: 'Grace Approver', password: 'Temp-pass-123' })).status, 200);
+  FT = (await fetch(`${BASE}/api/media/accreditation`).then(x => x.json())).formToken;
+  await new Promise(r => setTimeout(r, 3200)); // forms sent within 3 seconds of loading are refused
   const r = await fetch(`${BASE}/api/media-centre/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loginId: LOGIN, password: 'Temp-pass-123' }) });
   S = { cookie: r.headers.get('set-cookie').match(/ls_media=[^;]+/)[0], csrf: (await r.json()).csrf };
   await mc('password', 'POST', { current: 'Temp-pass-123', password: 'Own-pass-456' });
 });
 after(() => {
-  sql(`DELETE FROM mc_accreditations WHERE event_id IN ('${HOME}', '${AWAY}', '${SOON}'); DELETE FROM mc_contacts WHERE email LIKE '%.${T}@example.com'; DELETE FROM mc_invites WHERE event_id = '${HOME}'; DELETE FROM events WHERE id IN ('${HOME}', '${AWAY}', '${SOON}');
+  sql(`DELETE FROM mc_accreditations WHERE event_id IN ('${HOME}', '${AWAY}', '${SOON}'); DELETE FROM mc_contacts WHERE email LIKE '%.${T}@example.com'; DELETE FROM mc_invites WHERE event_id = '${HOME}'; DELETE FROM mc_prefill_codes WHERE email LIKE '%.${T}@example.com'; DELETE FROM events WHERE id IN ('${HOME}', '${AWAY}', '${SOON}');
     DELETE FROM mc_files WHERE owner = 'accreditation' AND uploaded_by_name IN ('Ada Reporter', 'Ben Writer', 'Ada R.'); DELETE FROM mc_sessions WHERE user_id IN (SELECT id FROM mc_users WHERE login_key = '${LOGIN.toLowerCase()}'); DELETE FROM mc_users WHERE login_key = '${LOGIN.toLowerCase()}';
     DELETE FROM mc_settings WHERE key = 'accreditation_max';`);
 });
@@ -60,6 +63,9 @@ test('the form lists upcoming HOME matches only, and closes 48 hours before kick
 });
 
 test('checks, spam trap and one request per match', async () => {
+  assert.equal((await applyNow(form({ formToken: 'forged.token.value' }))).status, 400, 'a valid form token is needed');
+  const quick = (await fetch(`${BASE}/api/media/accreditation`).then(x => x.json())).formToken;
+  assert.match((await applyNow(form({ formToken: quick }))).data.error, /very quick/, 'sent too fast after loading');
   assert.equal((await applyNow(form({ agree: '' }))).status, 400, 'must agree to the media rules');
   assert.equal((await applyNow(form({}, { photo: false, doc: true }))).status, 400, 'passport photo needed');
   assert.equal((await applyNow(form({}, { photo: true, doc: false }))).status, 400, 'press ID needed');
@@ -122,9 +128,17 @@ test('the per-match limit; invitation links; contacts recognise returning journa
   assert.equal((await mc(`accreditations/${ben.id}`, 'POST', { decision: 'reject', reason: 'The press box is full.' })).status, 200);
   const inv = await mc('accreditations', 'POST', { action: 'invite', eventId: HOME });
   assert.equal(inv.status, 200); assert.match(inv.data.link, /\/media\/accreditation\/\?match=.+&invite=/);
-  const pre = await fetch(`${BASE}/api/media/accreditation/prefill?email=ada.${T}@example.com`).then(r => r.json());
+  const pp = b => fetch(`${BASE}/api/media/accreditation/prefill`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': `10.7.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 0}` }, body: JSON.stringify(b) }).then(async r => ({ status: r.status, data: await r.json() }));
+  const known = await pp({ email: `ada.${T}@example.com` }), unknown = await pp({ email: `nobody.${T}@example.com` });
+  assert.equal(known.data.message, unknown.data.message, 'asking for a code never reveals whether the email is known');
+  assert.equal(known.data.fullName, undefined, 'no details without the code');
+  assert.equal((await pp({ email: `ada.${T}@example.com`, code: '000000' })).status, 400, 'wrong code');
+  const { createHash } = await import('node:crypto');
+  sql(`UPDATE mc_prefill_codes SET code_hash = '${createHash('sha256').update(`ada.${T}@example.com|123456`).digest('hex')}', tries = 0 WHERE email = 'ada.${T}@example.com';`);
+  const pre = (await pp({ email: `ada.${T}@example.com`, code: '123456' })).data;
   assert.equal(pre.known, true); assert.equal(pre.organisation, 'Benue Daily'); assert.equal(pre.hasPhoto, true);
   assert.equal(pre.phone, undefined, 'never the phone');
+  assert.equal((await pp({ email: `ada.${T}@example.com`, code: '123456' })).status, 400, 'a code works once');
   const c = (await mc('accreditations?view=contacts')).data.contacts.find(x => x.email === `ada.${T}@example.com`);
   assert.ok(c && c.accreditations >= 1);
   const acts = new Set((await admin('activity?section=accreditation')).data.rows.map(r => r.action));

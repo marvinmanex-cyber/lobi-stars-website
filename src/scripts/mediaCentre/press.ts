@@ -19,7 +19,7 @@ async function editor(main: HTMLElement, id: string) {
   const d: any = item.data || {}, ro = editable ? '' : 'disabled';
   main.innerHTML = `<div class="mc-page-head"><h1>Press release</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/press/" data-go="/press">← All releases</a></div>
     ${statusBanner(item, editable)}${item.status === 'published' && item.slug ? `<p><a href="/media/press-releases/${esc(item.slug)}/" target="_blank" rel="noopener">View on the website</a> · <a href="/media/press-releases/${esc(item.slug)}.pdf" target="_blank" rel="noopener">PDF</a></p>` : ''}
-    <div class="mc-ed"><form class="mc-ed-form" id="f" onsubmit="return false">
+    <div class="mc-ed"><form class="mc-ed-form" id="f">
       <label class="mc-check"><input type="checkbox" id="statement" ${d.statement ? 'checked' : ''} ${ro} /> This is an <b>official statement</b> (heading "OFFICIAL STATEMENT" instead of "FOR IMMEDIATE RELEASE")</label>
       <div class="mc-field"><label for="headline">Headline <span class="mc-req">*</span></label><input id="headline" maxlength="160" value="${esc(d.headline || '')}" ${ro} /></div>
       <div class="mc-field"><label for="sub">Sub-headline <small>(optional)</small></label><input id="sub" maxlength="240" value="${esc(d.subheadline || '')}" ${ro} /></div>

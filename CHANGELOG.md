@@ -8,6 +8,34 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-31: Media Centre: fixes from the QA audit
+
+**What changed**
+- **Returning journalists' privacy:** their saved details only fill in the
+  accreditation form after a 6-digit code emailed to them (or from an
+  invitation emailed to them). Before, typing a known email filled in the
+  name and organisation for anyone.
+- **Public forms** (accreditation, interview requests) now carry a signed
+  form token. Forms sent within 3 seconds of loading (bots) or with an
+  old or forged token are refused.
+- **Media Centre page:** a stricter security policy (scripts only from the
+  website itself).
+- **Gallery:** Media Centre albums show as albums, under their name, with
+  their video links.
+- **Matchday Desk:** the live screen refreshes only the score, timeline and
+  waiting list, so what you are typing is kept.
+- **Approval Queue:** "Edit, then approve" has a formatting editor for the
+  story text instead of code.
+- **Newsletter reminders:** automatic tests now check the Monday and Tuesday
+  reminders at set times.
+- **Documentation:** the README records password hashing (PBKDF2-SHA256)
+  as an accepted exception to the bcrypt/Argon2 brief, and HANDOVER M2 now
+  says the email service is already set up.
+
+**Staff:** nothing to do.
+
+---
+
 ## 2026-10-31: Media Centre, phase 5: press releases, Matchday Desk, library, interviews, press kit, calendar
 
 **What changed**

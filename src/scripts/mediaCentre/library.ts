@@ -21,7 +21,7 @@ async function editor(main: HTMLElement, id: string) {
   let photos: any[] = Array.isArray(d.photos) ? [...d.photos] : [], videos: any[] = Array.isArray(d.videos) ? [...d.videos] : [];
   main.innerHTML = `<div class="mc-page-head"><h1>Album</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/library/" data-go="/library">← Library</a></div>
     ${statusBanner(item, editable)}
-    <form class="mc-card" id="f" onsubmit="return false">
+    <form class="mc-card" id="f">
       <div class="mc-field"><label for="title">Album title <span class="mc-req">*</span></label><input id="title" maxlength="120" value="${esc(d.title || '')}" ${ro} placeholder="e.g. Lobi Stars 2-1 Kada City" /></div>
       <div class="mc-grid two"><div class="mc-field"><label for="match">Match or event</label><select id="match" ${ro}><option value="">Not a match</option>${M.matches.map((m: any) => `<option value="${esc(m.id)}" ${d.eventId === m.id ? 'selected' : ''}>${esc(m.label)} · ${esc(m.day)}</option>`).join('')}</select></div>
       <div class="mc-field"><label for="date">Date</label><input id="date" type="date" value="${esc(d.date || '')}" ${ro} /></div></div>

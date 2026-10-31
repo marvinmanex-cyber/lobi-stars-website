@@ -47,8 +47,8 @@ export async function newsletterReminders(env, now = Date.now()) {
   return out;
 }
 
-export async function mediaCentreTick(env) {
+export async function mediaCentreTick(env, now = Date.now()) {
   const out = { scheduled: await publishDue(env) };
-  try { Object.assign(out, await newsletterReminders(env)); } catch (e) { console.error('[media centre] reminders', e); out.reminderError = String(e?.message || e).slice(0, 200); }
+  try { Object.assign(out, await newsletterReminders(env, now)); } catch (e) { console.error('[media centre] reminders', e); out.reminderError = String(e?.message || e).slice(0, 200); }
   return out;
 }

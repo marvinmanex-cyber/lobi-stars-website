@@ -29,7 +29,7 @@ async function editor(main: HTMLElement, id: string) {
   main.innerHTML = `<div class="mc-page-head"><h1>${item.status === 'published' ? 'Published story' : 'Story'}</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/news/" data-go="/news">← All stories</a></div>
   ${statusBanner(item, editable)}
   <div class="mc-ed">
-    <form class="mc-ed-form" id="f" autocomplete="off" onsubmit="return false">
+    <form class="mc-ed-form" id="f" autocomplete="off">
       <div class="mc-field"><label for="cat">Category</label><select id="cat" ${ro}>${cats.map(c => `<option ${c === d.category ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
       <div class="mc-field"><label for="headline">Headline</label><input id="headline" maxlength="150" value="${esc(d.headline || '')}" ${ro} placeholder="e.g. Lobi Stars edge Kada City in Makurdi" /><span class="mc-hint" id="hlCount"></span></div>
       <div class="mc-field"><label for="summary">Summary <small>(1–2 sentences: shown on news cards and when shared on WhatsApp/Facebook)</small></label><textarea id="summary" maxlength="320" rows="3" ${ro}>${esc(d.summary || '')}</textarea><span class="mc-hint" id="smCount"></span></div>

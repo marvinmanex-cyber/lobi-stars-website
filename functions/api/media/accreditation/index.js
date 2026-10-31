@@ -1,14 +1,17 @@
-import { ensureAccreditationSchema, openMatches, eventById, checkApplication, apply, updateApplication, publicByUpdateToken, ROLES } from '../../_lib/mediaAccreditation.js';
+import { ensureAccreditationSchema, openMatches, eventById, checkApplication, apply, updateApplication, publicByUpdateToken, prefillFromInvite, ROLES } from '../../_lib/mediaAccreditation.js';
+import { formToken, formTokenProblem } from '../../_lib/mediaFormToken.js';
 import { mcSettings } from '../../_lib/mediaCentre.js';
 import { storeFile } from '../../_lib/mediaFiles.js';
 import { ensureFanSchema, rateLimit } from '../../_lib/fans.js';
 import { matchSlug } from '../../_lib/matchSlug.js';
 
 // Public: the media accreditation form (/media/accreditation/).
-// GET  ?match=<slug|id>&update=<token> -- upcoming home matches (and whether each is still open), roles,
-//      the match to preselect, or an application to update (after "more information needed").
+// GET  ?match=<slug|id>&update=<token>&invite=<token> -- upcoming home matches (and whether each is still open), roles,
+//      the match to preselect, an application to update (after "more information needed"), the saved details
+//      of a journalist an invitation was emailed to, and the form token.
 // POST multipart: eventId, fullName, phone, email, organisation, employment, role, equipment, needs, agree,
-//      pressDoc (PDF/JPG, 5 MB), photo (JPEG passport photo, cropped in the browser), update (token), invite, website (must stay empty).
+//      pressDoc (PDF/JPG, 5 MB), photo (JPEG passport photo, cropped in the browser), update (token), invite, website (must stay empty),
+//      formToken (from the GET).
 const J = (d, s = 200) => Response.json(d, { status: s, headers: { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
 
 export async function onRequestGet({ request, env }) {
@@ -20,7 +23,8 @@ export async function onRequestGet({ request, env }) {
   let selected = null;
   if (pick) { const e = await eventById(db, pick); if (e) selected = matches.find(m => m.id === e.id || m.slug === matchSlug(e)) || null; }
   const update = u.searchParams.get('update') ? await publicByUpdateToken(db, u.searchParams.get('update')) : null;
-  return J({ matches, selected: selected?.id || update?.eventId || null, roles: ROLES, closeHours: Number(settings.accreditation_close_hours), update });
+  const invited = u.searchParams.get('invite') ? await prefillFromInvite(db, u.searchParams.get('invite')) : null;
+  return J({ matches, selected: selected?.id || update?.eventId || null, roles: ROLES, closeHours: Number(settings.accreditation_close_hours), update, invited, formToken: await formToken(env, 'accreditation') });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -33,6 +37,8 @@ export async function onRequestPost({ request, env }) {
   let form;
   try { form = await request.formData(); } catch { return J({ error: 'Please fill in the form.' }, 400); }
   if (String(form.get('website') || '').trim()) return J({ ok: true }); // spam trap: looks accepted, nothing saved
+  const tokenProblem = await formTokenProblem(env, 'accreditation', form.get('formToken'));
+  if (tokenProblem) return J({ error: tokenProblem }, 400);
   const b = Object.fromEntries([...form.entries()].filter(([, v]) => typeof v === 'string'));
   const checked = checkApplication({ ...b, agree: b.agree });
   if (checked.error) return J({ error: checked.error }, 400);

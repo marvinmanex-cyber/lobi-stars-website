@@ -106,6 +106,8 @@ const gallery = defineCollection({
     album: z.string().nullable().optional(),
     credit: z.string().nullable().optional(),
     players: z.array(z.string()).nullable().optional(),
+    // The album's video links (on the album's first photo).
+    videos: z.array(z.object({ url: z.string(), caption: z.string().nullable().optional() })).nullable().optional(),
     mcId: z.string().nullable().optional(),
     // Unpublished from the Media Centre (kept, never shown).
     hidden: z.boolean().default(false),

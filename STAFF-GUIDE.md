@@ -3885,6 +3885,8 @@ What you can do with it:
 - **Reject:** write a reason.
 - **Unpublish** (published items): removes it from the website. Nothing
   published is ever deleted.
+- **Edit, then approve** shows the story text in a formatting editor (bold,
+  headings, quotes, lists, links), not as code.
 
 The content moves through these statuses: draft → waiting for approval →
 published (or scheduled → published), returned (with your comment), rejected,
@@ -3978,9 +3980,14 @@ match").
   background, face visible), equipment and special needs (both optional),
   and agreement to the club's media rules.
 - **Spam protection:** a hidden spam trap and a limit per connection.
-- **Returning journalists** are recognised by their email address. Their
-  name, organisation, role and passport photo are reused; their phone number
-  is never shown.
+- **Returning journalists:** they press "Applied before? Email me a code"
+  and type the 6-digit code from the email. Their name, organisation, role
+  and passport photo are then filled in.
+  - Nobody else can see someone's saved details. The answer looks the same
+    whether or not the email is known.
+  - The phone number is never shown.
+  - An invitation you email to a known journalist fills in their details by
+    itself.
 
 **In the Media Centre › Accreditation:**
 1. **Upcoming home matches** are listed with the number of new and approved
@@ -4092,7 +4099,9 @@ what a good answer looks like.
   3. Set the **publish time** (usually an hour before kick-off) and send it
      for approval.
   4. When it is approved, it appears on the match page at that time.
-- **Live updates:** press **Live updates** next to the match. Fill in the
+- **Live updates:** press **Live updates** next to the match. The score and
+  timeline refresh by themselves every 20 seconds, without clearing what you
+  are typing. Fill in the
   minute, team, player and detail, then press the button for what happened:
   kick-off, goal, yellow card, red card, substitution, half-time, second
   half, full-time or an update. Updates go to the **match page** and the
@@ -4110,7 +4119,8 @@ what a good answer looks like.
   photographer. For every photo add a **caption**, an optional credit and
   the **players** in it. Video links (YouTube or Facebook) can be added too.
 - **Approval:** an album appears in the website's **Gallery** about 3
-  minutes after a Super Admin approves it. Unpublishing hides it again.
+  minutes after a Super Admin approves it. It shows as an album, under its
+  name, with its video links. Unpublishing hides it again.
 - **Reuse:** every uploaded picture can be used again: **Library** in the
   story editor, and **From library** for the main photo and the newsletter
   photos.

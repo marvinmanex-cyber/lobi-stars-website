@@ -128,6 +128,8 @@ test('the Approval Queue and settings open for Super Admins; the page needs a st
   const page = await fetch(`${BASE}/media-centre/login/`);
   assert.equal(page.status, 200);
   assert.match(page.headers.get('content-security-policy') || '', /frame-ancestors 'self'/);
+  const scriptSrc = (page.headers.get('content-security-policy') || '').match(/script-src ([^;]+)/)?.[1] || '';
+  assert.equal(scriptSrc.trim(), "'self'", 'scripts only from the site itself (no inline scripts)');
   assert.match(page.headers.get('x-robots-tag') || '', /noindex/);
   assert.match(await page.text(), /Media Centre/);
 });

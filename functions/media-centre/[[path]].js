@@ -5,7 +5,7 @@
 export const MEDIA_CENTRE_HEADERS = {
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline'",
+    "script-src 'self'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src https://fonts.gstatic.com",
     "img-src 'self' data: blob: https://i.ytimg.com",

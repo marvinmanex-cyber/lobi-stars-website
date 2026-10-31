@@ -124,7 +124,10 @@ test('library: an album goes into the Gallery after approval; pictures are reusa
 
 test('interview requests: public form, propose a time, approve, done; saved to contacts', async () => {
   const send = b => fetch(`${BASE}/api/media/interview-request`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': `10.9.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 0}` }, body: JSON.stringify(b) });
-  const base = { fullName: 'Ifeoma Ask', email: `ife.${T}@example.com`, organisation: 'Radio Benue', who: 'The head coach', topic: 'The season so far and the next home match.', preferredAt: '2026-11-20T10:00', format: 'phone' };
+  const ft = (await fetch(`${BASE}/api/media/interview-request`).then(x => x.json())).formToken;
+  await new Promise(r => setTimeout(r, 3200));
+  assert.equal((await send({ fullName: 'X Y', formToken: 'bad.bad.bad' })).status, 400, 'form token needed');
+  const base = { formToken: ft, fullName: 'Ifeoma Ask', email: `ife.${T}@example.com`, organisation: 'Radio Benue', who: 'The head coach', topic: 'The season so far and the next home match.', preferredAt: '2026-11-20T10:00', format: 'phone' };
   assert.equal((await send({ ...base, format: 'fax' })).status, 400);
   assert.equal((await send({ ...base, website: 'spam' })).status, 200);
   assert.equal((await send(base)).status, 200);

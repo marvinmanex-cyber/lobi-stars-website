@@ -42,7 +42,7 @@ const previewHtml = v => `<h3 style="margin:0 0 6px">${esc(v.title)}</h3><p styl
 function galleryFiles(r, v, slug, paths, hidden = false) {
   return v.photos.map((p, i) => ({ path: `src/content/gallery/${slug}-${String(i + 1).padStart(2, '0')}.md`, text: [
     '---', `caption: ${yaml(`${v.title}: ${p.caption}`)}`, `photo: ${yaml(paths[p.id] || p.url)}`, `album: ${yaml(v.title)}`,
-    `credit: ${yaml(p.credit || v.credit || '')}`, p.players.length ? `players: ${yaml(p.players)}` : null, `mcId: ${yaml(r.id)}`, `hidden: ${hidden ? 'true' : 'false'}`, '---', '',
+    `credit: ${yaml(p.credit || v.credit || '')}`, p.players.length ? `players: ${yaml(p.players)}` : null, i === 0 && v.videos?.length ? `videos: ${yaml(v.videos.map(x => ({ url: x.url, caption: x.caption || null })))}` : null, `mcId: ${yaml(r.id)}`, `hidden: ${hidden ? 'true' : 'false'}`, '---', '',
   ].filter(l => l !== null).join('\n') }));
 }
 async function publish(env, r, v) {

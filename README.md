@@ -46,6 +46,13 @@ STAFF-GUIDE.md section 41 explains every screen in plain English.
     (`functions/api/_lib/password.js`; Cloudflare Workers can't run bcrypt
     or Argon2 within their CPU limits).
   - A temporary password must be changed at the first sign-in.
+  - **Accepted exception (31 Oct 2026):** the brief asked for bcrypt or
+    Argon2. The site uses PBKDF2-SHA256 instead, the same as the admin
+    logins. It is a recognised password-hashing standard (NIST SP 800-132,
+    OWASP), and Cloudflare's Web Crypto runs it natively.
+  - bcrypt and Argon2 would need a JavaScript library that goes over the
+    Workers free plan's 10 ms CPU limit per request.
+  - Revisit if the club moves to Workers Paid (HANDOVER A33).
 - **Lockout:** 5 wrong passwords lock the account for 15 minutes.
 - **Idle sign-out:** after 30 minutes without activity, enforced by both the
   server and the page.
@@ -121,6 +128,20 @@ STAFF-GUIDE.md section 41 explains every screen in plain English.
   photo crop). The form posts multipart data to `/api/media/accreditation`.
   It is protected by a honeypot field `website`, 6 requests per hour per IP,
   and a same-origin check.
+- **Form tokens:** both public forms carry a signed token
+  (`mediaFormToken.js`, HMAC with `SESSION_SECRET`). It must be at least
+  3 seconds old and at most 4 hours old.
+- **Returning applicants:** `POST /api/media/accreditation/prefill` emails a
+  6-digit code (stored hashed in `mc_prefill_codes`, 15 minutes, 5 tries).
+  The saved details only come back with that code, or through an invitation
+  emailed to that address. The answer is the same whether or not the email
+  is known.
+- **Content security policy:** the Media Centre page allows scripts from the
+  site only (`script-src 'self'`), with no inline scripts or inline event
+  handlers.
+- **Reminder tests:** on a local server only, `ALLOW_TEST_CLOCK=1` lets
+  `/api/internal/newsletter-run?now=<ISO>` run the reminders as if it were
+  that time. It is never set on the live site.
 - **Logic** (`functions/api/_lib/mediaAccreditation.js`):
   - only home matches;
   - closes `accreditation_close_hours` before kick-off;

@@ -37,7 +37,7 @@ async function lineupEditor(main: HTMLElement, id: string) {
   const defaultAt = item.scheduledAt || (m ? new Date(Date.parse(m.date) - 60 * 60e3).toISOString() : null);
   main.innerHTML = `<div class="mc-page-head"><h1>Line-up: ${esc(d.label || '')}</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/matchday/" data-go="/matchday">← Matchday Desk</a></div>
     ${statusBanner(item, editable)}
-    <form class="mc-card" id="f" onsubmit="return false">
+    <form class="mc-card" id="f">
       <p class="mc-muted">${m ? `${esc(when(m.date))} · ${esc(m.venue)}` : ''}</p>
       <p><b id="count"></b></p>
       <div class="mc-pick">${M.players.map((p: any) => `<label><span>${p.number != null ? `#${esc(p.number)} ` : ''}${esc(p.name)}</span><select data-p="${esc(p.slug)}" data-name="${esc(p.name)}" data-number="${esc(p.number ?? '')}" data-pos="${esc(p.position)}" ${ro}><option value="">—</option><option value="start" ${role(p.slug) === 'start' ? 'selected' : ''}>Starts</option><option value="sub" ${role(p.slug) === 'sub' ? 'selected' : ''}>Sub</option></select></label>`).join('') || '<p class="mc-muted">No live squad profiles yet.</p>'}</div>
@@ -58,38 +58,46 @@ async function lineupEditor(main: HTMLElement, id: string) {
 
 async function liveDesk(main: HTMLElement, eventId: string) {
   const M = await meta();
-  let timer = 0;
-  const draw = async () => {
-    if (!main.isConnected || !location.pathname.includes(`/matchday/live/${eventId}`)) { clearInterval(timer); return; }
-    const d = await api(`live?event=${encodeURIComponent(eventId)}`, { quiet: true });
-    const m = d.match, lobiHome = /lobi stars/i.test(m.home);
-    const keep = main.querySelector<HTMLFormElement>('#lf');
-    const saved = keep ? Object.fromEntries(new FormData(keep).entries()) : null;
-    main.innerHTML = `<div class="mc-page-head"><h1>Live: ${esc(m.home)} v ${esc(m.away)}</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/matchday/" data-go="/matchday">← Matchday Desk</a></div>
-      <p>${d.granted ? '<span class="mc-pill published">Your updates post instantly (pre-approved for this match)</span>' : '<span class="mc-pill submitted">Your updates wait for a Super Admin to approve</span>'}</p>
-      <section class="mc-card"><p class="mc-score">${esc(m.homeScore)} – ${esc(m.awayScore)}</p><p style="text-align:center" class="mc-muted">${esc(m.status)} · ${esc(when(m.date))}</p></section>
-      <form class="mc-card" id="lf" style="margin-top:12px" onsubmit="return false">
-        <div class="mc-grid two"><div class="mc-field"><label for="minute">Minute</label><input id="minute" name="minute" inputmode="numeric" maxlength="6" placeholder="e.g. 23 or 45+2" /></div>
-        <div class="mc-field"><label for="team">Team</label><select id="team" name="team"><option value="">—</option><option value="home">${esc(m.home)}</option><option value="away">${esc(m.away)}</option></select></div>
-        <div class="mc-field"><label for="player">Player</label><input id="player" name="player" list="squadList" maxlength="80" placeholder="Name" /><datalist id="squadList">${M.players.map((p: any) => `<option value="${esc(p.name)}">`).join('')}</datalist></div>
-        <div class="mc-field"><label for="detail">Detail <small>(optional)</small></label><input id="detail" name="detail" maxlength="160" placeholder="e.g. header from a corner; Akaa off, Musa on" /></div></div>
-        <div class="mc-live-btns">${Object.entries(d.types).map(([k, l]) => `<button type="button" class="mc-btn ${k === 'goal' ? 'mc-btn-red' : 'mc-btn-o'}" data-type="${esc(k)}">${esc(l as string)}</button>`).join('')}</div>
-      </form>
-      ${d.waiting.length ? `<section class="mc-card" style="margin-top:12px"><h2 class="mc-h3">Waiting for approval</h2><ul class="mc-list">${d.waiting.map((w: any) => `<li><div class="t"><b>${esc(w.title)}</b><small>${esc(when(w.submitted_at))}</small></div></li>`).join('')}</ul></section>` : ''}
-      <section class="mc-card" style="margin-top:12px"><h2 class="mc-h3">On the match page now</h2>${m.timeline.length ? `<ul class="mc-list">${m.timeline.map((t: any) => `<li><div class="t"><b>${esc(t.minute ? `${t.minute}'` : '')} ${esc(t.type)} ${esc(t.player || '')}</b><small>${esc(t.detail || '')}</small></div></li>`).join('')}</ul>` : '<p class="mc-empty">No updates yet.</p>'}</section>`;
-    if (saved) for (const [k, v] of Object.entries(saved)) { const el = main.querySelector<HTMLInputElement>(`[name="${k}"]`); if (el) el.value = String(v); }
-    if (!saved && lobiHome !== undefined) (main.querySelector('#team') as HTMLSelectElement).value = lobiHome ? 'home' : 'away';
-    main.querySelectorAll<HTMLButtonElement>('[data-type]').forEach(b => b.addEventListener('click', async () => {
-      const f = Object.fromEntries(new FormData(main.querySelector('#lf') as HTMLFormElement).entries()) as any;
-      b.disabled = true;
-      try {
-        const r = await api('live', { method: 'POST', body: { eventId, update: { type: b.dataset.type, minute: f.minute, team: f.team, player: f.player, detail: f.detail } } });
-        toast(r.posted ? `Posted. Score ${r.score} (${r.status}).` : 'Sent to the Super Admins for approval.');
-        for (const k of ['minute', 'player', 'detail']) (main.querySelector(`[name="${k}"]`) as HTMLInputElement).value = '';
-        await draw();
-      } catch (err: any) { toast(err.message, 9000); b.disabled = false; }
-    }));
+  const first = await api(`live?event=${encodeURIComponent(eventId)}`, { quiet: true });
+  const m0 = first.match;
+  // The form is drawn once; every 20 seconds only the score, the updates waiting and the timeline are refreshed.
+  main.innerHTML = `<div class="mc-page-head"><h1>Live: ${esc(m0.home)} v ${esc(m0.away)}</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/matchday/" data-go="/matchday">← Matchday Desk</a></div>
+    <p id="grant"></p>
+    <section class="mc-card"><p class="mc-score" id="score"></p><p style="text-align:center" class="mc-muted" id="state"></p></section>
+    <form class="mc-card" id="lf" style="margin-top:12px">
+      <div class="mc-grid two"><div class="mc-field"><label for="minute">Minute</label><input id="minute" name="minute" inputmode="numeric" maxlength="6" placeholder="e.g. 23 or 45+2" /></div>
+      <div class="mc-field"><label for="team">Team</label><select id="team" name="team"><option value="">—</option><option value="home" ${/lobi stars/i.test(m0.home) ? 'selected' : ''}>${esc(m0.home)}</option><option value="away" ${/lobi stars/i.test(m0.away) ? 'selected' : ''}>${esc(m0.away)}</option></select></div>
+      <div class="mc-field"><label for="player">Player</label><input id="player" name="player" list="squadList" maxlength="80" placeholder="Name" /><datalist id="squadList">${M.players.map((p: any) => `<option value="${esc(p.name)}">`).join('')}</datalist></div>
+      <div class="mc-field"><label for="detail">Detail <small>(optional)</small></label><input id="detail" name="detail" maxlength="160" placeholder="e.g. header from a corner; Akaa off, Musa on" /></div></div>
+      <div class="mc-live-btns">${Object.entries(first.types).map(([k, l]) => `<button type="button" class="mc-btn ${k === 'goal' ? 'mc-btn-red' : 'mc-btn-o'}" data-type="${esc(k)}">${esc(l as string)}</button>`).join('')}</div>
+    </form>
+    <section class="mc-card" style="margin-top:12px" id="waitBox" hidden><h2 class="mc-h3">Waiting for approval</h2><ul class="mc-list" id="waiting"></ul></section>
+    <section class="mc-card" style="margin-top:12px"><h2 class="mc-h3">On the match page now</h2><div id="timeline"></div></section>`;
+  const $ = (s: string) => main.querySelector(s) as HTMLElement;
+  const paint = (d: any) => {
+    const m = d.match;
+    $('#grant').innerHTML = d.granted ? '<span class="mc-pill published">Your updates post instantly (pre-approved for this match)</span>' : '<span class="mc-pill submitted">Your updates wait for a Super Admin to approve</span>';
+    $('#score').textContent = `${m.homeScore} – ${m.awayScore}`;
+    $('#state').textContent = `${m.status} · ${when(m.date)}`;
+    ($('#waitBox') as HTMLElement).hidden = !d.waiting.length;
+    $('#waiting').innerHTML = d.waiting.map((w: any) => `<li><div class="t"><b>${esc(w.title)}</b><small>${esc(when(w.submitted_at))}</small></div></li>`).join('');
+    $('#timeline').innerHTML = m.timeline.length ? `<ul class="mc-list">${m.timeline.map((t: any) => `<li><div class="t"><b>${esc(t.minute ? `${t.minute}'` : '')} ${esc(t.type)} ${esc(t.player || '')}</b><small>${esc(t.detail || '')}</small></div></li>`).join('')}</ul>` : '<p class="mc-empty">No updates yet.</p>';
   };
-  await draw();
-  timer = window.setInterval(() => draw().catch(() => {}), 20000);
+  paint(first);
+  const refresh = async () => { paint(await api(`live?event=${encodeURIComponent(eventId)}`, { quiet: true })); };
+  main.querySelectorAll<HTMLButtonElement>('[data-type]').forEach(b => b.addEventListener('click', async () => {
+    const f = Object.fromEntries(new FormData(main.querySelector('#lf') as HTMLFormElement).entries()) as any;
+    b.disabled = true;
+    try {
+      const r = await api('live', { method: 'POST', body: { eventId, update: { type: b.dataset.type, minute: f.minute, team: f.team, player: f.player, detail: f.detail } } });
+      toast(r.posted ? `Posted. Score ${r.score} (${r.status}).` : 'Sent to the Super Admins for approval.');
+      for (const k of ['minute', 'player', 'detail']) (main.querySelector(`[name="${k}"]`) as HTMLInputElement).value = '';
+      await refresh();
+    } catch (err: any) { toast(err.message, 9000); }
+    finally { b.disabled = false; }
+  }));
+  const timer = window.setInterval(() => {
+    if (!main.isConnected || !location.pathname.includes(`/matchday/live/${eventId}`)) { clearInterval(timer); return; }
+    refresh().catch(() => {});
+  }, 20000);
 }
