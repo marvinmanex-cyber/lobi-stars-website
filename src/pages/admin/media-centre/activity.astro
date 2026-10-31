@@ -1,0 +1,74 @@
+---
+// Media Centre › Activity log (only the three Super Admins). Every Media
+// Centre action and every Media Centre decision in the admin, with filters and
+// a CSV download. Entries can never be changed or deleted (not even by a Super
+// Admin): the database refuses it.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Media Centre activity | Lobi Stars Admin" description="Media Centre activity log." noindex>
+  <div class="wrap mcl">
+    <AdminNav current="media-activity" />
+    <header><div class="stag">Media Centre · Super Admins</div><h1 class="stitle">Media Centre <span class="r">activity log</span></h1></header>
+    <p class="mcl-lede">Who did what in the Media Centre, and every decision on Media Centre content. This log can't be changed or deleted by anyone. Times are Nigerian time.</p>
+    <p class="mcl-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <form class="mcl-f" id="f">
+      <label>Person<select name="user"><option value="">Everyone</option></select></label>
+      <label>From<input type="date" name="from" /></label>
+      <label>To<input type="date" name="to" /></label>
+      <label>Section<select name="section"><option value="">All sections</option></select></label>
+      <label>Action<select name="action"><option value="">All actions</option></select></label>
+      <button class="btn-p" type="submit">Show</button>
+      <a class="btn-o" id="csv" href="#">Download CSV</a>
+    </form>
+    <div class="mcl-card"><div class="mcl-scroll"><table class="mcl-t"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Item</th><th>Details</th><th>IP</th></tr></thead><tbody id="rows"><tr><td colspan="6" class="muted">Loading…</td></tr></tbody></table></div>
+      <button class="btn-o" id="more" type="button" hidden>Show older</button></div>
+  </div>
+</Layout>
+
+<style>
+  .mcl { max-width: 1200px; padding-top: 20px; padding-bottom: 60px; }
+  .mcl-lede { color: var(--a-muted); }
+  .mcl-msg { padding: 10px 14px; border-radius: 10px; background: #FEE2E2; color: #991B1B; }
+  .mcl-f { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin: 14px 0; }
+  .mcl-f label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; }
+  .mcl-f input, .mcl-f select { min-height: 40px; font: inherit; font-size: 14px; padding: 6px 10px; border: 1px solid var(--a-line); border-radius: 8px; background: var(--a-card); color: var(--a-ink); }
+  .mcl-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 12px; }
+  .mcl-scroll { overflow-x: auto; }
+  .mcl-t { width: 100%; border-collapse: collapse; font-size: 13px; } .mcl-t th, .mcl-t td { text-align: left; padding: 8px; border-top: 1px solid var(--a-line); vertical-align: top; }
+  .mcl-t th { border-top: 0; font-size: 12px; text-transform: uppercase; color: var(--a-muted); }
+  .mcl :global(.act) { font-weight: 700; } .mcl :global(.act.bad) { color: #B91C1C; } .mcl :global(.act.ok) { color: #047857; }
+</style>
+
+<script>
+  const H = { 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const when = (iso?: string) => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  let last: number | null = null, filled = false;
+  const qs = () => { const f = $('f'); const p = new URLSearchParams(); for (const k of ['user', 'from', 'to', 'section', 'action']) if (f[k].value) p.set(k, f[k].value); return p; };
+  async function load(more = false) {
+    const p = qs(); if (more && last) p.set('before', String(last));
+    $('csv').href = `/api/admin/media-centre/activity?${new URLSearchParams([...qs(), ['format', 'csv']])}`;
+    try {
+      const r = await fetch(`/api/admin/media-centre/activity?${p}`, { headers: H, cache: 'no-store' });
+      if (r.status === 401) { location.href = '/admin/login/?next=/admin/media-centre/activity/'; return; }
+      const d = await r.json(); if (!r.ok) throw new Error(d.error || 'Request failed');
+      if (!filled) {
+        const f = $('f');
+        f.user.innerHTML += d.users.map((u: any) => `<option value="${esc(u.id)}">${esc(u.fullName)} (${esc(u.loginId)})</option>`).join('');
+        f.section.innerHTML += d.sections.map((s: string) => `<option>${esc(s)}</option>`).join('');
+        f.action.innerHTML += d.actions.map((s: string) => `<option>${esc(s)}</option>`).join('');
+        filled = true;
+      }
+      const html = d.rows.map((r: any) => `<tr><td>${esc(when(r.at))}</td><td>${esc(r.actor_name || r.actor_kind)}</td><td><span class="act ${/fail|reject|lock|disable|unpublish|revoke/.test(r.action) ? 'bad' : /approve|publish|login$/.test(r.action) ? 'ok' : ''}">${esc(r.action)}</span><br /><small class="muted">${esc(r.section || '')}</small></td>
+        <td>${r.item_title ? esc(r.item_title) : ''}${r.item_type ? `<br /><small class="muted">${esc(r.item_type)}${r.item_id ? ` · ${esc(r.item_id)}` : ''}</small>` : ''}</td><td>${esc(r.details || '')}</td><td><small>${esc(r.ip || '')}</small></td></tr>`).join('');
+      $('rows').innerHTML = more ? $('rows').innerHTML + html : (html || '<tr><td colspan="6" class="muted">Nothing matches.</td></tr>');
+      last = d.rows.length ? d.rows[d.rows.length - 1].id : last;
+      $('more').hidden = d.rows.length < 200;
+    } catch (e: any) { $('msg').textContent = e.message; $('msg').hidden = false; }
+  }
+  $('f').addEventListener('submit', (e: Event) => { e.preventDefault(); last = null; load(); });
+  $('more').addEventListener('click', () => load(true));
+  load();
+</script>

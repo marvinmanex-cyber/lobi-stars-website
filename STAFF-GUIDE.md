@@ -3833,6 +3833,92 @@ the Super Admins should be owners of the Search Console property.
 **Learn:** **SEO basics** (button at the top) explains all of this in plain
 English for anyone on the media team.
 
+## 41. Media Centre (/media-centre)
+
+**What it is:** a separate, private page for the club's media staff:
+**https://lobistarsfc.com/media-centre**. They write content there; a Super
+Admin approves it in this admin (**Media Centre › Approval Queue**); approved
+content then appears on the public website in the places that already show it.
+Fans use the website exactly as before.
+
+**Who can open what**
+- Media Centre users sign in with a **Login ID** (their name + 2 to 4 digits,
+  e.g. **Iorbee68**) and **their own password**. There is no email sign-in.
+- A Media Centre login opens **only** the Media Centre. Every admin page and
+  admin API refuses it (checked on the server).
+- Media staff can never publish to the website themselves. The only
+  exception is accreditation (any media user approves it), plus live matchday
+  updates when a Super Admin grants them for a match.
+- Only the three Super Admins see the **Media Centre** menu in this admin.
+
+### Users (Media Centre › Users & settings)
+- **Add a user:** full name (printed on accreditation cards as "Signed: …"),
+  Login ID, and a temporary password (press **Make one**). Give these to the
+  person in person or by WhatsApp. They must choose their own password (8+
+  characters) the first time they sign in. There is no limit on the number of
+  users.
+- For each user: **Reset password** (a new temporary password; they are
+  signed out and must change it again), **Change Login ID**, **Rename**,
+  **Unlock**, **Sign out**, **Disable / Enable**.
+- **Security:**
+  - Five wrong passwords lock the account for 15 minutes (a Super Admin can
+    unlock it sooner).
+  - 30 minutes without activity signs the person out.
+  - Passwords are stored only as a secure hash (PBKDF2-SHA256, 100,000
+    rounds). Cloudflare cannot run bcrypt or Argon2 within its limits.
+
+### Approval Queue (Media Centre › Approval Queue)
+Everything the media staff send waits here, newest first. The count shows on
+the menu and in the bell. Open an item to see:
+- the **preview**;
+- for a correction to something already published, the **live version** next
+  to the correction and **what changed**;
+- the **history**: every version sent, approved or returned, with the changes
+  between them.
+
+What you can do with it:
+- **Approve and publish:** if the writer chose a time, it is published at
+  that time instead.
+- **Edit, then approve:** change the text yourself, then approve.
+- **Return with comment:** the writer sees your comment on their Media Centre
+  home and can send it again.
+- **Reject:** write a reason.
+- **Unpublish** (published items): removes it from the website. Nothing
+  published is ever deleted.
+
+The content moves through these statuses: draft → waiting for approval →
+published (or scheduled → published), returned (with your comment), rejected,
+unpublished.
+
+**Corrections:** when a writer changes something already published, the
+website keeps showing the live version until you approve the correction.
+
+### Activity log (Media Centre › Activity log)
+Every Media Centre action is listed: sign-ins and failed sign-ins, sign-outs,
+create, edit, submit, approve, return, reject, unpublish, uploads, password
+resets, user changes and settings. Each entry shows who, what, when, the IP
+address and the device.
+- **Filters:** person, dates, section, action. **Download CSV** gives the
+  same list as a spreadsheet.
+- Nobody can change or delete an entry, not even a Super Admin. The database
+  refuses it.
+
+### Settings (Media Centre › Users & settings)
+- **News categories:** the 17 presets (Match Preview … Fans). You can add
+  your own, rename, hide or re-order them, and choose the News page tab each
+  one is listed under. There are no women's-team or academy categories.
+- **Accreditation:** how many hours before kick-off applications close
+  (default 48), and the most accredited journalists per match.
+- **Lobi Stars Weekly:** the deadline (default Tuesday 6 PM) and the publish
+  time (default Wednesday 8 AM).
+- **Media team email:** where the Monday newsletter reminder goes.
+- **Media contact:** shown on press releases.
+
+### The Media Centre home (for media staff)
+After signing in: **Returned to me** (with the Super Admin's comment),
+**Waiting for approval**, **My drafts**, **Upcoming deadlines** and
+**Recently published**.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

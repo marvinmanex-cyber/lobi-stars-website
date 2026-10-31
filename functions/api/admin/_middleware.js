@@ -3,6 +3,7 @@ import { allowedPath, loadRoles } from '../_lib/adminRoles.js';
 import { crossSiteWrite } from '../_lib/adminSecurity.js';
 import { helperMayOpen } from '../_lib/helpers.js';
 import { hasPortalCookie, getPortalSession } from '../_lib/squadPortal.js';
+import { hasMediaCookie, getMediaSession } from '../_lib/mediaCentre.js';
 
 // Role check for every admin API (the endpoints themselves check the login).
 // A signed-in staff member calling an API outside their role gets 403.
@@ -18,6 +19,10 @@ export async function onRequest({ request, env, next, waitUntil }) {
   // The Squad & Staff Data Portal login never opens any admin API.
   if (!admin && !/^\/api\/admin\/(login|logout|invite|password-reset)(\/|$)/.test(url.pathname) && hasPortalCookie(request) && await getPortalSession(request, env, { touch: false })) {
     return Response.json({ error: 'The Squad & Staff Data Portal login only opens the portal.' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
+  }
+  // Nor does a Media Centre login (checked on the server for every admin API, GET and POST).
+  if (!admin && hasMediaCookie(request) && await getMediaSession(request, env, { touch: false })) {
+    return Response.json({ error: 'The Media Centre login only opens the Media Centre.' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
   }
   // Matchday helpers only use their own screen's APIs.
   if (admin?.helper && !helperMayOpen(admin, url.pathname)) return Response.json({ error: 'Helper accounts only open their own screen.' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });

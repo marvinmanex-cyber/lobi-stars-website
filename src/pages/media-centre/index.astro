@@ -1,0 +1,145 @@
+---
+// The Media Centre: the private page for the club's media staff
+// (functions/media-centre/[[path]].js serves it for every /media-centre address
+// with strict security headers). One page, several screens; the script in
+// src/scripts/mediaCentre/ draws them. Not linked from the public site.
+// Lobi Stars colours: blue #4C76B2, white, red #EE343C.
+---
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="same-origin" />
+  <meta name="theme-color" content="#4C76B2" />
+  <title>Media Centre | Lobi Stars FC</title>
+  <link rel="icon" href="/images/lobi-stars-badge.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="app">
+    <section class="mc-signin" id="signin" hidden>
+      <div class="mc-brand">
+        <img class="mc-badge-lg" src="/images/lobi-stars-badge.webp" alt="Lobi Stars FC badge" width="96" height="96" />
+        <p class="mc-club">Lobi Stars FC</p>
+        <h1 class="mc-h1">Media Centre</h1>
+        <p class="mc-sub">For the club's media staff</p>
+      </div>
+      <form class="mc-card mc-signin-card" id="signinForm" novalidate>
+        <h2 class="mc-h2">Sign in</h2>
+        <p class="mc-alert" id="signinMsg" role="alert" hidden></p>
+        <div class="mc-field"><label for="siId">Login ID</label><input id="siId" name="loginId" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="e.g. Iorbee68" /></div>
+        <div class="mc-field"><label for="siPw">Password</label><div class="mc-pw"><input id="siPw" name="password" type="password" autocomplete="current-password" required /><button type="button" class="mc-btn mc-btn-o" data-show="siPw">Show</button></div></div>
+        <button class="mc-btn mc-btn-red mc-wide" type="submit">Sign in</button>
+        <p class="mc-muted mc-small">Forgot your password? Ask a Super Admin to set a new temporary one.</p>
+      </form>
+    </section>
+
+    <section class="mc-signin" id="changepw" hidden>
+      <div class="mc-brand"><img class="mc-badge-lg" src="/images/lobi-stars-badge.webp" alt="" width="96" height="96" /><p class="mc-club">Lobi Stars FC</p><h1 class="mc-h1">Choose your password</h1></div>
+      <form class="mc-card mc-signin-card" id="pwForm" novalidate>
+        <p class="mc-muted" id="pwWhy">You signed in with a temporary password. Choose your own password to continue.</p>
+        <p class="mc-alert" id="pwMsg" role="alert" hidden></p>
+        <div class="mc-field"><label for="pwCur">Temporary (current) password</label><input id="pwCur" type="password" autocomplete="current-password" required /></div>
+        <div class="mc-field"><label for="pwNew">New password <small>(at least 8 characters)</small></label><input id="pwNew" type="password" autocomplete="new-password" minlength="8" required /></div>
+        <div class="mc-field"><label for="pwNew2">New password again</label><input id="pwNew2" type="password" autocomplete="new-password" minlength="8" required /></div>
+        <button class="mc-btn mc-btn-red mc-wide" type="submit">Save my password</button>
+        <button class="mc-btn mc-btn-o mc-wide" type="button" id="pwOut">Sign out</button>
+      </form>
+    </section>
+
+    <div id="shell" hidden>
+      <header class="mc-top">
+        <div class="mc-top-in">
+          <button class="mc-menu" id="menuBtn" type="button" aria-label="Menu" aria-expanded="false" aria-controls="nav">☰</button>
+          <a class="mc-logo" href="/media-centre/" data-go="/"><img src="/images/lobi-stars-badge.webp" alt="" width="40" height="40" /><span><b>Lobi Stars FC</b><small>Media Centre</small></span></a>
+          <div class="mc-who"><span id="who"></span><button class="mc-btn mc-btn-ghost" id="signOut" type="button">Sign out</button></div>
+        </div>
+      </header>
+      <div class="mc-body">
+        <nav class="mc-nav" id="nav" aria-label="Media Centre"></nav>
+        <main class="mc-main" id="main" tabindex="-1"></main>
+      </div>
+      <div class="mc-toast" id="toast" role="status" aria-live="polite" hidden></div>
+    </div>
+  </div>
+
+  <style is:global>
+    :root { --blue: #4C76B2; --blue-d: #36598C; --blue-l: #EAF0F8; --red: #EE343C; --red-d: #C9242C; --ink: #16181D; --grey: #4A505C; --bg: #F4F6F9; --line: #DDE3EC; --white: #fff; --ok: #0F8A4B; --warn: #A15C00; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { font: 16px/1.5 'Barlow', system-ui, sans-serif; color: var(--ink); background: var(--bg); -webkit-text-size-adjust: 100%; }
+    [hidden] { display: none !important; }
+    a { color: var(--blue-d); }
+    h1, h2, h3 { font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif; font-weight: 700; line-height: 1.15; margin: 0 0 10px; }
+    .mc-h1 { font-size: 34px; } .mc-h2 { font-size: 26px; } .mc-h3 { font-size: 20px; }
+    .mc-muted { color: var(--grey); } .mc-small { font-size: 14px; }
+    button, input, select, textarea { font: inherit; }
+    .mc-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 8px 16px; border-radius: 10px; border: 2px solid transparent; font-weight: 700; cursor: pointer; text-decoration: none; }
+    .mc-btn:disabled { opacity: .55; cursor: not-allowed; }
+    .mc-btn-red { background: var(--red); color: #fff; } .mc-btn-red:hover { background: var(--red-d); }
+    .mc-btn-blue { background: var(--blue); color: #fff; } .mc-btn-blue:hover { background: var(--blue-d); }
+    .mc-btn-o { background: #fff; color: var(--blue-d); border-color: var(--line); }
+    .mc-btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.6); min-height: 38px; padding: 4px 12px; }
+    .mc-btn-sm { min-height: 36px; padding: 4px 12px; font-size: 14px; }
+    .mc-wide { width: 100%; margin-top: 10px; }
+    .mc-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+    .mc-field { margin: 0 0 14px; } .mc-field label, .mc-label { display: block; font-weight: 700; font-size: 15px; margin: 0 0 5px; } .mc-field label small { font-weight: 400; color: var(--grey); }
+    .mc-field input, .mc-field select, .mc-field textarea, .mc-input { width: 100%; min-height: 46px; padding: 9px 12px; border: 1.5px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); font-size: 16px; }
+    .mc-field textarea { min-height: 90px; resize: vertical; }
+    .mc-field input:focus, .mc-field select:focus, .mc-field textarea:focus, .mc-input:focus { outline: 3px solid rgba(76,118,178,.35); border-color: var(--blue); }
+    .mc-hint { display: block; font-size: 13px; color: var(--grey); margin-top: 4px; } .mc-hint.warn { color: var(--warn); font-weight: 700; }
+    .mc-pw { display: flex; gap: 6px; } .mc-pw input { flex: 1; min-width: 0; }
+    .mc-alert { padding: 10px 12px; border-radius: 10px; background: #FDE8E9; color: #8E1A20; font-weight: 600; }
+    .mc-ok { padding: 10px 12px; border-radius: 10px; background: #E5F5EC; color: #0B5E34; font-weight: 600; }
+    /* Sign-in */
+    .mc-signin { min-height: 100vh; display: grid; align-content: start; justify-items: center; padding: 0 0 40px; background: linear-gradient(180deg, var(--blue) 0 280px, var(--bg) 280px); }
+    .mc-brand { text-align: center; color: #fff; padding: 34px 16px 22px; }
+    .mc-badge-lg { width: 96px; height: 96px; border-radius: 50%; background: #fff; padding: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+    .mc-club { margin: 10px 0 0; font: 700 18px 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+    .mc-sub { margin: 4px 0 0; opacity: .92; }
+    .mc-brand .mc-h1 { margin: 6px 0 0; } .mc-brand .mc-h1::after { content: ''; display: block; width: 56px; height: 5px; border-radius: 3px; background: var(--red); margin: 10px auto 0; }
+    .mc-signin-card { width: calc(100% - 32px); max-width: 420px; box-shadow: 0 10px 30px rgba(22,24,29,.08); }
+    /* Shell */
+    .mc-top { background: var(--blue); color: #fff; border-bottom: 4px solid var(--red); position: sticky; top: 0; z-index: 20; }
+    .mc-top-in { display: flex; align-items: center; gap: 10px; padding: 8px 12px; max-width: 1400px; margin: 0 auto; }
+    .mc-menu { background: transparent; border: 0; color: #fff; font-size: 26px; min-width: 44px; min-height: 44px; cursor: pointer; }
+    .mc-logo { display: flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; min-width: 0; }
+    .mc-logo img { width: 40px; height: 40px; border-radius: 50%; background: #fff; padding: 2px; }
+    .mc-logo span { display: grid; line-height: 1.1; } .mc-logo b { font: 700 17px 'Barlow Condensed', sans-serif; letter-spacing: .05em; } .mc-logo small { font-size: 13px; opacity: .9; }
+    .mc-who { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 14px; } .mc-who span { display: none; }
+    .mc-body { max-width: 1400px; margin: 0 auto; }
+    .mc-nav { display: none; background: #fff; border-bottom: 1px solid var(--line); padding: 8px; }
+    .mc-nav.open { display: block; }
+    .mc-nav a { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 10px; color: var(--ink); text-decoration: none; font-weight: 600; min-height: 44px; }
+    .mc-nav a.on { background: var(--blue-l); color: var(--blue-d); } .mc-nav a .n { margin-left: auto; background: var(--red); color: #fff; border-radius: 999px; font-size: 12px; padding: 1px 8px; }
+    .mc-main { padding: 16px 12px 60px; min-width: 0; }
+    .mc-main:focus { outline: none; }
+    .mc-toast { position: fixed; left: 12px; right: 12px; bottom: 16px; background: var(--ink); color: #fff; padding: 12px 16px; border-radius: 12px; z-index: 50; box-shadow: 0 8px 24px rgba(0,0,0,.25); max-width: 560px; margin: 0 auto; }
+    .mc-page-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 0 0 14px; } .mc-page-head h1 { margin: 0; font-size: 30px; flex: 1 1 auto; }
+    .mc-grid { display: grid; gap: 14px; }
+    .mc-list { list-style: none; margin: 0; padding: 0; } .mc-list li { padding: 10px 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; } .mc-list li:first-child { border-top: 0; }
+    .mc-list .t { flex: 1 1 200px; min-width: 0; } .mc-list .t b { display: block; overflow-wrap: anywhere; } .mc-list small { color: var(--grey); }
+    .mc-pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: var(--blue-l); color: var(--blue-d); white-space: nowrap; }
+    .mc-pill.draft { background: #EEF0F3; color: #3C4350; } .mc-pill.submitted { background: #FFF4D6; color: #7A4B00; } .mc-pill.returned { background: #FDE8E9; color: #8E1A20; }
+    .mc-pill.published, .mc-pill.approved { background: #E5F5EC; color: #0B5E34; } .mc-pill.scheduled { background: #E8E6FB; color: #3B2E9A; } .mc-pill.unpublished, .mc-pill.rejected { background: #EEF0F3; color: #6B7280; }
+    .mc-comment { margin: 6px 0 0; padding: 8px 10px; border-left: 4px solid var(--red); background: #FFF6F6; border-radius: 6px; font-size: 14px; width: 100%; }
+    .mc-empty { color: var(--grey); padding: 8px 0; }
+    .mc-table { width: 100%; border-collapse: collapse; font-size: 14px; } .mc-table th, .mc-table td { text-align: left; padding: 8px; border-top: 1px solid var(--line); vertical-align: top; } .mc-table th { border-top: 0; font-size: 12px; text-transform: uppercase; color: var(--grey); }
+    .mc-scroll { overflow-x: auto; }
+    .mc-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 12px; } .mc-tabs button { min-height: 38px; padding: 4px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-weight: 600; } .mc-tabs button.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+    @media (min-width: 700px) { .mc-who span { display: inline; } .mc-main { padding: 22px 22px 60px; } .mc-grid.two { grid-template-columns: 1fr 1fr; } }
+    @media (min-width: 1000px) {
+      .mc-menu { display: none; }
+      .mc-body { display: grid; grid-template-columns: 240px 1fr; }
+      .mc-nav { display: block; border: 0; border-right: 1px solid var(--line); min-height: calc(100vh - 64px); position: sticky; top: 64px; align-self: start; background: transparent; }
+    }
+  </style>
+  <script>
+    import '../../scripts/mediaCentre/app';
+  </script>
+</body>
+</html>

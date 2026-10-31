@@ -23,6 +23,8 @@
     "/m/*",
     "/matchday",
     "/matchday/*",
+    "/media-centre",
+    "/media-centre/*",
     "/matches",
     "/matches/*",
     "/news",

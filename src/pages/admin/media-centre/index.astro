@@ -1,0 +1,168 @@
+---
+// Media Centre › Users & settings (only the three Super Admins).
+// Media Centre users sign in at /media-centre with a Login ID (name + 2-4
+// digits, e.g. Iorbee68) and their own password. A Super Admin creates each
+// user with a temporary password; the user must choose their own at first
+// sign-in. Also: news categories, accreditation and newsletter settings.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Media Centre users | Lobi Stars Admin" description="Media Centre users and settings." noindex>
+  <div class="wrap mcu">
+    <AdminNav current="media-users" />
+    <header><div class="stag">Media Centre · Super Admins</div><h1 class="stitle">Media Centre <span class="r">users &amp; settings</span></h1></header>
+    <p class="mcu-lede">The Media Centre is the separate page where the media staff write news, the Lobi Stars Weekly, press releases and more: <a href="/media-centre/" target="_blank" rel="noopener">lobistarsfc.com/media-centre</a>. They sign in with their <b>Login ID</b> and their own password; they cannot open this admin. Everything they send waits in the <a href="/admin/media-centre/approvals/">Approval Queue</a>.</p>
+    <p class="mcu-msg" id="msg" role="status" aria-live="polite" hidden></p>
+
+    <section class="mcu-card">
+      <h2>Users</h2>
+      <div class="mcu-scroll"><table class="mcu-table"><thead><tr><th>Name</th><th>Login ID</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead><tbody id="users"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table></div>
+      <h3>Add a user</h3>
+      <form id="addForm" class="mcu-row" autocomplete="off">
+        <label>Full name <small>(printed on accreditation cards as "Signed: …")</small><input name="fullName" required maxlength="80" placeholder="e.g. Terver Iorbee" /></label>
+        <label>Login ID <small>(name + 2–4 digits)</small><input name="loginId" required maxlength="34" pattern="[A-Za-z]{2,30}[0-9]{2,4}" placeholder="e.g. Iorbee68" /></label>
+        <label>Temporary password <small>(at least 8 characters)</small><span class="mcu-pw"><input name="password" required minlength="8" maxlength="72" /><button type="button" class="btn-o" data-gen>Make one</button></span></label>
+        <button class="btn-p" type="submit">Add user</button>
+      </form>
+      <p class="muted small">Give the person their Login ID and temporary password in person or by WhatsApp. They must choose their own password the first time they sign in. Accounts lock for 15 minutes after 5 wrong passwords and sign out after 30 minutes without activity.</p>
+    </section>
+
+    <section class="mcu-card">
+      <h2>News categories</h2>
+      <p class="muted small">The categories writers choose from. Each is listed under one of the tabs on the public News page. Hidden categories can't be chosen for new stories (published stories keep theirs).</p>
+      <div id="cats"></div>
+      <form id="catForm" class="mcu-row">
+        <label>New category<input name="name" maxlength="40" required /></label>
+        <label>News page tab<select name="tab" id="catTab"></select></label>
+        <button class="btn-o" type="submit">Add category</button>
+      </form>
+    </section>
+
+    <section class="mcu-card">
+      <h2>Settings</h2>
+      <form id="setForm" class="mcu-grid">
+        <label>Accreditation closes (hours before kick-off)<input name="accreditation_close_hours" type="number" min="0" max="336" /></label>
+        <label>Most accredited journalists per match<input name="accreditation_max" type="number" min="1" max="999" /></label>
+        <label>Newsletter deadline<span class="mcu-pw"><select name="nd_day"></select><input name="nd_time" type="time" /></span></label>
+        <label>Newsletter publishes<span class="mcu-pw"><select name="np_day"></select><input name="np_time" type="time" /></span></label>
+        <label>Media team email (Monday newsletter reminder)<input name="media_team_email" type="email" /></label>
+        <label>Media contact on press releases<input name="press_contact" maxlength="200" /></label>
+        <div><button class="btn-p" type="submit">Save settings</button></div>
+      </form>
+      <p class="muted small">Times are Nigerian time. Emails (reminders, accreditation, newsletters) need the email service (Resend) set up in Cloudflare.</p>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .mcu { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
+  .mcu-lede { color: var(--a-muted); line-height: 1.5; } .mcu-lede a { color: inherit; font-weight: 700; }
+  .mcu-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: sticky; top: 8px; z-index: 5; } .mcu-msg.err { background: #FEE2E2; color: #991B1B; }
+  .mcu-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 16px 0; }
+  .mcu-card h2 { margin: 0 0 10px; font-size: 19px; } .mcu-card h3 { margin: 18px 0 8px; font-size: 16px; }
+  .mcu-scroll { overflow-x: auto; }
+  .mcu-table { width: 100%; border-collapse: collapse; font-size: 14px; } .mcu-table th, .mcu-table td { text-align: left; padding: 9px 8px; border-top: 1px solid var(--a-line); vertical-align: top; }
+  .mcu-table th { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--a-muted); border-top: 0; }
+  .mcu-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+  .mcu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; align-items: end; }
+  .mcu label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; } .mcu label small { font-weight: 400; color: var(--a-muted); }
+  .mcu input, .mcu select { min-height: 40px; font: inherit; font-size: 14px; padding: 6px 10px; border: 1px solid var(--a-line); border-radius: 8px; background: var(--a-card); color: var(--a-ink); }
+  .mcu-pw { display: flex; gap: 6px; } .mcu-pw input { flex: 1; min-width: 0; }
+  .mcu :global(.acts) { display: flex; flex-wrap: wrap; gap: 6px; } .mcu :global(.acts button) { font: inherit; font-size: 12px; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; }
+  .mcu :global(.pill) { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #DCFCE7; color: #166534; } .mcu :global(.pill.off) { background: #E5E7EB; color: #374151; } .mcu :global(.pill.warn) { background: #FEF3C7; color: #78350F; }
+  .mcu :global(.cat) { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--a-line); } .mcu :global(.cat.off) { opacity: .55; }
+  .mcu :global(.cat input) { flex: 1 1 200px; } .mcu :global(.cat button) { font: inherit; font-size: 12px; padding: 6px 9px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; }
+  .small { font-size: 13px; }
+</style>
+
+<script>
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const when = (iso?: string) => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '—';
+  const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  let msgT = 0;
+  function msg(t: string, ok = true) { const m = $('msg'); m.textContent = t; m.className = `mcu-msg${ok ? '' : ' err'}`; m.hidden = false; clearTimeout(msgT); msgT = window.setTimeout(() => { m.hidden = true; }, 8000); }
+  async function api(path: string, body?: unknown) {
+    const r = await fetch(`/api/admin/media-centre/${path}`, body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/media-centre/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  function tempPassword() {
+    const words = ['Eagle', 'Benue', 'Stars', 'Pitch', 'Goal', 'River', 'Lion', 'Kite', 'Drum', 'Mango'];
+    const a = crypto.getRandomValues(new Uint32Array(3));
+    return `${words[a[0] % 10]}-${words[a[1] % 10]}-${1000 + (a[2] % 9000)}`;
+  }
+  function users(list: any[]) {
+    $('users').innerHTML = list.length ? list.map(u => `<tr data-id="${esc(u.id)}" data-login="${esc(u.loginId)}" data-name="${esc(u.fullName)}">
+      <td><b>${esc(u.fullName)}</b><br /><small class="muted">Added ${esc(when(u.createdAt))}</small></td>
+      <td><code>${esc(u.loginId)}</code></td>
+      <td>${u.active ? '<span class="pill">Active</span>' : '<span class="pill off">Disabled</span>'} ${u.locked ? '<span class="pill warn">Locked</span>' : ''} ${u.mustChange ? '<span class="pill warn">Temporary password</span>' : ''}</td>
+      <td>${esc(when(u.lastLogin))}</td>
+      <td><div class="acts"><button data-a="reset_password">Reset password</button><button data-a="login_id">Change Login ID</button><button data-a="full_name">Rename</button>${u.locked ? '<button data-a="unlock">Unlock</button>' : ''}<button data-a="sign_out">Sign out</button><button data-a="${u.active ? 'disable' : 'enable'}">${u.active ? 'Disable' : 'Enable'}</button></div></td></tr>`).join('')
+      : '<tr><td colspan="5" class="muted">No users yet. Add the first one below.</td></tr>';
+  }
+  function cats(list: any[], tabs: string[]) {
+    $('catTab').innerHTML = tabs.map(t => `<option>${esc(t)}</option>`).join('');
+    $('cats').innerHTML = list.map((c, i) => `<div class="cat${c.hidden ? ' off' : ''}" data-id="${esc(c.id)}" data-sort="${c.sort}">
+      <input value="${esc(c.name)}" maxlength="40" aria-label="Category name" data-name />
+      <select data-tab aria-label="News page tab">${tabs.map(t => `<option ${t === c.tab ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
+      <button type="button" data-save>Save</button>
+      <button type="button" data-up ${i === 0 ? 'disabled' : ''} aria-label="Move up">↑</button>
+      <button type="button" data-hide>${c.hidden ? 'Show' : 'Hide'}</button>
+      ${c.preset ? '<small class="muted">preset</small>' : ''}</div>`).join('');
+  }
+  function settings(s: any) {
+    const f = $('setForm');
+    for (const k of ['accreditation_close_hours', 'accreditation_max', 'media_team_email', 'press_contact']) f[k].value = s[k] || '';
+    for (const [pre, key] of [['nd', 'newsletter_deadline'], ['np', 'newsletter_publish']]) {
+      const [d, t] = String(s[key] || '').split('|');
+      f[`${pre}_day`].innerHTML = DAYS.map((x, i) => `<option value="${i}" ${String(i) === d ? 'selected' : ''}>${x}</option>`).join('');
+      f[`${pre}_time`].value = t || '';
+    }
+  }
+  async function load() {
+    try {
+      const [u, s] = await Promise.all([api('users'), api('settings')]);
+      users(u.users); cats(s.categories, s.tabs); settings(s.settings);
+    } catch (e: any) { msg(e.message, false); }
+  }
+  $('users').addEventListener('click', async (e: Event) => {
+    const b = (e.target as HTMLElement).closest('button[data-a]') as HTMLElement | null; if (!b) return;
+    const tr = b.closest('tr') as HTMLElement, id = tr.dataset.id, name = tr.dataset.name, a = b.dataset.a!;
+    const body: any = { action: a, id };
+    if (a === 'reset_password') { const p = prompt(`New temporary password for ${name} (at least 8 characters). They must change it when they sign in.`, tempPassword()); if (!p) return; body.password = p; }
+    if (a === 'login_id') { const v = prompt(`New Login ID for ${name} (name + 2–4 digits):`, tr.dataset.login); if (!v) return; body.loginId = v; }
+    if (a === 'full_name') { const v = prompt('Full name (printed on accreditation cards):', name); if (!v) return; body.fullName = v; }
+    if (a === 'disable' && !confirm(`Disable ${name}? They are signed out at once and can't sign in until enabled again.`)) return;
+    try { const d = await api('users', body); users(d.users); msg(a === 'reset_password' ? `Done. Give ${name} the temporary password: ${body.password}` : 'Done.'); } catch (err: any) { msg(err.message, false); }
+  });
+  document.querySelector('[data-gen]')!.addEventListener('click', () => { $('addForm').password.value = tempPassword(); });
+  $('addForm').addEventListener('submit', async (e: Event) => {
+    e.preventDefault(); const f = e.target as any;
+    const body = { action: 'create', fullName: f.fullName.value, loginId: f.loginId.value, password: f.password.value };
+    try { const d = await api('users', body); users(d.users); msg(`${body.fullName} added. Login ID: ${body.loginId} · temporary password: ${body.password}`); f.reset(); } catch (err: any) { msg(err.message, false); }
+  });
+  $('cats').addEventListener('click', async (e: Event) => {
+    const t = e.target as HTMLElement, row = t.closest('.cat') as HTMLElement | null; if (!row || t.tagName !== 'BUTTON') return;
+    const id = row.dataset.id; let body: any = null;
+    if (t.matches('[data-save]')) body = { action: 'category', id, name: (row.querySelector('[data-name]') as HTMLInputElement).value, tab: (row.querySelector('[data-tab]') as HTMLSelectElement).value };
+    if (t.matches('[data-hide]')) body = { action: 'category', id, hidden: !row.classList.contains('off') };
+    if (t.matches('[data-up]')) { const prev = row.previousElementSibling as HTMLElement | null; if (!prev) return; try { await api('settings', { action: 'category', id: prev.dataset.id, sort: Number(row.dataset.sort) }); } catch { /* shown below */ } body = { action: 'category', id, sort: Number(prev.dataset.sort) }; }
+    if (!body) return;
+    try { const d = await api('settings', body); cats(d.categories, [...$('catTab').options].map((o: any) => o.value)); msg('Saved.'); } catch (err: any) { msg(err.message, false); }
+  });
+  $('catForm').addEventListener('submit', async (e: Event) => {
+    e.preventDefault(); const f = e.target as any;
+    try { const d = await api('settings', { action: 'category_add', name: f.name.value, tab: f.tab.value }); cats(d.categories, [...$('catTab').options].map((o: any) => o.value)); f.name.value = ''; msg('Category added.'); } catch (err: any) { msg(err.message, false); }
+  });
+  $('setForm').addEventListener('submit', async (e: Event) => {
+    e.preventDefault(); const f = e.target as any;
+    const values = { accreditation_close_hours: f.accreditation_close_hours.value, accreditation_max: f.accreditation_max.value, media_team_email: f.media_team_email.value, press_contact: f.press_contact.value,
+      newsletter_deadline: `${f.nd_day.value}|${f.nd_time.value}`, newsletter_publish: `${f.np_day.value}|${f.np_time.value}` };
+    try { const d = await api('settings', { action: 'settings', values }); settings(d.settings); msg('Settings saved.'); } catch (err: any) { msg(err.message, false); }
+  });
+  load();
+</script>

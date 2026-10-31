@@ -138,6 +138,12 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | L6 | **Ticket prices** | **Done (19 Oct 2026):** every home match still to be played is now VIP ₦500, Grand Stand ₦200, Popular Stand ₦100 (VIP raised from ₦300 on 19 Oct; set on 15 Oct as VIP Sitting ₦300, Grand Stand ₦200, Popular Stand ₦100 (club decision; before: ₦5,000 / ₦2,000 / ₦1,000). Tickets already bought keep the price paid. Change any match in Commerce › Match Tickets. Online payment needs the live Paystack key (A4). |
 | L7 | **Seats per stand** | How many VIP Sitting, Grand Stand and Popular Stand seats can be sold for each home match (until set, there is no limit). Enter them in Commerce › Match Tickets (one form sets all matches) or send them to the website manager. |
 
+## M. Media Centre (/media-centre, built 31 Oct 2026)
+
+| # | Item | What is needed |
+| --- | --- | --- |
+| M1 | **Create the Media Centre users** | A Super Admin opens Admin › Media Centre › Users & settings › *Add a user* for each media staff member (start with 4). Each needs a full name (it is printed on accreditation cards as "Signed: …"), a Login ID (name + 2–4 digits, e.g. Iorbee68) and a temporary password (press *Make one*). Give each person their Login ID and temporary password in person or by WhatsApp, with the link https://lobistarsfc.com/media-centre. They choose their own password at the first sign-in. |
+
 ## E. Legal
 
 | # | What | What to send |

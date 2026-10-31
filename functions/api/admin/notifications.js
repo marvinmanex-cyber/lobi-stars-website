@@ -9,6 +9,7 @@ import { healthSummary } from '../_lib/uptime.js';
 import { scoreBellItems } from '../_lib/scores/bell.js';
 import { unseenDevices, getPortalSettings, resetRequest } from '../_lib/squadPortal.js';
 import { queueCount as squadQueueCount } from '../_lib/squadApprovals.js';
+import { queueCount as mediaQueueCount } from '../_lib/mediaCentre.js';
 
 // GET /api/admin/notifications -- the admin bell: unread / overdue Inbox messages,
 // Predict & Win prizes not yet paid, commentary stream errors today, and
@@ -64,6 +65,12 @@ export async function onRequestGet({ request, env, waitUntil }) {
     if (n) items.unshift(can(admin, 'squad.approve')
       ? { icon: '🧾', title: `${n} squad ${n === 1 ? 'profile or change' : 'profiles or changes'} waiting for your approval`, sub: 'Nothing goes on the website before a Super Admin approves it', href: '/admin/squad-approvals/' }
       : { icon: '🧾', title: `${n} squad ${n === 1 ? 'profile or change' : 'profiles or changes'} waiting for a Super Admin`, sub: 'Sent from the Squad & Staff Data Portal', href: '/admin/squad-profiles/' });
+  }
+  // Media Centre content waiting for a Super Admin (Media Centre › Approval Queue).
+  if (can(admin, 'media.centre.manage')) {
+    const n = await mediaQueueCount(db).catch(() => 0);
+    counts.mediaApprovals = n;
+    if (n) items.unshift({ icon: '📰', title: `${n} Media Centre ${n === 1 ? 'item' : 'items'} waiting for your approval`, sub: 'News, newsletters and more from the media staff', href: '/admin/media-centre/approvals/' });
   }
   // Score verification: things waiting for the Website & Data Officer.
   if (can(admin, 'matchday.scores')) items.push(...await scoreBellItems(env).catch(err => { console.error('[bell] scores', err); return []; }));

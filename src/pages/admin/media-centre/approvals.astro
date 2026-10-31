@@ -1,0 +1,130 @@
+---
+// Media Centre › Approval Queue (only the three Super Admins). Everything the
+// media staff send from the Media Centre, newest first: preview, compare with
+// the live version and earlier versions, then Approve, Edit then approve,
+// Return with a comment, or Reject. Published content can be unpublished
+// (never deleted).
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+---
+<Layout title="Media Centre approvals | Lobi Stars Admin" description="Approve Media Centre content." noindex>
+  <div class="wrap mca">
+    <AdminNav current="media-approvals" />
+    <header><div class="stag">Media Centre · Super Admins</div><h1 class="stitle">Approval <span class="r">Queue</span></h1></header>
+    <p class="mca-lede">Content from the <a href="/media-centre/" target="_blank" rel="noopener">Media Centre</a> appears on the website only after a Super Admin approves it here. Approved news shows on the News page about 3 minutes later (the website rebuilds). Corrections to published content keep the live version until you approve them.</p>
+    <p class="mca-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <section class="mca-card"><h2>Waiting for approval <span class="mca-n" id="n"></span></h2><div id="queue"><p class="muted">Loading…</p></div></section>
+    <section class="mca-card" id="detail" hidden></section>
+    <section class="mca-card"><h2>Published and scheduled</h2><div id="published"></div></section>
+  </div>
+</Layout>
+
+<style>
+  .mca { max-width: 1150px; padding-top: 20px; padding-bottom: 60px; }
+  .mca-lede { color: var(--a-muted); line-height: 1.5; } .mca-lede a { color: inherit; font-weight: 700; }
+  .mca-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: sticky; top: 8px; z-index: 5; } .mca-msg.err { background: #FEE2E2; color: #991B1B; }
+  .mca-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 16px 0; }
+  .mca-card h2 { margin: 0 0 10px; font-size: 19px; } .mca-n { font-size: 14px; padding: 2px 9px; border-radius: 999px; background: #E31E24; color: #fff; vertical-align: middle; }
+  .mca :global(.q) { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--a-line); }
+  .mca :global(.q .t) { flex: 1 1 260px; } .mca :global(.q .t b) { display: block; } .mca :global(.q small) { color: var(--a-muted); }
+  .mca :global(.kind) { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #E0E9F6; color: #1E3A66; font-weight: 700; }
+  .mca :global(.corr) { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: #FEF3C7; color: #78350F; margin-left: 6px; }
+  .mca :global(button), .mca :global(.btnlike) { font: inherit; font-size: 13px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; text-decoration: none; }
+  .mca :global(button.go) { background: #10B981; border-color: #10B981; color: #fff; font-weight: 700; } .mca :global(button.bad) { color: #B91C1C; }
+  .mca :global(.cols) { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; }
+  .mca :global(.pv) { border: 1px solid var(--a-line); border-radius: 12px; padding: 14px; background: #fff; color: #15181D; max-height: 640px; overflow: auto; }
+  .mca :global(.pv img) { max-width: 100%; height: auto; } .mca :global(.pvh) { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--a-muted); margin: 0 0 6px; font-weight: 700; }
+  .mca :global(.acts) { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; align-items: center; }
+  .mca :global(textarea), .mca :global(input), .mca :global(select) { width: 100%; font: inherit; font-size: 14px; padding: 8px 10px; border: 1px solid var(--a-line); border-radius: 8px; background: var(--a-card); color: var(--a-ink); box-sizing: border-box; }
+  .mca :global(.ed label) { display: block; font-size: 13px; font-weight: 700; margin: 10px 0 4px; }
+  .mca :global(.rev) { font-size: 13px; padding: 8px 0; border-top: 1px solid var(--a-line); } .mca :global(.diff) { font-size: 13px; margin: 6px 0 0; padding-left: 16px; } .mca :global(.diff del) { color: #B91C1C; } .mca :global(.diff ins) { color: #047857; text-decoration: none; }
+</style>
+
+<script>
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const when = (iso?: string) => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '—';
+  const EVENTS: Record<string, string> = { submitted: 'Submitted', correction_submitted: 'Correction submitted', approved: 'Approved', returned: 'Returned', rejected: 'Rejected', edited_by_admin: 'Edited by a Super Admin', unpublished: 'Unpublished' };
+  let msgT = 0, cur: any = null;
+  function msg(t: string, ok = true) { const m = $('msg'); m.textContent = t; m.className = `mca-msg${ok ? '' : ' err'}`; m.hidden = false; clearTimeout(msgT); msgT = window.setTimeout(() => { m.hidden = true; }, 9000); }
+  async function api(qs = '', body?: unknown) {
+    const r = await fetch(`/api/admin/media-centre/approvals${qs}`, body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/media-centre/approvals/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    return d;
+  }
+  const plain = (v: unknown) => (typeof v === 'string' ? v : JSON.stringify(v ?? '')).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  function diff(a: any, b: any) {
+    const keys = [...new Set([...Object.keys(a || {}), ...Object.keys(b || {})])];
+    const out = keys.filter(k => JSON.stringify(a?.[k] ?? null) !== JSON.stringify(b?.[k] ?? null)).map(k => {
+      const o = plain(a?.[k]).slice(0, 220), n = plain(b?.[k]).slice(0, 220);
+      return `<li><b>${esc(k)}</b>: ${o ? `<del>${esc(o)}</del>` : '<i>empty</i>'} → ${n ? `<ins>${esc(n)}</ins>` : '<i>empty</i>'}</li>`;
+    });
+    return out.length ? `<ul class="diff">${out.join('')}</ul>` : '<p class="muted small">No differences.</p>';
+  }
+  async function load() {
+    try {
+      const d = await api();
+      $('n').textContent = d.items.length || ''; $('n').hidden = !d.items.length;
+      $('queue').innerHTML = d.items.length ? d.items.map((i: any) => `<div class="q"><span class="kind">${esc(i.kindLabel)}</span><div class="t"><b>${esc(i.title)}${i.correction ? '<span class="corr">Correction to live content</span>' : ''}</b><small>Sent by ${esc(i.submittedByName || i.createdByName)} · ${esc(when(i.submittedAt))}${i.scheduledAt ? ` · wants it published ${esc(when(i.scheduledAt))}` : ''}</small></div><button data-open="${esc(i.id)}">Open</button></div>`).join('')
+        : '<p class="muted">Nothing is waiting. 🎉</p>';
+      $('published').innerHTML = d.published.length ? d.published.map((p: any) => `<div class="q"><span class="kind">${esc(p.kind)}</span><div class="t"><b>${esc(p.title)}</b><small>${p.status === 'scheduled' ? `Scheduled for ${esc(when(p.scheduled_at))}` : `Published ${esc(when(p.published_at))}`}</small></div><button data-open="${esc(p.id)}">Open</button></div>`).join('') : '<p class="muted">Nothing yet.</p>';
+    } catch (e: any) { msg(e.message, false); }
+  }
+  function editor(item: any) {
+    const fields = (cur.fields || Object.keys(item.data || {}).map((k: string) => ({ key: k, label: k, type: typeof item.data[k] === 'string' && item.data[k].length > 120 ? 'textarea' : typeof item.data[k] === 'string' ? 'text' : 'json' })));
+    return `<div class="ed" id="ed">${fields.map((f: any) => {
+      const v = item.data?.[f.key];
+      if (f.type === 'textarea' || f.type === 'html') return `<label>${esc(f.label)}</label><textarea data-k="${esc(f.key)}" data-t="text" rows="${f.type === 'html' ? 12 : 4}">${esc(v ?? '')}</textarea>`;
+      if (f.type === 'json') return `<label>${esc(f.label)} <small class="muted">(JSON)</small></label><textarea data-k="${esc(f.key)}" data-t="json" rows="4">${esc(JSON.stringify(v ?? null, null, 1))}</textarea>`;
+      if (f.type === 'bool') return `<label><input type="checkbox" data-k="${esc(f.key)}" data-t="bool" ${v ? 'checked' : ''} style="width:auto" /> ${esc(f.label)}</label>`;
+      return `<label>${esc(f.label)}</label><input data-k="${esc(f.key)}" data-t="text" value="${esc(v ?? '')}" />`;
+    }).join('')}<div class="acts"><button class="go" data-do="approve-edited">Save my edits and approve</button><button data-do="cancel-edit">Cancel</button></div></div>`;
+  }
+  async function open(id: string) {
+    try {
+      cur = await api(`?id=${encodeURIComponent(id)}`);
+      const i = cur.item, waiting = i.status === 'submitted' || i.correction === 'submitted';
+      const box = $('detail'); box.hidden = false;
+      box.innerHTML = `<h2>${esc(i.title)} <span class="kind">${esc(i.kindLabel)}</span></h2>
+        <p class="muted small">Status: <b>${esc(i.status)}</b>${i.correction ? ` · correction ${esc(i.correction)}` : ''} · by ${esc(i.createdByName)} · version ${i.version}${i.scheduledAt ? ` · publish at ${esc(when(i.scheduledAt))}` : ''}${i.publishError ? ` · <b style="color:#B91C1C">last publishing error: ${esc(i.publishError)}</b>` : ''}</p>
+        <div class="cols">${i.live && i.correction ? `<div><p class="pvh">Live now</p><div class="pv">${cur.livePreviewHtml || esc(plain(i.live))}</div></div>` : ''}<div><p class="pvh">${i.correction ? 'Correction (waiting)' : 'Preview'}</p><div class="pv">${cur.previewHtml || esc(plain(i.data))}</div></div></div>
+        ${i.live && i.correction ? `<p class="pvh" style="margin-top:12px">What changed</p>${diff(i.live, i.data)}` : ''}
+        ${waiting ? `<div class="acts"><button class="go" data-do="approve">${i.scheduledAt && Date.parse(i.scheduledAt) > Date.now() ? 'Approve (publish at the scheduled time)' : 'Approve and publish'}</button><button data-do="edit">Edit, then approve</button>
+          <span style="flex:1 1 220px"><input id="cmt" placeholder="Comment for the writer (needed to return or reject)" maxlength="2000" /></span><button data-do="return">Return with comment</button><button class="bad" data-do="reject">Reject</button></div><div id="edBox"></div>` : ''}
+        ${['published', 'scheduled'].includes(i.status) ? `<div class="acts"><button class="bad" data-do="unpublish">Unpublish</button><small class="muted">Removes it from the website (it is kept here, never deleted).</small></div>` : ''}
+        <p class="pvh" style="margin-top:14px">History</p>${cur.revisions.map((r: any, k: number) => `<div class="rev"><b>${esc(EVENTS[r.event] || r.event)}</b> · v${r.version} · ${esc(r.by || '')} · ${esc(when(r.at))}${r.comment ? `<br />“${esc(r.comment)}”` : ''}${cur.revisions[k + 1] ? `<details><summary>Changes from the version before</summary>${diff(cur.revisions[k + 1].data, r.data)}</details>` : ''}</div>`).join('') || '<p class="muted small">No history yet.</p>'}`;
+      box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e: any) { msg(e.message, false); }
+  }
+  async function act(decision: string, extra: any = {}) {
+    const comment = ($('cmt') as HTMLInputElement | null)?.value || '';
+    if ((decision === 'return' || decision === 'reject') && comment.trim().length < 3) { msg('Write a short comment for the writer first.', false); $('cmt')?.focus(); return; }
+    if (decision === 'unpublish' && !confirm('Unpublish this? It disappears from the website (kept here).')) return;
+    try {
+      const d = await api('', { id: cur.item.id, decision, comment, ...extra });
+      msg(decision === 'approve' ? (d.scheduled ? 'Approved: it will be published at the scheduled time.' : `Approved and published.${d.note ? ` ${d.note}` : ''}`) : decision === 'return' ? 'Returned to the writer with your comment.' : decision === 'reject' ? 'Rejected.' : 'Unpublished.');
+      $('detail').hidden = true; load();
+    } catch (e: any) { msg(e.message, false); }
+  }
+  document.addEventListener('click', (e: Event) => {
+    const t = e.target as HTMLElement;
+    const o = t.closest('[data-open]') as HTMLElement | null; if (o) { open(o.dataset.open!); return; }
+    const b = t.closest('[data-do]') as HTMLElement | null; if (!b || !cur) return;
+    const what = b.dataset.do!;
+    if (what === 'edit') { $('edBox').innerHTML = editor(cur.item); return; }
+    if (what === 'cancel-edit') { $('edBox').innerHTML = ''; return; }
+    if (what === 'approve-edited') {
+      const data = { ...cur.item.data };
+      try {
+        document.querySelectorAll<HTMLInputElement>('#ed [data-k]').forEach(el => { const k = el.dataset.k!; data[k] = el.dataset.t === 'json' ? JSON.parse(el.value || 'null') : el.dataset.t === 'bool' ? el.checked : el.value; });
+      } catch { msg('One of the JSON boxes is not valid.', false); return; }
+      act('approve', { data }); return;
+    }
+    act(what);
+  });
+  const want = new URLSearchParams(location.search).get('id');
+  load().then(() => { if (want) open(want); });
+</script>

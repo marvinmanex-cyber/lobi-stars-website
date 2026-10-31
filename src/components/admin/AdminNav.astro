@@ -54,6 +54,12 @@ const CATEGORIES: Cat[] = [
     { id: 'cms-club', label: 'Club Pages', href: `${CMS}/settings/entries/history`, perm: 'content.club_pages.edit', ext: true, hint: 'History, Honours, Stadium, Fan Clubs' },
     { id: 'cms', label: 'Content CMS (everything)', href: '/admin/', perm: 'commerce.hospitality.manage|commerce.personalisation.manage|commerce.shop.manage|content.club_pages.edit|content.gallery.edit|content.news.edit|content.news.publish|content.team_news.edit|content.videos.edit|fans.members.manage|matchday.predict.manage|matchday.squad.edit|media.upload|partners.manage|settings.promo_bar|settings.site|settings.social_links', ext: true },
   ] },
+  { id: 'media-centre', icon: '🎙️', label: 'Media Centre', color: '#4C76B2', items: [
+    { id: 'media-approvals', label: 'Approval Queue', href: '/admin/media-centre/approvals/', perm: 'media.centre.manage', badge: 'mediaApprovals', hint: 'Super Admins: approve, edit, return or reject what the media staff send from the Media Centre' },
+    { id: 'media-users', label: 'Users & settings', href: '/admin/media-centre/', perm: 'media.centre.manage', hint: 'Create Media Centre users, reset passwords, Login IDs, news categories, deadlines' },
+    { id: 'media-activity', label: 'Activity log', href: '/admin/media-centre/activity/', perm: 'media.centre.manage', hint: 'Everything done in the Media Centre (cannot be changed or deleted); CSV download' },
+    { id: 'media-open', label: 'Open the Media Centre', href: '/media-centre/', perm: 'media.centre.manage', ext: true, hint: 'The separate page the media staff sign in to' },
+  ] },
   { id: 'rewards', icon: '⭐', label: 'Rewards', color: '#C9A227', items: [
     { id: 'rewards', label: 'Lobi Stars Rewards', href: '/admin/rewards/', perm: 'rewards.settings|rewards.catalogue|rewards.members.view|rewards.points.adjust|rewards.fulfilment', hint: 'Star Points: settings, members, adjust points, launch switch' },
     { id: 'rewards-catalogue', label: 'Rewards Catalogue', href: '/admin/rewards/catalogue/', perm: 'rewards.catalogue', hint: 'What fans can redeem: points, stock, limits' },

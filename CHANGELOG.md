@@ -8,6 +8,32 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-31: Media Centre, phase 1: users, sign-in, activity log, Approval Queue
+
+**What changed**
+- New private **Media Centre** for the media staff at /media-centre (club
+  badge, blue and red, works on phones). Sign-in is a Login ID (name + 2–4
+  digits, e.g. Iorbee68) and the person's own password. A temporary password
+  must be changed at the first sign-in. Five wrong passwords lock the account
+  for 15 minutes; 30 minutes without activity signs the person out.
+- A Media Centre login has no access to the admin. Every admin page and API
+  refuses it on the server.
+- New admin menu **Media Centre** (Super Admins only):
+  - **Users & settings:** add users, reset passwords, change Login IDs,
+    disable/enable; news categories; accreditation and newsletter settings.
+  - **Approval Queue:** preview, compare versions, approve, edit then
+    approve, return with comment, reject, unpublish. The count shows on the
+    menu and in the bell.
+  - **Activity log:** filters and CSV download. It cannot be changed or
+    deleted.
+- Media Centre home: returned to me (with comments), waiting for approval, my
+  drafts, deadlines, recently published.
+
+**Staff:** Super Admins create the Media Centre users (HANDOVER-TODO M1). See
+STAFF-GUIDE section 41 and README.md "Media Centre".
+
+---
+
 ## 2026-10-31: Squad & staff data portal is the "IT Center"
 
 **What changed**

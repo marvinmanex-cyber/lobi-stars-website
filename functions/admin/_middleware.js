@@ -4,6 +4,7 @@ import { withSecurityHeaders } from '../api/_lib/securityHeaders.js';
 import { ADMIN_PAGE_HEADERS, securitySettings } from '../api/_lib/adminSecurity.js';
 import { helperMayOpen } from '../api/_lib/helpers.js';
 import { hasPortalCookie, getPortalSession } from '../api/_lib/squadPortal.js';
+import { hasMediaCookie, getMediaSession } from '../api/_lib/mediaCentre.js';
 
 // Every /admin page (the CMS, Manage Matches, Analytics...) needs a staff
 // login. Visitors without a valid staff cookie are sent to /admin/login, and
@@ -18,6 +19,11 @@ export async function onRequest({ request, env, next }) {
   // The Squad & Staff Data Portal login never opens the admin back end.
   if (!admin && !isLoginPage && hasPortalCookie(request) && await getPortalSession(request, env, { touch: false })) {
     return new Response('<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>No access</title><p style="font:16px/1.5 sans-serif;padding:24px">The Squad &amp; Staff Data Portal login only opens the portal. It has no access to any other part of the website.</p>',
+      { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' } });
+  }
+  // A Media Centre login never opens the admin back end either.
+  if (!admin && !isLoginPage && hasMediaCookie(request) && await getMediaSession(request, env, { touch: false })) {
+    return new Response('<!doctype html><meta charset="utf-8"><meta name="robots" content="noindex, nofollow"><title>No access</title><p style="font:16px/1.5 sans-serif;padding:24px">The Media Centre login only opens the Media Centre (<a href="/media-centre/">/media-centre</a>). It has no access to the website admin.</p>',
       { status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' } });
   }
   if (!isLoginPage && !admin) {
