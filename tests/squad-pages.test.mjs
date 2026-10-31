@@ -208,7 +208,7 @@ test('website feed: "First Surname"; middle name never; full date of birth only 
 
 test(`partner feed: schemaVersion ${SCHEMA_VERSION}: first name and surname, no middle name, pronunciation null`, async () => {
   const doc = await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: `Bearer ${KEY}` } }).then(x => x.json());
-  assert.equal(doc.schemaVersion, '1.2'); assert.deepEqual(validatePackage(doc), []);
+  assert.equal(doc.schemaVersion, '1.3'); assert.deepEqual(validatePackage(doc), []);
   const a = doc.players.find(x => x.id === adult);
   assert.equal(a.firstName, 'Chidi'); assert.equal(a.surname, SUR); assert.equal(a.displayName, `Chidi ${SUR}`); assert.equal(a.officialName, `${SUR.toUpperCase()}, Chidi`); assert.equal(a.nationality.name, 'Nigeria'); assert.equal(a.previousClubs[0].country.code, 'NG');
   assert.equal(a.pronunciation, null); assert.equal(a.pronunciationAudio, null);

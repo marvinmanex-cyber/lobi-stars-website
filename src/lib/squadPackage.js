@@ -10,14 +10,17 @@
 // "SURNAME, First"); "pronunciation" and "pronunciationAudio" are back as null for
 // systems that expect them; displayName stays "First name Surname"; the player
 // note "roleModel" is removed (no longer asked).
+// 1.3 (31 Oct 2026): status "on_loan" and "former" (people who left stay in the feed so
+// the partner can still find them by name); "leaving" { reason, date, newClub } and
+// "loan" { club, start, until } (empty strings when not relevant).
 import { ageOn, isAdult, nameOf, profileName, groupOf } from './squadFields.js';
 import { officialName, shortName } from './names.js';
 import { countryName } from './countries.js';
 
-export const SCHEMA_VERSION = '1.2';
-// The package keeps its status words; LIVE and ON_LOAN are "verified" (approved), FORMER is "left_the_club".
-const STATUS = { LIVE: 'verified', ON_LOAN: 'verified', PENDING_APPROVAL: 'submitted', FORMER: 'left_the_club', CHANGES_REQUESTED: 'submitted', DRAFT: 'draft',
-  VERIFIED: 'verified', SUBMITTED: 'submitted', LEFT_THE_CLUB: 'left_the_club' };
+export const SCHEMA_VERSION = '1.3';
+// LIVE is "verified" (approved and on the website), ON_LOAN "on_loan", FORMER "former".
+const STATUS = { LIVE: 'verified', ON_LOAN: 'on_loan', PENDING_APPROVAL: 'submitted', FORMER: 'former', CHANGES_REQUESTED: 'submitted', DRAFT: 'draft',
+  VERIFIED: 'verified', SUBMITTED: 'submitted', LEFT_THE_CLUB: 'former' };
 const s = v => (v == null ? '' : String(v));
 const n = v => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Number(v) : null);
 
@@ -41,6 +44,8 @@ function personJson(p, files) {
     stateOfOrigin: s(d.stateOfOrigin), hometown: s(d.hometown), social: { instagram: s(d.socialInstagram), x: s(d.socialX), tiktok: s(d.socialTiktok) },
     honours: (d.honours || []).map(r => ({ title: s(r.title), seasonOrYear: s(r.seasonOrYear), clubOrTeam: s(r.clubOrTeam) })),
     bio: { headline: s(d.bioHeadline), text: s(d.bio) },
+    leaving: { reason: s(p.leave?.reason === 'Other' ? p.leave?.reasonOther || 'Other' : p.leave?.reason), date: s(p.leave?.date), newClub: s(p.leave?.newClub) },
+    loan: { club: s(p.loan?.club), start: s(p.loan?.start), until: s(p.loan?.until) },
   };
 }
 export function playerJson(p, files) {
@@ -90,16 +95,18 @@ const obj = (props, req = Object.keys(props)) => ({ type: 'object', additionalPr
 const cty = obj({ code: { type: 'string', pattern: '^([A-Z]{2}(-[A-Z]{3})?)?$' }, name: str });
 const honours = { type: 'array', items: obj({ title: str, seasonOrYear: str, clubOrTeam: str }) };
 const common = {
-  id: { type: 'string', minLength: 1 }, status: { enum: ['verified', 'submitted', 'left_the_club', 'draft'] }, updatedAt: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+01:00$' },
+  id: { type: 'string', minLength: 1 }, status: { enum: ['verified', 'on_loan', 'former', 'submitted', 'draft'] }, updatedAt: { type: 'string', pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\+01:00$' },
   displayName: { type: 'string', minLength: 1 }, surname: str, firstName: str, officialName: str, shortName: str, nickname: str,
   pronunciation: { type: 'null' }, pronunciationAudio: { type: 'null' },
   dateOfBirth: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' }, age: intN, nationality: cty, secondNationality: cty, placeOfBirth: obj({ town: str, country: cty }),
   stateOfOrigin: str, hometown: str, social: obj({ instagram: str, x: str, tiktok: str }), joinedClub: { type: 'string', pattern: '^(\\d{4}-\\d{2})?$' }, honours,
   bio: obj({ headline: str, text: { type: 'string', maxLength: 5000 } }),
+  leaving: obj({ reason: str, date: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' }, newClub: str }),
+  loan: obj({ club: str, start: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' }, until: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' } }),
 };
 const COMMON_REQ = Object.keys(common);
 export const SCHEMA = {
-  $schema: 'https://json-schema.org/draft/2020-12/schema', $id: 'https://lobistarsfc.com/schemas/squad-data-package-1.2.json',
+  $schema: 'https://json-schema.org/draft/2020-12/schema', $id: 'https://lobistarsfc.com/schemas/squad-data-package-1.3.json',
   title: 'Lobi Stars FC – Media Partner Data Package (data.json)', type: 'object', additionalProperties: false,
   required: ['schemaVersion', 'exportedAt', 'source', 'season', 'filters', 'team', 'players', 'staff'],
   properties: {

@@ -1,5 +1,6 @@
 import { requirePortal, portalJson, portalActor } from '../../_lib/squadPortal.js';
 import { getProfile, profileView, saveFields, deleteProfile, shirtTaken, samePerson } from '../../_lib/squadProfiles.js';
+import { pendingFor } from '../../_lib/squadLifecycle.js';
 
 // GET    /api/squad-portal/profiles/:id                 -- everything to reopen the form (any device)
 // PATCH  /api/squad-portal/profiles/:id { changes, since, commit, type? }  -- autosave (later save wins per field)
@@ -15,7 +16,9 @@ export async function onRequestGet({ request, env, params }) {
   if (denied) return denied;
   const p = await getProfile(env.DB, params.id);
   if (!p) return portalJson({ error: 'Profile not found.' }, 404);
-  return portalJson({ profile: profileView(p), ...(await checks(env, p)) });
+  // A request waiting for this profile (left the club, loan, …): shown at the top of the form.
+  const req = await pendingFor(env.DB, p.id);
+  return portalJson({ profile: profileView(p), request: req ? { kind: req.kind, at: req.submitted_at, by: req.submitted_by } : null, ...(await checks(env, p)) });
 }
 export async function onRequestPatch({ request, env, params }) {
   const { session, denied } = await requirePortal(request, env, { write: true });

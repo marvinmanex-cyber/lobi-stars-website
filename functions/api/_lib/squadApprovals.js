@@ -15,6 +15,7 @@ import { requestRebuild } from './squadPublish.js';
 import { superAdminEmails } from './superAdmins.js';
 import { sendEmail } from './email.js';
 import { approveNewRole, rejectNewRole } from './squadRoles.js';
+import { HANDLERS as LIFECYCLE } from './squadLifecycle.js';
 
 const nowIso = () => new Date().toISOString();
 const parse = (s, d) => { try { return s ? JSON.parse(s) : d; } catch { return d; } };
@@ -23,7 +24,7 @@ const SITE = env => String(env.SITE_URL || 'https://lobistarsfc.com').replace(/\
 
 export const KIND_LABEL = { new: 'New profile', edit: 'Edit', left: 'Left the club', loan: 'Out on loan', return: 'Back from loan', delete: 'Delete', restore: 'Restore', new_role: 'New role' };
 // What approving (and rejecting) a request does, per kind (more kinds come with later phases).
-export const REQUEST_KINDS = { new_role: approveNewRole };
+export const REQUEST_KINDS = { new_role: approveNewRole, ...LIFECYCLE };
 export const REJECT_HOOKS = { new_role: rejectNewRole };
 export const REMOVALS = ['left', 'delete'];
 

@@ -91,7 +91,7 @@ test('partner API: key needed; Public + Media only in the Data Package structure
   assert.equal((await fetch(`${BASE}/api/partner/squad`)).status, 401);
   assert.equal((await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: 'Bearer wrong' } })).status, 401);
   const doc = await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: `Bearer ${KEY}` } }).then(r => r.json());
-  assert.equal(doc.schemaVersion, '1.2'); assert.deepEqual(validatePackage(doc), []);
+  assert.equal(doc.schemaVersion, '1.3'); assert.deepEqual(validatePackage(doc), []);
   const pl = doc.players.find(x => x.id === id), st = doc.staff.find(x => x.id === staffId);
   assert.equal(pl.notes.careerHighlight, 'Captain in 2025', 'media notes included'); assert.equal(pl.pronunciation, null, 'no pronunciation any more (null in 1.2)');
   assert.equal(st.notes.philosophy, 'Press high'); assert.equal(st.role, 'Head Coach');
@@ -142,10 +142,12 @@ test('export data: Super Admins only (never the portal or the Website & Data Off
   assert.ok((await rev(null, '?filter=all')).data.exportLog.some(x => x.format === 'zip'), 'export logged');
 });
 
-test('left the club → off the website and the partner API; restore; new season carries live profiles over (still live, confirmations asked again)', async () => {
+test('left the club → off the website, "former" in the partner API; restore; new season carries live profiles over (still live, confirmations asked again)', async () => {
   assert.equal((await rev({ action: 'left', id })).status, 200);
   assert.ok(!(await fetch(`${BASE}/api/squad/public`).then(r => r.json())).players.some(x => x.id === id));
-  assert.ok(!(await fetch(`${BASE}/api/partner/squad`, { headers: { 'X-API-Key': KEY } }).then(r => r.json())).players.some(x => x.id === id));
+  // (since Data Package 1.3, people who left stay in the partner feed as "former" so they can still be found)
+  const gone = (await fetch(`${BASE}/api/partner/squad`, { headers: { 'X-API-Key': KEY } }).then(r => r.json())).players.find(x => x.id === id);
+  assert.equal(gone?.status, 'former');
   const all = (await rev(null, '?export=1&which=verified&season=all')).data;
   assert.ok(all.profiles.some(x => x.id === id && x.status === 'FORMER'), 'kept in "all seasons" exports');
   assert.equal((await rev({ action: 'restore', id })).status, 200);

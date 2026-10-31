@@ -56,7 +56,9 @@ export async function ensureProfileSchema(db) {
 // pending: the state of an edit to a live profile; person_id: the same person in every season;
 // migrated: 1 = moved from the old squad files ("migrated – please review").
 const NEW_COLUMNS = [['surname', 'TEXT'], ['first_name', 'TEXT'], ['middle_name', 'TEXT'], ['website_name', 'TEXT'], ['public_name', 'TEXT'], ['name_status', 'TEXT'],
-  ['public_slug', 'TEXT'], ['old_slugs', 'TEXT'], ['live_json', 'TEXT'], ['live_n', 'INTEGER'], ['pending', 'TEXT'], ['person_id', 'TEXT'], ['migrated', 'INTEGER']];
+  ['public_slug', 'TEXT'], ['old_slugs', 'TEXT'], ['live_json', 'TEXT'], ['live_n', 'INTEGER'], ['pending', 'TEXT'], ['person_id', 'TEXT'], ['migrated', 'INTEGER'],
+  // Phase 4 (31 Oct 2026): leave_json { reason, reasonOther, date, newClub } for FORMER; loan_json { club, start, until } for ON_LOAN.
+  ['leave_json', 'TEXT'], ['loan_json', 'TEXT']];
 
 /** The LIVE version of a profile: { type, data, photos, at, by } (null if never approved). */
 export const liveOf = p => (p?.live_json ? parse(p.live_json, null) : null);
@@ -173,6 +175,7 @@ export function profileView(p, { thumbs = 'portal' } = {}) {
     createdAt: p.created_at, createdBy: p.created_by, updatedAt: p.updated_at, updatedBy: p.updated_by,
     submittedAt: p.submitted_at, submittedBy: p.submitted_by, verifiedAt: p.verified_at, verifiedBy: p.verified_by,
     reviewNote: p.review_note, reviewBy: p.review_by, reviewAt: p.review_at, leftAt: p.left_at, carriedFrom: p.carried_from,
+    leave: parse(p.leave_json, null), loan: parse(p.loan_json, null), personId: p.person_id || p.id,
     editable: isEditable(p),
   };
 }
@@ -497,18 +500,27 @@ const FILTERS = {
 };
 export async function listProfiles(db, { season, filter = 'all', q = '' } = {}) {
   await ensureProfileSchema(db);
+  // A name: the forgiving search across current and former people, every season (squadLifecycle.js).
+  const typed = String(q || '').trim();
+  if (typed && !/^\d{1,2}$/.test(typed)) {
+    const { searchPeople } = await import('./squadLifecycle.js');
+    const found = (await searchPeople(db, typed)).filter(p => filter !== 'former' || p.status === 'FORMER');
+    return found.map(summaryOf);
+  }
   const where = [`deleted_at IS NULL`, FILTERS[filter] || FILTERS.all], binds = [];
   if (season && season !== 'all') { where.push(`season = ?`); binds.push(season); }
   const s = String(q || '').trim().toLowerCase();
   if (s) { where.push(/^\d{1,2}$/.test(s) ? `shirt_number = ?` : `lower(COALESCE(public_name, display_name, '') || ' ' || COALESCE(surname, '')) LIKE ?`); binds.push(/^\d{1,2}$/.test(s) ? Number(s) : `%${s.replace(/[%_]/g, '')}%`); }
   const rows = (await db.prepare(`SELECT * FROM squad_profiles WHERE ${where.join(' AND ')} ORDER BY CASE type WHEN 'player' THEN 0 ELSE 1 END, COALESCE(shirt_number, 999), COALESCE(surname, public_name, display_name) LIMIT 500`).bind(...binds).all()).results;
-  return rows.map(p => {
-    const photos = parse(p.photos_json, {});
-    return { id: p.id, season: p.season, type: p.type, status: p.status, statusLabel: statusOf(p).label, name: rowName(p), nameStatus: p.name_status || null, shirtNumber: p.shirt_number, position: p.position, role: p.role,
-      thumb: photos.profile ? `/api/squad-portal/file/${p.id}/profile/w400.webp?${photos.profile.rev ? `rev=${photos.profile.rev}` : `v=${encodeURIComponent(photos.profile.uploadedAt || '')}`}` : null,
-      pending: p.pending || null, liveN: p.live_n || null, migrated: !!p.migrated,
-      updatedAt: p.updated_at, updatedBy: p.updated_by, reviewNote: [p.status, p.pending].includes('CHANGES_REQUESTED') ? p.review_note : null, editable: isEditable(p) };
-  });
+  return rows.map(summaryOf);
+}
+function summaryOf(p) {
+  const photos = parse(p.photos_json, {});
+  return { id: p.id, season: p.season, type: p.type, status: p.status, statusLabel: statusOf(p).label, name: rowName(p), nameStatus: p.name_status || null, shirtNumber: p.shirt_number, position: p.position, role: p.role,
+    thumb: photos.profile ? `/api/squad-portal/file/${p.id}/profile/w400.webp?${photos.profile.rev ? `rev=${photos.profile.rev}` : `v=${encodeURIComponent(photos.profile.uploadedAt || '')}`}` : null,
+    pending: p.pending || null, liveN: p.live_n || null, migrated: !!p.migrated,
+    updatedAt: p.updated_at, updatedBy: p.updated_by, reviewNote: [p.status, p.pending].includes('CHANGES_REQUESTED') ? p.review_note : null, editable: isEditable(p),
+    leftAt: p.left_at || null, loanClub: parse(p.loan_json, {})?.club || null };
 }
 export async function counts(db, season) {
   await ensureProfileSchema(db);

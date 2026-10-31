@@ -8,6 +8,37 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-31: Leaving, loans, deleting and former players (Approved live squad, phase 4)
+
+**What changed**
+- Portal users can ask for **Left the club** (reason, date, new club), **Out on
+  loan** (club, start, expected return), **Return from loan** and **Delete
+  permanently** (type the name to confirm) on a live profile. Each is a request
+  that only a Super Admin approves (Squad: Approvals shows the details).
+- Approved leavers go off /squad at once; their old address goes to /squad/
+  (or to the Former Players & Legends page when switched on). Their data is kept.
+- Players on loan show in a new **Out on Loan** section of /squad, with "On loan
+  at [club] until [date]" on their page.
+- Deleted profiles can be restored by a Super Admin for 30 days, then the daily
+  job erases them.
+- The portal search finds former people and forgives small spelling slips;
+  new filters: Awaiting approval, Live, On loan, Former.
+- Starting a profile for someone who left offers "Restore previous profile"
+  (history kept; approved by a Super Admin).
+- Super Admins see when a former person's private details will be erased (2
+  seasons after leaving).
+- Optional public **Former Players & Legends** page (/squad/former/), off by
+  default (switch on Squad: Profile Submissions).
+- Data Package and partner feed: **schemaVersion 1.3**. Statuses "on_loan" and
+  "former"; new "leaving" and "loan" details; former people stay in the partner
+  feed.
+
+**Staff:** see STAFF-GUIDE section 38 "Leaving, loans and deleting".
+**Partner:** tell the media partner's developers about schemaVersion 1.3
+(section 39).
+
+---
+
 ## 2026-10-31: "Cover Stand" is now "Grandstand"
 
 **What changed**

@@ -1,9 +1,11 @@
 import { requirePortal, portalJson, portalActor } from '../../../_lib/squadPortal.js';
 import { submitProfile, savePhoto, deletePhoto, saveEvidence, deleteEvidence } from '../../../_lib/squadProfiles.js';
+import { createRequest } from '../../../_lib/squadLifecycle.js';
 
 // POST   /api/squad-portal/profiles/:id/submit           -- for approval by a Super Admin (all required answers, photo, free shirt number)
 // POST   /api/squad-portal/profiles/:id/photo  (form)    -- kind, w400, w1200, jpg, width, height, warnings
 // POST   /api/squad-portal/profiles/:id/evidence (form) -- file: a photo or PDF backing the international career
+// POST   /api/squad-portal/profiles/:id/request { kind: left|loan|return|delete|restore, … } -- asks the Super Admins (Approval Queue)
 // DELETE /api/squad-portal/profiles/:id/photo?kind=profile|action   or   /evidence
 // (Name recordings were removed on 22 Oct 2026: /audio answers 410.)
 export async function onRequestPost({ request, env, params, waitUntil }) {
@@ -25,6 +27,9 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
     const form = await request.formData().catch(() => null);
     if (!form) return portalJson({ error: 'The upload did not arrive. Please try again.' }, 400);
     r = await saveEvidence(env, actor, params.id, form);
+  } else if (params.action === 'request') {
+    const b = await request.json().catch(() => ({}));
+    r = await createRequest(env, actor, params.id, String(b.kind || ''), b);
   } else if (params.action === 'audio') return portalJson({ error: 'Name recordings are no longer used.' }, 410);
   else return portalJson({ error: 'Not found' }, 404);
   return r.error ? portalJson(r, r.status || 400) : portalJson(r);

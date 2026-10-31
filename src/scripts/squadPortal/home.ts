@@ -5,7 +5,7 @@ import { api, state, $, esc, toast, lagos } from './api';
 import { openForm } from './form';
 import { blankFormPdf } from './blankForm';
 
-const FILTERS: [string, string][] = [['all', 'All'], ['players', 'Players'], ['staff', 'Staff'], ['drafts', 'Drafts'], ['submitted', 'Submitted'], ['verified', 'Verified'], ['changes', 'Changes requested'], ['left', 'Left the club']];
+const FILTERS: [string, string][] = [['all', 'All'], ['players', 'Players'], ['staff', 'Staff'], ['drafts', 'Drafts'], ['submitted', 'Awaiting approval'], ['live', 'Live'], ['changes', 'Changes requested'], ['loan', 'On loan'], ['former', 'Former']];
 const BADGE: Record<string, string> = { DRAFT: 'amber', PENDING_APPROVAL: 'blue', LIVE: 'green', CHANGES_REQUESTED: 'red', ON_LOAN: 'grey', FORMER: 'grey', DELETED: 'grey' };
 // A live profile being edited shows the state of the edit.
 const stKey = (p: any) => (p.pending && ['LIVE', 'ON_LOAN'].includes(p.status) ? p.pending : p.status);
@@ -41,7 +41,7 @@ export async function showHome() {
     <section class="sp-card sp-saved" aria-labelledby="savedTitle">
       <div class="sp-saved-head"><h2 class="sp-h3" id="savedTitle">Saved profiles</h2>
         <label class="sp-season">Season <select id="seasonSel"></select></label></div>
-      <div class="sp-field sp-search"><label for="q">Search</label><input id="q" type="search" placeholder="Name or shirt number" value="${esc(view.q)}" /></div>
+      <div class="sp-field sp-search"><label for="q">Search</label><input id="q" type="search" placeholder="Search current and former players and staff by name" value="${esc(view.q)}" /></div>
       <div class="sp-filters" role="group" aria-label="Show">${FILTERS.map(([k, l]) => `<button type="button" class="sp-filter" data-filter="${k}" aria-pressed="${k === view.filter}">${l}</button>`).join('')}</div>
       <div class="sp-table-wrap" tabindex="0" role="region" aria-label="Saved profiles (scrolls sideways on small screens)"><table class="sp-table"><thead><tr>
         <th scope="col">Photo</th><th scope="col">Name</th><th scope="col">Type</th><th scope="col">Number / position or role</th><th scope="col">Status</th><th scope="col">Last saved</th><th scope="col">Actions</th>

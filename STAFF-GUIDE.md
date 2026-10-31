@@ -3291,7 +3291,9 @@ club's media partner in the Data Package.
 | Awaiting approval | Sent to the club; can only be viewed until it is approved or sent back. |
 | Live | On the website (the approved version). |
 | Changes requested | Sent back with a note; can be edited and sent again. |
-| On loan / Former / Deleted | Out on loan, left the club, or removed (these steps come with the next update). |
+| On loan | Out on loan at another club: in the "Out on Loan" part of /squad, with "On loan at [club] until [date]" on their page. |
+| Former | Left the club: off /squad, kept for the club's history, view only. |
+| Deleted | Removed by mistake: gone everywhere; a Super Admin can bring it back within 30 days, then it is erased for good. |
 
 **Live profiles keep their live version.** A live profile can still be edited
 in the portal (or by a Super Admin). The website keeps showing the approved
@@ -3444,6 +3446,50 @@ the approved profiles each time someone opens them (kept for 10 seconds), so an
 approval shows straight away; the built pages are only a backup. The sitemap
 lists the live profiles too.
 
+### Leaving, loans and deleting (portal users ask; Super Admins approve)
+
+Open a live profile in the portal. Under **Changes to the squad** there are
+three buttons; each sends a request to **Squad: Approvals** (one request per
+profile at a time), and nothing changes until a Super Admin approves it:
+
+- **Left the club:** reason (Transfer, Release, Retirement, End of contract,
+  Other + why), leaving date, new club (optional). When approved: off /squad
+  straight away; the old web address goes to /squad/ (or to their page on the
+  Former Players & Legends page, if switched on). Everything is kept.
+- **Out on loan:** loan club, start date, expected return date. When approved:
+  they move to the **Out on Loan** section of /squad and their page shows
+  "On loan at [club] until [date]". **Return from loan** (same place) brings
+  them back into the squad once approved.
+- **Delete permanently:** only for a profile made by mistake. Type the
+  person's name exactly to confirm. When approved it disappears everywhere.
+  Super Admins see it under **Deleted profiles** (Matchday › Squad: Profile
+  Submissions) and can **Restore** it for 30 days; after that the daily job
+  erases it (record, photos, versions; match statistics keep only the old web
+  address).
+
+Super Admins can do the same from Squad: Profile Submissions (Left the club…,
+Out on loan…, Return from loan, Delete permanently…, Restore); theirs apply at
+once and are logged like an approval.
+
+**Searching:** the portal search finds current and former people and forgives
+small spelling slips ("Musa Adey" finds "Musa Adeyemi"). Use the **Former**
+filter to see only people who left.
+
+**Someone coming back:** when a new profile is started for a person who has a
+former profile, the portal says "This person has a previous Lobi Stars
+profile" with **Restore previous profile**. That sends a restore request; once
+approved, the old profile (history, statistics, web address) comes back in the
+current season and the new draft is removed.
+
+**Private details after leaving:** phone, email, emergency and guardian
+contacts, legal name and date of birth are erased 2 seasons after the leaving
+date (Settings › retention). Super Admins see the erase date on the profile.
+
+**Former Players & Legends page (optional):** a Super Admin switch on Squad:
+Profile Submissions (off by default). When on, /squad/former/ lists former
+players and staff with photo, position, years at the club, appearances and
+goals, each with their own page, and /squad links to it.
+
 ### Roles (only the three Super Admins: Matchday › Squad: Roles)
 
 "Position at the club" in the portal is a list in two groups:
@@ -3482,9 +3528,9 @@ email when one is submitted.
 | Approve & publish / Approve changes | The new profile or the change goes live (a new live version); /squad updates within a few minutes (public details only; full date of birth only from 18; never the middle name). |
 | Request changes | Write a note; the portal shows it and the profile can be edited again. A live profile stays live meanwhile. |
 | Discard the changes | Throws away a change that is not approved; the live version stays. |
-| Left the club | Off the website and the partner feed straight away (status Former). Kept in "all seasons" downloads. Private details are erased after the retention period. |
-| Restore | Undoes "Left the club". |
-| Remove (Super Admins) | Deletes the profile. |
+| Left the club… / Out on loan… / Return from loan / Delete permanently… | See "Leaving, loans and deleting" above (applied at once for a Super Admin). |
+| Restore | Brings a former person back (current season; history kept). |
+| Delete (restorable for 30 days) | For a draft or a profile that is not live. |
 | Carry over | At the start of a new season, copies last season's live profiles into the new season. They stay live (same web address); the portal asks for the season's confirmations again as a change to send. |
 
 Filters: Awaiting approval, All current, Live, Changes requested, Drafts, On
@@ -3637,9 +3683,9 @@ but are not used anywhere.
 ## 39. Data Package format
 
 The Data Package is what the media partner's systems read. Its format is
-fixed: **schemaVersion "1.2"** (since 23 Oct 2026; 1.0 had the name
-pronunciation and recordings, which were removed; 1.1 had the middle name for
-over-18s). Do not rename files inside
+fixed: **schemaVersion "1.3"** (since 31 Oct 2026; 1.2 had no loans or
+former people; 1.0 had the name pronunciation and recordings, which were
+removed; 1.1 had the middle name for over-18s). Do not rename files inside
 the ZIP.
 
 **The ZIP contains:**
@@ -3654,14 +3700,14 @@ the ZIP.
 | `schema.json` | The formal description (JSON Schema) of data.json. |
 | `README.txt` | What is inside, when and by whom it was made. |
 
-**data.json, top level:** `schemaVersion` ("1.2"), `exportedAt` (Lagos time,
+**data.json, top level:** `schemaVersion` ("1.3"), `exportedAt` (Lagos time,
 e.g. 2026-10-22T11:42:00+01:00), `source` ("lobistarsfc.com"), `season`,
 `filters`, `team`, `players`, `staff`.
 
 - **team:** `id`, `name`, `shortName`, `nickname`, `crest`, `kitColours`
   (`home`, `away`), `stadium`, `city`, `state`, `competition`.
-- **Everyone (players and staff):** `id`, `status` (verified, submitted,
-  left_the_club), `updatedAt`, `displayName` ("First name Surname"),
+- **Everyone (players and staff):** `id`, `status` (verified, on_loan, former,
+  submitted, draft), `updatedAt`, `displayName` ("First name Surname"),
   `surname`, `firstName`, `officialName` ("SURNAME, First name"), `shortName`
   (surname), `nickname`, `pronunciation` and `pronunciationAudio` (always
   null: kept for systems that expect them), `dateOfBirth` (empty for
@@ -3669,7 +3715,9 @@ e.g. 2026-10-22T11:42:00+01:00), `source` ("lobistarsfc.com"), `season`,
   e.g. "NG", and `name`), `placeOfBirth` (`town`, `country`),
   `stateOfOrigin`, `hometown`, `social` (`instagram`, `x`, `tiktok`),
   `joinedClub`, `honours` (`title`, `seasonOrYear`, `clubOrTeam`), `bio`
-  (`headline`, `text`).
+  (`headline`, `text`), `leaving` (`reason`, `date`, `newClub`: filled in
+  for former people) and `loan` (`club`, `start`, `until`: filled in when on
+  loan); empty strings otherwise.
 - **players** (by position group, position, then shirt number), also:
   `shirtNumber`, `positionGroup` (Goalkeeper, Defender, Midfielder, Forward),
   `primaryPosition`, `secondaryPositions`, `preferredFoot`, `heightCm`,
@@ -3686,7 +3734,9 @@ details, and for under-18s the date of birth. There is no audio/ folder.
 **Partner feed (for the partner's developers):** `GET
 https://lobistarsfc.com/api/partner/squad` with the header
 `Authorization: Bearer <key>` (or `X-API-Key: <key>`). It returns the same
-data.json (verified profiles of the current season). Photo entries are links
+data.json: live and on-loan profiles of the current season, plus every
+former player and staff member (status "former", newest profile of each) so
+they can still be found by name. Photo entries are links
 that work for 24 hours. Add `?since=2026-10-22T00:00:00Z` to get only
 profiles changed after that time. The key is the LOBI_PARTNER_API_KEY secret
 in Cloudflare; a new key stops the old one working.

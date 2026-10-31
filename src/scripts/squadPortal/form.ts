@@ -160,7 +160,9 @@ function checks(r: any) {
   const dup = document.getElementById('dupWarn');
   if (dup) {
     dup.hidden = !r.samePerson;
-    if (r.samePerson) dup.innerHTML = `<b>A profile for this person may already exist:</b> ${esc(String(r.samePerson.display_name || 'unnamed').toUpperCase())} (${esc(r.samePerson.season)}, ${esc(STATUSES[r.samePerson.status] || r.samePerson.status)}). <button type="button" class="sp-link" data-goto="${esc(r.samePerson.id)}">Open it</button>`;
+    if (r.samePerson) dup.innerHTML = r.samePerson.status === 'FORMER'
+      ? `<b>This person has a previous Lobi Stars profile:</b> ${esc(String(r.samePerson.display_name || 'unnamed').toUpperCase())} (${esc(r.samePerson.season)}, left the club). <button type="button" class="sp-link" data-restore="${esc(r.samePerson.id)}">Restore previous profile</button> <button type="button" class="sp-link" data-goto="${esc(r.samePerson.id)}">Open it</button><br /><small>Restoring keeps their history; the club approves it.</small>`
+      : `<b>A profile for this person may already exist:</b> ${esc(String(r.samePerson.display_name || 'unnamed').toUpperCase())} (${esc(r.samePerson.season)}, ${esc(STATUSES[r.samePerson.status] || r.samePerson.status)}). <button type="button" class="sp-link" data-goto="${esc(r.samePerson.id)}">Open it</button>`;
   }
 }
 
@@ -243,6 +245,65 @@ export async function openForm(id: string) {
   pump();
 }
 
+// ── Leaving, loans, deletion (Phase 4): each is a request the club approves ──
+const KIND: Record<string, string> = { left: 'Left the club', loan: 'Out on loan', return: 'Return from loan', delete: 'Delete permanently', restore: 'Restore previous profile' };
+const REASONS = ['Transfer', 'Release', 'Retirement', 'End of contract', 'Other'];
+const day = (iso?: string) => iso ? new Date(`${iso.slice(0, 10)}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+function lifecycleHtml(p: any, req: any) {
+  const out: string[] = [];
+  if (req) out.push(`<p class="sp-review"><b>Waiting for the club's approval:</b> ${esc(KIND[req.kind] || req.kind)} (sent by ${esc(String(req.by || '').replace(/ \(Squad Data Portal\)$/, ''))}, ${esc(lagos(req.at))}).</p>`);
+  if (p.status === 'ON_LOAN' && p.loan) out.push(`<p class="sp-review sp-view"><b>On loan at ${esc(p.loan.club)}</b>${p.loan.until ? ` until ${esc(day(p.loan.until))}` : ''}.</p>`);
+  if (p.status === 'FORMER') out.push(`<p class="sp-review sp-view"><b>Left the club${p.leave?.date ? ` on ${esc(day(p.leave.date))}` : ''}</b>${p.leave?.reason ? ` (${esc(p.leave.reason === 'Other' ? p.leave.reasonOther || 'Other' : p.leave.reason)}${p.leave.newClub ? `, to ${esc(p.leave.newClub)}` : ''})` : ''}. This profile is kept for the club's history and can only be viewed.${req ? '' : ' <button type="button" class="sp-link" data-lc="restore">Restore previous profile (back at the club)</button>'}</p>`);
+  if (['LIVE', 'ON_LOAN'].includes(p.status) && !req) {
+    const btn = (k: string) => `<button type="button" class="sp-btn sp-btn-outline" data-lc="${k}">${KIND[k]}</button>`;
+    out.push(`<div class="sp-lc"><p class="sp-muted"><b>Changes to the squad</b> (the club approves each one):</p><div class="sp-lc-btns">${btn('left')}${p.status === 'LIVE' ? btn('loan') : btn('return')}${btn('delete')}</div><div id="lcForm"></div></div>`);
+  }
+  return out.join('');
+}
+function lcFormHtml(kind: string) {
+  const today = new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
+  const f = (id: string, label: string, input: string) => `<div class="sp-field"><div class="sp-flabel"><label for="${id}">${label}</label></div>${input}</div>`;
+  const body = kind === 'left'
+    ? f('lcReason', 'Reason <span class="sp-req">*</span>', `<select id="lcReason"><option value="">Choose…</option>${REASONS.map(r => `<option>${r}</option>`).join('')}</select>`)
+      + `<div id="lcOtherWrap" hidden>${f('lcOther', 'Say why <span class="sp-req">*</span>', '<input id="lcOther" maxlength="80" />')}</div>`
+      + f('lcDate', 'Leaving date <span class="sp-req">*</span>', `<input id="lcDate" type="date" value="${today}" />`) + f('lcClub', 'New club (optional)', '<input id="lcClub" maxlength="60" />')
+    : kind === 'loan'
+      ? f('lcClub', 'Loan club <span class="sp-req">*</span>', '<input id="lcClub" maxlength="60" />') + f('lcStart', 'Start date <span class="sp-req">*</span>', `<input id="lcStart" type="date" value="${today}" />`) + f('lcUntil', 'Expected return date <span class="sp-req">*</span>', '<input id="lcUntil" type="date" />')
+      : kind === 'return' ? f('lcDate', 'Back on', `<input id="lcDate" type="date" value="${today}" />`)
+        : kind === 'delete' ? `<p class="sp-warn">Only for a profile created by mistake. It disappears everywhere once the club approves (the club can bring it back within 30 days).</p>${f('lcConfirm', `Type the name to confirm: <b class="sp-pname">${esc(P!.name)}</b>`, '<input id="lcConfirm" autocomplete="off" />')}${f('lcWhy', 'Why (optional)', '<input id="lcWhy" maxlength="200" />')}`
+          : '<p class="sp-muted">The club approves bringing this person back; their history is kept.</p>';
+  return `<div class="sp-lc-form"><h3 class="sp-h3">${KIND[kind]}</h3>${body}<div class="sp-lc-btns"><button type="button" class="sp-btn sp-btn-red" data-lcsend="${kind}">Send to the club for approval</button><button type="button" class="sp-btn sp-btn-outline" data-lccancel>Cancel</button></div></div>`;
+}
+function wireLifecycle() {
+  const main = document.getElementById('main');
+  if (!main || (main as any)._lc) return;
+  (main as any)._lc = true;
+  main.addEventListener('click', async e => {
+    const t = e.target as HTMLElement, open = t.closest<HTMLElement>('[data-lc]'), send = t.closest<HTMLElement>('[data-lcsend]');
+    const v = (id: string) => (document.getElementById(id) as HTMLInputElement | null)?.value || '';
+    if (t.closest('[data-lccancel]')) { const box = document.getElementById('lcForm'); if (box) box.innerHTML = ''; return; }
+    if (open) {
+      const kind = open.dataset.lc!;
+      let box = document.getElementById('lcForm');
+      if (!box) { open.insertAdjacentHTML('afterend', '<div id="lcForm"></div>'); box = document.getElementById('lcForm'); }
+      box!.innerHTML = lcFormHtml(kind);
+      document.getElementById('lcReason')?.addEventListener('change', () => { document.getElementById('lcOtherWrap')!.hidden = v('lcReason') !== 'Other'; });
+      box!.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    if (send) {
+      const kind = send.dataset.lcsend!;
+      const body: any = { kind };
+      if (kind === 'left') Object.assign(body, { reason: v('lcReason'), reasonOther: v('lcOther'), date: v('lcDate'), newClub: v('lcClub') });
+      if (kind === 'loan') Object.assign(body, { club: v('lcClub'), start: v('lcStart'), until: v('lcUntil') });
+      if (kind === 'return') body.date = v('lcDate');
+      if (kind === 'delete') Object.assign(body, { confirm: v('lcConfirm'), why: v('lcWhy') });
+      (send as HTMLButtonElement).disabled = true;
+      try { await api(`profiles/${P!.id}/request`, { method: 'POST', body }); toast('Sent to the club for approval.'); openForm(P!.id); }
+      catch (err) { toast(err instanceof ApiError ? err.message : 'Could not send. Please try again.'); (send as HTMLButtonElement).disabled = false; }
+    }
+  });
+}
 function render(extra: any) {
   const p = P!, view = !p.editable;
   document.title = `${p.name || 'New profile'} | Squad & Staff Data Portal`;
@@ -259,6 +320,7 @@ function render(extra: any) {
     ${p.nameStatus === 'check' ? `<p class="sp-review"><b>Please check name order.</b> The form now has Surname, First name and Middle name; they were filled in from the old answers. Check them against the passport or official ID${p.editable ? ' and correct them if needed' : ''}. The club confirms them.</p>` : ''}
     ${stKey(p) === 'CHANGES_REQUESTED' && p.reviewNote ? `<p class="sp-review"><b>Changes requested by ${esc(p.reviewBy || 'the club')}:</b> ${esc(p.reviewNote)}</p>` : ''}
     ${['LIVE', 'ON_LOAN'].includes(p.status) && !view ? `<p class="sp-review sp-view">This profile is live on the website. Changes you make here are saved but only appear on the website after you send them and the club approves them.</p>` : ''}
+    ${lifecycleHtml(p, extra?.request)}
     ${view ? `<p class="sp-review sp-view">${stKey(p) === 'PENDING_APPROVAL' ? 'This profile is waiting for approval by the club and can only be viewed until then.' : `This profile is ${esc((p.statusLabel || STATUSES[p.status]).toLowerCase())} and can only be viewed.`}</p>` : ''}
     <p class="sp-dup" id="dupWarn" role="status" hidden></p>
     <div class="sp-form">
@@ -361,7 +423,16 @@ function wire() {
     if (!P!.editable || P!.type === b.dataset.type) return;
     P!.type = b.dataset.type as P['type']; visibility(); save({}, true, P!.type);
   }));
-  document.getElementById('dupWarn')?.addEventListener('click', e => { const g = (e.target as HTMLElement).closest<HTMLElement>('[data-goto]'); if (g) openForm(g.dataset.goto!); });
+  document.getElementById('dupWarn')?.addEventListener('click', async e => {
+    const t = e.target as HTMLElement, g = t.closest<HTMLElement>('[data-goto]'), rs = t.closest<HTMLElement>('[data-restore]');
+    if (g) openForm(g.dataset.goto!);
+    if (rs) {
+      if (!confirm('Ask the club to restore the previous profile? This new draft is removed once it is approved.')) return;
+      try { await api(`profiles/${rs.dataset.restore}/request`, { method: 'POST', body: { kind: 'restore', draftId: P!.id } }); toast('Sent: the club will approve the restore.'); openForm(rs.dataset.restore!); }
+      catch (err) { toast(err instanceof ApiError ? err.message : 'Could not send. Please try again.'); }
+    }
+  });
+  wireLifecycle();
   form.addEventListener('input', e => {
     const root = (e.target as HTMLElement).closest<HTMLElement>('[data-field]'); if (!root) return;
     const key = root.dataset.field!, f = FIELD[key];

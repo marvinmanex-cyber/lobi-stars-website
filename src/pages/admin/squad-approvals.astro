@@ -117,7 +117,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       if (it.requestId) {
         box.innerHTML = `<div class="sa-row"><h2><span class="k ${esc(it.kind)}">${esc(it.kindLabel)}</span> ${esc(it.name)}</h2><button class="btn-o" type="button" data-close>Close</button></div>
           <p class="muted">Sent by ${esc(who(it.submittedBy))} · ${esc(when(it.submittedAt))}</p>
-          <table class="cmp"><tbody>${Object.entries(it.payload || {}).map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</td></tr>`).join('') || '<tr><td class="muted">No details.</td></tr>'}</tbody></table>${actsHtml(it)}`;
+          <table class="cmp"><tbody>${(it.payload?.display || Object.entries(it.payload || {}).filter(([k]) => !['display', 'name'].includes(k))).map(([k, v]: any) => `<tr><th>${esc(k)}</th><td>${esc(typeof v === 'object' ? JSON.stringify(v) : v)}</td></tr>`).join('') || '<tr><td class="muted">No details.</td></tr>'}</tbody></table>${it.profileId ? `<p><a href="/admin/squad-profiles/?id=${encodeURIComponent(it.profileId)}">Open the profile</a></p>` : ''}${actsHtml(it)}`;
         return;
       }
       const d = await api(`?id=${encodeURIComponent(it.profileId)}`);

@@ -12,7 +12,7 @@ export async function onRequestGet({ request, env, params }) {
   if (!(await checkSignature(env, id, kind, variant, u.searchParams.get('exp'), u.searchParams.get('sig')))) return new Response('This link has expired or is not valid.', { status: 403 });
   const p = await getProfile(env.DB, id);
   const live = liveOf(p);
-  if (!p || !PUBLIC_STATUSES.includes(p.status) || !live?.photos?.[kind]) return new Response('Not found', { status: 404 });
+  if (!p || ![...PUBLIC_STATUSES, 'FORMER'].includes(p.status) || !live?.photos?.[kind]) return new Response('Not found', { status: 404 });
   const o = await readFile(env, p.id, kind, variant, live.photos[kind].rev || null);
   if (!o) return new Response('Not found', { status: 404 });
   const type = o.httpMetadata?.contentType || 'application/octet-stream', data = live.data || {};

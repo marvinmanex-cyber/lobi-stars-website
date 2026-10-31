@@ -73,6 +73,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       <h2>New season</h2>
       <p class="muted">Copies every live profile of a season into the new season (still live on the website, history and photos kept; the season's confirmations are asked again in the portal), and makes it the portal's current season.</p>
       <form class="sq-row" id="carry"><label class="sq-l">From <select id="carryFrom"></select></label><label class="sq-l">New season <input id="carryTo" placeholder="2027/28" maxlength="7" /></label><button class="btn-p" type="submit">Carry over squad</button></form>
+      <h2>Former Players &amp; Legends page</h2>
+      <p class="muted">A public page at /squad/former/ with each former player's and staff member's photo, position, years at the club, appearances and goals. Off by default; when off, a former player's old address goes to /squad/.</p>
+      <label class="sq-l" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="formerPage" /> Show the Former Players &amp; Legends page</label>
       <h2>Team details (Data Package)</h2>
       <form class="sq-team" id="team">
         <label class="sq-l">Name <input name="name" /></label><label class="sq-l">Short name <input name="shortName" /></label><label class="sq-l">Nickname <input name="nickname" /></label>
@@ -81,6 +84,12 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <label class="sq-l">Home kit colours <input name="home" placeholder="#C4161C, #F2B705" /></label><label class="sq-l">Away kit colours <input name="away" placeholder="#FFFFFF, #F2B705" /></label>
         <div><button class="btn-p" type="submit">Save team details</button></div>
       </form>
+    </section>
+
+    <section class="sq-card" id="deletedBox" hidden>
+      <h2>Deleted profiles</h2>
+      <p class="muted">Profiles deleted in the last 30 days can be brought back. After 30 days they are erased for good (record, photos and versions); match statistics keep the player's web address only.</p>
+      <div class="sq-scroll"><table class="sq-table"><thead><tr><th>Name</th><th>Season</th><th>Deleted</th><th>Erased on</th><th></th></tr></thead><tbody id="deletedRows"></tbody></table></div>
     </section>
 
     <section class="sq-card" id="exLogBox" hidden><h2>Export log</h2><div id="exLog"></div></section>
@@ -183,6 +192,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <td>${p.type === 'player' ? `${p.shirtNumber ?? '–'} · ${esc(p.position || '')}` : esc(p.role || '')}</td><td><span class="st ${stKey(p)}">${esc(p.statusLabel)}</span>${p.liveN ? `<br /><small class="muted">live version ${p.liveN}</small>` : ''}</td>
         <td>${esc(when(p.updatedAt))}<br /><small>${esc(p.updatedBy || '')}</small></td><td><button class="btn-o" type="button" data-open="${p.id}">Open</button></td></tr>`).join('') : '<tr><td colspan="7" class="muted">Nothing here.</td></tr>';
       $('fullBox').hidden = !D.canFull; $('superBox').hidden = !D.canSuper;
+      $('formerPage').checked = !!D.formerPage;
+      $('deletedBox').hidden = !(D.canSuper && D.deleted?.length);
+      $('deletedRows').innerHTML = (D.deleted || []).map((x: any) => `<tr><td><b>${esc(x.name)}</b><br /><small class="muted">${x.type === 'player' ? 'Player' : 'Coach / staff'}</small></td><td>${esc(x.season)}</td><td>${esc(when(x.deletedAt))}<br /><small class="muted">${esc(x.deletedBy || '')}</small></td><td>${esc(x.eraseOn)}</td><td><button class="btn-o" type="button" data-undelete="${esc(x.id)}">Restore</button></td></tr>`).join('');
       $('exportBox').hidden = !D.canExport; $('exLogBox').hidden = !D.canExport;
       if (D.exportTo?.length) $('exTo').textContent = D.exportTo.join(', ');
       const t = D.team, f = $('team');
@@ -305,7 +317,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   }
   async function open(id: string) {
     try {
-      const { profile: p } = await api(`?id=${encodeURIComponent(id)}`);
+      const { profile: p, request: req, eraseOn } = await api(`?id=${encodeURIComponent(id)}`);
       const fields = fieldsFor(p.type, { admin: true });
       const old = FIELDS.filter((f: any) => f.retired && p.data[f.key] != null && p.data[f.key] !== '');
       const box = $('detail'); box.hidden = false;
@@ -315,12 +327,20 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         waiting ? `<button class="btn-p" type="button" data-act="approve">${live ? 'Approve changes' : 'Approve &amp; publish'}</button> <a class="btn-o" href="/admin/squad-approvals/?id=${encodeURIComponent(p.id)}">Compare in Approvals</a>` : '',
         (live ? p.pending === 'PENDING_APPROVAL' : p.status === 'PENDING_APPROVAL') ? '<input class="sq-note" id="note" maxlength="500" placeholder="What needs changing (shown in the portal)" /><button class="btn-o" type="button" data-act="request_changes">Request changes</button>' : '',
         live && p.pending ? '<button class="btn-o" type="button" data-act="discard">Discard the changes (keep the live version)</button>' : '',
-        live ? '<button class="btn-o" type="button" data-act="left">Mark as left the club</button>' : '',
-        p.status === 'FORMER' ? '<button class="btn-o" type="button" data-act="restore">Restore (back at the club)</button>' : '',
-        D?.canSuper ? '<button class="btn-o" type="button" data-act="remove">Remove profile</button>' : '',
+        // Leaving, loans and deletion: applied straight away for a Super Admin (and logged like an approval).
+        !req && live ? '<button class="btn-o" type="button" data-lc="left">Left the club…</button>' : '',
+        !req && p.status === 'LIVE' ? '<button class="btn-o" type="button" data-lc="loan">Out on loan…</button>' : '',
+        !req && p.status === 'ON_LOAN' ? '<button class="btn-o" type="button" data-lc="return">Return from loan</button>' : '',
+        !req && live ? '<button class="btn-o" type="button" data-lc="delete">Delete permanently…</button>' : '',
+        !req && p.status === 'FORMER' ? '<button class="btn-o" type="button" data-lc="restore">Restore (back at the club)</button>' : '',
+        D?.canSuper && !live && p.status !== 'FORMER' ? '<button class="btn-o" type="button" data-act="remove">Delete (restorable for 30 days)</button>' : '',
       ].join('');
       box.innerHTML = `<div class="sq-row" style="justify-content:space-between"><h2>${esc(p.name || 'Unnamed')} <span class="st ${stKey(p)}">${esc(p.statusLabel)}</span>${p.nameStatus === 'check' ? ' <span class="st CHANGES_REQUESTED">Please check name order</span>' : ''}${p.migrated ? ' <span class="st MIGRATED">Migrated – please review</span>' : ''}</h2><button class="btn-o" type="button" id="closeDetail">Close</button></div>
         <p class="muted">${p.type === 'player' ? 'Player' : 'Coach / staff'} · ${esc(p.season)} · submitted ${esc(when(p.submittedAt))} by ${esc(p.submittedBy || '–')}${p.verifiedAt ? ` · last approved ${esc(when(p.verifiedAt))} by ${esc(p.verifiedBy)}` : ''}${p.liveN ? ` · live version ${p.liveN}` : ''}${p.reviewNote ? ` · note: ${esc(p.reviewNote)}` : ''}</p>
+        ${req ? `<p class="sq-old"><b>Request waiting:</b> ${esc(({ left: 'Left the club', loan: 'Out on loan', return: 'Return from loan', delete: 'Delete permanently', restore: 'Restore previous profile' } as any)[req.kind] || req.kind)} (sent by ${esc(req.by || '')}, ${esc(when(req.at))}). <a href="/admin/squad-approvals/">Open Squad: Approvals</a></p>` : ''}
+        ${p.status === 'ON_LOAN' && p.loan ? `<p class="sq-old"><b>On loan at ${esc(p.loan.club)}</b> from ${esc(p.loan.start)} until ${esc(p.loan.until)}.</p>` : ''}
+        ${p.status === 'FORMER' ? `<p class="sq-old"><b>Left the club${p.leave?.date ? ` on ${esc(p.leave.date)}` : ''}</b>${p.leave?.reason ? `: ${esc(p.leave.reason === 'Other' ? p.leave.reasonOther : p.leave.reason)}${p.leave.newClub ? `, to ${esc(p.leave.newClub)}` : ''}` : ''}.${eraseOn ? ` Private details (phone, email, emergency and guardian contacts, legal name, date of birth) will be erased on <b>${esc(eraseOn)}</b>.` : ''}</p>` : ''}
+        <div id="lcBox"></div>
         ${live && p.pending ? `<p class="sq-old"><b>${p.pending === 'DRAFT' ? 'Changes being made in the portal (not sent yet).' : p.pending === 'CHANGES_REQUESTED' ? 'Changes were sent back to the portal.' : 'Changes are waiting for approval.'}</b> Below are the new answers; the website still shows live version ${p.liveN}.</p>` : ''}
         <div class="sq-photos">${Object.entries(p.photos || {}).map(([k, ph]: any) => `<figure><img src="${esc(ph.url)}" alt="${k} photo" ${k === 'hero' ? 'style="aspect-ratio:16/9;width:280px"' : ''} /><figcaption class="muted">${k === 'profile' ? 'Profile' : k === 'hero' ? 'Wide header' : 'Action'} · ${esc(p.fileBase)}${k === 'profile' ? '' : `-${k}`}.jpg ${(ph.warnings || []).length ? `· ⚠ ${esc(ph.warnings.join(' '))}` : ''}</figcaption></figure>`).join('') || '<p class="muted">No photo.</p>'}</div>
         <dl class="sq-dl">${fields.map((f: any) => `<dt>${esc(labelOf(f, p.type, p.data))}<span class="use ${f.use}">${f.admin ? 'club' : f.use}</span></dt><dd>${f.type === 'rows' && p.data[f.key]?.length ? `<ul>${p.data[f.key].map((r: any) => `<li>${f.columns.map((c: any) => esc(rowValue(c, r[c.key]))).filter(Boolean).join(' · ')}</li>`).join('')}</ul>` : value(f, p.data[f.key], p.type)}</dd>`).join('')}</dl>
@@ -335,7 +355,27 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('closeDetail').onclick = () => { box.hidden = true; history.replaceState(null, '', location.pathname); };
     } catch (e: any) { msg(e.message, false); }
   }
+  // ── Leaving, loans, deletion (Super Admins: applied at once) ──
+  const LC_TITLE: Record<string, string> = { left: 'Left the club', loan: 'Out on loan', return: 'Return from loan', delete: 'Delete permanently', restore: 'Restore (back at the club)' };
+  function lcForm(kind: string, name: string) {
+    const today = new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
+    const f = (label: string, input: string) => `<label class="sq-l">${label}${input}</label>`;
+    const body = kind === 'left' ? f('Reason', `<select id="lcReason">${['Transfer', 'Release', 'Retirement', 'End of contract', 'Other'].map(r => `<option>${r}</option>`).join('')}</select>`) + f('If "Other": why', '<input id="lcOther" maxlength="80" />') + f('Leaving date', `<input id="lcDate" type="date" value="${today}" />`) + f('New club (optional)', '<input id="lcClub" maxlength="60" />')
+      : kind === 'loan' ? f('Loan club', '<input id="lcClub" maxlength="60" />') + f('Start date', `<input id="lcStart" type="date" value="${today}" />`) + f('Expected return', '<input id="lcUntil" type="date" />')
+        : kind === 'return' ? f('Back on', `<input id="lcDate" type="date" value="${today}" />`)
+          : kind === 'delete' ? `<p class="muted">Only for a profile created by mistake. It can be brought back within 30 days.</p>${f(`Type the name to confirm: <b>${esc(name)}</b>`, '<input id="lcConfirm" autocomplete="off" />')}` : '<p class="muted">They go back on the Squad page in the current season; their history is kept.</p>';
+    return `<div class="sq-card" style="margin:8px 0"><h3>${LC_TITLE[kind]}</h3><div class="sq-row">${body}</div><div class="sq-row"><button class="btn-p" type="button" data-lcgo="${kind}">Confirm</button><button class="btn-o" type="button" data-lcno>Cancel</button></div></div>`;
+  }
   $('detail').addEventListener('click', async (e: Event) => {
+    const t = e.target as HTMLElement, lc = t.closest('[data-lc]') as HTMLElement | null, go = t.closest('[data-lcgo]') as HTMLElement | null;
+    if (t.closest('[data-lcno]')) { $('lcBox').innerHTML = ''; return; }
+    if (lc) { $('lcBox').innerHTML = lcForm(lc.dataset.lc!, ($('detail').querySelector('h2')?.firstChild?.textContent || '').trim()); $('lcBox').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (go) {
+      const kind = go.dataset.lcgo!, id = ($('detail').querySelector('[data-id]') as HTMLElement).dataset.id, v = (x: string) => ($(x) as HTMLInputElement | null)?.value || '';
+      const body: any = { action: 'lifecycle', id, kind, reason: v('lcReason'), reasonOther: v('lcOther'), date: v('lcDate'), newClub: v('lcClub'), club: v('lcClub'), start: v('lcStart'), until: v('lcUntil'), confirm: v('lcConfirm') };
+      try { await api('', body); msg(`${LC_TITLE[kind]}: done. The Squad page changes within about 10 seconds.`); $('detail').hidden = true; load(); } catch (err: any) { msg(err.message, false); }
+      return;
+    }
     const rv = (e.target as HTMLElement).closest('[data-restorev]') as HTMLElement | null;
     if (rv) {
       const id = (rv.closest('[data-id]') as HTMLElement).dataset.id;
@@ -349,6 +389,14 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     if (sure[act!] && !confirm(sure[act!])) return;
     try { await api('', { action: act, id, note: ($('note') as HTMLInputElement | null)?.value }); msg({ approve: 'Approved. It is live; the website updates in about 2 minutes.', request_changes: 'Changes requested. The portal shows your note.', discard: 'Changes discarded; the live version stays.', left: 'Marked as left the club.', restore: 'Restored.', remove: 'Removed.' }[act!] || 'Done.'); $('detail').hidden = true; load(); }
     catch (err: any) { msg(err.message, false); }
+  });
+  $('deletedRows').addEventListener('click', async (e: Event) => {
+    const b = (e.target as HTMLElement).closest('[data-undelete]') as HTMLElement | null; if (!b) return;
+    if (!confirm('Bring this profile back?')) return;
+    try { const r = await api('', { action: 'restore_deleted', id: b.dataset.undelete }); msg(`Restored (${r.status === 'LIVE' ? 'live again' : 'as a draft'}).`); load(); } catch (err: any) { msg(err.message, false); }
+  });
+  $('formerPage').addEventListener('change', async () => {
+    try { await api('', { action: 'former_page', on: $('formerPage').checked }); msg($('formerPage').checked ? 'The Former Players & Legends page is on (/squad/former/).' : 'The Former Players & Legends page is off.'); } catch (err: any) { msg(err.message, false); }
   });
   function wireEdit(p: any) {
     $('saveEdit').onclick = async () => { try { await saveEdit(p.id); open(p.id); load(); } catch (e: any) { msg(e.message, false); } };

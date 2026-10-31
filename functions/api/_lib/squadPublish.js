@@ -33,7 +33,8 @@ export async function profilesFor(db, { season = null, statuses = ['LIVE'], type
 /** The Data Package input for a row (what squadPackage.js reads). */
 export const packageInput = r => {
   const photos = parseJson(r.photos_json, {});
-  return { id: r.id, type: r.type, status: r.status, updatedAt: r.updated_at, data: parseJson(r.data_json, {}), hasAction: !!photos.action, hasHero: !!photos.hero, hasPhoto: !!photos.profile, fileBase: fileBase(r), season: r.season, photos };
+  return { id: r.id, type: r.type, status: r.status, updatedAt: r.updated_at, data: parseJson(r.data_json, {}), hasAction: !!photos.action, hasHero: !!photos.hero, hasPhoto: !!photos.profile, fileBase: fileBase(r), season: r.season, photos,
+    leave: parseJson(r.leave_json, null), loan: parseJson(r.loan_json, null) };
 };
 
 // The public photo of a live profile (the version on the website: ?v= changes when the photo does).
@@ -69,15 +70,20 @@ export async function previewItem(env, r) {
 /** For the website: the live, not hidden profiles of the current season, public fields only. */
 export async function publicSquad(env) {
   const db = env.DB;
-  const season = (await getPortalSettings(db)).season;
-  const rows = (await profilesFor(db, { season })).filter(r => !parseJson(r.data_json, {}).hideFromWebsite);
-  const left = await profilesFor(db, { season, statuses: ['FORMER'] });
   const settings = await getPortalSettings(db);
+  const season = settings.season;
+  const rows = (await profilesFor(db, { season, statuses: ['LIVE', 'ON_LOAN'] })).filter(r => !parseJson(r.data_json, {}).hideFromWebsite);
+  // Former people: every season, the newest profile of each person (their web address stays theirs).
+  const formerRows = [];
+  { const seen = new Set(); for (const r of await profilesFor(db, { statuses: ['FORMER'] })) { const k = r.person_id || r.id; const d = parseJson(r.data_json, {}); if (!seen.has(k) && !d.hideFromWebsite && profileName(d)) { seen.add(k); formerRows.push(r); } } }
   const used = new Set();
   const uniq = s => { let x = s || 'profile', i = 2; while (used.has(x)) x = `${s}-${i++}`; used.add(x); return x; };
   // legacyOff: the old hand-made squad files are switched off (Super Admin, after the migration list).
   // clubStaff: the web addresses of non-coaching staff (they have no public page: /squad/staff/<slug>/ goes to /squad/).
-  const out = { season, updatedAt: new Date().toISOString(), players: [], staff: [], clubStaff: [], left: left.map(rowName).filter(Boolean), redirects: [], legacyOff: settings.legacy_off === '1' };
+  // loans: out on loan (their own section of /squad). formerSlugs: addresses of people who left (301 to /squad/, or to
+  // /squad/former/<slug>/ when the Former Players & Legends page is on: formerPage, with the people in `former`).
+  const out = { season, updatedAt: new Date().toISOString(), players: [], staff: [], loans: [], clubStaff: [], left: formerRows.filter(r => r.season === season).map(rowName).filter(Boolean),
+    redirects: [], legacyOff: settings.legacy_off === '1', formerPage: settings.former_page === '1', formerSlugs: [], former: [] };
   const roles = await roleMap(db);
   const slugWrites = [];
   for (const r of rows) {
@@ -90,18 +96,52 @@ export async function publicSquad(env) {
       r.old_slugs = JSON.stringify(f.olds);
     }
     const item = feedItem(r, uniq(slug));
-    if (r.type === 'player') { out.players.push(item); continue; }
-    // Only COACHING roles are on the Squad page (Squad › Roles); club staff and roles still waiting for approval are not.
-    const role = roles.get(item.role);
-    if (role?.category === 'COACHING') out.staff.push({ ...item, roleCategory: 'COACHING', roleOrder: role.sort });
-    else out.clubStaff.push(item.slug);
+    let keep = item;
+    if (r.type === 'staff') {
+      // Only COACHING roles are on the Squad page (Squad › Roles); club staff and roles still waiting for approval are not.
+      const role = roles.get(item.role);
+      if (role?.category !== 'COACHING') { out.clubStaff.push(item.slug); continue; }
+      keep = { ...item, roleCategory: 'COACHING', roleOrder: role.sort };
+    }
+    if (r.status === 'ON_LOAN') { out.loans.push({ ...keep, loan: parseJson(r.loan_json, {}) }); continue; }
+    (r.type === 'player' ? out.players : out.staff).push(keep);
   }
   if (slugWrites.length) await db.batch(slugWrites);
+  // Former people: their addresses (never reused) and, for the optional public page, public football data only.
+  const stats = await careerTotals(db, formerRows);
+  for (const r of formerRows) {
+    if (!r.public_slug) continue;
+    out.formerSlugs.push({ slug: r.public_slug, type: r.type, old: parseJson(r.old_slugs, []) });
+    if (!out.formerPage) continue;
+    const d = parseJson(r.data_json, {}), item = feedItem(r, r.public_slug);
+    const start = Number(String(d.joined || d.joinedStaff || '').slice(0, 4)) || Number(String(r.first_season || r.season).slice(0, 4)) || null;
+    const endYear = r.left_at ? Number(r.left_at.slice(0, 4)) : null;
+    const t = stats.get(r.id) || { apps: 0, goals: 0 };
+    out.former.push({ slug: r.public_slug, type: r.type, name: item.name, firstName: item.firstName, surname: item.surname, photo: item.photo, photoSmall: item.photoSmall,
+      position: item.position || null, role: item.role || null, group: item.group || null, nationality: item.nationality, years: start && endYear ? (start === endYear ? String(start) : `${start}–${endYear}`) : endYear ? `until ${endYear}` : '',
+      apps: t.apps, goals: t.goals, previousClubs: item.previousClubs || [], honours: item.honours || [] });
+  }
+  out.former.sort((a, b) => String(b.years).localeCompare(String(a.years)) || a.name.localeCompare(b.name));
   // Old addresses → current ones (never an address someone else uses now).
-  for (const [list, prefix] of [[out.players, '/squad/'], [out.staff, '/squad/staff/']]) {
+  for (const [list, prefix] of [[[...out.players, ...out.loans.filter(x => x.number !== undefined && !x.role)], '/squad/'], [[...out.staff, ...out.loans.filter(x => x.role)], '/squad/staff/']]) {
     const current = new Set(list.map(x => x.slug));
     for (const x of list) for (const o of x.oldSlugs) if (!current.has(o)) out.redirects.push({ from: `${prefix}${o}/`, to: `${prefix}${x.slug}/` });
   }
+  return out;
+}
+
+/** Appearances and goals for Lobi Stars (all seasons) of each profile, from the match records. */
+async function careerTotals(db, rows) {
+  const out = new Map();
+  if (!rows.length) return out;
+  try {
+    const slugsOf = r => [r.public_slug, ...parseJson(r.old_slugs, [])].filter(Boolean);
+    const all = [...new Set(rows.flatMap(slugsOf))];
+    if (!all.length) return out;
+    const res = (await db.prepare(`SELECT player_slug, SUM(played) AS apps, SUM(goals) AS goals FROM player_match_stats WHERE player_slug IN (SELECT value FROM json_each(?)) GROUP BY player_slug`).bind(JSON.stringify(all)).all()).results;
+    const by = new Map(res.map(x => [x.player_slug, x]));
+    for (const r of rows) out.set(r.id, slugsOf(r).reduce((t, s) => ({ apps: t.apps + (by.get(s)?.apps || 0), goals: t.goals + (by.get(s)?.goals || 0) }), { apps: 0, goals: 0 }));
+  } catch { /* no match records yet */ }
   return out;
 }
 
@@ -136,7 +176,12 @@ export async function checkSignature(env, id, kind, variant, exp, sig) {
 export async function partnerFeed(env, origin, { since = null } = {}) {
   const db = env.DB;
   const season = (await getPortalSettings(db)).season;
-  const rows = (await profilesFor(db, { season, since })).map(packageInput);
+  // Live and on loan (this season), plus former people (newest profile of each, any season) so the partner can still find them.
+  const current = await profilesFor(db, { season, since, statuses: ['LIVE', 'ON_LOAN'] });
+  const seen = new Set(), former = [];
+  // (a profile with no name left -- e.g. its details were erased -- can't be found by name, so it is left out)
+  for (const r of await profilesFor(db, { since, statuses: ['FORMER'] })) { const k = r.person_id || r.id; if (!seen.has(k) && profileName(parseJson(r.data_json, {}))) { seen.add(k); former.push(r); } }
+  const rows = [...current, ...former].map(packageInput);
   const links = new Map();
   for (const p of rows) {
     links.set(`${p.id}:profile`, p.hasPhoto ? await signedFileUrl(env, origin, p.id, 'profile', 'w1200.jpg') : null);

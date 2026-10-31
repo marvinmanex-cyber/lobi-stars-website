@@ -5,6 +5,9 @@ import { listProfiles, counts, seasons, getProfile, profileView, reviewAction, d
 import { legacyList, migrateLegacy } from '../../_lib/squadMigrate.js';
 import { PUBLIC_STATUSES } from '../../../../src/lib/squadFields.js';
 import { pickList } from '../../_lib/squadRoles.js';
+import { createRequest, pendingFor, deletedList, restoreDeleted } from '../../_lib/squadLifecycle.js';
+import { setPortalSetting } from '../../_lib/squadPortal.js';
+import { RETENTION_DEFAULT } from '../../_lib/squadProfiles.js';
 import { requestRebuild } from '../../_lib/squadPublish.js';
 import { draftBio } from '../../_lib/squadBio.js';
 import { exportData } from '../../_lib/squadExportData.js';
@@ -19,6 +22,9 @@ import { verifyTotp } from '../../_lib/totp.js';
 // GET  ?versions=<id>                       -- the live versions of a profile (Super Admins)
 // POST { action: 'restore_version', id, n } -- an earlier version becomes the working copy, waiting for approval (Super Admins)
 // GET  ?legacy=1                            -- the old hand-made squad files (the migration list; Super Admins)
+// POST { action: 'lifecycle', id, kind: left|loan|return|delete|restore, … } -- a Super Admin's own request, approved at once
+// POST { action: 'restore_deleted', id }    -- a deleted profile back (within 30 days; Super Admins)
+// POST { action: 'former_page', on }        -- the public Former Players & Legends page on / off (Super Admins)
 // POST { action: 'migrate', keys, switchOff } -- move the chosen ones into the portal (live, "migrated – please review"),
 //                                              and/or switch the old files off (Super Admins)
 // POST { action: 'remove', id }             -- Super Admins only (any status; logged)
@@ -48,7 +54,12 @@ export async function onRequestGet({ request, env }) {
   const u = new URL(request.url);
   if (u.searchParams.get('id')) {
     const p = await getProfile(db, u.searchParams.get('id'));
-    return p ? json({ profile: profileView(p) }) : json({ error: 'Profile not found.' }, 404);
+    if (!p) return json({ error: 'Profile not found.' }, 404);
+    const req = await pendingFor(db, p.id);
+    // Former people: when their private details will be erased (Privacy Policy retention).
+    let eraseOn = null;
+    if (p.status === 'FORMER' && p.left_at && superOnly(admin)) { const s = await getPortalSettings(db); eraseOn = new Date(Date.parse(p.left_at) + (Number(s.retention_seasons) || RETENTION_DEFAULT) * 365 * 864e5).toISOString().slice(0, 10); }
+    return json({ profile: profileView(p), request: req ? { kind: req.kind, at: req.submitted_at, by: req.submitted_by } : null, eraseOn });
   }
   if (u.searchParams.get('versions')) {
     if (!superOnly(admin)) return json({ error: 'Only Super Admins can see earlier versions.' }, 403);
@@ -71,6 +82,7 @@ export async function onRequestGet({ request, env }) {
   const season = u.searchParams.get('season') || cur;
   const log = (await db.prepare(`SELECT * FROM squad_export_log ORDER BY id DESC LIMIT 30`).all()).results;
   return json({ season, current: cur, seasons: await seasons(db), counts: await counts(db, season), team: await getTeam(db), exportLog: superOnly(admin) ? log : [],
+    deleted: superOnly(admin) ? await deletedList(db) : [], formerPage: (await getPortalSettings(db)).former_page === '1',
     roles: await pickList(db).catch(() => []), canApprove: can(admin, 'squad.approve'), canSuper: superOnly(admin), canExport: superOnly(admin), exportTo: superOnly(admin) ? await exportRecipients(db) : [], canFull: can(admin, 'squad.records.full'), canEdit: can(admin, 'squad.records.full'), deployHook: !!env.PAGES_DEPLOY_HOOK,
     pendingNames: (await db.prepare(`SELECT COUNT(*) AS n FROM squad_profiles WHERE name_status IN ('pending', 'check') AND deleted_at IS NULL`).first())?.n || 0,
     profiles: await listProfiles(db, { season, filter: u.searchParams.get('filter') || 'submitted', q: u.searchParams.get('q') || '' }) });
@@ -103,6 +115,18 @@ export async function onRequestPost({ request, env, waitUntil }) {
     r = await reviewAction(env, admin, b.id, b.action, b.note);
     // The website changes only when a live version changes (approve, left, restore).
     if (r.ok && ['verify', 'approve', 'left', 'restore'].includes(b.action)) rebuild(`${b.action} ${rowName(before)}`);
+  } else if (b.action === 'lifecycle') {
+    if (!can(admin, 'squad.approve')) return json({ error: 'Only the Super Admins can do this.' }, 403);
+    r = await createRequest(env, admin, String(b.id || ''), String(b.kind || ''), b, { apply: true });
+    if (r.ok) rebuild(`${b.kind} ${b.id}`);
+  } else if (b.action === 'restore_deleted') {
+    if (!superOnly(admin)) return json({ error: 'Only the Super Admins can restore a deleted profile.' }, 403);
+    r = await restoreDeleted(env, admin, b.id);
+  } else if (b.action === 'former_page') {
+    if (!superOnly(admin)) return json({ error: 'Only the Super Admins can change this.' }, 403);
+    await setPortalSetting(db, 'former_page', b.on ? '1' : '0', admin.name);
+    await logProfile(db, admin, 'squad_former_page', `${admin.name} switched the public Former Players & Legends page ${b.on ? 'on' : 'off'}`);
+    r = { ok: true };
   } else if (b.action === 'restore_version') {
     if (!superOnly(admin)) return json({ error: 'Only Super Admins can restore an earlier version.' }, 403);
     r = await restoreVersion(env, admin, b.id, b.n);

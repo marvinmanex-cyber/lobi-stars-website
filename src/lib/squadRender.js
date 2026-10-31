@@ -38,7 +38,7 @@ export function personFromFeed(x, kind) {
     joined: x.joined || null, debut: x.debutDate || null, licence: x.licence || null,
     bioHeadline: x.bioHeadline || null, bioText: x.bio || null, shortBio: null, interestingFact: x.interestingFact || null, shirtUrl: x.shirtShopUrl || null,
     socials: x.socials || {}, previousClubs: x.previousClubs || [], previousRoles: x.previousRoles || [], internationalCareer: x.internationalCareer || [], honours: x.honours || [],
-    isSample: false,
+    isSample: false, loan: x.loan && x.loan.club ? x.loan : null,
   };
 }
 /** Players by position group then number; coaches Head Coach first. */
@@ -68,8 +68,8 @@ export function bioHtml(text) {
 const SIL = '<circle cx="50" cy="36" r="18" /><path d="M14 100c0-22 16-36 36-36s36 14 36 36z" />';
 
 /** A squad card (photo, big number, first name above the surname, position or role). */
-export function renderCard(p) {
-  const subtitle = p.kind === 'player' ? p.position || p.groupLabel : p.role;
+export function renderCard(p, { subtitle: sub = null } = {}) {
+  const subtitle = sub || (p.kind === 'player' ? p.position || p.groupLabel : p.role);
   const plain = `${p.firstName} ${p.surname}`.trim();
   const twoLine = !!p.surname && (!p.name || p.name === plain);
   return `<a class="sc" href="${esc(p.href)}"><div class="sc-photo">${p.number != null ? `<span class="sc-num" aria-hidden="true">${esc(p.number)}</span>` : ''}${p.photoSmall
@@ -80,11 +80,31 @@ export function renderCard(p) {
 }
 
 /** The squad list: groups by position, then coaching staff. */
-export function renderList({ players, staff, season }) {
-  if (!players.length && !staff.length) return `<div class="empty-state">The squad for the ${esc(season)} season will be announced soon.</div>`;
-  const group = (id, title, list) => `<section class="sq-group" aria-labelledby="${id}"><h2 class="sq-title" id="${id}">${esc(title)}</h2><ul class="sq-grid">${list.map(p => `<li>${renderCard(p)}</li>`).join('')}</ul></section>`;
+export function renderList({ players, staff, loans = [], season, formerPage = false }) {
+  if (!players.length && !staff.length && !loans.length) return `<div class="empty-state">The squad for the ${esc(season)} season will be announced soon.</div>`;
+  const group = (id, title, list, sub) => `<section class="sq-group" aria-labelledby="${id}"><h2 class="sq-title" id="${id}">${esc(title)}</h2><ul class="sq-grid">${list.map(p => `<li>${renderCard(p, { subtitle: sub ? sub(p) : null })}</li>`).join('')}</ul></section>`;
   return GROUPS.map(g => { const list = players.filter(p => p.group === g.key); return list.length ? group(`g-${g.key}`, g.title, list) : ''; }).join('')
-    + (staff.length ? group('g-staff', 'Coaching Staff', staff) : '');
+    + (staff.length ? group('g-staff', 'Coaching Staff', staff) : '')
+    // Out on loan: at the bottom, "On loan at [club]".
+    + (loans.length ? group('g-loan', 'Out on Loan', loans, p => `On loan at ${p.loan?.club || 'another club'}`) : '')
+    + (formerPage ? '<p class="sq-former-link"><a href="/squad/former/">Former Players &amp; Legends →</a></p>' : '');
+}
+
+/** The Former Players & Legends list: photo, name, position, years at the club, appearances and goals. */
+export function renderFormerList(list) {
+  if (!list.length) return '<div class="empty-state">No former players or staff are listed yet.</div>';
+  return `<ul class="sq-grid sq-former">${list.map(x => `<li><a class="sc" href="/squad/former/${esc(x.slug)}/"><div class="sc-photo">${x.photoSmall ? `<img src="${esc(x.photoSmall)}" alt="" loading="lazy" decoding="async" width="400" height="500" />` : `<svg class="sc-sil" viewBox="0 0 100 100" aria-hidden="true">${SIL}</svg>`}</div><div class="sc-body"><span class="sc-name"><span class="sc-first">${esc(x.firstName || '')}</span><span class="sc-last">${esc(x.surname || x.name)}</span></span><span class="sc-sub">${esc(x.position || x.role || '')}${x.years ? ` · ${esc(x.years)}` : ''}</span>${x.type === 'player' ? `<span class="sc-stat">${esc(x.apps)} appearance${x.apps === 1 ? '' : 's'} · ${esc(x.goals)} goal${x.goals === 1 ? '' : 's'}</span>` : ''}</div></a></li>`).join('')}</ul>`;
+}
+/** A former player's page: public football data only, "Played for Lobi Stars [years]". */
+export function renderFormerProfile(x) {
+  const isPlayer = x.type === 'player';
+  return `<article class="pf" data-kind="${esc(x.type)}"><header class="pf-hero"><div class="wrap pf-hero-in"><div class="pf-portrait">${x.photo ? `<img src="${esc(x.photo)}" alt="${esc(x.name)}" width="600" height="750" />` : `<svg viewBox="0 0 100 100" aria-hidden="true">${SIL}</svg>`}</div>
+    <div class="pf-title"><p class="pf-kicker">Former ${isPlayer ? 'player' : 'staff'}${x.position || x.role ? ` · ${esc(x.position || x.role)}` : ''}</p><h1 class="pf-name"><span class="pf-first">${esc(x.firstName || '')}</span><span class="pf-last">${esc(x.surname || x.name)}</span></h1>
+    <p class="pf-played">${x.years ? `${isPlayer ? 'Played' : 'Worked'} for Lobi Stars ${esc(x.years)}` : `Formerly at Lobi Stars`}</p></div></div></header>
+    <div class="wrap pf-main"><div class="pf-col">${isPlayer ? `<ul class="pf-stats"><li><span class="pf-stat-v">${esc(x.apps)}</span><span class="pf-stat-k">Appearances for Lobi Stars</span></li><li><span class="pf-stat-v">${esc(x.goals)}</span><span class="pf-stat-k">Goals for Lobi Stars</span></li></ul><p class="pf-note">Worked out from the club's match records.</p>` : ''}
+    <section class="pf-sec"><h2 class="pf-h2">Details</h2><dl class="pf-details">${x.nationality ? `<div><dt>Nationality</dt><dd>${flagHtml(x.nationality)}</dd></div>` : ''}<div><dt>${isPlayer ? 'Position' : 'Role'}</dt><dd>${esc(x.position || x.role || '–')}</dd></div>${x.years ? `<div><dt>At Lobi Stars</dt><dd>${esc(x.years)}</dd></div>` : ''}</dl></section>
+    ${x.honours?.length ? `<section class="pf-sec"><h2 class="pf-h2">Honours</h2><ul class="pf-honours">${x.honours.map(h => `<li><b>${esc(h.title)}</b>${[h.seasonOrYear, h.clubOrTeam].filter(Boolean).length ? `<span> · ${esc([h.seasonOrYear, h.clubOrTeam].filter(Boolean).join(', '))}</span>` : ''}</li>`).join('')}</ul></section>` : ''}
+    <p><a class="pf-all" href="/squad/former/">All former players &amp; legends</a> · <a class="pf-all" href="/squad/">The current squad</a></p></div></div></article>`;
 }
 
 const handle = h => String(h || '').replace(/^@/, '');
@@ -136,6 +156,7 @@ export function renderProfile(p, { prev = null, next = null, teammates = [], sea
     </div>
   </header>
   <div class="wrap pf-main"><div class="pf-col">
+    ${p.loan ? `<p class="pf-loan" role="note"><b>On loan at ${esc(p.loan.club)}</b>${p.loan.until ? ` until ${esc(longDate(p.loan.until))}` : ''}</p>` : ''}
     ${shirtHref ? `<a class="pf-shirt" href="${esc(shirtHref)}"${p.shirtUrl ? ' target="_blank" rel="noopener"' : ''}><span class="pf-shirt-num" aria-hidden="true">${esc(p.number ?? '')}</span><span><b>Buy ${esc(p.shortName)}'s shirt</b><small>Official Lobi Stars FC shirt</small></span><span aria-hidden="true">→</span></a>` : ''}
     ${bio || p.bioHeadline || p.shortBio ? `<section class="pf-sec pf-bio" aria-labelledby="bio-h"><h2 class="pf-h2" id="bio-h">${esc(p.bioHeadline || 'Biography')}</h2>${bio || (p.shortBio ? `<p>${esc(p.shortBio)}</p>` : '')}</section>` : ''}
     ${p.interestingFact ? `<aside class="pf-fact" aria-labelledby="fact-h"><h2 id="fact-h">${fact}</h2><p>${esc(p.interestingFact)}</p></aside>` : ''}

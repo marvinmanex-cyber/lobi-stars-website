@@ -2,6 +2,7 @@ import { backupStep, mediaStep, backupReady, weeklyOffsiteEmail } from '../_lib/
 import { securitySettings, saveSecuritySetting } from '../_lib/adminSecurity.js';
 import { logAdminAction } from '../_lib/adminSession.js';
 import { erasePrivateAfterLeaving } from '../_lib/squadProfiles.js';
+import { purgeDeleted } from '../_lib/squadLifecycle.js';
 
 // POST /api/internal/backup-run -- called every minute by the cron Worker
 // ("Authorization: Bearer <CRON_SECRET>"). Runs the next step of today's automatic
@@ -15,6 +16,8 @@ export async function onRequestPost({ request, env }) {
   }
   let privacy = null;
   try { privacy = await erasePrivateAfterLeaving(env.DB); } catch (err) { console.error('[squad] privacy clean-up', err); }
+  // Deleted squad profiles older than 30 days are erased for good.
+  try { if (privacy && !privacy.skipped) privacy.purged = (await purgeDeleted(env)).erased; } catch (err) { console.error('[squad] purge deleted', err); }
   if (!backupReady(env)) return Response.json({ ok: true, ready: false, privacy });
   const out = { privacy, db: await backupStep(env) };
   try { out.media = await mediaStep(env); } catch (err) { console.error('[backup] media', err); }

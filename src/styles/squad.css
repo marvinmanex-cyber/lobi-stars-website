@@ -28,6 +28,14 @@
 }
 @media (prefers-reduced-motion: reduce) { .sc, .sc-photo img { transition: none; } }
 
+/* ── Out on loan, former players ── */
+.pf-loan { margin: 0 0 18px; padding: 14px 18px; border-radius: 12px; background: #FEF3C7; color: #78350F; border-left: 6px solid #F59E0B; font-size: 17px; }
+.pf-played { position: relative; margin: 14px 0 0; font: 700 18px/1.2 'Barlow Condensed', sans-serif; color: #FFC72C; letter-spacing: .5px; }
+.sc-stat { font-size: 13px; color: var(--lt); }
+.sq-former-link { margin: 8px 0 0; text-align: right; }
+.sq-former-link a { color: var(--red-text); font: 700 16px/1.2 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; }
+.sq-former-link a:hover { text-decoration: underline; }
+
 /* ── Flag with the country name ── */
 .flag { display: inline-flex; align-items: center; gap: 8px; }
 .flag img { flex: none; border-radius: 2px; box-shadow: 0 0 0 1px rgba(21, 24, 29, .12); object-fit: cover; }
