@@ -4,7 +4,7 @@
 // what readers will see. Phone / desktop toggle; autosave.
 import { api, esc, register, go, toast } from './core';
 import { listScreen, statusBanner, autosaver, workflowButtons } from './items';
-import { upload, pickFile, cleanHtml, plainText } from './files';
+import { upload, pickFile, pickFromLibrary, cleanHtml, plainText } from './files';
 
 let META: any = null;
 export async function meta() { if (!META) META = await api('meta'); return META; }
@@ -33,11 +33,11 @@ async function editor(main: HTMLElement, id: string) {
       <div class="mc-field"><label for="cat">Category</label><select id="cat" ${ro}>${cats.map(c => `<option ${c === d.category ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
       <div class="mc-field"><label for="headline">Headline</label><input id="headline" maxlength="150" value="${esc(d.headline || '')}" ${ro} placeholder="e.g. Lobi Stars edge Kada City in Makurdi" /><span class="mc-hint" id="hlCount"></span></div>
       <div class="mc-field"><label for="summary">Summary <small>(1–2 sentences: shown on news cards and when shared on WhatsApp/Facebook)</small></label><textarea id="summary" maxlength="320" rows="3" ${ro}>${esc(d.summary || '')}</textarea><span class="mc-hint" id="smCount"></span></div>
-      <div class="mc-field"><span class="mc-label">Main photo</span><div class="mc-photo" id="coverBox"></div>${editable ? '<button class="mc-btn mc-btn-o mc-btn-sm" type="button" id="coverBtn">Upload main photo</button>' : ''}<span class="mc-hint">JPG, PNG or WebP up to 5 MB. Resized automatically.</span></div>
+      <div class="mc-field"><span class="mc-label">Main photo</span><div class="mc-photo" id="coverBox"></div>${editable ? '<button class="mc-btn mc-btn-o mc-btn-sm" type="button" id="coverBtn">Upload main photo</button> <button class="mc-btn mc-btn-o mc-btn-sm" type="button" id="coverLib">From library</button>' : ''}<span class="mc-hint">JPG, PNG or WebP up to 5 MB. Resized automatically.</span></div>
       <div class="mc-grid two"><div class="mc-field"><label for="caption">Photo caption</label><input id="caption" maxlength="200" value="${esc(d.caption || '')}" ${ro} placeholder="Who or what is in the photo" /></div>
       <div class="mc-field"><label for="credit">Photo credit</label><input id="credit" maxlength="100" value="${esc(d.credit || '')}" ${ro} placeholder="e.g. Lobi Stars Media" /></div></div>
       <div class="mc-field"><span class="mc-label">Story</span>
-        ${editable ? `<div class="mc-tb" role="toolbar" aria-label="Formatting"><button type="button" data-cmd="bold" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="h2">H2</button><button type="button" data-cmd="h3">H3</button><button type="button" data-cmd="p">¶</button><button type="button" data-cmd="quote" aria-label="Quote">❝</button><button type="button" data-cmd="ul" aria-label="Bullet list">• List</button><button type="button" data-cmd="ol" aria-label="Numbered list">1. List</button><button type="button" data-cmd="link" aria-label="Link">🔗</button><button type="button" data-cmd="img" aria-label="Picture">🖼</button></div>` : ''}
+        ${editable ? `<div class="mc-tb" role="toolbar" aria-label="Formatting"><button type="button" data-cmd="bold" aria-label="Bold"><b>B</b></button><button type="button" data-cmd="h2">H2</button><button type="button" data-cmd="h3">H3</button><button type="button" data-cmd="p">¶</button><button type="button" data-cmd="quote" aria-label="Quote">❝</button><button type="button" data-cmd="ul" aria-label="Bullet list">• List</button><button type="button" data-cmd="ol" aria-label="Numbered list">1. List</button><button type="button" data-cmd="link" aria-label="Link">🔗</button><button type="button" data-cmd="img" aria-label="Picture">🖼</button><button type="button" data-cmd="lib">Library</button></div>` : ''}
         <div class="mc-rte" id="body" contenteditable="${editable}" role="textbox" aria-multiline="true" aria-label="Story text">${cleanHtml(d.body || '') || '<p><br></p>'}</div><span class="mc-hint" id="wc"></span></div>
       <div class="mc-field"><span class="mc-label">Photo gallery <small>(optional)</small></span><div class="mc-gal" id="gal"></div>${editable ? '<button class="mc-btn mc-btn-o mc-btn-sm" type="button" id="galBtn">Add photos</button>' : ''}</div>
       <div class="mc-field"><label for="video">Video link <small>(optional: YouTube or Facebook)</small></label><input id="video" type="url" value="${esc(d.video || '')}" ${ro} placeholder="https://www.youtube.com/watch?v=…" /></div>
@@ -140,6 +140,7 @@ async function editor(main: HTMLElement, id: string) {
     if (c === 'ul') document.execCommand('insertUnorderedList');
     if (c === 'ol') document.execCommand('insertOrderedList');
     if (c === 'link') { const u = prompt('Link address (https://…)'); if (u && /^(https?:\/\/|mailto:|\/)/i.test(u.trim())) document.execCommand('createLink', false, u.trim()); else if (u) toast('Links must start with https://'); }
+    if (c === 'lib') { const p = await pickFromLibrary(); if (p) { rte.focus(); document.execCommand('insertHTML', false, `<img src="${esc(p.url)}" alt="">`); } }
     if (c === 'img') {
       const f = await pickFile('image/jpeg,image/png,image/webp'); if (!f) return;
       try { toast('Uploading the picture…'); const up = await upload(f, { section: 'news' }); rte.focus(); document.execCommand('insertHTML', false, `<img src="${esc(up.url)}" alt="">`); toast('Picture added.'); } catch (err: any) { toast(err.message, 9000); }
@@ -150,6 +151,7 @@ async function editor(main: HTMLElement, id: string) {
     const f = await pickFile('image/jpeg,image/png,image/webp'); if (!f) return;
     try { toast('Uploading the photo…'); const up = await upload(f, { section: 'news' }); cover = { url: up.url, id: up.id }; drawCover(); changed(); toast('Photo added.'); } catch (err: any) { toast(err.message, 9000); }
   });
+  $('#coverLib')?.addEventListener('click', async () => { const p = await pickFromLibrary(); if (p) { cover = p; drawCover(); changed(); } });
   $('#galBtn')?.addEventListener('click', async () => {
     const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/jpeg,image/png,image/webp'; i.multiple = true;
     i.addEventListener('change', async () => {

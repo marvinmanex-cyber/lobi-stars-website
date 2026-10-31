@@ -8,6 +8,41 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-31: Media Centre, phase 5: press releases, Matchday Desk, library, interviews, press kit, calendar
+
+**What changed**
+- **Press Releases & Statements:**
+  - a fixed layout: FOR IMMEDIATE RELEASE, quote, media contact and ENDS;
+  - always approved by a Super Admin;
+  - a new public page, /media/press-releases (permanent archive), with a
+    branded PDF;
+  - emailed to the media contacts list.
+- **Matchday Desk:**
+  - line-ups prepared in advance, approved and published at a set time;
+  - quick live updates (kick-off, goal, card, substitution, half-time,
+    full-time) on the match page and the homepage live score;
+  - Super Admins can grant chosen people pre-approved live updates for a
+    match; everything is logged.
+- **Photo & Video Library:**
+  - albums with captions, photographer credits, player tags and video
+    links;
+  - approved albums go into the public Gallery;
+  - pictures can be reused in stories and newsletters.
+- **Interview Requests:**
+  - a new public form, /media/interview-request;
+  - approve, decline or propose another time, with emails, status tracking
+    and the media contacts history.
+- **Press Kit:** a new public page, /media/press-kit, managed from the Media
+  Centre with Super Admin approval.
+- **Content Calendar:** match days, newsletter Wednesdays and planned items
+  with the person, due date and status. Your items show on your Media
+  Centre home.
+- The **Media** page now links to all of these.
+
+**Staff:** see STAFF-GUIDE section 41.
+
+---
+
 ## 2026-10-31: Media Centre, phase 4: Lobi Stars Weekly
 
 **What changed**

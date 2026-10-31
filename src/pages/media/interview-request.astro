@@ -1,0 +1,60 @@
+---
+// /media/interview-request -- journalists ask to interview a player, coach or
+// club official. Handled by the media team in the Media Centre (approve,
+// decline or propose another time; the journalist is emailed).
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Interview requests | Lobi Stars Football Club" description="Request an interview with a Lobi Stars FC player, coach or club official.">
+  <div class="page-hero wrap">
+    <div class="stag">Press &amp; Media</div>
+    <h1 class="stitle">Interview <span class="r">request</span></h1>
+    <div class="divr"></div>
+    <p class="muted ir-lede">Tell us who you would like to interview, the topic and when. Our media team will reply by email.</p>
+  </div>
+  <div class="page-content wrap ir">
+    <p class="ir-msg" id="msg" role="alert" hidden></p>
+    <section class="panel" id="done" hidden><h2>Thank you</h2><p>We have your request and will reply by email.</p><p><a href="/media/">Back to the Media page</a></p></section>
+    <form class="panel" id="f" novalidate>
+      <div class="ir-two">
+        <div class="ir-f"><label for="fullName">Your full name <span class="req">*</span></label><input id="fullName" name="fullName" autocomplete="name" maxlength="80" required /></div>
+        <div class="ir-f"><label for="organisation">Media organisation <span class="req">*</span></label><input id="organisation" name="organisation" maxlength="120" required /></div>
+        <div class="ir-f"><label for="email">Email <span class="req">*</span></label><input id="email" name="email" type="email" autocomplete="email" required /></div>
+        <div class="ir-f"><label for="phone">Phone</label><input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="24" /></div>
+      </div>
+      <div class="ir-f"><label for="who">Who would you like to interview? <span class="req">*</span></label><input id="who" name="who" maxlength="120" required placeholder="e.g. the head coach, or a player's name" /></div>
+      <div class="ir-f"><label for="topic">Topic <span class="req">*</span></label><textarea id="topic" name="topic" rows="4" maxlength="1000" required placeholder="What is the interview about, and where will it appear?"></textarea></div>
+      <div class="ir-two">
+        <div class="ir-f"><label for="preferredAt">Preferred date and time <span class="req">*</span></label><input id="preferredAt" name="preferredAt" type="datetime-local" required /></div>
+        <fieldset class="ir-f"><legend>Format <span class="req">*</span></legend><label class="ir-r"><input type="radio" name="format" value="phone" required /> Phone</label><label class="ir-r"><input type="radio" name="format" value="in_person" /> In person</label><label class="ir-r"><input type="radio" name="format" value="video" /> Video call</label></fieldset>
+      </div>
+      <div class="ir-hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
+      <button class="btn-p" type="submit" id="send">Send my request</button>
+      <p class="muted ir-small">Your details are used only to handle this request. See the <a href="/privacy/">Privacy Policy</a>.</p>
+    </form>
+  </div>
+</Layout>
+<style>
+  .ir-lede { max-width: 720px; } .ir { max-width: 820px; }
+  .ir-msg { padding: 12px 14px; border-radius: 10px; background: #FDE8E9; color: #8E1A20; font-weight: 600; }
+  .ir-f { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; border: 0; padding: 0; min-width: 0; } .ir-f label, .ir-f legend { font-weight: 700; }
+  .ir-f input:not([type=radio]), .ir-f textarea { width: 100%; min-height: 46px; padding: 9px 12px; border: 1.5px solid #D6DAE1; border-radius: 10px; font: inherit; font-size: 16px; background: #fff; color: #15181D; box-sizing: border-box; }
+  .ir-two { display: grid; gap: 0 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .ir-r { display: inline-flex; gap: 6px; align-items: center; font-weight: 500 !important; margin-right: 16px; }
+  .ir-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .ir-small { font-size: 13px; } .req { color: #C9242C; }
+</style>
+<script>
+  const $ = (id: string) => document.getElementById(id) as any;
+  const msg = (t: string) => { $('msg').textContent = t; $('msg').hidden = !t; if (t) $('msg').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+  $('f').addEventListener('submit', async (e: Event) => {
+    e.preventDefault(); msg('');
+    const body = Object.fromEntries(new FormData($('f')).entries());
+    $('send').disabled = true;
+    try {
+      const r = await fetch('/api/media/interview-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { msg(d.error || 'Could not send. Please try again.'); return; }
+      $('f').hidden = true; $('done').hidden = false;
+    } catch { msg('No connection. Please try again.'); } finally { $('send').disabled = false; }
+  });
+</script>

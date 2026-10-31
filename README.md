@@ -155,6 +155,33 @@ STAFF-GUIDE.md section 41 explains every screen in plain English.
   Tuesday 30 minutes after the deadline to the Super Admins), once a week,
   logged.
 
+### Extra sections (phase 5)
+- **Press releases** (`mediaPress.js`, kind `press`):
+  - public pages from the database, `functions/media/press-releases/[[path]].js`,
+    using the shell `src/pages/media/press-releases/index.astro`;
+  - the PDF at `/media/press-releases/<slug>.pdf` (pdfLite);
+  - on the first publication it is emailed to `mc_contacts`.
+- **Matchday Desk** (`mediaMatchday.js`):
+  - kind `lineup`: scheduled, written into `match_centre.lineups_json` and
+    `squad_json`;
+  - kind `live`: created by `/api/media-centre/live` when the user has no
+    grant;
+  - `applyLiveUpdate()` updates `match_centre` (status, score, timeline),
+    clears the homepage cache and sends the usual `autoAlert` fan alerts;
+  - grants are in `mc_live_grants`, managed in Admin › Media Centre.
+- **Library** (`mediaLibrary.js`, kind `album`):
+  - approval commits `src/content/gallery/<slug>-NN.md` and the photos
+    (`public/images/gallery/mc/`) in one GitHub commit;
+  - the gallery schema gained `album`, `credit`, `players`, `mcId` and
+    `hidden`;
+  - pictures for reuse come from `/api/media-centre/library`.
+- **Interview requests** (`mediaInterviews.js`): the public form posts to
+  `/api/media/interview-request`; requests are in `mc_interviews`.
+- **Press kit** (`mediaPressKit.js`, kind `presskit`): approval marks the
+  files public; the page `/media/press-kit` reads `/api/media/press-kit`.
+- **Content calendar** (`mediaCalendar.js`, `mc_calendar`): match days come
+  from `events`; Wednesdays from `newsletter_publish`.
+
 ### Email
 Accreditation emails, reminders and the newsletter use the site's existing
 Resend setup. These are Cloudflare secrets:

@@ -34,6 +34,13 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     </section>
 
     <section class="mcu-card">
+      <h2>Matchday Desk: pre-approved live updates</h2>
+      <p class="muted small">Normally each live update from the Media Centre (kick-off, goal, card…) waits for a Super Admin. Give a person pre-approved live updates for one match and theirs go straight to the match page and the homepage live score (still logged).</p>
+      <form id="grantForm" class="mcu-row"><label>Match<select name="eventId" id="gMatch"></select></label><label>Person<select name="userId" id="gUser"></select></label><button class="btn-o" type="submit">Grant for this match</button></form>
+      <div class="mcu-scroll"><table class="mcu-table"><thead><tr><th>Person</th><th>Match</th><th>Granted by</th><th></th></tr></thead><tbody id="grants"></tbody></table></div>
+    </section>
+
+    <section class="mcu-card">
       <h2>News categories</h2>
       <p class="muted small">The categories writers choose from. Each is listed under one of the tabs on the public News page. Hidden categories can't be chosen for new stories (published stories keep theirs).</p>
       <div id="cats"></div>
@@ -139,10 +146,17 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     const reason = prompt('Why is this accreditation being revoked? (emailed to the journalist)'); if (!reason) return;
     try { await api('accreditations', { id: b.dataset.revoke, reason }); msg('Revoked.'); accs((await api('accreditations')).accreditations); } catch (err: any) { msg(err.message, false); }
   });
+  function grantsDraw(d: any) {
+    if (d.matches) $('gMatch').innerHTML = d.matches.map((m: any) => `<option value="${esc(m.id)}">${esc(m.home_team)} v ${esc(m.away_team)} · ${esc(when(m.event_date))}</option>`).join('') || '<option value="">No upcoming matches</option>';
+    if (d.users) $('gUser').innerHTML = d.users.map((u: any) => `<option value="${esc(u.id)}">${esc(u.fullName)} (${esc(u.loginId)})</option>`).join('') || '<option value="">No users</option>';
+    $('grants').innerHTML = d.grants.length ? d.grants.map((g: any) => `<tr><td>${esc(g.full_name)} <small class="muted">(${esc(g.login_id)})</small></td><td>${esc(g.home_team)} v ${esc(g.away_team)}<br /><small class="muted">${esc(when(g.event_date))}</small></td><td>${esc(g.granted_by)}</td><td><div class="acts"><button data-ungrant="${esc(g.event_id)}|${esc(g.user_id)}">Remove</button></div></td></tr>`).join('') : '<tr><td colspan="4" class="muted">Nobody has pre-approved live updates.</td></tr>';
+  }
+  $('grantForm').addEventListener('submit', async (e: Event) => { e.preventDefault(); const f = e.target as any; try { grantsDraw(await api('grants', { action: 'grant', eventId: f.eventId.value, userId: f.userId.value })); msg('Granted for this match.'); } catch (err: any) { msg(err.message, false); } });
+  $('grants').addEventListener('click', async (e: Event) => { const b = (e.target as HTMLElement).closest('[data-ungrant]') as HTMLElement | null; if (!b) return; const [eventId, userId] = b.dataset.ungrant!.split('|'); try { grantsDraw(await api('grants', { action: 'revoke', eventId, userId })); msg('Removed.'); } catch (err: any) { msg(err.message, false); } });
   async function load() {
     try {
-      const [u, s, ac] = await Promise.all([api('users'), api('settings'), api('accreditations')]);
-      users(u.users); cats(s.categories, s.tabs); settings(s.settings); accs(ac.accreditations);
+      const [u, s, ac, gr] = await Promise.all([api('users'), api('settings'), api('accreditations'), api('grants')]);
+      users(u.users); cats(s.categories, s.tabs); settings(s.settings); accs(ac.accreditations); grantsDraw(gr);
     } catch (e: any) { msg(e.message, false); }
   }
   $('users').addEventListener('click', async (e: Event) => {

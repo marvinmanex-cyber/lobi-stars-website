@@ -10,8 +10,13 @@
 //   adminFields: the fields offered by "Edit, then approve"
 //   scheduleFor(env, item): the kind's own publishing time (or null = now)
 //   noCorrections: published items can't be changed (e.g. a newsletter already emailed)
+//   mediaCreate: false when media staff can't create it as an item (live updates come from the Matchday Desk)
 import { NEWS } from './mediaNews.js';
 import { NEWSLETTER } from './mediaNewsletter.js';
+import { PRESS } from './mediaPress.js';
+import { ALBUM } from './mediaLibrary.js';
+import { PRESSKIT } from './mediaPressKit.js';
+import { LINEUP, LIVE } from './mediaMatchday.js';
 
-export const KINDS = { news: NEWS, newsletter: NEWSLETTER };
+export const KINDS = { news: NEWS, newsletter: NEWSLETTER, press: PRESS, album: ALBUM, presskit: PRESSKIT, lineup: LINEUP, live: LIVE };
 export function registerKind(id, def) { KINDS[id] = def; }

@@ -72,3 +72,24 @@ export function cleanHtml(html: string): string {
   return box.innerHTML;
 }
 export const plainText = (html: string) => new DOMParser().parseFromString(`<body>${html}</body>`, 'text/html').body.textContent?.replace(/\s+/g, ' ').trim() || '';
+
+/** "From library": choose an uploaded picture (resolves with { id, url } or null). */
+export function pickFromLibrary(): Promise<{ id: string; url: string } | null> {
+  return new Promise(async res => {
+    const d = document.createElement('dialog');
+    d.className = 'mc-lib';
+    d.innerHTML = '<form method="dialog"><div class="mc-lib-head"><b>Choose from the library</b><input class="mc-input" placeholder="Search by file or album name" data-q /><button class="mc-btn mc-btn-o mc-btn-sm" value="">Close</button></div><div class="mc-lib-grid" data-grid><p class="mc-muted">Loading…</p></div></form>';
+    document.body.append(d); d.showModal();
+    const grid = d.querySelector('[data-grid]') as HTMLElement;
+    const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+    const draw = async (q = '') => {
+      const { images } = await api(`library?q=${encodeURIComponent(q)}`);
+      grid.innerHTML = images.length ? images.map((i: any) => `<button type="button" class="mc-lib-it" data-id="${esc(i.id)}" data-url="${esc(i.url)}"><img src="${esc(i.url)}" alt="" loading="lazy" /><small>${esc(i.album || i.name || '')}</small></button>`).join('') : '<p class="mc-muted">No pictures yet.</p>';
+    };
+    let t = 0;
+    d.querySelector('[data-q]')!.addEventListener('input', e => { clearTimeout(t); t = window.setTimeout(() => draw((e.target as HTMLInputElement).value), 300); });
+    grid.addEventListener('click', e => { const b = (e.target as HTMLElement).closest<HTMLElement>('[data-id]'); if (b) { res({ id: b.dataset.id!, url: b.dataset.url! }); d.close(); } });
+    d.addEventListener('close', () => { d.remove(); res(null); });
+    draw();
+  });
+}

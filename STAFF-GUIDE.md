@@ -4071,6 +4071,81 @@ what a good answer looks like.
   **Unpublish** removes it from the archive; emails already sent can't be
   called back.
 
+### Press Releases & Statements
+- **Media Centre › Press Releases › New press release.** The layout is
+  fixed: headline (and optional sub-headline), release date and dateline,
+  **FOR IMMEDIATE RELEASE** (or **OFFICIAL STATEMENT** if you tick it), the
+  body, an optional quote with who said it, the media contact (the club
+  default if left empty) and **ENDS**.
+- **Approval:** always a Super Admin.
+- **Once approved:**
+  - it is on **lobistarsfc.com/media/press-releases** (a permanent
+    archive), with a **PDF** version in club colours;
+  - it is **emailed to the media contacts list**, with the PDF attached (this
+    needs Resend).
+
+### Matchday Desk
+- **Line-ups:**
+  1. Press **Prepare line-up** next to a match.
+  2. For each player, choose Starts or Sub (exactly 11 starters), and the
+     formation.
+  3. Set the **publish time** (usually an hour before kick-off) and send it
+     for approval.
+  4. When it is approved, it appears on the match page at that time.
+- **Live updates:** press **Live updates** next to the match. Fill in the
+  minute, team, player and detail, then press the button for what happened:
+  kick-off, goal, yellow card, red card, substitution, half-time, second
+  half, full-time or an update. Updates go to the **match page** and the
+  **homepage live score**, and fans get the usual match alerts.
+- **Approval of live updates:**
+  - Normally each update waits for a Super Admin in the Approval Queue.
+  - A **Super Admin** can give chosen people **pre-approved live updates**
+    for one match (Media Centre › Users & settings › *Matchday Desk*). Their
+    updates then post instantly.
+  - Every update is logged either way.
+- The page links to the existing **Live Commentary**.
+
+### Photo & Video Library
+- **Albums:** each album has a title, the match or event, the date and the
+  photographer. For every photo add a **caption**, an optional credit and
+  the **players** in it. Video links (YouTube or Facebook) can be added too.
+- **Approval:** an album appears in the website's **Gallery** about 3
+  minutes after a Super Admin approves it. Unpublishing hides it again.
+- **Reuse:** every uploaded picture can be used again: **Library** in the
+  story editor, and **From library** for the main photo and the newsletter
+  photos.
+
+### Interview Requests
+- **The public form:** **lobistarsfc.com/media/interview-request** asks who
+  the journalist wants to interview, the topic, a preferred date and the
+  format (phone, in person, video). It has spam protection.
+- **In Media Centre › Interview Requests:**
+  - **Approve:** you can add a message, e.g. where to meet.
+  - **Propose another time:** give the date and time.
+  - **Decline:** give a reason.
+  - **Mark as done** after the interview.
+- The journalist is emailed each time. The status and history are kept, and
+  added to the media contacts.
+
+### Press Kit
+- **The page:** **lobistarsfc.com/media/press-kit** has the club badge,
+  colours, how to write the club name, the squad photo, player headshots,
+  the fact sheet, the media contact and the media rules.
+- **Adding an item:** in Media Centre › Press Kit, each item has a section,
+  a title, text and files (pictures or PDFs).
+- **Approval:** an item appears after a Super Admin approves it.
+  Unpublishing removes it, and its files become private again.
+
+### Content Calendar
+Four weeks at a time:
+- **match days** (from the fixtures);
+- the **Lobi Stars Weekly** Wednesdays;
+- everything the team **plans**: what, type, who it is assigned to, due date
+  and status (planned, drafting, waiting for approval, published).
+
+Planned items assigned to you show under **Upcoming deadlines** on your
+Media Centre home.
+
 ### The Media Centre home (for media staff)
 After signing in: **Returned to me** (with the Super Admin's comment),
 **Waiting for approval**, **My drafts**, **Upcoming deadlines** and

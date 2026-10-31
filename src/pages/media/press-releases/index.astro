@@ -1,0 +1,36 @@
+---
+// /media/press-releases -- the shell for the press releases archive and each
+// release. functions/media/press-releases/[[path]].js fills [data-pr-root]
+// from the Media Centre (published releases only).
+import Layout from '../../../layouts/Layout.astro';
+---
+<Layout title="Press releases | Lobi Stars Football Club" description="Official press releases and statements from Lobi Stars FC.">
+  <div class="page-hero wrap">
+    <div class="stag">Press &amp; Media</div>
+    <h1 class="stitle">Press <span class="r">releases</span></h1>
+    <div class="divr"></div>
+  </div>
+  <div class="page-content wrap prw">
+    <div data-pr-root><p class="muted">No press releases yet.</p></div>
+    <p class="prw-back"><a href="/media/">← Media &amp; Press</a></p>
+  </div>
+</Layout>
+<style>
+  .prw { max-width: 860px; }
+  .prw :global(.pr-list) { list-style: none; margin: 0; padding: 0; }
+  .prw :global(.pr-list li) { border-top: 1px solid #E2E4E9; } .prw :global(.pr-list li:first-child) { border-top: 0; }
+  .prw :global(.pr-list a) { display: grid; gap: 4px; padding: 16px 0; color: inherit; text-decoration: none; }
+  .prw :global(.pr-list b) { font-size: 20px; line-height: 1.25; } .prw :global(.pr-list a:hover b) { text-decoration: underline; }
+  .prw :global(.pr-l-date) { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: #C9242C; font-weight: 700; }
+  .prw :global(.pr) { background: #fff; border: 1px solid #E2E4E9; border-radius: 14px; padding: clamp(18px, 4vw, 40px); }
+  .prw :global(.pr-imm) { margin: 0 0 10px; font-weight: 700; letter-spacing: .12em; font-size: 13px; color: #C9242C; }
+  .prw :global(.pr-h) { margin: 0 0 8px; font-size: clamp(26px, 4vw, 36px); line-height: 1.15; }
+  .prw :global(.pr-sub) { margin: 0 0 14px; font-size: 18px; color: #4A505C; }
+  .prw :global(.pr-body) { line-height: 1.7; font-size: 17px; } .prw :global(.pr-body img) { max-width: 100%; height: auto; }
+  .prw :global(.pr-quote) { margin: 20px 0; padding: 12px 18px; border-left: 4px solid #EE343C; background: #F7F8FA; border-radius: 6px; }
+  .prw :global(.pr-quote p) { margin: 0 0 6px; font-size: 18px; font-style: italic; } .prw :global(.pr-quote footer) { font-weight: 700; }
+  .prw :global(.pr-ends) { font-weight: 700; letter-spacing: .1em; text-align: center; margin: 22px 0; }
+  .prw :global(.pr-contact) { border-top: 1px solid #E2E4E9; padding-top: 12px; } .prw :global(.pr-contact h2) { font-size: 16px; margin: 0 0 4px; }
+  .prw :global(.pr-acts) { margin: 16px 0 0; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .prw-back { margin-top: 24px; }
+</style>

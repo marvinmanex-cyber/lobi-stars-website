@@ -102,6 +102,13 @@ const gallery = defineCollection({
   schema: z.object({
     caption: z.string(),
     photo: z.string(),
+    // Photos from a Media Centre album (approved by a Super Admin): album name, credit, tagged players.
+    album: z.string().nullable().optional(),
+    credit: z.string().nullable().optional(),
+    players: z.array(z.string()).nullable().optional(),
+    mcId: z.string().nullable().optional(),
+    // Unpublished from the Media Centre (kept, never shown).
+    hidden: z.boolean().default(false),
   }),
 });
 

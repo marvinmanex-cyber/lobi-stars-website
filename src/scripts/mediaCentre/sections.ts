@@ -2,4 +2,10 @@
 import './dashboard';
 import './news';
 import './newsletter';
+import './press';
 import './accreditation';
+import './matchday';
+import './library';
+import './interviews';
+import './presskit';
+import './calendar';

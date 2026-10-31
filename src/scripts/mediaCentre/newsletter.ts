@@ -4,7 +4,7 @@
 // sent for approval when every required section is complete.
 import { api, esc, register, go, toast, when } from './core';
 import { listScreen, statusBanner, autosaver, workflowButtons } from './items';
-import { upload, pickFile } from './files';
+import { upload, pickFile, pickFromLibrary } from './files';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const spec = (s: string) => { const [d, t] = String(s || '').split('|'); return `${DAYS[Number(d)] || ''} ${t || ''}`; };
@@ -68,7 +68,7 @@ async function editor(main: HTMLElement, id: string) {
   const field = (sec: string, f: F) => {
     const name = sec ? `${sec}.${f.k}` : f.k, v = get(sec, f.k);
     const lab = `<label for="nf-${name}">${esc(f.label)}${f.req ? ' <span class="mc-req">*</span>' : ''}</label>`;
-    if (f.type === 'photo') return `<div class="mc-field" data-photo="${esc(name)}"><span class="mc-label">${esc(f.label)}${f.req ? ' <span class="mc-req">*</span>' : ''}</span><div class="mc-photo" data-pbox>${v?.url ? `<img src="${esc(v.url)}" alt="" />` : '<p class="mc-muted mc-small">No photo yet.</p>'}</div>${editable ? `<button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-up="${esc(name)}">Upload</button> ${v?.url ? `<button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-rm="${esc(name)}">Remove</button>` : ''}` : ''}${f.hint ? `<span class="mc-hint">${esc(f.hint)}</span>` : ''}</div>`;
+    if (f.type === 'photo') return `<div class="mc-field" data-photo="${esc(name)}"><span class="mc-label">${esc(f.label)}${f.req ? ' <span class="mc-req">*</span>' : ''}</span><div class="mc-photo" data-pbox>${v?.url ? `<img src="${esc(v.url)}" alt="" />` : '<p class="mc-muted mc-small">No photo yet.</p>'}</div>${editable ? `<button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-up="${esc(name)}">Upload</button> <button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-lib="${esc(name)}">From library</button> ${v?.url ? `<button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-rm="${esc(name)}">Remove</button>` : ''}` : ''}${f.hint ? `<span class="mc-hint">${esc(f.hint)}</span>` : ''}</div>`;
     const input = f.type === 'area' ? `<textarea id="nf-${name}" data-k="${esc(name)}" rows="3" ${ro}>${esc(v || '')}</textarea>` : `<input id="nf-${name}" data-k="${esc(name)}" value="${esc(v ?? (f.k === 'ticketLink' ? '/tickets/' : ''))}" ${ro} />`;
     return `<div class="mc-field">${lab}${input}${f.hint ? `<span class="mc-hint">${esc(f.hint)}</span>` : ''}</div>`;
   };
@@ -116,6 +116,8 @@ async function editor(main: HTMLElement, id: string) {
   main.querySelectorAll<HTMLButtonElement>('[data-pv]').forEach(b => b.addEventListener('click', () => { main.querySelectorAll('[data-pv]').forEach(x => x.classList.toggle('on', x === b)); web = b.dataset.pv === 'web'; preview(); }));
   main.addEventListener('click', async e => {
     const t = e.target as HTMLElement, up = t.closest<HTMLElement>('[data-up]'), rm = t.closest<HTMLElement>('[data-rm]');
+    const lib = t.closest<HTMLElement>('[data-lib]');
+    if (lib) { const p = await pickFromLibrary(); if (p) { photos[lib.dataset.lib!] = p; main.querySelector(`[data-photo="${lib.dataset.lib}"] [data-pbox]`)!.innerHTML = `<img src="${esc(p.url)}" alt="" />`; changed(); } }
     if (up) {
       const f = await pickFile('image/jpeg,image/png,image/webp'); if (!f) return;
       try { toast('Uploading…'); const r = await upload(f, { section: 'newsletter', maxSide: 1200 }); photos[up.dataset.up!] = { url: r.url, id: r.id }; main.querySelector(`[data-photo="${up.dataset.up}"] [data-pbox]`)!.innerHTML = `<img src="${esc(r.url)}" alt="" />`; changed(); toast('Photo added.'); } catch (err: any) { toast(err.message, 9000); }
