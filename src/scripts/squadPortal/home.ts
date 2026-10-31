@@ -14,8 +14,9 @@ let searchTimer = 0;
 
 export async function showHome() {
   view.season = view.season || state.season;
-  document.title = 'Squad & Staff Data Portal | Lobi Stars FC';
+  document.title = 'IT Center: Squad & Staff Data Portal | Lobi Stars FC';
   $('main').innerHTML = `
+    <div class="sp-itc-brief" role="note"><div><b>IT Center</b><p>This portal is for the IT department of Lobi Stars FC. The club's IT team uses it to record and keep each player's and staff member's official details and photos, which the club then approves for the website.</p></div></div>
     <p class="sp-kicker sp-gold">${esc(state.season)} season</p>
     <h1 class="sp-h1 sp-page-title">Squad &amp; staff profiles</h1>
     <p class="sp-intro">Capture each player's and staff member's details and photo in one sitting. Every answer saves automatically, so nothing is lost if the network or power goes off.</p>
@@ -82,7 +83,7 @@ async function load() {
     const p = new URLSearchParams({ season: view.season, filter: view.filter, q: view.q });
     const d = await api(`profiles?${p}`, { activity: false });
     const c = d.counts;
-    $('chips').innerHTML = [['Players', c.players], ['Staff', c.staff], ['Drafts', c.drafts], ['Submitted', c.submitted], ['Verified', c.verified], ['Changes requested', c.changes]]
+    $('chips').innerHTML = [['Players', c.players], ['Staff', c.staff], ['Drafts', c.drafts], ['Awaiting approval', c.submitted], ['Live', c.live], ['Changes requested', c.changes], ['On loan', c.loan], ['Former', c.former]]
       .map(([l, n]) => `<li class="sp-chip"><b>${n}</b> ${l}</li>`).join('');
     $('seasonSel').innerHTML = (d.seasons as string[]).map(s => `<option value="${esc(s)}" ${s === view.season ? 'selected' : ''}>${esc(s)}${s === d.current ? ' (current)' : ''}</option>`).join('');
     $('rows').innerHTML = d.profiles.length ? d.profiles.map(row).join('') : `<tr><td colspan="7" class="sp-empty">No profiles here yet.</td></tr>`;

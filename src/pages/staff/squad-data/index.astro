@@ -14,7 +14,7 @@ const siteKey = settings.turnstileSiteKey;
   <meta name="robots" content="noindex, nofollow" />
   <meta name="referrer" content="no-referrer" />
   <meta name="theme-color" content="#1C3F7A" />
-  <title>Squad &amp; staff data portal | Lobi Stars FC</title>
+  <title>IT Center: Squad &amp; staff data portal | Lobi Stars FC</title>
   <link rel="icon" href="/images/lobi-stars-badge.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,6 +28,7 @@ const siteKey = settings.turnstileSiteKey;
         <span class="sp-badge sp-badge-lg"><img src="/images/lobi-stars-badge.webp" alt="Lobi Stars FC badge" width="96" height="96" /></span>
         <p class="sp-club">Lobi Stars FC</p>
         <p class="sp-pride">Pride of Benue</p>
+        <p class="sp-itc">IT Center</p>
         <h1 class="sp-h1">Squad &amp; staff data portal</h1>
         <span class="sp-goldbar" aria-hidden="true"></span>
       </div>
@@ -61,7 +62,7 @@ const siteKey = settings.turnstileSiteKey;
       <header class="sp-header">
         <div class="sp-header-in">
           <span class="sp-badge"><img src="/images/lobi-stars-badge.webp" alt="" width="44" height="44" /></span>
-          <div class="sp-header-titles"><b>Lobi Stars FC</b><span>Squad &amp; staff data portal</span></div>
+          <div class="sp-header-titles"><b>Lobi Stars FC · IT Center</b><span>Squad &amp; staff data portal</span></div>
           <div class="sp-header-user"><span>Signed in as <b id="whoName"></b></span><button type="button" class="sp-btn sp-btn-ghost" id="signOut">Sign out</button></div>
         </div>
       </header>
@@ -155,6 +156,10 @@ const siteKey = settings.turnstileSiteKey;
   /* Home */
   .sp-kicker { font-size: 15px; letter-spacing: .04em; }
   .sp-gold { color: var(--red); }
+  .sp-itc { display: inline-block; margin: 10px 0 4px; padding: 4px 12px; border-radius: 999px; background: var(--red); color: #fff; font: 700 15px 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .sp-itc-brief { display: flex; gap: 12px; align-items: flex-start; max-width: 760px; margin: 0 0 22px; padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-left: 5px solid var(--blue); border-radius: 10px; }
+  .sp-itc-brief b { display: block; font: 700 20px 'Barlow Condensed', sans-serif; color: var(--blue); letter-spacing: .02em; }
+  .sp-itc-brief p { margin: 2px 0 0; color: var(--grey); font-size: 15px; }
   .sp-page-title { font-size: 34px; line-height: 1.05; margin: 4px 0 10px; }
   .sp-intro { max-width: 760px; color: var(--grey); margin: 0 0 18px; font-size: 17px; }
   .sp-how { margin: 0 0 18px; }

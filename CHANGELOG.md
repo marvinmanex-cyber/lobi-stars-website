@@ -8,6 +8,21 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-31: Squad & staff data portal is the "IT Center"
+
+**What changed**
+- The portal (/staff/squad-data) now carries the name **IT Center**: a badge on
+  the sign-in screen, "Lobi Stars FC · IT Center" in the blue header, and a short
+  note at the top of the home page saying it is for the IT department of Lobi
+  Stars FC. The browser tab reads "IT Center: Squad & staff data portal".
+- The counters above the profile list now read Players, Staff, Drafts, Awaiting
+  approval, Live, Changes requested, On loan and Former (one of them showed
+  "undefined Verified" since the phase 4 update).
+
+**Staff:** nothing to do.
+
+---
+
 ## 2026-10-31: Leaving, loans, deleting and former players (Approved live squad, phase 4)
 
 **What changed**

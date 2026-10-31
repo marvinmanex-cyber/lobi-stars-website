@@ -3277,8 +3277,10 @@ checks that:
 
 ## 38. Squad & Staff Data Portal
 
-The private portal where the media team collects every player's and staff
-member's details and photos. Since 23 Oct 2026 it is the **only** source of the
+The private portal, named **IT Center** (for the IT department of Lobi Stars
+FC), where the club's IT team collects every player's and staff member's
+details and photos. The name shows on the sign-in screen, in the blue header and
+in a short note at the top of the home page. Since 23 Oct 2026 it is the **only** source of the
 Squad pages: nothing reaches the website until the club approves it. Approved
 (live) profiles appear on the Squad page (public details only) and go to the
 club's media partner in the Data Package.
