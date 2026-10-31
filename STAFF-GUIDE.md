@@ -3963,6 +3963,64 @@ Pictures (JPG, PNG or WebP up to 5 MB) are resized on the phone or computer
 before upload. Pasted text is cleaned: scripts, hidden code and unsafe links
 are removed, and the server cleans it again.
 
+### Media accreditation (any media staff member decides)
+**For journalists:** the public form at **lobistarsfc.com/media/accreditation**.
+It is linked from the website's **Media** page (footer › Media) and from each
+upcoming **home** match page ("Media: request accreditation for this
+match").
+- **Match:** only upcoming Lobi Stars **home** matches are offered, **one
+  match per application**. Applications close **48 hours before kick-off**
+  (a Super Admin setting).
+- **The form asks for:** full name, phone, email, media organisation, staff
+  or freelance, role (Writer, Photographer, TV Camera, Radio Commentator,
+  Digital/Social Media), press ID or a letter from the organisation (PDF/JPG,
+  5 MB), a **passport photo** (cropped and previewed on the form: plain light
+  background, face visible), equipment and special needs (both optional),
+  and agreement to the club's media rules.
+- **Spam protection:** a hidden spam trap and a limit per connection.
+- **Returning journalists** are recognised by their email address. Their
+  name, organisation, role and passport photo are reused; their phone number
+  is never shown.
+
+**In the Media Centre › Accreditation:**
+1. **Upcoming home matches** are listed with the number of new and approved
+   requests. **Requests** opens one match: the photo, the press document and
+   every detail.
+2. Your options:
+   - **Approve:** choose the access zone first: Press Box, Pitchside or
+     Mixed Zone.
+   - **Request more info:** the applicant gets an email with a link to
+     update the request.
+   - **Reject:** give a reason, which is emailed.
+3. **The limit per match:** set by a Super Admin, default 20. Approving
+   stops at the limit.
+4. **On approval:** the website makes the **accreditation card** (PDF, ID-card
+   size, club colours) and emails it to the journalist automatically. The
+   card shows: the badge, MEDIA ACCREDITATION, the match, date, kick-off,
+   McCarthy Stadium, the photo, name, organisation, role, access zone, a
+   unique number (e.g. LSA-2627-0001), a QR code, **"Signed: <the full name
+   of the staff member who approved>"** and "Valid for this match only".
+   **Download card (PDF)** gives the same file.
+5. **Invitation link** (per match): makes a link that pre-selects the match.
+   It is copied for you to share, or you can enter an email address to send
+   it.
+6. **Media contacts:** every accredited journalist is saved, with their
+   history (accreditations and interview requests).
+
+**The QR code** opens a public check page showing the photo, name,
+organisation, role, zone, match and **VALID**, **REVOKED** or **EXPIRED** (after
+the match). It never shows the phone or email. Stewards can scan it at the
+gate.
+
+**Super Admins:** Admin › Media Centre › Users & settings › *Media
+accreditations* lists every accreditation, with **Revoke** (give a reason; it
+is emailed and the check page then shows REVOKED).
+
+The applicant gets an email at every step: request received, more
+information needed, approved with the card attached, rejected, revoked.
+These emails need the email service (Resend) set up. Until then, download
+the card and send it yourself.
+
 ### The Media Centre home (for media staff)
 After signing in: **Returned to me** (with the Super Admin's comment),
 **Waiting for approval**, **My drafts**, **Upcoming deadlines** and

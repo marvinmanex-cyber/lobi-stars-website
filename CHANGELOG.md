@@ -8,6 +8,38 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-31: Media Centre, phase 3: media accreditation
+
+**What changed**
+- New public **Media** page (/media, linked in the footer) and an
+  **accreditation form** (/media/accreditation).
+  - It offers upcoming Lobi Stars home matches only, one match per
+    application, and closes 48 hours before kick-off.
+  - It asks for: name, phone, email, organisation, staff or freelance, role,
+    press ID or letter upload, a passport photo (with crop and preview),
+    equipment, special needs and agreement to the media rules.
+  - It has spam protection.
+  - Upcoming home match pages link to it.
+- **Media Centre › Accreditation:**
+  - requests per match with the photo and documents;
+  - Approve (with the access zone), Reject with a reason, or Request more
+    info (any media staff member);
+  - the per-match limit is enforced;
+  - invitation links that pre-select the match;
+  - a media contacts list (returning journalists are recognised by email).
+- **On approval:** the ID-card-sized PDF card (badge, match, date,
+  kick-off, McCarthy Stadium, photo, name, organisation, role, zone, number,
+  QR code, "Signed: <approver>", "Valid for this match only") is emailed and
+  can be downloaded. The QR code opens a public check page (VALID / REVOKED
+  / EXPIRED; no phone or email).
+- **Super Admins** can see and revoke every accreditation (Admin › Media
+  Centre › Users & settings).
+
+**Staff:** see STAFF-GUIDE section 41 "Media accreditation". Emails need Resend
+(HANDOVER-TODO).
+
+---
+
 ## 2026-10-31: Media Centre, phase 2: Latest News
 
 **What changed**

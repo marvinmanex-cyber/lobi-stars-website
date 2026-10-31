@@ -1,0 +1,157 @@
+---
+// /media/accreditation -- the public request form for media accreditation at a
+// Lobi Stars FC HOME match (one match per application; closes 48 hours before
+// kick-off). Decided by the media team in the Media Centre; the card is emailed.
+// ?match=<slug> preselects the match (invitation links and match pages);
+// ?update=<token> answers a request for more information.
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Media accreditation | Lobi Stars Football Club" description="Request media accreditation for a Lobi Stars FC home match at McCarthy Stadium, Makurdi.">
+  <div class="page-hero wrap">
+    <div class="stag">Press &amp; Media</div>
+    <h1 class="stitle">Media <span class="r">accreditation</span></h1>
+    <div class="divr"></div>
+    <p class="muted ac-lede">For journalists, photographers, camera crews, radio commentators and digital media covering a Lobi Stars home match at McCarthy Stadium. One match per application. Applications close <b id="closeH">48</b> hours before kick-off.</p>
+  </div>
+  <div class="page-content wrap ac">
+    <p class="ac-msg" id="msg" role="alert" hidden></p>
+    <section class="panel" id="done" hidden><h2>Thank you</h2><p id="doneText">We have your request. Our media team will review it and email you. Please do not come to the stadium expecting accreditation until you receive your card.</p><p><a href="/media/">Back to the Media page</a></p></section>
+    <form class="panel ac-form" id="f" novalidate>
+      <p class="ac-info" id="infoReq" hidden></p>
+      <div class="ac-f"><label for="eventId">Match <span class="req">*</span></label><select id="eventId" name="eventId" required><option value="">Loading the home matches…</option></select><small id="evHint"></small></div>
+      <div class="ac-two">
+        <div class="ac-f"><label for="email">Email <span class="req">*</span></label><input id="email" name="email" type="email" autocomplete="email" required /><small id="known"></small></div>
+        <div class="ac-f"><label for="fullName">Full name <span class="req">*</span></label><input id="fullName" name="fullName" autocomplete="name" maxlength="80" required /></div>
+        <div class="ac-f"><label for="phone">Phone <span class="req">*</span></label><input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="24" required placeholder="e.g. 0803 123 4567" /></div>
+        <div class="ac-f"><label for="organisation">Media organisation <span class="req">*</span></label><input id="organisation" name="organisation" maxlength="120" required placeholder="or Freelance" /></div>
+      </div>
+      <fieldset class="ac-f"><legend>Staff or freelance <span class="req">*</span></legend><label class="ac-r"><input type="radio" name="employment" value="staff" required /> Staff</label><label class="ac-r"><input type="radio" name="employment" value="freelance" /> Freelance</label></fieldset>
+      <div class="ac-f"><label for="role">Role <span class="req">*</span></label><select id="role" name="role" required><option value="">Choose…</option></select></div>
+      <div class="ac-f"><label for="pressDoc">Press ID or letter from your organisation <span class="req">*</span></label><input id="pressDoc" name="pressDoc" type="file" accept="application/pdf,image/jpeg" /><small>PDF or JPG, up to 5 MB.</small></div>
+      <div class="ac-f"><span class="ac-lbl">Passport photo <span class="req">*</span></span>
+        <input id="photoIn" type="file" accept="image/jpeg,image/png,image/webp" />
+        <small>Plain light background, face clearly visible, no sunglasses or hat. Drag the photo and use the slider so your face fills the frame.</small>
+        <div class="ac-crop" id="crop" hidden><canvas id="cv" width="300" height="400" aria-label="Photo preview"></canvas><label class="ac-zoom">Zoom <input id="zoom" type="range" min="1" max="3" step="0.01" value="1" /></label></div>
+        <small id="photoOnFile" hidden>We have your passport photo from an earlier application; add a new one only if you want to change it.</small></div>
+      <div class="ac-f"><label for="equipment">Equipment you will bring <small>(optional)</small></label><textarea id="equipment" name="equipment" rows="2" maxlength="500" placeholder="e.g. 2 cameras, tripod, laptop"></textarea></div>
+      <div class="ac-f"><label for="needs">Special needs <small>(optional)</small></label><textarea id="needs" name="needs" rows="2" maxlength="500" placeholder="e.g. wheelchair access, power socket"></textarea></div>
+      <div class="ac-hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
+      <label class="ac-agree"><input type="checkbox" name="agree" id="agree" value="1" required /> <span>I agree to the club's media rules: I will stay in my access zone, wear my accreditation at all times, follow stewards' instructions, not interview players outside the mixed zone, and use material only for news reporting. The club may withdraw accreditation at any time. <span class="req">*</span></span></label>
+      <button class="btn-p" type="submit" id="send">Send my request</button>
+      <p class="muted ac-small">Your details are used only to process this request and to contact you about Lobi Stars media matters. See the <a href="/privacy/">Privacy Policy</a>.</p>
+    </form>
+  </div>
+</Layout>
+<style>
+  .ac-lede { max-width: 760px; }
+  .ac { max-width: 860px; }
+  .ac-msg { padding: 12px 14px; border-radius: 10px; background: #FDE8E9; color: #8E1A20; font-weight: 600; }
+  .ac-form { display: grid; gap: 4px; }
+  .ac-f { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; border: 0; padding: 0; min-width: 0; }
+  .ac-f label, .ac-f legend, .ac-lbl { font-weight: 700; } .ac-f small { color: var(--muted, #5B6472); }
+  .ac-f input:not([type=radio]):not([type=checkbox]), .ac-f select, .ac-f textarea { width: 100%; min-height: 46px; padding: 9px 12px; border: 1.5px solid #D6DAE1; border-radius: 10px; font: inherit; font-size: 16px; background: #fff; color: #15181D; box-sizing: border-box; }
+  .ac-two { display: grid; gap: 0 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .ac-r { display: inline-flex; gap: 6px; align-items: center; font-weight: 500 !important; margin-right: 18px; }
+  .ac-crop { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; } .ac-crop canvas { width: 180px; height: 240px; border-radius: 10px; border: 2px solid #D6DAE1; touch-action: none; cursor: grab; background: #eee; }
+  .ac-zoom { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
+  .ac-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .ac-agree { display: flex; gap: 10px; align-items: flex-start; margin: 4px 0 16px; line-height: 1.5; } .ac-agree input { width: 20px; height: 20px; flex: none; margin-top: 3px; }
+  .ac-info { padding: 12px 14px; border-left: 4px solid #EE343C; background: #FFF6F6; border-radius: 8px; }
+  .ac-small { font-size: 13px; } .req { color: #C9242C; }
+</style>
+<script>
+  const $ = (id: string) => document.getElementById(id) as any;
+  const q = new URLSearchParams(location.search);
+  const msg = (t: string) => { const m = $('msg'); m.textContent = t; m.hidden = !t; if (t) m.scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+  let photoBlob: Blob | null = null, img: ImageBitmap | null = null, zoom = 1, ox = 0, oy = 0;
+  const update = q.get('update');
+  (async () => {
+    const d = await fetch(`/api/media/accreditation?${new URLSearchParams([...(q.get('match') ? [['match', q.get('match')!]] : []), ...(update ? [['update', update]] : [])])}`).then(r => r.json()).catch(() => null);
+    if (!d) { msg('The form could not load. Please refresh the page.'); return; }
+    $('closeH').textContent = d.closeHours;
+    $('role').innerHTML += d.roles.map((r: string) => `<option>${r}</option>`).join('');
+    const open = d.matches.filter((m: any) => m.open);
+    $('eventId').innerHTML = open.length ? `<option value="">Choose one home match…</option>${open.map((m: any) => `<option value="${m.id}">${m.label} · ${m.day}, ${m.kickOff}</option>`).join('')}` : '<option value="">No home match is open for applications right now</option>';
+    const closed = d.matches.filter((m: any) => !m.open);
+    if (closed.length) $('evHint').textContent = `Closed (less than ${d.closeHours} hours to kick-off): ${closed.map((m: any) => m.label).join(', ')}.`;
+    if (d.selected) $('eventId').value = d.selected;
+    if (update) {
+      if (!d.update) { msg('This link has already been used or is no longer valid.'); $('f').hidden = true; return; }
+      const u = d.update;
+      $('infoReq').hidden = false; $('infoReq').textContent = `Our media team asked: “${u.infoRequest}”. Update your request below and send it again.`;
+      for (const k of ['fullName', 'phone', 'email', 'organisation', 'equipment', 'needs']) $(k).value = u[k] || '';
+      $('role').value = u.role; (document.querySelector(`input[name=employment][value="${u.employment}"]`) as HTMLInputElement | null)?.click();
+      $('email').readOnly = true; $('eventId').disabled = true; $('photoOnFile').hidden = false; $('send').textContent = 'Send my updated request';
+    }
+  })();
+  // Returning journalists: details prefilled from the email address.
+  $('email').addEventListener('change', async () => {
+    if (update) return;
+    const e = $('email').value.trim(); if (!/^\S+@\S+\.\S+$/.test(e)) return;
+    const d = await fetch(`/api/media/accreditation/prefill?email=${encodeURIComponent(e)}`).then(r => r.json()).catch(() => ({ known: false }));
+    if (!d.known) { $('known').textContent = ''; $('photoOnFile').hidden = true; return; }
+    $('known').textContent = 'Welcome back: we filled in your details from your last request. Please check them.';
+    if (!$('fullName').value) $('fullName').value = d.fullName || '';
+    if (!$('organisation').value) $('organisation').value = d.organisation || '';
+    if (d.role && !$('role').value) $('role').value = d.role;
+    if (d.employment) (document.querySelector(`input[name=employment][value="${d.employment}"]`) as HTMLInputElement | null)?.click();
+    $('photoOnFile').hidden = !d.hasPhoto;
+  });
+  // Passport photo: crop to 3:4 with drag and zoom, then a JPEG.
+  const cv = $('cv') as HTMLCanvasElement, g = cv.getContext('2d')!;
+  function draw() {
+    if (!img) return;
+    const base = Math.max(cv.width / img.width, cv.height / img.height) * zoom;
+    const w = img.width * base, h = img.height * base;
+    ox = Math.min(0, Math.max(cv.width - w, ox)); oy = Math.min(0, Math.max(cv.height - h, oy));
+    g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, ox, oy, w, h);
+  }
+  $('photoIn').addEventListener('change', async () => {
+    const f = $('photoIn').files?.[0]; if (!f) return;
+    if (f.size > 5 * 1024 * 1024) { msg('The photo is larger than 5 MB. Please choose a smaller one.'); $('photoIn').value = ''; return; }
+    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { msg('Choose a JPG, PNG or WebP photo.'); return; }
+    img = await createImageBitmap(f).catch(() => null); if (!img) { msg('This photo could not be opened.'); return; }
+    zoom = 1; ox = 0; oy = 0; $('zoom').value = '1'; $('crop').hidden = false; msg(''); draw();
+    const base = Math.max(cv.width / img.width, cv.height / img.height); ox = (cv.width - img.width * base) / 2; oy = (cv.height - img.height * base) / 2; draw();
+  });
+  $('zoom').addEventListener('input', () => { zoom = Number($('zoom').value); draw(); });
+  let drag: { x: number; y: number } | null = null;
+  cv.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => { if (!drag) return; const k = cv.width / cv.clientWidth; ox += (e.clientX - drag.x) * k; oy += (e.clientY - drag.y) * k; drag = { x: e.clientX, y: e.clientY }; draw(); });
+  cv.addEventListener('pointerup', () => { drag = null; });
+  async function photoJpeg(): Promise<Blob | null> {
+    if (!img) return null;
+    const out = document.createElement('canvas'); out.width = 600; out.height = 800;
+    const k = 2, base = Math.max(cv.width / img.width, cv.height / img.height) * zoom;
+    const og = out.getContext('2d')!; og.fillStyle = '#fff'; og.fillRect(0, 0, 600, 800); og.drawImage(img, ox * k, oy * k, img.width * base * k, img.height * base * k);
+    return new Promise(res => out.toBlob(res, 'image/jpeg', 0.88));
+  }
+  $('f').addEventListener('submit', async (e: Event) => {
+    e.preventDefault(); msg('');
+    const f = $('f') as HTMLFormElement;
+    if (!update && !$('eventId').value) return msg('Choose the match.');
+    if (!$('agree').checked) return msg('Please agree to the club\'s media rules.');
+    const doc = $('pressDoc').files?.[0];
+    if (doc && doc.size > 5 * 1024 * 1024) return msg('The press ID / letter is larger than 5 MB.');
+    if (!update && !doc) return msg('Add your press ID or a letter from your organisation.');
+    const fd = new FormData(f);
+    if ($('eventId').disabled) fd.set('eventId', $('eventId').value);
+    fd.delete('photoIn');
+    photoBlob = await photoJpeg();
+    if (photoBlob) fd.set('photo', new File([photoBlob], 'passport.jpg', { type: 'image/jpeg' }));
+    else if (!update && $('photoOnFile').hidden) return msg('Add a passport photo.');
+    if (update) fd.set('update', update);
+    if (q.get('invite')) fd.set('invite', q.get('invite')!);
+    fd.set('agree', '1');
+    $('send').disabled = true; $('send').textContent = 'Sending…';
+    try {
+      const r = await fetch('/api/media/accreditation', { method: 'POST', body: fd });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { msg(d.error || 'Could not send. Please try again.'); return; }
+      f.hidden = true; $('done').hidden = false;
+      if (d.updated) $('doneText').textContent = 'Thank you: your updated request is with our media team. We will email you.';
+      $('done').scrollIntoView({ behavior: 'smooth' });
+    } catch { msg('No connection. Please try again.'); }
+    finally { $('send').disabled = false; $('send').textContent = update ? 'Send my updated request' : 'Send my request'; }
+  });
+</script>

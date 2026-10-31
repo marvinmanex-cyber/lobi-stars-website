@@ -1,0 +1,28 @@
+---
+// /media -- the club's Media page for journalists: accreditation for home
+// matches, press releases, the press kit, interview requests and the media
+// contact. Content comes from the Media Centre (approved by a Super Admin).
+import Layout from '../../layouts/Layout.astro';
+---
+<Layout title="Media | Lobi Stars Football Club" description="For journalists: Lobi Stars FC media accreditation for home matches at McCarthy Stadium, press releases, the press kit and interview requests.">
+  <div class="page-hero wrap">
+    <div class="stag">Press &amp; Media</div>
+    <h1 class="stitle">Media <span class="r">&amp; Press</span></h1>
+    <div class="divr"></div>
+    <p class="muted md-lede">Information for journalists, photographers and broadcasters covering Lobi Stars FC in the Nigeria National League.</p>
+  </div>
+  <div class="page-content wrap">
+    <ul class="md-grid">
+      <li class="panel"><h2>Match accreditation</h2><p class="muted">Apply to cover a Lobi Stars home match at McCarthy Stadium, Makurdi. One match per application; applications close 48 hours before kick-off.</p><a class="btn-p" href="/media/accreditation/">Request accreditation</a></li>
+    </ul>
+    <section class="panel md-contact"><h2>Media contact</h2><p>Lobi Stars FC Media Department · <a href="mailto:media@lobistarsfc.com">media@lobistarsfc.com</a></p></section>
+  </div>
+</Layout>
+<style>
+  .md-lede { max-width: 720px; }
+  .md-grid { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .md-grid .panel { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+  .md-grid h2, .md-contact h2 { margin: 0; font-size: 22px; }
+  .md-grid p { margin: 0; flex: 1; }
+  .md-contact p { margin: 8px 0 0; }
+</style>

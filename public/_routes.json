@@ -23,6 +23,8 @@
     "/m/*",
     "/matchday",
     "/matchday/*",
+    "/media/accreditation/verify",
+    "/media/accreditation/verify/*",
     "/media-centre",
     "/media-centre/*",
     "/matches",

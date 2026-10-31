@@ -115,6 +115,28 @@ STAFF-GUIDE.md section 41 explains every screen in plain English.
 - **Scheduled stories:** published by the every-minute timer
   (`/api/internal/newsletter-run` → `mediaCron.js`).
 
+### Media accreditation (phase 3)
+- **Public pages:** `src/pages/media/index.astro` (the Media page, linked
+  from the footer) and `src/pages/media/accreditation.astro` (the form, with
+  photo crop). The form posts multipart data to `/api/media/accreditation`.
+  It is protected by a honeypot field `website`, 6 requests per hour per IP,
+  and a same-origin check.
+- **Logic** (`functions/api/_lib/mediaAccreditation.js`):
+  - only home matches;
+  - closes `accreditation_close_hours` before kick-off;
+  - one pending or approved request per email per match;
+  - the per-match limit is `accreditation_max`.
+- **Tables:** `mc_accreditations`, `mc_contacts`, `mc_invites`.
+- **Media Centre API:** `/api/media-centre/accreditations` (list, invite),
+  `/:id` (approve / reject / info) and `/:id/card` (PDF). Any Media Centre
+  user can decide.
+- **Card:** `cardPdf()` uses pdfLite (54 × 85.6 mm, the JPEG badge and the
+  JPEG passport photo, with the QR drawn from qrcode-generator).
+- **Verification:** `functions/media/accreditation/verify/[token].js` (the
+  token is random, not the card number). It shows VALID / REVOKED / EXPIRED
+  (12 hours after kick-off) and never the phone or email.
+- **Revoke:** `/api/admin/media-centre/accreditations` (Super Admins).
+
 ### Email
 Accreditation emails, reminders and the newsletter use the site's existing
 Resend setup. These are Cloudflare secrets:

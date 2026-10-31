@@ -28,7 +28,7 @@ export function sniff(b) {
   return null;
 }
 export const MIME = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp', pdf: 'application/pdf' };
-const ALLOWED = { image: ['jpg', 'png', 'webp'], document: ['pdf', 'jpg'], photo: ['jpg', 'png', 'webp'] };
+const ALLOWED = { image: ['jpg', 'png', 'webp'], document: ['pdf', 'jpg'], photo: ['jpg'] }; // passport photos: JPEG (printed on the accreditation card)
 
 /**
  * Stores an uploaded file. kind: image | document | photo (passport photo).

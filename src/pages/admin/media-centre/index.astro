@@ -28,6 +28,12 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     </section>
 
     <section class="mcu-card">
+      <h2>Media accreditations</h2>
+      <p class="muted small">Journalists accredited by the media staff (any Media Centre user can approve). A Super Admin can revoke an accreditation: the verification page then shows REVOKED and the journalist is emailed.</p>
+      <div class="mcu-scroll"><table class="mcu-table"><thead><tr><th>Journalist</th><th>Match</th><th>Status</th><th>Approved by</th><th></th></tr></thead><tbody id="accs"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table></div>
+    </section>
+
+    <section class="mcu-card">
       <h2>News categories</h2>
       <p class="muted small">The categories writers choose from. Each is listed under one of the tabs on the public News page. Hidden categories can't be chosen for new stories (published stories keep theirs).</p>
       <div id="cats"></div>
@@ -123,10 +129,20 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       f[`${pre}_time`].value = t || '';
     }
   }
+  function accs(list: any[]) {
+    $('accs').innerHTML = list.length ? list.map(a => `<tr><td><b>${esc(a.fullName)}</b><br /><small class="muted">${esc(a.organisation)} · ${esc(a.role)}${a.number ? ` · ${esc(a.number)}` : ''}</small></td><td>${esc(a.match?.label || a.eventId)}<br /><small class="muted">${esc(when(a.match?.date))}</small></td>
+      <td><span class="pill ${a.status === 'approved' ? '' : a.status === 'revoked' || a.status === 'rejected' ? 'off' : 'warn'}">${esc(a.status)}</span>${a.zone ? `<br /><small>${esc(a.zone)}</small>` : ''}</td><td>${esc(a.decidedBy || '')}</td>
+      <td>${a.status === 'approved' ? `<div class="acts"><button data-revoke="${esc(a.id)}">Revoke</button>${a.verifyUrl ? `<a href="${esc(a.verifyUrl)}" target="_blank" rel="noopener">Check</a>` : ''}</div>` : ''}</td></tr>`).join('') : '<tr><td colspan="5" class="muted">No accreditation requests yet.</td></tr>';
+  }
+  $('accs').addEventListener('click', async (e: Event) => {
+    const b = (e.target as HTMLElement).closest('[data-revoke]') as HTMLElement | null; if (!b) return;
+    const reason = prompt('Why is this accreditation being revoked? (emailed to the journalist)'); if (!reason) return;
+    try { await api('accreditations', { id: b.dataset.revoke, reason }); msg('Revoked.'); accs((await api('accreditations')).accreditations); } catch (err: any) { msg(err.message, false); }
+  });
   async function load() {
     try {
-      const [u, s] = await Promise.all([api('users'), api('settings')]);
-      users(u.users); cats(s.categories, s.tabs); settings(s.settings);
+      const [u, s, ac] = await Promise.all([api('users'), api('settings'), api('accreditations')]);
+      users(u.users); cats(s.categories, s.tabs); settings(s.settings); accs(ac.accreditations);
     } catch (e: any) { msg(e.message, false); }
   }
   $('users').addEventListener('click', async (e: Event) => {
