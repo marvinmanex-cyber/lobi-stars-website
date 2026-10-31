@@ -137,6 +137,24 @@ STAFF-GUIDE.md section 41 explains every screen in plain English.
   (12 hours after kick-off) and never the phone or email.
 - **Revoke:** `/api/admin/media-centre/accreditations` (Super Admins).
 
+### Lobi Stars Weekly (phase 4)
+- **Template:** `functions/api/_lib/mediaNewsletter.js` (15 sections;
+  `missing()` lists the required ones and respects "No match this week").
+  The editor is `src/scripts/mediaCentre/newsletter.ts`.
+- **Preview:** `POST /api/media-centre/newsletter` renders it with the
+  site's own newsletter template (`renderNewsletter`). `GET` returns the
+  last result and next match for the fill-in buttons.
+- **On approval:** the kind's `scheduleFor` returns the Wednesday 08:00 of
+  the item's week (`newsletter_publish`), or now if that has passed.
+  Publishing creates a `newsletter_issues` row (status `scheduled`) that the
+  existing sender handles (`runScheduledNewsletters`): batches of 100,
+  retries, `newsletter_deliveries` as the send log, an unsubscribe link, a
+  plain-text version, and the archive at `/newsletter/<slug>/`. Pictures are
+  marked public so email programs can show them.
+- **Reminders:** `mediaCron.js` (Monday from 09:00 to `media_team_email`;
+  Tuesday 30 minutes after the deadline to the Super Admins), once a week,
+  logged.
+
 ### Email
 Accreditation emails, reminders and the newsletter use the site's existing
 Resend setup. These are Cloudflare secrets:

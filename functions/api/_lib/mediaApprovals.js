@@ -88,7 +88,8 @@ export async function decide(env, admin, request, id, { decision, comment = '', 
   }
   const problem = kind?.validate ? kind.validate(content, { admin: true }) : null;
   if (problem) return { error: problem };
-  const when = scheduledAt !== undefined ? scheduledAt : r.scheduled_at;
+  // Some kinds choose their own time (the Lobi Stars Weekly: Wednesday morning, or now if that has passed).
+  const when = kind?.scheduleFor ? await kind.scheduleFor(env, r) : (scheduledAt !== undefined ? scheduledAt : r.scheduled_at);
   const fresh = { ...r, data_json: JSON.stringify(content) };
   if (kind?.schedulable && when && Date.parse(when) > Date.now() + 60e3 && !isCorrection) {
     await db.prepare(`UPDATE mc_items SET status = 'scheduled', correction = NULL, live_json = ?, scheduled_at = ?, decided_at = ?, decided_by = ?, comment = NULL WHERE id = ?`)

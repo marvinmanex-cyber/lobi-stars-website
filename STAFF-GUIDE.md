@@ -4021,6 +4021,56 @@ information needed, approved with the card attached, rejected, revoked.
 These emails need the email service (Resend) set up. Until then, download
 the card and send it yourself.
 
+### Lobi Stars Weekly (the weekly newsletter)
+**Media Centre › Lobi Stars Weekly › Start this week's newsletter.** The
+template has 15 sections in this order. Each field has a short hint showing
+what a good answer looks like.
+
+| # | Section | Rule |
+| --- | --- | --- |
+| 1 | Masthead (edition number, date) | Automatic |
+| 2 | Welcome | Required |
+| 3 | Last Match Report: date, competition/matchday, opponent, venue, final score, scorers + minutes, line-up, key photo | Required if a match was played |
+| 4 | Match Analysis: what went well, areas to improve, turning point, coach's quote | Required if a match was played |
+| 5 | Player of the Match: name, photo, reason | Required if a match was played |
+| 6 | League Table: Lobi Stars' position, points, top of the conference | Required |
+| 7 | Squad Update: injuries, returns, suspensions | Required |
+| 8 | Next Match Preview: opponent, date, kick-off, venue, opponent form, what to expect, ticket link | Required |
+| 9 | Coming Fixtures (next 3) | Automatic |
+| 10 | Player or Staff Spotlight | Optional |
+| 11 | Club News | Optional |
+| 12 | Fans' Corner | Optional |
+| 13 | Partner Spotlight (with logo) | Optional |
+| 14 | Photo of the Week (with credit) | Optional |
+| 15 | Sign-off (ticket link, social links, #WeAreLobi) | Automatic |
+
+- **No match this week:** this switch hides sections 3–5 and shows an
+  optional **Training & Preparation** section instead.
+- **Fill in the last result / Fill in the next match:** copy the facts from
+  the fixtures and Live Match Control. Always check them.
+- **Preview:** the email and the web version, updated as you type.
+- **Send for approval:** only possible when every required section is
+  complete; the page says what is still missing.
+
+**The week:**
+- **Monday 9 AM:** if nothing has been started, a reminder email goes to the
+  media team email (Settings), and the deadline shows on the Media Centre
+  home.
+- **Tuesday 6 PM:** the deadline. If one is still waiting for approval at
+  6:30 PM, the Super Admins get a reminder.
+- **Approval:** a Super Admin approves in the Approval Queue. It is
+  published on **Wednesday at 8 AM**, or straight away if approved after
+  that. It goes out through the website's normal newsletter: emailed to
+  every confirmed subscriber (agreed to club news, not unsubscribed, weekly
+  newsletter on) in batches, with the unsubscribe link and a plain-text
+  version. Each delivery is recorded. The web version is added to the
+  newsletter archive (/newsletter).
+- **Times and email:** Super Admins can change the times and the media team
+  email in Media Centre › Users & settings.
+- **After approval:** an approved newsletter can't be changed.
+  **Unpublish** removes it from the archive; emails already sent can't be
+  called back.
+
 ### The Media Centre home (for media staff)
 After signing in: **Returned to me** (with the Super Admin's comment),
 **Waiting for approval**, **My drafts**, **Upcoming deadlines** and

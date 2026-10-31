@@ -8,7 +8,10 @@
 //   unpublish(env, item) -> { ok } | { error }
 //   schedulable: true when it can be approved for a later date and time
 //   adminFields: the fields offered by "Edit, then approve"
+//   scheduleFor(env, item): the kind's own publishing time (or null = now)
+//   noCorrections: published items can't be changed (e.g. a newsletter already emailed)
 import { NEWS } from './mediaNews.js';
+import { NEWSLETTER } from './mediaNewsletter.js';
 
-export const KINDS = { news: NEWS };
+export const KINDS = { news: NEWS, newsletter: NEWSLETTER };
 export function registerKind(id, def) { KINDS[id] = def; }

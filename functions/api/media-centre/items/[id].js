@@ -14,6 +14,7 @@ export async function onRequestPut({ request, env, params, data }) {
   const r = await getItem(env.DB, params.id);
   if (!r) return json({ error: 'Not found.' }, 404);
   const kind = KINDS[r.kind];
+  if (kind?.noCorrections && ['published', 'scheduled'].includes(r.status)) return json({ error: 'This has already been approved and cannot be changed. Start a new one.' }, 409);
   const b = await request.json().catch(() => ({}));
   const checked = kind?.normalise ? await kind.normalise(b.data || {}, { user: data.mc.user }) : { value: b.data || {} };
   if (checked.error) return json({ error: checked.error }, 400);

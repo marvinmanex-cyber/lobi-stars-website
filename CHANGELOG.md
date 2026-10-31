@@ -8,6 +8,31 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-10-31: Media Centre, phase 4: Lobi Stars Weekly
+
+**What changed**
+- **Media Centre › Lobi Stars Weekly:**
+  - the 15-section template (masthead, welcome, last match report, match
+    analysis, Player of the Match, league table, squad update, next match
+    preview, coming fixtures, spotlight, club news, fans' corner, partner
+    spotlight, photo of the week, sign-off);
+  - required, optional and automatic sections, with hints;
+  - a "No match this week" switch;
+  - fill-in buttons from the fixtures, and a live preview of the email and
+    the web version.
+- It can't be sent until the required sections are complete.
+- **Deadline Tuesday 6 PM:**
+  - Monday reminder to the media team if nothing has been started;
+  - Tuesday-evening reminder to the Super Admins if one is waiting.
+- **Once approved,** it publishes on Wednesday at 8 AM (or straight away if
+  approved later) through the existing newsletter: emailed to confirmed
+  subscribers in batches with the unsubscribe link and a plain-text version,
+  logged per address, and added to the newsletter archive.
+
+**Staff:** see STAFF-GUIDE section 41 "Lobi Stars Weekly".
+
+---
+
 ## 2026-10-31: Media Centre, phase 3: media accreditation
 
 **What changed**
