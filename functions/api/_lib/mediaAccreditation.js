@@ -235,10 +235,11 @@ export async function decideAccreditation(env, request, user, id, { decision, zo
     const fresh = await db.prepare(`SELECT * FROM mc_accreditations WHERE id = ?`).bind(r.id).first();
     await saveContact(db, fresh, 'accreditations', `Accredited for ${matchLabel(e)} (${number})`);
     await mcLog(db, A, 'approve', { ...meta, details: `${number}, ${zone}` });
-    const pdf = await cardPdf(env, fresh, e).catch(err => { console.error('[accreditation] card', err); return null; });
-    const sent = await mail(env, r.email, `Your media accreditation: ${matchLabel(e)}`, 'You are accredited',
-      `${p(`Dear ${esc(r.full_name)},`)}${p(`Your media accreditation for <b>${esc(matchLabel(e))}</b> on ${esc(matchDay(e.event_date))} (kick-off ${esc(kickOff(e.event_date))}, ${STADIUM}) is approved.`)}${p(`Accreditation number: <b>${esc(number)}</b> · Access: <b>${esc(zone)}</b>`)}${p('Your card is attached as a PDF. Print it (ID-card size) or show it on your phone with a photo ID. It is valid for this match only.')}${p(`Check it at any time: <a href="${SITE}/media/accreditation/verify/${token}/">${SITE}/media/accreditation/verify/…</a>`)}`,
-      pdf ? [{ filename: `Lobi-Stars-accreditation-${number}.pdf`, content: b64(pdf) }] : undefined);
+    // The approval letter (they print it and collect the laminated card at the media desk).
+    const pdf = await letterPdf(env, fresh, e).catch(err => { console.error('[accreditation] letter', err); return null; });
+    const sent = await mail(env, r.email, `Your media accreditation is approved: ${matchLabel(e)}`, 'Your accreditation is approved',
+      `${p(`Dear ${esc(r.full_name)},`)}${p(`Your media accreditation for <b>${esc(matchLabel(e))}</b> on ${esc(matchDay(e.event_date))} (kick-off ${esc(kickOff(e.event_date))}, ${STADIUM}) is approved.`)}${p(`Accreditation number: <b>${esc(number)}</b> · Access: <b>${esc(zone)}</b>`)}${p('Your <b>approval letter</b> is attached as a PDF. <b>Print it</b> and bring it, with a valid photo ID, to the designated <b>Media Desk at McCarthy Stadium</b> on match day to collect your <b>laminated accreditation card</b>. Wear the card at all times; it is valid for this match only.')}${p(`Check it at any time: <a href="${SITE}/media/accreditation/verify/${token}/">${SITE}/media/accreditation/verify/…</a>`)}`,
+      pdf ? [{ filename: `Lobi-Stars-accreditation-approval-${number}.pdf`, content: b64(pdf) }] : undefined);
     return { ok: true, number, emailed: sent };
   }
   if (decision === 'reject') {
@@ -348,6 +349,56 @@ export async function verifyView(db, token) {
 
 // ── The card (ID-1 size, 54 × 85.6 mm, portrait) ──
 const b64 = bytes => { let x = ''; for (let i = 0; i < bytes.length; i += 0x8000) x += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(x); };
+/**
+ * The approval letter (A4 PDF) emailed to an approved journalist. They print it and
+ * bring it, with photo ID, to the media desk at the stadium to collect their
+ * laminated accreditation card (cardPdf, printed by the media team). Signed by the
+ * Media Department (no personal name); the QR code opens the verification page.
+ */
+export async function letterPdf(env, r, e) {
+  const doc = new PdfDoc();
+  const W = doc.w, M = 56, BLUE = '#1C3F7A', RED = '#E31E24', INK = '#16181D', GREY = '#4A505C';
+  doc.rect(0, 0, W, 96, { fill: BLUE }); doc.rect(0, 96, W, 5, { fill: RED });
+  try {
+    const res = await env.ASSETS.fetch(new Request(`${SITE}/images/lobi-stars-badge-print.jpg`));
+    if (res.ok) { const img = doc.addJpeg(new Uint8Array(await res.arrayBuffer())); if (img) { doc.rect(M - 4, 14, 72, 72, { fill: '#FFFFFF' }); doc.drawImage(M, 18, 64, 64, img.id); } }
+  } catch { /* no badge */ }
+  doc.text('LOBI STARS FOOTBALL CLUB', M + 84, 44, { size: 18, bold: true, color: '#FFFFFF' });
+  doc.text('Media Department · McCarthy Stadium, Makurdi, Benue State', M + 84, 64, { size: 10, color: '#DCE6F5' });
+  let y = 140;
+  doc.text('MEDIA ACCREDITATION APPROVAL LETTER', M, y, { size: 16, bold: true, color: BLUE }); y += 24;
+  doc.text(pdfSafe(`Date: ${new Date(Date.parse(r.decided_at || nowIso()) + 3600e3).toISOString().slice(0, 10).split('-').reverse().join('/')}`), M, y, { size: 10, color: GREY });
+  doc.text(pdfSafe(`Reference: ${r.number}`), W - M, y, { size: 10, color: GREY, align: 'right' }); y += 30;
+  const para = (s, opts = {}) => { for (const l of wrap(pdfSafe(s), W - 2 * M, opts.size || 11, opts.bold)) { doc.text(l, M, y, { size: opts.size || 11, bold: opts.bold, color: opts.color || INK }); y += (opts.size || 11) + 5; } y += 8; };
+  para(`Dear ${r.full_name},`);
+  para(`We are pleased to confirm that your application for media accreditation to cover ${matchLabel(e)} on ${matchDay(e.event_date)} (kick-off ${kickOff(e.event_date)}) at ${STADIUM} has been approved.`);
+  // Details box.
+  const rows = [['Name', r.full_name], ['Organisation', `${r.organisation}${r.employment ? ` (${r.employment})` : ''}`], ['Role', r.role], ['Match', matchLabel(e)], ['Date and kick-off', `${matchDay(e.event_date)}, ${kickOff(e.event_date)}`], ['Venue', STADIUM], ['Access zone', r.zone || ''], ['Accreditation number', r.number]];
+  const boxTop = y; y += 18;
+  for (const [k, v] of rows) { doc.text(pdfSafe(k), M + 14, y, { size: 10, color: GREY }); doc.text(pdfSafe(String(v || '')).slice(0, 70), M + 160, y, { size: 11, bold: true, color: INK }); y += 20; }
+  doc.rect(M, boxTop, W - 2 * M, y - boxTop - 4, { stroke: '#D5DCE6', lineWidth: 1 });
+  y += 18;
+  // What to do.
+  const stepsTop = y;
+  doc.rect(M, stepsTop, W - 2 * M, 104, { fill: '#FFF4F4' }); doc.rect(M, stepsTop, 5, 104, { fill: RED });
+  y += 22;
+  doc.text('ON MATCH DAY', M + 18, y, { size: 11, bold: true, color: RED }); y += 18;
+  for (const s of ['1. Print this letter and bring it with a valid photo ID.', '2. Go to the designated Media Desk at McCarthy Stadium before kick-off.', '3. Collect your laminated accreditation card and wear it at all times.']) { doc.text(pdfSafe(s), M + 18, y, { size: 11, color: INK }); y += 18; }
+  doc.text('This accreditation is valid for this match only and may be withdrawn if the media rules are not followed.', M + 18, y + 2, { size: 9, color: GREY });
+  y = stepsTop + 126;
+  // QR code: opens the verification page.
+  const qr = qrcodeGenerator(0, 'M'); qr.addData(`${SITE}/media/accreditation/verify/${r.verify_token}/`); qr.make();
+  const n = qr.getModuleCount(), size = 92, cell = size / n, qx = W - M - size, qy = y;
+  for (let row = 0; row < n; row++) for (let col = 0; col < n; col++) if (qr.isDark(row, col)) doc.rect(qx + col * cell, qy + row * cell, cell + 0.2, cell + 0.2, { fill: '#000000' });
+  doc.text('Scan to verify', qx + size / 2, qy + size + 14, { size: 8, color: GREY, align: 'center' });
+  doc.text('Yours faithfully,', M, y + 14, { size: 11, color: INK });
+  doc.text('Media Department', M, y + 56, { size: 12, bold: true, color: INK });
+  doc.text('Lobi Stars Football Club', M, y + 72, { size: 11, color: GREY });
+  doc.text('media@lobistarsfc.com · lobistarsfc.com', M, y + 88, { size: 10, color: GREY });
+  doc.rect(0, doc.h - 18, W, 18, { fill: BLUE });
+  return doc.toBytes({ title: `Lobi Stars FC media accreditation approval ${r.number}`, author: 'Lobi Stars FC' });
+}
+
 export async function cardPdf(env, r, e) {
   const W = 153.07, H = 242.65; // points
   const doc = new PdfDoc({ width: W, height: H });

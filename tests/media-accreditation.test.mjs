@@ -106,6 +106,11 @@ test('more information, then approve with the zone; the card is signed by the ap
   assert.equal(card.status, 200); assert.equal(card.headers.get('content-type'), 'application/pdf');
   const text = Buffer.from(await card.arrayBuffer()).toString('latin1');
   for (const s of ['MEDIA ACCREDITATION', 'LOBI STARS FC', 'Signed: Grace Approver', 'Valid for this match only', 'McCarthy Stadium', 'PITCHSIDE', ap.data.number, 'Photographer', 'Benue Daily', 'Test United']) assert.ok(text.includes(s), `card shows ${s}`);
+  // The approval letter (emailed; printed and brought to the media desk for the laminated card).
+  const letter = await fetch(`${BASE}/api/media-centre/accreditations/${accId}/letter`, { headers: { Cookie: S.cookie } });
+  assert.equal(letter.status, 200); assert.equal(letter.headers.get('content-type'), 'application/pdf');
+  const lt = Buffer.from(await letter.arrayBuffer()).toString('latin1');
+  for (const s of ['APPROVAL LETTER', 'Media Desk', 'laminated accreditation card', ap.data.number, 'Pitchside']) assert.ok(lt.includes(s), `letter shows ${s}`);
   assert.ok((text.match(/\/Subtype \/Image/g) || []).length >= 2, 'badge and photo');
 });
 

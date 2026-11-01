@@ -1,7 +1,7 @@
 import { ensureAccreditationSchema, eventById, cardPdf } from '../../../_lib/mediaAccreditation.js';
 import { mcLog, mediaActor } from '../../../_lib/mediaCentre.js';
 
-// GET /api/media-centre/accreditations/:id/card -- the accreditation card (PDF, ID-card size).
+// GET /api/media-centre/accreditations/:id/card -- the accreditation card (PDF, ID-card size) the media desk prints and laminates.
 export async function onRequestGet({ request, env, params, data }) {
   await ensureAccreditationSchema(env.DB);
   const r = await env.DB.prepare(`SELECT * FROM mc_accreditations WHERE id = ?`).bind(params.id).first();

@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Accreditation: approval letter, laminated card at the media desk
+
+**What changed**
+- Approved journalists are emailed an **approval letter** (A4 PDF) instead of the
+  card. They print it and bring it, with photo ID, to the media desk at McCarthy
+  Stadium to collect a **laminated accreditation card**.
+- Media Centre › Accreditation: **Card for lamination (PDF)** (for the media desk
+  to print and laminate) and **Approval letter (PDF)** for each approved request.
+- The accreditation page's steps and "What you need" explain the new process.
+
+**Staff to do:** before each home match, print and laminate the cards of the
+approved journalists and have them at the media desk.
+
 ## 2026-11-01: Media page redesigned as the Press & Media Hub
 
 **What changed**

@@ -4127,13 +4127,17 @@ match").
    - **Reject:** give a reason, which is emailed.
 3. **The limit per match:** set by a Super Admin, default 20. Approving
    stops at the limit.
-4. **On approval:** the website makes the **accreditation card** (PDF, ID-card
-   size, club colours) and emails it to the journalist automatically. The
-   card shows: the badge, MEDIA ACCREDITATION, the match, date, kick-off,
-   McCarthy Stadium, the photo, name, organisation, role, access zone, a
-   unique number (e.g. LSA-2627-0001), a QR code, **"Signed: <the full name
-   of the staff member who approved>"** and "Valid for this match only".
-   **Download card (PDF)** gives the same file.
+4. **On approval (since 1 Nov 2026):** the journalist is emailed an **approval
+   letter** (A4 PDF: club badge, their details, the match, access zone,
+   accreditation number, a QR code to verify it, signed "Media Department").
+   They **print the letter** and bring it, with photo ID, to the designated
+   **Media Desk at McCarthy Stadium** on match day, where they collect a
+   **laminated accreditation card**. For the media desk, each approved request
+   has **Card for lamination (PDF)** (ID-card size, club colours, photo, name,
+   organisation, role, access zone, unique number e.g. LSA-2627-0001, QR code,
+   "Signed: <who approved>", "Valid for this match only"): print and laminate
+   one per journalist before match day. **Approval letter (PDF)** downloads the
+   letter that was emailed.
 5. **Invitation link** (per match): makes a link that pre-selects the match.
    It is copied for you to share, or you can enter an email address to send
    it.

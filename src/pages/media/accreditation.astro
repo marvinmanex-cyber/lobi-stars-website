@@ -35,12 +35,12 @@ import '../../styles/mediaHub.css';
     <div class="ah-steps">
       <div class="ah-step"><span>1</span><b>Apply online</b><p>Choose the match, add your press ID or letter and a passport photo.</p></div>
       <div class="ah-step"><span>2</span><b>Media team review</b><p>The club's media team approves, asks for more, or declines, by email.</p></div>
-      <div class="ah-step"><span>3</span><b>Card by email</b><p>Approved? Your accreditation card (PDF with a QR code) is emailed to you.</p></div>
-      <div class="ah-step"><span>4</span><b>Show it at the gate</b><p>Bring the card (phone or printed) and photo ID. Valid for that match only.</p></div>
+      <div class="ah-step"><span>3</span><b>Approval by email</b><p>When your application is approved, you are informed by email with your approval letter (PDF).</p></div>
+      <div class="ah-step"><span>4</span><b>Collect your card</b><p>Print the approval letter and bring it to the stadium. Pick up your laminated accreditation card at the designated media desk.</p></div>
     </div>
     <div class="ah-cards">
       <div class="ah-card"><h2>Access zones</h2><ul><li><b>Press Box</b> writers, radio and TV commentary</li><li><b>Pitchside</b> photographers and camera crews</li><li><b>Mixed Zone</b> post-match interviews</li></ul></div>
-      <div class="ah-card"><h2>What you need</h2><ul><li>Press ID or a letter from your organisation (PDF/JPG)</li><li>A passport photo (plain background)</li><li>One application per match</li></ul></div>
+      <div class="ah-card"><h2>What you need</h2><ul><li>Press ID or a letter from your organisation (PDF/JPG)</li><li>A passport photo (plain background)</li><li>One application per match</li><li>On match day: the printed approval letter and a photo ID</li></ul></div>
       <div class="ah-card"><h2>Media rules</h2><ul><li>Stay in your access zone and wear your card</li><li>Follow stewards' instructions</li><li>Interviews only in the mixed zone</li></ul></div>
     </div>
     <div class="ah-more" id="moreMatches" hidden><h2>Other upcoming home matches</h2><div id="moreList"></div></div>
@@ -49,7 +49,7 @@ import '../../styles/mediaHub.css';
   <div class="page-content wrap ac" id="apply">
     <div class="ah-formhead"><p class="ah-kicker dark">Application form</p><h2>Apply for accreditation</h2></div>
     <p class="ac-msg" id="msg" role="alert" hidden></p>
-    <section class="panel" id="done" hidden><h2>Thank you</h2><p id="doneText">We have your request. Our media team will review it and email you. Please do not come to the stadium expecting accreditation until you receive your card.</p><p><a href="/media/">Back to the Media page</a></p></section>
+    <section class="panel" id="done" hidden><h2>Thank you</h2><p id="doneText">We have your request. Our media team will review it and email you. Please do not come to the stadium expecting accreditation until you receive your approval email.</p><p><a href="/media/">Back to the Media page</a></p></section>
     <form class="panel ac-form" id="f" novalidate>
       <p class="ac-info" id="infoReq" hidden></p>
       <div class="ac-f"><label for="eventId">Match <span class="req">*</span></label><select id="eventId" name="eventId" required><option value="">Loading the home matches…</option></select><small id="evHint"></small></div>
