@@ -37,11 +37,12 @@ const siteKey = settings.turnstileSiteKey;
           <h2 class="sp-h2">Sign in</h2>
           <p class="sp-muted">Use the portal username and password provided by the club.</p>
           <p class="sp-alert" id="signinMsg" role="alert" hidden></p>
-          <div class="sp-field"><label for="siUser">Username</label><input id="siUser" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required /></div>
+          <div class="sp-field"><label for="siUser">Username <small>(Super Admins: your website email)</small></label><input id="siUser" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required /></div>
           <div class="sp-field"><label for="siPass">Password</label>
             <div class="sp-pw"><input id="siPass" name="password" type="password" autocomplete="current-password" required /><button type="button" class="sp-pw-show" id="siShow" aria-label="Show password" aria-pressed="false">Show</button></div></div>
-          <div class="sp-field"><label for="siName">Your name</label><input id="siName" name="name" autocomplete="name" placeholder="Who is entering data today?" required maxlength="60" aria-describedby="siNameHint" />
+          <div class="sp-field"><label for="siName">Your name <small>(not needed for Super Admins)</small></label><input id="siName" name="name" autocomplete="name" placeholder="Who is entering data today?" maxlength="60" aria-describedby="siNameHint" />
             <p class="sp-hint" id="siNameHint">Recorded with every profile you add or change.</p></div>
+          <div class="sp-field" id="siCodeWrap" hidden><label for="siCode">6-digit code from your authenticator app</label><input id="siCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" /></div>
           <div class="sp-turnstile" id="siTurnstile" hidden></div>
           <button class="sp-btn sp-btn-red sp-btn-block" type="submit" id="siBtn">Sign in</button>
           <p class="sp-forgot-link"><button type="button" class="sp-link" id="siForgot" aria-expanded="false" aria-controls="forgotBox">Forgot the password?</button></p>

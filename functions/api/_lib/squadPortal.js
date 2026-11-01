@@ -15,6 +15,7 @@ import { hashPassword, verifyPassword } from './password.js';
 import { ensureFanSchema, rateLimit, checkTurnstile } from './fans.js';
 import { logAdminAction } from './adminSession.js';
 import { emailNewPassword } from './squadNotify.js';
+import { verifySuperAdmin, looksLikeEmail } from './superAdminLogin.js';
 
 export const PORTAL_DEFAULT_PATH = '/staff/squad-data';
 /** The portal address (PORTAL_PATH, under /staff/; default /staff/squad-data). */
@@ -102,13 +103,19 @@ export async function signInState(env, request) {
 }
 
 /** Sign in. Returns { ok, session, cookies } or { error, status, needTurnstile }. */
-export async function signIn(env, request, { username, password, name, turnstile }) {
+export async function signIn(env, request, { username, password, name, turnstile, code }) {
   const db = env.DB;
   await ensureFanSchema(db);
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
   if (!(await rateLimit(db, `squadportal:${ip}`, 30, 900))) return { error: 'Too many attempts from this connection. Please wait 15 minutes.', status: 429 };
   const s = await getPortalSettings(db);
   if (s.enabled !== '1') return { error: 'The portal is currently closed.', status: 403, closed: true };
+  // A website Super Admin: their own email, password and two-step code (not the shared portal login).
+  if (looksLikeEmail(username)) {
+    const v = await verifySuperAdmin(env, { email: username, password, code }, 'itcentre');
+    if (!v.admin) return { error: v.error, status: v.status, needCode: v.needCode };
+    return startPortalSession(env, request, s, v.admin.name, ' (Super Admin, website email)');
+  }
   if (!s.password_hash) return { error: 'The portal has not been set up yet. Ask a Super Admin for the login.', status: 403 };
   if (s.locked_until && Date.parse(s.locked_until) > Date.now()) {
     const mins = Math.max(1, Math.ceil((Date.parse(s.locked_until) - Date.now()) / 60000));
@@ -133,6 +140,11 @@ export async function signIn(env, request, { username, password, name, turnstile
   }
   await setPortalSetting(db, 'failed', 0);
   await setPortalSetting(db, 'locked_until', '');
+  return startPortalSession(env, request, s, who, '');
+}
+
+async function startPortalSession(env, request, s, who, how) {
+  const db = env.DB;
   // Session.
   const token = randomToken(), id = await sha256Hex(token), csrf = randomToken(18), device = deviceLabel(request.headers.get('User-Agent'));
   let deviceId = cookieValue(request, DEVICE_COOKIE);
@@ -144,7 +156,7 @@ export async function signIn(env, request, { username, password, name, turnstile
   const known = await db.prepare(`SELECT id FROM squad_portal_devices WHERE id = ?`).bind(deviceId).first();
   if (known) await db.prepare(`UPDATE squad_portal_devices SET last_seen = ? WHERE id = ?`).bind(at, deviceId).run();
   else await db.prepare(`INSERT INTO squad_portal_devices (id, device, first_name, first_seen, last_seen) VALUES (?, ?, ?, ?, ?)`).bind(deviceId, device, who, at, at).run();
-  await logAdminAction(db, portalActor({ name: who }), 'squad_portal_signin', `${who} signed in to the Squad Data Portal (${device}${known ? '' : ', a new device'})`);
+  await logAdminAction(db, portalActor({ name: who }), 'squad_portal_signin', `${who}${how} signed in to the Squad Data Portal (${device}${known ? '' : ', a new device'})`);
   return { ok: true, session: { name: who, csrf, device }, cookies: [sessionCookie(token), deviceCookie(deviceId)], newDevice: !known };
 }
 

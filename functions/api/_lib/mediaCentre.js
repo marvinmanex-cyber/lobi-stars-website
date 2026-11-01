@@ -22,6 +22,7 @@
 // Every submission, approval and return saves a revision (mc_revisions).
 import { hashPassword, verifyPassword } from './password.js';
 import { ensureFanSchema, rateLimit } from './fans.js';
+import { verifySuperAdmin, stillSuperAdmin } from './superAdminLogin.js';
 
 export const MC_COOKIE = 'ls_media';
 export const IDLE_MS = 30 * 60e3;          // signed out after 30 minutes without activity
@@ -297,6 +298,25 @@ export async function approverSignIn(env, request, password) {
   return { ok: true, cookie: sessionCookie(token), session: { csrf, user: APPROVER_USER } };
 }
 
+// ── Website Super Admins: email, password and two-step code (a Media Centre session only) ──
+export async function adminMediaSignIn(env, request, { email, password, code }) {
+  const db = env.DB;
+  await ensureFanSchema(db); await ensureMediaSchema(db);
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  if (!(await rateLimit(db, `mediacentre:${ip}`, 30, 900))) return { error: 'Too many attempts from this connection. Please wait 15 minutes.', status: 429 };
+  const v = await verifySuperAdmin(env, { email, password, code }, 'media');
+  if (!v.admin) {
+    if (!v.needCode) await mcLog(db, publicActor(`Email sign-in (${oneLine(email, 60)})`), 'failed_login', { section: 'account', details: v.error, request });
+    return { error: v.error, status: v.status, needCode: v.needCode };
+  }
+  const token = randomToken(), sid = await sha256Hex(token), csrf = randomToken(18), at = nowIso();
+  await db.prepare(`INSERT INTO mc_sessions (id, user_id, csrf, created_at, last_seen, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+    .bind(sid, `admin:${v.admin.id}`, csrf, at, at, ip, oneLine(request.headers.get('User-Agent') || '', 300)).run();
+  const user = { id: `admin:${v.admin.id}`, loginId: v.admin.email, fullName: v.admin.name, mustChange: false, admin: true };
+  await mcLog(db, mediaActor(user), 'login', { section: 'account', details: 'Super Admin signed in with the website email', request });
+  return { ok: true, cookie: sessionCookie(token), session: { csrf, user } };
+}
+
 // ── Sign-in and sessions ──
 const cookieValue = (request, name) => ((request.headers.get('Cookie') || '').match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`)) || [])[1] || null;
 const sessionCookie = token => `${MC_COOKIE}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${MAX_MS / 1000}`;
@@ -362,6 +382,16 @@ export async function getMediaSession(request, env, { touch = true } = {}) {
   const s = await db.prepare(`SELECT s.*, u.login_id, u.full_name, u.is_active, u.must_change_password FROM mc_sessions s LEFT JOIN mc_users u ON u.id = s.user_id WHERE s.id = ? AND s.ended_at IS NULL`)
     .bind(await sha256Hex(token)).first();
   if (!s) return null;
+  // A website Super Admin's Media Centre session (they must still be a Super Admin).
+  if (String(s.user_id).startsWith('admin:')) {
+    const a = await stillSuperAdmin(env, s.user_id.slice(6));
+    const endIt = why => db.prepare(`UPDATE mc_sessions SET ended_at = ?, ended_why = ? WHERE id = ?`).bind(nowIso(), why, s.id).run();
+    if (!a) { await endIt('no longer a Super Admin'); return null; }
+    if (Date.now() - Date.parse(s.last_seen) > IDLE_MS) { await endIt('no activity for 30 minutes'); return null; }
+    if (Date.now() - Date.parse(s.created_at) > MAX_MS) { await endIt('12 hours'); return null; }
+    if (touch && Date.now() - Date.parse(s.last_seen) > 30e3) await db.prepare(`UPDATE mc_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
+    return { id: s.id, csrf: s.csrf, lastSeen: s.last_seen, user: { id: s.user_id, loginId: a.email, fullName: a.name, mustChange: false, admin: true } };
+  }
   const approver = s.user_id === APPROVER_ID;
   if (approver) { s.is_active = (await mcSettings(db)).approver_password_hash ? 1 : 0; s.full_name = APPROVER_USER.fullName; s.login_id = APPROVER_USER.loginId; s.must_change_password = 0; }
   else if (!s.login_id) return null;

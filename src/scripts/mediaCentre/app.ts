@@ -6,7 +6,7 @@ import './sections';
 
 // ── Router ──
 // The media approver (approval password) sees only the Approval Queue; nobody else sees it.
-const visible = () => SCREENS.filter(s => s.nav !== false && (state.user?.approver ? s.path === 'approvals' : s.path !== 'approvals'));
+const visible = () => SCREENS.filter(s => s.nav !== false && (state.user?.approver ? s.path === 'approvals' : state.user?.admin || s.path !== 'approvals'));
 function nav(active: string) {
   $('nav').innerHTML = visible().map(s => `<a href="/media-centre/${s.path ? `${s.path}/` : ''}" data-go="/${s.path}" class="${s.path === active ? 'on' : ''}"><span aria-hidden="true">${s.icon}</span>${esc(s.label)}</a>`).join('');
 }
@@ -60,7 +60,7 @@ function enter(s: any) {
   state.user = s.user; state.csrf = s.csrf;
   if (s.user.mustChange) { show('changepw'); $('pwCur').focus(); return; }
   show('shell');
-  $('who').innerHTML = s.user.approver ? 'Media approver' : `${esc(s.user.fullName)} <small>(${esc(s.user.loginId)})</small>`;
+  $('who').innerHTML = s.user.approver ? 'Media approver' : s.user.admin ? `${esc(s.user.fullName)} <small>(Super Admin)</small>` : `${esc(s.user.fullName)} <small>(${esc(s.user.loginId)})</small>`;
   if (location.pathname === '/media-centre/login/') history.replaceState(null, '', '/media-centre/');
   bumpIdle();
   route();
@@ -71,11 +71,13 @@ $('signinForm').addEventListener('submit', async (e: Event) => {
   const m = $('signinMsg'), btn = (e.target as HTMLFormElement).querySelector('button[type=submit]') as HTMLButtonElement;
   const loginId = $('siId').value.trim(), password = $('siPw').value;
   const approver = !$('siIdWrap').hidden ? false : true;
-  if (!approver && !/^[A-Za-z]{2,30}[0-9]{2,4}$/.test(loginId)) { m.textContent = 'Your Login ID is your name followed by 2 to 4 digits, e.g. Iorbee68.'; m.hidden = false; return; }
+  const isEmail = loginId.includes('@');
+  if (!approver && !isEmail && !/^[A-Za-z]{2,30}[0-9]{2,4}$/.test(loginId)) { m.textContent = 'Your Login ID is your name followed by 2 to 4 digits, e.g. Iorbee68.'; m.hidden = false; return; }
   btn.disabled = true;
   try {
-    const r = await fetch('/api/media-centre/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(approver ? { approver: true, password } : { loginId, password }), credentials: 'same-origin' });
+    const r = await fetch('/api/media-centre/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(approver ? { approver: true, password } : { loginId, password, code: $('siCode').value.trim() || undefined }), credentials: 'same-origin' });
     const d = await r.json().catch(() => ({}));
+    if (d.needCode) { $('siCodeWrap').hidden = false; $('siCode').focus(); }
     if (!r.ok) { m.textContent = d.error || 'Could not sign in.'; m.hidden = false; return; }
     $('siPw').value = ''; m.hidden = true;
     enter(d);

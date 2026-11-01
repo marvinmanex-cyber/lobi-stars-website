@@ -31,8 +31,9 @@
       <form class="mc-card mc-signin-card" id="signinForm" novalidate>
         <h2 class="mc-h2" id="siTitle">Sign in</h2>
         <p class="mc-alert" id="signinMsg" role="alert" hidden></p>
-        <div class="mc-field" id="siIdWrap"><label for="siId">Login ID</label><input id="siId" name="loginId" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="e.g. Iorbee68" /></div>
+        <div class="mc-field" id="siIdWrap"><label for="siId">Login ID (Super Admins: your website email)</label><input id="siId" name="loginId" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="e.g. Iorbee68" /></div>
         <div class="mc-field"><label for="siPw" id="siPwLabel">Password</label><div class="mc-pw"><input id="siPw" name="password" type="password" autocomplete="current-password" required /><button type="button" class="mc-btn mc-btn-o" data-show="siPw">Show</button></div></div>
+        <div class="mc-field" id="siCodeWrap" hidden><label for="siCode">6-digit code from your authenticator app</label><input id="siCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" /></div>
         <button class="mc-btn mc-btn-red mc-wide" type="submit">Sign in</button>
         <p class="mc-muted mc-small">Forgot your password? Ask a Super Admin to set a new temporary one.</p>
         <p class="mc-small"><button type="button" class="mc-btn mc-btn-ghost mc-btn-sm" id="siApprover">Approver sign-in</button></p>

@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Super Admins: one email login for the Media Centre, IT Centre and MatchDay Kitchen
+
+**What changed**
+- Website Super Admins sign in to the Media Centre, the IT Centre (Squad Data
+  Portal) and MatchDay Kitchen with their website email, password and two-step
+  code. Each area keeps its own session (never the admin session).
+- Media Centre: Super Admins see every section and the Approval Queue.
+- IT Centre: no shared username or "Your name" needed for Super Admins.
+
 ## 2026-11-01: Media Centre: newsletter name, accreditation 6 hours, WhatsApp channel, no press kit, media approver
 
 **What changed**

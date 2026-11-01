@@ -113,19 +113,22 @@ export function startPortal() {
     e.preventDefault();
     const f = e.target as HTMLFormElement, btn = $<HTMLButtonElement>('siBtn');
     const val = (n: string) => (f.elements.namedItem(n) as HTMLInputElement).value.trim();
-    for (const [n, label] of [['username', 'your username'], ['password', 'the password'], ['name', 'your name']]) {
+    // Website Super Admins sign in with their email (no shared login, no name needed).
+    const isAdmin = val('username').includes('@');
+    for (const [n, label] of [['username', 'your username'], ['password', 'the password'], ...(isAdmin ? [] : [['name', 'your name']])]) {
       if (!val(n)) { $('signinMsg').textContent = `Please enter ${label}.`; $('signinMsg').hidden = false; (f.elements.namedItem(n) as HTMLInputElement).focus(); return; }
     }
     btn.disabled = true; btn.textContent = 'Signing in…'; $('signinMsg').hidden = true;
     try {
       const turnstile = (f.querySelector('[name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || '';
       const r = await fetch('/api/squad-portal/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
-        body: JSON.stringify({ username: val('username'), password: (f.elements.namedItem('password') as HTMLInputElement).value, name: val('name'), turnstile }) });
+        body: JSON.stringify({ username: val('username'), password: (f.elements.namedItem('password') as HTMLInputElement).value, name: val('name'), turnstile, code: $<HTMLInputElement>('siCode').value.trim() || undefined }) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) {
         $('signinMsg').textContent = d.error || 'Could not sign in.'; $('signinMsg').hidden = false;
         if (d.needTurnstile) { showTurnstile(); try { window.turnstile?.reset(); } catch { /* not drawn yet */ } }
         if (d.field === 'name') $('siName').focus();
+        if (d.needCode) { $('siCodeWrap').hidden = false; $('siCode').focus(); }
         return;
       }
       state.csrf = d.csrf; state.name = d.name;

@@ -42,6 +42,15 @@ tablet. After **3 wrong attempts** a "not a robot" box appears; after **5**,
 the account is **locked for 15 minutes** and the account holder is emailed
 (a Super Admin can press **Unlock**). Full details: section 25.
 
+**One login for Super Admins (since 1 Nov 2026):** your website email, password and
+two-step code also sign you in to the **Media Centre** (lobistarsfc.com/media-centre:
+type your email in the Login ID box), the **IT Centre** (lobistarsfc.com/staff/squad-data:
+your email in the Username box; no name needed) and **MatchDay Kitchen**
+(lobistarsfc.com/matchday-kitchen). Each keeps its own session: signing in or out there
+doesn't sign you in or out of the admin. Other staff accounts can't do this; media,
+IT and kitchen staff keep their own logins. In the Media Centre, Super Admins see
+every section plus the Approval Queue.
+
 **The "Verify you are human" box (since 1 Nov 2026)** only shows when
 Cloudflare really needs a click, and once you pass it the website remembers
 you for **30 minutes** on that browser: the two-step code step, other
