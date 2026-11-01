@@ -1,10 +1,11 @@
-import { ensureAccreditationSchema, listFor, openMatches, contacts, createInvite, ZONES, ROLES } from '../../_lib/mediaAccreditation.js';
+import { ensureAccreditationSchema, listFor, openMatches, contacts, createInvite, setReopened, ZONES, ROLES } from '../../_lib/mediaAccreditation.js';
 import { mcSettings, json } from '../../_lib/mediaCentre.js';
 
 // Media Centre › Accreditation.
 // GET  ?event=<id>   -- requests (one match, or all recent), upcoming home matches with counts, settings.
 // GET  ?view=contacts -- the media contacts list.
 // POST { action: 'invite', eventId, email? } -- an invitation link that prefills the match (emailed if an address is given).
+// POST { action: 'reopen', eventId, open } -- open applications again during the closed period (or close them again).
 export async function onRequestGet({ request, env }) {
   const db = env.DB;
   await ensureAccreditationSchema(db);
@@ -19,6 +20,7 @@ export async function onRequestGet({ request, env }) {
 
 export async function onRequestPost({ request, env, data }) {
   const b = await request.json().catch(() => ({}));
+  if (b.action === 'reopen') { const r = await setReopened(env, request, data.mc.user, String(b.eventId || ''), !!b.open); return r.ok ? json(r) : json({ error: r.error }, 400); }
   if (b.action !== 'invite') return json({ error: 'Unknown action.' }, 400);
   const r = await createInvite(env, request, data.mc.user, String(b.eventId || ''), b.email || '');
   return r.ok ? json(r) : json({ error: r.error }, 400);

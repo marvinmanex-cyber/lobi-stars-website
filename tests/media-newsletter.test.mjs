@@ -1,4 +1,4 @@
-// Media Centre, phase 4: Lobi Stars Weekly. Required sections, "No match this
+// Media Centre, phase 4: Lobi Stars Weekly Newsletter. Required sections, "No match this
 // week", preview, approval -> the site's newsletter system (archive + sending
 // in test mode), Wednesday scheduling, no changes after approval, the dates.
 import { test, before, after } from 'node:test';
@@ -50,7 +50,7 @@ test('required sections must be complete; "No match this week" skips 3-5', async
   await mc(`items/${id}`, 'PUT', { data: BASIC });
   const pv = await mc('newsletter', 'POST', { data: BASIC, id });
   assert.equal(pv.data.missing, null);
-  for (const s of ['Lobi Stars Weekly', 'Edition', 'Training &amp; preparation', 'League table', 'Squad update', 'Next match preview', '#WeAreLobi']) assert.ok(pv.data.html.includes(s), `preview shows ${s}`);
+  for (const s of ['Lobi Stars Weekly Newsletter', 'Edition', 'Training &amp; preparation', 'League table', 'Squad update', 'Next match preview', '#WeAreLobi']) assert.ok(pv.data.html.includes(s), `preview shows ${s}`);
   assert.ok(!pv.data.html.includes('Player of the Match'), 'sections 3-5 hidden');
   const web = await mc('newsletter', 'POST', { data: BASIC, id, web: true });
   assert.equal(web.status, 200);
@@ -64,7 +64,7 @@ test('approved after Wednesday 8 AM: sent now through the newsletter system and 
   assert.equal(r.status, 200, JSON.stringify(r.data));
   assert.equal(r.data.published, true);
   const issue = JSON.parse(sql(`SELECT * FROM newsletter_issues WHERE subject LIKE '%Test week ${T}%';`))[0].results[0];
-  assert.ok(issue); assert.equal(issue.include_match, 0); assert.match(issue.subject, /^Lobi Stars Weekly #\d+: Test week/);
+  assert.ok(issue); assert.equal(issue.include_match, 0); assert.match(issue.subject, /^Lobi Stars Weekly Newsletter #\d+: Test week/);
   assert.ok(['scheduled', 'sending', 'sent'].includes(issue.status));
   for (let i = 0; i < 5; i++) { const s = JSON.parse(sql(`SELECT status FROM newsletter_issues WHERE id = '${issue.id}';`))[0].results[0].status; if (s === 'sent') break; await fetch(`${BASE}/api/internal/newsletter-run`, { method: 'POST', headers: CRON }); }
   const done = JSON.parse(sql(`SELECT status, slug FROM newsletter_issues WHERE id = '${issue.id}';`))[0].results[0];

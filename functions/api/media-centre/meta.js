@@ -22,6 +22,6 @@ export async function onRequestGet({ env }) {
     players: (squad.players || []).map(p => ({ slug: p.slug, name: p.name, number: p.number ?? null, position: p.position || '' })),
     staff: (squad.staff || []).map(s => ({ slug: s.slug, name: s.name, role: s.role || '' })),
     matches: events,
-    settings: { newsletterDeadline: settings.newsletter_deadline, newsletterPublish: settings.newsletter_publish, accreditationCloseHours: Number(settings.accreditation_close_hours) },
+    settings: { newsletterDeadline: settings.newsletter_deadline, newsletterPublish: settings.newsletter_publish, accreditationCloseHours: Number(settings.accreditation_close_hours), whatsappChannel: settings.whatsapp_channel_url || '' },
   });
 }

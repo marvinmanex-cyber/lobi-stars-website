@@ -158,7 +158,7 @@ STAFF-GUIDE.md section 41 explains every screen in plain English.
   (12 hours after kick-off) and never the phone or email.
 - **Revoke:** `/api/admin/media-centre/accreditations` (Super Admins).
 
-### Lobi Stars Weekly (phase 4)
+### Lobi Stars Weekly Newsletter (phase 4)
 - **Template:** `functions/api/_lib/mediaNewsletter.js` (15 sections;
   `missing()` lists the required ones and respects "No match this week").
   The editor is `src/scripts/mediaCentre/newsletter.ts`.
@@ -198,8 +198,10 @@ STAFF-GUIDE.md section 41 explains every screen in plain English.
   - pictures for reuse come from `/api/media-centre/library`.
 - **Interview requests** (`mediaInterviews.js`): the public form posts to
   `/api/media/interview-request`; requests are in `mc_interviews`.
-- **Press kit** (`mediaPressKit.js`, kind `presskit`): approval marks the
-  files public; the page `/media/press-kit` reads `/api/media/press-kit`.
+- **Press kit:** removed on 1 Nov 2026 (old `presskit` items are kept in
+  `mc_items` but never listed; `/media/press-kit` redirects to `/media/`).
+- **Media approver:** `approverSignIn` (mediaCentre.js), session user
+  `__approver__`, only `/api/media-centre/approvals`; recorded as "Media approver".
 - **Content calendar** (`mediaCalendar.js`, `mc_calendar`): match days come
   from `events`; Wednesdays from `newsletter_publish`.
 

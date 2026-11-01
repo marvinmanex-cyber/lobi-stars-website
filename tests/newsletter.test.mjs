@@ -1,4 +1,4 @@
-// The Lobi Stars Weekly: sign-up with options, newsletter options from the
+// The Lobi Stars Weekly Newsletter: sign-up with options, newsletter options from the
 // email link, sponsor adverts (add / edit / switch off / reorder / delete,
 // more than 3), picture uploads, the branded template, test send, sending to
 // everyone (test mode), the web version, click counting and staff roles.

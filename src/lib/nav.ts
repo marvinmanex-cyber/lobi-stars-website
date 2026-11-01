@@ -62,12 +62,11 @@ export const MAIN_NAV: NavItem[] = [
 // Other public pages that search should know about.
 export const EXTRA_PAGES: NavLink[] = [
   { label: 'Contact', href: '/contact', description: 'Address, phone, email and contact form' },
-  { label: 'Newsletter', href: '/newsletter', description: 'Sign up for the free Lobi Stars Weekly newsletter' },
+  { label: 'Newsletter', href: '/newsletter', description: 'Sign up for the free Lobi Stars Weekly Newsletter' },
   { label: 'Gallery', href: '/gallery', description: 'Photos from matchdays and club events' },
-  { label: 'Media', href: '/media', description: 'For journalists: match accreditation, press releases, press kit and interview requests' },
+  { label: 'Media', href: '/media', description: 'For journalists: match accreditation, press releases and interview requests' },
   { label: 'Media accreditation', href: '/media/accreditation', description: 'Request media accreditation for a Lobi Stars home match' },
   { label: 'Press releases', href: '/media/press-releases', description: 'Official Lobi Stars FC press releases and statements' },
-  { label: 'Press kit', href: '/media/press-kit', description: 'Club badge, colours, squad photo and media rules for journalists' },
   { label: 'Interview requests', href: '/media/interview-request', description: 'Request an interview with a player, coach or official' },
   { label: 'About the Club', href: '/club', description: 'About Lobi Stars FC' },
   { label: 'Privacy Policy', href: '/privacy', description: 'How we use your data' },

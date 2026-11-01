@@ -29,7 +29,7 @@ const MAX_MS = 12 * 3600e3;                // and after 12 hours in any case
 const LOCK_AFTER = 5, LOCK_MS = 15 * 60e3; // 5 wrong passwords: locked for 15 minutes
 export const LOGIN_ID_RE = /^[A-Za-z]{2,30}[0-9]{2,4}$/;
 export const STATUSES = ['draft', 'submitted', 'returned', 'scheduled', 'published', 'unpublished', 'rejected'];
-export const KIND_LABELS = { news: 'News story', newsletter: 'Lobi Stars Weekly', press: 'Press release', album: 'Photo album', presskit: 'Press kit file', lineup: 'Line-up', live: 'Live update' };
+export const KIND_LABELS = { news: 'News story', newsletter: 'Lobi Stars Weekly Newsletter', press: 'Press release', album: 'Photo album', lineup: 'Line-up', live: 'Live update' };
 
 // The preset news categories (Super Admins can add, rename or hide categories).
 // tab: the /news page tab the story is listed under (Team News, Features or Tickets).
@@ -43,12 +43,13 @@ export const NEWS_TABS = ['Team News', 'Features', 'Tickets'];
 export const DEFAULT_TAB = 'Team News';
 
 export const SETTING_DEFAULTS = {
-  accreditation_close_hours: '48',   // applications close this many hours before kick-off
+  accreditation_close_hours: '6',    // applications close this many hours before kick-off (media officers can reopen a match)
   accreditation_max: '20',           // accredited journalists per match
   newsletter_deadline: '2|18:00',    // Tuesday 6 PM (day of week 0 = Sunday | Lagos time)
   newsletter_publish: '3|08:00',     // Wednesday 8 AM
   media_team_email: 'media@lobistarsfc.com', // Monday reminders (Media Centre users have no email address)
   press_contact: 'Media Department, Lobi Stars FC · media@lobistarsfc.com',
+  whatsapp_channel_url: '',          // the club's WhatsApp channel: Matchday Desk › Live updates opens it
 };
 
 const nowIso = () => new Date().toISOString();
@@ -132,6 +133,11 @@ export async function ensureMediaSchema(db) {
       db.prepare(`INSERT OR IGNORE INTO mc_categories (id, name, tab, sort, preset) VALUES (?, ?, ?, ?, 1)`).bind(`cat_${i + 1}`, name, tab, i + 1)));
   }
   // The old tabs (First Team, Club, Media Watch) were removed on 1 Nov 2026: move categories still pointing at them.
+  // Accreditation closes 6 hours before kick-off since 1 Nov 2026 (was 48): move a saved 48 once.
+  if (!(await db.prepare(`SELECT 1 FROM mc_settings WHERE key = 'accr_close_6'`).first())) {
+    await db.batch([db.prepare(`UPDATE mc_settings SET value = '6' WHERE key = 'accreditation_close_hours' AND value = '48'`),
+      db.prepare(`INSERT OR IGNORE INTO mc_settings (key, value, updated_at) VALUES ('accr_close_6', '1', ?)`).bind(nowIso())]);
+  }
   const presetTab = Object.fromEntries(PRESET_CATEGORIES);
   const { results: old } = await db.prepare(`SELECT id, name FROM mc_categories WHERE tab NOT IN ('Team News', 'Features', 'Tickets')`).all();
   if (old.length) await db.batch(old.map(c => db.prepare(`UPDATE mc_categories SET tab = ? WHERE id = ?`).bind(presetTab[c.name] || DEFAULT_TAB, c.id)));
@@ -252,6 +258,45 @@ export async function updateUser(env, admin, request, id, { action, loginId, ful
   return { ok: true };
 }
 
+// ── The media approver (approval password) ──
+// A designated media staff member signs in to the Media Centre with the approval
+// password only (no Login ID) and sees only the Approval Queue. Anyone with the
+// password can approve; no name is recorded or shown: "Media approver". The
+// Super Admins set the password (Admin › Media Centre › Users & settings);
+// changing it signs out everyone using the old one.
+export const APPROVER_ID = '__approver__';
+export const APPROVER_USER = { id: APPROVER_ID, loginId: 'approver', fullName: 'Media approver', mustChange: false, approver: true };
+export const APPROVER_ACTOR = { kind: 'media', id: APPROVER_ID, name: 'Media approver' };
+export async function setApproverPassword(db, admin, request, password) {
+  const bad = passwordProblem(password, 'approver');
+  if (bad) return { error: bad };
+  await setMcSetting(db, 'approver_password_hash', await hashPassword(String(password)), admin.email || admin.name);
+  await endSessions(db, APPROVER_ID, 'approval password changed');
+  await mcLog(db, adminActor(admin), 'approver_password', { section: 'users', details: 'Approval password set or changed (approver sessions ended)', request });
+  return { ok: true };
+}
+export async function approverSignIn(env, request, password) {
+  const db = env.DB;
+  await ensureFanSchema(db); await ensureMediaSchema(db);
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  if (!(await rateLimit(db, `mediacentre:${ip}`, 30, 900))) return { error: 'Too many attempts from this connection. Please wait 15 minutes.', status: 429 };
+  const key = `mc-approver-fail:${ip}`, win = Math.floor(Date.now() / 1000), start = win - (win % 900);
+  const row = await db.prepare(`SELECT window_start, count FROM rate_limits WHERE key = ?`).bind(key).first();
+  if (row && row.window_start === start && row.count >= LOCK_AFTER) return { error: 'Too many wrong passwords. Wait 15 minutes and try again.', status: 423 };
+  const hash = (await mcSettings(db)).approver_password_hash;
+  const ok = await verifyPassword(String(password || ''), hash || '100000:00000000000000000000000000000000:00').catch(() => false);
+  if (!hash || !ok) {
+    await rateLimit(db, key, 1e6, 900);
+    await mcLog(db, publicActor('Approver sign-in'), 'failed_login', { section: 'account', details: hash ? 'Wrong approval password' : 'No approval password set yet', request });
+    return { error: hash ? 'That approval password is not right.' : 'Approver sign-in is not set up yet. Ask a Super Admin.', status: 401 };
+  }
+  const token = randomToken(), sid = await sha256Hex(token), csrf = randomToken(18), at = nowIso();
+  await db.prepare(`INSERT INTO mc_sessions (id, user_id, csrf, created_at, last_seen, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?)`)
+    .bind(sid, APPROVER_ID, csrf, at, at, ip, oneLine(request.headers.get('User-Agent') || '', 300)).run();
+  await mcLog(db, APPROVER_ACTOR, 'login', { section: 'account', details: 'Signed in with the approval password', request });
+  return { ok: true, cookie: sessionCookie(token), session: { csrf, user: APPROVER_USER } };
+}
+
 // ── Sign-in and sessions ──
 const cookieValue = (request, name) => ((request.headers.get('Cookie') || '').match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`)) || [])[1] || null;
 const sessionCookie = token => `${MC_COOKIE}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${MAX_MS / 1000}`;
@@ -314,9 +359,12 @@ export async function getMediaSession(request, env, { touch = true } = {}) {
   if (!token || !/^[\w-]{20,80}$/.test(token)) return null;
   const db = env.DB;
   await ensureMediaSchema(db);
-  const s = await db.prepare(`SELECT s.*, u.login_id, u.full_name, u.is_active, u.must_change_password FROM mc_sessions s JOIN mc_users u ON u.id = s.user_id WHERE s.id = ? AND s.ended_at IS NULL`)
+  const s = await db.prepare(`SELECT s.*, u.login_id, u.full_name, u.is_active, u.must_change_password FROM mc_sessions s LEFT JOIN mc_users u ON u.id = s.user_id WHERE s.id = ? AND s.ended_at IS NULL`)
     .bind(await sha256Hex(token)).first();
   if (!s) return null;
+  const approver = s.user_id === APPROVER_ID;
+  if (approver) { s.is_active = (await mcSettings(db)).approver_password_hash ? 1 : 0; s.full_name = APPROVER_USER.fullName; s.login_id = APPROVER_USER.loginId; s.must_change_password = 0; }
+  else if (!s.login_id) return null;
   const now = Date.now();
   const end = async why => {
     await db.prepare(`UPDATE mc_sessions SET ended_at = ?, ended_why = ? WHERE id = ?`).bind(nowIso(), why, s.id).run();
@@ -326,6 +374,7 @@ export async function getMediaSession(request, env, { touch = true } = {}) {
   if (now - Date.parse(s.last_seen) > IDLE_MS) { await end('no activity for 30 minutes'); return null; }
   if (now - Date.parse(s.created_at) > MAX_MS) { await end('12 hours'); return null; }
   if (touch && now - Date.parse(s.last_seen) > 30e3) await db.prepare(`UPDATE mc_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
+  if (approver) return { id: s.id, csrf: s.csrf, lastSeen: s.last_seen, user: { ...APPROVER_USER } };
   return { id: s.id, csrf: s.csrf, lastSeen: s.last_seen, user: { id: s.user_id, loginId: s.login_id, fullName: s.full_name, mustChange: !!s.must_change_password } };
 }
 export async function signOut(env, request, session, why = 'signed out') {
@@ -417,11 +466,11 @@ export async function revisions(db, id) {
 /** Items waiting for a Super Admin (Approval Queue). */
 export async function queue(db) {
   await ensureMediaSchema(db);
-  return (await db.prepare(`SELECT * FROM mc_items WHERE status = 'submitted' OR correction = 'submitted' ORDER BY COALESCE(submitted_at, updated_at) DESC LIMIT 200`).all()).results.map(r => itemView(r));
+  return (await db.prepare(`SELECT * FROM mc_items WHERE (status = 'submitted' OR correction = 'submitted') AND kind <> 'presskit' ORDER BY COALESCE(submitted_at, updated_at) DESC LIMIT 200`).all()).results.map(r => itemView(r));
 }
 export async function queueCount(db) {
   await ensureMediaSchema(db);
-  return (await db.prepare(`SELECT COUNT(*) AS n FROM mc_items WHERE status = 'submitted' OR correction = 'submitted'`).first())?.n || 0;
+  return (await db.prepare(`SELECT COUNT(*) AS n FROM mc_items WHERE (status = 'submitted' OR correction = 'submitted') AND kind <> 'presskit'`).first())?.n || 0;
 }
 
 /** The Media Centre home: my drafts, waiting, returned, recently published, deadlines. */

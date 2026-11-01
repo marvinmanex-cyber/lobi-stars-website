@@ -1,4 +1,4 @@
-// The Lobi Stars Weekly: newsletter issues written in the admin, sponsor
+// The Lobi Stars Weekly Newsletter: newsletter issues written in the admin, sponsor
 // adverts (any number, each with a logo, link and text), the branded email
 // template, sending to subscribers (Resend) and click counting for sponsors.
 //

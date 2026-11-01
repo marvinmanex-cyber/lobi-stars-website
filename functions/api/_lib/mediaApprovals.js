@@ -2,7 +2,7 @@
 // publishing. Each kind of content says how it is checked, published and
 // unpublished (mediaKinds.js); this file runs the shared workflow.
 import { logAdminAction } from './adminSession.js';
-import { ensureMediaSchema, getItem, itemView, addRevision, revisions, mcLog, adminActor, SYSTEM, parseJson, KIND_LABELS } from './mediaCentre.js';
+import { ensureMediaSchema, getItem, itemView, addRevision, revisions, mcLog, adminActor, SYSTEM, parseJson, KIND_LABELS, APPROVER_ACTOR } from './mediaCentre.js';
 import { KINDS } from './mediaKinds.js';
 
 const nowIso = () => new Date().toISOString();
@@ -35,12 +35,13 @@ export async function decide(env, admin, request, id, { decision, comment = '', 
   const r = await getItem(db, id);
   if (!r) return { error: 'Not found.', status: 404 };
   const kind = KINDS[r.kind];
-  const A = adminActor(admin), by = admin.name || admin.email, at = nowIso();
+  // The media approver (approval password) is recorded as "Media approver", never by name.
+  const A = admin.mediaApprover ? APPROVER_ACTOR : adminActor(admin), by = admin.name || admin.email, at = nowIso();
   const waiting = r.status === 'submitted' || r.correction === 'submitted';
   const isCorrection = r.correction === 'submitted';
   const log = (action, details) => Promise.all([
     mcLog(db, A, action, { section: sectionOf(r.kind), itemType: r.kind, itemId: r.id, itemTitle: r.title, details, request }),
-    logAdminAction(db, admin, `approval_media_${action}`, `Media Centre ${KIND_LABELS[r.kind] || r.kind} "${r.title || r.id}"${details ? `: ${details}` : ''}`),
+    admin.mediaApprover ? Promise.resolve() : logAdminAction(db, admin, `approval_media_${action}`, `Media Centre ${KIND_LABELS[r.kind] || r.kind} "${r.title || r.id}"${details ? `: ${details}` : ''}`),
   ]);
   comment = String(comment || '').trim().slice(0, 2000);
 
@@ -88,7 +89,7 @@ export async function decide(env, admin, request, id, { decision, comment = '', 
   }
   const problem = kind?.validate ? kind.validate(content, { admin: true }) : null;
   if (problem) return { error: problem };
-  // Some kinds choose their own time (the Lobi Stars Weekly: Wednesday morning, or now if that has passed).
+  // Some kinds choose their own time (the Lobi Stars Weekly Newsletter: Wednesday morning, or now if that has passed).
   const when = kind?.scheduleFor ? await kind.scheduleFor(env, r) : (scheduledAt !== undefined ? scheduledAt : r.scheduled_at);
   const fresh = { ...r, data_json: JSON.stringify(content) };
   if (kind?.schedulable && when && Date.parse(when) > Date.now() + 60e3 && !isCorrection) {

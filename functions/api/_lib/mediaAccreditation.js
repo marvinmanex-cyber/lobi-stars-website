@@ -1,6 +1,7 @@
 // Media Centre › Accreditation. Journalists apply on the public form
 // (/media/accreditation/) for ONE upcoming Lobi Stars HOME match; applications
-// close 48 hours before kick-off (a Super Admin setting). Any Media Centre user
+// close 6 hours before kick-off (a Super Admin setting), but any media officer can
+// open a closed match again from the Media Centre (until kick-off). Any Media Centre user
 // decides (the one exception to Super Admin approval): approve (with the access
 // zone), reject with a reason, or ask for more information. The per-match limit
 // is enforced. Approval makes an ID-card-sized PDF card with a QR code that
@@ -11,7 +12,7 @@
 import qrcodeGenerator from 'qrcode-generator';
 import { PdfDoc, pdfSafe, wrap } from './pdfLite.js';
 import { sendEmail } from './email.js';
-import { ensureMediaSchema, mcSettings, mcLog, newId, randomToken, oneLine, clean, parseJson } from './mediaCentre.js';
+import { ensureMediaSchema, mcSettings, setMcSetting, mcLog, mediaActor, newId, randomToken, oneLine, clean, parseJson } from './mediaCentre.js';
 import { fileRow, fileBytes } from './mediaFiles.js';
 import { matchSlug } from './matchSlug.js';
 import { isHomeGame } from './matchCentre.js';
@@ -67,14 +68,29 @@ export async function eventById(db, idOrSlug) {
   const { results } = await db.prepare(`SELECT * FROM events WHERE active = 1 AND event_date >= ?`).bind(new Date(Date.now() - 86400e3).toISOString()).all();
   return results.find(e => matchSlug(e) === s) || null;
 }
-export function closesAt(event, settings) { return new Date(Date.parse(event.event_date) - Number(settings.accreditation_close_hours || 48) * 3600e3).toISOString(); }
+export function closesAt(event, settings) { return new Date(Date.parse(event.event_date) - Number(settings.accreditation_close_hours || 6) * 3600e3).toISOString(); }
+/** A media officer opened applications for this match after they closed (mc_settings accr_open:<event id>). */
+const reopened = (event, settings) => settings[`accr_open:${event.id}`] === '1';
+/** Applications can be made now: before the closing time, or reopened by a media officer; never after kick-off. */
+export const acceptingApplications = (event, settings) => Date.parse(event.event_date) > Date.now() && (Date.now() < Date.parse(closesAt(event, settings)) || reopened(event, settings));
+/** A media officer opens (or closes again) applications for a match during the closed period. */
+export async function setReopened(env, request, user, eventId, open) {
+  const db = env.DB;
+  const e = await eventById(db, eventId);
+  if (!e || !isHomeGame(e) || Date.parse(e.event_date) < Date.now()) return { error: 'Only upcoming home matches can be opened.' };
+  await setMcSetting(db, `accr_open:${e.id}`, open ? '1' : '0', `${user.fullName} (${user.loginId})`);
+  await mcLog(db, mediaActor(user), open ? 'accreditation_reopen' : 'accreditation_close', { section: 'accreditation', itemType: 'match', itemId: e.id, itemTitle: matchLabel(e),
+    details: open ? 'Applications opened again during the closed period' : 'Applications closed again', request });
+  return { ok: true };
+}
 export const matchLabel = e => `${e.home_team} v ${e.away_team}`;
 /** Upcoming Lobi Stars HOME matches, with whether applications are still open. */
 export async function openMatches(db, settings) {
   const { results } = await db.prepare(`SELECT * FROM events WHERE active = 1 AND event_date > ? ORDER BY event_date LIMIT 40`).bind(nowIso()).all();
   return results.filter(e => isHomeGame(e) && !/postponed|cancel/i.test(e.status || '')).map(e => ({
     id: e.id, slug: matchSlug(e), label: matchLabel(e), date: e.event_date, day: matchDay(e.event_date), kickOff: kickOff(e.event_date),
-    competition: e.competition || 'Nigeria National League', closesAt: closesAt(e, settings), open: Date.now() < Date.parse(closesAt(e, settings)),
+    competition: e.competition || 'Nigeria National League', closesAt: closesAt(e, settings), open: acceptingApplications(e, settings),
+    reopened: Date.now() >= Date.parse(closesAt(e, settings)) && reopened(e, settings),
   }));
 }
 
@@ -161,7 +177,7 @@ export async function apply(env, request, v, { pressDocId, photoId, inviteToken 
   const settings = await mcSettings(db);
   const e = await eventById(db, v.eventId);
   if (!e || !isHomeGame(e) || Date.parse(e.event_date) < Date.now()) return { error: 'Accreditation is only for upcoming Lobi Stars home matches.' };
-  if (Date.now() >= Date.parse(closesAt(e, settings))) return { error: `Applications for this match closed ${settings.accreditation_close_hours} hours before kick-off.` };
+  if (!acceptingApplications(e, settings)) return { error: `Applications for this match closed ${settings.accreditation_close_hours} hours before kick-off.` };
   const dup = await db.prepare(`SELECT id, status FROM mc_accreditations WHERE event_id = ? AND email = ? AND status IN ('pending', 'info', 'approved')`).bind(e.id, v.email).first();
   if (dup) return { error: dup.status === 'approved' ? 'You are already accredited for this match.' : 'You have already applied for this match. We will email you.' };
   // A returning journalist may reuse the passport photo on file.

@@ -14,10 +14,10 @@ register({ path: 'accreditation', label: 'Accreditation', icon: '🪪', async re
   const d = await api(`accreditations${event ? `?event=${encodeURIComponent(event)}` : ''}`);
   const m = d.matches.find((x: any) => x.id === event);
   main.innerHTML = `<div class="mc-page-head"><h1>Accreditation</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/accreditation/contacts/" data-go="/accreditation/contacts">Media contacts</a></div>
-    <p class="mc-muted">Journalists apply on the public form (<a href="/media/accreditation/" target="_blank" rel="noopener">lobistarsfc.com/media/accreditation</a>) for one home match. Any media staff member can decide. At most <b>${d.max}</b> accredited per match; applications close ${d.closeHours} hours before kick-off.</p>
-    <section class="mc-card"><h2 class="mc-h3">Upcoming home matches</h2>${d.matches.length ? `<ul class="mc-list">${d.matches.map((x: any) => `<li><div class="t"><b>${esc(x.label)}</b><small>${esc(x.day)}, ${esc(x.kickOff)} · ${x.open ? `applications close ${esc(when(x.closesAt))}` : 'applications closed'}</small></div>
+    <p class="mc-muted">Journalists apply on the public form (<a href="/media/accreditation/" target="_blank" rel="noopener">lobistarsfc.com/media/accreditation</a>) for one home match. Any media staff member can decide. At most <b>${d.max}</b> accredited per match; applications close ${d.closeHours} hours before kick-off. After that you can <b>Open applications</b> again for a match (until kick-off).</p>
+    <section class="mc-card"><h2 class="mc-h3">Upcoming home matches</h2>${d.matches.length ? `<ul class="mc-list">${d.matches.map((x: any) => `<li><div class="t"><b>${esc(x.label)}</b><small>${esc(x.day)}, ${esc(x.kickOff)} · ${x.reopened ? 'applications opened again by the media team' : x.open ? `applications close ${esc(when(x.closesAt))}` : 'applications closed'}</small></div>
       <span class="mc-pill submitted">${x.counts.pending || 0} new</span> <span class="mc-pill published">${x.counts.approved || 0}/${d.max} approved</span>
-      <a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/accreditation/${esc(x.id)}/" data-go="/accreditation/${esc(x.id)}">Requests</a> <button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-invite="${esc(x.id)}">Invitation link</button></li>`).join('')}</ul>` : '<p class="mc-empty">No upcoming home matches in the fixtures.</p>'}</section>
+      <a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/accreditation/${esc(x.id)}/" data-go="/accreditation/${esc(x.id)}">Requests</a> <button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-invite="${esc(x.id)}">Invitation link</button>${x.reopened ? ` <button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-reopen="${esc(x.id)}" data-open="0">Close applications</button>` : !x.open ? ` <button class="mc-btn mc-btn-blue mc-btn-sm" type="button" data-reopen="${esc(x.id)}" data-open="1">Open applications</button>` : ''}</li>`).join('')}</ul>` : '<p class="mc-empty">No upcoming home matches in the fixtures.</p>'}</section>
     <section class="mc-card" style="margin-top:14px"><h2 class="mc-h3">${m ? `Requests: ${esc(m.label)}` : 'Latest requests (all matches)'}</h2><div id="reqs"></div></section>`;
   const reqs = main.querySelector('#reqs') as HTMLElement;
   const label = (id: string) => d.matches.find((x: any) => x.id === id)?.label || 'Past match';
@@ -45,6 +45,15 @@ register({ path: 'accreditation', label: 'Accreditation', icon: '🪪', async re
       go(`/accreditation${event ? `/${event}` : ''}`, true);
     } catch (err: any) { toast(err.message, 9000); b.removeAttribute('disabled'); }
   });
+  main.querySelectorAll<HTMLElement>('[data-reopen]').forEach(b => b.addEventListener('click', async () => {
+    const open = b.dataset.open === '1';
+    if (!confirm(open ? 'Open applications for this match again? Journalists can then apply until kick-off.' : 'Close applications for this match again?')) return;
+    try {
+      await api('accreditations', { method: 'POST', body: { action: 'reopen', eventId: b.dataset.reopen, open } });
+      toast(open ? 'Applications are open again for this match.' : 'Applications are closed for this match.');
+      go(`/accreditation${event ? `/${event}` : ''}`, true);
+    } catch (err: any) { toast(err.message, 9000); }
+  }));
   main.querySelectorAll<HTMLElement>('[data-invite]').forEach(b => b.addEventListener('click', async () => {
     const email = prompt('Email the invitation to (optional; leave empty to just copy the link):') ?? null;
     if (email === null) return;

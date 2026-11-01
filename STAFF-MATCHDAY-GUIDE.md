@@ -354,7 +354,7 @@ exported files private and delete them when you no longer need them.
 15. **Google Search Console:** verify the site and submit the sitemap
     (STAFF-GUIDE.md, section 23).
 16. **Newsletter:** once the email service is set up, send a test, then the
-    first Lobi Stars Weekly. Upload logos for Zeva Lager Beer and Play and add
+    first Lobi Stars Weekly Newsletter. Upload logos for Zeva Lager Beer and Play and add
     advert text for each sponsor (STAFF-GUIDE.md, section 24).
 17. **Order on WhatsApp:** add the bank details fans pay into and any pickup
     points (Admin › Commerce › Food: Menu & Prices › Ordering settings), and

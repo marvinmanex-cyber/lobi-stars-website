@@ -6,7 +6,7 @@ import { ensureMediaSchema, oneLine, clean, newId, mcLog, mcSettings } from './m
 import { nextWeekly } from './mediaDeadlines.js';
 
 export const CAL_STATUSES = { planned: 'Planned', drafting: 'Drafting', waiting: 'Waiting for approval', published: 'Published' };
-export const CAL_TYPES = { news: 'News story', newsletter: 'Lobi Stars Weekly', press: 'Press release', album: 'Photo album', social: 'Social media', video: 'Video', other: 'Other' };
+export const CAL_TYPES = { news: 'News story', newsletter: 'Lobi Stars Weekly Newsletter', press: 'Press release', album: 'Photo album', social: 'Social media', video: 'Video', other: 'Other' };
 const nowIso = () => new Date().toISOString();
 
 let ready = false;
@@ -29,7 +29,7 @@ export async function calendar(db, from, to) {
   const matches = (await db.prepare(`SELECT id, home_team, away_team, event_date, venue FROM events WHERE active = 1 AND event_date >= ? AND event_date <= ? ORDER BY event_date`).bind(from, to).all().catch(() => ({ results: [] }))).results
     .filter(e => /lobi stars/i.test(`${e.home_team} ${e.away_team}`)).map(e => ({ kind: 'match', id: e.id, title: `${e.home_team} v ${e.away_team}`, at: e.event_date, home: /lobi stars/i.test(e.home_team), venue: e.venue }));
   const wednesdays = [];
-  for (let t = Date.parse(from) - 1; wednesdays.length < 10;) { const w = nextWeekly(settings.newsletter_publish, t); if (w > to) break; wednesdays.push({ kind: 'newsletter', title: 'Lobi Stars Weekly goes out', at: w }); t = Date.parse(w) + 60e3; }
+  for (let t = Date.parse(from) - 1; wednesdays.length < 10;) { const w = nextWeekly(settings.newsletter_publish, t); if (w > to) break; wednesdays.push({ kind: 'newsletter', title: 'Lobi Stars Weekly Newsletter goes out', at: w }); t = Date.parse(w) + 60e3; }
   const planned = (await db.prepare(`SELECT c.*, i.status AS item_status, i.correction AS item_correction FROM mc_calendar c LEFT JOIN mc_items i ON i.id = c.item_id WHERE c.due_at IS NULL OR (c.due_at >= ? AND c.due_at <= ?) ORDER BY c.due_at`).bind(from, to).all()).results
     .map(c => ({ kind: 'planned', id: c.id, title: c.title, type: c.type, notes: c.notes, assigneeId: c.assignee_id, assignee: users.find(u => u.id === c.assignee_id)?.name || null, at: c.due_at,
       status: c.item_status ? (ITEM_TO_CAL[c.item_status] || c.status) : c.status, itemId: c.item_id, eventId: c.event_id }));

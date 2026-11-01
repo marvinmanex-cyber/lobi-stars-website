@@ -8,6 +8,23 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Media Centre: newsletter name, accreditation 6 hours, WhatsApp channel, no press kit, media approver
+
+**What changed**
+- The newsletter is now called the **Lobi Stars Weekly Newsletter** everywhere
+  (Media Centre, sign-up page, footer, emails, reminders).
+- Accreditation applications close **6 hours** before kick-off (was 48); media
+  officers can **Open applications** again for a match from the Media Centre.
+- Matchday Desk: **Live updates** opens the club's WhatsApp channel (link set in
+  Admin › Media Centre › Users & settings); **Website score** keeps the match page
+  score updates.
+- The **Press Kit** was removed from the website, the menus and the Media Centre.
+- **Media approver:** a designated media staff member signs in with the approval
+  password (Approver sign-in) and approves, returns or rejects; recorded as
+  "Media approver". The Media Centre no longer shows who approved anything.
+
+**To do:** HANDOVER-TODO M5 (approval password) and M6 (WhatsApp channel link).
+
 ## 2026-11-01: MatchDay Kitchen: icons on every button, WhatsApp button, tabs on their own row
 
 **What changed**

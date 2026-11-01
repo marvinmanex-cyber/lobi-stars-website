@@ -1,9 +1,10 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
-import { ensureMediaSchema, mcSettings, setMcSetting, categories, mcLog, adminActor, SETTING_DEFAULTS, NEWS_TABS, json, oneLine, newId } from '../../_lib/mediaCentre.js';
+import { ensureMediaSchema, mcSettings, setMcSetting, setApproverPassword, categories, mcLog, adminActor, SETTING_DEFAULTS, NEWS_TABS, json, oneLine, newId } from '../../_lib/mediaCentre.js';
 
 // Super Admins: Media Centre settings and news categories.
 // GET  -- settings, categories (including hidden ones).
 // POST { action: 'settings', values } | { action: 'category_add', name, tab } | { action: 'category', id, name?, tab?, hidden?, sort? }
+//      | { action: 'approver_password', password } (the media approver's sign-in password; never sent back)
 const CHECK = {
   accreditation_close_hours: v => /^\d{1,3}$/.test(v) && Number(v) <= 336,
   accreditation_max: v => /^\d{1,3}$/.test(v) && Number(v) >= 1,
@@ -11,11 +12,13 @@ const CHECK = {
   newsletter_publish: v => /^[0-6]\|([01]\d|2[0-3]):[0-5]\d$/.test(v),
   media_team_email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
   press_contact: v => v.length >= 5 && v.length <= 200,
+  whatsapp_channel_url: v => v === '' || /^https:\/\/(www\.)?(whatsapp\.com\/channel\/|chat\.whatsapp\.com\/|wa\.me\/)[\w/+-]{4,200}$/.test(v),
 };
 export async function onRequestGet({ request, env }) {
   const { denied } = await requireAdminUser(request, env);
   if (denied) return denied;
-  return json({ settings: await mcSettings(env.DB), categories: await categories(env.DB, { all: true }), tabs: NEWS_TABS });
+  const { approver_password_hash: pwHash, ...settings } = await mcSettings(env.DB);
+  return json({ settings: { ...settings, approverSet: !!pwHash }, categories: await categories(env.DB, { all: true }), tabs: NEWS_TABS });
 }
 
 export async function onRequestPost({ request, env }) {
@@ -25,7 +28,10 @@ export async function onRequestPost({ request, env }) {
   await ensureMediaSchema(db);
   const b = await request.json().catch(() => ({}));
   const A = adminActor(admin), by = admin.email || admin.name;
-  if (b.action === 'settings') {
+  if (b.action === 'approver_password') {
+    const r = await setApproverPassword(db, admin, request, String(b.password || ''));
+    if (r.error) return json({ error: r.error }, 400);
+  } else if (b.action === 'settings') {
     const changed = [];
     for (const [k, v] of Object.entries(b.values || {})) {
       if (!(k in SETTING_DEFAULTS)) continue;
@@ -54,5 +60,6 @@ export async function onRequestPost({ request, env }) {
     await db.prepare(`UPDATE mc_categories SET name = ?, tab = ?, hidden = ?, sort = ? WHERE id = ?`).bind(name, tab, hidden, sort, c.id).run();
     await mcLog(db, A, 'category_edit', { section: 'news', itemType: 'category', itemId: c.id, itemTitle: name, details: [c.name !== name ? `renamed from ${c.name}` : null, c.tab !== tab ? `tab ${tab}` : null, c.hidden !== hidden ? (hidden ? 'hidden' : 'shown') : null].filter(Boolean).join('; ') || null, request });
   } else return json({ error: 'Unknown action.' }, 400);
-  return json({ ok: true, settings: await mcSettings(db), categories: await categories(db, { all: true }) });
+  const { approver_password_hash: pwHash, ...settings } = await mcSettings(db);
+  return json({ ok: true, settings: { ...settings, approverSet: !!pwHash }, categories: await categories(db, { all: true }) });
 }

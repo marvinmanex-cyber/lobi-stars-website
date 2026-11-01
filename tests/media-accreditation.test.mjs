@@ -1,5 +1,5 @@
 // Media Centre, phase 3: media accreditation. The public form (home matches
-// only, one match, closes 48 hours before kick-off, spam trap), the media
+// only, one match, closes 6 hours before kick-off (media officers can reopen), spam trap), the media
 // team's decisions (approve with zone / reject / more info), the per-match
 // limit, the card PDF ("Signed: <approver>"), the verification page
 // (VALID / REVOKED / EXPIRED, no phone or email), revoke, contacts.
@@ -37,7 +37,7 @@ before(async () => {
   sql(`INSERT INTO events (id, home_team, away_team, competition, event_date, venue, vip_price_kobo, premium_price_kobo, regular_price_kobo, active) VALUES
     ('${HOME}', 'Lobi Stars FC', 'Test United ${T}', 'NNL', '${d(10)}', 'McCarthy Stadium, Makurdi', 50000, 20000, 10000, 1),
     ('${AWAY}', 'Away City ${T}', 'Lobi Stars FC', 'NNL', '${d(12)}', 'Away Ground', 0, 0, 0, 1),
-    ('${SOON}', 'Lobi Stars FC', 'Soon Rovers ${T}', 'NNL', '${new Date(Date.now() + 20 * 3600e3).toISOString()}', 'McCarthy Stadium, Makurdi', 50000, 20000, 10000, 1);`);
+    ('${SOON}', 'Lobi Stars FC', 'Soon Rovers ${T}', 'NNL', '${new Date(Date.now() + 3 * 3600e3).toISOString()}', 'McCarthy Stadium, Makurdi', 50000, 20000, 10000, 1);`);
   assert.equal((await admin('users', { action: 'create', loginId: LOGIN, fullName: 'Grace Approver', password: 'Temp-pass-123' })).status, 200);
   FT = (await fetch(`${BASE}/api/media/accreditation`).then(x => x.json())).formToken;
   await new Promise(r => setTimeout(r, 3200)); // forms sent within 3 seconds of loading are refused
@@ -48,18 +48,27 @@ before(async () => {
 after(() => {
   sql(`DELETE FROM mc_accreditations WHERE event_id IN ('${HOME}', '${AWAY}', '${SOON}'); DELETE FROM mc_contacts WHERE email LIKE '%.${T}@example.com'; DELETE FROM mc_invites WHERE event_id = '${HOME}'; DELETE FROM mc_prefill_codes WHERE email LIKE '%.${T}@example.com'; DELETE FROM events WHERE id IN ('${HOME}', '${AWAY}', '${SOON}');
     DELETE FROM mc_files WHERE owner = 'accreditation' AND uploaded_by_name IN ('Ada Reporter', 'Ben Writer', 'Ada R.'); DELETE FROM mc_sessions WHERE user_id IN (SELECT id FROM mc_users WHERE login_key = '${LOGIN.toLowerCase()}'); DELETE FROM mc_users WHERE login_key = '${LOGIN.toLowerCase()}';
-    DELETE FROM mc_settings WHERE key = 'accreditation_max';`);
+    DELETE FROM mc_settings WHERE key = 'accreditation_max' OR key = 'accr_open:${SOON}';`);
 });
 
-test('the form lists upcoming HOME matches only, and closes 48 hours before kick-off', async () => {
+test('the form lists upcoming HOME matches only, closes 6 hours before kick-off, and a media officer can reopen a match', async () => {
   const d = await fetch(`${BASE}/api/media/accreditation?match=${HOME}`).then(r => r.json());
   assert.ok(d.matches.some(m => m.id === HOME && m.open));
   assert.ok(!d.matches.some(m => m.id === AWAY), 'away matches are not offered');
-  assert.equal(d.matches.find(m => m.id === SOON).open, false, 'closed within 48 hours');
+  assert.equal(d.matches.find(m => m.id === SOON).open, false, 'closed within 6 hours');
+  assert.equal(d.closeHours, 6);
   assert.equal(d.selected, HOME, 'the invitation / match link preselects the match');
   assert.deepEqual(d.roles, ['Writer', 'Photographer', 'TV Camera', 'Radio Commentator', 'Digital/Social Media']);
   assert.equal((await applyNow(form({ eventId: AWAY }))).status, 400);
   assert.equal((await applyNow(form({ eventId: SOON }))).status, 400);
+  // Reopened from the Media Centre: open again until kick-off; closed again.
+  assert.equal((await mc('accreditations', 'POST', { action: 'reopen', eventId: SOON, open: true })).status, 200);
+  let m = (await mc('accreditations')).data.matches.find(x => x.id === SOON);
+  assert.equal(m.open, true); assert.equal(m.reopened, true);
+  assert.equal((await fetch(`${BASE}/api/media/accreditation`).then(r => r.json())).matches.find(x => x.id === SOON).open, true, 'open on the public form');
+  assert.equal((await mc('accreditations', 'POST', { action: 'reopen', eventId: SOON, open: false })).status, 200);
+  m = (await mc('accreditations')).data.matches.find(x => x.id === SOON);
+  assert.equal(m.open, false);
 });
 
 test('checks, spam trap and one request per match', async () => {

@@ -15,7 +15,7 @@ const fromLocal = (v: string) => v ? new Date(`${v}:00+01:00`).toISOString() : n
 register({ path: 'news', label: 'Latest News', icon: '📰', async render(main, parts) {
   if (parts[0]) return editor(main, parts[0]);
   await listScreen(main, { kind: 'news', title: 'Latest News', newLabel: 'New story',
-    intro: '<p class="mc-muted">Write a story; a Super Admin approves it; it then appears on the website\'s News page, the homepage and any tagged player or match pages.</p>',
+    intro: '<p class="mc-muted">Write a story and send it for approval; once approved it appears on the website\'s News page, the homepage and any tagged player or match pages.</p>',
     newData: { category: 'First Team News' },
     row: i => `${esc(i.createdByName)} · ${i.status === 'scheduled' ? 'publishes ' : 'updated '}${new Date(i.status === 'scheduled' ? i.scheduledAt : i.updatedAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })}` });
 } });
@@ -47,7 +47,7 @@ async function editor(main: HTMLElement, id: string) {
         <p class="mc-label" style="margin-top:12px">Players</p><input class="mc-input" id="pSearch" placeholder="Search players" ${ro} /><div class="mc-chips" id="players">${M.players.map((p: any) => `<label><input type="checkbox" value="${esc(p.slug)}" ${(d.players || []).includes(p.slug) ? 'checked' : ''} ${ro} /> ${p.number != null ? `#${esc(p.number)} ` : ''}${esc(p.name)}</label>`).join('') || '<span class="mc-muted">No live squad profiles yet.</span>'}</div>
         <p class="mc-label" style="margin-top:12px">Staff</p><div class="mc-chips" id="staff">${M.staff.map((s: any) => `<label><input type="checkbox" value="${esc(s.slug)}" ${(d.staff || []).includes(s.slug) ? 'checked' : ''} ${ro} /> ${esc(s.name)} <small>(${esc(s.role)})</small></label>`).join('') || '<span class="mc-muted">No coaching staff profiles yet.</span>'}</div>
       </details>
-      <div class="mc-field"><label class="mc-check"><input type="checkbox" id="brk" ${d.breakingRequested ? 'checked' : ''} ${ro} /> Ask for <b>breaking news</b> (the red homepage banner). A Super Admin decides.</label>${d.breaking ? '<span class="mc-hint">A Super Admin switched breaking news on for this story.</span>' : ''}</div>
+      <div class="mc-field"><label class="mc-check"><input type="checkbox" id="brk" ${d.breakingRequested ? 'checked' : ''} ${ro} /> Ask for <b>breaking news</b> (the red homepage banner). It is decided at approval.</label>${d.breaking ? '<span class="mc-hint">Breaking news was switched on for this story.</span>' : ''}</div>
       <div class="mc-field"><span class="mc-label">When to publish</span>
         <label class="mc-check"><input type="radio" name="when" value="now" ${item.scheduledAt ? '' : 'checked'} ${ro} /> As soon as it is approved</label>
         <label class="mc-check"><input type="radio" name="when" value="later" ${item.scheduledAt ? 'checked' : ''} ${ro} /> At a date and time: <input type="datetime-local" id="at" value="${esc(localInput(item.scheduledAt))}" ${ro} /></label></div>

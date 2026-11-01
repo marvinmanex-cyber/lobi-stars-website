@@ -24,10 +24,10 @@ export async function upcomingDeadlines(env, user, settings) {
   const db = env.DB;
   await ensureMediaSchema(db);
   const out = [];
-  // Lobi Stars Weekly: submit by Tuesday 6 PM.
+  // Lobi Stars Weekly Newsletter: submit by Tuesday 6 PM.
   const due = nextWeekly(settings.newsletter_deadline);
   const nl = await db.prepare(`SELECT id, status FROM mc_items WHERE kind = 'newsletter' AND created_at >= ? ORDER BY created_at DESC LIMIT 1`).bind(weekStart()).first();
-  out.push({ kind: 'newsletter', title: 'Lobi Stars Weekly: submit for approval', due, state: nl ? nl.status : 'not started', itemId: nl?.id || null });
+  out.push({ kind: 'newsletter', title: 'Lobi Stars Weekly Newsletter: submit for approval', due, state: nl ? nl.status : 'not started', itemId: nl?.id || null });
   // Content calendar items assigned to this user (phase 5 table; absent before then).
   try {
     const rows = (await db.prepare(`SELECT id, title, due_at, status FROM mc_calendar WHERE assignee_id = ? AND status <> 'published' AND due_at IS NOT NULL ORDER BY due_at LIMIT 10`).bind(user.id).all()).results;

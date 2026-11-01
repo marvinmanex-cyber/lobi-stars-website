@@ -12,7 +12,7 @@ export function statusPill(i: any) {
 }
 
 // The screen that edits each kind of content.
-export const KIND_PATH: Record<string, string> = { news: 'news', newsletter: 'newsletter', press: 'press', album: 'library', presskit: 'press-kit', lineup: 'matchday' };
+export const KIND_PATH: Record<string, string> = { news: 'news', newsletter: 'newsletter', press: 'press', album: 'library', lineup: 'matchday' };
 export const itemPath = (i: any) => `${KIND_PATH[i.kind] || i.kind}/${i.id}`;
 
 export class ApiError extends Error { status: number; data: any; constructor(m: string, status: number, data: any) { super(m); this.status = status; this.data = data; } }

@@ -3,7 +3,7 @@ import { previewHtmlFor, missing } from '../_lib/mediaNewsletter.js';
 import { KINDS } from '../_lib/mediaKinds.js';
 import { ensureTable } from '../_lib/matchCentre.js';
 
-// Media Centre › Lobi Stars Weekly helpers.
+// Media Centre › Lobi Stars Weekly Newsletter helpers.
 // POST { data, web?, id? } -- the email (or web) version for the live preview, and what is still missing.
 // GET                      -- facts to fill in: the last Lobi Stars result and the next match.
 export async function onRequestPost({ request, env }) {

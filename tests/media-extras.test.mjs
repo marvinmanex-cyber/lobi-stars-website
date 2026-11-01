@@ -1,6 +1,6 @@
 // Media Centre, phase 5: press releases, Matchday Desk (line-ups, live updates,
 // pre-approved grants), Photo & Video Library (albums -> Gallery), interview
-// requests, press kit, content calendar.
+// requests, content calendar (the press kit was removed on 1 Nov 2026).
 // Needs the local server with GITHUB_TOKEN and GITHUB_API_BASE=http://127.0.0.1:8899/gh.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -143,18 +143,9 @@ test('interview requests: public form, propose a time, approve, done; saved to c
   assert.ok(c && c.interviews === 1, 'history in the media contacts');
 });
 
-test('press kit: approved items appear on the public page and their files become public', async () => {
-  const doc = await up('document');
-  assert.equal((await fetch(`${BASE}${doc.url}`)).status, 404, 'private before approval');
-  const id = await make('presskit', { section: 'facts', title: `Fact sheet ${T}`, text: 'Founded 1981. Home: McCarthy Stadium, Makurdi.', files: [{ url: doc.url, label: 'Fact sheet (PDF)', kind: 'document' }] });
-  assert.equal((await mc(`items/${id}`, 'POST', { action: 'submit' })).status, 200);
-  assert.equal((await admin('approvals', { id, decision: 'approve' })).status, 200);
-  const kit = await fetch(`${BASE}/api/media/press-kit`).then(x => x.json());
-  const facts = kit.sections.find(s => s.key === 'facts');
-  assert.ok(facts && facts.items.some(i => i.title === `Fact sheet ${T}`));
-  assert.equal((await fetch(`${BASE}${doc.url}`)).status, 200, 'public after approval');
-  assert.equal((await admin('approvals', { id, decision: 'unpublish' })).status, 200);
-  assert.equal((await fetch(`${BASE}${doc.url}`)).status, 404, 'private again');
+test('the press kit was removed: no public page, no Media Centre kind', async () => {
+  assert.equal((await fetch(`${BASE}/api/media/press-kit`)).status, 404);
+  assert.equal((await fetch(`${BASE}/media/press-kit/`, { redirect: 'manual' })).status, 301);
 });
 
 test('content calendar: match days, newsletter Wednesdays, assigned plans (on the assignee\'s dashboard)', async () => {

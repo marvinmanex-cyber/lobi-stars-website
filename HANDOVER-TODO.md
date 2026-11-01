@@ -144,8 +144,10 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | --- | --- | --- |
 | M1 | **Create the Media Centre users** | A Super Admin opens Admin › Media Centre › Users & settings › *Add a user* for each media staff member (start with 4). Each needs a full name (it is printed on accreditation cards as "Signed: …"), a Login ID (name + 2–4 digits, e.g. Iorbee68) and a temporary password (press *Make one*). Give each person their Login ID and temporary password in person or by WhatsApp, with the link https://lobistarsfc.com/media-centre. They choose their own password at the first sign-in. |
 | M2 | **Media Centre emails** | **Done:** the email service (Resend) is already set up on the live site, so accreditation emails (with the card), interview replies, press releases to the media contacts and the newsletter reminders go out automatically. Nothing to do. |
-| M3 | **Fill the Press Kit** | In the Media Centre, Press Kit: add the club badge, colours, how to write the club name, the squad photo, player headshots, a fact sheet, the media contact and the media rules; a Super Admin approves each. Until then /media/press-kit asks journalists to email media@lobistarsfc.com. |
+| M3 | ~~Fill the Press Kit~~ | **Not needed:** the Press Kit was removed on 1 Nov 2026. |
 | M4 | **Check the media rules text** | The accreditation form uses a short version of the club's media rules (stay in your zone, wear the accreditation, follow stewards, interviews only in the mixed zone, news use only, the club may withdraw accreditation). Send the website manager the club's official wording if it differs. |
+| M5 | **Set the approval password (media approver)** | Admin › Media Centre › Users & settings › **Approval password**: type a password (at least 8 characters) and save. Give it only to the designated media staff member: they choose **Approver sign-in** on the Media Centre sign-in page. |
+| M6 | **Club WhatsApp channel link** | Admin › Media Centre › Users & settings › **Club WhatsApp channel link** (looks like https://whatsapp.com/channel/…), then **Save settings**. The Matchday Desk's **Live updates** button then opens the channel. |
 
 ## K. MatchDay Kitchen staff area (/matchday-kitchen, built 1 Nov 2026)
 

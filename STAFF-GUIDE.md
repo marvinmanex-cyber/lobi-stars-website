@@ -1733,7 +1733,7 @@ Nothing to do for most of this; it is built in. What it means for staff:
 
 ---
 
-## 24. The newsletter: The Lobi Stars Weekly (Admin › Fans & Inbox › Newsletter)
+## 24. The newsletter: The Lobi Stars Weekly Newsletter (Admin › Fans & Inbox › Newsletter)
 
 A free weekly email for fans, with the club badge, the week's news, the next
 match and adverts from the club's sponsors. Super Admin, CRM Manager, Content
@@ -3963,6 +3963,16 @@ Fans use the website exactly as before.
     rounds). Cloudflare cannot run bcrypt or Argon2 within its limits.
 
 ### Approval Queue (Media Centre › Approval Queue)
+**Who approves:** the Super Admins (here in the admin) and the **media approver**: a
+designated media staff member who signs in to the Media Centre with the **approval
+password** (sign-in page › **Approver sign-in**, no Login ID). The approver sees only
+the Approval Queue and can **Approve**, **Return with comment** or **Reject**.
+Anyone with the password can approve, so give it only to the designated person.
+Their decisions are recorded as "Media approver" (no name), and the Media Centre
+never shows who approved or returned something. Set or change the password in
+Admin › Media Centre › Users & settings › **Approval password**; changing it signs
+out anyone using the old one.
+
 Everything the media staff send waits here, newest first. The count shows on
 the menu and in the bell. Open an item to see:
 - the **preview**;
@@ -4011,7 +4021,7 @@ address and the device.
   (the website rebuilds in about 2 minutes).
 - **Accreditation:** how many hours before kick-off applications close
   (default 48), and the most accredited journalists per match.
-- **Lobi Stars Weekly:** the deadline (default Tuesday 6 PM) and the publish
+- **Lobi Stars Weekly Newsletter:** the deadline (default Tuesday 6 PM) and the publish
   time (default Wednesday 8 AM).
 - **Media team email:** where the Monday newsletter reminder goes.
 - **Media contact:** shown on press releases.
@@ -4071,8 +4081,11 @@ It is linked from the website's **Media** page (footer › Media) and from each
 upcoming **home** match page ("Media: request accreditation for this
 match").
 - **Match:** only upcoming Lobi Stars **home** matches are offered, **one
-  match per application**. Applications close **48 hours before kick-off**
-  (a Super Admin setting).
+  match per application**. Applications close **6 hours before kick-off**
+  (a Super Admin setting). After that, any media officer can press **Open
+  applications** next to the match in Media Centre › Accreditation, so
+  journalists can apply again until kick-off (**Close applications** stops it
+  again). Each open and close is in the activity log.
 - **The form asks for:** full name, phone, email, media organisation, staff
   or freelance, role (Writer, Photographer, TV Camera, Radio Commentator,
   Digital/Social Media), press ID or a letter from the organisation (PDF/JPG,
@@ -4128,8 +4141,8 @@ information needed, approved with the card attached, rejected, revoked.
 These emails need the email service (Resend) set up. Until then, download
 the card and send it yourself.
 
-### Lobi Stars Weekly (the weekly newsletter)
-**Media Centre › Lobi Stars Weekly › Start this week's newsletter.** The
+### Lobi Stars Weekly Newsletter (the weekly newsletter)
+**Media Centre › Lobi Stars Weekly Newsletter › Start this week's newsletter.** The
 template has 15 sections in this order. Each field has a short hint showing
 what a good answer looks like.
 
@@ -4192,6 +4205,11 @@ what a good answer looks like.
     needs Resend).
 
 ### Matchday Desk
+- **Live updates:** the green **Live updates** button (WhatsApp logo) opens the
+  club's **WhatsApp channel** in a new tab: post the live updates for fans there.
+  A Super Admin adds the channel link in Admin › Media Centre › Users & settings ›
+  **Club WhatsApp channel link**. **Website score** (next to it) still updates the
+  match page and the homepage live score.
 - **Line-ups:**
   1. Press **Prepare line-up** next to a match.
   2. For each player, choose Starts or Sub (exactly 11 starters), and the
@@ -4237,19 +4255,13 @@ what a good answer looks like.
 - The journalist is emailed each time. The status and history are kept, and
   added to the media contacts.
 
-### Press Kit
-- **The page:** **lobistarsfc.com/media/press-kit** has the club badge,
-  colours, how to write the club name, the squad photo, player headshots,
-  the fact sheet, the media contact and the media rules.
-- **Adding an item:** in Media Centre › Press Kit, each item has a section,
-  a title, text and files (pictures or PDFs).
-- **Approval:** an item appears after a Super Admin approves it.
-  Unpublishing removes it, and its files become private again.
+*(The Press Kit was removed from the website and the Media Centre on 1 Nov 2026;
+the old address lobistarsfc.com/media/press-kit opens the Media page.)*
 
 ### Content Calendar
 Four weeks at a time:
 - **match days** (from the fixtures);
-- the **Lobi Stars Weekly** Wednesdays;
+- the **Lobi Stars Weekly Newsletter** Wednesdays;
 - everything the team **plans**: what, type, who it is assigned to, due date
   and status (planned, drafting, waiting for approval, published).
 

@@ -5,13 +5,17 @@ import { state, $, esc, api, ApiError, toast, SCREENS, go, setRouteHandler, setS
 import './sections';
 
 // ── Router ──
+// The media approver (approval password) sees only the Approval Queue; nobody else sees it.
+const visible = () => SCREENS.filter(s => s.nav !== false && (state.user?.approver ? s.path === 'approvals' : s.path !== 'approvals'));
 function nav(active: string) {
-  $('nav').innerHTML = SCREENS.filter(s => s.nav !== false).map(s => `<a href="/media-centre/${s.path ? `${s.path}/` : ''}" data-go="/${s.path}" class="${s.path === active ? 'on' : ''}"><span aria-hidden="true">${s.icon}</span>${esc(s.label)}</a>`).join('');
+  $('nav').innerHTML = visible().map(s => `<a href="/media-centre/${s.path ? `${s.path}/` : ''}" data-go="/${s.path}" class="${s.path === active ? 'on' : ''}"><span aria-hidden="true">${s.icon}</span>${esc(s.label)}</a>`).join('');
 }
 async function route() {
   if (!state.user) return;
   const parts = location.pathname.replace(/^\/media-centre\/?/, '').split('/').filter(Boolean);
-  const screen = SCREENS.find(s => s.path === (parts[0] || '')) || SCREENS[0];
+  const list = visible();
+  const screen = list.find(s => s.path === (parts[0] || '')) || list[0];
+  if (state.user.approver && parts[0] !== 'approvals') parts.splice(0, parts.length, 'approvals');
   guard.dirty = () => false;
   nav(screen.path);
   $('nav').classList.remove('open'); $('menuBtn').setAttribute('aria-expanded', 'false');
@@ -56,7 +60,7 @@ function enter(s: any) {
   state.user = s.user; state.csrf = s.csrf;
   if (s.user.mustChange) { show('changepw'); $('pwCur').focus(); return; }
   show('shell');
-  $('who').innerHTML = `${esc(s.user.fullName)} <small>(${esc(s.user.loginId)})</small>`;
+  $('who').innerHTML = s.user.approver ? 'Media approver' : `${esc(s.user.fullName)} <small>(${esc(s.user.loginId)})</small>`;
   if (location.pathname === '/media-centre/login/') history.replaceState(null, '', '/media-centre/');
   bumpIdle();
   route();
@@ -66,16 +70,27 @@ $('signinForm').addEventListener('submit', async (e: Event) => {
   e.preventDefault();
   const m = $('signinMsg'), btn = (e.target as HTMLFormElement).querySelector('button[type=submit]') as HTMLButtonElement;
   const loginId = $('siId').value.trim(), password = $('siPw').value;
-  if (!/^[A-Za-z]{2,30}[0-9]{2,4}$/.test(loginId)) { m.textContent = 'Your Login ID is your name followed by 2 to 4 digits, e.g. Iorbee68.'; m.hidden = false; return; }
+  const approver = !$('siIdWrap').hidden ? false : true;
+  if (!approver && !/^[A-Za-z]{2,30}[0-9]{2,4}$/.test(loginId)) { m.textContent = 'Your Login ID is your name followed by 2 to 4 digits, e.g. Iorbee68.'; m.hidden = false; return; }
   btn.disabled = true;
   try {
-    const r = await fetch('/api/media-centre/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ loginId, password }), credentials: 'same-origin' });
+    const r = await fetch('/api/media-centre/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(approver ? { approver: true, password } : { loginId, password }), credentials: 'same-origin' });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { m.textContent = d.error || 'Could not sign in.'; m.hidden = false; return; }
     $('siPw').value = ''; m.hidden = true;
     enter(d);
   } catch { m.textContent = 'No connection. Please try again.'; m.hidden = false; }
   finally { btn.disabled = false; }
+});
+// Approver sign-in: the approval password only (no Login ID).
+$('siApprover').addEventListener('click', () => {
+  const toApprover = !$('siIdWrap').hidden;
+  $('siIdWrap').hidden = toApprover;
+  $('siTitle').textContent = toApprover ? 'Approver sign-in' : 'Sign in';
+  ($('siPwLabel') as HTMLElement).textContent = toApprover ? 'Approval password' : 'Password';
+  $('siApprover').textContent = toApprover ? 'Sign in with your Login ID instead' : 'Approver sign-in';
+  $('signinMsg').hidden = true;
+  (toApprover ? $('siPw') : $('siId')).focus();
 });
 $('pwForm').addEventListener('submit', async (e: Event) => {
   e.preventDefault();

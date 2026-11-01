@@ -1,6 +1,6 @@
 // Media Centre: the every-minute job (run from /api/internal/newsletter-run).
 //  - publishes approved items whose scheduled time has come;
-//  - Lobi Stars Weekly reminders: Monday (from 09:00 Lagos) to the media team
+//  - Lobi Stars Weekly Newsletter reminders: Monday (from 09:00 Lagos) to the media team
 //    if this week's newsletter has not been started; Tuesday evening (after
 //    the deadline) to the Super Admins if one is waiting for approval. Each
 //    reminder goes once a week (remembered in mc_settings);
@@ -38,15 +38,15 @@ export async function newsletterReminders(env, now = Date.now()) {
   // Monday from 09:00: nothing started this week.
   if (dow === 1 && hour >= 9 && !items.length) {
     const due = new Date(nextWeekly(s.newsletter_deadline, now)).toLocaleString('en-GB', { weekday: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
-    out.mondayReminder = await sendOnce('reminded_monday', [s.media_team_email].filter(Boolean), 'Reminder: start this week\'s Lobi Stars Weekly',
-      `This week's Lobi Stars Weekly has not been started yet. Please write it in the Media Centre and send it for approval by ${due}.`);
+    out.mondayReminder = await sendOnce('reminded_monday', [s.media_team_email].filter(Boolean), 'Reminder: start this week\'s Lobi Stars Weekly Newsletter',
+      `This week's Lobi Stars Weekly Newsletter has not been started yet. Please write it in the Media Centre and send it for approval by ${due}.`);
   }
   // Tuesday after the deadline time: one waiting for approval.
   const [dDow, dHm = '18:00'] = String(s.newsletter_deadline).split('|');
   const [dh, dm] = dHm.split(':').map(Number);
   if (dow === Number(dDow) && (hour > dh || (hour === dh && local.getUTCMinutes() >= (dm || 0) + 30)) && items.some(i => i.status === 'submitted')) {
-    out.tuesdayReminder = await sendOnce('reminded_tuesday', superAdminEmails(env), 'Lobi Stars Weekly is waiting for your approval',
-      'This week\'s Lobi Stars Weekly has been sent for approval. Please review it in Admin › Media Centre › Approval Queue so it can go out on Wednesday morning.');
+    out.tuesdayReminder = await sendOnce('reminded_tuesday', superAdminEmails(env), 'Lobi Stars Weekly Newsletter is waiting for your approval',
+      'This week\'s Lobi Stars Weekly Newsletter has been sent for approval. Please review it in Admin › Media Centre › Approval Queue so it can go out on Wednesday morning.');
   }
   return out;
 }

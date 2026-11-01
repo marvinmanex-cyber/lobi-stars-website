@@ -9,7 +9,7 @@ import { rteHtml, wireRte } from './rte';
 register({ path: 'press', label: 'Press Releases', icon: '📣', async render(main, parts) {
   if (parts[0]) return editor(main, parts[0]);
   await listScreen(main, { kind: 'press', title: 'Press Releases & Statements', newLabel: 'New press release',
-    intro: '<p class="mc-muted">Always approved by a Super Admin. Published releases go on <a href="/media/press-releases/" target="_blank" rel="noopener">lobistarsfc.com/media/press-releases</a> (with a PDF) and are emailed to the media contacts list.</p>',
+    intro: '<p class="mc-muted">Always approved before publishing. Published releases go on <a href="/media/press-releases/" target="_blank" rel="noopener">lobistarsfc.com/media/press-releases</a> (with a PDF) and are emailed to the media contacts list.</p>',
     newData: () => ({ date: new Date(Date.now() + 3600e3).toISOString().slice(0, 10), location: 'MAKURDI' }) });
 } });
 

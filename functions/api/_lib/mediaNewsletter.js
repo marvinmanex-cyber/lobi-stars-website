@@ -1,4 +1,4 @@
-// Media Centre › Lobi Stars Weekly: the weekly newsletter template (15
+// Media Centre › Lobi Stars Weekly Newsletter: the weekly newsletter template (15
 // sections, in order). Media staff fill it in and submit by Tuesday 6 PM; a
 // Super Admin approves; it publishes on Wednesday morning (or at once if
 // approved later) through the site's existing newsletter system: the web
@@ -72,7 +72,7 @@ export function missing(v) {
 }
 function validate(v) { return missing(v); }
 
-/** The edition number: Lobi Stars Weekly issues already published + 1. */
+/** The edition number: Lobi Stars Weekly Newsletter issues already published + 1. */
 async function editionNo(db, r) {
   try {
     const n = (await db.prepare(`SELECT COUNT(*) AS n FROM mc_items WHERE kind = 'newsletter' AND published_at IS NOT NULL AND id <> ?`).bind(r?.id || '').first())?.n || 0;
@@ -89,7 +89,7 @@ const lagosDate = iso => new Date(iso).toLocaleDateString('en-GB', { weekday: 's
 const lagosTime = iso => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
 const lines = (...xs) => xs.filter(Boolean).join('\n');
 
-/** The Lobi Stars Weekly as an issue of the site's newsletter (template, sending, archive). */
+/** The Lobi Stars Weekly Newsletter as an issue of the site's newsletter (template, sending, archive). */
 export async function issueFrom(db, v, { edition, date = new Date().toISOString() }) {
   const S = [];
   const add = (key, text, image = null, url = '') => { if (text || image) S.push({ title: SECTION_TITLES[key], text: String(text || '').slice(0, 4000), image: image?.url || null, url }); };
@@ -115,9 +115,9 @@ export async function issueFrom(db, v, { edition, date = new Date().toISOString(
   S.push({ title: '#WeAreLobi', text: 'Thank you for reading. Get your tickets for the next home match, follow the club on social media and share this newsletter with a fellow fan.', image: null, url: '/tickets/' });
   const dayLabel = new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
   return {
-    subject: `Lobi Stars Weekly #${edition}${v.headline ? `: ${v.headline}` : ''}`.slice(0, 150),
+    subject: `Lobi Stars Weekly Newsletter #${edition}${v.headline ? `: ${v.headline}` : ''}`.slice(0, 150),
     preheader: (v.headline || v.welcome).slice(0, 140),
-    headline: `Lobi Stars Weekly · Edition ${edition} · ${dayLabel}`,
+    headline: `Lobi Stars Weekly Newsletter · Edition ${edition} · ${dayLabel}`,
     intro: v.welcome,
     hero_image: null, hero_button_text: null, hero_button_url: null,
     include_match: false, stories: S, sponsor_ids: [], top_sponsor_id: null, audience: null,
@@ -130,12 +130,12 @@ export async function previewHtmlFor(env, v, { web = false, r = null } = {}) {
   await ensureNewsletterSchema(env.DB);
   const edition = await editionNo(env.DB, r);
   const issue = await issueFrom(env.DB, v, { edition });
-  return renderNewsletter({ issue: { ...issue, id: 'preview', status: 'draft' }, sponsors: [], match: null, recipient: { firstName: 'Ada' }, preview: true, web, base: SITE, settings: { ...NL_DEFAULTS, ...(await newsletterSettings(env.DB)), title: 'Lobi Stars Weekly' } });
+  return renderNewsletter({ issue: { ...issue, id: 'preview', status: 'draft' }, sponsors: [], match: null, recipient: { firstName: 'Ada' }, preview: true, web, base: SITE, settings: { ...NL_DEFAULTS, ...(await newsletterSettings(env.DB)), title: 'Lobi Stars Weekly Newsletter' } });
 }
 function previewHtml(v) {
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const row = (k, val) => val ? `<p style="margin:0 0 8px"><b>${esc(k)}:</b> ${esc(val).replace(/\n/g, '<br>')}</p>` : '';
-  return `<h2 style="margin:0 0 8px">Lobi Stars Weekly${v.headline ? `: ${esc(v.headline)}` : ''}</h2>${row('Welcome', v.welcome)}${v.noMatch ? row('No match this week · Training', v.training) : `${row('Last match', `${v.lastMatch.date} ${v.lastMatch.competition}: Lobi Stars ${v.lastMatch.score} ${v.lastMatch.opponent} (${v.lastMatch.venue})\nScorers: ${v.lastMatch.scorers}\nLine-up: ${v.lastMatch.lineup}`)}${row('Analysis', `${v.analysis.well}\n${v.analysis.improve}\n${v.analysis.turning}\n“${v.analysis.quote}”`)}${row('Player of the Match', `${v.potm.name}: ${v.potm.reason}`)}`}
+  return `<h2 style="margin:0 0 8px">Lobi Stars Weekly Newsletter${v.headline ? `: ${esc(v.headline)}` : ''}</h2>${row('Welcome', v.welcome)}${v.noMatch ? row('No match this week · Training', v.training) : `${row('Last match', `${v.lastMatch.date} ${v.lastMatch.competition}: Lobi Stars ${v.lastMatch.score} ${v.lastMatch.opponent} (${v.lastMatch.venue})\nScorers: ${v.lastMatch.scorers}\nLine-up: ${v.lastMatch.lineup}`)}${row('Analysis', `${v.analysis.well}\n${v.analysis.improve}\n${v.analysis.turning}\n“${v.analysis.quote}”`)}${row('Player of the Match', `${v.potm.name}: ${v.potm.reason}`)}`}
     ${row('Table', `${v.table.position}, ${v.table.points} pts · top: ${v.table.top}`)}${row('Squad', `${v.squad.injuries}\n${v.squad.returns}\n${v.squad.suspensions}`)}${row('Next match', `v ${v.nextMatch.opponent}, ${v.nextMatch.date} ${v.nextMatch.kickoff}, ${v.nextMatch.venue}\n${v.nextMatch.form}\n${v.nextMatch.expect}`)}
     ${row('Spotlight', v.spotlight.name && `${v.spotlight.name}: ${v.spotlight.text}`)}${row('Club news', v.clubNews)}${row("Fans' corner", v.fans)}${row('Partner', v.partner.name && `${v.partner.name}: ${v.partner.text}`)}${row('Photo of the week', v.photo.caption)}
     <p style="font-size:13px;color:#4A505C">Open "Preview the email" in the Media Centre for the full design.</p>`;
@@ -158,7 +158,7 @@ async function publish(env, r, v) {
     VALUES (?, ?, ?, ?, ?, NULL, NULL, NULL, 0, ?, '[]', NULL, 'scheduled', ?, 'Media Centre', ?, 'Media Centre', ?, ?, NULL)`)
     .bind(id, issue.subject, issue.preheader, issue.headline, issue.intro, JSON.stringify(issue.stories), at, at, at, `Media Centre (approved by ${r.decided_by || 'a Super Admin'})`).run();
   await db.prepare(`UPDATE mc_items SET ref = ? WHERE id = ?`).bind(id, r.id).run();
-  return { ok: true, note: `Lobi Stars Weekly #${edition} is being sent to the subscribers (in batches) and goes into the newsletter archive.` };
+  return { ok: true, note: `Lobi Stars Weekly Newsletter #${edition} is being sent to the subscribers (in batches) and goes into the newsletter archive.` };
 }
 async function unpublish(env, r) {
   if (!r.ref) return { ok: true };
@@ -170,9 +170,9 @@ async function unpublish(env, r) {
 }
 
 export const NEWSLETTER = {
-  label: 'Lobi Stars Weekly', section: 'newsletter', schedulable: true, scheduleFor, noCorrections: true,
+  label: 'Lobi Stars Weekly Newsletter', section: 'newsletter', schedulable: true, scheduleFor, noCorrections: true,
   normalise, validate, previewHtml, publish, unpublish,
-  titleOf: v => `Lobi Stars Weekly${v.headline ? `: ${v.headline}` : ''}`,
+  titleOf: v => `Lobi Stars Weekly Newsletter${v.headline ? `: ${v.headline}` : ''}`,
   adminFields: [
     { key: 'headline', label: 'Headline (in the subject line)', type: 'text' }, { key: 'welcome', label: 'Welcome', type: 'textarea' },
     { key: 'lastMatch', label: 'Last match', type: 'json' }, { key: 'analysis', label: 'Match analysis', type: 'json' }, { key: 'potm', label: 'Player of the Match', type: 'json' },

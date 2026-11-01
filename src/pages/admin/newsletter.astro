@@ -40,7 +40,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <div class="nl-ed">
           <form class="nl-form" id="form" autocomplete="off">
             <fieldset class="panel"><legend>1. The email</legend>
-              <label>Subject (what fans see in their inbox) *<input name="subject" maxlength="150" required placeholder="The Lobi Stars Weekly: derby day is here" /></label>
+              <label>Subject (what fans see in their inbox) *<input name="subject" maxlength="150" required placeholder="The Lobi Stars Weekly Newsletter: derby day is here" /></label>
               <label>Preview text (shown after the subject in most inboxes)<input name="preheader" maxlength="200" placeholder="Tickets, team news and a word from our partners" /></label>
             </fieldset>
             <fieldset class="panel"><legend>2. Main message</legend>
@@ -465,7 +465,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'Africa/Lagos' });
     const active = data.sponsors.filter(s => s.active);
     show({
-      status: 'draft', subject: `The Lobi Stars Weekly: ${date}`, preheader: 'Club news, the next match and offers from our partners',
+      status: 'draft', subject: `The Lobi Stars Weekly Newsletter: ${date}`, preheader: 'Club news, the next match and offers from our partners',
       headline: 'This week at Lobi Stars FC', intro: '', include_match: true,
       stories: news.slice(0, 3).map(a => ({ title: a.title, text: a.summary || '', image: a.coverImage || '', url: '/news/' + a.slug + '/' })),
       sponsor_ids: active.map(s => s.id), top_sponsor_id: active[0] ? active[0].id : '',

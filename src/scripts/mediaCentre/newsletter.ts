@@ -1,4 +1,4 @@
-// Media Centre › Lobi Stars Weekly: the 15-section template with hints, the
+// Media Centre › Lobi Stars Weekly Newsletter: the 15-section template with hints, the
 // "No match this week" switch, fill-in helpers from the fixtures, a live
 // preview of the email and of the web version, and autosave. It can only be
 // sent for approval when every required section is complete.
@@ -9,11 +9,11 @@ import { upload, pickFile, pickFromLibrary } from './files';
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const spec = (s: string) => { const [d, t] = String(s || '').split('|'); return `${DAYS[Number(d)] || ''} ${t || ''}`; };
 
-register({ path: 'newsletter', label: 'Lobi Stars Weekly', icon: '✉️', async render(main, parts) {
+register({ path: 'newsletter', label: 'Lobi Stars Weekly Newsletter', icon: '✉️', async render(main, parts) {
   if (parts[0]) return editor(main, parts[0]);
   const M = await api('meta');
-  await listScreen(main, { kind: 'newsletter', title: 'Lobi Stars Weekly', newLabel: 'Start this week\'s newsletter',
-    intro: `<p class="mc-muted">The weekly email to every subscriber. Send it for approval by <b>${esc(spec(M.settings.newsletterDeadline))}</b>; once a Super Admin approves it, it goes out on <b>${esc(spec(M.settings.newsletterPublish))}</b> (or straight away if approved later), and appears in the newsletter archive on the website.</p>`,
+  await listScreen(main, { kind: 'newsletter', title: 'Lobi Stars Weekly Newsletter', newLabel: 'Start this week\'s newsletter',
+    intro: `<p class="mc-muted">The weekly email to every subscriber. Send it for approval by <b>${esc(spec(M.settings.newsletterDeadline))}</b>; once it is approved, it goes out on <b>${esc(spec(M.settings.newsletterPublish))}</b> (or straight away if approved later), and appears in the newsletter archive on the website.</p>`,
     newData: {} });
 } });
 
@@ -72,7 +72,7 @@ async function editor(main: HTMLElement, id: string) {
     const input = f.type === 'area' ? `<textarea id="nf-${name}" data-k="${esc(name)}" rows="3" ${ro}>${esc(v || '')}</textarea>` : `<input id="nf-${name}" data-k="${esc(name)}" value="${esc(v ?? (f.k === 'ticketLink' ? '/tickets/' : ''))}" ${ro} />`;
     return `<div class="mc-field">${lab}${input}${f.hint ? `<span class="mc-hint">${esc(f.hint)}</span>` : ''}</div>`;
   };
-  main.innerHTML = `<div class="mc-page-head"><h1>Lobi Stars Weekly</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/newsletter/" data-go="/newsletter">← All newsletters</a></div>
+  main.innerHTML = `<div class="mc-page-head"><h1>Lobi Stars Weekly Newsletter</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/newsletter/" data-go="/newsletter">← All newsletters</a></div>
     ${statusBanner(item, editable)}
     <div class="mc-ed">
       <form class="mc-ed-form" id="f">

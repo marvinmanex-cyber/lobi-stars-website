@@ -5,6 +5,7 @@ import { getMediaSession, csrfProblem, clearMediaCookie, json } from '../_lib/me
 // (same website + the session's CSRF token). Someone with a temporary password
 // can only change it (or sign out) until they have.
 const OPEN = /^\/api\/media-centre\/(login|session)\/?$/;
+const APPROVER_ONLY = /^\/api\/media-centre\/(approvals|logout|session|media-file)(\/|$)/;
 const PASSWORD_ONLY = /^\/api\/media-centre\/(password|logout|session)\/?$/;
 
 export async function onRequest(context) {
@@ -18,6 +19,8 @@ export async function onRequest(context) {
     if (bad) return json({ error: bad }, 403);
   }
   if (session.user.mustChange && !PASSWORD_ONLY.test(url.pathname)) return json({ error: 'Please choose your own password first.', mustChange: true }, 403);
+  // The media approver only uses the Approval Queue.
+  if (session.user.approver && !APPROVER_ONLY.test(url.pathname)) return json({ error: 'The approver can only use the Approval Queue.' }, 403);
   data.mc = session;
   return next();
 }

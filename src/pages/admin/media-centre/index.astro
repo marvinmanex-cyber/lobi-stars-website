@@ -11,7 +11,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   <div class="wrap mcu">
     <AdminNav current="media-users" />
     <header><div class="stag">Media Centre · Super Admins</div><h1 class="stitle">Media Centre <span class="r">users &amp; settings</span></h1></header>
-    <p class="mcu-lede">The Media Centre is the separate page where the media staff write news, the Lobi Stars Weekly, press releases and more: <a href="/media-centre/" target="_blank" rel="noopener">lobistarsfc.com/media-centre</a>. They sign in with their <b>Login ID</b> and their own password; they cannot open this admin. Everything they send waits in the <a href="/admin/media-centre/approvals/">Approval Queue</a>.</p>
+    <p class="mcu-lede">The Media Centre is the separate page where the media staff write news, the Lobi Stars Weekly Newsletter, press releases and more: <a href="/media-centre/" target="_blank" rel="noopener">lobistarsfc.com/media-centre</a>. They sign in with their <b>Login ID</b> and their own password; they cannot open this admin. Everything they send waits in the <a href="/admin/media-centre/approvals/">Approval Queue</a>.</p>
     <p class="mcu-msg" id="msg" role="status" aria-live="polite" hidden></p>
 
     <section class="mcu-card">
@@ -52,6 +52,13 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     </section>
 
     <section class="mcu-card">
+      <h2>Approval password (media approver)</h2>
+      <p class="muted small">A designated media staff member can approve, return or reject what is sent from the Media Centre: on the Media Centre sign-in page they choose <b>Approver sign-in</b> and type this password (no Login ID). They see only the Approval Queue. Anyone with the password can approve, so share it only with the designated person. Decisions are recorded as "Media approver" (no name). Super Admins also approve here in the admin. Changing the password signs out anyone using the old one.</p>
+      <p class="small" id="apState"></p>
+      <form id="apForm" class="mcu-row"><label>New approval password (at least 8 characters)<input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" required /></label><button class="btn-o" type="submit">Save approval password</button></form>
+    </section>
+
+    <section class="mcu-card">
       <h2>Settings</h2>
       <form id="setForm" class="mcu-grid">
         <label>Accreditation closes (hours before kick-off)<input name="accreditation_close_hours" type="number" min="0" max="336" /></label>
@@ -60,6 +67,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
         <label>Newsletter publishes<span class="mcu-pw"><select name="np_day"></select><input name="np_time" type="time" /></span></label>
         <label>Media team email (Monday newsletter reminder)<input name="media_team_email" type="email" /></label>
         <label>Media contact on press releases<input name="press_contact" maxlength="200" /></label>
+        <label>Club WhatsApp channel link (Matchday Desk › Live updates opens it)<input name="whatsapp_channel_url" type="url" maxlength="250" placeholder="https://whatsapp.com/channel/…" /></label>
         <div><button class="btn-p" type="submit">Save settings</button></div>
       </form>
       <p class="muted small">Times are Nigerian time. Emails (reminders, accreditation, newsletters) need the email service (Resend) set up in Cloudflare.</p>
@@ -128,8 +136,9 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       ${c.preset ? '<small class="muted">preset</small>' : ''}</div>`).join('');
   }
   function settings(s: any) {
+    $('apState').textContent = s.approverSet ? 'An approval password is set.' : 'No approval password yet: approver sign-in is off.';
     const f = $('setForm');
-    for (const k of ['accreditation_close_hours', 'accreditation_max', 'media_team_email', 'press_contact']) f[k].value = s[k] || '';
+    for (const k of ['accreditation_close_hours', 'accreditation_max', 'media_team_email', 'press_contact', 'whatsapp_channel_url']) f[k].value = s[k] || '';
     for (const [pre, key] of [['nd', 'newsletter_deadline'], ['np', 'newsletter_publish']]) {
       const [d, t] = String(s[key] || '').split('|');
       f[`${pre}_day`].innerHTML = DAYS.map((x, i) => `<option value="${i}" ${String(i) === d ? 'selected' : ''}>${x}</option>`).join('');
@@ -188,9 +197,14 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     e.preventDefault(); const f = e.target as any;
     try { const d = await api('settings', { action: 'category_add', name: f.name.value, tab: f.tab.value }); cats(d.categories, [...$('catTab').options].map((o: any) => o.value)); f.name.value = ''; msg('Category added.'); } catch (err: any) { msg(err.message, false); }
   });
+  $('apForm').addEventListener('submit', async (e: Event) => {
+    e.preventDefault(); const f = e.target as any;
+    if (!confirm('Save this approval password? Anyone using the old one is signed out.')) return;
+    try { await api('settings', { action: 'approver_password', password: f.password.value }); f.password.value = ''; const d = await api('settings'); settings(d.settings); msg('Approval password saved. Give it only to the designated media approver.'); } catch (err: any) { msg(err.message, false); }
+  });
   $('setForm').addEventListener('submit', async (e: Event) => {
     e.preventDefault(); const f = e.target as any;
-    const values = { accreditation_close_hours: f.accreditation_close_hours.value, accreditation_max: f.accreditation_max.value, media_team_email: f.media_team_email.value, press_contact: f.press_contact.value,
+    const values = { accreditation_close_hours: f.accreditation_close_hours.value, accreditation_max: f.accreditation_max.value, media_team_email: f.media_team_email.value, press_contact: f.press_contact.value, whatsapp_channel_url: f.whatsapp_channel_url.value.trim(),
       newsletter_deadline: `${f.nd_day.value}|${f.nd_time.value}`, newsletter_publish: `${f.np_day.value}|${f.np_time.value}` };
     try { const d = await api('settings', { action: 'settings', values }); settings(d.settings); msg('Settings saved.'); } catch (err: any) { msg(err.message, false); }
   });

@@ -15,8 +15,7 @@ import { NEWS } from './mediaNews.js';
 import { NEWSLETTER } from './mediaNewsletter.js';
 import { PRESS } from './mediaPress.js';
 import { ALBUM } from './mediaLibrary.js';
-import { PRESSKIT } from './mediaPressKit.js';
 import { LINEUP, LIVE } from './mediaMatchday.js';
 
-export const KINDS = { news: NEWS, newsletter: NEWSLETTER, press: PRESS, album: ALBUM, presskit: PRESSKIT, lineup: LINEUP, live: LIVE };
+export const KINDS = { news: NEWS, newsletter: NEWSLETTER, press: PRESS, album: ALBUM, lineup: LINEUP, live: LIVE };
 export function registerKind(id, def) { KINDS[id] = def; }

@@ -10,7 +10,7 @@ import { meta } from './news';
 register({ path: 'library', label: 'Photo & Video Library', icon: '📷', async render(main, parts) {
   if (parts[0]) return editor(main, parts[0]);
   await listScreen(main, { kind: 'album', title: 'Photo & Video Library', newLabel: 'New album',
-    intro: '<p class="mc-muted">Albums go into the website\'s <a href="/gallery/" target="_blank" rel="noopener">Gallery</a> once a Super Admin approves them. Every picture you upload can also be used in stories and newsletters.</p>',
+    intro: '<p class="mc-muted">Albums go into the website\'s <a href="/gallery/" target="_blank" rel="noopener">Gallery</a> once they are approved. Every picture you upload can also be used in stories and newsletters.</p>',
     newData: () => ({ date: new Date(Date.now() + 3600e3).toISOString().slice(0, 10), photos: [], videos: [] }) });
 } });
 

@@ -7,7 +7,10 @@ import { KINDS } from '../../_lib/mediaKinds.js';
 export async function onRequestGet({ env, params }) {
   const r = await getItem(env.DB, params.id);
   if (!r || KINDS[r.kind]?.mediaCreate === false) return json({ error: 'Not found.' }, 404);
-  return json({ item: itemView(r), editable: editable(r), revisions: (await revisions(env.DB, r.id)).map(({ data, ...x }) => x) });
+  // Who approved, returned or rejected is never shown in the Media Centre (only "approved" / "returned").
+  const DECISIONS = /approved|returned|rejected|unpublished|edited_by_admin/;
+  return json({ item: { ...itemView(r), decidedBy: null }, editable: editable(r),
+    revisions: (await revisions(env.DB, r.id)).map(({ data, ...x }) => (DECISIONS.test(String(x.event || '')) ? { ...x, by_name: null, byName: null } : x)) });
 }
 
 export async function onRequestPut({ request, env, params, data }) {

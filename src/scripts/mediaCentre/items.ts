@@ -28,13 +28,13 @@ export async function listScreen(main: HTMLElement, { kind, title, newLabel, int
 /** The banner above an editor: where the item is in the workflow, and the comment if it was returned. */
 export function statusBanner(item: any, editable: boolean) {
   const parts = [`<p>${statusPill(item)} <small class="mc-muted">Version ${item.version} · last saved ${esc(when(item.updatedAt))} by ${esc(item.updatedByName || item.createdByName)}</small></p>`];
-  if ((item.status === 'returned' || item.correction === 'returned') && item.comment) parts.push(`<p class="mc-comment"><b>Returned by ${esc(item.decidedBy || 'a Super Admin')}:</b> ${esc(item.comment)}</p>`);
+  if ((item.status === 'returned' || item.correction === 'returned') && item.comment) parts.push(`<p class="mc-comment"><b>Returned with a comment:</b> ${esc(item.comment)}</p>`);
   if (item.status === 'rejected' && item.comment) parts.push(`<p class="mc-comment"><b>Rejected:</b> ${esc(item.comment)}</p>`);
-  if (item.status === 'submitted' || item.correction === 'submitted') parts.push('<p class="mc-ok">Waiting for a Super Admin to approve it. You can withdraw it to make more changes.</p>');
-  if (item.status === 'published' && !item.correction) parts.push(`<p class="mc-ok">Published${item.publishedAt ? ` ${esc(when(item.publishedAt))}` : ''}. Changes you make now are a <b>correction</b>: the live version stays until a Super Admin approves the correction.</p>`);
+  if (item.status === 'submitted' || item.correction === 'submitted') parts.push('<p class="mc-ok">Waiting for approval. You can withdraw it to make more changes.</p>');
+  if (item.status === 'published' && !item.correction) parts.push(`<p class="mc-ok">Published${item.publishedAt ? ` ${esc(when(item.publishedAt))}` : ''}. Changes you make now are a <b>correction</b>: the live version stays until the correction is approved.</p>`);
   if (item.status === 'scheduled') parts.push(`<p class="mc-ok">Approved: it will be published ${esc(when(item.scheduledAt))}.</p>`);
   if (item.correction === 'draft') parts.push('<p class="mc-muted mc-small">You have changed the published version. Send the correction for approval when it is ready.</p>');
-  if (!editable && item.status === 'unpublished') parts.push('<p class="mc-muted">This was unpublished by a Super Admin.</p>');
+  if (!editable && item.status === 'unpublished') parts.push('<p class="mc-muted">This was unpublished.</p>');
   return `<div class="mc-card" style="margin:0 0 14px">${parts.join('')}</div>`;
 }
 
@@ -68,7 +68,7 @@ export function workflowButtons(item: any, editable: boolean, { flush, schedule,
       if (action === 'submit') await flush();
       await api(`items/${item.id}`, { method: 'POST', body: { action, scheduledAt: action === 'submit' && schedule ? schedule() : undefined } });
       guard.dirty = () => false;
-      toast(action === 'submit' ? 'Sent to the Super Admins for approval.' : action === 'withdraw' ? 'Withdrawn: you can change it again.' : 'Draft deleted.');
+      toast(action === 'submit' ? 'Sent for approval.' : action === 'withdraw' ? 'Withdrawn: you can change it again.' : 'Draft deleted.');
       onDone();
     } catch (e: any) { toast(e.message, 9000); b.disabled = false; }
   }));
