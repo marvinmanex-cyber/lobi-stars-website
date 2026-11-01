@@ -309,7 +309,7 @@ export const whereText = o => (o.fulfilment === 'pickup' ? `Pickup: ${o.pickup_p
 
 /** The message the fan sends to the club on WhatsApp. */
 export function whatsappOrderMessage(o, items) {
-  const lines = ['Hello MatchDay Kitchen', "I'd like to place a food order.", '', `Order: ${o.ref}`, `Name: ${o.customer_name}`, `Phone: ${localPhone(o.phone)}`, ''];
+  const lines = ['Hello MatchDay Kitchen,', "I'd like to place a food order.", '', `Order: ${o.ref}`, `Name: ${o.customer_name}`, `Phone: ${localPhone(o.phone)}`, ''];
   for (const i of items) lines.push(`${i.qty} × ${i.name}: ${formatNaira(i.priceKobo * i.qty)}`);
   lines.push('-----------------------', `Total: ${formatNaira(o.total_kobo)}`, '', whereText(o));
   if (o.notes) lines.push(`Note: ${o.notes}`);

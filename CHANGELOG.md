@@ -11,7 +11,7 @@ in HANDOVER-TODO.md.
 ## 2026-11-01: Food order WhatsApp messages: "Hello MatchDay Kitchen", no exclamation marks
 
 **What changed**
-- The order message fans send now starts "Hello MatchDay Kitchen" (no waving
+- The order message fans send now starts "Hello MatchDay Kitchen," (no waving
   hand) and ends "Please confirm my order. Thank you."
 - No exclamation marks in any food WhatsApp message: the order, the receipt
   ("Thank you and enjoy the match.") and the staff replies (confirmed, paid,
