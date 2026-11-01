@@ -11,12 +11,7 @@ const siteKey = settings.turnstileSiteKey || '';
       <h1 class="login-title">Staff login</h1>
       <p class="login-note" id="note" role="status" hidden></p>
 
-      <div class="login-tabs" role="tablist" aria-label="Login type">
-        <button type="button" role="tab" id="tabStaff" aria-selected="true" aria-controls="staffForm">Staff account</button>
-        <button type="button" role="tab" id="tabOwner" aria-selected="false" aria-controls="ownerForm">Admin code (owner)</button>
-      </div>
-
-      <form id="staffForm" aria-labelledby="tabStaff">
+      <form id="staffForm" aria-label="Staff login">
         <label class="login-label" for="email">Email</label>
         <input id="email" type="email" autocomplete="username" required />
         <label class="login-label" for="password">Password</label>
@@ -39,12 +34,6 @@ const siteKey = settings.turnstileSiteKey || '';
 
       <div id="captcha" class="login-captcha" data-sitekey={siteKey} hidden><div id="tsBox"></div></div>
 
-      <form id="ownerForm" aria-labelledby="tabOwner" hidden>
-        <p class="muted">The owner signs in with the club's admin code: the way in if nothing else works. Every use is emailed to the Super Admins.</p>
-        <label class="login-label" for="code">Admin code</label>
-        <input id="code" name="code" type="password" autocomplete="current-password" required />
-        <button type="submit" class="btn-p" id="submit">Log in</button>
-      </form>
       <p class="muted login-help" style="text-align:center">Matchday helper? <a href="/helper/">Sign in with your username and PIN</a>.</p>
       <a class="login-back" href="/">← Back to the website</a>
 
@@ -108,18 +97,8 @@ const siteKey = settings.turnstileSiteKey || '';
     document.head.appendChild(sc);
   }
   const target = safeNext(next, location.origin);
-  const tabs = { staff: document.getElementById('tabStaff')!, owner: document.getElementById('tabOwner')! };
-  const forms = { staff: document.getElementById('staffForm') as HTMLFormElement, owner: document.getElementById('ownerForm') as HTMLFormElement };
-
-  function show(which: 'staff' | 'owner') {
-    (['staff', 'owner'] as const).forEach(k => {
-      tabs[k].setAttribute('aria-selected', String(k === which));
-      forms[k].hidden = k !== which;
-    });
-    err.hidden = true;
-  }
-  tabs.staff.addEventListener('click', () => show('staff'));
-  tabs.owner.addEventListener('click', () => show('owner'));
+  // Staff accounts only: the old shared admin code was retired on 1 Nov 2026.
+  const forms = { staff: document.getElementById('staffForm') as HTMLFormElement };
 
   async function login(body: Record<string, string>, marker: string, btn: HTMLButtonElement) {
     btn.disabled = true; err.hidden = true;
@@ -178,11 +157,5 @@ const siteKey = settings.turnstileSiteKey || '';
     const data = await res.json().catch(() => ({}));
     note.textContent = data.message || data.error || 'Please try again in a few minutes.'; note.hidden = false; err.hidden = true;
     forgot.hidden = true;
-  });
-  forms.owner.addEventListener('submit', e => {
-    e.preventDefault();
-    const code = (document.getElementById('code') as HTMLInputElement).value.trim();
-    if (!code) return;
-    login({ code }, '__session__', forms.owner.querySelector('button')!);
   });
 </script>

@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: The old admin code is retired
+
+**What changed**
+- The **Admin code (owner)** option was removed from the staff login page.
+  Everyone signs in with their own email, password and two-step login.
+- The code itself no longer signs anyone in (typed or sent by a script),
+  whatever the Security page setting says. Anyone trying it is refused and
+  the Super Admins are emailed.
+- Login & Security: the "switch the admin code on/off" buttons were removed.
+- The old Matches page asks you to log in with your staff account instead of
+  a code.
+
+**Who it affects:** staff; nothing to do. Keep the ADMIN_CODE secret in
+Cloudflare (the website still uses it to sign login sessions; deleting or
+changing it signs everyone out).
+
 ## 2026-11-01: PDF tickets: club crests without white boxes
 
 **What changed**

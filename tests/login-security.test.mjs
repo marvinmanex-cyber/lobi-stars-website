@@ -237,3 +237,11 @@ test('the owner code signs in with a session (logged); requests from other websi
   assert.equal((await api('/api/admin/account', 'POST', { action: 'logout_all' }, as(o))).status, 200);
   assert.equal((await api('/api/admin/me', 'GET', null, as(o))).status, 401);
 });
+
+test('the old shared admin code is retired on the live site (only the local test server keeps it)', async () => {
+  const { adminCodeRetired } = await import('../functions/api/_lib/adminSecurity.js');
+  assert.equal(adminCodeRetired({ ADMIN_CODE: 'x' }), true, 'live: retired');
+  assert.equal(adminCodeRetired({ ADMIN_CODE: 'x', ADMIN_CODE_TESTS: '1' }), false, 'local tests only');
+  const page = await fetch(`${BASE}/admin/login/`).then(r => r.text());
+  assert.ok(!/Admin code \(owner\)|id="ownerForm"/.test(page), 'no admin code option on the login page');
+});

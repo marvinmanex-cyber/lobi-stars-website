@@ -72,7 +72,7 @@ export const SETTING_DEFAULTS = {
   security_events_cleared: '', // when the security contact last cleared the Recent security events list (ISO time)
   access_review_month: '',    // the last month the access review was emailed (YYYY-MM)
   super_admin_list: '',       // the Super Admin list last seen (to notice changes)
-  admin_code_off: '0',        // '1' = the old emergency admin code no longer works
+  admin_code_off: '0',        // (no longer used for the switch: see adminCodeRetired)        // '1' = the old emergency admin code no longer works
   approvals_staff: '1',       // approvals (see approvals.js): new staff, Super Admin / download rights
   approvals_points: '1',      //   Rewards points adjustments over 1,000
   approvals_official: '1',    //   news marked "Official statement"
@@ -355,3 +355,11 @@ export const loginDetails = request => {
   const ua = request.headers.get('User-Agent') || '';
   return `<strong>When:</strong> ${esc(when())}<br><strong>Device:</strong> ${esc(describeDevice(ua))}<br><strong>Network address:</strong> ${esc(clientIp(request))}${request.headers.get('CF-IPCountry') ? ` (${esc(request.headers.get('CF-IPCountry'))})` : ''}`;
 };
+
+/**
+ * The old shared admin code (ADMIN_CODE) was retired on 1 Nov 2026: it no
+ * longer signs anyone in, whatever the Security page setting says. The secret
+ * stays in Cloudflare because it is part of the session-signing key. Only the
+ * local test server (ADMIN_CODE_TESTS=1) still accepts it, for the automatic tests.
+ */
+export const adminCodeRetired = env => env.ADMIN_CODE_TESTS !== '1';

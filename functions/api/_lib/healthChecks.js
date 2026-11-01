@@ -819,9 +819,10 @@ export async function stepSecurity(ctx) {
   const no2 = listed.filter(e => !sa.find(u => String(u.email).toLowerCase() === e && u.totp_enabled));
   if (no2.length) saProblems.push(`without two-step login: ${list(no2)}`);
   out.push(result('super_admins', saProblems.length ? (extra.length ? 'FAIL' : 'WARNING') : 'PASS', { problem: saProblems.length ? `${saProblems.join('; ')}.` : 'Exactly the three listed Super Admins, all with two-step login.' }));
-  const { securitySettings } = await import('./adminSecurity.js');
+  const { securitySettings, adminCodeRetired } = await import('./adminSecurity.js');
   const sec = await securitySettings(db);
-  out.push(result('admin_code', sec.admin_code_off === '1' || !env.ADMIN_CODE ? 'PASS' : 'WARNING', { problem: sec.admin_code_off === '1' || !env.ADMIN_CODE ? 'The old shared admin code is switched off.' : 'The old shared admin code still works.' }));
+  const codeOff = adminCodeRetired(env) || sec.admin_code_off === '1' || !env.ADMIN_CODE;
+  out.push(result('admin_code', codeOff ? 'PASS' : 'WARNING', { problem: codeOff ? 'The old shared admin code is retired.' : 'The old shared admin code still works.' }));
   const sw = ['FANS_DEV_LINKS', 'SOCIAL_POST_FAKE', 'PAYSTACK_FAKE', 'STAFF_TEST_PASSWORDS'].filter(k => env[k] && /lobistarsfc\.com$/.test(host));
   out.push(result('test_switches', sw.length ? 'FAIL' : 'PASS', { problem: sw.length ? `Testing switches on the live site: ${sw.join(', ')}.` : (/lobistarsfc\.com$/.test(host) ? 'No testing switch is on.' : 'Test site (testing switches allowed).') }));
   const files = ['/.env', '/.dev.vars', '/wrangler.toml', '/.git/config', '/package-lock.json'];

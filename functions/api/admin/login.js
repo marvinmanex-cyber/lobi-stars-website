@@ -6,7 +6,7 @@ import { roleOf, roleLabel } from '../_lib/adminRoles.js';
 import {
   createSession, deviceIdFrom, deviceCookie, randomHex, rememberDevice, looksLikeBackupCode, useBackupCode,
   securitySettings, allowlistApplies, ipAllowed, alertAddresses, securityEmail, loginDetails, describeDevice,
-  LOCK_AFTER, LOCK_MS, CAPTCHA_AFTER, sha256Hex, accountEmail } from '../_lib/adminSecurity.js';
+  LOCK_AFTER, LOCK_MS, adminCodeRetired, CAPTCHA_AFTER, sha256Hex, accountEmail } from '../_lib/adminSecurity.js';
 
 const WRONG = 'Email or password is incorrect.';
 const LOCKED = 'Too many wrong attempts. For your security, please wait 15 minutes and try again.';
@@ -49,7 +49,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   if (code) {
     if (ipFails >= CAPTCHA_AFTER && !(await captchaOk())) return needCaptcha();
     // The Super Admins have switched the old emergency code off: refused, recorded and reported.
-    if ((await securitySettings(db)).admin_code_off === '1') {
+    if (adminCodeRetired(env) || (await securitySettings(db)).admin_code_off === '1') {
       await ipFail();
       await logAdminAction(db, { id: 'unknown', name: 'Admin code' }, 'owner_code_refused', `the switched-off admin code was tried from ${ip}`);
       if (code === env.ADMIN_CODE) later(alertAddresses(env).then(to => securityEmail(env, to, 'Lobi Stars admin: someone tried the old admin code', ['Someone typed the old emergency admin code (it was switched off, so it did not work).', loginDetails(request), 'If this wasn\'t one of you, change ADMIN_CODE in Cloudflare.'], origin)));

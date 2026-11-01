@@ -1,5 +1,5 @@
 import { sign, verify } from './crypto.js';
-import { ensureSecuritySchema, liveSession, touchSession, securitySettings, ipAllowed, allowlistApplies, GRACE_DAYS } from './adminSecurity.js';
+import { ensureSecuritySchema, liveSession, touchSession, securitySettings, adminCodeRetired, ipAllowed, allowlistApplies, GRACE_DAYS } from './adminSecurity.js';
 import { clientIp } from './fans.js';
 import { roleOf } from './adminRoles.js';
 import { isFullSuperAdmin } from './superAdmins.js';
@@ -107,7 +107,8 @@ async function findAdmin(request, env) {
   // The owner's code in a header: for scripts and tests (the browser uses the session cookie).
   const code = request.headers.get('x-admin-code') || '';
   if (code && code.length === env.ADMIN_CODE.length && code === env.ADMIN_CODE) {
-    // The old emergency admin code stops working once the Super Admins switch it off.
+    // The old shared admin code is retired (adminCodeRetired), or switched off by the Super Admins.
+    if (adminCodeRetired(env)) return null;
     await ensureAdminSchema(env.DB);
     if ((await securitySettings(env.DB)).admin_code_off === '1') return null;
     return { ...OWNER };
@@ -122,7 +123,7 @@ async function findAdmin(request, env) {
   // A matchday helper (gate or kitchen, one match day only).
   if (helperId(s.user_id)) return helperAdmin(env.DB, helperId(s.user_id), sid);
   if (s.user_id === 'owner') {
-    if ((await securitySettings(env.DB)).admin_code_off === '1') return null;
+    if (adminCodeRetired(env) || (await securitySettings(env.DB)).admin_code_off === '1') return null;
     return { ...OWNER, sessionId: sid };
   }
 

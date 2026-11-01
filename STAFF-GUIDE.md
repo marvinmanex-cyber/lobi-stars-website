@@ -684,11 +684,11 @@ Files are named with today's date, e.g. `lobi-stars-fan-database-2026-10-09.xlsx
   listed Super Admin can't be given another role. Anyone else who somehow has
   the Super Admin role only gets Head of Media rights, and is moved to Head of
   Media. If a Super Admin is disabled, the other two are emailed.
-- **The old emergency admin code:** the owner admin code still works until the
-  Super Admins are set up. Once at least two of the three have signed in with
-  two-step login, press **Switch off the admin code** (Login & Security). From
-  then on the three Super Admins are each other's backup. Its history stays in
-  the Activity Log, and anyone who tries the old code is refused and reported.
+- **The old admin code is retired (since 1 Nov 2026):** the login page has
+  no "Admin code (owner)" option any more, and the code no longer signs anyone
+  in. Everyone uses their own email, password and two-step login; the three
+  Super Admins are each other's backup. Anyone who tries the old code is
+  refused and reported; its history stays in the Activity Log.
 
 ### Creating matchday helper accounts (Matchday Operations Manager, Commerce › Matchday Helpers)
 
@@ -1587,8 +1587,8 @@ point their inbound webhook at the same address with the same key.
 1. **Staff accounts:** create a login for each person in **Settings › Staff
    Users & Roles** with the right role (e.g. Fan Support for whoever answers
    fans, Commercial Manager for sponsorship and hospitality). Only tick **Can export
-   fan data** for people who need to download contact lists. Stop sharing the
-   owner admin code.
+   fan data** for people who need to download contact lists. (The old owner
+   admin code was retired on 1 Nov 2026.)
 2. **Email (Resend):** API key, the sender address for Inbox replies
    (suggested **info@lobistarsfc.com**) and the SPF, DKIM and DMARC records
    (section 18, Setup A). Until then nothing is emailed: Inbox replies,
@@ -1920,10 +1920,7 @@ Until then the Newsletter screen shows a yellow note.
   are told too), a backup code used, a password change, two-step login turned
   on, off or reset, and a lockout after wrong attempts. If it wasn't you, sign in, log out of all devices,
   change your password and tell a Super Admin.
-- The old owner admin code works only until the three Super Admins are set up
-  and switch it off (see "The old emergency admin code" above). While it works,
-  every sign-in with it is emailed straight away to the Super Admins and is
-  marked 🚨 in the Activity Log.
+- The old owner admin code is retired (see above): it no longer works.
 - **Super Admins with a Gmail address** see a one-time notice after signing in:
   "Your website access depends on your email account. Please make sure Google
   2-Step Verification is switched on for this Gmail account." Press **It's
@@ -1932,8 +1929,7 @@ Until then the Newsletter screen shows a yellow note.
 
 ### Login & Security (Settings › Login & Security, Super Admins only)
 - **The three Super Admins:** each one's account, two-step login, last login
-  and Gmail confirmation; **Send the Super Admin invites**; and **Switch off
-  the admin code** (needs two Super Admins signed in with two-step login).
+  and Gmail confirmation; and **Send the Super Admin invites**.
 - **The rules for everyone** are shown at the top: 12+ character passwords,
   signed out after 30 minutes without activity and after 12 hours, locked for
   15 minutes after 5 wrong attempts.
@@ -1949,8 +1945,7 @@ Until then the Newsletter screen shows a yellow note.
   Admins only, Super Admins and CRM Managers (the roles that can download fan
   data), or All staff, and list the allowed network addresses (for
   example the club office's internet connection; your own address is shown).
-  The page won't save a list that would sign you out. The owner admin code
-  always works from anywhere.
+  The page won't save a list that would sign you out.
 - **Security alerts:** **Send security emails to** chooses who is emailed:
   every Super Admin, or only one of them (the club chose
   dkakaan@lobistarsfc.com). The others still see every alert in the 🔔 bell.
@@ -4349,8 +4344,8 @@ Also in the CMS: **Gallery Photos**.
 
 - **A change doesn't appear:** wait 2 minutes and refresh the page. On a
   phone, pull down to refresh.
-- **"That code is not correct" on the login page:** check the admin code with
-  the website manager.
+- **Can't log in:** use **Forgot your password?** on the login page, or ask
+  a Super Admin to unlock your account or reset your two-step login.
 - **The CMS asks for a token again:** paste in the GitHub access token from
   the website manager.
 - **You made a mistake:** every change is saved in the site's history, and the

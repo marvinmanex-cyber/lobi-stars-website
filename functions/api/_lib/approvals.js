@@ -9,7 +9,7 @@
 // request. If there is nobody else who could approve, the action goes ahead and
 // is recorded as "no other approver", so the club is never stuck.
 import { logAdminAction } from './adminSession.js';
-import { securitySettings, saveSecuritySetting, securityEmail, securityContact } from './adminSecurity.js';
+import { securitySettings, adminCodeRetired, saveSecuritySetting, securityEmail, securityContact } from './adminSecurity.js';
 import { superAdminEmails, isFullSuperAdmin } from './superAdmins.js';
 import { randomId } from './crypto.js';
 
@@ -57,7 +57,7 @@ export async function otherApprovers(env, requester) {
     AND (email IN (${list.map(() => '?').join(',') || "''"})${testMode ? ' OR test_account = 1' : ''})`).bind(...list).all()).results : [];
   const people = rows.filter(u => isFullSuperAdmin(env, u) && u.id !== requester.id);
   const s = await securitySettings(env.DB);
-  if (requester.id !== 'owner' && s.admin_code_off !== '1') people.push({ id: 'owner', name: 'Owner (admin code)', email: '' });
+  if (requester.id !== 'owner' && s.admin_code_off !== '1' && !adminCodeRetired(env)) people.push({ id: 'owner', name: 'Owner (admin code)', email: '' });
   return people;
 }
 

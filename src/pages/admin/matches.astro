@@ -18,9 +18,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     <div id="gate" class="gate-card">
       <div class="gate-icon">&#128274;</div>
       <h2>Admin access</h2>
-      <p class="muted">Enter the admin code to manage fixtures.</p>
-      <input id="code" type="password" placeholder="Admin code" autocomplete="off" />
-      <button id="unlock" class="btn-p">Unlock</button>
+      <p class="muted">Please log in with your staff account to manage fixtures.</p>
+      <a id="unlock" class="btn-p" href="/admin/login/?next=/admin/matches/">Log in</a>
       <div id="gate-err" class="gate-err"></div>
     </div>
 
@@ -255,7 +254,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         code = '';
         manager.hidden = true;
         gate.style.display = '';
-        gateErr.textContent = 'Code rejected — enter it again.';
+        gateErr.textContent = 'Your login has ended. Please log in again.';
         gateErr.classList.add('show');
         throw new Error('unauthorised');
       }
@@ -431,26 +430,6 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       }
     });
 
-    async function unlock() {
-      const entered = $('code').value.trim();
-      if (!entered) return;
-      code = entered;
-      try {
-        await api('/api/admin/events');
-        sessionStorage.setItem('ls_admin_code', code);
-        gate.style.display = 'none';
-        manager.hidden = false;
-        gateErr.classList.remove('show');
-        await load();
-      } catch (err) {
-        if (err.message !== 'unauthorised') {
-          gateErr.textContent = err.message;
-          gateErr.classList.add('show');
-        }
-      }
-    }
-    $('unlock').addEventListener('click', unlock);
-    $('code').addEventListener('keydown', e => { if (e.key === 'Enter') unlock(); });
     $('lock-btn').addEventListener('click', () => {
       sessionStorage.removeItem('ls_admin_code');
       fetch('/api/admin/logout', { method: 'POST' }).finally(() => { location.href = '/admin/login/'; });
