@@ -9,6 +9,8 @@
 //
 // Coordinates: points (1/72 inch) from the TOP-left corner (converted here).
 
+import { pngToPdfParts } from './pngImage.js';
+
 // Helvetica and Helvetica-Bold advance widths (per 1000 em) for characters 32..126.
 const W_REG = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
 const W_BOLD = [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
@@ -127,6 +129,14 @@ export class PdfDoc {
     this.extra.push({ id, bytes: bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), ...info });
     return { id, width: info.width, height: info.height };
   }
+  /** Adds a PNG, keeping its see-through background (crests on tickets); returns { id, width, height } or null. */
+  async addPng(bytes) {
+    const png = await pngToPdfParts(bytes).catch(() => null);
+    if (!png) return null;
+    const id = `Im${this.extra.length + 2}`;
+    this.extra.push({ id, png, width: png.width, height: png.height });
+    return { id, width: png.width, height: png.height };
+  }
   setJpeg(bytes) {
     const info = jpegInfo(bytes);
     if (info) this.image = { bytes: bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes), ...info };
@@ -156,6 +166,7 @@ export class PdfDoc {
     let nextNo = first + this.pages.length * 2;
     const annotNos = this.annots.map(list => list.map(() => nextNo++));
     const extraNos = this.extra.map(() => nextNo++);
+    const smaskNos = this.extra.map(e => (e.png?.alpha ? nextNo++ : null));
     const xobjects = [this.image ? '/Im1 6 0 R' : '', ...this.extra.map((e, i) => `/${e.id} ${extraNos[i]} 0 R`)].filter(Boolean).join(' ');
     const res = `<< /Font << /F1 3 0 R /F2 4 0 R >>${xobjects ? ` /XObject << ${xobjects} >>` : ''} >>`;
     this.pages.forEach((ops, i) => {
@@ -168,7 +179,10 @@ export class PdfDoc {
     this.annots.forEach((list, i) => list.forEach((a, j) => {
       obj(annotNos[i][j], `<< /Type /Annot /Subtype /Link /Rect [${a.rect.map(num).join(' ')}] /Border [0 0 0] /A << /S /URI /URI (${a.url.replace(/[()\\]/g, c => `\\${c}`)}) >> >>`);
     }));
-    this.extra.forEach((im, i) => obj(extraNos[i], [`<< /Type /XObject /Subtype /Image /Width ${im.width} /Height ${im.height} /ColorSpace /${im.components === 1 ? 'DeviceGray' : im.components === 4 ? 'DeviceCMYK' : 'DeviceRGB'} /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`, im.bytes, '\nendstream']));
+    this.extra.forEach((im, i) => im.png ? (
+      obj(extraNos[i], [`<< /Type /XObject /Subtype /Image /Width ${im.width} /Height ${im.height} /ColorSpace /${im.png.grey ? 'DeviceGray' : 'DeviceRGB'} /BitsPerComponent 8 /Filter /FlateDecode${smaskNos[i] ? ` /SMask ${smaskNos[i]} 0 R` : ''} /Length ${im.png.color.length} >>\nstream\n`, im.png.color, '\nendstream']),
+      smaskNos[i] && obj(smaskNos[i], [`<< /Type /XObject /Subtype /Image /Width ${im.width} /Height ${im.height} /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length ${im.png.alpha.length} >>\nstream\n`, im.png.alpha, '\nendstream'])
+    ) : obj(extraNos[i], [`<< /Type /XObject /Subtype /Image /Width ${im.width} /Height ${im.height} /ColorSpace /${im.components === 1 ? 'DeviceGray' : im.components === 4 ? 'DeviceCMYK' : 'DeviceRGB'} /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`, im.bytes, '\nendstream']));
     const xref = length;
     const count = nextNo;
     let x = `xref\n0 ${count}\n0000000000 65535 f \n`;

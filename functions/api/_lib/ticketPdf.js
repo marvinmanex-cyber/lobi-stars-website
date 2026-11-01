@@ -13,19 +13,17 @@ const SITE = 'https://lobistarsfc.com';
 const NAVY = '#0D1A33', NAVY2 = '#0A1226', GOLD = '#C9A227', GREY = '#5A6270', CHILD = '#FFC72C';
 const W = 340, H = 640; // points: a phone-shaped page
 
-/** A crest as a JPEG (PDFs here only take JPEGs): the club badge, or a team's .jpg crest if the site has one. */
-async function crestJpeg(env, team, cache) {
-  const png = TEAM_LOGOS[team];
-  const tries = /lobi stars/i.test(team) ? ['/images/lobi-stars-badge-print.jpg'] : png ? [png.replace(/-transparent(-\d+)?\.png$/, '.jpg'), png] : [];
-  for (const path of tries.filter(p => /\.jpe?g$/i.test(p))) {
-    if (cache.has(path)) return cache.get(path);
-    try {
-      const res = await env.ASSETS.fetch(new Request(`${SITE}${path}`));
-      const bytes = res.ok ? new Uint8Array(await res.arrayBuffer()) : null;
-      if (bytes && bytes[0] === 0xff && bytes[1] === 0xd8) { cache.set(path, bytes); return bytes; }
-    } catch { /* try the next one */ }
-  }
-  return null;
+/** A team's crest, the same file as on the website: a see-through PNG (no white box), or a JPEG if that is all the site has. */
+async function crestImage(env, doc, team) {
+  const path = TEAM_LOGOS[team];
+  if (!path) return null;
+  try {
+    const res = await env.ASSETS.fetch(new Request(`${SITE}${path}`));
+    const bytes = res.ok ? new Uint8Array(await res.arrayBuffer()) : null;
+    if (!bytes) return null;
+    if (bytes[0] === 0xff && bytes[1] === 0xd8) { const img = doc.addJpeg(bytes); return img && { ...img, boxed: true }; }
+    return await doc.addPng(bytes);
+  } catch { return null; }
 }
 
 /** Draws the QR code as rows of black runs (far fewer boxes than one per module). */
@@ -48,12 +46,10 @@ function drawQr(doc, text, x, y, size) {
  */
 export async function ticketsPdf(env, { reference, matches }) {
   const doc = new PdfDoc({ width: W, height: H });
-  const crests = new Map(), imgIds = new Map();
+  const imgIds = new Map();
   const imgFor = async team => {
-    if (imgIds.has(team)) return imgIds.get(team);
-    const bytes = await crestJpeg(env, team, crests);
-    const img = bytes ? doc.addJpeg(bytes) : null;
-    imgIds.set(team, img); return img;
+    if (!imgIds.has(team)) imgIds.set(team, await crestImage(env, doc, team));
+    return imgIds.get(team);
   };
   let pages = 0;
   for (const m of matches) {
@@ -79,7 +75,12 @@ async function ticketPage(doc, m, t, i, of, homeImg, awayImg) {
   doc.text('OFFICIAL MATCH TICKET', W / 2, 50, { size: 14, bold: true, color: GOLD, align: 'center' });
   // Crests (or the team's initial in a gold ring).
   const crest = (team, img, cx) => {
-    if (img) { doc.rect(cx - 30, 66, 60, 60, { fill: '#FFFFFF' }); doc.drawImage(cx - 27, 69, 54, 54 * Math.min(1, img.height / img.width), img.id); }
+    if (img) {
+      // Fitted into a 60-point square, keeping its shape; a JPEG (white background) sits on a white box.
+      const s = 60 / Math.max(img.width, img.height), w = img.width * s, h = img.height * s;
+      if (img.boxed) doc.rect(cx - 30, 66, 60, 60, { fill: '#FFFFFF' });
+      doc.drawImage(cx - w / 2, 66 + (60 - h) / 2, w, h, img.id);
+    }
     else { doc.rect(cx - 30, 66, 60, 60, { stroke: GOLD, lineWidth: 1.5 }); doc.text(pdfSafe(team).charAt(0).toUpperCase(), cx, 106, { size: 26, bold: true, color: '#FFFFFF', align: 'center' }); }
   };
   crest(m.homeTeam, homeImg, W / 2 - 62); crest(m.awayTeam, awayImg, W / 2 + 62);
@@ -118,6 +119,12 @@ async function ticketPage(doc, m, t, i, of, homeImg, awayImg) {
   const tw = textWidth(type, 8, true) + 14;
   doc.rect(W / 2 - tw / 2, standY + 7, tw, 14, { fill: t.type === 'child' ? CHILD : '#E8EBF0' });
   doc.text(type, W / 2, standY + 17, { size: 8, bold: true, color: NAVY, align: 'center' });
-  if (t.priceKobo != null) doc.text(`N${Math.round(t.priceKobo / 100).toLocaleString('en-NG')}`, W / 2, standY + 38, { size: 12, bold: true, color: NAVY, align: 'center' });
+  if (t.priceKobo != null) {
+    // The built-in font has no ₦: an N with the two strokes drawn through it.
+    const price = `N${Math.round(t.priceKobo / 100).toLocaleString('en-NG')}`, py = standY + 38;
+    const x0 = W / 2 - textWidth(price, 12, true) / 2, nw = textWidth('N', 12, true);
+    doc.text(price, W / 2, py, { size: 12, bold: true, color: NAVY, align: 'center' });
+    for (const dy of [-5.2, -3]) doc.line(x0 - 1, py + dy, x0 + nw + 1, py + dy, { color: NAVY, width: 0.9 });
+  }
   doc.text('One scan per ticket, on the day of the match only.  lobistarsfc.com', W / 2, H - 14, { size: 6.5, color: GREY, align: 'center' });
 }

@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: PDF tickets: club crests without white boxes
+
+**What changed**
+- The PDF ticket (download and email attachment) now uses the same
+  see-through crests as the website, so both logos sit straight on the navy
+  background. The price shows the ₦ sign.
+
+**Who it affects:** fans; no staff action needed.
+
 ## 2026-11-01: News page tabs simplified; Tickets page badges removed
 
 **What changed**
