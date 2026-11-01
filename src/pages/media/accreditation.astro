@@ -5,15 +5,48 @@
 // ?match=<slug> preselects the match (invitation links and match pages);
 // ?update=<token> answers a request for more information.
 import Layout from '../../layouts/Layout.astro';
+import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
 ---
 <Layout title="Media accreditation | Lobi Stars Football Club" description="Request media accreditation for a Lobi Stars FC home match at McCarthy Stadium, Makurdi.">
-  <div class="page-hero wrap">
-    <div class="stag">Press &amp; Media</div>
-    <h1 class="stitle">Media <span class="r">accreditation</span></h1>
-    <div class="divr"></div>
-    <p class="muted ac-lede">For journalists, photographers, camera crews, radio commentators and digital media covering a Lobi Stars home match at McCarthy Stadium. One match per application. Applications close <b id="closeH">6</b> hours before kick-off.</p>
-  </div>
-  <div class="page-content wrap ac">
+  <section class="ah-hero" data-logos={JSON.stringify(TEAM_LOGOS)} id="hub">
+    <div class="wrap ah-in">
+      <div class="ah-copy">
+        <p class="ah-kicker">Press &amp; Media · McCarthy Stadium, Makurdi</p>
+        <h1 class="ah-title">Media Accreditation <span>Hub</span></h1>
+        <p class="ah-lede">For journalists, photographers, camera crews, radio commentators and digital media covering Lobi Stars FC home matches. One match per application; applications close <b id="closeH">6</b> hours before kick-off.</p>
+        <div class="ah-cta"><a class="ah-btn" href="#apply">Apply for accreditation</a><a class="ah-btn ghost" href="/media/">Media page</a></div>
+      </div>
+      <article class="ah-match" id="nextCard" aria-live="polite">
+        <p class="ah-mlabel" id="nmLabel">Next home match</p>
+        <div class="ah-teams">
+          <div class="ah-team"><span class="ah-crest" id="nmHomeCrest"></span><b id="nmHome">Lobi Stars FC</b></div>
+          <span class="ah-vs">VS</span>
+          <div class="ah-team"><span class="ah-crest" id="nmAwayCrest"></span><b id="nmAway">Loading…</b></div>
+        </div>
+        <p class="ah-when" id="nmWhen"></p>
+        <p class="ah-venue" id="nmVenue">McCarthy Stadium, Makurdi</p>
+        <div class="ah-status" id="nmStatus"></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap ah-info" aria-label="How accreditation works">
+    <div class="ah-steps">
+      <div class="ah-step"><span>1</span><b>Apply online</b><p>Choose the match, add your press ID or letter and a passport photo.</p></div>
+      <div class="ah-step"><span>2</span><b>Media team review</b><p>The club's media team approves, asks for more, or declines, by email.</p></div>
+      <div class="ah-step"><span>3</span><b>Card by email</b><p>Approved? Your accreditation card (PDF with a QR code) is emailed to you.</p></div>
+      <div class="ah-step"><span>4</span><b>Show it at the gate</b><p>Bring the card (phone or printed) and photo ID. Valid for that match only.</p></div>
+    </div>
+    <div class="ah-cards">
+      <div class="ah-card"><h2>Access zones</h2><ul><li><b>Press Box</b> writers, radio and TV commentary</li><li><b>Pitchside</b> photographers and camera crews</li><li><b>Mixed Zone</b> post-match interviews</li></ul></div>
+      <div class="ah-card"><h2>What you need</h2><ul><li>Press ID or a letter from your organisation (PDF/JPG)</li><li>A passport photo (plain background)</li><li>One application per match</li></ul></div>
+      <div class="ah-card"><h2>Media rules</h2><ul><li>Stay in your access zone and wear your card</li><li>Follow stewards' instructions</li><li>Interviews only in the mixed zone</li></ul></div>
+    </div>
+    <div class="ah-more" id="moreMatches" hidden><h2>Other upcoming home matches</h2><div id="moreList"></div></div>
+  </section>
+
+  <div class="page-content wrap ac" id="apply">
+    <div class="ah-formhead"><p class="ah-kicker dark">Application form</p><h2>Apply for accreditation</h2></div>
     <p class="ac-msg" id="msg" role="alert" hidden></p>
     <section class="panel" id="done" hidden><h2>Thank you</h2><p id="doneText">We have your request. Our media team will review it and email you. Please do not come to the stadium expecting accreditation until you receive your card.</p><p><a href="/media/">Back to the Media page</a></p></section>
     <form class="panel ac-form" id="f" novalidate>
@@ -44,7 +77,59 @@ import Layout from '../../layouts/Layout.astro';
     </form>
   </div>
 </Layout>
-<style>
+<style is:global>
+  /* Media Accreditation Hub (global: parts are drawn by the script; every class starts ah- or ac-): club colours (red #E31E24, blue #1C3F7A, white). */
+  .ah-hero { position: relative; color: #fff; background:
+      linear-gradient(115deg, rgba(14,28,56,.96) 0%, rgba(28,63,122,.9) 48%, rgba(193,26,31,.88) 100%),
+      url('/images/stadium-2.webp') center / cover no-repeat; padding: 56px 0 64px; overflow: hidden; }
+  .ah-hero::after { content: ''; position: absolute; inset: auto 0 0 0; height: 6px; background: linear-gradient(90deg, #E31E24, #fff 50%, #1C3F7A); }
+  .ah-in { display: grid; gap: 28px; align-items: center; grid-template-columns: 1fr; }
+  @media (min-width: 960px) { .ah-in { grid-template-columns: 1.1fr .9fr; } }
+  .ah-kicker { margin: 0 0 10px; font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 3px; text-transform: uppercase; color: #FFD9DA; }
+  .ah-kicker.dark { color: #C11A1F; }
+  .ah-title { margin: 0 0 14px; font: 400 clamp(44px, 7vw, 84px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .ah-title span { color: #FF5A5F; }
+  .ah-lede { max-width: 620px; font-size: 18px; line-height: 1.6; color: rgba(255,255,255,.9); margin: 0 0 22px; }
+  .ah-cta { display: flex; flex-wrap: wrap; gap: 10px; }
+  .ah-btn { display: inline-flex; align-items: center; min-height: 50px; padding: 0 22px; border-radius: 8px; background: #E31E24; color: #fff; text-decoration: none; font: 700 16px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; box-shadow: 0 8px 22px rgba(227,30,36,.35); }
+  .ah-btn.ghost { background: transparent; border: 2px solid rgba(255,255,255,.6); box-shadow: none; }
+  .ah-match { background: rgba(255,255,255,.97); color: #15181D; border-radius: 18px; padding: 22px 22px 18px; box-shadow: 0 24px 60px rgba(0,0,0,.35); border-top: 6px solid #E31E24; }
+  .ah-mlabel { margin: 0 0 12px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2.5px; text-transform: uppercase; color: #1C3F7A; text-align: center; }
+  .ah-teams { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
+  .ah-team { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+  .ah-team b { font: 400 22px/1.05 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .ah-crest { width: 84px; height: 84px; display: grid; place-items: center; }
+  .ah-crest img { width: 100%; height: 100%; object-fit: contain; }
+  .ah-crest .ph { width: 72px; height: 72px; border-radius: 50%; display: grid; place-items: center; background: #1C3F7A; color: #fff; font: 400 34px/1 'Bebas Neue', sans-serif; }
+  .ah-vs { font: 400 30px/1 'Bebas Neue', sans-serif; color: #E31E24; }
+  .ah-when { margin: 14px 0 2px; text-align: center; font-weight: 700; font-size: 17px; }
+  .ah-venue { margin: 0 0 14px; text-align: center; color: #5B6472; }
+  .ah-status { border-radius: 12px; padding: 12px 14px; text-align: center; background: #EAF1FB; }
+  .ah-status.open { background: #E7F6EC; } .ah-status.closed { background: #FDE8E9; }
+  .ah-status b { display: block; font: 700 15px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .ah-status.open b { color: #0B7A2E; } .ah-status.closed b { color: #C11A1F; }
+  .ah-count { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+  .ah-count span { min-width: 56px; padding: 6px 4px; border-radius: 8px; background: #fff; box-shadow: 0 1px 0 rgba(0,0,0,.06); font: 400 26px/1 'Bebas Neue', sans-serif; }
+  .ah-count small { display: block; font: 700 10px/1.4 Barlow, sans-serif; letter-spacing: 1px; color: #5B6472; text-transform: uppercase; }
+  .ah-info { margin-top: 34px; padding-bottom: 8px; }
+  .ah-steps { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 18px; }
+  .ah-step { position: relative; background: #fff; border: 1px solid #E3E6EB; border-radius: 14px; padding: 18px 16px 16px 64px; }
+  .ah-step span { position: absolute; left: 16px; top: 16px; width: 36px; height: 36px; border-radius: 50%; background: #1C3F7A; color: #fff; display: grid; place-items: center; font: 400 22px/1 'Bebas Neue', sans-serif; }
+  .ah-step:nth-child(even) span { background: #E31E24; }
+  .ah-step b { display: block; font: 700 17px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 4px; }
+  .ah-step p { margin: 0; color: #5B6472; font-size: 15px; line-height: 1.45; }
+  .ah-cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .ah-card { background: linear-gradient(180deg, #F6F8FC, #fff); border: 1px solid #E3E6EB; border-left: 5px solid #1C3F7A; border-radius: 14px; padding: 16px 18px; }
+  .ah-card:nth-child(2) { border-left-color: #E31E24; }
+  .ah-card h2 { margin: 0 0 8px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: #15181D; }
+  .ah-card ul { margin: 0; padding-left: 18px; line-height: 1.6; color: #3A4250; }
+  .ah-more { margin-top: 18px; } .ah-more h2 { font: 400 24px/1 'Bebas Neue', sans-serif; margin: 0 0 8px; }
+  .ah-more #moreList { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ah-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 12px 4px 6px; border-radius: 999px; background: #fff; border: 1px solid #E3E6EB; font-weight: 600; font-size: 14px; cursor: pointer; }
+  .ah-chip img { width: 28px; height: 28px; object-fit: contain; }
+  .ah-chip small { color: #5B6472; font-weight: 500; }
+  .ah-formhead { margin: 10px 0 14px; } .ah-formhead h2 { margin: 0; font: 400 40px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .ac .ac-form { border-top: 5px solid #E31E24; }
   .ac-lede { max-width: 760px; }
   .ac { max-width: 860px; }
   .ac-msg { padding: 12px 14px; border-radius: 10px; background: #FDE8E9; color: #8E1A20; font-weight: 600; }
@@ -74,6 +159,7 @@ import Layout from '../../layouts/Layout.astro';
     const d = await fetch(`/api/media/accreditation?${new URLSearchParams([...(q.get('match') ? [['match', q.get('match')!]] : []), ...(update ? [['update', update]] : [])])}`).then(r => r.json()).catch(() => null);
     if (!d) { msg('The form could not load. Please refresh the page.'); return; }
     $('closeH').textContent = d.closeHours;
+    hub(d);
     $('role').innerHTML += d.roles.map((r: string) => `<option>${r}</option>`).join('');
     const open = d.matches.filter((m: any) => m.open);
     $('eventId').innerHTML = open.length ? `<option value="">Choose one home match…</option>${open.map((m: any) => `<option value="${m.id}">${m.label} · ${m.day}, ${m.kickOff}</option>`).join('')}` : '<option value="">No home match is open for applications right now</option>';
@@ -91,6 +177,47 @@ import Layout from '../../layouts/Layout.astro';
       $('email').readOnly = true; $('eventId').disabled = true; $('photoOnFile').hidden = false; $('send').textContent = 'Send my updated request';
     }
   })();
+  // ── The hub: the next (or chosen) home match with both crests, and when applications close ──
+  const LOGOS: Record<string, string> = JSON.parse(($('hub') as HTMLElement).dataset.logos || '{}');
+  const crest = (name: string) => LOGOS[name] ? `<img src="${LOGOS[name]}" alt="${name.replace(/"/g, '')} crest" width="84" height="84" />` : `<span class="ph">${(name || '?').charAt(0).toUpperCase()}</span>`;
+  let hubMatches: any[] = [], hubClose = 6, tick = 0;
+  function showMatch(m: any, label = 'Next home match') {
+    if (!m) { $('nmAway').textContent = 'No home match scheduled'; $('nmHome').textContent = 'Lobi Stars FC'; $('nmHomeCrest').innerHTML = crest('Lobi Stars FC'); $('nmWhen').textContent = ''; $('nmStatus').className = 'ah-status'; $('nmStatus').innerHTML = '<b>Check back soon</b>New home matches appear here when they are added.'; return; }
+    const [home, away] = String(m.label).split(' v ');
+    $('nmHome').textContent = home; $('nmAway').textContent = away || '';
+    $('nmHomeCrest').innerHTML = crest(home); $('nmAwayCrest').innerHTML = crest(away || '');
+    $('nmWhen').textContent = `${m.day} · Kick-off ${m.kickOff}`;
+    $('nmLabel').textContent = label;
+    clearInterval(tick);
+    const draw = () => {
+      const left = Date.parse(m.closesAt) - Date.now();
+      const st = $('nmStatus');
+      if (!m.open) { st.className = 'ah-status closed'; st.innerHTML = `<b>Applications closed</b>They closed ${hubClose} hours before kick-off.`; clearInterval(tick); return; }
+      st.className = 'ah-status open';
+      if (left <= 0 || m.reopened) { st.innerHTML = '<b>Applications open</b>Opened again by the club\'s media team: apply now.'; return; }
+      const dd = Math.floor(left / 864e5), hh = Math.floor(left / 36e5) % 24, mm = Math.floor(left / 6e4) % 60, ss = Math.floor(left / 1e3) % 60;
+      st.innerHTML = `<b>Applications open · closing in</b><div class="ah-count"><span>${dd}<small>days</small></span><span>${String(hh).padStart(2, '0')}<small>hrs</small></span><span>${String(mm).padStart(2, '0')}<small>min</small></span><span>${String(ss).padStart(2, '0')}<small>sec</small></span></div>`;
+    };
+    draw(); tick = window.setInterval(draw, 1000);
+  }
+  function hub(d: any) {
+    hubMatches = d.matches || []; hubClose = d.closeHours;
+    const first = hubMatches.find((m: any) => m.id === d.selected) || hubMatches.find((m: any) => m.open) || hubMatches[0];
+    showMatch(first, first && first.id === d.selected ? 'Your chosen match' : 'Next home match');
+    const others = hubMatches.filter((m: any) => m !== first);
+    if (others.length) {
+      $('moreMatches').hidden = false;
+      $('moreList').innerHTML = others.map((m: any) => { const away = String(m.label).split(' v ')[1] || ''; return `<button type="button" class="ah-chip" data-m="${m.id}">${LOGOS[away] ? `<img src="${LOGOS[away]}" alt="" />` : ''}${m.label.replace(/</g, '&lt;')} <small>${m.day}${m.open ? '' : ' · closed'}</small></button>`; }).join('');
+    }
+  }
+  $('moreList').addEventListener('click', (e: Event) => {
+    const b = (e.target as HTMLElement).closest('[data-m]') as HTMLElement | null; if (!b) return;
+    const m = hubMatches.find((x: any) => x.id === b.dataset.m); showMatch(m, 'Chosen match');
+    if (m?.open) $('eventId').value = m.id;
+    $('hub').scrollIntoView({ behavior: 'smooth' });
+  });
+  $('eventId').addEventListener('change', () => { const m = hubMatches.find((x: any) => x.id === $('eventId').value); if (m) showMatch(m, 'Your chosen match'); });
+
   // Returning journalists: details prefilled from the email address.
   // Returning journalists: a code emailed to the address unlocks the saved details (never shown to anyone else).
   function fillFrom(d: any) {

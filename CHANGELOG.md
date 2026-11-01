@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Media accreditation page redesigned as a hub
+
+**What changed**
+- lobistarsfc.com/media/accreditation is now the **Media Accreditation Hub** in the
+  club colours: the next home match with both crests, date, kick-off and venue,
+  a live countdown to when applications close (or "closed" / "opened again"),
+  how it works in 4 steps, access zones, what you need, media rules, other
+  upcoming home matches, then the application form.
+
 ## 2026-11-01: Match Checklist: deadlines say how long before the match
 
 **What changed**
