@@ -16,6 +16,8 @@ in HANDOVER-TODO.md.
 - A green **WhatsApp** button is always in the top bar: it opens the kitchen's chats
   in WhatsApp Web in another tab of the same browser (WhatsApp does not allow its
   chats inside another website).
+- A blue **Telegram** button sits next to it (the Telegram channel link is set in
+  Staff accounts › Settings).
 - Open pages (tabs) have their own row under the top bar, so each shows in full;
   the signed-in name / email takes less room.
 

@@ -4294,7 +4294,7 @@ tabs open. WhatsApp and Telegram open in their own apps.
 | **One order** | All details and a button for each next status the website allows (the next step in green). **Cancel** (red, asks first) only for roles allowed to cancel. |
 | **Menu and prices** | **Mark sold out** / **Back on** (anyone; fans can't order it while sold out). **Save price** for supervisors and Super Admins. |
 | **Kitchen WhatsApp** (also the green **WhatsApp** button, always in the top bar) | Opens the kitchen's WhatsApp chats (+234 708 009 4985) in WhatsApp Web, in another tab of the same browser (always the same tab). WhatsApp does not allow its chats to be shown inside another website, so they can't appear on the dashboard itself. The first time, scan the QR code on the screen with the kitchen phone (WhatsApp › Linked devices) and keep that tab open. On a phone it opens the WhatsApp app. |
-| **Telegram updates** | Opens the kitchen Telegram channel (only shown once its link is set in Staff accounts › Settings). |
+| **Telegram updates** (also the blue **Telegram** button next to WhatsApp in the top bar) | Opens the kitchen Telegram channel in another tab. Until its link is pasted in Staff accounts › Settings, a Super Admin who taps it is taken there, and staff are told to ask a Super Admin. |
 | **Handover notes** | Notes for the next shift. Supervisors and Super Admins can pin and delete any note; others delete their own. |
 | **My shift** | **Start shift** / **End shift**, who is in the kitchen now, your last 10 shifts. |
 | **Food analytics** | For a day: orders, sales, average, cancelled, top 10 dishes, orders by hour (paid orders; cancelled left out). |

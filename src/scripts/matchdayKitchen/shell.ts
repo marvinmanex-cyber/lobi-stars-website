@@ -2,7 +2,7 @@
 // inside this browser tab (iframes of the panel page), the clock, and the
 // shared-tablet idle sign-out ("Still there?" after 20 minutes without a tap,
 // then a 60-second countdown). Inner pages report taps through window.mkShell.
-import { $, esc, api, session, loadSession, setSignedOutHandler, GROUPS, whatsappUrl, WA_PATH, iconFor, pageTitle, hm } from './common';
+import { $, esc, api, session, loadSession, setSignedOutHandler, GROUPS, whatsappUrl, WA_PATH, TG_PATH, iconFor, pageTitle, hm } from './common';
 
 const IDLE_MS = 20 * 60e3, COUNTDOWN = 60, MAX_TABS = 6, SAVE_KEY = 'mdk_tabs';
 type TabRec = { page: string; frame: HTMLIFrameElement; shownAt: number };
@@ -61,7 +61,7 @@ function renderHome() {
   renderWho();
   const sa = session.user.kind === 'admin';
   $('groups').innerHTML = GROUPS.filter(g => !g.superOnly || sa).map(g => {
-    const tiles = g.tiles.filter(t => t.id !== 'telegram' || session.settings.telegramUrl);
+    const tiles = g.tiles;
     return `<section class="mk-group"><h2>${esc(g.title)}</h2><div class="mk-rail"><div class="mk-tickets">${tiles.map(t => {
       const text = t.id === 'activity' && !sa ? 'Everything you have done here' : t.text;
       const note = t.external === 'whatsapp' ? 'Opens WhatsApp in a new tab' : t.external ? 'Opens the app' : '';
@@ -113,6 +113,9 @@ function open(page: string, { log = true, focus = true } = {}) {
     const url = page === 'whatsapp' ? whatsappUrl() : session.settings.telegramUrl;
     // The same browser tab each time (named), so WhatsApp Web stays signed in and isn't opened twice.
     if (url) { window.open(url, page === 'whatsapp' ? 'mdk-whatsapp' : 'mdk-telegram'); api('open', { method: 'POST', body: { page } }).catch(() => {}); }
+    // No Telegram link yet: Super Admins go to the setting; staff are told who can add it.
+    else if (session.user.kind === 'admin') { open('staff'); toast('Paste the Telegram channel link in Settings (at the bottom of Staff accounts).'); }
+    else toast("The Telegram channel hasn't been set up yet. Ask a super admin.");
     return;
   }
   const have = tabs.find(t => t.page === page);
@@ -137,6 +140,10 @@ function closeAllTabs(save = true) { while (tabs.length) tabs.pop()!.frame.remov
 $('homeBtn').addEventListener('click', home);
 $('waPath').setAttribute('d', WA_PATH);
 $('waBtn').addEventListener('click', () => open('whatsapp'));
+$('tgPath').setAttribute('d', TG_PATH);
+$('tgBtn').addEventListener('click', () => open('telegram'));
+let toastT = 0;
+function toast(t: string) { const el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toastT); toastT = window.setTimeout(() => { el.hidden = true; }, 6000); }
 // The tab frames fill the space under the top bar (taller when the tabs row is showing).
 const topH = () => document.documentElement.style.setProperty('--top-h', `${$('top').offsetHeight}px`);
 if ('ResizeObserver' in window) new ResizeObserver(topH).observe($('top')); else window.addEventListener('resize', topH);

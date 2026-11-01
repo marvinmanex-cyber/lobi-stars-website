@@ -324,7 +324,7 @@ const PAGES: Record<string, () => Promise<void>> = {
         act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'add', staffId: $('aId').value, name: $('aName').value, role: $('aRole').value, password: $('aPw').value } }); toast('Staff account added.'); await draw(); });
       } else if (form.id === 'setF') {
         const vals = (n: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${n}"]:checked`)].map(i => i.value);
-        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'settings', telegramUrl: $('sTg').value.trim(), cancelRoles: vals('cancel'), priceRoles: vals('price'), lateMinutes: $('sLate').value } }); toast('Settings saved.'); await draw(); });
+        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'settings', telegramUrl: $('sTg').value.trim(), cancelRoles: vals('cancel'), priceRoles: vals('price'), lateMinutes: $('sLate').value } }); toast('Settings saved.'); shell?.shiftChanged(); await draw(); });
       } else if (form.dataset.editform) {
         const g = (n: string) => form.querySelector(`[name="${n}"]`) as HTMLInputElement;
         act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'edit', id: form.dataset.editform, name: g('name').value, role: g('role').value, password: g('password').value, active: g('active').checked } }); toast('Changes saved.'); await draw(); });

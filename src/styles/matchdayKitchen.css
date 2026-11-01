@@ -63,6 +63,7 @@ a { color: var(--green); }
 .mk-top .mk-tb { min-height: 48px; padding: 0 14px; border: 2px solid rgba(255, 255, 255, .25); border-radius: 10px; background: transparent; color: #fff; font: 700 17px/1 'Barlow Condensed', sans-serif; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; flex: none; display: inline-flex; align-items: center; gap: 8px; }
 .mk-top .mk-tb.on { background: var(--gold); border-color: var(--gold); color: #1d1a05; }
 .mk-top .mk-tb.wa { background: #25D366; border-color: #25D366; color: #06331a; }
+.mk-top .mk-tb.tg { background: #229ED9; border-color: #229ED9; color: #fff; }
 .mk-top .mk-tb svg { width: 24px; height: 24px; flex: none; }
 .mk-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .15); }
 .mk-tab { display: inline-flex; align-items: center; min-height: 48px; border-radius: 10px; background: rgba(255, 255, 255, .12); border: 2px solid transparent; }
