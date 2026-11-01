@@ -2520,6 +2520,25 @@ each saying **Buy ticket**, **Sold out**, **Tickets not on sale yet** or
 The full list is on /fixtures, and each match's full detail on its Match
 Centre page.
 
+**What the fan gets (since 1 Nov 2026):**
+- **On the website** (the payment page and Find my tickets): each ticket is
+  designed like the email ticket: navy and gold, Lobi Stars and opponent
+  crests, date / kick-off / venue, ticket number, the QR code, stand, ADULT
+  or CHILD, and price.
+- Under each ticket there are two buttons:
+  - **Save to phone (picture):** saves a picture (PNG) of the ticket. On
+    Android it goes to Downloads/Gallery. On iPhone a share sheet opens:
+    tap **Save Image** to put it in Photos.
+  - **Download PDF:** the same ticket as a PDF. **Download all tickets
+    (PDF)** at the bottom gives every ticket of the order, one per page.
+- **In the email:** the tickets are shown as before, and **also attached as a
+  PDF** (one page per ticket) that the fan can save to their phone or print.
+- At the gate, the picture, the PDF and the email all scan the same.
+- **Add to calendar** now opens the fan's calendar directly: iPhone and Mac
+  open the Calendar app; Android and Windows open Google Calendar with the
+  match already filled in (the fan taps Save). Fans no longer get a file
+  they don't know how to open.
+
 **Lost tickets:** a fan can get them back at **lobistarsfc.com/tickets/lookup**
 with their email and the order reference (from the Paystack receipt or the email).
 You can also find the order in **Orders** (search by name, email, phone or
@@ -3689,6 +3708,27 @@ Club staff (not coaching) have no public page.
 share image and details, and is in the sitemap. Ages are worked out from
 the date of birth (Lagos time) each time the page opens.
 
+### News tags and AI facts (since 1 Nov 2026)
+
+**Tag suggestions (Matchday › Squad: Tag suggestions):** every 10 minutes the
+website reads published news stories (CMS and Media Centre). When a story
+mentions a live player's or staff member's full name and is not tagged with
+them yet, it is listed here.
+- **Tag:** adds the person to the story (the news file is updated; the story
+  then shows on their squad page, and staff pages also show their tagged
+  news).
+- **Not this person:** dismisses it; it is never suggested again.
+- Who can use it: Super Admins and news editors/publishers.
+- While writing a story in the Media Centre, a box **"Mentioned in the
+  story"** offers the same one-click tags.
+
+**AI fact suggestions:** for each newly tagged story, Claude suggests up to
+two short, dated facts about the player (for example "Scored twice against
+Kada City on 25 Oct 2026"). They wait in **Matchday › Squad: Approvals**
+(type "Fact"); only a Super Admin can approve them. Approved facts go **only
+to the media partner's feed** (Data Package `verifiedFacts`), never on the
+public website. The cost shows in Settings › AI usage as "News facts".
+
 ### Exporting the data (Super Admins only)
 
 Only the three **Super Admins** can export player, coach and staff data:
@@ -3727,7 +3767,7 @@ but are not used anywhere.
 ## 39. Data Package format
 
 The Data Package is what the media partner's systems read. Its format is
-fixed: **schemaVersion "1.4"** (since 31 Oct 2026; 1.3 had no
+fixed: **schemaVersion "1.5"** (since 1 Nov 2026; 1.4 had no verifiedFacts; 1.3 had no
 availability or milestones; 1.2 had no loans or former people; 1.0 had the name pronunciation and recordings, which were
 removed; 1.1 had the middle name for over-18s). Do not rename files inside
 the ZIP.
@@ -3744,7 +3784,7 @@ the ZIP.
 | `schema.json` | The formal description (JSON Schema) of data.json. |
 | `README.txt` | What is inside, when and by whom it was made. |
 
-**data.json, top level:** `schemaVersion` ("1.4"), `exportedAt` (Lagos time,
+**data.json, top level:** `schemaVersion` ("1.5"), `exportedAt` (Lagos time,
 e.g. 2026-10-22T11:42:00+01:00), `source` ("lobistarsfc.com"), `season`,
 `filters`, `team`, `players`, `staff`.
 
@@ -3771,8 +3811,9 @@ e.g. 2026-10-22T11:42:00+01:00), `source` ("lobistarsfc.com"), `season`,
   `tournaments`), `notes` (`careerHighlight`, `interestingFact`),
   `milestones` (`key`, `label`, `date`: verified, from the official match
   records), `upcomingMilestones` (`key`, `label`, e.g. "1 goal away from 10
-  for the club": for the partner only), `photos` (`profile`, `action`,
-  `hero`).
+  for the club": for the partner only), `verifiedFacts` (`text`, `date`,
+  `source`: the news story link; AI-suggested facts approved by a Super
+  Admin, partner only), `photos` (`profile`, `action`, `hero`).
 - **staff** (by role), also: `role`, `licence`, `playingCareer`,
   `previousRoles` (`club`, `position`, `period`), `notes` (`philosophy`,
   `careerHighlight`, `interestingFact`), `photos` (`profile`, `hero`).

@@ -17,6 +17,16 @@ export async function onRequestGet({ request, env }) {
   if (only) {
     rows = rows.filter(e => matchSlug(e) === only || e.id.toLowerCase() === only);
     if (!rows.length) return new Response('Match not found', { status: 404 });
+    // "Add to calendar" opens the fan's calendar: Apple devices open the .ics
+    // file straight in Calendar; everyone else gets Google Calendar's new-event
+    // page, filled in (?ics=1 always gives the file).
+    const e = rows[0];
+    if (!url.searchParams.has('ics') && !/iPhone|iPad|iPod|Macintosh/.test(request.headers.get('user-agent') || '')) {
+      const start = Date.parse(e.event_date);
+      const q = new URLSearchParams({ action: 'TEMPLATE', text: `${e.home_team} vs ${e.away_team}`, dates: `${stamp(start)}/${stamp(start + 2 * 3600e3)}`,
+        details: `${e.competition}. Kick-off times are Nigerian time. Match Centre: ${origin}/matches/${matchSlug(e)}/`, location: e.venue || '', ctz: 'Africa/Lagos' });
+      return new Response(null, { status: 302, headers: { Location: `https://calendar.google.com/calendar/render?${q}`, 'Cache-Control': 'no-store' } });
+    }
   }
   const now = stamp(Date.now());
 

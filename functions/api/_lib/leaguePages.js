@@ -107,7 +107,7 @@ function matchCard(f, { now = Date.now(), previews = {}, featured = false } = {}
   if (done && f.report_url) acts.push(`<a class="lg-btn" href="${esc(f.report_url)}">Report</a>`);
   const preview = iso ? previews[toLagos(iso).date] : null;
   if (upcoming && lobi && preview) acts.push(`<a class="lg-btn" href="/news/${esc(preview)}/">Match preview</a>`);
-  if (upcoming && f.kickoff_at && !f.extra) acts.push(`<a class="lg-btn" href="/api/league/calendar.ics?fixture=${encodeURIComponent(f.id)}" download>Add to calendar</a>`);
+  if (upcoming && f.kickoff_at && !f.extra) acts.push(`<a class="lg-btn" href="/api/league/add-to-calendar?fixture=${encodeURIComponent(f.id)}" target="_blank" rel="noopener">Add to calendar</a>`);
   if (mu) acts.push(shareAction(mu, `${f.home?.name} vs ${f.away?.name}`));
   const winner = done ? (f.home_goals > f.away_goals ? f.home?.name : f.home_goals < f.away_goals ? f.away?.name : '') : '';
   const label = done ? `${f.home?.name} ${f.home_goals}, ${f.away?.name} ${f.away_goals}${winner ? `. ${winner} won` : '. A draw'}` : `${f.home?.name} vs ${f.away?.name}`;

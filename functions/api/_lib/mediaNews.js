@@ -32,7 +32,7 @@ async function normalise(d, ctx = {}) {
     gallery: (Array.isArray(d.gallery) ? d.gallery : []).map(g => { const p = pic(g); return p ? { ...p, caption: oneLine(g.caption, 200) } : null; }).filter(Boolean).slice(0, 24),
     video: VIDEO_RE.test(String(d.video || '').trim()) ? String(d.video).trim() : '',
     players: (Array.isArray(d.players) ? d.players : []).map(s => String(s).toLowerCase()).filter(s => /^[a-z0-9-]{2,80}$/.test(s)).slice(0, 12),
-    staff: (Array.isArray(d.staff) ? d.staff : []).map(s => oneLine(s, 80)).filter(Boolean).slice(0, 6),
+    staff: (Array.isArray(d.staff) ? d.staff : []).map(s => String(s).toLowerCase()).filter(s => /^[a-z0-9-]{2,80}$/.test(s)).slice(0, 6),
     match: d.match && /^[\w-]{1,80}$/.test(String(d.match.id || '')) && /^\d{4}-\d{2}-\d{2}$/.test(String(d.match.date || '')) ? { id: String(d.match.id), date: String(d.match.date), label: oneLine(d.match.label, 120) } : null,
     // Breaking news (homepage banner): only a Super Admin can switch it on; writers can ask for it.
     breaking: ctx.admin ? !!d.breaking : false,
@@ -84,7 +84,7 @@ export function newsMarkdown(v, { slug, tab, publishedAt, updatedAt = null, stat
     v.video ? `videoUrl: ${yaml(v.video)}` : null,
     v.author ? `author: ${yaml(v.author)}` : null,
     v.players.length ? `players: ${yaml(v.players)}` : null,
-    v.staff.length ? `tags: ${yaml(v.staff)}` : null,
+    v.staff.length ? `staff: ${yaml(v.staff)}` : null,
     v.match ? `matchDate: ${yaml(v.match.date)}` : null,
     CONTENT_TYPE[v.category] && v.match ? `contentType: ${yaml(CONTENT_TYPE[v.category])}` : null,
     v.gallery.length ? `gallery: ${yaml(v.gallery.map(g => ({ src: swap(g.url), caption: g.caption || null })))}` : null,

@@ -13,6 +13,8 @@ import { ensureTable, listMatches, toSummary } from './matchCentre.js';
 import { ticketState, TIERS, CAP_COL, TIER_LABELS, naira } from './tickets/rules.js';
 import { fulfillOrder } from './fulfillOrder.js';
 import { sendEmail, ticketBlocksHtml } from './email.js';
+import { ticketsPdf } from './ticketPdf.js';
+import { basketTickets } from '../tickets/basket.js';
 
 export const HOLD_MINUTES = 30;
 
@@ -215,7 +217,7 @@ export async function sendBasketEmail(env, basket) {
     }
     if (!blocks.length) continue;
     const fx = await db.prepare(`SELECT id FROM league_fixtures WHERE event_id = ?`).bind(o.event_id).first().catch(() => null);
-    const cal = fx ? `https://lobistarsfc.com/api/league/calendar.ics?fixture=${fx.id}` : null;
+    const cal = fx ? `https://lobistarsfc.com/api/league/add-to-calendar?fixture=${fx.id}` : null;
     const saved = rows.reduce((t, r) => t + (Number(r.discount_kobo) || 0), 0);
     const count = children ? `${adults} adult${adults === 1 ? '' : 's'}, ${children} child${children === 1 ? '' : 'ren'}` : `${adults} ticket${adults === 1 ? '' : 's'}`;
     sections.push(`<h3 style="color:#0d1a33;margin:26px 0 8px;font-family:Arial,sans-serif;">${esc(o.home_team)} vs ${esc(o.away_team)}</h3>
@@ -230,7 +232,7 @@ export async function sendBasketEmail(env, basket) {
   const html = `<div style="max-width:520px;margin:0 auto;font-family:Arial,sans-serif;color:#111;">
     <h2 style="color:#0d1a33;">Your Lobi Stars match tickets</h2>
     <p>Hi ${esc(basket.buyer_name)},</p>
-    <p>Your payment of <strong>${naira(total)}</strong> is confirmed. Order reference: <strong>${esc(basket.reference)}</strong>. Below is one QR code per ticket, for each match.</p>
+    <p>Your payment of <strong>${naira(total)}</strong> is confirmed. Order reference: <strong>${esc(basket.reference)}</strong>. Below is one QR code per ticket, for each match. Your tickets are also attached as a PDF: open it and save it to your phone, or print it.</p>
     ${priceBox}
     ${orders.some(o => o.ticket_type === 'child') ? '<p style="font-size:13px;line-height:1.5;"><strong>Child tickets:</strong> children may be asked for proof of age at the gate.</p>' : ''}
     <p style="background:#f4f5f7;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;"><strong>At the gate:</strong> each QR code admits one person, once, and only on the day of its match. Have it ready on your phone (a screenshot works) or printed. Lost the email? Open lobistarsfc.com/tickets/lookup with your email and order reference.</p>
@@ -238,7 +240,12 @@ export async function sendBasketEmail(env, basket) {
     <p style="background:#FFF8E1;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;"><strong>On match day:</strong> order food and drinks to your seat from your phone at MatchDay Kitchen: <a href="https://lobistarsfc.com/kitchen/">lobistarsfc.com/kitchen</a>.</p>
     <p style="font-size:12px;color:#888;">Pride of Benue &middot; Lobi Stars Football Club</p>
   </div>`;
-  await sendEmail(env, { to: basket.buyer_email, subject: `Your Lobi Stars tickets (${orders.length} match${orders.length === 1 ? '' : 'es'}) – ${basket.reference}`, html });
+  // The same tickets as a PDF attachment (one page per ticket), to save on the phone or print.
+  const pdf = await ticketsPdf(env, await basketTickets(db, basket)).catch(err => { console.error('[tickets] pdf attachment', err); return null; });
+  const attachments = pdf ? [{ filename: `Lobi-Stars-tickets-${basket.reference}.pdf`, content: b64(pdf) }] : undefined;
+  await sendEmail(env, { to: basket.buyer_email, subject: `Your Lobi Stars tickets (${orders.length} match${orders.length === 1 ? '' : 'es'}) – ${basket.reference}`, html, attachments });
 }
+
+const b64 = bytes => { let x = ''; for (let i = 0; i < bytes.length; i += 0x8000) x += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(x); };
 
 export { TIERS, TIER_LABELS };

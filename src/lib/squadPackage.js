@@ -17,11 +17,13 @@
 // reason); players: "milestones" [{ key, label, date }] (verified, from the official
 // match records) and "upcomingMilestones" [{ key, label }] (e.g. "1 goal away from 10
 // for the club": for the media partner, not shown on the website).
+// 1.5 (31 Oct 2026): players: "verifiedFacts" [{ text, date, source }]: short facts taken
+// from club news stories (suggested by AI, approved by a Super Admin).
 import { ageOn, isAdult, nameOf, profileName, groupOf } from './squadFields.js';
 import { officialName, shortName } from './names.js';
 import { countryName } from './countries.js';
 
-export const SCHEMA_VERSION = '1.4';
+export const SCHEMA_VERSION = '1.5';
 // LIVE is "verified" (approved and on the website), ON_LOAN "on_loan", FORMER "former".
 const STATUS = { LIVE: 'verified', ON_LOAN: 'on_loan', PENDING_APPROVAL: 'submitted', FORMER: 'former', CHANGES_REQUESTED: 'submitted', DRAFT: 'draft',
   VERIFIED: 'verified', SUBMITTED: 'submitted', LEFT_THE_CLUB: 'former' };
@@ -66,6 +68,7 @@ export function playerJson(p, files) {
     notes: { careerHighlight: s(d.careerHighlight), interestingFact: s(d.interestingFact) },
     milestones: (p.milestones || []).map(m => ({ key: s(m.key), label: s(m.label), date: s(m.date ? String(m.date).slice(0, 10) : '') })),
     upcomingMilestones: (p.upcoming || []).map(m => ({ key: s(m.key), label: s(m.label) })),
+    verifiedFacts: (p.facts || []).map(f => ({ text: s(f.text), date: s(f.date), source: s(f.source) })),
     photos: { profile: files.photo(p, 'profile'), action: p.hasAction ? files.photo(p, 'action') : null, hero: p.hasHero ? files.photo(p, 'hero') : null },
   };
 }
@@ -114,7 +117,7 @@ const common = {
 };
 const COMMON_REQ = Object.keys(common);
 export const SCHEMA = {
-  $schema: 'https://json-schema.org/draft/2020-12/schema', $id: 'https://lobistarsfc.com/schemas/squad-data-package-1.4.json',
+  $schema: 'https://json-schema.org/draft/2020-12/schema', $id: 'https://lobistarsfc.com/schemas/squad-data-package-1.5.json',
   title: 'Lobi Stars FC – Media Partner Data Package (data.json)', type: 'object', additionalProperties: false,
   required: ['schemaVersion', 'exportedAt', 'source', 'season', 'filters', 'team', 'players', 'staff'],
   properties: {
@@ -129,6 +132,7 @@ export const SCHEMA = {
       notes: obj({ careerHighlight: { type: 'string', maxLength: 300 }, interestingFact: { type: 'string', maxLength: 300 } }),
       milestones: { type: 'array', items: obj({ key: str, label: str, date: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' } }) },
       upcomingMilestones: { type: 'array', items: obj({ key: str, label: str }) },
+      verifiedFacts: { type: 'array', items: obj({ text: str, date: { type: 'string', pattern: '^(\\d{4}-\\d{2}-\\d{2})?$' }, source: str }) },
       photos: obj({ profile: strN, action: strN, hero: strN }) }) },
     staff: { type: 'array', items: obj({ ...common, role: str, licence: str, playingCareer: str,
       previousRoles: { type: 'array', items: obj({ club: str, position: str, period: str }) },

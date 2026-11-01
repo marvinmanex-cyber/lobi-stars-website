@@ -1,38 +1,187 @@
 ---
-// Shows the tickets of an order, grouped by match: one QR code per ticket,
-// the match, date and time (WAT), venue, stand, "Add to calendar" and the
-// gate rules. window.lsRenderTickets(container, data) where data comes from
-// /api/tickets/basket or /api/tickets/lookup. Values are set with textContent.
-// Shows ADULT / CHILD on each ticket and, for a discounted order, the
-// discount applied and the amount saved (locked when the order was made).
+// Shows the tickets of an order, grouped by match: one designed ticket per
+// QR code (navy and gold, like the ticket email: crests, date / kick-off /
+// venue bar, ticket number, stub with the QR code, stand, ADULT / CHILD and
+// price), "Add to calendar" and the gate rules. window.lsRenderTickets(container,
+// data) where data comes from /api/tickets/basket or /api/tickets/lookup.
+// Values are set with textContent. Each ticket can be saved to the phone as a
+// picture (PNG drawn on a canvas here, no outside library) or as a PDF
+// (/api/tickets/pdf, the same file attached to the ticket email).
+import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
 ---
 <style is:global>
   .tv-match { border: 1.5px solid var(--d4); border-radius: 14px; padding: 16px; margin-bottom: 16px; background: var(--d2); }
   .tv-match h2 { margin: 0 0 4px; font: 400 26px/1.1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .tv-meta { margin: 0 0 12px; color: var(--lt); font-size: 14px; line-height: 1.5; }
-  .tv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
-  .tv-ticket { border: 2px solid #C9A227; border-radius: 12px; padding: 12px; text-align: center; background: #fff; color: #0d1a33; }
-  .tv-ticket img { width: 160px; height: 160px; display: block; margin: 0 auto 8px; }
-  .tv-ticket code { display: block; font-size: 12px; word-break: break-all; }
-  .tv-ticket b { display: block; font-size: 13px; margin-top: 4px; }
-  .tv-ticket.void { opacity: .5; border-color: #A3161B; }
-  .tv-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-  .tv-acts a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1.5px solid var(--d4); border-radius: 4px; color: var(--white); text-decoration: none; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
-  .tv-type { display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 4px; font: 700 12px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; background: #E8EBF0; color: #0d1a33; }
+  .tv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+  .tv-card { max-width: 380px; width: 100%; margin: 0 auto; }
+  .tv-tix { border: 2px solid #C9A227; border-radius: 12px; overflow: hidden; font-family: Arial, sans-serif; position: relative; }
+  .tv-top { background: linear-gradient(160deg, #0d1a33, #0a1226); padding: 20px 18px 14px; text-align: center; color: #fff; }
+  .tv-league { color: rgba(255,255,255,.55); font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
+  .tv-official { color: #C9A227; font-size: 15px; letter-spacing: 2px; font-weight: bold; margin: 4px 0 14px; }
+  .tv-crests { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 10px; }
+  .tv-crests img, .tv-crests .tv-init { width: 52px; height: 52px; object-fit: contain; }
+  .tv-init { display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid #C9A227; border-radius: 50%; font-size: 22px; font-weight: bold; }
+  .tv-vs { color: #C9A227; font-size: 13px; font-weight: bold; }
+  .tv-teams { font-size: 19px; font-weight: bold; line-height: 1.3; margin-bottom: 14px; }
+  .tv-teams span { color: #C9A227; font-size: 12px; }
+  .tv-bar { display: grid; grid-template-columns: 1fr 1fr 1fr; background: rgba(255,255,255,.92); border-radius: 8px; padding: 12px 4px; color: #0d1a33; font-size: 11px; font-weight: bold; }
+  .tv-bar > div { padding: 0 4px; }
+  .tv-bar > div + div { border-left: 1px solid #d5d9df; }
+  .tv-bar small { display: block; font-size: 9px; letter-spacing: 1px; color: #5a6270; padding-bottom: 3px; }
+  .tv-bar em { display: block; font-style: normal; font-weight: normal; color: #5a6270; }
+  .tv-no { color: rgba(255,255,255,.55); font: 10px/1.4 monospace; letter-spacing: 1px; margin-top: 10px; word-break: break-all; }
+  .tv-stub { background: #fff; border-top: 2px dashed #0d1a33; padding: 18px; text-align: center; color: #0d1a33; }
+  .tv-stub-h { font-size: 12px; letter-spacing: 2px; font-weight: bold; margin-bottom: 10px; }
+  .tv-qr { width: 160px; height: 160px; display: block; margin: 0 auto; background: #fff; border: 1px solid #e2e6ed; padding: 6px; border-radius: 6px; box-sizing: content-box; }
+  .tv-verify { color: #5a6270; font-size: 10px; line-height: 1.5; margin: 10px 0; }
+  .tv-verify b { display: block; color: #0d1a33; letter-spacing: 1px; text-transform: uppercase; }
+  .tv-badge { width: 40px; height: 40px; object-fit: contain; display: block; margin: 0 auto 4px; }
+  .tv-stand { font-size: 13px; font-weight: bold; text-transform: uppercase; }
+  .tv-type { display: inline-block; margin: 6px 0 2px; padding: 2px 8px; border-radius: 4px; font: 700 12px/1.3 'Barlow Condensed', sans-serif; letter-spacing: 1px; background: #E8EBF0; color: #0d1a33; }
   .tv-type.child { background: #FFC72C; }
+  .tv-price { display: block; font-size: 16px; font-weight: bold; }
+  .tv-of { color: #5a6270; font-size: 9px; margin-top: 10px; }
+  .tv-flag { position: absolute; top: 14px; right: -34px; transform: rotate(35deg); background: #A3161B; color: #fff; font: 700 12px/1 Arial, sans-serif; letter-spacing: 1px; padding: 6px 40px; }
+  .tv-tix.void { opacity: .6; }
+  .tv-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .tv-btns button, .tv-btns a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 10px; border-radius: 6px; font: 700 13px/1.1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; text-decoration: none; cursor: pointer; text-align: center; }
+  .tv-btns button { background: #C9A227; color: #0d1a33; border: 0; }
+  .tv-btns a { border: 1.5px solid var(--d4); color: var(--white); background: transparent; }
+  .tv-btns button:disabled { opacity: .6; cursor: wait; }
+  .tv-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .tv-acts a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1.5px solid var(--d4); border-radius: 4px; color: var(--white); text-decoration: none; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
   .tv-save { background: #E3F6E9; color: #0B3D1A; border-radius: 10px; padding: 12px 14px; font-size: 14.5px; line-height: 1.6; margin: 0 0 16px; }
   .tv-rules { background: var(--d3); border-radius: 10px; padding: 12px 14px; font-size: 14px; line-height: 1.55; margin: 0 0 16px; }
 </style>
-<script is:inline>
+<script is:inline define:vars={{ LOGOS: TEAM_LOGOS }}>
 (function () {
   if (window.lsRenderTickets) return;
   var TZ = 'Africa/Lagos';
   var STAND = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
+  var BADGE = { VIP: '/images/vip-siting.png', Regular: '/images/popular-stand.png' };
   var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else n.setAttribute(k, v); }); for (var i = 2; i < arguments.length; i++) if (arguments[i] != null) n.append(arguments[i]); return n; };
+  var naira = function (k) { return '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
+  var venueParts = function (v) { var s = String(v || ''), i = s.indexOf(','); return i < 0 ? [s, ''] : [s.slice(0, i).trim(), s.slice(i + 1).trim()]; };
+  var whenParts = function (iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return ['To be confirmed', 'TBC'];
+    return [d.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }), d.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' })];
+  };
+  var pdfUrl = function (data, ticketId) {
+    var u = '/api/tickets/pdf?reference=' + encodeURIComponent(data.reference || '');
+    if (!/^LSBAS-/.test(data.reference || '') && data.email) u += '&email=' + encodeURIComponent(data.email);
+    return ticketId ? u + '&ticket=' + encodeURIComponent(ticketId) : u;
+  };
+  var crest = function (team) { var src = LOGOS[team]; return src ? el('img', { src: src, alt: team, width: 52, height: 52 }) : el('span', { class: 'tv-init', text: String(team || '?').charAt(0).toUpperCase() }); };
+
+  // ---- The picture (PNG) of one ticket, drawn on a canvas so it looks the same on every phone.
+  var loadImg = function (src) { return new Promise(function (res) { if (!src) return res(null); var im = new Image(); im.onload = function () { res(im); }; im.onerror = function () { res(null); }; im.src = src; }); };
+  var fitText = function (c, s, max, size, weight) { do { c.font = weight + ' ' + size + 'px Arial, sans-serif'; size -= 1; } while (c.measureText(s).width > max && size > 10); };
+  var wrapText = function (c, s, max) { var out = [], line = ''; String(s).split(/\s+/).forEach(function (w) { var n = line ? line + ' ' + w : w; if (c.measureText(n).width > max && line) { out.push(line); line = w; } else line = n; }); if (line) out.push(line); return out; };
+  var roundRect = function (c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
+  function ticketPicture(m, t, i, of) {
+    var W = 720, H = 1320;
+    return Promise.all([loadImg(LOGOS[m.homeTeam]), loadImg(LOGOS[m.awayTeam]), loadImg('/api/qr/' + encodeURIComponent(t.id)), loadImg(BADGE[m.tier])]).then(function (imgs) {
+      var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      var c = cv.getContext('2d'); c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+      c.fillStyle = '#C9A227'; roundRect(c, 0, 0, W, H, 28); c.fill();
+      var g = c.createLinearGradient(0, 0, W, 700); g.addColorStop(0, '#0d1a33'); g.addColorStop(1, '#0a1226');
+      c.save(); roundRect(c, 6, 6, W - 12, H - 12, 24); c.clip();
+      c.fillStyle = g; c.fillRect(6, 6, W - 12, 700);
+      c.fillStyle = '#fff'; c.fillRect(6, 706, W - 12, H - 712);
+      c.restore();
+      c.fillStyle = 'rgba(255,255,255,.55)'; c.font = '20px Arial, sans-serif'; c.fillText('NIGERIA NATIONAL LEAGUE', W / 2, 70);
+      c.fillStyle = '#C9A227'; c.font = 'bold 34px Arial, sans-serif'; c.fillText('OFFICIAL MATCH TICKET', W / 2, 118);
+      var drawCrest = function (im, team, cx) {
+        if (im) { var s = Math.min(120 / im.width, 120 / im.height); c.drawImage(im, cx - im.width * s / 2, 210 - im.height * s / 2, im.width * s, im.height * s); }
+        else { c.strokeStyle = '#C9A227'; c.lineWidth = 3; c.beginPath(); c.arc(cx, 210, 58, 0, Math.PI * 2); c.stroke(); c.fillStyle = '#fff'; c.font = 'bold 52px Arial, sans-serif'; c.fillText(String(team || '?').charAt(0).toUpperCase(), cx, 228); }
+      };
+      drawCrest(imgs[0], m.homeTeam, W / 2 - 150); drawCrest(imgs[1], m.awayTeam, W / 2 + 150);
+      c.fillStyle = '#C9A227'; c.font = 'bold 30px Arial, sans-serif'; c.fillText('VS', W / 2, 222);
+      c.fillStyle = '#fff'; c.font = 'bold 40px Arial, sans-serif';
+      var y = 340; wrapText(c, m.homeTeam + ' vs ' + m.awayTeam, W - 80).slice(0, 2).forEach(function (l) { c.fillText(l, W / 2, y); y += 48; });
+      // Info bar.
+      var by = 420, bx = 40, bw = W - 80, col = bw / 3, wp = whenParts(m.kickoff), vp = venueParts(m.venue);
+      c.fillStyle = 'rgba(255,255,255,.92)'; roundRect(c, bx, by, bw, 150, 16); c.fill();
+      c.strokeStyle = '#d5d9df'; c.lineWidth = 2; c.beginPath(); c.moveTo(bx + col, by + 20); c.lineTo(bx + col, by + 130); c.moveTo(bx + col * 2, by + 20); c.lineTo(bx + col * 2, by + 130); c.stroke();
+      // greyLast: the venue's town, under its name, in grey.
+      var cell = function (label, lines, cx, greyLast) {
+        c.fillStyle = '#5a6270'; c.font = 'bold 18px Arial, sans-serif'; c.fillText(label, cx, by + 42);
+        lines.slice(0, 3).forEach(function (l, k) {
+          var grey = greyLast && k === lines.length - 1;
+          c.fillStyle = grey ? '#5a6270' : '#0d1a33'; c.font = (grey ? '' : 'bold ') + '22px Arial, sans-serif'; c.fillText(l, cx, by + 76 + k * 28);
+        });
+      };
+      c.font = 'bold 22px Arial, sans-serif';
+      cell('DATE', wrapText(c, wp[0], col - 16), bx + col / 2);
+      cell('KICK-OFF', [wp[1]], bx + col * 1.5);
+      cell('VENUE', wrapText(c, vp[0], col - 16).slice(0, 2).concat(vp[1] ? [vp[1]] : []), bx + col * 2.5, !!vp[1]);
+      c.fillStyle = 'rgba(255,255,255,.55)'; c.font = '20px monospace'; c.fillText('TICKET NO: ' + t.id, W / 2, 630);
+      c.fillText('Ticket ' + (i + 1) + ' of ' + of, W / 2, 664);
+      // Tear line and stub.
+      c.strokeStyle = '#0d1a33'; c.lineWidth = 3; c.setLineDash([14, 10]); c.beginPath(); c.moveTo(20, 706); c.lineTo(W - 20, 706); c.stroke(); c.setLineDash([]);
+      c.fillStyle = '#0d1a33'; c.font = 'bold 26px Arial, sans-serif'; c.fillText('MATCH TICKET', W / 2, 760);
+      c.strokeStyle = '#e2e6ed'; c.lineWidth = 2; roundRect(c, W / 2 - 180, 785, 360, 360, 12); c.stroke();
+      if (imgs[2]) { c.imageSmoothingEnabled = false; c.drawImage(imgs[2], W / 2 - 165, 800, 330, 330); c.imageSmoothingEnabled = true; }
+      c.fillStyle = '#0d1a33'; c.font = 'bold 20px Arial, sans-serif'; c.fillText('VERIFY TICKET', W / 2, 1180);
+      c.fillStyle = '#5a6270'; c.font = '18px Arial, sans-serif'; c.fillText('Scan the QR code to confirm this ticket is genuine.', W / 2, 1206);
+      var sy = 1250, stand = (STAND[m.tier] || m.tier).toUpperCase(), type = t.type === 'child' ? 'CHILD' : 'ADULT';
+      var parts = [stand, type, t.priceKobo != null ? naira(t.priceKobo) : null].filter(Boolean);
+      c.fillStyle = '#0d1a33'; fitText(c, parts.join('   ·   '), W - 80, 30, 'bold'); c.fillText(parts.join('   ·   '), W / 2, sy);
+      c.fillStyle = '#5a6270'; c.font = '17px Arial, sans-serif'; c.fillText('One scan per ticket, on the day of the match only · lobistarsfc.com', W / 2, 1290);
+      return new Promise(function (res) { cv.toBlob(res, 'image/png'); });
+    });
+  }
+  function savePicture(btn, m, t, i, of) {
+    var label = btn.textContent; btn.disabled = true; btn.textContent = 'Preparing…';
+    ticketPicture(m, t, i, of).then(function (blob) {
+      if (!blob) throw new Error('no picture');
+      var name = 'Lobi-Stars-ticket-' + t.id + '.png';
+      var file = window.File ? new File([blob], name, { type: 'image/png' }) : null;
+      // iPhone: the share sheet has "Save Image" (to Photos). Elsewhere: a normal download.
+      if (file && /iP(hone|ad|od)/.test(navigator.userAgent) && navigator.canShare && navigator.canShare({ files: [file] })) return navigator.share({ files: [file], title: 'Lobi Stars ticket' }).catch(function () {});
+      var a = el('a', { href: URL.createObjectURL(blob), download: name }); document.body.append(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+    }).catch(function () { alert('Could not make the picture. Take a screenshot of the ticket instead, or use Download PDF.'); })
+      .then(function () { btn.disabled = false; btn.textContent = label; });
+  }
+
+  function ticketCard(data, m, t, i, of) {
+    var wp = whenParts(m.kickoff), vp = venueParts(m.venue), stand = STAND[m.tier] || m.tier;
+    var tix = el('div', { class: 'tv-tix' + (t.status === 'void' ? ' void' : '') },
+      t.status === 'used' || t.status === 'void' ? el('span', { class: 'tv-flag', text: t.status === 'used' ? 'USED' : 'CANCELLED' }) : null,
+      el('div', { class: 'tv-top' },
+        el('div', { class: 'tv-league', text: 'Nigeria National League' }),
+        el('div', { class: 'tv-official', text: 'OFFICIAL MATCH TICKET' }),
+        el('div', { class: 'tv-crests' }, crest(m.homeTeam), el('span', { class: 'tv-vs', text: 'VS' }), crest(m.awayTeam)),
+        el('div', { class: 'tv-teams' }, m.homeTeam + ' ', el('span', { text: 'VS' }), ' ' + m.awayTeam),
+        el('div', { class: 'tv-bar' },
+          el('div', null, el('small', { text: 'DATE' }), wp[0]),
+          el('div', null, el('small', { text: 'KICK-OFF' }), wp[1]),
+          el('div', null, el('small', { text: 'VENUE' }), vp[0], vp[1] ? el('em', { text: vp[1] }) : null)),
+        el('div', { class: 'tv-no', text: 'TICKET NO: ' + t.id })),
+      el('div', { class: 'tv-stub' },
+        el('div', { class: 'tv-stub-h', text: 'MATCH TICKET' }),
+        el('img', { class: 'tv-qr', src: '/api/qr/' + encodeURIComponent(t.id), alt: 'QR code for ticket ' + (i + 1), width: 160, height: 160, loading: 'lazy' }),
+        el('div', { class: 'tv-verify' }, el('b', { text: 'Verify ticket' }), 'Scan the QR code to confirm this ticket is genuine.'),
+        BADGE[m.tier] ? el('img', { class: 'tv-badge', src: BADGE[m.tier], alt: '', width: 40, height: 40 }) : null,
+        el('div', { class: 'tv-stand', text: stand }),
+        el('span', { class: 'tv-type' + (t.type === 'child' ? ' child' : ''), text: t.type === 'child' ? 'CHILD' : 'ADULT' }),
+        t.priceKobo != null ? el('span', { class: 'tv-price', text: naira(t.priceKobo) }) : null,
+        el('div', { class: 'tv-of', text: 'Ticket ' + (i + 1) + ' of ' + of })));
+    var card = el('div', { class: 'tv-card' }, tix);
+    if (t.status !== 'void') {
+      var pic = el('button', { type: 'button', text: 'Save to phone (picture)' });
+      pic.addEventListener('click', function () { savePicture(pic, m, t, i, of); });
+      card.append(el('div', { class: 'tv-btns' }, pic, el('a', { href: pdfUrl(data, t.id), text: 'Download PDF' })));
+    }
+    return card;
+  }
+
   window.lsRenderTickets = function (box, data) {
     var count = data.matches.reduce(function (s, m) { return s + m.tickets.length; }, 0);
-    var parts = [el('p', { class: 'tv-rules' }, el('b', { text: 'At the gate: ' }), 'each QR code admits one person, once, and only on the day of its match. Show it on your phone (a screenshot works) or printed. Keep it private: anyone with the code can use it.')];
-    var naira = function (k) { return '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
+    var parts = [el('p', { class: 'tv-rules' }, el('b', { text: 'At the gate: ' }), 'each QR code admits one person, once, and only on the day of its match. Save each ticket to your phone (picture or PDF), or print it. Keep it private: anyone with the code can use it.')];
     if (data.discountKobo > 0) parts.unshift(el('p', { class: 'tv-save' }, 'Tickets ' + naira(data.subtotalKobo) + ' · Discount: ' + (data.discountLabel || 'Discount') + ' −' + naira(data.discountKobo) + ' · Total paid ' + naira(data.totalKobo) + '. ', el('b', { text: 'You saved ' + naira(data.discountKobo) + '.' }), data.groupName ? ' Group: ' + data.groupName + '.' : null));
     if (data.matches.some(function (m) { return m.tickets.some(function (t) { return t.type === 'child'; }); })) parts.push(el('p', { class: 'tv-rules', text: 'Child tickets: children may be asked for proof of age at the gate.' }));
     if (data.refunded) parts.unshift(el('p', { class: 'tv-rules', text: 'This order was refunded: its tickets are cancelled.' }));
@@ -40,16 +189,12 @@
       var d = new Date(m.kickoff);
       var when = d.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ', kick-off ' + d.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
       var grid = el('div', { class: 'tv-grid' });
-      m.tickets.forEach(function (t, i) {
-        grid.append(el('div', { class: 'tv-ticket' + (t.status === 'void' ? ' void' : '') },
-          el('img', { src: '/api/qr/' + encodeURIComponent(t.id), alt: 'QR code for ticket ' + (i + 1), width: 160, height: 160, loading: 'lazy' }),
-          el('code', { text: t.id }), el('b', { text: (STAND[m.tier] || m.tier) + (t.status === 'used' ? ' · used' : t.status === 'void' ? ' · cancelled' : '') }),
-          t.type ? el('span', { class: 'tv-type' + (t.type === 'child' ? ' child' : ''), text: t.type === 'child' ? 'CHILD' : 'ADULT' }) : null));
-      });
+      m.tickets.forEach(function (t, i) { grid.append(ticketCard(data, m, t, i, m.tickets.length)); });
       var acts = el('div', { class: 'tv-acts' });
-      if (m.fixtureId) acts.append(el('a', { href: '/api/league/calendar.ics?fixture=' + m.fixtureId, text: 'Add to calendar' }));
+      if (m.fixtureId) acts.append(el('a', { href: '/api/league/add-to-calendar?fixture=' + m.fixtureId, target: '_blank', rel: 'noopener', text: 'Add to calendar' }));
       parts.push(el('section', { class: 'tv-match' }, el('h2', { text: m.homeTeam + ' vs ' + m.awayTeam }), el('p', { class: 'tv-meta', text: when + ' · ' + m.venue + ' · ' + m.tickets.length + ' ticket' + (m.tickets.length === 1 ? '' : 's') + (m.discountKobo > 0 ? ' · you saved ' + naira(m.discountKobo) : '') }), grid, acts));
     });
+    if (!data.refunded && count > 1) parts.push(el('div', { class: 'tv-acts' }, el('a', { href: pdfUrl(data), text: 'Download all tickets (PDF)' })));
     box.replaceChildren.apply(box, parts);
     return count;
   };

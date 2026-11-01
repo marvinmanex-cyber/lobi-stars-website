@@ -62,9 +62,9 @@ test('new recent milestones become DRAFT story suggestions in the Media Centre (
   assert.equal(third.media.milestones.skipped, true, 'at most every 10 minutes');
 });
 
-test('partner feed 1.4: verified milestones and upcoming ones; availability', async () => {
+test('partner feed 1.5: verified milestones and upcoming ones; availability', async () => {
   const doc = await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: `Bearer ${KEY}` } }).then(r => r.json());
-  assert.equal(doc.schemaVersion, '1.4'); assert.equal(SCHEMA_VERSION, '1.4');
+  assert.equal(doc.schemaVersion, '1.5'); assert.equal(SCHEMA_VERSION, '1.5');
   assert.deepEqual(validatePackage(doc), []);
   const me = doc.players.find(p => p.id === P.id);
   assert.ok(me, 'the player is in the feed');

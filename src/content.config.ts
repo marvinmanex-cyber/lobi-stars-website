@@ -38,6 +38,8 @@ const news = defineCollection({
     updatedAt: z.coerce.date().nullable().optional(),
     // Squad players tagged in the story (player file names, e.g. "terna-akaa").
     players: z.array(z.string()).nullable().optional(),
+    // Coaching staff tagged in the story (their web address, e.g. "terver-iorliam"); listed on their page.
+    staff: z.array(z.string()).nullable().optional(),
     // Series tag, e.g. "Heritage" (long reads about club history and legends).
     series: z.string().nullable().optional(),
     // Free tags, e.g. "Community" (Club stories tagged Community are listed on /club/community).

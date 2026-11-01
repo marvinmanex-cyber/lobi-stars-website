@@ -1,0 +1,57 @@
+---
+// Matchday › Squad: Tag suggestions (Super Admins and staff who edit news).
+// Every 10 minutes published stories are scanned for current and former
+// players' and staff members' names; a name in a story that isn't tagged with
+// that person is listed here. "Tag" updates the story (it then appears on the
+// person's page after the site rebuilds); "Not this person" dismisses it.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Squad tag suggestions | Lobi Stars Admin" description="Tag stories with the players and staff they mention." noindex>
+  <div class="wrap sts">
+    <AdminNav current="squad-suggestions" />
+    <header><div class="stag">Matchday · Squad</div><h1 class="stitle">Tag <span class="r">suggestions</span></h1></header>
+    <p class="sts-lede">Players and staff mentioned in published stories that aren't tagged with them yet. <b>Tag</b> adds the tag: the story then appears on their Squad page (about 3 minutes after, when the site rebuilds). <b>Not this person</b> removes the suggestion (e.g. someone with the same name).</p>
+    <p class="sts-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <div class="sts-tabs"><button type="button" data-st="pending" class="on">Waiting</button><button type="button" data-st="tagged">Tagged</button><button type="button" data-st="dismissed">Dismissed</button></div>
+    <section class="sts-card"><ul class="sts-list" id="list"><li class="muted">Loading…</li></ul></section>
+  </div>
+</Layout>
+<style>
+  .sts { max-width: 1000px; padding-top: 20px; padding-bottom: 60px; }
+  .sts-lede { color: var(--a-muted); line-height: 1.5; }
+  .sts-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: sticky; top: 8px; z-index: 5; } .sts-msg.err { background: #FEE2E2; color: #991B1B; }
+  .sts-tabs { display: flex; gap: 6px; margin: 14px 0; } .sts-tabs button { font: inherit; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; } .sts-tabs button.on { background: #1C3F7A; color: #fff; border-color: #1C3F7A; }
+  .sts-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 8px 16px; }
+  .sts-list { list-style: none; margin: 0; padding: 0; }
+  .sts :global(.sts-list li) { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 12px 0; border-top: 1px solid var(--a-line); } .sts :global(.sts-list li:first-child) { border-top: 0; }
+  .sts :global(.t) { flex: 1 1 280px; } .sts :global(.t b) { display: block; } .sts :global(.t small) { color: var(--a-muted); }
+  .sts :global(button.act) { font: inherit; font-size: 13px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; } .sts :global(button.go) { background: #10B981; border-color: #10B981; color: #fff; font-weight: 700; }
+</style>
+<script>
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const when = (iso?: string) => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  let status = 'pending', msgT = 0;
+  function msg(t: string, ok = true) { const m = $('msg'); m.textContent = t; m.className = `sts-msg${ok ? '' : ' err'}`; m.hidden = false; clearTimeout(msgT); msgT = window.setTimeout(() => { m.hidden = true; }, 8000); }
+  async function api(body?: unknown) {
+    const r = await fetch(`/api/admin/squad-suggestions${body ? '' : `?status=${status}`}`, body ? { method: 'POST', headers: H, body: JSON.stringify(body) } : { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/squad-suggestions/'; throw new Error('Please sign in again.'); }
+    const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || 'Request failed'); return d;
+  }
+  async function load() {
+    try {
+      const d = await api();
+      $('list').innerHTML = d.suggestions.length ? d.suggestions.map((s: any) => `<li data-id="${s.id}"><div class="t"><b>${esc(s.name)} mentioned in “${esc(s.article_title)}”</b><small>${s.kind === 'player' ? 'Player' : 'Staff'} · found “${esc(s.matched)}” · ${esc(when(s.created_at))}${s.decided_by ? ` · ${esc(s.status)} by ${esc(s.decided_by)}` : ''}${s.error ? ` · <b style="color:#B91C1C">${esc(s.error)}</b>` : ''}</small> <a href="/news/${esc(s.article_slug)}/" target="_blank" rel="noopener">Open the story</a></div>
+        ${status === 'pending' ? '<button class="act go" type="button" data-d="tag">Tag</button><button class="act" type="button" data-d="dismiss">Not this person</button>' : ''}</li>`).join('') : '<li class="muted">Nothing here.</li>';
+    } catch (e: any) { msg(e.message, false); }
+  }
+  $('list').addEventListener('click', async (e: Event) => {
+    const b = (e.target as HTMLElement).closest('[data-d]') as HTMLButtonElement | null; if (!b) return;
+    b.disabled = true;
+    try { const r = await api({ id: Number(b.closest('li')!.dataset.id), decision: b.dataset.d }); msg(r.note || 'Done.'); load(); } catch (err: any) { msg(err.message, false); b.disabled = false; }
+  });
+  document.querySelectorAll<HTMLButtonElement>('[data-st]').forEach(b => b.addEventListener('click', () => { status = b.dataset.st!; document.querySelectorAll('[data-st]').forEach(x => x.classList.toggle('on', x === b)); load(); }));
+  load();
+</script>

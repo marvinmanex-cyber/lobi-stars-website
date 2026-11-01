@@ -30,7 +30,7 @@ import '../../styles/fixture-card.css';
       const acts = [];
       if (f.home.isLobi) acts.push('<a class="lg-btn primary" href="/tickets/">Tickets</a>');
       if (matchUrl) acts.push(`<a class="lg-btn" href="${encodeURI(matchUrl)}">Match Centre</a>`);
-      acts.push(`<a class="lg-btn" href="/api/league/calendar.ics?fixture=${encodeURIComponent(f.id)}" download>Add to calendar</a>`);
+      acts.push(`<a class="lg-btn" href="/api/league/add-to-calendar?fixture=${encodeURIComponent(f.id)}" target="_blank" rel="noopener">Add to calendar</a>`);
       if (matchUrl) acts.push(shareAction(matchUrl, `${f.home.name} vs ${f.away.name}`));
       // Every value is escaped by the card builder.
       body.innerHTML = fixtureCardHtml({

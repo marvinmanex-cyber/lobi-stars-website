@@ -91,7 +91,7 @@ test('partner API: key needed; Public + Media only in the Data Package structure
   assert.equal((await fetch(`${BASE}/api/partner/squad`)).status, 401);
   assert.equal((await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: 'Bearer wrong' } })).status, 401);
   const doc = await fetch(`${BASE}/api/partner/squad`, { headers: { Authorization: `Bearer ${KEY}` } }).then(r => r.json());
-  assert.equal(doc.schemaVersion, '1.4'); assert.deepEqual(validatePackage(doc), []);
+  assert.equal(doc.schemaVersion, '1.5'); assert.deepEqual(validatePackage(doc), []);
   const pl = doc.players.find(x => x.id === id), st = doc.staff.find(x => x.id === staffId);
   assert.equal(pl.notes.careerHighlight, 'Captain in 2025', 'media notes included'); assert.equal(pl.pronunciation, null, 'no pronunciation any more (null in 1.2)');
   assert.equal(st.notes.philosophy, 'Press high'); assert.equal(st.role, 'Head Coach');

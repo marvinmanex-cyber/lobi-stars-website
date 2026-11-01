@@ -27,9 +27,10 @@ export async function onRequestPost({ request, env }) {
     const o = await db.prepare(`SELECT o.*, e.home_team, e.away_team, e.event_date, e.venue, (SELECT id FROM league_fixtures f WHERE f.event_id = o.event_id) AS fixture_id
       FROM orders o JOIN events e ON e.id = o.event_id WHERE (o.paystack_reference = ? OR o.id = ?) AND lower(o.buyer_email) = ? AND o.payment_status = 'paid'`).bind(ref, ref, email).first();
     if (!o) return notFound;
-    const { results: t } = await db.prepare(`SELECT id, status FROM tickets WHERE order_id = ? ORDER BY id`).bind(o.id).all();
+    const { results: t } = await db.prepare(`SELECT id, status, ticket_type FROM tickets WHERE order_id = ? ORDER BY id`).bind(o.id).all();
+    const priceKobo = o.quantity ? Math.round(o.total_kobo / o.quantity) : null;
     return Response.json({ kind: 'order', reference: o.paystack_reference, email, totalKobo: o.total_kobo,
-      matches: [{ eventId: o.event_id, homeTeam: o.home_team, awayTeam: o.away_team, kickoff: o.event_date, venue: o.venue, tier: o.tier, fixtureId: o.fixture_id, tickets: t.map(x => ({ id: x.id, status: x.status })) }] });
+      matches: [{ eventId: o.event_id, homeTeam: o.home_team, awayTeam: o.away_team, kickoff: o.event_date, venue: o.venue, tier: o.tier, fixtureId: o.fixture_id, tickets: t.map(x => ({ id: x.id, status: x.status, type: x.ticket_type || 'adult', priceKobo })) }] });
   } catch (err) {
     console.error('[tickets] lookup', err);
     return Response.json({ error: 'Something went wrong.' }, { status: 500 });

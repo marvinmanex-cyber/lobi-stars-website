@@ -66,6 +66,10 @@ export async function onRequestGet({ request, env, waitUntil }) {
       ? { icon: '🧾', title: `${n} squad ${n === 1 ? 'profile or change' : 'profiles or changes'} waiting for your approval`, sub: 'Nothing goes on the website before a Super Admin approves it', href: '/admin/squad-approvals/' }
       : { icon: '🧾', title: `${n} squad ${n === 1 ? 'profile or change' : 'profiles or changes'} waiting for a Super Admin`, sub: 'Sent from the Squad & Staff Data Portal', href: '/admin/squad-profiles/' });
   }
+  // Stories that mention players or staff without tagging them (Squad: Tag suggestions).
+  if (can(admin, 'squad.approve') || can(admin, 'content.news.edit') || can(admin, 'content.news.publish')) {
+    counts.tagSuggestions = (await db.prepare(`SELECT COUNT(*) AS n FROM squad_tag_suggestions WHERE status = 'pending'`).first().catch(() => null))?.n || 0;
+  }
   // Media Centre content waiting for a Super Admin (Media Centre › Approval Queue).
   if (can(admin, 'media.centre.manage')) {
     const n = await mediaQueueCount(db).catch(() => 0);

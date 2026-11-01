@@ -64,7 +64,10 @@ test('calendars: /fixtures.ics feed and single-match downloads', async () => {
   assert.match(feed.headers.get('content-type'), /text\/calendar/);
   assert.match(await feed.text(), /BEGIN:VCALENDAR[\s\S]*X-WR-CALNAME:Lobi Stars FC Fixtures/);
   const { matches } = await fetch(`${BASE}/api/matches`).then(r => r.json());
-  const one = await fetch(`${BASE}/api/calendar?match=${matches[0].slug}`);
+  // Android / Windows: straight to Google Calendar, filled in; iPhone: the file (opens in Calendar).
+  const g = await fetch(`${BASE}/api/calendar?match=${matches[0].slug}`, { redirect: 'manual', headers: { 'User-Agent': 'Mozilla/5.0 (Linux; Android 14)' } });
+  assert.equal(g.status, 302); assert.match(g.headers.get('location'), /^https:\/\/calendar\.google\.com\/calendar\/render\?action=TEMPLATE&text=/);
+  const one = await fetch(`${BASE}/api/calendar?match=${matches[0].slug}`, { headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)' } });
   assert.equal(one.status, 200);
   assert.match(one.headers.get('content-disposition'), /attachment/);
   assert.equal(((await one.text()).match(/BEGIN:VEVENT/g) || []).length, 1);

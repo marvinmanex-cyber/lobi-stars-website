@@ -13,6 +13,7 @@ import { ensureProfileSchema, getTeam, fileBase, parseJson, rowName, liveOf, slu
 import { getPortalSettings, setPortalSetting } from './squadPortal.js';
 import { roleMap } from './squadRoles.js';
 import { careerData, careerFor } from './squadCareer.js';
+import { factsFor } from './squadNews.js';
 
 const GROUP = { Goalkeeper: 'GK', Defender: 'DEF', Midfielder: 'MID', Forward: 'FWD' };
 
@@ -193,6 +194,9 @@ export async function partnerFeed(env, origin, { since = null } = {}) {
       const c = careerFor(data, [r.public_slug, ...parseJson(r.old_slugs, [])], { goalkeeper: parseJson(r.data_json, {}).positionGroup === 'Goalkeeper' });
       rows[i].milestones = c.milestones; rows[i].upcoming = c.upcoming;
     });
+    // Facts from news stories that a Super Admin approved.
+    const facts = await factsFor(db, raw.map(r => r.person_id || r.id));
+    raw.forEach((r, i) => { if (r.type === 'player') rows[i].facts = facts.get(r.person_id || r.id) || []; });
   } catch (e) { console.error('[partner feed] milestones', e); }
   const links = new Map();
   for (const p of rows) {

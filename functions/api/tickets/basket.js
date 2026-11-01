@@ -142,7 +142,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
 
 /** The tickets of a basket, per match (only for someone holding the reference). */
 export async function basketTickets(db, basket) {
-  const { results } = await db.prepare(`SELECT o.id AS order_id, o.tier, o.quantity, o.event_id, o.discount_kobo, e.home_team, e.away_team, e.event_date, e.venue,
+  const { results } = await db.prepare(`SELECT o.id AS order_id, o.tier, o.quantity, o.total_kobo, o.event_id, o.discount_kobo, e.home_team, e.away_team, e.event_date, e.venue,
       (SELECT id FROM league_fixtures f WHERE f.event_id = o.event_id) AS fixture_id
     FROM orders o JOIN events e ON e.id = o.event_id WHERE o.basket_id = ? AND o.payment_status = 'paid' ORDER BY e.event_date, o.rowid`).bind(basket.id).all();
   // One entry per match and stand (a match can have several rows: adult/child, or more than 10 tickets).
@@ -152,7 +152,8 @@ export async function basketTickets(db, basket) {
     let m = matches.find(x => x.eventId === r.event_id && x.tier === r.tier);
     if (!m) { m = { eventId: r.event_id, homeTeam: r.home_team, awayTeam: r.away_team, kickoff: r.event_date, venue: r.venue, tier: r.tier, fixtureId: r.fixture_id, tickets: [], discountKobo: 0 }; matches.push(m); }
     m.discountKobo += Number(r.discount_kobo) || 0;
-    m.tickets.push(...t.map(x => ({ id: x.id, status: x.status, type: x.ticket_type || 'adult' })));
+    const priceKobo = r.quantity ? Math.round(r.total_kobo / r.quantity) : null;
+    m.tickets.push(...t.map(x => ({ id: x.id, status: x.status, type: x.ticket_type || 'adult', priceKobo })));
   }
   return {
     reference: basket.reference, email: basket.buyer_email, totalKobo: basket.total_kobo,

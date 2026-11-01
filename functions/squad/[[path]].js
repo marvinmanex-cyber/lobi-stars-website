@@ -78,14 +78,13 @@ async function profilePage(request, env, url, person, list, season, { index = tr
   const title = `${person.name} | Lobi Stars FC`;
   const { prev, next, teammates } = neighbours(list, person);
   const page = `${url.origin}${person.href}`;
-  // Stories tagged with this player (news file "players" list), newest first.
+  // Stories tagged with this person (news file "players" or "staff" list), newest first.
   let news = [];
-  if (person.kind === 'player') {
-    try {
-      const idx = await env.ASSETS.fetch(new URL('/data/news-index.json', url));
-      if (idx.ok) news = (await idx.json()).filter(n => (n.players || []).some(s => s === person.slug || (person.oldSlugs || []).includes(s)));
-    } catch { /* no news list */ }
-  }
+  try {
+    const idx = await env.ASSETS.fetch(new URL('/data/news-index.json', url));
+    const field = person.kind === 'player' ? 'players' : 'staff';
+    if (idx.ok) news = (await idx.json()).filter(n => (n[field] || []).some(s => s === person.slug || (person.oldSlugs || []).includes(s)));
+  } catch { /* no news list */ }
   const res = rewrite(shell, {
     title, description: profileDescription(person), url: page, index,
     image: person.photo ? new URL(person.photo.replace('w1200.webp', 'w1200.jpg'), url).toString() : null, imageAlt: `${person.name}, Lobi Stars FC`,

@@ -22,6 +22,7 @@ export async function GET() {
     membersOnly: a.data.membersOnly,
     // Tagged squad players (their profile pages list the story).
     players: a.data.players || [],
+    staff: a.data.staff || [],
     teamNews: (a.data.teamNews || []).map(r => ({
       name: r.name || name(r.player) || '', player: r.player && name(r.player) ? r.player : null,
       status: r.status, reason: r.reason || '', expectedReturn: r.expectedReturn || '',

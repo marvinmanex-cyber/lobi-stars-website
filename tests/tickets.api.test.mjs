@@ -97,6 +97,15 @@ test('one payment for several matches: tickets per match, duplicate webhook issu
   const look = await pub('/api/tickets/lookup', { email: b.buyerEmail.toUpperCase(), reference: ref.toLowerCase() }, { 'CF-Connecting-IP': lip });
   assert.equal(look.status, 200); assert.equal(look.data.matches.length, 2);
   assert.ok(!JSON.stringify(look.data).includes(b.buyerPhone), 'no phone number in the lookup');
+  assert.ok(look.data.matches.every(m => m.tickets.every(t => t.priceKobo > 0 && t.type)), 'price and ADULT/CHILD on each ticket');
+  // The PDF (also attached to the email): all tickets, or one; unknown reference refused.
+  const pdf = await fetch(`${BASE}/api/tickets/pdf?reference=${ref}`);
+  assert.equal(pdf.status, 200); assert.equal(pdf.headers.get('content-type'), 'application/pdf');
+  const pdfText = Buffer.from(await pdf.arrayBuffer()).toString('latin1');
+  assert.ok(pdfText.startsWith('%PDF-')); assert.match(pdfText, /\/Count 3 /, 'one page per ticket');
+  const one = Buffer.from(await (await fetch(`${BASE}/api/tickets/pdf?reference=${ref}&ticket=${ids[0]}`)).arrayBuffer()).toString('latin1');
+  assert.match(one, /\/Count 1 /); assert.ok(one.includes(ids[0]));
+  assert.equal((await fetch(`${BASE}/api/tickets/pdf?reference=LSBAS-NOTREAL0000`)).status, 404);
   // Gate: valid, then already used (with the time); the later match's ticket is the wrong match today.
   const todayTicket = paid.data.matches.find(m => m.eventId === today).tickets[0].id;
   const laterTicket = paid.data.matches.find(m => m.eventId === later).tickets[0].id;

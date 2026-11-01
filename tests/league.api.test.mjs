@@ -270,7 +270,12 @@ test('public pages are real HTML: fixtures with SportsEvent data, a real table, 
   assert.match(fx, /"@type":"SportsEvent"/);
   assert.match(fx, /"startDate":"2026-12-06T16:00:00\+01:00"/, 'Lobi Stars v Mighty Jets, Sunday 6 Dec, 4 PM Nigerian time');
   assert.match(fx, /Subscribe to Lobi Stars fixtures/);
-  assert.match(fx, /href="\/api\/league\/calendar\.ics\?fixture=\d+" download>Add to calendar/);
+  assert.match(fx, /href="\/api\/league\/add-to-calendar\?fixture=(\d+)" target="_blank" rel="noopener">Add to calendar/);
+  const fid = fx.match(/add-to-calendar\?fixture=(\d+)/)[1];
+  const g = await fetch(`${BASE}/api/league/add-to-calendar?fixture=${fid}`, { redirect: 'manual', headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0)' } });
+  assert.equal(g.status, 302); assert.match(g.headers.get('location'), /^https:\/\/calendar\.google\.com\/.*dates=\d{8}T\d{6}Z/);
+  const a = await fetch(`${BASE}/api/league/add-to-calendar?fixture=${fid}`, { redirect: 'manual', headers: { 'User-Agent': 'Mozilla/5.0 (iPhone)' } });
+  assert.match(a.headers.get('location'), /\/api\/league\/calendar\.ics\?fixture=/);
   const all = await fetch(`${BASE}/fixtures/?view=all`);
   assert.equal(all.headers.get('x-robots-tag'), 'noindex, follow');
   assert.ok(((await all.text()).match(/<article class="fx-card/g) || []).length >= 4);

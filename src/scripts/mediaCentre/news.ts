@@ -42,9 +42,10 @@ async function editor(main: HTMLElement, id: string) {
       <div class="mc-field"><span class="mc-label">Photo gallery <small>(optional)</small></span><div class="mc-gal" id="gal"></div>${editable ? '<button class="mc-btn mc-btn-o mc-btn-sm" type="button" id="galBtn">Add photos</button>' : ''}</div>
       <div class="mc-field"><label for="video">Video link <small>(optional: YouTube or Facebook)</small></label><input id="video" type="url" value="${esc(d.video || '')}" ${ro} placeholder="https://www.youtube.com/watch?v=…" /></div>
       <details class="mc-field mc-tags" open><summary class="mc-label">Tags</summary>
+        <p class="mc-mentions" id="mentions" hidden></p>
         <label for="match">Match</label><select id="match" ${ro}><option value="">No match</option>${M.matches.map((m: any) => `<option value="${esc(m.id)}" ${d.match?.id === m.id ? 'selected' : ''}>${esc(m.label)} · ${esc(new Date(m.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' }))}</option>`).join('')}</select>
         <p class="mc-label" style="margin-top:12px">Players</p><input class="mc-input" id="pSearch" placeholder="Search players" ${ro} /><div class="mc-chips" id="players">${M.players.map((p: any) => `<label><input type="checkbox" value="${esc(p.slug)}" ${(d.players || []).includes(p.slug) ? 'checked' : ''} ${ro} /> ${p.number != null ? `#${esc(p.number)} ` : ''}${esc(p.name)}</label>`).join('') || '<span class="mc-muted">No live squad profiles yet.</span>'}</div>
-        <p class="mc-label" style="margin-top:12px">Staff</p><div class="mc-chips" id="staff">${M.staff.map((s: any) => `<label><input type="checkbox" value="${esc(s.name)}" ${(d.staff || []).includes(s.name) ? 'checked' : ''} ${ro} /> ${esc(s.name)} <small>(${esc(s.role)})</small></label>`).join('') || '<span class="mc-muted">No coaching staff profiles yet.</span>'}</div>
+        <p class="mc-label" style="margin-top:12px">Staff</p><div class="mc-chips" id="staff">${M.staff.map((s: any) => `<label><input type="checkbox" value="${esc(s.slug)}" ${(d.staff || []).includes(s.slug) ? 'checked' : ''} ${ro} /> ${esc(s.name)} <small>(${esc(s.role)})</small></label>`).join('') || '<span class="mc-muted">No coaching staff profiles yet.</span>'}</div>
       </details>
       <div class="mc-field"><label class="mc-check"><input type="checkbox" id="brk" ${d.breakingRequested ? 'checked' : ''} ${ro} /> Ask for <b>breaking news</b> (the red homepage banner). A Super Admin decides.</label>${d.breaking ? '<span class="mc-hint">A Super Admin switched breaking news on for this story.</span>' : ''}</div>
       <div class="mc-field"><span class="mc-label">When to publish</span>
@@ -72,11 +73,29 @@ async function editor(main: HTMLElement, id: string) {
     match: (() => { const m = M.matches.find((x: any) => x.id === $('#match').value); return m ? { id: m.id, date: m.day, label: m.label } : null; })(),
     breakingRequested: $('#brk').checked, breaking: !!d.breaking,
   });
+  // Players and staff named in the story but not tagged: one click ticks them.
+  const reEsc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const mentions = () => {
+    const box = $('#mentions'); if (!box || !editable) return;
+    const text = `${$('#headline').value} ${$('#summary').value} ${plainText($('#body').innerHTML)}`;
+    const found = [...M.players.map((p: any) => ({ ...p, list: 'players', key: p.slug })), ...M.staff.map((p: any) => ({ ...p, list: 'staff', key: p.slug }))]
+      .filter(p => p.name && p.name.includes(' ') && new RegExp(`(^|[^\\p{L}])${reEsc(p.name)}($|[^\\p{L}])`, 'iu').test(text))
+      .filter(p => !(main.querySelector(`#${p.list} input[value="${p.key}"]`) as HTMLInputElement | null)?.checked);
+    box.hidden = !found.length;
+    box.innerHTML = found.length ? `Mentioned in the story: ${found.map(p => `<button type="button" class="mc-btn mc-btn-o mc-btn-sm" data-mention="${esc(p.list)}|${esc(p.key)}">Tag ${esc(p.name)}</button>`).join(' ')}` : '';
+  };
+  main.querySelector('#mentions')?.addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest<HTMLElement>('[data-mention]'); if (!b) return;
+    const [list, key] = b.dataset.mention!.split('|');
+    const cb = main.querySelector(`#${list} input[value="${key}"]`) as HTMLInputElement | null;
+    if (cb) { cb.checked = true; changed(); }
+  });
   const counts = () => {
     const n = $('#headline').value.length, s = $('#summary').value.length, w = plainText($('#body').innerHTML).split(/\s+/).filter(Boolean).length;
     $('#hlCount').textContent = `${n} characters${n > 70 ? ' · over 70: it may be cut short in Google and on phones' : ''}`; $('#hlCount').classList.toggle('warn', n > 70);
     $('#smCount').textContent = `${s} / 320`;
     $('#wc').textContent = `${w} words · about ${Math.max(1, Math.round(w / 220))} min read`;
+    mentions();
     $('#slug').textContent = item.slug ? `/news/${item.slug}/` : `/news/${new Date(Date.now() + 3600e3).toISOString().slice(0, 10)}-${slugify($('#headline').value || 'story')}/ (set when it is first published)`;
   };
   const saver = autosaver(async () => { await api(`items/${id}`, { method: 'PUT', body: { data: value() } }); }, $('#saveState'));

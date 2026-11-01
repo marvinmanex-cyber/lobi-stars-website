@@ -8,6 +8,37 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Designed tickets on the website, PDF ticket in the email, "Add to calendar" opens the calendar
+
+**What changed**
+- **Website tickets** (after paying, and on Find my tickets): designed like
+  the email ticket (navy and gold, both crests, date / kick-off / venue,
+  QR code, stand, ADULT/CHILD, price) instead of a plain QR box.
+- **Save to phone (picture)** and **Download PDF** under every ticket, plus
+  **Download all tickets (PDF)**. New address: /api/tickets/pdf.
+- **Ticket email:** the tickets are also attached as a PDF, one page per
+  ticket.
+- **Add to calendar** (tickets, fixtures, homepage, match bar, ticket email):
+  iPhone/Mac open the Calendar app; Android/Windows open Google Calendar
+  with the match filled in. No more confusing file download.
+
+**Who it affects:** fans buying tickets; no staff action needed.
+
+## 2026-11-01: News tags and AI facts for squad profiles (Approved live squad, phase 7 parts 1 and 2)
+
+**What changed**
+- Names found in published stories become tag suggestions (Matchday ›
+  Squad: Tag suggestions; also a "Mentioned in the story" box in the Media Centre
+  news editor). Staff pages now show their tagged news.
+- Claude suggests short dated facts from tagged stories; Super Admins approve
+  them in Squad: Approvals. Approved facts go only to the media partner.
+- Data Package is now schemaVersion 1.5 (adds `verifiedFacts`). Tell the
+  media partner's developers.
+
+**Who it affects:** Super Admins, news editors, the media partner.
+
+---
+
 ## 2026-10-31: Squad pages: tabs, careers, awards, milestones (Approved live squad, phases 5 and 6)
 
 **What changed**
