@@ -53,7 +53,7 @@ export function receiptWhatsappText(env, o) {
   const lines = items(o).map(i => `${i.qty} x ${i.name} - ${formatNaira((i.priceKobo || 0) * (i.qty || 1))}`);
   // Plain text only: emojis in a wa.me link can arrive as broken characters.
   return [`*MatchDay Kitchen - Lobi Stars FC*`, `Receipt for order ${o.ref}`, '', ...lines, '', `*Total paid: ${formatNaira(o.total_kobo)}*`, whereText(o),
-    '', `Your receipt (PDF): ${receiptPdfUrl(site, o)}`, '', 'Thank you and enjoy the match!'].join('\n');
+    '', `Your receipt (PDF): ${receiptPdfUrl(site, o)}`, '', 'Thank you and enjoy the match.'].join('\n');
 }
 
 /** "234…" for wa.me from the number the buyer gave (Nigerian numbers starting 0 → 234). */

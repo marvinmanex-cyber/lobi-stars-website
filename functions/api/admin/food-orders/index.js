@@ -150,7 +150,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
       await logAdminAction(env.DB, admin, 'food_receipt', `${o.ref}: receipt sent on WhatsApp`);
       // On phones the board shares the PDF file itself to WhatsApp; otherwise this link opens a chat with the receipt text and the PDF link.
       return Response.json({ ok: true, url: `https://wa.me/${to}?text=${encodeURIComponent(receiptWhatsappText(env, o))}`, receipt: receiptUrl(site, o),
-        pdf: receiptPdfUrl(site, o), pdfName: receiptPdfName(o), phone: to, caption: `MatchDay Kitchen receipt for order ${o.ref}. Thank you and enjoy the match!` }, { headers: noStore });
+        pdf: receiptPdfUrl(site, o), pdfName: receiptPdfName(o), phone: to, caption: `MatchDay Kitchen receipt for order ${o.ref}. Thank you and enjoy the match.` }, { headers: noStore });
     }
     const email = String(b.email || o.email || '').trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return Response.json({ error: 'There is no email address for this order. Type the buyer’s email.', needEmail: true }, { status: 400 });

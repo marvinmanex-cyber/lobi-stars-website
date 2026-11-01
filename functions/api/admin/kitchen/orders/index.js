@@ -34,7 +34,9 @@ export async function onRequestGet({ request, env, waitUntil }) {
     // Orders on their way in but NOT paid yet (WhatsApp orders waiting for payment, card payments in progress):
     // shown greyed out on the Kitchen Screen so the kitchen sees them coming. Don't cook them yet.
     const coming = (await db.prepare(`SELECT ref, order_status, items_json, fulfilment, seat, stand, pickup_point, channel, created_iso FROM food_orders
-      WHERE order_status IN ('AWAITING_WHATSAPP', 'CONFIRMED', 'AWAITING_PAYMENT') AND created_iso >= ? ORDER BY created_iso LIMIT 30`).bind(new Date(Date.now() - 3 * 3600e3).toISOString()).all()).results
+      WHERE order_status IN ('AWAITING_WHATSAPP', 'CONFIRMED', 'AWAITING_PAYMENT') AND created_iso >= ? ORDER BY created_iso DESC LIMIT 60`).bind(new Date(Date.now() - 3 * 3600e3).toISOString()).all()).results
+      // The newest 60 (a busy match day can have more than that waiting), shown oldest first.
+      .reverse()
       .map(o => { let items = []; try { items = JSON.parse(o.items_json).map(i => ({ name: i.name, qty: i.qty })); } catch {}
         return { ref: o.ref, items, where: whereText(o), how: o.channel === 'whatsapp' ? (o.order_status === 'CONFIRMED' ? 'WhatsApp: confirmed, waiting for payment' : 'WhatsApp: new, not confirmed yet') : 'Paying online now', at: o.created_iso }; });
     const job = runKitchenRepeats(env);

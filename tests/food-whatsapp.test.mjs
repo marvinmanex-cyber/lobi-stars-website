@@ -42,7 +42,8 @@ test('WhatsApp order: checked on the server, prices from the menu, order message
   assert.match(d.ref, /^FD-\d{8}-\d{4}$/);
   assert.equal(d.totalKobo, 2 * 150000 + 30000, 'browser prices ignored');
   assert.equal(d.total, '₦3,300');
-  for (const line of ['Hello Lobi Stars FC!', `Order: ${d.ref}`, 'Name: Emeka Okafor', '2 × Beef Suya: ₦3,000', 'Total: ₦3,300', 'Seat C14, Grand Stand', 'Note: No pepper please', 'Please confirm my order']) assert.ok(d.message.includes(line), line);
+  for (const line of ['Hello MatchDay Kitchen', `Order: ${d.ref}`, 'Name: Emeka Okafor', '2 × Beef Suya: ₦3,000', 'Total: ₦3,300', 'Seat C14, Grand Stand', 'Note: No pepper please', 'Please confirm my order']) assert.ok(d.message.includes(line), line);
+  assert.ok(d.message.startsWith('Hello MatchDay Kitchen\n') && !d.message.includes('!') && !d.message.includes('👋'), 'no exclamation marks or emoji');
   assert.ok(d.whatsappUrl.startsWith('https://wa.me/2349030399416?text='));
   assert.equal(decodeURIComponent(d.whatsappUrl.split('?text=')[1]), d.message);
   const track = new URL(d.trackUrl);
@@ -92,7 +93,7 @@ test('pickup points and bank details from the settings', async () => {
   const o = (await board()).data.orders.find(x => x.ref === r.data.ref);
   assert.equal(o.fulfilment, 'pickup');
   assert.match(o.wa.messages.CONFIRMED, /Test Bank, 0123456789/);
-  assert.equal(o.wa.messages.READY, `Hi Emeka, ${r.data.ref} is ready at East Gate Kiosk!`);
+  assert.equal(o.wa.messages.READY, `Hi Emeka, ${r.data.ref} is ready at East Gate Kiosk.`, 'a "!" in a saved template is sent as "."');
   // Paystack checkout can be collected too.
   const p = await post('/api/food-checkout', { name: 'Pick Up', fulfilment: 'pickup', pickupPoint: 'Main Stand Kiosk', phone: `0803${r7()}`, email: 'pick@example.com', items: [{ id: 'water', qty: 1 }] });
   assert.equal(p.status, 200, JSON.stringify(p.data));

@@ -121,9 +121,9 @@ export async function ensureFoodSchema(db) {
 // of a home game until full time). stands: list for the seat form's Section drop-down (default: the three
 // McCarthy Stadium stands; saved as an empty list = free text).
 export const WA_TEMPLATES = {
-  msgConfirmed: 'Hi {name}, your Lobi Stars FC food order {ref} is confirmed. Total {total}. Please pay to {bank} and send your receipt here. Thank you!',
-  msgPaid: "Hi {name}, we've received your payment for order {ref}. We're preparing your food now!",
-  msgReady: 'Hi {name}, your order {ref} is ready! {where}',
+  msgConfirmed: 'Hi {name}, your Lobi Stars FC food order {ref} is confirmed. Total {total}. Please pay to {bank} and send your receipt here. Thank you.',
+  msgPaid: "Hi {name}, we've received your payment for order {ref}. We're preparing your food now.",
+  msgReady: 'Hi {name}, your order {ref} is ready. {where}',
   msgCancelled: "Hi {name}, sorry, your Lobi Stars FC food order {ref} has been cancelled. Please message us if you have any questions.",
 };
 export const FOOD_DEFAULTS = {
@@ -309,11 +309,11 @@ export const whereText = o => (o.fulfilment === 'pickup' ? `Pickup: ${o.pickup_p
 
 /** The message the fan sends to the club on WhatsApp. */
 export function whatsappOrderMessage(o, items) {
-  const lines = ['Hello Lobi Stars FC! 👋', "I'd like to place a food order.", '', `Order: ${o.ref}`, `Name: ${o.customer_name}`, `Phone: ${localPhone(o.phone)}`, ''];
+  const lines = ['Hello MatchDay Kitchen', "I'd like to place a food order.", '', `Order: ${o.ref}`, `Name: ${o.customer_name}`, `Phone: ${localPhone(o.phone)}`, ''];
   for (const i of items) lines.push(`${i.qty} × ${i.name}: ${formatNaira(i.priceKobo * i.qty)}`);
   lines.push('-----------------------', `Total: ${formatNaira(o.total_kobo)}`, '', whereText(o));
   if (o.notes) lines.push(`Note: ${o.notes}`);
-  lines.push('', 'Please confirm my order. Thank you!');
+  lines.push('', 'Please confirm my order. Thank you.');
   return lines.join('\n');
 }
 export const whatsappUrl = (number, message) => `https://wa.me/${String(number).replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
@@ -322,7 +322,8 @@ export const whatsappUrl = (number, message) => `https://wa.me/${String(number).
 export function staffMessage(settings, o, kind) {
   const t = settings[{ CONFIRMED: 'msgConfirmed', PAID: 'msgPaid', READY: 'msgReady', CANCELLED: 'msgCancelled' }[kind]] || '';
   const where = o.fulfilment === 'pickup' ? `Collect it at ${o.pickup_point || 'the pickup point'}.` : `It's on its way to seat ${o.seat}${o.stand ? `, ${o.stand}` : ''}.`;
-  return t.replace(/\{(name|ref|total|bank|pickup|seat|where)\}/g, (_, k) => ({
+  // No exclamation marks in WhatsApp messages (also in templates saved before 1 Nov 2026).
+  return t.replace(/!+/g, '.').replace(/\.{2,}/g, '.').replace(/\{(name|ref|total|bank|pickup|seat|where)\}/g, (_, k) => ({
     name: (o.customer_name || '').split(' ')[0] || 'there', ref: o.ref, total: formatNaira(o.total_kobo),
     bank: settings.bankDetails || '[bank details: add them in Ordering settings]', pickup: o.pickup_point || '', seat: o.seat || '', where,
   }[k]));
