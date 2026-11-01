@@ -293,3 +293,14 @@ after(async () => {
   // The test competition stays only as test data in the local database; mark it not current.
   sql(`UPDATE league_competitions SET is_current = 0 WHERE id = ${Number(T.comp.id)}`);
 });
+
+test('admin match list: the next match first, then upcoming by date, then past matches', async () => {
+  const H = { 'x-admin-code': process.env.ADMIN_CODE || 'test-code-123' };
+  const { events } = await fetch(`${BASE}/api/admin/events`, { headers: H }).then(r => r.json());
+  const t = e => Date.parse(e.event_date), cut = Date.now() - 3 * 3600e3;
+  const firstPast = events.findIndex(e => t(e) < cut);
+  const upcoming = firstPast < 0 ? events : events.slice(0, firstPast), past = firstPast < 0 ? [] : events.slice(firstPast);
+  assert.ok(upcoming.every(e => t(e) >= cut) && past.every(e => t(e) < cut), 'upcoming before past');
+  for (let i = 1; i < upcoming.length; i++) assert.ok(t(upcoming[i]) >= t(upcoming[i - 1]), 'upcoming: soonest first');
+  for (let i = 1; i < past.length; i++) assert.ok(t(past[i]) <= t(past[i - 1]), 'past: most recent first');
+});

@@ -185,6 +185,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     .pills{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
     .pill{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:20px;}
     .pill.on{background:rgba(76,175,80,.2);color:#3fae44;}
+    .pill.next{background:#C9242C;color:#fff;}
     .pill.off{background:var(--d3);color:var(--lt);}
     .pill.past{background:rgba(255,199,44,.16);color: var(--gold-text);}
     .pill.sold{background:rgba(212,32,43,.14);color: var(--red-text);}
@@ -281,6 +282,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
 
+    let nextId = '';
     function cardHtml(e) {
       const past = new Date(e.event_date).getTime() < Date.now();
       const opp = opponent(e);
@@ -304,8 +306,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         '</div>' +
         '<div class="m-side">' +
           '<div class="pills">' +
-            '<span class="pill ' + (e.active ? 'on' : 'off') + '">' + (e.active ? 'Live' : 'Hidden') + '</span>' +
+            '<span class="pill ' + (e.active ? 'on' : 'off') + '">' + (e.active ? 'On the website' : 'Hidden') + '</span>' +
             (past ? '<span class="pill past">Past</span>' : '') +
+            (e.id === nextId ? '<span class="pill next">Next match</span>' : '') +
             ((e.is_home === 1 || (e.is_home === null && /lobi stars/i.test(e.home_team))) ? '<span class="pill on">Home game</span>' : '<span class="pill">Away</span>') +
             (orders ? '<span class="pill sold">' + orders + ' sold</span>' : '') +
           '</div>' +
@@ -323,6 +326,8 @@ import AdminNav from '../../components/admin/AdminNav.astro';
     async function load() {
       const data = await api('/api/admin/events');
       cache = data.events || [];
+      // The list comes next match first: label it.
+      nextId = (cache.find(e => e.active && new Date(e.event_date).getTime() > Date.now() - 3 * 3600e3) || {}).id || '';
       list.innerHTML = cache.length ? cache.map(cardHtml).join('') :
         '<div class="empty-state">No matches yet — add the first one.</div>';
     }

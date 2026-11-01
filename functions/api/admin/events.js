@@ -18,8 +18,12 @@ export async function onRequestGet({ request, env }) {
     `SELECT e.*,
             (SELECT COUNT(*) FROM orders o WHERE o.event_id = e.id AND o.payment_status = 'paid') AS paid_orders
      FROM events e
-     ORDER BY e.event_date DESC`
-  ).all();
+     ORDER BY CASE WHEN e.event_date >= ?1 THEN 0 ELSE 1 END,
+              CASE WHEN e.event_date >= ?1 THEN e.event_date END ASC,
+              e.event_date DESC`
+  ).bind(new Date(Date.now() - 3 * 3600e3).toISOString()).all();
+  // Order: the next match first, then the other upcoming matches by date, then past matches (most recent first).
+  // A match that kicked off in the last 3 hours still counts as the current one.
 
   return Response.json({ events: results });
 }

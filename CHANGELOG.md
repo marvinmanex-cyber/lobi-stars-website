@@ -8,6 +8,16 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Admin match lists: next match first
+
+**What changed**
+- Match Tickets & Settings (and the match pickers in Live Match Control and
+  Predictions) list the **next match first**, then the other upcoming matches by
+  date, then past matches. The first card is labelled **Next match**. (The matches
+  were already the club's 14 real fixtures; they were listed last-first.)
+- The green "Live" label on each card is now **On the website** (it meant the
+  match is shown on the website, not that it is being played).
+
 ## 2026-11-01: Admin menu items open in their own browser tabs
 
 **What changed**
