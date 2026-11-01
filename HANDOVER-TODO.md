@@ -152,7 +152,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | # | Item | What is needed |
 | --- | --- | --- |
 | K1 | **Add the kitchen staff** | A Super Admin signs in at lobistarsfc.com/matchday-kitchen with their website email, password and two-step code, opens **Staff accounts** and adds each person: Staff ID (e.g. LSK-001), full name, role (cook, pass / order handler, or kitchen supervisor) and a password. Give each person their own Staff ID and password. STAFF-GUIDE §42. |
-| K2 | **Telegram channel link (optional)** | If the kitchen has a Telegram channel, paste its link (https://t.me/…) in Staff accounts › Settings: the **Telegram updates** button then appears. |
+| K2 | **Telegram channel link** (reminder requested 1 Nov 2026) | The blue **Telegram** button (top bar, next to WhatsApp) and the Telegram updates button need the kitchen's Telegram channel link. Sign in to lobistarsfc.com/matchday-kitchen as a Super Admin › **Staff accounts** › **Settings** (bottom of the page) › paste the link (https://t.me/…) › **Save settings**. Until then, staff who tap it are told to ask a Super Admin. |
 | K3 | **Set up the kitchen tablet(s)** | Open lobistarsfc.com/matchday-kitchen on each tablet and add it to the home screen (STAFF-GUIDE §42). Check who may cancel orders and change prices (Settings; default: cancel = pass and supervisor, prices = supervisor). |
 
 ## E. Legal
