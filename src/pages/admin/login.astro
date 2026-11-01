@@ -79,7 +79,7 @@ const siteKey = settings.turnstileSiteKey || '';
   const note = document.getElementById('note')!;
   if (params.has('idle')) { note.textContent = 'You were signed out after 30 minutes without activity. Please log in again.'; note.hidden = false; }
   else if (params.has('ended')) { note.textContent = 'You were signed out (12 hours is the longest a login lasts, or you were signed out on another device). Please log in again.'; note.hidden = false; }
-  sessionStorage.removeItem('ls_admin_code');
+  sessionStorage.removeItem('ls_admin_code'); sessionStorage.removeItem('ls_admin_perms'); sessionStorage.removeItem('ls_admin_nav_y');
 
   // The human check, shown after 3 wrong attempts.
   const SITE_KEY = document.getElementById('captcha')!.dataset.sitekey || '';

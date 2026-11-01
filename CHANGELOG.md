@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Admin menu keeps its place
+
+**What changed**
+- The admin menu on the left no longer jumps back to the top when you open a page:
+  it stays where you scrolled it, the open page's item is always in view, and the
+  menu appears straight away on each page.
+
 ## 2026-11-01: Fix: admin login blocked while signed in to the Media Centre
 
 **What changed**

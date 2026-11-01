@@ -359,6 +359,35 @@ const showBack = here !== '/admin/dashboard/';
 
 <script>
   const w = window as any;
+  // The menu keeps its place: the items allowed for this person are shown at once (from the last page,
+  // then confirmed), the menu is scrolled back to where it was, and the open page's item is always in view.
+  const sideNav = document.querySelector<HTMLElement>('.ash-nav');
+  const NAV_Y = 'ls_admin_nav_y';
+  function keepMenuPlace() {
+    if (!sideNav) return;
+    try { const y = Number(sessionStorage.getItem(NAV_Y) || 0); if (y > 0) sideNav.scrollTop = y; } catch {}
+    const cur = sideNav.querySelector<HTMLElement>('a[aria-current="page"]');
+    if (cur && !cur.closest('[hidden]')) {
+      const box = sideNav.getBoundingClientRect(), r = cur.getBoundingClientRect();
+      if (r.top < box.top || r.bottom > box.bottom) cur.scrollIntoView({ block: 'center' });
+    }
+  }
+  function showMenu(perms: Set<string>) {
+    document.querySelectorAll<HTMLElement>('.ash-cat').forEach(cat => {
+      let any = false;
+      cat.querySelectorAll<HTMLElement>('li[data-perm]').forEach(li => { const p = li.dataset.perm || ''; const ok = !p || p.split('|').some(x => perms.has(x)); li.hidden = !ok; any ||= ok; });
+      cat.hidden = !any;
+    });
+    keepMenuPlace();
+  }
+  try { const cached = JSON.parse(sessionStorage.getItem('ls_admin_perms') || 'null'); if (Array.isArray(cached)) showMenu(new Set(cached)); } catch {}
+  if (sideNav) {
+    let navT = 0;
+    const saveY = () => { try { sessionStorage.setItem(NAV_Y, String(sideNav.scrollTop)); } catch {} };
+    sideNav.addEventListener('scroll', () => { clearTimeout(navT); navT = window.setTimeout(saveY, 120); }, { passive: true });
+    sideNav.addEventListener('click', saveY);
+    window.addEventListener('pagehide', saveY);
+  }
   // Scrolling table areas must be reachable with the keyboard (and named for screen readers).
   // Each gets a unique name from its section heading (e.g. "Programmes table").
   const tagScroll = () => document.querySelectorAll('.scroll:not([tabindex])').forEach(el => {
@@ -417,11 +446,8 @@ const showBack = here !== '/admin/dashboard/';
     $('ashName').textContent = d.admin.name;
     $('ashRole').textContent = d.admin.roleLabel;
     const perms = new Set<string>(d.admin.permissions || []);
-    document.querySelectorAll<HTMLElement>('.ash-cat').forEach(cat => {
-      let any = false;
-      cat.querySelectorAll<HTMLElement>('li[data-perm]').forEach(li => { const p = li.dataset.perm || ''; const ok = !p || p.split('|').some(x => perms.has(x)); li.hidden = !ok; any ||= ok; });
-      cat.hidden = !any;
-    });
+    showMenu(perms);
+    try { sessionStorage.setItem('ls_admin_perms', JSON.stringify([...perms])); } catch {}
     document.dispatchEvent(new CustomEvent('ls:admin', { detail: d.admin }));
     if (perms.has('commerce.kitchen.manage')) startFood();
     idleMinutes = d.admin.idleMinutes || 30;
