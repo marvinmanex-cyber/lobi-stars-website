@@ -119,6 +119,7 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
     .mcl :global(.mcl-2) { grid-template-columns: 1fr; }
     .mcl :global(.mcl-actions .btn-o), .mcl :global(.mcl-actions .btn-p) { flex: 1 1 auto; }
   }
+  .mcl-mdate { font-weight: 600; font-size: .7em; color: var(--a-muted, #6b7280); }
 </style>
 
 <script is:inline>
@@ -155,7 +156,17 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
     const finished = t.status === 'done' || t.status === 'not_applicable';
     const cls = t.status === 'done' ? 'done' : t.status === 'not_applicable' ? 'na' : t.overdue ? 'overdue' : t.dueSoon ? 'soon' : '';
     const owner = t.owner_name || t.owner_unit || '';
-    const due = t.overdue ? `<span class="od">Overdue: ${esc(wat(t.due_at))}</span>` : t.dueSoon ? `<span class="sn">Due ${esc(wat(t.due_at))}</span>` : `<span>Due ${esc(wat(t.due_at))}</span>`;
+    // The task's deadline, said relative to the match (so it isn't mistaken for the match date).
+    const rel = (() => {
+      const k = Date.parse(c.match?.kickoff || ''), d = Date.parse(t.due_at || '');
+      if (!k || !d) return '';
+      const h = Math.round((k - d) / 3600e3);
+      if (h === 0) return 'at kick-off';
+      const n = Math.abs(h), txt = n >= 24 && n % 24 === 0 ? `${n / 24} day${n === 24 ? '' : 's'}` : `${n} hour${n === 1 ? '' : 's'}`;
+      return h > 0 ? `${txt} before the match` : `${txt} after the match`;
+    })();
+    const when = `${esc(wat(t.due_at))}${rel ? ` (${rel})` : ''}`;
+    const due = t.overdue ? `<span class="od">Overdue: do by ${when}</span>` : t.dueSoon ? `<span class="sn">Do by ${when}</span>` : `<span>Do by ${when}</span>`;
     const tickOk = me.isSuper && !closed;
     const go = t.link && !t.link.broken && t.link.url
       ? `<a class="mcl-go" href="${esc(t.link.url)}"${t.link.type === 'external' ? ' target="_blank" rel="noopener noreferrer"' : ''}>${esc(t.link.label || 'Go to task')} <span aria-hidden="true">→</span>${t.link.type === 'external' ? '<span class="sr-only"> (opens in a new tab)</span>' : ''}</a>` : '';
@@ -218,7 +229,7 @@ import ChecklistTabs from '../../../components/admin/ChecklistTabs.astro';
       const all = c.tasks.filter(t => t.phase === ph), list = all.filter(visible);
       const fin = all.filter(t => t.status === 'done' || t.status === 'not_applicable').length;
       if (!list.length && filters.phase && filters.phase !== ph) return '';
-      return `<section class="mcl-card mcl-phase" aria-labelledby="ph-${ph}"><h3 id="ph-${ph}">${esc(data.labels.phase[ph])}<small>${fin} of ${all.length} done</small></h3>${list.length ? list.map(t => taskHtml(t, c)).join('') : '<p class="muted">No tasks match the filters.</p>'}</section>`;
+      return `<section class="mcl-card mcl-phase" aria-labelledby="ph-${ph}"><h3 id="ph-${ph}">${esc(data.labels.phase[ph])}${ph === 'before' ? ` <span class="mcl-mdate">(match: ${esc(wat(m.kickoff))})</span>` : ''}<small>${fin} of ${all.length} done</small></h3>${list.length ? list.map(t => taskHtml(t, c)).join('') : '<p class="muted">No tasks match the filters.</p>'}</section>`;
     }).join('');
     $('view').innerHTML = `<section class="mcl-card" aria-label="Match">
         <div class="mcl-top">

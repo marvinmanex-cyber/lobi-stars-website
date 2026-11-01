@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Match Checklist: deadlines say how long before the match
+
+**What changed**
+- Each task's date now reads "Do by Sun 1 Nov, 16:00 (7 days before the match)"
+  instead of "Due …", so a deadline isn't mistaken for the match date; the
+  "Before the match" heading shows the match date (e.g. Sun 8 Nov).
+
 ## 2026-11-01: Admin match lists: next match first
 
 **What changed**
