@@ -2,7 +2,7 @@
 // inside this browser tab (iframes of the panel page), the clock, and the
 // shared-tablet idle sign-out ("Still there?" after 20 minutes without a tap,
 // then a 60-second countdown). Inner pages report taps through window.mkShell.
-import { $, esc, api, session, loadSession, setSignedOutHandler, GROUPS, WHATSAPP_URL, pageTitle, hm } from './common';
+import { $, esc, api, session, loadSession, setSignedOutHandler, GROUPS, whatsappUrl, WA_PATH, iconFor, pageTitle, hm } from './common';
 
 const IDLE_MS = 20 * 60e3, COUNTDOWN = 60, MAX_TABS = 6, SAVE_KEY = 'mdk_tabs';
 type TabRec = { page: string; frame: HTMLIFrameElement; shownAt: number };
@@ -64,7 +64,8 @@ function renderHome() {
     const tiles = g.tiles.filter(t => t.id !== 'telegram' || session.settings.telegramUrl);
     return `<section class="mk-group"><h2>${esc(g.title)}</h2><div class="mk-rail"><div class="mk-tickets">${tiles.map(t => {
       const text = t.id === 'activity' && !sa ? 'Everything you have done here' : t.text;
-      return `<button type="button" class="mk-tile ${t.style || ''}" data-open="${t.id}"><b>${esc(t.title)}</b><span>${esc(text)}</span>${t.external ? '<small>Opens the app</small>' : ''}</button>`;
+      const note = t.external === 'whatsapp' ? 'Opens WhatsApp in a new tab' : t.external ? 'Opens the app' : '';
+      return `<button type="button" class="mk-tile ${t.style || ''}" data-open="${t.id}"><span class="mk-ico">${iconFor(t.id)}</span><b>${esc(t.title)}</b><span>${esc(text)}</span>${note ? `<small>${note}</small>` : ''}</button>`;
     }).join('')}</div></div></section>`;
   }).join('');
 }
@@ -77,7 +78,8 @@ $('shiftNag').addEventListener('click', () => open('shift'));
 // ── Tabs ──
 function persist() { try { sessionStorage.setItem(SAVE_KEY, JSON.stringify(tabs.map(t => t.page))); } catch { /* private mode */ } }
 function drawTabs() {
-  $('tabs').innerHTML = tabs.map(t => `<span class="mk-tab${t.page === current ? ' on' : ''}"><button type="button" class="t" data-tab="${esc(t.page)}" aria-current="${t.page === current ? 'page' : 'false'}">${esc(pageTitle(t.page))}</button><button type="button" class="x" data-close="${esc(t.page)}" aria-label="Close ${esc(pageTitle(t.page))}">×</button></span>`).join('');
+  $('tabs').hidden = !tabs.length;
+  $('tabs').innerHTML = tabs.map(t => `<span class="mk-tab${t.page === current ? ' on' : ''}"><button type="button" class="t" data-tab="${esc(t.page)}" aria-current="${t.page === current ? 'page' : 'false'}">${iconFor(t.page)}${esc(pageTitle(t.page))}</button><button type="button" class="x" data-close="${esc(t.page)}" aria-label="Close ${esc(pageTitle(t.page))}">×</button></span>`).join('');
   $('homeBtn').classList.toggle('on', !current);
   $('reloadBtn').hidden = !current;
   document.title = current ? `${pageTitle(current)} | MatchDay Kitchen | Lobi Stars FC` : 'MatchDay Kitchen | Lobi Stars FC';
@@ -108,8 +110,9 @@ function frameFor(page: string) {
 /** Opens a page as a tab (or switches to it); WhatsApp / Telegram open in their apps. */
 function open(page: string, { log = true, focus = true } = {}) {
   if (page === 'whatsapp' || page === 'telegram') {
-    const url = page === 'whatsapp' ? WHATSAPP_URL : session.settings.telegramUrl;
-    if (url) { window.open(url, '_blank', 'noopener'); api('open', { method: 'POST', body: { page } }).catch(() => {}); }
+    const url = page === 'whatsapp' ? whatsappUrl() : session.settings.telegramUrl;
+    // The same browser tab each time (named), so WhatsApp Web stays signed in and isn't opened twice.
+    if (url) { window.open(url, page === 'whatsapp' ? 'mdk-whatsapp' : 'mdk-telegram'); api('open', { method: 'POST', body: { page } }).catch(() => {}); }
     return;
   }
   const have = tabs.find(t => t.page === page);
@@ -132,6 +135,11 @@ function closeTab(page: string, redraw = true) {
 }
 function closeAllTabs(save = true) { while (tabs.length) tabs.pop()!.frame.remove(); current = ''; if (save) persist(); }
 $('homeBtn').addEventListener('click', home);
+$('waPath').setAttribute('d', WA_PATH);
+$('waBtn').addEventListener('click', () => open('whatsapp'));
+// The tab frames fill the space under the top bar (taller when the tabs row is showing).
+const topH = () => document.documentElement.style.setProperty('--top-h', `${$('top').offsetHeight}px`);
+if ('ResizeObserver' in window) new ResizeObserver(topH).observe($('top')); else window.addEventListener('resize', topH);
 $('reloadBtn').addEventListener('click', () => { const t = tabs.find(x => x.page === current); if (t) t.frame.contentWindow?.location.reload(); });
 
 // ── Full screen and clock ──

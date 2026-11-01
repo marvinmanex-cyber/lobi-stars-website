@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: MatchDay Kitchen: icons on every button, WhatsApp button, tabs on their own row
+
+**What changed**
+- Every home-screen button, open tab and page title has a picture of what it does
+  (WhatsApp and Telegram with their own logos).
+- A green **WhatsApp** button is always in the top bar: it opens the kitchen's chats
+  in WhatsApp Web in another tab of the same browser (WhatsApp does not allow its
+  chats inside another website).
+- Open pages (tabs) have their own row under the top bar, so each shows in full;
+  the signed-in name / email takes less room.
+
 ## 2026-11-01: MatchDay Kitchen staff area (/matchday-kitchen)
 
 **What changed**

@@ -5,7 +5,7 @@
 // activity for the idle sign-out, and a signed-out answer sends the whole
 // tablet to the sign-in page. Live pages refresh every 15 seconds, but never
 // while someone is tapping or typing.
-import { $, esc, api, session, loadSession, setSignedOutHandler, ApiError, pageTitle, hm, dayTime, dayOnly, todayLagos, mins } from './common';
+import { $, esc, api, session, loadSession, setSignedOutHandler, ApiError, pageTitle, iconFor, hm, dayTime, dayOnly, todayLagos, mins } from './common';
 
 const shell: any = (() => { try { return window.parent !== window ? (window.parent as any).mkShell : null; } catch { return null; } })();
 const page = decodeURIComponent(location.pathname.replace(/^\/matchday-kitchen\//, '').replace(/\/$/, '')) || 'kitchen';
@@ -342,6 +342,7 @@ const PAGES: Record<string, () => Promise<void>> = {
   const run = PAGES[key];
   document.title = `${pageTitle(page)} | MatchDay Kitchen | Lobi Stars FC`;
   $('pTitle').textContent = pageTitle(page);
+  if (iconFor(page)) $('pTitle').insertAdjacentHTML('beforebegin', `<span class="mk-ico" style="margin:0">${iconFor(page)}</span>`);
   if (!run) { notAvailable(); return; }
   try { await run(); }
   catch (e) {

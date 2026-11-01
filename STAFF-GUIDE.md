@@ -4280,9 +4280,9 @@ fans' ordering page.)
   60-second countdown. Tap **Keep me signed in**, or the tablet signs out by itself
   (recorded as an automatic sign-out).
 
-**The home screen** shows big buttons hanging from a rail like order tickets. Each
-button opens its page as a **tab** in the top bar (up to 6), without leaving the
-page. **Home** (top left, and on every page) goes back to the buttons and keeps the
+**The home screen** shows big buttons hanging from a rail like order tickets, each
+with a picture of what it does. Each button opens its page as a **tab** (up to 6,
+shown in full on their own row under the top bar), without leaving the page. **Home** (top left, and on every page) goes back to the buttons and keeps the
 tabs open. WhatsApp and Telegram open in their own apps.
 
 | Button | What it does |
@@ -4293,7 +4293,7 @@ tabs open. WhatsApp and Telegram open in their own apps.
 | **Food orders** | Search by order number or name, filter by status and day (30 a page). |
 | **One order** | All details and a button for each next status the website allows (the next step in green). **Cancel** (red, asks first) only for roles allowed to cancel. |
 | **Menu and prices** | **Mark sold out** / **Back on** (anyone; fans can't order it while sold out). **Save price** for supervisors and Super Admins. |
-| **Kitchen WhatsApp** | Opens WhatsApp to +234 708 009 4985. |
+| **Kitchen WhatsApp** (also the green **WhatsApp** button, always in the top bar) | Opens the kitchen's WhatsApp chats (+234 708 009 4985) in WhatsApp Web, in another tab of the same browser (always the same tab). WhatsApp does not allow its chats to be shown inside another website, so they can't appear on the dashboard itself. The first time, scan the QR code on the screen with the kitchen phone (WhatsApp › Linked devices) and keep that tab open. On a phone it opens the WhatsApp app. |
 | **Telegram updates** | Opens the kitchen Telegram channel (only shown once its link is set in Staff accounts › Settings). |
 | **Handover notes** | Notes for the next shift. Supervisors and Super Admins can pin and delete any note; others delete their own. |
 | **My shift** | **Start shift** / **End shift**, who is in the kitchen now, your last 10 shifts. |

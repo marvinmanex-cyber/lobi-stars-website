@@ -55,15 +55,19 @@ import '../../styles/matchdayKitchen.css';
   </section>
 
   <div id="app" hidden>
-    <header class="mk-top">
-      <img class="mk-top-logo" src="/images/matchday-kitchen/logo-96.png" alt="MatchDay Kitchen" width="48" height="48" />
-      <button type="button" class="mk-tb on" id="homeBtn" aria-label="Home"><span aria-hidden="true">⌂</span><span class="lbl">Home</span></button>
-      <nav class="mk-tabs" id="tabs" aria-label="Open pages"></nav>
-      <button type="button" class="mk-tb" id="reloadBtn" hidden aria-label="Reload this page"><span aria-hidden="true">⟳</span><span class="lbl">Reload</span></button>
-      <button type="button" class="mk-tb" id="fsBtn" hidden aria-label="Full screen"><span aria-hidden="true">⛶</span></button>
-      <span class="mk-clock" id="clock" aria-label="Time"></span>
-      <div class="mk-who" id="who"></div>
-      <button type="button" class="mk-tb" id="signoutBtn">Sign out</button>
+    <header class="mk-top" id="top">
+      <div class="mk-top-row">
+        <img class="mk-top-logo" src="/images/matchday-kitchen/logo-96.png" alt="MatchDay Kitchen" width="48" height="48" />
+        <button type="button" class="mk-tb on" id="homeBtn" aria-label="Home"><span aria-hidden="true">⌂</span><span class="lbl">Home</span></button>
+        <button type="button" class="mk-tb wa" id="waBtn" aria-label="Open the kitchen's WhatsApp chats (opens in a new tab)"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="waPath" fill="currentColor" /></svg><span class="lbl">WhatsApp</span></button>
+        <span class="mk-spacer"></span>
+        <button type="button" class="mk-tb" id="reloadBtn" hidden aria-label="Reload this page"><span aria-hidden="true">⟳</span><span class="lbl">Reload</span></button>
+        <button type="button" class="mk-tb" id="fsBtn" hidden aria-label="Full screen"><span aria-hidden="true">⛶</span></button>
+        <span class="mk-clock" id="clock" aria-label="Time"></span>
+        <div class="mk-who" id="who"></div>
+        <button type="button" class="mk-tb" id="signoutBtn">Sign out</button>
+      </div>
+      <nav class="mk-tabs" id="tabs" aria-label="Open pages" hidden></nav>
     </header>
     <main class="mk-home" id="home">
       <h1 class="mk-hello" id="hello"></h1>
