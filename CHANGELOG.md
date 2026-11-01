@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Admin menu items open in their own browser tabs
+
+**What changed**
+- Tapping an item in the admin menu opens that page in its own browser tab; the
+  page you were on stays open, so you can tap another item. Tapping the same item
+  again brings back its tab instead of opening another copy.
+
 ## 2026-11-01: Admin menu keeps its place
 
 **What changed**

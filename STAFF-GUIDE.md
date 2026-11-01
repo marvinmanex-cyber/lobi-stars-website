@@ -42,6 +42,10 @@ tablet. After **3 wrong attempts** a "not a robot" box appears; after **5**,
 the account is **locked for 15 minutes** and the account holder is emailed
 (a Super Admin can press **Unlock**). Full details: section 25.
 
+**The admin menu (left):** each item opens its page in its own browser tab, so the
+page you were on stays open; tapping the same item again goes back to its tab. The
+menu keeps its scroll position.
+
 **One login for Super Admins (since 1 Nov 2026):** your website email, password and
 two-step code also sign you in to the **Media Centre** (lobistarsfc.com/media-centre:
 type your email in the Login ID box), the **IT Centre** (lobistarsfc.com/staff/squad-data:

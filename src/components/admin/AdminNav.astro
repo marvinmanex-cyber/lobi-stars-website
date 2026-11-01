@@ -154,9 +154,10 @@ const showBack = here !== '/admin/dashboard/';
         <section class="ash-cat" data-cat={c.id} style={`--cat:${c.color}`} hidden>
           <h2 class="ash-cat-h"><span class="ash-ico" aria-hidden="true">{c.icon}</span><span class="ash-cat-t">{c.label}</span></h2>
           <ul>
+            {/* Each menu item opens in its own browser tab (the same tab again on the next click), so this page stays open. */}
             {c.items.map(i => (
               <li data-perm={i.perm} hidden>
-                <a href={i.href} aria-current={i.id === current ? 'page' : undefined} title={i.hint || i.label} target={i.ext && i.href.startsWith('/scan') ? '_blank' : undefined}>
+                <a href={i.href} aria-current={i.id === current ? 'page' : undefined} title={i.hint || i.label} target={i.id === current ? undefined : `ls-admin-${i.id}`}>
                   <span class="ash-dot" aria-hidden="true"></span><span class="ash-lbl">{i.label}</span>{i.ext && <span class="ash-ext" aria-label="(opens the CMS or another tool)">↗</span>}{(i as any).badge && <span class="ash-nbadge" data-nav-badge={(i as any).badge} hidden></span>}
                 </a>
               </li>
