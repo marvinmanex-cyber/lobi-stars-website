@@ -4217,8 +4217,7 @@ what a good answer looks like.
 - **Live updates:** the green **Live updates** button (WhatsApp logo) opens the
   club's **WhatsApp channel** in a new tab: post the live updates for fans there.
   A Super Admin adds the channel link in Admin › Media Centre › Users & settings ›
-  **Club WhatsApp channel link**. **Website score** (next to it) still updates the
-  match page and the homepage live score.
+  **Club WhatsApp channel link**.
 - **Line-ups:**
   1. Press **Prepare line-up** next to a match.
   2. For each player, choose Starts or Sub (exactly 11 starters), and the
@@ -4226,19 +4225,8 @@ what a good answer looks like.
   3. Set the **publish time** (usually an hour before kick-off) and send it
      for approval.
   4. When it is approved, it appears on the match page at that time.
-- **Live updates:** press **Live updates** next to the match. The score and
-  timeline refresh by themselves every 20 seconds, without clearing what you
-  are typing. Fill in the
-  minute, team, player and detail, then press the button for what happened:
-  kick-off, goal, yellow card, red card, substitution, half-time, second
-  half, full-time or an update. Updates go to the **match page** and the
-  **homepage live score**, and fans get the usual match alerts.
-- **Approval of live updates:**
-  - Normally each update waits for a Super Admin in the Approval Queue.
-  - A **Super Admin** can give chosen people **pre-approved live updates**
-    for one match (Media Centre › Users & settings › *Matchday Desk*). Their
-    updates then post instantly.
-  - Every update is logged either way.
+- *(The website live-score page in the Media Centre was removed on 1 Nov 2026.
+  The match score on the website is updated in the admin's Live Match Control.)*
 - The page links to the existing **Live Commentary**.
 
 ### Photo & Video Library

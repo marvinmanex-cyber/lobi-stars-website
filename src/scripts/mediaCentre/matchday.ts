@@ -1,12 +1,7 @@
 // Media Centre › Matchday Desk: prepare the line-up and substitutes in advance
 // (approved, published at the chosen time). Live updates: the button opens the
 // club's WhatsApp channel (link set by a Super Admin) where the media officer
-// posts live updates for fans. Also (smaller link) website score updates:
-// (approved, published at the chosen time), and post quick live updates during
-// the match (kick-off, goal, card, substitution, half-time, full-time) that
-// update the match page and the homepage live score. Updates post instantly
-// only for people a Super Admin granted "pre-approved live updates" for the
-// match; otherwise they wait for approval.
+// posts live updates for fans.
 import { api, esc, register, go, toast, when, itemPath, statusPill } from './core';
 import { statusBanner, autosaver, workflowButtons } from './items';
 import { meta } from './news';
@@ -16,16 +11,17 @@ const localInput = (iso?: string | null) => iso ? new Date(Date.parse(iso) + 360
 const fromLocal = (v: string) => v ? new Date(`${v}:00+01:00`).toISOString() : null;
 
 register({ path: 'matchday', label: 'Matchday Desk', icon: '⚽', async render(main, parts) {
-  if (parts[0] === 'live' && parts[1]) return liveDesk(main, parts[1]);
+  // The website live-score desk was removed (1 Nov 2026): live updates go to the WhatsApp channel.
+  if (parts[0] === 'live') { go('/matchday', true); return; }
   if (parts[0]) return lineupEditor(main, parts[0]);
   const [M, L] = await Promise.all([meta(), api('items?kind=lineup')]);
   const soon = M.matches.filter((m: any) => Date.parse(m.date) > Date.now() - 6 * 3600e3);
   main.innerHTML = `<div class="mc-page-head"><h1>Matchday Desk</h1></div>
-    <p class="mc-muted">Prepare line-ups before the match. <b>Live updates</b> opens the club's WhatsApp channel: post the live updates for fans there. <b>Website score</b> updates the match page and the homepage live score. For the full live audio, see <a href="/commentary/" target="_blank" rel="noopener">Live Commentary</a>.</p>
+    <p class="mc-muted">Prepare line-ups before the match. <b>Live updates</b> opens the club's WhatsApp channel: post the live updates for fans there. For the full live audio, see <a href="/commentary/" target="_blank" rel="noopener">Live Commentary</a>.</p>
     <section class="mc-card"><h2 class="mc-h3">Lobi Stars matches</h2>${soon.length ? `<ul class="mc-list">${soon.map((m: any) => `<li><div class="t"><b>${esc(m.label)}</b><small>${esc(when(m.date))} · ${esc(m.venue)}</small></div>
       <button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-lineup="${esc(m.id)}" data-label="${esc(m.label)}" data-date="${esc(m.date)}">Prepare line-up</button>
       ${M.settings?.whatsappChannel ? `<a class="mc-btn mc-btn-sm mc-wa" href="${esc(M.settings.whatsappChannel)}" target="mc-whatsapp-channel" rel="noopener">${WA_ICON}Live updates</a>` : `<button class="mc-btn mc-btn-sm mc-wa" type="button" data-nochannel>${WA_ICON}Live updates</button>`}
-      <a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/matchday/live/${esc(m.id)}/" data-go="/matchday/live/${esc(m.id)}">Website score</a> <a class="mc-small" href="/matches/${esc(m.slug)}/" target="_blank" rel="noopener">Match page</a></li>`).join('')}</ul>` : '<p class="mc-empty">No upcoming Lobi Stars matches in the fixtures.</p>'}</section>
+      <a class="mc-small" href="/matches/${esc(m.slug)}/" target="_blank" rel="noopener">Match page</a></li>`).join('')}</ul>` : '<p class="mc-empty">No upcoming Lobi Stars matches in the fixtures.</p>'}</section>
     <section class="mc-card" style="margin-top:14px"><h2 class="mc-h3">Line-ups</h2>${L.items.length ? `<ul class="mc-list">${L.items.map((i: any) => `<li><div class="t"><b>${esc(i.title)}</b><small>${i.scheduledAt ? `publishes ${esc(when(i.scheduledAt))}` : `updated ${esc(when(i.updatedAt))}`}</small></div>${statusPill(i)} <a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/${esc(itemPath(i))}/" data-go="/${esc(itemPath(i))}">Open</a></li>`).join('')}</ul>` : '<p class="mc-empty">No line-ups yet.</p>'}</section>`;
   main.querySelectorAll<HTMLElement>('[data-nochannel]').forEach(b => b.addEventListener('click', () => toast("The club's WhatsApp channel link hasn't been added yet. Ask a Super Admin to add it (Admin › Media Centre › Users & settings).", 9000)));
   main.querySelectorAll<HTMLElement>('[data-lineup]').forEach(b => b.addEventListener('click', async () => {
@@ -62,48 +58,3 @@ async function lineupEditor(main: HTMLElement, id: string) {
   count();
 }
 
-async function liveDesk(main: HTMLElement, eventId: string) {
-  const M = await meta();
-  const first = await api(`live?event=${encodeURIComponent(eventId)}`, { quiet: true });
-  const m0 = first.match;
-  // The form is drawn once; every 20 seconds only the score, the updates waiting and the timeline are refreshed.
-  main.innerHTML = `<div class="mc-page-head"><h1>Live: ${esc(m0.home)} v ${esc(m0.away)}</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/matchday/" data-go="/matchday">← Matchday Desk</a></div>
-    <p id="grant"></p>
-    <section class="mc-card"><p class="mc-score" id="score"></p><p style="text-align:center" class="mc-muted" id="state"></p></section>
-    <form class="mc-card" id="lf" style="margin-top:12px">
-      <div class="mc-grid two"><div class="mc-field"><label for="minute">Minute</label><input id="minute" name="minute" inputmode="numeric" maxlength="6" placeholder="e.g. 23 or 45+2" /></div>
-      <div class="mc-field"><label for="team">Team</label><select id="team" name="team"><option value="">—</option><option value="home" ${/lobi stars/i.test(m0.home) ? 'selected' : ''}>${esc(m0.home)}</option><option value="away" ${/lobi stars/i.test(m0.away) ? 'selected' : ''}>${esc(m0.away)}</option></select></div>
-      <div class="mc-field"><label for="player">Player</label><input id="player" name="player" list="squadList" maxlength="80" placeholder="Name" /><datalist id="squadList">${M.players.map((p: any) => `<option value="${esc(p.name)}">`).join('')}</datalist></div>
-      <div class="mc-field"><label for="detail">Detail <small>(optional)</small></label><input id="detail" name="detail" maxlength="160" placeholder="e.g. header from a corner; Akaa off, Musa on" /></div></div>
-      <div class="mc-live-btns">${Object.entries(first.types).map(([k, l]) => `<button type="button" class="mc-btn ${k === 'goal' ? 'mc-btn-red' : 'mc-btn-o'}" data-type="${esc(k)}">${esc(l as string)}</button>`).join('')}</div>
-    </form>
-    <section class="mc-card" style="margin-top:12px" id="waitBox" hidden><h2 class="mc-h3">Waiting for approval</h2><ul class="mc-list" id="waiting"></ul></section>
-    <section class="mc-card" style="margin-top:12px"><h2 class="mc-h3">On the match page now</h2><div id="timeline"></div></section>`;
-  const $ = (s: string) => main.querySelector(s) as HTMLElement;
-  const paint = (d: any) => {
-    const m = d.match;
-    $('#grant').innerHTML = d.granted ? '<span class="mc-pill published">Your updates post instantly (pre-approved for this match)</span>' : '<span class="mc-pill submitted">Your updates wait for approval</span>';
-    $('#score').textContent = `${m.homeScore} – ${m.awayScore}`;
-    $('#state').textContent = `${m.status} · ${when(m.date)}`;
-    ($('#waitBox') as HTMLElement).hidden = !d.waiting.length;
-    $('#waiting').innerHTML = d.waiting.map((w: any) => `<li><div class="t"><b>${esc(w.title)}</b><small>${esc(when(w.submitted_at))}</small></div></li>`).join('');
-    $('#timeline').innerHTML = m.timeline.length ? `<ul class="mc-list">${m.timeline.map((t: any) => `<li><div class="t"><b>${esc(t.minute ? `${t.minute}'` : '')} ${esc(t.type)} ${esc(t.player || '')}</b><small>${esc(t.detail || '')}</small></div></li>`).join('')}</ul>` : '<p class="mc-empty">No updates yet.</p>';
-  };
-  paint(first);
-  const refresh = async () => { paint(await api(`live?event=${encodeURIComponent(eventId)}`, { quiet: true })); };
-  main.querySelectorAll<HTMLButtonElement>('[data-type]').forEach(b => b.addEventListener('click', async () => {
-    const f = Object.fromEntries(new FormData(main.querySelector('#lf') as HTMLFormElement).entries()) as any;
-    b.disabled = true;
-    try {
-      const r = await api('live', { method: 'POST', body: { eventId, update: { type: b.dataset.type, minute: f.minute, team: f.team, player: f.player, detail: f.detail } } });
-      toast(r.posted ? `Posted. Score ${r.score} (${r.status}).` : 'Sent for approval.');
-      for (const k of ['minute', 'player', 'detail']) (main.querySelector(`[name="${k}"]`) as HTMLInputElement).value = '';
-      await refresh();
-    } catch (err: any) { toast(err.message, 9000); }
-    finally { b.disabled = false; }
-  }));
-  const timer = window.setInterval(() => {
-    if (!main.isConnected || !location.pathname.includes(`/matchday/live/${eventId}`)) { clearInterval(timer); return; }
-    refresh().catch(() => {});
-  }, 20000);
-}

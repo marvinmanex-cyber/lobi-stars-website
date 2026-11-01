@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Media Centre: website live-score page removed
+
+**What changed**
+- Matchday Desk: the website live-score page (Kick-off / Goal / Card buttons) was
+  removed; **Live updates** opens the club's WhatsApp channel. The match score on
+  the website is still updated in the admin's Live Match Control.
+- The name in the Media Centre top bar no longer shows "(Super Admin)" twice.
+
 ## 2026-11-01: Super Admins: one email login for the Media Centre, IT Centre and MatchDay Kitchen
 
 **What changed**

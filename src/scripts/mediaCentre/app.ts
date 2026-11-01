@@ -60,7 +60,7 @@ function enter(s: any) {
   state.user = s.user; state.csrf = s.csrf;
   if (s.user.mustChange) { show('changepw'); $('pwCur').focus(); return; }
   show('shell');
-  $('who').innerHTML = s.user.approver ? 'Media approver' : s.user.admin ? `${esc(s.user.fullName)} <small>(Super Admin)</small>` : `${esc(s.user.fullName)} <small>(${esc(s.user.loginId)})</small>`;
+  $('who').innerHTML = s.user.approver ? 'Media approver' : s.user.admin ? `${esc(s.user.fullName)}${/super admin/i.test(s.user.fullName) ? '' : ' <small>(Super Admin)</small>'}` : `${esc(s.user.fullName)} <small>(${esc(s.user.loginId)})</small>`;
   if (location.pathname === '/media-centre/login/') history.replaceState(null, '', '/media-centre/');
   bumpIdle();
   route();
