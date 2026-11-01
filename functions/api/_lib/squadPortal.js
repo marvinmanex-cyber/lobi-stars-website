@@ -117,7 +117,7 @@ export async function signIn(env, request, { username, password, name, turnstile
   const who = String(name || '').replace(/[\u0000-\u001F\u007F<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 60);
   if (who.length < 2) return { error: 'Please enter your name.', status: 400, field: 'name' };
   const failed = Number(s.failed) || 0;
-  if (failed >= TURNSTILE_AFTER && !(await checkTurnstile(env, turnstile, ip))) return { error: 'Please complete the human check.', status: 400, needTurnstile: true };
+  if (failed >= TURNSTILE_AFTER && !(await checkTurnstile(env, turnstile, ip, request))) return { error: 'Please complete the human check.', status: 400, needTurnstile: true };
   const okUser = String(username || '').trim().toLowerCase() === String(s.username || '').toLowerCase();
   const okPass = await verifyPassword(String(password || ''), s.password_hash).catch(() => false);
   if (!okUser || !okPass) {
@@ -249,7 +249,7 @@ export async function requestNewPassword(env, request, { name, contact, turnstil
   if (reach.length < 5) return { error: 'Please enter your WhatsApp number or email, so the new password can reach you.', status: 400, field: 'contact' };
   if (!(await rateLimit(db, `squadforgot:${ip}`, 3, 3600)) || !(await rateLimit(db, 'squadforgot:all', 10, 86400))) return { error: 'A request was already sent. A Super Admin will contact you.', status: 429 };
   const s = await getPortalSettings(db);
-  if (Number(s.failed) >= TURNSTILE_AFTER && !(await checkTurnstile(env, turnstile, ip))) return { error: 'Please complete the human check.', status: 400, needTurnstile: true };
+  if (Number(s.failed) >= TURNSTILE_AFTER && !(await checkTurnstile(env, turnstile, ip, request))) return { error: 'Please complete the human check.', status: 400, needTurnstile: true };
   const req = { name: who, contact: reach, device: deviceLabel(request.headers.get('User-Agent')), at: new Date().toISOString(), emailed: false };
   const actor = { id: 'squad-portal', name: `${who} (Squad Data Portal)`, email: 'squad-portal' };
   const password = newPortalPassword();

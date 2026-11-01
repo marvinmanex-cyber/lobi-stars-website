@@ -20,7 +20,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   let b;
   try { b = await request.json(); } catch { b = {}; }
   if (typeof b._gotcha === 'string' && b._gotcha.trim()) return Response.json({ ok: true });
-  if (!(await checkTurnstile(env, b['cf-turnstile-response'] || b.turnstileToken, ip))) {
+  if (!(await checkTurnstile(env, b['cf-turnstile-response'] || b.turnstileToken, ip, request))) {
     return Response.json({ error: 'Please complete the human check and try again.' }, { status: 400 });
   }
   const s = (v, n = 200) => (typeof v === 'string' ? v.trim().slice(0, n) : '');

@@ -102,7 +102,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
             <div class="tk-fl"><input id="fName" name="buyerName" autocomplete="name" required maxlength="80" placeholder=" " /><label for="fName">Full name</label></div>
             <div class="tk-fl"><input id="fEmail" name="buyerEmail" type="email" autocomplete="email" required maxlength="254" placeholder=" " /><label for="fEmail">Email (tickets are sent here)</label><p class="tk-inline" id="fEmailMsg" aria-live="polite"></p></div>
             <div class="tk-fl"><input id="fPhone" name="buyerPhone" type="tel" autocomplete="tel" inputmode="tel" required placeholder=" " /><label for="fPhone">Phone (e.g. 0803 123 4567)</label><p class="tk-inline" id="fPhoneMsg" aria-live="polite"></p></div>
-            {siteKey && <div class="cf-turnstile" data-sitekey={siteKey}></div>}
+            {siteKey && <div class="cf-turnstile" data-sitekey={siteKey} data-appearance="interaction-only"></div>}
             <p class="tk-err" id="buyErr" role="alert"></p>
             <button type="submit" class="tk-pay" id="payBtn" disabled>
               <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>

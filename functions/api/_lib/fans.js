@@ -102,9 +102,28 @@ export const tooMany = () =>
 
 // ── Human check (Cloudflare Turnstile) ──
 
-/** Skipped (allowed) until TURNSTILE_SECRET_KEY is set. */
-export async function checkTurnstile(env, token, ip) {
+/**
+ * Skipped (allowed) until TURNSTILE_SECRET_KEY is set. A Turnstile token works
+ * only once, so a person who passes is remembered for 30 minutes (this network
+ * and browser, stored hashed): later forms and the next login step are not
+ * asked again, even when the page sends an already-used token or none.
+ */
+const HUMAN_MS = 30 * 60000;
+async function humanKey(ip, request) {
+  const ua = request?.headers?.get?.('User-Agent') || '';
+  return `human:${await sha256Hex(`${ip || ''}|${ua}`)}`;
+}
+export async function checkTurnstile(env, token, ip, request) {
   if (!env.TURNSTILE_SECRET_KEY) return true;
+  const db = env.DB;
+  const key = db ? await humanKey(ip, request).catch(() => null) : null;
+  if (key) {
+    try {
+      await db.prepare(`CREATE TABLE IF NOT EXISTS human_passes (key TEXT PRIMARY KEY, until INTEGER NOT NULL)`).run();
+      const row = await db.prepare(`SELECT until FROM human_passes WHERE key = ?`).bind(key).first();
+      if (row && row.until > Date.now()) return true;
+    } catch { /* fall back to the token */ }
+  }
   if (!token) return false;
   const form = new FormData();
   form.append('secret', env.TURNSTILE_SECRET_KEY);
@@ -113,6 +132,11 @@ export async function checkTurnstile(env, token, ip) {
   try {
     const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form });
     const data = await res.json();
+    if (data.success && key) {
+      await db.prepare(`INSERT INTO human_passes (key, until) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET until = excluded.until`).bind(key, Date.now() + HUMAN_MS).run().catch(() => {});
+      // Old entries are cleared now and then.
+      if (Math.random() < 0.05) await db.prepare(`DELETE FROM human_passes WHERE until < ?`).bind(Date.now()).run().catch(() => {});
+    }
     return !!data.success;
   } catch {
     return false;

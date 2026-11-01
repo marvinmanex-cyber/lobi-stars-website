@@ -46,7 +46,7 @@ const siteKey = settings.turnstileSiteKey;
     <div class="fa-field">
       <label class="fa-check"><input type="checkbox" id="marketing" name="marketing" /><span>Send me Lobi Stars news and offers (optional).</span></label>
     </div>
-    {siteKey && <div class="cf-turnstile fa-turnstile" data-sitekey={siteKey}></div>}
+    {siteKey && <div class="cf-turnstile fa-turnstile" data-sitekey={siteKey} data-appearance="interaction-only"></div>}
     <p class="fa-err" id="err-human" role="alert"></p>
     <p class="fa-note err" id="formError" role="alert" hidden></p>
     <button type="submit" class="btn-p fa-submit" id="regBtn">Create my account</button>

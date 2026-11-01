@@ -25,7 +25,7 @@ export async function onRequestPost({ request, env }) {
   }
   if (b.action === 'send') {
     if (!(await rateLimit(db, `scoresub-sender:${s.id}`, 40, 3600))) return j({ error: 'That is a lot of updates in one hour. Please wait a little.' }, 429);
-    if (!(await checkTurnstile(env, b.turnstile, ip))) return j({ error: 'Please complete the human check and try again.' }, 400);
+    if (!(await checkTurnstile(env, b.turnstile, ip, request))) return j({ error: 'Please complete the human check and try again.' }, 400);
     const r = await submitFromForm(env, s, b);
     if (r.error) return j(r, 400);
     return j({ ok: true, received: true });

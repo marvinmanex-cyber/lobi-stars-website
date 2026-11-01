@@ -35,7 +35,7 @@ const siteKey = settings.turnstileSiteKey;
       </div>
       <label class="ss-lbl" for="minute">Minute (optional)</label>
       <input id="minute" inputmode="numeric" maxlength="6" placeholder="e.g. 67 or 90+3" />
-      {siteKey && <div class="cf-turnstile ss-ts" data-sitekey={siteKey}></div>}
+      {siteKey && <div class="cf-turnstile ss-ts" data-sitekey={siteKey} data-appearance="interaction-only"></div>}
       <button class="ss-btn ss-send" type="button" id="send">Send score</button>
       <p class="ss-note">Thank you. Send again whenever the score or status changes. Only the latest report from you counts.</p>
     </section>

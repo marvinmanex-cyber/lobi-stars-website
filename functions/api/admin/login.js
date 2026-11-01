@@ -41,7 +41,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   const ipRow = await db.prepare(`SELECT window_start, count FROM rate_limits WHERE key = ?`).bind(`admin-fail:${ip}`).first();
   const ipFails = ipRow && ipRow.window_start === start ? ipRow.count : 0;
   const ipFail = () => rateLimit(db, `admin-fail:${ip}`, 1e6, 900);
-  const captchaOk = () => checkTurnstile(env, typeof body.turnstile === 'string' ? body.turnstile : '', ip);
+  const captchaOk = () => checkTurnstile(env, typeof body.turnstile === 'string' ? body.turnstile : '', ip, request);
   const needCaptcha = (error = 'Please tick the box to show you are not a robot, then log in again.') => json({ needCaptcha: true, error }, 401);
 
   // ── The owner's admin code ──

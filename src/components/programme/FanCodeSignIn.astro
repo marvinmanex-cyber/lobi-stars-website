@@ -22,7 +22,7 @@ const Wrap = standalone ? 'div' : 'dialog';
     <form class="fcs-step" data-step="email" novalidate>
       <label class="fcs-lbl" for="fcsEmail">Email address</label>
       <input class="form-inp fcs-inp" id="fcsEmail" name="email" type="email" autocomplete="email" inputmode="email" required maxlength="254" />
-      {siteKey && <div class="cf-turnstile fcs-ts" data-sitekey={siteKey}></div>}
+      {siteKey && <div class="cf-turnstile fcs-ts" data-sitekey={siteKey} data-appearance="interaction-only"></div>}
       <p class="fcs-err" role="alert" data-err></p>
       <button class="btn-p fcs-btn" type="submit">Send me a code</button>
       <p class="fcs-small">By continuing you agree to our <a href="/terms/" target="_blank" rel="noopener">Terms</a> and <a href="/privacy/" target="_blank" rel="noopener">Privacy Notice</a>.</p>

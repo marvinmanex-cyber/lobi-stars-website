@@ -42,6 +42,12 @@ tablet. After **3 wrong attempts** a "not a robot" box appears; after **5**,
 the account is **locked for 15 minutes** and the account holder is emailed
 (a Super Admin can press **Unlock**). Full details: section 25.
 
+**The "Verify you are human" box (since 1 Nov 2026)** only shows when
+Cloudflare really needs a click, and once you pass it the website remembers
+you for **30 minutes** on that browser: the two-step code step, other
+forms (tickets, hospitality, contact, food orders) and a retry are not
+asked again. Before this fix, the login asked again after every try.
+
 **The first time you open the Content CMS** on a computer or phone, it asks for
 a **GitHub access token**. This is a long password-like code that the website
 manager gives you once. Paste it in and the CMS remembers it on that device.
@@ -1591,6 +1597,8 @@ point their inbound webhook at the same address with the same key.
    the site key in `src/data/fan-settings.json` (`turnstileSiteKey`) and the
    secret key in the Cloudflare variables (`TURNSTILE_SECRET_KEY`). It then
    protects fan sign-ups and the Contact, Sponsorship and Hospitality forms.
+   A person who passes is remembered for 30 minutes (same network and
+   browser), and the box only appears when Cloudflare needs a click.
 5. **Formspree:** messages are still also copied to the old Formspree email
    inbox. Once Inbox emails work, decide whether to switch that copy off.
 6. **Templates:** edit the three starter reply templates to match how the

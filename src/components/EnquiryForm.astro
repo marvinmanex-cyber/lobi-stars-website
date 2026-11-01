@@ -92,7 +92,7 @@ const interests = [
   )}
   {/* Spam trap: hidden from people, bots fill it in (Formspree also ignores these). */}
   <div class="eq-hp" aria-hidden="true"><label>Leave this empty <input type="text" name="_gotcha" tabindex="-1" autocomplete="off" /></label></div>
-  {siteKey && <div class="cf-turnstile eq-turnstile" data-sitekey={siteKey}></div>}
+  {siteKey && <div class="cf-turnstile eq-turnstile" data-sitekey={siteKey} data-appearance="interaction-only"></div>}
   <p class="eq-status" role="status" aria-live="polite" hidden></p>
   <button type="submit" class="btn-p eq-submit">{submitLabel}</button>
 </form>

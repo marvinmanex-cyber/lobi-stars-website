@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: "Verify you are human" no longer repeats
+
+**What changed**
+- Admin login: the human-check pass was sent twice (password step, then the
+  6-digit code step). Cloudflare passes work only once, so it was refused and
+  the box came back, again and again. Fixed.
+- All forms: once you pass the check, you are remembered for 30 minutes on
+  that browser and network (tickets, hospitality, contact, food orders, fan
+  sign-in, score reports, squad portal).
+- The box now only appears when Cloudflare really needs a click.
+
+**Who it affects:** staff logging in and fans using forms; no action needed.
+
 ## 2026-11-01: Designed tickets on the website, PDF ticket in the email, "Add to calendar" opens the calendar
 
 **What changed**

@@ -40,7 +40,7 @@ export async function onRequestPost({ request, env }) {
   if (joinRw && b.rewardsAgree !== true) errors.rewardsAgree = 'Please accept the Lobi Stars Rewards Terms, or untick "Also join Lobi Stars Rewards".';
   if (b.agree !== true) errors.agree = 'Please confirm you are 18 or older and agree to the Terms & Conditions and Privacy Policy.';
 
-  if (!(await checkTurnstile(env, b.turnstileToken, ip))) errors.human = 'Please complete the human check and try again.';
+  if (!(await checkTurnstile(env, b.turnstileToken, ip, request))) errors.human = 'Please complete the human check and try again.';
 
   if (!errors.email) {
     const taken = await env.DB.prepare(`SELECT id FROM members WHERE email = ?`).bind(email).first();

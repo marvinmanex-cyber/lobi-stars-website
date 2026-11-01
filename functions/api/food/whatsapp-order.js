@@ -37,7 +37,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     await ensureFanSchema(env.DB); // rate limit table
     if (!(await rateLimit(env.DB, `food-wa:${clientIp(request)}`, 20, 600))) return tooMany();
     if (!(await rateLimit(env.DB, `food-wa-phone:${phone}`, 5, 1800))) return json({ error: 'You have placed several orders in the last 30 minutes. Please message us on WhatsApp if you need to change an order.' }, 429);
-    if (!(await checkTurnstile(env, b.turnstileToken, clientIp(request)))) return json({ error: 'Please complete the human check and try again.' }, 400);
+    if (!(await checkTurnstile(env, b.turnstileToken, clientIp(request), request))) return json({ error: 'Please complete the human check and try again.' }, 400);
 
     await ensureFoodSchema(env.DB);
     await ensureMenuSchema(env.DB);

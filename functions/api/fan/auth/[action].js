@@ -24,7 +24,7 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
     if (action === 'request') {
       const email = normaliseEmail(b.email);
       if (!email) return jsonWithCookies({ error: 'Please enter a valid email address.' }, [], 400);
-      if (!(await checkTurnstile(env, b.turnstileToken, clientIp(request)))) return jsonWithCookies({ error: 'Please complete the human check and try again.' }, [], 400);
+      if (!(await checkTurnstile(env, b.turnstileToken, clientIp(request), request))) return jsonWithCookies({ error: 'Please complete the human check and try again.' }, [], 400);
       const src = validSrc(b.src), intent = INTENTS.includes(b.intent) ? b.intent : 'download';
       const r = await requestCode(env, request, waitUntil, email, { src, intent });
       if (r.error) return jsonWithCookies({ error: r.error }, [], r.status);

@@ -121,7 +121,7 @@ const siteKey = fanSettings.turnstileSiteKey;
         <div class="kx-pay">
           <button type="submit" class="kx-btn kx-btn--pay" id="kxPayBtn">Pay online</button>
           <div id="kxWaBox" hidden>
-            {siteKey && <div class="cf-turnstile" data-sitekey={siteKey} data-theme="dark"></div>}
+            {siteKey && <div class="cf-turnstile" data-sitekey={siteKey} data-appearance="interaction-only" data-theme="dark"></div>}
             <button type="button" class="kx-btn kx-btn--wa" id="kxWaBtn" style="width:100%">Order via WhatsApp</button>
           </div>
         </div>

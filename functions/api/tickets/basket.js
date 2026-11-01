@@ -32,7 +32,7 @@ export async function onRequestPost({ request, env }) {
     if (name.length < 2) return Response.json({ error: 'Please enter your full name.' }, { status: 400 });
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 254) return Response.json({ error: 'Please enter a valid email address.' }, { status: 400 });
     if (!phone) return Response.json({ error: 'Please enter a valid Nigerian mobile number, e.g. 0803 123 4567.' }, { status: 400 });
-    if (!(await checkTurnstile(env, b.turnstileToken, ip))) return Response.json({ error: 'Please complete the human check and try again.' }, { status: 400 });
+    if (!(await checkTurnstile(env, b.turnstileToken, ip, request))) return Response.json({ error: 'Please complete the human check and try again.' }, { status: 400 });
 
     await ensureDiscountSchema(db);
     const { lines: buyerLines, rawByKey } = parseBuyerLines(b.lines);

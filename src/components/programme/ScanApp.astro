@@ -191,7 +191,7 @@ const { mode = 'scan' } = Astro.props;
     show('fEmail', true);
     try {
       await loadTurnstile();
-      if (SITEKEY && window.turnstile && tsId === null) tsId = window.turnstile.render('#ts', { sitekey: SITEKEY });
+      if (SITEKEY && window.turnstile && tsId === null) tsId = window.turnstile.render('#ts', { sitekey: SITEKEY, appearance: 'interaction-only' });
     } catch (e) { console.error('[scan] turnstile', e); }
   }
   function resendTimer() {

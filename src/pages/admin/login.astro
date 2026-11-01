@@ -101,7 +101,7 @@ const siteKey = settings.turnstileSiteKey || '';
     box.hidden = false;
     const w = window as unknown as { turnstile?: { render: (el: string, o: object) => void; reset: () => void } };
     if (tsReady) { w.turnstile?.reset(); tsToken = ''; return; }
-    const draw = () => { tsReady = true; w.turnstile!.render('#tsBox', { sitekey: SITE_KEY, callback: (t: string) => { tsToken = t; } }); };
+    const draw = () => { tsReady = true; w.turnstile!.render('#tsBox', { sitekey: SITE_KEY, appearance: 'interaction-only', callback: (t: string) => { tsToken = t; } }); };
     if (w.turnstile) return draw();
     const sc = document.createElement('script');
     sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'; sc.async = true; sc.onload = draw;
@@ -124,8 +124,13 @@ const siteKey = settings.turnstileSiteKey || '';
   async function login(body: Record<string, string>, marker: string, btn: HTMLButtonElement) {
     btn.disabled = true; err.hidden = true;
     try {
-      const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(tsToken ? { ...body, turnstile: tsToken } : body) });
+      // A human-check token works once: send it, then forget it (the server
+      // remembers the pass for 30 minutes, so the next step isn't asked again).
+      const sent = tsToken; tsToken = '';
+      const res = await fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(sent ? { ...body, turnstile: sent } : body) });
       const data = await res.json().catch(() => ({}));
+      // Passed: hide the box until the server asks again.
+      if (sent && !data.needCaptcha) document.getElementById('captcha')!.hidden = true;
       if (data.needCode) {
         // Two-step login: show the code box and ask for the authenticator code.
         const w = document.getElementById('otpWrap')!; w.hidden = false;
