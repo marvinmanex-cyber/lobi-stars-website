@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: No human check on food orders
+
+**What changed**
+- MatchDay Kitchen and /food: the "Verify you are human" check was removed
+  from food orders (it could block fans with "Please complete the human
+  check"). Order limits per phone and per connection still stop abuse.
+
 ## 2026-11-01: Bottom menu stays at the bottom on iPhones
 
 **What changed**

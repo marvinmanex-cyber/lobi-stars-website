@@ -7,10 +7,8 @@
 // worked out on the server. Seat QR codes: /kitchen/?section=…&row=…&seat=…
 // Styles: src/styles/kitchen.css. Script: src/lib/kitchen.ts.
 import Layout from '../../layouts/Layout.astro';
-import fanSettings from '../../data/fan-settings.json';
 import '../../styles/kitchen.css';
 import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
-const siteKey = fanSettings.turnstileSiteKey;
 ---
 <Layout
   title="MatchDay Kitchen | Lobi Stars FC"
@@ -121,7 +119,6 @@ const siteKey = fanSettings.turnstileSiteKey;
         <div class="kx-pay">
           <button type="submit" class="kx-btn kx-btn--pay" id="kxPayBtn">Pay online</button>
           <div id="kxWaBox" hidden>
-            {siteKey && <div class="cf-turnstile" data-sitekey={siteKey} data-appearance="interaction-only" data-theme="dark"></div>}
             <button type="button" class="kx-btn kx-btn--wa" id="kxWaBtn" style="width:100%">Order via WhatsApp</button>
           </div>
         </div>
@@ -129,7 +126,6 @@ const siteKey = fanSettings.turnstileSiteKey;
       </form>
     </dialog>
   </div>
-  {siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
   <CheckoutRewards />
 </Layout>
 

@@ -1601,6 +1601,8 @@ point their inbound webhook at the same address with the same key.
    protects fan sign-ups and the Contact, Sponsorship and Hospitality forms.
    A person who passes is remembered for 30 minutes (same network and
    browser), and the box only appears when Cloudflare needs a click.
+   **Food orders (MatchDay Kitchen) have no human check** (since 1 Nov 2026);
+   limits on orders per phone and per connection stop abuse instead.
 5. **Formspree:** messages are still also copied to the old Formspree email
    inbox. Once Inbox emails work, decide whether to switch that copy off.
 6. **Templates:** edit the three starter reply templates to match how the

@@ -279,11 +279,9 @@ async function orderWhatsApp() {
   btn.disabled = true; btn.textContent = 'Preparing your order…';
   gaEvent('kitchen_order_start', { method: 'whatsapp', item_count: count() });
   try {
-    const token = (document.querySelector('#kxWaBox [name="cf-turnstile-response"]') as HTMLInputElement | null)?.value || '';
-    const { ok, status, d } = await post('/api/food/whatsapp-order', { ...body, turnstileToken: token });
+    const { ok, status, d } = await post('/api/food/whatsapp-order', body);
     if (!ok || !d.whatsappUrl) {
       if (status === 409 || d.code === 'stock') loadMenu();
-      (window as unknown as { turnstile?: { reset?: () => void } }).turnstile?.reset?.();
       throw new Error(d.error || 'Your order could not be saved. Please try again.');
     }
     remember();

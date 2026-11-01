@@ -1,7 +1,7 @@
 import { randomId } from '../_lib/crypto.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
 import { ensureFoodSchema, nextRef, foodSettings, priceCart, whatsappOrderMessage, whatsappUrl, formatNaira, trackUrl } from '../_lib/foodOrders.js';
-import { normalizeNigerianPhone, rateLimit, tooMany, clientIp, ensureFanSchema, checkTurnstile } from '../_lib/fans.js';
+import { normalizeNigerianPhone, rateLimit, tooMany, clientIp, ensureFanSchema } from '../_lib/fans.js';
 import { listMatches, isMatchDay, toSummary } from '../_lib/matchCentre.js';
 import { raiseFoodAlert } from '../_lib/foodAlerts.js';
 import { captureContact, splitName } from '../_lib/contacts.js';
@@ -11,7 +11,7 @@ const clean = (v, n) => (typeof v === 'string' ? v.replace(/<[^>]*>/g, '').repla
 
 // POST /api/food/whatsapp-order -- "Order on WhatsApp".
 // Body: { name, phone, fulfilment: 'seat'|'pickup', seat, stand, pickupPoint, email?, notes,
-//         adultConfirmed, items: [{ id, qty }], turnstileToken, website }
+//         adultConfirmed, items: [{ id, qty }], website }
 // Saves the order (status AWAITING_WHATSAPP, a reference such as FD-20261011-0042)
 // with prices from the menu in the database (never from the browser), alerts
 // the staff, and returns the WhatsApp link with the order message for the
@@ -37,7 +37,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     await ensureFanSchema(env.DB); // rate limit table
     if (!(await rateLimit(env.DB, `food-wa:${clientIp(request)}`, 20, 600))) return tooMany();
     if (!(await rateLimit(env.DB, `food-wa-phone:${phone}`, 5, 1800))) return json({ error: 'You have placed several orders in the last 30 minutes. Please message us on WhatsApp if you need to change an order.' }, 429);
-    if (!(await checkTurnstile(env, b.turnstileToken, clientIp(request), request))) return json({ error: 'Please complete the human check and try again.' }, 400);
+    // No human check on food orders (removed 1 Nov 2026): the rate limits above and the hidden "website" trap stop bots.
 
     await ensureFoodSchema(env.DB);
     await ensureMenuSchema(env.DB);
