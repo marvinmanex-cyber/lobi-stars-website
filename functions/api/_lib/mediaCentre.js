@@ -134,6 +134,9 @@ export async function ensureMediaSchema(db) {
       db.prepare(`INSERT OR IGNORE INTO mc_categories (id, name, tab, sort, preset) VALUES (?, ?, ?, ?, 1)`).bind(`cat_${i + 1}`, name, tab, i + 1)));
   }
   // The old tabs (First Team, Club, Media Watch) were removed on 1 Nov 2026: move categories still pointing at them.
+  // The media desk code unlocks the Approval Queue and the Media Inbox for one session.
+  const sessCols = new Set((await db.prepare(`PRAGMA table_info(mc_sessions)`).all()).results.map(c => c.name));
+  if (!sessCols.has('desk_unlocked_at')) await db.prepare(`ALTER TABLE mc_sessions ADD COLUMN desk_unlocked_at TEXT`).run();
   // Accreditation closes 6 hours before kick-off since 1 Nov 2026 (was 48): move a saved 48 once.
   if (!(await db.prepare(`SELECT 1 FROM mc_settings WHERE key = 'accr_close_6'`).first())) {
     await db.batch([db.prepare(`UPDATE mc_settings SET value = '6' WHERE key = 'accreditation_close_hours' AND value = '48'`),
@@ -266,14 +269,15 @@ export async function updateUser(env, admin, request, id, { action, loginId, ful
 // Super Admins set the password (Admin › Media Centre › Users & settings);
 // changing it signs out everyone using the old one.
 export const APPROVER_ID = '__approver__';
-export const APPROVER_USER = { id: APPROVER_ID, loginId: 'approver', fullName: 'Media approver', mustChange: false, approver: true };
-export const APPROVER_ACTOR = { kind: 'media', id: APPROVER_ID, name: 'Media approver' };
+export const APPROVER_USER = { id: APPROVER_ID, loginId: 'approver', fullName: 'Media desk', mustChange: false, approver: true };
+export const APPROVER_ACTOR = { kind: 'media', id: APPROVER_ID, name: 'Media desk' };
 export async function setApproverPassword(db, admin, request, password) {
   const bad = passwordProblem(password, 'approver');
   if (bad) return { error: bad };
   await setMcSetting(db, 'approver_password_hash', await hashPassword(String(password)), admin.email || admin.name);
-  await endSessions(db, APPROVER_ID, 'approval password changed');
-  await mcLog(db, adminActor(admin), 'approver_password', { section: 'users', details: 'Approval password set or changed (approver sessions ended)', request });
+  await endSessions(db, APPROVER_ID, 'media desk code changed');
+  await db.prepare(`UPDATE mc_sessions SET desk_unlocked_at = NULL WHERE desk_unlocked_at IS NOT NULL`).run();
+  await mcLog(db, adminActor(admin), 'approver_password', { section: 'users', details: 'Media desk code set or changed (code sessions ended, every unlock removed)', request });
   return { ok: true };
 }
 export async function approverSignIn(env, request, password) {
@@ -296,6 +300,30 @@ export async function approverSignIn(env, request, password) {
     .bind(sid, APPROVER_ID, csrf, at, at, ip, oneLine(request.headers.get('User-Agent') || '', 300)).run();
   await mcLog(db, APPROVER_ACTOR, 'login', { section: 'account', details: 'Signed in with the approval password', request });
   return { ok: true, cookie: sessionCookie(token), session: { csrf, user: APPROVER_USER } };
+}
+
+/** Unlocks the Approval Queue and the Media Inbox for this session with the media desk code. */
+export async function unlockDesk(env, request, session, code) {
+  const db = env.DB;
+  await ensureFanSchema(db); await ensureMediaSchema(db);
+  const key = `mc-desk-fail:${session.id}`, win = Math.floor(Date.now() / 1000), start = win - (win % 900);
+  const row = await db.prepare(`SELECT window_start, count FROM rate_limits WHERE key = ?`).bind(key).first();
+  if (row && row.window_start === start && row.count >= LOCK_AFTER) return { error: 'Too many wrong codes. Wait 15 minutes and try again.', status: 423 };
+  const hash = (await mcSettings(db)).approver_password_hash;
+  if (!hash) return { error: 'The media desk code has not been set yet. Ask a Super Admin.', status: 403 };
+  if (!(await verifyPassword(String(code || ''), hash).catch(() => false))) {
+    await rateLimit(db, key, 1e6, 900);
+    await mcLog(db, mediaActor(session.user), 'desk_code_wrong', { section: 'account', details: 'Wrong media desk code', request });
+    return { error: 'That code is not right.', status: 401 };
+  }
+  await db.prepare(`UPDATE mc_sessions SET desk_unlocked_at = ? WHERE id = ?`).bind(nowIso(), session.id).run();
+  await mcLog(db, mediaActor(session.user), 'desk_unlock', { section: 'account', details: 'Unlocked the Approval Queue and the Media Inbox with the media desk code', request });
+  return { ok: true };
+}
+export async function lockDesk(env, request, session) {
+  await env.DB.prepare(`UPDATE mc_sessions SET desk_unlocked_at = NULL WHERE id = ?`).bind(session.id).run();
+  await mcLog(env.DB, mediaActor(session.user), 'desk_lock', { section: 'account', request });
+  return { ok: true };
 }
 
 // ── Website Super Admins: email, password and two-step code (a Media Centre session only) ──
@@ -390,7 +418,7 @@ export async function getMediaSession(request, env, { touch = true } = {}) {
     if (Date.now() - Date.parse(s.last_seen) > IDLE_MS) { await endIt('no activity for 30 minutes'); return null; }
     if (Date.now() - Date.parse(s.created_at) > MAX_MS) { await endIt('12 hours'); return null; }
     if (touch && Date.now() - Date.parse(s.last_seen) > 30e3) await db.prepare(`UPDATE mc_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
-    return { id: s.id, csrf: s.csrf, lastSeen: s.last_seen, user: { id: s.user_id, loginId: a.email, fullName: a.name, mustChange: false, admin: true } };
+    return { id: s.id, csrf: s.csrf, lastSeen: s.last_seen, user: { id: s.user_id, loginId: a.email, fullName: a.name, mustChange: false, admin: true, desk: true } };
   }
   const approver = s.user_id === APPROVER_ID;
   if (approver) { s.is_active = (await mcSettings(db)).approver_password_hash ? 1 : 0; s.full_name = APPROVER_USER.fullName; s.login_id = APPROVER_USER.loginId; s.must_change_password = 0; }
@@ -404,8 +432,8 @@ export async function getMediaSession(request, env, { touch = true } = {}) {
   if (now - Date.parse(s.last_seen) > IDLE_MS) { await end('no activity for 30 minutes'); return null; }
   if (now - Date.parse(s.created_at) > MAX_MS) { await end('12 hours'); return null; }
   if (touch && now - Date.parse(s.last_seen) > 30e3) await db.prepare(`UPDATE mc_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
-  if (approver) return { id: s.id, csrf: s.csrf, lastSeen: s.last_seen, user: { ...APPROVER_USER } };
-  return { id: s.id, csrf: s.csrf, lastSeen: s.last_seen, user: { id: s.user_id, loginId: s.login_id, fullName: s.full_name, mustChange: !!s.must_change_password } };
+  if (approver) return { id: s.id, csrf: s.csrf, lastSeen: s.last_seen, user: { ...APPROVER_USER, desk: true } };
+  return { id: s.id, csrf: s.csrf, lastSeen: s.last_seen, user: { id: s.user_id, loginId: s.login_id, fullName: s.full_name, mustChange: !!s.must_change_password, desk: !!s.desk_unlocked_at } };
 }
 export async function signOut(env, request, session, why = 'signed out') {
   await env.DB.prepare(`UPDATE mc_sessions SET ended_at = ?, ended_why = ? WHERE id = ? AND ended_at IS NULL`).bind(nowIso(), why, session.id).run();

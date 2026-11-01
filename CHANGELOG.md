@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Media Centre: media desk code, Media Inbox; Press Room page
+
+**What changed**
+- **Media desk code** (replaces the approval password): typed in the Media Centre,
+  it unlocks the **Approval Queue** and the new **Media Inbox** until sign-out.
+- **Media Inbox:** read and reply to emails sent to media@lobistarsfc.com and send
+  new emails from it (signed "Lobi Stars FC Media"). Everyone sees the unread count;
+  only people with the code can open them. All logged.
+- **lobistarsfc.com/media** redesigned as **The Press Room** (newsroom look, different
+  from the accreditation hub): featured latest statement, match-week strip, four
+  service tiles, club facts, newsroom list, contact band.
+- Accreditation: "press ID" is now "your organisation's ID card" (or a letter from
+  your organisation).
+
+**To do:** HANDOVER-TODO M5 (set the media desk code).
+
 ## 2026-11-01: Accreditation: approval letter, laminated card at the media desk
 
 **What changed**

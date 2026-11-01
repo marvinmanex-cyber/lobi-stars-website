@@ -52,10 +52,10 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     </section>
 
     <section class="mcu-card">
-      <h2>Approval password (media approver)</h2>
-      <p class="muted small">A designated media staff member can approve, return or reject what is sent from the Media Centre: on the Media Centre sign-in page they choose <b>Approver sign-in</b> and type this password (no Login ID). They see only the Approval Queue. Anyone with the password can approve, so share it only with the designated person. Decisions are recorded as "Media approver" (no name). Super Admins also approve here in the admin. Changing the password signs out anyone using the old one.</p>
+      <h2>Media desk code</h2>
+      <p class="muted small">One code that unlocks two things in the Media Centre: the <b>Approval Queue</b> (approve, return or reject everything the media staff send: news, newsletters, press releases and more) and the <b>Media Inbox</b> (read and reply to emails sent to media@lobistarsfc.com, and send new ones from that address). Any Media Centre user who types the code gets both until they sign out; it can also be used alone on the sign-in page (<b>Sign in with the media desk code</b>). Everyone sees how many emails are waiting, but only people with the code can open them. Decisions are recorded as "Media desk" (no name). Changing the code locks everyone out again. Super Admins also approve here in the admin.</p>
       <p class="small" id="apState"></p>
-      <form id="apForm" class="mcu-row"><label>New approval password (at least 8 characters)<input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" required /></label><button class="btn-o" type="submit">Save approval password</button></form>
+      <form id="apForm" class="mcu-row"><label>New media desk code (at least 8 characters)<input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="72" required /></label><button class="btn-o" type="submit">Save media desk code</button></form>
     </section>
 
     <section class="mcu-card">
@@ -136,7 +136,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       ${c.preset ? '<small class="muted">preset</small>' : ''}</div>`).join('');
   }
   function settings(s: any) {
-    $('apState').textContent = s.approverSet ? 'An approval password is set.' : 'No approval password yet: approver sign-in is off.';
+    $('apState').textContent = s.approverSet ? 'A media desk code is set.' : 'No media desk code yet: the Approval Queue and Media Inbox in the Media Centre stay locked.';
     const f = $('setForm');
     for (const k of ['accreditation_close_hours', 'accreditation_max', 'media_team_email', 'press_contact', 'whatsapp_channel_url']) f[k].value = s[k] || '';
     for (const [pre, key] of [['nd', 'newsletter_deadline'], ['np', 'newsletter_publish']]) {
@@ -199,8 +199,8 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   });
   $('apForm').addEventListener('submit', async (e: Event) => {
     e.preventDefault(); const f = e.target as any;
-    if (!confirm('Save this approval password? Anyone using the old one is signed out.')) return;
-    try { await api('settings', { action: 'approver_password', password: f.password.value }); f.password.value = ''; const d = await api('settings'); settings(d.settings); msg('Approval password saved. Give it only to the designated media approver.'); } catch (err: any) { msg(err.message, false); }
+    if (!confirm('Save this media desk code? Everyone using the old code is locked out.')) return;
+    try { await api('settings', { action: 'approver_password', password: f.password.value }); f.password.value = ''; const d = await api('settings'); settings(d.settings); msg('Media desk code saved. Give it only to the people who approve and answer media emails.'); } catch (err: any) { msg(err.message, false); }
   });
   $('setForm').addEventListener('submit', async (e: Event) => {
     e.preventDefault(); const f = e.target as any;

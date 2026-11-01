@@ -3976,15 +3976,23 @@ Fans use the website exactly as before.
     rounds). Cloudflare cannot run bcrypt or Argon2 within its limits.
 
 ### Approval Queue (Media Centre › Approval Queue)
-**Who approves:** the Super Admins (here in the admin) and the **media approver**: a
-designated media staff member who signs in to the Media Centre with the **approval
-password** (sign-in page › **Approver sign-in**, no Login ID). The approver sees only
-the Approval Queue and can **Approve**, **Return with comment** or **Reject**.
-Anyone with the password can approve, so give it only to the designated person.
-Their decisions are recorded as "Media approver" (no name), and the Media Centre
-never shows who approved or returned something. Set or change the password in
-Admin › Media Centre › Users & settings › **Approval password**; changing it signs
-out anyone using the old one.
+**Who approves:** the Super Admins (here in the admin) and anyone with the **media
+desk code**. A Super Admin sets the code in Admin › Media Centre › Users & settings ›
+**Media desk code**. In the Media Centre, any user who types the code unlocks two
+things until they sign out: the **Approval Queue** (approve, return with a comment or
+reject everything the media staff send: news, newsletters, press releases and more)
+and the **Media Inbox** (below). The code can also be used alone on the sign-in page
+(**Sign in with the media desk code**: only those two sections). Decisions are
+recorded as "Media desk" (no name), and the Media Centre never shows who approved
+something. Changing the code locks everyone out again.
+
+**Media Inbox (Media Centre › Media Inbox):** emails sent to **media@lobistarsfc.com**.
+Every Media Centre user sees how many are unread (red number in the menu), but only
+people with the media desk code can open them. With the code: read each conversation,
+**reply** (sent from media@lobistarsfc.com, signed "Lobi Stars FC Media") or press
+**New email** to write to anyone from media@. Answers come back into the same
+conversation. Who read or sent what is in the Media Centre activity log. (The same
+emails are also in the admin Inbox and the media team's Gmail copy.)
 
 Everything the media staff send waits here, newest first. The count shows on
 the menu and in the bell. Open an item to see:

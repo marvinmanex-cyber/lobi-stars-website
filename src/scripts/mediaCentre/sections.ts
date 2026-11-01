@@ -9,3 +9,4 @@ import './library';
 import './interviews';
 import './calendar';
 import './approvals';
+import './inbox';

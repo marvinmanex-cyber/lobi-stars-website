@@ -184,7 +184,7 @@ export async function apply(env, request, v, { pressDocId, photoId, inviteToken 
   let photo = photoId;
   if (!photo) photo = (await db.prepare(`SELECT photo_id FROM mc_contacts WHERE email = ?`).bind(v.email).first())?.photo_id || null;
   if (!photo) return { error: 'Add a passport photo.' };
-  if (!pressDocId) return { error: 'Add your press ID or a letter from your organisation.' };
+  if (!pressDocId) return { error: "Add your organisation's ID card or a letter from your organisation." };
   const id = newId('acc'), at = nowIso();
   await db.prepare(`INSERT INTO mc_accreditations (id, event_id, status, full_name, phone, email, organisation, employment, role, press_doc_id, photo_id, equipment, needs, agreed_at, invite_token, ip, created_at, updated_at)
     VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)

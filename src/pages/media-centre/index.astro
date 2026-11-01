@@ -36,7 +36,7 @@
         <div class="mc-field" id="siCodeWrap" hidden><label for="siCode">6-digit code from your authenticator app</label><input id="siCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" /></div>
         <button class="mc-btn mc-btn-red mc-wide" type="submit">Sign in</button>
         <p class="mc-muted mc-small">Forgot your password? Ask a Super Admin to set a new temporary one.</p>
-        <p class="mc-small"><button type="button" class="mc-btn mc-btn-ghost mc-btn-sm" id="siApprover">Approver sign-in</button></p>
+        <p class="mc-small"><button type="button" class="mc-btn mc-btn-ghost mc-btn-sm" id="siApprover">Sign in with the media desk code</button></p>
       </form>
     </section>
 
@@ -84,6 +84,12 @@
     .mc-btn:disabled { opacity: .55; cursor: not-allowed; }
     .mc-btn-red { background: var(--red); color: #fff; } .mc-btn-red:hover { background: var(--red-d); }
     .mc-btn-blue { background: var(--blue); color: #fff; } .mc-btn-blue:hover { background: var(--blue-d); }
+    .mc-desk { text-align: center; max-width: 520px; margin: 0 auto; } .mc-desk-ico { font-size: 40px; } .mc-desk-form { text-align: left; margin-top: 12px; }
+    .mc-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; margin-left: 6px; border-radius: 11px; background: #EE343C; color: #fff; font-size: 12px; font-weight: 700; }
+    .mc-head-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+    .mc-mail li.unread b { font-weight: 800; } .mc-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #EE343C; margin-right: 6px; } .mc-prev { display: block; color: var(--muted, #6b7280); }
+    .mc-thread { display: grid; gap: 10px; } .mc-msg { background: #fff; border: 1px solid var(--line, #e3e6eb); border-radius: 12px; padding: 12px 14px; } .mc-msg.out { background: #F2F6FD; border-color: #cfdcf2; margin-left: 24px; } .mc-msg.in { margin-right: 24px; }
+    .mc-msg-h { margin: 0 0 6px; } .mc-msg-h small { color: var(--muted, #6b7280); } .mc-msg-b { overflow-wrap: anywhere; } .mc-msg-b img { max-width: 100%; height: auto; }
     .mc-wa { background: #25D366; color: #06331a; font-weight: 700; } .mc-wa:hover { background: #1fb457; }
     .mc-btn-o { background: #fff; color: var(--blue-d); border-color: var(--line); }
     .mc-btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.6); min-height: 38px; padding: 4px 12px; }

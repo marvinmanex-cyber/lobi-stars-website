@@ -37,7 +37,7 @@ test('a Super Admin sets the approval password (never sent back); the approver s
   assert.equal(s.approverSet, true); assert.equal(s.approver_password_hash, undefined, 'the stored password never leaves the server');
   assert.equal((await signIn({ approver: true, password: 'wrong-password-1' })).status, 401);
   const a = await signIn({ approver: true, password: PW });
-  assert.equal(a.status, 200); assert.equal(a.data.user.fullName, 'Media approver'); assert.equal(a.data.user.approver, true);
+  assert.equal(a.status, 200); assert.equal(a.data.user.fullName, 'Media desk'); assert.equal(a.data.user.approver, true);
   // Only the Approval Queue: nothing else in the Media Centre; and writers can't open the queue.
   assert.equal((await call(a.S, 'dashboard')).status, 403);
   assert.equal((await call(a.S, 'items?kind=news')).status, 403);
@@ -64,7 +64,26 @@ test('the approver returns and approves; recorded as "Media approver"; no approv
   const ok = await call(a, 'approvals', 'POST', { id, decision: 'approve' });
   assert.equal(ok.status, 200, JSON.stringify(ok.data));
   const log = JSON.parse(sql(`SELECT actor_name, action FROM mc_activity WHERE item_id = '${id}' AND action IN ('approve', 'return') ORDER BY id;`))[0].results;
-  assert.ok(log.length >= 2 && log.every(l => l.actor_name === 'Media approver'), JSON.stringify(log));
+  assert.ok(log.length >= 2 && log.every(l => l.actor_name === 'Media desk'), JSON.stringify(log));
+});
+
+test('the media desk code: everyone sees the unread count; the code unlocks the Approval Queue and the Media Inbox; send and reply from media@', async () => {
+  assert.equal((await call(W, 'inbox?count=1')).status, 200, 'every user sees the count');
+  assert.equal((await call(W, 'inbox')).data.locked, true, 'emails locked without the code');
+  assert.equal((await call(W, 'approvals')).data.locked, true);
+  assert.equal((await call(W, 'desk', 'POST', { code: 'wrong-code-1' })).status, 401);
+  assert.equal((await call(W, 'desk', 'POST', { code: PW })).status, 200);
+  assert.equal((await call(W, 'approvals')).status, 200, 'unlocked: the Approval Queue');
+  const sent = await call(W, 'inbox', 'POST', { action: 'compose', to: `reporter.${T}@example.com`, name: 'Ada Reporter', subject: `Interview ${T}`, text: 'Hello Ada. The coach is available on Friday.' });
+  assert.equal(sent.status, 200, JSON.stringify(sent.data));
+  const list = (await call(W, 'inbox')).data.threads;
+  assert.ok(list.some(t => t.id === sent.data.id && t.subject === `Interview ${T}`));
+  assert.equal((await call(W, 'inbox', 'POST', { action: 'reply', id: sent.data.id, text: 'One more thing: bring your ID card.' })).status, 200);
+  const th = (await call(W, `inbox?id=${sent.data.id}`)).data.thread;
+  assert.equal(th.messages.length, 2); assert.ok(th.messages.every(m => m.author === 'Lobi Stars FC Media'), 'no personal name on media@ emails');
+  assert.equal((await call(W, 'desk', 'DELETE')).status, 200);
+  assert.equal((await call(W, 'inbox')).data.locked, true, 'locked again');
+  sql(`DELETE FROM inbox_messages WHERE thread_id = '${sent.data.id}'; DELETE FROM inbox_threads WHERE id = '${sent.data.id}';`);
 });
 
 test('a new approval password signs out anyone using the old one', async () => {

@@ -3,19 +3,25 @@
 // (register() in its file).
 import { state, $, esc, api, ApiError, toast, SCREENS, go, setRouteHandler, setSignedOutHandler, guard } from './core';
 import './sections';
+import { unreadEmails } from './desk';
 
 // ── Router ──
-// The media approver (approval password) sees only the Approval Queue; nobody else sees it.
-const visible = () => SCREENS.filter(s => s.nav !== false && (state.user?.approver ? s.path === 'approvals' : state.user?.admin || s.path !== 'approvals'));
+// Signed in with the media desk code: only the Approval Queue and the Media Inbox.
+// Everyone else sees every section (those two stay locked until the code is entered).
+const DESK_ONLY = ['approvals', 'inbox'];
+const visible = () => SCREENS.filter(s => s.nav !== false && (!state.user?.approver || DESK_ONLY.includes(s.path)));
+let unread = 0;
+async function refreshUnread() { if (!state.user) return; unread = await unreadEmails(); const b = document.querySelector('[data-badge="inbox"]'); if (b) { b.textContent = String(unread); (b as HTMLElement).hidden = !unread; } }
+setInterval(refreshUnread, 60e3);
 function nav(active: string) {
-  $('nav').innerHTML = visible().map(s => `<a href="/media-centre/${s.path ? `${s.path}/` : ''}" data-go="/${s.path}" class="${s.path === active ? 'on' : ''}"><span aria-hidden="true">${s.icon}</span>${esc(s.label)}</a>`).join('');
+  $('nav').innerHTML = visible().map(s => `<a href="/media-centre/${s.path ? `${s.path}/` : ''}" data-go="/${s.path}" class="${s.path === active ? 'on' : ''}"><span aria-hidden="true">${s.icon}</span>${esc(s.label)}${s.path === 'inbox' ? `<span class="mc-badge" data-badge="inbox" ${unread ? '' : 'hidden'}>${unread}</span>` : ''}${s.path === 'inbox' || s.path === 'approvals' ? (state.user?.desk ? '' : ' <span aria-label="locked">🔒</span>') : ''}</a>`).join('');
 }
 async function route() {
   if (!state.user) return;
   const parts = location.pathname.replace(/^\/media-centre\/?/, '').split('/').filter(Boolean);
   const list = visible();
   const screen = list.find(s => s.path === (parts[0] || '')) || list[0];
-  if (state.user.approver && parts[0] !== 'approvals') parts.splice(0, parts.length, 'approvals');
+  if (state.user.approver && !DESK_ONLY.includes(parts[0])) parts.splice(0, parts.length, 'approvals');
   guard.dirty = () => false;
   nav(screen.path);
   $('nav').classList.remove('open'); $('menuBtn').setAttribute('aria-expanded', 'false');
@@ -60,7 +66,8 @@ function enter(s: any) {
   state.user = s.user; state.csrf = s.csrf;
   if (s.user.mustChange) { show('changepw'); $('pwCur').focus(); return; }
   show('shell');
-  $('who').innerHTML = s.user.approver ? 'Media approver' : s.user.admin ? `${esc(s.user.fullName)}${/super admin/i.test(s.user.fullName) ? '' : ' <small>(Super Admin)</small>'}` : `${esc(s.user.fullName)} <small>(${esc(s.user.loginId)})</small>`;
+  refreshUnread();
+  $('who').innerHTML = s.user.approver ? 'Media desk' : s.user.admin ? `${esc(s.user.fullName)}${/super admin/i.test(s.user.fullName) ? '' : ' <small>(Super Admin)</small>'}` : `${esc(s.user.fullName)} <small>(${esc(s.user.loginId)})</small>`;
   if (location.pathname === '/media-centre/login/') history.replaceState(null, '', '/media-centre/');
   bumpIdle();
   route();
@@ -88,9 +95,9 @@ $('signinForm').addEventListener('submit', async (e: Event) => {
 $('siApprover').addEventListener('click', () => {
   const toApprover = !$('siIdWrap').hidden;
   $('siIdWrap').hidden = toApprover;
-  $('siTitle').textContent = toApprover ? 'Approver sign-in' : 'Sign in';
-  ($('siPwLabel') as HTMLElement).textContent = toApprover ? 'Approval password' : 'Password';
-  $('siApprover').textContent = toApprover ? 'Sign in with your Login ID instead' : 'Approver sign-in';
+  $('siTitle').textContent = toApprover ? 'Media desk sign-in' : 'Sign in';
+  ($('siPwLabel') as HTMLElement).textContent = toApprover ? 'Media desk code' : 'Password';
+  $('siApprover').textContent = toApprover ? 'Sign in with your Login ID instead' : 'Sign in with the media desk code';
   $('signinMsg').hidden = true;
   (toApprover ? $('siPw') : $('siId')).focus();
 });

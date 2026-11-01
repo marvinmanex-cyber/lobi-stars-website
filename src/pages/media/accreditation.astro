@@ -33,14 +33,14 @@ import '../../styles/mediaHub.css';
 
   <section class="wrap ah-info" aria-label="How accreditation works">
     <div class="ah-steps">
-      <div class="ah-step"><span>1</span><b>Apply online</b><p>Choose the match, add your press ID or letter and a passport photo.</p></div>
+      <div class="ah-step"><span>1</span><b>Apply online</b><p>Choose the match, add your organisation's ID card (or a letter from your organisation) and a passport photo.</p></div>
       <div class="ah-step"><span>2</span><b>Media team review</b><p>The club's media team approves, asks for more, or declines, by email.</p></div>
       <div class="ah-step"><span>3</span><b>Approval by email</b><p>When your application is approved, you are informed by email with your approval letter (PDF).</p></div>
       <div class="ah-step"><span>4</span><b>Collect your card</b><p>Print the approval letter and bring it to the stadium. Pick up your laminated accreditation card at the designated media desk.</p></div>
     </div>
     <div class="ah-cards">
       <div class="ah-card"><h2>Access zones</h2><ul><li><b>Press Box</b> writers, radio and TV commentary</li><li><b>Pitchside</b> photographers and camera crews</li><li><b>Mixed Zone</b> post-match interviews</li></ul></div>
-      <div class="ah-card"><h2>What you need</h2><ul><li>Press ID or a letter from your organisation (PDF/JPG)</li><li>A passport photo (plain background)</li><li>One application per match</li><li>On match day: the printed approval letter and a photo ID</li></ul></div>
+      <div class="ah-card"><h2>What you need</h2><ul><li>Your organisation's ID card, or a letter from your organisation (PDF/JPG)</li><li>A passport photo (plain background)</li><li>One application per match</li><li>On match day: the printed approval letter and a photo ID</li></ul></div>
       <div class="ah-card"><h2>Media rules</h2><ul><li>Stay in your access zone and wear your card</li><li>Follow stewards' instructions</li><li>Interviews only in the mixed zone</li></ul></div>
     </div>
     <div class="ah-more" id="moreMatches" hidden><h2>Other upcoming home matches</h2><div id="moreList"></div></div>
@@ -63,7 +63,7 @@ import '../../styles/mediaHub.css';
       </div>
       <fieldset class="ac-f"><legend>Staff or freelance <span class="req">*</span></legend><label class="ac-r"><input type="radio" name="employment" value="staff" required /> Staff</label><label class="ac-r"><input type="radio" name="employment" value="freelance" /> Freelance</label></fieldset>
       <div class="ac-f"><label for="role">Role <span class="req">*</span></label><select id="role" name="role" required><option value="">Choose…</option></select></div>
-      <div class="ac-f"><label for="pressDoc">Press ID or letter from your organisation <span class="req">*</span></label><input id="pressDoc" name="pressDoc" type="file" accept="application/pdf,image/jpeg" /><small>PDF or JPG, up to 5 MB.</small></div>
+      <div class="ac-f"><label for="pressDoc">Your organisation's ID card, or a letter from your organisation <span class="req">*</span></label><input id="pressDoc" name="pressDoc" type="file" accept="application/pdf,image/jpeg" /><small>PDF or JPG, up to 5 MB.</small></div>
       <div class="ac-f"><span class="ac-lbl">Passport photo <span class="req">*</span></span>
         <input id="photoIn" type="file" accept="image/jpeg,image/png,image/webp" />
         <small>Plain light background, face clearly visible, no sunglasses or hat. Drag the photo and use the slider so your face fills the frame.</small>
@@ -228,8 +228,8 @@ import '../../styles/mediaHub.css';
     if (!update && !$('eventId').value) return msg('Choose the match.');
     if (!$('agree').checked) return msg('Please agree to the club\'s media rules.');
     const doc = $('pressDoc').files?.[0];
-    if (doc && doc.size > 5 * 1024 * 1024) return msg('The press ID / letter is larger than 5 MB.');
-    if (!update && !doc) return msg('Add your press ID or a letter from your organisation.');
+    if (doc && doc.size > 5 * 1024 * 1024) return msg('The ID card / letter is larger than 5 MB.');
+    if (!update && !doc) return msg("Add your organisation's ID card or a letter from your organisation.");
     const fd = new FormData(f);
     if ($('eventId').disabled) fd.set('eventId', $('eventId').value);
     fd.delete('photoIn');

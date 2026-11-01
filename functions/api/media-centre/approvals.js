@@ -1,14 +1,14 @@
 import { queue, json } from '../_lib/mediaCentre.js';
 import { decide, itemDetail } from '../_lib/mediaApprovals.js';
 
-// The Media Centre Approval Queue for the media approver (signed in with the
-// approval password). Approve, return (with a comment) or reject; recorded as
-// "Media approver". The Super Admins also approve in the admin.
+// The Media Centre Approval Queue: for anyone who unlocked it with the media desk
+// code (or signed in with it), and Super Admins. Approve, return (with a comment)
+// or reject; recorded as "Media desk" (no name). The Super Admins also approve in the admin.
 // GET ?id=<item> -- one item with its preview.   GET -- everything waiting.
 // POST { id, decision: approve | return | reject, comment? }
-const MEDIA_APPROVER = { id: 'media-approver', name: 'Media approver', email: '', mediaApprover: true };
+const MEDIA_APPROVER = { id: 'media-approver', name: 'Media desk', email: '', mediaApprover: true };
 export async function onRequestGet({ request, env, data }) {
-  if (!data.mc.user.approver && !data.mc.user.admin) return json({ error: 'Only the media approver can open this.' }, 403);
+  if (!data.mc.user.desk) return json({ error: 'Enter the media desk code to open the Approval Queue.', locked: true }, 403);
   const id = new URL(request.url).searchParams.get('id');
   if (id) {
     const d = await itemDetail(env.DB, id);
@@ -18,7 +18,7 @@ export async function onRequestGet({ request, env, data }) {
   return json({ items: (await queue(env.DB)).map(i => ({ ...i, decidedBy: null })) });
 }
 export async function onRequestPost({ request, env, data }) {
-  if (!data.mc.user.approver && !data.mc.user.admin) return json({ error: 'Only the media approver can do this.' }, 403);
+  if (!data.mc.user.desk) return json({ error: 'Enter the media desk code first.', locked: true }, 403);
   const b = await request.json().catch(() => ({}));
   if (!['approve', 'return', 'reject'].includes(b.decision)) return json({ error: 'Choose approve, return or reject.' }, 400);
   const u = data.mc.user;

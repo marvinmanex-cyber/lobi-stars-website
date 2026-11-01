@@ -1,17 +1,25 @@
-// Media Centre › Approval Queue, for the media approver (signed in with the
-// approval password; sees only this screen). Open an item, read the preview,
-// then Approve, Return (with a comment) or Reject. Recorded as "Media approver".
-import { api, esc, when, register, toast, go } from './core';
+// Media Centre › Approval Queue, for anyone who entered the media desk code (or
+// signed in with it) and Super Admins. Open an item, read the preview,
+// then Approve, Return (with a comment) or Reject. Recorded as "Media desk".
+import { api, esc, when, register, toast, go, state, ApiError } from './core';
+import { deskGate } from './desk';
 
 register({ path: 'approvals', label: 'Approval Queue', icon: '✅', async render(main, parts) {
-  if (parts[0]) return detail(main, parts[0]);
+  const again = () => go(`/approvals${parts[0] ? `/${parts[0]}` : ''}`, true);
+  const gate = () => deskGate(main, 'Approval Queue', 'Approving what the media team sends (news, newsletters, press releases and more) needs the media desk code.', again);
+  if (!state.user.desk) return gate();
+  try { if (parts[0]) return await detail(main, parts[0]); return await queueScreen(main); }
+  catch (e) { if (e instanceof ApiError && e.data?.locked) { state.user.desk = false; return gate(); } throw e; }
+} });
+
+async function queueScreen(main: HTMLElement) {
   main.innerHTML = '<p class="mc-muted">Loading…</p>';
   const d = await api('approvals');
   main.innerHTML = `<div class="mc-page-head"><h1>Approval Queue</h1></div>
     <p class="mc-muted">Everything sent for approval from the Media Centre. Open one to read it, then approve, return it with a comment, or reject it.</p>
     <section class="mc-card">${d.items.length ? `<ul class="mc-list">${d.items.map((i: any) => `<li><div class="t"><b>${esc(i.title || 'Untitled')}</b><small>${esc(i.kindLabel)}${i.correction === 'submitted' ? ' · correction' : ''} · sent ${esc(when(i.submittedAt || i.updatedAt))}${i.submittedByName ? ` by ${esc(i.submittedByName)}` : ''}</small></div>
       <a class="mc-btn mc-btn-blue mc-btn-sm" href="/media-centre/approvals/${esc(i.id)}/" data-go="/approvals/${esc(i.id)}">Open</a></li>`).join('')}</ul>` : '<p class="mc-empty">Nothing is waiting for approval. 👍</p>'}</section>`;
-} });
+}
 
 async function detail(main: HTMLElement, id: string) {
   main.innerHTML = '<p class="mc-muted">Loading…</p>';

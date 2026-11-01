@@ -165,7 +165,7 @@ export function stripQuoted(text) {
 // ── References ──
 
 /** Reserves `k` new conversation references for a year, e.g. LS-2026-00123. */
-async function nextRefs(db, year, k) {
+export async function nextRefs(db, year, k) {
   const row = await db.prepare(`INSERT INTO inbox_ref_counter (year, n) VALUES (?, ?) ON CONFLICT (year) DO UPDATE SET n = n + excluded.n RETURNING n`).bind(year, k).first();
   const last = row.n;
   return Array.from({ length: k }, (_, i) => `LS-${year}-${String(last - k + 1 + i).padStart(5, '0')}`);
