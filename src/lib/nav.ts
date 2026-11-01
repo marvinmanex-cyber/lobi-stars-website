@@ -52,6 +52,8 @@ export const MAIN_NAV: NavItem[] = [
       { label: 'Stadium', href: '/club/stadium', description: 'McCarthy Stadium, Makurdi' },
       { label: 'Partners', href: '/partners', description: 'Our sponsors and partnership enquiries' },
       { label: 'Fan Clubs', href: '/club/fan-clubs', description: 'Supporters clubs' },
+      { label: 'Press Room (Media)', href: '/media', description: 'For journalists: press releases, accreditation and interviews' },
+      { label: 'Media Accreditation', href: '/media/accreditation', description: 'Journalists: apply to cover a home match' },
       ...optionalClub,
     ],
   },

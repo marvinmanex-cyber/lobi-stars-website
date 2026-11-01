@@ -1,0 +1,52 @@
+---
+// Homepage band for journalists and media houses: apply for match accreditation
+// (the next home match is filled in by the script), the Press Room, and a share
+// button so the club can send the accreditation page to every media house.
+import ShareButton from './ShareButton.astro';
+const site = Astro.site || new URL('https://lobistarsfc.com');
+---
+<section class="mcta" aria-labelledby="mcta-title">
+  <div class="wrap mcta-in">
+    <div class="mcta-copy">
+      <p class="mcta-k">Press &amp; Media</p>
+      <h2 id="mcta-title">Journalists &amp; media houses: <span>get accredited</span></h2>
+      <p class="mcta-lede" id="mctaMatch">Apply online for media accreditation to cover Lobi Stars FC home matches at McCarthy Stadium, Makurdi.</p>
+      <div class="mcta-acts">
+        <a class="mcta-btn" href="/media/accreditation/">Apply for accreditation</a>
+        <a class="mcta-btn ghost" href="/media/">The Press Room</a>
+        <ShareButton url={new URL('/media/accreditation/', site).toString()} title="Lobi Stars FC media accreditation" text="Journalists and media houses: apply online for media accreditation to cover Lobi Stars FC home matches at McCarthy Stadium, Makurdi." label="Share with media houses" class="mcta-share" />
+      </div>
+    </div>
+    <ul class="mcta-points" aria-label="How it works">
+      <li><b>1</b>Apply online for one home match</li>
+      <li><b>2</b>The media team reviews it</li>
+      <li><b>3</b>Approval by email</li>
+      <li><b>4</b>Collect your card at the stadium</li>
+    </ul>
+  </div>
+</section>
+<style is:global>
+  .mcta { margin: 40px 0; background: linear-gradient(115deg, #0E1C38 0%, #1C3F7A 55%, #C11A1F 100%); color: #fff; position: relative; overflow: hidden; }
+  .mcta::after { content: ''; position: absolute; inset: auto 0 0 0; height: 5px; background: linear-gradient(90deg, #E31E24, #fff 50%, #1C3F7A); }
+  .mcta-in { display: grid; gap: 24px; padding-top: 40px !important; padding-bottom: 44px !important; align-items: center; }
+  @media (min-width: 960px) { .mcta-in { grid-template-columns: 1.4fr 1fr; } }
+  .mcta-k { margin: 0 0 8px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 3px; text-transform: uppercase; color: #FFD9DA; }
+  .mcta h2 { margin: 0 0 12px; font: 400 clamp(34px, 5vw, 56px)/.98 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .mcta h2 span { color: #FF6B70; }
+  .mcta-lede { margin: 0 0 18px; max-width: 620px; font-size: 17px; line-height: 1.6; color: rgba(255,255,255,.9); }
+  .mcta-acts { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .mcta-btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 20px; border-radius: 8px; background: #E31E24; color: #fff; text-decoration: none; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .mcta-btn.ghost { background: transparent; border: 2px solid rgba(255,255,255,.65); }
+  .mcta .mcta-share summary, .mcta .mcta-share > button { min-height: 48px; background: #fff; color: #0E1C38; border-color: #fff; }
+  .mcta-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+  .mcta-points li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.1); font-weight: 600; }
+  .mcta-points b { width: 32px; height: 32px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #fff; color: #C11A1F; font: 400 20px/1 'Bebas Neue', sans-serif; }
+</style>
+<script>
+  // Name the next home match when one is open for applications.
+  fetch('/api/media/accreditation').then(r => r.json()).then((d: any) => {
+    const m = (d.matches || []).find((x: any) => x.open);
+    const el = document.getElementById('mctaMatch');
+    if (m && el) el.textContent = `Applications are open for ${m.label} (${m.day}, kick-off ${m.kickOff}) at McCarthy Stadium. Apply online; applications close ${d.closeHours} hours before kick-off.`;
+  }).catch(() => {});
+</script>

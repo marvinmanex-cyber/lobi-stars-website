@@ -6,6 +6,7 @@
 // Content comes from the Media Centre (approved before publishing).
 import Layout from '../../layouts/Layout.astro';
 import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
+import ShareButton from '../../components/ShareButton.astro';
 ---
 <Layout title="Media | Lobi Stars Football Club" description="The Lobi Stars FC Press Room: press releases, media accreditation for home matches at McCarthy Stadium, interview requests and the media contact.">
   <div class="pr" id="pr" data-logos={JSON.stringify(TEAM_LOGOS)}>
@@ -15,7 +16,7 @@ import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
           <p class="pr-tag"><span></span>Lobi Stars FC · Media</p>
           <h1 class="pr-h1">The <em>Press</em> Room</h1>
           <p class="pr-lede">Official statements, match accreditation and interviews for journalists, photographers and broadcasters covering the Pride of Benue.</p>
-          <div class="pr-hero-links"><a href="/media/press-releases/">Press releases</a><a href="/media/accreditation/">Accreditation</a><a href="/media/interview-request/">Interviews</a></div>
+          <div class="pr-hero-links"><a href="/media/press-releases/">Press releases</a><a href="/media/accreditation/">Accreditation</a><a href="/media/interview-request/">Interviews</a><ShareButton title="Lobi Stars FC Press Room" text="The Lobi Stars FC Press Room: press releases, media accreditation for home matches and interview requests." label="Share with media houses" class="pr-share" /></div>
         </div>
         <a class="pr-feature" id="feature" href="/media/press-releases/">
           <span class="pr-feature-k">Latest statement</span>

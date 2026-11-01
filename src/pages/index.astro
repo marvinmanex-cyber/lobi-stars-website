@@ -14,6 +14,7 @@ import HomeHero from '../components/HomeHero.astro';
 import MatchdayGames from '../components/fans/MatchdayGames.astro';
 import ClubAtAGlance from '../components/ClubAtAGlance.astro';
 import NewsletterCta from '../components/NewsletterCta.astro';
+import MediaCta from '../components/MediaCta.astro';
 import MatchAlerts from '../components/MatchAlerts.astro';
 import MiniTable from '../components/league/MiniTable.astro';
 import { getSortedNews } from '../lib/news';
@@ -75,6 +76,8 @@ const teamJsonLd = {
   <!-- Official WhatsApp Channel (hidden until its address is set in the CMS), then the newsletter. -->
   <WhatsAppChannel variant="home" />
   <NewsletterCta />
+
+  <MediaCta />
 
   <section class="hp-sec hp-sec--shop" aria-labelledby="shop-title">
     <div class="hp-inner">

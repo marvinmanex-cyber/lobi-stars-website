@@ -7,6 +7,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
 import '../../styles/mediaHub.css';
+import ShareButton from '../../components/ShareButton.astro';
 ---
 <Layout title="Media accreditation | Lobi Stars Football Club" description="Request media accreditation for a Lobi Stars FC home match at McCarthy Stadium, Makurdi.">
   <section class="ah-hero" data-logos={JSON.stringify(TEAM_LOGOS)} id="hub">
@@ -15,7 +16,7 @@ import '../../styles/mediaHub.css';
         <p class="ah-kicker">Press &amp; Media · McCarthy Stadium, Makurdi</p>
         <h1 class="ah-title">Media Accreditation <span>Hub</span></h1>
         <p class="ah-lede">For journalists, photographers, camera crews, radio commentators and digital media covering Lobi Stars FC home matches. One match per application; applications close <b id="closeH">6</b> hours before kick-off.</p>
-        <div class="ah-cta"><a class="ah-btn" href="#apply">Apply for accreditation</a><a class="ah-btn ghost" href="/media/">Media page</a></div>
+        <div class="ah-cta"><a class="ah-btn" href="#apply">Apply for accreditation</a><a class="ah-btn ghost" href="/media/">Press Room</a><ShareButton title="Lobi Stars FC media accreditation" text="Journalists and media houses: apply online for media accreditation to cover Lobi Stars FC home matches at McCarthy Stadium, Makurdi." label="Share with media houses" class="ah-share" /></div>
       </div>
       <article class="ah-match" id="nextCard" aria-live="polite">
         <p class="ah-mlabel" id="nmLabel">Next home match</p>

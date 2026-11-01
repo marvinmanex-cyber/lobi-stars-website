@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Links to the Press Room and accreditation, with share buttons
+
+**What changed**
+- Homepage: a "Journalists & media houses: get accredited" band (names the next
+  home match open for applications) with Apply, The Press Room and **Share with
+  media houses**.
+- Main menu › Club: **Press Room (Media)** and **Media Accreditation**; footer:
+  "Media accreditation".
+- The accreditation hub and the Press Room have their own **Share with media
+  houses** button (WhatsApp, Facebook, X, Telegram, email, copy link).
+
 ## 2026-11-01: Media Centre: media desk code, Media Inbox; Press Room page
 
 **What changed**

@@ -51,3 +51,5 @@
 .ah-chip img { width: 28px; height: 28px; object-fit: contain; }
 .ah-chip small { color: #5B6472; font-weight: 500; }
 .ah-formhead { margin: 10px 0 14px; } .ah-formhead h2 { margin: 0; font: 400 40px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+
+.ah-share summary, .ah-share > button { min-height: 50px; background: #fff; color: #0E1C38; border-color: #fff; }
