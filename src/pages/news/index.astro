@@ -26,7 +26,8 @@ const tabs = [{ name: 'All', slug: 'all' }, ...NEWS_CATEGORIES];
       <ul class="nl-tab-list" data-tab-list>
         {tabs.map(t => (
           <li>
-            <a class="nl-tab" href={t.slug === 'all' ? '/news' : `/news?category=${t.slug}`} data-tab={t.slug}
+            {/* The Tickets tab opens the Buy Tickets page (ticket stories are still under All). */}
+            <a class="nl-tab" href={t.slug === 'all' ? '/news' : t.slug === 'tickets' ? '/tickets/' : `/news?category=${t.slug}`} data-tab={t.slug}
                aria-current={t.slug === 'all' ? 'page' : undefined}>{t.name}</a>
           </li>
         ))}

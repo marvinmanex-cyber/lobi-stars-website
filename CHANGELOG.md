@@ -28,6 +28,7 @@ in HANDOVER-TODO.md.
 - **/tickets:** the "QR tickets by email" and "Secure Paystack payment"
   badges were removed (only "Find my tickets" is left).
 - Homepage "All club news" link now opens all news.
+- The **Tickets** tab on /news opens the Buy Tickets page (/tickets).
 
 ## 2026-11-01: "Verify you are human" no longer repeats
 
