@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Media page redesigned as the Press & Media Hub
+
+**What changed**
+- lobistarsfc.com/media now matches the accreditation hub: club-colours header,
+  the next home match with both crests and the accreditation countdown ("Apply to
+  cover this match"), three service tiles with icons (accreditation, press
+  releases, interview requests), the latest press releases and the media contact.
+
 ## 2026-11-01: Media accreditation page redesigned as a hub
 
 **What changed**

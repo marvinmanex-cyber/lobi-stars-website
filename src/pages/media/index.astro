@@ -1,30 +1,145 @@
 ---
-// /media -- the club's Media page for journalists: accreditation for home
-// matches, press releases, interview requests and the media
-// contact. Content comes from the Media Centre (approved by a Super Admin).
+// /media -- the Press & Media hub for journalists: the next home match (crests,
+// kick-off, accreditation countdown), accreditation, press releases, interview
+// requests, the latest releases and the media contact. Same look as
+// /media/accreditation (src/styles/mediaHub.css). Content comes from the Media
+// Centre (approved before publishing).
 import Layout from '../../layouts/Layout.astro';
+import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
+import '../../styles/mediaHub.css';
 ---
-<Layout title="Media | Lobi Stars Football Club" description="For journalists: Lobi Stars FC media accreditation for home matches at McCarthy Stadium, press releases and interview requests.">
-  <div class="page-hero wrap">
-    <div class="stag">Press &amp; Media</div>
-    <h1 class="stitle">Media <span class="r">&amp; Press</span></h1>
-    <div class="divr"></div>
-    <p class="muted md-lede">Information for journalists, photographers and broadcasters covering Lobi Stars FC in the Nigeria National League.</p>
-  </div>
-  <div class="page-content wrap">
-    <ul class="md-grid">
-      <li class="panel"><h2>Match accreditation</h2><p class="muted">Apply to cover a Lobi Stars home match at McCarthy Stadium, Makurdi. One match per application; applications close 6 hours before kick-off.</p><a class="btn-p" href="/media/accreditation/">Request accreditation</a></li>
-      <li class="panel"><h2>Press releases</h2><p class="muted">Official club statements and announcements.</p><a class="btn-o" href="/media/press-releases/">Read press releases</a></li>
-      <li class="panel"><h2>Interview requests</h2><p class="muted">Ask to interview a player, coach or club official.</p><a class="btn-o" href="/media/interview-request/">Request an interview</a></li>
-    </ul>
-    <section class="panel md-contact"><h2>Media contact</h2><p>Lobi Stars FC Media Department · <a href="mailto:media@lobistarsfc.com">media@lobistarsfc.com</a></p></section>
-  </div>
+<Layout title="Media | Lobi Stars Football Club" description="Press & Media hub for journalists: Lobi Stars FC media accreditation for home matches at McCarthy Stadium, press releases and interview requests.">
+  <section class="ah-hero" id="hub" data-logos={JSON.stringify(TEAM_LOGOS)}>
+    <div class="wrap ah-in">
+      <div class="ah-copy">
+        <p class="ah-kicker">Press &amp; Media · Lobi Stars FC</p>
+        <h1 class="ah-title">Press &amp; Media <span>Hub</span></h1>
+        <p class="ah-lede">Everything for journalists, photographers and broadcasters covering the Pride of Benue in the Nigeria National League: match accreditation, official statements and interviews.</p>
+        <div class="ah-cta"><a class="ah-btn" href="/media/accreditation/">Request accreditation</a><a class="ah-btn ghost" href="/media/press-releases/">Press releases</a></div>
+      </div>
+      <article class="ah-match" aria-live="polite">
+        <p class="ah-mlabel">Next home match</p>
+        <div class="ah-teams">
+          <div class="ah-team"><span class="ah-crest" id="nmHomeCrest"></span><b id="nmHome">Lobi Stars FC</b></div>
+          <span class="ah-vs">VS</span>
+          <div class="ah-team"><span class="ah-crest" id="nmAwayCrest"></span><b id="nmAway">Loading…</b></div>
+        </div>
+        <p class="ah-when" id="nmWhen"></p>
+        <p class="ah-venue">McCarthy Stadium, Makurdi</p>
+        <div class="ah-status" id="nmStatus"></div>
+        <a class="ah-btn md-full" href="/media/accreditation/" id="nmApply">Apply to cover this match</a>
+      </article>
+    </div>
+  </section>
+
+  <section class="wrap md-svc" aria-label="Media services">
+    <a class="md-tile" href="/media/accreditation/">
+      <span class="md-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7.5 17.5a4.5 4.5 0 0 1 9 0"/><path d="M9 3v2h6V3"/></svg></span>
+      <b>Match accreditation</b>
+      <p>Cover a Lobi Stars home match at McCarthy Stadium. One match per application; applications close <span class="md-close">6</span> hours before kick-off.</p>
+      <span class="md-go">Request accreditation →</span>
+    </a>
+    <a class="md-tile red" href="/media/press-releases/">
+      <span class="md-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h13v14H6a2 2 0 0 1-2-2Z"/><path d="M17 8h3v9a2 2 0 0 1-2 2"/><path d="M7 9h7M7 12h7M7 15h4"/></svg></span>
+      <b>Press releases</b>
+      <p>Official club statements and announcements, each with a branded PDF to download.</p>
+      <span class="md-go">Read press releases →</span>
+    </a>
+    <a class="md-tile" href="/media/interview-request/">
+      <span class="md-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3M8 21h8"/></svg></span>
+      <b>Interview requests</b>
+      <p>Ask to interview a player, the coach or a club official. The media team replies by email.</p>
+      <span class="md-go">Request an interview →</span>
+    </a>
+  </section>
+
+  <section class="wrap md-lower">
+    <div class="md-news">
+      <div class="md-head"><h2>Latest from the club</h2><a href="/media/press-releases/">All press releases →</a></div>
+      <ul class="md-list" id="prList"><li class="md-empty">Loading…</li></ul>
+    </div>
+    <aside class="md-contact">
+      <h2>Media contact</h2>
+      <p id="contact">Lobi Stars FC Media Department</p>
+      <a class="md-mail" id="mail" href="mailto:media@lobistarsfc.com">media@lobistarsfc.com</a>
+      <ul>
+        <li>Accreditation questions: reply to your accreditation email</li>
+        <li>Match-day media entry: McCarthy Stadium, Makurdi</li>
+        <li>Please allow one working day for replies</li>
+      </ul>
+    </aside>
+  </section>
 </Layout>
-<style>
-  .md-lede { max-width: 720px; }
-  .md-grid { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-  .md-grid .panel { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
-  .md-grid h2, .md-contact h2 { margin: 0; font-size: 22px; }
-  .md-grid p { margin: 0; flex: 1; }
-  .md-contact p { margin: 8px 0 0; }
+<style is:global>
+  .md-svc { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); padding-top: 36px !important; }
+  .md-tile { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 22px 22px 20px; border-radius: 16px; background: #fff; border: 1px solid #E3E6EB; border-top: 5px solid #1C3F7A; color: #15181D; text-decoration: none; box-shadow: 0 10px 28px rgba(14,28,56,.06); transition: transform .15s, box-shadow .15s; }
+  .md-tile.red { border-top-color: #E31E24; }
+  .md-tile:hover { transform: translateY(-3px); box-shadow: 0 16px 34px rgba(14,28,56,.12); }
+  .md-ico { width: 54px; height: 54px; border-radius: 14px; display: grid; place-items: center; background: #EAF1FB; color: #1C3F7A; }
+  .md-tile.red .md-ico { background: #FDE8E9; color: #C11A1F; }
+  .md-ico svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .md-tile b { font: 400 30px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .md-tile p { margin: 0; flex: 1; color: #4A5260; line-height: 1.55; }
+  .md-go { font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: #C11A1F; margin-top: 6px; }
+  .md-full { width: 100%; justify-content: center; margin-top: 12px; }
+  .md-lower { display: grid; gap: 18px; grid-template-columns: 1fr; padding-top: 26px !important; padding-bottom: 50px !important; }
+  @media (min-width: 900px) { .md-lower { grid-template-columns: 1.6fr 1fr; } }
+  .md-news, .md-contact { background: #fff; border: 1px solid #E3E6EB; border-radius: 16px; padding: 20px 22px; }
+  .md-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .md-head h2, .md-contact h2 { margin: 0 0 10px; font: 400 32px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: #15181D; }
+  .md-head a { color: #C11A1F; font-weight: 700; text-decoration: none; }
+  .md-list { list-style: none; margin: 0; padding: 0; }
+  .md-list li { border-top: 1px solid #EEF0F3; }
+  .md-list li:first-child { border-top: 0; }
+  .md-list a { display: block; padding: 12px 0; color: #15181D; text-decoration: none; }
+  .md-list a:hover b { color: #C11A1F; }
+  .md-list small { display: block; font: 700 12px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 1.4px; text-transform: uppercase; color: #1C3F7A; }
+  .md-list b { display: block; font-size: 17px; line-height: 1.35; }
+  .md-list span { display: block; color: #5B6472; font-size: 14px; margin-top: 2px; }
+  .md-empty { padding: 14px 0; color: #5B6472; }
+  .md-contact { background: linear-gradient(160deg, #0E1C38, #1C3F7A); color: #fff; border: 0; }
+  .md-contact h2 { color: #fff; }
+  .md-contact p { margin: 0 0 6px; color: rgba(255,255,255,.85); }
+  .md-mail { display: inline-block; margin: 2px 0 14px; color: #fff; font-weight: 700; font-size: 18px; text-decoration: underline; text-decoration-color: #E31E24; text-underline-offset: 4px; }
+  .md-contact ul { margin: 0; padding-left: 18px; line-height: 1.7; color: rgba(255,255,255,.85); font-size: 15px; }
 </style>
+<script>
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const LOGOS: Record<string, string> = JSON.parse(($('hub') as HTMLElement).dataset.logos || '{}');
+  const crest = (name: string) => LOGOS[name] ? `<img src="${esc(LOGOS[name])}" alt="${esc(name)} crest" width="84" height="84" />` : `<span class="ph">${esc((name || '?').charAt(0).toUpperCase())}</span>`;
+  // The next home match and when accreditation closes (the same data as the accreditation form).
+  fetch('/api/media/accreditation').then(r => r.json()).then((d: any) => {
+    document.querySelectorAll('.md-close').forEach(el => { el.textContent = String(d.closeHours); });
+    const m = (d.matches || []).find((x: any) => x.open) || (d.matches || [])[0];
+    $('nmHomeCrest').innerHTML = crest('Lobi Stars FC');
+    if (!m) { $('nmAway').textContent = 'To be announced'; $('nmStatus').innerHTML = '<b>Check back soon</b>The next home match appears here when it is scheduled.'; $('nmApply').hidden = true; return; }
+    const [home, away] = String(m.label).split(' v ');
+    $('nmHome').textContent = home; $('nmAway').textContent = away || '';
+    $('nmHomeCrest').innerHTML = crest(home); $('nmAwayCrest').innerHTML = crest(away || '');
+    $('nmWhen').textContent = `${m.day} · Kick-off ${m.kickOff}`;
+    $('nmApply').href = `/media/accreditation/?match=${encodeURIComponent(m.slug || m.id)}`;
+    const st = $('nmStatus');
+    const draw = () => {
+      const left = Date.parse(m.closesAt) - Date.now();
+      if (!m.open) { st.className = 'ah-status closed'; st.innerHTML = `<b>Accreditation closed</b>Applications closed ${esc(d.closeHours)} hours before kick-off.`; $('nmApply').hidden = true; return false; }
+      st.className = 'ah-status open';
+      if (left <= 0 || m.reopened) { st.innerHTML = '<b>Accreditation open</b>Opened again by the club\'s media team.'; return false; }
+      const dd = Math.floor(left / 864e5), hh = Math.floor(left / 36e5) % 24, mm = Math.floor(left / 6e4) % 60, ss = Math.floor(left / 1e3) % 60;
+      st.innerHTML = `<b>Accreditation open · closing in</b><div class="ah-count"><span>${dd}<small>days</small></span><span>${String(hh).padStart(2, '0')}<small>hrs</small></span><span>${String(mm).padStart(2, '0')}<small>min</small></span><span>${String(ss).padStart(2, '0')}<small>sec</small></span></div>`;
+      return true;
+    };
+    if (draw()) { const t = window.setInterval(() => { if (!draw()) clearInterval(t); }, 1000); }
+  }).catch(() => { $('nmAway').textContent = 'To be announced'; });
+  // The latest press releases and the media contact.
+  fetch('/api/media/press-releases').then(r => r.json()).then((d: any) => {
+    $('prList').innerHTML = d.latest?.length ? d.latest.map((r: any) => `<li><a href="${esc(r.url)}"><small>${esc(r.date)}${r.statement ? ' · Statement' : ''}</small><b>${esc(r.headline)}</b>${r.subheadline ? `<span>${esc(r.subheadline)}</span>` : ''}</a></li>`).join('') : '<li class="md-empty">No press releases yet. Official statements will appear here.</li>';
+    // The contact line without its email address (the address is the link below it).
+    if (d.contact) {
+      const mail = (String(d.contact).match(/[^\s@·,]+@[^\s@·,]+\.[a-z]{2,}/i) || [])[0];
+      const text = String(d.contact).replace(mail || ' ', '').replace(/[\s·,–-]+$/, '').trim();
+      if (text) $('contact').textContent = text;
+      if (mail) { $('mail').href = `mailto:${mail}`; $('mail').textContent = mail; }
+    }
+  }).catch(() => { $('prList').innerHTML = '<li class="md-empty">Press releases could not load. Please refresh the page.</li>'; });
+</script>
