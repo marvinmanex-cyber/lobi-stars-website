@@ -111,7 +111,7 @@ test('edit then approve: published to the News page through GitHub (story and ph
   assert.ok(md, 'news file committed');
   assert.match(md.path, /^src\/content\/news\/\d{4}-\d{2}-\d{2}-lobi-stars-beat-kada-city-1-0\.md$/);
   assert.match(md.text, /^title: "Lobi Stars beat Kada City 1-0"$/m);
-  assert.match(md.text, /^category: "Match Report"$/m); assert.match(md.text, /^newsTab: "First Team"$/m);
+  assert.match(md.text, /^category: "Match Report"$/m); assert.match(md.text, /^newsTab: "Team News"$/m);
   assert.match(md.text, /^isBanner: true$/m, 'breaking news (homepage banner)');
   assert.match(md.text, /^coverImage: "\/images\/news\/mc\/[a-z0-9_]+\.jpg"$/m);
   assert.match(md.text, /^mcId: "/m); assert.match(md.text, /^players: \["musa-adeyemi"\]$/m);

@@ -98,7 +98,7 @@ export function newsMarkdown(v, { slug, tab, publishedAt, updatedAt = null, stat
 }
 
 async function categoryTab(db, name) {
-  try { return (await db.prepare(`SELECT tab FROM mc_categories WHERE name = ?`).bind(name).first())?.tab || 'Club'; } catch { return 'Club'; }
+  try { return (await db.prepare(`SELECT tab FROM mc_categories WHERE name = ?`).bind(name).first())?.tab || 'Team News'; } catch { return 'Team News'; }
 }
 async function slugFor(env, r, v) {
   if (r.slug) return r.slug;

@@ -179,7 +179,9 @@ membership changes, Inbox replies, notes, assignments and status changes).
 3. Fill in:
    - **Title**: the headline.
    - **Summary**: one or two sentences. This shows on the news cards.
-   - **Category**: First Team, Club, Tickets or Media Watch.
+   - **Category**: Team News, Features or Tickets (the three tabs on the
+     News page since 1 Nov 2026; older "First Team" stories show under Team
+     News, older "Club" and "Media Watch" stories only under All).
    - **Cover Image**: click to upload a photo from your computer or phone.
      Landscape (wide) photos look best.
    - **Cover Image Description**: say what's in the photo, e.g. "Players
@@ -4005,6 +4007,11 @@ address and the device.
 - **News categories:** the 17 presets (Match Preview … Fans). You can add
   your own, rename, hide or re-order them, and choose the News page tab each
   one is listed under. There are no women's-team or academy categories.
+  The News page tabs are **Team News, Features and Tickets**. Match, squad,
+  club and statement categories go to Team News; interviews, Coach's Corner,
+  partners, community and fans go to Features; Ticketing News to Tickets.
+  A story appears on the News page as soon as a Super Admin approves it
+  (the website rebuilds in about 2 minutes).
 - **Accreditation:** how many hours before kick-off applications close
   (default 48), and the most accredited journalists per match.
 - **Lobi Stars Weekly:** the deadline (default Tuesday 6 PM) and the publish

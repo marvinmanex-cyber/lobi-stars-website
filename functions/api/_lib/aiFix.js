@@ -65,7 +65,7 @@ async function nextMatch(env) {
 }
 
 /** A news file in the content editor's format, always status Draft. */
-export function newsDraftMarkdown({ title, summary, body, category = 'First Team', contentType = null, matchDate = null }) {
+export function newsDraftMarkdown({ title, summary, body, category = 'Team News', contentType = null, matchDate = null }) {
   return ['---', `title: ${yamlStr(title)}`, `summary: ${yamlStr(summary)}`, `category: ${yamlStr(category)}`, 'coverImage: /images/lobi-stars-badge.png', 'imageAlt: "Lobi Stars FC badge"',
     `publishedAt: ${new Date().toISOString()}`, 'isVideo: false', 'videoUrl: ""', 'videoDuration: ""', 'isFeatured: false', 'isBanner: false', 'status: "draft"', 'author: "Lobi Stars FC Media"',
     ...(contentType ? [`contentType: ${yamlStr(contentType)}`] : []), ...(matchDate ? [`matchDate: ${matchDate}`] : []), '---', '', body, ''].join('\n');

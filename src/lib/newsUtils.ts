@@ -1,14 +1,12 @@
 // Plain helpers with no server-only imports, so browser scripts can use them too.
 
-// The only news categories the club uses. Order here is the order of the
-// tabs on /news (after "All").
+// The tabs on /news (after "All"), in this order. Since 1 Nov 2026 there are
+// three: older "First Team" stories are listed under Team News; older "Club"
+// and "Media Watch" stories are only under All.
 export const NEWS_CATEGORIES = [
-  { name: 'First Team', slug: 'first-team' },
   { name: 'Team News', slug: 'team-news' },
   { name: 'Features', slug: 'features' },
   { name: 'Tickets', slug: 'tickets' },
-  { name: 'Club', slug: 'club' },
-  { name: 'Media Watch', slug: 'media-watch' },
 ] as const;
 
 export type NewsCategory = (typeof NEWS_CATEGORIES)[number]['name'];
@@ -18,7 +16,10 @@ export function categorySlug(name: string): string {
 }
 
 /** The /news tab a story is listed under: its Media Centre tab (newsTab) or its category. */
-export const tabOf = (d: { category: string; newsTab?: string | null }): string => d.newsTab || d.category;
+export const tabOf = (d: { category: string; newsTab?: string | null }): string => {
+  const t = d.newsTab || d.category;
+  return t === 'First Team' ? 'Team News' : t;
+};
 
 export function categoryHref(name: string): string {
   return `/news?category=${categorySlug(name)}`;

@@ -35,7 +35,7 @@ export async function onRequestPost({ request, env }) {
     }
     await mcLog(db, A, 'settings', { section: 'settings', details: changed.join('; '), request });
   } else if (b.action === 'category_add') {
-    const name = oneLine(b.name, 40), tab = NEWS_TABS.includes(b.tab) ? b.tab : 'Club';
+    const name = oneLine(b.name, 40), tab = NEWS_TABS.includes(b.tab) ? b.tab : 'Team News';
     if (name.length < 3) return json({ error: 'Enter the category name.' }, 400);
     if (/women|ladies|female|academy|youth team|u-?\d\d/i.test(name)) return json({ error: 'Lobi Stars has no women\'s or academy team.' }, 400);
     if (await db.prepare(`SELECT id FROM mc_categories WHERE lower(name) = lower(?)`).bind(name).first()) return json({ error: 'That category already exists.' }, 400);

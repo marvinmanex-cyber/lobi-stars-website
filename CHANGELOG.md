@@ -8,6 +8,18 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: News page tabs simplified; Tickets page badges removed
+
+**What changed**
+- **/news tabs:** All, Team News, Features, Tickets. "First Team" (same as
+  Team News), "Club" and "Media Watch" were removed. Older First Team stories
+  are under Team News; older Club and Media Watch stories are under All.
+- **Media Centre:** every news category now points at one of these tabs, so
+  a story approved by a Super Admin appears in the right tab on the News page.
+- **/tickets:** the "QR tickets by email" and "Secure Paystack payment"
+  badges were removed (only "Find my tickets" is left).
+- Homepage "All club news" link now opens all news.
+
 ## 2026-11-01: "Verify you are human" no longer repeats
 
 **What changed**

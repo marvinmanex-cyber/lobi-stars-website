@@ -32,14 +32,15 @@ export const STATUSES = ['draft', 'submitted', 'returned', 'scheduled', 'publish
 export const KIND_LABELS = { news: 'News story', newsletter: 'Lobi Stars Weekly', press: 'Press release', album: 'Photo album', presskit: 'Press kit file', lineup: 'Line-up', live: 'Live update' };
 
 // The preset news categories (Super Admins can add, rename or hide categories).
-// tab: the /news page tab the story is listed under.
+// tab: the /news page tab the story is listed under (Team News, Features or Tickets).
 export const PRESET_CATEGORIES = [
-  ['Match Preview', 'First Team'], ['Match Report', 'First Team'], ['Team News & Line-ups', 'Team News'], ['Post-Match Reaction', 'First Team'],
-  ['First Team News', 'First Team'], ['Injury Updates', 'Team News'], ['Transfer News', 'First Team'], ['Contract News', 'First Team'],
-  ['Player Interviews', 'Features'], ["Coach's Corner", 'Features'], ['Club Announcements', 'Club'], ['Official Statements', 'Club'],
-  ['Ticketing News', 'Tickets'], ['Fixtures Update', 'First Team'], ['Partner & Sponsor News', 'Club'], ['Community', 'Club'], ['Fans', 'Club'],
+  ['Match Preview', 'Team News'], ['Match Report', 'Team News'], ['Team News & Line-ups', 'Team News'], ['Post-Match Reaction', 'Team News'],
+  ['First Team News', 'Team News'], ['Injury Updates', 'Team News'], ['Transfer News', 'Team News'], ['Contract News', 'Team News'],
+  ['Player Interviews', 'Features'], ["Coach's Corner", 'Features'], ['Club Announcements', 'Team News'], ['Official Statements', 'Team News'],
+  ['Ticketing News', 'Tickets'], ['Fixtures Update', 'Team News'], ['Partner & Sponsor News', 'Features'], ['Community', 'Features'], ['Fans', 'Features'],
 ];
-export const NEWS_TABS = ['First Team', 'Team News', 'Features', 'Tickets', 'Club', 'Media Watch'];
+export const NEWS_TABS = ['Team News', 'Features', 'Tickets'];
+export const DEFAULT_TAB = 'Team News';
 
 export const SETTING_DEFAULTS = {
   accreditation_close_hours: '48',   // applications close this many hours before kick-off
@@ -130,6 +131,10 @@ export async function ensureMediaSchema(db) {
     await db.batch(PRESET_CATEGORIES.map(([name, tab], i) =>
       db.prepare(`INSERT OR IGNORE INTO mc_categories (id, name, tab, sort, preset) VALUES (?, ?, ?, ?, 1)`).bind(`cat_${i + 1}`, name, tab, i + 1)));
   }
+  // The old tabs (First Team, Club, Media Watch) were removed on 1 Nov 2026: move categories still pointing at them.
+  const presetTab = Object.fromEntries(PRESET_CATEGORIES);
+  const { results: old } = await db.prepare(`SELECT id, name FROM mc_categories WHERE tab NOT IN ('Team News', 'Features', 'Tickets')`).all();
+  if (old.length) await db.batch(old.map(c => db.prepare(`UPDATE mc_categories SET tab = ? WHERE id = ?`).bind(presetTab[c.name] || DEFAULT_TAB, c.id)));
   ready = true;
 }
 

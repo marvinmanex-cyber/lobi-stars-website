@@ -119,7 +119,7 @@ export async function ensureChecklistSchema(db) {
 // stale stored link); link_url: an https:// address for external links.
 export const LINK_COLUMNS = [['link_type', 'TEXT'], ['link_route', 'TEXT'], ['link_params', 'TEXT'], ['link_url', 'TEXT'], ['link_label', 'TEXT']];
 export const PLACEHOLDERS = ['match_id', 'fixture_id', 'home_team', 'away_team', 'match_date', 'competition_id', 'season_id', 'opponent_id', 'match_slug', 'site_url'];
-const news = (type, category = 'First Team', title = '{home_team}%20vs%20{away_team}') =>
+const news = (type, category = 'Team News', title = '{home_team}%20vs%20{away_team}') =>
   `/admin/#/collections/news/new?title=${encodeURIComponent(`${type}: `)}${title}&category=${encodeURIComponent(category)}&contentType=${encodeURIComponent(type)}&matchDate={match_date}`;
 /** The admin pages a task can link to (Templates page drop-down). Paths must exist. */
 export const LINK_TARGETS = [

@@ -16,9 +16,9 @@ const SOCIAL_SCHEMA = { whatsapp: { type: 'string', min: 40, max: 600, multiline
 
 /** The writing tasks (by seed task title) and what each produces. */
 export const WRITING_TASKS = {
-  'Match report published': { kind: 'news', contentType: 'Match Report', category: 'First Team', label: 'match report', ask: 'Anything the facts below don\'t show: key moments, how the team played, quotes (only real ones).',
+  'Match report published': { kind: 'news', contentType: 'Match Report', category: 'Team News', label: 'match report', ask: 'Anything the facts below don\'t show: key moments, how the team played, quotes (only real ones).',
     brief: 'Write a match report (300-500 words): result and scorers first, then the key moments in order, then what is next. Use the timeline and stats given. No quotes unless they are in the staff facts.' },
-  'Post-match press conference / interviews': { kind: 'news', contentType: 'Reaction/Interview', category: 'First Team', label: 'reaction / interview post', ask: 'The real quotes, and who said them (coach, captain, player).',
+  'Post-match press conference / interviews': { kind: 'news', contentType: 'Reaction/Interview', category: 'Team News', label: 'reaction / interview post', ask: 'The real quotes, and who said them (coach, captain, player).',
     brief: 'Write a short reaction post (200-400 words) built around the quotes in the staff facts, with one line of context about the result. Quotes must be exactly as given.', needsQuotes: true },
   'Injury report': { kind: 'news', contentType: 'Team News', category: 'Team News', label: 'team news (injuries)', ask: 'Who is injured or doubtful, what the injury is, and when they may be back (only what the medical team has confirmed).',
     brief: 'Write a short team news update (150-350 words) about injuries and availability, only from the staff facts. Calm and factual; no medical guesses.' },

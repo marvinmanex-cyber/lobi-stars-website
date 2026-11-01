@@ -154,7 +154,7 @@ export async function decideSuggestion(env, admin, id, decision) {
       v[field] = [...new Set([...(v[field] || []), s.slug])];
       const paths = {};
       for (const fid of [...JSON.stringify(v).matchAll(/\/api\/media-file\/([a-z0-9_]{4,40})/g)].map(x => x[1])) { const f = await fileRow(db, fid); if (f?.committed_path) paths[fid] = f.committed_path.replace(/^public/, ''); }
-      const tab = (await db.prepare(`SELECT tab FROM mc_categories WHERE name = ?`).bind(v.category).first().catch(() => null))?.tab || 'Club';
+      const tab = (await db.prepare(`SELECT tab FROM mc_categories WHERE name = ?`).bind(v.category).first().catch(() => null))?.tab || 'Team News';
       await commitFiles(env, [{ path: `src/content/news/${mc.slug}.md`, text: newsMarkdown(v, { slug: mc.slug, tab, publishedAt: mc.published_at, updatedAt: null, paths, mcId: mc.id }) }], `News: tagged ${s.name} in "${s.article_title}"`);
       const d = parseJson(mc.data_json, {}); d[field] = [...new Set([...(d[field] || []), s.slug])];
       await db.prepare(`UPDATE mc_items SET live_json = ?, data_json = ? WHERE id = ?`).bind(JSON.stringify(v), JSON.stringify(d), mc.id).run();

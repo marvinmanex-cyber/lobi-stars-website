@@ -293,13 +293,13 @@ const roster = (await getRoster())
     const anyLineup = [m.lineups?.home, m.lineups?.away].some(l => l && l.starting && l.starting.length);
     const vs = `${m.home_team} vs ${m.away_team}`;
     const ITEMS = [
-      { type: 'Preview', when: 'MD-2 (two days before)', done: !!story('Preview') || !!(m.preview || '').trim(), title: `Preview: ${vs}`, category: 'First Team' },
+      { type: 'Preview', when: 'MD-2 (two days before)', done: !!story('Preview') || !!(m.preview || '').trim(), title: `Preview: ${vs}`, category: 'Team News' },
       { type: 'Team News', when: 'MD-1 (day before)', done: !!story('Team News'), title: `Team news: ${vs}`, category: 'Team News' },
-      { type: 'Line-ups', when: '1 hour before kick-off', done: anyLineup || !!story('Line-ups'), title: `Line-ups: ${vs}`, category: 'First Team' },
-      { type: 'Live updates', when: 'During the match', done: (m.timeline || []).length > 0 || !!story('Live updates'), title: `Live: ${vs}`, category: 'First Team' },
-      { type: 'Match Report', when: 'After full time', done: !!(m.report || '').trim() || !!story('Match Report'), title: `Report: ${vs}`, category: 'First Team' },
-      { type: 'Highlights', when: 'After full time', done: !!(m.youtube_url || m.facebook_url) || !!story('Highlights'), title: `Highlights: ${vs}`, category: 'First Team' },
-      { type: 'Reaction/Interview', when: 'After full time', done: !!story('Reaction/Interview'), title: `Reaction: ${vs}`, category: 'First Team' },
+      { type: 'Line-ups', when: '1 hour before kick-off', done: anyLineup || !!story('Line-ups'), title: `Line-ups: ${vs}`, category: 'Team News' },
+      { type: 'Live updates', when: 'During the match', done: (m.timeline || []).length > 0 || !!story('Live updates'), title: `Live: ${vs}`, category: 'Team News' },
+      { type: 'Match Report', when: 'After full time', done: !!(m.report || '').trim() || !!story('Match Report'), title: `Report: ${vs}`, category: 'Team News' },
+      { type: 'Highlights', when: 'After full time', done: !!(m.youtube_url || m.facebook_url) || !!story('Highlights'), title: `Highlights: ${vs}`, category: 'Team News' },
+      { type: 'Reaction/Interview', when: 'After full time', done: !!story('Reaction/Interview'), title: `Reaction: ${vs}`, category: 'Team News' },
     ];
     const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
     document.getElementById('chkList').innerHTML = ITEMS.map(it => {
