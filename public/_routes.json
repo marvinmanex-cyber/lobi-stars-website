@@ -27,6 +27,8 @@
     "/media/*",
     "/media-centre",
     "/media-centre/*",
+    "/matchday-kitchen",
+    "/matchday-kitchen/*",
     "/matches",
     "/matches/*",
     "/news",

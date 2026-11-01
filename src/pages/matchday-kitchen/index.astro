@@ -1,0 +1,90 @@
+---
+// MatchDay Kitchen: the kitchen staff's own area (sign-in, the ticket-rail home
+// screen, pages opened as tabs). Served by functions/matchday-kitchen/[[path]].js
+// for /matchday-kitchen/ and /matchday-kitchen/login/ with strict security
+// headers. Separate from the website admin: its own staff, sign-in and cookie.
+// Inner pages are the panel page (panel.astro) in the tab frames.
+import '../../styles/matchdayKitchen.css';
+---
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="same-origin" />
+  <meta name="theme-color" content="#0e7a26" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="MatchDay Kitchen" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>MatchDay Kitchen | Lobi Stars FC</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/matchday-kitchen/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/matchday-kitchen/apple-touch-icon.png" />
+  <link rel="manifest" href="/matchday-kitchen.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <section class="mk-signin" id="signin" hidden>
+    <form class="mk-card" id="signinForm" novalidate>
+      <img class="mk-signin-logo" src="/images/matchday-kitchen/logo-320.png" alt="MatchDay Kitchen logo" width="160" height="160" />
+      <h1>MatchDay Kitchen</h1>
+      <p class="mk-club">Lobi Stars FC</p>
+      <p class="mk-ok" id="signinMsg" role="status" hidden></p>
+      <p class="mk-err" id="signinErr" role="alert" hidden></p>
+      <div class="mk-field">
+        <label for="login">Staff ID or email</label>
+        <input id="login" name="login" autocomplete="username" autocapitalize="characters" spellcheck="false" required maxlength="120" />
+      </div>
+      <div class="mk-field">
+        <label for="password">Password</label>
+        <div class="mk-pw">
+          <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="72" />
+          <button type="button" id="pwToggle" aria-controls="password" aria-pressed="false">Show</button>
+        </div>
+      </div>
+      <div class="mk-field" id="codeWrap" hidden>
+        <label for="code">6-digit code from your authenticator app</label>
+        <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" />
+      </div>
+      <button class="mk-btn go big wide" type="submit" id="signinBtn">Sign in</button>
+      <p class="mk-note">Everything you do in the kitchen is recorded under your name. Don't share your password.</p>
+    </form>
+  </section>
+
+  <div id="app" hidden>
+    <header class="mk-top">
+      <img class="mk-top-logo" src="/images/matchday-kitchen/logo-96.png" alt="MatchDay Kitchen" width="48" height="48" />
+      <button type="button" class="mk-tb on" id="homeBtn" aria-label="Home"><span aria-hidden="true">⌂</span><span class="lbl">Home</span></button>
+      <nav class="mk-tabs" id="tabs" aria-label="Open pages"></nav>
+      <button type="button" class="mk-tb" id="reloadBtn" hidden aria-label="Reload this page"><span aria-hidden="true">⟳</span><span class="lbl">Reload</span></button>
+      <button type="button" class="mk-tb" id="fsBtn" hidden aria-label="Full screen"><span aria-hidden="true">⛶</span></button>
+      <span class="mk-clock" id="clock" aria-label="Time"></span>
+      <div class="mk-who" id="who"></div>
+      <button type="button" class="mk-tb" id="signoutBtn">Sign out</button>
+    </header>
+    <main class="mk-home" id="home">
+      <h1 class="mk-hello" id="hello"></h1>
+      <button type="button" class="mk-shiftnag" id="shiftNag" hidden>You haven't started your shift. Start it now.</button>
+      <div id="groups"></div>
+    </main>
+    <div class="mk-frames" id="frames"></div>
+  </div>
+
+  <div class="mk-idle" id="idle" hidden role="alertdialog" aria-modal="true" aria-labelledby="idleTitle">
+    <div class="mk-card">
+      <h2 id="idleTitle">Still there?</h2>
+      <p>Nobody has tapped for 20 minutes. You'll be signed out in</p>
+      <div class="mk-count" id="idleCount">60</div>
+      <button type="button" class="mk-btn go big wide" id="idleKeep">Keep me signed in</button>
+    </div>
+  </div>
+  <div class="mk-toast" id="toast" role="status" hidden></div>
+
+  <script>
+    import '../../scripts/matchdayKitchen/shell';
+  </script>
+</body>
+</html>

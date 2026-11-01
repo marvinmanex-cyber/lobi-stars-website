@@ -4261,6 +4261,83 @@ After signing in: **Returned to me** (with the Super Admin's comment),
 **Waiting for approval**, **My drafts**, **Upcoming deadlines** and
 **Recently published**.
 
+## 42. MatchDay Kitchen staff area (/matchday-kitchen)
+
+**What it is:** the kitchen staff's own area at **lobistarsfc.com/matchday-kitchen**,
+for running food service on match day from a tablet or laptop. It is completely
+separate from the website admin: kitchen staff have their own **Staff ID** (for
+example LSK-001) and password, and can never open /admin. What they do changes the
+website's real orders and menu straight away (no approval step), and everything is
+recorded under their name. (Not to be confused with **lobistarsfc.com/kitchen**, the
+fans' ordering page.)
+
+**Signing in**
+- Kitchen staff: **Staff ID** and password.
+- Super Admins: your **website email** and password (and your two-step code). This
+  signs you in to MatchDay Kitchen only; it never signs you in or out of /admin.
+- 5 wrong passwords lock a Staff ID for 15 minutes.
+- **Shared tablets:** after 20 minutes without a tap, "Still there?" appears with a
+  60-second countdown. Tap **Keep me signed in**, or the tablet signs out by itself
+  (recorded as an automatic sign-out).
+
+**The home screen** shows big buttons hanging from a rail like order tickets. Each
+button opens its page as a **tab** in the top bar (up to 6), without leaving the
+page. **Home** (top left, and on every page) goes back to the buttons and keeps the
+tabs open. WhatsApp and Telegram open in their own apps.
+
+| Button | What it does |
+| --- | --- |
+| **Kitchen screen** | Paid orders to cook, oldest first, as tickets: big order number, minutes waiting, customer and seat, items, notes. **Start cooking**, then **Mark ready**. Red border and LATE after 15 minutes. Refreshes every 15 seconds (not while you are tapping). Shows the last 12 hours. |
+| **Live order board** | New / Preparing / Ready columns with counts. Tap a card to open the order. |
+| **Kitchen alerts** | Late orders, dishes sold out, orders cancelled today. |
+| **Food orders** | Search by order number or name, filter by status and day (30 a page). |
+| **One order** | All details and a button for each next status the website allows (the next step in green). **Cancel** (red, asks first) only for roles allowed to cancel. |
+| **Menu and prices** | **Mark sold out** / **Back on** (anyone; fans can't order it while sold out). **Save price** for supervisors and Super Admins. |
+| **Kitchen WhatsApp** | Opens WhatsApp to +234 708 009 4985. |
+| **Telegram updates** | Opens the kitchen Telegram channel (only shown once its link is set in Staff accounts › Settings). |
+| **Handover notes** | Notes for the next shift. Supervisors and Super Admins can pin and delete any note; others delete their own. |
+| **My shift** | **Start shift** / **End shift**, who is in the kitchen now, your last 10 shifts. |
+| **Food analytics** | For a day: orders, sales, average, cancelled, top 10 dishes, orders by hour (paid orders; cancelled left out). |
+| **Activity log** | Staff see their own actions. Super Admins see everyone's, filter by person and day, and **Download CSV**. |
+| **Staff accounts** | Super Admins only: add staff, change name and role, switch sign-in off, set a new password, settings, and the **data check**. |
+
+**Order statuses in the kitchen:** New = paid (or accepted), Preparing, Ready (= "out
+for delivery / ready for pickup" on the website), then Delivered. Unpaid WhatsApp
+orders do not appear on the kitchen screen until a staff member marks them paid.
+
+**Roles**
+
+| | Cook / kitchen hand | Pass / order handler | Kitchen supervisor | Super Admin |
+| --- | --- | --- | --- | --- |
+| Move orders to the next status | Yes | Yes | Yes | Yes |
+| Sold out / back on | Yes | Yes | Yes | Yes |
+| Cancel orders | | Yes | Yes | Yes |
+| Change prices | | | Yes | Yes |
+| Pin or delete anyone's notes | | | Yes | Yes |
+| Everyone's activity, CSV | | | | Yes |
+| Staff accounts | | | | Yes |
+
+Who can cancel and who can change prices can be changed in **Staff accounts ›
+Settings** (with the Telegram link and the "late after" minutes).
+
+**Staff accounts (Super Admins):** Staff IDs use letters, numbers and dashes (saved
+in capitals, each one unique). Passwords: at least 8 characters, not only numbers,
+not a common password, not like the Staff ID or name. **A new password or switching
+someone off signs them out on every tablet straight away.**
+
+**Recorded:** sign-ins and sign-outs (including automatic ones), every page opened,
+every status change ("Order FD-…: Preparing to Ready"), sold out / back on, price
+changes (old and new price), shifts, notes, staff account changes and settings,
+with the person's name and Staff ID, IP address and time. Passwords are never
+stored. The log can never be changed or deleted.
+
+**For admins:** Admin › Commerce › **MatchDay Kitchen staff area** shows the kitchen
+staff, shifts, handover notes and activity log (read-only).
+
+**Add it to a tablet's home screen:** open lobistarsfc.com/matchday-kitchen in Chrome
+(Android: menu › Add to Home screen) or Safari (iPad: Share › Add to Home Screen). It
+then opens full screen with the MatchDay Kitchen logo.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

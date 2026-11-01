@@ -1,0 +1,61 @@
+---
+// Commerce › MatchDay Kitchen (read-only): what happens in the separate
+// MatchDay Kitchen staff area (/matchday-kitchen): its staff accounts, shifts,
+// handover notes and activity log. Nothing can be changed here: staff accounts
+// are managed by the Super Admins inside MatchDay Kitchen, and the activity log
+// can never be changed or deleted.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="MatchDay Kitchen staff area | Lobi Stars Admin" description="Kitchen staff, shifts, handover notes and activity (read-only)." noindex>
+  <div class="wrap mkv">
+    <AdminNav current="mk-portal" />
+    <header><div class="stag">Commerce · Food</div><h1 class="stitle">MatchDay Kitchen <span class="r">staff area</span></h1></header>
+    <p class="mkv-lede">Read-only view of the kitchen staff's own area at <a href="/matchday-kitchen/" target="_blank" rel="noopener">lobistarsfc.com/matchday-kitchen</a>. Super Admins add staff and reset passwords there (sign in with your website email). The activity log can never be changed or deleted.</p>
+    <div class="mkv-tabs" role="tablist"><button type="button" data-v="staff" class="on">Staff</button><button type="button" data-v="shifts">Shifts</button><button type="button" data-v="notes">Handover notes</button><button type="button" data-v="activity">Activity log</button></div>
+    <div id="filters" hidden class="mkv-f"><select id="fStaff"><option value="">Everyone</option></select><input type="date" id="fDay" /><button type="button" id="fGo">Show</button></div>
+    <section class="mkv-card" id="out"><p class="muted">Loading…</p></section>
+    <div class="mkv-pager" id="pager"></div>
+  </div>
+</Layout>
+<style>
+  .mkv { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
+  .mkv-lede { color: var(--a-muted); line-height: 1.5; }
+  .mkv-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; } .mkv-tabs button, .mkv-f button, .mkv-pager button { font: inherit; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; } .mkv-tabs button.on { background: #0e7a26; color: #fff; border-color: #0e7a26; }
+  .mkv-f { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; } .mkv-f select, .mkv-f input { font: inherit; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); }
+  .mkv-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 8px 16px; overflow-x: auto; }
+  .mkv :global(table) { width: 100%; border-collapse: collapse; font-size: 14px; } .mkv :global(th), .mkv :global(td) { text-align: left; padding: 10px 8px; border-top: 1px solid var(--a-line); vertical-align: top; } .mkv :global(th) { border-top: 0; color: var(--a-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .mkv :global(small) { color: var(--a-muted); }
+  .mkv-pager { display: flex; gap: 8px; justify-content: center; margin: 12px 0; align-items: center; }
+</style>
+<script>
+  const H = { 'x-admin-code': sessionStorage.getItem('ls_admin_code') || '__session__' };
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const when = (iso?: string) => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '—';
+  let view = 'staff', page = 1, staffLoaded = false;
+  const table = (head: string[], rows: string[][]) => rows.length ? `<table><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '<p class="muted">Nothing yet.</p>';
+  async function load() {
+    $('filters').hidden = view !== 'activity'; $('pager').innerHTML = '';
+    const qs = new URLSearchParams({ view, page: String(page), staff: $('fStaff').value, day: $('fDay').value });
+    const r = await fetch(`/api/admin/matchday-kitchen?${qs}`, { headers: H, cache: 'no-store' });
+    if (r.status === 401) { location.href = '/admin/login/?next=/admin/matchday-kitchen/'; return; }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { $('out').innerHTML = `<p>${esc(d.error || 'Could not load.')}</p>`; return; }
+    if (view === 'staff') $('out').innerHTML = table(['Name', 'Staff ID', 'Role', 'Can sign in', 'Last sign-in'], d.staff.map((s: any) => [`<b>${esc(s.name)}</b>`, esc(s.staffId), esc(s.roleLabel), s.active ? (s.locked ? 'Locked (15 min)' : 'Yes') : 'Switched off', esc(when(s.lastLogin))]));
+    if (view === 'shifts') $('out').innerHTML = table(['Who', 'Role', 'Start', 'End'], d.shifts.map((s: any) => [`<b>${esc(s.name)}</b> <small>${esc(s.code || '')}</small>`, esc(s.role), esc(when(s.started_at)), s.ended_at ? esc(when(s.ended_at)) : 'On shift']));
+    if (view === 'notes') $('out').innerHTML = table(['Note', 'By', 'When'], d.notes.map((n: any) => [`${n.pinned ? '📌 ' : ''}${esc(n.text)}`, `${esc(n.author_name)} <small>${esc(n.author_code || '')}</small>`, esc(when(n.created_at))]));
+    if (view === 'activity') {
+      if (!staffLoaded) { $('fStaff').insertAdjacentHTML('beforeend', d.staff.map((s: any) => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')); staffLoaded = true; }
+      $('out').innerHTML = table(['When', 'Who', 'What happened', 'IP address'], d.rows.map((a: any) => [esc(when(a.at)), `${esc(a.who || '')}<br><small>${esc(a.code || '')}</small>`, `${esc(a.action)}${a.details ? `<br><small>${esc(a.details)}</small>` : ''}`, `<small>${esc(a.ip || '')}</small>`]));
+      if (d.pages > 1) $('pager').innerHTML = `<button type="button" data-pg="${d.page - 1}" ${d.page <= 1 ? 'disabled' : ''}>Newer</button><span>Page ${d.page} of ${d.pages}</span><button type="button" data-pg="${d.page + 1}" ${d.page >= d.pages ? 'disabled' : ''}>Older</button>`;
+    }
+  }
+  document.querySelector('.mkv-tabs')!.addEventListener('click', e => {
+    const b = (e.target as HTMLElement).closest('[data-v]') as HTMLElement | null; if (!b) return;
+    document.querySelectorAll('.mkv-tabs button').forEach(x => x.classList.toggle('on', x === b)); view = b.dataset.v!; page = 1; load();
+  });
+  $('fGo').addEventListener('click', () => { page = 1; load(); });
+  $('pager').addEventListener('click', (e: Event) => { const b = (e.target as HTMLElement).closest('[data-pg]') as HTMLElement | null; if (b) { page = Number(b.dataset.pg); load(); } });
+  load();
+</script>

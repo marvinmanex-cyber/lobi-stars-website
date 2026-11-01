@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: MatchDay Kitchen staff area (/matchday-kitchen)
+
+**What changed**
+- New: **lobistarsfc.com/matchday-kitchen**, the kitchen staff's own area, separate
+  from the admin (own Staff IDs and passwords, own sign-in; kitchen staff can never
+  open /admin). Super Admins sign in with their website email.
+- Ticket-rail home screen; pages open as tabs: Kitchen screen, Live order board,
+  Kitchen alerts, Food orders, one order, Menu and prices, Food analytics, My shift,
+  Handover notes, Activity log, Staff accounts, Kitchen WhatsApp, Telegram updates.
+- Changes the website's real orders and menu at once; roles (cook, pass, supervisor,
+  Super Admin); everything recorded under the person's name (log can't be changed).
+- "Still there?" sign-out after 20 minutes without a tap on shared tablets.
+- Admin › Commerce › MatchDay Kitchen staff area: read-only view for admins.
+
+**Who it affects:** kitchen staff and Super Admins. **To do:** HANDOVER-TODO K1–K3.
+
 ## 2026-11-01: Food order WhatsApp messages: "Hello MatchDay Kitchen", no exclamation marks
 
 **What changed**

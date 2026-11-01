@@ -147,6 +147,14 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | M3 | **Fill the Press Kit** | In the Media Centre, Press Kit: add the club badge, colours, how to write the club name, the squad photo, player headshots, a fact sheet, the media contact and the media rules; a Super Admin approves each. Until then /media/press-kit asks journalists to email media@lobistarsfc.com. |
 | M4 | **Check the media rules text** | The accreditation form uses a short version of the club's media rules (stay in your zone, wear the accreditation, follow stewards, interviews only in the mixed zone, news use only, the club may withdraw accreditation). Send the website manager the club's official wording if it differs. |
 
+## K. MatchDay Kitchen staff area (/matchday-kitchen, built 1 Nov 2026)
+
+| # | Item | What is needed |
+| --- | --- | --- |
+| K1 | **Add the kitchen staff** | A Super Admin signs in at lobistarsfc.com/matchday-kitchen with their website email, password and two-step code, opens **Staff accounts** and adds each person: Staff ID (e.g. LSK-001), full name, role (cook, pass / order handler, or kitchen supervisor) and a password. Give each person their own Staff ID and password. STAFF-GUIDE §42. |
+| K2 | **Telegram channel link (optional)** | If the kitchen has a Telegram channel, paste its link (https://t.me/…) in Staff accounts › Settings: the **Telegram updates** button then appears. |
+| K3 | **Set up the kitchen tablet(s)** | Open lobistarsfc.com/matchday-kitchen on each tablet and add it to the home screen (STAFF-GUIDE §42). Check who may cancel orders and change prices (Settings; default: cancel = pass and supervisor, prices = supervisor). |
+
 ## E. Legal
 
 | # | What | What to send |

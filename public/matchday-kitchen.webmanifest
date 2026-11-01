@@ -1,0 +1,16 @@
+{
+  "name": "MatchDay Kitchen",
+  "short_name": "MatchDay Kitchen",
+  "description": "Lobi Stars FC matchday kitchen staff area",
+  "start_url": "/matchday-kitchen/",
+  "scope": "/matchday-kitchen/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#07471a",
+  "theme_color": "#0e7a26",
+  "icons": [
+    { "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/images/matchday-kitchen/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

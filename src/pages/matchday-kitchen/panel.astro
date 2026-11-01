@@ -1,0 +1,45 @@
+---
+// MatchDay Kitchen inner pages (kitchen screen, live board, orders, menu, …).
+// functions/matchday-kitchen/[[path]].js serves this page for every inner
+// address; src/scripts/matchdayKitchen/panel.ts draws the page for the address.
+// Normally shown inside a tab of the home screen; also works on its own.
+import '../../styles/matchdayKitchen.css';
+---
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="same-origin" />
+  <meta name="theme-color" content="#0e7a26" />
+  <title>MatchDay Kitchen | Lobi Stars FC</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/matchday-kitchen/favicon-32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/matchday-kitchen/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <header class="mk-panel-head">
+    <button type="button" class="mk-btn" id="pHome"><span aria-hidden="true">⌂</span> Home</button>
+    <h1 id="pTitle">MatchDay Kitchen</h1>
+    <span class="upd" id="pUpd" aria-live="polite"></span>
+  </header>
+  <main class="mk-main" id="pMain"><p class="mk-empty">Loading…</p></main>
+  <dialog class="mk-dialog" id="pDialog">
+    <form method="dialog">
+      <h2 id="dTitle"></h2>
+      <div id="dBody"></div>
+      <div class="mk-actions">
+        <button class="mk-btn" value="no" id="dNo">Cancel</button>
+        <button class="mk-btn go" value="yes" id="dYes">Yes</button>
+      </div>
+    </form>
+  </dialog>
+  <div class="mk-toast" id="toast" role="status" hidden></div>
+  <script>
+    import '../../scripts/matchdayKitchen/panel';
+  </script>
+</body>
+</html>
