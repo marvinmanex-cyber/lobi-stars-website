@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Fix: admin login blocked while signed in to the Media Centre
+
+**What changed**
+- The admin login was refused ("The Media Centre login only opens the Media
+  Centre") when the same browser was signed in to the Media Centre. Signing in to
+  the admin now always works; admin pages send anyone without an admin login to the
+  admin login page. A Media Centre or IT Centre login still never opens the admin.
+
 ## 2026-11-01: Media Centre: website live-score page removed
 
 **What changed**

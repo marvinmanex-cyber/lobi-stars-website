@@ -67,7 +67,14 @@ test('a Media Centre session is refused by every admin route (server-side)', asy
     assert.equal((await fetch(`${BASE}${p}`, { headers: H })).status, 403, `GET ${p}`);
     assert.equal((await fetch(`${BASE}${p}`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json' }, body: '{}' })).status, 403, `POST ${p}`);
   }
-  for (const p of ['/admin/dashboard/', '/admin/media-centre/', '/admin/']) assert.equal((await fetch(`${BASE}${p}`, { headers: H, redirect: 'manual' })).status, 403, `page ${p}`);
+  // Admin pages: the Media Centre login doesn't count; the person goes to the admin login page.
+  for (const p of ['/admin/dashboard/', '/admin/media-centre/', '/admin/']) {
+    const r = await fetch(`${BASE}${p}`, { headers: H, redirect: 'manual' });
+    assert.equal(r.status, 302, `page ${p}`); assert.match(r.headers.get('location'), /\/admin\/login\//);
+  }
+  // Signing in to the admin still works in the same browser (a wrong password is just refused, not blocked).
+  const al = await fetch(`${BASE}/api/admin/login`, { method: 'POST', headers: { ...H, 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ email: 'nobody-here@example.com', password: 'wrong-pass-123' }) });
+  assert.notEqual((await al.json()).error, 'The Media Centre login only opens the Media Centre.');
 });
 
 test('5 wrong passwords lock the account for 15 minutes; a Super Admin can unlock', async () => {

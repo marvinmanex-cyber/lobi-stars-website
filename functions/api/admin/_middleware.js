@@ -16,12 +16,14 @@ export async function onRequest({ request, env, next, waitUntil }) {
   const url = new URL(request.url);
   if (crossSiteWrite(request)) return Response.json({ error: 'This request came from another website and was refused.' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
   const admin = await getAdmin(request, env);
+  // Signing in to the admin always works, even while signed in to another staff area in the same browser.
+  const signInPath = /^\/api\/admin\/(login|logout|invite|password-reset)(\/|$)/.test(url.pathname);
   // The Squad & Staff Data Portal login never opens any admin API.
-  if (!admin && !/^\/api\/admin\/(login|logout|invite|password-reset)(\/|$)/.test(url.pathname) && hasPortalCookie(request) && await getPortalSession(request, env, { touch: false })) {
+  if (!admin && !signInPath && hasPortalCookie(request) && await getPortalSession(request, env, { touch: false })) {
     return Response.json({ error: 'The Squad & Staff Data Portal login only opens the portal.' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
   }
   // Nor does a Media Centre login (checked on the server for every admin API, GET and POST).
-  if (!admin && hasMediaCookie(request) && await getMediaSession(request, env, { touch: false })) {
+  if (!admin && !signInPath && hasMediaCookie(request) && await getMediaSession(request, env, { touch: false })) {
     return Response.json({ error: 'The Media Centre login only opens the Media Centre.' }, { status: 403, headers: { 'Cache-Control': 'no-store' } });
   }
   // Matchday helpers only use their own screen's APIs.

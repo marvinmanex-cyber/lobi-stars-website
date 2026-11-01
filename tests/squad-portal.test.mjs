@@ -76,7 +76,7 @@ test('sign in: name required; the portal cookie opens the portal API but no admi
   assert.equal(me.name, 'Grace Test');
   assert.equal(me.season, '2026/27');
   for (const p of ['/api/admin/notifications', '/api/admin/staff', '/api/admin/food-orders', '/api/admin/squad-portal', '/api/admin/health']) assert.equal((await fetch(BASE + p, { headers: H })).status, 403, p);
-  for (const p of ['/admin/', '/admin/squad-portal/', '/admin/food-orders/live/']) assert.equal((await fetch(BASE + p, { headers: H, redirect: 'manual' })).status, 403, p);
+  for (const p of ['/admin/', '/admin/squad-portal/', '/admin/food-orders/live/']) { const r = await fetch(BASE + p, { headers: H, redirect: 'manual' }); assert.equal(r.status, 302, p); assert.match(r.headers.get('location'), /\/admin\/login\//, p); }
   assert.equal((await fetch(`${BASE}/admin/login/`, { headers: H, redirect: 'manual' })).status, 200, 'the admin login page still opens');
   assert.equal((await fetch(`${BASE}/api/squad-portal/session`, { method: 'POST', headers: H })).status, 403, 'no CSRF token');
   assert.equal((await fetch(`${BASE}/api/squad-portal/session`, { method: 'POST', headers: { ...H, 'X-CSRF-Token': me.csrf } })).status, 200);
