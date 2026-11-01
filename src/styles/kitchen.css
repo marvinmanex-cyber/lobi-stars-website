@@ -121,7 +121,8 @@
 
 /* Cart bar (sticky bottom) */
 .kx-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 1400; padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(6, 14, 30, .96); backdrop-filter: blur(8px); border-top: 1px solid var(--kx-line); transform: translateY(110%); transition: transform .25s ease; }
-.kx-bar.show { transform: none; }
+.kx-bar.show { transform: translate3d(0, 0, 0); } /* own layer: stays put on iPhones while scrolling */
+.kx-bar { -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .kx-bar button { width: 100%; max-width: 640px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 52px; padding: 0 18px; border: 0; border-radius: 14px; background: var(--kx-green); color: #04140A; font: 700 17px/1 'Barlow Condensed', sans-serif; letter-spacing: .04em; cursor: pointer; }
 .kx-bar b { font-size: 19px; }
 @media (max-width: 767px) { .kx-bar { bottom: calc(60px + env(safe-area-inset-bottom)); padding-bottom: 10px; } }

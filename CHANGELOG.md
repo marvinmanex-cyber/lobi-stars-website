@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-01: Bottom menu stays at the bottom on iPhones
+
+**What changed**
+- On some iPhones (Safari and in-app browsers) the bottom menu (Home, Matches,
+  News, Shop, More) and the Kitchen's "View cart" bar moved with the page
+  while scrolling. They now stay fixed at the bottom of the screen.
+
 ## 2026-11-01: The old admin code is retired
 
 **What changed**

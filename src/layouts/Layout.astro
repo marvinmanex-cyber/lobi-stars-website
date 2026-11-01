@@ -172,6 +172,9 @@ const showShare = share && showBack && !noindex && !/^\/(admin|scan|fans|payment
 }
 html{scroll-behavior:smooth;}
 body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--white);overflow-x:hidden;}
+/* clip (not hidden) where supported: on iPhones overflow-x:hidden can turn the page into its own scroller, and then the
+   bottom bar and other fixed bars scroll with the content. */
+@supports (overflow-x:clip){body{overflow-x:clip;}}
 a{color:inherit;}
 .wrap{max-width:1200px;margin:0 auto;padding:0 5%;}
 [hidden]{display:none !important;}

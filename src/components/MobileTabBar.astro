@@ -34,6 +34,8 @@ const tabs = [
       display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 0; right: 0; bottom: 0; z-index: 1500;
       background: #fff; border-top: 1px solid var(--d4); box-shadow: 0 -6px 18px rgba(15, 17, 21, .06);
       padding-bottom: env(safe-area-inset-bottom);
+      /* Its own layer, so iPhones keep it at the bottom of the screen while the page scrolls. */
+      transform: translate3d(0, 0, 0); -webkit-backface-visibility: hidden; backface-visibility: hidden;
     }
     .tb-item {
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; height: 60px;
