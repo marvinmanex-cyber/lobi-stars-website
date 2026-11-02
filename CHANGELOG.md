@@ -8,6 +8,25 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: Website outage (about 16:00–17:10 Nigerian time) fixed
+
+**Who it affects:** everyone.
+- **What happened:** from about 4 pm Nigerian time, every page that runs the
+  website's server code showed "Error 1102 – Worker exceeded resource limits":
+  - the home page, tickets, food ordering and sign-ins;
+  - the MatchDay Kitchen app and the Media Centre.
+
+  Pictures and plain files still loaded.
+- **Why:** on Cloudflare's free plan, each request may use only 10 ms of
+  computing time. Starting the website's server code (3.2 MB) had grown to
+  more than that, so each fresh server failed straight away.
+- **Fix (live 17:10):** the server code is now built in a compressed
+  ("minified") form (2.2 MB) that starts within the limit. Every build does
+  this automatically, including Cloudflare's own builds from GitHub.
+- **Still to do:** upgrade to **Workers Paid (US$5/month, HANDOVER A33)**. The
+  website keeps growing, and on the free plan this can happen again, for
+  example on a busy match day.
+
 ## 2026-11-02: MatchDay Kitchen staff app; whole-site phone/tablet/laptop check
 
 **Who it affects:** kitchen staff, fans on phones.
