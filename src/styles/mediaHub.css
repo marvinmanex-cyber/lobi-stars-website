@@ -53,3 +53,6 @@
 .ah-formhead { margin: 10px 0 14px; } .ah-formhead h2 { margin: 0; font: 400 40px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
 
 .ah-share summary, .ah-share > button { min-height: 50px; background: #fff; color: #0E1C38; border-color: #fff; }
+
+/* Share menus inside the coloured headers open upwards, so the section below never covers them. */
+.ah-hero .share-menu, .pr-hero .share-menu { top: auto; bottom: calc(100% + 8px); }

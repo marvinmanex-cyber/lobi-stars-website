@@ -16,9 +16,10 @@ import { ensureMediaSchema, mcSettings, setMcSetting, mcLog, mediaActor, newId, 
 import { fileRow, fileBytes } from './mediaFiles.js';
 import { matchSlug } from './matchSlug.js';
 import { isHomeGame } from './matchCentre.js';
+import { ensureCardSchema, ROLES as CARD_ROLES, roleInfo, zonesOf, nextAccreditationNumber, newVerifyToken, matchSettings, verifyStatus, verifyUrl } from './accreditationCards.js';
 
-export const ROLES = ['Writer', 'Photographer', 'TV Camera', 'Radio Commentator', 'Digital/Social Media'];
-export const ZONES = ['Press Box', 'Pitchside', 'Mixed Zone'];
+export const ROLES = CARD_ROLES.map(r => r.name);
+export { ZONES } from './accreditationCards.js';
 export const SITE = 'https://lobistarsfc.com';
 const STADIUM = 'McCarthy Stadium, Makurdi';
 const nowIso = () => new Date().toISOString();
@@ -56,6 +57,7 @@ export async function ensureAccreditationSchema(db) {
     // Returning journalists: a 6-digit code emailed to them unlocks their saved details (15 minutes, 5 tries).
     db.prepare(`CREATE TABLE IF NOT EXISTS mc_prefill_codes (email TEXT PRIMARY KEY, code_hash TEXT NOT NULL, expires_at TEXT NOT NULL, tries INTEGER NOT NULL DEFAULT 0)`),
   ]);
+  await ensureCardSchema(db);
   ready = true;
 }
 
@@ -86,12 +88,16 @@ export async function setReopened(env, request, user, eventId, open) {
 export const matchLabel = e => `${e.home_team} v ${e.away_team}`;
 /** Upcoming Lobi Stars HOME matches, with whether applications are still open. */
 export async function openMatches(db, settings) {
+  await ensureAccreditationSchema(db);
   const { results } = await db.prepare(`SELECT * FROM events WHERE active = 1 AND event_date > ? ORDER BY event_date LIMIT 40`).bind(nowIso()).all();
-  return results.filter(e => isHomeGame(e) && !/postponed|cancel/i.test(e.status || '')).map(e => ({
-    id: e.id, slug: matchSlug(e), label: matchLabel(e), date: e.event_date, day: matchDay(e.event_date), kickOff: kickOff(e.event_date),
-    competition: e.competition || 'Nigeria National League', closesAt: closesAt(e, settings), open: acceptingApplications(e, settings),
-    reopened: Date.now() >= Date.parse(closesAt(e, settings)) && reopened(e, settings),
-  }));
+  const out = [];
+  for (const e of results.filter(x => isHomeGame(x) && !/postponed|cancel/i.test(x.status || ''))) {
+    const ms = await matchSettings(db, e);
+    out.push({ id: e.id, slug: matchSlug(e), label: matchLabel(e), opponent: ms.opponent, date: e.event_date, day: matchDay(e.event_date), kickOff: kickOff(e.event_date),
+      competition: ms.competition, matchday: ms.matchday, closesAt: closesAt(e, settings), open: ms.accept && acceptingApplications(e, settings), accept: ms.accept,
+      reopened: Date.now() >= Date.parse(closesAt(e, settings)) && reopened(e, settings), colours: ms.colours, themeName: ms.theme, approverSet: !!(ms.approverName && ms.approverSignatureId) });
+  }
+  return out;
 }
 
 // ── Emails ──
@@ -115,7 +121,7 @@ export function checkApplication(b) {
   const v = {
     eventId: oneLine(b.eventId, 80), fullName: oneLine(b.fullName, 80), phone: oneLine(b.phone, 24), email: oneLine(b.email, 254).toLowerCase(),
     organisation: oneLine(b.organisation, 120), employment: b.employment === 'freelance' ? 'freelance' : b.employment === 'staff' ? 'staff' : '',
-    role: ROLES.includes(b.role) ? b.role : '', equipment: clean(b.equipment, 500), needs: clean(b.needs, 500), agree: b.agree === true || b.agree === 'on' || b.agree === '1' || b.agree === 'true',
+    role: ROLES.includes(b.role) ? b.role : '', equipment: '', needs: clean(b.needs, 500), agree: b.agree === true || b.agree === 'on' || b.agree === '1' || b.agree === 'true',
   };
   if (!v.eventId) return { error: 'Choose the match.' };
   if (v.fullName.length < 3) return { error: 'Enter your full name.' };
@@ -177,9 +183,9 @@ export async function apply(env, request, v, { pressDocId, photoId, inviteToken 
   const settings = await mcSettings(db);
   const e = await eventById(db, v.eventId);
   if (!e || !isHomeGame(e) || Date.parse(e.event_date) < Date.now()) return { error: 'Accreditation is only for upcoming Lobi Stars home matches.' };
-  if (!acceptingApplications(e, settings)) return { error: `Applications for this match closed ${settings.accreditation_close_hours} hours before kick-off.` };
+  if (!acceptingApplications(e, settings) || !(await matchSettings(db, e)).accept) return { error: 'Applications for this match are closed.' };
   const dup = await db.prepare(`SELECT id, status FROM mc_accreditations WHERE event_id = ? AND email = ? AND status IN ('pending', 'info', 'approved')`).bind(e.id, v.email).first();
-  if (dup) return { error: dup.status === 'approved' ? 'You are already accredited for this match.' : 'You have already applied for this match. We will email you.' };
+  if (dup) return { error: dup.status === 'approved' ? 'You are already accredited for this match.' : 'You have already applied for this match with this email. We will email you once it has been reviewed.' };
   // A returning journalist may reuse the passport photo on file.
   let photo = photoId;
   if (!photo) photo = (await db.prepare(`SELECT photo_id FROM mc_contacts WHERE email = ?`).bind(v.email).first())?.photo_id || null;
@@ -191,7 +197,7 @@ export async function apply(env, request, v, { pressDocId, photoId, inviteToken 
     .bind(id, e.id, v.fullName, v.phone, v.email, v.organisation, v.employment, v.role, pressDocId, photo, v.equipment || null, v.needs || null, at, inviteToken, request.headers.get('CF-Connecting-IP') || null, at, at).run();
   await mcLog(db, { kind: 'public', id: null, name: `${v.fullName} (${v.organisation})` }, 'accreditation_request', { section: 'accreditation', itemType: 'accreditation', itemId: id, itemTitle: `${v.fullName} · ${matchLabel(e)}`, details: v.role, request });
   await mail(env, v.email, `Accreditation request received: ${matchLabel(e)}`, 'We have your accreditation request',
-    `${p(`Dear ${esc(v.fullName)},`)}${p(`Thank you for applying for media accreditation for <b>${esc(matchLabel(e))}</b> on ${esc(matchDay(e.event_date))} (kick-off ${esc(kickOff(e.event_date))}, ${STADIUM}).`)}${p('Our media team will review it and email you. Please do not come to the stadium expecting accreditation until you receive your card.')}`);
+    `${p(`Dear ${esc(v.fullName)},`)}${p(`Thank you for applying for media accreditation for <b>${esc(matchLabel(e))}</b> on ${esc(matchDay(e.event_date))} (kick-off ${esc(kickOff(e.event_date))}, ${STADIUM}).`)}${p('Our media team will review it and email you once it has been reviewed. Please do not come to the stadium expecting accreditation until you receive your approval email.')}`);
   return { ok: true, id };
 }
 
@@ -205,7 +211,8 @@ export function view(r) {
   return r && { id: r.id, number: r.number, status: r.status, eventId: r.event_id, fullName: r.full_name, phone: r.phone, email: r.email, organisation: r.organisation, employment: r.employment, role: r.role,
     photo: r.photo_id ? `/api/media-file/${r.photo_id}` : null, pressDoc: r.press_doc_id ? `/api/media-file/${r.press_doc_id}` : null, equipment: r.equipment, needs: r.needs, zone: r.zone,
     infoRequest: r.info_request, reason: r.reason, decidedBy: r.decided_by_name, decidedAt: r.decided_at, revokedAt: r.revoked_at, revokedBy: r.revoked_by, revokeReason: r.revoke_reason,
-    createdAt: r.created_at, updatedAt: r.updated_at, verifyUrl: r.verify_token ? `${SITE}/media/accreditation/verify/${r.verify_token}/` : null };
+    createdAt: r.created_at, updatedAt: r.updated_at, verifyUrl: r.verify_token ? verifyUrl(r.verify_token) : null,
+    zones: zonesOf(r), category: roleInfo(r.role).code, roleName: roleInfo(r.role).name, emailSentAt: r.email_sent_at || null };
 }
 async function nextNumber(db, event) {
   const y = new Date(event.event_date), season = y.getUTCMonth() >= 7 ? `${String(y.getUTCFullYear()).slice(2)}${String(y.getUTCFullYear() + 1).slice(2)}` : `${String(y.getUTCFullYear() - 1).slice(2)}${String(y.getUTCFullYear()).slice(2)}`;
@@ -213,7 +220,7 @@ async function nextNumber(db, event) {
   return `LSA-${season}-${String(n).padStart(4, '0')}`;
 }
 /** decision: approve (zone) | reject (reason) | info (message). user: the Media Centre user deciding. */
-export async function decideAccreditation(env, request, user, id, { decision, zone, reason, message }) {
+export async function decideAccreditation(env, request, user, id, { decision, zones, reason, message }) {
   const db = env.DB;
   await ensureAccreditationSchema(db);
   const r = await db.prepare(`SELECT * FROM mc_accreditations WHERE id = ?`).bind(id).first();
@@ -224,23 +231,21 @@ export async function decideAccreditation(env, request, user, id, { decision, zo
   const meta = { section: 'accreditation', itemType: 'accreditation', itemId: r.id, itemTitle: `${r.full_name} · ${matchLabel(e)}`, request };
   if (!['pending', 'info'].includes(r.status)) return { error: 'This request has already been decided.' };
   if (decision === 'approve') {
-    if (!ZONES.includes(zone)) return { error: 'Choose the access zone.' };
+    const allowed = [...new Set((Array.isArray(zones) ? zones : roleInfo(r.role).zones).map(Number).filter(n => n >= 1 && n <= 5))].sort();
+    if (!allowed.length) return { error: 'Tick at least one access zone.' };
     if (Date.parse(e.event_date) < Date.now()) return { error: 'This match has already been played.' };
     const settings = await mcSettings(db), max = Number(settings.accreditation_max) || 20;
     const n = (await db.prepare(`SELECT COUNT(*) AS n FROM mc_accreditations WHERE event_id = ? AND status = 'approved'`).bind(r.event_id).first())?.n || 0;
     if (n >= max) return { error: `This match already has ${n} accredited journalists (the limit is ${max}; a Super Admin can change it).` };
-    const number = await nextNumber(db, e), token = randomToken(18);
-    await db.prepare(`UPDATE mc_accreditations SET status = 'approved', number = ?, verify_token = ?, zone = ?, decided_by_id = ?, decided_by_name = ?, decided_at = ?, updated_at = ?, update_token = NULL WHERE id = ?`)
-      .bind(number, token, zone, user.id, user.fullName, at, at, r.id).run();
+    // The number and the QR token are given once and kept (re-approving never changes them).
+    const num = r.seq ? { seq: r.seq, number: r.number } : await nextAccreditationNumber(db);
+    const token = r.verify_token || newVerifyToken();
+    await db.prepare(`UPDATE mc_accreditations SET status = 'approved', seq = ?, number = ?, verify_token = ?, zones = ?, zone = ?, decided_by_id = ?, decided_by_name = ?, decided_at = ?, updated_at = ?, update_token = NULL WHERE id = ?`)
+      .bind(num.seq, num.number, token, JSON.stringify(allowed), allowed.join(', '), user.id, user.fullName, at, at, r.id).run();
     const fresh = await db.prepare(`SELECT * FROM mc_accreditations WHERE id = ?`).bind(r.id).first();
-    await saveContact(db, fresh, 'accreditations', `Accredited for ${matchLabel(e)} (${number})`);
-    await mcLog(db, A, 'approve', { ...meta, details: `${number}, ${zone}` });
-    // The approval letter (they print it and collect the laminated card at the media desk).
-    const pdf = await letterPdf(env, fresh, e).catch(err => { console.error('[accreditation] letter', err); return null; });
-    const sent = await mail(env, r.email, `Your media accreditation is approved: ${matchLabel(e)}`, 'Your accreditation is approved',
-      `${p(`Dear ${esc(r.full_name)},`)}${p(`Your media accreditation for <b>${esc(matchLabel(e))}</b> on ${esc(matchDay(e.event_date))} (kick-off ${esc(kickOff(e.event_date))}, ${STADIUM}) is approved.`)}${p(`Accreditation number: <b>${esc(number)}</b> · Access: <b>${esc(zone)}</b>`)}${p('Your <b>approval letter</b> is attached as a PDF. <b>Print it</b> and bring it, with a valid photo ID, to the designated <b>Media Desk at McCarthy Stadium</b> on match day to collect your <b>laminated accreditation card</b>. Wear the card at all times; it is valid for this match only.')}${p(`Check it at any time: <a href="${SITE}/media/accreditation/verify/${token}/">${SITE}/media/accreditation/verify/…</a>`)}`,
-      pdf ? [{ filename: `Lobi-Stars-accreditation-approval-${number}.pdf`, content: b64(pdf) }] : undefined);
-    return { ok: true, number, emailed: sent };
+    await saveContact(db, fresh, 'accreditations', `Accredited for ${matchLabel(e)} (${num.number})`);
+    await mcLog(db, A, 'approve', { ...meta, details: `${num.number}, CAT. ${roleInfo(r.role).code}, zones ${allowed.join(', ')}` });
+    return { ok: true, number: num.number, zones: allowed };
   }
   if (decision === 'reject') {
     const why = oneLine(reason, 500);
@@ -283,7 +288,18 @@ export async function publicByUpdateToken(db, token) {
   if (!r) return null;
   return { eventId: r.event_id, fullName: r.full_name, phone: r.phone, email: r.email, organisation: r.organisation, employment: r.employment, role: r.role, equipment: r.equipment, needs: r.needs, infoRequest: r.info_request };
 }
-/** Super Admins: revoke an approved accreditation. */
+/** Restores a revoked accreditation (same number, zones and QR code). */
+export async function restore(env, request, user, id) {
+  const db = env.DB;
+  await ensureAccreditationSchema(db);
+  const r = await db.prepare(`SELECT * FROM mc_accreditations WHERE id = ?`).bind(id).first();
+  if (!r || r.status !== 'revoked') return { error: 'Only revoked accreditations can be restored.' };
+  await db.prepare(`UPDATE mc_accreditations SET status = 'approved', revoked_at = NULL, revoked_by = NULL, revoke_reason = NULL, updated_at = ? WHERE id = ?`).bind(nowIso(), id).run();
+  const e = await eventById(db, r.event_id);
+  await mcLog(db, mediaActor(user), 'restore', { section: 'accreditation', itemType: 'accreditation', itemId: id, itemTitle: `${r.full_name} · ${e ? matchLabel(e) : ''}`, details: r.number, request });
+  return { ok: true };
+}
+/** Revoke an approved accreditation (Media Centre or Super Admins). */
 export async function revoke(env, request, admin, id, reason) {
   const db = env.DB;
   await ensureAccreditationSchema(db);
@@ -338,67 +354,17 @@ export async function createInvite(env, request, user, eventId, email = '') {
 // ── Verification (public, from the QR code) ──
 export async function verifyView(db, token) {
   await ensureAccreditationSchema(db);
-  const r = await db.prepare(`SELECT * FROM mc_accreditations WHERE verify_token = ?`).bind(String(token || '')).first();
-  if (!r) return null;
-  const e = await eventById(db, r.event_id);
-  const expired = !e || Date.now() > Date.parse(e.event_date) + 12 * 3600e3;
-  const state = r.status === 'revoked' ? 'REVOKED' : r.status !== 'approved' ? 'REVOKED' : expired ? 'EXPIRED' : 'VALID';
-  return { state, number: r.number, fullName: r.full_name, organisation: r.organisation, role: r.role, zone: r.zone, photoId: r.photo_id,
-    match: e ? matchLabel(e) : '', day: e ? matchDay(e.event_date) : '', kickOff: e ? kickOff(e.event_date) : '', revokeReason: r.status === 'revoked' ? r.revoke_reason : null };
+  const r = token ? await db.prepare(`SELECT * FROM mc_accreditations WHERE verify_token = ?`).bind(String(token)).first() : null;
+  const e = r ? await eventById(db, r.event_id) : null;
+  const st = verifyStatus(r, e);
+  if (!r) return { status: st };
+  const ms = e ? await matchSettings(db, e) : null;
+  return { status: st, number: r.number, fullName: r.full_name, organisation: r.organisation, role: roleInfo(r.role).name, category: roleInfo(r.role).code, zones: st.key === 'approved' ? zonesOf(r) : [],
+    hasPhoto: !!r.photo_id, match: ms ? `Lobi Stars FC vs ${ms.opponent}` : '', day: e ? matchDay(e.event_date) : '', kickOff: ms ? ms.kickoff : '', venue: ms ? ms.venue : '' };
 }
 
 // ── The card (ID-1 size, 54 × 85.6 mm, portrait) ──
 const b64 = bytes => { let x = ''; for (let i = 0; i < bytes.length; i += 0x8000) x += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(x); };
-/**
- * The approval letter (A4 PDF) emailed to an approved journalist. They print it and
- * bring it, with photo ID, to the media desk at the stadium to collect their
- * laminated accreditation card (cardPdf, printed by the media team). Signed by the
- * Media Department (no personal name); the QR code opens the verification page.
- */
-export async function letterPdf(env, r, e) {
-  const doc = new PdfDoc();
-  const W = doc.w, M = 56, BLUE = '#1C3F7A', RED = '#E31E24', INK = '#16181D', GREY = '#4A505C';
-  doc.rect(0, 0, W, 96, { fill: BLUE }); doc.rect(0, 96, W, 5, { fill: RED });
-  try {
-    const res = await env.ASSETS.fetch(new Request(`${SITE}/images/lobi-stars-badge-print.jpg`));
-    if (res.ok) { const img = doc.addJpeg(new Uint8Array(await res.arrayBuffer())); if (img) { doc.rect(M - 4, 14, 72, 72, { fill: '#FFFFFF' }); doc.drawImage(M, 18, 64, 64, img.id); } }
-  } catch { /* no badge */ }
-  doc.text('LOBI STARS FOOTBALL CLUB', M + 84, 44, { size: 18, bold: true, color: '#FFFFFF' });
-  doc.text('Media Department · McCarthy Stadium, Makurdi, Benue State', M + 84, 64, { size: 10, color: '#DCE6F5' });
-  let y = 140;
-  doc.text('MEDIA ACCREDITATION APPROVAL LETTER', M, y, { size: 16, bold: true, color: BLUE }); y += 24;
-  doc.text(pdfSafe(`Date: ${new Date(Date.parse(r.decided_at || nowIso()) + 3600e3).toISOString().slice(0, 10).split('-').reverse().join('/')}`), M, y, { size: 10, color: GREY });
-  doc.text(pdfSafe(`Reference: ${r.number}`), W - M, y, { size: 10, color: GREY, align: 'right' }); y += 30;
-  const para = (s, opts = {}) => { for (const l of wrap(pdfSafe(s), W - 2 * M, opts.size || 11, opts.bold)) { doc.text(l, M, y, { size: opts.size || 11, bold: opts.bold, color: opts.color || INK }); y += (opts.size || 11) + 5; } y += 8; };
-  para(`Dear ${r.full_name},`);
-  para(`We are pleased to confirm that your application for media accreditation to cover ${matchLabel(e)} on ${matchDay(e.event_date)} (kick-off ${kickOff(e.event_date)}) at ${STADIUM} has been approved.`);
-  // Details box.
-  const rows = [['Name', r.full_name], ['Organisation', `${r.organisation}${r.employment ? ` (${r.employment})` : ''}`], ['Role', r.role], ['Match', matchLabel(e)], ['Date and kick-off', `${matchDay(e.event_date)}, ${kickOff(e.event_date)}`], ['Venue', STADIUM], ['Access zone', r.zone || ''], ['Accreditation number', r.number]];
-  const boxTop = y; y += 18;
-  for (const [k, v] of rows) { doc.text(pdfSafe(k), M + 14, y, { size: 10, color: GREY }); doc.text(pdfSafe(String(v || '')).slice(0, 70), M + 160, y, { size: 11, bold: true, color: INK }); y += 20; }
-  doc.rect(M, boxTop, W - 2 * M, y - boxTop - 4, { stroke: '#D5DCE6', lineWidth: 1 });
-  y += 18;
-  // What to do.
-  const stepsTop = y;
-  doc.rect(M, stepsTop, W - 2 * M, 104, { fill: '#FFF4F4' }); doc.rect(M, stepsTop, 5, 104, { fill: RED });
-  y += 22;
-  doc.text('ON MATCH DAY', M + 18, y, { size: 11, bold: true, color: RED }); y += 18;
-  for (const s of ['1. Print this letter and bring it with a valid photo ID.', '2. Go to the designated Media Desk at McCarthy Stadium before kick-off.', '3. Collect your laminated accreditation card and wear it at all times.']) { doc.text(pdfSafe(s), M + 18, y, { size: 11, color: INK }); y += 18; }
-  doc.text('This accreditation is valid for this match only and may be withdrawn if the media rules are not followed.', M + 18, y + 2, { size: 9, color: GREY });
-  y = stepsTop + 126;
-  // QR code: opens the verification page.
-  const qr = qrcodeGenerator(0, 'M'); qr.addData(`${SITE}/media/accreditation/verify/${r.verify_token}/`); qr.make();
-  const n = qr.getModuleCount(), size = 92, cell = size / n, qx = W - M - size, qy = y;
-  for (let row = 0; row < n; row++) for (let col = 0; col < n; col++) if (qr.isDark(row, col)) doc.rect(qx + col * cell, qy + row * cell, cell + 0.2, cell + 0.2, { fill: '#000000' });
-  doc.text('Scan to verify', qx + size / 2, qy + size + 14, { size: 8, color: GREY, align: 'center' });
-  doc.text('Yours faithfully,', M, y + 14, { size: 11, color: INK });
-  doc.text('Media Department', M, y + 56, { size: 12, bold: true, color: INK });
-  doc.text('Lobi Stars Football Club', M, y + 72, { size: 11, color: GREY });
-  doc.text('media@lobistarsfc.com · lobistarsfc.com', M, y + 88, { size: 10, color: GREY });
-  doc.rect(0, doc.h - 18, W, 18, { fill: BLUE });
-  return doc.toBytes({ title: `Lobi Stars FC media accreditation approval ${r.number}`, author: 'Lobi Stars FC' });
-}
-
 export async function cardPdf(env, r, e) {
   const W = 153.07, H = 242.65; // points
   const doc = new PdfDoc({ width: W, height: H });

@@ -27,7 +27,9 @@ export async function onRequestGet({ request, env, params }) {
   const page = one ? `${url.origin}/media/press-releases/${one.slug}/` : `${url.origin}/media/press-releases/`;
   const html = one
     ? `${releaseHtml(one, { publishedAt: one.publishedAt, contactFallback: settings.press_contact })}<p class="pr-acts"><a class="btn-o" href="/media/press-releases/${esc(one.slug)}.pdf">Download PDF</a> <a href="/media/press-releases/">All press releases</a></p>`
-    : (list.length ? `<ul class="pr-list">${list.map(r => `<li><a href="/media/press-releases/${esc(r.slug)}/"><span class="pr-l-date">${esc(prDate(r.date || r.publishedAt))}${r.statement ? ' · Statement' : ''}</span><b>${esc(r.headline)}</b>${r.subheadline ? `<span>${esc(r.subheadline)}</span>` : ''}</a></li>`).join('')}</ul>` : '<p class="muted">No press releases yet.</p>');
+    : (list.length ? `<ul class="pr-list">${list.map(r => { const d = new Date(r.date || r.publishedAt); const cal = isNaN(d) ? ['', ''] : [d.toLocaleDateString('en-GB', { day: 'numeric', timeZone: 'Africa/Lagos' }), d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' })];
+        return `<li><a class="${r.statement ? 'is-st' : ''}" href="/media/press-releases/${esc(r.slug)}/" aria-label="${esc(r.headline)}, ${esc(prDate(r.date || r.publishedAt))}"><span class="pr-l-cal" aria-hidden="true"><b>${esc(cal[0])}</b><span>${esc(cal[1])}</span></span><span class="pr-l-txt"><span class="pr-l-tag">${r.statement ? 'Official statement' : 'Press release'}</span><b>${esc(r.headline)}</b>${r.subheadline ? `<span>${esc(r.subheadline)}</span>` : ''}<span class="pr-l-more">Read the release →</span></span></a></li>`; }).join('')}</ul>`
+      : '<div class="prn-empty"><b>No press releases yet</b><p>New releases appear here as soon as the club publishes them.</p></div>');
   const set = v => ({ element(el) { el.setAttribute('content', v); } });
   const res = new HTMLRewriter()
     .on('title', { element(el) { el.setInnerContent(title); } })

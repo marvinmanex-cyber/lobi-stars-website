@@ -8,6 +8,42 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: New media accreditation system, colourful press releases page
+
+**Who it affects:** journalists, the media team, stewards at the gate.
+- **Accreditation (Media Centre › Accreditation)** is rebuilt:
+  - **Match settings** per home match: opponent and logo, competition,
+    matchday, kick-off, venue, card collection time, accept applications on
+    or off, the card colour design (5 designs or your own colours), and the
+    approving officer's name, title and signature.
+  - **Approve** with access zones 1 to 5 (ticked from the role). Numbers run
+    LSFC/MED/0020 onwards and are never reused.
+  - **Send approval emails (N)** emails everyone approved and not yet
+    emailed, once each, from media@lobistarsfc.com.
+  - **Print all approved cards** prints 4 × 6 inch cards, front and back, in
+    the match's colours.
+  - **Revoke** and **Restore** from the Media Centre.
+  - The approval letter (PDF) is gone: journalists collect the card at the
+    stadium from the collection time.
+- **Public form:** new roles (Journalist, Photographer, Camera / Broadcast,
+  Radio, Digital / Social Media). The equipment question is removed. The
+  thank-you message now gives the email address we will write to.
+- **QR check page** moved to lobistarsfc.com/media/verify/… and shows
+  APPROVED / EXPIRED / NOT VALID / NOT APPROVED / NOT FOUND. Cards printed
+  earlier still work.
+- **Press releases page** (/media/press-releases) redesigned in club colours:
+  - Newsroom header.
+  - Each release is a dated card (red for press releases, blue for
+    statements).
+  - Sidebar with the media contact and journalist links.
+  - Each release has a club letterhead.
+- The **share** menus at the top of the accreditation page, the Press Room
+  and the homepage media band now open upwards, so the section below no
+  longer covers them.
+- **Staff to do:** fill in **Match settings** (approving officer and
+  signature) for Lobi Stars FC vs Bichi First FC before approving.
+  See HANDOVER-TODO M7.
+
 ## 2026-11-01: Links to the Press Room and accreditation, with share buttons
 
 **What changed**

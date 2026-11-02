@@ -3960,7 +3960,7 @@ Fans use the website exactly as before.
 - Only the three Super Admins see the **Media Centre** menu in this admin.
 
 ### Users (Media Centre › Users & settings)
-- **Add a user:** full name (printed on accreditation cards as "Signed: …"),
+- **Add a user:** full name (shown in the activity log),
   Login ID, and a temporary password (press **Make one**). Give these to the
   person in person or by WhatsApp. They must choose their own password (8+
   characters) the first time they sign in. There is no limit on the number of
@@ -4098,73 +4098,92 @@ are removed, and the server cleans it again.
 
 ### Media accreditation (any media staff member decides)
 **For journalists:** the public form at **lobistarsfc.com/media/accreditation**.
-It is linked from the website's **Media** page (footer › Media) and from each
-upcoming **home** match page ("Media: request accreditation for this
-match").
-- **Match:** only upcoming Lobi Stars **home** matches are offered, **one
-  match per application**. Applications close **6 hours before kick-off**
-  (a Super Admin setting). After that, any media officer can press **Open
-  applications** next to the match in Media Centre › Accreditation, so
-  journalists can apply again until kick-off (**Close applications** stops it
-  again). Each open and close is in the activity log.
-- **The form asks for:** full name, phone, email, media organisation, staff
-  or freelance, role (Writer, Photographer, TV Camera, Radio Commentator,
-  Digital/Social Media), press ID or a letter from the organisation (PDF/JPG,
-  5 MB), a **passport photo** (cropped and previewed on the form: plain light
-  background, face visible), equipment and special needs (both optional),
-  and agreement to the club's media rules.
-- **Spam protection:** a hidden spam trap and a limit per connection.
-- **Returning journalists:** they press "Applied before? Email me a code"
-  and type the 6-digit code from the email. Their name, organisation, role
-  and passport photo are then filled in.
-  - Nobody else can see someone's saved details. The answer looks the same
-    whether or not the email is known.
-  - The phone number is never shown.
-  - An invitation you email to a known journalist fills in their details by
-    itself.
+It is linked from the homepage, the Press Room (**lobistarsfc.com/media**) and
+each upcoming **home** match page.
+- **Match:** only upcoming Lobi Stars **home** matches that accept
+  applications are offered, **one application per email per match**.
+  Applications close **6 hours before kick-off** (a Super Admin setting).
+  After that, any media officer can press **Open late applications** next to
+  the match, so journalists can apply until kick-off (**Close late
+  applications** stops it again).
+- **The form asks for:** email, full name, phone, media organisation, staff
+  or freelance, role (**Journalist, Photographer, Camera / Broadcast, Radio,
+  Digital / Social Media**), their **organisation's ID card** (PDF/JPG, up to
+  5 MB, seen only by the media team), a **passport photo** (cropped on the
+  form), special needs (optional) and agreement to the media rules.
+- After sending, they see: "Application received. We will email you at
+  <their email> once it has been reviewed."
+- **Returning journalists:** "Applied before? Email me a code" fills in their
+  details after they type the 6-digit code. The answer looks the same whether
+  or not the email is known, and the phone number is never shown.
 
-**In the Media Centre › Accreditation:**
-1. **Upcoming home matches** are listed with the number of new and approved
-   requests. **Requests** opens one match: the photo, the press document and
-   every detail.
-2. Your options:
-   - **Approve:** choose the access zone first: Press Box, Pitchside or
-     Mixed Zone.
-   - **Request more info:** the applicant gets an email with a link to
-     update the request.
-   - **Reject:** give a reason, which is emailed.
-3. **The limit per match:** set by a Super Admin, default 20. Approving
-   stops at the limit.
-4. **On approval (since 1 Nov 2026):** the journalist is emailed an **approval
-   letter** (A4 PDF: club badge, their details, the match, access zone,
-   accreditation number, a QR code to verify it, signed "Media Department").
-   They **print the letter** and bring it, with photo ID, to the designated
-   **Media Desk at McCarthy Stadium** on match day, where they collect a
-   **laminated accreditation card**. For the media desk, each approved request
-   has **Card for lamination (PDF)** (ID-card size, club colours, photo, name,
-   organisation, role, access zone, unique number e.g. LSA-2627-0001, QR code,
-   "Signed: <who approved>", "Valid for this match only"): print and laminate
-   one per journalist before match day. **Approval letter (PDF)** downloads the
-   letter that was emailed.
-5. **Invitation link** (per match): makes a link that pre-selects the match.
-   It is copied for you to share, or you can enter an email address to send
-   it.
-6. **Media contacts:** every accredited journalist is saved, with their
-   history (accreditations and interview requests).
+**Media Centre › Accreditation** lists every home match with its **card
+colours**, the number of new and approved applications and its status (Open,
+Closed or Match played).
 
-**The QR code** opens a public check page showing the photo, name,
-organisation, role, zone, match and **VALID**, **REVOKED** or **EXPIRED** (after
-the match). It never shows the phone or email. Stewards can scan it at the
-gate.
+**1. Match settings (do this first for each match).** Press **Match
+settings** next to the match:
+- **Opponent name** and **logo** (if no logo is uploaded, the club's usual
+  logo is used), **competition** (default "Nigeria National League (NNL)"),
+  **matchday** number, **kick-off** as printed, **venue** (default "McCarthy
+  Stadium, Makurdi"), **card collection from** (default 12:00, printed "12
+  noon") and **Accept applications on the website** (untick to close the form
+  for this match).
+- **Card colours:** pick one design (Lobi Classic, Crest Blue, Crimson,
+  Midnight, Sky), or type your own three colours (e.g. #0E2A55). Use a
+  different design for each match day, so last week's cards are easy to spot.
+- **Approving officer:** name, title and a **signature** (a photo of the
+  signature on white paper). It is printed on every card and in the email.
+  It is filled in from the last match; change it if someone else approves.
 
-**Super Admins:** Admin › Media Centre › Users & settings › *Media
-accreditations* lists every accreditation, with **Revoke** (give a reason; it
-is emailed and the check page then shows REVOKED).
+**2. Applications.** Press **Applications** next to the match. Each row has
+the photo, the person's details, **View ID** (their organisation's ID card),
+the category letter (J, P, B, R or D), the status and the accreditation
+number.
+- **Approve:** the access zones are ticked for you from the role (you can
+  change them), then press **Approve**. The person gets the next number
+  (LSFC/MED/0020, 0021 …; numbers are never reused) and the card exists
+  straight away. **No email is sent yet.**
+- **Reject** (give a reason, which is emailed) or **Ask for more** (the
+  person gets a link to update the application).
+- Approved: **View card**, **Resend email**, **Revoke** (the QR code then
+  shows NOT VALID). Revoked: **Restore** (same number and QR code).
+- The limit per match is set by a Super Admin (default 20).
 
-The applicant gets an email at every step: request received, more
-information needed, approved with the card attached, rejected, revoked.
-These emails need the email service (Resend) set up. Until then, download
-the card and send it yourself.
+| Zone | Where | Ticked by default for |
+| --- | --- | --- |
+| 1 | Press Box / Media Tribune | everyone |
+| 2 | Media Centre / Work Room | everyone |
+| 3 | Pitchside (photographers' positions) | Photographer (P), Camera / Broadcast (B) |
+| 4 | Mixed Zone (player interviews) | Journalist (J), Camera / Broadcast, Radio (R), Digital (D) |
+| 5 | Post-match Press Conference | everyone |
+
+**3. Send approval emails (N).** When you have finished approving, press
+**Send approval emails** and confirm. Everyone approved who has not been
+emailed gets one email (from media@lobistarsfc.com) with their number, the
+match, their zones and when to collect the card. Nobody is emailed twice.
+The table then shows "Emailed <date>". The button is greyed out when there is
+nobody to email or no approving officer and signature yet (a yellow banner
+says so).
+
+**4. Print the cards.** **Print all approved cards** opens every approved
+card (front and back, in number order, 4 × 6 inch) with a **Print cards**
+button. Print on card stock, cut, laminate, and hand them out at the stadium
+from the collection time. Journalists bring their organisation's ID card or a
+photo ID.
+
+**The QR code** on each card opens **lobistarsfc.com/media/verify/…**, a
+public check page (not on Google) with a large status: **APPROVED** (green),
+**EXPIRED** (the match has been played), **NOT VALID** (revoked), **NOT
+APPROVED** or **NOT FOUND**. It shows the photo to compare with the face, the
+name, role, organisation, number, the match and (only when approved) the
+zones. It never shows the phone number, email or ID card. Stewards scan it at
+the gate.
+
+**Other tools:** **Invitation link** (per match) makes a link that selects
+the match; **Media contacts** lists every accredited journalist and their
+history. **Super Admins:** Admin › Media Centre › Users & settings › *Media
+accreditations* lists every accreditation, with **Revoke**.
 
 ### Lobi Stars Weekly Newsletter (the weekly newsletter)
 **Media Centre › Lobi Stars Weekly Newsletter › Start this week's newsletter.** The

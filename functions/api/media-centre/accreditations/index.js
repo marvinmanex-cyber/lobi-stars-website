@@ -1,4 +1,5 @@
 import { ensureAccreditationSchema, listFor, openMatches, contacts, createInvite, setReopened, ZONES, ROLES } from '../../_lib/mediaAccreditation.js';
+import { ROLES as ROLE_INFO } from '../../_lib/accreditationCards.js';
 import { mcSettings, json } from '../../_lib/mediaCentre.js';
 
 // Media Centre › Accreditation.
@@ -15,7 +16,7 @@ export async function onRequestGet({ request, env }) {
   const matches = await openMatches(db, settings);
   const counts = (await db.prepare(`SELECT event_id, status, COUNT(*) AS n FROM mc_accreditations GROUP BY event_id, status`).all()).results;
   for (const m of matches) { m.counts = {}; for (const c of counts.filter(x => x.event_id === m.id)) m.counts[c.status] = c.n; }
-  return json({ matches, requests: await listFor(db, u.searchParams.get('event') || null), zones: ZONES, roles: ROLES, max: Number(settings.accreditation_max), closeHours: Number(settings.accreditation_close_hours) });
+  return json({ matches, requests: await listFor(db, u.searchParams.get('event') || null), zones: ZONES, roles: ROLES, roleInfo: ROLE_INFO, max: Number(settings.accreditation_max), closeHours: Number(settings.accreditation_close_hours) });
 }
 
 export async function onRequestPost({ request, env, data }) {

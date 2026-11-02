@@ -1,8 +1,10 @@
-// Media Centre, phase 3: media accreditation. The public form (home matches
-// only, one match, closes 6 hours before kick-off (media officers can reopen), spam trap), the media
-// team's decisions (approve with zone / reject / more info), the per-match
-// limit, the card PDF ("Signed: <approver>"), the verification page
-// (VALID / REVOKED / EXPIRED, no phone or email), revoke, contacts.
+// Media accreditation. The public form (home matches only, one match, closes
+// 6 hours before kick-off (media officers can reopen), spam trap), the media
+// team's decisions (approve with access zones 1-5 / reject / more info), the
+// per-match limit, LSFC/MED numbers, match card settings, the printable card,
+// "Send approval emails" (once per person), the verification page
+// (APPROVED / NOT VALID / EXPIRED / NOT FOUND, no phone or email), revoke and
+// restore, contacts.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -46,7 +48,7 @@ before(async () => {
   await mc('password', 'POST', { current: 'Temp-pass-123', password: 'Own-pass-456' });
 });
 after(() => {
-  sql(`DELETE FROM mc_accreditations WHERE event_id IN ('${HOME}', '${AWAY}', '${SOON}'); DELETE FROM mc_contacts WHERE email LIKE '%.${T}@example.com'; DELETE FROM mc_invites WHERE event_id = '${HOME}'; DELETE FROM mc_prefill_codes WHERE email LIKE '%.${T}@example.com'; DELETE FROM events WHERE id IN ('${HOME}', '${AWAY}', '${SOON}');
+  sql(`DELETE FROM mc_accreditations WHERE event_id IN ('${HOME}', '${AWAY}', '${SOON}'); DELETE FROM mc_contacts WHERE email LIKE '%.${T}@example.com'; DELETE FROM mc_invites WHERE event_id = '${HOME}'; DELETE FROM mc_prefill_codes WHERE email LIKE '%.${T}@example.com'; DELETE FROM mc_accr_matches WHERE event_id IN ('${HOME}', '${SOON}'); DELETE FROM events WHERE id IN ('${HOME}', '${AWAY}', '${SOON}');
     DELETE FROM mc_files WHERE owner = 'accreditation' AND uploaded_by_name IN ('Ada Reporter', 'Ben Writer', 'Ada R.'); DELETE FROM mc_sessions WHERE user_id IN (SELECT id FROM mc_users WHERE login_key = '${LOGIN.toLowerCase()}'); DELETE FROM mc_users WHERE login_key = '${LOGIN.toLowerCase()}';
     DELETE FROM mc_settings WHERE key = 'accreditation_max' OR key = 'accr_open:${SOON}';`);
 });
@@ -58,7 +60,8 @@ test('the form lists upcoming HOME matches only, closes 6 hours before kick-off,
   assert.equal(d.matches.find(m => m.id === SOON).open, false, 'closed within 6 hours');
   assert.equal(d.closeHours, 6);
   assert.equal(d.selected, HOME, 'the invitation / match link preselects the match');
-  assert.deepEqual(d.roles, ['Writer', 'Photographer', 'TV Camera', 'Radio Commentator', 'Digital/Social Media']);
+  assert.deepEqual(d.roles, ['Journalist', 'Photographer', 'Camera / Broadcast', 'Radio', 'Digital / Social Media']);
+  assert.equal(d.matches.find(m => m.id === HOME).competition, 'Nigeria National League (NNL)');
   assert.equal((await applyNow(form({ eventId: AWAY }))).status, 400);
   assert.equal((await applyNow(form({ eventId: SOON }))).status, 400);
   // Reopened from the Media Centre: open again until kick-off; closed again.
@@ -86,57 +89,83 @@ test('checks, spam trap and one request per match', async () => {
   assert.equal((await applyNow(form())).status, 400, 'one request per match');
 });
 
-let accId;
-test('more information, then approve with the zone; the card is signed by the approving user', async () => {
+let accId, accNumber;
+test('match settings, then approve with zones: an LSFC/MED number, the printable card and approval emails sent once', async () => {
+  const st = (await mc(`accreditations/matches?event=${HOME}`)).data;
+  assert.equal(st.settings.competition, 'Nigeria National League (NNL)');
+  assert.equal(st.settings.venue, 'McCarthy Stadium, Makurdi');
+  assert.equal(st.settings.collectionTime, '12:00');
+  assert.ok((await mc('accreditations/matches')).data.matches.some(m => m.id === HOME && m.colours.main), 'home matches list with card colours');
   const list = (await mc(`accreditations?event=${HOME}`)).data;
   const r = list.requests.find(x => x.email === `ada.${T}@example.com`);
   assert.ok(r && r.photo && r.pressDoc); accId = r.id;
+  assert.equal(r.category, 'P');
+  assert.deepEqual(list.roleInfo.find(x => x.name === 'Photographer').zones, [1, 2, 3, 5]);
   const info = await mc(`accreditations/${accId}`, 'POST', { decision: 'info', message: 'Please send a clearer photo.' });
   assert.equal(info.status, 200);
   const token = JSON.parse(sql(`SELECT update_token FROM mc_accreditations WHERE id = '${accId}';`))[0].results[0].update_token;
   const pre = await fetch(`${BASE}/api/media/accreditation?update=${token}`).then(x => x.json());
   assert.equal(pre.update.infoRequest, 'Please send a clearer photo.');
-  const up = form({ fullName: 'Ada R.', update: token });
-  assert.equal((await applyNow(up)).status, 200);
-  assert.equal((await mc(`accreditations/${accId}`, 'POST', { decision: 'approve' })).status, 400, 'zone required');
-  const ap = await mc(`accreditations/${accId}`, 'POST', { decision: 'approve', zone: 'Pitchside' });
+  assert.equal((await applyNow(form({ fullName: 'Ada R.', update: token }))).status, 200);
+  assert.equal((await mc(`accreditations/${accId}`, 'POST', { decision: 'approve', zones: [] })).status, 400, 'a zone is needed');
+  const ap = await mc(`accreditations/${accId}`, 'POST', { decision: 'approve', zones: [1, 2, 3, 5] });
   assert.equal(ap.status, 200, JSON.stringify(ap.data));
-  assert.match(ap.data.number, /^LSA-\d{4}-\d{4}$/);
+  assert.match(ap.data.number, /^LSFC\/MED\/\d{4}$/); accNumber = ap.data.number;
+  assert.ok(Number(accNumber.slice(-4)) >= 20, 'numbers start at 0020');
+  // The card exists straight away (HTML, 4 x 6 in) and on the print-all page.
   const card = await fetch(`${BASE}/api/media-centre/accreditations/${accId}/card`, { headers: { Cookie: S.cookie } });
-  assert.equal(card.status, 200); assert.equal(card.headers.get('content-type'), 'application/pdf');
-  const text = Buffer.from(await card.arrayBuffer()).toString('latin1');
-  for (const s of ['MEDIA ACCREDITATION', 'LOBI STARS FC', 'Signed: Grace Approver', 'Valid for this match only', 'McCarthy Stadium', 'PITCHSIDE', ap.data.number, 'Photographer', 'Benue Daily', 'Test United']) assert.ok(text.includes(s), `card shows ${s}`);
-  // The approval letter (emailed; printed and brought to the media desk for the laminated card).
-  const letter = await fetch(`${BASE}/api/media-centre/accreditations/${accId}/letter`, { headers: { Cookie: S.cookie } });
-  assert.equal(letter.status, 200); assert.equal(letter.headers.get('content-type'), 'application/pdf');
-  const lt = Buffer.from(await letter.arrayBuffer()).toString('latin1');
-  for (const s of ['APPROVAL LETTER', 'Media Desk', 'laminated accreditation card', ap.data.number, 'Pitchside']) assert.ok(lt.includes(s), `letter shows ${s}`);
-  assert.ok((text.match(/\/Subtype \/Image/g) || []).length >= 2, 'badge and photo');
+  assert.equal(card.status, 200); assert.match(card.headers.get('content-type'), /text\/html/);
+  const html = await card.text();
+  const vt = JSON.parse(sql(`SELECT verify_token FROM mc_accreditations WHERE id = '${accId}';`))[0].results[0].verify_token;
+  assert.ok(vt.length >= 40, 'a long verification token');
+  for (const x of [accNumber, 'Ada R.', 'Benue Daily', 'TEST UNITED', '<svg', '4in 6in']) assert.ok(html.includes(x), `card shows ${x}`);
+  const all = await fetch(`${BASE}/api/media-centre/accreditations/print?event=${HOME}`, { headers: { Cookie: S.cookie } }).then(x => x.text());
+  assert.ok(all.includes(accNumber), 'print all approved cards');
+  // The approving officer, then the approval emails (each person once).
+  const up = new FormData(); up.append('kind', 'image'); up.append('section', 'accreditation'); up.append('file', new Blob([jpg], { type: 'image/jpeg' }), 'signature.jpg');
+  const sig = await fetch(`${BASE}/api/media-centre/upload`, { method: 'POST', headers: { Cookie: S.cookie, 'X-CSRF-Token': S.csrf }, body: up }).then(x => x.json());
+  assert.ok(sig.file?.id, JSON.stringify(sig));
+  const save = await mc('accreditations/matches', 'POST', { action: 'settings', eventId: HOME, opponent: 'Test United', competition: 'Nigeria National League (NNL)', matchday: '3', venue: 'McCarthy Stadium, Makurdi', collectionTime: '12:00', theme: 'crest', accept: true, approverName: 'Austin Tyowua', approverTitle: 'Media Officer', approverSignatureId: sig.file.id });
+  assert.equal(save.status, 200, JSON.stringify(save.data));
+  assert.equal(save.data.settings.colours.main, '#2B5A97', 'Crest Blue');
+  const send = await mc('accreditations/matches', 'POST', { action: 'send_emails', eventId: HOME });
+  assert.equal(send.status, 200, JSON.stringify(send.data)); assert.equal(send.data.sent, 1);
+  assert.equal((await mc('accreditations/matches', 'POST', { action: 'send_emails', eventId: HOME })).data.sent, 0, 'never emailed twice');
+  assert.ok((await mc(`accreditations?event=${HOME}`)).data.requests.find(x => x.id === accId).emailSentAt, 'emailed date recorded');
+  assert.equal((await mc(`accreditations/${accId}`, 'POST', { action: 'resend' })).status, 200, 'resend one');
 });
 
-test('verification page: VALID, then REVOKED by a Super Admin, and EXPIRED after the match; never the phone or email', async () => {
+test('verification page: APPROVED, NOT VALID when revoked, restored with the same number, EXPIRED after the match, NOT FOUND; never the phone or email', async () => {
   const token = JSON.parse(sql(`SELECT verify_token FROM mc_accreditations WHERE id = '${accId}';`))[0].results[0].verify_token;
-  let html = await fetch(`${BASE}/media/accreditation/verify/${token}/`).then(r => r.text());
-  assert.match(html, />VALID</); assert.match(html, /Ada R\./); assert.match(html, /Benue Daily/);
-  assert.doesNotMatch(html, /0803|example\.com/, 'no phone or email');
+  const page = async (path = `/media/verify/${token}`) => { const r = await fetch(`${BASE}${path}`); assert.equal(r.headers.get('cache-control'), 'no-store'); return { status: r.status, html: await r.text(), r }; };
+  let v = await page();
+  assert.match(v.html, />APPROVED</); assert.match(v.html, /Ada R\./); assert.match(v.html, /Benue Daily/); assert.match(v.html, /Pitchside/);
+  assert.match(v.r.headers.get('x-robots-tag'), /noindex/);
+  assert.doesNotMatch(v.html, /0803|example\.com/, 'no phone or email');
   assert.equal((await fetch(`${BASE}/api/media/accreditation/photo/${token}`)).status, 200);
-  assert.equal((await fetch(`${BASE}/media/accreditation/verify/nonsense-token/`)).status, 404);
+  assert.match((await page(`/media/accreditation/verify/${token}/`)).html, />APPROVED</, 'the earlier address still works');
+  v = await page('/media/verify/nonsense-token');
+  assert.equal(v.status, 404); assert.match(v.html, />NOT FOUND</);
+  assert.equal((await mc(`accreditations/${accId}`, 'POST', { action: 'revoke', reason: 'Broke the media rules' })).status, 200);
+  v = await page(); assert.match(v.html, />NOT VALID</); assert.doesNotMatch(v.html, /Pitchside/, 'no zones unless approved');
+  assert.match(await fetch(`${BASE}/api/media-centre/accreditations/${accId}/card`, { headers: { Cookie: S.cookie } }).then(x => x.text()), /REVOKED/);
+  assert.equal((await mc(`accreditations/${accId}`, 'POST', { action: 'restore' })).status, 200);
+  assert.equal((await mc(`accreditations?event=${HOME}`)).data.requests.find(x => x.id === accId).number, accNumber, 'same number after restore');
+  assert.match((await page()).html, />APPROVED</);
   const list = (await admin('accreditations')).data.accreditations;
   assert.ok(list.some(a => a.id === accId && a.phone === undefined), 'the admin list leaves out phone numbers');
-  assert.equal((await admin('accreditations', { id: accId, reason: 'Broke the media rules' })).status, 200);
-  html = await fetch(`${BASE}/media/accreditation/verify/${token}/`).then(r => r.text());
-  assert.match(html, />REVOKED</); assert.match(html, /Broke the media rules/);
+  assert.equal((await admin('accreditations', { id: accId, reason: 'Broke the media rules' })).status, 200, 'a Super Admin can revoke');
+  assert.match((await page()).html, />NOT VALID</);
   sql(`UPDATE mc_accreditations SET status = 'approved' WHERE id = '${accId}'; UPDATE events SET event_date = '${new Date(Date.now() - 2 * 86400e3).toISOString()}' WHERE id = '${HOME}';`);
-  html = await fetch(`${BASE}/media/accreditation/verify/${token}/`).then(r => r.text());
-  assert.match(html, />EXPIRED</);
+  assert.match((await page()).html, />EXPIRED</);
   sql(`UPDATE events SET event_date = '${new Date(Date.now() + 10 * 86400e3).toISOString()}' WHERE id = '${HOME}';`);
 });
 
 test('the per-match limit; invitation links; contacts recognise returning journalists', async () => {
   sql(`INSERT INTO mc_settings (key, value) VALUES ('accreditation_max', '1') ON CONFLICT(key) DO UPDATE SET value = '1';`);
-  assert.equal((await applyNow(form({ email: `ben.${T}@example.com`, fullName: 'Ben Writer', role: 'Writer' }))).status, 200);
+  assert.equal((await applyNow(form({ email: `ben.${T}@example.com`, fullName: 'Ben Writer', role: 'Journalist' }))).status, 200);
   const ben = (await mc(`accreditations?event=${HOME}`)).data.requests.find(x => x.email === `ben.${T}@example.com`);
-  const full = await mc(`accreditations/${ben.id}`, 'POST', { decision: 'approve', zone: 'Press Box' });
+  const full = await mc(`accreditations/${ben.id}`, 'POST', { decision: 'approve', zones: [1, 2, 4, 5] });
   assert.equal(full.status, 400); assert.match(full.data.error, /limit is 1/);
   assert.equal((await mc(`accreditations/${ben.id}`, 'POST', { decision: 'reject', reason: '' })).status, 400, 'a reason is needed');
   assert.equal((await mc(`accreditations/${ben.id}`, 'POST', { decision: 'reject', reason: 'The press box is full.' })).status, 200);
@@ -156,5 +185,5 @@ test('the per-match limit; invitation links; contacts recognise returning journa
   const c = (await mc('accreditations?view=contacts')).data.contacts.find(x => x.email === `ada.${T}@example.com`);
   assert.ok(c && c.accreditations >= 1);
   const acts = new Set((await admin('activity?section=accreditation')).data.rows.map(r => r.action));
-  for (const a of ['accreditation_request', 'request_info', 'accreditation_update', 'approve', 'reject', 'revoke', 'invite', 'download_card']) assert.ok(acts.has(a), `logged: ${a}`);
+  for (const a of ['accreditation_request', 'request_info', 'accreditation_update', 'approve', 'reject', 'revoke', 'restore', 'invite', 'download_card', 'print_cards', 'card_settings', 'approval_emails']) assert.ok(acts.has(a), `logged: ${a}`);
 });

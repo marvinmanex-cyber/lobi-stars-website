@@ -1,36 +1,109 @@
 ---
 // /media/press-releases -- the shell for the press releases archive and each
 // release. functions/media/press-releases/[[path]].js fills [data-pr-root]
-// from the Media Centre (published releases only).
+// from the Media Centre (published releases only). Newsroom look in club
+// colours: navy-to-red header, dated release cards, a journalists' sidebar,
+// and a letterhead for each release.
 import Layout from '../../../layouts/Layout.astro';
+import ShareButton from '../../../components/ShareButton.astro';
 ---
 <Layout title="Press releases | Lobi Stars Football Club" description="Official press releases and statements from Lobi Stars FC.">
-  <div class="page-hero wrap">
-    <div class="stag">Press &amp; Media</div>
-    <h1 class="stitle">Press <span class="r">releases</span></h1>
-    <div class="divr"></div>
-  </div>
-  <div class="page-content wrap prw">
-    <div data-pr-root><p class="muted">No press releases yet.</p></div>
-    <p class="prw-back"><a href="/media/">← Media &amp; Press</a></p>
+  <section class="prn-hero">
+    <div class="wrap prn-hero-in">
+      <div>
+        <p class="prn-kicker"><span></span>Official newsroom</p>
+        <h1 class="prn-title">Press <em>releases</em></h1>
+        <p class="prn-lede">Official announcements and statements from Lobi Stars Football Club, Makurdi. Free to quote and publish, with credit to Lobi Stars FC.</p>
+        <div class="prn-tags"><span class="t-red">Press releases</span><span class="t-blue">Official statements</span><span class="t-gold">Downloadable PDFs</span></div>
+      </div>
+      <div class="prn-stamp" aria-hidden="true"><img src="/images/lobi-stars-fc-transparent-256.png" alt="" width="150" height="150" /><b>Lobi Stars FC</b><span>Media &amp; Communications</span></div>
+    </div>
+  </section>
+  <div class="wrap prn-grid">
+    <main class="prw">
+      <div data-pr-root><div class="prn-empty"><b>No press releases yet</b><p>New releases appear here as soon as the club publishes them.</p></div></div>
+    </main>
+    <aside class="prn-side" aria-label="For journalists">
+      <div class="prn-card prn-contact"><h2>Media contact</h2><p>Lobi Stars FC Media Department</p><a href="mailto:media@lobistarsfc.com">media@lobistarsfc.com</a></div>
+      <div class="prn-card"><h2>For journalists</h2>
+        <ul class="prn-links">
+          <li><a href="/media/accreditation/"><span class="d red"></span>Match accreditation</a></li>
+          <li><a href="/media/interview-request/"><span class="d blue"></span>Request an interview</a></li>
+          <li><a href="/media/"><span class="d gold"></span>The Press Room</a></li>
+        </ul>
+      </div>
+      <div class="prn-card prn-share"><h2>Share the newsroom</h2><ShareButton title="Lobi Stars FC press releases" text="Official press releases and statements from Lobi Stars FC." label="Share" class="share--l" /></div>
+    </aside>
   </div>
 </Layout>
 <style>
-  .prw { max-width: 860px; }
-  .prw :global(.pr-list) { list-style: none; margin: 0; padding: 0; }
-  .prw :global(.pr-list li) { border-top: 1px solid #E2E4E9; } .prw :global(.pr-list li:first-child) { border-top: 0; }
-  .prw :global(.pr-list a) { display: grid; gap: 4px; padding: 16px 0; color: inherit; text-decoration: none; }
-  .prw :global(.pr-list b) { font-size: 20px; line-height: 1.25; } .prw :global(.pr-list a:hover b) { text-decoration: underline; }
-  .prw :global(.pr-l-date) { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: #C9242C; font-weight: 700; }
-  .prw :global(.pr) { background: #fff; border: 1px solid #E2E4E9; border-radius: 14px; padding: clamp(18px, 4vw, 40px); }
-  .prw :global(.pr-imm) { margin: 0 0 10px; font-weight: 700; letter-spacing: .12em; font-size: 13px; color: #C9242C; }
-  .prw :global(.pr-h) { margin: 0 0 8px; font-size: clamp(26px, 4vw, 36px); line-height: 1.15; }
-  .prw :global(.pr-sub) { margin: 0 0 14px; font-size: 18px; color: #4A505C; }
-  .prw :global(.pr-body) { line-height: 1.7; font-size: 17px; } .prw :global(.pr-body img) { max-width: 100%; height: auto; }
-  .prw :global(.pr-quote) { margin: 20px 0; padding: 12px 18px; border-left: 4px solid #EE343C; background: #F7F8FA; border-radius: 6px; }
-  .prw :global(.pr-quote p) { margin: 0 0 6px; font-size: 18px; font-style: italic; } .prw :global(.pr-quote footer) { font-weight: 700; }
-  .prw :global(.pr-ends) { font-weight: 700; letter-spacing: .1em; text-align: center; margin: 22px 0; }
-  .prw :global(.pr-contact) { border-top: 1px solid #E2E4E9; padding-top: 12px; } .prw :global(.pr-contact h2) { font-size: 16px; margin: 0 0 4px; }
-  .prw :global(.pr-acts) { margin: 16px 0 0; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-  .prw-back { margin-top: 24px; }
+  .prn-hero { position: relative; overflow: hidden; color: #fff; background:
+      radial-gradient(circle at 85% 20%, rgba(255,201,40,.22), transparent 40%),
+      linear-gradient(120deg, #0E1C38 0%, #1C3F7A 50%, #C11A1F 100%); }
+  .prn-hero::after { content: ''; position: absolute; inset: auto 0 0 0; height: 6px; background: linear-gradient(90deg, #E31E24 0 33%, #fff 33% 66%, #1C3F7A 66%); }
+  .prn-hero-in { position: relative; display: grid; gap: 24px; align-items: center; padding-top: 46px !important; padding-bottom: 52px !important; }
+  @media (min-width: 900px) { .prn-hero-in { grid-template-columns: 1fr auto; } }
+  .prn-kicker { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 3px; text-transform: uppercase; color: #FFD34D; }
+  .prn-kicker span { width: 34px; height: 3px; background: #FFD34D; }
+  .prn-title { margin: 0 0 12px; font: 400 clamp(48px, 8vw, 92px)/.92 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .prn-title em { font-style: normal; color: #FF6B70; }
+  .prn-lede { max-width: 640px; margin: 0 0 18px; font-size: 18px; line-height: 1.6; color: rgba(255,255,255,.9); }
+  .prn-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .prn-tags span { padding: 7px 12px; border-radius: 999px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .t-red { background: #E31E24; } .t-blue { background: #fff; color: #1C3F7A; } .t-gold { background: #FFC928; color: #3A2A00; }
+  .prn-stamp { display: none; }
+  @media (min-width: 900px) { .prn-stamp { display: grid; justify-items: center; gap: 4px; padding: 22px 26px; border-radius: 20px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.25); transform: rotate(-3deg); }
+    .prn-stamp img { width: 130px; height: 130px; object-fit: contain; }
+    .prn-stamp b { font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; } .prn-stamp span { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: #FFD9DA; } }
+
+  .prn-grid { display: grid; gap: 28px; padding-top: 36px !important; padding-bottom: 56px !important; }
+  @media (min-width: 980px) { .prn-grid { grid-template-columns: minmax(0, 1fr) 300px; align-items: start; } }
+  .prn-side { display: grid; gap: 16px; }
+  @media (min-width: 980px) { .prn-side { position: sticky; top: 110px; } }
+  .prn-card { background: #fff; border: 1px solid #E3E6EB; border-radius: 16px; padding: 18px 18px 16px; box-shadow: 0 6px 18px rgba(14,28,56,.06); }
+  .prn-card h2 { margin: 0 0 10px; font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: #1C3F7A; }
+  .prn-contact { background: linear-gradient(135deg, #1C3F7A, #0E1C38); color: #fff; border: 0; }
+  .prn-contact h2 { color: #FFD34D; } .prn-contact p { margin: 0 0 6px; color: rgba(255,255,255,.85); }
+  .prn-contact a { color: #fff; font-weight: 700; word-break: break-all; }
+  .prn-links { list-style: none; margin: 0; padding: 0; }
+  .prn-links a { display: flex; align-items: center; gap: 10px; min-height: 44px; color: #15181D; font-weight: 600; text-decoration: none; border-top: 1px solid #EEF0F3; }
+  .prn-links li:first-child a { border-top: 0; } .prn-links a:hover { color: #C11A1F; }
+  .d { width: 10px; height: 10px; border-radius: 50%; flex: none; } .d.red { background: #E31E24; } .d.blue { background: #1C3F7A; } .d.gold { background: #FFC928; }
+  .prn-share { border-top: 5px solid #FFC928; }
+
+  .prw :global(.prn-empty) { text-align: center; padding: 48px 20px; border-radius: 18px; border: 2px dashed #C9D3E6; background: linear-gradient(180deg, #F4F7FD, #fff); }
+  .prw :global(.prn-empty b) { display: block; font: 400 30px/1 'Bebas Neue', sans-serif; color: #1C3F7A; margin-bottom: 8px; }
+  .prw :global(.prn-empty p) { margin: 0; color: #5B6472; }
+
+  /* The archive: a coloured date block, the type tag, headline and summary. */
+  .prw :global(.pr-list) { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .prw :global(.pr-list a) { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 16px; align-items: start; padding: 16px; border-radius: 16px; background: #fff; border: 1px solid #E3E6EB; border-left: 6px solid #E31E24; color: inherit; text-decoration: none; box-shadow: 0 6px 18px rgba(14,28,56,.06); transition: transform .15s, box-shadow .15s; }
+  .prw :global(.pr-list a.is-st) { border-left-color: #1C3F7A; }
+  .prw :global(.pr-list a:hover) { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(14,28,56,.12); }
+  .prw :global(.pr-l-cal) { display: grid; justify-items: center; padding: 8px 0 10px; border-radius: 12px; background: linear-gradient(160deg, #E31E24, #A8141A); color: #fff; }
+  .prw :global(.is-st .pr-l-cal) { background: linear-gradient(160deg, #1C3F7A, #0E1C38); }
+  .prw :global(.pr-l-cal b) { font: 400 36px/1 'Bebas Neue', sans-serif; } .prw :global(.pr-l-cal span) { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .prw :global(.pr-l-txt) { display: grid; gap: 6px; }
+  .prw :global(.pr-l-tag) { justify-self: start; padding: 4px 10px; border-radius: 999px; background: #FDE8E9; color: #C11A1F; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .prw :global(.is-st .pr-l-tag) { background: #E6EDF8; color: #1C3F7A; }
+  .prw :global(.pr-l-txt b) { font-size: 20px; line-height: 1.25; } .prw :global(.pr-list a:hover b) { color: #C11A1F; }
+  .prw :global(.pr-l-txt > span:last-child:not(.pr-l-tag)) { color: #4A505C; }
+  .prw :global(.pr-l-more) { font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; color: #C11A1F; }
+
+  /* One release: club letterhead. */
+  .prw :global(.pr) { position: relative; background: #fff; border: 1px solid #E3E6EB; border-radius: 16px; padding: 0 clamp(18px, 4vw, 44px) clamp(18px, 4vw, 40px); overflow: hidden; box-shadow: 0 10px 30px rgba(14,28,56,.08); }
+  .prw :global(.pr::before) { content: 'LOBI STARS FOOTBALL CLUB · MAKURDI'; display: block; margin: 0 calc(-1 * clamp(18px, 4vw, 44px)) 22px; padding: 16px clamp(18px, 4vw, 44px) 16px 84px; background: url('/images/lobi-stars-fc-transparent-256.png') 22px center / 48px no-repeat, linear-gradient(110deg, #0E1C38, #1C3F7A 60%, #C11A1F); color: #fff; font: 400 22px/1.2 'Bebas Neue', sans-serif; letter-spacing: 1.5px; border-bottom: 5px solid #FFC928; min-height: 48px; display: flex; align-items: center; }
+  .prw :global(.pr-imm) { display: inline-block; margin: 0 0 14px; padding: 6px 12px; border-radius: 6px; background: #E31E24; color: #fff; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; }
+  .prw :global(.pr-h) { margin: 0 0 8px; font: 400 clamp(32px, 5vw, 48px)/1.02 'Bebas Neue', sans-serif; letter-spacing: .5px; color: #0E1C38; }
+  .prw :global(.pr-sub) { margin: 0 0 14px; font-size: 19px; color: #4A505C; }
+  .prw :global(.pr-date) { margin: 0 0 10px; color: #1C3F7A; }
+  .prw :global(.pr-body) { line-height: 1.75; font-size: 17px; } .prw :global(.pr-body img) { max-width: 100%; height: auto; border-radius: 10px; }
+  .prw :global(.pr-quote) { margin: 24px 0; padding: 18px 22px; border-left: 6px solid #E31E24; background: linear-gradient(90deg, #FFF3F3, #F4F7FD); border-radius: 10px; }
+  .prw :global(.pr-quote p) { margin: 0 0 8px; font-size: 20px; font-style: italic; color: #0E1C38; } .prw :global(.pr-quote footer) { font-weight: 700; color: #C11A1F; }
+  .prw :global(.pr-ends) { font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: 6px; text-align: center; margin: 26px 0; color: #1C3F7A; }
+  .prw :global(.pr-ends::before), .prw :global(.pr-ends::after) { content: '#'; color: #E31E24; margin: 0 10px; }
+  .prw :global(.pr-contact) { border-top: 0; padding: 14px 16px; border-radius: 12px; background: #F4F7FD; } .prw :global(.pr-contact h2) { font: 400 20px/1 'Bebas Neue', sans-serif; color: #1C3F7A; margin: 0 0 6px; }
+  .prw :global(.pr-contact p) { margin: 0; }
+  .prw :global(.pr-acts) { margin: 18px 0 0; display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .prw :global(.pr-acts .btn-o) { background: #E31E24; border-color: #E31E24; color: #fff; }
 </style>

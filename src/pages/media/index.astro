@@ -72,6 +72,7 @@ import ShareButton from '../../components/ShareButton.astro';
 </Layout>
 <style is:global>
   .pr { --blue: #1C3F7A; --red: #E31E24; --ink: #12161D; --muted: #5B6472; background: #F4F6FA; }
+  .pr-hero :global(.share-menu) { top: auto; bottom: calc(100% + 8px); }
   .pr-hero { position: relative; overflow: hidden; background: #fff; border-bottom: 1px solid #E3E6EB; }
   .pr-hero::before { content: ''; position: absolute; right: -120px; top: -60px; width: 520px; height: 520px; background: repeating-linear-gradient(135deg, rgba(227,30,36,.09) 0 18px, transparent 18px 36px, rgba(28,63,122,.08) 36px 54px, transparent 54px 72px); transform: rotate(8deg); }
   .pr-hero-in { position: relative; display: grid; gap: 28px; padding-top: 54px !important; padding-bottom: 54px !important; align-items: center; }
