@@ -2,52 +2,128 @@
 // /media/interview-request -- journalists ask to interview a player, coach or
 // club official. Handled by the media team in the Media Centre (approve,
 // decline or propose another time; the journalist is emailed).
+// "Studio" look: dark navy header with a gold microphone motif, quick-pick
+// chips for who to interview, the format as large tiles, and a how-it-works panel.
 import Layout from '../../layouts/Layout.astro';
 ---
 <Layout title="Interview requests | Lobi Stars Football Club" description="Request an interview with a Lobi Stars FC player, coach or club official.">
-  <div class="page-hero wrap">
-    <div class="stag">Press &amp; Media</div>
-    <h1 class="stitle">Interview <span class="r">request</span></h1>
-    <div class="divr"></div>
-    <p class="muted ir-lede">Tell us who you would like to interview, the topic and when. Our media team will reply by email.</p>
-  </div>
-  <div class="page-content wrap ir">
-    <p class="ir-msg" id="msg" role="alert" hidden></p>
-    <section class="panel" id="done" hidden><h2>Thank you</h2><p>We have your request and will reply by email.</p><p><a href="/media/">Back to the Media page</a></p></section>
-    <form class="panel" id="f" novalidate>
-      <div class="ir-two">
-        <div class="ir-f"><label for="fullName">Your full name <span class="req">*</span></label><input id="fullName" name="fullName" autocomplete="name" maxlength="80" required /></div>
-        <div class="ir-f"><label for="organisation">Media organisation <span class="req">*</span></label><input id="organisation" name="organisation" maxlength="120" required /></div>
-        <div class="ir-f"><label for="email">Email <span class="req">*</span></label><input id="email" name="email" type="email" autocomplete="email" required /></div>
-        <div class="ir-f"><label for="phone">Phone</label><input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="24" /></div>
+  <section class="iv-hero">
+    <div class="wrap iv-hero-in">
+      <div>
+        <p class="iv-kicker"><span class="iv-live"></span>Press &amp; Media · On the record</p>
+        <h1 class="iv-title">Request an <em>interview</em></h1>
+        <p class="iv-lede">Players, the head coach and club officials. Tell us who you would like to speak to, the topic and when. Our media team will reply by email.</p>
+        <ul class="iv-chips-hero" aria-label="Who you can request">
+          <li>Head coach</li><li>Players</li><li>Club officials</li>
+        </ul>
       </div>
-      <div class="ir-f"><label for="who">Who would you like to interview? <span class="req">*</span></label><input id="who" name="who" maxlength="120" required placeholder="e.g. the head coach, or a player's name" /></div>
-      <div class="ir-f"><label for="topic">Topic <span class="req">*</span></label><textarea id="topic" name="topic" rows="4" maxlength="1000" required placeholder="What is the interview about, and where will it appear?"></textarea></div>
-      <div class="ir-two">
-        <div class="ir-f"><label for="preferredAt">Preferred date and time <span class="req">*</span></label><input id="preferredAt" name="preferredAt" type="datetime-local" required /></div>
-        <fieldset class="ir-f"><legend>Format <span class="req">*</span></legend><label class="ir-r"><input type="radio" name="format" value="phone" required /> Phone</label><label class="ir-r"><input type="radio" name="format" value="in_person" /> In person</label><label class="ir-r"><input type="radio" name="format" value="video" /> Video call</label></fieldset>
+      <div class="iv-mic" aria-hidden="true">
+        <svg viewBox="0 0 120 160" width="150" height="200"><rect x="38" y="8" width="44" height="80" rx="22" fill="#FFC928"/><g stroke="#0E1C38" stroke-width="3" opacity=".35"><line x1="44" y1="30" x2="76" y2="30"/><line x1="44" y1="42" x2="76" y2="42"/><line x1="44" y1="54" x2="76" y2="54"/></g><path d="M24 70a36 36 0 0 0 72 0" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round"/><line x1="60" y1="106" x2="60" y2="134" stroke="#fff" stroke-width="7" stroke-linecap="round"/><line x1="38" y1="138" x2="82" y2="138" stroke="#E31E24" stroke-width="8" stroke-linecap="round"/></svg>
       </div>
-      <div class="ir-hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
-      <button class="btn-p" type="submit" id="send">Send my request</button>
-      <p class="muted ir-small">Your details are used only to handle this request. See the <a href="/privacy/">Privacy Policy</a>.</p>
-    </form>
+    </div>
+  </section>
+
+  <div class="wrap iv-grid">
+    <div class="iv-main">
+      <p class="iv-msg" id="msg" role="alert" hidden></p>
+      <section class="iv-card iv-done" id="done" hidden><div class="iv-tick" aria-hidden="true">✓</div><h2>Request sent</h2><p>We have your request and will reply by email.</p><p><a class="iv-btn ghost" href="/media/">Back to the Press Room</a></p></section>
+      <form class="iv-card" id="f" novalidate>
+        <h2 class="iv-h"><span>1</span>About you</h2>
+        <div class="iv-two">
+          <div class="iv-f"><label for="fullName">Your full name <span class="req">*</span></label><input id="fullName" name="fullName" autocomplete="name" maxlength="80" required /></div>
+          <div class="iv-f"><label for="organisation">Media organisation <span class="req">*</span></label><input id="organisation" name="organisation" maxlength="120" required /></div>
+          <div class="iv-f"><label for="email">Email <span class="req">*</span></label><input id="email" name="email" type="email" autocomplete="email" required /></div>
+          <div class="iv-f"><label for="phone">Phone</label><input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="24" /></div>
+        </div>
+
+        <h2 class="iv-h"><span>2</span>The interview</h2>
+        <div class="iv-f"><label for="who">Who would you like to interview? <span class="req">*</span></label>
+          <div class="iv-picks" role="group" aria-label="Quick choices"><button type="button" data-who="The head coach">Head coach</button><button type="button" data-who="A player: ">A player</button><button type="button" data-who="A club official: ">Club official</button></div>
+          <input id="who" name="who" maxlength="120" required placeholder="e.g. the head coach, or a player's name" /></div>
+        <div class="iv-f"><label for="topic">Topic <span class="req">*</span></label><textarea id="topic" name="topic" rows="4" maxlength="1000" required placeholder="What is the interview about, and where will it appear?"></textarea><small class="iv-count" id="count">0 / 1000</small></div>
+
+        <h2 class="iv-h"><span>3</span>When and how</h2>
+        <div class="iv-f"><label for="preferredAt">Preferred date and time <span class="req">*</span></label><input id="preferredAt" name="preferredAt" type="datetime-local" required /></div>
+        <fieldset class="iv-f iv-formats"><legend>Format <span class="req">*</span></legend>
+          <label class="iv-tile"><input type="radio" name="format" value="phone" required /><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg></span><b>Phone</b><small>We call you</small></label>
+          <label class="iv-tile"><input type="radio" name="format" value="in_person" /><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-3.3 0-8 1.7-8 5v1h16v-1c0-3.3-4.7-5-8-5z"/></svg></span><b>In person</b><small>At the club</small></label>
+          <label class="iv-tile"><input type="radio" name="format" value="video" /><span class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.6-.4-1-1-1H4c-.6 0-1 .4-1 1v10c0 .6.4 1 1 1h12c.6 0 1-.4 1-1v-3.5l4 4v-11z"/></svg></span><b>Video call</b><small>Online</small></label>
+        </fieldset>
+        <div class="iv-hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
+        <button class="iv-btn" type="submit" id="send">Send my request</button>
+        <p class="iv-small">Your details are used only to handle this request. See the <a href="/privacy/">Privacy Policy</a>.</p>
+      </form>
+    </div>
+    <aside class="iv-side" aria-label="How it works">
+      <div class="iv-card iv-how"><h2>How it works</h2>
+        <ol><li><b>Send your request</b><span>Who, the topic and when.</span></li><li><b>We check availability</b><span>Around training and match days.</span></li><li><b>We reply by email</b><span>Confirmed, another time suggested, or declined.</span></li></ol>
+      </div>
+      <div class="iv-card iv-tip"><h2>Good to know</h2><p>Match-day interviews take place in the mixed zone and the post-match press conference, for accredited media.</p><a href="/media/accreditation/">Apply for match accreditation →</a></div>
+      <div class="iv-card iv-contact"><h2>Media contact</h2><a href="mailto:media@lobistarsfc.com">media@lobistarsfc.com</a></div>
+    </aside>
   </div>
 </Layout>
 <style>
-  .ir-lede { max-width: 720px; } .ir { max-width: 820px; }
-  .ir-msg { padding: 12px 14px; border-radius: 10px; background: #FDE8E9; color: #8E1A20; font-weight: 600; }
-  .ir-f { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; border: 0; padding: 0; min-width: 0; } .ir-f label, .ir-f legend { font-weight: 700; }
-  .ir-f input:not([type=radio]), .ir-f textarea { width: 100%; min-height: 46px; padding: 9px 12px; border: 1.5px solid #D6DAE1; border-radius: 10px; font: inherit; font-size: 16px; background: #fff; color: #15181D; box-sizing: border-box; }
-  .ir-two { display: grid; gap: 0 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-  .ir-r { display: inline-flex; gap: 6px; align-items: center; font-weight: 500 !important; margin-right: 16px; }
-  .ir-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
-  .ir-small { font-size: 13px; } .req { color: #C9242C; }
+  .iv-hero { position: relative; overflow: hidden; color: #fff; background: radial-gradient(circle at 80% 30%, rgba(255,201,40,.18), transparent 45%), linear-gradient(135deg, #0B1630 0%, #13284F 60%, #1C3F7A 100%); }
+  .iv-hero::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 2px, transparent 2px 26px); }
+  .iv-hero::after { content: ''; position: absolute; inset: auto 0 0 0; height: 6px; background: linear-gradient(90deg, #FFC928, #E31E24); }
+  .iv-hero-in { position: relative; display: grid; gap: 20px; align-items: center; padding-top: 44px !important; padding-bottom: 50px !important; }
+  @media (min-width: 900px) { .iv-hero-in { grid-template-columns: 1fr auto; } }
+  .iv-kicker { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 3px; text-transform: uppercase; color: #FFC928; }
+  .iv-live { width: 10px; height: 10px; border-radius: 50%; background: #E31E24; box-shadow: 0 0 0 4px rgba(227,30,36,.3); }
+  .iv-title { margin: 0 0 12px; font: 400 clamp(46px, 7.5vw, 88px)/.92 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .iv-title em { font-style: normal; color: #FFC928; }
+  .iv-lede { max-width: 640px; margin: 0 0 16px; font-size: 18px; line-height: 1.6; color: rgba(255,255,255,.88); }
+  .iv-chips-hero { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; }
+  .iv-chips-hero li { padding: 7px 14px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,.4); font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+  .iv-mic { display: none; } @media (min-width: 900px) { .iv-mic { display: grid; place-items: center; width: 220px; height: 220px; border-radius: 50%; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.18); } }
+
+  .iv-grid { display: grid; gap: 24px; padding-top: 32px !important; padding-bottom: 56px !important; }
+  @media (min-width: 980px) { .iv-grid { grid-template-columns: minmax(0, 1fr) 320px; align-items: start; } .iv-side { position: sticky; top: 110px; } }
+  .iv-main, .iv-side { min-width: 0; } .iv-side { display: grid; gap: 16px; }
+  .iv-card { background: #fff; border: 1px solid #E3E6EB; border-radius: 18px; padding: clamp(18px, 3.5vw, 32px); box-shadow: 0 10px 28px rgba(14,28,56,.07); }
+  .iv-h { display: flex; align-items: center; gap: 10px; margin: 6px 0 14px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: #0E1C38; }
+  .iv-h:not(:first-child) { margin-top: 26px; padding-top: 22px; border-top: 1px dashed #DCE1E8; }
+  .iv-h span { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #FFC928; color: #0E1C38; font-size: 20px; }
+  .iv-f { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; border: 0; padding: 0; min-width: 0; } .iv-f > label, .iv-f legend { font-weight: 700; padding: 0; }
+  .iv-f input:not([type=radio]), .iv-f textarea { width: 100%; min-height: 48px; padding: 10px 13px; border: 1.5px solid #D6DAE1; border-radius: 12px; font: inherit; font-size: 16px; background: #F9FAFC; color: #15181D; box-sizing: border-box; }
+  .iv-f input:focus, .iv-f textarea:focus { outline: 3px solid rgba(255,201,40,.45); border-color: #1C3F7A; background: #fff; }
+  .iv-two { display: grid; gap: 0 16px; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); }
+  .iv-picks { display: flex; flex-wrap: wrap; gap: 6px; }
+  .iv-picks button { min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #1C3F7A; background: #fff; color: #1C3F7A; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+  .iv-picks button:hover, .iv-picks button:focus-visible { background: #1C3F7A; color: #fff; }
+  .iv-count { align-self: flex-end; color: #6A7280; font-size: 13px; }
+  .iv-formats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .iv-formats legend { grid-column: 1 / -1; margin-bottom: 6px; }
+  @media (max-width: 520px) { .iv-formats { grid-template-columns: 1fr; } }
+  .iv-tile { position: relative; display: grid; justify-items: center; gap: 4px; padding: 16px 10px; border: 2px solid #DCE1E8; border-radius: 14px; background: #F9FAFC; cursor: pointer; text-align: center; transition: border-color .15s, background .15s; }
+  .iv-tile input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .iv-tile .ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: #E6EDF8; } .iv-tile svg { width: 24px; height: 24px; fill: #1C3F7A; }
+  .iv-tile b { font-size: 16px; } .iv-tile small { color: #6A7280; }
+  .iv-tile:has(input:checked) { border-color: #E31E24; background: #FFF4F4; } .iv-tile:has(input:checked) .ic { background: #E31E24; } .iv-tile:has(input:checked) svg { fill: #fff; }
+  .iv-tile:has(input:focus-visible) { outline: 3px solid rgba(255,201,40,.6); outline-offset: 2px; }
+  .iv-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 54px; width: 100%; margin-top: 8px; padding: 0 24px; border: 0; border-radius: 12px; background: linear-gradient(90deg, #E31E24, #B8141A); color: #fff; font: 700 18px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 10px 24px rgba(227,30,36,.3); text-decoration: none; }
+  .iv-btn:disabled { opacity: .6; } .iv-btn.ghost { width: auto; background: #fff; color: #1C3F7A; border: 2px solid #1C3F7A; box-shadow: none; }
+  .iv-small { font-size: 13px; color: #6A7280; margin: 12px 0 0; }
+  .iv-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .req { color: #C9242C; }
+  .iv-msg { padding: 12px 14px; border-radius: 12px; background: #FDE8E9; color: #8E1A20; font-weight: 600; margin: 0 0 14px; }
+  .iv-done { text-align: center; } .iv-tick { width: 64px; height: 64px; margin: 0 auto 10px; border-radius: 50%; display: grid; place-items: center; background: #1B7F3B; color: #fff; font-size: 34px; }
+  .iv-done h2 { font: 400 34px/1 'Bebas Neue', sans-serif; margin: 0 0 8px; color: #0E1C38; }
+  .iv-side h2 { margin: 0 0 12px; font: 400 22px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: #1C3F7A; }
+  .iv-how { border-top: 5px solid #FFC928; } .iv-how ol { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 12px; }
+  .iv-how li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; column-gap: 10px; } .iv-how li::before { content: counter(s); grid-row: span 2; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: #0E1C38; color: #FFC928; font: 400 18px/1 'Bebas Neue', sans-serif; }
+  .iv-how li span { color: #5B6472; font-size: 15px; }
+  .iv-tip { background: linear-gradient(160deg, #FFF8E1, #fff); border-color: #F3D98A; } .iv-tip p { margin: 0 0 8px; color: #4A505C; } .iv-tip a { color: #C11A1F; font-weight: 700; text-decoration: none; }
+  .iv-contact { background: linear-gradient(135deg, #1C3F7A, #0B1630); color: #fff; border: 0; } .iv-contact h2 { color: #FFC928; } .iv-contact a { color: #fff; font-weight: 700; word-break: break-all; }
 </style>
 <script>
   const $ = (id: string) => document.getElementById(id) as any;
   let formTok = '';
   fetch('/api/media/interview-request').then(r => r.json()).then(d => { formTok = d.formToken || ''; }).catch(() => {});
   const msg = (t: string) => { $('msg').textContent = t; $('msg').hidden = !t; if (t) $('msg').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+  document.querySelectorAll<HTMLButtonElement>('[data-who]').forEach(b => b.addEventListener('click', () => { const w = $('who'); w.value = b.dataset.who; w.focus(); w.setSelectionRange(w.value.length, w.value.length); }));
+  $('topic').addEventListener('input', () => { $('count').textContent = `${$('topic').value.length} / 1000`; });
   $('f').addEventListener('submit', async (e: Event) => {
     e.preventDefault(); msg('');
     const body = { ...Object.fromEntries(new FormData($('f')).entries()), formToken: formTok };
@@ -56,7 +132,7 @@ import Layout from '../../layouts/Layout.astro';
       const r = await fetch('/api/media/interview-request', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { msg(d.error || 'Could not send. Please try again.'); return; }
-      $('f').hidden = true; $('done').hidden = false;
+      $('f').hidden = true; $('done').hidden = false; $('done').scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch { msg('No connection. Please try again.'); } finally { $('send').disabled = false; }
   });
 </script>

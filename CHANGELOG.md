@@ -8,6 +8,33 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: MatchDay Kitchen seat bar fixed for good; interview and accreditation forms redesigned; confirm email
+
+**Who it affects:** fans ordering food, journalists.
+- **MatchDay Kitchen (/kitchen):** on phones and tablets, the "Your seat" bar
+  and the category tabs now stay right under the site header as it slides
+  away and comes back. Before, the menu scrolled through a gap above them.
+  - The seat bar is solid, so nothing shows through it.
+  - Its height is re-measured whenever it changes.
+  - The Section hint is shorter on phones.
+  - **To stop it breaking again,** an automatic layout check
+    (tests/kitchen-layout.test.mjs) opens the page in a real browser at phone,
+    small phone, tablet and desktop sizes. It fails if the bars drift, the
+    page scrolls sideways or the order drawer does not fit.
+- **Interview request page** (/media/interview-request) redesigned:
+  - A dark "studio" header.
+  - Quick picks for who to interview.
+  - The format chosen with tiles.
+  - A how-it-works panel and the media contact.
+- **Accreditation form** redesigned:
+  - Five numbered sections.
+  - Staff / freelance tiles.
+  - Upload boxes.
+  - A larger send button.
+- **Confirm email:** applicants now type their email twice. The form shows
+  whether the two match, and the website refuses the application if they
+  differ.
+
 ## 2026-11-02: Press List and "Send to press list"; share buttons removed
 
 **Who it affects:** the media team and journalists.

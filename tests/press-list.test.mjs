@@ -26,6 +26,7 @@ const pdf = Buffer.from('%PDF-1.4\n% test\n' + 'x'.repeat(300));
 function form(over = {}) {
   const f = new FormData();
   const v = { fullName: 'Derek Kakaan', phone: '0803 123 4567', email: DEREK, organisation: 'Benue Voice', employment: 'staff', role: 'Journalist', agree: '1', website: '', formToken: FT, ...over };
+  if (!('emailConfirm' in over)) v.emailConfirm = v.email;
   for (const [k, x] of Object.entries(v)) if (x !== undefined) f.append(k, x);
   f.append('photo', new Blob([jpg], { type: 'image/jpeg' }), 'p.jpg');
   f.append('pressDoc', new Blob([pdf], { type: 'application/pdf' }), 'id.pdf');

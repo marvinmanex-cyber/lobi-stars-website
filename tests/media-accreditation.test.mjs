@@ -26,6 +26,7 @@ const pdf = Buffer.from('%PDF-1.4\n% test press letter\n' + 'x'.repeat(300));
 function form(over = {}, files = { photo: true, doc: true }) {
   const f = new FormData();
   const v = { eventId: HOME, fullName: 'Ada Reporter', phone: '0803 123 4567', email: `ada.${T}@example.com`, organisation: 'Benue Daily', employment: 'staff', role: 'Photographer', equipment: '2 cameras', agree: '1', website: '', ...over };
+  if (!('emailConfirm' in v)) v.emailConfirm = v.email;
   for (const [k, x] of Object.entries(v)) f.append(k, x);
   if (!('formToken' in over)) f.append('formToken', FT);
   if (files.photo) f.append('photo', new Blob([jpg], { type: 'image/jpeg' }), 'passport.jpg');
@@ -79,6 +80,7 @@ test('checks, spam trap and one request per match', async () => {
   const quick = (await fetch(`${BASE}/api/media/accreditation`).then(x => x.json())).formToken;
   assert.match((await applyNow(form({ formToken: quick }))).data.error, /very quick/, 'sent too fast after loading');
   assert.equal((await applyNow(form({ agree: '' }))).status, 400, 'must agree to the media rules');
+  assert.match((await applyNow(form({ emailConfirm: 'typo@example.com' }))).data.error || '', /do not match/, 'the two emails must match');
   assert.equal((await applyNow(form({}, { photo: false, doc: true }))).status, 400, 'passport photo needed');
   assert.equal((await applyNow(form({}, { photo: true, doc: false }))).status, 400, 'press ID needed');
   const trap = await applyNow(form({ website: 'http://spam' }));

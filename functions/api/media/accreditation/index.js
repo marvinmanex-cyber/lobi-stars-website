@@ -43,6 +43,7 @@ export async function onRequestPost({ request, env }) {
   const checked = checkApplication({ ...b, agree: b.agree });
   if (checked.error) return J({ error: checked.error }, 400);
   const v = checked.value;
+  if (!b.update && String(b.emailConfirm || '').trim().toLowerCase() !== v.email) return J({ error: 'The two email addresses do not match. Please check them.' }, 400);
   const store = async (field, kind) => {
     const f = form.get(field);
     if (!f || typeof f === 'string' || !f.size) return { id: null };

@@ -3,7 +3,10 @@
 .kx {
   --kx-navy: #0A1730; --kx-navy-2: #10224A; --kx-navy-3: #17306A; --kx-line: rgba(255, 255, 255, .12);
   --kx-green: #18C93A; --kx-green-d: #12A12E; --kx-red: #E02020; --kx-gold: #FFC21A; --kx-text: #fff; --kx-muted: #B9C3D9;
-  --kx-stick: 72px; /* below the fixed site header */
+  /* The sticky seat bar and tabs sit right under the site header: its real visible
+     height (taller with the promo bar, 0 while it slides away on phones and tablets),
+     never a fixed number -- a fixed 72px left a gap the menu scrolled through. */
+  --kx-stick: var(--header-vis, var(--header-h, 72px));
   background: var(--kx-navy); color: var(--kx-text); min-height: 70vh;
   font-family: 'Barlow', system-ui, sans-serif;
   padding-bottom: 96px; /* room for the cart bar */
@@ -59,7 +62,7 @@
 .kx-offline { background: #6B1D1D; }
 
 /* Seat bar (sticky) */
-.kx-seat { position: sticky; top: var(--kx-stick); z-index: 30; background: rgba(10, 23, 48, .96); backdrop-filter: blur(6px); border-bottom: 1px solid var(--kx-line); }
+.kx-seat { position: sticky; top: var(--kx-stick); transition: top .25s ease; z-index: 30; background: var(--kx-navy); border-bottom: 1px solid var(--kx-line); }
 .kx-seat .kx-wrap { display: grid; grid-template-columns: auto minmax(0, 1.5fr) minmax(0, .8fr) minmax(0, .8fr); align-items: end; gap: 8px; padding-top: 8px; padding-bottom: 8px; }
 .kx-seat-t { align-self: center; font: 700 italic 15px/1.1 'Barlow Condensed', sans-serif; text-transform: uppercase; color: var(--kx-gold); }
 .kx-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -71,7 +74,7 @@
 .kx .kx-bad { border-color: var(--kx-red) !important; }
 
 /* Category tabs (sticky, scroll sideways) */
-.kx-tabs { position: sticky; top: calc(var(--kx-stick) + var(--kx-seat-h, 62px)); z-index: 29; background: var(--kx-navy); border-bottom: 1px solid var(--kx-line); }
+.kx-tabs { position: sticky; top: calc(var(--kx-stick) + var(--kx-seat-h, 62px)); transition: top .25s ease; z-index: 29; background: var(--kx-navy); border-bottom: 1px solid var(--kx-line); }
 .kx-tabs .kx-wrap { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-top: 10px; padding-bottom: 10px; scroll-snap-type: x proximity; }
 .kx-tabs .kx-wrap::-webkit-scrollbar { display: none; }
 .kx-tab { flex: none; scroll-snap-align: start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--kx-line); background: transparent; color: #fff; text-decoration: none; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: .04em; white-space: nowrap; transition: background .2s, color .2s, border-color .2s; }

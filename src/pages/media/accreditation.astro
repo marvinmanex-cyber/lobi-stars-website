@@ -52,43 +52,74 @@ import '../../styles/mediaHub.css';
     <section class="panel" id="done" hidden><h2>Application received</h2><p id="doneText">We will email you once it has been reviewed.</p><p><a href="/media/">Back to the Media page</a></p></section>
     <form class="panel ac-form" id="f" novalidate>
       <p class="ac-info" id="infoReq" hidden></p>
+      <h3 class="ac-h"><span>1</span>The match<small>One home match per application</small></h3>
       <div class="ac-f"><label for="eventId">Match <span class="req">*</span></label><select id="eventId" name="eventId" required><option value="">Loading the home matches…</option></select><small id="evHint"></small></div>
+      <h3 class="ac-h"><span>2</span>About you</h3>
       <div class="ac-two">
         <div class="ac-f"><label for="email">Email <span class="req">*</span></label><input id="email" name="email" type="email" autocomplete="email" required /><small id="known"></small>
           <div class="ac-code" id="codeBox"><button type="button" class="ac-link" id="askCode">Applied before? Email me a code to fill in my details</button>
             <span id="codeRow" hidden><input id="code" inputmode="numeric" maxlength="6" placeholder="6-digit code" aria-label="Code from the email" /><button type="button" class="btn-o" id="useCode">Fill in</button></span></div></div>
+        <div class="ac-f" id="emailConfirmWrap"><label for="emailConfirm">Confirm email <span class="req">*</span></label><input id="emailConfirm" name="emailConfirm" type="email" autocomplete="email" required placeholder="Type your email again" /><small id="emailMatch" class="ac-match" aria-live="polite"></small></div>
         <div class="ac-f"><label for="fullName">Full name <span class="req">*</span></label><input id="fullName" name="fullName" autocomplete="name" maxlength="80" required /></div>
         <div class="ac-f"><label for="phone">Phone <span class="req">*</span></label><input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="24" required placeholder="e.g. 0803 123 4567" /></div>
         <div class="ac-f"><label for="organisation">Media organisation <span class="req">*</span></label><input id="organisation" name="organisation" maxlength="120" required placeholder="or Freelance" /></div>
       </div>
-      <fieldset class="ac-f"><legend>Staff or freelance <span class="req">*</span></legend><label class="ac-r"><input type="radio" name="employment" value="staff" required /> Staff</label><label class="ac-r"><input type="radio" name="employment" value="freelance" /> Freelance</label></fieldset>
+      <h3 class="ac-h"><span>3</span>Your role</h3>
+      <fieldset class="ac-f ac-tiles"><legend>Staff or freelance <span class="req">*</span></legend><label class="ac-tile"><input type="radio" name="employment" value="staff" required /><b>Staff</b><small>I work for a media house</small></label><label class="ac-tile"><input type="radio" name="employment" value="freelance" /><b>Freelance</b><small>I work for myself</small></label></fieldset>
       <div class="ac-f"><label for="role">Role <span class="req">*</span></label><select id="role" name="role" required><option value="">Choose…</option></select></div>
-      <div class="ac-f"><label for="pressDoc">Your organisation's ID card, or a letter from your organisation <span class="req">*</span></label><input id="pressDoc" name="pressDoc" type="file" accept="application/pdf,image/jpeg" /><small>PDF or JPG, up to 5 MB.</small></div>
-      <div class="ac-f"><span class="ac-lbl">Passport photo <span class="req">*</span></span>
+      <h3 class="ac-h"><span>4</span>ID card and photo<small>Seen only by the club media team</small></h3>
+      <div class="ac-f ac-upload"><label for="pressDoc">Your organisation's ID card, or a letter from your organisation <span class="req">*</span></label><input id="pressDoc" name="pressDoc" type="file" accept="application/pdf,image/jpeg" /><small>PDF or JPG, up to 5 MB.</small></div>
+      <div class="ac-f ac-upload"><span class="ac-lbl">Passport photo <span class="req">*</span></span>
         <input id="photoIn" type="file" accept="image/jpeg,image/png,image/webp" />
         <small>Plain light background, face clearly visible, no sunglasses or hat. Drag the photo and use the slider so your face fills the frame.</small>
         <div class="ac-crop" id="crop" hidden><canvas id="cv" width="300" height="400" aria-label="Photo preview"></canvas><label class="ac-zoom">Zoom <input id="zoom" type="range" min="1" max="3" step="0.01" value="1" /></label></div>
         <small id="photoOnFile" hidden>We have your passport photo from an earlier application; add a new one only if you want to change it.</small></div>
+      <h3 class="ac-h"><span>5</span>Final details</h3>
       <div class="ac-f"><label for="needs">Special needs <small>(optional)</small></label><textarea id="needs" name="needs" rows="2" maxlength="500" placeholder="e.g. wheelchair access, power socket"></textarea></div>
       <div class="ac-hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
+      <div class="ac-checks">
       <label class="ac-agree"><input type="checkbox" name="pressList" id="pressList" value="1" /> <span>Add me to the Lobi Stars FC press list to receive club statements and matchday accreditation links. You can unsubscribe at any time.</span></label>
       <label class="ac-agree"><input type="checkbox" name="agree" id="agree" value="1" required /> <span>I agree to the club's media rules: I will stay in my access zone, wear my accreditation at all times, follow stewards' instructions, not interview players outside the mixed zone, and use material only for news reporting. The club may withdraw accreditation at any time. <span class="req">*</span></span></label>
-      <button class="btn-p" type="submit" id="send">Send my request</button>
+      </div>
+      <button class="ac-send" type="submit" id="send">Send my request</button>
       <p class="muted ac-small">Your details are used only to process this request and to contact you about Lobi Stars media matters. See the <a href="/privacy/">Privacy Policy</a>.</p>
     </form>
   </div>
 </Layout>
 <style is:global>
   /* The hub look (header, match card, steps, cards) is in src/styles/mediaHub.css, shared with /media. */
-  .ac .ac-form { border-top: 5px solid #E31E24; }
+  .ac .ac-form { border: 1px solid #E3E6EB; border-top: 6px solid #E31E24; border-radius: 18px; padding: clamp(18px, 3.5vw, 36px); box-shadow: 0 14px 34px rgba(14,28,56,.08); background: #fff; }
+  .ac-h { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 4px 0 14px; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: #0E1C38; }
+  .ac-h:not(:first-of-type) { margin-top: 18px; padding-top: 22px; border-top: 1px dashed #DCE1E8; }
+  .ac-h span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: linear-gradient(135deg, #1C3F7A, #0E1C38); color: #fff; font-size: 20px; box-shadow: 0 4px 10px rgba(28,63,122,.3); }
+  .ac-h small { flex-basis: 100%; margin-left: 46px; font: 500 14px/1.3 'Barlow', sans-serif; letter-spacing: 0; color: #6A7280; }
+  .ac-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .ac-tiles legend { grid-column: 1 / -1; margin-bottom: 6px; }
+  .ac-tile { position: relative; display: grid; gap: 2px; padding: 14px 16px 14px 46px; border: 2px solid #DCE1E8; border-radius: 14px; background: #F9FAFC; cursor: pointer; transition: border-color .15s, background .15s; font-weight: 500 !important; }
+  .ac-tile::before { content: ''; position: absolute; left: 16px; top: 17px; width: 18px; height: 18px; border-radius: 50%; border: 2px solid #9AA3B2; background: #fff; }
+  .ac-tile input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+  .ac-tile b { font-size: 17px; } .ac-tile small { color: #6A7280; }
+  .ac-tile:has(input:checked) { border-color: #E31E24; background: #FFF4F4; } .ac-tile:has(input:checked)::before { border-color: #E31E24; background: radial-gradient(circle, #E31E24 45%, #fff 50%); }
+  .ac-tile:has(input:focus-visible) { outline: 3px solid rgba(28,63,122,.35); outline-offset: 2px; }
+  .ac-upload { padding: 14px; border: 2px dashed #C9D3E6; border-radius: 14px; background: linear-gradient(180deg, #F4F7FD, #fff); }
+  .ac-upload input[type=file] { min-height: 0 !important; padding: 8px !important; background: #fff !important; cursor: pointer; }
+  .ac-upload input[type=file]::file-selector-button { margin-right: 12px; padding: 9px 16px; border: 0; border-radius: 8px; background: #1C3F7A; color: #fff; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; }
+  .ac-checks { margin: 8px 0 16px; padding: 14px 16px 2px; border-radius: 14px; background: #F4F7FD; border: 1px solid #DCE4F2; }
+  .ac-send { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 56px; padding: 0 24px; border: 0; border-radius: 12px; background: linear-gradient(90deg, #E31E24, #B8141A); color: #fff; font: 700 19px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; box-shadow: 0 10px 24px rgba(227,30,36,.3); }
+  .ac-match { font-weight: 600; } .ac-match.ok { color: #1B7F3B !important; } .ac-match.no { color: #B3261E !important; }
+  .ac-f input.ac-bad { border-color: #D93025 !important; }
+  .ac-f.ac-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  @media (max-width: 420px) { .ac-f.ac-tiles { grid-template-columns: 1fr; } }
+  .ac-send:disabled { opacity: .6; } .ac-send:hover { filter: brightness(1.05); }
+  .ac-f input:focus, .ac-f select:focus, .ac-f textarea:focus { outline: 3px solid rgba(28,63,122,.25); border-color: #1C3F7A; background: #fff; }
   .ac-lede { max-width: 760px; }
   .ac { max-width: 860px; }
   .ac-msg { padding: 12px 14px; border-radius: 10px; background: #FDE8E9; color: #8E1A20; font-weight: 600; }
   .ac-form { display: grid; gap: 4px; }
   .ac-f { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; border: 0; padding: 0; min-width: 0; }
   .ac-f label, .ac-f legend, .ac-lbl { font-weight: 700; } .ac-f small { color: var(--muted, #5B6472); }
-  .ac-f input:not([type=radio]):not([type=checkbox]), .ac-f select, .ac-f textarea { width: 100%; min-height: 46px; padding: 9px 12px; border: 1.5px solid #D6DAE1; border-radius: 10px; font: inherit; font-size: 16px; background: #fff; color: #15181D; box-sizing: border-box; }
-  .ac-two { display: grid; gap: 0 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .ac-f input:not([type=radio]):not([type=checkbox]), .ac-f select, .ac-f textarea { width: 100%; min-height: 46px; padding: 9px 12px; border: 1.5px solid #D6DAE1; border-radius: 10px; font: inherit; font-size: 16px; background: #F9FAFC; color: #15181D; box-sizing: border-box; }
+  .ac-two { display: grid; gap: 0 16px; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { .ac-two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   .ac-r { display: inline-flex; gap: 6px; align-items: center; font-weight: 500 !important; margin-right: 18px; }
   .ac-crop { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; } .ac-crop canvas { width: 180px; height: 240px; border-radius: 10px; border: 2px solid #D6DAE1; touch-action: none; cursor: grab; background: #eee; }
   .ac-zoom { display: flex; flex-direction: column; gap: 4px; font-weight: 600; }
@@ -118,14 +149,14 @@ import '../../styles/mediaHub.css';
     if (closed.length) $('evHint').textContent = `Closed (less than ${d.closeHours} hours to kick-off): ${closed.map((m: any) => m.label).join(', ')}.`;
     if (d.selected) $('eventId').value = d.selected;
     formTok = d.formToken || '';
-    if (d.invited?.email && !update) { $('email').value = d.invited.email; fillFrom(d.invited); }
+    if (d.invited?.email && !update) { $('email').value = d.invited.email; $('emailConfirm').value = d.invited.email; checkMatch(); fillFrom(d.invited); }
     if (update) {
       if (!d.update) { msg('This link has already been used or is no longer valid.'); $('f').hidden = true; return; }
       const u = d.update;
       $('infoReq').hidden = false; $('infoReq').textContent = `Our media team asked: “${u.infoRequest}”. Update your request below and send it again.`;
       for (const k of ['fullName', 'phone', 'email', 'organisation', 'needs']) $(k).value = u[k] || '';
       $('role').value = u.role; (document.querySelector(`input[name=employment][value="${u.employment}"]`) as HTMLInputElement | null)?.click();
-      $('email').readOnly = true; $('eventId').disabled = true; $('photoOnFile').hidden = false; $('send').textContent = 'Send my updated request';
+      $('emailConfirm').value = $('email').value; $('emailConfirmWrap').hidden = true; $('email').readOnly = true; $('eventId').disabled = true; $('photoOnFile').hidden = false; $('send').textContent = 'Send my updated request';
     }
   })();
   // ── The hub: the next (or chosen) home match with both crests, and when applications close ──
@@ -222,8 +253,21 @@ import '../../styles/mediaHub.css';
     const og = out.getContext('2d')!; og.fillStyle = '#fff'; og.fillRect(0, 0, 600, 800); og.drawImage(img, ox * k, oy * k, img.width * base * k, img.height * base * k);
     return new Promise(res => out.toBlob(res, 'image/jpeg', 0.88));
   }
+  // Confirm email: both boxes must match (a mistyped address means we cannot reach the applicant).
+  function checkMatch() {
+    const a = $('email').value.trim().toLowerCase(), b = $('emailConfirm').value.trim().toLowerCase(), m = $('emailMatch');
+    if (!b) { m.textContent = ''; m.className = 'ac-match'; $('emailConfirm').classList.remove('ac-bad'); return false; }
+    const ok = a === b;
+    m.textContent = ok ? '✓ The emails match' : 'The emails do not match yet';
+    m.className = `ac-match ${ok ? 'ok' : 'no'}`;
+    $('emailConfirm').classList.toggle('ac-bad', !ok);
+    return ok;
+  }
+  $('email').addEventListener('input', checkMatch); $('emailConfirm').addEventListener('input', checkMatch);
   $('f').addEventListener('submit', async (e: Event) => {
     e.preventDefault(); msg('');
+    if (!update && !$('emailConfirm').value.trim()) { $('emailConfirm').focus(); return msg('Type your email address again in "Confirm email".'); }
+    if (!update && !checkMatch()) { $('emailConfirm').focus(); return msg('The two email addresses do not match. Please check them.'); }
     const f = $('f') as HTMLFormElement;
     if (!update && !$('eventId').value) return msg('Choose the match.');
     if (!$('agree').checked) return msg('Please agree to the club\'s media rules.');

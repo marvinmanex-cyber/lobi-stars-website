@@ -368,7 +368,9 @@ export function startKitchen() {
   });
   // Sticky offsets: the category tabs sit under the seat bar.
   const setH = () => $('kx').style.setProperty('--kx-seat-h', `${$('kxSeatBar').offsetHeight}px`);
+  // Re-measured whenever the seat bar changes size (stand drop-down, text size, rotation), not only on resize.
   setH(); addEventListener('resize', setH);
+  if ('ResizeObserver' in window) new ResizeObserver(setH).observe($('kxSeatBar'));
   // Offline / online.
   const net = () => { $('kxOffline').hidden = navigator.onLine; };
   addEventListener('online', () => { net(); loadMenu(); }); addEventListener('offline', net); net();

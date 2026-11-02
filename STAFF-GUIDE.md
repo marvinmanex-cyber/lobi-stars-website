@@ -4106,7 +4106,7 @@ each upcoming **home** match page.
   After that, any media officer can press **Open late applications** next to
   the match, so journalists can apply until kick-off (**Close late
   applications** stops it again).
-- **The form asks for:** email, full name, phone, media organisation, staff
+- **The form asks for:** email (typed twice, the two must match), full name, phone, media organisation, staff
   or freelance, role (**Journalist, Photographer, Camera / Broadcast, Radio,
   Digital / Social Media**), their **organisation's ID card** (PDF/JPG, up to
   5 MB, seen only by the media team), a **passport photo** (cropped on the
