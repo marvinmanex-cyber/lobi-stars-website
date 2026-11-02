@@ -15,7 +15,11 @@ register({ path: 'approvals', label: 'Approval Queue', icon: '✅', async render
 async function queueScreen(main: HTMLElement) {
   main.innerHTML = '<p class="mc-muted">Loading…</p>';
   const d = await api('approvals');
+  // Accreditation applications are decided in Accreditation (their own review page); show how many are waiting.
+  let acc: any[] = [];
+  if (!state.user?.approver) { try { acc = ((await api('accreditations/matches', { quiet: true })).matches || []).filter((m: any) => m.pending > 0 && m.status !== 'Match played'); } catch { /* not available */ } }
   main.innerHTML = `<div class="mc-page-head"><h1>Approval Queue</h1></div>
+    ${acc.length ? `<section class="mc-card mc-acc-wait"><h2 class="mc-h3">🎫 Accreditation applications waiting</h2><p class="mc-small">Journalists' applications are reviewed and approved in Accreditation, one by one on their review page.</p><ul class="mc-list">${acc.map((m: any) => `<li><div class="t"><b>Lobi Stars FC vs ${esc(m.opponent)}</b><small>${esc(m.day)} · ${m.pending} waiting</small></div><a class="mc-btn mc-btn-blue mc-btn-sm" href="/media-centre/accreditation/${esc(m.id)}/" data-go="/accreditation/${esc(m.id)}">Review applications</a></li>`).join('')}</ul></section>` : ''}
     <p class="mc-muted">Everything sent for approval from the Media Centre. Open one to read it, then approve, return it with a comment, or reject it.</p>
     <section class="mc-card">${d.items.length ? `<ul class="mc-list">${d.items.map((i: any) => `<li><div class="t"><b>${esc(i.title || 'Untitled')}</b><small>${esc(i.kindLabel)}${i.correction === 'submitted' ? ' · correction' : ''} · sent ${esc(when(i.submittedAt || i.updatedAt))}${i.submittedByName ? ` by ${esc(i.submittedByName)}` : ''}</small></div>
       <a class="mc-btn mc-btn-blue mc-btn-sm" href="/media-centre/approvals/${esc(i.id)}/" data-go="/approvals/${esc(i.id)}">Open</a></li>`).join('')}</ul>` : '<p class="mc-empty">Nothing is waiting for approval. 👍</p>'}</section>`;
