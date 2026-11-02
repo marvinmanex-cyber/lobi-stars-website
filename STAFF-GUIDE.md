@@ -4395,7 +4395,7 @@ fans' ordering page.)
 
 **Signing in**
 - Kitchen staff: **Staff ID** and password.
-- Super Admins: your **website email** and password (and your two-step code). This
+- Super Admins: your **website email** and password only (no two-step code in the kitchen). This
   signs you in to MatchDay Kitchen only; it never signs you in or out of /admin.
 - 5 wrong passwords lock a Staff ID for 15 minutes.
 - **Shared tablets:** after 20 minutes without a tap, "Still there?" appears with a

@@ -8,6 +8,16 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: MatchDay Kitchen sign-in without the two-step code
+
+**Who it affects:** Super Admins using the kitchen app.
+- Super Admins now sign in to MatchDay Kitchen with their **website email and
+  password only**. There is no authenticator code.
+- A kitchen sign-in opens only the kitchen, never the website admin. The admin
+  (/admin) still asks for the two-step code.
+- 5 wrong passwords still lock the email for 15 minutes, and the attempt
+  limits stay.
+
 ## 2026-11-02: MatchDay Kitchen order alarms, accept step, late warning, receipts
 
 **Who it affects:** kitchen staff and fans who order food.

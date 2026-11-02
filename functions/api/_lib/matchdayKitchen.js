@@ -16,7 +16,6 @@
 import { hashPassword, verifyPassword } from './password.js';
 import { ensureFanSchema, rateLimit } from './fans.js';
 import { isFullSuperAdmin } from './superAdmins.js';
-import { verifyTotp } from './totp.js';
 
 export const MK_COOKIE = 'ls_mdk';
 export const IDLE_MS = 22 * 60e3;              // the page asks "Still there?" after 20 minutes; the server ends the session after 22
@@ -238,14 +237,8 @@ export async function signIn(env, request, { login, password, code }) {
       await mkLog(db, { kind: 'public', name: email, code: email }, ok && u ? 'Sign-in refused: only website Super Admins can sign in with an email' : 'Wrong email or password', { kind: 'sign_in', request });
       return { error: ok && u ? 'Only website Super Admins can sign in with an email. Kitchen staff use their Staff ID.' : FAIL, status: 401 };
     }
-    if (u.totp_enabled) {
-      const otp = String(code || '').replace(/\s/g, '');
-      if (!otp) return { needCode: true, error: 'Enter the 6-digit code from your authenticator app.', status: 401 };
-      const step = await verifyTotp(u.totp_secret, otp, u.totp_last_step || 0);
-      if (!step) { await mkLog(db, adminActor(u), 'Wrong two-step code', { kind: 'sign_in', request }); return { needCode: true, error: 'That code is not right. Wait for the next code and try again.', status: 401 }; }
-      const r = await db.prepare(`UPDATE admin_users SET totp_last_step = ? WHERE id = ? AND totp_last_step < ?`).bind(step, u.id, step).run();
-      if (!r.meta?.changes) return { needCode: true, error: 'That code has already been used. Wait for the next code.', status: 401 };
-    }
+    // MatchDay Kitchen: email and password only (no two-step code). A kitchen session opens
+    // only the kitchen, never the website admin, which still asks for the code.
     const s = await startSession(db, request, 'admin', u.id);
     await mkLog(db, adminActor(u), 'Signed in', { kind: 'sign_in', request });
     return { ok: true, cookie: s.cookie };
