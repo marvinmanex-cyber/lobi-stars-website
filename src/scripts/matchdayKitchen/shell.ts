@@ -3,6 +3,7 @@
 // shared-tablet idle sign-out ("Still there?" after 20 minutes without a tap,
 // then a 60-second countdown). Inner pages report taps through window.mkShell.
 import { $, esc, api, session, loadSession, setSignedOutHandler, GROUPS, whatsappUrl, WA_PATH, TG_PATH, iconFor, pageTitle, hm } from './common';
+import { startAlarms, stopAlarms, alarmsNow } from './alarm';
 
 const IDLE_MS = 20 * 60e3, COUNTDOWN = 60, MAX_TABS = 6, SAVE_KEY = 'mdk_tabs';
 type TabRec = { page: string; frame: HTMLIFrameElement; shownAt: number };
@@ -161,7 +162,7 @@ const tick = () => { $('clock').textContent = new Date().toLocaleTimeString('en-
 tick(); setInterval(tick, 10e3);
 
 // ── Signed out (from anywhere): the whole tablet goes to the sign-in page ──
-function signedOut(msg = 'You were signed out. Please sign in again.') { stopIdle(); try { sessionStorage.removeItem(SAVE_KEY); } catch { /* */ } showSignin(started ? msg : ''); started = false; }
+function signedOut(msg = 'You were signed out. Please sign in again.') { stopIdle(); stopAlarms(); try { sessionStorage.removeItem(SAVE_KEY); } catch { /* */ } showSignin(started ? msg : ''); started = false; }
 setSignedOutHandler(() => signedOut());
 $('signoutBtn').addEventListener('click', async () => {
   try { await api('logout', { method: 'POST', body: {} }); } catch { /* signed out anyway */ }
@@ -198,7 +199,7 @@ $('idleKeep').addEventListener('click', () => { clearInterval(countdown); $('idl
 
 // For the pages inside the tabs.
 (window as any).mkShell = {
-  home, open: (p: string) => open(p), activity, signedOut: () => signedOut(),
+  home, open: (p: string) => open(p), activity, signedOut: () => signedOut(), alarmsNow,
   shiftChanged: async () => { try { await loadSession(); renderWho(); } catch { /* */ } },
 };
 
@@ -213,6 +214,7 @@ async function startApp() {
   for (const p of saved.slice(0, MAX_TABS)) if (typeof p === 'string' && /^[a-z/0-9_-]+$/i.test(p)) open(p, { log: false, focus: false });
   if (SHORTCUTS.includes(wantOpen)) { open(wantOpen); wantOpen = ''; }
   startIdle();
+  startAlarms(p => open(p));
   started = true;
 }
 

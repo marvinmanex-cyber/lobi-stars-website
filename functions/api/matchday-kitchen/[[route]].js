@@ -56,6 +56,8 @@ export async function onRequest(context) {
         return json({ ok: true });
       }
       case 'GET kitchen': return json({ tickets: await K.kitchenTickets(db, late), lateMinutes: late });
+      // The alarm check (every 10 seconds from each open app): new orders to accept, late orders.
+      case 'GET pulse': return json(await K.pulse(db, late));
       case 'GET board': return json({ columns: await K.boardColumns(db, late), lateMinutes: late });
       case 'GET alerts': return json({ ...(await K.alerts(db, late)), lateMinutes: late });
       case 'GET orders': return json(await K.searchOrders(db, { q: q.get('q') || '', status: q.get('status') || '', day: q.get('day') || '', page: q.get('page') || 1 }, late));
@@ -71,7 +73,25 @@ export async function onRequest(context) {
         const r = await K.setStatus(db, body.id, to, staffName(user));
         if (r.error) return json({ error: r.error }, 409);
         await mkLog(db, user, `Order ${r.ref}: ${K.statusLabel(r.from)} to ${K.statusLabel(r.to)}`, { kind: 'order', request });
+        // Delivered: the receipt goes to the buyer's email; the app offers the WhatsApp receipt.
+        if (r.to === 'DELIVERED') {
+          const receipt = await K.receiptAfterDelivery(env, body.id, staffName(user));
+          if (receipt.emailed) await mkLog(db, user, `Order ${r.ref}: receipt emailed`, { kind: 'order', request });
+          return json({ ok: true, receipt });
+        }
         return json({ ok: true });
+      }
+      case 'POST receipt': {
+        // The WhatsApp receipt for an order (opened by staff), or the email again.
+        const o = await K.getOrder(db, body.id || '');
+        if (!o) return json({ error: 'That order no longer exists.' }, 404);
+        const receipt = await K.receiptAfterDelivery(env, o.id, staffName(user));
+        if (body.via === 'whatsapp') {
+          if (!receipt.whatsappUrl) return json({ error: 'This order has no phone number for WhatsApp.' }, 400);
+          await K.markWhatsappReceipt(db, o.id, staffName(user));
+          await mkLog(db, user, `Order ${o.ref}: receipt sent on WhatsApp`, { kind: 'order', request });
+        }
+        return json({ ok: true, receipt });
       }
       case 'GET menu': return json({ groups: await K.menu(db), canPrice: perms.price });
       case 'POST menu': {

@@ -4423,14 +4423,42 @@ tabs open. WhatsApp and Telegram open in their own apps.
 | **Activity log** | Staff see their own actions. Super Admins see everyone's, filter by person and day, and **Download CSV**. |
 | **Staff accounts** | Super Admins only: add staff, change name and role, switch sign-in off, set a new password, settings, and the **data check**. |
 
-**Order statuses in the kitchen:** the same words the fan sees on their order
-page:
-1. **New** (paid or accepted): tap **Start cooking**.
-2. **Preparing**: when the food leaves the kitchen, tap **Food on the way**. For
-   pickup orders the button says **Ready for pickup**.
-3. **On the way** (or **Ready for pickup**): the order stays on the kitchen
-   screen until someone taps **Mark delivered**.
-4. **Delivered**. Unpaid WhatsApp
+**How an order goes through the kitchen.** The kitchen uses the same words the
+fan sees on their order page.
+
+| Step | Status in the kitchen | Tap | The fan sees |
+| --- | --- | --- | --- |
+| 1 | **New** (just paid) | **Accept order** | Received |
+| 2 | **Received** | **Start cooking** | Received |
+| 3 | **Preparing** | **Food on the way** (pickup: **Ready for pickup**) | Preparing |
+| 4 | **On the way** | **Mark delivered** | On the way |
+| 5 | **Delivered** | (receipt) | Delivered |
+
+**Alarms** work on every open MatchDay Kitchen app or tablet, whatever page is
+open:
+- **New order:**
+  - A loud beep every 3 seconds, a flashing red bar ("NEW ORDER #0004").
+  - Vibration on phones, and "🔔" in the tab title.
+  - It keeps going **until someone taps Accept order**.
+  - Tap the red bar to open the kitchen screen.
+- **Late order:** an order not delivered **within 5 minutes of payment** gets
+  an amber bar ("LATE ORDER #0004, 6 min") and a lower beep once a minute,
+  until it is marked delivered. A Super Admin can change the 5 minutes in
+  Staff accounts › Settings.
+- **Sounds:** phones and browsers only allow sound after a tap. If you see the
+  yellow **Tap to turn on order sounds** button, tap it (or tap anywhere) once
+  after opening the app.
+- **Notifications:** the app may ask to show notifications. Press **Allow**, so
+  new orders also pop up when the app is in the background.
+
+**Receipts.** When you tap **Mark delivered**:
+- If the fan gave an email address, the receipt (with the PDF) is emailed
+  automatically.
+- If the order has a phone number, the app offers **Send receipt on WhatsApp**.
+  WhatsApp opens with the receipt already written to the fan's number; tap
+  **Send**. WhatsApp doesn't let websites send messages by themselves.
+- A delivered order's page also has **Send receipt on WhatsApp** and **Email
+  receipt** buttons, for later. Unpaid WhatsApp
 orders do not appear on the kitchen screen until a staff member marks them paid.
 
 **Roles**

@@ -72,11 +72,13 @@ import '../../styles/matchdayKitchen.css';
         <button type="button" class="mk-tb" id="installTop" hidden aria-label="Install the Kitchen app"><span aria-hidden="true">⬇</span><span class="lbl">Install app</span></button>
         <button type="button" class="mk-tb" id="reloadBtn" hidden aria-label="Reload this page"><span aria-hidden="true">⟳</span><span class="lbl">Reload</span></button>
         <button type="button" class="mk-tb" id="fsBtn" hidden aria-label="Full screen"><span aria-hidden="true">⛶</span></button>
+        <button type="button" class="mk-tb mk-sound" id="soundOn" hidden aria-label="Turn on order sounds"><span aria-hidden="true">🔈</span><span class="lbl">Tap to turn on order sounds</span></button>
         <span class="mk-clock" id="clock" aria-label="Time"></span>
         <div class="mk-who" id="who"></div>
         <button type="button" class="mk-tb" id="signoutBtn">Sign out</button>
       </div>
       <nav class="mk-tabs" id="tabs" aria-label="Open pages" hidden></nav>
+      <div class="mk-alarm" id="alarm" role="alert" aria-live="assertive" hidden></div>
     </header>
     <main class="mk-home" id="home">
       <h1 class="mk-hello" id="hello"></h1>

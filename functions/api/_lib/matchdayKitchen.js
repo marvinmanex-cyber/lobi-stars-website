@@ -24,7 +24,7 @@ const MAX_MS = 14 * 3600e3;                    // and after 14 hours in any case
 const LOCK_AFTER = 5, LOCK_MS = 15 * 60e3;     // 5 wrong passwords: locked for 15 minutes
 export const STAFF_ID_RE = /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
 export const ROLES = { cook: 'Cook / kitchen hand', pass: 'Pass / order handler', supervisor: 'Kitchen supervisor' };
-export const SETTING_DEFAULTS = { telegram_url: '', cancel_roles: 'pass,supervisor', price_roles: 'supervisor', late_minutes: '15' };
+export const SETTING_DEFAULTS = { telegram_url: '', cancel_roles: 'pass,supervisor', price_roles: 'supervisor', late_minutes: '5' };
 
 const nowIso = () => new Date().toISOString();
 const b64url = bytes => btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -81,7 +81,7 @@ export async function kitchenSettings(db) {
   await ensureKitchenSchema(db);
   const rows = (await db.prepare(`SELECT key, value FROM mk_settings`).all()).results;
   const s = { ...SETTING_DEFAULTS, ...Object.fromEntries(rows.map(r => [r.key, r.value])) };
-  return { telegramUrl: s.telegram_url || '', cancelRoles: s.cancel_roles.split(',').filter(r => ROLES[r]), priceRoles: s.price_roles.split(',').filter(r => ROLES[r]), lateMinutes: Math.max(1, Math.min(120, Number(s.late_minutes) || 15)) };
+  return { telegramUrl: s.telegram_url || '', cancelRoles: s.cancel_roles.split(',').filter(r => ROLES[r]), priceRoles: s.price_roles.split(',').filter(r => ROLES[r]), lateMinutes: Math.max(1, Math.min(120, Number(s.late_minutes) || 5)) };
 }
 export async function saveSettings(db, who, v) {
   const at = nowIso();
@@ -89,7 +89,7 @@ export async function saveSettings(db, who, v) {
   const url = clean(v.telegramUrl, 300);
   if (url && !/^https:\/\/(t\.me|telegram\.me)\/[\w+/-]+$/i.test(url)) return { error: 'The Telegram link must look like https://t.me/yourchannel' };
   const roles = list => (Array.isArray(list) ? list : []).filter(r => ROLES[r]).join(',');
-  const late = Math.max(1, Math.min(120, Math.round(Number(v.lateMinutes) || 15)));
+  const late = Math.max(1, Math.min(120, Math.round(Number(v.lateMinutes) || 5)));
   await db.batch([put('telegram_url', url), put('cancel_roles', roles(v.cancelRoles)), put('price_roles', roles(v.priceRoles)), put('late_minutes', String(late))]);
   return { ok: true };
 }

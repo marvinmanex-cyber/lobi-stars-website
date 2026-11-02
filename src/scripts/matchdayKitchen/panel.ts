@@ -57,10 +57,22 @@ function ticketHtml(t: any) {
     ${t.next ? `<button type="button" class="mk-btn go big wide" data-move="${esc(t.id)}" data-to="${esc(t.next.to)}">${esc(t.next.label)}</button>` : ''}
   </article>`;
 }
+/** After a status change: the alarms re-check at once; after "Mark delivered", the receipt. */
+async function afterMove(id: string, r: any) {
+  try { (window.parent as any).mkShell?.alarmsNow?.(); } catch { /* */ }
+  if (!r?.receipt) { toast('Done.'); return; }
+  const rc = r.receipt;
+  const said = rc.emailed ? `The receipt was emailed to ${rc.email}.` : rc.email ? 'The receipt email could not be sent (email may not be set up yet).' : 'This order has no email address.';
+  if (!rc.whatsappUrl) { toast(`Delivered. ${said}`); return; }
+  if (await confirmBox('Order delivered', `${said} Send the receipt on WhatsApp too? WhatsApp opens with the receipt written; tap Send.`, 'Send receipt on WhatsApp')) {
+    window.open(rc.whatsappUrl, 'mdk-whatsapp');
+    api('receipt', { method: 'POST', body: { id, via: 'whatsapp' } }).catch(() => {});
+  }
+}
 async function moveFrom(e: Event, reload: () => Promise<void>) {
   const b = (e.target as HTMLElement).closest('[data-move]') as HTMLButtonElement | null;
   if (!b) return;
-  await act(b, async () => { await api('order', { method: 'POST', body: { id: b.dataset.move, to: b.dataset.to } }); toast('Done.'); await reload(); });
+  await act(b, async () => { const r = await api('order', { method: 'POST', body: { id: b.dataset.move, to: b.dataset.to } }); await reload(); await afterMove(b.dataset.move!, r); });
 }
 
 // ── Pages ──
@@ -157,14 +169,21 @@ const PAGES: Record<string, () => Promise<void>> = {
           <p style="margin:10px 0 0;font-size:20px"><b>Total ${esc(o.total)}</b></p></div>
         <h2 style="font-size:22px;margin:0 0 6px">Change status</h2>
         ${d.moves.length ? `<div class="mk-actions">${d.moves.map((m: any) => `<button type="button" class="mk-btn ${m.next ? 'go big' : m.cancel ? 'danger' : ''}" data-to="${esc(m.to)}" data-label="${esc(m.label)}" data-cancel="${m.cancel ? 1 : 0}">${m.next ? esc(o.next?.label || m.label) : esc(m.label)}</button>`).join('')}</div>` : '<p class="mk-empty">No more changes for this order.</p>'}
+        ${o.status === 'DELIVERED' ? `<h2 style="font-size:22px;margin:14px 0 6px">Receipt</h2><div class="mk-actions"><button type="button" class="mk-btn go" id="rcWa">Send receipt on WhatsApp</button><button type="button" class="mk-btn" id="rcEmail">Email receipt</button></div>` : ''}
         <div class="mk-actions"><button type="button" class="mk-btn" id="allOrders">All orders</button></div>`;
       $('allOrders').addEventListener('click', () => openPage('orders'));
+      $('rcWa')?.addEventListener('click', async () => {
+        try { const r = await api('receipt', { method: 'POST', body: { id, via: 'whatsapp' } }); window.open(r.receipt.whatsappUrl, 'mdk-whatsapp'); } catch (err: any) { toast(err.message); }
+      });
+      $('rcEmail')?.addEventListener('click', async () => {
+        try { const r = await api('receipt', { method: 'POST', body: { id, via: 'email' } }); toast(r.receipt.emailed ? `Receipt emailed to ${r.receipt.email}.` : r.receipt.email ? 'The email could not be sent. Try WhatsApp.' : 'This order has no email address. Use WhatsApp.'); } catch (err: any) { toast(err.message); }
+      });
     };
     main.addEventListener('click', async (e: Event) => {
       const b = (e.target as HTMLElement).closest('[data-to]') as HTMLButtonElement | null;
       if (!b) return;
       if (b.dataset.cancel === '1' && !(await confirmBox('Cancel this order?', 'The order will be cancelled and the customer will see it as cancelled. This is recorded under your name.', 'Cancel order', true))) return;
-      await act(b, async () => { await api('order', { method: 'POST', body: { id, to: b.dataset.to } }); toast(`Order moved to ${b.dataset.label}.`); await draw(); });
+      await act(b, async () => { const r = await api('order', { method: 'POST', body: { id, to: b.dataset.to } }); await draw(); if (r.receipt) await afterMove(id, r); else { toast(`Order moved to ${b.dataset.label}.`); try { (window.parent as any).mkShell?.alarmsNow?.(); } catch { /* */ } } });
     });
     await draw();
   },

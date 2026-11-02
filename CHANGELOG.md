@@ -8,6 +8,25 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: MatchDay Kitchen order alarms, accept step, late warning, receipts
+
+**Who it affects:** kitchen staff and fans who order food.
+- **Steps:** New → **Accept order** → Received → **Start cooking** → Preparing
+  → **Food on the way** → On the way → **Mark delivered** → Delivered.
+- **New order alarm:**
+  - A loud beep every 3 seconds and a flashing red bar, plus vibration, a
+    notification and the tab title.
+  - It keeps going until someone taps **Accept order**.
+  - It works in every open kitchen app, whatever page is open.
+- **Late order warning:** an order not delivered within **5 minutes** of
+  payment gets an amber bar and a beep once a minute until delivered. A Super
+  Admin can change the 5 minutes in Settings.
+- **Receipts on delivery:**
+  - The receipt with its PDF is emailed automatically when the fan gave an
+    email.
+  - **Send receipt on WhatsApp** opens WhatsApp with the receipt written to the
+    fan's number (one tap to send). Each send is recorded.
+
 ## 2026-11-02: MatchDay Kitchen: "Food on the way" step
 
 **Who it affects:** kitchen staff.

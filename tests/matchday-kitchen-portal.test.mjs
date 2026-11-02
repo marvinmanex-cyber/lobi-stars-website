@@ -68,14 +68,32 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   assert.equal((await C.call('order', { id, to: 'CANCELLED' })).status, 403, 'a cook cannot cancel');
   assert.equal((await S.call('order', { id, to: 'PAID' })).status, 200);
   let k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
-  assert.ok(k, 'on the kitchen screen'); assert.equal(k.next.label, 'Start cooking'); assert.equal(k.note, 'No pepper'); assert.equal(k.items[0].qty, 2);
+  assert.ok(k, 'on the kitchen screen'); assert.equal(k.next.label, 'Accept order'); assert.equal(k.note, 'No pepper'); assert.equal(k.items[0].qty, 2);
+  // The alarm: a new (paid, not accepted) order beeps until someone accepts it.
+  assert.ok((await C.call('pulse')).data.newOrders.some(p => p.ref === o.ref), 'new order alarm');
+  assert.equal((await C.call('order', { id, to: k.next.to })).status, 200);
+  assert.ok(!(await C.call('pulse')).data.newOrders.some(p => p.ref === o.ref), 'accepting stops the alarm');
+  k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
+  assert.equal(k.statusLabel, 'Received'); assert.equal(k.next.label, 'Start cooking');
   assert.equal((await C.call('order', { id, to: k.next.to })).status, 200);
   k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
   assert.equal(k.statusLabel, 'Preparing'); assert.equal(k.next.label, 'Food on the way');
   assert.equal((await C.call('order', { id, to: k.next.to })).status, 200);
   assert.equal(rows(`SELECT order_status FROM food_orders WHERE id = '${id}';`)[0].order_status, 'OUT_FOR_DELIVERY', "the website's real order is Ready");
   const board = (await C.call('board')).data.columns;
-  assert.ok(board.ready.orders.some(t => t.ref === o.ref), 'in the Ready column');
+  assert.ok(board.ready.orders.some(t => t.ref === o.ref), 'in the On the way column');
+  // Late: not delivered within 5 minutes of payment.
+  rows(`UPDATE food_orders SET paid_iso = '${new Date(Date.now() - 10 * 60e3).toISOString()}' WHERE id = '${id}';`);
+  const pl = (await C.call('pulse')).data;
+  assert.equal(pl.lateMinutes, 5); assert.ok(pl.late.some(p => p.ref === o.ref), 'late order alarm');
+  // Delivered: the receipt (no email on this order, so WhatsApp, one tap).
+  k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
+  assert.equal(k.next.label, 'Mark delivered');
+  const dl = await C.call('order', { id, to: k.next.to });
+  assert.equal(dl.status, 200); assert.match(dl.data.receipt.whatsappUrl, /^https:\/\/wa\.me\/234\d+\?text=/);
+  assert.ok(!(await C.call('pulse')).data.late.some(p => p.ref === o.ref), 'delivered: no longer late');
+  assert.equal((await C.call('receipt', { id, via: 'whatsapp' })).status, 200);
+  assert.ok(rows(`SELECT receipt_wa_at FROM food_orders WHERE id = '${id}';`)[0].receipt_wa_at, 'WhatsApp receipt recorded');
 
   // Menu: anyone can mark sold out; only supervisors (and Super Admins) change prices.
   suya = rows(`SELECT price_kobo, sold_out FROM food_items WHERE id = 'suya';`)[0];

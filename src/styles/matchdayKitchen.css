@@ -235,3 +235,16 @@ a { color: var(--green); }
 .mk-install { margin-top: 18px; padding: 14px 16px; border-radius: 14px; background: #EAF6EC; border: 1px solid #BFE3C6; text-align: left; }
 .mk-install-t { margin: 0 0 10px; line-height: 1.45; } .mk-install-t b { display: block; font-size: 17px; margin-bottom: 2px; }
 .mk-install-ios { margin: 8px 0 0; line-height: 1.5; }
+
+/* Order alarms: new orders (red, flashing, until accepted) and late orders (amber). */
+.mk-alarm { cursor: pointer; }
+.mk-alarm > div { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 12px 18px; font-size: 20px; line-height: 1.3; color: #fff; }
+.mk-alarm b { font-size: 22px; letter-spacing: .04em; }
+.mk-alarm small { font-size: 15px; opacity: .9; }
+.mk-alarm-new { background: #D12A2A; }
+.mk-alarm-late { background: #B26A00; }
+.mk-alarm-hint { margin-left: auto; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.2); font-size: 15px; font-weight: 700; }
+.mk-alarm.flash .mk-alarm-new { animation: mk-flash 1s steps(2, start) infinite; }
+@keyframes mk-flash { 50% { background: #7E0E0E; } }
+@media (prefers-reduced-motion: reduce) { .mk-alarm.flash .mk-alarm-new { animation: none; } }
+.mk-sound { background: #FFC928 !important; color: #2A2000 !important; }

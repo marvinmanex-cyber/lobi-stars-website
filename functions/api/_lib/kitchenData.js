@@ -12,6 +12,8 @@
 // (plus updated_at) and write the dish's history.
 import { ensureFoodSchema, moveOrder, STATUS, STAFF_MOVES, whereText, formatNaira, expireStale } from './foodOrders.js';
 import { ensureMenuSchema, history } from './foodMenuDb.js';
+import { receiptEmailHtml, receiptWhatsappText, receiptPdf, receiptPdfName, waNumber, canReceipt, LOGO_JPEG } from './foodReceipt.js';
+import { sendEmail } from './email.js';
 
 export const DATA = {
   orders: 'food_orders', items: 'food_items', categories: 'food_categories',
@@ -26,9 +28,11 @@ export const DATA = {
   kitchenShows: ['PAID', 'ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY'],
   board: ['PAID', 'ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY'],
   cancelled: ['CANCELLED', 'REFUNDED'],
-  // The next step for each status (the big green button).
+  // The next step for each status (the big green button). The order of service:
+  // New (paid) -> Accept order -> Received -> Start cooking -> Preparing -> Food on the way
+  // -> On the way -> Mark delivered -> Delivered (receipt emailed; WhatsApp receipt one tap).
   next: {
-    PAID: { to: 'PREPARING', label: 'Start cooking' },
+    PAID: { to: 'ACCEPTED', label: 'Accept order' },
     ACCEPTED: { to: 'PREPARING', label: 'Start cooking' },
     PREPARING: { to: 'OUT_FOR_DELIVERY', label: 'Food on the way' },
     OUT_FOR_DELIVERY: { to: 'DELIVERED', label: 'Mark delivered' },
@@ -37,7 +41,7 @@ export const DATA = {
   },
   // Kitchen words for the website statuses (everything else uses the website label).
   // Same words as the fan's tracking page (Received, Preparing, On the way, Delivered).
-  labels: { PAID: 'New', ACCEPTED: 'New', PREPARING: 'Preparing', OUT_FOR_DELIVERY: 'On the way', DELIVERED: 'Delivered' },
+  labels: { PAID: 'New', ACCEPTED: 'Received', PREPARING: 'Preparing', OUT_FOR_DELIVERY: 'On the way', DELIVERED: 'Delivered' },
   lateMinutes: 15,
   // The kitchen screen and live board show one match day: orders from the last 12 hours
   // (an order left unfinished from an earlier match is still in Food orders, not on the screen).
@@ -63,7 +67,8 @@ function nextFor(o) {
 /** One order as the kitchen pages show it. */
 export function ticket(o, lateMinutes = DATA.lateMinutes) {
   const waited = minutesSince(startedAt(o));
-  const inKitchen = DATA.kitchenScreen.includes(o.order_status);
+  // Late = not delivered within the target (5 minutes by default) of payment, at any step.
+  const inKitchen = DATA.kitchenShows.includes(o.order_status);
   return {
     id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: o.order_status === 'OUT_FOR_DELIVERY' && pickup(o) ? 'Ready for pickup' : statusLabel(o.order_status), stage: stageOf(o.order_status),
     customer: o.customer_name || '', where: o.seat || o.pickup_point ? whereText(o) : '', note: o.notes || '',
@@ -217,4 +222,50 @@ export async function checkData(db) {
   await step('Menu', async () => { const m = await menu(db); return `${m.reduce((n, g) => n + g.dishes.length, 0)} dishes in ${m.length} categories`; });
   await step('Analytics', async () => { const a = await analytics(db); return `${a.orders} paid order(s) today, ${a.sales}`; });
   return out;
+}
+
+/**
+ * The alarm check every open kitchen app makes every 10 seconds: orders not accepted yet
+ * (they beep until someone taps Accept order) and orders not delivered within the target.
+ * Only a few columns of today's open orders (indexed by status), so it stays cheap.
+ */
+export async function pulse(db, lateMinutes) {
+  await ready(db);
+  const { results } = await db.prepare(`SELECT id, ref, order_status, paid_iso, created_iso, created_at, seat, stand, fulfilment, pickup_point FROM food_orders WHERE order_status IN (${placeholders(DATA.kitchenShows)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 200`).bind(...DATA.kitchenShows, since()).all();
+  const one = o => ({ id: o.id, ref: o.ref || o.id, no: String(o.ref || o.id).split('-').pop(), status: statusLabel(o.order_status), minutes: minutesSince(startedAt(o)), where: o.seat || o.pickup_point ? whereText(o) : '' });
+  return {
+    newOrders: results.filter(o => o.order_status === 'PAID').map(one),
+    late: results.filter(o => minutesSince(startedAt(o)) >= lateMinutes).map(one),
+    lateMinutes,
+  };
+}
+
+const SITE = 'https://lobistarsfc.com';
+/**
+ * After "Mark delivered": the receipt (PDF attached) is emailed to the buyer when they gave
+ * an email and email is set up; the WhatsApp receipt is one tap for staff (WhatsApp does not
+ * let a website send messages by itself). Returns what happened, for the kitchen app.
+ */
+export async function receiptAfterDelivery(env, id, by) {
+  const o = await getOrder(env.DB, id);
+  if (!o || !canReceipt(o)) return { emailed: false, whatsappUrl: null };
+  const out = { emailed: false, email: o.email || '', whatsappUrl: null };
+  const phone = waNumber(o.phone || '');
+  if (phone) out.whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(receiptWhatsappText(env, o))}`;
+  if (o.email && !o.receipt_email_at && env.RESEND_API_KEY) {
+    try {
+      let logo = null;
+      try { const r = await env.ASSETS.fetch(new URL(LOGO_JPEG, SITE)); if (r.ok) logo = new Uint8Array(await r.arrayBuffer()); } catch { /* without the logo */ }
+      const pdf = receiptPdf(o, logo);
+      let bin = ''; for (let i = 0; i < pdf.length; i += 0x8000) bin += String.fromCharCode(...pdf.subarray(i, i + 0x8000));
+      await sendEmail(env, { to: o.email, subject: `Your MatchDay Kitchen receipt – ${o.ref}`, html: receiptEmailHtml(env, o), attachments: [{ filename: receiptPdfName(o), content: btoa(bin) }] });
+      await env.DB.prepare(`UPDATE food_orders SET receipt_email_at = ?, receipt_email_to = ?, receipt_by = ? WHERE id = ?`).bind(new Date().toISOString(), o.email, by, o.id).run();
+      out.emailed = true;
+    } catch (err) { console.error('[kitchen] receipt email', err); }
+  } else if (o.receipt_email_at) out.emailed = true;
+  return out;
+}
+/** The WhatsApp receipt was opened from the kitchen app: recorded on the order. */
+export async function markWhatsappReceipt(db, id, by) {
+  await db.prepare(`UPDATE food_orders SET receipt_wa_at = ?, receipt_by = COALESCE(receipt_by, ?) WHERE id = ? OR ref = ?`).bind(new Date().toISOString(), by, String(id), String(id)).run();
 }
