@@ -4,6 +4,8 @@
 // with strict security headers). One page, several screens; the script in
 // src/scripts/mediaCentre/ draws them. Not linked from the public site.
 // Lobi Stars colours: blue #4C76B2, white, red #EE343C.
+// mc-build: changes with every build, so open pages notice a new version (core.ts).
+const BUILD = String(Date.now());
 ---
 <!doctype html>
 <html lang="en-GB">
@@ -11,6 +13,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="robots" content="noindex, nofollow" />
+  <meta name="mc-build" content={BUILD} />
   <meta name="referrer" content="same-origin" />
   <meta name="theme-color" content="#4C76B2" />
   <title>Media Centre | Lobi Stars FC</title>
@@ -66,6 +69,7 @@
         <main class="mc-main" id="main" tabindex="-1"></main>
       </div>
       <div class="mc-toast" id="toast" role="status" aria-live="polite" hidden></div>
+      <div class="mc-update" id="mcUpdate" role="status" hidden>A new version of the Media Centre is ready. Save your work, then <a href="">reload the page</a>.</div>
     </div>
   </div>
 
@@ -203,6 +207,7 @@
     .mc-review-decide { border-top: 5px solid #1C3F7A; } .mc-zones-lg { display: grid; gap: 8px; margin: 0 0 14px; } .mc-zones-lg label { font-weight: 500; }
     @media (max-width: 600px) { .mc-review-person { grid-template-columns: 1fr; } .mc-review-photo { width: 150px; height: 200px; } }
     .mc-acc-wait { margin: 0 0 14px; border-left: 5px solid #E31E24; }
+    .mc-update { position: fixed; top: 74px; left: 50%; transform: translateX(-50%); z-index: 3000; padding: 10px 16px; border-radius: 10px; background: #FFF4D6; border: 1px solid #F0C85A; color: #5A4300; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.15); max-width: calc(100vw - 24px); } .mc-update a { color: #1C3F7A; }
     .mc-req { color: var(--red); } .mc-nl-sec { margin: 0 0 12px; } .mc-nl-sec h2 small { font: 500 13px 'Barlow', sans-serif; }
     .mc-lib { width: min(900px, calc(100% - 24px)); max-height: 85vh; border: 0; border-radius: 14px; padding: 0; } .mc-lib::backdrop { background: rgba(0,0,0,.5); }
     .mc-lib-head { display: flex; gap: 8px; align-items: center; padding: 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: #fff; } .mc-lib-head input { flex: 1; min-height: 40px; }

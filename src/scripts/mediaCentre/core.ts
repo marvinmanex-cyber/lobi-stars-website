@@ -41,8 +41,25 @@ export function register(s: Screen) { SCREENS.push(s); }
 let routeHandler: () => void = () => {};
 export function setRouteHandler(f: () => void) { routeHandler = f; }
 /** Opens a screen: go('/news/abc'). */
+// New version check: the page carries its build stamp; when the website has a newer
+// one, the next screen change loads the new version (or a banner asks, with unsaved work).
+const BUILD = document.querySelector<HTMLMetaElement>('meta[name="mc-build"]')?.content || '';
+let newer = false, lastCheck = 0;
+async function checkVersion() {
+  if (!BUILD || newer || Date.now() - lastCheck < 60e3) return;
+  lastCheck = Date.now();
+  try {
+    const html = await fetch('/media-centre/', { cache: 'no-store', credentials: 'same-origin' }).then(r => r.text());
+    const live = html.match(/name="mc-build" content="(\d+)"/)?.[1];
+    if (live && live !== BUILD) { newer = true; const b = document.getElementById('mcUpdate'); if (b) b.hidden = false; }
+  } catch { /* offline */ }
+}
+setInterval(checkVersion, 5 * 60e3);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkVersion(); });
 export function go(path: string, replace = false) {
   const url = `/media-centre${path === '/' ? '/' : path.replace(/\/?$/, '/')}`;
+  if (newer && !guard.dirty()) { location.href = url; return; }
+  checkVersion();
   if (replace) history.replaceState(null, '', url); else history.pushState(null, '', url);
   routeHandler();
 }
