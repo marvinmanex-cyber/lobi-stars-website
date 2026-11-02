@@ -43,7 +43,7 @@ export const THEMES = {
   sky: { name: 'Sky', main: '#1F3F73', band: '#A9D8F7', alert: '#D62839' },
 };
 const HEX = /^#[0-9a-f]{6}$/i;
-export const SHOW_CONTACT_ON_CARD = true; // phone and email on the back of the card (set false to hide them)
+export const SHOW_CONTACT_ON_CARD = false; // the card never shows the phone number or email (since 2 Nov 2026)
 
 let ready = false;
 export async function ensureCardSchema(db) {
@@ -157,13 +157,18 @@ export function cardHtml(r, e, ms) {
     <footer class="c-foot">VALID FOR THIS MATCH ONLY · NON-TRANSFERABLE</footer>
     ${revoked ? '<div class="c-revoked">REVOKED</div>' : ''}
   </section>`;
+  // The back (club design, 2 Nov 2026): holder name, number, match and special needs (no phone or email),
+  // the access zone key, conditions of use, and where to return a lost card.
   const back = `<section class="card back" style="${vars}">
-    <header class="c-head small"><img src="${LOBI_CREST}" alt="" class="c-crest"/><div><b>LOBI STARS FC</b><span class="c-acc">MEDIA ACCREDITATION</span></div></header>
-    <div class="c-sec"><h3>HOLDER DETAILS</h3>${SHOW_CONTACT_ON_CARD ? `<p><small>Phone</small>${esc(r.phone)}</p><p><small>Email</small>${esc(r.email)}</p>` : ''}<p><small>Special needs</small>${esc(r.needs || 'None stated')}</p></div>
-    <div class="c-sec"><h3>ACCESS ZONE KEY</h3><ol class="c-key">${ZONES.map(z => `<li><span>${z.n}</span>${esc(z.name)}</li>`).join('')}</ol></div>
-    <div class="c-sec"><h3>CONDITIONS OF USE</h3><ol class="c-cond"><li>Wear this card visibly at all times inside the stadium.</li><li>Valid only for the match on the front. Not transferable.</li><li>Entry is limited to the zones marked on the front.</li><li>Follow directions from stewards, security and media officers.</li><li>Misuse or lending this card leads to its withdrawal.</li></ol></div>
-    <div class="c-found"><small>IF FOUND, PLEASE RETURN TO</small><b>Media Department, Lobi Stars FC</b><span>lobistarsfc.com/media</span></div>
+    <header class="b-head"><img src="${LOBI_CREST}" alt="" /><b>LOBI STARS FC</b><span>MEDIA<br>ACCREDITATION</span></header>
+    <div class="b-sec"><h3>HOLDER DETAILS</h3>
+      <dl class="b-dl"><dt>Name</dt><dd>${esc(r.full_name)}</dd><dt>Accreditation no.</dt><dd>${esc(r.number || '—')}</dd>
+        <dt>Match</dt><dd>Lobi Stars FC vs ${esc(ms.opponent)}, ${esc(shortDate(e.event_date))}</dd><dt>Special needs</dt><dd>${esc(r.needs || 'None stated')}</dd></dl></div>
+    <div class="b-sec"><h3>ACCESS ZONE KEY</h3><ol class="b-key">${ZONES.map(z => `<li><span>${z.n}</span>${esc(z.name)}</li>`).join('')}</ol></div>
+    <div class="b-sec b-last"><h3>CONDITIONS OF USE</h3><ol class="b-cond"><li>Wear this card visibly at all times inside the stadium.</li><li>Valid only for the match on the front. Not transferable.</li><li>Entry is limited to the zones marked on the front.</li><li>Follow directions from stewards, security and media officers.</li><li>Misuse or lending this card leads to its withdrawal.</li></ol></div>
+    <div class="b-found"><small>IF FOUND, PLEASE RETURN TO</small><b>Media Department, Lobi Stars FC</b><span>lobistarsfc.com/media</span></div>
     <footer class="c-foot"></footer>
+    ${revoked ? '<div class="c-revoked">REVOKED</div>' : ''}
   </section>`;
   return { front, back };
 }
@@ -196,6 +201,16 @@ export const CARD_CSS = `
 .c-key li{display:flex;gap:8px;align-items:center}.c-key span{width:18px;height:18px;border-radius:4px;background:var(--main);color:#fff;display:grid;place-items:center;font:600 11px/1 Oswald,sans-serif}
 .c-cond{counter-reset:k}.c-cond li{counter-increment:k;padding-left:16px;position:relative}.c-cond li::before{content:counter(k);position:absolute;left:0;font-weight:700;color:var(--alert)}
 .c-found{margin:8px 16px 10px;background:#F2F4F9;border-radius:8px;padding:8px 12px;text-align:center;font-size:11px}.c-found small{display:block;font-size:9px;letter-spacing:1px;color:#6b7280}.c-found b{display:block;font-size:13px}
+.b-head{height:60px;flex:none;background:var(--main);color:#fff;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:4px solid var(--band)}
+.b-head img{width:38px;height:38px;object-fit:contain}.card .b-head b{font:800 19px/1 Inter,Arial,sans-serif;letter-spacing:1.5px}.b-head span{color:var(--band);font:800 8.5px/1.15 Inter,Arial,sans-serif;letter-spacing:1.6px}
+.b-sec{margin:0 16px;padding:11px 0 8px;border-bottom:1px solid #E1E4EA}.b-sec.b-last{border-bottom:0}
+.card .b-sec h3{margin:0 0 7px;font:800 12px/1 Inter,Arial,sans-serif;letter-spacing:1.6px;color:var(--main);border:0;padding:0}
+.b-dl{display:grid;grid-template-columns:104px 1fr;gap:5px 8px;margin:0;font-size:10px;line-height:1.35}.b-dl dt{font-weight:700;color:#5b6472}.b-dl dd{margin:0;color:#14171f}
+.b-key{margin:0;padding:0;list-style:none;font-size:10px;line-height:1.3;display:grid;gap:5px}.b-key li{display:flex;gap:9px;align-items:center}
+.b-key span{width:20px;height:20px;border-radius:4px;background:var(--main);color:#fff;display:grid;place-items:center;font:800 10px/1 Inter,Arial,sans-serif;flex:none}
+.b-cond{margin:0;padding:0 0 0 16px;font-size:9.5px;line-height:1.55;color:#3b4252}
+.b-found{margin:4px 16px 12px;background:#F2F4F9;border-radius:8px;padding:12px 12px 14px;font-size:10px}.b-found small{display:block;font-size:8px;letter-spacing:1.4px;color:#6b7280;font-weight:700}
+.card .b-found b{display:block;font:800 11px/1.4 Inter,Arial,sans-serif;color:#14171f}.b-found span{display:block;color:var(--alert);font-weight:700}
 .c-revoked{position:absolute;inset:0;display:grid;place-items:center;font:700 74px/1 Oswald,sans-serif;color:rgba(214,40,57,.38);transform:rotate(-28deg);letter-spacing:6px;pointer-events:none}`;
 
 /** A printable page of cards (front and back, one face per 4 × 6 in page). */

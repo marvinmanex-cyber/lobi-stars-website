@@ -8,6 +8,18 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: New back for the media accreditation card
+
+**Who it affects:** the media team (printing cards) and journalists.
+- The back of the card follows the club's design:
+  - Holder details: **name, accreditation number, match and special needs**.
+    The **phone number and email are no longer printed**.
+  - The access zone key.
+  - The conditions of use.
+  - "If found, please return to" with the club address.
+- Cards printed from now on use it (View card / Print all approved cards).
+  The front is unchanged.
+
 ## 2026-11-02: Review page before approving accreditation; "Settings saved" messages visible
 
 **Who it affects:** the media team and Super Admins.
