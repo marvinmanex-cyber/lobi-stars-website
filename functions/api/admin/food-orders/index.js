@@ -182,7 +182,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
   if (!STATUS[b.status]) return Response.json({ error: 'Unknown status' }, { status: 400 });
   const order = await env.DB.prepare(`SELECT * FROM food_orders WHERE id = ?`).bind(String(b.id || '')).first();
   if (!order) return Response.json({ error: 'Order not found' }, { status: 404 });
-  const err = await moveOrder(env.DB, order, b.status, admin.name);
+  const err = await moveOrder(env.DB, order, b.status, admin.name, env);
   if (err) return Response.json({ error: err }, { status: 409 });
   await logAdminAction(env.DB, admin, 'food_order_status', `${order.ref}: ${order.order_status} → ${b.status}`);
   // Kitchen alerts (in the background, so staff get an instant reply).

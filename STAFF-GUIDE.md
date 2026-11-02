@@ -4451,6 +4451,27 @@ open:
 - **Notifications:** the app may ask to show notifications. Press **Allow**, so
   new orders also pop up when the app is in the background.
 
+**Orders for kick-off or half-time** show a yellow badge on the ticket:
+**⏱ HALF-TIME · due 16:50** (or KICK-OFF).
+- Accept them as usual, then cook them so they are ready for that time.
+- They only count as late after the time they are due, not from when they were
+  paid.
+
+**New orders blink red** on the kitchen screen and the live order board (and on
+the admin's Live Order Board) until someone accepts them or starts preparing
+them.
+
+**Pickup orders** (only when pickup points are set in Admin › Food ›
+Ordering):
+- The fan gets a big collection number, e.g. **#0004**, the last 4 digits of
+  the order number.
+- When you tap **Ready for pickup**, the fan is told to come and show that
+  number.
+
+**Fan alerts:** fans can press **Tell me when it's on the way** on their order
+page. Their phone then gets a notification when you tap **Start cooking** and
+when you tap **Food on the way** or **Ready for pickup**.
+
 **Receipts.** When you tap **Mark delivered**:
 - If the fan gave an email address, the receipt (with the PDF) is emailed
   automatically.
@@ -4489,6 +4510,33 @@ stored. The log can never be changed or deleted.
 
 **For admins:** Admin › Commerce › **MatchDay Kitchen staff area** shows the kitchen
 staff, shifts, handover notes and activity log (read-only).
+
+### What fans see when they order (lobistarsfc.com/kitchen)
+- **Popular now:** the six most ordered dishes of the last 30 days, at the top
+  of the menu (updated every 15 minutes). MatchDay Combos come next.
+- **Order again:** a fan who ordered before on the same phone sees their last
+  order at the top, with one **Order again** button. Sold-out items are left
+  out.
+- **When:** **As soon as possible**, **At kick-off** (shown only before kick-off)
+  or **At half-time** (until about 40 minutes into the match). Orders for
+  kick-off or half-time are cooked for that time.
+- **Delivery or pickup:** when pickup points are set, fans can choose **I'll
+  collect it** and get a collection number.
+- **Alerts:** **Tell me when it's on the way** sends a phone notification. If
+  the order page is open, it also chimes and buzzes when the status changes.
+
+**Where fans are reminded to order:**
+- **A green "MatchDay Kitchen is open" bar** at the bottom of every page on
+  home match days (from 6 hours before kick-off to 4 hours after), while
+  ordering is open. Fans can close it for the day.
+- **The ticket email** has an **Order food to your seat** button.
+- **The ticket confirmation and Find my tickets pages** link to the kitchen.
+- **Posters:** open **lobistarsfc.com/kitchen/poster/**.
+  - **Print A4 poster** is for walls, kiosks and the programme page.
+  - **Big screen: full screen** shows a 16:9 slide for the stadium screen
+    (or take a screenshot of it).
+
+  Both have a QR code to the menu.
 
 ### The MatchDay Kitchen staff app (install on phones, tablets and laptops)
 The kitchen staff area is also its own app, **MD Kitchen**. It is separate from the

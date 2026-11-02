@@ -194,3 +194,22 @@
   .kx-card:hover { transform: none; }
 }
 /* The page has its own WhatsApp ordering and a cart bar at the bottom. */
+
+/* Order again, Popular now, order ahead, pickup number, fan alerts. */
+.kx-again { padding-top: 14px; }
+.kx-again-card { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px 16px; border-radius: 16px; background: linear-gradient(120deg, #13306E, #0F2350); border: 1.5px solid var(--kx-gold); }
+.kx-again-card b { display: block; font: 700 italic 18px/1.1 'Barlow Condensed', sans-serif; text-transform: uppercase; color: var(--kx-gold); }
+.kx-again-card span { color: var(--kx-muted); font-size: 15px; }
+.kx-again-card .kx-btn { margin-left: auto; min-height: 46px; padding: 0 18px; width: auto; }
+.kx-cat--popular h2::before { content: '🔥 '; }
+.kx-cat--popular .kx-card { border-color: rgba(255, 194, 26, .45); }
+.kx-radios--3 { grid-template-columns: 1fr 1fr 1fr; }
+@media (max-width: 420px) { .kx-radios--3 { grid-template-columns: 1fr; } }
+.kx-radios--3:has(#kxWhenKo[hidden]) { grid-template-columns: 1fr 1fr; }
+.kx-collect { margin: 14px auto 6px; padding: 14px; border-radius: 16px; background: var(--kx-gold); color: #1A1400; max-width: 320px; }
+.kx-collect span { display: block; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.kx-collect b { display: block; font: 800 64px/1 'Barlow Condensed', sans-serif; margin: 6px 0; }
+.kx-collect small { font-size: 15px; font-weight: 600; }
+.kx-when { margin: 8px 0; padding: 10px 12px; border-radius: 10px; background: rgba(255, 194, 26, .14); color: var(--kx-gold); font-weight: 700; }
+.kx-btn--alert { width: 100%; margin: 10px 0 0; background: #fff; color: var(--kx-navy); }
+.kx-btn--alert.on { background: var(--kx-green); color: #04140A; }

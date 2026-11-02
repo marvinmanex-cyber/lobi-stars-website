@@ -19,9 +19,22 @@ import TicketsView from '../../components/tickets/TicketsView.astro';
     </form>
     <p class="lk-msg" id="lkMsg" role="status" aria-live="polite"></p>
     <div id="lkTickets"></div>
+    <a class="lk-food" href="/kitchen/?utm_source=find_tickets" data-track="kitchen_click" data-track-label="find_tickets">
+      <img src="/images/matchday-kitchen/logo-96.png" alt="" width="56" height="56" loading="lazy" />
+      <span><b>On match day: MatchDay Kitchen</b>Order food and drinks to your seat. Order ahead for kick-off or half-time.</span>
+      <span class="lk-food-go">Order food →</span>
+    </a>
   </div>
   <TicketsView />
 </Layout>
+<style>
+  .lk-food { display: flex; align-items: center; gap: 14px; max-width: 640px; margin: 28px 0 0; padding: 14px 16px; border-radius: 14px; background: #0E7A26; color: #fff; text-decoration: none; }
+  .lk-food img { width: 56px; height: 56px; border-radius: 50%; flex: none; }
+  .lk-food b { display: block; font: 700 17px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #FFE27A; }
+  .lk-food span { font-size: 15px; line-height: 1.4; }
+  .lk-food-go { margin-left: auto; padding: 10px 14px; border-radius: 10px; background: #fff; color: #0E7A26; font: 700 15px/1 'Barlow Condensed', sans-serif !important; white-space: nowrap; }
+  @media (max-width: 520px) { .lk-food { flex-wrap: wrap; } .lk-food-go { margin-left: 0; } }
+</style>
 
 <style>
   .lk { display: grid; gap: 12px; max-width: 520px; margin-bottom: 24px; }

@@ -54,7 +54,9 @@ const stageOf = s => Object.keys(DATA.stages).find(k => DATA.stages[k].statuses.
 const placeholders = a => a.map(() => '?').join(',');
 const items = o => { try { return JSON.parse(o.items_json || '[]'); } catch { return []; } };
 /** When the kitchen's clock starts: when the order was paid (WhatsApp orders: when payment was confirmed), else when it was placed. */
-const startedAt = o => o.paid_iso || o.created_iso || (o.created_at ? `${o.created_at.replace(' ', 'T')}Z` : null);
+const paidAt = o => o.paid_iso || o.created_iso || (o.created_at ? `${o.created_at.replace(' ', 'T')}Z` : null);
+// Orders for kick-off or half-time are counted from the time they are due, not when they were paid.
+const startedAt = o => (o.deliver_at && Date.parse(o.deliver_at) > Date.parse(paidAt(o) || 0) ? o.deliver_at : paidAt(o));
 const minutesSince = iso => (iso ? Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 60000)) : 0);
 
 // Pickup orders aren't carried to a seat: the same step reads "Ready for pickup".
@@ -76,7 +78,8 @@ export function ticket(o, lateMinutes = DATA.lateMinutes) {
     itemCount: items(o).reduce((n, i) => n + (Number(i.qty) || 0), 0),
     total: formatNaira(o.total_kobo), totalKobo: o.total_kobo, channel: o.channel, phone: o.phone ? String(o.phone).replace(/\d(?=\d{4})/g, '•') : '',
     placedAt: o.created_iso || null, paidAt: o.paid_iso || null, statusAt: o.status_at || null, statusBy: o.status_by || '',
-    minutes: waited, late: inKitchen && waited >= lateMinutes,
+    minutes: waited, late: inKitchen && waited >= lateMinutes && Date.parse(startedAt(o) || 0) <= Date.now(),
+    deliverWhen: o.deliver_when || 'now', deliverAt: o.deliver_at || null,
     next: nextFor(o),
   };
 }
@@ -147,10 +150,10 @@ export function movesFor(o) {
 }
 
 /** Changes an order's status (through the website's moveOrder). Returns { ok, from, to } or { error }. */
-export async function setStatus(db, id, to, staffName) {
+export async function setStatus(db, id, to, staffName, env = null) {
   const o = await getOrder(db, id);
   if (!o) return { error: 'That order no longer exists.' };
-  const problem = await moveOrder(db, o, String(to), staffName);
+  const problem = await moveOrder(db, o, String(to), staffName, env);
   if (problem) return { error: problem };
   return { ok: true, ref: o.ref || o.id, from: o.order_status, to: String(to) };
 }
@@ -231,11 +234,11 @@ export async function checkData(db) {
  */
 export async function pulse(db, lateMinutes) {
   await ready(db);
-  const { results } = await db.prepare(`SELECT id, ref, order_status, paid_iso, created_iso, created_at, seat, stand, fulfilment, pickup_point FROM food_orders WHERE order_status IN (${placeholders(DATA.kitchenShows)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 200`).bind(...DATA.kitchenShows, since()).all();
+  const { results } = await db.prepare(`SELECT id, ref, order_status, paid_iso, created_iso, created_at, seat, stand, fulfilment, pickup_point, deliver_at FROM food_orders WHERE order_status IN (${placeholders(DATA.kitchenShows)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 200`).bind(...DATA.kitchenShows, since()).all();
   const one = o => ({ id: o.id, ref: o.ref || o.id, no: String(o.ref || o.id).split('-').pop(), status: statusLabel(o.order_status), minutes: minutesSince(startedAt(o)), where: o.seat || o.pickup_point ? whereText(o) : '' });
   return {
     newOrders: results.filter(o => o.order_status === 'PAID').map(one),
-    late: results.filter(o => minutesSince(startedAt(o)) >= lateMinutes).map(one),
+    late: results.filter(o => Date.parse(startedAt(o) || 0) <= Date.now() && minutesSince(startedAt(o)) >= lateMinutes).map(one),
     lateMinutes,
   };
 }

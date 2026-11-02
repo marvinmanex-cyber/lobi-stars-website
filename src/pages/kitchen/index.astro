@@ -62,6 +62,7 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
 
     <nav class="kx-tabs" aria-label="Menu categories"><div class="kx-wrap" id="kxTabs"></div></nav>
 
+    <section class="kx-wrap kx-again" id="kxAgain2" hidden aria-label="Order again"></section>
     <section class="kx-wrap kx-menu" id="kxMenu" aria-label="Menu">
       <p class="kx-empty kx-loading">Loading the menu…</p>
     </section>
@@ -75,6 +76,9 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
           <li data-step="1">Received</li><li data-step="2">Preparing</li><li data-step="3">On the way</li><li data-step="4">Delivered</li>
         </ol>
         <p class="kx-status" id="kxStatus" aria-live="polite"></p>
+        <div class="kx-collect" id="kxCollect" hidden><span>Your collection number</span><b id="kxCollectNo"></b><small id="kxCollectAt"></small></div>
+        <p class="kx-when" id="kxWhenShow" hidden></p>
+        <button type="button" class="kx-btn kx-btn--alert" id="kxAlertBtn" hidden>🔔 Tell me when it's on the way</button>
         <div class="kx-sum" id="kxSum"></div>
         <div class="kx-done-acts">
           <a class="kx-btn kx-btn--wa" id="kxWaOpen" hidden>Open WhatsApp to send your order</a>
@@ -98,16 +102,23 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
 
         <fieldset class="kx-fs">
           <legend>When</legend>
-          <div class="kx-radios">
+          <div class="kx-radios kx-radios--3">
             <label class="kx-radio"><input type="radio" name="when" value="now" checked /> As soon as possible</label>
+            <label class="kx-radio" id="kxWhenKo" hidden><input type="radio" name="when" value="kickoff" /> At kick-off</label>
             <label class="kx-radio"><input type="radio" name="when" value="half-time" /> At half-time</label>
           </div>
+          <p class="kx-small" id="kxWhenHint">Ordering ahead? Choose kick-off or half-time: the kitchen cooks it for then, so you skip the rush.</p>
           <label class="kx-f"><span>Note for the kitchen (optional)</span><textarea id="kxNote" maxlength="150" placeholder="e.g. no pepper, extra sauce"></textarea></label>
         </fieldset>
 
         <fieldset class="kx-fs">
           <legend>Your details</legend>
-          <div class="kx-seatsum"><span id="kxSeatSum">Seat not set</span><button type="button" class="kx-link" id="kxSeatEdit">Change seat</button></div>
+          <div class="kx-radios" id="kxHow" hidden role="radiogroup" aria-label="Delivery or pickup">
+            <label class="kx-radio"><input type="radio" name="how" value="seat" checked /> Bring it to my seat</label>
+            <label class="kx-radio"><input type="radio" name="how" value="pickup" /> I'll collect it</label>
+          </div>
+          <label class="kx-f" id="kxPickupWrap" hidden><span>Collect from</span><select id="kxPickup"></select></label>
+          <div class="kx-seatsum" id="kxSeatSumWrap"><span id="kxSeatSum">Seat not set</span><button type="button" class="kx-link" id="kxSeatEdit">Change seat</button></div>
           <label class="kx-f"><span>Name</span><input id="kxName" autocomplete="name" maxlength="60" required /></label>
           <label class="kx-f"><span>Phone (Nigerian mobile)</span><input id="kxPhone" type="tel" autocomplete="tel" inputmode="tel" placeholder="0803 123 4567" required /></label>
           <label class="kx-f"><span>Email (optional: only if you want your receipt by email)</span><input id="kxEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" /></label>

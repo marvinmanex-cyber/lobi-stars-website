@@ -22,7 +22,7 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
       const who = order.kitchen_ack_by ? ` (accepted by ${order.kitchen_ack_by})` : '';
       return Response.json({ error: `This order has already moved on${who}. The board will refresh.`, status: order.order_status }, { status: 409 });
     }
-    const err = await moveOrder(env.DB, order, move[1], admin.name);
+    const err = await moveOrder(env.DB, order, move[1], admin.name, env);
     if (err) return Response.json({ error: err }, { status: 409 });
     await logAdminAction(env.DB, admin, 'kitchen_order', `${order.ref}: ${move[0]} → ${move[1]}`);
     if (params.action === 'accept') {

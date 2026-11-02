@@ -68,6 +68,10 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   .lb :global(.lb-cards) { display: grid; gap: 10px; }
   .lb :global(.lb-card) { background: var(--a-card); border-radius: 14px; padding: 12px 14px; border-left: 6px solid var(--c); box-shadow: 0 6px 16px rgba(15,17,21,.07); }
   .lb :global(.lb-card.new) { animation: lbflash 1.2s ease-out 2; }
+  /* New paid orders blink red until someone starts preparing them. */
+  .lb :global([data-col="PAID"] .lb-card) { animation: lbred 1.1s ease-in-out infinite; }
+  @keyframes lbred { 0%, 100% { background: var(--a-card); border-left-color: #DC2626; box-shadow: 0 0 0 0 rgba(220,38,38,.55); } 50% { background: #FDE2E2; border-left-color: #DC2626; box-shadow: 0 0 0 8px rgba(220,38,38,0); } }
+  @media (prefers-reduced-motion: reduce) { .lb :global([data-col="PAID"] .lb-card) { animation: none; border-left-color: #DC2626; background: #FDE2E2; } }
   @keyframes lbflash { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,.7); } 100% { box-shadow: 0 0 0 14px rgba(22,163,74,0); } }
   .lb :global(.lb-seat) { font: 400 34px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .lb :global(.lb-stand) { font: 700 15px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .5px; text-transform: uppercase; color: var(--lt); }

@@ -93,6 +93,10 @@ export async function ensureFoodSchema(db) {
     ['repeat_count', 'INTEGER NOT NULL DEFAULT 0'], ['last_alert_at', 'TEXT'],
     // Receipts sent to the buyer from the Live Order Board (when, and by whom).
     ['receipt_email_at', 'TEXT'], ['receipt_email_to', 'TEXT'], ['receipt_wa_at', 'TEXT'], ['receipt_by', 'TEXT'],
+    // When the fan wants it: now / kickoff / half-time, and the time it is due (kick-off, or kick-off + 50 minutes).
+    ['deliver_when', 'TEXT'], ['deliver_at', 'TEXT'],
+    // The fan's browser push subscription for this order ("Tell me when it's on the way").
+    ['push_sub', 'TEXT'],
   ]) if (!cols.has(name)) await db.prepare(`ALTER TABLE food_orders ADD COLUMN ${name} ${type}`).run();
   await db.batch([
     db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_food_ref ON food_orders(ref) WHERE ref IS NOT NULL`),
@@ -233,7 +237,7 @@ export async function confirmFoodPayment(env, order, { waitUntil, origin = 'http
 export const trackUrl = (origin, o) => `${origin}/food/order/?ref=${encodeURIComponent(o.ref)}&t=${encodeURIComponent(o.view_token || '')}`;
 
 /** Staff move (validated). Returns the error text, or null when done. */
-export async function moveOrder(db, order, to, staffName) {
+export async function moveOrder(db, order, to, staffName, env = null) {
   if (!order) return 'Order not found.';
   const allowed = STAFF_MOVES[order.order_status] || [];
   if (!allowed.includes(to)) return `An order that is "${STATUS[order.order_status]?.label || order.order_status}" can't be moved to "${STATUS[to]?.label || to}".`;
@@ -257,7 +261,36 @@ export async function moveOrder(db, order, to, staffName) {
       if (stmts.length) await db.batch(stmts);
     } catch { /* menu table not created yet */ }
   }
+  // The fan's own alert (cooking now / on the way), when they asked for one.
+  if (env && order.push_sub && ['PREPARING', 'OUT_FOR_DELIVERY'].includes(to)) {
+    try { const { notifyFan } = await import('./foodNotify.js'); await notifyFan(env, order, to); } catch (err) { console.error('[food] fan alert', err); }
+  }
   return null;
+}
+
+/** "When": order ahead for kick-off or half-time. Saves the choice and the time it is due. */
+export async function setDelivery(db, id, when, eventId) {
+  const w = ['kickoff', 'half-time'].includes(when) ? when : 'now';
+  let at = null;
+  if (w !== 'now' && eventId) {
+    const e = await db.prepare(`SELECT event_date FROM events WHERE id = ?`).bind(eventId).first().catch(() => null);
+    const ko = e ? Date.parse(e.event_date) : NaN;
+    if (Number.isFinite(ko)) at = new Date(ko + (w === 'half-time' ? 50 : 0) * 60e3).toISOString();
+  }
+  await db.prepare(`UPDATE food_orders SET deliver_when = ?, deliver_at = ? WHERE id = ?`).bind(w, at, id).run();
+}
+
+/** Popular now: the most ordered dishes of the last 30 days (worked out at most every 15 minutes). */
+export async function popularItems(db) {
+  const row = await db.prepare(`SELECT value, updated_at FROM food_settings WHERE key = 'popular_cache'`).first().catch(() => null);
+  if (row && Date.now() - Date.parse(row.updated_at) < 15 * 60e3) { try { return JSON.parse(row.value); } catch { /* recount */ } }
+  const since = new Date(Date.now() - 30 * 86400e3).toISOString();
+  const { results } = await db.prepare(`SELECT items_json FROM food_orders WHERE payment_status = 'paid' AND COALESCE(paid_iso, created_iso) >= ? AND order_status NOT IN ('CANCELLED', 'REFUNDED') ORDER BY COALESCE(paid_iso, created_iso) DESC LIMIT 1500`).bind(since).all();
+  const n = {};
+  for (const r of results) { try { for (const i of JSON.parse(r.items_json)) n[i.id] = (n[i.id] || 0) + (Number(i.qty) || 0); } catch { /* skip */ } }
+  const ids = Object.entries(n).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([id]) => id);
+  await saveFoodSetting(db, 'popular_cache', JSON.stringify(ids), 'system').catch(() => {});
+  return ids;
 }
 
 /** What the fan's status page shows. */
@@ -271,6 +304,7 @@ export function publicOrder(o) {
     items: items.map(i => ({ name: i.name, qty: i.qty, priceKobo: i.priceKobo })), totalKobo: o.total_kobo,
     createdAt: o.created_iso, paidAt: o.paid_iso, expiresAt: o.expires_at,
     preparingAt: o.preparing_at, outAt: o.out_at, deliveredAt: o.delivered_at,
+    deliverWhen: o.deliver_when || 'now', deliverAt: o.deliver_at || null, alerts: !!o.push_sub,
   };
 }
 

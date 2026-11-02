@@ -46,10 +46,12 @@ async function trim(cache) {
 self.addEventListener('push', event => {
   let d = null;
   try { d = event.data ? event.data.json() : null; } catch (e) { d = null; }
-  if (!d || d.kind !== 'match') return;
+  // Match alerts, and MatchDay Kitchen order alerts ("cooking now", "on the way").
+  if (!d || (d.kind !== 'match' && d.kind !== 'food')) return;
+  const food = d.kind === 'food';
   event.waitUntil(self.registration.showNotification(d.title || 'Lobi Stars FC', {
-    body: d.body || '', tag: d.tag || 'match', renotify: true,
-    icon: '/images/icon-192.png', badge: '/images/icon-192.png', vibrate: [200, 100, 200],
+    body: d.body || '', tag: d.tag || 'match', renotify: true, requireInteraction: food,
+    icon: food ? '/images/matchday-kitchen/icon-192.png' : '/images/icon-192.png', badge: '/images/icon-192.png', vibrate: food ? [300, 120, 300, 120, 300] : [200, 100, 200],
     data: { url: d.url || '/' },
   }));
 });

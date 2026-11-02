@@ -50,6 +50,7 @@ function ticketHtml(t: any) {
     <div class="mk-ord-top"><span class="mk-ord-no">#${esc(String(t.ref).split('-').pop())}</span><span class="mk-mins">${esc(mins(t.minutes))}</span></div>
     <div class="mk-status" style="margin-top:-6px">${esc(t.ref)}</div>
     ${t.late ? '<div><span class="mk-late">LATE</span></div>' : ''}
+    ${t.deliverWhen && t.deliverWhen !== 'now' ? `<div class="mk-due">⏱ ${t.deliverWhen === 'half-time' ? 'HALF-TIME' : 'KICK-OFF'}${t.deliverAt ? ` · due ${esc(new Date(t.deliverAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }))}` : ''}</div>` : ''}
     ${t.customer || t.where ? `<div class="mk-who2">${esc([t.customer, t.where].filter(Boolean).join(' · '))}</div>` : ''}
     <ul class="mk-items">${t.items.map((i: any) => `<li>${esc(i.qty)} × ${esc(i.name)}${i.note ? `<em>${esc(i.note)}</em>` : ''}</li>`).join('')}</ul>
     ${t.note ? `<div class="mk-onote">Note: ${esc(t.note)}</div>` : ''}
@@ -91,7 +92,7 @@ const PAGES: Record<string, () => Promise<void>> = {
     const draw = async (quiet = false) => {
       const d = await api('board', { quiet });
       main.innerHTML = `<div class="mk-board">${Object.values(d.columns).map((c: any) => `<section class="mk-col"><h2>${esc(c.label)} <span class="mk-badge">${c.orders.length}</span></h2>${c.orders.length ? c.orders.map((o: any) => `
-        <button type="button" class="mk-mini${o.late ? ' late' : ''}" data-order="${esc(o.id)}"><b>${esc(o.ref)}</b><span class="r">${esc(mins(o.minutes))}</span>
+        <button type="button" class="mk-mini${o.late ? ' late' : ''}${o.status === 'PAID' ? ' is-new' : ''}" data-order="${esc(o.id)}"><b>${esc(o.ref)}</b><span class="r">${esc(mins(o.minutes))}</span>
         <span>${o.itemCount} item${o.itemCount === 1 ? '' : 's'}${o.customer ? ` · ${esc(o.customer)}` : ''}</span></button>`).join('') : '<p class="mk-status" style="margin:8px 6px">None</p>'}</section>`).join('')}</div>`;
       stamp();
     };

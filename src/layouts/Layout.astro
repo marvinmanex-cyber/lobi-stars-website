@@ -2,6 +2,7 @@
 import PageBack from '../components/PageBack.astro';
 import HeadMeta from '../components/HeadMeta.astro';
 import InstallPrompt from '../components/InstallPrompt.astro';
+import KitchenNudge from '../components/KitchenNudge.astro';
 import CookieConsent from '../components/CookieConsent.astro';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
@@ -255,6 +256,7 @@ main.bare{padding-top:0;min-height:0;}
 </script>
 {!bare && !adminPage && <CookieConsent />}
 {!bare && !adminPage && <InstallPrompt />}
+{!bare && !adminPage && <KitchenNudge />}
 <script is:inline src="/track.js" defer></script>
 {!adminPage && <script is:inline src="/ga.js" defer></script>}
 </body>

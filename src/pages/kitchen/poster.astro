@@ -1,0 +1,77 @@
+---
+// /kitchen/poster/ -- MatchDay Kitchen posters with a big QR code to the menu:
+// an A4 poster (print, stadium walls, programme page) and a 16:9 slide for the
+// big screen (open full screen on the screen computer, or screenshot it).
+// Staff open it, press Print or go full screen. Not indexed.
+import qrcodeGenerator from 'qrcode-generator';
+const URL_ = 'https://lobistarsfc.com/kitchen/?utm_source=poster&utm_medium=qr';
+const qr = qrcodeGenerator(0, 'M'); qr.addData(URL_); qr.make();
+const n = qr.getModuleCount(), q = 2, t = n + q * 2;
+let d = '';
+for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c + q} ${r + q}h1v1h-1z`;
+const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${t} ${t}" shape-rendering="crispEdges" role="img" aria-label="QR code: lobistarsfc.com/kitchen"><rect width="${t}" height="${t}" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+---
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>MatchDay Kitchen posters | Lobi Stars FC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;700&family=Barlow+Condensed:ital,wght@0,700;1,800&display=swap" rel="stylesheet" />
+  <style>
+    body { margin: 0; background: #E6E9EF; font-family: 'Barlow', Arial, sans-serif; color: #0A1730; }
+    .bar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 12px 18px; background: #0A1730; color: #fff; }
+    .bar button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: #18C93A; color: #04140A; font: 700 16px/1 'Barlow Condensed', sans-serif; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+    .wrap { display: grid; gap: 28px; justify-items: center; padding: 28px 14px 60px; }
+    h2.lbl { margin: 0; font: 700 18px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #5B6472; }
+    /* A4 poster */
+    .a4 { width: 210mm; height: 297mm; max-width: 100%; aspect-ratio: 210 / 297; height: auto; box-sizing: border-box; background: radial-gradient(circle at 50% 0%, #17306A, #0A1730 70%); color: #fff; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 14mm 12mm; box-shadow: 0 12px 34px rgba(0,0,0,.25); }
+    .a4 img.logo { width: 46%; max-width: 92mm; }
+    .a4 h1 { margin: 6mm 0 2mm; font: italic 800 clamp(30px, 6vw, 64px)/0.95 'Barlow Condensed', sans-serif; text-transform: uppercase; color: #FFC21A; }
+    .a4 p.sub { margin: 0 0 6mm; font-size: clamp(16px, 2.6vw, 26px); }
+    .a4 .qr { width: 52%; max-width: 105mm; background: #fff; padding: 4mm; border-radius: 6mm; }
+    .a4 .url { margin: 4mm 0 0; font: 700 clamp(18px, 3vw, 30px)/1 'Barlow Condensed', sans-serif; letter-spacing: .03em; }
+    .steps { display: flex; gap: 4mm; margin-top: auto; flex-wrap: wrap; justify-content: center; }
+    .steps span { padding: 3mm 5mm; border-radius: 99px; background: #18C93A; color: #04140A; font: 700 clamp(13px, 2vw, 20px)/1 'Barlow Condensed', sans-serif; text-transform: uppercase; }
+    /* 16:9 big screen */
+    .wide { width: 100%; max-width: 1280px; aspect-ratio: 16 / 9; box-sizing: border-box; display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: 4%; padding: 4% 5%; background: linear-gradient(120deg, #0A1730, #17306A 60%, #0E7A26); color: #fff; box-shadow: 0 12px 34px rgba(0,0,0,.25); }
+    .wide img.logo { width: 34%; }
+    .wide h1 { margin: 2% 0; font: italic 800 clamp(26px, 5.4vw, 76px)/0.95 'Barlow Condensed', sans-serif; text-transform: uppercase; color: #FFC21A; }
+    .wide p { margin: 0 0 3%; font-size: clamp(14px, 2vw, 28px); }
+    .wide .qrbox { background: #fff; border-radius: 4%; padding: 5%; text-align: center; color: #0A1730; }
+    .wide .qrbox b { display: block; margin-top: 3%; font: 700 clamp(14px, 2.2vw, 30px)/1 'Barlow Condensed', sans-serif; }
+    .wide:fullscreen { max-width: none; width: 100vw; height: 100vh; aspect-ratio: auto; }
+    @page { size: A4 portrait; margin: 0; }
+    @media print { .bar, .lbl, .wide { display: none !important; } body { background: #fff; } .wrap { padding: 0; } .a4 { box-shadow: none; width: 210mm; height: 297mm; max-width: none; } * { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <div class="bar"><b>MatchDay Kitchen posters</b><span><button type="button" id="printA4">Print A4 poster</button> <button type="button" id="fullWide">Big screen: full screen</button></span></div>
+  <main class="wrap">
+    <h2 class="lbl">A4 poster (walls, kiosks, programme page)</h2>
+    <section class="a4" aria-label="A4 poster">
+      <img class="logo" src="/images/matchday-kitchen/logo-320.png" alt="MatchDay Kitchen" />
+      <h1>Hungry? Order to your seat</h1>
+      <p class="sub">Scan, order and pay on your phone. We bring it to you.</p>
+      <div class="qr" set:html={svg} />
+      <p class="url">lobistarsfc.com/kitchen</p>
+      <div class="steps"><span>1 · Scan</span><span>2 · Choose</span><span>3 · Pay</span><span>4 · Enjoy</span></div>
+    </section>
+    <h2 class="lbl">Big screen (16:9)</h2>
+    <section class="wide" id="wide" aria-label="Big screen slide">
+      <div>
+        <img class="logo" src="/images/matchday-kitchen/logo-320.png" alt="MatchDay Kitchen" />
+        <h1>Order food to your seat</h1>
+        <p>Scan the code, order on your phone, and stay in your seat. Order now for half-time and skip the rush.</p>
+      </div>
+      <div class="qrbox"><div set:html={svg} /><b>lobistarsfc.com/kitchen</b></div>
+    </section>
+  </main>
+  <script is:inline>
+    document.getElementById('printA4').addEventListener('click', function () { window.print(); });
+    document.getElementById('fullWide').addEventListener('click', function () { var w = document.getElementById('wide'); if (w.requestFullscreen) w.requestFullscreen(); });
+  </script>
+</body>
+</html>

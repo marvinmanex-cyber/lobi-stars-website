@@ -70,7 +70,7 @@ export async function onRequest(context) {
       case 'POST order': {
         const to = String(body.to || '');
         if (K.DATA.cancelled.includes(to) && !perms.cancel) return denied();
-        const r = await K.setStatus(db, body.id, to, staffName(user));
+        const r = await K.setStatus(db, body.id, to, staffName(user), env);
         if (r.error) return json({ error: r.error }, 409);
         await mkLog(db, user, `Order ${r.ref}: ${K.statusLabel(r.from)} to ${K.statusLabel(r.to)}`, { kind: 'order', request });
         // Delivered: the receipt goes to the buyer's email; the app offers the WhatsApp receipt.

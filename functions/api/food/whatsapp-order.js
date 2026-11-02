@@ -1,6 +1,6 @@
 import { randomId } from '../_lib/crypto.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
-import { ensureFoodSchema, nextRef, foodSettings, priceCart, whatsappOrderMessage, whatsappUrl, formatNaira, trackUrl } from '../_lib/foodOrders.js';
+import { ensureFoodSchema, nextRef, foodSettings, priceCart, whatsappOrderMessage, whatsappUrl, formatNaira, trackUrl, setDelivery } from '../_lib/foodOrders.js';
 import { normalizeNigerianPhone, rateLimit, tooMany, clientIp, ensureFanSchema } from '../_lib/fans.js';
 import { listMatches, isMatchDay, toSummary } from '../_lib/matchCentre.js';
 import { raiseFoodAlert } from '../_lib/foodAlerts.js';
@@ -75,6 +75,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'AWAITING_WHATSAPP', ?, ?, ?, 'whatsapp', ?, ?)`
     ).bind(id, ref, order.seat, order.stand, phone, email, name, order.notes, eventId, order.items_json, totalKobo, ref,
       token, created.toISOString(), expires.toISOString(), order.fulfilment, order.pickup_point).run();
+    await setDelivery(env.DB, id, b.when, eventId);
 
     const origin = new URL(request.url).origin;
     const later = Promise.all([

@@ -1,0 +1,43 @@
+---
+// Match days only: a small "MatchDay Kitchen is open" bar on every public page
+// (not on the kitchen pages themselves), shown while ordering is open. Fans can
+// close it for the day. Checks /api/food/menu at most every 5 minutes per visit.
+---
+<a class="kn" id="kitchenNudge" href="/kitchen/?utm_source=site&utm_medium=nudge" hidden data-track="kitchen_click" data-track-label="nudge">
+  <img src="/images/matchday-kitchen/logo-48.png" alt="" width="34" height="34" />
+  <span><b>MatchDay Kitchen is open</b> Order food to your seat</span>
+  <span class="kn-go" aria-hidden="true">Order →</span>
+  <button type="button" class="kn-x" id="kitchenNudgeX" aria-label="Hide for today">×</button>
+</a>
+<style is:global>
+  .kn { position: fixed; left: 12px; right: 12px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 1300; display: flex; align-items: center; gap: 10px;
+    max-width: 520px; margin: 0 auto; padding: 8px 8px 8px 10px; border-radius: 14px; background: #0E7A26; color: #fff; text-decoration: none;
+    box-shadow: 0 12px 30px rgba(0,0,0,.28); font-family: 'Barlow', sans-serif; }
+  .kn[hidden] { display: none; }
+  .kn img { width: 34px; height: 34px; border-radius: 50%; flex: none; }
+  .kn b { display: block; font: 700 15px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #FFE27A; }
+  .kn span { font-size: 14px; line-height: 1.25; }
+  .kn-go { margin-left: auto; padding: 8px 12px; border-radius: 10px; background: #fff; color: #0E7A26; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  .kn-x { width: 36px; height: 36px; flex: none; border: 0; border-radius: 50%; background: rgba(255,255,255,.18); color: #fff; font-size: 22px; line-height: 1; cursor: pointer; }
+  @media (max-width: 767px) { .kn { bottom: calc(72px + env(safe-area-inset-bottom)); } }
+  html.kb-open .kn { display: none !important; }
+</style>
+<script is:inline>
+  (function () {
+    var el = document.getElementById('kitchenNudge');
+    if (!el || /^\/(kitchen|food|matchday-kitchen)(\/|$)/.test(location.pathname)) return;
+    var today = new Date().toISOString().slice(0, 10);
+    try { if (localStorage.getItem('ls_kn_hide') === today) return; } catch (e) {}
+    var show = function (open) { el.hidden = !open; };
+    try { var c = JSON.parse(sessionStorage.getItem('ls_kn') || 'null'); if (c && Date.now() - c.at < 300000) { show(c.open); return; } } catch (e) {}
+    fetch('/api/food/menu?lite=1').then(function (r) { return r.json(); }).then(function (d) {
+      var open = !!(d && d.open && d.matchday);
+      try { sessionStorage.setItem('ls_kn', JSON.stringify({ at: Date.now(), open: open })); } catch (e) {}
+      show(open);
+    }).catch(function () {});
+    document.getElementById('kitchenNudgeX').addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation(); el.hidden = true;
+      try { localStorage.setItem('ls_kn_hide', today); } catch (er) {}
+    });
+  })();
+</script>

@@ -1,16 +1,27 @@
 import { publicMenu, orderingState } from '../_lib/foodMenuDb.js';
-import { foodSettings } from '../_lib/foodOrders.js';
+import { foodSettings, popularItems } from '../_lib/foodOrders.js';
 
 // GET /api/food/menu -- the public in-seat food menu (only available items,
 // grouped by category), whether ordering is open, and the seat form options.
 // Not cached, so menu changes in the admin show straight away.
-export async function onRequestGet({ env }) {
+const todayMatch = env => env.DB.prepare(`SELECT 1 AS x FROM events WHERE active = 1 AND home_team LIKE '%Lobi Stars%' AND event_date BETWEEN ? AND ? LIMIT 1`)
+  .bind(new Date(Date.now() - 4 * 3600e3).toISOString(), new Date(Date.now() + 6 * 3600e3).toISOString()).first().catch(() => null);
+export async function onRequestGet({ env, request }) {
   const settings = await foodSettings(env.DB);
-  const [categories, state] = await Promise.all([publicMenu(env.DB), orderingState(env, settings)]);
+  // ?lite=1: only "open?" and "home match today?" (the site-wide "Kitchen open" reminder), cached briefly.
+  if (new URL(request.url).searchParams.get('lite') === '1') {
+    const [state, today] = await Promise.all([orderingState(env, settings), todayMatch(env)]);
+    return Response.json({ open: state.open, matchday: !!today }, { headers: { 'Cache-Control': 'public, max-age=120' } });
+  }
+  const [categories, state, popular, today] = await Promise.all([publicMenu(env.DB), orderingState(env, settings), popularItems(env.DB).catch(() => []),
+    // A Lobi Stars home match from 6 hours before kick-off to 4 hours after.
+    todayMatch(env)]);
   return Response.json({
     open: state.open, reason: state.reason, match: state.match || null, opensAt: state.opensAt || null, closesAt: state.closesAt || null,
     categories, stands: settings.stands, minOrderKobo: settings.minOrderKobo, paymentExpiryMinutes: settings.paymentExpiryMinutes,
     pickupPoints: settings.pickupPoints,
+    matchday: !!today,
+    popular, // the most ordered dishes ("Popular now" at the top of the menu)
     whatsapp: settings.whatsappEnabled ? { number: settings.whatsappNumber, display: `+${settings.whatsappNumber.slice(0, 3)} ${settings.whatsappNumber.slice(3, 6)} ${settings.whatsappNumber.slice(6, 9)} ${settings.whatsappNumber.slice(9)}` } : null,
   }, { headers: { 'Cache-Control': 'no-store' } });
 }

@@ -127,7 +127,11 @@ export function ticketEmailHtml({ order, event, tickets }) {
     <p>Your booking for <strong>${escHtml(event.home_team)} vs ${escHtml(event.away_team)}</strong> (${escHtml(event.competition)}) is confirmed. Order reference: <strong>${order.id}</strong>.</p>
     <p>Present each QR code below at the gate &mdash; one scan per ticket. Screenshots work fine, or download the ticket image from your confirmation page on the website.</p>
     ${ticketBlocks}
-    <p style="background:#FFF8E1;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;"><strong>On match day:</strong> order food and drinks to your seat from your phone at MatchDay Kitchen: <a href="https://lobistarsfc.com/kitchen/">lobistarsfc.com/kitchen</a>.</p>
+    <div style="margin:18px 0;padding:16px;border-radius:12px;background:#0E7A26;color:#fff;text-align:center;">
+      <p style="margin:0 0 4px;font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#FFE27A;font-weight:bold;">On match day · MatchDay Kitchen</p>
+      <p style="margin:0 0 12px;font-size:15px;line-height:1.5;">Order food and drinks from your phone and we bring them to your seat. Order ahead for kick-off or half-time and skip the queue.</p>
+      <a href="https://lobistarsfc.com/kitchen/?utm_source=ticket_email&amp;utm_medium=email" style="display:inline-block;background:#fff;color:#0E7A26;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px;">Order food to your seat</a>
+    </div>
     <p style="font-size:12px;color:#888;">Pride of Benue &middot; Lobi Stars Football Club</p>
   </div>`;
 }

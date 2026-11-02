@@ -8,6 +8,28 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: Easier, faster food ordering for fans; new orders blink red
+
+**Who it affects:** fans ordering food, kitchen staff, the media team (posters).
+- **Order ahead:** **At kick-off** or **At half-time**, saved with the time
+  the order is due.
+  - The kitchen sees a yellow "⏱ HALF-TIME · due …" badge.
+  - The late warning starts from the time it is due.
+- **Order again:** one tap repeats the fan's last order on that phone.
+- **Popular now:** the most ordered dishes at the top of the menu.
+- **Fan alerts:** **Tell me when it's on the way** sends a phone notification
+  for "cooking now" and "on the way" (or "ready to collect"). The order page
+  also chimes when the status changes.
+- **Pickup collection numbers** (when pickup points are set): a big number such
+  as #0004, and an alert when it is ready.
+- **Promotion:**
+  - A "MatchDay Kitchen is open" bar on every page on match days.
+  - An **Order food to your seat** button in ticket emails.
+  - A link on Find my tickets.
+  - Printable posters at /kitchen/poster/ (A4 and big screen, with a QR code).
+- **New orders blink red** on the kitchen app (kitchen screen and live board)
+  and on the admin Live Order Board, until someone accepts or starts them.
+
 ## 2026-11-02: MatchDay Kitchen sign-in without the two-step code
 
 **Who it affects:** Super Admins using the kitchen app.

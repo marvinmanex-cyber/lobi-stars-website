@@ -9,9 +9,10 @@ import { upcomingMatches } from '../../functions/api/_lib/tickets/rules.js';
 
 type Item = { id: string; name: string; description: string; priceKobo: number; photo: string | null; emoji?: string; soldOut: boolean; maxPerOrder: number; adult: boolean; spice?: number; badge?: string | null };
 type Cat = { id: string; name: string; items: Item[] };
-type Menu = { open: boolean; reason: string; match: string | null; opensAt: string | null; closesAt: string | null; categories: Cat[]; stands: string[]; minOrderKobo: number; paymentExpiryMinutes: number; whatsapp: { number: string; display: string } | null };
+type Menu = { popular?: string[]; pickupPoints?: string[]; open: boolean; reason: string; match: string | null; opensAt: string | null; closesAt: string | null; categories: Cat[]; stands: string[]; minOrderKobo: number; paymentExpiryMinutes: number; whatsapp: { number: string; display: string } | null };
 
-const CART = 'ls_kitchen_cart', SEAT = 'ls_kitchen_seat', PENDING = 'ls_kitchen_pending';
+const CART = 'ls_kitchen_cart', SEAT = 'ls_kitchen_seat', PENDING = 'ls_kitchen_pending', LAST = 'ls_kitchen_last';
+let kickoffAt = 0; // the next home match's kick-off (for "At kick-off")
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const naira = (k: number) => '₦' + Math.round(k / 100).toLocaleString('en-NG');
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -91,11 +92,33 @@ function sortedCats() {
   // "Match Day Combos" (any category with "combo" in its name) comes first.
   return [...(menu?.categories || [])].sort((a, b) => Number(/combo/i.test(b.name)) - Number(/combo/i.test(a.name)));
 }
+// "Popular now": the most ordered dishes (worked out on the server), shown first.
+function popularCat(): Cat | null {
+  const ids = menu?.popular || [];
+  const list = ids.map(id => items.find(f => f.id === id)).filter((f): f is Item => !!f && !f.soldOut);
+  return list.length >= 3 ? { id: 'popular', name: 'Popular now', items: list.slice(0, 6) } : null;
+}
+// "Order again": the last order on this phone, one tap to put it back in the cart.
+function renderAgain() {
+  const box = $('kxAgain2');
+  const last = store.get<{ items: { id: string; qty: number }[] }>(LAST, 120 * 86400e3);
+  const ok = (last?.items || []).map(i => ({ f: items.find(x => x.id === i.id), qty: i.qty })).filter(x => x.f && !x.f.soldOut) as { f: Item; qty: number }[];
+  if (!ok.length || !menu?.open || count()) { box.hidden = true; return; }
+  box.innerHTML = `<div class="kx-again-card"><div><b>Order again</b><span>${ok.map(x => `${x.qty} × ${esc(x.f.name)}`).join(', ')} · ${naira(ok.reduce((s, x) => s + x.qty * x.f.priceKobo, 0))}</span></div><button type="button" class="kx-btn kx-btn--pay" id="kxAgainBtn">Order again</button></div>`;
+  box.hidden = false;
+  $('kxAgainBtn').addEventListener('click', () => {
+    for (const x of ok) qty[x.f.id] = Math.min(x.f.maxPerOrder, x.qty);
+    saveCart(); renderMenu(); renderCart(); box.hidden = true;
+    gaEvent('kitchen_order_again', { item_count: count() });
+    $('kxCartBtn').click();
+  });
+}
 function renderMenu() {
-  const cats = sortedCats();
+  const pop = popularCat();
+  const cats = pop ? [pop, ...sortedCats()] : sortedCats();
   if (!cats.length) { $('kxMenu').innerHTML = '<p class="kx-empty">The menu will be ready on match day.</p>'; $('kxTabs').innerHTML = ''; return; }
   $('kxTabs').innerHTML = cats.map((c, i) => `<a class="kx-tab" href="#cat-${esc(c.id)}" data-cat="${esc(c.id)}"${i === 0 ? ' aria-current="true"' : ''}>${esc(c.name)}</a>`).join('');
-  $('kxMenu').innerHTML = cats.map(c => `<section class="kx-cat${/combo/i.test(c.name) ? ' kx-cat--combo' : ''}" id="cat-${esc(c.id)}" aria-labelledby="h-${esc(c.id)}"><h2 id="h-${esc(c.id)}">${esc(c.name)}</h2><ul class="kx-grid">${c.items.map(card).join('')}</ul></section>`).join('');
+  $('kxMenu').innerHTML = cats.map(c => `<section class="kx-cat${c.id === 'popular' ? ' kx-cat--popular' : /combo/i.test(c.name) ? ' kx-cat--combo' : ''}" id="cat-${esc(c.id)}" aria-labelledby="h-${esc(c.id)}"><h2 id="h-${esc(c.id)}">${esc(c.name)}</h2><ul class="kx-grid">${c.items.map(card).join('')}</ul></section>`).join('');
   spy();
 }
 function renderCart() {
@@ -182,6 +205,7 @@ async function loadFixture() {
       .find((m: { status: string }) => m.status !== 'postponed');
     if (!home) return;
     const when = new Date(home.event_date);
+    kickoffAt = when.getTime(); whenOptions();
     const date = when.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' });
     const time = when.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Lagos' });
     $('kxFix').innerHTML = `${esc(home.home_team)} vs ${esc(home.away_team)}<small>${esc(date)} · ${esc(time)} · McCarthy Stadium</small>`;
@@ -199,7 +223,8 @@ async function loadMenu() {
     useStands(menu.stands || []);
     $('kxWaBox').hidden = !menu.whatsapp;
     $('kxSmall').textContent = `Pay online with card, bank transfer or USSD (Paystack). Your order goes to the kitchen once payment is confirmed; unpaid orders are cancelled after ${menu.paymentExpiryMinutes} minutes.${menu.whatsapp ? ' Or order via WhatsApp and pay the staff.' : ''}`;
-    renderState(); renderMenu(); renderCart();
+    usePickup(menu.pickupPoints || []);
+    renderState(); renderMenu(); renderCart(); renderAgain();
   } catch {
     if (!menu) $('kxMenu').innerHTML = '<p class="kx-empty">The menu could not be loaded. Check your connection and try again.</p>';
     if (!menu) $('kxClosed').hidden = true;
@@ -219,7 +244,8 @@ function collect(viaWhatsApp: boolean) {
   const picked = items.filter(f => qty[f.id]);
   if (!picked.length) return fail('Your cart is empty.');
   const s = seat();
-  if (!s.section || !s.row || !s.seat) {
+  const pickup = isPickup();
+  if (!pickup && (!s.section || !s.row || !s.seat)) {
     ($('kxDrawer') as HTMLDialogElement).close();
     const missing = !s.section ? 'kxSection' : !s.row ? 'kxRow' : 'kxSeat';
     $(missing).classList.add('kx-bad'); $(missing).focus();
@@ -234,11 +260,12 @@ function collect(viaWhatsApp: boolean) {
   if (!$('kxAdultWrap').hidden && !($('kxAdult') as HTMLInputElement).checked) return fail('Please confirm you are 18 or older to order alcoholic drinks.', 'kxAdult');
   const min = menu.minOrderKobo || 0;
   if (min && total() < min) return fail(`The minimum order is ${naira(min)}.`);
-  const when = (document.querySelector('input[name="when"]:checked') as HTMLInputElement)?.value;
-  const note = [when === 'half-time' ? 'Deliver at half-time.' : '', v('kxNote')].filter(Boolean).join(' ').slice(0, 200);
+  const when = (document.querySelector('input[name="when"]:checked') as HTMLInputElement)?.value || 'now';
+  const note = [when === 'half-time' ? 'Deliver at half-time.' : when === 'kickoff' ? 'Deliver at kick-off.' : '', v('kxNote')].filter(Boolean).join(' ').slice(0, 200);
   return {
-    name: v('kxName'), phone: v('kxPhone'), email: v('kxEmail'), notes: note,
-    fulfilment: 'seat', stand: s.section, seat: `Row ${s.row}, Seat ${s.seat}`.slice(0, 20),
+    name: v('kxName'), phone: v('kxPhone'), email: v('kxEmail'), notes: note, when,
+    fulfilment: pickup ? 'pickup' : 'seat', pickupPoint: pickup ? ($('kxPickup') as HTMLSelectElement).value : '',
+    stand: pickup ? '' : s.section, seat: pickup ? '' : `Row ${s.row}, Seat ${s.seat}`.slice(0, 20),
     adultConfirmed: ($('kxAdult') as HTMLInputElement).checked, website: ($('kxTrap') as HTMLInputElement).value,
     items: picked.map(f => ({ id: f.id, qty: qty[f.id] })),
   };
@@ -263,7 +290,7 @@ async function payOnline(e: Event) {
   try {
     const { ok, status, d } = await post('/api/food-checkout', { ...body, ...(rewardsBox?.values() || {}), returnTo: 'kitchen' });
     if (!ok || !d.authorizationUrl) { if (status === 409) loadMenu(); throw new Error(d.error || 'Payment could not be started. Please try again.'); }
-    remember();
+    remember(); saveLast(body.items);
     store.set(PENDING, { ref: d.ref });
     location.href = d.authorizationUrl; // the cart is cleared once the payment is confirmed
   } catch (err) {
@@ -284,7 +311,7 @@ async function orderWhatsApp() {
       if (status === 409 || d.code === 'stock') loadMenu();
       throw new Error(d.error || 'Your order could not be saved. Please try again.');
     }
-    remember();
+    remember(); saveLast(body.items);
     try { if (!localStorage.getItem(`ga_fd_${d.ref}`)) { localStorage.setItem(`ga_fd_${d.ref}`, '1'); gaEvent('kitchen_order_complete', { method: 'whatsapp' }); } } catch { /* private mode */ }
     waMessage = d.message;
     qty = {}; saveCart();
@@ -298,7 +325,7 @@ async function orderWhatsApp() {
 }
 
 // ── Confirmation and status ──
-type Order = { ref: string; status: string; statusLabel: string; seat: string; stand: string; items: { name: string; qty: number; priceKobo: number }[]; totalKobo: number; channel: string; notes: string };
+type Order = { fulfilment?: string; pickupPoint?: string; deliverWhen?: string; deliverAt?: string | null; alerts?: boolean; ref: string; status: string; statusLabel: string; seat: string; stand: string; items: { name: string; qty: number; priceKobo: number }[]; totalKobo: number; channel: string; notes: string };
 const STEP: Record<string, number> = { PAID: 1, ACCEPTED: 1, PREPARING: 2, OUT_FOR_DELIVERY: 3, DELIVERED: 4 };
 let statusTimer: number | undefined;
 function showDone(o: { ref: string; token: string; whatsappUrl?: string }) {
@@ -309,6 +336,7 @@ function showDone(o: { ref: string; token: string; whatsappUrl?: string }) {
   wa.hidden = !o.whatsappUrl; if (o.whatsappUrl) wa.href = o.whatsappUrl;
   $('kxWaCopy').hidden = !o.whatsappUrl || !waMessage;
   $('kxDone').focus();
+  current = o;
   const poll = async () => {
     try {
       const r = await fetch(`/api/food/order?ref=${encodeURIComponent(o.ref)}&t=${encodeURIComponent(o.token)}`, { cache: 'no-store' });
@@ -323,6 +351,18 @@ function showDone(o: { ref: string; token: string; whatsappUrl?: string }) {
 }
 function renderStatus(o: Order) {
   const step = STEP[o.status] || 0;
+  // A change while the page is open: a short chime and a buzz.
+  if (lastStatus && lastStatus !== o.status && ['PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status)) chime();
+  lastStatus = o.status;
+  const pickup = o.fulfilment === 'pickup', no = String(o.ref).split('-').pop();
+  $('kxCollect').hidden = !pickup || !step;
+  $('kxCollectNo').textContent = `#${no}`;
+  $('kxCollectAt').textContent = o.status === 'OUT_FOR_DELIVERY' ? `Ready now at ${o.pickupPoint || 'the pickup point'}: show this number.` : `Collect at ${o.pickupPoint || 'the pickup point'} when it is ready.`;
+  const due = o.deliverAt ? new Date(o.deliverAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
+  $('kxWhenShow').hidden = !(o.deliverWhen && o.deliverWhen !== 'now') || o.status === 'DELIVERED';
+  $('kxWhenShow').textContent = o.deliverWhen === 'half-time' ? `Ordered for half-time${due ? ` (about ${due})` : ''}.` : o.deliverWhen === 'kickoff' ? `Ordered for kick-off${due ? ` (${due})` : ''}.` : '';
+  $('kxAlertBtn').hidden = !step || ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) || !('PushManager' in window) || !('serviceWorker' in navigator);
+  if (o.alerts || alertsOn) { $('kxAlertBtn').classList.add('on'); $('kxAlertBtn').textContent = "🔔 Alerts on: we'll tell you when it's on the way"; }
   document.querySelectorAll<HTMLElement>('#kxSteps li').forEach(li => {
     const n = Number(li.dataset.step);
     li.classList.toggle('done', n <= step); li.classList.toggle('now', n === step + 1 && step > 0 && step < 4);
@@ -331,7 +371,7 @@ function renderStatus(o: Order) {
     AWAITING_PAYMENT: 'Waiting for your payment to be confirmed. This usually takes a few seconds.',
     AWAITING_WHATSAPP: 'Send the order message on WhatsApp so the kitchen can confirm it. Staff will tell you how to pay.',
     PAID: 'Paid. The kitchen has your order.', ACCEPTED: 'The kitchen has your order.',
-    PREPARING: 'Your food is being prepared.', OUT_FOR_DELIVERY: 'Your order is on the way to your seat.',
+    PREPARING: 'Your food is being prepared.', OUT_FOR_DELIVERY: o.fulfilment === 'pickup' ? 'Ready to collect: show your number at the counter.' : 'Your order is on the way to your seat.',
     DELIVERED: 'Delivered. Enjoy the match!', PAYMENT_FAILED: 'The payment did not go through. Your cart is still saved: please try again.',
     EXPIRED: 'This order was cancelled because it was not paid in time. Your cart is still saved: please order again.',
     CANCELLED: 'This order was cancelled. Please contact a steward or order again.',
@@ -344,6 +384,57 @@ function renderStatus(o: Order) {
   if (['DELIVERED', 'PAYMENT_FAILED', 'EXPIRED', 'CANCELLED'].includes(o.status)) window.clearInterval(statusTimer);
 }
 
+// ── Order again, pickup, order ahead, fan alerts ──
+function saveLast(list: { id: string; qty: number }[]) { store.set(LAST, { items: list }); }
+function isPickup() { return !$('kxHow').hidden && (document.querySelector('input[name="how"]:checked') as HTMLInputElement)?.value === 'pickup'; }
+/** Pickup points from Admin › Food (Ordering): "I'll collect it" appears only when there are some. */
+function usePickup(points: string[]) {
+  $('kxHow').hidden = !points.length;
+  const sel = $('kxPickup') as HTMLSelectElement;
+  if (points.length && sel.options.length !== points.length) sel.innerHTML = points.map(p => `<option>${esc(p)}</option>`).join('');
+  const sync = () => { const p = isPickup(); $('kxPickupWrap').hidden = !p; $('kxSeatSumWrap').hidden = p; };
+  document.querySelectorAll<HTMLInputElement>('input[name="how"]').forEach(r => { r.onchange = sync; });
+  sync();
+}
+/** "At kick-off" only before kick-off; "At half-time" until about 40 minutes in. */
+function whenOptions() {
+  const now = Date.now();
+  $('kxWhenKo').hidden = !(kickoffAt && now < kickoffAt - 2 * 60e3);
+  const ht = document.querySelector<HTMLInputElement>('input[name="when"][value="half-time"]')!.closest('label') as HTMLElement;
+  ht.hidden = !!kickoffAt && now > kickoffAt + 40 * 60e3;
+  const checked = document.querySelector<HTMLInputElement>('input[name="when"]:checked');
+  if (checked?.closest('label')?.hidden) (document.querySelector('input[name="when"][value="now"]') as HTMLInputElement).checked = true;
+}
+let current: { ref: string; token: string } | null = null, lastStatus = '', alertsOn = false, chimeCtx: AudioContext | null = null;
+function chime() {
+  try { navigator.vibrate?.([200, 100, 200]); } catch { /* */ }
+  try {
+    const C = (window as any).AudioContext || (window as any).webkitAudioContext; if (!C) return;
+    chimeCtx = chimeCtx || new C(); const c = chimeCtx!;
+    [880, 1175].forEach((f, i) => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = f; g.gain.setValueAtTime(0.0001, c.currentTime + i * 0.18); g.gain.exponentialRampToValueAtTime(0.5, c.currentTime + i * 0.18 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + i * 0.18 + 0.3); o.connect(g).connect(c.destination); o.start(c.currentTime + i * 0.18); o.stop(c.currentTime + i * 0.18 + 0.35); });
+  } catch { /* no sound */ }
+}
+const b64 = (s: string) => { const p = '='.repeat((4 - (s.length % 4)) % 4); const r = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(r, c => c.charCodeAt(0)); };
+/** "Tell me when it's on the way": a phone notification for this order (cooking now, on the way / ready). */
+async function turnOnAlerts() {
+  const btn = $('kxAlertBtn') as HTMLButtonElement;
+  if (!current) return;
+  btn.disabled = true;
+  try {
+    if (Notification.permission === 'denied') throw new Error('Notifications are blocked for this site in your browser settings. Keep this page open: it updates by itself.');
+    if ((await Notification.requestPermission()) !== 'granted') throw new Error('Notifications were not allowed. Keep this page open: it updates by itself.');
+    const reg = (await navigator.serviceWorker.getRegistration('/')) || (await navigator.serviceWorker.register('/sw.js'));
+    await navigator.serviceWorker.ready;
+    const k = await (await fetch('/api/push/public-key')).json();
+    if (!k.key) throw new Error('Alerts are not available right now. Keep this page open: it updates by itself.');
+    const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(k.key) }));
+    const r = await post('/api/food/notify', { ref: current.ref, t: current.token, subscription: sub.toJSON() });
+    if (!r.ok) throw new Error(r.d.error || 'Alerts could not be turned on.');
+    alertsOn = true; btn.classList.add('on'); btn.textContent = "🔔 Alerts on: we'll tell you when it's on the way";
+    gaEvent('kitchen_alerts_on');
+  } catch (err) { $('kxStatus').textContent = (err as Error).message; btn.disabled = false; }
+}
+
 export function startKitchen() {
   const drawer = $('kxDrawer') as HTMLDialogElement;
   const open = () => { renderCart(); saveSeat(); drawer.showModal(); $('kxClose').focus(); };
@@ -354,6 +445,8 @@ export function startKitchen() {
   $('kxSeatEdit').addEventListener('click', () => { drawer.close(); $('kxSeatBar').scrollIntoView({ block: 'nearest' }); $('kxRow').focus(); });
   onStep($('kxMenu')); onStep($('kxLines'));
   $('kxForm').addEventListener('submit', payOnline);
+  $('kxAlertBtn').addEventListener('click', turnOnAlerts);
+  window.setInterval(whenOptions, 60000);
   $('kxWaBtn').addEventListener('click', orderWhatsApp);
   ['kxName', 'kxPhone', 'kxEmail', 'kxAdult'].forEach(id => $(id).addEventListener('input', () => $(id).classList.remove('kx-bad')));
   $('kxWaCopy').addEventListener('click', async () => {
