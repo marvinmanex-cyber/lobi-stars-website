@@ -12,6 +12,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     <AdminNav current="media-users" />
     <header><div class="stag">Media Centre · Super Admins</div><h1 class="stitle">Media Centre <span class="r">users &amp; settings</span></h1></header>
     <p class="mcu-lede">The Media Centre is the separate page where the media staff write news, the Lobi Stars Weekly Newsletter, press releases and more: <a href="/media-centre/" target="_blank" rel="noopener">lobistarsfc.com/media-centre</a>. They sign in with their <b>Login ID</b> and their own password; they cannot open this admin. Everything they send waits in the <a href="/admin/media-centre/approvals/">Approval Queue</a>.</p>
+    <p class="mcu-jump"><a href="#apForm">Jump to the media desk code ↓</a> · <a href="#setForm">Jump to the settings ↓</a></p>
     <p class="mcu-msg" id="msg" role="status" aria-live="polite" hidden></p>
 
     <section class="mcu-card">
@@ -19,7 +20,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       <div class="mcu-scroll"><table class="mcu-table"><thead><tr><th>Name</th><th>Login ID</th><th>Status</th><th>Last sign-in</th><th>Actions</th></tr></thead><tbody id="users"><tr><td colspan="5" class="muted">Loading…</td></tr></tbody></table></div>
       <h3>Add a user</h3>
       <form id="addForm" class="mcu-row" autocomplete="off">
-        <label>Full name <small>(printed on accreditation cards as "Signed: …")</small><input name="fullName" required maxlength="80" placeholder="e.g. Terver Iorbee" /></label>
+        <label>Full name <small>(shown in the activity log)</small><input name="fullName" required maxlength="80" placeholder="e.g. Terver Iorbee" /></label>
         <label>Login ID <small>(name + 2–4 digits)</small><input name="loginId" required maxlength="34" pattern="[A-Za-z]{2,30}[0-9]{2,4}" placeholder="e.g. Iorbee68" /></label>
         <label>Temporary password <small>(at least 8 characters)</small><span class="mcu-pw"><input name="password" required minlength="8" maxlength="72" /><button type="button" class="btn-o" data-gen>Make one</button></span></label>
         <button class="btn-p" type="submit">Add user</button>
@@ -78,6 +79,8 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
 <style>
   .mcu { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
   .mcu-lede { color: var(--a-muted); line-height: 1.5; } .mcu-lede a { color: inherit; font-weight: 700; }
+  .mcu-jump { margin: -6px 0 18px; font-weight: 700; } .mcu-jump a { color: #C11A1F; }
+  #apForm, #setForm { scroll-margin-top: 140px; }
   .mcu-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 3000; width: max-content; max-width: min(620px, calc(100vw - 32px)); box-shadow: 0 12px 32px rgba(0,0,0,.22); font-weight: 600; } .mcu-msg.err { background: #FEE2E2; color: #991B1B; }
   .mcu-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 16px 0; }
   .mcu-card h2 { margin: 0 0 10px; font-size: 19px; } .mcu-card h3 { margin: 18px 0 8px; font-size: 16px; }
@@ -174,7 +177,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     const body: any = { action: a, id };
     if (a === 'reset_password') { const p = prompt(`New temporary password for ${name} (at least 8 characters). They must change it when they sign in.`, tempPassword()); if (!p) return; body.password = p; }
     if (a === 'login_id') { const v = prompt(`New Login ID for ${name} (name + 2–4 digits):`, tr.dataset.login); if (!v) return; body.loginId = v; }
-    if (a === 'full_name') { const v = prompt('Full name (printed on accreditation cards):', name); if (!v) return; body.fullName = v; }
+    if (a === 'full_name') { const v = prompt('Full name:', name); if (!v) return; body.fullName = v; }
     if (a === 'disable' && !confirm(`Disable ${name}? They are signed out at once and can't sign in until enabled again.`)) return;
     try { const d = await api('users', body); users(d.users); msg(a === 'reset_password' ? `Done. Give ${name} the temporary password: ${body.password}` : 'Done.'); } catch (err: any) { msg(err.message, false); }
   });
