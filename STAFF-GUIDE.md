@@ -4423,8 +4423,14 @@ tabs open. WhatsApp and Telegram open in their own apps.
 | **Activity log** | Staff see their own actions. Super Admins see everyone's, filter by person and day, and **Download CSV**. |
 | **Staff accounts** | Super Admins only: add staff, change name and role, switch sign-in off, set a new password, settings, and the **data check**. |
 
-**Order statuses in the kitchen:** New = paid (or accepted), Preparing, Ready (= "out
-for delivery / ready for pickup" on the website), then Delivered. Unpaid WhatsApp
+**Order statuses in the kitchen:** the same words the fan sees on their order
+page:
+1. **New** (paid or accepted): tap **Start cooking**.
+2. **Preparing**: when the food leaves the kitchen, tap **Food on the way**. For
+   pickup orders the button says **Ready for pickup**.
+3. **On the way** (or **Ready for pickup**): the order stays on the kitchen
+   screen until someone taps **Mark delivered**.
+4. **Delivered**. Unpaid WhatsApp
 orders do not appear on the kitchen screen until a staff member marks them paid.
 
 **Roles**

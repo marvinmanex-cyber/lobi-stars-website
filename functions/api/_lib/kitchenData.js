@@ -19,22 +19,25 @@ export const DATA = {
   stages: {
     new: { label: 'New', statuses: ['PAID', 'ACCEPTED'] },
     preparing: { label: 'Preparing', statuses: ['PREPARING'] },
-    ready: { label: 'Ready', statuses: ['OUT_FOR_DELIVERY'] },
+    ready: { label: 'On the way', statuses: ['OUT_FOR_DELIVERY'] },
   },
-  kitchenScreen: ['PAID', 'ACCEPTED', 'PREPARING'],       // tickets to cook
+  kitchenScreen: ['PAID', 'ACCEPTED', 'PREPARING'],       // tickets to cook (they can be late)
+  // The kitchen screen also keeps orders on the way until someone taps "Mark delivered".
+  kitchenShows: ['PAID', 'ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY'],
   board: ['PAID', 'ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY'],
   cancelled: ['CANCELLED', 'REFUNDED'],
   // The next step for each status (the big green button).
   next: {
     PAID: { to: 'PREPARING', label: 'Start cooking' },
     ACCEPTED: { to: 'PREPARING', label: 'Start cooking' },
-    PREPARING: { to: 'OUT_FOR_DELIVERY', label: 'Mark ready' },
+    PREPARING: { to: 'OUT_FOR_DELIVERY', label: 'Food on the way' },
     OUT_FOR_DELIVERY: { to: 'DELIVERED', label: 'Mark delivered' },
     AWAITING_WHATSAPP: { to: 'CONFIRMED', label: 'Confirm order' },
     CONFIRMED: { to: 'PAID', label: 'Payment received' },
   },
   // Kitchen words for the website statuses (everything else uses the website label).
-  labels: { PAID: 'New', ACCEPTED: 'New', PREPARING: 'Preparing', OUT_FOR_DELIVERY: 'Ready', DELIVERED: 'Delivered' },
+  // Same words as the fan's tracking page (Received, Preparing, On the way, Delivered).
+  labels: { PAID: 'New', ACCEPTED: 'New', PREPARING: 'Preparing', OUT_FOR_DELIVERY: 'On the way', DELIVERED: 'Delivered' },
   lateMinutes: 15,
   // The kitchen screen and live board show one match day: orders from the last 12 hours
   // (an order left unfinished from an earlier match is still in Food orders, not on the screen).
@@ -50,19 +53,26 @@ const items = o => { try { return JSON.parse(o.items_json || '[]'); } catch { re
 const startedAt = o => o.paid_iso || o.created_iso || (o.created_at ? `${o.created_at.replace(' ', 'T')}Z` : null);
 const minutesSince = iso => (iso ? Math.max(0, Math.floor((Date.now() - Date.parse(iso)) / 60000)) : 0);
 
+// Pickup orders aren't carried to a seat: the same step reads "Ready for pickup".
+const pickup = o => o.fulfilment === 'pickup';
+function nextFor(o) {
+  const n = DATA.next[o.order_status];
+  if (n && o.order_status === 'PREPARING' && pickup(o)) return { ...n, label: 'Ready for pickup' };
+  return n || null;
+}
 /** One order as the kitchen pages show it. */
 export function ticket(o, lateMinutes = DATA.lateMinutes) {
   const waited = minutesSince(startedAt(o));
   const inKitchen = DATA.kitchenScreen.includes(o.order_status);
   return {
-    id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: statusLabel(o.order_status), stage: stageOf(o.order_status),
+    id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: o.order_status === 'OUT_FOR_DELIVERY' && pickup(o) ? 'Ready for pickup' : statusLabel(o.order_status), stage: stageOf(o.order_status),
     customer: o.customer_name || '', where: o.seat || o.pickup_point ? whereText(o) : '', note: o.notes || '',
     items: items(o).map(i => ({ name: i.name, qty: i.qty, note: i.note || '' })),
     itemCount: items(o).reduce((n, i) => n + (Number(i.qty) || 0), 0),
     total: formatNaira(o.total_kobo), totalKobo: o.total_kobo, channel: o.channel, phone: o.phone ? String(o.phone).replace(/\d(?=\d{4})/g, '•') : '',
     placedAt: o.created_iso || null, paidAt: o.paid_iso || null, statusAt: o.status_at || null, statusBy: o.status_by || '',
     minutes: waited, late: inKitchen && waited >= lateMinutes,
-    next: DATA.next[o.order_status] || null,
+    next: nextFor(o),
   };
 }
 
@@ -73,10 +83,10 @@ export async function getOrder(db, id) {
   return db.prepare(`SELECT * FROM food_orders WHERE id = ? OR ref = ?`).bind(String(id), String(id)).first();
 }
 
-/** Kitchen screen: orders to cook (New and Preparing), oldest first. */
+/** Kitchen screen: orders to cook (New, Preparing) and on the way (until delivered), oldest first. */
 export async function kitchenTickets(db, lateMinutes) {
   await ready(db);
-  const { results } = await db.prepare(`SELECT * FROM food_orders WHERE order_status IN (${placeholders(DATA.kitchenScreen)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 200`).bind(...DATA.kitchenScreen, since()).all();
+  const { results } = await db.prepare(`SELECT * FROM food_orders WHERE order_status IN (${placeholders(DATA.kitchenShows)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 200`).bind(...DATA.kitchenShows, since()).all();
   return results.map(o => ticket(o, lateMinutes));
 }
 

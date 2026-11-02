@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: MatchDay Kitchen: "Food on the way" step
+
+**Who it affects:** kitchen staff.
+- The kitchen app now uses the same words as the fan's order page:
+  New → **Start cooking** → Preparing → **Food on the way** → On the way →
+  **Mark delivered** → Delivered.
+  - Before, the button said "Mark ready", and the step was called "Ready".
+  - Pickup orders say **Ready for pickup** instead.
+- Orders on the way now stay on the kitchen screen until someone taps
+  **Mark delivered**. Before, they disappeared from it.
+
 ## 2026-11-02: Website outage (about 16:00–17:10 Nigerian time) fixed
 
 **Who it affects:** everyone.

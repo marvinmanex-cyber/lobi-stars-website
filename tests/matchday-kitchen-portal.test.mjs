@@ -71,7 +71,7 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   assert.ok(k, 'on the kitchen screen'); assert.equal(k.next.label, 'Start cooking'); assert.equal(k.note, 'No pepper'); assert.equal(k.items[0].qty, 2);
   assert.equal((await C.call('order', { id, to: k.next.to })).status, 200);
   k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
-  assert.equal(k.statusLabel, 'Preparing'); assert.equal(k.next.label, 'Mark ready');
+  assert.equal(k.statusLabel, 'Preparing'); assert.equal(k.next.label, 'Food on the way');
   assert.equal((await C.call('order', { id, to: k.next.to })).status, 200);
   assert.equal(rows(`SELECT order_status FROM food_orders WHERE id = '${id}';`)[0].order_status, 'OUT_FOR_DELIVERY', "the website's real order is Ready");
   const board = (await C.call('board')).data.columns;
@@ -91,7 +91,7 @@ test('the kitchen screen moves the real order; the menu page changes the real me
 
   // Activity log: everyone's for the Super Admin (and CSV); only their own for staff.
   const all = (await A.call('activity')).data;
-  assert.ok(all.rows.some(a => a.code === COOK.staffId && a.action === `Order ${o.ref}: Preparing to Ready`), 'status change under the cook');
+  assert.ok(all.rows.some(a => a.code === COOK.staffId && a.action === `Order ${o.ref}: Preparing to On the way`), 'status change under the cook');
   assert.ok(all.rows.some(a => a.code === COOK.staffId && a.action === 'Marked Suya as sold out' || /sold out/.test(a.action)));
   assert.ok(all.rows.some(a => a.code === SUP.staffId && /^Changed the price of .+ to ₦1,650$/.test(a.action)));
   const mine = (await C.call('activity')).data;

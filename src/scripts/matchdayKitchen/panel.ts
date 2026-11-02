@@ -113,7 +113,7 @@ const PAGES: Record<string, () => Promise<void>> = {
     const f = { q: '', status: '', day: todayLagos(), page: 1 };
     main.innerHTML = `<form class="mk-filters" id="oF">
       <div class="mk-field"><label for="oQ">Order number or name</label><input id="oQ" type="search" placeholder="e.g. FD-20261108-0012 or Derek" /></div>
-      <div class="mk-field"><label for="oS">Status</label><select id="oS"><option value="">All</option><option value="new">New</option><option value="preparing">Preparing</option><option value="ready">Ready</option>
+      <div class="mk-field"><label for="oS">Status</label><select id="oS"><option value="">All</option><option value="new">New</option><option value="preparing">Preparing</option><option value="ready">On the way</option>
         <option value="DELIVERED">Delivered</option><option value="AWAITING_WHATSAPP">WhatsApp – to confirm</option><option value="CONFIRMED">Confirmed – awaiting payment</option><option value="AWAITING_PAYMENT">Awaiting payment</option><option value="cancelled">Cancelled</option><option value="EXPIRED">Expired</option></select></div>
       <div class="mk-field"><label for="oD">Date</label><input id="oD" type="date" value="${f.day}" /></div>
       <button class="mk-btn go" type="submit">Search</button></form><div id="oList"></div>`;
