@@ -52,8 +52,33 @@ const tabs = [
     .toast { bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
     .mv-confirm { bottom: calc(72px + env(safe-area-inset-bottom)) !important; }
   }
+  /* While the on-screen keyboard is open (phones and tablets), the bars fixed to the bottom
+     of the screen are hidden: iPhones otherwise float them in the middle of the page, over
+     the form being typed into. The site header slides away too, for room. html.kb-open is
+     set by the script below. */
+  html.kb-open .tb, html.kb-open .kx-bar, html.kb-open .fd-cartbar, html.kb-open .cc { display: none !important; }
+  @media (max-width: 1023px) { html.kb-open #siteHeader { transform: translateY(-100%); } html.kb-open { --header-vis: 0px; } }
 </style>
 
 <script>
   document.getElementById('tbMore')?.addEventListener('click', () => document.getElementById('menuBtn')?.click());
+  // On-screen keyboard: set html.kb-open while a text field has focus on a touch screen, or
+  // while the visible area is much shorter than the window (the keyboard is up). Added once.
+  const w = window as any;
+  if (!w.__lsKb) {
+    w.__lsKb = true;
+    const coarse = window.matchMedia('(pointer: coarse)'), noHover = window.matchMedia('(hover: none)');
+    const touch = { get matches() { return coarse.matches || noHover.matches || navigator.maxTouchPoints > 0; } };
+    const isText = (el: Element | null) => !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'SELECT' || (el as HTMLElement).isContentEditable
+      || (el.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset|file|range|color|image|hidden)$/i.test((el as HTMLInputElement).type)));
+    const vv = window.visualViewport;
+    const update = () => {
+      const typing = touch.matches && isText(document.activeElement);
+      const squeezed = !!vv && window.innerHeight - vv.height > 150;
+      document.documentElement.classList.toggle('kb-open', typing || (touch.matches && squeezed));
+    };
+    document.addEventListener('focusin', update);
+    document.addEventListener('focusout', () => setTimeout(update, 120));
+    vv?.addEventListener('resize', update);
+  }
 </script>

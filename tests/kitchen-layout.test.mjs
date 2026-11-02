@@ -80,6 +80,18 @@ test('MatchDay Kitchen layout on phone, tablet and desktop', { skip: !EDGE && 'M
       assert.ok(d.open, `${sz.name}: the order drawer opens`);
       assert.ok(d.top >= -1 && d.bottom <= d.H + 1 && d.left >= -1 && d.right <= d.W + 1, `${sz.name}: the order drawer fits the screen ${JSON.stringify(d)}`);
       await b.ev(`document.getElementById('kxClose').click(); true`);
+      // Typing on a phone or tablet: the bottom menu and cart bar step aside (iPhones float them over the form otherwise).
+      if (sz.mobile) {
+        // A tap on the field (a real tap gives the page focus first, which a background test window lacks).
+        await b.send('Page.bringToFront'); await b.send('Emulation.setFocusEmulationEnabled', { enabled: true });
+        await b.ev(`document.getElementById('kxRow').focus(); true`); await sleep(250);
+        const kb = await b.ev(`({ open: document.documentElement.classList.contains('kb-open'), tb: getComputedStyle(document.querySelector('.tb') || document.body).display, bar: getComputedStyle(document.getElementById('kxBar')).display })`);
+        assert.ok(kb.open, `${sz.name}: typing is noticed`);
+        assert.equal(kb.bar, 'none', `${sz.name}: the cart bar hides while typing`);
+        if (sz.width < 768) assert.equal(kb.tb, 'none', `${sz.name}: the bottom menu hides while typing`);
+        await b.ev(`document.activeElement.blur(); true`); await sleep(300);
+        assert.equal(await b.ev(`document.documentElement.classList.contains('kb-open')`), false, `${sz.name}: the bars come back after typing`);
+      }
     }
   } finally { b.close(); }
 });

@@ -8,6 +8,21 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: Phones: menus no longer float over forms while typing
+
+**Who it affects:** everyone on a phone or tablet.
+- On iPhones, opening the keyboard (for example in the newsletter sign-up in
+  the footer) made the bottom menu (Home, Matches, News, Shop, More) float in
+  the middle of the page, over the form.
+- Now, while you type on a phone or tablet:
+  - The bottom menu, the MatchDay Kitchen cart bar and the food cart bar are
+    hidden.
+  - The top header slides away to give more room.
+  - Everything comes back when the keyboard closes.
+- Laptops are unchanged.
+- The automatic layout check (tests/kitchen-layout.test.mjs) now also checks
+  this.
+
 ## 2026-11-02: New back for the media accreditation card
 
 **Who it affects:** the media team (printing cards) and journalists.
