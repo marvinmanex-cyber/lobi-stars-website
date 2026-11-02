@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "prebuild": "node scripts/fetch-squad.mjs && (node scripts/optimize-images.mjs || echo \"Image optimisation skipped\")",
-    "build": "astro build && node scripts/check-routes.mjs",
+    "build": "astro build && node scripts/check-routes.mjs && wrangler pages functions build --minify --outdir dist/_worker.js",
     "preview": "astro preview",
     "optimize-images": "node scripts/optimize-images.mjs",
     "seed:local": "node scripts/seed-local-demo.mjs",
@@ -19,5 +19,8 @@
   },
   "engines": {
     "node": ">=22.12.0"
+  },
+  "devDependencies": {
+    "wrangler": "4.156.1"
   }
 }
