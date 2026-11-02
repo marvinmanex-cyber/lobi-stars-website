@@ -4,7 +4,7 @@
 //                                reject, ask for more, revoke / restore; "Send approval emails",
 //                                "Print all approved cards"
 //   /accreditation/<id>/settings the match's card settings (design, opponent, approving officer)
-//   /accreditation/contacts      media contacts
+//   (media contacts are in the Press List)
 import { api, esc, when, day, register, toast, go } from './core';
 import { upload, pickFile } from './files';
 
@@ -14,7 +14,7 @@ const swatch = (c: any) => `<span class="mc-sw" aria-hidden="true"><i style="bac
 const fileUrl = (id: string | null) => (id ? `/api/media-file/${encodeURIComponent(id)}` : '');
 
 register({ path: 'accreditation', label: 'Accreditation', icon: '🪪', async render(main, parts) {
-  if (parts[0] === 'contacts') return contactsScreen(main);
+  if (parts[0] === 'contacts') { go('/press-list', true); return; }
   if (parts[0] && parts[1] === 'settings') return settingsScreen(main, parts[0]);
   if (parts[0]) return applicationsScreen(main, parts[0]);
   return matchesScreen(main);
@@ -24,7 +24,7 @@ async function matchesScreen(main: HTMLElement) {
   main.innerHTML = '<p class="mc-muted">Loading…</p>';
   const [d, a] = await Promise.all([api('accreditations/matches'), api('accreditations?event=__none__')]);
   const open = (id: string) => a.matches.find((x: any) => x.id === id);
-  main.innerHTML = `<div class="mc-page-head"><h1>Accreditation</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/accreditation/contacts/" data-go="/accreditation/contacts">Media contacts</a></div>
+  main.innerHTML = `<div class="mc-page-head"><h1>Accreditation</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/press-list/" data-go="/press-list">Press List</a></div>
     <p class="mc-muted">Journalists apply on <a href="/media/accreditation/" target="_blank" rel="noopener">lobistarsfc.com/media/accreditation</a> for one home match. Approve them here, then press <b>Send approval emails</b>. Cards are printed and collected at the stadium. At most <b>${a.max}</b> accredited per match; applications close ${a.closeHours} hours before kick-off (you can open them again until kick-off).</p>
     <section class="mc-card"><div class="mc-scroll"><table class="mc-table"><thead><tr><th>Card</th><th>Match</th><th>Date</th><th>New</th><th>Approved</th><th>Status</th><th></th></tr></thead><tbody>
     ${d.matches.map((m: any) => { const o = open(m.id); return `<tr>
@@ -152,13 +152,4 @@ async function settingsScreen(main: HTMLElement, event: string) {
     if (body.approverName && body.approverName !== ms.approverName && body.approverSignatureId === ms.approverSignatureId) body.approverSignatureId = null;
     try { await api('accreditations/matches', { method: 'POST', body }); toast('Settings saved.'); go(`/accreditation/${event}`); } catch (err: any) { toast(err.message, 9000); }
   });
-}
-
-async function contactsScreen(main: HTMLElement) {
-  main.innerHTML = '<p class="mc-muted">Loading…</p>';
-  const { contacts } = await api('accreditations?view=contacts');
-  main.innerHTML = `<div class="mc-page-head"><h1>Media contacts</h1><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/accreditation/" data-go="/accreditation">← Accreditation</a></div>
-    <p class="mc-muted">Journalists saved when they are accredited (or after an interview request). Returning applicants are recognised by their email address. Press releases are emailed to this list.</p>
-    <section class="mc-card"><input class="mc-input" id="q" placeholder="Search name, organisation or email" style="margin:0 0 10px" /><div class="mc-scroll"><table class="mc-table"><thead><tr><th>Name</th><th>Organisation</th><th>Contact</th><th>History</th></tr></thead><tbody id="rows">${contacts.map((c: any) => `<tr data-s="${esc(`${c.fullName} ${c.organisation} ${c.email}`.toLowerCase())}"><td><b>${esc(c.fullName)}</b><br /><small>${esc(c.role || '')} · ${esc(c.employment || '')}</small></td><td>${esc(c.organisation || '')}</td><td><a href="mailto:${esc(c.email)}">${esc(c.email)}</a><br />${esc(c.phone || '')}</td><td><small>${c.accreditations} accreditation(s), ${c.interviews} interview request(s) · last ${esc(day(c.lastSeen))}</small></td></tr>`).join('') || '<tr><td colspan="4" class="mc-empty">No contacts yet.</td></tr>'}</tbody></table></div></section>`;
-  main.querySelector('#q')!.addEventListener('input', e => { const v = (e.target as HTMLInputElement).value.toLowerCase(); main.querySelectorAll<HTMLElement>('#rows tr[data-s]').forEach(r => { r.hidden = !!v && !r.dataset.s!.includes(v); }); });
 }

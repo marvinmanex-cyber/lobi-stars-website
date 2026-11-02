@@ -7,7 +7,6 @@
 import Layout from '../../layouts/Layout.astro';
 import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
 import '../../styles/mediaHub.css';
-import ShareButton from '../../components/ShareButton.astro';
 ---
 <Layout title="Media accreditation | Lobi Stars Football Club" description="Request media accreditation for a Lobi Stars FC home match at McCarthy Stadium, Makurdi.">
   <section class="ah-hero" data-logos={JSON.stringify(TEAM_LOGOS)} id="hub">
@@ -16,7 +15,7 @@ import ShareButton from '../../components/ShareButton.astro';
         <p class="ah-kicker">Press &amp; Media · McCarthy Stadium, Makurdi</p>
         <h1 class="ah-title">Media Accreditation <span>Hub</span></h1>
         <p class="ah-lede">For journalists, photographers, camera crews, radio commentators and digital media covering Lobi Stars FC home matches. One match per application; applications close <b id="closeH">6</b> hours before kick-off.</p>
-        <div class="ah-cta"><a class="ah-btn" href="#apply">Apply for accreditation</a><a class="ah-btn ghost" href="/media/">Press Room</a><ShareButton title="Lobi Stars FC media accreditation" text="Journalists and media houses: apply online for media accreditation to cover Lobi Stars FC home matches at McCarthy Stadium, Makurdi." label="Share with media houses" class="ah-share" /></div>
+        <div class="ah-cta"><a class="ah-btn" href="#apply">Apply for accreditation</a><a class="ah-btn ghost" href="/media/">Press Room</a></div>
       </div>
       <article class="ah-match" id="nextCard" aria-live="polite">
         <p class="ah-mlabel" id="nmLabel">Next home match</p>
@@ -72,6 +71,7 @@ import ShareButton from '../../components/ShareButton.astro';
         <small id="photoOnFile" hidden>We have your passport photo from an earlier application; add a new one only if you want to change it.</small></div>
       <div class="ac-f"><label for="needs">Special needs <small>(optional)</small></label><textarea id="needs" name="needs" rows="2" maxlength="500" placeholder="e.g. wheelchair access, power socket"></textarea></div>
       <div class="ac-hp" aria-hidden="true"><label for="website">Leave this empty</label><input id="website" name="website" tabindex="-1" autocomplete="off" /></div>
+      <label class="ac-agree"><input type="checkbox" name="pressList" id="pressList" value="1" /> <span>Add me to the Lobi Stars FC press list to receive club statements and matchday accreditation links. You can unsubscribe at any time.</span></label>
       <label class="ac-agree"><input type="checkbox" name="agree" id="agree" value="1" required /> <span>I agree to the club's media rules: I will stay in my access zone, wear my accreditation at all times, follow stewards' instructions, not interview players outside the mixed zone, and use material only for news reporting. The club may withdraw accreditation at any time. <span class="req">*</span></span></label>
       <button class="btn-p" type="submit" id="send">Send my request</button>
       <p class="muted ac-small">Your details are used only to process this request and to contact you about Lobi Stars media matters. See the <a href="/privacy/">Privacy Policy</a>.</p>
@@ -239,6 +239,7 @@ import ShareButton from '../../components/ShareButton.astro';
     if (update) fd.set('update', update);
     if (q.get('invite')) fd.set('invite', q.get('invite')!);
     fd.set('agree', '1');
+    if ($('pressList').checked) fd.set('pressList', '1'); else fd.delete('pressList');
     fd.set('formToken', formTok);
     $('send').disabled = true; $('send').textContent = 'Sending…';
     try {

@@ -83,26 +83,18 @@ async function publish(env, r, v) {
   const clash = await db.prepare(`SELECT id FROM mc_items WHERE kind = 'press' AND slug = ? AND id <> ?`).bind(slug, r.id).first();
   const finalSlug = clash ? `${slug}-${r.id.slice(-4).toLowerCase()}` : slug;
   await setPublic(db, fileIdsIn(v), true);
-  // Email the media contacts (first publication only).
+  // Email everyone subscribed to the press list (first publication only; recorded under Press List › Sent messages).
   let note = `Published at /media/press-releases/${finalSlug}/.`;
   if (!r.published_at && env.RESEND_API_KEY) {
     const settings = await mcSettings(db);
-    let list = [];
-    try { list = (await db.prepare(`SELECT email, full_name FROM mc_contacts ORDER BY last_seen DESC LIMIT 400`).all()).results; } catch { /* no contacts yet */ }
     const pdf = await releasePdf(env, v, { publishedAt: new Date().toISOString(), contact: v.contact || settings.press_contact }).catch(() => null);
     let b64 = null; if (pdf) { let x = ''; for (let i = 0; i < pdf.length; i += 0x8000) x += String.fromCharCode(...pdf.subarray(i, i + 0x8000)); b64 = btoa(x); }
-    let sent = 0;
-    for (const c of list.slice(0, 200)) {
-      try {
-        await sendEmail(env, { to: c.email, subject: `${v.statement ? 'Statement' : 'Press release'}: ${v.headline}`, replyTo: 'media@lobistarsfc.com',
-          html: `<div style="font:16px/1.5 Arial,sans-serif;max-width:620px">${releaseHtml(v, { contactFallback: settings.press_contact })}<p><a href="${SITE}/media/press-releases/${finalSlug}/">Read it on lobistarsfc.com</a></p></div>`,
-          text: `${v.headline}\n\n${textOf(v.body)}\n\n${v.quote ? `"${v.quote}" - ${v.quoteBy}\n\n` : ''}ENDS\n\n${SITE}/media/press-releases/${finalSlug}/`,
-          attachments: b64 ? [{ filename: `${finalSlug}.pdf`, content: b64 }] : undefined });
-        sent++;
-      } catch (e) { console.error('[press] email', e); }
-    }
-    note += ` Emailed to ${sent} media contact${sent === 1 ? '' : 's'}.`;
-  } else if (!r.published_at) note += ' Email is not set up, so it was not emailed to the media contacts.';
+    const { sendReleaseToList } = await import('./pressList.js');
+    const esc2 = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const body = `<h1 style="font-size:24px;line-height:1.2;margin:0 0 10px;color:#0E2A55">${esc2(v.headline)}</h1>${v.subheadline ? `<p><b>${esc2(v.subheadline)}</b></p>` : ''}${v.body}${v.quote ? `<blockquote style="margin:16px 0;padding:10px 14px;border-left:4px solid #D62839;background:#F7F8FA"><i>“${esc2(v.quote)}”</i><br><b>${esc2(v.quoteBy)}</b></blockquote>` : ''}<p style="text-align:center;font-weight:bold;letter-spacing:3px">ENDS</p>`;
+    const res = await sendReleaseToList(env, { releaseId: r.id, subject: `${v.statement ? 'Statement' : 'Press release'}: ${v.headline}`, body, url: `${SITE}/media/press-releases/${finalSlug}/`, label: v.statement ? 'Official statement' : 'Press release', attachment: b64 ? { filename: `${finalSlug}.pdf`, content: b64 } : null }).catch(e => { console.error('[press] list', e); return { sent: 0 }; });
+    note += ` Emailed to ${res.sent} press list contact${res.sent === 1 ? '' : 's'}.`;
+  } else if (!r.published_at) note += ' Email is not set up, so it was not emailed to the press list.';
   return { ok: true, slug: finalSlug, note };
 }
 

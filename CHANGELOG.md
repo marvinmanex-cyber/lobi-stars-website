@@ -8,6 +8,30 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: Press List and "Send to press list"; share buttons removed
+
+**Who it affects:** the media team and journalists.
+- **New: Media Centre › Press List.** It lists every media contact, with:
+  - search and filters (media type, role, subscribed, applied for a match);
+  - select all, and add, edit, delete, import or export (CSV).
+- **Send to press list** sends four kinds of message:
+  - a club statement or press release (with its PDF);
+  - a matchday accreditation link (with an Apply button for that match);
+  - an accreditation notice;
+  - a general message.
+
+  It has a preview, a test email and a progress bar. Each person gets their
+  own email from media@lobistarsfc.com with a one-click unsubscribe link.
+  **Sent messages** keeps a record of every send.
+- **The accreditation form** has a new box (unticked) to join the press list.
+  Everyone who applied before is on the list as **not subscribed** (they
+  never agreed).
+- **Press releases** are now emailed automatically only to **subscribed**
+  people (before: everyone in the media contacts).
+- **The "Share with media houses" button** is removed from the Press Room and
+  the accreditation page. The Share button at the top of each page stays.
+- **Media contacts** (under Accreditation) is now the Press List.
+
 ## 2026-11-02: New media accreditation system, colourful press releases page
 
 **Who it affects:** journalists, the media team, stewards at the gate.

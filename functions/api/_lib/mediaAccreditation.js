@@ -122,6 +122,7 @@ export function checkApplication(b) {
     eventId: oneLine(b.eventId, 80), fullName: oneLine(b.fullName, 80), phone: oneLine(b.phone, 24), email: oneLine(b.email, 254).toLowerCase(),
     organisation: oneLine(b.organisation, 120), employment: b.employment === 'freelance' ? 'freelance' : b.employment === 'staff' ? 'staff' : '',
     role: ROLES.includes(b.role) ? b.role : '', equipment: '', needs: clean(b.needs, 500), agree: b.agree === true || b.agree === 'on' || b.agree === '1' || b.agree === 'true',
+    pressList: b.pressList === true || b.pressList === 'on' || b.pressList === '1' || b.pressList === 'true',
   };
   if (!v.eventId) return { error: 'Choose the match.' };
   if (v.fullName.length < 3) return { error: 'Enter your full name.' };
@@ -195,6 +196,8 @@ export async function apply(env, request, v, { pressDocId, photoId, inviteToken 
   await db.prepare(`INSERT INTO mc_accreditations (id, event_id, status, full_name, phone, email, organisation, employment, role, press_doc_id, photo_id, equipment, needs, agreed_at, invite_token, ip, created_at, updated_at)
     VALUES (?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .bind(id, e.id, v.fullName, v.phone, v.email, v.organisation, v.employment, v.role, pressDocId, photo, v.equipment || null, v.needs || null, at, inviteToken, request.headers.get('CF-Connecting-IP') || null, at, at).run();
+  // The press list: one contact per email (subscribed only if they ticked the box).
+  try { const { recordApplicant } = await import('./pressList.js'); await recordApplicant(db, v, photo, v.pressList); } catch (err) { console.error('[press list] applicant', err); }
   await mcLog(db, { kind: 'public', id: null, name: `${v.fullName} (${v.organisation})` }, 'accreditation_request', { section: 'accreditation', itemType: 'accreditation', itemId: id, itemTitle: `${v.fullName} · ${matchLabel(e)}`, details: v.role, request });
   await mail(env, v.email, `Accreditation request received: ${matchLabel(e)}`, 'We have your accreditation request',
     `${p(`Dear ${esc(v.fullName)},`)}${p(`Thank you for applying for media accreditation for <b>${esc(matchLabel(e))}</b> on ${esc(matchDay(e.event_date))} (kick-off ${esc(kickOff(e.event_date))}, ${STADIUM}).`)}${p('Our media team will review it and email you once it has been reviewed. Please do not come to the stadium expecting accreditation until you receive your approval email.')}`);

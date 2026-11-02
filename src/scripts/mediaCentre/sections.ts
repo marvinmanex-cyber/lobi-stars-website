@@ -3,6 +3,7 @@ import './dashboard';
 import './news';
 import './newsletter';
 import './press';
+import './pressList';
 import './accreditation';
 import './matchday';
 import './library';

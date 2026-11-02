@@ -4185,6 +4185,76 @@ the match; **Media contacts** lists every accredited journalist and their
 history. **Super Admins:** Admin › Media Centre › Users & settings › *Media
 accreditations* lists every accreditation, with **Revoke**.
 
+### Press List and "Send to press list"
+**Media Centre › Press List** (Media Centre users only; it is never shown on
+the website). One row per email address: journalists, photographers,
+broadcasters and media houses.
+
+**How people get on the list**
+- **The accreditation form** has a box (unticked): "Add me to the Lobi Stars
+  FC press list…". Everyone who applies is kept on the list (needed for their
+  accreditation), but only people who **ticked the box are subscribed**.
+  Applying again never makes a second row; the **Matches** column counts the
+  matches they applied for.
+- **Add contact:** name, email, phone, organisation, media type, role, notes,
+  and you must tick **"This person agreed to receive club media emails"**.
+- **Import CSV:** columns name, email, phone, organisation, media_type
+  (press *Download an empty template*). You see a preview first; bad emails
+  and duplicates are skipped, and the result says "X added, Y updated, Z
+  skipped". Tick "Everyone in this file agreed…" only if they did; otherwise
+  they are added as not subscribed. Someone who unsubscribed is never
+  subscribed again by an import.
+- Click a name to **edit** or **delete** a contact. **Export CSV** downloads
+  the people shown by the current filters.
+
+**Choosing who gets it:** search (name, email, organisation), filter by
+media type, role, "Subscribed only" or "Applied for <match>", tick people or
+tick the box at the top to select everyone shown ("12 selected"), then press
+**Send to press list**.
+
+**The composer (4 steps)**
+1. **Type:**
+   - **Club statement / press release:** choose a published release. The
+     subject and summary are filled in, the branded PDF is attached, and a
+     button links to the release.
+   - **Matchday accreditation link:** choose an upcoming home match. The
+     email shows the match line and an **Apply for accreditation** button
+     with that match selected.
+   - **Accreditation notice:** for example the collection point changed or
+     kick-off moved. **Send to everyone who applied for this match** selects
+     them.
+   - **General message.**
+2. **Subject and message:**
+   - Bold, italic, lists and links.
+   - The fields **{first_name}**, **{full_name}** and **{organisation}** are
+     replaced for each person.
+   - One attachment (PDF or JPG, 5 MB).
+3. **Preview** shows the email exactly, and the number of people.
+   - A yellow box lists anyone left out.
+   - **Send test to me** emails only you (type your email once; it is
+     remembered).
+4. **Send:** confirm "Send to 37 contacts?".
+   - Keep the page open while the progress bar runs.
+   - If the page was closed, open the message under **Sent messages** and
+     press **Continue sending**.
+
+**Rules:**
+- **One email per person** from "Lobi Stars FC Media" <media@lobistarsfc.com>,
+  and nobody sees anyone else's address.
+- **Not subscribed** people are left out of statements, matchday links and
+  general messages. An accreditation notice may still reach people who
+  applied for that match.
+- Every email ends with **Unsubscribe from the press list**. One click
+  removes the person, with no login needed.
+- At most 10 sends per hour per user.
+
+**Sent messages** lists every send: the date, who sent it, the type, the
+subject and how many were sent or failed. Open one to see the message and
+each recipient.
+
+**Press releases:** the first time a release is published, it is emailed
+automatically to everyone **subscribed**, and it appears under Sent messages.
+
 ### Lobi Stars Weekly Newsletter (the weekly newsletter)
 **Media Centre › Lobi Stars Weekly Newsletter › Start this week's newsletter.** The
 template has 15 sections in this order. Each field has a short hint showing
