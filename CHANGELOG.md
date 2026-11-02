@@ -8,6 +8,30 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: MatchDay Kitchen staff app; whole-site phone/tablet/laptop check
+
+**Who it affects:** kitchen staff, fans on phones.
+- **MD Kitchen app:** the kitchen staff area
+  (lobistarsfc.com/matchday-kitchen) can now be installed as its own app on
+  phones, tablets and laptops. It is separate from the Lobi Stars app and only
+  opens the kitchen staff area (never the public site or the admin). It has:
+  - its own icon;
+  - an **Install the Kitchen app** button on the sign-in screen and in the top
+    bar (iPhone/iPad: Share › Add to Home Screen);
+  - shortcuts on the app icon: Kitchen screen, Live orders, All orders, Menu;
+  - a **Fan menu** button that opens the public ordering page in the browser;
+  - a "No connection" screen instead of a browser error.
+
+  Fans keep ordering at lobistarsfc.com/kitchen.
+- **Whole-site check:** about 100 pages checked on phone, tablet and laptop (on
+  the live site and locally).
+  - No sideways scrolling, no broken pictures, no header covering content and no
+    script errors.
+  - **Fixed:** the bare /match-centre/ address (a template) now goes to Fixtures
+    instead of showing "Match not found".
+  - **Fixed:** tick boxes and round options are at least 22 px on touch screens,
+    easier to tap.
+
 ## 2026-11-02: Phones: menus no longer float over forms while typing
 
 **Who it affects:** everyone on a phone or tablet.

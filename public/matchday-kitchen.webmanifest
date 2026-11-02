@@ -1,16 +1,27 @@
 {
-  "name": "MatchDay Kitchen",
-  "short_name": "MatchDay Kitchen",
-  "description": "Lobi Stars FC matchday kitchen staff area",
-  "start_url": "/matchday-kitchen/",
+  "id": "/matchday-kitchen/",
+  "name": "MatchDay Kitchen Staff",
+  "short_name": "MD Kitchen",
+  "description": "Lobi Stars FC MatchDay Kitchen: the kitchen staff app (orders, kitchen screen, menu, shifts). Staff only.",
+  "start_url": "/matchday-kitchen/?app=1",
   "scope": "/matchday-kitchen/",
-  "display": "fullscreen",
-  "display_override": ["fullscreen", "standalone"],
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen"],
   "orientation": "any",
   "background_color": "#07471a",
   "theme_color": "#0e7a26",
+  "categories": ["business", "food"],
   "icons": [
-    { "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/images/matchday-kitchen/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
-  ]
+    { "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/images/matchday-kitchen/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/images/matchday-kitchen/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/images/matchday-kitchen/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Kitchen screen", "short_name": "Kitchen", "url": "/matchday-kitchen/?open=kitchen", "icons": [{ "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Live orders", "short_name": "Live", "url": "/matchday-kitchen/?open=live", "icons": [{ "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192" }] },
+    { "name": "All orders", "short_name": "Orders", "url": "/matchday-kitchen/?open=orders", "icons": [{ "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Menu and sold out", "short_name": "Menu", "url": "/matchday-kitchen/?open=menu", "icons": [{ "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192" }] }
+  ],
+  "prefer_related_applications": false
 }

@@ -136,7 +136,9 @@ import '../styles/fixture-card.css';
   };
 
   const root = document.getElementById('mc')!;
-  const slug = location.pathname.replace(/^\/matches\//, '').replace(/\/$/, '') || new URLSearchParams(location.search).get('m') || '';
+  // A match page is /matches/<slug>/ (or ?m=<slug>). The bare template address has no match: go to the fixtures.
+  const slug = (location.pathname.startsWith('/matches/') ? location.pathname.replace(/^\/matches\//, '').replace(/\/$/, '') : '') || new URLSearchParams(location.search).get('m') || '';
+  if (!slug) location.replace('/fixtures/');
   let match: Full | null = null;
   let activeTab = '';
   let timers: number[] = [];

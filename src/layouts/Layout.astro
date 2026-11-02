@@ -175,6 +175,8 @@ body{font-family:'Barlow',sans-serif;background:var(--black);color:var(--white);
 /* clip (not hidden) where supported: on iPhones overflow-x:hidden can turn the page into its own scroller, and then the
    bottom bar and other fixed bars scroll with the content. */
 @supports (overflow-x:clip){body{overflow-x:clip;}}
+/* Touch screens: tick boxes and round options big enough for a fingertip. */
+@media (pointer:coarse){input[type=checkbox],input[type=radio]{min-width:22px;min-height:22px;}}
 a{color:inherit;}
 .wrap{max-width:1200px;margin:0 auto;padding:0 5%;}
 [hidden]{display:none !important;}

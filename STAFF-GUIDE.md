@@ -4456,9 +4456,40 @@ stored. The log can never be changed or deleted.
 **For admins:** Admin › Commerce › **MatchDay Kitchen staff area** shows the kitchen
 staff, shifts, handover notes and activity log (read-only).
 
-**Add it to a tablet's home screen:** open lobistarsfc.com/matchday-kitchen in Chrome
-(Android: menu › Add to Home screen) or Safari (iPad: Share › Add to Home Screen). It
-then opens full screen with the MatchDay Kitchen logo.
+### The MatchDay Kitchen staff app (install on phones, tablets and laptops)
+The kitchen staff area is also its own app, **MD Kitchen**. It is separate from the
+Lobi Stars app.
+- It opens straight to the kitchen sign-in and home screen, full screen, with the
+  MatchDay Kitchen icon.
+- It only shows the kitchen staff area. It never opens the public website or the
+  admin.
+- Fans don't need it. They order at lobistarsfc.com/kitchen.
+
+**Install it (once per device):** open **lobistarsfc.com/matchday-kitchen**.
+- **Android phone or tablet (Chrome):** press **Install the Kitchen app** on the
+  sign-in screen, then **Install**. If the button isn't there, use the Chrome menu
+  (⋮) › **Install app** (or **Add to Home screen**).
+- **iPhone or iPad (Safari):** tap **Share** (the square with an arrow), then
+  **Add to Home Screen**, then **Add**.
+- **Laptop (Chrome or Edge):** press **Install the Kitchen app** on the sign-in
+  screen, or the install icon at the right of the address bar. It then opens in its
+  own window and can be pinned to the taskbar.
+- Signed in already? The **Install app** button is in the top bar.
+
+**Using it:**
+- **Shortcuts:** press and hold the app icon (Android, laptop: right-click) for
+  **Kitchen screen**, **Live orders**, **All orders** and **Menu and sold out**.
+  After signing in, the page opens straight away.
+- **Fan menu** (top bar) opens the public ordering page in the normal browser, so
+  you can see prices, sold-out items and what a fan sees.
+- **WhatsApp** and **Telegram** open in their own apps, as before.
+- **No connection:** the app shows a "No connection" screen with **Try again**,
+  instead of a browser error. Orders are always live, never old copies.
+- **Updates:** the app always loads the latest version. There is nothing to update
+  by hand.
+- **Shared tablets:** the same rules as in the browser. Each person signs in with
+  their own Staff ID, and the "Still there?" sign-out runs after 20 minutes
+  without a tap.
 
 ## Other things you can update in the CMS
 

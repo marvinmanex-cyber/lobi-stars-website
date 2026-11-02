@@ -22,6 +22,11 @@ const PANEL = /^\/matchday-kitchen\/(kitchen|live|alerts|orders|orders\/[A-Za-z0
 export async function onRequest({ request, env, next }) {
   const url = new URL(request.url);
   let path = url.pathname;
+  // The kitchen staff app's service worker (its scope is the kitchen area only).
+  if (path === '/matchday-kitchen/sw.js') {
+    const sw = await env.ASSETS.fetch(new URL('/matchday-kitchen-sw.js', url));
+    return new Response(sw.body, { status: sw.status, headers: { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': '/matchday-kitchen/', 'X-Content-Type-Options': 'nosniff' } });
+  }
   if (path === '/matchday-kitchen') return Response.redirect(`${url.origin}/matchday-kitchen/${url.search}`, 301);
   if (!path.endsWith('/') && PANEL.test(`${path}/`)) return Response.redirect(`${url.origin}${path}/${url.search}`, 301);
   if (path === '/matchday-kitchen/login') path = '/matchday-kitchen/login/';

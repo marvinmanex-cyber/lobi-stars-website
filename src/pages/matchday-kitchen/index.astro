@@ -16,7 +16,8 @@ import '../../styles/matchdayKitchen.css';
   <meta name="theme-color" content="#0e7a26" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="MatchDay Kitchen" />
+  <meta name="apple-mobile-web-app-title" content="MD Kitchen" />
+  <meta name="application-name" content="MD Kitchen" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>MatchDay Kitchen | Lobi Stars FC</title>
   <link rel="icon" type="image/png" sizes="32x32" href="/images/matchday-kitchen/favicon-32.png" />
@@ -51,6 +52,11 @@ import '../../styles/matchdayKitchen.css';
       </div>
       <button class="mk-btn go big wide" type="submit" id="signinBtn">Sign in</button>
       <p class="mk-note">Everything you do in the kitchen is recorded under your name. Don't share your password.</p>
+      <div class="mk-install" id="installBox" hidden>
+        <p class="mk-install-t"><b>Kitchen staff app</b> Install MatchDay Kitchen on this phone, tablet or laptop. It opens straight to the kitchen, full screen, without the rest of the website.</p>
+        <button type="button" class="mk-btn go wide" id="installBtn" hidden>Install the Kitchen app</button>
+        <p class="mk-install-ios" id="iosHow" hidden>On iPhone or iPad (Safari): tap <b>Share</b> <span aria-hidden="true">⬆</span>, then <b>Add to Home Screen</b>, then <b>Add</b>.</p>
+      </div>
     </form>
   </section>
 
@@ -61,7 +67,9 @@ import '../../styles/matchdayKitchen.css';
         <button type="button" class="mk-tb on" id="homeBtn" aria-label="Home"><span aria-hidden="true">⌂</span><span class="lbl">Home</span></button>
         <button type="button" class="mk-tb wa" id="waBtn" aria-label="Open the kitchen's WhatsApp chats (opens in a new tab)"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="waPath" fill="currentColor" /></svg><span class="lbl">WhatsApp</span></button>
         <button type="button" class="mk-tb tg" id="tgBtn" aria-label="Open the kitchen's Telegram updates (opens in a new tab)"><svg viewBox="0 0 24 24" aria-hidden="true"><path id="tgPath" fill="currentColor" /></svg><span class="lbl">Telegram</span></button>
+        <button type="button" class="mk-tb" id="fanBtn" aria-label="Open the fan ordering page in the browser"><span aria-hidden="true">🍽</span><span class="lbl">Fan menu</span></button>
         <span class="mk-spacer"></span>
+        <button type="button" class="mk-tb" id="installTop" hidden aria-label="Install the Kitchen app"><span aria-hidden="true">⬇</span><span class="lbl">Install app</span></button>
         <button type="button" class="mk-tb" id="reloadBtn" hidden aria-label="Reload this page"><span aria-hidden="true">⟳</span><span class="lbl">Reload</span></button>
         <button type="button" class="mk-tb" id="fsBtn" hidden aria-label="Full screen"><span aria-hidden="true">⛶</span></button>
         <span class="mk-clock" id="clock" aria-label="Time"></span>
@@ -90,6 +98,7 @@ import '../../styles/matchdayKitchen.css';
 
   <script>
     import '../../scripts/matchdayKitchen/shell';
+    import '../../scripts/matchdayKitchen/app';
   </script>
 </body>
 </html>

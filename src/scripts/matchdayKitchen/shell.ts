@@ -9,6 +9,9 @@ type TabRec = { page: string; frame: HTMLIFrameElement; shownAt: number };
 const tabs: TabRec[] = [];
 let current = '';                       // '' = Home
 let lastActivity = Date.now(), lastPing = Date.now(), idleTimer = 0, countdown = 0, started = false;
+// App shortcuts (press and hold the app icon): /matchday-kitchen/?open=kitchen|live|orders|menu.
+const SHORTCUTS = ['kitchen', 'live', 'orders', 'menu'];
+let wantOpen = new URLSearchParams(location.search).get('open') || '';
 
 // ── Sign in ──
 function showSignin(msg = '') {
@@ -202,12 +205,13 @@ $('idleKeep').addEventListener('click', () => { clearInterval(countdown); $('idl
 async function startApp() {
   await loadSession();
   $('signin').hidden = true; $('app').hidden = false;
-  if (location.pathname !== '/matchday-kitchen/') history.replaceState(null, '', '/matchday-kitchen/');
+  if (location.pathname !== '/matchday-kitchen/' || location.search) history.replaceState(null, '', '/matchday-kitchen/');
   renderHome(); show('');
   // Refreshed by accident: reopen the pages that were open, but stay on Home.
   let saved: string[] = [];
   try { saved = JSON.parse(sessionStorage.getItem(SAVE_KEY) || '[]'); } catch { /* */ }
   for (const p of saved.slice(0, MAX_TABS)) if (typeof p === 'string' && /^[a-z/0-9_-]+$/i.test(p)) open(p, { log: false, focus: false });
+  if (SHORTCUTS.includes(wantOpen)) { open(wantOpen); wantOpen = ''; }
   startIdle();
   started = true;
 }
