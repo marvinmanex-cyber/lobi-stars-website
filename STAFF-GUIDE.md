@@ -4140,6 +4140,14 @@ settings** next to the match:
 the photo, the person's details, **View ID** (their organisation's ID card),
 the category letter (J, P, B, R or D), the status and the accreditation
 number.
+- **Review application** (on each new application) opens the full
+  application: a large passport photo, their **organisation's ID card shown on
+  the page** (photo or PDF), email, phone, special needs, whether they are on
+  the press list, and their earlier applications.
+  - **Approve**, **Reject** and **Ask for more** are only on this page. The
+    website refuses a decision on an application nobody has opened. If the
+    applicant updates their application, it must be reviewed again.
+  - **Next application →** moves to the next one waiting.
 - **Approve:** the access zones are ticked for you from the role (you can
   change them), then press **Approve**. The person gets the next number
   (LSFC/MED/0020, 0021 …; numbers are never reused) and the card exists

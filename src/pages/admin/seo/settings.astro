@@ -59,7 +59,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
 <style>
   .seo { --blue: #1C3F7A; --red: #C8102E; }
   .seo-head { margin-bottom: 14px; } .stag a { color: inherit; }
-  .seo-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; margin: 0 0 12px; position: sticky; top: 8px; z-index: 5; } .seo-msg.err { background: #FEE2E2; color: #991B1B; }
+  .seo-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 3000; width: max-content; max-width: min(620px, calc(100vw - 32px)); box-shadow: 0 12px 32px rgba(0,0,0,.22); font-weight: 600; } .seo-msg.err { background: #FEE2E2; color: #991B1B; }
   .seo-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 18px 20px; margin-bottom: 16px; }
   .seo-card h2 { margin: 0 0 6px; font: 700 18px 'Barlow', sans-serif; color: var(--blue); } :global(body.admin-dark) .seo-card h2 { color: #93C5FD; }
   .seo :global(.muted) { color: var(--a-muted); font-size: 14px; margin: 0 0 10px; line-height: 1.5; }

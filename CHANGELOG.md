@@ -8,6 +8,30 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-02: Review page before approving accreditation; "Settings saved" messages visible
+
+**Who it affects:** the media team and Super Admins.
+- **Accreditation (Media Centre):** each new application has a **Review
+  application** button. The page shows:
+  - the photo;
+  - the organisation's ID card (on the page, photo or PDF);
+  - every detail and earlier applications.
+
+  Approve, Reject and Ask for more are only there. The website refuses an
+  approval or rejection for an application that has not been opened (or has
+  changed since).
+- **Admin messages:** "Settings saved" (and any error) was hidden under the
+  top bar. It now pops up at the bottom of the screen on six pages:
+  - Media Centre › Users & settings;
+  - Media Centre › Approval Queue;
+  - SEO settings;
+  - Squad approvals, roles and suggestions.
+
+  The Save settings button also shows "Saving…" and then "Saved ✓".
+  WhatsApp channel links with extra text after a "?" are accepted, and an
+  error now names the field to check.
+- The Accreditation and Press List menu icons now show on every device.
+
 ## 2026-11-02: MatchDay Kitchen seat bar fixed for good; interview and accreditation forms redesigned; confirm email
 
 **Who it affects:** fans ordering food, journalists.

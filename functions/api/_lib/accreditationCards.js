@@ -49,7 +49,7 @@ let ready = false;
 export async function ensureCardSchema(db) {
   if (ready) return;
   const cols = new Set((await db.prepare(`PRAGMA table_info(mc_accreditations)`).all()).results.map(c => c.name));
-  for (const [c, t] of [['zones', 'TEXT'], ['seq', 'INTEGER'], ['email_sent_at', 'TEXT']]) if (!cols.has(c)) await db.prepare(`ALTER TABLE mc_accreditations ADD COLUMN ${c} ${t}`).run();
+  for (const [c, t] of [['zones', 'TEXT'], ['seq', 'INTEGER'], ['email_sent_at', 'TEXT'], ['reviewed_at', 'TEXT'], ['reviewed_by', 'TEXT']]) if (!cols.has(c)) await db.prepare(`ALTER TABLE mc_accreditations ADD COLUMN ${c} ${t}`).run();
   await db.batch([
     db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS mc_accreditations_seq ON mc_accreditations (seq) WHERE seq IS NOT NULL`),
     db.prepare(`CREATE TABLE IF NOT EXISTS mc_accr_matches (

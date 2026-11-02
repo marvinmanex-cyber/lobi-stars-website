@@ -78,7 +78,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
 <style>
   .mcu { max-width: 1100px; padding-top: 20px; padding-bottom: 60px; }
   .mcu-lede { color: var(--a-muted); line-height: 1.5; } .mcu-lede a { color: inherit; font-weight: 700; }
-  .mcu-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: sticky; top: 8px; z-index: 5; } .mcu-msg.err { background: #FEE2E2; color: #991B1B; }
+  .mcu-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 3000; width: max-content; max-width: min(620px, calc(100vw - 32px)); box-shadow: 0 12px 32px rgba(0,0,0,.22); font-weight: 600; } .mcu-msg.err { background: #FEE2E2; color: #991B1B; }
   .mcu-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 16px 0; }
   .mcu-card h2 { margin: 0 0 10px; font-size: 19px; } .mcu-card h3 { margin: 18px 0 8px; font-size: 16px; }
   .mcu-scroll { overflow-x: auto; }
@@ -206,7 +206,9 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     e.preventDefault(); const f = e.target as any;
     const values = { accreditation_close_hours: f.accreditation_close_hours.value, accreditation_max: f.accreditation_max.value, media_team_email: f.media_team_email.value, press_contact: f.press_contact.value, whatsapp_channel_url: f.whatsapp_channel_url.value.trim(),
       newsletter_deadline: `${f.nd_day.value}|${f.nd_time.value}`, newsletter_publish: `${f.np_day.value}|${f.np_time.value}` };
-    try { const d = await api('settings', { action: 'settings', values }); settings(d.settings); msg('Settings saved.'); } catch (err: any) { msg(err.message, false); }
+    const btn = f.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Saving…';
+    try { const d = await api('settings', { action: 'settings', values }); settings(d.settings); msg('Settings saved.'); btn.textContent = 'Saved ✓'; } catch (err: any) { msg(err.message, false); btn.textContent = 'Save settings'; }
+    finally { btn.disabled = false; window.setTimeout(() => { btn.textContent = 'Save settings'; }, 2500); }
   });
   load();
 </script>

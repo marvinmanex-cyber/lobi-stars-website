@@ -109,6 +109,10 @@ test('match settings, then approve with zones: an LSFC/MED number, the printable
   const pre = await fetch(`${BASE}/api/media/accreditation?update=${token}`).then(x => x.json());
   assert.equal(pre.update.infoRequest, 'Please send a clearer photo.');
   assert.equal((await applyNow(form({ fullName: 'Ada R.', update: token }))).status, 200);
+  const blind = await mc(`accreditations/${accId}`, 'POST', { decision: 'approve', zones: [1, 2] });
+  assert.equal(blind.status, 409, 'no approving without opening the application'); assert.match(blind.data.error, /review/);
+  const rv = await mc(`accreditations/${accId}?review=1`);
+  assert.equal(rv.status, 200); assert.equal(rv.data.doc.mime, 'application/pdf'); assert.ok(rv.data.request.reviewedAt); assert.ok(rv.data.queue.includes(accId));
   assert.equal((await mc(`accreditations/${accId}`, 'POST', { decision: 'approve', zones: [] })).status, 400, 'a zone is needed');
   const ap = await mc(`accreditations/${accId}`, 'POST', { decision: 'approve', zones: [1, 2, 3, 5] });
   assert.equal(ap.status, 200, JSON.stringify(ap.data));
@@ -167,6 +171,7 @@ test('the per-match limit; invitation links; contacts recognise returning journa
   sql(`INSERT INTO mc_settings (key, value) VALUES ('accreditation_max', '1') ON CONFLICT(key) DO UPDATE SET value = '1';`);
   assert.equal((await applyNow(form({ email: `ben.${T}@example.com`, fullName: 'Ben Writer', role: 'Journalist' }))).status, 200);
   const ben = (await mc(`accreditations?event=${HOME}`)).data.requests.find(x => x.email === `ben.${T}@example.com`);
+  assert.equal((await mc(`accreditations/${ben.id}?review=1`)).status, 200);
   const full = await mc(`accreditations/${ben.id}`, 'POST', { decision: 'approve', zones: [1, 2, 4, 5] });
   assert.equal(full.status, 400); assert.match(full.data.error, /limit is 1/);
   assert.equal((await mc(`accreditations/${ben.id}`, 'POST', { decision: 'reject', reason: '' })).status, 400, 'a reason is needed');

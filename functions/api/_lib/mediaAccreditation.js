@@ -215,7 +215,7 @@ export function view(r) {
     photo: r.photo_id ? `/api/media-file/${r.photo_id}` : null, pressDoc: r.press_doc_id ? `/api/media-file/${r.press_doc_id}` : null, equipment: r.equipment, needs: r.needs, zone: r.zone,
     infoRequest: r.info_request, reason: r.reason, decidedBy: r.decided_by_name, decidedAt: r.decided_at, revokedAt: r.revoked_at, revokedBy: r.revoked_by, revokeReason: r.revoke_reason,
     createdAt: r.created_at, updatedAt: r.updated_at, verifyUrl: r.verify_token ? verifyUrl(r.verify_token) : null,
-    zones: zonesOf(r), category: roleInfo(r.role).code, roleName: roleInfo(r.role).name, emailSentAt: r.email_sent_at || null };
+    zones: zonesOf(r), category: roleInfo(r.role).code, roleName: roleInfo(r.role).name, emailSentAt: r.email_sent_at || null, reviewedAt: r.reviewed_at || null, reviewedBy: r.reviewed_by || null };
 }
 async function nextNumber(db, event) {
   const y = new Date(event.event_date), season = y.getUTCMonth() >= 7 ? `${String(y.getUTCFullYear()).slice(2)}${String(y.getUTCFullYear() + 1).slice(2)}` : `${String(y.getUTCFullYear() - 1).slice(2)}${String(y.getUTCFullYear()).slice(2)}`;
@@ -233,6 +233,8 @@ export async function decideAccreditation(env, request, user, id, { decision, zo
   const A = { kind: 'media', id: user.id, name: `${user.fullName} (${user.loginId})` }, at = nowIso();
   const meta = { section: 'accreditation', itemType: 'accreditation', itemId: r.id, itemTitle: `${r.full_name} · ${matchLabel(e)}`, request };
   if (!['pending', 'info'].includes(r.status)) return { error: 'This request has already been decided.' };
+  // No blind decisions: the application must have been opened on its review page (again after any update).
+  if (['approve', 'reject'].includes(decision) && !r.reviewed_at) return { error: 'Open the application and review it before approving or rejecting.', status: 409 };
   if (decision === 'approve') {
     const allowed = [...new Set((Array.isArray(zones) ? zones : roleInfo(r.role).zones).map(Number).filter(n => n >= 1 && n <= 5))].sort();
     if (!allowed.length) return { error: 'Tick at least one access zone.' };
@@ -280,7 +282,7 @@ export async function updateApplication(env, request, token, v, { pressDocId, ph
   if (!r) return { error: 'This link has already been used or is no longer valid.', status: 404 };
   const e = await eventById(db, r.event_id);
   const at = nowIso();
-  await db.prepare(`UPDATE mc_accreditations SET status = 'pending', full_name = ?, phone = ?, organisation = ?, employment = ?, role = ?, equipment = ?, needs = ?, press_doc_id = COALESCE(?, press_doc_id), photo_id = COALESCE(?, photo_id), update_token = NULL, updated_at = ? WHERE id = ?`)
+  await db.prepare(`UPDATE mc_accreditations SET status = 'pending', full_name = ?, phone = ?, organisation = ?, employment = ?, role = ?, equipment = ?, needs = ?, press_doc_id = COALESCE(?, press_doc_id), photo_id = COALESCE(?, photo_id), update_token = NULL, reviewed_at = NULL, reviewed_by = NULL, updated_at = ? WHERE id = ?`)
     .bind(v.fullName, v.phone, v.organisation, v.employment, v.role, v.equipment || null, v.needs || null, pressDocId || null, photoId || null, at, r.id).run();
   await mcLog(db, { kind: 'public', id: null, name: `${v.fullName} (${v.organisation})` }, 'accreditation_update', { section: 'accreditation', itemType: 'accreditation', itemId: r.id, itemTitle: `${v.fullName} · ${e ? matchLabel(e) : r.event_id}`, request });
   return { ok: true };

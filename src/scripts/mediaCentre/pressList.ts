@@ -13,7 +13,7 @@ const loadSel = (): Set<string> => { try { return new Set(JSON.parse(sessionStor
 const saveSel = (s: Set<string>) => { try { sessionStorage.setItem(KEY, JSON.stringify([...s])); } catch { /* private mode */ } };
 let selected = loadSel();
 
-register({ path: 'press-list', label: 'Press List', icon: '📇', async render(main, parts) {
+register({ path: 'press-list', label: 'Press List', icon: '📋', async render(main, parts) {
   if (parts[0] === 'new') return contactForm(main, null);
   if (parts[0] === 'contact' && parts[1]) return contactForm(main, decodeURIComponent(parts[1]));
   if (parts[0] === 'import') return importScreen(main);

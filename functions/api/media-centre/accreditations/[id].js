@@ -6,10 +6,30 @@ import { json, mcLog, mediaActor } from '../../_lib/mediaCentre.js';
 // POST /api/media-centre/accreditations/:id
 //   { decision: approve, zones: [1..5] } | { decision: reject, reason } | { decision: info, message }
 //   { action: 'revoke', reason? } | { action: 'restore' } | { action: 'resend' } (the approval email again)
-export async function onRequestGet({ env, params }) {
-  await ensureAccreditationSchema(env.DB);
-  const r = await env.DB.prepare(`SELECT * FROM mc_accreditations WHERE id = ?`).bind(params.id).first();
-  return r ? json({ request: view(r) }) : json({ error: 'Not found.' }, 404);
+// GET ?review=1 -- the review page: the full application, its ID document type, the match,
+// earlier applications by the same email; marks it as reviewed (needed before approve / reject).
+export async function onRequestGet({ request, env, params, data }) {
+  const db = env.DB;
+  await ensureAccreditationSchema(db);
+  let r = await db.prepare(`SELECT * FROM mc_accreditations WHERE id = ?`).bind(params.id).first();
+  if (!r) return json({ error: 'Not found.' }, 404);
+  if (new URL(request.url).searchParams.get('review') !== '1') return json({ request: view(r) });
+  const user = data.mc.user;
+  if (['pending', 'info'].includes(r.status)) {
+    await db.prepare(`UPDATE mc_accreditations SET reviewed_at = ?, reviewed_by = ? WHERE id = ?`).bind(new Date().toISOString(), user.fullName, r.id).run();
+    if (!r.reviewed_at) await mcLog(db, mediaActor(user), 'review', { section: 'accreditation', itemType: 'accreditation', itemId: r.id, itemTitle: r.full_name, request });
+    r = await db.prepare(`SELECT * FROM mc_accreditations WHERE id = ?`).bind(params.id).first();
+  }
+  const e = await eventById(db, r.event_id);
+  const doc = r.press_doc_id ? await db.prepare(`SELECT mime, name, bytes FROM mc_files WHERE id = ?`).bind(r.press_doc_id).first() : null;
+  const earlier = (await db.prepare(`SELECT id, event_id, status, number, created_at FROM mc_accreditations WHERE email = ? AND id <> ? ORDER BY created_at DESC LIMIT 20`).bind(r.email, r.id).all()).results;
+  const labels = {};
+  for (const x of earlier) if (!labels[x.event_id]) { const ev = await eventById(db, x.event_id); labels[x.event_id] = ev ? `${ev.home_team} v ${ev.away_team}` : 'Past match'; }
+  const queue = (await db.prepare(`SELECT id FROM mc_accreditations WHERE event_id = ? AND status IN ('pending', 'info') ORDER BY created_at`).bind(r.event_id).all()).results.map(x => x.id);
+  const press = await db.prepare(`SELECT subscribed FROM mc_contacts WHERE email = ?`).bind(r.email).first().catch(() => null);
+  return json({ request: view(r), match: e ? { id: e.id, label: `${e.home_team} v ${e.away_team}`, date: e.event_date } : null,
+    doc: doc ? { mime: doc.mime, name: doc.name, bytes: doc.bytes } : null, pressList: !!press?.subscribed,
+    earlier: earlier.map(x => ({ id: x.id, match: labels[x.event_id], status: x.status, number: x.number, createdAt: x.created_at })), queue });
 }
 export async function onRequestPost({ request, env, params, data }) {
   const b = await request.json().catch(() => ({}));

@@ -10,6 +10,7 @@ export function deskGate(main: HTMLElement, title: string, what: string, done: (
       <div class="mc-desk-ico" aria-hidden="true">🔒</div>
       <h2 class="mc-h3">Enter the media desk code</h2>
       <p class="mc-muted">${esc(what)} The code is given by a Super Admin. It unlocks the Approval Queue and the Media Inbox until you sign out.</p>
+      ${state.user?.admin ? '<p class="mc-small"><b>Super Admin:</b> set or change the code in <a href="/admin/media-centre/#apForm" target="_blank" rel="noopener">Admin › Media Centre › Users &amp; settings › Media desk code</a>, then type it here.</p>' : ''}
       ${unread ? `<p class="mc-pill submitted" style="display:inline-block">${unread} unread email${unread === 1 ? '' : 's'} waiting</p>` : ''}
       <form class="mc-desk-form" novalidate><div class="mc-field"><label for="deskCode">Media desk code</label>
         <div class="mc-pw"><input id="deskCode" type="password" autocomplete="off" required /><button type="button" class="mc-btn mc-btn-o" data-show="deskCode">Show</button></div></div>

@@ -12,8 +12,9 @@ const CHECK = {
   newsletter_publish: v => /^[0-6]\|([01]\d|2[0-3]):[0-5]\d$/.test(v),
   media_team_email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
   press_contact: v => v.length >= 5 && v.length <= 200,
-  whatsapp_channel_url: v => v === '' || /^https:\/\/(www\.)?(whatsapp\.com\/channel\/|chat\.whatsapp\.com\/|wa\.me\/)[\w/+-]{4,200}$/.test(v),
+  whatsapp_channel_url: v => v === '' || /^https:\/\/(www\.)?(whatsapp\.com\/channel\/|chat\.whatsapp\.com\/|wa\.me\/)[\w/+-]{4,200}(\?[\w=&%.-]*)?$/.test(v),
 };
+const LABELS = { accreditation_close_hours: 'Accreditation closes', accreditation_max: 'Most accredited journalists per match', newsletter_deadline: 'Newsletter deadline', newsletter_publish: 'Newsletter publishes', media_team_email: 'Media team email', press_contact: 'Media contact on press releases', whatsapp_channel_url: 'Club WhatsApp channel link (it should look like https://whatsapp.com/channel/…)' };
 export async function onRequestGet({ request, env }) {
   const { denied } = await requireAdminUser(request, env);
   if (denied) return denied;
@@ -36,7 +37,7 @@ export async function onRequestPost({ request, env }) {
     for (const [k, v] of Object.entries(b.values || {})) {
       if (!(k in SETTING_DEFAULTS)) continue;
       const s = oneLine(v, 200);
-      if (!CHECK[k](s)) return json({ error: `Please check "${k.replace(/_/g, ' ')}".` }, 400);
+      if (!CHECK[k](s)) return json({ error: `Not saved: please check "${LABELS[k] || k.replace(/_/g, ' ')}".` }, 400);
       await setMcSetting(db, k, s, by); changed.push(`${k}=${s}`);
     }
     await mcLog(db, A, 'settings', { section: 'settings', details: changed.join('; '), request });

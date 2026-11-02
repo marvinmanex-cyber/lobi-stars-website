@@ -20,7 +20,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 <style>
   .sts { max-width: 1000px; padding-top: 20px; padding-bottom: 60px; }
   .sts-lede { color: var(--a-muted); line-height: 1.5; }
-  .sts-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: sticky; top: 8px; z-index: 5; } .sts-msg.err { background: #FEE2E2; color: #991B1B; }
+  .sts-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 3000; width: max-content; max-width: min(620px, calc(100vw - 32px)); box-shadow: 0 12px 32px rgba(0,0,0,.22); font-weight: 600; } .sts-msg.err { background: #FEE2E2; color: #991B1B; }
   .sts-tabs { display: flex; gap: 6px; margin: 14px 0; } .sts-tabs button { font: inherit; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; } .sts-tabs button.on { background: #1C3F7A; color: #fff; border-color: #1C3F7A; }
   .sts-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 8px 16px; }
   .sts-list { list-style: none; margin: 0; padding: 0; }

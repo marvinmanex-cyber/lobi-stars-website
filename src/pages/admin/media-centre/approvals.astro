@@ -22,7 +22,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
 <style>
   .mca { max-width: 1150px; padding-top: 20px; padding-bottom: 60px; }
   .mca-lede { color: var(--a-muted); line-height: 1.5; } .mca-lede a { color: inherit; font-weight: 700; }
-  .mca-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: sticky; top: 8px; z-index: 5; } .mca-msg.err { background: #FEE2E2; color: #991B1B; }
+  .mca-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 3000; width: max-content; max-width: min(620px, calc(100vw - 32px)); box-shadow: 0 12px 32px rgba(0,0,0,.22); font-weight: 600; } .mca-msg.err { background: #FEE2E2; color: #991B1B; }
   .mca-card { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 16px 0; }
   .mca-card h2 { margin: 0 0 10px; font-size: 19px; } .mca-n { font-size: 14px; padding: 2px 9px; border-radius: 999px; background: #E31E24; color: #fff; vertical-align: middle; }
   .mca :global(.q) { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 10px 0; border-top: 1px solid var(--a-line); }

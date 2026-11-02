@@ -20,7 +20,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
 <style>
   .sr { max-width: 1000px; padding-top: 20px; padding-bottom: 60px; }
   .sr-lede { color: var(--a-muted); line-height: 1.5; } .sr-lede a { color: inherit; font-weight: 700; }
-  .sr-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: sticky; top: 8px; z-index: 5; } .sr-msg.err { background: #FEE2E2; color: #991B1B; }
+  .sr-msg { padding: 10px 14px; border-radius: 10px; background: #DCFCE7; color: #166534; position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 3000; width: max-content; max-width: min(620px, calc(100vw - 32px)); box-shadow: 0 12px 32px rgba(0,0,0,.22); font-weight: 600; } .sr-msg.err { background: #FEE2E2; color: #991B1B; }
   .sr :global(.grp) { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px; margin: 14px 0; }
   .sr :global(.grp h2) { margin: 0 0 4px; font-size: 18px; } .sr :global(.grp > p) { margin: 0 0 10px; color: var(--a-muted); font-size: 14px; }
   .sr :global(.role) { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 0; border-top: 1px solid var(--a-line); }

@@ -4,6 +4,8 @@
 //                                reject, ask for more, revoke / restore; "Send approval emails",
 //                                "Print all approved cards"
 //   /accreditation/<id>/settings the match's card settings (design, opponent, approving officer)
+//   /accreditation/<id>/review/<application>  the full application: the only place to approve,
+//                                reject or ask for more (the server refuses decisions on unopened applications)
 //   (media contacts are in the Press List)
 import { api, esc, when, day, register, toast, go } from './core';
 import { upload, pickFile } from './files';
@@ -13,9 +15,10 @@ const PILL: Record<string, string> = { pending: 'submitted', info: 'returned', a
 const swatch = (c: any) => `<span class="mc-sw" aria-hidden="true"><i style="background:${esc(c.main)}"></i><i style="background:${esc(c.band)}"></i><i style="background:${esc(c.alert)}"></i></span>`;
 const fileUrl = (id: string | null) => (id ? `/api/media-file/${encodeURIComponent(id)}` : '');
 
-register({ path: 'accreditation', label: 'Accreditation', icon: '🪪', async render(main, parts) {
+register({ path: 'accreditation', label: 'Accreditation', icon: '🎫', async render(main, parts) {
   if (parts[0] === 'contacts') { go('/press-list', true); return; }
   if (parts[0] && parts[1] === 'settings') return settingsScreen(main, parts[0]);
+  if (parts[0] && parts[1] === 'review' && parts[2]) return reviewScreen(main, parts[0], parts[2]);
   if (parts[0]) return applicationsScreen(main, parts[0]);
   return matchesScreen(main);
 } });
@@ -72,8 +75,7 @@ async function applicationsScreen(main: HTMLElement, event: string) {
       <td><b class="mc-cat">${esc(r.category)}</b></td>
       <td><span class="mc-pill ${PILL[r.status]}">${esc(ST[r.status] || r.status)}</span>${r.emailSentAt ? `<br /><small>Emailed ${esc(day(r.emailSentAt))}</small>` : r.status === 'approved' ? '<br /><small>Not emailed yet</small>' : ''}</td>
       <td>${r.number ? `<b>${esc(r.number)}</b>${r.status === 'approved' ? `<br /><small>Zones ${esc(r.zones.join(', '))}</small>` : ''}` : ''}</td>
-      <td class="mc-acts">${['pending', 'info'].includes(r.status) ? `<fieldset class="mc-zones"><legend>Access zones</legend>${d.zones.map((z: any) => `<label title="${esc(z.name)}"><input type="checkbox" value="${z.n}" ${roleZones(r.roleName).includes(z.n) ? 'checked' : ''} /> ${z.n}</label>`).join('')}</fieldset>
-          <button class="mc-btn mc-btn-blue mc-btn-sm" type="button" data-do="approve">Approve</button> <button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-do="reject">Reject</button> <button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-do="info">Ask for more</button>`
+      <td class="mc-acts">${['pending', 'info'].includes(r.status) ? `<a class="mc-btn mc-btn-blue mc-btn-sm" href="/media-centre/accreditation/${esc(event)}/review/${esc(r.id)}/" data-go="/accreditation/${esc(event)}/review/${esc(r.id)}">Review application</a>${r.reviewedAt ? `<br /><small>Reviewed by ${esc(r.reviewedBy || '')}</small>` : ''}`
         : r.status === 'approved' ? `<a class="mc-btn mc-btn-o mc-btn-sm" href="/api/media-centre/accreditations/${esc(r.id)}/card" target="_blank" rel="noopener">View card</a> ${r.emailSentAt ? '<button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-act="resend">Resend email</button> ' : ''}<button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-act="revoke">Revoke</button>`
         : r.status === 'revoked' ? `<a class="mc-btn mc-btn-o mc-btn-sm" href="/api/media-centre/accreditations/${esc(r.id)}/card" target="_blank" rel="noopener">View card</a> <button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-act="restore">Restore</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="mc-empty">No applications for this match yet.</td></tr>'}
     </tbody></table></div><p class="mc-small">Zones: ${d.zones.map((z: any) => `<b>${z.n}</b> ${esc(z.name)}`).join(' · ')}</p></section>`;
@@ -152,4 +154,58 @@ async function settingsScreen(main: HTMLElement, event: string) {
     if (body.approverName && body.approverName !== ms.approverName && body.approverSignatureId === ms.approverSignatureId) body.approverSignatureId = null;
     try { await api('accreditations/matches', { method: 'POST', body }); toast('Settings saved.'); go(`/accreditation/${event}`); } catch (err: any) { toast(err.message, 9000); }
   });
+}
+
+async function reviewScreen(main: HTMLElement, event: string, id: string) {
+  main.innerHTML = '<p class="mc-muted">Loading…</p>';
+  const [d, list] = await Promise.all([api(`accreditations/${encodeURIComponent(id)}?review=1`), api(`accreditations?event=${encodeURIComponent(event)}`)]);
+  const r = d.request, open = ['pending', 'info'].includes(r.status);
+  const roleZones = ((list.roleInfo.find((x: any) => x.name === r.roleName) || list.roleInfo[0]).zones) as number[];
+  const pos = d.queue.indexOf(r.id), next = d.queue[pos + 1] || d.queue.find((x: string) => x !== r.id) || '';
+  const docUrl = r.pressDoc ? `${r.pressDoc}${d.doc?.mime === 'application/pdf' ? '?frame=1' : ''}` : '';
+  const row = (k: string, v: string) => v ? `<tr><th>${k}</th><td>${v}</td></tr>` : '';
+  const STL: Record<string, string> = { pending: 'New', info: 'Waiting for the applicant', approved: 'Approved', rejected: 'Rejected', revoked: 'Revoked' };
+  main.innerHTML = `<div class="mc-page-head"><h1>Review: ${esc(r.fullName)}</h1><div class="mc-acts"><a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/accreditation/${esc(event)}/" data-go="/accreditation/${esc(event)}">← Applications</a>${next ? ` <a class="mc-btn mc-btn-o mc-btn-sm" href="/media-centre/accreditation/${esc(event)}/review/${esc(next)}/" data-go="/accreditation/${esc(event)}/review/${esc(next)}">Next application →</a>` : ''}</div></div>
+    <p class="mc-muted">${d.match ? `${esc(d.match.label)} · ${esc(day(d.match.date))} · ` : ''}applied ${esc(when(r.createdAt))}${d.queue.length && pos >= 0 ? ` · ${pos + 1} of ${d.queue.length} waiting` : ''}</p>
+    <div class="mc-review">
+      <section class="mc-card mc-review-person">
+        ${r.photo ? `<a href="${esc(r.photo)}" target="_blank" rel="noopener"><img src="${esc(r.photo)}" alt="Passport photo of ${esc(r.fullName)}" width="240" height="320" class="mc-review-photo" /></a>` : '<div class="mc-review-photo">No photo</div>'}
+        <div class="mc-review-who"><h2>${esc(r.fullName)}</h2><p><b class="mc-cat">${esc(r.category)}</b> ${esc(r.roleName)}</p><p>${esc(r.organisation)} <small>(${esc(r.employment)})</small></p>
+          <span class="mc-pill ${r.status === 'approved' ? 'published' : r.status === 'pending' ? 'submitted' : r.status === 'info' ? 'returned' : 'rejected'}">${esc(STL[r.status] || r.status)}</span></div>
+        <table class="mc-table mc-review-t">
+          ${row('Email', `<a href="mailto:${esc(r.email)}">${esc(r.email)}</a>`)}${row('Phone', `<a href="tel:${esc(r.phone)}">${esc(r.phone)}</a>`)}
+          ${row('Special needs', esc(r.needs || ''))}${row('Press list', d.pressList ? 'Subscribed' : 'Not subscribed')}
+          ${row('Asked for more', r.infoRequest ? esc(r.infoRequest) : '')}${row('Number', r.number ? esc(r.number) : '')}${row('Reviewed', r.reviewedAt ? `${esc(r.reviewedBy || '')}, ${esc(when(r.reviewedAt))}` : '')}
+        </table>
+        <h3 class="mc-h3">Earlier applications</h3>
+        ${d.earlier.length ? `<ul class="mc-review-earlier">${d.earlier.map((x: any) => `<li>${esc(x.match)} · ${esc(x.status)}${x.number ? ` · ${esc(x.number)}` : ''} <small>${esc(day(x.createdAt))}</small></li>`).join('')}</ul>` : '<p class="mc-small">First application from this email.</p>'}
+      </section>
+      <section class="mc-card mc-review-doc"><div class="mc-page-head"><h2 class="mc-h3">Organisation ID card / letter</h2>${r.pressDoc ? `<a class="mc-btn mc-btn-o mc-btn-sm" href="${esc(docUrl)}" target="_blank" rel="noopener">Open full size</a>` : ''}</div>
+        ${!r.pressDoc ? '<p class="mc-empty">No document was added.</p>' : d.doc?.mime === 'application/pdf' ? `<iframe class="mc-review-frame" src="${esc(docUrl)}" title="ID card or letter (PDF)"></iframe>` : `<img class="mc-review-img" src="${esc(r.pressDoc)}" alt="ID card or letter from ${esc(r.organisation)}" />`}
+        <p class="mc-small">Check that the name and organisation match the application and the photo.</p></section>
+    </div>
+    ${open ? `<section class="mc-card mc-review-decide"><h2 class="mc-h3">Your decision</h2>
+      <fieldset class="mc-zones mc-zones-lg"><legend>Access zones (ticked for a ${esc(r.roleName)})</legend>${list.zones.map((z: any) => `<label><input type="checkbox" value="${z.n}" ${roleZones.includes(z.n) ? 'checked' : ''} /> <b>${z.n}</b> ${esc(z.name)}</label>`).join('')}</fieldset>
+      <div class="mc-acts"><button class="mc-btn mc-btn-blue" type="button" id="approve">Approve</button><button class="mc-btn mc-btn-o" type="button" id="showReject">Reject…</button><button class="mc-btn mc-btn-o" type="button" id="showInfo">Ask for more…</button></div>
+      <div id="rejectBox" hidden><label class="mc-field"><span>Reason (emailed to the applicant)</span><textarea class="mc-input" id="reason" rows="3" maxlength="500"></textarea></label><button class="mc-btn mc-btn-o" type="button" id="reject">Reject this application</button></div>
+      <div id="infoBox" hidden><label class="mc-field"><span>What do you need from the applicant? (emailed with a link to update the application)</span><textarea class="mc-input" id="infoMsg" rows="3" maxlength="500"></textarea></label><button class="mc-btn mc-btn-o" type="button" id="info">Send the request</button></div>
+    </section>` : `<p class="mc-muted">This application has been decided (${esc(STL[r.status] || r.status)}).</p>`}`;
+  if (!open) return;
+  const $ = (x: string) => main.querySelector(`#${x}`) as any;
+  const after = () => go(next ? `/accreditation/${event}/review/${next}` : `/accreditation/${event}`, true);
+  const decide = async (body: any, btn: HTMLButtonElement, done: (res: any) => string) => {
+    btn.disabled = true;
+    try { const res = await api(`accreditations/${encodeURIComponent(id)}`, { method: 'POST', body }); toast(done(res), 9000); after(); }
+    catch (err: any) { toast(err.message, 9000); btn.disabled = false; }
+  };
+  $('showReject').addEventListener('click', () => { $('rejectBox').hidden = false; $('infoBox').hidden = true; $('reason').focus(); });
+  $('showInfo').addEventListener('click', () => { $('infoBox').hidden = false; $('rejectBox').hidden = true; $('infoMsg').focus(); });
+  $('approve').addEventListener('click', (e: Event) => {
+    const zones = [...main.querySelectorAll<HTMLInputElement>('.mc-zones input:checked')].map(i => Number(i.value));
+    if (!zones.length) { toast('Tick at least one access zone.'); return; }
+    if (!confirm(`Approve ${r.fullName} (${r.organisation}) with zones ${zones.join(', ')}?`)) return;
+    decide({ decision: 'approve', zones }, e.currentTarget as HTMLButtonElement, res => `Approved: ${res.number}. Press "Send approval emails" on the applications page when you are ready.`);
+  });
+  $('reject').addEventListener('click', (e: Event) => { const reason = $('reason').value.trim(); if (!reason) { toast('Write the reason.'); return; } decide({ decision: 'reject', reason }, e.currentTarget as HTMLButtonElement, res => `Rejected.${res.emailed ? ' The applicant was emailed.' : ''}`); });
+  $('info').addEventListener('click', (e: Event) => { const message = $('infoMsg').value.trim(); if (!message) { toast('Write what you need.'); return; } decide({ decision: 'info', message }, e.currentTarget as HTMLButtonElement, res => `Request sent.${res.emailed ? '' : ` Email is not set up: send them this link: ${res.link}`}`); });
 }

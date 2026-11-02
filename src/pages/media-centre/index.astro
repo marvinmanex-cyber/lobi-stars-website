@@ -192,6 +192,16 @@
     .mc-prog { height: 12px; border-radius: 6px; background: #E6EAF0; overflow: hidden; margin: 12px 0 6px; } .mc-prog i { display: block; height: 100%; background: #1B7F3B; transition: width .3s; }
     .mc-bad td { color: #A01818; background: #FDF0F0; }
     @media (min-width: 1100px) { .mc-press-detail { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; align-items: start; } }
+    .mc-review { display: grid; gap: 14px; margin: 0 0 14px; } @media (min-width: 1100px) { .mc-review { grid-template-columns: minmax(320px, .9fr) 1.1fr; align-items: start; } }
+    .mc-review-person { display: grid; gap: 12px; grid-template-columns: auto 1fr; align-items: start; } .mc-review-person > table, .mc-review-person > h3, .mc-review-person > ul, .mc-review-person > p { grid-column: 1 / -1; }
+    .mc-review-photo { width: 180px; height: 240px; object-fit: cover; border-radius: 12px; border: 3px solid #0E2A55; background: #EEF0F3; display: grid; place-items: center; color: var(--grey); }
+    .mc-review-who h2 { margin: 0 0 6px; font-size: 24px; } .mc-review-who p { margin: 0 0 6px; }
+    .mc-review-t th { width: 140px; color: var(--grey); font-weight: 600; text-transform: none; font-size: 14px; border-top: 1px solid var(--line); }
+    .mc-review-earlier { margin: 0; padding-left: 18px; }
+    .mc-review-frame { display: block; width: 100%; height: 640px; border: 1px solid var(--line); border-radius: 10px; background: #F6F7F9; }
+    .mc-review-img { display: block; max-width: 100%; max-height: 640px; margin: 0 auto; border-radius: 10px; border: 1px solid var(--line); }
+    .mc-review-decide { border-top: 5px solid #1C3F7A; } .mc-zones-lg { display: grid; gap: 8px; margin: 0 0 14px; } .mc-zones-lg label { font-weight: 500; }
+    @media (max-width: 600px) { .mc-review-person { grid-template-columns: 1fr; } .mc-review-photo { width: 150px; height: 200px; } }
     .mc-req { color: var(--red); } .mc-nl-sec { margin: 0 0 12px; } .mc-nl-sec h2 small { font: 500 13px 'Barlow', sans-serif; }
     .mc-lib { width: min(900px, calc(100% - 24px)); max-height: 85vh; border: 0; border-radius: 14px; padding: 0; } .mc-lib::backdrop { background: rgba(0,0,0,.5); }
     .mc-lib-head { display: flex; gap: 8px; align-items: center; padding: 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: #fff; } .mc-lib-head input { flex: 1; min-height: 40px; }
