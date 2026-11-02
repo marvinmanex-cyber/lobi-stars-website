@@ -6,7 +6,7 @@
 // platform in qr_events. Stats are totals only.
 import { validSrc, ensureQrSchema } from './qr.js';
 import { ensureProgrammeSchema } from './programme.js';
-import site from '../../../src/data/site.json' with { type: 'json' };
+import site from '../../../src/data/site.json'; // plain JSON import: Cloudflare's build doesn't accept 'with { type }'
 
 // A platform without its own profile address uses the club's social link from the
 // Content CMS (Site Settings › Social links), so each address is entered once.

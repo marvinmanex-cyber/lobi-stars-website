@@ -19,7 +19,7 @@ import { submitSitemap, seoFake } from './seoGoogle.js';
 import { queueRecheck, alertRecipients, escapeHtml } from './seoRun.js';
 import { logAdminAction } from './adminSession.js';
 import { sendEmail } from './email.js';
-import site from '../../../src/data/site.json' with { type: 'json' };
+import site from '../../../src/data/site.json'; // plain JSON import: Cloudflare's build doesn't accept 'with { type }'
 
 const fid = () => `sf_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
 const SITE = 'https://lobistarsfc.com';
