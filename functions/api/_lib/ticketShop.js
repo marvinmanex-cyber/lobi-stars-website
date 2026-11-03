@@ -100,7 +100,7 @@ export async function soldCounts(db) {
  * home match, with a message for fans. While paused nothing can be bought online;
  * switching it off brings back each match's own settings unchanged.
  */
-export const PAUSE_DEFAULT = "Online tickets open soon. We're getting online payment ready. Check back shortly, or follow our WhatsApp channel to be told the moment tickets go on sale.";
+export const PAUSE_DEFAULT = 'Online tickets open soon. Follow our WhatsApp channel to be told the moment tickets go on sale.';
 export async function salesPause(db) {
   try {
     const { results } = await db.prepare(`SELECT key, value FROM settings WHERE key IN ('tickets_paused', 'tickets_pause_message')`).all();
