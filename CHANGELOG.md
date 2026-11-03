@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: WhatsApp receipts as a picture (not text)
+
+**Who it affects:** kitchen staff and fans.
+- After **Mark delivered**, or from a delivered order's page, the kitchen app
+  makes a **receipt picture** (logo, order number, items, total, PAID stamp)
+  and sends it in two steps:
+  1. Open the fan's WhatsApp chat.
+  2. Share the picture into it.
+
+  On laptops the picture is downloaded so it can be dragged into the chat.
+- The PDF receipt can still be downloaded. Email receipts already carry the
+  PDF.
+
 ## 2026-11-02: Easier, faster food ordering for fans; new orders blink red
 
 **Who it affects:** fans ordering food, kitchen staff, the media team (posters).

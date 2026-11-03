@@ -81,6 +81,12 @@ export async function onRequest(context) {
         }
         return json({ ok: true });
       }
+      case 'GET receipt-data': {
+        const r = await K.receiptData(env, q.get('id') || '');
+        if (!r) return json({ error: 'That order no longer exists.' }, 404);
+        if (r.error) return json({ error: r.error }, 409);
+        return json(r);
+      }
       case 'POST receipt': {
         // The WhatsApp receipt for an order (opened by staff), or the email again.
         const o = await K.getOrder(db, body.id || '');

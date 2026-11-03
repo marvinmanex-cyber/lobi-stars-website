@@ -6,6 +6,7 @@
 // tablet to the sign-in page. Live pages refresh every 15 seconds, but never
 // while someone is tapping or typing.
 import { $, esc, api, session, loadSession, setSignedOutHandler, ApiError, pageTitle, iconFor, hm, dayTime, dayOnly, todayLagos, mins } from './common';
+import { sendReceiptWhatsApp } from './receipt';
 
 const shell: any = (() => { try { return window.parent !== window ? (window.parent as any).mkShell : null; } catch { return null; } })();
 const page = decodeURIComponent(location.pathname.replace(/^\/matchday-kitchen\//, '').replace(/\/$/, '')) || 'kitchen';
@@ -64,11 +65,9 @@ async function afterMove(id: string, r: any) {
   if (!r?.receipt) { toast('Done.'); return; }
   const rc = r.receipt;
   const said = rc.emailed ? `The receipt was emailed to ${rc.email}.` : rc.email ? 'The receipt email could not be sent (email may not be set up yet).' : 'This order has no email address.';
-  if (!rc.whatsappUrl) { toast(`Delivered. ${said}`); return; }
-  if (await confirmBox('Order delivered', `${said} Send the receipt on WhatsApp too? WhatsApp opens with the receipt written; tap Send.`, 'Send receipt on WhatsApp')) {
-    window.open(rc.whatsappUrl, 'mdk-whatsapp');
-    api('receipt', { method: 'POST', body: { id, via: 'whatsapp' } }).catch(() => {});
-  }
+  toast(`Delivered. ${said}`);
+  // The receipt picture for WhatsApp (open the fan's chat, then share the picture).
+  if (rc.whatsappUrl) await sendReceiptWhatsApp(id, toast);
 }
 async function moveFrom(e: Event, reload: () => Promise<void>) {
   const b = (e.target as HTMLElement).closest('[data-move]') as HTMLButtonElement | null;
@@ -174,7 +173,7 @@ const PAGES: Record<string, () => Promise<void>> = {
         <div class="mk-actions"><button type="button" class="mk-btn" id="allOrders">All orders</button></div>`;
       $('allOrders').addEventListener('click', () => openPage('orders'));
       $('rcWa')?.addEventListener('click', async () => {
-        try { const r = await api('receipt', { method: 'POST', body: { id, via: 'whatsapp' } }); window.open(r.receipt.whatsappUrl, 'mdk-whatsapp'); } catch (err: any) { toast(err.message); }
+        await sendReceiptWhatsApp(id, toast);
       });
       $('rcEmail')?.addEventListener('click', async () => {
         try { const r = await api('receipt', { method: 'POST', body: { id, via: 'email' } }); toast(r.receipt.emailed ? `Receipt emailed to ${r.receipt.email}.` : r.receipt.email ? 'The email could not be sent. Try WhatsApp.' : 'This order has no email address. Use WhatsApp.'); } catch (err: any) { toast(err.message); }

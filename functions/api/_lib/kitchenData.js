@@ -268,6 +268,22 @@ export async function receiptAfterDelivery(env, id, by) {
   } else if (o.receipt_email_at) out.emailed = true;
   return out;
 }
+/** What the kitchen app needs to draw the receipt picture (and the fan's WhatsApp chat link). */
+export async function receiptData(env, id) {
+  const o = await getOrder(env.DB, id);
+  if (!o) return null;
+  if (!canReceipt(o)) return { error: 'There is no receipt for this order: it has not been paid.' };
+  const phone = waNumber(o.phone || '');
+  const first = String(o.customer_name || '').trim().split(/\s+/)[0] || 'there';
+  return {
+    ref: o.ref || o.id, name: o.customer_name || '', where: o.seat || o.pickup_point ? whereText(o) : '',
+    items: items(o).map(i => ({ name: i.name, qty: Number(i.qty) || 0, priceKobo: Number(i.priceKobo) || 0 })), totalKobo: o.total_kobo,
+    pointsKobo: o.points_kobo || 0, voucherKobo: o.voucher_kobo || 0,
+    paidAt: o.paid_iso || o.created_iso, deliveredAt: o.delivered_at || null, channel: o.channel || 'paystack',
+    chatUrl: phone ? `https://wa.me/${phone}?text=${encodeURIComponent(`Hi ${first}, thank you for ordering from MatchDay Kitchen. Your receipt for order ${o.ref} is below 👇`)}` : null,
+    pdfUrl: `${SITE}/api/food/receipt?ref=${encodeURIComponent(o.ref)}&t=${encodeURIComponent(o.view_token || '')}`,
+  };
+}
 /** The WhatsApp receipt was opened from the kitchen app: recorded on the order. */
 export async function markWhatsappReceipt(db, id, by) {
   await db.prepare(`UPDATE food_orders SET receipt_wa_at = ?, receipt_by = COALESCE(receipt_by, ?) WHERE id = ? OR ref = ?`).bind(new Date().toISOString(), by, String(id), String(id)).run();

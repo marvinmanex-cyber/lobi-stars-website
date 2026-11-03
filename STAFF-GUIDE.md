@@ -4475,9 +4475,16 @@ when you tap **Food on the way** or **Ready for pickup**.
 **Receipts.** When you tap **Mark delivered**:
 - If the fan gave an email address, the receipt (with the PDF) is emailed
   automatically.
-- If the order has a phone number, the app offers **Send receipt on WhatsApp**.
-  WhatsApp opens with the receipt already written to the fan's number; tap
-  **Send**. WhatsApp doesn't let websites send messages by themselves.
+- If the order has a phone number, the app shows the **receipt picture**
+  (logo, items, total, PAID stamp) with two steps:
+  1. **Open chat with the fan:** WhatsApp opens on their number with a short
+     message. Send it, then come back to the app.
+  2. **Share receipt picture:** choose WhatsApp, then that chat, which is now at
+     the top. On a laptop the button **downloads** the picture instead; drag it
+     into the WhatsApp chat.
+
+  **Download the PDF receipt instead** is there too. (WhatsApp links can only
+  carry text, so the picture is shared with the phone's share menu.)
 - A delivered order's page also has **Send receipt on WhatsApp** and **Email
   receipt** buttons, for later. Unpaid WhatsApp
 orders do not appear on the kitchen screen until a staff member marks them paid.

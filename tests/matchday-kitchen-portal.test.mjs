@@ -93,6 +93,10 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   assert.equal(dl.status, 200); assert.match(dl.data.receipt.whatsappUrl, /^https:\/\/wa\.me\/234\d+\?text=/);
   assert.ok(!(await C.call('pulse')).data.late.some(p => p.ref === o.ref), 'delivered: no longer late');
   assert.equal((await C.call('receipt', { id, via: 'whatsapp' })).status, 200);
+  // The receipt picture's details (items with prices, total, the fan's chat link, the PDF link).
+  const rd = (await C.call(`receipt-data?id=${id}`)).data;
+  assert.equal(rd.ref, o.ref); assert.equal(rd.items[0].qty, 2); assert.ok(rd.items[0].priceKobo > 0); assert.ok(rd.totalKobo > 0);
+  assert.match(rd.chatUrl, /^https:\/\/wa\.me\/234\d+\?text=/); assert.match(rd.pdfUrl, /\/api\/food\/receipt\?ref=/);
   assert.ok(rows(`SELECT receipt_wa_at FROM food_orders WHERE id = '${id}';`)[0].receipt_wa_at, 'WhatsApp receipt recorded');
 
   // Menu: anyone can mark sold out; only supervisors (and Super Admins) change prices.

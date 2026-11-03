@@ -107,6 +107,7 @@ function frameFor(page: string) {
   const f = document.createElement('iframe');
   f.src = `/matchday-kitchen/${page.split('/').map(encodeURIComponent).join('/')}/`;
   f.title = pageTitle(page);
+  f.allow = 'web-share; clipboard-write'; // the receipt picture is shared from inside the page
   f.hidden = true;
   $('frames').append(f);
   return f;
