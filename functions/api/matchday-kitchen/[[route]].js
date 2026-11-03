@@ -58,7 +58,7 @@ export async function onRequest(context) {
       case 'GET kitchen': return json({ tickets: await K.kitchenTickets(db, late), lateMinutes: late });
       // The alarm check (every 10 seconds from each open app): new orders to accept, late orders.
       case 'GET pulse': return json(await K.pulse(db, late));
-      case 'GET board': return json({ columns: await K.boardColumns(db, late), lateMinutes: late });
+      case 'GET board': return json({ columns: await K.boardColumns(db, late), unpaid: await K.unpaidOrders(db), lateMinutes: late });
       case 'GET alerts': return json({ ...(await K.alerts(db, late)), lateMinutes: late });
       case 'GET orders': return json(await K.searchOrders(db, { q: q.get('q') || '', status: q.get('status') || '', day: q.get('day') || '', page: q.get('page') || 1 }, late));
       case 'GET order': {

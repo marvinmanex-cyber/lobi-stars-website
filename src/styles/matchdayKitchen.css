@@ -264,3 +264,14 @@ a { color: var(--green); }
 .mk-rc-steps { list-style: none; margin: 14px 0 6px; padding: 0; display: grid; gap: 12px; }
 .mk-rc-steps small { display: block; margin-top: 4px; color: var(--muted); font-size: 15px; }
 .mk-rc-more { margin: 6px 0 12px; font-size: 15px; } .mk-rc-more a { color: inherit; }
+
+/* Live board: orders not paid yet (separate from the kitchen columns). */
+.mk-unpaid-box { margin: 0 0 16px; padding: 12px 14px 14px; border-radius: 14px; background: #FFF6E0; border: 2px dashed #E0A400; }
+.mk-unpaid-box h2, .mk-unpaid-box h3 { margin: 2px 0 10px; font-size: 20px; } .mk-unpaid-box h3 { font-size: 18px; margin-top: 14px; }
+.mk-unpaid-box small { display: block; font-size: 14px; font-weight: 500; color: var(--muted); }
+.mk-unpaid-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.mk-unpaid { background: var(--paper); border-radius: 10px; border-left: 6px solid #E0A400; padding: 10px 12px; display: grid; gap: 6px; }
+.mk-unpaid.failed { border-left-color: #6B7280; opacity: .92; }
+.mk-unpaid-top { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; } .mk-unpaid-top .r { margin-left: auto; color: var(--muted); }
+.mk-unpaid-top span:nth-child(2) { font-size: 14px; font-weight: 700; color: #8A5A00; }
+.mk-unpaid .mk-btn { justify-self: start; min-height: 40px; }

@@ -90,7 +90,15 @@ const PAGES: Record<string, () => Promise<void>> = {
   async live() {
     const draw = async (quiet = false) => {
       const d = await api('board', { quiet });
-      main.innerHTML = `<div class="mk-board">${Object.values(d.columns).map((c: any) => `<section class="mk-col"><h2>${esc(c.label)} <span class="mk-badge">${c.orders.length}</span></h2>${c.orders.length ? c.orders.map((o: any) => `
+      const up = d.unpaid || [], waiting = up.filter((o: any) => !o.failed), failed = up.filter((o: any) => o.failed);
+      const unpaidCard = (o: any) => `<article class="mk-unpaid${o.failed ? ' failed' : ''}"><div class="mk-unpaid-top"><b>${esc(o.ref)}</b><span>${esc(o.statusLabel)}</span><span class="r">${esc(mins(o.minutes))} ago</span></div>
+        <div>${esc([o.customer, o.where].filter(Boolean).join(' · '))}${o.phone ? ` · ${esc(o.phone)}` : ''}</div>
+        <div class="mk-status">${esc(o.items.map((i: any) => `${i.qty} × ${i.name}`).join(', '))} · <b>${esc(o.total)}</b>${o.channel === 'whatsapp' ? ' · WhatsApp order' : ''}</div>
+        ${o.chatUrl ? `<a class="mk-btn" href="${esc(o.chatUrl)}" target="mdk-whatsapp" rel="noopener">Chat on WhatsApp</a>` : ''}</article>`;
+      const unpaidHtml = `<section class="mk-unpaid-box" aria-label="Awaiting payment"><h2>Awaiting payment <span class="mk-badge">${waiting.length}</span> <small>Not paid yet: do not cook. A paid order moves to New by itself.</small></h2>
+        ${waiting.length ? `<div class="mk-unpaid-grid">${waiting.map(unpaidCard).join('')}</div>` : '<p class="mk-status" style="margin:4px 6px">Nobody is waiting to pay.</p>'}
+        ${failed.length ? `<h3>Did not pay <span class="mk-badge red">${failed.length}</span> <small>Payment failed or ran out of time (last 12 hours). Ask them what went wrong.</small></h3><div class="mk-unpaid-grid">${failed.map(unpaidCard).join('')}</div>` : ''}</section>`;
+      main.innerHTML = unpaidHtml + `<div class="mk-board">${Object.values(d.columns).map((c: any) => `<section class="mk-col"><h2>${esc(c.label)} <span class="mk-badge">${c.orders.length}</span></h2>${c.orders.length ? c.orders.map((o: any) => `
         <button type="button" class="mk-mini${o.late ? ' late' : ''}${o.status === 'PAID' ? ' is-new' : ''}" data-order="${esc(o.id)}"><b>${esc(o.ref)}</b><span class="r">${esc(mins(o.minutes))}</span>
         <span>${o.itemCount} item${o.itemCount === 1 ? '' : 's'}${o.customer ? ` · ${esc(o.customer)}` : ''}</span></button>`).join('') : '<p class="mk-status" style="margin:8px 6px">None</p>'}</section>`).join('')}</div>`;
       stamp();

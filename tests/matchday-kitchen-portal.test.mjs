@@ -66,7 +66,13 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   assert.ok(o.ref, JSON.stringify(o));
   const id = rows(`SELECT id FROM food_orders WHERE ref = '${o.ref}';`)[0].id;
   assert.equal((await C.call('order', { id, to: 'CANCELLED' })).status, 403, 'a cook cannot cancel');
+  // Not paid yet: in the board's "Awaiting payment" box (with a WhatsApp chat link), not in the kitchen columns.
+  let bd = (await C.call('board')).data;
+  const un = bd.unpaid.find(u => u.ref === o.ref);
+  assert.ok(un, 'in Awaiting payment'); assert.equal(un.failed, false); assert.match(un.chatUrl || '', /^https:\/\/wa\.me\/234/);
   assert.equal((await S.call('order', { id, to: 'PAID' })).status, 200);
+  bd = (await C.call('board')).data;
+  assert.ok(!bd.unpaid.some(u => u.ref === o.ref), 'paid: leaves Awaiting payment');
   let k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
   assert.ok(k, 'on the kitchen screen'); assert.equal(k.next.label, 'Accept order'); assert.equal(k.note, 'No pepper'); assert.equal(k.items[0].qty, 2);
   // The alarm: a new (paid, not accepted) order beeps until someone accepts it.

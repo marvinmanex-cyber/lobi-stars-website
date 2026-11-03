@@ -4457,6 +4457,15 @@ open:
 - They only count as late after the time they are due, not from when they were
   paid.
 
+**Awaiting payment** (top of the live order board, in a yellow dashed box) lists
+orders placed but not paid in the last 12 hours.
+- **Do not cook these.** When the fan pays, the order leaves the box and appears
+  as a blinking **New** order.
+- **Did not pay** lists payment failed or ran out of time. Use **Chat on
+  WhatsApp** to ask the fan what went wrong (for example card declined, bank
+  transfer not finished, or no network). The message is already written.
+- The admin's Live Order Board also has an "Awaiting payment" section.
+
 **New orders blink red** on the kitchen screen and the live order board (and on
 the admin's Live Order Board) until someone accepts them or starts preparing
 them.

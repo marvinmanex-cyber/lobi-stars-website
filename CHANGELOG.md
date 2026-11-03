@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Kitchen app: "Awaiting payment" box
+
+**Who it affects:** kitchen staff.
+- The kitchen app's live order board shows orders placed but **not paid yet**
+  in a separate yellow box, with the fan's name, items, total and how long ago.
+  Paid orders move to New by themselves.
+- A **Did not pay** list shows payments that failed or ran out of time in the
+  last 12 hours.
+- Every card has **Chat on WhatsApp**, with a message ready to ask the fan if
+  they need help paying.
+
 ## 2026-11-03: WhatsApp receipts as a picture (not text)
 
 **Who it affects:** kitchen staff and fans.

@@ -107,6 +107,34 @@ export async function boardColumns(db, lateMinutes) {
   return cols;
 }
 
+/**
+ * Not paid (the board's "Awaiting payment" box): orders placed in the last 12 hours that
+ * are still waiting for payment, or that failed / ran out of time. Staff can see who
+ * ordered and ask them on WhatsApp what went wrong. A paid order leaves this box and
+ * appears as New.
+ */
+export const UNPAID = ['AWAITING_PAYMENT', 'AWAITING_WHATSAPP', 'CONFIRMED', 'PAYMENT_FAILED', 'EXPIRED'];
+export async function unpaidOrders(db) {
+  await ready(db);
+  await expireStale(db).catch(() => {});
+  const { results } = await db.prepare(`SELECT * FROM food_orders WHERE order_status IN (${placeholders(UNPAID)}) AND created_iso >= ? ORDER BY created_iso DESC LIMIT 100`).bind(...UNPAID, since()).all();
+  return results.map(o => {
+    const phone = String(o.phone || '').replace(/\D/g, '').replace(/^0/, '234');
+    const first = String(o.customer_name || '').trim().split(/\s+/)[0] || 'there';
+    const failed = ['PAYMENT_FAILED', 'EXPIRED'].includes(o.order_status);
+    const msg = failed
+      ? `Hi ${first}, this is MatchDay Kitchen (Lobi Stars FC). We saw your food order ${o.ref} was not paid. Did something go wrong with the payment? We can help you order again.`
+      : `Hi ${first}, this is MatchDay Kitchen (Lobi Stars FC). Your food order ${o.ref} is waiting for payment. Do you need help paying?`;
+    return {
+      id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: STATUS[o.order_status]?.label || o.order_status, failed,
+      customer: o.customer_name || '', where: o.seat || o.pickup_point ? whereText(o) : '', channel: o.channel || 'paystack',
+      items: items(o).map(i => ({ name: i.name, qty: i.qty })), total: formatNaira(o.total_kobo),
+      phone: o.phone ? String(o.phone).replace(/\d(?=\d{4})/g, '•') : '', minutes: minutesSince(o.created_iso),
+      chatUrl: phone.length >= 12 ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : null,
+    };
+  });
+}
+
 /** Lagos day (YYYY-MM-DD) -> the UTC start and end of that day. */
 export function lagosDay(day) {
   const d = /^\d{4}-\d{2}-\d{2}$/.test(day || '') ? day : new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
