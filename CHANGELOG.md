@@ -13,8 +13,9 @@ in HANDOVER-TODO.md.
 - Admin › Match Tickets: a **Discount ₦** box for each stand of each match
   (and in "Apply to all"). Fans pay the price minus the discount and see the
   old price crossed out with "Save ₦…". It must be less than the price.
-- The tickets screen after booking has **Download to my phone** (one PDF of
-  all the tickets) and **Email my tickets** (sent again to the email on the
+- The tickets screen after booking has **Download to my phone** (every ticket
+  saved as a picture to the phone's photos / gallery; the PDF is a small link
+  underneath) and **Email my tickets** (sent again to the email on the
   order only).
 - The /tickets banner now names the free stand: "Free Popular Stand tickets
   are open now".

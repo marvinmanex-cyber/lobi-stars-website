@@ -63,6 +63,7 @@ import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
   .tv-get-note { margin: 10px 0 0; font-size: 14px; color: #FFE08A; min-height: 0; }
   .tv-get-note:empty { display: none; }
   .tv-get-small { margin: 10px 0 0; font-size: 13px; opacity: .8; }
+  .tv-get-small a { color: #fff; font-weight: 700; }
   @media (max-width: 520px) { .tv-get-row { grid-template-columns: 1fr; } }
   .tv-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   .tv-acts a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1.5px solid var(--d4); border-radius: 4px; color: var(--white); text-decoration: none; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
@@ -162,6 +163,23 @@ import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
       .then(function () { btn.disabled = false; btn.textContent = label; });
   }
 
+  // Every ticket of the order as pictures (PNG), made as soon as the tickets show so the
+  // button can save them at once: iPhone opens the share sheet ("Save Image(s)" to Photos),
+  // Android and computers save each picture (Downloads / Gallery).
+  function savePictures(btn, list, ready) {
+    var label = btn.innerHTML; btn.disabled = true;
+    var small = btn.querySelector('small'); if (small) small.textContent = 'Preparing your pictures…';
+    ready.then(function (blobs) {
+      var files = blobs.map(function (b, k) { return b && window.File ? new File([b], 'Lobi-Stars-ticket-' + list[k].t.id + '.png', { type: 'image/png' }) : null; }).filter(Boolean);
+      if (!files.length) throw new Error('no pictures');
+      if (/iP(hone|ad|od)/.test(navigator.userAgent) && navigator.canShare && navigator.canShare({ files: files })) return navigator.share({ files: files, title: 'Lobi Stars tickets' }).catch(function () {});
+      files.forEach(function (f, k) {
+        setTimeout(function () { var a = el('a', { href: URL.createObjectURL(f), download: f.name }); document.body.append(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000); }, k * 600);
+      });
+    }).catch(function () { alert('Could not make the pictures. Use "Save to phone (picture)" on each ticket below, or download the PDF.'); })
+      .then(function () { setTimeout(function () { btn.disabled = false; btn.innerHTML = label; }, 1200); });
+  }
+
   function ticketCard(data, m, t, i, of) {
     var wp = whenParts(m.kickoff), vp = venueParts(m.venue), stand = STAND[m.tier] || m.tier;
     var tix = el('div', { class: 'tv-tix' + (t.status === 'void' ? ' void' : '') },
@@ -202,7 +220,12 @@ import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
     if (data.refunded) parts.unshift(el('p', { class: 'tv-rules', text: 'This order was refunded: its tickets are cancelled.' }));
     // Get your tickets: straight to the phone (PDF) and to the email address on the order.
     if (!data.refunded && count) {
-      var dl = el('a', { class: 'tv-get-btn tv-get-btn--phone', href: pdfUrl(data), download: 'Lobi-Stars-tickets-' + (data.reference || '') + '.pdf' }, el('span', { class: 'tv-get-ic', 'aria-hidden': 'true', text: '⬇' }), el('span', {}, el('b', { text: 'Download to my phone' }), el('small', { text: count === 1 ? 'Your ticket as a PDF' : 'All ' + count + ' tickets as one PDF' })));
+      // Download to the phone as pictures (PNG); the PDF stays as a small link.
+      var list = [];
+      data.matches.forEach(function (m) { m.tickets.forEach(function (t, i) { if (t.status !== 'void') list.push({ m: m, t: t, i: i, of: m.tickets.length }); }); });
+      var ready = new Promise(function (res) { setTimeout(res, 300); }).then(function () { return Promise.all(list.map(function (x) { return ticketPicture(x.m, x.t, x.i, x.of).catch(function () { return null; }); })); });
+      var dl = el('button', { type: 'button', class: 'tv-get-btn tv-get-btn--phone' }, el('span', { class: 'tv-get-ic', 'aria-hidden': 'true', text: '⬇' }), el('span', {}, el('b', { text: 'Download to my phone' }), el('small', { text: list.length === 1 ? 'Your ticket as a picture' : 'All ' + list.length + ' tickets as pictures' })));
+      dl.addEventListener('click', function () { savePictures(dl, list, ready); });
       var mailBox = el('span', {}, el('b', { text: 'Email my tickets' }), el('small', { text: data.email ? 'Send to ' + data.email : 'Send them to your email' }));
       var mail = el('button', { type: 'button', class: 'tv-get-btn tv-get-btn--mail' }, el('span', { class: 'tv-get-ic', 'aria-hidden': 'true', text: '✉' }), mailBox);
       var note = el('p', { class: 'tv-get-note', role: 'status' });
@@ -217,7 +240,7 @@ import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
         });
       } else mail.hidden = true;
       parts.unshift(el('div', { class: 'tv-get' }, el('p', { class: 'tv-get-t', text: 'Get your tickets' }), el('div', { class: 'tv-get-row' }, dl, mail), note,
-        el('p', { class: 'tv-get-small', text: 'Your tickets were also emailed to you when you booked. You can save each ticket as a picture below too.' })));
+        el('p', { class: 'tv-get-small' }, 'Your tickets were also emailed to you when you booked. Prefer a PDF? ', el('a', { href: pdfUrl(data), download: 'Lobi-Stars-tickets-' + (data.reference || '') + '.pdf', text: 'Download the PDF' }), '.')));
     }
     data.matches.forEach(function (m) {
       var d = new Date(m.kickoff);

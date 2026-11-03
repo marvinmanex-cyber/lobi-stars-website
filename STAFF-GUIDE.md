@@ -2650,7 +2650,9 @@ or **Opening soon**. "Apply to all" at the top can set it for every home match.
   all" has a discount box per stand too. The group / early bird / family
   discounts (Ticket Discounts) can still apply on top of the new price.
 - **Getting the tickets:** after booking (free or paid), the tickets screen
-  has **Download to my phone** (all the tickets as one PDF) and **Email my
+  has **Download to my phone** (every ticket saved as a picture: on iPhone it
+  opens "Save Image" to Photos, on Android it saves to the gallery /
+  Downloads; a "Download the PDF" link is underneath) and **Email my
   tickets** (sends them again, only to the email on the order, up to 3 times
   an hour). The tickets are also emailed automatically when booked, and each
   ticket can be saved as a picture.
