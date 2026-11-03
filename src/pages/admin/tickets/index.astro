@@ -35,6 +35,9 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
         <label class="la-f">VIP seats<input name="capVIP" type="number" min="0" inputmode="numeric" style="width:100px" /></label>
         <label class="la-f">Grand Stand seats<input name="capPremium" type="number" min="0" inputmode="numeric" style="width:100px" /></label>
         <label class="la-f">Popular seats<input name="capRegular" type="number" min="0" inputmode="numeric" style="width:100px" /></label>
+        <label class="la-f">VIP discount ₦<input name="offVIP" type="number" min="0" inputmode="numeric" style="width:100px" placeholder="0 = none" /></label>
+        <label class="la-f">Grand Stand discount ₦<input name="offPremium" type="number" min="0" inputmode="numeric" style="width:100px" placeholder="0 = none" /></label>
+        <label class="la-f">Popular discount ₦<input name="offRegular" type="number" min="0" inputmode="numeric" style="width:100px" placeholder="0 = none" /></label>
         <label class="la-f">VIP is<select name="modeVIP"><option value="">Keep</option><option value="paid">Paid</option><option value="free">Free</option><option value="soon">Opening soon</option></select></label>
         <label class="la-f">Grand Stand is<select name="modePremium"><option value="">Keep</option><option value="paid">Paid</option><option value="free">Free</option><option value="soon">Opening soon</option></select></label>
         <label class="la-f">Popular Stand is<select name="modeRegular"><option value="">Keep</option><option value="paid">Paid</option><option value="free">Free</option><option value="soon">Opening soon</option></select></label>
@@ -127,10 +130,16 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       [['paid', 'Paid'], ['free', 'Free'], ['soon', 'Opening soon']].forEach(function (o) { md.add(new Option(o[1], o[0], false, (x.mode || 'paid') === o[0])); });
       inputs['m' + x.tier] = md;
       var priceL = el('label', { class: 'la-f' }, 'Price ₦', inputs['p' + x.tier]);
-      var syncMode = function () { priceL.hidden = md.value === 'free'; };
+      // Discount: naira off each ticket of this stand (fans see the old price crossed out).
+      inputs['o' + x.tier] = el('input', { type: 'number', min: 0, inputmode: 'numeric', value: x.discountNaira || '', placeholder: '0 = none', 'aria-label': x.label + ' discount in naira' });
+      var offL = el('label', { class: 'la-f' }, 'Discount ₦', inputs['o' + x.tier]);
+      var now = el('p', { class: 'la-muted' });
+      var syncNow = function () { var p = Number(inputs['p' + x.tier].value || 0), o = Number(inputs['o' + x.tier].value || 0); now.textContent = md.value !== 'free' && p > 0 && o > 0 ? (o < p ? 'Fans pay ' + naira((p - o) * 100) + ' (was ' + naira(p * 100) + ')' : 'The discount must be less than the price') : ''; };
+      inputs['p' + x.tier].addEventListener('input', syncNow); inputs['o' + x.tier].addEventListener('input', syncNow);
+      var syncMode = function () { priceL.hidden = md.value === 'free'; offL.hidden = md.value === 'free'; syncNow(); };
       md.addEventListener('change', syncMode); syncMode();
       return el('div', { class: md.value === 'free' ? 'tk-free' : '' }, el('b', { text: x.label }),
-        el('label', { class: 'la-f' }, 'Sold as', md), priceL, el('label', { class: 'la-f' }, 'Seats', inputs['c' + x.tier]),
+        el('label', { class: 'la-f' }, 'Sold as', md), priceL, offL, now, el('label', { class: 'la-f' }, 'Seats', inputs['c' + x.tier]),
         el('p', { class: 'la-muted', text: x.sold + ' sold · ' + naira(x.revenueKobo) + (x.held ? ' · ' + x.held + ' held in checkouts' : '') + (x.capacity != null ? ' · ' + Math.max(0, x.capacity - x.sold - x.held) + ' left' : '') }));
     });
     var on = el('input', { type: 'checkbox', checked: m.isOnSale, style: 'width:22px;height:22px;min-height:auto' });
@@ -142,8 +151,8 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     var save = el('button', { type: 'button', class: 'btn-p btn-sm', text: 'Save' });
     save.addEventListener('click', function () {
       var body = { prices: {}, capacities: {}, saleOpensAt: opens.value, saleClosesAt: closes.value, maxPerOrder: Number(max.value), isOnSale: on.checked, allowDiscounts: disc.checked, discountCap: dcap.value === '' ? null : Number(dcap.value) };
-      body.modes = {};
-      ['VIP', 'Premium', 'Regular'].forEach(function (t) { body.prices[t] = Number(inputs['p' + t].value || 0); body.capacities[t] = inputs['c' + t].value === '' ? null : Number(inputs['c' + t].value); body.modes[t] = inputs['m' + t].value; });
+      body.modes = {}; body.discounts = {};
+      ['VIP', 'Premium', 'Regular'].forEach(function (t) { body.prices[t] = Number(inputs['p' + t].value || 0); body.capacities[t] = inputs['c' + t].value === '' ? null : Number(inputs['c' + t].value); body.modes[t] = inputs['m' + t].value; body.discounts[t] = inputs['o' + t].value === '' ? 0 : Number(inputs['o' + t].value); });
       LA.api('/api/admin/tickets/match/' + encodeURIComponent(m.id), { method: 'PUT', body: body }).then(function (r) { r.ok ? (LA.toast('Saved'), load()) : LA.toast(r.d.error || 'Could not save.', true); });
     });
     return el('div', { class: 'tk-m' },
@@ -165,6 +174,8 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
     if (Object.keys(prices).length) body.prices = prices;
     if (Object.keys(caps).length) body.capacities = caps;
     var modes = {}; ['VIP', 'Premium', 'Regular'].forEach(function (t) { if (f['mode' + t].value) modes[t] = f['mode' + t].value; });
+    var offs = {}; ['VIP', 'Premium', 'Regular'].forEach(function (t) { if (f['off' + t].value !== '') offs[t] = Number(f['off' + t].value); });
+    if (Object.keys(offs).length) body.discounts = offs;
     if (Object.keys(modes).length) body.modes = modes;
     if (f.max.value) body.maxPerOrder = Number(f.max.value);
     if (f.on.value !== '') body.isOnSale = f.on.value === '1';

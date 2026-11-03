@@ -49,6 +49,21 @@ import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
   .tv-btns button { background: #C9A227; color: #0d1a33; border: 0; }
   .tv-btns a { border: 1.5px solid var(--d4); color: var(--white); background: transparent; }
   .tv-btns button:disabled { opacity: .6; cursor: wait; }
+  .tv-get { margin: 0 0 18px; padding: 16px; border-radius: 14px; background: linear-gradient(135deg, #0E1C38, #1C3F7A); color: #fff; }
+  .tv-get-t { margin: 0 0 10px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #FFC928; }
+  .tv-get-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tv-get-btn { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; border-radius: 12px; border: 0; text-align: left; text-decoration: none; cursor: pointer; font: inherit; }
+  .tv-get-btn b { display: block; font: 700 17px/1.15 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+  .tv-get-btn small { display: block; font-size: 13px; opacity: .85; }
+  .tv-get-btn--phone { background: #E31E24; color: #fff; }
+  .tv-get-btn--mail { background: #fff; color: #0E1C38; }
+  .tv-get-btn:disabled { opacity: .6; cursor: wait; }
+  .tv-get-ic { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: rgba(255, 255, 255, .18); font-size: 20px; }
+  .tv-get-btn--mail .tv-get-ic { background: #EEF2F8; }
+  .tv-get-note { margin: 10px 0 0; font-size: 14px; color: #FFE08A; min-height: 0; }
+  .tv-get-note:empty { display: none; }
+  .tv-get-small { margin: 10px 0 0; font-size: 13px; opacity: .8; }
+  @media (max-width: 520px) { .tv-get-row { grid-template-columns: 1fr; } }
   .tv-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   .tv-acts a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 14px; border: 1.5px solid var(--d4); border-radius: 4px; color: var(--white); text-decoration: none; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
   .tv-save { background: #E3F6E9; color: #0B3D1A; border-radius: 10px; padding: 12px 14px; font-size: 14.5px; line-height: 1.6; margin: 0 0 16px; }
@@ -185,6 +200,25 @@ import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
     if (data.discountKobo > 0) parts.unshift(el('p', { class: 'tv-save' }, 'Tickets ' + naira(data.subtotalKobo) + ' · Discount: ' + (data.discountLabel || 'Discount') + ' −' + naira(data.discountKobo) + ' · Total paid ' + naira(data.totalKobo) + '. ', el('b', { text: 'You saved ' + naira(data.discountKobo) + '.' }), data.groupName ? ' Group: ' + data.groupName + '.' : null));
     if (data.matches.some(function (m) { return m.tickets.some(function (t) { return t.type === 'child'; }); })) parts.push(el('p', { class: 'tv-rules', text: 'Child tickets: children may be asked for proof of age at the gate.' }));
     if (data.refunded) parts.unshift(el('p', { class: 'tv-rules', text: 'This order was refunded: its tickets are cancelled.' }));
+    // Get your tickets: straight to the phone (PDF) and to the email address on the order.
+    if (!data.refunded && count) {
+      var dl = el('a', { class: 'tv-get-btn tv-get-btn--phone', href: pdfUrl(data), download: 'Lobi-Stars-tickets-' + (data.reference || '') + '.pdf' }, el('span', { class: 'tv-get-ic', 'aria-hidden': 'true', text: '⬇' }), el('span', {}, el('b', { text: 'Download to my phone' }), el('small', { text: count === 1 ? 'Your ticket as a PDF' : 'All ' + count + ' tickets as one PDF' })));
+      var mailBox = el('span', {}, el('b', { text: 'Email my tickets' }), el('small', { text: data.email ? 'Send to ' + data.email : 'Send them to your email' }));
+      var mail = el('button', { type: 'button', class: 'tv-get-btn tv-get-btn--mail' }, el('span', { class: 'tv-get-ic', 'aria-hidden': 'true', text: '✉' }), mailBox);
+      var note = el('p', { class: 'tv-get-note', role: 'status' });
+      if (/^LSBAS-/.test(data.reference || '')) {
+        mail.addEventListener('click', function () {
+          mail.disabled = true; note.textContent = 'Sending…';
+          fetch('/api/tickets/resend', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reference: data.reference }) })
+            .then(function (r) { return r.json(); })
+            .then(function (d) { note.textContent = d.ok ? 'Sent to ' + d.sentTo + '. It can take a minute: check your spam folder too.' : (d.error || 'Could not send just now.'); })
+            .catch(function () { note.textContent = 'No connection. Please try again.'; })
+            .then(function () { setTimeout(function () { mail.disabled = false; }, 8000); });
+        });
+      } else mail.hidden = true;
+      parts.unshift(el('div', { class: 'tv-get' }, el('p', { class: 'tv-get-t', text: 'Get your tickets' }), el('div', { class: 'tv-get-row' }, dl, mail), note,
+        el('p', { class: 'tv-get-small', text: 'Your tickets were also emailed to you when you booked. You can save each ticket as a picture below too.' })));
+    }
     data.matches.forEach(function (m) {
       var d = new Date(m.kickoff);
       var when = d.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ', kick-off ' + d.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });

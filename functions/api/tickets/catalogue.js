@@ -19,12 +19,13 @@ export async function onRequestGet({ request, env }) {
         id: c.event.id, slug: c.event.slug, matchday: c.matchday, competition: c.event.competition,
         homeTeam: c.event.home_team, awayTeam: c.event.away_team, kickoff: c.event.event_date, venue: c.event.venue, status: c.event.status,
         state: c.ticket.state, opensAt: c.ticket.opensAt || null, presale: !!c.ticket.presale, maxPerOrder: c.ticket.maxPerOrder,
-        tiers: c.ticket.tiers.map(t => ({ tier: t.tier, label: t.label, priceKobo: t.priceKobo, left: t.remaining, free: !!t.free, soon: !!t.soon })), partial: !!c.ticket.partial,
+        tiers: c.ticket.tiers.map(t => ({ tier: t.tier, label: t.label, priceKobo: t.priceKobo, wasKobo: t.wasKobo || null, offKobo: t.offKobo || 0, left: t.remaining, free: !!t.free, soon: !!t.soon })), partial: !!c.ticket.partial,
       }));
     // Discount badges (Group, Early bird, Family bundle) when a rule is on and applies.
     const offers = await offersFor(env.DB, matches);
     for (const m of matches) m.offers = offers.get(m.id) || null;
-    return Response.json({ matches, pause: cat.pause?.paused ? { message: cat.pause.message, freeOpen: matches.some(m => m.partial && m.state === 'on_sale') } : null, serverTime: new Date().toISOString() }, { headers: { 'Cache-Control': 'no-store' } });
+    const freeStands = [...new Set(matches.filter(m => m.state === 'on_sale').flatMap(m => m.tiers.filter(t => t.free && t.left !== 0).map(t => t.label)))];
+    return Response.json({ matches, freeStands, pause: cat.pause?.paused ? { message: cat.pause.message, freeOpen: matches.some(m => m.partial && m.state === 'on_sale'), freeStands } : null, serverTime: new Date().toISOString() }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (err) {
     console.error('[tickets] catalogue', err);
     return Response.json({ error: 'Could not load the matches.' }, { status: 500 });

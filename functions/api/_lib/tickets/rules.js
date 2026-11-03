@@ -9,6 +9,8 @@ export const CAP_COL = { VIP: 'vip_capacity', Premium: 'premium_capacity', Regul
 // nothing to pay: issued at once and emailed) or 'soon' (shown as "Opening soon", can't be booked).
 export const MODE_COL = { VIP: 'vip_mode', Premium: 'premium_mode', Regular: 'regular_mode' };
 export const STAND_MODES = ['paid', 'free', 'soon'];
+// A discount in naira off each ticket of a stand (kobo), set per match: fans pay price minus this.
+export const OFF_COL = { VIP: 'vip_off_kobo', Premium: 'premium_off_kobo', Regular: 'regular_off_kobo' };
 export const DEFAULT_MAX_PER_ORDER = 10;
 // Groups can buy more (the admin sets up to 50 per match); a large order is
 // stored as several orders rows of at most 10 (ticketDiscounts.orderChunks).
@@ -85,8 +87,11 @@ export function ticketState(event, settings, sold = {}, now = Date.now(), { earl
     const remaining = capacity === null ? null : Math.max(0, capacity - (Number(sold[t]) || 0));
     const mode = STAND_MODES.includes(settings?.[MODE_COL[t]]) ? settings[MODE_COL[t]] : 'paid';
     if (mode === 'free') return { tier: t, label: TIER_LABELS[t], priceKobo: 0, free: true, capacity, remaining };
-    if (mode === 'soon') return { tier: t, label: TIER_LABELS[t], priceKobo: price, soon: true, capacity, remaining };
-    return { tier: t, label: TIER_LABELS[t], priceKobo: price, capacity, remaining };
+    // Amount off (only when it leaves something to pay; otherwise ignored).
+    const off = Math.max(0, Number(settings?.[OFF_COL[t]]) || 0);
+    const sale = price > 0 && off > 0 && off < price ? { priceKobo: price - off, wasKobo: price, offKobo: off } : { priceKobo: price };
+    if (mode === 'soon') return { tier: t, label: TIER_LABELS[t], ...sale, soon: true, capacity, remaining };
+    return { tier: t, label: TIER_LABELS[t], ...sale, capacity, remaining };
   }).filter(t => t.free || t.soon || t.priceKobo > 0);
   const open = tiers.filter(t => !t.soon); // stands that can be booked now
   const base = { tiers, maxPerOrder };

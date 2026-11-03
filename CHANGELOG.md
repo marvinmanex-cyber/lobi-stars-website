@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Ticket discounts in naira; download and email buttons; free stand banner
+
+- Admin › Match Tickets: a **Discount ₦** box for each stand of each match
+  (and in "Apply to all"). Fans pay the price minus the discount and see the
+  old price crossed out with "Save ₦…". It must be less than the price.
+- The tickets screen after booking has **Download to my phone** (one PDF of
+  all the tickets) and **Email my tickets** (sent again to the email on the
+  order only).
+- The /tickets banner now names the free stand: "Free Popular Stand tickets
+  are open now".
+
 ## 2026-11-03: Free stands and "Opening soon" for match tickets
 
 - Admin › Match Tickets: each stand of each home match is **Paid**, **Free**

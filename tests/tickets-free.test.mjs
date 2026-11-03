@@ -53,6 +53,12 @@ test('a Free stand: no payment, tickets issued and shown; paid stands "Opening s
   assert.equal(got.matches[0].tickets.length, 2); assert.equal(got.matches[0].tickets[0].priceKobo, 0);
   const rows = JSON.parse(sql(`SELECT t.status, o.payment_status, o.unit_price_kobo FROM tickets t JOIN orders o ON o.id = t.order_id WHERE t.event_id = '${EV}'`))[0].results;
   assert.equal(rows.length, 2); assert.ok(rows.every(r => r.status === 'valid' && r.payment_status === 'paid' && r.unit_price_kobo === 0));
+  // "Email my tickets": only to the email on the order, a few times an hour.
+  const rs = await fetch(`${BASE}/api/tickets/resend`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reference: b1.d.reference }) }).then(async r => ({ status: r.status, d: await r.json() }));
+  // (The local test server has no email key, so sending fails there with a clear message.)
+  if (rs.status === 200) assert.match(rs.d.sentTo, /^fa\*+@example\.com$/); else assert.match(rs.d.error, /could not be sent/);
+  assert.equal((await fetch(`${BASE}/api/tickets/resend`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reference: 'LSBAS-NOPENOPE1' }) })).status, 404);
+  const cFree = await cat(); assert.deepEqual(cFree.pause.freeStands, ['Popular Stand']);
   const pdf = await fetch(`${BASE}/api/tickets/pdf?reference=${b1.d.reference}`);
   assert.equal(pdf.status, 200); assert.match(pdf.headers.get('content-type') || '', /pdf/);
 
@@ -80,4 +86,25 @@ test('a Free stand: no payment, tickets issued and shown; paid stands "Opening s
   const list = await fetch(`${BASE}/api/matches`).then(r => r.json());
   const mm = (list.matches || []).find(x => x.id === EV);
   if (mm) { assert.equal(mm.ticket.fromKobo, 0); assert.equal(mm.ticket.free, true); }
+});
+
+test('a discount in naira on any stand: fans pay price minus the discount, old price shown', async () => {
+  await admin('', 'POST', { action: 'pause', paused: false, message: '' });
+  // Must be less than the price; 0 removes it.
+  assert.match((await admin(`/match/${EV}`, 'PUT', { modes: { VIP: 'paid', Premium: 'paid', Regular: 'paid' }, discounts: { VIP: 1500 } })).d.error, /must be less than the price/);
+  assert.equal((await admin(`/match/${EV}`, 'PUT', { modes: { VIP: 'paid', Premium: 'paid', Regular: 'paid' }, discounts: { VIP: 500, Premium: 0, Regular: 100 } })).status, 200);
+  const view = (await admin('', 'GET')).d.matches.find(m => m.id === EV);
+  assert.equal(view.tiers.find(t => t.tier === 'VIP').discountNaira, 500);
+  const m = (await cat()).matches.find(x => x.id === EV);
+  const vip = m.tiers.find(t => t.tier === 'VIP'), gs = m.tiers.find(t => t.tier === 'Premium'), ps = m.tiers.find(t => t.tier === 'Regular');
+  assert.equal(vip.priceKobo, 100000); assert.equal(vip.wasKobo, 150000); assert.equal(vip.offKobo, 50000);
+  assert.equal(gs.priceKobo, 80000); assert.equal(gs.wasKobo, null);
+  assert.equal(ps.priceKobo, 30000);
+  // The checkout price (what Paystack would charge) uses the discounted price.
+  const q = await fetch(`${BASE}/api/tickets/price`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines: [{ eventId: EV, tier: 'VIP', quantity: 2 }, ] }) }).then(r => r.json());
+  assert.equal(q.ok, true, JSON.stringify(q)); assert.equal(q.totalKobo, 200000);
+  // "Apply to all" refuses a discount that is not below a match's price.
+  assert.equal((await admin('/bulk', 'POST', { discounts: { Regular: 400 } })).status, 400);
+  assert.equal((await admin(`/match/${EV}`, 'PUT', { discounts: { VIP: 0, Regular: 0 } })).status, 200);
+  assert.equal((await cat()).matches.find(x => x.id === EV).tiers.find(t => t.tier === 'VIP').priceKobo, 150000, 'discount removed');
 });

@@ -11,7 +11,7 @@ import { sourceLabel, deviceOf } from './ticketSource.js';
 import { lagosParts } from './fixtureCard.js';
 import { randomId } from './crypto.js';
 import { ensureTable, listMatches, toSummary } from './matchCentre.js';
-import { ticketState, TIERS, CAP_COL, MODE_COL, TIER_LABELS, naira } from './tickets/rules.js';
+import { ticketState, TIERS, CAP_COL, MODE_COL, OFF_COL, TIER_LABELS, naira } from './tickets/rules.js';
 import { fulfillOrder } from './fulfillOrder.js';
 import { sendEmail, ticketBlocksHtml } from './email.js';
 import { ticketsPdf } from './ticketPdf.js';
@@ -51,6 +51,8 @@ export async function ensureTicketShopSchema(db) {
   // Paid / free / opening soon, per stand (Admin › Match Tickets).
   const lts = new Set((await db.prepare(`PRAGMA table_info(league_ticket_settings)`).all()).results.map(c => c.name));
   for (const col of Object.values(MODE_COL)) if (!lts.has(col)) await db.prepare(`ALTER TABLE league_ticket_settings ADD COLUMN ${col} TEXT`).run().catch(err => { if (!/duplicate column/i.test(String(err))) throw err; });
+  // Amount off per stand (kobo).
+  for (const col of Object.values(OFF_COL)) if (!lts.has(col)) await db.prepare(`ALTER TABLE league_ticket_settings ADD COLUMN ${col} INTEGER`).run().catch(err => { if (!/duplicate column/i.test(String(err))) throw err; });
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_basket ON orders (basket_id)`).run();
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_event_tier ON orders (event_id, tier, payment_status)`).run();
   // Matches already priced when this switch was added stay on sale (the club

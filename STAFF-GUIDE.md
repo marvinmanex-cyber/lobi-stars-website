@@ -2644,6 +2644,16 @@ or **Opening soon**. "Apply to all" at the top can set it for every home match.
   tickets for that match. Free tickets scan at the gate like any other ticket
   (Gate Control shows "Free ticket"). Discounts never apply to free tickets.
 - **Opening soon:** the stand is shown with "Opening soon" and can't be booked.
+- **Discount ₦:** next to each stand's price. Fans pay the price minus this
+  amount, and see the old price crossed out with "Save ₦…". It must be less
+  than the price (for no charge, use Free); 0 or empty removes it. "Apply to
+  all" has a discount box per stand too. The group / early bird / family
+  discounts (Ticket Discounts) can still apply on top of the new price.
+- **Getting the tickets:** after booking (free or paid), the tickets screen
+  has **Download to my phone** (all the tickets as one PDF) and **Email my
+  tickets** (sends them again, only to the email on the order, up to 3 times
+  an hour). The tickets are also emailed automatically when booked, and each
+  ticket can be saved as a picture.
 - **While online payment is paused** (Pause all online ticket sales), Free
   stands stay open and every paid stand shows "Opening soon". The banner on
   /tickets then says "Free tickets are open now".

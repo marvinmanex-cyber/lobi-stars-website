@@ -425,6 +425,10 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   .tk-paused[hidden] { display: none; }
   /* Free stands (green) and stands opening soon (greyed, can't be chosen). */
   .tk-stand--free .tk-price, .tk-from--free b { color: #0B7A2E; }
+  /* Discounted stands: the old price crossed out and the saving. */
+  .tk-was { margin-left: 6px; color: #8A9099; font-weight: 400; }
+  .tk-save { display: inline-block; margin-top: 2px; padding: 1px 7px; border-radius: 6px; background: #E9F8EE; color: #0B7A2E; font: 700 12px/1.5 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; font-style: normal; }
+  .tk-from .tk-save { display: block; margin-top: 4px; }
   .tk-from--free b { font-size: 1.15em; letter-spacing: .04em; text-transform: uppercase; }
   .tk-stand--soon { opacity: .6; cursor: not-allowed; }
   .tk-stand--soon .tk-price { color: #8A6D00; font-style: italic; }
@@ -450,7 +454,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   var naira = function (k) { return '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
   // Free stands show "Free"; stands not open yet show "Opening soon" (and can't be chosen).
   var money = function (k) { return k === 0 ? 'Free' : naira(k); };
-  var priceOf = function (t) { return t.soon ? 'Opening soon' : t.free ? 'Free' : naira(t.priceKobo); };
+  var priceOf = function (t) { return t.soon ? 'Opening soon' : t.free ? 'Free' : naira(t.priceKobo) + (t.wasKobo ? ' (was ' + naira(t.wasKobo) + ')' : ''); };
   var bookable = function (t) { return !t.soon && t.left !== 0; };
   var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c != null && c !== false) n.append(c); } return n; };
   var svg = function (html) { var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = html; return s; };
@@ -518,8 +522,8 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   function stands() {
     var box = $('tkStands'); box.replaceChildren();
     var onSale = matches.filter(function (m) { return m.state === 'on_sale'; });
-    var lowest = {}, soon = {};
-    onSale.forEach(function (m) { m.tiers.forEach(function (t) { if (t.soon) { soon[t.tier] = true; return; } if (lowest[t.tier] == null || t.priceKobo < lowest[t.tier]) lowest[t.tier] = t.priceKobo; }); });
+    var lowest = {}, soon = {}, was = {};
+    onSale.forEach(function (m) { m.tiers.forEach(function (t) { if (t.soon) { soon[t.tier] = true; return; } if (lowest[t.tier] == null || t.priceKobo < lowest[t.tier]) { lowest[t.tier] = t.priceKobo; was[t.tier] = t.wasKobo || null; } }); });
     var offered = TIERS.filter(function (t) { return lowest[t[0]] != null || soon[t[0]]; });
     if (!offered.length) { box.append(el('p', { class: 'tk-hint', text: 'Stands and prices appear here when tickets go on sale.' })); return; }
     var varies = function (tier) { var ps = onSale.map(function (m) { var t = m.tiers.find(function (x) { return x.tier === tier && !x.soon; }); return t ? t.priceKobo : null; }).filter(function (x) { return x != null; }); return ps.some(function (p) { return p !== ps[0]; }); };
@@ -530,7 +534,8 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       box.append(el('label', { class: 'tk-stand' + (closed ? ' tk-stand--soon' : lowest[tier] === 0 ? ' tk-stand--free' : '') }, radio(tier, $('allTier').value === tier, closed),
         // TODO (Marvin to confirm): a "Most Popular" badge needs sales data or the club's say-so.
         el('b', { text: t[1] }),
-        el('span', { class: 'tk-price', text: closed ? 'Opening soon' : lowest[tier] === 0 ? 'Free' : (varies(tier) ? 'from ' : '') + naira(lowest[tier]) + ' per ticket' }),
+        el('span', { class: 'tk-price' }, closed ? 'Opening soon' : lowest[tier] === 0 ? 'Free' : (varies(tier) ? 'from ' : '') + naira(lowest[tier]) + ' per ticket', !closed && was[tier] ? el('s', { class: 'tk-was', text: naira(was[tier]) }) : null),
+        !closed && was[tier] ? el('span', { class: 'tk-save', text: 'Save ' + naira(was[tier] - lowest[tier]) }) : null,
         el('small', { text: STAND_TEXT[tier] })));
     });
   }
@@ -611,7 +616,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
               el('div', { class: 'tk-meta' }, el('time', { datetime: m.kickoff, text: when.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + time }), el('br'), 'McCarthy Stadium, Makurdi' + (can && left !== null ? ' · ' + left + ' left' : '')),
               offerBits(m)),
             el('div', { class: 'tk-side' },
-              can && low ? el('span', { class: 'tk-from' }, 'from', el('b', { text: naira(low) })) : can && low === 0 ? el('span', { class: 'tk-from tk-from--free' }, el('b', { text: 'Free' })) : null,
+              can && low ? el('span', { class: 'tk-from' }, 'from', el('b', { text: naira(low) }), open.some(function (t) { return t.wasKobo; }) ? el('em', { class: 'tk-save', text: 'Discount' }) : null) : can && low === 0 ? el('span', { class: 'tk-from tk-from--free' }, el('b', { text: 'Free' })) : null,
               el('label', { class: 'tk-toggle' }, cb, svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>')),
               el('span', { class: 'tk-toggle-l', 'aria-hidden': 'true', text: can ? 'Select' : '' }))),
           pick));
@@ -751,8 +756,10 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       // The message's first sentence is the heading; the rest goes underneath.
       if (pz && d.pause && d.pause.freeOpen) {
         pz.hidden = false;
-        document.getElementById('tkPausedTitle').textContent = 'Free tickets are open now';
-        document.getElementById('tkPausedMsg').textContent = 'Book your free tickets below: fill in your details as usual, there is nothing to pay, and your tickets are emailed to you straight away. Other stands are opening soon.';
+        // Names the free stand(s): "Free Popular Stand tickets are open now".
+        var fs = (d.pause.freeStands || []), names = fs.length > 1 ? fs.slice(0, -1).join(', ') + ' and ' + fs[fs.length - 1] : (fs[0] || '');
+        document.getElementById('tkPausedTitle').textContent = 'Free ' + (names ? names + ' ' : '') + 'tickets are open now';
+        document.getElementById('tkPausedMsg').textContent = 'Book your free ' + (names ? names + ' ' : '') + 'tickets below: fill in your details as usual and there is nothing to pay. Download your tickets straight to your phone, and we also email them to you. Other stands are opening soon.';
       } else if (pz) { pz.hidden = !d.pause; if (d.pause) { var mm = String(d.pause.message || '').match(/^(.+?[.!?])\s+([\s\S]*)$/); document.getElementById('tkPausedTitle').textContent = mm ? mm[1].replace(/[.!]$/, '') : 'Online tickets open soon'; document.getElementById('tkPausedMsg').textContent = mm ? mm[2] : d.pause.message; } }
     }).catch(function () {
       list.removeAttribute('aria-busy');
