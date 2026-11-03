@@ -8,6 +8,18 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Ropajo partner page: Lobi Stars and Ropajo styles blended
+
+- The page now mixes both brands: Lobi Stars red and gold, Bebas Neue and
+  Barlow (the club's fonts) with Ropajo's espresso brown, cream, burgundy and
+  serif headings. A red-gold-burgundy stripe runs between the sections, the
+  "Official Hotel Partner" title sits on a Lobi red label, the buttons are in
+  club red and the cards use red, gold and burgundy.
+- The "x" between the logos was replaced by two round crests (Lobi Stars with a
+  red and gold ring, Ropajo with a cream and burgundy ring) joined by a
+  red-to-cream line with a gold handshake emblem, and "Lobi Stars FC / Ropajo
+  Hotels" underneath.
+
 ## 2026-11-03: Ropajo partner page: new wording, no website photos
 
 - The Ropajo page text was rewritten: Ropajo is presented as the club's chosen

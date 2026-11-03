@@ -1,8 +1,8 @@
 ---
 // Ropajo Hotels' partner page (theme: "ropajo"). The same layout as every partner page
 // (who the partner is, the partnership with Lobi Stars FC, a link to their website),
-// dressed in a touch of Ropajo's brand: espresso brown and cream, a burgundy accent and
-// their Abhaya Libre serif for headings, alongside the club's own fonts and badge.
+// in a blend of both brands: Lobi Stars red and gold with Bebas Neue / Barlow, and
+// Ropajo's espresso brown, cream, burgundy and Abhaya Libre serif.
 // The partnership text is the partner file's body (src/content/partners/ropajo.md).
 import type { Partner } from '../../lib/partners';
 import { website } from '../../lib/partners';
@@ -12,45 +12,56 @@ const { partner } = Astro.props;
 const p = partner.data;
 const site = website(partner) ?? 'https://ropajo.com/';
 const pillars = [
-  { title: 'Official Hotel Partner', text: 'The chosen hotel of Lobi Stars FC for accommodation and hospitality.',
+  { tone: 'red', title: 'Official Hotel Partner', text: 'The chosen hotel of Lobi Stars FC for accommodation and hospitality.',
     icon: '<path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01"/>' },
-  { title: 'Hosting distinguished guests', text: 'Dignitaries, partners and invited guests of the club are received with comfort, care and discretion.',
+  { tone: 'gold', title: 'Hosting distinguished guests', text: 'Dignitaries, partners and invited guests of the club are received with comfort, care and discretion.',
     icon: '<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.8z"/>' },
-  { title: 'Shared standards', text: 'A common commitment to excellence, professionalism and genuine hospitality, on and off the pitch.',
+  { tone: 'wine', title: 'Shared standards', text: 'A common commitment to excellence, professionalism and genuine hospitality, on and off the pitch.',
     icon: '<path d="M8 12l3 3 5-6"/><circle cx="12" cy="12" r="9"/>' },
 ];
+// Picture spaces: designed panels until the club's own photos arrive (swap each for an <img>).
 const tiles = [
   { tone: 'cream', title: 'Rooms & Suites', icon: '<path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 18h18M3 21v-3M21 21v-3"/><path d="M6 10V7a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3M12 10V7a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/>' },
-  { tone: 'wine', title: 'Fine Dining', icon: '<path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v5M9 3v5M17 21V3c-2 1-3 4-3 7h3"/>' },
+  { tone: 'red', title: 'Fine Dining', icon: '<path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v5M9 3v5M17 21V3c-2 1-3 4-3 7h3"/>' },
   { tone: 'dark', title: 'Leisure', icon: '<path d="M2 18c2 1.3 3.5 1.3 5 0s3-1.3 5 0 3.5 1.3 5 0 3-1.3 5 0M6 15V6a2 2 0 0 1 4 0M14 15V6a2 2 0 0 1 4 0M6 9h8M6 12h8"/>' },
 ];
+const HANDSHAKE = '<path d="M11 17l2 2a1 1 0 0 0 3-3"/><path d="M14 14l2.5 2.5a1 1 0 0 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/><path d="M21 3l1 11h-2M3 3L2 14l6.5 6.5a1 1 0 1 0 3-3M3 4h8"/>';
 ---
 <div class="rj">
   <section class="rj-top">
     <div class="wrap rj-top-in">
-      <div class="rj-pair" aria-label="Lobi Stars FC and Ropajo Hotels">
-        <img class="rj-badge" src="/images/lobi-stars-badge.png" alt="Lobi Stars FC badge" width="120" height="120" />
-        <span class="rj-x" aria-hidden="true">&times;</span>
-        <img class="rj-logo" src="/images/ropajo/logo-cream.png" alt="Ropajo Hotels logo" width="1074" height="828" />
-      </div>
+      <figure class="rj-duo" aria-label="Lobi Stars FC and Ropajo Hotels, partners">
+        <div class="rj-duo-row">
+          <span class="rj-med rj-med--lobi"><img src="/images/lobi-stars-badge.png" alt="Lobi Stars FC badge" width="120" height="120" /></span>
+          <span class="rj-link" aria-hidden="true">
+            <span class="rj-link-line"></span>
+            <span class="rj-link-gem"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={HANDSHAKE} /></span>
+          </span>
+          <span class="rj-med rj-med--ropajo"><img src="/images/ropajo/logo-cream.png" alt="Ropajo Hotels logo" width="1074" height="828" /></span>
+        </div>
+        <figcaption class="rj-duo-cap"><span>Lobi Stars FC</span><i aria-hidden="true"></i><span>Ropajo Hotels</span></figcaption>
+      </figure>
       <div class="rj-intro">
         <p class="rj-caps">{p.tier}</p>
         <h1 class="rj-h1">{p.name}</h1>
         <p class="rj-official">{p.officialTitle}</p>
         {p.shortDescription && <p class="rj-desc">{p.shortDescription}</p>}
-        <a class="rj-btn" href={site} target="_blank" rel="sponsored noopener">Visit Ropajo Hotels<span class="sr-only"> (opens in a new tab)</span></a>
+        <div class="rj-btns">
+          <a class="rj-btn" href={site} target="_blank" rel="sponsored noopener">Visit Ropajo Hotels<span class="sr-only"> (opens in a new tab)</span></a>
+          <a class="rj-btn rj-btn--ghost" href="#rj-part-h">The partnership</a>
+        </div>
       </div>
     </div>
   </section>
 
   <section class="rj-part" aria-labelledby="rj-part-h">
     <div class="wrap">
-      <p class="rj-caps rj-caps--wine">Lobi Stars FC &times; Ropajo Hotels</p>
+      <p class="rj-caps rj-caps--red">Lobi Stars FC &amp; Ropajo Hotels</p>
       <h2 class="rj-h2" id="rj-part-h">The partnership</h2>
       <div class="rj-body"><slot /></div>
       <ul class="rj-pillars">
         {pillars.map(x => (
-          <li>
+          <li class={`rj-pill--${x.tone}`}>
             <span class="rj-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" set:html={x.icon} /></span>
             <h3>{x.title}</h3>
             <p>{x.text}</p>
@@ -68,7 +79,6 @@ const tiles = [
         <p>Ropajo Hotels &amp; Apartments offers well-appointed rooms and apartments, a pool, a restaurant serving local and intercontinental cuisine, and a relaxed coffee lounge, with a focus on comfort and attentive service.</p>
         <a class="rj-btn rj-btn--cream" href={site} target="_blank" rel="sponsored noopener">Go to ropajo.com<span class="sr-only"> (opens in a new tab)</span></a>
       </div>
-      {/* Picture spaces: designed panels until the club's own photos arrive (swap each for an <img>). */}
       <div class="rj-photos" aria-hidden="true">
         {tiles.map(t => (
           <div class={`rj-tile rj-tile--${t.tone}`}>
@@ -85,42 +95,73 @@ const tiles = [
 <style>
   @font-face { font-family: 'Abhaya Libre'; font-style: normal; font-weight: 500; font-display: swap; src: url('/fonts/abhaya-libre-500.woff2') format('woff2'); }
   @font-face { font-family: 'Abhaya Libre'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/abhaya-libre-600.woff2') format('woff2'); }
-  .rj { --rj-espresso: #1F1515; --rj-espresso-2: #2B1E1C; --rj-cream: #FDF0D5; --rj-cream-2: #F3E2BF; --rj-wine: #7D041A; --rj-serif: 'Abhaya Libre', Georgia, serif; }
-  .rj-caps { margin: 0 0 10px; font: 700 13px/1.4 'Barlow Condensed', sans-serif; letter-spacing: .3em; text-transform: uppercase; color: var(--rj-cream-2); }
-  .rj-caps--wine { color: var(--rj-wine); }
-  .rj-h2 { margin: 0 0 18px; font: 600 clamp(32px, 4vw, 46px)/1.08 var(--rj-serif); color: var(--rj-espresso); }
-  .rj-h2--light { color: var(--rj-cream); }
-  .rj-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 50px; padding: 0 28px; border-radius: 10px; background: var(--rj-cream); color: var(--rj-espresso); border: 1.5px solid var(--rj-cream); font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: background .2s, color .2s; }
-  .rj-btn:hover, .rj-btn:focus-visible { background: transparent; color: var(--rj-cream); }
-  .rj-btn--cream { background: transparent; color: var(--rj-cream); }
-  .rj-btn--cream:hover, .rj-btn--cream:focus-visible { background: var(--rj-cream); color: var(--rj-espresso); }
-  .rj a:focus-visible { outline: 2px solid var(--rj-cream); outline-offset: 3px; }
+  .rj {
+    /* Ropajo */ --rj-espresso: #1F1515; --rj-espresso-2: #2B1E1C; --rj-cream: #FDF0D5; --rj-cream-2: #F3E2BF; --rj-wine: #7D041A; --rj-serif: 'Abhaya Libre', Georgia, serif;
+    /* Lobi Stars */ --ls-red: #E31E24; --ls-red-2: #A3141A; --ls-gold: #FFC72C;
+    --rj-stripe: linear-gradient(90deg, var(--ls-red) 0 38%, var(--ls-gold) 38% 62%, var(--rj-wine) 62%);
+  }
+  .rj-caps { margin: 0 0 10px; font: 700 13px/1.4 'Barlow Condensed', sans-serif; letter-spacing: .3em; text-transform: uppercase; color: var(--ls-gold); }
+  .rj-caps--red { color: var(--ls-red-2); }
+  .rj-h2 { position: relative; margin: 0 0 22px; padding-bottom: 14px; font: 400 clamp(40px, 5vw, 58px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; color: var(--rj-espresso); }
+  .rj-h2::after { content: ''; position: absolute; left: 0; bottom: 0; width: 120px; height: 4px; border-radius: 2px; background: var(--rj-stripe); }
+  .rj-h2--light { font: 600 clamp(32px, 4vw, 44px)/1.08 var(--rj-serif); letter-spacing: 0; color: var(--rj-cream); }
+  .rj-btns { display: flex; flex-wrap: wrap; gap: 12px; }
+  .rj-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 52px; padding: 0 28px; border-radius: 10px; background: var(--ls-red); color: #fff; border: 2px solid var(--ls-red); font: 700 16px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: background .2s, color .2s, border-color .2s; }
+  .rj-btn:hover, .rj-btn:focus-visible { background: var(--ls-red-2); border-color: var(--ls-red-2); }
+  .rj-btn--ghost { background: transparent; border-color: rgba(253, 240, 213, .55); color: var(--rj-cream); }
+  .rj-btn--ghost:hover, .rj-btn--ghost:focus-visible { background: var(--rj-cream); border-color: var(--rj-cream); color: var(--rj-espresso); }
+  .rj-btn--cream { background: transparent; border-color: var(--ls-gold); color: var(--ls-gold); }
+  .rj-btn--cream:hover, .rj-btn--cream:focus-visible { background: var(--ls-gold); border-color: var(--ls-gold); color: var(--rj-espresso); }
+  .rj a:focus-visible { outline: 2px solid var(--ls-gold); outline-offset: 3px; }
 
-  /* Top: the club badge beside Ropajo's logo, then who they are (like every partner page). */
-  .rj-top { background: radial-gradient(120% 140% at 0% 0%, #3A2723 0%, var(--rj-espresso) 55%); color: var(--rj-cream); border-bottom: 3px solid var(--rj-wine); }
-  .rj-top-in { display: grid; grid-template-columns: minmax(260px, 420px) 1fr; gap: 48px; align-items: center; padding-top: 52px; padding-bottom: 56px; }
-  .rj-pair { display: flex; align-items: center; justify-content: center; gap: 22px; padding: 30px 26px; border: 1px solid rgba(253, 240, 213, .22); border-radius: 18px; background: rgba(253, 240, 213, .04); }
-  .rj-badge { width: 96px; height: auto; }
-  .rj-x { font: 400 30px/1 var(--rj-serif); color: var(--rj-cream-2); opacity: .7; }
-  .rj-logo { width: 150px; height: auto; }
-  .rj-h1 { margin: 0; font: 600 clamp(42px, 5.4vw, 68px)/1 var(--rj-serif); color: var(--rj-cream); }
-  .rj-official { margin: 10px 0 0; font: 700 22px/1.2 'Barlow Condensed', sans-serif; color: #F2B8A0; }
-  .rj-desc { margin: 14px 0 26px; max-width: 600px; font-size: 17px; line-height: 1.7; color: rgba(253, 240, 213, .88); }
+  /* Top: Lobi red sweeping into Ropajo espresso, with the club stripe along the bottom. */
+  .rj-top { position: relative; overflow: hidden; color: var(--rj-cream);
+    background: radial-gradient(70% 120% at 0% 100%, rgba(227, 30, 36, .55), transparent 60%), radial-gradient(60% 90% at 100% 0%, rgba(125, 4, 26, .55), transparent 65%), var(--rj-espresso); }
+  .rj-top::before { content: ''; position: absolute; left: -10%; top: -40%; width: 46%; height: 180%; transform: rotate(14deg); background: repeating-linear-gradient(90deg, rgba(255, 199, 44, .05) 0 2px, transparent 2px 22px); pointer-events: none; }
+  .rj-top::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--rj-stripe); }
+  .rj-top-in { position: relative; display: grid; grid-template-columns: minmax(300px, 460px) 1fr; gap: 56px; align-items: center; padding-top: 56px; padding-bottom: 64px; }
 
-  /* The partnership, on cream. */
-  .rj-part { background: var(--rj-cream); color: var(--rj-espresso); padding: 60px 0 64px; }
-  .rj-body { max-width: 760px; font-size: 18px; line-height: 1.75; color: #3A2B28; }
+  /* The two crests, joined by a red-gold-cream line with a handshake emblem. */
+  .rj-duo { margin: 0; }
+  .rj-duo-row { display: flex; align-items: center; justify-content: center; }
+  .rj-med { position: relative; z-index: 1; flex: none; display: grid; place-items: center; width: 150px; height: 150px; border-radius: 50%; }
+  .rj-med img { width: 72%; height: auto; }
+  .rj-med--lobi { background: radial-gradient(circle at 35% 30%, #fff, #F1F1F1); box-shadow: 0 0 0 4px var(--ls-red), 0 0 0 9px rgba(255, 199, 44, .9), 0 18px 40px -12px rgba(0, 0, 0, .6); }
+  .rj-med--ropajo { background: radial-gradient(circle at 35% 30%, #3A2723, var(--rj-espresso)); box-shadow: 0 0 0 4px var(--rj-cream), 0 0 0 9px var(--rj-wine), 0 18px 40px -12px rgba(0, 0, 0, .6); }
+  .rj-med--ropajo img { width: 76%; }
+  .rj-link { position: relative; flex: 0 0 120px; height: 56px; display: grid; place-items: center; margin: 0 -4px; }
+  .rj-link-line { position: absolute; left: 0; right: 0; top: 50%; height: 4px; margin-top: -2px; background: linear-gradient(90deg, var(--ls-red), var(--ls-gold) 50%, var(--rj-cream)); }
+  .rj-link-gem { position: relative; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 12px; transform: rotate(45deg); background: var(--ls-gold); color: var(--rj-espresso); box-shadow: 0 0 0 4px var(--rj-espresso), 0 8px 20px -6px rgba(0, 0, 0, .6); }
+  .rj-link-gem svg { transform: rotate(-45deg); }
+  .rj-duo-cap { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 26px; font: 400 20px/1 'Bebas Neue', sans-serif; letter-spacing: 2px; color: var(--rj-cream); }
+  .rj-duo-cap i { width: 6px; height: 6px; transform: rotate(45deg); background: var(--ls-gold); }
+
+  .rj-h1 { margin: 0; font: 600 clamp(44px, 5.6vw, 72px)/1 var(--rj-serif); color: var(--rj-cream); }
+  .rj-official { display: inline-block; margin: 14px 0 0; padding: 7px 14px 5px; border-radius: 6px; background: var(--ls-red); font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1.5px; color: #fff; }
+  .rj-desc { margin: 16px 0 26px; max-width: 600px; font-size: 17px; line-height: 1.7; color: rgba(253, 240, 213, .9); }
+
+  /* The partnership, on cream, with Lobi headings and cards in both brands' colours. */
+  .rj-part { background: var(--rj-cream); color: var(--rj-espresso); padding: 64px 0 68px; }
+  .rj-body { max-width: 780px; font-size: 18px; line-height: 1.75; color: #3A2B28; }
   .rj-body :global(p) { margin: 0 0 1em; }
-  .rj-body :global(a) { color: var(--rj-wine); text-underline-offset: 3px; }
-  .rj-pillars { list-style: none; margin: 30px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .rj-pillars li { padding: 24px; border-radius: 14px; background: #fff; border: 1px solid #EAD6AE; border-top: 3px solid var(--rj-wine); box-shadow: 0 10px 24px -18px rgba(31, 21, 21, .45); }
-  .rj-ic { display: grid; place-items: center; width: 46px; height: 46px; margin-bottom: 14px; border-radius: 12px; background: var(--rj-espresso); color: var(--rj-cream); }
+  .rj-body :global(strong) { color: var(--ls-red-2); }
+  .rj-body :global(a) { color: var(--ls-red-2); text-underline-offset: 3px; }
+  .rj-pillars { list-style: none; margin: 32px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .rj-pillars li { --tone: var(--ls-red); --ic-ink: #fff; position: relative; overflow: hidden; padding: 26px 24px; border-radius: 14px; background: #fff; border: 1px solid #EAD6AE; box-shadow: 0 12px 26px -18px rgba(31, 21, 21, .5); transition: transform .25s ease; }
+  .rj-pillars li::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--tone); }
+  .rj-pillars li:hover { transform: translateY(-3px); }
+  .rj-pillars .rj-pill--gold { --tone: var(--ls-gold); --ic-ink: var(--rj-espresso); }
+  .rj-pillars .rj-pill--wine { --tone: var(--rj-wine); }
+  .rj-ic { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 14px; border-radius: 12px; background: var(--tone); color: var(--ic-ink); }
   .rj-pillars h3 { margin: 0 0 6px; font: 600 24px/1.15 var(--rj-serif); color: var(--rj-espresso); }
   .rj-pillars p { margin: 0; font-size: 15.5px; line-height: 1.6; color: #4A3A36; }
 
-  /* About Ropajo: a short note and three photos, with the link to their website. */
-  .rj-about { background: var(--rj-espresso-2); color: var(--rj-cream); padding: 56px 0 60px; }
+  /* About Ropajo: espresso with a Lobi red glow, and the picture panels. */
+  .rj-about { position: relative; background: radial-gradient(50% 80% at 100% 100%, rgba(227, 30, 36, .25), transparent 70%), var(--rj-espresso-2); color: var(--rj-cream); padding: 60px 0 64px; }
+  .rj-about::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--rj-stripe); }
   .rj-about-in { display: grid; grid-template-columns: minmax(260px, 1fr) 1.5fr; gap: 40px; align-items: center; }
+  .rj-about .rj-h2--light::after { display: none; }
+  .rj-about .rj-h2--light { padding-bottom: 0; }
   .rj-about-text p:not(.rj-caps) { margin: 0 0 24px; font-size: 17px; line-height: 1.7; color: rgba(253, 240, 213, .85); }
   .rj-photos { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
   .rj-tile { position: relative; overflow: hidden; height: 260px; border-radius: 14px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 22px 18px;
@@ -129,17 +170,21 @@ const tiles = [
   .rj-tile svg { position: absolute; top: 22px; left: 18px; opacity: .9; }
   .rj-tile::after { content: ''; position: absolute; right: -36px; top: -36px; width: 120px; height: 120px; border-radius: 50%; border: 1px solid currentColor; opacity: .18; }
   .rj-tile--cream { color: var(--rj-espresso); background: repeating-linear-gradient(135deg, rgba(31, 21, 21, .05) 0 1px, transparent 1px 14px), linear-gradient(160deg, var(--rj-cream), var(--rj-cream-2)); border-color: transparent; }
-  .rj-tile--wine { background: repeating-linear-gradient(135deg, rgba(253, 240, 213, .06) 0 1px, transparent 1px 14px), linear-gradient(160deg, #9A1530, var(--rj-wine)); border-color: transparent; margin-top: 28px; }
-  .rj-tile-k { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .3em; text-transform: uppercase; opacity: .7; }
+  .rj-tile--red { color: #fff; background: repeating-linear-gradient(135deg, rgba(255, 255, 255, .07) 0 1px, transparent 1px 14px), linear-gradient(160deg, var(--ls-red), var(--ls-red-2)); border-color: transparent; margin-top: 28px; }
+  .rj-tile-k { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .3em; text-transform: uppercase; opacity: .75; }
+  .rj-tile--dark .rj-tile-k { color: var(--ls-gold); opacity: 1; }
   .rj-tile-t { font: 600 24px/1.1 var(--rj-serif); }
 
   @media (max-width: 900px) { .rj-pillars { grid-template-columns: 1fr; } .rj-about-in { grid-template-columns: 1fr; } }
   @media (max-width: 760px) {
-    .rj-top-in { grid-template-columns: 1fr; gap: 28px; padding-top: 32px; padding-bottom: 40px; }
-    .rj-pair { gap: 16px; padding: 22px 16px; }
-    .rj-badge { width: 76px; } .rj-logo { width: 120px; }
+    .rj-top-in { grid-template-columns: 1fr; gap: 30px; padding-top: 36px; padding-bottom: 46px; }
+    .rj-med { width: 112px; height: 112px; }
+    .rj-link { flex-basis: 76px; }
+    .rj-link-gem { width: 38px; height: 38px; } .rj-link-gem svg { width: 18px; height: 18px; }
+    .rj-duo-cap { font-size: 17px; margin-top: 22px; }
     .rj-btn { width: 100%; }
-    .rj-part { padding: 44px 0 48px; } .rj-about { padding: 44px 0 48px; }
-    .rj-photos { grid-template-columns: 1fr; } .rj-tile { height: 104px; justify-content: center; } .rj-tile svg { top: 50%; left: auto; right: 22px; transform: translateY(-50%); } .rj-tile--wine { margin-top: 0; }
+    .rj-part { padding: 46px 0 50px; } .rj-about { padding: 46px 0 50px; }
+    .rj-photos { grid-template-columns: 1fr; } .rj-tile { height: 104px; justify-content: center; } .rj-tile svg { top: 50%; left: auto; right: 22px; transform: translateY(-50%); } .rj-tile--red { margin-top: 0; }
   }
+  @media (prefers-reduced-motion: reduce) { .rj-pillars li { transition: none; } .rj-pillars li:hover { transform: none; } }
 </style>
