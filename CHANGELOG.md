@@ -17,8 +17,8 @@ in HANDOVER-TODO.md.
   club red and the cards use red, gold and burgundy.
 - The "x" between the logos was replaced by two round crests (Lobi Stars with a
   red and gold ring, Ropajo with a cream and burgundy ring) joined by a
-  red-to-cream line with a gold handshake emblem, and "Lobi Stars FC / Ropajo
-  Hotels" underneath.
+  red-to-cream line, and "Lobi Stars FC / Ropajo Hotels" underneath. (A
+  handshake emblem on the line was tried and removed the same day.)
 
 ## 2026-11-03: Ropajo partner page: new wording, no website photos
 
