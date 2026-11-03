@@ -54,9 +54,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
         <div class="fset">
           <div class="fset-label">Ticket pricing (&#8358;)</div>
           <div class="f-grid f-grid-3">
-            <label>VIP<input id="f-vip" type="number" min="0" step="50" value="0" required/></label>
-            <label>Premium<input id="f-prem" type="number" min="0" step="50" value="0" required/></label>
-            <label>Regular<input id="f-reg" type="number" min="0" step="50" value="0" required/></label>
+            <label>VIP Sitting<input id="f-vip" type="number" min="0" step="50" value="1500" required/></label>
+            <label>Grand Stand<input id="f-prem" type="number" min="0" step="50" value="800" required/></label>
+            <label>Popular Stand<input id="f-reg" type="number" min="0" step="50" value="400" required/></label>
           </div>
         </div>
 
@@ -298,9 +298,9 @@ import AdminNav from '../../components/admin/AdminNav.astro';
           '<div class="m-when">' + fmtWhen(e.event_date) + '</div>' +
           '<div class="m-sub">' + esc(e.competition) + ' &nbsp;•&nbsp; ' + esc(e.venue) + '</div>' +
           '<div class="m-prices">' +
-            '<span class="chip">VIP ' + naira(e.vip_price_kobo) + '</span>' +
-            '<span class="chip">Premium ' + naira(e.premium_price_kobo) + '</span>' +
-            '<span class="chip">Regular ' + naira(e.regular_price_kobo) + '</span>' +
+            '<span class="chip">VIP Sitting ' + naira(e.vip_price_kobo) + '</span>' +
+            '<span class="chip">Grand Stand ' + naira(e.premium_price_kobo) + '</span>' +
+            '<span class="chip">Popular Stand ' + naira(e.regular_price_kobo) + '</span>' +
             (e.programme_url ? '<span class="chip">&#128196; Programme attached</span>' : '') +
           '</div>' +
         '</div>' +
@@ -343,9 +343,10 @@ import AdminNav from '../../components/admin/AdminNav.astro';
       $('f-date').value = e ? isoToLocalInput(e.event_date) : '';
       $('f-active').checked = e ? !!e.active : true;
       $('f-ishome').checked = e ? (e.is_home === null || e.is_home === undefined ? /lobi stars/i.test(e.home_team) : e.is_home === 1) : true;
-      $('f-vip').value = e ? e.vip_price_kobo / 100 : 0;
-      $('f-prem').value = e ? e.premium_price_kobo / 100 : 0;
-      $('f-reg').value = e ? e.regular_price_kobo / 100 : 0;
+      // New match: the club's standard prices (VIP Sitting ₦1,500, Grand Stand ₦800, Popular Stand ₦400).
+      $('f-vip').value = e ? e.vip_price_kobo / 100 : 1500;
+      $('f-prem').value = e ? e.premium_price_kobo / 100 : 800;
+      $('f-reg').value = e ? e.regular_price_kobo / 100 : 400;
       $('f-prog').value = e ? (e.programme_url || '') : '';
       $('f-comm').checked = e ? e.commentary_enabled !== 0 : true;
       $('f-commstart').value = e && e.commentary_start_at ? isoToLocalInput(e.commentary_start_at) : '';

@@ -8,6 +8,16 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Ticket categories and prices
+
+**Who it affects:** fans buying tickets, admins.
+- Every upcoming home match is priced **VIP Sitting ₦1,500, Grand Stand ₦800,
+  Popular Stand ₦400**. Six matches were still at ₦500 / ₦200 / ₦100 and were
+  updated. Tickets already sold keep the price that was paid.
+- Admin › Match Tickets & Settings now uses the same names as the tickets page:
+  VIP Sitting, Grand Stand and Popular Stand (no more "Premium" and "Regular").
+- New matches start with these prices filled in.
+
 ## 2026-11-03: Delete accreditation applications (Super Admins)
 
 **Who it affects:** Super Admins in the Media Centre.
