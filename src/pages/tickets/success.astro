@@ -138,6 +138,8 @@ import TicketsView from '../../components/tickets/TicketsView.astro';
 
   // Tickets for several matches (one payment): wait for the payment, then show them all.
   const basket = params.get('basket');
+  // Free tickets: nothing was paid, so the heading says so while they load.
+  if (basket && params.get('free') === '1') { const h = document.querySelector('#state-loading .stitle'); if (h) h.innerHTML = 'Getting your <span class="r">Free Tickets</span>'; }
   if (basket) {
     for (let i = 0; i < 12; i++) {
       try {
@@ -148,7 +150,7 @@ import TicketsView from '../../components/tickets/TicketsView.astro';
           loading.style.display = 'none';
           document.getElementById('state-basket').style.display = 'block';
           const n = window.lsRenderTickets(document.getElementById('basket-list'), d);
-          document.getElementById('basket-summary').textContent = `Payment confirmed. ${n} ticket${n === 1 ? '' : 's'} for ${d.matches.length} match${d.matches.length === 1 ? '' : 'es'}, also emailed to ${d.email}. Order reference: ${d.reference}.`;
+          document.getElementById('basket-summary').textContent = `${d.totalKobo === 0 ? 'Your free tickets are confirmed' : 'Payment confirmed'}. ${n} ticket${n === 1 ? '' : 's'} for ${d.matches.length} match${d.matches.length === 1 ? '' : 'es'}, also emailed to ${d.email}. Order reference: ${d.reference}.`;
           return;
         }
         if (!r.ok && r.status !== 500) { errorMsg.textContent = d.error || 'Order not found.'; break; }

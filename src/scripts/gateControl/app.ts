@@ -300,7 +300,7 @@ function renderResult(r: any) {
       <dl class="gc-details">
         ${det('Match', t.match ? `${t.match}${t.matchDate ? ` · ${dayOnly(t.matchDate)}` : ''}` : '', true)}
         ${det('Ticket number', t.id)}
-        ${det('Price paid', naira(t.pricePaidKobo))}
+        ${det('Price paid', t.pricePaidKobo === 0 ? 'Free ticket' : naira(t.pricePaidKobo))}
         ${det('Bought on', dayTime(t.boughtAt))}
         ${det('Bought where', where || t.channel)}
         ${det('Order', t.ticketsInOrder ? `${t.ticketsInOrder} ticket${t.ticketsInOrder === 1 ? '' : 's'} · ${naira(t.orderTotalKobo)} total` : '')}

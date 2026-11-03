@@ -61,7 +61,7 @@ import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
   var STAND = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
   var BADGE = { VIP: '/images/vip-siting.png', Regular: '/images/popular-stand.png' };
   var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else n.setAttribute(k, v); }); for (var i = 2; i < arguments.length; i++) if (arguments[i] != null) n.append(arguments[i]); return n; };
-  var naira = function (k) { return '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
+  var naira = function (k) { return Number(k) === 0 ? 'Free' : '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
   var venueParts = function (v) { var s = String(v || ''), i = s.indexOf(','); return i < 0 ? [s, ''] : [s.slice(0, i).trim(), s.slice(i + 1).trim()]; };
   var whenParts = function (iso) {
     var d = new Date(iso);

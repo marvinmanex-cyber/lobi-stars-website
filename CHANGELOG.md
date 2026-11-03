@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Free stands and "Opening soon" for match tickets
+
+- Admin › Match Tickets: each stand of each home match is **Paid**, **Free**
+  or **Opening soon** ("Apply to all" can set it for every home match).
+- **Free** stands: fans book online as usual (name, email, phone) and press
+  **Get my free tickets**. No payment: the tickets are issued at once, shown
+  to download, emailed (PDF, "Free ticket"), and scan at the gate as normal.
+  At most "Most per order" free tickets per person (email or phone) per match.
+- **Opening soon** stands show but can't be booked.
+- While online payment is paused, Free stands stay open and paid stands show
+  "Opening soon"; the /tickets banner says "Free tickets are open now".
+- Homepage, fixtures and match pages say **Get free ticket** when the
+  cheapest open stand is free.
+
 ## 2026-11-03: Ropajo page: colour highlight cards
 
 - The three highlights (Official hotel, Club guests, Shared standards) are now

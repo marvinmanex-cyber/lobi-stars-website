@@ -13,7 +13,7 @@ const isLobi = n => /lobi stars/i.test(n || '');
 function ticketHtml(m, home) {
   if (!home) return '<span class="lg-chip lg-tix">Away fixture</span>';
   const t = m.ticket || { state: m.on_sale ? 'on_sale' : 'not_on_sale' };
-  if (t.state === 'on_sale') return `<a class="lg-btn primary" href="/tickets/?event=${encodeURIComponent(m.id)}">Buy ticket${t.fromKobo ? ` <small>from ${esc(naira(t.fromKobo))}</small>` : ''}</a>`;
+  if (t.state === 'on_sale') return `<a class="lg-btn primary" href="/tickets/?event=${encodeURIComponent(m.id)}">${t.free ? 'Get free ticket' : 'Buy ticket'}${t.fromKobo ? ` <small>from ${esc(naira(t.fromKobo))}</small>` : ''}</a>`;
   if (t.state === 'sold_out') return '<span class="lg-chip bad lg-tix">Sold out</span>';
   if (t.state === 'closed') return '';
   const opens = t.opensAt ? ` (from ${esc(new Date(t.opensAt).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short' }))})` : '';

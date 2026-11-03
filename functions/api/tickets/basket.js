@@ -17,17 +17,26 @@ import { ensureDiscountSchema, priceWithDiscounts, orderChunks, holdChunkStateme
 //   held atomically. If the total differs from expectedTotalKobo (what the
 //   buyer was shown), nothing is charged: 409 with the new price, so the buyer
 //   sees it first. -> { authorizationUrl, reference }
+//   FREE stands (Admin › Match Tickets: Free): the same form, but when the total is
+//   ₦0 nothing goes to Paystack: the tickets are issued at once and emailed (PDF)
+//   -> { free: true, reference }. At most "most tickets per order" free tickets per
+//   person (email or phone) per match. Free stands stay open while payments are paused.
 // GET /api/tickets/basket?reference=  -- after paying: confirms with Paystack
 //   (if the webhook hasn't arrived yet) and returns the tickets per match.
 const clean = (v, max) => String(v ?? '').replace(/<[^>]*>/g, '').replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, max);
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost({ request, env, waitUntil }) {
   try {
     const db = env.DB;
     await ensureFanSchema(db);
-    // All online ticket sales paused (Admin › Tickets): the fans' message, nothing is held or charged.
+    // Online payment paused (Admin › Tickets): only FREE stands can be booked (the catalogue
+    // shows paid stands as "Opening soon"); anything else gets the fans' message.
     const pause = await salesPause(db);
-    if (pause.paused) return Response.json({ error: pause.message, paused: true }, { status: 409, headers: { 'Cache-Control': 'no-store' } });
+    if (pause.paused) {
+      await ensureTicketShopSchema(db);
+      const freeOpen = await db.prepare(`SELECT 1 FROM league_ticket_settings WHERE is_on_sale = 1 AND (vip_mode = 'free' OR premium_mode = 'free' OR regular_mode = 'free') LIMIT 1`).first();
+      if (!freeOpen) return Response.json({ error: pause.message, paused: true }, { status: 409, headers: { 'Cache-Control': 'no-store' } });
+    }
     const ip = clientIp(request);
     if (!(await rateLimit(db, `ticket-basket:${ip}`, 12, 3600))) return tooMany();
     const b = await request.json().catch(() => ({}));
@@ -45,7 +54,18 @@ export async function onRequestPost({ request, env }) {
     const earlyMs = await presaleMs(db, sessionId);
     let cat = await catalogue(env, { earlyMs });
     const priced = priceBasket(buyerLines, cat);
+    if (!priced.ok && pause.paused && !priced.soldOut) return Response.json({ error: pause.message, paused: true }, { status: 409, headers: { 'Cache-Control': 'no-store' } });
     if (!priced.ok) return Response.json({ error: priced.error, eventId: priced.eventId || null, soldOut: !!priced.soldOut }, { status: priced.soldOut ? 409 : 400 });
+    // Free tickets: a fair share per person (email or phone) per match.
+    for (const l of priced.lines.filter(x => x.free)) {
+      const c = cat.get(l.eventId), max = c.ticket.maxPerOrder;
+      const had = (await db.prepare(`SELECT COALESCE(SUM(quantity), 0) AS n FROM orders WHERE event_id = ? AND unit_price_kobo = 0 AND (buyer_email = ? OR buyer_phone = ?)
+          AND ((payment_status = 'paid' AND refunded_at IS NULL) OR (payment_status = 'pending' AND created_at > datetime('now', '-30 minutes')))`).bind(l.eventId, email, phone).first())?.n || 0;
+      if (had + l.quantity > max) {
+        const name = `${c.event.home_team} vs ${c.event.away_team}`;
+        return Response.json({ error: had >= max ? `You already have the most free tickets allowed for ${name} (${max} per person).` : `Free tickets are limited to ${max} per person for ${name}. You can book ${max - had} more.`, eventId: l.eventId }, { status: 400 });
+      }
+    }
     const { pricing, input } = await priceWithDiscounts(db, priced.lines, rawByKey, cat, email);
     if (!pricing.ok) return Response.json({ error: pricing.error, eventId: pricing.eventId || null }, { status: 400 });
     const expected = b.expectedTotalKobo === undefined || b.expectedTotalKobo === null ? null : Number(b.expectedTotalKobo);
@@ -102,6 +122,13 @@ export async function onRequestPost({ request, env }) {
     }
 
     const origin = new URL(request.url).origin;
+    // Nothing to pay (free stands): issue the tickets now and email them; no Paystack.
+    if (pricing.totalKobo === 0 && pay.totalKobo === 0) {
+      await tagBasket(db, basketId, request, b.source).catch(err => console.error('[tickets] tag', err));
+      const basket = await db.prepare(`SELECT * FROM league_ticket_orders WHERE id = ?`).bind(basketId).first();
+      await fulfilBasket(env, basket, waitUntil);
+      return Response.json({ free: true, reference, totalKobo: 0, redirect: `${origin}/tickets/success/?basket=${encodeURIComponent(reference)}&free=1` });
+    }
     try {
       await tagBasket(db, basketId, request, b.source).catch(err => console.error('[tickets] tag', err));
       const p = await initialize(env, { email, amountKobo: pay.totalKobo, reference, callbackUrl: `${origin}/tickets/success/?basket=${encodeURIComponent(reference)}`, metadata: { kind: 'basket', basketId, matches: pricing.matches.length, discount_kobo: pricing.discountKobo } });

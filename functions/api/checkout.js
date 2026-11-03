@@ -63,6 +63,8 @@ export async function onRequestPost({ request, env }) {
   // Same rules as the Tickets page: on/off switch, sale times, home matches only, seats left.
   const priced = priceBasket([{ eventId: String(eventId), tier, quantity: qty }], await catalogue(env));
   if (!priced.ok) return Response.json({ error: priced.error, soldOut: !!priced.soldOut }, { status: priced.soldOut ? 409 : 400 });
+  // Free stands are booked on /tickets (no payment): never sent to Paystack from here.
+  if (priced.lines[0].free) return Response.json({ error: 'This stand is free: book your free tickets on lobistarsfc.com/tickets.', free: true }, { status: 400 });
 
   const unitPriceKobo = priced.lines[0].unitKobo;
   const totalKobo = unitPriceKobo * qty;

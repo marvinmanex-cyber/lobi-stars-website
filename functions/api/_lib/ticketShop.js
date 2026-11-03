@@ -11,7 +11,7 @@ import { sourceLabel, deviceOf } from './ticketSource.js';
 import { lagosParts } from './fixtureCard.js';
 import { randomId } from './crypto.js';
 import { ensureTable, listMatches, toSummary } from './matchCentre.js';
-import { ticketState, TIERS, CAP_COL, TIER_LABELS, naira } from './tickets/rules.js';
+import { ticketState, TIERS, CAP_COL, MODE_COL, TIER_LABELS, naira } from './tickets/rules.js';
 import { fulfillOrder } from './fulfillOrder.js';
 import { sendEmail, ticketBlocksHtml } from './email.js';
 import { ticketsPdf } from './ticketPdf.js';
@@ -48,6 +48,9 @@ export async function ensureTicketShopSchema(db) {
   if (!have.has('refunded_at')) await db.prepare(`ALTER TABLE orders ADD COLUMN refunded_at TEXT`).run();
   // Ticket Sales dashboard: where the buyer came from, their city / state (from the connection) and device.
   for (const c of ['source', 'city', 'region', 'device']) if (!have.has(c)) await db.prepare(`ALTER TABLE orders ADD COLUMN ${c} TEXT`).run();
+  // Paid / free / opening soon, per stand (Admin › Match Tickets).
+  const lts = new Set((await db.prepare(`PRAGMA table_info(league_ticket_settings)`).all()).results.map(c => c.name));
+  for (const col of Object.values(MODE_COL)) if (!lts.has(col)) await db.prepare(`ALTER TABLE league_ticket_settings ADD COLUMN ${col} TEXT`).run().catch(err => { if (!/duplicate column/i.test(String(err))) throw err; });
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_basket ON orders (basket_id)`).run();
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_event_tier ON orders (event_id, tier, payment_status)`).run();
   // Matches already priced when this switch was added stay on sale (the club
@@ -117,9 +120,17 @@ export async function setSalesPause(db, { paused, message }, by) {
   await db.batch([put('tickets_paused', paused ? '1' : '0'), put('tickets_pause_message', String(message || '').trim().slice(0, 400))]);
   return salesPause(db);
 }
-/** While paused, a home match that could otherwise be sold shows "not on sale" with the pause note. */
+/**
+ * While paused (online payment off), paid stands show "Opening soon"; FREE stands stay open
+ * (nothing to pay). A match with no free stand shows "not on sale" with the pause note.
+ */
 const PAUSABLE = ['on_sale', 'sold_out', 'not_on_sale'];
-const applyPause = (t, pause) => (pause.paused && PAUSABLE.includes(t.state) ? { ...t, state: 'not_on_sale', paused: true, opensAt: null, note: 'Online tickets open soon' } : t);
+const applyPause = (t, pause) => {
+  if (!pause.paused || !PAUSABLE.includes(t.state)) return t;
+  const free = t.tiers.filter(x => x.free);
+  if (!free.length || t.state === 'not_on_sale') return { ...t, state: 'not_on_sale', paused: true, opensAt: null, note: 'Online tickets open soon' };
+  return { ...t, partial: true, tiers: t.tiers.map(x => (x.free ? x : { ...x, soon: true })), state: free.every(x => x.remaining === 0) ? 'sold_out' : t.state };
+};
 
 export async function settingsFor(db) {
   const { results } = await db.prepare(`SELECT * FROM league_ticket_settings`).all();
@@ -147,10 +158,11 @@ export async function decorateMatches(env, summaries, rows = null) {
     return summaries.map(m => {
       const row = byId.get(m.id) || m;
       const t = applyPause(ticketState({ ...row, ...m, is_home: m.is_home }, settings.get(m.id), sold.get(m.id) || {}), pause);
-      const fromKobo = t.tiers.length ? Math.min(...t.tiers.map(x => x.priceKobo)) : null;
+      const open = t.tiers.filter(x => !x.soon);
+      const fromKobo = open.length ? Math.min(...open.map(x => x.priceKobo)) : null;
       const league = md.get(m.id);
       return { ...m, matchday: league?.matchday ?? null, league_status: league?.status || null,
-        ticket: { state: t.state, fromKobo, opensAt: t.opensAt || null, paused: !!t.paused, note: t.note || null, left: t.tiers.some(x => x.remaining !== null) ? t.tiers.reduce((s, x) => s + (x.remaining ?? 0), 0) : null } };
+        ticket: { state: t.state, fromKobo, free: fromKobo === 0, opensAt: t.opensAt || null, paused: !!t.paused, note: t.note || null, left: t.tiers.some(x => x.remaining !== null) ? t.tiers.reduce((s, x) => s + (x.remaining ?? 0), 0) : null } };
     });
   } catch (err) {
     console.error('[tickets] decorate', err);
@@ -256,10 +268,11 @@ export async function sendBasketEmail(env, basket) {
   const priceBox = discount > 0
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:0 0 14px;font-size:14px;line-height:1.7;background:#E9F8EE;border-radius:8px;"><tr><td style="padding:10px 12px;">Tickets<br><b>Discount: ${esc(basket.discount_label || 'Discount')}</b>${basket.group_name ? `<br>Group: ${esc(basket.group_name)}` : ''}<br><b>Total paid</b></td><td align="right" style="padding:10px 12px;vertical-align:top;">${naira(total + discount)}<br><b>−${naira(discount)}</b>${basket.group_name ? '<br>&nbsp;' : ''}<br><b>${naira(total)}</b></td></tr></table><p style="margin:0 0 14px;color:#0B7A2E;font-weight:bold;">You saved ${naira(discount)}.</p>`
     : '';
+  const free = total === 0 && !(Number(basket.points_kobo) > 0);
   const html = `<div style="max-width:520px;margin:0 auto;font-family:Arial,sans-serif;color:#111;">
-    <h2 style="color:#0d1a33;">Your Lobi Stars match tickets</h2>
+    <h2 style="color:#0d1a33;">Your ${free ? 'free ' : ''}Lobi Stars match tickets</h2>
     <p>Hi ${esc(basket.buyer_name)},</p>
-    <p>Your payment of <strong>${naira(total)}</strong> is confirmed. Order reference: <strong>${esc(basket.reference)}</strong>. Below is one QR code per ticket, for each match. Your tickets are also attached as a PDF: open it and save it to your phone, or print it.</p>
+    <p>${free ? 'Your <strong>free</strong> tickets are confirmed. There is nothing to pay.' : `Your payment of <strong>${naira(total)}</strong> is confirmed.`} Order reference: <strong>${esc(basket.reference)}</strong>. Below is one QR code per ticket, for each match. Your tickets are also attached as a PDF: open it and save it to your phone, or print it.</p>
     ${priceBox}
     ${orders.some(o => o.ticket_type === 'child') ? '<p style="font-size:13px;line-height:1.5;"><strong>Child tickets:</strong> children may be asked for proof of age at the gate.</p>' : ''}
     <p style="background:#f4f5f7;padding:10px 12px;border-radius:8px;font-size:13px;line-height:1.5;"><strong>At the gate:</strong> each QR code admits one person, once, and only on the day of its match. Have it ready on your phone (a screenshot works) or printed. Lost the email? Open lobistarsfc.com/tickets/lookup with your email and order reference.</p>
@@ -270,7 +283,7 @@ export async function sendBasketEmail(env, basket) {
   // The same tickets as a PDF attachment (one page per ticket), to save on the phone or print.
   const pdf = await ticketsPdf(env, await basketTickets(db, basket)).catch(err => { console.error('[tickets] pdf attachment', err); return null; });
   const attachments = pdf ? [{ filename: `Lobi-Stars-tickets-${basket.reference}.pdf`, content: b64(pdf) }] : undefined;
-  await sendEmail(env, { to: basket.buyer_email, subject: `Your Lobi Stars tickets (${orders.length} match${orders.length === 1 ? '' : 'es'}) – ${basket.reference}`, html, attachments });
+  await sendEmail(env, { to: basket.buyer_email, subject: `Your ${free ? 'free ' : ''}Lobi Stars tickets (${orders.length} match${orders.length === 1 ? '' : 'es'}) – ${basket.reference}`, html, attachments });
 }
 
 const b64 = bytes => { let x = ''; for (let i = 0; i < bytes.length; i += 0x8000) x += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(x); };

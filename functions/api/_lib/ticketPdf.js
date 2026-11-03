@@ -119,7 +119,9 @@ async function ticketPage(doc, m, t, i, of, homeImg, awayImg) {
   const tw = textWidth(type, 8, true) + 14;
   doc.rect(W / 2 - tw / 2, standY + 7, tw, 14, { fill: t.type === 'child' ? CHILD : '#E8EBF0' });
   doc.text(type, W / 2, standY + 17, { size: 8, bold: true, color: NAVY, align: 'center' });
-  if (t.priceKobo != null) {
+  if (t.priceKobo === 0) {
+    doc.text('FREE TICKET', W / 2, standY + 38, { size: 12, bold: true, color: NAVY, align: 'center' });
+  } else if (t.priceKobo != null) {
     // The built-in font has no ₦: an N with the two strokes drawn through it.
     const price = `N${Math.round(t.priceKobo / 100).toLocaleString('en-NG')}`, py = standY + 38;
     const x0 = W / 2 - textWidth(price, 12, true) / 2, nw = textWidth('N', 12, true);

@@ -5,6 +5,10 @@ export const TIERS = ['VIP', 'Premium', 'Regular'];
 export const TIER_LABELS = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
 export const PRICE_COL = { VIP: 'vip_price_kobo', Premium: 'premium_price_kobo', Regular: 'regular_price_kobo' };
 export const CAP_COL = { VIP: 'vip_capacity', Premium: 'premium_capacity', Regular: 'regular_capacity' };
+// How each stand is sold for a match: 'paid' (its price), 'free' (booked online like a paid ticket but
+// nothing to pay: issued at once and emailed) or 'soon' (shown as "Opening soon", can't be booked).
+export const MODE_COL = { VIP: 'vip_mode', Premium: 'premium_mode', Regular: 'regular_mode' };
+export const STAND_MODES = ['paid', 'free', 'soon'];
 export const DEFAULT_MAX_PER_ORDER = 10;
 // Groups can buy more (the admin sets up to 50 per match); a large order is
 // stored as several orders rows of at most 10 (ticketDiscounts.orderChunks).
@@ -79,15 +83,19 @@ export function ticketState(event, settings, sold = {}, now = Date.now(), { earl
     const cap = settings?.[CAP_COL[t]];
     const capacity = cap === null || cap === undefined || cap === '' ? null : Number(cap);
     const remaining = capacity === null ? null : Math.max(0, capacity - (Number(sold[t]) || 0));
+    const mode = STAND_MODES.includes(settings?.[MODE_COL[t]]) ? settings[MODE_COL[t]] : 'paid';
+    if (mode === 'free') return { tier: t, label: TIER_LABELS[t], priceKobo: 0, free: true, capacity, remaining };
+    if (mode === 'soon') return { tier: t, label: TIER_LABELS[t], priceKobo: price, soon: true, capacity, remaining };
     return { tier: t, label: TIER_LABELS[t], priceKobo: price, capacity, remaining };
-  }).filter(t => t.priceKobo > 0);
+  }).filter(t => t.free || t.soon || t.priceKobo > 0);
+  const open = tiers.filter(t => !t.soon); // stands that can be booked now
   const base = { tiers, maxPerOrder };
   if (event.active === 0 || (event.status && event.status !== 'scheduled') || !(kickoff > now)) return { ...base, state: 'closed' };
   if (settings?.sale_closes_at && Date.parse(settings.sale_closes_at) <= now) return { ...base, state: 'closed' };
-  if (!settings || !settings.is_on_sale || !tiers.length) return { ...base, state: 'not_on_sale' };
+  if (!settings || !settings.is_on_sale || !open.length) return { ...base, state: 'not_on_sale' };
   if (settings.sale_opens_at && Date.parse(settings.sale_opens_at) - earlyMs > now) return { ...base, state: 'not_on_sale', opensAt: settings.sale_opens_at };
   const presale = !!(settings.sale_opens_at && Date.parse(settings.sale_opens_at) > now); // open only thanks to early access
-  if (tiers.every(t => t.remaining === 0)) return { ...base, state: 'sold_out', presale };
+  if (open.every(t => t.remaining === 0)) return { ...base, state: 'sold_out', presale };
   return { ...base, state: 'on_sale', presale };
 }
 
@@ -117,12 +125,13 @@ export function priceBasket(lines, catalogue) {
     if (c.ticket.state !== 'on_sale') return { ok: false, error: `Tickets for ${name} are not on sale.`, eventId: l.eventId };
     const tier = c.ticket.tiers.find(t => t.tier === l.tier);
     if (!tier) return { ok: false, error: `Choose a stand for ${name}.`, eventId: l.eventId };
+    if (tier.soon) return { ok: false, error: `${tier.label} tickets for ${name} are opening soon.`, eventId: l.eventId, soon: true };
     const q = Number(l.quantity);
     if (!Number.isInteger(q) || q < 1 || q > c.ticket.maxPerOrder) return { ok: false, error: `You can buy 1 to ${c.ticket.maxPerOrder} tickets for ${name}.`, eventId: l.eventId };
     if (tier.remaining !== null && tier.remaining < q) {
       return { ok: false, soldOut: true, error: tier.remaining ? `Only ${tier.remaining} ${tier.label} ticket${tier.remaining === 1 ? '' : 's'} left for ${name}.` : `${tier.label} is sold out for ${name}.`, eventId: l.eventId };
     }
-    out.push({ eventId: String(l.eventId), tier: l.tier, quantity: q, unitKobo: tier.priceKobo, totalKobo: tier.priceKobo * q });
+    out.push({ eventId: String(l.eventId), tier: l.tier, quantity: q, unitKobo: tier.free ? 0 : tier.priceKobo, totalKobo: tier.free ? 0 : tier.priceKobo * q, free: !!tier.free });
   }
   return { ok: true, lines: out, totalKobo: out.reduce((s, l) => s + l.totalKobo, 0) };
 }

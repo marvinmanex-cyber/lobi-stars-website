@@ -2631,6 +2631,27 @@ page tells fans buying several matches how much a season ticket would save them.
 **Who can use it:** Super Admin and Commercial. Matchday Operators can open the
 scanner only (Admin › Matchday › Ticket Scanner).
 
+### Free stands and "Opening soon" (Commerce › Match Tickets)
+
+Each stand of each home match has **Sold as**: **Paid** (its price), **Free**
+or **Opening soon**. "Apply to all" at the top can set it for every home match.
+
+- **Free:** fans book online exactly like a paid ticket (choose the match and
+  stand, name, email, phone), but the price shows **Free** and the button says
+  **Get my free tickets**. Nothing goes to Paystack: the tickets are issued at
+  once, shown on the screen to save or download (PDF), and emailed. Each
+  person (same email or same phone) can get at most **Most per order** free
+  tickets for that match. Free tickets scan at the gate like any other ticket
+  (Gate Control shows "Free ticket"). Discounts never apply to free tickets.
+- **Opening soon:** the stand is shown with "Opening soon" and can't be booked.
+- **While online payment is paused** (Pause all online ticket sales), Free
+  stands stay open and every paid stand shows "Opening soon". The banner on
+  /tickets then says "Free tickets are open now".
+- The match must still be switched **On sale**, and seat limits (capacity)
+  count free tickets too.
+- On the homepage and fixtures, a match whose cheapest open stand is free
+  shows **Get free ticket**.
+
 ## 34a. Ticket discounts (Commerce › Ticket Discounts)
 
 Three discounts, all **switched off** until you turn them on at

@@ -144,7 +144,7 @@ export async function priceWithDiscounts(db, pricedLines, rawByKey, catalogue, e
     return {
       eventId: l.eventId, tier: l.tier, unitKobo: l.unitKobo, kickoff: catalogue.get(l.eventId).event.event_date,
       family, adults: family ? raw.adults : l.quantity, children: family ? raw.children : 0,
-      allowDiscounts: ctx[l.eventId].allowDiscounts,
+      allowDiscounts: ctx[l.eventId].allowDiscounts && l.unitKobo > 0,
     };
   });
   const pricing = computeOrderPricing(lines, rules, settings, now, ctx);

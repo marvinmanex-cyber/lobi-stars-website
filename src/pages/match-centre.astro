@@ -235,10 +235,10 @@ import '../styles/fixture-card.css';
       timers.push(window.setInterval(tick, 1000));
 
       const actions = el('div', 'mc-actions');
-      const tk = (m as any).ticket as { state?: string; fromKobo?: number } | undefined;
+      const tk = (m as any).ticket as { state?: string; fromKobo?: number; free?: boolean } | undefined;
       if (tk ? tk.state === 'on_sale' : (m as any).on_sale) {
         const from = tk?.fromKobo ? ` from ₦${Math.round(tk.fromKobo / 100).toLocaleString('en-NG')}` : '';
-        const t = el('a', 'btn-p', `Buy ticket${from}`) as HTMLAnchorElement;
+        const t = el('a', 'btn-p', tk?.free ? 'Get free ticket' : `Buy ticket${from}`) as HTMLAnchorElement;
         t.href = `/tickets/?event=${encodeURIComponent(m.id)}`;
         actions.append(t);
       } else if (tk?.state === 'sold_out') actions.append(el('span', 'mc-tix-note', 'Tickets sold out'));

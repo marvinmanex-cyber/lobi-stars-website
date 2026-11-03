@@ -423,6 +423,13 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   }
   .tk-paused { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 22px; padding: 16px 18px; border-radius: 14px; background: linear-gradient(120deg, #0E1C38, #1C3F7A); color: #fff; border-left: 6px solid #FFC928; }
   .tk-paused[hidden] { display: none; }
+  /* Free stands (green) and stands opening soon (greyed, can't be chosen). */
+  .tk-stand--free .tk-price, .tk-from--free b { color: #0B7A2E; }
+  .tk-from--free b { font-size: 1.15em; letter-spacing: .04em; text-transform: uppercase; }
+  .tk-stand--soon { opacity: .6; cursor: not-allowed; }
+  .tk-stand--soon .tk-price { color: #8A6D00; font-style: italic; }
+  .tk-seg label.free { color: #0B7A2E; font-weight: 700; }
+  .tk-seg label.soon { opacity: .55; font-style: italic; cursor: not-allowed; }
   .tk-paused-ico { font-size: 30px; line-height: 1; }
   .tk-paused b { display: block; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: #FFC928; margin-bottom: 6px; }
   .tk-paused p { margin: 0 0 8px; line-height: 1.5; color: rgba(255,255,255,.9); }
@@ -441,6 +448,10 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var naira = function (k) { return '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
+  // Free stands show "Free"; stands not open yet show "Opening soon" (and can't be chosen).
+  var money = function (k) { return k === 0 ? 'Free' : naira(k); };
+  var priceOf = function (t) { return t.soon ? 'Opening soon' : t.free ? 'Free' : naira(t.priceKobo); };
+  var bookable = function (t) { return !t.soon && t.left !== 0; };
   var el = function (tag, props) { var n = document.createElement(tag); Object.keys(props || {}).forEach(function (k) { var v = props[k]; if (v == null || v === false) return; if (k === 'text') n.textContent = v; else if (k === 'class') n.className = v; else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), v); else n.setAttribute(k, v === true ? '' : v); }); for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c != null && c !== false) n.append(c); } return n; };
   var svg = function (html) { var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.innerHTML = html; return s; };
   var TZ = 'Africa/Lagos';
@@ -507,18 +518,19 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   function stands() {
     var box = $('tkStands'); box.replaceChildren();
     var onSale = matches.filter(function (m) { return m.state === 'on_sale'; });
-    var lowest = {};
-    onSale.forEach(function (m) { m.tiers.forEach(function (t) { if (lowest[t.tier] == null || t.priceKobo < lowest[t.tier]) lowest[t.tier] = t.priceKobo; }); });
-    var offered = TIERS.filter(function (t) { return lowest[t[0]] != null; });
+    var lowest = {}, soon = {};
+    onSale.forEach(function (m) { m.tiers.forEach(function (t) { if (t.soon) { soon[t.tier] = true; return; } if (lowest[t.tier] == null || t.priceKobo < lowest[t.tier]) lowest[t.tier] = t.priceKobo; }); });
+    var offered = TIERS.filter(function (t) { return lowest[t[0]] != null || soon[t[0]]; });
     if (!offered.length) { box.append(el('p', { class: 'tk-hint', text: 'Stands and prices appear here when tickets go on sale.' })); return; }
-    var varies = function (tier) { var ps = onSale.map(function (m) { var t = m.tiers.find(function (x) { return x.tier === tier; }); return t ? t.priceKobo : null; }).filter(function (x) { return x != null; }); return ps.some(function (p) { return p !== ps[0]; }); };
-    var radio = function (value, checked) { var r = el('input', { type: 'radio', name: 'standAll', value: value }); r.checked = checked; r.addEventListener('change', function () { var s = $('allTier'); s.value = value; s.dispatchEvent(new Event('change')); }); return r; };
+    var varies = function (tier) { var ps = onSale.map(function (m) { var t = m.tiers.find(function (x) { return x.tier === tier && !x.soon; }); return t ? t.priceKobo : null; }).filter(function (x) { return x != null; }); return ps.some(function (p) { return p !== ps[0]; }); };
+    var radio = function (value, checked, off) { var r = el('input', { type: 'radio', name: 'standAll', value: value, disabled: !!off }); r.checked = checked && !off; r.addEventListener('change', function () { var s = $('allTier'); s.value = value; s.dispatchEvent(new Event('change')); }); return r; };
     offered.forEach(function (t) {
       var tier = t[0];
-      box.append(el('label', { class: 'tk-stand' }, radio(tier, $('allTier').value === tier),
+      var closed = lowest[tier] == null;
+      box.append(el('label', { class: 'tk-stand' + (closed ? ' tk-stand--soon' : lowest[tier] === 0 ? ' tk-stand--free' : '') }, radio(tier, $('allTier').value === tier, closed),
         // TODO (Marvin to confirm): a "Most Popular" badge needs sales data or the club's say-so.
         el('b', { text: t[1] }),
-        el('span', { class: 'tk-price', text: (varies(tier) ? 'from ' : '') + naira(lowest[tier]) + ' per ticket' }),
+        el('span', { class: 'tk-price', text: closed ? 'Opening soon' : lowest[tier] === 0 ? 'Free' : (varies(tier) ? 'from ' : '') + naira(lowest[tier]) + ' per ticket' }),
         el('small', { text: STAND_TEXT[tier] })));
     });
   }
@@ -534,8 +546,8 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       var cb = el('input', { type: 'checkbox', 'aria-label': 'Select ' + title + (m.matchday ? ', Matchday ' + m.matchday : ''), disabled: !can });
       // The existing stand and quantity selects stay the source of truth (hidden).
       var tier = el('select', { 'aria-label': 'Stand', class: 'tk-hidden-sel', tabindex: '-1', 'aria-hidden': 'true' });
-      m.tiers.forEach(function (t) { tier.add(new Option(t.label + ' · ' + naira(t.priceKobo) + (t.left !== null ? ' · ' + t.left + ' left' : ''), t.tier, false, false)); if (t.left === 0) tier.options[tier.options.length - 1].disabled = true; });
-      var firstOpen = m.tiers.find(function (t) { return t.left !== 0; }); if (firstOpen) tier.value = firstOpen.tier;
+      m.tiers.forEach(function (t) { tier.add(new Option(t.label + ' · ' + priceOf(t) + (!t.soon && t.left !== null ? ' · ' + t.left + ' left' : ''), t.tier, false, false)); if (!bookable(t)) tier.options[tier.options.length - 1].disabled = true; });
+      var firstOpen = m.tiers.find(bookable); if (firstOpen) tier.value = firstOpen.tier;
       var qty = el('select', { 'aria-label': 'Number of tickets', class: 'tk-hidden-sel', tabindex: '-1', 'aria-hidden': 'true' });
       var fillQty = function () { var t = m.tiers.find(function (x) { return x.tier === tier.value; }); var max = Math.min(m.maxPerOrder, t && t.left !== null ? t.left : m.maxPerOrder); var cur = Number(qty.value) || 1; qty.replaceChildren(); for (var i = 1; i <= Math.max(1, max); i++) qty.add(new Option(i + ' ticket' + (i === 1 ? '' : 's'), i, false, i === Math.min(cur, max))); };
       fillQty();
@@ -543,10 +555,10 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       var segName = 'tier-' + m.id;
       var seg = el('div', { class: 'tk-seg', role: 'radiogroup', 'aria-label': 'Stand for ' + title });
       m.tiers.forEach(function (t) {
-        var r = el('input', { type: 'radio', name: segName, value: t.tier, disabled: t.left === 0 });
+        var r = el('input', { type: 'radio', name: segName, value: t.tier, disabled: !bookable(t) });
         r.checked = tier.value === t.tier;
         r.addEventListener('change', function () { tier.value = t.tier; tier.dispatchEvent(new Event('change')); });
-        seg.append(el('label', { title: t.left !== null ? t.left + ' left' : null }, r, t.label + ' · ' + naira(t.priceKobo)));
+        seg.append(el('label', { class: t.soon ? 'soon' : t.free ? 'free' : null, title: !t.soon && t.left !== null ? t.left + ' left' : null }, r, t.label + ' · ' + priceOf(t)));
       });
       var out = el('output', { 'aria-live': 'polite', text: qty.value });
       var minus = el('button', { type: 'button', 'aria-label': 'One ticket fewer for ' + title, text: '−' });
@@ -576,8 +588,9 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       var pick = el('div', { class: 'tk-pick', hidden: true }, seg, mode, step, famBox, tier, qty);
       var when = new Date(m.kickoff);
       var time = when.toLocaleTimeString('en-US', { timeZone: TZ, hour: 'numeric', minute: '2-digit' });
-      var low = m.tiers.length ? Math.min.apply(null, m.tiers.map(function (t) { return t.priceKobo; })) : 0;
-      var left = m.tiers.some(function (t) { return t.left !== null; }) ? m.tiers.reduce(function (s, t) { return s + (t.left || 0); }, 0) : null;
+      var open = m.tiers.filter(function (t) { return !t.soon; });
+      var low = open.length ? Math.min.apply(null, open.map(function (t) { return t.priceKobo; })) : null;
+      var left = open.some(function (t) { return t.left !== null; }) ? open.reduce(function (s, t) { return s + (t.left || 0); }, 0) : null;
       var stateText = m.state === 'not_on_sale' && m.opensAt ? 'On sale from ' + new Date(m.opensAt).toLocaleDateString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short' }) : STATE[m.state];
       var days = (Date.parse(m.kickoff) - now) / 864e5;
       var flag = firstUpcoming && firstUpcoming.id === m.id ? el('span', { class: 'tk-flag', text: 'Next match' }) : days >= 0 && days <= 7 ? el('span', { class: 'tk-flag tk-flag--week', text: 'This week' }) : null;
@@ -598,7 +611,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
               el('div', { class: 'tk-meta' }, el('time', { datetime: m.kickoff, text: when.toLocaleDateString('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' }) + ' · ' + time }), el('br'), 'McCarthy Stadium, Makurdi' + (can && left !== null ? ' · ' + left + ' left' : '')),
               offerBits(m)),
             el('div', { class: 'tk-side' },
-              can && low ? el('span', { class: 'tk-from' }, 'from', el('b', { text: naira(low) })) : null,
+              can && low ? el('span', { class: 'tk-from' }, 'from', el('b', { text: naira(low) })) : can && low === 0 ? el('span', { class: 'tk-from tk-from--free' }, el('b', { text: 'Free' })) : null,
               el('label', { class: 'tk-toggle' }, cb, svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>')),
               el('span', { class: 'tk-toggle-l', 'aria-hidden': 'true', text: can ? 'Select' : '' }))),
           pick));
@@ -627,9 +640,9 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   // Animated total (the screen-reader text gets the final amount only).
   var shownTotal = 0, totalAnim;
   function showTotal(k) {
-    $('sumTotalLive').textContent = 'Total ' + naira(k);
+    $('sumTotalLive').textContent = 'Total ' + money(k);
     var from = shownTotal; shownTotal = k; cancelAnimationFrame(totalAnim);
-    if (reduce || from === k) { $('sumTotal').textContent = naira(k); return; }
+    if (reduce || from === k || k === 0) { $('sumTotal').textContent = money(k); return; }
     var t0 = performance.now();
     var frame = function (t) { var p = Math.min(1, (t - t0) / 350); $('sumTotal').textContent = naira(from + (k - from) * (1 - Math.pow(1 - p, 3))); if (p < 1) totalAnim = requestAnimationFrame(frame); };
     totalAnim = requestAnimationFrame(frame);
@@ -647,9 +660,9 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   function showPrice(total, tickets, nSel) {
     showTotal(total);
     $('tkBar').hidden = !nSel;
-    $('barTotal').textContent = naira(total);
+    $('barTotal').textContent = nSel ? money(total) : naira(0);
     $('barCount').textContent = nSel + ' match' + (nSel === 1 ? '' : 'es') + ', ' + tickets + ' ticket' + (tickets === 1 ? '' : 's');
-    $('payText').textContent = nSel ? 'Pay ' + naira(total) + ' with Paystack' : 'Pay with Paystack';
+    $('payText').textContent = nSel && total === 0 ? 'Get my free tickets' : nSel ? 'Pay ' + naira(total) + ' with Paystack' : 'Pay with Paystack';
   }
   var payLines = function (basket) { return basket.map(function (l) { return l.family ? { eventId: l.eventId, tier: l.tier, family: true, adults: l.adults, children: l.children } : { eventId: l.eventId, tier: l.tier, quantity: l.quantity }; }); };
   function requestPrice(basket) {
@@ -706,7 +719,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       var what = famOn ? 'Family bundle: ' + r.fam.adults + ' adult' + (r.fam.adults === 1 ? '' : 's') + ' + ' + r.fam.children + ' child' + (r.fam.children === 1 ? '' : 'ren') + ' · ' + t.label : t.label + ' × ' + q;
       lines.append(el('li', { class: 'tk-line' },
         el('span', {}, el('b', { text: title }), el('small', { text: what })),
-        el('span', { class: 'tk-lt', text: naira(sub) }),
+        el('span', { class: 'tk-lt', text: money(sub) }),
         el('button', { type: 'button', 'aria-label': 'Remove ' + title, text: '×', onclick: function () { set(r, false); summary(); } })));
       return famOn ? { eventId: r.m.id, tier: t.tier, family: true, adults: r.fam.adults, children: r.fam.children, quantity: q, unitKobo: t.priceKobo, title: title }
         : { eventId: r.m.id, tier: t.tier, quantity: q, unitKobo: t.priceKobo, title: title };
@@ -736,7 +749,11 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       // All online sales paused by the club: the message, at the top.
       var pz = document.getElementById('tkPaused');
       // The message's first sentence is the heading; the rest goes underneath.
-      if (pz) { pz.hidden = !d.pause; if (d.pause) { var mm = String(d.pause.message || '').match(/^(.+?[.!?])\s+([\s\S]*)$/); document.getElementById('tkPausedTitle').textContent = mm ? mm[1].replace(/[.!]$/, '') : 'Online tickets open soon'; document.getElementById('tkPausedMsg').textContent = mm ? mm[2] : d.pause.message; } }
+      if (pz && d.pause && d.pause.freeOpen) {
+        pz.hidden = false;
+        document.getElementById('tkPausedTitle').textContent = 'Free tickets are open now';
+        document.getElementById('tkPausedMsg').textContent = 'Book your free tickets below: fill in your details as usual, there is nothing to pay, and your tickets are emailed to you straight away. Other stands are opening soon.';
+      } else if (pz) { pz.hidden = !d.pause; if (d.pause) { var mm = String(d.pause.message || '').match(/^(.+?[.!?])\s+([\s\S]*)$/); document.getElementById('tkPausedTitle').textContent = mm ? mm[1].replace(/[.!]$/, '') : 'Online tickets open soon'; document.getElementById('tkPausedMsg').textContent = mm ? mm[2] : d.pause.message; } }
     }).catch(function () {
       list.removeAttribute('aria-busy');
       list.replaceChildren(el('li', { class: 'tk-empty' }, 'The matches could not be loaded just now. Check your connection.', el('br'), el('button', { type: 'button', text: 'Try again', onclick: load })));
@@ -778,6 +795,8 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
         if (res.ok && res.d.authorizationUrl) { location.href = res.d.authorizationUrl; return; }
+        // Free tickets: nothing to pay, they are issued and emailed at once.
+        if (res.ok && res.d.free) { location.href = res.d.redirect || ('/tickets/success/?basket=' + encodeURIComponent(res.d.reference) + '&free=1'); return; }
         err.textContent = res.d.error || 'Something went wrong. Please try again.';
         // The price changed (a discount ended or ran out): show the new total; the buyer presses Pay again.
         if (res.d.code === 'repriced' && res.d.pricing) { showQuote(Object.assign({ ok: true }, res.d.pricing), selectedBasket()); err.textContent = res.d.error; }

@@ -43,7 +43,7 @@ export function matchBarHtml(matches, { now = Date.now() } = {}) {
   const listen = (cls, role) => `<a class="${cls}" href="/commentary/"${role} data-track="commentary_click" data-track-label="${esc(slug)}" aria-label="Listen live to ${esc(title)} on Lobi Stars FC Live">${cls.includes('mb-btn') ? '<span class="mb-live-dot" aria-hidden="true"></span>' : ''}Listen live</a>`;
   let primary;
   if (live) primary = listen('mb-btn mb-btn--primary', '');
-  else if (home && !postponed && t.state === 'on_sale') primary = `<a class="mb-btn mb-btn--primary" href="/tickets/?event=${encodeURIComponent(m.id)}">Buy ticket${t.fromKobo ? ` <small>from ${esc(naira(t.fromKobo))}</small>` : ''}</a>`;
+  else if (home && !postponed && t.state === 'on_sale') primary = `<a class="mb-btn mb-btn--primary" href="/tickets/?event=${encodeURIComponent(m.id)}">${t.free ? 'Get free ticket' : 'Buy ticket'}${t.fromKobo ? ` <small>from ${esc(naira(t.fromKobo))}</small>` : ''}</a>`;
   else primary = `<a class="mb-btn mb-btn--primary" href="${centre}">Match Centre</a>`;
   const item = html => `<li role="none">${html}</li>`;
   const more = [];

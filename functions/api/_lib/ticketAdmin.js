@@ -1,7 +1,7 @@
 // Admin › Tickets helpers: the per-match sales view and validated settings.
 import { requireAdminUser } from './adminEvents.js';
 import { ensureTicketShopSchema, settingsFor, soldCounts } from './ticketShop.js';
-import { ticketState, TIERS, PRICE_COL, CAP_COL, TIER_LABELS } from './tickets/rules.js';
+import { ticketState, TIERS, PRICE_COL, CAP_COL, MODE_COL, STAND_MODES, TIER_LABELS } from './tickets/rules.js';
 import { listMatches, toSummary } from './matchCentre.js';
 import { ensureDiscountSchema } from './ticketDiscounts.js';
 
@@ -48,6 +48,14 @@ export function parseTicketSettings(b, event) {
       const n = Number(v);
       if (!Number.isInteger(n) || n < 0 || n > 100000) return { error: `${TIER_LABELS[t]}: capacity is a whole number of seats (empty = no limit).` };
       settings[CAP_COL[t]] = n;
+    }
+  }
+  // How each stand is sold: paid (its price), free, or opening soon.
+  if (b.modes !== undefined) {
+    for (const t of TIERS) {
+      if (b.modes[t] === undefined) continue;
+      if (!STAND_MODES.includes(b.modes[t])) return { error: `${TIER_LABELS[t]}: choose Paid, Free or Opening soon.` };
+      settings[MODE_COL[t]] = b.modes[t] === 'paid' ? null : b.modes[t];
     }
   }
   for (const [k, col] of [['saleOpensAt', 'sale_opens_at'], ['saleClosesAt', 'sale_closes_at']]) {
@@ -110,7 +118,7 @@ export async function salesView(env) {
     return {
       id: row.id, matchday: md.get(row.id) ?? null, homeTeam: row.home_team, awayTeam: row.away_team, kickoff: row.event_date, venue: row.venue, status: s.status,
       state: t.state, isOnSale: !!st?.is_on_sale, allowDiscounts: st ? st.allow_discounts !== 0 : true, discountCap: st?.discount_cap ?? null, saleOpensAt: st?.sale_opens_at || null, saleClosesAt: st?.sale_closes_at || null, maxPerOrder: st?.max_per_order || 10,
-      tiers: TIERS.map(tr => ({ tier: tr, label: TIER_LABELS[tr], priceNaira: (Number(row[PRICE_COL[tr]]) || 0) / 100, capacity: st?.[CAP_COL[tr]] ?? null,
+      tiers: TIERS.map(tr => ({ tier: tr, label: TIER_LABELS[tr], priceNaira: (Number(row[PRICE_COL[tr]]) || 0) / 100, mode: st?.[MODE_COL[tr]] || 'paid', capacity: st?.[CAP_COL[tr]] ?? null,
         sold: Number(p[tr]?.sold) || 0, revenueKobo: Number(p[tr]?.revenue) || 0, held: Number(held.get(row.id)?.[tr]) || 0 })),
     };
   }).sort((a, b) => Date.parse(a.kickoff) - Date.parse(b.kickoff));
