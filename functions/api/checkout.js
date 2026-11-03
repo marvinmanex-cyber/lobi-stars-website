@@ -4,7 +4,7 @@ import { ensureTable } from './_lib/matchCentre.js';
 import { readSession } from './_lib/session.js';
 import { membershipOf } from './_lib/membership.js';
 import { seasonConfig } from './_lib/seasonConfig.js';
-import { catalogue, holdLineStatement } from './_lib/ticketShop.js';
+import { catalogue, holdLineStatement, salesPause } from './_lib/ticketShop.js';
 import { priceBasket } from './_lib/tickets/rules.js';
 
 const TIER_COLUMN = {
@@ -14,6 +14,7 @@ const TIER_COLUMN = {
 };
 
 export async function onRequestPost({ request, env }) {
+  { const pause = await salesPause(env.DB); if (pause.paused) return Response.json({ error: pause.message, paused: true }, { status: 409 }); }
   let body;
   try {
     body = await request.json();

@@ -1,4 +1,4 @@
-import { catalogue, newBasketIds, ensureTicketShopSchema, fulfilBasket } from '../_lib/ticketShop.js';
+import { catalogue, newBasketIds, ensureTicketShopSchema, fulfilBasket, salesPause } from '../_lib/ticketShop.js';
 import { priceBasket, naira, TIER_LABELS } from '../_lib/tickets/rules.js';
 import { initialize, verify } from '../_lib/paystackClient.js';
 import { normalizeNigerianPhone, clientIp, rateLimit, tooMany, checkTurnstile, ensureFanSchema } from '../_lib/fans.js';
@@ -25,6 +25,9 @@ export async function onRequestPost({ request, env }) {
   try {
     const db = env.DB;
     await ensureFanSchema(db);
+    // All online ticket sales paused (Admin › Tickets): the fans' message, nothing is held or charged.
+    const pause = await salesPause(db);
+    if (pause.paused) return Response.json({ error: pause.message, paused: true }, { status: 409, headers: { 'Cache-Control': 'no-store' } });
     const ip = clientIp(request);
     if (!(await rateLimit(db, `ticket-basket:${ip}`, 12, 3600))) return tooMany();
     const b = await request.json().catch(() => ({}));

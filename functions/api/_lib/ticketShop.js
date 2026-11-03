@@ -95,6 +95,29 @@ export async function soldCounts(db) {
 }
 
 /** Ticket settings of every match (one row per match: a small table). */
+/**
+ * "Pause all online ticket sales" (Admin › Commerce › Tickets): one switch for every
+ * home match, with a message for fans. While paused nothing can be bought online;
+ * switching it off brings back each match's own settings unchanged.
+ */
+export const PAUSE_DEFAULT = "Online tickets open soon. We're getting online payment ready. Check back shortly, or follow our WhatsApp channel to be told the moment tickets go on sale.";
+export async function salesPause(db) {
+  try {
+    const { results } = await db.prepare(`SELECT key, value FROM settings WHERE key IN ('tickets_paused', 'tickets_pause_message')`).all();
+    const v = Object.fromEntries(results.map(r => [r.key, r.value]));
+    return { paused: v.tickets_paused === '1', message: (v.tickets_pause_message || '').trim() || PAUSE_DEFAULT };
+  } catch { return { paused: false, message: PAUSE_DEFAULT }; }
+}
+export async function setSalesPause(db, { paused, message }, by) {
+  await ensureTicketShopSchema(db);
+  const put = (k, v) => db.prepare(`INSERT INTO settings (key, value, updated_at, updated_by) VALUES (?, ?, datetime('now'), ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`).bind(k, v, by);
+  await db.batch([put('tickets_paused', paused ? '1' : '0'), put('tickets_pause_message', String(message || '').trim().slice(0, 400))]);
+  return salesPause(db);
+}
+/** While paused, a home match that could otherwise be sold shows "not on sale" with the pause note. */
+const PAUSABLE = ['on_sale', 'sold_out', 'not_on_sale'];
+const applyPause = (t, pause) => (pause.paused && PAUSABLE.includes(t.state) ? { ...t, state: 'not_on_sale', paused: true, opensAt: null, note: 'Online tickets open soon' } : t);
+
 export async function settingsFor(db) {
   const { results } = await db.prepare(`SELECT * FROM league_ticket_settings`).all();
   return new Map(results.map(r => [r.event_id, r]));
@@ -116,15 +139,15 @@ export async function decorateMatches(env, summaries, rows = null) {
   try {
     const db = env.DB;
     await ensureTicketShopSchema(db);
-    const [settings, sold, md] = await Promise.all([settingsFor(db), soldCounts(db), matchdays(db)]);
+    const [settings, sold, md, pause] = await Promise.all([settingsFor(db), soldCounts(db), matchdays(db), salesPause(db)]);
     const byId = new Map((rows || []).map(r => [r.id, r]));
     return summaries.map(m => {
       const row = byId.get(m.id) || m;
-      const t = ticketState({ ...row, ...m, is_home: m.is_home }, settings.get(m.id), sold.get(m.id) || {});
+      const t = applyPause(ticketState({ ...row, ...m, is_home: m.is_home }, settings.get(m.id), sold.get(m.id) || {}), pause);
       const fromKobo = t.tiers.length ? Math.min(...t.tiers.map(x => x.priceKobo)) : null;
       const league = md.get(m.id);
       return { ...m, matchday: league?.matchday ?? null, league_status: league?.status || null,
-        ticket: { state: t.state, fromKobo, opensAt: t.opensAt || null, left: t.tiers.some(x => x.remaining !== null) ? t.tiers.reduce((s, x) => s + (x.remaining ?? 0), 0) : null } };
+        ticket: { state: t.state, fromKobo, opensAt: t.opensAt || null, paused: !!t.paused, note: t.note || null, left: t.tiers.some(x => x.remaining !== null) ? t.tiers.reduce((s, x) => s + (x.remaining ?? 0), 0) : null } };
     });
   } catch (err) {
     console.error('[tickets] decorate', err);
@@ -137,11 +160,12 @@ export async function catalogue(env, { earlyMs = 0 } = {}) {
   const db = env.DB;
   await ensureTicketShopSchema(db);
   const rows = await listMatches(db);
-  const [settings, sold, md] = await Promise.all([settingsFor(db), soldCounts(db), matchdays(db)]);
+  const [settings, sold, md, pause] = await Promise.all([settingsFor(db), soldCounts(db), matchdays(db), salesPause(db)]);
   const map = new Map();
+  map.pause = pause;
   for (const r of rows) {
     const summary = toSummary(r, r);
-    const ticket = ticketState({ ...r, is_home: summary.is_home, status: summary.status }, settings.get(r.id), sold.get(r.id) || {}, Date.now(), { earlyMs });
+    const ticket = applyPause(ticketState({ ...r, is_home: summary.is_home, status: summary.status }, settings.get(r.id), sold.get(r.id) || {}, Date.now(), { earlyMs }), pause);
     map.set(r.id, { event: { ...r, ...summary }, ticket, settings: settings.get(r.id) || null, matchday: md.get(r.id)?.matchday ?? null });
   }
   return map;

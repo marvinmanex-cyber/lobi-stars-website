@@ -15,6 +15,15 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
       <div class="la-row"><a class="btn-o" href="/tickets/" target="_blank" rel="noopener">Public tickets page ↗</a><a class="btn-o" href="/admin/tickets/discounts/">Discounts</a><a class="btn-o" href="/admin/season-tickets/">Season Tickets</a><a class="btn-o" href="/admin/tickets/scan/">Ticket Scanner</a></div></header>
     <p class="la-lede">Nothing is sold unless a match is switched <b>On sale</b> and has at least one stand price. Tickets are only sold for Lobi Stars home matches. Times are Nigerian time. Leave a capacity empty for no limit.</p>
 
+    <section class="la-card tk-pause" id="pauseBox" aria-labelledby="h-pause">
+      <h2 id="h-pause">Pause all online ticket sales</h2>
+      <p class="tk-pause-state" id="pauseState">Checking…</p>
+      <p class="la-msg">While paused, nobody can buy tickets online for any match. Fans see the message below on the tickets page, and "Tickets not on sale yet" on the fixtures. Each match's own settings stay as they are, so resuming brings everything back.</p>
+      <label class="la-f" style="display:block">Message for fans<textarea id="pauseMsg" rows="3" maxlength="400" style="width:100%;margin-top:6px"></textarea></label>
+      <p class="la-msg">If tickets will be sold at the stadium gate, you can add: "Tickets will also be available at McCarthy Stadium on match day."</p>
+      <div class="la-row"><button type="button" class="btn-p" id="pauseOn">Pause online sales</button><button type="button" class="btn-o" id="pauseSave">Save message</button><button type="button" class="btn-o" id="pauseOff">Resume online sales</button></div>
+    </section>
+
     <section class="la-card" aria-labelledby="h-tot"><h2 id="h-tot">Sales</h2><div id="totals" class="la-row"></div></section>
 
     <section class="la-card" aria-labelledby="h-bulk">
@@ -49,6 +58,12 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
   </div>
   <LeagueKit />
 </Layout>
+<style>
+  .tk-pause { border-left: 6px solid #E0A400; }
+  .tk-pause-state { margin: 0 0 8px; padding: 10px 14px; border-radius: 10px; font-weight: 700; font-size: 17px; }
+  .tk-pause-state.is-paused { background: #FFF1C2; color: #6B4E00; }
+  .tk-pause-state.is-on { background: #E5F6EA; color: #166534; }
+</style>
 
 <style is:global>
   .tk-m { border: 1px solid var(--a-line); border-radius: 12px; padding: 12px; margin-bottom: 12px; }
@@ -66,9 +81,31 @@ import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
   var wat = function (iso) { return iso ? new Date(Date.parse(iso) + 3600e3).toISOString().slice(0, 16) : ''; };
   var STATE = { on_sale: 'On sale', sold_out: 'Sold out', not_on_sale: 'Not on sale', closed: 'Closed / played' };
 
+  // Pause all online ticket sales (one switch, with the fans' message).
+  var pauseNow = null;
+  function showPause(p) {
+    if (!p) return; pauseNow = p;
+    var st = $('pauseState');
+    st.textContent = p.paused ? '⏸ Online ticket sales are PAUSED. Nobody can buy tickets online.' : '✅ Online ticket sales are running normally.';
+    st.className = 'tk-pause-state ' + (p.paused ? 'is-paused' : 'is-on');
+    if (document.activeElement !== $('pauseMsg')) $('pauseMsg').value = p.message || '';
+    $('pauseOn').hidden = !!p.paused; $('pauseOff').hidden = !p.paused;
+  }
+  function savePause(paused, confirmText) {
+    if (confirmText && !confirm(confirmText)) return;
+    LA.api('/api/admin/tickets', { method: 'POST', body: { action: 'pause', paused: paused, message: $('pauseMsg').value } }).then(function (r) {
+      if (!r.ok) { LA.toast(r.d.error || 'Could not save.', true); return; }
+      showPause(r.d.pause); LA.toast(r.d.pause.paused ? 'Online ticket sales paused.' : 'Online ticket sales resumed.'); load();
+    });
+  }
+  $('pauseOn').addEventListener('click', function () { savePause(true, 'Pause ALL online ticket sales now? Fans will see your message and cannot buy tickets online until you resume.'); });
+  $('pauseOff').addEventListener('click', function () { savePause(false, 'Resume online ticket sales? Every match goes back to its own settings (on sale, prices, times).'); });
+  $('pauseSave').addEventListener('click', function () { savePause(!!(pauseNow && pauseNow.paused)); });
+
   function load() {
     LA.api('/api/admin/tickets').then(function (r) {
       if (!r.ok) { $('matches').replaceChildren(el('p', { class: 'la-msg err', text: r.d.error || 'Could not load.' })); return; }
+      showPause(r.d.pause);
       var t = r.d.totals;
       $('totals').replaceChildren(el('div', { class: 'tk-stat' }, el('b', { text: String(t.sold) }), 'tickets sold'), el('div', { class: 'tk-stat' }, el('b', { text: naira(t.revenueKobo) }), 'revenue'),
         el('div', { class: 'tk-stat' }, el('b', { text: t.capacity ? String(Math.max(0, t.capacity - t.sold)) : '–' }), 'seats left (where a capacity is set)'));

@@ -2492,6 +2492,22 @@ the other Conference D results; open the public Table to check it.
 
 ## 34. Match tickets (Commerce › Match Tickets)
 
+### Pause all online ticket sales
+At the top of **Commerce › Match Tickets**, for example while payments are
+being fixed:
+- **Pause online sales** stops online ticket buying for **every** home match at
+  once.
+  - The tickets page shows a banner with your message and a link to the club's
+    WhatsApp channel.
+  - Fixtures and match pages say "Tickets not on sale yet".
+  - Checkout refuses orders and shows your message.
+- **Message for fans** can be changed; press **Save message**. If tickets will
+  be sold at the gate, add "Tickets will also be available at McCarthy Stadium
+  on match day."
+- **Resume online sales** brings every match back to its own settings (on sale,
+  prices, times). Nothing has to be set again.
+- Pausing and resuming are recorded in the admin activity log.
+
 Fans buy tickets for one home match or several at once on **lobistarsfc.com/tickets**:
 they tick the matches (or press **Select all home matches** or **Select next 3
 matches**), choose a stand and how many for each, and pay **once** with Paystack.

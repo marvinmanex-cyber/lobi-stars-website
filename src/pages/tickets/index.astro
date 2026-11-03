@@ -57,6 +57,8 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       <!-- Shown only while season tickets are on sale (Admin › Commerce › Season Tickets). -->
       <a class="tk-seasonbar" id="seasonBanner" href="/season-tickets/" hidden><span><b>Season tickets</b><span id="seasonBannerText">One ticket for every home match.</span></span><span class="tk-seasonbtn">Buy a season ticket &rarr;</span></a>
 
+      <div class="tk-paused" id="tkPaused" role="status" hidden><span class="tk-paused-ico" aria-hidden="true">⏳</span><div><b>Online tickets open soon</b><p id="tkPausedMsg"></p><a href="https://whatsapp.com/channel/0029VaeAqYI8qIzwLEdy3E1o" target="_blank" rel="noopener">Follow our WhatsApp channel</a></div></div>
+
       <div class="tk-grid">
         <div class="tk-main">
           <!-- C. Matches -->
@@ -419,6 +421,12 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     .tk *, .tk :global(*) { animation: none !important; transition: none !important; }
     .tk :global(.tk-card:hover), .tk :global(.tk-stand:hover), .tk-xcard:hover { transform: none; }
   }
+  .tk-paused { display: flex; gap: 14px; align-items: flex-start; margin: 0 0 22px; padding: 16px 18px; border-radius: 14px; background: linear-gradient(120deg, #0E1C38, #1C3F7A); color: #fff; border-left: 6px solid #FFC928; }
+  .tk-paused[hidden] { display: none; }
+  .tk-paused-ico { font-size: 30px; line-height: 1; }
+  .tk-paused b { display: block; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: #FFC928; margin-bottom: 6px; }
+  .tk-paused p { margin: 0 0 8px; line-height: 1.5; color: rgba(255,255,255,.9); }
+  .tk-paused a { color: #fff; font-weight: 700; }
 </style>
 
 <script is:inline define:vars={{ LOGOS }}>
@@ -717,6 +725,9 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     list.replaceChildren(el('li', { class: 'tk-skel', 'aria-hidden': 'true' }), el('li', { class: 'tk-skel', 'aria-hidden': 'true' }), el('li', { class: 'tk-sr', text: 'Loading the home matches…' }));
     fetch('/api/tickets/catalogue', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (d) {
       matches = d.matches || []; rows.clear(); draw();
+      // All online sales paused by the club: the message, at the top.
+      var pz = document.getElementById('tkPaused');
+      if (pz) { pz.hidden = !d.pause; if (d.pause) document.getElementById('tkPausedMsg').textContent = d.pause.message; }
     }).catch(function () {
       list.removeAttribute('aria-busy');
       list.replaceChildren(el('li', { class: 'tk-empty' }, 'The matches could not be loaded just now. Check your connection.', el('br'), el('button', { type: 'button', text: 'Try again', onclick: load })));

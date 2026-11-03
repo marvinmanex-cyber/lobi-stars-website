@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: "Pause all online ticket sales" switch
+
+**Who it affects:** fans buying tickets, admins.
+- **Commerce › Match Tickets** has one switch to pause online ticket sales for
+  every home match, with a message for fans. The default is "Online tickets
+  open soon. We're getting online payment ready…".
+- **While paused:**
+  - the tickets page shows a banner with the message;
+  - fixtures say "Tickets not on sale yet";
+  - checkout is refused with the message.
+- **Resume** restores each match's own settings.
+- **Paused on 3 Nov 2026** until Paystack is ready (A4).
+
 ## 2026-11-03: Ticket categories and prices
 
 **Who it affects:** fans buying tickets, admins.
