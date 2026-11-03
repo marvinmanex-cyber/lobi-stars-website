@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Gate Control: counts per steward and gate, charts, wireless scanners
+
+- **Scan screen:** three live numbers at the top: **You today**, **your gate**
+  and **All gates** (fans checked in today, counted on the server so every
+  phone agrees).
+- **Today:** "Together today" total; bar charts of fans checked in **by each
+  steward** (ranked, "You" marked) and **by each gate**; a **check-ins through
+  the day** chart (15-minute steps, busiest time).
+- **Wireless / USB barcode scanners** on a laptop or tablet: just scan, nothing
+  to tap. Gate Control tells a scanner from a person typing by its speed,
+  shows "Scanner connected", clears a green result after 2.5 seconds, and
+  records the scan as "scanner". Phones and laptops can be used together.
+
 ## 2026-11-03: Gate Control: the ticket stewards' area (/gate-control)
 
 - **New:** lobistarsfc.com/gate-control, a separate area for matchday ticket

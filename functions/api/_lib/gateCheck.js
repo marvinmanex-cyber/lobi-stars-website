@@ -104,7 +104,7 @@ export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', wh
   const gate = who?.gate || null, u = who?.user || {};
   const station = `${u.name || 'Gate Control'}${u.code ? ` (${u.code})` : ''}${gate ? ` – ${gate}` : ''}`.slice(0, 120);
   const record = (res, extra = {}) => db.prepare(`INSERT INTO gc_scans (at, ticket_id, raw, event_id, tier, result, how, gate, staff_user_id, staff_name, staff_code, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(nowIso(), extra.id || null, oneLine(raw, 200), extra.eventId || null, extra.tier || null, res, how === 'typed' ? 'typed' : 'camera', gate, u.id || null, u.name || null, u.code || null, extra.note || null).run()
+    .bind(nowIso(), extra.id || null, oneLine(raw, 200), extra.eventId || null, extra.tier || null, res, ['typed', 'scanner'].includes(how) ? how : 'camera', gate, u.id || null, u.name || null, u.code || null, extra.note || null).run()
     .catch(e => console.error('[gate control] scan record', e));
 
   const parsed = parseTicketInput(raw);
@@ -181,15 +181,50 @@ export async function readmitTicket(env, raw, { reason, who }) {
   return { ok: true, code: 'readmitted', title: 'RE-ADMITTED', reason: `Let back in by ${u.name}. Reason: ${why}`, ticket: describe(t, await lastAdmit(db, t.id)) };
 }
 
-/** The live view: today's home match, checked in by stand and gate, refused scans, the latest scans. */
-export async function todayView(env) {
+// "Today" is the match day in Nigeria: from midnight Lagos time.
+const REFUSED = `'used', 'fake', 'not_lobi', 'wrong_match', 'void', 'unpaid'`;
+export const dayStart = (now = Date.now()) => new Date(Date.parse(`${lagosDay(now)}T00:00:00Z`) - 3600e3).toISOString();
+
+/** The counts on the scan screen: me, my gate, everyone (fans checked in today). Cheap: one query. */
+export async function myCounts(env, user) {
+  const db = env.DB;
+  await ensureGateSchema(db);
+  const r = await db.prepare(`SELECT
+      SUM(CASE WHEN result = 'admitted' THEN 1 ELSE 0 END) AS total,
+      SUM(CASE WHEN result = 'admitted' AND staff_user_id = ? THEN 1 ELSE 0 END) AS me,
+      SUM(CASE WHEN result IN (${REFUSED}) AND staff_user_id = ? THEN 1 ELSE 0 END) AS me_refused,
+      SUM(CASE WHEN result = 'admitted' AND gate = ? THEN 1 ELSE 0 END) AS gate
+    FROM gc_scans WHERE at >= ?`).bind(user.id, user.id, user.gate || '', dayStart()).first();
+  return { me: r?.me || 0, meRefused: r?.me_refused || 0, gate: { name: user.gate || '', admitted: r?.gate || 0 }, total: r?.total || 0 };
+}
+
+/** The live view: today's home match, check-ins by steward, gate, stand and time of day, refusals, the latest scans. */
+export async function todayView(env, user = null) {
   const db = env.DB;
   await ensureGateSchema(db); await ensureTicketShopSchema(db);
   const match = await todaysHomeMatch(db).catch(() => null);
-  const since = new Date(Date.now() - 16 * 3600e3).toISOString();
-  const latest = (await db.prepare(`SELECT s.at, s.ticket_id, s.result, s.gate, s.staff_name, s.staff_code, s.how, s.tier, s.note FROM gc_scans s WHERE s.at > ? ORDER BY s.id DESC LIMIT 30`).bind(since).all()).results;
-  const counts = Object.fromEntries((await db.prepare(`SELECT result, COUNT(*) AS n FROM gc_scans WHERE at > ? GROUP BY result`).bind(since).all()).results.map(r => [r.result, r.n]));
-  const byGate = (await db.prepare(`SELECT COALESCE(gate, 'No gate') AS gate, COUNT(*) AS n FROM gc_scans WHERE at > ? AND result = 'admitted' GROUP BY 1 ORDER BY n DESC`).bind(since).all()).results;
+  const since = dayStart();
+  const latest = (await db.prepare(`SELECT s.at, s.ticket_id, s.result, s.gate, s.staff_name, s.staff_code, s.how, s.tier, s.note FROM gc_scans s WHERE s.at >= ? ORDER BY s.id DESC LIMIT 30`).bind(since).all()).results;
+  const counts = Object.fromEntries((await db.prepare(`SELECT result, COUNT(*) AS n FROM gc_scans WHERE at >= ? GROUP BY result`).bind(since).all()).results.map(r => [r.result, r.n]));
+  const byGate = (await db.prepare(`SELECT COALESCE(gate, 'No gate') AS gate, COUNT(*) AS n FROM gc_scans WHERE at >= ? AND result = 'admitted' GROUP BY 1 ORDER BY n DESC`).bind(since).all()).results;
+  // Each steward (one phone each): fans checked in, refused, re-admitted, their latest gate and scan.
+  const byStaff = (await db.prepare(`SELECT staff_user_id AS id, MAX(staff_name) AS name, MAX(staff_code) AS code,
+      SUM(CASE WHEN result = 'admitted' THEN 1 ELSE 0 END) AS admitted,
+      SUM(CASE WHEN result IN (${REFUSED}) THEN 1 ELSE 0 END) AS refused,
+      SUM(CASE WHEN result = 'readmitted' THEN 1 ELSE 0 END) AS readmitted,
+      MAX(at) AS last,
+      (SELECT g.gate FROM gc_scans g WHERE g.staff_user_id = s.staff_user_id AND g.at >= ? ORDER BY g.id DESC LIMIT 1) AS gate
+    FROM gc_scans s WHERE at >= ? AND staff_user_id IS NOT NULL AND result != 'lookup' GROUP BY staff_user_id ORDER BY admitted DESC, last DESC`).bind(since, since).all()).results
+    .map(r => ({ id: r.id, name: r.name || 'Unknown', code: r.code || '', admitted: r.admitted || 0, refused: r.refused || 0, readmitted: r.readmitted || 0, gate: r.gate || '', last: r.last, me: !!user && r.id === user.id }));
+  // Check-ins through the day, in 15-minute steps (Lagos time).
+  const times = (await db.prepare(`SELECT at FROM gc_scans WHERE at >= ? AND result = 'admitted' ORDER BY at`).bind(since).all()).results;
+  const STEP = 15 * 60e3, buckets = new Map();
+  for (const t of times) { const k = Math.floor(Date.parse(t.at) / STEP) * STEP; buckets.set(k, (buckets.get(k) || 0) + 1); }
+  const timeline = [];
+  if (buckets.size) {
+    const keys = [...buckets.keys()], first = Math.min(...keys), last = Math.max(...keys, Math.floor(Date.now() / STEP) * STEP);
+    for (let k = first; k <= last && timeline.length < 96; k += STEP) timeline.push({ at: new Date(k).toISOString(), n: buckets.get(k) || 0 });
+  }
   let stands = [];
   if (match) {
     const sold = Object.fromEntries((await db.prepare(`SELECT t.tier, COUNT(*) AS n, SUM(CASE WHEN t.status = 'used' THEN 1 ELSE 0 END) AS inn FROM tickets t JOIN orders o ON o.id = t.order_id
@@ -199,8 +234,8 @@ export async function todayView(env) {
   const refused = ['used', 'fake', 'not_lobi', 'wrong_match', 'void', 'unpaid'].reduce((s, k) => s + (counts[k] || 0), 0);
   return {
     match: match ? { id: match.id, name: `${match.home_team} vs ${match.away_team}`, date: match.event_date, venue: match.venue } : null,
-    totals: { admitted: (counts.admitted || 0) + (counts.readmitted || 0), refused, fake: (counts.fake || 0) + (counts.not_lobi || 0), used: counts.used || 0, lookups: counts.lookup || 0 },
-    stands, byGate,
+    totals: { admitted: counts.admitted || 0, readmitted: counts.readmitted || 0, refused, fake: (counts.fake || 0) + (counts.not_lobi || 0), used: counts.used || 0, lookups: counts.lookup || 0 },
+    stands, byGate, byStaff, timeline,
     latest: latest.map(s => ({ at: s.at, ticket: s.ticket_id, result: s.result, gate: s.gate, by: s.staff_name ? `${s.staff_name}${s.staff_code ? ` (${s.staff_code})` : ''}` : '', how: s.how, stand: TIER_LABELS[s.tier] || '', note: s.note })),
   };
 }

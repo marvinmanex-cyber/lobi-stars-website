@@ -129,6 +129,47 @@ textarea.gc-input { min-height: 120px; resize: vertical; }
 .gc-auto i { display: block; height: 100%; background: #fff; animation: gc-auto var(--t, 2.5s) linear forwards; }
 @keyframes gc-auto { from { width: 100%; } to { width: 0; } }
 
+/* The three counters on the scan screen */
+.gc-tally { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
+.gc-tile { display: grid; justify-items: start; gap: 2px; padding: 12px 12px 10px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); text-align: left; cursor: pointer; min-width: 0; }
+.gc-tile b { font: 400 40px/1 'Bebas Neue', sans-serif; letter-spacing: .02em; }
+.gc-tile span { font: 700 12px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.gc-tile.me { border-color: rgba(255, 199, 44, .6); background: linear-gradient(160deg, rgba(255, 199, 44, .16), var(--panel)); }
+.gc-tile.me b { color: var(--gold); }
+.gc-tile.all { background: linear-gradient(160deg, rgba(18, 161, 80, .22), var(--panel)); border-color: rgba(18, 161, 80, .5); }
+.gc-tile.all b { color: #5ee08f; }
+
+/* Wireless / USB scanner hint (it types the ticket's code and presses Enter) */
+.gc-scanner { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--line); color: var(--muted); font-size: 14px; }
+.gc-scanner b { color: var(--ink); }
+.gc-scanner-dot { flex: none; width: 10px; height: 10px; margin-top: 5px; border-radius: 50%; background: var(--muted); }
+.gc-scanner.on { border-style: solid; border-color: rgba(18, 161, 80, .55); background: rgba(18, 161, 80, .08); }
+.gc-scanner.on .gc-scanner-dot { background: #2bd273; box-shadow: 0 0 0 4px rgba(43, 210, 115, .2); }
+.gc-scanner.away .gc-scanner-dot { background: var(--amber); }
+
+/* Today: together, ranking bars, the day chart */
+.gc-together { display: grid; justify-items: center; text-align: center; gap: 2px; padding: 20px 16px; margin-bottom: 14px; border-radius: 16px; border: 1px solid rgba(18, 161, 80, .5);
+  background: radial-gradient(80% 120% at 50% 0%, rgba(18, 161, 80, .35), transparent 70%), var(--panel); }
+.gc-together b { font: 400 72px/1 'Bebas Neue', sans-serif; color: #5ee08f; }
+.gc-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.gc-rank li { display: flex; gap: 10px; align-items: flex-start; }
+.gc-rank-no { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--panel-2); font: 700 14px/1 'Barlow Condensed', sans-serif; color: var(--muted); }
+.gc-rank li:first-child .gc-rank-no { background: var(--gold); color: #17130a; }
+.gc-rank-main { flex: 1; min-width: 0; }
+.gc-rank-h { display: flex; justify-content: space-between; gap: 10px; }
+.gc-rank-h b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-rank-h em { font-style: normal; margin-left: 6px; padding: 1px 7px; border-radius: 6px; background: var(--gold); color: #17130a; font: 700 12px/1.4 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.gc-rank-h strong { font: 400 26px/1 'Bebas Neue', sans-serif; }
+.gc-rank-t { height: 14px; margin-top: 5px; border-radius: 7px; background: var(--panel-2); overflow: hidden; }
+.gc-rank-t i { display: block; height: 100%; border-radius: 7px; background: linear-gradient(90deg, var(--red-2), var(--red)); transition: width .5s ease; }
+.gc-rank li.me .gc-rank-t i { background: linear-gradient(90deg, #d99a00, var(--gold)); }
+.gc-rank small { display: block; margin-top: 3px; color: var(--muted); font-size: 13px; }
+.gc-time { display: block; width: 100%; height: auto; }
+.gc-time rect { fill: #2bd273; }
+.gc-time line { stroke: var(--line); stroke-width: 1; }
+.gc-time text { fill: var(--muted); font: 600 11px Barlow, sans-serif; }
+.gc-time text.v { fill: var(--ink); font-weight: 700; }
+
 /* Today */
 .gc-match { padding: 18px; border-radius: 16px; margin-bottom: 14px; background: linear-gradient(120deg, var(--red-2), #2a0b0e 70%); border: 1px solid rgba(255, 255, 255, .1); }
 .gc-match h3 { font-size: 30px; margin-top: 4px; }

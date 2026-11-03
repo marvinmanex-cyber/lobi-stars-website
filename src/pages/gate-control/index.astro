@@ -86,22 +86,28 @@ const svg = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="current
           <button type="button" id="modeAdmit" aria-pressed="true">Check in</button>
           <button type="button" class="look" id="modeLook" aria-pressed="false">Look up only</button>
         </div>
+        <div class="gc-tally" aria-live="polite" aria-label="Fans checked in today">
+          <button type="button" class="gc-tile me" data-view="today"><b id="cMe">0</b><span>You today</span></button>
+          <button type="button" class="gc-tile" data-view="today"><b id="cGate">0</b><span id="cGateL">This gate</span></button>
+          <button type="button" class="gc-tile all" data-view="today"><b id="cAll">0</b><span>All gates</span></button>
+        </div>
         <div id="result" aria-live="assertive"></div>
         <div id="scanBox">
           <div class="gc-cam" id="cam" hidden>
             <div id="reader"></div>
             <p class="gc-cam-tip">Hold the ticket's QR code inside the square</p>
           </div>
+          <p class="gc-scanner" id="scannerHint"><span class="gc-scanner-dot" aria-hidden="true"></span><span id="scannerText"><b>Wireless or USB scanner?</b> Just scan: the result shows here. Keep this page open and in front.</span></p>
           <button type="button" class="gc-btn red huge wide" id="camBtn"><Fragment set:html={svg(I.scan)} /><span id="camLbl">Scan ticket</span></button>
           <p class="gc-err" id="camErr" role="alert" hidden style="margin-top:12px"></p>
           <div class="gc-or">or type the ticket number</div>
           <form id="typeForm" class="gc-type-row" novalidate>
             <label class="gc-sr" for="ticketNo">Ticket number</label>
-            <div class="gc-type"><span>LS-TIX-</span><input id="ticketNo" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" inputmode="text" placeholder="ABCD2345EFGH" /></div>
+            <div class="gc-type"><span>LS-TIX-</span><input id="ticketNo" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="200" inputmode="text" placeholder="ABCD2345EFGH" /></div>
             <button class="gc-btn gold" type="submit" style="min-height:62px">Check</button>
           </form>
           <p class="gc-hint">The 12 letters and numbers after LS-TIX- on the ticket. For a season ticket, type the whole number (LS-SZN-…).</p>
-          <div class="gc-count"><span id="myCount">You have checked in 0 people</span><span id="lastAt"></span></div>
+          <div class="gc-count"><span id="myRefused"></span><span id="lastAt"></span></div>
         </div>
       </section>
 

@@ -129,6 +129,15 @@ test('re-admit (supervisors only, with a reason); today view; activity recorded;
   assert.ok(d.totals.admitted >= 4); assert.ok(d.totals.fake >= 2); assert.ok(d.byGate.some(g => g.gate === 'Main Gate'));
   assert.ok(d.latest.some(s => s.result === 'readmitted' && /car park/.test(s.note)));
   assert.ok(d.onDuty.some(p => p.code === STEW.staffId && p.gate === 'Main Gate'));
+  // Counts per steward (each on their own phone), per gate and together; "You" marked.
+  const me = d.byStaff.find(x => x.code === STEW.staffId), sup = d.byStaff.find(x => x.code === SUP.staffId);
+  assert.ok(me.me, 'my row is marked'); assert.equal(sup.me, false);
+  assert.ok(me.admitted >= 2); assert.equal(me.gate, 'Main Gate'); assert.ok(me.refused >= 1);
+  assert.equal(d.byStaff.reduce((t, x) => t + x.admitted, 0), d.totals.admitted, 'the stewards add up to the total');
+  assert.ok(d.timeline.length >= 1 && d.timeline.reduce((t, x) => t + x.n, 0) === d.totals.admitted);
+  const c = (await St.call('counts')).data, c2 = (await Su.call('counts')).data;
+  assert.equal(c.me, me.admitted); assert.equal(c.gate.name, 'Main Gate'); assert.equal(c.total, d.totals.admitted);
+  assert.equal(c2.me, sup.admitted); assert.equal(c2.gate.name, 'VIP Gate'); assert.equal(c2.total, c.total);
 
   const mine = (await St.call(`activity?day=`)).data;
   assert.equal(mine.all, false); assert.ok(mine.rows.every(a => a.code === STEW.staffId));

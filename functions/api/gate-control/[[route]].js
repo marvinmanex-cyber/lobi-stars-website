@@ -3,11 +3,11 @@
 //   POST login {login, password}   POST logout   GET session   POST gate {gate}
 //   POST check {ticket, mode: admit|lookup, how: camera|typed}
 //   POST readmit {ticket, reason}  (supervisors)
-//   GET today   GET activity?staff&day&page[&format=csv]
+//   GET today   GET counts (me / my gate / everyone)   GET activity?staff&day&page[&format=csv]
 //   GET staff   POST staff {action: add|edit|gates, …}  (Super Admins)
 import { signIn, signOut, json, gateSettings, saveGates, permissions, gcLog, setGate, activityPage, listStaff, createStaff, updateStaff,
   onDuty, ROLES, oneLine, clearGateCookie } from '../_lib/gateControl.js';
-import { checkTicket, readmitTicket, todayView } from '../_lib/gateCheck.js';
+import { checkTicket, readmitTicket, todayView, myCounts } from '../_lib/gateCheck.js';
 
 const denied = () => json({ error: "Your role can't do this. Ask a Gate Supervisor or a Super Admin.", denied: true }, 403);
 const csvCell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) || /^[=+\-@]/.test(s) ? `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"` : s; };
@@ -45,8 +45,8 @@ export async function onRequest(context) {
       case 'POST check': {
         if (!user.gate) return json({ error: 'Choose your gate first.', needGate: true }, 409);
         const mode = body.mode === 'lookup' ? 'lookup' : 'admit';
-        const r = await checkTicket(env, String(body.ticket || '').slice(0, 300), { mode, how: body.how === 'typed' ? 'typed' : 'camera', who: { user, gate: user.gate }, request });
-        await gcLog(db, user, `${RESULT_WORDS[r.code] || r.code}: ${r.ticket?.id || oneLine(body.ticket, 60)}${body.how === 'typed' ? ' (typed)' : ''}`,
+        const r = await checkTicket(env, String(body.ticket || '').slice(0, 300), { mode, how: ['typed', 'scanner'].includes(body.how) ? body.how : 'camera', who: { user, gate: user.gate }, request });
+        await gcLog(db, user, `${RESULT_WORDS[r.code] || r.code}: ${r.ticket?.id || oneLine(body.ticket, 60)}${body.how === 'typed' ? ' (typed)' : body.how === 'scanner' ? ' (scanner)' : ''}`,
           { kind: 'scan', details: r.code === 'admitted' || r.code === 'valid' ? null : r.reason, request });
         return json(r);
       }
@@ -57,7 +57,9 @@ export async function onRequest(context) {
         await gcLog(db, user, `Re-admitted ticket ${r.ticket.id}`, { kind: 'scan', details: body.reason, request });
         return json(r);
       }
-      case 'GET today': return json({ ...(await todayView(env)), onDuty: await onDuty(db) });
+      case 'GET today': return json({ ...(await todayView(env, user)), onDuty: await onDuty(db) });
+      // The counts on the scan screen: me, my gate, everyone today.
+      case 'GET counts': return json(await myCounts(env, user));
       case 'GET activity': {
         const userId = perms.activityAll ? (q.get('staff') || '') : user.id;
         const csv = q.get('format') === 'csv';

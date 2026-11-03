@@ -4712,15 +4712,41 @@ your website email, press **Staff** (bottom bar):
    at the ticket desk to answer a fan's question. Switch back to **Check in**
    for the gate.
 
+**Counts: you, your gate, everyone.** Three numbers sit at the top of the scan
+screen: **You today** (fans you have checked in today), **your gate** (all
+check-ins at the gate you chose) and **All gates** (everyone together). They
+are counted on the server, so they are the same on every phone, and they
+update after each scan and every 20 seconds. Each person signs in on their own
+phone or laptop, so "You today" is that device's count. Tap a number to open
+**Today**. "Today" starts at midnight, Nigeria time.
+
+**Wireless or USB barcode scanner on a laptop or tablet.** Connect the scanner
+(Bluetooth, its USB dongle, or a cable), open Gate Control, sign in and choose
+the gate. Then just scan tickets: there is nothing to tap. The scanner "types"
+the ticket's code and presses Enter, and Gate Control catches it anywhere on
+the scan screen; the result shows straight away, and after a green ADMIT the
+screen clears itself for the next fan after 2.5 seconds. The box above the scan
+button turns green and says **Scanner connected** after the first scan. If it
+turns amber ("Click this page"), another window is in front: click the Gate
+Control page once. Phones and laptops can be used together at different gates,
+and the phone camera button still works on a laptop with a webcam. Scans from
+a scanner are marked "scanner" in Today and in the activity log. Most scanners
+come set to "keyboard" mode with Enter after each scan, which is what Gate
+Control needs; if a scan only fills the box without checking, set the scanner
+to add Enter (its manual has a barcode for this).
+
 **Re-admit (Gate Supervisors).** When a fan who was checked in steps out and
 comes back (car park, first aid), the ticket shows ALREADY USED. The supervisor
 scans it and presses **Re-admit (supervisor)**, writes the reason and confirms.
 The re-admission and the reason are recorded under the supervisor's name.
 
-**Today** (bottom bar) shows, live, every 10 seconds: today's home match, how
-many have been checked in, refused and fake, check-ins per stand against
-tickets sold, check-ins per gate, who is on duty at which gate, and the latest
-scans at every gate.
+**Today** (bottom bar) shows, live, every 10 seconds: today's home match; the
+**Together today** total; a bar chart of **fans checked in by each steward**
+(ranked, with their gate, how many they refused and their last scan; your own
+row is marked **You**); a bar chart of **fans checked in at each gate**; a
+**check-ins through the day** chart in 15-minute steps with the busiest 15
+minutes; refused and fake totals; check-ins per stand against tickets sold;
+who is on duty at which gate; and the latest scans at every gate.
 
 **Activity** shows what was done, by whom, at which gate and when. Stewards see
 their own; supervisors and Super Admins see everyone's, can pick a person and a
