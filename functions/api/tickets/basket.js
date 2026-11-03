@@ -1,4 +1,4 @@
-import { catalogue, newBasketIds, ensureTicketShopSchema, fulfilBasket, salesPause } from '../_lib/ticketShop.js';
+import { catalogue, newBasketIds, ensureTicketShopSchema, fulfilBasket, salesPause, tagBasket } from '../_lib/ticketShop.js';
 import { priceBasket, naira, TIER_LABELS } from '../_lib/tickets/rules.js';
 import { initialize, verify } from '../_lib/paystackClient.js';
 import { normalizeNigerianPhone, clientIp, rateLimit, tooMany, checkTurnstile, ensureFanSchema } from '../_lib/fans.js';
@@ -103,6 +103,7 @@ export async function onRequestPost({ request, env }) {
 
     const origin = new URL(request.url).origin;
     try {
+      await tagBasket(db, basketId, request, b.source).catch(err => console.error('[tickets] tag', err));
       const p = await initialize(env, { email, amountKobo: pay.totalKobo, reference, callbackUrl: `${origin}/tickets/success/?basket=${encodeURIComponent(reference)}`, metadata: { kind: 'basket', basketId, matches: pricing.matches.length, discount_kobo: pricing.discountKobo } });
       return Response.json({ authorizationUrl: p.authorization_url, reference, totalKobo: pay.totalKobo, pointsUsed: pay.pointsUsed });
     } catch (err) {

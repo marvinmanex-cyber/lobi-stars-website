@@ -257,6 +257,16 @@ main.bare{padding-top:0;min-height:0;}
 {!bare && !adminPage && <CookieConsent />}
 {!bare && !adminPage && <InstallPrompt />}
 {!bare && !adminPage && <KitchenNudge />}
+<script is:inline>
+  // Where this visitor came from (for the Ticket Sales dashboard): the link's utm_source tag, or the
+  // outside website they came from. Kept 30 days on this device; a new tagged link replaces it.
+  (function () { try {
+    var q = new URLSearchParams(location.search), u = (q.get('utm_source') || '').slice(0, 40), r = '';
+    if (document.referrer) { var h = new URL(document.referrer).host; if (h && h !== location.host) r = h.slice(0, 80); }
+    var old = JSON.parse(localStorage.getItem('ls_src') || 'null');
+    if (u || r) { if (u || !old || Date.now() - old.at > 30 * 864e5) localStorage.setItem('ls_src', JSON.stringify({ s: u ? 'utm:' + u : 'ref:' + r, at: Date.now() })); }
+  } catch (e) {} })();
+</script>
 <script is:inline src="/track.js" defer></script>
 {!adminPage && <script is:inline src="/ga.js" defer></script>}
 </body>

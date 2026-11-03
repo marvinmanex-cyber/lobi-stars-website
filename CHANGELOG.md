@@ -8,6 +8,25 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Live Ticket Sales dashboard
+
+**Who it affects:** admins (Commerce).
+- New page **Commerce › Ticket Sales (live)**, updated every 15 seconds:
+  - money raised online, tickets sold, people who paid, and checkouts paid vs
+    started;
+  - a ring chart of VIP Sitting, Grand Stand and Popular Stand (tickets, %
+    and money);
+  - money by match, and a table for every home match with totals;
+  - where buyers came from, where they are, their device and sales by day;
+  - the latest purchases.
+- From now on every ticket order records where the buyer came from:
+  - the link's tracking tag or the outside site, remembered for 30 days on
+    their phone;
+  - their city and state (from their connection);
+  - their device.
+
+  Older orders show "Before tracking".
+
 ## 2026-11-03: "Pause all online ticket sales" switch
 
 **Who it affects:** fans buying tickets, admins.

@@ -80,6 +80,7 @@ const CATEGORIES: Cat[] = [
   ] },
   { id: 'commerce', icon: '🛒', label: 'Commerce', color: '#F97316', items: [
     { id: 'tickets', label: 'Match Tickets', href: '/admin/tickets/', perm: 'commerce.tickets.manage', hint: 'Prices, capacity, sale times and on/off per home match; orders, refunds, sales' },
+    { id: 'ticket-sales', label: 'Ticket Sales (live)', href: '/admin/tickets/sales/', perm: 'commerce.tickets.manage', hint: 'Live dashboard: money raised, tickets by stand, every home match, where buyers came from' },
     { id: 'ticket-discounts', label: 'Ticket Discounts', href: '/admin/tickets/discounts/', perm: 'commerce.tickets.manage', hint: 'Group, early-bird and family bundle discounts: on/off, percents, dates, limits, report' },
     { id: 'scan', label: 'Ticket Scanner', href: '/admin/tickets/scan/', perm: 'commerce.gate_scan' },
     { id: 'helpers', label: 'Matchday Helpers', href: '/admin/helpers/', perm: 'helpers.create', hint: 'Gate and kitchen helper logins for one match (username + PIN, QR, WhatsApp)' },

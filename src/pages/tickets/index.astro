@@ -430,6 +430,14 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
 </style>
 
 <script is:inline define:vars={{ LOGOS }}>
+  // Where the buyer came from (Ticket Sales dashboard): first touch (link tag or outside site), and the page on this site before /tickets.
+  function buySource() {
+    var o = { first: '', via: '' };
+    try { var x = JSON.parse(localStorage.getItem('ls_src') || 'null'); if (x && Date.now() - x.at < 30 * 864e5) o.first = x.s; } catch (e) {}
+    try { var q = new URLSearchParams(location.search).get('utm_source'); if (q) o.first = 'utm:' + q.slice(0, 40); } catch (e) {}
+    try { if (document.referrer) { var r = new URL(document.referrer); o.via = r.host === location.host ? r.pathname.slice(0, 80) : 'ref:' + r.host.slice(0, 80); } } catch (e) {}
+    return o;
+  }
 (function () {
   var $ = function (id) { return document.getElementById(id); };
   var naira = function (k) { return '₦' + Math.round(k / 100).toLocaleString('en-NG'); };
@@ -766,7 +774,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     var tokenEl = f.querySelector('[name="cf-turnstile-response"]');
     $('payBtn').disabled = true;
     if (window.lsGa) window.lsGa('ticket_purchase_start', { item_count: lines.length, value: quote.totalKobo / 100, currency: 'NGN' });
-    fetch('/api/tickets/basket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines: lines, groupName: $('grpWrap').hidden ? '' : f.groupName.value, expectedTotalKobo: quote.totalKobo, usePoints: rw ? rw.values().usePoints : 0, buyerName: f.buyerName.value, buyerEmail: f.buyerEmail.value, buyerPhone: f.buyerPhone.value, turnstileToken: tokenEl ? tokenEl.value : '' }) })
+    fetch('/api/tickets/basket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines: lines, groupName: $('grpWrap').hidden ? '' : f.groupName.value, expectedTotalKobo: quote.totalKobo, usePoints: rw ? rw.values().usePoints : 0, buyerName: f.buyerName.value, buyerEmail: f.buyerEmail.value, buyerPhone: f.buyerPhone.value, turnstileToken: tokenEl ? tokenEl.value : '', source: buySource() }) })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
       .then(function (res) {
         if (res.ok && res.d.authorizationUrl) { location.href = res.d.authorizationUrl; return; }

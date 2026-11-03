@@ -2492,6 +2492,31 @@ the other Conference D results; open the public Table to check it.
 
 ## 34. Match tickets (Commerce › Match Tickets)
 
+### Ticket Sales dashboard (Commerce › Ticket Sales (live))
+A live view of **paid online ticket sales**. It refreshes every 15 seconds, and
+new purchases flash yellow. Refunded and unpaid orders are not counted.
+Choose **All home matches** or one match at the top.
+- **Money raised online, Tickets sold, People who paid, and Checkouts paid**
+  (paid out of started, plus how many are paying right now).
+- **By stand:** a ring chart with **VIP Sitting, Grand Stand and Popular
+  Stand**, showing tickets, percentage and money for each.
+- **Money by match:** a bar for each home match, coloured by stand.
+- **Every home match:** a table with tickets (and %) and money per stand, and
+  totals at the bottom.
+- **Where buyers came from:** Instagram, Facebook, WhatsApp, X, Google, email,
+  QR posters, a page on the website, or Direct. This comes from the link they
+  used or the site they came from, even if they bought later on the same
+  phone. To see which posts sell, add `?utm_source=instagram` (or facebook,
+  whatsapp…) to the links you share.
+- **Where buyers are:** city and state from their internet connection
+  (approximate).
+- **Device:** phone, tablet or computer. **Sales by day** shows the last 30
+  days.
+- **Latest purchases:** time, match, buyer, stand, quantity, amount, source and
+  place.
+- Orders made before 3 Nov 2026 show "Before tracking" for source, place and
+  device.
+
 ### Pause all online ticket sales
 At the top of **Commerce › Match Tickets**, for example while payments are
 being fixed:

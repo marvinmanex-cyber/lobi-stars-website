@@ -7,6 +7,7 @@
 //    the gate work exactly as before.
 // Seats are held atomically: the order row is only inserted if the seats
 // sold plus seats held by unpaid orders (30 minutes) still fit.
+import { sourceLabel, deviceOf } from './ticketSource.js';
 import { lagosParts } from './fixtureCard.js';
 import { randomId } from './crypto.js';
 import { ensureTable, listMatches, toSummary } from './matchCentre.js';
@@ -45,6 +46,8 @@ export async function ensureTicketShopSchema(db) {
   const have = new Set(results.map(c => c.name));
   if (!have.has('basket_id')) await db.prepare(`ALTER TABLE orders ADD COLUMN basket_id TEXT`).run();
   if (!have.has('refunded_at')) await db.prepare(`ALTER TABLE orders ADD COLUMN refunded_at TEXT`).run();
+  // Ticket Sales dashboard: where the buyer came from, their city / state (from the connection) and device.
+  for (const c of ['source', 'city', 'region', 'device']) if (!have.has(c)) await db.prepare(`ALTER TABLE orders ADD COLUMN ${c} TEXT`).run();
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_basket ON orders (basket_id)`).run();
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_event_tier ON orders (event_id, tier, payment_status)`).run();
   // Matches already priced when this switch was added stay on sale (the club
@@ -273,3 +276,11 @@ export async function sendBasketEmail(env, basket) {
 const b64 = bytes => { let x = ''; for (let i = 0; i < bytes.length; i += 0x8000) x += String.fromCharCode(...bytes.subarray(i, i + 0x8000)); return btoa(x); };
 
 export { TIERS, TIER_LABELS };
+
+// ── Where ticket buyers come from (Ticket Sales dashboard): names in ticketSource.js ──
+/** Tags a basket's order lines with where the buyer came from, city / state and device. */
+export async function tagBasket(db, basketId, request, src) {
+  const cf = request.cf || {};
+  await db.prepare(`UPDATE orders SET source = ?, city = ?, region = ?, device = ? WHERE basket_id = ?`)
+    .bind(sourceLabel(src || {}), String(cf.city || '').slice(0, 60) || null, String(cf.region || '').slice(0, 60) || null, deviceOf(request.headers.get('User-Agent') || ''), basketId).run();
+}

@@ -1,0 +1,146 @@
+---
+// Commerce › Ticket Sales: live dashboard of paid online ticket sales (refunds left out).
+// Money raised, tickets, buyers and checkouts paid at the top; the split between VIP
+// Sitting, Grand Stand and Popular Stand (tickets, % and money); every home match;
+// where buyers came from, their city / state and device; sales by day; the latest
+// purchases. Refreshes every 15 seconds. Data: /api/admin/tickets/sales.
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="Ticket Sales | Lobi Stars Admin" description="Live ticket sales dashboard." noindex>
+  <div class="wrap la ts">
+    <AdminNav current="ticket-sales" />
+    <header class="la-head"><div><div class="stag">Commerce</div><h1 class="stitle">Ticket <span class="r">Sales</span></h1></div>
+      <div class="la-row"><label class="ts-pick">Match <select id="evPick"><option value="">All home matches</option></select></label><a class="btn-o" href="/admin/tickets/">Match Tickets ›</a></div></header>
+    <p class="ts-live" aria-live="polite"><span class="ts-dot" aria-hidden="true"></span><span id="liveText">Loading…</span></p>
+
+    <section class="ts-kpis" aria-label="Totals">
+      <div class="ts-kpi money"><span>Money raised online</span><b id="kMoney">–</b><small id="kMoneySub"></small></div>
+      <div class="ts-kpi"><span>Tickets sold</span><b id="kTickets">–</b><small id="kTicketsSub"></small></div>
+      <div class="ts-kpi"><span>People who paid</span><b id="kBuyers">–</b><small>different buyers (by email)</small></div>
+      <div class="ts-kpi"><span>Checkouts paid</span><b id="kConv">–</b><small id="kConvSub"></small></div>
+    </section>
+
+    <div class="ts-grid">
+      <section class="la-card ts-card"><h2>By stand</h2><div class="ts-donut-wrap"><div id="donut"></div><ul class="ts-legend" id="legend"></ul></div></section>
+      <section class="la-card ts-card"><h2>Money by match</h2><div id="matchBars" class="ts-bars"></div></section>
+    </div>
+
+    <section class="la-card ts-card"><h2>Every home match</h2><div class="ts-scroll"><table class="ts-table"><thead><tr><th>Match</th><th>VIP Sitting</th><th>Grand Stand</th><th>Popular Stand</th><th>Tickets</th><th>Money</th></tr></thead><tbody id="matchRows"></tbody><tfoot id="matchFoot"></tfoot></table></div></section>
+
+    <div class="ts-grid">
+      <section class="la-card ts-card"><h2>Where buyers came from</h2><div id="sources" class="ts-bars"></div><p class="ts-note">Instagram, Facebook, WhatsApp, X, Google, email, QR posters… from the link they used or the site they came from. Orders before 3 Nov 2026 show "Before tracking".</p></section>
+      <section class="la-card ts-card"><h2>Sales by day</h2><div id="daily"></div></section>
+    </div>
+    <div class="ts-grid">
+      <section class="la-card ts-card"><h2>Where buyers are</h2><div id="places" class="ts-bars"></div><p class="ts-note">City and state from their internet connection (approximate).</p></section>
+      <section class="la-card ts-card"><h2>Device</h2><div id="devices" class="ts-bars"></div></section>
+    </div>
+
+    <section class="la-card ts-card"><h2>Latest purchases</h2><div class="ts-scroll"><table class="ts-table"><thead><tr><th>Time</th><th>Match</th><th>Buyer</th><th>Stand</th><th>Qty</th><th>Amount</th><th>From</th><th>Place</th></tr></thead><tbody id="recent"></tbody></table></div></section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<style is:global>
+  .ts { --vip: #C9A227; --grand: #1C3F7A; --popular: #E31E24; }
+  .ts-pick { display: flex; gap: 8px; align-items: center; font-weight: 700; } .ts-pick select { min-height: 40px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: inherit; padding: 0 10px; }
+  .ts-live { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; color: var(--a-muted); font-size: 14px; }
+  .ts-dot { width: 10px; height: 10px; border-radius: 50%; background: #16A34A; box-shadow: 0 0 0 0 rgba(22,163,74,.6); animation: tsPulse 2s infinite; }
+  @keyframes tsPulse { 70% { box-shadow: 0 0 0 10px rgba(22,163,74,0); } 100% { box-shadow: 0 0 0 0 rgba(22,163,74,0); } }
+  .ts-kpis { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 0 0 16px; }
+  .ts-kpi { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 16px 18px; display: grid; gap: 4px; }
+  .ts-kpi span { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--a-muted); }
+  .ts-kpi b { font: 400 40px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .ts-kpi small { color: var(--a-muted); }
+  .ts-kpi.money { background: linear-gradient(135deg, #0E2A55, #1C3F7A); color: #fff; border: 0; } .ts-kpi.money span, .ts-kpi.money small { color: #CFE0FA; } .ts-kpi.money b { color: #FFC928; font-size: 46px; }
+  .ts-grid { display: grid; gap: 14px; margin: 0 0 14px; } @media (min-width: 1000px) { .ts-grid { grid-template-columns: 1fr 1fr; } }
+  .ts-card h2 { margin: 0 0 12px; font-size: 20px; }
+  .ts-donut-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; }
+  .ts-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; flex: 1; min-width: 200px; }
+  .ts-legend li { display: grid; grid-template-columns: 16px 1fr auto; gap: 4px 10px; align-items: center; }
+  .ts-legend i { width: 16px; height: 16px; border-radius: 4px; } .ts-legend b { font-size: 17px; } .ts-legend small { grid-column: 2 / 4; color: var(--a-muted); }
+  .ts-bars { display: grid; gap: 8px; }
+  .ts-bar { display: grid; grid-template-columns: minmax(120px, 34%) 1fr auto; gap: 10px; align-items: center; font-size: 14px; }
+  .ts-bar .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  .ts-bar .track { height: 18px; border-radius: 6px; background: rgba(127,127,127,.15); overflow: hidden; display: flex; }
+  .ts-bar .track i { display: block; height: 100%; }
+  .ts-bar .v { font-weight: 700; white-space: nowrap; }
+  .ts-scroll { overflow-x: auto; }
+  .ts-table { width: 100%; border-collapse: collapse; font-size: 14px; } .ts-table th, .ts-table td { padding: 8px 10px; border-top: 1px solid var(--a-line); text-align: left; white-space: nowrap; }
+  .ts-table th { border-top: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--a-muted); }
+  .ts-table tfoot td { font-weight: 800; border-top: 2px solid var(--a-line); }
+  .ts-table tr.is-new { animation: tsNew 2.5s ease-out; } @keyframes tsNew { from { background: rgba(255,201,40,.45); } }
+  .ts-pct { color: var(--a-muted); font-size: 12px; margin-left: 4px; }
+  .ts-note { margin: 10px 0 0; font-size: 13px; color: var(--a-muted); }
+  .ts-empty { color: var(--a-muted); }
+</style>
+
+<script is:inline>
+  (function () {
+    var $ = function (id) { return document.getElementById(id); };
+    var COL = { VIP: 'var(--vip)', Premium: 'var(--grand)', Regular: 'var(--popular)' };
+    var naira = function (k) { return '₦' + Math.round((k || 0) / 100).toLocaleString('en-NG'); };
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+    var when = function (iso) { return iso ? new Date(String(iso).replace(' ', 'T') + (/Z|\+/.test(iso) ? '' : 'Z')).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''; };
+    var seen = null, ev = new URLSearchParams(location.search).get('event') || '', picked = false;
+
+    function donut(tiers, total) {
+      var R = 70, C = 2 * Math.PI * R, off = 0;
+      var arcs = total ? tiers.map(function (t) { var len = (t.tickets / total) * C; var s = '<circle r="' + R + '" cx="90" cy="90" fill="none" stroke="' + COL[t.tier] + '" stroke-width="30" stroke-dasharray="' + len + ' ' + (C - len) + '" stroke-dashoffset="' + (-off) + '" transform="rotate(-90 90 90)"/>'; off += len; return s; }).join('')
+        : '<circle r="' + R + '" cx="90" cy="90" fill="none" stroke="rgba(127,127,127,.2)" stroke-width="30"/>';
+      return '<svg viewBox="0 0 180 180" width="190" height="190" role="img" aria-label="Tickets by stand">' + arcs + '<text x="90" y="86" text-anchor="middle" font-size="30" font-weight="800" fill="currentColor">' + total + '</text><text x="90" y="108" text-anchor="middle" font-size="13" fill="currentColor" opacity=".7">tickets</text></svg>';
+    }
+    function bars(rows, value, label, color) {
+      var max = Math.max.apply(null, rows.map(value).concat([1]));
+      return rows.length ? rows.map(function (r) { return '<div class="ts-bar"><span class="t" title="' + esc(r.name) + '">' + esc(r.name) + '</span><span class="track"><i style="width:' + (value(r) / max * 100) + '%;background:' + (color ? color(r) : '#1C3F7A') + '"></i></span><span class="v">' + label(r) + '</span></div>'; }).join('')
+        : '<p class="ts-empty">No sales yet.</p>';
+    }
+    function stacked(m) {
+      var max = m._max || 1;
+      return '<div class="ts-bar"><span class="t" title="' + esc(m.name) + '">' + esc(m.name.replace('Lobi Stars FC vs ', 'v ')) + '</span><span class="track">' +
+        m.tiers.map(function (t) { return '<i style="width:' + ((t.kobo || 0) / max * 100) + '%;background:' + COL[t.tier] + '" title="' + esc(t.label) + ': ' + naira(t.kobo) + '"></i>'; }).join('') + '</span><span class="v">' + naira(m.kobo) + '</span></div>';
+    }
+
+    function draw(d) {
+      var T = d.totals;
+      if (!picked) { picked = true; $('evPick').innerHTML = '<option value="">All home matches</option>' + d.matches.filter(function (m) { return m.date; }).map(function (m) { return '<option value="' + esc(m.id) + '"' + (m.id === ev ? ' selected' : '') + '>' + esc(m.name) + ' · ' + esc(when(m.date).split(',')[0]) + '</option>'; }).join(''); }
+      $('kMoney').textContent = naira(T.kobo);
+      $('kMoneySub').textContent = d.event ? 'this match, paid online' : 'all home matches, paid online';
+      $('kTickets').textContent = T.tickets.toLocaleString('en-NG');
+      $('kTicketsSub').textContent = d.tiers.map(function (t) { return t.label.split(' ')[0] + ' ' + t.tickets; }).join(' · ');
+      $('kBuyers').textContent = T.buyers.toLocaleString('en-NG');
+      $('kConv').textContent = T.checkouts ? Math.round(T.paidCheckouts / T.checkouts * 100) + '%' : '–';
+      $('kConvSub').textContent = T.paidCheckouts + ' paid of ' + T.checkouts + ' started' + (T.payingNow ? ' · ' + T.payingNow + ' paying right now' : '');
+      $('donut').innerHTML = donut(d.tiers, T.tickets);
+      $('legend').innerHTML = d.tiers.map(function (t) { return '<li><i style="background:' + COL[t.tier] + '"></i><b>' + esc(t.label) + '</b><b>' + t.percent + '%</b><small>' + t.tickets + ' ticket' + (t.tickets === 1 ? '' : 's') + ' · ' + naira(t.kobo) + '</small></li>'; }).join('');
+      var ms = d.matches.filter(function (m) { return m.date; });
+      var mx = Math.max.apply(null, ms.map(function (m) { return m.kobo; }).concat([1]));
+      ms.forEach(function (m) { m._max = mx; });
+      $('matchBars').innerHTML = ms.length ? ms.map(stacked).join('') + '<p class="ts-note">Colours: <b style="color:var(--vip)">VIP Sitting</b> · <b style="color:var(--grand)">Grand Stand</b> · <b style="color:var(--popular)">Popular Stand</b></p>' : '<p class="ts-empty">No home matches.</p>';
+      var cell = function (m, i) { var t = m.tiers[i]; return '<td>' + t.tickets + (m.tickets ? '<span class="ts-pct">' + Math.round(t.tickets / m.tickets * 100) + '%</span>' : '') + '<br><small>' + naira(t.kobo) + '</small></td>'; };
+      $('matchRows').innerHTML = ms.map(function (m) { return '<tr><td><b>' + esc(m.name) + '</b><br><small>' + esc(when(m.date)) + '</small></td>' + cell(m, 0) + cell(m, 1) + cell(m, 2) + '<td><b>' + m.tickets + '</b></td><td><b>' + naira(m.kobo) + '</b></td></tr>'; }).join('');
+      var all = d.matches.reduce(function (a, m) { a.t += m.tickets; a.k += m.kobo; return a; }, { t: 0, k: 0 });
+      $('matchFoot').innerHTML = '<tr><td>All home matches</td><td>' + d.matches.reduce(function (s, m) { return s + m.tiers[0].tickets; }, 0) + '</td><td>' + d.matches.reduce(function (s, m) { return s + m.tiers[1].tickets; }, 0) + '</td><td>' + d.matches.reduce(function (s, m) { return s + m.tiers[2].tickets; }, 0) + '</td><td>' + all.t + '</td><td>' + naira(all.k) + '</td></tr>';
+      $('sources').innerHTML = bars(d.sources, function (r) { return r.tickets; }, function (r) { return r.tickets + ' · ' + naira(r.kobo); });
+      $('places').innerHTML = bars(d.places.map(function (r) { return { name: r.city ? r.city + ', ' + r.region : r.region, tickets: r.tickets }; }), function (r) { return r.tickets; }, function (r) { return r.tickets; }, function () { return '#0E7A26'; });
+      $('devices').innerHTML = bars(d.devices, function (r) { return r.tickets; }, function (r) { return r.tickets; }, function () { return '#7C3AED'; });
+      var dm = Math.max.apply(null, d.daily.map(function (x) { return x.tickets; }).concat([1]));
+      $('daily').innerHTML = d.daily.length ? '<svg viewBox="0 0 ' + (d.daily.length * 34 + 10) + ' 170" width="100%" height="190" role="img" aria-label="Tickets sold per day">' + d.daily.map(function (x, i) { var h = x.tickets / dm * 120; return '<rect x="' + (i * 34 + 8) + '" y="' + (140 - h) + '" width="24" height="' + h + '" rx="4" fill="#1C3F7A"><title>' + x.day + ': ' + x.tickets + ' tickets, ' + naira(x.kobo) + '</title></rect><text x="' + (i * 34 + 20) + '" y="' + (134 - h) + '" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">' + x.tickets + '</text><text x="' + (i * 34 + 20) + '" y="158" text-anchor="middle" font-size="10" fill="currentColor" opacity=".7">' + x.day.slice(8) + '/' + x.day.slice(5, 7) + '</text>'; }).join('') + '</svg>' : '<p class="ts-empty">No sales yet.</p>';
+      var fresh = seen ? d.recent.filter(function (r) { return !seen.has(r.id); }) : [];
+      seen = new Set(d.recent.map(function (r) { return r.id; }));
+      $('recent').innerHTML = d.recent.length ? d.recent.map(function (r) { return '<tr' + (fresh.some(function (f) { return f.id === r.id; }) ? ' class="is-new"' : '') + '><td>' + esc(when(r.at)) + '</td><td>' + esc(r.match) + '</td><td>' + esc(r.buyer) + '</td><td>' + esc(r.tier) + '</td><td>' + r.qty + '</td><td><b>' + naira(r.kobo) + '</b></td><td>' + esc(r.source) + '</td><td>' + esc(r.place) + '</td></tr>'; }).join('') : '<tr><td colspan="8" class="ts-empty">No purchases yet.</td></tr>';
+      $('liveText').textContent = 'Live · updated ' + new Date(d.at).toLocaleTimeString('en-GB', { timeZone: 'Africa/Lagos' }) + ' · refreshes every 15 seconds' + (fresh.length ? ' · ' + fresh.length + ' new purchase' + (fresh.length === 1 ? '' : 's') : '');
+    }
+    function load() {
+      LA.api('/api/admin/tickets/sales' + (ev ? '?event=' + encodeURIComponent(ev) : '')).then(function (r) {
+        if (!r.ok) { $('liveText').textContent = r.d.error || 'Could not load the sales.'; return; }
+        draw(r.d);
+      });
+    }
+    $('evPick').addEventListener('change', function () { ev = this.value; seen = null; history.replaceState(null, '', ev ? '?event=' + encodeURIComponent(ev) : location.pathname); load(); });
+    load();
+    setInterval(function () { if (document.visibilityState === 'visible') load(); }, 15000);
+  })();
+</script>
