@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Cloudflare Workers Paid plan is active
+
+**Who it affects:** everyone.
+- The club upgraded to Cloudflare Workers Paid (US$5/month). Checked live:
+  requests using 47–71 ms now complete, where the free plan cut them off at
+  10 ms.
+- The free plan's limits no longer apply:
+  - 10 ms of computing per request (the cause of the 2 Nov outage);
+  - 5 million database reads a day (the cause of the 22 Oct outage).
+- The compressed server build stays: it also makes pages start faster.
+
 ## 2026-11-03: Kitchen app: "Awaiting payment" box
 
 **Who it affects:** kitchen staff.
