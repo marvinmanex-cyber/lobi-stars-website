@@ -672,7 +672,8 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   function setPayWording(nSel, total) {
     var free = !!nSel && total === 0;
     $('payText').textContent = free ? 'Click to download' : nSel ? 'Pay ' + naira(total) + ' with Paystack' : 'Pay with Paystack';
-    $('payIcoLock').hidden = free; $('payIcoDl').hidden = !free;
+    // (SVG icons: the hidden ATTRIBUTE, not the .hidden property, which SVG elements don't have.)
+    $('payIcoLock').toggleAttribute('hidden', free); $('payIcoDl').toggleAttribute('hidden', !free);
     $('paySub').hidden = free; $('freeNote').hidden = !free;
     $('payBy').textContent = free ? 'Free tickets are issued at once.' : 'Handled securely by Paystack.';
     if (free && $('tkRewards')) $('tkRewards').hidden = true;
