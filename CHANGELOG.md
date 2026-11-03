@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Partners page: new "Why partner with Lobi Stars" design
+
+- The four reasons to partner on /partners now each have their own club colour
+  (red, gold, navy and green), an icon, a large number and clearer text, with
+  a short line under the heading. The text still comes from Admin › Partners
+  (Why partner), so editing it there works as before; a new reason gets the
+  next colour and a star icon.
+
 ## 2026-11-03: Ropajo Hotels joins as Official Hotel Partner; three partners removed
 
 - **Ropajo Hotels & Apartments** (Lobi Quarters, Makurdi) is now the

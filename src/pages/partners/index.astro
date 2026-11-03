@@ -14,6 +14,16 @@ const LOGO_SIZE: Record<string, 'principal' | 'kit' | 'club' | 'small'> = {
   'Official Suppliers': 'club', 'Media & Broadcast Partners': 'small', 'Institutional & Community Partners': 'small',
 };
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+// "Why partner" cards: each in its own club colour, with an icon picked from its title
+// (benefits are edited in the admin, so unknown titles get the star).
+const WHY_ICONS: [RegExp, string][] = [
+  [/stadium|pitch|board|sign/i, '<path d="M3 20h18M5 20V9l7-4 7 4v11M9 20v-5h6v5"/><path d="M8 11h.01M12 11h.01M16 11h.01"/>'],
+  [/community|activation|fan|matchday/i, '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 1.8 6 5.5"/>'],
+  [/digital|social|online|web/i, '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18h2"/><path d="M9.5 9.5l2 2 3.5-3.5"/>'],
+  [/media|broadcast|tv|coverage|camera/i, '<rect x="2.5" y="6" width="14" height="12" rx="2"/><path d="M16.5 10.5l5-3v9l-5-3"/>'],
+];
+const STAR = '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>';
+const whyIcon = (t: string) => (WHY_ICONS.find(([re]) => re.test(t)) ?? [, STAR])[1];
 ---
 <Layout
   title="Our Official Partners | Lobi Stars Football Club"
@@ -66,9 +76,12 @@ const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
     <section class="pp-sec" aria-labelledby="why">
       <h2 class="pp-h2" id="why">Why partner with Lobi Stars</h2>
+      <p class="pp-why-lead">Put your brand in front of the Pride of Benue's fans: in the stadium on matchdays, across Benue State and online every day.</p>
       <ul class="pp-why">
-        {PARTNERSHIP.benefits.map(b => (
-          <li>
+        {PARTNERSHIP.benefits.map((b, i) => (
+          <li class={`pp-why-${i % 4}`}>
+            <span class="pp-why-no" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+            <span class="pp-why-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={whyIcon(b.title)} /></span>
             {b.figure && <span class="pp-fig">{b.figure}<small>{b.figureLabel}</small></span>}
             <h3>{b.title}</h3>
             <p>{b.text}</p>
@@ -137,12 +150,28 @@ const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   .pp-opp-title { font: 700 19px/1.2 'Barlow Condensed', sans-serif; }
   .pp-opp-status { align-self: flex-start; padding: 4px 8px; border-radius: 3px; background: #E8F7EE; color: #17643A; font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; }
   .pp-opp .btn-p { margin-top: 6px; padding: 11px 18px; text-align: center; }
-  .pp-why { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-  .pp-why li { padding: 22px; border-radius: 12px; background: #15181D; color: #fff; }
-  .pp-why h3 { margin: 0 0 8px; font: 400 24px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #FFC72C; }
-  .pp-why p { margin: 0; color: rgba(255, 255, 255, .85); line-height: 1.6; font-size: 15px; }
-  .pp-fig { display: block; margin-bottom: 8px; font: 400 40px/1 'Bebas Neue', sans-serif; color: #fff; }
-  .pp-fig small { display: block; font: 700 11px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: rgba(255, 255, 255, .7); }
+  /* Why partner: four cards, each in its own club colour (red, gold, navy, green), with an
+     icon, a large faded number and a coloured top edge; they lift a little on hover. */
+  .pp-why-lead { margin: -6px 0 22px; max-width: 760px; font-size: 17px; line-height: 1.6; color: var(--lt); }
+  .pp-why { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 18px; }
+  .pp-why li {
+    --c1: #C8102E; --c2: #7A0A1C; --ink: #fff; --sub: rgba(255, 255, 255, .88); --chip: rgba(255, 255, 255, .16);
+    position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 26px 24px 28px; border-radius: 16px;
+    background: linear-gradient(150deg, var(--c1), var(--c2)); color: var(--ink);
+    box-shadow: 0 10px 26px -14px var(--c2); transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .pp-why li::after { content: ''; position: absolute; right: -40px; bottom: -40px; width: 140px; height: 140px; border-radius: 50%; background: rgba(255, 255, 255, .08); pointer-events: none; }
+  .pp-why li:hover { transform: translateY(-4px); box-shadow: 0 18px 34px -14px var(--c2); }
+  .pp-why .pp-why-1 { --c1: #FFD34D; --c2: #F2A900; --ink: #1A1206; --sub: #3B2C0B; --chip: rgba(26, 18, 6, .1); }
+  .pp-why .pp-why-2 { --c1: #1E3A8A; --c2: #0B1B47; }
+  .pp-why .pp-why-3 { --c1: #138A4A; --c2: #0A4F2A; }
+  .pp-why-no { position: absolute; top: 14px; right: 18px; font: 400 64px/1 'Bebas Neue', sans-serif; color: var(--ink); opacity: .16; }
+  .pp-why-ic { display: grid; place-items: center; width: 52px; height: 52px; margin-bottom: 18px; border-radius: 14px; background: var(--chip); color: var(--ink); }
+  .pp-why h3 { margin: 0 0 10px; padding-right: 44px; font: 700 23px/1.15 'Barlow Condensed', sans-serif; letter-spacing: .3px; text-transform: uppercase; color: var(--ink); }
+  .pp-why p { margin: 0; color: var(--sub); line-height: 1.6; font-size: 16px; }
+  .pp-fig { display: block; margin-bottom: 8px; font: 400 40px/1 'Bebas Neue', sans-serif; color: var(--ink); }
+  .pp-fig small { display: block; font: 700 11px/1.4 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--sub); }
+  @media (prefers-reduced-motion: reduce) { .pp-why li, .pp-why li:hover { transition: none; transform: none; } }
   .pp-brochure { margin-top: 20px; }
   .pp-dl { border: 0; border-radius: 14px; padding: 26px; width: min(520px, 92vw); box-shadow: 0 30px 80px rgba(0, 0, 0, .35); }
   .pp-dl::backdrop { background: rgba(15, 17, 21, .6); }
