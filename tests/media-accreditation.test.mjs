@@ -156,6 +156,7 @@ test('verification page: APPROVED, NOT VALID when revoked, restored with the sam
   v = await page(); assert.match(v.html, />NOT VALID</); assert.doesNotMatch(v.html, /Pitchside/, 'no zones unless approved');
   assert.match(await fetch(`${BASE}/api/media-centre/accreditations/${accId}/card`, { headers: { Cookie: S.cookie } }).then(x => x.text()), /REVOKED/);
   assert.equal((await mc(`accreditations/${accId}`, 'POST', { action: 'restore' })).status, 200);
+  assert.equal((await mc(`accreditations/${accId}`, 'POST', { action: 'delete' })).status, 403, 'only Super Admins can delete applications');
   assert.equal((await mc(`accreditations?event=${HOME}`)).data.requests.find(x => x.id === accId).number, accNumber, 'same number after restore');
   assert.match((await page()).html, />APPROVED</);
   const list = (await admin('accreditations')).data.accreditations;

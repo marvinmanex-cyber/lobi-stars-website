@@ -34,6 +34,18 @@ export async function onRequestGet({ request, env, params, data }) {
 export async function onRequestPost({ request, env, params, data }) {
   const b = await request.json().catch(() => ({}));
   const user = data.mc.user;
+  if (b.action === 'delete') {
+    // Super Admins only: remove an application (e.g. tests). Its number is never reused.
+    if (!user.admin) return json({ error: 'Only Super Admins can delete applications.' }, 403);
+    await ensureAccreditationSchema(env.DB);
+    const r = await env.DB.prepare(`SELECT * FROM mc_accreditations WHERE id = ?`).bind(params.id).first();
+    if (!r) return json({ error: 'Not found.' }, 404);
+    await env.DB.prepare(`DELETE FROM mc_accreditations WHERE id = ?`).bind(r.id).run();
+    // The press list's "matches applied" for this email.
+    await env.DB.prepare(`UPDATE mc_contacts SET applications_count = (SELECT COUNT(DISTINCT event_id) FROM mc_accreditations WHERE email = ?) WHERE email = ?`).bind(r.email, r.email).run().catch(() => {});
+    await mcLog(env.DB, mediaActor(user), 'delete', { section: 'accreditation', itemType: 'accreditation', itemId: r.id, itemTitle: `${r.full_name}${r.number ? ` (${r.number})` : ''}`, details: `Deleted (${r.status})`, request });
+    return json({ ok: true });
+  }
   if (b.action === 'revoke') { const r = await revoke(env, request, { id: user.id, name: user.fullName }, params.id, b.reason); return r.ok ? json(r) : json({ error: r.error }, 400); }
   if (b.action === 'restore') { const r = await restore(env, request, user, params.id); return r.ok ? json(r) : json({ error: r.error }, 400); }
   if (b.action === 'resend') {

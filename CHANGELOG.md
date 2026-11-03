@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Delete accreditation applications (Super Admins)
+
+**Who it affects:** Super Admins in the Media Centre.
+- Every application in Accreditation › Applications has a **Delete** button
+  for Super Admins, for example to remove test applications. It asks first and
+  cannot be undone.
+- A deleted card's number is not reused, and its QR code shows NOT FOUND.
+  Media staff can't delete; they revoke instead.
+
 ## 2026-11-03: Cloudflare Workers Paid plan is active
 
 **Who it affects:** everyone.

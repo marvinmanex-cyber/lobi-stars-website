@@ -7,7 +7,7 @@
 //   /accreditation/<id>/review/<application>  the full application: the only place to approve,
 //                                reject or ask for more (the server refuses decisions on unopened applications)
 //   (media contacts are in the Press List)
-import { api, esc, when, day, register, toast, go } from './core';
+import { api, esc, when, day, register, toast, go, state } from './core';
 import { upload, pickFile } from './files';
 
 const ST: Record<string, string> = { pending: 'New', info: 'Waiting for the applicant', approved: 'Approved', rejected: 'Rejected', revoked: 'Revoked' };
@@ -77,7 +77,7 @@ async function applicationsScreen(main: HTMLElement, event: string) {
       <td>${r.number ? `<b>${esc(r.number)}</b>${r.status === 'approved' ? `<br /><small>Zones ${esc(r.zones.join(', '))}</small>` : ''}` : ''}</td>
       <td class="mc-acts">${['pending', 'info'].includes(r.status) ? `<a class="mc-btn mc-btn-blue mc-btn-sm" href="/media-centre/accreditation/${esc(event)}/review/${esc(r.id)}/" data-go="/accreditation/${esc(event)}/review/${esc(r.id)}">Review application</a>${r.reviewedAt ? `<br /><small>Reviewed by ${esc(r.reviewedBy || '')}</small>` : ''}`
         : r.status === 'approved' ? `<a class="mc-btn mc-btn-o mc-btn-sm" href="/api/media-centre/accreditations/${esc(r.id)}/card" target="_blank" rel="noopener">View card</a> ${r.emailSentAt ? '<button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-act="resend">Resend email</button> ' : ''}<button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-act="revoke">Revoke</button>`
-        : r.status === 'revoked' ? `<a class="mc-btn mc-btn-o mc-btn-sm" href="/api/media-centre/accreditations/${esc(r.id)}/card" target="_blank" rel="noopener">View card</a> <button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-act="restore">Restore</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="mc-empty">No applications for this match yet.</td></tr>'}
+        : r.status === 'revoked' ? `<a class="mc-btn mc-btn-o mc-btn-sm" href="/api/media-centre/accreditations/${esc(r.id)}/card" target="_blank" rel="noopener">View card</a> <button class="mc-btn mc-btn-o mc-btn-sm" type="button" data-act="restore">Restore</button>` : ''}${state.user?.admin ? ` <button class="mc-btn mc-btn-o mc-btn-sm mc-danger" type="button" data-act="delete" data-name="${esc(r.fullName)}" data-number="${esc(r.number || '')}">Delete</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="mc-empty">No applications for this match yet.</td></tr>'}
     </tbody></table></div><p class="mc-small">Zones: ${d.zones.map((z: any) => `<b>${z.n}</b> ${esc(z.name)}`).join(' · ')}</p></section>`;
   const reload = () => go(`/accreditation/${event}`, true);
   main.querySelector('#send')?.addEventListener('click', async e => {
@@ -99,11 +99,12 @@ async function applicationsScreen(main: HTMLElement, event: string) {
       body.action = b.dataset.act;
       if (body.action === 'revoke') { const why = prompt('Revoke this accreditation? The QR code will show NOT VALID. Reason (optional):'); if (why === null) return; body.reason = why; }
       if (body.action === 'resend' && !confirm('Send the approval email to this person again?')) return;
+      if (body.action === 'delete' && !confirm(`Delete the application from ${b.dataset.name} permanently? This cannot be undone.${b.dataset.number ? ` The number ${b.dataset.number} will not be used again and its QR code will show NOT FOUND.` : ''}`)) return;
     }
     b.setAttribute('disabled', '');
     try {
       const r = await api(`accreditations/${id}`, { method: 'POST', body });
-      toast(body.decision === 'approve' ? `Approved: ${r.number}. Press "Send approval emails" when you are ready.` : body.decision === 'reject' ? `Rejected.${r.emailed ? ' The applicant was emailed.' : ''}` : body.decision === 'info' ? `Request sent.${r.emailed ? '' : ` Email is not set up: send them this link: ${r.link}`}` : body.action === 'revoke' ? 'Revoked.' : body.action === 'restore' ? 'Restored (same number and QR code).' : 'Email sent again.', 9000);
+      toast(body.decision === 'approve' ? `Approved: ${r.number}. Press "Send approval emails" when you are ready.` : body.decision === 'reject' ? `Rejected.${r.emailed ? ' The applicant was emailed.' : ''}` : body.decision === 'info' ? `Request sent.${r.emailed ? '' : ` Email is not set up: send them this link: ${r.link}`}` : body.action === 'delete' ? 'Application deleted.' : body.action === 'revoke' ? 'Revoked.' : body.action === 'restore' ? 'Restored (same number and QR code).' : 'Email sent again.', 9000);
       reload();
     } catch (err: any) { toast(err.message, 9000); b.removeAttribute('disabled'); }
   });

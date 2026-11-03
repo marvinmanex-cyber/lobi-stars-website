@@ -4157,6 +4157,11 @@ number.
 - Approved: **View card**, **Resend email**, **Revoke** (the QR code then
   shows NOT VALID). Revoked: **Restore** (same number and QR code).
 - The limit per match is set by a Super Admin (default 20).
+- **Delete** (Super Admins only, on every application): removes an
+  application, for example a test, permanently after you confirm.
+  - Its accreditation number is never given to anyone else, and its QR code
+    shows NOT FOUND.
+  - Each deletion is in the activity log.
 
 | Zone | Where | Ticked by default for |
 | --- | --- | --- |
