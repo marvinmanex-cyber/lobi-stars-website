@@ -8,6 +8,21 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Ropajo partner page redesigned (Lobi Stars off-white, resort style)
+
+- Back to the Lobi Stars off-white and red, with a resort touch: warm sun glow
+  and palm fronds.
+- The two logos now sit on a co-branded **hotel room key card** (Lobi Stars
+  badge and Ropajo logo, gold chip, red and gold stripe) instead of two circles.
+- Hotel name and the red "Official Hotel Partner" label are centred on phones
+  and tablets.
+- Far fewer words: one line, three short highlights (Official hotel, Club
+  guests, Shared standards), then **Together: Lobi Stars × Ropajo**, a photo
+  space for joint activities. Until photos arrive it shows four designed
+  panels marked "Photos coming soon". Photos are added in the Ropajo partner
+  file (`gallery`), or sent to the website manager.
+- A one-line note about Ropajo with a link to ropajo.com closes the page.
+
 ## 2026-11-03: Gate Control: offline mode, app, wrong gate, messages, incidents, watch list, report
 
 Free additions based on how large stadiums run their gates:

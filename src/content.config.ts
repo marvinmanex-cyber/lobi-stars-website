@@ -173,6 +173,8 @@ const partners = defineCollection({
     logoNoCard: z.boolean().default(false),
     // A partner page designed in the partner's own brand style (e.g. "ropajo" -> RopajoFeature).
     theme: z.enum(['ropajo']).nullable().optional(),
+    // Photos of joint activities (club and partner together), shown on a themed partner page.
+    gallery: z.array(z.object({ src: z.string(), caption: z.string().default('') })).default([]),
     website: z.string().nullable().optional(),
     shortDescription: z.string().default(''),
     since: z.coerce.number().int().nullable().optional(),

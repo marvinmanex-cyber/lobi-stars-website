@@ -7,14 +7,12 @@ logo: "/images/ropajo-logo.png"
 cardColor: "#1F1515"
 theme: "ropajo"
 website: "https://ropajo.com/"
-shortDescription: "Ropajo Hotels & Apartments is the Official Hotel Partner of Lobi Stars FC, welcoming the club's distinguished guests."
+shortDescription: "Where Lobi Stars FC welcomes its distinguished guests: the Official Hotel Partner of the Pride of Benue."
 since: null
 displayOrder: 2
 active: true
 ageRestricted: false
+# Photos of Lobi Stars and Ropajo together: add { src, caption } items here (files in public/images/ropajo/).
+gallery: []
 ---
-Lobi Stars FC is proud to welcome Ropajo Hotels & Apartments as its **Official Hotel Partner**.
-
-Through this partnership, Ropajo is the club's chosen hotel for its distinguished guests: dignitaries, partners, invited officials and delegations who visit Lobi Stars FC. Each guest is received with comfortable accommodation, attentive service and the warm hospitality that reflects the values of the Pride of Benue.
-
-The partnership brings together two organisations that share a commitment to excellence, professionalism and pride in the community they serve.
+Ropajo Hotels & Apartments is the Official Hotel Partner of Lobi Stars FC.
