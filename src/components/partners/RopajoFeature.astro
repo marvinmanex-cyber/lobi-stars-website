@@ -51,7 +51,7 @@ const FROND = `<path d="M20 190Q100 130 192 22" fill="none" stroke="currentColor
           </div>
           <div class="rj-key-bottom">
             <span class="rj-chip" aria-hidden="true"></span>
-            <span>Lobi Stars FC <b>&amp;</b> Ropajo Hotels</span>
+            <span class="rj-key-names"><span>Lobi Stars FC</span><b>&amp;</b><span>Ropajo Hotels</span></span>
           </div>
         </div>
         <div class="rj-key-shadow" aria-hidden="true"></div>
@@ -144,6 +144,7 @@ const FROND = `<path d="M20 190Q100 130 192 22" fill="none" stroke="currentColor
   .rj-key-line { width: 2px; height: 70px; border-radius: 1px; background: linear-gradient(var(--red), var(--gold)); }
   .rj-key-ropajo { width: 126px; height: auto; }
   .rj-key-bottom { display: flex; align-items: center; gap: 12px; padding-bottom: 6px; font: 400 17px/1 'Bebas Neue', sans-serif; letter-spacing: 1.5px; }
+  .rj-key-names { display: inline-flex; align-items: baseline; gap: .55em; }
   .rj-key-bottom b { color: var(--gold); font-weight: 400; }
   .rj-chip { width: 34px; height: 26px; border-radius: 6px; background: linear-gradient(135deg, #f7d77a, #c9971a); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .25); position: relative; }
   .rj-chip::before { content: ''; position: absolute; inset: 6px 10px; border: 1px solid rgba(0, 0, 0, .3); border-radius: 3px; }
