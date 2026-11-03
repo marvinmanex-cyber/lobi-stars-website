@@ -462,8 +462,9 @@ then goes to /partners (Benue Links, Jumia and BIPC were removed this way on
 **Ropajo Hotels (Official Hotel Partner)** has its own page designed in
 Ropajo's brand colours and font, set by the web team with `theme: "ropajo"` in
 its partner file (the design is in
-`src/components/partners/RopajoFeature.astro`, including its address, phone
-numbers and photos). Editing its name, short description or logo in the admin
+`src/components/partners/RopajoFeature.astro`). It is a partnership page in the
+same layout as the others, with a touch of Ropajo's style; the partnership
+text is the body of its partner file. Editing its name, short description or logo in the admin
 works as usual; ask the web team to change anything else on that page.
 
 **Partnership Opportunities:** the categories you're offering to new sponsors

@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Ropajo partner page redesigned as a partnership page
+
+- /partners/ropajo/ now follows the same layout as the other partner pages
+  (logo, tier, name, official title, description, Visit website button) and is
+  about the partnership: the Lobi Stars badge beside the Ropajo logo, a "The
+  partnership" section (Official Hotel Partner, Rooted in Lobi Quarters, A base
+  for visiting fans) and a short "About our partner" note with three photos
+  and a link to ropajo.com. It keeps a touch of Ropajo's style (espresso brown,
+  cream, their serif headings) next to the club's own fonts. The hotel-style
+  sections, phone numbers and email were taken off.
+- The partnership text is in the Ropajo partner file; send the website
+  manager what the club and Ropajo are doing together to fill it in.
+
 ## 2026-11-03: Partners page: new "Why partner with Lobi Stars" design
 
 - The four reasons to partner on /partners now each have their own club colour

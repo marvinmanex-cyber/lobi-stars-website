@@ -13,4 +13,6 @@ displayOrder: 2
 active: true
 ageRestricted: false
 ---
-Ropajo Hotels & Apartments is the Official Hotel Partner of Lobi Stars FC. Right in Lobi Quarters, Makurdi, Ropajo brings a touch of luxury and creativity to every stay, with rooms and apartments, a pool, a restaurant and a coffee space.
+Lobi Stars FC and Ropajo Hotels & Apartments have joined together, with Ropajo as the club's **Official Hotel Partner**. Both are proud Makurdi names, and Ropajo's home in Lobi Quarters makes it a natural partner for the Pride of Benue.
+
+Through the partnership, Ropajo welcomes the club's guests, partners and fans travelling to Makurdi for home matches at McCarthy Stadium. News about the partnership will appear on this page.
