@@ -12,12 +12,17 @@ const { partner } = Astro.props;
 const p = partner.data;
 const site = website(partner) ?? 'https://ropajo.com/';
 const pillars = [
-  { title: 'Official Hotel Partner', text: 'Ropajo Hotels is the official hotel of Lobi Stars FC, the Pride of Benue.',
+  { title: 'Official Hotel Partner', text: 'The chosen hotel of Lobi Stars FC for accommodation and hospitality.',
     icon: '<path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01"/>' },
-  { title: 'Rooted in Lobi Quarters', text: 'Two Makurdi names, one home: Ropajo sits in Lobi Quarters, Makurdi.',
-    icon: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>' },
-  { title: 'A base for visiting fans', text: 'Coming to Makurdi for a home match? Ropajo is the club’s recommended place to stay.',
-    icon: '<path d="M4 20v-8a8 8 0 0 1 16 0v8"/><path d="M4 16h16M9 20v-4M15 20v-4"/>' },
+  { title: 'Hosting distinguished guests', text: 'Dignitaries, partners and invited guests of the club are received with comfort, care and discretion.',
+    icon: '<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.8z"/>' },
+  { title: 'Shared standards', text: 'A common commitment to excellence, professionalism and genuine hospitality, on and off the pitch.',
+    icon: '<path d="M8 12l3 3 5-6"/><circle cx="12" cy="12" r="9"/>' },
+];
+const tiles = [
+  { tone: 'cream', title: 'Rooms & Suites', icon: '<path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 18h18M3 21v-3M21 21v-3"/><path d="M6 10V7a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3M12 10V7a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/>' },
+  { tone: 'wine', title: 'Fine Dining', icon: '<path d="M7 3v8a2 2 0 0 0 2 2v8M5 3v5M9 3v5M17 21V3c-2 1-3 4-3 7h3"/>' },
+  { tone: 'dark', title: 'Leisure', icon: '<path d="M2 18c2 1.3 3.5 1.3 5 0s3-1.3 5 0 3.5 1.3 5 0 3-1.3 5 0M6 15V6a2 2 0 0 1 4 0M14 15V6a2 2 0 0 1 4 0M6 9h8M6 12h8"/>' },
 ];
 ---
 <div class="rj">
@@ -60,13 +65,18 @@ const pillars = [
       <div class="rj-about-text">
         <p class="rj-caps">About our partner</p>
         <h2 class="rj-h2 rj-h2--light" id="rj-about-h">Ropajo Hotels &amp; Apartments</h2>
-        <p>Rooms and apartments, a pool, a restaurant serving local and intercontinental dishes, and a coffee space, at 9 Gondo Aluor Road, Lobi Quarters, Makurdi.</p>
+        <p>Ropajo Hotels &amp; Apartments offers well-appointed rooms and apartments, a pool, a restaurant serving local and intercontinental cuisine, and a relaxed coffee lounge, with a focus on comfort and attentive service.</p>
         <a class="rj-btn rj-btn--cream" href={site} target="_blank" rel="sponsored noopener">Go to ropajo.com<span class="sr-only"> (opens in a new tab)</span></a>
       </div>
-      <div class="rj-photos">
-        <img src="/images/ropajo/apartment.webp" alt="The living room of a Ropajo apartment" width="900" height="1200" loading="lazy" decoding="async" />
-        <img src="/images/ropajo/pool.webp" alt="The pool at Ropajo Hotels" width="1200" height="957" loading="lazy" decoding="async" />
-        <img src="/images/ropajo/restaurant.webp" alt="The Ropajo Hotels restaurant" width="900" height="1200" loading="lazy" decoding="async" />
+      {/* Picture spaces: designed panels until the club's own photos arrive (swap each for an <img>). */}
+      <div class="rj-photos" aria-hidden="true">
+        {tiles.map(t => (
+          <div class={`rj-tile rj-tile--${t.tone}`}>
+            <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" set:html={t.icon} />
+            <span class="rj-tile-k">Ropajo</span>
+            <span class="rj-tile-t">{t.title}</span>
+          </div>
+        ))}
       </div>
     </div>
   </section>
@@ -113,8 +123,15 @@ const pillars = [
   .rj-about-in { display: grid; grid-template-columns: minmax(260px, 1fr) 1.5fr; gap: 40px; align-items: center; }
   .rj-about-text p:not(.rj-caps) { margin: 0 0 24px; font-size: 17px; line-height: 1.7; color: rgba(253, 240, 213, .85); }
   .rj-photos { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
-  .rj-photos img { width: 100%; height: 260px; object-fit: cover; border-radius: 12px; display: block; }
-  .rj-photos img:nth-child(2) { margin-top: 28px; }
+  .rj-tile { position: relative; overflow: hidden; height: 260px; border-radius: 14px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 22px 18px;
+    border: 1px solid rgba(253, 240, 213, .18); color: var(--rj-cream);
+    background: repeating-linear-gradient(135deg, rgba(253, 240, 213, .05) 0 1px, transparent 1px 14px), linear-gradient(160deg, #3A2723, var(--rj-espresso)); }
+  .rj-tile svg { position: absolute; top: 22px; left: 18px; opacity: .9; }
+  .rj-tile::after { content: ''; position: absolute; right: -36px; top: -36px; width: 120px; height: 120px; border-radius: 50%; border: 1px solid currentColor; opacity: .18; }
+  .rj-tile--cream { color: var(--rj-espresso); background: repeating-linear-gradient(135deg, rgba(31, 21, 21, .05) 0 1px, transparent 1px 14px), linear-gradient(160deg, var(--rj-cream), var(--rj-cream-2)); border-color: transparent; }
+  .rj-tile--wine { background: repeating-linear-gradient(135deg, rgba(253, 240, 213, .06) 0 1px, transparent 1px 14px), linear-gradient(160deg, #9A1530, var(--rj-wine)); border-color: transparent; margin-top: 28px; }
+  .rj-tile-k { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .3em; text-transform: uppercase; opacity: .7; }
+  .rj-tile-t { font: 600 24px/1.1 var(--rj-serif); }
 
   @media (max-width: 900px) { .rj-pillars { grid-template-columns: 1fr; } .rj-about-in { grid-template-columns: 1fr; } }
   @media (max-width: 760px) {
@@ -123,6 +140,6 @@ const pillars = [
     .rj-badge { width: 76px; } .rj-logo { width: 120px; }
     .rj-btn { width: 100%; }
     .rj-part { padding: 44px 0 48px; } .rj-about { padding: 44px 0 48px; }
-    .rj-photos img { height: 160px; } .rj-photos img:nth-child(2) { margin-top: 0; }
+    .rj-photos { grid-template-columns: 1fr; } .rj-tile { height: 104px; justify-content: center; } .rj-tile svg { top: 50%; left: auto; right: 22px; transform: translateY(-50%); } .rj-tile--wine { margin-top: 0; }
   }
 </style>

@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Ropajo partner page: new wording, no website photos
+
+- The Ropajo page text was rewritten: Ropajo is presented as the club's chosen
+  hotel for its distinguished guests (dignitaries, partners, invited officials
+  and delegations). The three cards are now Official Hotel Partner, Hosting
+  distinguished guests and Shared standards. Makurdi and Lobi Quarters are no
+  longer mentioned on the page.
+- The photos taken from ropajo.com were removed. Until the club's own photos
+  arrive, three designed panels (Rooms & Suites, Fine Dining, Leisure) in
+  Ropajo's colours fill the picture spaces.
+
 ## 2026-11-03: Ropajo partner page redesigned as a partnership page
 
 - /partners/ropajo/ now follows the same layout as the other partner pages
