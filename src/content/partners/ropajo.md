@@ -7,7 +7,7 @@ logo: "/images/ropajo-logo.png"
 cardColor: "#1F1515"
 theme: "ropajo"
 website: "https://ropajo.com/"
-shortDescription: "Where Lobi Stars FC welcomes its distinguished guests: the Official Hotel Partner of the Pride of Benue."
+shortDescription: "Where Lobi Stars FC welcomes its distinguished guests. The Official Hotel Partner of the Pride of Benue."
 since: null
 displayOrder: 2
 active: true

@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Ropajo page wording
+
+- The line under the title now reads "Where Lobi Stars FC welcomes its
+  distinguished guests. The Official Hotel Partner of the Pride of Benue."
+- No "×" between Lobi Stars FC and Ropajo anywhere: the key card and the
+  Together heading use "&".
+
 ## 2026-11-03: Ropajo partner page redesigned (Lobi Stars off-white, resort style)
 
 - Back to the Lobi Stars off-white and red, with a resort touch: warm sun glow
@@ -17,7 +24,7 @@ in HANDOVER-TODO.md.
 - Hotel name and the red "Official Hotel Partner" label are centred on phones
   and tablets.
 - Far fewer words: one line, three short highlights (Official hotel, Club
-  guests, Shared standards), then **Together: Lobi Stars × Ropajo**, a photo
+  guests, Shared standards), then **Together: Lobi Stars & Ropajo**, a photo
   space for joint activities. Until photos arrive it shows four designed
   panels marked "Photos coming soon". Photos are added in the Ropajo partner
   file (`gallery`), or sent to the website manager.
