@@ -5,12 +5,18 @@
 // with strict security headers (camera allowed on this page only). Separate
 // from the website admin: its own staff, sign-in and cookie.
 import '../../styles/gateControl.css';
+import { readFileSync } from 'node:fs';
+// The club badge is built into the page (about 10 KB) so it always shows, even when the app opens offline.
+const BADGE = `data:image/webp;base64,${readFileSync('public/images/lobi-stars-badge.webp').toString('base64')}`;
 const I = {
   scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="4" height="4"/><rect x="13" y="7" width="4" height="4"/><rect x="7" y="13" width="4" height="4"/><path d="M13 13h1.5v1.5M17 17h-1.5v-1.5M13 17h1"/>',
   today: '<path d="M3 21h18"/><rect x="5" y="11" width="3" height="7"/><rect x="10.5" y="6" width="3" height="12"/><rect x="16" y="9" width="3" height="9"/>',
   activity: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   staff: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.2A5 5 0 0 1 22 19"/>',
   out: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+  alert: '<path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18v.5"/>',
+  torch: '<path d="M8 2h8l-1 6H9L8 2z"/><path d="M9 8h6v4l-1 10h-4L9 12V8z"/><path d="M12 13v3"/>',
+  flip: '<path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/>',
   pin: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
 };
 const svg = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -29,14 +35,15 @@ const svg = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="current
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Gate Control | Lobi Stars FC</title>
   <link rel="icon" type="image/png" href="/images/lobi-stars-badge.png" />
-  <link rel="apple-touch-icon" href="/images/lobi-stars-badge.png" />
+  <link rel="apple-touch-icon" href="/images/gate-control/icon-192.png" />
+  <link rel="manifest" href="/gate-control.webmanifest" />
 </head>
 <body>
   <!-- Sign in -->
   <section class="gc-center" id="signin" hidden>
     <form class="gc-card" id="signinForm" novalidate>
       <div class="gc-brand">
-        <img src="/images/lobi-stars-badge.png" alt="Lobi Stars FC badge" width="58" height="58" />
+        <img src={BADGE} alt="Lobi Stars FC badge" width="58" height="58" />
         <div><h1>Gate Control</h1><p class="gc-caps">Lobi Stars FC · Ticket Stewards</p></div>
       </div>
       <p class="gc-err" id="signinErr" role="alert" hidden></p>
@@ -71,13 +78,15 @@ const svg = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="current
   <!-- The app -->
   <div id="app" hidden>
     <header class="gc-top">
-      <img src="/images/lobi-stars-badge.png" alt="" width="36" height="36" />
+      <img src={BADGE} alt="" width="36" height="36" />
       <div class="gc-top-t"><b>Gate Control</b><small id="who"></small></div>
       <span class="gc-spacer"></span>
+      <span class="gc-net" id="netChip" role="status" hidden></span>
       <button type="button" class="gc-chip" id="gateChip" aria-label="Change gate"><Fragment set:html={svg(I.pin)} /><span id="gateName"></span></button>
       <button type="button" class="gc-icon" id="signoutBtn" aria-label="Sign out"><Fragment set:html={svg(I.out)} /></button>
     </header>
 
+    <div class="gc-msgs" id="msgs" aria-live="assertive"></div>
     <main class="gc-main">
       <!-- Scan -->
       <section id="v-scan" aria-labelledby="scanH">
@@ -96,6 +105,10 @@ const svg = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="current
           <div class="gc-cam" id="cam" hidden>
             <div id="reader"></div>
             <p class="gc-cam-tip">Hold the ticket's QR code inside the square</p>
+            <div class="gc-cam-tools">
+              <button type="button" class="gc-icon" id="torchBtn" hidden aria-pressed="false" aria-label="Torch"><Fragment set:html={svg(I.torch)} /></button>
+              <button type="button" class="gc-icon" id="flipBtn" hidden aria-label="Switch camera"><Fragment set:html={svg(I.flip)} /></button>
+            </div>
           </div>
           <p class="gc-scanner" id="scannerHint"><span class="gc-scanner-dot" aria-hidden="true"></span><span id="scannerText"><b>Wireless or USB scanner?</b> Just scan: the result shows here. Keep this page open and in front.</span></p>
           <button type="button" class="gc-btn red huge wide" id="camBtn"><Fragment set:html={svg(I.scan)} /><span id="camLbl">Scan ticket</span></button>
@@ -108,13 +121,44 @@ const svg = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="current
           </form>
           <p class="gc-hint">The 12 letters and numbers after LS-TIX- on the ticket. For a season ticket, type the whole number (LS-SZN-…).</p>
           <div class="gc-count"><span id="myRefused"></span><span id="lastAt"></span></div>
+          <div class="gc-panel gc-recent" id="recentBox" hidden><p class="gc-caps" style="margin:0 0 4px">My last scans</p><ul class="gc-list" id="recentList"></ul></div>
+          <p class="gc-hint" id="offlineInfo"></p>
         </div>
       </section>
 
       <!-- Today -->
       <section id="v-today" hidden aria-labelledby="todayH">
         <div class="gc-h"><h2 id="todayH">Today at the gates</h2><span class="gc-caps" id="todayAt"></span></div>
+        <div class="gc-panel" id="supBox" hidden>
+          <p class="gc-caps" style="margin:0 0 8px">Supervisor: message every steward</p>
+          <form id="msgForm" novalidate>
+            <p class="gc-err" id="msgErr" hidden></p>
+            <div class="gc-field"><label for="msgText">Message</label><input class="gc-input" id="msgText" maxlength="240" placeholder="e.g. Gate C closed: send fans to Main Gate" autocomplete="off" /></div>
+            <div class="gc-row2">
+              <div class="gc-field"><label for="msgGate">Send to</label><select class="gc-input" id="msgGate"></select></div>
+              <div class="gc-field"><label for="msgHours">Show for</label><select class="gc-input" id="msgHours"><option value="0.5">30 minutes</option><option value="1">1 hour</option><option value="3" selected>3 hours</option><option value="8">All day</option></select></div>
+            </div>
+            <button class="gc-btn gold wide" type="submit">Send message</button>
+          </form>
+          <ul class="gc-list" id="supMsgs" style="margin-top:10px"></ul>
+          <div class="gc-row-btns"><a class="gc-btn ghost" id="reportBtn" href="/api/gate-control/report" download>Download today's report (CSV)</a></div>
+        </div>
         <div id="todayBody"><p class="gc-empty">Loading…</p></div>
+      </section>
+
+      <!-- Incidents -->
+      <section id="v-incidents" hidden aria-labelledby="incH">
+        <div class="gc-h"><h2 id="incH">Incidents</h2><span class="gc-caps" id="incCount"></span></div>
+        <form class="gc-panel" id="incForm" novalidate>
+          <p class="gc-caps" style="margin:0 0 10px">Report an incident at your gate</p>
+          <p class="gc-err" id="incErr" hidden></p>
+          <div class="gc-field"><label for="incCat">What happened</label><select class="gc-input" id="incCat"></select></div>
+          <div class="gc-field"><label for="incText">Details (who, where, what was done)</label><textarea class="gc-input" id="incText" maxlength="1000"></textarea></div>
+          <div class="gc-field"><label for="incTicket">Ticket number (if any)</label><input class="gc-input" id="incTicket" maxlength="40" autocomplete="off" autocapitalize="characters" /></div>
+          <button type="submit" class="gc-btn red wide">Report</button>
+          <p class="gc-hint">Emergency? Call for help first, then report it here. Supervisors see every report straight away.</p>
+        </form>
+        <div class="gc-panel"><p class="gc-caps" style="margin:0 0 4px" id="incListT">Today's reports</p><ul class="gc-list" id="incList"></ul></div>
       </section>
 
       <!-- Activity -->
@@ -141,12 +185,21 @@ const svg = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="current
           <textarea class="gc-input" id="gatesText" aria-label="Gates, one per line"></textarea>
           <button type="button" class="gc-btn red" id="gatesSave" style="margin-top:10px">Save gates</button>
         </div>
+        <div class="gc-panel">
+          <h3 style="font-size:26px;margin-bottom:8px">Which stands each gate is for</h3>
+          <p class="gc-note" style="margin:0 0 10px">Tick the stands a gate lets in. A ticket for another stand is shown <b>WRONG GATE</b> with where to send the fan (stewards can still press "Admit here anyway"). A gate with nothing ticked lets in every stand.</p>
+          <p class="gc-ok" id="standsOk" hidden>Saved.</p>
+          <p class="gc-err" id="standsErr" hidden></p>
+          <div id="standsGrid" class="gc-stands"></div>
+          <button type="button" class="gc-btn red" id="standsSave" style="margin-top:10px">Save</button>
+        </div>
       </section>
     </main>
 
     <nav class="gc-tabs" aria-label="Gate Control">
       <button type="button" class="gc-tab" data-view="scan" aria-current="page"><Fragment set:html={svg(I.scan)} />Scan</button>
       <button type="button" class="gc-tab" data-view="today"><Fragment set:html={svg(I.today)} />Today</button>
+      <button type="button" class="gc-tab" data-view="incidents"><Fragment set:html={svg(I.alert)} />Incidents<span class="gc-badge" id="incBadge" hidden></span></button>
       <button type="button" class="gc-tab" data-view="activity"><Fragment set:html={svg(I.activity)} />Activity</button>
       <button type="button" class="gc-tab" data-view="staff" id="staffTab" hidden><Fragment set:html={svg(I.staff)} />Staff</button>
     </nav>

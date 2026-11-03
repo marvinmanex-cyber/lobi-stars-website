@@ -1,0 +1,16 @@
+{
+  "id": "/gate-control/",
+  "name": "Gate Control – Lobi Stars FC",
+  "short_name": "Gate Control",
+  "description": "Ticket stewards: scan and check in Lobi Stars FC match tickets.",
+  "start_url": "/gate-control/",
+  "scope": "/gate-control/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c0f14",
+  "theme_color": "#0c0f14",
+  "icons": [
+    { "src": "/images/gate-control/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/images/gate-control/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -10,7 +10,12 @@ const dayOnly = (iso?: string | null) => iso ? new Date(iso).toLocaleDateString(
 const naira = (k?: number | null) => k == null ? '—' : `₦${Math.round(k / 100).toLocaleString('en-NG')}`;
 const todayLagos = () => new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
 
-const S: { csrf: string; user: any; perms: any; gates: string[] } = { csrf: '', user: null, perms: {}, gates: [] };
+const S: { csrf: string; user: any; perms: any; gates: string[]; incidentTypes: Record<string, string> } = { csrf: '', user: null, perms: {}, gates: [], incidentTypes: {} };
+// Small saved values on this phone (the offline list, unsent check-ins, the last session).
+const LS = { get: (k: string, d: any) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set: (k: string, v: any) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* full or blocked */ } },
+  del: (k: string) => { try { localStorage.removeItem(k); } catch { /* blocked */ } } };
+let netDown = false;
 
 class ApiError extends Error { status: number; data: any; constructor(m: string, status: number, data: any) { super(m); this.status = status; this.data = data; } }
 async function api(path: string, { method = 'GET', body, quiet = false }: { method?: string; body?: any; quiet?: boolean } = {}) {
@@ -19,7 +24,8 @@ async function api(path: string, { method = 'GET', body, quiet = false }: { meth
   if (body) headers['Content-Type'] = 'application/json';
   let r: Response;
   try { r = await fetch(`/api/gate-control/${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store', credentials: 'same-origin' }); }
-  catch { throw new ApiError('No connection. Check the phone’s data or Wi-Fi and try again.', 0, {}); }
+  catch { netDown = true; setNet(); throw new ApiError('No connection. Check the phone’s data or Wi-Fi and try again.', 0, {}); }
+  if (netDown) { netDown = false; setNet(); }
   const d = await r.json().catch(() => ({}));
   if (r.status === 401 && d.signedOut) { showSignIn(S.csrf ? 'You were signed out. Please sign in again.' : ''); throw new ApiError(d.error || 'Signed out', 401, d); }
   if (!r.ok) throw new ApiError(d.error || 'Something went wrong. Please try again.', r.status, d);
@@ -42,8 +48,12 @@ async function boot() {
   try {
     const d = await api('session', { quiet: true });
     Object.assign(S, d);
+    LS.set('gc_sess', { csrf: d.csrf, user: d.user, perms: d.perms, gates: d.gates, incidentTypes: d.incidentTypes });
     if (!S.user.gate) showGatePick(false); else showApp();
   } catch (e: any) {
+    // No signal when the app opens: carry on with the last session on this phone (offline list).
+    const saved = LS.get('gc_sess', null);
+    if (e.status === 0 && saved?.user?.gate) { Object.assign(S, saved); showApp(); toast('No signal: working offline'); setTimeout(retryImages, 800); return; }
     if (e.status !== 401) showSignIn(e.message);
   }
 }
@@ -87,9 +97,12 @@ $('gateList').addEventListener('click', async (ev: Event) => {
 $('gateCancel').addEventListener('click', () => showApp());
 $('gateChip').addEventListener('click', () => showGatePick(true));
 $('signoutBtn').addEventListener('click', async () => {
+  if (queue.length) { await syncQueue(); }
+  if (queue.length) { alert(`${queue.length} offline check-in${queue.length === 1 ? ' has' : 's have'} not been sent yet. Stay signed in until the signal returns, then sign out.`); return; }
   if (!confirm('Sign out of Gate Control?')) return;
   try { await api('logout', { method: 'POST' }); } catch { /* signed out anyway */ }
   S.csrf = ''; S.user = null;
+  LS.del('gc_sess'); LS.del('gc_pack'); LS.del('gc_used'); usePack(null); usedLocal = new Set();
   showSignIn();
 });
 
@@ -102,9 +115,105 @@ async function loadCounts() {
     $('cMe').textContent = String(c.me); $('cGate').textContent = String(c.gate.admitted); $('cAll').textContent = String(c.total);
     $('cGateL').textContent = c.gate.name || 'This gate';
     $('myRefused').textContent = c.meRefused ? `You refused ${c.meRefused} today` : '';
+    renderMsgs(c.messages || []);
+    $('incBadge').hidden = !c.openIncidents; $('incBadge').textContent = String(c.openIncidents || '');
   } catch { /* keep the last numbers */ }
 }
-function startCounts() { clearInterval(countsTimer); loadCounts(); countsTimer = setInterval(() => { if (!document.hidden && view === 'scan') loadCounts(); }, 20000); }
+function startCounts() { clearInterval(countsTimer); loadCounts(); countsTimer = setInterval(() => { if (!document.hidden) loadCounts(); }, 20000); }
+
+// ── Supervisor messages on every steward's screen ──
+const seenMsg = new Set<number>(LS.get('gc_msg_seen', []));
+function renderMsgs(list: any[]) {
+  const gone = new Set<number>(LS.get('gc_msg_dismissed', []));
+  const show = list.filter(m => !gone.has(m.id));
+  $('msgs').innerHTML = show.map(m => `<div class="gc-msg" role="alert"><div><b>${esc(m.text)}</b><small>${esc(m.from || 'Supervisor')} · ${hm(m.at)} · ${m.gate ? esc(m.gate) : 'all gates'}</small></div><button type="button" data-dismiss="${m.id}">OK</button></div>`).join('');
+  const fresh = show.filter(m => !seenMsg.has(m.id));
+  if (fresh.length) { feedback('info'); navigator.vibrate?.([200, 100, 200]); fresh.forEach(m => seenMsg.add(m.id)); LS.set('gc_msg_seen', [...seenMsg].slice(-100)); }
+}
+$('msgs').addEventListener('click', (ev: Event) => {
+  const b = (ev.target as HTMLElement).closest('[data-dismiss]') as HTMLElement | null;
+  if (!b) return;
+  const gone = new Set<number>(LS.get('gc_msg_dismissed', [])); gone.add(Number(b.dataset.dismiss)); LS.set('gc_msg_dismissed', [...gone].slice(-100));
+  b.closest('.gc-msg')?.remove();
+});
+
+// ── Offline: today's ticket list kept on this phone ──
+// Stadium mobile data often fails when the crowd arrives. Each phone keeps today's tickets
+// (number, stand, child, first name, already in) and checks them itself when there is no
+// signal; offline check-ins are sent when the signal returns (anyone let in twice is flagged).
+type Row = [string, string, number, string, number];
+const STAND: Record<string, string> = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
+let pack: any = null, packMap = new Map<string, Row>(), usedLocal = new Set<string>(LS.get('gc_used', [])), queue: any[] = LS.get('gc_queue', []);
+function usePack(p: any) { pack = p; packMap = new Map((p?.tickets || []).map((r: Row) => [r[0], r])); }
+usePack(LS.get('gc_pack', null));
+const packToday = () => !!(pack?.match && new Date(Date.parse(pack.at) + 3600e3).toISOString().slice(0, 10) === todayLagos());
+async function refreshPack() {
+  try {
+    const p = await api('offline', { quiet: true });
+    usePack(p); LS.set('gc_pack', p);
+    usedLocal = new Set(queue.map((q: any) => q.ticket)); LS.set('gc_used', [...usedLocal]);
+  } catch { /* keep the saved list */ }
+  showOfflineInfo();
+}
+function showOfflineInfo() {
+  $('offlineInfo').textContent = packToday() ? `Offline list ready: ${pack.tickets.length.toLocaleString('en-GB')} tickets for ${pack.match.name} (updated ${hm(pack.at)}). Scanning carries on if the signal drops.`
+    : pack && !pack.match ? 'No Lobi Stars home match today, so there is no offline list.' : '';
+}
+function setNet() {
+  const chip = $('netChip'); if (!chip) return;
+  const off = netDown || !navigator.onLine;
+  chip.hidden = !off && !queue.length;
+  chip.classList.toggle('off', off);
+  chip.textContent = off ? `Offline${queue.length ? ` · ${queue.length}` : ''}` : `${queue.length} to send`;
+  chip.title = off ? `No signal: working from the offline list${queue.length ? `; ${queue.length} check-in${queue.length === 1 ? '' : 's'} to send` : ''}` : `${queue.length} offline check-in${queue.length === 1 ? '' : 's'} to send`;
+}
+function localCheck(text: string, how: string, override = false): any {
+  const up = text.toUpperCase().replace(/\s+/g, '');
+  const m = /LS-?(TIX|SZN)-?([A-HJ-NP-Z2-9]{12})(?![A-Z0-9])/.exec(up) || (/^[A-HJ-NP-Z2-9]{12}$/.test(up) ? [up, 'TIX', up] : null);
+  if (!m) return /^HTTPS?:/.test(up) && !/LOBISTARSFC/.test(up) ? { code: 'not_lobi', fake: true, title: 'NOT A LOBI STARS TICKET', reason: 'This QR code is not a Lobi Stars FC ticket.', offline: true }
+    : { code: 'bad_number', title: 'CHECK THE NUMBER', reason: 'This is not a complete ticket number. Check it and try again.', offline: true };
+  const id = `LS-${m[1]}-${m[2]}`, row = packMap.get(id);
+  if (!row) return { code: 'not_listed', title: "NOT ON TODAY'S LIST", reason: `${id} is not on today's ticket list on this phone: it may be fake, cancelled or for another match. Do not admit. Check it again when the signal returns.`, offline: true };
+  const ticket = { kind: m[1] === 'SZN' ? 'season' : 'match', id, stand: STAND[row[1]] || row[1], type: row[2] ? 'Child' : 'Adult', buyer: row[3] || 'No name', status: 'valid' };
+  if (row[4] || usedLocal.has(id)) return { code: 'used', title: 'ALREADY USED', reason: 'Already checked in (offline list). Do not admit again.', ticket, offline: true };
+  if (mode === 'lookup') return { code: 'valid', title: 'VALID TICKET', reason: "On today's list and not used yet (offline). Not checked in.", ticket, offline: true };
+  const only = pack.stands?.[S.user.gate];
+  if (!override && only?.length && !only.includes(row[1])) {
+    const goTo = S.gates.filter(g => !pack.stands?.[g]?.length || pack.stands[g].includes(row[1]));
+    return { code: 'wrong_gate', title: 'WRONG GATE', canOverride: true, reason: `This ticket is for the ${ticket.stand}. Send the fan to ${goTo.join(' or ') || 'the right gate'}. Not checked in.`, ticket, offline: true };
+  }
+  usedLocal.add(id); LS.set('gc_used', [...usedLocal]);
+  queue.push({ ticket: id, at: new Date().toISOString(), how }); LS.set('gc_queue', queue); setNet();
+  return { code: 'admitted', title: row[2] ? 'ADMIT CHILD' : 'ADMIT', reason: 'Checked in on this phone (offline). It is sent to the other gates when the signal returns.', ticket: { ...ticket, status: 'used' }, offline: true };
+}
+let syncing = false;
+async function syncQueue() {
+  if (syncing || !queue.length) return;
+  syncing = true;
+  const batch = queue.slice(0, 200);
+  try {
+    const r = await api('sync', { method: 'POST', body: { scans: batch } });
+    queue = queue.slice(batch.length); LS.set('gc_queue', queue);
+    toast(`${r.sent} offline check-in${r.sent === 1 ? '' : 's'} sent`);
+    if (r.doubles?.length) { feedback('bad'); alert(`Double entry: ${r.doubles.join(', ')} had already been checked in at another gate before you let ${r.doubles.length === 1 ? 'it' : 'them'} in offline. Tell your supervisor.`); }
+    loadCounts();
+  } catch { /* try again later */ } finally { syncing = false; setNet(); }
+}
+setInterval(() => { if (queue.length && navigator.onLine) syncQueue(); }, 15000);
+setInterval(() => { if (S.user && navigator.onLine && !document.hidden) refreshPack(); }, 5 * 60e3);
+// Pictures that missed the saved copy while the app opened offline: try once more.
+function retryImages() { document.querySelectorAll('img').forEach(i => { if (i.complete && !i.naturalWidth) i.src = `${i.getAttribute('src')!.split('?')[0]}?r=${Date.now()}`; }); }
+window.addEventListener('online', () => { setNet(); syncQueue(); refreshPack(); retryImages(); });
+window.addEventListener('offline', setNet);
+
+// ── My last scans (this phone) ──
+const recent: any[] = [];
+function pushRecent(r: any) {
+  recent.unshift({ at: new Date().toISOString(), title: r.title, code: r.code, ticket: r.ticket?.id || '', name: r.ticket?.buyer || '', offline: !!r.offline });
+  recent.length = Math.min(recent.length, 6);
+  $('recentBox').hidden = false;
+  $('recentList').innerHTML = recent.map(x => `<li><span class="gc-dot ${({ ok: 'ok', info: 'info', warn: 'warn' } as Record<string, string>)[KIND[x.code]] || 'bad'}"></span><div class="gc-li-main"><b>${esc(x.title)}</b> <span class="gc-mono">${esc(x.ticket)}</span><small>${esc(x.name)}${x.offline ? ' · offline' : ''}</small></div><span class="gc-li-time">${hm(x.at)}</span></li>`).join('');
+}
 
 let view = 'scan';
 function showApp() {
@@ -112,17 +221,23 @@ function showApp() {
   $('who').textContent = `${S.user.name} · ${S.user.roleLabel}`;
   $('gateName').textContent = S.user.gate;
   $('staffTab').hidden = !S.perms.staff;
+  $('supBox').hidden = !S.perms.supervise;
+  if (S.csrf) LS.set('gc_sess', { csrf: S.csrf, user: S.user, perms: S.perms, gates: S.gates, incidentTypes: S.incidentTypes });
+  $('incCat').innerHTML = Object.entries(S.incidentTypes || {}).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join('');
+  $('msgGate').innerHTML = '<option value="">All gates</option>' + S.gates.map(g => `<option>${esc(g)}</option>`).join('');
   go(view);
   startCounts();
+  setNet(); showOfflineInfo(); refreshPack(); syncQueue();
 }
 function go(v: string) {
   view = v;
   for (const t of document.querySelectorAll<HTMLElement>('.gc-tab')) { if (t.dataset.view === v) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); }
-  for (const x of ['scan', 'today', 'activity', 'staff']) $(`v-${x}`).hidden = x !== v;
+  for (const x of ['scan', 'today', 'incidents', 'activity', 'staff']) $(`v-${x}`).hidden = x !== v;
   if (v !== 'scan') stopCamera();
   if (v === 'today') startToday(); else stopToday();
   if (v === 'activity') loadActivity(1);
   if (v === 'staff') loadStaff();
+  if (v === 'incidents') loadIncidents();
   if (v === 'scan') loadCounts();
   window.scrollTo(0, 0);
 }
@@ -161,7 +276,7 @@ function setMode(m: 'admit' | 'lookup') {
 $('modeAdmit').addEventListener('click', () => setMode('admit'));
 $('modeLook').addEventListener('click', () => setMode('lookup'));
 
-const KIND: Record<string, string> = { admitted: 'ok', readmitted: 'ok', valid: 'info', used: 'bad', void: 'bad', unpaid: 'bad', fake: 'fake', not_lobi: 'fake', wrong_match: 'warn', bad_number: 'warn' };
+const KIND: Record<string, string> = { admitted: 'ok', readmitted: 'ok', valid: 'info', used: 'bad', void: 'bad', unpaid: 'bad', fake: 'fake', not_lobi: 'fake', wrong_match: 'warn', wrong_gate: 'warn', bad_number: 'warn', not_listed: 'bad' };
 const ICON: Record<string, string> = {
   ok: '<path d="M20 6 9 17l-5-5"/>', info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   bad: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>', fake: '<path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18v.5"/>',
@@ -173,14 +288,14 @@ let busy = false, lastText = '', lastTime = 0, autoNext: any = 0, lastTicket = '
 function renderResult(r: any) {
   const k = KIND[r.code] || 'bad';
   const t = r.ticket;
-  const det = (label: string, value: unknown, full = false) => value ? `<div${full ? ' class="full"' : ''}><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>` : '';
+  const det = (label: string, value: unknown, full = false) => value && value !== '—' ? `<div${full ? ' class="full"' : ''}><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>` : '';
   const where = t?.where ? [t.where.source, t.where.device, t.where.place].filter(Boolean).join(' · ') : '';
   const checked = t?.status === 'used' && t.usedAt ? `${dayTime(t.usedAt)}${t.usedGate ? ` · ${t.usedGate}` : ''}${t.usedByName ? ` · ${t.usedByName}` : ''}` : '';
   const autoMs = k === 'ok' && (camOn || lastHow === 'scanner') ? 2500 : 0;
   $('result').innerHTML = `
     <div class="gc-result ${k}" role="alert">
       <div class="gc-r-top"><span class="gc-r-ic">${ico(k)}</span><div class="gc-r-title">${esc(r.title || '')}</div></div>
-      <p class="gc-r-reason">${esc(r.reason || '')}</p>
+      <p class="gc-r-reason">${esc(r.reason || '')}${r.offline ? ' <span class="gc-tag">Offline</span>' : ''}</p>
       ${t ? `<div class="gc-r-who"><b>${esc(t.buyer || 'No name')}</b><span>${esc(t.stand)} · ${esc(t.type)} ticket</span></div>
       <dl class="gc-details">
         ${det('Match', t.match ? `${t.match}${t.matchDate ? ` · ${dayOnly(t.matchDate)}` : ''}` : '', true)}
@@ -195,7 +310,8 @@ function renderResult(r: any) {
         ${det('Checked in', checked, true)}
       </dl>` : ''}
       <div class="gc-r-actions">
-        ${r.code === 'used' && S.perms.readmit && t?.kind === 'match' ? '<button type="button" class="gc-btn ghost" data-act="readmit">Re-admit (supervisor)</button>' : ''}
+        ${r.canOverride ? '<button type="button" class="gc-btn ghost" data-act="override">Admit here anyway</button>' : ''}
+        ${r.code === 'used' && S.perms.readmit && t?.kind === 'match' && !r.offline ? '<button type="button" class="gc-btn ghost" data-act="readmit">Re-admit (supervisor)</button>' : ''}
         <button type="button" class="gc-btn" data-act="next">${camOn ? 'Scan next ticket' : 'Next ticket'}</button>
       </div>
       ${autoMs ? `<div class="gc-auto" aria-hidden="true"><i style="--t:${autoMs}ms"></i></div>` : ''}
@@ -215,17 +331,33 @@ $('result').addEventListener('click', (ev: Event) => {
   const b = (ev.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
   if (!b) return;
   if (b.dataset.act === 'next') nextTicket();
+  if (b.dataset.act === 'override') check(lastTicket, (lastHow || 'typed') as any, true);
   if (b.dataset.act === 'readmit') { clearTimeout(autoNext); $('readmitErr').hidden = true; $('readmitWhy').value = ''; $('readmitDlg').showModal(); }
 });
 
 let lastHow = '';
-async function check(text: string, how: 'camera' | 'typed' | 'scanner') {
+function bumpCounts() {
+  $('cMe').textContent = String(Number($('cMe').textContent) + 1);
+  $('cGate').textContent = String(Number($('cGate').textContent) + 1);
+  $('cAll').textContent = String(Number($('cAll').textContent) + 1);
+  $('lastAt').textContent = `Last check-in at ${hm(new Date().toISOString())}`;
+}
+function offlineResult(text: string, how: string, override: boolean) {
+  const r = localCheck(text, how, override);
+  if (r.code === 'admitted') bumpCounts();
+  renderResult(r); pushRecent(r);
+}
+async function check(text: string, how: 'camera' | 'typed' | 'scanner', override = false) {
   if (busy) return;
   busy = true; lastTicket = text; lastHow = how;
   clearTimeout(autoNext);
+  // No signal at all: straight to the offline list (no waiting for the network to fail).
+  if (!navigator.onLine && packToday()) { offlineResult(text, how, override); busy = false; return; }
   $('result').innerHTML = `<div class="gc-result wait"><div class="gc-r-top"><span class="gc-r-ic">${ico('wait')}</span><div class="gc-r-title">Checking…</div></div></div>`;
   try {
-    const r = await api('check', { method: 'POST', body: { ticket: text, mode, how } });
+    const r = await api('check', { method: 'POST', body: { ticket: text, mode, how, override } });
+    pushRecent(r);
+    if (queue.length) syncQueue();
     if (r.code === 'admitted') {
       $('cMe').textContent = String(Number($('cMe').textContent) + 1);
       $('cGate').textContent = String(Number($('cGate').textContent) + 1);
@@ -237,6 +369,7 @@ async function check(text: string, how: 'camera' | 'typed' | 'scanner') {
   } catch (e: any) {
     if (e.data?.needGate) { showGatePick(false); return; }
     if (e.status === 401) return;
+    if (e.status === 0 && packToday()) { offlineResult(text, how, override); return; }
     $('result').innerHTML = `<div class="gc-result warn" role="alert"><div class="gc-r-top"><span class="gc-r-ic">${ico('warn')}</span><div class="gc-r-title">Not checked</div></div>
       <p class="gc-r-reason">${esc(e.message)}</p><div class="gc-r-actions"><button type="button" class="gc-btn" data-act="retry">Try again</button><button type="button" class="gc-btn ghost" data-act="next">Cancel</button></div></div>`;
     feedback('warn');
@@ -304,7 +437,7 @@ $('readmitForm').addEventListener('submit', async (ev: Event) => {
 });
 
 // ── Camera (html5-qrcode, kept on this website: /vendor) ──
-let scanner: any = null, camOn = false;
+let scanner: any = null, camOn = false, torch: any = null, cams: any[] = [], camIndex = -1;
 function loadLib(): Promise<void> {
   if ((window as any).Html5Qrcode) return Promise.resolve();
   return new Promise((ok, fail) => {
@@ -322,9 +455,13 @@ async function startCamera() {
     const H = (window as any);
     $('cam').hidden = false;
     scanner = scanner || new H.Html5Qrcode('reader', { formatsToSupport: [H.Html5QrcodeSupportedFormats.QR_CODE], experimentalFeatures: { useBarCodeDetectorIfSupported: true }, verbose: false });
-    await scanner.start({ facingMode: 'environment' }, { fps: 12, qrbox: (w: number, h: number) => { const s = Math.floor(Math.min(w, h) * 0.72); return { width: s, height: s }; }, aspectRatio: 1 },
+    await scanner.start(camIndex >= 0 && cams[camIndex] ? { deviceId: { exact: cams[camIndex].id } } : { facingMode: 'environment' }, { fps: 12, qrbox: (w: number, h: number) => { const s = Math.floor(Math.min(w, h) * 0.72); return { width: s, height: s }; }, aspectRatio: 1 },
       (text: string) => onScan(text), () => {});
     camOn = true;
+    // Torch (dark entrances, night matches) and switching cameras, where the phone allows.
+    try { torch = scanner.getRunningTrackCameraCapabilities?.()?.torchFeature?.(); $('torchBtn').hidden = !(torch && torch.isSupported()); } catch { $('torchBtn').hidden = true; }
+    $('torchBtn').setAttribute('aria-pressed', 'false');
+    try { cams = await H.Html5Qrcode.getCameras(); $('flipBtn').hidden = cams.length < 2; } catch { $('flipBtn').hidden = true; }
   } catch (e: any) {
     $('cam').hidden = true;
     const msg = /Permission|NotAllowed/i.test(String(e?.name || e?.message || e)) ? 'The camera is blocked. Allow camera access for lobistarsfc.com in the browser settings, or type the ticket number below.'
@@ -335,6 +472,15 @@ async function startCamera() {
     $('camBtn').disabled = false; setMode(mode);
   }
 }
+$('torchBtn').addEventListener('click', async () => {
+  const on = $('torchBtn').getAttribute('aria-pressed') !== 'true';
+  try { await torch?.apply(on); $('torchBtn').setAttribute('aria-pressed', String(on)); } catch { toast('The torch is not available on this phone.'); }
+});
+$('flipBtn').addEventListener('click', async () => {
+  if (!cams.length) return;
+  camIndex = (camIndex + 1) % cams.length;
+  await stopCamera(); await startCamera();
+});
 function pauseCamera() { try { if (scanner && camOn) scanner.pause(true); } catch { /* already paused */ } }
 function resumeCamera() { try { if (scanner && camOn) scanner.resume(); } catch { /* not paused */ } }
 async function stopCamera() {
@@ -381,14 +527,26 @@ function timeChart(points: { at: string; n: number }[]) {
   return `<svg class="gc-time" viewBox="0 0 ${W} ${H}" role="img" aria-label="Check-ins every 15 minutes; busiest ${hm(peak.at)} with ${peak.n}"><line x1="0" y1="${H - pad}" x2="${W}" y2="${H - pad}" />${cols}</svg>
     <p class="gc-hint">Busiest 15 minutes: <b>${hm(peak.at)}</b> with <b>${peak.n}</b> fans.</p>`;
 }
+// Watch list: bursts of fake tickets at a gate, double entries, tickets tried more than once.
+function watchHtml(w: any) {
+  if (!w || (!w.bursts.length && !w.doubles.length && !w.repeats.length)) return '';
+  const li = (k: string, title: string, sub: string, at?: string) => `<li><span class="gc-dot ${k}"></span><div class="gc-li-main"><b>${title}</b><small>${sub}</small></div>${at ? `<span class="gc-li-time">${hm(at)}</span>` : ''}</li>`;
+  return `<div class="gc-panel gc-watch"><p class="gc-caps" style="margin:0 0 4px;color:#ffb3b5">Watch list</p><ul class="gc-list">
+    ${w.bursts.map((b: any) => li('bad', `${b.n} fake tickets at ${esc(b.gate)} in the last 30 minutes`, 'Look out for a tout selling fake tickets nearby; tell the police or security.')).join('')}
+    ${w.doubles.map((x: any) => li('bad', `Double entry: <span class="gc-mono">${esc(x.ticket)}</span>`, `Let in offline at ${esc(x.gate || '')} by ${esc(x.by || '')}, but it had already been checked in.`, x.at)).join('')}
+    ${w.repeats.map((x: any) => li(x.fake ? 'bad' : 'warn', `<span class="gc-mono">${esc(x.ticket)}</span> tried ${x.tries} times`, `${x.fake ? 'Fake number' : 'Already used'} · ${esc(x.gates)}`, x.last)).join('')}
+  </ul></div>`;
+}
 async function loadToday() {
   try {
     const d = await api('today', { quiet: true });
     $('todayAt').textContent = `Updated ${hm(new Date().toISOString())}`;
+    if (S.perms.supervise) $('supMsgs').innerHTML = (d.messages || []).map((m: any) => `<li><span class="gc-dot ${m.live ? 'warn' : ''}"></span><div class="gc-li-main"><b>${esc(m.text)}</b><small>${esc(m.from || '')} · ${m.gate ? esc(m.gate) : 'all gates'}${m.live ? ' · showing now' : ' · ended'}</small>${m.live ? `<div class="gc-row-btns"><button type="button" class="gc-btn ghost" data-clear="${m.id}">Take down</button></div>` : ''}</div><span class="gc-li-time">${hm(m.at)}</span></li>`).join('');
     const stands = d.stands.length ? d.stands.map((s: any) => `<div class="gc-bar"><div class="gc-bar-h"><span>${esc(s.label)}</span><span>${s.in} in / ${s.sold} sold</span></div>
       <div class="gc-bar-t"><i style="width:${s.sold ? Math.min(100, Math.round((s.in / s.sold) * 100)) : 0}%"></i></div></div>`).join('') : '';
     $('todayBody').innerHTML = `
       <div class="gc-match">${d.match ? `<p class="gc-caps" style="color:#ffd9da">Today's home match</p><h3>${esc(d.match.name)}</h3><p style="margin:6px 0 0">${esc(dayTime(d.match.date))} · ${esc(d.match.venue || '')}</p>` : '<p class="gc-caps" style="color:#ffd9da">No Lobi Stars home match today</p><h3>Practice and look-ups only</h3>'}</div>
+      ${watchHtml(d.watch)}
       <div class="gc-together"><span class="gc-caps">Together today</span><b>${d.totals.admitted.toLocaleString('en-GB')}</b><span>fans checked in at all gates${d.totals.readmitted ? ` · ${d.totals.readmitted} re-admitted` : ''}</span></div>
       <div class="gc-panel"><p class="gc-caps" style="margin:0 0 8px">Fans checked in by each steward</p>${d.byStaff.length ? bars(d.byStaff.map((s: any) => ({ label: s.name, me: s.me, n: s.admitted,
         sub: [s.code, s.gate, s.refused ? `${s.refused} refused` : '', s.readmitted ? `${s.readmitted} re-admitted` : '', s.last ? `last ${hm(s.last)}` : ''].filter(Boolean).join(' · ') }))) : '<p class="gc-empty">No check-ins yet.</p>'}</div>
@@ -441,6 +599,7 @@ async function loadStaff() {
     const d = await api('staff');
     staff = d.staff;
     $('gatesText').value = d.gates.join('\n');
+    $('standsGrid').innerHTML = d.gates.map((g: string) => `<fieldset><legend>${esc(g)}</legend>${['VIP', 'Premium', 'Regular'].map(t => `<label><input type="checkbox" data-g="${esc(g)}" data-t="${t}"${(d.stands?.[g] || []).includes(t) ? ' checked' : ''} /> ${STAND[t]}</label>`).join('')}</fieldset>`).join('');
     $('staffList').innerHTML = staff.length ? staff.map(s => `<div class="gc-person"><div class="gc-li-main"><b>${esc(s.name)}</b>
       <small><span class="gc-mono">${esc(s.staffId)}</span> · <span class="gc-tag${s.role === 'supervisor' ? ' sup' : ''}">${esc(s.roleLabel)}</span>${s.active ? '' : ' <span class="gc-tag off">Switched off</span>'}${s.locked ? ' <span class="gc-tag off">Locked</span>' : ''}
       · last sign-in ${s.lastLogin ? esc(dayTime(s.lastLogin)) : 'never'}</small></div><button type="button" class="gc-btn ghost" data-edit="${esc(s.id)}">Edit</button></div>`).join('')
@@ -482,5 +641,61 @@ $('gatesSave').addEventListener('click', async () => {
     S.gates = r.gates; $('gatesText').value = r.gates.join('\n'); $('gatesOk').hidden = false;
   } catch (e: any) { $('gatesErr').textContent = e.message; $('gatesErr').hidden = false; }
 });
+
+$('standsSave').addEventListener('click', async () => {
+  $('standsOk').hidden = true; $('standsErr').hidden = true;
+  const map: Record<string, string[]> = {};
+  for (const c of document.querySelectorAll<HTMLInputElement>('#standsGrid input')) { (map[c.dataset.g!] ||= []); if (c.checked) map[c.dataset.g!].push(c.dataset.t!); }
+  try { await api('staff', { method: 'POST', body: { action: 'stands', stands: map } }); $('standsOk').hidden = false; refreshPack(); }
+  catch (e: any) { $('standsErr').textContent = e.message; $('standsErr').hidden = false; }
+});
+
+// ── Supervisor messages (Today) ──
+$('msgForm').addEventListener('submit', async (ev: Event) => {
+  ev.preventDefault();
+  $('msgErr').hidden = true;
+  try {
+    await api('message', { method: 'POST', body: { action: 'send', text: $('msgText').value, gate: $('msgGate').value, hours: Number($('msgHours').value) } });
+    $('msgText').value = ''; toast('Message sent'); loadToday(); loadCounts();
+  } catch (e: any) { $('msgErr').textContent = e.message; $('msgErr').hidden = false; }
+});
+$('supMsgs').addEventListener('click', async (ev: Event) => {
+  const b = (ev.target as HTMLElement).closest('[data-clear]') as HTMLElement | null;
+  if (!b) return;
+  try { await api('message', { method: 'POST', body: { action: 'clear', id: Number(b.dataset.clear) } }); loadToday(); } catch (e: any) { toast(e.message); }
+});
+
+// ── Incidents ──
+async function loadIncidents() {
+  try {
+    const d = await api('incidents');
+    $('incListT').textContent = d.canClose ? "Today's reports (all gates)" : 'Your reports today';
+    const open = d.incidents.filter((i: any) => i.open).length;
+    $('incCount').textContent = open ? `${open} open` : '';
+    $('incList').innerHTML = d.incidents.length ? d.incidents.map((i: any) => `<li><span class="gc-dot ${i.open ? 'bad' : 'ok'}"></span><div class="gc-li-main"><b>${esc(i.label)}</b>${i.open ? ' <span class="gc-inc-open">· open</span>' : ' · closed'}
+      <small>${esc(i.details)}</small><small>${esc([i.gate, i.by, i.ticket].filter(Boolean).join(' · '))}${i.closedBy ? ` · closed by ${esc(i.closedBy)}${i.closeNote ? `: ${esc(i.closeNote)}` : ''}` : ''}</small>
+      ${d.canClose && i.open ? `<div class="gc-row-btns"><button type="button" class="gc-btn ghost" data-close="${i.id}">Close</button></div>` : ''}</div><span class="gc-li-time">${hm(i.at)}</span></li>`).join('')
+      : '<li class="gc-empty">No incidents reported today.</li>';
+  } catch (e: any) { if (e.status !== 401) $('incList').innerHTML = `<li class="gc-empty">${esc(e.message)}</li>`; }
+}
+$('incForm').addEventListener('submit', async (ev: Event) => {
+  ev.preventDefault();
+  $('incErr').hidden = true;
+  try {
+    await api('incident', { method: 'POST', body: { action: 'add', category: $('incCat').value, details: $('incText').value, ticket: $('incTicket').value } });
+    $('incText').value = ''; $('incTicket').value = '';
+    toast('Incident reported'); loadIncidents(); loadCounts();
+  } catch (e: any) { $('incErr').textContent = e.message; $('incErr').hidden = false; }
+});
+$('incList').addEventListener('click', async (ev: Event) => {
+  const b = (ev.target as HTMLElement).closest('[data-close]') as HTMLElement | null;
+  if (!b) return;
+  const note = prompt('How was it resolved? (optional)') ?? null;
+  if (note === null) return;
+  try { await api('incident', { method: 'POST', body: { action: 'close', id: Number(b.dataset.close), note } }); loadIncidents(); loadCounts(); } catch (e: any) { toast(e.message); }
+});
+
+// The Gate Control app: works from the home screen and opens without a signal.
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/gate-control/sw.js', { scope: '/gate-control/' }).catch(() => {});
 
 boot();

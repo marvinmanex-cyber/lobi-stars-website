@@ -139,6 +139,31 @@ textarea.gc-input { min-height: 120px; resize: vertical; }
 .gc-tile.all { background: linear-gradient(160deg, rgba(18, 161, 80, .22), var(--panel)); border-color: rgba(18, 161, 80, .5); }
 .gc-tile.all b { color: #5ee08f; }
 
+/* Offline / waiting chip, broadcast messages, camera tools, recent scans, incidents, stands */
+.gc-net { display: inline-flex; align-items: center; min-height: 32px; padding: 0 10px; border-radius: 999px; background: rgba(245, 158, 11, .16); border: 1px solid rgba(245, 158, 11, .6); color: #ffd28a; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.gc-net.off { background: rgba(227, 30, 36, .18); border-color: rgba(227, 30, 36, .7); color: #ffb3b5; }
+.gc-msgs { max-width: 760px; margin: 0 auto; padding: 0 14px; }
+.gc-msg { display: flex; gap: 12px; align-items: flex-start; margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--gold); color: #17130a; box-shadow: 0 10px 24px -14px rgba(0, 0, 0, .8); animation: gc-pop .25s ease; }
+.gc-msg b { display: block; font-size: 17px; line-height: 1.35; }
+.gc-msg small { opacity: .8; }
+.gc-msg button { flex: none; margin-left: auto; min-height: 36px; padding: 0 12px; border-radius: 10px; border: 2px solid rgba(23, 19, 10, .4); background: transparent; color: inherit; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+@media (min-width: 900px) { .gc-msgs { padding-left: 110px; max-width: 900px; } }
+.gc-cam-tools { position: absolute; top: 10px; right: 10px; display: grid; gap: 8px; z-index: 2; }
+.gc-cam-tools .gc-icon { background: rgba(0, 0, 0, .55); border-color: rgba(255, 255, 255, .35); color: #fff; }
+.gc-cam-tools .gc-icon[aria-pressed="true"] { background: var(--gold); color: #17130a; }
+.gc-recent { margin-top: 14px; }
+.gc-badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 4px; border-radius: 9px; background: var(--red); color: #fff; font-size: 11px; }
+.gc-tab { position: relative; }
+.gc-tab .gc-badge { position: absolute; top: 4px; right: calc(50% - 26px); }
+.gc-stands { display: grid; gap: 10px; }
+.gc-stands fieldset { margin: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; }
+.gc-stands legend { padding: 0 6px; font-weight: 700; }
+.gc-stands label { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; margin-right: 14px; }
+.gc-stands input { width: 22px; height: 22px; }
+.gc-watch { border-color: rgba(227, 30, 36, .6); background: linear-gradient(160deg, rgba(227, 30, 36, .14), var(--panel)); }
+.gc-inc-open { color: #ffb3b5; }
+.gc-row-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+
 /* Wireless / USB scanner hint (it types the ticket's code and presses Enter) */
 .gc-scanner { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--line); color: var(--muted); font-size: 14px; }
 .gc-scanner b { color: var(--ink); }
@@ -212,6 +237,7 @@ dialog.gc-dlg::backdrop { background: rgba(0, 0, 0, .7); }
 .gc-toast { position: fixed; left: 50%; bottom: 86px; z-index: 50; transform: translateX(-50%); max-width: calc(100vw - 32px); padding: 12px 18px; border-radius: 12px; background: #fff; color: #10141a; font-weight: 600; box-shadow: 0 12px 30px rgba(0, 0, 0, .5); }
 
 @media (max-width: 420px) {
+  .gc-top:has(.gc-net:not([hidden])) .gc-top-t { display: none; }
   .gc-top-t small { display: none; }
   .gc-top-t b { font-size: 21px; }
   .gc-spacer { display: none; }

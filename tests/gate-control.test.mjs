@@ -19,7 +19,7 @@ const ip = () => `10.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 0}.$
 const CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const tid = () => `LS-TIX-${Array.from({ length: 12 }, () => CH[(Math.random() * CH.length) | 0]).join('')}`;
 const EV = `gc-ev-${T}`, EV2 = `gc-ev2-${T}`;
-const K = { a: tid(), b: tid(), c: tid(), race: tid(), tomorrow: tid(), refunded: tid(), unpaid: tid() };
+const K = { a: tid(), b: tid(), c: tid(), d: tid(), race: tid(), tomorrow: tid(), refunded: tid(), unpaid: tid() };
 
 async function signIn(login, password) {
   const r = await fetch(`${BASE}/api/gate-control/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ login, password }) });
@@ -81,7 +81,7 @@ test('scan / type: details shown; checked in once; fake, used, wrong match, canc
   sql(`INSERT INTO events (id, home_team, away_team, competition, event_date, venue, vip_price_kobo, premium_price_kobo, regular_price_kobo, active) VALUES ('${EV}', 'Lobi Stars FC', 'Gate Test ${T}', 'NNL', '${now}', 'McCarthy Stadium', 150000, 80000, 40000, 1);
     INSERT INTO events (id, home_team, away_team, competition, event_date, venue, vip_price_kobo, premium_price_kobo, regular_price_kobo, active) VALUES ('${EV2}', 'Lobi Stars FC', 'Later Test ${T}', 'NNL', '${later}', 'McCarthy Stadium', 150000, 80000, 40000, 1);
     ${ord(`gco1-${T}`, EV, 'VIP', 'paid')} ${tk(K.a, `gco1-${T}`, EV, 'VIP')} ${tk(K.b, `gco1-${T}`, EV, 'VIP')}
-    ${ord(`gco2-${T}`, EV, 'Regular', 'paid')} ${tk(K.c, `gco2-${T}`, EV, 'Regular')} ${tk(K.race, `gco2-${T}`, EV, 'Regular')}
+    ${ord(`gco2-${T}`, EV, 'Regular', 'paid')} ${tk(K.c, `gco2-${T}`, EV, 'Regular')} ${tk(K.race, `gco2-${T}`, EV, 'Regular')} ${tk(K.d, `gco2-${T}`, EV, 'Regular')}
     ${ord(`gco3-${T}`, EV2, 'Premium', 'paid')} ${tk(K.tomorrow, `gco3-${T}`, EV2, 'Premium')}
     ${ord(`gco4-${T}`, EV, 'VIP', 'paid', 'refunded')} ${tk(K.refunded, `gco4-${T}`, EV, 'VIP')}
     ${ord(`gco5-${T}`, EV, 'VIP', 'pending')} ${tk(K.unpaid, `gco5-${T}`, EV, 'VIP')}`);
@@ -158,4 +158,64 @@ test('re-admit (supervisors only, with a reason); today view; activity recorded;
   const sid = (await A.call('staff')).data.staff.find(s => s.staffId === STEW.staffId).id;
   assert.equal((await A.call('staff', { action: 'edit', id: sid, active: false })).status, 200);
   assert.equal((await St.call('check', { ticket: K.c })).status, 401);
+});
+
+test('wrong gate (admit anyway), offline list and sync with double entries, messages, incidents, report', async () => {
+  // Main Gate is for VIP only; the other gates take every stand.
+  assert.match((await A.call('staff', { action: 'stands', stands: { 'Main Gate': ['VIP'], 'VIP Gate': ['VIP'], 'Gate C': ['VIP'] } })).data.error, /No gate is left/);
+  assert.equal((await A.call('staff', { action: 'stands', stands: { 'Main Gate': ['VIP'], 'VIP Gate': [], 'Gate C': [] } })).status, 200);
+  const sup = await signIn(SUP.staffId, SUP.password);
+  const U = await as(sup.cookie);
+  await U.call('gate', { gate: 'Main Gate' });
+  const wg = (await U.call('check', { ticket: K.d })).data;
+  assert.equal(wg.code, 'wrong_gate', JSON.stringify(wg)); assert.ok(wg.goTo.includes('VIP Gate')); assert.equal(wg.canOverride, true);
+  assert.equal(JSON.parse(sql(`SELECT status FROM tickets WHERE id = '${K.d}'`))[0].results[0].status, 'valid', 'not checked in');
+  assert.equal((await U.call('check', { ticket: K.d, override: true })).data.code, 'admitted', 'admit here anyway');
+  await A.call('staff', { action: 'stands', stands: { 'Main Gate': [], 'VIP Gate': [], 'Gate C': [] } });
+
+  // Offline list: no phone numbers or emails, just number, stand, child, first name, already in.
+  const pack = (await U.call('offline')).data;
+  assert.ok(Array.isArray(pack.tickets)); assert.ok(pack.stands);
+  if (pack.match?.id === EV) {
+    const row = pack.tickets.find(r => r[0] === K.c);
+    assert.deepEqual(row, [K.c, 'Regular', 0, 'Terver', 0]);
+    assert.equal(pack.tickets.find(r => r[0] === K.a)[4], 1, 'already in');
+    assert.ok(!JSON.stringify(pack).includes('example.com'), 'no emails on the phone');
+  }
+  // Offline check-ins sent later: K.c is new; K.a had already been checked in = double entry.
+  const at = new Date(Date.now() - 5 * 60e3).toISOString();
+  const s1 = (await U.call('sync', { scans: [{ ticket: K.c, at }, { ticket: K.a, at }] })).data;
+  assert.equal(s1.sent, 2); assert.equal(s1.admitted, 1); assert.deepEqual(s1.doubles, [K.a]);
+  const s2 = (await U.call('sync', { scans: [{ ticket: K.c, at }] })).data;
+  assert.equal(s2.admitted, 1, 'sent twice (lost answer): not a double entry'); assert.equal(s2.doubles.length, 0);
+  const today = (await U.call('today')).data;
+  assert.ok(today.watch.doubles.some(x => x.ticket === K.a)); assert.ok(today.watch.repeats.some(x => x.ticket === K.a));
+
+  // Messages from a supervisor reach every gate (or one gate); taken down again.
+  assert.equal((await U.call('message', { action: 'send', text: 'Gate C closed: send fans to Main Gate', gate: '' })).status, 200);
+  let c = (await A.call('counts')).data;
+  const msg = c.messages.find(m => /Gate C closed/.test(m.text));
+  assert.ok(msg);
+  assert.equal((await U.call('message', { action: 'send', text: 'Only VIP Gate sees this', gate: 'VIP Gate' })).status, 200);
+  assert.ok(!(await U.call('counts')).data.messages.some(m => /Only VIP/.test(m.text)), 'Main Gate does not see a VIP Gate message');
+  assert.equal((await U.call('message', { action: 'clear', id: msg.id })).status, 200);
+  assert.ok(!(await A.call('counts')).data.messages.some(m => m.id === msg.id));
+
+  // Incidents: reported, listed, closed by a supervisor.
+  assert.equal((await U.call('incident', { action: 'add', category: 'nope', details: 'x' })).status, 400);
+  const inc = (await U.call('incident', { action: 'add', category: 'medical', details: 'Fan fainted near turnstile 2, first aid called', ticket: K.c })).data;
+  assert.ok(inc.id);
+  assert.ok((await U.call('counts')).data.openIncidents >= 1);
+  const list = (await U.call('incidents')).data;
+  assert.ok(list.incidents.some(i => i.id === inc.id && i.open && i.label === 'Medical / first aid'));
+  assert.equal((await U.call('incident', { action: 'close', id: inc.id, note: 'Taken to first aid room' })).status, 200);
+  assert.ok((await U.call('incidents')).data.incidents.some(i => i.id === inc.id && !i.open && /first aid room/.test(i.closeNote)));
+
+  // End-of-day report for supervisors.
+  const rep = await fetch(`${BASE}/api/gate-control/report`, { headers: { Cookie: `ls_gate=${sup.cookie}` } });
+  assert.equal(rep.status, 200); const csv = await rep.text();
+  assert.match(csv, /Time \(Nigeria\),Result,Ticket/); assert.ok(csv.includes(K.a)); assert.match(csv, /Sent to another gate/);
+  // The app files.
+  assert.equal((await fetch(`${BASE}/gate-control/sw.js`)).headers.get('service-worker-allowed'), '/gate-control/');
+  assert.equal((await fetch(`${BASE}/gate-control.webmanifest`)).status, 200);
 });

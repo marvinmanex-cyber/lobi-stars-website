@@ -8,6 +8,26 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Gate Control: offline mode, app, wrong gate, messages, incidents, watch list, report
+
+Free additions based on how large stadiums run their gates:
+- **Offline mode:** each phone keeps today's ticket list (no phone numbers or
+  emails) and carries on scanning when the mobile data drops; offline
+  check-ins are sent when the signal returns, and anyone let in twice is
+  flagged as a **double entry**.
+- **Install as an app:** Gate Control can be added to the home screen and
+  opens without a signal.
+- **Wrong gate:** Super Admins set which stands each gate is for; other
+  tickets are sent to the right gate (with "Admit here anyway").
+- **Supervisor messages** to every steward's screen, or to one gate.
+- **Incident log** (medical, lost child, crowding, aggression, fan removed,
+  fake tickets / tout, lost property, safety hazard, other); supervisors close
+  them.
+- **Watch list** on Today: bursts of fake tickets at a gate, double entries,
+  tickets tried more than once.
+- **Torch and camera switch**, **my last scans**, and an **end-of-day report
+  (CSV)** for supervisors.
+
 ## 2026-11-03: Gate Control: counts per steward and gate, charts, wireless scanners
 
 - **Scan screen:** three live numbers at the top: **You today**, **your gate**

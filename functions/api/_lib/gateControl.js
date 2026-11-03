@@ -85,7 +85,24 @@ export async function gateSettings(db) {
   let gates = [];
   try { gates = JSON.parse(row?.value || '[]'); } catch { gates = []; }
   gates = (Array.isArray(gates) ? gates : []).map(g => oneLine(g, 40)).filter(Boolean);
-  return { gates: gates.length ? gates : DEFAULT_GATES };
+  if (!gates.length) gates = DEFAULT_GATES;
+  // Which stands each gate is for (wrong-gate guidance). A gate with none listed takes every stand.
+  const st = await db.prepare(`SELECT value FROM gc_settings WHERE key = 'gate_stands'`).first();
+  let stands = {};
+  try { stands = JSON.parse(st?.value || '{}') || {}; } catch { stands = {}; }
+  stands = Object.fromEntries(gates.map(g => [g, (Array.isArray(stands[g]) ? stands[g] : []).filter(t => STAND_KEYS.includes(t))]));
+  return { gates, stands };
+}
+export const STAND_KEYS = ['VIP', 'Premium', 'Regular'];
+export async function saveGateStands(db, who, map) {
+  const { gates } = await gateSettings(db);
+  const clean = Object.fromEntries(gates.map(g => [g, (Array.isArray(map?.[g]) ? map[g] : []).filter(t => STAND_KEYS.includes(t))]));
+  // Every stand must still have at least one gate.
+  const uncovered = STAND_KEYS.filter(t => !gates.some(g => !clean[g].length || clean[g].includes(t)));
+  if (uncovered.length) return { error: `No gate is left for ${uncovered.map(t => ({ VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' })[t]).join(', ')}. Tick it for at least one gate.` };
+  await db.prepare(`INSERT INTO gc_settings (key, value, updated_at, updated_by) VALUES ('gate_stands', ?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`)
+    .bind(JSON.stringify(clean), nowIso(), who).run();
+  return { ok: true, stands: clean };
 }
 export async function saveGates(db, who, list) {
   const gates = [...new Set((Array.isArray(list) ? list : String(list || '').split(/\n|,/)).map(g => oneLine(g, 40)).filter(Boolean))].slice(0, 20);
@@ -98,7 +115,7 @@ export async function saveGates(db, who, list) {
 // ── Who may do what ──
 export function permissions(user) {
   const sa = user.kind === 'admin', sup = sa || user.role === 'supervisor';
-  return { scan: true, lookup: true, readmit: sup, activityAll: sup, staff: sa, settings: sa };
+  return { scan: true, lookup: true, readmit: sup, supervise: sup, activityAll: sup, staff: sa, settings: sa };
 }
 
 // ── Activity log ──

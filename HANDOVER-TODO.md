@@ -168,6 +168,8 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | --- | --- | --- |
 | T1 | **Add the ticket stewards** | A Super Admin signs in at lobistarsfc.com/gate-control with their website email and password, opens **Staff** (bottom bar) › **Add a steward**: Staff ID (e.g. LSG-001), full name, role (**Ticket Steward**, or **Gate Supervisor** for the person in charge) and a password. Give each person their own Staff ID and password. STAFF-GUIDE §43. |
 | T2 | **Name the gates** | Same page, **Gates** box: one gate per line, matching the real entrances at McCarthy Stadium (now: Main Gate, VIP Gate, Grand Stand Gate, Popular Stand Gate). **Save gates**. |
+| T4 | **Which stands each gate is for (optional)** | If some gates are only for certain stands (for example a VIP Gate), a Super Admin ticks them in Gate Control › Staff › **Which stands each gate is for**. Leave a gate empty to let in every stand. |
+| T5 | **Install Gate Control on each steward's phone** | Open lobistarsfc.com/gate-control on the phone and add it to the home screen (iPhone: Share › Add to Home Screen; Android: menu › Install app). Sign in once with a signal on match day so the phone keeps the offline ticket list. |
 | T3 | **A practice run before the first home match** | Each steward signs in on their own phone, allows the camera, and scans a test ticket in **Look up only** mode (nothing is checked in). Buy one real ticket (or ask the website manager for a test one) to see a green ADMIT. |
 
 ## E. Legal

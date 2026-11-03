@@ -16,7 +16,7 @@
 //   readmitted   a supervisor let a used ticket back in (with reason) (green)
 // The check-in is one atomic UPDATE ... WHERE status = 'valid', so two gates
 // scanning the same ticket at the same moment can never both admit it.
-import { ensureGateSchema, oneLine } from './gateControl.js';
+import { ensureGateSchema, oneLine, gateSettings } from './gateControl.js';
 import { ensureTicketShopSchema } from './ticketShop.js';
 import { ensureDiscountSchema } from './ticketDiscounts.js';
 import { scanSeasonPass, todaysHomeMatch, ensureSeasonSchema } from './seasonTickets.js';
@@ -97,14 +97,14 @@ async function seasonCheck(env, id, { admit, station }) {
  * Check a scanned / typed ticket. mode: 'admit' (check the person in) or 'lookup' (only show it).
  * who = { user, gate }. Every attempt is recorded in gc_scans.
  */
-export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', who, request } = {}) {
+export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', who, request, override = false, note = null } = {}) {
   const db = env.DB;
   await ensureGateSchema(db); await ensureTicketShopSchema(db); await ensureDiscountSchema(db);
   const admit = mode === 'admit';
   const gate = who?.gate || null, u = who?.user || {};
   const station = `${u.name || 'Gate Control'}${u.code ? ` (${u.code})` : ''}${gate ? ` – ${gate}` : ''}`.slice(0, 120);
   const record = (res, extra = {}) => db.prepare(`INSERT INTO gc_scans (at, ticket_id, raw, event_id, tier, result, how, gate, staff_user_id, staff_name, staff_code, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(nowIso(), extra.id || null, oneLine(raw, 200), extra.eventId || null, extra.tier || null, res, ['typed', 'scanner'].includes(how) ? how : 'camera', gate, u.id || null, u.name || null, u.code || null, extra.note || null).run()
+    .bind(nowIso(), extra.id || null, oneLine(raw, 200), extra.eventId || null, extra.tier || null, res, ['typed', 'scanner', 'offline'].includes(how) ? how : 'camera', gate, u.id || null, u.name || null, u.code || null, extra.note || null).run()
     .catch(e => console.error('[gate control] scan record', e));
 
   const parsed = parseTicketInput(raw);
@@ -147,6 +147,16 @@ export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', wh
     const date = new Date(t.event_date).toLocaleDateString('en-GB', { timeZone: 'Africa/Lagos', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
     return { code: 'wrong_match', title: 'WRONG MATCH', reason: `Genuine ticket, but for ${t.home_team} vs ${t.away_team} on ${date}. Do not admit today; it stays valid for that match.`, ticket: d };
   }
+  // Wrong-gate guidance: a gate set up for certain stands sends other tickets to the right gate
+  // (not checked in, so the fan can enter there). "Admit here anyway" passes override.
+  if (admit && !override && gate) {
+    const { gates, stands } = await gateSettings(db);
+    if (stands[gate]?.length && !stands[gate].includes(t.tier)) {
+      const goTo = gates.filter(g => !stands[g]?.length || stands[g].includes(t.tier));
+      await record('wrong_gate', base);
+      return { code: 'wrong_gate', title: 'WRONG GATE', canOverride: true, reason: `This ticket is for the ${d.stand}. Send the fan to ${goTo.join(' or ') || 'the right gate'}. Not checked in.`, ticket: d, goTo };
+    }
+  }
   if (!admit) {
     await record('lookup', base);
     return { code: 'valid', title: 'VALID TICKET', reason: 'Genuine and not yet used. Not checked in (Look up only).', ticket: d };
@@ -156,10 +166,10 @@ export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', wh
     // Another gate checked it in a moment ago.
     const again = await ticketRow(db, id);
     d = describe(again, await lastAdmit(db, id));
-    await record('used', base);
+    await record('used', { ...base, note });
     return { code: 'used', title: 'ALREADY USED', reason: `${usedLine(d)} Do not admit again.`, ticket: d };
   }
-  await record('admitted', base);
+  await record('admitted', { ...base, note });
   await earnAttendance(env, id).catch(() => {});
   d = describe(await ticketRow(db, id), null);
   return { code: 'admitted', title: d.type === 'Child' ? 'ADMIT CHILD' : 'ADMIT', reason: d.type === 'Child' ? 'Child ticket: check the age if unsure.' : 'Genuine ticket, checked in now.', ticket: d };

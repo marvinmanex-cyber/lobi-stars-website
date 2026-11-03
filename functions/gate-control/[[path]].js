@@ -4,7 +4,7 @@
 // this website, never framed, never indexed, never cached.
 const HEADERS = {
   'Content-Security-Policy': [
-    "default-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "default-src 'self'", "worker-src 'self'", "manifest-src 'self'", "script-src 'self'", "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com", "img-src 'self' data: blob:", "media-src 'self' blob:", "connect-src 'self'",
     "frame-ancestors 'none'", "base-uri 'none'", "form-action 'self'", "object-src 'none'",
   ].join('; '),
@@ -20,6 +20,11 @@ const HEADERS = {
 export async function onRequest({ request, env, next }) {
   const url = new URL(request.url);
   const path = url.pathname;
+  // The Gate Control app's service worker (its scope is Gate Control only).
+  if (path === '/gate-control/sw.js') {
+    const sw = await env.ASSETS.fetch(new URL('/gate-control-sw.js', url));
+    return new Response(sw.body, { status: sw.status, headers: { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache', 'Service-Worker-Allowed': '/gate-control/', 'X-Content-Type-Options': 'nosniff' } });
+  }
   if (path === '/gate-control' || path === '/gate-control/login') return Response.redirect(`${url.origin}/gate-control/${url.search}`, 301);
   let res;
   if (path === '/gate-control/') res = await next();

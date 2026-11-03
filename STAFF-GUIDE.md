@@ -4757,6 +4757,66 @@ signed out after 75 minutes without using the page, and after 14 hours in any
 case. The page is never shown in search engines, and only this page may use the
 phone's camera.
 
+**Install it as an app.** On the phone, open lobistarsfc.com/gate-control and
+add it to the home screen (iPhone: Share › Add to Home Screen; Android: the
+browser menu › Install app / Add to Home screen). The **Gate Control** icon
+then opens it full screen, and it opens even with no signal.
+
+**No signal? Keep scanning (offline mode).** Stadium mobile data often stops
+working when the crowd arrives. While there is a signal, each phone keeps
+**today's ticket list** (ticket number, stand, adult or child and first name;
+no phone numbers or emails) and refreshes it every 5 minutes. The scan screen
+says "Offline list ready: … tickets". When the signal drops:
+- The top bar shows **Offline** and how many check-ins are waiting to be sent.
+- Scanning carries on: genuine, unused tickets show **ADMIT** (marked
+  **Offline**), a ticket already let in on this phone shows **ALREADY USED**, and
+  a number not on today's list shows **NOT ON TODAY'S LIST** (do not admit;
+  check it again when the signal returns).
+- When the signal returns, the waiting check-ins are sent by themselves. If
+  someone was let in offline with a ticket that had already been used at
+  another gate, the phone says **Double entry** and it appears on the
+  **Watch list** on Today for the supervisor.
+- Don't sign out while check-ins are waiting: Gate Control will ask you to
+  wait for the signal first.
+- Offline, the details shown are shorter (no price, phone or purchase time),
+  because those are not kept on the phone.
+
+**Wrong gate.** A Super Admin can set which stands each gate is for (Staff ›
+**Which stands each gate is for**). A ticket for another stand then shows amber
+**WRONG GATE** with where to send the fan, and is not checked in, so the fan can
+enter at the right gate. If the fan should come in here anyway, press **Admit
+here anyway** (recorded). A gate with nothing ticked lets in every stand.
+
+**Torch and camera switch.** With the camera on, a torch button appears on
+phones that have one (dark entrances, night matches), and a switch button
+appears when the phone has more than one camera.
+
+**My last scans.** The scan screen lists your last 6 scans, to settle "I was
+already let in" questions quickly.
+
+**Messages from the supervisor.** Gate Supervisors and Super Admins can send a
+message from **Today** (e.g. "Gate C closed: send fans to Main Gate") to every
+gate or one gate, for 30 minutes up to all day. It appears in yellow at the top
+of every steward's screen with a sound and buzz; stewards press **OK** to hide
+it. The supervisor can **Take down** a message early.
+
+**Incidents** (bottom bar). Any steward can report an incident at their gate:
+medical / first aid, lost child, crowding / crush risk, aggression or fight,
+fan refused or removed, fake tickets / tout, lost property, safety hazard or
+other, with details and a ticket number if there is one. Emergencies: call for
+help first, then report. Supervisors see every report (a red number on the
+Incidents tab shows how many are open) and **Close** each one with how it was
+resolved. Stewards see their own reports.
+
+**Watch list** (top of Today, when there is something to watch): 3 or more fake
+tickets at one gate in 30 minutes (a tout may be selling fakes nearby), double
+entries found when offline check-ins were sent, and tickets tried more than
+once.
+
+**End-of-day report.** Supervisors press **Download today's report (CSV)** on
+Today: every scan with the time, result, ticket, stand, gate, steward and how
+it was scanned. It opens in Excel or Google Sheets.
+
 **The older scanners** (lobistarsfc.com/scan and Admin › Commerce › Ticket
 Scanner, with the Matchday Helpers logins) still work. Gate Control is the one
 to use for ticket stewards.
