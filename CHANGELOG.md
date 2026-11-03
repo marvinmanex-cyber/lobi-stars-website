@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Free tickets "Click to download"; human check always visible
+
+- Free orders: the button says **Click to download** (no "Pay ₦0 with
+  Paystack"), with the note that a copy is sent to the fan's email. After
+  booking, the ticket pictures download by themselves (iPhone: one tap).
+- The human check (Cloudflare Turnstile) on /tickets is now always visible
+  (it usually ticks itself), and the form waits for it for a few seconds
+  instead of saying "Please complete the human check" straight away.
+
 ## 2026-11-03: Ticket discounts in naira; download and email buttons; free stand banner
 
 - Admin › Match Tickets: a **Discount ₦** box for each stand of each match

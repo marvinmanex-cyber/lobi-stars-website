@@ -149,8 +149,10 @@ import TicketsView from '../../components/tickets/TicketsView.astro';
           try { if (!localStorage.getItem('ga_tk_' + basket)) { localStorage.setItem('ga_tk_' + basket, '1'); if (window.lsGa) window.lsGa('ticket_purchase_complete', { item_count: (d.matches || []).length, currency: 'NGN' }); } } catch (e) {}
           loading.style.display = 'none';
           document.getElementById('state-basket').style.display = 'block';
-          const n = window.lsRenderTickets(document.getElementById('basket-list'), d);
-          document.getElementById('basket-summary').textContent = `${d.totalKobo === 0 ? 'Your free tickets are confirmed' : 'Payment confirmed'}. ${n} ticket${n === 1 ? '' : 's'} for ${d.matches.length} match${d.matches.length === 1 ? '' : 'es'}, also emailed to ${d.email}. Order reference: ${d.reference}.`;
+          const n = window.lsRenderTickets(document.getElementById('basket-list'), d, { autoSave: params.get('free') === '1' });
+          document.getElementById('basket-summary').textContent = d.totalKobo === 0
+            ? `Your free ticket${n === 1 ? ' is' : 's are'} ready and downloading to your phone. A copy has been sent to your email (${d.email}). Order reference: ${d.reference}.`
+            : `Payment confirmed. ${n} ticket${n === 1 ? '' : 's'} for ${d.matches.length} match${d.matches.length === 1 ? '' : 'es'}, also emailed to ${d.email}. Order reference: ${d.reference}.`;
           return;
         }
         if (!r.ok && r.status !== 500) { errorMsg.textContent = d.error || 'Order not found.'; break; }

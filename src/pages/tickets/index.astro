@@ -102,14 +102,16 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
             <div class="tk-fl"><input id="fName" name="buyerName" autocomplete="name" required maxlength="80" placeholder=" " /><label for="fName">Full name</label></div>
             <div class="tk-fl"><input id="fEmail" name="buyerEmail" type="email" autocomplete="email" required maxlength="254" placeholder=" " /><label for="fEmail">Email (tickets are sent here)</label><p class="tk-inline" id="fEmailMsg" aria-live="polite"></p></div>
             <div class="tk-fl"><input id="fPhone" name="buyerPhone" type="tel" autocomplete="tel" inputmode="tel" required placeholder=" " /><label for="fPhone">Phone (e.g. 0803 123 4567)</label><p class="tk-inline" id="fPhoneMsg" aria-live="polite"></p></div>
-            {siteKey && <div class="cf-turnstile" data-sitekey={siteKey} data-appearance="interaction-only"></div>}
+            {siteKey && <div class="cf-turnstile tk-human" data-sitekey={siteKey} data-appearance="always" data-size="flexible"></div>}
             <p class="tk-err" id="buyErr" role="alert"></p>
             <button type="submit" class="tk-pay" id="payBtn" disabled>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true" id="payIcoLock"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true" id="payIcoDl" hidden><path d="M12 4v11" /><path d="M7 10l5 5 5-5" /><path d="M5 20h14" /></svg>
               <span id="payText">Pay with Paystack</span>
             </button>
-            <p class="tk-paysub">Card, bank transfer or USSD</p>
-            <p class="tk-small">Handled securely by Paystack. One QR code per ticket; each admits one person, once, on the day of its match. By buying you agree to our <a href="/terms/">Terms</a>.</p>
+            <p class="tk-paysub" id="paySub">Card, bank transfer or USSD</p>
+            <p class="tk-freenote" id="freeNote" hidden>Free tickets: nothing to pay. Your tickets download to your phone, and a copy is sent to your email.</p>
+            <p class="tk-small" id="payFine"><span id="payBy">Handled securely by Paystack.</span> One QR code per ticket; each admits one person, once, on the day of its match. By buying you agree to our <a href="/terms/">Terms</a>.</p>
           </form>
         </aside>
       </div>
@@ -377,6 +379,9 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   .tk-pay:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; }
   .tk-paysub { margin: -4px 0 0; text-align: center; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--lt); }
   .tk-small { margin: 0; color: var(--lt); font-size: 13px; line-height: 1.5; }
+  .tk-human { min-height: 65px; }
+  .tk-freenote { margin: 0; padding: 10px 12px; border-radius: 10px; background: #E9F8EE; color: #0B5A24; font-size: 14px; line-height: 1.45; font-weight: 600; }
+  .tk-freenote[hidden] { display: none; }
   .tk-small a { color: var(--red-text); }
 
   /* G. Cross-sell */
@@ -662,12 +667,21 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   // The price on screen: the full price straight away, then the server's price
   // (with any discount) from /api/tickets/price. Pay uses the server's total.
   var quote = null, quoteSeq = 0, quoteTimer;
+  // Free order: "Click to download" (no Paystack), with the email note; otherwise "Pay ₦… with Paystack".
+  function setPayWording(nSel, total) {
+    var free = !!nSel && total === 0;
+    $('payText').textContent = free ? 'Click to download' : nSel ? 'Pay ' + naira(total) + ' with Paystack' : 'Pay with Paystack';
+    $('payIcoLock').hidden = free; $('payIcoDl').hidden = !free;
+    $('paySub').hidden = free; $('freeNote').hidden = !free;
+    $('payBy').textContent = free ? 'Free tickets are issued at once.' : 'Handled securely by Paystack.';
+    if (free && $('tkRewards')) $('tkRewards').hidden = true;
+  }
   function showPrice(total, tickets, nSel) {
     showTotal(total);
     $('tkBar').hidden = !nSel;
     $('barTotal').textContent = nSel ? money(total) : naira(0);
     $('barCount').textContent = nSel + ' match' + (nSel === 1 ? '' : 'es') + ', ' + tickets + ' ticket' + (tickets === 1 ? '' : 's');
-    $('payText').textContent = nSel && total === 0 ? 'Get my free tickets' : nSel ? 'Pay ' + naira(total) + ' with Paystack' : 'Pay with Paystack';
+    setPayWording(nSel, total);
   }
   var payLines = function (basket) { return basket.map(function (l) { return l.family ? { eventId: l.eventId, tier: l.tier, family: true, adults: l.adults, children: l.children } : { eventId: l.eventId, tier: l.tier, quantity: l.quantity }; }); };
   function requestPrice(basket) {
@@ -706,11 +720,11 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     $('grpWrap').hidden = !d.matches.some(function (m) { return m.applied.some(function (a) { return a.kind === 'group'; }); });
     showPrice(d.totalKobo, tickets, basket.length);
     $('payBtn').disabled = false;
-    if (rw) rw.refresh();
+    if (rw && d.totalKobo > 0) rw.refresh();
   }
   // Lobi Stars Rewards: "Use my Star Points" (shown once Rewards is live).
   var rw = window.LSRewards ? window.LSRewards.mount($('tkRewards'), { kind: 'tickets', subtotal: function () { return quote ? quote.totalKobo : 0; },
-    onChange: function (x) { if (quote && x.offKobo) $('payText').textContent = 'Pay ' + naira(quote.totalKobo - x.offKobo) + ' with Paystack'; else if (quote) $('payText').textContent = 'Pay ' + naira(quote.totalKobo) + ' with Paystack'; } }) : null;
+    onChange: function (x) { if (!quote || quote.totalKobo === 0) return; if (x.offKobo) $('payText').textContent = 'Pay ' + naira(quote.totalKobo - x.offKobo) + ' with Paystack'; else $('payText').textContent = 'Pay ' + naira(quote.totalKobo) + ' with Paystack'; } }) : null;
 
   function summary() {
     var sel = selected(), total = 0, tickets = 0, lines = $('sumLines');
@@ -796,6 +810,13 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     if (!lines.length) { err.textContent = 'Tick at least one match.'; return; }
     if (!quote) { err.textContent = 'Working out your price. Please try again in a moment.'; return; }
     var tokenEl = f.querySelector('[name="cf-turnstile-response"]');
+    // The human check (Turnstile) may still be working: wait for it (up to 8 seconds) instead of failing.
+    if (f.querySelector('.cf-turnstile') && !(tokenEl && tokenEl.value)) {
+      var waited = Number(f.dataset.waited || 0);
+      if (waited < 8) { err.textContent = 'Checking you are human…'; f.dataset.waited = String(waited + 1); setTimeout(function () { f.requestSubmit ? f.requestSubmit() : f.dispatchEvent(new Event('submit', { cancelable: true })); }, 1000); return; }
+      // Still nothing after 8 seconds: send anyway; the server says if the check is really needed.
+    }
+    f.dataset.waited = '0'; err.textContent = '';
     $('payBtn').disabled = true;
     if (window.lsGa) window.lsGa('ticket_purchase_start', { item_count: lines.length, value: quote.totalKobo / 100, currency: 'NGN' });
     fetch('/api/tickets/basket', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lines: lines, groupName: $('grpWrap').hidden ? '' : f.groupName.value, expectedTotalKobo: quote.totalKobo, usePoints: rw ? rw.values().usePoints : 0, buyerName: f.buyerName.value, buyerEmail: f.buyerEmail.value, buyerPhone: f.buyerPhone.value, turnstileToken: tokenEl ? tokenEl.value : '', source: buySource() }) })
@@ -810,6 +831,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
         // A match that just sold out: untick it so the rest can be paid in one click.
         if (res.d.soldOut && res.d.eventId && rows.get(res.d.eventId)) { set(rows.get(res.d.eventId), false); summary(); load(); }
         if (window.turnstile && window.turnstile.reset) window.turnstile.reset();
+        if (/human check/i.test(res.d.error || '')) err.textContent = 'Please tick the "Verify you are human" box above the button, then press it again.';
         $('payBtn').disabled = !selected().length;
       })
       .catch(function () { err.textContent = 'No connection. Please try again.'; $('payBtn').disabled = false; });

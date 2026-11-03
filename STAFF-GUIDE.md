@@ -2638,7 +2638,10 @@ or **Opening soon**. "Apply to all" at the top can set it for every home match.
 
 - **Free:** fans book online exactly like a paid ticket (choose the match and
   stand, name, email, phone), but the price shows **Free** and the button says
-  **Get my free tickets**. Nothing goes to Paystack: the tickets are issued at
+  **Click to download**, with the note "Your tickets download to your phone,
+  and a copy is sent to your email". After pressing it, the ticket pictures
+  download by themselves (iPhone: one tap on "Download to my phone" saves
+  them to Photos). Nothing goes to Paystack: the tickets are issued at
   once, shown on the screen to save or download (PDF), and emailed. Each
   person (same email or same phone) can get at most **Most per order** free
   tickets for that match. Free tickets scan at the gate like any other ticket

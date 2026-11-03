@@ -212,7 +212,7 @@ import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
     return card;
   }
 
-  window.lsRenderTickets = function (box, data) {
+  window.lsRenderTickets = function (box, data, opts) {
     var count = data.matches.reduce(function (s, m) { return s + m.tickets.length; }, 0);
     var parts = [el('p', { class: 'tv-rules' }, el('b', { text: 'At the gate: ' }), 'each QR code admits one person, once, and only on the day of its match. Save each ticket to your phone (picture or PDF), or print it. Keep it private: anyone with the code can use it.')];
     if (data.discountKobo > 0) parts.unshift(el('p', { class: 'tv-save' }, 'Tickets ' + naira(data.subtotalKobo) + ' · Discount: ' + (data.discountLabel || 'Discount') + ' −' + naira(data.discountKobo) + ' · Total paid ' + naira(data.totalKobo) + '. ', el('b', { text: 'You saved ' + naira(data.discountKobo) + '.' }), data.groupName ? ' Group: ' + data.groupName + '.' : null));
@@ -226,6 +226,8 @@ import { TEAM_LOGOS } from '../../../functions/api/_lib/teamLogos.js';
       var ready = new Promise(function (res) { setTimeout(res, 300); }).then(function () { return Promise.all(list.map(function (x) { return ticketPicture(x.m, x.t, x.i, x.of).catch(function () { return null; }); })); });
       var dl = el('button', { type: 'button', class: 'tv-get-btn tv-get-btn--phone' }, el('span', { class: 'tv-get-ic', 'aria-hidden': 'true', text: '⬇' }), el('span', {}, el('b', { text: 'Download to my phone' }), el('small', { text: list.length === 1 ? 'Your ticket as a picture' : 'All ' + list.length + ' tickets as pictures' })));
       dl.addEventListener('click', function () { savePictures(dl, list, ready); });
+      // Free tickets: start the download by themselves (phones that need a tap, e.g. iPhone, get the button).
+      if (opts && opts.autoSave && !/iP(hone|ad|od)/.test(navigator.userAgent)) ready.then(function () { savePictures(dl, list, ready); });
       var mailBox = el('span', {}, el('b', { text: 'Email my tickets' }), el('small', { text: data.email ? 'Send to ' + data.email : 'Send them to your email' }));
       var mail = el('button', { type: 'button', class: 'tv-get-btn tv-get-btn--mail' }, el('span', { class: 'tv-get-ic', 'aria-hidden': 'true', text: '✉' }), mailBox);
       var note = el('p', { class: 'tv-get-note', role: 'status' });
