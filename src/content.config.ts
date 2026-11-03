@@ -171,6 +171,8 @@ const partners = defineCollection({
     // true when the logo file is a transparent cut-out that already has its own
     // shape (e.g. Zeva's label): shown without the white card, a little larger.
     logoNoCard: z.boolean().default(false),
+    // A partner page designed in the partner's own brand style (e.g. "ropajo" -> RopajoFeature).
+    theme: z.enum(['ropajo']).nullable().optional(),
     website: z.string().nullable().optional(),
     shortDescription: z.string().default(''),
     since: z.coerce.number().int().nullable().optional(),

@@ -455,7 +455,16 @@ is still replaced or refunded.
    strip is left out there and on the partner pages; every other page shows
    them in the footer.
 
-**To remove a partner** without deleting them, untick **Active**.
+**To remove a partner** without deleting them, untick **Active**. Their page
+then goes to /partners (Benue Links, Jumia and BIPC were removed this way on
+3 Nov 2026).
+
+**Ropajo Hotels (Official Hotel Partner)** has its own page designed in
+Ropajo's brand colours and font, set by the web team with `theme: "ropajo"` in
+its partner file (the design is in
+`src/components/partners/RopajoFeature.astro`, including its address, phone
+numbers and photos). Editing its name, short description or logo in the admin
+works as usual; ask the web team to change anything else on that page.
 
 **Partnership Opportunities:** the categories you're offering to new sponsors
 are under **Site Settings… › Partnership Opportunities & Benefits**. When you

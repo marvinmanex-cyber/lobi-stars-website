@@ -8,6 +8,6 @@ website: "https://jumia.com.ng"
 shortDescription: "Jumia is the Official E-commerce Partner of Lobi Stars FC."
 since: null
 displayOrder: 3
-active: true
+active: false
 ageRestricted: false
 ---

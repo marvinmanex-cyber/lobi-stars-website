@@ -8,6 +8,29 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Ropajo Hotels joins as Official Hotel Partner; three partners removed
+
+- **Ropajo Hotels & Apartments** (Lobi Quarters, Makurdi) is now the
+  **Official Hotel Partner**, listed with the Official Club Partners (second,
+  after Novus MFB). Its logo links to https://ropajo.com/ everywhere it shows:
+  homepage, footer, /partners and its own page.
+- **Its own page, /partners/ropajo/, is designed in Ropajo's brand style** so it
+  flows with ropajo.com: espresso brown and cream with a deep burgundy accent,
+  their serif font (Abhaya Libre, hosted on our site), spaced capitals,
+  outlined buttons and large photos of the rooms, pool, restaurant and food
+  (taken from ropajo.com). It has Book your stay buttons, the address with a
+  Google Maps link, their phone numbers and email, and a note for fans coming
+  to Makurdi for a home match. The logo shows in cream on their brown, as on
+  their own website.
+- **Removed as partners:** Benue Links (Transport), Jumia (E-commerce) and BIPC
+  (Institutional Partner). They are switched off (Active unticked), not
+  deleted, so any of them can be brought back by ticking Active again. Their
+  old pages now go to /partners. Transport and E-commerce are now listed as open
+  categories for new sponsors.
+- **Shop:** the note "Official sales are powered by Jumia Nigeria" was taken
+  off the Club Shop. The Shop on Jumia buttons on products still work for now
+  (see HANDOVER-TODO D1).
+
 ## 2026-11-03: Live Ticket Sales dashboard
 
 **Who it affects:** admins (Commerce).

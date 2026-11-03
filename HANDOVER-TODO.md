@@ -113,9 +113,11 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 
 | # | What | What to send |
 |---|---|---|
-| C30 | **BIPC logo: full file needed** | The BIPC (Benue Investment & Property Co) logo on the site is cut off on both sides ("Benue Invest…", "Limitec"), because the uploaded picture itself was cropped. | Ask BIPC for their official logo as a PNG (transparent) or SVG, showing the whole name, and send it to the website manager (or upload it in the Content CMS › Partners › BIPC › Logo). |
+| C30 | ~~**BIPC logo: full file needed**~~ No longer needed: BIPC was removed as a partner on 3 Nov 2026. | The BIPC (Benue Investment & Property Co) logo on the site is cut off on both sides ("Benue Invest…", "Limitec"), because the uploaded picture itself was cropped. | Ask BIPC for their official logo as a PNG (transparent) or SVG, showing the whole name, and send it to the website manager (or upload it in the Content CMS › Partners › BIPC › Logo). |
 | C31 | **Grand Stand badge picture** | "Cover Stand" was renamed "Grand Stand" (31 Oct 2026). The round stand badge on tickets and ticket emails still reads "COVER STAND", so it is hidden for Grand Stand tickets. | Send the website manager a Grand Stand badge in the same style as the VIP Sitting and Popular Stand badges (square PNG, at least 320 px); it is then switched on. |
-| D1 | **Shop** | For each product: price in naira and its own Jumia product link. |
+| D1 | **Shop** | For each product: price in naira and its own Jumia product link. Note: Jumia was removed as E-commerce Partner on 3 Nov 2026, but the Shop on Jumia buttons still work. Tell the website manager if they should come off too, or which shop replaces them. |
+| P1 | **New Transport and E-commerce partners** | Benue Links and Jumia were removed on 3 Nov 2026. When new partners are signed, send their name, logo (transparent PNG or SVG), website and official title, or add them in Admin › Partners. |
+| P2 | **Ropajo Hotels: check with them** | Their page (/partners/ropajo/) uses photos, phone numbers and the email from ropajo.com. Ask Ropajo to confirm they are happy with it, whether they want any changes, the year the partnership started, and who should get their monthly partner report (C18). |
 | D2 | **Membership** | How fans pay (at the club, bank transfer or online with Paystack), the price per tier, and whether to switch on online payment. |
 | D3 | **Shirt personalisation** | Fee, available sizes, how fans collect or receive shirts; then "switch it on". |
 | D4 | **Hospitality packages** | Package names, what's included, price (or "on request"). |

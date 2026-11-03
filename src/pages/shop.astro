@@ -14,7 +14,7 @@ const persOn = P.enabled === true && Number(P.feeNaira) > 0 && !!String(P.howYou
 const canPers = (p: (typeof shop.products)[number]) => persOn && p.personalisable && p.inStock && Number(p.price) > 0;
 const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: withSeason(p.name), price: Number(p.price) }));
 ---
-<Layout title="Club Shop | Lobi Stars Football Club" description="Official Lobi Stars FC merchandise: jerseys, jackets, scarves, caps and gifts, sold through Jumia Nigeria.">
+<Layout title="Club Shop | Lobi Stars Football Club" description="Official Lobi Stars FC merchandise: jerseys, jackets, scarves, caps and gifts.">
   <div class="page-hero wrap">
     <div class="stag">Official Gear</div>
     <h1 class="stitle">Club <span class="r">Shop</span></h1>
@@ -25,7 +25,7 @@ const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: wit
     <div class="shop-grid">
       {shop.products.map(p => <ShopCard product={p} personalise={canPers(p)} />)}
     </div>
-    <p class="shop-note"><strong>Note:</strong> Official sales are powered by Jumia Nigeria. Members get 10% off club merchandise &mdash; <a href="/membership">join here</a>.</p>
+    <p class="shop-note"><strong>Note:</strong> Members get 10% off club merchandise &mdash; <a href="/membership">join here</a>.</p>
     {persShirts.length > 0 && <p class="shop-note"><strong>Personalised shirts:</strong> {NO_REFUND_POLICY}</p>}
     <p class="shop-note" id="shopRwNote" hidden><strong>Lobi Stars Rewards:</strong> Star Points are earned on orders paid here on lobistarsfc.com (such as personalised shirts, match tickets, matchday food and membership), not on Jumia orders. <a href="/rewards/">How Star Points work</a></p>
   </div>

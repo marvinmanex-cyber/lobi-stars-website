@@ -8,6 +8,6 @@ website: "https://benuelinks.com"
 shortDescription: "Benue Links Nig. Ltd is the Official Transport Partner of Lobi Stars FC."
 since: null
 displayOrder: 2
-active: true
+active: false
 ageRestricted: false
 ---
