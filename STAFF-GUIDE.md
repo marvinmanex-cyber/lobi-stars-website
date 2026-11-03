@@ -4645,6 +4645,96 @@ Lobi Stars app.
   their own Staff ID, and the "Still there?" sign-out runs after 20 minutes
   without a tap.
 
+## 43. Gate Control: the ticket stewards' area (/gate-control)
+
+**What it is.** Gate Control is the matchday ticket stewards' own page, at
+**lobistarsfc.com/gate-control**. It is kept separate from the website admin,
+like MatchDay Kitchen: stewards have their own Staff ID and password, and a
+Gate Control sign-in never opens /admin. It works on any phone (best added to
+the home screen: Share > Add to Home Screen on iPhone, or the browser menu >
+Add to Home screen / Install app on Android).
+
+**Who signs in**
+
+| Who | Signs in with | Can do |
+|---|---|---|
+| **Ticket Steward** | Staff ID (e.g. LSG-001) and password | Scan and check in tickets, look tickets up, see Today, see their own activity |
+| **Gate Supervisor** | Staff ID and password | Everything a steward can, plus **Re-admit** a used ticket (with a reason), see everyone's activity and download it (CSV) |
+| **Super Admin** | Their website email and password | Everything, plus add stewards, reset passwords, switch people off, and set the list of gates |
+
+Any number of people can be signed in and scanning at the same time, at
+different gates. A ticket can only ever be checked in once: if two phones scan
+the same ticket at the same moment, one shows ADMIT and the other ALREADY USED.
+
+**Setting up (Super Admin, once).** Sign in at lobistarsfc.com/gate-control with
+your website email, press **Staff** (bottom bar):
+
+1. **Add a steward**: Staff ID (e.g. LSG-001, LSG-002 …), full name, role
+   (Ticket Steward or Gate Supervisor) and a password of at least 8
+   characters. Give each person their own Staff ID and password.
+2. **Gates**: one gate per line (default: Main Gate, VIP Gate, Grand Stand
+   Gate, Popular Stand Gate). Press **Save gates**.
+3. To stop someone signing in, press **Edit** and untick **Can sign in**; they
+   are signed out on every phone at once. **Edit** is also where you reset a
+   password (they are signed out and must use the new one).
+
+**On match day (each steward)**
+
+1. Open lobistarsfc.com/gate-control, sign in, and tap **the gate you are at**.
+   The gate shows at the top (tap it to change gate).
+2. Tap **Scan ticket**. The phone camera opens (allow the camera the first
+   time). Hold the ticket's QR code inside the square. The answer fills the
+   screen, with a sound and a buzz:
+   - **Green ADMIT**: genuine ticket for today's match, now checked in. With the
+     camera on, the scanner is ready for the next ticket after 2.5 seconds.
+     **ADMIT CHILD**: a child ticket (family bundle); check the age if unsure.
+   - **Red ALREADY USED**: shows when, at which gate and by whom it was checked
+     in. Don't let them in; call the supervisor.
+   - **Red and striped FAKE TICKET**: no Lobi Stars ticket has this number.
+     **NOT A LOBI STARS TICKET**: the QR code is not from lobistarsfc.com.
+     Don't let them in; call the supervisor.
+   - **Amber WRONG MATCH**: a genuine ticket for another match. Don't let them
+     in today; it still works on its own match day.
+   - **Red CANCELLED TICKET** (refunded) or **NOT PAID**: don't let them in.
+   - **Amber CHECK THE NUMBER**: the typed number has a mistake (ticket
+     numbers never use O, I, 0 or 1). Type it again.
+3. **If the camera can't read a ticket** (cracked screen, low light), type the
+   12 letters and numbers after **LS-TIX-** in the box and press **Check**. It
+   works exactly like a scan. For a season ticket, type the whole number
+   (LS-SZN-…).
+4. Every answer shows the ticket in full: the buyer's name, stand, adult or
+   child, the match, the ticket number, **price paid**, **when it was bought**,
+   **where it was bought** (for example Instagram · Phone · Makurdi, Benue),
+   the order (how many tickets and the total), payment, part of the phone
+   number and email (to check against the fan's own phone), and, for a used
+   ticket, when, where and by whom it was checked in.
+5. **Look up only** (top switch) shows a ticket without checking it in. Use it
+   at the ticket desk to answer a fan's question. Switch back to **Check in**
+   for the gate.
+
+**Re-admit (Gate Supervisors).** When a fan who was checked in steps out and
+comes back (car park, first aid), the ticket shows ALREADY USED. The supervisor
+scans it and presses **Re-admit (supervisor)**, writes the reason and confirms.
+The re-admission and the reason are recorded under the supervisor's name.
+
+**Today** (bottom bar) shows, live, every 10 seconds: today's home match, how
+many have been checked in, refused and fake, check-ins per stand against
+tickets sold, check-ins per gate, who is on duty at which gate, and the latest
+scans at every gate.
+
+**Activity** shows what was done, by whom, at which gate and when. Stewards see
+their own; supervisors and Super Admins see everyone's, can pick a person and a
+day, and download a CSV. The record cannot be changed or deleted.
+
+**Security.** Five wrong passwords lock a Staff ID for 15 minutes. A steward is
+signed out after 75 minutes without using the page, and after 14 hours in any
+case. The page is never shown in search engines, and only this page may use the
+phone's camera.
+
+**The older scanners** (lobistarsfc.com/scan and Admin › Commerce › Ticket
+Scanner, with the Matchday Helpers logins) still work. Gate Control is the one
+to use for ticket stewards.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

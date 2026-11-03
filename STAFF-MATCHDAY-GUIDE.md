@@ -105,7 +105,17 @@ Lost PIN: **New PIN**. Someone leaves early: **Switch off**. Running late:
 **Later finish** (until 06:00 next morning at most). Each scan and kitchen step
 shows the helper's name.
 
-**At the gates:** the Ticket Scanner (lobistarsfc.com/scan) reads match
+**At the gates: Gate Control (lobistarsfc.com/gate-control).** Ticket stewards
+sign in with their own Staff ID and password, tap the gate they are at, and
+press **Scan ticket** to use the phone camera. If a ticket won't scan, they type
+the 12 letters and numbers after LS-TIX-. Each answer shows the buyer's name,
+stand, adult or child, price paid, when and where it was bought, and whether it
+is genuine: green ADMIT, red ALREADY USED (with when, which gate and who), red
+FAKE TICKET, amber WRONG MATCH, red CANCELLED or NOT PAID. Gate Supervisors can
+re-admit a fan who stepped out (with a reason). **Today** shows check-ins per
+stand and gate, live. Full guide: STAFF-GUIDE §43.
+
+**Older scanner:** the Ticket Scanner (lobistarsfc.com/scan) also reads match
 tickets and season tickets alike. A season ticket gets in once per home match:
 if it shows "Already used for this match", the code has already been let in
 today. Season tickets only work on home match days.

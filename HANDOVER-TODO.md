@@ -162,6 +162,14 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | K3 | **Set up the kitchen tablet(s)** | On each kitchen tablet or phone, open lobistarsfc.com/matchday-kitchen and press **Install the Kitchen app** (iPhone/iPad: Share › Add to Home Screen). The **MD Kitchen** app then opens straight to the kitchen (STAFF-GUIDE §42). Check who may cancel orders and change prices (Settings; default: cancel = pass and supervisor, prices = supervisor). |
 | K4 | **Print the MatchDay Kitchen posters** | Open **lobistarsfc.com/kitchen/poster/** and press **Print A4 poster** for walls, kiosks and the programme. On match day, open the same page on the big screen computer and press **Big screen: full screen**. Optional: add pickup points (Admin › Food › Ordering) if fans may collect food themselves; they then get collection numbers. |
 
+## T. Gate Control: ticket stewards (/gate-control, built 3 Nov 2026)
+
+| # | Item | What is needed |
+| --- | --- | --- |
+| T1 | **Add the ticket stewards** | A Super Admin signs in at lobistarsfc.com/gate-control with their website email and password, opens **Staff** (bottom bar) › **Add a steward**: Staff ID (e.g. LSG-001), full name, role (**Ticket Steward**, or **Gate Supervisor** for the person in charge) and a password. Give each person their own Staff ID and password. STAFF-GUIDE §43. |
+| T2 | **Name the gates** | Same page, **Gates** box: one gate per line, matching the real entrances at McCarthy Stadium (now: Main Gate, VIP Gate, Grand Stand Gate, Popular Stand Gate). **Save gates**. |
+| T3 | **A practice run before the first home match** | Each steward signs in on their own phone, allows the camera, and scans a test ticket in **Look up only** mode (nothing is checked in). Buy one real ticket (or ask the website manager for a test one) to see a green ADMIT. |
+
 ## E. Legal
 
 | # | What | What to send |

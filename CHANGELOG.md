@@ -8,6 +8,32 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Gate Control: the ticket stewards' area (/gate-control)
+
+- **New:** lobistarsfc.com/gate-control, a separate area for matchday ticket
+  stewards (like MatchDay Kitchen and the Media Centre). Stewards have their
+  own Staff ID and password and never get into the website admin. Roles:
+  **Ticket Steward** and **Gate Supervisor**; Super Admins sign in with their
+  website email and add the stewards and the list of gates.
+- Each person chooses their gate. **Scan ticket** opens the phone camera; a
+  ticket that won't scan can be typed. The answer fills the screen with a
+  sound: ADMIT / ADMIT CHILD, ALREADY USED (when, which gate, by whom), FAKE
+  TICKET, NOT A LOBI STARS TICKET, WRONG MATCH, CANCELLED, NOT PAID, or CHECK
+  THE NUMBER. It shows the buyer, stand, adult or child, price paid, when and
+  where it was bought, the order and part of the phone and email.
+- Any number of phones can scan at once; a ticket is checked in once only.
+  **Look up only** shows a ticket without checking it in. Gate Supervisors can
+  **re-admit** a fan who stepped out, with a reason. **Today** shows check-ins
+  per stand and gate, refusals, fake attempts and who is on duty, live.
+  Everything is recorded in an activity log that cannot be changed.
+- The camera scanner is kept on our own website (no outside scripts), and only
+  this page may use the camera.
+- **Fixed:** the old gate scanner (lobistarsfc.com/scan) had a coding mistake
+  that stopped its page script from running; it now works and points
+  stewards to Gate Control.
+- Admin › Commerce has a new **Gate Control (ticket stewards)** link.
+- To do: HANDOVER-TODO T1–T3 (add the stewards, name the gates, a practice run).
+
 ## 2026-11-03: Ropajo partner page: Lobi Stars and Ropajo styles blended
 
 - The page now mixes both brands: Lobi Stars red and gold, Bebas Neue and

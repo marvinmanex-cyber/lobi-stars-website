@@ -8,6 +8,7 @@ import Layout from '../layouts/Layout.astro';
 
     <p id="who" class="muted" style="display:none;margin-top:12px;font-size:14px;"></p>
     <div id="gate-login" class="card" style="padding:24px;margin-top:20px;">
+      <p class="muted" style="margin:0 0 12px;font-size:14px;"><b>Ticket stewards: use <a href="/gate-control/">Gate Control</a></b> (your Staff ID and password; scan with your phone, see every ticket's details).</p>
       <p class="muted" style="margin:0 0 12px;font-size:14px;">Matchday helpers: <a href="/helper/">sign in with your username and PIN</a>.</p>
       <label class="muted" style="display:block;margin-bottom:8px;font-size:13px;">Staff Code</label>
       <input id="staff-code" type="password" inputmode="numeric" placeholder="Enter staff code" style="width:100%;padding:12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:var(--d3);color:var(--white);font-size:16px;margin-bottom:12px;"/>
@@ -129,7 +130,7 @@ import Layout from '../layouts/Layout.astro';
         const child = data.ticketType === 'child';
         resultTitle.textContent = child ? 'VALID: ADMIT CHILD' : 'VALID: ADMIT ADULT';
         // Plain text only: the buyer's name is typed by the buyer.
-        resultDetail.replaceChildren(child ? 'CHILD ticket: check age if unsure.' : 'ADULT ticket', document.createElement('br'), `${data.ticket.buyer_name} · ${({ VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' } as Record<string, string>)[data.ticket.tier] || data.ticket.tier}`, document.createElement('br'), `${data.ticket.home_team} vs ${data.ticket.away_team}`);
+        resultDetail.replaceChildren(child ? 'CHILD ticket: check age if unsure.' : 'ADULT ticket', document.createElement('br'), `${data.ticket.buyer_name} · ${({ VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' })[data.ticket.tier] || data.ticket.tier}`, document.createElement('br'), `${data.ticket.home_team} vs ${data.ticket.away_team}`);
       } else {
         // Amber for a ticket to another match, red for everything else.
         const wrong = data.code === 'wrong_match';

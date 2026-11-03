@@ -15,6 +15,8 @@
     "/fixtures/*",
     "/fixtures.ics",
     "/fixtures.ics/*",
+    "/gate-control",
+    "/gate-control/*",
     "/health",
     "/health/*",
     "/live",

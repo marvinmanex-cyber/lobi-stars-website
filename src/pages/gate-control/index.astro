@@ -1,0 +1,180 @@
+---
+// Gate Control: the matchday ticket stewards' own area (sign-in, gate choice,
+// ticket scanner, today's check-ins, activity, staff). Served by
+// functions/gate-control/[[path]].js for /gate-control/ and /gate-control/login/
+// with strict security headers (camera allowed on this page only). Separate
+// from the website admin: its own staff, sign-in and cookie.
+import '../../styles/gateControl.css';
+const I = {
+  scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="4" height="4"/><rect x="13" y="7" width="4" height="4"/><rect x="7" y="13" width="4" height="4"/><path d="M13 13h1.5v1.5M17 17h-1.5v-1.5M13 17h1"/>',
+  today: '<path d="M3 21h18"/><rect x="5" y="11" width="3" height="7"/><rect x="10.5" y="6" width="3" height="12"/><rect x="16" y="9" width="3" height="9"/>',
+  activity: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+  staff: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.2A5 5 0 0 1 22 19"/>',
+  out: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5M21 12H9"/>',
+  pin: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+};
+const svg = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+---
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="same-origin" />
+  <meta name="theme-color" content="#0c0f14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Gate Control" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Gate Control | Lobi Stars FC</title>
+  <link rel="icon" type="image/png" href="/images/lobi-stars-badge.png" />
+  <link rel="apple-touch-icon" href="/images/lobi-stars-badge.png" />
+</head>
+<body>
+  <!-- Sign in -->
+  <section class="gc-center" id="signin" hidden>
+    <form class="gc-card" id="signinForm" novalidate>
+      <div class="gc-brand">
+        <img src="/images/lobi-stars-badge.png" alt="Lobi Stars FC badge" width="58" height="58" />
+        <div><h1>Gate Control</h1><p class="gc-caps">Lobi Stars FC · Ticket Stewards</p></div>
+      </div>
+      <p class="gc-err" id="signinErr" role="alert" hidden></p>
+      <div class="gc-field">
+        <label for="login">Staff ID or email</label>
+        <input class="gc-input" id="login" autocomplete="username" autocapitalize="characters" spellcheck="false" required maxlength="120" placeholder="e.g. LSG-001" />
+      </div>
+      <div class="gc-field">
+        <label for="password">Password</label>
+        <div class="gc-pw">
+          <input class="gc-input" id="password" type="password" autocomplete="current-password" required maxlength="72" />
+          <button type="button" class="gc-btn ghost" id="pwToggle" aria-controls="password" aria-pressed="false">Show</button>
+        </div>
+      </div>
+      <button class="gc-btn red huge wide" type="submit" id="signinBtn">Sign in</button>
+      <p class="gc-note">Every scan and check-in is recorded under your name and gate. Don't share your password.</p>
+    </form>
+  </section>
+
+  <!-- Choose the gate -->
+  <section class="gc-center" id="gatePick" hidden>
+    <div class="gc-card">
+      <p class="gc-caps" id="gateHello"></p>
+      <h1 style="font-size:40px;margin-top:6px">Which gate are you at?</h1>
+      <p class="gc-note" style="margin-top:8px">Your check-ins are recorded at this gate. You can change it at any time.</p>
+      <p class="gc-err" id="gateErr" role="alert" hidden></p>
+      <div class="gc-gates" id="gateList"></div>
+      <button type="button" class="gc-btn ghost wide" id="gateCancel" hidden>Cancel</button>
+    </div>
+  </section>
+
+  <!-- The app -->
+  <div id="app" hidden>
+    <header class="gc-top">
+      <img src="/images/lobi-stars-badge.png" alt="" width="36" height="36" />
+      <div class="gc-top-t"><b>Gate Control</b><small id="who"></small></div>
+      <span class="gc-spacer"></span>
+      <button type="button" class="gc-chip" id="gateChip" aria-label="Change gate"><Fragment set:html={svg(I.pin)} /><span id="gateName"></span></button>
+      <button type="button" class="gc-icon" id="signoutBtn" aria-label="Sign out"><Fragment set:html={svg(I.out)} /></button>
+    </header>
+
+    <main class="gc-main">
+      <!-- Scan -->
+      <section id="v-scan" aria-labelledby="scanH">
+        <h2 class="gc-sr" id="scanH">Scan tickets</h2>
+        <div class="gc-mode" role="group" aria-label="What a scan does">
+          <button type="button" id="modeAdmit" aria-pressed="true">Check in</button>
+          <button type="button" class="look" id="modeLook" aria-pressed="false">Look up only</button>
+        </div>
+        <div id="result" aria-live="assertive"></div>
+        <div id="scanBox">
+          <div class="gc-cam" id="cam" hidden>
+            <div id="reader"></div>
+            <p class="gc-cam-tip">Hold the ticket's QR code inside the square</p>
+          </div>
+          <button type="button" class="gc-btn red huge wide" id="camBtn"><Fragment set:html={svg(I.scan)} /><span id="camLbl">Scan ticket</span></button>
+          <p class="gc-err" id="camErr" role="alert" hidden style="margin-top:12px"></p>
+          <div class="gc-or">or type the ticket number</div>
+          <form id="typeForm" class="gc-type-row" novalidate>
+            <label class="gc-sr" for="ticketNo">Ticket number</label>
+            <div class="gc-type"><span>LS-TIX-</span><input id="ticketNo" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" inputmode="text" placeholder="ABCD2345EFGH" /></div>
+            <button class="gc-btn gold" type="submit" style="min-height:62px">Check</button>
+          </form>
+          <p class="gc-hint">The 12 letters and numbers after LS-TIX- on the ticket. For a season ticket, type the whole number (LS-SZN-…).</p>
+          <div class="gc-count"><span id="myCount">You have checked in 0 people</span><span id="lastAt"></span></div>
+        </div>
+      </section>
+
+      <!-- Today -->
+      <section id="v-today" hidden aria-labelledby="todayH">
+        <div class="gc-h"><h2 id="todayH">Today at the gates</h2><span class="gc-caps" id="todayAt"></span></div>
+        <div id="todayBody"><p class="gc-empty">Loading…</p></div>
+      </section>
+
+      <!-- Activity -->
+      <section id="v-activity" hidden aria-labelledby="actH">
+        <div class="gc-h"><h2 id="actH">Activity</h2><a class="gc-btn ghost" id="actCsv" hidden href="#">Download CSV</a></div>
+        <div class="gc-filters">
+          <div class="gc-field" style="margin:0"><label for="actDay">Day</label><input class="gc-input" type="date" id="actDay" /></div>
+          <div class="gc-field" style="margin:0" id="actStaffWrap" hidden><label for="actStaff">Person</label><select class="gc-input" id="actStaff"><option value="">Everyone</option></select></div>
+        </div>
+        <div class="gc-panel"><ul class="gc-list" id="actList"></ul></div>
+        <div class="gc-pager"><button type="button" class="gc-btn ghost" id="actPrev">Newer</button><span class="gc-caps" id="actPage"></span><button type="button" class="gc-btn ghost" id="actNext">Older</button></div>
+      </section>
+
+      <!-- Staff (Super Admins) -->
+      <section id="v-staff" hidden aria-labelledby="staffH">
+        <div class="gc-h"><h2 id="staffH">Ticket stewards</h2><button type="button" class="gc-btn gold" id="addStaff">Add a steward</button></div>
+        <p class="gc-note" style="margin-top:0">Stewards sign in at <b>lobistarsfc.com/gate-control</b> with their Staff ID and password. Gate Supervisors can also re-admit a used ticket (with a reason) and see everyone's activity.</p>
+        <div class="gc-staff" id="staffList"></div>
+        <div class="gc-panel" style="margin-top:18px">
+          <h3 style="font-size:26px;margin-bottom:8px">Gates</h3>
+          <p class="gc-note" style="margin:0 0 10px">One gate per line. Stewards choose their gate when they sign in.</p>
+          <p class="gc-ok" id="gatesOk" hidden>Gates saved.</p>
+          <p class="gc-err" id="gatesErr" hidden></p>
+          <textarea class="gc-input" id="gatesText" aria-label="Gates, one per line"></textarea>
+          <button type="button" class="gc-btn red" id="gatesSave" style="margin-top:10px">Save gates</button>
+        </div>
+      </section>
+    </main>
+
+    <nav class="gc-tabs" aria-label="Gate Control">
+      <button type="button" class="gc-tab" data-view="scan" aria-current="page"><Fragment set:html={svg(I.scan)} />Scan</button>
+      <button type="button" class="gc-tab" data-view="today"><Fragment set:html={svg(I.today)} />Today</button>
+      <button type="button" class="gc-tab" data-view="activity"><Fragment set:html={svg(I.activity)} />Activity</button>
+      <button type="button" class="gc-tab" data-view="staff" id="staffTab" hidden><Fragment set:html={svg(I.staff)} />Staff</button>
+    </nav>
+  </div>
+
+  <dialog class="gc-dlg" id="staffDlg">
+    <form id="staffForm" method="dialog" novalidate>
+      <h3 id="staffDlgT">Add a steward</h3>
+      <p class="gc-err" id="staffErr" hidden></p>
+      <div class="gc-row2">
+        <div class="gc-field"><label for="sfId">Staff ID</label><input class="gc-input" id="sfId" autocapitalize="characters" placeholder="LSG-001" maxlength="20" /></div>
+        <div class="gc-field"><label for="sfRole">Role</label><select class="gc-input" id="sfRole"><option value="steward">Ticket Steward</option><option value="supervisor">Gate Supervisor</option></select></div>
+      </div>
+      <div class="gc-field"><label for="sfName">Full name</label><input class="gc-input" id="sfName" maxlength="80" autocomplete="off" /></div>
+      <div class="gc-field"><label for="sfPw" id="sfPwL">Password (at least 8 characters)</label><input class="gc-input" id="sfPw" type="text" maxlength="72" autocomplete="new-password" /></div>
+      <label class="gc-check" id="sfActiveWrap" hidden><input type="checkbox" id="sfActive" /> Can sign in</label>
+      <div class="gc-row2" style="margin-top:8px"><button type="button" class="gc-btn ghost" id="sfCancel">Cancel</button><button type="submit" class="gc-btn red" id="sfSave">Save</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="gc-dlg" id="readmitDlg">
+    <form id="readmitForm" method="dialog" novalidate>
+      <h3>Let this ticket back in?</h3>
+      <p class="gc-note" style="margin-top:0">Only for someone who was checked in and stepped out (for example, to the car or for first aid). Your name and the reason are recorded.</p>
+      <p class="gc-err" id="readmitErr" hidden></p>
+      <div class="gc-field"><label for="readmitWhy">Reason</label><input class="gc-input" id="readmitWhy" maxlength="200" placeholder="e.g. Went out to the car park, seen leaving by me" /></div>
+      <div class="gc-row2"><button type="button" class="gc-btn ghost" id="readmitCancel">Cancel</button><button type="submit" class="gc-btn red">Re-admit</button></div>
+    </form>
+  </dialog>
+
+  <div class="gc-toast" id="toast" role="status" hidden></div>
+
+  <script>
+    import '../../scripts/gateControl/app';
+  </script>
+</body>
+</html>
