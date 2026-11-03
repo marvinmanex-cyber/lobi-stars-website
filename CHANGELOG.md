@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-03: Ropajo page: colour highlight cards
+
+- The three highlights (Official hotel, Club guests, Shared standards) are now
+  colour cards: Lobi red, sunset gold and palm green, each with a white icon
+  badge and a faint palm frond. Side by side on laptops, one under the other
+  on phones.
+
 ## 2026-11-03: Ropajo page wording
 
 - The line under the title now reads "Where Lobi Stars FC welcomes its

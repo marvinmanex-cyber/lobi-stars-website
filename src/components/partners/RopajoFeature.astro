@@ -71,8 +71,12 @@ const FROND = `<path d="M20 190Q100 130 192 22" fill="none" stroke="currentColor
 
   <section class="rj-high" aria-label="The partnership at a glance">
     <ul class="wrap rj-high-in">
-      {highlights.map(h => (
-        <li><span class="rj-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={h.icon} /></span><span><b>{h.t}</b><small>{h.s}</small></span></li>
+      {highlights.map((h, i) => (
+        <li class={`rj-hc rj-hc--${i}`}>
+          <svg class="rj-hc-frond" viewBox="0 0 200 200" aria-hidden="true" set:html={FROND} />
+          <span class="rj-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" set:html={h.icon} /></span>
+          <span class="rj-hc-text"><b>{h.t}</b><small>{h.s}</small></span>
+        </li>
       ))}
     </ul>
   </section>
@@ -160,13 +164,21 @@ const FROND = `<path d="M20 190Q100 130 192 22" fill="none" stroke="currentColor
   .rj-btn--ghost:hover, .rj-btn--ghost:focus-visible { background: var(--ink); border-color: var(--ink); color: #fff; }
   .rj a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 
-  /* Three highlights. */
+  /* Three highlights: colour cards (Lobi red, sunset gold, palm green) with a palm frond. */
   .rj-high { background: var(--paper); border-bottom: 1px solid var(--line); }
-  .rj-high-in { list-style: none; margin-top: 0; margin-bottom: 0; padding-top: 22px; padding-bottom: 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-  .rj-high li { display: flex; align-items: center; gap: 12px; }
-  .rj-ic { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--sand); color: var(--red-2); }
-  .rj-high b { display: block; font: 700 18px/1.15 'Barlow Condensed', sans-serif; letter-spacing: .02em; text-transform: uppercase; }
-  .rj-high small { color: var(--muted); font-size: 14px; }
+  .rj-high-in { list-style: none; margin-top: 0; margin-bottom: 0; padding-top: 28px; padding-bottom: 28px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .rj-hc { position: relative; overflow: hidden; display: flex; align-items: center; gap: 16px; padding: 20px 20px 20px 18px; border-radius: 18px; color: #fff;
+    box-shadow: 0 14px 28px -18px var(--shade); transition: transform .25s ease, box-shadow .25s ease; }
+  .rj-hc:hover { transform: translateY(-3px); box-shadow: 0 20px 34px -18px var(--shade); }
+  .rj-hc--0 { --shade: #B3141A; background: linear-gradient(135deg, #F0353B 0%, #B3141A 100%); }
+  .rj-hc--1 { --shade: #C2410C; background: linear-gradient(135deg, #FBBF24 0%, #F97316 100%); color: #2A1503; }
+  .rj-hc--2 { --shade: #145C3A; background: linear-gradient(135deg, #2FA36B 0%, #145C3A 100%); }
+  .rj-hc-frond { position: absolute; width: 150px; right: -40px; top: -46px; color: currentColor; opacity: .16; transform: rotate(70deg); pointer-events: none; }
+  .rj-ic { position: relative; flex: none; display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: #fff; box-shadow: 0 6px 14px -6px rgba(0, 0, 0, .35); }
+  .rj-hc--0 .rj-ic { color: #B3141A; } .rj-hc--1 .rj-ic { color: #C2410C; } .rj-hc--2 .rj-ic { color: #145C3A; }
+  .rj-hc-text { position: relative; }
+  .rj-hc b { display: block; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .rj-hc small { display: block; margin-top: 3px; font-size: 15px; opacity: .92; }
 
   /* Together: photos of joint activities (or designed placeholders). */
   .rj-together { padding: 64px 0 70px; }
@@ -221,7 +233,8 @@ const FROND = `<path d="M20 190Q100 130 192 22" fill="none" stroke="currentColor
     .rj-desc { font-size: 16px; margin: 14px 0 22px; }
     .rj-btns { width: 100%; flex-direction: column; }
     .rj-btn { width: 100%; }
-    .rj-high-in { grid-template-columns: 1fr; gap: 14px; }
+    .rj-high-in { grid-template-columns: 1fr; gap: 12px; padding-top: 22px; padding-bottom: 22px; }
+    .rj-hc { padding: 16px; }
     .rj-together { padding: 46px 0 50px; }
     .rj-gal { grid-auto-rows: 140px; gap: 10px; }
     .big .rj-soon-t { font-size: 30px; }
@@ -229,5 +242,5 @@ const FROND = `<path d="M20 190Q100 130 192 22" fill="none" stroke="currentColor
     .rj-soon-s { letter-spacing: .12em; }
     .rj-about-in { flex-direction: column; gap: 10px; }
   }
-  @media (prefers-reduced-motion: reduce) { .rj-key, .rj-gal img { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .rj-key, .rj-gal img, .rj-hc { transition: none; } .rj-hc:hover { transform: none; } }
 </style>
