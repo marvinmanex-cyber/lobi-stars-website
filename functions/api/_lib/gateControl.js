@@ -19,8 +19,11 @@ import { ensureFanSchema, rateLimit } from './fans.js';
 import { isFullSuperAdmin } from './superAdmins.js';
 
 export const GC_COOKIE = 'ls_gate';
-const IDLE_MS = 75 * 60e3;                     // quiet spells between arrivals are normal at a gate
-const MAX_MS = 14 * 3600e3;                    // a long match day
+// A sign-in stays open for 24 hours on that phone or computer, with no sign-out for being
+// idle, so a steward is never asked to sign in again with a queue at the gate. Switching
+// someone off or changing their password still signs them out at once.
+const MAX_MS = 24 * 3600e3;
+const IDLE_MS = MAX_MS;
 const LOCK_AFTER = 5, LOCK_MS = 15 * 60e3;     // 5 wrong passwords: locked for 15 minutes
 export const STAFF_ID_RE = /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
 export const ROLES = { steward: 'Ticket Steward', supervisor: 'Gate Supervisor' };
@@ -313,7 +316,7 @@ export async function getGateSession(request, env, { touch = true } = {}) {
   const now = Date.now();
   if (!user) { await end('account switched off or no longer allowed'); return null; }
   if (now - Date.parse(s.last_seen) > IDLE_MS) { await end('no activity', 'Signed out automatically (no activity)'); return null; }
-  if (now - Date.parse(s.created_at) > MAX_MS) { await end('14 hours', 'Signed out automatically (14 hours)'); return null; }
+  if (now - Date.parse(s.created_at) > MAX_MS) { await end('24 hours', 'Signed out automatically (24 hours)'); return null; }
   if (touch && now - Date.parse(s.last_seen) > 20e3) await db.prepare(`UPDATE gc_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
   user.gate = s.gate || null;
   return { id: s.id, csrf: s.csrf, user };

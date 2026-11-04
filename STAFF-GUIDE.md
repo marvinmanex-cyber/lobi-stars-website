@@ -4789,8 +4789,9 @@ their own; supervisors and Super Admins see everyone's, can pick a person and a
 day, and download a CSV. The record cannot be changed or deleted.
 
 **Security.** Five wrong passwords lock a Staff ID for 15 minutes. A steward is
-signed out after 75 minutes without using the page, and after 14 hours in any
-case. The page is never shown in search engines, and only this page may use the
+signed out after 24 hours, never for being idle, so nobody has to sign in again
+with a queue at the gate. Switching a steward off or changing their password
+signs them out on every phone at once. The page is never shown in search engines, and only this page may use the
 phone's camera.
 
 **Install it as an app.** On the phone, open lobistarsfc.com/gate-control and

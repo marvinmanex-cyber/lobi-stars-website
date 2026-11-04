@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-04: Gate Control stays signed in for 24 hours
+
+- A Gate Control sign-in now lasts 24 hours on that phone or computer, with no
+  sign-out for being idle (it was 75 minutes idle / 14 hours), so stewards are
+  not asked to sign in again with a queue at the gate. Switching a steward off
+  or changing their password still signs them out at once.
+
 ## 2026-11-04: Ticket scanners fixed on phones
 
 - The phone camera scanner in Gate Control (and the older /scan page) showed a
