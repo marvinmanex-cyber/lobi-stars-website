@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-04: Header without Zeva; Prime Beverages; House 43 "table for two"
+
+- The Principal Partner (Zeva) is no longer shown in the site header. To bring it
+  back: `SHOW_PRINCIPAL = true` in src/components/SiteHeader.astro.
+- Prime Beverages is now the **Official Beverage Distribution Partner**: "Stocked,
+  delivered, dependable. Prime Beverages is the Official Beverage Distribution
+  Partner of Lobi Stars FC."
+- House 43 page and share picture: both blue logos keep their own shape and
+  colour, each on a white dinner plate with a gold rim, a gold "&" coin between
+  them and a fork and knife either side (a table for two).
+
 ## 2026-11-04: Partners page tidied
 
 - House 43 page on phones: the two logos, "Lobi Stars FC & House 43" and the

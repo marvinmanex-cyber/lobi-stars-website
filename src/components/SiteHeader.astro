@@ -4,7 +4,9 @@ import PromoBar from './PromoBar.astro';
 import { getPartners, logoSrc, logoAlt } from '../lib/partners';
 
 // Principal partner shown next to the search icon; hidden if there isn't one.
-const principal = (await getPartners()).find(p => p.data.tier === 'Principal Partner');
+// Switched off on 4 Nov 2026 (the club's request): set SHOW_PRINCIPAL to true to bring it back.
+const SHOW_PRINCIPAL = false;
+const principal = SHOW_PRINCIPAL ? (await getPartners()).find(p => p.data.tier === 'Principal Partner') : undefined;
 const principalLogo = principal ? logoSrc(principal) : null;
 
 const path = Astro.url.pathname.replace(/\/$/, '') || '/';
