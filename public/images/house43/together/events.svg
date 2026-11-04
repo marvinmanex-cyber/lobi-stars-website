@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <!-- Club events & unveilings: a stage, spotlights, confetti and a new shirt on show (illustration; replace with a photo later). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1A0B2E"/><stop offset="1" stop-color="#0A0A12"/></linearGradient>
+    <linearGradient id="curtain" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7D0F13"/><stop offset=".5" stop-color="#E31E24"/><stop offset="1" stop-color="#7D0F13"/></linearGradient>
+    <linearGradient id="spot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF3C4" stop-opacity=".6"/><stop offset="1" stop-color="#FFF3C4" stop-opacity=".05"/></linearGradient>
+    <linearGradient id="shirt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#F0353B"/><stop offset="1" stop-color="#B3151A"/></linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <!-- spotlights -->
+  <path d="M60 0l60 0 110 390H150z" fill="url(#spot)"/><path d="M280 0h60L250 390h-80z" fill="url(#spot)"/>
+  <!-- curtains -->
+  <g>
+    <path d="M0 0h90c-10 120 0 260-30 420H0z" fill="url(#curtain)"/>
+    <path d="M400 0h-90c10 120 0 260 30 420h60z" fill="url(#curtain)"/>
+    <path d="M20 0c4 140 2 280-6 420M50 0c2 140-4 280-20 420M350 0c-2 140 4 280 20 420M380 0c-4 140-2 280 6 420" stroke="#5A0A0E" stroke-width="3" fill="none" opacity=".6"/>
+    <path d="M0 0h400v34c-40 18-80 18-120 0-40 18-80 18-120 0-40 18-80 18-120 0S0 52 0 34z" fill="#B3151A"/>
+    <path d="M0 34c40 18 80 18 120 0 40 18 80 18 120 0 40 18 80 18 120 0" stroke="#F2B705" stroke-width="3" fill="none"/>
+  </g>
+  <!-- stage -->
+  <path d="M30 400h340l30 100H0z" fill="#2A1A10"/><path d="M30 400h340" stroke="#C9B488" stroke-width="4"/>
+  <ellipse cx="200" cy="405" rx="110" ry="14" fill="#FFF3C4" fill-opacity=".25"/>
+  <!-- stand + shirt -->
+  <path d="M196 330h8v70h-8zM170 398h60" stroke="#C9B488" stroke-width="6" stroke-linecap="round"/>
+  <path d="M150 190l30-18h40l30 18 22 36-26 14-12-18v108h-68V222l-12 18-26-14z" fill="url(#shirt)" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>
+  <path d="M184 172c4 10 28 10 32 0" fill="none" stroke="#fff" stroke-width="4"/>
+  <text x="200" y="285" text-anchor="middle" font-family="Bebas Neue, Impact, sans-serif" font-size="58" fill="#fff">43</text>
+  <text x="200" y="232" text-anchor="middle" font-family="Bebas Neue, Impact, sans-serif" font-size="16" letter-spacing="2" fill="#F2B705">LOBI STARS</text>
+  <!-- confetti -->
+  <g>
+    <rect x="110" y="70" width="10" height="5" fill="#F2B705" transform="rotate(30 115 72)"/><rect x="250" y="60" width="10" height="5" fill="#2FA36B" transform="rotate(-25 255 62)"/>
+    <rect x="180" y="110" width="9" height="5" fill="#fff" transform="rotate(60 184 112)"/><rect x="300" y="140" width="10" height="5" fill="#F2B705" transform="rotate(15 305 142)"/>
+    <rect x="95" y="160" width="10" height="5" fill="#3B9BE0" transform="rotate(-40 100 162)"/><rect x="225" y="95" width="8" height="4" fill="#F97316" transform="rotate(45 229 97)"/>
+    <rect x="140" y="130" width="8" height="4" fill="#E8D9B5" transform="rotate(-10 144 132)"/><rect x="275" y="190" width="9" height="5" fill="#fff" transform="rotate(70 279 192)"/>
+    <rect x="120" y="230" width="9" height="5" fill="#F2B705" transform="rotate(-60 124 232)"/><rect x="285" y="250" width="10" height="5" fill="#2FA36B" transform="rotate(20 290 252)"/>
+    <circle cx="160" cy="85" r="3" fill="#F97316"/><circle cx="215" cy="150" r="3" fill="#F2B705"/><circle cx="330" cy="105" r="3" fill="#fff"/><circle cx="85" cy="110" r="3" fill="#2FA36B"/>
+  </g>
+</svg>

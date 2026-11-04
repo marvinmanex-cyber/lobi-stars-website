@@ -15,6 +15,9 @@ in HANDOVER-TODO.md.
   for the three highlights (a serving cloche, a map with two pins for Abuja
   and Jos, a coffee cup and a cocktail); the menu is now "The Matchday Menu —
   Picked Like a Starting XI" with new wording.
+- The four "Together" tiles now show colourful drawn scenes (the squad at a
+  long table, the stadium under floodlights, a shirt unveiling on stage, the
+  kitchen) until real photos arrive.
 
 - **House 43** (https://www.house43.org/) added as an Official Club Partner,
   right after Ropajo Hotels on /partners/.

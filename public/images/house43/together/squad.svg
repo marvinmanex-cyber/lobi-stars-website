@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <!-- The squad at House 43: a long dinner table under warm pendant lights (illustration; replace with a photo later). -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4A1013"/><stop offset=".55" stop-color="#24090B"/><stop offset="1" stop-color="#120707"/></linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#FFD98A" stop-opacity=".95"/><stop offset=".35" stop-color="#F2B705" stop-opacity=".35"/><stop offset="1" stop-color="#F2B705" stop-opacity="0"/></radialGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7A4A22"/><stop offset="1" stop-color="#3E2410"/></linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C9B488"/><stop offset="1" stop-color="#8E7A4E"/></linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#bg)"/>
+  <!-- brick wall hint -->
+  <g stroke="#ffffff" stroke-opacity=".04" stroke-width="2">
+    <path d="M0 60h400M0 100h400M0 140h400M0 180h400M0 220h400"/>
+    <path d="M40 60v40M120 60v40M200 60v40M280 60v40M360 60v40M80 100v40M160 100v40M240 100v40M320 100v40M40 140v40M120 140v40M200 140v40M280 140v40M360 140v40M80 180v40M160 180v40M240 180v40M320 180v40"/>
+  </g>
+  <!-- big 43 sign on the wall -->
+  <text x="200" y="210" text-anchor="middle" font-family="Bebas Neue, Impact, sans-serif" font-size="150" fill="#E8D9B5" fill-opacity=".09">43</text>
+  <!-- pendant lights -->
+  <g>
+    <circle cx="90" cy="150" r="80" fill="url(#glow)"/><circle cx="200" cy="130" r="95" fill="url(#glow)"/><circle cx="310" cy="150" r="80" fill="url(#glow)"/>
+    <path d="M90 0v112M200 0v90M310 0v112" stroke="#111" stroke-width="2"/>
+    <path d="M70 130l8-18h24l8 18z" fill="url(#shade)"/><path d="M176 110l9-20h30l9 20z" fill="url(#shade)"/><path d="M290 130l8-18h24l8 18z" fill="url(#shade)"/>
+    <ellipse cx="90" cy="131" rx="12" ry="4" fill="#FFF3C4"/><ellipse cx="200" cy="111" rx="15" ry="5" fill="#FFF3C4"/><ellipse cx="310" cy="131" rx="12" ry="4" fill="#FFF3C4"/>
+  </g>
+  <!-- table in perspective -->
+  <path d="M150 270h100l120 230H30z" fill="url(#wood)"/>
+  <path d="M150 270h100" stroke="#C9B488" stroke-opacity=".5" stroke-width="2"/>
+  <!-- red chairs (jersey backs) -->
+  <g fill="#E31E24">
+    <path d="M118 300l14-6 6 8v26h-20z"/><path d="M92 350l18-8 8 10v34h-26z"/><path d="M60 410l22-10 10 12v42H60z"/>
+    <path d="M282 300l-14-6-6 8v26h20z"/><path d="M308 350l-18-8-8 10v34h26z"/><path d="M340 410l-22-10-10 12v42h32z"/>
+  </g>
+  <g fill="#fff" font-family="Bebas Neue, Impact, sans-serif" text-anchor="middle">
+    <text x="128" y="322" font-size="12">9</text><text x="105" y="378" font-size="16">10</text><text x="76" y="445" font-size="20">7</text>
+    <text x="272" y="322" font-size="12">4</text><text x="295" y="378" font-size="16">11</text><text x="324" y="445" font-size="20">5</text>
+  </g>
+  <!-- plates, glasses -->
+  <g>
+    <ellipse cx="170" cy="292" rx="14" ry="4" fill="#F6EFE0"/><ellipse cx="230" cy="292" rx="14" ry="4" fill="#F6EFE0"/>
+    <ellipse cx="150" cy="340" rx="20" ry="6" fill="#F6EFE0"/><ellipse cx="250" cy="340" rx="20" ry="6" fill="#F6EFE0"/>
+    <ellipse cx="125" cy="405" rx="28" ry="8" fill="#F6EFE0"/><ellipse cx="275" cy="405" rx="28" ry="8" fill="#F6EFE0"/>
+    <ellipse cx="150" cy="339" rx="10" ry="3" fill="#E8742A"/><ellipse cx="250" cy="339" rx="10" ry="3" fill="#2FA36B"/>
+    <ellipse cx="125" cy="403" rx="15" ry="4.5" fill="#B3151A"/><ellipse cx="275" cy="403" rx="15" ry="4.5" fill="#E8742A"/>
+    <path d="M178 330h8l-1 14h-6zM214 330h8l-1 14h-6z" fill="#FFD98A" fill-opacity=".8"/>
+  </g>
+  <!-- table card -->
+  <g transform="translate(200 360)">
+    <path d="M-22 0l6-26h32l6 26z" fill="#F6EFE0"/>
+    <text x="0" y="-6" text-anchor="middle" font-family="Bebas Neue, Impact, sans-serif" font-size="20" fill="#E31E24">43</text>
+  </g>
+</svg>

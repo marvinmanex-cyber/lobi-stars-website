@@ -32,7 +32,13 @@ const menu = [
   { phase: 'Second half', dish: 'Grilled T-Bone with Signature Mash' },
   { phase: 'Extra time', dish: 'Savory Lamb & Greens Delight' },
 ];
-const placeholders = ['The squad at House 43', 'Matchday hospitality', 'Club events & unveilings', 'Behind the scenes'];
+// Until real photos arrive (partner file `gallery`): an illustration for each tile (public/images/house43/together/).
+const placeholders = [
+  { t: 'The squad at House 43', img: '/images/house43/together/squad.svg' },
+  { t: 'Matchday hospitality', img: '/images/house43/together/matchday.svg' },
+  { t: 'Club events & unveilings', img: '/images/house43/together/events.svg' },
+  { t: 'Behind the scenes', img: '/images/house43/together/kitchen.svg' },
+];
 ---
 <div class="h43">
   <section class="h43-hero">
@@ -116,7 +122,7 @@ const placeholders = ['The squad at House 43', 'Matchday hospitality', 'Club eve
       ) : (
         <ul class="h43-gal">
           {placeholders.map(c => (
-            <li><div class="h43-soon"><span class="h43-wm" aria-hidden="true">43</span><span class="h43-soon-t">{c}</span><span class="h43-soon-s">Photos coming soon</span></div></li>
+            <li><div class="h43-soon"><img src={c.img} alt="" width="400" height="500" loading="lazy" decoding="async" /><span class="h43-soon-chip">Photos coming soon</span><span class="h43-soon-t">{c.t}</span></div></li>
           ))}
         </ul>
       )}
@@ -222,10 +228,11 @@ const placeholders = ['The squad at House 43', 'Matchday hospitality', 'Club eve
   .h43-gal img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .h43-gal figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 14px 12px; color: #fff; font-weight: 600; background: linear-gradient(transparent, rgba(0, 0, 0, .75)); }
   .h43-soon { position: relative; overflow: hidden; height: 100%; border-radius: 16px; background: var(--ink-2); color: #fff; display: flex; flex-direction: column; justify-content: flex-end; padding: 18px; border-top: 4px solid var(--red); }
-  .h43-wm { position: absolute; right: -10px; top: -18px; font: 400 170px/1 'Bebas Neue', sans-serif; color: rgba(232, 217, 181, .07); pointer-events: none; }
-  .h43-soon-t { position: relative; font: 400 26px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; }
-  .h43-soon-s { position: relative; margin-top: 6px; font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: .2em; text-transform: uppercase; color: var(--cream-2); }
-
+  .h43-soon img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .6s ease; }
+  .h43-soon::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 50%, rgba(0, 0, 0, .78)); }
+  .h43-soon:hover img { transform: scale(1.04); }
+  .h43-soon-chip { position: absolute; z-index: 1; top: 12px; left: 12px; padding: 5px 10px; border-radius: 999px; background: rgba(18, 18, 18, .72); color: var(--cream-2); font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: .16em; text-transform: uppercase; }
+  .h43-soon-t { position: relative; z-index: 1; font: 400 28px/1.05 'Bebas Neue', sans-serif; letter-spacing: 1px; text-shadow: 0 2px 10px rgba(0, 0, 0, .6); }
   /* Partner card */
   .h43-about { background: var(--cream); padding: 48px 0 56px; }
   .h43-info { max-width: 720px; margin: 0 auto; display: flex; align-items: center; gap: 24px; padding: 24px 28px; background: #fff; border: 1px solid #E6E1D6; border-top: 4px solid var(--red); border-radius: 14px; }
@@ -262,5 +269,5 @@ const placeholders = ['The squad at House 43', 'Matchday hospitality', 'Club eve
     .h43-info { flex-direction: column; text-align: center; gap: 12px; }
   }
   @media (max-width: 420px) { .h43-gal { grid-template-columns: 1fr; } }
-  @media (prefers-reduced-motion: reduce) { .h43-card { transition: none; } }
+  @media (prefers-reduced-motion: reduce) { .h43-card, .h43-soon img { transition: none; } }
 </style>

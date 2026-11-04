@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <!-- Matchday hospitality: the stadium under floodlights, a drink and a plate in the lounge (illustration; replace with a photo later). -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B1430"/><stop offset=".6" stop-color="#1E3A8A"/><stop offset="1" stop-color="#7C2D12"/></linearGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFF3C4" stop-opacity=".55"/><stop offset="1" stop-color="#FFF3C4" stop-opacity="0"/></linearGradient>
+    <linearGradient id="pitch" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2FA36B"/><stop offset="1" stop-color="#145C3A"/></linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDBA74"/><stop offset="1" stop-color="#E31E24"/></linearGradient>
+  </defs>
+  <rect width="400" height="500" fill="url(#sky)"/>
+  <g fill="#fff"><circle cx="40" cy="40" r="1.4"/><circle cx="120" cy="70" r="1"/><circle cx="260" cy="30" r="1.4"/><circle cx="340" cy="80" r="1"/><circle cx="190" cy="20" r="1"/><circle cx="370" cy="25" r="1.4"/></g>
+  <!-- floodlight beams -->
+  <path d="M48 70L-40 330h200z" fill="url(#beam)"/><path d="M352 70L240 330h200z" fill="url(#beam)"/>
+  <!-- floodlight towers -->
+  <g fill="#0A0F1E">
+    <path d="M46 80h4l10 220h-24z"/><path d="M350 80h4l10 220h-24z"/>
+    <rect x="26" y="52" width="44" height="24" rx="3"/><rect x="330" y="52" width="44" height="24" rx="3"/>
+  </g>
+  <g fill="#FFF3C4"><circle cx="35" cy="60" r="3.5"/><circle cx="48" cy="60" r="3.5"/><circle cx="61" cy="60" r="3.5"/><circle cx="35" cy="69" r="3.5"/><circle cx="48" cy="69" r="3.5"/><circle cx="61" cy="69" r="3.5"/>
+    <circle cx="339" cy="60" r="3.5"/><circle cx="352" cy="60" r="3.5"/><circle cx="365" cy="60" r="3.5"/><circle cx="339" cy="69" r="3.5"/><circle cx="352" cy="69" r="3.5"/><circle cx="365" cy="69" r="3.5"/></g>
+  <!-- stand with crowd -->
+  <path d="M0 230l60-30h280l60 30v40H0z" fill="#111827"/>
+  <g fill="#E31E24"><circle cx="40" cy="238" r="4"/><circle cx="70" cy="226" r="4"/><circle cx="100" cy="222" r="4"/><circle cx="130" cy="230" r="4"/><circle cx="160" cy="221" r="4"/><circle cx="210" cy="226" r="4"/><circle cx="250" cy="220" r="4"/><circle cx="280" cy="230" r="4"/><circle cx="320" cy="224" r="4"/><circle cx="355" cy="236" r="4"/></g>
+  <g fill="#F2B705"><circle cx="55" cy="250" r="4"/><circle cx="115" cy="246" r="4"/><circle cx="185" cy="240" r="4"/><circle cx="235" cy="248" r="4"/><circle cx="300" cy="244" r="4"/><circle cx="375" cy="252" r="4"/></g>
+  <g fill="#fff" fill-opacity=".85"><circle cx="85" cy="244" r="4"/><circle cx="145" cy="250" r="4"/><circle cx="265" cy="252" r="4"/><circle cx="335" cy="256" r="4"/></g>
+  <!-- pitch -->
+  <path d="M0 270h400v230H0z" fill="url(#pitch)"/>
+  <g fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="2.5"><path d="M30 290h340l40 210H-10z"/><path d="M200 290v210"/><ellipse cx="200" cy="380" rx="60" ry="22"/></g>
+  <!-- lounge ledge in front -->
+  <path d="M0 420h400v80H0z" fill="#121212"/><path d="M0 420h400" stroke="#C9B488" stroke-width="3"/>
+  <!-- cocktail -->
+  <path d="M66 360h56l-28 34z" fill="url(#glass)" stroke="#fff" stroke-opacity=".7" stroke-width="2"/>
+  <path d="M94 394v24M78 420h32" stroke="#fff" stroke-opacity=".8" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="122" cy="360" r="8" fill="#84CC16" stroke="#fff" stroke-width="1.5"/><path d="M110 334l-10 30" stroke="#E31E24" stroke-width="3" stroke-linecap="round"/>
+  <!-- plate with food -->
+  <ellipse cx="290" cy="418" rx="64" ry="12" fill="#F6EFE0"/><ellipse cx="290" cy="412" rx="36" ry="9" fill="#E8742A"/>
+  <ellipse cx="275" cy="407" rx="12" ry="5" fill="#B3151A"/><circle cx="305" cy="405" r="5" fill="#2FA36B"/><circle cx="313" cy="410" r="4" fill="#2FA36B"/>
+</svg>

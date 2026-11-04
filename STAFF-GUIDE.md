@@ -473,7 +473,8 @@ a dark hero with a "reserved table card", three highlights, **The Matchday
 Menu** (four dishes as a team sheet: change them in the `menu` list at the top
 of that file), **Together** (photo tiles: add `{ src, caption }` items to
 `gallery` in `src/content/partners/house-43.md`, files in
-`public/images/house43/`) and a closing partner card. Its logo shows once
+`public/images/house43/`; until then each tile shows a drawn picture from
+`public/images/house43/together/`, marked "Photos coming soon") and a closing partner card. Its logo shows once
 `public/images/house43-logo.png` (and a cream version,
 `public/images/house43/logo-cream.png`, for the dark hero) are added; until
 then a "HOUSE 43" word mark is shown. Its link-card picture is
