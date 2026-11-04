@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-04: Lobi Gate Control: stewards at one gate, supervisors at all gates
+
+- A **Ticket Steward** works at one gate. Set it when adding the scanner, or
+  change it any time in the scanners list (Admin › Commerce › Lobi Gate
+  Control). A steward given a gate cannot change it on the phone; **They
+  choose** lets them pick.
+- A **Gate Supervisor** has access to **all gates**: no gate to choose, never
+  shown WRONG GATE, sees every gate's messages; the phone shows **All gates**.
+- The role can also be changed in the scanners list; the phone picks it up
+  within seconds.
+
 ## 2026-11-04: Lobi Gate Control: scanners with one-time passcodes, live in the admin
 
 - Gate Control is now **Lobi Gate Control** (new logo, app name, and the link

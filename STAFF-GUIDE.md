@@ -4696,8 +4696,8 @@ appears as **Lobi Gate Control** with its own logo.
 
 | Role | Can do |
 |---|---|
-| **Ticket Steward** | Scan and check in tickets, look tickets up, see Today, report incidents, see their own activity |
-| **Gate Supervisor** | Everything a steward can, plus **Re-admit** a used ticket (with a reason), message every gate, close incidents, see every scanner's activity and download the report |
+| **Ticket Steward** | Works at **one gate**. Scan and check in tickets, look tickets up, see Today, report incidents, see their own activity |
+| **Gate Supervisor** | Has access to **all gates**: no gate to choose, never shown WRONG GATE, sees every gate's messages. Everything a steward can, plus **Re-admit** a used ticket (with a reason), message every gate, close incidents, see every scanner's activity and download the report |
 
 Any number of scanners can work at the same time, at different gates. A ticket
 can only ever be checked in once: if two phones scan the same ticket at the
@@ -4709,14 +4709,18 @@ same moment, one shows ADMIT and the other ALREADY USED.
 - **Scanners active now** (seen in the last 90 seconds), switched on, fans
   checked in, refused and fake tickets today.
 - **Add a scanner:** a name (e.g. "Main Gate phone 1"), the person using it
-  (optional), the role, and the gate (optional; otherwise they choose). Press
+  (optional), the role, and (for a Ticket Steward) the gate. A steward given a
+  gate here stays at it: they cannot change it on the phone. Leave **They
+  choose** to let them pick. A Gate Supervisor has all gates, so there is no
+  gate to set. Press
   **Create passcode**: an 8-number passcode (e.g. 1234-5678) is shown **once**,
   with **Send on WhatsApp** and **Copy**. It works once, on one phone, for 3
   days.
 - **Scanners list:** each scanner's number (SCN-001…), name, person, role,
   phone type, status (**Active now**, Switched on, **Waiting for passcode**,
   **Revoked**), the gate it is at, fans checked in and refused today, and its
-  last scan.
+  last scan. **Change the role or gate** in the list at any time: the phone
+  picks it up straight away (within a few seconds, when it has a signal).
 - **Revoke:** the scanner stops at once (as soon as the phone has a signal)
   and its saved ticket list is removed from the phone. **New passcode:** for a
   new phone, or to switch a revoked scanner back on; the old phone stops.
@@ -4726,8 +4730,10 @@ same moment, one shows ADMIT and the other ALREADY USED.
 
 **Switching a phone on (each steward, once):** open
 lobistarsfc.com/lobi-gate-control, type the passcode, press **Switch on this
-scanner**, then tap **the gate you are at**. The scanner stays on (no
-sign-out button); the gate shows at the top and can be changed.
+scanner**. A steward whose gate was not set by the club then taps **the gate
+you are at**. The scanner stays on (no sign-out button); the gate shows at the
+top (supervisors see **All gates**). Only a steward who chose their own gate can
+change it on the phone.
 
 **On match day (each steward)**
 

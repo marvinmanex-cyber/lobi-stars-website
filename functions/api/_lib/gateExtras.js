@@ -95,9 +95,10 @@ export async function clearMessage(db, user, id, request) {
   return { ok: true };
 }
 /** Messages showing now for this gate (newest first). */
-export async function liveMessages(db, gate) {
+export async function liveMessages(db, gate, all = false) {
   await ensureExtras(db);
-  return (await db.prepare(`SELECT id, at, text, gate, from_name, from_code FROM gc_messages WHERE until > ? AND (gate IS NULL OR gate = ?) ORDER BY id DESC LIMIT 5`).bind(nowIso(), gate || '').all()).results
+  // Supervisors (all gates) see every message showing now.
+  return (await db.prepare(`SELECT id, at, text, gate, from_name, from_code FROM gc_messages WHERE until > ? AND (gate IS NULL OR gate = ? OR ?) ORDER BY id DESC LIMIT 5`).bind(nowIso(), gate || '', all ? 1 : 0).all()).results
     .map(m => ({ id: m.id, at: m.at, text: m.text, gate: m.gate, from: m.from_name }));
 }
 export async function todaysMessages(db) {

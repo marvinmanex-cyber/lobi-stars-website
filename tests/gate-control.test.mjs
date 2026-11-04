@@ -33,7 +33,7 @@ async function as(cookie) {
   const s = await fetch(`${BASE}/api/gate-control/session`, { headers: { Cookie: `ls_gate=${cookie}` } }).then(r => r.json());
   const call = (path, body) => fetch(`${BASE}/api/gate-control/${path}`, body ? { method: 'POST', headers: { Cookie: `ls_gate=${cookie}`, 'Content-Type': 'application/json', 'X-CSRF-Token': s.csrf }, body: JSON.stringify(body) } : { headers: { Cookie: `ls_gate=${cookie}` } })
     .then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
-  return { s, call };
+  return { s, call, cookie };
 }
 let St, Su;
 const ids = [];
@@ -56,7 +56,7 @@ test('ticket numbers and QR codes are read correctly', () => {
 test('scanners: added in the admin, switched on once with a passcode, never /admin; a gate must be chosen', async () => {
   assert.equal((await adm({ action: 'gates', gates: ['Main Gate', 'VIP Gate', 'Gate C'] })).data.gates.length, 3);
   for (const d of [STEW, SUP, OBS]) {
-    const r = await adm({ action: 'add', ...d, gate: d === SUP ? 'VIP Gate' : '' });
+    const r = await adm({ action: 'add', ...d, gate: d === SUP ? 'VIP Gate' : '' }); // a supervisor's gate is ignored: all gates
     assert.equal(r.status, 200, JSON.stringify(r.data)); assert.match(r.data.passcode, /^\d{4}-\d{4}$/); assert.match(r.data.code, /^SCN-\d{3}/);
     Object.assign(d, { code: r.data.code, id: r.data.id, passcode: r.data.passcode }); ids.push(r.data.id);
   }
@@ -74,7 +74,8 @@ test('scanners: added in the admin, switched on once with a passcode, never /adm
   assert.equal((await St.call('gate', { gate: 'Main Gate' })).data.gate, 'Main Gate');
   const su = await activate(SUP.passcode); SUP.cookie = su.cookie;
   Su = await as(su.cookie);
-  assert.equal(Su.s.user.gate, 'VIP Gate', 'gate set in the admin'); assert.equal(Su.s.perms.readmit, true);
+  assert.equal(Su.s.user.gate, 'All gates', 'supervisors have all gates'); assert.equal(Su.s.user.allGates, true); assert.equal(Su.s.perms.readmit, true);
+  assert.equal((await Su.call('gate', { gate: 'Main Gate' })).status, 400, 'a supervisor does not choose a gate');
   // The admin sees them: active now, waiting for a passcode.
   const v = (await adm()).data;
   assert.ok(v.activeNow >= 2);
@@ -139,14 +140,14 @@ test('re-admit (supervisors only, with a reason); today view; activity recorded;
   assert.ok(d.latest.some(s => s.result === 'readmitted' && /car park/.test(s.note)));
   assert.ok(d.onDuty.some(p => p.code === STEW.code && p.gate === 'Main Gate'));
   // Counts per steward (each on their own phone), per gate and together; "You" marked.
-  const me = d.byStaff.find(x => x.code === STEW.code), sup = d.byStaff.find(x => x.code === SUP.code);
+  const me = d.byStaff.find(x => x.id === STEW.id), sup = d.byStaff.find(x => x.id === SUP.id);
   assert.ok(me.me, 'my row is marked'); assert.equal(sup.me, false);
   assert.ok(me.admitted >= 2); assert.equal(me.gate, 'Main Gate'); assert.ok(me.refused >= 1);
   assert.equal(d.byStaff.reduce((t, x) => t + x.admitted, 0), d.totals.admitted, 'the stewards add up to the total');
   assert.ok(d.timeline.length >= 1 && d.timeline.reduce((t, x) => t + x.n, 0) === d.totals.admitted);
   const c = (await St.call('counts')).data, c2 = (await Su.call('counts')).data;
   assert.equal(c.me, me.admitted); assert.equal(c.gate.name, 'Main Gate'); assert.equal(c.total, d.totals.admitted);
-  assert.equal(c2.me, sup.admitted); assert.equal(c2.gate.name, 'VIP Gate'); assert.equal(c2.total, c.total);
+  assert.equal(c2.me, sup.admitted); assert.equal(c2.gate.name, 'All gates'); assert.equal(c2.gate.admitted, c.total, 'all gates = everyone'); assert.equal(c2.total, c.total);
 
   const mine = (await St.call(`activity?day=`)).data;
   assert.equal(mine.all, false); assert.ok(mine.rows.every(a => a.code === STEW.code));
@@ -176,11 +177,20 @@ test('wrong gate (admit anyway), offline list and sync with double entries, mess
   assert.equal((await adm({ action: 'stands', stands: { 'Main Gate': ['VIP'], 'VIP Gate': [], 'Gate C': [] } })).status, 200);
   const sup = { cookie: SUP.cookie };
   const U = await as(sup.cookie);
-  await U.call('gate', { gate: 'Main Gate' });
-  const wg = (await U.call('check', { ticket: K.d })).data;
+  // A steward set to a gate by the club stays at it (cannot change it on the phone).
+  const A = await as((await activate(OBS.passcode)).cookie);
+  assert.equal((await adm({ action: 'edit', id: OBS.id, gate: 'Main Gate' })).status, 200);
+  const A2 = await as(A.cookie);
+  assert.equal(A2.s.user.gate, 'Main Gate'); assert.equal(A2.s.user.gateLocked, true);
+  assert.equal((await A.call('gate', { gate: 'Gate C' })).status, 400, 'locked to the gate set by the club');
+  const wg = (await A.call('check', { ticket: K.d })).data;
   assert.equal(wg.code, 'wrong_gate', JSON.stringify(wg)); assert.ok(wg.goTo.includes('VIP Gate')); assert.equal(wg.canOverride, true);
   assert.equal(JSON.parse(sql(`SELECT status FROM tickets WHERE id = '${K.d}'`))[0].results[0].status, 'valid', 'not checked in');
-  assert.equal((await U.call('check', { ticket: K.d, override: true })).data.code, 'admitted', 'admit here anyway');
+  // A supervisor (all gates) is never sent to another gate.
+  assert.equal((await U.call('check', { ticket: K.d })).data.code, 'admitted', 'supervisor admits at any gate');
+  // Back to "they choose", then the steward picks Gate C.
+  assert.equal((await adm({ action: 'edit', id: OBS.id, gate: '' })).status, 200);
+  assert.equal((await A.call('gate', { gate: 'Gate C' })).status, 200);
   await adm({ action: 'stands', stands: { 'Main Gate': [], 'VIP Gate': [], 'Gate C': [] } });
 
   // Offline list: no phone numbers or emails, just number, stand, child, first name, already in.
@@ -203,12 +213,12 @@ test('wrong gate (admit anyway), offline list and sync with double entries, mess
 
   // Messages from a supervisor reach every gate (or one gate); taken down again.
   assert.equal((await U.call('message', { action: 'send', text: 'Gate C closed: send fans to Main Gate', gate: '' })).status, 200);
-  const A = await as((await activate(OBS.passcode)).cookie); await A.call('gate', { gate: 'Gate C' });
   let c = (await A.call('counts')).data;
   const msg = c.messages.find(m => /Gate C closed/.test(m.text));
   assert.ok(msg);
   assert.equal((await U.call('message', { action: 'send', text: 'Only VIP Gate sees this', gate: 'VIP Gate' })).status, 200);
-  assert.ok(!(await U.call('counts')).data.messages.some(m => /Only VIP/.test(m.text)), 'Main Gate does not see a VIP Gate message');
+  assert.ok(!(await A.call('counts')).data.messages.some(m => /Only VIP/.test(m.text)), 'Gate C does not see a VIP Gate message');
+  assert.ok((await U.call('counts')).data.messages.some(m => /Only VIP/.test(m.text)), 'a supervisor (all gates) sees every message');
   assert.equal((await U.call('message', { action: 'clear', id: msg.id })).status, 200);
   assert.ok(!(await A.call('counts')).data.messages.some(m => m.id === msg.id));
 

@@ -9,7 +9,7 @@ import { watchList } from '../_lib/gateExtras.js';
 // the phone), give a new passcode, revoke a scanner at once, gates and stands.
 //   GET                       -> { devices, activeNow, totals, latest, byGate, watch, gates, stands, roles }
 //   POST { action: 'add', name, holder, role, gate }      -> { passcode, code, until }
-//   POST { action: 'passcode' | 'revoke', id }  POST { action: 'edit', id, name, holder, role }
+//   POST { action: 'passcode' | 'revoke', id }  POST { action: 'edit', id, name?, holder?, role?, gate? }  (supervisors: all gates)
 //   POST { action: 'gates', gates }  POST { action: 'stands', stands }
 const J = (d, s = 200) => Response.json(d, { status: s, headers: { 'Cache-Control': 'no-store' } });
 const who = admin => admin?.email || admin?.name || 'admin';

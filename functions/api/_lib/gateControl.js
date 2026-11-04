@@ -19,6 +19,8 @@ import { ensureFanSchema, rateLimit } from './fans.js';
 import { isFullSuperAdmin } from './superAdmins.js';
 
 export const GC_COOKIE = 'ls_gate';
+// Gate Supervisors work across every gate: they never choose one and are never sent to another gate.
+export const ALL_GATES = 'All gates';
 // A sign-in stays open for 24 hours on that phone or computer, with no sign-out for being
 // idle, so a steward is never asked to sign in again with a queue at the gate. Switching
 // someone off or changing their password still signs them out at once.
@@ -333,7 +335,9 @@ export async function getGateSession(request, env, { touch = true } = {}) {
   if (device) {
     if (!device.last_seen || now - Date.parse(device.last_seen) > 15e3) await db.prepare(`UPDATE gc_devices SET last_seen = ?, last_ip = ? WHERE id = ?`).bind(nowIso(), request.headers.get('CF-Connecting-IP') || null, device.id).run();
     if (touch && now - Date.parse(s.last_seen) > 20e3) await db.prepare(`UPDATE gc_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
-    user.gate = s.gate || null;
+    if (device.role === 'supervisor') { user.gate = ALL_GATES; user.allGates = true; }
+    else if (device.gate) { user.gate = device.gate; user.gateLocked = true; }
+    else user.gate = s.gate || null;
     return { id: s.id, csrf: s.csrf, user };
   }
   if (now - Date.parse(s.last_seen) > IDLE_MS) { await end('no activity', 'Signed out automatically (no activity)'); return null; }
@@ -343,6 +347,8 @@ export async function getGateSession(request, env, { touch = true } = {}) {
   return { id: s.id, csrf: s.csrf, user };
 }
 export async function setGate(db, session, gate, request) {
+  if (session.user.allGates) return { error: 'Gate Supervisors work at all gates: no need to choose one.' };
+  if (session.user.gateLocked) return { error: `The club has set this scanner to ${session.user.gate}. Ask your supervisor to change it.` };
   const { gates } = await gateSettings(db);
   const g = oneLine(gate, 40);
   if (!gates.includes(g)) return { error: 'Choose one of the gates on the list.' };
@@ -396,7 +402,7 @@ export async function createDevice(env, by, v, request) {
   const name = oneLine(v.name, 60), holder = oneLine(v.holder, 80) || null, role = ROLES[v.role] ? v.role : 'steward';
   if (name.length < 2) return { error: 'Give the scanner a name, e.g. "Main Gate phone 1".' };
   const { gates } = await gateSettings(db);
-  const gate = v.gate && gates.includes(v.gate) ? v.gate : null;
+  const gate = role !== 'supervisor' && v.gate && gates.includes(v.gate) ? v.gate : null;
   const n = ((await db.prepare(`SELECT COUNT(*) AS n FROM gc_devices`).first())?.n || 0) + 1;
   let code = `SCN-${String(n).padStart(3, '0')}`;
   while (await db.prepare(`SELECT 1 FROM gc_devices WHERE code = ?`).bind(code).first()) code = `SCN-${String(Number(code.slice(4)) + 1).padStart(3, '0')}`;
@@ -434,8 +440,17 @@ export async function updateDevice(env, by, id, v, request) {
   const name = v.name !== undefined ? oneLine(v.name, 60) : d.name, holder = v.holder !== undefined ? (oneLine(v.holder, 80) || null) : d.holder;
   const role = v.role !== undefined && ROLES[v.role] ? v.role : d.role;
   if (name.length < 2) return { error: 'Give the scanner a name.' };
-  await db.prepare(`UPDATE gc_devices SET name = ?, holder = ?, role = ? WHERE id = ?`).bind(name, holder, role, d.id).run();
-  await gcLog(db, { kind: 'admin', name: by, code: by }, `Changed scanner ${d.code}: ${name}${holder ? ` (${holder})` : ''}, ${ROLES[role]}`, { kind: 'device', request });
+  let gate = d.gate;
+  if (v.gate !== undefined) {
+    const { gates } = await gateSettings(db);
+    if (v.gate && !gates.includes(v.gate)) return { error: 'Choose one of the gates on the list.' };
+    gate = v.gate || null;
+  }
+  if (role === 'supervisor') gate = null;
+  await db.prepare(`UPDATE gc_devices SET name = ?, holder = ?, role = ?, gate = ? WHERE id = ?`).bind(name, holder, role, gate, d.id).run();
+  // The phone picks up the new gate on its next request; its own choice is cleared.
+  if (gate !== d.gate || role !== d.role) await db.prepare(`UPDATE gc_sessions SET gate = ? WHERE user_id = ? AND ended_at IS NULL`).bind(gate, d.id).run();
+  await gcLog(db, { kind: 'admin', name: by, code: by }, `Changed scanner ${d.code}: ${name}${holder ? ` (${holder})` : ''}, ${ROLES[role]}, ${role === 'supervisor' ? ALL_GATES : gate || 'steward chooses the gate'}`, { kind: 'device', request });
   return { ok: true };
 }
 /** The phone enters its one-time passcode: the scanner is switched on (no email or password). */
@@ -474,7 +489,7 @@ export async function listDevices(db, since) {
     const [lastAt, lastResult, lastTicket] = String(d.last_scan || '').split('|');
     return { id: d.id, code: d.code, name: d.name, holder: d.holder, role: d.role, roleLabel: ROLES[d.role] || d.role, status: d.status,
       online: d.status === 'active' && !!d.last_seen && now - Date.parse(d.last_seen) < 90e3,
-      gate: d.gate_now || d.gate || null, lastSeen: d.last_seen, activatedAt: d.activated_at, createdAt: d.created_at, passcodeUntil: d.status === 'waiting' ? d.passcode_until : null,
+      gate: d.role === 'supervisor' ? ALL_GATES : d.gate || d.gate_now || null, gateSet: d.role === 'supervisor' ? ALL_GATES : d.gate || '', lastSeen: d.last_seen, activatedAt: d.activated_at, createdAt: d.created_at, passcodeUntil: d.status === 'waiting' ? d.passcode_until : null,
       revokedAt: d.revoked_at, revokedBy: d.revoked_by, admitted: d.admitted || 0, refused: d.refused || 0,
       lastScan: lastAt ? { at: lastAt, result: lastResult, ticket: lastTicket || null } : null, phone: /iPhone|iPad/.test(d.user_agent || '') ? 'iPhone / iPad' : /Android/.test(d.user_agent || '') ? 'Android' : d.user_agent ? 'Computer' : null };
   });

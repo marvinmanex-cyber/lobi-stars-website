@@ -265,3 +265,6 @@ dialog.gc-dlg::backdrop { background: rgba(0, 0, 0, .7); }
   .gc-main { padding-left: 110px; max-width: 900px; }
 }
 @media (prefers-reduced-motion: reduce) { .gc-result { animation: none; } .gc-auto i { animation: none; width: 0; } }
+.gc-chip:disabled { opacity: 1; cursor: default; }
+.gc-tally.two { grid-template-columns: 1fr 1fr; }
+.gc-tile[hidden] { display: none; }

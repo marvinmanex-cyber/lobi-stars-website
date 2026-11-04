@@ -46,7 +46,7 @@ export async function onRequest(context) {
         await signOut(db, S, request);
         return json({ ok: true }, 200, { 'Set-Cookie': clearGateCookie() });
       case 'GET session':
-        return json({ csrf: S.csrf, user: { name: user.name, firstName: user.firstName, code: user.code, role: user.role, roleLabel: user.roleLabel, kind: user.kind, gate: user.gate, deviceName: user.deviceName || null }, perms, gates: (await gateSettings(db)).gates, incidentTypes: INCIDENTS });
+        return json({ csrf: S.csrf, user: { name: user.name, firstName: user.firstName, code: user.code, role: user.role, roleLabel: user.roleLabel, kind: user.kind, gate: user.gate, allGates: !!user.allGates, gateLocked: !!user.gateLocked, deviceName: user.deviceName || null }, perms, gates: (await gateSettings(db)).gates, incidentTypes: INCIDENTS });
       case 'POST gate': {
         const r = await setGate(db, S, body.gate, request);
         return r.error ? json({ error: r.error }, 400) : json(r);
@@ -75,7 +75,7 @@ export async function onRequest(context) {
       }
       case 'GET today': return json({ ...(await todayView(env, user)), onDuty: await onDuty(db), watch: await watchList(db), messages: perms.supervise ? await todaysMessages(db) : [] });
       // The counts on the scan screen (me, my gate, everyone today) and the messages showing now.
-      case 'GET counts': return json({ ...(await myCounts(env, user)), messages: await liveMessages(db, user.gate), openIncidents: perms.supervise ? await openIncidentCount(db) : 0 });
+      case 'GET counts': return json({ ...(await myCounts(env, user)), messages: await liveMessages(db, user.gate, !!user.allGates), openIncidents: perms.supervise ? await openIncidentCount(db) : 0 });
       case 'POST message': {
         if (!perms.supervise) return denied();
         const r = body.action === 'clear' ? await clearMessage(db, user, body.id, request) : await postMessage(db, user, body, request);

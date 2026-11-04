@@ -105,8 +105,10 @@ Lost PIN: **New PIN**. Someone leaves early: **Switch off**. Running late:
 **Later finish** (until 06:00 next morning at most). Each scan and kitchen step
 shows the helper's name.
 
-**At the gates: Gate Control (lobistarsfc.com/gate-control).** Ticket stewards
-sign in with their own Staff ID and password, tap the gate they are at, and
+**At the gates: Lobi Gate Control (lobistarsfc.com/lobi-gate-control).** Each
+scanner phone is switched on once with its passcode from the admin. A Ticket
+Steward works at one gate (set by the club in Admin › Commerce › Lobi Gate
+Control, or chosen on the phone); a Gate Supervisor has all gates. They
 press **Scan ticket** to use the phone camera. If a ticket won't scan, they type
 the 12 letters and numbers after LS-TIX-. Each answer shows the buyer's name,
 stand, adult or child, price paid, when and where it was bought, and whether it

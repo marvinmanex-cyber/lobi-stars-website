@@ -2,7 +2,7 @@
 // its scripts, styles, fonts and the camera scanner on the phone so Gate Control still
 // opens when the stadium's mobile data drops. Ticket data is never cached here (the page
 // keeps today's ticket list itself); /api/ always goes to the network.
-const CACHE = 'gate-control-v5';
+const CACHE = 'gate-control-v6';
 const EXTRA = ['/vendor/jsqr-1.4.0.min.js', '/images/gate-control/logo-640.webp', '/images/gate-control/icon-192.png', '/gate-control.webmanifest',
   '/fonts/bebas-neue-400.woff2', '/fonts/barlow-400.woff2', '/fonts/barlow-600.woff2', '/fonts/barlow-700.woff2', '/fonts/barlow-condensed-700.woff2'];
 

@@ -31,11 +31,11 @@ import LeagueKit from '../../components/admin/league/LeagueKit.astro';
       <form id="addForm" class="la-row" style="align-items:flex-end">
         <label class="la-f">Scanner name<input name="name" required maxlength="60" placeholder="e.g. Main Gate phone 1" style="min-width:200px" /></label>
         <label class="la-f">Person using it (optional)<input name="holder" maxlength="80" placeholder="e.g. Chidi Okafor" style="min-width:180px" /></label>
-        <label class="la-f">Role<select name="role"><option value="steward">Ticket Steward</option><option value="supervisor">Gate Supervisor</option></select></label>
-        <label class="la-f">Gate<select name="gate" id="addGate"><option value="">They choose</option></select></label>
+        <label class="la-f">Role<select name="role" id="addRole"><option value="steward">Ticket Steward</option><option value="supervisor">Gate Supervisor (all gates)</option></select></label>
+        <label class="la-f" id="addGateWrap">Gate<select name="gate" id="addGate"><option value="">They choose</option></select></label>
         <button class="btn-p" type="submit">Create passcode</button>
       </form>
-      <p class="la-msg">Gate Supervisors can also re-admit a fan who stepped out, send messages to all gates, close incidents and see every scanner's activity.</p>
+      <p class="la-msg">A <b>Ticket Steward</b> works at one gate: set it here (they cannot change it on the phone) or leave "They choose". A <b>Gate Supervisor</b> has access to <b>all gates</b>: no gate to choose and never sent to another gate. You can change a scanner's role or gate in the list below at any time. Gate Supervisors can also re-admit a fan who stepped out, send messages to all gates, close incidents and see every scanner's activity.</p>
       <div class="gca-pass" id="passBox" hidden role="status"></div>
     </section>
 
@@ -116,7 +116,7 @@ import LeagueKit from '../../components/admin/league/LeagueKit.astro';
   const ago = (iso?: string) => { if (!iso) return 'never'; const s = Math.round((Date.now() - Date.parse(iso)) / 1000); return s < 60 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: TZ }); };
   const RESULT: Record<string, [string, string]> = { admitted: ['Checked in', 'ok'], readmitted: ['Re-admitted', 'ok'], lookup: ['Looked up', ''], used: ['Already used', 'bad'], fake: ['FAKE', 'bad'], not_lobi: ['Not a Lobi ticket', 'bad'], wrong_match: ['Wrong match', 'warn'], wrong_gate: ['Wrong gate', 'warn'], void: ['Cancelled', 'bad'], unpaid: ['Not paid', 'bad'], bad_number: ['Number mistyped', 'warn'] };
   const STAND: Record<string, string> = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
-  let gatesLoaded = false, timer: any = 0;
+  let gatesLoaded = false, timer: any = 0, gateList: string[] = [];
 
   function status(d: any) {
     if (d.status === 'revoked') return `<span class="gca-dot off"></span><b>Revoked</b><small>${esc(ago(d.revokedAt))}${d.revokedBy ? ' by ' + esc(d.revokedBy) : ''}</small>`;
@@ -133,12 +133,21 @@ import LeagueKit from '../../components/admin/league/LeagueKit.astro';
       $('gatesText').value = d.gates.join('\n');
       $('standsGrid').innerHTML = d.gates.map((g: string) => `<fieldset><legend>${esc(g)}</legend>${['VIP', 'Premium', 'Regular'].map(t => `<label><input type="checkbox" data-g="${esc(g)}" data-t="${t}"${(d.gateStands?.[g] || []).includes(t) ? ' checked' : ''} /> ${STAND[t]}</label>`).join('')}</fieldset>`).join('');
     }
+    gateList = d.gates;
+    // Don't redraw the list while a role or gate is being chosen.
+    if ($('devices').contains(document.activeElement) && (document.activeElement as HTMLElement).tagName === 'SELECT') return renderRest(d);
     $('devices').innerHTML = d.devices.length ? `<div class="gca-tbl"><table><thead><tr><th>Status</th><th>Scanner</th><th>Gate</th><th>Today</th><th>Last scan</th><th></th></tr></thead><tbody>${d.devices.map((x: any) => {
       const last = x.lastScan ? `${esc(hm(x.lastScan.at))} · ${esc((RESULT[x.lastScan.result] || [x.lastScan.result])[0])}<small>${esc(x.lastScan.ticket || '')}</small>` : '<small>No scans yet</small>';
       const acts = x.status === 'revoked' ? `<button type="button" data-act="passcode" data-id="${esc(x.id)}">New passcode (switch back on)</button>`
         : `<button type="button" data-act="passcode" data-id="${esc(x.id)}">New passcode</button><button type="button" class="danger" data-act="revoke" data-id="${esc(x.id)}" data-name="${esc(x.code + ' ' + x.name)}">Revoke</button>`;
-      return `<tr><td>${status(x)}</td><td><b>${esc(x.code)} · ${esc(x.name)}</b><small>${esc([x.holder, x.roleLabel, x.phone].filter(Boolean).join(' · '))}</small></td><td>${esc(x.gate || '—')}</td><td><b>${x.admitted}</b> in<small>${x.refused} refused</small></td><td>${last}</td><td><div class="gca-acts">${acts}</div></td></tr>`;
+      const roleSel = `<select data-edit="role" data-id="${esc(x.id)}" aria-label="Role for ${esc(x.code)}"><option value="steward"${x.role === 'steward' ? ' selected' : ''}>Ticket Steward</option><option value="supervisor"${x.role === 'supervisor' ? ' selected' : ''}>Gate Supervisor</option></select>`;
+      const gateSel = x.role === 'supervisor' ? '<b>All gates</b>'
+        : `<select data-edit="gate" data-id="${esc(x.id)}" aria-label="Gate for ${esc(x.code)}"><option value="">They choose</option>${gateList.map(g => `<option${g === x.gateSet ? ' selected' : ''}>${esc(g)}</option>`).join('')}</select>${!x.gateSet && x.gate ? `<small>now at ${esc(x.gate)}</small>` : ''}`;
+      return `<tr><td>${status(x)}</td><td><b>${esc(x.code)} · ${esc(x.name)}</b><small>${esc([x.holder, x.phone].filter(Boolean).join(' · '))}</small>${roleSel}</td><td>${gateSel}</td><td><b>${x.admitted}</b> in<small>${x.refused} refused</small></td><td>${last}</td><td><div class="gca-acts">${acts}</div></td></tr>`;
     }).join('')}</tbody></table></div>` : '<p class="la-msg">No scanners yet. Add the first one above.</p>';
+    renderRest(d);
+  }
+  function renderRest(d: any) {
     const w = d.watch || {};
     const warn = [...(w.bursts || []).map((b: any) => `${b.n} fake tickets at ${esc(b.gate)} in the last 30 minutes.`), ...(w.doubles || []).map((x: any) => `Double entry: ${esc(x.ticket)} (offline, ${esc(x.gate || '')}).`)];
     $('watch').innerHTML = warn.length ? `<div class="gca-watch"><b>Watch list:</b> ${warn.join(' ')}</div>` : '';
@@ -165,6 +174,15 @@ import LeagueKit from '../../components/admin/league/LeagueKit.astro';
     const r = await LA.api('/api/admin/gate-control', { method: 'POST', body: { action: 'add', name: el.name.value, holder: el.holder.value, role: el.role.value, gate: el.gate.value } });
     if (!r.ok) { LA.toast(r.d.error || 'Could not add.', true); return; }
     showPass(r.d, el.name.value); f.reset(); load();
+  });
+  // Supervisors have all gates: no gate to set.
+  $('addRole').addEventListener('change', () => { const sup = ($('addRole') as HTMLSelectElement).value === 'supervisor'; $('addGateWrap').hidden = sup; if (sup) ($('addGate') as HTMLSelectElement).value = ''; });
+  $('devices').addEventListener('change', async (e: Event) => {
+    const s = e.target as HTMLSelectElement;
+    if (!s.dataset?.edit) return;
+    const r = await LA.api('/api/admin/gate-control', { method: 'POST', body: { action: 'edit', id: s.dataset.id, [s.dataset.edit]: s.value } });
+    r.ok ? LA.toast(s.dataset.edit === 'role' ? (s.value === 'supervisor' ? 'Now a Gate Supervisor (all gates)' : 'Now a Ticket Steward') : s.value ? `Set to ${s.value}` : 'The steward chooses the gate') : LA.toast(r.d.error || 'Could not change.', true);
+    s.blur(); load();
   });
   $('devices').addEventListener('click', async (e: Event) => {
     const b = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;

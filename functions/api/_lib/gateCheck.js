@@ -205,7 +205,8 @@ export async function myCounts(env, user) {
       SUM(CASE WHEN result IN (${REFUSED}) AND staff_user_id = ? THEN 1 ELSE 0 END) AS me_refused,
       SUM(CASE WHEN result = 'admitted' AND gate = ? THEN 1 ELSE 0 END) AS gate
     FROM gc_scans WHERE at >= ?`).bind(user.id, user.id, user.gate || '', dayStart()).first();
-  return { me: r?.me || 0, meRefused: r?.me_refused || 0, gate: { name: user.gate || '', admitted: r?.gate || 0 }, total: r?.total || 0 };
+  // Supervisors (all gates): the gate counter is every gate.
+  return { me: r?.me || 0, meRefused: r?.me_refused || 0, gate: { name: user.gate || '', admitted: user.allGates ? r?.total || 0 : r?.gate || 0 }, total: r?.total || 0 };
 }
 
 /** The live view: today's home match, check-ins by steward, gate, stand and time of day, refusals, the latest scans. */

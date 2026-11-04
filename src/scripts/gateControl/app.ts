@@ -93,7 +93,7 @@ $('gateList').addEventListener('click', async (ev: Event) => {
   } catch (e: any) { $('gateErr').textContent = e.message; $('gateErr').hidden = false; }
 });
 $('gateCancel').addEventListener('click', () => showApp());
-$('gateChip').addEventListener('click', () => showGatePick(true));
+$('gateChip').addEventListener('click', () => { if (!S.user.allGates && !S.user.gateLocked) showGatePick(true); });
 // (No sign-out button: a scanner stays on until the club revokes it in the admin.)
 
 // The three counters on the scan screen (me, my gate, everyone today), from the server so
@@ -210,6 +210,13 @@ function showApp() {
   only('app');
   $('who').textContent = `${S.user.code ? S.user.code + ' · ' : ''}${S.user.name} · ${S.user.roleLabel}`;
   $('gateName').textContent = S.user.gate;
+  // Supervisors work at all gates; a steward given a gate by the club stays at it.
+  const fixed = S.user.allGates || S.user.gateLocked;
+  ($('gateChip') as HTMLButtonElement).disabled = !!fixed;
+  // Supervisors: "this gate" is every gate, so show just You today and All gates.
+  ($('cGate').parentElement as HTMLElement).hidden = !!S.user.allGates;
+  $('cGate').closest('.gc-tally')!.classList.toggle('two', !!S.user.allGates);
+  $('gateChip').setAttribute('aria-label', fixed ? `Gate: ${S.user.gate}` : 'Change gate');
   $('staffTab').hidden = !S.perms.staff;
   $('supBox').hidden = !S.perms.supervise;
   if (S.csrf) LS.set('gc_sess', { csrf: S.csrf, user: S.user, perms: S.perms, gates: S.gates, incidentTypes: S.incidentTypes });
