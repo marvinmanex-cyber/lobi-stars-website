@@ -4885,6 +4885,97 @@ it was scanned. It opens in Excel or Google Sheets.
 Scanner, with the Matchday Helpers logins) still work. Gate Control is the one
 to use for ticket stewards.
 
+### 43a. Running the gates on match day (Admin › Commerce › Lobi Gate Control)
+
+**The gates: open / closed.** The coloured banner at the top of the admin page
+says whether the gates are **OPEN** (green), **NOT OPEN YET** (blue) or
+**CLOSED** (red).
+- **Automatic** (normal): the gates open by themselves a set time before
+  kick-off of today's home match (choose 1, 1½, 2, 3 or 4 hours; 3 hours to
+  start with). On a day without a home match they stay open for look-ups and
+  practice.
+- **Open the gates now** / **Close the gates**: by hand, for today only (the
+  next day goes back to Automatic). Every scanner gets a message.
+- While the gates are not open, a steward's scan shows amber **GATES NOT OPEN
+  YET** (or **GATES CLOSED**) and nobody is checked in. Look-ups and practice
+  still work. A **Gate Supervisor** sees **Let in (supervisor)** for a real
+  exception (e.g. the match commissioner); it is recorded with their name.
+
+**Scanner readiness.** The scanners list has a **Ready?** column. Each phone
+reports every minute: switched on and connected; gate set; camera tested (or a
+wireless scanner used); today's offline ticket list downloaded; battery (Android
+phones; iPhones do not share it: below 30% and not charging = not ready); screen
+kept awake. **✗ Not ready** lists what to fix. The green box at the top counts
+how many are **ready**. The phone itself shows **Before the gates open** with
+the same list.
+
+**Screen kept awake.** While Lobi Gate Control is open, the phone's screen does
+not dim or lock (on most phones; if it still dims, turn off battery saver).
+
+**How full each stand is.** Under **Set the stand sizes**, enter how many fans
+each stand holds (the stadium's safety figure; empty = no limit). The bars show
+fans checked in today against the size. At **90%** every gate gets a message;
+when **full**, every gate is told and scans for that stand show red **STAND
+FULL** (other stands carry on). A Gate Supervisor can still let someone in.
+
+**Queue speed.** For each gate: fans a minute (last 5 minutes) and the average
+time per fan when busy. Over 15 seconds a fan shows **SLOW**: send help or add
+a scanner. Supervisors see it on their phone under **Today** too.
+
+**Message the scanners.** Send a message to every gate, one gate, or **one
+scanner** (or press **Message** on that scanner's row). It pops up on the phone
+with a sound and buzz; a message to one scanner shows **to you only** in blue.
+
+**Banned list.** Add a ticket number, or an email address or phone number (=
+every ticket bought with it), the reason and, if you like, an end date. That fan
+is refused at every gate with red **DO NOT ADMIT** (no button lets them in),
+and an **incident** opens for the supervisors straight away (their phones beep).
+Banned tickets are on each phone's offline list too. **Remove** takes someone
+off the list.
+
+**Practice mode (training).** On the phone, press **Practice mode (training)**
+at the bottom of the scan screen. A yellow striped bar shows the practice
+ticket numbers; scan or type them to see every answer (ADMIT, ADMIT CHILD,
+ALREADY USED, FAKE, WRONG MATCH, WRONG GATE, DO NOT ADMIT). In Practice mode
+real tickets can be scanned too: nothing is checked in or counted. Press **End
+practice** when done. Print the practice tickets (with QR codes) from the admin
+page, **Practice tickets › Print**. Outside Practice mode a practice ticket shows
+**PRACTICE TICKET** (refused).
+
+**Match-day report (email).** After the gates close (by **Close the gates**),
+the report is emailed automatically after 30 minutes, 1 hour or 2 hours (you
+choose); if nobody closes the gates, 4 hours after kick-off. It goes to the
+addresses under **Match-day report** (first time: the three Super Admins). It
+has: fans checked in, % of tickets used, **no-shows**, fake tickets, first and
+last check-in and the busiest 15 minutes, each stand (tickets, used, no-shows,
+how full), each gate, refusals by reason, each scanner, incidents, supervisor
+re-admits, offline double entries, passes scanned, and every scan attached as a
+CSV. **Preview** shows it now; **Send now** emails it straight away.
+
+### 43b. Staff & media passes (Admin › Commerce › Lobi Gate Control › Staff & media passes)
+
+For people who are not fans with tickets: **players' guests, club staff, match
+officials, stewards, security, medical, VIP guests, contractors / suppliers and
+club media**.
+1. **Make a pass:** full name, category, organisation or "with" (e.g. Guest of
+   player no. 9), phone (optional), first and last day, and tick the **zones**
+   they may enter (All stands, VIP lounge, Pitch side, Dressing rooms, Press
+   box, Media centre; change the list under **Change the list of zones**).
+2. **Print** it: an ID-card size pass (54 × 85.6 mm) with the club badge, the
+   category in its colour, the name, a QR code, the zones and the dates.
+   **Print the passes shown** prints them all.
+3. At the gate the steward scans it like a ticket: blue **VALID PASS** with the
+   name, category and the **zones in big letters**. Passes are not counted as
+   fans. A withdrawn pass shows **PASS WITHDRAWN**; outside its dates **PASS
+   NOT VALID TODAY**; an unknown number **FAKE PASS**.
+4. **Withdraw** stops a pass at every gate. **Edit** changes it (the QR code
+   stays the same).
+
+**Journalists:** their accreditation cards from **Media Centre › Accreditation**
+scan at the gates too: **VALID MEDIA CARD** with their zones for today's match,
+or the reason it is not valid. Passes and today's media cards are on each
+phone's offline list.
+
 ## Other things you can update in the CMS
 
 ### Prediction League prize

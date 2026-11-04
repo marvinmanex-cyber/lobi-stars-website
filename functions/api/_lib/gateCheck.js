@@ -14,6 +14,12 @@
 //   not_lobi     a code that is not a Lobi Stars ticket at all        (red, FAKE)
 //   bad_number   typed number with letters tickets never use          (amber: check the typing)
 //   readmitted   a supervisor let a used ticket back in (with reason) (green)
+//   banned       on the club's banned list (DO NOT ADMIT; supervisors alerted)  (red)
+//   gates_closed the gates are not open (a supervisor can let someone in)       (amber)
+//   stand_full   the stand is full (a supervisor can let someone in)            (red)
+//   pass_ok / pass_bad   staff / media pass (LS-ACC-… or a Media Centre card) (not a fan)
+//   practice_ticket      a practice ticket scanned outside Practice mode       (red)
+// Practice mode (practice: true): the same answers, but nothing is checked in or counted.
 // The check-in is one atomic UPDATE ... WHERE status = 'valid', so two gates
 // scanning the same ticket at the same moment can never both admit it.
 import { ensureGateSchema, oneLine, gateSettings } from './gateControl.js';
@@ -23,6 +29,7 @@ import { scanSeasonPass, todaysHomeMatch, ensureSeasonSchema } from './seasonTic
 import { earnAttendance } from './rewardsEarn.js';
 import { TIER_LABELS, TIERS } from './tickets/rules.js';
 import { parseTicketInput } from './gateTicketNumber.js';
+import { banFor, banIncident, gatesStatus, standFull, capacityAlerts, passCheck, mediaPassCheck, practiceResult, PRACTICE } from './gateMatchday.js';
 export { parseTicketInput };
 
 const nowIso = () => new Date().toISOString();
@@ -68,7 +75,7 @@ const usedLine = d => {
 };
 
 /** Season tickets (LS-SZN-…): one entry per home match. */
-async function seasonCheck(env, id, { admit, station }) {
+async function seasonCheck(env, id, { admit, station, gateRules = null }) {
   const db = env.DB;
   await ensureSeasonSchema(db);
   const p = await db.prepare(`SELECT p.*, o.buyer_name, o.buyer_email, o.buyer_phone, o.paid_at, o.created_at AS ordered_at, o.total_kobo, o.quantity, o.payment_status
@@ -83,10 +90,14 @@ async function seasonCheck(env, id, { admit, station }) {
     where: { source: 'Online (lobistarsfc.com)', device: null, place: null }, channel: 'Season ticket, bought online', payment: p.payment_status === 'paid' ? 'Paid' : 'Not paid', status: p.status,
   };
   if (p.status !== 'valid') return { code: 'void', title: 'CANCELLED', reason: 'This season ticket has been cancelled. Do not admit.', ticket };
+  const ban = await banFor(db, { ticketId: p.id, email: p.buyer_email, phone: p.buyer_phone });
+  if (ban) return { code: 'banned', title: 'DO NOT ADMIT', reason: `This fan is on the club's banned list (${ban.reason}). Do not admit. A supervisor has been alerted.`, ticket, ban, eventId: match?.id };
   if (!admit) {
     const used = match ? await db.prepare(`SELECT scanned_at FROM season_pass_scans WHERE pass_id = ? AND event_id = ?`).bind(p.id, match.id).first() : null;
     return used ? { code: 'used', title: 'ALREADY USED', reason: `Already used for today's match (${used.scanned_at}).`, ticket } : { code: 'valid', title: 'VALID SEASON TICKET', reason: 'Genuine and not yet used today. Not checked in (Look up only).', ticket, eventId: match?.id };
   }
+  // Gates closed / stand full (checked before the pass is used).
+  if (gateRules) { const stop = await gateRules(p.tier, ticket); if (stop) return { ...stop, eventId: match?.id }; }
   const r = await scanSeasonPass(db, p.id, station);
   if (r.body.valid) return { code: 'admitted', title: 'ADMIT', reason: 'Season ticket checked in for today’s match.', ticket, eventId: match?.id };
   const code = /Already used/i.test(r.body.reason) ? 'used' : /No Lobi Stars home match|not this match/i.test(r.body.reason) ? 'wrong_match' : 'void';
@@ -97,28 +108,72 @@ async function seasonCheck(env, id, { admit, station }) {
  * Check a scanned / typed ticket. mode: 'admit' (check the person in) or 'lookup' (only show it).
  * who = { user, gate }. Every attempt is recorded in gc_scans.
  */
-export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', who, request, override = false, note = null } = {}) {
+export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', who, request, override = false, force = false, practice = false, note = null } = {}) {
   const db = env.DB;
   await ensureGateSchema(db); await ensureTicketShopSchema(db); await ensureDiscountSchema(db);
   const admit = mode === 'admit';
   const gate = who?.gate || null, u = who?.user || {};
   const station = `${u.name || 'Gate Control'}${u.code ? ` (${u.code})` : ''}${gate ? ` – ${gate}` : ''}`.slice(0, 120);
-  const record = (res, extra = {}) => db.prepare(`INSERT INTO gc_scans (at, ticket_id, raw, event_id, tier, result, how, gate, staff_user_id, staff_name, staff_code, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+  const record = (res, extra = {}) => practice ? Promise.resolve() : db.prepare(`INSERT INTO gc_scans (at, ticket_id, raw, event_id, tier, result, how, gate, staff_user_id, staff_name, staff_code, note) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
     .bind(nowIso(), extra.id || null, oneLine(raw, 200), extra.eventId || null, extra.tier || null, res, ['typed', 'scanner', 'offline'].includes(how) ? how : 'camera', gate, u.id || null, u.name || null, u.code || null, extra.note || null).run()
     .catch(e => console.error('[gate control] scan record', e));
 
   const parsed = parseTicketInput(raw);
+  // Media Centre accreditation card (its QR link).
+  if (parsed.media) {
+    const r = await mediaPassCheck(db, parsed.media);
+    await record(r.record, { id: r.ticket?.id || null, note: r.ticket?.stand || null });
+    return { ...r, practice };
+  }
   if (!parsed.id) {
     await record(parsed.code);
     return { code: parsed.code, title: parsed.code === 'not_lobi' ? 'NOT A LOBI STARS TICKET' : 'CHECK THE NUMBER', reason: parsed.reason, fake: parsed.code === 'not_lobi' };
   }
   const id = parsed.id;
 
+  // Practice tickets: each shows one answer, in Practice mode only.
+  if (PRACTICE[id]) {
+    if (practice) return practiceResult(id);
+    await record('fake', { id, note: 'Practice ticket' });
+    return { code: 'practice_ticket', title: 'PRACTICE TICKET', reason: 'This is a practice ticket, not a real one. Do not admit.', fake: true };
+  }
+  // Staff and media passes (not fans: never counted as check-ins).
+  if (id.startsWith('LS-ACC-')) {
+    const r = await passCheck(db, id, { dry: practice });
+    await record(r.record, { id, note: r.ticket?.stand || null });
+    return { ...r, practice };
+  }
+
+  // Gates closed, stand full: checked just before a fan is checked in (a supervisor can still let them in).
+  const gateRules = async (tier, ticket) => {
+    if (!admit || practice || force) return null;
+    const g = await gatesStatus(db);
+    if (!g.open) {
+      await record('gates_closed', { id, tier });
+      return { code: 'gates_closed', title: g.closed ? 'GATES CLOSED' : 'GATES NOT OPEN YET', ticket, supervisorOverride: true,
+        reason: g.closed ? 'The gates are closed. Do not check anyone in; call a supervisor.' : `The gates open at ${new Date(g.opensAt).toLocaleTimeString('en-GB', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit' })}. Ask the fan to wait.` };
+    }
+    const full = await standFull(db, tier);
+    if (full) {
+      await record('stand_full', { id, tier });
+      return { code: 'stand_full', title: 'STAND FULL', ticket, supervisorOverride: true, reason: `The ${TIER_LABELS[tier] || tier} is full (${full.inside.toLocaleString('en-GB')} of ${full.capacity.toLocaleString('en-GB')}). Do not check in; call a supervisor.` };
+    }
+    return null;
+  };
+  const banned = async (ban, d) => {
+    await record('banned', { id, eventId: d.eventId, tier: d.tier, note: ban.reason });
+    if (!practice) await banIncident(db, { ...u, gate }, id, ban).catch(e => console.error('[gate control] ban incident', e));
+    return { code: 'banned', title: 'DO NOT ADMIT', reason: `This fan is on the club's banned list (${ban.reason}). Do not admit. A supervisor has been alerted.`, ticket: d.ticket, practice };
+  };
+
   if (id.startsWith('LS-SZN-')) {
-    const r = await seasonCheck(env, id, { admit, station });
-    await record(r.code === 'valid' ? 'lookup' : r.code, { id, eventId: r.eventId, tier: r.ticket?.tier });
-    if (r.code === 'admitted') await earnAttendance(env, id).catch(() => {});
-    return { ...r, fake: r.code === 'fake' };
+    const r = await seasonCheck(env, id, { admit: admit && !practice, station, gateRules });
+    if (r.code === 'banned') return banned(r.ban, { eventId: r.eventId, tier: r.ticket?.tier, ticket: r.ticket });
+    if (['gates_closed', 'stand_full'].includes(r.code)) return r;
+    if (practice && admit && r.code === 'valid') return { ...r, code: 'admitted', title: 'ADMIT', reason: 'Season ticket checked in for today’s match.', practice };
+    await record(r.code === 'valid' ? 'lookup' : r.code, { id, eventId: r.eventId, tier: r.ticket?.tier, note });
+    if (r.code === 'admitted') { await earnAttendance(env, id).catch(() => {}); await capacityAlerts(db, r.ticket?.tier).catch(() => {}); }
+    return { ...r, fake: r.code === 'fake', practice };
   }
 
   const t = await ticketRow(db, id);
@@ -129,6 +184,8 @@ export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', wh
   }
   let d = describe(t, t.status === 'used' ? await lastAdmit(db, id) : null);
   const base = { id, eventId: t.event_id, tier: t.tier };
+  const ban = await banFor(db, { ticketId: id, email: t.buyer_email, phone: t.buyer_phone });
+  if (ban && !t.refunded_at && t.status !== 'void') return banned(ban, { ...base, ticket: d });
   if (t.refunded_at || t.status === 'void') {
     await record('void', base);
     return { code: 'void', title: 'CANCELLED TICKET', reason: t.refunded_at ? 'This ticket was refunded. Do not admit.' : 'This ticket was cancelled. Do not admit.', ticket: d };
@@ -161,6 +218,9 @@ export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', wh
     await record('lookup', base);
     return { code: 'valid', title: 'VALID TICKET', reason: 'Genuine and not yet used. Not checked in (Look up only).', ticket: d };
   }
+  const stop = await gateRules(t.tier, d);
+  if (stop) return stop;
+  if (practice) return { code: 'admitted', title: d.type === 'Child' ? 'ADMIT CHILD' : 'ADMIT', reason: d.type === 'Child' ? 'Child ticket: check the age if unsure.' : 'Genuine ticket, checked in now.', ticket: d, practice };
   const claim = await db.prepare(`UPDATE tickets SET status = 'used', used_at = datetime('now'), scanned_by = ? WHERE id = ? AND status = 'valid'`).bind(station, id).run();
   if (!claim.meta.changes) {
     // Another gate checked it in a moment ago.
@@ -169,8 +229,9 @@ export async function checkTicket(env, raw, { mode = 'admit', how = 'camera', wh
     await record('used', { ...base, note });
     return { code: 'used', title: 'ALREADY USED', reason: `${usedLine(d)} Do not admit again.`, ticket: d };
   }
-  await record('admitted', { ...base, note });
+  await record('admitted', { ...base, note: force ? [note, 'Let in by a supervisor (gates closed / stand full)'].filter(Boolean).join('; ') : note });
   await earnAttendance(env, id).catch(() => {});
+  await capacityAlerts(db, t.tier).catch(e => console.error('[gate control] capacity', e));
   d = describe(await ticketRow(db, id), null);
   return { code: 'admitted', title: d.type === 'Child' ? 'ADMIT CHILD' : 'ADMIT', reason: d.type === 'Child' ? 'Child ticket: check the age if unsure.' : 'Genuine ticket, checked in now.', ticket: d };
 }
@@ -192,7 +253,7 @@ export async function readmitTicket(env, raw, { reason, who }) {
 }
 
 // "Today" is the match day in Nigeria: from midnight Lagos time.
-const REFUSED = `'used', 'fake', 'not_lobi', 'wrong_match', 'void', 'unpaid'`;
+const REFUSED = `'used', 'fake', 'not_lobi', 'wrong_match', 'void', 'unpaid', 'banned', 'gates_closed', 'stand_full'`;
 export const dayStart = (now = Date.now()) => new Date(Date.parse(`${lagosDay(now)}T00:00:00Z`) - 3600e3).toISOString();
 
 /** The counts on the scan screen: me, my gate, everyone (fans checked in today). Cheap: one query. */
@@ -242,7 +303,7 @@ export async function todayView(env, user = null) {
       WHERE t.event_id = ? AND o.payment_status = 'paid' AND o.refunded_at IS NULL AND t.status != 'void' GROUP BY t.tier`).bind(match.id).all()).results.map(r => [r.tier, r]));
     stands = TIERS.map(tier => ({ tier, label: TIER_LABELS[tier], sold: sold[tier]?.n || 0, in: sold[tier]?.inn || 0 }));
   }
-  const refused = ['used', 'fake', 'not_lobi', 'wrong_match', 'void', 'unpaid'].reduce((s, k) => s + (counts[k] || 0), 0);
+  const refused = ['used', 'fake', 'not_lobi', 'wrong_match', 'void', 'unpaid', 'banned', 'gates_closed', 'stand_full'].reduce((s, k) => s + (counts[k] || 0), 0);
   return {
     match: match ? { id: match.id, name: `${match.home_team} vs ${match.away_team}`, date: match.event_date, venue: match.venue } : null,
     totals: { admitted: counts.admitted || 0, readmitted: counts.readmitted || 0, refused, fake: (counts.fake || 0) + (counts.not_lobi || 0), used: counts.used || 0, lookups: counts.lookup || 0 },

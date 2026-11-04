@@ -117,6 +117,18 @@ FAKE TICKET, amber WRONG MATCH, red CANCELLED or NOT PAID. Gate Supervisors can
 re-admit a fan who stepped out (with a reason). **Today** shows check-ins per
 stand and gate, live. Full guide: STAFF-GUIDE §43.
 
+**Match-day gate checklist (Admin › Commerce › Lobi Gate Control):**
+1. The day before: stand sizes set; banned list up to date; staff and media
+   passes printed (**Staff & media passes**); report email addresses right.
+2. Two hours before the gates open: every scanner shows **✓ Ready** (fix what a
+   ✗ lists); stewards have practised (**Practice mode**).
+3. The gates open automatically (default 3 hours before kick-off), or press
+   **Open the gates now**.
+4. During the match: watch **How full each stand is**, **Queue speed** and the
+   watch list; message a gate or one scanner when needed.
+5. After the last fans are in: **Close the gates**. The match-day report is
+   emailed automatically. Full guide: STAFF-GUIDE §43a and §43b.
+
 **Older scanner:** the Ticket Scanner (lobistarsfc.com/scan) also reads match
 tickets and season tickets alike. A season ticket gets in once per home match:
 if it shows "Already used for this match", the code has already been let in

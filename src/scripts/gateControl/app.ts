@@ -98,7 +98,7 @@ $('gateChip').addEventListener('click', () => { if (!S.user.allGates && !S.user.
 
 // The three counters on the scan screen (me, my gate, everyone today), from the server so
 // they are right on every phone; refreshed after each scan and every 20 seconds.
-let countsTimer: any = 0;
+let countsTimer: any = 0, lastOpenInc = -1, gatesNow: any = LS.get('gc_gates', null);
 async function loadCounts() {
   try {
     const c = await api('counts', { quiet: true });
@@ -107,7 +107,31 @@ async function loadCounts() {
     $('myRefused').textContent = c.meRefused ? `You refused ${c.meRefused} today` : '';
     renderMsgs(c.messages || []);
     $('incBadge').hidden = !c.openIncidents; $('incBadge').textContent = String(c.openIncidents || '');
+    // A new incident (e.g. a banned fan at a gate): supervisors hear it straight away.
+    if (S.perms.supervise && c.openIncidents > lastOpenInc && lastOpenInc >= 0) { feedback('bad'); toast('New incident: open the Incidents tab'); }
+    lastOpenInc = c.openIncidents || 0;
+    if (c.gates) { gatesNow = c.gates; LS.set('gc_gates', c.gates); }
+    renderGates();
+    renderCapacity(c.capacity || []);
   } catch { /* keep the last numbers */ }
+}
+// Gates open / closed: a banner on the scan screen (from the server, or the offline list).
+function gatesOpenNow(): { open: boolean; text: string } {
+  const g = gatesNow || pack?.gates;
+  if (!g) return { open: true, text: '' };
+  if (g.mode === 'closed') return { open: false, text: 'The gates are CLOSED. Do not check anyone in.' };
+  if (g.mode === 'open') return { open: true, text: '' };
+  if (g.opensAt && Date.now() < Date.parse(g.opensAt)) return { open: false, text: `Gates not open yet: they open at ${hm(g.opensAt)}. You can practise or look tickets up.` };
+  return { open: true, text: '' };
+}
+function renderGates() {
+  const g = gatesOpenNow();
+  $('gatesBanner').hidden = g.open || practice;
+  $('gatesBanner').textContent = g.text;
+}
+function renderCapacity(list: any[]) {
+  const hot = list.filter(x => x.state === 'near' || x.state === 'full');
+  $('capChips').innerHTML = hot.map(x => `<span class="gc-cap ${x.state}">${esc(x.label)}: ${x.state === 'full' ? 'FULL' : `${x.pct}% full`}</span>`).join('');
 }
 function startCounts() { clearInterval(countsTimer); loadCounts(); countsTimer = setInterval(() => { if (!document.hidden) loadCounts(); }, 20000); }
 
@@ -116,7 +140,7 @@ const seenMsg = new Set<number>(LS.get('gc_msg_seen', []));
 function renderMsgs(list: any[]) {
   const gone = new Set<number>(LS.get('gc_msg_dismissed', []));
   const show = list.filter(m => !gone.has(m.id));
-  $('msgs').innerHTML = show.map(m => `<div class="gc-msg" role="alert"><div><b>${esc(m.text)}</b><small>${esc(m.from || 'Supervisor')} · ${hm(m.at)} · ${m.gate ? esc(m.gate) : 'all gates'}</small></div><button type="button" data-dismiss="${m.id}">OK</button></div>`).join('');
+  $('msgs').innerHTML = show.map(m => `<div class="gc-msg${m.personal ? ' me' : ''}" role="alert"><div><b>${esc(m.text)}</b><small>${esc(m.from || 'Supervisor')} · ${hm(m.at)} · ${m.personal ? 'to you only' : m.gate ? esc(m.gate) : 'all gates'}</small></div><button type="button" data-dismiss="${m.id}">OK</button></div>`).join('');
   const fresh = show.filter(m => !seenMsg.has(m.id));
   if (fresh.length) { feedback('info'); navigator.vibrate?.([200, 100, 200]); fresh.forEach(m => seenMsg.add(m.id)); LS.set('gc_msg_seen', [...seenMsg].slice(-100)); }
 }
@@ -142,8 +166,10 @@ async function refreshPack() {
     const p = await api('offline', { quiet: true });
     usePack(p); LS.set('gc_pack', p);
     usedLocal = new Set(queue.map((q: any) => q.ticket)); LS.set('gc_used', [...usedLocal]);
+    if (p.gates) { gatesNow = p.gates; LS.set('gc_gates', p.gates); }
+    sendStatus();
   } catch { /* keep the saved list */ }
-  showOfflineInfo();
+  showOfflineInfo(); renderGates();
 }
 function showOfflineInfo() {
   $('offlineInfo').textContent = packToday() ? `Offline list ready: ${pack.tickets.length.toLocaleString('en-GB')} tickets for ${pack.match.name} (updated ${hm(pack.at)}). Scanning carries on if the signal drops.`
@@ -159,12 +185,27 @@ function setNet() {
 }
 function localCheck(text: string, how: string, override = false): any {
   const up = text.toUpperCase().replace(/\s+/g, '');
-  const m = /LS-?(TIX|SZN)-?([A-HJ-NP-Z2-9]{12})(?![A-Z0-9])/.exec(up) || (/^[A-HJ-NP-Z2-9]{12}$/.test(up) ? [up, 'TIX', up] : null);
+  // Media Centre card (its QR link) and staff passes: from the offline list of passes.
+  const md = /\/MEDIA\/(?:ACCREDITATION\/)?VERIFY\/([A-Z0-9_-]{8,80})/.exec(up);
+  if (md) {
+    const tok = /\/media\/(?:accreditation\/)?verify\/([A-Za-z0-9_-]{8,80})/i.exec(text)?.[1] || '';
+    const ps = (pack?.passes || []).find((x: any) => x[0] === `MEDIA:${tok}`);
+    return ps ? { code: 'pass_ok', title: 'VALID MEDIA CARD', reason: `Allowed in: ${ps[3] || 'see the card'}. Check the photo on the card matches the person.`, ticket: { kind: 'pass', id: 'Media card', buyer: ps[1], stand: ps[2], type: 'Pass', zones: String(ps[3] || '').split(', ').filter(Boolean) }, offline: true }
+      : { code: 'not_listed', title: 'MEDIA CARD NOT ON THE LIST', reason: "This media card is not on today's list on this phone. Do not let the person in until it is checked with a signal.", offline: true };
+  }
+  const m = /LS-?(TIX|SZN|ACC)-?([A-HJ-NP-Z2-9]{12})(?![A-Z0-9])/.exec(up) || (/^[A-HJ-NP-Z2-9]{12}$/.test(up) ? [up, 'TIX', up] : null);
+  if (m && m[1] === 'ACC') {
+    const id = `LS-ACC-${m[2]}`, ps = (pack?.passes || []).find((x: any) => x[0] === id);
+    return ps ? { code: 'pass_ok', title: 'VALID PASS', reason: `Allowed in: ${ps[3]}. Check the person matches the name.`, ticket: { kind: 'pass', id, buyer: ps[1], stand: ps[2], type: 'Pass', zones: String(ps[3] || '').split(', ').filter(Boolean) }, offline: true }
+      : { code: 'pass_bad', title: 'PASS NOT ON THE LIST', reason: "This pass is not valid today (or not on this phone's list). Do not let the person in until it is checked with a signal.", offline: true };
+  }
+  if (m && PRACTICE_IDS[`LS-TIX-${m[2]}`]) return practice ? practiceLocal(`LS-TIX-${m[2]}`) : { code: 'practice_ticket', title: 'PRACTICE TICKET', reason: 'This is a practice ticket, not a real one. Do not admit.', offline: true };
   if (!m) return /^HTTPS?:/.test(up) && !/LOBISTARSFC/.test(up) ? { code: 'not_lobi', fake: true, title: 'NOT A LOBI STARS TICKET', reason: 'This QR code is not a Lobi Stars FC ticket.', offline: true }
     : { code: 'bad_number', title: 'CHECK THE NUMBER', reason: 'This is not a complete ticket number. Check it and try again.', offline: true };
   const id = `LS-${m[1]}-${m[2]}`, row = packMap.get(id);
   if (!row) return { code: 'not_listed', title: "NOT ON TODAY'S LIST", reason: `${id} is not on today's ticket list on this phone: it may be fake, cancelled or for another match. Do not admit. Check it again when the signal returns.`, offline: true };
   const ticket = { kind: m[1] === 'SZN' ? 'season' : 'match', id, stand: STAND[row[1]] || row[1], type: row[2] ? 'Child' : 'Adult', buyer: row[3] || 'No name', status: 'valid' };
+  if ((pack?.banned || []).includes(id)) return { code: 'banned', title: 'DO NOT ADMIT', reason: "This fan is on the club's banned list. Do not admit; call a supervisor.", ticket, offline: true };
   if (row[4] || usedLocal.has(id)) return { code: 'used', title: 'ALREADY USED', reason: 'Already checked in (offline list). Do not admit again.', ticket, offline: true };
   if (mode === 'lookup') return { code: 'valid', title: 'VALID TICKET', reason: "On today's list and not used yet (offline). Not checked in.", ticket, offline: true };
   const only = pack.stands?.[S.user.gate];
@@ -172,6 +213,9 @@ function localCheck(text: string, how: string, override = false): any {
     const goTo = S.gates.filter(g => !pack.stands?.[g]?.length || pack.stands[g].includes(row[1]));
     return { code: 'wrong_gate', title: 'WRONG GATE', canOverride: true, reason: `This ticket is for the ${ticket.stand}. Send the fan to ${goTo.join(' or ') || 'the right gate'}. Not checked in.`, ticket, offline: true };
   }
+  if (practice) return { code: 'admitted', title: row[2] ? 'ADMIT CHILD' : 'ADMIT', reason: 'Practice: not checked in.', ticket, offline: true, practice: true };
+  const g = gatesOpenNow();
+  if (!g.open && !override) return { code: 'gates_closed', title: 'GATES NOT OPEN', reason: g.text, ticket, offline: true };
   usedLocal.add(id); LS.set('gc_used', [...usedLocal]);
   queue.push({ ticket: id, at: new Date().toISOString(), how }); LS.set('gc_queue', queue); setNet();
   return { code: 'admitted', title: row[2] ? 'ADMIT CHILD' : 'ADMIT', reason: 'Checked in on this phone (offline). It is sent to the other gates when the signal returns.', ticket: { ...ticket, status: 'used' }, offline: true };
@@ -195,6 +239,81 @@ setInterval(() => { if (S.user && navigator.onLine && !document.hidden) refreshP
 function retryImages() { document.querySelectorAll('img').forEach(i => { if (i.complete && !i.naturalWidth) i.src = `${i.getAttribute('src')!.split('?')[0]}?r=${Date.now()}`; }); }
 window.addEventListener('online', () => { setNet(); syncQueue(); refreshPack(); retryImages(); });
 window.addEventListener('offline', setNet);
+
+// ── Practice mode: practice tickets show each answer; nothing is checked in or counted ──
+const PRACTICE_IDS: Record<string, string> = {
+  'LS-TIX-TEST2ADULT22': 'admitted', 'LS-TIX-TEST3CHLD333': 'admitted_child', 'LS-TIX-TEST4USED444': 'used', 'LS-TIX-TEST5FAKE555': 'fake',
+  'LS-TIX-TEST6MATCH66': 'wrong_match', 'LS-TIX-TEST7STAND77': 'wrong_gate', 'LS-TIX-TEST8BANNED8': 'banned',
+};
+function practiceLocal(id: string): any {
+  const k = PRACTICE_IDS[id];
+  const t = { kind: 'match', id, stand: k === 'wrong_gate' ? 'VIP Sitting' : 'Popular Stand', type: k === 'admitted_child' ? 'Child' : 'Adult', buyer: 'Practice Fan' };
+  const R: Record<string, any> = {
+    admitted: { code: 'admitted', title: 'ADMIT', reason: 'Genuine ticket, checked in now.' }, admitted_child: { code: 'admitted', title: 'ADMIT CHILD', reason: 'Child ticket: check the age if unsure.' },
+    used: { code: 'used', title: 'ALREADY USED', reason: 'Already checked in earlier. Do not admit again.' }, fake: { code: 'fake', title: 'FAKE TICKET', reason: 'No Lobi Stars ticket has this number. Do not admit.' },
+    wrong_match: { code: 'wrong_match', title: 'WRONG MATCH', reason: 'Genuine ticket, but for another match.' }, wrong_gate: { code: 'wrong_gate', title: 'WRONG GATE', reason: 'This ticket is for the VIP Sitting. Send the fan to VIP Gate.', canOverride: true },
+    banned: { code: 'banned', title: 'DO NOT ADMIT', reason: "This fan is on the club's banned list. Do not admit; call a supervisor." },
+  };
+  return { ...R[k], ticket: k === 'fake' ? null : t, practice: true, offline: true };
+}
+let practice = false, practiceCount = Number(LS.get('gc_practice_n', 0)) || 0;
+function setPractice(on: boolean) {
+  practice = on;
+  $('practiceBtn').setAttribute('aria-pressed', String(on));
+  $('practiceBar').hidden = !on;
+  document.body.classList.toggle('gc-practising', on);
+  $('result').innerHTML = '';
+  renderGates();
+  if (on) $('practiceList').innerHTML = Object.keys(PRACTICE_IDS).map(id => `<li><span class="gc-mono">${id.slice(7)}</span><small>${({ admitted: 'Adult: ADMIT', admitted_child: 'Child: ADMIT CHILD', used: 'Already used', fake: 'Fake', wrong_match: 'Another match', wrong_gate: 'Wrong gate', banned: 'Banned fan' } as Record<string, string>)[PRACTICE_IDS[id]]}</small></li>`).join('');
+  toast(on ? 'Practice mode: nothing is checked in or counted' : 'Practice mode off: real check-ins');
+}
+$('practiceBtn').addEventListener('click', () => setPractice(!practice));
+$('practiceOff').addEventListener('click', () => setPractice(false));
+
+// ── Keep the screen awake while Lobi Gate Control is open (no unlocking with a queue waiting) ──
+let wakeLock: any = null, wakeOk: boolean | null = null;
+async function keepAwake() {
+  const wl = (navigator as any).wakeLock;
+  if (!wl) { wakeOk = null; return; }
+  if (wakeLock && !wakeLock.released) return;
+  try { wakeLock = await wl.request('screen'); wakeOk = true; wakeLock.addEventListener?.('release', () => { wakeOk = document.hidden ? wakeOk : false; }); }
+  catch { wakeOk = false; }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.user) { keepAwake(); sendStatus(); } });
+document.addEventListener('pointerdown', () => { if (S.user && (!wakeLock || wakeLock.released)) keepAwake(); });
+
+// ── Readiness: this phone tells the club it is ready (camera, offline list, battery, screen awake) ──
+let camState: string = LS.get('gc_cam', 'untested'), scannerUsed = !!LS.get('gc_scanner', false), battery: any = null, statusTimer: any = 0;
+async function initBattery() {
+  try { const b = await (navigator as any).getBattery?.(); if (b) { battery = b; b.addEventListener('levelchange', sendStatus); b.addEventListener('chargingchange', sendStatus); } } catch { battery = null; }
+}
+async function cameraPermission() {
+  try { const q = await (navigator as any).permissions?.query({ name: 'camera' }); if (q?.state === 'denied') camState = 'blocked'; else if (q?.state === 'granted' && camState !== 'ok') camState = LS.get('gc_cam', 'untested'); } catch { /* not supported */ }
+}
+async function sendStatus() {
+  if (!S.user || !navigator.onLine) return;
+  await cameraPermission();
+  const body = {
+    camera: camState, scanner: scannerUsed, wake: wakeOk, online: navigator.onLine, queue: queue.length, practice: practiceCount,
+    installed: matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone === true,
+    pack: pack ? { n: pack.tickets?.length || 0, at: pack.at, match: pack.match?.id || '' } : null,
+    battery: battery ? { level: battery.level, charging: battery.charging } : null,
+  };
+  try { await api('status', { method: 'POST', body, quiet: true }); } catch { /* next time */ }
+  renderReady();
+}
+function renderReady() {
+  const issues: string[] = [];
+  if (camState === 'blocked') issues.push('The camera is blocked: allow it for lobistarsfc.com in the phone settings.');
+  else if (camState !== 'ok' && !scannerUsed) issues.push('Test the camera: press Scan ticket once.');
+  if (gatesNow?.kickOff && !packToday()) issues.push('No offline ticket list yet: keep the app open with a signal for a minute.');
+  if (battery && !battery.charging && battery.level < 0.3) issues.push(`Battery ${Math.round(battery.level * 100)}%: charge the phone now.`);
+  if (wakeOk === false) issues.push('The screen may switch off: turn off battery saver.');
+  $('readyBox').hidden = !issues.length;
+  $('readyList').innerHTML = issues.map(i => `<li>${esc(i)}</li>`).join('');
+}
+function startStatus() { clearInterval(statusTimer); sendStatus(); statusTimer = setInterval(() => { if (!document.hidden) sendStatus(); }, 60000); }
+initBattery();
 
 // ── My last scans (this phone) ──
 const recent: any[] = [];
@@ -225,6 +344,7 @@ function showApp() {
   go(view);
   startCounts();
   setNet(); showOfflineInfo(); refreshPack(); syncQueue();
+  keepAwake(); startStatus(); renderGates();
 }
 function go(v: string) {
   view = v;
@@ -273,10 +393,11 @@ function setMode(m: 'admit' | 'lookup') {
 $('modeAdmit').addEventListener('click', () => setMode('admit'));
 $('modeLook').addEventListener('click', () => setMode('lookup'));
 
-const KIND: Record<string, string> = { admitted: 'ok', readmitted: 'ok', valid: 'info', used: 'bad', void: 'bad', unpaid: 'bad', fake: 'fake', not_lobi: 'fake', wrong_match: 'warn', wrong_gate: 'warn', bad_number: 'warn', not_listed: 'bad' };
+const KIND: Record<string, string> = { admitted: 'ok', readmitted: 'ok', valid: 'info', used: 'bad', void: 'bad', unpaid: 'bad', fake: 'fake', not_lobi: 'fake', wrong_match: 'warn', wrong_gate: 'warn', bad_number: 'warn', not_listed: 'bad',
+  banned: 'bad', gates_closed: 'warn', stand_full: 'bad', pass_ok: 'pass', pass_bad: 'bad', practice_ticket: 'fake' };
 const ICON: Record<string, string> = {
   ok: '<path d="M20 6 9 17l-5-5"/>', info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
-  bad: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>', fake: '<path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18v.5"/>',
+  bad: '<circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/>', pass: '<rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M8 17h8"/>', fake: '<path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18v.5"/>',
   warn: '<path d="M12 3 2 21h20L12 3z"/><path d="M12 10v5M12 18v.5"/>', wait: '<circle cx="12" cy="12" r="9" stroke-dasharray="40 20"/>',
 };
 const ico = (k: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k] || ICON.info}</svg>`;
@@ -289,11 +410,16 @@ function renderResult(r: any) {
   const where = t?.where ? [t.where.source, t.where.device, t.where.place].filter(Boolean).join(' · ') : '';
   const checked = t?.status === 'used' && t.usedAt ? `${dayTime(t.usedAt)}${t.usedGate ? ` · ${t.usedGate}` : ''}${t.usedByName ? ` · ${t.usedByName}` : ''}` : '';
   const autoMs = k === 'ok' && (camOn || lastHow === 'scanner') ? 2500 : 0;
+  if (r.practice) { practiceCount++; LS.set('gc_practice_n', practiceCount); }
+  const passHtml = t?.kind === 'pass' ? `<div class="gc-r-who"><b>${esc(t.buyer || '')}</b><span>${esc(t.stand || '')}${t.organisation ? ` · ${esc(t.organisation)}` : ''}</span></div>
+      ${t.zones?.length ? `<div class="gc-zones">${t.zones.map((z: string) => `<span>${esc(z)}</span>`).join('')}</div>` : ''}
+      <dl class="gc-details">${det('Pass number', t.id)}${det('Valid', t.from ? (t.from === t.to ? t.from : `${t.from} to ${t.to}`) : '')}${det('Last scanned', t.lastScan ? dayTime(t.lastScan) : '')}</dl>` : '';
   $('result').innerHTML = `
-    <div class="gc-result ${k}" role="alert">
+    <div class="gc-result ${k}${r.practice ? ' practice' : ''}" role="alert">
+      ${r.practice ? '<div class="gc-practice-tag">PRACTICE: not checked in</div>' : ''}
       <div class="gc-r-top"><span class="gc-r-ic">${ico(k)}</span><div class="gc-r-title">${esc(r.title || '')}</div></div>
       <p class="gc-r-reason">${esc(r.reason || '')}${r.offline ? ' <span class="gc-tag">Offline</span>' : ''}</p>
-      ${t ? `<div class="gc-r-who"><b>${esc(t.buyer || 'No name')}</b><span>${esc(t.stand)} · ${esc(t.type)} ticket</span></div>
+      ${passHtml}${t && t.kind !== 'pass' ? `<div class="gc-r-who"><b>${esc(t.buyer || 'No name')}</b><span>${esc(t.stand)} · ${esc(t.type)} ticket</span></div>
       <dl class="gc-details">
         ${det('Match', t.match ? `${t.match}${t.matchDate ? ` · ${dayOnly(t.matchDate)}` : ''}` : '', true)}
         ${det('Ticket number', t.id)}
@@ -308,12 +434,13 @@ function renderResult(r: any) {
       </dl>` : ''}
       <div class="gc-r-actions">
         ${r.canOverride ? '<button type="button" class="gc-btn ghost" data-act="override">Admit here anyway</button>' : ''}
+        ${r.canForce ? '<button type="button" class="gc-btn ghost" data-act="force">Let in (supervisor)</button>' : ''}
         ${r.code === 'used' && S.perms.readmit && t?.kind === 'match' && !r.offline ? '<button type="button" class="gc-btn ghost" data-act="readmit">Re-admit (supervisor)</button>' : ''}
         <button type="button" class="gc-btn" data-act="next">${camOn ? 'Scan next ticket' : 'Next ticket'}</button>
       </div>
       ${autoMs ? `<div class="gc-auto" aria-hidden="true"><i style="--t:${autoMs}ms"></i></div>` : ''}
     </div>`;
-  feedback(k === 'fake' ? 'bad' : k);
+  feedback(k === 'fake' ? 'bad' : k === 'pass' ? 'info' : k);
   clearTimeout(autoNext);
   if (autoMs) autoNext = setTimeout(nextTicket, autoMs);
   $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -329,6 +456,7 @@ $('result').addEventListener('click', (ev: Event) => {
   if (!b) return;
   if (b.dataset.act === 'next') nextTicket();
   if (b.dataset.act === 'override') check(lastTicket, (lastHow || 'typed') as any, true);
+  if (b.dataset.act === 'force') { if (confirm('Let this fan in although the gates are closed or the stand is full? Your name is recorded.')) check(lastTicket, (lastHow || 'typed') as any, lastOverride, true); }
   if (b.dataset.act === 'readmit') { clearTimeout(autoNext); $('readmitErr').hidden = true; $('readmitWhy').value = ''; $('readmitDlg').showModal(); }
 });
 
@@ -341,21 +469,22 @@ function bumpCounts() {
 }
 function offlineResult(text: string, how: string, override: boolean) {
   const r = localCheck(text, how, override);
-  if (r.code === 'admitted') bumpCounts();
+  if (r.code === 'admitted' && !r.practice) bumpCounts();
   renderResult(r); pushRecent(r);
 }
-async function check(text: string, how: 'camera' | 'typed' | 'scanner', override = false) {
+let lastOverride = false;
+async function check(text: string, how: 'camera' | 'typed' | 'scanner', override = false, force = false) {
   if (busy) return;
-  busy = true; lastTicket = text; lastHow = how;
+  busy = true; lastTicket = text; lastHow = how; lastOverride = override;
   clearTimeout(autoNext);
   // No signal at all: straight to the offline list (no waiting for the network to fail).
   if (!navigator.onLine && packToday()) { offlineResult(text, how, override); busy = false; return; }
   $('result').innerHTML = `<div class="gc-result wait"><div class="gc-r-top"><span class="gc-r-ic">${ico('wait')}</span><div class="gc-r-title">Checking…</div></div></div>`;
   try {
-    const r = await api('check', { method: 'POST', body: { ticket: text, mode, how, override } });
+    const r = await api('check', { method: 'POST', body: { ticket: text, mode, how, override, force, practice } });
     pushRecent(r);
     if (queue.length) syncQueue();
-    if (r.code === 'admitted') {
+    if (r.code === 'admitted' && !r.practice) {
       $('cMe').textContent = String(Number($('cMe').textContent) + 1);
       $('cGate').textContent = String(Number($('cGate').textContent) + 1);
       $('cAll').textContent = String(Number($('cAll').textContent) + 1);
@@ -392,6 +521,7 @@ $('typeForm').addEventListener('submit', (ev: Event) => {
 // the steward never has to tap the box; a person typing is far slower and goes to the box.
 const keys = { buf: '', last: 0, gaps: [] as number[], fast: false };
 function scannerSeen() {
+  if (!scannerUsed) { scannerUsed = true; LS.set('gc_scanner', true); renderReady(); }
   const h = $('scannerHint'); h.classList.add('on'); h.classList.remove('away');
   $('scannerText').innerHTML = '<b>Scanner connected.</b> Scan the next ticket; the result shows here.';
 }
@@ -463,6 +593,7 @@ async function startCamera() {
     $('cam').hidden = false;
     await v.play().catch(() => { /* some phones start it themselves */ });
     camOn = true; camPaused = false;
+    camState = 'ok'; LS.set('gc_cam', 'ok'); renderReady();
     // The phone's own QR reader when it has one; jsQR otherwise.
     detector = null;
     const BD = (window as any).BarcodeDetector;
@@ -477,6 +608,7 @@ async function startCamera() {
   } catch (e: any) {
     await stopCamera();
     const why = String(e?.name || '') + ' ' + String(e?.message || e || '');
+    if (/NotAllowed|Permission|denied/i.test(why)) { camState = 'blocked'; LS.set('gc_cam', 'blocked'); renderReady(); }
     const msg = /NotAllowed|Permission|denied/i.test(why) ? 'The camera is blocked. Allow the camera for lobistarsfc.com (iPhone: Settings › Safari › Camera › Allow; Android: tap the lock next to the address › Permissions › Camera), then press Scan ticket again. Or type the ticket number below.'
       : /NotFound|Overconstrained|no camera|device not found/i.test(why) ? 'No camera was found on this device. Type the ticket number below.'
       : /NotReadable|in use|Could not start/i.test(why) ? 'Another app is using the camera. Close it and press Scan ticket again.'
@@ -551,6 +683,7 @@ let todayTimer: any = 0;
 const RESULT_LABEL: Record<string, [string, string]> = {
   admitted: ['Checked in', 'ok'], readmitted: ['Re-admitted', 'ok'], lookup: ['Looked up', 'info'], used: ['Refused: already used', 'bad'], fake: ['FAKE ticket', 'bad'],
   not_lobi: ['Not a Lobi Stars ticket', 'bad'], wrong_match: ['Wrong match', 'warn'], void: ['Cancelled ticket', 'bad'], unpaid: ['Not paid', 'bad'], bad_number: ['Number mistyped', 'warn'],
+  wrong_gate: ['Sent to another gate', 'warn'], banned: ['BANNED fan refused', 'bad'], gates_closed: ['Gates not open', 'warn'], stand_full: ['Stand full', 'bad'], pass_ok: ['Pass allowed', 'info'], pass_bad: ['Pass refused', 'bad'],
 };
 // Bars: one row per person or gate, longest = the top count. Number at the end of the bar.
 const bars = (rows: { label: string; sub?: string; n: number; me?: boolean }[]) => {
@@ -573,11 +706,12 @@ function timeChart(points: { at: string; n: number }[]) {
 }
 // Watch list: bursts of fake tickets at a gate, double entries, tickets tried more than once.
 function watchHtml(w: any) {
-  if (!w || (!w.bursts.length && !w.doubles.length && !w.repeats.length)) return '';
+  if (!w || (!w.bursts.length && !w.doubles.length && !w.repeats.length && !(w.banned || []).length)) return '';
   const li = (k: string, title: string, sub: string, at?: string) => `<li><span class="gc-dot ${k}"></span><div class="gc-li-main"><b>${title}</b><small>${sub}</small></div>${at ? `<span class="gc-li-time">${hm(at)}</span>` : ''}</li>`;
   return `<div class="gc-panel gc-watch"><p class="gc-caps" style="margin:0 0 4px;color:#ffb3b5">Watch list</p><ul class="gc-list">
     ${w.bursts.map((b: any) => li('bad', `${b.n} fake tickets at ${esc(b.gate)} in the last 30 minutes`, 'Look out for a tout selling fake tickets nearby; tell the police or security.')).join('')}
     ${w.doubles.map((x: any) => li('bad', `Double entry: <span class="gc-mono">${esc(x.ticket)}</span>`, `Let in offline at ${esc(x.gate || '')} by ${esc(x.by || '')}, but it had already been checked in.`, x.at)).join('')}
+    ${(w.banned || []).map((x: any) => li('bad', `BANNED fan refused: <span class="gc-mono">${esc(x.ticket)}</span>`, `${esc(x.gate || '')} · ${esc(x.by || '')}${x.reason ? ` · ${esc(x.reason)}` : ''}`, x.at)).join('')}
     ${w.repeats.map((x: any) => li(x.fake ? 'bad' : 'warn', `<span class="gc-mono">${esc(x.ticket)}</span> tried ${x.tries} times`, `${x.fake ? 'Fake number' : 'Already used'} · ${esc(x.gates)}`, x.last)).join('')}
   </ul></div>`;
 }
@@ -602,6 +736,8 @@ async function loadToday() {
         <div class="gc-stat y"><b>${d.totals.fake}</b><span class="gc-caps">Fake tickets</span></div>
       </div>
       ${stands ? `<div class="gc-panel"><p class="gc-caps" style="margin:0">By stand</p>${stands}</div>` : ''}
+      ${(d.capacity || []).some((c: any) => c.capacity) ? `<div class="gc-panel"><p class="gc-caps" style="margin:0">How full each stand is</p>${d.capacity.filter((c: any) => c.capacity).map((c: any) => `<div class="gc-bar ${c.state}"><div class="gc-bar-h"><span>${esc(c.label)}</span><span>${c.inside.toLocaleString('en-GB')} / ${c.capacity.toLocaleString('en-GB')} · ${c.state === 'full' ? 'FULL' : `${c.pct}%`}</span></div><div class="gc-bar-t"><i style="width:${Math.min(100, c.pct)}%"></i></div></div>`).join('')}</div>` : ''}
+      ${S.perms.supervise && (d.queue || []).length ? `<div class="gc-panel"><p class="gc-caps" style="margin:0 0 4px">Queue speed (last few minutes)</p><ul class="gc-list">${d.queue.map((q: any) => `<li><span class="gc-dot ${q.state === 'slow' ? 'bad' : q.state === 'ok' ? 'ok' : ''}"></span><div class="gc-li-main"><b>${esc(q.gate)}</b><small>${q.perMinute} fans a minute${q.avgSeconds ? ` · ${q.avgSeconds} s per fan` : ''} · ${q.scanners} scanner${q.scanners === 1 ? '' : 's'}${q.state === 'slow' ? ' · SLOW: send help' : ''}</small></div></li>`).join('')}</ul></div>` : ''}
       <div class="gc-panel"><p class="gc-caps" style="margin:0 0 4px">On duty now</p>${d.onDuty.length ? `<ul class="gc-list">${d.onDuty.map((p: any) => `<li><span class="gc-dot info"></span><div class="gc-li-main"><b>${esc(p.name)}</b><small>${esc(p.role)} · ${esc(p.code)}</small></div><span class="gc-li-time">${esc(p.gate)}</span></li>`).join('')}</ul>` : '<p class="gc-empty">Nobody signed in.</p>'}</div>
       <div class="gc-panel"><p class="gc-caps" style="margin:0 0 4px">Latest scans (all gates)</p>${d.latest.length ? `<ul class="gc-list">${d.latest.map((s: any) => {
         const [label, k] = RESULT_LABEL[s.result] || [s.result, 'info'];

@@ -1,9 +1,11 @@
 import { syncChecklists, getSettings, saveSetting, ensureChecklistSchema } from '../_lib/matchChecklist.js';
 import { runReminders } from '../_lib/checklistReminders.js';
+import { gateReportTick } from '../_lib/gateMatchday.js';
 
 // POST /api/internal/checklist-run -- Match Checklist jobs, with "Authorization: Bearer <CRON_SECRET>".
 // Called every minute by the timer Worker (workers/kitchen-cron):
-//   (default)        keeps checklists in step with the fixtures (every 15 minutes) and,
+//   (default)        keeps checklists in step with the fixtures (every 15 minutes), sends the
+//                    Lobi Gate Control match-day report after the gates close, and,
 //                    from the reminder time (Lagos), sends the daily digest once a day.
 // By hand (scripts/checklist.mjs):
 //   ?action=generate                 generate / update checklists now
@@ -31,6 +33,8 @@ export async function onRequestPost({ request, env }) {
     }
     const s = await getSettings(env.DB);
     if (s.remindersEnabled) out.remind = await runReminders(env, {});
+    // Lobi Gate Control: the match-day gate report, once, after the gates close.
+    try { out.gateReport = await gateReportTick(env); } catch (e) { console.error('[checklist-run] gate report', e); out.gateReport = { error: true }; }
     return Response.json(out);
   } catch (err) {
     console.error('[checklist-run]', err);

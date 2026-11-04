@@ -8,6 +8,31 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-04: Lobi Gate Control: running the gates like a professional stadium
+
+Admin › Commerce › Lobi Gate Control and the scanner app now have:
+- **Gates open / closed:** automatic (a set time before kick-off) or by hand;
+  stewards can't check anyone in while the gates are closed (a Gate Supervisor
+  can make an exception, recorded).
+- **Scanner readiness:** a Ready? column (camera, offline list, gate, battery,
+  screen awake) and a count of scanners ready; the phone shows what to fix.
+- **Screen kept awake** while the app is open.
+- **Stand capacity:** stand sizes, live bars, a message at 90% and when full,
+  then STAND FULL for that stand.
+- **Queue speed** per gate (fans a minute, seconds per fan, SLOW warning).
+- **Banned list:** by ticket, email or phone; DO NOT ADMIT at every gate and an
+  incident for the supervisors.
+- **Message one scanner** (or one gate, or every gate) from the admin.
+- **Battery** of each Android scanner on the admin page.
+- **Practice mode** with printable practice tickets: nothing checked in or
+  counted.
+- **Match-day report** emailed to management after the gates close, with the
+  CSV of every scan; preview and send now.
+- **Staff & media passes** (new page): QR passes with zones for players'
+  guests, staff, officials, stewards, security, medical, VIP guests and
+  contractors, printed as ID cards; Media Centre accreditation cards scan at
+  the gates too.
+
 ## 2026-11-04: Lobi Gate Control: stewards at one gate, supervisors at all gates
 
 - A **Ticket Steward** works at one gate. Set it when adding the scanner, or

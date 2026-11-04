@@ -268,3 +268,31 @@ dialog.gc-dlg::backdrop { background: rgba(0, 0, 0, .7); }
 .gc-chip:disabled { opacity: 1; cursor: default; }
 .gc-tally.two { grid-template-columns: 1fr 1fr; }
 .gc-tile[hidden] { display: none; }
+
+/* Match-day running: gates banner, readiness, practice mode, passes, stand capacity */
+.gc-gates-banner { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: rgba(245, 158, 11, .16); border: 2px solid #F59E0B; color: #FFD58A; font-weight: 700; }
+.gc-readybox { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: rgba(59, 130, 246, .12); border: 1px solid rgba(96, 165, 250, .5); color: #CFE1FF; font-size: 14px; }
+.gc-readybox ul { margin: 6px 0 0; padding-left: 18px; }
+.gc-practice-bar { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; color: #111; font-size: 14px;
+  background: repeating-linear-gradient(135deg, #FFC72C 0 14px, #FFD966 14px 28px); }
+.gc-practice-bar ul { list-style: none; margin: 8px 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+.gc-practice-bar li { display: flex; flex-direction: column; background: rgba(255, 255, 255, .6); border-radius: 8px; padding: 4px 8px; }
+.gc-practice-bar .gc-mono { font-weight: 700; color: #111; }
+.gc-practice-bar small { color: #333; }
+.gc-practice-bar .gc-btn { color: #111; border-color: #111; min-height: 40px; }
+.gc-practice-btn { margin-top: 14px; }
+.gc-practice-btn[aria-pressed="true"] { background: #FFC72C; color: #111; }
+.gc-practice-tag { margin: -4px 0 8px; display: inline-block; padding: 3px 10px; border-radius: 999px; background: #FFC72C; color: #111; font-weight: 800; font-size: 12px; letter-spacing: .06em; }
+body.gc-practising .gc-top { border-bottom-color: #FFC72C; }
+.gc-result.pass { background: linear-gradient(160deg, #1D4ED8, #1E3A8A); border-color: #60A5FA; color: #fff; }
+.gc-zones { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.gc-zones span { padding: 6px 12px; border-radius: 999px; background: #fff; color: #1E3A8A; font-weight: 800; font-size: 15px; }
+.gc-capchips { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 10px; }
+.gc-capchips:empty { display: none; }
+.gc-cap { padding: 4px 10px; border-radius: 999px; font-weight: 800; font-size: 13px; }
+.gc-cap.near { background: rgba(245, 158, 11, .2); color: #FFD58A; border: 1px solid #F59E0B; }
+.gc-cap.full { background: #C8102E; color: #fff; }
+.gc-bar.near .gc-bar-t i { background: #F59E0B; }
+.gc-bar.full .gc-bar-t i { background: #C8102E; }
+.gc-msg.me { background: #1D4ED8; color: #fff; }
+.gc-msg.me small { color: rgba(255, 255, 255, .85); }

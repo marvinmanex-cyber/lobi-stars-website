@@ -1,0 +1,181 @@
+---
+// Commerce › Lobi Gate Control › Staff & media passes: QR passes for players' guests, club
+// staff, match officials, stewards, security, medical, VIP guests and contractors, with the
+// zones each may enter. Scanned with Lobi Gate Control (a VALID PASS shows the zones; a
+// withdrawn or out-of-date pass is refused). Media accreditation cards (Media Centre) also
+// scan at the gates. Printed as ID cards (54 × 85.6 mm).
+import Layout from '../../../layouts/Layout.astro';
+import AdminNav from '../../../components/admin/AdminNav.astro';
+import LeagueKit from '../../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="Staff & media passes | Lobi Gate Control" description="QR passes with zones for staff, guests, officials and contractors, scanned at the gates." noindex>
+  <div class="wrap la gcp">
+    <AdminNav current="gate-control" />
+    <header class="la-head">
+      <div><div class="stag">Lobi Gate Control</div><h1 class="stitle">Staff &amp; media <span class="r">passes</span></h1></div>
+      <div class="la-row"><a class="btn-o" href="/admin/gate-control/">← Lobi Gate Control</a></div>
+    </header>
+    <p class="la-lede">Passes for people who are not fans with tickets: players' guests, club staff, match officials, stewards, security, medical, VIP guests and contractors. Each pass has a QR code and the <b>zones</b> the person may enter. Stewards scan it with Lobi Gate Control: <b>VALID PASS</b> shows the name and zones in big letters; a withdrawn or out-of-date pass is refused. Journalists' cards come from <b>Media Centre › Accreditation</b> and scan the same way.</p>
+
+    <section class="la-card" aria-labelledby="h-new">
+      <h2 id="h-new"><span id="formT">Make a pass</span></h2>
+      <form id="passForm">
+        <input type="hidden" name="id" />
+        <div class="la-row" style="align-items:flex-end">
+          <label class="la-f">Full name<input name="name" required maxlength="80" style="min-width:200px" /></label>
+          <label class="la-f">Category<select name="category" id="cat"></select></label>
+          <label class="la-f">Organisation / with (optional)<input name="organisation" maxlength="80" placeholder="e.g. Guest of player no. 9" style="min-width:200px" /></label>
+          <label class="la-f">Phone (optional)<input name="phone" maxlength="20" /></label>
+        </div>
+        <div class="la-row" style="align-items:flex-end;margin-top:8px">
+          <label class="la-f">First day<input name="from" type="date" required /></label>
+          <label class="la-f">Last day<input name="to" type="date" required /></label>
+          <label class="la-f" style="flex:1;min-width:220px">Notes (optional, not printed)<input name="notes" maxlength="300" /></label>
+        </div>
+        <fieldset class="gcp-zones"><legend>Zones this person may enter</legend><div id="zones"></div></fieldset>
+        <div class="la-row"><button class="btn-p" type="submit" id="saveBtn">Make the pass</button><button class="btn-o" type="button" id="cancelEdit" hidden>Cancel</button></div>
+      </form>
+      <details class="gcp-det"><summary>Change the list of zones</summary>
+        <p class="la-msg">One zone per line (e.g. Pitch side, Dressing rooms). Passes already made keep their zones.</p>
+        <textarea id="zonesText" rows="6" style="width:100%;max-width:420px"></textarea>
+        <div class="la-row" style="margin-top:6px"><button type="button" class="btn-o" id="zonesSave">Save zones</button></div>
+      </details>
+    </section>
+
+    <section class="la-card" aria-labelledby="h-list">
+      <h2 id="h-list">Passes</h2>
+      <div class="la-row" style="margin-bottom:8px"><label class="la-f">Show<select id="show"><option value="valid">Valid today or later</option><option value="all">All</option></select></label><button type="button" class="btn-o" id="printAll">Print the passes shown</button></div>
+      <div id="list"><p class="la-msg">Loading…</p></div>
+    </section>
+    <div id="sheet" class="gcp-sheet" aria-hidden="true"></div>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<style is:global>
+  .gcp { max-width: 1200px; }
+  .gcp-zones { border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 12px; margin: 12px 0; }
+  .gcp-zones legend { font-weight: 700; padding: 0 4px; }
+  .gcp-zones label { display: inline-flex; gap: 6px; align-items: center; margin: 4px 16px 4px 0; }
+  .gcp-det summary { cursor: pointer; font-weight: 700; margin-top: 10px; }
+  .gcp table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .gcp th, .gcp td { text-align: left; padding: 9px 8px; border-top: 1px solid var(--a-line); vertical-align: top; }
+  .gcp th { border-top: 0; color: var(--a-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .gcp td small { display: block; color: var(--a-muted); }
+  .gcp-cat { display: inline-block; padding: 2px 8px; border-radius: 999px; color: #fff; font-size: 12px; font-weight: 700; }
+  .gcp-z { display: inline-block; margin: 0 4px 4px 0; padding: 1px 7px; border-radius: 6px; background: var(--a-line); font-size: 12px; }
+  .gcp-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .gcp-acts button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; }
+  .gcp-acts button.danger { border-color: #C11A1F; color: #C11A1F; }
+  .gcp-off { opacity: .55; }
+  .gcp-tbl { overflow-x: auto; }
+  .gcp-sheet { display: none; }
+  @media print {
+    @page { margin: 8mm; }
+    body * { visibility: hidden !important; }
+    .gcp-sheet, .gcp-sheet * { visibility: visible !important; }
+    .gcp-sheet { display: flex !important; flex-wrap: wrap; gap: 6mm; position: absolute; inset: 0; background: #fff; }
+    .gcp-card { width: 54mm; height: 85.6mm; border-radius: 3mm; overflow: hidden; border: .3mm solid #999; font-family: Arial, sans-serif; color: #111; display: flex; flex-direction: column; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .gcp-card .top { background: #0E2A55; color: #fff; padding: 2.5mm 3mm; display: flex; align-items: center; gap: 2mm; border-bottom: 1mm solid #F5C11A; }
+    .gcp-card .top img { width: 9mm; height: 9mm; }
+    .gcp-card .top b { font-size: 7.5pt; letter-spacing: .04em; line-height: 1.1; }
+    .gcp-card .band { color: #fff; text-align: center; font-weight: 800; font-size: 9pt; padding: 1.4mm; text-transform: uppercase; letter-spacing: .06em; }
+    .gcp-card .body { padding: 2mm 3mm; flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .gcp-card .name { font-size: 11pt; font-weight: 800; line-height: 1.15; }
+    .gcp-card .org { font-size: 7pt; color: #444; margin-top: .6mm; }
+    .gcp-card svg { width: 25mm; height: 25mm; margin: 1.5mm 0 1mm; }
+    .gcp-card .zones { font-size: 6.6pt; font-weight: 700; line-height: 1.3; }
+    .gcp-card .foot { font-size: 6pt; color: #333; padding: 1mm 3mm 2mm; text-align: center; }
+    .gcp-card .no { font-family: monospace; font-size: 6.5pt; }
+  }
+</style>
+
+<script>
+  import qrcode from 'qrcode-generator';
+  const LA = (window as any).LA;
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const today = () => new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
+  const fmt = (d: string) => d ? new Date(`${d}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+  let data: any = { passes: [], zones: [], categories: {}, colours: {} }, editing: any = null;
+  const API = '/api/admin/gate-control';
+
+  async function load() {
+    const r = await LA.api(`${API}?view=passes`);
+    if (!r.ok) { $('list').innerHTML = `<p class="la-msg">${esc(r.d.error || 'Could not load.')}</p>`; return; }
+    data = r.d;
+    if (!$('cat').options.length) $('cat').innerHTML = Object.entries(data.categories).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('');
+    drawZones(editing?.zones || []);
+    $('zonesText').value = data.zones.join('\n');
+    drawList();
+  }
+  function drawZones(checked: string[]) {
+    $('zones').innerHTML = data.zones.map((z: string) => `<label><input type="checkbox" value="${esc(z)}"${checked.includes(z) ? ' checked' : ''} /> ${esc(z)}</label>`).join('');
+  }
+  function shown() { return data.passes.filter((p: any) => $('show').value === 'all' || (p.status === 'active' && p.to >= today())); }
+  function drawList() {
+    const list = shown();
+    $('list').innerHTML = list.length ? `<div class="gcp-tbl"><table><thead><tr><th>Person</th><th>Category</th><th>Zones</th><th>Valid</th><th>Last scanned</th><th></th></tr></thead><tbody>${list.map((p: any) => `
+      <tr class="${p.status !== 'active' ? 'gcp-off' : ''}"><td><b>${esc(p.name)}</b><small>${esc([p.organisation, p.phone].filter(Boolean).join(' · '))}</small><small style="font-family:monospace">${esc(p.id)}</small></td>
+      <td><span class="gcp-cat" style="background:${esc(p.colour)}">${esc(p.categoryLabel)}</span>${p.status !== 'active' ? '<small>Withdrawn</small>' : ''}</td>
+      <td>${p.zones.map((z: string) => `<span class="gcp-z">${esc(z)}</span>`).join('')}</td>
+      <td>${esc(p.from === p.to ? fmt(p.from) : `${fmt(p.from)} – ${fmt(p.to)}`)}</td>
+      <td>${p.lastScan ? esc(new Date(p.lastScan).toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })) : '<small>Not yet</small>'}</td>
+      <td><div class="gcp-acts">${p.status === 'active' ? `<button type="button" data-print="${esc(p.id)}">Print</button><button type="button" data-edit="${esc(p.id)}">Edit</button><button type="button" class="danger" data-revoke="${esc(p.id)}">Withdraw</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div>`
+      : '<p class="la-msg">No passes yet. Make the first one above.</p>';
+  }
+  function card(p: any) {
+    const q = qrcode(0, 'M'); q.addData(p.id); q.make();
+    return `<div class="gcp-card"><div class="top"><img src="/images/lobi-stars-fc-transparent-256.png" alt="" /><b>LOBI STARS FC<br>MATCH-DAY PASS</b></div>
+      <div class="band" style="background:${esc(p.colour)}">${esc(p.categoryLabel)}</div>
+      <div class="body"><div class="name">${esc(p.name)}</div>${p.organisation ? `<div class="org">${esc(p.organisation)}</div>` : ''}${q.createSvgTag({ cellSize: 3, margin: 1, scalable: true })}
+      <div class="zones">${p.zones.map(esc).join(' · ')}</div></div>
+      <div class="foot">Valid ${esc(p.from === p.to ? fmt(p.from) : `${fmt(p.from)} – ${fmt(p.to)}`)}<br><span class="no">${esc(p.id)}</span></div></div>`;
+  }
+  function print(list: any[]) {
+    if (!list.length) { LA.toast('No passes to print.', true); return; }
+    $('sheet').innerHTML = list.map(card).join('');
+    setTimeout(() => window.print(), 300);
+  }
+  function resetForm() {
+    editing = null; ($('passForm') as HTMLFormElement).reset();
+    const el = $('passForm').elements; el.from.value = today(); el.to.value = today(); el.id.value = '';
+    $('formT').textContent = 'Make a pass'; $('saveBtn').textContent = 'Make the pass'; $('cancelEdit').hidden = true; drawZones([]);
+  }
+  $('passForm').addEventListener('submit', async (e: Event) => {
+    e.preventDefault();
+    const el = $('passForm').elements;
+    const zones = [...document.querySelectorAll<HTMLInputElement>('#zones input:checked')].map(i => i.value);
+    const r = await LA.api(API, { method: 'POST', body: { action: 'pass_save', id: el.id.value || undefined, name: el.name.value, category: el.category.value, organisation: el.organisation.value, phone: el.phone.value, from: el.from.value, to: el.to.value, notes: el.notes.value, zones } });
+    if (!r.ok) { LA.toast(r.d.error || 'Could not save.', true); return; }
+    LA.toast(editing ? 'Pass saved' : 'Pass made: print it below');
+    const made = r.d.pass; resetForm(); await load();
+    if (made && await LA.confirm('Print this pass now?', [`${made.name} · ${made.categoryLabel}`], 'Print')) print([made]);
+  });
+  $('cancelEdit').addEventListener('click', resetForm);
+  $('show').addEventListener('change', drawList);
+  $('printAll').addEventListener('click', () => print(shown().filter((p: any) => p.status === 'active')));
+  $('list').addEventListener('click', async (e: Event) => {
+    const t = e.target as HTMLElement;
+    const pr = t.closest('[data-print]') as HTMLElement | null, ed = t.closest('[data-edit]') as HTMLElement | null, rv = t.closest('[data-revoke]') as HTMLElement | null;
+    if (pr) print(data.passes.filter((p: any) => p.id === pr.dataset.print));
+    if (ed) {
+      const p = data.passes.find((x: any) => x.id === ed.dataset.edit); if (!p) return;
+      editing = p; const el = $('passForm').elements;
+      el.id.value = p.id; el.name.value = p.name; el.category.value = p.category; el.organisation.value = p.organisation || ''; el.phone.value = p.phone || ''; el.from.value = p.from; el.to.value = p.to; el.notes.value = p.notes || '';
+      drawZones(p.zones); $('formT').textContent = `Edit ${p.name}`; $('saveBtn').textContent = 'Save'; $('cancelEdit').hidden = false;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    if (rv) {
+      if (!(await LA.confirm('Withdraw this pass?', ['It is refused at every gate from now on (as soon as the phones have a signal).'], 'Withdraw'))) return;
+      const r = await LA.api(API, { method: 'POST', body: { action: 'pass_revoke', id: rv.dataset.revoke } });
+      r.ok ? LA.toast('Pass withdrawn') : LA.toast(r.d.error || 'Could not withdraw.', true); load();
+    }
+  });
+  $('zonesSave').addEventListener('click', async () => {
+    const r = await LA.api(API, { method: 'POST', body: { action: 'zones', zones: $('zonesText').value.split('\n') } });
+    r.ok ? LA.toast('Zones saved') : LA.toast(r.d.error || 'Could not save.', true); load();
+  });
+  resetForm();
+  LA.ready ? LA.ready(load) : load();
+</script>

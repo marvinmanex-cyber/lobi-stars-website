@@ -12,13 +12,15 @@
 import { activateDevice, signOut, json, gateSettings, saveGates, saveGateStands, permissions, gcLog, setGate, activityPage, listStaff, createStaff, updateStaff,
   onDuty, ROLES, oneLine, clearGateCookie } from '../_lib/gateControl.js';
 import { checkTicket, readmitTicket, todayView, myCounts } from '../_lib/gateCheck.js';
+import { gatesStatus, capacityView, queueView, saveReadiness, PRACTICE } from '../_lib/gateMatchday.js';
 import { offlinePack, syncOffline, postMessage, clearMessage, liveMessages, todaysMessages, INCIDENTS, addIncident, closeIncident, listIncidents,
   openIncidentCount, watchList, reportCsv } from '../_lib/gateExtras.js';
 
 const denied = () => json({ error: "Your role can't do this. Ask a Gate Supervisor or a Super Admin.", denied: true }, 403);
 const csvCell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) || /^[=+\-@]/.test(s) ? `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"` : s; };
 const RESULT_WORDS = { admitted: 'Checked in', readmitted: 'Re-admitted', used: 'Refused: already used', fake: 'Refused: fake ticket', not_lobi: 'Refused: not a Lobi Stars ticket',
-  wrong_match: 'Refused: wrong match', wrong_gate: 'Sent to another gate', void: 'Refused: cancelled', unpaid: 'Refused: not paid', valid: 'Looked up (valid)', bad_number: 'Number to check' };
+  wrong_match: 'Refused: wrong match', wrong_gate: 'Sent to another gate', void: 'Refused: cancelled', unpaid: 'Refused: not paid', valid: 'Looked up (valid)', bad_number: 'Number to check',
+  banned: 'Refused: BANNED fan', gates_closed: 'Refused: gates not open', stand_full: 'Refused: stand full', pass_ok: 'Pass allowed', pass_bad: 'Pass refused', practice_ticket: 'Practice ticket refused' };
 const HOW = ['typed', 'scanner'];
 
 export async function onRequest(context) {
@@ -54,11 +56,15 @@ export async function onRequest(context) {
       case 'POST check': {
         if (!user.gate) return json({ error: 'Choose your gate first.', needGate: true }, 409);
         const mode = body.mode === 'lookup' ? 'lookup' : 'admit';
-        const override = body.override === true;
-        const r = await checkTicket(env, String(body.ticket || '').slice(0, 300), { mode, how: HOW.includes(body.how) ? body.how : 'camera', who, request, override,
+        const override = body.override === true, practice = body.practice === true;
+        // Gates closed / stand full: only a Gate Supervisor can still let someone in.
+        if (body.force === true && !perms.supervise) return denied();
+        const force = body.force === true;
+        const r = await checkTicket(env, String(body.ticket || '').slice(0, 300), { mode, how: HOW.includes(body.how) ? body.how : 'camera', who, request, override, force, practice,
           note: override ? 'Admitted here although the ticket is for another gate' : null });
-        await gcLog(db, user, `${RESULT_WORDS[r.code] || r.code}: ${r.ticket?.id || oneLine(body.ticket, 60)}${body.how === 'typed' ? ' (typed)' : body.how === 'scanner' ? ' (scanner)' : ''}${override && r.code === 'admitted' ? ' (admitted at this gate anyway)' : ''}`,
-          { kind: 'scan', details: r.code === 'admitted' || r.code === 'valid' ? null : r.reason, request });
+        if (r.supervisorOverride) r.canForce = !!perms.supervise;
+        await gcLog(db, user, `${practice ? 'Practice: ' : ''}${RESULT_WORDS[r.code] || r.code}: ${r.ticket?.id || oneLine(body.ticket, 60)}${body.how === 'typed' ? ' (typed)' : body.how === 'scanner' ? ' (scanner)' : ''}${override && r.code === 'admitted' ? ' (admitted at this gate anyway)' : ''}${force && r.code === 'admitted' ? ' (let in by a supervisor)' : ''}`,
+          { kind: practice ? 'practice' : 'scan', details: r.code === 'admitted' || r.code === 'valid' ? null : r.reason, request });
         return json(r);
       }
       case 'POST readmit': {
@@ -73,9 +79,17 @@ export async function onRequest(context) {
         if (!user.gate) return json({ error: 'Choose your gate first.', needGate: true }, 409);
         return json(await syncOffline(env, body.scans, who, request));
       }
-      case 'GET today': return json({ ...(await todayView(env, user)), onDuty: await onDuty(db), watch: await watchList(db), messages: perms.supervise ? await todaysMessages(db) : [] });
+      case 'GET today': return json({ ...(await todayView(env, user)), onDuty: await onDuty(db), watch: await watchList(db), messages: perms.supervise ? await todaysMessages(db) : [],
+        capacity: await capacityView(db), queue: perms.supervise ? await queueView(db) : [], gates: await gatesStatus(db) });
       // The counts on the scan screen (me, my gate, everyone today) and the messages showing now.
-      case 'GET counts': return json({ ...(await myCounts(env, user)), messages: await liveMessages(db, user.gate, !!user.allGates), openIncidents: perms.supervise ? await openIncidentCount(db) : 0 });
+      case 'GET counts': return json({ ...(await myCounts(env, user)), messages: await liveMessages(db, user.gate, !!user.allGates, user.kind === 'device' ? user.id : ''), openIncidents: perms.supervise ? await openIncidentCount(db) : 0,
+        gates: await gatesStatus(db), capacity: await capacityView(db) });
+      // What this phone reports every minute: camera, offline list, battery, screen awake (the admin's Ready column).
+      case 'POST status': {
+        if (user.kind === 'device') await saveReadiness(db, user.id, body);
+        return json({ ok: true });
+      }
+      case 'GET practice': return json({ tickets: Object.entries(PRACTICE).map(([id, p]) => ({ id, label: p.label })) });
       case 'POST message': {
         if (!perms.supervise) return denied();
         const r = body.action === 'clear' ? await clearMessage(db, user, body.id, request) : await postMessage(db, user, body, request);

@@ -1,7 +1,9 @@
 // Gate Control: reads a scanned QR code or a typed ticket number (kept apart from
 // gateCheck.js so it can be tested on its own). Ticket numbers are LS-TIX- (match)
-// or LS-SZN- (season) followed by 12 letters and numbers, never O, I, 0 or 1.
-const ID_RE = /^LS-(TIX|SZN)-[A-HJ-NP-Z2-9]{12}$/;
+// or LS-SZN- (season) followed by 12 letters and numbers, never O, I, 0 or 1. Staff and
+// media passes: LS-ACC-… (Lobi Gate Control passes) and the Media Centre card's QR link
+// (/media/verify/<token>) -> { media: token }.
+const ID_RE = /^LS-(TIX|SZN|ACC)-[A-HJ-NP-Z2-9]{12}$/;
 const OUR_HOSTS = /(^|\.)lobistarsfc\.com$|^localhost$|^127\.0\.0\.1$|\.lobi-stars-website\.pages\.dev$/i;
 
 /** A scanned code or typed number -> { id } (a ticket number to look up) or { code, reason } (refused before the database). */
@@ -11,6 +13,8 @@ export function parseTicketInput(raw) {
   if (/^https?:\/\//i.test(s)) {
     let u;
     try { u = new URL(s); } catch { return { code: 'not_lobi', reason: 'This QR code is not a Lobi Stars FC ticket.' }; }
+    const md = /^\/media\/(?:accreditation\/)?verify\/([A-Za-z0-9_-]{8,80})\/?$/.exec(u.pathname);
+    if (OUR_HOSTS.test(u.hostname) && md) return { media: md[1] };
     const m = /^\/verify\/([^/?#]+)\/?$/.exec(u.pathname);
     if (!OUR_HOSTS.test(u.hostname) || !m) return { code: 'not_lobi', reason: `This QR code is not a Lobi Stars FC ticket (it points to ${u.hostname}).` };
     s = decodeURIComponent(m[1]);
@@ -18,12 +22,12 @@ export function parseTicketInput(raw) {
   let id = s.toUpperCase().replace(/[\s_.]+/g, '').replace(/—|–/g, '-');
   // Typed without the start: "ABCD2345EFGH" -> LS-TIX-ABCD2345EFGH.
   if (/^[A-Z0-9]{12}$/.test(id)) id = `LS-TIX-${id}`;
-  if (/^LS(TIX|SZN)[A-Z0-9]{12}$/.test(id)) id = `LS-${id.slice(2, 5)}-${id.slice(5)}`;
+  if (/^LS(TIX|SZN|ACC)[A-Z0-9]{12}$/.test(id)) id = `LS-${id.slice(2, 5)}-${id.slice(5)}`;
   if (ID_RE.test(id)) return { id };
-  const tail = id.replace(/^LS-(TIX|SZN)-?/, '');
-  if (/^LS-(TIX|SZN)-?/.test(id) && tail.length === 12 && /[01IO]/.test(tail)) {
+  const tail = id.replace(/^LS-(TIX|SZN|ACC)-?/, '');
+  if (/^LS-(TIX|SZN|ACC)-?/.test(id) && tail.length === 12 && /[01IO]/.test(tail)) {
     return { code: 'bad_number', reason: 'Check the number: ticket numbers never use the letters O or I, or the numbers 0 or 1.' };
   }
-  if (/^LS-(TIX|SZN)-?/.test(id)) return { code: 'bad_number', reason: `A ticket number is LS-TIX- followed by 12 letters and numbers (this one has ${tail.length}). Check the number.` };
+  if (/^LS-(TIX|SZN|ACC)-?/.test(id)) return { code: 'bad_number', reason: `A ticket number is LS-TIX- followed by 12 letters and numbers (this one has ${tail.length}). Check the number.` };
   return { code: 'not_lobi', reason: 'This is not a Lobi Stars FC ticket number.' };
 }

@@ -170,6 +170,10 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | T2 | **Name the gates** | Same admin page, **Gates and stands**: one gate per line, matching the real entrances at McCarthy Stadium (now: Main Gate, VIP Gate, Grand Stand Gate, Popular Stand Gate). **Save gates**. |
 | T4 | **Which stands each gate is for (optional)** | If some gates are only for certain stands (for example a VIP Gate), a Super Admin ticks them in Gate Control › Staff › **Which stands each gate is for**. Leave a gate empty to let in every stand. |
 | T5 | **Install Lobi Gate Control on each steward's phone** | Open lobistarsfc.com/lobi-gate-control on the phone and add it to the home screen (iPhone: Share › Add to Home Screen; Android: menu › Install app). Switch it on with its passcode, and open it once with a signal on match day so the phone keeps the offline ticket list. |
+| T6 | **Stand sizes (capacity)** | Admin › Commerce › Lobi Gate Control › **How full each stand is › Set the stand sizes**: how many fans each stand holds at McCarthy Stadium (VIP Sitting, Grand Stand, Popular Stand). Leave empty for no limit. |
+| T7 | **When the gates open, and who gets the report** | Same page: the gates open automatically 3 hours before kick-off (change it in the gates banner). Under **Match-day report**, check the email addresses (now the three Super Admins) and add management. |
+| T8 | **Staff & media passes for Sunday** | Same page › **Staff & media passes**: make and print passes for players' guests, officials, security, medical, VIP guests and contractors (tick their zones). Check the zone names match the stadium. |
+| T9 | **Practice run with Practice mode** | Each steward presses **Practice mode (training)** on their phone and scans the printed practice tickets (Practice tickets › Print). Before the gates open, every scanner should show **✓ Ready**. |
 | T3 | **A practice run before the first home match** | Each steward signs in on their own phone, allows the camera, and scans a test ticket in **Look up only** mode (nothing is checked in). Buy one real ticket (or ask the website manager for a test one) to see a green ADMIT. |
 
 ## E. Legal

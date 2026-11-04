@@ -13,12 +13,21 @@ import LeagueKit from '../../components/admin/league/LeagueKit.astro';
     <AdminNav current="gate-control" />
     <header class="la-head">
       <div class="gca-brand"><img src="/images/gate-control/logo-96.png" alt="" width="56" height="56" /><div><div class="stag">Commerce · Match day</div><h1 class="stitle">Lobi Gate <span class="r">Control</span></h1></div></div>
-      <div class="la-row"><a class="btn-o" href="/lobi-gate-control" target="_blank" rel="noopener">Open the scanner app ↗</a></div>
+      <div class="la-row"><a class="btn-o" href="/admin/gate-control/passes/">Staff &amp; media passes</a><a class="btn-o" href="/lobi-gate-control" target="_blank" rel="noopener">Open the scanner app ↗</a></div>
     </header>
     <p class="la-lede">Each phone or laptop that scans tickets is a <b>scanner</b>. Add one below: you get a <b>one-time passcode</b> to give to the person. They open <b>lobistarsfc.com/lobi-gate-control</b> on that phone, type the passcode once, and the scanner stays on until you <b>revoke</b> it. Updates live every 5 seconds.</p>
 
+    <section class="gca-gates" id="gatesCard" aria-labelledby="h-gstate">
+      <div class="gca-gates-l"><span class="gca-caps">The gates</span><h2 id="h-gstate"><span id="gState">–</span></h2><p id="gLabel" class="gca-sub"></p></div>
+      <div class="gca-gates-r">
+        <button type="button" class="btn-p" data-gmode="open">Open the gates now</button>
+        <button type="button" class="btn-o gca-danger" data-gmode="closed">Close the gates</button>
+        <button type="button" class="btn-o" data-gmode="auto">Automatic</button>
+        <label class="la-f">Automatic: open<select id="gOpenBefore"><option value="60">1 hour</option><option value="90">1½ hours</option><option value="120">2 hours</option><option value="180">3 hours</option><option value="240">4 hours</option></select>before kick-off</label>
+      </div>
+    </section>
     <section class="gca-stats" aria-label="Right now">
-      <div class="gca-stat live"><b id="sActive">–</b><span>scanners active now</span></div>
+      <div class="gca-stat live"><b id="sActive">–</b><span>scanners active now · <b id="sReady" style="display:inline;font:inherit">–</b> ready</span></div>
       <div class="gca-stat"><b id="sOn">–</b><span>switched on</span></div>
       <div class="gca-stat ok"><b id="sIn">–</b><span>fans checked in today</span></div>
       <div class="gca-stat bad"><b id="sRef">–</b><span>refused today</span></div>
@@ -44,11 +53,70 @@ import LeagueKit from '../../components/admin/league/LeagueKit.astro';
       <div id="devices"><p class="la-msg">Loading…</p></div>
     </section>
 
+    <div class="gca-two eq">
+      <section class="la-card" aria-labelledby="h-cap">
+        <h2 id="h-cap">How full each stand is</h2>
+        <div id="capBars"></div>
+        <details class="gca-det"><summary>Set the stand sizes</summary>
+          <p class="la-msg">How many fans each stand holds (the stadium's safety figure). At 90% every gate gets a message; when full, scanners stop checking in that stand (a Gate Supervisor can still let someone in). Leave empty for no limit.</p>
+          <div class="la-row" id="capForm"></div>
+          <div class="la-row" style="margin-top:8px"><button type="button" class="btn-o" id="capSave">Save stand sizes</button></div>
+        </details>
+      </section>
+      <section class="la-card" aria-labelledby="h-queue">
+        <h2 id="h-queue">Queue speed</h2>
+        <p class="la-msg">Fans a minute at each gate (last 5 minutes) and the average time per fan when busy. Over 15 seconds a fan = <b>slow</b>: send help or open another scanner.</p>
+        <div id="queue"></div>
+      </section>
+    </div>
+
+    <section class="la-card" aria-labelledby="h-msg">
+      <h2 id="h-msg">Message the scanners</h2>
+      <form id="msgForm" class="la-row" style="align-items:flex-end">
+        <label class="la-f">To<select id="msgTo"><option value="all">Every gate</option></select></label>
+        <label class="la-f" style="flex:1;min-width:240px">Message<input id="msgText" maxlength="240" placeholder="e.g. Chidi, go to VIP Gate" /></label>
+        <label class="la-f">Show for<select id="msgHours"><option value="0.5">30 minutes</option><option value="1" selected>1 hour</option><option value="3">3 hours</option></select></label>
+        <button class="btn-p" type="submit">Send</button>
+      </form>
+      <p class="la-msg">It pops up on the phone with a sound and vibration. Choose one scanner to message just that person.</p>
+    </section>
+
     <section class="la-card" aria-labelledby="h-live">
       <h2 id="h-live">Live scans (all gates)</h2>
       <div id="watch"></div>
       <ul class="gca-feed" id="feed"></ul>
     </section>
+
+    <section class="la-card" aria-labelledby="h-ban">
+      <h2 id="h-ban">Banned list</h2>
+      <p class="la-msg">A fan on this list is refused at every gate with a red <b>DO NOT ADMIT</b>, and the supervisors get an incident straight away. Ban one ticket, or everything bought with an email address or phone number.</p>
+      <form id="banForm" class="la-row" style="align-items:flex-end">
+        <label class="la-f">Ticket number, email or phone<input name="value" required maxlength="120" placeholder="LS-TIX-… / name@… / 0803…" style="min-width:220px" /></label>
+        <label class="la-f">Name (optional)<input name="name" maxlength="80" /></label>
+        <label class="la-f" style="flex:1;min-width:200px">Reason<input name="reason" required maxlength="200" placeholder="e.g. Crowd trouble, 8 Nov" /></label>
+        <label class="la-f">Until (optional)<input name="until" type="date" /></label>
+        <button class="btn-p" type="submit">Add to banned list</button>
+      </form>
+      <div id="bans"></div>
+    </section>
+
+    <div class="gca-two eq">
+      <section class="la-card" aria-labelledby="h-prac">
+        <h2 id="h-prac">Practice tickets</h2>
+        <p class="la-msg">For training: on the phone, press <b>Practice mode</b> and scan these. Each shows a different answer; nothing is checked in or counted. They are refused outside Practice mode.</p>
+        <div class="la-row"><button type="button" class="btn-o" id="pracPrint">Print the practice tickets</button></div>
+        <ul class="gca-prac" id="pracList"></ul>
+      </section>
+      <section class="la-card" aria-labelledby="h-rep">
+        <h2 id="h-rep">Match-day report</h2>
+        <p class="la-msg">Emailed automatically after the gates close (or 4 hours after kick-off): attendance, each stand and gate, no-shows, busiest time, fakes, refusals, incidents, with every scan attached.</p>
+        <label class="la-f" style="display:block">Send to (one email per line)<textarea id="repEmails" rows="3" style="width:100%"></textarea></label>
+        <label class="la-f">Send it<select id="repDelay"><option value="30">30 minutes</option><option value="60">1 hour</option><option value="120">2 hours</option></select>after the gates close</label>
+        <div class="la-row" style="margin-top:8px"><button type="button" class="btn-o" id="repSave">Save</button><a class="btn-o" href="/api/admin/gate-control?view=report" target="_blank" rel="noopener">Preview</a><button type="button" class="btn-o" id="repSend">Send now</button></div>
+        <p class="la-msg" id="repSent"></p>
+      </section>
+    </div>
+    <div id="pracSheet" class="gca-print" aria-hidden="true"></div>
 
     <section class="la-card" aria-labelledby="h-gates">
       <h2 id="h-gates">Gates and stands</h2>
@@ -104,17 +172,58 @@ import LeagueKit from '../../components/admin/league/LeagueKit.astro';
   .gca-stands fieldset { border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; margin: 0 0 8px; }
   .gca-stands legend { font-weight: 700; padding: 0 4px; }
   .gca-stands label { margin-right: 14px; display: inline-flex; gap: 6px; align-items: center; }
+  .gca-gates { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; padding: 18px 20px; border-radius: 18px; margin: 0 0 14px; color: #fff; background: linear-gradient(140deg, #0E2A55, #14396f); }
+  .gca-gates.open { background: linear-gradient(140deg, #0b7a3b, #12a150); }
+  .gca-gates.closed { background: linear-gradient(140deg, #8f1116, #C11A1F); }
+  .gca-gates h2 { margin: 2px 0; font: 400 40px/1 'Bebas Neue', sans-serif; color: #fff; }
+  .gca-caps { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; opacity: .85; }
+  .gca-sub { margin: 0; opacity: .9; }
+  .gca-gates-r { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+  .gca-gates-r .la-f { color: #fff; font-size: 13px; }
+  .gca-gates-r .btn-o { background: rgba(255, 255, 255, .12); color: #fff; border-color: rgba(255, 255, 255, .6); }
+  .gca-gates-r button[aria-current="true"] { outline: 3px solid #FFC928; outline-offset: 2px; }
+  .gca-two.eq { grid-template-columns: 1fr 1fr; }
+  .gca-cap { margin: 8px 0 12px; }
+  .gca-cap-h { display: flex; justify-content: space-between; font-size: 14px; }
+  .gca-cap-t { height: 12px; border-radius: 999px; background: var(--a-line); overflow: hidden; margin-top: 4px; }
+  .gca-cap-t i { display: block; height: 100%; background: #12a150; }
+  .gca-cap.near .gca-cap-t i { background: #F59E0B; } .gca-cap.full .gca-cap-t i { background: #C11A1F; }
+  .gca-cap.full .gca-cap-h b { color: #C11A1F; }
+  .gca-det summary { cursor: pointer; font-weight: 700; margin-top: 6px; }
+  .gca-q { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--a-line); font-size: 14px; }
+  .gca-q:first-child { border-top: 0; }
+  .gca-q .slow { color: #C11A1F; font-weight: 700; }
+  .gca-ready { font-weight: 700; } .gca-ready.ok { color: #0B7A2E; } .gca-ready.no { color: #B45309; }
+  .gca-ready-list { margin: 2px 0 0; padding-left: 16px; color: var(--a-muted); font-size: 12px; }
+  .gca-bat { display: inline-block; font-size: 12px; padding: 1px 6px; border-radius: 6px; background: var(--a-line); margin-top: 3px; }
+  .gca-bat.low { background: #FDECEC; color: #C11A1F; font-weight: 700; }
+  .gca-prac { list-style: none; padding: 0; margin: 10px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 13px; }
+  .gca-prac li { border: 1px solid var(--a-line); border-radius: 8px; padding: 6px 8px; }
+  .gca-prac code { font-weight: 700; }
+  .gca .gca-danger { border-color: #C11A1F; color: #C11A1F; }
+  .gca .gca-gates-r .gca-danger { border-color: #fff; color: #fff; background: rgba(0, 0, 0, .25); }
+  .gca-print { display: none; }
+  @media print {
+    body * { visibility: hidden !important; }
+    .gca-print, .gca-print * { visibility: visible !important; }
+    .gca-print { display: grid !important; position: absolute; inset: 0; grid-template-columns: 1fr 1fr; gap: 8mm; padding: 8mm; background: #fff; }
+    .gca-pt { border: 2px dashed #111; border-radius: 4mm; padding: 5mm; text-align: center; break-inside: avoid; color: #111; font-family: Arial, sans-serif; }
+    .gca-pt svg { width: 38mm; height: 38mm; }
+    .gca-pt b { display: block; font-size: 14pt; } .gca-pt span { display: block; font-size: 10pt; } .gca-pt em { display: block; font-style: normal; font-weight: 700; color: #b45309; font-size: 10pt; }
+  }
+  @media (max-width: 900px) { .gca-two.eq { grid-template-columns: 1fr; } }
   @media (max-width: 900px) { .gca-stats { grid-template-columns: repeat(2, 1fr); } .gca-stat.live { grid-column: 1 / -1; } .gca-two { grid-template-columns: 1fr; } .gca-tbl { overflow-x: auto; } }
 </style>
 
 <script>
+  import qrcode from 'qrcode-generator';
   const LA = (window as any).LA;
   const $ = (id: string) => document.getElementById(id) as any;
   const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
   const TZ = 'Africa/Lagos';
   const hm = (iso?: string) => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ }) : '';
   const ago = (iso?: string) => { if (!iso) return 'never'; const s = Math.round((Date.now() - Date.parse(iso)) / 1000); return s < 60 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: TZ }); };
-  const RESULT: Record<string, [string, string]> = { admitted: ['Checked in', 'ok'], readmitted: ['Re-admitted', 'ok'], lookup: ['Looked up', ''], used: ['Already used', 'bad'], fake: ['FAKE', 'bad'], not_lobi: ['Not a Lobi ticket', 'bad'], wrong_match: ['Wrong match', 'warn'], wrong_gate: ['Wrong gate', 'warn'], void: ['Cancelled', 'bad'], unpaid: ['Not paid', 'bad'], bad_number: ['Number mistyped', 'warn'] };
+  const RESULT: Record<string, [string, string]> = { admitted: ['Checked in', 'ok'], readmitted: ['Re-admitted', 'ok'], lookup: ['Looked up', ''], used: ['Already used', 'bad'], fake: ['FAKE', 'bad'], not_lobi: ['Not a Lobi ticket', 'bad'], wrong_match: ['Wrong match', 'warn'], wrong_gate: ['Wrong gate', 'warn'], void: ['Cancelled', 'bad'], unpaid: ['Not paid', 'bad'], bad_number: ['Number mistyped', 'warn'], banned: ['BANNED', 'bad'], gates_closed: ['Gates not open', 'warn'], stand_full: ['Stand full', 'bad'], pass_ok: ['Pass allowed', 'ok'], pass_bad: ['Pass refused', 'bad'] };
   const STAND: Record<string, string> = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
   let gatesLoaded = false, timer: any = 0, gateList: string[] = [];
 
@@ -136,18 +245,49 @@ import LeagueKit from '../../components/admin/league/LeagueKit.astro';
     gateList = d.gates;
     // Don't redraw the list while a role or gate is being chosen.
     if ($('devices').contains(document.activeElement) && (document.activeElement as HTMLElement).tagName === 'SELECT') return renderRest(d);
-    $('devices').innerHTML = d.devices.length ? `<div class="gca-tbl"><table><thead><tr><th>Status</th><th>Scanner</th><th>Gate</th><th>Today</th><th>Last scan</th><th></th></tr></thead><tbody>${d.devices.map((x: any) => {
+    $('devices').innerHTML = d.devices.length ? `<div class="gca-tbl"><table><thead><tr><th>Status</th><th>Scanner</th><th>Gate</th><th>Ready?</th><th>Today</th><th>Last scan</th><th></th></tr></thead><tbody>${d.devices.map((x: any) => {
       const last = x.lastScan ? `${esc(hm(x.lastScan.at))} · ${esc((RESULT[x.lastScan.result] || [x.lastScan.result])[0])}<small>${esc(x.lastScan.ticket || '')}</small>` : '<small>No scans yet</small>';
       const acts = x.status === 'revoked' ? `<button type="button" data-act="passcode" data-id="${esc(x.id)}">New passcode (switch back on)</button>`
-        : `<button type="button" data-act="passcode" data-id="${esc(x.id)}">New passcode</button><button type="button" class="danger" data-act="revoke" data-id="${esc(x.id)}" data-name="${esc(x.code + ' ' + x.name)}">Revoke</button>`;
+        : `${x.status === 'active' ? `<button type="button" data-act="message" data-id="${esc(x.id)}" data-name="${esc(x.code + ' ' + x.name)}">Message</button>` : ''}<button type="button" data-act="passcode" data-id="${esc(x.id)}">New passcode</button><button type="button" class="danger" data-act="revoke" data-id="${esc(x.id)}" data-name="${esc(x.code + ' ' + x.name)}">Revoke</button>`;
+      const rd = x.ready, bad = (rd?.checks || []).filter((c: any) => !c.ok);
+      const readyCell = x.status !== 'active' ? '<small>—</small>' : `<span class="gca-ready ${rd?.ready ? 'ok' : 'no'}">${rd?.ready ? '✓ Ready' : '✗ Not ready'}</span>${bad.length ? `<ul class="gca-ready-list">${bad.map((c: any) => `<li>${esc(c.fix)}</li>`).join('')}</ul>` : ''}${rd?.battery != null ? `<span class="gca-bat${rd.battery < 30 && !rd.charging ? ' low' : ''}">🔋 ${rd.battery}%${rd.charging ? ' charging' : ''}</span>` : ''}${rd?.practice ? `<small>${rd.practice} practice scans</small>` : ''}`;
       const roleSel = `<select data-edit="role" data-id="${esc(x.id)}" aria-label="Role for ${esc(x.code)}"><option value="steward"${x.role === 'steward' ? ' selected' : ''}>Ticket Steward</option><option value="supervisor"${x.role === 'supervisor' ? ' selected' : ''}>Gate Supervisor</option></select>`;
       const gateSel = x.role === 'supervisor' ? '<b>All gates</b>'
         : `<select data-edit="gate" data-id="${esc(x.id)}" aria-label="Gate for ${esc(x.code)}"><option value="">They choose</option>${gateList.map(g => `<option${g === x.gateSet ? ' selected' : ''}>${esc(g)}</option>`).join('')}</select>${!x.gateSet && x.gate ? `<small>now at ${esc(x.gate)}</small>` : ''}`;
-      return `<tr><td>${status(x)}</td><td><b>${esc(x.code)} · ${esc(x.name)}</b><small>${esc([x.holder, x.phone].filter(Boolean).join(' · '))}</small>${roleSel}</td><td>${gateSel}</td><td><b>${x.admitted}</b> in<small>${x.refused} refused</small></td><td>${last}</td><td><div class="gca-acts">${acts}</div></td></tr>`;
+      return `<tr><td>${status(x)}</td><td><b>${esc(x.code)} · ${esc(x.name)}</b><small>${esc([x.holder, x.phone].filter(Boolean).join(' · '))}</small>${roleSel}</td><td>${gateSel}</td><td>${readyCell}</td><td><b>${x.admitted}</b> in<small>${x.refused} refused</small></td><td>${last}</td><td><div class="gca-acts">${acts}</div></td></tr>`;
     }).join('')}</tbody></table></div>` : '<p class="la-msg">No scanners yet. Add the first one above.</p>';
     renderRest(d);
   }
+  let capLoaded = false, repLoaded = false;
+  function renderMatchday(d: any) {
+    const g = d.gatesState || {};
+    $('gatesCard').className = `gca-gates ${g.open ? 'open' : g.closed ? 'closed' : ''}`;
+    $('gState').textContent = g.open ? 'OPEN' : g.closed ? 'CLOSED' : 'NOT OPEN YET';
+    $('gLabel').textContent = `${g.label || ''}${g.kickOff ? ` · kick-off ${hm(g.kickOff)}` : ''}`;
+    document.querySelectorAll<HTMLElement>('[data-gmode]').forEach(b => b.setAttribute('aria-current', String(b.dataset.gmode === g.mode)));
+    if (document.activeElement !== $('gOpenBefore')) $('gOpenBefore').value = String(g.openBefore || 180);
+    $('sReady').textContent = d.readyNow;
+    $('capBars').innerHTML = d.capacity.map((c: any) => c.capacity ? `<div class="gca-cap ${c.state}"><div class="gca-cap-h"><span>${esc(c.label)}</span><b>${c.inside.toLocaleString('en-GB')} / ${c.capacity.toLocaleString('en-GB')} · ${c.state === 'full' ? 'FULL' : c.pct + '%'}</b></div><div class="gca-cap-t"><i style="width:${Math.min(100, c.pct)}%"></i></div></div>`
+      : `<div class="gca-cap"><div class="gca-cap-h"><span>${esc(c.label)}</span><span>${c.inside.toLocaleString('en-GB')} in · no size set</span></div></div>`).join('');
+    if (!capLoaded) { capLoaded = true; $('capForm').innerHTML = d.capacity.map((c: any) => `<label class="la-f">${esc(c.label)}<input type="number" min="0" step="1" data-cap="${c.tier}" value="${d.capacitySizes[c.tier] ?? ''}" placeholder="No limit" style="width:130px" /></label>`).join(''); }
+    $('queue').innerHTML = d.queue.length ? d.queue.map((q: any) => `<div class="gca-q"><span><b>${esc(q.gate)}</b> · ${q.scanners} scanner${q.scanners === 1 ? '' : 's'}</span><span class="${q.state === 'slow' ? 'slow' : ''}">${q.perMinute} a minute${q.avgSeconds ? ` · ${q.avgSeconds} s per fan` : ''}${q.state === 'slow' ? ' · SLOW' : q.state === 'quiet' ? ' · quiet' : ''}</span></div>`).join('') : '<p class="la-msg">No scans in the last 10 minutes.</p>';
+    $('bans').innerHTML = d.bans.length ? `<div class="gca-tbl"><table><thead><tr><th>Banned</th><th>Name</th><th>Reason</th><th>Until</th><th></th></tr></thead><tbody>${d.bans.map((b: any) => `<tr><td><b>${esc(b.value)}</b><small>${esc(b.kind === 'ticket' ? 'Ticket' : b.kind === 'email' ? 'Everything bought with this email' : 'Everything bought with this phone')}</small></td><td>${esc(b.name || '—')}</td><td>${esc(b.reason)}<small>added by ${esc(b.by || '')}</small></td><td>${esc(b.until || 'No end')}${b.expired ? ' <small>(ended)</small>' : ''}</td><td><div class="gca-acts"><button type="button" data-unban="${b.id}">Remove</button></div></td></tr>`).join('')}</tbody></table></div>` : '<p class="la-msg">Nobody is on the banned list.</p>';
+    const sel = $('msgTo') as HTMLSelectElement;
+    if (document.activeElement !== sel) {
+      const v = sel.value;
+      sel.innerHTML = `<option value="all">Every gate</option><optgroup label="One gate">${d.gates.map((g2: string) => `<option value="gate:${esc(g2)}">${esc(g2)}</option>`).join('')}</optgroup><optgroup label="One scanner">${d.devices.filter((x: any) => x.status === 'active').map((x: any) => `<option value="device:${esc(x.id)}">${esc(x.code)} · ${esc(x.holder || x.name)}${x.online ? '' : ' (offline)'}</option>`).join('')}</optgroup>`;
+      sel.value = [...sel.options].some(o => o.value === v) ? v : 'all';
+    }
+    if (!$('pracList').children.length) {
+      practice = d.practice;
+      $('pracList').innerHTML = d.practice.map((t: any) => `<li><code>${esc(t.id.slice(7))}</code><br><small>${esc(t.label)}</small></li>`).join('');
+    }
+    if (!repLoaded) { repLoaded = true; $('repEmails').value = (d.report.emails || []).join('\n'); $('repDelay').value = String(d.report.delay || 60); }
+    $('repSent').textContent = d.report.sent?.at ? `Sent ${new Date(d.report.sent.at).toLocaleString('en-GB', { timeZone: TZ, day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} to ${(d.report.sent.to || []).join(', ')}.` : d.match ? "Not sent yet for today's match." : '';
+  }
+  let practice: any[] = [];
   function renderRest(d: any) {
+    renderMatchday(d);
     const w = d.watch || {};
     const warn = [...(w.bursts || []).map((b: any) => `${b.n} fake tickets at ${esc(b.gate)} in the last 30 minutes.`), ...(w.doubles || []).map((x: any) => `Double entry: ${esc(x.ticket)} (offline, ${esc(x.gate || '')}).`)];
     $('watch').innerHTML = warn.length ? `<div class="gca-watch"><b>Watch list:</b> ${warn.join(' ')}</div>` : '';
@@ -187,6 +327,12 @@ import LeagueKit from '../../components/admin/league/LeagueKit.astro';
   $('devices').addEventListener('click', async (e: Event) => {
     const b = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
     if (!b) return;
+    if (b.dataset.act === 'message') {
+      const text = prompt(`Message to ${b.dataset.name} (shows on that phone only):`);
+      if (!text) return;
+      const r = await LA.api('/api/admin/gate-control', { method: 'POST', body: { action: 'message', to: `device:${b.dataset.id}`, text, hours: 1 } });
+      r.ok ? LA.toast('Message sent') : LA.toast(r.d.error || 'Could not send.', true);
+    }
     if (b.dataset.act === 'revoke') {
       const ok = await LA.confirm('Revoke this scanner?', [`${b.dataset.name} stops working at once (as soon as the phone has a signal). You can give it a new passcode later.`], 'Revoke');
       if (!ok) return;
@@ -200,6 +346,50 @@ import LeagueKit from '../../components/admin/league/LeagueKit.astro';
       if (r.ok) { showPass(r.d, ''); window.scrollTo({ top: $('passBox').offsetTop - 120, behavior: 'smooth' }); } else LA.toast(r.d.error || 'Could not.', true);
       load();
     }
+  });
+  const post = (body: any) => LA.api('/api/admin/gate-control', { method: 'POST', body });
+  document.querySelectorAll<HTMLElement>('[data-gmode]').forEach(b => b.addEventListener('click', async () => {
+    const mode = b.dataset.gmode!;
+    if (mode !== 'auto' && !(await LA.confirm(mode === 'open' ? 'Open the gates now?' : 'Close the gates?', [mode === 'open' ? 'Every scanner starts checking fans in, and every gate gets a message.' : 'Scanners stop checking fans in (a Gate Supervisor can still let someone in). The match-day report is emailed afterwards.'], mode === 'open' ? 'Open the gates' : 'Close the gates'))) return;
+    const r = await post({ action: 'gates_mode', mode, openBefore: Number($('gOpenBefore').value) });
+    r.ok ? LA.toast(mode === 'open' ? 'Gates open' : mode === 'closed' ? 'Gates closed' : 'Gates on automatic') : LA.toast(r.d.error || 'Could not change.', true); load();
+  }));
+  $('gOpenBefore').addEventListener('change', async () => { const r = await post({ action: 'gates_mode', openBefore: Number($('gOpenBefore').value) }); r.ok ? LA.toast('Saved') : LA.toast(r.d.error || 'Could not save.', true); load(); });
+  $('capSave').addEventListener('click', async () => {
+    const capacity: Record<string, string> = {};
+    document.querySelectorAll<HTMLInputElement>('[data-cap]').forEach(i => { capacity[i.dataset.cap!] = i.value; });
+    const r = await post({ action: 'capacity', capacity });
+    r.ok ? LA.toast('Stand sizes saved') : LA.toast(r.d.error || 'Could not save.', true); load();
+  });
+  $('msgForm').addEventListener('submit', async (e: Event) => {
+    e.preventDefault();
+    const r = await post({ action: 'message', to: $('msgTo').value, text: $('msgText').value, hours: Number($('msgHours').value) });
+    if (r.ok) { LA.toast('Message sent'); $('msgText').value = ''; } else LA.toast(r.d.error || 'Could not send.', true);
+  });
+  $('banForm').addEventListener('submit', async (e: Event) => {
+    e.preventDefault();
+    const f = e.target as HTMLFormElement, el = f.elements as any;
+    const r = await post({ action: 'ban_add', value: el.value.value, name: el.name.value, reason: el.reason.value, until: el.until.value });
+    if (r.ok) { LA.toast('Added to the banned list'); f.reset(); load(); } else LA.toast(r.d.error || 'Could not add.', true);
+  });
+  $('bans').addEventListener('click', async (e: Event) => {
+    const b = (e.target as HTMLElement).closest('[data-unban]') as HTMLElement | null;
+    if (!b || !(await LA.confirm('Remove from the banned list?', ['They can be checked in again.'], 'Remove'))) return;
+    const r = await post({ action: 'ban_remove', id: Number(b.dataset.unban) });
+    r.ok ? LA.toast('Removed') : LA.toast(r.d.error || 'Could not remove.', true); load();
+  });
+  $('repSave').addEventListener('click', async () => {
+    const r = await post({ action: 'report_settings', emails: $('repEmails').value, delay: Number($('repDelay').value) });
+    r.ok ? LA.toast('Saved') : LA.toast(r.d.error || 'Could not save.', true);
+  });
+  $('repSend').addEventListener('click', async () => {
+    if (!(await LA.confirm('Email the match-day report now?', ['It goes to everyone on the list, with the figures so far.'], 'Send now'))) return;
+    const r = await post({ action: 'report_send' });
+    r.ok ? LA.toast(`Report sent to ${(r.d.to || []).length} people`) : LA.toast(r.d.error || 'Could not send.', true); load();
+  });
+  $('pracPrint').addEventListener('click', () => {
+    $('pracSheet').innerHTML = practice.map((t: any) => { const q = qrcode(0, 'M'); q.addData(t.id); q.make(); return `<div class="gca-pt"><em>PRACTICE TICKET · NOT VALID FOR ENTRY</em>${q.createSvgTag({ cellSize: 4, margin: 2, scalable: true })}<b>${esc(t.id)}</b><span>${esc(t.label)}</span></div>`; }).join('');
+    window.print();
   });
   $('gatesSave').addEventListener('click', async () => {
     const r = await LA.api('/api/admin/gate-control', { method: 'POST', body: { action: 'gates', gates: $('gatesText').value.split('\n') } });

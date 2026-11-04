@@ -489,7 +489,7 @@ export async function listDevices(db, since) {
     const [lastAt, lastResult, lastTicket] = String(d.last_scan || '').split('|');
     return { id: d.id, code: d.code, name: d.name, holder: d.holder, role: d.role, roleLabel: ROLES[d.role] || d.role, status: d.status,
       online: d.status === 'active' && !!d.last_seen && now - Date.parse(d.last_seen) < 90e3,
-      gate: d.role === 'supervisor' ? ALL_GATES : d.gate || d.gate_now || null, gateSet: d.role === 'supervisor' ? ALL_GATES : d.gate || '', lastSeen: d.last_seen, activatedAt: d.activated_at, createdAt: d.created_at, passcodeUntil: d.status === 'waiting' ? d.passcode_until : null,
+      gate: d.role === 'supervisor' ? ALL_GATES : d.gate || d.gate_now || null, gateSet: d.role === 'supervisor' ? ALL_GATES : d.gate || '', readinessRaw: d.readiness || null, readinessAt: d.readiness_at || null, lastSeen: d.last_seen, activatedAt: d.activated_at, createdAt: d.created_at, passcodeUntil: d.status === 'waiting' ? d.passcode_until : null,
       revokedAt: d.revoked_at, revokedBy: d.revoked_by, admitted: d.admitted || 0, refused: d.refused || 0,
       lastScan: lastAt ? { at: lastAt, result: lastResult, ticket: lastTicket || null } : null, phone: /iPhone|iPad/.test(d.user_agent || '') ? 'iPhone / iPad' : /Android/.test(d.user_agent || '') ? 'Android' : d.user_agent ? 'Computer' : null };
   });

@@ -13,13 +13,14 @@ import { todaysHomeMatch, ensureSeasonSchema } from './seasonTickets.js';
 import { ensureTicketShopSchema } from './ticketShop.js';
 import { ensureDiscountSchema } from './ticketDiscounts.js';
 import { TIER_LABELS } from './tickets/rules.js';
+import { ensureMatchdaySchema, gatesStatus, bannedTicketsFor, passesForOffline, capacitySettings } from './gateMatchday.js';
 
 const nowIso = () => new Date().toISOString();
 const first = n => String(n || '').trim().split(/\s+/)[0] || '';
 
 let ready = false;
 async function ensureExtras(db) {
-  await ensureGateSchema(db);
+  await ensureMatchdaySchema(db);
   if (ready) return;
   await db.batch([
     db.prepare(`CREATE TABLE IF NOT EXISTS gc_messages (
@@ -41,13 +42,17 @@ export async function offlinePack(env) {
   await ensureGateSchema(db); await ensureTicketShopSchema(db); await ensureDiscountSchema(db); await ensureSeasonSchema(db);
   const match = await todaysHomeMatch(db).catch(() => null);
   const { stands } = await gateSettings(db);
-  if (!match) return { match: null, at: nowIso(), stands, tickets: [] };
+  const gates = await gatesStatus(db, match);
+  const passes = await passesForOffline(db, match).catch(() => []);
+  if (!match) return { match: null, at: nowIso(), stands, gates, passes, banned: [], capacity: {}, tickets: [] };
   const rows = (await db.prepare(`SELECT t.id, t.tier, t.ticket_type, t.status, o.buyer_name FROM tickets t JOIN orders o ON o.id = t.order_id
     WHERE t.event_id = ? AND o.payment_status = 'paid' AND o.refunded_at IS NULL AND t.status != 'void'`).bind(match.id).all()).results;
   const season = (await db.prepare(`SELECT p.id, p.tier, p.holder_name, (SELECT 1 FROM season_pass_scans s WHERE s.pass_id = p.id AND s.event_id = ?) AS used
     FROM season_passes p JOIN season_orders o ON o.id = p.order_id WHERE p.status = 'valid' AND o.payment_status = 'paid'`).bind(match.id).all().catch(() => ({ results: [] }))).results;
   return {
-    match: { id: match.id, name: `${match.home_team} vs ${match.away_team}`, date: match.event_date }, at: nowIso(), stands,
+    match: { id: match.id, name: `${match.home_team} vs ${match.away_team}`, date: match.event_date }, at: nowIso(), stands, gates, passes,
+    // Banned ticket numbers (DO NOT ADMIT offline too) and the stand sizes.
+    banned: await bannedTicketsFor(db, match.id).catch(() => []), capacity: await capacitySettings(db),
     // [ticket number, stand, child (1/0), first name, already in (1/0)]
     tickets: rows.map(r => [r.id, r.tier, r.ticket_type === 'child' ? 1 : 0, first(r.buyer_name), r.status === 'used' ? 1 : 0])
       .concat(season.map(p => [p.id, p.tier, 0, first(p.holder_name), p.used ? 1 : 0])),
@@ -95,16 +100,16 @@ export async function clearMessage(db, user, id, request) {
   return { ok: true };
 }
 /** Messages showing now for this gate (newest first). */
-export async function liveMessages(db, gate, all = false) {
+export async function liveMessages(db, gate, all = false, deviceId = '') {
   await ensureExtras(db);
-  // Supervisors (all gates) see every message showing now.
-  return (await db.prepare(`SELECT id, at, text, gate, from_name, from_code FROM gc_messages WHERE until > ? AND (gate IS NULL OR gate = ? OR ?) ORDER BY id DESC LIMIT 5`).bind(nowIso(), gate || '', all ? 1 : 0).all()).results
-    .map(m => ({ id: m.id, at: m.at, text: m.text, gate: m.gate, from: m.from_name }));
+  // Every gate, this gate, or this scanner only. Supervisors (all gates) see every gate's messages.
+  return (await db.prepare(`SELECT id, at, text, gate, from_name, from_code, device_id FROM gc_messages WHERE until > ? AND ((device_id IS NULL AND (gate IS NULL OR gate = ? OR ?)) OR device_id = ?) ORDER BY id DESC LIMIT 6`).bind(nowIso(), gate || '', all ? 1 : 0, deviceId || '-').all()).results
+    .map(m => ({ id: m.id, at: m.at, text: m.text, gate: m.gate, from: m.from_name, personal: !!m.device_id }));
 }
 export async function todaysMessages(db) {
   await ensureExtras(db);
-  return (await db.prepare(`SELECT * FROM gc_messages WHERE at >= ? ORDER BY id DESC LIMIT 30`).bind(dayStart()).all()).results
-    .map(m => ({ id: m.id, at: m.at, text: m.text, gate: m.gate, from: m.from_name, live: m.until > nowIso() }));
+  return (await db.prepare(`SELECT m.*, d.code AS d_code, d.name AS d_name FROM gc_messages m LEFT JOIN gc_devices d ON d.id = m.device_id WHERE m.at >= ? ORDER BY m.id DESC LIMIT 30`).bind(dayStart()).all()).results
+    .map(m => ({ id: m.id, at: m.at, text: m.text, gate: m.device_id ? `${m.d_code || ''} ${m.d_name || ''}`.trim() : m.gate, from: m.from_name, live: m.until > nowIso() }));
 }
 
 // ── Incidents ──
@@ -156,12 +161,15 @@ export async function watchList(db) {
     .bind(new Date(Date.now() - 30 * 60e3).toISOString()).all()).results;
   const doubles = (await db.prepare(`SELECT ticket_id, gate, staff_name, at FROM gc_scans WHERE at >= ? AND how = 'offline' AND result = 'used' ORDER BY id DESC LIMIT 20`).bind(since).all()).results
     .map(r => ({ ticket: r.ticket_id, gate: r.gate, by: r.staff_name, at: r.at }));
-  return { repeats, bursts, doubles };
+  const banned = (await db.prepare(`SELECT ticket_id, gate, staff_name, at, note FROM gc_scans WHERE at >= ? AND result = 'banned' ORDER BY id DESC LIMIT 20`).bind(since).all()).results
+    .map(r => ({ ticket: r.ticket_id, gate: r.gate, by: r.staff_name, at: r.at, reason: r.note }));
+  return { repeats, bursts, doubles, banned };
 }
 
 // ── End-of-day report ──
 const RESULT = { admitted: 'Checked in', readmitted: 'Re-admitted', lookup: 'Looked up', used: 'Refused: already used', fake: 'Refused: fake', not_lobi: 'Refused: not a Lobi Stars ticket',
-  wrong_match: 'Refused: wrong match', wrong_gate: 'Sent to another gate', void: 'Refused: cancelled', unpaid: 'Refused: not paid', bad_number: 'Number mistyped' };
+  wrong_match: 'Refused: wrong match', wrong_gate: 'Sent to another gate', void: 'Refused: cancelled', unpaid: 'Refused: not paid', bad_number: 'Number mistyped',
+  banned: 'Refused: BANNED', gates_closed: 'Refused: gates not open', stand_full: 'Refused: stand full', pass_ok: 'Pass: allowed', pass_bad: 'Pass: refused' };
 const cell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) || /^[=+\-@]/.test(s) ? `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"` : s; };
 export async function reportCsv(db, day = '') {
   await ensureGateSchema(db);
