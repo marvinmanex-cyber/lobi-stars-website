@@ -469,8 +469,8 @@ works as usual; ask the web team to change anything else on that page.
 
 **House 43 (Official Hospitality Partner)** has its own page the same way
 (`theme: "house43"`, design in `src/components/partners/House43Feature.astro`):
-a dark hero with a "reserved table card", three highlights, **The Matchday
-Menu** (four dishes as a team sheet: change them in the `menu` list at the top
+a dark hero with a "reserved table card", three highlights, **The Perfect
+Line-Up** (four dishes as a team sheet: change them in the `menu` list at the top
 of that file), **Together** (photo tiles: add `{ src, caption }` items to
 `gallery` in `src/content/partners/house-43.md`, files in
 `public/images/house43/`; until then each tile shows a drawn picture from

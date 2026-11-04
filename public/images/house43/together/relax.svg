@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 500">
+  <!-- Behind the scenes: two players unwinding by the pool at sunset, headphones on, drinks on the side table (illustration; replace with a photo later). -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B1B5A"/><stop offset=".45" stop-color="#B83A5E"/><stop offset=".75" stop-color="#F59E0B"/><stop offset="1" stop-color="#FCD34D"/></linearGradient>
+    <linearGradient id="pool" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38BDF8"/><stop offset="1" stop-color="#0369A1"/></linearGradient>
+    <linearGradient id="deck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C9B488"/><stop offset="1" stop-color="#8E7A4E"/></linearGradient>
+    <radialGradient id="sun" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#FFF3C4"/><stop offset=".6" stop-color="#FCD34D"/><stop offset="1" stop-color="#FCD34D" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <circle cx="230" cy="250" r="90" fill="url(#sun)"/>
+  <!-- hotel building silhouette with lit windows -->
+  <path d="M260 120h120v180H260z" fill="#24123F"/>
+  <g fill="#FCD34D" fill-opacity=".85"><rect x="276" y="140" width="16" height="12"/><rect x="304" y="140" width="16" height="12"/><rect x="332" y="140" width="16" height="12"/><rect x="276" y="170" width="16" height="12"/><rect x="332" y="170" width="16" height="12"/><rect x="304" y="200" width="16" height="12"/><rect x="332" y="200" width="16" height="12"/><rect x="276" y="230" width="16" height="12"/></g>
+  <!-- palms -->
+  <g fill="#1B1033">
+    <path d="M60 300c6-60 10-110 30-170l6 2c-16 60-20 110-24 168z"/>
+    <path d="M93 128c-30-14-60-6-76 10 26-6 52-2 76-4zM93 128c-10-26-34-40-56-40 22 12 40 26 56 40zM93 128c16-24 44-32 66-26-24 4-46 14-66 26zM93 128c26-6 52 6 64 24-24-12-44-18-64-24z"/>
+  </g>
+  <!-- string lights -->
+  <path d="M0 40q100 40 200 10t200 20" fill="none" stroke="#111" stroke-width="1.5"/>
+  <g fill="#FFF3C4"><circle cx="30" cy="50" r="4"/><circle cx="80" cy="64" r="4"/><circle cx="130" cy="66" r="4"/><circle cx="180" cy="56" r="4"/><circle cx="230" cy="46" r="4"/><circle cx="280" cy="48" r="4"/><circle cx="330" cy="56" r="4"/><circle cx="375" cy="62" r="4"/></g>
+  <!-- pool -->
+  <path d="M0 300h400v60H0z" fill="url(#pool)"/>
+  <g stroke="#E0F2FE" stroke-opacity=".7" stroke-width="2.5" stroke-linecap="round" fill="none"><path d="M30 318h40M120 330h60M240 316h50M320 334h50M60 346h30M200 348h40"/></g>
+  <!-- deck -->
+  <path d="M0 360h400v140H0z" fill="url(#deck)"/>
+  <g stroke="#7A6640" stroke-opacity=".4" stroke-width="2"><path d="M0 390h400M0 420h400M0 450h400M0 480h400"/></g>
+  <!-- lounger 1 with player (headphones) -->
+  <g>
+    <path d="M30 430h150l20-40h12l-22 46H30z" fill="#F6EFE0"/>
+    <path d="M40 436v26M170 436v26" stroke="#5B4A2A" stroke-width="5" stroke-linecap="round"/>
+    <rect x="70" y="416" width="80" height="18" rx="9" fill="#E31E24"/>
+    <text x="110" y="430" text-anchor="middle" font-family="Bebas Neue, Impact, sans-serif" font-size="13" fill="#fff">9</text>
+    <rect x="34" y="420" width="40" height="12" rx="6" fill="#111"/>
+    <circle cx="164" cy="406" r="14" fill="#6B4226"/>
+    <path d="M151 398a14 14 0 0 1 26 0" fill="none" stroke="#111" stroke-width="4"/><rect x="148" y="400" width="6" height="10" rx="2" fill="#E31E24"/><rect x="174" y="400" width="6" height="10" rx="2" fill="#E31E24"/>
+  </g>
+  <!-- side table with drinks -->
+  <g>
+    <rect x="198" y="410" width="34" height="6" rx="3" fill="#5B4A2A"/><path d="M215 416v30" stroke="#5B4A2A" stroke-width="4"/>
+    <path d="M203 392h10l-2 18h-6z" fill="#F97316" fill-opacity=".9"/><circle cx="214" cy="391" r="3" fill="#84CC16"/>
+    <path d="M219 394h10l-2 16h-6z" fill="#FCD34D" fill-opacity=".9"/>
+  </g>
+  <!-- lounger 2 with player and towel "43" -->
+  <g>
+    <path d="M250 440h130l18-38h12l-20 44H250z" fill="#F6EFE0"/>
+    <path d="M258 446v26M372 446v26" stroke="#5B4A2A" stroke-width="5" stroke-linecap="round"/>
+    <rect x="262" y="424" width="96" height="20" rx="4" fill="#1E4FA3"/>
+    <text x="310" y="440" text-anchor="middle" font-family="Bebas Neue, Impact, sans-serif" font-size="15" fill="#fff">43</text>
+    <rect x="286" y="414" width="64" height="14" rx="7" fill="#E31E24"/>
+    <circle cx="368" cy="414" r="13" fill="#4A2E1A"/>
+    <path d="M360 410h16" stroke="#111" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <!-- football resting -->
+  <circle cx="225" cy="472" r="12" fill="#fff" stroke="#111" stroke-width="1.5"/>
+  <path d="M225 466l5 4-2 6h-6l-2-6z" fill="#111"/>
+</svg>

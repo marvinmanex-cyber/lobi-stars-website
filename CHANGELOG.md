@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-04: House 43 page: Lobi colours on the table card, menu and photos
+
+- The "Reserved for the Pride of Benue" table card is now in Lobi Stars colours:
+  red with fine stripes, a royal-blue top band with three gold stars, a gold
+  edge, ticket notches, a white "43" with a blue shadow between two gold stars,
+  a navy footer and a blue card behind it (also on the share picture).
+- The two logos are the same size on their plates.
+- Phones and tablets: "Official Hospitality Partner" is centred and the
+  paragraph under it is justified.
+- The Abuja & Jos map has no white square around it.
+- The menu is now "The Perfect Line-Up — Four Plates, One Winning Menu".
+- "Behind the scenes" now shows two players relaxing by a hotel pool at sunset
+  (instead of the kitchen).
+
 ## 2026-11-04: Header without Zeva; Prime Beverages; House 43 "table for two"
 
 - The Principal Partner (Zeva) is no longer shown in the site header. To bring it
