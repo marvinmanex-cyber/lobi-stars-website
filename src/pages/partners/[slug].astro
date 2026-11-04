@@ -3,6 +3,8 @@ import Layout from '../../layouts/Layout.astro';
 import PartnerLogo from '../../components/partners/PartnerLogo.astro';
 import NewsCarousel from '../../components/news/NewsCarousel.astro';
 import RopajoFeature from '../../components/partners/RopajoFeature.astro';
+import House43Feature from '../../components/partners/House43Feature.astro';
+import { existsSync } from 'node:fs';
 import { render } from 'astro:content';
 import { getPartners, logoSrc, logoAlt, website, type Partner } from '../../lib/partners';
 import { getSortedNews } from '../../lib/news';
@@ -33,15 +35,20 @@ const pageTitle = fullTitle.length <= 70 ? fullTitle : `${p.name} – ${p.offici
 let pageDesc = (p.shortDescription || `${p.name} is the ${p.officialTitle} of Lobi Stars Football Club.`).trim();
 if (pageDesc.length < 70) pageDesc = `${pageDesc} Find out more about ${p.name} and its partnership with the Pride of Benue.`;
 if (pageDesc.length > 160) pageDesc = pageDesc.slice(0, 157).replace(/\s+\S*$/, '') + '…';
+// A designed link-card picture (1200 × 630) when there is one: public/og/partners-<slug>.jpg.
+const ogFile = `/og/partners-${partner.id}.jpg`;
+const ogImage = existsSync(`public${ogFile}`) ? ogFile : null;
 ---
 <Layout
   title={pageTitle}
   description={pageDesc}
-  image={logoSrc(partner) ?? undefined}
-  imageAlt={logoAlt(partner)}
+  image={ogImage ?? logoSrc(partner) ?? undefined}
+  imageAlt={ogImage ? pageTitle : logoAlt(partner)}
 >
   {p.theme === 'ropajo' ? (
     <RopajoFeature partner={partner}>{hasBody && <Content />}</RopajoFeature>
+  ) : p.theme === 'house43' ? (
+    <House43Feature partner={partner} />
   ) : (
   <div class="wrap pd">
     <div class="pd-top">

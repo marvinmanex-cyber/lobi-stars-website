@@ -467,6 +467,19 @@ same layout as the others, with a touch of Ropajo's style; the partnership
 text is the body of its partner file. Editing its name, short description or logo in the admin
 works as usual; ask the web team to change anything else on that page.
 
+**House 43 (Official Hospitality Partner)** has its own page the same way
+(`theme: "house43"`, design in `src/components/partners/House43Feature.astro`):
+a dark hero with a "reserved table card", three highlights, **The Matchday
+Menu** (four dishes as a team sheet: change them in the `menu` list at the top
+of that file), **Together** (photo tiles: add `{ src, caption }` items to
+`gallery` in `src/content/partners/house-43.md`, files in
+`public/images/house43/`) and a closing partner card. Its logo shows once
+`public/images/house43-logo.png` (and a cream version,
+`public/images/house43/logo-cream.png`, for the dark hero) are added; until
+then a "HOUSE 43" word mark is shown. Its link-card picture is
+`public/og/partners-house-43.jpg` (any partner can have one:
+`public/og/partners-<slug>.jpg`).
+
 **Partnership Opportunities:** the categories you're offering to new sponsors
 are under **Site Settings… › Partnership Opportunities & Benefits**. When you
 add an active Official Club Partner, their category disappears from the

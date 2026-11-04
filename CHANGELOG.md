@@ -8,6 +8,18 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-04: House 43, Official Hospitality Partner
+
+- **House 43** (https://www.house43.org/) added as an Official Club Partner,
+  right after Ropajo Hotels on /partners/.
+- New page **/partners/house-43/**: dark hero with the two logos and a
+  "reserved table card", three highlights, **The Matchday Menu** (a team sheet
+  of four House 43 dishes), **Together** (photo tiles, "Photos coming soon"
+  until photos arrive) and a closing partner card; its own link-card picture
+  for sharing.
+- The House 43 logo shows as soon as the file is added (a word mark until
+  then). See HANDOVER-TODO P4.
+
 ## 2026-11-04: Lobi Gate Control: running the gates like a professional stadium
 
 Admin › Commerce › Lobi Gate Control and the scanner app now have:
