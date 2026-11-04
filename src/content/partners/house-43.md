@@ -3,7 +3,9 @@ name: "House 43"
 tier: "Official Club Partners"
 category: "Hospitality"
 officialTitle: "Official Hospitality Partner"
-logo: "/images/house43-logo.png"
+logo: "/images/house43-mark.png"
+# The house mark on its own: a transparent cut-out, shown without the white card.
+logoNoCard: true
 theme: "house43"
 website: "https://www.house43.org/"
 shortDescription: "Where the Pride of Benue sits down to eat, celebrate and host its guests. The Official Hospitality Partner of Lobi Stars FC."

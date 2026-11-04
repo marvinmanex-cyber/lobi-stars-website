@@ -7,23 +7,19 @@ import PartnerLogo from '../../components/partners/PartnerLogo.astro';
 import { getPartners, byTier, openCategories, website, PARTNERSHIP } from '../../lib/partners';
 
 const partners = await getPartners();
-const tiers = byTier(partners);
+// On this page (4 Nov 2026): no Principal Partner or Kit Partner sections, and the Media &
+// Broadcast partner sits in the Official Club Partners grid (3 a row: two even rows).
+const HIDDEN_TIERS = ['Principal Partner', 'Official Kit Partner'];
+const MERGED_INTO_CLUB = ['Media & Broadcast Partners'];
+const tiers = byTier(partners.filter(p => !HIDDEN_TIERS.includes(p.data.tier)))
+  .map(g => g.tier === 'Official Club Partners' ? { ...g, partners: [...g.partners, ...partners.filter(p => MERGED_INTO_CLUB.includes(p.data.tier))] } : g)
+  .filter(g => !MERGED_INTO_CLUB.includes(g.tier));
 const open = openCategories(partners);
 const LOGO_SIZE: Record<string, 'principal' | 'kit' | 'club' | 'small'> = {
   'Principal Partner': 'principal', 'Official Kit Partner': 'kit', 'Official Club Partners': 'club',
   'Official Suppliers': 'club', 'Media & Broadcast Partners': 'small', 'Institutional & Community Partners': 'small',
 };
 const slugify = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-// "Why partner" cards: each in its own club colour, with an icon picked from its title
-// (benefits are edited in the admin, so unknown titles get the star).
-const WHY_ICONS: [RegExp, string][] = [
-  [/stadium|pitch|board|sign/i, '<path d="M3 20h18M5 20V9l7-4 7 4v11M9 20v-5h6v5"/><path d="M8 11h.01M12 11h.01M16 11h.01"/>'],
-  [/community|activation|fan|matchday/i, '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 1.8 6 5.5"/>'],
-  [/digital|social|online|web/i, '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18h2"/><path d="M9.5 9.5l2 2 3.5-3.5"/>'],
-  [/media|broadcast|tv|coverage|camera/i, '<rect x="2.5" y="6" width="14" height="12" rx="2"/><path d="M16.5 10.5l5-3v9l-5-3"/>'],
-];
-const STAR = '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>';
-const whyIcon = (t: string) => (WHY_ICONS.find(([re]) => re.test(t)) ?? [, STAR])[1];
 ---
 <Layout
   title="Our Official Partners | Lobi Stars Football Club"
@@ -74,21 +70,9 @@ const whyIcon = (t: string) => (WHY_ICONS.find(([re]) => re.test(t)) ?? [, STAR]
       </section>
     )}
 
-    <section class="pp-sec" aria-labelledby="why">
-      <h2 class="pp-h2" id="why">Why partner with Lobi Stars</h2>
-      <p class="pp-why-lead">Put your brand in front of the Pride of Benue's fans: in the stadium on matchdays, across Benue State and online every day.</p>
-      <ul class="pp-why">
-        {PARTNERSHIP.benefits.map((b, i) => (
-          <li class={`pp-why-${i % 4}`}>
-            <span class="pp-why-no" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
-            <span class="pp-why-ic" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={whyIcon(b.title)} /></span>
-            {b.figure && <span class="pp-fig">{b.figure}<small>{b.figureLabel}</small></span>}
-            <h3>{b.title}</h3>
-            <p>{b.text}</p>
-          </li>
-        ))}
-      </ul>
-      {PARTNERSHIP.brochureUrl && (
+    {/* "Why partner with Lobi Stars" removed from this page (4 Nov 2026). The brochure download stays, shown only once a brochure file is added. */}
+    {PARTNERSHIP.brochureUrl && (
+    <section class="pp-sec" aria-label="Partnership brochure">
         <>
           <button type="button" class="btn-o pp-brochure" id="brochureBtn">Download Partnership Brochure (PDF)</button>
           <dialog class="pp-dl" id="brochureDlg" aria-labelledby="dl-h">
@@ -111,8 +95,8 @@ const whyIcon = (t: string) => (WHY_ICONS.find(([re]) => re.test(t)) ?? [, STAR]
             </form>
           </dialog>
         </>
-      )}
     </section>
+    )}
 
     <section class="panel pp-form" id="enquiry" aria-labelledby="enquiry-title">
       <h2 class="pp-h2" id="enquiry-title">Partnership Enquiry</h2>
@@ -135,6 +119,9 @@ const whyIcon = (t: string) => (WHY_ICONS.find(([re]) => re.test(t)) ?? [, STAR]
   .pp-row { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 28px 32px; }
   .pp-card { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; width: 280px; max-width: 100%; }
   .pp-row--club .pp-card, .pp-row--small .pp-card { width: 230px; }
+  /* Official Club Partners: three a row, in even rows. */
+  .pp-row--club { max-width: 1000px; margin: 0 auto; gap: 40px 48px; }
+  .pp-row--club .pp-card { width: 280px; }
   .pp-card :global(.pl) { margin-bottom: 8px; }
   .pp-title { margin: 6px 0 0; font: 700 19px/1.2 'Barlow Condensed', sans-serif; }
   .pp-title a { color: var(--white); text-decoration: none; }

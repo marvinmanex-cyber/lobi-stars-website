@@ -1,7 +1,7 @@
 ---
 name: "Msendo Table Water"
 tier: "Official Club Partners"
-category: "Table Water"
+category: "Water"
 officialTitle: "Official Water Partner"
 logo: "/images/msendo-table-water.png"
 website: "https://www.msendoltd.com"

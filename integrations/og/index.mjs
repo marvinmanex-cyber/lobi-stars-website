@@ -39,6 +39,8 @@ export async function makeShareImages({ dist, site, files, logger }) {
     if (!og) continue;
     const ogPath = og.replace(site, '');
     const partner = /^partners\/[^/]+\/index\.html$/.test(rel);
+    // A partner with its own designed card (public/og/partners-<slug>.jpg): keep it as it is.
+    if (partner && ogPath.startsWith('/og/') && existsSync(pub(ogPath))) continue;
     if (ogPath !== DEFAULT && !partner) {
       // Its own photo (news story, player, …): make it a 1200x630 JPEG under
       // 300 KB, the size every platform shows as a large card.

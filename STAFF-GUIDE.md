@@ -481,6 +481,13 @@ then a "HOUSE 43" word mark is shown. Its link-card picture is
 `public/og/partners-house-43.jpg` (any partner can have one:
 `public/og/partners-<slug>.jpg`).
 
+**What the /partners/ page shows (since 4 Nov 2026):** the Official Club Partners
+in two rows of three (the Media & Broadcast partner joins that grid). The
+Principal Partner and Kit Partner sections and "Why partner with Lobi Stars" are
+not shown there (to bring them back, ask the web team: `HIDDEN_TIERS` in
+`src/pages/partners/index.astro`). Zeva and Play still appear in the header,
+footer and on their own pages.
+
 **Partnership Opportunities:** the categories you're offering to new sponsors
 are under **Site Settings… › Partnership Opportunities & Benefits**. When you
 add an active Official Club Partner, their category disappears from the

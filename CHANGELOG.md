@@ -8,6 +8,21 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-04: Partners page tidied
+
+- /partners/ no longer shows the Principal Partner (Zeva) or Official Kit Partner
+  (Play) sections, or "Why partner with Lobi Stars" and its four cards. Zeva and
+  Play stay partners everywhere else (header, footer, their own pages).
+- Official Club Partners now sit in two even rows of three: Novus MFB, Ropajo
+  Hotels, House 43; Prime Beverages, Msendo Table Water and Aeson Sports
+  Management (Official Media & Broadcast Partner) on the same row.
+- House 43 shows its house mark without the white card, the same height as the
+  other logos.
+- Msendo's category is now "Water", so "Official Water Partner" is no longer
+  listed as available under Partnership Opportunities.
+- A partner page with its own designed share card (public/og/partners-<slug>.jpg)
+  keeps it at build time (House 43).
+
 ## 2026-11-04: House 43, Official Hospitality Partner
 
 - Later the same day: new hero wording ("Lobi Stars FC’s hospitality home in
