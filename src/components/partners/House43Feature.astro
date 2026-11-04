@@ -36,7 +36,7 @@ const menu = [
 const placeholders = [
   { t: 'The squad at House 43', img: '/images/house43/together/squad.svg' },
   { t: 'Matchday hospitality', img: '/images/house43/together/matchday.svg' },
-  { t: 'Club events & unveilings', img: '/images/house43/together/events.svg' },
+  { t: 'Club events & unveilings', img: '/images/house43/together/events.svg?v=2' },
   { t: 'Behind the scenes', img: '/images/house43/together/kitchen.svg' },
 ];
 ---
@@ -254,6 +254,9 @@ const placeholders = [
   @media (max-width: 600px) {
     .h43-hero-in { padding-top: 30px; padding-bottom: 44px; }
     .h43-lock-badge { width: 52px; height: 52px; }
+    /* Phones: the two logos, the names line and the big name centred (the rest stays left-aligned). */
+    .h43-lockup { justify-content: center; }
+    .h43-names, .h43-h1 { text-align: center; }
     .h43-amp { font-size: 36px; }
     .h43-desc { font-size: 16px; }
     .h43-btns { flex-direction: column; }

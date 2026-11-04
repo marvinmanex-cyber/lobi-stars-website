@@ -10,6 +10,10 @@ in HANDOVER-TODO.md.
 
 ## 2026-11-04: Partners page tidied
 
+- House 43 page on phones: the two logos, "Lobi Stars FC & House 43" and the
+  big "HOUSE 43" are centred (the rest stays as it was). The "LOBI STARS" name
+  on the unveiling shirt picture now fits on the shirt.
+
 - /partners/ no longer shows the Principal Partner (Zeva) or Official Kit Partner
   (Play) sections, or "Why partner with Lobi Stars" and its four cards. Zeva and
   Play stay partners everywhere else (header, footer, their own pages).
