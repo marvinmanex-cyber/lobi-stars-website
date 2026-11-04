@@ -10,6 +10,12 @@ in HANDOVER-TODO.md.
 
 ## 2026-11-04: House 43, Official Hospitality Partner
 
+- Later the same day: new hero wording ("Lobi Stars FC’s hospitality home in
+  Abuja and Jos…"), no "Official Club Partners" line above it; colour pictures
+  for the three highlights (a serving cloche, a map with two pins for Abuja
+  and Jos, a coffee cup and a cocktail); the menu is now "The Matchday Menu —
+  Picked Like a Starting XI" with new wording.
+
 - **House 43** (https://www.house43.org/) added as an Official Club Partner,
   right after Ropajo Hotels on /partners/.
 - New page **/partners/house-43/**: dark hero with the two logos and a
