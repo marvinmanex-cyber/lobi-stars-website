@@ -10,6 +10,8 @@ in HANDOVER-TODO.md.
 
 ## 2026-11-04: House 43 page: Lobi colours on the table card, menu and photos
 
+- 5 Nov: no full stop after "The Perfect Line-Up"; on phones both heading lines are centred.
+
 - Later still: the menu heading is two lines on every screen ("The Perfect
   Line-Up." then "Four Plates, One Winning Menu" in red, no dash), and the House 43
   logo section at the bottom is a white band from edge to edge of the page.

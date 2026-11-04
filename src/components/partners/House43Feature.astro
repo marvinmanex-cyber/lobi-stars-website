@@ -93,7 +93,7 @@ const placeholders = [
   <section class="h43-menu" aria-labelledby="h43-menu-h">
     <div class="wrap h43-menu-in">
       <div class="h43-menu-text">
-        <h2 class="h43-h2" id="h43-menu-h"><span class="h43-h2-main">The Perfect Line-Up.</span> <span class="h43-h2-sub">Four Plates, One Winning Menu</span></h2>
+        <h2 class="h43-h2" id="h43-menu-h"><span class="h43-h2-main">The Perfect Line-Up</span> <span class="h43-h2-sub">Four Plates, One Winning Menu</span></h2>
         <p class="h43-lede">Four signature plates from the House 43 menu, served the way a matchday unfolds, from the pre-match breakfast to extra time.</p>
       </div>
       <div class="h43-sheet">
@@ -295,6 +295,8 @@ const placeholders = [
     .h43-info { padding: 32px 0 36px; }
     .h43-menu .h43-h2 { font-size: 46px; }
     .h43-h2-sub { font-size: min(31px, 8.4vw); }
+    /* Phones: both lines centred. */
+    .h43-menu .h43-h2 { text-align: center; }
   }
   @media (max-width: 420px) { .h43-gal { grid-template-columns: 1fr; } }
   @media (prefers-reduced-motion: reduce) { .h43-card, .h43-soon img { transition: none; } }
