@@ -1,0 +1,197 @@
+---
+// Commerce › Lobi Gate Control: the ticket scanners (phones / laptops) at the gates.
+// Live every 5 seconds: how many scanners are active now, what each one is doing (gate,
+// scans today, last scan), the latest scans at every gate. Add a scanner (a one-time
+// passcode switches the phone on, no email or password), give a new passcode, revoke a
+// scanner at once. Gates and which stands each gate is for.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+import LeagueKit from '../../components/admin/league/LeagueKit.astro';
+---
+<Layout title="Lobi Gate Control | Lobi Stars Admin" description="Ticket scanners at the gates: live status, passcodes and revoking." noindex>
+  <div class="wrap la gca">
+    <AdminNav current="gate-control" />
+    <header class="la-head">
+      <div class="gca-brand"><img src="/images/gate-control/logo-96.png" alt="" width="56" height="56" /><div><div class="stag">Commerce · Match day</div><h1 class="stitle">Lobi Gate <span class="r">Control</span></h1></div></div>
+      <div class="la-row"><a class="btn-o" href="/lobi-gate-control" target="_blank" rel="noopener">Open the scanner app ↗</a></div>
+    </header>
+    <p class="la-lede">Each phone or laptop that scans tickets is a <b>scanner</b>. Add one below: you get a <b>one-time passcode</b> to give to the person. They open <b>lobistarsfc.com/lobi-gate-control</b> on that phone, type the passcode once, and the scanner stays on until you <b>revoke</b> it. Updates live every 5 seconds.</p>
+
+    <section class="gca-stats" aria-label="Right now">
+      <div class="gca-stat live"><b id="sActive">–</b><span>scanners active now</span></div>
+      <div class="gca-stat"><b id="sOn">–</b><span>switched on</span></div>
+      <div class="gca-stat ok"><b id="sIn">–</b><span>fans checked in today</span></div>
+      <div class="gca-stat bad"><b id="sRef">–</b><span>refused today</span></div>
+      <div class="gca-stat warn"><b id="sFake">–</b><span>fake tickets today</span></div>
+    </section>
+    <p class="la-msg" id="matchLine"></p>
+
+    <section class="la-card" aria-labelledby="h-add">
+      <h2 id="h-add">Add a scanner</h2>
+      <form id="addForm" class="la-row" style="align-items:flex-end">
+        <label class="la-f">Scanner name<input name="name" required maxlength="60" placeholder="e.g. Main Gate phone 1" style="min-width:200px" /></label>
+        <label class="la-f">Person using it (optional)<input name="holder" maxlength="80" placeholder="e.g. Chidi Okafor" style="min-width:180px" /></label>
+        <label class="la-f">Role<select name="role"><option value="steward">Ticket Steward</option><option value="supervisor">Gate Supervisor</option></select></label>
+        <label class="la-f">Gate<select name="gate" id="addGate"><option value="">They choose</option></select></label>
+        <button class="btn-p" type="submit">Create passcode</button>
+      </form>
+      <p class="la-msg">Gate Supervisors can also re-admit a fan who stepped out, send messages to all gates, close incidents and see every scanner's activity.</p>
+      <div class="gca-pass" id="passBox" hidden role="status"></div>
+    </section>
+
+    <section class="la-card" aria-labelledby="h-dev">
+      <h2 id="h-dev">Scanners <small class="gca-upd" id="upd"></small></h2>
+      <div id="devices"><p class="la-msg">Loading…</p></div>
+    </section>
+
+    <section class="la-card" aria-labelledby="h-live">
+      <h2 id="h-live">Live scans (all gates)</h2>
+      <div id="watch"></div>
+      <ul class="gca-feed" id="feed"></ul>
+    </section>
+
+    <section class="la-card" aria-labelledby="h-gates">
+      <h2 id="h-gates">Gates and stands</h2>
+      <div class="gca-two">
+        <div>
+          <p class="la-msg">One gate per line. Scanners choose their gate (or you set it when adding the scanner).</p>
+          <textarea id="gatesText" rows="5" style="width:100%"></textarea>
+          <div class="la-row" style="margin-top:8px"><button type="button" class="btn-o" id="gatesSave">Save gates</button></div>
+        </div>
+        <div>
+          <p class="la-msg">Which stands each gate is for. A ticket for another stand shows <b>WRONG GATE</b> with where to send the fan. A gate with nothing ticked lets in every stand.</p>
+          <div id="standsGrid" class="gca-stands"></div>
+          <div class="la-row" style="margin-top:8px"><button type="button" class="btn-o" id="standsSave">Save stands</button></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <LeagueKit />
+</Layout>
+
+<style is:global>
+  /* Global (but every rule starts with .gca): the lists are drawn by the script. */
+  .gca { max-width: 1200px; }
+  .gca-brand { display: flex; align-items: center; gap: 14px; }
+  .gca-brand img { border-radius: 14px; }
+  .gca-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 0 0 10px; }
+  .gca-stat { background: var(--a-card); border: 1px solid var(--a-line); border-radius: 16px; padding: 14px 16px; }
+  .gca-stat b { display: block; font: 400 44px/1 'Bebas Neue', sans-serif; }
+  .gca-stat span { color: var(--a-muted); font-size: 13px; }
+  .gca-stat.live { background: linear-gradient(150deg, #12a150, #0b7a3b); border-color: transparent; color: #fff; }
+  .gca-stat.live span { color: rgba(255, 255, 255, .9); }
+  .gca-stat.ok b { color: #0B7A2E; } .gca-stat.bad b { color: #C11A1F; } .gca-stat.warn b { color: #B45309; }
+  .gca-pass { margin-top: 14px; padding: 16px; border-radius: 14px; background: #0E1C38; color: #fff; }
+  .gca-pass .code { font: 700 40px/1.1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .1em; color: #FFC928; margin: 6px 0; }
+  .gca-pass a, .gca-pass button { margin: 8px 8px 0 0; }
+  .gca-upd { color: var(--a-muted); font-weight: 400; font-size: 13px; }
+  .gca table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .gca th, .gca td { text-align: left; padding: 10px 8px; border-top: 1px solid var(--a-line); vertical-align: top; }
+  .gca th { border-top: 0; color: var(--a-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+  .gca td small { color: var(--a-muted); display: block; }
+  .gca-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; background: #9AA0A8; vertical-align: middle; }
+  .gca-dot.on { background: #12a150; box-shadow: 0 0 0 4px rgba(18, 161, 80, .2); } .gca-dot.wait { background: #F59E0B; } .gca-dot.off { background: #C11A1F; }
+  .gca-acts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .gca-acts button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--a-line); background: var(--a-card); color: var(--a-ink); cursor: pointer; }
+  .gca .gca-acts button.danger { border-color: #C11A1F; color: #C11A1F; }
+  .gca-feed { list-style: none; margin: 0; padding: 0; max-height: 420px; overflow: auto; }
+  .gca-feed li { display: flex; gap: 10px; padding: 8px 0; border-top: 1px solid var(--a-line); font-size: 14px; }
+  .gca-feed li:first-child { border-top: 0; }
+  .gca-feed .t { color: var(--a-muted); min-width: 52px; }
+  .gca-feed .r { font-weight: 700; } .gca-feed .r.ok { color: #0B7A2E; } .gca-feed .r.bad { color: #C11A1F; } .gca-feed .r.warn { color: #B45309; }
+  .gca-watch { padding: 10px 12px; border-radius: 10px; background: #FDECEC; color: #7A0A0E; margin-bottom: 10px; font-size: 14px; }
+  .gca-two { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; }
+  .gca-stands fieldset { border: 1px solid var(--a-line); border-radius: 10px; padding: 8px 10px; margin: 0 0 8px; }
+  .gca-stands legend { font-weight: 700; padding: 0 4px; }
+  .gca-stands label { margin-right: 14px; display: inline-flex; gap: 6px; align-items: center; }
+  @media (max-width: 900px) { .gca-stats { grid-template-columns: repeat(2, 1fr); } .gca-stat.live { grid-column: 1 / -1; } .gca-two { grid-template-columns: 1fr; } .gca-tbl { overflow-x: auto; } }
+</style>
+
+<script>
+  const LA = (window as any).LA;
+  const $ = (id: string) => document.getElementById(id) as any;
+  const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+  const TZ = 'Africa/Lagos';
+  const hm = (iso?: string) => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: TZ }) : '';
+  const ago = (iso?: string) => { if (!iso) return 'never'; const s = Math.round((Date.now() - Date.parse(iso)) / 1000); return s < 60 ? 'just now' : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: TZ }); };
+  const RESULT: Record<string, [string, string]> = { admitted: ['Checked in', 'ok'], readmitted: ['Re-admitted', 'ok'], lookup: ['Looked up', ''], used: ['Already used', 'bad'], fake: ['FAKE', 'bad'], not_lobi: ['Not a Lobi ticket', 'bad'], wrong_match: ['Wrong match', 'warn'], wrong_gate: ['Wrong gate', 'warn'], void: ['Cancelled', 'bad'], unpaid: ['Not paid', 'bad'], bad_number: ['Number mistyped', 'warn'] };
+  const STAND: Record<string, string> = { VIP: 'VIP Sitting', Premium: 'Grand Stand', Regular: 'Popular Stand' };
+  let gatesLoaded = false, timer: any = 0;
+
+  function status(d: any) {
+    if (d.status === 'revoked') return `<span class="gca-dot off"></span><b>Revoked</b><small>${esc(ago(d.revokedAt))}${d.revokedBy ? ' by ' + esc(d.revokedBy) : ''}</small>`;
+    if (d.status === 'waiting') return `<span class="gca-dot wait"></span><b>Waiting for passcode</b><small>passcode valid until ${esc(new Date(d.passcodeUntil).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: TZ }))}</small>`;
+    return d.online ? `<span class="gca-dot on"></span><b>Active now</b><small>seen ${esc(ago(d.lastSeen))}</small>` : `<span class="gca-dot"></span><b>Switched on</b><small>last seen ${esc(ago(d.lastSeen))}</small>`;
+  }
+  function render(d: any) {
+    $('sActive').textContent = d.activeNow; $('sOn').textContent = d.switchedOn; $('sIn').textContent = d.totals.admitted; $('sRef').textContent = d.totals.refused; $('sFake').textContent = d.totals.fake;
+    $('matchLine').textContent = d.match ? `Today's home match: ${d.match.name}.` : 'No Lobi Stars home match today.';
+    $('upd').textContent = `updated ${hm(d.at)}`;
+    if (!gatesLoaded) {
+      gatesLoaded = true;
+      $('addGate').insertAdjacentHTML('beforeend', d.gates.map((g: string) => `<option>${esc(g)}</option>`).join(''));
+      $('gatesText').value = d.gates.join('\n');
+      $('standsGrid').innerHTML = d.gates.map((g: string) => `<fieldset><legend>${esc(g)}</legend>${['VIP', 'Premium', 'Regular'].map(t => `<label><input type="checkbox" data-g="${esc(g)}" data-t="${t}"${(d.gateStands?.[g] || []).includes(t) ? ' checked' : ''} /> ${STAND[t]}</label>`).join('')}</fieldset>`).join('');
+    }
+    $('devices').innerHTML = d.devices.length ? `<div class="gca-tbl"><table><thead><tr><th>Status</th><th>Scanner</th><th>Gate</th><th>Today</th><th>Last scan</th><th></th></tr></thead><tbody>${d.devices.map((x: any) => {
+      const last = x.lastScan ? `${esc(hm(x.lastScan.at))} · ${esc((RESULT[x.lastScan.result] || [x.lastScan.result])[0])}<small>${esc(x.lastScan.ticket || '')}</small>` : '<small>No scans yet</small>';
+      const acts = x.status === 'revoked' ? `<button type="button" data-act="passcode" data-id="${esc(x.id)}">New passcode (switch back on)</button>`
+        : `<button type="button" data-act="passcode" data-id="${esc(x.id)}">New passcode</button><button type="button" class="danger" data-act="revoke" data-id="${esc(x.id)}" data-name="${esc(x.code + ' ' + x.name)}">Revoke</button>`;
+      return `<tr><td>${status(x)}</td><td><b>${esc(x.code)} · ${esc(x.name)}</b><small>${esc([x.holder, x.roleLabel, x.phone].filter(Boolean).join(' · '))}</small></td><td>${esc(x.gate || '—')}</td><td><b>${x.admitted}</b> in<small>${x.refused} refused</small></td><td>${last}</td><td><div class="gca-acts">${acts}</div></td></tr>`;
+    }).join('')}</tbody></table></div>` : '<p class="la-msg">No scanners yet. Add the first one above.</p>';
+    const w = d.watch || {};
+    const warn = [...(w.bursts || []).map((b: any) => `${b.n} fake tickets at ${esc(b.gate)} in the last 30 minutes.`), ...(w.doubles || []).map((x: any) => `Double entry: ${esc(x.ticket)} (offline, ${esc(x.gate || '')}).`)];
+    $('watch').innerHTML = warn.length ? `<div class="gca-watch"><b>Watch list:</b> ${warn.join(' ')}</div>` : '';
+    $('feed').innerHTML = d.latest.length ? d.latest.map((s: any) => { const [label, k] = RESULT[s.result] || [s.result, '']; return `<li><span class="t">${esc(hm(s.at))}</span><span><span class="r ${k}">${esc(label)}</span> ${esc(s.ticket || '')} <small>· ${esc([s.stand, s.gate, s.by, s.how === 'offline' ? 'offline' : ''].filter(Boolean).join(' · '))}</small></span></li>`; }).join('') : '<li class="la-msg">No scans yet today.</li>';
+  }
+  async function load() {
+    const r = await LA.api('/api/admin/gate-control');
+    if (r.ok) render(r.d); else $('devices').innerHTML = `<p class="la-msg">${esc(r.d.error || 'Could not load.')}</p>`;
+  }
+  function start() { clearInterval(timer); load(); timer = setInterval(() => { if (!document.hidden) load(); }, 5000); }
+
+  function showPass(r: any, name: string) {
+    const until = new Date(r.until).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: TZ });
+    const msg = `Lobi Gate Control scanner ${r.code}${name ? ` (${name})` : ''}\n1. Open https://lobistarsfc.com/lobi-gate-control on your phone\n2. Enter this passcode: ${r.passcode}\nIt works once, on one phone, until ${until}.`;
+    $('passBox').hidden = false;
+    $('passBox').innerHTML = `<div>Passcode for <b>${esc(r.code)}${name ? ' · ' + esc(name) : ''}</b></div><div class="code">${esc(r.passcode)}</div>
+      <div>Give it to the person. They open <b>lobistarsfc.com/lobi-gate-control</b> on their phone and type it once. Valid until ${esc(until)}. It is shown only now.</div>
+      <a class="btn-p" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}">Send on WhatsApp</a><button type="button" class="btn-o" id="copyPass">Copy</button>`;
+    $('copyPass').addEventListener('click', () => { navigator.clipboard?.writeText(msg).then(() => LA.toast('Copied'), () => LA.toast('Copy failed: write it down instead.', true)); });
+  }
+  $('addForm').addEventListener('submit', async (e: Event) => {
+    e.preventDefault();
+    const f = e.target as HTMLFormElement, el = f.elements as any;
+    const r = await LA.api('/api/admin/gate-control', { method: 'POST', body: { action: 'add', name: el.name.value, holder: el.holder.value, role: el.role.value, gate: el.gate.value } });
+    if (!r.ok) { LA.toast(r.d.error || 'Could not add.', true); return; }
+    showPass(r.d, el.name.value); f.reset(); load();
+  });
+  $('devices').addEventListener('click', async (e: Event) => {
+    const b = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
+    if (!b) return;
+    if (b.dataset.act === 'revoke') {
+      const ok = await LA.confirm('Revoke this scanner?', [`${b.dataset.name} stops working at once (as soon as the phone has a signal). You can give it a new passcode later.`], 'Revoke');
+      if (!ok) return;
+      const r = await LA.api('/api/admin/gate-control', { method: 'POST', body: { action: 'revoke', id: b.dataset.id } });
+      r.ok ? LA.toast('Scanner revoked') : LA.toast(r.d.error || 'Could not revoke.', true); load();
+    }
+    if (b.dataset.act === 'passcode') {
+      const ok = await LA.confirm('Give this scanner a new passcode?', ['The phone that has it now stops working. The new passcode switches it on again (on any phone).'], 'New passcode');
+      if (!ok) return;
+      const r = await LA.api('/api/admin/gate-control', { method: 'POST', body: { action: 'passcode', id: b.dataset.id } });
+      if (r.ok) { showPass(r.d, ''); window.scrollTo({ top: $('passBox').offsetTop - 120, behavior: 'smooth' }); } else LA.toast(r.d.error || 'Could not.', true);
+      load();
+    }
+  });
+  $('gatesSave').addEventListener('click', async () => {
+    const r = await LA.api('/api/admin/gate-control', { method: 'POST', body: { action: 'gates', gates: $('gatesText').value.split('\n') } });
+    if (r.ok) { LA.toast('Gates saved'); gatesLoaded = false; $('addGate').innerHTML = '<option value="">They choose</option>'; load(); } else LA.toast(r.d.error || 'Could not save.', true);
+  });
+  $('standsSave').addEventListener('click', async () => {
+    const map: Record<string, string[]> = {};
+    document.querySelectorAll<HTMLInputElement>('#standsGrid input').forEach(c => { (map[c.dataset.g!] ||= []); if (c.checked) map[c.dataset.g!].push(c.dataset.t!); });
+    const r = await LA.api('/api/admin/gate-control', { method: 'POST', body: { action: 'stands', stands: map } });
+    r.ok ? LA.toast('Saved') : LA.toast(r.d.error || 'Could not save.', true);
+  });
+  start();
+</script>

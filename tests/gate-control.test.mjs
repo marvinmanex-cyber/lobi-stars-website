@@ -1,5 +1,6 @@
-// Gate Control (/gate-control): the ticket stewards' own area. Its own staff and
-// sign-in (never the admin back end); a gate must be chosen; scanning or typing
+// Lobi Gate Control (/gate-control): the ticket scanners. A scanner (phone / laptop) is
+// added in the admin and switched on once with a one-time passcode (no email or password),
+// stays on until revoked, and never opens the admin back end; a gate must be chosen; scanning or typing
 // a ticket shows who bought it, when, where and the price, and checks them in
 // once only (also when five phones scan the same ticket at once); fake, used,
 // wrong-match, cancelled and unpaid tickets are refused; supervisors re-admit;
@@ -7,22 +8,24 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { sql } from './media-helpers.mjs';
-import { hashPassword } from '../functions/api/_lib/password.js';
 import { parseTicketInput } from '../functions/api/_lib/gateTicketNumber.js';
 
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
 const T = Math.random().toString(36).slice(2, 7).toUpperCase().replace(/[^A-Z]/g, 'Q');
-const SA_EMAIL = `gc-sa-${T.toLowerCase()}@example.com`, SA_PW = 'Gate-Super-2026!';
-const STEW = { staffId: `LSG-${T}1`, name: 'Chidi Steward', role: 'steward', password: 'Turnstile-Blue-41' };
-const SUP = { staffId: `LSG-${T}2`, name: 'Ngozi Lead', role: 'supervisor', password: 'Floodlight-Red-52' };
+const ADMIN = { 'Content-Type': 'application/json', 'x-admin-code': process.env.ADMIN_CODE || 'test-code-123' };
+const adm = body => fetch(`${BASE}/api/admin/gate-control`, body ? { method: 'POST', headers: ADMIN, body: JSON.stringify(body) } : { headers: ADMIN }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
+// Scanners: filled in when they are added (code SCN-…, the phone's cookie).
+const STEW = { name: `Main Gate phone ${T}`, holder: 'Chidi Steward', role: 'steward' };
+const SUP = { name: `VIP Gate phone ${T}`, holder: 'Ngozi Lead', role: 'supervisor' };
+const OBS = { name: `Gate C phone ${T}`, holder: 'Observer', role: 'steward' };
 const ip = () => `10.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 0}`;
 const CH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const tid = () => `LS-TIX-${Array.from({ length: 12 }, () => CH[(Math.random() * CH.length) | 0]).join('')}`;
 const EV = `gc-ev-${T}`, EV2 = `gc-ev2-${T}`;
 const K = { a: tid(), b: tid(), c: tid(), d: tid(), race: tid(), tomorrow: tid(), refunded: tid(), unpaid: tid() };
 
-async function signIn(login, password) {
-  const r = await fetch(`${BASE}/api/gate-control/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ login, password }) });
+async function activate(passcode) {
+  const r = await fetch(`${BASE}/api/gate-control/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ passcode }) });
   const cookie = (r.headers.get('set-cookie') || '').match(/ls_gate=([^;]+)/)?.[1];
   return { status: r.status, data: await r.json().catch(() => ({})), cookie };
 }
@@ -32,10 +35,11 @@ async function as(cookie) {
     .then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
   return { s, call };
 }
-let A, St, Su;
+let St, Su;
+const ids = [];
 
 after(() => sql(`DELETE FROM tickets WHERE event_id IN ('${EV}', '${EV2}'); DELETE FROM orders WHERE event_id IN ('${EV}', '${EV2}'); DELETE FROM events WHERE id IN ('${EV}', '${EV2}');
-  DELETE FROM admin_users WHERE email = '${SA_EMAIL}'; DELETE FROM gc_staff WHERE staff_id IN ('${STEW.staffId}', '${SUP.staffId}');`));
+  DELETE FROM gc_devices WHERE id IN (${ids.map(i => `'${i}'`).join(', ') || "''"});`));
 
 test('ticket numbers and QR codes are read correctly', () => {
   const id = K.a;
@@ -49,28 +53,33 @@ test('ticket numbers and QR codes are read correctly', () => {
   assert.equal(parseTicketInput('LS-TIX-ABC').code, 'bad_number');
 });
 
-test('own sign-in; stewards cannot open /admin or manage staff; a gate must be chosen', async () => {
-  sql(`INSERT INTO admin_users (id, name, email, password_hash, role, active, test_account) VALUES ('gct_${T}', 'Gate Super Tester', '${SA_EMAIL}', '${await hashPassword(SA_PW)}', 'super_admin', 1, 1);`);
-  const sa = await signIn(SA_EMAIL, SA_PW);
-  assert.equal(sa.status, 200, JSON.stringify(sa.data));
-  A = await as(sa.cookie);
-  assert.equal(A.s.perms.staff, true);
-  for (const p of [STEW, SUP]) assert.equal((await A.call('staff', { action: 'add', ...p })).status, 200, `adds ${p.name}`);
-  assert.match((await A.call('staff', { action: 'add', staffId: `LSG-${T}9`, name: 'Weak', role: 'steward', password: 'tickets123' })).data.error, /common/);
-  assert.equal((await A.call('staff', { action: 'gates', gates: ['Main Gate', 'VIP Gate', 'Gate C'] })).data.gates.length, 3);
-
-  const st = await signIn(STEW.staffId.toLowerCase(), STEW.password);
-  assert.equal(st.status, 200, JSON.stringify(st.data));
-  assert.equal((await fetch(`${BASE}/api/admin/me`, { headers: { Cookie: `ls_gate=${st.cookie}` } })).status, 401, 'a Gate Control session never opens /admin');
+test('scanners: added in the admin, switched on once with a passcode, never /admin; a gate must be chosen', async () => {
+  assert.equal((await adm({ action: 'gates', gates: ['Main Gate', 'VIP Gate', 'Gate C'] })).data.gates.length, 3);
+  for (const d of [STEW, SUP, OBS]) {
+    const r = await adm({ action: 'add', ...d, gate: d === SUP ? 'VIP Gate' : '' });
+    assert.equal(r.status, 200, JSON.stringify(r.data)); assert.match(r.data.passcode, /^\d{4}-\d{4}$/); assert.match(r.data.code, /^SCN-\d{3}/);
+    Object.assign(d, { code: r.data.code, id: r.data.id, passcode: r.data.passcode }); ids.push(r.data.id);
+  }
+  assert.equal((await adm({ action: 'add', name: '' })).status, 400);
+  // Wrong passcode refused; the right one works once only.
+  assert.equal((await activate('0000-0001')).status, 401);
+  const st = await activate(STEW.passcode);
+  assert.equal(st.status, 200, JSON.stringify(st.data)); STEW.cookie = st.cookie;
+  assert.match((await activate(STEW.passcode)).data.error, /already been used/);
+  assert.equal((await fetch(`${BASE}/api/admin/me`, { headers: { Cookie: `ls_gate=${st.cookie}` } })).status, 401, 'a scanner never opens /admin');
   St = await as(st.cookie);
-  assert.equal(St.s.perms.readmit, false);
-  assert.equal((await St.call('staff')).status, 403);
+  assert.equal(St.s.user.code, STEW.code); assert.equal(St.s.user.kind, 'device'); assert.equal(St.s.perms.readmit, false);
   assert.equal((await St.call('check', { ticket: K.a })).data.needGate, true);
   assert.equal((await St.call('gate', { gate: 'Nowhere' })).status, 400);
   assert.equal((await St.call('gate', { gate: 'Main Gate' })).data.gate, 'Main Gate');
-  Su = await as((await signIn(SUP.staffId, SUP.password)).cookie);
-  await Su.call('gate', { gate: 'VIP Gate' });
-  assert.equal((await signIn(STEW.staffId, 'wrong-password-1')).status, 401);
+  const su = await activate(SUP.passcode); SUP.cookie = su.cookie;
+  Su = await as(su.cookie);
+  assert.equal(Su.s.user.gate, 'VIP Gate', 'gate set in the admin'); assert.equal(Su.s.perms.readmit, true);
+  // The admin sees them: active now, waiting for a passcode.
+  const v = (await adm()).data;
+  assert.ok(v.activeNow >= 2);
+  const row = code => v.devices.find(x => x.code === code);
+  assert.equal(row(STEW.code).online, true); assert.equal(row(STEW.code).status, 'active'); assert.equal(row(OBS.code).status, 'waiting');
 });
 
 test('scan / type: details shown; checked in once; fake, used, wrong match, cancelled and unpaid refused', async () => {
@@ -128,9 +137,9 @@ test('re-admit (supervisors only, with a reason); today view; activity recorded;
   const d = (await St.call('today')).data;
   assert.ok(d.totals.admitted >= 4); assert.ok(d.totals.fake >= 2); assert.ok(d.byGate.some(g => g.gate === 'Main Gate'));
   assert.ok(d.latest.some(s => s.result === 'readmitted' && /car park/.test(s.note)));
-  assert.ok(d.onDuty.some(p => p.code === STEW.staffId && p.gate === 'Main Gate'));
+  assert.ok(d.onDuty.some(p => p.code === STEW.code && p.gate === 'Main Gate'));
   // Counts per steward (each on their own phone), per gate and together; "You" marked.
-  const me = d.byStaff.find(x => x.code === STEW.staffId), sup = d.byStaff.find(x => x.code === SUP.staffId);
+  const me = d.byStaff.find(x => x.code === STEW.code), sup = d.byStaff.find(x => x.code === SUP.code);
   assert.ok(me.me, 'my row is marked'); assert.equal(sup.me, false);
   assert.ok(me.admitted >= 2); assert.equal(me.gate, 'Main Gate'); assert.ok(me.refused >= 1);
   assert.equal(d.byStaff.reduce((t, x) => t + x.admitted, 0), d.totals.admitted, 'the stewards add up to the total');
@@ -140,7 +149,7 @@ test('re-admit (supervisors only, with a reason); today view; activity recorded;
   assert.equal(c2.me, sup.admitted); assert.equal(c2.gate.name, 'VIP Gate'); assert.equal(c2.total, c.total);
 
   const mine = (await St.call(`activity?day=`)).data;
-  assert.equal(mine.all, false); assert.ok(mine.rows.every(a => a.code === STEW.staffId));
+  assert.equal(mine.all, false); assert.ok(mine.rows.every(a => a.code === STEW.code));
   assert.ok(mine.rows.some(a => /Refused: fake ticket/.test(a.action)));
   const all = (await Su.call('activity?day=')).data;
   assert.equal(all.all, true); assert.ok(all.rows.some(a => /Re-admitted/.test(a.action)));
@@ -155,23 +164,24 @@ test('re-admit (supervisors only, with a reason); today view; activity recorded;
   assert.equal((await fetch(`${BASE}/vendor/jsqr-1.4.0.min.js`)).status, 200);
 
   // Switching a steward off signs them out straight away.
-  const sid = (await A.call('staff')).data.staff.find(s => s.staffId === STEW.staffId).id;
-  assert.equal((await A.call('staff', { action: 'edit', id: sid, active: false })).status, 200);
+  // Revoking a scanner stops it at once; a new passcode switches it on again.
+  assert.equal((await adm({ action: 'revoke', id: STEW.id })).status, 200);
+  assert.equal((await adm()).data.devices.find(x => x.code === STEW.code).status, 'revoked');
   assert.equal((await St.call('check', { ticket: K.c })).status, 401);
 });
 
 test('wrong gate (admit anyway), offline list and sync with double entries, messages, incidents, report', async () => {
   // Main Gate is for VIP only; the other gates take every stand.
-  assert.match((await A.call('staff', { action: 'stands', stands: { 'Main Gate': ['VIP'], 'VIP Gate': ['VIP'], 'Gate C': ['VIP'] } })).data.error, /No gate is left/);
-  assert.equal((await A.call('staff', { action: 'stands', stands: { 'Main Gate': ['VIP'], 'VIP Gate': [], 'Gate C': [] } })).status, 200);
-  const sup = await signIn(SUP.staffId, SUP.password);
+  assert.match((await adm({ action: 'stands', stands: { 'Main Gate': ['VIP'], 'VIP Gate': ['VIP'], 'Gate C': ['VIP'] } })).data.error, /No gate is left/);
+  assert.equal((await adm({ action: 'stands', stands: { 'Main Gate': ['VIP'], 'VIP Gate': [], 'Gate C': [] } })).status, 200);
+  const sup = { cookie: SUP.cookie };
   const U = await as(sup.cookie);
   await U.call('gate', { gate: 'Main Gate' });
   const wg = (await U.call('check', { ticket: K.d })).data;
   assert.equal(wg.code, 'wrong_gate', JSON.stringify(wg)); assert.ok(wg.goTo.includes('VIP Gate')); assert.equal(wg.canOverride, true);
   assert.equal(JSON.parse(sql(`SELECT status FROM tickets WHERE id = '${K.d}'`))[0].results[0].status, 'valid', 'not checked in');
   assert.equal((await U.call('check', { ticket: K.d, override: true })).data.code, 'admitted', 'admit here anyway');
-  await A.call('staff', { action: 'stands', stands: { 'Main Gate': [], 'VIP Gate': [], 'Gate C': [] } });
+  await adm({ action: 'stands', stands: { 'Main Gate': [], 'VIP Gate': [], 'Gate C': [] } });
 
   // Offline list: no phone numbers or emails, just number, stand, child, first name, already in.
   const pack = (await U.call('offline')).data;
@@ -193,6 +203,7 @@ test('wrong gate (admit anyway), offline list and sync with double entries, mess
 
   // Messages from a supervisor reach every gate (or one gate); taken down again.
   assert.equal((await U.call('message', { action: 'send', text: 'Gate C closed: send fans to Main Gate', gate: '' })).status, 200);
+  const A = await as((await activate(OBS.passcode)).cookie); await A.call('gate', { gate: 'Gate C' });
   let c = (await A.call('counts')).data;
   const msg = c.messages.find(m => /Gate C closed/.test(m.text));
   assert.ok(msg);

@@ -1,7 +1,7 @@
 {
   "id": "/gate-control/",
-  "name": "Gate Control – Lobi Stars FC",
-  "short_name": "Gate Control",
+  "name": "Lobi Gate Control",
+  "short_name": "Lobi Gate Control",
   "description": "Ticket stewards: scan and check in Lobi Stars FC match tickets.",
   "start_url": "/gate-control/",
   "scope": "/gate-control/",

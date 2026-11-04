@@ -27,7 +27,7 @@ async function api(path: string, { method = 'GET', body, quiet = false }: { meth
   catch { netDown = true; setNet(); throw new ApiError('No connection. Check the phone’s data or Wi-Fi and try again.', 0, {}); }
   if (netDown) { netDown = false; setNet(); }
   const d = await r.json().catch(() => ({}));
-  if (r.status === 401 && d.signedOut) { showSignIn(S.csrf ? 'You were signed out. Please sign in again.' : ''); throw new ApiError(d.error || 'Signed out', 401, d); }
+  if (r.status === 401 && d.signedOut) { const was = !!S.csrf; S.csrf = ''; LS.del('gc_sess'); LS.del('gc_pack'); LS.del('gc_used'); showSignIn(was ? 'This scanner has been switched off by the club. Ask for a new passcode.' : ''); throw new ApiError(d.error || 'Signed out', 401, d); }
   if (!r.ok) throw new ApiError(d.error || 'Something went wrong. Please try again.', r.status, d);
   return d;
 }
@@ -42,7 +42,7 @@ function showSignIn(msg = '') {
   stopCamera(); stopToday();
   only('signin');
   const e = $('signinErr'); e.textContent = msg; e.hidden = !msg;
-  setTimeout(() => $('login').focus(), 50);
+  setTimeout(() => $('passcode').focus(), 50);
 }
 async function boot() {
   try {
@@ -57,23 +57,21 @@ async function boot() {
     if (e.status !== 401) showSignIn(e.message);
   }
 }
-$('pwToggle').addEventListener('click', () => {
-  const p = $('password'), show = p.type === 'password';
-  p.type = show ? 'text' : 'password'; $('pwToggle').textContent = show ? 'Hide' : 'Show'; $('pwToggle').setAttribute('aria-pressed', String(show));
-});
+// The passcode box: numbers only, shown as 1234-5678.
+$('passcode').addEventListener('input', () => { const d = $('passcode').value.replace(/\D/g, '').slice(0, 8); $('passcode').value = d.length > 4 ? `${d.slice(0, 4)}-${d.slice(4)}` : d; });
 $('signinForm').addEventListener('submit', async (ev: Event) => {
   ev.preventDefault();
   const err = $('signinErr'), btn = $('signinBtn');
   err.hidden = true;
-  const login = $('login').value.trim(), password = $('password').value;
-  if (!login || !password) { err.textContent = 'Enter your Staff ID (or email) and password.'; err.hidden = false; return; }
-  btn.disabled = true; btn.textContent = 'Signing in…';
+  const passcode = $('passcode').value.replace(/\D/g, '');
+  if (passcode.length !== 8) { err.textContent = 'Enter the 8-number passcode from the club, e.g. 1234-5678.'; err.hidden = false; return; }
+  btn.disabled = true; btn.textContent = 'Switching on…';
   try {
-    await api('login', { method: 'POST', body: { login, password } });
-    $('password').value = '';
+    await api('login', { method: 'POST', body: { passcode } });
+    $('passcode').value = '';
     await boot();
   } catch (e: any) { err.textContent = e.message; err.hidden = false; }
-  finally { btn.disabled = false; btn.textContent = 'Sign in'; }
+  finally { btn.disabled = false; btn.textContent = 'Switch on this scanner'; }
 });
 
 function showGatePick(canCancel: boolean) {
@@ -96,15 +94,7 @@ $('gateList').addEventListener('click', async (ev: Event) => {
 });
 $('gateCancel').addEventListener('click', () => showApp());
 $('gateChip').addEventListener('click', () => showGatePick(true));
-$('signoutBtn').addEventListener('click', async () => {
-  if (queue.length) { await syncQueue(); }
-  if (queue.length) { alert(`${queue.length} offline check-in${queue.length === 1 ? ' has' : 's have'} not been sent yet. Stay signed in until the signal returns, then sign out.`); return; }
-  if (!confirm('Sign out of Gate Control?')) return;
-  try { await api('logout', { method: 'POST' }); } catch { /* signed out anyway */ }
-  S.csrf = ''; S.user = null;
-  LS.del('gc_sess'); LS.del('gc_pack'); LS.del('gc_used'); usePack(null); usedLocal = new Set();
-  showSignIn();
-});
+// (No sign-out button: a scanner stays on until the club revokes it in the admin.)
 
 // The three counters on the scan screen (me, my gate, everyone today), from the server so
 // they are right on every phone; refreshed after each scan and every 20 seconds.
@@ -218,7 +208,7 @@ function pushRecent(r: any) {
 let view = 'scan';
 function showApp() {
   only('app');
-  $('who').textContent = `${S.user.name} · ${S.user.roleLabel}`;
+  $('who').textContent = `${S.user.code ? S.user.code + ' · ' : ''}${S.user.name} · ${S.user.roleLabel}`;
   $('gateName').textContent = S.user.gate;
   $('staffTab').hidden = !S.perms.staff;
   $('supBox').hidden = !S.perms.supervise;

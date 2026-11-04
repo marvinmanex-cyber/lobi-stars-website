@@ -77,6 +77,16 @@ export async function ensureGateSchema(db) {
     db.prepare(`CREATE INDEX IF NOT EXISTS gc_scans_ticket ON gc_scans (ticket_id, at)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS gc_scans_event ON gc_scans (event_id, result)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS gc_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT, updated_by TEXT)`),
+    // Scanner devices (Lobi Gate Control): each phone / laptop is switched on once with a
+    // one-time passcode made in the admin, then stays on until the admin revokes it.
+    db.prepare(`CREATE TABLE IF NOT EXISTS gc_devices (
+      id TEXT PRIMARY KEY, code TEXT NOT NULL UNIQUE,  -- SCN-001
+      name TEXT NOT NULL, holder TEXT, role TEXT NOT NULL DEFAULT 'steward', gate TEXT,
+      status TEXT NOT NULL DEFAULT 'waiting',         -- waiting (passcode not used yet) / active / revoked
+      passcode_hash TEXT, passcode_until TEXT,         -- one-time passcode (hashed), valid 72 hours
+      created_by TEXT, created_at TEXT NOT NULL, activated_at TEXT, revoked_at TEXT, revoked_by TEXT,
+      last_seen TEXT, last_ip TEXT, user_agent TEXT)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS gc_devices_pass ON gc_devices (passcode_hash)`),
   ]);
   ready = true;
 }
@@ -211,18 +221,19 @@ export async function updateStaff(env, by, request, id, v) {
 
 // ── Sign-in and sessions ──
 const cookieValue = (request, name) => ((request.headers.get('Cookie') || '').match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`)) || [])[1] || null;
-const sessionCookie = token => `${GC_COOKIE}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${MAX_MS / 1000}`;
+const sessionCookie = (token, maxS = MAX_MS / 1000) => `${GC_COOKIE}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${maxS}`;
+const DEVICE_COOKIE_S = 400 * 86400; // a scanner stays on until the admin revokes it
 export const clearGateCookie = () => `${GC_COOKIE}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`;
 const FAIL = 'The Staff ID / email or password is not right.';
 const DUMMY_HASH = '100000:00000000000000000000000000000000:00';
 const staffActor = s => ({ kind: 'staff', id: s.id, name: s.full_name, code: s.staff_id });
 const adminActor = u => ({ kind: 'admin', id: u.id, name: u.name || u.email, code: u.email });
 
-async function startSession(db, request, kind, userId) {
+async function startSession(db, request, kind, userId, gate = null) {
   const token = randomToken(), sid = await sha256Hex(token), csrf = randomToken(18), at = nowIso();
-  await db.prepare(`INSERT INTO gc_sessions (id, kind, user_id, csrf, created_at, last_seen, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(sid, kind, userId, csrf, at, at, request.headers.get('CF-Connecting-IP') || null, oneLine(request.headers.get('User-Agent') || '', 300)).run();
-  return { cookie: sessionCookie(token) };
+  await db.prepare(`INSERT INTO gc_sessions (id, kind, user_id, csrf, gate, created_at, last_seen, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    .bind(sid, kind, userId, csrf, gate, at, at, request.headers.get('CF-Connecting-IP') || null, oneLine(request.headers.get('User-Agent') || '', 300)).run();
+  return { cookie: sessionCookie(token, kind === 'device' ? DEVICE_COOKIE_S : MAX_MS / 1000) };
 }
 
 export async function signIn(env, request, { login, password }) {
@@ -301,8 +312,11 @@ export async function getGateSession(request, env, { touch = true } = {}) {
   await ensureGateSchema(db);
   const s = await db.prepare(`SELECT * FROM gc_sessions WHERE id = ? AND ended_at IS NULL`).bind(await sha256Hex(token)).first();
   if (!s) return null;
-  let user = null;
-  if (s.kind === 'staff') {
+  let user = null, device = null;
+  if (s.kind === 'device') {
+    device = await db.prepare(`SELECT * FROM gc_devices WHERE id = ?`).bind(s.user_id).first();
+    if (device?.status === 'active') user = deviceActor(device);
+  } else if (s.kind === 'staff') {
     const st = await db.prepare(`SELECT * FROM gc_staff WHERE id = ?`).bind(s.user_id).first();
     if (st?.is_active) user = { ...staffActor(st), role: st.role, roleLabel: ROLES[st.role] || st.role, firstName: st.full_name.split(' ')[0] };
   } else {
@@ -314,7 +328,14 @@ export async function getGateSession(request, env, { touch = true } = {}) {
     if (log && user) await gcLog(db, { ...user, gate: s.gate }, log, { kind: 'sign_out' });
   };
   const now = Date.now();
-  if (!user) { await end('account switched off or no longer allowed'); return null; }
+  if (!user) { await end(device ? 'scanner revoked' : 'account switched off or no longer allowed'); return null; }
+  // Scanners: no time limit (until revoked); "last seen" every 15 seconds shows who is active now.
+  if (device) {
+    if (!device.last_seen || now - Date.parse(device.last_seen) > 15e3) await db.prepare(`UPDATE gc_devices SET last_seen = ?, last_ip = ? WHERE id = ?`).bind(nowIso(), request.headers.get('CF-Connecting-IP') || null, device.id).run();
+    if (touch && now - Date.parse(s.last_seen) > 20e3) await db.prepare(`UPDATE gc_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
+    user.gate = s.gate || null;
+    return { id: s.id, csrf: s.csrf, user };
+  }
   if (now - Date.parse(s.last_seen) > IDLE_MS) { await end('no activity', 'Signed out automatically (no activity)'); return null; }
   if (now - Date.parse(s.created_at) > MAX_MS) { await end('24 hours', 'Signed out automatically (24 hours)'); return null; }
   if (touch && now - Date.parse(s.last_seen) > 20e3) await db.prepare(`UPDATE gc_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
@@ -346,9 +367,115 @@ export function csrfProblem(request, session) {
 export async function onDuty(db) {
   await ensureGateSchema(db);
   const since = new Date(Date.now() - 10 * 60e3).toISOString();
-  const rows = (await db.prepare(`SELECT s.kind, s.gate, s.last_seen, st.full_name, st.staff_id, st.role, a.name AS admin_name, a.email
+  const rows = (await db.prepare(`SELECT s.kind, s.gate, s.last_seen, st.full_name, st.staff_id, st.role, a.name AS admin_name, a.email,
+      dv.code AS dv_code, dv.name AS dv_name, dv.holder AS dv_holder, dv.role AS dv_role, dv.last_seen AS dv_seen
     FROM gc_sessions s LEFT JOIN gc_staff st ON s.kind = 'staff' AND st.id = s.user_id LEFT JOIN admin_users a ON s.kind = 'admin' AND a.id = s.user_id
-    WHERE s.ended_at IS NULL AND s.last_seen > ? ORDER BY s.last_seen DESC`).bind(since).all()).results;
+    LEFT JOIN gc_devices dv ON s.kind = 'device' AND dv.id = s.user_id
+    WHERE s.ended_at IS NULL AND (s.last_seen > ? OR dv.last_seen > ?) ORDER BY s.last_seen DESC`).bind(since, since).all()).results;
   const seen = new Set();
-  return rows.filter(r => { const k = r.staff_id || r.email; if (seen.has(k)) return false; seen.add(k); return true; }).map(r => ({ name: r.full_name || r.admin_name || r.email || 'Unknown', code: r.staff_id || r.email || '', role: r.kind === 'admin' ? 'Super Admin' : ROLES[r.role] || r.role, gate: r.gate || 'No gate chosen', lastSeen: r.last_seen }));
+  return rows.filter(r => { const k = r.dv_code || r.staff_id || r.email; if (seen.has(k)) return false; seen.add(k); return true; })
+    .map(r => r.dv_code
+      ? { name: r.dv_holder ? `${r.dv_holder} (${r.dv_name})` : r.dv_name, code: r.dv_code, role: ROLES[r.dv_role] || r.dv_role, gate: r.gate || 'No gate chosen', lastSeen: r.dv_seen || r.last_seen }
+      : { name: r.full_name || r.admin_name || r.email || 'Unknown', code: r.staff_id || r.email || '', role: r.kind === 'admin' ? 'Super Admin' : ROLES[r.role] || r.role, gate: r.gate || 'No gate chosen', lastSeen: r.last_seen });
+}
+
+// ── Scanner devices (Lobi Gate Control) ──
+const deviceActor = d => ({ kind: 'device', id: d.id, name: d.holder ? `${d.holder} (${d.name})` : d.name, code: d.code, role: d.role, roleLabel: ROLES[d.role] || d.role,
+  firstName: String(d.holder || d.name).split(' ')[0], deviceName: d.name });
+const PASS_MS = 72 * 3600e3;
+const passHash = (env, digits) => sha256Hex(`gc-pass:${env.SESSION_SECRET || 'lobi'}:${digits}`);
+function newPasscode() {
+  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 100000000;
+  return String(n).padStart(8, '0');
+}
+export const showPasscode = p => `${p.slice(0, 4)}-${p.slice(4)}`;
+/** Adds a scanner and its one-time passcode (shown once, to give to the person). */
+export async function createDevice(env, by, v, request) {
+  const db = env.DB;
+  await ensureGateSchema(db);
+  const name = oneLine(v.name, 60), holder = oneLine(v.holder, 80) || null, role = ROLES[v.role] ? v.role : 'steward';
+  if (name.length < 2) return { error: 'Give the scanner a name, e.g. "Main Gate phone 1".' };
+  const { gates } = await gateSettings(db);
+  const gate = v.gate && gates.includes(v.gate) ? v.gate : null;
+  const n = ((await db.prepare(`SELECT COUNT(*) AS n FROM gc_devices`).first())?.n || 0) + 1;
+  let code = `SCN-${String(n).padStart(3, '0')}`;
+  while (await db.prepare(`SELECT 1 FROM gc_devices WHERE code = ?`).bind(code).first()) code = `SCN-${String(Number(code.slice(4)) + 1).padStart(3, '0')}`;
+  const pass = newPasscode(), id = newId('gcd'), at = nowIso();
+  await db.prepare(`INSERT INTO gc_devices (id, code, name, holder, role, gate, status, passcode_hash, passcode_until, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, 'waiting', ?, ?, ?, ?)`)
+    .bind(id, code, name, holder, role, gate, await passHash(env, pass), new Date(Date.now() + PASS_MS).toISOString(), by, at).run();
+  await gcLog(db, { kind: 'admin', name: by, code: by }, `Added scanner ${code} "${name}"${holder ? ` for ${holder}` : ''} (${ROLES[role]})`, { kind: 'device', request });
+  return { ok: true, id, code, passcode: showPasscode(pass), until: new Date(Date.now() + PASS_MS).toISOString() };
+}
+/** A new one-time passcode (new phone, or bring back a revoked scanner). The old phone stops at once. */
+export async function renewPasscode(env, by, id, request) {
+  const db = env.DB;
+  const d = await db.prepare(`SELECT * FROM gc_devices WHERE id = ?`).bind(String(id)).first();
+  if (!d) return { error: 'That scanner no longer exists.' };
+  const pass = newPasscode(), until = new Date(Date.now() + PASS_MS).toISOString();
+  await db.prepare(`UPDATE gc_devices SET status = 'waiting', passcode_hash = ?, passcode_until = ?, revoked_at = NULL, revoked_by = NULL WHERE id = ?`).bind(await passHash(env, pass), until, d.id).run();
+  await endSessions(db, d.id, 'new passcode');
+  await gcLog(db, { kind: 'admin', name: by, code: by }, `New passcode for scanner ${d.code} "${d.name}"`, { kind: 'device', request });
+  return { ok: true, code: d.code, passcode: showPasscode(pass), until };
+}
+/** Switches a scanner off at once (its next request is refused). */
+export async function revokeDevice(env, by, id, request) {
+  const db = env.DB;
+  const d = await db.prepare(`SELECT * FROM gc_devices WHERE id = ?`).bind(String(id)).first();
+  if (!d) return { error: 'That scanner no longer exists.' };
+  await db.prepare(`UPDATE gc_devices SET status = 'revoked', passcode_hash = NULL, revoked_at = ?, revoked_by = ? WHERE id = ?`).bind(nowIso(), by, d.id).run();
+  await endSessions(db, d.id, 'scanner revoked');
+  await gcLog(db, { kind: 'admin', name: by, code: by }, `Revoked scanner ${d.code} "${d.name}"`, { kind: 'device', request });
+  return { ok: true };
+}
+export async function updateDevice(env, by, id, v, request) {
+  const db = env.DB;
+  const d = await db.prepare(`SELECT * FROM gc_devices WHERE id = ?`).bind(String(id)).first();
+  if (!d) return { error: 'That scanner no longer exists.' };
+  const name = v.name !== undefined ? oneLine(v.name, 60) : d.name, holder = v.holder !== undefined ? (oneLine(v.holder, 80) || null) : d.holder;
+  const role = v.role !== undefined && ROLES[v.role] ? v.role : d.role;
+  if (name.length < 2) return { error: 'Give the scanner a name.' };
+  await db.prepare(`UPDATE gc_devices SET name = ?, holder = ?, role = ? WHERE id = ?`).bind(name, holder, role, d.id).run();
+  await gcLog(db, { kind: 'admin', name: by, code: by }, `Changed scanner ${d.code}: ${name}${holder ? ` (${holder})` : ''}, ${ROLES[role]}`, { kind: 'device', request });
+  return { ok: true };
+}
+/** The phone enters its one-time passcode: the scanner is switched on (no email or password). */
+export async function activateDevice(env, request, { passcode }) {
+  const db = env.DB;
+  await ensureFanSchema(db); await ensureGateSchema(db);
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+  if (!(await rateLimit(db, `gc-pass:${ip}`, 15, 900))) return { error: 'Too many tries from this connection. Please wait 15 minutes.', status: 429 };
+  const digits = String(passcode || '').replace(/\D/g, '');
+  if (digits.length !== 8) return { error: 'The passcode has 8 numbers, e.g. 1234-5678.', status: 400 };
+  const d = await db.prepare(`SELECT * FROM gc_devices WHERE passcode_hash = ? AND status = 'waiting'`).bind(await passHash(env, digits)).first();
+  if (!d) {
+    await gcLog(db, { kind: 'public', name: 'Unknown', code: '' }, 'Scanner passcode refused (wrong or already used)', { kind: 'sign_in', request });
+    return { error: 'That passcode is not right, or it has already been used. Ask the club for a new one.', status: 401 };
+  }
+  if (Date.parse(d.passcode_until) < Date.now()) return { error: 'That passcode has expired (they last 3 days). Ask the club for a new one.', status: 401 };
+  // One time only: the passcode is cleared as the scanner is switched on.
+  const claim = await db.prepare(`UPDATE gc_devices SET status = 'active', passcode_hash = NULL, activated_at = ?, last_seen = ?, last_ip = ?, user_agent = ? WHERE id = ? AND status = 'waiting'`)
+    .bind(nowIso(), nowIso(), ip, oneLine(request.headers.get('User-Agent') || '', 300), d.id).run();
+  if (!claim.meta?.changes) return { error: 'That passcode has just been used. Ask the club for a new one.', status: 401 };
+  const sess = await startSession(db, request, 'device', d.id, d.gate || null);
+  await gcLog(db, { ...deviceActor(d), gate: d.gate }, 'Scanner switched on with its passcode', { kind: 'sign_in', request });
+  return { ok: true, cookie: sess.cookie };
+}
+/** Every scanner, with "active now" (seen in the last 90 seconds), its gate, scans today and last scan. */
+export async function listDevices(db, since) {
+  await ensureGateSchema(db);
+  const rows = (await db.prepare(`SELECT d.*,
+      (SELECT s.gate FROM gc_sessions s WHERE s.user_id = d.id AND s.ended_at IS NULL ORDER BY s.created_at DESC LIMIT 1) AS gate_now,
+      (SELECT COUNT(*) FROM gc_scans c WHERE c.staff_user_id = d.id AND c.at >= ? AND c.result = 'admitted') AS admitted,
+      (SELECT COUNT(*) FROM gc_scans c WHERE c.staff_user_id = d.id AND c.at >= ? AND c.result IN ('used', 'fake', 'not_lobi', 'wrong_match', 'void', 'unpaid')) AS refused,
+      (SELECT c.at || '|' || c.result || '|' || COALESCE(c.ticket_id, '') FROM gc_scans c WHERE c.staff_user_id = d.id ORDER BY c.id DESC LIMIT 1) AS last_scan
+    FROM gc_devices d ORDER BY CASE d.status WHEN 'active' THEN 0 WHEN 'waiting' THEN 1 ELSE 2 END, d.code`).bind(since, since).all()).results;
+  const now = Date.now();
+  return rows.map(d => {
+    const [lastAt, lastResult, lastTicket] = String(d.last_scan || '').split('|');
+    return { id: d.id, code: d.code, name: d.name, holder: d.holder, role: d.role, roleLabel: ROLES[d.role] || d.role, status: d.status,
+      online: d.status === 'active' && !!d.last_seen && now - Date.parse(d.last_seen) < 90e3,
+      gate: d.gate_now || d.gate || null, lastSeen: d.last_seen, activatedAt: d.activated_at, createdAt: d.created_at, passcodeUntil: d.status === 'waiting' ? d.passcode_until : null,
+      revokedAt: d.revoked_at, revokedBy: d.revoked_by, admitted: d.admitted || 0, refused: d.refused || 0,
+      lastScan: lastAt ? { at: lastAt, result: lastResult, ticket: lastTicket || null } : null, phone: /iPhone|iPad/.test(d.user_agent || '') ? 'iPhone / iPad' : /Android/.test(d.user_agent || '') ? 'Android' : d.user_agent ? 'Computer' : null };
+  });
 }

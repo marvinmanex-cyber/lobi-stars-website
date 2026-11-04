@@ -8,6 +8,21 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-04: Lobi Gate Control: scanners with one-time passcodes, live in the admin
+
+- Gate Control is now **Lobi Gate Control** (new logo, app name, and the link
+  lobistarsfc.com/lobi-gate-control).
+- No more email / Staff ID and password: each phone or laptop is a **scanner**,
+  added in **Admin › Commerce › Lobi Gate Control (scanners)** with a one-time
+  8-number passcode (Send on WhatsApp / Copy). The phone types it once and the
+  scanner stays on until revoked. No sign-out button on the scanner.
+- The admin page shows, live every 5 seconds: **scanners active now**, each
+  scanner's status, gate, phone type, checked in / refused today and last
+  scan, every scan at every gate, the watch list, and gates and stands.
+  **Revoke** stops a scanner at once; **New passcode** moves it to a new phone
+  or switches it back on.
+- The old Staff accounts in Gate Control are no longer used.
+
 ## 2026-11-04: Gate Control stays signed in for 24 hours
 
 - A Gate Control sign-in now lasts 24 hours on that phone or computer, with no

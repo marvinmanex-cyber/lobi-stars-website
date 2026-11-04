@@ -56,6 +56,14 @@ textarea.gc-input { min-height: 120px; resize: vertical; }
 .gc-gate { min-height: 64px; justify-content: flex-start; font-size: 20px; padding: 0 18px; }
 .gc-gate.on { border-color: var(--gold); background: rgba(255, 199, 44, .1); }
 
+/* The passcode screen */
+.gc-activate { text-align: center; }
+.gc-logo { display: block; width: min(220px, 70%); height: auto; margin: 0 auto 10px; border-radius: 22px; box-shadow: 0 18px 40px -20px rgba(0, 0, 0, .8); }
+.gc-activate h1 { font-size: 40px; }
+.gc-activate .gc-caps { margin: 4px 0 18px; }
+.gc-activate .gc-field { text-align: left; }
+.gc-pass { text-align: center; font: 600 32px/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .12em; }
+
 /* App frame */
 .gc-top { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 10px; padding: 10px 14px; padding-top: max(10px, env(safe-area-inset-top));
   background: rgba(12, 15, 20, .94); backdrop-filter: blur(8px); border-bottom: 3px solid var(--red); }

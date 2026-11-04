@@ -7,7 +7,8 @@
 import '../../styles/gateControl.css';
 import { readFileSync } from 'node:fs';
 // The club badge is built into the page (about 10 KB) so it always shows, even when the app opens offline.
-const BADGE = `data:image/webp;base64,${readFileSync('public/images/lobi-stars-badge.webp').toString('base64')}`;
+// The Lobi Gate Control logo, built into the page (about 20 KB) so it always shows, even offline.
+const BADGE = `data:image/png;base64,${readFileSync('public/images/gate-control/logo-96.png').toString('base64')}`;
 const I = {
   scan: '<path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="4" height="4"/><rect x="13" y="7" width="4" height="4"/><rect x="7" y="13" width="4" height="4"/><path d="M13 13h1.5v1.5M17 17h-1.5v-1.5M13 17h1"/>',
   today: '<path d="M3 21h18"/><rect x="5" y="11" width="3" height="7"/><rect x="10.5" y="6" width="3" height="12"/><rect x="16" y="9" width="3" height="9"/>',
@@ -31,35 +32,27 @@ const svg = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="current
   <meta name="theme-color" content="#0c0f14" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="Gate Control" />
+  <meta name="apple-mobile-web-app-title" content="Lobi Gate Control" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Gate Control | Lobi Stars FC</title>
-  <link rel="icon" type="image/png" href="/images/lobi-stars-badge.png" />
-  <link rel="apple-touch-icon" href="/images/gate-control/icon-192.png" />
+  <title>Lobi Gate Control | Lobi Stars FC</title>
+  <link rel="icon" type="image/png" href="/images/gate-control/favicon-32.png" />
+  <link rel="apple-touch-icon" href="/images/gate-control/apple-touch-icon.png" />
   <link rel="manifest" href="/gate-control.webmanifest" />
 </head>
 <body>
   <!-- Sign in -->
   <section class="gc-center" id="signin" hidden>
-    <form class="gc-card" id="signinForm" novalidate>
-      <div class="gc-brand">
-        <img src={BADGE} alt="Lobi Stars FC badge" width="58" height="58" />
-        <div><h1>Gate Control</h1><p class="gc-caps">Lobi Stars FC · Ticket Stewards</p></div>
-      </div>
+    <form class="gc-card gc-activate" id="signinForm" novalidate>
+      <img class="gc-logo" src="/images/gate-control/logo-640.webp" alt="Lobi Gate Control" width="320" height="320" />
+      <h1>Lobi Gate Control</h1>
+      <p class="gc-caps">Lobi Stars FC · Ticket scanner</p>
       <p class="gc-err" id="signinErr" role="alert" hidden></p>
       <div class="gc-field">
-        <label for="login">Staff ID or email</label>
-        <input class="gc-input" id="login" autocomplete="username" autocapitalize="characters" spellcheck="false" required maxlength="120" placeholder="e.g. LSG-001" />
+        <label for="passcode">Scanner passcode</label>
+        <input class="gc-input gc-pass" id="passcode" inputmode="numeric" autocomplete="one-time-code" maxlength="9" placeholder="1234-5678" required />
       </div>
-      <div class="gc-field">
-        <label for="password">Password</label>
-        <div class="gc-pw">
-          <input class="gc-input" id="password" type="password" autocomplete="current-password" required maxlength="72" />
-          <button type="button" class="gc-btn ghost" id="pwToggle" aria-controls="password" aria-pressed="false">Show</button>
-        </div>
-      </div>
-      <button class="gc-btn red huge wide" type="submit" id="signinBtn">Sign in</button>
-      <p class="gc-note">Every scan and check-in is recorded under your name and gate. Don't share your password.</p>
+      <button class="gc-btn red huge wide" type="submit" id="signinBtn">Switch on this scanner</button>
+      <p class="gc-note">Get your passcode from the Lobi Stars FC admin. It works once, on this phone only, and the scanner then stays on until the club switches it off.</p>
     </form>
   </section>
 
@@ -79,11 +72,10 @@ const svg = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="current
   <div id="app" hidden>
     <header class="gc-top">
       <img src={BADGE} alt="" width="36" height="36" />
-      <div class="gc-top-t"><b>Gate Control</b><small id="who"></small></div>
+      <div class="gc-top-t"><b>Lobi Gate Control</b><small id="who"></small></div>
       <span class="gc-spacer"></span>
       <span class="gc-net" id="netChip" role="status" hidden></span>
       <button type="button" class="gc-chip" id="gateChip" aria-label="Change gate"><Fragment set:html={svg(I.pin)} /><span id="gateName"></span></button>
-      <button type="button" class="gc-icon" id="signoutBtn" aria-label="Sign out"><Fragment set:html={svg(I.out)} /></button>
     </header>
 
     <div class="gc-msgs" id="msgs" aria-live="assertive"></div>

@@ -4681,43 +4681,58 @@ Lobi Stars app.
   their own Staff ID, and the "Still there?" sign-out runs after 20 minutes
   without a tap.
 
-## 43. Gate Control: the ticket stewards' area (/gate-control)
+## 43. Lobi Gate Control: the ticket scanners (/lobi-gate-control)
 
-**What it is.** Gate Control is the matchday ticket stewards' own page, at
-**lobistarsfc.com/gate-control**. It is kept separate from the website admin,
-like MatchDay Kitchen: stewards have their own Staff ID and password, and a
-Gate Control sign-in never opens /admin. It works on any phone (best added to
-the home screen: Share > Add to Home Screen on iPhone, or the browser menu >
-Add to Home screen / Install app on Android).
+**What it is.** Lobi Gate Control is the app the stewards use to scan tickets at
+the gates: **lobistarsfc.com/lobi-gate-control** (lobistarsfc.com/gate-control
+also works). Each phone or laptop that scans is a **scanner**. There is no email
+or password: a scanner is switched on **once** with a **one-time passcode**
+from the admin, and then stays on until the club **revokes** it. A scanner
+never opens the website admin. Add it to the phone's home screen (iPhone:
+Share › Add to Home Screen; Android: the browser menu › Install app) and it
+appears as **Lobi Gate Control** with its own logo.
 
-**Who signs in**
+**Roles**
 
-| Who | Signs in with | Can do |
-|---|---|---|
-| **Ticket Steward** | Staff ID (e.g. LSG-001) and password | Scan and check in tickets, look tickets up, see Today, see their own activity |
-| **Gate Supervisor** | Staff ID and password | Everything a steward can, plus **Re-admit** a used ticket (with a reason), see everyone's activity and download it (CSV) |
-| **Super Admin** | Their website email and password | Everything, plus add stewards, reset passwords, switch people off, and set the list of gates |
+| Role | Can do |
+|---|---|
+| **Ticket Steward** | Scan and check in tickets, look tickets up, see Today, report incidents, see their own activity |
+| **Gate Supervisor** | Everything a steward can, plus **Re-admit** a used ticket (with a reason), message every gate, close incidents, see every scanner's activity and download the report |
 
-Any number of people can be signed in and scanning at the same time, at
-different gates. A ticket can only ever be checked in once: if two phones scan
-the same ticket at the same moment, one shows ADMIT and the other ALREADY USED.
+Any number of scanners can work at the same time, at different gates. A ticket
+can only ever be checked in once: if two phones scan the same ticket at the
+same moment, one shows ADMIT and the other ALREADY USED.
 
-**Setting up (Super Admin, once).** Sign in at lobistarsfc.com/gate-control with
-your website email, press **Staff** (bottom bar):
+**The admin page: Admin › Commerce › Lobi Gate Control (scanners)**
+(admins who manage tickets). It updates itself every 5 seconds:
 
-1. **Add a steward**: Staff ID (e.g. LSG-001, LSG-002 …), full name, role
-   (Ticket Steward or Gate Supervisor) and a password of at least 8
-   characters. Give each person their own Staff ID and password.
-2. **Gates**: one gate per line (default: Main Gate, VIP Gate, Grand Stand
-   Gate, Popular Stand Gate). Press **Save gates**.
-3. To stop someone signing in, press **Edit** and untick **Can sign in**; they
-   are signed out on every phone at once. **Edit** is also where you reset a
-   password (they are signed out and must use the new one).
+- **Scanners active now** (seen in the last 90 seconds), switched on, fans
+  checked in, refused and fake tickets today.
+- **Add a scanner:** a name (e.g. "Main Gate phone 1"), the person using it
+  (optional), the role, and the gate (optional; otherwise they choose). Press
+  **Create passcode**: an 8-number passcode (e.g. 1234-5678) is shown **once**,
+  with **Send on WhatsApp** and **Copy**. It works once, on one phone, for 3
+  days.
+- **Scanners list:** each scanner's number (SCN-001…), name, person, role,
+  phone type, status (**Active now**, Switched on, **Waiting for passcode**,
+  **Revoked**), the gate it is at, fans checked in and refused today, and its
+  last scan.
+- **Revoke:** the scanner stops at once (as soon as the phone has a signal)
+  and its saved ticket list is removed from the phone. **New passcode:** for a
+  new phone, or to switch a revoked scanner back on; the old phone stops.
+- **Live scans:** every scan at every gate as it happens, with the scanner and
+  gate, and the watch list (bursts of fake tickets, double entries).
+- **Gates and stands:** the list of gates, and which stands each gate is for.
+
+**Switching a phone on (each steward, once):** open
+lobistarsfc.com/lobi-gate-control, type the passcode, press **Switch on this
+scanner**, then tap **the gate you are at**. The scanner stays on (no
+sign-out button); the gate shows at the top and can be changed.
 
 **On match day (each steward)**
 
-1. Open lobistarsfc.com/gate-control, sign in, and tap **the gate you are at**.
-   The gate shows at the top (tap it to change gate).
+1. Open Lobi Gate Control (already switched on) and check **the gate** at the
+   top is right (tap it to change gate).
 2. Tap **Scan ticket**. The phone camera opens (allow the camera the first
    time). Hold the ticket's QR code inside the square. The answer fills the
    screen, with a sound and a buzz:

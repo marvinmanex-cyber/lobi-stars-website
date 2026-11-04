@@ -9,7 +9,7 @@
 //   GET incidents?day   POST incident {action: add|close, category, details, ticket, id, note}
 //   GET report?day (CSV of every scan; supervisors)
 //   GET staff   POST staff {action: add|edit|gates|stands, …}  (Super Admins)
-import { signIn, signOut, json, gateSettings, saveGates, saveGateStands, permissions, gcLog, setGate, activityPage, listStaff, createStaff, updateStaff,
+import { activateDevice, signOut, json, gateSettings, saveGates, saveGateStands, permissions, gcLog, setGate, activityPage, listStaff, createStaff, updateStaff,
   onDuty, ROLES, oneLine, clearGateCookie } from '../_lib/gateControl.js';
 import { checkTicket, readmitTicket, todayView, myCounts } from '../_lib/gateCheck.js';
 import { offlinePack, syncOffline, postMessage, clearMessage, liveMessages, todaysMessages, INCIDENTS, addIncident, closeIncident, listIncidents,
@@ -29,8 +29,9 @@ export async function onRequest(context) {
   const body = method === 'POST' ? await request.json().catch(() => ({})) : {};
   const q = new URL(request.url).searchParams;
   try {
+    // Lobi Gate Control: a scanner is switched on with its one-time passcode (no email or password).
     if (route === 'login' && method === 'POST') {
-      const r = await signIn(env, request, body);
+      const r = await activateDevice(env, request, body);
       if (!r.ok) return json({ error: r.error }, r.status || 400);
       return json({ ok: true }, 200, { 'Set-Cookie': r.cookie });
     }
@@ -45,7 +46,7 @@ export async function onRequest(context) {
         await signOut(db, S, request);
         return json({ ok: true }, 200, { 'Set-Cookie': clearGateCookie() });
       case 'GET session':
-        return json({ csrf: S.csrf, user: { name: user.name, firstName: user.firstName, code: user.code, role: user.role, roleLabel: user.roleLabel, kind: user.kind, gate: user.gate }, perms, gates: (await gateSettings(db)).gates, incidentTypes: INCIDENTS });
+        return json({ csrf: S.csrf, user: { name: user.name, firstName: user.firstName, code: user.code, role: user.role, roleLabel: user.roleLabel, kind: user.kind, gate: user.gate, deviceName: user.deviceName || null }, perms, gates: (await gateSettings(db)).gates, incidentTypes: INCIDENTS });
       case 'POST gate': {
         const r = await setGate(db, S, body.gate, request);
         return r.error ? json({ error: r.error }, 400) : json(r);
