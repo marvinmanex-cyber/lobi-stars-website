@@ -10,6 +10,12 @@ in HANDOVER-TODO.md.
 
 ## 2026-11-04: House 43 page: Lobi colours on the table card, menu and photos
 
+- Later: the table card is milk white (red "Reserved" pill, red "for the", navy
+  "Pride of Benue", red "43" with a blue shadow, blue and navy bands, gold edge);
+  both logos the same size, filling their plates; on phones the heading reads
+  "The Perfect Line-Up." with "Four Plates, One Winning Menu" on one line below,
+  and the House 43 card at the bottom runs edge to edge.
+
 - The "Reserved for the Pride of Benue" table card is now in Lobi Stars colours:
   red with fine stripes, a royal-blue top band with three gold stars, a gold
   edge, ticket notches, a white "43" with a blue shadow between two gold stars,
