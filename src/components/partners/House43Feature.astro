@@ -41,7 +41,7 @@ const placeholders = ['The squad at House 43', 'Matchday hospitality', 'Club eve
           <img class="h43-lock-badge" src="/images/lobi-stars-badge.png" alt="Lobi Stars FC badge" width="128" height="128" />
           <span class="h43-amp" aria-hidden="true">&amp;</span>
           {heroLogo
-            ? <img class="h43-lock-logo" src={heroLogo} alt="House 43 logo" height="72" />
+            ? <img class="h43-lock-logo" src={heroLogo} alt="House 43 logo" width="733" height="800" />
             : <span class="h43-lock-mark" role="img" aria-label="House 43">HOUSE<b>43</b></span>}
         </div>
         <p class="h43-names">Lobi Stars FC &amp; House 43</p>
@@ -128,7 +128,7 @@ const placeholders = ['The squad at House 43', 'Matchday hospitality', 'Club eve
     <div class="wrap">
       <div class="h43-info">
         {cardLogo
-          ? <img class="h43-info-logo" src={cardLogo} alt="House 43 – Official Hospitality Partner of Lobi Stars FC" height="80" loading="lazy" />
+          ? <img class="h43-info-logo" src={cardLogo} alt="House 43 – Official Hospitality Partner of Lobi Stars FC" width="733" height="800" loading="lazy" />
           : <span class="h43-info-mark" role="img" aria-label="House 43">HOUSE<b>43</b></span>}
         <p>A café, bar, lounge and restaurant in Maitama and Wuse, Abuja, and in Jos, serving from breakfast to dinner every day.</p>
         <a class="h43-link" href={site} target="_blank" rel="sponsored noopener">house43.org<span aria-hidden="true"> ↗</span><span class="sr-only"> (opens in a new tab)</span></a>
@@ -154,7 +154,7 @@ const placeholders = ['The squad at House 43', 'Matchday hospitality', 'Club eve
   .h43-lockup { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
   .h43-lock-badge { width: 64px; height: 64px; object-fit: contain; }
   .h43-amp { font: italic 500 44px/1 var(--serif); color: var(--cream-2); }
-  .h43-lock-logo { height: 56px; width: auto; }
+  .h43-lock-logo { height: 84px; width: auto; }
   .h43-lock-mark, .h43-info-mark { display: inline-flex; align-items: baseline; gap: 6px; padding: 8px 14px; border: 2px solid var(--cream-2); border-radius: 10px; color: var(--cream-2); font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: 3px; }
   .h43-lock-mark b, .h43-info-mark b { color: var(--red-lt); font-weight: 400; }
   .h43-names { margin: 0 0 18px; font: 700 15px/1.3 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--cream-2); }
@@ -229,7 +229,7 @@ const placeholders = ['The squad at House 43', 'Matchday hospitality', 'Club eve
   /* Partner card */
   .h43-about { background: var(--cream); padding: 48px 0 56px; }
   .h43-info { max-width: 720px; margin: 0 auto; display: flex; align-items: center; gap: 24px; padding: 24px 28px; background: #fff; border: 1px solid #E6E1D6; border-top: 4px solid var(--red); border-radius: 14px; }
-  .h43-info-logo { height: 72px; width: auto; flex: none; }
+  .h43-info-logo { height: 110px; width: auto; flex: none; }
   .h43-info-mark { flex: none; color: var(--ink); border-color: var(--ink); }
   .h43-info-mark b { color: var(--red-2); }
   .h43-info p { margin: 0; flex: 1; color: var(--muted); line-height: 1.6; }

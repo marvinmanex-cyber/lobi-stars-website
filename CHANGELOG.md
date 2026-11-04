@@ -17,8 +17,8 @@ in HANDOVER-TODO.md.
   of four House 43 dishes), **Together** (photo tiles, "Photos coming soon"
   until photos arrive) and a closing partner card; its own link-card picture
   for sharing.
-- The House 43 logo shows as soon as the file is added (a word mark until
-  then). See HANDOVER-TODO P4.
+- The House 43 logo is on the card, the page (a cream version on the dark
+  hero) and the link-card picture. See HANDOVER-TODO P4 for photos.
 
 ## 2026-11-04: Lobi Gate Control: running the gates like a professional stadium
 
