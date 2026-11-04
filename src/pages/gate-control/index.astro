@@ -103,7 +103,8 @@ const svg = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="current
         <div id="result" aria-live="assertive"></div>
         <div id="scanBox">
           <div class="gc-cam" id="cam" hidden>
-            <div id="reader"></div>
+            <video id="camVideo" playsinline muted autoplay></video>
+            <div class="gc-cam-frame" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
             <p class="gc-cam-tip">Hold the ticket's QR code inside the square</p>
             <div class="gc-cam-tools">
               <button type="button" class="gc-icon" id="torchBtn" hidden aria-pressed="false" aria-label="Torch"><Fragment set:html={svg(I.torch)} /></button>

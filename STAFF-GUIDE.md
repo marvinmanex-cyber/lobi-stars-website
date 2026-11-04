@@ -4823,6 +4823,12 @@ says "Offline list ready: … tickets". When the signal drops:
 enter at the right gate. If the fan should come in here anyway, press **Admit
 here anyway** (recorded). A gate with nothing ticked lets in every stand.
 
+**If the camera does not start:** allow the camera for lobistarsfc.com
+(iPhone: Settings › Safari › Camera › Allow, or the "aA" button in the
+address bar › Website Settings › Camera; Android Chrome: the lock next to the
+address › Permissions › Camera), close any other app using the camera, and
+press **Scan ticket** again. Typing the ticket number always works.
+
 **Torch and camera switch.** With the camera on, a torch button appears on
 phones that have one (dark entrances, night matches), and a switch button
 appears when the phone has more than one camera.

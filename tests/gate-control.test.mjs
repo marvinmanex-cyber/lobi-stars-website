@@ -152,7 +152,7 @@ test('re-admit (supervisors only, with a reason); today view; activity recorded;
   assert.match(page.headers.get('content-security-policy') || '', /script-src 'self'/);
   assert.match(page.headers.get('x-robots-tag') || '', /noindex/);
   assert.equal((await fetch(`${BASE}/gate-control/anything`)).status, 404);
-  assert.equal((await fetch(`${BASE}/vendor/html5-qrcode-2.3.8.min.js`)).status, 200);
+  assert.equal((await fetch(`${BASE}/vendor/jsqr-1.4.0.min.js`)).status, 200);
 
   // Switching a steward off signs them out straight away.
   const sid = (await A.call('staff')).data.staff.find(s => s.staffId === STEW.staffId).id;

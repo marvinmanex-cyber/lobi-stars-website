@@ -42,7 +42,6 @@ import Layout from '../layouts/Layout.astro';
 (function () {
   let staffCode = sessionStorage.getItem('ls_staff_code') || '';
   let scanCount = 0;
-  let html5QrCode = null;
 
   const gateLogin = document.getElementById('gate-login');
   const scanUi = document.getElementById('scan-ui');
@@ -158,34 +157,45 @@ import Layout from '../layouts/Layout.astro';
   // rapid keystrokes without a final Enter -- refocus keeps the field ready.
   document.addEventListener('click', () => { if (scanUi.style.display !== 'none') ticketInput.focus(); });
 
+  // The phone's own camera (works on iPhone and Android): a <video playsinline muted> and,
+  // about 8 times a second, the phone's built-in QR reader or jsQR (kept on this website).
+  let stream = null, loop = 0, detector = null, last = '', lastAt = 0;
+  const grab = document.createElement('canvas'), gctx = grab.getContext('2d', { willReadFrequently: true });
+  const loadJsQR = () => window.jsQR ? Promise.resolve() : new Promise((ok, fail) => { const sc = document.createElement('script'); sc.src = '/vendor/jsqr-1.4.0.min.js'; sc.onload = ok; sc.onerror = fail; document.head.appendChild(sc); });
+  function stopCam() {
+    clearTimeout(loop); if (stream) stream.getTracks().forEach(t => t.stop()); stream = null;
+    cameraBox.style.display = 'none'; cameraBox.innerHTML = ''; cameraToggle.textContent = '📷 Use Camera Instead';
+  }
+  async function readFrame(v) {
+    const w = v.videoWidth, h = v.videoHeight; if (!w || v.readyState < 2) return null;
+    if (detector) { try { const r = await detector.detect(v); return r[0] ? r[0].rawValue : null; } catch (e) { detector = null; await loadJsQR(); } }
+    if (!window.jsQR) return null;
+    const side = Math.min(w, h), size = Math.min(640, side); grab.width = size; grab.height = size;
+    gctx.drawImage(v, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size);
+    const c = window.jsQR(gctx.getImageData(0, 0, size, size).data, size, size, { inversionAttempts: 'attemptBoth' });
+    return c ? c.data : null;
+  }
   cameraToggle.addEventListener('click', async () => {
-    if (html5QrCode) {
-      await html5QrCode.stop().catch(() => {});
-      html5QrCode = null;
-      cameraBox.style.display = 'none';
-      cameraBox.innerHTML = '';
-      cameraToggle.textContent = '📷 Use Camera Instead';
-      ticketInput.focus();
-      return;
+    if (stream) { stopCam(); ticketInput.focus(); return; }
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('no camera api');
+      stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' } } });
+      cameraBox.style.display = 'block';
+      cameraBox.innerHTML = '<video playsinline muted autoplay style="width:100%;aspect-ratio:1/1;object-fit:cover;background:#000;border-radius:10px;display:block"></video>';
+      cameraToggle.textContent = '⌨️ Use Keyboard/Scanner Instead';
+      const v = cameraBox.querySelector('video'); v.muted = true; v.srcObject = stream; await v.play().catch(() => {});
+      if (window.BarcodeDetector) { try { if ((await BarcodeDetector.getSupportedFormats()).includes('qr_code')) detector = new BarcodeDetector({ formats: ['qr_code'] }); } catch (e) { detector = null; } }
+      if (!detector) await loadJsQR();
+      const tick = async () => {
+        if (!stream) return;
+        try { const text = await readFrame(v); const now = Date.now(); if (text && (text !== last || now - lastAt > 4000)) { last = text; lastAt = now; validateTicket(text.trim()); } } catch (e) { /* next frame */ }
+        loop = setTimeout(tick, 120);
+      };
+      tick();
+    } catch (e) {
+      stopCam();
+      alert(/NotAllowed|Permission/i.test(String(e && e.name)) ? 'The camera is blocked. Allow the camera for lobistarsfc.com in the browser settings, then try again.' : 'Could not start the camera. Use the keyboard/scanner input instead.');
     }
-    cameraBox.style.display = 'block';
-    cameraBox.innerHTML = '<div id="qr-reader" style="width:100%;"></div>';
-    cameraToggle.textContent = '⌨️ Use Keyboard/Scanner Instead';
-
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';
-    script.onload = () => {
-      html5QrCode = new Html5Qrcode('qr-reader');
-      html5QrCode.start(
-        { facingMode: 'environment' },
-        { fps: 10, qrbox: 220 },
-        decodedText => validateTicket(decodedText.trim())
-      ).catch(() => {
-        resultDetail.textContent = '';
-        alert('Could not access the camera. Use the keyboard/scanner input instead.');
-      });
-    };
-    document.body.appendChild(script);
   });
 })();
 </script>

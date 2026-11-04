@@ -436,58 +436,105 @@ $('readmitForm').addEventListener('submit', async (ev: Event) => {
   } catch (e: any) { $('readmitErr').textContent = e.message; $('readmitErr').hidden = false; }
 });
 
-// ── Camera (html5-qrcode, kept on this website: /vendor) ──
-let scanner: any = null, camOn = false, torch: any = null, cams: any[] = [], camIndex = -1;
-function loadLib(): Promise<void> {
-  if ((window as any).Html5Qrcode) return Promise.resolve();
+// ── Camera: the phone's own camera feed (works on iPhone and Android) ──
+// A <video playsinline muted> shows the back camera; about 8 times a second the square in
+// the middle is read for a QR code: with the phone's built-in reader (BarcodeDetector, e.g.
+// Android Chrome) or else jsQR (kept on this website: /vendor), which works everywhere.
+let stream: MediaStream | null = null, camOn = false, camPaused = false, loopTimer: any = 0, detector: any = null;
+let cams: MediaDeviceInfo[] = [], camIndex = -1, track: MediaStreamTrack | null = null;
+const grab = document.createElement('canvas');
+const grabCtx = grab.getContext('2d', { willReadFrequently: true } as any) as CanvasRenderingContext2D;
+function loadJsQR(): Promise<void> {
+  if ((window as any).jsQR) return Promise.resolve();
   return new Promise((ok, fail) => {
-    const s = document.createElement('script');
-    s.src = '/vendor/html5-qrcode-2.3.8.min.js';
-    s.onload = () => ok(); s.onerror = () => fail(new Error('The scanner could not load. Check the connection and try again.'));
-    document.head.appendChild(s);
+    const sc = document.createElement('script');
+    sc.src = '/vendor/jsqr-1.4.0.min.js';
+    sc.onload = () => ok(); sc.onerror = () => fail(new Error('The scanner could not load. Check the connection and try again, or type the ticket number below.'));
+    document.head.appendChild(sc);
   });
 }
 async function startCamera() {
   $('camErr').hidden = true;
   $('camBtn').disabled = true; $('camLbl').textContent = 'Starting camera…';
   try {
-    await loadLib();
-    const H = (window as any);
+    if (!navigator.mediaDevices?.getUserMedia) throw new Error(location.protocol !== 'https:' ? 'The camera only works on https://lobistarsfc.com.' : 'This browser cannot use the camera. Open Gate Control in Chrome (Android) or Safari (iPhone), or type the ticket number below.');
+    const dev = camIndex >= 0 && cams[camIndex] ? cams[camIndex].deviceId : '';
+    stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: dev ? { deviceId: { exact: dev } } : { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } } });
+    const v = $('camVideo') as HTMLVideoElement;
+    v.muted = true; v.setAttribute('muted', ''); v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
+    v.srcObject = stream;
     $('cam').hidden = false;
-    scanner = scanner || new H.Html5Qrcode('reader', { formatsToSupport: [H.Html5QrcodeSupportedFormats.QR_CODE], experimentalFeatures: { useBarCodeDetectorIfSupported: true }, verbose: false });
-    await scanner.start(camIndex >= 0 && cams[camIndex] ? { deviceId: { exact: cams[camIndex].id } } : { facingMode: 'environment' }, { fps: 12, qrbox: (w: number, h: number) => { const s = Math.floor(Math.min(w, h) * 0.72); return { width: s, height: s }; }, aspectRatio: 1 },
-      (text: string) => onScan(text), () => {});
-    camOn = true;
+    await v.play().catch(() => { /* some phones start it themselves */ });
+    camOn = true; camPaused = false;
+    // The phone's own QR reader when it has one; jsQR otherwise.
+    detector = null;
+    const BD = (window as any).BarcodeDetector;
+    if (BD) { try { const f = await BD.getSupportedFormats(); if (f.includes('qr_code')) detector = new BD({ formats: ['qr_code'] }); } catch { detector = null; } }
+    if (!detector) await loadJsQR();
     // Torch (dark entrances, night matches) and switching cameras, where the phone allows.
-    try { torch = scanner.getRunningTrackCameraCapabilities?.()?.torchFeature?.(); $('torchBtn').hidden = !(torch && torch.isSupported()); } catch { $('torchBtn').hidden = true; }
-    $('torchBtn').setAttribute('aria-pressed', 'false');
-    try { cams = await H.Html5Qrcode.getCameras(); $('flipBtn').hidden = cams.length < 2; } catch { $('flipBtn').hidden = true; }
+    track = stream.getVideoTracks()[0] || null;
+    const caps: any = (track as any)?.getCapabilities ? (track as any).getCapabilities() : {};
+    $('torchBtn').hidden = !caps.torch; $('torchBtn').setAttribute('aria-pressed', 'false');
+    try { cams = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput'); $('flipBtn').hidden = cams.length < 2; } catch { $('flipBtn').hidden = true; }
+    scanLoop();
   } catch (e: any) {
-    $('cam').hidden = true;
-    const msg = /Permission|NotAllowed/i.test(String(e?.name || e?.message || e)) ? 'The camera is blocked. Allow camera access for lobistarsfc.com in the browser settings, or type the ticket number below.'
-      : /NotFound|no camera|Requested device not found/i.test(String(e?.name || e?.message || e)) ? 'No camera was found on this device. Type the ticket number below.'
+    await stopCamera();
+    const why = String(e?.name || '') + ' ' + String(e?.message || e || '');
+    const msg = /NotAllowed|Permission|denied/i.test(why) ? 'The camera is blocked. Allow the camera for lobistarsfc.com (iPhone: Settings › Safari › Camera › Allow; Android: tap the lock next to the address › Permissions › Camera), then press Scan ticket again. Or type the ticket number below.'
+      : /NotFound|Overconstrained|no camera|device not found/i.test(why) ? 'No camera was found on this device. Type the ticket number below.'
+      : /NotReadable|in use|Could not start/i.test(why) ? 'Another app is using the camera. Close it and press Scan ticket again.'
       : (e?.message || 'The camera could not start. Type the ticket number below.');
     $('camErr').textContent = msg; $('camErr').hidden = false;
   } finally {
     $('camBtn').disabled = false; setMode(mode);
   }
 }
+/** Reads the square in the middle of the picture (what the steward sees inside the frame). */
+async function readFrame(): Promise<string | null> {
+  const v = $('camVideo') as HTMLVideoElement;
+  const w = v.videoWidth, h = v.videoHeight;
+  if (!w || !h || v.readyState < 2) return null;
+  if (detector) {
+    try { const r = await detector.detect(v); return r && r[0] ? r[0].rawValue || null : null; }
+    catch { detector = null; await loadJsQR().catch(() => {}); }
+  }
+  const jsQR = (window as any).jsQR;
+  if (!jsQR) return null;
+  const side = Math.min(w, h), size = Math.min(640, side);
+  grab.width = size; grab.height = size;
+  grabCtx.drawImage(v, (w - side) / 2, (h - side) / 2, side, side, 0, 0, size, size);
+  const img = grabCtx.getImageData(0, 0, size, size);
+  const code = jsQR(img.data, size, size, { inversionAttempts: 'attemptBoth' });
+  return code && code.data ? code.data : null;
+}
+function scanLoop() {
+  clearTimeout(loopTimer);
+  if (!camOn) return;
+  loopTimer = setTimeout(async () => {
+    if (camOn && !camPaused) { try { const text = await readFrame(); if (text) onScan(text.trim()); } catch { /* next frame */ } }
+    scanLoop();
+  }, 120);
+}
 $('torchBtn').addEventListener('click', async () => {
   const on = $('torchBtn').getAttribute('aria-pressed') !== 'true';
-  try { await torch?.apply(on); $('torchBtn').setAttribute('aria-pressed', String(on)); } catch { toast('The torch is not available on this phone.'); }
+  try { await (track as any)?.applyConstraints({ advanced: [{ torch: on }] }); $('torchBtn').setAttribute('aria-pressed', String(on)); } catch { toast('The torch is not available on this phone.'); }
 });
 $('flipBtn').addEventListener('click', async () => {
   if (!cams.length) return;
   camIndex = (camIndex + 1) % cams.length;
   await stopCamera(); await startCamera();
 });
-function pauseCamera() { try { if (scanner && camOn) scanner.pause(true); } catch { /* already paused */ } }
-function resumeCamera() { try { if (scanner && camOn) scanner.resume(); } catch { /* not paused */ } }
+function pauseCamera() { camPaused = true; }
+function resumeCamera() { camPaused = false; }
 async function stopCamera() {
-  if (!scanner || !camOn) return;
-  camOn = false;
-  try { await scanner.stop(); } catch { /* stopped */ }
-  $('cam').hidden = true; setMode(mode);
+  const was = camOn || !!stream;
+  camOn = false; camPaused = false; clearTimeout(loopTimer);
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  track = null;
+  const v = $('camVideo') as HTMLVideoElement | null;
+  if (v) v.srcObject = null;
+  $('cam').hidden = true;
+  if (was) setMode(mode);
 }
 function onScan(text: string) {
   const now = Date.now();

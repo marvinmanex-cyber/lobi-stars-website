@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-04: Ticket scanners fixed on phones
+
+- The phone camera scanner in Gate Control (and the older /scan page) showed a
+  black box on some phones, especially iPhones, so nothing scanned. It now
+  uses the phone's camera directly (shown in the page, muted, inline as
+  iPhones need) and reads QR codes with the phone's own reader where it has
+  one (Android Chrome) or the jsQR reader kept on our website (all phones).
+- Torch and camera switch still appear where the phone allows. If the camera
+  is blocked, the message says where to allow it (iPhone: Settings › Safari ›
+  Camera; Android: the lock next to the address › Permissions › Camera).
+- Phones that installed Gate Control as an app get the new scanner the next
+  time it opens with a signal.
+
 ## 2026-11-03: Free tickets "Click to download"; human check always visible
 
 - Free orders: the button says **Click to download** (no "Pay ₦0 with
