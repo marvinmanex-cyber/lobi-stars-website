@@ -108,6 +108,7 @@ export function permissions(user, settings) {
     notes: sa || user.role === 'supervisor',        // pin / delete anyone's handover notes
     // The kitchen's back end: supervisors see everyone's activity, manage cooks and pass staff, and change the settings.
     activityAll: sa || user.role === 'supervisor', staff: sa || user.role === 'supervisor', superAdmin: sa,
+    ordering: sa || user.role === 'supervisor',     // open and close food ordering for fans
   };
 }
 

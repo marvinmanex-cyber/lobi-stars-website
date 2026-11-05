@@ -202,6 +202,34 @@ test('a supervisor has the kitchen back end: all activity, cooks and pass staff,
   sql(`DELETE FROM mk_staff WHERE id = '${added.data.id}';`);
 });
 
+test('food ordering: supervisors and Super Admins open and close it, cooks only see it, fans are refused while closed', async () => {
+  const before = rows(`SELECT value FROM food_settings WHERE key = 'orderingMode'`)[0]?.value || 'open';
+  const sup = await signCode(SUP.code), S = await as(sup.cookie);
+  const added = await S.call('staff', { action: 'add', name: `Order Cook ${T}`, role: 'cook' });
+  const C = await as((await signCode(added.data.loginCode)).cookie);
+  const sa = await signIn(SA_EMAIL, SA_PW), A = await as(sa.cookie);
+  try {
+    assert.equal(S.s.perms.ordering, true); assert.equal(A.s.perms.ordering, true); assert.equal(C.s.perms.ordering, false);
+    assert.equal((await C.call('ordering')).data.canChange, false, 'a cook sees it, without the buttons');
+    assert.equal((await C.call('ordering', { mode: 'closed' })).status, 403);
+    assert.equal((await S.call('ordering', { mode: 'nonsense' })).status, 400);
+    const closed = await S.call('ordering', { mode: 'closed' });
+    assert.equal(closed.status, 200); assert.equal(closed.data.open, false); assert.equal(closed.data.mode, 'closed');
+    assert.equal((await fetch(`${BASE}/api/food/menu`).then(r => r.json())).open, false, 'fans see it closed');
+    const pay = await fetch(`${BASE}/api/food-checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ name: 'Closed Tester', items: [{ id: 'suya', qty: 1 }], seat: 'A1', stand: 'Popular Stand', phone: '08031234567' }) });
+    assert.equal((await pay.json()).code, 'closed', 'and the server refuses the order');
+    const wa = await fetch(`${BASE}/api/food/whatsapp-order`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ name: 'Closed Tester', items: [{ id: 'suya', qty: 1 }], seat: 'A1', stand: 'Popular Stand', phone: `0803${String(Date.now()).slice(-7)}` }) });
+    assert.equal((await wa.json()).code, 'closed', 'WhatsApp orders too');
+    assert.equal((await A.call('ordering', { mode: 'open' })).data.open, true, 'a Super Admin opens it');
+    assert.equal((await fetch(`${BASE}/api/food/menu`).then(r => r.json())).open, true);
+    assert.equal((await S.call('ordering', { mode: 'auto' })).data.mode, 'auto');
+    const log = (await A.call('activity')).data.rows;
+    assert.ok(log.some(a => a.code === SUP.staffId && a.action === 'Closed food ordering'), 'recorded under the name');
+  } finally {
+    sql(`UPDATE food_settings SET value = '${before}' WHERE key = 'orderingMode'; DELETE FROM mk_staff WHERE id = '${added.data.id}';`);
+  }
+});
+
 test('pages are private: noindex, strict security headers, only framed by MatchDay Kitchen', async () => {
   for (const p of ['/matchday-kitchen/', '/matchday-kitchen/login/', '/matchday-kitchen/kitchen/', '/matchday-kitchen/orders/FD-1/']) {
     const r = await fetch(`${BASE}${p}`);

@@ -280,3 +280,13 @@ a { color: var(--green); }
 .mk-link { display: block; width: 100%; min-height: 44px; margin-top: 8px; border: 0; background: none; color: inherit; font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
 .mk-codeshow { margin: 8px 0; font: 700 40px/1.1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .1em; }
 .mk-codebox { border: 3px solid #0e7a26; }
+/* Food ordering for fans: open / closed (home screen) */
+.mk-ordering { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; margin: 0 0 18px; padding: 16px 18px; border-radius: 14px; border: 3px solid #b3151a; background: #fdecec; color: #5c0a0d; }
+.mk-ordering.on { border-color: #0e7a26; background: #e7f6ea; color: #07471a; }
+.mk-ordering-t { flex: 1 1 260px; min-width: 0; }
+.mk-ordering-t b { display: block; font: 700 26px/1.15 'Barlow Condensed', sans-serif; }
+.mk-ordering-t span { display: block; margin-top: 2px; font-size: 15px; line-height: 1.4; }
+.mk-ordering-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+.mk-ordering-btns .mk-btn[aria-pressed="true"] { outline: 3px solid #121212; outline-offset: 2px; }
+.mk-btn.stop { background: #b3151a; border-color: #b3151a; color: #fff; }
+@media (max-width: 600px) { .mk-ordering-btns { width: 100%; } .mk-ordering-btns .mk-btn { flex: 1 1 100%; } }

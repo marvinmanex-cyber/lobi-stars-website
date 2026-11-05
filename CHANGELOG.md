@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-05: MatchDay Kitchen: buttons to open and close food ordering
+
+**Who it affects:** kitchen supervisors, Super Admins, kitchen staff.
+- The MatchDay Kitchen home screen shows whether food ordering is open or closed for fans, and everyone in the kitchen can see it.
+- Kitchen supervisors and Super Admins have **Open ordering**, **Close ordering** and **Automatic** buttons. Each asks for confirmation and is recorded in the activity log.
+
 ## 2026-11-05: MatchDay Kitchen: login codes for staff; supervisors get the back end
 
 **Who it affects:** kitchen staff, kitchen supervisors, Super Admins.

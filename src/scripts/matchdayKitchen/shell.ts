@@ -70,9 +70,41 @@ function renderWho() {
     : `<b>${esc(u.name)} · ${esc(u.code)}</b><span>${sh?.onShift ? `on shift since ${esc(hm(sh.since))}` : 'not on shift'}</span>`;
   $('shiftNag').hidden = !!sh?.onShift || u.kind === 'admin';
 }
+// Food ordering for fans: everyone sees whether it is open; supervisors and Super Admins have the buttons.
+function drawOrdering(o: any) {
+  const when = (iso: string) => new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
+  $('ordering').hidden = false;
+  $('ordering').classList.toggle('on', !!o.open);
+  $('ordState').textContent = o.open ? 'Food ordering is OPEN' : 'Food ordering is CLOSED';
+  $('ordNote').textContent = o.mode === 'auto'
+    ? (o.open ? `Automatic${o.closesAt ? `: closes ${when(o.closesAt)}` : ''}` : `Automatic${o.opensAt ? `: opens ${when(o.opensAt)}` : ': opens before the next home match'}`)
+    : o.open ? 'Fans can order and pay now. It stays open until someone closes it.' : 'Fans cannot order. It stays closed until someone opens it.';
+  $('ordBtns').hidden = !o.canChange;
+  document.querySelectorAll<HTMLElement>('[data-ordering]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ordering === o.mode)));
+}
+async function loadOrdering(quiet = true) {
+  try { drawOrdering(await api('ordering', { quiet })); } catch { /* keep the last answer */ }
+}
+$('ordBtns').addEventListener('click', async (e: Event) => {
+  const b = (e.target as HTMLElement).closest('[data-ordering]') as HTMLButtonElement | null;
+  if (!b) return;
+  const mode = b.dataset.ordering!;
+  const ask = mode === 'open' ? 'Open food ordering? Fans can order and pay straight away, so make sure the kitchen is ready.'
+    : mode === 'closed' ? 'Close food ordering? Fans cannot order until someone opens it again. Orders already placed are not affected.'
+    : 'Set food ordering to automatic? It then opens by itself before each home match and closes after it.';
+  if (!confirm(ask)) return;
+  b.disabled = true;
+  try {
+    drawOrdering(await api('ordering', { method: 'POST', body: { mode } }));
+    toast(mode === 'open' ? 'Food ordering is open.' : mode === 'closed' ? 'Food ordering is closed.' : 'Food ordering is on automatic.');
+  } catch (ex) { toast((ex as Error).message); } finally { b.disabled = false; }
+});
+setInterval(() => { if (session.csrf && !document.hidden && !$('home').hidden) loadOrdering(); }, 30e3);
+
 function renderHome() {
   $('hello').textContent = `${greeting()}, ${session.user.firstName}`;
   renderWho();
+  loadOrdering();
   const sa = !!session.perms.staff;
   $('groups').innerHTML = GROUPS.filter(g => !g.superOnly || sa).map(g => {
     const tiles = g.tiles;

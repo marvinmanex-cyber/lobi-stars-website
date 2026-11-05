@@ -4611,6 +4611,13 @@ when you tap **Food on the way** or **Ready for pickup**.
   receipt** buttons, for later. Unpaid WhatsApp
 orders do not appear on the kitchen screen until a staff member marks them paid.
 
+**Opening and closing food ordering:** the box at the top of the MatchDay Kitchen home screen says whether fans can order now (green OPEN, red CLOSED), and everyone in the kitchen can see it. Kitchen supervisors and Super Admins also have three buttons:
+- **Open ordering:** fans can order and pay straight away. It stays open until someone closes it.
+- **Close ordering:** fans cannot order, online or on WhatsApp, until someone opens it. Orders already placed are not affected.
+- **Automatic:** opens by itself before each home match (90 minutes before kick-off unless changed in Admin › Food › Menu) and closes about 3 hours after kick-off.
+
+It is the same setting as the button on the admin live order board, and each change is recorded in the activity log.
+
 **Roles**
 
 | | Cook / kitchen hand | Pass / order handler | Kitchen supervisor | Super Admin |
@@ -4621,6 +4628,7 @@ orders do not appear on the kitchen screen until a staff member marks them paid.
 | Change prices | | | Yes | Yes |
 | Pin or delete anyone's notes | | | Yes | Yes |
 | Everyone's activity, CSV | | | Yes | Yes |
+| Open and close food ordering | | | Yes | Yes |
 | Staff accounts and settings | | | Yes (cooks and pass staff) | Yes (everyone) |
 
 Who can cancel and who can change prices can be changed in **Staff accounts ›

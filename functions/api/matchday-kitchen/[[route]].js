@@ -7,10 +7,13 @@
 //   GET analytics?day   GET shift   POST shift {action: start|end}
 //   GET notes   POST notes {action: add|pin|unpin|delete, id, text}
 //   GET activity?staff&day&page[&format=csv]   GET staff   POST staff {action: add|edit|settings, …}
+//   GET ordering   POST ordering {mode: open|closed|auto} (supervisors, Super Admins): food ordering for fans
 //   GET check (Super Admins: the data check)
 import { signIn, signOut, json, kitchenSettings, permissions, mkLog, shiftState, startShift, endShift, listNotes, noteAction,
   activityPage, listStaff, createStaff, updateStaff, saveSettings, ROLES, oneLine, clearKitchenCookie } from '../_lib/matchdayKitchen.js';
 import * as K from '../_lib/kitchenData.js';
+import { foodSettings, saveFoodSetting } from '../_lib/foodOrders.js';
+import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
 
 // The pages (and their names in the activity log).
 const PAGES = {
@@ -158,6 +161,21 @@ export async function onRequest(context) {
           return json({ ok: true });
         }
         return json({ error: 'Unknown action.' }, 400);
+      }
+      // Food ordering for fans: everyone sees whether it is open; supervisors and Super Admins change it.
+      case 'GET ordering': {
+        await ensureMenuSchema(db);
+        const fs = await foodSettings(db);
+        return json({ ...(await orderingState(env, fs)), mode: fs.orderingMode, autoOpenMinutes: fs.autoOpenMinutes, canChange: perms.ordering });
+      }
+      case 'POST ordering': {
+        if (!perms.ordering) return denied();
+        if (!['open', 'closed', 'auto'].includes(body.mode)) return json({ error: 'Choose open, closed or automatic.' }, 400);
+        await ensureMenuSchema(db);
+        await saveFoodSetting(db, 'orderingMode', body.mode, user.name);
+        await mkLog(db, user, body.mode === 'open' ? 'Opened food ordering' : body.mode === 'closed' ? 'Closed food ordering' : 'Set food ordering to automatic', { kind: 'settings', request });
+        const fs = await foodSettings(db);
+        return json({ ...(await orderingState(env, fs)), mode: fs.orderingMode, autoOpenMinutes: fs.autoOpenMinutes, canChange: true });
       }
       case 'GET check':
         if (!perms.superAdmin) return denied();

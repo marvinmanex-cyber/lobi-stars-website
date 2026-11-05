@@ -88,6 +88,14 @@ import '../../styles/matchdayKitchen.css';
     <main class="mk-home" id="home">
       <h1 class="mk-hello" id="hello"></h1>
       <button type="button" class="mk-shiftnag" id="shiftNag" hidden>You haven't started your shift. Start it now.</button>
+      <section class="mk-ordering" id="ordering" aria-label="Food ordering for fans" hidden>
+        <div class="mk-ordering-t"><b id="ordState"></b><span id="ordNote"></span></div>
+        <div class="mk-ordering-btns" id="ordBtns" hidden>
+          <button type="button" class="mk-btn go big" data-ordering="open">Open ordering</button>
+          <button type="button" class="mk-btn stop big" data-ordering="closed">Close ordering</button>
+          <button type="button" class="mk-btn big" data-ordering="auto">Automatic</button>
+        </div>
+      </section>
       <div id="groups"></div>
     </main>
     <div class="mk-frames" id="frames"></div>
