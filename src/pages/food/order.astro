@@ -32,6 +32,7 @@ import Layout from '../../layouts/Layout.astro';
         <li data-step="DELIVERED"><span class="dot"></span><b>Delivered</b><small data-time></small></li>
       </ol>
       <p class="fo-cancel" id="cancelled" hidden></p>
+      <p class="fo-pay" id="payHow" hidden></p>
       <div class="panel fo-card">
         <p class="fo-seat" id="seat"></p>
         <ul class="fo-items" id="items"></ul>
@@ -61,6 +62,8 @@ import Layout from '../../layouts/Layout.astro';
   .fo-track li.on .dot { background: #16A34A; border-color: #16A34A; }
   .fo-track li.on::before { background: #16A34A; }
   .fo-track li.now .dot { box-shadow: 0 0 0 6px rgba(22,163,74,.2); }
+  .fo-pay { margin: 0 0 16px; padding: 12px 14px; border-radius: 10px; border: 2px solid var(--gold, #FFC21A); line-height: 1.45; }
+  .fo-pay[hidden] { display: none; }
   .fo-cancel { padding: 12px 14px; border-radius: 10px; background: #F3F4F6; color: #374151; font-weight: 600; }
   .fo-card { padding: 20px !important; margin-bottom: 16px; }
   .fo-seat { margin: 0 0 12px; font: 400 28px/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
@@ -111,6 +114,7 @@ import Layout from '../../layouts/Layout.astro';
     if (o.status === 'EXPIRED') return problem('Order <span class="r">expired</span>', `Order ${o.ref} wasn't paid in time, so it was cancelled. If money left your account, contact the club with this reference.`);
 
     $('ref').textContent = o.ref;
+    $('payHow').textContent = d.payment || ''; $('payHow').hidden = !d.payment;
     $('seat').textContent = o.fulfilment === 'pickup' ? `Collect from ${o.pickupPoint}` : `Seat ${o.seat}${o.stand ? ' · ' + o.stand : ''}`;
     $('items').innerHTML = o.items.map(i => `<li><span></span><span>${naira(i.priceKobo * i.qty)}</span></li>`).join('');
     [...$('items').children].forEach((li, n) => { li.firstChild.textContent = `${o.items[n].qty} × ${o.items[n].name}`; });

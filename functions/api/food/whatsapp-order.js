@@ -1,6 +1,7 @@
 import { randomId } from '../_lib/crypto.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
-import { ensureFoodSchema, nextRef, foodSettings, priceCart, whatsappOrderMessage, whatsappUrl, formatNaira, trackUrl, setDelivery } from '../_lib/foodOrders.js';
+import { ensureFoodSchema, nextRef, foodSettings, priceCart, whatsappOrderMessage, whatsappUrl, formatNaira, trackUrl, setDelivery, paymentMessage } from '../_lib/foodOrders.js';
+import { sendEmail } from '../_lib/email.js';
 import { normalizeNigerianPhone, rateLimit, tooMany, clientIp, ensureFanSchema } from '../_lib/fans.js';
 import { listMatches, isMatchDay, toSummary } from '../_lib/matchCentre.js';
 import { raiseFoodAlert } from '../_lib/foodAlerts.js';
@@ -79,7 +80,10 @@ export async function onRequestPost({ request, env, waitUntil }) {
     await setDelivery(env.DB, id, b.when, eventId);
 
     const origin = new URL(request.url).origin;
+    const payment = paymentMessage(settings, { ...order, channel: 'whatsapp', payment_status: 'pending', order_status: 'AWAITING_WHATSAPP' });
     const later = Promise.all([
+      // If they gave an email, how to pay goes there straight away too.
+      payment && email && env.RESEND_API_KEY ? sendEmail(env, { to: email, subject: `Your MatchDay Kitchen order ${ref}: how to pay`, html: `<div style="font-family:Arial,sans-serif;font-size:16px;line-height:1.5"><p>${payment.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))}</p><p>Forward your receipt on WhatsApp, in the same chat as your order.</p></div>` }).catch(err => console.error('[food] payment email', err)) : null,
       raiseFoodAlert(env, 'whatsapp', order, { waitUntil, origin }).catch(err => console.error('[food] whatsapp alert', err)),
       // The kitchen's own devices and Telegram group (the kitchen app also rings until someone confirms it).
       notifyKitchen(env, id, 'whatsapp'),
@@ -88,9 +92,9 @@ export async function onRequestPost({ request, env, waitUntil }) {
     ]);
     if (waitUntil) waitUntil(later); else await later;
 
-    const message = whatsappOrderMessage(order, orderItems);
+    const message = whatsappOrderMessage(order, orderItems, settings.bankDetails);
     return json({
-      ok: true, ref, totalKobo, total: formatNaira(totalKobo), message,
+      ok: true, ref, totalKobo, total: formatNaira(totalKobo), message, payment,
       whatsappUrl: whatsappUrl(settings.whatsappNumber, message), whatsappNumber: settings.whatsappNumber,
       trackUrl: trackUrl(origin, { ref, view_token: token }),
     });

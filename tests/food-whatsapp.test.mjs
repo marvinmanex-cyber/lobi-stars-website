@@ -4,6 +4,8 @@
 // trap field. Needs the local Pages dev server with ADMIN_CODE=test-code-123.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { sql } from './media-helpers.mjs';
+import { FOOD_DEFAULTS, staffMessage } from '../functions/api/_lib/foodOrders.js';
 
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
 const ADMIN = { 'Content-Type': 'application/json', 'x-admin-code': process.env.ADMIN_CODE || 'test-code-123' };
@@ -93,6 +95,14 @@ test('pickup points and bank details from the settings', async () => {
   const o = (await board()).data.orders.find(x => x.ref === r.data.ref);
   assert.equal(o.fulfilment, 'pickup');
   assert.match(o.wa.messages.CONFIRMED, /Test Bank, 0123456789/);
+  // How to pay reaches the fan at once: in their own message and on their order screen.
+  assert.match(r.data.message, /To pay: ₦\d[\d,]* to Lobi Stars FC, Test Bank, 0123456789\. I will forward my receipt here for confirmation\.$/);
+  assert.match(r.data.payment, /Test Bank, 0123456789/); assert.ok(r.data.payment.includes(r.data.ref));
+  const tu = new URL(r.data.trackUrl), status = () => fetch(`${BASE}/api/food/order?ref=${tu.searchParams.get('ref')}&t=${tu.searchParams.get('t')}`).then(x => x.json());
+  const seen = await status();
+  assert.equal(seen.payment, r.data.payment, 'on the order screen too');
+  sql(`UPDATE food_orders SET payment_status = 'paid', order_status = 'PAID' WHERE ref = '${r.data.ref}';`);
+  assert.equal((await status()).payment, null, 'gone once paid');
   assert.equal(o.wa.messages.READY, `Hi Emeka, ${r.data.ref} is ready at East Gate Kiosk.`, 'a "!" in a saved template is sent as "."');
   // Paystack checkout can be collected too.
   const p = await post('/api/food-checkout', { name: 'Pick Up', fulfilment: 'pickup', pickupPoint: 'Main Stand Kiosk', phone: `0803${r7()}`, email: 'pick@example.com', items: [{ id: 'water', qty: 1 }] });
@@ -114,4 +124,9 @@ test('limits: 5 orders per phone in 30 minutes; switched off or closed ordering'
   assert.equal(closed.status, 503);
   assert.equal(closed.data.code, 'closed');
   await admin('/api/admin/food-menu', 'POST', { action: 'ordering_mode', mode: 'open' });
+});
+
+test('the payment message: the name, the order, the amount and the club\'s account', () => {
+  const m = staffMessage(FOOD_DEFAULTS, { customer_name: 'George Okoro', ref: 'FD-20261105-0012', total_kobo: 500, seat: 'A1' }, 'CONFIRMED');
+  assert.equal(m, 'Hi George, this is MatchDay Kitchen. We have received your food order FD-20261105-0012 of ₦5, and it is waiting for payment. Kindly pay the sum of ₦5 to Aeson Sports Management Limited, Fidelity Bank: 4011459917 and forward the receipt to me for confirmation.');
 });

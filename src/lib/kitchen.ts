@@ -450,6 +450,8 @@ function showDone(o: { ref: string; token: string; whatsappUrl?: string }) {
       const d = await r.json();
       if (!r.ok || !d.order) { $('kxStatus').textContent = d.error || 'We could not load your order just now.'; return; }
       renderStatus(d.order as Order);
+      $('kxPay').hidden = !d.payment;
+      if (d.payment) { $('kxPayT').textContent = d.payment; const n = String(d.payment).match(/\b\d{10}\b/)?.[0] || ''; $('kxPayCopy').dataset.n = n; $('kxPayCopy').hidden = !n; }
     } catch { $('kxStatus').textContent = 'Checking your order… (no connection right now)'; }
   };
   poll();
@@ -476,7 +478,8 @@ function renderStatus(o: Order) {
   });
   const msg: Record<string, string> = {
     AWAITING_PAYMENT: 'Waiting for your payment to be confirmed. This usually takes a few seconds.',
-    AWAITING_WHATSAPP: 'Send the order message on WhatsApp so the kitchen can confirm it. Staff will tell you how to pay.',
+    AWAITING_WHATSAPP: 'Send the order message on WhatsApp, pay as shown below and forward your receipt in the same chat.',
+    CONFIRMED: 'Waiting for your payment. Pay as shown below and forward your receipt on WhatsApp.',
     PAID: 'Paid. The kitchen has your order.', ACCEPTED: 'The kitchen has your order.',
     PREPARING: 'Your food is being prepared.', OUT_FOR_DELIVERY: o.fulfilment === 'pickup' ? 'Ready to collect: show your number at the counter.' : 'Your order is on the way to your seat.',
     DELIVERED: 'Delivered. Enjoy the match!', PAYMENT_FAILED: 'The payment did not go through. Your cart is still saved: please try again.',
@@ -561,6 +564,10 @@ export function startKitchen() {
   window.setInterval(whenOptions, 60000);
   $('kxWaBtn').addEventListener('click', orderWhatsApp);
   ['kxName', 'kxPhone', 'kxEmail', 'kxAdult'].forEach(id => $(id).addEventListener('input', () => $(id).classList.remove('kx-bad')));
+  $('kxPayCopy').addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText($('kxPayCopy').dataset.n || ''); $('kxPayCopy').textContent = 'Copied'; } catch { $('kxPayCopy').textContent = 'Copy failed: please write it down'; }
+    window.setTimeout(() => { $('kxPayCopy').textContent = 'Copy account number'; }, 2500);
+  });
   $('kxWaCopy').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(waMessage); $('kxWaCopy').textContent = 'Copied'; } catch { $('kxWaCopy').textContent = 'Copy failed: use the WhatsApp button'; }
     window.setTimeout(() => { $('kxWaCopy').textContent = 'Copy order message'; }, 2500);

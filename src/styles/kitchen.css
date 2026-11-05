@@ -238,3 +238,10 @@
 .kx-offer-t b { color: #FFC72C; }
 .kx-offer-add { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--kx-green); color: #04140A; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
 .kx-offer-no { min-height: 44px; padding: 0 8px; border: 0; background: none; color: #fff; font-size: 14px; text-decoration: underline; cursor: pointer; }
+/* How to pay a WhatsApp order */
+.kx-pay { text-align: left; margin: 12px 0 0; padding: 14px; border-radius: 12px; border: 2px solid var(--kx-gold); background: var(--kx-navy); }
+.kx-pay[hidden] { display: none; }
+.kx-pay b { display: block; margin-bottom: 4px; color: var(--kx-gold); }
+.kx-pay p { margin: 0 0 10px; font-size: 15px; line-height: 1.45; }
+.kx-pay .kx-btn { width: 100%; }
+.kx-pay .kx-btn[hidden] { display: none; }

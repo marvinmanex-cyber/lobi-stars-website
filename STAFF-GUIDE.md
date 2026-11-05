@@ -4658,6 +4658,8 @@ Who can cancel can be changed in **Staff accounts › Settings** (with the Teleg
 
 Signing out with the **Sign out** button stops alerts on that person's devices until they next sign in. The automatic sign-out after 20 idle minutes does not stop them. Switching a person off, or giving them a new login code, stops them too. Tablets must allow sound: tap the screen once after opening the app.
 
+**The payment message:** when a fan orders on WhatsApp, how to pay is added to their own order message and shown on their order screen, and emailed if they gave an email. On the Live order board, **Confirm order** opens the fan's chat with the full message ready: press send. It reads "Hi George, this is MatchDay Kitchen. We have received your food order FD-… of ₦…, and it is waiting for payment. Kindly pay the sum of ₦… to Aeson Sports Management Limited, Fidelity Bank: 4011459917 and forward the receipt to me for confirmation." Change the wording or the account in Admin › Food › Menu › Ordering settings. WhatsApp doesn't let a website send a message by itself, so staff still press send.
+
 **WhatsApp payments (Record payment):** when a fan pays for a WhatsApp order and sends the receipt on WhatsApp:
 1. Open the order: on the **Live order board** under **Awaiting payment** (or **Did not pay**, if it ran out of time), or in **Food orders**. Press **Record payment**.
 2. Tap to add the receipt: a photo, a screenshot or a PDF (required).

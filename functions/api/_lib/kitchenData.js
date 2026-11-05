@@ -10,7 +10,7 @@
 // Status changes go through foodOrders.moveOrder (the same rules, alerts and
 // time stamps as the admin pages); menu changes update only the one field
 // (plus updated_at) and write the dish's history.
-import { ensureFoodSchema, moveOrder, STATUS, STAFF_MOVES, whereText, formatNaira, expireStale } from './foodOrders.js';
+import { ensureFoodSchema, moveOrder, STATUS, STAFF_MOVES, whereText, formatNaira, expireStale, foodSettings, staffMessage } from './foodOrders.js';
 import { ensureMenuSchema, history, parseItem, wasOrdered } from './foodMenuDb.js';
 import { receiptEmailHtml, receiptWhatsappText, receiptPdf, receiptPdfName, waNumber, canReceipt, LOGO_JPEG } from './foodReceipt.js';
 import { sendEmail } from './email.js';
@@ -118,11 +118,12 @@ export async function unpaidOrders(db) {
   await ready(db);
   await expireStale(db).catch(() => {});
   const { results } = await db.prepare(`SELECT * FROM food_orders WHERE order_status IN (${placeholders(UNPAID)}) AND created_iso >= ? ORDER BY created_iso DESC LIMIT 100`).bind(...UNPAID, since()).all();
+  const settings = await foodSettings(db);
   return results.map(o => {
     const phone = String(o.phone || '').replace(/\D/g, '').replace(/^0/, '234');
     const first = String(o.customer_name || '').trim().split(/\s+/)[0] || 'there';
     const failed = ['PAYMENT_FAILED', 'EXPIRED'].includes(o.order_status);
-    const msg = failed
+    const msg = !failed && o.channel === 'whatsapp' ? staffMessage(settings, o, 'CONFIRMED') : failed
       ? `Hi ${first}, this is MatchDay Kitchen (Lobi Stars FC). We saw your food order ${o.ref} was not paid. Did something go wrong with the payment? We can help you order again.`
       : `Hi ${first}, this is MatchDay Kitchen (Lobi Stars FC). Your food order ${o.ref} is waiting for payment. Do you need help paying?`;
     return {

@@ -172,7 +172,13 @@ const PAGES: Record<string, () => Promise<void>> = {
     };
     main.addEventListener('click', e => {
       const c = (e.target as HTMLElement).closest('[data-confirm]') as HTMLButtonElement | null;
-      if (c) { act(c, async () => { await api('order', { method: 'POST', body: { id: c.dataset.confirm, to: 'CONFIRMED' } }); toast('Confirmed. Now send the fan the payment details on WhatsApp.'); shell?.alarmsNow?.(); await draw(); }); return; }
+      if (c) {
+        // WhatsApp opens at once (browsers block it after a wait), with the payment message ready: staff press send.
+        const url = (main as any)._unpaid.find((x: any) => x.id === c.dataset.confirm)?.chatUrl;
+        if (url) window.open(url, 'mdk-whatsapp');
+        act(c, async () => { await api('order', { method: 'POST', body: { id: c.dataset.confirm, to: 'CONFIRMED' } }); toast(url ? 'Confirmed. Press send in WhatsApp to give the fan the payment details.' : 'Confirmed. This order has no WhatsApp number: call the fan with the payment details.'); shell?.alarmsNow?.(); await draw(); });
+        return;
+      }
       const p = (e.target as HTMLElement).closest('[data-pay]') as HTMLElement | null;
       if (p) { const o = (main as any)._unpaid.find((x: any) => x.id === p.dataset.pay); if (o) openPay(o, () => { draw(); }); return; }
       const b = (e.target as HTMLElement).closest('[data-order]') as HTMLElement | null; if (b) openPage(`orders/${b.dataset.order}`);

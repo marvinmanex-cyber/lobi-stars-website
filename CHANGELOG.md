@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-05: WhatsApp food orders: fans are told how to pay straight away
+
+**Who it affects:** fans ordering on WhatsApp, kitchen order handlers.
+- The account is now set: Aeson Sports Management Limited, Fidelity Bank: 4011459917 (change it in Ordering settings).
+- How to pay is added to the fan's own WhatsApp order message, shown on their order screen and emailed if they gave an email.
+- **Confirm order** on the Live order board opens the fan's chat with the new message ready: "Hi {name}, this is MatchDay Kitchen. We have received your food order…". Staff press send.
+
 ## 2026-11-05: Kitchen staff are alerted about new WhatsApp orders
 
 **Who it affects:** all kitchen staff. **Staff need to:** press **Turn on order alerts** once on each device.

@@ -125,7 +125,7 @@ export async function ensureFoodSchema(db) {
 // of a home game until full time). stands: list for the seat form's Section drop-down (default: the three
 // McCarthy Stadium stands; saved as an empty list = free text).
 export const WA_TEMPLATES = {
-  msgConfirmed: 'Hi {name}, your Lobi Stars FC food order {ref} is confirmed. Total {total}. Please pay to {bank} and send your receipt here. Thank you.',
+  msgConfirmed: 'Hi {name}, this is MatchDay Kitchen. We have received your food order {ref} of {total}, and it is waiting for payment. Kindly pay the sum of {total} to {bank} and forward the receipt to me for confirmation.',
   msgPaid: "Hi {name}, we've received your payment for order {ref}. We're preparing your food now.",
   msgReady: 'Hi {name}, your order {ref} is ready. {where}',
   msgCancelled: "Hi {name}, sorry, your Lobi Stars FC food order {ref} has been cancelled. Please message us if you have any questions.",
@@ -133,7 +133,7 @@ export const WA_TEMPLATES = {
 export const FOOD_DEFAULTS = {
   paymentExpiryMinutes: 15, orderingMode: 'open', autoOpenMinutes: 90, stands: ['Popular Stand', 'Grand Stand', 'VIP Seating'], minOrderKobo: 0,
   // Order on WhatsApp. The number is the club WhatsApp shown on the site.
-  whatsappEnabled: true, whatsappNumber: '2347080094985', whatsappExpiryHours: 3, pickupPoints: [], bankDetails: '',
+  whatsappEnabled: true, whatsappNumber: '2347080094985', whatsappExpiryHours: 3, pickupPoints: [], bankDetails: 'Aeson Sports Management Limited, Fidelity Bank: 4011459917',
   ...WA_TEMPLATES,
 };
 export async function foodSettings(db) {
@@ -355,15 +355,24 @@ export const localPhone = e164 => { const d = String(e164 || '').replace(/\D/g, 
 export const whereText = o => (o.fulfilment === 'pickup' ? `Pickup: ${o.pickup_point || 'pickup point'}` : `Seat ${o.seat}${o.stand ? `, ${o.stand}` : ''}`);
 
 /** The message the fan sends to the club on WhatsApp. */
-export function whatsappOrderMessage(o, items) {
+// bank: where to pay. It goes in the fan's own message, so the details are in the chat straight away
+// (WhatsApp doesn't let a website send a message by itself).
+export function whatsappOrderMessage(o, items, bank = '') {
   const lines = ['Hello MatchDay Kitchen,', "I'd like to place a food order.", '', `Order: ${o.ref}`, `Name: ${o.customer_name}`, `Phone: ${localPhone(o.phone)}`, ''];
   for (const i of items) lines.push(`${i.qty} × ${i.name}: ${formatNaira(i.priceKobo * i.qty)}`);
   lines.push('-----------------------', `Total: ${formatNaira(o.total_kobo)}`, '', whereText(o));
   if (o.notes) lines.push(`Note: ${o.notes}`);
   lines.push('', 'Please confirm my order. Thank you.');
+  if (bank) lines.push('', `To pay: ${formatNaira(o.total_kobo)} to ${bank}. I will forward my receipt here for confirmation.`);
   return lines.join('\n');
 }
 export const whatsappUrl = (number, message) => `https://wa.me/${String(number).replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+
+/** How to pay, for the fan's own screens: only while a WhatsApp order is waiting for payment. */
+export function paymentMessage(settings, o) {
+  if (o.channel !== 'whatsapp' || o.payment_status === 'paid' || !['AWAITING_WHATSAPP', 'CONFIRMED'].includes(o.order_status) || !settings.bankDetails) return null;
+  return staffMessage(settings, o, 'CONFIRMED');
+}
 
 /** Staff reply for an order status (templates in Ordering settings). */
 export function staffMessage(settings, o, kind) {

@@ -1,4 +1,4 @@
-import { ensureFoodSchema, expireStale, confirmFoodPayment, publicOrder } from '../_lib/foodOrders.js';
+import { ensureFoodSchema, expireStale, confirmFoodPayment, publicOrder, foodSettings, paymentMessage } from '../_lib/foodOrders.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
 
@@ -23,5 +23,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
       if (!r.changed && r.reason === 'payment does not match the order') return Response.json({ order: publicOrder(order), problem: 'mismatch' }, { headers: noStore });
     } catch (err) { console.error('[food] status verify', err); }
   }
-  return Response.json({ order: publicOrder(order) }, { headers: noStore });
+  // A WhatsApp order waiting for payment: how to pay, on the fan's order screen.
+  const payment = order.channel === 'whatsapp' && order.payment_status !== 'paid' ? paymentMessage(await foodSettings(env.DB), order) : null;
+  return Response.json({ order: publicOrder(order), payment }, { headers: noStore });
 }

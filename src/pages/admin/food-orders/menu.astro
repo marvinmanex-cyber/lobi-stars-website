@@ -55,10 +55,10 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
           <div class="form-grp"><label class="form-lbl" for="waHours">Unconfirmed WhatsApp orders expire after (hours)</label><input class="form-inp" id="waHours" type="number" min="1" max="48" /></div>
         </div>
         <div class="form-grp"><label class="form-lbl" for="pickupPoints">Pickup points (one per line; fans can then choose "I'll collect it". Leave empty for seat delivery only)</label><textarea class="form-ta" id="pickupPoints" rows="3" placeholder="Main Stand Kiosk&#10;East Gate Kiosk"></textarea></div>
-        <div class="form-grp"><label class="form-lbl" for="bankDetails">Bank details for payment (used in the "Confirmed" message)</label><textarea class="form-ta" id="bankDetails" rows="2" maxlength="300" placeholder="Lobi Stars FC, Bank name, Account number 0123456789"></textarea></div>
+        <div class="form-grp"><label class="form-lbl" for="bankDetails">Bank details for payment (fans see them when they order on WhatsApp)</label><textarea class="form-ta" id="bankDetails" rows="2" maxlength="300" placeholder="Account name, Bank name: account number"></textarea></div>
         <fieldset><legend>Ready-made WhatsApp replies for staff</legend>
           <p class="muted">Staff press <b>Chat on WhatsApp</b> on an order and the right message is filled in. You can use <code>{'{name}'}</code>, <code>{'{ref}'}</code>, <code>{'{total}'}</code>, <code>{'{bank}'}</code>, <code>{'{pickup}'}</code>, <code>{'{seat}'}</code> and <code>{'{where}'}</code>.</p>
-          <div class="form-grp"><label class="form-lbl" for="msgConfirmed">Order confirmed (ask for payment)</label><textarea class="form-ta" id="msgConfirmed" rows="2" maxlength="500"></textarea></div>
+          <div class="form-grp"><label class="form-lbl" for="msgConfirmed">Payment request (shown to fans, and sent when staff press Confirm order)</label><textarea class="form-ta" id="msgConfirmed" rows="2" maxlength="500"></textarea></div>
           <div class="form-grp"><label class="form-lbl" for="msgPaid">Payment received</label><textarea class="form-ta" id="msgPaid" rows="2" maxlength="500"></textarea></div>
           <div class="form-grp"><label class="form-lbl" for="msgReady">Ready / on its way</label><textarea class="form-ta" id="msgReady" rows="2" maxlength="500"></textarea></div>
           <div class="form-grp"><label class="form-lbl" for="msgCancelled">Cancelled</label><textarea class="form-ta" id="msgCancelled" rows="2" maxlength="500"></textarea></div>

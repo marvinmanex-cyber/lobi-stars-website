@@ -94,6 +94,7 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
           <li data-step="1">Received</li><li data-step="2">Preparing</li><li data-step="3">On the way</li><li data-step="4">Delivered</li>
         </ol>
         <p class="kx-status" id="kxStatus" aria-live="polite"></p>
+        <div class="kx-pay" id="kxPay" hidden><b>How to pay</b><p id="kxPayT"></p><button type="button" class="kx-btn kx-btn--ghost" id="kxPayCopy">Copy account number</button></div>
         <div class="kx-collect" id="kxCollect" hidden><span>Your collection number</span><b id="kxCollectNo"></b><small id="kxCollectAt"></small></div>
         <p class="kx-when" id="kxWhenShow" hidden></p>
         <button type="button" class="kx-btn kx-btn--alert" id="kxAlertBtn" hidden>🔔 Tell me when it's on the way</button>
