@@ -14,15 +14,25 @@ let lastActivity = Date.now(), lastPing = Date.now(), idleTimer = 0, countdown =
 const SHORTCUTS = ['kitchen', 'live', 'orders', 'menu'];
 let wantOpen = new URLSearchParams(location.search).get('open') || '';
 
-// ── Sign in ──
+// ── Sign in: kitchen staff type their login code; Super Admins can switch to their website email ──
+let adminMode = false;
+$('modeBtn').addEventListener('click', () => {
+  adminMode = !adminMode;
+  $('adminFields').hidden = !adminMode; $('codeFields').hidden = adminMode;
+  $('modeBtn').textContent = adminMode ? 'Kitchen staff? Sign in with your login code' : 'Super Admin? Sign in with your website email';
+  $('signinNote').textContent = adminMode ? 'This signs you in to MatchDay Kitchen only.' : "Everything you do in the kitchen is recorded under your name. Don't share your login code.";
+  $('signinErr').hidden = true;
+  $(adminMode ? 'login' : 'loginCode').focus();
+});
+$('loginCode').addEventListener('input', () => { const d = $('loginCode').value.replace(/\D/g, '').slice(0, 8); $('loginCode').value = d.length > 4 ? `${d.slice(0, 4)}-${d.slice(4)}` : d; });
 function showSignin(msg = '') {
   $('app').hidden = true; $('idle').hidden = true; $('signin').hidden = false;
   closeAllTabs(false);
   document.title = 'Sign in | MatchDay Kitchen | Lobi Stars FC';
   if (location.pathname !== '/matchday-kitchen/login/') history.replaceState(null, '', '/matchday-kitchen/login/');
   $('signinMsg').textContent = msg; $('signinMsg').hidden = !msg;
-  $('password').value = ''; $('codeWrap').hidden = true; $('code').value = '';
-  setTimeout(() => $('login').focus(), 50);
+  $('password').value = ''; $('loginCode').value = '';
+  setTimeout(() => $(adminMode ? 'login' : 'loginCode').focus(), 50);
 }
 $('pwToggle').addEventListener('click', () => {
   const show = $('password').type === 'password';
@@ -34,13 +44,13 @@ $('signinForm').addEventListener('submit', async (e: Event) => {
   e.preventDefault();
   const err = $('signinErr'), btn = $('signinBtn');
   err.hidden = true; $('signinMsg').hidden = true;
-  const login = $('login').value.trim(), password = $('password').value;
-  if (!login || !password) { err.textContent = 'Enter your Staff ID (or email) and password.'; err.hidden = false; return; }
+  const login = $('login').value.trim(), password = $('password').value, loginCode = $('loginCode').value.replace(/\D/g, '');
+  if (adminMode && (!login || !password)) { err.textContent = 'Enter your website email and password.'; err.hidden = false; return; }
+  if (!adminMode && loginCode.length !== 8) { err.textContent = 'Enter your 8-number login code, e.g. 1234-5678.'; err.hidden = false; return; }
   btn.disabled = true; btn.textContent = 'Signing in…';
   try {
-    const r = await fetch('/api/matchday-kitchen/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ login, password, code: $('code').value.trim() || undefined }) });
+    const r = await fetch('/api/matchday-kitchen/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify(adminMode ? { login, password } : { loginCode }) });
     const d = await r.json().catch(() => ({}));
-    if (d.needCode) { $('codeWrap').hidden = false; $('code').focus(); }
     if (!r.ok) throw new Error(d.error || 'Sign-in failed. Please try again.');
     await startApp();
   } catch (ex) {
@@ -63,7 +73,7 @@ function renderWho() {
 function renderHome() {
   $('hello').textContent = `${greeting()}, ${session.user.firstName}`;
   renderWho();
-  const sa = session.user.kind === 'admin';
+  const sa = !!session.perms.staff;
   $('groups').innerHTML = GROUPS.filter(g => !g.superOnly || sa).map(g => {
     const tiles = g.tiles;
     return `<section class="mk-group"><h2>${esc(g.title)}</h2><div class="mk-rail"><div class="mk-tickets">${tiles.map(t => {
@@ -119,7 +129,7 @@ function open(page: string, { log = true, focus = true } = {}) {
     // The same browser tab each time (named), so WhatsApp Web stays signed in and isn't opened twice.
     if (url) { window.open(url, page === 'whatsapp' ? 'mdk-whatsapp' : 'mdk-telegram'); api('open', { method: 'POST', body: { page } }).catch(() => {}); }
     // No Telegram link yet: Super Admins go to the setting; staff are told who can add it.
-    else if (session.user.kind === 'admin') { open('staff'); toast('Paste the Telegram channel link in Settings (at the bottom of Staff accounts).'); }
+    else if (session.perms.staff) { open('staff'); toast('Paste the Telegram channel link in Settings (at the bottom of Staff accounts).'); }
     else toast("The Telegram channel hasn't been set up yet. Ask a super admin.");
     return;
   }

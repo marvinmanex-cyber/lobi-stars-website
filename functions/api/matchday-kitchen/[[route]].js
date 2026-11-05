@@ -1,6 +1,6 @@
 // /api/matchday-kitchen/<route>: every MatchDay Kitchen action (the session is
 // checked by _middleware.js; data.mk = { id, csrf, user }).
-//   POST login {login, password, code?}   POST logout {idle?}   GET session
+//   POST login {loginCode} (staff) or {login, password} (Super Admins)   POST logout {idle?}   GET session
 //   POST open {page}                       GET kitchen   GET board   GET alerts
 //   GET orders?q&status&day&page           GET order?id   POST order {id, to}
 //   GET menu   POST menu {id, action: soldout|back|price, price}
@@ -145,11 +145,12 @@ export async function onRequest(context) {
       }
       case 'GET staff':
         if (!perms.staff) return denied();
-        return json({ staff: await listStaff(db), roles: ROLES, settings });
+        // Supervisors add and manage cooks and pass staff; only a Super Admin handles supervisors.
+        return json({ staff: await listStaff(db), roles: ROLES, addRoles: perms.superAdmin ? ROLES : Object.fromEntries(Object.entries(ROLES).filter(([k]) => k !== 'supervisor')), settings });
       case 'POST staff': {
         if (!perms.staff) return denied();
-        if (body.action === 'add') { const r = await createStaff(env, user, request, body); return r.error ? json({ error: r.error }, 400) : json({ ok: true }); }
-        if (body.action === 'edit') { const r = await updateStaff(env, user, request, body.id, body); return r.error ? json({ error: r.error }, 400) : json({ ok: true }); }
+        if (body.action === 'add') { const r = await createStaff(env, user, request, body); return r.error ? json({ error: r.error }, r.status || 400) : json(r); }
+        if (body.action === 'edit') { const r = await updateStaff(env, user, request, body.id, body); return r.error ? json({ error: r.error }, r.status || 400) : json(r); }
         if (body.action === 'settings') {
           const r = await saveSettings(db, user.code, body);
           if (r.error) return json({ error: r.error }, 400);
@@ -159,7 +160,7 @@ export async function onRequest(context) {
         return json({ error: 'Unknown action.' }, 400);
       }
       case 'GET check':
-        if (!perms.staff) return denied();
+        if (!perms.superAdmin) return denied();
         return json({ steps: await K.checkData(db) });
       default:
         return json({ error: 'Not found.' }, 404);

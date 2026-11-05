@@ -10,14 +10,19 @@ import { hashPassword } from '../functions/api/_lib/password.js';
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
 const T = Math.random().toString(36).slice(2, 7).toUpperCase().replace(/[^A-Z]/g, 'Q');
 const SA_EMAIL = `mk-sa-${T.toLowerCase()}@example.com`, SA_PW = 'Kitchen-Super-2026!';
-const COOK = { staffId: `LSK-${T}1`, name: 'Ada Cook', role: 'cook', password: 'Grill-Fire-77' };
-const SUP = { staffId: `LSK-${T}2`, name: 'Bola Super', role: 'supervisor', password: 'Pepper-Soup-88' };
+const COOK = { staffId: `LSK-${T}1`, name: 'Ada Cook', role: 'cook' };
+const SUP = { staffId: `LSK-${T}2`, name: 'Bola Super', role: 'supervisor' };
 const ip = () => `10.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 0}`;
 const rows = q => JSON.parse(sql(q))[0].results;
 let suya;
 
 async function signIn(login, password, extra = {}) {
   const r = await fetch(`${BASE}/api/matchday-kitchen/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ login, password, ...extra }) });
+  const cookie = (r.headers.get('set-cookie') || '').match(/ls_mdk=([^;]+)/)?.[1];
+  return { status: r.status, data: await r.json().catch(() => ({})), cookie };
+}
+async function signCode(loginCode, fromIp = ip()) {
+  const r = await fetch(`${BASE}/api/matchday-kitchen/login`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': fromIp }, body: JSON.stringify({ loginCode }) });
   const cookie = (r.headers.get('set-cookie') || '').match(/ls_mdk=([^;]+)/)?.[1];
   return { status: r.status, data: await r.json().catch(() => ({})), cookie };
 }
@@ -33,7 +38,7 @@ after(() => {
   sql(`DELETE FROM admin_users WHERE email = '${SA_EMAIL}';`);
 });
 
-test('Super Admin signs in with the website email; kitchen staff with their Staff ID; neither opens /admin', async () => {
+test('Super Admin signs in with the website email; kitchen staff with a login code only; neither opens /admin', async () => {
   sql(`INSERT INTO admin_users (id, name, email, password_hash, role, active, test_account) VALUES ('mkt_${T}', 'Kitchen Super Tester', '${SA_EMAIL}', '${await hashPassword(SA_PW)}', 'super_admin', 1, 1);`);
   const sa = await signIn(SA_EMAIL.toUpperCase(), SA_PW);
   assert.equal(sa.status, 200, JSON.stringify(sa.data)); assert.ok(sa.cookie);
@@ -41,26 +46,40 @@ test('Super Admin signs in with the website email; kitchen staff with their Staf
   assert.equal(A.s.user.kind, 'admin'); assert.equal(A.s.perms.staff, true);
   // The kitchen cookie never opens the admin back end.
   assert.equal((await fetch(`${BASE}/api/admin/me`, { headers: { Cookie: `ls_mdk=${sa.cookie}` } })).status, 401);
-  for (const p of [COOK, SUP]) assert.equal((await A.call('staff', { action: 'add', ...p, staffId: p.staffId.toLowerCase() })).status, 200, `adds ${p.name} (ID saved in capitals)`);
+  for (const p of [COOK, SUP]) {
+    const r = await A.call('staff', { action: 'add', ...p, staffId: p.staffId.toLowerCase() });
+    assert.equal(r.status, 200, `adds ${p.name} (ID saved in capitals)`);
+    assert.match(r.data.loginCode, /^\d{4}-\d{4}$/, 'an 8-number login code, shown once');
+    assert.equal(r.data.staffId, p.staffId);
+    p.code = r.data.loginCode; p.id = r.data.id;
+  }
+  // No Staff ID given: the website makes one.
+  const auto = await A.call('staff', { action: 'add', name: 'Auto Number', role: 'pass' });
+  assert.match(auto.data.staffId, /^LSK-\d{3,}$/);
+  sql(`DELETE FROM mk_staff WHERE id = '${auto.data.id}';`);
   assert.equal((await A.call('staff', { action: 'add', ...COOK, name: 'Someone Else' })).status, 400, 'Staff IDs are unique');
-  assert.match((await A.call('staff', { action: 'add', staffId: `LSK-${T}9`, name: 'Weak Pw', role: 'cook', password: '12345678' })).data.error, /only numbers|common/);
   const list = (await A.call('staff')).data.staff;
   assert.ok(list.some(s => s.staffId === COOK.staffId && s.role === 'cook'));
 
-  const cook = await signIn(COOK.staffId.toLowerCase(), COOK.password);
+  // The code is stored only as a hash.
+  const stored = rows(`SELECT login_code_hash, password_hash FROM mk_staff WHERE id = '${COOK.id}'`)[0];
+  assert.ok(stored.login_code_hash && !stored.login_code_hash.includes(COOK.code.replace('-', '')));
+  // Staff ID and password no longer sign anyone in.
+  assert.equal((await signIn(COOK.staffId, 'Grill-Fire-77')).status, 400);
+  const cook = await signCode(COOK.code);
   assert.equal(cook.status, 200, JSON.stringify(cook.data));
   assert.equal((await fetch(`${BASE}/api/admin/me`, { headers: { Cookie: `ls_mdk=${cook.cookie}` } })).status, 401, 'kitchen staff cannot open /admin');
   const C = await as(cook.cookie);
   assert.equal(C.s.user.code, COOK.staffId); assert.equal(C.s.perms.price, false); assert.equal(C.s.perms.cancel, false);
-  assert.equal((await C.call('staff')).status, 403, 'only Super Admins manage staff');
+  assert.equal((await C.call('staff')).status, 403, 'cooks do not manage staff');
   // A non-Super-Admin website account cannot sign in with an email.
   assert.equal((await signIn('nobody-here@example.com', 'whatever-123')).status, 401);
 });
 
 test('the kitchen screen moves the real order; the menu page changes the real menu; roles are enforced; all recorded', async () => {
   const sa = await signIn(SA_EMAIL, SA_PW), A = await as(sa.cookie);
-  const cook = await signIn(COOK.staffId, COOK.password), C = await as(cook.cookie);
-  const sup = await signIn(SUP.staffId, SUP.password), S = await as(sup.cookie);
+  const cook = await signCode(COOK.code), C = await as(cook.cookie);
+  const sup = await signCode(SUP.code), S = await as(sup.cookie);
   // A WhatsApp order, confirmed as paid: it is now New on the kitchen screen.
   const o = await fetch(`${BASE}/api/food/whatsapp-order`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ name: 'Kitchen Fan', phone: `0803${String(Math.random()).slice(2, 9)}`, fulfilment: 'seat', seat: 'K12', notes: 'No pepper', items: [{ id: 'suya', qty: 2 }] }) }).then(r => r.json());
   assert.ok(o.ref, JSON.stringify(o));
@@ -131,9 +150,9 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   assert.equal((await fetch(`${BASE}/api/matchday-kitchen/menu`, { method: 'POST', headers: { Cookie: `ls_mdk=${cook.cookie}`, 'Content-Type': 'application/json' }, body: '{"id":"suya","action":"soldout"}' })).status, 403);
 });
 
-test('shifts, handover notes (pin: supervisors only), switching off signs out at once, lockout after 5 wrong passwords', async () => {
-  const cook = await signIn(COOK.staffId, COOK.password), C = await as(cook.cookie);
-  const sup = await signIn(SUP.staffId, SUP.password), S = await as(sup.cookie);
+test('shifts, handover notes (pin: supervisors only), switching off signs out at once, wrong codes refused', async () => {
+  const cook = await signCode(COOK.code), C = await as(cook.cookie);
+  const sup = await signCode(SUP.code), S = await as(sup.cookie);
   assert.equal((await C.call('shift', { action: 'start' })).status, 200);
   assert.equal((await C.call('shift', { action: 'start' })).status, 409, 'one shift at a time');
   assert.ok((await S.call('shift')).data.onNow.some(p => p.code === COOK.staffId), 'in the kitchen now');
@@ -148,11 +167,39 @@ test('shifts, handover notes (pin: supervisors only), switching off signs out at
   const cookRow = (await A.call('staff')).data.staff.find(s => s.staffId === COOK.staffId);
   assert.equal((await A.call('staff', { action: 'edit', id: cookRow.id, active: false })).status, 200);
   assert.equal((await fetch(`${BASE}/api/matchday-kitchen/session`, { headers: { Cookie: `ls_mdk=${cook.cookie}` } })).status, 401, 'signed out on every tablet');
-  assert.equal((await signIn(COOK.staffId, COOK.password)).status, 403, 'switched off');
-  for (let i = 0; i < 4; i++) assert.equal((await signIn(SUP.staffId, 'wrong-password-x')).status, 401);
-  assert.equal((await signIn(SUP.staffId, 'wrong-password-x')).status, 423, 'locked on the 5th');
-  assert.equal((await signIn(SUP.staffId, SUP.password)).status, 423, 'still locked with the right password');
-  assert.equal((await signIn(`LSK-NOPE${T}`, 'whatever-123')).status, 401, 'unknown Staff ID: same answer');
+  assert.equal((await signCode(COOK.code)).status, 403, 'switched off');
+  assert.equal((await A.call('staff', { action: 'edit', id: cookRow.id, active: true })).status, 200);
+  // Wrong codes: refused, and 10 from one connection stop it for 15 minutes.
+  const badIp = ip();
+  for (let i = 0; i < 10; i++) assert.equal((await signCode('0000-0001', badIp)).status, 401);
+  assert.equal((await signCode(SUP.code, badIp)).status, 429, 'stopped, even with a right code');
+  assert.equal((await signCode(SUP.code)).status, 200, 'another connection is not affected');
+  assert.equal((await signCode('123')).status, 400, 'too short');
+});
+
+test('a supervisor has the kitchen back end: all activity, cooks and pass staff, settings; only a Super Admin handles supervisors', async () => {
+  const sup = await signCode(SUP.code), S = await as(sup.cookie);
+  assert.equal(S.s.perms.staff, true); assert.equal(S.s.perms.activityAll, true); assert.equal(S.s.perms.superAdmin, false); assert.equal(S.s.perms.price, true); assert.equal(S.s.perms.cancel, true);
+  const list = (await S.call('staff')).data;
+  assert.ok(list.staff.some(x => x.staffId === COOK.staffId)); assert.equal(list.addRoles.supervisor, undefined); assert.ok(list.addRoles.cook);
+  assert.ok((await S.call('activity')).data.rows.some(a => a.code !== SUP.staffId), "sees everyone's activity");
+  assert.equal((await fetch(`${BASE}/api/admin/me`, { headers: { Cookie: `ls_mdk=${sup.cookie}` } })).status, 401, 'never the website admin');
+  assert.equal((await S.call('check')).status, 403, 'the data check stays with Super Admins');
+  // Adds a cook and gives a new code; the old code stops and the person is signed out.
+  const added = await S.call('staff', { action: 'add', name: `Temp Cook ${T}`, role: 'cook' });
+  assert.equal(added.status, 200); const old = added.data.loginCode;
+  const tc = await signCode(old); assert.equal(tc.status, 200);
+  const nc = await S.call('staff', { action: 'edit', id: added.data.id, newCode: true });
+  assert.match(nc.data.loginCode, /^\d{4}-\d{4}$/); assert.notEqual(nc.data.loginCode, old);
+  assert.equal((await fetch(`${BASE}/api/matchday-kitchen/session`, { headers: { Cookie: `ls_mdk=${tc.cookie}` } })).status, 401, 'signed out at once');
+  assert.equal((await signCode(old)).status, 401, 'the old code stops');
+  assert.equal((await signCode(nc.data.loginCode)).status, 200);
+  // Supervisors: not for supervisors.
+  assert.equal((await S.call('staff', { action: 'add', name: 'Another Boss', role: 'supervisor' })).status, 403);
+  assert.equal((await S.call('staff', { action: 'edit', id: added.data.id, role: 'supervisor' })).status, 403, 'cannot promote');
+  assert.equal((await S.call('staff', { action: 'edit', id: SUP.id, newCode: true })).status, 403, "cannot change a supervisor's code");
+  assert.equal((await S.call('staff', { action: 'settings', telegramUrl: '', cancelRoles: ['pass', 'supervisor'], priceRoles: ['supervisor'], lateMinutes: 5 })).status, 200, 'changes the settings');
+  sql(`DELETE FROM mk_staff WHERE id = '${added.data.id}';`);
 });
 
 test('pages are private: noindex, strict security headers, only framed by MatchDay Kitchen', async () => {

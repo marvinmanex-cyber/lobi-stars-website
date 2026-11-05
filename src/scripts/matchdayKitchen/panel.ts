@@ -302,30 +302,38 @@ const PAGES: Record<string, () => Promise<void>> = {
 
   async staff() {
     if (!session.perms.staff) { notAvailable(); return; }
+    // A new login code shows once, at the top of the page, ready to send.
+    let codeShown: { name: string; staffId: string; loginCode: string } | null = null;
+    const codeMsg = (c: { name: string; loginCode: string }) => `MatchDay Kitchen login for ${c.name}\n1. Open https://lobistarsfc.com/matchday-kitchen\n2. Enter this login code: ${c.loginCode}\nIt is personal to you: please keep it private.`;
     const draw = async () => {
       const d = await api('staff');
-      const roleOpts = (sel = '') => Object.entries(d.roles).map(([k, v]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
+      const sa = !!session.perms.superAdmin;
+      const canEdit = (s: any) => sa || s.role !== 'supervisor';
+      const roleOpts = (sel = '') => Object.entries(d.addRoles).map(([k, v]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
       const roleChecks = (name: string, on: string[]) => Object.entries(d.roles).map(([k, v]) => `<label style="display:flex;gap:8px;align-items:center;min-height:44px"><input type="checkbox" name="${name}" value="${k}" ${on.includes(k) ? 'checked' : ''} style="width:24px;height:24px" /> ${esc(v)}</label>`).join('');
       main.innerHTML = `
+        ${codeShown ? `<section class="mk-section"><div class="mk-box mk-codebox" role="status"><p style="margin:0">Login code for <b>${esc(codeShown.name)}</b> (${esc(codeShown.staffId)})</p>
+          <div class="mk-codeshow">${esc(codeShown.loginCode)}</div>
+          <p style="margin:0 0 10px">It is shown <b>only now</b>. Send it to them privately. They open lobistarsfc.com/matchday-kitchen and type it to sign in.</p>
+          <div class="mk-actions" style="justify-content:flex-start"><a class="mk-btn go" href="https://wa.me/?text=${encodeURIComponent(codeMsg(codeShown))}" target="_blank" rel="noopener">Send on WhatsApp</a><button type="button" class="mk-btn" id="codeCopy">Copy</button><button type="button" class="mk-btn" id="codeDone">Done</button></div></div></section>` : ''}
         <section class="mk-section"><h2>Kitchen staff <span class="mk-badge">${d.staff.length}</span></h2>
           ${d.staff.length ? `<div class="mk-table-wrap"><table class="mk-table"><thead><tr><th>Name</th><th>Staff ID</th><th>Role</th><th>Can sign in</th><th>Last sign-in</th><th></th></tr></thead><tbody>${d.staff.map((s: any) => `
-            <tr><td><b>${esc(s.name)}</b></td><td>${esc(s.staffId)}</td><td>${esc(s.roleLabel)}</td><td>${s.active ? (s.locked ? '<span class="mk-pill red">Locked 15 min</span>' : '<span class="mk-pill go">Yes</span>') : '<span class="mk-pill red">Switched off</span>'}</td><td>${s.lastLogin ? esc(dayTime(s.lastLogin)) : 'Never'}</td>
-            <td><button type="button" class="mk-btn" data-edit="${esc(s.id)}">Edit</button></td></tr>
-            <tr id="ed_${esc(s.id)}" hidden><td colspan="6"><form class="mk-box" data-editform="${esc(s.id)}" style="margin:0">
+            <tr><td><b>${esc(s.name)}</b></td><td>${esc(s.staffId)}</td><td>${esc(s.roleLabel)}</td><td>${s.active ? (s.hasCode ? '<span class="mk-pill go">Yes</span>' : '<span class="mk-pill red">Needs a login code</span>') : '<span class="mk-pill red">Switched off</span>'}</td><td>${s.lastLogin ? esc(dayTime(s.lastLogin)) : 'Never'}</td>
+            <td>${canEdit(s) ? `<button type="button" class="mk-btn" data-edit="${esc(s.id)}">Edit</button>` : ''}</td></tr>
+            ${canEdit(s) ? `<tr id="ed_${esc(s.id)}" hidden><td colspan="6"><form class="mk-box" data-editform="${esc(s.id)}" style="margin:0">
               <div class="mk-filters"><div class="mk-field"><label>Full name</label><input name="name" value="${esc(s.name)}" maxlength="80" /></div>
               <div class="mk-field"><label>Role</label><select name="role">${roleOpts(s.role)}</select></div>
-              <div class="mk-field"><label>New password (optional)</label><input name="password" type="password" autocomplete="new-password" maxlength="72" /></div></div>
+              </div>
               <label style="display:flex;gap:10px;align-items:center;min-height:48px;font-size:18px"><input type="checkbox" name="active" ${s.active ? 'checked' : ''} style="width:26px;height:26px" /> Can sign in</label>
-              <p class="mk-status" style="text-transform:none;letter-spacing:0">A new password or switching someone off signs them out on every tablet straight away.</p>
-              <button class="mk-btn go" type="submit">Save changes</button></form></td></tr>`).join('')}</tbody></table></div>` : '<p class="mk-empty">No kitchen staff yet. Add the first person below.</p>'}
+              <p class="mk-status" style="text-transform:none;letter-spacing:0">A new login code or switching someone off signs them out on every tablet straight away.</p>
+              <div class="mk-actions" style="justify-content:flex-start"><button class="mk-btn go" type="submit">Save changes</button><button type="button" class="mk-btn" data-newcode="${esc(s.id)}" data-name="${esc(s.name)}">Give a new login code</button></div></form></td></tr>` : ''}`).join('')}</tbody></table></div>` : '<p class="mk-empty">No kitchen staff yet. Add the first person below.</p>'}
         </section>
         <section class="mk-section"><h2>Add staff</h2><form class="mk-box" id="addF">
-          <div class="mk-filters"><div class="mk-field"><label for="aId">Staff ID</label><input id="aId" placeholder="e.g. LSK-001" maxlength="20" autocapitalize="characters" /></div>
-          <div class="mk-field"><label for="aName">Full name</label><input id="aName" maxlength="80" /></div>
+          <div class="mk-filters"><div class="mk-field"><label for="aName">Full name</label><input id="aName" maxlength="80" /></div>
           <div class="mk-field"><label for="aRole">Role</label><select id="aRole">${roleOpts('cook')}</select></div>
-          <div class="mk-field"><label for="aPw">Password</label><input id="aPw" type="password" autocomplete="new-password" maxlength="72" /></div></div>
-          <p class="mk-status" style="text-transform:none;letter-spacing:0">Staff IDs: letters, numbers and dashes (saved in capitals). Passwords: at least 8 characters, not only numbers, not common, not like the Staff ID or name.</p>
-          <button class="mk-btn go big" type="submit">Add staff</button></form></section>
+          </div>
+          <p class="mk-status" style="text-transform:none;letter-spacing:0">No email or password: the website gives this person a Staff ID and an 8-number login code.${sa ? '' : ' Only a Super Admin can add a kitchen supervisor.'}</p>
+          <button class="mk-btn go big" type="submit">Add staff and make login code</button></form></section>
         <section class="mk-section"><h2>Settings</h2><form class="mk-box" id="setF">
           <div class="mk-field"><label for="sTg">Telegram channel link (shows the Telegram updates button)</label><input id="sTg" placeholder="https://t.me/yourchannel" value="${esc(d.settings.telegramUrl)}" /></div>
           <div class="mk-filters" style="align-items:flex-start"><fieldset class="mk-field" style="border:0;padding:0"><legend class="mk-label">Who can cancel orders</legend>${roleChecks('cancel', d.settings.cancelRoles)}</fieldset>
@@ -333,12 +341,21 @@ const PAGES: Record<string, () => Promise<void>> = {
           <div class="mk-field"><label for="sLate">Orders are late after (minutes)</label><input id="sLate" type="number" min="1" max="120" value="${d.settings.lateMinutes}" /></div></div>
           <p class="mk-status" style="text-transform:none;letter-spacing:0">Super admins can always cancel orders and change prices.</p>
           <button class="mk-btn go" type="submit">Save settings</button></form></section>
-        <section class="mk-section"><h2>Data check</h2><div class="mk-box"><p style="margin:0 0 10px">Checks that MatchDay Kitchen can read the website's orders and menu.</p><button type="button" class="mk-btn" id="chk">Run the data check</button><div id="chkOut" style="margin-top:10px"></div></div></section>`;
+        ${sa ? `<section class="mk-section"><h2>Data check</h2><div class="mk-box"><p style="margin:0 0 10px">Checks that MatchDay Kitchen can read the website's orders and menu.</p><button type="button" class="mk-btn" id="chk">Run the data check</button><div id="chkOut" style="margin-top:10px"></div></div></section>` : ''}`;
+      window.scrollTo(0, 0);
     };
     main.addEventListener('click', (e: Event) => {
       const el = e.target as HTMLElement;
       const ed = el.closest('[data-edit]') as HTMLElement | null;
       if (ed) { const row = $(`ed_${ed.dataset.edit}`); row.hidden = !row.hidden; return; }
+      const nc = el.closest('[data-newcode]') as HTMLButtonElement | null;
+      if (nc) {
+        if (!confirm(`Give ${nc.dataset.name} a new login code? Their old code stops working and they are signed out straight away.`)) return;
+        act(nc, async () => { const r = await api('staff', { method: 'POST', body: { action: 'edit', id: nc.dataset.newcode, newCode: true } }); codeShown = r; await draw(); });
+        return;
+      }
+      if (el.id === 'codeDone') { codeShown = null; act(null, draw); return; }
+      if (el.id === 'codeCopy' && codeShown) { navigator.clipboard?.writeText(codeMsg(codeShown)).then(() => toast('Copied.'), () => toast('Copy failed: write the code down instead.')); return; }
       if (el.id === 'chk') act(el as HTMLButtonElement, async () => {
         const d = await api('check');
         $('chkOut').innerHTML = d.steps.map((s: any) => `<p class="${s.ok ? 'mk-ok' : 'mk-err'}" style="margin:0 0 6px"><b>${s.ok ? 'OK' : 'PROBLEM'}</b> · ${esc(s.name)}: ${esc(s.detail)}</p>`).join('');
@@ -348,13 +365,13 @@ const PAGES: Record<string, () => Promise<void>> = {
       e.preventDefault();
       const form = e.target as HTMLFormElement;
       if (form.id === 'addF') {
-        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'add', staffId: $('aId').value, name: $('aName').value, role: $('aRole').value, password: $('aPw').value } }); toast('Staff account added.'); await draw(); });
+        act(form.querySelector('button'), async () => { const r = await api('staff', { method: 'POST', body: { action: 'add', name: $('aName').value, role: $('aRole').value } }); codeShown = r; toast('Staff account added.'); await draw(); });
       } else if (form.id === 'setF') {
         const vals = (n: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${n}"]:checked`)].map(i => i.value);
         act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'settings', telegramUrl: $('sTg').value.trim(), cancelRoles: vals('cancel'), priceRoles: vals('price'), lateMinutes: $('sLate').value } }); toast('Settings saved.'); shell?.shiftChanged(); await draw(); });
       } else if (form.dataset.editform) {
         const g = (n: string) => form.querySelector(`[name="${n}"]`) as HTMLInputElement;
-        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'edit', id: form.dataset.editform, name: g('name').value, role: g('role').value, password: g('password').value, active: g('active').checked } }); toast('Changes saved.'); await draw(); });
+        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'edit', id: form.dataset.editform, name: g('name').value, role: g('role').value, active: g('active').checked } }); toast('Changes saved.'); await draw(); });
       }
     });
     await draw();

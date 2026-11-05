@@ -2,7 +2,8 @@
 // from the website admin back end (like the Media Centre and the IT Centre).
 //
 // Kitchen staff are NOT admin staff: their own table (mk_staff), their own
-// Staff IDs (e.g. LSK-001) and passwords, their own cookie (ls_mdk) and their
+// Staff IDs (e.g. LSK-001) and a personal 8-number login code (no email or
+// password; since 5 Nov 2026), their own cookie (ls_mdk) and their
 // own API (/api/matchday-kitchen/*). A kitchen session never opens /admin (the
 // admin middlewares only accept the admin session). Website Super Admins may
 // also sign in here with their website email and password (and two-step code);
@@ -13,14 +14,15 @@
 // never stops the kitchen: a failed write is logged and the work carries on.
 // No approval step: what staff do takes effect at once. Orders and the menu
 // are only read and changed through kitchenData.js.
-import { hashPassword, verifyPassword } from './password.js';
+import { verifyPassword } from './password.js';
 import { ensureFanSchema, rateLimit } from './fans.js';
 import { isFullSuperAdmin } from './superAdmins.js';
 
 export const MK_COOKIE = 'ls_mdk';
 export const IDLE_MS = 22 * 60e3;              // the page asks "Still there?" after 20 minutes; the server ends the session after 22
 const MAX_MS = 14 * 3600e3;                    // and after 14 hours in any case (a long match day)
-const LOCK_AFTER = 5, LOCK_MS = 15 * 60e3;     // 5 wrong passwords: locked for 15 minutes
+const LOCK_AFTER = 5;                          // Super Admin email sign-in: 5 wrong passwords, wait 15 minutes
+const CODE_FAILS = 10;                         // login codes: 10 wrong codes from one connection, wait 15 minutes
 export const STAFF_ID_RE = /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
 export const ROLES = { cook: 'Cook / kitchen hand', pass: 'Pass / order handler', supervisor: 'Kitchen supervisor' };
 export const SETTING_DEFAULTS = { telegram_url: '', cancel_roles: 'pass,supervisor', price_roles: 'supervisor', late_minutes: '5' };
@@ -45,7 +47,7 @@ export async function ensureKitchenSchema(db) {
     db.prepare(`CREATE TABLE IF NOT EXISTS mk_staff (
       id TEXT PRIMARY KEY, staff_id TEXT NOT NULL UNIQUE, full_name TEXT NOT NULL,
       role TEXT NOT NULL,                       -- cook / pass / supervisor
-      password_hash TEXT NOT NULL,              -- PBKDF2-SHA256 (password.js); passwords are never stored
+      password_hash TEXT NOT NULL,              -- not used since 5 Nov 2026 (staff sign in with a login code)
       is_active INTEGER NOT NULL DEFAULT 1, failed_attempts INTEGER NOT NULL DEFAULT 0, locked_until TEXT,
       created_by TEXT, created_at TEXT NOT NULL, updated_at TEXT, last_login_at TEXT)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS mk_sessions (
@@ -72,6 +74,9 @@ export async function ensureKitchenSchema(db) {
       text TEXT NOT NULL, pinned INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, deleted_at TEXT, deleted_by TEXT)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS mk_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT, updated_by TEXT)`),
   ]);
+  // The personal login code, stored only as a hash (shown once, when it is made).
+  try { await db.prepare(`ALTER TABLE mk_staff ADD COLUMN login_code_hash TEXT`).run(); } catch { /* already there */ }
+  await db.prepare(`CREATE INDEX IF NOT EXISTS mk_staff_code ON mk_staff (login_code_hash)`).run();
   ready = true;
 }
 
@@ -101,7 +106,8 @@ export function permissions(user, settings) {
     cancel: sa || settings.cancelRoles.includes(user.role),
     price: sa || settings.priceRoles.includes(user.role),
     notes: sa || user.role === 'supervisor',        // pin / delete anyone's handover notes
-    activityAll: sa, staff: sa,
+    // The kitchen's back end: supervisors see everyone's activity, manage cooks and pass staff, and change the settings.
+    activityAll: sa || user.role === 'supervisor', staff: sa || user.role === 'supervisor', superAdmin: sa,
   };
 }
 
@@ -134,21 +140,31 @@ export function staffIdProblem(id) {
   if (id.length > 20 || !STAFF_ID_RE.test(id)) return 'The Staff ID can only have letters, numbers and dashes, e.g. LSK-001.';
   return null;
 }
-const COMMON = /^(password|passw0rd|12345678|123456789|1234567890|qwerty|qwertyuiop|iloveyou|letmein|welcome|admin|football|lobistars|matchday|kitchen|abc12345|11111111|00000000)\d*$/i;
-/** Password rules like Django's: 8+ characters, not only numbers, not too common, not too like the Staff ID or name. */
-export function passwordProblem(p, staffId = '', name = '') {
-  p = String(p || '');
-  if (p.length < 8) return 'The password must have at least 8 characters.';
-  if (p.length > 72) return 'The password can have at most 72 characters.';
-  if (/^\d+$/.test(p)) return "The password can't be only numbers.";
-  if (COMMON.test(p) || /^(.)\1+$/.test(p)) return 'That password is too common. Choose another.';
-  const low = p.toLowerCase();
-  const similar = [staffId, ...String(name).split(/\s+/)].map(x => String(x || '').toLowerCase().replace(/-/g, '')).filter(x => x.length >= 3);
-  if (similar.some(x => low.replace(/-/g, '').includes(x))) return "The password is too like the person's Staff ID or name.";
-  return null;
+// Login codes: 8 numbers, personal, working until a new one is made. Only a hash is kept.
+const codeHash = (env, digits) => sha256Hex(`mk-code:${env.SESSION_SECRET || 'lobi'}:${digits}`);
+const showCode = d => `${d.slice(0, 4)}-${d.slice(4)}`;
+async function newLoginCode(env) {
+  for (let i = 0; i < 8; i++) {
+    const n = crypto.getRandomValues(new Uint32Array(1))[0] % 100000000;
+    const digits = String(n).padStart(8, '0');
+    if (/^(\d)\1+$/.test(digits) || digits === '12345678') continue;
+    const hash = await codeHash(env, digits);
+    if (!(await env.DB.prepare(`SELECT 1 FROM mk_staff WHERE login_code_hash = ?`).bind(hash).first())) return { digits, hash };
+  }
+  throw new Error('Could not make a login code.');
 }
+async function nextStaffId(db) {
+  let n = ((await db.prepare(`SELECT COUNT(*) AS n FROM mk_staff`).first())?.n || 0) + 1;
+  for (;;) {
+    const id = `LSK-${String(n).padStart(3, '0')}`;
+    if (!(await db.prepare(`SELECT 1 FROM mk_staff WHERE staff_id = ?`).bind(id).first())) return id;
+    n++;
+  }
+}
+// Only a Super Admin adds or changes a kitchen supervisor; supervisors manage cooks and pass staff.
+const SUPER_ONLY = 'Only a Super Admin can add or change a kitchen supervisor.';
 const staffView = s => ({ id: s.id, staffId: s.staff_id, name: s.full_name, role: s.role, roleLabel: ROLES[s.role] || s.role, active: !!s.is_active,
-  locked: !!(s.locked_until && Date.parse(s.locked_until) > Date.now()), lastLogin: s.last_login_at, createdAt: s.created_at });
+  hasCode: !!s.login_code_hash, lastLogin: s.last_login_at, createdAt: s.created_at });
 export async function listStaff(db) {
   await ensureKitchenSchema(db);
   return (await db.prepare(`SELECT * FROM mk_staff ORDER BY is_active DESC, full_name`).all()).results.map(staffView);
@@ -159,15 +175,18 @@ async function endSessions(db, userId, why) {
 export async function createStaff(env, by, request, v) {
   const db = env.DB;
   await ensureKitchenSchema(db);
-  const staffId = String(v.staffId || '').trim().toUpperCase(), name = oneLine(v.name, 80), role = String(v.role || '');
-  const bad = staffIdProblem(staffId) || (name.length < 2 ? "Enter the person's full name." : null) || (!ROLES[role] ? 'Choose a role.' : null) || passwordProblem(v.password, staffId, name);
+  const name = oneLine(v.name, 80), role = String(v.role || '');
+  const given = String(v.staffId || '').trim().toUpperCase();
+  const bad = (given ? staffIdProblem(given) : null) || (name.length < 2 ? "Enter the person's full name." : null) || (!ROLES[role] ? 'Choose a role.' : null);
   if (bad) return { error: bad };
-  if (await db.prepare(`SELECT id FROM mk_staff WHERE staff_id = ?`).bind(staffId).first()) return { error: 'That Staff ID is already used. Choose another.' };
-  const id = newId('mks'), at = nowIso();
-  await db.prepare(`INSERT INTO mk_staff (id, staff_id, full_name, role, password_hash, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-    .bind(id, staffId, name, role, await hashPassword(String(v.password)), by.code || by.name, at, at).run();
+  if (role === 'supervisor' && by.kind !== 'admin') return { error: SUPER_ONLY, status: 403 };
+  if (given && await db.prepare(`SELECT id FROM mk_staff WHERE staff_id = ?`).bind(given).first()) return { error: 'That Staff ID is already used. Choose another.' };
+  const staffId = given || await nextStaffId(db);
+  const id = newId('mks'), at = nowIso(), code = await newLoginCode(env);
+  await db.prepare(`INSERT INTO mk_staff (id, staff_id, full_name, role, password_hash, login_code_hash, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, 'login-code', ?, ?, ?, ?)`)
+    .bind(id, staffId, name, role, code.hash, by.code || by.name, at, at).run();
   await mkLog(db, by, `Created staff account ${name} (${staffId}), ${ROLES[role]}`, { kind: 'staff', request });
-  return { ok: true, id };
+  return { ok: true, id, staffId, name, loginCode: showCode(code.digits) };
 }
 export async function updateStaff(env, by, request, id, v) {
   const db = env.DB;
@@ -179,27 +198,27 @@ export async function updateStaff(env, by, request, id, v) {
   const active = v.active !== undefined ? (v.active ? 1 : 0) : s.is_active;
   if (name.length < 2) return { error: "Enter the person's full name." };
   if (!ROLES[role]) return { error: 'Choose a role.' };
-  const pw = String(v.password || '');
-  if (pw) { const bad = passwordProblem(pw, s.staff_id, name); if (bad) return { error: bad }; }
+  if (by.kind !== 'admin' && (s.role === 'supervisor' || role === 'supervisor')) return { error: SUPER_ONLY, status: 403 };
+  const code = v.newCode === true ? await newLoginCode(env) : null;
   const changes = [];
   if (name !== s.full_name) changes.push(`name ${s.full_name} → ${name}`);
   if (role !== s.role) changes.push(`role ${ROLES[s.role] || s.role} → ${ROLES[role]}`);
   if (active !== s.is_active) changes.push(active ? 'can sign in again' : 'switched off');
-  if (pw) changes.push('password reset');
+  if (code) changes.push('new login code');
   if (!changes.length) return { ok: true, unchanged: true };
-  await db.prepare(`UPDATE mk_staff SET full_name = ?, role = ?, is_active = ?, ${pw ? 'password_hash = ?, failed_attempts = 0, locked_until = NULL, ' : ''}updated_at = ? WHERE id = ?`)
-    .bind(...[name, role, active, ...(pw ? [await hashPassword(pw)] : []), nowIso(), s.id]).run();
-  // A new password or a switched-off account signs the person out on every tablet straight away.
-  if (pw || !active) await endSessions(db, s.id, pw ? 'password changed' : 'account switched off');
+  await db.prepare(`UPDATE mk_staff SET full_name = ?, role = ?, is_active = ?, ${code ? 'login_code_hash = ?, ' : ''}updated_at = ? WHERE id = ?`)
+    .bind(...[name, role, active, ...(code ? [code.hash] : []), nowIso(), s.id]).run();
+  // A new code or a switched-off account signs the person out on every tablet straight away.
+  if (code || !active) await endSessions(db, s.id, code ? 'new login code' : 'account switched off');
   await mkLog(db, by, `Changed staff account ${name} (${s.staff_id}): ${changes.join(', ')}`, { kind: 'staff', request });
-  return { ok: true };
+  return { ok: true, staffId: s.staff_id, name, ...(code ? { loginCode: showCode(code.digits) } : {}) };
 }
 
 // ── Sign-in and sessions ──
 const cookieValue = (request, name) => ((request.headers.get('Cookie') || '').match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`)) || [])[1] || null;
 const sessionCookie = token => `${MK_COOKIE}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${MAX_MS / 1000}`;
 export const clearKitchenCookie = () => `${MK_COOKIE}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`;
-const FAIL = 'The Staff ID / email or password is not right.';
+const FAIL = 'The email or password is not right.';
 const DUMMY_HASH = '100000:00000000000000000000000000000000:00';
 const staffActor = s => ({ kind: 'staff', id: s.id, name: s.full_name, code: s.staff_id });
 const adminActor = u => ({ kind: 'admin', id: u.id, name: u.name || u.email, code: u.email });
@@ -211,13 +230,38 @@ async function startSession(db, request, kind, userId) {
   return { cookie: sessionCookie(token), csrf };
 }
 
-export async function signIn(env, request, { login, password, code }) {
+export async function signIn(env, request, { login, password, loginCode }) {
   const db = env.DB;
   await ensureFanSchema(db); await ensureKitchenSchema(db);
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
   if (!(await rateLimit(db, `mdk-login:${ip}`, 40, 900))) return { error: 'Too many attempts from this connection. Please wait 15 minutes.', status: 429 };
   const raw = String(login || '').trim().slice(0, 120);
   const pw = String(password || '');
+
+  // Kitchen staff: their personal login code (no email or password).
+  if (loginCode !== undefined) {
+    const digits = String(loginCode || '').replace(/\D/g, '');
+    if (digits.length !== 8) return { error: 'Your login code has 8 numbers, e.g. 1234-5678.', status: 400 };
+    const key = `mdk-code-fail:${ip}`;
+    const now = Math.floor(Date.now() / 1000), start = now - (now % 900);
+    const row = await db.prepare(`SELECT window_start, count FROM rate_limits WHERE key = ?`).bind(key).first();
+    if (row && row.window_start === start && row.count >= CODE_FAILS) return { error: 'Too many wrong codes from this connection. Please wait 15 minutes.', status: 429 };
+    const st = await db.prepare(`SELECT * FROM mk_staff WHERE login_code_hash = ?`).bind(await codeHash(env, digits)).first();
+    if (!st) {
+      await rateLimit(db, key, 1e6, 900);
+      await mkLog(db, { kind: 'public', name: 'Unknown', code: '' }, 'Sign-in refused: wrong login code', { kind: 'sign_in', request });
+      return { error: 'That login code is not right. Check it, or ask your kitchen supervisor.', status: 401 };
+    }
+    const person = staffActor(st);
+    if (!st.is_active) {
+      await mkLog(db, person, 'Sign-in refused: account switched off', { kind: 'sign_in', request });
+      return { error: 'This account is switched off. Ask a kitchen supervisor or a Super Admin.', status: 403 };
+    }
+    await db.prepare(`UPDATE mk_staff SET last_login_at = ? WHERE id = ?`).bind(nowIso(), st.id).run();
+    const sess = await startSession(db, request, 'staff', st.id);
+    await mkLog(db, person, 'Signed in', { kind: 'sign_in', request });
+    return { ok: true, cookie: sess.cookie };
+  }
 
   // A website Super Admin, with their website email.
   if (raw.includes('@')) {
@@ -235,7 +279,7 @@ export async function signIn(env, request, { login, password, code }) {
     if (!allowed) {
       await rateLimit(db, key, 1e6, 900);
       await mkLog(db, { kind: 'public', name: email, code: email }, ok && u ? 'Sign-in refused: only website Super Admins can sign in with an email' : 'Wrong email or password', { kind: 'sign_in', request });
-      return { error: ok && u ? 'Only website Super Admins can sign in with an email. Kitchen staff use their Staff ID.' : FAIL, status: 401 };
+      return { error: ok && u ? 'Only website Super Admins can sign in with an email. Kitchen staff use their login code.' : FAIL, status: 401 };
     }
     // MatchDay Kitchen: email and password only (no two-step code). A kitchen session opens
     // only the kitchen, never the website admin, which still asks for the code.
@@ -244,42 +288,7 @@ export async function signIn(env, request, { login, password, code }) {
     return { ok: true, cookie: s.cookie };
   }
 
-  // Kitchen staff, with their Staff ID.
-  const staffId = raw.toUpperCase();
-  const s = STAFF_ID_RE.test(staffId) ? await db.prepare(`SELECT * FROM mk_staff WHERE staff_id = ?`).bind(staffId).first() : null;
-  if (!s) {
-    // The same work as a real check, so a wrong ID takes as long to refuse as a wrong password.
-    await verifyPassword(pw, DUMMY_HASH).catch(() => false);
-    await mkLog(db, { kind: 'public', name: `Unknown (${oneLine(raw, 40) || 'empty'})`, code: oneLine(raw, 40) }, 'Sign-in refused: no such Staff ID', { kind: 'sign_in', request });
-    return { error: FAIL, status: 401 };
-  }
-  const who = staffActor(s);
-  if (s.locked_until && Date.parse(s.locked_until) > Date.now()) {
-    const mins = Math.max(1, Math.ceil((Date.parse(s.locked_until) - Date.now()) / 60000));
-    await verifyPassword(pw, DUMMY_HASH).catch(() => false);
-    await mkLog(db, who, 'Sign-in refused: account locked', { kind: 'sign_in', request });
-    return { error: `Too many wrong passwords. This Staff ID is locked for ${mins} more minute${mins === 1 ? '' : 's'}.`, status: 423 };
-  }
-  const ok = await verifyPassword(pw, s.password_hash).catch(() => false);
-  if (!ok) {
-    const n = (s.failed_attempts || 0) + 1;
-    if (n >= LOCK_AFTER) {
-      await db.prepare(`UPDATE mk_staff SET failed_attempts = 0, locked_until = ? WHERE id = ?`).bind(new Date(Date.now() + LOCK_MS).toISOString(), s.id).run();
-      await mkLog(db, who, `Wrong password (${n}); Staff ID locked for 15 minutes`, { kind: 'sign_in', request });
-      return { error: 'Too many wrong passwords. This Staff ID is locked for 15 minutes.', status: 423 };
-    }
-    await db.prepare(`UPDATE mk_staff SET failed_attempts = ? WHERE id = ?`).bind(n, s.id).run();
-    await mkLog(db, who, `Wrong password (${n} of ${LOCK_AFTER})`, { kind: 'sign_in', request });
-    return { error: FAIL, status: 401 };
-  }
-  if (!s.is_active) {
-    await mkLog(db, who, 'Sign-in refused: account switched off', { kind: 'sign_in', request });
-    return { error: 'This account is switched off. Ask a kitchen supervisor or a Super Admin.', status: 403 };
-  }
-  await db.prepare(`UPDATE mk_staff SET failed_attempts = 0, locked_until = NULL, last_login_at = ? WHERE id = ?`).bind(nowIso(), s.id).run();
-  const sess = await startSession(db, request, 'staff', s.id);
-  await mkLog(db, who, 'Signed in', { kind: 'sign_in', request });
-  return { ok: true, cookie: sess.cookie };
+  return { error: 'Kitchen staff sign in with their login code. Super Admins use their website email.', status: 400 };
 }
 
 /** The kitchen session for this request, or null (ends idle, expired, switched-off or no-longer-Super-Admin sessions). */

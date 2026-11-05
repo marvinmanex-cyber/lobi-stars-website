@@ -275,3 +275,8 @@ a { color: var(--green); }
 .mk-unpaid-top { display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; } .mk-unpaid-top .r { margin-left: auto; color: var(--muted); }
 .mk-unpaid-top span:nth-child(2) { font-size: 14px; font-weight: 700; color: #8A5A00; }
 .mk-unpaid .mk-btn { justify-self: start; min-height: 40px; }
+/* Login codes (no email or password for kitchen staff) */
+.mk-codein { text-align: center; font: 700 30px/1.2 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .08em; }
+.mk-link { display: block; width: 100%; min-height: 44px; margin-top: 8px; border: 0; background: none; color: inherit; font: inherit; font-size: 14px; text-decoration: underline; cursor: pointer; }
+.mk-codeshow { margin: 8px 0; font: 700 40px/1.1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .1em; }
+.mk-codebox { border: 3px solid #0e7a26; }

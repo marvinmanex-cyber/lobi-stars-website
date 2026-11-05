@@ -11,7 +11,7 @@ import AdminNav from '../../components/admin/AdminNav.astro';
   <div class="wrap mkv">
     <AdminNav current="mk-portal" />
     <header><div class="stag">Commerce · Food</div><h1 class="stitle">MatchDay Kitchen <span class="r">staff area</span></h1></header>
-    <p class="mkv-lede">Read-only view of the kitchen staff's own area at <a href="/matchday-kitchen/" target="_blank" rel="noopener">lobistarsfc.com/matchday-kitchen</a>. Super Admins add staff and reset passwords there (sign in with your website email). The activity log can never be changed or deleted.</p>
+    <p class="mkv-lede">Read-only view of the kitchen staff's own area at <a href="/matchday-kitchen/" target="_blank" rel="noopener">lobistarsfc.com/matchday-kitchen</a>. Super Admins and kitchen supervisors add staff and give login codes there (Super Admins sign in with your website email). The activity log can never be changed or deleted.</p>
     <div class="mkv-tabs" role="tablist"><button type="button" data-v="staff" class="on">Staff</button><button type="button" data-v="shifts">Shifts</button><button type="button" data-v="notes">Handover notes</button><button type="button" data-v="activity">Activity log</button></div>
     <div id="filters" hidden class="mkv-f"><select id="fStaff"><option value="">Everyone</option></select><input type="date" id="fDay" /><button type="button" id="fGo">Show</button></div>
     <section class="mkv-card" id="out"><p class="muted">Loading…</p></section>

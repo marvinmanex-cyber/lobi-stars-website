@@ -35,23 +35,28 @@ import '../../styles/matchdayKitchen.css';
       <p class="mk-club">Lobi Stars FC</p>
       <p class="mk-ok" id="signinMsg" role="status" hidden></p>
       <p class="mk-err" id="signinErr" role="alert" hidden></p>
-      <div class="mk-field">
-        <label for="login">Staff ID or email</label>
-        <input id="login" name="login" autocomplete="username" autocapitalize="characters" spellcheck="false" required maxlength="120" />
-      </div>
-      <div class="mk-field">
-        <label for="password">Password</label>
-        <div class="mk-pw">
-          <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="72" />
-          <button type="button" id="pwToggle" aria-controls="password" aria-pressed="false">Show</button>
+      <div id="codeFields">
+        <div class="mk-field">
+          <label for="loginCode">Your login code</label>
+          <input class="mk-codein" id="loginCode" name="loginCode" inputmode="numeric" autocomplete="one-time-code" maxlength="9" placeholder="1234-5678" />
         </div>
       </div>
-      <div class="mk-field" id="codeWrap" hidden>
-        <label for="code">6-digit code from your authenticator app</label>
-        <input id="code" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" />
+      <div id="adminFields" hidden>
+        <div class="mk-field">
+          <label for="login">Website email (Super Admins)</label>
+          <input id="login" name="login" type="email" autocomplete="username" spellcheck="false" maxlength="120" />
+        </div>
+        <div class="mk-field">
+          <label for="password">Password</label>
+          <div class="mk-pw">
+            <input id="password" name="password" type="password" autocomplete="current-password" maxlength="72" />
+            <button type="button" id="pwToggle" aria-controls="password" aria-pressed="false">Show</button>
+          </div>
+        </div>
       </div>
       <button class="mk-btn go big wide" type="submit" id="signinBtn">Sign in</button>
-      <p class="mk-note">Everything you do in the kitchen is recorded under your name. Don't share your password.</p>
+      <p class="mk-note" id="signinNote">Everything you do in the kitchen is recorded under your name. Don't share your login code.</p>
+      <button type="button" class="mk-link" id="modeBtn">Super Admin? Sign in with your website email</button>
       <div class="mk-install" id="installBox" hidden>
         <p class="mk-install-t"><b>Kitchen staff app</b> Install MatchDay Kitchen on this phone, tablet or laptop. It opens straight to the kitchen, full screen, without the rest of the website.</p>
         <button type="button" class="mk-btn go wide" id="installBtn" hidden>Install the Kitchen app</button>

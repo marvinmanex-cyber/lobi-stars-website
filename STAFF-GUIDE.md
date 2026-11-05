@@ -4501,16 +4501,16 @@ After signing in: **Returned to me** (with the Super Admin's comment),
 **What it is:** the kitchen staff's own area at **lobistarsfc.com/matchday-kitchen**,
 for running food service on match day from a tablet or laptop. It is completely
 separate from the website admin: kitchen staff have their own **Staff ID** (for
-example LSK-001) and password, and can never open /admin. What they do changes the
+example LSK-001) and a personal **login code** (no email or password), and can never open /admin. What they do changes the
 website's real orders and menu straight away (no approval step), and everything is
 recorded under their name. (Not to be confused with **lobistarsfc.com/kitchen**, the
 fans' ordering page.)
 
 **Signing in**
-- Kitchen staff: **Staff ID** and password.
-- Super Admins: your **website email** and password only (no two-step code in the kitchen). This
+- Kitchen staff: their 8-number **login code** only (for example 1234-5678). It keeps working until a new one is made.
+- Super Admins: press **Super Admin? Sign in with your website email**, then your **website email** and password only (no two-step code in the kitchen). This
   signs you in to MatchDay Kitchen only; it never signs you in or out of /admin.
-- 5 wrong passwords lock a Staff ID for 15 minutes.
+- 10 wrong codes from one connection stop sign-in from there for 15 minutes. 5 wrong Super Admin passwords: wait 15 minutes.
 - **Shared tablets:** after 20 minutes without a tap, "Still there?" appears with a
   60-second countdown. Tap **Keep me signed in**, or the tablet signs out by itself
   (recorded as an automatic sign-out).
@@ -4533,8 +4533,8 @@ tabs open. WhatsApp and Telegram open in their own apps.
 | **Handover notes** | Notes for the next shift. Supervisors and Super Admins can pin and delete any note; others delete their own. |
 | **My shift** | **Start shift** / **End shift**, who is in the kitchen now, your last 10 shifts. |
 | **Food analytics** | For a day: orders, sales, average, cancelled, top 10 dishes, orders by hour (paid orders; cancelled left out). |
-| **Activity log** | Staff see their own actions. Super Admins see everyone's, filter by person and day, and **Download CSV**. |
-| **Staff accounts** | Super Admins only: add staff, change name and role, switch sign-in off, set a new password, settings, and the **data check**. |
+| **Activity log** | Staff see their own actions. Kitchen supervisors and Super Admins see everyone's, filter by person and day, and **Download CSV**. |
+| **Staff accounts** | Kitchen supervisors and Super Admins: add staff, change name and role, switch sign-in off, give a new login code, settings. Only a Super Admin adds or changes a supervisor. The **data check** is for Super Admins. |
 
 **How an order goes through the kitchen.** The kitchen uses the same words the
 fan sees on their order page.
@@ -4620,16 +4620,13 @@ orders do not appear on the kitchen screen until a staff member marks them paid.
 | Cancel orders | | Yes | Yes | Yes |
 | Change prices | | | Yes | Yes |
 | Pin or delete anyone's notes | | | Yes | Yes |
-| Everyone's activity, CSV | | | | Yes |
-| Staff accounts | | | | Yes |
+| Everyone's activity, CSV | | | Yes | Yes |
+| Staff accounts and settings | | | Yes (cooks and pass staff) | Yes (everyone) |
 
 Who can cancel and who can change prices can be changed in **Staff accounts ›
 Settings** (with the Telegram link and the "late after" minutes).
 
-**Staff accounts (Super Admins):** Staff IDs use letters, numbers and dashes (saved
-in capitals, each one unique). Passwords: at least 8 characters, not only numbers,
-not a common password, not like the Staff ID or name. **A new password or switching
-someone off signs them out on every tablet straight away.**
+**Staff accounts (adding someone):** **Staff accounts** › **Add staff**: full name and role, then **Add staff and make login code**. The website makes the Staff ID (LSK-001, LSK-002 …) and an 8-number login code. The code is shown **once**, with **Send on WhatsApp** and **Copy**; only a scrambled copy is stored, so nobody can look it up later. Lost or leaked code: **Edit** › **Give a new login code**. **A new login code or switching someone off signs them out on every tablet straight away.** Supervisors have the kitchen's back end, not the website admin (/admin); only a Super Admin adds or changes a supervisor.
 
 **Recorded:** sign-ins and sign-outs (including automatic ones), every page opened,
 every status change ("Order FD-…: Preparing to Ready"), sold out / back on, price
@@ -4699,7 +4696,7 @@ Lobi Stars app.
 - **Updates:** the app always loads the latest version. There is nothing to update
   by hand.
 - **Shared tablets:** the same rules as in the browser. Each person signs in with
-  their own Staff ID, and the "Still there?" sign-out runs after 20 minutes
+  their own login code, and the "Still there?" sign-out runs after 20 minutes
   without a tap.
 
 ## 43. Lobi Gate Control: the ticket scanners (/lobi-gate-control)

@@ -82,8 +82,8 @@ export const GROUPS: Group[] = [
     { id: 'analytics', title: 'Food analytics', text: 'Orders, sales and top dishes' },
     { id: 'activity', title: 'Activity log', text: 'What was done, by whom and when' },
   ] },
-  { title: 'Super admin', superOnly: true, tiles: [
-    { id: 'staff', title: 'Staff accounts', text: 'Add staff, reset passwords, switch off access' },
+  { title: 'Manage the kitchen', superOnly: true, tiles: [
+    { id: 'staff', title: 'Staff accounts', text: 'Add staff, give login codes, switch off access, settings' },
   ] },
 ];
 /** Page names (tabs, page titles). */

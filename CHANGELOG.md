@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-05: MatchDay Kitchen: login codes for staff; supervisors get the back end
+
+**Who it affects:** kitchen staff, kitchen supervisors, Super Admins.
+- Kitchen staff now sign in with a personal **8-number login code**: no email, Staff ID or password to type. It is shown once when made, with **Send on WhatsApp** and **Copy**, and works until a new one is given.
+- **Add staff** only asks for a name and role; the website makes the Staff ID and the code.
+- **Kitchen supervisors** now have the kitchen's back end: everyone's activity and the CSV, **Staff accounts** (add and manage cooks and pass staff, give new codes) and **Settings**. Only a Super Admin adds or changes a supervisor. Supervisors still cannot open the website admin.
+- Super Admins still use their website email and password (a link on the sign-in page).
+
 ## 2026-11-04: House 43 page: Lobi colours on the table card, menu and photos
 
 - 5 Nov: no full stop after "The Perfect Line-Up"; on phones both heading lines are centred.
