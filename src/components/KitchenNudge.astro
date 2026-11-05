@@ -5,7 +5,7 @@
 ---
 <a class="kn" id="kitchenNudge" href="/kitchen/?utm_source=site&utm_medium=nudge" hidden data-track="kitchen_click" data-track-label="nudge">
   <img src="/images/matchday-kitchen/logo-48.png" alt="" width="34" height="34" />
-  <span><b>MatchDay Kitchen is open</b> Order food to your seat</span>
+  <span id="kitchenNudgeText"><b>MatchDay Kitchen is open</b> Order food to your seat</span>
   <span class="kn-go" aria-hidden="true">Order →</span>
   <button type="button" class="kn-x" id="kitchenNudgeX" aria-label="Hide for today">×</button>
 </a>
@@ -28,12 +28,17 @@
     if (!el || /^\/(kitchen|food|matchday-kitchen)(\/|$)/.test(location.pathname)) return;
     var today = new Date().toISOString().slice(0, 10);
     try { if (localStorage.getItem('ls_kn_hide') === today) return; } catch (e) {}
-    var show = function (open) { el.hidden = !open; };
-    try { var c = JSON.parse(sessionStorage.getItem('ls_kn') || 'null'); if (c && Date.now() - c.at < 300000) { show(c.open); return; } } catch (e) {}
+    // From 25 to 40 minutes into the match it says "order for half-time".
+    var show = function (open, ko) {
+      el.hidden = !open;
+      var mins = ko ? (Date.now() - Date.parse(ko)) / 60000 : -1;
+      if (open && mins >= 25 && mins <= 40) { var t = document.getElementById('kitchenNudgeText'); if (t) t.innerHTML = '<b>Half-time is coming</b> Order now for half-time, at your seat'; }
+    };
+    try { var c = JSON.parse(sessionStorage.getItem('ls_kn') || 'null'); if (c && Date.now() - c.at < 300000) { show(c.open, c.ko); return; } } catch (e) {}
     fetch('/api/food/menu?lite=1').then(function (r) { return r.json(); }).then(function (d) {
-      var open = !!(d && d.open && d.matchday);
-      try { sessionStorage.setItem('ls_kn', JSON.stringify({ at: Date.now(), open: open })); } catch (e) {}
-      show(open);
+      var open = !!(d && d.open && d.matchday), ko = d && d.kickOff || null;
+      try { sessionStorage.setItem('ls_kn', JSON.stringify({ at: Date.now(), open: open, ko: ko })); } catch (e) {}
+      show(open, ko);
     }).catch(function () {});
     document.getElementById('kitchenNudgeX').addEventListener('click', function (e) {
       e.preventDefault(); e.stopPropagation(); el.hidden = true;

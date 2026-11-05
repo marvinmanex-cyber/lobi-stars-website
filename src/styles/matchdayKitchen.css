@@ -299,3 +299,13 @@ a { color: var(--green); }
 .mk-allbox b { display: block; font-size: 20px; }
 .mk-allbox span { display: block; font-size: 15px; }
 .mk-dish .rename input { width: 220px; max-width: 100%; }
+/* Delivery by stand */
+.mk-stand h2 small { font-size: 15px; font-weight: 400; color: var(--muted); }
+.mk-stand > .mk-btn { margin: 0 0 8px; }
+.mk-runner { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin: 0 0 8px; background: var(--paper); border-radius: 10px; }
+.mk-runner.late { box-shadow: inset 6px 0 0 var(--red); }
+.mk-runner-seat { flex: none; min-width: 72px; padding: 8px; border-radius: 8px; background: #07471a; color: #fff; text-align: center; font: 700 20px/1.1 'Barlow Condensed', sans-serif; overflow-wrap: anywhere; }
+.mk-runner-main { flex: 1; min-width: 0; }
+.mk-runner-main b, .mk-runner-main span { display: block; }
+.mk-runner-main .mk-pill { display: inline-block; margin-top: 4px; }
+@media (max-width: 600px) { .mk-runner { flex-wrap: wrap; } .mk-runner .mk-btn { width: 100%; } .mk-runner-main { flex: 1 1 60%; } }

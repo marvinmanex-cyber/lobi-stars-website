@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-05: MatchDay Kitchen: drink offer, half-time reminder, delivery by stand, food report
+
+**Who it affects:** fans ordering food, kitchen staff and runners, management.
+- **Add a drink?** The cart offers one drink when a fan has food but no drink or combo. 18+ drinks are never offered.
+- **Half-time reminder:** about 30 minutes into a home match, while ordering is open, a phone alert to fans with alerts on, once per match, and matching words on the website's MatchDay Kitchen bar. There is a new alert choice for fans, and an off switch in Admin › Fan alerts.
+- **Delivery by stand:** a new kitchen page for runners: orders on the way grouped by stand, in seat order, with **Delivered** and **Mark all delivered**.
+- **Match-day food report:** emailed once, 4 hours after kick-off (Staff accounts › Match-day food report: addresses, Preview today, Send now). No customer details.
+
 ## 2026-11-05: Food menu: rename any dish
 
 **Who it affects:** kitchen supervisors, Super Admins, fans.

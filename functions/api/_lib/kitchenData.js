@@ -298,6 +298,64 @@ export async function analytics(db, day) {
   };
 }
 
+/**
+ * Orders for the runners, by stand (pickup orders by pickup point): on the way first in seat
+ * order, plus how many are still cooking for that stand. Late ones are marked.
+ */
+export async function deliveryByStand(db, lateMinutes) {
+  await ready(db);
+  const { results } = await db.prepare(`SELECT * FROM food_orders WHERE order_status IN (${placeholders(DATA.kitchenShows)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 300`).bind(...DATA.kitchenShows, since()).all();
+  const groups = new Map();
+  for (const o of results) {
+    const name = pickup(o) ? `Pickup: ${o.pickup_point || 'pickup point'}` : (o.stand || 'No stand given');
+    if (!groups.has(name)) groups.set(name, { name, pickup: pickup(o), ready: [], cooking: 0 });
+    const g = groups.get(name);
+    if (o.order_status === 'OUT_FOR_DELIVERY') g.ready.push({ ...ticket(o, lateMinutes), seat: o.seat || '' });
+    else g.cooking++;
+  }
+  const list = [...groups.values()];
+  for (const g of list) g.ready.sort((a, b) => a.seat.localeCompare(b.seat, 'en', { numeric: true, sensitivity: 'base' }));
+  return list.sort((a, b) => Number(a.pickup) - Number(b.pickup) || b.ready.length - a.ready.length || a.name.localeCompare(b.name));
+}
+
+/** The match-day food report: totals only, no customer details. */
+export async function matchReportData(db, day, lateMinutes = DATA.lateMinutes) {
+  await ready(db);
+  const a = await analytics(db, day);
+  const { start, end } = lagosDay(a.day);
+  const rows = (await db.prepare(`SELECT order_status, total_kobo, stand, fulfilment, pickup_point, channel, deliver_at, paid_iso, created_iso, created_at, delivered_at FROM food_orders WHERE payment_status = 'paid' AND COALESCE(paid_iso, created_iso) >= ? AND COALESCE(paid_iso, created_iso) < ?`).bind(start, end).all()).results
+    .filter(o => !DATA.cancelled.includes(o.order_status));
+  const unpaid = (await db.prepare(`SELECT COUNT(*) AS n FROM food_orders WHERE payment_status != 'paid' AND created_iso >= ? AND created_iso < ?`).bind(start, end).first())?.n || 0;
+  const tally = (key) => {
+    const m = new Map();
+    for (const o of rows) { const k = key(o), x = m.get(k) || { name: k, orders: 0, kobo: 0 }; x.orders++; x.kobo += o.total_kobo || 0; m.set(k, x); }
+    return [...m.values()].sort((x, y) => y.kobo - x.kobo).map(x => ({ name: x.name, orders: x.orders, sales: formatNaira(x.kobo) }));
+  };
+  const hours = new Map();
+  let late = 0, delivered = 0, totalMinutes = 0;
+  for (const o of rows) {
+    const h = new Date(Date.parse(paidAt(o)) + 3600e3).getUTCHours();
+    const x = hours.get(h) || { hour: h, orders: 0, done: 0, minutes: 0 };
+    x.orders++;
+    if (o.delivered_at) {
+      const m = Math.max(0, (Date.parse(o.delivered_at) - Date.parse(startedAt(o))) / 60000);
+      delivered++; totalMinutes += m; x.done++; x.minutes += m;
+      if (m > lateMinutes) late++;
+    }
+    hours.set(h, x);
+  }
+  const byHour = [...hours.values()].sort((x, y) => x.hour - y.hour).map(x => ({ hour: x.hour, orders: x.orders, avgMinutes: x.done ? Math.round(x.minutes / x.done) : null }));
+  const timed = byHour.filter(x => x.avgMinutes !== null);
+  return {
+    day: a.day, orders: a.orders, sales: a.sales, average: a.average, cancelled: a.cancelled, topDishes: a.topDishes, unpaid, lateMinutes,
+    delivered, late, avgMinutes: delivered ? Math.round(totalMinutes / delivered) : null, notFinished: rows.filter(o => DATA.kitchenShows.includes(o.order_status)).length,
+    byHour, slowestHour: timed.length ? timed.reduce((p, q) => (q.avgMinutes > p.avgMinutes ? q : p)).hour : null,
+    busiestHour: byHour.length ? byHour.reduce((p, q) => (q.orders > p.orders ? q : p)).hour : null,
+    byStand: tally(o => (pickup(o) ? `Pickup: ${o.pickup_point || 'pickup point'}` : o.stand || 'No stand given')),
+    byChannel: tally(o => (o.channel === 'whatsapp' ? 'WhatsApp' : 'Pay online')),
+  };
+}
+
 /** The data check (the brief's check_kitchen_data): each step OK or PROBLEM with the reason. */
 export async function checkData(db) {
   const out = [];

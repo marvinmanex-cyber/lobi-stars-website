@@ -6,6 +6,7 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { alertText } from '../functions/api/_lib/matchAlerts.js';
+import { sql } from './media-helpers.mjs';
 
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
 const ADMIN = { 'Content-Type': 'application/json', 'x-admin-code': process.env.ADMIN_CODE || 'test-code-123' };
@@ -19,7 +20,7 @@ const b64u = buf => Buffer.from(buf).toString('base64url');
 const made = [];
 after(async () => {
   for (const id of made) await fetch(`${BASE}/api/admin/staff/${id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({ active: false, reason: 'test finished' }) });
-  await api('/api/admin/fan-alerts', 'POST', { settings: { radio_live: true, kickoff: true, halftime: true, second_half: true, fulltime: true, goal: true } });
+  await api('/api/admin/fan-alerts', 'POST', { settings: { radio_live: true, kickoff: true, halftime: true, second_half: true, fulltime: true, goal: true, food_halftime: true } });
 });
 
 /** A browser push subscription with real keys, pointing at an address that refuses connections. */
@@ -53,13 +54,13 @@ test('fans turn alerts on, check them, change choices and turn them off; bad inp
   const sub = await fakeSub();
   assert.equal((await fetch(`${BASE}/api/push/public-key`).then(r => r.json())).key.length > 40, true);
   assert.equal((await pub('subscribe', { subscription: { endpoint: 'http://insecure/x', keys: sub.keys } })).status, 400);
-  assert.equal((await pub('subscribe', { subscription: sub, prefs: { radio: false, match: false, goals: false } })).status, 400, 'at least one');
+  assert.equal((await pub('subscribe', { subscription: sub, prefs: { radio: false, match: false, goals: false, kitchen: false } })).status, 400, 'at least one');
   assert.equal((await pub('subscribe', { subscription: sub, prefs: { goals: false } })).status, 200);
   let s = (await pub('status', { endpoint: sub.endpoint })).data;
-  assert.deepEqual(s, { subscribed: true, prefs: { radio: true, match: true, goals: false } });
+  assert.deepEqual(s, { subscribed: true, prefs: { radio: true, match: true, goals: false, kitchen: true } });
   await pub('subscribe', { subscription: sub, prefs: { radio: true, match: false, goals: true } });
   s = (await pub('status', { endpoint: sub.endpoint })).data;
-  assert.deepEqual(s.prefs, { radio: true, match: false, goals: true });
+  assert.deepEqual(s.prefs, { radio: true, match: false, goals: true, kitchen: true });
   await pub('unsubscribe', { endpoint: sub.endpoint });
   assert.equal((await pub('status', { endpoint: sub.endpoint })).data.subscribed, false);
 });
@@ -142,4 +143,43 @@ test('the service worker shows match alerts and the alert box is on match pages'
   }
   const priv = await fetch(`${BASE}/privacy/`).then(r => r.text());
   assert.match(priv, /Turn on match alerts/);
+});
+
+test('half-time food reminder: about 30 minutes in, once per match, only while ordering is open', async () => {
+  const rows = q => JSON.parse(sql(q))[0].results;
+  const today = rows(`SELECT id FROM events WHERE active = 1 AND event_date >= datetime('now', '-1 day') AND event_date <= datetime('now', '+1 day')`).map(r => r.id);
+  const mode = rows(`SELECT value FROM food_settings WHERE key = 'orderingMode'`)[0]?.value || 'open';
+  const setMode = m => sql(`INSERT INTO food_settings (key, value) VALUES ('orderingMode', '${m}') ON CONFLICT (key) DO UPDATE SET value = '${m}';`);
+  const tick = () => fetch(`${BASE}/api/internal/kitchen-repeat`, { method: 'POST', headers: { Authorization: `Bearer ${CRON}` } });
+  const at = minsAgo => new Date(Date.now() - minsAgo * 60e3).toISOString();
+  const id = await createMatch();
+  const list = async () => (await jobsFor(id)).filter(j => j.kind === 'food_halftime');
+  const move = m => sql(`UPDATE events SET event_date = '${at(m)}' WHERE id = '${id}';`);
+  try {
+    if (today.length) sql(`UPDATE events SET active = 0 WHERE id IN (${today.map(x => `'${x}'`).join(',')});`);
+    setMode('open');
+    await api('/api/admin/fan-alerts', 'POST', { settings: { food_halftime: true } });
+    move(10); assert.equal((await tick()).status, 200);
+    assert.equal((await list()).length, 0, 'too early');
+    // The website bar gets the kick-off time.
+    const lite = await fetch(`${BASE}/api/food/menu?lite=1`).then(r => r.json());
+    assert.equal(lite.matchday, true); assert.ok(lite.kickOff, 'kick-off time for the half-time wording');
+    move(31); setMode('closed'); await tick();
+    assert.equal((await list()).length, 0, 'ordering closed: no reminder');
+    setMode('open'); await tick();
+    const sent = await list();
+    assert.equal(sent.length, 1, 'sent');
+    assert.match(sent[0].title, /Half-time is coming/); assert.match(alertText('food_halftime', { home_team: 'A', away_team: 'B' }).url, /^\/kitchen\//);
+    await tick();
+    assert.equal((await list()).length, 1, 'once per match');
+    // Turned off in the admin: a new match gets none.
+    move(60); await tick();
+    assert.equal((await list()).length, 1, 'too late');
+    assert.ok((await api('/api/admin/fan-alerts')).data.kinds.food_halftime, 'it has an off switch in the admin');
+    assert.equal((await pub('subscribe', { subscription: await fakeSub(), prefs: { radio: false, match: false, goals: false, kitchen: true } })).status, 200, 'fans can choose it on its own');
+  } finally {
+    setMode(mode);
+    sql(`UPDATE events SET active = 0 WHERE id = '${id}';`);
+    if (today.length) sql(`UPDATE events SET active = 1 WHERE id IN (${today.map(x => `'${x}'`).join(',')});`);
+  }
 });

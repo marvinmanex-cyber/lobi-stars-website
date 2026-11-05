@@ -16,7 +16,7 @@ import { pushReady } from './foodAlerts.js';
 import { sendEncryptedPush } from './webPush.js';
 import { matchSlug } from './matchSlug.js';
 
-export const CATEGORIES = { radio: 'Radio show & commentary', match: 'Kick-off, half-time & full time', goals: 'Goals' };
+export const CATEGORIES = { radio: 'Radio show & commentary', match: 'Kick-off, half-time & full time', goals: 'Goals', kitchen: 'MatchDay Kitchen: order for half-time' };
 export const AUTO_KINDS = {
   radio_live: { category: 'radio', label: 'Pre-match radio show / commentary on air' },
   kickoff: { category: 'match', label: 'Kick-off' },
@@ -24,6 +24,7 @@ export const AUTO_KINDS = {
   second_half: { category: 'match', label: 'Second half' },
   fulltime: { category: 'match', label: 'Full time' },
   goal: { category: 'goals', label: 'Goals' },
+  food_halftime: { category: 'kitchen', label: 'MatchDay Kitchen: order now for half-time (about 30 minutes in)' },
 };
 const BATCH = 40;
 const nowIso = () => new Date().toISOString();
@@ -66,8 +67,9 @@ export async function alertSettings(db) {
 export async function saveAlertSettings(db, values, by) {
   await ensureMatchAlertsSchema(db);
   const now = nowIso();
+  const current = await alertSettings(db); // an alert type not in `values` keeps its setting
   await db.batch(Object.keys(AUTO_KINDS).map(k => db.prepare(`INSERT INTO fan_alert_settings (key, value, updated_at, updated_by) VALUES (?, ?, ?, ?)
-    ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`).bind(k, values[k] ? '1' : '0', now, by || '')));
+    ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`).bind(k, (k in (values || {}) ? values[k] : current[k]) ? '1' : '0', now, by || '')));
   return alertSettings(db);
 }
 
@@ -90,6 +92,7 @@ export function alertText(kind, event, extra = {}) {
       const lobi = /lobi stars/i.test(extra.scorerTeam || '');
       return { title: `${lobi ? '⚽ GOAL for Lobi Stars!' : '⚽ Goal'} ${scoreLine(event, extra.home, extra.away)}`, body: `${short(extra.scorerTeam)} score${extra.minute ? ` (${extra.minute}')` : ''}. Tap to follow live.`, url: matchUrl(event) };
     }
+    case 'food_halftime': return { title: '🍽️ Half-time is coming', body: 'Order now from MatchDay Kitchen and get your food at half-time, at your seat.', url: '/kitchen/?utm_source=push&utm_medium=halftime' };
     default: return null;
   }
 }
@@ -126,6 +129,31 @@ export async function autoAlert(env, kind, event, extra = {}, { onceKey, waitUnt
 }
 
 /**
+ * The half-time food reminder: about 30 minutes into a home match, once per match, only
+ * while food ordering is open and the match is under way. Called by the every-minute timer.
+ */
+export async function checkFoodHalftime(env, { waitUntil, origin, now = Date.now() } = {}) {
+  try {
+    const { todaysHomeMatch } = await import('./seasonTickets.js');
+    const today = await todaysHomeMatch(env.DB, now);
+    if (!today) return null;
+    const start0 = Date.parse(today.event_date);
+    if (now < start0 + 25 * 60e3 || now > start0 + 90 * 60e3) return null; // (a late kick-off moves it a little)
+    const { listMatches, toSummary } = await import('./matchCentre.js');
+    const row = (await listMatches(env.DB)).find(r => r.id === today.id);
+    const m = row ? toSummary(row, row) : null;
+    if (!m || ['postponed', 'cancelled', 'half-time', 'second-half', 'full-time'].includes(m.status)) return null;
+    const mins = (now - Date.parse(m.kickoff_at || m.event_date)) / 60e3;
+    if (mins < 28 || mins > 38) return null;
+    const { foodSettings } = await import('./foodOrders.js');
+    const { ensureMenuSchema, orderingState } = await import('./foodMenuDb.js');
+    await ensureMenuSchema(env.DB);
+    if (!(await orderingState(env, await foodSettings(env.DB))).open) return null;
+    return await autoAlert(env, 'food_halftime', today, {}, { waitUntil, origin });
+  } catch (err) { console.error('[match alerts] food half-time', err); return null; }
+}
+
+/**
  * Sends the next batch of the oldest unfinished job. Returns
  * { sent, failed, pending } (pending = jobs still to finish). Never throws.
  * With `origin` and CRON_SECRET, asks the site to continue straight away.
@@ -146,7 +174,8 @@ export async function runFanPush(env, { origin } = {}) {
       return { sent: 0, failed: 0, pending: 0, error: 'Push not set up (VAPID keys missing)' };
     }
     const { results: subs } = await db.prepare(`SELECT id, endpoint, keys_json, prefs FROM fan_push_subs WHERE active = 1 AND id > ? ORDER BY id LIMIT ?`).bind(job.cursor, BATCH * 3).all();
-    const wanted = subs.filter(s => { try { return JSON.parse(s.prefs)[job.category] !== false; } catch { return true; } }).slice(0, BATCH);
+    // (Fans who chose before the kitchen reminder existed: it follows their match alerts choice.)
+    const wanted = subs.filter(s => { try { const p = JSON.parse(s.prefs); return (p[job.category] ?? (job.category === 'kitchen' ? p.match : true)) !== false; } catch { return true; } }).slice(0, BATCH);
     // A full batch: continue after the last person sent. Otherwise everyone fetched was handled;
     // the job is finished when there were no more subscribers to fetch.
     const full = wanted.length === BATCH;

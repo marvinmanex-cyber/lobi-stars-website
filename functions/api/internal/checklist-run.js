@@ -1,6 +1,7 @@
 import { syncChecklists, getSettings, saveSetting, ensureChecklistSchema } from '../_lib/matchChecklist.js';
 import { runReminders } from '../_lib/checklistReminders.js';
 import { gateReportTick } from '../_lib/gateMatchday.js';
+import { kitchenReportTick } from '../_lib/kitchenReport.js';
 
 // POST /api/internal/checklist-run -- Match Checklist jobs, with "Authorization: Bearer <CRON_SECRET>".
 // Called every minute by the timer Worker (workers/kitchen-cron):
@@ -35,6 +36,8 @@ export async function onRequestPost({ request, env }) {
     if (s.remindersEnabled) out.remind = await runReminders(env, {});
     // Lobi Gate Control: the match-day gate report, once, after the gates close.
     try { out.gateReport = await gateReportTick(env); } catch (e) { console.error('[checklist-run] gate report', e); out.gateReport = { error: true }; }
+    // MatchDay Kitchen: the match-day food report, once, 4 hours after kick-off.
+    try { out.kitchenReport = await kitchenReportTick(env); } catch (e) { console.error('[checklist-run] kitchen report', e); out.kitchenReport = { error: true }; }
     return Response.json(out);
   } catch (err) {
     console.error('[checklist-run]', err);

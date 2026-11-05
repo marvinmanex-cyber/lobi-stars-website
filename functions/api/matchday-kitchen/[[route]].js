@@ -8,18 +8,21 @@
 //   GET notes   POST notes {action: add|pin|unpin|delete, id, text}
 //   GET activity?staff&day&page[&format=csv]   GET staff   POST staff {action: add|edit|settings, …}
 //   GET ordering   POST ordering {mode: open|closed|auto} (supervisors, Super Admins): food ordering for fans
+//   GET delivery (ready orders by stand)   GET report-settings   POST report-settings {emails}
+//   GET report (preview, HTML)   POST report (send now)   (report: supervisors, Super Admins)
 //   GET check (Super Admins: the data check)
 import { signIn, signOut, json, kitchenSettings, permissions, mkLog, shiftState, startShift, endShift, listNotes, noteAction,
   activityPage, listStaff, createStaff, updateStaff, saveSettings, ROLES, oneLine, clearKitchenCookie } from '../_lib/matchdayKitchen.js';
 import * as K from '../_lib/kitchenData.js';
 import { foodSettings, saveFoodSetting } from '../_lib/foodOrders.js';
+import { buildReport, sendReport, reportEmails, saveReportEmails } from '../_lib/kitchenReport.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
 
 // The pages (and their names in the activity log).
 const PAGES = {
   kitchen: 'Kitchen screen', live: 'Live order board', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices',
   analytics: 'Food analytics', shift: 'My shift', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts',
-  whatsapp: 'Kitchen WhatsApp', telegram: 'Telegram updates',
+  whatsapp: 'Kitchen WhatsApp', telegram: 'Telegram updates', delivery: 'Delivery by stand',
 };
 const denied = () => json({ error: "Your role can't do this. Ask a kitchen supervisor or a super admin.", denied: true }, 403);
 const staffName = u => `${u.name} (${u.code}) – MatchDay Kitchen`;
@@ -58,6 +61,7 @@ export async function onRequest(context) {
         await mkLog(db, user, body.page === 'whatsapp' || body.page === 'telegram' ? `Went to ${name}` : `Opened ${name}`, { kind: 'open', request });
         return json({ ok: true });
       }
+      case 'GET delivery': return json({ groups: await K.deliveryByStand(db, late), lateMinutes: late });
       case 'GET kitchen': return json({ tickets: await K.kitchenTickets(db, late), lateMinutes: late });
       // The alarm check (every 10 seconds from each open app): new orders to accept, late orders.
       case 'GET pulse': return json(await K.pulse(db, late));
@@ -205,6 +209,27 @@ export async function onRequest(context) {
         await mkLog(db, user, body.mode === 'open' ? 'Opened food ordering' : body.mode === 'closed' ? 'Closed food ordering' : 'Set food ordering to automatic', { kind: 'settings', request });
         const fs = await foodSettings(db);
         return json({ ...(await orderingState(env, fs)), mode: fs.orderingMode, autoOpenMinutes: fs.autoOpenMinutes, canChange: true });
+      }
+      case 'GET report-settings':
+        if (!perms.staff) return denied();
+        return json({ emails: await reportEmails(env) });
+      case 'POST report-settings': {
+        if (!perms.staff) return denied();
+        const r = await saveReportEmails(db, user.code, body.emails);
+        if (r.error) return json({ error: r.error }, 400);
+        await mkLog(db, user, 'Changed who gets the match-day food report', { kind: 'settings', details: r.emails.join(', '), request });
+        return json(r);
+      }
+      case 'GET report': {
+        if (!perms.staff) return denied();
+        const { html } = await buildReport(env);
+        return new Response(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Match-day food report</title><body style="margin:0;padding:16px;background:#f3f4f6">${html}</body>`,
+          { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow', 'X-Content-Type-Options': 'nosniff' } });
+      }
+      case 'POST report': {
+        if (!perms.staff) return denied();
+        const r = await sendReport(env, { by: user.name, actor: user, request });
+        return r.error ? json({ error: r.error }, 400) : json(r);
       }
       case 'GET check':
         if (!perms.superAdmin) return denied();

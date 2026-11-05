@@ -36,7 +36,7 @@ test('Popular now and the light match-day check', async () => {
   assert.ok(Array.isArray(m.popular), 'popular list'); assert.equal(typeof m.matchday, 'boolean');
   const lite = await fetch(`${BASE}/api/food/menu?lite=1`);
   const d = await lite.json();
-  assert.deepEqual(Object.keys(d).sort(), ['matchday', 'open']); assert.equal(d.matchday, true, 'the test home match is today');
+  assert.deepEqual(Object.keys(d).sort(), ['kickOff', 'matchday', 'open']); assert.equal(d.matchday, true, 'the test home match is today');
   assert.match(lite.headers.get('cache-control') || '', /max-age=120/);
 });
 

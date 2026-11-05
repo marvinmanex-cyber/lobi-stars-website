@@ -4525,6 +4525,7 @@ tabs open. WhatsApp and Telegram open in their own apps.
 | --- | --- |
 | **Kitchen screen** | Paid orders to cook, oldest first, as tickets: big order number, minutes waiting, customer and seat, items, notes. **Start cooking**, then **Mark ready**. Red border and LATE after 15 minutes. Refreshes every 15 seconds (not while you are tapping). Shows the last 12 hours. |
 | **Live order board** | New / Preparing / Ready columns with counts. Tap a card to open the order. |
+| **Delivery by stand** | For the runners: orders on the way, grouped by stand (and pickup point), in seat order, with how many are still cooking for that stand. Tap **Delivered** on each, or **Mark all delivered** for a stand. Anyone in the kitchen. |
 | **Kitchen alerts** | Late orders, dishes turned off, orders cancelled today. |
 | **Food orders** | Search by order number or name, filter by status and day (30 a page). |
 | **One order** | All details and a button for each next status the website allows (the next step in green). **Cancel** (red, asks first) only for roles allowed to cancel. |
@@ -4634,6 +4635,12 @@ It is the same setting as the button on the admin live order board, and each cha
 | Staff accounts and settings | | | Yes (cooks and pass staff) | Yes (everyone) |
 
 Who can cancel can be changed in **Staff accounts › Settings** (with the Telegram link and the "late after" minutes). Only supervisors and Super Admins change prices, add dishes and delete dishes.
+
+**Match-day food report:** emailed once, 4 hours after kick-off of each home match, to the addresses in **Staff accounts › Match-day food report** (first time: the three Super Admins). It has sales, paid orders, average order, late orders, top dishes, hour by hour with the slowest and busiest hour, each stand and how fans ordered. It has no customer details. **Preview today** shows it now; **Send now** emails it. Supervisors and Super Admins. It needs email (Resend) set up on the website.
+
+**Half-time reminder for fans:** about 30 minutes into a home match, while ordering is open, fans who turned on alerts get "Half-time is coming: order now". The MatchDay Kitchen bar on the website says the same from 25 to 40 minutes. Sent once per match. Turn it off in Admin › **Fan alerts**. Fans can turn it off in their alert choices.
+
+**Add a drink:** when a fan's cart has food but no drink or combo, the cart offers one drink that is ON (the most popular first), with **Add** and **No thanks**. It never offers 18+ drinks.
 
 **Managing the menu from the fans' page:** a kitchen supervisor or Super Admin signed in to MatchDay Kitchen who opens **lobistarsfc.com/kitchen** on the same device sees a yellow **Manage the menu** bar and, on every item, a name box (**Save name**), a price box and **Delete**. A new name shows to fans straight away; orders already placed keep the name they were placed with. **+ Add menu item** adds a dish (name, category, price, optional description; a photo can be added later in the website admin). Fans never see these, and the website checks the role on every change. If the kitchen sign-in has ended, the bar says so with a link to sign in again. **Delete:** a dish with past orders is kept out of sight for the reports; any other is removed. Everything is recorded in the activity log.
 

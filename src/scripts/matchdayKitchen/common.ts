@@ -66,6 +66,7 @@ export const GROUPS: Group[] = [
   { title: 'Live service', tiles: [
     { id: 'kitchen', title: 'Kitchen screen', text: 'Tickets to cook, oldest first', style: 'hero' },
     { id: 'live', title: 'Live order board', text: 'Every order and its status, live' },
+    { id: 'delivery', title: 'Delivery by stand', text: 'Orders on the way, grouped by stand, in seat order' },
     { id: 'alerts', title: 'Kitchen alerts', text: 'Late orders, cancellations, dishes turned off', style: 'red' },
   ] },
   { title: 'Orders and menu', tiles: [
@@ -88,7 +89,7 @@ export const GROUPS: Group[] = [
 ];
 /** Page names (tabs, page titles). */
 export const PAGE_TITLE: Record<string, string> = {
-  kitchen: 'Kitchen screen', live: 'Live order board', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices', analytics: 'Food analytics',
+  kitchen: 'Kitchen screen', live: 'Live order board', delivery: 'Delivery by stand', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices', analytics: 'Food analytics',
   shift: 'My shift', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts', 'not-available': 'Not available',
 };
 export const pageTitle = (page: string) => page.startsWith('orders/') ? `Order ${decodeURIComponent(page.slice(7))}` : PAGE_TITLE[page] || 'MatchDay Kitchen';

@@ -231,3 +231,10 @@
 .kx-mgrprice button { border: 0; background: #FFC72C; color: #111; }
 .kx-mgrdel { flex: 1 1 100%; border: 1px solid #FF8A8F; background: transparent; color: #FF8A8F; }
 .kx-mgrdlg .kx-dbody { display: flex; flex-direction: column; gap: 12px; }
+/* Add a drink? (one offer in the cart) */
+.kx-offer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 12px; border: 1px dashed #FFC72C; border-radius: 12px; background: rgba(255, 199, 44, .08); }
+.kx-offer[hidden] { display: none; }
+.kx-offer-t { flex: 1 1 160px; min-width: 0; font-size: 15px; }
+.kx-offer-t b { color: #FFC72C; }
+.kx-offer-add { min-height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--kx-green); color: #04140A; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+.kx-offer-no { min-height: 44px; padding: 0 8px; border: 0; background: none; color: #fff; font-size: 14px; text-decoration: underline; cursor: pointer; }

@@ -18,6 +18,7 @@ const { variant = 'card' } = Astro.props;
         <label><input type="checkbox" data-pref="radio" checked /> Radio show &amp; live commentary</label>
         <label><input type="checkbox" data-pref="match" checked /> Kick-off, half-time &amp; full time</label>
         <label><input type="checkbox" data-pref="goals" checked /> Goals</label>
+        <label><input type="checkbox" data-pref="kitchen" checked /> MatchDay Kitchen: order for half-time</label>
       </fieldset>
       <div class="ma-acts">
         <button type="button" class="btn-p ma-on" data-ma-on>Turn on match alerts</button>
@@ -88,7 +89,7 @@ const { variant = 'card' } = Astro.props;
     })();
     $('[data-ma-on]').addEventListener('click', async function () {
       var p = prefs();
-      if (!p.radio && !p.match && !p.goals) { msg('Choose at least one kind of alert.'); return; }
+      if (!p.radio && !p.match && !p.goals && !p.kitchen) { msg('Choose at least one kind of alert.'); return; }
       if (!supported) { msg(ios && !standalone ? 'On iPhone, first add this site to your Home Screen (Share → Add to Home Screen), open it from there, then tap this button.' : 'This browser cannot show notifications. Try Chrome, Edge, Firefox or Samsung Internet.'); return; }
       var btn = this; btn.disabled = true;
       try {

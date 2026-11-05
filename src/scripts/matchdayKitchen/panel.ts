@@ -107,6 +107,31 @@ const PAGES: Record<string, () => Promise<void>> = {
     await draw(); every15(() => draw(true));
   },
 
+  async delivery() {
+    const draw = async (quiet = false) => {
+      const d = await api('delivery', { quiet });
+      main.innerHTML = d.groups.length ? d.groups.map((g: any, i: number) => `<section class="mk-section mk-stand"><h2>${esc(g.name)} <span class="mk-badge${g.ready.length ? ' red' : ''}">${g.ready.length}</span>${g.cooking ? ` <small>${g.cooking} still cooking</small>` : ''}</h2>
+        ${g.ready.length ? `${g.ready.length > 1 ? `<button type="button" class="mk-btn" data-all="${i}">Mark all ${g.ready.length} delivered</button>` : ''}${g.ready.map((o: any) => `<article class="mk-runner${o.late ? ' late' : ''}"><div class="mk-runner-seat">${esc(o.seat || (g.pickup ? 'Pickup' : '—'))}</div>
+          <div class="mk-runner-main"><b>${esc(o.ref)}${o.customer ? ` · ${esc(o.customer)}` : ''}</b><span>${esc(o.items.map((x: any) => `${x.qty} × ${x.name}`).join(', '))}</span>${o.note ? `<span class="mk-status">Note: ${esc(o.note)}</span>` : ''}${o.late ? `<span class="mk-pill red">Late: ${esc(mins(o.minutes))}</span>` : ''}</div>
+          <button type="button" class="mk-btn go" data-done="${esc(o.id)}">${g.pickup ? 'Collected' : 'Delivered'}</button></article>`).join('')}` : '<p class="mk-status" style="margin:4px 6px">Nothing on the way to this stand yet.</p>'}</section>`).join('')
+        : '<p class="mk-empty">Nothing to deliver. Orders appear here when the kitchen presses "Food on the way".</p>';
+      (main as any)._groups = d.groups;
+      stamp();
+    };
+    main.addEventListener('click', e => {
+      const el = e.target as HTMLElement;
+      const one = el.closest('[data-done]') as HTMLButtonElement | null;
+      if (one) { act(one, async () => { await api('order', { method: 'POST', body: { id: one.dataset.done, to: 'DELIVERED' } }); toast('Marked delivered. The receipt email has gone if the fan gave an address.'); await draw(); }); return; }
+      const all = el.closest('[data-all]') as HTMLButtonElement | null;
+      if (all) {
+        const g = (main as any)._groups[Number(all.dataset.all)];
+        if (!g || !confirm(`Mark all ${g.ready.length} orders for ${g.name} as delivered?`)) return;
+        act(all, async () => { let n = 0; for (const o of g.ready) { try { await api('order', { method: 'POST', body: { id: o.id, to: 'DELIVERED' } }); n++; } catch { /* already moved on another tablet */ } } toast(`${n} order${n === 1 ? '' : 's'} marked delivered.`); await draw(); });
+      }
+    });
+    await draw(); every15(() => draw(true));
+  },
+
   async alerts() {
     const draw = async (quiet = false) => {
       const d = await api('alerts', { quiet });
@@ -339,7 +364,7 @@ const PAGES: Record<string, () => Promise<void>> = {
     let codeShown: { name: string; staffId: string; loginCode: string } | null = null;
     const codeMsg = (c: { name: string; loginCode: string }) => `MatchDay Kitchen login for ${c.name}\n1. Open https://lobistarsfc.com/matchday-kitchen\n2. Enter this login code: ${c.loginCode}\nIt is personal to you: please keep it private.`;
     const draw = async () => {
-      const d = await api('staff');
+      const [d, rep] = await Promise.all([api('staff'), api('report-settings')]);
       const sa = !!session.perms.superAdmin;
       const canEdit = (s: any) => sa || s.role !== 'supervisor';
       const roleOpts = (sel = '') => Object.entries(d.addRoles).map(([k, v]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
@@ -373,6 +398,10 @@ const PAGES: Record<string, () => Promise<void>> = {
           <div class="mk-field"><label for="sLate">Orders are late after (minutes)</label><input id="sLate" type="number" min="1" max="120" value="${d.settings.lateMinutes}" /></div></div>
           <p class="mk-status" style="text-transform:none;letter-spacing:0">Super Admins can always cancel orders. Only supervisors and Super Admins change prices, add dishes and delete dishes.</p>
           <button class="mk-btn go" type="submit">Save settings</button></form></section>
+        <section class="mk-section"><h2>Match-day food report</h2><form class="mk-box" id="repF">
+          <p style="margin:0 0 10px">Emailed once, 4 hours after kick-off of each home match: sales, top dishes, hour by hour, late orders and each stand. It has no customer details.</p>
+          <div class="mk-field"><label for="repE">Send to (one email per line)</label><textarea id="repE" rows="3">${esc(rep.emails.join('\n'))}</textarea></div>
+          <div class="mk-actions" style="justify-content:flex-start"><button class="mk-btn go" type="submit">Save</button><a class="mk-btn" href="/api/matchday-kitchen/report" target="_blank" rel="noopener">Preview today</a><button type="button" class="mk-btn" id="repSend">Send now</button></div></form></section>
         ${sa ? `<section class="mk-section"><h2>Data check</h2><div class="mk-box"><p style="margin:0 0 10px">Checks that MatchDay Kitchen can read the website's orders and menu.</p><button type="button" class="mk-btn" id="chk">Run the data check</button><div id="chkOut" style="margin-top:10px"></div></div></section>` : ''}`;
       window.scrollTo(0, 0);
     };
@@ -386,6 +415,11 @@ const PAGES: Record<string, () => Promise<void>> = {
         act(nc, async () => { const r = await api('staff', { method: 'POST', body: { action: 'edit', id: nc.dataset.newcode, newCode: true } }); codeShown = r; await draw(); });
         return;
       }
+      if (el.id === 'repSend') {
+        if (!confirm('Email the food report now, with the figures so far?')) return;
+        act(el as HTMLButtonElement, async () => { const r = await api('report', { method: 'POST', body: {} }); toast(`Report sent to ${r.to.length} ${r.to.length === 1 ? 'person' : 'people'}.`); });
+        return;
+      }
       if (el.id === 'codeDone') { codeShown = null; act(null, draw); return; }
       if (el.id === 'codeCopy' && codeShown) { navigator.clipboard?.writeText(codeMsg(codeShown)).then(() => toast('Copied.'), () => toast('Copy failed: write the code down instead.')); return; }
       if (el.id === 'chk') act(el as HTMLButtonElement, async () => {
@@ -396,7 +430,9 @@ const PAGES: Record<string, () => Promise<void>> = {
     main.addEventListener('submit', (e: Event) => {
       e.preventDefault();
       const form = e.target as HTMLFormElement;
-      if (form.id === 'addF') {
+      if (form.id === 'repF') {
+        act(form.querySelector('button'), async () => { const r = await api('report-settings', { method: 'POST', body: { emails: $('repE').value } }); toast(`Saved: ${r.emails.length} address${r.emails.length === 1 ? '' : 'es'}.`); });
+      } else if (form.id === 'addF') {
         act(form.querySelector('button'), async () => { const r = await api('staff', { method: 'POST', body: { action: 'add', name: $('aName').value, role: $('aRole').value } }); codeShown = r; toast('Staff account added.'); await draw(); });
       } else if (form.id === 'setF') {
         const vals = (n: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${n}"]:checked`)].map(i => i.value);

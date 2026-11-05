@@ -220,12 +220,32 @@ function renderCart() {
   $('kxLines').innerHTML = picked.length ? picked.map(f => `<li class="kx-line"><div><b>${esc(f.name)}</b><small>${naira(f.priceKobo * qty[f.id])}</small></div>
 <div class="kx-step" role="group" aria-label="${esc(f.name)} quantity"><button type="button" data-id="${esc(f.id)}" data-d="-1" aria-label="Remove one ${esc(f.name)}">−</button><output>${qty[f.id]}</output><button type="button" data-id="${esc(f.id)}" data-d="1" aria-label="Add one more ${esc(f.name)}"${qty[f.id] >= f.maxPerOrder ? ' disabled' : ''}>+</button></div></li>`).join('')
     : '<li class="kx-small">Your cart is empty. Add something from the menu.</li>';
+  drawDrinkOffer(picked);
   $('kxTotal').textContent = naira(t);
   mountRewards(); rewardsBox?.refresh();
   const min = menu?.minOrderKobo || 0;
   $('kxMin').hidden = !(min && t && t < min);
   $('kxMin').textContent = `The minimum order is ${naira(min)}.`;
   $('kxAdultWrap').hidden = !picked.some(f => f.adult);
+}
+// "Add a drink?": one offer in the cart when it has food but no drink or combo (a drink that is ready, the most popular first).
+const NO_DRINK = 'ls_kitchen_nodrink';
+function drawDrinkOffer(picked: Item[]) {
+  const box = $('kxOffer');
+  const hide = () => { box.hidden = true; box.innerHTML = ''; };
+  if (!menu?.open || !picked.length) return hide();
+  try { if (sessionStorage.getItem(NO_DRINK)) return hide(); } catch { /* private mode */ }
+  const inCats = (re: RegExp) => menu!.categories.filter(c => re.test(c.name)).flatMap(c => c.items);
+  const drinks = inCats(/drink/i), combos = inCats(/combo/i);
+  if (picked.some(f => drinks.some(x => x.id === f.id) || combos.some(x => x.id === f.id))) return hide();
+  const can = drinks.filter(f => !f.soldOut && !f.adult);
+  const pop = (menu.popular || []).map(id => can.find(f => f.id === id)).find(Boolean);
+  const offer = pop || can[0];
+  if (!offer) return hide();
+  box.hidden = false;
+  box.innerHTML = `<span class="kx-offer-t"><b>Add a drink?</b> ${esc(offer.name)} · ${naira(offer.priceKobo)}</span>
+<button type="button" class="kx-offer-add" data-id="${esc(offer.id)}" data-d="1" data-track="kitchen_click" data-track-label="drink_offer" aria-label="Add ${esc(offer.name)}, ${naira(offer.priceKobo)}">Add</button>
+<button type="button" class="kx-offer-no" id="kxOfferNo">No thanks</button>`;
 }
 function change(id: string, d: number) {
   const f = items.find(x => x.id === id);
@@ -530,7 +550,12 @@ export function startKitchen() {
   $('kxClose').addEventListener('click', () => drawer.close());
   drawer.addEventListener('click', e => { if (e.target === drawer) drawer.close(); }); // tap outside
   $('kxSeatEdit').addEventListener('click', () => { drawer.close(); $('kxSeatBar').scrollIntoView({ block: 'nearest' }); $('kxRow').focus(); });
-  onStep($('kxMenu')); onStep($('kxLines'));
+  onStep($('kxMenu')); onStep($('kxLines')); onStep($('kxOffer'));
+  $('kxOffer').addEventListener('click', e => {
+    if ((e.target as HTMLElement).id !== 'kxOfferNo') return;
+    try { sessionStorage.setItem(NO_DRINK, '1'); } catch { /* private mode */ }
+    $('kxOffer').hidden = true;
+  });
   $('kxForm').addEventListener('submit', payOnline);
   $('kxAlertBtn').addEventListener('click', turnOnAlerts);
   window.setInterval(whenOptions, 60000);

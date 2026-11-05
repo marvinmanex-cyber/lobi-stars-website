@@ -285,6 +285,40 @@ test('only supervisors and Super Admins add dishes, delete dishes and change pri
   }
 });
 
+test('delivery by stand: ready orders grouped, in seat order, still-cooking counted; marking delivered; the food report', async () => {
+  const S = await as((await signCode(SUP.code)).cookie), A = await as((await signIn(SA_EMAIL, SA_PW)).cookie);
+  const added = await S.call('staff', { action: 'add', name: `Runner ${T}`, role: 'cook' });
+  const R = await as((await signCode(added.data.loginCode)).cookie);
+  const iso = new Date().toISOString();
+  const stand = `Stand ${T}`;
+  const put = (id, seat, status, extra = '') => `INSERT INTO food_orders (id, ref, seat, stand, phone, email, items_json, total_kobo, paystack_reference, payment_status, order_status, paid_iso, created_iso, channel, customer_name) VALUES ('${id}', '${id}', '${seat}', '${stand}', '0803000000${seat.length}', '', '[{"id":"suya","name":"Report Suya ${T}","qty":2,"priceKobo":50000}]', 100000, 'r-${id}', 'paid', '${status}', '${iso}', '${iso}', 'paystack', 'Fan ${seat}');${extra}`;
+  const ids = [`d1${T}`, `d2${T}`, `d3${T}`];
+  sql(put(ids[0], 'B-10', 'OUT_FOR_DELIVERY') + put(ids[1], 'B-2', 'OUT_FOR_DELIVERY') + put(ids[2], 'C-1', 'PREPARING'));
+  try {
+    const d = (await R.call('delivery')).data;
+    const g = d.groups.find(x => x.name === stand);
+    assert.ok(g, 'the stand is there');
+    assert.deepEqual(g.ready.map(o => o.seat), ['B-2', 'B-10'], 'seat order, 2 before 10');
+    assert.equal(g.cooking, 1, 'still cooking is only counted');
+    assert.ok(!JSON.stringify(g.ready).includes('08030000003'), 'phone numbers stay masked');
+    assert.equal((await R.call('order', { id: ids[1], to: 'DELIVERED' })).status, 200, 'any kitchen role can mark delivered');
+    assert.deepEqual((await R.call('delivery')).data.groups.find(x => x.name === stand).ready.map(o => o.seat), ['B-10']);
+    // The report: supervisors and Super Admins; totals, no customer details.
+    assert.equal((await R.call('report-settings')).status, 403);
+    assert.equal((await fetch(`${BASE}/api/matchday-kitchen/report`, { headers: { Cookie: `ls_mdk=${(await signCode(added.data.loginCode)).cookie}` } })).status, 403);
+    assert.equal((await S.call('report-settings', { emails: 'not an email' })).status, 400);
+    const saved = await S.call('report-settings', { emails: 'chef@example.com\nboss@example.com' });
+    assert.deepEqual(saved.data.emails, ['chef@example.com', 'boss@example.com']);
+    assert.deepEqual((await A.call('report-settings')).data.emails, ['chef@example.com', 'boss@example.com']);
+    const sup = await signCode(SUP.code);
+    const html = await fetch(`${BASE}/api/matchday-kitchen/report`, { headers: { Cookie: `ls_mdk=${sup.cookie}` } }).then(r => r.text());
+    assert.match(html, /Match-day food report/); assert.match(html, /Top dishes/); assert.ok(html.includes(`Report Suya ${T}`)); assert.ok(html.includes(stand)); assert.match(html, /Hour by hour/);
+    assert.ok(!html.includes(`Fan B-2`), 'no customer names'); assert.ok(!html.includes('fan@example.com'));
+  } finally {
+    sql(`DELETE FROM food_orders WHERE id IN (${ids.map(i => `'${i}'`).join(',')}); DELETE FROM mk_staff WHERE id = '${added.data.id}'; DELETE FROM mk_settings WHERE key = 'report_emails';`);
+  }
+});
+
 test('food ordering: supervisors and Super Admins open and close it, cooks only see it, fans are refused while closed', async () => {
   const before = rows(`SELECT value FROM food_settings WHERE key = 'orderingMode'`)[0]?.value || 'open';
   const sup = await signCode(SUP.code), S = await as(sup.cookie);
@@ -333,7 +367,7 @@ test('website admins see kitchen staff, shifts, notes and the activity log read-
   assert.ok((await get('staff')).staff.some(s => s.staffId === SUP.staffId));
   assert.ok((await get('shifts')).shifts.some(s => s.code === COOK.staffId));
   assert.ok((await get('notes')).notes.some(n => n.text.includes(T)));
-  assert.ok((await get('activity')).rows.some(a => a.code === COOK.staffId));
+  assert.ok((await get('activity')).rows.some(a => a.code === COOK.staffId || a.code === SUP.staffId));
   assert.equal((await fetch(`${BASE}/api/admin/matchday-kitchen`, { method: 'POST', headers: H, body: '{}' })).status, 405, 'nothing can be changed');
   assert.throws(() => sql(`DELETE FROM mk_activity WHERE actor_code = '${COOK.staffId}';`), /cannot be deleted|SQLITE|Error/, 'the activity log cannot be deleted');
 });
