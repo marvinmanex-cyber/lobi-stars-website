@@ -20,7 +20,7 @@ import { foodSettings, saveFoodSetting } from '../_lib/foodOrders.js';
 import { buildReport, sendReport, reportEmails, saveReportEmails } from '../_lib/kitchenReport.js';
 import { recordPayment, canRecord, proofInfo, proofResponse, PAY_METHODS } from '../_lib/foodPaymentProof.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
-import { saveAppDevice, removeAppDevice, removeStaffDevices, testAppDevice } from '../_lib/kitchenNotify.js';
+import { saveAppDevice, removeAppDevice, removeStaffDevices, testAppDevice, notifyKitchen } from '../_lib/kitchenNotify.js';
 
 // The pages (and their names in the activity log).
 const PAGES = {
@@ -28,6 +28,8 @@ const PAGES = {
   analytics: 'Food analytics', shift: 'My shift', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts',
   whatsapp: 'Kitchen WhatsApp', telegram: 'Telegram updates', delivery: 'Delivery by stand',
 };
+// An order still waiting to be confirmed or rejected: only supervisors and Super Admins move it.
+const UNCONFIRMED = ['AWAITING_WHATSAPP', 'CONFIRMED', 'PAID'];
 const denied = () => json({ error: "Your role can't do this. Ask a kitchen supervisor or a super admin.", denied: true }, 403);
 const staffName = u => `${u.name} (${u.code}) – MatchDay Kitchen`;
 const csvCell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) || /^[=+\-@]/.test(s) ? `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"` : s; };
@@ -80,19 +82,22 @@ export async function onRequest(context) {
         const o = await K.getOrder(db, q.get('id') || '');
         if (!o) return json({ error: 'That order no longer exists.' }, 404);
         // A WhatsApp order becomes paid through Record payment (with evidence), not a plain status button.
-        const moves = K.movesFor(o).filter(m => (!m.cancel || perms.cancel) && !(m.to === 'PAID' && o.channel === 'whatsapp' && o.payment_status !== 'paid'));
-        return json({ order: K.ticket(o, late), moves, canRecordPayment: canRecord(o) && perms.payment, needsPaymentRole: canRecord(o) && !perms.payment, payment: perms.payment ? await proofInfo(db, o.id) : null, methods: PAY_METHODS });
+        const held = UNCONFIRMED.includes(o.order_status);
+        const moves = held && !perms.confirm ? [] : K.movesFor(o).filter(m => (!m.cancel || perms.cancel || held) && (m.to !== 'PAID' || perms.confirm) && !(m.to === 'PAID' && o.channel === 'whatsapp' && o.payment_status !== 'paid'));
+        return json({ order: K.ticket(o, late), moves, needsSupervisor: held && !perms.confirm, canRecordPayment: canRecord(o) && perms.payment, needsPaymentRole: canRecord(o) && !perms.payment, payment: perms.payment ? await proofInfo(db, o.id) : null, methods: PAY_METHODS });
       }
       case 'POST order': {
         const to = String(body.to || '');
-        if (K.DATA.cancelled.includes(to) && !perms.cancel) return denied();
-        if (to === 'PAID') {
-          const was = await K.getOrder(db, body.id);
-          if (was && was.channel === 'whatsapp' && was.payment_status !== 'paid') return json({ error: 'Use Record payment, with the evidence from the fan.', recordPayment: true }, 400);
-        }
+        const was = await K.getOrder(db, body.id);
+        const held = !!was && UNCONFIRMED.includes(was.order_status);
+        if ((held || to === 'PAID') && !perms.confirm) return denied();
+        if (K.DATA.cancelled.includes(to) && !perms.cancel && !held) return denied();
+        if (to === 'PAID' && was && was.channel === 'whatsapp' && was.payment_status !== 'paid') return json({ error: 'Use Record payment, with the evidence from the fan.', recordPayment: true }, 400);
         const r = await K.setStatus(db, body.id, to, staffName(user), env);
         if (r.error) return json({ error: r.error }, 409);
         await mkLog(db, user, `Order ${r.ref}: ${K.statusLabel(r.from)} to ${K.statusLabel(r.to)}`, { kind: 'order', request });
+        // Confirmed and paid: cooking is pending, so the kitchen's devices are told too.
+        if (r.to === 'ACCEPTED' && r.from === 'PAID') context.waitUntil(notifyKitchen(env, was.id, 'cook'));
         // Delivered: the receipt goes to the buyer's email; the app offers the WhatsApp receipt.
         if (r.to === 'DELIVERED') {
           const receipt = await K.receiptAfterDelivery(env, body.id, staffName(user));

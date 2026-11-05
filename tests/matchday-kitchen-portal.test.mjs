@@ -89,18 +89,33 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   let bd = (await C.call('board')).data;
   const un = bd.unpaid.find(u => u.ref === o.ref);
   assert.ok(un, 'in Awaiting payment'); assert.equal(un.failed, false); assert.match(un.chatUrl || '', /^https:\/\/wa\.me\/234/);
-  assert.equal((await S.call('payment', { id, method: 'transfer', amount: String(un.totalNaira), proof: Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, ...T.split('').map(x => x.charCodeAt(0))]).toString('base64') })).status, 200);
+  // Paid (as a Paystack payment does): it now waits for a supervisor to confirm it.
+  rows(`UPDATE food_orders SET payment_status = 'paid', order_status = 'PAID', paid_iso = '${new Date().toISOString()}' WHERE id = '${id}';`);
   bd = (await C.call('board')).data;
   assert.ok(!bd.unpaid.some(u => u.ref === o.ref), 'paid: leaves Awaiting payment');
   let k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
-  assert.ok(k, 'on the kitchen screen'); assert.equal(k.next.label, 'Accept order'); assert.equal(k.note, 'No pepper'); assert.equal(k.items[0].qty, 2);
-  // The alarm: a new (paid, not accepted) order beeps until someone accepts it.
+  assert.ok(k, 'on the kitchen screen'); assert.equal(k.next.label, 'Confirm order'); assert.equal(k.note, 'No pepper'); assert.equal(k.items[0].qty, 2);
+  // The alarm: a new (paid, not confirmed) order beeps until a supervisor or Super Admin confirms or rejects it.
   assert.ok((await C.call('pulse')).data.newOrders.some(p => p.ref === o.ref), 'new order alarm');
-  assert.equal((await C.call('order', { id, to: k.next.to })).status, 200);
-  assert.ok(!(await C.call('pulse')).data.newOrders.some(p => p.ref === o.ref), 'accepting stops the alarm');
+  assert.equal((await C.call('order', { id, to: k.next.to })).status, 403, 'a cook sees it but cannot confirm it');
+  assert.equal((await C.call('order', { id, to: 'PREPARING' })).status, 403, 'nor skip past it');
+  assert.equal((await C.call('order', { id, to: 'CANCELLED' })).status, 403, 'nor reject it');
+  assert.equal((await C.call(`order?id=${id}`)).data.needsSupervisor, true); assert.equal((await C.call(`order?id=${id}`)).data.moves.length, 0);
+  assert.ok((await S.call(`order?id=${id}`)).data.moves.some(m => m.to === 'CANCELLED'), 'a supervisor can reject it');
+  assert.equal((await S.call('order', { id, to: k.next.to })).status, 200);
+  const cooking = (await C.call('pulse')).data;
+  assert.ok(!cooking.newOrders.some(p => p.ref === o.ref), 'confirming stops that alarm');
+  assert.ok(cooking.cook.some(p => p.ref === o.ref), 'and starts the cooking alarm');
+  let told = false; for (let i = 0; i < 10 && !told; i++) { told = rows(`SELECT attempt FROM food_notification_log WHERE order_id = '${id}'`).some(l => l.attempt === 'cook'); if (!told) await new Promise(r => setTimeout(r, 1500)); }
+  assert.ok(told, 'devices are told too (sent in the background)');
   k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
   assert.equal(k.statusLabel, 'Received'); assert.equal(k.next.label, 'Start cooking');
-  assert.equal((await C.call('order', { id, to: k.next.to })).status, 200);
+  // An order for half-time rings 30 minutes before it is due, not straight away.
+  rows(`UPDATE food_orders SET deliver_at = '${new Date(Date.now() + 2 * 3600e3).toISOString()}', deliver_when = 'half-time' WHERE id = '${id}';`);
+  assert.ok(!(await C.call('pulse')).data.cook.some(p => p.ref === o.ref), 'not due yet: quiet');
+  rows(`UPDATE food_orders SET deliver_at = NULL, deliver_when = 'now' WHERE id = '${id}';`);
+  assert.equal((await C.call('order', { id, to: k.next.to })).status, 200, 'anyone can start cooking');
+  assert.ok(!(await C.call('pulse')).data.cook.some(p => p.ref === o.ref), 'cooking started: quiet');
   k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
   assert.equal(k.statusLabel, 'Preparing'); assert.equal(k.next.label, 'Food on the way');
   assert.equal((await C.call('order', { id, to: k.next.to })).status, 200);
@@ -348,16 +363,26 @@ test('a new WhatsApp order alerts the kitchen: the alarm rings until it is confi
     assert.ok(log.some(l => l.channel === 'push' && l.attempt === 'whatsapp'), JSON.stringify(log));
     assert.equal(rows(`SELECT kitchen_alerted_at FROM food_orders WHERE id = '${o.id}'`)[0].kitchen_alerted_at, null, 'the paid alert is still to come');
 
-    // Confirming stops the ring, for everyone.
-    assert.equal((await C.call('order', { id: o.id, to: 'CONFIRMED' })).status, 200);
+    // A cook can't confirm or reject it. A supervisor confirming stops the ring, for everyone.
+    assert.equal((await C.call('order', { id: o.id, to: 'CONFIRMED' })).status, 403);
+    assert.equal((await C.call('order', { id: o.id, to: 'CANCELLED' })).status, 403);
+    assert.ok(await ring(C), 'still ringing');
+    assert.equal((await S.call('order', { id: o.id, to: 'CONFIRMED' })).status, 200);
     assert.ok(!(await ring(S)), 'confirmed: quiet');
-    // Paying straight away stops it too, and the paid alert then goes out.
+    assert.ok(!(await C.call('pulse')).data.cook.some(x => x.ref === o.ref), 'confirmed but not paid: no cooking alarm yet');
+    // Rejecting stops it too.
+    const rj = await place('W3'); made.push(rj.id);
+    assert.equal((await S.call('order', { id: rj.id, to: 'CANCELLED' })).status, 200);
+    assert.ok(!(await C.call('pulse')).data.whatsapp.some(x => x.ref === rj.ref), 'rejected: quiet');
+    // Recording the payment straight away stops it too, and cooking is then pending.
     const p = await place('W2'); made.push(p.id);
     assert.ok((await C.call('pulse')).data.whatsapp.some(x => x.ref === p.ref));
     assert.equal((await S.call('payment', { id: p.id, method: 'cash', amount: '99999', proof: Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 9, 8, 7, ...T.split('').map(x => x.charCodeAt(0))]).toString('base64') })).status, 200);
     const after = (await C.call('pulse')).data;
-    assert.ok(!after.whatsapp.some(x => x.ref === p.ref)); assert.ok(after.newOrders.some(x => x.ref === p.ref), 'now on the paid alarm');
-    assert.ok(rows(`SELECT kitchen_alerted_at FROM food_orders WHERE id = '${p.id}'`)[0].kitchen_alerted_at, 'the paid alert went out');
+    assert.ok(!after.whatsapp.some(x => x.ref === p.ref)); assert.ok(after.cook.some(x => x.ref === p.ref), 'now on the cooking alarm');
+    assert.ok(!after.newOrders.some(x => x.ref === p.ref), 'no second confirmation needed');
+    let told = false; for (let i = 0; i < 10 && !told; i++) { told = rows(`SELECT attempt FROM food_notification_log WHERE order_id = '${p.id}'`).some(l => l.attempt === 'cook'); if (!told) await new Promise(r => setTimeout(r, 1500)); }
+    assert.ok(told, 'devices are told to start cooking (sent in the background)');
 
     // The idle sign-out keeps the alerts; the sign-out button and "turn off" stop them.
     assert.equal((await C.call('logout', { idle: true })).status, 200);
@@ -380,7 +405,7 @@ test('a new WhatsApp order alerts the kitchen: the alarm rings until it is confi
 });
 
 test('WhatsApp payments: evidence required, then the order goes on as if paid online; cooks cannot; a receipt cannot be reused', async () => {
-  const S = await as((await signCode(SUP.code)).cookie);
+  const supCookie = (await signCode(SUP.code)).cookie, S = await as(supCookie);
   const staff = async (name, role) => { const a = await S.call('staff', { action: 'add', name: `${name} ${T}`, role }); return { id: a.data.id, u: await as((await signCode(a.data.loginCode)).cookie) }; };
   const pass = await staff('Pay Pass', 'pass'), cook = await staff('Pay Cook', 'cook');
   const iso = new Date().toISOString();
@@ -394,65 +419,64 @@ test('WhatsApp payments: evidence required, then the order goes on as if paid on
   try {
     const up = (await pass.u.call('board')).data.unpaid.find(o => o.id === a);
     assert.equal(up.canPay, true); assert.equal(up.totalNaira, 1500);
-    // Only order handlers, supervisors and Super Admins.
-    assert.equal(cook.u.s.perms.payment, false); assert.equal(pass.u.s.perms.payment, true);
+    // Only supervisors and Super Admins.
+    assert.equal(cook.u.s.perms.payment, false); assert.equal(pass.u.s.perms.payment, false); assert.equal(S.s.perms.payment, true);
+    assert.equal((await pass.u.call('payment', body(a))).status, 403, 'an order handler cannot either');
     assert.equal((await cook.u.call('payment', body(a))).status, 403, 'a cook cannot record a payment');
-    assert.equal((await cook.u.call('order', { id: a, to: 'PAID' })).status, 400, 'nor mark it paid another way');
-    assert.equal((await pass.u.call('order', { id: a, to: 'PAID' })).data.recordPayment, true, 'the plain status button is closed');
-    assert.ok(!(await pass.u.call(`order?id=${a}`)).data.moves.some(m => m.to === 'PAID'));
-    assert.equal((await pass.u.call(`order?id=${a}`)).data.canRecordPayment, true);
+    assert.equal((await cook.u.call('order', { id: a, to: 'PAID' })).status, 403, 'nor mark it paid another way');
+    assert.equal((await S.call('order', { id: a, to: 'PAID' })).data.recordPayment, true, 'the plain status button is closed');
+    assert.ok(!(await S.call(`order?id=${a}`)).data.moves.some(m => m.to === 'PAID'));
+    assert.equal((await S.call(`order?id=${a}`)).data.canRecordPayment, true);
     assert.equal((await cook.u.call(`order?id=${a}`)).data.canRecordPayment, false);
     // The checks.
-    assert.match((await pass.u.call('payment', body(a, { proof: '' }))).data.error, /evidence/);
-    assert.match((await pass.u.call('payment', body(a, { proof: Buffer.from('<script>alert(1)</script>').toString('base64') }))).data.error, /not a picture/, 'a file is checked by what it really is');
-    assert.match((await pass.u.call('payment', body(a, { amount: '1000' }))).data.error, /less than the order total/);
-    assert.equal((await pass.u.call('payment', body(a, { method: 'gold' }))).status, 400);
-    assert.equal((await pass.u.call('payment', body(d))).status, 400, 'online orders are confirmed by Paystack');
+    assert.match((await S.call('payment', body(a, { proof: '' }))).data.error, /evidence/);
+    assert.match((await S.call('payment', body(a, { proof: Buffer.from('<script>alert(1)</script>').toString('base64') }))).data.error, /not a picture/, 'a file is checked by what it really is');
+    assert.match((await S.call('payment', body(a, { amount: '1000' }))).data.error, /less than the order total/);
+    assert.equal((await S.call('payment', body(a, { method: 'gold' }))).status, 400);
+    assert.equal((await S.call('payment', body(d))).status, 400, 'online orders are confirmed by Paystack');
     assert.equal(order(a).payment_status, 'pending', 'nothing changed yet');
     // Recorded: paid, in the kitchen, recorded and traceable.
-    const r = await pass.u.call('payment', body(a, { note: 'GTB ref 123' }));
+    const r = await S.call('payment', body(a, { note: 'GTB ref 123' }));
     assert.equal(r.status, 200, JSON.stringify(r.data));
     assert.match(r.data.chatUrl, /^https:\/\/wa\.me\/2348031234567/, 'one tap to tell the fan');
     const o = order(a);
-    assert.equal(o.order_status, 'PAID'); assert.equal(o.payment_status, 'paid'); assert.ok(o.paid_iso); assert.match(o.paid_reference, /^WhatsApp: Bank transfer, recorded by Pay Pass/);
+    assert.equal(o.order_status, 'ACCEPTED', 'recording it also confirms it'); assert.equal(o.payment_status, 'paid'); assert.ok(o.paid_iso); assert.match(o.paid_reference, /^WhatsApp: Bank transfer, recorded by Bola Super/);
     assert.ok((await cook.u.call('kitchen')).data.tickets.some(t => t.id === a), 'on the kitchen screen like any paid order');
-    assert.ok(rows(`SELECT kitchen_alerted_at FROM food_orders WHERE id = '${a}'`)[0].kitchen_alerted_at !== undefined);
-    assert.ok(!(await pass.u.call('board')).data.unpaid.some(x => x.id === a), 'off the awaiting payment list');
-    assert.equal((await pass.u.call('order', { id: a, to: 'ACCEPTED' })).status, 200, 'and it carries on as normal');
+    assert.ok(!(await S.call('board')).data.unpaid.some(x => x.id === a), 'off the awaiting payment list');
+    assert.equal((await cook.u.call('order', { id: a, to: 'PREPARING' })).status, 200, 'and it carries on as normal');
     // Twice: refused.
-    assert.equal((await pass.u.call('payment', body(a, { proof: jpg(9) }))).status, 409);
+    assert.equal((await S.call('payment', body(a, { proof: jpg(9) }))).status, 409);
     // The evidence: same roles only; shown, never run.
-    const info = (await pass.u.call(`order?id=${a}`)).data.payment;
-    assert.equal(info.method, 'Bank transfer'); assert.equal(info.note, 'GTB ref 123'); assert.match(info.by, /Pay Pass/);
+    const info = (await S.call(`order?id=${a}`)).data.payment;
+    assert.equal(info.method, 'Bank transfer'); assert.equal(info.note, 'GTB ref 123'); assert.match(info.by, /Bola Super/);
     assert.equal((await cook.u.call(`order?id=${a}`)).data.payment, null);
     assert.equal((await cook.u.call(`payment-proof?id=${a}`)).status, 403);
     assert.equal((await fetch(`${BASE}/api/matchday-kitchen/payment-proof?id=${a}`)).status, 401, 'never the public');
     const passCookie = (await signCode((await S.call('staff', { action: 'edit', id: pass.id, newCode: true })).data.loginCode)).cookie;
     pass.u = await as(passCookie);
-    const pic = await fetch(`${BASE}/api/matchday-kitchen/payment-proof?id=${a}`, { headers: { Cookie: `ls_mdk=${passCookie}` } });
+    assert.equal((await pass.u.call(`payment-proof?id=${a}`)).status, 403);
+    const pic = await fetch(`${BASE}/api/matchday-kitchen/payment-proof?id=${a}`, { headers: { Cookie: `ls_mdk=${supCookie}` } });
     assert.equal(pic.status, 200); assert.equal(pic.headers.get('content-type'), 'image/jpeg'); assert.equal(pic.headers.get('x-content-type-options'), 'nosniff');
     assert.equal(Buffer.from(await pic.arrayBuffer()).toString('base64'), jpg());
     // The same receipt on another order: refused; a supervisor can allow it, and it stays flagged.
-    const dup = await pass.u.call('payment', body(b));
-    assert.equal(dup.status, 409); assert.equal(dup.data.duplicate, a); assert.equal(dup.data.canOverride, false);
-    assert.equal((await pass.u.call('payment', body(b, { allowDuplicate: true }))).status, 409, 'an order handler cannot allow it');
-    assert.equal((await S.call('payment', body(b))).data.canOverride, true);
+    const dup = await S.call('payment', body(b));
+    assert.equal(dup.status, 409); assert.equal(dup.data.duplicate, a); assert.equal(dup.data.canOverride, true);
     const allowed = await S.call('payment', body(b, { allowDuplicate: true }));
     assert.equal(allowed.status, 200); assert.equal(allowed.data.duplicateOf, a);
     assert.equal((await S.call(`order?id=${b}`)).data.payment.duplicateOf, a);
     // A fan who paid after the order ran out of time; a PDF receipt; more than the total.
-    const late = await pass.u.call('payment', body(c, { proof: pdf, method: 'pos', amount: '2000' }));
-    assert.equal(late.status, 200); assert.equal(order(c).paid_late, 1); assert.equal(order(c).order_status, 'PAID');
+    const late = await S.call('payment', body(c, { proof: pdf, method: 'pos', amount: '2000' }));
+    assert.equal(late.status, 200); assert.equal(order(c).paid_late, 1); assert.equal(order(c).order_status, 'ACCEPTED');
     assert.equal((await S.call(`order?id=${c}`)).data.payment.isPdf, true);
-    const pdfFile = await fetch(`${BASE}/api/matchday-kitchen/payment-proof?id=${c}`, { headers: { Cookie: `ls_mdk=${passCookie}` } });
+    const pdfFile = await fetch(`${BASE}/api/matchday-kitchen/payment-proof?id=${c}`, { headers: { Cookie: `ls_mdk=${supCookie}` } });
     assert.match(pdfFile.headers.get('content-disposition'), /^attachment/, 'a PDF is downloaded, not opened on our site');
     // The website admin can see it too.
     assert.equal((await fetch(`${BASE}/api/admin/food-orders/proof?id=${a}`)).status, 401);
     const adm = await fetch(`${BASE}/api/admin/food-orders/proof?id=${a}`, { headers: { 'x-admin-code': 'test-code-123' } });
     assert.equal(adm.status, 200); assert.equal(adm.headers.get('content-type'), 'image/jpeg');
     // An oversized upload is refused before it is read.
-    assert.equal((await pass.u.call('payment', body(f, { proof: 'x'.repeat(4000000) }))).status, 413);
-    assert.equal((await pass.u.call('payment', body(f, { proof: Buffer.concat([Buffer.from([0xFF, 0xD8, 0xFF]), Buffer.alloc(1600 * 1024, 1)]).toString('base64') }))).status, 400, 'over 1.5 MB');
+    assert.equal((await S.call('payment', body(f, { proof: 'x'.repeat(4000000) }))).status, 413);
+    assert.equal((await S.call('payment', body(f, { proof: Buffer.concat([Buffer.from([0xFF, 0xD8, 0xFF]), Buffer.alloc(1600 * 1024, 1)]).toString('base64') }))).status, 400, 'over 1.5 MB');
     // A Super Admin too; and the log.
     const A = await as((await signIn(SA_EMAIL, SA_PW)).cookie);
     assert.equal((await A.call('payment', body(e, { proof: jpg(5) }))).status, 200);

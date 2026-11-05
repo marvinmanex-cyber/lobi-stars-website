@@ -4551,7 +4551,7 @@ fan sees on their order page.
 
 | Step | Status in the kitchen | Tap | The fan sees |
 | --- | --- | --- | --- |
-| 1 | **New** (just paid) | **Accept order** | Received |
+| 1 | **New** (just paid) | **Confirm order** (supervisor or Super Admin), or **Reject order** | Received |
 | 2 | **Received** | **Start cooking** | Received |
 | 3 | **Preparing** | **Food on the way** (pickup: **Ready for pickup**) | Preparing |
 | 4 | **On the way** | **Mark delivered** | On the way |
@@ -4562,7 +4562,7 @@ open:
 - **New order:**
   - A loud beep every 3 seconds, a flashing red bar ("NEW ORDER #0004").
   - Vibration on phones, and "🔔" in the tab title.
-  - It keeps going **until someone taps Accept order**.
+  - It keeps going **until a supervisor or Super Admin confirms or rejects the order**. Other staff see the order and hear it, but can't stop it.
   - Tap the red bar to open the kitchen screen.
 - **Late order:** an order not delivered **within 5 minutes of payment** gets
   an amber bar ("LATE ORDER #0004, 6 min") and a lower beep once a minute,
@@ -4636,7 +4636,8 @@ It is the same setting as the button on the admin live order board, and each cha
 | Turn a dish on or off | Yes | Yes | Yes | Yes |
 | Turn all dishes on or off | | | Yes | Yes |
 | Cancel orders | | Yes | Yes | Yes |
-| Record a WhatsApp payment, see the evidence | | Yes | Yes | Yes |
+| Confirm or reject an order | | | Yes | Yes |
+| Record a WhatsApp payment, see the evidence | | | Yes | Yes |
 | Allow a receipt already used on another order | | | Yes | Yes |
 | Change prices, rename, add and delete dishes | | | Yes | Yes |
 | Pin or delete anyone's notes | | | Yes | Yes |
@@ -4653,7 +4654,10 @@ Who can cancel can be changed in **Staff accounts › Settings** (with the Teleg
 **Add a drink:** when a fan's cart has food but no drink or combo, the cart offers one drink that is ON (the most popular first), with **Add** and **No thanks**. It never offers 18+ drinks.
 
 **Order alerts:** new orders alert the kitchen in two ways.
-- **In the app:** while MatchDay Kitchen is open, a paid order flashes red and beeps until someone presses **Accept order**. A new WhatsApp order shows a green bar and rings every 10 seconds until someone presses **Confirm order** (Live order board) or records the payment. It is not paid yet, so don't cook it.
+- **In the app:** while MatchDay Kitchen is open, every alert blinks red, in the bar at the top and on the button or tab of the page it comes from, and keeps beeping:
+  - **A paid order or a new WhatsApp order** beeps until a supervisor or Super Admin confirms or rejects it. Everyone else sees the order and hears it but can't stop it, so have a supervisor on duty. A WhatsApp order that is confirmed but not paid goes quiet and isn't cooked.
+  - **🍳 Start cooking** beeps once an order is confirmed and paid, until anyone presses **Start cooking**. An order for kick-off or half-time starts 30 minutes before it is due.
+  - **A late order** beeps once a minute until it is delivered.
 - **On the device, even with the app closed:** on the Home screen press **Turn on order alerts** and allow notifications. Do this once on each phone or tablet, then press **Send a test alert** to check it. On iPhone and iPad, install the app first (Share, then Add to Home Screen) and open it from there.
 
 Signing out with the **Sign out** button stops alerts on that person's devices until they next sign in. The automatic sign-out after 20 idle minutes does not stop them. Switching a person off, or giving them a new login code, stops them too. Tablets must allow sound: tap the screen once after opening the app.
@@ -4668,7 +4672,9 @@ Signing out with the **Sign out** button stops alerts on that person's devices u
 
 The order then goes on exactly as if it was paid online: the kitchen alarm rings, it appears on the kitchen screen, stock and rewards update, the fan's tracking page moves on and the confirmation email goes out (if they gave an email). The evidence is kept with the order: see it on the order's page, with who recorded it and when.
 
-Who: order handlers, supervisors and Super Admins, not cooks. Only they can open the evidence, which has bank details on it. If the same receipt was already used on another order, it is refused; a supervisor or Super Admin who has checked it can allow it, and the order stays flagged. Check the money has actually reached the club's account: a screenshot can be faked. The website admin's live board still has its own **Payment received** button (no evidence).
+Recording a payment also confirms the order, so it goes straight to **Start cooking**.
+
+Who: supervisors and Super Admins only. Only they can open the evidence, which has bank details on it. If the same receipt was already used on another order, it is refused; a supervisor or Super Admin who has checked it can allow it, and the order stays flagged. Check the money has actually reached the club's account: a screenshot can be faked. The website admin's live board still has its own **Payment received** button (no evidence).
 
 **Managing the menu from the fans' page:** a kitchen supervisor or Super Admin signed in to MatchDay Kitchen who opens **lobistarsfc.com/kitchen** on the same device sees a yellow **Manage the menu** bar and, on every item, a name box (**Save name**), a price box and **Delete**. A new name shows to fans straight away; orders already placed keep the name they were placed with. **+ Add menu item** adds a dish (name, category, price, optional description; a photo can be added later in the website admin). Fans never see these, and the website checks the role on every change. If the kitchen sign-in has ended, the bar says so with a link to sign in again. **Delete:** a dish with past orders is kept out of sight for the reports; any other is removed. Everything is recorded in the activity log.
 

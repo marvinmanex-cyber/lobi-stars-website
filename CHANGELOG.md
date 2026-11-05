@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-05: Kitchen alerts blink red; only supervisors confirm orders; start-cooking alarm
+
+**Who it affects:** all kitchen staff. **Staff need to:** have a supervisor or Super Admin on duty whenever ordering is open.
+- Every alert now blinks red, in the top bar and on the button or tab of the page it comes from.
+- Only supervisors and Super Admins can confirm or reject an order, or record a WhatsApp payment and see its evidence. Other staff see the orders and hear the alarm. "Accept order" is now **Confirm order**, with **Reject order** beside it.
+- An order keeps beeping until it is confirmed or rejected.
+- New: once an order is confirmed and paid, **🍳 Start cooking** beeps until someone presses Start cooking, and devices with order alerts on are told. A WhatsApp order confirmed but not paid stays quiet until the payment is recorded.
+- The website admin's own screens and the Telegram Accept button are unchanged.
+
 ## 2026-11-05: WhatsApp food orders: fans are told how to pay straight away
 
 **Who it affects:** fans ordering on WhatsApp, kitchen order handlers.

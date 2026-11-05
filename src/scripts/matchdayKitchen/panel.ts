@@ -97,7 +97,7 @@ async function sendPayment(allowDuplicate = false) {
   try {
     const r = await api('payment', { method: 'POST', body: { id: payOrder.id, method: $('payHow').value, amount: $('payAmt').value, note: $('payNote').value, proof: payProof, fileName: payFileName, allowDuplicate } });
     $('payF').hidden = true; $('payDone').hidden = false;
-    $('payDoneT').textContent = `Order ${r.ref} is paid (${r.amount}, ${r.method}) and has gone to the kitchen. The evidence is saved with the order.`;
+    $('payDoneT').textContent = `Order ${r.ref} is paid (${r.amount}, ${r.method}) and has gone to the kitchen, which is told to start cooking. The evidence is saved with the order.`;
     const tell = $('payTell') as HTMLAnchorElement;
     tell.hidden = !r.chatUrl; if (r.chatUrl) tell.href = r.chatUrl;
     shell?.alarmsNow?.();
@@ -122,7 +122,9 @@ function ticketHtml(t: any) {
     <ul class="mk-items">${t.items.map((i: any) => `<li>${esc(i.qty)} × ${esc(i.name)}${i.note ? `<em>${esc(i.note)}</em>` : ''}</li>`).join('')}</ul>
     ${t.note ? `<div class="mk-onote">Note: ${esc(t.note)}</div>` : ''}
     <div class="mk-status">${esc(t.statusLabel)}</div>
-    ${t.next ? `<button type="button" class="mk-btn go big wide" data-move="${esc(t.id)}" data-to="${esc(t.next.to)}">${esc(t.next.label)}</button>` : ''}
+    ${t.status === 'PAID' && !session.perms.confirm ? '<div class="mk-status">Waiting for a supervisor to confirm it</div>'
+      : t.next ? `<button type="button" class="mk-btn go big wide" data-move="${esc(t.id)}" data-to="${esc(t.next.to)}">${esc(t.next.label)}</button>` : ''}
+    ${t.status === 'PAID' && session.perms.confirm ? `<button type="button" class="mk-btn danger wide" data-move="${esc(t.id)}" data-to="CANCELLED">Reject order</button>` : ''}
   </article>`;
 }
 /** After a status change: the alarms re-check at once; after "Mark delivered", the receipt. */
@@ -138,6 +140,7 @@ async function afterMove(id: string, r: any) {
 async function moveFrom(e: Event, reload: () => Promise<void>) {
   const b = (e.target as HTMLElement).closest('[data-move]') as HTMLButtonElement | null;
   if (!b) return;
+  if (b.dataset.to === 'CANCELLED' && !confirm('Reject this order? The fan sees it as cancelled. This order is already paid, so the money has to be refunded. Your name is recorded.')) return;
   await act(b, async () => { const r = await api('order', { method: 'POST', body: { id: b.dataset.move, to: b.dataset.to } }); await reload(); await afterMove(b.dataset.move!, r); });
 }
 
@@ -157,10 +160,10 @@ const PAGES: Record<string, () => Promise<void>> = {
     const draw = async (quiet = false) => {
       const d = await api('board', { quiet });
       const up = d.unpaid || [], waiting = up.filter((o: any) => !o.failed), failed = up.filter((o: any) => o.failed);
-      const unpaidCard = (o: any) => `<article class="mk-unpaid${o.failed ? ' failed' : ''}"><div class="mk-unpaid-top"><b>${esc(o.ref)}</b><span>${esc(o.statusLabel)}</span><span class="r">${esc(mins(o.minutes))}${o.minutes >= 1 ? ' ago' : ''}</span></div>
+      const unpaidCard = (o: any) => `<article class="mk-unpaid${o.failed ? ' failed' : ''}${o.status === 'AWAITING_WHATSAPP' ? ' confirm-me' : ''}"><div class="mk-unpaid-top"><b>${esc(o.ref)}</b><span>${esc(o.statusLabel)}</span><span class="r">${esc(mins(o.minutes))}${o.minutes >= 1 ? ' ago' : ''}</span></div>
         <div>${esc([o.customer, o.where].filter(Boolean).join(' · '))}${o.phone ? ` · ${esc(o.phone)}` : ''}</div>
         <div class="mk-status">${esc(o.items.map((i: any) => `${i.qty} × ${i.name}`).join(', '))} · <b>${esc(o.total)}</b>${o.channel === 'whatsapp' ? ' · WhatsApp order' : ''}</div>
-        <div class="mk-actions" style="justify-content:flex-start;margin:6px 0 0">${o.chatUrl ? `<a class="mk-btn" href="${esc(o.chatUrl)}" target="mdk-whatsapp" rel="noopener">Chat on WhatsApp</a>` : ''}${o.status === 'AWAITING_WHATSAPP' ? `<button type="button" class="mk-btn go" data-confirm="${esc(o.id)}">Confirm order</button>` : ''}${o.canPay && session.perms.payment ? `<button type="button" class="mk-btn go" data-pay="${esc(o.id)}">Record payment</button>` : ''}</div></article>`;
+        <div class="mk-actions" style="justify-content:flex-start;margin:6px 0 0">${o.chatUrl ? `<a class="mk-btn" href="${esc(o.chatUrl)}" target="mdk-whatsapp" rel="noopener">Chat on WhatsApp</a>` : ''}${o.status === 'AWAITING_WHATSAPP' && session.perms.confirm ? `<button type="button" class="mk-btn go" data-confirm="${esc(o.id)}">Confirm order</button>` : ''}${o.canPay && session.perms.payment ? `<button type="button" class="mk-btn go" data-pay="${esc(o.id)}">Record payment</button>` : ''}${['AWAITING_WHATSAPP', 'CONFIRMED'].includes(o.status) && session.perms.confirm ? `<button type="button" class="mk-btn danger" data-reject="${esc(o.id)}">Reject order</button>` : ''}${o.status === 'AWAITING_WHATSAPP' && !session.perms.confirm ? '<span class="mk-status">Waiting for a supervisor</span>' : ''}</div></article>`;
       const unpaidHtml = `<section class="mk-unpaid-box" aria-label="Awaiting payment"><h2>Awaiting payment <span class="mk-badge">${waiting.length}</span> <small>Not paid yet: do not cook. A paid order moves to New by itself.</small></h2>
         ${waiting.length ? `<div class="mk-unpaid-grid">${waiting.map(unpaidCard).join('')}</div>` : '<p class="mk-status" style="margin:4px 6px">Nobody is waiting to pay.</p>'}
         ${failed.length ? `<h3>Did not pay <span class="mk-badge red">${failed.length}</span> <small>Payment failed or ran out of time (last 12 hours). Ask them what went wrong.</small></h3><div class="mk-unpaid-grid">${failed.map(unpaidCard).join('')}</div>` : ''}</section>`;
@@ -177,6 +180,14 @@ const PAGES: Record<string, () => Promise<void>> = {
         const url = (main as any)._unpaid.find((x: any) => x.id === c.dataset.confirm)?.chatUrl;
         if (url) window.open(url, 'mdk-whatsapp');
         act(c, async () => { await api('order', { method: 'POST', body: { id: c.dataset.confirm, to: 'CONFIRMED' } }); toast(url ? 'Confirmed. Press send in WhatsApp to give the fan the payment details.' : 'Confirmed. This order has no WhatsApp number: call the fan with the payment details.'); shell?.alarmsNow?.(); await draw(); });
+        return;
+      }
+      const rj = (e.target as HTMLElement).closest('[data-reject]') as HTMLButtonElement | null;
+      if (rj) {
+        if (!confirm('Reject this order? The fan sees it as cancelled. Your name is recorded.')) return;
+        const url = (main as any)._unpaid.find((x: any) => x.id === rj.dataset.reject)?.rejectUrl;
+        if (url) window.open(url, 'mdk-whatsapp');
+        act(rj, async () => { await api('order', { method: 'POST', body: { id: rj.dataset.reject, to: 'CANCELLED' } }); toast(url ? 'Rejected. Press send in WhatsApp to tell the fan.' : 'Rejected.'); shell?.alarmsNow?.(); await draw(); });
         return;
       }
       const p = (e.target as HTMLElement).closest('[data-pay]') as HTMLElement | null;
@@ -280,10 +291,10 @@ const PAGES: Record<string, () => Promise<void>> = {
         <div class="mk-box"><ul class="mk-items" style="border-top:0">${o.items.map((i: any) => `<li>${esc(i.qty)} × ${esc(i.name)}${i.note ? `<em>${esc(i.note)}</em>` : ''}</li>`).join('')}</ul>
           ${o.note ? `<div class="mk-onote" style="margin-top:10px">Note: ${esc(o.note)}</div>` : ''}
           <p style="margin:10px 0 0;font-size:20px"><b>Total ${esc(o.total)}</b></p></div>
-        ${d.canRecordPayment ? `<div class="mk-box mk-paybox"><b>Has the fan sent a receipt on WhatsApp?</b><p style="margin:4px 0 10px">Add it here and mark the order paid. It goes to the kitchen as if it was paid online.</p><button type="button" class="mk-btn go big" id="recPay">Record payment</button></div>` : d.needsPaymentRole ? '<p class="mk-status" style="text-transform:none;letter-spacing:0">Waiting for payment. An order handler or supervisor records it when the fan sends the receipt.</p>' : ''}
+        ${d.canRecordPayment ? `<div class="mk-box mk-paybox"><b>Has the fan sent a receipt on WhatsApp?</b><p style="margin:4px 0 10px">Add it here and mark the order paid. It goes to the kitchen as if it was paid online.</p><button type="button" class="mk-btn go big" id="recPay">Record payment</button></div>` : d.needsPaymentRole ? '<p class="mk-status" style="text-transform:none;letter-spacing:0">Waiting for payment. A supervisor or Super Admin records it when the fan sends the receipt.</p>' : ''}
         ${d.payment ? `<div class="mk-box"><h2 style="font-size:20px;margin:0 0 8px">Payment evidence</h2>${d.payment.isPdf ? '' : `<a href="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" target="_blank" rel="noopener"><img class="mk-proofimg" src="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" alt="The payment evidence for this order" loading="lazy" /></a>`}<a class="mk-btn" href="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" target="_blank" rel="noopener">${d.payment.isPdf ? 'Download the PDF receipt' : 'Open it full size'}</a></div>` : ''}
         <h2 style="font-size:22px;margin:0 0 6px">Change status</h2>
-        ${d.moves.length ? `<div class="mk-actions">${d.moves.map((m: any) => `<button type="button" class="mk-btn ${m.next ? 'go big' : m.cancel ? 'danger' : ''}" data-to="${esc(m.to)}" data-label="${esc(m.label)}" data-cancel="${m.cancel ? 1 : 0}">${m.next ? esc(o.next?.label || m.label) : esc(m.label)}</button>`).join('')}</div>` : '<p class="mk-empty">No more changes for this order.</p>'}
+        ${d.moves.length ? `<div class="mk-actions">${d.moves.map((m: any) => `<button type="button" class="mk-btn ${m.next ? 'go big' : m.cancel ? 'danger' : ''}" data-to="${esc(m.to)}" data-label="${esc(m.label)}" data-cancel="${m.cancel ? 1 : 0}">${m.next ? esc(o.next?.label || m.label) : esc(m.label)}</button>`).join('')}</div>` : d.needsSupervisor ? '<p class="mk-empty">A supervisor or Super Admin confirms or rejects this order.</p>' : '<p class="mk-empty">No more changes for this order.</p>'}
         ${o.status === 'DELIVERED' ? `<h2 style="font-size:22px;margin:14px 0 6px">Receipt</h2><div class="mk-actions"><button type="button" class="mk-btn go" id="rcWa">Send receipt on WhatsApp</button><button type="button" class="mk-btn" id="rcEmail">Email receipt</button></div>` : ''}
         <div class="mk-actions"><button type="button" class="mk-btn" id="allOrders">All orders</button></div>`;
       $('allOrders').addEventListener('click', () => openPage('orders'));

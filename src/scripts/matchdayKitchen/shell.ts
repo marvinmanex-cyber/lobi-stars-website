@@ -3,7 +3,7 @@
 // shared-tablet idle sign-out ("Still there?" after 20 minutes without a tap,
 // then a 60-second countdown). Inner pages report taps through window.mkShell.
 import { $, esc, api, session, loadSession, setSignedOutHandler, GROUPS, whatsappUrl, WA_PATH, TG_PATH, iconFor, pageTitle, hm } from './common';
-import { startAlarms, stopAlarms, alarmsNow } from './alarm';
+import { startAlarms, stopAlarms, alarmsNow, markSources } from './alarm';
 import { initPush } from './push';
 
 const IDLE_MS = 20 * 60e3, COUNTDOWN = 60, MAX_TABS = 6, SAVE_KEY = 'mdk_tabs';
@@ -115,6 +115,7 @@ function renderHome() {
       return `<button type="button" class="mk-tile ${t.style || ''}" data-open="${t.id}"><span class="mk-ico">${iconFor(t.id)}</span><b>${esc(t.title)}</b><span>${esc(text)}</span>${note ? `<small>${note}</small>` : ''}</button>`;
     }).join('')}</div></div></section>`;
   }).join('');
+  markSources();
 }
 $('groups').addEventListener('click', (e: Event) => {
   const b = (e.target as HTMLElement).closest('[data-open]') as HTMLElement | null;
@@ -129,6 +130,7 @@ function drawTabs() {
   $('tabs').innerHTML = tabs.map(t => `<span class="mk-tab${t.page === current ? ' on' : ''}"><button type="button" class="t" data-tab="${esc(t.page)}" aria-current="${t.page === current ? 'page' : 'false'}">${iconFor(t.page)}${esc(pageTitle(t.page))}</button><button type="button" class="x" data-close="${esc(t.page)}" aria-label="Close ${esc(pageTitle(t.page))}">×</button></span>`).join('');
   $('homeBtn').classList.toggle('on', !current);
   $('reloadBtn').hidden = !current;
+  markSources();
   document.title = current ? `${pageTitle(current)} | MatchDay Kitchen | Lobi Stars FC` : 'MatchDay Kitchen | Lobi Stars FC';
 }
 $('tabs').addEventListener('click', (e: Event) => {

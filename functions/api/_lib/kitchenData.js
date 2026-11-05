@@ -29,10 +29,10 @@ export const DATA = {
   board: ['PAID', 'ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY'],
   cancelled: ['CANCELLED', 'REFUNDED'],
   // The next step for each status (the big green button). The order of service:
-  // New (paid) -> Accept order -> Received -> Start cooking -> Preparing -> Food on the way
+  // New (paid) -> Confirm order (supervisors, Super Admins) -> Received -> Start cooking -> Preparing -> Food on the way
   // -> On the way -> Mark delivered -> Delivered (receipt emailed; WhatsApp receipt one tap).
   next: {
-    PAID: { to: 'ACCEPTED', label: 'Accept order' },
+    PAID: { to: 'ACCEPTED', label: 'Confirm order' },
     ACCEPTED: { to: 'PREPARING', label: 'Start cooking' },
     PREPARING: { to: 'OUT_FOR_DELIVERY', label: 'Food on the way' },
     OUT_FOR_DELIVERY: { to: 'DELIVERED', label: 'Mark delivered' },
@@ -132,6 +132,7 @@ export async function unpaidOrders(db) {
       items: items(o).map(i => ({ name: i.name, qty: i.qty })), total: formatNaira(o.total_kobo),
       phone: o.phone ? String(o.phone).replace(/\d(?=\d{4})/g, '•') : '', minutes: minutesSince(o.created_iso),
       chatUrl: phone.length >= 12 ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : null,
+      rejectUrl: phone.length >= 12 && o.channel === 'whatsapp' && !failed ? `https://wa.me/${phone}?text=${encodeURIComponent(staffMessage(settings, o, 'CANCELLED'))}` : null,
     };
   });
 }
@@ -382,6 +383,8 @@ export async function pulse(db, lateMinutes) {
   const one = o => ({ id: o.id, ref: o.ref || o.id, no: String(o.ref || o.id).split('-').pop(), status: statusLabel(o.order_status), minutes: minutesSince(startedAt(o)), where: o.seat || o.pickup_point ? whereText(o) : '' });
   return {
     newOrders: results.filter(o => o.order_status === 'PAID').map(one),
+    // Confirmed and paid, not started yet: cooking is pending. An order for kick-off or half-time rings 30 minutes before it is due.
+    cook: results.filter(o => o.order_status === 'ACCEPTED' && !(o.deliver_at && Date.parse(o.deliver_at) - Date.now() > 30 * 60e3)).map(one),
     // New WhatsApp orders nobody has confirmed yet: not paid, so not to cook, but the fan is waiting for a reply.
     whatsapp: results.filter(o => o.order_status === 'AWAITING_WHATSAPP').map(one),
     late: results.filter(o => DATA.kitchenShows.includes(o.order_status) && Date.parse(startedAt(o) || 0) <= Date.now() && minutesSince(startedAt(o)) >= lateMinutes).map(one),

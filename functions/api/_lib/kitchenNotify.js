@@ -79,6 +79,7 @@ export function buildKitchenTicket(order, attempt = 'initial') {
     : attempt === 'cancel' ? `❌ ORDER ${order.ref} CANCELLED, do not cook`
     : attempt === 'test' ? '🔔 Test kitchen alert'
     : attempt === 'whatsapp' ? `💬 NEW WHATSAPP ORDER ${order.ref}: confirm it`
+    : attempt === 'cook' ? `🍳 START COOKING ${order.ref}`
     : `🍽️ NEW PAID ORDER ${order.ref}`;
   const body = attempt === 'test' ? 'Kitchen alerts are working on this device.' : `${items.map(i => `${i.qty}× ${i.name}`).join(', ')} | ${where}${attempt === 'whatsapp' ? ' | Not paid yet: do not cook' : ''}`;
   const longText = [
@@ -154,7 +155,8 @@ async function log(db, order, channel, attempt, success, error, messageId = null
 /**
  * Alerts the kitchen about one order. attempt: 'initial' (once, when it
  * becomes PAID), 'repeat' (still not accepted), 'whatsapp' (a new WhatsApp order
- * to confirm: not paid yet, so it never uses up the paid alert), 'cancel' (an
+ * to confirm: not paid yet, so it never uses up the paid alert), 'cook' (confirmed
+ * and paid: cooking is pending), 'cancel' (an
  * alerted order was cancelled) or 'test'. Returns { sent, push, telegram } and never throws.
  */
 export async function notifyKitchen(env, orderId, attempt = 'initial') {

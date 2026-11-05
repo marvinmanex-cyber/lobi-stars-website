@@ -2,12 +2,15 @@
 // WhatsApp. Kitchen staff upload that evidence and mark the order paid. From then on the order
 // goes exactly as if it had been paid online: the kitchen is alerted, stock and rewards update,
 // the fan's tracking page moves on and the confirmation email goes out (afterFoodPaid).
+// Only supervisors and Super Admins record payments, and recording one also confirms the order,
+// so it goes straight to Received with the start-cooking alarm.
 //
 // Guards: evidence is required (a real picture or PDF, checked by its first bytes); the amount
 // must cover the order; only one payment per order (one atomic update); the same receipt used
 // on another order is refused unless a supervisor or Super Admin allows it (recorded). Evidence
 // has bank details on it: only roles that record payments can open it, never fans.
 import { afterFoodPaid, ensureFoodSchema, foodSettings, formatNaira, staffMessage } from './foodOrders.js';
+import { notifyKitchen } from './kitchenNotify.js';
 
 export const PAY_METHODS = { transfer: 'Bank transfer', ussd: 'USSD / mobile app', pos: 'POS', cash: 'Cash' };
 export const RECORDABLE = ['AWAITING_WHATSAPP', 'CONFIRMED', 'EXPIRED', 'PAYMENT_FAILED'];
@@ -95,15 +98,17 @@ export async function recordPayment(env, order, v, who, { canOverride = false, w
 
   const late = ['EXPIRED', 'PAYMENT_FAILED'].includes(order.order_status) ? 1 : 0;
   const reference = `WhatsApp: ${PAY_METHODS[v.method]}, recorded by ${name}${code ? ` (${code})` : ''}`.slice(0, 200);
-  const claim = await db.prepare(`UPDATE food_orders SET payment_status = 'paid', order_status = 'PAID', paid_at = datetime('now'), paid_iso = ?, paid_reference = ?, paid_late = ?, status_by = ?, status_at = ?
-    WHERE id = ? AND payment_status != 'paid' AND order_status IN (${RECORDABLE.map(() => '?').join(',')})`).bind(at, reference, late, `${name} – MatchDay Kitchen`, at, order.id, ...RECORDABLE).run();
+  const claim = await db.prepare(`UPDATE food_orders SET payment_status = 'paid', order_status = 'ACCEPTED', kitchen_ack_at = ?, kitchen_ack_by = ?, paid_at = datetime('now'), paid_iso = ?, paid_reference = ?, paid_late = ?, status_by = ?, status_at = ?
+    WHERE id = ? AND payment_status != 'paid' AND order_status IN (${RECORDABLE.map(() => '?').join(',')})`).bind(at, name, at, reference, late, `${name} – MatchDay Kitchen`, at, order.id, ...RECORDABLE).run();
   if (!claim.meta?.changes) {
     await db.prepare(`DELETE FROM food_payment_proofs WHERE order_id = ?`).bind(order.id).run();
     return { error: 'Someone else has just changed this order. Refresh and try again.', status: 409 };
   }
 
-  const paid = { ...order, payment_status: 'paid', order_status: 'PAID', paid_iso: at, paid_reference: reference };
+  const paid = { ...order, payment_status: 'paid', order_status: 'ACCEPTED', paid_iso: at, paid_reference: reference };
   await afterFoodPaid(env, order, paid, { waitUntil, origin });
+  const cook = notifyKitchen(env, order.id, 'cook');
+  if (waitUntil) waitUntil(cook); else await cook;
   const settings = await foodSettings(db);
   return { ok: true, ref: order.ref || order.id, total: formatNaira(order.total_kobo), amount: formatNaira(amountKobo), method: PAY_METHODS[v.method], late: !!late, duplicateOf: seen ? (seen.ref || seen.order_id) : null, chatUrl: fanChat(settings, order) };
 }
