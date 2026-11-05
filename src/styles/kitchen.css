@@ -213,3 +213,4 @@
 .kx-when { margin: 8px 0; padding: 10px 12px; border-radius: 10px; background: rgba(255, 194, 26, .14); color: var(--kx-gold); font-weight: 700; }
 .kx-btn--alert { width: 100%; margin: 10px 0 0; background: #fff; color: var(--kx-navy); }
 .kx-btn--alert.on { background: var(--kx-green); color: #04140A; }
+.kx-readytag { position: absolute; right: 8px; bottom: 8px; padding: 4px 9px; border-radius: 999px; background: #0E7A26; color: #fff; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; }

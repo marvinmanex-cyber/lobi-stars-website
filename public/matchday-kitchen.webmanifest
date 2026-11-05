@@ -21,7 +21,7 @@
     { "name": "Kitchen screen", "short_name": "Kitchen", "url": "/matchday-kitchen/?open=kitchen", "icons": [{ "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192" }] },
     { "name": "Live orders", "short_name": "Live", "url": "/matchday-kitchen/?open=live", "icons": [{ "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192" }] },
     { "name": "All orders", "short_name": "Orders", "url": "/matchday-kitchen/?open=orders", "icons": [{ "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Menu and sold out", "short_name": "Menu", "url": "/matchday-kitchen/?open=menu", "icons": [{ "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Menu: dishes on and off", "short_name": "Menu", "url": "/matchday-kitchen/?open=menu", "icons": [{ "src": "/images/matchday-kitchen/icon-192.png", "sizes": "192x192" }] }
   ],
   "prefer_related_applications": false
 }

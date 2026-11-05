@@ -10,7 +10,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     <AdminNav current="food-menu" />
     <div class="stag">Commerce › In-Seat Food</div>
     <h1 class="stitle">Food <span class="r">Menu</span></h1>
-    <p class="muted fm-lede">Add items, change prices and photos, and mark items <strong>sold out</strong> when they run out. Changes appear on the <a href="/food/" target="_blank" rel="noopener">food ordering page</a> straight away. New prices apply to new orders only; past orders keep the price that was paid.</p>
+    <p class="muted fm-lede">Add items, change prices and photos, and turn items <strong>off</strong> when they are not ready or have run out. Changes appear on the <a href="/food/" target="_blank" rel="noopener">food ordering page</a> straight away. New prices apply to new orders only; past orders keep the price that was paid.</p>
     <p class="fm-msg" id="msg" role="status" aria-live="polite" hidden></p>
     <p class="fm-state" id="orderingState"></p>
 
@@ -109,7 +109,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
           </div>
           <div class="fm-checks">
             <label><input type="checkbox" id="fAvail" checked /> Show on the menu</label>
-            <label><input type="checkbox" id="fSold" /> Sold out</label>
+            <label><input type="checkbox" id="fSold" /> Off (not ready)</label>
             <label><input type="checkbox" id="fAdult" /> 18+ (alcoholic drink)</label>
           </div>
         </div>
@@ -237,7 +237,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       ${thumb}
       <div class="fm-name">${esc(i.name)}<small>${esc(catName(i.category))}${flags ? ' · ' + esc(flags) : ''}</small></div>
       <label class="fm-price">₦<input type="number" min="1" step="1" value="${i.price}" data-price aria-label="Price of ${esc(i.name)} in naira"></label>
-      <label class="fm-switch"><input type="checkbox" data-sold ${i.soldOut ? 'checked' : ''} aria-label="${esc(i.name)} sold out"> Sold out</label>
+      <label class="fm-switch"><input type="checkbox" data-sold ${i.soldOut ? 'checked' : ''} aria-label="${esc(i.name)} off: not ready or sold out"> Off (not ready)</label>
       <div class="fm-btns"><button data-act="edit">Edit</button><button data-act="duplicate">Duplicate</button><button class="del" data-act="delete">Delete</button></div></li>`;
   }
   function render() {
@@ -266,7 +266,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   $('list').addEventListener('change', async e => {
     const li = e.target.closest('[data-id]'); if (!li) return;
     try {
-      if (e.target.matches('[data-sold]')) { await api({ action: 'soldOut', id: li.dataset.id, value: e.target.checked }); msg(e.target.checked ? 'Marked sold out. Fans can no longer add it.' : 'Back on sale.', true); }
+      if (e.target.matches('[data-sold]')) { await api({ action: 'soldOut', id: li.dataset.id, value: e.target.checked }); msg(e.target.checked ? 'Turned off. Fans see "Not ready" and cannot add it.' : 'Turned on. Fans can order it.', true); }
       if (e.target.matches('[data-price]')) { await api({ action: 'price', id: li.dataset.id, price: Number(e.target.value) }); msg('Price saved. It applies to new orders.', true); }
     } catch (err) { msg(err.message, false); api(); }
   });
@@ -348,7 +348,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     const name = $('fName').value.trim() || 'Item name', price = Number($('fPrice').value) || 0, desc = $('fDesc').value.trim();
     const sold = $('fSold').checked, adult = $('fAdult').checked;
     $('preview').className = 'pv' + (sold ? ' sold' : '');
-    $('preview').innerHTML = `<div class="pv-photo">${photoUrl ? `<img src="${esc(photoUrl)}" alt="">` : `<span>${esc($('fEmoji').value || '🍽️')}</span>`}${sold ? '<span class="pv-tag">Sold out</span>' : adult ? '<span class="pv-tag">18+</span>' : ''}</div>` +
+    $('preview').innerHTML = `<div class="pv-photo">${photoUrl ? `<img src="${esc(photoUrl)}" alt="">` : `<span>${esc($('fEmoji').value || '🍽️')}</span>`}${sold ? '<span class="pv-tag">Not ready</span>' : adult ? '<span class="pv-tag">18+</span>' : ''}</div>` +
       `<div class="pv-body"><div class="pv-name">${esc(name)}</div>${desc ? `<p class="pv-desc">${esc(desc)}</p>` : ''}<div class="pv-price">${naira(price)}</div>${adult ? '<span class="pv-age">18+ | Drink Responsibly</span>' : ''}</div>`;
     $('cur').hidden = !photoUrl; $('curInfo').textContent = photoUrl ? '✓ Photo added.' : '';
   }

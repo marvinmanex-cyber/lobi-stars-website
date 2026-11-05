@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-05: Food: an ON / OFF switch on every item, Ready / Not ready for fans
+
+**Who it affects:** kitchen staff, supervisors, fans ordering food.
+- MatchDay Kitchen › **Menu and prices**: every item has a green **ON** / grey **OFF** switch (replaces Mark sold out / Back on). Anyone in the kitchen can use it.
+- Fans see a green **Ready** tag on items that are ON, and **Not ready** on items that are OFF (they can't be added or ordered). An item whose stock count runs out still says **Sold out**.
+- Supervisors and Super Admins also have **Turn all ON** and **Turn all OFF**.
+- The website admin's sold-out switch now says **Off (not ready)**. It is the same setting.
+
 ## 2026-11-05: MatchDay Kitchen: buttons to open and close food ordering
 
 **Who it affects:** kitchen supervisors, Super Admins, kitchen staff.

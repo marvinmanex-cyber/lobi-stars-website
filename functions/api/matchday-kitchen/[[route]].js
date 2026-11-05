@@ -102,13 +102,20 @@ export async function onRequest(context) {
         }
         return json({ ok: true, receipt });
       }
-      case 'GET menu': return json({ groups: await K.menu(db), canPrice: perms.price });
+      case 'GET menu': return json({ groups: await K.menu(db), canPrice: perms.price, canAll: perms.ordering });
       case 'POST menu': {
         if (body.action === 'soldout' || body.action === 'back') {
           const r = await K.setSoldOut(db, body.id, body.action === 'soldout', staffName(user));
           if (r.error) return json({ error: r.error }, 404);
-          if (r.changed) await mkLog(db, user, body.action === 'soldout' ? `Marked ${r.name} as sold out` : `Put ${r.name} back on`, { kind: 'menu', request });
+          if (r.changed) await mkLog(db, user, body.action === 'soldout' ? `Turned ${r.name} off (not ready)` : `Turned ${r.name} on (ready)`, { kind: 'menu', request });
           return json({ ok: true });
+        }
+        // Every dish at once: supervisors and Super Admins.
+        if (body.action === 'all_on' || body.action === 'all_off') {
+          if (!perms.ordering) return denied();
+          const r = await K.setAllReady(db, body.action === 'all_on', staffName(user));
+          if (r.changed) await mkLog(db, user, `Turned ${r.changed} dish${r.changed === 1 ? '' : 'es'} ${body.action === 'all_on' ? 'on (ready)' : 'off (not ready)'}`, { kind: 'menu', request });
+          return json({ ok: true, changed: r.changed });
         }
         if (body.action === 'price') {
           if (!perms.price) return denied();

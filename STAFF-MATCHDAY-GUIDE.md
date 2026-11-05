@@ -61,7 +61,7 @@ section 35.
    for home **and** away games. On the day, press **Test stream** on
    **Admin → Commentary** (see STAFF-GUIDE.md, section 9).
 6. **In-seat food:** check the menu (**Food: Menu & Prices**): prices, photos,
-   anything sold out, and that ordering is **Automatic** or will be opened.
+   which dishes are ON (ready) or OFF, and that ordering is **Automatic** or will be opened.
    Set up the kitchen tablet with **Food: Live Order Board** and make sure the
    kitchen and runners have notifications on (STAFF-GUIDE.md, sections 13–16).
 6. **Tickets:** to give members first access, set *General sale opens* on the
@@ -183,7 +183,7 @@ half-time and second-half alerts, so check the score before saving.
 MatchDay Kitchen receipt.
 
 **During the match (in-seat food):** keep the Live Order Board open; prepare
-only **Paid** orders; switch items to **Sold out** as soon as they run out.
+only **Paid** orders; turn a dish **OFF** as soon as it isn't ready or runs out (MatchDay Kitchen › **Menu and prices**), and **ON** when it's ready.
 
 ## 3. At the final whistle
 

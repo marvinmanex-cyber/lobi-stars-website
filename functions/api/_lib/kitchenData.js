@@ -204,8 +204,18 @@ export async function setSoldOut(db, id, soldOut, by) {
   const on = soldOut ? 1 : 0;
   // Back on also clears a stock count of 0 (as the admin menu does).
   await db.prepare(`UPDATE food_items SET sold_out = ?, stock = CASE WHEN ? = 0 AND stock = 0 THEN NULL ELSE stock END, updated_at = ? WHERE id = ?`).bind(on, on, new Date().toISOString(), d.id).run();
-  await history(db, d.id, by, on ? 'Marked sold out (MatchDay Kitchen)' : 'Back on (MatchDay Kitchen)');
+  await history(db, d.id, by, on ? 'Turned off: not ready (MatchDay Kitchen)' : 'Turned on: ready (MatchDay Kitchen)');
   return { ok: true, name: d.name, changed: !!d.sold_out !== !!on };
+}
+/** Every dish on or off at once. Dishes whose stock count has run out stay off (they are really sold out). */
+export async function setAllReady(db, on, by) {
+  await ready(db);
+  const at = new Date().toISOString();
+  const rows = (await db.prepare(`SELECT id FROM food_items WHERE archived = 0 AND sold_out = ? AND (stock IS NULL OR stock != 0)`).bind(on ? 1 : 0).all()).results;
+  if (!rows.length) return { changed: 0 };
+  await db.batch(rows.map(r => db.prepare(`UPDATE food_items SET sold_out = ?, updated_at = ? WHERE id = ?`).bind(on ? 0 : 1, at, r.id)));
+  for (const r of rows) await history(db, r.id, by, on ? 'Turned on: ready (MatchDay Kitchen, all dishes)' : 'Turned off: not ready (MatchDay Kitchen, all dishes)');
+  return { changed: rows.length };
 }
 
 /** Price in naira (whole or with kobo). */

@@ -290,3 +290,11 @@ a { color: var(--green); }
 .mk-ordering-btns .mk-btn[aria-pressed="true"] { outline: 3px solid #121212; outline-offset: 2px; }
 .mk-btn.stop { background: #b3151a; border-color: #b3151a; color: #fff; }
 @media (max-width: 600px) { .mk-ordering-btns { width: 100%; } .mk-ordering-btns .mk-btn { flex: 1 1 100%; } }
+/* The ON / OFF switch on each dish */
+.mk-switch { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; min-width: 104px; padding: 6px 12px 6px 6px; border: 2px solid #9aa3ad; border-radius: 999px; background: #e4e7ea; color: #3a4048; font: 700 17px/1 'Barlow Condensed', sans-serif; letter-spacing: .08em; cursor: pointer; }
+.mk-switch i { flex: none; width: 34px; height: 34px; border-radius: 50%; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .35); }
+.mk-switch.on { flex-direction: row-reverse; justify-content: space-between; padding: 6px 6px 6px 14px; border-color: #0e7a26; background: #0e7a26; color: #fff; }
+.mk-switch:focus-visible { outline: 3px solid #ffc72c; outline-offset: 2px; }
+.mk-allbox { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.mk-allbox b { display: block; font-size: 20px; }
+.mk-allbox span { display: block; font-size: 15px; }

@@ -124,12 +124,19 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   assert.match(rd.chatUrl, /^https:\/\/wa\.me\/234\d+\?text=/); assert.match(rd.pdfUrl, /\/api\/food\/receipt\?ref=/);
   assert.ok(rows(`SELECT receipt_wa_at FROM food_orders WHERE id = '${id}';`)[0].receipt_wa_at, 'WhatsApp receipt recorded');
 
-  // Menu: anyone can mark sold out; only supervisors (and Super Admins) change prices.
+  // Menu: anyone can turn a dish on or off; fans see Not ready; only supervisors (and Super Admins) change prices or turn all.
   suya = rows(`SELECT price_kobo, sold_out FROM food_items WHERE id = 'suya';`)[0];
   assert.equal((await C.call('menu', { id: 'suya', action: 'soldout' })).status, 200);
-  assert.equal(rows(`SELECT sold_out FROM food_items WHERE id = 'suya';`)[0].sold_out, 1, 'sold out on the website menu');
+  assert.equal(rows(`SELECT sold_out FROM food_items WHERE id = 'suya';`)[0].sold_out, 1, 'off on the website menu');
+  const fanItem = async () => (await fetch(`${BASE}/api/food/menu`, { cache: 'no-store' }).then(r => r.json())).categories.flatMap(c => c.items).find(i => i.id === 'suya');
+  let fi = await fanItem();
+  if (fi) { assert.equal(fi.soldOut, true); assert.equal(fi.notReady, true, 'fans see Not ready, not Sold out'); }
   assert.equal((await C.call('menu', { id: 'suya', action: 'back' })).status, 200);
   assert.equal(rows(`SELECT sold_out FROM food_items WHERE id = 'suya';`)[0].sold_out, 0);
+  fi = await fanItem();
+  if (fi) { assert.equal(fi.soldOut, false); assert.equal(fi.notReady, false); }
+  assert.equal((await C.call('menu', { action: 'all_off' })).status, 403, 'a cook cannot turn everything off');
+  assert.equal((await C.call('menu')).data.canAll, false);
   assert.equal((await C.call('menu', { id: 'suya', action: 'price', price: '2000' })).status, 403, 'a cook cannot change prices');
   assert.equal((await S.call('menu', { id: 'suya', action: 'price', price: 'abc' })).data.error, 'Enter the price as a number, e.g. 2500.');
   assert.equal((await S.call('menu', { id: 'suya', action: 'price', price: '-5' })).status, 400);
@@ -139,7 +146,7 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   // Activity log: everyone's for the Super Admin (and CSV); only their own for staff.
   const all = (await A.call('activity')).data;
   assert.ok(all.rows.some(a => a.code === COOK.staffId && a.action === `Order ${o.ref}: Preparing to On the way`), 'status change under the cook');
-  assert.ok(all.rows.some(a => a.code === COOK.staffId && a.action === 'Marked Suya as sold out' || /sold out/.test(a.action)));
+  assert.ok(all.rows.some(a => a.code === COOK.staffId && /^Turned .*Suya off \(not ready\)$/.test(a.action)));
   assert.ok(all.rows.some(a => a.code === SUP.staffId && /^Changed the price of .+ to ₦1,650$/.test(a.action)));
   const mine = (await C.call('activity')).data;
   assert.ok(mine.rows.length && mine.rows.every(a => a.code === COOK.staffId), 'staff see only their own');
@@ -200,6 +207,25 @@ test('a supervisor has the kitchen back end: all activity, cooks and pass staff,
   assert.equal((await S.call('staff', { action: 'edit', id: SUP.id, newCode: true })).status, 403, "cannot change a supervisor's code");
   assert.equal((await S.call('staff', { action: 'settings', telegramUrl: '', cancelRoles: ['pass', 'supervisor'], priceRoles: ['supervisor'], lateMinutes: 5 })).status, 200, 'changes the settings');
   sql(`DELETE FROM mk_staff WHERE id = '${added.data.id}';`);
+});
+
+test('every dish has a switch: a supervisor can turn all off and on; stock that ran out stays off and says Sold out', async () => {
+  const S = await as((await signCode(SUP.code)).cookie);
+  const keep = rows(`SELECT id, sold_out, stock FROM food_items WHERE archived = 0`);
+  const id = keep.find(k => k.id !== 'suya').id;
+  try {
+    assert.equal((await S.call('menu')).data.canAll, true);
+    sql(`UPDATE food_items SET stock = 0, sold_out = 1 WHERE id = '${id}';`);
+    assert.ok((await S.call('menu', { action: 'all_off' })).data.changed >= 1);
+    assert.equal(rows(`SELECT COUNT(*) AS n FROM food_items WHERE archived = 0 AND sold_out = 0`)[0].n, 0, 'all off');
+    assert.ok((await S.call('menu', { action: 'all_on' })).data.changed >= 1);
+    assert.equal(rows(`SELECT sold_out FROM food_items WHERE id = '${id}'`)[0].sold_out, 1, 'no stock left: stays off');
+    const item = (await fetch(`${BASE}/api/food/menu`, { cache: 'no-store' }).then(r => r.json())).categories.flatMap(c => c.items).find(i => i.id === id);
+    if (item) { assert.equal(item.soldOut, true); assert.equal(item.notReady, false, 'really sold out'); }
+    assert.ok((await S.call('activity')).data.rows.some(a => /^Turned \d+ dish(es)? on \(ready\)$/.test(a.action)));
+  } finally {
+    sql(keep.map(k => `UPDATE food_items SET sold_out = ${k.sold_out}, stock = ${k.stock === null ? 'NULL' : k.stock} WHERE id = '${k.id}';`).join(' '));
+  }
 });
 
 test('food ordering: supervisors and Super Admins open and close it, cooks only see it, fans are refused while closed', async () => {

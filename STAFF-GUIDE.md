@@ -1246,8 +1246,9 @@ button on Food Orders). Changes show on the public food page straight away.
 5. The **Preview** shows exactly what fans will see. Press **Save item**.
 
 ### Everyday changes (straight from the list)
-- **Sold out** switch: turn it on when an item runs out; fans see it greyed
-  out and can't order it. Turn it off when it's back.
+- **Off (not ready)** switch: tick it when an item isn't ready or has run out;
+  fans see **Not ready** and can't order it. Untick it when it's ready. (An item
+  whose stock count reaches 0 shows **Sold out** instead.)
 - **Price box:** type the new price and press Enter. New orders pay the new
   price; past orders keep the price that was paid. The change is recorded in
   the item's history ("Price changed from ₦X to ₦Y").
@@ -4524,10 +4525,10 @@ tabs open. WhatsApp and Telegram open in their own apps.
 | --- | --- |
 | **Kitchen screen** | Paid orders to cook, oldest first, as tickets: big order number, minutes waiting, customer and seat, items, notes. **Start cooking**, then **Mark ready**. Red border and LATE after 15 minutes. Refreshes every 15 seconds (not while you are tapping). Shows the last 12 hours. |
 | **Live order board** | New / Preparing / Ready columns with counts. Tap a card to open the order. |
-| **Kitchen alerts** | Late orders, dishes sold out, orders cancelled today. |
+| **Kitchen alerts** | Late orders, dishes turned off, orders cancelled today. |
 | **Food orders** | Search by order number or name, filter by status and day (30 a page). |
 | **One order** | All details and a button for each next status the website allows (the next step in green). **Cancel** (red, asks first) only for roles allowed to cancel. |
-| **Menu and prices** | **Mark sold out** / **Back on** (anyone; fans can't order it while sold out). **Save price** for supervisors and Super Admins. |
+| **Menu and prices** | An **ON / OFF switch on every dish** (anyone). ON: fans see **Ready** and can order it. OFF: fans see **Not ready** and can't. Supervisors and Super Admins also have **Turn all ON** / **Turn all OFF** and **Save price**. |
 | **Kitchen WhatsApp** (also the green **WhatsApp** button, always in the top bar) | Opens the kitchen's WhatsApp chats (+234 708 009 4985) in WhatsApp Web, in another tab of the same browser (always the same tab). WhatsApp does not allow its chats to be shown inside another website, so they can't appear on the dashboard itself. The first time, scan the QR code on the screen with the kitchen phone (WhatsApp › Linked devices) and keep that tab open. On a phone it opens the WhatsApp app. |
 | **Telegram updates** (also the blue **Telegram** button next to WhatsApp in the top bar) | Opens the kitchen Telegram channel in another tab. Until its link is pasted in Staff accounts › Settings, a Super Admin who taps it is taken there, and staff are told to ask a Super Admin. |
 | **Handover notes** | Notes for the next shift. Supervisors and Super Admins can pin and delete any note; others delete their own. |
@@ -4623,7 +4624,8 @@ It is the same setting as the button on the admin live order board, and each cha
 | | Cook / kitchen hand | Pass / order handler | Kitchen supervisor | Super Admin |
 | --- | --- | --- | --- | --- |
 | Move orders to the next status | Yes | Yes | Yes | Yes |
-| Sold out / back on | Yes | Yes | Yes | Yes |
+| Turn a dish on or off | Yes | Yes | Yes | Yes |
+| Turn all dishes on or off | | | Yes | Yes |
 | Cancel orders | | Yes | Yes | Yes |
 | Change prices | | | Yes | Yes |
 | Pin or delete anyone's notes | | | Yes | Yes |
@@ -4637,7 +4639,7 @@ Settings** (with the Telegram link and the "late after" minutes).
 **Staff accounts (adding someone):** **Staff accounts** › **Add staff**: full name and role, then **Add staff and make login code**. The website makes the Staff ID (LSK-001, LSK-002 …) and an 8-number login code. The code is shown **once**, with **Send on WhatsApp** and **Copy**; only a scrambled copy is stored, so nobody can look it up later. Lost or leaked code: **Edit** › **Give a new login code**. **A new login code or switching someone off signs them out on every tablet straight away.** Supervisors have the kitchen's back end, not the website admin (/admin); only a Super Admin adds or changes a supervisor.
 
 **Recorded:** sign-ins and sign-outs (including automatic ones), every page opened,
-every status change ("Order FD-…: Preparing to Ready"), sold out / back on, price
+every status change ("Order FD-…: Preparing to Ready"), dishes turned on and off, price
 changes (old and new price), shifts, notes, staff account changes and settings,
 with the person's name and Staff ID, IP address and time. Passwords are never
 stored. The log can never be changed or deleted.
@@ -4694,7 +4696,7 @@ Lobi Stars app.
 
 **Using it:**
 - **Shortcuts:** press and hold the app icon (Android, laptop: right-click) for
-  **Kitchen screen**, **Live orders**, **All orders** and **Menu and sold out**.
+  **Kitchen screen**, **Live orders**, **All orders** and **Menu: dishes on and off**.
   After signing in, the page opens straight away.
 - **Fan menu** (top bar) opens the public ordering page in the normal browser, so
   you can see prices, sold-out items and what a fan sees.

@@ -113,7 +113,7 @@ const PAGES: Record<string, () => Promise<void>> = {
       main.innerHTML = `
         <section class="mk-section"><h2>Late orders <span class="mk-badge${d.late.length ? ' red' : ''}">${d.late.length}</span></h2>
           ${d.late.length ? `<div class="mk-ord-grid">${d.late.map(ticketHtml).join('')}</div>` : `<p class="mk-empty">No late orders. Orders count as late after ${d.lateMinutes} minutes.</p>`}</section>
-        <section class="mk-section"><h2>Sold out <span class="mk-badge${d.soldOut.length ? ' red' : ''}">${d.soldOut.length}</span></h2>
+        <section class="mk-section"><h2>Dishes turned off <span class="mk-badge${d.soldOut.length ? ' red' : ''}">${d.soldOut.length}</span></h2>
           ${d.soldOut.length ? `<div class="mk-box"><ul style="margin:0 0 12px;padding-left:22px;font-size:19px">${d.soldOut.map((s: any) => `<li>${esc(s.name)}${s.category ? ` <span class="mk-status">${esc(s.category)}</span>` : ''}</li>`).join('')}</ul></div>` : '<p class="mk-empty">Nothing is sold out.</p>'}
           <div class="mk-actions"><button type="button" class="mk-btn" data-goto="menu">Open Menu and prices</button></div></section>
         <section class="mk-section"><h2>Cancelled today <span class="mk-badge">${d.cancelled.length}</span></h2>
@@ -199,15 +199,25 @@ const PAGES: Record<string, () => Promise<void>> = {
   async menu() {
     const draw = async () => {
       const d = await api('menu');
-      main.innerHTML = d.groups.length ? d.groups.map((g: any) => `<section class="mk-section"><h2>${esc(g.name)}</h2>${g.dishes.map((m: any) => `
-        <div class="mk-dish${m.soldOut ? ' out' : ''}"><div class="n">${esc(m.emoji)} ${esc(m.name)}<small>${m.soldOut ? 'Sold out' : m.available ? 'On the menu' : 'Hidden from the menu (admin)'}${d.canPrice ? '' : ` · ${esc(m.priceText)}`}</small></div>
+      const all = d.groups.flatMap((g: any) => g.dishes), on = all.filter((m: any) => !m.soldOut).length;
+      main.innerHTML = (all.length ? `<section class="mk-section"><div class="mk-box mk-allbox"><div><b>${on} of ${all.length} dishes are ON</b><span>Fans can order only dishes that are ON. Changes show on the fans' menu within a minute.</span></div>
+          ${d.canAll ? `<div class="mk-actions" style="justify-content:flex-start;margin:0"><button type="button" class="mk-btn go" data-all="all_on">Turn all ON</button><button type="button" class="mk-btn danger" data-all="all_off">Turn all OFF</button></div>` : ''}</div></section>` : '')
+        + (d.groups.length ? d.groups.map((g: any) => `<section class="mk-section"><h2>${esc(g.name)}</h2>${g.dishes.map((m: any) => `
+        <div class="mk-dish${m.soldOut ? ' out' : ''}"><div class="n">${esc(m.emoji)} ${esc(m.name)}<small>${m.soldOut ? 'Not ready: fans cannot order it' : m.available ? 'Ready: fans can order it' : 'Hidden from the menu (admin)'}${d.canPrice ? '' : ` · ${esc(m.priceText)}`}</small></div>
         <div class="ctl">${d.canPrice ? `<form class="price" data-price="${esc(m.id)}"><label class="mk-sr" for="p_${esc(m.id)}">Price of ${esc(m.name)} in naira</label>₦<input class="mk-input" id="p_${esc(m.id)}" inputmode="decimal" value="${esc(m.price)}" /><button class="mk-btn" type="submit">Save price</button></form>` : ''}
-          ${m.soldOut ? `<button type="button" class="mk-btn go" data-dish="${esc(m.id)}" data-act="back">Back on</button>` : `<button type="button" class="mk-btn danger" data-dish="${esc(m.id)}" data-act="soldout">Mark sold out</button>`}</div></div>`).join('')}</section>`).join('')
-        : '<p class="mk-empty">The menu is empty. Dishes are added in the website admin (Menu & Prices).</p>';
+          <button type="button" class="mk-switch${m.soldOut ? '' : ' on'}" role="switch" aria-checked="${m.soldOut ? 'false' : 'true'}" aria-label="${esc(m.name)}: ready for fans" data-dish="${esc(m.id)}" data-name="${esc(m.name)}" data-act="${m.soldOut ? 'back' : 'soldout'}"><i aria-hidden="true"></i><span>${m.soldOut ? 'OFF' : 'ON'}</span></button></div></div>`).join('')}</section>`).join('')
+        : '<p class="mk-empty">The menu is empty. Dishes are added in the website admin (Menu & Prices).</p>');
     };
     main.addEventListener('click', (e: Event) => {
+      const all = (e.target as HTMLElement).closest('[data-all]') as HTMLButtonElement | null;
+      if (all) {
+        const turnOn = all.dataset.all === 'all_on';
+        if (!confirm(turnOn ? 'Turn ALL dishes ON? Fans can order every dish straight away. Dishes that have run out of stock stay off.' : 'Turn ALL dishes OFF? Fans cannot order anything until dishes are turned back on.')) return;
+        act(all, async () => { const r = await api('menu', { method: 'POST', body: { action: all.dataset.all } }); toast(`${r.changed} dish${r.changed === 1 ? '' : 'es'} turned ${turnOn ? 'on' : 'off'}.`); await draw(); });
+        return;
+      }
       const b = (e.target as HTMLElement).closest('[data-dish]') as HTMLButtonElement | null;
-      if (b) act(b, async () => { await api('menu', { method: 'POST', body: { id: b.dataset.dish, action: b.dataset.act } }); toast(b.dataset.act === 'soldout' ? 'Marked sold out. Fans can no longer order it.' : 'Back on the menu.'); await draw(); });
+      if (b) act(b, async () => { await api('menu', { method: 'POST', body: { id: b.dataset.dish, action: b.dataset.act } }); toast(b.dataset.act === 'soldout' ? `${b.dataset.name} is OFF. Fans see "Not ready".` : `${b.dataset.name} is ON. Fans can order it.`); await draw(); });
     });
     main.addEventListener('submit', (e: Event) => {
       const f = (e.target as HTMLElement).closest('[data-price]') as HTMLFormElement | null;

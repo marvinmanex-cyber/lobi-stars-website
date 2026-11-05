@@ -325,7 +325,8 @@ export async function priceCart(db, items) {
     if (!m || !m.available || !Number.isInteger(qty) || qty < 1 || qty > 50) return { error: 'One of the items is no longer on the menu. Please refresh the page.', status: 400 };
     if (seen.has(m.id)) return { error: 'The same item appears twice. Please refresh the page.', status: 400 };
     seen.add(m.id);
-    if (m.sold_out || m.stock === 0) return { error: `Sorry, ${m.name} has just sold out. Please remove it and try again.`, status: 409 };
+    if (m.stock === 0) return { error: `Sorry, ${m.name} has just sold out. Please remove it and try again.`, status: 409 };
+    if (m.sold_out) return { error: `Sorry, ${m.name} is not ready right now. Please remove it and try again.`, status: 409 };
     if (m.max_per_order && qty > m.max_per_order) return { error: `You can order at most ${m.max_per_order} × ${m.name}.`, status: 400 };
     if (m.stock != null && qty > m.stock) return { error: `Only ${m.stock} × ${m.name} left. Please reduce the quantity.`, status: 409 };
     if (m.adult) adult = true;

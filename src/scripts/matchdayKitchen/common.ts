@@ -66,11 +66,11 @@ export const GROUPS: Group[] = [
   { title: 'Live service', tiles: [
     { id: 'kitchen', title: 'Kitchen screen', text: 'Tickets to cook, oldest first', style: 'hero' },
     { id: 'live', title: 'Live order board', text: 'Every order and its status, live' },
-    { id: 'alerts', title: 'Kitchen alerts', text: 'Late orders, cancellations, sold out', style: 'red' },
+    { id: 'alerts', title: 'Kitchen alerts', text: 'Late orders, cancellations, dishes turned off', style: 'red' },
   ] },
   { title: 'Orders and menu', tiles: [
     { id: 'orders', title: 'Food orders', text: 'Find, check and update any order' },
-    { id: 'menu', title: 'Menu and prices', text: 'Mark dishes sold out, change prices' },
+    { id: 'menu', title: 'Menu and prices', text: 'Turn dishes on and off, change prices' },
   ] },
   { title: 'Team and messages', tiles: [
     { id: 'whatsapp', title: 'Kitchen WhatsApp', text: 'Open the kitchen chats (+234 708 009 4985)', external: 'whatsapp', style: 'wa' },

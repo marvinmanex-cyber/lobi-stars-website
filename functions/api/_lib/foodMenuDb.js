@@ -129,7 +129,7 @@ export async function publicMenu(db) {
     id: c.id, name: c.name,
     items: items.filter(i => i.category_id === c.id).map(i => ({
       id: i.id, name: i.name, description: i.description || '', priceKobo: i.price_kobo, photo: photoUrl(i.photo_id),
-      emoji: i.emoji || '', soldOut: !!i.sold_out || i.stock === 0, maxPerOrder: i.max_per_order || 20, adult: !!i.adult,
+      emoji: i.emoji || '', soldOut: !!i.sold_out || i.stock === 0, notReady: !!i.sold_out && i.stock !== 0, maxPerOrder: i.max_per_order || 20, adult: !!i.adult,
       spice: i.spice || 0, badge: i.badge || null,
     })),
   })).filter(c => c.items.length);
