@@ -176,33 +176,10 @@ export async function nextRef(db) {
 }
 
 /**
- * Confirms a payment with Paystack and, only if Paystack agrees, marks the
- * order PAID (once). Returns { order, changed, reason }.
+ * Everything that follows an order becoming paid, however it was paid (Paystack, or a WhatsApp
+ * payment recorded by staff): stock, staff and kitchen alerts, rewards, the contact and the email.
  */
-export async function confirmFoodPayment(env, order, { waitUntil, origin = 'https://lobistarsfc.com' } = {}) {
-  if (!order) return { order, changed: false, reason: 'not found' };
-  if (order.payment_status === 'paid') return { order, changed: false, reason: 'already paid' };
-  const t = await verify(env, order.paystack_reference); // throws if Paystack can't be reached
-  await env.DB.prepare(`UPDATE food_orders SET last_verify_at = ? WHERE id = ?`).bind(nowIso(), order.id).run();
-  if (t.status === 'failed') {
-    await env.DB.prepare(`UPDATE food_orders SET order_status = 'PAYMENT_FAILED', payment_status = 'failed' WHERE id = ? AND payment_status = 'pending'`).bind(order.id).run();
-    try { const { releaseCheckout } = await import('./rewardsCheckout.js'); await releaseCheckout(env, order.paystack_reference); } catch { /* released by the Rewards job */ }
-    return { order: { ...order, order_status: 'PAYMENT_FAILED' }, changed: false, reason: 'payment failed' };
-  }
-  if (t.status !== 'success') return { order, changed: false, reason: `not paid (${t.status})` };
-  if (t.reference !== order.paystack_reference || Number(t.amount) !== Number(order.total_kobo) || String(t.currency || '').toUpperCase() !== 'NGN') {
-    console.error('[food] payment does not match order', order.ref, t);
-    return { order, changed: false, reason: 'payment does not match the order' };
-  }
-  const at = nowIso();
-  const late = order.order_status === 'EXPIRED' ? 1 : 0;
-  // The atomic update is the guard against double processing (webhook + status page, or a repeated webhook).
-  const res = await env.DB.prepare(
-    `UPDATE food_orders SET payment_status = 'paid', order_status = 'PAID', paid_at = datetime('now'), paid_iso = ?, paid_reference = ?, paid_late = ?
-     WHERE id = ? AND payment_status != 'paid'`
-  ).bind(at, t.reference, late, order.id).run();
-  if (!res.meta?.changes) return { order, changed: false, reason: 'already paid' };
-  const paid = { ...order, payment_status: 'paid', order_status: 'PAID', paid_iso: at };
+export async function afterFoodPaid(env, order, paid, { waitUntil, origin = 'https://lobistarsfc.com' } = {}) {
   // Items with a stock count go down by what was paid for (0 = sold out).
   try {
     const stmts = JSON.parse(order.items_json).map(i => env.DB.prepare(
@@ -231,6 +208,37 @@ export async function confirmFoodPayment(env, order, { waitUntil, origin = 'http
       .catch(err => console.error('[food] email failed', err));
     if (waitUntil) waitUntil(send); else await send;
   }
+}
+
+/**
+ * Confirms a payment with Paystack and, only if Paystack agrees, marks the
+ * order PAID (once). Returns { order, changed, reason }.
+ */
+export async function confirmFoodPayment(env, order, { waitUntil, origin = 'https://lobistarsfc.com' } = {}) {
+  if (!order) return { order, changed: false, reason: 'not found' };
+  if (order.payment_status === 'paid') return { order, changed: false, reason: 'already paid' };
+  const t = await verify(env, order.paystack_reference); // throws if Paystack can't be reached
+  await env.DB.prepare(`UPDATE food_orders SET last_verify_at = ? WHERE id = ?`).bind(nowIso(), order.id).run();
+  if (t.status === 'failed') {
+    await env.DB.prepare(`UPDATE food_orders SET order_status = 'PAYMENT_FAILED', payment_status = 'failed' WHERE id = ? AND payment_status = 'pending'`).bind(order.id).run();
+    try { const { releaseCheckout } = await import('./rewardsCheckout.js'); await releaseCheckout(env, order.paystack_reference); } catch { /* released by the Rewards job */ }
+    return { order: { ...order, order_status: 'PAYMENT_FAILED' }, changed: false, reason: 'payment failed' };
+  }
+  if (t.status !== 'success') return { order, changed: false, reason: `not paid (${t.status})` };
+  if (t.reference !== order.paystack_reference || Number(t.amount) !== Number(order.total_kobo) || String(t.currency || '').toUpperCase() !== 'NGN') {
+    console.error('[food] payment does not match order', order.ref, t);
+    return { order, changed: false, reason: 'payment does not match the order' };
+  }
+  const at = nowIso();
+  const late = order.order_status === 'EXPIRED' ? 1 : 0;
+  // The atomic update is the guard against double processing (webhook + status page, or a repeated webhook).
+  const res = await env.DB.prepare(
+    `UPDATE food_orders SET payment_status = 'paid', order_status = 'PAID', paid_at = datetime('now'), paid_iso = ?, paid_reference = ?, paid_late = ?
+     WHERE id = ? AND payment_status != 'paid'`
+  ).bind(at, t.reference, late, order.id).run();
+  if (!res.meta?.changes) return { order, changed: false, reason: 'already paid' };
+  const paid = { ...order, payment_status: 'paid', order_status: 'PAID', paid_iso: at };
+  await afterFoodPaid(env, order, paid, { waitUntil, origin });
   return { order: paid, changed: true, reason: 'paid' };
 }
 
@@ -252,14 +260,18 @@ export async function moveOrder(db, order, to, staffName, env = null) {
   }
   // WhatsApp orders: staff confirm the payment arrived (bank transfer / cash), so it counts as paid in reports.
   if (to === 'PAID' && order.channel === 'whatsapp' && order.payment_status !== 'paid') {
-    await db.prepare(`UPDATE food_orders SET payment_status = 'paid', paid_at = datetime('now'), paid_iso = ?, paid_reference = ? WHERE id = ?`)
-      .bind(nowIso(), `WhatsApp: confirmed by ${staffName}`, order.id).run();
-    try {
-      const stmts = JSON.parse(order.items_json).map(i => db.prepare(
-        `UPDATE food_items SET stock = MAX(0, stock - ?), sold_out = CASE WHEN stock - ? <= 0 THEN 1 ELSE sold_out END WHERE id = ? AND stock IS NOT NULL`
-      ).bind(i.qty, i.qty, i.id));
-      if (stmts.length) await db.batch(stmts);
-    } catch { /* menu table not created yet */ }
+    const at = nowIso(), reference = `WhatsApp: confirmed by ${staffName}`;
+    await db.prepare(`UPDATE food_orders SET payment_status = 'paid', paid_at = datetime('now'), paid_iso = ?, paid_reference = ? WHERE id = ?`).bind(at, reference, order.id).run();
+    const paid = { ...order, payment_status: 'paid', order_status: 'PAID', paid_iso: at, paid_reference: reference };
+    if (env) await afterFoodPaid(env, order, paid);
+    else {
+      try {
+        const stmts = JSON.parse(order.items_json).map(i => db.prepare(
+          `UPDATE food_items SET stock = MAX(0, stock - ?), sold_out = CASE WHEN stock - ? <= 0 THEN 1 ELSE sold_out END WHERE id = ? AND stock IS NOT NULL`
+        ).bind(i.qty, i.qty, i.id));
+        if (stmts.length) await db.batch(stmts);
+      } catch { /* menu table not created yet */ }
+    }
   }
   // The fan's own alert (cooking now / on the way), when they asked for one.
   if (env && order.push_sub && ['PREPARING', 'OUT_FOR_DELIVERY'].includes(to)) {

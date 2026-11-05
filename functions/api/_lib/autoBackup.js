@@ -19,7 +19,7 @@ import { sendEmail } from './email.js';
 export const KEEP_DAYS = 30;
 const PAGE = 5000;
 const TABLES_PER_STEP = 12;
-const SKIP_TABLES = new Set(['rate_limits', 'auth_tokens', 'food_photos', 'newsletter_assets', 'd1_migrations', 'sqlite_sequence', 'export_tickets', 'admin_sessions', 'admin_backup_codes', 'squad_portal_settings', 'squad_portal_sessions', 'squad_portal_devices', 'mc_sessions']);
+const SKIP_TABLES = new Set(['rate_limits', 'auth_tokens', 'food_photos', 'food_payment_proofs', 'newsletter_assets', 'd1_migrations', 'sqlite_sequence', 'export_tickets', 'admin_sessions', 'admin_backup_codes', 'squad_portal_settings', 'squad_portal_sessions', 'squad_portal_devices', 'mc_sessions']);
 const SKIP_COLUMNS = /password|token_hash|secret|keys_json|^data$|totp|unsub_token|view_token|^token$|pin_hash|link_hash|invite_hash|code_hash/i;
 const lagosDay = (t = Date.now()) => new Date(t + 3600e3).toISOString().slice(0, 10);
 

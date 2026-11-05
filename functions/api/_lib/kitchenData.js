@@ -76,7 +76,7 @@ export function ticket(o, lateMinutes = DATA.lateMinutes) {
     customer: o.customer_name || '', where: o.seat || o.pickup_point ? whereText(o) : '', note: o.notes || '',
     items: items(o).map(i => ({ name: i.name, qty: i.qty, note: i.note || '' })),
     itemCount: items(o).reduce((n, i) => n + (Number(i.qty) || 0), 0),
-    total: formatNaira(o.total_kobo), totalKobo: o.total_kobo, channel: o.channel, phone: o.phone ? String(o.phone).replace(/\d(?=\d{4})/g, '•') : '',
+    total: formatNaira(o.total_kobo), totalKobo: o.total_kobo, totalNaira: Math.ceil((o.total_kobo || 0) / 100), paid: o.payment_status === 'paid', paidNote: o.paid_reference && /^WhatsApp:/.test(o.paid_reference) ? o.paid_reference : '', channel: o.channel, phone: o.phone ? String(o.phone).replace(/\d(?=\d{4})/g, '•') : '',
     placedAt: o.created_iso || null, paidAt: o.paid_iso || null, statusAt: o.status_at || null, statusBy: o.status_by || '',
     minutes: waited, late: inKitchen && waited >= lateMinutes && Date.parse(startedAt(o) || 0) <= Date.now(),
     deliverWhen: o.deliver_when || 'now', deliverAt: o.deliver_at || null,
@@ -126,7 +126,7 @@ export async function unpaidOrders(db) {
       ? `Hi ${first}, this is MatchDay Kitchen (Lobi Stars FC). We saw your food order ${o.ref} was not paid. Did something go wrong with the payment? We can help you order again.`
       : `Hi ${first}, this is MatchDay Kitchen (Lobi Stars FC). Your food order ${o.ref} is waiting for payment. Do you need help paying?`;
     return {
-      id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: STATUS[o.order_status]?.label || o.order_status, failed,
+      id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: STATUS[o.order_status]?.label || o.order_status, failed, canPay: o.channel === 'whatsapp' && o.order_status !== 'AWAITING_PAYMENT', totalNaira: Math.ceil((o.total_kobo || 0) / 100),
       customer: o.customer_name || '', where: o.seat || o.pickup_point ? whereText(o) : '', channel: o.channel || 'paystack',
       items: items(o).map(i => ({ name: i.name, qty: i.qty })), total: formatNaira(o.total_kobo),
       phone: o.phone ? String(o.phone).replace(/\d(?=\d{4})/g, '•') : '', minutes: minutesSince(o.created_iso),

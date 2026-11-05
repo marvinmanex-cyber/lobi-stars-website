@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-05: WhatsApp food orders: record the payment with evidence
+
+**Who it affects:** kitchen order handlers and supervisors, fans ordering on WhatsApp.
+- **Record payment** on the Live order board and on the order's page: upload the fan's receipt (photo, screenshot or PDF), check the amount, press **Mark order paid**, then **Tell the fan on WhatsApp**.
+- The order then goes on exactly as if paid online: kitchen alarm, kitchen screen, stock, rewards, tracking and email. Until now, a WhatsApp order marked paid skipped the kitchen alarm, rewards and email; that is fixed for the website admin's **Payment received** button too.
+- Evidence is required, kept with the order and open only to order handlers, supervisors and Super Admins. Cooks can't record payments. A receipt already used on another order is refused unless a supervisor allows it.
+- A fan who paid after the order ran out of time can still be recorded (marked as a late payment).
+
 ## 2026-11-05: MatchDay Kitchen: drink offer, half-time reminder, delivery by stand, food report
 
 **Who it affects:** fans ordering food, kitchen staff and runners, management.

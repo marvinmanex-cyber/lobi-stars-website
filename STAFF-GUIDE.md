@@ -4628,6 +4628,8 @@ It is the same setting as the button on the admin live order board, and each cha
 | Turn a dish on or off | Yes | Yes | Yes | Yes |
 | Turn all dishes on or off | | | Yes | Yes |
 | Cancel orders | | Yes | Yes | Yes |
+| Record a WhatsApp payment, see the evidence | | Yes | Yes | Yes |
+| Allow a receipt already used on another order | | | Yes | Yes |
 | Change prices, rename, add and delete dishes | | | Yes | Yes |
 | Pin or delete anyone's notes | | | Yes | Yes |
 | Everyone's activity, CSV | | | Yes | Yes |
@@ -4641,6 +4643,16 @@ Who can cancel can be changed in **Staff accounts › Settings** (with the Teleg
 **Half-time reminder for fans:** about 30 minutes into a home match, while ordering is open, fans who turned on alerts get "Half-time is coming: order now". The MatchDay Kitchen bar on the website says the same from 25 to 40 minutes. Sent once per match. Turn it off in Admin › **Fan alerts**. Fans can turn it off in their alert choices.
 
 **Add a drink:** when a fan's cart has food but no drink or combo, the cart offers one drink that is ON (the most popular first), with **Add** and **No thanks**. It never offers 18+ drinks.
+
+**WhatsApp payments (Record payment):** when a fan pays for a WhatsApp order and sends the receipt on WhatsApp:
+1. Open the order: on the **Live order board** under **Awaiting payment** (or **Did not pay**, if it ran out of time), or in **Food orders**. Press **Record payment**.
+2. Tap to add the receipt: a photo, a screenshot or a PDF (required).
+3. Check **how they paid** and the **amount received** (it can't be less than the total), add the bank reference if you have it, and press **Mark order paid**.
+4. Press **Tell the fan on WhatsApp** to send the "payment received" message.
+
+The order then goes on exactly as if it was paid online: the kitchen alarm rings, it appears on the kitchen screen, stock and rewards update, the fan's tracking page moves on and the confirmation email goes out (if they gave an email). The evidence is kept with the order: see it on the order's page, with who recorded it and when.
+
+Who: order handlers, supervisors and Super Admins, not cooks. Only they can open the evidence, which has bank details on it. If the same receipt was already used on another order, it is refused; a supervisor or Super Admin who has checked it can allow it, and the order stays flagged. Check the money has actually reached the club's account: a screenshot can be faked. The website admin's live board still has its own **Payment received** button (no evidence).
 
 **Managing the menu from the fans' page:** a kitchen supervisor or Super Admin signed in to MatchDay Kitchen who opens **lobistarsfc.com/kitchen** on the same device sees a yellow **Manage the menu** bar and, on every item, a name box (**Save name**), a price box and **Delete**. A new name shows to fans straight away; orders already placed keep the name they were placed with. **+ Add menu item** adds a dish (name, category, price, optional description; a photo can be added later in the website admin). Fans never see these, and the website checks the role on every change. If the kitchen sign-in has ended, the bar says so with a link to sign in again. **Delete:** a dish with past orders is kept out of sight for the reports; any other is removed. Everything is recorded in the activity log.
 

@@ -106,6 +106,8 @@ export function permissions(user, settings) {
     cancel: sa || settings.cancelRoles.includes(user.role),
     price: sa || user.role === 'supervisor',        // prices, and adding and deleting dishes: supervisors and Super Admins only
     menu: sa || user.role === 'supervisor',
+    // Recording a WhatsApp payment and opening its evidence: order handlers, supervisors and Super Admins (not cooks).
+    payment: sa || user.role === 'supervisor' || user.role === 'pass', paymentOverride: sa || user.role === 'supervisor',
     notes: sa || user.role === 'supervisor',        // pin / delete anyone's handover notes
     // The kitchen's back end: supervisors see everyone's activity, manage cooks and pass staff, and change the settings.
     activityAll: sa || user.role === 'supervisor', staff: sa || user.role === 'supervisor', superAdmin: sa,
