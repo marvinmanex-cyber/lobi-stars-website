@@ -29,7 +29,7 @@ function confirmBox(title: string, text: string, yes = 'Yes', danger = false): P
   d.showModal();
   return new Promise(res => d.addEventListener('close', () => res(d.returnValue === 'yes'), { once: true }));
 }
-const busy = () => Date.now() - lastTouch < 5000 || ($('pDialog') as HTMLDialogElement).open || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '');
+const busy = () => Date.now() - lastTouch < 5000 || ($('pDialog') as HTMLDialogElement).open || ($('payDlg') as HTMLDialogElement).open || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '');
 function every15(f: () => Promise<void>) {
   window.setInterval(() => { if (!document.hidden && !busy()) f().catch(() => {}); }, 15000);
 }
@@ -44,6 +44,71 @@ async function act(btn: HTMLButtonElement | null, f: () => Promise<void>) {
   if (btn) btn.disabled = true;
   try { await f(); } catch (e) { if ((e as ApiError).data?.denied) notAvailable(); else toast((e as Error).message); } finally { if (btn) btn.disabled = false; }
 }
+
+// ── Record a WhatsApp payment: the evidence, then the order goes on as if paid online ──
+let payOrder: { id: string; ref: string; total: string; totalNaira: number } | null = null, payProof = '', payFileName = '', payDone: (() => void) | null = null;
+/** A photo becomes a small JPEG (phone photos are several MB); a PDF goes as it is. */
+async function readProof(file: File): Promise<{ data: string; preview: boolean }> {
+  const asDataUrl = (b: Blob) => new Promise<string>((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => no(new Error('That file could not be read.')); r.readAsDataURL(b); });
+  if (file.type.startsWith('image/')) {
+    try {
+      const img = await createImageBitmap(file);
+      // Smaller and smaller until it fits (about 1.4 MB, the limit is 1.5). White behind see-through screenshots.
+      for (const [side, q] of [[1500, 0.75], [1500, 0.55], [1100, 0.55], [800, 0.5], [600, 0.45]] as const) {
+        const k = Math.min(1, side / Math.max(img.width, img.height));
+        const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+        const g = c.getContext('2d')!; g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+        const data = c.toDataURL('image/jpeg', q);
+        if (data.length * 0.75 < 1400 * 1024) return { data, preview: true };
+      }
+    } catch { /* this browser can't draw it: send it as it is */ }
+  }
+  if (file.size > 1500 * 1024) throw new Error('That file is too big (the most is 1.5 MB). Send a screenshot instead.');
+  return { data: await asDataUrl(file), preview: false };
+}
+function openPay(o: { id: string; ref: string; total: string; totalNaira: number }, done: () => void) {
+  payOrder = o; payProof = ''; payFileName = ''; payDone = done;
+  $('payF').hidden = false; $('payDone').hidden = true;
+  $('paySum').textContent = `Order ${o.ref} · Total ${o.total}. Only do this once you have seen the fan's receipt. The order then goes to the kitchen as if it was paid online.`;
+  ($('payF') as HTMLFormElement).reset();
+  $('payAmt').value = String(o.totalNaira);
+  $('payPrev').hidden = true; $('payPrev').removeAttribute('src'); $('payName').hidden = true; $('payErr').hidden = true;
+  $('payPick').textContent = 'Tap to add the receipt: photo, screenshot or PDF';
+  ($('payDlg') as HTMLDialogElement).showModal();
+}
+$('payFile').addEventListener('change', async () => {
+  const f = ($('payFile') as HTMLInputElement).files?.[0];
+  if (!f) return;
+  $('payErr').hidden = true;
+  try {
+    const r = await readProof(f);
+    payProof = r.data; payFileName = f.name;
+    $('payPick').textContent = 'Change the receipt';
+    if (r.preview) { $('payPrev').src = r.data; $('payPrev').hidden = false; $('payName').hidden = true; }
+    else { $('payPrev').hidden = true; $('payName').textContent = `Added: ${f.name}`; $('payName').hidden = false; }
+  } catch (e) { payProof = ''; $('payErr').textContent = (e as Error).message; $('payErr').hidden = false; }
+});
+async function sendPayment(allowDuplicate = false) {
+  if (!payOrder) return;
+  const err = $('payErr'), btn = $('paySave') as HTMLButtonElement;
+  err.hidden = true;
+  if (!payProof) { err.textContent = 'Add the payment evidence first: a photo or screenshot of the receipt, or its PDF.'; err.hidden = false; return; }
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const r = await api('payment', { method: 'POST', body: { id: payOrder.id, method: $('payHow').value, amount: $('payAmt').value, note: $('payNote').value, proof: payProof, fileName: payFileName, allowDuplicate } });
+    $('payF').hidden = true; $('payDone').hidden = false;
+    $('payDoneT').textContent = `Order ${r.ref} is paid (${r.amount}, ${r.method}) and has gone to the kitchen. The evidence is saved with the order.`;
+    const tell = $('payTell') as HTMLAnchorElement;
+    tell.hidden = !r.chatUrl; if (r.chatUrl) tell.href = r.chatUrl;
+    payDone?.();
+  } catch (e: any) {
+    if (e.data?.duplicate && e.data?.canOverride && confirm(`${e.message}\n\nIs this really a new payment? Press OK only if you have checked. Your name is recorded.`)) { btn.disabled = false; btn.textContent = 'Mark order paid'; return sendPayment(true); }
+    err.textContent = e.message; err.hidden = false;
+  } finally { btn.disabled = false; btn.textContent = 'Mark order paid'; }
+}
+$('payF').addEventListener('submit', (e: Event) => { e.preventDefault(); sendPayment(); });
+$('payNo').addEventListener('click', () => ($('payDlg') as HTMLDialogElement).close());
+$('payClose').addEventListener('click', () => ($('payDlg') as HTMLDialogElement).close());
 
 // ── Order tickets (kitchen screen, alerts) ──
 function ticketHtml(t: any) {
@@ -91,19 +156,24 @@ const PAGES: Record<string, () => Promise<void>> = {
     const draw = async (quiet = false) => {
       const d = await api('board', { quiet });
       const up = d.unpaid || [], waiting = up.filter((o: any) => !o.failed), failed = up.filter((o: any) => o.failed);
-      const unpaidCard = (o: any) => `<article class="mk-unpaid${o.failed ? ' failed' : ''}"><div class="mk-unpaid-top"><b>${esc(o.ref)}</b><span>${esc(o.statusLabel)}</span><span class="r">${esc(mins(o.minutes))} ago</span></div>
+      const unpaidCard = (o: any) => `<article class="mk-unpaid${o.failed ? ' failed' : ''}"><div class="mk-unpaid-top"><b>${esc(o.ref)}</b><span>${esc(o.statusLabel)}</span><span class="r">${esc(mins(o.minutes))}${o.minutes >= 1 ? ' ago' : ''}</span></div>
         <div>${esc([o.customer, o.where].filter(Boolean).join(' · '))}${o.phone ? ` · ${esc(o.phone)}` : ''}</div>
         <div class="mk-status">${esc(o.items.map((i: any) => `${i.qty} × ${i.name}`).join(', '))} · <b>${esc(o.total)}</b>${o.channel === 'whatsapp' ? ' · WhatsApp order' : ''}</div>
-        ${o.chatUrl ? `<a class="mk-btn" href="${esc(o.chatUrl)}" target="mdk-whatsapp" rel="noopener">Chat on WhatsApp</a>` : ''}</article>`;
+        <div class="mk-actions" style="justify-content:flex-start;margin:6px 0 0">${o.chatUrl ? `<a class="mk-btn" href="${esc(o.chatUrl)}" target="mdk-whatsapp" rel="noopener">Chat on WhatsApp</a>` : ''}${o.canPay && session.perms.payment ? `<button type="button" class="mk-btn go" data-pay="${esc(o.id)}">Record payment</button>` : ''}</div></article>`;
       const unpaidHtml = `<section class="mk-unpaid-box" aria-label="Awaiting payment"><h2>Awaiting payment <span class="mk-badge">${waiting.length}</span> <small>Not paid yet: do not cook. A paid order moves to New by itself.</small></h2>
         ${waiting.length ? `<div class="mk-unpaid-grid">${waiting.map(unpaidCard).join('')}</div>` : '<p class="mk-status" style="margin:4px 6px">Nobody is waiting to pay.</p>'}
         ${failed.length ? `<h3>Did not pay <span class="mk-badge red">${failed.length}</span> <small>Payment failed or ran out of time (last 12 hours). Ask them what went wrong.</small></h3><div class="mk-unpaid-grid">${failed.map(unpaidCard).join('')}</div>` : ''}</section>`;
+      (main as any)._unpaid = up;
       main.innerHTML = unpaidHtml + `<div class="mk-board">${Object.values(d.columns).map((c: any) => `<section class="mk-col"><h2>${esc(c.label)} <span class="mk-badge">${c.orders.length}</span></h2>${c.orders.length ? c.orders.map((o: any) => `
         <button type="button" class="mk-mini${o.late ? ' late' : ''}${o.status === 'PAID' ? ' is-new' : ''}" data-order="${esc(o.id)}"><b>${esc(o.ref)}</b><span class="r">${esc(mins(o.minutes))}</span>
         <span>${o.itemCount} item${o.itemCount === 1 ? '' : 's'}${o.customer ? ` · ${esc(o.customer)}` : ''}</span></button>`).join('') : '<p class="mk-status" style="margin:8px 6px">None</p>'}</section>`).join('')}</div>`;
       stamp();
     };
-    main.addEventListener('click', e => { const b = (e.target as HTMLElement).closest('[data-order]') as HTMLElement | null; if (b) openPage(`orders/${b.dataset.order}`); });
+    main.addEventListener('click', e => {
+      const p = (e.target as HTMLElement).closest('[data-pay]') as HTMLElement | null;
+      if (p) { const o = (main as any)._unpaid.find((x: any) => x.id === p.dataset.pay); if (o) openPay(o, () => { draw(); }); return; }
+      const b = (e.target as HTMLElement).closest('[data-order]') as HTMLElement | null; if (b) openPage(`orders/${b.dataset.order}`);
+    });
     await draw(); every15(() => draw(true));
   },
 
@@ -194,17 +264,21 @@ const PAGES: Record<string, () => Promise<void>> = {
           <dt>Placed</dt><dd>${esc(dayTime(o.placedAt))}</dd>
           ${o.paidAt ? `<dt>Paid</dt><dd>${esc(dayTime(o.paidAt))}</dd>` : ''}
           <dt>Waiting</dt><dd>${esc(mins(o.minutes))}</dd>
-          <dt>How</dt><dd>${o.channel === 'whatsapp' ? 'WhatsApp order' : 'Paid online'}</dd>
+          <dt>How</dt><dd>${o.channel === 'whatsapp' ? (o.paid ? 'WhatsApp order, paid' : 'WhatsApp order, not paid yet') : 'Paid online'}</dd>
+          ${d.payment ? `<dt>Payment</dt><dd>${esc(d.payment.amount)}, ${esc(d.payment.method)}${d.payment.note ? `<br />${esc(d.payment.note)}` : ''}<br /><small>Recorded by ${esc(d.payment.by)}${d.payment.code ? ` (${esc(d.payment.code)})` : ''}, ${esc(dayTime(d.payment.at))}</small>${d.payment.duplicateOf ? `<br /><span class="mk-pill red">Same receipt as ${esc(d.payment.duplicateOf)} (allowed)</span>` : ''}</dd>` : ''}
           ${o.statusBy ? `<dt>Last change</dt><dd>${esc(o.statusBy)}${o.statusAt ? `, ${esc(dayTime(o.statusAt))}` : ''}</dd>` : ''}
         </dl></div>
         <div class="mk-box"><ul class="mk-items" style="border-top:0">${o.items.map((i: any) => `<li>${esc(i.qty)} × ${esc(i.name)}${i.note ? `<em>${esc(i.note)}</em>` : ''}</li>`).join('')}</ul>
           ${o.note ? `<div class="mk-onote" style="margin-top:10px">Note: ${esc(o.note)}</div>` : ''}
           <p style="margin:10px 0 0;font-size:20px"><b>Total ${esc(o.total)}</b></p></div>
+        ${d.canRecordPayment ? `<div class="mk-box mk-paybox"><b>Has the fan sent a receipt on WhatsApp?</b><p style="margin:4px 0 10px">Add it here and mark the order paid. It goes to the kitchen as if it was paid online.</p><button type="button" class="mk-btn go big" id="recPay">Record payment</button></div>` : d.needsPaymentRole ? '<p class="mk-status" style="text-transform:none;letter-spacing:0">Waiting for payment. An order handler or supervisor records it when the fan sends the receipt.</p>' : ''}
+        ${d.payment ? `<div class="mk-box"><h2 style="font-size:20px;margin:0 0 8px">Payment evidence</h2>${d.payment.isPdf ? '' : `<a href="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" target="_blank" rel="noopener"><img class="mk-proofimg" src="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" alt="The payment evidence for this order" loading="lazy" /></a>`}<a class="mk-btn" href="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" target="_blank" rel="noopener">${d.payment.isPdf ? 'Download the PDF receipt' : 'Open it full size'}</a></div>` : ''}
         <h2 style="font-size:22px;margin:0 0 6px">Change status</h2>
         ${d.moves.length ? `<div class="mk-actions">${d.moves.map((m: any) => `<button type="button" class="mk-btn ${m.next ? 'go big' : m.cancel ? 'danger' : ''}" data-to="${esc(m.to)}" data-label="${esc(m.label)}" data-cancel="${m.cancel ? 1 : 0}">${m.next ? esc(o.next?.label || m.label) : esc(m.label)}</button>`).join('')}</div>` : '<p class="mk-empty">No more changes for this order.</p>'}
         ${o.status === 'DELIVERED' ? `<h2 style="font-size:22px;margin:14px 0 6px">Receipt</h2><div class="mk-actions"><button type="button" class="mk-btn go" id="rcWa">Send receipt on WhatsApp</button><button type="button" class="mk-btn" id="rcEmail">Email receipt</button></div>` : ''}
         <div class="mk-actions"><button type="button" class="mk-btn" id="allOrders">All orders</button></div>`;
       $('allOrders').addEventListener('click', () => openPage('orders'));
+      $('recPay')?.addEventListener('click', () => openPay(o, () => { draw(); }));
       $('rcWa')?.addEventListener('click', async () => {
         await sendReceiptWhatsApp(id, toast);
       });

@@ -179,7 +179,7 @@ import PushEnable from '../../components/admin/PushEnable.astro';
       `<dl><dt>Name</dt><dd>${esc(o.name || '–')}</dd><dt>Phone</dt><dd><a href="tel:${esc(o.phone)}">${esc(o.phone)}</a></dd><dt>Email</dt><dd>${esc(o.email)}</dd>` +
       `<dt>Ordered by</dt><dd>${o.channel === 'whatsapp' ? '💬 WhatsApp' : 'Website (Paystack)'}</dd>` +
       `<dt>${o.fulfilment === 'pickup' ? 'Pickup' : 'Seat'}</dt><dd>${o.fulfilment === 'pickup' ? esc(o.pickupPoint) : `${esc(o.seat)} · ${esc(o.stand || 'Stand not given')}`}</dd><dt>Note</dt><dd>${esc(o.notes || '–')}</dd><dt>Match</dt><dd>${esc(o.match || '–')}</dd>` +
-      `<dt>Paystack ref</dt><dd>${esc(o.paystackRef || '–')}</dd><dt>Payment</dt><dd>${esc(o.payment)}</dd></dl>` +
+      `<dt>${/^WhatsApp:/.test(o.paystackRef || '') ? 'Paid via' : 'Paystack ref'}</dt><dd>${esc(o.paystackRef || '–')}${/^WhatsApp: .*recorded by/.test(o.paystackRef || '') ? ` · <a href="/api/admin/food-orders/proof?id=${encodeURIComponent(o.id)}" target="_blank" rel="noopener">See the evidence</a>` : ''}</dd><dt>Payment</dt><dd>${esc(o.payment)}</dd></dl>` +
       (o.kitchen ? `<p class="fo-kitchen ${esc(o.kitchen.state)}">👩‍🍳 Kitchen: ${esc(o.kitchen.text)}</p>` : '') +
       `<ul class="tl"><li>🕒 Ordered ${esc(when(o.createdAt))}</li>${o.paidAt ? `<li>🟢 Paid ${esc(when(o.paidAt))}</li>` : `<li>⏳ Pay by ${esc(when(o.expiresAt))}</li>`}` +
       `${o.preparingAt ? `<li>👩‍🍳 Preparing ${esc(when(o.preparingAt))}</li>` : ''}${o.outAt ? `<li>🏃 Out for delivery ${esc(when(o.outAt))}</li>` : ''}${o.deliveredAt ? `<li>✅ Delivered ${esc(when(o.deliveredAt))}</li>` : ''}` +

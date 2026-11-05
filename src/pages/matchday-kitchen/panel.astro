@@ -37,6 +37,31 @@ import '../../styles/matchdayKitchen.css';
       </div>
     </form>
   </dialog>
+  <dialog class="mk-dialog mk-paydlg" id="payDlg" aria-labelledby="payT">
+    <form id="payF" novalidate>
+      <h2 id="payT">Record payment</h2>
+      <p class="mk-status" id="paySum" style="text-transform:none;letter-spacing:0"></p>
+      <div class="mk-field">
+        <label for="payFile">Payment evidence (required)</label>
+        <input id="payFile" type="file" accept="image/*,application/pdf" class="mk-sr" />
+        <label for="payFile" class="mk-btn mk-paypick" id="payPick">Tap to add the receipt: photo, screenshot or PDF</label>
+        <img id="payPrev" alt="The payment evidence you chose" hidden />
+        <p class="mk-status" id="payName" style="text-transform:none;letter-spacing:0" hidden></p>
+      </div>
+      <div class="mk-filters">
+        <div class="mk-field"><label for="payHow">How they paid</label><select id="payHow"><option value="transfer">Bank transfer</option><option value="ussd">USSD / mobile app</option><option value="pos">POS</option><option value="cash">Cash</option></select></div>
+        <div class="mk-field"><label for="payAmt">Amount received (₦)</label><input id="payAmt" inputmode="numeric" maxlength="9" /></div>
+      </div>
+      <div class="mk-field"><label for="payNote">Note (optional): bank reference or sender's name</label><input id="payNote" maxlength="200" autocomplete="off" /></div>
+      <p class="mk-err" id="payErr" role="alert" hidden></p>
+      <div class="mk-actions"><button type="button" class="mk-btn" id="payNo">Cancel</button><button type="submit" class="mk-btn go big" id="paySave">Mark order paid</button></div>
+    </form>
+    <div id="payDone" hidden>
+      <h2>Payment recorded</h2>
+      <p id="payDoneT"></p>
+      <div class="mk-actions"><a class="mk-btn go big" id="payTell" target="mdk-whatsapp" rel="noopener" hidden>Tell the fan on WhatsApp</a><button type="button" class="mk-btn" id="payClose">Done</button></div>
+    </div>
+  </dialog>
   <div class="mk-toast" id="toast" role="status" hidden></div>
   <script>
     import '../../scripts/matchdayKitchen/panel';

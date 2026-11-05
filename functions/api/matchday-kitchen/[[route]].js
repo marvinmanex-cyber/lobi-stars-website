@@ -10,12 +10,14 @@
 //   GET ordering   POST ordering {mode: open|closed|auto} (supervisors, Super Admins): food ordering for fans
 //   GET delivery (ready orders by stand)   GET report-settings   POST report-settings {emails}
 //   GET report (preview, HTML)   POST report (send now)   (report: supervisors, Super Admins)
+//   POST payment {id, method, amount, proof, fileName, note, allowDuplicate}   GET payment-proof?id   (order handlers, supervisors, Super Admins)
 //   GET check (Super Admins: the data check)
 import { signIn, signOut, json, kitchenSettings, permissions, mkLog, shiftState, startShift, endShift, listNotes, noteAction,
   activityPage, listStaff, createStaff, updateStaff, saveSettings, ROLES, oneLine, clearKitchenCookie } from '../_lib/matchdayKitchen.js';
 import * as K from '../_lib/kitchenData.js';
 import { foodSettings, saveFoodSetting } from '../_lib/foodOrders.js';
 import { buildReport, sendReport, reportEmails, saveReportEmails } from '../_lib/kitchenReport.js';
+import { recordPayment, canRecord, proofInfo, proofResponse, PAY_METHODS } from '../_lib/foodPaymentProof.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
 
 // The pages (and their names in the activity log).
@@ -33,6 +35,8 @@ export async function onRequest(context) {
   const db = env.DB;
   const route = [].concat(params.route || []).join('/');
   const method = request.method;
+  // The biggest thing sent here is a payment receipt (1.5 MB, about 2 MB once encoded).
+  if (method === 'POST' && Number(request.headers.get('content-length') || 0) > 2.5e6) return json({ error: 'That file is too big (the most is 1.5 MB). Send a screenshot instead.' }, 413);
   const body = method === 'POST' ? await request.json().catch(() => ({})) : {};
   const q = new URL(request.url).searchParams;
   try {
@@ -71,12 +75,17 @@ export async function onRequest(context) {
       case 'GET order': {
         const o = await K.getOrder(db, q.get('id') || '');
         if (!o) return json({ error: 'That order no longer exists.' }, 404);
-        const moves = K.movesFor(o).filter(m => !m.cancel || perms.cancel);
-        return json({ order: K.ticket(o, late), moves });
+        // A WhatsApp order becomes paid through Record payment (with evidence), not a plain status button.
+        const moves = K.movesFor(o).filter(m => (!m.cancel || perms.cancel) && !(m.to === 'PAID' && o.channel === 'whatsapp' && o.payment_status !== 'paid'));
+        return json({ order: K.ticket(o, late), moves, canRecordPayment: canRecord(o) && perms.payment, needsPaymentRole: canRecord(o) && !perms.payment, payment: perms.payment ? await proofInfo(db, o.id) : null, methods: PAY_METHODS });
       }
       case 'POST order': {
         const to = String(body.to || '');
         if (K.DATA.cancelled.includes(to) && !perms.cancel) return denied();
+        if (to === 'PAID') {
+          const was = await K.getOrder(db, body.id);
+          if (was && was.channel === 'whatsapp' && was.payment_status !== 'paid') return json({ error: 'Use Record payment, with the evidence from the fan.', recordPayment: true }, 400);
+        }
         const r = await K.setStatus(db, body.id, to, staffName(user), env);
         if (r.error) return json({ error: r.error }, 409);
         await mkLog(db, user, `Order ${r.ref}: ${K.statusLabel(r.from)} to ${K.statusLabel(r.to)}`, { kind: 'order', request });
@@ -210,6 +219,17 @@ export async function onRequest(context) {
         const fs = await foodSettings(db);
         return json({ ...(await orderingState(env, fs)), mode: fs.orderingMode, autoOpenMinutes: fs.autoOpenMinutes, canChange: true });
       }
+      case 'POST payment': {
+        if (!perms.payment) return denied();
+        const o = await K.getOrder(db, body.id);
+        const r = await recordPayment(env, o, body, user, { canOverride: perms.paymentOverride, origin: new URL(request.url).origin, waitUntil: p => context.waitUntil(p) });
+        if (r.error) return json({ error: r.error, duplicate: r.duplicate, canOverride: r.canOverride }, r.status || 400);
+        await mkLog(db, user, `Order ${r.ref}: recorded payment of ${r.amount} (${r.method}), evidence saved${r.late ? ', after the order had expired' : ''}${r.duplicateOf ? `, the same receipt as order ${r.duplicateOf} (allowed)` : ''}`, { kind: 'order', details: oneLine(body.note, 200) || null, request });
+        return json(r);
+      }
+      case 'GET payment-proof':
+        if (!perms.payment) return denied();
+        return proofResponse(db, q.get('id') || '');
       case 'GET report-settings':
         if (!perms.staff) return denied();
         return json({ emails: await reportEmails(env) });

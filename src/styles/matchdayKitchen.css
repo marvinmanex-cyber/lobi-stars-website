@@ -309,3 +309,13 @@ a { color: var(--green); }
 .mk-runner-main b, .mk-runner-main span { display: block; }
 .mk-runner-main .mk-pill { display: inline-block; margin-top: 4px; }
 @media (max-width: 600px) { .mk-runner { flex-wrap: wrap; } .mk-runner .mk-btn { width: 100%; } .mk-runner-main { flex: 1 1 60%; } }
+/* Record a WhatsApp payment */
+.mk-paydlg { width: min(560px, calc(100vw - 24px)); max-height: 92vh; overflow-y: auto; }
+.mk-paydlg h2 { margin: 0 0 8px; }
+.mk-paydlg input:not([type=file]), .mk-paydlg select { width: 100%; }
+.mk-paypick { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 64px; padding: 10px 14px; border: 2px dashed #0e7a26; border-radius: 12px; text-align: center; text-transform: none; letter-spacing: 0; white-space: normal; cursor: pointer; }
+#payFile:focus-visible + .mk-paypick { outline: 3px solid #ffc72c; outline-offset: 2px; }
+#payPrev { display: block; max-width: 100%; max-height: 150px; margin: 10px auto 0; border-radius: 10px; border: 1px solid #c8cdd3; }
+#payPrev[hidden] { display: none; }
+.mk-paybox { border: 2px solid #0e7a26; }
+.mk-proofimg { display: block; max-width: 100%; max-height: 420px; margin: 0 0 10px; border-radius: 10px; border: 1px solid #c8cdd3; }

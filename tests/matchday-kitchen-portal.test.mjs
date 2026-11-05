@@ -89,7 +89,7 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   let bd = (await C.call('board')).data;
   const un = bd.unpaid.find(u => u.ref === o.ref);
   assert.ok(un, 'in Awaiting payment'); assert.equal(un.failed, false); assert.match(un.chatUrl || '', /^https:\/\/wa\.me\/234/);
-  assert.equal((await S.call('order', { id, to: 'PAID' })).status, 200);
+  assert.equal((await S.call('payment', { id, method: 'transfer', amount: String(un.totalNaira), proof: Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 1, 2, 3, 4, ...T.split('').map(x => x.charCodeAt(0))]).toString('base64') })).status, 200);
   bd = (await C.call('board')).data;
   assert.ok(!bd.unpaid.some(u => u.ref === o.ref), 'paid: leaves Awaiting payment');
   let k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
@@ -316,6 +316,94 @@ test('delivery by stand: ready orders grouped, in seat order, still-cooking coun
     assert.ok(!html.includes(`Fan B-2`), 'no customer names'); assert.ok(!html.includes('fan@example.com'));
   } finally {
     sql(`DELETE FROM food_orders WHERE id IN (${ids.map(i => `'${i}'`).join(',')}); DELETE FROM mk_staff WHERE id = '${added.data.id}'; DELETE FROM mk_settings WHERE key = 'report_emails';`);
+  }
+});
+
+test('WhatsApp payments: evidence required, then the order goes on as if paid online; cooks cannot; a receipt cannot be reused', async () => {
+  const S = await as((await signCode(SUP.code)).cookie);
+  const staff = async (name, role) => { const a = await S.call('staff', { action: 'add', name: `${name} ${T}`, role }); return { id: a.data.id, u: await as((await signCode(a.data.loginCode)).cookie) }; };
+  const pass = await staff('Pay Pass', 'pass'), cook = await staff('Pay Cook', 'cook');
+  const iso = new Date().toISOString();
+  const put = (id, status, channel = 'whatsapp', pay = 'pending') => `INSERT INTO food_orders (id, ref, seat, stand, phone, email, items_json, total_kobo, paystack_reference, payment_status, order_status, created_iso, channel, customer_name) VALUES ('${id}', '${id}', 'A1', 'Popular Stand', '+2348031234567', '', '[{"id":"suya","name":"Suya","qty":1,"priceKobo":150000}]', 150000, 'r-${id}', '${pay}', '${status}', '${iso}', '${channel}', 'Abigail Fan');`;
+  const ids = ['a', 'b', 'c', 'd', 'e', 'f'].map(x => `WA${x}${T}`), [a, b, c, d, e, f] = ids;
+  sql(put(a, 'AWAITING_WHATSAPP') + put(b, 'CONFIRMED') + put(c, 'EXPIRED') + put(d, 'AWAITING_WHATSAPP', 'paystack') + put(e, 'AWAITING_WHATSAPP') + put(f, 'AWAITING_WHATSAPP'));
+  const jpg = (n = 1) => Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, ...Array(40).fill(n), 0xFF, 0xD9]).toString('base64');
+  const pdf = Buffer.from('%PDF-1.4 receipt').toString('base64');
+  const body = (id, over = {}) => ({ id, method: 'transfer', amount: '1500', proof: jpg(), ...over });
+  const order = id => rows(`SELECT order_status, payment_status, paid_reference, paid_late, paid_iso FROM food_orders WHERE id = '${id}'`)[0];
+  try {
+    const up = (await pass.u.call('board')).data.unpaid.find(o => o.id === a);
+    assert.equal(up.canPay, true); assert.equal(up.totalNaira, 1500);
+    // Only order handlers, supervisors and Super Admins.
+    assert.equal(cook.u.s.perms.payment, false); assert.equal(pass.u.s.perms.payment, true);
+    assert.equal((await cook.u.call('payment', body(a))).status, 403, 'a cook cannot record a payment');
+    assert.equal((await cook.u.call('order', { id: a, to: 'PAID' })).status, 400, 'nor mark it paid another way');
+    assert.equal((await pass.u.call('order', { id: a, to: 'PAID' })).data.recordPayment, true, 'the plain status button is closed');
+    assert.ok(!(await pass.u.call(`order?id=${a}`)).data.moves.some(m => m.to === 'PAID'));
+    assert.equal((await pass.u.call(`order?id=${a}`)).data.canRecordPayment, true);
+    assert.equal((await cook.u.call(`order?id=${a}`)).data.canRecordPayment, false);
+    // The checks.
+    assert.match((await pass.u.call('payment', body(a, { proof: '' }))).data.error, /evidence/);
+    assert.match((await pass.u.call('payment', body(a, { proof: Buffer.from('<script>alert(1)</script>').toString('base64') }))).data.error, /not a picture/, 'a file is checked by what it really is');
+    assert.match((await pass.u.call('payment', body(a, { amount: '1000' }))).data.error, /less than the order total/);
+    assert.equal((await pass.u.call('payment', body(a, { method: 'gold' }))).status, 400);
+    assert.equal((await pass.u.call('payment', body(d))).status, 400, 'online orders are confirmed by Paystack');
+    assert.equal(order(a).payment_status, 'pending', 'nothing changed yet');
+    // Recorded: paid, in the kitchen, recorded and traceable.
+    const r = await pass.u.call('payment', body(a, { note: 'GTB ref 123' }));
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    assert.match(r.data.chatUrl, /^https:\/\/wa\.me\/2348031234567/, 'one tap to tell the fan');
+    const o = order(a);
+    assert.equal(o.order_status, 'PAID'); assert.equal(o.payment_status, 'paid'); assert.ok(o.paid_iso); assert.match(o.paid_reference, /^WhatsApp: Bank transfer, recorded by Pay Pass/);
+    assert.ok((await cook.u.call('kitchen')).data.tickets.some(t => t.id === a), 'on the kitchen screen like any paid order');
+    assert.ok(rows(`SELECT kitchen_alerted_at FROM food_orders WHERE id = '${a}'`)[0].kitchen_alerted_at !== undefined);
+    assert.ok(!(await pass.u.call('board')).data.unpaid.some(x => x.id === a), 'off the awaiting payment list');
+    assert.equal((await pass.u.call('order', { id: a, to: 'ACCEPTED' })).status, 200, 'and it carries on as normal');
+    // Twice: refused.
+    assert.equal((await pass.u.call('payment', body(a, { proof: jpg(9) }))).status, 409);
+    // The evidence: same roles only; shown, never run.
+    const info = (await pass.u.call(`order?id=${a}`)).data.payment;
+    assert.equal(info.method, 'Bank transfer'); assert.equal(info.note, 'GTB ref 123'); assert.match(info.by, /Pay Pass/);
+    assert.equal((await cook.u.call(`order?id=${a}`)).data.payment, null);
+    assert.equal((await cook.u.call(`payment-proof?id=${a}`)).status, 403);
+    assert.equal((await fetch(`${BASE}/api/matchday-kitchen/payment-proof?id=${a}`)).status, 401, 'never the public');
+    const passCookie = (await signCode((await S.call('staff', { action: 'edit', id: pass.id, newCode: true })).data.loginCode)).cookie;
+    pass.u = await as(passCookie);
+    const pic = await fetch(`${BASE}/api/matchday-kitchen/payment-proof?id=${a}`, { headers: { Cookie: `ls_mdk=${passCookie}` } });
+    assert.equal(pic.status, 200); assert.equal(pic.headers.get('content-type'), 'image/jpeg'); assert.equal(pic.headers.get('x-content-type-options'), 'nosniff');
+    assert.equal(Buffer.from(await pic.arrayBuffer()).toString('base64'), jpg());
+    // The same receipt on another order: refused; a supervisor can allow it, and it stays flagged.
+    const dup = await pass.u.call('payment', body(b));
+    assert.equal(dup.status, 409); assert.equal(dup.data.duplicate, a); assert.equal(dup.data.canOverride, false);
+    assert.equal((await pass.u.call('payment', body(b, { allowDuplicate: true }))).status, 409, 'an order handler cannot allow it');
+    assert.equal((await S.call('payment', body(b))).data.canOverride, true);
+    const allowed = await S.call('payment', body(b, { allowDuplicate: true }));
+    assert.equal(allowed.status, 200); assert.equal(allowed.data.duplicateOf, a);
+    assert.equal((await S.call(`order?id=${b}`)).data.payment.duplicateOf, a);
+    // A fan who paid after the order ran out of time; a PDF receipt; more than the total.
+    const late = await pass.u.call('payment', body(c, { proof: pdf, method: 'pos', amount: '2000' }));
+    assert.equal(late.status, 200); assert.equal(order(c).paid_late, 1); assert.equal(order(c).order_status, 'PAID');
+    assert.equal((await S.call(`order?id=${c}`)).data.payment.isPdf, true);
+    const pdfFile = await fetch(`${BASE}/api/matchday-kitchen/payment-proof?id=${c}`, { headers: { Cookie: `ls_mdk=${passCookie}` } });
+    assert.match(pdfFile.headers.get('content-disposition'), /^attachment/, 'a PDF is downloaded, not opened on our site');
+    // The website admin can see it too.
+    assert.equal((await fetch(`${BASE}/api/admin/food-orders/proof?id=${a}`)).status, 401);
+    const adm = await fetch(`${BASE}/api/admin/food-orders/proof?id=${a}`, { headers: { 'x-admin-code': 'test-code-123' } });
+    assert.equal(adm.status, 200); assert.equal(adm.headers.get('content-type'), 'image/jpeg');
+    // An oversized upload is refused before it is read.
+    assert.equal((await pass.u.call('payment', body(f, { proof: 'x'.repeat(4000000) }))).status, 413);
+    assert.equal((await pass.u.call('payment', body(f, { proof: Buffer.concat([Buffer.from([0xFF, 0xD8, 0xFF]), Buffer.alloc(1600 * 1024, 1)]).toString('base64') }))).status, 400, 'over 1.5 MB');
+    // A Super Admin too; and the log.
+    const A = await as((await signIn(SA_EMAIL, SA_PW)).cookie);
+    assert.equal((await A.call('payment', body(e, { proof: jpg(5) }))).status, 200);
+    const log = (await A.call('activity')).data.rows;
+    assert.ok(log.some(x => x.action.startsWith(`Order ${a}: recorded payment of ₦1,500 (Bank transfer), evidence saved`)), 'recorded in the log');
+    assert.ok(log.some(x => x.action.includes(`the same receipt as order ${a} (allowed)`)));
+    // Paid orders count in the report's WhatsApp line.
+    const report = await fetch(`${BASE}/api/matchday-kitchen/report`, { headers: { Cookie: `ls_mdk=${passCookie}` } });
+    assert.equal(report.status, 403, 'the report stays with supervisors');
+  } finally {
+    sql(`DELETE FROM food_payment_proofs WHERE order_id IN (${ids.map(i => `'${i}'`).join(',')}); DELETE FROM food_orders WHERE id IN (${ids.map(i => `'${i}'`).join(',')}); DELETE FROM mk_staff WHERE id IN ('${pass.id}', '${cook.id}');`);
   }
 });
 
