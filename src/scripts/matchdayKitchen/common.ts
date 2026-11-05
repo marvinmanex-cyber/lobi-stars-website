@@ -9,7 +9,7 @@ export const dayOnly = (iso?: string | null) => iso ? new Date(iso).toLocaleDate
 export const todayLagos = () => new Date(Date.now() + 3600e3).toISOString().slice(0, 10);
 export const mins = (n: number) => n < 1 ? 'just now' : `${n} min`;
 
-export const session: { csrf: string; user: any; perms: any; settings: any; shift: any } = { csrf: '', user: null, perms: {}, settings: {}, shift: null };
+export const session: { csrf: string; user: any; perms: any; settings: any; shift: any; pushKey: string } = { csrf: '', user: null, perms: {}, settings: {}, shift: null, pushKey: '' };
 
 export class ApiError extends Error { status: number; data: any; constructor(m: string, status: number, data: any) { super(m); this.status = status; this.data = data; } }
 let onSignedOut = () => {};

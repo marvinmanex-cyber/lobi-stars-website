@@ -34,7 +34,8 @@ export async function ensureKitchenSchema(db) {
   )`).run();
   // Kitchen Screen devices are push subscriptions marked kitchen = 1.
   const cols = new Set((await db.prepare(`PRAGMA table_info(push_subs)`).all()).results.map(r => r.name));
-  for (const [name, type] of [['kitchen', 'INTEGER NOT NULL DEFAULT 0'], ['is_active', 'INTEGER NOT NULL DEFAULT 1']]) {
+  // mk_app = 1: a device registered in the MatchDay Kitchen staff app (its alerts open that app, not the admin).
+  for (const [name, type] of [['kitchen', 'INTEGER NOT NULL DEFAULT 0'], ['is_active', 'INTEGER NOT NULL DEFAULT 1'], ['mk_app', 'INTEGER NOT NULL DEFAULT 0']]) {
     if (!cols.has(name)) await db.prepare(`ALTER TABLE push_subs ADD COLUMN ${name} ${type}`).run();
   }
   ready = true;
@@ -77,13 +78,15 @@ export function buildKitchenTicket(order, attempt = 'initial') {
   const title = attempt === 'repeat' ? `⚠️ STILL WAITING: ${order.ref} (paid ${mins} min ago)`
     : attempt === 'cancel' ? `❌ ORDER ${order.ref} CANCELLED, do not cook`
     : attempt === 'test' ? '🔔 Test kitchen alert'
+    : attempt === 'whatsapp' ? `💬 NEW WHATSAPP ORDER ${order.ref}: confirm it`
     : `🍽️ NEW PAID ORDER ${order.ref}`;
-  const body = attempt === 'test' ? 'Kitchen alerts are working on this device.' : `${items.map(i => `${i.qty}× ${i.name}`).join(', ')} | ${where}`;
+  const body = attempt === 'test' ? 'Kitchen alerts are working on this device.' : `${items.map(i => `${i.qty}× ${i.name}`).join(', ')} | ${where}${attempt === 'whatsapp' ? ' | Not paid yet: do not cook' : ''}`;
   const longText = [
     ...items.map(i => `${i.qty}× ${i.name}`),
     order.notes ? `📝 Note: ${order.notes}` : '',
     `👤 ${firstName(order)}`, `📍 ${where}`,
     order.paid_iso ? `🕒 Paid ${lagosTime(order.paid_iso)}` : '',
+    attempt === 'whatsapp' ? '⏳ Not paid yet: do not cook' : '',
   ].filter(Boolean).join('\n');
   return { title, body, longText };
 }
@@ -126,12 +129,13 @@ export async function clearTelegramButtons(env, db, orderId, note) {
 // ── Push to Kitchen Screen devices ──
 async function pushKitchen(env, db, payload, topic) {
   if (!pushReady(env)) return { ok: false, error: 'Push not set up (VAPID keys missing)' };
-  const { results } = await db.prepare(`SELECT endpoint, keys_json FROM push_subs WHERE kitchen = 1 AND is_active = 1`).all();
+  const { results } = await db.prepare(`SELECT endpoint, keys_json, mk_app FROM push_subs WHERE kitchen = 1 AND is_active = 1`).all();
   if (!results.length) return { ok: false, error: 'No kitchen devices registered' };
   const out = await Promise.allSettled(results.map(async row => {
     const keys = JSON.parse(row.keys_json || '{}');
     if (!keys.p256dh || !keys.auth) return 'nokeys';
-    const status = await sendEncryptedPush(env, { endpoint: row.endpoint, keys }, payload, { ttl: 300, urgency: 'high', topic });
+    const { mkUrl, ...rest } = payload;
+    const status = await sendEncryptedPush(env, { endpoint: row.endpoint, keys }, row.mk_app ? { ...rest, url: mkUrl || '/matchday-kitchen/' } : rest, { ttl: 300, urgency: 'high', topic });
     if (status === 404 || status === 410) await db.prepare(`UPDATE push_subs SET is_active = 0 WHERE endpoint = ?`).bind(row.endpoint).run();
     else if (status >= 200 && status < 300) await db.prepare(`UPDATE push_subs SET last_ok_at = ? WHERE endpoint = ?`).bind(nowIso(), row.endpoint).run();
     return status;
@@ -149,8 +153,9 @@ async function log(db, order, channel, attempt, success, error, messageId = null
 
 /**
  * Alerts the kitchen about one order. attempt: 'initial' (once, when it
- * becomes PAID), 'repeat' (still not accepted), 'cancel' (an alerted order
- * was cancelled) or 'test'. Returns { sent, push, telegram } and never throws.
+ * becomes PAID), 'repeat' (still not accepted), 'whatsapp' (a new WhatsApp order
+ * to confirm: not paid yet, so it never uses up the paid alert), 'cancel' (an
+ * alerted order was cancelled) or 'test'. Returns { sent, push, telegram } and never throws.
  */
 export async function notifyKitchen(env, orderId, attempt = 'initial') {
   const db = env.DB;
@@ -171,7 +176,7 @@ export async function notifyKitchen(env, orderId, attempt = 'initial') {
     }
     order = { ...order, kitchen_alerted_at: order.kitchen_alerted_at || now };
     const t = buildKitchenTicket(order, attempt);
-    const payload = { kind: 'kitchen', attempt, title: t.title, body: attempt === 'repeat' || attempt === 'initial' ? `${t.body}${order.notes ? ` | 📝 ${order.notes}` : ''}` : t.body, ref: order.ref, url: `/admin/kitchen/?order=${encodeURIComponent(order.ref)}` };
+    const payload = { kind: 'kitchen', attempt, title: t.title, body: attempt === 'repeat' || attempt === 'initial' ? `${t.body}${order.notes ? ` | 📝 ${order.notes}` : ''}` : t.body, ref: order.ref, url: `/admin/kitchen/?order=${encodeURIComponent(order.ref)}`, mkUrl: `/matchday-kitchen/?open=${attempt === 'whatsapp' ? 'live' : 'kitchen'}` };
     const button = attempt === 'initial' || attempt === 'repeat';
     // Both channels at once; each is logged as soon as it finishes, and one failing never stops the other.
     const pushJob = pushKitchen(env, db, payload, order.ref)
@@ -190,6 +195,37 @@ export async function notifyKitchen(env, orderId, attempt = 'initial') {
     console.error('[kitchen] notify', err);
     return { sent: false, reason: err.message };
   }
+}
+
+// ── Devices registered in the MatchDay Kitchen staff app ──
+/** This person's device gets kitchen alerts. Returns an error text, or null. */
+export async function saveAppDevice(db, user, sub, deviceName) {
+  if (typeof sub?.endpoint !== 'string' || sub.endpoint.length > 1000 || !/^https:\/\//.test(sub.endpoint) || !sub.keys?.p256dh || !sub.keys?.auth) return 'This device could not be set up for alerts.';
+  await ensureKitchenSchema(db);
+  await db.prepare(`INSERT INTO push_subs (endpoint, staff_id, staff_name, keys_json, want_unpaid, want_paid, device, created_at, kitchen, is_active, mk_app) VALUES (?, ?, ?, ?, 0, 0, ?, ?, 1, 1, 1)
+    ON CONFLICT (endpoint) DO UPDATE SET staff_id = excluded.staff_id, staff_name = excluded.staff_name, keys_json = excluded.keys_json, device = excluded.device, kitchen = 1, is_active = 1, mk_app = 1`)
+    .bind(sub.endpoint, user.id, user.name, JSON.stringify({ p256dh: String(sub.keys.p256dh), auth: String(sub.keys.auth) }), String(deviceName || '').trim().slice(0, 60) || 'Kitchen device', nowIso()).run();
+  return null;
+}
+export async function removeAppDevice(db, endpoint) {
+  await ensureKitchenSchema(db);
+  await db.prepare(`UPDATE push_subs SET is_active = 0 WHERE endpoint = ? AND mk_app = 1`).bind(String(endpoint || '')).run();
+}
+/** Signed out with the button, switched off or given a new code: no more orders on that person's devices. */
+export async function removeStaffDevices(db, userId) {
+  await ensureKitchenSchema(db);
+  await db.prepare(`UPDATE push_subs SET is_active = 0 WHERE staff_id = ? AND mk_app = 1`).bind(String(userId)).run();
+}
+/** A test alert to one device of the app. */
+export async function testAppDevice(env, endpoint) {
+  await ensureKitchenSchema(env.DB);
+  const row = await env.DB.prepare(`SELECT endpoint, keys_json FROM push_subs WHERE endpoint = ? AND mk_app = 1 AND is_active = 1`).bind(String(endpoint || '')).first();
+  if (!row || !pushReady(env)) return false;
+  const t = buildKitchenTicket({ ref: 'TEST', items_json: '[]' }, 'test');
+  try {
+    const status = await sendEncryptedPush(env, { endpoint: row.endpoint, keys: JSON.parse(row.keys_json || '{}') }, { kind: 'kitchen', attempt: 'test', title: t.title, body: t.body, ref: 'TEST', url: '/matchday-kitchen/' }, { ttl: 300, urgency: 'high', topic: 'test' });
+    return status >= 200 && status < 300;
+  } catch { return false; }
 }
 
 /** A test alert to every kitchen device and the Telegram group. */

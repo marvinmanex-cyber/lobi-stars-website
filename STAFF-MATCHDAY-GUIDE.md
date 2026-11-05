@@ -183,7 +183,7 @@ half-time and second-half alerts, so check the score before saving.
 MatchDay Kitchen receipt.
 
 **During the match (in-seat food):** keep the Live Order Board open; prepare
-only **Paid** orders; turn a dish **OFF** as soon as it isn't ready or runs out (MatchDay Kitchen › **Menu and prices**), and **ON** when it's ready. When a fan sends a WhatsApp payment receipt, press **Record payment** on the order, add the receipt and press **Mark order paid** (STAFF-GUIDE §42).
+only **Paid** orders; turn a dish **OFF** as soon as it isn't ready or runs out (MatchDay Kitchen › **Menu and prices**), and **ON** when it's ready. Before the gates open, check **Turn on order alerts** is done on every kitchen phone and tablet (press **Send a test alert**) and tap each screen once so the sound works. A green bar and ringing means a new WhatsApp order: press **Confirm order** on the Live order board and reply to the fan. When a fan sends a WhatsApp payment receipt, press **Record payment** on the order, add the receipt and press **Mark order paid** (STAFF-GUIDE §42).
 
 ## 3. At the final whistle
 

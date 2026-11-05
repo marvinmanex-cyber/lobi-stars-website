@@ -361,7 +361,7 @@ function collect(viaWhatsApp: boolean) {
   }
   const v = (id: string) => ($(id) as HTMLInputElement).value.trim();
   if (v('kxName').length < 2) return fail('Please enter your name.', 'kxName');
-  if (!isPhone(v('kxPhone'))) return fail('Please enter a valid Nigerian mobile number, e.g. 0803 123 4567.', 'kxPhone');
+  if (!isPhone(v('kxPhone'))) return fail('Please enter a valid Nigerian WhatsApp number, e.g. 0803 123 4567.', 'kxPhone');
   // Email is optional: only for buyers who want the receipt by email.
   if (v('kxEmail') && !isEmail(v('kxEmail'))) return fail('Please check your email address (or leave it empty).', 'kxEmail');
   if (!$('kxAdultWrap').hidden && !($('kxAdult') as HTMLInputElement).checked) return fail('Please confirm you are 18 or older to order alcoholic drinks.', 'kxAdult');

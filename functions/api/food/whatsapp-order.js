@@ -4,6 +4,7 @@ import { ensureFoodSchema, nextRef, foodSettings, priceCart, whatsappOrderMessag
 import { normalizeNigerianPhone, rateLimit, tooMany, clientIp, ensureFanSchema } from '../_lib/fans.js';
 import { listMatches, isMatchDay, toSummary } from '../_lib/matchCentre.js';
 import { raiseFoodAlert } from '../_lib/foodAlerts.js';
+import { notifyKitchen } from '../_lib/kitchenNotify.js';
 import { captureContact, splitName } from '../_lib/contacts.js';
 
 const json = (data, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store' } });
@@ -29,7 +30,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     const pickup = b.fulfilment === 'pickup';
     const items = Array.isArray(b.items) ? b.items : [];
     if (name.length < 2) return json({ error: 'Please enter your name.' }, 400);
-    if (!phone) return json({ error: 'Please enter a valid Nigerian mobile number (e.g. 0803 123 4567).' }, 400);
+    if (!phone) return json({ error: 'Please enter a valid Nigerian WhatsApp number (e.g. 0803 123 4567).' }, 400);
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return json({ error: 'Please check your email address (or leave it empty).' }, 400);
     if (!items.length || items.length > 20) return json({ error: 'Please choose between 1 and 20 different items.' }, 400);
     if (!pickup && !seat) return json({ error: 'Please enter your seat number.' }, 400);
@@ -80,6 +81,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
     const origin = new URL(request.url).origin;
     const later = Promise.all([
       raiseFoodAlert(env, 'whatsapp', order, { waitUntil, origin }).catch(err => console.error('[food] whatsapp alert', err)),
+      // The kitchen's own devices and Telegram group (the kitchen app also rings until someone confirms it).
+      notifyKitchen(env, id, 'whatsapp'),
       (async () => { const n = splitName(name); await captureContact(env, { source: 'food_order', refTable: 'food_orders', refId: id, email: email || null, phone, firstName: n.firstName, surname: n.surname, label: ref }); })()
         .catch(err => console.error('[food] contact', err)),
     ]);

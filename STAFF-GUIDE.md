@@ -4652,6 +4652,12 @@ Who can cancel can be changed in **Staff accounts › Settings** (with the Teleg
 
 **Add a drink:** when a fan's cart has food but no drink or combo, the cart offers one drink that is ON (the most popular first), with **Add** and **No thanks**. It never offers 18+ drinks.
 
+**Order alerts:** new orders alert the kitchen in two ways.
+- **In the app:** while MatchDay Kitchen is open, a paid order flashes red and beeps until someone presses **Accept order**. A new WhatsApp order shows a green bar and rings every 10 seconds until someone presses **Confirm order** (Live order board) or records the payment. It is not paid yet, so don't cook it.
+- **On the device, even with the app closed:** on the Home screen press **Turn on order alerts** and allow notifications. Do this once on each phone or tablet, then press **Send a test alert** to check it. On iPhone and iPad, install the app first (Share, then Add to Home Screen) and open it from there.
+
+Signing out with the **Sign out** button stops alerts on that person's devices until they next sign in. The automatic sign-out after 20 idle minutes does not stop them. Switching a person off, or giving them a new login code, stops them too. Tablets must allow sound: tap the screen once after opening the app.
+
 **WhatsApp payments (Record payment):** when a fan pays for a WhatsApp order and sends the receipt on WhatsApp:
 1. Open the order: on the **Live order board** under **Awaiting payment** (or **Did not pay**, if it ran out of time), or in **Food orders**. Press **Record payment**.
 2. Tap to add the receipt: a photo, a screenshot or a PDF (required).

@@ -4,6 +4,7 @@
 // then a 60-second countdown). Inner pages report taps through window.mkShell.
 import { $, esc, api, session, loadSession, setSignedOutHandler, GROUPS, whatsappUrl, WA_PATH, TG_PATH, iconFor, pageTitle, hm } from './common';
 import { startAlarms, stopAlarms, alarmsNow } from './alarm';
+import { initPush } from './push';
 
 const IDLE_MS = 20 * 60e3, COUNTDOWN = 60, MAX_TABS = 6, SAVE_KEY = 'mdk_tabs';
 type TabRec = { page: string; frame: HTMLIFrameElement; shownAt: number };
@@ -260,6 +261,7 @@ async function startApp() {
   if (SHORTCUTS.includes(wantOpen)) { open(wantOpen); wantOpen = ''; }
   startIdle();
   startAlarms(p => open(p));
+  initPush(toast);
   started = true;
 }
 

@@ -370,16 +370,20 @@ export async function checkData(db) {
 
 /**
  * The alarm check every open kitchen app makes every 10 seconds: orders not accepted yet
- * (they beep until someone taps Accept order) and orders not delivered within the target.
+ * (they beep until someone taps Accept order), new WhatsApp orders (they ring until someone
+ * confirms or records the payment) and orders not delivered within the target.
  * Only a few columns of today's open orders (indexed by status), so it stays cheap.
  */
 export async function pulse(db, lateMinutes) {
   await ready(db);
-  const { results } = await db.prepare(`SELECT id, ref, order_status, paid_iso, created_iso, created_at, seat, stand, fulfilment, pickup_point, deliver_at FROM food_orders WHERE order_status IN (${placeholders(DATA.kitchenShows)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 200`).bind(...DATA.kitchenShows, since()).all();
+  const watch = [...DATA.kitchenShows, 'AWAITING_WHATSAPP'];
+  const { results } = await db.prepare(`SELECT id, ref, order_status, paid_iso, created_iso, created_at, seat, stand, fulfilment, pickup_point, deliver_at FROM food_orders WHERE order_status IN (${placeholders(watch)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 200`).bind(...watch, since()).all();
   const one = o => ({ id: o.id, ref: o.ref || o.id, no: String(o.ref || o.id).split('-').pop(), status: statusLabel(o.order_status), minutes: minutesSince(startedAt(o)), where: o.seat || o.pickup_point ? whereText(o) : '' });
   return {
     newOrders: results.filter(o => o.order_status === 'PAID').map(one),
-    late: results.filter(o => Date.parse(startedAt(o) || 0) <= Date.now() && minutesSince(startedAt(o)) >= lateMinutes).map(one),
+    // New WhatsApp orders nobody has confirmed yet: not paid, so not to cook, but the fan is waiting for a reply.
+    whatsapp: results.filter(o => o.order_status === 'AWAITING_WHATSAPP').map(one),
+    late: results.filter(o => DATA.kitchenShows.includes(o.order_status) && Date.parse(startedAt(o) || 0) <= Date.now() && minutesSince(startedAt(o)) >= lateMinutes).map(one),
     lateMinutes,
   };
 }

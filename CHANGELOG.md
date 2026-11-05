@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-05: Kitchen staff are alerted about new WhatsApp orders
+
+**Who it affects:** all kitchen staff. **Staff need to:** press **Turn on order alerts** once on each device.
+- A new WhatsApp order used to make no sound in MatchDay Kitchen, because the alarm only covered paid orders. It now shows a green bar and rings every 10 seconds until someone confirms it or records the payment.
+- **Confirm order** is now on the WhatsApp order's card on the Live order board.
+- New: **Turn on order alerts** on the Home screen gives a phone or tablet alerts for new orders even when the app is closed. Until now only devices set up on the old admin Kitchen Screen could get these.
+- Signing out with the button, being switched off or getting a new login code stops alerts on that person's devices. The 20-minute idle sign-out does not.
+- The food order form now asks for the fan's **WhatsApp number** instead of "Phone", so staff can reach them there.
+
 ## 2026-11-05: MatchDay Kitchen can have its own Paystack account
 
 **Who it affects:** the website manager and whoever handles the kitchen's money. Fans see no change.

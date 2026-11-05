@@ -96,6 +96,14 @@ import '../../styles/matchdayKitchen.css';
           <button type="button" class="mk-btn big" data-ordering="auto">Automatic</button>
         </div>
       </section>
+      <section class="mk-pushbox" id="pushBox" aria-label="Order alerts on this device" hidden>
+        <p id="pushText"></p>
+        <div class="mk-pushbtns">
+          <button type="button" class="mk-btn go big" id="pushOn" hidden>Turn on order alerts</button>
+          <button type="button" class="mk-btn" id="pushTest" hidden>Send a test alert</button>
+          <button type="button" class="mk-btn" id="pushOff" hidden>Turn off</button>
+        </div>
+      </section>
       <div id="groups"></div>
     </main>
     <div class="mk-frames" id="frames"></div>

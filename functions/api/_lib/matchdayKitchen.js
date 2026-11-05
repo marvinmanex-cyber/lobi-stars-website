@@ -213,7 +213,11 @@ export async function updateStaff(env, by, request, id, v) {
   await db.prepare(`UPDATE mk_staff SET full_name = ?, role = ?, is_active = ?, ${code ? 'login_code_hash = ?, ' : ''}updated_at = ? WHERE id = ?`)
     .bind(...[name, role, active, ...(code ? [code.hash] : []), nowIso(), s.id]).run();
   // A new code or a switched-off account signs the person out on every tablet straight away.
-  if (code || !active) await endSessions(db, s.id, code ? 'new login code' : 'account switched off');
+  if (code || !active) {
+    await endSessions(db, s.id, code ? 'new login code' : 'account switched off');
+    // No more order alerts on their devices (they turn back on when the person next signs in, if allowed).
+    await db.prepare(`UPDATE push_subs SET is_active = 0 WHERE staff_id = ? AND mk_app = 1`).bind(s.id).run().catch(() => {});
+  }
   await mkLog(db, by, `Changed staff account ${name} (${s.staff_id}): ${changes.join(', ')}`, { kind: 'staff', request });
   return { ok: true, staffId: s.staff_id, name, ...(code ? { loginCode: showCode(code.digits) } : {}) };
 }

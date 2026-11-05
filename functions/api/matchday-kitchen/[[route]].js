@@ -11,6 +11,7 @@
 //   GET delivery (ready orders by stand)   GET report-settings   POST report-settings {emails}
 //   GET report (preview, HTML)   POST report (send now)   (report: supervisors, Super Admins)
 //   POST payment {id, method, amount, proof, fileName, note, allowDuplicate}   GET payment-proof?id   (order handlers, supervisors, Super Admins)
+//   POST push {action: on|off|test, subscription, deviceName, endpoint}   order alerts on this device
 //   GET check (Super Admins: the data check)
 import { signIn, signOut, json, kitchenSettings, permissions, mkLog, shiftState, startShift, endShift, listNotes, noteAction,
   activityPage, listStaff, createStaff, updateStaff, saveSettings, ROLES, oneLine, clearKitchenCookie } from '../_lib/matchdayKitchen.js';
@@ -19,6 +20,7 @@ import { foodSettings, saveFoodSetting } from '../_lib/foodOrders.js';
 import { buildReport, sendReport, reportEmails, saveReportEmails } from '../_lib/kitchenReport.js';
 import { recordPayment, canRecord, proofInfo, proofResponse, PAY_METHODS } from '../_lib/foodPaymentProof.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
+import { saveAppDevice, removeAppDevice, removeStaffDevices, testAppDevice } from '../_lib/kitchenNotify.js';
 
 // The pages (and their names in the activity log).
 const PAGES = {
@@ -55,10 +57,12 @@ export async function onRequest(context) {
     switch (`${method} ${route}`) {
       case 'POST logout':
         await signOut(db, S, request, !!body.idle);
+        // Signing out with the button stops the alerts; the 20-minute idle sign-out keeps them, so a resting tablet still rings.
+        if (!body.idle) await removeStaffDevices(db, user.id).catch(() => {});
         return json({ ok: true }, 200, { 'Set-Cookie': clearKitchenCookie() });
       case 'GET session':
         return json({ csrf: S.csrf, user: { name: user.name, firstName: user.firstName, code: user.code, role: user.role, roleLabel: user.roleLabel, kind: user.kind },
-          perms, settings: { telegramUrl: settings.telegramUrl, lateMinutes: late }, shift: await shiftState(db, user) });
+          perms, settings: { telegramUrl: settings.telegramUrl, lateMinutes: late }, shift: await shiftState(db, user), pushKey: env.VAPID_PUBLIC_KEY || '' });
       case 'POST open': {
         const name = PAGES[body.page];
         if (!name) return json({ error: 'Unknown page.' }, 400);
@@ -230,6 +234,15 @@ export async function onRequest(context) {
       case 'GET payment-proof':
         if (!perms.payment) return denied();
         return proofResponse(db, q.get('id') || '');
+      case 'POST push': {
+        if (body.action === 'on') {
+          const problem = await saveAppDevice(db, user, body.subscription, body.deviceName);
+          return problem ? json({ error: problem }, 400) : json({ ok: true });
+        }
+        if (body.action === 'off') { await removeAppDevice(db, body.endpoint); return json({ ok: true }); }
+        if (body.action === 'test') return json({ ok: await testAppDevice(env, body.endpoint) });
+        return json({ error: 'Unknown action.' }, 400);
+      }
       case 'GET report-settings':
         if (!perms.staff) return denied();
         return json({ emails: await reportEmails(env) });

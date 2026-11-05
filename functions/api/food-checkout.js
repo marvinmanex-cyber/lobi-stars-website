@@ -28,7 +28,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
   if (!name) return Response.json({ error: 'Please enter your name.' }, { status: 400 });
   if (!pickup && !seat) return Response.json({ error: 'Please enter your seat number.' }, { status: 400 });
-  if (!phone) return Response.json({ error: 'Please enter a valid Nigerian mobile number (e.g. 0803 123 4567).' }, { status: 400 });
+  if (!phone) return Response.json({ error: 'Please enter a valid Nigerian WhatsApp number (e.g. 0803 123 4567).' }, { status: 400 });
   // Email is optional: only for buyers who want the receipt by email.
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return Response.json({ error: 'Please check your email address (or leave it empty).' }, { status: 400 });
   if (!items.length) return Response.json({ error: 'Please choose at least one item.' }, { status: 400 });

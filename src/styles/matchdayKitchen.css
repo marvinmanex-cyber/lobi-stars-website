@@ -319,3 +319,11 @@ a { color: var(--green); }
 #payPrev[hidden] { display: none; }
 .mk-paybox { border: 2px solid #0e7a26; }
 .mk-proofimg { display: block; max-width: 100%; max-height: 420px; margin: 0 0 10px; border-radius: 10px; border: 1px solid #c8cdd3; }
+/* New WhatsApp orders in the alarm bar; order alerts on this device */
+.mk-alarm-wa { background: #0E7A26; }
+.mk-pushbox { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 18px; padding: 14px 18px; border-radius: 14px; border: 3px solid #b26a00; background: #fff6e0; color: #4a2c00; }
+.mk-pushbox[hidden] { display: none; }
+.mk-pushbox.on { border: 1px solid #c8cdd3; background: #fff; color: #17301c; padding: 10px 14px; }
+.mk-pushbox p { flex: 1 1 260px; margin: 0; font-size: 18px; line-height: 1.35; }
+.mk-pushbox.on p { font-size: 16px; }
+.mk-pushbtns { display: flex; flex-wrap: wrap; gap: 8px; }

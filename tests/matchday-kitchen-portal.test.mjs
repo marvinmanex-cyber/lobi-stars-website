@@ -319,6 +319,66 @@ test('delivery by stand: ready orders grouped, in seat order, still-cooking coun
   }
 });
 
+test('a new WhatsApp order alerts the kitchen: the alarm rings until it is confirmed or paid, and devices get an alert', async () => {
+  const S = await as((await signCode(SUP.code)).cookie);
+  const a = await S.call('staff', { action: 'add', name: `Alert Cook ${T}`, role: 'cook' });
+  const cookie = (await signCode(a.data.loginCode)).cookie, C = await as(cookie);
+  const place = async seat => { const r = await fetch(`${BASE}/api/food/whatsapp-order`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ name: 'Alert Fan', phone: `0803${String(Math.random()).slice(2, 9)}`, fulfilment: 'seat', seat, items: [{ id: 'suya', qty: 1 }] }) }).then(x => x.json()); assert.ok(r.ref, JSON.stringify(r)); return { ref: r.ref, id: rows(`SELECT id FROM food_orders WHERE ref = '${r.ref}'`)[0].id }; };
+  const endpoint = `https://127.0.0.1:1/push-${T}`, sub = { endpoint, keys: { p256dh: 'p', auth: 'a' } };
+  const device = () => rows(`SELECT is_active, kitchen, mk_app, staff_id, want_paid FROM push_subs WHERE endpoint = '${endpoint}'`)[0];
+  const made = [];
+  try {
+    // The session gives the app what it needs to register a device; bad devices are refused.
+    assert.ok(C.s.pushKey, 'the app gets the push key');
+    assert.equal((await C.call('push', { action: 'on', subscription: { endpoint: 'http://not-secure/' } })).status, 400);
+    assert.equal((await C.call('push', { action: 'nonsense' })).status, 400);
+    assert.equal((await fetch(`${BASE}/api/matchday-kitchen/push`, { method: 'POST', body: '{}' })).status, 401, 'signed-in staff only');
+    assert.equal((await C.call('push', { action: 'on', subscription: sub, deviceName: 'Test phone' })).status, 200);
+    let d = device();
+    assert.equal(d.is_active, 1); assert.equal(d.kitchen, 1); assert.equal(d.mk_app, 1); assert.equal(d.want_paid, 0); assert.equal(d.staff_id, a.data.id);
+    assert.equal((await C.call('push', { action: 'test', endpoint })).data.ok, false, 'an unreachable device reports failure');
+
+    // A new order rings every role's app, and is sent to devices and Telegram.
+    const o = await place('W1'); made.push(o.id);
+    const ring = async who => (await who.call('pulse')).data.whatsapp.find(p => p.ref === o.ref);
+    assert.ok(await ring(C), 'a cook hears it'); assert.ok(await ring(S), 'a supervisor hears it');
+    assert.ok(!(await C.call('pulse')).data.newOrders.some(p => p.ref === o.ref), 'it is not on the paid alarm');
+    assert.ok(!(await C.call('pulse')).data.late.some(p => p.ref === o.ref), 'nor counted as late');
+    const log = rows(`SELECT channel, attempt FROM food_notification_log WHERE order_id = '${o.id}'`);
+    assert.ok(log.some(l => l.channel === 'push' && l.attempt === 'whatsapp'), JSON.stringify(log));
+    assert.equal(rows(`SELECT kitchen_alerted_at FROM food_orders WHERE id = '${o.id}'`)[0].kitchen_alerted_at, null, 'the paid alert is still to come');
+
+    // Confirming stops the ring, for everyone.
+    assert.equal((await C.call('order', { id: o.id, to: 'CONFIRMED' })).status, 200);
+    assert.ok(!(await ring(S)), 'confirmed: quiet');
+    // Paying straight away stops it too, and the paid alert then goes out.
+    const p = await place('W2'); made.push(p.id);
+    assert.ok((await C.call('pulse')).data.whatsapp.some(x => x.ref === p.ref));
+    assert.equal((await S.call('payment', { id: p.id, method: 'cash', amount: '99999', proof: Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 9, 8, 7, ...T.split('').map(x => x.charCodeAt(0))]).toString('base64') })).status, 200);
+    const after = (await C.call('pulse')).data;
+    assert.ok(!after.whatsapp.some(x => x.ref === p.ref)); assert.ok(after.newOrders.some(x => x.ref === p.ref), 'now on the paid alarm');
+    assert.ok(rows(`SELECT kitchen_alerted_at FROM food_orders WHERE id = '${p.id}'`)[0].kitchen_alerted_at, 'the paid alert went out');
+
+    // The idle sign-out keeps the alerts; the sign-out button and "turn off" stop them.
+    assert.equal((await C.call('logout', { idle: true })).status, 200);
+    assert.equal(device().is_active, 1, 'a resting tablet still rings');
+    const C2 = await as((await signCode(a.data.loginCode)).cookie);
+    assert.equal((await C2.call('push', { action: 'off', endpoint })).status, 200);
+    assert.equal(device().is_active, 0);
+    assert.equal((await C2.call('push', { action: 'on', subscription: sub })).status, 200);
+    assert.equal((await C2.call('logout', {})).status, 200);
+    assert.equal(device().is_active, 0, 'signed out with the button: no more orders on this device');
+    // Switched off: the same.
+    const C3 = await as((await signCode(a.data.loginCode)).cookie);
+    await C3.call('push', { action: 'on', subscription: sub });
+    assert.equal(device().is_active, 1);
+    assert.equal((await S.call('staff', { action: 'edit', id: a.data.id, active: false })).status, 200);
+    assert.equal(device().is_active, 0, 'switched off: no more orders on their devices');
+  } finally {
+    sql(`DELETE FROM push_subs WHERE endpoint = '${endpoint}'; DELETE FROM mk_staff WHERE id = '${a.data.id}';` + made.map(i => `DELETE FROM food_payment_proofs WHERE order_id = '${i}'; DELETE FROM food_orders WHERE id = '${i}';`).join(''));
+  }
+});
+
 test('WhatsApp payments: evidence required, then the order goes on as if paid online; cooks cannot; a receipt cannot be reused', async () => {
   const S = await as((await signCode(SUP.code)).cookie);
   const staff = async (name, role) => { const a = await S.call('staff', { action: 'add', name: `${name} ${T}`, role }); return { id: a.data.id, u: await as((await signCode(a.data.loginCode)).cookie) }; };
