@@ -150,6 +150,7 @@ Allow about half a day. Work through it in order.
    | `SESSION_SECRET`, `CRON_SECRET`, `ANALYTICS_SALT`, `INBOX_INBOUND_KEY`, `MEDIA_INBOUND_KEY`, `TELEGRAM_WEBHOOK_SECRET` | new random values |
    | `RESEND_API_KEY`, `RESEND_FROM`, `REPLY_TO_EMAIL`, `INBOX_REPLY_DOMAIN` | Resend (resend.com): make a new Full access API key; the others as in HANDOVER-TODO.md A1 and A2 |
    | `PAYSTACK_SECRET_KEY` | Paystack dashboard › Settings › API Keys |
+   | `PAYSTACK_KITCHEN_SECRET_KEY` | The MatchDay Kitchen business in Paystack › Settings › API Keys |
    | `TURNSTILE_SECRET_KEY` | Cloudflare › Turnstile › add a widget for lobistarsfc.com (also put the new site key in `src/data/fan-settings.json`) |
    | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` | new: `npx web-push generate-vapid-keys` (fans turn match alerts on again) |
    | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_KITCHEN_CHAT_ID`, `TELEGRAM_PUBLIC_BOT_TOKEN`, `TELEGRAM_PUBLIC_CHANNEL`, `FACEBOOK_PAGE_ID`, `FACEBOOK_PAGE_TOKEN`, `TERMII_API_KEY`, `TERMII_SENDER_ID`, `PAGES_DEPLOY_HOOK` | only those the club uses (HANDOVER-TODO.md section A) |
@@ -175,7 +176,7 @@ Allow about half a day. Work through it in order.
       subdomain and its inbound webhook
       `https://lobistarsfc.com/api/inbox/inbound?key=<new INBOX_INBOUND_KEY>`.
     - DMARC record `v=DMARC1; p=none;`.
-    - Paystack webhook stays `https://lobistarsfc.com/api/paystack-webhook`.
+    - Paystack webhooks stay `https://lobistarsfc.com/api/paystack-webhook` (main account) and `https://lobistarsfc.com/api/paystack-webhook-kitchen` (MatchDay Kitchen's account).
     - Telegram: run the webhook script again (DEPLOYMENT.md, "Kitchen Order
       Alerts"). Google Search Console: verify the domain again (new DNS TXT).
 

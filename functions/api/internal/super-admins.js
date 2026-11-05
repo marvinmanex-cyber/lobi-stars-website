@@ -14,7 +14,7 @@ import { deliverAlerts, weeklySummary, weeklySummaryHtml } from '../_lib/activit
 //   fingerprint is kept, never the key) and tells the Super Admins;
 // - emails the Super Admins the security alerts waiting (fan-data downloads, permission
 //   changes, many failed sign-ins…), and the weekly security summary on Mondays from 08:00.
-const WATCHED_KEYS = ['PAYSTACK_SECRET_KEY', 'PAYSTACK_PUBLIC_KEY', 'RESEND_API_KEY', 'RESEND_FROM', 'NEWSLETTER_FROM', 'TURNSTILE_SECRET_KEY'];
+const WATCHED_KEYS = ['PAYSTACK_SECRET_KEY', 'PAYSTACK_KITCHEN_SECRET_KEY', 'PAYSTACK_PUBLIC_KEY', 'RESEND_API_KEY', 'RESEND_FROM', 'NEWSLETTER_FROM', 'TURNSTILE_SECRET_KEY'];
 
 export async function onRequestPost({ request, env }) {
   if (!env.CRON_SECRET || request.headers.get('Authorization') !== `Bearer ${env.CRON_SECRET}`) {
@@ -59,7 +59,7 @@ async function watchKeys(env, origin) {
   const changed = before ? WATCHED_KEYS.filter(k => (before[k] || '') !== now[k]) : [];
   if (!before || changed.length) await saveSecuritySetting(env.DB, 'key_fingerprints', JSON.stringify(now), 'Security watch');
   if (!changed.length) return [];
-  const what = changed.map(k => `${k} ${now[k] ? (before[k] ? 'changed' : 'added') : 'removed'}${k === 'PAYSTACK_SECRET_KEY' && env[k] ? ` (now ${String(env[k]).startsWith('sk_live') ? 'LIVE' : 'TEST'} mode)` : ''}`);
+  const what = changed.map(k => `${k} ${now[k] ? (before[k] ? 'changed' : 'added') : 'removed'}${/^PAYSTACK_(KITCHEN_)?SECRET_KEY$/.test(k) && env[k] ? ` (now ${String(env[k]).startsWith('sk_live') ? 'LIVE' : 'TEST'} mode)` : ''}`);
   await logAdminAction(env.DB, { id: 'system', name: 'Security watch' }, 'service_key_changed', what.join('; '));
   await securityEmail(env, await alertAddresses(env), 'Lobi Stars admin: a payment or email key was changed', [
     'A service key in Cloudflare (Workers & Pages › lobi-stars-website › Settings › Variables and Secrets) was changed:',

@@ -1332,6 +1332,14 @@ orders, money taken and the top item.
    website checks each payment with Paystack.
 2. **Keys:** use Paystack **test** keys while rehearsing (below), then switch
    `PAYSTACK_SECRET_KEY` in Cloudflare Pages to the **live** key.
+
+   **MatchDay Kitchen's own Paystack account:** food payments can go to a separate
+   Paystack business, while tickets, membership and shirts stay on the main one.
+   In the kitchen's business, set the webhook URL to
+   **https://lobistarsfc.com/api/paystack-webhook-kitchen** and put its **live** secret key
+   in Cloudflare Pages as `PAYSTACK_KITCHEN_SECRET_KEY`, then redeploy. Until that key is
+   there, food payments use the main account. Website Health shows the kitchen account's
+   state under Payments. Refunds for food are then made in the kitchen's Paystack business.
 3. **Phone notifications:** run `npx web-push generate-vapid-keys` once and add
    `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT`
    (`mailto:info@lobistarsfc.com`) in Cloudflare Pages → Settings → Variables.

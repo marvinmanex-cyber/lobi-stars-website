@@ -30,6 +30,28 @@ export async function verify(env, reference) {
   return { status: d.status, amount: d.amount, currency: d.currency, reference: d.reference };
 }
 
+// ── MatchDay Kitchen's own Paystack account ──
+// With PAYSTACK_KITCHEN_SECRET_KEY set, food payments go to the kitchen's account; everything else
+// (tickets, membership, shirts) stays on the main one. Without it, food uses the main account.
+export const kitchenKey = env => env.PAYSTACK_KITCHEN_SECRET_KEY || env.PAYSTACK_SECRET_KEY;
+
+export async function initializeFood(env, opts) {
+  if (isFake(env)) return initialize(env, opts);
+  return initializeTransaction(kitchenKey(env), opts);
+}
+
+/** Paystack's record of a food payment. An order started on the main account before the switch is found there. */
+export async function verifyFood(env, reference) {
+  if (isFake(env) || !env.PAYSTACK_KITCHEN_SECRET_KEY) return verify(env, reference);
+  let d;
+  try { d = await verifyTransaction(env.PAYSTACK_KITCHEN_SECRET_KEY, reference); }
+  catch (err) {
+    if (!env.PAYSTACK_SECRET_KEY) throw err;
+    try { d = await verifyTransaction(env.PAYSTACK_SECRET_KEY, reference); } catch { throw err; }
+  }
+  return { status: d.status, amount: d.amount, currency: d.currency, reference: d.reference };
+}
+
 export async function setFakeTransaction(env, { reference, status = 'success', amount, currency = 'NGN' }) {
   await ensureFake(env.DB);
   await env.DB.prepare(`INSERT INTO paystack_fake (reference, status, amount, currency) VALUES (?, ?, ?, ?)

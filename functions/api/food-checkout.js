@@ -1,5 +1,5 @@
 import { randomId } from './_lib/crypto.js';
-import { initialize } from './_lib/paystackClient.js';
+import { initializeFood } from './_lib/paystackClient.js';
 import { ensureMenuSchema, orderingState } from './_lib/foodMenuDb.js';
 import { ensureFoodSchema, nextRef, foodSettings, priceCart, setDelivery } from './_lib/foodOrders.js';
 import { holdCheckoutRewards, releaseCheckout, ensureCheckoutColumns } from './_lib/rewardsCheckout.js';
@@ -81,7 +81,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     .catch(err => console.error('[food] unpaid alert', err));
   if (waitUntil) waitUntil(alert); else await alert;
   try {
-    const p = await initialize(env, {
+    const p = await initializeFood(env, {
       // Paystack needs an address; without one the club's orders address is used (the buyer gets no email).
       email: email || String(env.FOOD_ORDERS_EMAIL || 'food-orders@lobistarsfc.com'), amountKobo: pay.totalKobo, reference: ref,
       callbackUrl: `${origin}${b.returnTo === 'kitchen' ? '/kitchen/' : '/food/order/'}?ref=${encodeURIComponent(ref)}&t=${encodeURIComponent(token)}`,

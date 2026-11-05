@@ -1,3 +1,4 @@
+import { isFake } from './paystackClient.js';
 // Website Health: the checks. Each check is READ-ONLY and safe: no payments, no
 // emails to fans, no data changes. Secret values are never put in a result,
 // only whether they are set and work.
@@ -75,6 +76,9 @@ export const INFO = {
     fix: ['Cloudflare › Turnstile › the "Lobi Stars website" widget.', 'Make sure the secret key is saved as TURNSTILE_SECRET_KEY (Workers & Pages › lobi-stars-website › Settings › Variables and Secrets).', 'Press "Check again".'] },
 
   // ── Payments ──
+  paystack_kitchen: { category: 'payments', name: 'MatchDay Kitchen Paystack account', who: SA,
+    why: 'Food payments go to the kitchen\'s own Paystack account. If its key or webhook is wrong, fans can\'t pay for food, or paid orders stay "Awaiting payment".',
+    fix: ['Log in to the kitchen\'s Paystack business › Settings › API Keys & Webhooks.', 'Make sure the Live Webhook URL is exactly https://lobistarsfc.com/api/paystack-webhook-kitchen.', 'Copy the LIVE secret key and, in Cloudflare › Workers & Pages › lobi-stars-website › Settings › Variables and Secrets, set PAYSTACK_KITCHEN_SECRET_KEY to it.', 'Press "Check again".'] },
   paystack_keys: { category: 'payments', name: 'Paystack keys set (live on the live site)', who: SA,
     why: 'Without the live key no real payment can be taken; test keys on the live site mean fans "pay" with no money arriving.',
     fix: ['Log in to dashboard.paystack.com › Settings › API Keys & Webhooks.', 'Copy the LIVE secret key.', 'In Cloudflare › Workers & Pages › lobi-stars-website › Settings › Variables and Secrets, set PAYSTACK_SECRET_KEY to it.', 'Press "Check again".'] },
@@ -545,6 +549,23 @@ export async function stepPayments(ctx) {
   const hookRecent = lastHook && Date.now() - Date.parse(lastHook.at) < 24 * 3600e3;
   if (paidInPaystack && !hookRecent) out.push(result('paystack_webhook', 'FAIL', { problem: `Paystack had ${plural(paidInPaystack, 'successful payment')} in the last 24 hours but sent no confirmation to the website${lastHook ? ` (last one ${lastHook.at.slice(0, 16).replace('T', ' ')} UTC)` : ''}. Fans' paid orders may stay "Awaiting payment".`, details: { lastWebhook: lastHook?.at || null, paidLast24h: paidInPaystack } }));
   else out.push(result('paystack_webhook', 'PASS', { problem: lastHook ? `Last confirmation from Paystack: ${lastHook.at.slice(0, 16).replace('T', ' ')} UTC (signature checked on every one).` : 'No payments yet, so no confirmations expected. Every confirmation\'s signature is checked.', details: { lastWebhook: lastHook?.at || null } }));
+  // MatchDay Kitchen's own Paystack account (optional: without it, food uses the main account).
+  const kKey = env.PAYSTACK_KITCHEN_SECRET_KEY || '';
+  if (!kKey) out.push(result('paystack_kitchen', 'SKIPPED', { problem: 'No separate kitchen account yet: food payments go through the main Paystack account.' }));
+  else if (!/^sk_(live|test)_/.test(kKey)) out.push(result('paystack_kitchen', 'FAIL', { problem: 'PAYSTACK_KITCHEN_SECRET_KEY does not look like a Paystack secret key.' }));
+  else if (liveSite && /^sk_test_/.test(kKey)) out.push(result('paystack_kitchen', 'WARNING', { problem: 'MatchDay Kitchen is using a Paystack TEST key on the live website: fans can "pay" for food but no money arrives.' }));
+  else if (isFake(env)) out.push(result('paystack_kitchen', 'PASS', { problem: 'Kitchen key set (test site).' }));
+  else {
+    const f = await timedFetch(`https://api.paystack.co/transaction?perPage=50&status=success&from=${encodeURIComponent(ago(24))}`, { headers: { Authorization: `Bearer ${kKey}` } });
+    const d = f.res ? await f.res.json().catch(() => ({})) : {};
+    const row = await safeFirst(db, `SELECT value FROM settings WHERE key = 'paystack_kitchen_last_webhook'`);
+    let last = null; try { last = row ? JSON.parse(row.value) : null; } catch { last = null; }
+    const paid = f.res?.ok ? Number(d.meta?.total ?? (d.data || []).length) : 0;
+    if (!f.res) out.push(result('paystack_kitchen', 'WARNING', { problem: `Paystack did not answer for the kitchen's account: ${f.error}.`, who: 'Paystack', details: { error: f.error } }));
+    else if (f.res.status === 401) out.push(result('paystack_kitchen', 'FAIL', { problem: 'Paystack refused the kitchen\'s secret key (it may have been changed or deleted).', details: { status: 401 } }));
+    else if (paid && !(last && Date.now() - Date.parse(last.at) < 24 * 3600e3)) out.push(result('paystack_kitchen', 'FAIL', { problem: `The kitchen's Paystack account had ${plural(paid, 'successful payment')} in the last 24 hours but sent no confirmation to the website. Fans' paid orders may stay "Awaiting payment".`, details: { lastWebhook: last?.at || null, paidLast24h: paid } }));
+    else out.push(result('paystack_kitchen', 'PASS', { problem: `Kitchen key set. ${plural(paid, 'successful payment')} in the last 24 hours.${last ? ` Last confirmation: ${last.at.slice(0, 16).replace('T', ' ')} UTC.` : ''}` }));
+  }
   const stuck = await safeFirst(db, `SELECT COUNT(*) AS n FROM food_orders WHERE order_status IN ('AWAITING_PAYMENT', 'AWAITING_WHATSAPP') AND expires_at IS NOT NULL AND expires_at < ?`, ago(0.25));
   if (stuck === null) out.push(result('food_expiry', 'SKIPPED', { problem: 'MatchDay Kitchen is not set up.' }));
   else out.push(result('food_expiry', stuck.n ? 'WARNING' : 'PASS', { problem: stuck.n ? `${plural(stuck.n, 'unpaid food order')} past the time limit still open.` : 'Unpaid orders close on time.', fixId: stuck.n ? 'expire_food' : null }));

@@ -26,7 +26,7 @@
 //   (or "ready for pickup") -> DELIVERED.  Unconfirmed WhatsApp orders expire
 // after a few hours (Admin -> Menu & Prices -> Ordering settings).
 // Orders can be delivered to the seat or collected at a pickup point.
-import { verify } from './paystackClient.js';
+import { verifyFood } from './paystackClient.js';
 import { captureContact, splitName } from './contacts.js';
 import { sendEmail, foodOrderEmailHtml } from './email.js';
 import { raiseFoodAlert } from './foodAlerts.js';
@@ -217,7 +217,7 @@ export async function afterFoodPaid(env, order, paid, { waitUntil, origin = 'htt
 export async function confirmFoodPayment(env, order, { waitUntil, origin = 'https://lobistarsfc.com' } = {}) {
   if (!order) return { order, changed: false, reason: 'not found' };
   if (order.payment_status === 'paid') return { order, changed: false, reason: 'already paid' };
-  const t = await verify(env, order.paystack_reference); // throws if Paystack can't be reached
+  const t = await verifyFood(env, order.paystack_reference); // throws if Paystack can't be reached
   await env.DB.prepare(`UPDATE food_orders SET last_verify_at = ? WHERE id = ?`).bind(nowIso(), order.id).run();
   if (t.status === 'failed') {
     await env.DB.prepare(`UPDATE food_orders SET order_status = 'PAYMENT_FAILED', payment_status = 'failed' WHERE id = ? AND payment_status = 'pending'`).bind(order.id).run();

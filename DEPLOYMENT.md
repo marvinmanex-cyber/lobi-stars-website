@@ -45,7 +45,8 @@ these in git.
 | `DB` (D1 binding) | Everything | Already bound (see below). |
 | `ADMIN_CODE` | Owner sign-in to /admin | Long and private; staff use their own logins. |
 | `SESSION_SECRET` | Fan and staff sessions, ticket QR codes | Long random value. |
-| `PAYSTACK_SECRET_KEY` | Tickets, membership, shirts, food | Test key (`sk_test_`) while testing, then the live key. |
+| `PAYSTACK_SECRET_KEY` | Tickets, membership, shirts (and food, until the kitchen key below is set) | Test key (`sk_test_`) while testing, then the live key. Webhook: `https://lobistarsfc.com/api/paystack-webhook`. |
+| `PAYSTACK_KITCHEN_SECRET_KEY` | MatchDay Kitchen's own Paystack account (food payments only; optional) | The secret key of the kitchen's Paystack business. Webhook: `https://lobistarsfc.com/api/paystack-webhook-kitchen`. Without it, food uses the main account. |
 | `RESEND_API_KEY` | All emails | From Resend → API Keys. |
 | `RESEND_FROM` | Ticket, food and general emails | e.g. `Lobi Stars FC <noreply@lobistarsfc.com>`. |
 | `GA4_MEASUREMENT_ID` | Google Analytics 4 (only after a visitor accepts cookies) | e.g. `G-XXXXXXXXXX` (GA4 › Admin › Data streams › the web stream). Empty = GA4 off. Not secret. |

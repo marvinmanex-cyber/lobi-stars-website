@@ -5,6 +5,7 @@
 ADMIN_CODE=change-me
 SESSION_SECRET=change-me-long-random
 PAYSTACK_SECRET_KEY=sk_test_xxx
+# PAYSTACK_KITCHEN_SECRET_KEY=sk_test_xxx   # optional: MatchDay Kitchen's own Paystack account
 # PAYSTACK_FAKE=1            # local tests only, NEVER in production
 # FANS_DEV_LINKS=1           # local tests only
 

@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-05: MatchDay Kitchen can have its own Paystack account
+
+**Who it affects:** the website manager and whoever handles the kitchen's money. Fans see no change.
+- Food payments can now go to a separate Paystack business, with the kitchen's own bank account, reports and refunds. Tickets, membership and shirts stay on the main account.
+- **Nothing changes until the club adds the kitchen's key** (`PAYSTACK_KITCHEN_SECRET_KEY`, HANDOVER-TODO A4b). Until then food payments use the main account.
+- The kitchen has its own webhook address, which can only confirm food orders. Orders in progress at the moment of the switch still confirm.
+- Website Health has a new check under Payments, and adding or changing the kitchen's key sends a security alert.
+
 ## 2026-11-05: WhatsApp food orders: record the payment with evidence
 
 **Who it affects:** kitchen order handlers and supervisors, fans ordering on WhatsApp.
