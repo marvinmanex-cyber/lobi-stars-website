@@ -22,7 +22,7 @@ import { securitySettings, saveSecuritySetting } from '../_lib/adminSecurity.js'
 // POST /api/admin/backup { action: 'offsite_send_now' }     -- email the newest encrypted copy now
 // Passwords, sign-in tokens, two-step login secrets, push keys, private links
 // and stored pictures are never included.
-const SKIP_TABLES = new Set(['rate_limits', 'auth_tokens', 'food_photos', 'newsletter_assets', 'd1_migrations', 'sqlite_sequence']);
+const SKIP_TABLES = new Set(['rate_limits', 'auth_tokens', 'food_photos', 'food_payment_proofs', 'newsletter_assets', 'd1_migrations', 'sqlite_sequence']);
 const SKIP_COLUMNS = /password|token_hash|secret|keys_json|^data$|totp|unsub_token|view_token|^token$/i;
 const PAGE = 5000;
 const noStore = { 'Cache-Control': 'no-store' };
