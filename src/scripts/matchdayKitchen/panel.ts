@@ -210,7 +210,7 @@ const PAGES: Record<string, () => Promise<void>> = {
             <button class="mk-btn go" type="submit">Add to the menu</button></form></section>` : '')
         + (d.groups.length ? d.groups.map((g: any) => `<section class="mk-section"><h2>${esc(g.name)}</h2>${g.dishes.map((m: any) => `
         <div class="mk-dish${m.soldOut ? ' out' : ''}"><div class="n">${esc(m.emoji)} ${esc(m.name)}<small>${m.soldOut ? 'Not ready: fans cannot order it' : m.available ? 'Ready: fans can order it' : 'Hidden from the menu (admin)'}${d.canPrice ? '' : ` · ${esc(m.priceText)}`}</small></div>
-        <div class="ctl">${d.canPrice ? `<form class="price" data-price="${esc(m.id)}"><label class="mk-sr" for="p_${esc(m.id)}">Price of ${esc(m.name)} in naira</label>₦<input class="mk-input" id="p_${esc(m.id)}" inputmode="decimal" value="${esc(m.price)}" /><button class="mk-btn" type="submit">Save price</button></form>` : ''}
+        <div class="ctl">${d.canMenu ? `<form class="price rename" data-rename="${esc(m.id)}"><label class="mk-sr" for="n_${esc(m.id)}">New name for ${esc(m.name)}</label><input class="mk-input" id="n_${esc(m.id)}" maxlength="60" value="${esc(m.name)}" /><button class="mk-btn" type="submit">Save name</button></form>` : ''}${d.canPrice ? `<form class="price" data-price="${esc(m.id)}"><label class="mk-sr" for="p_${esc(m.id)}">Price of ${esc(m.name)} in naira</label>₦<input class="mk-input" id="p_${esc(m.id)}" inputmode="decimal" value="${esc(m.price)}" /><button class="mk-btn" type="submit">Save price</button></form>` : ''}
           <button type="button" class="mk-switch${m.soldOut ? '' : ' on'}" role="switch" aria-checked="${m.soldOut ? 'false' : 'true'}" aria-label="${esc(m.name)}: ready for fans" data-dish="${esc(m.id)}" data-name="${esc(m.name)}" data-act="${m.soldOut ? 'back' : 'soldout'}"><i aria-hidden="true"></i><span>${m.soldOut ? 'OFF' : 'ON'}</span></button>${d.canMenu ? `<button type="button" class="mk-btn danger" data-del="${esc(m.id)}" data-name="${esc(m.name)}">Delete</button>` : ''}</div></div>`).join('')}</section>`).join('')
         : '<p class="mk-empty">The menu is empty. Dishes are added in the website admin (Menu & Prices).</p>');
     };
@@ -235,6 +235,12 @@ const PAGES: Record<string, () => Promise<void>> = {
       if ((e.target as HTMLElement).id === 'dishF') {
         e.preventDefault();
         act((e.target as HTMLElement).querySelector('button'), async () => { const r = await api('menu', { method: 'POST', body: { action: 'add', item: { name: $('dName').value, category: $('dCat').value, price: $('dPrice').value, description: $('dDesc').value } } }); toast(`${r.name} added at ${r.price}. Fans can order it now.`); await draw(); });
+        return;
+      }
+      const rn = (e.target as HTMLElement).closest('[data-rename]') as HTMLFormElement | null;
+      if (rn) {
+        e.preventDefault();
+        act(rn.querySelector('button'), async () => { const r = await api('menu', { method: 'POST', body: { action: 'rename', id: rn.dataset.rename, name: (rn.querySelector('input') as HTMLInputElement).value } }); toast(r.unchanged ? 'The name is the same.' : `Renamed to ${r.name}. Fans see the new name.`); await draw(); });
         return;
       }
       const f = (e.target as HTMLElement).closest('[data-price]') as HTMLFormElement | null;

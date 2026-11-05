@@ -4528,7 +4528,7 @@ tabs open. WhatsApp and Telegram open in their own apps.
 | **Kitchen alerts** | Late orders, dishes turned off, orders cancelled today. |
 | **Food orders** | Search by order number or name, filter by status and day (30 a page). |
 | **One order** | All details and a button for each next status the website allows (the next step in green). **Cancel** (red, asks first) only for roles allowed to cancel. |
-| **Menu and prices** | An **ON / OFF switch on every dish** (anyone). ON: fans see **Ready** and can order it. OFF: fans see **Not ready** and can't. Supervisors and Super Admins also have **Turn all ON** / **Turn all OFF**, **Save price**, **Add a dish** and **Delete**. |
+| **Menu and prices** | An **ON / OFF switch on every dish** (anyone). ON: fans see **Ready** and can order it. OFF: fans see **Not ready** and can't. Supervisors and Super Admins also have **Turn all ON** / **Turn all OFF**, **Save name** (rename), **Save price**, **Add a dish** and **Delete**. |
 | **Kitchen WhatsApp** (also the green **WhatsApp** button, always in the top bar) | Opens the kitchen's WhatsApp chats (+234 708 009 4985) in WhatsApp Web, in another tab of the same browser (always the same tab). WhatsApp does not allow its chats to be shown inside another website, so they can't appear on the dashboard itself. The first time, scan the QR code on the screen with the kitchen phone (WhatsApp › Linked devices) and keep that tab open. On a phone it opens the WhatsApp app. |
 | **Telegram updates** (also the blue **Telegram** button next to WhatsApp in the top bar) | Opens the kitchen Telegram channel in another tab. Until its link is pasted in Staff accounts › Settings, a Super Admin who taps it is taken there, and staff are told to ask a Super Admin. |
 | **Handover notes** | Notes for the next shift. Supervisors and Super Admins can pin and delete any note; others delete their own. |
@@ -4627,7 +4627,7 @@ It is the same setting as the button on the admin live order board, and each cha
 | Turn a dish on or off | Yes | Yes | Yes | Yes |
 | Turn all dishes on or off | | | Yes | Yes |
 | Cancel orders | | Yes | Yes | Yes |
-| Change prices, add and delete dishes | | | Yes | Yes |
+| Change prices, rename, add and delete dishes | | | Yes | Yes |
 | Pin or delete anyone's notes | | | Yes | Yes |
 | Everyone's activity, CSV | | | Yes | Yes |
 | Open and close food ordering | | | Yes | Yes |
@@ -4635,7 +4635,7 @@ It is the same setting as the button on the admin live order board, and each cha
 
 Who can cancel can be changed in **Staff accounts › Settings** (with the Telegram link and the "late after" minutes). Only supervisors and Super Admins change prices, add dishes and delete dishes.
 
-**Managing the menu from the fans' page:** a kitchen supervisor or Super Admin signed in to MatchDay Kitchen who opens **lobistarsfc.com/kitchen** on the same device sees a yellow **Manage the menu** bar and, on every item, a price box and **Delete**. **+ Add menu item** adds a dish (name, category, price, optional description; a photo can be added later in the website admin). Fans never see these, and the website checks the role on every change. If the kitchen sign-in has ended, the bar says so with a link to sign in again. **Delete:** a dish with past orders is kept out of sight for the reports; any other is removed. Everything is recorded in the activity log.
+**Managing the menu from the fans' page:** a kitchen supervisor or Super Admin signed in to MatchDay Kitchen who opens **lobistarsfc.com/kitchen** on the same device sees a yellow **Manage the menu** bar and, on every item, a name box (**Save name**), a price box and **Delete**. A new name shows to fans straight away; orders already placed keep the name they were placed with. **+ Add menu item** adds a dish (name, category, price, optional description; a photo can be added later in the website admin). Fans never see these, and the website checks the role on every change. If the kitchen sign-in has ended, the bar says so with a link to sign in again. **Delete:** a dish with past orders is kept out of sight for the reports; any other is removed. Everything is recorded in the activity log.
 
 **Staff accounts (adding someone):** **Staff accounts** › **Add staff**: full name and role, then **Add staff and make login code**. The website makes the Staff ID (LSK-001, LSK-002 …) and an 8-number login code. The code is shown **once**, with **Send on WhatsApp** and **Copy**; only a scrambled copy is stored, so nobody can look it up later. Lost or leaked code: **Edit** › **Give a new login code**. **A new login code or switching someone off signs them out on every tablet straight away.** Supervisors have the kitchen's back end, not the website admin (/admin); only a Super Admin adds or changes a supervisor.
 

@@ -95,7 +95,7 @@ ${f.adult ? '<span class="kx-age">18+ | Drink Responsibly</span>' : ''}
 const MGR_HINT = 'ls_kitchen_manager';
 let mgr: { csrf: string; canMenu: boolean; canPrice: boolean } | null = null;
 function mgrControls(f: Item) {
-  return `<div class="kx-mgr">${mgr!.canPrice ? `<form class="kx-mgrprice" data-mgr-price="${esc(f.id)}"><label>₦<input inputmode="numeric" maxlength="9" value="${Math.round(f.priceKobo / 100)}" aria-label="New price for ${esc(f.name)}" /></label><button type="submit">Save price</button></form>` : ''}
+  return `<div class="kx-mgr">${mgr!.canMenu ? `<form class="kx-mgrprice" data-mgr-name="${esc(f.id)}"><label><input maxlength="60" value="${esc(f.name)}" aria-label="New name for ${esc(f.name)}" /></label><button type="submit">Save name</button></form>` : ''}${mgr!.canPrice ? `<form class="kx-mgrprice" data-mgr-price="${esc(f.id)}"><label>₦<input inputmode="numeric" maxlength="9" value="${Math.round(f.priceKobo / 100)}" aria-label="New price for ${esc(f.name)}" /></label><button type="submit">Save price</button></form>` : ''}
 ${mgr!.canMenu ? `<button type="button" class="kx-mgrdel" data-mgr-del="${esc(f.id)}" data-name="${esc(f.name)}">Delete</button>` : ''}</div>`;
 }
 const mgrSay = (t: string) => { $('kxMgrMsg').textContent = t; };
@@ -145,6 +145,16 @@ async function initManager() {
     } catch (ex) { err.textContent = (ex as Error).message; err.hidden = false; } finally { btn.disabled = false; }
   });
   $('kxMenu').addEventListener('submit', async e => {
+    const rn = (e.target as HTMLElement).closest('[data-mgr-name]') as HTMLFormElement | null;
+    if (rn) {
+      e.preventDefault();
+      try {
+        const r = await mgrApi('menu', { action: 'rename', id: rn.dataset.mgrName, name: rn.querySelector('input')!.value });
+        await loadMenu();
+        mgrSay(r.unchanged ? 'The name is the same.' : `Renamed to ${r.name}. Fans see the new name.`);
+      } catch (ex) { mgrSay((ex as Error).message); }
+      return;
+    }
     const f = (e.target as HTMLElement).closest('[data-mgr-price]') as HTMLFormElement | null;
     if (!f) return;
     e.preventDefault();

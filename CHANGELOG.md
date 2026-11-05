@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-05: Food menu: rename any dish
+
+**Who it affects:** kitchen supervisors, Super Admins, fans.
+- Every dish now has a name box and **Save name**, on **lobistarsfc.com/kitchen** (Manage the menu) and in MatchDay Kitchen › **Menu and prices**. Supervisors and Super Admins only.
+- Fans see the new name when their menu next refreshes (within a minute). Orders already placed keep the name they were placed with. Each rename is recorded in the activity log.
+
 ## 2026-11-05: Food menu: add, delete and change prices from the menu itself
 
 **Who it affects:** kitchen supervisors, Super Admins.

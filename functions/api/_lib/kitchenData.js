@@ -236,6 +236,19 @@ export async function addDish(db, v, by) {
   await history(db, id, by, `Added at ${formatNaira(value.price_kobo)} (MatchDay Kitchen)`);
   return { ok: true, id, name: value.name, price: formatNaira(value.price_kobo) };
 }
+/** A new name for a dish. Orders already placed keep the name they were placed with. */
+export async function renameDish(db, id, name, by) {
+  await ready(db);
+  const n = String(name ?? '').replace(/\s+/g, ' ').trim().slice(0, 60);
+  if (n.length < 2) return { error: 'Enter the new name for this dish.', status: 400 };
+  const d = await db.prepare(`SELECT id, name FROM food_items WHERE id = ? AND archived = 0`).bind(String(id)).first();
+  if (!d) return { error: 'That dish is no longer on the menu.', status: 404 };
+  if (n === d.name) return { ok: true, name: n, old: d.name, unchanged: true };
+  if (await db.prepare(`SELECT 1 FROM food_items WHERE archived = 0 AND LOWER(name) = LOWER(?) AND id != ?`).bind(n, d.id).first()) return { error: 'Another dish already has that name.', status: 400 };
+  await db.prepare(`UPDATE food_items SET name = ?, updated_at = ? WHERE id = ?`).bind(n, new Date().toISOString(), d.id).run();
+  await history(db, d.id, by, `Renamed from "${d.name}" (MatchDay Kitchen)`);
+  return { ok: true, name: n, old: d.name };
+}
 /** Off the menu. A dish with past orders is kept out of sight for the reports; any other is removed. */
 export async function deleteDish(db, id, by) {
   await ready(db);

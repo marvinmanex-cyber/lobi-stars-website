@@ -3,7 +3,7 @@
 //   POST login {loginCode} (staff) or {login, password} (Super Admins)   POST logout {idle?}   GET session
 //   POST open {page}                       GET kitchen   GET board   GET alerts
 //   GET orders?q&status&day&page           GET order?id   POST order {id, to}
-//   GET menu   POST menu {id, action: soldout|back|price|add|delete|all_on|all_off, price, item}
+//   GET menu   POST menu {id, action: soldout|back|price|rename|add|delete|all_on|all_off, price, name, item}
 //   GET analytics?day   GET shift   POST shift {action: start|end}
 //   GET notes   POST notes {action: add|pin|unpin|delete, id, text}
 //   GET activity?staff&day&page[&format=csv]   GET staff   POST staff {action: add|edit|settings, …}
@@ -123,6 +123,13 @@ export async function onRequest(context) {
           const r = await K.addDish(db, body.item || {}, staffName(user));
           if (r.error) return json({ error: r.error }, 400);
           await mkLog(db, user, `Added ${r.name} to the menu at ${r.price}`, { kind: 'menu', request });
+          return json(r);
+        }
+        if (body.action === 'rename') {
+          if (!perms.menu) return denied();
+          const r = await K.renameDish(db, body.id, body.name, staffName(user));
+          if (r.error) return json({ error: r.error }, r.status);
+          if (!r.unchanged) await mkLog(db, user, `Renamed ${r.old} to ${r.name}`, { kind: 'menu', request });
           return json(r);
         }
         if (body.action === 'delete') {

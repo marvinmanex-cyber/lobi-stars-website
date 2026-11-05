@@ -246,6 +246,17 @@ test('only supervisors and Super Admins add dishes, delete dishes and change pri
     assert.equal((await S.call('menu', { action: 'add', item: { name: name.toUpperCase(), category: cat, price: 500 } })).status, 400, 'no two dishes with one name');
     let it = (await fan()).find(i => i.id === r.data.id);
     assert.equal(it.priceKobo, 150000); assert.equal(it.soldOut, false);
+    // Rename: supervisors and Super Admins; fans see it; no blanks or duplicates; orders keep their name.
+    assert.equal((await P.call('menu', { action: 'rename', id: r.data.id, name: 'Nope' })).status, 403);
+    assert.equal((await S.call('menu', { action: 'rename', id: r.data.id, name: ' ' })).status, 400);
+    const other = (await fan()).find(i => i.id !== r.data.id);
+    assert.equal((await S.call('menu', { action: 'rename', id: r.data.id, name: other.name.toUpperCase() })).status, 400, 'no two dishes with one name');
+    assert.equal((await S.call('menu', { action: 'rename', id: 'no-such-dish', name: 'Ghost Dish' })).status, 404);
+    const rn = await A.call('menu', { action: 'rename', id: r.data.id, name: `${name}   Skidd` });
+    assert.equal(rn.status, 200); assert.equal(rn.data.name, `${name} Skidd`);
+    assert.equal((await fan()).find(i => i.id === r.data.id).name, `${name} Skidd`);
+    assert.ok((await A.call('activity')).data.rows.some(a => a.action === `Renamed ${name} to ${name} Skidd`), 'recorded');
+    assert.equal((await S.call('menu', { action: 'rename', id: r.data.id, name })).status, 200);
     // Prices: the settings can no longer give this to anyone else.
     assert.equal((await S.call('staff', { action: 'settings', telegramUrl: '', cancelRoles: ['pass', 'supervisor'], priceRoles: ['pass', 'cook'], lateMinutes: 5 })).status, 200);
     const P2 = await as((await signCode(added.data.loginCode)).cookie);

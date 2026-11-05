@@ -298,3 +298,4 @@ a { color: var(--green); }
 .mk-allbox { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .mk-allbox b { display: block; font-size: 20px; }
 .mk-allbox span { display: block; font-size: 15px; }
+.mk-dish .rename input { width: 220px; max-width: 100%; }
