@@ -87,8 +87,84 @@ function card(f: Item) {
 ${f.badge && BADGE[f.badge] ? `<span class="kx-badge kx-badge--${esc(f.badge)}">${BADGE[f.badge]}</span>` : ''}${f.soldOut ? `<span class="kx-soldtag">${off}</span>` : '<span class="kx-readytag">Ready</span>'}</div>
 <div class="kx-body"><span class="kx-name">${esc(f.name)}</span>${f.description ? `<p class="kx-desc">${esc(f.description)}</p>` : ''}
 ${f.adult ? '<span class="kx-age">18+ | Drink Responsibly</span>' : ''}
-<div class="kx-meta"><span class="kx-price">${naira(f.priceKobo)}</span>${spice}</div>${ctrl}</div></li>`;
+<div class="kx-meta"><span class="kx-price">${naira(f.priceKobo)}</span>${spice}</div>${ctrl}${mgr ? mgrControls(f) : ''}</div></li>`;
 }
+// ── Manage the menu (kitchen supervisors and Super Admins only) ──
+// Fans never call the kitchen API: only a device where a supervisor or Super Admin has signed
+// in to MatchDay Kitchen carries the hint below. The server checks the role on every change.
+const MGR_HINT = 'ls_kitchen_manager';
+let mgr: { csrf: string; canMenu: boolean; canPrice: boolean } | null = null;
+function mgrControls(f: Item) {
+  return `<div class="kx-mgr">${mgr!.canPrice ? `<form class="kx-mgrprice" data-mgr-price="${esc(f.id)}"><label>₦<input inputmode="numeric" maxlength="9" value="${Math.round(f.priceKobo / 100)}" aria-label="New price for ${esc(f.name)}" /></label><button type="submit">Save price</button></form>` : ''}
+${mgr!.canMenu ? `<button type="button" class="kx-mgrdel" data-mgr-del="${esc(f.id)}" data-name="${esc(f.name)}">Delete</button>` : ''}</div>`;
+}
+const mgrSay = (t: string) => { $('kxMgrMsg').textContent = t; };
+async function mgrApi(path: string, body?: unknown) {
+  const r = await fetch(`/api/matchday-kitchen/${path}`, body ? { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': mgr?.csrf || '' }, credentials: 'same-origin', body: JSON.stringify(body) } : { headers: { 'X-Activity': '0' }, credentials: 'same-origin', cache: 'no-store' });
+  const d = await r.json().catch(() => ({}));
+  if (r.status === 401) { mgr = null; mgrSignedOut(); renderMenu(); throw new Error('Your kitchen sign-in has ended.'); }
+  if (!r.ok) throw new Error(d.error || 'Something went wrong. Please try again.');
+  return d;
+}
+function mgrSignedOut() {
+  $('kxMgr').hidden = false; $('kxMgrAdd').hidden = true;
+  $('kxMgrWho').innerHTML = 'Your kitchen sign-in has ended. <a href="/matchday-kitchen/">Sign in again</a> to change the menu.';
+}
+async function initManager() {
+  let hint = false;
+  try { hint = localStorage.getItem(MGR_HINT) === '1'; } catch { /* private mode */ }
+  if (!hint) return;
+  let s: any;
+  try {
+    const r = await fetch('/api/matchday-kitchen/session', { headers: { 'X-Activity': '0' }, credentials: 'same-origin', cache: 'no-store' });
+    if (r.status === 401) { mgrSignedOut(); return; }
+    if (!r.ok) return;
+    s = await r.json();
+  } catch { return; }
+  if (!s?.perms?.menu && !s?.perms?.price) { try { localStorage.removeItem(MGR_HINT); } catch { /* ignore */ } return; }
+  mgr = { csrf: s.csrf, canMenu: !!s.perms.menu, canPrice: !!s.perms.price };
+  $('kxMgr').hidden = false; $('kxMgrAdd').hidden = !mgr.canMenu;
+  $('kxMgrWho').textContent = `Signed in as ${s.user.name}. Only you can see these options: fans can't.`;
+  renderMenu();
+  const dlg = $<HTMLDialogElement>('kxMgrDlg');
+  if (mgr.canMenu) {
+    const d = await mgrApi('menu').catch(() => null);
+    if (d) $<HTMLSelectElement>('kxMgrCat').innerHTML = d.categories.map((c: Cat) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+  }
+  $('kxMgrAdd').addEventListener('click', () => { $('kxMgrErr').hidden = true; dlg.showModal(); $('kxMgrName').focus(); });
+  $('kxMgrX').addEventListener('click', () => dlg.close());
+  $('kxMgrForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = $<HTMLButtonElement>('kxMgrSave'), err = $('kxMgrErr');
+    err.hidden = true; btn.disabled = true;
+    try {
+      const r = await mgrApi('menu', { action: 'add', item: { name: $<HTMLInputElement>('kxMgrName').value, category: $<HTMLSelectElement>('kxMgrCat').value, price: $<HTMLInputElement>('kxMgrPrice').value, description: $<HTMLTextAreaElement>('kxMgrDesc').value } });
+      $<HTMLFormElement>('kxMgrForm').reset(); dlg.close();
+      await loadMenu();
+      mgrSay(`${r.name} added at ${r.price}. Fans can order it now.`);
+    } catch (ex) { err.textContent = (ex as Error).message; err.hidden = false; } finally { btn.disabled = false; }
+  });
+  $('kxMenu').addEventListener('submit', async e => {
+    const f = (e.target as HTMLElement).closest('[data-mgr-price]') as HTMLFormElement | null;
+    if (!f) return;
+    e.preventDefault();
+    try {
+      const r = await mgrApi('menu', { action: 'price', id: f.dataset.mgrPrice, price: f.querySelector('input')!.value });
+      await loadMenu();
+      mgrSay(`Price saved: ${r.price}.`);
+    } catch (ex) { mgrSay((ex as Error).message); }
+  });
+  $('kxMenu').addEventListener('click', async e => {
+    const b = (e.target as HTMLElement).closest('[data-mgr-del]') as HTMLButtonElement | null;
+    if (!b || !confirm(`Delete ${b.dataset.name} from the menu? Fans will no longer see it. Past orders stay in the reports.`)) return;
+    try {
+      await mgrApi('menu', { action: 'delete', id: b.dataset.mgrDel });
+      await loadMenu();
+      mgrSay(`${b.dataset.name} deleted from the menu.`);
+    } catch (ex) { mgrSay((ex as Error).message); }
+  });
+}
+
 function sortedCats() {
   // "Match Day Combos" (any category with "combo" in its name) comes first.
   return [...(menu?.categories || [])].sort((a, b) => Number(/combo/i.test(b.name)) - Number(/combo/i.test(a.name)));
@@ -472,7 +548,8 @@ export function startKitchen() {
   initSeat(); recall();
   const q = new URLSearchParams(location.search);
   if (q.get('ref') && q.get('t')) showDone({ ref: q.get('ref')!, token: q.get('t')! });
-  loadMenu(); loadFixture();
-  window.setInterval(() => { if (document.visibilityState === 'visible') loadMenu(); }, 60000);
+  loadMenu(); loadFixture(); initManager();
+  // (Not while a manager is typing a new price.)
+  window.setInterval(() => { if (document.visibilityState === 'visible' && !document.activeElement?.closest('.kx-mgr')) loadMenu(); }, 60000);
   window.setInterval(renderState, 30000);
 }

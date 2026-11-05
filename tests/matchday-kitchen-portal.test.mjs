@@ -138,7 +138,7 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   assert.equal((await C.call('menu', { action: 'all_off' })).status, 403, 'a cook cannot turn everything off');
   assert.equal((await C.call('menu')).data.canAll, false);
   assert.equal((await C.call('menu', { id: 'suya', action: 'price', price: '2000' })).status, 403, 'a cook cannot change prices');
-  assert.equal((await S.call('menu', { id: 'suya', action: 'price', price: 'abc' })).data.error, 'Enter the price as a number, e.g. 2500.');
+  assert.equal((await S.call('menu', { id: 'suya', action: 'price', price: 'abc' })).data.error, 'Enter the price as a number above 0, e.g. 2500.');
   assert.equal((await S.call('menu', { id: 'suya', action: 'price', price: '-5' })).status, 400);
   assert.equal((await S.call('menu', { id: 'suya', action: 'price', price: '1650' })).status, 200);
   assert.equal(rows(`SELECT price_kobo FROM food_items WHERE id = 'suya';`)[0].price_kobo, 165000);
@@ -225,6 +225,52 @@ test('every dish has a switch: a supervisor can turn all off and on; stock that 
     assert.ok((await S.call('activity')).data.rows.some(a => /^Turned \d+ dish(es)? on \(ready\)$/.test(a.action)));
   } finally {
     sql(keep.map(k => `UPDATE food_items SET sold_out = ${k.sold_out}, stock = ${k.stock === null ? 'NULL' : k.stock} WHERE id = '${k.id}';`).join(' '));
+  }
+});
+
+test('only supervisors and Super Admins add dishes, delete dishes and change prices; fans get the new menu at once', async () => {
+  const S = await as((await signCode(SUP.code)).cookie), A = await as((await signIn(SA_EMAIL, SA_PW)).cookie);
+  const added = await S.call('staff', { action: 'add', name: `Menu Cook ${T}`, role: 'pass' });
+  const P = await as((await signCode(added.data.loginCode)).cookie);
+  const fan = async () => (await fetch(`${BASE}/api/food/menu`, { cache: 'no-store' }).then(r => r.json())).categories.flatMap(c => c.items);
+  const cat = (await S.call('menu')).data.categories[0].id;
+  const name = `Test Pie ${T}`;
+  try {
+    assert.equal(P.s.perms.menu, false); assert.equal(P.s.perms.price, false); assert.equal(S.s.perms.menu, true); assert.equal(A.s.perms.menu, true);
+    assert.equal((await P.call('menu')).data.categories.length, 0);
+    assert.equal((await P.call('menu', { action: 'add', item: { name, category: cat, price: 500 } })).status, 403);
+    assert.equal((await S.call('menu', { action: 'add', item: { name: '', category: cat, price: 500 } })).status, 400);
+    assert.equal((await S.call('menu', { action: 'add', item: { name, category: cat, price: 0 } })).status, 400);
+    const r = await S.call('menu', { action: 'add', item: { name, category: cat, price: '1,500', description: 'Hot and fresh' } });
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    assert.equal((await S.call('menu', { action: 'add', item: { name: name.toUpperCase(), category: cat, price: 500 } })).status, 400, 'no two dishes with one name');
+    let it = (await fan()).find(i => i.id === r.data.id);
+    assert.equal(it.priceKobo, 150000); assert.equal(it.soldOut, false);
+    // Prices: the settings can no longer give this to anyone else.
+    assert.equal((await S.call('staff', { action: 'settings', telegramUrl: '', cancelRoles: ['pass', 'supervisor'], priceRoles: ['pass', 'cook'], lateMinutes: 5 })).status, 200);
+    const P2 = await as((await signCode(added.data.loginCode)).cookie);
+    assert.equal(P2.s.perms.price, false);
+    assert.equal((await P.call('menu', { action: 'price', id: r.data.id, price: 900 })).status, 403);
+    assert.equal((await A.call('menu', { action: 'price', id: r.data.id, price: 0 })).status, 400, 'never free by mistake');
+    assert.equal((await A.call('menu', { action: 'price', id: r.data.id, price: 900 })).status, 200);
+    it = (await fan()).find(i => i.id === r.data.id);
+    assert.equal(it.priceKobo, 90000);
+    // Delete: refused for others; gone for fans; a dish with past orders is kept for reports.
+    assert.equal((await P.call('menu', { action: 'delete', id: r.data.id })).status, 403);
+    const del = await S.call('menu', { action: 'delete', id: r.data.id });
+    assert.equal(del.status, 200); assert.ok(!del.data.archived, 'never ordered: removed');
+    assert.ok(!(await fan()).some(i => i.id === r.data.id));
+    assert.equal(rows(`SELECT COUNT(*) AS n FROM food_items WHERE id = '${r.data.id}'`)[0].n, 0);
+    assert.equal((await S.call('menu', { action: 'delete', id: r.data.id })).status, 404);
+    const r2 = await S.call('menu', { action: 'add', item: { name: `${name} 2`, category: cat, price: 700 } });
+    sql(`INSERT INTO food_orders (id, seat, stand, phone, email, items_json, total_kobo, paystack_reference, payment_status) VALUES ('fo_${T}', 'A1', 'Popular Stand', '08030000000', 'fan@example.com', '[{"id":"${r2.data.id}","qty":1}]', 70000, 'ref_${T}', 'paid');`);
+    const del2 = await A.call('menu', { action: 'delete', id: r2.data.id });
+    assert.equal(del2.data.archived, true, 'past orders: kept for reports');
+    assert.ok(!(await fan()).some(i => i.id === r2.data.id));
+    assert.ok((await A.call('activity')).data.rows.some(a => a.action === `Deleted ${name} from the menu` && a.code === SUP.staffId), 'recorded');
+    sql(`DELETE FROM food_orders WHERE id = 'fo_${T}'; DELETE FROM food_items WHERE id = '${r2.data.id}';`);
+  } finally {
+    sql(`DELETE FROM mk_staff WHERE id = '${added.data.id}';`);
   }
 });
 

@@ -63,6 +63,24 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
     <nav class="kx-tabs" aria-label="Menu categories"><div class="kx-wrap" id="kxTabs"></div></nav>
 
     <section class="kx-wrap kx-again" id="kxAgain2" hidden aria-label="Order again"></section>
+    <!-- Only for a kitchen supervisor or Super Admin signed in on this device (see initManager in lib/kitchen.ts). -->
+    <section class="kx-wrap kx-mgrbar" id="kxMgr" hidden aria-label="Manage the menu">
+      <div><b>Manage the menu</b><span id="kxMgrWho"></span></div>
+      <button type="button" class="kx-btn kx-btn--pay" id="kxMgrAdd" hidden>+ Add menu item</button>
+      <p class="kx-mgrmsg" id="kxMgrMsg" role="status"></p>
+    </section>
+    <dialog class="kx-drawer kx-mgrdlg" id="kxMgrDlg" aria-labelledby="kxMgrDlgH">
+      <div class="kx-dhead"><h2 id="kxMgrDlgH">Add menu item</h2><button type="button" class="kx-x" id="kxMgrX" aria-label="Close">&times;</button></div>
+      <form class="kx-dbody" id="kxMgrForm" novalidate>
+        <label class="kx-f"><span>Name</span><input id="kxMgrName" maxlength="60" autocomplete="off" /></label>
+        <label class="kx-f"><span>Category</span><select id="kxMgrCat"></select></label>
+        <label class="kx-f"><span>Price (₦)</span><input id="kxMgrPrice" inputmode="numeric" maxlength="9" autocomplete="off" placeholder="2500" /></label>
+        <label class="kx-f"><span>Description (optional)</span><textarea id="kxMgrDesc" maxlength="160"></textarea></label>
+        <p class="kx-err" id="kxMgrErr" role="alert" hidden></p>
+        <button type="submit" class="kx-btn kx-btn--pay" id="kxMgrSave">Add to the menu</button>
+        <p class="kx-small">Fans can order it straight away. A photo can be added later in the website admin.</p>
+      </form>
+    </dialog>
     <section class="kx-wrap kx-menu" id="kxMenu" aria-label="Menu">
       <p class="kx-empty kx-loading">Loading the menu…</p>
     </section>

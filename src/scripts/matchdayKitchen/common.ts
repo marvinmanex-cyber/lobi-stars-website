@@ -70,7 +70,7 @@ export const GROUPS: Group[] = [
   ] },
   { title: 'Orders and menu', tiles: [
     { id: 'orders', title: 'Food orders', text: 'Find, check and update any order' },
-    { id: 'menu', title: 'Menu and prices', text: 'Turn dishes on and off, change prices' },
+    { id: 'menu', title: 'Menu and prices', text: 'Turn dishes on and off, prices, add and delete dishes' },
   ] },
   { title: 'Team and messages', tiles: [
     { id: 'whatsapp', title: 'Kitchen WhatsApp', text: 'Open the kitchen chats (+234 708 009 4985)', external: 'whatsapp', style: 'wa' },

@@ -94,7 +94,7 @@ export async function saveSettings(db, who, v) {
   if (url && !/^https:\/\/(t\.me|telegram\.me)\/[\w+/-]+$/i.test(url)) return { error: 'The Telegram link must look like https://t.me/yourchannel' };
   const roles = list => (Array.isArray(list) ? list : []).filter(r => ROLES[r]).join(',');
   const late = Math.max(1, Math.min(120, Math.round(Number(v.lateMinutes) || 5)));
-  await db.batch([put('telegram_url', url), put('cancel_roles', roles(v.cancelRoles)), put('price_roles', roles(v.priceRoles)), put('late_minutes', String(late))]);
+  await db.batch([put('telegram_url', url), put('cancel_roles', roles(v.cancelRoles)), put('late_minutes', String(late))]);
   return { ok: true };
 }
 
@@ -104,7 +104,8 @@ export function permissions(user, settings) {
   return {
     move: true, soldOut: true,
     cancel: sa || settings.cancelRoles.includes(user.role),
-    price: sa || settings.priceRoles.includes(user.role),
+    price: sa || user.role === 'supervisor',        // prices, and adding and deleting dishes: supervisors and Super Admins only
+    menu: sa || user.role === 'supervisor',
     notes: sa || user.role === 'supervisor',        // pin / delete anyone's handover notes
     // The kitchen's back end: supervisors see everyone's activity, manage cooks and pass staff, and change the settings.
     activityAll: sa || user.role === 'supervisor', staff: sa || user.role === 'supervisor', superAdmin: sa,

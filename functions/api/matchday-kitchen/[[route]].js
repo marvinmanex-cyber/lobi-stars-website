@@ -3,7 +3,7 @@
 //   POST login {loginCode} (staff) or {login, password} (Super Admins)   POST logout {idle?}   GET session
 //   POST open {page}                       GET kitchen   GET board   GET alerts
 //   GET orders?q&status&day&page           GET order?id   POST order {id, to}
-//   GET menu   POST menu {id, action: soldout|back|price, price}
+//   GET menu   POST menu {id, action: soldout|back|price|add|delete|all_on|all_off, price, item}
 //   GET analytics?day   GET shift   POST shift {action: start|end}
 //   GET notes   POST notes {action: add|pin|unpin|delete, id, text}
 //   GET activity?staff&day&page[&format=csv]   GET staff   POST staff {action: add|edit|settings, …}
@@ -102,7 +102,7 @@ export async function onRequest(context) {
         }
         return json({ ok: true, receipt });
       }
-      case 'GET menu': return json({ groups: await K.menu(db), canPrice: perms.price, canAll: perms.ordering });
+      case 'GET menu': return json({ groups: await K.menu(db), canPrice: perms.price, canAll: perms.ordering, canMenu: perms.menu, categories: perms.menu ? await K.menuCategories(db) : [] });
       case 'POST menu': {
         if (body.action === 'soldout' || body.action === 'back') {
           const r = await K.setSoldOut(db, body.id, body.action === 'soldout', staffName(user));
@@ -116,6 +116,21 @@ export async function onRequest(context) {
           const r = await K.setAllReady(db, body.action === 'all_on', staffName(user));
           if (r.changed) await mkLog(db, user, `Turned ${r.changed} dish${r.changed === 1 ? '' : 'es'} ${body.action === 'all_on' ? 'on (ready)' : 'off (not ready)'}`, { kind: 'menu', request });
           return json({ ok: true, changed: r.changed });
+        }
+        // Adding and deleting dishes: supervisors and Super Admins only.
+        if (body.action === 'add') {
+          if (!perms.menu) return denied();
+          const r = await K.addDish(db, body.item || {}, staffName(user));
+          if (r.error) return json({ error: r.error }, 400);
+          await mkLog(db, user, `Added ${r.name} to the menu at ${r.price}`, { kind: 'menu', request });
+          return json(r);
+        }
+        if (body.action === 'delete') {
+          if (!perms.menu) return denied();
+          const r = await K.deleteDish(db, body.id, staffName(user));
+          if (r.error) return json({ error: r.error }, 404);
+          await mkLog(db, user, `Deleted ${r.name} from the menu`, { kind: 'menu', request });
+          return json(r);
         }
         if (body.action === 'price') {
           if (!perms.price) return denied();
@@ -164,7 +179,7 @@ export async function onRequest(context) {
         if (body.action === 'settings') {
           const r = await saveSettings(db, user.code, body);
           if (r.error) return json({ error: r.error }, 400);
-          await mkLog(db, user, 'Changed MatchDay Kitchen settings', { kind: 'settings', details: `Telegram: ${oneLine(body.telegramUrl, 120) || 'none'}; cancel: ${(body.cancelRoles || []).join(', ') || 'super admins only'}; prices: ${(body.priceRoles || []).join(', ') || 'super admins only'}; late after ${body.lateMinutes} min`, request });
+          await mkLog(db, user, 'Changed MatchDay Kitchen settings', { kind: 'settings', details: `Telegram: ${oneLine(body.telegramUrl, 120) || 'none'}; cancel: ${(body.cancelRoles || []).join(', ') || 'super admins only'}; late after ${body.lateMinutes} min`, request });
           return json({ ok: true });
         }
         return json({ error: 'Unknown action.' }, 400);

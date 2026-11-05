@@ -208,6 +208,7 @@ tick(); setInterval(tick, 10e3);
 function signedOut(msg = 'You were signed out. Please sign in again.') { stopIdle(); stopAlarms(); try { sessionStorage.removeItem(SAVE_KEY); } catch { /* */ } showSignin(started ? msg : ''); started = false; }
 setSignedOutHandler(() => signedOut());
 $('signoutBtn').addEventListener('click', async () => {
+  try { localStorage.removeItem('ls_kitchen_manager'); } catch { /* private mode */ }
   try { await api('logout', { method: 'POST', body: {} }); } catch { /* signed out anyway */ }
   signedOut('You have signed out.');
 });
@@ -250,6 +251,7 @@ async function startApp() {
   await loadSession();
   $('signin').hidden = true; $('app').hidden = false;
   if (location.pathname !== '/matchday-kitchen/' || location.search) history.replaceState(null, '', '/matchday-kitchen/');
+  try { if (session.perms.menu) localStorage.setItem('ls_kitchen_manager', '1'); else localStorage.removeItem('ls_kitchen_manager'); } catch { /* private mode */ }
   renderHome(); show('');
   // Refreshed by accident: reopen the pages that were open, but stay on Home.
   let saved: string[] = [];

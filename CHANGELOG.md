@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-05: Food menu: add, delete and change prices from the menu itself
+
+**Who it affects:** kitchen supervisors, Super Admins.
+- On **lobistarsfc.com/kitchen**, a supervisor or Super Admin signed in to MatchDay Kitchen on that device sees **Manage the menu**, **+ Add menu item**, a price box and **Delete** on each item. Fans never see them.
+- The same options are on MatchDay Kitchen › **Menu and prices**.
+- In the kitchen area, only supervisors and Super Admins can change prices, add dishes or delete dishes. **Who can change prices** was removed from Settings. A price must be above ₦0.
+
 ## 2026-11-05: Food: an ON / OFF switch on every item, Ready / Not ready for fans
 
 **Who it affects:** kitchen staff, supervisors, fans ordering food.

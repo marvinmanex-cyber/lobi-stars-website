@@ -202,13 +202,25 @@ const PAGES: Record<string, () => Promise<void>> = {
       const all = d.groups.flatMap((g: any) => g.dishes), on = all.filter((m: any) => !m.soldOut).length;
       main.innerHTML = (all.length ? `<section class="mk-section"><div class="mk-box mk-allbox"><div><b>${on} of ${all.length} dishes are ON</b><span>Fans can order only dishes that are ON. Changes show on the fans' menu within a minute.</span></div>
           ${d.canAll ? `<div class="mk-actions" style="justify-content:flex-start;margin:0"><button type="button" class="mk-btn go" data-all="all_on">Turn all ON</button><button type="button" class="mk-btn danger" data-all="all_off">Turn all OFF</button></div>` : ''}</div></section>` : '')
+        + (d.canMenu ? `<section class="mk-section"><h2>Add a dish</h2><form class="mk-box" id="dishF"><div class="mk-filters">
+            <div class="mk-field"><label for="dName">Name</label><input id="dName" maxlength="60" /></div>
+            <div class="mk-field"><label for="dCat">Category</label><select id="dCat">${d.categories.map((x: any) => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</select></div>
+            <div class="mk-field"><label for="dPrice">Price (₦)</label><input id="dPrice" inputmode="numeric" maxlength="9" /></div>
+            <div class="mk-field"><label for="dDesc">Description (optional)</label><input id="dDesc" maxlength="160" /></div></div>
+            <button class="mk-btn go" type="submit">Add to the menu</button></form></section>` : '')
         + (d.groups.length ? d.groups.map((g: any) => `<section class="mk-section"><h2>${esc(g.name)}</h2>${g.dishes.map((m: any) => `
         <div class="mk-dish${m.soldOut ? ' out' : ''}"><div class="n">${esc(m.emoji)} ${esc(m.name)}<small>${m.soldOut ? 'Not ready: fans cannot order it' : m.available ? 'Ready: fans can order it' : 'Hidden from the menu (admin)'}${d.canPrice ? '' : ` · ${esc(m.priceText)}`}</small></div>
         <div class="ctl">${d.canPrice ? `<form class="price" data-price="${esc(m.id)}"><label class="mk-sr" for="p_${esc(m.id)}">Price of ${esc(m.name)} in naira</label>₦<input class="mk-input" id="p_${esc(m.id)}" inputmode="decimal" value="${esc(m.price)}" /><button class="mk-btn" type="submit">Save price</button></form>` : ''}
-          <button type="button" class="mk-switch${m.soldOut ? '' : ' on'}" role="switch" aria-checked="${m.soldOut ? 'false' : 'true'}" aria-label="${esc(m.name)}: ready for fans" data-dish="${esc(m.id)}" data-name="${esc(m.name)}" data-act="${m.soldOut ? 'back' : 'soldout'}"><i aria-hidden="true"></i><span>${m.soldOut ? 'OFF' : 'ON'}</span></button></div></div>`).join('')}</section>`).join('')
+          <button type="button" class="mk-switch${m.soldOut ? '' : ' on'}" role="switch" aria-checked="${m.soldOut ? 'false' : 'true'}" aria-label="${esc(m.name)}: ready for fans" data-dish="${esc(m.id)}" data-name="${esc(m.name)}" data-act="${m.soldOut ? 'back' : 'soldout'}"><i aria-hidden="true"></i><span>${m.soldOut ? 'OFF' : 'ON'}</span></button>${d.canMenu ? `<button type="button" class="mk-btn danger" data-del="${esc(m.id)}" data-name="${esc(m.name)}">Delete</button>` : ''}</div></div>`).join('')}</section>`).join('')
         : '<p class="mk-empty">The menu is empty. Dishes are added in the website admin (Menu & Prices).</p>');
     };
     main.addEventListener('click', (e: Event) => {
+      const del = (e.target as HTMLElement).closest('[data-del]') as HTMLButtonElement | null;
+      if (del) {
+        if (!confirm(`Delete ${del.dataset.name} from the menu? Fans will no longer see it. Past orders stay in the reports.`)) return;
+        act(del, async () => { await api('menu', { method: 'POST', body: { action: 'delete', id: del.dataset.del } }); toast(`${del.dataset.name} deleted from the menu.`); await draw(); });
+        return;
+      }
       const all = (e.target as HTMLElement).closest('[data-all]') as HTMLButtonElement | null;
       if (all) {
         const turnOn = all.dataset.all === 'all_on';
@@ -220,6 +232,11 @@ const PAGES: Record<string, () => Promise<void>> = {
       if (b) act(b, async () => { await api('menu', { method: 'POST', body: { id: b.dataset.dish, action: b.dataset.act } }); toast(b.dataset.act === 'soldout' ? `${b.dataset.name} is OFF. Fans see "Not ready".` : `${b.dataset.name} is ON. Fans can order it.`); await draw(); });
     });
     main.addEventListener('submit', (e: Event) => {
+      if ((e.target as HTMLElement).id === 'dishF') {
+        e.preventDefault();
+        act((e.target as HTMLElement).querySelector('button'), async () => { const r = await api('menu', { method: 'POST', body: { action: 'add', item: { name: $('dName').value, category: $('dCat').value, price: $('dPrice').value, description: $('dDesc').value } } }); toast(`${r.name} added at ${r.price}. Fans can order it now.`); await draw(); });
+        return;
+      }
       const f = (e.target as HTMLElement).closest('[data-price]') as HTMLFormElement | null;
       if (!f) return;
       e.preventDefault();
@@ -347,9 +364,8 @@ const PAGES: Record<string, () => Promise<void>> = {
         <section class="mk-section"><h2>Settings</h2><form class="mk-box" id="setF">
           <div class="mk-field"><label for="sTg">Telegram channel link (shows the Telegram updates button)</label><input id="sTg" placeholder="https://t.me/yourchannel" value="${esc(d.settings.telegramUrl)}" /></div>
           <div class="mk-filters" style="align-items:flex-start"><fieldset class="mk-field" style="border:0;padding:0"><legend class="mk-label">Who can cancel orders</legend>${roleChecks('cancel', d.settings.cancelRoles)}</fieldset>
-          <fieldset class="mk-field" style="border:0;padding:0"><legend class="mk-label">Who can change prices</legend>${roleChecks('price', d.settings.priceRoles)}</fieldset>
           <div class="mk-field"><label for="sLate">Orders are late after (minutes)</label><input id="sLate" type="number" min="1" max="120" value="${d.settings.lateMinutes}" /></div></div>
-          <p class="mk-status" style="text-transform:none;letter-spacing:0">Super admins can always cancel orders and change prices.</p>
+          <p class="mk-status" style="text-transform:none;letter-spacing:0">Super Admins can always cancel orders. Only supervisors and Super Admins change prices, add dishes and delete dishes.</p>
           <button class="mk-btn go" type="submit">Save settings</button></form></section>
         ${sa ? `<section class="mk-section"><h2>Data check</h2><div class="mk-box"><p style="margin:0 0 10px">Checks that MatchDay Kitchen can read the website's orders and menu.</p><button type="button" class="mk-btn" id="chk">Run the data check</button><div id="chkOut" style="margin-top:10px"></div></div></section>` : ''}`;
       window.scrollTo(0, 0);
@@ -378,7 +394,7 @@ const PAGES: Record<string, () => Promise<void>> = {
         act(form.querySelector('button'), async () => { const r = await api('staff', { method: 'POST', body: { action: 'add', name: $('aName').value, role: $('aRole').value } }); codeShown = r; toast('Staff account added.'); await draw(); });
       } else if (form.id === 'setF') {
         const vals = (n: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${n}"]:checked`)].map(i => i.value);
-        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'settings', telegramUrl: $('sTg').value.trim(), cancelRoles: vals('cancel'), priceRoles: vals('price'), lateMinutes: $('sLate').value } }); toast('Settings saved.'); shell?.shiftChanged(); await draw(); });
+        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'settings', telegramUrl: $('sTg').value.trim(), cancelRoles: vals('cancel'), lateMinutes: $('sLate').value } }); toast('Settings saved.'); shell?.shiftChanged(); await draw(); });
       } else if (form.dataset.editform) {
         const g = (n: string) => form.querySelector(`[name="${n}"]`) as HTMLInputElement;
         act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'edit', id: form.dataset.editform, name: g('name').value, role: g('role').value, active: g('active').checked } }); toast('Changes saved.'); await draw(); });

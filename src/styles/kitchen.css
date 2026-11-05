@@ -214,3 +214,20 @@
 .kx-btn--alert { width: 100%; margin: 10px 0 0; background: #fff; color: var(--kx-navy); }
 .kx-btn--alert.on { background: var(--kx-green); color: #04140A; }
 .kx-readytag { position: absolute; right: 8px; bottom: 8px; padding: 4px 9px; border-radius: 999px; background: #0E7A26; color: #fff; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+/* Manage the menu: kitchen supervisors and Super Admins only */
+.kx-mgrbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin-top: 14px; margin-bottom: 14px; padding: 14px 16px; border: 2px solid #FFC72C; border-radius: 14px; background: rgba(255, 199, 44, .1); color: #fff; }
+.kx-mgrbar[hidden] { display: none; }
+.kx-mgrbar b { display: block; font: 700 20px/1.2 'Barlow Condensed', sans-serif; color: #FFC72C; }
+.kx-mgrbar span { display: block; font-size: 14px; }
+.kx-mgrbar a { color: #FFC72C; text-decoration: underline; }
+.kx-mgrbar .kx-btn { width: auto; }
+.kx-mgrmsg { flex: 1 1 100%; margin: 0; font-weight: 600; color: #7CF29A; }
+.kx-mgrmsg:empty { display: none; }
+.kx-mgr { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px; padding-top: 10px; border-top: 1px dashed rgba(255, 199, 44, .5); }
+.kx-mgrprice { display: flex; flex: 1 1 100%; align-items: center; gap: 6px; margin: 0; }
+.kx-mgrprice label { display: flex; flex: 1 1 0; min-width: 0; align-items: center; gap: 4px; font-weight: 700; color: #FFC72C; }
+.kx-mgrprice input { width: 100%; min-width: 0; min-height: 44px; padding: 0 8px; border: 1px solid #5B6B92; border-radius: 8px; background: #0B1730; color: #fff; font: inherit; }
+.kx-mgrprice button, .kx-mgrdel { flex: none; min-height: 44px; padding: 0 12px; border-radius: 8px; font: 700 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
+.kx-mgrprice button { border: 0; background: #FFC72C; color: #111; }
+.kx-mgrdel { flex: 1 1 100%; border: 1px solid #FF8A8F; background: transparent; color: #FF8A8F; }
+.kx-mgrdlg .kx-dbody { display: flex; flex-direction: column; gap: 12px; }

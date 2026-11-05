@@ -11,7 +11,7 @@
 // time stamps as the admin pages); menu changes update only the one field
 // (plus updated_at) and write the dish's history.
 import { ensureFoodSchema, moveOrder, STATUS, STAFF_MOVES, whereText, formatNaira, expireStale } from './foodOrders.js';
-import { ensureMenuSchema, history } from './foodMenuDb.js';
+import { ensureMenuSchema, history, parseItem, wasOrdered } from './foodMenuDb.js';
 import { receiptEmailHtml, receiptWhatsappText, receiptPdf, receiptPdfName, waNumber, canReceipt, LOGO_JPEG } from './foodReceipt.js';
 import { sendEmail } from './email.js';
 
@@ -218,11 +218,43 @@ export async function setAllReady(db, on, by) {
   return { changed: rows.length };
 }
 
+export async function menuCategories(db) {
+  await ready(db);
+  return (await db.prepare(`SELECT id, name FROM food_categories ORDER BY sort, name`).all()).results;
+}
+/** A new dish, on the fans' menu straight away. A photo can be added later in the website admin. */
+export async function addDish(db, v, by) {
+  await ready(db);
+  const cats = await menuCategories(db);
+  const { value, error } = parseItem({ name: v.name, price: Number(String(v.price ?? '').replace(/[₦,\s]/g, '')), category: v.category, description: v.description, emoji: v.emoji }, cats);
+  if (error) return { error };
+  if (await db.prepare(`SELECT 1 FROM food_items WHERE archived = 0 AND LOWER(name) = LOWER(?)`).bind(value.name).first()) return { error: 'A dish with that name is already on the menu.' };
+  const id = `fi-${crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`, now = new Date().toISOString();
+  const sort = ((await db.prepare(`SELECT MAX(sort) AS m FROM food_items`).first())?.m ?? -1) + 1;
+  await db.prepare(`INSERT INTO food_items (id, name, description, price_kobo, category_id, photo_id, emoji, available, sold_out, adult, max_per_order, stock, spice, badge, sort, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, NULL, ?, 1, 0, 0, NULL, NULL, 0, NULL, ?, ?, ?)`).bind(id, value.name, value.description, value.price_kobo, value.category_id, value.emoji || '🍽️', sort, now, now).run();
+  await history(db, id, by, `Added at ${formatNaira(value.price_kobo)} (MatchDay Kitchen)`);
+  return { ok: true, id, name: value.name, price: formatNaira(value.price_kobo) };
+}
+/** Off the menu. A dish with past orders is kept out of sight for the reports; any other is removed. */
+export async function deleteDish(db, id, by) {
+  await ready(db);
+  const d = await db.prepare(`SELECT id, name FROM food_items WHERE id = ? AND archived = 0`).bind(String(id)).first();
+  if (!d) return { error: 'That dish is no longer on the menu.' };
+  if (await wasOrdered(db, d.id)) {
+    await db.prepare(`UPDATE food_items SET archived = 1, updated_at = ? WHERE id = ?`).bind(new Date().toISOString(), d.id).run();
+    await history(db, d.id, by, 'Deleted from the menu; kept for past order reports (MatchDay Kitchen)');
+    return { ok: true, name: d.name, archived: true };
+  }
+  await db.batch([db.prepare(`DELETE FROM food_items WHERE id = ?`).bind(d.id), db.prepare(`DELETE FROM food_item_history WHERE item_id = ?`).bind(d.id)]);
+  return { ok: true, name: d.name };
+}
+
 /** Price in naira (whole or with kobo). */
 export async function setPrice(db, id, price, by) {
   await ready(db);
   const n = Number(String(price ?? '').replace(/[₦,\s]/g, ''));
-  if (String(price ?? '').trim() === '' || !Number.isFinite(n) || n < 0) return { error: 'Enter the price as a number, e.g. 2500.' };
+  if (String(price ?? '').trim() === '' || !Number.isFinite(n) || n <= 0) return { error: 'Enter the price as a number above 0, e.g. 2500.' };
   if (n > 1_000_000) return { error: 'That price looks too high. Enter the price in naira, e.g. 2500.' };
   const kobo = Math.round(n * 100);
   const d = await db.prepare(`SELECT id, name, price_kobo FROM food_items WHERE id = ? AND archived = 0`).bind(String(id)).first();
