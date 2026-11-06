@@ -84,7 +84,7 @@ import Layout from '../../layouts/Layout.astro';
   const time = iso => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
   const STEPS = ['PAID', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'];
   const STAMPS = { PAID: 'paidAt', PREPARING: 'preparingAt', OUT_FOR_DELIVERY: 'outAt', DELIVERED: 'deliveredAt' };
-  const HEAD = { PAID: 'confirmed', ACCEPTED: 'accepted by the kitchen', PREPARING: 'being prepared', OUT_FOR_DELIVERY: 'on its way', DELIVERED: 'delivered',
+  const HEAD = { PAID: 'confirmed', ACCEPTED: 'accepted by the kitchen', PREPARING: 'being prepared', READY: 'ready', OUT_FOR_DELIVERY: 'on its way', FAILED_DELIVERY: 'waiting for you', DELIVERED: 'delivered',
     AWAITING_WHATSAPP: 'saved: send it to us on WhatsApp', CONFIRMED: 'confirmed: waiting for your payment' };
   let tries = 0, timer = 0;
 
@@ -120,9 +120,9 @@ import Layout from '../../layouts/Layout.astro';
     [...$('items').children].forEach((li, n) => { li.firstChild.textContent = `${o.items[n].qty} × ${o.items[n].name}`; });
     $('total').textContent = naira(o.totalKobo);
     $('note').hidden = !o.notes; $('note').textContent = o.notes ? `Your note: ${o.notes}` : '';
-    const stopped = o.status === 'CANCELLED' || o.status === 'REFUNDED';
+    const stopped = o.status === 'CANCELLED' || o.status === 'REFUNDED' || o.status === 'REJECTED';
     // Accepted by the kitchen counts as the "confirmed" step; WhatsApp orders before payment show no step yet.
-    const at = STEPS.indexOf(o.status === 'ACCEPTED' ? 'PAID' : o.status);
+    const at = STEPS.indexOf(o.status === 'ACCEPTED' ? 'PAID' : ['READY', 'FAILED_DELIVERY'].includes(o.status) ? 'PREPARING' : o.status);
     // Paid (online): the kitchen order is complete. Once per order.
     if (at >= 0 && !stopped) { try { if (!localStorage.getItem('ga_fd_' + o.ref)) { localStorage.setItem('ga_fd_' + o.ref, '1'); if (window.lsGa) window.lsGa('kitchen_order_complete', { method: 'online', value: o.totalKobo / 100, currency: 'NGN' }); } } catch (e) {} }
     document.querySelectorAll('#track li').forEach((li, n) => {
@@ -130,10 +130,11 @@ import Layout from '../../layouts/Layout.astro';
       li.classList.toggle('now', !stopped && n === at);
       li.querySelector('[data-time]').textContent = n <= at ? time(o[STAMPS[li.dataset.step]]) : '';
     });
-    $('headline').textContent = stopped ? (o.status === 'REFUNDED' ? 'refunded' : 'cancelled') : HEAD[o.status] || 'confirmed';
-    if (o.status === 'OUT_FOR_DELIVERY' && o.fulfilment === 'pickup') $('headline').textContent = 'ready to collect';
+    $('headline').textContent = stopped ? (o.status === 'REFUNDED' ? 'refunded' : o.status === 'REJECTED' ? 'not accepted' : 'cancelled') : HEAD[o.status] || 'confirmed';
+    if ((o.status === 'READY' || o.status === 'OUT_FOR_DELIVERY') && o.fulfilment === 'pickup') $('headline').textContent = 'ready to collect';
     $('cancelled').hidden = !stopped;
     $('cancelled').textContent = o.status === 'REFUNDED' ? 'This order was cancelled and refunded.' : stopped ? 'This order was cancelled by the club. If you were charged, a refund will be arranged; contact the club with your reference.' : '';
+    if (o.status === 'REJECTED') $('cancelled').textContent = `We could not accept this order${o.rejectReason ? `: ${o.rejectReason}` : ''}. ${o.refundNote || ''}`.trim();
     show('done');
     if (!stopped && o.status !== 'DELIVERED') timer = setTimeout(load, 10000);
   }

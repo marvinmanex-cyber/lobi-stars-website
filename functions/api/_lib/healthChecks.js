@@ -569,7 +569,7 @@ export async function stepPayments(ctx) {
   const stuck = await safeFirst(db, `SELECT COUNT(*) AS n FROM food_orders WHERE order_status IN ('AWAITING_PAYMENT', 'AWAITING_WHATSAPP') AND expires_at IS NOT NULL AND expires_at < ?`, ago(0.25));
   if (stuck === null) out.push(result('food_expiry', 'SKIPPED', { problem: 'MatchDay Kitchen is not set up.' }));
   else out.push(result('food_expiry', stuck.n ? 'WARNING' : 'PASS', { problem: stuck.n ? `${plural(stuck.n, 'unpaid food order')} past the time limit still open.` : 'Unpaid orders close on time.', fixId: stuck.n ? 'expire_food' : null }));
-  const late = await safeAll(db, `SELECT ref, order_status, paid_iso FROM food_orders WHERE order_status IN ('PAID', 'ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY') AND paid_iso IS NOT NULL AND paid_iso < ? AND paid_iso > ? ORDER BY paid_iso LIMIT 20`, ago(1), ago(12));
+  const late = await safeAll(db, `SELECT ref, order_status, paid_iso FROM food_orders WHERE order_status IN ('PAID', 'ACCEPTED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY') AND paid_iso IS NOT NULL AND paid_iso < ? AND paid_iso > ? ORDER BY paid_iso LIMIT 20`, ago(1), ago(12));
   if (late === null) out.push(result('food_delivery', 'SKIPPED', { problem: 'MatchDay Kitchen is not set up.' }));
   else out.push(result('food_delivery', late.length ? 'WARNING' : 'PASS', { problem: late.length ? `${plural(late.length, 'paid order')} not delivered after an hour: ${list(late.map(o => o.ref))}.` : 'No paid order waiting more than an hour.', details: { orders: late } }));
   return out;

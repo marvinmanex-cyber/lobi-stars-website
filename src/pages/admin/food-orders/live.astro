@@ -112,8 +112,8 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const naira = k => '₦' + (Number(k || 0) / 100).toLocaleString('en-NG');
   const time = iso => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
-  const NEXT = { PAID: ['Start preparing', 'PREPARING', '#2563EB'], ACCEPTED: ['Start preparing', 'PREPARING', '#2563EB'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY', '#7C3AED'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED', '#166534'] };
-  const BACK = { ACCEPTED: 'PAID', PREPARING: 'PAID', OUT_FOR_DELIVERY: 'PREPARING', DELIVERED: 'OUT_FOR_DELIVERY' };
+  const NEXT = { PAID: ['Start preparing', 'PREPARING', '#2563EB'], ACCEPTED: ['Start preparing', 'PREPARING', '#2563EB'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY', '#7C3AED'], READY: ['Out for delivery', 'OUT_FOR_DELIVERY', '#7C3AED'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED', '#166534'] };
+  const BACK = {}; // Orders only move forward (6 Nov 2026).
   let orders = [], known = new Set(), first = true, offset = 0, settings = {};
   const WA = ['AWAITING_WHATSAPP', 'CONFIRMED'];
   // "Chat on WhatsApp" with the right ready-made message for where the order is.
@@ -157,7 +157,7 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     document.querySelector('[data-n="WA"]').textContent = wa.length;
     document.querySelector('[data-col="WA"]').innerHTML = wa.length ? wa.map(waCard).join('') : '<p class="lb-empty">No WhatsApp orders waiting.</p>';
     for (const col of ['PAID', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'AWAITING_PAYMENT']) {
-      const list = orders.filter(o => o.status === col || (col === 'PREPARING' && o.status === 'ACCEPTED'));
+      const list = orders.filter(o => o.status === col || (col === 'PREPARING' && o.status === 'ACCEPTED') || (col === 'OUT_FOR_DELIVERY' && ['READY', 'FAILED_DELIVERY'].includes(o.status)));
       if (col === 'DELIVERED') list.reverse();
       document.querySelector(`[data-n="${col}"]`).textContent = list.length;
       const box = document.querySelector(`[data-col="${col}"]`);

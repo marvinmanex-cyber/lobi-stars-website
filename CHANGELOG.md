@@ -8,12 +8,26 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-06: MatchDay Kitchen order workflow, Phase 1
+
+**Who it affects:** all kitchen staff, Super Admins and fans ordering food. **Staff need to:** add any runners as the new **Delivery / runner** role, and Super Admins now need their two-step code to sign in to the kitchen.
+- **Order steps:** Confirm order, Start cooking, **Food ready** (new), Take for delivery, Delivered. Orders only move forward. New side steps: **Rejected**, and **Delivery failed** (a supervisor then tries again or cancels).
+- **Reasons:** rejecting or cancelling now needs a reason. A paid order that is rejected or cancelled goes on a refund list. The refund itself is still done by hand in Paystack.
+- **Who does what:** only supervisors and Super Admins confirm, reject and cancel. The "Who can cancel" setting is gone, so order handlers can no longer cancel. Cooks start cooking and mark food ready, and can flag **Something is missing**. Runners take and deliver.
+- **What each person sees:** cooks and runners no longer see totals, payment details or sales figures. The kitchen screen shows each role its own orders.
+- **Alerts by role:** new orders ring for supervisors and Super Admins, start-cooking for cooks, ready for runners. Cooks no longer hear new unconfirmed orders.
+- **Super Admin alerts:** Everything, Urgent only or Off, in Staff accounts. You can't switch off if that would leave nobody alerted. Nobody else can mute.
+- **Fans:** the tracking page shows Ready, and the reason and refund note if an order isn't accepted. Emails go out when an order is accepted, on its way or rejected. No WhatsApp message goes out on rejection.
+- **Automatic WhatsApp updates** are built but switched off until a Meta account is connected.
+- **Venues:** the site can now hold more than one venue; the existing one is the first. Everything is recorded with who, when and before and after.
+
 ## 2026-11-06: MatchDay Kitchen: three fixes from the error check
 
 **Who it affects:** kitchen staff.
 - **Food orders** search: searching by order number or name now finds the order on any day, not only the selected date.
 - An online order that was never paid no longer says "Paid online" on its page.
 - The "Waiting" time no longer shows on delivered, cancelled or expired orders.
+- The kitchen poster page now fits a phone screen. Printing it is unchanged.
 
 ## 2026-11-06: One WhatsApp number for kitchen orders and replies; no message on rejection
 

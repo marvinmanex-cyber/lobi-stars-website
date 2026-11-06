@@ -432,8 +432,8 @@ async function orderWhatsApp() {
 }
 
 // ── Confirmation and status ──
-type Order = { fulfilment?: string; pickupPoint?: string; deliverWhen?: string; deliverAt?: string | null; alerts?: boolean; ref: string; status: string; statusLabel: string; seat: string; stand: string; items: { name: string; qty: number; priceKobo: number }[]; totalKobo: number; channel: string; notes: string };
-const STEP: Record<string, number> = { PAID: 1, ACCEPTED: 1, PREPARING: 2, OUT_FOR_DELIVERY: 3, DELIVERED: 4 };
+type Order = { fulfilment?: string; pickupPoint?: string; deliverWhen?: string; deliverAt?: string | null; alerts?: boolean; rejectReason?: string; refundNote?: string; ref: string; status: string; statusLabel: string; seat: string; stand: string; items: { name: string; qty: number; priceKobo: number }[]; totalKobo: number; channel: string; notes: string };
+const STEP: Record<string, number> = { PAID: 1, ACCEPTED: 1, PREPARING: 2, READY: 2, FAILED_DELIVERY: 2, OUT_FOR_DELIVERY: 3, DELIVERED: 4 };
 let statusTimer: number | undefined;
 function showDone(o: { ref: string; token: string; whatsappUrl?: string }) {
   $('kxMenu').hidden = true; $('kxSeatBar').hidden = true; document.querySelector<HTMLElement>('.kx-tabs')!.hidden = true;
@@ -461,16 +461,16 @@ function showDone(o: { ref: string; token: string; whatsappUrl?: string }) {
 function renderStatus(o: Order) {
   const step = STEP[o.status] || 0;
   // A change while the page is open: a short chime and a buzz.
-  if (lastStatus && lastStatus !== o.status && ['PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status)) chime();
+  if (lastStatus && lastStatus !== o.status && ['PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status)) chime();
   lastStatus = o.status;
   const pickup = o.fulfilment === 'pickup', no = String(o.ref).split('-').pop();
   $('kxCollect').hidden = !pickup || !step;
   $('kxCollectNo').textContent = `#${no}`;
-  $('kxCollectAt').textContent = o.status === 'OUT_FOR_DELIVERY' ? `Ready now at ${o.pickupPoint || 'the pickup point'}: show this number.` : `Collect at ${o.pickupPoint || 'the pickup point'} when it is ready.`;
+  $('kxCollectAt').textContent = o.status === 'READY' || o.status === 'OUT_FOR_DELIVERY' ? `Ready now at ${o.pickupPoint || 'the pickup point'}: show this number.` : `Collect at ${o.pickupPoint || 'the pickup point'} when it is ready.`;
   const due = o.deliverAt ? new Date(o.deliverAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
   $('kxWhenShow').hidden = !(o.deliverWhen && o.deliverWhen !== 'now') || o.status === 'DELIVERED';
   $('kxWhenShow').textContent = o.deliverWhen === 'half-time' ? `Ordered for half-time${due ? ` (about ${due})` : ''}.` : o.deliverWhen === 'kickoff' ? `Ordered for kick-off${due ? ` (${due})` : ''}.` : '';
-  $('kxAlertBtn').hidden = !step || ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(o.status) || !('PushManager' in window) || !('serviceWorker' in navigator);
+  $('kxAlertBtn').hidden = !step || ['OUT_FOR_DELIVERY', 'DELIVERED', 'FAILED_DELIVERY'].includes(o.status) || !('PushManager' in window) || !('serviceWorker' in navigator);
   if (o.alerts || alertsOn) { $('kxAlertBtn').classList.add('on'); $('kxAlertBtn').textContent = "🔔 Alerts on: we'll tell you when it's on the way"; }
   document.querySelectorAll<HTMLElement>('#kxSteps li').forEach(li => {
     const n = Number(li.dataset.step);
@@ -480,14 +480,17 @@ function renderStatus(o: Order) {
     AWAITING_PAYMENT: 'Waiting for your payment to be confirmed. This usually takes a few seconds.',
     AWAITING_WHATSAPP: 'Send the order message on WhatsApp, pay as shown below and forward your receipt in the same chat.',
     CONFIRMED: 'Waiting for your payment. Pay as shown below and forward your receipt on WhatsApp.',
+    READY: o.fulfilment === 'pickup' ? 'Ready to collect: show your number at the counter.' : 'Your food is ready and a runner will bring it to you soon.',
+    FAILED_DELIVERY: 'We came to your seat and could not find you. Please stay at your seat or contact a steward.',
+    REJECTED: `We could not accept this order${o.rejectReason ? `: ${o.rejectReason}` : ''}. ${o.refundNote || ''}`.trim(),
     PAID: 'Paid. The kitchen has your order.', ACCEPTED: 'The kitchen has your order.',
     PREPARING: 'Your food is being prepared.', OUT_FOR_DELIVERY: o.fulfilment === 'pickup' ? 'Ready to collect: show your number at the counter.' : 'Your order is on the way to your seat.',
     DELIVERED: 'Delivered. Enjoy the match!', PAYMENT_FAILED: 'The payment did not go through. Your cart is still saved: please try again.',
     EXPIRED: 'This order was cancelled because it was not paid in time. Your cart is still saved: please order again.',
-    CANCELLED: 'This order was cancelled. Please contact a steward or order again.',
+    CANCELLED: `This order was cancelled. ${o.refundNote || 'Please contact a steward or order again.'}`,
   };
   $('kxStatus').textContent = msg[o.status] || o.statusLabel;
-  $('kxDoneH').textContent = ['PAYMENT_FAILED', 'EXPIRED', 'CANCELLED'].includes(o.status) ? 'Order not completed' : step ? 'Order received' : 'We have your order';
+  $('kxDoneH').textContent = ['PAYMENT_FAILED', 'EXPIRED', 'CANCELLED', 'REJECTED'].includes(o.status) ? 'Order not completed' : step ? 'Order received' : 'We have your order';
   $('kxSum').innerHTML = `${o.items.map(i => `${esc(i.qty)} × ${esc(i.name)}: ${naira(i.qty * i.priceKobo)}`).join('<br>')}<br><b>Total ${naira(o.totalKobo)}</b><br>${esc([o.stand, o.seat].filter(Boolean).join(', '))}${o.notes ? `<br>Note: ${esc(o.notes)}` : ''}`;
   // A confirmed payment empties the cart; a failed one keeps it.
   if (step) { const p = store.get<{ ref: string }>(PENDING, 24 * 3600e3); if (p?.ref === o.ref) { qty = {}; saveCart(); store.del(PENDING); renderCart(); } }

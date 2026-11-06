@@ -15,7 +15,9 @@ import { syncPush } from './push';
 
 type P = { id: string; ref: string; no: string; status: string; minutes: number; where: string };
 let ctx: AudioContext | null = null, timer = 0, newBeep = 0, lateBeep = 0, waBeep = 0, cookBeep = 0, running = false, openFn: (p: string) => void = () => {};
-let last: { newOrders: P[]; whatsapp: P[]; cook: P[]; late: P[] } = { newOrders: [], whatsapp: [], cook: [], late: [] };
+type Flag = { flagId: number; id: string; ref: string; no: string; note: string; by: string };
+const EMPTY = () => ({ newOrders: [] as P[], whatsapp: [] as P[], cook: [] as P[], ready: [] as P[], failed: [] as P[], flags: [] as Flag[], late: [] as P[] });
+let last = EMPTY();
 const seen = new Set<string>();
 const TITLE = 'MatchDay Kitchen | Lobi Stars FC';
 
@@ -54,17 +56,22 @@ export function markSources() {
   if (last.newOrders.length) { hot.add('kitchen'); hot.add('live'); }
   if (last.whatsapp.length) hot.add('live');
   if (last.cook.length) hot.add('kitchen');
+  if (last.ready.length) { hot.add('delivery'); hot.add('kitchen'); }
+  if (last.failed.length || last.flags.length) hot.add('live');
   if (last.late.length) hot.add('alerts');
   document.querySelectorAll<HTMLElement>('[data-open], .mk-tab [data-tab]').forEach(el => el.classList.toggle('mk-blink', hot.has(el.dataset.open || el.dataset.tab || '')));
 }
 function draw() {
   const bar = $('alarm'); if (!bar) return;
-  const n = last.newOrders, w = last.whatsapp, c = last.cook, l = last.late;
+  const n = last.newOrders, w = last.whatsapp, c = last.cook, l = last.late, r = last.ready, f = last.failed, g = last.flags;
   const hint = session.perms?.confirm ? 'Tap to confirm or reject' : 'Waiting for a supervisor';
   const lines: string[] = [];
   if (n.length) lines.push(`<div class="mk-alarm-new"><b>🔔 ${n.length === 1 ? 'NEW ORDER' : `${n.length} NEW ORDERS`}</b> ${n.slice(0, 4).map(p => `#${esc(p.no)}${p.where ? ` <small>${esc(p.where)}</small>` : ''}`).join(' · ')}<span class="mk-alarm-hint">${hint}</span></div>`);
   if (w.length) lines.push(`<div class="mk-alarm-wa"><b>💬 ${w.length === 1 ? 'NEW WHATSAPP ORDER' : `${w.length} NEW WHATSAPP ORDERS`}</b> ${w.slice(0, 4).map(p => `#${esc(p.no)}${p.where ? ` <small>${esc(p.where)}</small>` : ''}`).join(' · ')}<span class="mk-alarm-hint">Not paid yet. ${hint}</span></div>`);
   if (c.length) lines.push(`<div class="mk-alarm-cook"><b>🍳 START COOKING</b> ${c.slice(0, 4).map(p => `#${esc(p.no)}${p.where ? ` <small>${esc(p.where)}</small>` : ''}`).join(' · ')}<span class="mk-alarm-hint">Tap, then Start cooking</span></div>`);
+  if (r.length) lines.push(`<div class="mk-alarm-cook"><b>🛎️ READY FOR DELIVERY</b> ${r.slice(0, 4).map(p => `#${esc(p.no)}${p.where ? ` <small>${esc(p.where)}</small>` : ''}`).join(' · ')}<span class="mk-alarm-hint">Tap, then Take for delivery</span></div>`);
+  if (f.length) lines.push(`<div class="mk-alarm-cook"><b>⚠️ DELIVERY FAILED</b> ${f.slice(0, 4).map(p => `#${esc(p.no)}`).join(' · ')}<span class="mk-alarm-hint">Try again or cancel</span></div>`);
+  if (g.length) lines.push(`<div class="mk-alarm-cook"><b>⚠️ MISSING INGREDIENT</b> ${g.slice(0, 3).map(x => `#${esc(x.no)} <small>${esc(x.note)}</small>`).join(' · ')}<span class="mk-alarm-hint">Tap to open the order</span></div>`);
   if (l.length) lines.push(`<div class="mk-alarm-late"><b>⏰ ${l.length === 1 ? 'LATE ORDER' : `${l.length} LATE ORDERS`}</b> ${l.slice(0, 4).map(p => `#${esc(p.no)} <small>${esc(p.status)}, ${p.minutes} min</small>`).join(' · ')}<span class="mk-alarm-hint">Not delivered yet</span></div>`);
   bar.innerHTML = lines.join('');
   bar.hidden = !lines.length;
@@ -75,11 +82,12 @@ function draw() {
   if (n.length && !newBeep) { beepNew(); newBeep = window.setInterval(beepNew, 3000); }
   if (!n.length && newBeep) { clearInterval(newBeep); newBeep = 0; }
   // New WhatsApp orders: a different ring every 5 seconds until they are confirmed, rejected or paid.
-  if (w.length && !waBeep) { if (!n.length) beepWa(); waBeep = window.setInterval(() => { if (!last.newOrders.length) beepWa(); }, 5000); }
-  if (!w.length && waBeep) { clearInterval(waBeep); waBeep = 0; }
+  const urgent = w.length + f.length + g.length;
+  if (urgent && !waBeep) { if (!n.length) beepWa(); waBeep = window.setInterval(() => { if (!last.newOrders.length) beepWa(); }, 5000); }
+  if (!urgent && waBeep) { clearInterval(waBeep); waBeep = 0; }
   // Cooking pending: a ring every 10 seconds until someone presses Start cooking.
-  if (c.length && !cookBeep) { if (!n.length && !w.length) beepCook(); cookBeep = window.setInterval(() => { if (!last.newOrders.length && !last.whatsapp.length) beepCook(); }, 10000); }
-  if (!c.length && cookBeep) { clearInterval(cookBeep); cookBeep = 0; }
+  if ((c.length || r.length) && !cookBeep) { if (!n.length && !urgent) beepCook(); cookBeep = window.setInterval(() => { if (!last.newOrders.length && !last.whatsapp.length) beepCook(); }, 10000); }
+  if (!c.length && !r.length && cookBeep) { clearInterval(cookBeep); cookBeep = 0; }
   // Late orders: a beep once a minute until delivered.
   if (l.length && !lateBeep) { beepLate(); lateBeep = window.setInterval(beepLate, 60000); }
   if (!l.length && lateBeep) { clearInterval(lateBeep); lateBeep = 0; }
@@ -88,7 +96,7 @@ function draw() {
 async function check() {
   try {
     const d = await api('pulse', { quiet: true });
-    last = { newOrders: d.newOrders || [], whatsapp: d.whatsapp || [], cook: d.cook || [], late: d.late || [] };
+    last = { ...EMPTY(), ...d };
     for (const p of last.newOrders) notify(p);
     for (const p of last.whatsapp) notify(p, true);
     draw();
@@ -106,7 +114,7 @@ export function startAlarms(open: (p: string) => void) {
 }
 export function stopAlarms() {
   running = false; clearInterval(timer); clearInterval(newBeep); clearInterval(lateBeep); clearInterval(waBeep); clearInterval(cookBeep); timer = newBeep = lateBeep = waBeep = cookBeep = 0;
-  last = { newOrders: [], whatsapp: [], cook: [], late: [] }; markSources(); const bar = $('alarm'); if (bar) bar.hidden = true; document.title = TITLE;
+  last = EMPTY(); markSources(); const bar = $('alarm'); if (bar) bar.hidden = true; document.title = TITLE;
   const b = $('soundOn'); if (b) b.hidden = true;
 }
 /** Re-check straight away (after a status change in a page). */
@@ -118,7 +126,11 @@ document.addEventListener('pointerdown', () => {
   audio();
   if (!asked && running && 'Notification' in window && Notification.permission === 'default') { asked = true; Notification.requestPermission().then(() => syncPush()).catch(() => {}); }
 }, { capture: true });
-$('alarm')?.addEventListener('click', () => openFn(last.newOrders.length || (last.cook.length && !last.whatsapp.length) ? 'kitchen' : last.whatsapp.length ? 'live' : 'alerts'));
+$('alarm')?.addEventListener('click', () => {
+  if (last.flags.length) { openFn(`orders/${last.flags[0].id}`); return; }
+  if (last.failed.length) { openFn(`orders/${last.failed[0].id}`); return; }
+  openFn(last.newOrders.length || (last.cook.length && !last.whatsapp.length) ? 'kitchen' : last.whatsapp.length ? 'live' : last.ready.length ? 'delivery' : 'alerts');
+});
 // Tapped a phone alert while the app was already open.
 if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data?.type === 'mk-open' && running) { check(); if (e.data.page) openFn(e.data.page); } });
 $('soundOn')?.addEventListener('click', () => { audio(); beepNew(); });

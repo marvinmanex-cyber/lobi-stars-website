@@ -29,7 +29,7 @@ function confirmBox(title: string, text: string, yes = 'Yes', danger = false): P
   d.showModal();
   return new Promise(res => d.addEventListener('close', () => res(d.returnValue === 'yes'), { once: true }));
 }
-const busy = () => Date.now() - lastTouch < 5000 || ($('pDialog') as HTMLDialogElement).open || ($('payDlg') as HTMLDialogElement).open || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '');
+const busy = () => Date.now() - lastTouch < 5000 || ($('pDialog') as HTMLDialogElement).open || ($('payDlg') as HTMLDialogElement).open || ($('whyDlg') as HTMLDialogElement).open || /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '');
 function every15(f: () => Promise<void>) {
   window.setInterval(() => { if (!document.hidden && !busy()) f().catch(() => {}); }, 15000);
 }
@@ -112,6 +112,33 @@ $('payF').addEventListener('submit', (e: Event) => { e.preventDefault(); sendPay
 $('payNo').addEventListener('click', () => ($('payDlg') as HTMLDialogElement).close());
 $('payClose').addEventListener('click', () => ($('payDlg') as HTMLDialogElement).close());
 
+// ── Rejecting or cancelling: always with a reason. The fan sees it on their tracking page, never on WhatsApp ──
+let whyJob: { id: string; to: string; done: () => void } | null = null;
+function openWhy(id: string, to: 'REJECTED' | 'CANCELLED', paid: boolean, done: () => void) {
+  whyJob = { id, to, done };
+  const reject = to === 'REJECTED';
+  $('whyT').textContent = reject ? 'Reject order' : 'Cancel order';
+  $('whyYes').textContent = reject ? 'Reject order' : 'Cancel order';
+  $('whySum').textContent = `The fan sees this on their order page and by email if they gave one. No WhatsApp message goes out.${paid ? ' This order is paid, so it goes on the refund list. Your name is recorded.' : ' Your name is recorded.'}`;
+  $('whyListBox').hidden = !reject;
+  $('whyNoteL').textContent = reject ? 'Note (required for Other)' : 'Why is it being cancelled?';
+  ($('whyF') as HTMLFormElement).reset(); $('whyErr').hidden = true;
+  ($('whyDlg') as HTMLDialogElement).showModal();
+}
+$('whyNo').addEventListener('click', () => ($('whyDlg') as HTMLDialogElement).close());
+$('whyF').addEventListener('submit', async (e: Event) => {
+  e.preventDefault();
+  if (!whyJob) return;
+  const b = $('whyYes') as HTMLButtonElement; b.disabled = true; $('whyErr').hidden = true;
+  try {
+    await api('order', { method: 'POST', body: { id: whyJob.id, to: whyJob.to, reason: whyJob.to === 'REJECTED' ? $('whyList').value : '', note: $('whyNote').value } });
+    ($('whyDlg') as HTMLDialogElement).close();
+    toast(whyJob.to === 'REJECTED' ? 'Order rejected.' : 'Order cancelled.');
+    shell?.alarmsNow?.();
+    whyJob.done();
+  } catch (err) { $('whyErr').textContent = (err as Error).message; $('whyErr').hidden = false; } finally { b.disabled = false; }
+});
+
 // ── Order tickets (kitchen screen, alerts) ──
 function ticketHtml(t: any) {
   return `<article class="mk-ord ${esc(t.status)}${t.late ? ' late' : ''}">
@@ -125,7 +152,8 @@ function ticketHtml(t: any) {
     <div class="mk-status">${esc(t.statusLabel)}</div>
     ${t.status === 'PAID' && !session.perms.confirm ? '<div class="mk-status">Waiting for a supervisor to confirm it</div>'
       : t.next ? `<button type="button" class="mk-btn go big wide" data-move="${esc(t.id)}" data-to="${esc(t.next.to)}">${esc(t.next.label)}</button>` : ''}
-    ${t.status === 'PAID' && session.perms.confirm ? `<button type="button" class="mk-btn danger wide" data-move="${esc(t.id)}" data-to="CANCELLED">Reject order</button>` : ''}
+    ${t.status === 'PAID' && session.perms.confirm ? `<button type="button" class="mk-btn danger wide" data-move="${esc(t.id)}" data-to="REJECTED">Reject order</button>` : ''}
+    ${session.perms.flag && ['ACCEPTED', 'PREPARING'].includes(t.status) ? `<button type="button" class="mk-btn wide" data-flag="${esc(t.id)}">Something is missing</button>` : ''}
   </article>`;
 }
 /** After a status change: the alarms re-check at once; after "Mark delivered", the receipt. */
@@ -140,8 +168,15 @@ async function afterMove(id: string, r: any) {
 }
 async function moveFrom(e: Event, reload: () => Promise<void>) {
   const b = (e.target as HTMLElement).closest('[data-move]') as HTMLButtonElement | null;
-  if (!b) return;
-  if (b.dataset.to === 'CANCELLED' && !confirm('Reject this order? The fan sees it as cancelled. This order is already paid, so the money has to be refunded. Your name is recorded.')) return;
+  if (!b) {
+    const f = (e.target as HTMLElement).closest('[data-flag]') as HTMLButtonElement | null;
+    if (f) {
+      const note = prompt('What is missing?');
+      if (note && note.trim()) await act(f, async () => { await api('flag', { method: 'POST', body: { id: f.dataset.flag, note } }); toast('The supervisor has been told.'); });
+    }
+    return;
+  }
+  if (b.dataset.to === 'REJECTED' || b.dataset.to === 'CANCELLED') { openWhy(b.dataset.move!, b.dataset.to as any, true, () => { reload(); }); return; }
   await act(b, async () => { const r = await api('order', { method: 'POST', body: { id: b.dataset.move, to: b.dataset.to } }); await reload(); await afterMove(b.dataset.move!, r); });
 }
 
@@ -163,7 +198,7 @@ const PAGES: Record<string, () => Promise<void>> = {
       const up = d.unpaid || [], waiting = up.filter((o: any) => !o.failed), failed = up.filter((o: any) => o.failed);
       const unpaidCard = (o: any) => `<article class="mk-unpaid${o.failed ? ' failed' : ''}${o.status === 'AWAITING_WHATSAPP' ? ' confirm-me' : ''}"><div class="mk-unpaid-top"><b>${esc(o.ref)}</b><span>${esc(o.statusLabel)}</span><span class="r">${esc(mins(o.minutes))}${o.minutes >= 1 ? ' ago' : ''}</span></div>
         <div>${esc([o.customer, o.where].filter(Boolean).join(' · '))}${o.phone ? ` · ${esc(o.phone)}` : ''}</div>
-        <div class="mk-status">${esc(o.items.map((i: any) => `${i.qty} × ${i.name}`).join(', '))} · <b>${esc(o.total)}</b>${o.channel === 'whatsapp' ? ' · WhatsApp order' : ''}</div>
+        <div class="mk-status">${esc(o.items.map((i: any) => `${i.qty} × ${i.name}`).join(', '))} ${o.total ? ` · <b>${esc(o.total)}</b>` : ''}${o.channel === 'whatsapp' ? ' · WhatsApp order' : ''}</div>
         <div class="mk-actions" style="justify-content:flex-start;margin:6px 0 0">${o.chatUrl ? `<a class="mk-btn" href="${esc(o.chatUrl)}" target="mdk-whatsapp" rel="noopener">Reply on WhatsApp</a>` : ''}${o.status === 'AWAITING_WHATSAPP' && session.perms.confirm ? `<button type="button" class="mk-btn go" data-confirm="${esc(o.id)}">Confirm order</button>` : ''}${o.canPay && session.perms.payment ? `<button type="button" class="mk-btn go" data-pay="${esc(o.id)}">Record payment</button>` : ''}${['AWAITING_WHATSAPP', 'CONFIRMED'].includes(o.status) && session.perms.confirm ? `<button type="button" class="mk-btn danger" data-reject="${esc(o.id)}">Reject order</button>` : ''}${o.status === 'AWAITING_WHATSAPP' && !session.perms.confirm ? '<span class="mk-status">Waiting for a supervisor</span>' : ''}</div></article>`;
       const unpaidHtml = `<section class="mk-unpaid-box" aria-label="Awaiting payment"><h2>Awaiting payment <span class="mk-badge">${waiting.length}</span> <small>Not paid yet: do not cook. A paid order moves to New by itself.</small></h2>
         ${waiting.length ? `<div class="mk-unpaid-grid">${waiting.map(unpaidCard).join('')}</div>` : '<p class="mk-status" style="margin:4px 6px">Nobody is waiting to pay.</p>'}
@@ -185,8 +220,7 @@ const PAGES: Record<string, () => Promise<void>> = {
       }
       const rj = (e.target as HTMLElement).closest('[data-reject]') as HTMLButtonElement | null;
       if (rj) {
-        if (!confirm('Reject this order? The fan sees it as cancelled. Your name is recorded.')) return;
-        act(rj, async () => { await api('order', { method: 'POST', body: { id: rj.dataset.reject, to: 'CANCELLED' } }); toast('Order rejected.'); shell?.alarmsNow?.(); await draw(); });
+        openWhy(rj.dataset.reject!, 'REJECTED', false, () => { draw(); });
         return;
       }
       const p = (e.target as HTMLElement).closest('[data-pay]') as HTMLElement | null;
@@ -200,22 +234,28 @@ const PAGES: Record<string, () => Promise<void>> = {
     const draw = async (quiet = false) => {
       const d = await api('delivery', { quiet });
       main.innerHTML = d.groups.length ? d.groups.map((g: any, i: number) => `<section class="mk-section mk-stand"><h2>${esc(g.name)} <span class="mk-badge${g.ready.length ? ' red' : ''}">${g.ready.length}</span>${g.cooking ? ` <small>${g.cooking} still cooking</small>` : ''}</h2>
-        ${g.ready.length ? `${g.ready.length > 1 ? `<button type="button" class="mk-btn" data-all="${i}">Mark all ${g.ready.length} delivered</button>` : ''}${g.ready.map((o: any) => `<article class="mk-runner${o.late ? ' late' : ''}"><div class="mk-runner-seat">${esc(o.seat || (g.pickup ? 'Pickup' : '—'))}</div>
+        ${g.ready.length ? `${g.ready.filter((o: any) => o.status === 'OUT_FOR_DELIVERY').length > 1 ? `<button type="button" class="mk-btn" data-all="${i}">Mark all ${g.ready.filter((o: any) => o.status === 'OUT_FOR_DELIVERY').length} delivered</button>` : ''}${g.ready.map((o: any) => `<article class="mk-runner${o.late ? ' late' : ''}"><div class="mk-runner-seat">${esc(o.seat || (g.pickup ? 'Pickup' : '—'))}</div>
           <div class="mk-runner-main"><b>${esc(o.ref)}${o.customer ? ` · ${esc(o.customer)}` : ''}</b><span>${esc(o.items.map((x: any) => `${x.qty} × ${x.name}`).join(', '))}</span>${o.note ? `<span class="mk-status">Note: ${esc(o.note)}</span>` : ''}${o.late ? `<span class="mk-pill red">Late: ${esc(mins(o.minutes))}</span>` : ''}</div>
-          <button type="button" class="mk-btn go" data-done="${esc(o.id)}">${g.pickup ? 'Collected' : 'Delivered'}</button></article>`).join('')}` : '<p class="mk-status" style="margin:4px 6px">Nothing on the way to this stand yet.</p>'}</section>`).join('')
-        : '<p class="mk-empty">Nothing to deliver. Orders appear here when the kitchen presses "Food on the way".</p>';
+          ${o.status === 'READY' ? `<button type="button" class="mk-btn go" data-go="${esc(o.id)}" data-to="${g.pickup ? 'DELIVERED' : 'OUT_FOR_DELIVERY'}">${g.pickup ? 'Collected' : 'Take for delivery'}</button>` : `<button type="button" class="mk-btn go" data-go="${esc(o.id)}" data-to="DELIVERED">Delivered</button><button type="button" class="mk-btn" data-go="${esc(o.id)}" data-to="FAILED_DELIVERY">Not at seat</button>`}</article>`).join('')}` : '<p class="mk-status" style="margin:4px 6px">Nothing ready for this stand yet.</p>'}</section>`).join('')
+        : '<p class="mk-empty">Nothing to deliver. Orders appear here when the kitchen presses "Food ready".</p>';
       (main as any)._groups = d.groups;
       stamp();
     };
     main.addEventListener('click', e => {
       const el = e.target as HTMLElement;
-      const one = el.closest('[data-done]') as HTMLButtonElement | null;
-      if (one) { act(one, async () => { await api('order', { method: 'POST', body: { id: one.dataset.done, to: 'DELIVERED' } }); toast('Marked delivered. The receipt email has gone if the fan gave an address.'); await draw(); }); return; }
+      const one = el.closest('[data-go]') as HTMLButtonElement | null;
+      if (one) {
+        const to = one.dataset.to!;
+        if (to === 'FAILED_DELIVERY' && !confirm('The fan is not at their seat? A supervisor then decides whether to try again or cancel.')) return;
+        act(one, async () => { await api('order', { method: 'POST', body: { id: one.dataset.go, to } }); toast(to === 'DELIVERED' ? 'Marked delivered. The receipt email has gone if the fan gave an address.' : to === 'FAILED_DELIVERY' ? 'A supervisor has been told.' : 'Taken for delivery.'); shell?.alarmsNow?.(); await draw(); });
+        return;
+      }
       const all = el.closest('[data-all]') as HTMLButtonElement | null;
       if (all) {
         const g = (main as any)._groups[Number(all.dataset.all)];
-        if (!g || !confirm(`Mark all ${g.ready.length} orders for ${g.name} as delivered?`)) return;
-        act(all, async () => { let n = 0; for (const o of g.ready) { try { await api('order', { method: 'POST', body: { id: o.id, to: 'DELIVERED' } }); n++; } catch { /* already moved on another tablet */ } } toast(`${n} order${n === 1 ? '' : 's'} marked delivered.`); await draw(); });
+        const out = (g?.ready || []).filter((o: any) => o.status === 'OUT_FOR_DELIVERY');
+        if (!g || !confirm(`Mark all ${out.length} orders for ${g.name} as delivered?`)) return;
+        act(all, async () => { let n = 0; for (const o of out) { try { await api('order', { method: 'POST', body: { id: o.id, to: 'DELIVERED' } }); n++; } catch { /* already moved on another tablet */ } } toast(`${n} order${n === 1 ? '' : 's'} marked delivered.`); await draw(); });
       }
     });
     await draw(); every15(() => draw(true));
@@ -247,7 +287,7 @@ const PAGES: Record<string, () => Promise<void>> = {
     const f = { q: '', status: '', day: todayLagos(), page: 1 };
     main.innerHTML = `<form class="mk-filters" id="oF">
       <div class="mk-field"><label for="oQ">Order number or name</label><input id="oQ" type="search" placeholder="e.g. FD-20261108-0012 or Derek" /></div>
-      <div class="mk-field"><label for="oS">Status</label><select id="oS"><option value="">All</option><option value="new">New</option><option value="preparing">Preparing</option><option value="ready">On the way</option>
+      <div class="mk-field"><label for="oS">Status</label><select id="oS"><option value="">All</option><option value="new">New</option><option value="preparing">Preparing</option><option value="ready">Ready</option><option value="out">On the way</option>
         <option value="DELIVERED">Delivered</option><option value="AWAITING_WHATSAPP">WhatsApp – to confirm</option><option value="CONFIRMED">Confirmed – awaiting payment</option><option value="AWAITING_PAYMENT">Awaiting payment</option><option value="cancelled">Cancelled</option><option value="EXPIRED">Expired</option></select></div>
       <div class="mk-field"><label for="oD">Date (ignored when you search by number or name)</label><input id="oD" type="date" value="${f.day}" /></div>
       <button class="mk-btn go" type="submit">Search</button></form><div id="oList"></div>`;
@@ -255,7 +295,7 @@ const PAGES: Record<string, () => Promise<void>> = {
       const d = await api(`orders?${new URLSearchParams({ q: f.q, status: f.status, day: f.day, page: String(f.page) })}`);
       $('oList').innerHTML = d.orders.length ? `<p class="mk-status">${d.total} order${d.total === 1 ? '' : 's'} ${d.everyDay ? 'found, on any day' : `on ${esc(dayOnly(`${d.day}T12:00:00Z`))}`}</p>
         <div class="mk-table-wrap"><table class="mk-table"><thead><tr><th>Order</th><th>Time</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody>${d.orders.map((o: any) => `
-          <tr class="click" data-order="${esc(o.id)}" tabindex="0"><td><b>${esc(o.ref)}</b></td><td>${esc(hm(o.placedAt))}</td><td>${esc(o.customer)}</td><td>${esc(o.items.map((i: any) => `${i.qty} × ${i.name}`).join(', '))}</td><td>${esc(o.total)}</td><td><span class="mk-pill ${o.stage ? 'go' : /Cancel|Refund/.test(o.statusLabel) ? 'red' : ''}">${esc(o.statusLabel)}</span></td></tr>`).join('')}</tbody></table></div>
+          <tr class="click" data-order="${esc(o.id)}" tabindex="0"><td><b>${esc(o.ref)}</b></td><td>${esc(hm(o.placedAt))}</td><td>${esc(o.customer)}</td><td>${esc(o.items.map((i: any) => `${i.qty} × ${i.name}`).join(', '))}</td><td>${esc(o.total || '')}</td><td><span class="mk-pill ${o.stage ? 'go' : /Cancel|Refund|Reject|failed/.test(o.statusLabel) ? 'red' : ''}">${esc(o.statusLabel)}</span></td></tr>`).join('')}</tbody></table></div>
         ${d.pages > 1 ? `<div class="mk-pager"><button type="button" class="mk-btn" data-pg="${d.page - 1}" ${d.page <= 1 ? 'disabled' : ''}>Previous</button><span>Page ${d.page} of ${d.pages}</span><button type="button" class="mk-btn" data-pg="${d.page + 1}" ${d.page >= d.pages ? 'disabled' : ''}>Next</button></div>` : ''}`
         : `<p class="mk-empty">${d.everyDay ? 'No order has that number or name, on any day.' : 'No orders on this day. Try another day.'}</p>`;
     };
@@ -283,22 +323,29 @@ const PAGES: Record<string, () => Promise<void>> = {
           <dt>Placed</dt><dd>${esc(dayTime(o.placedAt))}</dd>
           ${o.paidAt ? `<dt>Paid</dt><dd>${esc(dayTime(o.paidAt))}</dd>` : ''}
           ${o.stage ? `<dt>Waiting</dt><dd>${esc(mins(o.minutes))}</dd>` : ''}
-          <dt>How</dt><dd>${o.channel === 'whatsapp' ? (o.paid ? 'WhatsApp order, paid' : 'WhatsApp order, not paid yet') : (o.paid ? 'Paid online' : 'Online order, not paid')}</dd>
+          <dt>How</dt><dd>${o.channel ? (o.channel === 'whatsapp' ? (o.paid ? 'WhatsApp order, paid' : 'WhatsApp order, not paid yet') : (o.paid ? 'Paid online' : 'Online order, not paid')) : (o.fulfilment === 'pickup' ? 'Pickup' : 'Delivery to seat')}</dd>
+          ${o.rejectReason ? `<dt>Rejected</dt><dd>${esc(d.reasons?.[o.rejectReason] || o.rejectReason)}${o.rejectNote ? `<br /><small>${esc(o.rejectNote)}</small>` : ''}</dd>` : ''}
+          ${o.cancelReason ? `<dt>Cancelled</dt><dd>${esc(o.cancelReason)}</dd>` : ''}
           ${d.payment ? `<dt>Payment</dt><dd>${esc(d.payment.amount)}, ${esc(d.payment.method)}${d.payment.note ? `<br />${esc(d.payment.note)}` : ''}<br /><small>Recorded by ${esc(d.payment.by)}${d.payment.code ? ` (${esc(d.payment.code)})` : ''}, ${esc(dayTime(d.payment.at))}</small>${d.payment.duplicateOf ? `<br /><span class="mk-pill red">Same receipt as ${esc(d.payment.duplicateOf)} (allowed)</span>` : ''}</dd>` : ''}
           ${o.statusBy ? `<dt>Last change</dt><dd>${esc(o.statusBy)}${o.statusAt ? `, ${esc(dayTime(o.statusAt))}` : ''}</dd>` : ''}
         </dl></div>
         <div class="mk-box"><ul class="mk-items" style="border-top:0">${o.items.map((i: any) => `<li>${esc(i.qty)} × ${esc(i.name)}${i.note ? `<em>${esc(i.note)}</em>` : ''}</li>`).join('')}</ul>
           ${o.note ? `<div class="mk-onote" style="margin-top:10px">Note: ${esc(o.note)}</div>` : ''}
-          <p style="margin:10px 0 0;font-size:20px"><b>Total ${esc(o.total)}</b></p></div>
+          ${o.total ? `<p style="margin:10px 0 0;font-size:20px"><b>Total ${esc(o.total)}</b></p>` : ''}${d.canFlag ? `<div class="mk-actions" style="justify-content:flex-start;margin-top:10px"><button type="button" class="mk-btn" id="flagBtn">Something is missing</button></div>` : ''}</div>
         ${d.canRecordPayment ? `<div class="mk-box mk-paybox"><b>Has the fan sent a receipt on WhatsApp?</b><p style="margin:4px 0 10px">Add it here and mark the order paid. It goes to the kitchen as if it was paid online.</p><button type="button" class="mk-btn go big" id="recPay">Record payment</button></div>` : d.needsPaymentRole ? '<p class="mk-status" style="text-transform:none;letter-spacing:0">Waiting for payment. A supervisor or Super Admin records it when the fan sends the receipt.</p>' : ''}
         ${d.payment ? `<div class="mk-box"><h2 style="font-size:20px;margin:0 0 8px">Payment evidence</h2>${d.payment.isPdf ? '' : `<a href="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" target="_blank" rel="noopener"><img class="mk-proofimg" src="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" alt="The payment evidence for this order" loading="lazy" /></a>`}<a class="mk-btn" href="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" target="_blank" rel="noopener">${d.payment.isPdf ? 'Download the PDF receipt' : 'Open it full size'}</a></div>` : ''}
         ${d.chat ? `<div class="mk-actions" style="justify-content:flex-start"><a class="mk-btn go" href="${esc(d.chat.url)}" target="mdk-whatsapp" rel="noopener">${esc(d.chat.label)} on WhatsApp</a></div>` : d.waDevice ? '' : '<p class="mk-status" style="text-transform:none;letter-spacing:0">Replies to fans go only from the official MatchDay Kitchen WhatsApp, 0708 009 4985, on its own device.</p>'}
         <h2 style="font-size:22px;margin:0 0 6px">Change status</h2>
-        ${d.moves.length ? `<div class="mk-actions">${d.moves.map((m: any) => `<button type="button" class="mk-btn ${m.next ? 'go big' : m.cancel ? 'danger' : ''}" data-to="${esc(m.to)}" data-label="${esc(m.label)}" data-cancel="${m.cancel ? 1 : 0}">${m.next ? esc(o.next?.label || m.label) : esc(m.label)}</button>`).join('')}</div>` : d.needsSupervisor ? '<p class="mk-empty">A supervisor or Super Admin confirms or rejects this order.</p>' : '<p class="mk-empty">No more changes for this order.</p>'}
+        ${d.moves.length ? `<div class="mk-actions">${d.moves.map((m: any) => `<button type="button" class="mk-btn ${m.next ? 'go big' : m.cancel || m.reject ? 'danger' : ''}" data-to="${esc(m.to)}" data-label="${esc(m.label)}" data-cancel="${m.cancel ? 1 : 0}" ${o.paid ? 'data-paid="1"' : ''}>${m.next ? esc(o.next?.label || m.label) : esc(m.label)}</button>`).join('')}</div>` : d.needsSupervisor ? '<p class="mk-empty">A supervisor or Super Admin confirms or rejects this order.</p>' : '<p class="mk-empty">No more changes for this order.</p>'}
         ${o.status === 'DELIVERED' ? `<h2 style="font-size:22px;margin:14px 0 6px">Receipt</h2><div class="mk-actions">${d.waDevice ? '<button type="button" class="mk-btn go" id="rcWa">Send receipt on WhatsApp</button>' : ''}<button type="button" class="mk-btn" id="rcEmail">Email receipt</button></div>` : ''}
+        ${d.events?.length ? `<section class="mk-box" style="margin-top:12px"><h2 style="font-size:20px;margin:0 0 8px">History</h2><ul style="margin:0;padding-left:20px">${d.events.map((x: any) => `<li>${esc(dayTime(x.at))}: ${x.kind === 'flag' ? 'Missing ingredient' : esc(x.to_status || '')}${x.by_name ? ` · ${esc(x.by_name)}` : ''}${x.reason || x.note ? ` · ${esc([x.reason, x.note].filter(Boolean).join(': '))}` : ''}</li>`).join('')}</ul></section>` : ''}
         <div class="mk-actions"><button type="button" class="mk-btn" id="allOrders">All orders</button></div>`;
       $('allOrders').addEventListener('click', () => openPage('orders'));
       $('recPay')?.addEventListener('click', () => openPay(o, () => { draw(); }));
+      $('flagBtn')?.addEventListener('click', async () => {
+        const note = prompt('What is missing?');
+        if (note && note.trim()) await act($('flagBtn'), async () => { await api('flag', { method: 'POST', body: { id, note } }); toast('The supervisor has been told.'); });
+      });
       $('rcWa')?.addEventListener('click', async () => {
         await sendReceiptWhatsApp(id, toast);
       });
@@ -309,7 +356,7 @@ const PAGES: Record<string, () => Promise<void>> = {
     main.addEventListener('click', async (e: Event) => {
       const b = (e.target as HTMLElement).closest('[data-to]') as HTMLButtonElement | null;
       if (!b) return;
-      if (b.dataset.cancel === '1' && !(await confirmBox('Cancel this order?', 'The order will be cancelled and the customer will see it as cancelled. This is recorded under your name.', 'Cancel order', true))) return;
+      if (b.dataset.to === 'REJECTED' || b.dataset.to === 'CANCELLED') { openWhy(id, b.dataset.to as any, !!b.dataset.paid, () => { draw(); }); return; }
       await act(b, async () => { const r = await api('order', { method: 'POST', body: { id, to: b.dataset.to } }); await draw(); if (r.receipt) await afterMove(id, r); else { toast(`Order moved to ${b.dataset.label}.`); try { (window.parent as any).mkShell?.alarmsNow?.(); } catch { /* */ } } });
     });
     await draw();
@@ -458,7 +505,7 @@ const PAGES: Record<string, () => Promise<void>> = {
     let codeShown: { name: string; staffId: string; loginCode: string } | null = null;
     const codeMsg = (c: { name: string; loginCode: string }) => `MatchDay Kitchen login for ${c.name}\n1. Open https://lobistarsfc.com/matchday-kitchen\n2. Enter this login code: ${c.loginCode}\nIt is personal to you: please keep it private.`;
     const draw = async () => {
-      const [d, rep, wad] = await Promise.all([api('staff'), api('report-settings'), session.perms.superAdmin ? api('whatsapp-devices') : null]);
+      const [d, rep, wad, al] = await Promise.all([api('staff'), api('report-settings'), session.perms.superAdmin ? api('whatsapp-devices') : null, session.perms.alertLevel ? api('alert-settings') : null]);
       const sa = !!session.perms.superAdmin;
       const canEdit = (s: any) => sa || s.role !== 'supervisor';
       const roleOpts = (sel = '') => Object.entries(d.addRoles).map(([k, v]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
@@ -489,11 +536,16 @@ const PAGES: Record<string, () => Promise<void>> = {
         ${wad ? `<section class="mk-section"><h2>Official WhatsApp device</h2><div class="mk-box"><p style="margin:0 0 10px">Orders and replies use only <b>0708 009 4985</b>. Only a device on this list gets the reply buttons and fans' numbers; everyone else sees the orders only. Do this on the kitchen's phone or computer where WhatsApp is signed in to that number, then sign out of your own account there. It stays approved until you remove it.</p>
           ${wad.devices.length ? `<ul style="margin:0 0 12px;padding:0;list-style:none">${wad.devices.map((x: any) => `<li style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #d9dde2"><span><b>${esc(x.name)}</b>${x.thisOne ? ' <span class="mk-pill go">This device</span>' : ''}<br /><small>Added by ${esc(x.addedBy || '')}, ${esc(dayTime(x.addedAt))}</small></span><button type="button" class="mk-btn danger" data-waremove="${esc(x.id)}" data-name="${esc(x.name)}">Remove</button></li>`).join('')}</ul>` : '<p class="mk-status" style="text-transform:none;letter-spacing:0">No device yet, so nobody can reply from here.</p>'}
           ${wad.thisDevice ? '' : '<button type="button" class="mk-btn go" id="waThis">Make this device the official WhatsApp device</button>'}</div></section>` : ''}
+        ${al ? `<section class="mk-section"><h2>Your alerts</h2><form class="mk-box" id="alF"><div class="mk-filters">
+          <div class="mk-field"><label for="alLevel">What you hear</label><select id="alLevel"><option value="all" ${al.level === 'all' ? 'selected' : ''}>Everything</option><option value="urgent" ${al.level === 'urgent' ? 'selected' : ''}>Urgent only</option><option value="off" ${al.level === 'off' ? 'selected' : ''}>Off</option></select></div>
+          <div class="mk-field"><label for="alFall">If nobody else would hear a new order, alert</label><select id="alFall"><option value="">Every Super Admin</option>${al.admins.map((a: any) => `<option value="${esc(a.id)}" ${a.id === al.fallbackId ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div></div>
+          <p class="mk-status" style="text-transform:none;letter-spacing:0">Only Super Admins can change what they hear. Staff on duty can't mute alerts. You can't switch off if that would leave nobody alerted.</p>
+          <button class="mk-btn go" type="submit">Save alert settings</button></form></section>` : ''}
         <section class="mk-section"><h2>Settings</h2><form class="mk-box" id="setF">
           <div class="mk-field"><label for="sTg">Telegram channel link (shows the Telegram updates button)</label><input id="sTg" placeholder="https://t.me/yourchannel" value="${esc(d.settings.telegramUrl)}" /></div>
-          <div class="mk-filters" style="align-items:flex-start"><fieldset class="mk-field" style="border:0;padding:0"><legend class="mk-label">Who can cancel orders</legend>${roleChecks('cancel', d.settings.cancelRoles)}</fieldset>
+          <div class="mk-filters" style="align-items:flex-start">
           <div class="mk-field"><label for="sLate">Orders are late after (minutes)</label><input id="sLate" type="number" min="1" max="120" value="${d.settings.lateMinutes}" /></div></div>
-          <p class="mk-status" style="text-transform:none;letter-spacing:0">Super Admins can always cancel orders. Only supervisors and Super Admins change prices, add dishes and delete dishes.</p>
+          <p class="mk-status" style="text-transform:none;letter-spacing:0">Only supervisors and Super Admins confirm, reject and cancel orders, change prices, add dishes and delete dishes.</p>
           <button class="mk-btn go" type="submit">Save settings</button></form></section>
         <section class="mk-section"><h2>Match-day food report</h2><form class="mk-box" id="repF">
           <p style="margin:0 0 10px">Emailed once, 4 hours after kick-off of each home match: sales, top dishes, hour by hour, late orders and each stand. It has no customer details.</p>
@@ -540,7 +592,9 @@ const PAGES: Record<string, () => Promise<void>> = {
     main.addEventListener('submit', (e: Event) => {
       e.preventDefault();
       const form = e.target as HTMLFormElement;
-      if (form.id === 'repF') {
+      if (form.id === 'alF') {
+        act(form.querySelector('button'), async () => { await api('alert-settings', { method: 'POST', body: { level: $('alLevel').value, fallbackId: $('alFall').value } }); toast('Alert settings saved.'); shell?.alarmsNow?.(); });
+      } else if (form.id === 'repF') {
         act(form.querySelector('button'), async () => { const r = await api('report-settings', { method: 'POST', body: { emails: $('repE').value } }); toast(`Saved: ${r.emails.length} address${r.emails.length === 1 ? '' : 'es'}.`); });
       } else if (form.id === 'addF') {
         act(form.querySelector('button'), async () => { const r = await api('staff', { method: 'POST', body: { action: 'add', name: $('aName').value, role: $('aRole').value } }); codeShown = r; toast('Staff account added.'); await draw(); });

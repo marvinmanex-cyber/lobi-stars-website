@@ -13,16 +13,22 @@
 //   POST payment {id, method, amount, proof, fileName, note, allowDuplicate}   GET payment-proof?id   (order handlers, supervisors, Super Admins)
 //   POST push {action: on|off|test, subscription, deviceName, endpoint}   order alerts on this device
 //   GET whatsapp-devices   POST whatsapp-device {action: this|remove, id, name}   (Super Admins: the official WhatsApp devices)
+//   POST flag {id, note} (kitchen: a missing ingredient)   POST flag-ack {flagId} (supervisors, Super Admins)
+//   GET alert-settings   POST alert-settings {level, fallbackId} (Super Admins only: nobody else can mute)
+//   GET venues (signed in)   POST venue {id?, name, active, settings} (Super Admins)
 //   GET check (Super Admins: the data check)
 import { signIn, signOut, json, kitchenSettings, permissions, mkLog, shiftState, startShift, endShift, listNotes, noteAction,
   activityPage, listStaff, createStaff, updateStaff, saveSettings, ROLES, oneLine, clearKitchenCookie } from '../_lib/matchdayKitchen.js';
+import { isFullSuperAdmin } from '../_lib/superAdmins.js';
 import * as K from '../_lib/kitchenData.js';
 import { foodSettings, saveFoodSetting } from '../_lib/foodOrders.js';
 import { buildReport, sendReport, reportEmails, saveReportEmails } from '../_lib/kitchenReport.js';
 import { recordPayment, canRecord, proofInfo, proofResponse, PAY_METHODS } from '../_lib/foodPaymentProof.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
 import { officialDevice, listDevices, addDevice, removeDevice, replyFor } from '../_lib/kitchenWhatsapp.js';
-import { saveAppDevice, removeAppDevice, removeStaffDevices, testAppDevice, notifyKitchen } from '../_lib/kitchenNotify.js';
+import { saveAppDevice, removeAppDevice, removeStaffDevices, testAppDevice, notifyKitchen, markOpened, alertFallback, alertLevels, ensureKitchenSchema as ensureAlertSchema } from '../_lib/kitchenNotify.js';
+import { canMove, reasonProblem, muteProblem, ALERT_LEVELS } from '../_lib/kitchenWorkflow.js';
+import { REJECT_REASONS, recordOrderEvent, DEFAULT_VENUE, ensureFoodSchema } from '../_lib/foodOrders.js';
 
 // The pages (and their names in the activity log).
 const PAGES = {
@@ -30,8 +36,6 @@ const PAGES = {
   analytics: 'Food analytics', shift: 'My shift', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts',
   whatsapp: 'Kitchen WhatsApp', telegram: 'Telegram updates', delivery: 'Delivery by stand',
 };
-// An order still waiting to be confirmed or rejected: only supervisors and Super Admins move it.
-const UNCONFIRMED = ['AWAITING_WHATSAPP', 'CONFIRMED', 'PAID'];
 const denied = () => json({ error: "Your role can't do this. Ask a kitchen supervisor or a super admin.", denied: true }, 403);
 const staffName = u => `${u.name} (${u.code}) – MatchDay Kitchen`;
 const csvCell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) || /^[=+\-@]/.test(s) ? `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"` : s; };
@@ -57,6 +61,10 @@ export async function onRequest(context) {
     const settings = await kitchenSettings(db);
     const perms = permissions(user, settings);
     const late = settings.lateMinutes;
+    // Super Admins see every venue; everyone else their own.
+    const scope = user.kind === 'admin' ? null : [user.venueId || DEFAULT_VENUE];
+    const role = user.role;
+    const visible = o => K.inScope(o, scope);
     // Reply links and the fan's number go only to the kitchen's approved WhatsApp device.
     const onWaDevice = async () => !!(await officialDevice(request, env));
 
@@ -67,45 +75,60 @@ export async function onRequest(context) {
         if (!body.idle) await removeStaffDevices(db, user.id).catch(() => {});
         return json({ ok: true }, 200, { 'Set-Cookie': clearKitchenCookie() });
       case 'GET session':
-        return json({ csrf: S.csrf, user: { name: user.name, firstName: user.firstName, code: user.code, role: user.role, roleLabel: user.roleLabel, kind: user.kind },
-          perms, settings: { telegramUrl: settings.telegramUrl, lateMinutes: late }, shift: await shiftState(db, user), pushKey: env.VAPID_PUBLIC_KEY || '', waDevice: await onWaDevice() });
+        return json({ csrf: S.csrf, user: { name: user.name, firstName: user.firstName, code: user.code, role: user.role, roleLabel: user.roleLabel, kind: user.kind, id: user.id },
+          perms, settings: { telegramUrl: settings.telegramUrl, lateMinutes: late }, venueId: user.venueId || null, shift: await shiftState(db, user), pushKey: env.VAPID_PUBLIC_KEY || '', waDevice: await onWaDevice() });
       case 'POST open': {
         const name = PAGES[body.page];
         if (!name) return json({ error: 'Unknown page.' }, 400);
         await mkLog(db, user, body.page === 'whatsapp' || body.page === 'telegram' ? `Went to ${name}` : `Opened ${name}`, { kind: 'open', request });
         return json({ ok: true });
       }
-      case 'GET delivery': return json({ groups: await K.deliveryByStand(db, late), lateMinutes: late });
-      case 'GET kitchen': return json({ tickets: await K.kitchenTickets(db, late), lateMinutes: late });
+      case 'GET delivery': return json({ groups: await K.deliveryByStand(db, late, scope), lateMinutes: late });
+      case 'GET kitchen': return json({ tickets: (await K.kitchenTickets(db, late, scope)).filter(t => K.inView(t, role)).map(t => K.forRole(t, role)), lateMinutes: late });
       // The alarm check (every 10 seconds from each open app): new orders to accept, late orders.
-      case 'GET pulse': return json(await K.pulse(db, late));
+      case 'GET pulse': {
+        let level = 'all';
+        if (user.kind === 'admin') { await ensureAlertSchema(db); level = (await alertLevels(db))[user.id] || 'all'; }
+        return json(await K.pulse(db, late, { role, level, scope }));
+      }
       case 'GET board': {
         const wa = await onWaDevice();
-        return json({ columns: await K.boardColumns(db, late), unpaid: (await K.unpaidOrders(db)).map(o => (wa ? o : { ...o, chatUrl: null })), lateMinutes: late });
+        const columns = await K.boardColumns(db, late, scope);
+        for (const col of Object.values(columns)) col.orders = col.orders.map(t => K.forRole(t, role));
+        return json({ columns, unpaid: (await K.unpaidOrders(db, scope)).map(o => K.forRole(wa ? o : { ...o, chatUrl: null }, role)), lateMinutes: late });
       }
-      case 'GET alerts': return json({ ...(await K.alerts(db, late)), lateMinutes: late });
-      case 'GET orders': return json(await K.searchOrders(db, { q: q.get('q') || '', status: q.get('status') || '', day: q.get('day') || '', page: q.get('page') || 1 }, late));
+      case 'GET alerts': {
+        const a = await K.alerts(db, late, scope);
+        return json({ ...a, late: a.late.map(t => K.forRole(t, role)), cancelled: a.cancelled.map(t => K.forRole(t, role)), lateMinutes: late });
+      }
+      case 'GET orders': {
+        const r = await K.searchOrders(db, { q: q.get('q') || '', status: q.get('status') || '', day: q.get('day') || '', page: q.get('page') || 1, scope }, late);
+        return json({ ...r, orders: r.orders.map(t => K.forRole(t, role)) });
+      }
       case 'GET order': {
         const o = await K.getOrder(db, q.get('id') || '');
-        if (!o) return json({ error: 'That order no longer exists.' }, 404);
+        if (!o || !visible(o)) return json({ error: 'That order no longer exists.' }, 404);
         // A WhatsApp order becomes paid through Record payment (with evidence), not a plain status button.
-        const held = UNCONFIRMED.includes(o.order_status);
-        const moves = held && !perms.confirm ? [] : K.movesFor(o).filter(m => (!m.cancel || perms.cancel || held) && (m.to !== 'PAID' || perms.confirm) && !(m.to === 'PAID' && o.channel === 'whatsapp' && o.payment_status !== 'paid'));
+        const moves = K.movesFor(o, role).filter(m => !(m.to === 'PAID' && o.channel === 'whatsapp' && o.payment_status !== 'paid'));
+        const held = ['AWAITING_WHATSAPP', 'CONFIRMED', 'PAID'].includes(o.order_status);
+        await markOpened(db, o.id, user.id);
+        const events = perms.reports ? (await db.prepare(`SELECT from_status, to_status, kind, by_name, reason, note, at FROM order_events WHERE order_id = ? ORDER BY id`).bind(o.id).all()).results : [];
         const wa = await onWaDevice();
-        return json({ order: K.ticket(o, late), moves, waDevice: wa, chat: wa ? replyFor(await foodSettings(db), o) : null, needsSupervisor: held && !perms.confirm, canRecordPayment: canRecord(o) && perms.payment, needsPaymentRole: canRecord(o) && !perms.payment, payment: perms.payment ? await proofInfo(db, o.id) : null, methods: PAY_METHODS });
+        return json({ order: K.forRole(K.ticket(o, late), role), events, canFlag: perms.flag && ['ACCEPTED', 'PREPARING'].includes(o.order_status), reasons: perms.confirm ? REJECT_REASONS : null, moves, waDevice: wa, chat: wa ? replyFor(await foodSettings(db), o) : null, needsSupervisor: held && !perms.confirm && moves.length === 0, canRecordPayment: canRecord(o) && perms.payment, needsPaymentRole: canRecord(o) && !perms.payment, payment: perms.payment ? await proofInfo(db, o.id) : null, methods: PAY_METHODS });
       }
       case 'POST order': {
         const to = String(body.to || '');
         const was = await K.getOrder(db, body.id);
-        const held = !!was && UNCONFIRMED.includes(was.order_status);
-        if ((held || to === 'PAID') && !perms.confirm) return denied();
-        if (K.DATA.cancelled.includes(to) && !perms.cancel && !held) return denied();
-        if (to === 'PAID' && was && was.channel === 'whatsapp' && was.payment_status !== 'paid') return json({ error: 'Use Record payment, with the evidence from the fan.', recordPayment: true }, 400);
-        const r = await K.setStatus(db, body.id, to, staffName(user), env);
+        if (!was || !visible(was)) return json({ error: 'That order no longer exists.' }, 404);
+        const blocked = canMove(role, was, to);
+        if (blocked?.status === 403) return denied();
+        if (blocked) return json({ error: blocked.error }, 409);
+        if (to === 'PAID' && was.channel === 'whatsapp' && was.payment_status !== 'paid') return json({ error: 'Use Record payment, with the evidence from the fan.', recordPayment: true }, 400);
+        const why = reasonProblem(to, { reason: body.reason, note: body.note });
+        if (why) return json({ error: why, needReason: true }, 400);
+        const r = await K.setStatus(db, was.id, to, staffName(user), env, { byId: user.id, byRole: role, reason: body.reason, note: body.note, waitUntil: p => context.waitUntil(p) });
         if (r.error) return json({ error: r.error }, 409);
-        await mkLog(db, user, `Order ${r.ref}: ${K.statusLabel(r.from)} to ${K.statusLabel(r.to)}`, { kind: 'order', request });
-        // Confirmed and paid: cooking is pending, so the kitchen's devices are told too.
-        if (r.to === 'ACCEPTED' && r.from === 'PAID') context.waitUntil(notifyKitchen(env, was.id, 'cook'));
+        await mkLog(db, user, `Order ${r.ref}: ${K.statusLabel(r.from)} to ${K.statusLabel(r.to)}`, { kind: 'order', request, before: { status: r.from }, after: { status: r.to, reason: body.reason || null, note: oneLine(body.note, 300) || null } });
         // Delivered: the receipt goes to the buyer's email; the app offers the WhatsApp receipt.
         if (r.to === 'DELIVERED') {
           const receipt = await K.receiptAfterDelivery(env, body.id, staffName(user));
@@ -142,7 +165,7 @@ export async function onRequest(context) {
         if (body.action === 'soldout' || body.action === 'back') {
           const r = await K.setSoldOut(db, body.id, body.action === 'soldout', staffName(user));
           if (r.error) return json({ error: r.error }, 404);
-          if (r.changed) await mkLog(db, user, body.action === 'soldout' ? `Turned ${r.name} off (not ready)` : `Turned ${r.name} on (ready)`, { kind: 'menu', request });
+          if (r.changed) await mkLog(db, user, body.action === 'soldout' ? `Turned ${r.name} off (not ready)` : `Turned ${r.name} on (ready)`, { kind: 'menu', request, before: { dish: r.name, on: body.action === 'soldout' }, after: { dish: r.name, on: body.action !== 'soldout' } });
           return json({ ok: true });
         }
         // Every dish at once: supervisors and Super Admins.
@@ -178,12 +201,14 @@ export async function onRequest(context) {
           if (!perms.price) return denied();
           const r = await K.setPrice(db, body.id, body.price, staffName(user));
           if (r.error) return json({ error: r.error }, 400);
-          if (!r.unchanged) await mkLog(db, user, `Changed the price of ${r.name} from ${r.old} to ${r.new}`, { kind: 'price', request });
+          if (!r.unchanged) await mkLog(db, user, `Changed the price of ${r.name} from ${r.old} to ${r.new}`, { kind: 'price', request, before: { dish: r.name, price: r.old }, after: { dish: r.name, price: r.new } });
           return json({ ok: true, price: r.new });
         }
         return json({ error: 'Unknown action.' }, 400);
       }
-      case 'GET analytics': return json(await K.analytics(db, q.get('day') || ''));
+      case 'GET analytics':
+        if (!perms.reports) return denied();
+        return json(await K.analytics(db, q.get('day') || ''));
       case 'GET shift': return json(await shiftState(db, user));
       case 'POST shift': {
         const r = body.action === 'end' ? await endShift(db, user, request) : await startShift(db, user, request);
@@ -281,6 +306,78 @@ export async function onRequest(context) {
           return json({ ok: true });
         }
         return json({ error: 'Unknown action.' }, 400);
+      }
+      // The kitchen tells the supervisors an ingredient is missing.
+      case 'POST flag': {
+        if (!perms.flag) return denied();
+        const o = await K.getOrder(db, body.id);
+        if (!o || !visible(o)) return json({ error: 'That order no longer exists.' }, 404);
+        const note = oneLine(body.note, 200);
+        if (note.length < 2) return json({ error: 'Write what is missing.' }, 400);
+        await recordOrderEvent(db, o.id, { kind: 'flag', byId: user.id, byName: user.name, byRole: role, note });
+        await mkLog(db, user, `Order ${o.ref}: flagged a missing ingredient`, { kind: 'order', details: note, request });
+        context.waitUntil(notifyKitchen(env, o.id, 'flag'));
+        return json({ ok: true });
+      }
+      case 'POST flag-ack': {
+        if (!perms.confirm) return denied();
+        await db.prepare(`UPDATE order_events SET ack_at = ?, ack_by = ? WHERE id = ? AND kind = 'flag' AND ack_at IS NULL`).bind(new Date().toISOString(), user.name, Number(body.flagId) || 0).run();
+        await mkLog(db, user, 'Dealt with a missing ingredient flag', { kind: 'order', request });
+        return json({ ok: true });
+      }
+      // What a Super Admin hears. There is no route like this for anyone else: staff on duty can't mute.
+      case 'GET alert-settings': {
+        if (!perms.alertLevel) return denied();
+        await ensureAlertSchema(db);
+        const levels = await alertLevels(db);
+        const admins = (await db.prepare(`SELECT * FROM admin_users WHERE active = 1 AND disabled_at IS NULL`).all()).results.filter(a => isFullSuperAdmin(env, a));
+        return json({ level: levels[user.id] || 'all', levels: ALERT_LEVELS, fallbackId: await alertFallback(db), admins: admins.map(a => ({ id: a.id, name: a.name || a.email })) });
+      }
+      case 'POST alert-settings': {
+        if (!perms.alertLevel) return denied();
+        await ensureAlertSchema(db);
+        const levels = await alertLevels(db);
+        const before = { level: levels[user.id] || 'all', fallbackId: await alertFallback(db) };
+        const level = ALERT_LEVELS.includes(body.level) ? body.level : before.level;
+        const fallbackId = body.fallbackId !== undefined ? (String(body.fallbackId || '') || null) : before.fallbackId;
+        const admins = (await db.prepare(`SELECT * FROM admin_users WHERE active = 1 AND disabled_at IS NULL`).all()).results.filter(a => isFullSuperAdmin(env, a));
+        if (fallbackId && !admins.some(a => a.id === fallbackId)) return json({ error: 'The fallback must be a Super Admin.' }, 400);
+        const supervisorOnDuty = !!(await db.prepare(`SELECT 1 FROM mk_shifts WHERE role = 'supervisor' AND ended_at IS NULL AND started_at > ? LIMIT 1`).bind(new Date(Date.now() - 18 * 3600e3).toISOString()).first());
+        const otherAdminsHearing = admins.filter(a => a.id !== user.id && (levels[a.id] || 'all') !== 'off').length;
+        const bad = muteProblem(level, { supervisorOnDuty, otherAdminsHearing, fallbackId, selfId: user.id });
+        if (bad) return json({ error: bad }, 409);
+        const at = new Date().toISOString();
+        await db.batch([
+          db.prepare(`INSERT INTO mk_alert_prefs (user_id, level, updated_at) VALUES (?, ?, ?) ON CONFLICT (user_id) DO UPDATE SET level = excluded.level, updated_at = excluded.updated_at`).bind(user.id, level, at),
+          db.prepare(`INSERT INTO mk_settings (key, value, updated_at, updated_by) VALUES ('alert_fallback', ?, ?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`).bind(fallbackId || '', at, user.code),
+        ]);
+        await mkLog(db, user, `Changed alert settings: ${level}`, { kind: 'settings', request, before, after: { level, fallbackId } });
+        return json({ ok: true, level, fallbackId });
+      }
+      case 'GET venues': {
+        await ensureFoodSchema(db);
+        const rows = (await db.prepare(`SELECT id, name, active, settings_json FROM mk_venues ORDER BY created_at`).all()).results;
+        return json({ venues: rows.filter(v => !scope || scope.includes(v.id)).map(v => ({ id: v.id, name: v.name, active: !!v.active, ...(perms.superAdmin ? { settings: JSON.parse(v.settings_json || '{}') } : {}) })) });
+      }
+      case 'POST venue': {
+        if (!perms.superAdmin) return denied();
+        await ensureFoodSchema(db);
+        const name = oneLine(body.name, 80), at = new Date().toISOString();
+        if (name.length < 2) return json({ error: 'Enter the venue name.' }, 400);
+        const settings = body.settings && typeof body.settings === 'object' ? body.settings : {};
+        if (settings.whatsappNumber !== undefined && !/^234\d{10}$/.test(String(settings.whatsappNumber))) return json({ error: 'The WhatsApp number must look like 2347080094985.' }, 400);
+        if (body.id) {
+          const old = await db.prepare(`SELECT name, active, settings_json FROM mk_venues WHERE id = ?`).bind(String(body.id)).first();
+          if (!old) return json({ error: 'That venue no longer exists.' }, 404);
+          const merged = { ...JSON.parse(old.settings_json || '{}'), ...settings }, active = body.active === undefined ? old.active : (body.active ? 1 : 0);
+          await db.prepare(`UPDATE mk_venues SET name = ?, active = ?, settings_json = ?, updated_at = ? WHERE id = ?`).bind(name, active, JSON.stringify(merged), at, String(body.id)).run();
+          await mkLog(db, user, `Changed venue ${name}`, { kind: 'settings', request, before: { name: old.name, active: !!old.active, settings: JSON.parse(old.settings_json || '{}') }, after: { name, active: !!active, settings: merged } });
+          return json({ ok: true, id: String(body.id) });
+        }
+        const id = `venue-${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
+        await db.prepare(`INSERT INTO mk_venues (id, name, active, settings_json, created_at) VALUES (?, ?, 1, ?, ?)`).bind(id, name, JSON.stringify(settings), at).run();
+        await mkLog(db, user, `Added venue ${name}`, { kind: 'settings', request, after: { id, name, settings } });
+        return json({ ok: true, id });
       }
       case 'GET report-settings':
         if (!perms.staff) return denied();

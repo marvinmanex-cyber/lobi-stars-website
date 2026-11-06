@@ -220,7 +220,7 @@ import Layout from '../../layouts/Layout.astro';
     c.dataset.ref = o.ref;
     const top = el('div', 'kt-top');
     top.append(el('span', 'kt-ref', o.ref));
-    if (o.status !== 'OUT_FOR_DELIVERY') {
+    if (!['READY', 'OUT_FOR_DELIVERY'].includes(o.status)) {
       const m = minsSince(o.paidAt);
       const age = el('span', 'kt-age' + (m >= 10 ? ' red' : m >= 5 ? ' amber' : ''), `${m} min`);
       age.dataset.paid = o.paidAt; top.append(age);
@@ -259,7 +259,7 @@ import Layout from '../../layouts/Layout.astro';
     drawComing();
     fill('listNew', 'nNew', orders.filter(o => o.status === 'PAID'), 'No new orders');
     fill('listCook', 'nCook', orders.filter(o => o.status === 'ACCEPTED' || o.status === 'PREPARING'), 'Nothing cooking');
-    fill('listReady', 'nReady', orders.filter(o => o.status === 'OUT_FOR_DELIVERY').reverse(), 'Nothing ready');
+    fill('listReady', 'nReady', orders.filter(o => ['READY', 'OUT_FOR_DELIVERY'].includes(o.status)).reverse(), 'Nothing ready');
     if (highlight) { const h = document.querySelector(`.kt-card[data-ref="${CSS.escape(highlight)}"]`); if (h) { h.scrollIntoView({ block: 'center', behavior: 'smooth' }); highlight = null; } }
     alarmCheck();
   }

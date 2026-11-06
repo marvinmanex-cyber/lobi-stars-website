@@ -18,13 +18,14 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${t} ${t}" sha
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>MatchDay Kitchen posters | Lobi Stars FC</title>
+  <meta name="description" content="Print the MatchDay Kitchen A4 poster or show the big screen slide, with the code fans scan to order food to their seat." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;700&family=Barlow+Condensed:ital,wght@0,700;1,800&display=swap" rel="stylesheet" />
   <style>
     body { margin: 0; background: #E6E9EF; font-family: 'Barlow', Arial, sans-serif; color: #0A1730; }
     .bar { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 12px 18px; background: #0A1730; color: #fff; }
     .bar button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: #18C93A; color: #04140A; font: 700 16px/1 'Barlow Condensed', sans-serif; letter-spacing: .05em; text-transform: uppercase; cursor: pointer; }
-    .wrap { display: grid; gap: 28px; justify-items: center; padding: 28px 14px 60px; }
+    .wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; justify-items: center; padding: 28px 14px 60px; }
     h2.lbl { margin: 0; font: 700 18px/1 'Barlow Condensed', sans-serif; letter-spacing: .1em; text-transform: uppercase; color: #5B6472; }
     /* A4 poster */
     .a4 { width: 210mm; height: 297mm; max-width: 100%; aspect-ratio: 210 / 297; height: auto; box-sizing: border-box; background: radial-gradient(circle at 50% 0%, #17306A, #0A1730 70%); color: #fff; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 14mm 12mm; box-shadow: 0 12px 34px rgba(0,0,0,.25); }
@@ -38,7 +39,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${t} ${t}" sha
     /* 16:9 big screen */
     .wide { width: 100%; max-width: 1280px; aspect-ratio: 16 / 9; box-sizing: border-box; display: grid; grid-template-columns: 1.2fr 1fr; align-items: center; gap: 4%; padding: 4% 5%; background: linear-gradient(120deg, #0A1730, #17306A 60%, #0E7A26); color: #fff; box-shadow: 0 12px 34px rgba(0,0,0,.25); }
     .wide img.logo { width: 34%; }
-    .wide h1 { margin: 2% 0; font: italic 800 clamp(26px, 5.4vw, 76px)/0.95 'Barlow Condensed', sans-serif; text-transform: uppercase; color: #FFC21A; }
+    .wide h2 { margin: 2% 0; font: italic 800 clamp(26px, 5.4vw, 76px)/0.95 'Barlow Condensed', sans-serif; text-transform: uppercase; color: #FFC21A; }
     .wide p { margin: 0 0 3%; font-size: clamp(14px, 2vw, 28px); }
     .wide .qrbox { background: #fff; border-radius: 4%; padding: 5%; text-align: center; color: #0A1730; }
     .wide .qrbox b { display: block; margin-top: 3%; font: 700 clamp(14px, 2.2vw, 30px)/1 'Barlow Condensed', sans-serif; }
@@ -63,7 +64,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${t} ${t}" sha
     <section class="wide" id="wide" aria-label="Big screen slide">
       <div>
         <img class="logo" src="/images/matchday-kitchen/logo-320.png" alt="MatchDay Kitchen" />
-        <h1>Order food to your seat</h1>
+        <h2>Order food to your seat</h2>
         <p>Scan the code, order on your phone, and stay in your seat. Order now for half-time and skip the rush.</p>
       </div>
       <div class="qrbox"><div set:html={svg} /><b>lobistarsfc.com/kitchen</b></div>

@@ -11,6 +11,7 @@ const track = o => `${SITE}/kitchen/?ref=${encodeURIComponent(o.ref)}&t=${encode
 function message(o, to) {
   const pickup = o.fulfilment === 'pickup';
   if (to === 'PREPARING') return { title: `Order #${no(o)}: cooking now 🍳`, body: 'The MatchDay Kitchen is preparing your food.' };
+  if (to === 'READY') return { title: `Order #${no(o)} is ready to collect`, body: `Show number #${no(o)} at ${o.pickup_point || 'the pickup point'}.` };
   if (to === 'OUT_FOR_DELIVERY') return pickup
     ? { title: `Order #${no(o)} is ready to collect`, body: `Show number #${no(o)} at ${o.pickup_point || 'the pickup point'}.` }
     : { title: `Your food is on the way 🛵`, body: `Order #${no(o)} is coming to ${[o.stand, o.seat].filter(Boolean).join(', ') || 'your seat'}.` };

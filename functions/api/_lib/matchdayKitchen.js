@@ -17,6 +17,9 @@
 import { verifyPassword } from './password.js';
 import { ensureFanSchema, rateLimit } from './fans.js';
 import { isFullSuperAdmin } from './superAdmins.js';
+import { verifyTotp } from './totp.js';
+import { looksLikeBackupCode, useBackupCode } from './adminSecurity.js';
+import { DEFAULT_VENUE } from './foodOrders.js';
 
 export const MK_COOKIE = 'ls_mdk';
 export const IDLE_MS = 22 * 60e3;              // the page asks "Still there?" after 20 minutes; the server ends the session after 22
@@ -24,7 +27,7 @@ const MAX_MS = 14 * 3600e3;                    // and after 14 hours in any case
 const LOCK_AFTER = 5;                          // Super Admin email sign-in: 5 wrong passwords, wait 15 minutes
 const CODE_FAILS = 10;                         // login codes: 10 wrong codes from one connection, wait 15 minutes
 export const STAFF_ID_RE = /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
-export const ROLES = { cook: 'Cook / kitchen hand', pass: 'Pass / order handler', supervisor: 'Kitchen supervisor' };
+export const ROLES = { cook: 'Cook / kitchen hand', pass: 'Pass / order handler', delivery: 'Delivery / runner', supervisor: 'Kitchen supervisor' };
 export const SETTING_DEFAULTS = { telegram_url: '', cancel_roles: 'pass,supervisor', price_roles: 'supervisor', late_minutes: '5' };
 
 const nowIso = () => new Date().toISOString();
@@ -77,6 +80,10 @@ export async function ensureKitchenSchema(db) {
   // The personal login code, stored only as a hash (shown once, when it is made).
   try { await db.prepare(`ALTER TABLE mk_staff ADD COLUMN login_code_hash TEXT`).run(); } catch { /* already there */ }
   await db.prepare(`CREATE INDEX IF NOT EXISTS mk_staff_code ON mk_staff (login_code_hash)`).run();
+  // The order workflow (6 Nov 2026): each person and shift belongs to a venue; the log keeps before and after.
+  for (const [t, col] of [['mk_staff', 'venue_id'], ['mk_shifts', 'venue_id'], ['mk_activity', 'before_json'], ['mk_activity', 'after_json']]) {
+    try { await db.prepare(`ALTER TABLE ${t} ADD COLUMN ${col} TEXT`).run(); } catch { /* already there */ }
+  }
   ready = true;
 }
 
@@ -101,9 +108,14 @@ export async function saveSettings(db, who, v) {
 // ── Who is signed in, and what they may do ──
 export function permissions(user, settings) {
   const sa = user.kind === 'admin';
+  const manager = sa || user.role === 'supervisor';
   return {
     move: true, soldOut: true,
-    cancel: sa || settings.cancelRoles.includes(user.role),
+    cancel: manager,                                // cancelling and rejecting: supervisors and Super Admins only
+    reports: manager,                               // sales figures and reports
+    money: manager || user.role === 'pass',         // totals, payment details and the fan's masked number
+    flag: !sa && user.role !== 'delivery',          // tell a supervisor an ingredient is missing
+    alertLevel: sa,                                 // only Super Admins can change what they hear: nobody else can mute
     price: sa || user.role === 'supervisor',        // prices, and adding and deleting dishes: supervisors and Super Admins only
     menu: sa || user.role === 'supervisor',
     // Confirming or rejecting an order, recording a WhatsApp payment and opening its evidence: supervisors and Super Admins.
@@ -117,12 +129,12 @@ export function permissions(user, settings) {
 }
 
 // ── Activity log ──
-export async function mkLog(db, user, action, { kind = null, details = null, request = null } = {}) {
+export async function mkLog(db, user, action, { kind = null, details = null, request = null, before = null, after = null } = {}) {
   try {
     await ensureKitchenSchema(db);
-    await db.prepare(`INSERT INTO mk_activity (at, actor_kind, actor_id, actor_name, actor_code, action, kind, details, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+    await db.prepare(`INSERT INTO mk_activity (at, actor_kind, actor_id, actor_name, actor_code, action, kind, details, ip, before_json, after_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .bind(nowIso(), user?.kind || 'system', user?.id || null, user?.name || null, user?.code || null, oneLine(action, 300), kind, details ? clean(details, 1000) : null,
-        request?.headers.get('CF-Connecting-IP') || null).run();
+        request?.headers.get('CF-Connecting-IP') || null, before === null ? null : JSON.stringify(before), after === null ? null : JSON.stringify(after)).run();
   } catch (e) { console.error('[matchday kitchen] activity', e); }
 }
 export async function activityPage(db, { userId = '', day = '', page = 1, limit = 50, all = false } = {}) {
@@ -169,7 +181,7 @@ async function nextStaffId(db) {
 // Only a Super Admin adds or changes a kitchen supervisor; supervisors manage cooks and pass staff.
 const SUPER_ONLY = 'Only a Super Admin can add or change a kitchen supervisor.';
 const staffView = s => ({ id: s.id, staffId: s.staff_id, name: s.full_name, role: s.role, roleLabel: ROLES[s.role] || s.role, active: !!s.is_active,
-  hasCode: !!s.login_code_hash, lastLogin: s.last_login_at, createdAt: s.created_at });
+  hasCode: !!s.login_code_hash, lastLogin: s.last_login_at, createdAt: s.created_at, venueId: s.venue_id || DEFAULT_VENUE });
 export async function listStaff(db) {
   await ensureKitchenSchema(db);
   return (await db.prepare(`SELECT * FROM mk_staff ORDER BY is_active DESC, full_name`).all()).results.map(staffView);
@@ -188,9 +200,11 @@ export async function createStaff(env, by, request, v) {
   if (given && await db.prepare(`SELECT id FROM mk_staff WHERE staff_id = ?`).bind(given).first()) return { error: 'That Staff ID is already used. Choose another.' };
   const staffId = given || await nextStaffId(db);
   const id = newId('mks'), at = nowIso(), code = await newLoginCode(env);
-  await db.prepare(`INSERT INTO mk_staff (id, staff_id, full_name, role, password_hash, login_code_hash, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, 'login-code', ?, ?, ?, ?)`)
-    .bind(id, staffId, name, role, code.hash, by.code || by.name, at, at).run();
-  await mkLog(db, by, `Created staff account ${name} (${staffId}), ${ROLES[role]}`, { kind: 'staff', request });
+  // A supervisor adds people to their own venue; a Super Admin can choose.
+  const venueId = by.kind === 'admin' ? (String(v.venueId || '') || DEFAULT_VENUE) : (by.venueId || DEFAULT_VENUE);
+  await db.prepare(`INSERT INTO mk_staff (id, staff_id, full_name, role, password_hash, login_code_hash, created_by, created_at, updated_at, venue_id) VALUES (?, ?, ?, ?, 'login-code', ?, ?, ?, ?, ?)`)
+    .bind(id, staffId, name, role, code.hash, by.code || by.name, at, at, venueId).run();
+  await mkLog(db, by, `Created staff account ${name} (${staffId}), ${ROLES[role]}`, { kind: 'staff', request, after: { name, staffId, role, venueId, active: true } });
   return { ok: true, id, staffId, name, loginCode: showCode(code.digits) };
 }
 export async function updateStaff(env, by, request, id, v) {
@@ -201,6 +215,9 @@ export async function updateStaff(env, by, request, id, v) {
   const name = v.name !== undefined ? oneLine(v.name, 80) : s.full_name;
   const role = v.role !== undefined ? String(v.role) : s.role;
   const active = v.active !== undefined ? (v.active ? 1 : 0) : s.is_active;
+  const venueId = by.kind === 'admin' && v.venueId !== undefined ? String(v.venueId) : (s.venue_id || DEFAULT_VENUE);
+  // A supervisor only manages people at their own venue.
+  if (by.kind !== 'admin' && by.venueId && (s.venue_id || DEFAULT_VENUE) !== by.venueId) return { error: 'That person works at another venue.', status: 403 };
   if (name.length < 2) return { error: "Enter the person's full name." };
   if (!ROLES[role]) return { error: 'Choose a role.' };
   if (by.kind !== 'admin' && (s.role === 'supervisor' || role === 'supervisor')) return { error: SUPER_ONLY, status: 403 };
@@ -210,16 +227,18 @@ export async function updateStaff(env, by, request, id, v) {
   if (role !== s.role) changes.push(`role ${ROLES[s.role] || s.role} → ${ROLES[role]}`);
   if (active !== s.is_active) changes.push(active ? 'can sign in again' : 'switched off');
   if (code) changes.push('new login code');
+  if (venueId !== (s.venue_id || DEFAULT_VENUE)) changes.push('venue changed');
   if (!changes.length) return { ok: true, unchanged: true };
-  await db.prepare(`UPDATE mk_staff SET full_name = ?, role = ?, is_active = ?, ${code ? 'login_code_hash = ?, ' : ''}updated_at = ? WHERE id = ?`)
-    .bind(...[name, role, active, ...(code ? [code.hash] : []), nowIso(), s.id]).run();
+  await db.prepare(`UPDATE mk_staff SET full_name = ?, role = ?, is_active = ?, venue_id = ?, ${code ? 'login_code_hash = ?, ' : ''}updated_at = ? WHERE id = ?`)
+    .bind(...[name, role, active, venueId, ...(code ? [code.hash] : []), nowIso(), s.id]).run();
   // A new code or a switched-off account signs the person out on every tablet straight away.
   if (code || !active) {
     await endSessions(db, s.id, code ? 'new login code' : 'account switched off');
     // No more order alerts on their devices (they turn back on when the person next signs in, if allowed).
     await db.prepare(`UPDATE push_subs SET is_active = 0 WHERE staff_id = ? AND mk_app = 1`).bind(s.id).run().catch(() => {});
   }
-  await mkLog(db, by, `Changed staff account ${name} (${s.staff_id}): ${changes.join(', ')}`, { kind: 'staff', request });
+  await mkLog(db, by, `Changed staff account ${name} (${s.staff_id}): ${changes.join(', ')}`, { kind: 'staff', request,
+    before: { name: s.full_name, role: s.role, venueId: s.venue_id || DEFAULT_VENUE, active: !!s.is_active }, after: { name, role, venueId, active: !!active } });
   return { ok: true, staffId: s.staff_id, name, ...(code ? { loginCode: showCode(code.digits) } : {}) };
 }
 
@@ -239,7 +258,18 @@ async function startSession(db, request, kind, userId) {
   return { cookie: sessionCookie(token), csrf };
 }
 
-export async function signIn(env, request, { login, password, loginCode }) {
+/** The Super Admin's second step: the authenticator code or a backup code. Returns an error text, or null. */
+async function secondStep(env, db, u, otp, request) {
+  const code = String(otp || '').trim();
+  if (!(await rateLimit(db, `mdk-otp:${u.id}`, 8, 900))) return 'Too many tries. Please wait 15 minutes.';
+  if (looksLikeBackupCode(code)) return (await useBackupCode(db, u.id, code)) === null ? 'That backup code is not right or has already been used.' : null;
+  const step = await verifyTotp(u.totp_secret, code, u.totp_last_step);
+  if (!step) return 'That code is not right or has already been used. Wait for the next code and try again.';
+  const r = await db.prepare(`UPDATE admin_users SET totp_last_step = ? WHERE id = ? AND totp_last_step < ?`).bind(step, u.id, step).run();
+  return r.meta?.changes ? null : 'That code has already been used. Wait for the next code.';
+}
+
+export async function signIn(env, request, { login, password, loginCode, otp }) {
   const db = env.DB;
   await ensureFanSchema(db); await ensureKitchenSchema(db);
   const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
@@ -290,8 +320,15 @@ export async function signIn(env, request, { login, password, loginCode }) {
       await mkLog(db, { kind: 'public', name: email, code: email }, ok && u ? 'Sign-in refused: only website Super Admins can sign in with an email' : 'Wrong email or password', { kind: 'sign_in', request });
       return { error: ok && u ? 'Only website Super Admins can sign in with an email. Kitchen staff use their login code.' : FAIL, status: 401 };
     }
-    // MatchDay Kitchen: email and password only (no two-step code). A kitchen session opens
-    // only the kitchen, never the website admin, which still asks for the code.
+    // Super Admins use two-step sign-in here too, with the same authenticator as the website admin.
+    // A kitchen session still opens only the kitchen, never the website admin.
+    const testAccount = env.STAFF_TEST_PASSWORDS === '1' && u.test_account;
+    if (!testAccount) {
+      if (!u.totp_enabled) return { error: 'Set up two-step login in the website admin first (My account), then sign in here.', status: 403 };
+      if (!String(otp || '').trim()) return { error: 'Enter the 6-digit code from your authenticator app (or a backup code).', needCode: true, status: 401 };
+      const bad = await secondStep(env, db, u, otp, request);
+      if (bad) { await mkLog(db, adminActor(u), 'Sign-in refused: wrong two-step code', { kind: 'sign_in', request }); return { error: bad, needCode: true, status: 401 }; }
+    }
     const s = await startSession(db, request, 'admin', u.id);
     await mkLog(db, adminActor(u), 'Signed in', { kind: 'sign_in', request });
     return { ok: true, cookie: s.cookie };
@@ -311,7 +348,7 @@ export async function getKitchenSession(request, env, { touch = true } = {}) {
   let user = null;
   if (s.kind === 'staff') {
     const st = await db.prepare(`SELECT * FROM mk_staff WHERE id = ?`).bind(s.user_id).first();
-    if (st?.is_active) user = { ...staffActor(st), role: st.role, roleLabel: ROLES[st.role] || st.role, firstName: st.full_name.split(' ')[0] };
+    if (st?.is_active) user = { ...staffActor(st), role: st.role, roleLabel: ROLES[st.role] || st.role, firstName: st.full_name.split(' ')[0], venueId: st.venue_id || DEFAULT_VENUE };
   } else {
     const u = await db.prepare(`SELECT * FROM admin_users WHERE id = ?`).bind(s.user_id).first().catch(() => null);
     if (u && u.active && !u.disabled_at && isFullSuperAdmin(env, u)) user = { ...adminActor(u), role: 'super_admin', roleLabel: 'Super admin', email: u.email, firstName: String(u.name || u.email).split(/[ @]/)[0] };
@@ -353,7 +390,7 @@ export async function shiftState(db, user) {
 }
 export async function startShift(db, user, request) {
   if (await openShift(db, user.id)) return { error: 'Your shift has already started.' };
-  await db.prepare(`INSERT INTO mk_shifts (id, user_id, name, code, role, started_at) VALUES (?, ?, ?, ?, ?, ?)`).bind(newId('sh'), user.id, user.name, user.code, user.role, nowIso()).run();
+  await db.prepare(`INSERT INTO mk_shifts (id, user_id, name, code, role, started_at, venue_id) VALUES (?, ?, ?, ?, ?, ?, ?)`).bind(newId('sh'), user.id, user.name, user.code, user.role, nowIso(), user.venueId || DEFAULT_VENUE).run();
   await mkLog(db, user, 'Started shift', { kind: 'shift', request });
   return { ok: true };
 }

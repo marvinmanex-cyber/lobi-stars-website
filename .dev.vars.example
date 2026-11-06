@@ -6,6 +6,8 @@ ADMIN_CODE=change-me
 SESSION_SECRET=change-me-long-random
 PAYSTACK_SECRET_KEY=sk_test_xxx
 # PAYSTACK_KITCHEN_SECRET_KEY=sk_test_xxx   # optional: MatchDay Kitchen's own Paystack account
+# WHATSAPP_CLOUD_TOKEN=xxx                  # optional: Meta's WhatsApp Business Platform (automatic customer updates)
+# WHATSAPP_PHONE_NUMBER_ID=xxx              # optional: goes with the token; updates stay off until both are set
 # PAYSTACK_FAKE=1            # local tests only, NEVER in production
 # FANS_DEV_LINKS=1           # local tests only
 

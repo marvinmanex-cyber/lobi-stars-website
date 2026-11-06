@@ -37,6 +37,16 @@ import '../../styles/matchdayKitchen.css';
       </div>
     </form>
   </dialog>
+  <dialog class="mk-dialog mk-paydlg" id="whyDlg" aria-labelledby="whyT">
+    <form id="whyF" novalidate>
+      <h2 id="whyT">Reject order</h2>
+      <p class="mk-status" id="whySum" style="text-transform:none;letter-spacing:0"></p>
+      <div class="mk-field" id="whyListBox"><label for="whyList">Why?</label><select id="whyList"><option value="">Choose a reason</option><option value="sold_out">An item is sold out</option><option value="kitchen_at_capacity">The kitchen is at capacity</option><option value="outside_delivery_zone">Outside the delivery area</option><option value="payment_issue">A problem with the payment</option><option value="other">Other</option></select></div>
+      <div class="mk-field"><label for="whyNote" id="whyNoteL">Note (required for Other)</label><input id="whyNote" maxlength="300" autocomplete="off" /></div>
+      <p class="mk-err" id="whyErr" role="alert" hidden></p>
+      <div class="mk-actions"><button type="button" class="mk-btn" id="whyNo">Keep the order</button><button type="submit" class="mk-btn danger big" id="whyYes">Reject order</button></div>
+    </form>
+  </dialog>
   <dialog class="mk-dialog mk-paydlg" id="payDlg" aria-labelledby="payT">
     <form id="payF" novalidate>
       <h2 id="payT">Record payment</h2>

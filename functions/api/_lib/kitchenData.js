@@ -10,8 +10,9 @@
 // Status changes go through foodOrders.moveOrder (the same rules, alerts and
 // time stamps as the admin pages); menu changes update only the one field
 // (plus updated_at) and write the dish's history.
-import { ensureFoodSchema, moveOrder, STATUS, STAFF_MOVES, whereText, formatNaira, expireStale, foodSettings, staffMessage } from './foodOrders.js';
+import { ensureFoodSchema, moveOrder, STATUS, STAFF_MOVES, whereText, formatNaira, expireStale, foodSettings, staffMessage, DEFAULT_VENUE } from './foodOrders.js';
 import { ensureMenuSchema, history, parseItem, wasOrdered } from './foodMenuDb.js';
+import { canMove, ROLE_VIEW, seesMoney, alarmsFor } from './kitchenWorkflow.js';
 import { receiptEmailHtml, receiptWhatsappText, receiptPdf, receiptPdfName, waNumber, canReceipt, LOGO_JPEG } from './foodReceipt.js';
 import { sendEmail } from './email.js';
 
@@ -19,29 +20,31 @@ export const DATA = {
   orders: 'food_orders', items: 'food_items', categories: 'food_categories',
   // The kitchen's statuses and the website statuses they cover.
   stages: {
-    new: { label: 'New', statuses: ['PAID', 'ACCEPTED'] },
-    preparing: { label: 'Preparing', statuses: ['PREPARING'] },
-    ready: { label: 'On the way', statuses: ['OUT_FOR_DELIVERY'] },
+    new: { label: 'New', statuses: ['PAID'] },
+    preparing: { label: 'Preparing', statuses: ['ACCEPTED', 'PREPARING'] },
+    ready: { label: 'Ready', statuses: ['READY'] },
+    out: { label: 'On the way', statuses: ['OUT_FOR_DELIVERY'] },
   },
-  kitchenScreen: ['PAID', 'ACCEPTED', 'PREPARING'],       // tickets to cook (they can be late)
+  kitchenScreen: ['PAID', 'ACCEPTED', 'PREPARING', 'READY'],       // tickets to cook (they can be late)
   // The kitchen screen also keeps orders on the way until someone taps "Mark delivered".
-  kitchenShows: ['PAID', 'ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY'],
-  board: ['PAID', 'ACCEPTED', 'PREPARING', 'OUT_FOR_DELIVERY'],
-  cancelled: ['CANCELLED', 'REFUNDED'],
+  kitchenShows: ['PAID', 'ACCEPTED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY', 'FAILED_DELIVERY'],
+  board: ['PAID', 'ACCEPTED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY'],
+  cancelled: ['CANCELLED', 'REFUNDED', 'REJECTED'],
   // The next step for each status (the big green button). The order of service:
   // New (paid) -> Confirm order (supervisors, Super Admins) -> Received -> Start cooking -> Preparing -> Food on the way
   // -> On the way -> Mark delivered -> Delivered (receipt emailed; WhatsApp receipt one tap).
   next: {
     PAID: { to: 'ACCEPTED', label: 'Confirm order' },
     ACCEPTED: { to: 'PREPARING', label: 'Start cooking' },
-    PREPARING: { to: 'OUT_FOR_DELIVERY', label: 'Food on the way' },
+    PREPARING: { to: 'READY', label: 'Food ready' },
+    READY: { to: 'OUT_FOR_DELIVERY', label: 'Take for delivery' },
     OUT_FOR_DELIVERY: { to: 'DELIVERED', label: 'Mark delivered' },
     AWAITING_WHATSAPP: { to: 'CONFIRMED', label: 'Confirm order' },
     CONFIRMED: { to: 'PAID', label: 'Payment received' },
   },
   // Kitchen words for the website statuses (everything else uses the website label).
   // Same words as the fan's tracking page (Received, Preparing, On the way, Delivered).
-  labels: { PAID: 'New', ACCEPTED: 'Received', PREPARING: 'Preparing', OUT_FOR_DELIVERY: 'On the way', DELIVERED: 'Delivered' },
+  labels: { PAID: 'New', ACCEPTED: 'Received', PREPARING: 'Preparing', READY: 'Ready', OUT_FOR_DELIVERY: 'On the way', DELIVERED: 'Delivered', FAILED_DELIVERY: 'Delivery failed', REJECTED: 'Rejected', CANCELLED: 'Cancelled' },
   lateMinutes: 15,
   // The kitchen screen and live board show one match day: orders from the last 12 hours
   // (an order left unfinished from an earlier match is still in Food orders, not on the screen).
@@ -64,15 +67,16 @@ const pickup = o => o.fulfilment === 'pickup';
 function nextFor(o) {
   const n = DATA.next[o.order_status];
   if (n && o.order_status === 'PREPARING' && pickup(o)) return { ...n, label: 'Ready for pickup' };
+  if (o.order_status === 'READY' && pickup(o)) return { to: 'DELIVERED', label: 'Collected' };
   return n || null;
 }
 /** One order as the kitchen pages show it. */
 export function ticket(o, lateMinutes = DATA.lateMinutes) {
   const waited = minutesSince(startedAt(o));
   // Late = not delivered within the target (5 minutes by default) of payment, at any step.
-  const inKitchen = DATA.kitchenShows.includes(o.order_status);
+  const inKitchen = DATA.kitchenShows.includes(o.order_status) && o.order_status !== 'FAILED_DELIVERY';
   return {
-    id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: o.order_status === 'OUT_FOR_DELIVERY' && pickup(o) ? 'Ready for pickup' : statusLabel(o.order_status), stage: stageOf(o.order_status),
+    id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: o.order_status === 'READY' && pickup(o) ? 'Ready for pickup' : statusLabel(o.order_status), venueId: o.venue_id || null, rejectReason: o.reject_reason || '', rejectNote: o.reject_note || '', cancelReason: o.cancel_reason || '', fulfilment: o.fulfilment || 'seat', stage: stageOf(o.order_status),
     customer: o.customer_name || '', where: o.seat || o.pickup_point ? whereText(o) : '', note: o.notes || '',
     items: items(o).map(i => ({ name: i.name, qty: i.qty, note: i.note || '' })),
     itemCount: items(o).reduce((n, i) => n + (Number(i.qty) || 0), 0),
@@ -86,24 +90,36 @@ export function ticket(o, lateMinutes = DATA.lateMinutes) {
 
 async function ready(db) { await ensureFoodSchema(db); await ensureMenuSchema(db); }
 
+/** Cooks and runners don't see totals, payment details or the fan's phone number. */
+export function forRole(t, role) {
+  if (seesMoney(role)) return t;
+  const { total, totalKobo, totalNaira, paid, paidNote, phone, chatUrl, canPay, channel, ...rest } = t;
+  return rest;
+}
+/** The orders this person's screen shows. */
+export const inView = (t, role) => !ROLE_VIEW[role] || ROLE_VIEW[role].includes(t.status);
+/** Supervisors, cooks and runners see their own venue. Super Admins see them all (scope null). */
+// An order with no venue recorded belongs to the first venue, so it can never be hidden from everyone.
+export const inScope = (o, scope) => !scope || scope.includes(o.venue_id || o.venueId || DEFAULT_VENUE);
+
 export async function getOrder(db, id) {
   await ready(db);
   return db.prepare(`SELECT * FROM food_orders WHERE id = ? OR ref = ?`).bind(String(id), String(id)).first();
 }
 
 /** Kitchen screen: orders to cook (New, Preparing) and on the way (until delivered), oldest first. */
-export async function kitchenTickets(db, lateMinutes) {
+export async function kitchenTickets(db, lateMinutes, scope = null) {
   await ready(db);
   const { results } = await db.prepare(`SELECT * FROM food_orders WHERE order_status IN (${placeholders(DATA.kitchenShows)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 200`).bind(...DATA.kitchenShows, since()).all();
-  return results.map(o => ticket(o, lateMinutes));
+  return results.filter(o => inScope(o, scope)).map(o => ticket(o, lateMinutes));
 }
 
 /** Live order board: New / Preparing / Ready columns. */
-export async function boardColumns(db, lateMinutes) {
+export async function boardColumns(db, lateMinutes, scope = null) {
   await ready(db);
   const { results } = await db.prepare(`SELECT * FROM food_orders WHERE order_status IN (${placeholders(DATA.board)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 300`).bind(...DATA.board, since()).all();
   const cols = Object.fromEntries(Object.entries(DATA.stages).map(([k, v]) => [k, { label: v.label, orders: [] }]));
-  for (const o of results) { const t = ticket(o, lateMinutes); if (cols[t.stage]) cols[t.stage].orders.push(t); }
+  for (const o of results.filter(x => inScope(x, scope))) { const t = ticket(o, lateMinutes); if (cols[t.stage]) cols[t.stage].orders.push(t); }
   return cols;
 }
 
@@ -114,12 +130,12 @@ export async function boardColumns(db, lateMinutes) {
  * appears as New.
  */
 export const UNPAID = ['AWAITING_PAYMENT', 'AWAITING_WHATSAPP', 'CONFIRMED', 'PAYMENT_FAILED', 'EXPIRED'];
-export async function unpaidOrders(db) {
+export async function unpaidOrders(db, scope = null) {
   await ready(db);
   await expireStale(db).catch(() => {});
   const { results } = await db.prepare(`SELECT * FROM food_orders WHERE order_status IN (${placeholders(UNPAID)}) AND created_iso >= ? ORDER BY created_iso DESC LIMIT 100`).bind(...UNPAID, since()).all();
   const settings = await foodSettings(db);
-  return results.map(o => {
+  return results.filter(o => inScope(o, scope)).map(o => {
     const phone = String(o.phone || '').replace(/\D/g, '').replace(/^0/, '234');
     const first = String(o.customer_name || '').trim().split(/\s+/)[0] || 'there';
     const failed = ['PAYMENT_FAILED', 'EXPIRED'].includes(o.order_status);
@@ -144,24 +160,25 @@ export function lagosDay(day) {
   return { day: d, start, end };
 }
 
-export async function alerts(db, lateMinutes) {
+export async function alerts(db, lateMinutes, scope = null) {
   await ready(db);
-  const late = (await kitchenTickets(db, lateMinutes)).filter(t => t.late);
+  const late = (await kitchenTickets(db, lateMinutes, scope)).filter(t => t.late);
   const soldOut = (await db.prepare(`SELECT i.id, i.name, c.name AS category FROM food_items i LEFT JOIN food_categories c ON c.id = i.category_id WHERE i.sold_out = 1 AND i.archived = 0 ORDER BY c.sort, i.sort, i.name`).all()).results;
   const { start, end } = lagosDay();
   const cancelled = (await db.prepare(`SELECT * FROM food_orders WHERE order_status IN (${placeholders(DATA.cancelled)}) AND COALESCE(cancelled_at, status_at, created_iso) >= ? AND COALESCE(cancelled_at, status_at, created_iso) < ? ORDER BY COALESCE(cancelled_at, status_at) DESC LIMIT 100`)
-    .bind(...DATA.cancelled, start, end).all()).results.map(o => ticket(o, lateMinutes));
+    .bind(...DATA.cancelled, start, end).all()).results.filter(o => inScope(o, scope)).map(o => ticket(o, lateMinutes));
   return { late, soldOut, cancelled };
 }
 
 /** Food orders: filter by status and day; 30 a page. A search by order number or name looks at every day. */
-export async function searchOrders(db, { q = '', status = '', day = '', page = 1 } = {}, lateMinutes) {
+export async function searchOrders(db, { q = '', status = '', day = '', page = 1, scope = null } = {}, lateMinutes) {
   await ready(db);
   await expireStale(db).catch(() => {});
   const { day: d, start, end } = lagosDay(day);
   const text = String(q || '').trim().slice(0, 60);
   const w = text ? [] : ['created_iso >= ?', 'created_iso < ?'], b = text ? [] : [start, end];
   if (text) { w.push('(ref LIKE ? OR customer_name LIKE ? OR id = ?)'); b.push(`%${text}%`, `%${text}%`, text); }
+  if (scope) { w.push(`COALESCE(venue_id, ?) IN (${placeholders(scope)})`); b.push(DEFAULT_VENUE, ...scope); }
   if (status && DATA.stages[status]) { w.push(`order_status IN (${placeholders(DATA.stages[status].statuses)})`); b.push(...DATA.stages[status].statuses); }
   else if (status === 'cancelled') { w.push(`order_status IN (${placeholders(DATA.cancelled)})`); b.push(...DATA.cancelled); }
   else if (status && STATUS[status]) { w.push('order_status = ?'); b.push(status); }
@@ -173,17 +190,17 @@ export async function searchOrders(db, { q = '', status = '', day = '', page = 1
 }
 
 /** The status changes allowed from this order's status (the website's own rules), next step first. */
-export function movesFor(o) {
-  const next = DATA.next[o.order_status]?.to;
-  const all = STAFF_MOVES[o.order_status] || [];
-  return [...all].sort((a, b) => (a === next ? -1 : b === next ? 1 : 0)).map(to => ({ to, label: statusLabel(to), next: to === next, cancel: DATA.cancelled.includes(to) }));
+export function movesFor(o, role = 'super_admin') {
+  const next = nextFor(o)?.to;
+  const all = (STAFF_MOVES[o.order_status] || []).filter(to => !canMove(role, o, to));
+  return [...all].sort((a, b) => (a === next ? -1 : b === next ? 1 : 0)).map(to => ({ to, label: statusLabel(to), next: to === next, cancel: to === 'CANCELLED', reject: to === 'REJECTED' }));
 }
 
 /** Changes an order's status (through the website's moveOrder). Returns { ok, from, to } or { error }. */
-export async function setStatus(db, id, to, staffName, env = null) {
+export async function setStatus(db, id, to, staffName, env = null, opts = {}) {
   const o = await getOrder(db, id);
   if (!o) return { error: 'That order no longer exists.' };
-  const problem = await moveOrder(db, o, String(to), staffName, env);
+  const problem = await moveOrder(db, o, String(to), staffName, env, opts);
   if (problem) return { error: problem };
   return { ok: true, ref: o.ref || o.id, from: o.order_status, to: String(to) };
 }
@@ -304,15 +321,15 @@ export async function analytics(db, day) {
  * Orders for the runners, by stand (pickup orders by pickup point): on the way first in seat
  * order, plus how many are still cooking for that stand. Late ones are marked.
  */
-export async function deliveryByStand(db, lateMinutes) {
+export async function deliveryByStand(db, lateMinutes, scope = null) {
   await ready(db);
   const { results } = await db.prepare(`SELECT * FROM food_orders WHERE order_status IN (${placeholders(DATA.kitchenShows)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 300`).bind(...DATA.kitchenShows, since()).all();
   const groups = new Map();
-  for (const o of results) {
+  for (const o of results.filter(x => inScope(x, scope) && x.order_status !== 'FAILED_DELIVERY')) {
     const name = pickup(o) ? `Pickup: ${o.pickup_point || 'pickup point'}` : (o.stand || 'No stand given');
     if (!groups.has(name)) groups.set(name, { name, pickup: pickup(o), ready: [], cooking: 0 });
     const g = groups.get(name);
-    if (o.order_status === 'OUT_FOR_DELIVERY') g.ready.push({ ...ticket(o, lateMinutes), seat: o.seat || '' });
+    if (['READY', 'OUT_FOR_DELIVERY'].includes(o.order_status)) g.ready.push({ ...forRole(ticket(o, lateMinutes), 'delivery'), seat: o.seat || '' });
     else g.cooking++;
   }
   const list = [...groups.values()];
@@ -376,20 +393,27 @@ export async function checkData(db) {
  * confirms or records the payment) and orders not delivered within the target.
  * Only a few columns of today's open orders (indexed by status), so it stays cheap.
  */
-export async function pulse(db, lateMinutes) {
+export async function pulse(db, lateMinutes, { role = 'super_admin', level = 'all', scope = null } = {}) {
   await ready(db);
   const watch = [...DATA.kitchenShows, 'AWAITING_WHATSAPP'];
-  const { results } = await db.prepare(`SELECT id, ref, order_status, paid_iso, created_iso, created_at, seat, stand, fulfilment, pickup_point, deliver_at FROM food_orders WHERE order_status IN (${placeholders(watch)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 200`).bind(...watch, since()).all();
+  const { results } = await db.prepare(`SELECT id, ref, order_status, paid_iso, created_iso, created_at, seat, stand, fulfilment, pickup_point, deliver_at, venue_id FROM food_orders WHERE order_status IN (${placeholders(watch)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 200`).bind(...watch, since()).all();
+  const seen = results.filter(o => inScope(o, scope));
   const one = o => ({ id: o.id, ref: o.ref || o.id, no: String(o.ref || o.id).split('-').pop(), status: statusLabel(o.order_status), minutes: minutesSince(startedAt(o)), where: o.seat || o.pickup_point ? whereText(o) : '' });
-  return {
-    newOrders: results.filter(o => o.order_status === 'PAID').map(one),
+  const flags = (await db.prepare(`SELECT e.id, e.note, e.by_name, o.id AS order_id, o.ref, o.venue_id FROM order_events e JOIN food_orders o ON o.id = e.order_id WHERE e.kind = 'flag' AND e.ack_at IS NULL AND e.at >= ? ORDER BY e.id LIMIT 20`).bind(since()).all()).results
+    .filter(f => inScope(f, scope)).map(f => ({ flagId: f.id, id: f.order_id, ref: f.ref, no: String(f.ref).split('-').pop(), note: f.note, by: f.by_name }));
+  const lists = {
+    newOrders: seen.filter(o => o.order_status === 'PAID').map(one),
     // Confirmed and paid, not started yet: cooking is pending. An order for kick-off or half-time rings 30 minutes before it is due.
-    cook: results.filter(o => o.order_status === 'ACCEPTED' && !(o.deliver_at && Date.parse(o.deliver_at) - Date.now() > 30 * 60e3)).map(one),
+    cook: seen.filter(o => o.order_status === 'ACCEPTED' && !(o.deliver_at && Date.parse(o.deliver_at) - Date.now() > 30 * 60e3)).map(one),
     // New WhatsApp orders nobody has confirmed yet: not paid, so not to cook, but the fan is waiting for a reply.
-    whatsapp: results.filter(o => o.order_status === 'AWAITING_WHATSAPP').map(one),
-    late: results.filter(o => DATA.kitchenShows.includes(o.order_status) && Date.parse(startedAt(o) || 0) <= Date.now() && minutesSince(startedAt(o)) >= lateMinutes).map(one),
-    lateMinutes,
+    whatsapp: seen.filter(o => o.order_status === 'AWAITING_WHATSAPP').map(one),
+    // Ready and waiting for a runner.
+    ready: seen.filter(o => o.order_status === 'READY').map(one),
+    failed: seen.filter(o => o.order_status === 'FAILED_DELIVERY').map(one),
+    flags,
+    late: seen.filter(o => DATA.kitchenShows.includes(o.order_status) && o.order_status !== 'FAILED_DELIVERY' && Date.parse(startedAt(o) || 0) <= Date.now() && minutesSince(startedAt(o)) >= lateMinutes).map(one),
   };
+  return { ...alarmsFor(role, level, lists), lateMinutes };
 }
 
 const SITE = 'https://lobistarsfc.com';

@@ -123,7 +123,7 @@ import PushEnable from '../../components/admin/PushEnable.astro';
   const naira = k => '₦' + (Number(k || 0) / 100).toLocaleString('en-NG');
   const when = iso => iso ? new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
   const msg = (t, ok) => { $('msg').textContent = t; $('msg').className = 'fo-msg ' + (ok ? 'ok' : 'err'); $('msg').hidden = false; };
-  const NEXT = { AWAITING_WHATSAPP: ['Confirm order', 'CONFIRMED'], CONFIRMED: ['Payment received', 'PAID'], PAID: ['Start preparing', 'PREPARING'], ACCEPTED: ['Start preparing', 'PREPARING'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED'] };
+  const NEXT = { READY: ['Out for delivery', 'OUT_FOR_DELIVERY'], AWAITING_WHATSAPP: ['Confirm order', 'CONFIRMED'], CONFIRMED: ['Payment received', 'PAID'], PAID: ['Start preparing', 'PREPARING'], ACCEPTED: ['Start preparing', 'PREPARING'], PREPARING: ['Out for delivery', 'OUT_FOR_DELIVERY'], OUT_FOR_DELIVERY: ['Delivered', 'DELIVERED'] };
   const STEP = { AWAITING_WHATSAPP: ['CONFIRMED', 'Send confirmation & payment details'], CONFIRMED: ['CONFIRMED', 'Remind about payment'], PAID: ['PAID', 'Tell them payment arrived'], PREPARING: ['PAID', 'Tell them it is being prepared'], OUT_FOR_DELIVERY: ['READY', 'Tell them it is ready / on its way'], CANCELLED: ['CANCELLED', 'Tell them it is cancelled'] };
   const waLink = (o, step) => `https://wa.me/${esc(o.wa.phone)}?text=${encodeURIComponent(o.wa.messages[step] || '')}`;
   let ST = {}, rows = [], page = 1, filled = false;

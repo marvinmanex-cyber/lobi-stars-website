@@ -47,6 +47,7 @@ these in git.
 | `SESSION_SECRET` | Fan and staff sessions, ticket QR codes | Long random value. |
 | `PAYSTACK_SECRET_KEY` | Tickets, membership, shirts (and food, until the kitchen key below is set) | Test key (`sk_test_`) while testing, then the live key. Webhook: `https://lobistarsfc.com/api/paystack-webhook`. |
 | `PAYSTACK_KITCHEN_SECRET_KEY` | MatchDay Kitchen's own Paystack account (food payments only; optional) | The secret key of the kitchen's Paystack business. Webhook: `https://lobistarsfc.com/api/paystack-webhook-kitchen`. Without it, food uses the main account. |
+| `WHATSAPP_CLOUD_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID` | Automatic customer updates on WhatsApp through Meta's WhatsApp Business Platform (optional) | Both from the Meta app. Stays off until both are set. Connecting may take the number off the normal WhatsApp app, so plan it first. |
 | `RESEND_API_KEY` | All emails | From Resend → API Keys. |
 | `RESEND_FROM` | Ticket, food and general emails | e.g. `Lobi Stars FC <noreply@lobistarsfc.com>`. |
 | `GA4_MEASUREMENT_ID` | Google Analytics 4 (only after a visitor accepts cookies) | e.g. `G-XXXXXXXXXX` (GA4 › Admin › Data streams › the web stream). Empty = GA4 off. Not secret. |

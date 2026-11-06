@@ -4553,16 +4553,23 @@ fan sees on their order page.
 | --- | --- | --- | --- |
 | 1 | **New** (just paid) | **Confirm order** (supervisor or Super Admin), or **Reject order** | Received |
 | 2 | **Received** | **Start cooking** | Received |
-| 3 | **Preparing** | **Food on the way** (pickup: **Ready for pickup**) | Preparing |
-| 4 | **On the way** | **Mark delivered** | On the way |
-| 5 | **Delivered** | (receipt) | Delivered |
+| 3 | **Preparing** | **Food ready** (pickup: **Ready for pickup**) | Preparing |
+| 4 | **Ready** | **Take for delivery** (pickup: **Collected**) | Preparing, then "ready" |
+| 5 | **On the way** | **Delivered**, or **Not at seat** | On the way |
+| 6 | **Delivered** | (receipt) | Delivered |
+
+Orders only move forward, and the website refuses anything else. **Rejecting** (at step 1, or a WhatsApp order before it) needs a reason: an item sold out, kitchen at capacity, outside the delivery area, a payment problem, or other with a note. **Cancelling** can happen at any step before delivery and needs a reason too. Both are for supervisors and Super Admins. A paid order that is rejected or cancelled goes on the refund list, and the refund is then made by hand in Paystack. The fan sees the reason on their order page, and by email if they gave one. No WhatsApp message goes out.
+
+**Not at seat:** the runner presses it, and supervisors get an alarm. Open the order and press **Ready** to try again, or **Cancelled** with a reason.
+
+**Something is missing:** a cook presses it on the order and types what's missing. Supervisors get an alarm and see it on the order.
 
 **Alarms** work on every open MatchDay Kitchen app or tablet, whatever page is
 open:
 - **New order:**
   - A loud beep every 3 seconds, a flashing red bar ("NEW ORDER #0004").
   - Vibration on phones, and "🔔" in the tab title.
-  - It keeps going **until a supervisor or Super Admin confirms or rejects the order**. Other staff see the order and hear it, but can't stop it.
+  - It keeps going **until a supervisor or Super Admin confirms or rejects the order**. Only they hear it, and it needs them on duty.
   - Tap the red bar to open the kitchen screen.
 - **Late order:** an order not delivered **within 5 minutes of payment** gets
   an amber bar ("LATE ORDER #0004, 6 min") and a lower beep once a minute,
@@ -4632,20 +4639,28 @@ It is the same setting as the button on the admin live order board, and each cha
 
 | | Cook / kitchen hand | Pass / order handler | Kitchen supervisor | Super Admin |
 | --- | --- | --- | --- | --- |
-| Move orders to the next status | Yes | Yes | Yes | Yes |
+| See the orders | Cooking only | Yes | Yes (own venue) | Yes (all venues) |
+| See totals, payment details, sales figures | | Totals | Yes | Yes |
+| Start cooking, Food ready | Yes | Yes | Yes | Yes |
+| Take for delivery, Delivered, Not at seat | | Yes | Yes | Yes |
+| Flag a missing ingredient | Yes | Yes | Yes | |
 | Turn a dish on or off | Yes | Yes | Yes | Yes |
 | Turn all dishes on or off | | | Yes | Yes |
-| Cancel orders | | Yes | Yes | Yes |
+| Cancel orders | | | Yes | Yes |
 | Confirm or reject an order | | | Yes | Yes |
+| Try again after a failed delivery | | | Yes | Yes |
+| Change what alerts they hear | | | | Yes |
 | Record a WhatsApp payment, see the evidence | | | Yes | Yes |
 | Allow a receipt already used on another order | | | Yes | Yes |
 | Change prices, rename, add and delete dishes | | | Yes | Yes |
 | Pin or delete anyone's notes | | | Yes | Yes |
 | Everyone's activity, CSV | | | Yes | Yes |
 | Open and close food ordering | | | Yes | Yes |
-| Staff accounts and settings | | | Yes (cooks and pass staff) | Yes (everyone) |
+| Staff accounts and settings | | | Yes (cooks, pass staff and runners at their venue) | Yes (everyone) |
 
-Who can cancel can be changed in **Staff accounts › Settings** (with the Telegram link and the "late after" minutes). Only supervisors and Super Admins change prices, add dishes and delete dishes.
+**Delivery / runner** is a separate role: they see orders that are ready or on the way, take them out and deliver them, and don't see totals, payment details or the fan's number.
+
+Only supervisors and Super Admins change prices, add dishes and delete dishes. **Super Admins** sign in to the kitchen with their email, password and two-step code. **Super Admin alerts:** Staff accounts › **Your alerts**: Everything, Urgent only (new orders, cancellations, failed deliveries, missing ingredients) or Off. You can't choose Off if no supervisor is on shift and no other Super Admin would hear new orders, unless another Super Admin is set as the fallback. Nobody else can mute alerts.
 
 **Match-day food report:** emailed once, 4 hours after kick-off of each home match, to the addresses in **Staff accounts › Match-day food report** (first time: the three Super Admins). It has sales, paid orders, average order, late orders, top dishes, hour by hour with the slowest and busiest hour, each stand and how fans ordered. It has no customer details. **Preview today** shows it now; **Send now** emails it. Supervisors and Super Admins. It needs email (Resend) set up on the website.
 
@@ -4654,9 +4669,11 @@ Who can cancel can be changed in **Staff accounts › Settings** (with the Teleg
 **Add a drink:** when a fan's cart has food but no drink or combo, the cart offers one drink that is ON (the most popular first), with **Add** and **No thanks**. It never offers 18+ drinks.
 
 **Order alerts:** new orders alert the kitchen in two ways.
-- **In the app:** while MatchDay Kitchen is open, every alert blinks red, in the bar at the top and on the button or tab of the page it comes from, and keeps beeping:
+- **In the app:** while MatchDay Kitchen is open, each person hears the alerts for their job, and every alert blinks red, in the bar at the top and on the button or tab of the page it comes from, and keeps beeping:
   - **A paid order or a new WhatsApp order** beeps until a supervisor or Super Admin confirms or rejects it. Everyone else sees the order and hears it but can't stop it, so have a supervisor on duty. A WhatsApp order that is confirmed but not paid goes quiet and isn't cooked.
-  - **🍳 Start cooking** beeps once an order is confirmed and paid, until anyone presses **Start cooking**. An order for kick-off or half-time starts 30 minutes before it is due.
+  - **🍳 Start cooking** beeps once an order is confirmed and paid, until someone presses **Start cooking**. An order for kick-off or half-time starts 30 minutes before it is due.
+  - **🛎️ Ready for delivery** beeps for runners until someone presses **Take for delivery**.
+  - **⚠️ Delivery failed** and **⚠️ Missing ingredient** beep for supervisors.
   - **A late order** beeps once a minute until it is delivered.
 - **On the device, even with the app closed:** on the Home screen press **Turn on order alerts** and allow notifications. Do this once on each phone or tablet, then press **Send a test alert** to check it. On iPhone and iPad, install the app first (Share, then Add to Home Screen) and open it from there.
 

@@ -24,7 +24,7 @@ self.addEventListener('push', e => {
     try { d = e.data ? e.data.json() : {}; } catch { d = {}; }
     await self.registration.showNotification(d.title || '🍽️ New MatchDay Kitchen order', {
       body: d.body || 'Open MatchDay Kitchen.', tag: d.ref ? `kitchen-${d.ref}` : 'kitchen', renotify: true,
-      requireInteraction: d.attempt !== 'test', vibrate: [300, 100, 300, 100, 500], icon: ICON, badge: ICON,
+      requireInteraction: d.attempt !== 'test' && d.loud !== false, silent: d.loud === false, vibrate: d.loud === false ? [] : [300, 100, 300, 100, 500], icon: ICON, badge: ICON,
       data: { url: d.url || '/matchday-kitchen/' },
     });
   })());

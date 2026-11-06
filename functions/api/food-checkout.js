@@ -1,7 +1,7 @@
 import { randomId } from './_lib/crypto.js';
 import { initializeFood } from './_lib/paystackClient.js';
 import { ensureMenuSchema, orderingState } from './_lib/foodMenuDb.js';
-import { ensureFoodSchema, nextRef, foodSettings, priceCart, setDelivery } from './_lib/foodOrders.js';
+import { ensureFoodSchema, nextRef, foodSettings, priceCart, setDelivery, DEFAULT_VENUE } from './_lib/foodOrders.js';
 import { holdCheckoutRewards, releaseCheckout, ensureCheckoutColumns } from './_lib/rewardsCheckout.js';
 import { readSession } from './_lib/session.js';
 import { normalizeNigerianPhone, rateLimit, tooMany, clientIp, ensureFanSchema } from './_lib/fans.js';
@@ -73,6 +73,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'AWAITING_PAYMENT', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(id, ref, pickup ? '' : seat, pickup ? null : stand || null, phone, email, name, notes || null, eventId, JSON.stringify(orderItems), pay.totalKobo, ref,
     token, created.toISOString(), expires.toISOString(), pickup ? 'pickup' : 'seat', pickup ? pickupPoint : null, pay.pointsUsed, pay.pointsKobo, pay.voucherCode, pay.voucherKobo).run();
+  await env.DB.prepare(`UPDATE food_orders SET venue_id = ? WHERE id = ?`).bind(DEFAULT_VENUE, id).run();
   await setDelivery(env.DB, id, b.when, eventId);
 
   const origin = new URL(request.url).origin;

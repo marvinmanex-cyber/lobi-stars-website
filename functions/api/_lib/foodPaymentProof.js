@@ -9,7 +9,7 @@
 // must cover the order; only one payment per order (one atomic update); the same receipt used
 // on another order is refused unless a supervisor or Super Admin allows it (recorded). Evidence
 // has bank details on it: only roles that record payments can open it, never fans.
-import { afterFoodPaid, ensureFoodSchema, foodSettings, formatNaira, staffMessage } from './foodOrders.js';
+import { afterFoodPaid, ensureFoodSchema, foodSettings, formatNaira, recordOrderEvent, staffMessage } from './foodOrders.js';
 import { notifyKitchen } from './kitchenNotify.js';
 
 export const PAY_METHODS = { transfer: 'Bank transfer', ussd: 'USSD / mobile app', pos: 'POS', cash: 'Cash' };
@@ -105,6 +105,7 @@ export async function recordPayment(env, order, v, who, { canOverride = false, w
     return { error: 'Someone else has just changed this order. Refresh and try again.', status: 409 };
   }
 
+  await recordOrderEvent(db, order.id, { from: order.order_status, to: 'ACCEPTED', byId: who?.id || null, byName: name, byRole: who?.role || null, note: `Payment recorded: ${PAY_METHODS[v.method]}` });
   const paid = { ...order, payment_status: 'paid', order_status: 'ACCEPTED', paid_iso: at, paid_reference: reference };
   await afterFoodPaid(env, order, paid, { waitUntil, origin });
   const cook = notifyKitchen(env, order.id, 'cook');

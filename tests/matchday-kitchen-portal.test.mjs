@@ -81,25 +81,25 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   const sa = await signIn(SA_EMAIL, SA_PW), A = await as(sa.cookie);
   const cook = await signCode(COOK.code), C = await as(cook.cookie);
   const sup = await signCode(SUP.code), S = await as(sup.cookie);
-  const W = await as(`${cook.cookie}; ${officialCookie()}`);
+  const W = await as(`${sup.cookie}; ${officialCookie()}`);
   // A WhatsApp order, confirmed as paid: it is now New on the kitchen screen.
   const o = await fetch(`${BASE}/api/food/whatsapp-order`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ name: 'Kitchen Fan', phone: `0803${String(Math.random()).slice(2, 9)}`, fulfilment: 'seat', seat: 'K12', notes: 'No pepper', items: [{ id: 'suya', qty: 2 }] }) }).then(r => r.json());
   assert.ok(o.ref, JSON.stringify(o));
   const id = rows(`SELECT id FROM food_orders WHERE ref = '${o.ref}';`)[0].id;
   assert.equal((await C.call('order', { id, to: 'CANCELLED' })).status, 403, 'a cook cannot cancel');
   // Not paid yet: in the board's "Awaiting payment" box (with a WhatsApp chat link), not in the kitchen columns.
-  let bd = (await C.call('board')).data;
+  let bd = (await S.call('board')).data;
   const un = bd.unpaid.find(u => u.ref === o.ref);
   assert.ok(un, 'in Awaiting payment'); assert.equal(un.failed, false); assert.equal(un.chatUrl, null, 'no reply link away from the official device');
   assert.match((await W.call('board')).data.unpaid.find(u => u.ref === o.ref).chatUrl, /^https:\/\/wa\.me\/234/);
   // Paid (as a Paystack payment does): it now waits for a supervisor to confirm it.
   rows(`UPDATE food_orders SET payment_status = 'paid', order_status = 'PAID', paid_iso = '${new Date().toISOString()}' WHERE id = '${id}';`);
-  bd = (await C.call('board')).data;
+  bd = (await S.call('board')).data;
   assert.ok(!bd.unpaid.some(u => u.ref === o.ref), 'paid: leaves Awaiting payment');
-  let k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
+  let k = (await S.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
   assert.ok(k, 'on the kitchen screen'); assert.equal(k.next.label, 'Confirm order'); assert.equal(k.note, 'No pepper'); assert.equal(k.items[0].qty, 2);
   // The alarm: a new (paid, not confirmed) order beeps until a supervisor or Super Admin confirms or rejects it.
-  assert.ok((await C.call('pulse')).data.newOrders.some(p => p.ref === o.ref), 'new order alarm');
+  assert.ok((await S.call('pulse')).data.newOrders.some(p => p.ref === o.ref), 'new order alarm');
   assert.equal((await C.call('order', { id, to: k.next.to })).status, 403, 'a cook sees it but cannot confirm it');
   assert.equal((await C.call('order', { id, to: 'PREPARING' })).status, 403, 'nor skip past it');
   assert.equal((await C.call('order', { id, to: 'CANCELLED' })).status, 403, 'nor reject it');
@@ -107,7 +107,7 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   assert.ok((await S.call(`order?id=${id}`)).data.moves.some(m => m.to === 'CANCELLED'), 'a supervisor can reject it');
   assert.equal((await S.call('order', { id, to: k.next.to })).status, 200);
   const cooking = (await C.call('pulse')).data;
-  assert.ok(!cooking.newOrders.some(p => p.ref === o.ref), 'confirming stops that alarm');
+  assert.ok(!(await S.call('pulse')).data.newOrders.some(p => p.ref === o.ref), 'confirming stops that alarm');
   assert.ok(cooking.cook.some(p => p.ref === o.ref), 'and starts the cooking alarm');
   let told = false; for (let i = 0; i < 10 && !told; i++) { told = rows(`SELECT attempt FROM food_notification_log WHERE order_id = '${id}'`).some(l => l.attempt === 'cook'); if (!told) await new Promise(r => setTimeout(r, 1500)); }
   assert.ok(told, 'devices are told too (sent in the background)');
@@ -120,21 +120,24 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   assert.equal((await C.call('order', { id, to: k.next.to })).status, 200, 'anyone can start cooking');
   assert.ok(!(await C.call('pulse')).data.cook.some(p => p.ref === o.ref), 'cooking started: quiet');
   k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
-  assert.equal(k.statusLabel, 'Preparing'); assert.equal(k.next.label, 'Food on the way');
+  assert.equal(k.statusLabel, 'Preparing'); assert.equal(k.next.label, 'Food ready');
   assert.equal((await C.call('order', { id, to: k.next.to })).status, 200);
-  assert.equal(rows(`SELECT order_status FROM food_orders WHERE id = '${id}';`)[0].order_status, 'OUT_FOR_DELIVERY', "the website's real order is Ready");
-  const board = (await C.call('board')).data.columns;
-  assert.ok(board.ready.orders.some(t => t.ref === o.ref), 'in the On the way column');
+  assert.equal(rows(`SELECT order_status FROM food_orders WHERE id = '${id}';`)[0].order_status, 'READY', "the website's real order is Ready");
+  assert.ok((await S.call('board')).data.columns.ready.orders.some(t => t.ref === o.ref), 'in the Ready column');
+  assert.equal((await C.call('order', { id, to: 'OUT_FOR_DELIVERY' })).status, 403, 'a cook does not take it out');
+  assert.equal((await S.call('order', { id, to: 'OUT_FOR_DELIVERY' })).status, 200);
+  const board = (await S.call('board')).data.columns;
+  assert.ok(board.out.orders.some(t => t.ref === o.ref), 'in the On the way column');
   // Late: not delivered within 5 minutes of payment.
   rows(`UPDATE food_orders SET paid_iso = '${new Date(Date.now() - 10 * 60e3).toISOString()}' WHERE id = '${id}';`);
-  const pl = (await C.call('pulse')).data;
+  const pl = (await S.call('pulse')).data;
   assert.equal(pl.lateMinutes, 5); assert.ok(pl.late.some(p => p.ref === o.ref), 'late order alarm');
   // Delivered: the receipt (no email on this order, so WhatsApp, one tap).
-  k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
+  k = (await S.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
   assert.equal(k.next.label, 'Mark delivered');
   const dl = await W.call('order', { id, to: k.next.to });
   assert.equal(dl.status, 200); assert.match(dl.data.receipt.whatsappUrl, /^https:\/\/wa\.me\/234\d+\?text=/);
-  assert.ok(!(await C.call('pulse')).data.late.some(p => p.ref === o.ref), 'delivered: no longer late');
+  assert.ok(!(await S.call('pulse')).data.late.some(p => p.ref === o.ref), 'delivered: no longer late');
   assert.equal((await C.call('receipt', { id, via: 'whatsapp' })).status, 403, 'not from another device');
   assert.equal((await C.call(`receipt-data?id=${id}`)).status, 403);
   assert.equal((await W.call('receipt', { id, via: 'whatsapp' })).status, 200);
@@ -165,7 +168,7 @@ test('the kitchen screen moves the real order; the menu page changes the real me
 
   // Activity log: everyone's for the Super Admin (and CSV); only their own for staff.
   const all = (await A.call('activity')).data;
-  assert.ok(all.rows.some(a => a.code === COOK.staffId && a.action === `Order ${o.ref}: Preparing to On the way`), 'status change under the cook');
+  assert.ok(all.rows.some(a => a.code === COOK.staffId && a.action === `Order ${o.ref}: Preparing to Ready`), 'status change under the cook');
   assert.ok(all.rows.some(a => a.code === COOK.staffId && /^Turned .*Suya off \(not ready\)$/.test(a.action)));
   assert.ok(all.rows.some(a => a.code === SUP.staffId && /^Changed the price of .+ to ₦1,650$/.test(a.action)));
   const mine = (await C.call('activity')).data;
@@ -307,7 +310,7 @@ test('only supervisors and Super Admins add dishes, delete dishes and change pri
 
 test('delivery by stand: ready orders grouped, in seat order, still-cooking counted; marking delivered; the food report', async () => {
   const S = await as((await signCode(SUP.code)).cookie), A = await as((await signIn(SA_EMAIL, SA_PW)).cookie);
-  const added = await S.call('staff', { action: 'add', name: `Runner ${T}`, role: 'cook' });
+  const added = await S.call('staff', { action: 'add', name: `Runner ${T}`, role: 'delivery' });
   const R = await as((await signCode(added.data.loginCode)).cookie);
   const iso = new Date().toISOString();
   const stand = `Stand ${T}`;
@@ -321,7 +324,7 @@ test('delivery by stand: ready orders grouped, in seat order, still-cooking coun
     assert.deepEqual(g.ready.map(o => o.seat), ['B-2', 'B-10'], 'seat order, 2 before 10');
     assert.equal(g.cooking, 1, 'still cooking is only counted');
     assert.ok(!JSON.stringify(g.ready).includes('08030000003'), 'phone numbers stay masked');
-    assert.equal((await R.call('order', { id: ids[1], to: 'DELIVERED' })).status, 200, 'any kitchen role can mark delivered');
+    assert.equal((await R.call('order', { id: ids[1], to: 'DELIVERED' })).status, 200, 'a runner can mark delivered');
     assert.deepEqual((await R.call('delivery')).data.groups.find(x => x.name === stand).ready.map(o => o.seat), ['B-10']);
     // The report: supervisors and Super Admins; totals, no customer details.
     assert.equal((await R.call('report-settings')).status, 403);
@@ -361,9 +364,9 @@ test('a new WhatsApp order alerts the kitchen: the alarm rings until it is confi
     // A new order rings every role's app, and is sent to devices and Telegram.
     const o = await place('W1'); made.push(o.id);
     const ring = async who => (await who.call('pulse')).data.whatsapp.find(p => p.ref === o.ref);
-    assert.ok(await ring(C), 'a cook hears it'); assert.ok(await ring(S), 'a supervisor hears it');
-    assert.ok(!(await C.call('pulse')).data.newOrders.some(p => p.ref === o.ref), 'it is not on the paid alarm');
-    assert.ok(!(await C.call('pulse')).data.late.some(p => p.ref === o.ref), 'nor counted as late');
+    assert.ok(!(await ring(C)), 'not for cooks: they get the cooking alarm'); assert.ok(await ring(S), 'a supervisor hears it');
+    assert.ok(!(await S.call('pulse')).data.newOrders.some(p => p.ref === o.ref), 'it is not on the paid alarm');
+    assert.ok(!(await S.call('pulse')).data.late.some(p => p.ref === o.ref), 'nor counted as late');
     const log = rows(`SELECT channel, attempt FROM food_notification_log WHERE order_id = '${o.id}'`);
     assert.ok(log.some(l => l.channel === 'push' && l.attempt === 'whatsapp'), JSON.stringify(log));
     assert.equal(rows(`SELECT kitchen_alerted_at FROM food_orders WHERE id = '${o.id}'`)[0].kitchen_alerted_at, null, 'the paid alert is still to come');
@@ -371,20 +374,20 @@ test('a new WhatsApp order alerts the kitchen: the alarm rings until it is confi
     // A cook can't confirm or reject it. A supervisor confirming stops the ring, for everyone.
     assert.equal((await C.call('order', { id: o.id, to: 'CONFIRMED' })).status, 403);
     assert.equal((await C.call('order', { id: o.id, to: 'CANCELLED' })).status, 403);
-    assert.ok(await ring(C), 'still ringing');
+    assert.ok(await ring(S), 'still ringing');
     assert.equal((await S.call('order', { id: o.id, to: 'CONFIRMED' })).status, 200);
     assert.ok(!(await ring(S)), 'confirmed: quiet');
     assert.ok(!(await C.call('pulse')).data.cook.some(x => x.ref === o.ref), 'confirmed but not paid: no cooking alarm yet');
     // Rejecting stops it too.
     const rj = await place('W3'); made.push(rj.id);
-    assert.equal((await S.call('order', { id: rj.id, to: 'CANCELLED' })).status, 200);
-    assert.ok(!(await C.call('pulse')).data.whatsapp.some(x => x.ref === rj.ref), 'rejected: quiet');
+    assert.equal((await S.call('order', { id: rj.id, to: 'REJECTED', reason: 'sold_out' })).status, 200);
+    assert.ok(!(await S.call('pulse')).data.whatsapp.some(x => x.ref === rj.ref), 'rejected: quiet');
     // Recording the payment straight away stops it too, and cooking is then pending.
     const p = await place('W2'); made.push(p.id);
-    assert.ok((await C.call('pulse')).data.whatsapp.some(x => x.ref === p.ref));
+    assert.ok((await S.call('pulse')).data.whatsapp.some(x => x.ref === p.ref));
     assert.equal((await S.call('payment', { id: p.id, method: 'cash', amount: '99999', proof: Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 9, 8, 7, ...T.split('').map(x => x.charCodeAt(0))]).toString('base64') })).status, 200);
-    const after = (await C.call('pulse')).data;
-    assert.ok(!after.whatsapp.some(x => x.ref === p.ref)); assert.ok(after.cook.some(x => x.ref === p.ref), 'now on the cooking alarm');
+    const after = (await S.call('pulse')).data;
+    assert.ok(!after.whatsapp.some(x => x.ref === p.ref)); assert.ok((await C.call('pulse')).data.cook.some(x => x.ref === p.ref), 'now on the cooking alarm');
     assert.ok(!after.newOrders.some(x => x.ref === p.ref), 'no second confirmation needed');
     let told = false; for (let i = 0; i < 10 && !told; i++) { told = rows(`SELECT attempt FROM food_notification_log WHERE order_id = '${p.id}'`).some(l => l.attempt === 'cook'); if (!told) await new Promise(r => setTimeout(r, 1500)); }
     assert.ok(told, 'devices are told to start cooking (sent in the background)');
@@ -459,7 +462,7 @@ test('one WhatsApp number: orders go only to it, replies only from its approved 
     assert.equal((await S.call(`order?id=${o.id}`)).data.order.phone.includes('•'), true, 'the number stays hidden');
 
     // Rejected: no message at all, even on the approved device.
-    assert.equal((await W.call('order', { id: o.id, to: 'CANCELLED' })).status, 200);
+    assert.equal((await W.call('order', { id: o.id, to: 'REJECTED', reason: 'sold_out' })).status, 200);
     const after = (await W.call(`order?id=${o.id}`)).data;
     assert.equal(after.chat, null, 'nothing to send'); assert.ok(!JSON.stringify(after).includes('wa.me'));
     const p = await place('R2'); made.push(p.id);

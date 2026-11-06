@@ -11,7 +11,9 @@
 // an order being saved or moved.
 import { ensureAlertsSchema, pushReady } from './foodAlerts.js';
 import { sendEncryptedPush } from './webPush.js';
-import { ensureFoodSchema, whereText } from './foodOrders.js';
+import { ensureFoodSchema, whereText, REJECT_REASONS } from './foodOrders.js';
+import { recipientsFor, eventOf, isLoud, STAFF } from './kitchenWorkflow.js';
+import { customerUpdate } from './kitchenCustomer.js';
 
 const nowIso = () => new Date().toISOString();
 const lagosTime = iso => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
@@ -38,6 +40,12 @@ export async function ensureKitchenSchema(db) {
   for (const [name, type] of [['kitchen', 'INTEGER NOT NULL DEFAULT 0'], ['is_active', 'INTEGER NOT NULL DEFAULT 1'], ['mk_app', 'INTEGER NOT NULL DEFAULT 0']]) {
     if (!cols.has(name)) await db.prepare(`ALTER TABLE push_subs ADD COLUMN ${name} ${type}`).run();
   }
+  // The log also says which event, who it went to and when they opened the order.
+  const logCols = new Set((await db.prepare(`PRAGMA table_info(food_notification_log)`).all()).results.map(r => r.name));
+  for (const name of ['event', 'recipient', 'opened_at']) if (!logCols.has(name)) await db.prepare(`ALTER TABLE food_notification_log ADD COLUMN ${name} TEXT`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_food_log_open ON food_notification_log (order_id, recipient, opened_at)`).run();
+  // Super Admins' alert level (all / urgent / off). Nobody else has one: staff on duty can't mute.
+  await db.prepare(`CREATE TABLE IF NOT EXISTS mk_alert_prefs (user_id TEXT PRIMARY KEY, level TEXT NOT NULL, updated_at TEXT)`).run();
   ready = true;
 }
 
@@ -80,6 +88,12 @@ export function buildKitchenTicket(order, attempt = 'initial') {
     : attempt === 'test' ? '🔔 Test kitchen alert'
     : attempt === 'whatsapp' ? `💬 NEW WHATSAPP ORDER ${order.ref}: confirm it`
     : attempt === 'cook' ? `🍳 START COOKING ${order.ref}`
+    : attempt === 'ready' ? `🛎️ READY ${order.ref}: take it out`
+    : attempt === 'out' ? `🛵 ON THE WAY ${order.ref}`
+    : attempt === 'delivered' ? `✅ DELIVERED ${order.ref}`
+    : attempt === 'rejected' ? `⛔ REJECTED ${order.ref}`
+    : attempt === 'failed' ? `⚠️ DELIVERY FAILED ${order.ref}: decide what next`
+    : attempt === 'flag' ? `⚠️ MISSING INGREDIENT ${order.ref}`
     : `🍽️ NEW PAID ORDER ${order.ref}`;
   const body = attempt === 'test' ? 'Kitchen alerts are working on this device.' : `${items.map(i => `${i.qty}× ${i.name}`).join(', ')} | ${where}${attempt === 'whatsapp' ? ' | Not paid yet: do not cook' : ''}`;
   const longText = [
@@ -96,6 +110,7 @@ function telegramHtml(order, attempt) {
   const t = buildKitchenTicket(order, attempt);
   if (attempt === 'test') return `<b>${escHtml(t.title)}</b>\n${escHtml(t.body)}`;
   if (attempt === 'cancel') return `<b>${escHtml(t.title)}</b>\n${escHtml(whereText(order))}`;
+  if (attempt === 'rejected') return `<b>${escHtml(t.title)}</b>\n${escHtml(REJECT_REASONS[order.reject_reason] || '')}`;
   return `<b>${escHtml(t.title)}</b>\n\n${escHtml(t.longText)}`;
 }
 
@@ -128,27 +143,44 @@ export async function clearTelegramButtons(env, db, orderId, note) {
 }
 
 // ── Push to Kitchen Screen devices ──
-async function pushKitchen(env, db, payload, topic) {
+/** Every kitchen device, with the role of the person it belongs to. */
+async function kitchenDevices(db) {
+  await db.prepare(`CREATE TABLE IF NOT EXISTS mk_staff (id TEXT PRIMARY KEY, staff_id TEXT NOT NULL UNIQUE, full_name TEXT NOT NULL, role TEXT NOT NULL, password_hash TEXT NOT NULL, is_active INTEGER NOT NULL DEFAULT 1, failed_attempts INTEGER NOT NULL DEFAULT 0, locked_until TEXT, created_by TEXT, created_at TEXT NOT NULL, updated_at TEXT, last_login_at TEXT)`).run();
+  const { results } = await db.prepare(`SELECT p.endpoint, p.keys_json, p.mk_app, p.staff_id, s.role FROM push_subs p LEFT JOIN mk_staff s ON s.id = p.staff_id WHERE p.kitchen = 1 AND p.is_active = 1`).all();
+  // A device in the app with no kitchen staff account belongs to a Super Admin. Anything else is an admin Kitchen Screen.
+  return results.map(r => ({ ...r, staffId: r.staff_id, role: r.mk_app ? (r.role || STAFF.SA) : 'screen' }));
+}
+export async function alertLevels(db) {
+  const { results } = await db.prepare(`SELECT user_id, level FROM mk_alert_prefs`).all();
+  return Object.fromEntries(results.map(r => [r.user_id, r.level]));
+}
+export async function alertFallback(db) {
+  return (await db.prepare(`SELECT value FROM mk_settings WHERE key = 'alert_fallback'`).first().catch(() => null))?.value || null;
+}
+async function pushKitchen(env, db, payload, topic, { event = null, order = null, attempt = 'initial' } = {}) {
   if (!pushReady(env)) return { ok: false, error: 'Push not set up (VAPID keys missing)' };
-  const { results } = await db.prepare(`SELECT endpoint, keys_json, mk_app FROM push_subs WHERE kitchen = 1 AND is_active = 1`).all();
-  if (!results.length) return { ok: false, error: 'No kitchen devices registered' };
+  const all = await kitchenDevices(db);
+  const results = event ? recipientsFor(event, all, { levels: await alertLevels(db), fallbackId: await alertFallback(db), cookWasPreparing: !!order?.was_preparing }) : all;
+  if (!results.length) return { ok: false, error: all.length ? 'Nobody on this alert has a device registered' : 'No kitchen devices registered' };
   const out = await Promise.allSettled(results.map(async row => {
     const keys = JSON.parse(row.keys_json || '{}');
     if (!keys.p256dh || !keys.auth) return 'nokeys';
     const { mkUrl, ...rest } = payload;
-    const status = await sendEncryptedPush(env, { endpoint: row.endpoint, keys }, row.mk_app ? { ...rest, url: mkUrl || '/matchday-kitchen/' } : rest, { ttl: 300, urgency: 'high', topic });
+    const body = { ...(row.mk_app ? { ...rest, url: mkUrl || '/matchday-kitchen/' } : rest), loud: !event || isLoud(event, row.role) };
+    const status = await sendEncryptedPush(env, { endpoint: row.endpoint, keys }, body, { ttl: 300, urgency: body.loud ? 'high' : 'normal', topic });
     if (status === 404 || status === 410) await db.prepare(`UPDATE push_subs SET is_active = 0 WHERE endpoint = ?`).bind(row.endpoint).run();
     else if (status >= 200 && status < 300) await db.prepare(`UPDATE push_subs SET last_ok_at = ? WHERE endpoint = ?`).bind(nowIso(), row.endpoint).run();
+    if (order) await log(db, order, 'push', attempt, status >= 200 && status < 300, status >= 200 && status < 300 ? null : `Status ${status}`, null, { event, recipient: row.staffId });
     return status;
   }));
   const ok = out.filter(r => r.status === 'fulfilled' && r.value >= 200 && r.value < 300).length;
   return ok ? { ok: true, error: ok < results.length ? `${results.length - ok} of ${results.length} devices failed` : null } : { ok: false, error: `No device received it (${out.map(r => r.value || r.reason?.message).join(', ')})` };
 }
 
-async function log(db, order, channel, attempt, success, error, messageId = null) {
+async function log(db, order, channel, attempt, success, error, messageId = null, { event = null, recipient = null } = {}) {
   try {
-    await db.prepare(`INSERT INTO food_notification_log (order_id, ref, channel, attempt, success, error, message_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-      .bind(order?.id || null, order?.ref || null, channel, attempt, success ? 1 : 0, error ? String(error).slice(0, 300) : null, messageId, nowIso()).run();
+    await db.prepare(`INSERT INTO food_notification_log (order_id, ref, channel, attempt, success, error, message_id, created_at, event, recipient) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(order?.id || null, order?.ref || null, channel, attempt, success ? 1 : 0, error ? String(error).slice(0, 300) : null, messageId, nowIso(), event, recipient).run();
   } catch (err) { console.error('[kitchen] log', err); }
 }
 
@@ -176,19 +208,28 @@ export async function notifyKitchen(env, orderId, attempt = 'initial') {
     } else if (attempt === 'repeat') {
       await db.prepare(`UPDATE food_orders SET last_alert_at = ?, kitchen_alerted_at = COALESCE(kitchen_alerted_at, ?) WHERE id = ?`).bind(now, now, orderId).run();
     }
-    order = { ...order, kitchen_alerted_at: order.kitchen_alerted_at || now };
+    order = { ...order, kitchen_alerted_at: order.kitchen_alerted_at || now, was_preparing: !!order.preparing_at };
     const t = buildKitchenTicket(order, attempt);
-    const payload = { kind: 'kitchen', attempt, title: t.title, body: attempt === 'repeat' || attempt === 'initial' ? `${t.body}${order.notes ? ` | 📝 ${order.notes}` : ''}` : t.body, ref: order.ref, url: `/admin/kitchen/?order=${encodeURIComponent(order.ref)}`, mkUrl: `/matchday-kitchen/?open=${attempt === 'whatsapp' ? 'live' : 'kitchen'}` };
+    const event = eventOf(attempt);
+    // A busy minute: one alert saying how many, in place of separate pop-ups.
+    let burst = 0;
+    if (event === 'ORDER_NEW' && attempt !== 'repeat') {
+      burst = (await db.prepare(`SELECT COUNT(*) AS n FROM food_orders WHERE order_status IN ('PAID', 'AWAITING_WHATSAPP') AND COALESCE(paid_iso, created_iso) >= ?`).bind(new Date(Date.now() - 60e3).toISOString()).first())?.n || 0;
+    }
+    const grouped = burst >= 3;
+    const payload = { kind: 'kitchen', attempt, title: grouped ? `🔔 ${burst} new orders` : t.title, body: grouped ? 'Tap to see them' : attempt === 'repeat' || attempt === 'initial' ? `${t.body}${order.notes ? ` | 📝 ${order.notes}` : ''}` : t.body, ref: grouped ? 'burst' : order.ref, url: `/admin/kitchen/?order=${encodeURIComponent(order.ref)}`, mkUrl: grouped ? '/matchday-kitchen/?open=live' : `/matchday-kitchen/?open=${encodeURIComponent(`orders/${order.ref}`)}` };
     const button = attempt === 'initial' || attempt === 'repeat';
+    const toGroup = !['out', 'delivered'].includes(attempt);
     // Both channels at once; each is logged as soon as it finishes, and one failing never stops the other.
-    const pushJob = pushKitchen(env, db, payload, order.ref)
+    const pushJob = pushKitchen(env, db, payload, grouped ? 'burst' : order.ref, { event, order, attempt })
       .catch(err => ({ ok: false, error: err.message }))
-      .then(async r => { await log(db, order, 'push', attempt, r.ok, r.error); return r; });
-    const tgJob = !s.telegram ? Promise.resolve(null)
+      // Each device is logged as it is sent to; this line is for when none could be tried.
+      .then(async r => { if (!r.ok) await log(db, order, 'push', attempt, false, r.error, null, { event }); return r; });
+    const tgJob = !s.telegram || !toGroup ? Promise.resolve(null)
       : (telegramReady(env)
         ? sendTelegram(env, telegramHtml(order, attempt), order.ref, button).then(id => ({ ok: true, id }), err => ({ ok: false, error: err.message }))
         : Promise.resolve({ ok: false, error: 'Telegram not set up (bot token / chat id missing)' }))
-        .then(async r => { await log(db, order, 'telegram', attempt, r.ok, r.error, r.id || null); return r; });
+        .then(async r => { await log(db, order, 'telegram', attempt, r.ok, r.error, r.id || null, { event }); return r; });
     const [push, tg] = await Promise.allSettled([pushJob, tgJob]);
     const pushRes = push.status === 'fulfilled' ? push.value : { ok: false, error: push.reason?.message };
     const tgRes = tg.status === 'fulfilled' ? tg.value : { ok: false, error: tg.reason?.message };
@@ -228,6 +269,26 @@ export async function testAppDevice(env, endpoint) {
     const status = await sendEncryptedPush(env, { endpoint: row.endpoint, keys: JSON.parse(row.keys_json || '{}') }, { kind: 'kitchen', attempt: 'test', title: t.title, body: t.body, ref: 'TEST', url: '/matchday-kitchen/' }, { ttl: 300, urgency: 'high', topic: 'test' });
     return status >= 200 && status < 300;
   } catch { return false; }
+}
+
+/** Staff and customer alerts for one status change. Never throws. */
+export async function notifyMove(env, order, to) {
+  const attempt = { ACCEPTED: 'cook', READY: 'ready', OUT_FOR_DELIVERY: 'out', DELIVERED: 'delivered', REJECTED: 'rejected', CANCELLED: 'cancel', FAILED_DELIVERY: 'failed' }[to];
+  // Straight to Preparing from the admin's screens: cooks still need to know.
+  const staff = attempt || (to === 'PREPARING' && order.order_status === 'PAID' ? 'cook' : null);
+  if (staff) await notifyKitchen(env, order.id, staff);
+  const customer = { ACCEPTED: 'accepted', OUT_FOR_DELIVERY: 'out', DELIVERED: 'delivered', REJECTED: 'rejected' }[to];
+  if (!customer) return;
+  await ensureKitchenSchema(env.DB);
+  const fresh = await env.DB.prepare(`SELECT * FROM food_orders WHERE id = ?`).bind(order.id).first();
+  await customerUpdate(env, fresh || order, customer, (channel, ok, error) => log(env.DB, order, channel, `customer_${customer}`, ok, error, null, { event: eventOf(staff), recipient: 'customer' }));
+}
+/** The person has opened the order: their alerts about it count as seen. */
+export async function markOpened(db, orderId, userId) {
+  try {
+    await ensureKitchenSchema(db);
+    await db.prepare(`UPDATE food_notification_log SET opened_at = ? WHERE order_id = ? AND recipient = ? AND opened_at IS NULL`).bind(nowIso(), String(orderId), String(userId)).run();
+  } catch (err) { console.error('[kitchen] opened', err); }
 }
 
 /** A test alert to every kitchen device and the Telegram group. */
