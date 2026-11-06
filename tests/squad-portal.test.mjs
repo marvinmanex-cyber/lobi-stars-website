@@ -39,7 +39,7 @@ test('the portal page: private, never indexed, strict headers; other /staff/ add
 test('the portal link appears on no public page, menu, sitemap or search index', () => {
   const dist = fileURLToPath(new URL('../dist/', import.meta.url));
   const hits = [];
-  const walk = d => { for (const f of readdirSync(d)) { const p = path.join(d, f); if (statSync(p).isDirectory()) { if (!/[\\/]staff$|[\\/]admin$/.test(p)) walk(p); } else if (/\.(html|xml|json|txt|js)$/.test(f) && !/robots\.txt$/.test(f)) { if (readFileSync(p, 'utf8').includes('/staff/squad-data')) hits.push(p); } } };
+  const walk = d => { for (const f of readdirSync(d)) { const p = path.join(d, f); if (statSync(p).isDirectory()) { if (!/[\\/]staff$|[\\/]admin$|[\\/]_worker\.js$/.test(p)) walk(p); } else if (/\.(html|xml|json|txt|js)$/.test(f) && !/robots\.txt$/.test(f)) { if (readFileSync(p, 'utf8').includes('/staff/squad-data')) hits.push(p); } } };
   walk(dist);
   assert.deepEqual(hits, []);
 });

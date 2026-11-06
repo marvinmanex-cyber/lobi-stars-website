@@ -26,7 +26,7 @@ test('every page in the sitemap has a unique title, description, canonical URL, 
     assert.ok(!titles.has(title), `${p} has the same title as ${titles.get(title)}`);
     titles.set(title, p);
     assert.ok((metaOf(h, 'name', 'description') || '').length > 20, `${p} description`);
-    assert.equal(h.match(/<link rel="canonical" href="([^"]+)"/)?.[1], `https://lobistarsfc.com${p}`, `${p} canonical`);
+    assert.equal((h.match(/<link rel="canonical" href="([^"]+)"/)?.[1] || '').replace(BASE, 'https://lobistarsfc.com'), `https://lobistarsfc.com${p}`, `${p} canonical`); // the local server uses its own address on pages it renders
     for (const [a, n] of [['property', 'og:title'], ['property', 'og:description'], ['property', 'og:url'], ['name', 'twitter:card'], ['name', 'twitter:title'], ['name', 'twitter:image']]) assert.ok(metaOf(h, a, n), `${p} ${n}`);
     images.add(local(metaOf(h, 'property', 'og:image')));
   }

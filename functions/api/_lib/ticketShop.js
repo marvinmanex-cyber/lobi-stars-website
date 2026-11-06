@@ -17,7 +17,8 @@ import { sendEmail, ticketBlocksHtml } from './email.js';
 import { ticketsPdf } from './ticketPdf.js';
 import { basketTickets } from '../tickets/basket.js';
 
-export const HOLD_MINUTES = 30;
+import { HOLD_MINUTES } from './ticketHold.js';
+export { HOLD_MINUTES };
 
 let ready = false;
 export async function ensureTicketShopSchema(db) {

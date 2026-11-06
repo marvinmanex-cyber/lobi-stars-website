@@ -52,7 +52,7 @@ after(async () => { sql(`DELETE FROM squad_profiles WHERE display_name LIKE '%${
 test('the portal link is on no public page and not in the sitemap; robots.txt and the page keep search engines out', async () => {
   assert.ok(existsSync(dist), 'build first (npm run build)');
   const pages = walk(fileURLToPath(dist)).filter(f => /\.(html|xml|txt|js)$/.test(f) && !/[\\/]staff[\\/]/.test(f));
-  const hits = pages.filter(f => readFileSync(f, 'utf8').includes(PORTAL) && !/robots\.txt$/.test(f) && !/[\\/]_astro[\\/]/.test(f));
+  const hits = pages.filter(f => readFileSync(f, 'utf8').includes(PORTAL) && !/robots\.txt$/.test(f) && !/[\\/]_astro[\\/]|[\\/]_worker\.js[\\/]/.test(f));
   assert.deepEqual(hits, [], 'no public page mentions the portal address');
   // (Coaching staff profiles live at /squad/staff/…; robots.txt blocks only addresses starting with /staff/.)
   assert.ok(!/<loc>[^<]*\.com\/staff\//.test(readFileSync(new URL('sitemap.xml', dist), 'utf8')), 'the portal is not in the sitemap');

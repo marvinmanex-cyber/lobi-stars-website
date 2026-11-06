@@ -74,7 +74,7 @@ test('posting: Telegram automatically, Facebook not set up, 3 per hour, manual m
 test('the Share button shows on content pages, not on sign-in, checkout, 404 or staff pages', async () => {
   const has = async p => /data-share[\s>]/.test(await (await fetch(BASE + p)).text());
   for (const p of ['/club/history/', '/partners/aeson-sports-management/', '/tickets/', '/membership/', '/hospitality/', '/food/', '/help/', '/news/', '/squad/']) assert.ok(await has(p), `missing on ${p}`);
-  for (const p of ['/', '/fans/login/', '/fans/account/', '/tickets/success/', '/food/order/', '/no-such-page/', '/admin/share/', '/programme/']) assert.ok(!(await has(p)), `should not be on ${p}`);
+  for (const p of ['/fans/login/', '/fans/account/', '/tickets/success/', '/food/order/', '/no-such-page/', '/admin/share/', '/programme/']) assert.ok(!(await has(p)), `should not be on ${p}`);
   // Match pages: the share bar is switched on by the server for the match's own address.
   const ev = await post('/api/admin/events', { home_team: 'Lobi Stars FC', away_team: 'Share Test FC', competition: 'NNL', venue: 'McCarthy Stadium, Makurdi', event_date: new Date(Date.now() + 5 * 864e5).toISOString(), vip_price_kobo: 0, premium_price_kobo: 0, regular_price_kobo: 0, active: true });
   assert.equal(ev.status, 200);

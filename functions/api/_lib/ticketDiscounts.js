@@ -3,7 +3,7 @@
 // basket with the server clock, the locked snapshot re-check for the webhook,
 // and the admin report. The maths itself is tickets/discounts.js (pure).
 import { computeOrderPricing, publicOffers, DEFAULT_SETTINGS } from './tickets/discounts.js';
-import { HOLD_MINUTES } from './ticketShop.js';
+import { HOLD_MINUTES } from './ticketHold.js';
 import { CAP_COL } from './tickets/rules.js';
 
 export const SETTING_KEYS = {
