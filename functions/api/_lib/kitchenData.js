@@ -154,21 +154,22 @@ export async function alerts(db, lateMinutes) {
   return { late, soldOut, cancelled };
 }
 
-/** Food orders: search by order number or name, filter by status and day; 30 a page. */
+/** Food orders: filter by status and day; 30 a page. A search by order number or name looks at every day. */
 export async function searchOrders(db, { q = '', status = '', day = '', page = 1 } = {}, lateMinutes) {
   await ready(db);
   await expireStale(db).catch(() => {});
   const { day: d, start, end } = lagosDay(day);
-  const w = ['created_iso >= ?', 'created_iso < ?'], b = [start, end];
   const text = String(q || '').trim().slice(0, 60);
+  const w = text ? [] : ['created_iso >= ?', 'created_iso < ?'], b = text ? [] : [start, end];
   if (text) { w.push('(ref LIKE ? OR customer_name LIKE ? OR id = ?)'); b.push(`%${text}%`, `%${text}%`, text); }
   if (status && DATA.stages[status]) { w.push(`order_status IN (${placeholders(DATA.stages[status].statuses)})`); b.push(...DATA.stages[status].statuses); }
   else if (status === 'cancelled') { w.push(`order_status IN (${placeholders(DATA.cancelled)})`); b.push(...DATA.cancelled); }
   else if (status && STATUS[status]) { w.push('order_status = ?'); b.push(status); }
   const p = Math.max(1, Math.min(1000, Number(page) || 1));
-  const total = (await db.prepare(`SELECT COUNT(*) AS n FROM food_orders WHERE ${w.join(' AND ')}`).bind(...b).first()).n;
-  const rows = (await db.prepare(`SELECT * FROM food_orders WHERE ${w.join(' AND ')} ORDER BY created_iso DESC LIMIT 30 OFFSET ?`).bind(...b, (p - 1) * 30).all()).results;
-  return { day: d, page: p, pages: Math.max(1, Math.ceil(total / 30)), total, orders: rows.map(o => ticket(o, lateMinutes)) };
+  const where = w.join(' AND ') || '1 = 1';
+  const total = (await db.prepare(`SELECT COUNT(*) AS n FROM food_orders WHERE ${where}`).bind(...b).first()).n;
+  const rows = (await db.prepare(`SELECT * FROM food_orders WHERE ${where} ORDER BY created_iso DESC LIMIT 30 OFFSET ?`).bind(...b, (p - 1) * 30).all()).results;
+  return { day: d, everyDay: !!text, page: p, pages: Math.max(1, Math.ceil(total / 30)), total, orders: rows.map(o => ticket(o, lateMinutes)) };
 }
 
 /** The status changes allowed from this order's status (the website's own rules), next step first. */

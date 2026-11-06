@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-06: MatchDay Kitchen: three fixes from the error check
+
+**Who it affects:** kitchen staff.
+- **Food orders** search: searching by order number or name now finds the order on any day, not only the selected date.
+- An online order that was never paid no longer says "Paid online" on its page.
+- The "Waiting" time no longer shows on delivered, cancelled or expired orders.
+
 ## 2026-11-06: One WhatsApp number for kitchen orders and replies; no message on rejection
 
 **Who it affects:** all kitchen staff and website admins handling food orders. **A Super Admin needs to:** approve the kitchen's WhatsApp device (HANDOVER-TODO A4e). Until then, nobody can reply from MatchDay Kitchen.

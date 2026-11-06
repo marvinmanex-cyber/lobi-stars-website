@@ -249,15 +249,15 @@ const PAGES: Record<string, () => Promise<void>> = {
       <div class="mk-field"><label for="oQ">Order number or name</label><input id="oQ" type="search" placeholder="e.g. FD-20261108-0012 or Derek" /></div>
       <div class="mk-field"><label for="oS">Status</label><select id="oS"><option value="">All</option><option value="new">New</option><option value="preparing">Preparing</option><option value="ready">On the way</option>
         <option value="DELIVERED">Delivered</option><option value="AWAITING_WHATSAPP">WhatsApp – to confirm</option><option value="CONFIRMED">Confirmed – awaiting payment</option><option value="AWAITING_PAYMENT">Awaiting payment</option><option value="cancelled">Cancelled</option><option value="EXPIRED">Expired</option></select></div>
-      <div class="mk-field"><label for="oD">Date</label><input id="oD" type="date" value="${f.day}" /></div>
+      <div class="mk-field"><label for="oD">Date (ignored when you search by number or name)</label><input id="oD" type="date" value="${f.day}" /></div>
       <button class="mk-btn go" type="submit">Search</button></form><div id="oList"></div>`;
     const draw = async () => {
       const d = await api(`orders?${new URLSearchParams({ q: f.q, status: f.status, day: f.day, page: String(f.page) })}`);
-      $('oList').innerHTML = d.orders.length ? `<p class="mk-status">${d.total} order${d.total === 1 ? '' : 's'} on ${esc(dayOnly(`${d.day}T12:00:00Z`))}</p>
+      $('oList').innerHTML = d.orders.length ? `<p class="mk-status">${d.total} order${d.total === 1 ? '' : 's'} ${d.everyDay ? 'found, on any day' : `on ${esc(dayOnly(`${d.day}T12:00:00Z`))}`}</p>
         <div class="mk-table-wrap"><table class="mk-table"><thead><tr><th>Order</th><th>Time</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody>${d.orders.map((o: any) => `
           <tr class="click" data-order="${esc(o.id)}" tabindex="0"><td><b>${esc(o.ref)}</b></td><td>${esc(hm(o.placedAt))}</td><td>${esc(o.customer)}</td><td>${esc(o.items.map((i: any) => `${i.qty} × ${i.name}`).join(', '))}</td><td>${esc(o.total)}</td><td><span class="mk-pill ${o.stage ? 'go' : /Cancel|Refund/.test(o.statusLabel) ? 'red' : ''}">${esc(o.statusLabel)}</span></td></tr>`).join('')}</tbody></table></div>
         ${d.pages > 1 ? `<div class="mk-pager"><button type="button" class="mk-btn" data-pg="${d.page - 1}" ${d.page <= 1 ? 'disabled' : ''}>Previous</button><span>Page ${d.page} of ${d.pages}</span><button type="button" class="mk-btn" data-pg="${d.page + 1}" ${d.page >= d.pages ? 'disabled' : ''}>Next</button></div>` : ''}`
-        : '<p class="mk-empty">No orders match. Try another day or clear the search.</p>';
+        : `<p class="mk-empty">${d.everyDay ? 'No order has that number or name, on any day.' : 'No orders on this day. Try another day.'}</p>`;
     };
     $('oF').addEventListener('submit', (e: Event) => { e.preventDefault(); f.q = $('oQ').value.trim(); f.status = $('oS').value; f.day = $('oD').value || todayLagos(); f.page = 1; act(null, draw); });
     $('oList').addEventListener('click', (e: Event) => {
@@ -282,8 +282,8 @@ const PAGES: Record<string, () => Promise<void>> = {
           ${o.phone ? `<dt>Phone</dt><dd>${esc(o.phone)}</dd>` : ''}
           <dt>Placed</dt><dd>${esc(dayTime(o.placedAt))}</dd>
           ${o.paidAt ? `<dt>Paid</dt><dd>${esc(dayTime(o.paidAt))}</dd>` : ''}
-          <dt>Waiting</dt><dd>${esc(mins(o.minutes))}</dd>
-          <dt>How</dt><dd>${o.channel === 'whatsapp' ? (o.paid ? 'WhatsApp order, paid' : 'WhatsApp order, not paid yet') : 'Paid online'}</dd>
+          ${o.stage ? `<dt>Waiting</dt><dd>${esc(mins(o.minutes))}</dd>` : ''}
+          <dt>How</dt><dd>${o.channel === 'whatsapp' ? (o.paid ? 'WhatsApp order, paid' : 'WhatsApp order, not paid yet') : (o.paid ? 'Paid online' : 'Online order, not paid')}</dd>
           ${d.payment ? `<dt>Payment</dt><dd>${esc(d.payment.amount)}, ${esc(d.payment.method)}${d.payment.note ? `<br />${esc(d.payment.note)}` : ''}<br /><small>Recorded by ${esc(d.payment.by)}${d.payment.code ? ` (${esc(d.payment.code)})` : ''}, ${esc(dayTime(d.payment.at))}</small>${d.payment.duplicateOf ? `<br /><span class="mk-pill red">Same receipt as ${esc(d.payment.duplicateOf)} (allowed)</span>` : ''}</dd>` : ''}
           ${o.statusBy ? `<dt>Last change</dt><dd>${esc(o.statusBy)}${o.statusAt ? `, ${esc(dayTime(o.statusAt))}` : ''}</dd>` : ''}
         </dl></div>

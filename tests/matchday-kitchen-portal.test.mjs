@@ -409,6 +409,20 @@ test('a new WhatsApp order alerts the kitchen: the alarm rings until it is confi
   }
 });
 
+test('searching by order number finds an order from any day', async () => {
+  const S = await as((await signCode(SUP.code)).cookie);
+  const id = `FD-OLD${T}`, old = new Date(Date.now() - 20 * 86400e3).toISOString();
+  sql(`INSERT INTO food_orders (id, ref, seat, phone, email, items_json, total_kobo, paystack_reference, payment_status, order_status, created_iso, channel, customer_name) VALUES ('${id}', '${id}', 'A1', '+2348031234567', '', '[]', 100, '${id}', 'pending', 'EXPIRED', '${old}', 'paystack', 'Old Fan');`);
+  try {
+    const found = (await S.call(`orders?q=${id}&day=2020-01-01`)).data;
+    assert.equal(found.total, 1); assert.equal(found.everyDay, true); assert.equal(found.orders[0].ref, id);
+    assert.ok(!(await S.call('orders')).data.orders.some(o => o.ref === id), 'no search: today only');
+    assert.equal((await S.call(`orders?day=2020-01-01`)).data.everyDay, false);
+    const t = (await S.call(`order?id=${id}`)).data.order;
+    assert.equal(t.paid, false, 'the order page can tell it was never paid'); assert.equal(t.stage, null, 'and that it is not waiting');
+  } finally { sql(`DELETE FROM food_orders WHERE id = '${id}';`); }
+});
+
 test('one WhatsApp number: orders go only to it, replies only from its approved device, and a rejection sends nothing', async () => {
   const sa = await signIn(SA_EMAIL, SA_PW), A = await as(sa.cookie);
   const sup = await signCode(SUP.code), S = await as(sup.cookie), C = await as((await signCode(COOK.code)).cookie);
