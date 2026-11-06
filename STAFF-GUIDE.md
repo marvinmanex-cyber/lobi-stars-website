@@ -4662,13 +4662,18 @@ Who can cancel can be changed in **Staff accounts › Settings** (with the Teleg
 
 Signing out with the **Sign out** button stops alerts on that person's devices until they next sign in. The automatic sign-out after 20 idle minutes does not stop them. Switching a person off, or giving them a new login code, stops them too. Tablets must allow sound: tap the screen once after opening the app.
 
-**The payment message:** when a fan orders on WhatsApp, how to pay is added to their own order message and shown on their order screen, and emailed if they gave an email. On the Live order board, **Confirm order** opens the fan's chat with the full message ready: press send. It reads "Hi George, this is MatchDay Kitchen. We have received your food order FD-… of ₦…, and it is waiting for payment. Kindly pay the sum of ₦… to Aeson Sports Management Limited, Fidelity Bank: 4011459917 and forward the receipt to me for confirmation." Change the wording or the account in Admin › Food › Menu › Ordering settings. WhatsApp doesn't let a website send a message by itself, so staff still press send.
+**The payment message:** when a fan orders on WhatsApp, how to pay is added to their own order message and shown on their order screen, and emailed if they gave an email. On the official WhatsApp device, **Confirm order** opens the fan's chat with the full message ready: press send. It reads "Hi George, this is MatchDay Kitchen. We have received your food order FD-… of ₦…, and it is waiting for payment. Kindly pay the sum of ₦… to Aeson Sports Management Limited, Fidelity Bank: 4011459917 and forward the receipt to our WhatsApp number, 0708 009 4985, for confirmation." Change the wording or the account in Admin › Food › Menu › Ordering settings. WhatsApp doesn't let a website send a message by itself, so staff still press send. Rejecting an order sends no message.
+
+**One WhatsApp number:** every food order goes to **0708 009 4985 (+234 708 009 4985)**, and replies come only from it. The number is fixed on the website and can't be changed in the settings.
+- **The official device:** a Super Admin signs in on the kitchen's own phone or computer, where WhatsApp is signed in to that number, then goes to Staff accounts › **Official WhatsApp device** and presses **Make this device the official WhatsApp device**. Sign out of your own account there afterwards. Whoever then signs in on that device sees the WhatsApp buttons. Remove a lost or changed device from the same list at once.
+- **Every other device:** staff see the orders, with the fan's number hidden and no WhatsApp buttons. This includes supervisors and the website admin's order pages.
+- **What the website can't check:** it can't see which account WhatsApp is signed in to, so never approve a personal phone, and keep only the kitchen's number on that device. The full number still shows in the website admin's order details for managers: don't message fans from a private number.
 
 **WhatsApp payments (Record payment):** when a fan pays for a WhatsApp order and sends the receipt on WhatsApp:
 1. Open the order: on the **Live order board** under **Awaiting payment** (or **Did not pay**, if it ran out of time), or in **Food orders**. Press **Record payment**.
 2. Tap to add the receipt: a photo, a screenshot or a PDF (required).
 3. Check **how they paid** and the **amount received** (it can't be less than the total), add the bank reference if you have it, and press **Mark order paid**.
-4. Press **Tell the fan on WhatsApp** to send the "payment received" message.
+4. On the official WhatsApp device, press **Tell the fan on WhatsApp** to send the "payment received" message. On any other device, the official device sends it from the order's page.
 
 The order then goes on exactly as if it was paid online: the kitchen alarm rings, it appears on the kitchen screen, stock and rewards update, the fan's tracking page moves on and the confirmation email goes out (if they gave an email). The evidence is kept with the order: see it on the order's page, with who recorded it and when.
 

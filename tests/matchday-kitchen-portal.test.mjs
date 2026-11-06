@@ -5,6 +5,7 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { sql } from './media-helpers.mjs';
+import { officialCookie } from './wa-device-helper.mjs';
 import { hashPassword } from '../functions/api/_lib/password.js';
 
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
@@ -80,6 +81,7 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   const sa = await signIn(SA_EMAIL, SA_PW), A = await as(sa.cookie);
   const cook = await signCode(COOK.code), C = await as(cook.cookie);
   const sup = await signCode(SUP.code), S = await as(sup.cookie);
+  const W = await as(`${cook.cookie}; ${officialCookie()}`);
   // A WhatsApp order, confirmed as paid: it is now New on the kitchen screen.
   const o = await fetch(`${BASE}/api/food/whatsapp-order`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ name: 'Kitchen Fan', phone: `0803${String(Math.random()).slice(2, 9)}`, fulfilment: 'seat', seat: 'K12', notes: 'No pepper', items: [{ id: 'suya', qty: 2 }] }) }).then(r => r.json());
   assert.ok(o.ref, JSON.stringify(o));
@@ -88,7 +90,8 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   // Not paid yet: in the board's "Awaiting payment" box (with a WhatsApp chat link), not in the kitchen columns.
   let bd = (await C.call('board')).data;
   const un = bd.unpaid.find(u => u.ref === o.ref);
-  assert.ok(un, 'in Awaiting payment'); assert.equal(un.failed, false); assert.match(un.chatUrl || '', /^https:\/\/wa\.me\/234/);
+  assert.ok(un, 'in Awaiting payment'); assert.equal(un.failed, false); assert.equal(un.chatUrl, null, 'no reply link away from the official device');
+  assert.match((await W.call('board')).data.unpaid.find(u => u.ref === o.ref).chatUrl, /^https:\/\/wa\.me\/234/);
   // Paid (as a Paystack payment does): it now waits for a supervisor to confirm it.
   rows(`UPDATE food_orders SET payment_status = 'paid', order_status = 'PAID', paid_iso = '${new Date().toISOString()}' WHERE id = '${id}';`);
   bd = (await C.call('board')).data;
@@ -129,12 +132,14 @@ test('the kitchen screen moves the real order; the menu page changes the real me
   // Delivered: the receipt (no email on this order, so WhatsApp, one tap).
   k = (await C.call('kitchen')).data.tickets.find(t => t.ref === o.ref);
   assert.equal(k.next.label, 'Mark delivered');
-  const dl = await C.call('order', { id, to: k.next.to });
+  const dl = await W.call('order', { id, to: k.next.to });
   assert.equal(dl.status, 200); assert.match(dl.data.receipt.whatsappUrl, /^https:\/\/wa\.me\/234\d+\?text=/);
   assert.ok(!(await C.call('pulse')).data.late.some(p => p.ref === o.ref), 'delivered: no longer late');
-  assert.equal((await C.call('receipt', { id, via: 'whatsapp' })).status, 200);
+  assert.equal((await C.call('receipt', { id, via: 'whatsapp' })).status, 403, 'not from another device');
+  assert.equal((await C.call(`receipt-data?id=${id}`)).status, 403);
+  assert.equal((await W.call('receipt', { id, via: 'whatsapp' })).status, 200);
   // The receipt picture's details (items with prices, total, the fan's chat link, the PDF link).
-  const rd = (await C.call(`receipt-data?id=${id}`)).data;
+  const rd = (await W.call(`receipt-data?id=${id}`)).data;
   assert.equal(rd.ref, o.ref); assert.equal(rd.items[0].qty, 2); assert.ok(rd.items[0].priceKobo > 0); assert.ok(rd.totalKobo > 0);
   assert.match(rd.chatUrl, /^https:\/\/wa\.me\/234\d+\?text=/); assert.match(rd.pdfUrl, /\/api\/food\/receipt\?ref=/);
   assert.ok(rows(`SELECT receipt_wa_at FROM food_orders WHERE id = '${id}';`)[0].receipt_wa_at, 'WhatsApp receipt recorded');
@@ -404,6 +409,61 @@ test('a new WhatsApp order alerts the kitchen: the alarm rings until it is confi
   }
 });
 
+test('one WhatsApp number: orders go only to it, replies only from its approved device, and a rejection sends nothing', async () => {
+  const sa = await signIn(SA_EMAIL, SA_PW), A = await as(sa.cookie);
+  const sup = await signCode(SUP.code), S = await as(sup.cookie), C = await as((await signCode(COOK.code)).cookie);
+  const place = async seat => { const r = await fetch(`${BASE}/api/food/whatsapp-order`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ name: 'Reply Fan', phone: `0803${String(Math.random()).slice(2, 9)}`, fulfilment: 'seat', seat, items: [{ id: 'suya', qty: 1 }] }) }).then(x => x.json()); assert.ok(r.ref, JSON.stringify(r)); return { ...r, id: rows(`SELECT id FROM food_orders WHERE ref = '${r.ref}'`)[0].id }; };
+  const made = [];
+  try {
+    // Only a Super Admin approves a device.
+    sql(`DELETE FROM mk_wa_devices WHERE added_by = 'tests' OR name = 'Kitchen phone';`); // the limit of 4 devices counts these
+    assert.equal((await S.call('whatsapp-device', { action: 'this', name: 'Private phone' })).status, 403);
+    assert.equal((await C.call('whatsapp-device', { action: 'this', name: 'Private phone' })).status, 403);
+    assert.equal((await S.call('whatsapp-devices')).status, 403);
+    const res = await fetch(`${BASE}/api/matchday-kitchen/whatsapp-device`, { method: 'POST', headers: { Cookie: `ls_mdk=${sa.cookie}`, 'Content-Type': 'application/json', 'X-CSRF-Token': A.s.csrf }, body: JSON.stringify({ action: 'this', name: 'Kitchen phone' }) });
+    assert.equal(res.status, 200);
+    const set = res.headers.get('set-cookie');
+    assert.match(set, /^ls_mk_wa=[a-f0-9]{64}; HttpOnly; Secure; SameSite=Strict/);
+    const device = set.split(';')[0];
+    const W = await as(`${sup.cookie}; ${device}`);
+    assert.equal(W.s.waDevice, true); assert.equal(S.s.waDevice, false, 'the same person on another device');
+    assert.equal((await as(`${sup.cookie}; ls_mk_wa=${'a'.repeat(64)}`)).s.waDevice, false, 'a made-up device');
+    const listed = (await A.call('whatsapp-devices')).data.devices.find(d => d.name === 'Kitchen phone');
+    assert.ok(listed); assert.equal(JSON.stringify(listed).includes(device.split('=')[1]), false, 'the secret is never shown');
+
+    // Orders go only to the official number.
+    sql(`DELETE FROM food_settings WHERE key = 'bankDetails';`); // other tests may have blanked it: the real account is the default
+    const o = await place('R1'); made.push(o.id);
+    assert.match(o.whatsappUrl, /^https:\/\/wa\.me\/2347080094985\?/);
+    assert.match(decodeURIComponent(o.whatsappUrl), /Fidelity Bank: 4011459917/);
+    // Replies: only the approved device gets the fan's number.
+    const seen = async who => JSON.stringify((await who.call('board')).data.unpaid.find(x => x.ref === o.ref));
+    assert.match(await seen(W), /wa\.me\/2348/);
+    for (const who of [S, C]) assert.doesNotMatch(await seen(who), /wa\.me/, 'others see the order, with nothing to reply with');
+    assert.ok((await W.call(`order?id=${o.id}`)).data.chat.url.startsWith('https://wa.me/2348'));
+    assert.equal((await S.call(`order?id=${o.id}`)).data.chat, null);
+    assert.equal((await S.call(`order?id=${o.id}`)).data.order.phone.includes('•'), true, 'the number stays hidden');
+
+    // Rejected: no message at all, even on the approved device.
+    assert.equal((await W.call('order', { id: o.id, to: 'CANCELLED' })).status, 200);
+    const after = (await W.call(`order?id=${o.id}`)).data;
+    assert.equal(after.chat, null, 'nothing to send'); assert.ok(!JSON.stringify(after).includes('wa.me'));
+    const p = await place('R2'); made.push(p.id);
+    assert.ok(!JSON.stringify((await W.call('board')).data).includes('rejectUrl'));
+    // Recording a payment: the reply button only on the approved device.
+    const jpg = Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 3, 1, 4, ...T.split('').map(x => x.charCodeAt(0))]).toString('base64');
+    assert.match((await W.call('payment', { id: p.id, method: 'cash', amount: '99999', proof: jpg })).data.chatUrl, /^https:\/\/wa\.me\/2348/);
+
+    // Removed: back to seeing orders only.
+    assert.equal((await A.call('whatsapp-device', { action: 'remove', id: listed.id })).status, 200);
+    assert.equal((await as(`${sup.cookie}; ${device}`)).s.waDevice, false);
+    const q = await place('R3'); made.push(q.id);
+    assert.doesNotMatch(JSON.stringify((await W.call('board')).data.unpaid.find(x => x.ref === q.ref)), /wa\.me/);
+  } finally {
+    sql(`DELETE FROM mk_wa_devices WHERE name = 'Kitchen phone';` + made.map(i => `DELETE FROM food_payment_proofs WHERE order_id = '${i}'; DELETE FROM food_orders WHERE id = '${i}';`).join(''));
+  }
+});
+
 test('WhatsApp payments: evidence required, then the order goes on as if paid online; cooks cannot; a receipt cannot be reused', async () => {
   const supCookie = (await signCode(SUP.code)).cookie, S = await as(supCookie);
   const staff = async (name, role) => { const a = await S.call('staff', { action: 'add', name: `${name} ${T}`, role }); return { id: a.data.id, u: await as((await signCode(a.data.loginCode)).cookie) }; };
@@ -438,7 +498,7 @@ test('WhatsApp payments: evidence required, then the order goes on as if paid on
     // Recorded: paid, in the kitchen, recorded and traceable.
     const r = await S.call('payment', body(a, { note: 'GTB ref 123' }));
     assert.equal(r.status, 200, JSON.stringify(r.data));
-    assert.match(r.data.chatUrl, /^https:\/\/wa\.me\/2348031234567/, 'one tap to tell the fan');
+    assert.equal(r.data.chatUrl, null, 'no reply link away from the official device');
     const o = order(a);
     assert.equal(o.order_status, 'ACCEPTED', 'recording it also confirms it'); assert.equal(o.payment_status, 'paid'); assert.ok(o.paid_iso); assert.match(o.paid_reference, /^WhatsApp: Bank transfer, recorded by Bola Super/);
     assert.ok((await cook.u.call('kitchen')).data.tickets.some(t => t.id === a), 'on the kitchen screen like any paid order');

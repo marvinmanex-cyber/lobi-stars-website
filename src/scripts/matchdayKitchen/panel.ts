@@ -100,6 +100,7 @@ async function sendPayment(allowDuplicate = false) {
     $('payDoneT').textContent = `Order ${r.ref} is paid (${r.amount}, ${r.method}) and has gone to the kitchen, which is told to start cooking. The evidence is saved with the order.`;
     const tell = $('payTell') as HTMLAnchorElement;
     tell.hidden = !r.chatUrl; if (r.chatUrl) tell.href = r.chatUrl;
+    if (!r.chatUrl) $('payDoneT').textContent += ' The fan is told from the official MatchDay Kitchen WhatsApp device.';
     shell?.alarmsNow?.();
     payDone?.();
   } catch (e: any) {
@@ -163,7 +164,7 @@ const PAGES: Record<string, () => Promise<void>> = {
       const unpaidCard = (o: any) => `<article class="mk-unpaid${o.failed ? ' failed' : ''}${o.status === 'AWAITING_WHATSAPP' ? ' confirm-me' : ''}"><div class="mk-unpaid-top"><b>${esc(o.ref)}</b><span>${esc(o.statusLabel)}</span><span class="r">${esc(mins(o.minutes))}${o.minutes >= 1 ? ' ago' : ''}</span></div>
         <div>${esc([o.customer, o.where].filter(Boolean).join(' · '))}${o.phone ? ` · ${esc(o.phone)}` : ''}</div>
         <div class="mk-status">${esc(o.items.map((i: any) => `${i.qty} × ${i.name}`).join(', '))} · <b>${esc(o.total)}</b>${o.channel === 'whatsapp' ? ' · WhatsApp order' : ''}</div>
-        <div class="mk-actions" style="justify-content:flex-start;margin:6px 0 0">${o.chatUrl ? `<a class="mk-btn" href="${esc(o.chatUrl)}" target="mdk-whatsapp" rel="noopener">Chat on WhatsApp</a>` : ''}${o.status === 'AWAITING_WHATSAPP' && session.perms.confirm ? `<button type="button" class="mk-btn go" data-confirm="${esc(o.id)}">Confirm order</button>` : ''}${o.canPay && session.perms.payment ? `<button type="button" class="mk-btn go" data-pay="${esc(o.id)}">Record payment</button>` : ''}${['AWAITING_WHATSAPP', 'CONFIRMED'].includes(o.status) && session.perms.confirm ? `<button type="button" class="mk-btn danger" data-reject="${esc(o.id)}">Reject order</button>` : ''}${o.status === 'AWAITING_WHATSAPP' && !session.perms.confirm ? '<span class="mk-status">Waiting for a supervisor</span>' : ''}</div></article>`;
+        <div class="mk-actions" style="justify-content:flex-start;margin:6px 0 0">${o.chatUrl ? `<a class="mk-btn" href="${esc(o.chatUrl)}" target="mdk-whatsapp" rel="noopener">Reply on WhatsApp</a>` : ''}${o.status === 'AWAITING_WHATSAPP' && session.perms.confirm ? `<button type="button" class="mk-btn go" data-confirm="${esc(o.id)}">Confirm order</button>` : ''}${o.canPay && session.perms.payment ? `<button type="button" class="mk-btn go" data-pay="${esc(o.id)}">Record payment</button>` : ''}${['AWAITING_WHATSAPP', 'CONFIRMED'].includes(o.status) && session.perms.confirm ? `<button type="button" class="mk-btn danger" data-reject="${esc(o.id)}">Reject order</button>` : ''}${o.status === 'AWAITING_WHATSAPP' && !session.perms.confirm ? '<span class="mk-status">Waiting for a supervisor</span>' : ''}</div></article>`;
       const unpaidHtml = `<section class="mk-unpaid-box" aria-label="Awaiting payment"><h2>Awaiting payment <span class="mk-badge">${waiting.length}</span> <small>Not paid yet: do not cook. A paid order moves to New by itself.</small></h2>
         ${waiting.length ? `<div class="mk-unpaid-grid">${waiting.map(unpaidCard).join('')}</div>` : '<p class="mk-status" style="margin:4px 6px">Nobody is waiting to pay.</p>'}
         ${failed.length ? `<h3>Did not pay <span class="mk-badge red">${failed.length}</span> <small>Payment failed or ran out of time (last 12 hours). Ask them what went wrong.</small></h3><div class="mk-unpaid-grid">${failed.map(unpaidCard).join('')}</div>` : ''}</section>`;
@@ -179,15 +180,13 @@ const PAGES: Record<string, () => Promise<void>> = {
         // WhatsApp opens at once (browsers block it after a wait), with the payment message ready: staff press send.
         const url = (main as any)._unpaid.find((x: any) => x.id === c.dataset.confirm)?.chatUrl;
         if (url) window.open(url, 'mdk-whatsapp');
-        act(c, async () => { await api('order', { method: 'POST', body: { id: c.dataset.confirm, to: 'CONFIRMED' } }); toast(url ? 'Confirmed. Press send in WhatsApp to give the fan the payment details.' : 'Confirmed. This order has no WhatsApp number: call the fan with the payment details.'); shell?.alarmsNow?.(); await draw(); });
+        act(c, async () => { await api('order', { method: 'POST', body: { id: c.dataset.confirm, to: 'CONFIRMED' } }); toast(url ? 'Confirmed. Press send in WhatsApp to give the fan the payment details.' : 'Confirmed. Replies go from the official MatchDay Kitchen WhatsApp device.'); shell?.alarmsNow?.(); await draw(); });
         return;
       }
       const rj = (e.target as HTMLElement).closest('[data-reject]') as HTMLButtonElement | null;
       if (rj) {
         if (!confirm('Reject this order? The fan sees it as cancelled. Your name is recorded.')) return;
-        const url = (main as any)._unpaid.find((x: any) => x.id === rj.dataset.reject)?.rejectUrl;
-        if (url) window.open(url, 'mdk-whatsapp');
-        act(rj, async () => { await api('order', { method: 'POST', body: { id: rj.dataset.reject, to: 'CANCELLED' } }); toast(url ? 'Rejected. Press send in WhatsApp to tell the fan.' : 'Rejected.'); shell?.alarmsNow?.(); await draw(); });
+        act(rj, async () => { await api('order', { method: 'POST', body: { id: rj.dataset.reject, to: 'CANCELLED' } }); toast('Order rejected.'); shell?.alarmsNow?.(); await draw(); });
         return;
       }
       const p = (e.target as HTMLElement).closest('[data-pay]') as HTMLElement | null;
@@ -293,9 +292,10 @@ const PAGES: Record<string, () => Promise<void>> = {
           <p style="margin:10px 0 0;font-size:20px"><b>Total ${esc(o.total)}</b></p></div>
         ${d.canRecordPayment ? `<div class="mk-box mk-paybox"><b>Has the fan sent a receipt on WhatsApp?</b><p style="margin:4px 0 10px">Add it here and mark the order paid. It goes to the kitchen as if it was paid online.</p><button type="button" class="mk-btn go big" id="recPay">Record payment</button></div>` : d.needsPaymentRole ? '<p class="mk-status" style="text-transform:none;letter-spacing:0">Waiting for payment. A supervisor or Super Admin records it when the fan sends the receipt.</p>' : ''}
         ${d.payment ? `<div class="mk-box"><h2 style="font-size:20px;margin:0 0 8px">Payment evidence</h2>${d.payment.isPdf ? '' : `<a href="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" target="_blank" rel="noopener"><img class="mk-proofimg" src="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" alt="The payment evidence for this order" loading="lazy" /></a>`}<a class="mk-btn" href="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" target="_blank" rel="noopener">${d.payment.isPdf ? 'Download the PDF receipt' : 'Open it full size'}</a></div>` : ''}
+        ${d.chat ? `<div class="mk-actions" style="justify-content:flex-start"><a class="mk-btn go" href="${esc(d.chat.url)}" target="mdk-whatsapp" rel="noopener">${esc(d.chat.label)} on WhatsApp</a></div>` : d.waDevice ? '' : '<p class="mk-status" style="text-transform:none;letter-spacing:0">Replies to fans go only from the official MatchDay Kitchen WhatsApp, 0708 009 4985, on its own device.</p>'}
         <h2 style="font-size:22px;margin:0 0 6px">Change status</h2>
         ${d.moves.length ? `<div class="mk-actions">${d.moves.map((m: any) => `<button type="button" class="mk-btn ${m.next ? 'go big' : m.cancel ? 'danger' : ''}" data-to="${esc(m.to)}" data-label="${esc(m.label)}" data-cancel="${m.cancel ? 1 : 0}">${m.next ? esc(o.next?.label || m.label) : esc(m.label)}</button>`).join('')}</div>` : d.needsSupervisor ? '<p class="mk-empty">A supervisor or Super Admin confirms or rejects this order.</p>' : '<p class="mk-empty">No more changes for this order.</p>'}
-        ${o.status === 'DELIVERED' ? `<h2 style="font-size:22px;margin:14px 0 6px">Receipt</h2><div class="mk-actions"><button type="button" class="mk-btn go" id="rcWa">Send receipt on WhatsApp</button><button type="button" class="mk-btn" id="rcEmail">Email receipt</button></div>` : ''}
+        ${o.status === 'DELIVERED' ? `<h2 style="font-size:22px;margin:14px 0 6px">Receipt</h2><div class="mk-actions">${d.waDevice ? '<button type="button" class="mk-btn go" id="rcWa">Send receipt on WhatsApp</button>' : ''}<button type="button" class="mk-btn" id="rcEmail">Email receipt</button></div>` : ''}
         <div class="mk-actions"><button type="button" class="mk-btn" id="allOrders">All orders</button></div>`;
       $('allOrders').addEventListener('click', () => openPage('orders'));
       $('recPay')?.addEventListener('click', () => openPay(o, () => { draw(); }));
@@ -303,7 +303,7 @@ const PAGES: Record<string, () => Promise<void>> = {
         await sendReceiptWhatsApp(id, toast);
       });
       $('rcEmail')?.addEventListener('click', async () => {
-        try { const r = await api('receipt', { method: 'POST', body: { id, via: 'email' } }); toast(r.receipt.emailed ? `Receipt emailed to ${r.receipt.email}.` : r.receipt.email ? 'The email could not be sent. Try WhatsApp.' : 'This order has no email address. Use WhatsApp.'); } catch (err: any) { toast(err.message); }
+        try { const r = await api('receipt', { method: 'POST', body: { id, via: 'email' } }); toast(r.receipt.emailed ? `Receipt emailed to ${r.receipt.email}.` : r.receipt.email ? 'The email could not be sent. Send it from the official WhatsApp device.' : 'This order has no email address. Send it from the official WhatsApp device.'); } catch (err: any) { toast(err.message); }
       });
     };
     main.addEventListener('click', async (e: Event) => {
@@ -458,7 +458,7 @@ const PAGES: Record<string, () => Promise<void>> = {
     let codeShown: { name: string; staffId: string; loginCode: string } | null = null;
     const codeMsg = (c: { name: string; loginCode: string }) => `MatchDay Kitchen login for ${c.name}\n1. Open https://lobistarsfc.com/matchday-kitchen\n2. Enter this login code: ${c.loginCode}\nIt is personal to you: please keep it private.`;
     const draw = async () => {
-      const [d, rep] = await Promise.all([api('staff'), api('report-settings')]);
+      const [d, rep, wad] = await Promise.all([api('staff'), api('report-settings'), session.perms.superAdmin ? api('whatsapp-devices') : null]);
       const sa = !!session.perms.superAdmin;
       const canEdit = (s: any) => sa || s.role !== 'supervisor';
       const roleOpts = (sel = '') => Object.entries(d.addRoles).map(([k, v]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
@@ -486,6 +486,9 @@ const PAGES: Record<string, () => Promise<void>> = {
           </div>
           <p class="mk-status" style="text-transform:none;letter-spacing:0">No email or password: the website gives this person a Staff ID and an 8-number login code.${sa ? '' : ' Only a Super Admin can add a kitchen supervisor.'}</p>
           <button class="mk-btn go big" type="submit">Add staff and make login code</button></form></section>
+        ${wad ? `<section class="mk-section"><h2>Official WhatsApp device</h2><div class="mk-box"><p style="margin:0 0 10px">Orders and replies use only <b>0708 009 4985</b>. Only a device on this list gets the reply buttons and fans' numbers; everyone else sees the orders only. Do this on the kitchen's phone or computer where WhatsApp is signed in to that number, then sign out of your own account there. It stays approved until you remove it.</p>
+          ${wad.devices.length ? `<ul style="margin:0 0 12px;padding:0;list-style:none">${wad.devices.map((x: any) => `<li style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #d9dde2"><span><b>${esc(x.name)}</b>${x.thisOne ? ' <span class="mk-pill go">This device</span>' : ''}<br /><small>Added by ${esc(x.addedBy || '')}, ${esc(dayTime(x.addedAt))}</small></span><button type="button" class="mk-btn danger" data-waremove="${esc(x.id)}" data-name="${esc(x.name)}">Remove</button></li>`).join('')}</ul>` : '<p class="mk-status" style="text-transform:none;letter-spacing:0">No device yet, so nobody can reply from here.</p>'}
+          ${wad.thisDevice ? '' : '<button type="button" class="mk-btn go" id="waThis">Make this device the official WhatsApp device</button>'}</div></section>` : ''}
         <section class="mk-section"><h2>Settings</h2><form class="mk-box" id="setF">
           <div class="mk-field"><label for="sTg">Telegram channel link (shows the Telegram updates button)</label><input id="sTg" placeholder="https://t.me/yourchannel" value="${esc(d.settings.telegramUrl)}" /></div>
           <div class="mk-filters" style="align-items:flex-start"><fieldset class="mk-field" style="border:0;padding:0"><legend class="mk-label">Who can cancel orders</legend>${roleChecks('cancel', d.settings.cancelRoles)}</fieldset>
@@ -512,6 +515,19 @@ const PAGES: Record<string, () => Promise<void>> = {
       if (el.id === 'repSend') {
         if (!confirm('Email the food report now, with the figures so far?')) return;
         act(el as HTMLButtonElement, async () => { const r = await api('report', { method: 'POST', body: {} }); toast(`Report sent to ${r.to.length} ${r.to.length === 1 ? 'person' : 'people'}.`); });
+        return;
+      }
+      if (el.id === 'waThis') {
+        if (!confirm('Is WhatsApp on this device signed in to 0708 009 4985? Only say yes on the kitchen\'s own phone or computer, never a personal one.')) return;
+        const name = prompt('Name this device, e.g. Kitchen phone', 'Kitchen phone');
+        if (name === null) return;
+        act(el as HTMLButtonElement, async () => { await api('whatsapp-device', { method: 'POST', body: { action: 'this', name } }); toast('This is now an official WhatsApp device.'); await shell?.shiftChanged?.(); await draw(); });
+        return;
+      }
+      const wr = el.closest('[data-waremove]') as HTMLButtonElement | null;
+      if (wr) {
+        if (!confirm(`Remove ${wr.dataset.name}? It can no longer reply to fans from MatchDay Kitchen.`)) return;
+        act(wr, async () => { await api('whatsapp-device', { method: 'POST', body: { action: 'remove', id: wr.dataset.waremove } }); toast('Device removed.'); await shell?.shiftChanged?.(); await draw(); });
         return;
       }
       if (el.id === 'codeDone') { codeShown = null; act(null, draw); return; }

@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-06: One WhatsApp number for kitchen orders and replies; no message on rejection
+
+**Who it affects:** all kitchen staff and website admins handling food orders. **A Super Admin needs to:** approve the kitchen's WhatsApp device (HANDOVER-TODO A4e). Until then, nobody can reply from MatchDay Kitchen.
+- Rejecting an order no longer opens WhatsApp or prepares a message.
+- All food orders go to 0708 009 4985. The number is fixed: it is no longer a setting.
+- Reply buttons and fans' numbers in WhatsApp links now appear only on a device a Super Admin has approved. Every other device, including supervisors' phones and the website admin, sees the orders only.
+- The payment message now names the number, so receipts go to the right place.
+
 ## 2026-11-05: Kitchen alerts blink red; only supervisors confirm orders; start-cooking alarm
 
 **Who it affects:** all kitchen staff. **Staff need to:** have a supervisor or Super Admin on duty whenever ordering is open.

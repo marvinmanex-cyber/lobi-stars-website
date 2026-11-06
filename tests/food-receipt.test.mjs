@@ -5,6 +5,7 @@
 // Needs the local Pages dev server with ADMIN_CODE=test-code-123 (no RESEND_API_KEY).
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { officialCookie } from './wa-device-helper.mjs';
 import { readFileSync } from 'node:fs';
 
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
@@ -13,7 +14,8 @@ const randIp = () => `10.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 
 const r7 = () => String(Math.floor(Math.random() * 1e7)).padStart(7, '0');
 const post = (path, body) => fetch(BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': randIp() }, body: JSON.stringify(body) })
   .then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
-const admin = (path, method = 'GET', body) => fetch(BASE + path, { method, headers: ADMIN, body: body ? JSON.stringify(body) : undefined }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
+const device = officialCookie();
+const admin = (path, method = 'GET', body) => fetch(BASE + path, { method, headers: { ...ADMIN, Cookie: device }, body: body ? JSON.stringify(body) : undefined }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
 const waSettings = s => admin('/api/admin/food-menu', 'POST', { action: 'whatsapp_settings', settings: { whatsappEnabled: true, whatsappNumber: '0903 039 9416', whatsappExpiryHours: 3, pickupPoints: [], bankDetails: '', ...s } });
 const move = (id, status) => admin('/api/admin/food-orders', 'POST', { id, status });
 after(async () => { await waSettings({}); });
@@ -28,6 +30,7 @@ test('receipts: only for paid orders; WhatsApp opens a chat with the buyer with 
   assert.equal((await admin('/api/admin/food-orders', 'POST', { action: 'receipt_whatsapp', id: order.id })).status, 409, 'not paid yet');
   for (const s of ['PAID', 'PREPARING', 'OUT_FOR_DELIVERY', 'DELIVERED']) assert.equal((await move(order.id, s)).status, 200, s);
 
+  assert.equal((await fetch(`${BASE}/api/admin/food-orders`, { method: 'POST', headers: ADMIN, body: JSON.stringify({ action: 'receipt_whatsapp', id: order.id }) })).status, 403, 'only from the official WhatsApp device');
   const wa = await admin('/api/admin/food-orders', 'POST', { action: 'receipt_whatsapp', id: order.id });
   assert.equal(wa.status, 200, JSON.stringify(wa.data));
   assert.ok(wa.data.url.startsWith(`https://wa.me/234${phone.slice(1)}?text=`), 'to the buyer\'s number');

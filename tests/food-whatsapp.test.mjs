@@ -4,6 +4,7 @@
 // trap field. Needs the local Pages dev server with ADMIN_CODE=test-code-123.
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
+import { officialCookie } from './wa-device-helper.mjs';
 import { sql } from './media-helpers.mjs';
 import { FOOD_DEFAULTS, staffMessage } from '../functions/api/_lib/foodOrders.js';
 
@@ -13,7 +14,8 @@ const randIp = () => `10.${(Math.random() * 250) | 0}.${(Math.random() * 250) | 
 const r7 = () => String(Math.floor(Math.random() * 1e7)).padStart(7, '0');
 const post = (path, body) => fetch(BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': randIp() }, body: JSON.stringify(body) })
   .then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
-const admin = (path, method = 'GET', body) => fetch(BASE + path, { method, headers: ADMIN, body: body ? JSON.stringify(body) : undefined }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
+const device = officialCookie();
+const admin = (path, method = 'GET', body) => fetch(BASE + path, { method, headers: { ...ADMIN, Cookie: device }, body: body ? JSON.stringify(body) : undefined }).then(async r => ({ status: r.status, data: await r.json().catch(() => ({})) }));
 const waSettings = s => admin('/api/admin/food-menu', 'POST', { action: 'whatsapp_settings', settings: { whatsappEnabled: true, whatsappNumber: '0903 039 9416', whatsappExpiryHours: 3, pickupPoints: [], bankDetails: '', ...s } });
 const waOrder = over => post('/api/food/whatsapp-order', { name: 'Emeka Okafor', phone: `0803${r7()}`, fulfilment: 'seat', seat: 'C14', stand: 'Grand Stand', notes: 'No pepper please', items: [{ id: 'suya', qty: 2, priceKobo: 1 }, { id: 'water', qty: 1 }], ...over });
 const board = () => admin('/api/admin/food-orders?show=board');
@@ -24,8 +26,8 @@ after(async () => { await waSettings({}); await admin('/api/admin/food-menu', 'P
 test('the menu offers Order on WhatsApp with the club number', async () => {
   await waSettings({});
   const m = await fetch(`${BASE}/api/food/menu`).then(r => r.json());
-  assert.equal(m.whatsapp.number, '2349030399416');
-  assert.match(m.whatsapp.display, /^\+234 903 039 9416$/);
+  assert.equal(m.whatsapp.number, '2347080094985', 'the number is fixed: a saved number is ignored');
+  assert.match(m.whatsapp.display, /^\+234 708 009 4985$/);
 });
 
 test('WhatsApp order: checked on the server, prices from the menu, order message and wa.me link', async () => {
@@ -46,7 +48,7 @@ test('WhatsApp order: checked on the server, prices from the menu, order message
   assert.equal(d.total, '₦3,300');
   for (const line of ['Hello MatchDay Kitchen', `Order: ${d.ref}`, 'Name: Emeka Okafor', '2 × Beef Suya: ₦3,000', 'Total: ₦3,300', 'Seat C14, Grand Stand', 'Note: No pepper please', 'Please confirm my order']) assert.ok(d.message.includes(line), line);
   assert.ok(d.message.startsWith('Hello MatchDay Kitchen,\n') && !d.message.includes('!') && !d.message.includes('👋'), 'no exclamation marks or emoji');
-  assert.ok(d.whatsappUrl.startsWith('https://wa.me/2349030399416?text='));
+  assert.ok(d.whatsappUrl.startsWith('https://wa.me/2347080094985?text='));
   assert.equal(decodeURIComponent(d.whatsappUrl.split('?text=')[1]), d.message);
   const track = new URL(d.trackUrl);
   const st = await fetch(`${BASE}/api/food/order?ref=${track.searchParams.get('ref')}&t=${track.searchParams.get('t')}`).then(x => x.json());
@@ -84,7 +86,8 @@ test('staff: confirm, payment received (counts as paid), kitchen steps; Paystack
 
 test('pickup points and bank details from the settings', async () => {
   assert.equal((await waOrder({ fulfilment: 'pickup', pickupPoint: 'Main Stand Kiosk' })).status, 400, 'no pickup points yet');
-  assert.equal((await waSettings({ whatsappNumber: '12' })).status, 400, 'valid club number');
+  assert.equal((await waSettings({ whatsappNumber: '12' })).status, 200, 'the number can\'t be changed, so nothing to check');
+  assert.equal((await fetch(`${BASE}/api/food/menu`).then(x => x.json())).whatsapp.number, '2347080094985');
   await waSettings({ pickupPoints: ['Main Stand Kiosk', 'East Gate Kiosk'], bankDetails: 'Lobi Stars FC, Test Bank, 0123456789', msgReady: 'Hi {name}, {ref} is ready at {pickup}!' });
   const m = await fetch(`${BASE}/api/food/menu`).then(r => r.json());
   assert.deepEqual(m.pickupPoints, ['Main Stand Kiosk', 'East Gate Kiosk']);
@@ -128,5 +131,15 @@ test('limits: 5 orders per phone in 30 minutes; switched off or closed ordering'
 
 test('the payment message: the name, the order, the amount and the club\'s account', () => {
   const m = staffMessage(FOOD_DEFAULTS, { customer_name: 'George Okoro', ref: 'FD-20261105-0012', total_kobo: 500, seat: 'A1' }, 'CONFIRMED');
-  assert.equal(m, 'Hi George, this is MatchDay Kitchen. We have received your food order FD-20261105-0012 of ₦5, and it is waiting for payment. Kindly pay the sum of ₦5 to Aeson Sports Management Limited, Fidelity Bank: 4011459917 and forward the receipt to me for confirmation.');
+  assert.equal(m, 'Hi George, this is MatchDay Kitchen. We have received your food order FD-20261105-0012 of ₦5, and it is waiting for payment. Kindly pay the sum of ₦5 to Aeson Sports Management Limited, Fidelity Bank: 4011459917 and forward the receipt to our WhatsApp number, 0708 009 4985, for confirmation.');
+});
+
+test('chat links only on the official device, also in the website admin', async () => {
+  await waSettings({});
+  await admin('/api/admin/food-menu', 'POST', { action: 'ordering_mode', mode: 'open' });
+  const r = await waOrder({});
+  assert.equal(r.status, 200, JSON.stringify(r.data));
+  const other = await fetch(`${BASE}/api/admin/food-orders?show=board`, { headers: ADMIN }).then(x => x.json());
+  assert.equal(other.orders.find(x => x.ref === r.data.ref).wa, null, 'the admin elsewhere sees no chat link');
+  assert.ok((await board()).data.orders.find(x => x.ref === r.data.ref).wa, 'the approved device does');
 });

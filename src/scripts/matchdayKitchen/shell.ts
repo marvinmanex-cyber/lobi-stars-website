@@ -103,12 +103,14 @@ $('ordBtns').addEventListener('click', async (e: Event) => {
 setInterval(() => { if (session.csrf && !document.hidden && !$('home').hidden) loadOrdering(); }, 30e3);
 
 function renderHome() {
+  $('waBtn').hidden = !session.waDevice;
   $('hello').textContent = `${greeting()}, ${session.user.firstName}`;
   renderWho();
   loadOrdering();
   const sa = !!session.perms.staff;
   $('groups').innerHTML = GROUPS.filter(g => !g.superOnly || sa).map(g => {
-    const tiles = g.tiles;
+    // WhatsApp opens only on the kitchen's official device: replies come from one number.
+    const tiles = g.tiles.filter(t => t.id !== 'whatsapp' || session.waDevice);
     return `<section class="mk-group"><h2>${esc(g.title)}</h2><div class="mk-rail"><div class="mk-tickets">${tiles.map(t => {
       const text = t.id === 'activity' && !sa ? 'Everything you have done here' : t.text;
       const note = t.external === 'whatsapp' ? 'Opens WhatsApp in a new tab' : t.external ? 'Opens the app' : '';
@@ -159,6 +161,7 @@ function frameFor(page: string) {
 }
 /** Opens a page as a tab (or switches to it); WhatsApp / Telegram open in their apps. */
 function open(page: string, { log = true, focus = true } = {}) {
+  if (page === 'whatsapp' && !session.waDevice) { toast('Replies go only from the official MatchDay Kitchen WhatsApp device (0708 009 4985).'); return; }
   if (page === 'whatsapp' || page === 'telegram') {
     const url = page === 'whatsapp' ? whatsappUrl() : session.settings.telegramUrl;
     // The same browser tab each time (named), so WhatsApp Web stays signed in and isn't opened twice.
@@ -247,7 +250,7 @@ $('idleKeep').addEventListener('click', () => { clearInterval(countdown); $('idl
 // For the pages inside the tabs.
 (window as any).mkShell = {
   home, open: (p: string) => open(p), activity, signedOut: () => signedOut(), alarmsNow,
-  shiftChanged: async () => { try { await loadSession(); renderWho(); } catch { /* */ } },
+  shiftChanged: async () => { try { await loadSession(); if (!$('home').hidden) renderHome(); else { renderWho(); $('waBtn').hidden = !session.waDevice; } } catch { /* */ } },
 };
 
 async function startApp() {

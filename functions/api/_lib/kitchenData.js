@@ -132,7 +132,6 @@ export async function unpaidOrders(db) {
       items: items(o).map(i => ({ name: i.name, qty: i.qty })), total: formatNaira(o.total_kobo),
       phone: o.phone ? String(o.phone).replace(/\d(?=\d{4})/g, '•') : '', minutes: minutesSince(o.created_iso),
       chatUrl: phone.length >= 12 ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : null,
-      rejectUrl: phone.length >= 12 && o.channel === 'whatsapp' && !failed ? `https://wa.me/${phone}?text=${encodeURIComponent(staffMessage(settings, o, 'CANCELLED'))}` : null,
     };
   });
 }

@@ -124,8 +124,11 @@ export async function ensureFoodSchema(db) {
 // orderingMode: 'open' (always), 'closed', or 'auto' (from autoOpenMinutes before kick-off
 // of a home game until full time). stands: list for the seat form's Section drop-down (default: the three
 // McCarthy Stadium stands; saved as an empty list = free text).
+// The only WhatsApp number for food orders: fans send to it and replies come from it. Fixed here, not a setting.
+export const OFFICIAL_WHATSAPP = '2347080094985';
+export const OFFICIAL_WHATSAPP_LOCAL = '0708 009 4985';
 export const WA_TEMPLATES = {
-  msgConfirmed: 'Hi {name}, this is MatchDay Kitchen. We have received your food order {ref} of {total}, and it is waiting for payment. Kindly pay the sum of {total} to {bank} and forward the receipt to me for confirmation.',
+  msgConfirmed: 'Hi {name}, this is MatchDay Kitchen. We have received your food order {ref} of {total}, and it is waiting for payment. Kindly pay the sum of {total} to {bank} and forward the receipt to our WhatsApp number, {whatsapp}, for confirmation.',
   msgPaid: "Hi {name}, we've received your payment for order {ref}. We're preparing your food now.",
   msgReady: 'Hi {name}, your order {ref} is ready. {where}',
   msgCancelled: "Hi {name}, sorry, your Lobi Stars FC food order {ref} has been cancelled. Please message us if you have any questions.",
@@ -133,7 +136,7 @@ export const WA_TEMPLATES = {
 export const FOOD_DEFAULTS = {
   paymentExpiryMinutes: 15, orderingMode: 'open', autoOpenMinutes: 90, stands: ['Popular Stand', 'Grand Stand', 'VIP Seating'], minOrderKobo: 0,
   // Order on WhatsApp. The number is the club WhatsApp shown on the site.
-  whatsappEnabled: true, whatsappNumber: '2347080094985', whatsappExpiryHours: 3, pickupPoints: [], bankDetails: 'Aeson Sports Management Limited, Fidelity Bank: 4011459917',
+  whatsappEnabled: true, whatsappNumber: OFFICIAL_WHATSAPP, whatsappExpiryHours: 3, pickupPoints: [], bankDetails: 'Aeson Sports Management Limited, Fidelity Bank: 4011459917',
   ...WA_TEMPLATES,
 };
 export async function foodSettings(db) {
@@ -142,7 +145,6 @@ export async function foodSettings(db) {
   const s = { ...FOOD_DEFAULTS, stands: [...FOOD_DEFAULTS.stands], pickupPoints: [] }; // a stands list saved in Admin › Food replaces the default
   for (const r of results) {
     if (r.key === 'whatsappEnabled') s.whatsappEnabled = r.value === '1';
-    if (r.key === 'whatsappNumber' && /^234\d{10}$/.test(r.value || '')) s.whatsappNumber = r.value;
     if (r.key === 'whatsappExpiryHours') s.whatsappExpiryHours = Math.min(48, Math.max(1, Number(r.value) || 3));
     if (r.key === 'bankDetails') s.bankDetails = String(r.value || '').slice(0, 300);
     if (r.key in WA_TEMPLATES && r.value) s[r.key] = String(r.value).slice(0, 500);
@@ -379,8 +381,8 @@ export function staffMessage(settings, o, kind) {
   const t = settings[{ CONFIRMED: 'msgConfirmed', PAID: 'msgPaid', READY: 'msgReady', CANCELLED: 'msgCancelled' }[kind]] || '';
   const where = o.fulfilment === 'pickup' ? `Collect it at ${o.pickup_point || 'the pickup point'}.` : `It's on its way to seat ${o.seat}${o.stand ? `, ${o.stand}` : ''}.`;
   // No exclamation marks in WhatsApp messages (also in templates saved before 1 Nov 2026).
-  return t.replace(/!+/g, '.').replace(/\.{2,}/g, '.').replace(/\{(name|ref|total|bank|pickup|seat|where)\}/g, (_, k) => ({
+  return t.replace(/!+/g, '.').replace(/\.{2,}/g, '.').replace(/\{(name|ref|total|bank|pickup|seat|where|whatsapp)\}/g, (_, k) => ({
     name: (o.customer_name || '').split(' ')[0] || 'there', ref: o.ref, total: formatNaira(o.total_kobo),
-    bank: settings.bankDetails || '[bank details: add them in Ordering settings]', pickup: o.pickup_point || '', seat: o.seat || '', where,
+    bank: settings.bankDetails || '[bank details: add them in Ordering settings]', pickup: o.pickup_point || '', seat: o.seat || '', where, whatsapp: OFFICIAL_WHATSAPP_LOCAL,
   }[k]));
 }

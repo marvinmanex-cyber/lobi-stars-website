@@ -6,6 +6,7 @@ import { buildXlsx } from '../../_lib/xlsx.js';
 import { kitchenStatus } from '../../_lib/kitchenNotify.js';
 import { receiptEmailHtml, receiptWhatsappText, receiptUrl, receiptPdf, receiptPdfUrl, receiptPdfName, waNumber, canReceipt, LOGO_JPEG } from '../../_lib/foodReceipt.js';
 import { sendEmail } from '../../_lib/email.js';
+import { officialDevice } from '../../_lib/kitchenWhatsapp.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
 const json = s => { try { return JSON.parse(s); } catch { return []; } };
@@ -46,6 +47,8 @@ export async function onRequestGet({ request, env }) {
   const show = p.get('show') || 'open';
   const base = `SELECT f.*, e.home_team, e.away_team FROM food_orders f LEFT JOIN events e ON e.id = f.event_id`;
   const settings = await foodSettings(db);
+  // Chat links only on the kitchen's official WhatsApp device: replies come from one number.
+  const replySettings = (await officialDevice(request, env)) ? settings : null;
   const watNow = new Date(Date.now() + 3600e3);
   const todayStart = new Date(Date.UTC(watNow.getUTCFullYear(), watNow.getUTCMonth(), watNow.getUTCDate()) - 3600e3).toISOString();
 
@@ -84,7 +87,7 @@ export async function onRequestGet({ request, env }) {
     const { results: matches } = await db.prepare(`SELECT DISTINCT f.event_id AS id, e.home_team, e.away_team, e.event_date FROM food_orders f JOIN events e ON e.id = f.event_id ORDER BY e.event_date DESC LIMIT 50`).all();
     const { results: stands } = await db.prepare(`SELECT DISTINCT stand FROM food_orders WHERE stand IS NOT NULL AND stand != '' ORDER BY stand LIMIT 60`).all();
     return Response.json({
-      statuses: STATUS, orders: results.map(o => view(o, settings)), total, page, pages: Math.max(1, Math.ceil(total / size)), canExport: admin.canExport,
+      statuses: STATUS, orders: results.map(o => view(o, replySettings)), total, page, pages: Math.max(1, Math.ceil(total / size)), canExport: admin.canExport,
       matches: matches.map(m => ({ id: m.id, label: `${m.home_team} vs ${m.away_team} (${new Date(m.event_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'Africa/Lagos' })})` })),
       stands: stands.map(s => s.stand),
     }, { headers: noStore });
@@ -110,7 +113,7 @@ export async function onRequestGet({ request, env }) {
   return Response.json({
     statuses: STATUS,
     settings,
-    orders: results.map(o => view(o, settings)),
+    orders: results.map(o => view(o, replySettings)),
     serverTime: new Date().toISOString(),
     today: {
       orders: paidToday.length, revenueKobo: paidToday.reduce((s, o) => s + o.total_kobo, 0),
@@ -144,6 +147,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     const site = String(env.SITE_URL || new URL(request.url).origin).replace(/\/+$/, '');
     if (b.action === 'receipt_pdf') return Response.json({ ok: true, pdf: receiptPdfUrl(site, o), pdfName: receiptPdfName(o) }, { headers: noStore });
     if (b.action === 'receipt_whatsapp') {
+      if (!(await officialDevice(request, env))) return Response.json({ error: 'Receipts go on WhatsApp only from the official MatchDay Kitchen WhatsApp device (0708 009 4985). Use email here.' }, { status: 403 });
       const to = waNumber(b.phone || o.phone);
       if (!to) return Response.json({ error: 'There is no WhatsApp number for this order. Type the buyer’s number.' }, { status: 400 });
       await env.DB.prepare(`UPDATE food_orders SET receipt_wa_at = ?, receipt_by = ? WHERE id = ?`).bind(new Date().toISOString(), admin.name, o.id).run();

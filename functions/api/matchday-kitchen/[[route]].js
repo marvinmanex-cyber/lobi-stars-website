@@ -12,6 +12,7 @@
 //   GET report (preview, HTML)   POST report (send now)   (report: supervisors, Super Admins)
 //   POST payment {id, method, amount, proof, fileName, note, allowDuplicate}   GET payment-proof?id   (order handlers, supervisors, Super Admins)
 //   POST push {action: on|off|test, subscription, deviceName, endpoint}   order alerts on this device
+//   GET whatsapp-devices   POST whatsapp-device {action: this|remove, id, name}   (Super Admins: the official WhatsApp devices)
 //   GET check (Super Admins: the data check)
 import { signIn, signOut, json, kitchenSettings, permissions, mkLog, shiftState, startShift, endShift, listNotes, noteAction,
   activityPage, listStaff, createStaff, updateStaff, saveSettings, ROLES, oneLine, clearKitchenCookie } from '../_lib/matchdayKitchen.js';
@@ -20,6 +21,7 @@ import { foodSettings, saveFoodSetting } from '../_lib/foodOrders.js';
 import { buildReport, sendReport, reportEmails, saveReportEmails } from '../_lib/kitchenReport.js';
 import { recordPayment, canRecord, proofInfo, proofResponse, PAY_METHODS } from '../_lib/foodPaymentProof.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
+import { officialDevice, listDevices, addDevice, removeDevice, replyFor } from '../_lib/kitchenWhatsapp.js';
 import { saveAppDevice, removeAppDevice, removeStaffDevices, testAppDevice, notifyKitchen } from '../_lib/kitchenNotify.js';
 
 // The pages (and their names in the activity log).
@@ -55,6 +57,8 @@ export async function onRequest(context) {
     const settings = await kitchenSettings(db);
     const perms = permissions(user, settings);
     const late = settings.lateMinutes;
+    // Reply links and the fan's number go only to the kitchen's approved WhatsApp device.
+    const onWaDevice = async () => !!(await officialDevice(request, env));
 
     switch (`${method} ${route}`) {
       case 'POST logout':
@@ -64,7 +68,7 @@ export async function onRequest(context) {
         return json({ ok: true }, 200, { 'Set-Cookie': clearKitchenCookie() });
       case 'GET session':
         return json({ csrf: S.csrf, user: { name: user.name, firstName: user.firstName, code: user.code, role: user.role, roleLabel: user.roleLabel, kind: user.kind },
-          perms, settings: { telegramUrl: settings.telegramUrl, lateMinutes: late }, shift: await shiftState(db, user), pushKey: env.VAPID_PUBLIC_KEY || '' });
+          perms, settings: { telegramUrl: settings.telegramUrl, lateMinutes: late }, shift: await shiftState(db, user), pushKey: env.VAPID_PUBLIC_KEY || '', waDevice: await onWaDevice() });
       case 'POST open': {
         const name = PAGES[body.page];
         if (!name) return json({ error: 'Unknown page.' }, 400);
@@ -75,7 +79,10 @@ export async function onRequest(context) {
       case 'GET kitchen': return json({ tickets: await K.kitchenTickets(db, late), lateMinutes: late });
       // The alarm check (every 10 seconds from each open app): new orders to accept, late orders.
       case 'GET pulse': return json(await K.pulse(db, late));
-      case 'GET board': return json({ columns: await K.boardColumns(db, late), unpaid: await K.unpaidOrders(db), lateMinutes: late });
+      case 'GET board': {
+        const wa = await onWaDevice();
+        return json({ columns: await K.boardColumns(db, late), unpaid: (await K.unpaidOrders(db)).map(o => (wa ? o : { ...o, chatUrl: null })), lateMinutes: late });
+      }
       case 'GET alerts': return json({ ...(await K.alerts(db, late)), lateMinutes: late });
       case 'GET orders': return json(await K.searchOrders(db, { q: q.get('q') || '', status: q.get('status') || '', day: q.get('day') || '', page: q.get('page') || 1 }, late));
       case 'GET order': {
@@ -84,7 +91,8 @@ export async function onRequest(context) {
         // A WhatsApp order becomes paid through Record payment (with evidence), not a plain status button.
         const held = UNCONFIRMED.includes(o.order_status);
         const moves = held && !perms.confirm ? [] : K.movesFor(o).filter(m => (!m.cancel || perms.cancel || held) && (m.to !== 'PAID' || perms.confirm) && !(m.to === 'PAID' && o.channel === 'whatsapp' && o.payment_status !== 'paid'));
-        return json({ order: K.ticket(o, late), moves, needsSupervisor: held && !perms.confirm, canRecordPayment: canRecord(o) && perms.payment, needsPaymentRole: canRecord(o) && !perms.payment, payment: perms.payment ? await proofInfo(db, o.id) : null, methods: PAY_METHODS });
+        const wa = await onWaDevice();
+        return json({ order: K.ticket(o, late), moves, waDevice: wa, chat: wa ? replyFor(await foodSettings(db), o) : null, needsSupervisor: held && !perms.confirm, canRecordPayment: canRecord(o) && perms.payment, needsPaymentRole: canRecord(o) && !perms.payment, payment: perms.payment ? await proofInfo(db, o.id) : null, methods: PAY_METHODS });
       }
       case 'POST order': {
         const to = String(body.to || '');
@@ -101,12 +109,14 @@ export async function onRequest(context) {
         // Delivered: the receipt goes to the buyer's email; the app offers the WhatsApp receipt.
         if (r.to === 'DELIVERED') {
           const receipt = await K.receiptAfterDelivery(env, body.id, staffName(user));
+          if (!(await onWaDevice())) receipt.whatsappUrl = null;
           if (receipt.emailed) await mkLog(db, user, `Order ${r.ref}: receipt emailed`, { kind: 'order', request });
           return json({ ok: true, receipt });
         }
         return json({ ok: true });
       }
       case 'GET receipt-data': {
+        if (!(await onWaDevice())) return json({ error: 'Receipts go on WhatsApp only from the official MatchDay Kitchen WhatsApp device.' }, 403);
         const r = await K.receiptData(env, q.get('id') || '');
         if (!r) return json({ error: 'That order no longer exists.' }, 404);
         if (r.error) return json({ error: r.error }, 409);
@@ -116,7 +126,10 @@ export async function onRequest(context) {
         // The WhatsApp receipt for an order (opened by staff), or the email again.
         const o = await K.getOrder(db, body.id || '');
         if (!o) return json({ error: 'That order no longer exists.' }, 404);
+        const wa = await onWaDevice();
+        if (body.via === 'whatsapp' && !wa) return json({ error: 'Receipts go on WhatsApp only from the official MatchDay Kitchen WhatsApp device.' }, 403);
         const receipt = await K.receiptAfterDelivery(env, o.id, staffName(user));
+        if (!wa) receipt.whatsappUrl = null;
         if (body.via === 'whatsapp') {
           if (!receipt.whatsappUrl) return json({ error: 'This order has no phone number for WhatsApp.' }, 400);
           await K.markWhatsappReceipt(db, o.id, staffName(user));
@@ -234,7 +247,7 @@ export async function onRequest(context) {
         const r = await recordPayment(env, o, body, user, { canOverride: perms.paymentOverride, origin: new URL(request.url).origin, waitUntil: p => context.waitUntil(p) });
         if (r.error) return json({ error: r.error, duplicate: r.duplicate, canOverride: r.canOverride }, r.status || 400);
         await mkLog(db, user, `Order ${r.ref}: recorded payment of ${r.amount} (${r.method}), evidence saved${r.late ? ', after the order had expired' : ''}${r.duplicateOf ? `, the same receipt as order ${r.duplicateOf} (allowed)` : ''}`, { kind: 'order', details: oneLine(body.note, 200) || null, request });
-        return json(r);
+        return json({ ...r, chatUrl: (await onWaDevice()) ? r.chatUrl : null });
       }
       case 'GET payment-proof':
         if (!perms.payment) return denied();
@@ -246,6 +259,27 @@ export async function onRequest(context) {
         }
         if (body.action === 'off') { await removeAppDevice(db, body.endpoint); return json({ ok: true }); }
         if (body.action === 'test') return json({ ok: await testAppDevice(env, body.endpoint) });
+        return json({ error: 'Unknown action.' }, 400);
+      }
+      case 'GET whatsapp-devices': {
+        if (!perms.superAdmin) return denied();
+        const current = await officialDevice(request, env);
+        return json({ devices: (await listDevices(db)).map(d => ({ ...d, thisOne: d.id === current })), thisDevice: !!current });
+      }
+      case 'POST whatsapp-device': {
+        if (!perms.superAdmin) return denied();
+        if (body.action === 'this') {
+          const r = await addDevice(env, request, body.name, user.name);
+          if (r.error) return json({ error: r.error }, 400);
+          await mkLog(db, user, `Made ${r.name} an official WhatsApp device`, { kind: 'settings', request });
+          return json({ ok: true, name: r.name }, 200, { 'Set-Cookie': r.cookie });
+        }
+        if (body.action === 'remove') {
+          const r = await removeDevice(db, body.id, user.name);
+          if (r.error) return json({ error: r.error }, 404);
+          await mkLog(db, user, `Removed ${r.name} from the official WhatsApp devices`, { kind: 'settings', request });
+          return json({ ok: true });
+        }
         return json({ error: 'Unknown action.' }, 400);
       }
       case 'GET report-settings':

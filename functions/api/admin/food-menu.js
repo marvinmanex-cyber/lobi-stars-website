@@ -2,7 +2,6 @@ import { requireAdminUser } from '../_lib/adminEvents.js';
 import { logAdminAction } from '../_lib/adminSession.js';
 import { ensureMenuSchema, parseItem, history, wasOrdered, photoUrl, naira, orderingState } from '../_lib/foodMenuDb.js';
 import { foodSettings, saveFoodSetting, WA_TEMPLATES } from '../_lib/foodOrders.js';
-import { normalizeNigerianPhone } from '../_lib/fans.js';
 import { randomId } from '../_lib/crypto.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
@@ -182,15 +181,12 @@ export async function onRequestPost({ request, env }) {
       break;
     }
     case 'whatsapp_settings': {
-      // Order on WhatsApp: the club number, pickup points, bank details and the staff reply messages.
+      // Order on WhatsApp: pickup points, bank details and the staff reply messages. The number itself is fixed (foodOrders.js).
       const w = b.settings || {};
-      const num = normalizeNigerianPhone(w.whatsappNumber);
-      if (w.whatsappEnabled && !num) return bad('Please enter the club WhatsApp number (e.g. 0708 009 4985).');
       const hours = Math.round(Number(w.whatsappExpiryHours));
       if (!(hours >= 1 && hours <= 48)) return bad('Unconfirmed WhatsApp orders must expire after 1 to 48 hours.');
       const points = (Array.isArray(w.pickupPoints) ? w.pickupPoints : String(w.pickupPoints || '').split('\n')).map(x => String(x).trim().slice(0, 60)).filter(Boolean).slice(0, 20);
       const pairs = [['whatsappEnabled', w.whatsappEnabled ? '1' : '0'], ['whatsappExpiryHours', hours], ['pickupPoints', JSON.stringify(points)], ['bankDetails', String(w.bankDetails || '').trim().slice(0, 300)]];
-      if (num) pairs.push(['whatsappNumber', num.replace(/\D/g, '')]);
       for (const k of Object.keys(WA_TEMPLATES)) pairs.push([k, String(w[k] || '').trim().slice(0, 500) || WA_TEMPLATES[k]]);
       for (const [k, v] of pairs) await saveFoodSetting(db, k, v, admin.name);
       await log('whatsapp_settings', `WhatsApp ordering ${w.whatsappEnabled ? 'on' : 'off'}, ${points.length} pickup points`);
