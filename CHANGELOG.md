@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-06: MatchDay Kitchen order workflow, Phase 2
+
+**Who it affects:** all kitchen staff, and fans ordering food. **Staff need to:** press **Start shift** whenever a supervisor has started the match-day shift, and runners ask fans for their delivery code.
+- **Match-day shift:** while it runs, only people clocked in hear alerts. If nobody starts it, everyone in the role hears them.
+- **Escalation:** orders left too long at a step alert the right people once. Each venue can set its own times.
+- **Runners take orders:** two runners can't take the same order, and only the runner or a supervisor finishes it. A supervisor can change the runner.
+- **Delivery code:** fans get a 4-digit code, and runners type it to confirm delivery. A supervisor can confirm without it, and that is recorded.
+- **Kick-off and half-time orders** stay quiet until 30 minutes before they are due.
+- **Pause and capacity:** **Pause new orders**, or stop by itself at a set number of open orders, with a message for fans.
+- **Sold-out per venue:** a dish can be off at one venue and on at another.
+- **Refunds:** a new page. Refunds can now be sent through Paystack from the kitchen; above ₦20,000 they need a Super Admin.
+- **Backup alerts:** a message to supervisors when nobody opens a new order after 60 seconds. Built, but it needs Meta or Termii connected, and a phone number on the supervisor's account.
+
 ## 2026-11-06: MatchDay Kitchen order workflow, Phase 1
 
 **Who it affects:** all kitchen staff, Super Admins and fans ordering food. **Staff need to:** add any runners as the new **Delivery / runner** role, and Super Admins now need their two-step code to sign in to the kitchen.

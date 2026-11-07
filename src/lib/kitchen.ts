@@ -9,7 +9,7 @@ import { upcomingMatches } from '../../functions/api/_lib/tickets/rules.js';
 
 type Item = { id: string; name: string; description: string; priceKobo: number; photo: string | null; emoji?: string; soldOut: boolean; notReady?: boolean; maxPerOrder: number; adult: boolean; spice?: number; badge?: string | null };
 type Cat = { id: string; name: string; items: Item[] };
-type Menu = { popular?: string[]; pickupPoints?: string[]; open: boolean; reason: string; match: string | null; opensAt: string | null; closesAt: string | null; categories: Cat[]; stands: string[]; minOrderKobo: number; paymentExpiryMinutes: number; whatsapp: { number: string; display: string } | null };
+type Menu = { message?: string | null; popular?: string[]; pickupPoints?: string[]; open: boolean; reason: string; match: string | null; opensAt: string | null; closesAt: string | null; categories: Cat[]; stands: string[]; minOrderKobo: number; paymentExpiryMinutes: number; whatsapp: { number: string; display: string } | null };
 
 const CART = 'ls_kitchen_cart', SEAT = 'ls_kitchen_seat', PENDING = 'ls_kitchen_pending', LAST = 'ls_kitchen_last';
 let kickoffAt = 0; // the next home match's kick-off (for "At kick-off")
@@ -299,7 +299,7 @@ function renderState() {
     : !menu.open && menu.opensAt ? `Opens in ${untilText(Date.parse(menu.opensAt) - now)}` : '';
   $('kxClosed').hidden = menu.open;
   $('kxClosed').classList.remove('kx-pending');
-  $('kxClosedText').textContent = menu.opensAt
+  $('kxClosedText').textContent = menu.message ? menu.message : menu.opensAt
     ? `Ordering opens ${new Date(menu.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' })}${menu.match ? ` for ${menu.match}` : ''}. You can look at the menu now.`
     : 'Ordering opens on Lobi Stars home match days. You can look at the menu now.';
   ($('kxPayBtn') as HTMLButtonElement).disabled = !menu.open;
@@ -432,7 +432,7 @@ async function orderWhatsApp() {
 }
 
 // ── Confirmation and status ──
-type Order = { fulfilment?: string; pickupPoint?: string; deliverWhen?: string; deliverAt?: string | null; alerts?: boolean; rejectReason?: string; refundNote?: string; ref: string; status: string; statusLabel: string; seat: string; stand: string; items: { name: string; qty: number; priceKobo: number }[]; totalKobo: number; channel: string; notes: string };
+type Order = { fulfilment?: string; pickupPoint?: string; deliverWhen?: string; deliverAt?: string | null; alerts?: boolean; deliveryCode?: string; rejectReason?: string; refundNote?: string; ref: string; status: string; statusLabel: string; seat: string; stand: string; items: { name: string; qty: number; priceKobo: number }[]; totalKobo: number; channel: string; notes: string };
 const STEP: Record<string, number> = { PAID: 1, ACCEPTED: 1, PREPARING: 2, READY: 2, FAILED_DELIVERY: 2, OUT_FOR_DELIVERY: 3, DELIVERED: 4 };
 let statusTimer: number | undefined;
 function showDone(o: { ref: string; token: string; whatsappUrl?: string }) {
@@ -465,6 +465,7 @@ function renderStatus(o: Order) {
   lastStatus = o.status;
   const pickup = o.fulfilment === 'pickup', no = String(o.ref).split('-').pop();
   $('kxCollect').hidden = !pickup || !step;
+  $('kxCodeBox').hidden = !o.deliveryCode; $('kxCode').textContent = o.deliveryCode || '';
   $('kxCollectNo').textContent = `#${no}`;
   $('kxCollectAt').textContent = o.status === 'READY' || o.status === 'OUT_FOR_DELIVERY' ? `Ready now at ${o.pickupPoint || 'the pickup point'}: show this number.` : `Collect at ${o.pickupPoint || 'the pickup point'} when it is ready.`;
   const due = o.deliverAt ? new Date(o.deliverAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';

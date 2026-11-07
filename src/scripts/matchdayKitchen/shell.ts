@@ -84,6 +84,10 @@ function drawOrdering(o: any) {
     ? (o.open ? `Automatic${o.closesAt ? `: closes ${when(o.closesAt)}` : ''}` : `Automatic${o.opensAt ? `: opens ${when(o.opensAt)}` : ': opens before the next home match'}`)
     : o.open ? 'Fans can order and pay now. It stays open until someone closes it.' : 'Fans cannot order. It stays closed until someone opens it.';
   $('ordBtns').hidden = !o.canChange;
+  // Paused or at capacity: fans see the message, and the buttons above stay as they are.
+  if (o.reason === 'paused' || o.reason === 'capacity') { $('ordState').textContent = o.reason === 'paused' ? 'New orders are PAUSED' : 'The kitchen is at CAPACITY'; $('ordNote').textContent = `Fans see: "${o.message}"`; }
+  $('ordPause').textContent = o.paused ? 'Resume new orders' : 'Pause new orders';
+  $('ordPause').dataset.paused = o.paused ? '1' : '';
   document.querySelectorAll<HTMLElement>('[data-ordering]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ordering === o.mode)));
 }
 async function loadOrdering(quiet = true) {
@@ -104,6 +108,14 @@ $('ordBtns').addEventListener('click', async (e: Event) => {
   } catch (ex) { toast((ex as Error).message); } finally { b.disabled = false; }
 });
 setInterval(() => { if (session.csrf && !document.hidden && !$('home').hidden) loadOrdering(); }, 30e3);
+$('ordPause').addEventListener('click', async () => {
+  const b = $('ordPause') as HTMLButtonElement, paused = !b.dataset.paused;
+  let pauseMessage;
+  if (paused) { const m = prompt('Pause new orders? This is what fans see (you can leave it as it is):', 'The kitchen has paused new orders for a few minutes. Please try again soon.'); if (m === null) return; pauseMessage = m; }
+  b.disabled = true;
+  try { await api('venue-settings', { method: 'POST', body: { paused, ...(paused ? { pauseMessage } : {}) } }); toast(paused ? 'New orders are paused.' : 'New orders are back on.'); await loadOrdering(false); }
+  catch (ex) { toast((ex as Error).message); } finally { b.disabled = false; }
+});
 
 function renderHome() {
   $('waBtn').hidden = !session.waDevice;
@@ -113,7 +125,7 @@ function renderHome() {
   const sa = !!session.perms.staff;
   $('groups').innerHTML = GROUPS.filter(g => !g.superOnly || sa).map(g => {
     // WhatsApp opens only on the kitchen's official device: replies come from one number.
-    const tiles = g.tiles.filter(t => (t.id !== 'whatsapp' || session.waDevice) && (t.id !== 'analytics' || session.perms.reports));
+    const tiles = g.tiles.filter(t => (t.id !== 'whatsapp' || session.waDevice) && (t.id !== 'analytics' || session.perms.reports) && (!t.superOnly || sa));
     return `<section class="mk-group"><h2>${esc(g.title)}</h2><div class="mk-rail"><div class="mk-tickets">${tiles.map(t => {
       const text = t.id === 'activity' && !sa ? 'Everything you have done here' : t.text;
       const note = t.external === 'whatsapp' ? 'Opens WhatsApp in a new tab' : t.external ? 'Opens the app' : '';

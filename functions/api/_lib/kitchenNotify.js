@@ -14,6 +14,8 @@ import { sendEncryptedPush } from './webPush.js';
 import { ensureFoodSchema, whereText, REJECT_REASONS } from './foodOrders.js';
 import { recipientsFor, eventOf, isLoud, STAFF } from './kitchenWorkflow.js';
 import { customerUpdate } from './kitchenCustomer.js';
+import { ensureKitchenSchema as ensureStaffSchema } from './matchdayKitchen.js';
+import { dutyIds, getVenue, preorderHeld } from './kitchenOps.js';
 
 const nowIso = () => new Date().toISOString();
 const lagosTime = iso => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
@@ -94,6 +96,11 @@ export function buildKitchenTicket(order, attempt = 'initial') {
     : attempt === 'rejected' ? `⛔ REJECTED ${order.ref}`
     : attempt === 'failed' ? `⚠️ DELIVERY FAILED ${order.ref}: decide what next`
     : attempt === 'flag' ? `⚠️ MISSING INGREDIENT ${order.ref}`
+    : attempt === 'esc_new' ? `⚠️ NOT CONFIRMED YET: ${order.ref}`
+    : attempt === 'esc_preparing' ? `⚠️ STILL COOKING: ${order.ref}`
+    : attempt === 'esc_ready' ? `⚠️ NOBODY HAS TAKEN ${order.ref}`
+    : attempt === 'esc_out' ? `⚠️ STILL NOT DELIVERED: ${order.ref}`
+    : attempt === 'release' ? `🍳 START COOKING ${order.ref}: due soon`
     : `🍽️ NEW PAID ORDER ${order.ref}`;
   const body = attempt === 'test' ? 'Kitchen alerts are working on this device.' : `${items.map(i => `${i.qty}× ${i.name}`).join(', ')} | ${where}${attempt === 'whatsapp' ? ' | Not paid yet: do not cook' : ''}`;
   const longText = [
@@ -145,10 +152,10 @@ export async function clearTelegramButtons(env, db, orderId, note) {
 // ── Push to Kitchen Screen devices ──
 /** Every kitchen device, with the role of the person it belongs to. */
 async function kitchenDevices(db) {
-  await db.prepare(`CREATE TABLE IF NOT EXISTS mk_staff (id TEXT PRIMARY KEY, staff_id TEXT NOT NULL UNIQUE, full_name TEXT NOT NULL, role TEXT NOT NULL, password_hash TEXT NOT NULL, is_active INTEGER NOT NULL DEFAULT 1, failed_attempts INTEGER NOT NULL DEFAULT 0, locked_until TEXT, created_by TEXT, created_at TEXT NOT NULL, updated_at TEXT, last_login_at TEXT)`).run();
-  const { results } = await db.prepare(`SELECT p.endpoint, p.keys_json, p.mk_app, p.staff_id, s.role FROM push_subs p LEFT JOIN mk_staff s ON s.id = p.staff_id WHERE p.kitchen = 1 AND p.is_active = 1`).all();
+  await ensureStaffSchema(db);
+  const { results } = await db.prepare(`SELECT p.endpoint, p.keys_json, p.mk_app, p.staff_id, s.role, s.venue_id FROM push_subs p LEFT JOIN mk_staff s ON s.id = p.staff_id WHERE p.kitchen = 1 AND p.is_active = 1`).all();
   // A device in the app with no kitchen staff account belongs to a Super Admin. Anything else is an admin Kitchen Screen.
-  return results.map(r => ({ ...r, staffId: r.staff_id, role: r.mk_app ? (r.role || STAFF.SA) : 'screen' }));
+  return results.map(r => ({ ...r, staffId: r.staff_id, venueId: r.venue_id || null, role: r.mk_app ? (r.role || STAFF.SA) : 'screen' }));
 }
 export async function alertLevels(db) {
   const { results } = await db.prepare(`SELECT user_id, level FROM mk_alert_prefs`).all();
@@ -160,7 +167,7 @@ export async function alertFallback(db) {
 async function pushKitchen(env, db, payload, topic, { event = null, order = null, attempt = 'initial' } = {}) {
   if (!pushReady(env)) return { ok: false, error: 'Push not set up (VAPID keys missing)' };
   const all = await kitchenDevices(db);
-  const results = event ? recipientsFor(event, all, { levels: await alertLevels(db), fallbackId: await alertFallback(db), cookWasPreparing: !!order?.was_preparing }) : all;
+  const results = event ? recipientsFor(event, all, { levels: await alertLevels(db), fallbackId: await alertFallback(db), cookWasPreparing: !!order?.was_preparing, venueId: order?.venue_id || null, duty: order?.venue_id ? await dutyIds(db, order.venue_id) : null }) : all;
   if (!results.length) return { ok: false, error: all.length ? 'Nobody on this alert has a device registered' : 'No kitchen devices registered' };
   const out = await Promise.allSettled(results.map(async row => {
     const keys = JSON.parse(row.keys_json || '{}');
@@ -276,7 +283,9 @@ export async function notifyMove(env, order, to) {
   const attempt = { ACCEPTED: 'cook', READY: 'ready', OUT_FOR_DELIVERY: 'out', DELIVERED: 'delivered', REJECTED: 'rejected', CANCELLED: 'cancel', FAILED_DELIVERY: 'failed' }[to];
   // Straight to Preparing from the admin's screens: cooks still need to know.
   const staff = attempt || (to === 'PREPARING' && order.order_status === 'PAID' ? 'cook' : null);
-  if (staff) await notifyKitchen(env, order.id, staff);
+  // A kick-off or half-time order isn't for the cooks yet: the every-minute check releases it when it is due.
+  const held = staff === 'cook' && preorderHeld(order, (await getVenue(env.DB, order.venue_id))?.settings || { preorderMinutes: 30 });
+  if (staff && !held) await notifyKitchen(env, order.id, staff);
   const customer = { ACCEPTED: 'accepted', OUT_FOR_DELIVERY: 'out', DELIVERED: 'delivered', REJECTED: 'rejected' }[to];
   if (!customer) return;
   await ensureKitchenSchema(env.DB);

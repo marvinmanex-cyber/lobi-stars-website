@@ -139,6 +139,12 @@ $('whyF').addEventListener('submit', async (e: Event) => {
   } catch (err) { $('whyErr').textContent = (err as Error).message; $('whyErr').hidden = false; } finally { b.disabled = false; }
 });
 
+/** A runner confirms delivery with the fan's 4-digit code. null: they pressed Cancel. */
+function askCode(b: HTMLElement): string | null {
+  if (b.dataset.code !== '1' || session.perms.confirm) return '';
+  return prompt("Ask the fan for their 4-digit delivery code. It's on their order page.");
+}
+
 // ── Order tickets (kitchen screen, alerts) ──
 function ticketHtml(t: any) {
   return `<article class="mk-ord ${esc(t.status)}${t.late ? ' late' : ''}">
@@ -151,7 +157,8 @@ function ticketHtml(t: any) {
     ${t.note ? `<div class="mk-onote">Note: ${esc(t.note)}</div>` : ''}
     <div class="mk-status">${esc(t.statusLabel)}</div>
     ${t.status === 'PAID' && !session.perms.confirm ? '<div class="mk-status">Waiting for a supervisor to confirm it</div>'
-      : t.next ? `<button type="button" class="mk-btn go big wide" data-move="${esc(t.id)}" data-to="${esc(t.next.to)}">${esc(t.next.label)}</button>` : ''}
+      : t.next ? `<button type="button" class="mk-btn go big wide" data-move="${esc(t.id)}" data-to="${esc(t.next.to)}" ${t.needsCode ? 'data-code="1"' : ''}>${esc(t.next.label)}</button>` : ''}
+    ${t.claimedName ? `<div class="mk-status">Runner: ${esc(t.claimedName)}</div>` : ''}
     ${t.status === 'PAID' && session.perms.confirm ? `<button type="button" class="mk-btn danger wide" data-move="${esc(t.id)}" data-to="REJECTED">Reject order</button>` : ''}
     ${session.perms.flag && ['ACCEPTED', 'PREPARING'].includes(t.status) ? `<button type="button" class="mk-btn wide" data-flag="${esc(t.id)}">Something is missing</button>` : ''}
   </article>`;
@@ -177,7 +184,8 @@ async function moveFrom(e: Event, reload: () => Promise<void>) {
     return;
   }
   if (b.dataset.to === 'REJECTED' || b.dataset.to === 'CANCELLED') { openWhy(b.dataset.move!, b.dataset.to as any, true, () => { reload(); }); return; }
-  await act(b, async () => { const r = await api('order', { method: 'POST', body: { id: b.dataset.move, to: b.dataset.to } }); await reload(); await afterMove(b.dataset.move!, r); });
+  const code = askCode(b); if (code === null) return;
+  await act(b, async () => { const r = await api('order', { method: 'POST', body: { id: b.dataset.move, to: b.dataset.to, code } }); await reload(); await afterMove(b.dataset.move!, r); });
 }
 
 // ── Pages ──
@@ -234,9 +242,9 @@ const PAGES: Record<string, () => Promise<void>> = {
     const draw = async (quiet = false) => {
       const d = await api('delivery', { quiet });
       main.innerHTML = d.groups.length ? d.groups.map((g: any, i: number) => `<section class="mk-section mk-stand"><h2>${esc(g.name)} <span class="mk-badge${g.ready.length ? ' red' : ''}">${g.ready.length}</span>${g.cooking ? ` <small>${g.cooking} still cooking</small>` : ''}</h2>
-        ${g.ready.length ? `${g.ready.filter((o: any) => o.status === 'OUT_FOR_DELIVERY').length > 1 ? `<button type="button" class="mk-btn" data-all="${i}">Mark all ${g.ready.filter((o: any) => o.status === 'OUT_FOR_DELIVERY').length} delivered</button>` : ''}${g.ready.map((o: any) => `<article class="mk-runner${o.late ? ' late' : ''}"><div class="mk-runner-seat">${esc(o.seat || (g.pickup ? 'Pickup' : '—'))}</div>
-          <div class="mk-runner-main"><b>${esc(o.ref)}${o.customer ? ` · ${esc(o.customer)}` : ''}</b><span>${esc(o.items.map((x: any) => `${x.qty} × ${x.name}`).join(', '))}</span>${o.note ? `<span class="mk-status">Note: ${esc(o.note)}</span>` : ''}${o.late ? `<span class="mk-pill red">Late: ${esc(mins(o.minutes))}</span>` : ''}</div>
-          ${o.status === 'READY' ? `<button type="button" class="mk-btn go" data-go="${esc(o.id)}" data-to="${g.pickup ? 'DELIVERED' : 'OUT_FOR_DELIVERY'}">${g.pickup ? 'Collected' : 'Take for delivery'}</button>` : `<button type="button" class="mk-btn go" data-go="${esc(o.id)}" data-to="DELIVERED">Delivered</button><button type="button" class="mk-btn" data-go="${esc(o.id)}" data-to="FAILED_DELIVERY">Not at seat</button>`}</article>`).join('')}` : '<p class="mk-status" style="margin:4px 6px">Nothing ready for this stand yet.</p>'}</section>`).join('')
+        ${g.ready.length ? `${session.perms.confirm && g.ready.filter((o: any) => o.status === 'OUT_FOR_DELIVERY').length > 1 ? `<button type="button" class="mk-btn" data-all="${i}">Mark all ${g.ready.filter((o: any) => o.status === 'OUT_FOR_DELIVERY').length} delivered</button>` : ''}${g.ready.map((o: any) => `<article class="mk-runner${o.late ? ' late' : ''}"><div class="mk-runner-seat">${esc(o.seat || (g.pickup ? 'Pickup' : '—'))}</div>
+          <div class="mk-runner-main"><b>${esc(o.ref)}${o.customer ? ` · ${esc(o.customer)}` : ''}</b><span>${esc(o.items.map((x: any) => `${x.qty} × ${x.name}`).join(', '))}</span>${o.note ? `<span class="mk-status">Note: ${esc(o.note)}</span>` : ''}${o.claimedName ? `<span class="mk-status">Runner: ${esc(o.claimedName)}</span>` : ''}${o.late ? `<span class="mk-pill red">Late: ${esc(mins(o.minutes))}</span>` : ''}</div>
+          ${o.status === 'READY' ? `<button type="button" class="mk-btn go" data-go="${esc(o.id)}" data-to="${g.pickup ? 'DELIVERED' : 'OUT_FOR_DELIVERY'}">${g.pickup ? 'Collected' : 'Take for delivery'}</button>` : `<button type="button" class="mk-btn go" data-go="${esc(o.id)}" data-to="DELIVERED" ${o.needsCode ? 'data-code="1"' : ''}>Delivered</button><button type="button" class="mk-btn" data-go="${esc(o.id)}" data-to="FAILED_DELIVERY">Not at seat</button>`}</article>`).join('')}` : '<p class="mk-status" style="margin:4px 6px">Nothing ready for this stand yet.</p>'}</section>`).join('')
         : '<p class="mk-empty">Nothing to deliver. Orders appear here when the kitchen presses "Food ready".</p>';
       (main as any)._groups = d.groups;
       stamp();
@@ -247,7 +255,8 @@ const PAGES: Record<string, () => Promise<void>> = {
       if (one) {
         const to = one.dataset.to!;
         if (to === 'FAILED_DELIVERY' && !confirm('The fan is not at their seat? A supervisor then decides whether to try again or cancel.')) return;
-        act(one, async () => { await api('order', { method: 'POST', body: { id: one.dataset.go, to } }); toast(to === 'DELIVERED' ? 'Marked delivered. The receipt email has gone if the fan gave an address.' : to === 'FAILED_DELIVERY' ? 'A supervisor has been told.' : 'Taken for delivery.'); shell?.alarmsNow?.(); await draw(); });
+        const code = askCode(one); if (code === null) return;
+        act(one, async () => { await api('order', { method: 'POST', body: { id: one.dataset.go, to, code } }); toast(to === 'DELIVERED' ? 'Marked delivered. The receipt email has gone if the fan gave an address.' : to === 'FAILED_DELIVERY' ? 'A supervisor has been told.' : 'Taken for delivery.'); shell?.alarmsNow?.(); await draw(); });
         return;
       }
       const all = el.closest('[data-all]') as HTMLButtonElement | null;
@@ -327,6 +336,7 @@ const PAGES: Record<string, () => Promise<void>> = {
           ${o.rejectReason ? `<dt>Rejected</dt><dd>${esc(d.reasons?.[o.rejectReason] || o.rejectReason)}${o.rejectNote ? `<br /><small>${esc(o.rejectNote)}</small>` : ''}</dd>` : ''}
           ${o.cancelReason ? `<dt>Cancelled</dt><dd>${esc(o.cancelReason)}</dd>` : ''}
           ${d.payment ? `<dt>Payment</dt><dd>${esc(d.payment.amount)}, ${esc(d.payment.method)}${d.payment.note ? `<br />${esc(d.payment.note)}` : ''}<br /><small>Recorded by ${esc(d.payment.by)}${d.payment.code ? ` (${esc(d.payment.code)})` : ''}, ${esc(dayTime(d.payment.at))}</small>${d.payment.duplicateOf ? `<br /><span class="mk-pill red">Same receipt as ${esc(d.payment.duplicateOf)} (allowed)</span>` : ''}</dd>` : ''}
+          ${o.claimedName ? `<dt>Runner</dt><dd>${esc(o.claimedName)}</dd>` : ''}
           ${o.statusBy ? `<dt>Last change</dt><dd>${esc(o.statusBy)}${o.statusAt ? `, ${esc(dayTime(o.statusAt))}` : ''}</dd>` : ''}
         </dl></div>
         <div class="mk-box"><ul class="mk-items" style="border-top:0">${o.items.map((i: any) => `<li>${esc(i.qty)} × ${esc(i.name)}${i.note ? `<em>${esc(i.note)}</em>` : ''}</li>`).join('')}</ul>
@@ -335,13 +345,15 @@ const PAGES: Record<string, () => Promise<void>> = {
         ${d.canRecordPayment ? `<div class="mk-box mk-paybox"><b>Has the fan sent a receipt on WhatsApp?</b><p style="margin:4px 0 10px">Add it here and mark the order paid. It goes to the kitchen as if it was paid online.</p><button type="button" class="mk-btn go big" id="recPay">Record payment</button></div>` : d.needsPaymentRole ? '<p class="mk-status" style="text-transform:none;letter-spacing:0">Waiting for payment. A supervisor or Super Admin records it when the fan sends the receipt.</p>' : ''}
         ${d.payment ? `<div class="mk-box"><h2 style="font-size:20px;margin:0 0 8px">Payment evidence</h2>${d.payment.isPdf ? '' : `<a href="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" target="_blank" rel="noopener"><img class="mk-proofimg" src="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" alt="The payment evidence for this order" loading="lazy" /></a>`}<a class="mk-btn" href="/api/matchday-kitchen/payment-proof?id=${encodeURIComponent(o.id)}" target="_blank" rel="noopener">${d.payment.isPdf ? 'Download the PDF receipt' : 'Open it full size'}</a></div>` : ''}
         ${d.chat ? `<div class="mk-actions" style="justify-content:flex-start"><a class="mk-btn go" href="${esc(d.chat.url)}" target="mdk-whatsapp" rel="noopener">${esc(d.chat.label)} on WhatsApp</a></div>` : d.waDevice ? '' : '<p class="mk-status" style="text-transform:none;letter-spacing:0">Replies to fans go only from the official MatchDay Kitchen WhatsApp, 0708 009 4985, on its own device.</p>'}
+        ${d.runners?.length && o.status === 'OUT_FOR_DELIVERY' ? `<form class="mk-box" id="reF"><div class="mk-field"><label for="reS">Give to another runner</label><select id="reS">${d.runners.map((x: any) => `<option value="${esc(x.id)}" ${x.id === o.claimedBy ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></div><button class="mk-btn" type="submit">Change runner</button></form>` : ''}
         <h2 style="font-size:22px;margin:0 0 6px">Change status</h2>
-        ${d.moves.length ? `<div class="mk-actions">${d.moves.map((m: any) => `<button type="button" class="mk-btn ${m.next ? 'go big' : m.cancel || m.reject ? 'danger' : ''}" data-to="${esc(m.to)}" data-label="${esc(m.label)}" data-cancel="${m.cancel ? 1 : 0}" ${o.paid ? 'data-paid="1"' : ''}>${m.next ? esc(o.next?.label || m.label) : esc(m.label)}</button>`).join('')}</div>` : d.needsSupervisor ? '<p class="mk-empty">A supervisor or Super Admin confirms or rejects this order.</p>' : '<p class="mk-empty">No more changes for this order.</p>'}
+        ${d.moves.length ? `<div class="mk-actions">${d.moves.map((m: any) => `<button type="button" class="mk-btn ${m.next ? 'go big' : m.cancel || m.reject ? 'danger' : ''}" data-to="${esc(m.to)}" data-label="${esc(m.label)}" data-cancel="${m.cancel ? 1 : 0}" ${o.paid ? 'data-paid="1"' : ''} ${m.to === 'DELIVERED' && o.needsCode ? 'data-code="1"' : ''}>${m.next ? esc(o.next?.label || m.label) : esc(m.label)}</button>`).join('')}</div>` : d.needsSupervisor ? '<p class="mk-empty">A supervisor or Super Admin confirms or rejects this order.</p>' : '<p class="mk-empty">No more changes for this order.</p>'}
         ${o.status === 'DELIVERED' ? `<h2 style="font-size:22px;margin:14px 0 6px">Receipt</h2><div class="mk-actions">${d.waDevice ? '<button type="button" class="mk-btn go" id="rcWa">Send receipt on WhatsApp</button>' : ''}<button type="button" class="mk-btn" id="rcEmail">Email receipt</button></div>` : ''}
-        ${d.events?.length ? `<section class="mk-box" style="margin-top:12px"><h2 style="font-size:20px;margin:0 0 8px">History</h2><ul style="margin:0;padding-left:20px">${d.events.map((x: any) => `<li>${esc(dayTime(x.at))}: ${x.kind === 'flag' ? 'Missing ingredient' : esc(x.to_status || '')}${x.by_name ? ` · ${esc(x.by_name)}` : ''}${x.reason || x.note ? ` · ${esc([x.reason, x.note].filter(Boolean).join(': '))}` : ''}</li>`).join('')}</ul></section>` : ''}
+        ${d.events?.length ? `<section class="mk-box" style="margin-top:12px"><h2 style="font-size:20px;margin:0 0 8px">History</h2><ul style="margin:0;padding-left:20px">${d.events.map((x: any) => `<li>${esc(dayTime(x.at))}: ${x.kind === 'flag' ? 'Missing ingredient' : x.kind === 'escalation' ? 'Alert sent' : x.kind === 'reassign' ? 'Runner changed' : esc(x.to_status || '')}${x.by_name ? ` · ${esc(x.by_name)}` : ''}${x.reason || x.note ? ` · ${esc([x.reason, x.note].filter(Boolean).join(': '))}` : ''}</li>`).join('')}</ul></section>` : ''}
         <div class="mk-actions"><button type="button" class="mk-btn" id="allOrders">All orders</button></div>`;
       $('allOrders').addEventListener('click', () => openPage('orders'));
       $('recPay')?.addEventListener('click', () => openPay(o, () => { draw(); }));
+      $('reF')?.addEventListener('submit', (e: Event) => { e.preventDefault(); act(($('reF') as HTMLFormElement).querySelector('button'), async () => { await api('reassign', { method: 'POST', body: { id, staffId: $('reS').value } }); toast('Runner changed.'); await draw(); }); });
       $('flagBtn')?.addEventListener('click', async () => {
         const note = prompt('What is missing?');
         if (note && note.trim()) await act($('flagBtn'), async () => { await api('flag', { method: 'POST', body: { id, note } }); toast('The supervisor has been told.'); });
@@ -357,7 +369,8 @@ const PAGES: Record<string, () => Promise<void>> = {
       const b = (e.target as HTMLElement).closest('[data-to]') as HTMLButtonElement | null;
       if (!b) return;
       if (b.dataset.to === 'REJECTED' || b.dataset.to === 'CANCELLED') { openWhy(id, b.dataset.to as any, !!b.dataset.paid, () => { draw(); }); return; }
-      await act(b, async () => { const r = await api('order', { method: 'POST', body: { id, to: b.dataset.to } }); await draw(); if (r.receipt) await afterMove(id, r); else { toast(`Order moved to ${b.dataset.label}.`); try { (window.parent as any).mkShell?.alarmsNow?.(); } catch { /* */ } } });
+      const code = askCode(b); if (code === null) return;
+      await act(b, async () => { const r = await api('order', { method: 'POST', body: { id, to: b.dataset.to, code } }); await draw(); if (r.receipt) await afterMove(id, r); else { toast(`Order moved to ${b.dataset.label}.`); try { (window.parent as any).mkShell?.alarmsNow?.(); } catch { /* */ } } });
     });
     await draw();
   },
@@ -437,8 +450,10 @@ const PAGES: Record<string, () => Promise<void>> = {
 
   async shift() {
     const draw = async () => {
-      const d = await api('shift');
-      main.innerHTML = `<div class="mk-box" style="text-align:center">
+      const [d, vs] = await Promise.all([api('shift'), api('venue-shift')]);
+      main.innerHTML = `${vs.canChange ? `<div class="mk-box" style="text-align:center"><p style="font-size:20px;margin:0 0 6px">${vs.running ? `The match-day shift has been running since <b>${esc(hm(vs.since))}</b>.` : 'The match-day shift has not started.'}</p>
+          <p class="mk-status" style="text-transform:none;letter-spacing:0;margin:0 0 12px">${vs.running ? 'Only people clocked in hear order alerts. Ending it clocks everyone out.' : 'Until it starts, everyone hears the alerts for their job. Once it starts, only people clocked in do.'}</p>
+          <button type="button" class="mk-btn big ${vs.running ? 'danger' : 'go'}" id="vsBtn">${vs.running ? 'End match-day shift' : 'Start match-day shift'}</button></div>` : vs.running ? '<p class="mk-status" style="text-transform:none;letter-spacing:0">The match-day shift is running. Start your shift to hear order alerts.</p>' : ''}<div class="mk-box" style="text-align:center">
           <p style="font-size:20px;margin:0 0 12px">${d.onShift ? `You have been on shift since <b>${esc(hm(d.since))}</b>.` : "You're not on shift."}</p>
           <button type="button" class="mk-btn big ${d.onShift ? 'danger' : 'go'}" id="shBtn" style="min-width:260px">${d.onShift ? 'End shift' : 'Start shift'}</button></div>
         <section class="mk-section"><h2>In the kitchen now</h2>${d.onNow.length ? `<div class="mk-table-wrap"><table class="mk-table"><thead><tr><th>Name</th><th>Role</th><th>Since</th></tr></thead><tbody>${d.onNow.map((p: any) => `<tr><td><b>${esc(p.name)}</b> <span class="mk-status">${esc(p.code)}</span></td><td>${esc(p.role)}</td><td>${esc(hm(p.since))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="mk-empty">Nobody is on shift.</p>'}</section>
@@ -446,6 +461,10 @@ const PAGES: Record<string, () => Promise<void>> = {
           const m = s.ended_at ? Math.round((Date.parse(s.ended_at) - Date.parse(s.started_at)) / 60000) : null;
           return `<tr><td>${esc(dayOnly(s.started_at))}</td><td>${esc(hm(s.started_at))}</td><td>${s.ended_at ? esc(hm(s.ended_at)) : '<span class="mk-pill go">On shift</span>'}</td><td>${m === null ? '—' : `${Math.floor(m / 60)} h ${m % 60} min`}</td></tr>`;
         }).join('')}</tbody></table></div>` : '<p class="mk-empty">No shifts yet.</p>'}</section>`;
+      $('vsBtn')?.addEventListener('click', async () => {
+        if (vs.running && !(await confirmBox('End the match-day shift?', 'Everyone at this venue is clocked out.', 'End it', true))) return;
+        await act($('vsBtn'), async () => { await api('venue-shift', { method: 'POST', body: { action: vs.running ? 'end' : 'start' } }); toast(vs.running ? 'Match-day shift ended.' : 'Match-day shift started. Staff need to start their own shifts.'); shell?.alarmsNow?.(); shell?.shiftChanged(); await draw(); });
+      });
       $('shBtn').addEventListener('click', async () => {
         if (d.onShift && !(await confirmBox('End your shift?', 'Your shift end time is recorded under your name.', 'End shift', true))) return;
         await act($('shBtn'), async () => { await api('shift', { method: 'POST', body: { action: d.onShift ? 'end' : 'start' } }); toast(d.onShift ? 'Shift ended. Thank you.' : 'Shift started.'); shell?.shiftChanged(); await draw(); });
@@ -504,8 +523,9 @@ const PAGES: Record<string, () => Promise<void>> = {
     // A new login code shows once, at the top of the page, ready to send.
     let codeShown: { name: string; staffId: string; loginCode: string } | null = null;
     const codeMsg = (c: { name: string; loginCode: string }) => `MatchDay Kitchen login for ${c.name}\n1. Open https://lobistarsfc.com/matchday-kitchen\n2. Enter this login code: ${c.loginCode}\nIt is personal to you: please keep it private.`;
+    const vnFull = () => ($('vNew') ? { newMinutes: $('vNew').value, preparingMinutes: $('vPrep').value, readyMinutes: $('vReady').value, outMinutes: $('vOut').value, preorderMinutes: $('vPre').value, refundApprovalNaira: $('vRef').value, requireDeliveryCode: $('vCode').checked } : {});
     const draw = async () => {
-      const [d, rep, wad, al] = await Promise.all([api('staff'), api('report-settings'), session.perms.superAdmin ? api('whatsapp-devices') : null, session.perms.alertLevel ? api('alert-settings') : null]);
+      const [d, rep, wad, al, vn] = await Promise.all([api('staff'), api('report-settings'), session.perms.superAdmin ? api('whatsapp-devices') : null, session.perms.alertLevel ? api('alert-settings') : null, api('venue-settings')]);
       const sa = !!session.perms.superAdmin;
       const canEdit = (s: any) => sa || s.role !== 'supervisor';
       const roleOpts = (sel = '') => Object.entries(d.addRoles).map(([k, v]) => `<option value="${k}" ${k === sel ? 'selected' : ''}>${esc(v)}</option>`).join('');
@@ -521,6 +541,7 @@ const PAGES: Record<string, () => Promise<void>> = {
             <td>${canEdit(s) ? `<button type="button" class="mk-btn" data-edit="${esc(s.id)}">Edit</button>` : ''}</td></tr>
             ${canEdit(s) ? `<tr id="ed_${esc(s.id)}" hidden><td colspan="6"><form class="mk-box" data-editform="${esc(s.id)}" style="margin:0">
               <div class="mk-filters"><div class="mk-field"><label>Full name</label><input name="name" value="${esc(s.name)}" maxlength="80" /></div>
+              <div class="mk-field"><label>Phone (for backup alerts)</label><input name="phone" value="${esc(s.phone || '')}" inputmode="tel" maxlength="16" /></div>
               <div class="mk-field"><label>Role</label><select name="role">${roleOpts(s.role)}</select></div>
               </div>
               <label style="display:flex;gap:10px;align-items:center;min-height:48px;font-size:18px"><input type="checkbox" name="active" ${s.active ? 'checked' : ''} style="width:26px;height:26px" /> Can sign in</label>
@@ -541,6 +562,16 @@ const PAGES: Record<string, () => Promise<void>> = {
           <div class="mk-field"><label for="alFall">If nobody else would hear a new order, alert</label><select id="alFall"><option value="">Every Super Admin</option>${al.admins.map((a: any) => `<option value="${esc(a.id)}" ${a.id === al.fallbackId ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</select></div></div>
           <p class="mk-status" style="text-transform:none;letter-spacing:0">Only Super Admins can change what they hear. Staff on duty can't mute alerts. You can't switch off if that would leave nobody alerted.</p>
           <button class="mk-btn go" type="submit">Save alert settings</button></form></section>` : ''}
+        <section class="mk-section"><h2>Venue: ${esc(vn.name)}</h2><form class="mk-box" id="venF"><div class="mk-filters">
+          <div class="mk-field"><label for="vCap">Stop new orders at this many open orders (0 = no limit)</label><input id="vCap" type="number" min="0" max="5000" value="${vn.settings.maxOpenOrders}" /></div>
+          ${vn.full ? `<div class="mk-field"><label for="vNew">Not confirmed after (minutes)</label><input id="vNew" type="number" min="1" max="120" value="${vn.settings.newMinutes}" /></div>
+          <div class="mk-field"><label for="vPrep">Still cooking after (minutes)</label><input id="vPrep" type="number" min="1" max="240" value="${vn.settings.preparingMinutes}" /></div>
+          <div class="mk-field"><label for="vReady">Ready but not taken after (minutes)</label><input id="vReady" type="number" min="1" max="120" value="${vn.settings.readyMinutes}" /></div>
+          <div class="mk-field"><label for="vOut">On the way too long after (minutes)</label><input id="vOut" type="number" min="1" max="240" value="${vn.settings.outMinutes}" /></div>
+          <div class="mk-field"><label for="vPre">Start kick-off and half-time orders (minutes before due)</label><input id="vPre" type="number" min="0" max="240" value="${vn.settings.preorderMinutes}" /></div>
+          <div class="mk-field"><label for="vRef">Refunds above this need a Super Admin (₦)</label><input id="vRef" type="number" min="0" value="${vn.settings.refundApprovalNaira}" /></div>` : ''}
+          </div>${vn.full ? `<label style="display:flex;gap:10px;align-items:center;min-height:48px;font-size:18px"><input type="checkbox" id="vCode" ${vn.settings.requireDeliveryCode ? 'checked' : ''} style="width:26px;height:26px" /> Runners must enter the fan's delivery code</label>` : ''}
+          <button class="mk-btn go" type="submit">Save venue settings</button></form></section>
         <section class="mk-section"><h2>Settings</h2><form class="mk-box" id="setF">
           <div class="mk-field"><label for="sTg">Telegram channel link (shows the Telegram updates button)</label><input id="sTg" placeholder="https://t.me/yourchannel" value="${esc(d.settings.telegramUrl)}" /></div>
           <div class="mk-filters" style="align-items:flex-start">
@@ -592,7 +623,10 @@ const PAGES: Record<string, () => Promise<void>> = {
     main.addEventListener('submit', (e: Event) => {
       e.preventDefault();
       const form = e.target as HTMLFormElement;
-      if (form.id === 'alF') {
+      if (form.id === 'venF') {
+        const full = vnFull();
+        act(form.querySelector('button'), async () => { await api('venue-settings', { method: 'POST', body: { maxOpenOrders: $('vCap').value, ...full } }); toast('Venue settings saved.'); });
+      } else if (form.id === 'alF') {
         act(form.querySelector('button'), async () => { await api('alert-settings', { method: 'POST', body: { level: $('alLevel').value, fallbackId: $('alFall').value } }); toast('Alert settings saved.'); shell?.alarmsNow?.(); });
       } else if (form.id === 'repF') {
         act(form.querySelector('button'), async () => { const r = await api('report-settings', { method: 'POST', body: { emails: $('repE').value } }); toast(`Saved: ${r.emails.length} address${r.emails.length === 1 ? '' : 'es'}.`); });
@@ -603,8 +637,27 @@ const PAGES: Record<string, () => Promise<void>> = {
         act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'settings', telegramUrl: $('sTg').value.trim(), cancelRoles: vals('cancel'), lateMinutes: $('sLate').value } }); toast('Settings saved.'); shell?.shiftChanged(); await draw(); });
       } else if (form.dataset.editform) {
         const g = (n: string) => form.querySelector(`[name="${n}"]`) as HTMLInputElement;
-        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'edit', id: form.dataset.editform, name: g('name').value, role: g('role').value, active: g('active').checked } }); toast('Changes saved.'); await draw(); });
+        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'edit', id: form.dataset.editform, name: g('name').value, phone: g('phone').value, role: g('role').value, active: g('active').checked } }); toast('Changes saved.'); await draw(); });
       }
+    });
+    await draw();
+  },
+
+  async refunds() {
+    if (!session.perms.confirm) { notAvailable(); return; }
+    const LABEL: Record<string, string> = { manual: 'To refund', failed: 'Paystack refused it', working: 'In progress', sent: 'Sent to Paystack', done: 'Refunded by hand' };
+    const draw = async () => {
+      const d = await api('refunds');
+      main.innerHTML = d.refunds.length ? `<div class="mk-table-wrap"><table class="mk-table"><thead><tr><th>Order</th><th>Customer</th><th>Amount</th><th>Why</th><th>Status</th><th></th></tr></thead><tbody>${d.refunds.map((r: any) => `<tr><td><b>${esc(r.ref)}</b><br><span class="mk-status">${esc(dayTime(r.at))}</span></td><td>${esc(r.customer)}</td><td>${esc(r.amount)}</td><td>${esc(r.reason)}</td><td><span class="mk-pill ${['sent', 'done'].includes(r.status) ? 'go' : 'red'}">${esc(LABEL[r.status] || r.status)}</span>${r.doneBy ? `<br><span class="mk-status">${esc(r.doneBy)}</span>` : ''}</td><td>${['manual', 'failed'].includes(r.status) ? (r.needsSuperAdmin ? '<span class="mk-status">Needs a Super Admin</span>' : `<div class="mk-actions" style="justify-content:flex-start;margin:0">${r.channel === 'paystack' ? `<button type="button" class="mk-btn go" data-refund="${esc(r.id)}" data-act="refund">Refund through Paystack</button>` : ''}<button type="button" class="mk-btn" data-refund="${esc(r.id)}" data-act="done">Mark as refunded</button></div>`) : ''}</td></tr>`).join('')}</tbody></table></div>`
+        : '<p class="mk-empty">Nothing to refund. Paid orders that are rejected or cancelled appear here.</p>';
+      stamp();
+    };
+    main.addEventListener('click', (e: Event) => {
+      const b = (e.target as HTMLElement).closest('[data-refund]') as HTMLButtonElement | null;
+      if (!b) return;
+      const viaPaystack = b.dataset.act === 'refund';
+      if (!confirm(viaPaystack ? 'Send this refund to Paystack? The money goes back to the fan. Your name is recorded.' : 'Have you already refunded this fan yourself? Your name is recorded.')) return;
+      act(b, async () => { await api('refund', { method: 'POST', body: { id: b.dataset.refund, action: b.dataset.act } }); toast(viaPaystack ? 'Sent to Paystack.' : 'Marked as refunded.'); await draw(); });
     });
     await draw();
   },

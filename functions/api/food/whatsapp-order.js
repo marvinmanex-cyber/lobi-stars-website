@@ -1,6 +1,7 @@
 import { randomId } from '../_lib/crypto.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
-import { ensureFoodSchema, nextRef, foodSettings, priceCart, whatsappOrderMessage, whatsappUrl, formatNaira, trackUrl, setDelivery, paymentMessage, DEFAULT_VENUE } from '../_lib/foodOrders.js';
+import { ensureFoodSchema, nextRef, foodSettings, priceCart, whatsappOrderMessage, whatsappUrl, formatNaira, trackUrl, setDelivery, paymentMessage, newDeliveryCode } from '../_lib/foodOrders.js';
+import { activeVenueId } from '../_lib/kitchenOps.js';
 import { customerUpdate } from '../_lib/kitchenCustomer.js';
 import { normalizeNigerianPhone, rateLimit, tooMany, clientIp, ensureFanSchema } from '../_lib/fans.js';
 import { listMatches, isMatchDay, toSummary } from '../_lib/matchCentre.js';
@@ -45,11 +46,13 @@ export async function onRequestPost({ request, env, waitUntil }) {
     await ensureMenuSchema(env.DB);
     const settings = await foodSettings(env.DB);
     if (!settings.whatsappEnabled) return json({ error: 'Ordering on WhatsApp is not available right now. Please use Place Order & Pay.' }, 503);
-    if (!(await orderingState(env, settings)).open) return json({ error: 'In-seat ordering is closed at the moment. It opens on matchday.', code: 'closed' }, 503);
+    const venueId = await activeVenueId(env.DB, b.venueId);
+    const ordering = await orderingState(env, settings, venueId);
+    if (!ordering.open) return json({ error: ordering.message || 'In-seat ordering is closed at the moment. It opens on matchday.', code: 'closed' }, 503);
     if (pickup && !settings.pickupPoints.includes(pickupPoint)) return json({ error: 'Please choose where you will collect your order.' }, 400);
     if (!pickup && settings.stands.length && !settings.stands.includes(stand)) return json({ error: 'Please choose your stand from the list.' }, 400);
 
-    const priced = await priceCart(env.DB, items);
+    const priced = await priceCart(env.DB, items, venueId);
     if (priced.error) return json({ error: priced.error, code: priced.status === 409 ? 'stock' : undefined }, priced.status);
     const { orderItems, totalKobo, adult } = priced;
     if (adult && b.adultConfirmed !== true) return json({ error: 'Please confirm you are 18 or older to order alcoholic drinks.', code: 'adult' }, 400);
@@ -77,7 +80,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'AWAITING_WHATSAPP', ?, ?, ?, 'whatsapp', ?, ?)`
     ).bind(id, ref, order.seat, order.stand, phone, email, name, order.notes, eventId, order.items_json, totalKobo, ref,
       token, created.toISOString(), expires.toISOString(), order.fulfilment, order.pickup_point).run();
-    await env.DB.prepare(`UPDATE food_orders SET venue_id = ? WHERE id = ?`).bind(DEFAULT_VENUE, id).run();
+    const deliveryCode = newDeliveryCode();
+    await env.DB.prepare(`UPDATE food_orders SET venue_id = ?, delivery_code = ? WHERE id = ?`).bind(venueId, deliveryCode, id).run();
     await setDelivery(env.DB, id, b.when, eventId);
 
     const origin = new URL(request.url).origin;
@@ -93,7 +97,7 @@ export async function onRequestPost({ request, env, waitUntil }) {
     ]);
     if (waitUntil) waitUntil(later); else await later;
 
-    const message = whatsappOrderMessage(order, orderItems, settings.bankDetails);
+    const message = whatsappOrderMessage(order, orderItems, settings.bankDetails, deliveryCode);
     return json({
       ok: true, ref, totalKobo, total: formatNaira(totalKobo), message, payment,
       whatsappUrl: whatsappUrl(settings.whatsappNumber, message), whatsappNumber: settings.whatsappNumber,

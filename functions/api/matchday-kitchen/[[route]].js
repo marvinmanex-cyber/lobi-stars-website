@@ -16,6 +16,8 @@
 //   POST flag {id, note} (kitchen: a missing ingredient)   POST flag-ack {flagId} (supervisors, Super Admins)
 //   GET alert-settings   POST alert-settings {level, fallbackId} (Super Admins only: nobody else can mute)
 //   GET venues (signed in)   POST venue {id?, name, active, settings} (Super Admins)
+//   GET venue-shift   POST venue-shift {action: start|end}   POST venue-settings {…}   POST reassign {id, staffId}
+//   GET refunds   POST refund {id, action: refund|done}   (supervisors up to the venue's limit, Super Admins)
 //   GET check (Super Admins: the data check)
 import { signIn, signOut, json, kitchenSettings, permissions, mkLog, shiftState, startShift, endShift, listNotes, noteAction,
   activityPage, listStaff, createStaff, updateStaff, saveSettings, ROLES, oneLine, clearKitchenCookie } from '../_lib/matchdayKitchen.js';
@@ -27,12 +29,16 @@ import { recordPayment, canRecord, proofInfo, proofResponse, PAY_METHODS } from 
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
 import { officialDevice, listDevices, addDevice, removeDevice, replyFor } from '../_lib/kitchenWhatsapp.js';
 import { saveAppDevice, removeAppDevice, removeStaffDevices, testAppDevice, notifyKitchen, markOpened, alertFallback, alertLevels, ensureKitchenSchema as ensureAlertSchema } from '../_lib/kitchenNotify.js';
-import { canMove, reasonProblem, muteProblem, ALERT_LEVELS } from '../_lib/kitchenWorkflow.js';
+import { canMove, reasonProblem, muteProblem, alarmsFor, ALERT_LEVELS } from '../_lib/kitchenWorkflow.js';
+import { getVenue, cleanVenuePatch, saveVenueSettings, openVenueShift, startVenueShift, endVenueShift, dutyIds, refundProblem } from '../_lib/kitchenOps.js';
+import { refundFood } from '../_lib/paystackClient.js';
+import { formatNaira, STATUS } from '../_lib/foodOrders.js';
+import { rateLimit, ensureFanSchema } from '../_lib/fans.js';
 import { REJECT_REASONS, recordOrderEvent, DEFAULT_VENUE, ensureFoodSchema } from '../_lib/foodOrders.js';
 
 // The pages (and their names in the activity log).
 const PAGES = {
-  kitchen: 'Kitchen screen', live: 'Live order board', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices',
+  refunds: 'Refunds', kitchen: 'Kitchen screen', live: 'Live order board', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices',
   analytics: 'Food analytics', shift: 'My shift', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts',
   whatsapp: 'Kitchen WhatsApp', telegram: 'Telegram updates', delivery: 'Delivery by stand',
 };
@@ -65,6 +71,9 @@ export async function onRequest(context) {
     const scope = user.kind === 'admin' ? null : [user.venueId || DEFAULT_VENUE];
     const role = user.role;
     const visible = o => K.inScope(o, scope);
+    const myVenue = String(q.get('venue') || body.venueId || '') && user.kind === 'admin' ? String(q.get('venue') || body.venueId) : (user.venueId || DEFAULT_VENUE);
+    // Runners see orders nobody has taken and their own.
+    const forRunner = t => role !== 'delivery' || t.status !== 'OUT_FOR_DELIVERY' || !t.claimedBy || t.claimedBy === user.id;
     // Reply links and the fan's number go only to the kitchen's approved WhatsApp device.
     const onWaDevice = async () => !!(await officialDevice(request, env));
 
@@ -83,13 +92,23 @@ export async function onRequest(context) {
         await mkLog(db, user, body.page === 'whatsapp' || body.page === 'telegram' ? `Went to ${name}` : `Opened ${name}`, { kind: 'open', request });
         return json({ ok: true });
       }
-      case 'GET delivery': return json({ groups: await K.deliveryByStand(db, late, scope), lateMinutes: late });
-      case 'GET kitchen': return json({ tickets: (await K.kitchenTickets(db, late, scope)).filter(t => K.inView(t, role)).map(t => K.forRole(t, role)), lateMinutes: late });
+      case 'GET delivery': {
+        const groups = await K.deliveryByStand(db, late, scope);
+        return json({ groups: groups.map(g => ({ ...g, ready: g.ready.filter(forRunner) })), lateMinutes: late });
+      }
+      case 'GET kitchen': return json({ tickets: (await K.kitchenTickets(db, late, scope)).filter(t => K.inView(t, role) && forRunner(t)).map(t => K.forRole(t, role)), lateMinutes: late });
       // The alarm check (every 10 seconds from each open app): new orders to accept, late orders.
       case 'GET pulse': {
         let level = 'all';
         if (user.kind === 'admin') { await ensureAlertSchema(db); level = (await alertLevels(db))[user.id] || 'all'; }
-        return json(await K.pulse(db, late, { role, level, scope }));
+        const venue = await getVenue(db, myVenue);
+        const p = await K.pulse(db, late, { role, level, scope, preorderMinutes: venue?.settings.preorderMinutes ?? 30 });
+        // While a match-day shift is running, only people clocked in hear the alarms.
+        if (user.kind !== 'admin') {
+          const duty = await dutyIds(db, myVenue);
+          if (duty && !duty.includes(user.id)) return json({ ...alarmsFor(role, 'off', {}), newOrders: [], whatsapp: [], cook: [], ready: [], late: [], failed: [], flags: [], offDuty: true, lateMinutes: late });
+        }
+        return json(p);
       }
       case 'GET board': {
         const wa = await onWaDevice();
@@ -109,24 +128,39 @@ export async function onRequest(context) {
         const o = await K.getOrder(db, q.get('id') || '');
         if (!o || !visible(o)) return json({ error: 'That order no longer exists.' }, 404);
         // A WhatsApp order becomes paid through Record payment (with evidence), not a plain status button.
-        const moves = K.movesFor(o, role).filter(m => !(m.to === 'PAID' && o.channel === 'whatsapp' && o.payment_status !== 'paid'));
+        const moves = K.movesFor(o, role).filter(m => !canMove(role, o, m.to, { userId: user.id })).filter(m => !(m.to === 'PAID' && o.channel === 'whatsapp' && o.payment_status !== 'paid'));
         const held = ['AWAITING_WHATSAPP', 'CONFIRMED', 'PAID'].includes(o.order_status);
         await markOpened(db, o.id, user.id);
+        const runners = perms.confirm && ['READY', 'OUT_FOR_DELIVERY'].includes(o.order_status) ? (await db.prepare(`SELECT id, full_name FROM mk_staff WHERE role IN ('delivery', 'pass') AND is_active = 1 AND COALESCE(venue_id, ?) = ? ORDER BY full_name`).bind(DEFAULT_VENUE, o.venue_id || DEFAULT_VENUE).all()).results.map(x => ({ id: x.id, name: x.full_name })) : [];
         const events = perms.reports ? (await db.prepare(`SELECT from_status, to_status, kind, by_name, reason, note, at FROM order_events WHERE order_id = ? ORDER BY id`).bind(o.id).all()).results : [];
         const wa = await onWaDevice();
-        return json({ order: K.forRole(K.ticket(o, late), role), events, canFlag: perms.flag && ['ACCEPTED', 'PREPARING'].includes(o.order_status), reasons: perms.confirm ? REJECT_REASONS : null, moves, waDevice: wa, chat: wa ? replyFor(await foodSettings(db), o) : null, needsSupervisor: held && !perms.confirm && moves.length === 0, canRecordPayment: canRecord(o) && perms.payment, needsPaymentRole: canRecord(o) && !perms.payment, payment: perms.payment ? await proofInfo(db, o.id) : null, methods: PAY_METHODS });
+        return json({ order: K.forRole(K.ticket(o, late), role), runners, events, canFlag: perms.flag && ['ACCEPTED', 'PREPARING'].includes(o.order_status), reasons: perms.confirm ? REJECT_REASONS : null, moves, waDevice: wa, chat: wa ? replyFor(await foodSettings(db), o) : null, needsSupervisor: held && !perms.confirm && moves.length === 0, canRecordPayment: canRecord(o) && perms.payment, needsPaymentRole: canRecord(o) && !perms.payment, payment: perms.payment ? await proofInfo(db, o.id) : null, methods: PAY_METHODS });
       }
       case 'POST order': {
         const to = String(body.to || '');
         const was = await K.getOrder(db, body.id);
         if (!was || !visible(was)) return json({ error: 'That order no longer exists.' }, 404);
-        const blocked = canMove(role, was, to);
+        const blocked = canMove(role, was, to, { userId: user.id });
         if (blocked?.status === 403) return denied();
         if (blocked) return json({ error: blocked.error }, 409);
         if (to === 'PAID' && was.channel === 'whatsapp' && was.payment_status !== 'paid') return json({ error: 'Use Record payment, with the evidence from the fan.', recordPayment: true }, 400);
         const why = reasonProblem(to, { reason: body.reason, note: body.note });
         if (why) return json({ error: why, needReason: true }, 400);
-        const r = await K.setStatus(db, was.id, to, staffName(user), env, { byId: user.id, byRole: role, reason: body.reason, note: body.note, waitUntil: p => context.waitUntil(p) });
+        // Runners confirm delivery with the fan's code. A supervisor can confirm without it, and the history says so.
+        let note = body.note;
+        if (to === 'DELIVERED' && was.delivery_code && was.fulfilment !== 'pickup' && was.order_status === 'OUT_FOR_DELIVERY') {
+          const venue = await getVenue(db, was.venue_id);
+          const given = String(body.code || '').replace(/\D/g, '');
+          if (venue?.settings.requireDeliveryCode !== false && given !== was.delivery_code) {
+            if (!perms.confirm) {
+              await ensureFanSchema(db);
+              if (!(await rateLimit(db, `mdk-delivery:${was.id}`, 6, 900))) return json({ error: 'Too many wrong codes. Ask a supervisor.' }, 429);
+              return json({ error: given ? "That code isn't right. Ask the fan to check it on their order page." : "Enter the fan's 4-digit code.", needCode: true }, 400);
+            }
+            note = `Confirmed without the fan's code${note ? `: ${note}` : ''}`;
+          }
+        }
+        const r = await K.setStatus(db, was.id, to, staffName(user), env, { byId: user.id, byRole: role, reason: body.reason, note, claimBy: to === 'OUT_FOR_DELIVERY' ? { id: user.id, name: user.name } : null, waitUntil: p => context.waitUntil(p) });
         if (r.error) return json({ error: r.error }, 409);
         await mkLog(db, user, `Order ${r.ref}: ${K.statusLabel(r.from)} to ${K.statusLabel(r.to)}`, { kind: 'order', request, before: { status: r.from }, after: { status: r.to, reason: body.reason || null, note: oneLine(body.note, 300) || null } });
         // Delivered: the receipt goes to the buyer's email; the app offers the WhatsApp receipt.
@@ -160,10 +194,10 @@ export async function onRequest(context) {
         }
         return json({ ok: true, receipt });
       }
-      case 'GET menu': return json({ groups: await K.menu(db), canPrice: perms.price, canAll: perms.ordering, canMenu: perms.menu, categories: perms.menu ? await K.menuCategories(db) : [] });
+      case 'GET menu': return json({ groups: await K.menu(db, myVenue), canPrice: perms.price, canAll: perms.ordering, canMenu: perms.menu, categories: perms.menu ? await K.menuCategories(db) : [] });
       case 'POST menu': {
         if (body.action === 'soldout' || body.action === 'back') {
-          const r = await K.setSoldOut(db, body.id, body.action === 'soldout', staffName(user));
+          const r = await K.setSoldOut(db, body.id, body.action === 'soldout', staffName(user), myVenue);
           if (r.error) return json({ error: r.error }, 404);
           if (r.changed) await mkLog(db, user, body.action === 'soldout' ? `Turned ${r.name} off (not ready)` : `Turned ${r.name} on (ready)`, { kind: 'menu', request, before: { dish: r.name, on: body.action === 'soldout' }, after: { dish: r.name, on: body.action !== 'soldout' } });
           return json({ ok: true });
@@ -255,7 +289,8 @@ export async function onRequest(context) {
       case 'GET ordering': {
         await ensureMenuSchema(db);
         const fs = await foodSettings(db);
-        return json({ ...(await orderingState(env, fs)), mode: fs.orderingMode, autoOpenMinutes: fs.autoOpenMinutes, canChange: perms.ordering });
+        const v = await getVenue(db, myVenue);
+        return json({ ...(await orderingState(env, fs, myVenue)), mode: fs.orderingMode, autoOpenMinutes: fs.autoOpenMinutes, canChange: perms.ordering, paused: !!v?.settings.paused, pauseMessage: v?.settings.pauseMessage || '', maxOpenOrders: v?.settings.maxOpenOrders || 0 });
       }
       case 'POST ordering': {
         if (!perms.ordering) return denied();
@@ -264,7 +299,8 @@ export async function onRequest(context) {
         await saveFoodSetting(db, 'orderingMode', body.mode, user.name);
         await mkLog(db, user, body.mode === 'open' ? 'Opened food ordering' : body.mode === 'closed' ? 'Closed food ordering' : 'Set food ordering to automatic', { kind: 'settings', request });
         const fs = await foodSettings(db);
-        return json({ ...(await orderingState(env, fs)), mode: fs.orderingMode, autoOpenMinutes: fs.autoOpenMinutes, canChange: true });
+        const v = await getVenue(db, myVenue);
+        return json({ ...(await orderingState(env, fs, myVenue)), mode: fs.orderingMode, autoOpenMinutes: fs.autoOpenMinutes, canChange: true, paused: !!v?.settings.paused, pauseMessage: v?.settings.pauseMessage || '', maxOpenOrders: v?.settings.maxOpenOrders || 0 });
       }
       case 'POST payment': {
         if (!perms.payment) return denied();
@@ -306,6 +342,76 @@ export async function onRequest(context) {
           return json({ ok: true });
         }
         return json({ error: 'Unknown action.' }, 400);
+      }
+      // A supervisor gives an order to another runner.
+      case 'POST reassign': {
+        if (!perms.confirm) return denied();
+        const o = await K.getOrder(db, body.id);
+        if (!o || !visible(o)) return json({ error: 'That order no longer exists.' }, 404);
+        if (o.order_status !== 'OUT_FOR_DELIVERY') return json({ error: 'Only an order on its way can be given to another runner.' }, 409);
+        const st = await db.prepare(`SELECT id, full_name FROM mk_staff WHERE id = ? AND is_active = 1 AND role IN ('delivery', 'pass') AND COALESCE(venue_id, ?) = ?`).bind(String(body.staffId || ''), DEFAULT_VENUE, o.venue_id || DEFAULT_VENUE).first();
+        if (!st) return json({ error: 'Choose a runner at this venue.' }, 400);
+        await db.prepare(`UPDATE food_orders SET claimed_by = ?, claimed_name = ?, claimed_at = ? WHERE id = ?`).bind(st.id, st.full_name, new Date().toISOString(), o.id).run();
+        await recordOrderEvent(db, o.id, { kind: 'reassign', byId: user.id, byName: user.name, byRole: role, note: `Given to ${st.full_name}` });
+        await mkLog(db, user, `Order ${o.ref}: gave it to ${st.full_name}`, { kind: 'order', request, before: { runner: o.claimed_name || null }, after: { runner: st.full_name } });
+        return json({ ok: true });
+      }
+      case 'GET venue-shift': {
+        const v = await openVenueShift(db, myVenue);
+        return json({ running: !!v, since: v?.started_at || null, by: v?.started_by || null, canChange: perms.confirm });
+      }
+      case 'POST venue-shift': {
+        if (!perms.confirm) return denied();
+        const r = body.action === 'end' ? await endVenueShift(db, myVenue, user.name) : await startVenueShift(db, myVenue, user.name);
+        if (r.error) return json({ error: r.error }, 409);
+        await mkLog(db, user, body.action === 'end' ? 'Ended the match-day shift' : 'Started the match-day shift', { kind: 'shift', request });
+        return json({ ok: true });
+      }
+      case 'GET venue-settings': {
+        if (!perms.ordering) return denied();
+        const v = await getVenue(db, myVenue);
+        return json({ id: v.id, name: v.name, settings: { ...v.settings, refundApprovalNaira: v.settings.refundApprovalKobo / 100 }, full: perms.superAdmin });
+      }
+      case 'POST venue-settings': {
+        if (!perms.ordering) return denied();
+        const c = cleanVenuePatch(body, { superAdmin: perms.superAdmin });
+        if (c.error) return json({ error: c.error }, 400);
+        const r = await saveVenueSettings(db, myVenue, c.patch);
+        if (!r) return json({ error: 'That venue no longer exists.' }, 404);
+        await mkLog(db, user, c.patch.paused === true ? 'Paused new orders' : c.patch.paused === false ? 'Resumed new orders' : 'Changed venue settings', { kind: 'settings', request, before: r.before, after: r.after });
+        return json({ ok: true, settings: r.after });
+      }
+      case 'GET refunds': {
+        if (!perms.confirm) return denied();
+        const rows = (await db.prepare(`SELECT r.*, o.ref, o.customer_name, o.channel, o.venue_id, o.order_status FROM food_refunds r JOIN food_orders o ON o.id = r.order_id ORDER BY r.created_at DESC LIMIT 200`).all()).results.filter(visible);
+        const limit = (await getVenue(db, myVenue))?.settings;
+        return json({ refunds: rows.map(r => ({ id: r.order_id, ref: r.ref, customer: r.customer_name || '', amount: formatNaira(r.amount_kobo), reason: r.reason || '', status: r.status, channel: r.channel, by: r.created_by || '', at: r.created_at, doneBy: r.done_by || '', doneAt: r.done_at || '', needsSuperAdmin: !!refundProblem(r.amount_kobo, limit, perms.superAdmin) })) });
+      }
+      case 'POST refund': {
+        if (!perms.confirm) return denied();
+        const o = await K.getOrder(db, body.id);
+        if (!o || !visible(o)) return json({ error: 'That order no longer exists.' }, 404);
+        const r = await db.prepare(`SELECT * FROM food_refunds WHERE order_id = ?`).bind(o.id).first();
+        if (!r || !['manual', 'failed'].includes(r.status)) return json({ error: 'This refund has already been dealt with.' }, 409);
+        const limit = refundProblem(r.amount_kobo, (await getVenue(db, o.venue_id))?.settings, perms.superAdmin);
+        if (limit) return json({ error: limit, needsSuperAdmin: true }, 403);
+        // Claimed first, so two people can't refund the same order.
+        const got = await db.prepare(`UPDATE food_refunds SET status = 'working', done_by = ?, done_at = ? WHERE order_id = ? AND status = ?`).bind(user.name, new Date().toISOString(), o.id, r.status).run();
+        if (!got.meta?.changes) return json({ error: 'Someone else is dealing with this refund.' }, 409);
+        let status = 'done';
+        if (body.action === 'refund') {
+          if (o.channel !== 'paystack') { await db.prepare(`UPDATE food_refunds SET status = ? WHERE order_id = ?`).bind(r.status, o.id).run(); return json({ error: 'This order was paid by WhatsApp: refund the fan yourself, then press Mark as refunded.' }, 400); }
+          try { await refundFood(env, o.paystack_reference, r.amount_kobo); status = 'sent'; }
+          catch (err) {
+            await db.prepare(`UPDATE food_refunds SET status = 'failed' WHERE order_id = ?`).bind(o.id).run();
+            await mkLog(db, user, `Order ${o.ref}: Paystack refused the refund`, { kind: 'order', details: err.message, request });
+            return json({ error: `Paystack didn't accept the refund: ${err.message}` }, 502);
+          }
+        }
+        await db.prepare(`UPDATE food_refunds SET status = ? WHERE order_id = ?`).bind(status, o.id).run();
+        if (STATUS.REFUNDED && o.order_status !== 'REFUNDED') await K.setStatus(db, o.id, 'REFUNDED', staffName(user), null, { byId: user.id, byRole: role, note: status === 'sent' ? 'Sent to Paystack' : 'Refunded by hand' });
+        await mkLog(db, user, `Order ${o.ref}: refunded ${formatNaira(r.amount_kobo)}${status === 'sent' ? ' through Paystack' : ' by hand'}`, { kind: 'order', request, before: { refund: r.status }, after: { refund: status } });
+        return json({ ok: true, status });
       }
       // The kitchen tells the supervisors an ingredient is missing.
       case 'POST flag': {

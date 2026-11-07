@@ -183,7 +183,7 @@ half-time and second-half alerts, so check the score before saving.
 MatchDay Kitchen receipt.
 
 **During the match (in-seat food):** keep the Live Order Board open; prepare
-only **Paid** orders; turn a dish **OFF** as soon as it isn't ready or runs out (MatchDay Kitchen › **Menu and prices**), and **ON** when it's ready. Before the gates open, check **Turn on order alerts** is done on every kitchen phone and tablet (press **Send a test alert**) and tap each screen once so the sound works. Make sure a supervisor or Super Admin is on duty: only they can confirm or reject orders, and orders keep beeping until they do. **🍳 Start cooking** beeps until someone presses Start cooking. When a fan sends a WhatsApp payment receipt, press **Record payment** on the order, add the receipt and press **Mark order paid** (STAFF-GUIDE §42).
+only **Paid** orders; turn a dish **OFF** as soon as it isn't ready or runs out (MatchDay Kitchen › **Menu and prices**), and **ON** when it's ready. Before the gates open, check **Turn on order alerts** is done on every kitchen phone and tablet (press **Send a test alert**) and tap each screen once so the sound works. A supervisor starts the match-day shift on **My shift**, and everyone presses **Start shift**, or they won't hear alerts. Make sure a supervisor or Super Admin is on duty: only they can confirm or reject orders, and orders keep beeping until they do. **🍳 Start cooking** beeps until someone presses Start cooking. When a fan sends a WhatsApp payment receipt, press **Record payment** on the order, add the receipt and press **Mark order paid** (STAFF-GUIDE §42).
 
 ## 3. At the final whistle
 

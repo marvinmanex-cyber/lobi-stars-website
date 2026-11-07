@@ -99,9 +99,25 @@ export function parseItem(b, categories) {
  * Automatic mode also gives the opening and closing time (ISO) of the home
  * match concerned, for the MatchDay Kitchen countdown.
  */
-export async function orderingState(env, settings) {
+// The venue's own pause and capacity limit come first, with the message fans see.
+async function venueBlock(db, venueId) {
+  try {
+    const row = await db.prepare(`SELECT settings_json FROM mk_venues WHERE id = ?`).bind(venueId).first();
+    const v = JSON.parse(row?.settings_json || '{}');
+    if (v.paused) return { open: false, reason: 'paused', message: v.pauseMessage || 'The kitchen has paused new orders for a few minutes. Please try again soon.' };
+    const max = Number(v.maxOpenOrders) || 0;
+    if (max > 0) {
+      const n = (await db.prepare(`SELECT COUNT(*) AS n FROM food_orders WHERE order_status IN ('PAID', 'ACCEPTED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY') AND COALESCE(venue_id, ?) = ?`).bind(venueId, venueId).first())?.n || 0;
+      if (n >= max) return { open: false, reason: 'capacity', message: v.pauseMessage || 'The kitchen is very busy right now. Please try again in a few minutes.' };
+    }
+  } catch { /* venues not set up yet: ordering carries on */ }
+  return null;
+}
+export async function orderingState(env, settings, venueId = 'venue-main') {
   const s = settings || await foodSettings(env.DB);
   if (s.orderingMode === 'closed') return { open: false, reason: 'closed' };
+  const blocked = await venueBlock(env.DB, venueId);
+  if (blocked) return blocked;
   if (s.orderingMode !== 'auto') return { open: true, reason: 'open' };
   // Automatic: from N minutes before kick-off of a Lobi Stars HOME game until full time.
   const now = Date.now();
@@ -121,10 +137,15 @@ export async function orderingState(env, settings) {
 }
 
 /** The public menu: available, non-archived items grouped by category. */
-export async function publicMenu(db) {
+export async function publicMenu(db, venueId = 'venue-main') {
   await ensureMenuSchema(db);
   const { results: cats } = await db.prepare(`SELECT * FROM food_categories ORDER BY sort, name`).all();
   const { results: items } = await db.prepare(`SELECT * FROM food_items WHERE archived = 0 AND available = 1 ORDER BY sort, name`).all();
+  // A dish turned off at this venue only: gone from this venue's menu at once.
+  if (venueId !== 'venue-main') {
+    const off = (await db.prepare(`SELECT item_id FROM food_item_venue WHERE venue_id = ? AND sold_out = 1`).bind(venueId).all().catch(() => ({ results: [] }))).results.map(r => r.item_id);
+    for (const i of items) if (off.includes(i.id)) i.sold_out = 1;
+  }
   return cats.map(c => ({
     id: c.id, name: c.name,
     items: items.filter(i => i.category_id === c.id).map(i => ({

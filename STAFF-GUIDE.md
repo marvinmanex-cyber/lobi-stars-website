@@ -4560,6 +4560,10 @@ fan sees on their order page.
 
 Orders only move forward, and the website refuses anything else. **Rejecting** (at step 1, or a WhatsApp order before it) needs a reason: an item sold out, kitchen at capacity, outside the delivery area, a payment problem, or other with a note. **Cancelling** can happen at any step before delivery and needs a reason too. Both are for supervisors and Super Admins. A paid order that is rejected or cancelled goes on the refund list, and the refund is then made by hand in Paystack. The fan sees the reason on their order page, and by email if they gave one. No WhatsApp message goes out.
 
+**Taking an order:** when a runner presses **Take for delivery**, the order is theirs. If two press at once, only one gets it. Only that runner or a supervisor can finish it, and a supervisor can change the runner on the order's page.
+
+**Delivery code:** every order gets a 4-digit code. The fan sees it on their order page and in their WhatsApp order message. The runner asks for it and types it when pressing **Delivered**. Staff never see the code. If the fan can't find it, call a supervisor, who can confirm delivery without it, and the order's history records that. A Super Admin can switch the code off in Staff accounts › Venue. Pickup orders don't use it.
+
 **Not at seat:** the runner presses it, and supervisors get an alarm. Open the order and press **Ready** to try again, or **Cancelled** with a reason.
 
 **Something is missing:** a cook presses it on the order and types what's missing. Supervisors get an alarm and see it on the order.
@@ -4667,6 +4671,14 @@ Only supervisors and Super Admins change prices, add dishes and delete dishes. *
 **Half-time reminder for fans:** about 30 minutes into a home match, while ordering is open, fans who turned on alerts get "Half-time is coming: order now". The MatchDay Kitchen bar on the website says the same from 25 to 40 minutes. Sent once per match. Turn it off in Admin › **Fan alerts**. Fans can turn it off in their alert choices.
 
 **Add a drink:** when a fan's cart has food but no drink or combo, the cart offers one drink that is ON (the most popular first), with **Add** and **No thanks**. It never offers 18+ drinks.
+
+**Match-day shift:** a supervisor or Super Admin starts it on **My shift**. While it runs, only people who have pressed **Start shift** hear order alerts, so everyone must clock in. Ending it clocks everyone out. If nobody starts it, everyone hears the alerts for their job, so forgetting can't silence the kitchen.
+
+**If an order is left too long** (Staff accounts › Venue sets the times, Super Admins only), an alert goes out once: not confirmed after 2 minutes (supervisors and Super Admins), still cooking after 15 (supervisors), ready but not taken after 3 (runners and supervisors), on the way after 10 (supervisors). Kick-off and half-time orders stay quiet until 30 minutes before they are due. If WhatsApp through Meta or SMS through Termii is connected, supervisors with a phone number on their account also get a message when nobody has opened a new order after 60 seconds.
+
+**Pausing:** **Pause new orders** on the Home screen stops new orders and shows fans your message. **Stop new orders at this many open orders** in Staff accounts › Venue does the same by itself when the kitchen is full, and it starts again as orders finish. Supervisors and Super Admins.
+
+**Refunds:** the **Refunds** page lists paid orders that were rejected or cancelled. **Refund through Paystack** sends the money back to the fan's card or account. **Mark as refunded** is for WhatsApp payments, after you've paid the fan back yourself. Refunds above ₦20,000 need a Super Admin; a Super Admin can change that amount in Staff accounts › Venue.
 
 **Order alerts:** new orders alert the kitchen in two ways.
 - **In the app:** while MatchDay Kitchen is open, each person hears the alerts for their job, and every alert blinks red, in the bar at the top and on the button or tab of the page it comes from, and keeps beeping:

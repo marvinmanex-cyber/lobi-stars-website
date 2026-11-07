@@ -242,6 +242,158 @@ test('Super Admins need the two-step code to sign in to the kitchen', async () =
   } finally { sql(`DELETE FROM admin_users WHERE email = '${emails}';`); }
 });
 
+// ── Phase 2 ──
+const CRON = { Authorization: 'Bearer cron-test-secret' };
+const tick = () => fetch(`${BASE}/api/internal/kitchen-repeat`, { method: 'POST', headers: CRON }).then(r => r.json());
+const minsAgo = m => new Date(Date.now() - m * 60000).toISOString();
+
+test('claiming is atomic: two runners, one order, one wins', async () => {
+  const other = await staff('WF Run Two', 'delivery');
+  const id = put('READY', { paid: true });
+  const res = await Promise.all([R.call('order', { id, to: 'OUT_FOR_DELIVERY' }), other.u.call('order', { id, to: 'OUT_FOR_DELIVERY' })]);
+  assert.deepEqual(res.map(r => r.status).sort(), [200, 409], JSON.stringify(res.map(r => r.data)));
+  const row = rows(`SELECT claimed_by, claimed_name FROM food_orders WHERE id = '${id}'`)[0];
+  const winner = res[0].status === 200 ? R : other.u, loser = res[0].status === 200 ? other.u : R;
+  assert.equal(row.claimed_by, winner.s.user.id);
+  // Only the runner who has it finishes it; other runners don't see it; a supervisor can change it.
+  assert.equal((await loser.call('order', { id, to: 'DELIVERED' })).status, 403);
+  assert.ok(!(await loser.call('kitchen')).data.tickets.some(t => t.id === id));
+  assert.ok((await winner.call('kitchen')).data.tickets.some(t => t.id === id && t.claimedName));
+  assert.equal((await loser.call('reassign', { id, staffId: loser.s.user.id })).status, 403);
+  assert.equal((await S.call('reassign', { id, staffId: loser.s.user.id })).status, 200);
+  assert.equal(rows(`SELECT claimed_by FROM food_orders WHERE id = '${id}'`)[0].claimed_by, loser.s.user.id);
+  assert.equal((await loser.call('order', { id, to: 'DELIVERED' })).status, 200);
+  assert.equal((await S.call('reassign', { id, staffId: 'nobody' })).status, 409, 'not once delivered');
+  const seen = await pub(id);
+  assert.doesNotMatch(JSON.stringify(seen), /WF Run/, 'no staff details for the fan');
+});
+
+test('delivery code: the fan has it, the runner needs it, a supervisor can do without and it is recorded', async () => {
+  const id = put('OUT_FOR_DELIVERY', { paid: true });
+  sql(`UPDATE food_orders SET delivery_code = '4821' WHERE id = '${id}';`);
+  assert.equal((await pub(id)).order.deliveryCode, '4821', 'on the fan\'s order page');
+  assert.doesNotMatch(JSON.stringify((await R.call(`order?id=${id}`)).data), /4821/, 'never shown to staff');
+  assert.equal((await R.call('order', { id, to: 'DELIVERED' })).data.needCode, true);
+  assert.equal((await R.call('order', { id, to: 'DELIVERED', code: '1111' })).data.needCode, true);
+  assert.equal(status(id), 'OUT_FOR_DELIVERY');
+  assert.equal((await R.call('order', { id, to: 'DELIVERED', code: '48 21' })).status, 200);
+  assert.equal((await pub(id)).order.deliveryCode, '', 'gone once delivered');
+  const two = put('OUT_FOR_DELIVERY', { paid: true });
+  sql(`UPDATE food_orders SET delivery_code = '1234' WHERE id = '${two}';`);
+  assert.equal((await S.call('order', { id: two, to: 'DELIVERED' })).status, 200);
+  assert.match(events(two).at(-1).note, /without the fan's code/);
+  // A pickup order has no code to give; and a new order gets one.
+  const pick = put('READY', { paid: true, fulfilment: 'pickup' });
+  sql(`UPDATE food_orders SET delivery_code = '9999' WHERE id = '${pick}';`);
+  assert.equal((await pub(pick)).order.deliveryCode, '');
+  assert.equal((await R.call('order', { id: pick, to: 'DELIVERED' })).status, 200);
+});
+
+test('escalation: overdue orders alert once each', async () => {
+  const late = put('PAID', { paid: true }), fresh = put('PAID', { paid: true }), cook = put('PREPARING', { paid: true }), ready = put('READY', { paid: true }), out = put('OUT_FOR_DELIVERY', { paid: true });
+  sql(`UPDATE food_orders SET paid_iso = '${minsAgo(5)}' WHERE id = '${late}'; UPDATE food_orders SET preparing_at = '${minsAgo(20)}' WHERE id = '${cook}'; UPDATE food_orders SET ready_at = '${minsAgo(5)}' WHERE id = '${ready}'; UPDATE food_orders SET out_at = '${minsAgo(15)}' WHERE id = '${out}';`);
+  const r = await tick();
+  assert.ok(r.escalations.escalated >= 4, JSON.stringify(r));
+  const kinds = id => rows(`SELECT kind FROM order_escalations WHERE order_id = '${id}'`).map(x => x.kind);
+  assert.deepEqual(kinds(late), ['esc_new']); assert.deepEqual(kinds(fresh), []); assert.deepEqual(kinds(cook), ['esc_preparing']); assert.deepEqual(kinds(ready), ['esc_ready']); assert.deepEqual(kinds(out), ['esc_out']);
+  assert.ok(rows(`SELECT 1 FROM food_notification_log WHERE order_id = '${late}' AND event = 'ESCALATION_NEW'`).length);
+  assert.ok(events(cook).some(e => e.kind === 'escalation'));
+  const again = await tick();
+  assert.equal(rows(`SELECT COUNT(*) AS n FROM order_escalations WHERE order_id = '${late}'`)[0].n, 1, 'once only');
+  assert.equal((await fetch(`${BASE}/api/internal/kitchen-repeat`, { method: 'POST' })).status, 403);
+  sql(`DELETE FROM order_escalations WHERE order_id LIKE 'WF%${T}';`);
+  void again;
+});
+
+test('kick-off and half-time orders stay quiet until they are due', async () => {
+  const id = put('ACCEPTED', { paid: true });
+  sql(`UPDATE food_orders SET accepted_iso = '${minsAgo(1)}', deliver_when = 'half-time', deliver_at = '${new Date(Date.now() + 2 * 3600e3).toISOString()}' WHERE id = '${id}';`);
+  assert.ok(!(await C.call('pulse')).data.cook.some(x => x.id === id));
+  await tick();
+  assert.equal(rows(`SELECT 1 FROM order_escalations WHERE order_id = '${id}' AND kind = 'release'`).length, 0);
+  sql(`UPDATE food_orders SET accepted_iso = '${minsAgo(120)}', deliver_at = '${new Date(Date.now() + 10 * 60000).toISOString()}' WHERE id = '${id}';`);
+  assert.ok((await C.call('pulse')).data.cook.some(x => x.id === id), 'due soon: rings');
+  await tick();
+  assert.equal(rows(`SELECT 1 FROM order_escalations WHERE order_id = '${id}' AND kind = 'release'`).length, 1, 'and the devices are told');
+});
+
+test('the match-day shift: only people clocked in hear alerts; forgetting it can\'t silence the kitchen', async () => {
+  const id = put('ACCEPTED', { paid: true });
+  assert.equal((await C.call('venue-shift', { action: 'start' })).status, 403);
+  assert.ok((await C.call('pulse')).data.cook.some(x => x.id === id), 'no shift running: everyone hears');
+  assert.equal((await S.call('venue-shift', { action: 'start' })).status, 200);
+  assert.equal((await S.call('venue-shift', { action: 'start' })).status, 409);
+  assert.equal((await C.call('venue-shift')).data.running, true);
+  assert.equal((await C.call('pulse')).data.offDuty, true, 'not clocked in: quiet');
+  assert.equal((await C.call('shift', { action: 'start' })).status, 200);
+  assert.ok((await C.call('pulse')).data.cook.some(x => x.id === id), 'clocked in: hears');
+  assert.ok((await A.call('pulse')).data.cook.some(x => x.id === id), 'a Super Admin isn\'t on shifts');
+  assert.equal((await S.call('venue-shift', { action: 'end' })).status, 200);
+  assert.equal((await C.call('shift')).data.onShift, false, 'ending it clocks everyone out');
+  assert.equal((await C.call('venue-shift')).data.running, false);
+});
+
+test('pausing and capacity: fans are told, and orders stop', async () => {
+  const fan = () => fetch(`${BASE}/api/food/menu`).then(r => r.json());
+  const order = () => fetch(`${BASE}/api/food/whatsapp-order`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ name: 'Pause Fan', phone: `0803${String(Math.random()).slice(2, 9)}`, fulfilment: 'seat', seat: 'P1', stand: 'Popular Stand', items: [{ id: 'water', qty: 1 }] }) });
+  sql(`INSERT INTO food_settings (key, value) VALUES ('orderingMode', 'open') ON CONFLICT (key) DO UPDATE SET value = 'open';`);
+  try {
+    assert.equal((await C.call('venue-settings', { paused: true })).status, 403);
+    assert.equal((await S.call('venue-settings', { paused: true, pauseMessage: 'Back in five minutes' })).status, 200);
+    const m = await fan();
+    assert.equal(m.open, false); assert.equal(m.reason, 'paused'); assert.equal(m.message, 'Back in five minutes');
+    const refused = await order();
+    assert.equal(refused.status, 503); assert.match((await refused.json()).error, /Back in five/);
+    assert.equal((await S.call('ordering')).data.paused, true);
+    assert.equal((await S.call('venue-settings', { paused: false })).status, 200);
+    assert.equal((await fan()).open, true);
+    const n = rows(`SELECT COUNT(*) AS n FROM food_orders WHERE order_status IN ('PAID', 'ACCEPTED', 'PREPARING', 'READY', 'OUT_FOR_DELIVERY') AND COALESCE(venue_id, 'venue-main') = 'venue-main'`)[0].n;
+    assert.equal((await S.call('venue-settings', { maxOpenOrders: n + 1 })).status, 200);
+    assert.equal((await fan()).open, true);
+    put('PAID', { paid: true });
+    assert.equal((await fan()).reason, 'capacity');
+    const logged = rows(`SELECT before_json, after_json FROM mk_activity WHERE action = 'Changed venue settings' ORDER BY id DESC LIMIT 1`)[0];
+    assert.equal(JSON.parse(logged.after_json).maxOpenOrders, n + 1);
+  } finally { await S.call('venue-settings', { maxOpenOrders: 0, paused: false, pauseMessage: '' }); }
+});
+
+test('a dish turned off at one venue stays on at another', async () => {
+  const v = await A.call('venue', { name: `Third Ground ${T}` }); venues.push(v.data.id);
+  const menu = async venue => (await fetch(`${BASE}/api/food/menu${venue ? `?venue=${venue}` : ''}`).then(r => r.json())).categories.flatMap(c => c.items).find(i => i.id === 'water');
+  sql(`UPDATE food_items SET sold_out = 0, archived = 0, available = 1 WHERE id = 'water'; INSERT INTO food_settings (key, value) VALUES ('orderingMode', 'open') ON CONFLICT (key) DO UPDATE SET value = 'open';`);
+  assert.equal((await A.call('menu', { id: 'water', action: 'soldout', venueId: v.data.id })).status, 200);
+  assert.equal((await menu(v.data.id)).soldOut, true);
+  assert.equal((await menu()).soldOut, false, 'the first venue is untouched');
+  assert.ok((await A.call(`menu?venue=${v.data.id}`)).data.groups.flatMap(g => g.dishes).find(d => d.id === 'water').soldOut);
+  const buy = await fetch(`${BASE}/api/food/whatsapp-order`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': ip() }, body: JSON.stringify({ venueId: v.data.id, name: 'Venue Fan', phone: `0803${String(Math.random()).slice(2, 9)}`, fulfilment: 'seat', seat: 'V1', stand: 'Popular Stand', items: [{ id: 'water', qty: 1 }] }) });
+  assert.equal(buy.status, 409, 'can\'t be ordered there');
+  sql(`DELETE FROM food_item_venue WHERE venue_id = '${v.data.id}';`);
+});
+
+test('refunds: the limit, Paystack and by hand, only once', async () => {
+  const pay = put('PAID', { paid: true }), wa = put('PAID', { paid: true, channel: 'whatsapp' });
+  await S.call('order', { id: pay, to: 'REJECTED', reason: 'sold_out' });
+  await S.call('order', { id: wa, to: 'REJECTED', reason: 'sold_out' });
+  assert.equal((await C.call('refunds')).status, 403);
+  assert.ok((await S.call('refunds')).data.refunds.some(r => r.id === pay && r.status === 'manual'));
+  // Above the limit: a Super Admin only.
+  assert.equal((await A.call('venue-settings', { refundApprovalNaira: 1000 })).status, 200);
+  assert.ok((await S.call('refunds')).data.refunds.find(r => r.id === pay).needsSuperAdmin);
+  assert.equal((await S.call('refund', { id: pay, action: 'refund' })).data.needsSuperAdmin, true);
+  assert.equal((await C.call('refund', { id: pay, action: 'refund' })).status, 403);
+  // Under the limit: a supervisor can.
+  assert.equal((await A.call('venue-settings', { refundApprovalNaira: 20000 })).status, 200);
+  assert.equal((await S.call('refund', { id: wa, action: 'refund' })).status, 400, 'a WhatsApp payment can\'t go through Paystack');
+  assert.equal(rows(`SELECT status FROM food_refunds WHERE order_id = '${wa}'`)[0].status, 'manual', 'and nothing has changed');
+  assert.equal((await S.call('refund', { id: wa, action: 'done' })).status, 200);
+  assert.equal(rows(`SELECT status FROM food_refunds WHERE order_id = '${wa}'`)[0].status, 'done'); assert.equal(status(wa), 'REFUNDED');
+  const sent = await S.call('refund', { id: pay, action: 'refund' });
+  assert.equal(sent.data.status, 'sent', JSON.stringify(sent.data)); assert.equal(status(pay), 'REFUNDED');
+  assert.equal((await S.call('refund', { id: pay, action: 'refund' })).status, 409, 'only once');
+  assert.equal(events(pay).at(-1).to_status, 'REFUNDED');
+  assert.ok(rows(`SELECT 1 FROM mk_activity WHERE action LIKE 'Order ${pay}: refunded%'`).length);
+});
+
 after(() => {
-  sql(`DELETE FROM order_events WHERE order_id LIKE 'WF%${T}'; DELETE FROM food_refunds WHERE order_id LIKE 'WF%${T}'; DELETE FROM food_notification_log WHERE order_id LIKE 'WF%${T}'; DELETE FROM food_orders WHERE id LIKE 'WF%${T}'; DELETE FROM mk_staff WHERE full_name LIKE 'WF %'; DELETE FROM admin_users WHERE email IN ('${SA_EMAIL}', '${SA2_EMAIL}');${venues.map(v => `DELETE FROM mk_venues WHERE id = '${v}';`).join('')}`);
+  sql(`DELETE FROM order_escalations WHERE order_id LIKE 'WF%${T}'; DELETE FROM order_events WHERE order_id LIKE 'WF%${T}'; DELETE FROM food_refunds WHERE order_id LIKE 'WF%${T}'; DELETE FROM food_notification_log WHERE order_id LIKE 'WF%${T}'; DELETE FROM food_orders WHERE id LIKE 'WF%${T}'; DELETE FROM mk_staff WHERE full_name LIKE 'WF %'; DELETE FROM admin_users WHERE email IN ('${SA_EMAIL}', '${SA2_EMAIL}');${venues.map(v => `DELETE FROM mk_venues WHERE id = '${v}';`).join('')}`);
 });

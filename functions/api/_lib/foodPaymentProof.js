@@ -11,6 +11,7 @@
 // has bank details on it: only roles that record payments can open it, never fans.
 import { afterFoodPaid, ensureFoodSchema, foodSettings, formatNaira, recordOrderEvent, staffMessage } from './foodOrders.js';
 import { notifyKitchen } from './kitchenNotify.js';
+import { getVenue, preorderHeld } from './kitchenOps.js';
 
 export const PAY_METHODS = { transfer: 'Bank transfer', ussd: 'USSD / mobile app', pos: 'POS', cash: 'Cash' };
 export const RECORDABLE = ['AWAITING_WHATSAPP', 'CONFIRMED', 'EXPIRED', 'PAYMENT_FAILED'];
@@ -98,8 +99,8 @@ export async function recordPayment(env, order, v, who, { canOverride = false, w
 
   const late = ['EXPIRED', 'PAYMENT_FAILED'].includes(order.order_status) ? 1 : 0;
   const reference = `WhatsApp: ${PAY_METHODS[v.method]}, recorded by ${name}${code ? ` (${code})` : ''}`.slice(0, 200);
-  const claim = await db.prepare(`UPDATE food_orders SET payment_status = 'paid', order_status = 'ACCEPTED', kitchen_ack_at = ?, kitchen_ack_by = ?, paid_at = datetime('now'), paid_iso = ?, paid_reference = ?, paid_late = ?, status_by = ?, status_at = ?
-    WHERE id = ? AND payment_status != 'paid' AND order_status IN (${RECORDABLE.map(() => '?').join(',')})`).bind(at, name, at, reference, late, `${name} – MatchDay Kitchen`, at, order.id, ...RECORDABLE).run();
+  const claim = await db.prepare(`UPDATE food_orders SET payment_status = 'paid', order_status = 'ACCEPTED', accepted_iso = ?, kitchen_ack_at = ?, kitchen_ack_by = ?, paid_at = datetime('now'), paid_iso = ?, paid_reference = ?, paid_late = ?, status_by = ?, status_at = ?
+    WHERE id = ? AND payment_status != 'paid' AND order_status IN (${RECORDABLE.map(() => '?').join(',')})`).bind(at, at, name, at, reference, late, `${name} – MatchDay Kitchen`, at, order.id, ...RECORDABLE).run();
   if (!claim.meta?.changes) {
     await db.prepare(`DELETE FROM food_payment_proofs WHERE order_id = ?`).bind(order.id).run();
     return { error: 'Someone else has just changed this order. Refresh and try again.', status: 409 };
@@ -108,8 +109,11 @@ export async function recordPayment(env, order, v, who, { canOverride = false, w
   await recordOrderEvent(db, order.id, { from: order.order_status, to: 'ACCEPTED', byId: who?.id || null, byName: name, byRole: who?.role || null, note: `Payment recorded: ${PAY_METHODS[v.method]}` });
   const paid = { ...order, payment_status: 'paid', order_status: 'ACCEPTED', paid_iso: at, paid_reference: reference };
   await afterFoodPaid(env, order, paid, { waitUntil, origin });
-  const cook = notifyKitchen(env, order.id, 'cook');
-  if (waitUntil) waitUntil(cook); else await cook;
+  // A kick-off or half-time order waits: the every-minute check tells the cooks when it is due.
+  if (!preorderHeld(order, (await getVenue(db, order.venue_id))?.settings || { preorderMinutes: 30 })) {
+    const cook = notifyKitchen(env, order.id, 'cook');
+    if (waitUntil) waitUntil(cook); else await cook;
+  }
   const settings = await foodSettings(db);
   return { ok: true, ref: order.ref || order.id, total: formatNaira(order.total_kobo), amount: formatNaira(amountKobo), method: PAY_METHODS[v.method], late: !!late, duplicateOf: seen ? (seen.ref || seen.order_id) : null, chatUrl: fanChat(settings, order) };
 }

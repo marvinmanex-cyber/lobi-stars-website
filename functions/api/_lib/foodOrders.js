@@ -65,9 +65,11 @@ export const STAFF_MOVES = {
 };
 // Why an order can be rejected (the note is required for "other").
 export const REJECT_REASONS = { sold_out: 'An item is sold out', kitchen_at_capacity: 'The kitchen is at capacity', outside_delivery_zone: 'Outside the delivery area', payment_issue: 'A problem with the payment', other: 'Other' };
+/** The fan gives this to the runner, to prove the order reached them. */
+export const newDeliveryCode = () => String(1000 + (crypto.getRandomValues(new Uint16Array(1))[0] % 9000));
 // The first venue: existing orders and staff belong to it. Its details are data, not logic.
 export const DEFAULT_VENUE = 'venue-main';
-const STAMP = { READY: 'ready_at', FAILED_DELIVERY: 'failed_at', REJECTED: 'cancelled_at', CONFIRMED: 'confirmed_at', PREPARING: 'preparing_at', OUT_FOR_DELIVERY: 'out_at', DELIVERED: 'delivered_at', CANCELLED: 'cancelled_at', REFUNDED: 'refunded_at' };
+const STAMP = { ACCEPTED: 'accepted_iso', READY: 'ready_at', FAILED_DELIVERY: 'failed_at', REJECTED: 'cancelled_at', CONFIRMED: 'confirmed_at', PREPARING: 'preparing_at', OUT_FOR_DELIVERY: 'out_at', DELIVERED: 'delivered_at', CANCELLED: 'cancelled_at', REFUNDED: 'refunded_at' };
 
 const nowIso = () => new Date().toISOString();
 
@@ -109,6 +111,8 @@ export async function ensureFoodSchema(db) {
     ['push_sub', 'TEXT'],
     // The order workflow (6 Nov 2026): its venue, when it was ready, when delivery failed, why it was rejected or cancelled.
     ['venue_id', 'TEXT'], ['ready_at', 'TEXT'], ['failed_at', 'TEXT'], ['reject_reason', 'TEXT'], ['reject_note', 'TEXT'], ['cancel_reason', 'TEXT'],
+    // Phase 2: the fan's 4-digit delivery code, the runner who took the order, when it was accepted.
+    ['delivery_code', 'TEXT'], ['claimed_by', 'TEXT'], ['claimed_name', 'TEXT'], ['claimed_at', 'TEXT'], ['accepted_iso', 'TEXT'],
   ]) if (!cols.has(name)) await db.prepare(`ALTER TABLE food_orders ADD COLUMN ${name} ${type}`).run();
   await db.batch([
     db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_food_ref ON food_orders(ref) WHERE ref IS NOT NULL`),
@@ -120,6 +124,10 @@ export async function ensureFoodSchema(db) {
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_order_events_order ON order_events (order_id, id)`),
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_order_events_flag ON order_events (kind, ack_at)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS food_refunds (order_id TEXT PRIMARY KEY, amount_kobo INTEGER NOT NULL, reason TEXT, status TEXT NOT NULL DEFAULT 'manual', created_by TEXT, created_at TEXT NOT NULL, done_by TEXT, done_at TEXT)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS mk_venue_shifts (id TEXT PRIMARY KEY, venue_id TEXT NOT NULL, started_by TEXT, started_at TEXT NOT NULL, ended_by TEXT, ended_at TEXT)`),
+    db.prepare(`CREATE INDEX IF NOT EXISTS idx_venue_shift ON mk_venue_shifts (venue_id, ended_at)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS order_escalations (order_id TEXT NOT NULL, kind TEXT NOT NULL, at TEXT NOT NULL, PRIMARY KEY (order_id, kind))`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS food_item_venue (item_id TEXT NOT NULL, venue_id TEXT NOT NULL, sold_out INTEGER NOT NULL DEFAULT 0, updated_at TEXT, PRIMARY KEY (item_id, venue_id))`),
     db.prepare(`CREATE TABLE IF NOT EXISTS mk_venues (id TEXT PRIMARY KEY, name TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1, settings_json TEXT NOT NULL DEFAULT '{}', created_at TEXT NOT NULL, updated_at TEXT)`),
     db.prepare(`INSERT OR IGNORE INTO mk_venues (id, name, active, settings_json, created_at) VALUES (?, 'McCarthy Stadium', 1, ?, ?)`).bind(DEFAULT_VENUE, JSON.stringify({ whatsappNumber: '2347080094985', bankDetails: 'Aeson Sports Management Limited, Fidelity Bank: 4011459917' }), new Date().toISOString()),
     db.prepare(`UPDATE food_orders SET venue_id = ? WHERE venue_id IS NULL`).bind(DEFAULT_VENUE),
@@ -233,6 +241,11 @@ export async function afterFoodPaid(env, order, paid, { waitUntil, origin = 'htt
     const job = kitchenOnPaid(env, order.id, waitUntil);
     if (!waitUntil) await job;
   } catch (err) { console.error('[food] kitchen alert', err); }
+  // The customer's "received" message on WhatsApp, once Meta is connected (their email is further down).
+  try {
+    const { customerUpdate, whatsappConnected } = await import('./kitchenCustomer.js');
+    if (whatsappConnected(env)) await customerUpdate(env, { ...paid, ...(await env.DB.prepare(`SELECT delivery_code, view_token FROM food_orders WHERE id = ?`).bind(order.id).first()) }, 'received');
+  } catch (err) { console.error('[food] customer received', err); }
   // Lobi Stars Rewards: Star Points / voucher used are taken, and food points are earned (on the part paid in naira).
   try { const { confirmCheckout } = await import('./rewardsCheckout.js'); await confirmCheckout(env, order.paystack_reference); const { earnFood } = await import('./rewardsEarn.js'); await earnFood(env, paid); } catch (err) { console.error('[food] rewards', err); }
   const n = splitName(order.customer_name || '');
@@ -290,7 +303,9 @@ export async function moveOrder(db, order, to, staffName, env = null, opts = {})
   if (!allowed.includes(to)) return `An order that is "${STATUS[order.order_status]?.label || order.order_status}" can't be moved to "${STATUS[to]?.label || to}".`;
   const col = STAMP[to];
   const reason = opts.reason ? String(opts.reason).slice(0, 60) : null, note = opts.note ? String(opts.note).replace(/\s+/g, ' ').trim().slice(0, 300) : null;
-  const why = to === 'REJECTED' ? [`, reject_reason = ?, reject_note = ?`, [reason, note]] : to === 'CANCELLED' ? [`, cancel_reason = ?`, [[reason, note].filter(Boolean).join(': ') || null]] : ['', []];
+  // A runner taking an order: the status check in this one update is what stops two runners taking it.
+  const claimBy = to === 'OUT_FOR_DELIVERY' && opts.claimBy ? [`, claimed_by = ?, claimed_name = ?, claimed_at = ?`, [opts.claimBy.id, opts.claimBy.name, nowIso()]] : ['', []];
+  const why = to === 'REJECTED' ? [`, reject_reason = ?, reject_note = ?`, [reason, note]] : to === 'CANCELLED' ? [`, cancel_reason = ?`, [[reason, note].filter(Boolean).join(': ') || null]] : claimBy;
   const res = await db.prepare(
     `UPDATE food_orders SET order_status = ?, status_by = ?, status_at = ?${col ? `, ${col} = ?` : ''}${why[0]} WHERE id = ? AND order_status = ?`
   ).bind(...[to, staffName, nowIso(), ...(col ? [nowIso()] : []), ...why[1], order.id, order.order_status]).run();
@@ -369,6 +384,8 @@ export function publicOrder(o) {
     preparingAt: o.preparing_at, outAt: o.out_at, deliveredAt: o.delivered_at,
     deliverWhen: o.deliver_when || 'now', deliverAt: o.deliver_at || null, alerts: !!o.push_sub,
     readyAt: o.ready_at || null,
+    // Shown only to the fan (this address needs their token), and only while it is useful.
+    deliveryCode: o.fulfilment !== 'pickup' && o.delivery_code && !['DELIVERED', 'CANCELLED', 'REJECTED', 'REFUNDED', 'EXPIRED', 'PAYMENT_FAILED'].includes(o.order_status) ? o.delivery_code : '',
     rejectReason: o.order_status === 'REJECTED' ? (REJECT_REASONS[o.reject_reason] || '') : '',
     refundNote: ['REJECTED', 'CANCELLED'].includes(o.order_status) && o.payment_status === 'paid' ? 'Your payment will be refunded.' : '',
   };
@@ -380,8 +397,11 @@ export function publicOrder(o) {
  * limits and stock. Prices always come from the database, never the browser.
  * Returns { orderItems, totalKobo, adult } or { error, status }.
  */
-export async function priceCart(db, items) {
+export async function priceCart(db, items, venueId = DEFAULT_VENUE) {
   const { results: menu } = await db.prepare(`SELECT * FROM food_items WHERE archived = 0`).all();
+  // A dish turned off at this venue only.
+  const off = venueId === DEFAULT_VENUE ? [] : (await db.prepare(`SELECT item_id FROM food_item_venue WHERE venue_id = ? AND sold_out = 1`).bind(venueId).all()).results.map(r => r.item_id);
+  for (const m of menu) if (off.includes(m.id)) m.sold_out = 1;
   const orderItems = [];
   let totalKobo = 0, adult = false;
   const seen = new Set();
@@ -411,12 +431,13 @@ export const whereText = o => (o.fulfilment === 'pickup' ? `Pickup: ${o.pickup_p
 /** The message the fan sends to the club on WhatsApp. */
 // bank: where to pay. It goes in the fan's own message, so the details are in the chat straight away
 // (WhatsApp doesn't let a website send a message by itself).
-export function whatsappOrderMessage(o, items, bank = '') {
+export function whatsappOrderMessage(o, items, bank = '', code = '') {
   const lines = ['Hello MatchDay Kitchen,', "I'd like to place a food order.", '', `Order: ${o.ref}`, `Name: ${o.customer_name}`, `Phone: ${localPhone(o.phone)}`, ''];
   for (const i of items) lines.push(`${i.qty} × ${i.name}: ${formatNaira(i.priceKobo * i.qty)}`);
   lines.push('-----------------------', `Total: ${formatNaira(o.total_kobo)}`, '', whereText(o));
   if (o.notes) lines.push(`Note: ${o.notes}`);
   lines.push('', 'Please confirm my order. Thank you.');
+  if (code && o.fulfilment !== 'pickup') lines.push('', `Delivery code: ${code}`);
   if (bank) lines.push('', `To pay: ${formatNaira(o.total_kobo)} to ${bank}. I will forward my receipt here for confirmation.`);
   return lines.join('\n');
 }

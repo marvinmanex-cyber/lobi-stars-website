@@ -76,7 +76,7 @@ export function ticket(o, lateMinutes = DATA.lateMinutes) {
   // Late = not delivered within the target (5 minutes by default) of payment, at any step.
   const inKitchen = DATA.kitchenShows.includes(o.order_status) && o.order_status !== 'FAILED_DELIVERY';
   return {
-    id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: o.order_status === 'READY' && pickup(o) ? 'Ready for pickup' : statusLabel(o.order_status), venueId: o.venue_id || null, rejectReason: o.reject_reason || '', rejectNote: o.reject_note || '', cancelReason: o.cancel_reason || '', fulfilment: o.fulfilment || 'seat', stage: stageOf(o.order_status),
+    id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: o.order_status === 'READY' && pickup(o) ? 'Ready for pickup' : statusLabel(o.order_status), venueId: o.venue_id || null, claimedBy: o.claimed_by || null, claimedName: o.claimed_name || '', needsCode: !!o.delivery_code && o.order_status === 'OUT_FOR_DELIVERY' && !pickup(o), rejectReason: o.reject_reason || '', rejectNote: o.reject_note || '', cancelReason: o.cancel_reason || '', fulfilment: o.fulfilment || 'seat', stage: stageOf(o.order_status),
     customer: o.customer_name || '', where: o.seat || o.pickup_point ? whereText(o) : '', note: o.notes || '',
     items: items(o).map(i => ({ name: i.name, qty: i.qty, note: i.note || '' })),
     itemCount: items(o).reduce((n, i) => n + (Number(i.qty) || 0), 0),
@@ -206,21 +206,29 @@ export async function setStatus(db, id, to, staffName, env = null, opts = {}) {
 }
 
 /** Menu and prices, grouped by category (archived dishes left out). */
-export async function menu(db) {
+export async function menu(db, venueId = DEFAULT_VENUE) {
   await ready(db);
+  const off = venueId === DEFAULT_VENUE ? [] : (await db.prepare(`SELECT item_id FROM food_item_venue WHERE venue_id = ? AND sold_out = 1`).bind(venueId).all()).results.map(r => r.item_id);
   const cats = (await db.prepare(`SELECT id, name FROM food_categories ORDER BY sort, name`).all()).results;
   const dishes = (await db.prepare(`SELECT id, name, price_kobo, category_id, available, sold_out, emoji FROM food_items WHERE archived = 0 ORDER BY sort, name`).all()).results;
   const groups = cats.map(c => ({ id: c.id, name: c.name, dishes: [] }));
   const other = { id: '', name: 'Other', dishes: [] };
-  for (const d of dishes) (groups.find(g => g.id === d.category_id) || other).dishes.push({ id: d.id, name: d.name, emoji: d.emoji || '', price: d.price_kobo / 100, priceText: formatNaira(d.price_kobo), soldOut: !!d.sold_out, available: !!d.available });
+  for (const d of dishes) (groups.find(g => g.id === d.category_id) || other).dishes.push({ id: d.id, name: d.name, emoji: d.emoji || '', price: d.price_kobo / 100, priceText: formatNaira(d.price_kobo), soldOut: !!d.sold_out || off.includes(d.id), available: !!d.available });
   return [...groups, other].filter(g => g.dishes.length);
 }
 
-export async function setSoldOut(db, id, soldOut, by) {
+export async function setSoldOut(db, id, soldOut, by, venueId = DEFAULT_VENUE) {
   await ready(db);
   const d = await db.prepare(`SELECT id, name, sold_out FROM food_items WHERE id = ? AND archived = 0`).bind(String(id)).first();
   if (!d) return { error: 'That dish is no longer on the menu.' };
   const on = soldOut ? 1 : 0;
+  // Any other venue keeps its own list; the first venue uses the dish's own switch.
+  if (venueId !== DEFAULT_VENUE) {
+    const was = await db.prepare(`SELECT sold_out FROM food_item_venue WHERE item_id = ? AND venue_id = ?`).bind(d.id, venueId).first();
+    await db.prepare(`INSERT INTO food_item_venue (item_id, venue_id, sold_out, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT (item_id, venue_id) DO UPDATE SET sold_out = excluded.sold_out, updated_at = excluded.updated_at`).bind(d.id, venueId, on, new Date().toISOString()).run();
+    await history(db, d.id, by, `${on ? 'Turned off' : 'Turned on'} at venue ${venueId} (MatchDay Kitchen)`);
+    return { ok: true, name: d.name, changed: !!was?.sold_out !== !!on };
+  }
   // Back on also clears a stock count of 0 (as the admin menu does).
   await db.prepare(`UPDATE food_items SET sold_out = ?, stock = CASE WHEN ? = 0 AND stock = 0 THEN NULL ELSE stock END, updated_at = ? WHERE id = ?`).bind(on, on, new Date().toISOString(), d.id).run();
   await history(db, d.id, by, on ? 'Turned off: not ready (MatchDay Kitchen)' : 'Turned on: ready (MatchDay Kitchen)');
@@ -393,7 +401,7 @@ export async function checkData(db) {
  * confirms or records the payment) and orders not delivered within the target.
  * Only a few columns of today's open orders (indexed by status), so it stays cheap.
  */
-export async function pulse(db, lateMinutes, { role = 'super_admin', level = 'all', scope = null } = {}) {
+export async function pulse(db, lateMinutes, { role = 'super_admin', level = 'all', scope = null, preorderMinutes = 30 } = {}) {
   await ready(db);
   const watch = [...DATA.kitchenShows, 'AWAITING_WHATSAPP'];
   const { results } = await db.prepare(`SELECT id, ref, order_status, paid_iso, created_iso, created_at, seat, stand, fulfilment, pickup_point, deliver_at, venue_id FROM food_orders WHERE order_status IN (${placeholders(watch)}) AND COALESCE(paid_iso, created_iso) >= ? ORDER BY COALESCE(paid_iso, created_iso) LIMIT 200`).bind(...watch, since()).all();
@@ -404,7 +412,7 @@ export async function pulse(db, lateMinutes, { role = 'super_admin', level = 'al
   const lists = {
     newOrders: seen.filter(o => o.order_status === 'PAID').map(one),
     // Confirmed and paid, not started yet: cooking is pending. An order for kick-off or half-time rings 30 minutes before it is due.
-    cook: seen.filter(o => o.order_status === 'ACCEPTED' && !(o.deliver_at && Date.parse(o.deliver_at) - Date.now() > 30 * 60e3)).map(one),
+    cook: seen.filter(o => o.order_status === 'ACCEPTED' && !(o.deliver_at && Date.parse(o.deliver_at) - Date.now() > preorderMinutes * 60e3)).map(one),
     // New WhatsApp orders nobody has confirmed yet: not paid, so not to cook, but the fan is waiting for a reply.
     whatsapp: seen.filter(o => o.order_status === 'AWAITING_WHATSAPP').map(one),
     // Ready and waiting for a runner.

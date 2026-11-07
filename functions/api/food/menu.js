@@ -1,5 +1,6 @@
 import { publicMenu, orderingState } from '../_lib/foodMenuDb.js';
 import { foodSettings, popularItems } from '../_lib/foodOrders.js';
+import { activeVenueId } from '../_lib/kitchenOps.js';
 
 // GET /api/food/menu -- the public in-seat food menu (only available items,
 // grouped by category), whether ordering is open, and the seat form options.
@@ -8,16 +9,17 @@ const todayMatch = env => env.DB.prepare(`SELECT event_date FROM events WHERE ac
   .bind(new Date(Date.now() - 4 * 3600e3).toISOString(), new Date(Date.now() + 6 * 3600e3).toISOString()).first().catch(() => null);
 export async function onRequestGet({ env, request }) {
   const settings = await foodSettings(env.DB);
+  const venueId = await activeVenueId(env.DB, new URL(request.url).searchParams.get('venue'));
   // ?lite=1: only "open?" and "home match today?" (the site-wide "Kitchen open" reminder), cached briefly.
   if (new URL(request.url).searchParams.get('lite') === '1') {
-    const [state, today] = await Promise.all([orderingState(env, settings), todayMatch(env)]);
+    const [state, today] = await Promise.all([orderingState(env, settings, venueId), todayMatch(env)]);
     return Response.json({ open: state.open, matchday: !!today, kickOff: today?.event_date || null }, { headers: { 'Cache-Control': 'public, max-age=120' } });
   }
-  const [categories, state, popular, today] = await Promise.all([publicMenu(env.DB), orderingState(env, settings), popularItems(env.DB).catch(() => []),
+  const [categories, state, popular, today] = await Promise.all([publicMenu(env.DB, venueId), orderingState(env, settings, venueId), popularItems(env.DB).catch(() => []),
     // A Lobi Stars home match from 6 hours before kick-off to 4 hours after.
     todayMatch(env)]);
   return Response.json({
-    open: state.open, reason: state.reason, match: state.match || null, opensAt: state.opensAt || null, closesAt: state.closesAt || null,
+    open: state.open, reason: state.reason, message: state.message || null, venueId, match: state.match || null, opensAt: state.opensAt || null, closesAt: state.closesAt || null,
     categories, stands: settings.stands, minOrderKobo: settings.minOrderKobo, paymentExpiryMinutes: settings.paymentExpiryMinutes,
     pickupPoints: settings.pickupPoints,
     matchday: !!today,

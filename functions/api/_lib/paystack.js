@@ -36,6 +36,17 @@ export async function verifyTransaction(secretKey, reference) {
   return data.data; // { status: 'success'|'failed'|..., amount, reference, ... }
 }
 
+// Asks Paystack to refund a transaction in full, or part of it.
+export async function refundTransaction(secretKey, reference, amountKobo) {
+  const res = await fetch(`${PAYSTACK_BASE}/refund`, {
+    method: 'POST', headers: { Authorization: `Bearer ${secretKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ transaction: reference, amount: amountKobo }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.status) throw new Error(data.message || 'Paystack refund failed');
+  return data.data;
+}
+
 // Verifies the X-Paystack-Signature header on incoming webhook requests:
 // HMAC-SHA512 of the raw request body, keyed with the secret key, hex-encoded.
 export async function verifyWebhookSignature(secretKey, rawBody, signatureHeader) {

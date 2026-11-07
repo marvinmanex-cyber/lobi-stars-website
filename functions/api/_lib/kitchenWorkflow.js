@@ -31,7 +31,7 @@ export const seesMoney = role => [SA, SUP, PASS].includes(role);
  * May this person make this move on this order? Returns null when yes, or { error, status } when
  * no: status 403 for the wrong role, 409 for a move the order can't make from where it is.
  */
-export function canMove(role, order, to) {
+export function canMove(role, order, to, { userId = null } = {}) {
   const from = order?.order_status;
   const labelled = `An order that is ${String(from || 'unknown').toLowerCase().replace(/_/g, ' ')} can't be moved to ${String(to).toLowerCase().replace(/_/g, ' ')}.`;
   if (!(STAFF_MOVES[from] || []).includes(to)) return { error: labelled, status: 409 };
@@ -41,6 +41,8 @@ export function canMove(role, order, to) {
   if (from === 'READY' && to === 'DELIVERED' && order.fulfilment !== 'pickup') return { error: labelled, status: 409 };
   if (to === 'REFUNDED') return role === SA ? null : { error: 'Only a Super Admin can mark a refund.', status: 403 };
   if (role === SA || role === SUP) return null;
+  // Once a runner has taken an order, only they (or a supervisor) finish it.
+  if (from === 'OUT_FOR_DELIVERY' && order.claimed_by && userId && order.claimed_by !== userId) return { error: `${order.claimed_name || 'Another runner'} has this order.`, status: 403 };
   if ((ROLE_MOVES[role] || []).includes(key(from, to))) return null;
   return { error: "Your role can't do this. Ask a kitchen supervisor or a super admin.", status: 403 };
 }
@@ -68,13 +70,18 @@ export const EVENTS = {
   ORDER_CANCELLED: { roles: [SA, SUP, 'screen'], loud: [] },
   ORDER_FAILED_DELIVERY: { roles: [SA, SUP], loud: [SUP] },
   MISSING_INGREDIENT: { roles: [SA, SUP], loud: [SUP] },
+  // Escalations.
+  ESCALATION_NEW: { roles: [SA, SUP], loud: [SA, SUP] },
+  ESCALATION_PREPARING: { roles: [SUP], loud: [SUP] },
+  ESCALATION_READY: { roles: [RUN, PASS, SUP], loud: [RUN, PASS, SUP] },
+  ESCALATION_OUT: { roles: [SUP], loud: [SUP] },
 };
 // A Super Admin on "urgent only" still gets these.
-export const URGENT = ['ORDER_NEW', 'ORDER_CANCELLED', 'ORDER_FAILED_DELIVERY', 'MISSING_INGREDIENT'];
+export const URGENT = ['ORDER_NEW', 'ORDER_CANCELLED', 'ORDER_FAILED_DELIVERY', 'MISSING_INGREDIENT', 'ESCALATION_NEW'];
 export const ALERT_LEVELS = ['all', 'urgent', 'off'];
 
 /** What this attempt at alerting the kitchen means as an event. */
-export const eventOf = attempt => ({ initial: 'ORDER_NEW', repeat: 'ORDER_NEW', whatsapp: 'ORDER_NEW', cook: 'ORDER_ACCEPTED', ready: 'ORDER_READY', out: 'ORDER_OUT_FOR_DELIVERY', delivered: 'ORDER_DELIVERED', rejected: 'ORDER_REJECTED', cancel: 'ORDER_CANCELLED', failed: 'ORDER_FAILED_DELIVERY', flag: 'MISSING_INGREDIENT' }[attempt] || null);
+export const eventOf = attempt => ({ initial: 'ORDER_NEW', repeat: 'ORDER_NEW', whatsapp: 'ORDER_NEW', cook: 'ORDER_ACCEPTED', ready: 'ORDER_READY', out: 'ORDER_OUT_FOR_DELIVERY', delivered: 'ORDER_DELIVERED', rejected: 'ORDER_REJECTED', cancel: 'ORDER_CANCELLED', failed: 'ORDER_FAILED_DELIVERY', flag: 'MISSING_INGREDIENT', release: 'ORDER_ACCEPTED', esc_new: 'ESCALATION_NEW', esc_preparing: 'ESCALATION_PREPARING', esc_ready: 'ESCALATION_READY', esc_out: 'ESCALATION_OUT' }[attempt] || null);
 
 export const hearsEvent = (role, level, event) => {
   if (role !== SA) return true;
@@ -87,12 +94,15 @@ export const hearsEvent = (role, level, event) => {
  * Super Admins. Safety rule: if nobody who can act would hear a new order or an emergency, the
  * designated fallback Super Admin hears it anyway, or else every Super Admin.
  */
-export function recipientsFor(event, devices, { levels = {}, fallbackId = null, cookWasPreparing = false } = {}) {
+export function recipientsFor(event, devices, { levels = {}, fallbackId = null, cookWasPreparing = false, duty = null, venueId = null } = {}) {
   const rule = EVENTS[event];
   if (!rule) return [];
   const roles = [...rule.roles];
   if (cookWasPreparing && ['ORDER_CANCELLED', 'ORDER_FAILED_DELIVERY'].includes(event)) roles.push(COOK);
-  const wanted = devices.filter(d => roles.includes(d.role));
+  // Staff at another venue never hear this order. While a match-day shift is running, only those clocked in do (duty is null otherwise).
+  const here = devices.filter(d => d.role === SA || d.role === 'screen' || !venueId || !d.venueId || d.venueId === venueId);
+  const onDuty = here.filter(d => d.role === SA || d.role === 'screen' || !duty || duty.includes(d.staffId));
+  const wanted = onDuty.filter(d => roles.includes(d.role));
   const chosen = wanted.filter(d => hearsEvent(d.role, levels[d.staffId] || 'all', event));
   const someoneCanAct = chosen.some(d => d.role === SUP || d.role === SA);
   if (!someoneCanAct && URGENT.includes(event)) {

@@ -4,7 +4,7 @@
 // keeps a small table of "transactions" that tests create through
 // /api/dev/paystack-fake, so payment confirmation can be tested end to end
 // without real keys. In normal mode the real Paystack API is used.
-import { initializeTransaction, verifyTransaction } from './paystack.js';
+import { initializeTransaction, verifyTransaction, refundTransaction } from './paystack.js';
 
 export const isFake = env => env.PAYSTACK_FAKE === '1';
 
@@ -50,6 +50,17 @@ export async function verifyFood(env, reference) {
     try { d = await verifyTransaction(env.PAYSTACK_SECRET_KEY, reference); } catch { throw err; }
   }
   return { status: d.status, amount: d.amount, currency: d.currency, reference: d.reference };
+}
+
+/** Refunds a food payment on the account that took it. */
+export async function refundFood(env, reference, amountKobo) {
+  if (isFake(env)) return { status: 'pending', fake: true };
+  if (!env.PAYSTACK_KITCHEN_SECRET_KEY) return refundTransaction(env.PAYSTACK_SECRET_KEY, reference, amountKobo);
+  try { return await refundTransaction(env.PAYSTACK_KITCHEN_SECRET_KEY, reference, amountKobo); }
+  catch (err) {
+    if (!env.PAYSTACK_SECRET_KEY) throw err;
+    try { return await refundTransaction(env.PAYSTACK_SECRET_KEY, reference, amountKobo); } catch { throw err; }
+  }
 }
 
 export async function setFakeTransaction(env, { reference, status = 'success', amount, currency = 'NGN' }) {

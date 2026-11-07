@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { canMove, reasonProblem, recipientsFor, alarmsFor, muteProblem, isLoud, seesMoney, EVENTS, eventOf, STAFF } from '../functions/api/_lib/kitchenWorkflow.js';
 import { STAFF_MOVES, STATUS, REJECT_REASONS, staffMessage, FOOD_DEFAULTS } from '../functions/api/_lib/foodOrders.js';
 import { customerMessage, customerUpdate, whatsappConnected } from '../functions/api/_lib/kitchenCustomer.js';
+import { dueEscalations, preorderHeld, refundProblem, cleanVenuePatch, VENUE_DEFAULTS as V } from '../functions/api/_lib/kitchenOps.js';
 
 const { SA, SUP, PASS, COOK, RUN } = STAFF;
 const ALL = Object.keys(STATUS);
@@ -154,4 +155,62 @@ test('customer WhatsApp: off until Meta is connected, and never for a rejection'
   globalThis.fetch = async () => new Response('{}', { status: 500 });
   await customerUpdate(env, { ...order, email: '' }, 'out', log);
   assert.deepEqual(logged.at(-1), ['whatsapp', false], 'a failure is logged, and doesn\'t throw');
+});
+
+test('escalation timers, with the default times', () => {
+  const now = Date.parse('2026-11-08T15:00:00Z');
+  const ago = m => new Date(now - m * 60000).toISOString();
+  const due = (o, sent) => dueEscalations(o, V, now, sent);
+  assert.deepEqual(due({ order_status: 'PAID', paid_iso: ago(1) }), []);
+  assert.deepEqual(due({ order_status: 'PAID', paid_iso: ago(2) }), ['esc_new']);
+  assert.deepEqual(due({ order_status: 'PAID', paid_iso: ago(9) }, ['esc_new']), [], 'once');
+  assert.deepEqual(due({ order_status: 'AWAITING_WHATSAPP', created_iso: ago(3) }), ['esc_new']);
+  assert.deepEqual(due({ order_status: 'CONFIRMED', created_iso: ago(30) }), [], 'waiting for the fan, not for us');
+  assert.deepEqual(due({ order_status: 'PREPARING', preparing_at: ago(14) }), []);
+  assert.deepEqual(due({ order_status: 'PREPARING', preparing_at: ago(15) }), ['esc_preparing']);
+  assert.deepEqual(due({ order_status: 'READY', ready_at: ago(2) }), []);
+  assert.deepEqual(due({ order_status: 'READY', ready_at: ago(3) }), ['esc_ready']);
+  assert.deepEqual(due({ order_status: 'READY', ready_at: ago(9), fulfilment: 'pickup' }), [], 'nobody claims a pickup order');
+  assert.deepEqual(due({ order_status: 'OUT_FOR_DELIVERY', out_at: ago(9) }), []);
+  assert.deepEqual(due({ order_status: 'OUT_FOR_DELIVERY', out_at: ago(10) }), ['esc_out']);
+  assert.deepEqual(due({ order_status: 'DELIVERED', out_at: ago(90) }), []);
+  // Each venue can have its own times.
+  assert.deepEqual(dueEscalations({ order_status: 'PAID', paid_iso: ago(2) }, { ...V, newMinutes: 5 }, now), []);
+});
+
+test('kick-off and half-time orders wait, then are released', () => {
+  const now = Date.parse('2026-11-08T15:00:00Z');
+  const at = m => new Date(now + m * 60000).toISOString();
+  const o = { order_status: 'ACCEPTED', accepted_iso: at(-5), deliver_at: at(60) };
+  assert.equal(preorderHeld(o, V, now), true);
+  assert.deepEqual(dueEscalations(o, V, now), []);
+  const soon = { ...o, deliver_at: at(30) };
+  assert.equal(preorderHeld(soon, V, now), false);
+  assert.deepEqual(dueEscalations(soon, V, now), ['release']);
+  assert.deepEqual(dueEscalations(soon, V, now, ['release']), [], 'once');
+  assert.deepEqual(dueEscalations({ order_status: 'ACCEPTED', accepted_iso: at(-5), deliver_at: at(5) }, V, now), [], 'never held back: the cooks already know');
+  assert.equal(preorderHeld({ order_status: 'ACCEPTED' }, V, now), false, 'an order for now');
+});
+
+test('on duty and at this venue', () => {
+  const people = [{ endpoint: 'a', role: SUP, staffId: 'S1', venueId: 'v1' }, { endpoint: 'b', role: SUP, staffId: 'S2', venueId: 'v1' }, { endpoint: 'c', role: SUP, staffId: 'S3', venueId: 'v2' }, { endpoint: 'd', role: COOK, staffId: 'C1', venueId: 'v1' }, { endpoint: 'e', role: SA, staffId: 'A1' }];
+  const to = (ev, o) => recipientsFor(ev, people, o).map(d => d.endpoint).sort();
+  assert.deepEqual(to('ORDER_NEW', { venueId: 'v1' }), ['a', 'b', 'e'], 'no shift running: everyone in the role at this venue');
+  assert.deepEqual(to('ORDER_NEW', { venueId: 'v1', duty: ['S1'] }), ['a', 'e'], 'shift running: only those clocked in');
+  assert.deepEqual(to('ORDER_ACCEPTED', { venueId: 'v1', duty: ['S1'] }), ['a', 'e'], 'a cook not clocked in hears nothing');
+  assert.deepEqual(to('ORDER_ACCEPTED', { venueId: 'v1', duty: ['C1'] }), ['d', 'e']);
+  assert.deepEqual(to('ORDER_NEW', { venueId: 'v1', duty: [], levels: { A1: 'off' } }), ['e'], 'nobody on duty and muted: the Super Admin hears it anyway');
+  assert.deepEqual(to('ESCALATION_NEW', { venueId: 'v2' }), ['c', 'e']);
+  assert.deepEqual(to('ESCALATION_READY', { venueId: 'v1' }), ['a', 'b']);
+});
+
+test('refund limit and venue settings', () => {
+  assert.equal(refundProblem(100, { refundApprovalKobo: 100 }, false), null);
+  assert.match(refundProblem(101, { refundApprovalKobo: 100 }, false), /Super Admin/);
+  assert.equal(refundProblem(101, { refundApprovalKobo: 100 }, true), null);
+  assert.deepEqual(cleanVenuePatch({ maxOpenOrders: '40', paused: true, pauseMessage: ' Back   soon ' }).patch, { maxOpenOrders: 40, paused: true, pauseMessage: 'Back soon' });
+  assert.ok(cleanVenuePatch({ maxOpenOrders: -1 }).error);
+  assert.deepEqual(cleanVenuePatch({ newMinutes: 1, refundApprovalNaira: 5000, requireDeliveryCode: false }).patch, {}, 'a supervisor can\'t change these');
+  assert.deepEqual(cleanVenuePatch({ newMinutes: 1, refundApprovalNaira: 5000, requireDeliveryCode: false }, { superAdmin: true }).patch, { newMinutes: 1, requireDeliveryCode: false, refundApprovalKobo: 500000 });
+  assert.ok(cleanVenuePatch({ newMinutes: 0 }, { superAdmin: true }).error);
 });
