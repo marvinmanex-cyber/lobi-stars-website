@@ -8,6 +8,11 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-07: Partner order: House 43 after Msendo
+
+**Who it affects:** everyone. **Staff need to:** nothing.
+- House 43 now shows between Msendo Table Water and Aeson Sports Management in the footer, and after Msendo on the partners pages.
+
 ## 2026-11-07: Footer: no Principal Partner
 
 **Who it affects:** everyone. **Staff need to:** nothing.
