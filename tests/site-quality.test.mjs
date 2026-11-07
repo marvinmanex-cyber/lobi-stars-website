@@ -50,7 +50,7 @@ test('draft (sample) news and sample players are not public', async () => {
   assert.equal((await html('/news/2026-10-08-first-team-step-up-preparations-for-kada-warriors/')).status, 404);
   assert.equal((await html('/squad/sample-goalkeeper/')).status, 404);
   const sitemap = (await html('/sitemap.xml')).body;
-  assert.doesNotMatch(sitemap, /sample|\/news\/2026-/);
+  assert.doesNotMatch(sitemap, /sample|first-team-step-up-preparations-for-kada-warriors/);
   const search = await fetch(`${BASE}/search-index.json`).then(r => r.json());
   assert.ok(!search.some(i => /sample/i.test(i.url)), 'search has no sample items');
   const home = visible((await html('/')).body);

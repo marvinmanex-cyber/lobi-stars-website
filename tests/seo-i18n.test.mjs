@@ -43,7 +43,9 @@ test('pages without their own photo get a branded share image; news keeps its ph
   const story = [...(await html('/sitemap.xml')).matchAll(/<loc>https:\/\/lobistarsfc\.com(\/news\/[^<]+)<\/loc>/g)].map(m => m[1]).find(p => p !== '/news/');
   if (story) {
     const h = await html(story);
-    assert.doesNotMatch(metaOf(h, 'property', 'og:image'), /\/og\//, 'stories use their cover photo');
+    // The cover photo itself, or the same photo resized for sharing (/og/news-…): never a branded text card.
+    const shareImg = metaOf(h, 'property', 'og:image');
+    assert.ok(!/\/og\//.test(shareImg) || /\/og\/news-/.test(shareImg), `stories use their cover photo: ${shareImg}`);
     const art = ld(h).find(d => d['@type'] === 'NewsArticle');
     assert.ok(art && art.headline && art.datePublished && art.image);
     assert.ok(ld(h).some(d => d['@type'] === 'BreadcrumbList'));
