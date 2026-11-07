@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-07: MatchDay Kitchen: saved sales reports
+
+**Who it affects:** kitchen supervisors and Super Admins. **Staff need to:** nothing: reports save by themselves.
+- A sales report now saves by itself 4 hours after kick-off of each home match: total sales, orders and items sold, online and WhatsApp payments shown apart, every item ranked from most sold, and a pie chart.
+- **Download report** in Word or PDF.
+- Tick any reports, such as 1, 4 and 7, to combine them into one report.
+- Reports are kept. A Super Admin sees **Delete** only from a year after a report's date, and nothing is deleted by itself.
+
 ## 2026-11-07: MatchDay Kitchen order workflow, Phase 3
 
 **Who it affects:** kitchen staff, supervisors, Super Admins and fans ordering food. **Nothing changes until the club uses it:** zones are optional.

@@ -5,6 +5,7 @@ import { sendEmail } from './email.js';
 import { matchReportData } from './kitchenData.js';
 import { ensureKitchenSchema, kitchenSettings, mkLog } from './matchdayKitchen.js';
 import { todaysHomeMatch } from './seasonTickets.js';
+import { saveMatchDayReports } from './kitchenSalesReports.js';
 
 const nowIso = () => new Date().toISOString();
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -85,6 +86,14 @@ export async function kitchenReportTick(env) {
   if (!match) return { idle: 'no home match today' };
   if (Date.now() < Date.parse(match.event_date) + DUE_MS) return { idle: 'not yet' };
   await ensureKitchenSchema(db);
+  // The saved sales report for this match day (once), whether or not the email below can go.
+  const savedKey = `sales_report_saved_${match.id}`;
+  if (!(await getSetting(db, savedKey))) {
+    try {
+      const saved = await saveMatchDayReports(db, lagosDayOf(match.event_date));
+      await putSetting(db, savedKey, `${nowIso()} ${saved.join(',')}`, 'Automatic');
+    } catch (e) { console.error('[kitchen sales report]', e); } // tries again next minute; the email still goes
+  }
   if (await getSetting(db, sentKey(match))) return { idle: 'sent' };
   const { data } = await buildReport(env, match);
   if (!data.orders && !data.unpaid) { await putSetting(db, sentKey(match), `${nowIso()} no orders`, 'Automatic'); return { idle: 'no orders' }; }

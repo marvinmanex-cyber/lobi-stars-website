@@ -69,7 +69,7 @@ export const ICONS: Record<string, string> = {
   activity: line('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>'),
   staff: line('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.2A5 5 0 0 1 22 19"/>'),
 };
-export const iconFor = (page: string) => ICONS[page.startsWith('orders/') || page === 'refunds' ? 'orders' : page === 'reports' ? 'analytics' : page] || '';
+export const iconFor = (page: string) => ICONS[page.startsWith('orders/') || page === 'refunds' ? 'orders' : page === 'reports' || page === 'sales' ? 'analytics' : page] || '';
 
 export type Tile = { id: string; title: string; text: string; style?: 'hero' | 'red' | 'amber' | 'gold' | 'wa' | 'tg'; external?: 'whatsapp' | 'telegram'; superOnly?: boolean };
 export type Group = { title: string; tiles: Tile[]; superOnly?: boolean };
@@ -85,6 +85,7 @@ export const GROUPS: Group[] = [
     { id: 'orders', title: 'Food orders', text: 'Find, check and update any order' },
     { id: 'menu', title: 'Menu and prices', text: 'Turn dishes on and off, prices, add and delete dishes' },
     { id: 'refunds', title: 'Refunds', text: 'Paid orders that were rejected or cancelled', superOnly: true },
+    { id: 'sales', title: 'Sales reports', text: 'Saved after each match day. Combine them, download in Word or PDF', superOnly: true },
     { id: 'reports', title: 'Reports', text: 'Match-day figures, staff performance, ratings, CSV', superOnly: true },
   ] },
   { title: 'Team and messages', tiles: [
@@ -103,7 +104,7 @@ export const GROUPS: Group[] = [
 ];
 /** Page names (tabs, page titles). */
 export const PAGE_TITLE: Record<string, string> = {
-  refunds: 'Refunds', reports: 'Reports', kitchen: 'Kitchen screen', live: 'Live order board', delivery: 'Delivery by stand', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices', analytics: 'Food analytics',
+  refunds: 'Refunds', reports: 'Reports', sales: 'Sales reports', kitchen: 'Kitchen screen', live: 'Live order board', delivery: 'Delivery by stand', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices', analytics: 'Food analytics',
   shift: 'My shift', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts', 'not-available': 'Not available',
 };
 export const pageTitle = (page: string) => page.startsWith('orders/') ? `Order ${decodeURIComponent(page.slice(7))}` : PAGE_TITLE[page] || 'MatchDay Kitchen';

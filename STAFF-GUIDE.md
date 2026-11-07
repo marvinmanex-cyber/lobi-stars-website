@@ -4678,6 +4678,13 @@ Only supervisors and Super Admins change prices, add dishes and delete dishes. *
 
 **Kitchen tickets:** **Print kitchen ticket** on an order's page prints what to cook and where it goes, with no prices or phone number.
 
+**Sales reports (saved records):** a report saves by itself 4 hours after kick-off of each home match. Supervisors and Super Admins find them on **Sales reports**. Each shows total sales, orders and items sold, what was paid online and on WhatsApp, every item with the most sold first, and a pie chart.
+- **Open** a report, then press **Download report (Word)** or **(PDF)**.
+- **Combining:** tick any reports (say 1, 4 and 7) and press **Combine reports**. Its figures are added together, and it downloads the same way.
+- **Save report** with a date saves a day that wasn't a home match. Doing it again updates the figures, for example after a late refund or a payment recorded late.
+- **What counts:** a sale is a paid order that wasn't cancelled, rejected or refunded. Those left out are listed underneath. Sales are what fans actually paid, so Star Points and vouchers are taken off.
+- **Keeping them:** reports stay until someone deletes them. A Super Admin sees **Delete** on a report only from a year after its date, and the website refuses any earlier attempt. Nothing is deleted by itself, and each deletion is recorded.
+
 **Reports:** the **Reports** page shows one day: orders, sales, time at each step, best sellers, rejections and cancellations with reasons, staff performance and customer ratings, each with **Download CSV**. Supervisors see their own venue, and Super Admins see all venues.
 
 **Customer ratings:** once an order is delivered, the fan's order page asks them to score the food, speed and service from 1 to 5, with an optional comment.

@@ -332,3 +332,17 @@ a { color: var(--green); }
 .mk-tile.mk-blink b, .mk-tile.mk-blink span, .mk-tile.mk-blink small { color: inherit; }
 @media (prefers-reduced-motion: reduce) { .mk-tile.mk-blink, .mk-tab .mk-blink { animation: none; background: #FFD9D9; } }
 @media (max-width: 520px) { .mk-alarm > div { padding: 6px 12px; font-size: 15px; gap: 2px 8px; } .mk-alarm b { font-size: 18px; } .mk-alarm small { font-size: 13px; } .mk-alarm-hint { margin-left: 0; padding: 2px 8px; font-size: 13px; } }
+/* Sales reports: the pie, in the chart palette's fixed order. Text keeps its own colours. */
+.mk-pie { --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948; display: flex; flex-wrap: wrap; gap: 16px 24px; align-items: center; }
+@media (prefers-color-scheme: dark) { .mk-pie { --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767; } }
+.mk-pie-chart { position: relative; flex: 0 0 auto; width: min(240px, 100%); }
+.mk-pie-chart svg { display: block; width: 100%; height: auto; }
+.mk-slice:hover, .mk-slice:focus { opacity: .85; outline: none; }
+.mk-pie-tip { position: absolute; z-index: 2; max-width: 200px; padding: 6px 10px; border-radius: 8px; background: var(--ink); color: var(--paper); font-size: 14px; pointer-events: none; }
+.mk-pie-tip[hidden] { display: none; }
+.mk-pie-key { flex: 1 1 220px; margin: 0; padding: 0; list-style: none; }
+.mk-pie-key li { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 16px; }
+.mk-pie-key i { flex: none; width: 14px; height: 14px; border-radius: 4px; }
+.mk-pie-key span { flex: 1; }
+.mk-pie-key b { white-space: nowrap; }
+.mk-srcheck { width: 26px; height: 26px; }

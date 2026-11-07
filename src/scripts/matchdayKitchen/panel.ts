@@ -699,6 +699,86 @@ const PAGES: Record<string, () => Promise<void>> = {
     await draw();
   },
 
+  async sales() {
+    if (!session.perms.reports) { notAvailable(); return; }
+    const picked = new Set<number>();
+    let opened = '';
+    const pieSvg = (slices: any[]) => {
+      const R = 90, C = 100; let a = 0;
+      const total = slices.reduce((s, x) => s + x.qty, 0) || 1;
+      const pt = (t: number) => `${(C + R * Math.sin(t)).toFixed(2)} ${(C - R * Math.cos(t)).toFixed(2)}`;
+      const marks = slices.map((s, i) => {
+        const from = a; a += (s.qty / total) * Math.PI * 2;
+        const label = `${s.name}: ${s.qty} sold, ${s.share}%`;
+        const shape = slices.length === 1 ? `<circle cx="${C}" cy="${C}" r="${R}"` : `<path d="M${C} ${C} L${pt(from)} A${R} ${R} 0 ${a - from > Math.PI ? 1 : 0} 1 ${pt(a)} Z"`;
+        return `${shape} style="fill:var(--s${i + 1});stroke:var(--paper);stroke-width:2" class="mk-slice" tabindex="0" aria-label="${esc(label)}" data-tip="${esc(label)}"><title>${esc(label)}</title>${slices.length === 1 ? '</circle>' : '</path>'}`;
+      }).join('');
+      return `<svg viewBox="0 0 200 200" role="img" aria-label="Pie chart of items sold. The same figures are in the table below.">${marks}</svg>`;
+    };
+    const show = async (nos: number[]) => {
+      const key = nos.join(',');
+      opened = key;
+      const d = await api(`sales-report?nos=${encodeURIComponent(key)}`);
+      const f = d.figures, file = (fmt: string) => `/api/matchday-kitchen/sales-report-file?nos=${encodeURIComponent(key)}&format=${fmt}`;
+      $('srView').innerHTML = `<section class="mk-section mk-box" id="srReport"><h2 style="margin:0 0 4px">${esc(d.heading)}</h2>
+          <p class="mk-status" style="text-transform:none;letter-spacing:0;margin:0 0 12px">${esc(d.parts.map((p: any) => `${p.day}${d.combined ? ` (report ${p.no})` : ''}`).join(', '))}</p>
+          <div class="mk-actions" style="justify-content:flex-start;margin:0 0 14px"><a class="mk-btn go" href="${file('docx')}" download>Download report (Word)</a><a class="mk-btn go" href="${file('pdf')}" download>Download report (PDF)</a></div>
+          <div class="mk-stats"><div class="mk-stat"><b>${esc(f.total)}</b><span>Total sales</span></div><div class="mk-stat"><b>${f.totalOrders}</b><span>Orders</span></div><div class="mk-stat"><b>${f.totalItems}</b><span>Items sold</span></div></div>
+          <h3 style="margin:16px 0 6px">How it was paid</h3>
+          <div class="mk-table-wrap"><table class="mk-table"><thead><tr><th></th><th>Orders</th><th>Sales</th></tr></thead><tbody><tr><td>Paid online</td><td>${f.online.orders}</td><td>${esc(f.onlineTotal)}</td></tr><tr><td>Paid on WhatsApp, payment confirmed</td><td>${f.whatsapp.orders}</td><td>${esc(f.whatsappTotal)}</td></tr><tr><td><b>Total</b></td><td><b>${f.totalOrders}</b></td><td><b>${esc(f.total)}</b></td></tr></tbody></table></div>
+          ${f.discountsKobo ? `<p class="mk-status" style="text-transform:none;letter-spacing:0">Star Points and vouchers took ${esc(f.discounts)} off menu prices. Sales are what fans actually paid.</p>` : ''}
+          ${f.excluded.orders ? `<p class="mk-status" style="text-transform:none;letter-spacing:0">Not counted: ${f.excluded.orders} paid order${f.excluded.orders === 1 ? '' : 's'} later cancelled, rejected or refunded (${esc(f.excludedTotal)}).</p>` : ''}
+          ${d.pie.length ? `<h3 style="margin:16px 0 6px">Share of items sold</h3><div class="mk-pie"><div class="mk-pie-chart">${pieSvg(d.pie)}<div class="mk-pie-tip" id="srTip" hidden></div></div><ul class="mk-pie-key">${d.pie.map((s: any, i: number) => `<li><i style="background:var(--s${i + 1})"></i><span>${esc(s.name)}</span><b>${s.qty} (${s.share}%)</b></li>`).join('')}</ul></div>` : ''}
+          <h3 style="margin:16px 0 6px">Items, most sold first</h3>
+          ${f.items.length ? `<div class="mk-table-wrap"><table class="mk-table"><thead><tr><th>#</th><th>Item</th><th>Sold</th><th>Online</th><th>WhatsApp</th><th>Sales</th></tr></thead><tbody>${f.items.map((i: any) => `<tr><td>${i.rank}</td><td>${esc(i.name)}</td><td><b>${i.qty}</b></td><td>${i.onlineQty}</td><td>${i.whatsappQty}</td><td>${esc(i.sales)}</td></tr>`).join('')}<tr><td></td><td><b>Total</b></td><td><b>${f.totalItems}</b></td><td></td><td></td><td><b>${esc(f.total)}</b></td></tr></tbody></table></div>` : '<p class="mk-status">Nothing sold.</p>'}
+          ${d.combined ? `<h3 style="margin:16px 0 6px">Reports in this one</h3><div class="mk-table-wrap"><table class="mk-table"><thead><tr><th>Report</th><th>Date</th><th>Match</th><th>Orders</th><th>Sales</th></tr></thead><tbody>${d.parts.map((p: any) => `<tr><td>${p.no}</td><td>${esc(p.day)}</td><td>${esc(p.title)}</td><td>${p.orders}</td><td>${esc(p.total)}</td></tr>`).join('')}</tbody></table></div>` : ''}</section>`;
+      $('srReport').scrollIntoView({ block: 'start' });
+    };
+    const draw = async () => {
+      const d = await api('sales-reports');
+      main.innerHTML = `<section class="mk-section"><form class="mk-filters" id="srF"><div class="mk-field"><label for="srD">Save or update a report for a day</label><input id="srD" type="date" value="${todayLagos()}" max="${todayLagos()}" /></div><button class="mk-btn" type="submit">Save report</button></form>
+          <p class="mk-status" style="text-transform:none;letter-spacing:0">A report saves by itself 4 hours after kick-off of each home match. Saving a day again updates its figures, for example after a refund.</p></section>
+        <section class="mk-section"><h2>Saved reports <span class="mk-badge">${d.reports.length}</span></h2>
+        ${d.reports.length ? `<div class="mk-actions" style="justify-content:flex-start;margin:0 0 8px"><button type="button" class="mk-btn go" id="srCombine" disabled>Tick reports to combine them</button></div><div class="mk-table-wrap"><table class="mk-table"><thead><tr><th><span class="mk-sr">Choose</span></th><th>Report</th><th>Date</th><th>Match</th><th>Orders</th><th>Sales</th><th></th></tr></thead><tbody>${d.reports.map((r: any) => `<tr><td><input type="checkbox" class="mk-srcheck" data-pick="${r.no}" aria-label="Choose report ${r.no}" ${picked.has(r.no) ? 'checked' : ''} /></td><td><b>Report ${r.no}</b></td><td style="white-space:nowrap">${esc(r.day)}</td><td>${esc(r.title)}${r.venue ? `<br><span class="mk-status" style="text-transform:none;letter-spacing:0">${esc(r.venue)}</span>` : ''}</td><td>${r.orders}</td><td>${esc(r.total)}</td><td><div class="mk-actions" style="justify-content:flex-start;margin:0"><button type="button" class="mk-btn" data-open-report="${r.no}">Open</button>${d.canDelete && r.canDelete ? `<button type="button" class="mk-btn danger" data-del-report="${r.no}">Delete</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div>
+        <p class="mk-status" style="text-transform:none;letter-spacing:0">Reports are kept. A Super Admin can choose to delete one a year after its date: the Delete button appears then, and nothing is deleted by itself.</p>` : '<p class="mk-empty">No saved reports yet. One saves by itself after each home match.</p>'}</section><div id="srView"></div>`;
+      syncCombine();
+      stamp();
+    };
+    const syncCombine = () => {
+      const b = $('srCombine') as HTMLButtonElement | null;
+      if (!b) return;
+      b.disabled = picked.size < 2;
+      b.textContent = picked.size < 2 ? 'Tick 2 or more reports to combine them' : `Combine reports ${[...picked].sort((x, y) => x - y).join(', ')}`;
+    };
+    main.addEventListener('change', (e: Event) => {
+      const c = (e.target as HTMLElement).closest('[data-pick]') as HTMLInputElement | null;
+      if (!c) return;
+      if (c.checked) picked.add(Number(c.dataset.pick)); else picked.delete(Number(c.dataset.pick));
+      syncCombine();
+    });
+    main.addEventListener('pointermove', (e: PointerEvent) => {
+      const tip = $('srTip'); if (!tip) return;
+      const s = (e.target as HTMLElement).closest('[data-tip]') as HTMLElement | null;
+      tip.hidden = !s;
+      if (s) { const box = tip.parentElement!.getBoundingClientRect(); tip.textContent = s.dataset.tip!; tip.style.left = `${e.clientX - box.left + 10}px`; tip.style.top = `${e.clientY - box.top + 10}px`; }
+    });
+    main.addEventListener('click', (e: Event) => {
+      const el = e.target as HTMLElement;
+      const o = el.closest('[data-open-report]') as HTMLButtonElement | null;
+      if (o) { act(o, () => show([Number(o.dataset.openReport)])); return; }
+      if (el.id === 'srCombine') { act(el as HTMLButtonElement, () => show([...picked].sort((x, y) => x - y))); return; }
+      const del = el.closest('[data-del-report]') as HTMLButtonElement | null;
+      if (del && confirm(`Delete report ${del.dataset.delReport}? It can't be brought back. Your name is recorded.`)) act(del, async () => { await api('sales-reports', { method: 'POST', body: { action: 'delete', no: Number(del.dataset.delReport) } }); picked.delete(Number(del.dataset.delReport)); toast('Report deleted.'); await draw(); });
+    });
+    main.addEventListener('submit', (e: Event) => {
+      if ((e.target as HTMLElement).id !== 'srF') return;
+      e.preventDefault();
+      act((e.target as HTMLElement).querySelector('button'), async () => { const r = await api('sales-reports', { method: 'POST', body: { action: 'save', day: $('srD').value } }); toast(r.created ? `Saved as report ${r.reportNo}.` : `Report ${r.reportNo} updated.`); await draw(); await show([r.reportNo]); });
+    });
+    await draw();
+    void opened;
+  },
+
   async 'not-available'() { notAvailable(); },
 };
 

@@ -22,6 +22,8 @@
 //   GET reports?day&format=csv&kind=match|staff|ratings (supervisors for their venue, Super Admins)
 //   POST test-alerts (supervisors, Super Admins: a test to every device, and who it reached)
 //   An X-Idempotency-Key header on POST order, claim, payment or refund makes a retry safe: the first answer is repeated.
+//   GET sales-reports   GET sales-report?nos=1,4,7   GET sales-report-file?nos=1,4,7&format=pdf|docx (supervisors for their venue, Super Admins)
+//   POST sales-reports {action: save|delete, day, no} (save: supervisors, Super Admins; delete: Super Admins, a year after the report's date)
 //   GET check (Super Admins: the data check)
 import { signIn, signOut, json, kitchenSettings, permissions, mkLog, shiftState, startShift, endShift, listNotes, noteAction,
   activityPage, listStaff, createStaff, updateStaff, saveSettings, ROLES, oneLine, clearKitchenCookie } from '../_lib/matchdayKitchen.js';
@@ -35,7 +37,9 @@ import { officialDevice, listDevices, addDevice, removeDevice, replyFor } from '
 import { saveAppDevice, removeAppDevice, removeStaffDevices, testAppDevice, testAlerts, notifyKitchen, markOpened, alertFallback, alertLevels, ensureKitchenSchema as ensureAlertSchema } from '../_lib/kitchenNotify.js';
 import { canMove, reasonProblem, muteProblem, alarmsFor, ALERT_LEVELS, zoneOf, runnerCovers } from '../_lib/kitchenWorkflow.js';
 import { kitchenReport, csvRows } from '../_lib/kitchenReports.js';
-import { getVenue, cleanVenuePatch, saveVenueSettings, openVenueShift, startVenueShift, endVenueShift, dutyIds, refundProblem } from '../_lib/kitchenOps.js';
+import { listSalesReports, loadSalesReport, saveSalesReport, deleteSalesReport, pieSlices } from '../_lib/kitchenSalesReports.js';
+import { salesReportPdf, salesReportDocx, reportFileName, PIE_COLOURS } from '../_lib/kitchenSalesFiles.js';
+import { activeVenueId as activeVenue, getVenue, cleanVenuePatch, saveVenueSettings, openVenueShift, startVenueShift, endVenueShift, dutyIds, refundProblem } from '../_lib/kitchenOps.js';
 import { refundFood } from '../_lib/paystackClient.js';
 import { formatNaira, STATUS } from '../_lib/foodOrders.js';
 import { rateLimit, ensureFanSchema } from '../_lib/fans.js';
@@ -43,7 +47,7 @@ import { REJECT_REASONS, recordOrderEvent, DEFAULT_VENUE, ensureFoodSchema } fro
 
 // The pages (and their names in the activity log).
 const PAGES = {
-  refunds: 'Refunds', reports: 'Reports', kitchen: 'Kitchen screen', live: 'Live order board', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices',
+  refunds: 'Refunds', reports: 'Reports', sales: 'Sales reports', kitchen: 'Kitchen screen', live: 'Live order board', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices',
   analytics: 'Food analytics', shift: 'My shift', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts',
   whatsapp: 'Kitchen WhatsApp', telegram: 'Telegram updates', delivery: 'Delivery by stand',
 };
@@ -420,6 +424,39 @@ async function handle(context) {
           return new Response(`﻿${csvRows(kind, report).map(r => r.map(csvCell).join(',')).join('\r\n')}\r\n`, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="matchday-kitchen-${kind}-${day}.csv"`, 'Cache-Control': 'no-store' } });
         }
         return json({ day, ...report });
+      }
+      case 'GET sales-reports':
+        if (!perms.reports) return denied();
+        return json({ reports: await listSalesReports(db, scope), canDelete: perms.superAdmin });
+      case 'GET sales-report':
+      case 'GET sales-report-file': {
+        if (!perms.reports) return denied();
+        const report = await loadSalesReport(db, String(q.get('nos') || '').split(','), scope);
+        if (!report) return json({ error: 'One of those reports is no longer here.' }, 404);
+        if (route === 'sales-report') return json({ ...report, pie: pieSlices(report.figures.items), colours: PIE_COLOURS });
+        const pdf = q.get('format') === 'pdf';
+        const file = pdf ? await salesReportPdf(report) : salesReportDocx(report);
+        await mkLog(db, user, `Downloaded ${report.heading} (${pdf ? 'PDF' : 'Word'})`, { kind: 'open', request });
+        return new Response(file, { headers: { 'Content-Type': pdf ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'Content-Disposition': `attachment; filename="${reportFileName(report, pdf ? 'pdf' : 'docx')}"`, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
+      }
+      case 'POST sales-reports': {
+        if (!perms.reports) return denied();
+        if (body.action === 'save') {
+          const venueId = user.kind === 'admin' ? await activeVenue(db, body.venueId) : myVenue;
+          const r = await saveSalesReport(db, { venueId, day: String(body.day || ''), by: user.name });
+          if (r.error) return json({ error: r.error }, 400);
+          await mkLog(db, user, r.created ? `Saved sales report ${r.reportNo} for ${body.day}` : `Updated the figures in sales report ${r.reportNo}`, { kind: 'settings', request });
+          return json(r);
+        }
+        if (body.action === 'delete') {
+          // There's no way round the year: the server checks it, not only the page.
+          if (!perms.superAdmin) return denied();
+          const r = await deleteSalesReport(db, body.no, scope);
+          if (r.error) return json({ error: r.error }, r.status);
+          await mkLog(db, user, `Deleted sales report ${body.no} (${r.title}, ${r.day})`, { kind: 'settings', request, before: { orders: r.data.totalOrders, totalKobo: r.data.totalKobo, items: r.data.items } });
+          return json({ ok: true });
+        }
+        return json({ error: 'Unknown action.' }, 400);
       }
       case 'POST test-alerts': {
         if (!perms.confirm) return denied();
