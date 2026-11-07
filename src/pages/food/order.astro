@@ -34,6 +34,7 @@ import Layout from '../../layouts/Layout.astro';
       <p class="fo-cancel" id="cancelled" hidden></p>
       <p class="fo-pay" id="payHow" hidden></p>
       <p class="fo-pay" id="codeHow" hidden></p>
+      <div class="fo-pay" id="rateBox" hidden></div>
       <div class="panel fo-card">
         <p class="fo-seat" id="seat"></p>
         <ul class="fo-items" id="items"></ul>
@@ -76,6 +77,13 @@ import Layout from '../../layouts/Layout.astro';
   #problem .btn-p { margin-top: 16px; display: inline-block; }
 </style>
 
+<script>
+  import { mountRating } from '../../lib/foodRating';
+  // Either order: the page may ask for the rating before or after this script has loaded.
+  const show = (detail: any) => { const box = document.getElementById('rateBox'); if (box && !box.dataset.on) { box.dataset.on = '1'; mountRating(box, detail); } };
+  document.addEventListener('ls-order-rate', (e: any) => show(e.detail));
+  if ((window as any).lsOrderRate) show((window as any).lsOrderRate);
+</script>
 <script is:inline>
 (function () {
   const p = new URLSearchParams(location.search);
@@ -137,6 +145,7 @@ import Layout from '../../layouts/Layout.astro';
     $('cancelled').hidden = !stopped;
     $('cancelled').textContent = o.status === 'REFUNDED' ? 'This order was cancelled and refunded.' : stopped ? 'This order was cancelled by the club. If you were charged, a refund will be arranged; contact the club with your reference.' : '';
     if (o.status === 'REJECTED') $('cancelled').textContent = `We could not accept this order${o.rejectReason ? `: ${o.rejectReason}` : ''}. ${o.refundNote || ''}`.trim();
+    if (d.canRate) { window.lsOrderRate = { ref, token }; document.dispatchEvent(new CustomEvent('ls-order-rate', { detail: { ref, token } })); }
     show('done');
     if (!stopped && o.status !== 'DELIVERED') timer = setTimeout(load, 10000);
   }

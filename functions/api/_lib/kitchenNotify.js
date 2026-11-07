@@ -12,7 +12,7 @@
 import { ensureAlertsSchema, pushReady } from './foodAlerts.js';
 import { sendEncryptedPush } from './webPush.js';
 import { ensureFoodSchema, whereText, REJECT_REASONS } from './foodOrders.js';
-import { recipientsFor, eventOf, isLoud, STAFF } from './kitchenWorkflow.js';
+import { recipientsFor, eventOf, isLoud, STAFF, zoneOf } from './kitchenWorkflow.js';
 import { customerUpdate } from './kitchenCustomer.js';
 import { ensureKitchenSchema as ensureStaffSchema } from './matchdayKitchen.js';
 import { dutyIds, getVenue, preorderHeld } from './kitchenOps.js';
@@ -153,9 +153,9 @@ export async function clearTelegramButtons(env, db, orderId, note) {
 /** Every kitchen device, with the role of the person it belongs to. */
 async function kitchenDevices(db) {
   await ensureStaffSchema(db);
-  const { results } = await db.prepare(`SELECT p.endpoint, p.keys_json, p.mk_app, p.staff_id, s.role, s.venue_id FROM push_subs p LEFT JOIN mk_staff s ON s.id = p.staff_id WHERE p.kitchen = 1 AND p.is_active = 1`).all();
+  const { results } = await db.prepare(`SELECT p.endpoint, p.keys_json, p.mk_app, p.staff_id, s.role, s.venue_id, s.zone_id FROM push_subs p LEFT JOIN mk_staff s ON s.id = p.staff_id WHERE p.kitchen = 1 AND p.is_active = 1`).all();
   // A device in the app with no kitchen staff account belongs to a Super Admin. Anything else is an admin Kitchen Screen.
-  return results.map(r => ({ ...r, staffId: r.staff_id, venueId: r.venue_id || null, role: r.mk_app ? (r.role || STAFF.SA) : 'screen' }));
+  return results.map(r => ({ ...r, staffId: r.staff_id, venueId: r.venue_id || null, zoneId: r.zone_id || null, role: r.mk_app ? (r.role || STAFF.SA) : 'screen' }));
 }
 export async function alertLevels(db) {
   const { results } = await db.prepare(`SELECT user_id, level FROM mk_alert_prefs`).all();
@@ -167,7 +167,7 @@ export async function alertFallback(db) {
 async function pushKitchen(env, db, payload, topic, { event = null, order = null, attempt = 'initial' } = {}) {
   if (!pushReady(env)) return { ok: false, error: 'Push not set up (VAPID keys missing)' };
   const all = await kitchenDevices(db);
-  const results = event ? recipientsFor(event, all, { levels: await alertLevels(db), fallbackId: await alertFallback(db), cookWasPreparing: !!order?.was_preparing, venueId: order?.venue_id || null, duty: order?.venue_id ? await dutyIds(db, order.venue_id) : null }) : all;
+  const results = event ? recipientsFor(event, all, { levels: await alertLevels(db), fallbackId: await alertFallback(db), cookWasPreparing: !!order?.was_preparing, venueId: order?.venue_id || null, duty: order?.venue_id ? await dutyIds(db, order.venue_id) : null, orderZone: order?.venue_id ? zoneOf(order.stand, (await getVenue(db, order.venue_id))?.settings.zones) : null }) : all;
   if (!results.length) return { ok: false, error: all.length ? 'Nobody on this alert has a device registered' : 'No kitchen devices registered' };
   const out = await Promise.allSettled(results.map(async row => {
     const keys = JSON.parse(row.keys_json || '{}');
@@ -298,6 +298,35 @@ export async function markOpened(db, orderId, userId) {
     await ensureKitchenSchema(db);
     await db.prepare(`UPDATE food_notification_log SET opened_at = ? WHERE order_id = ? AND recipient = ? AND opened_at IS NULL`).bind(nowIso(), String(orderId), String(userId)).run();
   } catch (err) { console.error('[kitchen] opened', err); }
+}
+
+/**
+ * The pre-match test: an alert to every device at the venue, and who it reached. "Reached" means
+ * the phone's push service took it; people with no device are listed too.
+ */
+export async function testAlerts(env, venueId) {
+  const db = env.DB;
+  await ensureKitchenSchema(db);
+  const devices = (await kitchenDevices(db)).filter(d => d.mk_app && (d.role === STAFF.SA || !d.venueId || d.venueId === venueId));
+  const staff = (await db.prepare(`SELECT id, full_name, role FROM mk_staff WHERE is_active = 1 AND COALESCE(venue_id, ?) = ?`).bind(venueId, venueId).all()).results;
+  const results = await Promise.all(devices.map(async d => {
+    let ok = false, error = null;
+    try {
+      const keys = JSON.parse(d.keys_json || '{}');
+      const status = pushReady(env) ? await sendEncryptedPush(env, { endpoint: d.endpoint, keys }, { kind: 'kitchen', attempt: 'test', loud: true, title: '🔔 Pre-match test alert', body: 'Alerts are working on this device.', ref: 'TEST', url: '/matchday-kitchen/' }, { ttl: 300, urgency: 'high', topic: 'test' }) : 0;
+      ok = status >= 200 && status < 300;
+      if (!ok) error = pushReady(env) ? `Status ${status}` : 'Push not set up';
+    } catch (err) { error = err.message; }
+    await log(db, null, 'push', 'test', ok, error, null, { event: 'TEST', recipient: d.staffId });
+    return { staffId: d.staffId, ok, error };
+  }));
+  const names = Object.fromEntries(staff.map(s => [s.id, s]));
+  const people = staff.map(s => {
+    const mine = results.filter(r => r.staffId === s.id);
+    return { name: s.full_name, role: s.role, devices: mine.length, reached: mine.filter(r => r.ok).length };
+  });
+  const admins = results.filter(r => !names[r.staffId]);
+  return { people, otherDevices: admins.length, otherReached: admins.filter(r => r.ok).length, reached: results.filter(r => r.ok).length, total: results.length };
 }
 
 /** A test alert to every kitchen device and the Telegram group. */

@@ -4672,6 +4672,20 @@ Only supervisors and Super Admins change prices, add dishes and delete dishes. *
 
 **Add a drink:** when a fan's cart has food but no drink or combo, the cart offers one drink that is ON (the most popular first), with **Add** and **No thanks**. It never offers 18+ drinks.
 
+**Delivery zones (optional):** in Staff accounts › Venue, write one zone per line, such as `North: Popular Stand, Grand Stand`. Then open a runner's account and choose their zone. Runners with a zone see and hear only that zone's ready orders. Runners with no zone, and orders from a stand in no zone, are never left out. If an order sits ready too long, every runner on duty is alerted.
+
+**Taking several orders:** on **Delivery by stand**, **Take all** takes every ready order for that stand in one tap.
+
+**Kitchen tickets:** **Print kitchen ticket** on an order's page prints what to cook and where it goes, with no prices or phone number.
+
+**Reports:** the **Reports** page shows one day: orders, sales, time at each step, best sellers, rejections and cancellations with reasons, staff performance and customer ratings, each with **Download CSV**. Supervisors see their own venue, and Super Admins see all venues.
+
+**Customer ratings:** once an order is delivered, the fan's order page asks them to score the food, speed and service from 1 to 5, with an optional comment.
+
+**Test alerts:** on **My shift**, supervisors can press **Test alerts on every device** before the match. It lists each person, how many of their devices the alert reached and who has no device set up. "Reached" means the phone's alert service took it, so also check it appeared on the screen.
+
+**Weak connections:** if the connection drops as someone presses a button, the app quietly tries again without doing the action twice.
+
 **Match-day shift:** a supervisor or Super Admin starts it on **My shift**. While it runs, only people who have pressed **Start shift** hear order alerts, so everyone must clock in. Ending it clocks everyone out. If nobody starts it, everyone hears the alerts for their job, so forgetting can't silence the kitchen.
 
 **If an order is left too long** (Staff accounts › Venue sets the times, Super Admins only), an alert goes out once: not confirmed after 2 minutes (supervisors and Super Admins), still cooking after 15 (supervisors), ready but not taken after 3 (runners and supervisors), on the way after 10 (supervisors). Kick-off and half-time orders stay quiet until 30 minutes before they are due. If WhatsApp through Meta or SMS through Termii is connected, supervisors with a phone number on their account also get a message when nobody has opened a new order after 60 seconds.

@@ -33,6 +33,8 @@ export async function runEscalations(env, { now = Date.now() } = {}) {
     const since = new Date(now - 12 * 3600e3).toISOString();
     const q = OPEN.map(() => '?').join(',');
     const { results } = await db.prepare(`SELECT * FROM food_orders WHERE order_status IN (${q}) AND created_iso >= ? ORDER BY created_iso LIMIT 200`).bind(...OPEN, since).all();
+    // Old retry records aren't needed after two days.
+    if (new Date(now).getUTCMinutes() === 0) await db.prepare(`DELETE FROM mk_idempotency WHERE at < ?`).bind(new Date(now - 2 * 86400e3).toISOString()).run().catch(() => {});
     if (!results.length) return done;
     const venues = new Map();
     const settingsOf = async id => { if (!venues.has(id)) venues.set(id, (await getVenue(db, id))?.settings || null); return venues.get(id); };

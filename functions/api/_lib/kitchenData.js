@@ -76,7 +76,7 @@ export function ticket(o, lateMinutes = DATA.lateMinutes) {
   // Late = not delivered within the target (5 minutes by default) of payment, at any step.
   const inKitchen = DATA.kitchenShows.includes(o.order_status) && o.order_status !== 'FAILED_DELIVERY';
   return {
-    id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: o.order_status === 'READY' && pickup(o) ? 'Ready for pickup' : statusLabel(o.order_status), venueId: o.venue_id || null, claimedBy: o.claimed_by || null, claimedName: o.claimed_name || '', needsCode: !!o.delivery_code && o.order_status === 'OUT_FOR_DELIVERY' && !pickup(o), rejectReason: o.reject_reason || '', rejectNote: o.reject_note || '', cancelReason: o.cancel_reason || '', fulfilment: o.fulfilment || 'seat', stage: stageOf(o.order_status),
+    id: o.id, ref: o.ref || o.id, status: o.order_status, statusLabel: o.order_status === 'READY' && pickup(o) ? 'Ready for pickup' : statusLabel(o.order_status), venueId: o.venue_id || null, stand: o.stand || '', claimedBy: o.claimed_by || null, claimedName: o.claimed_name || '', needsCode: !!o.delivery_code && o.order_status === 'OUT_FOR_DELIVERY' && !pickup(o), rejectReason: o.reject_reason || '', rejectNote: o.reject_note || '', cancelReason: o.cancel_reason || '', fulfilment: o.fulfilment || 'seat', stage: stageOf(o.order_status),
     customer: o.customer_name || '', where: o.seat || o.pickup_point ? whereText(o) : '', note: o.notes || '',
     items: items(o).map(i => ({ name: i.name, qty: i.qty, note: i.note || '' })),
     itemCount: items(o).reduce((n, i) => n + (Number(i.qty) || 0), 0),

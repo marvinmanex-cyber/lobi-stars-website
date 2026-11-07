@@ -25,5 +25,7 @@ export async function onRequestGet({ request, env, waitUntil }) {
   }
   // A WhatsApp order waiting for payment: how to pay, on the fan's order screen.
   const payment = order.channel === 'whatsapp' && order.payment_status !== 'paid' ? paymentMessage(await foodSettings(env.DB), order) : null;
-  return Response.json({ order: publicOrder(order), payment }, { headers: noStore });
+  // A delivered order the fan hasn't rated yet.
+  const canRate = order.order_status === 'DELIVERED' && !(await env.DB.prepare(`SELECT 1 FROM food_ratings WHERE order_id = ?`).bind(order.id).first());
+  return Response.json({ order: publicOrder(order), payment, canRate }, { headers: noStore });
 }

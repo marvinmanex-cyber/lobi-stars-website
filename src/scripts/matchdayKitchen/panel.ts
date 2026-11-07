@@ -242,6 +242,7 @@ const PAGES: Record<string, () => Promise<void>> = {
     const draw = async (quiet = false) => {
       const d = await api('delivery', { quiet });
       main.innerHTML = d.groups.length ? d.groups.map((g: any, i: number) => `<section class="mk-section mk-stand"><h2>${esc(g.name)} <span class="mk-badge${g.ready.length ? ' red' : ''}">${g.ready.length}</span>${g.cooking ? ` <small>${g.cooking} still cooking</small>` : ''}</h2>
+        ${!g.pickup && g.ready.filter((o: any) => o.status === 'READY').length > 1 ? `<button type="button" class="mk-btn go" data-take="${i}">Take all ${g.ready.filter((o: any) => o.status === 'READY').length} for delivery</button>` : ''}
         ${g.ready.length ? `${session.perms.confirm && g.ready.filter((o: any) => o.status === 'OUT_FOR_DELIVERY').length > 1 ? `<button type="button" class="mk-btn" data-all="${i}">Mark all ${g.ready.filter((o: any) => o.status === 'OUT_FOR_DELIVERY').length} delivered</button>` : ''}${g.ready.map((o: any) => `<article class="mk-runner${o.late ? ' late' : ''}"><div class="mk-runner-seat">${esc(o.seat || (g.pickup ? 'Pickup' : '—'))}</div>
           <div class="mk-runner-main"><b>${esc(o.ref)}${o.customer ? ` · ${esc(o.customer)}` : ''}</b><span>${esc(o.items.map((x: any) => `${x.qty} × ${x.name}`).join(', '))}</span>${o.note ? `<span class="mk-status">Note: ${esc(o.note)}</span>` : ''}${o.claimedName ? `<span class="mk-status">Runner: ${esc(o.claimedName)}</span>` : ''}${o.late ? `<span class="mk-pill red">Late: ${esc(mins(o.minutes))}</span>` : ''}</div>
           ${o.status === 'READY' ? `<button type="button" class="mk-btn go" data-go="${esc(o.id)}" data-to="${g.pickup ? 'DELIVERED' : 'OUT_FOR_DELIVERY'}">${g.pickup ? 'Collected' : 'Take for delivery'}</button>` : `<button type="button" class="mk-btn go" data-go="${esc(o.id)}" data-to="DELIVERED" ${o.needsCode ? 'data-code="1"' : ''}>Delivered</button><button type="button" class="mk-btn" data-go="${esc(o.id)}" data-to="FAILED_DELIVERY">Not at seat</button>`}</article>`).join('')}` : '<p class="mk-status" style="margin:4px 6px">Nothing ready for this stand yet.</p>'}</section>`).join('')
@@ -251,6 +252,12 @@ const PAGES: Record<string, () => Promise<void>> = {
     };
     main.addEventListener('click', e => {
       const el = e.target as HTMLElement;
+      const take = el.closest('[data-take]') as HTMLButtonElement | null;
+      if (take) {
+        const g = (main as any)._groups[Number(take.dataset.take)];
+        act(take, async () => { const r = await api('claim', { method: 'POST', body: { ids: g.ready.filter((o: any) => o.status === 'READY').map((o: any) => o.id) } }); toast(r.missed?.length ? `Took ${r.claimed.length}. Someone else has ${r.missed.length}.` : `Took ${r.claimed.length} orders.`); shell?.alarmsNow?.(); await draw(); });
+        return;
+      }
       const one = el.closest('[data-go]') as HTMLButtonElement | null;
       if (one) {
         const to = one.dataset.to!;
@@ -350,9 +357,10 @@ const PAGES: Record<string, () => Promise<void>> = {
         ${d.moves.length ? `<div class="mk-actions">${d.moves.map((m: any) => `<button type="button" class="mk-btn ${m.next ? 'go big' : m.cancel || m.reject ? 'danger' : ''}" data-to="${esc(m.to)}" data-label="${esc(m.label)}" data-cancel="${m.cancel ? 1 : 0}" ${o.paid ? 'data-paid="1"' : ''} ${m.to === 'DELIVERED' && o.needsCode ? 'data-code="1"' : ''}>${m.next ? esc(o.next?.label || m.label) : esc(m.label)}</button>`).join('')}</div>` : d.needsSupervisor ? '<p class="mk-empty">A supervisor or Super Admin confirms or rejects this order.</p>' : '<p class="mk-empty">No more changes for this order.</p>'}
         ${o.status === 'DELIVERED' ? `<h2 style="font-size:22px;margin:14px 0 6px">Receipt</h2><div class="mk-actions">${d.waDevice ? '<button type="button" class="mk-btn go" id="rcWa">Send receipt on WhatsApp</button>' : ''}<button type="button" class="mk-btn" id="rcEmail">Email receipt</button></div>` : ''}
         ${d.events?.length ? `<section class="mk-box" style="margin-top:12px"><h2 style="font-size:20px;margin:0 0 8px">History</h2><ul style="margin:0;padding-left:20px">${d.events.map((x: any) => `<li>${esc(dayTime(x.at))}: ${x.kind === 'flag' ? 'Missing ingredient' : x.kind === 'escalation' ? 'Alert sent' : x.kind === 'reassign' ? 'Runner changed' : esc(x.to_status || '')}${x.by_name ? ` · ${esc(x.by_name)}` : ''}${x.reason || x.note ? ` · ${esc([x.reason, x.note].filter(Boolean).join(': '))}` : ''}</li>`).join('')}</ul></section>` : ''}
-        <div class="mk-actions"><button type="button" class="mk-btn" id="allOrders">All orders</button></div>`;
+        <div class="mk-actions">${o.stage ? '<button type="button" class="mk-btn" id="printT">Print kitchen ticket</button>' : ''}<button type="button" class="mk-btn" id="allOrders">All orders</button></div>`;
       $('allOrders').addEventListener('click', () => openPage('orders'));
       $('recPay')?.addEventListener('click', () => openPay(o, () => { draw(); }));
+      $('printT')?.addEventListener('click', () => { const w = window.open(`/api/matchday-kitchen/ticket?id=${encodeURIComponent(o.id)}`, 'mdk-ticket'); if (w) w.addEventListener('load', () => w.print()); });
       $('reF')?.addEventListener('submit', (e: Event) => { e.preventDefault(); act(($('reF') as HTMLFormElement).querySelector('button'), async () => { await api('reassign', { method: 'POST', body: { id, staffId: $('reS').value } }); toast('Runner changed.'); await draw(); }); });
       $('flagBtn')?.addEventListener('click', async () => {
         const note = prompt('What is missing?');
@@ -453,7 +461,8 @@ const PAGES: Record<string, () => Promise<void>> = {
       const [d, vs] = await Promise.all([api('shift'), api('venue-shift')]);
       main.innerHTML = `${vs.canChange ? `<div class="mk-box" style="text-align:center"><p style="font-size:20px;margin:0 0 6px">${vs.running ? `The match-day shift has been running since <b>${esc(hm(vs.since))}</b>.` : 'The match-day shift has not started.'}</p>
           <p class="mk-status" style="text-transform:none;letter-spacing:0;margin:0 0 12px">${vs.running ? 'Only people clocked in hear order alerts. Ending it clocks everyone out.' : 'Until it starts, everyone hears the alerts for their job. Once it starts, only people clocked in do.'}</p>
-          <button type="button" class="mk-btn big ${vs.running ? 'danger' : 'go'}" id="vsBtn">${vs.running ? 'End match-day shift' : 'Start match-day shift'}</button></div>` : vs.running ? '<p class="mk-status" style="text-transform:none;letter-spacing:0">The match-day shift is running. Start your shift to hear order alerts.</p>' : ''}<div class="mk-box" style="text-align:center">
+          <button type="button" class="mk-btn big ${vs.running ? 'danger' : 'go'}" id="vsBtn">${vs.running ? 'End match-day shift' : 'Start match-day shift'}</button>
+          <div class="mk-actions" style="justify-content:center"><button type="button" class="mk-btn" id="testAll">Test alerts on every device</button></div><div id="testOut" style="text-align:left"></div></div>` : vs.running ? '<p class="mk-status" style="text-transform:none;letter-spacing:0">The match-day shift is running. Start your shift to hear order alerts.</p>' : ''}<div class="mk-box" style="text-align:center">
           <p style="font-size:20px;margin:0 0 12px">${d.onShift ? `You have been on shift since <b>${esc(hm(d.since))}</b>.` : "You're not on shift."}</p>
           <button type="button" class="mk-btn big ${d.onShift ? 'danger' : 'go'}" id="shBtn" style="min-width:260px">${d.onShift ? 'End shift' : 'Start shift'}</button></div>
         <section class="mk-section"><h2>In the kitchen now</h2>${d.onNow.length ? `<div class="mk-table-wrap"><table class="mk-table"><thead><tr><th>Name</th><th>Role</th><th>Since</th></tr></thead><tbody>${d.onNow.map((p: any) => `<tr><td><b>${esc(p.name)}</b> <span class="mk-status">${esc(p.code)}</span></td><td>${esc(p.role)}</td><td>${esc(hm(p.since))}</td></tr>`).join('')}</tbody></table></div>` : '<p class="mk-empty">Nobody is on shift.</p>'}</section>
@@ -461,6 +470,10 @@ const PAGES: Record<string, () => Promise<void>> = {
           const m = s.ended_at ? Math.round((Date.parse(s.ended_at) - Date.parse(s.started_at)) / 60000) : null;
           return `<tr><td>${esc(dayOnly(s.started_at))}</td><td>${esc(hm(s.started_at))}</td><td>${s.ended_at ? esc(hm(s.ended_at)) : '<span class="mk-pill go">On shift</span>'}</td><td>${m === null ? '—' : `${Math.floor(m / 60)} h ${m % 60} min`}</td></tr>`;
         }).join('')}</tbody></table></div>` : '<p class="mk-empty">No shifts yet.</p>'}</section>`;
+      $('testAll')?.addEventListener('click', () => act($('testAll'), async () => {
+        const r = await api('test-alerts', { method: 'POST', body: {} });
+        $('testOut').innerHTML = `<p style="margin:10px 0 6px"><b>Reached ${r.reached} of ${r.total} device${r.total === 1 ? '' : 's'}.</b> Check the alert appeared on each one.</p><ul style="margin:0;padding-left:20px">${r.people.map((p: any) => `<li>${esc(p.name)}: ${p.devices ? `${p.reached} of ${p.devices} device${p.devices === 1 ? '' : 's'}` : '<b>no device set up</b>'}</li>`).join('')}${r.otherDevices ? `<li>Super Admins: ${r.otherReached} of ${r.otherDevices} devices</li>` : ''}</ul>`;
+      }));
       $('vsBtn')?.addEventListener('click', async () => {
         if (vs.running && !(await confirmBox('End the match-day shift?', 'Everyone at this venue is clocked out.', 'End it', true))) return;
         await act($('vsBtn'), async () => { await api('venue-shift', { method: 'POST', body: { action: vs.running ? 'end' : 'start' } }); toast(vs.running ? 'Match-day shift ended.' : 'Match-day shift started. Staff need to start their own shifts.'); shell?.alarmsNow?.(); shell?.shiftChanged(); await draw(); });
@@ -542,6 +555,7 @@ const PAGES: Record<string, () => Promise<void>> = {
             ${canEdit(s) ? `<tr id="ed_${esc(s.id)}" hidden><td colspan="6"><form class="mk-box" data-editform="${esc(s.id)}" style="margin:0">
               <div class="mk-filters"><div class="mk-field"><label>Full name</label><input name="name" value="${esc(s.name)}" maxlength="80" /></div>
               <div class="mk-field"><label>Phone (for backup alerts)</label><input name="phone" value="${esc(s.phone || '')}" inputmode="tel" maxlength="16" /></div>
+              ${vn.settings.zones?.length && s.role === 'delivery' ? `<div class="mk-field"><label>Delivery zone</label><select name="zoneId"><option value="">All zones</option>${vn.settings.zones.map((z: any) => `<option value="${esc(z.id)}" ${z.id === s.zoneId ? 'selected' : ''}>${esc(z.name)}</option>`).join('')}</select></div>` : ''}
               <div class="mk-field"><label>Role</label><select name="role">${roleOpts(s.role)}</select></div>
               </div>
               <label style="display:flex;gap:10px;align-items:center;min-height:48px;font-size:18px"><input type="checkbox" name="active" ${s.active ? 'checked' : ''} style="width:26px;height:26px" /> Can sign in</label>
@@ -571,6 +585,7 @@ const PAGES: Record<string, () => Promise<void>> = {
           <div class="mk-field"><label for="vPre">Start kick-off and half-time orders (minutes before due)</label><input id="vPre" type="number" min="0" max="240" value="${vn.settings.preorderMinutes}" /></div>
           <div class="mk-field"><label for="vRef">Refunds above this need a Super Admin (₦)</label><input id="vRef" type="number" min="0" value="${vn.settings.refundApprovalNaira}" /></div>` : ''}
           </div>${vn.full ? `<label style="display:flex;gap:10px;align-items:center;min-height:48px;font-size:18px"><input type="checkbox" id="vCode" ${vn.settings.requireDeliveryCode ? 'checked' : ''} style="width:26px;height:26px" /> Runners must enter the fan's delivery code</label>` : ''}
+          <div class="mk-field"><label for="vZones">Delivery zones (one per line, e.g. North: Popular Stand, Grand Stand). Leave empty for no zones.</label><textarea id="vZones" rows="3">${esc(vn.settings.zonesText || '')}</textarea></div>
           <button class="mk-btn go" type="submit">Save venue settings</button></form></section>
         <section class="mk-section"><h2>Settings</h2><form class="mk-box" id="setF">
           <div class="mk-field"><label for="sTg">Telegram channel link (shows the Telegram updates button)</label><input id="sTg" placeholder="https://t.me/yourchannel" value="${esc(d.settings.telegramUrl)}" /></div>
@@ -625,7 +640,7 @@ const PAGES: Record<string, () => Promise<void>> = {
       const form = e.target as HTMLFormElement;
       if (form.id === 'venF') {
         const full = vnFull();
-        act(form.querySelector('button'), async () => { await api('venue-settings', { method: 'POST', body: { maxOpenOrders: $('vCap').value, ...full } }); toast('Venue settings saved.'); });
+        act(form.querySelector('button'), async () => { await api('venue-settings', { method: 'POST', body: { maxOpenOrders: $('vCap').value, zonesText: $('vZones').value, ...full } }); toast('Venue settings saved.'); });
       } else if (form.id === 'alF') {
         act(form.querySelector('button'), async () => { await api('alert-settings', { method: 'POST', body: { level: $('alLevel').value, fallbackId: $('alFall').value } }); toast('Alert settings saved.'); shell?.alarmsNow?.(); });
       } else if (form.id === 'repF') {
@@ -637,7 +652,7 @@ const PAGES: Record<string, () => Promise<void>> = {
         act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'settings', telegramUrl: $('sTg').value.trim(), cancelRoles: vals('cancel'), lateMinutes: $('sLate').value } }); toast('Settings saved.'); shell?.shiftChanged(); await draw(); });
       } else if (form.dataset.editform) {
         const g = (n: string) => form.querySelector(`[name="${n}"]`) as HTMLInputElement;
-        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'edit', id: form.dataset.editform, name: g('name').value, phone: g('phone').value, role: g('role').value, active: g('active').checked } }); toast('Changes saved.'); await draw(); });
+        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'edit', id: form.dataset.editform, name: g('name').value, phone: g('phone').value, ...(g('zoneId') ? { zoneId: g('zoneId').value } : {}), role: g('role').value, active: g('active').checked } }); toast('Changes saved.'); await draw(); });
       }
     });
     await draw();
@@ -659,6 +674,28 @@ const PAGES: Record<string, () => Promise<void>> = {
       if (!confirm(viaPaystack ? 'Send this refund to Paystack? The money goes back to the fan. Your name is recorded.' : 'Have you already refunded this fan yourself? Your name is recorded.')) return;
       act(b, async () => { await api('refund', { method: 'POST', body: { id: b.dataset.refund, action: b.dataset.act } }); toast(viaPaystack ? 'Sent to Paystack.' : 'Marked as refunded.'); await draw(); });
     });
+    await draw();
+  },
+
+  async reports() {
+    if (!session.perms.reports) { notAvailable(); return; }
+    main.innerHTML = `<form class="mk-filters" id="rpF"><div class="mk-field"><label for="rpD">Day</label><input id="rpD" type="date" value="${todayLagos()}" /></div><button class="mk-btn go" type="submit">Show</button></form><div id="rpOut"></div>`;
+    const min = (n: any) => (n === null || n === undefined ? '—' : `${n} min`);
+    const score = (n: any) => (n === null || n === undefined ? '—' : `${n} / 5`);
+    const table = (heads: string[], rows: string[][]) => `<div class="mk-table-wrap"><table class="mk-table"><thead><tr>${heads.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    const draw = async () => {
+      const day = $('rpD').value || todayLagos();
+      const d = await api(`reports?day=${encodeURIComponent(day)}`);
+      const m = d.match, csv = (k: string) => `<a class="mk-btn" href="/api/matchday-kitchen/reports?day=${encodeURIComponent(day)}&kind=${k}&format=csv" download>Download CSV</a>`;
+      $('rpOut').innerHTML = `<div class="mk-stats"><div class="mk-stat"><b>${m.orders}</b><span>Orders</span></div><div class="mk-stat"><b>${esc(m.revenue)}</b><span>Sales</span></div><div class="mk-stat"><b>${esc(m.average)}</b><span>Average order</span></div><div class="mk-stat"><b>${esc(min(m.stages.total))}</b><span>Paid to delivered</span></div></div>
+        <section class="mk-section mk-box"><h2>Time at each step</h2>${table(['Step', 'Average'], [['Paid to confirmed', min(m.stages.confirm)], ['Confirmed to cooking', min(m.stages.startCooking)], ['Cooking', min(m.stages.cook)], ['Waiting for a runner', min(m.stages.waitForRunner)], ['Delivering', min(m.stages.deliver)]])}<div class="mk-actions" style="justify-content:flex-start">${csv('match')}</div></section>
+        <section class="mk-section mk-box"><h2>Best sellers</h2>${m.bestSellers.length ? table(['Dish', 'Sold', 'Sales'], m.bestSellers.map((b: any) => [b.name, String(b.qty), b.sales])) : '<p class="mk-status">No paid orders on this day.</p>'}</section>
+        <section class="mk-section mk-box"><h2>Rejected and cancelled</h2>${m.stopped.length ? table(['Reason', 'Orders'], m.stopped.map((s: any) => [s.reason, String(s.count)])) : '<p class="mk-status">None on this day.</p>'}</section>
+        <section class="mk-section mk-box"><h2>Staff performance</h2>${d.staff.length ? table(['Name', 'Orders handled', 'Average cooking', 'Average delivery'], d.staff.map((p: any) => [p.name, String(p.orders), min(p.avgCookMinutes), min(p.avgDeliverMinutes)])) : '<p class="mk-status">Nothing recorded on this day.</p>'}<div class="mk-actions" style="justify-content:flex-start">${csv('staff')}</div></section>
+        <section class="mk-section mk-box"><h2>Customer ratings</h2><p>${d.ratings.count} rating${d.ratings.count === 1 ? '' : 's'}: food ${esc(score(d.ratings.food))}, speed ${esc(score(d.ratings.speed))}, service ${esc(score(d.ratings.service))}</p>${d.ratings.byMatch.length ? table(['Match', 'Ratings', 'Food', 'Speed', 'Service'], d.ratings.byMatch.map((x: any) => [x.match, String(x.count), score(x.food), score(x.speed), score(x.service)])) : ''}${d.ratings.comments.length ? `<ul>${d.ratings.comments.map((c: any) => `<li>${esc(c.ref)}: ${esc(c.comment)}</li>`).join('')}</ul>` : ''}<div class="mk-actions" style="justify-content:flex-start">${csv('ratings')}</div></section>`;
+      stamp();
+    };
+    $('rpF').addEventListener('submit', (e: Event) => { e.preventDefault(); act(null, draw); });
     await draw();
   },
 

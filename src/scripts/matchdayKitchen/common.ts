@@ -15,13 +15,25 @@ export class ApiError extends Error { status: number; data: any; constructor(m: 
 let onSignedOut = () => {};
 export const setSignedOutHandler = (f: () => void) => { onSignedOut = f; };
 /** Calls /api/matchday-kitchen/<path>. quiet: an automatic refresh (doesn't count as activity). */
+// A weak connection can lose the answer after the server has acted. These taps carry a key and are
+// tried again by themselves: the server repeats its first answer rather than acting twice.
+const RETRY = new Set(['order', 'claim', 'payment', 'refund']);
+const newKey = () => (crypto.randomUUID ? crypto.randomUUID() : `k-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+const wait = (ms: number) => new Promise(ok => setTimeout(ok, ms));
 export async function api(path: string, { method = 'GET', body, quiet = false }: { method?: string; body?: any; quiet?: boolean } = {}) {
   const headers: Record<string, string> = { 'X-CSRF-Token': session.csrf };
   if (quiet) headers['X-Activity'] = '0';
   if (body) headers['Content-Type'] = 'application/json';
-  let r: Response;
-  try { r = await fetch(`/api/matchday-kitchen/${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store', credentials: 'same-origin' }); }
-  catch { throw new ApiError('No connection. Check the Wi-Fi and try again.', 0, {}); }
+  const safe = method === 'POST' && RETRY.has(path);
+  if (safe) headers['X-Idempotency-Key'] = newKey();
+  let r: Response | null = null;
+  for (let attempt = 0; !r; attempt++) {
+    try { r = await fetch(`/api/matchday-kitchen/${path}`, { method, headers, body: body ? JSON.stringify(body) : undefined, cache: 'no-store', credentials: 'same-origin' }); }
+    catch {
+      if (!safe || attempt >= 2) throw new ApiError('No connection. Check the Wi-Fi and try again.', 0, {});
+      await wait(1500 * (attempt + 1));
+    }
+  }
   const d = await r.json().catch(() => ({}));
   if (r.status === 401 && d.signedOut) { onSignedOut(); throw new ApiError(d.error || 'Signed out', 401, d); }
   if (!r.ok) throw new ApiError(d.error || 'Something went wrong. Please try again.', r.status, d);
@@ -57,7 +69,7 @@ export const ICONS: Record<string, string> = {
   activity: line('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>'),
   staff: line('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.2A5 5 0 0 1 22 19"/>'),
 };
-export const iconFor = (page: string) => ICONS[page.startsWith('orders/') || page === 'refunds' ? 'orders' : page] || '';
+export const iconFor = (page: string) => ICONS[page.startsWith('orders/') || page === 'refunds' ? 'orders' : page === 'reports' ? 'analytics' : page] || '';
 
 export type Tile = { id: string; title: string; text: string; style?: 'hero' | 'red' | 'amber' | 'gold' | 'wa' | 'tg'; external?: 'whatsapp' | 'telegram'; superOnly?: boolean };
 export type Group = { title: string; tiles: Tile[]; superOnly?: boolean };
@@ -73,6 +85,7 @@ export const GROUPS: Group[] = [
     { id: 'orders', title: 'Food orders', text: 'Find, check and update any order' },
     { id: 'menu', title: 'Menu and prices', text: 'Turn dishes on and off, prices, add and delete dishes' },
     { id: 'refunds', title: 'Refunds', text: 'Paid orders that were rejected or cancelled', superOnly: true },
+    { id: 'reports', title: 'Reports', text: 'Match-day figures, staff performance, ratings, CSV', superOnly: true },
   ] },
   { title: 'Team and messages', tiles: [
     { id: 'whatsapp', title: 'Kitchen WhatsApp', text: 'Open the kitchen chats (+234 708 009 4985)', external: 'whatsapp', style: 'wa' },
@@ -90,7 +103,7 @@ export const GROUPS: Group[] = [
 ];
 /** Page names (tabs, page titles). */
 export const PAGE_TITLE: Record<string, string> = {
-  refunds: 'Refunds', kitchen: 'Kitchen screen', live: 'Live order board', delivery: 'Delivery by stand', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices', analytics: 'Food analytics',
+  refunds: 'Refunds', reports: 'Reports', kitchen: 'Kitchen screen', live: 'Live order board', delivery: 'Delivery by stand', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices', analytics: 'Food analytics',
   shift: 'My shift', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts', 'not-available': 'Not available',
 };
 export const pageTitle = (page: string) => page.startsWith('orders/') ? `Order ${decodeURIComponent(page.slice(7))}` : PAGE_TITLE[page] || 'MatchDay Kitchen';

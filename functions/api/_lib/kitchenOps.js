@@ -1,6 +1,7 @@
 // MatchDay Kitchen, running a venue: its settings, the match-day shift, who is on duty, when an
 // order should escalate, and refunds. Timers and amounts live in each venue's settings_json.
 import { DEFAULT_VENUE, ensureFoodSchema, formatNaira } from './foodOrders.js';
+import { parseZones } from './kitchenWorkflow.js';
 
 export const VENUE_DEFAULTS = {
   newMinutes: 2, preparingMinutes: 15, readyMinutes: 3, outMinutes: 10, // escalation timers
@@ -9,6 +10,7 @@ export const VENUE_DEFAULTS = {
   requireDeliveryCode: true,    // runners confirm delivery with the fan's 4-digit code
   refundApprovalKobo: 2000000,  // above this (₦20,000), only a Super Admin can refund
   paused: false, pauseMessage: '', maxOpenOrders: 0, // pause ordering, or stop at this many open orders (0 = no limit)
+  zones: [],                    // delivery zones: [{ id, name, sections: [stands] }]
 };
 const nowIso = () => new Date().toISOString();
 const parse = s => { try { const v = JSON.parse(s || '{}'); return v && typeof v === 'object' ? v : {}; } catch { return {}; } };
@@ -43,6 +45,7 @@ export function cleanVenuePatch(b, { superAdmin = false } = {}) {
   };
   const bad = mins('maxOpenOrders', 0, 5000) || (superAdmin && (mins('newMinutes', 1, 120) || mins('preparingMinutes', 1, 240) || mins('readyMinutes', 1, 120) || mins('outMinutes', 1, 240) || mins('preorderMinutes', 0, 240) || mins('backupAfterSeconds', 30, 3600)));
   if (bad) return { error: bad };
+  if (b.zonesText !== undefined) patch.zones = parseZones(b.zonesText);
   if (b.paused !== undefined) patch.paused = !!b.paused;
   if (b.pauseMessage !== undefined) patch.pauseMessage = String(b.pauseMessage || '').replace(/\s+/g, ' ').trim().slice(0, 160);
   if (superAdmin && b.requireDeliveryCode !== undefined) patch.requireDeliveryCode = !!b.requireDeliveryCode;

@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-07: MatchDay Kitchen order workflow, Phase 3
+
+**Who it affects:** kitchen staff, supervisors, Super Admins and fans ordering food. **Nothing changes until the club uses it:** zones are optional.
+- **Delivery zones:** group stands into zones, and runners get only their zone's ready orders. Overdue orders still go to every runner on duty.
+- **Take all:** a runner can take several ready orders for one stand in one tap.
+- **Kitchen tickets:** a printable ticket for each order, with no prices or phone number.
+- **Customer ratings:** fans score food, speed and service after delivery.
+- **Reports:** a new page with match-day figures, time at each step, best sellers, reasons for rejections and cancellations, staff performance and ratings, all with CSV.
+- **Test alerts:** one press sends a test to every device and shows who it reached.
+- **Weak connections:** the app retries by itself without doing an action twice.
+
 ## 2026-11-06: MatchDay Kitchen order workflow, Phase 2
 
 **Who it affects:** all kitchen staff, and fans ordering food. **Staff need to:** press **Start shift** whenever a supervisor has started the match-day shift, and runners ask fans for their delivery code.

@@ -18,6 +18,10 @@
 //   GET venues (signed in)   POST venue {id?, name, active, settings} (Super Admins)
 //   GET venue-shift   POST venue-shift {action: start|end}   POST venue-settings {…}   POST reassign {id, staffId}
 //   GET refunds   POST refund {id, action: refund|done}   (supervisors up to the venue's limit, Super Admins)
+//   POST claim {ids} (runners: take several ready orders in one zone)   GET ticket?id (printable, no money or phone)
+//   GET reports?day&format=csv&kind=match|staff|ratings (supervisors for their venue, Super Admins)
+//   POST test-alerts (supervisors, Super Admins: a test to every device, and who it reached)
+//   An X-Idempotency-Key header on POST order, claim, payment or refund makes a retry safe: the first answer is repeated.
 //   GET check (Super Admins: the data check)
 import { signIn, signOut, json, kitchenSettings, permissions, mkLog, shiftState, startShift, endShift, listNotes, noteAction,
   activityPage, listStaff, createStaff, updateStaff, saveSettings, ROLES, oneLine, clearKitchenCookie } from '../_lib/matchdayKitchen.js';
@@ -28,8 +32,9 @@ import { buildReport, sendReport, reportEmails, saveReportEmails } from '../_lib
 import { recordPayment, canRecord, proofInfo, proofResponse, PAY_METHODS } from '../_lib/foodPaymentProof.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
 import { officialDevice, listDevices, addDevice, removeDevice, replyFor } from '../_lib/kitchenWhatsapp.js';
-import { saveAppDevice, removeAppDevice, removeStaffDevices, testAppDevice, notifyKitchen, markOpened, alertFallback, alertLevels, ensureKitchenSchema as ensureAlertSchema } from '../_lib/kitchenNotify.js';
-import { canMove, reasonProblem, muteProblem, alarmsFor, ALERT_LEVELS } from '../_lib/kitchenWorkflow.js';
+import { saveAppDevice, removeAppDevice, removeStaffDevices, testAppDevice, testAlerts, notifyKitchen, markOpened, alertFallback, alertLevels, ensureKitchenSchema as ensureAlertSchema } from '../_lib/kitchenNotify.js';
+import { canMove, reasonProblem, muteProblem, alarmsFor, ALERT_LEVELS, zoneOf, runnerCovers } from '../_lib/kitchenWorkflow.js';
+import { kitchenReport, csvRows } from '../_lib/kitchenReports.js';
 import { getVenue, cleanVenuePatch, saveVenueSettings, openVenueShift, startVenueShift, endVenueShift, dutyIds, refundProblem } from '../_lib/kitchenOps.js';
 import { refundFood } from '../_lib/paystackClient.js';
 import { formatNaira, STATUS } from '../_lib/foodOrders.js';
@@ -38,7 +43,7 @@ import { REJECT_REASONS, recordOrderEvent, DEFAULT_VENUE, ensureFoodSchema } fro
 
 // The pages (and their names in the activity log).
 const PAGES = {
-  refunds: 'Refunds', kitchen: 'Kitchen screen', live: 'Live order board', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices',
+  refunds: 'Refunds', reports: 'Reports', kitchen: 'Kitchen screen', live: 'Live order board', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices',
   analytics: 'Food analytics', shift: 'My shift', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts',
   whatsapp: 'Kitchen WhatsApp', telegram: 'Telegram updates', delivery: 'Delivery by stand',
 };
@@ -46,7 +51,29 @@ const denied = () => json({ error: "Your role can't do this. Ask a kitchen super
 const staffName = u => `${u.name} (${u.code}) – MatchDay Kitchen`;
 const csvCell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) || /^[=+\-@]/.test(s) ? `"${(/^[=+\-@]/.test(s) ? `'${s}` : s).replace(/"/g, '""')}"` : s; };
 
+// Weak connections: a phone may send the same tap twice. The first answer is kept and repeated.
+const IDEMPOTENT = new Set(['order', 'claim', 'payment', 'refund']);
 export async function onRequest(context) {
+  const { request, env, params, data } = context;
+  const route = [].concat(params.route || []).join('/');
+  const key = request.headers.get('X-Idempotency-Key');
+  if (request.method !== 'POST' || !IDEMPOTENT.has(route) || !key || !data.mk || !/^[\w-]{8,80}$/.test(key)) return handle(context);
+  await ensureFoodSchema(env.DB);
+  const id = `${data.mk.user.id}:${route}:${key}`;
+  const claim = await env.DB.prepare(`INSERT OR IGNORE INTO mk_idempotency (key, at) VALUES (?, ?)`).bind(id, new Date().toISOString()).run();
+  if (!claim.meta?.changes) {
+    const seen = await env.DB.prepare(`SELECT status, body FROM mk_idempotency WHERE key = ?`).bind(id).first();
+    if (seen?.status) return new Response(seen.body, { status: seen.status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Idempotent-Replay': '1' } });
+    return json({ error: 'Still working on that. Please wait a moment.' }, 409);
+  }
+  const res = await handle(context);
+  // A server failure can be tried again; anything else is the answer for this tap.
+  if (res.status >= 500) await env.DB.prepare(`DELETE FROM mk_idempotency WHERE key = ?`).bind(id).run();
+  else await env.DB.prepare(`UPDATE mk_idempotency SET status = ?, body = ? WHERE key = ?`).bind(res.status, await res.clone().text(), id).run();
+  return res;
+}
+
+async function handle(context) {
   const { request, env, params, data } = context;
   const db = env.DB;
   const route = [].concat(params.route || []).join('/');
@@ -74,6 +101,10 @@ export async function onRequest(context) {
     const myVenue = String(q.get('venue') || body.venueId || '') && user.kind === 'admin' ? String(q.get('venue') || body.venueId) : (user.venueId || DEFAULT_VENUE);
     // Runners see orders nobody has taken and their own.
     const forRunner = t => role !== 'delivery' || t.status !== 'OUT_FOR_DELIVERY' || !t.claimedBy || t.claimedBy === user.id;
+    // A runner with a zone sees that zone's ready orders.
+    const zones = role === 'delivery' && user.zoneId ? (await getVenue(db, myVenue))?.settings.zones || [] : [];
+    const inZone = stand => role !== 'delivery' || runnerCovers(user.zoneId, zoneOf(stand, zones));
+    const forRunnerZone = t => forRunner(t) && (t.status !== 'READY' || inZone(t.stand));
     // Reply links and the fan's number go only to the kitchen's approved WhatsApp device.
     const onWaDevice = async () => !!(await officialDevice(request, env));
 
@@ -94,9 +125,9 @@ export async function onRequest(context) {
       }
       case 'GET delivery': {
         const groups = await K.deliveryByStand(db, late, scope);
-        return json({ groups: groups.map(g => ({ ...g, ready: g.ready.filter(forRunner) })), lateMinutes: late });
+        return json({ groups: groups.map(g => ({ ...g, ready: g.ready.filter(forRunnerZone) })).filter(g => role !== 'delivery' || g.ready.length), lateMinutes: late });
       }
-      case 'GET kitchen': return json({ tickets: (await K.kitchenTickets(db, late, scope)).filter(t => K.inView(t, role) && forRunner(t)).map(t => K.forRole(t, role)), lateMinutes: late });
+      case 'GET kitchen': return json({ tickets: (await K.kitchenTickets(db, late, scope)).filter(t => K.inView(t, role) && forRunnerZone(t)).map(t => K.forRole(t, role)), lateMinutes: late });
       // The alarm check (every 10 seconds from each open app): new orders to accept, late orders.
       case 'GET pulse': {
         let level = 'all';
@@ -107,6 +138,11 @@ export async function onRequest(context) {
         if (user.kind !== 'admin') {
           const duty = await dutyIds(db, myVenue);
           if (duty && !duty.includes(user.id)) return json({ ...alarmsFor(role, 'off', {}), newOrders: [], whatsapp: [], cook: [], ready: [], late: [], failed: [], flags: [], offDuty: true, lateMinutes: late });
+        }
+        // A runner's alarm rings for their own zone's ready orders.
+        if (role === 'delivery' && user.zoneId) {
+          const stands = new Map((await db.prepare(`SELECT id, stand FROM food_orders WHERE order_status = 'READY'`).all()).results.map(r => [r.id, r.stand]));
+          p.ready = p.ready.filter(x => inZone(stands.get(x.id)));
         }
         return json(p);
       }
@@ -343,6 +379,54 @@ export async function onRequest(context) {
         }
         return json({ error: 'Unknown action.' }, 400);
       }
+      // Taking several ready orders in one go: same zone (or the same stand, if the venue has no zones).
+      case 'POST claim': {
+        const ids = (Array.isArray(body.ids) ? body.ids : []).map(String).slice(0, 10);
+        if (!ids.length) return json({ error: 'Choose at least one order.' }, 400);
+        const venue = await getVenue(db, myVenue);
+        const orders = (await Promise.all(ids.map(i => K.getOrder(db, i)))).filter(o => o && visible(o));
+        const areas = new Set(orders.map(o => zoneOf(o.stand, venue?.settings.zones) || `stand:${o.stand || ''}`));
+        if (areas.size > 1) return json({ error: 'Take orders from one area at a time.' }, 400);
+        const claimed = [], missed = [];
+        for (const o of orders) {
+          if (canMove(role, o, 'OUT_FOR_DELIVERY', { userId: user.id }) || !inZone(o.stand)) { missed.push(o.ref); continue; }
+          const r = await K.setStatus(db, o.id, 'OUT_FOR_DELIVERY', staffName(user), env, { byId: user.id, byRole: role, claimBy: { id: user.id, name: user.name }, waitUntil: p => context.waitUntil(p) });
+          if (r.error) { missed.push(o.ref); continue; }
+          claimed.push(o.ref);
+          await mkLog(db, user, `Order ${o.ref}: took it for delivery`, { kind: 'order', request, before: { status: 'READY' }, after: { status: 'OUT_FOR_DELIVERY' } });
+        }
+        if (!claimed.length) return json({ error: 'Someone else has taken those orders.', missed }, 409);
+        return json({ ok: true, claimed, missed });
+      }
+      // The kitchen's printed ticket: what to cook and where it goes. No money, no phone number.
+      case 'GET ticket': {
+        const o = await K.getOrder(db, q.get('id') || '');
+        if (!o || !visible(o)) return new Response('Not found', { status: 404, headers: { 'Cache-Control': 'no-store' } });
+        const t = K.forRole(K.ticket(o, late), 'cook');
+        const e = v => String(v ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+        const html = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Ticket ${e(t.ref)}</title>
+          <style>@page{margin:4mm}body{margin:0 auto;max-width:76mm;padding:4mm;font:15px/1.35 Arial,sans-serif;color:#000;background:#fff}h1{font-size:30px;margin:0}.w{font-size:19px;font-weight:700;margin:6px 0}ul{padding:0;margin:8px 0;list-style:none;border-top:2px dashed #000;border-bottom:2px dashed #000}li{font-size:18px;padding:5px 0}em{display:block;font-size:14px}.n{font-weight:700;border:2px solid #000;padding:5px;margin:8px 0}small{display:block;color:#000}</style>
+          <h1>#${e(String(t.ref).split('-').pop())}</h1><small>${e(t.ref)}</small><div class="w">${e(t.where)}</div>${t.customer ? `<div>${e(t.customer.split(/\s+/)[0])}</div>` : ''}${t.deliverWhen && t.deliverWhen !== 'now' ? `<div class="n">FOR ${t.deliverWhen === 'half-time' ? 'HALF-TIME' : 'KICK-OFF'}</div>` : ''}
+          <ul>${t.items.map(i => `<li>${e(i.qty)} × ${e(i.name)}${i.note ? `<em>${e(i.note)}</em>` : ''}</li>`).join('')}</ul>${t.note ? `<div class="n">Note: ${e(t.note)}</div>` : ''}<small>Printed ${e(new Date().toLocaleString('en-GB', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Africa/Lagos' }))}</small>`;
+        return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow', 'X-Content-Type-Options': 'nosniff', 'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'" } });
+      }
+      case 'GET reports': {
+        if (!perms.reports) return denied();
+        const { day, start, end } = K.lagosDay(q.get('day') || '');
+        const report = await kitchenReport(db, { start, end, scope });
+        if (q.get('format') === 'csv') {
+          const kind = ['match', 'staff', 'ratings'].includes(q.get('kind')) ? q.get('kind') : 'match';
+          await mkLog(db, user, `Downloaded the ${kind} report (CSV)`, { kind: 'open', request });
+          return new Response(`﻿${csvRows(kind, report).map(r => r.map(csvCell).join(',')).join('\r\n')}\r\n`, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': `attachment; filename="matchday-kitchen-${kind}-${day}.csv"`, 'Cache-Control': 'no-store' } });
+        }
+        return json({ day, ...report });
+      }
+      case 'POST test-alerts': {
+        if (!perms.confirm) return denied();
+        const r = await testAlerts(env, myVenue);
+        await mkLog(db, user, `Sent a test alert: reached ${r.reached} of ${r.total} devices`, { kind: 'settings', request });
+        return json(r);
+      }
       // A supervisor gives an order to another runner.
       case 'POST reassign': {
         if (!perms.confirm) return denied();
@@ -370,7 +454,7 @@ export async function onRequest(context) {
       case 'GET venue-settings': {
         if (!perms.ordering) return denied();
         const v = await getVenue(db, myVenue);
-        return json({ id: v.id, name: v.name, settings: { ...v.settings, refundApprovalNaira: v.settings.refundApprovalKobo / 100 }, full: perms.superAdmin });
+        return json({ id: v.id, name: v.name, settings: { ...v.settings, refundApprovalNaira: v.settings.refundApprovalKobo / 100, zonesText: (v.settings.zones || []).map(z => `${z.name}: ${z.sections.join(', ')}`).join('\n') }, full: perms.superAdmin });
       }
       case 'POST venue-settings': {
         if (!perms.ordering) return denied();

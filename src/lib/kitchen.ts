@@ -5,6 +5,7 @@
 //   POST /api/food/whatsapp-order   Order via WhatsApp (same message format as the food page)
 //   GET  /api/food/order?ref=&t=    order status (Received, Preparing, On the way, Delivered)
 // Vanilla TypeScript, no libraries. The cart and seat are kept on the phone.
+import { mountRating } from './foodRating';
 import { upcomingMatches } from '../../functions/api/_lib/tickets/rules.js';
 
 type Item = { id: string; name: string; description: string; priceKobo: number; photo: string | null; emoji?: string; soldOut: boolean; notReady?: boolean; maxPerOrder: number; adult: boolean; spice?: number; badge?: string | null };
@@ -450,6 +451,7 @@ function showDone(o: { ref: string; token: string; whatsappUrl?: string }) {
       const d = await r.json();
       if (!r.ok || !d.order) { $('kxStatus').textContent = d.error || 'We could not load your order just now.'; return; }
       renderStatus(d.order as Order);
+      if (d.canRate && !$('kxRate').dataset.on) { $('kxRate').dataset.on = '1'; mountRating($('kxRate'), { ref: o.ref, token: o.token }); }
       $('kxPay').hidden = !d.payment;
       if (d.payment) { $('kxPayT').textContent = d.payment; const n = String(d.payment).match(/\b\d{10}\b/)?.[0] || ''; $('kxPayCopy').dataset.n = n; $('kxPayCopy').hidden = !n; }
     } catch { $('kxStatus').textContent = 'Checking your order… (no connection right now)'; }

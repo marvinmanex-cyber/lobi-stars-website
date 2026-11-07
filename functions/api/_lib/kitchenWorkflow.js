@@ -57,6 +57,28 @@ export function reasonProblem(to, { reason, note } = {}) {
   return null;
 }
 
+// ── Delivery zones: a venue's sections grouped, so runners get only their own part of the ground ──
+/** The zone a stand or section belongs to: its id, or null when zones don't cover it. */
+export function zoneOf(stand, zones = []) {
+  const s = String(stand || '').trim().toLowerCase();
+  if (!s) return null;
+  return (zones || []).find(z => (z.sections || []).some(x => String(x).trim().toLowerCase() === s))?.id || null;
+}
+/** Does this runner handle this order? No zone on either side means yes, so nothing can go unseen. */
+export const runnerCovers = (runnerZone, orderZone) => !runnerZone || !orderZone || runnerZone === orderZone;
+/** "Zone name: Stand A, Stand B", one per line. */
+export function parseZones(text) {
+  const out = [];
+  for (const line of String(text || '').split('\n')) {
+    const i = line.indexOf(':');
+    if (i < 1) continue;
+    const name = line.slice(0, i).replace(/\s+/g, ' ').trim().slice(0, 40);
+    const sections = line.slice(i + 1).split(',').map(x => x.replace(/\s+/g, ' ').trim().slice(0, 60)).filter(Boolean).slice(0, 30);
+    if (name && sections.length) out.push({ id: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `zone-${out.length + 1}`, name, sections });
+  }
+  return out.slice(0, 20);
+}
+
 // ── Who is told about what ──
 // loud: sound and vibration that keep going. The rest get one quiet notification.
 // 'screen' is a device set up on the website admin's Kitchen Screen.
@@ -94,7 +116,7 @@ export const hearsEvent = (role, level, event) => {
  * Super Admins. Safety rule: if nobody who can act would hear a new order or an emergency, the
  * designated fallback Super Admin hears it anyway, or else every Super Admin.
  */
-export function recipientsFor(event, devices, { levels = {}, fallbackId = null, cookWasPreparing = false, duty = null, venueId = null } = {}) {
+export function recipientsFor(event, devices, { levels = {}, fallbackId = null, cookWasPreparing = false, duty = null, venueId = null, orderZone = null } = {}) {
   const rule = EVENTS[event];
   if (!rule) return [];
   const roles = [...rule.roles];
@@ -102,7 +124,9 @@ export function recipientsFor(event, devices, { levels = {}, fallbackId = null, 
   // Staff at another venue never hear this order. While a match-day shift is running, only those clocked in do (duty is null otherwise).
   const here = devices.filter(d => d.role === SA || d.role === 'screen' || !venueId || !d.venueId || d.venueId === venueId);
   const onDuty = here.filter(d => d.role === SA || d.role === 'screen' || !duty || duty.includes(d.staffId));
-  const wanted = onDuty.filter(d => roles.includes(d.role));
+  // A new "ready" alert goes to the runners for that zone. An overdue one goes to every runner on duty.
+  const zoned = event === 'ORDER_READY' ? onDuty.filter(d => d.role !== RUN || runnerCovers(d.zoneId, orderZone)) : onDuty;
+  const wanted = zoned.filter(d => roles.includes(d.role));
   const chosen = wanted.filter(d => hearsEvent(d.role, levels[d.staffId] || 'all', event));
   const someoneCanAct = chosen.some(d => d.role === SUP || d.role === SA);
   if (!someoneCanAct && URGENT.includes(event)) {

@@ -81,7 +81,7 @@ export async function ensureKitchenSchema(db) {
   try { await db.prepare(`ALTER TABLE mk_staff ADD COLUMN login_code_hash TEXT`).run(); } catch { /* already there */ }
   await db.prepare(`CREATE INDEX IF NOT EXISTS mk_staff_code ON mk_staff (login_code_hash)`).run();
   // The order workflow (6 Nov 2026): each person and shift belongs to a venue; the log keeps before and after.
-  for (const [t, col] of [['mk_staff', 'phone'], ['mk_staff', 'venue_id'], ['mk_shifts', 'venue_id'], ['mk_activity', 'before_json'], ['mk_activity', 'after_json']]) {
+  for (const [t, col] of [['mk_staff', 'zone_id'], ['mk_staff', 'phone'], ['mk_staff', 'venue_id'], ['mk_shifts', 'venue_id'], ['mk_activity', 'before_json'], ['mk_activity', 'after_json']]) {
     try { await db.prepare(`ALTER TABLE ${t} ADD COLUMN ${col} TEXT`).run(); } catch { /* already there */ }
   }
   ready = true;
@@ -181,7 +181,7 @@ async function nextStaffId(db) {
 // Only a Super Admin adds or changes a kitchen supervisor; supervisors manage cooks and pass staff.
 const SUPER_ONLY = 'Only a Super Admin can add or change a kitchen supervisor.';
 const staffView = s => ({ id: s.id, staffId: s.staff_id, name: s.full_name, role: s.role, roleLabel: ROLES[s.role] || s.role, active: !!s.is_active,
-  hasCode: !!s.login_code_hash, lastLogin: s.last_login_at, createdAt: s.created_at, venueId: s.venue_id || DEFAULT_VENUE, phone: s.phone || '' });
+  hasCode: !!s.login_code_hash, lastLogin: s.last_login_at, createdAt: s.created_at, venueId: s.venue_id || DEFAULT_VENUE, phone: s.phone || '', zoneId: s.zone_id || '' });
 export async function listStaff(db) {
   await ensureKitchenSchema(db);
   return (await db.prepare(`SELECT * FROM mk_staff ORDER BY is_active DESC, full_name`).all()).results.map(staffView);
@@ -217,6 +217,7 @@ export async function updateStaff(env, by, request, id, v) {
   const active = v.active !== undefined ? (v.active ? 1 : 0) : s.is_active;
   const venueId = by.kind === 'admin' && v.venueId !== undefined ? String(v.venueId) : (s.venue_id || DEFAULT_VENUE);
   const phone = v.phone !== undefined ? String(v.phone || '').replace(/[^\d+]/g, '').slice(0, 16) : (s.phone || '');
+  const zoneId = v.zoneId !== undefined ? String(v.zoneId || '').slice(0, 60) : (s.zone_id || '');
   // A supervisor only manages people at their own venue.
   if (by.kind !== 'admin' && by.venueId && (s.venue_id || DEFAULT_VENUE) !== by.venueId) return { error: 'That person works at another venue.', status: 403 };
   if (name.length < 2) return { error: "Enter the person's full name." };
@@ -230,9 +231,10 @@ export async function updateStaff(env, by, request, id, v) {
   if (code) changes.push('new login code');
   if (venueId !== (s.venue_id || DEFAULT_VENUE)) changes.push('venue changed');
   if (phone !== (s.phone || '')) changes.push('phone number changed');
+  if (zoneId !== (s.zone_id || '')) changes.push('delivery zone changed');
   if (!changes.length) return { ok: true, unchanged: true };
-  await db.prepare(`UPDATE mk_staff SET full_name = ?, role = ?, is_active = ?, venue_id = ?, phone = ?, ${code ? 'login_code_hash = ?, ' : ''}updated_at = ? WHERE id = ?`)
-    .bind(...[name, role, active, venueId, phone, ...(code ? [code.hash] : []), nowIso(), s.id]).run();
+  await db.prepare(`UPDATE mk_staff SET full_name = ?, role = ?, is_active = ?, venue_id = ?, phone = ?, zone_id = ?, ${code ? 'login_code_hash = ?, ' : ''}updated_at = ? WHERE id = ?`)
+    .bind(...[name, role, active, venueId, phone, zoneId || null, ...(code ? [code.hash] : []), nowIso(), s.id]).run();
   // A new code or a switched-off account signs the person out on every tablet straight away.
   if (code || !active) {
     await endSessions(db, s.id, code ? 'new login code' : 'account switched off');
@@ -350,7 +352,7 @@ export async function getKitchenSession(request, env, { touch = true } = {}) {
   let user = null;
   if (s.kind === 'staff') {
     const st = await db.prepare(`SELECT * FROM mk_staff WHERE id = ?`).bind(s.user_id).first();
-    if (st?.is_active) user = { ...staffActor(st), role: st.role, roleLabel: ROLES[st.role] || st.role, firstName: st.full_name.split(' ')[0], venueId: st.venue_id || DEFAULT_VENUE };
+    if (st?.is_active) user = { ...staffActor(st), role: st.role, roleLabel: ROLES[st.role] || st.role, firstName: st.full_name.split(' ')[0], venueId: st.venue_id || DEFAULT_VENUE, zoneId: st.zone_id || null };
   } else {
     const u = await db.prepare(`SELECT * FROM admin_users WHERE id = ?`).bind(s.user_id).first().catch(() => null);
     if (u && u.active && !u.disabled_at && isFullSuperAdmin(env, u)) user = { ...adminActor(u), role: 'super_admin', roleLabel: 'Super admin', email: u.email, firstName: String(u.name || u.email).split(/[ @]/)[0] };
