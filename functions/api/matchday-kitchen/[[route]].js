@@ -26,7 +26,7 @@
 //   POST sales-reports {action: save|delete, day, no} (save: supervisors, Super Admins; delete: Super Admins, a year after the report's date)
 //   GET check (Super Admins: the data check)
 import { signIn, signOut, json, kitchenSettings, permissions, mkLog, shiftState, startShift, endShift, listNotes, noteAction,
-  activityPage, listStaff, createStaff, updateStaff, saveSettings, ROLES, oneLine, clearKitchenCookie } from '../_lib/matchdayKitchen.js';
+  activityPage, listStaff, createStaff, updateStaff, changeOwnCode, saveSettings, ROLES, oneLine, clearKitchenCookie } from '../_lib/matchdayKitchen.js';
 import { isFullSuperAdmin } from '../_lib/superAdmins.js';
 import * as K from '../_lib/kitchenData.js';
 import { foodSettings, saveFoodSetting } from '../_lib/foodOrders.js';
@@ -48,7 +48,7 @@ import { REJECT_REASONS, recordOrderEvent, DEFAULT_VENUE, ensureFoodSchema } fro
 // The pages (and their names in the activity log).
 const PAGES = {
   refunds: 'Refunds', reports: 'Reports', sales: 'Sales reports', kitchen: 'Kitchen screen', live: 'Live order board', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices',
-  analytics: 'Food analytics', shift: 'My shift', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts',
+  analytics: 'Food analytics', shift: 'My shift', 'my-code': 'My login code', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts',
   whatsapp: 'Kitchen WhatsApp', telegram: 'Telegram updates', delivery: 'Delivery by stand',
 };
 const denied = () => json({ error: "Your role can't do this. Ask a kitchen supervisor or a super admin.", denied: true }, 403);
@@ -313,6 +313,10 @@ async function handle(context) {
         if (!perms.staff) return denied();
         // Supervisors add and manage cooks and pass staff; only a Super Admin handles supervisors.
         return json({ staff: await listStaff(db), roles: ROLES, addRoles: perms.superAdmin ? ROLES : Object.fromEntries(Object.entries(ROLES).filter(([k]) => k !== 'supervisor')), settings });
+      case 'POST my-code': {
+        const r = await changeOwnCode(env, user, request, S.id, body);
+        return r.error ? json({ error: r.error }, r.status || 400) : json(r);
+      }
       case 'POST staff': {
         if (!perms.staff) return denied();
         if (body.action === 'add') { const r = await createStaff(env, user, request, body); return r.error ? json({ error: r.error }, r.status || 400) : json(r); }

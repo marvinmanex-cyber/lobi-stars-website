@@ -69,7 +69,7 @@ export const ICONS: Record<string, string> = {
   activity: line('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>'),
   staff: line('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.5 14.2A5 5 0 0 1 22 19"/>'),
 };
-export const iconFor = (page: string) => ICONS[page.startsWith('orders/') || page === 'refunds' ? 'orders' : page === 'reports' || page === 'sales' ? 'analytics' : page] || '';
+export const iconFor = (page: string) => ICONS[page.startsWith('orders/') || page === 'refunds' ? 'orders' : page === 'reports' || page === 'sales' ? 'analytics' : page === 'my-code' ? 'staff' : page] || '';
 
 export type Tile = { id: string; title: string; text: string; style?: 'hero' | 'red' | 'amber' | 'gold' | 'wa' | 'tg'; external?: 'whatsapp' | 'telegram'; superOnly?: boolean };
 export type Group = { title: string; tiles: Tile[]; superOnly?: boolean };
@@ -95,6 +95,7 @@ export const GROUPS: Group[] = [
   ] },
   { title: 'Shift and records', tiles: [
     { id: 'shift', title: 'My shift', text: 'Start or end your shift', style: 'amber' },
+    { id: 'my-code', title: 'My login code', text: 'Choose your own 8-number code to sign in with' },
     { id: 'analytics', title: 'Food analytics', text: 'Orders, sales and top dishes' },
     { id: 'activity', title: 'Activity log', text: 'What was done, by whom and when' },
   ] },
@@ -105,6 +106,6 @@ export const GROUPS: Group[] = [
 /** Page names (tabs, page titles). */
 export const PAGE_TITLE: Record<string, string> = {
   refunds: 'Refunds', reports: 'Reports', sales: 'Sales reports', kitchen: 'Kitchen screen', live: 'Live order board', delivery: 'Delivery by stand', alerts: 'Kitchen alerts', orders: 'Food orders', menu: 'Menu and prices', analytics: 'Food analytics',
-  shift: 'My shift', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts', 'not-available': 'Not available',
+  shift: 'My shift', 'my-code': 'My login code', handover: 'Handover notes', activity: 'Activity log', staff: 'Staff accounts', 'not-available': 'Not available',
 };
 export const pageTitle = (page: string) => page.startsWith('orders/') ? `Order ${decodeURIComponent(page.slice(7))}` : PAGE_TITLE[page] || 'MatchDay Kitchen';

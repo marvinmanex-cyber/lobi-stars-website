@@ -170,6 +170,32 @@ async function newLoginCode(env) {
   }
   throw new Error('Could not make a login code.');
 }
+/**
+ * Why a chosen code is too easy to guess, or null when it's fine. The code alone signs a person in,
+ * so the same number, counting, repeats and dates (birthdays) are refused.
+ */
+export function weakCodeReason(raw) {
+  const d = String(raw || '').replace(/\D/g, '');
+  if (d.length !== 8) return 'A login code is 8 numbers, e.g. 4826-1937.';
+  if (new Set(d).size < 3) return 'Use at least 3 different numbers.';
+  const steps = [...d].slice(1).map((c, i) => (Number(c) - Number(d[i]) + 10) % 10);
+  if (steps.every(s => s === 1) || steps.every(s => s === 9)) return 'Numbers counting up or down are too easy to guess.';
+  if (/^(\d)\1(\d)\2(\d)\3(\d)\4$/.test(d) || /^(\d\d)\1{3}$/.test(d) || /^(\d{4})\1$/.test(d) || d.slice(0, 4) === [...d.slice(4)].reverse().join('')) return 'Repeated or mirrored numbers are too easy to guess.';
+  const isDate = (dd, mm, yyyy) => { const y = Number(yyyy), m = Number(mm), x = Number(dd); if (y < 1930 || y > 2035 || m < 1 || m > 12 || x < 1) return false; return x <= new Date(Date.UTC(y, m, 0)).getUTCDate(); };
+  if (isDate(d.slice(0, 2), d.slice(2, 4), d.slice(4)) || isDate(d.slice(2, 4), d.slice(0, 2), d.slice(4)) || isDate(d.slice(6), d.slice(4, 6), d.slice(0, 4)) || isDate(d.slice(4, 6), d.slice(6), d.slice(0, 4))) return 'Dates, such as a birthday, are too easy to guess.';
+  return null;
+}
+const CODE_TAKEN = "That code can't be used. Choose different numbers.";
+/** A code someone chose: { digits, hash } or { error }. A code that's someone else's gets a plain refusal, so it isn't given away. */
+async function chosenLoginCode(env, raw, ownId = null) {
+  const why = weakCodeReason(raw);
+  if (why) return { error: why };
+  const digits = String(raw).replace(/\D/g, ''), hash = await codeHash(env, digits);
+  const other = await env.DB.prepare(`SELECT id FROM mk_staff WHERE login_code_hash = ?`).bind(hash).first();
+  if (other && other.id !== ownId) return { error: CODE_TAKEN };
+  return { digits, hash };
+}
+
 async function nextStaffId(db) {
   let n = ((await db.prepare(`SELECT COUNT(*) AS n FROM mk_staff`).first())?.n || 0) + 1;
   for (;;) {
@@ -198,8 +224,11 @@ export async function createStaff(env, by, request, v) {
   if (bad) return { error: bad };
   if (role === 'supervisor' && by.kind !== 'admin') return { error: SUPER_ONLY, status: 403 };
   if (given && await db.prepare(`SELECT id FROM mk_staff WHERE staff_id = ?`).bind(given).first()) return { error: 'That Staff ID is already used. Choose another.' };
+  // Their own chosen code, or a random one.
+  const chosen = String(v.loginCode || '').trim() ? await chosenLoginCode(env, v.loginCode) : null;
+  if (chosen?.error) return { error: chosen.error };
   const staffId = given || await nextStaffId(db);
-  const id = newId('mks'), at = nowIso(), code = await newLoginCode(env);
+  const id = newId('mks'), at = nowIso(), code = chosen || await newLoginCode(env);
   // A supervisor adds people to their own venue; a Super Admin can choose.
   const venueId = by.kind === 'admin' ? (String(v.venueId || '') || DEFAULT_VENUE) : (by.venueId || DEFAULT_VENUE);
   await db.prepare(`INSERT INTO mk_staff (id, staff_id, full_name, role, password_hash, login_code_hash, created_by, created_at, updated_at, venue_id) VALUES (?, ?, ?, ?, 'login-code', ?, ?, ?, ?, ?)`)
@@ -223,12 +252,14 @@ export async function updateStaff(env, by, request, id, v) {
   if (name.length < 2) return { error: "Enter the person's full name." };
   if (!ROLES[role]) return { error: 'Choose a role.' };
   if (by.kind !== 'admin' && (s.role === 'supervisor' || role === 'supervisor')) return { error: SUPER_ONLY, status: 403 };
-  const code = v.newCode === true ? await newLoginCode(env) : null;
+  const chosen = String(v.loginCode || '').trim() ? await chosenLoginCode(env, v.loginCode, s.id) : null;
+  if (chosen?.error) return { error: chosen.error };
+  const code = chosen || (v.newCode === true ? await newLoginCode(env) : null);
   const changes = [];
   if (name !== s.full_name) changes.push(`name ${s.full_name} → ${name}`);
   if (role !== s.role) changes.push(`role ${ROLES[s.role] || s.role} → ${ROLES[role]}`);
   if (active !== s.is_active) changes.push(active ? 'can sign in again' : 'switched off');
-  if (code) changes.push('new login code');
+  if (code) changes.push(chosen ? 'login code chosen' : 'new login code');
   if (venueId !== (s.venue_id || DEFAULT_VENUE)) changes.push('venue changed');
   if (phone !== (s.phone || '')) changes.push('phone number changed');
   if (zoneId !== (s.zone_id || '')) changes.push('delivery zone changed');
@@ -244,6 +275,29 @@ export async function updateStaff(env, by, request, id, v) {
   await mkLog(db, by, `Changed staff account ${name} (${s.staff_id}): ${changes.join(', ')}`, { kind: 'staff', request,
     before: { name: s.full_name, role: s.role, venueId: s.venue_id || DEFAULT_VENUE, active: !!s.is_active }, after: { name, role, venueId, active: !!active } });
   return { ok: true, staffId: s.staff_id, name, ...(code ? { loginCode: showCode(code.digits) } : {}) };
+}
+
+/** A staff member chooses their own code: their current code first, then the new one. Their other tablets are signed out. */
+export async function changeOwnCode(env, user, request, sessionId, { current, code, confirm }) {
+  const db = env.DB;
+  await ensureKitchenSchema(db);
+  if (user.kind !== 'staff') return { error: 'Super Admins sign in with their website email, not a login code.' };
+  if (!(await rateLimit(db, `mdk-mycode:${user.id}`, 6, 900))) return { error: 'Too many tries. Please wait 15 minutes.', status: 429 };
+  const s = await db.prepare(`SELECT * FROM mk_staff WHERE id = ?`).bind(user.id).first();
+  const now = String(current || '').replace(/\D/g, '');
+  if (!s || now.length !== 8 || (await codeHash(env, now)) !== s.login_code_hash) {
+    await mkLog(db, user, 'Login code not changed: current code wrong', { kind: 'staff', request });
+    return { error: 'Your current login code is not right.' };
+  }
+  const next = String(code || '').replace(/\D/g, '');
+  if (next !== String(confirm || '').replace(/\D/g, '')) return { error: "The two new codes don't match. Type it again." };
+  if (next === now) return { error: 'That is already your code. Choose different numbers.' };
+  const chosen = await chosenLoginCode(env, next, s.id);
+  if (chosen.error) return { error: chosen.error };
+  await db.prepare(`UPDATE mk_staff SET login_code_hash = ?, updated_at = ? WHERE id = ?`).bind(chosen.hash, nowIso(), s.id).run();
+  await db.prepare(`UPDATE mk_sessions SET ended_at = ?, ended_why = 'login code changed' WHERE user_id = ? AND ended_at IS NULL AND id <> ?`).bind(nowIso(), s.id, sessionId || '').run();
+  await mkLog(db, user, 'Chose a new login code', { kind: 'staff', request });
+  return { ok: true };
 }
 
 // ── Sign-in and sessions ──

@@ -4678,6 +4678,11 @@ Only supervisors and Super Admins change prices, add dishes and delete dishes. *
 
 **Kitchen tickets:** **Print kitchen ticket** on an order's page prints what to cook and where it goes, with no prices or phone number.
 
+**Choosing login codes:** each kitchen staff member can choose their own 8-number code. On the MatchDay Kitchen home page they open **My login code**, type their current code, then the new code twice. Any other tablet they're signed in on signs out.
+- When adding someone on **Staff accounts**, you can type the code in **Login code (optional)**. Leave it empty for a random code. To change someone's code, use **Choose a new login code** in their **Edit** box.
+- The website refuses codes that are easy to guess: the same number repeated, fewer than 3 different numbers, counting up or down (12345678), repeats, doubles or mirrors (12121212, 11223344, 12344321) and dates such as birthdays (15061990).
+- If a code is already someone else's, the website only says it can't be used and doesn't say why, so that person's code stays safe.
+
 **Sales reports (saved records):** a report saves by itself 4 hours after kick-off of each home match. Supervisors and Super Admins find them on **Sales reports**. Each shows total sales, orders and items sold, what was paid online and on WhatsApp, every item with the most sold first, and a pie chart.
 - **Open** a report, then press **Download report (Word)** or **(PDF)**.
 - **Combining:** tick any reports (say 1, 4 and 7) and press **Combine reports**. Its figures are added together, and it downloads the same way.

@@ -125,7 +125,7 @@ function renderHome() {
   const sa = !!session.perms.staff;
   $('groups').innerHTML = GROUPS.filter(g => !g.superOnly || sa).map(g => {
     // WhatsApp opens only on the kitchen's official device: replies come from one number.
-    const tiles = g.tiles.filter(t => (t.id !== 'whatsapp' || session.waDevice) && (t.id !== 'analytics' || session.perms.reports) && (!t.superOnly || sa));
+    const tiles = g.tiles.filter(t => (t.id !== 'whatsapp' || session.waDevice) && (t.id !== 'analytics' || session.perms.reports) && (t.id !== 'my-code' || session.user.kind === 'staff') && (!t.superOnly || sa));
     return `<section class="mk-group"><h2>${esc(g.title)}</h2><div class="mk-rail"><div class="mk-tickets">${tiles.map(t => {
       const text = t.id === 'activity' && !sa ? 'Everything you have done here' : t.text;
       const note = t.external === 'whatsapp' ? 'Opens WhatsApp in a new tab' : t.external ? 'Opens the app' : '';

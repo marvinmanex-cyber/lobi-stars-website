@@ -17,7 +17,7 @@ const HEADERS = {
   'X-Robots-Tag': 'noindex, nofollow',
   'Cache-Control': 'no-store',
 };
-const PANEL = /^\/matchday-kitchen\/(kitchen|live|delivery|refunds|reports|sales|alerts|orders|orders\/[A-Za-z0-9_-]{1,60}|menu|analytics|shift|handover|activity|staff|not-available)\/$/;
+const PANEL = /^\/matchday-kitchen\/(kitchen|live|delivery|refunds|reports|sales|alerts|orders|orders\/[A-Za-z0-9_-]{1,60}|menu|analytics|shift|my-code|handover|activity|staff|not-available)\/$/;
 
 export async function onRequest({ request, env, next }) {
   const url = new URL(request.url);

@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-07: MatchDay Kitchen: choose your own login code
+
+**Who it affects:** kitchen staff, supervisors, Super Admins. **Staff need to:** nothing (optional).
+- Staff can choose their own 8-number login code under **My login code** on the home page.
+- Whoever adds staff, or edits an account, can type a chosen code instead of getting a random one.
+- Easy codes (repeats, counting, birthdays) are refused.
+
 ## 2026-11-07: Partner order: House 43 after Msendo
 
 **Who it affects:** everyone. **Staff need to:** nothing.

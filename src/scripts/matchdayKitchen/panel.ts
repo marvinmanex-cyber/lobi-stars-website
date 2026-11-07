@@ -557,6 +557,7 @@ const PAGES: Record<string, () => Promise<void>> = {
               <div class="mk-field"><label>Phone (for backup alerts)</label><input name="phone" value="${esc(s.phone || '')}" inputmode="tel" maxlength="16" /></div>
               ${vn.settings.zones?.length && s.role === 'delivery' ? `<div class="mk-field"><label>Delivery zone</label><select name="zoneId"><option value="">All zones</option>${vn.settings.zones.map((z: any) => `<option value="${esc(z.id)}" ${z.id === s.zoneId ? 'selected' : ''}>${esc(z.name)}</option>`).join('')}</select></div>` : ''}
               <div class="mk-field"><label>Role</label><select name="role">${roleOpts(s.role)}</select></div>
+              <div class="mk-field"><label>Choose a new login code (optional)</label><input name="loginCode" inputmode="numeric" autocomplete="off" maxlength="9" placeholder="Leave empty to keep it" /></div>
               </div>
               <label style="display:flex;gap:10px;align-items:center;min-height:48px;font-size:18px"><input type="checkbox" name="active" ${s.active ? 'checked' : ''} style="width:26px;height:26px" /> Can sign in</label>
               <p class="mk-status" style="text-transform:none;letter-spacing:0">A new login code or switching someone off signs them out on every tablet straight away.</p>
@@ -565,8 +566,9 @@ const PAGES: Record<string, () => Promise<void>> = {
         <section class="mk-section"><h2>Add staff</h2><form class="mk-box" id="addF">
           <div class="mk-filters"><div class="mk-field"><label for="aName">Full name</label><input id="aName" maxlength="80" /></div>
           <div class="mk-field"><label for="aRole">Role</label><select id="aRole">${roleOpts('cook')}</select></div>
+          <div class="mk-field"><label for="aCode">Login code (optional)</label><input id="aCode" inputmode="numeric" autocomplete="off" maxlength="9" placeholder="Empty = a random code" /></div>
           </div>
-          <p class="mk-status" style="text-transform:none;letter-spacing:0">No email or password: the website gives this person a Staff ID and an 8-number login code.${sa ? '' : ' Only a Super Admin can add a kitchen supervisor.'}</p>
+          <p class="mk-status" style="text-transform:none;letter-spacing:0">No email or password: the website gives this person a Staff ID and an 8-number login code. To choose the code yourself, type it in: 8 numbers. Not the same number repeated, not counting (12345678), not a date such as a birthday.${sa ? '' : ' Only a Super Admin can add a kitchen supervisor.'}</p>
           <button class="mk-btn go big" type="submit">Add staff and make login code</button></form></section>
         ${wad ? `<section class="mk-section"><h2>Official WhatsApp device</h2><div class="mk-box"><p style="margin:0 0 10px">Orders and replies use only <b>0708 009 4985</b>. Only a device on this list gets the reply buttons and fans' numbers; everyone else sees the orders only. Do this on the kitchen's phone or computer where WhatsApp is signed in to that number, then sign out of your own account there. It stays approved until you remove it.</p>
           ${wad.devices.length ? `<ul style="margin:0 0 12px;padding:0;list-style:none">${wad.devices.map((x: any) => `<li style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #d9dde2"><span><b>${esc(x.name)}</b>${x.thisOne ? ' <span class="mk-pill go">This device</span>' : ''}<br /><small>Added by ${esc(x.addedBy || '')}, ${esc(dayTime(x.addedAt))}</small></span><button type="button" class="mk-btn danger" data-waremove="${esc(x.id)}" data-name="${esc(x.name)}">Remove</button></li>`).join('')}</ul>` : '<p class="mk-status" style="text-transform:none;letter-spacing:0">No device yet, so nobody can reply from here.</p>'}
@@ -646,13 +648,13 @@ const PAGES: Record<string, () => Promise<void>> = {
       } else if (form.id === 'repF') {
         act(form.querySelector('button'), async () => { const r = await api('report-settings', { method: 'POST', body: { emails: $('repE').value } }); toast(`Saved: ${r.emails.length} address${r.emails.length === 1 ? '' : 'es'}.`); });
       } else if (form.id === 'addF') {
-        act(form.querySelector('button'), async () => { const r = await api('staff', { method: 'POST', body: { action: 'add', name: $('aName').value, role: $('aRole').value } }); codeShown = r; toast('Staff account added.'); await draw(); });
+        act(form.querySelector('button'), async () => { const r = await api('staff', { method: 'POST', body: { action: 'add', name: $('aName').value, role: $('aRole').value, loginCode: $('aCode').value } }); codeShown = r; toast('Staff account added.'); await draw(); });
       } else if (form.id === 'setF') {
         const vals = (n: string) => [...form.querySelectorAll<HTMLInputElement>(`input[name="${n}"]:checked`)].map(i => i.value);
         act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'settings', telegramUrl: $('sTg').value.trim(), cancelRoles: vals('cancel'), lateMinutes: $('sLate').value } }); toast('Settings saved.'); shell?.shiftChanged(); await draw(); });
       } else if (form.dataset.editform) {
         const g = (n: string) => form.querySelector(`[name="${n}"]`) as HTMLInputElement;
-        act(form.querySelector('button'), async () => { await api('staff', { method: 'POST', body: { action: 'edit', id: form.dataset.editform, name: g('name').value, phone: g('phone').value, ...(g('zoneId') ? { zoneId: g('zoneId').value } : {}), role: g('role').value, active: g('active').checked } }); toast('Changes saved.'); await draw(); });
+        act(form.querySelector('button'), async () => { const r = await api('staff', { method: 'POST', body: { action: 'edit', id: form.dataset.editform, name: g('name').value, phone: g('phone').value, ...(g('zoneId') ? { zoneId: g('zoneId').value } : {}), role: g('role').value, active: g('active').checked, loginCode: g('loginCode').value } }); if (r.loginCode) codeShown = r; toast('Changes saved.'); await draw(); });
       }
     });
     await draw();
@@ -777,6 +779,25 @@ const PAGES: Record<string, () => Promise<void>> = {
     });
     await draw();
     void opened;
+  },
+
+  async 'my-code'() {
+    if (session.user.kind !== 'staff') { main.innerHTML = '<section class="mk-section mk-box"><p style="margin:0">Super Admins sign in with their website email, so there is no login code to change.</p></section>'; stamp(); return; }
+    const field = (id: string, label: string, auto: string) => `<div class="mk-field"><label for="${id}">${label}</label><input id="${id}" type="password" inputmode="numeric" autocomplete="${auto}" maxlength="9" required /></div>`;
+    main.innerHTML = `<section class="mk-section"><form class="mk-box" id="mcF" style="max-width:560px">
+        <p style="margin:0 0 12px">Choose your own 8-number code to sign in with. Keep it to yourself: everything done with it is recorded under your name.</p>
+        ${field('mcNow', 'Your current login code', 'current-password')}${field('mcNew', 'Your new login code', 'new-password')}${field('mcAgain', 'Type the new code again', 'new-password')}
+        <p class="mk-status" style="text-transform:none;letter-spacing:0">8 numbers. Not the same number repeated, not counting (12345678), not a date such as a birthday. Any other tablet you're signed in on signs out.</p>
+        <button class="mk-btn go big" type="submit">Save my new code</button></form></section>`;
+    stamp();
+    $('mcF').addEventListener('submit', (e: Event) => {
+      e.preventDefault();
+      act(($('mcF') as HTMLFormElement).querySelector('button'), async () => {
+        await api('my-code', { method: 'POST', body: { current: $('mcNow').value, code: $('mcNew').value, confirm: $('mcAgain').value } });
+        ($('mcF') as HTMLFormElement).reset();
+        toast('Your new login code is saved. Use it next time you sign in.');
+      });
+    });
   },
 
   async 'not-available'() { notAvailable(); },
