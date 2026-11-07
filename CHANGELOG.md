@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-07: News stories: wider text, shorter headlines
+
+**Who it affects:** fans reading news. **Staff need to:** nothing.
+- A story's text is now as wide as its cover picture, and justified.
+- Headlines are smaller and never take more than two lines: a long one shrinks to fit.
+
 ## 2026-11-07: MatchDay Kitchen: the "runner" role is now called "Delivery"
 
 **Who it affects:** kitchen staff and fans. **Staff need to:** nothing.
