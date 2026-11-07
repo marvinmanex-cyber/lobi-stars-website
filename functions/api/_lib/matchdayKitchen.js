@@ -27,7 +27,7 @@ const MAX_MS = 14 * 3600e3;                    // and after 14 hours in any case
 const LOCK_AFTER = 5;                          // Super Admin email sign-in: 5 wrong passwords, wait 15 minutes
 const CODE_FAILS = 10;                         // login codes: 10 wrong codes from one connection, wait 15 minutes
 export const STAFF_ID_RE = /^[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
-export const ROLES = { cook: 'Cook / kitchen hand', pass: 'Pass / order handler', delivery: 'Delivery / runner', supervisor: 'Kitchen supervisor' };
+export const ROLES = { cook: 'Cook / kitchen hand', pass: 'Pass / order handler', delivery: 'Delivery', supervisor: 'Kitchen supervisor' };
 export const SETTING_DEFAULTS = { telegram_url: '', cancel_roles: 'pass,supervisor', price_roles: 'supervisor', late_minutes: '5' };
 
 const nowIso = () => new Date().toISOString();

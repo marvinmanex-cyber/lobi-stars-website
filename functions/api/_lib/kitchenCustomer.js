@@ -22,7 +22,7 @@ export function customerMessage(env, order, event, extra = {}) {
   const items = (() => { try { return JSON.parse(order.items_json).map(i => `${i.qty} × ${i.name}`).join(', '); } catch { return ''; } })();
   switch (event) {
     case 'payment': return extra.text ? { subject: `Your order ${ref}: how to pay`, text: extra.text } : null;
-    case 'received': return { subject: `We have your order ${ref}`, text: `${hi} We have received your order ${ref}: ${items}. Total ${formatNaira(order.total_kobo)}. ${whereText(order)}.${order.delivery_code && order.fulfilment !== 'pickup' ? ` Your delivery code is ${order.delivery_code}: give it to the runner when your food arrives.` : ''}${link}` };
+    case 'received': return { subject: `We have your order ${ref}`, text: `${hi} We have received your order ${ref}: ${items}. Total ${formatNaira(order.total_kobo)}. ${whereText(order)}.${order.delivery_code && order.fulfilment !== 'pickup' ? ` Your delivery code is ${order.delivery_code}: give it to our delivery staff when your food arrives.` : ''}${link}` };
     case 'accepted': return { subject: `Order ${ref} accepted`, text: `${hi} Your order ${ref} has been accepted and is going to the kitchen.${link}` };
     case 'out': return { subject: `Order ${ref} is on its way`, text: `${hi} Your order ${ref} is on its way to you.${order.delivery_code ? ` Have your delivery code ready: ${order.delivery_code}.` : ''}${link}` };
     case 'delivered': return { subject: `Order ${ref} delivered`, text: `${hi} Your order ${ref} has been delivered. Enjoy the match.${link ? ` Tell us how it went: ${trackUrl(SITE(env), order)}` : ''}` };

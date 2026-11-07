@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-07: MatchDay Kitchen: the "runner" role is now called "Delivery"
+
+**Who it affects:** kitchen staff and fans. **Staff need to:** nothing.
+- The staff role "Delivery / runner" is now just **Delivery**. Screens say "Delivery: <name>" and "Change delivery person".
+- Fans are told to give their delivery code to "our delivery staff".
+
 ## 2026-11-07: MatchDay Kitchen: saved sales reports
 
 **Who it affects:** kitchen supervisors and Super Admins. **Staff need to:** nothing: reports save by themselves.

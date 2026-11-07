@@ -124,7 +124,7 @@ import Layout from '../../layouts/Layout.astro';
 
     $('ref').textContent = o.ref;
     $('payHow').textContent = d.payment || ''; $('payHow').hidden = !d.payment;
-    $('codeHow').textContent = o.deliveryCode ? `Your delivery code is ${o.deliveryCode}. Give it to the runner when your food arrives.` : ''; $('codeHow').hidden = !o.deliveryCode;
+    $('codeHow').textContent = o.deliveryCode ? `Your delivery code is ${o.deliveryCode}. Give it to our delivery staff when your food arrives.` : ''; $('codeHow').hidden = !o.deliveryCode;
     $('seat').textContent = o.fulfilment === 'pickup' ? `Collect from ${o.pickupPoint}` : `Seat ${o.seat}${o.stand ? ' · ' + o.stand : ''}`;
     $('items').innerHTML = o.items.map(i => `<li><span></span><span>${naira(i.priceKobo * i.qty)}</span></li>`).join('');
     [...$('items').children].forEach((li, n) => { li.firstChild.textContent = `${o.items[n].qty} × ${o.items[n].name}`; });

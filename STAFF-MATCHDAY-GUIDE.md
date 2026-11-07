@@ -63,7 +63,7 @@ section 35.
 6. **In-seat food:** check the menu (**Food: Menu & Prices**): prices, photos,
    which dishes are ON (ready) or OFF, and that ordering is **Automatic** or will be opened.
    Set up the kitchen tablet with **Food: Live Order Board** and make sure the
-   kitchen and runners have notifications on (STAFF-GUIDE.md, sections 13–16).
+   kitchen and delivery staff have notifications on (STAFF-GUIDE.md, sections 13–16).
 6. **Tickets:** to give members first access, set *General sale opens* on the
    match (Admin → Match Tickets & Settings). Members confirmed in Admin → Members can
    buy before then; everyone else from that time.

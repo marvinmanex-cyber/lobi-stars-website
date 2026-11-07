@@ -469,9 +469,9 @@ async function handle(context) {
         if (!perms.confirm) return denied();
         const o = await K.getOrder(db, body.id);
         if (!o || !visible(o)) return json({ error: 'That order no longer exists.' }, 404);
-        if (o.order_status !== 'OUT_FOR_DELIVERY') return json({ error: 'Only an order on its way can be given to another runner.' }, 409);
+        if (o.order_status !== 'OUT_FOR_DELIVERY') return json({ error: 'Only an order on its way can be given to another delivery person.' }, 409);
         const st = await db.prepare(`SELECT id, full_name FROM mk_staff WHERE id = ? AND is_active = 1 AND role IN ('delivery', 'pass') AND COALESCE(venue_id, ?) = ?`).bind(String(body.staffId || ''), DEFAULT_VENUE, o.venue_id || DEFAULT_VENUE).first();
-        if (!st) return json({ error: 'Choose a runner at this venue.' }, 400);
+        if (!st) return json({ error: 'Choose a delivery person at this venue.' }, 400);
         await db.prepare(`UPDATE food_orders SET claimed_by = ?, claimed_name = ?, claimed_at = ? WHERE id = ?`).bind(st.id, st.full_name, new Date().toISOString(), o.id).run();
         await recordOrderEvent(db, o.id, { kind: 'reassign', byId: user.id, byName: user.name, byRole: role, note: `Given to ${st.full_name}` });
         await mkLog(db, user, `Order ${o.ref}: gave it to ${st.full_name}`, { kind: 'order', request, before: { runner: o.claimed_name || null }, after: { runner: st.full_name } });

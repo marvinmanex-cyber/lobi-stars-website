@@ -1096,7 +1096,7 @@ page.
 | Paid | green | Payment confirmed. The kitchen is alerted: accept it. |
 | Accepted by kitchen | teal | The kitchen has seen it; start cooking. |
 | Preparing | blue | The kitchen is making it. |
-| Out for delivery | purple | A runner is taking it to the seat. |
+| Out for delivery | purple | A delivery person is taking it to the seat. |
 | Delivered | dark green | Handed to the fan. |
 | Payment failed / Expired | red / grey | No money taken. Nothing to do. |
 | Cancelled / Refunded | grey | Cancelled by staff; refund done in Paystack. |
@@ -1309,7 +1309,7 @@ this season, all time or custom dates) and, if you like, **one match**.
 - **Items ranked:** bar chart and table with portions, % of items, revenue
   and % of food revenue (from the price each fan actually paid).
 - **By category:** Meals vs Snacks vs Drinks.
-- **Orders by stand:** where to put more runners.
+- **Orders by stand:** where to put more delivery staff.
 - **Orders per 15 minutes:** for one match it is shown against kick-off
   (half-time is usually the busiest); otherwise by time of day.
 - **⬇ Food Report (Excel):** sheets for orders, items with % and customers.
@@ -1352,7 +1352,7 @@ orders, money taken and the top item.
 7. **Stands:** enter the stands/sections list (Menu → Ordering settings).
 8. **Ordering times:** choose **Automatic** (e.g. 90 minutes before kick-off
    of home games until full time) or open/close it by hand.
-9. **Staff:** give kitchen and runner staff a **Commercial** staff account,
+9. **Staff:** give kitchen and delivery person staff a **Commercial** staff account,
    and ask them to enable notifications on their phones.
 
 ### A test run with Paystack test keys (do this once before going live)
@@ -4533,7 +4533,7 @@ tabs open. WhatsApp and Telegram open in their own apps.
 | --- | --- |
 | **Kitchen screen** | Paid orders to cook, oldest first, as tickets: big order number, minutes waiting, customer and seat, items, notes. **Start cooking**, then **Mark ready**. Red border and LATE after 15 minutes. Refreshes every 15 seconds (not while you are tapping). Shows the last 12 hours. |
 | **Live order board** | New / Preparing / Ready columns with counts. Tap a card to open the order. |
-| **Delivery by stand** | For the runners: orders on the way, grouped by stand (and pickup point), in seat order, with how many are still cooking for that stand. Tap **Delivered** on each, or **Mark all delivered** for a stand. Anyone in the kitchen. |
+| **Delivery by stand** | For the delivery staff: orders on the way, grouped by stand (and pickup point), in seat order, with how many are still cooking for that stand. Tap **Delivered** on each, or **Mark all delivered** for a stand. Anyone in the kitchen. |
 | **Kitchen alerts** | Late orders, dishes turned off, orders cancelled today. |
 | **Food orders** | Search by order number or name, filter by status and day (30 a page). |
 | **One order** | All details and a button for each next status the website allows (the next step in green). **Cancel** (red, asks first) only for roles allowed to cancel. |
@@ -4560,11 +4560,11 @@ fan sees on their order page.
 
 Orders only move forward, and the website refuses anything else. **Rejecting** (at step 1, or a WhatsApp order before it) needs a reason: an item sold out, kitchen at capacity, outside the delivery area, a payment problem, or other with a note. **Cancelling** can happen at any step before delivery and needs a reason too. Both are for supervisors and Super Admins. A paid order that is rejected or cancelled goes on the refund list, and the refund is then made by hand in Paystack. The fan sees the reason on their order page, and by email if they gave one. No WhatsApp message goes out.
 
-**Taking an order:** when a runner presses **Take for delivery**, the order is theirs. If two press at once, only one gets it. Only that runner or a supervisor can finish it, and a supervisor can change the runner on the order's page.
+**Taking an order:** when a delivery person presses **Take for delivery**, the order is theirs. If two press at once, only one gets it. Only that delivery person or a supervisor can finish it, and a supervisor can change the delivery person on the order's page.
 
-**Delivery code:** every order gets a 4-digit code. The fan sees it on their order page and in their WhatsApp order message. The runner asks for it and types it when pressing **Delivered**. Staff never see the code. If the fan can't find it, call a supervisor, who can confirm delivery without it, and the order's history records that. A Super Admin can switch the code off in Staff accounts › Venue. Pickup orders don't use it.
+**Delivery code:** every order gets a 4-digit code. The fan sees it on their order page and in their WhatsApp order message. The delivery person asks for it and types it when pressing **Delivered**. Staff never see the code. If the fan can't find it, call a supervisor, who can confirm delivery without it, and the order's history records that. A Super Admin can switch the code off in Staff accounts › Venue. Pickup orders don't use it.
 
-**Not at seat:** the runner presses it, and supervisors get an alarm. Open the order and press **Ready** to try again, or **Cancelled** with a reason.
+**Not at seat:** the delivery person presses it, and supervisors get an alarm. Open the order and press **Ready** to try again, or **Cancelled** with a reason.
 
 **Something is missing:** a cook presses it on the order and types what's missing. Supervisors get an alarm and see it on the order.
 
@@ -4660,9 +4660,9 @@ It is the same setting as the button on the admin live order board, and each cha
 | Pin or delete anyone's notes | | | Yes | Yes |
 | Everyone's activity, CSV | | | Yes | Yes |
 | Open and close food ordering | | | Yes | Yes |
-| Staff accounts and settings | | | Yes (cooks, pass staff and runners at their venue) | Yes (everyone) |
+| Staff accounts and settings | | | Yes (cooks, pass staff and delivery staff at their venue) | Yes (everyone) |
 
-**Delivery / runner** is a separate role: they see orders that are ready or on the way, take them out and deliver them, and don't see totals, payment details or the fan's number.
+**Delivery** is a separate role: they see orders that are ready or on the way, take them out and deliver them, and don't see totals, payment details or the fan's number.
 
 Only supervisors and Super Admins change prices, add dishes and delete dishes. **Super Admins** sign in to the kitchen with their email, password and two-step code. **Super Admin alerts:** Staff accounts › **Your alerts**: Everything, Urgent only (new orders, cancellations, failed deliveries, missing ingredients) or Off. You can't choose Off if no supervisor is on shift and no other Super Admin would hear new orders, unless another Super Admin is set as the fallback. Nobody else can mute alerts.
 
@@ -4672,7 +4672,7 @@ Only supervisors and Super Admins change prices, add dishes and delete dishes. *
 
 **Add a drink:** when a fan's cart has food but no drink or combo, the cart offers one drink that is ON (the most popular first), with **Add** and **No thanks**. It never offers 18+ drinks.
 
-**Delivery zones (optional):** in Staff accounts › Venue, write one zone per line, such as `North: Popular Stand, Grand Stand`. Then open a runner's account and choose their zone. Runners with a zone see and hear only that zone's ready orders. Runners with no zone, and orders from a stand in no zone, are never left out. If an order sits ready too long, every runner on duty is alerted.
+**Delivery zones (optional):** in Staff accounts › Venue, write one zone per line, such as `North: Popular Stand, Grand Stand`. Then open a delivery person's account and choose their zone. Delivery staff with a zone see and hear only that zone's ready orders. Delivery staff with no zone, and orders from a stand in no zone, are never left out. If an order sits ready too long, every delivery person on duty is alerted.
 
 **Taking several orders:** on **Delivery by stand**, **Take all** takes every ready order for that stand in one tap.
 
@@ -4695,7 +4695,7 @@ Only supervisors and Super Admins change prices, add dishes and delete dishes. *
 
 **Match-day shift:** a supervisor or Super Admin starts it on **My shift**. While it runs, only people who have pressed **Start shift** hear order alerts, so everyone must clock in. Ending it clocks everyone out. If nobody starts it, everyone hears the alerts for their job, so forgetting can't silence the kitchen.
 
-**If an order is left too long** (Staff accounts › Venue sets the times, Super Admins only), an alert goes out once: not confirmed after 2 minutes (supervisors and Super Admins), still cooking after 15 (supervisors), ready but not taken after 3 (runners and supervisors), on the way after 10 (supervisors). Kick-off and half-time orders stay quiet until 30 minutes before they are due. If WhatsApp through Meta or SMS through Termii is connected, supervisors with a phone number on their account also get a message when nobody has opened a new order after 60 seconds.
+**If an order is left too long** (Staff accounts › Venue sets the times, Super Admins only), an alert goes out once: not confirmed after 2 minutes (supervisors and Super Admins), still cooking after 15 (supervisors), ready but not taken after 3 (delivery staff and supervisors), on the way after 10 (supervisors). Kick-off and half-time orders stay quiet until 30 minutes before they are due. If WhatsApp through Meta or SMS through Termii is connected, supervisors with a phone number on their account also get a message when nobody has opened a new order after 60 seconds.
 
 **Pausing:** **Pause new orders** on the Home screen stops new orders and shows fans your message. **Stop new orders at this many open orders** in Staff accounts › Venue does the same by itself when the kitchen is full, and it starts again as orders finish. Supervisors and Super Admins.
 
@@ -4705,7 +4705,7 @@ Only supervisors and Super Admins change prices, add dishes and delete dishes. *
 - **In the app:** while MatchDay Kitchen is open, each person hears the alerts for their job, and every alert blinks red, in the bar at the top and on the button or tab of the page it comes from, and keeps beeping:
   - **A paid order or a new WhatsApp order** beeps until a supervisor or Super Admin confirms or rejects it. Everyone else sees the order and hears it but can't stop it, so have a supervisor on duty. A WhatsApp order that is confirmed but not paid goes quiet and isn't cooked.
   - **🍳 Start cooking** beeps once an order is confirmed and paid, until someone presses **Start cooking**. An order for kick-off or half-time starts 30 minutes before it is due.
-  - **🛎️ Ready for delivery** beeps for runners until someone presses **Take for delivery**.
+  - **🛎️ Ready for delivery** beeps for delivery staff until someone presses **Take for delivery**.
   - **⚠️ Delivery failed** and **⚠️ Missing ingredient** beep for supervisors.
   - **A late order** beeps once a minute until it is delivered.
 - **On the device, even with the app closed:** on the Home screen press **Turn on order alerts** and allow notifications. Do this once on each phone or tablet, then press **Send a test alert** to check it. On iPhone and iPad, install the app first (Share, then Add to Home Screen) and open it from there.

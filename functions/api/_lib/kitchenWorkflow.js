@@ -42,7 +42,7 @@ export function canMove(role, order, to, { userId = null } = {}) {
   if (to === 'REFUNDED') return role === SA ? null : { error: 'Only a Super Admin can mark a refund.', status: 403 };
   if (role === SA || role === SUP) return null;
   // Once a runner has taken an order, only they (or a supervisor) finish it.
-  if (from === 'OUT_FOR_DELIVERY' && order.claimed_by && userId && order.claimed_by !== userId) return { error: `${order.claimed_name || 'Another runner'} has this order.`, status: 403 };
+  if (from === 'OUT_FOR_DELIVERY' && order.claimed_by && userId && order.claimed_by !== userId) return { error: `${order.claimed_name || 'Another delivery person'} has this order.`, status: 403 };
   if ((ROLE_MOVES[role] || []).includes(key(from, to))) return null;
   return { error: "Your role can't do this. Ask a kitchen supervisor or a super admin.", status: 403 };
 }

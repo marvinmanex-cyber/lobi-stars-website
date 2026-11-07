@@ -77,7 +77,7 @@ export function csvRows(kind, r) {
   if (kind === 'ratings') return [['Match', 'Ratings', 'Food', 'Speed', 'Service'], ...r.ratings.byMatch.map(m => [m.match, m.count, m.food ?? '', m.speed ?? '', m.service ?? '']), [], ['Order', 'Food', 'Speed', 'Service', 'Comment'], ...r.ratings.comments.map(c => [c.ref, c.food, c.speed, c.service, c.comment])];
   const m = r.match;
   return [['Orders', m.orders], ['Sales', m.revenue], ['Average order', m.average], [],
-    ['Average minutes per step'], ['Paid to confirmed', m.stages.confirm ?? ''], ['Confirmed to cooking', m.stages.startCooking ?? ''], ['Cooking', m.stages.cook ?? ''], ['Waiting for a runner', m.stages.waitForRunner ?? ''], ['Delivering', m.stages.deliver ?? ''], ['Paid to delivered', m.stages.total ?? ''], [],
+    ['Average minutes per step'], ['Paid to confirmed', m.stages.confirm ?? ''], ['Confirmed to cooking', m.stages.startCooking ?? ''], ['Cooking', m.stages.cook ?? ''], ['Waiting for delivery', m.stages.waitForRunner ?? ''], ['Delivering', m.stages.deliver ?? ''], ['Paid to delivered', m.stages.total ?? ''], [],
     ['Rejected or cancelled', 'Orders'], ...m.stopped.map(s => [s.reason, s.count]), [],
     ['Best sellers', 'Quantity', 'Sales'], ...m.bestSellers.map(b => [b.name, b.qty, b.sales])];
 }

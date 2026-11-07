@@ -483,7 +483,7 @@ function renderStatus(o: Order) {
     AWAITING_PAYMENT: 'Waiting for your payment to be confirmed. This usually takes a few seconds.',
     AWAITING_WHATSAPP: 'Send the order message on WhatsApp, pay as shown below and forward your receipt in the same chat.',
     CONFIRMED: 'Waiting for your payment. Pay as shown below and forward your receipt on WhatsApp.',
-    READY: o.fulfilment === 'pickup' ? 'Ready to collect: show your number at the counter.' : 'Your food is ready and a runner will bring it to you soon.',
+    READY: o.fulfilment === 'pickup' ? 'Ready to collect: show your number at the counter.' : 'Your food is ready and our delivery staff will bring it to you soon.',
     FAILED_DELIVERY: 'We came to your seat and could not find you. Please stay at your seat or contact a steward.',
     REJECTED: `We could not accept this order${o.rejectReason ? `: ${o.rejectReason}` : ''}. ${o.refundNote || ''}`.trim(),
     PAID: 'Paid. The kitchen has your order.', ACCEPTED: 'The kitchen has your order.',
