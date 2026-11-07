@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-07: Footer: no Principal Partner
+
+**Who it affects:** everyone. **Staff need to:** nothing.
+- Zeva and the "Principal Partner" block are no longer in the footer; the other partner logos stay.
+- Less empty space between the footer links, the partners and the bottom line.
+
 ## 2026-11-07: News stories: wider text, shorter headlines
 
 **Who it affects:** fans reading news. **Staff need to:** nothing.
