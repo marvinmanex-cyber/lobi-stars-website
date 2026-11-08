@@ -8,6 +8,11 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-08: Watch Live: the Lobi Stars Facebook page
+
+**Who it affects:** fans. **Staff need to:** nothing.
+- "Watch on Facebook" on Matchday Live and the Watch page now opens the official Lobi Stars page (facebook.com/LobiStars) instead of the Aeson Football Podcast page. A match's own Facebook live link, when set in Live Match Control, still comes first.
+
 ## 2026-11-08: Predict & Win sponsor: Prime Beverages & Logistics Ltd
 
 **Who it affects:** fans, Super Admins. **Staff need to:** optionally upload the sponsor's logo.
