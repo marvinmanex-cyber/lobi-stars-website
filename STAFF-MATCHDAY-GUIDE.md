@@ -45,7 +45,7 @@ section 35.
 1. **Check the match** in **Admin → League → Fixtures** (the whole season is
    loaded): date, kick-off time and venue. Ticket prices are set in
    **Admin → Matchday → Match Tickets & Settings**.
-2. Open **Admin → Match Centre** and choose the match.
+2. Open **Admin → Matchday → Live Match Control** (the Match Centre) and choose the match.
 3. **Matchday squad:** in *Matchday squad*, set each player to **Starting XI**,
    **Bench** or *Not selected*. Only these players appear in Man of the Match
    voting. Press **Save Match Centre**.
@@ -161,7 +161,7 @@ tickets and alerts follow. Reschedule it there when the new date is known.
 
 ## 2. At kick-off
 
-In **Admin → Match Centre**, choose the match and press
+In **Admin → Matchday → Live Match Control** (the Match Centre), choose the match and press
 **▶ Start Match (Kick-off)**.
 
 - The match shows as **LIVE** everywhere, with a red "LIVE NOW" banner on the homepage.
@@ -262,7 +262,7 @@ is recalculated.
 
 ## 5. Man of the Match results
 
-In **Admin → Match Centre**, home games have a **Man of the Match votes**
+In **Admin → Matchday → Live Match Control** (the Match Centre), home games have a **Man of the Match votes**
 panel. Staff can see the live vote count at any time (fans only see the
 total number of voters until full time). Ties give joint winners. Each
 player's number of awards appears on their profile automatically.
@@ -292,7 +292,7 @@ fan sees their own position on their account page.
 
 | What | Where | Who |
 |---|---|---|
-| Man of the Match votes (CSV) | Admin → Match Centre → *Export votes (CSV)* | Any staff |
+| Man of the Match votes (CSV) | Admin → Matchday → Live Match Control → *Export votes (CSV)* | Any staff |
 | Predictions (CSV) | Admin → Predict & Win → *Export predictions (CSV)* | Staff with "Can export fan data" |
 
 Every export is recorded in the download log (Admin → Fan database). Keep
