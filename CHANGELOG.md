@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-08: Predict & Win: everyone with the exact score shown; final-score reminder
+
+**Who it affects:** fans, Super Admins. **Staff need to:** enter the final score after each home game (End Match).
+- After the final score is entered, fans see the winner and everyone who predicted the exact score, in order, with the exact time. The first one wins.
+- If no final score is entered by 1 hour 55 minutes after kick-off (5:55pm), Super Admins get a red, blinking, beeping alert on every admin page until it is entered or dismissed.
+
 ## 2026-11-08: Man of the Match: automatic fixed times, players on the field only
 
 **Who it affects:** fans, matchday staff. **Staff need to:** add substitutions for players coming on.

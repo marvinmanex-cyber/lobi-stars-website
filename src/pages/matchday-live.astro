@@ -147,6 +147,16 @@ import '../styles/fixture-card.css';
     .ml :global(.ml-tab) { font-size: 12px; padding: 10px 2px 12px; }
     .ml :global(.ml-tab span) { font-size: 18px; }
   }
+  :global(.pw-exact) { margin: 16px 0; padding: 16px; border: 1px solid var(--d4); border-radius: 14px; background: var(--d2, #fff); }
+  :global(.pw-exact h3) { margin: 0 0 4px; font: 400 24px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  :global(.pw-exact-note) { margin: 0 0 10px; font-size: 14px; color: var(--lt); }
+  :global(.pw-exact-list) { margin: 0; padding-left: 26px; }
+  :global(.pw-exact-list li) { padding: 8px 0; border-bottom: 1px solid var(--d4); display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+  :global(.pw-exact-list li.win) { font-weight: 700; }
+  :global(.pw-exact-name) { flex: 1 1 180px; }
+  :global(.pw-exact-at) { font-variant-numeric: tabular-nums; font-size: 14px; }
+  :global(.pw-exact-tag) { flex-basis: 100%; font-size: 13px; color: var(--red-text); }
+  :global(.pw-exact-tag.muted) { color: var(--lt); }
 </style>
 
 <script>
@@ -439,7 +449,8 @@ import '../styles/fixture-card.css';
   // ── Predict & Win. Opening/closing times come from the server clock. ──
   type Predict = { state: 'notyet' | 'open' | 'closed' | 'result' | 'off'; prize: number; maxGoals: number; opensAt: string; closesAt: string | null;
     count: number; fan: { firstName: string; verified: boolean } | null; mine: { home: number; away: number; at: string; disqualified: boolean } | null;
-    result: { home: number; away: number; winner: string | null; noWinnerText: string | null; correct: number; total: number; prize: number; youWon: boolean; claim: string | null } | null;
+    result: { home: number; away: number; winner: string | null; noWinnerText: string | null; correct: number; total: number; prize: number; youWon: boolean; claim: string | null;
+      exact?: { name: string; at: string; winner: boolean; note: string; you: boolean }[] } | null;
     serverTime: string };
   const naira = (n: number) => `₦${n.toLocaleString('en-NG')}`;
   const predicted = (n: number) => `${n.toLocaleString('en-NG')} fan${n === 1 ? ' has' : 's have'} predicted`;
@@ -486,6 +497,22 @@ import '../styles/fixture-card.css';
       panel.append(el('p', 'pw-winner', r.winner ? `🏆 Winner: ${r.winner} (${naira(r.prize)})` : (r.noWinnerText || 'No correct prediction this time.')));
       panel.append(el('p', 'pw-stats', `${r.correct} correct prediction${r.correct === 1 ? '' : 's'} · ${r.total} total`));
       out.push(panel);
+      // Everyone who predicted the exact score, first to last, with the exact time: the first one wins.
+      if (r.exact?.length) {
+        const exactAt = (iso: string) => `${fmtDate(iso)}, ${new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Africa/Lagos' })}.${String(new Date(iso).getMilliseconds()).padStart(3, '0')}`;
+        const box = el('div', 'pw-exact');
+        box.append(el('h3', '', `Everyone who predicted ${r.home} – ${r.away}`), el('p', 'pw-exact-note', 'In the order they predicted, with the exact time (Nigerian time). The first eligible fan wins.'));
+        const list = el('ol', 'pw-exact-list');
+        r.exact.forEach(x => {
+          const li = el('li', x.winner ? 'win' : '');
+          li.append(el('span', 'pw-exact-name', `${x.winner ? '🏆 ' : ''}${x.name}${x.you ? ' (you)' : ''}`), el('span', 'pw-exact-at', exactAt(x.at)));
+          if (x.winner) li.append(el('span', 'pw-exact-tag', 'Predicted first: winner'));
+          else if (x.note) li.append(el('span', 'pw-exact-tag muted', x.note));
+          list.append(li);
+        });
+        box.append(list);
+        out.push(box);
+      }
       out.push(shareRow(r.winner ? `🏆 ${m.home_team} ${r.home} – ${r.away} ${m.away_team}: someone predicted it exactly and won ${naira(r.prize)} on Lobi Stars Predict & Win!` : `${m.home_team} ${r.home} – ${r.away} ${m.away_team}. Nobody predicted it exactly on Lobi Stars Predict & Win this time. Try next home game!`, m));
       if (r.youWon) {
         const won = el('div', 'mv-thanks');

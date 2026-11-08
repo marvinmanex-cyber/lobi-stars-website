@@ -269,6 +269,19 @@ is recalculated.
 
 ---
 
+## 4a. Final-score reminder and Predict & Win results
+
+- **Predict & Win** opens 24 hours before kick-off and closes at kick-off. Each fan account (one email
+  address) can predict once.
+- The result only shows to fans **after you enter the final score** (End Match). Fans then see the
+  winner and **everyone who predicted the exact score, in order, with the exact time** (to the
+  thousandth of a second). The first one wins; club staff/players and disqualified entries can't win.
+  Names show as first name, surname initial and a hidden phone number.
+- **Forgot the score?** From **1 hour 55 minutes after kick-off (5:55pm for a 4pm game)**, every admin
+  page a Super Admin has open shows a **red, blinking alert that beeps every 4 seconds** until the final
+  score is entered or a Super Admin presses **Dismiss** (recorded in the Activity Log). Tap the page
+  once if the beep can't be heard: browsers only play sound after a tap.
+
 ## 5. Man of the Match results
 
 In **Admin → Matchday → Live Match Control** (the Match Centre), home games have a **Man of the Match votes**

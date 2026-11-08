@@ -9,8 +9,9 @@ const noStore = { 'Cache-Control': 'no-store' };
 const notHome = () => Response.json({ error: 'Predict & Win is only for Lobi Stars home games.' }, { status: 404 });
 
 // GET /api/matches/:slug/predict -- window, the fan's own prediction, how
-// many fans have predicted and (after full time) the result. Other fans'
-// predictions are never shown.
+// many fans have predicted and (after the final score is entered) the result: the winner and
+// everyone who predicted the exact score, in the order they predicted, with the exact time.
+// Wrong predictions are never shown.
 export async function onRequestGet({ request, env, params }) {
   const match = await findHomeMatch(env, params.slug);
   if (!match) return notHome();
@@ -31,6 +32,15 @@ export async function onRequestGet({ request, env, params }) {
       winner: w ? publicName(w) : null,
       noWinnerText: w ? null : NO_WINNER_TEXT,
       correct: result.correct_count, total: result.total_count, prize: result.prize_amount,
+      exact: (await env.DB.prepare(
+        `SELECT p.id, p.created_at, p.is_winner, COALESCE(m.is_staff, 0) AS is_staff, m.first_name, m.last_name, m.phone_e164
+         FROM predictions p LEFT JOIN members m ON m.id = p.member_id
+         WHERE p.event_id = ? AND p.disqualified = 0 AND p.home_goals = ? AND p.away_goals = ? ORDER BY p.created_at ASC, p.id ASC LIMIT 500`
+      ).bind(match.id, result.home_score, result.away_score).all()).results.map(p => ({
+        name: p.first_name ? publicName(p) : 'Deleted account', at: p.created_at, winner: !!p.is_winner,
+        note: p.is_winner ? '' : p.is_staff ? 'Club staff or player: cannot win' : !p.first_name ? 'Account deleted' : '',
+        you: !!(mine && mine.id === p.id),
+      })),
       youWon: !!(mine && mine.is_winner),
       claim: mine && mine.is_winner ? CLAIM_INSTRUCTIONS : null,
     };
