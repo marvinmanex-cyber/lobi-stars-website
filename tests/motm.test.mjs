@@ -103,6 +103,26 @@ test('only logged-in, verified fans can vote, and only for squad players', async
   await control(m.id, { action: 'fulltime', home_score: 0, away_score: 0 });
 });
 
+test('a substitute can be voted for only after coming on; nothing shows before kick-off', async () => {
+  const m = await homeMatch();
+  const early = await get(`/api/matches/${m.slug}/motm`);
+  assert.equal(early.data.state, 'before'); assert.deepEqual(early.data.players, [], 'the line-up is not shown before kick-off');
+  await control(m.id, { action: 'kickoff' });
+  const open = await get(`/api/matches/${m.slug}/motm`);
+  assert.deepEqual(open.data.players.map(p => p.slug), [roster[0].slug, roster[1].slug], 'starting XI only');
+  assert.ok(open.data.closesAt, 'closing time (85th minute) is given');
+  const c = await fan();
+  assert.equal((await vote(m, roster[2].slug, c)).status, 400, 'still on the bench');
+  await fetch(`${BASE}/api/admin/match-centre/${m.id}`, { method: 'PUT', headers: ADMIN, body: JSON.stringify({
+    status: 'live', squad: { starting: [roster[0].slug, roster[1].slug], bench: [roster[2].slug] },
+    timeline: [{ minute: '60', type: 'sub', team: 'home', player: roster[2].name, detail: `on for ${roster[1].name}` }],
+  }) });
+  const after = await get(`/api/matches/${m.slug}/motm`);
+  assert.deepEqual(after.data.players.map(p => [p.slug, p.role]), [[roster[0].slug, 'Starting XI'], [roster[1].slug, 'Starting XI'], [roster[2].slug, 'Came on']]);
+  assert.equal((await vote(m, roster[2].slug, c)).status, 200, 'on the field now');
+  await control(m.id, { action: 'fulltime', home_score: 1, away_score: 0 });
+});
+
 test('leaderboard is hidden while live and revealed at full time, with joint winners on a tie', async () => {
   const m = await homeMatch();
   await control(m.id, { action: 'kickoff' });
@@ -121,8 +141,8 @@ test('leaderboard is hidden while live and revealed at full time, with joint win
   assert.equal(ft.data.state, 'closed');
   assert.equal(ft.data.results.total, 4);
   assert.deepEqual([...ft.data.results.winners].sort(), [roster[0].slug, roster[1].slug].sort());
-  const r2 = ft.data.results.rows.find(r => r.slug === roster[2].slug);
-  assert.equal(r2.votes, 0);
+  // Only players on the field are in the results: the unused substitute isn't.
+  assert.equal(ft.data.results.rows.find(r => r.slug === roster[2].slug), undefined);
   assert.equal(ft.data.results.rows.find(r => r.slug === roster[0].slug).pct, 50);
 
   const awards = await get('/api/motm/awards');

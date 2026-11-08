@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-08: Man of the Match: opens by itself, closes at the 85th minute, players on the field only
+
+**Who it affects:** fans, matchday staff. **Staff need to:** set Half-time and Second half during the match (so the 85th minute is timed right) and add substitutions for players coming on.
+- Voting opens by itself at the scheduled kick-off (or at Start Match if earlier) and closes at the 85th minute, so the winner can be announced in the stadium. Fans see the result 5 minutes later, or at full time.
+- Fans can only vote for players on the field: the starting XI, and a substitute once a substitution brings them on.
+- The Media Centre line-up feeds voting from kick-off (even as a draft) and fills an empty squad in Live Match Control. Nothing is shown before kick-off.
+
 ## 2026-11-07: MatchDay Kitchen: choose your own login code
 
 **Who it affects:** kitchen staff, supervisors, Super Admins. **Staff need to:** nothing (optional).

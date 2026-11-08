@@ -1,7 +1,7 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { loadMatch, toPublic } from '../../_lib/matchCentre.js';
-import { ensureMotmSchema, leaderboard, votingState } from '../../_lib/motm.js';
+import { ensureMotmSchema, leaderboard, votingWindow, playersOnField, votingSquad, lobiSide } from '../../_lib/motm.js';
 import { buildCsv } from '../../_lib/xlsx.js';
 
 // GET /api/admin/motm/:eventId[?format=csv] -- Man of the Match vote
@@ -13,7 +13,9 @@ export async function onRequestGet({ request, env, params }) {
   if (!m) return Response.json({ error: 'Match not found' }, { status: 404 });
   await ensureMotmSchema(env.DB);
   const match = toPublic(m.event, m.centre);
-  const board = await leaderboard(env.DB, match.id, match.squad);
+  const players = playersOnField(await votingSquad(env.DB, match), match.timeline, lobiSide(match));
+  const board = await leaderboard(env.DB, match.id, null, players);
+  const win = votingWindow(match);
 
   if (new URL(request.url).searchParams.get('format') === 'csv') {
     await logAdminAction(env.DB, admin, 'export_motm_csv', `${match.home_team} vs ${match.away_team}`);
@@ -27,5 +29,5 @@ export async function onRequestGet({ request, env, params }) {
       },
     });
   }
-  return Response.json({ state: votingState(match.status), ...board }, { headers: { 'Cache-Control': 'no-store' } });
+  return Response.json({ state: win.state, opensAt: win.opensAt, closesAt: win.closesAt, ...board }, { headers: { 'Cache-Control': 'no-store' } });
 }

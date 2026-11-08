@@ -7,7 +7,8 @@ import { notifyFans } from '../../_lib/notify.js';
 import { autoAlert } from '../../_lib/matchAlerts.js';
 import { parsePlayerStats, savePlayerStats, loadPlayerStats } from '../../_lib/stats.js';
 import { fromLiveMatchControl } from '../../_lib/scores/consensus.js';
-import { loadMatch, toPublic, parseCentrePayload, parseSquad, scoreInt, isHomeGame, LIVE_STATUSES } from '../../_lib/matchCentre.js';
+import { loadMatch, toPublic, parseCentrePayload, parseSquad, scoreInt, isHomeGame, LIVE_STATUSES, nextSecondHalfAt } from '../../_lib/matchCentre.js';
+import { mediaLineup } from '../../_lib/motm.js';
 
 async function roster(request, env) {
   try {
@@ -28,6 +29,8 @@ export async function onRequestGet({ request, env, params }) {
     match: {
       ...toPublic(m.event, m.centre), auto_closed: !!m.centre?.auto_closed,
       youtube_url: m.centre?.youtube_url || '', facebook_url: m.centre?.facebook_url || '',
+      // The Media Centre line-up (staff only): fills an empty matchday squad.
+      media_lineup: await mediaLineup(env.DB, m.event.id),
       playerStats: await loadPlayerStats(env.DB, params.id),
     },
     serverTime: new Date().toISOString(),
@@ -76,24 +79,25 @@ export async function onRequestPut({ request, env, params, waitUntil }) {
   const prev = m.centre || {};
   const kickoffAt = LIVE_STATUSES.includes(v.status) || v.status === 'full-time' ? (prev.kickoff_at || now) : (v.status === 'scheduled' ? null : prev.kickoff_at || null);
   const endedAt = v.status === 'full-time' ? (prev.ended_at || now) : null;
+  const secondHalfAt = nextSecondHalfAt(prev, v.status, now);
 
   await env.DB.prepare(
     `INSERT INTO match_centre
        (event_id, status, home_score, away_score, preview, report, lineups_json, timeline_json, stats_json, gallery_json,
-        squad_json, kickoff_at, ended_at, youtube_url, facebook_url, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        squad_json, kickoff_at, ended_at, youtube_url, facebook_url, second_half_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
      ON CONFLICT(event_id) DO UPDATE SET
        status = excluded.status, home_score = excluded.home_score, away_score = excluded.away_score,
        preview = excluded.preview, report = excluded.report, lineups_json = excluded.lineups_json,
        timeline_json = excluded.timeline_json, stats_json = excluded.stats_json,
        gallery_json = excluded.gallery_json, squad_json = excluded.squad_json,
        kickoff_at = excluded.kickoff_at, ended_at = excluded.ended_at,
-       youtube_url = excluded.youtube_url, facebook_url = excluded.facebook_url,
+       youtube_url = excluded.youtube_url, facebook_url = excluded.facebook_url, second_half_at = excluded.second_half_at,
        auto_closed = CASE WHEN excluded.status = 'full-time' THEN match_centre.auto_closed ELSE 0 END,
        updated_at = excluded.updated_at`
   ).bind(
     params.id, v.status, v.home_score, v.away_score, v.preview, v.report,
-    v.lineups_json, v.timeline_json, v.stats_json, v.gallery_json, JSON.stringify(squad), kickoffAt, endedAt, s.youtube_url, s.facebook_url
+    v.lineups_json, v.timeline_json, v.stats_json, v.gallery_json, JSON.stringify(squad), kickoffAt, endedAt, s.youtube_url, s.facebook_url, secondHalfAt
   ).run();
 
   // Score verification: Live Match Control is one source for this match.
@@ -146,7 +150,7 @@ export async function onRequestPost({ request, env, params, waitUntil }) {
     if (LIVE_STATUSES.includes(status)) return Response.json({ error: 'This match has already kicked off.' }, { status: 409 });
     await env.DB.prepare(
       `INSERT INTO match_centre (event_id, status, kickoff_at, updated_at) VALUES (?, 'live', ?, datetime('now'))
-       ON CONFLICT(event_id) DO UPDATE SET status = 'live', kickoff_at = excluded.kickoff_at, ended_at = NULL,
+       ON CONFLICT(event_id) DO UPDATE SET status = 'live', kickoff_at = excluded.kickoff_at, ended_at = NULL, second_half_at = NULL,
          auto_closed = 0, updated_at = excluded.updated_at`
     ).bind(params.id, now).run();
     await logAdminAction(env.DB, admin, 'match_kickoff', `${m.event.home_team} v ${m.event.away_team}`);

@@ -2,10 +2,11 @@
 //
 // Rules, all enforced here on the server with the server clock:
 // - only signed-in fans with a confirmed email can vote;
-// - voting is open only while the match is LIVE (kick-off to full time);
+// - voting opens at the scheduled kick-off (or Start Match, if earlier) and closes at the 85th
+//   minute of play, so the winner can be announced in the stadium before full time;
 // - one vote per fan per match (UNIQUE (event_id, member_id)), never changed;
-// - only players in that match's squad (picked by staff) can be voted for;
-// - vote counts stay hidden until full time, then the leaderboard is shown.
+// - only players on the field can be voted for: the starting XI, and substitutes once they come on;
+// - vote counts stay hidden until full time (or 5 minutes after voting closes), then the leaderboard is shown.
 import { LIVE_STATUSES } from './matchCentre.js';
 
 let ready = false;
@@ -34,6 +35,77 @@ export function votingState(status) {
   return 'before';
 }
 
+const MIN = 60e3;
+export const CLOSE_MINUTE = 85;          // voting closes at the 85th minute of play
+const HALF_TIME_MIN = 15;                // if the second-half start wasn't recorded, half-time is taken as 15 minutes
+const REVEAL_AFTER_MS = 5 * MIN;         // fans see the result 5 minutes after voting closes (or at full time)
+const iso = t => (Number.isFinite(t) ? new Date(t).toISOString() : null);
+
+/**
+ * When voting opens and closes, decided on the server clock.
+ * Opens: the scheduled kick-off, or Start Match if that was pressed first.
+ * Closes: 40 minutes into the second half (the 85th minute). Without a recorded second-half start:
+ * 85 minutes of play + 15 minutes of half-time after kick-off. Never closes during half-time.
+ * Returns { state: before|open|closed|off, opensAt, closesAt, revealed }.
+ */
+export function votingWindow(m, now = Date.now()) {
+  const status = m.status || 'scheduled';
+  if (status === 'postponed' || status === 'cancelled') return { state: 'off', opensAt: null, closesAt: null, revealed: false };
+  const sched = Date.parse(m.event_date), ko = m.kickoff_at ? Date.parse(m.kickoff_at) : NaN;
+  const opensAt = Number.isFinite(ko) ? Math.min(ko, sched) : sched;
+  const start = Number.isFinite(ko) ? ko : sched;
+  const closesAt = m.second_half_at ? Date.parse(m.second_half_at) + (CLOSE_MINUTE - 45) * MIN : start + (CLOSE_MINUTE + HALF_TIME_MIN) * MIN;
+  const win = { opensAt: iso(opensAt), closesAt: iso(closesAt) };
+  if (status === 'full-time') return { state: 'closed', ...win, revealed: true };
+  if (status === 'half-time') return { state: 'open', ...win, revealed: false };
+  if (status !== 'live' && now < opensAt) return { state: 'before', ...win, revealed: false };
+  if (now >= closesAt) return { state: 'closed', ...win, revealed: now >= closesAt + REVEAL_AFTER_MS };
+  return { state: 'open', ...win, revealed: false };
+}
+
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+/** Did this substitution bring the player on? The timeline's player is the one coming on ("on for X" goes in the detail). */
+function cameOn(p, e) {
+  const who = norm(String(e.player || '').split(/\s+(?:on for|for|replaces|replacing)\s+/i)[0]);
+  if (!who) return false;
+  const name = norm(p.name);
+  if (who === name || who.includes(name)) return true;
+  if (p.number != null && new RegExp(`(^|\\s)#?${p.number}(\\s|$)`).test(String(e.player))) return true;
+  const said = who.split(' ');
+  return name.split(' ').some(t => t.length > 2 && said.includes(t));
+}
+/** Players fans can vote for: the starting XI, and each substitute once a substitution brings them on. */
+export function playersOnField(squad, timeline, side = 'home') {
+  const s = squad || {};
+  const subs = (timeline || []).filter(e => e.type === 'sub' && (!e.team || e.team === side));
+  return [
+    ...(s.starting || []).map(p => ({ ...p, role: 'Starting XI' })),
+    ...(s.bench || []).filter(p => subs.some(e => cameOn(p, e))).map(p => ({ ...p, role: 'Came on' })),
+  ];
+}
+
+/** The latest Media Centre line-up for this match (draft or published), as a squad. Null if there isn't one. */
+export async function mediaLineup(db, eventId) {
+  try {
+    const r = await db.prepare(`SELECT status, data_json, updated_at FROM mc_items WHERE kind = 'lineup' AND ref = ? AND status NOT IN ('rejected', 'unpublished') ORDER BY updated_at DESC LIMIT 1`).bind(eventId).first();
+    if (!r) return null;
+    const d = JSON.parse(r.data_json || '{}');
+    const pick = list => (Array.isArray(list) ? list : []).filter(p => p && p.slug && p.name).map(p => ({ slug: String(p.slug), name: String(p.name), number: p.number ?? null, position: p.position || '', photo: null }));
+    const squad = { starting: pick(d.starting), bench: pick(d.subs) };
+    return squad.starting.length ? { ...squad, status: r.status, updatedAt: r.updated_at } : null;
+  } catch { return null; } // no Media Centre yet
+}
+/**
+ * The squad voting uses: the one saved in Live Match Control (a published line-up goes there too);
+ * if that's empty, the Media Centre line-up, so a line-up picked there counts even before it's published.
+ */
+export async function votingSquad(db, match) {
+  if (match.squad?.starting?.length) return match.squad;
+  const lu = await mediaLineup(db, match.id);
+  return lu ? { starting: lu.starting, bench: lu.bench } : { starting: [], bench: [] };
+}
+export const lobiSide = match => (/lobi stars/i.test(match.home_team || '') ? 'home' : 'away');
+
 /** Every squad player (starting XI then bench), for the voting cards. */
 export function squadPlayers(squad) {
   const s = squad || {};
@@ -51,13 +123,13 @@ export async function totalVoters(db, eventId) {
  * The leaderboard: every squad player ranked by votes, with % and the
  * winner(s). Joint winners when the top vote count is shared.
  */
-export async function leaderboard(db, eventId, squad) {
+export async function leaderboard(db, eventId, squad, players = null) {
   const { results } = await db.prepare(
     `SELECT player_slug, MAX(player_name) AS player_name, COUNT(*) AS votes FROM motm_votes WHERE event_id = ? GROUP BY player_slug`
   ).bind(eventId).all();
   const total = results.reduce((n, r) => n + r.votes, 0);
-  const players = squadPlayers(squad);
-  const rows = players.map(p => ({ slug: p.slug, name: p.name, number: p.number, position: p.position, photo: p.photo || null, votes: results.find(r => r.player_slug === p.slug)?.votes || 0 }));
+  const list = players || squadPlayers(squad);
+  const rows = list.map(p => ({ slug: p.slug, name: p.name, number: p.number, position: p.position, photo: p.photo || null, votes: results.find(r => r.player_slug === p.slug)?.votes || 0 }));
   // Votes for a player later removed from the squad still count.
   for (const r of results) if (!rows.some(x => x.slug === r.player_slug)) rows.push({ slug: r.player_slug, name: r.player_name || r.player_slug, number: null, position: '', photo: null, votes: r.votes });
   rows.sort((a, b) => b.votes - a.votes || String(a.name).localeCompare(String(b.name)));

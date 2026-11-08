@@ -48,6 +48,7 @@ export async function ensureTable(db) {
     ['squad_json', 'TEXT'],     // Lobi Stars matchday squad (starting XI + bench) for MOTM voting
     ['youtube_url', 'TEXT'],    // Watch Live: YouTube live/replay link (home games only)
     ['facebook_url', 'TEXT'],   // Watch Live: Facebook live/replay link (home games only)
+    ['second_half_at', 'TEXT'], // when the second half started (Man of the Match voting closes at the 85th minute)
   ]);
   // NULL = work it out from the home team name; 1/0 = set explicitly by staff.
   await addMissing('events', [
@@ -114,6 +115,7 @@ export function toPublic(event, centre) {
     home_score: c.home_score ?? null,
     away_score: c.away_score ?? null,
     kickoff_at: c.kickoff_at || null,
+    second_half_at: c.second_half_at || null,
     ended_at: c.ended_at || null,
     preview: c.preview || '',
     report: c.report || '',
@@ -162,6 +164,13 @@ export async function listMatches(db) {
   ).all();
   await autoCloseOverdue(db, results.filter(r => r.event_id));
   return results;
+}
+
+/** The second-half start to keep after a status change: set when half-time goes back to live. */
+export function nextSecondHalfAt(prev, status, now = new Date().toISOString()) {
+  if (status === 'scheduled') return null;
+  if ((prev.status || 'scheduled') === 'half-time' && status === 'live') return now;
+  return prev.second_half_at || null;
 }
 
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');

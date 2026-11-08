@@ -286,7 +286,7 @@ import '../styles/fixture-card.css';
   // ── Man of the Match voting. Every rule is checked again on the server. ──
   type Player = { slug: string; name: string; number: number | null; position: string; photo: string | null; role?: string };
   type Row = Player & { votes: number; pct: number; winner: boolean };
-  type Motm = { state: 'before' | 'open' | 'closed' | 'off'; players: Player[]; totalVoters: number;
+  type Motm = { state: 'before' | 'open' | 'closed' | 'off'; players: Player[]; totalVoters: number; opensAt?: string | null; closesAt?: string | null;
     fan: { firstName: string; verified: boolean } | null; myVote: { slug: string; name: string; at: string } | null;
     results: { total: number; rows: Row[]; winners: string[] } | null };
 
@@ -320,10 +320,20 @@ import '../styles/fixture-card.css';
     } catch { box.replaceChildren(el('p', 'mv-msg', 'Voting could not be loaded. Please refresh the page.')); return; }
     renderVote(box, m, d);
     box.append(rulesLink('/motm/rules/', 'Man of the Match voting rules'));
-    // While voting is open, keep the "fans have voted" number fresh.
-    if (d.state === 'open') timers.push(window.setInterval(async () => {
-      try { const r = await fetch(`/api/matches/${encodeURIComponent(m.slug)}/motm`).then(x => x.json()); const t = box.querySelector('[data-voters]'); if (t) t.textContent = voters(r.totalVoters); } catch {}
-    }, 30_000));
+    // Every 30 seconds: the voter count, and a fresh screen when voting opens or closes, a substitute
+    // comes on, or the result is out (never while the fan is confirming a vote).
+    if (d.state !== 'off' && !(d.state === 'closed' && d.results)) {
+      const was = JSON.stringify([d.state, d.players.map(p => p.slug), !!d.results]);
+      const t = window.setInterval(async () => {
+        try {
+          const r: Motm = await fetch(`/api/matches/${encodeURIComponent(m.slug)}/motm`, { credentials: 'same-origin' }).then(x => x.json());
+          const c = box.querySelector('[data-voters]'); if (c) c.textContent = voters(r.totalVoters);
+          const confirming = box.querySelector('.mv-confirm:not([hidden])');
+          if (!confirming && JSON.stringify([r.state, r.players.map(p => p.slug), !!r.results]) !== was) { clearInterval(t); loadVote(box, m); }
+        } catch {}
+      }, 30_000);
+      timers.push(t);
+    }
   }
 
   function renderVote(box: HTMLElement, m: M, d: Motm) {
@@ -332,6 +342,12 @@ import '../styles/fixture-card.css';
 
     if (d.state === 'off') { box.replaceChildren(el('p', 'mv-msg', 'There is no Man of the Match vote for this match.')); return; }
 
+    if (d.state === 'closed' && !d.results) {
+      out.push(el('p', 'mv-msg', 'Voting closed at the 85th minute. The Man of the Match is announced in the stadium and appears here shortly.'), count);
+      if (d.myVote) out.push(el('p', 'mv-mine', `You voted for ${d.myVote.name}.`));
+      box.replaceChildren(...out);
+      return;
+    }
     if (d.state === 'closed') {
       const r = d.results!;
       if (!r.total) { out.push(el('p', 'mv-msg', 'Voting has closed. No votes were cast for this match.')); box.replaceChildren(...out); return; }
@@ -346,7 +362,7 @@ import '../styles/fixture-card.css';
         c.append(t); wins.append(c);
       });
       out.push(wins);
-      out.push(el('p', 'mv-msg', `Voting closed · ${r.total.toLocaleString('en-NG')} fan${r.total === 1 ? '' : 's'} voted`));
+      out.push(el('p', 'mv-msg', `Voting closed at the 85th minute · ${r.total.toLocaleString('en-NG')} fan${r.total === 1 ? '' : 's'} voted`));
       if (d.myVote) out.push(el('p', 'mv-mine', `You voted for ${d.myVote.name}.`));
       const list = el('ol', 'mv-board');
       list.setAttribute('aria-label', 'Final vote results');
@@ -362,11 +378,11 @@ import '../styles/fixture-card.css';
       return;
     }
 
-    if (d.state === 'before') out.push(el('p', 'mv-msg', `Voting opens at kick-off (${fmtTime(m.event_date)}). Only fans with a free, email-confirmed account can vote, one vote per match.`));
+    if (d.state === 'before') out.push(el('p', 'mv-msg', `Voting opens at kick-off (${fmtTime(d.opensAt || m.event_date)}) and closes at the 85th minute. You can vote for any Lobi Stars player on the field. Only fans with a free, email-confirmed account can vote, one vote per match.`));
     if (d.state === 'open') {
       if (d.myVote) {
         const t = el('div', 'mv-thanks');
-        t.append(el('strong', '', `Thanks! You voted for ${d.myVote.name}.`), el('span', '', 'Results are revealed at full time.'));
+        t.append(el('strong', '', `Thanks! You voted for ${d.myVote.name}.`), el('span', '', 'Voting closes at the 85th minute and the winner is announced in the stadium.'));
         box.replaceChildren(t, count, shareRow(`I voted for ${d.myVote.name} as Lobi Stars Man of the Match vs ${m.away_team}. Have your say:`, m));
         return;
       }
@@ -375,11 +391,12 @@ import '../styles/fixture-card.css';
         const p = el('p', 'mv-msg', 'Please confirm your email address to vote. ');
         p.append(link(`/fans/login/?next=${encodeURIComponent(`/matches/${m.slug}/live/#vote`)}`, 'Resend the confirmation email', ''));
         out.push(p);
-      } else out.push(el('p', 'mv-msg', `Voting is open, ${d.fan.firstName}! Pick one player. Your vote can't be changed.`));
+      } else out.push(el('p', 'mv-msg', `Voting is open, ${d.fan.firstName}! Pick one player on the field. Your vote can't be changed. Voting closes at the 85th minute.`));
       out.push(count);
     } else if (!d.fan) out.push(authButtons(m));
 
-    if (!d.players.length) { out.push(el('p', 'mv-msg', 'The matchday squad will appear here before kick-off.')); box.replaceChildren(...out); return; }
+    if (d.state === 'before') { box.replaceChildren(...out); return; }
+    if (!d.players.length) { out.push(el('p', 'mv-msg', 'The players will appear here in a moment.')); box.replaceChildren(...out); return; }
 
     const canVote = d.state === 'open' && !!d.fan?.verified && !d.myVote;
     const grid = el('ul', 'mv-grid');

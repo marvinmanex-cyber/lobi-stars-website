@@ -20,7 +20,7 @@ the Match Centre) with four tabs:
 |---|---|---|
 | **Watch Live** | Plays the YouTube or Facebook stream; afterwards it becomes the "Full match replay" | Stream starts at kick-off |
 | **Commentary** | Plays Lobi Stars FC Live commentary right on the page (same player as lobistarsfc.com/commentary) | From the commentary start time (normally 15 min before kick-off) until 15 min after full time |
-| **Vote MOTM** | Fans vote for the Lobi Stars Man of the Match | Kick-off to full time |
+| **Vote MOTM** | Fans vote for a Lobi Stars player on the field | Opens by itself at kick-off; closes at the **85th minute** |
 | **Predict & Win** | Fans predict the exact score; earliest correct prediction wins ₦10,000 | 24 hours before kick-off until kick-off |
 
 Fans need a free fan account with a confirmed email to vote or predict.
@@ -47,8 +47,14 @@ section 35.
    **Admin → Matchday → Match Tickets & Settings**.
 2. Open **Admin → Matchday → Live Match Control** (the Match Centre) and choose the match.
 3. **Matchday squad:** in *Matchday squad*, set each player to **Starting XI**,
-   **Bench** or *Not selected*. Only these players appear in Man of the Match
-   voting. Press **Save Match Centre**.
+   **Bench** or *Not selected*, and press **Save Match Centre**. **Or** pick the
+   line-up in the **Media Centre** (Matchday Desk → Line-up): it counts for
+   voting from kick-off even before it is approved, and it fills an empty
+   squad here. Nothing is shown to fans before kick-off.
+   - **Who fans can vote for:** the Starting XI, and a substitute only once a
+     **Substitution** for them is added (Live timeline here, or a Media Centre
+     live update): put the player **coming on** as the player, and "on for X"
+     in the detail. Unused substitutes can't be voted for.
    - Players come from the Squad (the Content CMS, or profiles verified in
      Matchday › Squad: Profile Submissions). Add new players there first.
 4. **Stream links:** in *Live stream (Watch Live)*, paste the **YouTube live
@@ -165,7 +171,13 @@ In **Admin → Matchday → Live Match Control** (the Match Centre), choose the 
 **▶ Start Match (Kick-off)**.
 
 - The match shows as **LIVE** everywhere, with a red "LIVE NOW" banner on the homepage.
-- **Man of the Match voting opens.**
+- **Man of the Match voting opens** (it also opens by itself at the scheduled
+  kick-off if nobody presses the button).
+- **Set Half-time, then Second half** (Status & score, or Media Centre live
+  updates): voting closes **40 minutes into the second half, the 85th
+  minute**, leaving 5 minutes to announce the winner in the stadium. If the
+  second half isn't set, voting closes 100 minutes after kick-off (85 minutes
+  plus 15 for half-time).
 - **Predict & Win closes** (it also closes by itself at the scheduled kick-off time).
 - Opted-in fans get a "Kick-off! Vote for Man of the Match" email.
 - Fans with match alerts get a **⚽ Kick-off!** phone notification.
@@ -190,7 +202,8 @@ only **Paid** orders; turn a dish **OFF** as soon as it isn't ready or runs out 
 Press **■ End Match (Full-time)** and enter the **final score**, then
 **Confirm full-time**.
 
-- Voting closes and the **Man of the Match** is revealed to fans.
+- The **Man of the Match** shows to fans (it already showed if 5 minutes had
+  passed since voting closed at the 85th minute).
 - The **Predict & Win winner** is worked out straight away and the message
   tells you if there is a winner.
 - **Forgot to press End Match?** The match closes by itself **2 hours 15
@@ -263,8 +276,9 @@ is recalculated.
 ## 5. Man of the Match results
 
 In **Admin → Matchday → Live Match Control** (the Match Centre), home games have a **Man of the Match votes**
-panel. Staff can see the live vote count at any time (fans only see the
-total number of voters until full time). Ties give joint winners. Each
+panel. It says when voting opens and closes. Staff can see the live vote count at any time, so
+the winner can be read out in the stadium as soon as voting closes at the 85th minute
+(fans only see the total number of voters until full time or 5 minutes after voting closes). Ties give joint winners. Each
 player's number of awards appears on their profile automatically.
 
 ---

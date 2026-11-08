@@ -8,7 +8,7 @@
 //    each update waits in the Approval Queue (kind "live"); a Super Admin can
 //    grant chosen users "pre-approved live updates" for a match, and theirs
 //    post instantly. Everything is logged.
-import { ensureTable, loadMatch, isHomeGame, LIVE_STATUSES } from './matchCentre.js';
+import { ensureTable, loadMatch, isHomeGame, LIVE_STATUSES, nextSecondHalfAt } from './matchCentre.js';
 import { autoAlert } from './matchAlerts.js';
 import { fromLiveMatchControl } from './scores/consensus.js';
 import { settlePredictions } from './predict.js';
@@ -66,10 +66,11 @@ export async function applyLiveUpdate(env, eventId, u, { by = 'Media Centre', wa
   if (u.type === 'note') add('note');
   const kickoffAt = c.kickoff_at || (LIVE_STATUSES.includes(status) || status === 'full-time' ? nowIso() : null);
   const endedAt = status === 'full-time' ? (c.ended_at || nowIso()) : null;
-  await db.prepare(`INSERT INTO match_centre (event_id, status, home_score, away_score, timeline_json, kickoff_at, ended_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+  const secondHalfAt = nextSecondHalfAt(c, status, nowIso());
+  await db.prepare(`INSERT INTO match_centre (event_id, status, home_score, away_score, timeline_json, kickoff_at, ended_at, second_half_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     ON CONFLICT(event_id) DO UPDATE SET status = excluded.status, home_score = excluded.home_score, away_score = excluded.away_score, timeline_json = excluded.timeline_json,
-      kickoff_at = excluded.kickoff_at, ended_at = excluded.ended_at, updated_at = excluded.updated_at`)
-    .bind(eventId, status, home, away, JSON.stringify(timeline.slice(-80)), kickoffAt, endedAt).run();
+      kickoff_at = excluded.kickoff_at, ended_at = excluded.ended_at, second_half_at = excluded.second_half_at, updated_at = excluded.updated_at`)
+    .bind(eventId, status, home, away, JSON.stringify(timeline.slice(-80)), kickoffAt, endedAt, secondHalfAt).run();
   // The homepage is cached for 30 seconds: clear it so the live score shows at once.
   try { await caches.default.delete(new Request(`${env.SITE_URL || 'https://lobistarsfc.com'}/`)); } catch { /* no cache */ }
   const later = p => { if (waitUntil) waitUntil(p.catch(() => {})); else p.catch(() => {}); };
