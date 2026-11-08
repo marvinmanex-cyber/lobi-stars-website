@@ -306,6 +306,9 @@ function renderState() {
   $('kxClosedText').textContent = menu.message ? menu.message : menu.opensAt
     ? `Ordering opens ${new Date(menu.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'Africa/Lagos' })}${menu.match ? ` for ${menu.match}` : ''}. You can look at the menu now.`
     : 'Ordering opens on Lobi Stars home match days. You can look at the menu now.';
+  // Opening soon: the heading says it all, with no extra text.
+  if (soon) $('kxClosedText').textContent = '';
+  $('kxClosedText').hidden = soon;
   ($('kxPayBtn') as HTMLButtonElement).disabled = !menu.open;
   ($('kxWaBtn') as HTMLButtonElement).disabled = !menu.open;
 }

@@ -5,4 +5,4 @@
 // kitchen alerts to fans stay off. Staff can still use MatchDay Kitchen to prepare.
 // Set to false when the kitchen opens.
 export const KITCHEN_OPENING_SOON = true;
-export const KITCHEN_OPENING_SOON_MESSAGE = "We're putting the finishing touches to in-seat food ordering so we can serve you properly. Have a look at the menu, and thank you for your patience.";
+export const KITCHEN_OPENING_SOON_MESSAGE = 'MatchDay Kitchen is opening soon.';
