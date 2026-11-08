@@ -10,7 +10,8 @@ interface Props { partner: Partner }
 const { partner } = Astro.props;
 const p = partner.data;
 const site = website(partner) ?? 'https://ropajo.com/';
-const gallery = (p as any).gallery as { src: string; caption: string }[] ?? [];
+const gallery = (p as any).gallery as { src: string; caption: string; alt?: string }[] ?? [];
+const galleryTitle = (p as any).galleryTitle as string | undefined;
 const highlights = [
   { t: 'Official hotel', s: 'of Lobi Stars FC', icon: '<path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/>' },
   { t: 'Club guests', s: 'welcomed in comfort', icon: '<path d="M12 3l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.8z"/>' },
@@ -86,12 +87,12 @@ const FROND = `<path d="M20 190Q100 130 192 22" fill="none" stroke="currentColor
       <div class="rj-t-head">
         <p class="rj-caps rj-caps--red">Together</p>
         <h2 class="rj-h2" id="rj-t-h">Lobi Stars <span>&amp;</span> Ropajo</h2>
-        <p class="rj-sub">Moments from our partnership.</p>
+        {galleryTitle ? <h3 class="rj-gal-title">{galleryTitle}</h3> : <p class="rj-sub">Moments from our partnership.</p>}
       </div>
       {gallery.length > 0 ? (
         <ul class="rj-gal">
           {gallery.map((g, i) => (
-            <li class={i === 0 ? 'big' : i === gallery.length - 1 && gallery.length % 3 === 1 ? 'wide' : ''}><figure><img src={g.src} alt={g.caption || 'Lobi Stars FC and Ropajo Hotels'} loading="lazy" decoding="async" />{g.caption && <figcaption>{g.caption}</figcaption>}</figure></li>
+            <li class={i === 0 ? 'big' : i === gallery.length - 1 && gallery.length % 3 === 1 ? 'wide' : ''}><figure><img src={g.src} alt={g.alt || g.caption || 'Lobi Stars FC and Ropajo Hotels'} loading="lazy" decoding="async" />{g.caption && <figcaption>{g.caption}</figcaption>}</figure></li>
           ))}
         </ul>
       ) : (
@@ -182,6 +183,7 @@ const FROND = `<path d="M20 190Q100 130 192 22" fill="none" stroke="currentColor
 
   /* Together: photos of joint activities (or designed placeholders). */
   .rj-together { padding: 64px 0 70px; }
+  .rj-gal-title { margin: 10px 0 0; font-size: clamp(20px, 2.6vw, 28px); line-height: 1.25; font-weight: 700; color: inherit; }
   .rj-t-head { text-align: center; margin-bottom: 28px; }
   .rj-h2 { margin: 0; font: 400 clamp(40px, 6vw, 64px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .rj-h2 span { color: var(--red); }

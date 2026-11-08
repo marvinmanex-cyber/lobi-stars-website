@@ -174,7 +174,8 @@ const partners = defineCollection({
     // A partner page designed in the partner's own brand style (e.g. "ropajo" -> RopajoFeature).
     theme: z.enum(['ropajo', 'house43']).nullable().optional(),
     // Photos of joint activities (club and partner together), shown on a themed partner page.
-    gallery: z.array(z.object({ src: z.string(), caption: z.string().default('') })).default([]),
+    gallery: z.array(z.object({ src: z.string(), caption: z.string().default(''), alt: z.string().optional() })).default([]),
+    galleryTitle: z.string().optional(),
     website: z.string().nullable().optional(),
     shortDescription: z.string().default(''),
     since: z.coerce.number().int().nullable().optional(),

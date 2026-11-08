@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-08: Ropajo partner page: signing-day photos
+
+**Who it affects:** everyone. **Staff need to:** nothing.
+- The "See us together" section on the Ropajo page now shows 5 photos from the partnership signing and the new Ropajo training kits, under the title "Signing Day: Lobi Stars FC and Ropajo Hotels Seal the Partnership". No captions are shown.
+- To change them: edit `gallery` and `galleryTitle` in the Ropajo partner file (photos in public/images/ropajo/).
+
 ## 2026-11-08: Media Centre: stay signed in for 2 hours
 
 **Who it affects:** Media Centre users and approvers. **Staff need to:** nothing.
