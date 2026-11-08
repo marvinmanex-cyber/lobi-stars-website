@@ -7,7 +7,7 @@ export async function onRequestPost({ request, env }) {
   const s = await getPortalSession(request, env, { touch: false });
   const b = await request.json().catch(() => ({}));
   if (s) {
-    const why = b.why === 'idle' ? 'no activity for 60 minutes' : 'signed out';
+    const why = b.why === 'idle' ? 'no activity for 2 hours' : 'signed out';
     await signOut(env, s, why);
     await logAdminAction(env.DB, portalActor(s), 'squad_portal_signout', `${s.name} signed out of the Squad Data Portal (${why})`);
   }

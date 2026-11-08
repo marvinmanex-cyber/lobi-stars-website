@@ -1,0 +1,190 @@
+---
+// Exo Sports' partner page (theme: "exo"), built the same way as Ropajo's and House 43's: a dark
+// hero with both badges and a shirt drawn in HTML/SVG in Exo's colours, three highlights, "The Kit"
+// (the training kits made by Exo Sports), "Together" (photos from the partner file `gallery`, with
+// designed placeholders until then) and a closing partner card. Class prefix exo-.
+// Logo: /images/exo-sports-logo.png once the file is in public/ (a word mark in Exo's colours until then).
+import { existsSync } from 'node:fs';
+import type { Partner } from '../../lib/partners';
+import { website } from '../../lib/partners';
+
+interface Props { partner: Partner }
+const { partner } = Astro.props;
+const p = partner.data;
+const site = website(partner);
+const gallery = (p as any).gallery as { src: string; caption: string; alt?: string }[] ?? [];
+const LOGO = '/images/exo-sports-logo.png';
+const logo = existsSync(`public${LOGO}`) ? LOGO : null;
+const kits = [
+  { img: '/images/ropajo/training-kit-orange.jpg', t: 'Training kit · Orange', s: 'Breathable, quick-dry, built for the training pitch' },
+  { img: '/images/ropajo/training-kit-grey.jpg', t: 'Training kit · Grey', s: 'The same performance fabric in the club’s grey' },
+];
+const highlights = [
+  { t: 'Official Kit Partner', s: 'of Lobi Stars FC', icon: '<path d="M16 6l8 4 8-4 10 6-4 9-5-2v23H15V19l-5 2-4-9z" fill="#C00018"/><path d="M24 10l-3 5h6z" fill="#fff"/><path d="M15 26h18" stroke="#0098FF" stroke-width="3"/>' },
+  { t: 'Matchday & training', s: 'kit for the whole squad', icon: '<circle cx="24" cy="24" r="17" fill="#fff" stroke="#111" stroke-width="2"/><path d="M24 13l6 4-2 7h-8l-2-7zM13 22l5 2 1 7-4 4M35 22l-5 2-1 7 4 4M20 36l4-5 4 5" fill="none" stroke="#111" stroke-width="2" stroke-linejoin="round"/><path d="M24 13l6 4-2 7h-8l-2-7z" fill="#C00018"/>' },
+  { t: 'Made for the Pride of Benue', s: 'in the club’s colours', icon: '<path d="M24 5l15 6v10c0 10-6 18-15 22C15 39 9 31 9 21V11z" fill="#0F2D8A"/><path d="M24 12l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1z" fill="#FFC72C"/>' },
+];
+const placeholders = ['Kit unveiling', 'On the training pitch', 'Matchday in Exo', 'Behind the seams'];
+---
+<div class="exo">
+  <section class="exo-hero">
+    <div class="wrap exo-hero-in">
+      <div class="exo-intro">
+        <div class="exo-lockup" role="img" aria-label="Lobi Stars FC and Exo Sports">
+          <span class="exo-chip"><img src="/images/lobi-stars-badge.png" alt="" width="80" height="80" /></span>
+          <span class="exo-amp" aria-hidden="true">&amp;</span>
+          <span class="exo-chip exo-chip--logo">{logo ? <img src={logo} alt="" width="160" height="107" /> : <span class="exo-mark" aria-hidden="true"><b>EXO</b><i>SPORTS</i></span>}</span>
+        </div>
+        <p class="exo-names">Lobi Stars FC &amp; Exo Sports</p>
+        <h1 class="exo-h1">{p.name}</h1>
+        <p class="exo-title">{p.officialTitle}</p>
+        <p class="exo-desc">Exo Sports dresses the Pride of Benue. As Official Kit Partner of Lobi Stars FC, Exo Sports makes the kit the squad trains and plays in: performance wear designed in the club’s colours, carrying the badge with pride.</p>
+        <div class="exo-btns">
+          <a class="exo-btn" href="#exo-kit">See the kit</a>
+          {site && <a class="exo-btn exo-btn--ghost" href={site} target="_blank" rel="sponsored noopener">Visit Exo Sports<span class="sr-only"> (opens in a new tab)</span></a>}
+        </div>
+      </div>
+      <!-- The shirt (SVG): Lobi blue with red and Exo-blue shoulder stripes, the badge and the Exo mark. -->
+      <div class="exo-shirtwrap" aria-hidden="true">
+        <svg class="exo-shirt" viewBox="0 0 300 320">
+          <defs>
+            <linearGradient id="exo-cloth" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1B3FA8"/><stop offset="1" stop-color="#0B2470"/></linearGradient>
+            <pattern id="exo-mesh" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r=".9" fill="#fff" fill-opacity=".07"/></pattern>
+          </defs>
+          <path d="M95 18l55 22 55-22 78 46-30 64-36-16v214H83V112l-36 16-30-64z" fill="url(#exo-cloth)"/>
+          <path d="M95 18l55 22 55-22 78 46-30 64-36-16v214H83V112l-36 16-30-64z" fill="url(#exo-mesh)"/>
+          <path d="M17 64l78-46 4 8-74 45zM283 64l-78-46-4 8 74 45z" fill="#C00018"/>
+          <path d="M25 72l74-45 4 7-71 44zM275 72l-74-45-4 7 71 44z" fill="#0098FF"/>
+          <path d="M122 30l28 26 28-26" fill="none" stroke="#C00018" stroke-width="6" stroke-linejoin="round"/>
+          <path d="M83 300h134" stroke="#C00018" stroke-width="6"/>
+          <g transform="translate(176 96)"><path d="M18 0l17 7v12c0 12-7 21-17 25C8 40 1 31 1 19V7z" fill="#fff"/><path d="M18 6l12 5v9c0 8-5 15-12 18-7-3-12-10-12-18v-9z" fill="#1B3FA8"/><path d="M18 13l2 4 5 1-4 3 1 5-4-2-4 2 1-5-4-3 5-1z" fill="#FFC72C"/></g>
+          <g transform="translate(94 104)"><path d="M0 0h24l-9 9 9 9H0l9-9z" fill="#C00018"/><text x="28" y="16" fill="#fff" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="16">EXO</text></g>
+          <text x="150" y="210" text-anchor="middle" fill="#fff" font-family="'Bebas Neue', Impact, sans-serif" font-size="74" letter-spacing="2">10</text>
+          <text x="150" y="246" text-anchor="middle" fill="#FFC72C" font-family="'Barlow Condensed', Arial, sans-serif" font-weight="700" font-size="17" letter-spacing="4">PRIDE OF BENUE</text>
+        </svg>
+        <span class="exo-tag">Official Kit Partner</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="exo-high" aria-label="The partnership at a glance">
+    <ul class="wrap exo-high-in">
+      {highlights.map(h => (
+        <li class="exo-hc"><span class="exo-ic" aria-hidden="true"><svg viewBox="0 0 48 48" width="44" height="44" set:html={h.icon} /></span><span><b>{h.t}</b><small>{h.s}</small></span></li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="exo-kit" id="exo-kit" aria-labelledby="exo-kit-h">
+    <div class="wrap">
+      <p class="exo-eyebrow">The Kit</p>
+      <h2 class="exo-h2" id="exo-kit-h">Made by Exo Sports</h2>
+      <p class="exo-sub">The Lobi Stars FC training kits: breathable, quick-dry and lightweight, with the club crest on the chest and the shorts.</p>
+      <ul class="exo-kits">
+        {kits.map(k => (
+          <li><figure><img src={k.img} alt={`Lobi Stars FC ${k.t.toLowerCase()} by Exo Sports`} width="1024" height="1024" loading="lazy" decoding="async" /><figcaption><b>{k.t}</b><span>{k.s}</span></figcaption></figure></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="exo-together" id="exo-together" aria-labelledby="exo-t-h">
+    <div class="wrap">
+      <p class="exo-eyebrow">Together</p>
+      <h2 class="exo-h2" id="exo-t-h">Lobi Stars <span>&amp;</span> Exo Sports</h2>
+      {gallery.length > 0 ? (
+        <ul class="exo-gal">
+          {gallery.map(g => <li><figure><img src={g.src} alt={g.alt || g.caption || 'Lobi Stars FC and Exo Sports'} loading="lazy" decoding="async" />{g.caption && <figcaption>{g.caption}</figcaption>}</figure></li>)}
+        </ul>
+      ) : (
+        <ul class="exo-gal">
+          {placeholders.map((t, i) => <li><div class={`exo-soon exo-soon--${i}`}><span class="exo-soon-chip">Photos coming soon</span><span class="exo-soon-t">{t}</span></div></li>)}
+        </ul>
+      )}
+    </div>
+  </section>
+
+  <section class="exo-about">
+    <div class="wrap">
+      <div class="exo-info">
+        {logo ? <img class="exo-info-logo" src={logo} alt="Exo Sports – Official Kit Partner of Lobi Stars FC" width="240" height="160" loading="lazy" /> : <span class="exo-mark exo-mark--big" role="img" aria-label="Exo Sports"><b>EXO</b><i>SPORTS</i></span>}
+        <p>Exo Sports is the Official Kit Partner of Lobi Stars FC, making the squad’s matchday and training wear.</p>
+        <a class="exo-link" href="/partners/">All club partners<span aria-hidden="true"> →</span></a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<style>
+  .exo { --exo-red: #C00018; --exo-blue: #0098FF; --ink: #111317; --navy: #0B1638; }
+  .exo-hero { position: relative; overflow: hidden; color: #fff; background: radial-gradient(120% 140% at 85% 10%, #1B2D6B 0%, var(--navy) 45%, #07090F 100%); padding: 56px 0 64px; }
+  .exo-hero::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, transparent 0 46px, rgba(255, 255, 255, .025) 46px 92px); pointer-events: none; }
+  .exo-hero::after { content: ''; position: absolute; left: -8%; bottom: -60px; width: 70%; height: 120px; background: linear-gradient(90deg, var(--exo-red), var(--exo-blue)); transform: skewY(-4deg); opacity: .9; }
+  .exo-hero-in { position: relative; z-index: 1; display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
+  .exo-lockup { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+  .exo-chip { display: inline-flex; align-items: center; justify-content: center; height: 84px; min-width: 84px; padding: 8px; border-radius: 18px; background: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
+  .exo-chip img { max-height: 68px; width: auto; }
+  .exo-chip--logo { padding: 8px 14px; }
+  .exo-amp { font: 400 40px/1 'Bebas Neue', sans-serif; color: #FFC72C; }
+  .exo-mark { display: inline-flex; flex-direction: column; line-height: .9; }
+  .exo-mark b { font: 900 34px/0.9 'Arial Black', Arial, sans-serif; letter-spacing: 1px; color: var(--exo-red); }
+  .exo-mark b::first-letter { color: var(--exo-red); }
+  .exo-mark i { font: 800 12px/1.2 Arial, sans-serif; font-style: normal; letter-spacing: 3px; color: var(--ink); }
+  .exo-mark--big b { font-size: 54px; }
+  .exo-mark--big i { font-size: 18px; }
+  .exo-names { margin: 0; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #FFC72C; }
+  .exo-h1 { margin: 10px 0 4px; font: 400 clamp(46px, 7vw, 80px)/.95 'Bebas Neue', sans-serif; letter-spacing: 1px; color: #fff; }
+  .exo-title { margin: 0 0 14px; font: 700 18px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: var(--exo-blue); }
+  .exo-desc { max-width: 560px; margin: 0 0 22px; font-size: 17px; line-height: 1.65; color: rgba(255, 255, 255, .9); }
+  .exo-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+  .exo-btn { display: inline-flex; align-items: center; min-height: 48px; padding: 0 22px; border-radius: 10px; background: var(--exo-red); color: #fff; text-decoration: none; font: 700 15px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; }
+  .exo-btn:hover, .exo-btn:focus-visible { background: #9E0014; }
+  .exo-btn--ghost { background: transparent; border: 2px solid rgba(255, 255, 255, .7); }
+  .exo-btn--ghost:hover, .exo-btn--ghost:focus-visible { background: #fff; color: var(--ink); }
+  .exo-shirtwrap { position: relative; justify-self: center; width: min(360px, 100%); }
+  .exo-shirt { width: 100%; height: auto; filter: drop-shadow(0 24px 40px rgba(0, 0, 0, .5)); transform: rotate(-4deg); }
+  .exo-tag { position: absolute; right: 0; bottom: 18px; padding: 8px 14px; border-radius: 999px; background: #fff; color: var(--ink); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; box-shadow: 0 8px 20px rgba(0, 0, 0, .3); }
+  .exo-high { background: #fff; border-bottom: 1px solid var(--d4); }
+  .exo-high-in { list-style: none; margin: 0 auto; padding: 22px 5%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .exo-hc { display: flex; align-items: center; gap: 12px; }
+  .exo-hc b { display: block; font: 700 17px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .5px; text-transform: uppercase; }
+  .exo-hc small { color: var(--lt); font-size: 14px; }
+  .exo-ic { flex: none; width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: #F2F5FB; }
+  .exo-kit, .exo-together { padding: 60px 0; }
+  .exo-together { background: #F6F7F9; }
+  .exo-eyebrow { margin: 0; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 3px; text-transform: uppercase; color: var(--exo-red); text-align: center; }
+  .exo-h2 { margin: 8px 0 8px; text-align: center; font: 400 clamp(34px, 5vw, 52px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
+  .exo-h2 span { color: var(--exo-red); }
+  .exo-sub { max-width: 620px; margin: 0 auto 28px; text-align: center; color: var(--lt); line-height: 1.6; }
+  .exo-kits { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .exo-kits figure { margin: 0; border-radius: 18px; overflow: hidden; background: #111; box-shadow: 0 14px 30px rgba(15, 17, 21, .12); }
+  .exo-kits img { display: block; width: 100%; height: auto; transition: transform .6s ease; }
+  .exo-kits figure:hover img { transform: scale(1.03); }
+  .exo-kits figcaption { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; background: #fff; }
+  .exo-kits figcaption b { font: 700 18px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .5px; text-transform: uppercase; }
+  .exo-kits figcaption span { font-size: 14px; color: var(--lt); }
+  .exo-gal { list-style: none; margin: 24px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .exo-gal figure { margin: 0; height: 100%; border-radius: 16px; overflow: hidden; }
+  .exo-gal img { width: 100%; height: 100%; object-fit: cover; display: block; aspect-ratio: 4 / 5; }
+  .exo-gal figcaption { padding: 8px 4px; font-weight: 600; }
+  .exo-soon { position: relative; aspect-ratio: 4 / 5; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px; color: #fff; background: linear-gradient(160deg, var(--navy), #1B3FA8); }
+  .exo-soon--1 { background: linear-gradient(160deg, #8E0012, var(--exo-red)); }
+  .exo-soon--2 { background: linear-gradient(160deg, #005FA3, var(--exo-blue)); }
+  .exo-soon--3 { background: linear-gradient(160deg, #1A1C22, #3A3F4B); }
+  .exo-soon::before { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(115deg, transparent 0 22px, rgba(255, 255, 255, .06) 22px 44px); }
+  .exo-soon-chip { position: absolute; top: 14px; left: 14px; padding: 6px 10px; border-radius: 999px; background: rgba(255, 255, 255, .92); color: var(--ink); font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.2px; text-transform: uppercase; }
+  .exo-soon-t { position: relative; font: 400 26px/1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .exo-about { padding: 50px 0 70px; }
+  .exo-info { max-width: 640px; margin: 0 auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 30px 24px; border: 1px solid var(--d4); border-top: 5px solid var(--exo-red); border-radius: 18px; background: #fff; }
+  .exo-info-logo { max-width: 220px; height: auto; }
+  .exo-info p { margin: 0; color: var(--lt); line-height: 1.6; }
+  .exo-link { color: var(--exo-red); font-weight: 700; text-decoration: none; }
+  @media (max-width: 860px) {
+    .exo-hero-in { grid-template-columns: 1fr; }
+    .exo-shirtwrap { width: min(280px, 80%); }
+    .exo-high-in { grid-template-columns: 1fr; }
+    .exo-gal { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 560px) { .exo-kits { grid-template-columns: 1fr; } .exo-hero { padding: 36px 0 70px; } }
+  @media (prefers-reduced-motion: reduce) { .exo-kits img { transition: none; } }
+</style>

@@ -18,7 +18,7 @@ import LivePlayer from './commentary/LivePlayer.astro';
   .lb-wrap[hidden] { display: none; }
   .lb-wrap .lb { flex: 1; min-width: 0; }
   .lb-listen { padding: 0 5% 0 0; flex-shrink: 0; }
-  .lb-listen:empty { display: none; }
+  .lb-listen:empty, .lb-listen[hidden] { display: none; }
   @media (max-width: 600px) { .lb-wrap { flex-wrap: wrap; justify-content: center; } .lb-wrap .lb { flex-basis: 100%; } .lb-listen { padding: 0 5% 12px; } }
   .lb {
     display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 5%;
@@ -52,6 +52,11 @@ import LivePlayer from './commentary/LivePlayer.astro';
       banner.querySelector('[data-lb-teams]')!.textContent = `Lobi Stars vs ${opponent}`;
       banner.href = `/matches/${live.slug}/live/`;
       wrap.hidden = false;
+      // No commentary for this match: "Watch live, vote" and no Listen Live button.
+      const listen = wrap.querySelector('.lb-listen') as HTMLElement | null;
+      const cta = banner.querySelector('.lb-cta');
+      if (live.commentary === false) { if (listen) listen.hidden = true; if (cta) cta.textContent = '– Watch live, Vote'; return; }
+      if (listen) listen.hidden = false; if (cta) cta.textContent = '– Watch, Listen, Vote';
       // Start the Listen Live button now that it can be seen.
       window.dispatchEvent(new Event('ls:live-needed'));
     } catch { /* leave hidden */ }

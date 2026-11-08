@@ -12,6 +12,7 @@ import { matchSlug } from './matchSlug.js';
 import { matchBarMatch, naira } from './tickets/rules.js';
 import { crestHtml, lagosParts, esc } from './fixtureCard.js';
 import { jsonLd } from './tickets/upcomingHtml.js';
+import { KITCHEN_OPENING_SOON } from './launchFlags.js';
 
 const isLobi = n => /lobi stars/i.test(n || '');
 const LIVE = ['live', 'half-time', 'half_time'];
@@ -41,8 +42,11 @@ export function matchBarHtml(matches, { now = Date.now() } = {}) {
 
   const centre = `/matches/${esc(slug)}/`;
   const listen = (cls, role) => `<a class="${cls}" href="/commentary/"${role} data-track="commentary_click" data-track-label="${esc(slug)}" aria-label="Listen live to ${esc(title)} on Lobi Stars FC Live">${cls.includes('mb-btn') ? '<span class="mb-live-dot" aria-hidden="true"></span>' : ''}Listen live</a>`;
+  // No commentary for this match: promote Watch Live (Matchday Live) instead of Listen Live.
+  const watch = (cls, role) => `<a class="${cls}" href="/matches/${esc(slug)}/live/"${role} data-track="watch_click" data-track-label="${esc(slug)}" aria-label="Watch ${esc(title)} live">${cls.includes('mb-btn') ? '<span class="mb-live-dot" aria-hidden="true"></span>' : ''}Watch live</a>`;
+  const liveLink = m.commentary === false ? watch : listen;
   let primary;
-  if (live) primary = listen('mb-btn mb-btn--primary', '');
+  if (live) primary = liveLink('mb-btn mb-btn--primary', '');
   else if (home && !postponed && t.state === 'on_sale') primary = `<a class="mb-btn mb-btn--primary" href="/tickets/?event=${encodeURIComponent(m.id)}">${t.free ? 'Get free ticket' : 'Buy ticket'}${t.fromKobo ? ` <small>from ${esc(naira(t.fromKobo))}</small>` : ''}</a>`;
   else primary = `<a class="mb-btn mb-btn--primary" href="${centre}">Match Centre</a>`;
   const item = html => `<li role="none">${html}</li>`;
@@ -50,7 +54,7 @@ export function matchBarHtml(matches, { now = Date.now() } = {}) {
   if (!primary.includes(`href="${centre}"`)) more.push(item(`<a role="menuitem" href="${centre}">Match Centre</a>`));
   if (!postponed && p) more.push(item(`<a role="menuitem" href="/api/calendar?match=${encodeURIComponent(slug)}">Add to calendar</a>`));
   more.push(item(`<button type="button" role="menuitem" data-fx-share data-url="${centre}" data-title="${esc(title)}">Share</button>`));
-  if (!live) more.push(item(listen('', ' role="menuitem"')));
+  if (!live) more.push(item(liveLink('', ' role="menuitem"')));
 
   const mid = live && Number.isInteger(m.home_score) && Number.isInteger(m.away_score)
     ? `<span class="mb-score" aria-label="Score ${esc(m.home_score)} to ${esc(m.away_score)}">${esc(m.home_score)}<span aria-hidden="true">–</span>${esc(m.away_score)}</span>`
@@ -69,6 +73,6 @@ export function matchBarHtml(matches, { now = Date.now() } = {}) {
 <p class="mb-venue"><span class="mb-sr">Venue: </span>${esc(m.venue || 'Venue to be confirmed')}</p></div>
 ${when}
 ${status}
-<div class="mb-acts">${primary}${home && !postponed ? '<a class="mb-btn mb-btn--food" href="/kitchen/" data-track="kitchen_click" data-track-label="match_bar">Order food to your seat</a>' : ''}<div class="mb-more"><button type="button" class="mb-btn mb-btn--more" aria-haspopup="true" aria-expanded="false" aria-controls="mbMenu">More <span aria-hidden="true">&#9662;</span></button><ul class="mb-menu" id="mbMenu" role="menu" aria-label="More for ${esc(title)}" hidden>${more.join('')}</ul></div></div>
+<div class="mb-acts">${primary}${home && !postponed && !KITCHEN_OPENING_SOON ? '<a class="mb-btn mb-btn--food" href="/kitchen/" data-track="kitchen_click" data-track-label="match_bar">Order food to your seat</a>' : ''}<div class="mb-more"><button type="button" class="mb-btn mb-btn--more" aria-haspopup="true" aria-expanded="false" aria-controls="mbMenu">More <span aria-hidden="true">&#9662;</span></button><ul class="mb-menu" id="mbMenu" role="menu" aria-label="More for ${esc(title)}" hidden>${more.join('')}</ul></div></div>
 ${jsonLd(m)}</div>`;
 }

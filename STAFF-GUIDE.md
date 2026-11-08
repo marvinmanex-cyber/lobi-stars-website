@@ -34,7 +34,7 @@ or knows your password.
 and type your email: you get a link to choose a new one (it works for 2
 hours). Then sign in as usual with your two-step code.
 
-**Staying signed in:** you're signed out after **30 minutes without
+**Staying signed in:** you're signed out after **2 hours without
 activity** (a box warns you 2 minutes before; press **Stay signed in**) and
 after **12 hours** at most; just log in again. The Kitchen
 Screen and the Live Order Board stay signed in while they're open on a
@@ -1986,7 +1986,7 @@ Until then the Newsletter screen shows a yellow note.
 - **The three Super Admins:** each one's account, two-step login, last login
   and Gmail confirmation; and **Send the Super Admin invites**.
 - **The rules for everyone** are shown at the top: 12+ character passwords,
-  signed out after 30 minutes without activity and after 12 hours, locked for
+  signed out after 2 hours without activity and after 12 hours, locked for
   15 minutes after 5 wrong attempts.
 - **Two-step login for everyone:** press **Require two-step login**. It only
   works once at least one Super Admin has a **personal staff account** with

@@ -8,6 +8,6 @@ website: ""
 shortDescription: "Play is the Official Kit Partner of Lobi Stars FC."
 since: null
 displayOrder: 1
-active: true
+active: false # replaced by Exo Sports as Official Kit Partner (8 Nov 2026)
 ageRestricted: false
 ---

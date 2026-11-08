@@ -466,7 +466,7 @@ const showBack = here !== '/admin/dashboard/';
     try { sessionStorage.setItem('ls_admin_perms', JSON.stringify([...perms])); } catch {}
     document.dispatchEvent(new CustomEvent('ls:admin', { detail: d.admin }));
     if (perms.has('commerce.kitchen.manage')) startFood();
-    idleMinutes = d.admin.idleMinutes || 30;
+    idleMinutes = d.admin.idleMinutes || 120;
     // Super Admins on Gmail: a one-time reminder about Google 2-Step Verification (acknowledgement recorded).
     if (d.admin.gmailNotice) {
       const box = document.createElement('div');
@@ -736,10 +736,10 @@ const showBack = here !== '/admin/dashboard/';
     scan();
   }
 
-  // Signed out after 30 minutes without activity. While someone is using the
+  // Signed out after 2 hours without activity. While someone is using the
   // page (mouse, keys, touch, scrolling) a "still here" signal is sent every
   // 4 minutes; automatic refreshes in the background don't keep a session open.
-  let idleMinutes = 30, lastAct = Date.now(), lastPing = Date.now();
+  let idleMinutes = 120, lastAct = Date.now(), lastPing = Date.now();
   const mark = () => { lastAct = Date.now(); };
   for (const ev of ['pointerdown', 'keydown', 'touchstart', 'wheel', 'scroll']) window.addEventListener(ev, mark, { passive: true, capture: true });
   const backToLogin = (why: string) => { sessionStorage.removeItem('ls_admin_code'); location.href = `/admin/login/?${why}=1&next=${encodeURIComponent(location.pathname + location.search)}`; };

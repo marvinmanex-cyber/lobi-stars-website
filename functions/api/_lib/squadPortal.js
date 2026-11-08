@@ -27,7 +27,7 @@ export const portalLink = (env, origin) => `${String(env.SITE_URL || origin || '
 
 const COOKIE = 'ls_squad';
 const DEVICE_COOKIE = 'ls_squad_dev';
-export const IDLE_MS = 60 * 60e3;
+export const IDLE_MS = 2 * 3600e3; // 2 hours without activity (owner's request, 8 Nov 2026)
 const MAX_MS = 12 * 3600e3;
 const LOCK_AFTER = 5, LOCK_MS = 15 * 60e3, TURNSTILE_AFTER = 3;
 export const PORTAL_ACTOR_ROLE = 'squad_portal';
@@ -86,8 +86,8 @@ export function deviceLabel(ua) {
 }
 
 const cookieValue = (request, name) => ((request.headers.get('Cookie') || '').match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`)) || [])[1] || null;
-const sessionCookie = token => `${COOKIE}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${MAX_MS / 1000}`;
-export const clearPortalCookie = () => `${COOKIE}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`;
+const sessionCookie = token => `${COOKIE}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${MAX_MS / 1000}`;
+export const clearPortalCookie = () => `${COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 const deviceCookie = id => `${DEVICE_COOKIE}=${id}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${400 * 86400}`;
 export const hasPortalCookie = request => !!cookieValue(request, COOKIE);
 
@@ -173,7 +173,7 @@ export async function getPortalSession(request, env, { touch = true } = {}) {
   const end = why => db.prepare(`UPDATE squad_portal_sessions SET ended_at = ?, ended_why = ? WHERE id = ?`).bind(nowIso(), why, s.id).run();
   if (set.enabled !== '1') { await end('portal closed'); return null; }
   if (Number(s.pw_version) !== (Number(set.pw_version) || 1)) { await end('password changed'); return null; }
-  if (now - Date.parse(s.last_seen) > IDLE_MS) { await end('no activity for 60 minutes'); return null; }
+  if (now - Date.parse(s.last_seen) > IDLE_MS) { await end('no activity for 2 hours'); return null; }
   if (now - Date.parse(s.created_at) > MAX_MS) { await end('12 hours'); return null; }
   if (touch && now - Date.parse(s.last_seen) > 60e3) await db.prepare(`UPDATE squad_portal_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
   return { id: s.id, name: s.name, csrf: s.csrf, device: s.device, deviceId: s.device_id, since: s.created_at, lastSeen: s.last_seen, season: set.season };

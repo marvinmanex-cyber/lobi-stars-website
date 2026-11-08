@@ -142,6 +142,8 @@ export function toSummary(event, centre) {
     event_date: p.event_date, venue: p.venue, is_home: p.is_home, status: p.status,
     home_score: p.home_score, away_score: p.away_score, kickoff_at: p.kickoff_at,
     has_stream: !!(p.stream.youtube || p.stream.facebook),
+    // Live commentary for this match (Match Tickets & Settings). Off: pages promote Watch Live instead.
+    commentary: event.commentary_enabled !== 0,
     on_sale: p.on_sale,
   };
 }

@@ -8,6 +8,24 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-08: Exo Sports is the Official Kit Partner
+
+**Who it affects:** everyone. **Staff need to:** add the Exo Sports logo file (public/images/exo-sports-logo.png).
+- Exo Sports replaces Play as Official Kit Partner (Play is switched off, not deleted).
+- New partner page /partners/exo-sports/: hero with both badges and a shirt in Exo's colours, the partnership highlights, "The Kit" (the orange and grey training kits by Exo Sports), "Together" (photo placeholders until photos arrive) and a partner card. Until the logo file is added, an "EXO SPORTS" word mark is shown.
+
+## 2026-11-08: Predict & Win winner card; homepage promotes Watch Live when there is no commentary
+
+**Who it affects:** fans. **Staff need to:** press End Match and enter the final score (that decides the winner).
+- The Predict & Win page shows the result as soon as the final score is entered: the final score, the winner (first name, surname initial, masked phone), the score they predicted and the exact time, "predicted first of N correct predictions", the prize, the sponsor line, everyone who predicted the exact score in order, and this season's winners. Before that it says predictions are closed; the page checks every minute and shows the winner by itself.
+- Homepage: when a match has no commentary, the match bar and the LIVE NOW banner say "Watch live" (Matchday Live) instead of "Listen live". The "Order food to your seat" button is hidden while MatchDay Kitchen is "Opening soon".
+
+## 2026-11-08: Staff stay signed in for at least 2 hours
+
+**Who it affects:** all staff. **Staff need to:** nothing.
+- Website admin, the Squad & staff data portal and MatchDay Kitchen now sign you out only after 2 hours without activity (were 30 minutes, 60 minutes and 20 minutes). The Media Centre already was 2 hours; Gate Control stays 24 hours.
+- Squad portal links opened from WhatsApp or email keep you signed in.
+
 ## 2026-11-08: Watch Live: the Lobi Stars Facebook page and YouTube channel
 
 **Who it affects:** fans. **Staff need to:** nothing.

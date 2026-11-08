@@ -45,7 +45,8 @@ export async function findMotmMatch(env, key = '') {
   } else {
     const now = Date.now(), today = lagosDay(now);
     const home = (await listMatches(env.DB)).filter(isHomeGame);
-    const t = home.find(e => lagosDay(Date.parse(e.event_date)) === today && !['postponed', 'cancelled'].includes(e.status));
+    // Today's home game (the one nearest now, if there were ever two).
+    const t = home.filter(e => lagosDay(Date.parse(e.event_date)) === today && !['postponed', 'cancelled'].includes(e.status)).sort((a, b) => Math.abs(Date.parse(a.event_date) - now) - Math.abs(Date.parse(b.event_date) - now))[0];
     const next = home.filter(e => Date.parse(e.event_date) > now && !['postponed', 'cancelled'].includes(e.status)).sort((a, b) => Date.parse(a.event_date) - Date.parse(b.event_date))[0];
     const last = home.filter(e => Date.parse(e.event_date) <= now).sort((a, b) => Date.parse(b.event_date) - Date.parse(a.event_date))[0];
     id = (t || next || last)?.id || null;

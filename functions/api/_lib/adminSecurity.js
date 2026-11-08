@@ -7,7 +7,7 @@
 import { sendEmail } from './email.js';
 import { clientIp } from './fans.js';
 
-export const IDLE_MS = 30 * 60 * 1000;          // signed out after 30 minutes without activity
+export const IDLE_MS = 2 * 3600 * 1000;         // signed out after 2 hours without activity (owner's request, 8 Nov 2026)
 export const SESSION_MS = 12 * 60 * 60 * 1000;  // and after 12 hours at most
 export const LOCK_AFTER = 5;                     // wrong passwords / codes in a row
 export const LOCK_MS = 15 * 60 * 1000;

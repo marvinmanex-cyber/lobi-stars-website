@@ -1,12 +1,12 @@
 // MatchDay Kitchen home screen: sign-in, the ticket rail, pages opened as tabs
 // inside this browser tab (iframes of the panel page), the clock, and the
-// shared-tablet idle sign-out ("Still there?" after 20 minutes without a tap,
+// shared-tablet idle sign-out ("Still there?" after 2 hours without a tap,
 // then a 60-second countdown). Inner pages report taps through window.mkShell.
 import { $, esc, api, session, loadSession, setSignedOutHandler, GROUPS, whatsappUrl, WA_PATH, TG_PATH, iconFor, pageTitle, hm } from './common';
 import { startAlarms, stopAlarms, alarmsNow, markSources } from './alarm';
 import { initPush } from './push';
 
-const IDLE_MS = 20 * 60e3, COUNTDOWN = 60, MAX_TABS = 6, SAVE_KEY = 'mdk_tabs';
+const IDLE_MS = 120 * 60e3, COUNTDOWN = 60, MAX_TABS = 6, SAVE_KEY = 'mdk_tabs';
 type TabRec = { page: string; frame: HTMLIFrameElement; shownAt: number };
 const tabs: TabRec[] = [];
 let current = '';                       // '' = Home
@@ -256,7 +256,7 @@ function askStillThere() {
     if (left <= 0) {
       clearInterval(countdown);
       try { await api('logout', { method: 'POST', body: { idle: true } }); } catch { /* */ }
-      signedOut('You were signed out because nobody tapped for 20 minutes.');
+      signedOut('You were signed out because nobody tapped for 2 hours.');
     }
   }, 1000);
 }

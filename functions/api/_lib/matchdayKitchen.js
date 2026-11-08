@@ -22,7 +22,7 @@ import { looksLikeBackupCode, useBackupCode } from './adminSecurity.js';
 import { DEFAULT_VENUE } from './foodOrders.js';
 
 export const MK_COOKIE = 'ls_mdk';
-export const IDLE_MS = 22 * 60e3;              // the page asks "Still there?" after 20 minutes; the server ends the session after 22
+export const IDLE_MS = 122 * 60e3;             // the page asks "Still there?" after 2 hours; the server ends the session after 2 hours 2 minutes
 const MAX_MS = 14 * 3600e3;                    // and after 14 hours in any case (a long match day)
 const LOCK_AFTER = 5;                          // Super Admin email sign-in: 5 wrong passwords, wait 15 minutes
 const CODE_FAILS = 10;                         // login codes: 10 wrong codes from one connection, wait 15 minutes
@@ -424,7 +424,7 @@ export async function getKitchenSession(request, env, { touch = true } = {}) {
 }
 export async function signOut(db, session, request, idle = false) {
   await db.prepare(`UPDATE mk_sessions SET ended_at = ?, ended_why = ? WHERE id = ? AND ended_at IS NULL`).bind(nowIso(), idle ? 'no activity (Still there? not answered)' : 'signed out', session.id).run();
-  await mkLog(db, session.user, idle ? 'Signed out automatically (no tap for 20 minutes)' : 'Signed out', { kind: 'sign_out', request });
+  await mkLog(db, session.user, idle ? 'Signed out automatically (no tap for 2 hours)' : 'Signed out', { kind: 'sign_out', request });
 }
 /** Changes must come from the MatchDay Kitchen pages: same website and the session's token. */
 export function csrfProblem(request, session) {

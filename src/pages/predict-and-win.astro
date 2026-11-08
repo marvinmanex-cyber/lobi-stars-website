@@ -27,11 +27,59 @@ const prize = formatNaira(PRIZE_AMOUNT);
     ]}
   >
     <!-- Filled in on the server with the saved sponsor (functions/predict-and-win/index.js). -->
-    <div id="predictSponsorTop" slot="top"><div class="pw-top-sp"><p data-predict-sponsor-line>Predict &amp; Win, sponsored by <strong>Prime Beverages &amp; Logistics Ltd</strong></p></div></div>
+    <div slot="top">
+      <div id="predictSponsorTop"><div class="pw-top-sp"><p data-predict-sponsor-line>Predict &amp; Win, sponsored by <strong>Prime Beverages &amp; Logistics Ltd</strong></p></div></div>
+      <!-- The result card (winner, predicted score and time, everyone with the exact score) and this season's winners. -->
+      <div id="predictBoard" data-state="" data-slug=""></div>
+    </div>
   </MatchdayGamePage>
 </Layout>
 
+<script>
+  // While predictions are open or waiting for the final score, check every minute and reload when the
+  // result is in, so fans already on the page see the winner without refreshing.
+  const board = document.getElementById('predictBoard');
+  const state = board?.dataset.state, slug = board?.dataset.slug;
+  if (slug && (state === 'open' || state === 'closed')) {
+    const t = window.setInterval(async () => {
+      try {
+        const d = await (await fetch(`/api/matches/${encodeURIComponent(slug)}/predict`, { cache: 'no-store' })).json();
+        if (d.state && d.state !== state) { clearInterval(t); location.reload(); }
+      } catch { /* try again next minute */ }
+    }, 60_000);
+  }
+</script>
+
 <style is:global>
+  .pwb-card { margin: 0 0 22px; padding: 20px; border: 2px solid #E31E24; border-radius: 18px; background: #fff; }
+  .pwb-card--wait, .pwb-card--open { border-color: var(--d4); border-left: 5px solid #E31E24; }
+  .pwb-k { margin: 0 0 8px; font: 700 13px/1.2 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #E31E24; }
+  .pwb-score { margin: 0 0 14px; font: 400 clamp(26px, 5vw, 40px)/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .pwb-score b { color: #E31E24; font-weight: 400; }
+  .pwb-win { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border-radius: 14px; background: #FFF8E1; }
+  .pwb-trophy { font-size: 40px; line-height: 1; }
+  .pwb-win p { margin: 0 0 4px; line-height: 1.5; }
+  .pwb-win-k { font: 700 12px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #7A5300; }
+  .pwb-win-name { font: 400 clamp(28px, 6vw, 40px)/1.05 'Bebas Neue', sans-serif !important; letter-spacing: .5px; overflow-wrap: anywhere; }
+  .pwb-none { margin: 0; padding: 12px 14px; border-radius: 12px; background: #F4F5F7; }
+  .pwb-sp { margin: 12px 0 0; font-weight: 600; }
+  .pwb-wait { margin: 0 0 6px; font: 400 clamp(24px, 4vw, 32px)/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .pwb-card p a { color: var(--red-text); font-weight: 700; }
+  .pwb-h3 { margin: 20px 0 6px; font: 400 24px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .pwb-note { margin: 0 0 8px; font-size: 14px; color: var(--lt); }
+  .pwb-list { margin: 0; padding-left: 24px; }
+  .pwb-list li { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 8px 0; border-bottom: 1px solid var(--d4); }
+  .pwb-list li > span:first-child { flex: 1 1 180px; overflow-wrap: anywhere; }
+  .pwb-list li.win { font-weight: 700; }
+  .pwb-at { font-size: 14px; font-variant-numeric: tabular-nums; }
+  .pwb-tag { flex-basis: 100%; font-size: 13px; color: var(--lt); }
+  .pwb-tag--win { color: #E31E24; }
+  .pwb-total { margin: 12px 0 0; font-weight: 700; }
+  .pwb-arch { margin: 0 0 26px; }
+  .pwb-arch ul { list-style: none; margin: 0; padding: 0; }
+  .pwb-arch li { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--d4); }
+  .pwb-arch-w { font-weight: 700; flex: 1 1 100%; }
+  .pwb-arch-m { font-size: 14px; color: var(--lt); }
   .pw-top-sp { display: flex; align-items: center; gap: 14px; margin: 0 0 30px; padding: 12px 16px; border: 1px solid var(--d4); border-radius: 14px; background: #fff; }
   .pw-top-sp img { width: 72px; height: 72px; object-fit: contain; border-radius: 10px; background: #fff; flex: none; }
   .pw-top-sp p { margin: 0; font-size: 16px; }

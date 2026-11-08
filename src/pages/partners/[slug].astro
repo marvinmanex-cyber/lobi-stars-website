@@ -4,6 +4,7 @@ import PartnerLogo from '../../components/partners/PartnerLogo.astro';
 import NewsCarousel from '../../components/news/NewsCarousel.astro';
 import RopajoFeature from '../../components/partners/RopajoFeature.astro';
 import House43Feature from '../../components/partners/House43Feature.astro';
+import ExoFeature from '../../components/partners/ExoFeature.astro';
 import { existsSync } from 'node:fs';
 import { render } from 'astro:content';
 import { getPartners, logoSrc, logoAlt, website, type Partner } from '../../lib/partners';
@@ -49,6 +50,8 @@ const ogImage = existsSync(`public${ogFile}`) ? ogFile : null;
     <RopajoFeature partner={partner}>{hasBody && <Content />}</RopajoFeature>
   ) : p.theme === 'house43' ? (
     <House43Feature partner={partner} />
+  ) : p.theme === 'exo' ? (
+    <ExoFeature partner={partner} />
   ) : (
   <div class="wrap pd">
     <div class="pd-top">

@@ -1,5 +1,5 @@
 // Squad & Staff Data Portal: sign in, the signed-in shell and the inactivity
-// sign-out (60 minutes without activity, with a 2-minute warning).
+// sign-out (2 hours without activity, with a 2-minute warning).
 import { api, state, $, toast, ApiError } from './api';
 import { showHome } from './home';
 import { startForms } from './form';
@@ -73,7 +73,7 @@ async function signOut(why?: string) {
   clearInterval(warnTimer); clearInterval(idleTimer);
   try { await fetch('/api/squad-portal/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ why }), credentials: 'same-origin' }); } catch { /* offline */ }
   state.csrf = ''; state.name = '';
-  showSignIn(why === 'idle' ? 'You were signed out after 60 minutes without activity. Your saved answers are kept.' : undefined);
+  showSignIn(why === 'idle' ? 'You were signed out after 2 hours without activity. Your saved answers are kept.' : undefined);
 }
 
 export function startPortal() {

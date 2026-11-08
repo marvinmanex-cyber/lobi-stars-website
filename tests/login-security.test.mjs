@@ -109,14 +109,14 @@ test('sessions: log out ends the session on the server; log out of other devices
   assert.equal((await api('/api/admin/me', 'GET', null, { Cookie: 'ls_admin=owner.9999999999999.abc' })).status, 401);
 });
 
-test('idle for 30 minutes: signed out; background refreshes do not keep a session open', async () => {
+test('idle for 2 hours: signed out (not before); background refreshes do not keep a session open', async () => {
   const s = await staff('fan_support');
   const l = await login({ email: s.email, password: PW });
   const sid = l.cookie.split('.')[1];
-  localSql(`UPDATE admin_sessions SET last_seen = ${Date.now() - 20 * 60000} WHERE id = '${sid}'`);
+  localSql(`UPDATE admin_sessions SET last_seen = ${Date.now() - 100 * 60000} WHERE id = '${sid}'`);
   assert.equal((await api('/api/admin/notifications', 'GET', null, as(l))).status, 200);
   assert.equal((await api('/api/admin/me', 'POST', {}, as(l))).status, 200, '"still here" keeps it open');
-  localSql(`UPDATE admin_sessions SET last_seen = ${Date.now() - 31 * 60000} WHERE id = '${sid}'`);
+  localSql(`UPDATE admin_sessions SET last_seen = ${Date.now() - 121 * 60000} WHERE id = '${sid}'`);
   assert.equal((await api('/api/admin/me', 'GET', null, as(l))).status, 401, 'idle: signed out');
   const page = await fetch(`${BASE}/admin/dashboard/`, { headers: as(l), redirect: 'manual' });
   assert.equal(page.status, 302); assert.match(page.headers.get('location'), /\/admin\/login\//);
