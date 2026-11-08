@@ -290,8 +290,8 @@ is recalculated.
 - **Who can be voted for:** the starting XI (from Live Match Control's squad, or the Media Centre line-up),
   and a substitute from the moment his **Substitution** is saved in the Live timeline (or sent as a Media
   Centre live update). The website records the time each timeline entry is saved.
-- **Counted votes:** one per verified fan account. Votes from accounts made less than 24 hours before
-  kick-off are kept but not counted ("held"). Level on votes: whoever reached that total first wins.
+- **Counted votes:** one per verified fan account. Accounts can be created any time before kick-off;
+  votes from accounts made after kick-off are kept but not counted ("held"). Level on votes: whoever reached that total first wins.
 - **Sponsor:** Admin → Matchday → **Man of the Match Sponsor** (Super Admins): photo, display name,
   sponsor line and a Show sponsor switch. Every change is in the Activity Log.
 

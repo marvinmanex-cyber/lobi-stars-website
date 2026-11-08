@@ -6,13 +6,14 @@
 //   4 pm kick-off), on the club clock (Africa/Lagos). If kick-off moves, both times move with it.
 // - Votable: the starting XI, and a substitute only from the moment his substitution was recorded.
 // - One vote per verified fan account per match (UNIQUE (event_id, member_id) in the database).
-// - Accounts created less than HOLD_NEW_ACCOUNTS_HOURS before kick-off: vote saved as "held", not counted.
+// - Accounts created after kick-off: vote saved as "held", not counted (the club's decision, 8 Nov 2026:
+//   fans can create an account any time before the game starts and still vote).
 // - Winner: most valid votes; level on votes = whoever reached that total first.
 
 import { effectiveKickoff } from './kickoff.js';
 
 export const VOTING_OPEN_MINUTES = 110;
-export const HOLD_NEW_ACCOUNTS_HOURS = 24;
+export const HOLD_NEW_ACCOUNTS_HOURS = 0; // hours before kick-off an account must exist (0 = any time before kick-off)
 export const CLUB_TZ = 'Africa/Lagos';
 export const DEFAULT_SPONSOR = { show: true, name: 'Mr. Moses Orkuma', line: 'Proudly sponsored by Mr. Moses Orkuma', photoUrl: null };
 const MIN = 60e3;
@@ -61,8 +62,8 @@ export function candidates(squad, timeline, side = 'home', at = Date.now()) {
   return out;
 }
 
-/** Is this account's vote held (not counted)? Accounts made less than 24 hours before kick-off. */
-export const isHeldAccount = (accountCreatedAt, kickoffIso) => !accountCreatedAt || Date.parse(accountCreatedAt) > Date.parse(kickoffIso) - HOLD_NEW_ACCOUNTS_HOURS * 3600e3;
+/** Is this account's vote held (not counted)? Accounts made after kick-off (4:00 pm if no time was entered). */
+export const isHeldAccount = (accountCreatedAt, kickoffIso) => !accountCreatedAt || Date.parse(accountCreatedAt) > effectiveKickoff(kickoffIso) - HOLD_NEW_ACCOUNTS_HOURS * 3600e3;
 
 /**
  * Counts the votes. votes: [{ player_slug, created_at, status }]. Only counted votes, cast inside the

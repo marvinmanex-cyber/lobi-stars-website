@@ -68,10 +68,11 @@ test('a second vote is refused (UNIQUE (event_id, member_id))', async () => {
   assert.match(src, /'You have already voted in this match\.'/);
 });
 
-test('held accounts (created less than 24 hours before kick-off) are not counted', () => {
-  assert.equal(isHeldAccount(at(-24 * 60 - 1), KO), false);
-  assert.equal(isHeldAccount(at(-23 * 60), KO), true);
-  assert.equal(isHeldAccount(at(5), KO), true, 'made during the match');
+test('accounts made any time before kick-off count; accounts made after kick-off are held', () => {
+  assert.equal(isHeldAccount(at(-24 * 60), KO), false);
+  assert.equal(isHeldAccount(at(-5), KO), false, 'made 5 minutes before kick-off: counts');
+  assert.equal(isHeldAccount(at(1), KO), true, 'made during the match: held');
+  assert.equal(isHeldAccount(null, KO), true);
   const players = candidates(squad, [], 'home', Date.parse(KO));
   const t = tally({ votes: [v('a', 5), v('b', 6, 'held'), v('b', 7, 'held')], players, opensAt: W.opensAt, closesAt: W.closesAt });
   assert.equal(t.totalVotes, 1); assert.equal(t.held, 2); assert.equal(t.rows[0].slug, 'a');

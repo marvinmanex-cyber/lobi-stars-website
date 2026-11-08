@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-08: Man of the Match: accounts made any time before kick-off count
+
+**Who it affects:** fans. **Staff need to:** nothing.
+- Fans can create an account any time before the game starts and their Man of the Match vote counts (was: 24 hours before). Only accounts created after kick-off are held. Predict & Win already allowed this (predictions close at kick-off, or 4:00 pm if no kick-off time is set).
+- Rules page: voting "closes at 5:50 pm, about 5 minutes before the end of the match", matching the Man of the Match page.
+
 ## 2026-11-08: Predict & Win 4:00 pm fallback; MOTM wording; terms no longer marked DRAFT
 
 **Who it affects:** fans. **Staff need to:** nothing.
