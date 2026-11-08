@@ -78,12 +78,13 @@ export function playersOnField(squad, timeline, side = 'home') {
 /** The latest Media Centre line-up for this match (draft or published), as a squad. Null if there isn't one. */
 export async function mediaLineup(db, eventId) {
   try {
-    const r = await db.prepare(`SELECT status, data_json, updated_at FROM mc_items WHERE kind = 'lineup' AND ref = ? AND status NOT IN ('rejected', 'unpublished') ORDER BY updated_at DESC LIMIT 1`).bind(eventId).first();
-    if (!r) return null;
-    const d = JSON.parse(r.data_json || '{}');
+    // Line-ups keep the match in their data (eventId); some may also have it in ref.
+    const { results } = await db.prepare(`SELECT status, data_json, updated_at FROM mc_items WHERE kind = 'lineup' AND (ref = ? OR json_extract(data_json, '$.eventId') = ?) AND status NOT IN ('rejected', 'unpublished') ORDER BY updated_at DESC LIMIT 20`).bind(eventId, eventId).all();
     const pick = list => (Array.isArray(list) ? list : []).filter(p => p && p.slug && p.name).map(p => ({ slug: String(p.slug), name: String(p.name), number: p.number ?? null, position: p.position || '', photo: null }));
-    const squad = { starting: pick(d.starting), bench: pick(d.subs) };
-    return squad.starting.length ? { ...squad, status: r.status, updatedAt: r.updated_at } : null;
+    const all = results.map(r => { const d = JSON.parse(r.data_json || '{}'); return { starting: pick(d.starting), bench: pick(d.subs), status: r.status, updatedAt: r.updated_at }; }).filter(x => x.starting.length);
+    // The newest complete line-up (11 starters); if none is complete, the newest one with the most starters.
+    const best = all.find(x => x.starting.length === 11) || [...all].sort((a, b) => b.starting.length - a.starting.length || Date.parse(b.updatedAt) - Date.parse(a.updatedAt))[0];
+    return best || null;
   } catch { return null; } // no Media Centre yet
 }
 /**
