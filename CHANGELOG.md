@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-08: Media Centre: stay signed in for 2 hours
+
+**Who it affects:** Media Centre users and approvers. **Staff need to:** nothing.
+- You're only signed out after 2 hours without activity (was 30 minutes), so approving no longer asks you to sign in again.
+- Media Centre links opened from WhatsApp, email or Telegram keep you signed in, and open the sign-in page instead of an error if you are signed out.
+
 ## 2026-11-08: Predict & Win: everyone with the exact score shown; final-score reminder
 
 **Who it affects:** fans, Super Admins. **Staff need to:** enter the final score after each home game (End Match).

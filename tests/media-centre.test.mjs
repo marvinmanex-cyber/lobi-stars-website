@@ -86,11 +86,17 @@ test('5 wrong passwords lock the account for 15 minutes; a Super Admin can unloc
   assert.equal((await login(LOGIN, 'My-own-pass-456', from)).status, 200);
 });
 
-test('30 minutes without activity ends the session; disabling signs out at once', async () => {
+test('2 hours without activity ends the session (not before); disabling signs out at once', async () => {
   const s = await login(LOGIN, 'My-own-pass-456');
   assert.equal((await mc(s, 'dashboard')).status, 200);
-  sql(`UPDATE mc_sessions SET last_seen = '${new Date(Date.now() - 31 * 60e3).toISOString()}' WHERE user_id = '${userId}' AND ended_at IS NULL;`);
+  const quiet = mins => sql(`UPDATE mc_sessions SET last_seen = '${new Date(Date.now() - mins * 60e3).toISOString()}' WHERE user_id = '${userId}' AND ended_at IS NULL;`);
+  quiet(90);
+  assert.equal((await mc(s, 'dashboard')).status, 200, 'still signed in after 1.5 hours without activity');
+  quiet(121);
   assert.equal((await mc(s, 'dashboard')).status, 401);
+  // A link opened in the browser goes to the sign-in page, not raw text.
+  const nav = await fetch(`${BASE}/api/media-centre/approvals`, { headers: { Accept: 'text/html', 'Sec-Fetch-Mode': 'navigate' }, redirect: 'manual' });
+  assert.equal(nav.status, 302); assert.equal(nav.headers.get('location'), '/media-centre/');
   const s2 = await login(LOGIN, 'My-own-pass-456');
   assert.equal((await admin('users', { action: 'disable', id: userId })).status, 200);
   assert.equal((await mc(s2, 'dashboard')).status, 401);

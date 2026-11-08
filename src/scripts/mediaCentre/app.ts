@@ -1,4 +1,4 @@
-// Media Centre: sign-in, the required password change, the 30-minute idle
+// Media Centre: sign-in, the required password change, the 2-hour idle
 // sign-out, the menu and the dashboard. Each section adds its own screen
 // (register() in its file).
 import { state, $, esc, api, ApiError, toast, SCREENS, go, setRouteHandler, setSignedOutHandler, guard } from './core';
@@ -117,12 +117,12 @@ $('pwForm').addEventListener('submit', async (e: Event) => {
 });
 async function signOutNow(why?: string) {
   try { await api('logout', { method: 'POST', body: { why } }); } catch { /* signed out anyway */ }
-  signedOut(why === 'idle' ? 'You were signed out after 30 minutes without activity.' : 'You are signed out.');
+  signedOut(why === 'idle' ? 'You were signed out after 2 hours without activity.' : 'You are signed out.');
 }
 $('signOut').addEventListener('click', () => { if (guard.dirty() && !confirm('You have changes that are not saved yet. Sign out anyway?')) return; signOutNow(); });
 $('pwOut').addEventListener('click', () => signOutNow());
 
-// ── 30 minutes without activity: signed out (the server ends the session too) ──
+// ── 2 hours without activity: signed out (the server ends the session too) ──
 let idleT = 0, lastBump = 0;
 function bumpIdle() {
   const now = Date.now();

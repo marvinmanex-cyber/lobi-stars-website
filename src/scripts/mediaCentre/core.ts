@@ -1,6 +1,6 @@
 // Media Centre: shared helpers for every screen (API calls with the CSRF
 // token, navigation between screens, toasts, formatting).
-export const state: { user: any; csrf: string; idleMs: number } = { user: null, csrf: '', idleMs: 30 * 60e3 };
+export const state: { user: any; csrf: string; idleMs: number } = { user: null, csrf: '', idleMs: 2 * 3600e3 };
 export const $ = (id: string) => document.getElementById(id) as any;
 export const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 export const when = (iso?: string | null) => iso ? new Date(iso).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';

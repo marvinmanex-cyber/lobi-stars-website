@@ -13,7 +13,12 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   if (OPEN.test(url.pathname)) return next();
   const session = await getMediaSession(request, env, { touch: request.headers.get('X-Activity') !== '0' });
-  if (!session) return json({ error: 'Please sign in to the Media Centre again.', signedOut: true }, 401, { 'Set-Cookie': clearMediaCookie() });
+  if (!session) {
+    // A link opened in the browser (not the Media Centre page asking for data): show the sign-in page, not raw text.
+    const nav = request.method === 'GET' && (request.headers.get('Sec-Fetch-Mode') === 'navigate' || /text\/html/.test(request.headers.get('Accept') || ''));
+    if (nav) return new Response(null, { status: 302, headers: { Location: '/media-centre/', 'Cache-Control': 'no-store' } });
+    return json({ error: 'Please sign in to the Media Centre again.', signedOut: true }, 401, { 'Set-Cookie': clearMediaCookie() });
+  }
   if (request.method !== 'GET' && request.method !== 'HEAD') {
     const bad = csrfProblem(request, session);
     if (bad) return json({ error: bad }, 403);

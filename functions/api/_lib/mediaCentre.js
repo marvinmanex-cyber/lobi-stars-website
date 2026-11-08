@@ -25,7 +25,7 @@ import { ensureFanSchema, rateLimit } from './fans.js';
 import { verifySuperAdmin, stillSuperAdmin } from './superAdminLogin.js';
 
 export const MC_COOKIE = 'ls_media';
-export const IDLE_MS = 30 * 60e3;          // signed out after 30 minutes without activity
+export const IDLE_MS = 2 * 3600e3;         // signed out after 2 hours without activity (owner's request, 8 Nov 2026)
 const MAX_MS = 12 * 3600e3;                // and after 12 hours in any case
 const LOCK_AFTER = 5, LOCK_MS = 15 * 60e3; // 5 wrong passwords: locked for 15 minutes
 export const LOGIN_ID_RE = /^[A-Za-z]{2,30}[0-9]{2,4}$/;
@@ -347,8 +347,12 @@ export async function adminMediaSignIn(env, request, { email, password, code }) 
 
 // ── Sign-in and sessions ──
 const cookieValue = (request, name) => ((request.headers.get('Cookie') || '').match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`)) || [])[1] || null;
-const sessionCookie = token => `${MC_COOKIE}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${MAX_MS / 1000}`;
-export const clearMediaCookie = () => `${MC_COOKIE}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`;
+// SameSite=Lax: opening a Media Centre link from WhatsApp, email or Telegram keeps you signed in.
+// Every change still needs the session's CSRF token, so other websites can't act for you.
+const sessionCookie = token => `${MC_COOKIE}=${token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${MAX_MS / 1000}`;
+export const clearMediaCookie = () => `${MC_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+/** The same session cookie again with today's settings (older sign-ins had SameSite=Strict). */
+export const renewMediaCookie = request => { const t = cookieValue(request, MC_COOKIE); return t && /^[\w-]{20,80}$/.test(t) ? sessionCookie(t) : null; };
 export const hasMediaCookie = request => !!cookieValue(request, MC_COOKIE);
 
 export async function signIn(env, request, { loginId, password }) {
@@ -415,7 +419,7 @@ export async function getMediaSession(request, env, { touch = true } = {}) {
     const a = await stillSuperAdmin(env, s.user_id.slice(6));
     const endIt = why => db.prepare(`UPDATE mc_sessions SET ended_at = ?, ended_why = ? WHERE id = ?`).bind(nowIso(), why, s.id).run();
     if (!a) { await endIt('no longer a Super Admin'); return null; }
-    if (Date.now() - Date.parse(s.last_seen) > IDLE_MS) { await endIt('no activity for 30 minutes'); return null; }
+    if (Date.now() - Date.parse(s.last_seen) > IDLE_MS) { await endIt('no activity for 2 hours'); return null; }
     if (Date.now() - Date.parse(s.created_at) > MAX_MS) { await endIt('12 hours'); return null; }
     if (touch && Date.now() - Date.parse(s.last_seen) > 30e3) await db.prepare(`UPDATE mc_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
     return { id: s.id, csrf: s.csrf, lastSeen: s.last_seen, user: { id: s.user_id, loginId: a.email, fullName: a.name, mustChange: false, admin: true, desk: true } };
@@ -426,10 +430,10 @@ export async function getMediaSession(request, env, { touch = true } = {}) {
   const now = Date.now();
   const end = async why => {
     await db.prepare(`UPDATE mc_sessions SET ended_at = ?, ended_why = ? WHERE id = ?`).bind(nowIso(), why, s.id).run();
-    if (why.startsWith('no activity')) await mcLog(db, { kind: 'media', id: s.user_id, name: `${s.full_name} (${s.login_id})` }, 'logout', { section: 'account', details: 'Signed out automatically after 30 minutes without activity' });
+    if (why.startsWith('no activity')) await mcLog(db, { kind: 'media', id: s.user_id, name: `${s.full_name} (${s.login_id})` }, 'logout', { section: 'account', details: 'Signed out automatically after 2 hours without activity' });
   };
   if (!s.is_active) { await end('account disabled'); return null; }
-  if (now - Date.parse(s.last_seen) > IDLE_MS) { await end('no activity for 30 minutes'); return null; }
+  if (now - Date.parse(s.last_seen) > IDLE_MS) { await end('no activity for 2 hours'); return null; }
   if (now - Date.parse(s.created_at) > MAX_MS) { await end('12 hours'); return null; }
   if (touch && now - Date.parse(s.last_seen) > 30e3) await db.prepare(`UPDATE mc_sessions SET last_seen = ? WHERE id = ?`).bind(nowIso(), s.id).run();
   if (approver) return { id: s.id, csrf: s.csrf, lastSeen: s.last_seen, user: { ...APPROVER_USER, desk: true } };

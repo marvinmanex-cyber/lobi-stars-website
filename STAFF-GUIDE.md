@@ -4088,7 +4088,7 @@ Fans use the website exactly as before.
 - **Security:**
   - Five wrong passwords lock the account for 15 minutes (a Super Admin can
     unlock it sooner).
-  - 30 minutes without activity signs the person out.
+  - **2 hours** without activity signs the person out (and 12 hours after signing in in any case). While you keep using it, you stay signed in, including approving. A Media Centre link opened from WhatsApp, email or Telegram keeps you signed in; if you are signed out, it opens the sign-in page.
   - Passwords are stored only as a secure hash (PBKDF2-SHA256, 100,000
     rounds). Cloudflare cannot run bcrypt or Argon2 within its limits.
 
