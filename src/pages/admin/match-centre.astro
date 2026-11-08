@@ -39,7 +39,7 @@ const roster = (await getRoster())
           <button type="button" class="ctl-btn start" id="kickoffBtn">▶ Start Match (Kick-off)</button>
           <button type="button" class="ctl-btn end" id="fulltimeBtn">■ End Match (Full-time)</button>
         </div>
-        <p class="muted ctl-note">Man of the Match voting opens by itself at the scheduled kick-off (or when you press <strong>Start Match</strong>, if earlier) and closes at the <strong>85th minute</strong>, so the winner can be announced in the stadium. Press <strong>Start Match</strong> at kick-off and set <strong>half-time</strong> and the <strong>second half</strong> in Status &amp; score, so the 85th minute is timed right. Press <strong>End Match</strong> at the final whistle and enter the score: voting closes and results are calculated. If nobody presses End Match, the match closes automatically 2 hours 15 minutes after kick-off (you can still add the final score afterwards). All times use the server clock in Nigerian time.</p>
+        <p class="muted ctl-note">Man of the Match voting is automatic, at fixed times: it opens at the scheduled kick-off and closes <strong>1 hour 50 minutes later</strong> (4:00pm to 5:50pm for a 4pm kick-off), whatever is pressed here. Press <strong>End Match</strong> at the final whistle and enter the score: voting closes and results are calculated. If nobody presses End Match, the match closes automatically 2 hours 15 minutes after kick-off (you can still add the final score afterwards). All times use the server clock in Nigerian time.</p>
         <div class="ctl-motm">
           <div class="ctl-motm-head">
             <h3>Man of the Match votes</h3>
@@ -457,7 +457,7 @@ const roster = (await getRoster())
       const d = await api(`/api/admin/motm/${encodeURIComponent(m.id)}`);
       const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const t = iso => iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }) : '';
-      const when = d.state === 'before' ? `Voting opens at ${t(d.opensAt)}.` : d.state === 'open' ? `<strong>Voting is open</strong> until about ${t(d.closesAt)} (the 85th minute).` : d.state === 'closed' ? '<strong>Voting has closed.</strong> Announce the winner.' : 'No vote for this match.';
+      const when = d.state === 'before' ? `Voting opens at ${t(d.opensAt)}.` : d.state === 'open' ? `<strong>Voting is open</strong> until ${t(d.closesAt)}.` : d.state === 'closed' ? '<strong>Voting has closed.</strong> Announce the winner.' : 'No vote for this match.';
       if (!d.rows.length) { box.innerHTML = `<p>${when}</p><p class="muted">No players to vote for yet: pick the squad below or approve the line-up in the Media Centre.</p>`; return; }
       box.innerHTML = `<p>${when}</p><p><strong>${d.total}</strong> vote${d.total === 1 ? '' : 's'}${d.winners.length ? ` &middot; Leading: ${esc(d.rows.filter(r => r.winner).map(r => r.name).join(' & '))}` : ''}</p>` +
         '<div class="sq-scroll"><table class="motm-table"><thead><tr><th>Player</th><th>Votes</th><th>%</th></tr></thead><tbody>' +

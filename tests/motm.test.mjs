@@ -2,6 +2,7 @@
 // with FANS_DEV_LINKS=1 and ADMIN_CODE=test-code-123 (see tests/fans.test.mjs).
 import { test, before } from 'node:test';
 import assert from 'node:assert/strict';
+import { sql } from './media-helpers.mjs';
 
 const BASE = process.env.BASE || 'http://127.0.0.1:8790';
 const ADMIN = { 'Content-Type': 'application/json', 'x-admin-code': process.env.ADMIN_CODE || 'test-code-123' };
@@ -45,6 +46,9 @@ before(async () => {
   assert.ok(roster.length >= 3, 'needs at least 3 players in the squad');
 });
 
+// Voting runs on fixed times from the scheduled kick-off, so tests move the kick-off time.
+const at = (m, minutesAgo) => sql(`UPDATE events SET event_date = '${new Date(Date.now() - minutesAgo * 60e3).toISOString()}' WHERE id = '${m.id}';`);
+
 async function homeMatch(over = {}) {
   const res = await fetch(`${BASE}/api/admin/events`, {
     method: 'POST', headers: ADMIN, body: JSON.stringify({
@@ -72,7 +76,7 @@ test('voting: before kick-off rejected, live accepted once, second vote rejected
   assert.equal(early.status, 409);
   assert.equal(early.data.code, 'before');
 
-  await control(m.id, { action: 'kickoff' });
+  await control(m.id, { action: 'kickoff' }); await at(m, 1);
   const ok = await vote(m, roster[0].slug, a);
   assert.equal(ok.status, 200, JSON.stringify(ok.data));
   assert.equal(ok.data.myVote.name, roster[0].name);
@@ -86,6 +90,7 @@ test('voting: before kick-off rejected, live accepted once, second vote rejected
   assert.equal(mine.data.myVote.slug, roster[0].slug, 'vote cannot be changed');
 
   await control(m.id, { action: 'fulltime', home_score: 1, away_score: 0 });
+  await at(m, 111); // voting closes 1 hour 50 minutes after the scheduled kick-off
   const late = await vote(m, roster[0].slug, b);
   assert.equal(late.status, 409);
   assert.equal(late.data.code, 'closed');
@@ -93,7 +98,7 @@ test('voting: before kick-off rejected, live accepted once, second vote rejected
 
 test('only logged-in, verified fans can vote, and only for squad players', async () => {
   const m = await homeMatch();
-  await control(m.id, { action: 'kickoff' });
+  await control(m.id, { action: 'kickoff' }); await at(m, 1);
   const anon = await vote(m, roster[0].slug);
   assert.equal(anon.status, 401);
   assert.equal(await fan({ verify: false }), null);
@@ -107,7 +112,7 @@ test('a substitute can be voted for only after coming on; nothing shows before k
   const m = await homeMatch();
   const early = await get(`/api/matches/${m.slug}/motm`);
   assert.equal(early.data.state, 'before'); assert.deepEqual(early.data.players, [], 'the line-up is not shown before kick-off');
-  await control(m.id, { action: 'kickoff' });
+  await control(m.id, { action: 'kickoff' }); await at(m, 1);
   const open = await get(`/api/matches/${m.slug}/motm`);
   assert.deepEqual(open.data.players.map(p => p.slug), [roster[0].slug, roster[1].slug], 'starting XI only');
   assert.ok(open.data.closesAt, 'closing time (85th minute) is given');
@@ -125,7 +130,7 @@ test('a substitute can be voted for only after coming on; nothing shows before k
 
 test('leaderboard is hidden while live and revealed at full time, with joint winners on a tie', async () => {
   const m = await homeMatch();
-  await control(m.id, { action: 'kickoff' });
+  await control(m.id, { action: 'kickoff' }); await at(m, 1);
   const fans = await Promise.all([fan(), fan(), fan(), fan()]);
   // 2 votes each for players 0 and 1 -> joint winners; player 2 none.
   await vote(m, roster[0].slug, fans[0]); await vote(m, roster[0].slug, fans[1]);
@@ -137,6 +142,7 @@ test('leaderboard is hidden while live and revealed at full time, with joint win
   assert.equal(live.data.totalVoters, 4, 'only the number of voters');
 
   await control(m.id, { action: 'fulltime', home_score: 2, away_score: 2 });
+  await at(m, 116); // closed, and 5 minutes on: the result shows
   const ft = await get(`/api/matches/${m.slug}/motm`);
   assert.equal(ft.data.state, 'closed');
   assert.equal(ft.data.results.total, 4);

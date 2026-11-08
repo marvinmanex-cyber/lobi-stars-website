@@ -23,7 +23,6 @@ export async function onRequestGet({ request, env, params }) {
     kickoff: match.event_date,
     opensAt: win.opensAt,
     closesAt: win.closesAt,
-    closeMinute: 85,
     players,
     totalVoters: await totalVoters(env.DB, match.id),
     fan: fan ? { firstName: fan.first_name, verified: !!fan.email_verified } : null,
@@ -45,7 +44,7 @@ export async function onRequestPost({ request, env, params }) {
 
   const state = votingWindow(match).state;
   if (state === 'before') return Response.json({ error: 'Voting opens at kick-off.', code: 'before' }, { status: 409 });
-  if (state !== 'open') return Response.json({ error: 'Voting closed at the 85th minute.', code: 'closed' }, { status: 409 });
+  if (state !== 'open') return Response.json({ error: 'Voting has closed for this match.', code: 'closed' }, { status: 409 });
 
   let b;
   try { b = await request.json(); } catch { b = {}; }

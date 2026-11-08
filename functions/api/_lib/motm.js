@@ -2,11 +2,11 @@
 //
 // Rules, all enforced here on the server with the server clock:
 // - only signed-in fans with a confirmed email can vote;
-// - voting opens at the scheduled kick-off (or Start Match, if earlier) and closes at the 85th
-//   minute of play, so the winner can be announced in the stadium before full time;
+// - voting opens at the scheduled kick-off and closes 1 hour 50 minutes later (4:00pm to 5:50pm),
+//   fixed times, so the winner can be announced in the stadium;
 // - one vote per fan per match (UNIQUE (event_id, member_id)), never changed;
 // - only players on the field can be voted for: the starting XI, and substitutes once they come on;
-// - vote counts stay hidden until full time (or 5 minutes after voting closes), then the leaderboard is shown.
+// - vote counts stay hidden until 5 minutes after voting closes, then the leaderboard is shown.
 import { LIVE_STATUSES } from './matchCentre.js';
 
 let ready = false;
@@ -36,31 +36,22 @@ export function votingState(status) {
 }
 
 const MIN = 60e3;
-export const CLOSE_MINUTE = 85;          // voting closes at the 85th minute of play
-const HALF_TIME_MIN = 15;                // if the second-half start wasn't recorded, half-time is taken as 15 minutes
-const REVEAL_AFTER_MS = 5 * MIN;         // fans see the result 5 minutes after voting closes (or at full time)
+// Fixed times, decided by the club (8 Nov 2026): voting opens at the scheduled kick-off and closes
+// 1 hour 50 minutes later (4:00pm to 5:50pm for a 4pm kick-off), whatever happens in the match.
+// Nothing staff press opens it earlier or closes it sooner.
+export const OPEN_FOR_MIN = 110;
+const REVEAL_AFTER_MS = 5 * MIN;         // fans see the result 5 minutes after voting closes
 const iso = t => (Number.isFinite(t) ? new Date(t).toISOString() : null);
 
-/**
- * When voting opens and closes, decided on the server clock.
- * Opens: the scheduled kick-off, or Start Match if that was pressed first.
- * Closes: 40 minutes into the second half (the 85th minute). Without a recorded second-half start:
- * 85 minutes of play + 15 minutes of half-time after kick-off. Never closes during half-time.
- * Returns { state: before|open|closed|off, opensAt, closesAt, revealed }.
- */
+/** When voting opens and closes, on the server clock. Returns { state: before|open|closed|off, opensAt, closesAt, revealed }. */
 export function votingWindow(m, now = Date.now()) {
   const status = m.status || 'scheduled';
   if (status === 'postponed' || status === 'cancelled') return { state: 'off', opensAt: null, closesAt: null, revealed: false };
-  const sched = Date.parse(m.event_date), ko = m.kickoff_at ? Date.parse(m.kickoff_at) : NaN;
-  const opensAt = Number.isFinite(ko) ? Math.min(ko, sched) : sched;
-  const start = Number.isFinite(ko) ? ko : sched;
-  const closesAt = m.second_half_at ? Date.parse(m.second_half_at) + (CLOSE_MINUTE - 45) * MIN : start + (CLOSE_MINUTE + HALF_TIME_MIN) * MIN;
+  const opensAt = Date.parse(m.event_date), closesAt = opensAt + OPEN_FOR_MIN * MIN;
   const win = { opensAt: iso(opensAt), closesAt: iso(closesAt) };
-  if (status === 'full-time') return { state: 'closed', ...win, revealed: true };
-  if (status === 'half-time') return { state: 'open', ...win, revealed: false };
-  if (status !== 'live' && now < opensAt) return { state: 'before', ...win, revealed: false };
-  if (now >= closesAt) return { state: 'closed', ...win, revealed: now >= closesAt + REVEAL_AFTER_MS };
-  return { state: 'open', ...win, revealed: false };
+  if (now < opensAt) return { state: 'before', ...win, revealed: false };
+  if (now < closesAt) return { state: 'open', ...win, revealed: false };
+  return { state: 'closed', ...win, revealed: now >= closesAt + REVEAL_AFTER_MS };
 }
 
 const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();

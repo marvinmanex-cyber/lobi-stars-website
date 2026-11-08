@@ -8,10 +8,10 @@ in HANDOVER-TODO.md.
 
 ---
 
-## 2026-11-08: Man of the Match: opens by itself, closes at the 85th minute, players on the field only
+## 2026-11-08: Man of the Match: automatic fixed times, players on the field only
 
-**Who it affects:** fans, matchday staff. **Staff need to:** set Half-time and Second half during the match (so the 85th minute is timed right) and add substitutions for players coming on.
-- Voting opens by itself at the scheduled kick-off (or at Start Match if earlier) and closes at the 85th minute, so the winner can be announced in the stadium. Fans see the result 5 minutes later, or at full time.
+**Who it affects:** fans, matchday staff. **Staff need to:** add substitutions for players coming on.
+- Voting opens by itself at the scheduled kick-off and closes 1 hour 50 minutes later (4:00pm to 5:50pm for a 4pm kick-off), whatever happens in the match. Fans see the result 5 minutes after it closes.
 - Fans can only vote for players on the field: the starting XI, and a substitute once a substitution brings them on.
 - The Media Centre line-up feeds voting from kick-off (even as a draft) and fills an empty squad in Live Match Control. Nothing is shown before kick-off.
 

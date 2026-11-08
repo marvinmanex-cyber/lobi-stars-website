@@ -343,7 +343,7 @@ import '../styles/fixture-card.css';
     if (d.state === 'off') { box.replaceChildren(el('p', 'mv-msg', 'There is no Man of the Match vote for this match.')); return; }
 
     if (d.state === 'closed' && !d.results) {
-      out.push(el('p', 'mv-msg', 'Voting closed at the 85th minute. The Man of the Match is announced in the stadium and appears here shortly.'), count);
+      out.push(el('p', 'mv-msg', `Voting closed at ${fmtTime(d.closesAt!)}. The Man of the Match is announced in the stadium and appears here shortly.`), count);
       if (d.myVote) out.push(el('p', 'mv-mine', `You voted for ${d.myVote.name}.`));
       box.replaceChildren(...out);
       return;
@@ -362,7 +362,7 @@ import '../styles/fixture-card.css';
         c.append(t); wins.append(c);
       });
       out.push(wins);
-      out.push(el('p', 'mv-msg', `Voting closed at the 85th minute · ${r.total.toLocaleString('en-NG')} fan${r.total === 1 ? '' : 's'} voted`));
+      out.push(el('p', 'mv-msg', `Voting closed · ${r.total.toLocaleString('en-NG')} fan${r.total === 1 ? '' : 's'} voted`));
       if (d.myVote) out.push(el('p', 'mv-mine', `You voted for ${d.myVote.name}.`));
       const list = el('ol', 'mv-board');
       list.setAttribute('aria-label', 'Final vote results');
@@ -378,11 +378,11 @@ import '../styles/fixture-card.css';
       return;
     }
 
-    if (d.state === 'before') out.push(el('p', 'mv-msg', `Voting opens at kick-off (${fmtTime(d.opensAt || m.event_date)}) and closes at the 85th minute. You can vote for any Lobi Stars player on the field. Only fans with a free, email-confirmed account can vote, one vote per match.`));
+    if (d.state === 'before') out.push(el('p', 'mv-msg', `Voting opens at ${fmtTime(d.opensAt || m.event_date)} and closes at ${d.closesAt ? fmtTime(d.closesAt) : 'the end of the match'}. You can vote for any Lobi Stars player on the field. Only fans with a free, email-confirmed account can vote, one vote per match.`));
     if (d.state === 'open') {
       if (d.myVote) {
         const t = el('div', 'mv-thanks');
-        t.append(el('strong', '', `Thanks! You voted for ${d.myVote.name}.`), el('span', '', 'Voting closes at the 85th minute and the winner is announced in the stadium.'));
+        t.append(el('strong', '', `Thanks! You voted for ${d.myVote.name}.`), el('span', '', `Voting closes at ${fmtTime(d.closesAt!)} and the winner is announced in the stadium.`));
         box.replaceChildren(t, count, shareRow(`I voted for ${d.myVote.name} as Lobi Stars Man of the Match vs ${m.away_team}. Have your say:`, m));
         return;
       }
@@ -391,7 +391,7 @@ import '../styles/fixture-card.css';
         const p = el('p', 'mv-msg', 'Please confirm your email address to vote. ');
         p.append(link(`/fans/login/?next=${encodeURIComponent(`/matches/${m.slug}/live/#vote`)}`, 'Resend the confirmation email', ''));
         out.push(p);
-      } else out.push(el('p', 'mv-msg', `Voting is open, ${d.fan.firstName}! Pick one player on the field. Your vote can't be changed. Voting closes at the 85th minute.`));
+      } else out.push(el('p', 'mv-msg', `Voting is open, ${d.fan.firstName}! Pick one player on the field. Your vote can't be changed. Voting closes at ${fmtTime(d.closesAt!)}.`));
       out.push(count);
     } else if (!d.fan) out.push(authButtons(m));
 

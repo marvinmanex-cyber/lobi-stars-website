@@ -7,29 +7,15 @@ import { nextSecondHalfAt } from '../functions/api/_lib/matchCentre.js';
 const KO = Date.parse('2026-11-08T15:00:00Z'), min = 60e3;
 const m = (x = {}) => ({ event_date: '2026-11-08T15:00:00Z', status: 'scheduled', ...x });
 
-test('opens at the scheduled kick-off by itself, or at Start Match if earlier', () => {
+test('fixed times: opens at kick-off, closes 1 hour 50 minutes later, whatever is pressed', () => {
   assert.equal(votingWindow(m(), KO - min).state, 'before');
-  assert.equal(votingWindow(m(), KO).state, 'open', 'nobody pressed Start Match: still opens at 4pm');
-  const early = new Date(KO - 5 * min).toISOString();
-  assert.equal(votingWindow(m({ status: 'live', kickoff_at: early }), KO - 4 * min).state, 'open');
-  assert.equal(votingWindow(m({ status: 'live', kickoff_at: early })).opensAt, early);
-});
-
-test('closes at the 85th minute', () => {
-  // No second half recorded: 85 minutes + 15 of half-time after kick-off.
-  const late = new Date(KO + 10 * min).toISOString(); // kick-off delayed 10 minutes
-  assert.equal(votingWindow(m({ status: 'live', kickoff_at: late }), KO + 109 * min).state, 'open');
-  assert.equal(votingWindow(m({ status: 'live', kickoff_at: late }), KO + 110 * min).state, 'closed');
-  // Second half recorded: 40 minutes into it.
-  const sh = new Date(KO + 62 * min).toISOString();
-  const w = x => votingWindow(m({ status: 'live', kickoff_at: new Date(KO).toISOString(), second_half_at: sh }), x);
-  assert.equal(w(KO + 101 * min).state, 'open');
-  const c = w(KO + 102 * min);
-  assert.equal(c.state, 'closed'); assert.equal(c.revealed, false, 'result hidden for the stadium announcement');
-  assert.equal(w(KO + 107 * min).revealed, true, '5 minutes later the result shows');
-  // Never closes during half-time, and full time always closes and reveals.
-  assert.equal(votingWindow(m({ status: 'half-time', kickoff_at: new Date(KO).toISOString() }), KO + 200 * min).state, 'open');
-  assert.deepEqual([votingWindow(m({ status: 'full-time' }), KO + 50 * min).state, votingWindow(m({ status: 'full-time' })).revealed], ['closed', true]);
+  assert.equal(votingWindow(m({ status: 'live', kickoff_at: new Date(KO - 10 * min).toISOString() }), KO - min).state, 'before', 'Start Match early does not open it');
+  assert.equal(votingWindow(m(), KO).state, 'open', '4:00pm with nobody pressing anything');
+  assert.equal(votingWindow(m({ status: 'full-time' }), KO + 100 * min).state, 'open', 'full time pressed early does not close it');
+  assert.equal(votingWindow(m({ status: 'live', second_half_at: new Date(KO + 70 * min).toISOString() }), KO + 109 * min).state, 'open');
+  const c = votingWindow(m({ status: 'live' }), KO + 110 * min);
+  assert.equal(c.state, 'closed'); assert.equal(c.closesAt, '2026-11-08T16:50:00.000Z', '5:50pm Nigerian time'); assert.equal(c.revealed, false);
+  assert.equal(votingWindow(m(), KO + 115 * min).revealed, true, 'result shows 5 minutes later');
   assert.equal(votingWindow(m({ status: 'postponed' }), KO).state, 'off');
 });
 

@@ -48,7 +48,7 @@ export async function ensureTable(db) {
     ['squad_json', 'TEXT'],     // Lobi Stars matchday squad (starting XI + bench) for MOTM voting
     ['youtube_url', 'TEXT'],    // Watch Live: YouTube live/replay link (home games only)
     ['facebook_url', 'TEXT'],   // Watch Live: Facebook live/replay link (home games only)
-    ['second_half_at', 'TEXT'], // when the second half started (Man of the Match voting closes at the 85th minute)
+    ['second_half_at', 'TEXT'], // when the second half started (kept for the record)
   ]);
   // NULL = work it out from the home team name; 1/0 = set explicitly by staff.
   await addMissing('events', [
