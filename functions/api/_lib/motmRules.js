@@ -9,6 +9,8 @@
 // - Accounts created less than HOLD_NEW_ACCOUNTS_HOURS before kick-off: vote saved as "held", not counted.
 // - Winner: most valid votes; level on votes = whoever reached that total first.
 
+import { effectiveKickoff } from './kickoff.js';
+
 export const VOTING_OPEN_MINUTES = 110;
 export const HOLD_NEW_ACCOUNTS_HOURS = 24;
 export const CLUB_TZ = 'Africa/Lagos';
@@ -24,7 +26,7 @@ export const clubTime = iso => new Date(iso).toLocaleTimeString('en-GB', { hour:
  */
 export function votingWindow(m, now = Date.now()) {
   if (!m) return { status: 'no_match', opensAt: null, closesAt: null };
-  const opens = Date.parse(m.event_date), closes = opens + VOTING_OPEN_MINUTES * MIN;
+  const opens = effectiveKickoff(m.event_date), closes = opens + VOTING_OPEN_MINUTES * MIN; // 4:00 pm if no kick-off time was entered
   const win = { opensAt: new Date(opens).toISOString(), closesAt: new Date(closes).toISOString() };
   if (!m.is_home) return { status: 'not_home', ...win };
   if (m.status === 'postponed' || m.status === 'cancelled') return { status: 'cancelled', ...win };

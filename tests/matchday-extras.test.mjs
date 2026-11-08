@@ -22,13 +22,12 @@ async function match(kickoffInMs, over = {}) {
   return (await fetch(`${BASE}/api/admin/match-centre/${id}`, { headers: ADMIN }).then(r => r.json())).match;
 }
 
-test('Predict & Win terms and MOTM rules pages exist; terms are marked DRAFT and kept out of search', async () => {
+test('Predict & Win terms and MOTM rules pages exist; no DRAFT banner (removed 8 Nov 2026)', async () => {
   const terms = await fetch(`${BASE}/predict-and-win/terms/`);
   assert.equal(terms.status, 200);
   const t = await terms.text();
-  assert.match(t, /DRAFT/);
-  assert.match(t, /legal adviser/);
-  assert.match(t, /name="robots" content="noindex/);
+  assert.doesNotMatch(t, /legal adviser/, 'the DRAFT banner is gone');
+  assert.doesNotMatch(t, /name="robots" content="noindex/, 'final terms can be found in search');
   for (const s of ['₦10,000', '18 or older', 'resident in Nigeria', 'One entry per person per home game', '24 hours before the scheduled kick-off', 'received first', 'prize is not given out', 'families', 'decision on all matters', 'never ask for your password']) {
     assert.ok(t.includes(s), `terms mention: ${s}`);
   }

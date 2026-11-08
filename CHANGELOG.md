@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-08: Predict & Win 4:00 pm fallback; MOTM wording; terms no longer marked DRAFT
+
+**Who it affects:** fans. **Staff need to:** nothing.
+- Predict & Win closes at kick-off; if a match has no kick-off time set (saved as midnight), kick-off is taken as 4:00 pm Nigerian time. Man of the Match voting uses the same rule.
+- Man of the Match page and rules: "Pick your player: choose one Lobi Stars player that is performing the most on the field"; "The Man of the Match is announced 5 minutes to the end of the match"; voting "closes at 10 minutes to full time"; the top 3 votes and percentages are shown at 5:50 pm.
+- The Predict & Win terms no longer show the DRAFT notice (and can now appear in search results).
+
 ## 2026-11-08: Man of the Match: automatic announcement, top 3, sponsor
 
 **Who it affects:** fans, matchday staff, Super Admins. **Staff need to:** record substitutions in the Live timeline.

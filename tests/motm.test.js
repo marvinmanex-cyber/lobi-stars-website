@@ -138,3 +138,13 @@ test('no valid votes gives "no winner"', () => {
   assert.equal(a.winner, null); assert.equal(a.message, 'No Man of the Match this game.');
   assert.match(cardHtml({ status: 'closed', opponent: 'X', announcement: a, archive: [] }), /No Man of the Match this game\./);
 });
+
+test('no kick-off time entered (midnight): voting and Predict & Win use 4:00 pm Nigerian time', async () => {
+  const { predictionWindow } = await import('../functions/api/_lib/predict.js');
+  const noTime = home({ event_date: '2026-11-21T23:00:00.000Z' }); // 22 Nov, 00:00 in Lagos
+  const w = votingWindow(noTime, Date.parse('2026-11-22T10:00:00Z'));
+  assert.equal(w.status, 'upcoming');
+  assert.equal(w.opensAt, '2026-11-22T15:00:00.000Z'); assert.equal(clubTime(w.opensAt), '4:00 pm'); assert.equal(clubTime(w.closesAt), '5:50 pm');
+  assert.equal(new Date(predictionWindow(noTime).closesAt).toISOString(), '2026-11-22T15:00:00.000Z', 'predictions close at 4:00 pm');
+  assert.equal(new Date(predictionWindow(home()).closesAt).toISOString(), KO, 'a real kick-off time is used as it is');
+});

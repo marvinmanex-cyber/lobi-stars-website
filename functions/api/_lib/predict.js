@@ -8,6 +8,7 @@
 //   score and the EARLIEST submission. Disqualified entries and accounts
 //   flagged as club staff/players can't win. No exact score = no winner.
 import { LIVE_STATUSES } from './matchCentre.js';
+import { effectiveKickoff } from './kickoff.js';
 import { PREDICTION_OPENS_HOURS_BEFORE, PREDICTION_CLOSES_AT, MAX_GOALS, PRIZE_AMOUNT } from './predictSettings.js';
 import { maskPhone, sendPrizeWinnerEmail } from './fans.js';
 
@@ -52,7 +53,8 @@ export async function ensurePredictSchema(db) {
 
 /** Opening and closing times (ms) for a match. */
 export function predictionWindow(match) {
-  const scheduled = new Date(match.event_date).getTime();
+  // Kick-off on the club clock; 4:00 pm Nigerian time if no kick-off time was entered.
+  const scheduled = effectiveKickoff(match.event_date);
   const opensAt = scheduled - PREDICTION_OPENS_HOURS_BEFORE * 3600_000;
   // Staff pressing Start Match early closes predictions at that moment.
   const kicked = match.kickoff_at ? new Date(match.kickoff_at).getTime() : Infinity;
