@@ -10,7 +10,7 @@ in HANDOVER-TODO.md.
 
 ## 2026-11-08: Exo Sports is the Official Kit Partner
 
-**Who it affects:** everyone. **Staff need to:** add the Exo Sports logo file (public/images/exo-sports-logo.png).
+**Who it affects:** everyone. **Staff need to:** nothing (the real Exo Sports logo was added the same day).
 - Exo Sports replaces Play as Official Kit Partner (Play is switched off, not deleted).
 - New partner page /partners/exo-sports/: hero with both badges and a shirt in Exo's colours, the partnership highlights, "The Kit" (the orange and grey training kits by Exo Sports), "Together" (photo placeholders until photos arrive) and a partner card. Until the logo file is added, an "EXO SPORTS" word mark is shown.
 
