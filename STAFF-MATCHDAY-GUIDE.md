@@ -295,6 +295,18 @@ is recalculated.
 - **Sponsor:** Admin → Matchday → **Man of the Match Sponsor** (Super Admins): photo, display name,
   sponsor line and a Show sponsor switch. Every change is in the Activity Log.
 
+## 4c. Sponsors of the fan games
+
+Super Admins set them in **Admin → Matchday**:
+- **Man of the Match Sponsor** (Mr. Moses Orkuma): shown on the Man of the Match page and every announcement.
+- **Predict & Win Sponsor** (Prime Beverages & Logistics Ltd): shown on the Predict & Win page
+  ("Predict & Win, sponsored by …"), in the Predict tab of Matchday Live and with each result.
+
+On each page: **Upload photo or logo** (JPG, PNG or WebP, at most 5 MB; square, 600×600 px or more looks
+best), **Replace** or **Remove** it, change the **Display name** and **Sponsor line**, and turn **Show sponsor**
+on or off. With no picture, only the name is shown. Changes show on the website straight away and are
+recorded in the Activity Log.
+
 ## 5. Man of the Match results
 
 In **Admin → Matchday → Live Match Control** (the Match Centre), home games have a **Man of the Match votes**

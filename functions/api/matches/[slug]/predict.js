@@ -4,6 +4,7 @@ import { ensurePredictSchema, predictState, predictionWindow, parseGoals, countP
 import { PRIZE_AMOUNT, MAX_GOALS, CLAIM_INSTRUCTIONS, NO_WINNER_TEXT } from '../../_lib/predictSettings.js';
 import { recordServerEvent } from '../../_lib/analytics.js';
 import { earnPrediction } from '../../_lib/rewardsEarn.js';
+import { getGameSponsor, publicSponsor } from '../../_lib/gameSponsors.js';
 
 const noStore = { 'Cache-Control': 'no-store' };
 const notHome = () => Response.json({ error: 'Predict & Win is only for Lobi Stars home games.' }, { status: 404 });
@@ -53,6 +54,7 @@ export async function onRequestGet({ request, env, params }) {
     fan: fan ? { firstName: fan.first_name, verified: !!fan.email_verified } : null,
     mine: mine ? { home: mine.home_goals, away: mine.away_goals, at: mine.created_at, disqualified: !!mine.disqualified } : null,
     result: outcome,
+    sponsor: publicSponsor(await getGameSponsor(env.DB, 'predict')),
     serverTime: new Date().toISOString(),
   }, { headers: noStore });
 }

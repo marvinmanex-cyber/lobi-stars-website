@@ -1,0 +1,14 @@
+---
+// Matchday › Predict & Win Sponsor (Super Admins only): the sponsor shown on /predict-and-win/ and
+// in the Predict tab of Matchday Live. Settings record "predict_sponsor"; changes are logged.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+import SponsorEditor from '../../components/admin/SponsorEditor.astro';
+---
+<Layout title="Predict & Win Sponsor | Lobi Stars Admin" description="The Predict & Win sponsor." noindex>
+  <div class="wrap ms">
+    <AdminNav current="predict-sponsor" />
+    <header><div class="stag">Matchday</div><h1 class="stitle">Predict &amp; Win <span class="r">Sponsor</span></h1></header>
+    <SponsorEditor game="predict" where={'Shown on the Predict & Win page ("Predict & Win, sponsored by …"), in the Predict tab of Matchday Live and with each result.'} />
+  </div>
+</Layout>

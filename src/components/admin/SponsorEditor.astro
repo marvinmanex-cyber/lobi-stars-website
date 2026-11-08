@@ -1,0 +1,88 @@
+---
+// The sponsor editor for a Matchday Live game (Super Admins only): photo or logo with preview and
+// Replace / Remove, display name, sponsor line and a "Show sponsor" switch. Saves through
+// /api/admin/game-sponsor?game=<game>; every change is recorded in the Activity Log.
+interface Props { game: 'motm' | 'predict'; where: string }
+const { game, where } = Astro.props;
+---
+<p class="ms-lede">{where} Super Admins only; every change is recorded in the Activity Log. With no photo or logo, only the sponsor's name is shown.</p>
+<p class="ms-msg" id="msg" role="status" aria-live="polite" hidden></p>
+<div class="ms-grid" id="body" data-game={game} hidden>
+  <section class="ms-card" aria-labelledby="phH">
+    <h2 id="phH">Photo or logo</h2>
+    <div class="ms-prev" id="prev"><span>No picture yet</span></div>
+    <p class="ms-sub">JPG, PNG or WebP, at most 5 MB. Square, at least 600×600 px recommended (a logo on a plain background works best).</p>
+    <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden />
+    <div class="ms-acts"><button type="button" class="btn-p" id="pick">Upload photo or logo</button><button type="button" class="btn-o" id="rm" hidden>Remove</button></div>
+  </section>
+  <form class="ms-card" id="f" aria-labelledby="dH">
+    <h2 id="dH">Details</h2>
+    <label class="ms-f"><span>Display name</span><input id="name" maxlength="80" required /></label>
+    <label class="ms-f"><span>Sponsor line</span><input id="line" maxlength="160" required /></label>
+    <label class="ms-sw"><input type="checkbox" id="show" /> <span>Show sponsor</span></label>
+    <p class="ms-sub" id="upd"></p>
+    <button class="btn-p" type="submit">Save</button>
+  </form>
+</div>
+
+<style>
+  .ms-lede { max-width: 760px; color: var(--a-muted, #56635B); }
+  .ms-msg { padding: 12px 16px; border-radius: 10px; background: #E8F7EE; color: #17643A; font-weight: 600; }
+  .ms-msg.err { background: #FDECEC; color: #A3161B; }
+  .ms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 16px; }
+  .ms-card { background: var(--a-card, #fff); border: 1px solid var(--a-line, #e5e7eb); border-radius: 16px; padding: 18px 20px; }
+  .ms-card h2 { margin: 0 0 12px; font-size: 20px; }
+  .ms-prev { width: 180px; height: 180px; border-radius: 16px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f1f4f2; color: #56635B; margin-bottom: 10px; }
+  .ms-prev :global(img) { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+  .ms-sub { font-size: 14px; color: var(--a-muted, #56635B); }
+  .ms-acts { display: flex; gap: 10px; flex-wrap: wrap; }
+  .ms-f { display: block; margin: 0 0 14px; }
+  .ms-f span { display: block; font-weight: 600; margin-bottom: 6px; }
+  .ms-f input { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--a-line, #d0d5dd); border-radius: 10px; font: inherit; box-sizing: border-box; }
+  .ms-sw { display: flex; align-items: center; gap: 10px; min-height: 48px; font-weight: 600; }
+  .ms-sw input { width: 24px; height: 24px; }
+  @media (max-width: 760px) { .ms-grid { grid-template-columns: 1fr; } }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'x-admin-code': code };
+  const $ = id => document.getElementById(id);
+  const API = '/api/admin/game-sponsor?game=' + encodeURIComponent($('body').dataset.game);
+  const say = (t, err) => { const m = $('msg'); m.textContent = t; m.className = 'ms-msg' + (err ? ' err' : ''); m.hidden = false; };
+  function draw(s) {
+    $('name').value = s.name; $('line').value = s.line; $('show').checked = !!s.show;
+    $('prev').innerHTML = s.photoUrl ? '' : '<span>No picture yet</span>';
+    if (s.photoUrl) { const i = document.createElement('img'); i.src = s.photoUrl; i.alt = s.name; $('prev').append(i); }
+    $('pick').textContent = s.photoUrl ? 'Replace photo or logo' : 'Upload photo or logo';
+    $('rm').hidden = !s.photoUrl;
+    $('upd').textContent = s.updatedAt ? 'Last changed ' + s.updatedAt + ' by ' + (s.updatedBy || 'a Super Admin') + '.' : 'Not changed yet (showing the default).';
+  }
+  async function load() {
+    const r = await fetch(API, { headers: H, cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { say(d.error || 'Could not load the sponsor.', true); return; }
+    $('body').hidden = false; draw(d.sponsor);
+  }
+  async function post(body, isForm) {
+    const r = await fetch(API, { method: 'POST', headers: isForm ? H : Object.assign({}, H, { 'Content-Type': 'application/json' }), body: isForm ? body : JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Could not save.');
+    draw(d.sponsor);
+  }
+  $('pick').addEventListener('click', () => $('file').click());
+  $('file').addEventListener('change', async () => {
+    const f = $('file').files[0]; $('file').value = '';
+    if (!f) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { say('Choose a JPG, PNG or WebP picture.', true); return; }
+    if (f.size > 5 * 1024 * 1024) { say('The picture is larger than 5 MB.', true); return; }
+    const dims = await new Promise(res => { const i = new Image(); i.onload = () => res([i.naturalWidth, i.naturalHeight]); i.onerror = () => res([0, 0]); i.src = URL.createObjectURL(f); });
+    const fd = new FormData(); fd.append('photo', f); fd.append('width', String(dims[0])); fd.append('height', String(dims[1]));
+    try { await post(fd, true); say(dims[0] && (dims[0] < 600 || dims[1] < 600) ? 'Saved. Tip: a picture of at least 600×600 px looks sharper.' : 'Saved. It shows on the website straight away.'); } catch (e) { say(e.message, true); }
+  });
+  $('rm').addEventListener('click', async () => { if (!confirm('Remove the picture? The sponsor name stays.')) return; try { await post({ removePhoto: true }); say('Picture removed. Only the name is shown now.'); } catch (e) { say(e.message, true); } });
+  $('f').addEventListener('submit', async e => { e.preventDefault(); try { await post({ name: $('name').value, line: $('line').value, show: $('show').checked }); say('Saved. It shows on the website straight away.'); } catch (er) { say(er.message, true); } });
+  load();
+})();
+</script>

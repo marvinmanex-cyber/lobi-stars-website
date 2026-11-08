@@ -158,6 +158,9 @@ import '../styles/fixture-card.css';
   :global(.pw-exact-tag) { flex-basis: 100%; font-size: 13px; color: var(--red-text); }
   :global(.pw-exact-tag.muted) { color: var(--lt); }
   .ml :global(.mv-top3-h) { margin: 18px 0 8px; font: 400 22px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .ml :global(.pw-sp) { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; padding: 10px 14px; border: 1px solid var(--d4); border-radius: 12px; background: #fff; }
+  .ml :global(.pw-sp-img) { width: 48px; height: 48px; object-fit: contain; border-radius: 8px; background: #fff; flex: none; }
+  .ml :global(.pw-sp-line) { margin: 6px 0 0; font-weight: 600; }
 </style>
 
 <script>
@@ -445,6 +448,7 @@ import '../styles/fixture-card.css';
   // ── Predict & Win. Opening/closing times come from the server clock. ──
   type Predict = { state: 'notyet' | 'open' | 'closed' | 'result' | 'off'; prize: number; maxGoals: number; opensAt: string; closesAt: string | null;
     count: number; fan: { firstName: string; verified: boolean } | null; mine: { home: number; away: number; at: string; disqualified: boolean } | null;
+    sponsor?: { name: string; line: string; photoUrl: string | null } | null;
     result: { home: number; away: number; winner: string | null; noWinnerText: string | null; correct: number; total: number; prize: number; youWon: boolean; claim: string | null;
       exact?: { name: string; at: string; winner: boolean; note: string; you: boolean }[] } | null;
     serverTime: string };
@@ -479,6 +483,13 @@ import '../styles/fixture-card.css';
 
   function renderPredict(box: HTMLElement, m: M, d: Predict) {
     const out: Node[] = [el('h2', '', `PREDICT FOR FREE AND WIN ${naira(d.prize)}!`)];
+    // The sponsor (Admin › Predict & Win Sponsor): logo or photo if there is one, otherwise the name only.
+    if (d.sponsor) {
+      const sp = el('div', 'pw-sp'); sp.dataset.predictSponsorLine = '';
+      if (d.sponsor.photoUrl) { const i = el('img', 'pw-sp-img') as HTMLImageElement; i.src = d.sponsor.photoUrl; i.alt = d.sponsor.name; i.width = 48; i.height = 48; i.loading = 'lazy'; i.dataset.predictSponsor = ''; sp.append(i); }
+      const t = el('span', '', 'Predict & Win, sponsored by '); t.append(el('strong', '', d.sponsor.name)); sp.append(t);
+      out.push(sp);
+    }
     const reload = () => { timers.forEach(clearInterval); timers = []; if (match) render(match, true); };
     const next = encodeURIComponent(`/matches/${m.slug}/live/#predict`);
     const auth = () => { const a = el('div', 'ml-actions'); a.append(link(`/fans/register/?next=${next}`, 'Register to play', 'btn-p'), link(`/fans/login/?next=${next}`, 'Log in', 'btn-o')); return a; };
@@ -491,6 +502,7 @@ import '../styles/fixture-card.css';
       const panel = el('div', 'pw-result');
       panel.append(el('span', 'pw-k', 'Final score'), el('strong', 'pw-score', `${m.home_team} ${r.home} – ${r.away} ${m.away_team}`));
       panel.append(el('p', 'pw-winner', r.winner ? `🏆 Winner: ${r.winner} (${naira(r.prize)})` : (r.noWinnerText || 'No correct prediction this time.')));
+      if (d.sponsor) panel.append(el('p', 'pw-sp-line', d.sponsor.line));
       panel.append(el('p', 'pw-stats', `${r.correct} correct prediction${r.correct === 1 ? '' : 's'} · ${r.total} total`));
       out.push(panel);
       // Everyone who predicted the exact score, first to last, with the exact time: the first one wins.

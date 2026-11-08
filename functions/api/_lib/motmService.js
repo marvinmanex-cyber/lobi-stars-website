@@ -5,7 +5,8 @@
 import { ensureTable, loadMatch, toPublic, listMatches, isHomeGame } from './matchCentre.js';
 import { matchSlug } from './matchSlug.js';
 import { currentFan } from './matchdayFan.js';
-import { votingWindow, candidates, tally, isHeldAccount, sponsorView, announcementData, announcementView, clubTime, DEFAULT_SPONSOR } from './motmRules.js';
+import { votingWindow, candidates, tally, isHeldAccount, sponsorView, announcementData, announcementView, clubTime } from './motmRules.js';
+import { getGameSponsor, saveGameSponsor } from './gameSponsors.js';
 
 let ready = false;
 export async function ensureMotmTables(db) {
@@ -25,26 +26,9 @@ export async function ensureMotmTables(db) {
   ready = true;
 }
 
-// ── Sponsor (settings record "motm_sponsor") ──
-export async function getSponsor(db) {
-  await ensureMotmTables(db);
-  const row = await db.prepare(`SELECT value, updated_at, updated_by FROM settings WHERE key = 'motm_sponsor'`).first();
-  let v = {};
-  try { v = JSON.parse(row?.value || '{}'); } catch { /* defaults */ }
-  return { ...DEFAULT_SPONSOR, ...v, updatedAt: row?.updated_at || null, updatedBy: row?.updated_by || null };
-}
-export async function saveSponsor(db, patch, by) {
-  const cur = await getSponsor(db);
-  const next = {
-    show: patch.show !== undefined ? !!patch.show : cur.show,
-    name: patch.name !== undefined ? String(patch.name).replace(/\s+/g, ' ').trim().slice(0, 80) || DEFAULT_SPONSOR.name : cur.name,
-    line: patch.line !== undefined ? String(patch.line).replace(/\s+/g, ' ').trim().slice(0, 160) || DEFAULT_SPONSOR.line : cur.line,
-    photoUrl: patch.photoUrl !== undefined ? (patch.photoUrl || null) : cur.photoUrl,
-  };
-  await db.prepare(`INSERT INTO settings (key, value, updated_at, updated_by) VALUES ('motm_sponsor', ?, datetime('now'), ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, updated_by = excluded.updated_by`)
-    .bind(JSON.stringify(next), by || null).run();
-  return { before: cur, after: next };
-}
+// ── Sponsor (settings record "motm_sponsor", shared with the other game sponsors: gameSponsors.js) ──
+export async function getSponsor(db) { await ensureMotmTables(db); return getGameSponsor(db, 'motm'); }
+export async function saveSponsor(db, patch, by) { return saveGameSponsor(db, 'motm', patch, by); }
 
 // ── Which match ──
 const lagosDay = t => new Date(t + 3600e3).toISOString().slice(0, 10);

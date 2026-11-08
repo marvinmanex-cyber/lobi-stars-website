@@ -25,5 +25,14 @@ const prize = formatNaira(PRIZE_AMOUNT);
       'Season Prediction League: every entry also scores 3 points for the exact score or 1 point for the correct result.',
       'The club will never ask for your bank details through the website.',
     ]}
-  />
+  >
+    <!-- Filled in on the server with the saved sponsor (functions/predict-and-win/index.js). -->
+    <div id="predictSponsorTop" slot="top"><div class="pw-top-sp"><p data-predict-sponsor-line>Predict &amp; Win, sponsored by <strong>Prime Beverages &amp; Logistics Ltd</strong></p></div></div>
+  </MatchdayGamePage>
 </Layout>
+
+<style is:global>
+  .pw-top-sp { display: flex; align-items: center; gap: 14px; margin: 0 0 30px; padding: 12px 16px; border: 1px solid var(--d4); border-radius: 14px; background: #fff; }
+  .pw-top-sp img { width: 72px; height: 72px; object-fit: contain; border-radius: 10px; background: #fff; flex: none; }
+  .pw-top-sp p { margin: 0; font-size: 16px; }
+</style>

@@ -3,90 +3,12 @@
 // and on every announcement card. Settings record "motm_sponsor"; changes are logged.
 import Layout from '../../layouts/Layout.astro';
 import AdminNav from '../../components/admin/AdminNav.astro';
+import SponsorEditor from '../../components/admin/SponsorEditor.astro';
 ---
 <Layout title="Man of the Match Sponsor | Lobi Stars Admin" description="The Man of the Match sponsor." noindex>
   <div class="wrap ms">
     <AdminNav current="motm-sponsor" />
-    <header><div class="stag">Matchday</div><h1 class="stitle">Man of the Match <span class="r">Sponsor</span></h1>
-      <p class="ms-lede">Shown on the <a href="/man-of-the-match/" target="_blank" rel="noopener">Man of the Match page</a> ("Man of the Match, sponsored by …") and on every announcement card. Super Admins only; every change is recorded in the Activity Log.</p></header>
-    <p class="ms-msg" id="msg" role="status" aria-live="polite" hidden></p>
-    <div class="ms-grid" id="body" hidden>
-      <section class="ms-card" aria-labelledby="phH">
-        <h2 id="phH">Sponsor photo</h2>
-        <div class="ms-prev" id="prev"><span>No photo yet</span></div>
-        <p class="ms-sub">JPG, PNG or WebP, at most 5 MB. Square, at least 600×600 px recommended. Without a photo, the sponsor line shows on its own.</p>
-        <input type="file" id="file" accept="image/jpeg,image/png,image/webp" hidden />
-        <div class="ms-acts"><button type="button" class="btn-p" id="pick">Upload photo</button><button type="button" class="btn-o" id="rm" hidden>Remove photo</button></div>
-      </section>
-      <form class="ms-card" id="f" aria-labelledby="dH">
-        <h2 id="dH">Details</h2>
-        <label class="ms-f"><span>Display name</span><input id="name" maxlength="80" required /></label>
-        <label class="ms-f"><span>Sponsor line</span><input id="line" maxlength="160" required /></label>
-        <label class="ms-sw"><input type="checkbox" id="show" /> <span>Show sponsor</span></label>
-        <p class="ms-sub" id="upd"></p>
-        <button class="btn-p" type="submit">Save</button>
-      </form>
-    </div>
+    <header><div class="stag">Matchday</div><h1 class="stitle">Man of the Match <span class="r">Sponsor</span></h1></header>
+    <SponsorEditor game="motm" where={'Shown on the Man of the Match page ("Man of the Match, sponsored by …") and on every announcement card.'} />
   </div>
 </Layout>
-
-<style>
-  .ms-lede { max-width: 760px; color: var(--a-muted, #56635B); }
-  .ms-msg { padding: 12px 16px; border-radius: 10px; background: #E8F7EE; color: #17643A; font-weight: 600; }
-  .ms-msg.err { background: #FDECEC; color: #A3161B; }
-  .ms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 16px; }
-  .ms-card { background: var(--a-card, #fff); border: 1px solid var(--a-line, #e5e7eb); border-radius: 16px; padding: 18px 20px; }
-  .ms-card h2 { margin: 0 0 12px; font-size: 20px; }
-  .ms-prev { width: 180px; height: 180px; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #f1f4f2; color: #56635B; margin-bottom: 10px; }
-  .ms-prev img { width: 100%; height: 100%; object-fit: cover; }
-  .ms-sub { font-size: 14px; color: var(--a-muted, #56635B); }
-  .ms-acts { display: flex; gap: 10px; flex-wrap: wrap; }
-  .ms-f { display: block; margin: 0 0 14px; }
-  .ms-f span { display: block; font-weight: 600; margin-bottom: 6px; }
-  .ms-f input { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--a-line, #d0d5dd); border-radius: 10px; font: inherit; box-sizing: border-box; }
-  .ms-sw { display: flex; align-items: center; gap: 10px; min-height: 48px; font-weight: 600; }
-  .ms-sw input { width: 24px; height: 24px; }
-  @media (max-width: 760px) { .ms-grid { grid-template-columns: 1fr; } }
-</style>
-
-<script is:inline>
-(function () {
-  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
-  const H = { 'x-admin-code': code };
-  const $ = id => document.getElementById(id);
-  const say = (t, err) => { const m = $('msg'); m.textContent = t; m.className = 'ms-msg' + (err ? ' err' : ''); m.hidden = false; };
-  function draw(s) {
-    $('name').value = s.name; $('line').value = s.line; $('show').checked = !!s.show;
-    $('prev').innerHTML = s.photoUrl ? '' : '<span>No photo yet</span>';
-    if (s.photoUrl) { const i = document.createElement('img'); i.src = s.photoUrl; i.alt = s.name; $('prev').append(i); }
-    $('pick').textContent = s.photoUrl ? 'Replace photo' : 'Upload photo';
-    $('rm').hidden = !s.photoUrl;
-    $('upd').textContent = s.updatedAt ? 'Last changed ' + s.updatedAt + ' by ' + (s.updatedBy || 'a Super Admin') + '.' : '';
-  }
-  async function load() {
-    const r = await fetch('/api/admin/motm-sponsor', { headers: H, cache: 'no-store' });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) { say(d.error || 'Could not load the sponsor.', true); return; }
-    $('body').hidden = false; draw(d.sponsor);
-  }
-  async function post(body, isForm) {
-    const r = await fetch('/api/admin/motm-sponsor', { method: 'POST', headers: isForm ? H : Object.assign({}, H, { 'Content-Type': 'application/json' }), body: isForm ? body : JSON.stringify(body) });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.error || 'Could not save.');
-    draw(d.sponsor);
-  }
-  $('pick').addEventListener('click', () => $('file').click());
-  $('file').addEventListener('change', async () => {
-    const f = $('file').files[0]; $('file').value = '';
-    if (!f) return;
-    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) { say('Choose a JPG, PNG or WebP picture.', true); return; }
-    if (f.size > 5 * 1024 * 1024) { say('The picture is larger than 5 MB.', true); return; }
-    const dims = await new Promise(res => { const i = new Image(); i.onload = () => res([i.naturalWidth, i.naturalHeight]); i.onerror = () => res([0, 0]); i.src = URL.createObjectURL(f); });
-    const fd = new FormData(); fd.append('photo', f); fd.append('width', String(dims[0])); fd.append('height', String(dims[1]));
-    try { await post(fd, true); say(dims[0] && (dims[0] < 600 || dims[1] < 600 || dims[0] !== dims[1]) ? 'Photo saved. Tip: a square photo of at least 600×600 px looks best.' : 'Photo saved.'); } catch (e) { say(e.message, true); }
-  });
-  $('rm').addEventListener('click', async () => { if (!confirm('Remove the sponsor photo? The sponsor line stays.')) return; try { await post({ removePhoto: true }); say('Photo removed.'); } catch (e) { say(e.message, true); } });
-  $('f').addEventListener('submit', async e => { e.preventDefault(); try { await post({ name: $('name').value, line: $('line').value, show: $('show').checked }); say('Saved. The Man of the Match page shows it straight away.'); } catch (er) { say(er.message, true); } });
-  load();
-})();
-</script>

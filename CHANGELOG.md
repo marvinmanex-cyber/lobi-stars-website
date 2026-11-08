@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-08: Predict & Win sponsor: Prime Beverages & Logistics Ltd
+
+**Who it affects:** fans, Super Admins. **Staff need to:** optionally upload the sponsor's logo.
+- The Predict & Win page, the Predict tab in Matchday Live and each result now show "Predict & Win, sponsored by Prime Beverages & Logistics Ltd".
+- New admin page **Admin → Matchday → Predict & Win Sponsor** (Super Admins): logo or photo upload, display name, sponsor line and a Show switch. With no picture, only the name shows. Changes are logged.
+- The Man of the Match and Predict & Win sponsor pages now share one editor (settings records motm_sponsor and predict_sponsor).
+
 ## 2026-11-08: Man of the Match: accounts made any time before kick-off count
 
 **Who it affects:** fans. **Staff need to:** nothing.
