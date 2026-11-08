@@ -7,7 +7,7 @@ import { notifyFans } from '../../_lib/notify.js';
 import { autoAlert } from '../../_lib/matchAlerts.js';
 import { parsePlayerStats, savePlayerStats, loadPlayerStats } from '../../_lib/stats.js';
 import { fromLiveMatchControl } from '../../_lib/scores/consensus.js';
-import { loadMatch, toPublic, parseCentrePayload, parseSquad, scoreInt, isHomeGame, LIVE_STATUSES, nextSecondHalfAt } from '../../_lib/matchCentre.js';
+import { loadMatch, toPublic, parseCentrePayload, parseSquad, scoreInt, isHomeGame, LIVE_STATUSES, nextSecondHalfAt, stampTimeline } from '../../_lib/matchCentre.js';
 import { mediaLineup } from '../../_lib/motm.js';
 
 async function roster(request, env) {
@@ -80,6 +80,7 @@ export async function onRequestPut({ request, env, params, waitUntil }) {
   const kickoffAt = LIVE_STATUSES.includes(v.status) || v.status === 'full-time' ? (prev.kickoff_at || now) : (v.status === 'scheduled' ? null : prev.kickoff_at || null);
   const endedAt = v.status === 'full-time' ? (prev.ended_at || now) : null;
   const secondHalfAt = nextSecondHalfAt(prev, v.status, now);
+  try { v.timeline_json = JSON.stringify(stampTimeline(JSON.parse(v.timeline_json || '[]'), JSON.parse(prev.timeline_json || '[]'), now)); } catch { /* keep as sent */ }
 
   await env.DB.prepare(
     `INSERT INTO match_centre

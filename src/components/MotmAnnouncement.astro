@@ -1,0 +1,76 @@
+---
+// The top of /man-of-the-match/: the sponsor, the latest Man of the Match card (winner, message,
+// how the top 3 were voted) and this season's winners. The server fills these in
+// (functions/man-of-the-match.js); this script re-checks /api/motm/current.json every 30 seconds
+// while voting is upcoming or open and reloads the page when the status changes, so fans already
+// here see the winner at closing time without refreshing.
+---
+<div class="motm-top">
+  <div id="motmSponsorTop"><div class="motm-sp"><p data-motm-sponsor-line>Man of the Match, sponsored by <strong>Mr. Moses Orkuma</strong></p></div></div>
+  <div id="motmCard" data-status=""><p class="motm-loading">The latest Man of the Match appears here.</p></div>
+</div>
+
+<script>
+  const card = document.getElementById('motmCard');
+  let status = card?.dataset.status || '';
+  async function check() {
+    try {
+      const d = await (await fetch('/api/motm/current.json', { cache: 'no-store', credentials: 'same-origin' })).json();
+      if (!status) {
+        // Page served without the server's card (for example a cached copy): draw it here.
+        const { cardHtml, sponsorHtml } = await import('../../functions/api/_lib/motmCard.js');
+        const top = document.getElementById('motmSponsorTop');
+        if (top) top.innerHTML = sponsorHtml(d.sponsor);
+        if (card) { card.innerHTML = cardHtml(d); card.dataset.status = d.status; }
+        status = d.status;
+      } else if (d.status !== status) location.reload();
+      return d.status;
+    } catch { return status; }
+  }
+  check().then(s => {
+    if (s !== 'upcoming' && s !== 'open') return;
+    const t = window.setInterval(async () => { const now = await check(); if (now !== 'upcoming' && now !== 'open') clearInterval(t); }, 30_000);
+  });
+</script>
+
+<style is:global>
+  .motm-top { margin: 0 0 36px; }
+  .motm-sp { display: flex; align-items: center; gap: 14px; margin: 0 0 18px; padding: 12px 16px; border: 1px solid var(--d4); border-radius: 14px; background: #fff; }
+  .motm-sp img { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; flex: none; }
+  .motm-sp p { margin: 0; font-size: 16px; color: var(--white); }
+  .motm-loading { margin: 0; color: var(--lt); }
+  .motm-live { margin: 0 0 16px; padding: 14px 16px; border-radius: 12px; background: #E31E24; color: #fff; line-height: 1.5; }
+  .motm-live a { color: #fff; font-weight: 700; }
+  .motm-live--soon { background: #15181D; }
+  .motm-card { border: 2px solid #E31E24; border-radius: 18px; padding: 20px; background: #fff; overflow: hidden; }
+  .motm-card--none h2 { margin: 6px 0; font: 400 clamp(26px, 5vw, 36px)/1.1 'Bebas Neue', sans-serif; }
+  .motm-k { margin: 0 0 12px; font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 2px; text-transform: uppercase; color: #E31E24; }
+  .motm-main { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+  .motm-photo { width: min(220px, 100%); aspect-ratio: 1; object-fit: cover; border-radius: 16px; flex: none; }
+  .motm-nophoto { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .motm-nophoto img { width: 88px; height: 88px; flex: none; }
+  .motm-bigname { font: 400 clamp(32px, 7vw, 54px)/1 'Bebas Neue', sans-serif; letter-spacing: .5px; color: #E31E24; overflow-wrap: anywhere; }
+  .motm-who { flex: 1 1 220px; min-width: 0; }
+  .motm-who h2 { margin: 0; font: 400 clamp(30px, 6vw, 46px)/1 'Bebas Neue', sans-serif; letter-spacing: .5px; overflow-wrap: anywhere; }
+  .motm-meta { margin: 6px 0 2px; font-weight: 700; }
+  .motm-match { margin: 0; color: var(--lt); }
+  .motm-msg { margin: 16px 0 0; line-height: 1.6; }
+  .motm-msg p { margin: 0 0 8px; }
+  .motm-msg-h { font: 700 20px/1.3 'Barlow', sans-serif; color: #E31E24; }
+  .motm-card-sp { margin: 4px 0 0; font-weight: 600; }
+  .motm-h3 { margin: 20px 0 10px; font: 400 24px/1.1 'Bebas Neue', sans-serif; letter-spacing: .5px; }
+  .motm-top3 { list-style: none; margin: 0; padding: 0; }
+  .motm-top3 li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; grid-template-areas: 'f n v' 'f b b'; gap: 4px 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--d4); }
+  .motm-sm { grid-area: f; width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+  .motm-sm--n { display: flex; align-items: center; justify-content: center; background: #E31E24; color: #fff; font-weight: 700; font-size: 15px; }
+  .motm-sm-name { grid-area: n; font-weight: 600; overflow-wrap: anywhere; }
+  .motm-sm-v { grid-area: v; font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .motm-barwrap { grid-area: b; height: 8px; border-radius: 4px; background: var(--d3, #eee); overflow: hidden; }
+  .motm-bar { display: block; height: 100%; background: #E31E24; border-radius: 4px; }
+  .motm-total { margin: 10px 0 0; font-weight: 700; }
+  .motm-arch { margin-top: 26px; }
+  .motm-arch ul { list-style: none; margin: 0; padding: 0; }
+  .motm-arch li { display: flex; flex-wrap: wrap; gap: 2px 12px; padding: 10px 0; border-bottom: 1px solid var(--d4); }
+  .motm-arch-w { font-weight: 700; flex: 1 1 100%; }
+  .motm-arch-m, .motm-arch-v { font-size: 14px; color: var(--lt); }
+</style>

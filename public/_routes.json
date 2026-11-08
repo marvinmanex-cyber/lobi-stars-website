@@ -60,7 +60,9 @@
     "/verify",
     "/verify/*",
     "/watch",
-    "/watch/*"
+    "/watch/*",
+    "/man-of-the-match",
+    "/man-of-the-match/*"
   ],
   "exclude": []
 }

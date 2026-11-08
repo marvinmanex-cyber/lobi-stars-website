@@ -1,25 +1,32 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import MatchdayGamePage from '../components/fans/MatchdayGamePage.astro';
+import MotmAnnouncement from '../components/MotmAnnouncement.astro';
+// The winner card and sponsor are filled in on the server (functions/man-of-the-match.js).
 ---
-<Layout title="Vote for Man of the Match | Lobi Stars Football Club" description="Vote for the Lobi Stars Man of the Match at every home game with a free fan account.">
+<Layout title="Vote for Man of the Match | Lobi Stars Football Club" description="Vote for the Lobi Stars Man of the Match at every home game with a free fan account. Voting opens at 4:00 pm and the winner is announced at 5:50 pm, before the final whistle.">
   <MatchdayGamePage
     kind="vote"
     kicker="Matchday Live"
     title="Man of the"
     highlight="Match"
-    intro="Who was the best Lobi Stars player on the day? At every Lobi Stars home game, fans choose the Man of the Match."
+    intro="Who is the best Lobi Stars player on the day? At every Lobi Stars home game, fans choose the Man of the Match. Voting opens at 4:00 pm and the winner is announced at 5:50 pm, before the final whistle."
     steps={[
       { title: 'Create a fan account', text: 'It is free. Confirm your email address so your vote counts.' },
-      { title: 'Open Matchday Live', text: 'On matchday, open the game from Fixtures or this page and choose the Vote tab.' },
-      { title: 'Pick your player', text: 'Choose one Lobi Stars player from the matchday squad. One vote per fan per match.' },
-      { title: 'See the winner', text: 'The Man of the Match is announced after the final whistle.' },
+      { title: 'Vote from 4:00 pm', text: 'Voting opens automatically at kick-off. Open the game from Fixtures or this page and choose the Vote tab in Matchday Live.' },
+      { title: 'Pick your player', text: 'Choose one Lobi Stars player who is playing in the match — the starting XI or a substitute who has come on. One vote per fan per match.' },
+      { title: 'See the winner at 5:50 pm', text: "Voting closes automatically at 5:50 pm and the Man of the Match is announced here before the final whistle, with the top 3 players' votes and percentages." },
     ]}
     rules={[
       'Voting is for Lobi Stars home games only.',
-      'You can vote for any Lobi Stars player in the matchday squad (starting XI and substitutes).',
+      'Voting opens at 4:00 pm and closes at 5:50 pm.',
+      'You can vote for players in the starting XI and substitutes who come on during the match. Unused substitutes cannot be voted for.',
       'One vote per verified fan account per match.',
+      'The winner is announced automatically at 5:50 pm, together with how the top 3 players were voted.',
+      'If players are level on votes, the player who reached that total first wins.',
       'All voting times use the official club clock (Nigerian time).',
     ]}
-  />
+  >
+    <MotmAnnouncement slot="top" />
+  </MatchdayGamePage>
 </Layout>

@@ -56,7 +56,7 @@ export async function applyLiveUpdate(env, eventId, u, { by = 'Media Centre', wa
   let status = c.status || 'scheduled', home = Number(c.home_score) || 0, away = Number(c.away_score) || 0;
   const prev = { status, home, away };
   const timeline = parseJson(c.timeline_json, []);
-  const add = (type, extra = {}) => timeline.push({ minute: u.minute || '', type, team: u.team || '', player: u.player || '', detail: u.detail || '', ...extra });
+  const add = (type, extra = {}) => timeline.push({ minute: u.minute || '', type, team: u.team || '', player: u.player || '', detail: u.detail || '', recordedAt: nowIso(), ...extra });
   if (u.type === 'kickoff') { status = 'live'; add('note', { detail: u.detail || 'Kick-off', team: '' }); }
   if (u.type === 'halftime') { status = 'half-time'; add('note', { detail: u.detail || `Half-time: ${home}-${away}`, team: '' }); }
   if (u.type === 'secondhalf') { status = 'live'; add('note', { detail: u.detail || 'Second half under way', team: '' }); }

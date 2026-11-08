@@ -1,7 +1,7 @@
 import { requireAdminUser } from '../../_lib/adminEvents.js';
 import { logAdminAction } from '../../_lib/adminSession.js';
 import { loadMatch, toPublic } from '../../_lib/matchCentre.js';
-import { ensureMotmSchema, leaderboard, votingWindow, playersOnField, votingSquad, lobiSide } from '../../_lib/motm.js';
+import { staffTally } from '../../_lib/motmService.js';
 import { buildCsv } from '../../_lib/xlsx.js';
 
 // GET /api/admin/motm/:eventId[?format=csv] -- Man of the Match vote
@@ -11,11 +11,14 @@ export async function onRequestGet({ request, env, params }) {
   if (denied) return denied;
   const m = await loadMatch(env.DB, params.id);
   if (!m) return Response.json({ error: 'Match not found' }, { status: 404 });
-  await ensureMotmSchema(env.DB);
   const match = toPublic(m.event, m.centre);
-  const players = playersOnField(await votingSquad(env.DB, match), match.timeline, lobiSide(match));
-  const board = await leaderboard(env.DB, match.id, null, players);
-  const win = votingWindow(match);
+  const t = await staffTally(env, request, match);
+  // Every player who can be (or could be) voted for, with his valid votes so far.
+  const rows = t.players.map(p => { const r = t.rows.find(x => x.slug === p.slug); return { slug: p.slug, name: p.name, number: p.number ?? null, position: p.position || '', votes: r?.votes || 0, pct: r?.percent || 0 }; })
+    .sort((a, b) => b.votes - a.votes || (t.rows.findIndex(x => x.slug === a.slug) + 1 || 999) - (t.rows.findIndex(x => x.slug === b.slug) + 1 || 999));
+  const top = t.rows[0]?.slug || null;
+  const board = { total: t.totalVotes, held: t.held, rows: rows.map(r => ({ ...r, winner: r.slug === top })), winners: top ? [top] : [] };
+  const win = t.win;
 
   if (new URL(request.url).searchParams.get('format') === 'csv') {
     await logAdminAction(env.DB, admin, 'export_motm_csv', `${match.home_team} vs ${match.away_team}`);
@@ -29,5 +32,5 @@ export async function onRequestGet({ request, env, params }) {
       },
     });
   }
-  return Response.json({ state: win.state, opensAt: win.opensAt, closesAt: win.closesAt, ...board }, { headers: { 'Cache-Control': 'no-store' } });
+  return Response.json({ state: win.status, opensAt: win.opensAt, closesAt: win.closesAt, ...board }, { headers: { 'Cache-Control': 'no-store' } });
 }

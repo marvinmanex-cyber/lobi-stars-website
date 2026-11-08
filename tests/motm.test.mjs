@@ -37,6 +37,8 @@ async function fan({ verify = true } = {}) {
   await fetch(reg.data.devLink.replace('https://lobistarsfc.com', BASE), { redirect: 'manual' });
   const login = await post('/api/auth/login', { email, password: 'Lobi-Stars-2026' });
   assert.equal(login.status, 200);
+  // An account made more than 24 hours before kick-off (newer accounts' votes are held, not counted).
+  sql(`UPDATE members SET created_at = '${new Date(Date.now() - 3 * 86400e3).toISOString()}' WHERE email = '${email}';`);
   return login.headers.get('set-cookie').split(';')[0];
 }
 
@@ -84,7 +86,7 @@ test('voting: before kick-off rejected, live accepted once, second vote rejected
   const again = await vote(m, roster[1].slug, a);
   assert.equal(again.status, 409);
   assert.equal(again.data.code, 'voted');
-  assert.match(again.data.error, new RegExp(roster[0].name));
+  assert.equal(again.data.error, 'You have already voted in this match.');
 
   const mine = await get(`/api/matches/${m.slug}/motm`, a);
   assert.equal(mine.data.myVote.slug, roster[0].slug, 'vote cannot be changed');
@@ -128,25 +130,28 @@ test('a substitute can be voted for only after coming on; nothing shows before k
   await control(m.id, { action: 'fulltime', home_score: 1, away_score: 0 });
 });
 
-test('leaderboard is hidden while live and revealed at full time, with joint winners on a tie', async () => {
+test('results hidden while open, announced at closing time; a tie goes to whoever reached the total first', async () => {
   const m = await homeMatch();
   await control(m.id, { action: 'kickoff' }); await at(m, 1);
   const fans = await Promise.all([fan(), fan(), fan(), fan()]);
-  // 2 votes each for players 0 and 1 -> joint winners; player 2 none.
+  // 2 votes each for players 0 and 1: player 0 got to 2 first, so he wins; player 2 none.
   await vote(m, roster[0].slug, fans[0]); await vote(m, roster[0].slug, fans[1]);
   await vote(m, roster[1].slug, fans[2]); await vote(m, roster[1].slug, fans[3]);
 
   const live = await get(`/api/matches/${m.slug}/motm`);
   assert.equal(live.data.state, 'open');
   assert.equal(live.data.results, null, 'no counts or rankings during the match');
-  assert.equal(live.data.totalVoters, 4, 'only the number of voters');
+  assert.equal(live.data.announcement, undefined, 'no totals while open');
 
   await control(m.id, { action: 'fulltime', home_score: 2, away_score: 2 });
-  await at(m, 116); // closed, and 5 minutes on: the result shows
+  // Move the clock on: the votes were cast in the first hour, and voting closed a minute ago.
+  sql(`UPDATE motm_votes SET created_at = strftime('%Y-%m-%dT%H:%M:%fZ', created_at, '-60 minutes') WHERE event_id = '${m.id}';`);
+  await at(m, 111);
   const ft = await get(`/api/matches/${m.slug}/motm`);
   assert.equal(ft.data.state, 'closed');
   assert.equal(ft.data.results.total, 4);
-  assert.deepEqual([...ft.data.results.winners].sort(), [roster[0].slug, roster[1].slug].sort());
+  assert.deepEqual(ft.data.results.winners, [roster[0].slug]);
+  assert.equal(ft.data.announcement.tieBroken, true);
   // Only players on the field are in the results: the unused substitute isn't.
   assert.equal(ft.data.results.rows.find(r => r.slug === roster[2].slug), undefined);
   assert.equal(ft.data.results.rows.find(r => r.slug === roster[0].slug).pct, 50);

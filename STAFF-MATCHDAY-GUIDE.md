@@ -282,6 +282,19 @@ is recalculated.
   score is entered or a Super Admin presses **Dismiss** (recorded in the Activity Log). Tap the page
   once if the beep can't be heard: browsers only play sound after a tap.
 
+## 4b. Man of the Match: how it works now (8 November 2026)
+
+- **Automatic:** voting opens at kick-off (4:00pm) and closes 110 minutes later (5:50pm). At 5:50pm the
+  winner is counted and announced on https://lobistarsfc.com/man-of-the-match/ by itself, with the top 3
+  players' votes and percentages. Nobody approves it.
+- **Who can be voted for:** the starting XI (from Live Match Control's squad, or the Media Centre line-up),
+  and a substitute from the moment his **Substitution** is saved in the Live timeline (or sent as a Media
+  Centre live update). The website records the time each timeline entry is saved.
+- **Counted votes:** one per verified fan account. Votes from accounts made less than 24 hours before
+  kick-off are kept but not counted ("held"). Level on votes: whoever reached that total first wins.
+- **Sponsor:** Admin → Matchday → **Man of the Match Sponsor** (Super Admins): photo, display name,
+  sponsor line and a Show sponsor switch. Every change is in the Activity Log.
+
 ## 5. Man of the Match results
 
 In **Admin → Matchday → Live Match Control** (the Match Centre), home games have a **Man of the Match votes**

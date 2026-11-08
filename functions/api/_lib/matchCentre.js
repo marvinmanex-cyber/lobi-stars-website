@@ -166,6 +166,14 @@ export async function listMatches(db) {
   return results;
 }
 
+/** Each timeline entry keeps the time it was first recorded (a substitute can be voted for from then). */
+export function stampTimeline(next, prev, now = new Date().toISOString()) {
+  const key = e => [e.type, e.team, String(e.player || '').trim().toLowerCase(), String(e.minute || '')].join('|');
+  const old = new Map();
+  for (const e of prev || []) if (e.recordedAt && !old.has(key(e))) old.set(key(e), e.recordedAt);
+  return (next || []).map(e => ({ ...e, recordedAt: e.recordedAt || old.get(key(e)) || now }));
+}
+
 /** The second-half start to keep after a status change: set when half-time goes back to live. */
 export function nextSecondHalfAt(prev, status, now = new Date().toISOString()) {
   if (status === 'scheduled') return null;

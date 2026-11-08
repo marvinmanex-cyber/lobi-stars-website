@@ -149,7 +149,17 @@ export async function awardCounts(db) {
     list.push(r); byEvent.set(r.event_id, list);
   }
   const awards = {};
-  for (const list of byEvent.values()) {
+  // The saved announcement decides (most valid votes; level = first to reach the total).
+  const announced = new Set();
+  try {
+    for (const a of (await db.prepare(`SELECT event_id, data_json FROM motm_announcements`).all()).results) {
+      announced.add(a.event_id);
+      const slug = JSON.parse(a.data_json || '{}').winnerSlug;
+      if (slug) awards[slug] = (awards[slug] || 0) + 1;
+    }
+  } catch { /* no announcements yet */ }
+  for (const [eventId, list] of byEvent.entries()) {
+    if (announced.has(eventId)) continue;
     const top = Math.max(...list.map(r => r.votes));
     for (const r of list) if (r.votes === top) awards[r.player_slug] = (awards[r.player_slug] || 0) + 1;
   }

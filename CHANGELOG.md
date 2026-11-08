@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-08: Man of the Match: automatic announcement, top 3, sponsor
+
+**Who it affects:** fans, matchday staff, Super Admins. **Staff need to:** record substitutions in the Live timeline.
+- At 5:50pm (kick-off + 110 minutes) the Man of the Match is announced automatically on /man-of-the-match/: photo (from the squad list) or name with the club badge, message, how the top 3 were voted, total fans, and this season's winners.
+- Votes count only from verified accounts made 24 hours or more before kick-off; substitutes count from the time they come on; level on votes goes to whoever got there first.
+- New admin page **Man of the Match Sponsor** (Super Admins): Mr. Moses Orkuma's photo, name, line and a Show switch.
+- New: GET /api/motm/current.json and POST /api/motm/vote (Matchday Live uses them). Checks: npm run test:motm, npm run check:motm:live.
+
 ## 2026-11-08: MatchDay Kitchen "Opening soon"; no commentary for Lobi Stars v Bichi First
 
 **Who it affects:** fans, kitchen staff, commentary team. **Staff need to:** nothing.
