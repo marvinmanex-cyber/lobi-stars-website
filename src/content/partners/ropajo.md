@@ -14,7 +14,7 @@ active: true
 ageRestricted: false
 # Photos of Lobi Stars and Ropajo together (files in public/images/ropajo/). No captions are shown
 # (the owner's choice); "alt" describes each photo for screen readers only.
-galleryTitle: "Signing Day: Lobi Stars FC and Ropajo Hotels Seal the Partnership"
+galleryTitle: "Lobi Stars FC and Ropajo Hotels Seal the Partnership"
 gallery:
   - src: "/images/ropajo/signing-jersey.jpg"
     alt: "Lobi Stars FC and Ropajo Hotels representatives hold up the orange Ropajo training jersey at the signing"
