@@ -1,6 +1,6 @@
 {
-  "_todo": "TODO: replace youtubeChannel/facebookPage with the Lobi Stars channels for match streams. (Live commentary is Lobi Stars FC Live at /commentary; its settings are on Admin -> Commentary.)",
-  "youtubeChannel": "https://www.youtube.com/@aesonfootballpodcast",
+  "_note": "youtubeChannel / facebookPage: the official Lobi Stars channels (since 8 Nov 2026), shown when a match has no stream link of its own. Live commentary is Lobi Stars FC Live at /commentary (Admin -> Commentary).",
+  "youtubeChannel": "https://www.youtube.com/@lobistarsfootballclub4809",
   "facebookPage": "https://www.facebook.com/LobiStars",
   "_live": "motmLive / predictLive: set to true once Man of the Match voting / Predict & Win are switched on.",
   "motmLive": true,
