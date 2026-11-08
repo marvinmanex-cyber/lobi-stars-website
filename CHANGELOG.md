@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-08: MatchDay Kitchen "Opening soon"; no commentary for Lobi Stars v Bichi First
+
+**Who it affects:** fans, kitchen staff, commentary team. **Staff need to:** nothing.
+- MatchDay Kitchen isn't taking orders yet: fans see **MatchDay Kitchen is opening soon** on the kitchen and food pages and can look at the menu. The "Kitchen is open" bar and kitchen alerts to fans are off. Staff can still use MatchDay Kitchen to prepare. To open it, the website team sets `KITCHEN_OPENING_SOON` to false in functions/api/_lib/launchFlags.js and redeploys.
+- Live commentary is switched off for Lobi Stars FC v Bichi First FC (8 November): "Live commentary available for this match" is unticked in Match Tickets & Settings.
+
 ## 2026-11-08: Ropajo partner page: signing-day photos
 
 **Who it affects:** everyone. **Staff need to:** nothing.

@@ -9,6 +9,7 @@
 // their own copy of name and price, so menu changes never alter past orders.
 // The first time this runs, the original 8 items are copied in.
 import { FOOD_MENU } from './foodMenu.js';
+import { KITCHEN_OPENING_SOON, KITCHEN_OPENING_SOON_MESSAGE } from './launchFlags.js';
 import { randomId } from './crypto.js';
 import { ensureFoodSchema, foodSettings } from './foodOrders.js';
 import { listMatches, toSummary } from './matchCentre.js';
@@ -114,6 +115,8 @@ async function venueBlock(db, venueId) {
   return null;
 }
 export async function orderingState(env, settings, venueId = 'venue-main') {
+  // "Opening soon": not taking orders yet, whatever the settings say (launchFlags.js).
+  if (KITCHEN_OPENING_SOON && env.KITCHEN_OPENING_SOON !== '0') return { open: false, reason: 'opening-soon', message: KITCHEN_OPENING_SOON_MESSAGE };
   const s = settings || await foodSettings(env.DB);
   if (s.orderingMode === 'closed') return { open: false, reason: 'closed' };
   const blocked = await venueBlock(env.DB, venueId);

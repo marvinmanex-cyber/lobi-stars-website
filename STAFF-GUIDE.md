@@ -4683,6 +4683,8 @@ Only supervisors and Super Admins change prices, add dishes and delete dishes. *
 - The website refuses codes that are easy to guess: the same number repeated, fewer than 3 different numbers, counting up or down (12345678), repeats, doubles or mirrors (12121212, 11223344, 12344321) and dates such as birthdays (15061990).
 - If a code is already someone else's, the website only says it can't be used and doesn't say why, so that person's code stays safe.
 
+**Opening soon (since 8 November 2026):** MatchDay Kitchen isn't taking fan orders yet. Fans see "MatchDay Kitchen is opening soon" and can look at the menu; the Open/Pause switches in MatchDay Kitchen don't open ordering while this is on. Staff can still sign in, set up the menu and test. When the club is ready, ask the website team to switch it off (`KITCHEN_OPENING_SOON` in functions/api/_lib/launchFlags.js).
+
 **Sales reports (saved records):** a report saves by itself 4 hours after kick-off of each home match. Supervisors and Super Admins find them on **Sales reports**. Each shows total sales, orders and items sold, what was paid online and on WhatsApp, every item with the most sold first, and a pie chart.
 - **Open** a report, then press **Download report (Word)** or **(PDF)**.
 - **Combining:** tick any reports (say 1, 4 and 7) and press **Combine reports**. Its figures are added together, and it downloads the same way.

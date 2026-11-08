@@ -235,7 +235,8 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
       for (const id of Object.keys(qty)) { const f = items.find(x => x.id === id); if (!f || f.soldOut) delete qty[id]; }
       saveCart();
       $('closed').hidden = d.open;
-      if (!d.open && d.message) $('closed').textContent = d.message;
+      if (!d.open && d.reason === 'opening-soon') { $('closed').innerHTML = '🍽️ <strong>MatchDay Kitchen is opening soon.</strong> '; $('closed').append(d.message); }
+      else if (!d.open && d.message) $('closed').textContent = d.message;
       $('shop').classList.toggle('is-closed', !d.open);
       if (d.stands?.length && $('foodStand').tagName === 'INPUT') {
         $('foodStand').outerHTML = `<select class="form-sel" id="foodStand" required><option value="">Choose your stand</option>${d.stands.map(s => `<option>${esc(s)}</option>`).join('')}</select>`;

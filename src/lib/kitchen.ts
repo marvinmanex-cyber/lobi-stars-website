@@ -293,10 +293,13 @@ function untilText(ms: number) {
 function renderState() {
   if (!menu) return;
   const pill = $('kxPill');
-  pill.className = `kx-pill kx-pill--${menu.open ? 'open' : 'closed'}`;
-  pill.innerHTML = `<span class="kx-dot" aria-hidden="true"></span>${menu.open ? 'Kitchen open' : 'Kitchen closed'}`;
+  const soon = !menu.open && menu.reason === 'opening-soon';
+  pill.className = `kx-pill kx-pill--${menu.open ? 'open' : soon ? 'soon' : 'closed'}`;
+  pill.innerHTML = `<span class="kx-dot" aria-hidden="true"></span>${menu.open ? 'Kitchen open' : soon ? 'Opening soon' : 'Kitchen closed'}`;
+  $('kxClosed').classList.toggle('kx-soon', soon);
+  const head = $('kxClosed').querySelector('b'); if (head) head.textContent = soon ? 'MatchDay Kitchen is opening soon' : 'Kitchen closed';
   const now = Date.now();
-  $('kxCd').textContent = menu.open && menu.closesAt ? `Orders close in ${untilText(Date.parse(menu.closesAt) - now)}`
+  $('kxCd').textContent = soon ? '' : menu.open && menu.closesAt ? `Orders close in ${untilText(Date.parse(menu.closesAt) - now)}`
     : !menu.open && menu.opensAt ? `Opens in ${untilText(Date.parse(menu.opensAt) - now)}` : '';
   $('kxClosed').hidden = menu.open;
   $('kxClosed').classList.remove('kx-pending');
