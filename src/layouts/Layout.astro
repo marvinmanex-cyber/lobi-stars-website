@@ -183,8 +183,8 @@ a{color:inherit;}
 [hidden]{display:none !important;}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 
-main{padding-top:var(--header-h);min-height:60vh;}
-main.bare{padding-top:0;min-height:0;}
+#main{padding-top:var(--header-h);min-height:45vh;}
+#main.bare{padding-top:0;min-height:0;}
 .skip-link{position:fixed;top:-60px;left:12px;z-index:3000;background:var(--red);color:#fff;padding:10px 16px;border-radius:6px;font-weight:700;text-decoration:none;}
 .skip-link:focus{top:12px;}
 
@@ -203,10 +203,10 @@ main.bare{padding-top:0;min-height:0;}
 .card{background:var(--d2);border:1px solid var(--d4);border-radius:8px;overflow:hidden;transition:transform .25s,border-color .25s,box-shadow .25s;}
 .card:hover{transform:translateY(-4px);border-color:rgba(212,32,43,.35);box-shadow:0 16px 32px rgba(15,17,21,.08);}
 .muted{color:var(--lt);}
-.page-hero{padding:70px 5% 40px;}
-.page-content{padding:0 5% 90px;}
+.page-hero{padding:56px 5% 32px;}
+.page-content{padding:0 5% 48px;}
 /* Phones: no stretched page height and a short, even space above the footer (no big empty gaps). */
-@media(max-width:767px){ main{min-height:0;} .page-content{padding-bottom:32px;} }
+@media(max-width:767px){ #main{min-height:0;} .page-content{padding-bottom:32px;} .page-hero{padding:44px 5% 24px;} .empty-state{padding:36px 16px;} }
 @media(max-width:767px){ .page-content > :last-child, .page-content > :last-child > :last-child{margin-bottom:0;} }
 /* Phones: the footer stays put at the end of the page. No elastic bounce at the page edges, and behind and below the
    black footer (the space kept for the bottom bar, and past the end of the page) is the footer's dark colour, never white. */
@@ -214,7 +214,7 @@ main.bare{padding-top:0;min-height:0;}
   html{overscroll-behavior-y:none;background:#15181D;}
   body{background:linear-gradient(var(--black),var(--black)) top/100% calc(100% - 60px - env(safe-area-inset-bottom)) no-repeat,#15181D;}
 }
-.empty-state{padding:60px 20px;text-align:center;color:var(--lt);border:1px dashed var(--d4);border-radius:10px;}
+.empty-state{padding:44px 20px;text-align:center;color:var(--lt);border:1px dashed var(--d4);border-radius:10px;}
 
 /* FORMS (membership, contact, partners, food) */
 .form-grp{margin-bottom:16px;}

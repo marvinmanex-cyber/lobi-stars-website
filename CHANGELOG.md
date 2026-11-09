@@ -8,6 +8,20 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-09: Whole-site check on phone, tablet and laptop; less empty space
+
+**Who it affects:** everyone. **Staff need to:** nothing.
+- Every public page was checked at phone (390px), tablet (820px) and laptop (1366px) size: no page scrolls sideways, no script errors, and every page in the sitemap loads. The only failures were the forms' anti-spam check refusing the automated browser, which is expected.
+- **Less empty space:**
+  - The gap above the footer is smaller on every page (page bottom space 90px → 48px; footer top space 70px → 32px).
+  - Page titles have less space above and below; "nothing here yet" boxes are shorter.
+  - Short pages no longer stretch to 60% of the screen (now 45%).
+  - Homepage sections are tighter on phones.
+- **Match pages:** the match area no longer forces a full screen of height, which left a big white area below the tabs.
+- **Press releases:** an inner page area was a second "main" area, which is invalid HTML and doubled the top space and height. Fixed, so Media contact now sits under the list.
+- **Exo Sports:** the four "Photos coming soon" boxes are short banners instead of tall photo frames (real photos keep their shape).
+- The main-area spacing rule now applies only to the site's own main area, so pages with their own layout no longer get extra space.
+
 ## 2026-11-09: Scores Update Centre: safer updates, goals, clock, history and more
 
 **Who it affects:** whoever updates scores; Super Admins. **Staff need to:** set the three Matchday 1 results that are still Live to Full time (HANDOVER-TODO L1); tick "Count live matches in the table" if the public table should move during games (L3).
