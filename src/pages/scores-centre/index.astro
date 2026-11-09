@@ -1,0 +1,303 @@
+---
+// /scores-centre/ -- the Scores Update Centre: NNL Conference D fixtures week by week, where staff
+// update scores during games; each update changes the league table at once. Signed in with the
+// shared access code and the person's name (functions/api/_lib/scoresCentre.js). Not linked from
+// the public site, never indexed. Lobi Stars colours: blue #4C76B2, white, red #EE343C.
+---
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="same-origin" />
+  <meta name="theme-color" content="#4C76B2" />
+  <title>Scores Update Centre | Lobi Stars FC</title>
+  <link rel="icon" href="/images/lobi-stars-badge.png" />
+  <style is:global>
+    @font-face { font-family: 'Bebas Neue'; font-weight: 400; font-display: swap; src: url('/fonts/bebas-neue-400.woff2') format('woff2'); }
+    @font-face { font-family: 'Barlow'; font-weight: 400; font-display: swap; src: url('/fonts/barlow-400.woff2') format('woff2'); }
+    @font-face { font-family: 'Barlow'; font-weight: 600; font-display: swap; src: url('/fonts/barlow-600.woff2') format('woff2'); }
+    @font-face { font-family: 'Barlow'; font-weight: 700; font-display: swap; src: url('/fonts/barlow-700.woff2') format('woff2'); }
+    :root { --blue: #4C76B2; --blue-d: #2F4F80; --navy: #0F1E36; --red: #EE343C; --red-d: #C8202A; --ink: #14202E; --muted: #5E6B7A; --line: #DCE3EC; --bg: #F2F5F9; --card: #fff; --green: #138A3E; --amber: #B26A00; }
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    html, body { overflow-x: hidden; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.45 'Barlow', Arial, sans-serif; -webkit-text-size-adjust: 100%; }
+    button, input, select { font: inherit; }
+    .h { font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; letter-spacing: .5px; }
+
+    /* Sign in */
+    .si { min-height: 100vh; display: grid; place-items: center; padding: 24px 16px; background: linear-gradient(160deg, var(--navy), var(--blue-d) 60%, var(--blue)); }
+    .si-box { width: 100%; max-width: 400px; }
+    .si-brand { text-align: center; color: #fff; margin-bottom: 18px; }
+    .si-brand img { width: 84px; height: 84px; }
+    .si-brand p { margin: 6px 0 0; opacity: .85; }
+    .si-brand h1 { margin: 2px 0 0; font-size: 42px; line-height: 1; }
+    .card { background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(15, 30, 54, .12); }
+    .field { margin: 0 0 14px; }
+    .field label { display: block; font-weight: 600; margin-bottom: 6px; }
+    .field input { width: 100%; min-height: 50px; border: 1.5px solid var(--line); border-radius: 10px; padding: 0 14px; font-size: 18px; }
+    .field input:focus { outline: 3px solid rgba(76, 118, 178, .35); border-color: var(--blue); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 18px; border-radius: 10px; border: 0; cursor: pointer; font-weight: 700; }
+    .btn-red { background: var(--red); color: #fff; }
+    .btn-red:hover { background: var(--red-d); }
+    .btn-red:disabled { background: #E9B9BC; cursor: default; }
+    .btn-ghost { background: transparent; color: var(--blue-d); border: 1.5px solid var(--line); }
+    .wide { width: 100%; }
+    .alert { background: #FDECEC; color: #8F1C22; border-radius: 10px; padding: 10px 12px; margin: 0 0 14px; }
+    .small { color: var(--muted); font-size: 14px; }
+
+    /* Top bar */
+    .top { position: sticky; top: 0; z-index: 5; background: linear-gradient(90deg, var(--navy), var(--blue-d)); color: #fff; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
+    .top img { width: 40px; height: 40px; }
+    .top .t { line-height: 1.05; min-width: 0; }
+    .top .t b { display: block; font-family: 'Bebas Neue', Impact, sans-serif; font-weight: 400; font-size: 24px; letter-spacing: .5px; }
+    .top .t span { font-size: 13px; opacity: .85; }
+    .top .me { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+    .top .me button { min-height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, .4); background: transparent; color: #fff; cursor: pointer; font-weight: 600; }
+    @media (max-width: 560px) { .top .me span { display: none; } }
+
+    main { max-width: 1180px; margin: 0 auto; padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 18px; align-items: start; }
+    @media (max-width: 960px) { main { grid-template-columns: minmax(0, 1fr); } }
+    main > * { min-width: 0; }
+
+    /* Weeks */
+    .weeks { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .weeks .arrow { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-size: 20px; color: var(--blue-d); }
+    .weeks .arrow:disabled { opacity: .35; cursor: default; }
+    .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; flex: 1; min-width: 0; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { flex: none; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-weight: 600; color: var(--ink); }
+    .chip[aria-current="true"] { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .week-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 4px 0 10px; }
+    .week-h h2 { margin: 0; font-size: 34px; line-height: 1; }
+
+    /* Match cards */
+    .match { background: var(--card); border-radius: 14px; padding: 14px; margin-bottom: 12px; border: 1.5px solid transparent; box-shadow: 0 2px 10px rgba(15, 30, 54, .06); }
+    .match.dirty { border-color: var(--red); }
+    .match.lobi { box-shadow: inset 4px 0 0 var(--blue), 0 2px 10px rgba(15, 30, 54, .06); }
+    .m-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+    .m-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+    .team { display: flex; align-items: center; gap: 8px; min-width: 0; font-weight: 700; }
+    .team.away { flex-direction: row-reverse; text-align: right; }
+    .team img { width: 34px; height: 34px; object-fit: contain; flex: none; }
+    .team span { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.15; }
+    .score { display: flex; align-items: center; gap: 6px; }
+    .step { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .step button { width: 40px; height: 34px; border-radius: 8px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-size: 20px; line-height: 1; color: var(--blue-d); }
+    .step output { font-family: 'Bebas Neue', Impact, sans-serif; font-size: 44px; line-height: .9; min-width: 40px; text-align: center; }
+    .dash { font-family: 'Bebas Neue', Impact, sans-serif; font-size: 30px; color: var(--muted); }
+    .statuses { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; }
+    .st { min-height: 38px; padding: 0 12px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-size: 14px; font-weight: 600; }
+    .st[aria-pressed="true"] { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .st[data-s="LIVE"][aria-pressed="true"] { background: var(--red); border-color: var(--red); }
+    .st[data-s="HALF_TIME"][aria-pressed="true"] { background: var(--amber); border-color: var(--amber); }
+    .st[data-s="FULL_TIME"][aria-pressed="true"] { background: var(--green); border-color: var(--green); }
+    .m-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+    .m-foot .info { font-size: 13px; color: var(--muted); }
+    .m-foot .info b { color: var(--ink); }
+    .ok { color: var(--green); font-weight: 700; }
+    .warn { color: var(--amber); font-weight: 700; }
+    .m-actions { display: flex; gap: 8px; margin-left: auto; }
+    .link { background: none; border: 0; color: var(--blue-d); text-decoration: underline; cursor: pointer; padding: 0 6px; min-height: 40px; }
+    .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--red); margin-right: 5px; animation: blink 1.2s infinite; }
+    @keyframes blink { 50% { opacity: .2; } }
+    @media (prefers-reduced-motion: reduce) { .live-dot { animation: none; } }
+
+    /* Table */
+    aside .card { padding: 14px; }
+    aside h2 { margin: 0 0 4px; font-size: 30px; line-height: 1; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; font-size: 12px; color: var(--muted); font-weight: 600; padding: 6px 4px; border-bottom: 1.5px solid var(--line); }
+    td { padding: 7px 4px; border-bottom: 1px solid var(--line); }
+    td.n, th.n { text-align: center; }
+    tr.lobi td { background: #EAF1FB; font-weight: 700; }
+    .tteam { display: flex; align-items: center; gap: 6px; }
+    .tteam img { width: 20px; height: 20px; object-fit: contain; }
+    .mv { font-size: 11px; margin-left: 2px; }
+    .mv.up { color: var(--green); } .mv.down { color: var(--red); }
+    .recent { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+    .recent li { padding: 6px 0; border-bottom: 1px solid var(--line); }
+    .recent time { color: var(--muted); margin-right: 6px; }
+    .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--navy); color: #fff; padding: 12px 18px; border-radius: 12px; max-width: calc(100% - 32px); box-shadow: 0 8px 24px rgba(0, 0, 0, .25); z-index: 20; }
+    .toast.err { background: var(--red-d); }
+  </style>
+</head>
+<body>
+  <section class="si" id="si" hidden>
+    <div class="si-box">
+      <div class="si-brand">
+        <img src="/images/lobi-stars-badge.webp" alt="Lobi Stars FC badge" width="84" height="84" />
+        <p>Lobi Stars FC</p>
+        <h1 class="h">Scores Update Centre</h1>
+        <p>NNL Conference D · live scores and table</p>
+      </div>
+      <form class="card" id="siForm" novalidate>
+        <p class="alert" id="siMsg" role="alert" hidden></p>
+        <div class="field"><label for="siName">Your name</label><input id="siName" autocomplete="name" maxlength="60" required /></div>
+        <div class="field"><label for="siCode">Access code</label><input id="siCode" type="password" inputmode="numeric" autocomplete="off" maxlength="12" required /></div>
+        <button class="btn btn-red wide" type="submit">Sign in</button>
+        <p class="small" style="margin:12px 0 0">You stay signed in until 2 hours pass without using the page. Every score you update is recorded with your name.</p>
+      </form>
+    </div>
+  </section>
+
+  <div id="app" hidden>
+    <header class="top">
+      <img src="/images/lobi-stars-badge.webp" alt="" width="40" height="40" />
+      <div class="t"><b>Scores Update Centre</b><span id="comp">NNL Conference D</span></div>
+      <div class="me"><span id="me"></span><button type="button" id="out">Sign out</button></div>
+    </header>
+    <main>
+      <section aria-labelledby="wkH">
+        <nav class="weeks" aria-label="Weeks">
+          <button class="arrow" type="button" id="prev" aria-label="Previous week">‹</button>
+          <div class="chips" id="chips"></div>
+          <button class="arrow" type="button" id="next" aria-label="Next week">›</button>
+        </nav>
+        <div class="week-h"><h2 class="h" id="wkH">Week</h2><span class="small" id="wkSub"></span></div>
+        <div id="matches"></div>
+      </section>
+      <aside>
+        <div class="card">
+          <h2 class="h">League table</h2>
+          <p class="small" id="tSub" style="margin:0 0 8px"></p>
+          <div style="overflow-x:auto"><table><thead><tr><th class="n">#</th><th>Team</th><th class="n">P</th><th class="n">W</th><th class="n">D</th><th class="n">L</th><th class="n">GD</th><th class="n">Pts</th></tr></thead><tbody id="tbl"></tbody></table></div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <h2 class="h" style="font-size:24px">Recent updates</h2>
+          <ul class="recent" id="recent"></ul>
+        </div>
+      </aside>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script is:inline>
+  (function () {
+    var $ = function (id) { return document.getElementById(id); };
+    var csrf = '', week = null, data = null, dirty = {}, busy = false;
+    var LABEL = { SCHEDULED: 'Not started', LIVE: 'Live', HALF_TIME: 'Half-time', FULL_TIME: 'Full time', POSTPONED: 'Postponed', ABANDONED: 'Abandoned', CANCELLED: 'Cancelled' };
+    var ORDER = ['SCHEDULED', 'LIVE', 'HALF_TIME', 'FULL_TIME', 'POSTPONED', 'ABANDONED', 'CANCELLED'];
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+    var lagos = function (iso, opts) { try { return new Date(iso).toLocaleString('en-GB', Object.assign({ timeZone: 'Africa/Lagos' }, opts)); } catch (e) { return ''; } };
+    var toastT;
+    function toast(msg, err) { var t = $('toast'); t.textContent = msg; t.className = 'toast' + (err ? ' err' : ''); t.hidden = false; clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, err ? 6000 : 3500); }
+    async function api(path, body) {
+      var r = await fetch('/api/scores-centre/' + path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(body) } : { cache: 'no-store' });
+      var d = await r.json().catch(function () { return {}; });
+      if (r.status === 401 && d.signedOut) { showSignIn('You were signed out (2 hours without activity). Please sign in again.'); throw new Error('signed out'); }
+      if (!r.ok) throw new Error(d.error || 'Something went wrong. Please try again.');
+      return d;
+    }
+    function showSignIn(msg) { $('app').hidden = true; $('si').hidden = false; $('siMsg').hidden = !msg; if (msg) $('siMsg').textContent = msg; try { $('siName').value = localStorage.getItem('sc_name') || ''; } catch (e) {} ($('siName').value ? $('siCode') : $('siName')).focus(); }
+
+    $('siForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var b = e.submitter || this.querySelector('button'); b.disabled = true;
+      try {
+        var r = await fetch('/api/scores-centre/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: $('siName').value, code: $('siCode').value }) });
+        var d = await r.json().catch(function () { return {}; });
+        if (!r.ok) throw new Error(d.error || 'Could not sign in.');
+        try { localStorage.setItem('sc_name', $('siName').value.trim()); } catch (e2) {}
+        $('siCode').value = '';
+        await start();
+      } catch (err) { $('siMsg').hidden = false; $('siMsg').textContent = err.message; }
+      b.disabled = false;
+    });
+    $('out').addEventListener('click', async function () { try { await api('logout', {}); } catch (e) {} showSignIn('You are signed out.'); });
+
+    async function start() {
+      var s = await fetch('/api/scores-centre/session', { cache: 'no-store' });
+      if (!s.ok) return showSignIn('');
+      var d = await s.json(); csrf = d.csrf; $('me').textContent = d.name;
+      $('si').hidden = true; $('app').hidden = false;
+      await load();
+    }
+    async function load(w) {
+      if (w !== undefined) { week = w; dirty = {}; }
+      data = await api('week' + (week ? '?week=' + week : ''));
+      week = data.week;
+      draw();
+    }
+    function chipScroll() { var box = $('chips'), c = box.querySelector('[aria-current="true"]'); if (c) box.scrollLeft = c.offsetLeft - box.offsetLeft - (box.clientWidth - c.offsetWidth) / 2; }
+    function draw() {
+      $('comp').textContent = data.competition || 'NNL Conference D';
+      $('chips').innerHTML = data.weeks.map(function (n) { return '<button class="chip" type="button" data-week="' + n + '" aria-current="' + (n === week) + '">Week ' + n + '</button>'; }).join('');
+      var i = data.weeks.indexOf(week); $('prev').disabled = i <= 0; $('next').disabled = i < 0 || i >= data.weeks.length - 1;
+      chipScroll();
+      $('wkH').textContent = 'Week ' + week;
+      var ko = data.matches.map(function (m) { return m.kickoff; }).filter(Boolean).sort()[0];
+      $('wkSub').textContent = ko ? lagos(ko, { weekday: 'short', day: 'numeric', month: 'short' }) : '';
+      drawMatches(); drawTable();
+    }
+    function cur(m) { return dirty[m.id] || { home: m.homeGoals, away: m.awayGoals, status: m.status }; }
+    function drawMatches() {
+      $('matches').innerHTML = data.matches.length ? data.matches.map(function (m) {
+        var c = cur(m), isDirty = !!dirty[m.id];
+        var num = function (v) { return v == null ? '–' : v; };
+        var side = function (t, cls) { return '<div class="team ' + cls + '">' + (t && t.crest ? '<img src="' + esc(t.crest) + '" alt="" loading="lazy" />' : '') + '<span>' + esc(t ? t.name : '?') + '</span></div>'; };
+        var stepper = function (which, v) { return '<div class="step"><button type="button" data-inc="' + which + '" aria-label="Add a goal">+</button><output>' + num(v) + '</output><button type="button" data-dec="' + which + '" aria-label="Take a goal away">−</button></div>'; };
+        var counted = m.counted ? '<span class="ok">✓ In the table</span>' : '<span class="warn">Not in the table yet</span>';
+        var by = m.updatedBy ? ' · last update by <b>' + esc(m.updatedBy) + '</b> at ' + lagos(m.updatedAt, { hour: '2-digit', minute: '2-digit' }) : '';
+        return '<article class="match' + (isDirty ? ' dirty' : '') + ((m.home && m.home.isLobi) || (m.away && m.away.isLobi) ? ' lobi' : '') + '" data-id="' + m.id + '">'
+          + '<div class="m-meta"><span>' + (c.status === 'LIVE' ? '<i class="live-dot"></i>' : '') + (m.kickoff ? lagos(m.kickoff, { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Date to be confirmed') + '</span><span>' + esc(m.venue || '') + '</span></div>'
+          + '<div class="m-row">' + side(m.home, 'home') + '<div class="score">' + stepper('home', c.home) + '<span class="dash">:</span>' + stepper('away', c.away) + '</div>' + side(m.away, 'away') + '</div>'
+          + '<div class="statuses" role="group" aria-label="Match status">' + ORDER.map(function (s) { return '<button type="button" class="st" data-s="' + s + '" aria-pressed="' + (c.status === s) + '">' + LABEL[s] + '</button>'; }).join('') + '</div>'
+          + '<div class="m-foot"><span class="info">' + counted + by + '</span><div class="m-actions">'
+          + (isDirty ? '<button type="button" class="link" data-undo>Undo changes</button>' : (m.centreDecision ? '<button type="button" class="link" data-clear>Clear</button>' : ''))
+          + '<button type="button" class="btn btn-red" data-save' + (isDirty ? '' : ' disabled') + '>Update</button></div></div></article>';
+      }).join('') : '<div class="card">No matches in this week.</div>';
+    }
+    function drawTable() {
+      var t = data.table;
+      if (!t) { $('tbl').innerHTML = ''; $('tSub').textContent = 'No table yet.'; return; }
+      $('tSub').innerHTML = (t.live ? '<i class="live-dot"></i>Live: matches in play count as they stand.' : 'Updates as soon as you press Update.') + (t.publicCountsLive ? '' : ' The public table counts finished matches only.');
+      $('tbl').innerHTML = t.rows.map(function (r) {
+        var mv = r.move > 0 ? '<span class="mv up">▲' + r.move + '</span>' : r.move < 0 ? '<span class="mv down">▼' + (-r.move) + '</span>' : '';
+        return '<tr class="' + (r.isLobi ? 'lobi' : '') + '"><td class="n">' + r.pos + '</td><td><div class="tteam">' + (r.crest ? '<img src="' + esc(r.crest) + '" alt="" loading="lazy" />' : '') + esc(r.short || r.name) + mv + '</div></td><td class="n">' + r.p + '</td><td class="n">' + r.w + '</td><td class="n">' + r.d + '</td><td class="n">' + r.l + '</td><td class="n">' + (r.gd > 0 ? '+' : '') + r.gd + '</td><td class="n"><b>' + r.pts + '</b></td></tr>';
+      }).join('');
+      $('recent').innerHTML = (data.recent || []).length ? data.recent.map(function (x) { return '<li><time>' + lagos(x.at.replace(' ', 'T') + (x.at.endsWith('Z') ? '' : 'Z'), { hour: '2-digit', minute: '2-digit' }) + '</time>' + esc(x.text) + '</li>'; }).join('') : '<li class="small">No updates yet.</li>';
+    }
+    function matchOf(el) { var a = el.closest('[data-id]'); return a && data.matches.find(function (m) { return m.id === Number(a.dataset.id); }); }
+
+    document.addEventListener('click', async function (e) {
+      var el = e.target;
+      var chip = el.closest('[data-week]');
+      if (chip) { if (Object.keys(dirty).length && !confirm('You have scores not updated yet. Leave this week without saving them?')) return; return load(Number(chip.dataset.week)).catch(function (err) { toast(err.message, true); }); }
+      if (el.id === 'prev' || el.id === 'next') { var i = data.weeks.indexOf(week) + (el.id === 'next' ? 1 : -1); if (data.weeks[i] == null) return; if (Object.keys(dirty).length && !confirm('You have scores not updated yet. Leave this week without saving them?')) return; return load(data.weeks[i]).catch(function (err) { toast(err.message, true); }); }
+      var m = matchOf(el); if (!m) return;
+      var c = Object.assign({}, cur(m));
+      if (el.closest('[data-inc]')) { var k = el.closest('[data-inc]').dataset.inc; c[k] = (c[k] == null ? 0 : c[k]) + 1; if (c[k] > 99) c[k] = 99; if (c.status === 'SCHEDULED') c.status = 'LIVE'; if (c.home == null) c.home = 0; if (c.away == null) c.away = 0; }
+      else if (el.closest('[data-dec]')) { var k2 = el.closest('[data-dec]').dataset.dec; c[k2] = Math.max(0, (c[k2] == null ? 0 : c[k2]) - 1); if (c.home == null) c.home = 0; if (c.away == null) c.away = 0; }
+      else if (el.closest('[data-s]')) { c.status = el.closest('[data-s]').dataset.s; if (['LIVE', 'HALF_TIME', 'FULL_TIME'].indexOf(c.status) >= 0) { if (c.home == null) c.home = 0; if (c.away == null) c.away = 0; } }
+      else if (el.closest('[data-undo]')) { delete dirty[m.id]; return drawMatches(); }
+      else if (el.closest('[data-clear]')) {
+        if (!confirm('Clear the score you set here for ' + m.home.name + ' v ' + m.away.name + '? The match then follows its other score sources (for example Live Match Control).')) return;
+        try { await api('clear', { fixtureId: m.id }); toast('Cleared. The table is updated.'); await load(); } catch (err) { toast(err.message, true); }
+        return;
+      }
+      else if (el.closest('[data-save]')) {
+        var btn = el.closest('[data-save]'); btn.disabled = true; btn.textContent = 'Updating…'; busy = true;
+        try {
+          await api('update', { fixtureId: m.id, homeGoals: c.status === 'SCHEDULED' ? '' : c.home, awayGoals: c.status === 'SCHEDULED' ? '' : c.away, status: c.status });
+          delete dirty[m.id];
+          toast('Updated: ' + m.home.name + ' ' + (c.status === 'SCHEDULED' ? 'v' : c.home + '–' + c.away) + ' ' + m.away.name + ' (' + LABEL[c.status] + '). The table is updated.');
+          await load();
+        } catch (err) { toast(err.message, true); btn.disabled = false; btn.textContent = 'Update'; }
+        busy = false; return;
+      }
+      else return;
+      var same = c.home === m.homeGoals && c.away === m.awayGoals && c.status === m.status;
+      if (same) delete dirty[m.id]; else dirty[m.id] = c;
+      drawMatches();
+    });
+    // Keep the scores and table fresh (other people may be updating too); never over unsaved changes.
+    setInterval(function () { if (!data || busy || document.hidden || Object.keys(dirty).length || $('app').hidden) return; load().catch(function () {}); }, 20000);
+    window.addEventListener('beforeunload', function (e) { if (Object.keys(dirty).length) { e.preventDefault(); e.returnValue = ''; } });
+    start().catch(function () { showSignIn(''); });
+  })();
+  </script>
+</body>
+</html>

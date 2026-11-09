@@ -174,6 +174,14 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | K7 | **Collection board TV** (added 9 Nov 2026) | On the computer or smart TV at the pickup point, open **lobistarsfc.com/kitchen/board/** and tap the screen once. Only useful when pickup points are set. |
 | K8 | **Labels and sponsored dishes** (added 9 Nov 2026) | MatchDay Kitchen › **Menu and prices** › **Labels** on each dish: tick Halal / Vegetarian / Kids' portion where true, and choose a sponsor if a partner has paid for one. |
 
+## L. Scores Update Centre (/scores-centre, built 9 Nov 2026)
+
+| # | Item | What is needed |
+| --- | --- | --- |
+| L1 | **Enter the Matchday 1 results** | Sign in at lobistarsfc.com/scores-centre (your name and the access code), open **Week 1** and enter each result with **Full time** › **Update**: Yobe 3–2 Mighty Jets, Wikki 1–0 Kada, ABS 1–0 Sokoto, Lobi 1–0 Bichi. The table updates by itself. |
+| L3 | **Let the public table move during games** | Admin › League › **Table & Rules** › tick **Count live matches in the table** › Save. Without it, the public table changes at full time (the Scores Update Centre's own table always moves live). |
+| L2 | **Give the access code only to the people who update scores** | Never post it in a group or publicly. To change it, ask the website team. |
+
 ## T. Gate Control: ticket stewards (/gate-control, built 3 Nov 2026)
 
 | # | Item | What is needed |

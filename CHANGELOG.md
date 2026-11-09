@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-09: Scores Update Centre
+
+**Who it affects:** whoever updates scores on match days. **Staff need to:** sign in at lobistarsfc.com/scores-centre with your name and the access code; enter the Matchday 1 results there (HANDOVER-TODO L1).
+- New page **/scores-centre**: NNL Conference D fixtures week by week (Week 1, Week 2 …). For each match: **+** / **−** for each score, the status (Not started, Live, Half-time, Full time, Postponed, Abandoned, Cancelled) and **Update**. The league table beside it changes at once, with ▲▼ movement and the last updates with who made them.
+- Sign-in: the shared access code (a Cloudflare secret, SCORES_CENTRE_CODE; not in the code, as the repository is public) plus the person's name. Signed in until 2 hours without activity. 5 wrong codes per connection, or 60 overall, block sign-in for 15 minutes.
+- Each update is a staff-verified score (the same as Other Games › Set verified result), so it goes through score verification and League History. Only the newest update from the centre for a match stays active. **Clear** withdraws it.
+- For the public table to move during games, tick **Count live matches in the table** in Admin › League › Table & Rules (HANDOVER-TODO L3). The centre's own table always counts live matches.
+- Tests: tests/scores-centre.test.mjs.
+
 ## 2026-11-09: MatchDay Kitchen extras: transfer, half-time slots, prep guide, goal deals, sponsors, collection board, labels
 
 **Who it affects:** fans, kitchen supervisors, Super Admins. **Staff need to:** choose the settings in MatchDay Kitchen › Menu and prices; put the collection board on the pickup-point TV; switch on Pay by bank transfer once Paystack has turned on Transfer (HANDOVER-TODO K5–K8).

@@ -251,6 +251,34 @@ On every matchday, keep **Matchday › Other Games** open on your phone.
 
 Full instructions: STAFF-GUIDE.md section 37.
 
+## 3b. Scores Update Centre: live scores and the table (9 November 2026)
+
+**lobistarsfc.com/scores-centre** is the page for updating NNL Conference D scores during games, on a phone, tablet or laptop. It isn't linked from the public website.
+
+**Signing in**
+- Type **your name** and the **access code** (the club gives it to the people who update scores; never post it publicly).
+- You stay signed in until **2 hours pass without using the page**. Then sign in again.
+- 5 wrong codes from one connection block sign-in from there for 15 minutes.
+- Every score you update is recorded with your name (League History and the Activity Log).
+
+**Updating scores**
+1. Choose the week at the top (**Week 1**, **Week 2** …). It opens on the week being played, or the next one.
+2. On the match, press **+** or **−** under each team's score. Pressing **+** on a match that hasn't started sets it to **Live**.
+3. Tap the status: **Not started**, **Live**, **Half-time**, **Full time**, **Postponed**, **Abandoned** or **Cancelled**.
+4. Press **Update**. The card turns red while it has changes that aren't saved yet.
+5. The league table on the page (beside the matches, or underneath on a phone) changes straight away, with ▲▼ arrows for places gained or lost.
+
+Update as the game goes: each goal, half-time, then **Full time** at the end. Every update replaces the one before.
+
+**Good to know**
+- **Undo changes** forgets what you changed on a card before you press Update.
+- **Clear** removes the score set here for a match (for example on the wrong match). The match then follows its other score sources, such as Live Match Control.
+- The page checks for other people's updates every 20 seconds (never while you have changes that aren't saved).
+- **Recent updates** shows the last updates and who made them.
+- A score from here is a **staff-verified score**: it counts in the table at once and replaces scores from other sources for that match, including Live Match Control. For Lobi Stars' own match, keep Live Match Control and this page the same, or update only here.
+- **The public table** (lobistarsfc.com/table, the homepage and Matchday Live) counts live matches as they stand only when **Count live matches in the table** is ticked (Admin › League › Table & Rules). Otherwise it changes at full time. The table in the Scores Update Centre always counts live matches.
+- To change the access code, ask the website team (it is kept as a secret in Cloudflare, not in the website's code).
+
 ## 4. Check the Predict & Win winner and pay the prize
 
 Open **Admin → Predict & Win** and choose the match.

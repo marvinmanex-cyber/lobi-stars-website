@@ -4854,6 +4854,10 @@ Lobi Stars app.
   their own login code, and the "Still there?" sign-out runs after 20 minutes
   without a tap.
 
+## 42a. Scores Update Centre (/scores-centre)
+
+The page for updating NNL Conference D scores during games, week by week, at **lobistarsfc.com/scores-centre**. Sign in with your name and the access code, and you stay signed in until 2 hours pass without using the page. Each update is a staff-verified score, so the league table, the live table, League History and the Activity Log update by themselves. Full instructions: STAFF-MATCHDAY-GUIDE.md section 3b.
+
 ## 43. Lobi Gate Control: the ticket scanners (/lobi-gate-control)
 
 **What it is.** Lobi Gate Control is the app the stewards use to scan tickets at
