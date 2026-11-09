@@ -4,5 +4,5 @@
 // last details are finished. Fans can look at the menu; ordering, the "Kitchen is open" bar and
 // kitchen alerts to fans stay off. Staff can still use MatchDay Kitchen to prepare.
 // Set to false when the kitchen opens.
-export const KITCHEN_OPENING_SOON = true;
+export const KITCHEN_OPENING_SOON = false; // opened by the owner on 9 Nov 2026
 export const KITCHEN_OPENING_SOON_MESSAGE = 'MatchDay Kitchen is opening soon.';

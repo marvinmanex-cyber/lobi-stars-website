@@ -8,6 +8,11 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-09: MatchDay Kitchen is open for orders
+
+**Who it affects:** fans, kitchen staff. **Staff need to:** keep the kitchen staffed while ordering is open; check prices in Menu and prices.
+- The "Opening soon" notice is gone. Ordering follows the kitchen's own setting (MatchDay Kitchen › ordering: currently Open), so fans can order now. The "Kitchen is open" bar, the homepage food buttons and kitchen alerts to fans are back.
+
 ## 2026-11-09: Homepage partners: no Zeva logo
 
 **Who it affects:** everyone. **Staff need to:** nothing.
