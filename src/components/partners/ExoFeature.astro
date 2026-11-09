@@ -16,6 +16,7 @@ const gallery = (p as any).gallery as { src: string; caption: string; alt?: stri
 const LOGO = '/images/exo-sports-logo.png';
 const logo = existsSync(`public${LOGO}`) ? LOGO : null;
 const kits = [
+  { img: '/images/exo/playing-kit-white.jpg', t: 'Playing kit · White', s: 'White with red trim, the crest on the chest and the shorts' },
   { img: '/images/ropajo/training-kit-orange.jpg', t: 'Training kit · Orange', s: 'Breathable, quick-dry, built for the training pitch' },
   { img: '/images/ropajo/training-kit-grey.jpg', t: 'Training kit · Grey', s: 'The same performance fabric in the club’s grey' },
 ];
@@ -44,24 +45,9 @@ const placeholders = ['Kit unveiling', 'On the training pitch', 'Matchday in Exo
           {site && <a class="exo-btn exo-btn--ghost" href={site} target="_blank" rel="sponsored noopener">Visit Exo Sports<span class="sr-only"> (opens in a new tab)</span></a>}
         </div>
       </div>
-      <!-- The shirt (SVG): Lobi blue with red and Exo-blue shoulder stripes, the badge and the Exo mark. -->
-      <div class="exo-shirtwrap" aria-hidden="true">
-        <svg class="exo-shirt" viewBox="0 0 300 320">
-          <defs>
-            <linearGradient id="exo-cloth" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1B3FA8"/><stop offset="1" stop-color="#0B2470"/></linearGradient>
-            <pattern id="exo-mesh" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r=".9" fill="#fff" fill-opacity=".07"/></pattern>
-          </defs>
-          <path d="M95 18l55 22 55-22 78 46-30 64-36-16v214H83V112l-36 16-30-64z" fill="url(#exo-cloth)"/>
-          <path d="M95 18l55 22 55-22 78 46-30 64-36-16v214H83V112l-36 16-30-64z" fill="url(#exo-mesh)"/>
-          <path d="M17 64l78-46 4 8-74 45zM283 64l-78-46-4 8 74 45z" fill="#C00018"/>
-          <path d="M25 72l74-45 4 7-71 44zM275 72l-74-45-4 7 71 44z" fill="#0098FF"/>
-          <path d="M122 30l28 26 28-26" fill="none" stroke="#C00018" stroke-width="6" stroke-linejoin="round"/>
-          <path d="M83 300h134" stroke="#C00018" stroke-width="6"/>
-          <g transform="translate(176 96)"><path d="M18 0l17 7v12c0 12-7 21-17 25C8 40 1 31 1 19V7z" fill="#fff"/><path d="M18 6l12 5v9c0 8-5 15-12 18-7-3-12-10-12-18v-9z" fill="#1B3FA8"/><path d="M18 13l2 4 5 1-4 3 1 5-4-2-4 2 1-5-4-3 5-1z" fill="#FFC72C"/></g>
-          <g transform="translate(94 104)"><path d="M0 0h24l-9 9 9 9H0l9-9z" fill="#C00018"/><text x="28" y="16" fill="#fff" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="16">EXO</text></g>
-          <text x="150" y="210" text-anchor="middle" fill="#fff" font-family="'Bebas Neue', Impact, sans-serif" font-size="74" letter-spacing="2">10</text>
-          <text x="150" y="246" text-anchor="middle" fill="#FFC72C" font-family="'Barlow Condensed', Arial, sans-serif" font-weight="700" font-size="17" letter-spacing="4">PRIDE OF BENUE</text>
-        </svg>
+      <!-- The Lobi Stars FC playing kit by Exo Sports. -->
+      <div class="exo-shirtwrap">
+        <img class="exo-kitphoto" src="/images/exo/playing-kit-white.jpg" alt="The Lobi Stars FC playing kit by Exo Sports: white shirt and shorts with red trim, the club crest and the Exo Sports logo" width="1024" height="1024" fetchpriority="high" />
         <span class="exo-tag">Official Kit Partner</span>
       </div>
     </div>
@@ -79,7 +65,7 @@ const placeholders = ['Kit unveiling', 'On the training pitch', 'Matchday in Exo
     <div class="wrap">
       <p class="exo-eyebrow">The Kit</p>
       <h2 class="exo-h2" id="exo-kit-h">Made by Exo Sports</h2>
-      <p class="exo-sub">The Lobi Stars FC training kits: breathable, quick-dry and lightweight, with the club crest on the chest and the shorts.</p>
+      <p class="exo-sub">The Lobi Stars FC playing and training kits: breathable, quick-dry and lightweight, with the club crest on the chest and the shorts.</p>
       <ul class="exo-kits">
         {kits.map(k => (
           <li><figure><img src={k.img} alt={`Lobi Stars FC ${k.t.toLowerCase()} by Exo Sports`} width="1024" height="1024" loading="lazy" decoding="async" /><figcaption><b>{k.t}</b><span>{k.s}</span></figcaption></figure></li>
@@ -142,9 +128,9 @@ const placeholders = ['Kit unveiling', 'On the training pitch', 'Matchday in Exo
   .exo-btn:hover, .exo-btn:focus-visible { background: #9E0014; }
   .exo-btn--ghost { background: transparent; border: 2px solid rgba(255, 255, 255, .7); }
   .exo-btn--ghost:hover, .exo-btn--ghost:focus-visible { background: #fff; color: var(--ink); }
-  .exo-shirtwrap { position: relative; justify-self: center; width: min(360px, 100%); }
-  .exo-shirt { width: 100%; height: auto; filter: drop-shadow(0 24px 40px rgba(0, 0, 0, .5)); transform: rotate(-4deg); }
-  .exo-tag { position: absolute; right: 0; bottom: 18px; padding: 8px 14px; border-radius: 999px; background: #fff; color: var(--ink); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; box-shadow: 0 8px 20px rgba(0, 0, 0, .3); }
+  .exo-shirtwrap { position: relative; justify-self: center; width: min(460px, 100%); }
+  .exo-kitphoto { display: block; width: 100%; height: auto; border-radius: 22px; border: 4px solid rgba(255, 255, 255, .9); box-shadow: 0 26px 50px rgba(0, 0, 0, .5); transform: rotate(-2.5deg); }
+    .exo-tag { position: absolute; right: 0; bottom: 18px; padding: 8px 14px; border-radius: 999px; background: #fff; color: var(--ink); font: 700 13px/1 'Barlow Condensed', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; box-shadow: 0 8px 20px rgba(0, 0, 0, .3); }
   .exo-high { background: #fff; border-bottom: 1px solid var(--d4); }
   .exo-high-in { list-style: none; margin: 0 auto; padding: 22px 5%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .exo-hc { display: flex; align-items: center; gap: 12px; }
@@ -157,7 +143,7 @@ const placeholders = ['Kit unveiling', 'On the training pitch', 'Matchday in Exo
   .exo-h2 { margin: 8px 0 8px; text-align: center; font: 400 clamp(34px, 5vw, 52px)/1 'Bebas Neue', sans-serif; letter-spacing: 1px; }
   .exo-h2 span { color: var(--exo-red); }
   .exo-sub { max-width: 620px; margin: 0 auto 28px; text-align: center; color: var(--lt); line-height: 1.6; }
-  .exo-kits { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .exo-kits { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
   .exo-kits figure { margin: 0; border-radius: 18px; overflow: hidden; background: #111; box-shadow: 0 14px 30px rgba(15, 17, 21, .12); }
   .exo-kits img { display: block; width: 100%; height: auto; transition: transform .6s ease; }
   .exo-kits figure:hover img { transform: scale(1.03); }
@@ -181,8 +167,9 @@ const placeholders = ['Kit unveiling', 'On the training pitch', 'Matchday in Exo
   .exo-info p { margin: 0; color: var(--lt); line-height: 1.6; }
   .exo-link { color: var(--exo-red); font-weight: 700; text-decoration: none; }
   @media (max-width: 860px) {
+    .exo-kits { grid-template-columns: 1fr 1fr; }
     .exo-hero-in { grid-template-columns: 1fr; }
-    .exo-shirtwrap { width: min(280px, 80%); }
+    .exo-shirtwrap { width: min(420px, 100%); }
     .exo-high-in { grid-template-columns: 1fr; }
     .exo-gal { grid-template-columns: repeat(2, 1fr); }
   }
