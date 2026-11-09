@@ -268,7 +268,7 @@ test('claiming is atomic: two runners, one order, one wins', async () => {
   assert.doesNotMatch(JSON.stringify(seen), /WF Run/, 'no staff details for the fan');
 });
 
-test('delivery code: the fan has it, the runner needs it, a supervisor can do without and it is recorded', async () => {
+test('delivery code: the fan has it, everyone is asked for it, a supervisor can skip it only with a reason, recorded', async () => {
   const id = put('OUT_FOR_DELIVERY', { paid: true });
   sql(`UPDATE food_orders SET delivery_code = '4821' WHERE id = '${id}';`);
   assert.equal((await pub(id)).order.deliveryCode, '4821', 'on the fan\'s order page');
@@ -280,8 +280,12 @@ test('delivery code: the fan has it, the runner needs it, a supervisor can do wi
   assert.equal((await pub(id)).order.deliveryCode, '', 'gone once delivered');
   const two = put('OUT_FOR_DELIVERY', { paid: true });
   sql(`UPDATE food_orders SET delivery_code = '1234' WHERE id = '${two}';`);
-  assert.equal((await S.call('order', { id: two, to: 'DELIVERED' })).status, 200);
-  assert.match(events(two).at(-1).note, /without the fan's code/);
+  const asked = (await S.call('order', { id: two, to: 'DELIVERED' })).data;
+  assert.equal(asked.needCode, true, 'the supervisor is asked for the code too'); assert.equal(asked.canSkip, true);
+  assert.equal((await S.call('order', { id: two, to: 'DELIVERED', withoutCode: true })).data.needCode, true, 'skipping needs a reason');
+  assert.equal((await R.call('order', { id: two, to: 'DELIVERED', withoutCode: true, note: 'lost phone' })).data.needCode, true, 'a runner cannot skip');
+  assert.equal((await S.call('order', { id: two, to: 'DELIVERED', withoutCode: true, note: 'Fan lost their phone; seat and name checked' })).status, 200);
+  assert.match(events(two).at(-1).note, /without the fan's code: Fan lost their phone/);
   // A pickup order has no code to give; and a new order gets one.
   const pick = put('READY', { paid: true, fulfilment: 'pickup' });
   sql(`UPDATE food_orders SET delivery_code = '9999' WHERE id = '${pick}';`);

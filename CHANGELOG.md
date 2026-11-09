@@ -8,6 +8,11 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-09: MatchDay Kitchen: everyone is asked for the fan's delivery code
+
+**Who it affects:** kitchen supervisors, Super Admins, delivery staff. **Staff need to:** ask the fan for their 4-digit code before pressing Delivered.
+- Supervisors and Super Admins are now asked for the code too (before, only delivery staff were). They can leave it empty only by giving a reason, which is recorded on the order. Delivery staff can't skip it.
+
 ## 2026-11-09: MatchDay Kitchen is open for orders
 
 **Who it affects:** fans, kitchen staff. **Staff need to:** keep the kitchen staffed while ordering is open; check prices in Menu and prices.

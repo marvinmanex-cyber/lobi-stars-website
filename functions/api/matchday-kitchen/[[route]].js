@@ -186,18 +186,22 @@ async function handle(context) {
         if (to === 'PAID' && was.channel === 'whatsapp' && was.payment_status !== 'paid') return json({ error: 'Use Record payment, with the evidence from the fan.', recordPayment: true }, 400);
         const why = reasonProblem(to, { reason: body.reason, note: body.note });
         if (why) return json({ error: why, needReason: true }, 400);
-        // Runners confirm delivery with the fan's code. A supervisor can confirm without it, and the history says so.
+        // Everyone confirms a seat delivery with the fan's code (owner's decision, 9 Nov 2026). Only a supervisor
+        // or Super Admin can confirm without it, by choosing to and giving a reason; the history says so.
         let note = body.note;
         if (to === 'DELIVERED' && was.delivery_code && was.fulfilment !== 'pickup' && was.order_status === 'OUT_FOR_DELIVERY') {
           const venue = await getVenue(db, was.venue_id);
           const given = String(body.code || '').replace(/\D/g, '');
           if (venue?.settings.requireDeliveryCode !== false && given !== was.delivery_code) {
-            if (!perms.confirm) {
+            if (body.withoutCode === true && perms.confirm) {
+              const why = oneLine(body.note || '', 200);
+              if (!why) return json({ error: "Say why you are confirming without the fan's code.", needCode: true }, 400);
+              note = `Confirmed without the fan's code: ${why}`;
+            } else {
               await ensureFanSchema(db);
-              if (!(await rateLimit(db, `mdk-delivery:${was.id}`, 6, 900))) return json({ error: 'Too many wrong codes. Ask a supervisor.' }, 429);
-              return json({ error: given ? "That code isn't right. Ask the fan to check it on their order page." : "Enter the fan's 4-digit code.", needCode: true }, 400);
+              if (given && !(await rateLimit(db, `mdk-delivery:${was.id}`, 6, 900))) return json({ error: 'Too many wrong codes. Ask a supervisor.' }, 429);
+              return json({ error: given ? "That code isn't right. Ask the fan to check it on their order page." : "Enter the fan's 4-digit code.", needCode: true, canSkip: !!perms.confirm }, 400);
             }
-            note = `Confirmed without the fan's code${note ? `: ${note}` : ''}`;
           }
         }
         const r = await K.setStatus(db, was.id, to, staffName(user), env, { byId: user.id, byRole: role, reason: body.reason, note, claimBy: to === 'OUT_FOR_DELIVERY' ? { id: user.id, name: user.name } : null, waitUntil: p => context.waitUntil(p) });

@@ -140,9 +140,19 @@ $('whyF').addEventListener('submit', async (e: Event) => {
 });
 
 /** A runner confirms delivery with the fan's 4-digit code. null: they pressed Cancel. */
-function askCode(b: HTMLElement): string | null {
-  if (b.dataset.code !== '1' || session.perms.confirm) return '';
-  return prompt("Ask the fan for their 4-digit delivery code. It's on their order page.");
+/** The fan's delivery code for a seat delivery: { code } or, for a supervisor who has none, { withoutCode, note }; null if cancelled. */
+function askCode(b: HTMLElement): { code: string; withoutCode?: boolean; note?: string } | null {
+  if (b.dataset.code !== '1') return { code: '' };
+  const sup = !!session.perms.confirm;
+  const c = prompt(sup
+    ? "Ask the fan for their 4-digit delivery code. It's on their order page.\n\nSupervisors and Super Admins only: leave it empty to confirm without the code."
+    : "Ask the fan for their 4-digit delivery code. It's on their order page.");
+  if (c === null) return null;
+  const code = c.replace(/\D/g, '');
+  if (code || !sup) return { code };
+  const why = prompt("Confirming without the fan's code. Why? (This is recorded on the order.)");
+  if (!why || !why.trim()) return null;
+  return { code: '', withoutCode: true, note: why.trim() };
 }
 
 // ── Order tickets (kitchen screen, alerts) ──
@@ -184,8 +194,8 @@ async function moveFrom(e: Event, reload: () => Promise<void>) {
     return;
   }
   if (b.dataset.to === 'REJECTED' || b.dataset.to === 'CANCELLED') { openWhy(b.dataset.move!, b.dataset.to as any, true, () => { reload(); }); return; }
-  const code = askCode(b); if (code === null) return;
-  await act(b, async () => { const r = await api('order', { method: 'POST', body: { id: b.dataset.move, to: b.dataset.to, code } }); await reload(); await afterMove(b.dataset.move!, r); });
+  const ask = askCode(b); if (ask === null) return;
+  await act(b, async () => { const r = await api('order', { method: 'POST', body: { id: b.dataset.move, to: b.dataset.to, ...ask } }); await reload(); await afterMove(b.dataset.move!, r); });
 }
 
 // ── Pages ──
@@ -262,8 +272,8 @@ const PAGES: Record<string, () => Promise<void>> = {
       if (one) {
         const to = one.dataset.to!;
         if (to === 'FAILED_DELIVERY' && !confirm('The fan is not at their seat? A supervisor then decides whether to try again or cancel.')) return;
-        const code = askCode(one); if (code === null) return;
-        act(one, async () => { await api('order', { method: 'POST', body: { id: one.dataset.go, to, code } }); toast(to === 'DELIVERED' ? 'Marked delivered. The receipt email has gone if the fan gave an address.' : to === 'FAILED_DELIVERY' ? 'A supervisor has been told.' : 'Taken for delivery.'); shell?.alarmsNow?.(); await draw(); });
+        const ask = askCode(one); if (ask === null) return;
+        act(one, async () => { await api('order', { method: 'POST', body: { id: one.dataset.go, to, ...ask } }); toast(to === 'DELIVERED' ? 'Marked delivered. The receipt email has gone if the fan gave an address.' : to === 'FAILED_DELIVERY' ? 'A supervisor has been told.' : 'Taken for delivery.'); shell?.alarmsNow?.(); await draw(); });
         return;
       }
       const all = el.closest('[data-all]') as HTMLButtonElement | null;
@@ -271,7 +281,7 @@ const PAGES: Record<string, () => Promise<void>> = {
         const g = (main as any)._groups[Number(all.dataset.all)];
         const out = (g?.ready || []).filter((o: any) => o.status === 'OUT_FOR_DELIVERY');
         if (!g || !confirm(`Mark all ${out.length} orders for ${g.name} as delivered?`)) return;
-        act(all, async () => { let n = 0; for (const o of out) { try { await api('order', { method: 'POST', body: { id: o.id, to: 'DELIVERED' } }); n++; } catch { /* already moved on another tablet */ } } toast(`${n} order${n === 1 ? '' : 's'} marked delivered.`); await draw(); });
+        act(all, async () => { let n = 0; for (const o of out) { try { await api('order', { method: 'POST', body: { id: o.id, to: 'DELIVERED', withoutCode: true, note: `Marked delivered together for ${g.name} by a supervisor` } }); n++; } catch { /* already moved on another tablet */ } } toast(`${n} order${n === 1 ? '' : 's'} marked delivered.`); await draw(); });
       }
     });
     await draw(); every15(() => draw(true));
@@ -377,8 +387,8 @@ const PAGES: Record<string, () => Promise<void>> = {
       const b = (e.target as HTMLElement).closest('[data-to]') as HTMLButtonElement | null;
       if (!b) return;
       if (b.dataset.to === 'REJECTED' || b.dataset.to === 'CANCELLED') { openWhy(id, b.dataset.to as any, !!b.dataset.paid, () => { draw(); }); return; }
-      const code = askCode(b); if (code === null) return;
-      await act(b, async () => { const r = await api('order', { method: 'POST', body: { id, to: b.dataset.to, code } }); await draw(); if (r.receipt) await afterMove(id, r); else { toast(`Order moved to ${b.dataset.label}.`); try { (window.parent as any).mkShell?.alarmsNow?.(); } catch { /* */ } } });
+      const ask = askCode(b); if (ask === null) return;
+      await act(b, async () => { const r = await api('order', { method: 'POST', body: { id, to: b.dataset.to, ...ask } }); await draw(); if (r.receipt) await afterMove(id, r); else { toast(`Order moved to ${b.dataset.label}.`); try { (window.parent as any).mkShell?.alarmsNow?.(); } catch { /* */ } } });
     });
     await draw();
   },

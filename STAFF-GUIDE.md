@@ -4562,7 +4562,7 @@ Orders only move forward, and the website refuses anything else. **Rejecting** (
 
 **Taking an order:** when a delivery person presses **Take for delivery**, the order is theirs. If two press at once, only one gets it. Only that delivery person or a supervisor can finish it, and a supervisor can change the delivery person on the order's page.
 
-**Delivery code:** every order gets a 4-digit code. The fan sees it on their order page and in their WhatsApp order message. The delivery person asks for it and types it when pressing **Delivered**. Staff never see the code. If the fan can't find it, call a supervisor, who can confirm delivery without it, and the order's history records that. A Super Admin can switch the code off in Staff accounts › Venue. Pickup orders don't use it.
+**Delivery code:** every order gets a 4-digit code. The fan sees it on their order page and in their WhatsApp order message. Whoever presses **Delivered** (delivery staff, supervisors and Super Admins alike) is asked for it and types it in. Staff never see the code. If the fan can't find it, a supervisor or Super Admin can leave the code empty and must give a reason; the reason is saved on the order and in the activity log. Delivery staff cannot skip it. **Mark all delivered** for a stand (supervisors) records that the orders were confirmed together. A Super Admin can switch the code off in Staff accounts › Venue. Pickup orders don't use it.
 
 **Not at seat:** the delivery person presses it, and supervisors get an alarm. Open the order and press **Ready** to try again, or **Cancelled** with a reason.
 
