@@ -122,9 +122,10 @@ const placeholders = ['Kit unveiling', 'On the training pitch', 'Matchday in Exo
   .exo-hero::after { content: ''; position: absolute; left: -8%; bottom: -60px; width: 70%; height: 120px; background: linear-gradient(90deg, var(--exo-red), var(--exo-blue)); transform: skewY(-4deg); opacity: .9; }
   .exo-hero-in { position: relative; z-index: 1; display: grid; grid-template-columns: 1.1fr .9fr; gap: 40px; align-items: center; }
   .exo-lockup { display: inline-flex; align-items: center; gap: 14px; margin-bottom: 16px; }
-  .exo-chip { display: inline-flex; align-items: center; justify-content: center; height: 84px; min-width: 84px; padding: 8px; border-radius: 18px; background: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
-  .exo-chip img { max-height: 68px; width: auto; }
-  .exo-chip--logo { padding: 8px 14px; }
+  /* Both logos in boxes of the same size. */
+  .exo-chip { display: inline-flex; align-items: center; justify-content: center; width: 180px; height: 104px; padding: 10px 14px; box-sizing: border-box; border-radius: 18px; background: #fff; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); }
+  .exo-chip img { width: 100%; height: 100%; object-fit: contain; }
+  
   .exo-amp { font: 400 40px/1 'Bebas Neue', sans-serif; color: #FFC72C; }
   .exo-mark { display: inline-flex; flex-direction: column; line-height: .9; }
   .exo-mark b { font: 900 34px/0.9 'Arial Black', Arial, sans-serif; letter-spacing: 1px; color: var(--exo-red); }
@@ -185,6 +186,6 @@ const placeholders = ['Kit unveiling', 'On the training pitch', 'Matchday in Exo
     .exo-high-in { grid-template-columns: 1fr; }
     .exo-gal { grid-template-columns: repeat(2, 1fr); }
   }
-  @media (max-width: 560px) { .exo-kits { grid-template-columns: 1fr; } .exo-hero { padding: 36px 0 70px; } }
+  @media (max-width: 560px) { .exo-chip { width: 132px; height: 80px; padding: 8px 10px; } .exo-kits { grid-template-columns: 1fr; } .exo-hero { padding: 36px 0 70px; } }
   @media (prefers-reduced-motion: reduce) { .exo-kits img { transition: none; } }
 </style>
