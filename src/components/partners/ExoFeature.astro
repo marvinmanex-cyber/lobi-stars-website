@@ -174,5 +174,12 @@ const placeholders = ['Kit unveiling', 'On the training pitch', 'Matchday in Exo
     .exo-gal { grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 560px) { .exo-chip { width: 132px; height: 80px; padding: 8px 10px; } .exo-kits { grid-template-columns: 1fr; } .exo-hero { padding: 36px 0 70px; } }
+  /* Phones: the logos and the write-up under them in the middle of the page. */
+  @media (max-width: 600px) {
+    .exo-intro { text-align: center; }
+    .exo-lockup { display: flex; justify-content: center; }
+    .exo-desc { margin-left: auto; margin-right: auto; }
+    .exo-btns { justify-content: center; }
+  }
   @media (prefers-reduced-motion: reduce) { .exo-kits img { transition: none; } }
 </style>
