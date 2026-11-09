@@ -129,7 +129,8 @@ export function scoreboard(league) {
     const counted = isCounted(f, { ...comp, include_live: 1 });
     const showScore = f.home_goals != null && counted;
     return { id: f.id, matchday: md, kickoff: f.kickoff_at, status: f.status, home: side(f.home), away: side(f.away),
-      homeGoals: showScore ? f.home_goals : null, awayGoals: showScore ? f.away_goals : null, unconfirmed: f.verification === 'UNCONFIRMED' };
+      homeGoals: showScore ? f.home_goals : null, awayGoals: showScore ? f.away_goals : null, unconfirmed: f.verification === 'UNCONFIRMED',
+      goals: showScore ? (f.events || []).filter(e => e.kind !== 'red').map(e => ({ side: e.side, player: e.player || '', minute: e.minute || '', kind: e.kind })) : [] };
   });
 }
 

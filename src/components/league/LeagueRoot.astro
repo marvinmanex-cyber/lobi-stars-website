@@ -73,6 +73,8 @@ const { which } = Astro.props;
   .lg-board .h { text-align: right; } .lg-board b { min-width: 44px; text-align: center; font: 400 20px/1 'Bebas Neue', sans-serif; }
   .lg-board-st { font: 700 11px/1 'Barlow Condensed', sans-serif; letter-spacing: 1px; text-transform: uppercase; color: var(--lt); }
   .lg-board-st.live { color: #E31E24; }
+  .lg-board-ev { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; font-size: 12px; color: var(--lt); font-weight: 400; margin-top: -2px; }
+  .lg-board-ev .h { text-align: right; } .lg-board-ev i { font-style: normal; font-size: 11px; }
   .lg-table-wrap { position: relative; overflow-x: auto; border: 1px solid var(--d4); border-radius: 12px; background: var(--d2); }
   .lg-table-wrap:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
   .lg-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 15px; }

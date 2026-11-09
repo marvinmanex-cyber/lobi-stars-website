@@ -1,0 +1,108 @@
+---
+// Matchday › Scores Update Centre (Super Admins only): who is signed in to /scores-centre, sign people
+// out, change the access code (only a hash is kept), and wrong-code attempts. API: /api/admin/scores-centre.
+import Layout from '../../layouts/Layout.astro';
+import AdminNav from '../../components/admin/AdminNav.astro';
+---
+<Layout title="Scores Update Centre | Lobi Stars Admin" description="Manage the Scores Update Centre." noindex>
+  <div class="wrap sca">
+    <AdminNav current="scores-centre" />
+    <header><div class="stag">Matchday</div><h1 class="stitle">Scores Update <span class="r">Centre</span></h1></header>
+    <p class="sca-lede">The page where staff update NNL Conference D scores during games: <a href="/scores-centre/" target="_blank" rel="noopener">lobistarsfc.com/scores-centre</a>. Staff sign in with their name and the access code, and stay signed in until 2 hours pass without activity. Super Admins only; every change here is recorded in the Activity Log.</p>
+    <p class="sca-msg" id="msg" role="status" aria-live="polite" hidden></p>
+    <div class="sca-grid" id="body" hidden>
+      <section class="sca-card" aria-labelledby="onH">
+        <h2 id="onH">Signed in now</h2>
+        <div id="open"></div>
+        <div class="sca-acts"><button type="button" class="sca-btn danger" id="all">Sign everyone out</button></div>
+      </section>
+      <section class="sca-card" aria-labelledby="codeH">
+        <h2 id="codeH">Access code</h2>
+        <p class="sca-sub" id="codeSrc"></p>
+        <form id="codeF">
+          <label class="sca-f"><span>New access code (4 to 12 numbers)</span><input id="code" type="password" inputmode="numeric" autocomplete="new-password" maxlength="12" /></label>
+          <label class="sca-f"><span>Type it again</span><input id="code2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="12" /></label>
+          <label class="sca-sw"><input type="checkbox" id="outAll" checked /> Also sign everyone out (they sign in again with the new code)</label>
+          <button class="sca-btn" type="submit">Change the code</button>
+        </form>
+        <p class="sca-sub">The code is never shown again or written in any log. Give it only to the people who update scores.</p>
+      </section>
+      <section class="sca-card wide" aria-labelledby="hisH">
+        <h2 id="hisH">Sign-ins in the last 7 days</h2>
+        <div class="sca-tw"><table><thead><tr><th>Name</th><th>Signed in</th><th>Last active</th><th>Device</th><th>Status</th><th></th></tr></thead><tbody id="sess"></tbody></table></div>
+      </section>
+      <section class="sca-card wide" aria-labelledby="refH">
+        <h2 id="refH">Wrong codes</h2>
+        <p class="sca-sub">5 wrong codes from one connection, or 60 from everywhere, block sign-in for 15 minutes.</p>
+        <ul class="sca-list" id="refused"></ul>
+      </section>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .sca-lede { max-width: 820px; color: var(--a-muted, #56635B); }
+  .sca-msg { padding: 12px 16px; border-radius: 10px; background: #E8F7EE; color: #17643A; font-weight: 600; }
+  .sca-msg.err { background: #FDECEC; color: #A3161B; }
+  .sca-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 16px; }
+  .sca-card { background: var(--a-card, #fff); border: 1px solid var(--a-line, #e5e7eb); border-radius: 16px; padding: 18px 20px; min-width: 0; }
+  .sca-card.wide { grid-column: 1 / -1; }
+  .sca-card h2 { margin: 0 0 12px; font-size: 20px; }
+  .sca-sub { font-size: 14px; color: var(--a-muted, #56635B); }
+  .sca-acts { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .sca-f { display: block; margin: 0 0 14px; }
+  .sca-f span { display: block; font-weight: 600; margin-bottom: 6px; }
+  .sca-f input { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--a-line, #d0d5dd); border-radius: 10px; font: inherit; box-sizing: border-box; }
+  .sca-sw { display: flex; align-items: center; gap: 10px; min-height: 44px; font-weight: 600; margin-bottom: 10px; }
+  .sca-sw input { width: 22px; height: 22px; }
+  .sca-btn { min-height: 44px; padding: 0 18px; border-radius: 10px; border: 0; background: #4C76B2; color: #fff; font-weight: 700; cursor: pointer; }
+  .sca-btn.danger { background: #C8202A; }
+  .sca-btn.small { min-height: 34px; padding: 0 12px; font-size: 14px; }
+  .sca-tw { overflow-x: auto; }
+  .sca-tw table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .sca-tw th, .sca-tw td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--a-line, #e5e7eb); white-space: nowrap; }
+  .sca-list { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .sca-list li { padding: 6px 0; border-bottom: 1px solid var(--a-line, #e5e7eb); }
+  .sca-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #17A34A; margin-right: 6px; }
+  @media (max-width: 760px) { .sca-grid { grid-template-columns: 1fr; } }
+</style>
+
+<script is:inline>
+(function () {
+  const code = sessionStorage.getItem('ls_admin_code') || '__session__';
+  const H = { 'x-admin-code': code };
+  const $ = id => document.getElementById(id);
+  const API = '/api/admin/scores-centre';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const when = iso => { if (!iso) return ''; try { return new Date(iso.includes('T') ? iso : iso.replace(' ', 'T') + 'Z').toLocaleString('en-GB', { timeZone: 'Africa/Lagos', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return iso; } };
+  const say = (t, err) => { const m = $('msg'); m.textContent = t; m.className = 'sca-msg' + (err ? ' err' : ''); m.hidden = false; };
+  async function post(body) {
+    const r = await fetch(API, { method: 'POST', headers: Object.assign({}, H, { 'Content-Type': 'application/json' }), body: JSON.stringify(body) });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Something went wrong.');
+    return d;
+  }
+  async function load() {
+    const r = await fetch(API, { headers: H, cache: 'no-store' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { say(d.error || 'Could not load.', true); return; }
+    $('body').hidden = false;
+    const open = d.sessions.filter(s => s.open);
+    $('open').innerHTML = open.length ? '<ul class="sca-list">' + open.map(s => '<li>' + (s.online ? '<span class="sca-dot" title="Online now"></span>' : '') + '<b>' + esc(s.name) + '</b> · ' + esc(s.device) + ' · last active ' + when(s.lastSeen) + ' <button type="button" class="sca-btn small danger" data-out="' + esc(s.id) + '">Sign out</button></li>').join('') + '</ul>' : '<p class="sca-sub">Nobody is signed in.</p>';
+    $('codeSrc').textContent = d.code.source === 'admin' ? 'Code set here on ' + when(d.code.changedAt) + ' by ' + (d.code.changedBy || 'a Super Admin') + '.' : d.code.source === 'secret' ? 'The first code (set by the website team). Change it below at any time.' : 'No code yet: set one below.';
+    $('sess').innerHTML = d.sessions.length ? d.sessions.map(s => '<tr><td><b>' + esc(s.name) + '</b></td><td>' + when(s.since) + '</td><td>' + when(s.lastSeen) + '</td><td>' + esc(s.device) + '</td><td>' + (s.open ? (s.online ? '<span class="sca-dot"></span>Online' : 'Signed in') : esc(s.endedWhy || 'Signed out')) + '</td><td>' + (s.open ? '<button type="button" class="sca-btn small danger" data-out="' + esc(s.id) + '">Sign out</button>' : '') + '</td></tr>').join('') : '<tr><td colspan="6">No sign-ins in the last 7 days.</td></tr>';
+    $('refused').innerHTML = d.refused.length ? d.refused.map(x => '<li>' + when(x.at) + ' · ' + esc(x.text) + '</li>').join('') : '<li>None.</li>';
+  }
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-out]');
+    if (b) { try { await post({ action: 'signout', id: b.dataset.out }); say('Signed out.'); load(); } catch (err) { say(err.message, true); } return; }
+    if (e.target.id === 'all') { if (!confirm('Sign everyone out of the Scores Update Centre?')) return; try { const r = await post({ action: 'signout-all' }); say('Signed out ' + r.ended + ' session' + (r.ended === 1 ? '' : 's') + '.'); load(); } catch (err) { say(err.message, true); } }
+  });
+  $('codeF').addEventListener('submit', async e => {
+    e.preventDefault();
+    if ($('code').value !== $('code2').value) return say('The two codes are not the same.', true);
+    try { const r = await post({ action: 'code', code: $('code').value, signOutAll: $('outAll').checked }); $('code').value = $('code2').value = ''; say('The access code is changed' + (r.ended ? ' and ' + r.ended + ' session' + (r.ended === 1 ? '' : 's') + ' signed out' : '') + '.'); load(); } catch (err) { say(err.message, true); }
+  });
+  load();
+})();
+</script>

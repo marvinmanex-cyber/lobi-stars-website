@@ -1,0 +1,16 @@
+{
+  "id": "/scores-centre/",
+  "name": "Lobi Stars Scores Update Centre",
+  "short_name": "Scores Centre",
+  "description": "Update NNL Conference D scores and the league table during games.",
+  "start_url": "/scores-centre/",
+  "scope": "/scores-centre/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0F1E36",
+  "theme_color": "#2F4F80",
+  "icons": [
+    { "src": "/images/scores-centre/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/images/scores-centre/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

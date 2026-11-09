@@ -258,7 +258,9 @@ export async function loadLeague(env, { slug = null, publishedOnly = true } = {}
   const teamById = new Map(allTeams.map(t => [t.id, { ...t, crest_url: logoFile(t.crest_url), aliases: parse(t.aliases, []) }]));
   const venueById = new Map(venuesR.results.map(v => [v.id, v]));
   const fixtures = await overlayCentre(db, fixturesR.results.map(f => ({ ...f })));
-  for (const f of fixtures) { f.home = teamById.get(f.home_team_id); f.away = teamById.get(f.away_team_id); f.venue = venueById.get(f.venue_id) || null; f.competition = competition; }
+  // Goals and red cards from the Scores Update Centre (shown on the scoreboard).
+  const evs = (await db.prepare(`SELECT fixture_id, kind, side, player, minute FROM sc_events WHERE removed_at IS NULL ORDER BY CAST(minute AS INTEGER), id`).all().catch(() => ({ results: [] }))).results;
+  for (const f of fixtures) { f.home = teamById.get(f.home_team_id); f.away = teamById.get(f.away_team_id); f.venue = venueById.get(f.venue_id) || null; f.competition = competition; f.events = evs.filter(e => e.fixture_id === f.id); }
   return {
     competition: { ...competition, zones: parse(competition.zones, []), tiebreak: parse(competition.tiebreak_order, []) },
     teams: teamsR.results.map(t => teamById.get(t.id)), allTeams: [...teamById.values()], venues: venuesR.results,

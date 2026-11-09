@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-09: Scores Update Centre: safer updates, goals, clock, history and more
+
+**Who it affects:** whoever updates scores; Super Admins. **Staff need to:** set the three Matchday 1 results that are still Live to Full time (HANDOVER-TODO L1); tick "Count live matches in the table" if the public table should move during games (L3).
+- **Fix:** pressing **+** on a match that kicked off more than 2½ hours ago now sets it to Full time, not Live (Matchday 1 results had been saved as Live, so they didn't count in the public table). Saving Live or Half-time more than 3 hours after kick-off asks first.
+- **Checks:** confirm before taking a goal away, setting Full time, changing a finished match, or updating a match someone else is covering.
+- **No overwriting:** a match changed by someone else after you opened it isn't replaced without asking (who changed it and what it is now).
+- **Weak network:** updates made with no signal wait on the phone and are sent when it returns; "Saved ✓" or "⏳ Waiting for network" on each match.
+- **History** per match with **Undo last change**.
+- **Goals, penalties, own goals and red cards** with player and minute; scorers also show on the public table's scoreboard.
+- **Match clock** (12', 45+2', HT, 67', FT) with **Kicked off now** and **Second half started**.
+- **Live now** view (today's matches, live first); **Online now**; **I'm covering this match**.
+- **Match notes** (e.g. "Kick-off delayed 30 min").
+- Screen stays on while the page is open; installs as an app (manifest and a small offline copy of the page).
+- New **Admin › Matchday › Scores Update Centre** (Super Admins): who is signed in, sign one or everyone out, change the access code (only a hash kept), wrong-code attempts.
+- Tests: tests/scores-centre.test.mjs (10).
+
 ## 2026-11-09: Scores Update Centre
 
 **Who it affects:** whoever updates scores on match days. **Staff need to:** sign in at lobistarsfc.com/scores-centre with your name and the access code; enter the Matchday 1 results there (HANDOVER-TODO L1).

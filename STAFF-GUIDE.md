@@ -4856,7 +4856,7 @@ Lobi Stars app.
 
 ## 42a. Scores Update Centre (/scores-centre)
 
-The page for updating NNL Conference D scores during games, week by week, at **lobistarsfc.com/scores-centre**. Sign in with your name and the access code, and you stay signed in until 2 hours pass without using the page. Each update is a staff-verified score, so the league table, the live table, League History and the Activity Log update by themselves. Full instructions: STAFF-MATCHDAY-GUIDE.md section 3b.
+The page for updating NNL Conference D scores during games, week by week, at **lobistarsfc.com/scores-centre**. Sign in with your name and the access code, and you stay signed in until 2 hours pass without using the page. Each update is a staff-verified score, so the league table, the live table, League History and the Activity Log update by themselves. It also has goals and red cards, match notes, a match clock, history with undo, a "Live now" view, who's online and who's covering each match, and keeps updates on the phone when the network drops. Super Admins manage sign-ins and the access code in Admin › Matchday › **Scores Update Centre**. Full instructions: STAFF-MATCHDAY-GUIDE.md section 3b.
 
 ## 43. Lobi Gate Control: the ticket scanners (/lobi-gate-control)
 

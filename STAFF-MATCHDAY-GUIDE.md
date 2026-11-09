@@ -270,6 +270,32 @@ Full instructions: STAFF-GUIDE.md section 37.
 
 Update as the game goes: each goal, half-time, then **Full time** at the end. Every update replaces the one before.
 
+**Entering old results:** pressing **+** on a match that kicked off more than 2½ hours ago sets it to **Full time** (not Live). Saving a match as Live or Half-time more than 3 hours after kick-off asks whether it should be Full time. A match left on **Live** only counts in the public table when "Count live matches in the table" is ticked.
+
+**Checks before saving:** the page asks first when you take a goal away, set **Full time** ("Confirm full time: …"), change a match that is already finished, or update a match someone else is covering.
+
+**Two people on the same match:** if someone else changed the match after you opened it, the page says who and what it is now, and asks before replacing it with yours.
+
+**No network:** if the signal drops when you press Update, the update is kept on your phone ("⏳ Waiting for network") and sent by itself when the signal returns. A yellow bar at the top says how many are waiting. Don't sign out while updates are waiting. If someone changed the match in the meantime, yours isn't sent and you're told.
+
+**Live now:** the red **Live now** button (first in the week list) shows today's matches, live ones first. The page opens there on match days.
+
+**The clock:** live matches show the minute (12', 45+2', HT, 67', FT), counted from the planned kick-off. Under **Goals, cards, more**:
+- **Kicked off now** if the match started late.
+- **Second half started** when the second half begins (it also sets the match to Live). Changing Half-time to Live does the same.
+
+**Goals, cards, more** (on each match):
+- **Goals and red cards:** choose Goal, Penalty goal, Own goal or Red card, the team, the player (optional) and the minute, then **Add**. For an own goal, choose the team that gained the goal. They show on the match and, once the score counts, under that match on the public table's scoreboard. ✕ removes one (it stays in the history).
+- **Match note:** e.g. "Kick-off delayed 30 min" or "Abandoned at 70', floodlights". Shown on the match.
+- **I'm covering this match:** others see "Covered by …" and are asked before updating it.
+- **History:** every change (who, score, time), with **Undo last change** (back to the score before) and **Remove all scores set here**.
+
+**Who's online:** under the week title ("Online now: …").
+
+**On the phone:** the screen stays on while the page is open (☀ Screen on). Press **Install app** in the top bar (Android, laptop), or on iPhone Share › **Add to Home Screen**, to open it like an app.
+
+**Super Admins:** Admin › Matchday › **Scores Update Centre** shows who is signed in (and who is online now), signs one person or everyone out, changes the access code, and lists wrong-code attempts.
+
 **Good to know**
 - **Undo changes** forgets what you changed on a card before you press Update.
 - **Clear** removes the score set here for a match (for example on the wrong match). The match then follows its other score sources, such as Live Match Control.
@@ -277,7 +303,7 @@ Update as the game goes: each goal, half-time, then **Full time** at the end. Ev
 - **Recent updates** shows the last updates and who made them.
 - A score from here is a **staff-verified score**: it counts in the table at once and replaces scores from other sources for that match, including Live Match Control. For Lobi Stars' own match, keep Live Match Control and this page the same, or update only here.
 - **The public table** (lobistarsfc.com/table, the homepage and Matchday Live) counts live matches as they stand only when **Count live matches in the table** is ticked (Admin › League › Table & Rules). Otherwise it changes at full time. The table in the Scores Update Centre always counts live matches.
-- To change the access code, ask the website team (it is kept as a secret in Cloudflare, not in the website's code).
+- To change the access code: a Super Admin uses Admin › Matchday › Scores Update Centre › **Access code** (tick "Also sign everyone out" to make everyone sign in again with the new code).
 
 ## 4. Check the Predict & Win winner and pay the prize
 

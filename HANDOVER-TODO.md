@@ -178,7 +178,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 
 | # | Item | What is needed |
 | --- | --- | --- |
-| L1 | **Enter the Matchday 1 results** | Sign in at lobistarsfc.com/scores-centre (your name and the access code), open **Week 1** and enter each result with **Full time** › **Update**: Yobe 3–2 Mighty Jets, Wikki 1–0 Kada, ABS 1–0 Sokoto, Lobi 1–0 Bichi. The table updates by itself. |
+| L1 | **Set the Matchday 1 results to Full time** | They were saved as **Live**, so only Lobi 1–0 Bichi counts in the public table. In the Scores Update Centre open **Week 1**, and on Yobe v Mighty Jets, Wikki v Kada and ABS v Sokoto tap **Full time** › **Update** › OK (the scores are already right). Do Lobi v Bichi too, so all four say Full time. |
 | L3 | **Let the public table move during games** | Admin › League › **Table & Rules** › tick **Count live matches in the table** › Save. Without it, the public table changes at full time (the Scores Update Centre's own table always moves live). |
 | L2 | **Give the access code only to the people who update scores** | Never post it in a group or publicly. To change it, ask the website team. |
 
