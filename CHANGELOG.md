@@ -8,6 +8,18 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-09: MatchDay Kitchen extras: transfer, half-time slots, prep guide, goal deals, sponsors, collection board, labels
+
+**Who it affects:** fans, kitchen supervisors, Super Admins. **Staff need to:** choose the settings in MatchDay Kitchen › Menu and prices; put the collection board on the pickup-point TV; switch on Pay by bank transfer once Paystack has turned on Transfer (HANDOVER-TODO K5–K8).
+- **Pay by bank transfer:** a second pay button. Paystack gives the fan a one-time account number and confirms the payment automatically, so the order goes to the kitchen with no manual check. Off until switched on in Menu and prices.
+- **Half-time slots:** start (45'), middle (50') and end (55') of half-time, each with a limit (40 to begin with, 0 = no limit). Full slots are refused and fans are offered the next one.
+- **How much to prepare:** top of Sales reports. A suggestion per item for the next home match, from the last 5 saved reports (most recent counts most) plus 15%, never below paid pre-orders; with half-time slot counts.
+- **Goal deals:** a Lobi Stars home goal starts money off (5–50%, for 3–20 minutes) once per goal, shown on the menu and in the goal alert. Saved on each order (deal_kobo). Off to begin with.
+- **Sponsored dishes:** a partner's logo and "Sponsored by" on a dish (MatchDay Kitchen › Labels, or Admin › Food › Menu).
+- **Collection board:** new TV page /kitchen/board/ with Preparing and Ready to collect numbers only, a chime when an order is ready, and ?point= for one pickup point.
+- **Labels:** Halal, Vegetarian and Kids' portion badges on dishes.
+- Tests: tests/kitchen-ideas.test.mjs.
+
 ## 2026-11-09: MatchDay Kitchen: everyone is asked for the fan's delivery code
 
 **Who it affects:** kitchen supervisors, Super Admins, delivery staff. **Staff need to:** ask the fan for their 4-digit code before pressing Delivered.

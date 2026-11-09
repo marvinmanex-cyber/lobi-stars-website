@@ -81,7 +81,7 @@ async function figuresFor(db, venueId, day) {
 }
 async function titleFor(db, day) {
   const { start, end } = dayRange(day);
-  const { results } = await db.prepare(`SELECT * FROM events WHERE event_date >= ? AND event_date < ? ORDER BY event_date`).bind(start, end).all();
+  const { results } = await db.prepare(`SELECT * FROM events WHERE event_date >= ? AND event_date < ? ORDER BY active DESC, event_date`).bind(start, end).all(); // a switched-off (cancelled) match never names the report when a live one exists
   const m = results.find(isHomeGame);
   return { title: m ? `${m.home_team} vs ${m.away_team}` : 'Sales with no home match', eventId: m?.id || null };
 }

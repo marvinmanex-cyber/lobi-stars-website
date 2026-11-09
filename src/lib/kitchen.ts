@@ -8,9 +8,10 @@
 import { mountRating } from './foodRating';
 import { upcomingMatches } from '../../functions/api/_lib/tickets/rules.js';
 
-type Item = { id: string; name: string; description: string; priceKobo: number; photo: string | null; emoji?: string; soldOut: boolean; notReady?: boolean; maxPerOrder: number; adult: boolean; spice?: number; badge?: string | null };
+type Item = { id: string; name: string; description: string; priceKobo: number; photo: string | null; emoji?: string; soldOut: boolean; notReady?: boolean; maxPerOrder: number; adult: boolean; spice?: number; badge?: string | null; tags?: string[]; sponsor?: { slug: string; name: string; logo: string | null } | null };
+const TAG_NAMES: Record<string, string> = { halal: 'Halal', veg: 'Vegetarian', kids: "Kids' portion" };
 type Cat = { id: string; name: string; items: Item[] };
-type Menu = { message?: string | null; popular?: string[]; pickupPoints?: string[]; open: boolean; reason: string; match: string | null; opensAt: string | null; closesAt: string | null; categories: Cat[]; stands: string[]; minOrderKobo: number; paymentExpiryMinutes: number; whatsapp: { number: string; display: string } | null };
+type Menu = { payTransfer?: boolean; halftimeSlots?: { id: string; label: string; at: string; left: number | null; full: boolean }[]; goalDeal?: { percent: number; until: string } | null; message?: string | null; popular?: string[]; pickupPoints?: string[]; open: boolean; reason: string; match: string | null; opensAt: string | null; closesAt: string | null; categories: Cat[]; stands: string[]; minOrderKobo: number; paymentExpiryMinutes: number; whatsapp: { number: string; display: string } | null };
 
 const CART = 'ls_kitchen_cart', SEAT = 'ls_kitchen_seat', PENDING = 'ls_kitchen_pending', LAST = 'ls_kitchen_last';
 let kickoffAt = 0; // the next home match's kick-off (for "At kick-off")
@@ -87,7 +88,7 @@ function card(f: Item) {
 <div class="kx-photo">${f.photo ? `<img src="${esc(f.photo)}" alt="" loading="lazy" decoding="async" width="400" height="300">` : f.emoji ? `<div class="kx-ph kx-ph--emoji" aria-hidden="true">${esc(f.emoji)}</div>` : `<div class="kx-ph" aria-hidden="true">${esc(f.name.split(/\s+/).slice(0, 2).map(w => w[0]).join(''))}</div>`}
 ${f.badge && BADGE[f.badge] ? `<span class="kx-badge kx-badge--${esc(f.badge)}">${BADGE[f.badge]}</span>` : ''}${f.soldOut ? `<span class="kx-soldtag">${off}</span>` : '<span class="kx-readytag">Ready</span>'}</div>
 <div class="kx-body"><span class="kx-name">${esc(f.name)}</span>${f.description ? `<p class="kx-desc">${esc(f.description)}</p>` : ''}
-${f.adult ? '<span class="kx-age">18+ | Drink Responsibly</span>' : ''}
+${f.adult ? '<span class="kx-age">18+ | Drink Responsibly</span>' : ''}${f.tags?.length ? `<span class="kx-tags">${f.tags.map(t => `<span class="kx-tag kx-tag--${esc(t)}">${esc(TAG_NAMES[t] || t)}</span>`).join('')}</span>` : ''}${f.sponsor ? `<span class="kx-spons">${f.sponsor.logo ? `<img src="${esc(f.sponsor.logo)}" alt="" width="40" height="20" loading="lazy" />` : ''}Sponsored by ${esc(f.sponsor.name)}</span>` : ''}
 <div class="kx-meta"><span class="kx-price">${naira(f.priceKobo)}</span>${spice}</div>${ctrl}${mgr ? mgrControls(f) : ''}</div></li>`;
 }
 // ── Manage the menu (kitchen supervisors and Super Admins only) ──
@@ -292,6 +293,14 @@ function untilText(ms: number) {
 }
 function renderState() {
   if (!menu) return;
+  // Goal deal: a Lobi Stars goal a few minutes ago (the discount is taken off at checkout).
+  let deal = document.getElementById('kxDeal');
+  const dealOn = menu.open && menu.goalDeal && Date.parse(menu.goalDeal.until) > Date.now();
+  if (dealOn && !deal) { deal = document.createElement('p'); deal.id = 'kxDeal'; deal.className = 'kx-banner kx-deal'; deal.setAttribute('role', 'status'); $('kxClosed').before(deal); }
+  if (deal) {
+    deal.hidden = !dealOn;
+    if (dealOn) { const left = Math.max(0, Math.ceil((Date.parse(menu.goalDeal!.until) - Date.now()) / 60000)); deal.innerHTML = `<b>⚽ GOAL DEAL: ${menu.goalDeal!.percent}% off</b><span>Lobi Stars scored! ${menu.goalDeal!.percent}% comes off your order at checkout for about ${left} more minute${left === 1 ? '' : 's'}.</span>`; }
+  }
   const pill = $('kxPill');
   const soon = !menu.open && menu.reason === 'opening-soon';
   pill.className = `kx-pill kx-pill--${menu.open ? 'open' : soon ? 'soon' : 'closed'}`;
@@ -310,6 +319,8 @@ function renderState() {
   if (soon) $('kxClosedText').textContent = '';
   $('kxClosedText').hidden = soon;
   ($('kxPayBtn') as HTMLButtonElement).disabled = !menu.open;
+  $('kxTrBtn').hidden = $('kxTrHint').hidden = !menu.payTransfer;
+  ($('kxTrBtn') as HTMLButtonElement).disabled = !menu.open;
   ($('kxWaBtn') as HTMLButtonElement).disabled = !menu.open;
 }
 async function loadFixture() {
@@ -377,7 +388,7 @@ function collect(viaWhatsApp: boolean) {
   const when = (document.querySelector('input[name="when"]:checked') as HTMLInputElement)?.value || 'now';
   const note = [when === 'half-time' ? 'Deliver at half-time.' : when === 'kickoff' ? 'Deliver at kick-off.' : '', v('kxNote')].filter(Boolean).join(' ').slice(0, 200);
   return {
-    name: v('kxName'), phone: v('kxPhone'), email: v('kxEmail'), notes: note, when,
+    name: v('kxName'), phone: v('kxPhone'), email: v('kxEmail'), notes: note, when, slot: when === 'half-time' ? ($('kxSlot') as HTMLSelectElement).value : '',
     fulfilment: pickup ? 'pickup' : 'seat', pickupPoint: pickup ? ($('kxPickup') as HTMLSelectElement).value : '',
     stand: pickup ? '' : s.section, seat: pickup ? '' : `Row ${s.row}, Seat ${s.seat}`.slice(0, 20),
     adultConfirmed: ($('kxAdult') as HTMLInputElement).checked, website: ($('kxTrap') as HTMLInputElement).value,
@@ -395,21 +406,22 @@ function recall() { ['kxName', 'kxPhone', 'kxEmail'].forEach(id => { try { const
 /** GA4 key event (only sent if the visitor accepted analytics; no personal data). */
 const gaEvent = (name: string, params: Record<string, string | number> = {}) => (window as unknown as { lsGa?: (n: string, p: Record<string, string | number>) => void }).lsGa?.(name, params);
 
-async function payOnline(e: Event) {
+async function payOnline(e: Event, payBy: 'card' | 'transfer' = 'card') {
   e.preventDefault();
   const body = collect(false); if (!body) return;
-  const btn = $('kxPayBtn') as HTMLButtonElement;
+  const btn = $(payBy === 'transfer' ? 'kxTrBtn' : 'kxPayBtn') as HTMLButtonElement;
+  const label = btn.textContent || '';
   btn.disabled = true; btn.textContent = 'Opening payment…';
-  gaEvent('kitchen_order_start', { method: 'online', item_count: count() });
+  gaEvent('kitchen_order_start', { method: payBy === 'transfer' ? 'transfer' : 'online', item_count: count() });
   try {
-    const { ok, status, d } = await post('/api/food-checkout', { ...body, ...(rewardsBox?.values() || {}), returnTo: 'kitchen' });
+    const { ok, status, d } = await post('/api/food-checkout', { ...body, ...(rewardsBox?.values() || {}), returnTo: 'kitchen', payBy });
     if (!ok || !d.authorizationUrl) { if (status === 409) loadMenu(); throw new Error(d.error || 'Payment could not be started. Please try again.'); }
     remember(); saveLast(body.items);
     store.set(PENDING, { ref: d.ref });
     location.href = d.authorizationUrl; // the cart is cleared once the payment is confirmed
   } catch (err) {
     fail((err as Error).message || 'Payment could not be started. Please try again.');
-    btn.disabled = false; btn.textContent = 'Pay online';
+    btn.disabled = false; btn.textContent = label;
   }
 }
 
@@ -526,6 +538,19 @@ function whenOptions() {
   ht.hidden = !!kickoffAt && now > kickoffAt + 40 * 60e3;
   const checked = document.querySelector<HTMLInputElement>('input[name="when"]:checked');
   if (checked?.closest('label')?.hidden) (document.querySelector('input[name="when"][value="now"]') as HTMLInputElement).checked = true;
+  slotOptions();
+}
+/** The half-time slots (start, middle, end), with the full ones shown but not chosen. */
+function slotOptions() {
+  const sel = $('kxSlot') as HTMLSelectElement, wrap = $('kxSlotWrap');
+  const slots = menu?.halftimeSlots || [];
+  const ht = (document.querySelector('input[name="when"]:checked') as HTMLInputElement)?.value === 'half-time';
+  wrap.hidden = !ht || !slots.length;
+  if (!slots.length) return;
+  const keep = sel.value;
+  sel.innerHTML = slots.map(s => `<option value="${s.id}" ${s.full ? 'disabled' : ''}>${s.label} (${new Date(s.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' })})${s.full ? ' – full' : s.left !== null && s.left <= 10 ? ` – ${s.left} left` : ''}</option>`).join('');
+  const pick = slots.find(s => s.id === keep && !s.full) || slots.find(s => !s.full);
+  if (pick) sel.value = pick.id;
 }
 let current: { ref: string; token: string } | null = null, lastStatus = '', alertsOn = false, chimeCtx: AudioContext | null = null;
 function chime() {
@@ -574,6 +599,8 @@ export function startKitchen() {
   $('kxForm').addEventListener('submit', payOnline);
   $('kxAlertBtn').addEventListener('click', turnOnAlerts);
   window.setInterval(whenOptions, 60000);
+  document.querySelectorAll('input[name="when"]').forEach(r => r.addEventListener('change', slotOptions));
+  $('kxTrBtn').addEventListener('click', e => payOnline(e, 'transfer'));
   $('kxWaBtn').addEventListener('click', orderWhatsApp);
   ['kxName', 'kxPhone', 'kxEmail', 'kxAdult'].forEach(id => $(id).addEventListener('input', () => $(id).classList.remove('kx-bad')));
   $('kxPayCopy').addEventListener('click', async () => {
@@ -605,5 +632,7 @@ export function startKitchen() {
   loadMenu(); loadFixture(); initManager();
   // (Not while a manager is typing a new price.)
   window.setInterval(() => { if (document.visibilityState === 'visible' && !document.activeElement?.closest('.kx-mgr')) loadMenu(); }, 60000);
-  window.setInterval(renderState, 30000);
+  window.setInterval(renderState, 15000);
+  // Keep the menu fresh during a match (dishes turned on or off, a goal deal starting), only while the page is visible.
+  window.setInterval(() => { if (!document.hidden) loadMenu().catch(() => {}); }, 60000);
 }

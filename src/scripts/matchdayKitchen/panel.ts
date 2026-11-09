@@ -399,6 +399,19 @@ const PAGES: Record<string, () => Promise<void>> = {
       const all = d.groups.flatMap((g: any) => g.dishes), on = all.filter((m: any) => !m.soldOut).length;
       main.innerHTML = (all.length ? `<section class="mk-section"><div class="mk-box mk-allbox"><div><b>${on} of ${all.length} dishes are ON</b><span>Fans can order only dishes that are ON. Changes show on the fans' menu within a minute.</span></div>
           ${d.canAll ? `<div class="mk-actions" style="justify-content:flex-start;margin:0"><button type="button" class="mk-btn go" data-all="all_on">Turn all ON</button><button type="button" class="mk-btn danger" data-all="all_off">Turn all OFF</button></div>` : ''}</div></section>` : '')
+        + (d.goalDeal ? `<section class="mk-section"><h2>⚽ Goal deal</h2><form class="mk-box" id="dealF">
+            <p style="margin:0 0 10px">When Lobi Stars score at a home match, food is money off for a few minutes. Fans see it on the menu, and fans with match alerts get it with the goal alert. ${d.goalDeal.activeUntil ? `<b>A goal deal is on now, until ${esc(new Date(d.goalDeal.activeUntil).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }))}.</b>` : ''}</p>
+            <label style="display:flex;gap:10px;align-items:center;min-height:48px;font-size:18px"><input type="checkbox" id="gdOn" ${d.goalDeal.enabled ? 'checked' : ''} style="width:26px;height:26px" /> Goal deals on</label>
+            <div class="mk-filters"><div class="mk-field"><label for="gdPct">Percent off</label><input id="gdPct" inputmode="numeric" value="${esc(d.goalDeal.percent)}" /></div><div class="mk-field"><label for="gdMin">For how many minutes</label><input id="gdMin" inputmode="numeric" value="${esc(d.goalDeal.minutes)}" /></div></div>
+            <button class="mk-btn go" type="submit">Save goal deal</button></form></section>` : '')
+        + (d.slotCapacity !== null && d.slotCapacity !== undefined ? `<section class="mk-section"><h2>⏱ Half-time slots</h2><form class="mk-box" id="slotF">
+            <p style="margin:0 0 10px">Half-time orders are spread over three slots: start (45'), middle (50') and end (55') of half-time. When a slot is full, fans are offered the next one. 0 means no limit.</p>
+            <div class="mk-filters"><div class="mk-field"><label for="slCap">Orders per slot</label><input id="slCap" inputmode="numeric" value="${esc(d.slotCapacity)}" /></div></div>
+            <button class="mk-btn go" type="submit">Save</button></form></section>` : '')
+        + (d.payTransfer !== null && d.payTransfer !== undefined ? `<section class="mk-section"><h2>🏦 Pay by bank transfer</h2><form class="mk-box" id="ptF">
+            <p style="margin:0 0 10px">Fans get a one-time account number from Paystack and pay from any bank app. Paystack confirms the payment by itself, so nobody checks transfers by hand. Switch on only after Paystack has turned on "Transfer" for the kitchen's payments.</p>
+            <label style="display:flex;gap:10px;align-items:center;min-height:48px;font-size:18px"><input type="checkbox" id="ptOn" ${d.payTransfer ? 'checked' : ''} style="width:26px;height:26px" /> Show "Pay by bank transfer" to fans</label>
+            <button class="mk-btn go" type="submit">Save</button></form></section>` : '')
         + (d.canMenu ? `<section class="mk-section"><h2>Add a dish</h2><form class="mk-box" id="dishF"><div class="mk-filters">
             <div class="mk-field"><label for="dName">Name</label><input id="dName" maxlength="60" /></div>
             <div class="mk-field"><label for="dCat">Category</label><select id="dCat">${d.categories.map((x: any) => `<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('')}</select></div>
@@ -408,10 +421,15 @@ const PAGES: Record<string, () => Promise<void>> = {
         + (d.groups.length ? d.groups.map((g: any) => `<section class="mk-section"><h2>${esc(g.name)}</h2>${g.dishes.map((m: any) => `
         <div class="mk-dish${m.soldOut ? ' out' : ''}"><div class="n">${esc(m.emoji)} ${esc(m.name)}<small>${m.soldOut ? 'Not ready: fans cannot order it' : m.available ? 'Ready: fans can order it' : 'Hidden from the menu (admin)'}${d.canPrice ? '' : ` · ${esc(m.priceText)}`}</small></div>
         <div class="ctl">${d.canMenu ? `<form class="price rename" data-rename="${esc(m.id)}"><label class="mk-sr" for="n_${esc(m.id)}">New name for ${esc(m.name)}</label><input class="mk-input" id="n_${esc(m.id)}" maxlength="60" value="${esc(m.name)}" /><button class="mk-btn" type="submit">Save name</button></form>` : ''}${d.canPrice ? `<form class="price" data-price="${esc(m.id)}"><label class="mk-sr" for="p_${esc(m.id)}">Price of ${esc(m.name)} in naira</label>₦<input class="mk-input" id="p_${esc(m.id)}" inputmode="decimal" value="${esc(m.price)}" /><button class="mk-btn" type="submit">Save price</button></form>` : ''}
-          <button type="button" class="mk-switch${m.soldOut ? '' : ' on'}" role="switch" aria-checked="${m.soldOut ? 'false' : 'true'}" aria-label="${esc(m.name)}: ready for fans" data-dish="${esc(m.id)}" data-name="${esc(m.name)}" data-act="${m.soldOut ? 'back' : 'soldout'}"><i aria-hidden="true"></i><span>${m.soldOut ? 'OFF' : 'ON'}</span></button>${d.canMenu ? `<button type="button" class="mk-btn danger" data-del="${esc(m.id)}" data-name="${esc(m.name)}">Delete</button>` : ''}</div></div>`).join('')}</section>`).join('')
+          <button type="button" class="mk-switch${m.soldOut ? '' : ' on'}" role="switch" aria-checked="${m.soldOut ? 'false' : 'true'}" aria-label="${esc(m.name)}: ready for fans" data-dish="${esc(m.id)}" data-name="${esc(m.name)}" data-act="${m.soldOut ? 'back' : 'soldout'}"><i aria-hidden="true"></i><span>${m.soldOut ? 'OFF' : 'ON'}</span></button>${d.canMenu ? `<button type="button" class="mk-btn" data-labels="${esc(m.id)}">Labels${m.tags.length || m.sponsor ? ` (${m.tags.length + (m.sponsor ? 1 : 0)})` : ''}</button><button type="button" class="mk-btn danger" data-del="${esc(m.id)}" data-name="${esc(m.name)}">Delete</button>` : ''}</div></div>
+        ${d.canMenu ? `<form class="mk-box mk-labelsf" data-labelsf="${esc(m.id)}" hidden><b>Labels for ${esc(m.name)}</b><div class="mk-actions" style="justify-content:flex-start;margin:6px 0">${Object.entries(d.tagNames || {}).map(([k, v]: any) => `<label style="display:flex;gap:8px;align-items:center;min-height:44px;margin-right:14px"><input type="checkbox" name="tag" value="${esc(k)}" ${m.tags.includes(k) ? 'checked' : ''} style="width:24px;height:24px" /> ${esc(v)}</label>`).join('')}</div>
+          <div class="mk-field"><label>Sponsored by (shown on the fans' menu)</label><select name="sponsor"><option value="">No sponsor</option>${(d.partners || []).map((p: any) => `<option value="${esc(p.slug)}" ${p.slug === m.sponsor ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
+          <button class="mk-btn go" type="submit">Save labels</button></form>` : ''}`).join('')}</section>`).join('')
         : '<p class="mk-empty">The menu is empty. Dishes are added in the website admin (Menu & Prices).</p>');
     };
     main.addEventListener('click', (e: Event) => {
+      const lb = (e.target as HTMLElement).closest('[data-labels]') as HTMLButtonElement | null;
+      if (lb) { const f = main.querySelector(`[data-labelsf="${lb.dataset.labels}"]`) as HTMLFormElement | null; if (f) f.hidden = !f.hidden; return; }
       const del = (e.target as HTMLElement).closest('[data-del]') as HTMLButtonElement | null;
       if (del) {
         if (!confirm(`Delete ${del.dataset.name} from the menu? Fans will no longer see it. Past orders stay in the reports.`)) return;
@@ -432,6 +450,29 @@ const PAGES: Record<string, () => Promise<void>> = {
       if ((e.target as HTMLElement).id === 'dishF') {
         e.preventDefault();
         act((e.target as HTMLElement).querySelector('button'), async () => { const r = await api('menu', { method: 'POST', body: { action: 'add', item: { name: $('dName').value, category: $('dCat').value, price: $('dPrice').value, description: $('dDesc').value } } }); toast(`${r.name} added at ${r.price}. Fans can order it now.`); await draw(); });
+        return;
+      }
+      if ((e.target as HTMLElement).id === 'ptF') {
+        e.preventDefault();
+        act((e.target as HTMLElement).querySelector('button'), async () => { const r = await api('menu', { method: 'POST', body: { action: 'pay-transfer', on: ($('ptOn') as HTMLInputElement).checked } }); toast(r.on ? 'Pay by bank transfer is on.' : 'Pay by bank transfer is off.'); await draw(); });
+        return;
+      }
+      if ((e.target as HTMLElement).id === 'slotF') {
+        e.preventDefault();
+        act((e.target as HTMLElement).querySelector('button'), async () => { const r = await api('menu', { method: 'POST', body: { action: 'slot-capacity', capacity: $('slCap').value } }); toast(r.capacity ? `Saved: ${r.capacity} orders per half-time slot.` : 'Saved: no limit on half-time slots.'); await draw(); });
+        return;
+      }
+      if ((e.target as HTMLElement).id === 'dealF') {
+        e.preventDefault();
+        act((e.target as HTMLElement).querySelector('button'), async () => { const r = await api('menu', { method: 'POST', body: { action: 'goal-deal', enabled: ($('gdOn') as HTMLInputElement).checked, percent: $('gdPct').value, minutes: $('gdMin').value } }); toast(r.enabled ? `Goal deal on: ${r.percent}% off for ${r.minutes} minutes after each Lobi Stars goal.` : 'Goal deals are off.'); await draw(); });
+        return;
+      }
+      const lf = (e.target as HTMLElement).closest('[data-labelsf]') as HTMLFormElement | null;
+      if (lf) {
+        e.preventDefault();
+        const tags = [...lf.querySelectorAll<HTMLInputElement>('input[name="tag"]:checked')].map(i => i.value);
+        const sponsor = (lf.querySelector('select[name="sponsor"]') as HTMLSelectElement).value;
+        act(lf.querySelector('button'), async () => { const r = await api('menu', { method: 'POST', body: { action: 'labels', id: lf.dataset.labelsf, tags, sponsor } }); toast(`Labels saved for ${r.name}. Fans see them on the menu.`); await draw(); });
         return;
       }
       const rn = (e.target as HTMLElement).closest('[data-rename]') as HTMLFormElement | null;
@@ -747,8 +788,14 @@ const PAGES: Record<string, () => Promise<void>> = {
       $('srReport').scrollIntoView({ block: 'start' });
     };
     const draw = async () => {
-      const d = await api('sales-reports');
-      main.innerHTML = `<section class="mk-section"><form class="mk-filters" id="srF"><div class="mk-field"><label for="srD">Save or update a report for a day</label><input id="srD" type="date" value="${todayLagos()}" max="${todayLagos()}" /></div><button class="mk-btn" type="submit">Save report</button></form>
+      const [d, pf] = await Promise.all([api('sales-reports'), api('prep-forecast').catch(() => null)]);
+      const tLagos = (iso: string) => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' });
+      const prep = pf ? `<section class="mk-section"><h2>🍳 How much to prepare${pf.next ? ` <span class="mk-badge">${esc(pf.next.title)}</span>` : ''}</h2>
+          ${pf.items.length ? `<p class="mk-status" style="text-transform:none;letter-spacing:0">A suggestion from the last ${pf.basedOn.length} saved report${pf.basedOn.length === 1 ? '' : 's'} (the most recent counts most), plus ${pf.margin}% extra. It never goes below what fans have already paid for. Use your judgement for big matches, rain or holidays.</p>
+          <div class="mk-table-wrap"><table class="mk-table"><thead><tr><th>Item</th><th>Prepare</th><th>Already ordered</th><th>Average sold</th><th>Last match</th></tr></thead><tbody>${pf.items.map((i: any) => `<tr><td>${esc(i.name)}</td><td><b>${i.suggest}</b></td><td>${i.preordered}</td><td>${i.average}</td><td>${i.last}</td></tr>`).join('')}</tbody></table></div>`
+          : '<p class="mk-empty">No saved reports yet. After the first home match, the suggestion appears here.</p>'}
+          ${pf.halftimeSlots.length ? `<h3 style="margin:14px 0 6px">Half-time orders so far</h3><div class="mk-table-wrap"><table class="mk-table"><thead><tr><th>Slot</th><th>Due</th><th>Orders</th><th>Room left</th></tr></thead><tbody>${pf.halftimeSlots.map((s: any) => `<tr><td>${esc(s.label)}</td><td>${tLagos(s.at)}</td><td><b>${s.taken}</b></td><td>${s.left === null ? 'No limit' : s.left}</td></tr>`).join('')}</tbody></table></div>` : ''}</section>` : '';
+      main.innerHTML = prep + `<section class="mk-section"><form class="mk-filters" id="srF"><div class="mk-field"><label for="srD">Save or update a report for a day</label><input id="srD" type="date" value="${todayLagos()}" max="${todayLagos()}" /></div><button class="mk-btn" type="submit">Save report</button></form>
           <p class="mk-status" style="text-transform:none;letter-spacing:0">A report saves by itself 4 hours after kick-off of each home match. Saving a day again updates its figures, for example after a refund.</p></section>
         <section class="mk-section"><h2>Saved reports <span class="mk-badge">${d.reports.length}</span></h2>
         ${d.reports.length ? `<div class="mk-actions" style="justify-content:flex-start;margin:0 0 8px"><button type="button" class="mk-btn go" id="srCombine" disabled>Tick reports to combine them</button></div><div class="mk-table-wrap"><table class="mk-table"><thead><tr><th><span class="mk-sr">Choose</span></th><th>Report</th><th>Date</th><th>Match</th><th>Orders</th><th>Sales</th><th></th></tr></thead><tbody>${d.reports.map((r: any) => `<tr><td><input type="checkbox" class="mk-srcheck" data-pick="${r.no}" aria-label="Choose report ${r.no}" ${picked.has(r.no) ? 'checked' : ''} /></td><td><b>Report ${r.no}</b></td><td style="white-space:nowrap">${esc(r.day)}</td><td>${esc(r.title)}${r.venue ? `<br><span class="mk-status" style="text-transform:none;letter-spacing:0">${esc(r.venue)}</span>` : ''}</td><td>${r.orders}</td><td>${esc(r.total)}</td><td><div class="mk-actions" style="justify-content:flex-start;margin:0"><button type="button" class="mk-btn" data-open-report="${r.no}">Open</button>${d.canDelete && r.canDelete ? `<button type="button" class="mk-btn danger" data-del-report="${r.no}">Delete</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div>

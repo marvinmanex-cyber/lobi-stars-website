@@ -250,3 +250,20 @@
 .kx-banner.kx-soon { background: linear-gradient(135deg, #0B3D1B, #0E7A26); color: #fff; padding: 18px 20px; border: 1px solid rgba(255, 199, 44, .45); }
 .kx-banner.kx-soon b { display: block; margin-bottom: 0; font: 700 20px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; color: #FFC72C; }
 .kx-banner.kx-soon span { font-weight: 500; }
+/* Dish labels and sponsors. */
+.kx-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+.kx-tag { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #E8F7EE; color: #0B5D2A; }
+.kx-tag--kids { background: #EAF2FF; color: #1D4ED8; }
+.kx-tag--veg { background: #F0FBE6; color: #3F6212; }
+.kx-spons { display: flex; align-items: center; gap: 6px; margin: 4px 0; font-size: 12px; color: #9CA3AF; }
+.kx-spons img { height: 20px; width: auto; background: #fff; border-radius: 4px; padding: 1px 3px; }
+.kx-banner.kx-deal { background: linear-gradient(135deg, #B8860B, #FFC72C); color: #2A1E00; padding: 14px 18px; }
+.kx-banner.kx-deal b { display: block; font: 700 20px/1.2 'Barlow Condensed', sans-serif; letter-spacing: .04em; }
+.kx-banner.kx-deal[hidden] { display: none; }
+
+/* Pay by bank transfer (Paystack Pay with Transfer) */
+#kxTrBtn { margin-top: 10px; }
+.kx-trhint { margin: 6px 0 0; font-size: 13px; color: var(--kx-muted, #5b6660); text-align: center; }
+.kx-slot { margin-top: 10px; }
+.kx-slot[hidden] { display: none; }
+.kx-slot select { min-height: 48px; border-radius: 10px; padding: 0 10px; font-size: 16px; }

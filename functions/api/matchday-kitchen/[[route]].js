@@ -37,6 +37,12 @@ import { officialDevice, listDevices, addDevice, removeDevice, replyFor } from '
 import { saveAppDevice, removeAppDevice, removeStaffDevices, testAppDevice, testAlerts, notifyKitchen, markOpened, alertFallback, alertLevels, ensureKitchenSchema as ensureAlertSchema } from '../_lib/kitchenNotify.js';
 import { canMove, reasonProblem, muteProblem, alarmsFor, ALERT_LEVELS, zoneOf, runnerCovers } from '../_lib/kitchenWorkflow.js';
 import { kitchenReport, csvRows } from '../_lib/kitchenReports.js';
+import { partnerList } from '../_lib/partnerList.js';
+import { goalDeal, saveGoalDeal } from '../_lib/goalDeal.js';
+import { slotCapacity, saveSlotCapacity } from '../_lib/halftimeSlots.js';
+import { prepForecast } from '../_lib/prepForecast.js';
+import { payTransferOn, savePayTransfer } from '../_lib/payTransfer.js';
+import { TAGS } from '../_lib/foodMenuDb.js';
 import { listSalesReports, loadSalesReport, saveSalesReport, deleteSalesReport, pieSlices } from '../_lib/kitchenSalesReports.js';
 import { salesReportPdf, salesReportDocx, reportFileName, PIE_COLOURS } from '../_lib/kitchenSalesFiles.js';
 import { activeVenueId as activeVenue, getVenue, cleanVenuePatch, saveVenueSettings, openVenueShift, startVenueShift, endVenueShift, dutyIds, refundProblem } from '../_lib/kitchenOps.js';
@@ -238,8 +244,35 @@ async function handle(context) {
         }
         return json({ ok: true, receipt });
       }
-      case 'GET menu': return json({ groups: await K.menu(db, myVenue), canPrice: perms.price, canAll: perms.ordering, canMenu: perms.menu, categories: perms.menu ? await K.menuCategories(db) : [] });
+      case 'GET menu': return json({ groups: await K.menu(db, myVenue), canPrice: perms.price, canAll: perms.ordering, canMenu: perms.menu, categories: perms.menu ? await K.menuCategories(db) : [], partners: perms.menu ? (await partnerList(env, request.url)).map(p => ({ slug: p.slug, name: p.name })) : [], tagNames: TAGS, goalDeal: perms.price ? await goalDeal(db) : null, slotCapacity: perms.price ? await slotCapacity(db) : null, payTransfer: perms.ordering ? await payTransferOn(db) : null });
       case 'POST menu': {
+        if (body.action === 'pay-transfer') {
+          if (!perms.ordering) return denied();
+          const r = await savePayTransfer(db, body.on === true, staffName(user));
+          await mkLog(db, user, r.on ? 'Switched on Pay by bank transfer' : 'Switched off Pay by bank transfer', { kind: 'settings', request });
+          return json(r);
+        }
+        if (body.action === 'slot-capacity') {
+          if (!perms.price) return denied();
+          const r = await saveSlotCapacity(db, body.capacity, staffName(user));
+          if (r.error) return json({ error: r.error }, 400);
+          await mkLog(db, user, `Half-time slots: ${r.capacity ? `${r.capacity} orders per slot` : 'no limit'}`, { kind: 'menu', request });
+          return json(r);
+        }
+        if (body.action === 'goal-deal') {
+          if (!perms.price) return denied();
+          const r = await saveGoalDeal(db, body, staffName(user));
+          if (r.error) return json({ error: r.error }, 400);
+          await mkLog(db, user, `Goal deal: ${r.enabled ? `on, ${r.percent}% off for ${r.minutes} minutes after a Lobi Stars goal` : 'off'}`, { kind: 'menu', request });
+          return json(r);
+        }
+        if (body.action === 'labels') {
+          if (!perms.menu) return denied();
+          const r = await K.setDishLabels(db, body.id, { tags: body.tags, sponsor: body.sponsor }, staffName(user));
+          if (r.error) return json({ error: r.error }, r.status || 400);
+          await mkLog(db, user, `Menu: labels for ${r.name} (${r.tags.join(', ') || 'none'}; sponsor ${r.sponsor || 'none'})`, { kind: 'menu', request });
+          return json(r);
+        }
         if (body.action === 'soldout' || body.action === 'back') {
           const r = await K.setSoldOut(db, body.id, body.action === 'soldout', staffName(user), myVenue);
           if (r.error) return json({ error: r.error }, 404);
@@ -433,6 +466,9 @@ async function handle(context) {
         }
         return json({ day, ...report });
       }
+      case 'GET prep-forecast':
+        if (!perms.reports) return denied();
+        return json(await prepForecast(db, scope));
       case 'GET sales-reports':
         if (!perms.reports) return denied();
         return json({ reports: await listSalesReports(db, scope), canDelete: perms.superAdmin });

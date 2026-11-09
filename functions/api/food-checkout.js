@@ -1,4 +1,7 @@
 import { randomId } from './_lib/crypto.js';
+import { goalDiscount } from './_lib/goalDeal.js';
+import { pickSlot, setSlot } from './_lib/halftimeSlots.js';
+import { payTransferOn } from './_lib/payTransfer.js';
 import { initializeFood } from './_lib/paystackClient.js';
 import { ensureMenuSchema, orderingState } from './_lib/foodMenuDb.js';
 import { ensureFoodSchema, nextRef, foodSettings, priceCart, setDelivery, newDeliveryCode } from './_lib/foodOrders.js';
@@ -50,7 +53,10 @@ export async function onRequestPost({ request, env, waitUntil }) {
   // Prices, availability and limits come from the menu in the database (Admin -> In-Seat Food -> Menu).
   const priced = await priceCart(env.DB, items, venueId);
   if (priced.error) return Response.json({ error: priced.error }, { status: priced.status });
-  const { orderItems, totalKobo, adult } = priced;
+  const { orderItems, adult } = priced;
+  // Goal deal (a Lobi Stars goal a few minutes ago): money off, saved on the order.
+  const { dealKobo } = await goalDiscount(env.DB, priced.totalKobo);
+  const totalKobo = priced.totalKobo - dealKobo;
   if (adult && b.adultConfirmed !== true) return Response.json({ error: 'Please confirm you are 18 or older to order alcoholic drinks.', code: 'adult' }, { status: 400 });
   if (settings.minOrderKobo && totalKobo < settings.minOrderKobo) return Response.json({ error: `The minimum order is ₦${(settings.minOrderKobo / 100).toLocaleString('en-NG')}.` }, { status: 400 });
   // The home match being played today, if any (for reports per match).
@@ -61,6 +67,9 @@ export async function onRequestPost({ request, env, waitUntil }) {
     eventId = m?.id || null;
   } catch { /* no match */ }
 
+  // Half-time: a slot with room (start, middle or end of half-time).
+  const slot = b.when === 'half-time' && eventId ? await pickSlot(env.DB, eventId, b.slot) : { slot: null };
+  if (slot.error) return Response.json({ error: slot.error, code: slot.code }, { status: 409 });
   const id = randomId('LS-FOOD');
   const ref = await nextRef(env.DB);
   // Lobi Stars Rewards: a food voucher and/or Star Points (held now, taken when paid).
@@ -76,8 +85,9 @@ export async function onRequestPost({ request, env, waitUntil }) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'AWAITING_PAYMENT', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(id, ref, pickup ? '' : seat, pickup ? null : stand || null, phone, email, name, notes || null, eventId, JSON.stringify(orderItems), pay.totalKobo, ref,
     token, created.toISOString(), expires.toISOString(), pickup ? 'pickup' : 'seat', pickup ? pickupPoint : null, pay.pointsUsed, pay.pointsKobo, pay.voucherCode, pay.voucherKobo).run();
-  await env.DB.prepare(`UPDATE food_orders SET venue_id = ?, delivery_code = ? WHERE id = ?`).bind(venueId, newDeliveryCode(), id).run();
+  await env.DB.prepare(`UPDATE food_orders SET venue_id = ?, delivery_code = ?, deal_kobo = ? WHERE id = ?`).bind(venueId, newDeliveryCode(), dealKobo, id).run();
   await setDelivery(env.DB, id, b.when, eventId);
+  await setSlot(env.DB, id, slot.slot, slot.at);
 
   const origin = new URL(request.url).origin;
   // Staff alert "New order – awaiting payment" (in the admin; push/email only if switched on).
@@ -90,6 +100,8 @@ export async function onRequestPost({ request, env, waitUntil }) {
       email: email || String(env.FOOD_ORDERS_EMAIL || 'food-orders@lobistarsfc.com'), amountKobo: pay.totalKobo, reference: ref,
       callbackUrl: `${origin}${b.returnTo === 'kitchen' ? '/kitchen/' : '/food/order/'}?ref=${encodeURIComponent(ref)}&t=${encodeURIComponent(token)}`,
       metadata: { kind: 'food', orderId: id, ref, seat, stand },
+      // Pay by bank transfer (when switched on): Paystack gives a one-time account number and confirms it automatically.
+      ...(b.payBy === 'transfer' && (await payTransferOn(env.DB)) ? { channels: ['bank_transfer'] } : {}),
     });
     return Response.json({ authorizationUrl: p.authorization_url, ref, orderId: id, totalKobo: pay.totalKobo });
   } catch (err) {

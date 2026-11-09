@@ -113,11 +113,20 @@ export async function autoAlert(env, kind, event, extra = {}, { onceKey, waitUnt
   try {
     const db = env.DB;
     await ensureMatchAlertsSchema(db);
+    // MatchDay Kitchen goal deal: a Lobi Stars goal at a home match starts it (once per goal).
+    let deal = null;
+    if (kind === 'goal' && /lobi stars/i.test(extra.scorerTeam || '') && /lobi stars/i.test(event.home_team || '')) {
+      try {
+        const once = await db.prepare(`INSERT INTO fan_alert_once (event_id, kind, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING`).bind(String(event.id), `deal:${onceKey || kind}`, nowIso()).run();
+        if (once.meta?.changes) { const { startGoalDeal } = await import('./goalDeal.js'); deal = await startGoalDeal(db); }
+      } catch (err) { console.error('[goal deal]', err); }
+    }
     if (!AUTO_KINDS[kind] || !(await alertSettings(db))[kind]) return null;
     const claim = await db.prepare(`INSERT INTO fan_alert_once (event_id, kind, created_at) VALUES (?, ?, ?) ON CONFLICT DO NOTHING`).bind(String(event.id), onceKey || kind, nowIso()).run();
     if (!claim.meta?.changes) return null;
     const t = alertText(kind, event, extra);
     if (!t) return null;
+    if (deal) { t.body = `${t.body} 🍔 Goal deal: ${deal.percent}% off MatchDay Kitchen for ${deal.minutes} minutes!`; t.url = '/kitchen/?utm_source=push&utm_medium=goal_deal'; }
     const id = await createJob(db, { kind, category: AUTO_KINDS[kind].category, eventId: event.id, ...t });
     const job = runFanPush(env, { origin });
     if (waitUntil) waitUntil(job); else await job;

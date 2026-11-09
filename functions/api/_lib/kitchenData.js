@@ -11,7 +11,7 @@
 // time stamps as the admin pages); menu changes update only the one field
 // (plus updated_at) and write the dish's history.
 import { ensureFoodSchema, moveOrder, STATUS, STAFF_MOVES, whereText, formatNaira, expireStale, foodSettings, staffMessage, DEFAULT_VENUE } from './foodOrders.js';
-import { ensureMenuSchema, history, parseItem, wasOrdered } from './foodMenuDb.js';
+import { ensureMenuSchema, history, parseItem, wasOrdered, parseTags, cleanTags, cleanSponsor, TAGS } from './foodMenuDb.js';
 import { canMove, ROLE_VIEW, seesMoney, alarmsFor } from './kitchenWorkflow.js';
 import { receiptEmailHtml, receiptWhatsappText, receiptPdf, receiptPdfName, waNumber, canReceipt, LOGO_JPEG } from './foodReceipt.js';
 import { sendEmail } from './email.js';
@@ -210,10 +210,10 @@ export async function menu(db, venueId = DEFAULT_VENUE) {
   await ready(db);
   const off = venueId === DEFAULT_VENUE ? [] : (await db.prepare(`SELECT item_id FROM food_item_venue WHERE venue_id = ? AND sold_out = 1`).bind(venueId).all()).results.map(r => r.item_id);
   const cats = (await db.prepare(`SELECT id, name FROM food_categories ORDER BY sort, name`).all()).results;
-  const dishes = (await db.prepare(`SELECT id, name, price_kobo, category_id, available, sold_out, emoji FROM food_items WHERE archived = 0 ORDER BY sort, name`).all()).results;
+  const dishes = (await db.prepare(`SELECT id, name, price_kobo, category_id, available, sold_out, emoji, tags, sponsor FROM food_items WHERE archived = 0 ORDER BY sort, name`).all()).results;
   const groups = cats.map(c => ({ id: c.id, name: c.name, dishes: [] }));
   const other = { id: '', name: 'Other', dishes: [] };
-  for (const d of dishes) (groups.find(g => g.id === d.category_id) || other).dishes.push({ id: d.id, name: d.name, emoji: d.emoji || '', price: d.price_kobo / 100, priceText: formatNaira(d.price_kobo), soldOut: !!d.sold_out || off.includes(d.id), available: !!d.available });
+  for (const d of dishes) (groups.find(g => g.id === d.category_id) || other).dishes.push({ id: d.id, name: d.name, emoji: d.emoji || '', tags: parseTags(d.tags), sponsor: d.sponsor || '', price: d.price_kobo / 100, priceText: formatNaira(d.price_kobo), soldOut: !!d.sold_out || off.includes(d.id), available: !!d.available });
   return [...groups, other].filter(g => g.dishes.length);
 }
 
@@ -262,6 +262,16 @@ export async function addDish(db, v, by) {
     VALUES (?, ?, ?, ?, ?, NULL, ?, 1, 0, 0, NULL, NULL, 0, NULL, ?, ?, ?)`).bind(id, value.name, value.description, value.price_kobo, value.category_id, value.emoji || '🍽️', sort, now, now).run();
   await history(db, id, by, `Added at ${formatNaira(value.price_kobo)} (MatchDay Kitchen)`);
   return { ok: true, id, name: value.name, price: formatNaira(value.price_kobo) };
+}
+/** A dish's labels (halal, vegetarian, kids' portion) and sponsoring partner. */
+export async function setDishLabels(db, id, { tags, sponsor }, by) {
+  await ready(db);
+  const d = await db.prepare(`SELECT id, name, tags, sponsor FROM food_items WHERE id = ? AND archived = 0`).bind(String(id)).first();
+  if (!d) return { error: 'That dish is no longer on the menu.', status: 404 };
+  const t = cleanTags(tags), s = cleanSponsor(sponsor);
+  await db.prepare(`UPDATE food_items SET tags = ?, sponsor = ?, updated_at = ? WHERE id = ?`).bind(JSON.stringify(t), s, new Date().toISOString(), d.id).run();
+  await history(db, d.id, by, `Labels: ${t.map(x => TAGS[x]).join(', ') || 'none'}; sponsor: ${s || 'none'} (MatchDay Kitchen)`);
+  return { ok: true, name: d.name, tags: t, sponsor: s };
 }
 /** A new name for a dish. Orders already placed keep the name they were placed with. */
 export async function renameDish(db, id, name, by) {

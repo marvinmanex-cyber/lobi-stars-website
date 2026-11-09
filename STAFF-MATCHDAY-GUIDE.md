@@ -81,6 +81,16 @@ section 35.
 
 ---
 
+## 1c. MatchDay Kitchen on the day (9 November 2026)
+
+- **The day before:** a kitchen supervisor opens MatchDay Kitchen › **Sales reports** › **How much to prepare** and buys stock from it (the last 5 matches plus 15%).
+- **Two hours before kick-off:** turn on the **collection board** on the TV at the pickup point: **lobistarsfc.com/kitchen/board/**, then tap the screen once.
+- **Menu and prices:** check **Goal deals on** (and the percent), **Half-time slots** (orders per slot) and **Pay by bank transfer** are set the way you want.
+- **During the match:** a Lobi Stars goal entered in Live Match Control starts the goal deal by itself. Expect a rush of orders in the next few minutes.
+- **Half-time:** orders are due at 45, 50 and 55 minutes after kick-off, in slots. Cook in that order.
+
+Full details: STAFF-GUIDE.md › section 42 › Kitchen extras.
+
 ## 1a. The digital match day programme (2 days before)
 
 In **Admin → Matchday → Matchday Programme**, press **+ New programme**, pick the

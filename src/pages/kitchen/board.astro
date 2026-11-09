@@ -1,0 +1,85 @@
+---
+// /kitchen/board/ -- the MatchDay Kitchen collection board for a TV near the kiosk or pickup point.
+// Open it full screen on the screen computer. Shows pickup order numbers only (no names): "Preparing"
+// and "Ready to collect", newest ready first; checks every 8 seconds and chimes when a new order is
+// ready. ?point=<pickup point name> shows one pickup point only. Not indexed.
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Collection board | MatchDay Kitchen</title>
+  <link rel="icon" href="/favicon.ico" />
+  <style>
+    :root { --green: #0E7A26; --gold: #FFC72C; --ink: #0B1210; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(120% 120% at 50% 0%, #10331C, var(--ink)); color: #fff; font-family: 'Barlow', Arial, sans-serif; display: flex; flex-direction: column; }
+    header { display: flex; align-items: center; gap: 18px; padding: 18px 3vw; border-bottom: 2px solid rgba(255, 255, 255, .1); }
+    header img { width: 64px; height: 64px; border-radius: 50%; background: #fff; }
+    header h1 { margin: 0; font: 400 clamp(28px, 3.4vw, 54px)/1 'Bebas Neue', Impact, sans-serif; letter-spacing: 1px; }
+    header p { margin: 4px 0 0; color: rgba(255, 255, 255, .75); font-size: clamp(14px, 1.3vw, 20px); }
+    .clock { margin-left: auto; font: 400 clamp(28px, 3vw, 48px)/1 'Bebas Neue', Impact, sans-serif; color: var(--gold); }
+    main { flex: 1; display: grid; grid-template-columns: 1fr 1.4fr; gap: 2vw; padding: 2vw 3vw; }
+    section { border-radius: 22px; padding: 1.4vw 1.8vw; background: rgba(255, 255, 255, .05); border: 2px solid rgba(255, 255, 255, .1); }
+    .ready { background: rgba(14, 122, 38, .25); border-color: var(--green); }
+    h2 { margin: 0 0 1vw; font: 400 clamp(26px, 3vw, 52px)/1 'Bebas Neue', Impact, sans-serif; letter-spacing: 1.5px; }
+    .ready h2 { color: var(--gold); }
+    ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 1vw; }
+    li { min-width: 9.5vw; padding: .6vw 1.2vw; border-radius: 14px; background: rgba(255, 255, 255, .1); text-align: center; font: 400 clamp(34px, 4.4vw, 84px)/1 'Bebas Neue', Impact, sans-serif; letter-spacing: 1px; }
+    .ready li { background: #fff; color: var(--ink); }
+    .ready li.new { animation: pop 1s ease-in-out 4; }
+    li small { display: block; font: 600 clamp(11px, .9vw, 16px)/1.2 Arial, sans-serif; letter-spacing: 0; color: inherit; opacity: .7; }
+    .empty { color: rgba(255, 255, 255, .55); font-size: clamp(16px, 1.6vw, 26px); }
+    footer { padding: 12px 3vw 18px; color: rgba(255, 255, 255, .7); font-size: clamp(14px, 1.2vw, 20px); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    footer b { color: var(--gold); }
+    #go { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .75); font: 700 22px Arial, sans-serif; cursor: pointer; }
+    #go[hidden], [hidden] { display: none !important; }
+    @keyframes pop { 50% { transform: scale(1.12); background: var(--gold); } }
+    @media (max-width: 800px) { main { grid-template-columns: 1fr; } li { min-width: 24vw; } }
+    @media (prefers-reduced-motion: reduce) { .ready li.new { animation: none; } }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="/images/matchday-kitchen/logo-48.png" alt="" width="64" height="64" />
+    <div><h1>MatchDay Kitchen · Collection</h1><p id="pt">Show your order number at the counter</p></div>
+    <span class="clock" id="clock"></span>
+  </header>
+  <main>
+    <section aria-labelledby="pH"><h2 id="pH">Preparing</h2><ul id="prep"></ul><p class="empty" id="prepE">No orders being prepared.</p></section>
+    <section class="ready" aria-labelledby="rH" aria-live="polite"><h2 id="rH">Ready to collect</h2><ul id="ready"></ul><p class="empty" id="readyE">Nothing waiting. Order at lobistarsfc.com/kitchen</p></section>
+  </main>
+  <footer><span>Your number is on your order page and in your order message.</span><span>Order at <b>lobistarsfc.com/kitchen</b></span></footer>
+  <div id="go" hidden>Tap anywhere to start the collection board (turns the chime on)</div>
+  <script is:inline>
+  (function () {
+    var point = new URLSearchParams(location.search).get('point') || '';
+    if (point) document.getElementById('pt').textContent = 'Pickup point: ' + point + ' · show your order number at the counter';
+    var audio = null, seen = null;
+    var go = document.getElementById('go');
+    go.hidden = false;
+    go.addEventListener('click', function () { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} go.hidden = true; if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () {}); });
+    function chime() {
+      if (!audio) return;
+      [784, 988, 1175].forEach(function (f, i) { var o = audio.createOscillator(), g = audio.createGain(); o.frequency.value = f; g.gain.setValueAtTime(0.0001, audio.currentTime + i * 0.18); g.gain.exponentialRampToValueAtTime(0.4, audio.currentTime + i * 0.18 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + i * 0.18 + 0.3); o.connect(g).connect(audio.destination); o.start(audio.currentTime + i * 0.18); o.stop(audio.currentTime + i * 0.18 + 0.35); });
+    }
+    function li(o, isNew) { var x = document.createElement('li'); if (isNew) x.className = 'new'; x.textContent = o.no; if (o.point && !point) { var s = document.createElement('small'); s.textContent = o.point; x.append(s); } return x; }
+    function fill(id, list, fresh) { var ul = document.getElementById(id); ul.replaceChildren.apply(ul, list.map(function (o) { return li(o, fresh && fresh.has(o.no)); })); document.getElementById(id + 'E').hidden = list.length > 0; }
+    async function tick() {
+      try {
+        var d = await (await fetch('/api/food/board' + (point ? '?point=' + encodeURIComponent(point) : ''), { cache: 'no-store' })).json();
+        var now = new Set(d.ready.map(function (o) { return o.no; }));
+        var fresh = seen ? new Set(Array.from(now).filter(function (n) { return !seen.has(n); })) : new Set();
+        fill('prep', d.preparing); fill('ready', d.ready, fresh);
+        if (fresh.size) chime();
+        seen = now;
+      } catch (e) { /* try again shortly */ }
+    }
+    function clock() { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Africa/Lagos' }); }
+    tick(); clock(); setInterval(tick, 8000); setInterval(clock, 15000);
+  })();
+  </script>
+</body>
+</html>

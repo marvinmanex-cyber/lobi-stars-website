@@ -4756,8 +4756,14 @@ staff, shifts, handover notes and activity log (read-only).
   order at the top, with one **Order again** button. Sold-out items are left
   out.
 - **When:** **As soon as possible**, **At kick-off** (shown only before kick-off)
-  or **At half-time** (until about 40 minutes into the match). Orders for
-  kick-off or half-time are cooked for that time.
+  or **At half-time** (until about 40 minutes into the match), with a choice of
+  half-time slot (start, middle or end). Orders for kick-off or half-time are
+  cooked for that time.
+- **Labels and sponsors:** dishes can show Halal, Vegetarian or Kids' portion,
+  and "Sponsored by" a partner.
+- **Goal deal:** after a Lobi Stars goal at a home match, a green bar shows the
+  money off and the minutes left (when goal deals are on).
+- **Pay by bank transfer:** a second pay button (when switched on).
 - **Delivery or pickup:** when pickup points are set, fans can choose **I'll
   collect it** and get a collection number.
 - **Alerts:** **Tell me when it's on the way** sends a phone notification. If
@@ -4775,6 +4781,43 @@ staff, shifts, handover notes and activity log (read-only).
     (or take a screenshot of it).
 
   Both have a QR code to the menu.
+
+### Kitchen extras (9 November 2026)
+
+**Pay by bank transfer (automatic confirmation).** Fans can press **Pay by bank transfer** under **Pay online**. Paystack shows them a one-time account number; they send the money from any bank app, and Paystack tells the website as soon as it arrives. The order then becomes a normal paid order (alarm, kitchen screen, receipt). Nobody checks transfers or receipts by hand.
+- It is **off** until a supervisor or Super Admin switches it on: **Menu and prices** › **🏦 Pay by bank transfer** › tick **Show "Pay by bank transfer" to fans** › **Save**.
+- Switch it on only after Paystack has turned on **Transfer** for the account that receives food payments (Paystack dashboard › Settings › Preferences › Payment channels). Otherwise fans see an error from Paystack.
+- WhatsApp orders paid by transfer to the bank account still need **Record payment**, as before.
+
+**Half-time slots.** Fans who choose **At half-time** pick a slot: **Start of half-time** (45 minutes after kick-off), **Middle** (50) or **End** (55). Each slot takes a set number of orders (40 to begin with). When one is full, fans see "full" and are offered the next one, and the website refuses extra orders for a full slot.
+- Change the number: **Menu and prices** › **⏱ Half-time slots** › **Orders per slot** › **Save** (supervisors and Super Admins). 0 means no limit.
+- The kitchen ticket shows the time each order is due (⏱ HALF-TIME · due 16:45).
+- **Sales reports** › **How much to prepare** shows how many orders each slot has so far.
+
+**How much to prepare.** At the top of **Sales reports** (supervisors and Super Admins). For the next home match it suggests how many of each item to prepare:
+- It uses the last 5 saved sales reports. The most recent match counts most.
+- It adds 15% so the kitchen doesn't run out early, and never suggests fewer than fans have already paid for.
+- Columns: **Prepare** (the suggestion), **Already ordered** (paid pre-orders for that match), **Average sold**, **Last match**.
+- It is only a guide. Prepare more for big matches, holidays or good weather, and less if it rains. It appears after the first saved report.
+
+**Goal deals.** When Lobi Stars score at a home match, food is money off for a few minutes (for example 10% off for 10 minutes).
+- Switch on: **Menu and prices** › **⚽ Goal deal** › tick **Goal deals on**, set **Percent off** (5 to 50) and **For how many minutes** (3 to 20) › **Save goal deal**. Off to begin with.
+- The deal starts by itself when the goal is entered in Live Match Control (one deal per goal). Fans see a green "Goal deal" bar with the minutes left on the menu. Fans with match alerts get it in the goal alert.
+- The discount is worked out by the website at checkout and saved on the order. Sales reports count what fans actually paid.
+- Unticking **Goal deals on** also ends a deal that is running.
+
+**Sponsored dishes.** A dish can carry a partner's name and logo ("Sponsored by …") on the fans' menu.
+- In MatchDay Kitchen: **Menu and prices** › **Labels** on the dish › choose the sponsor › **Save labels** (supervisors and Super Admins).
+- In the website admin: Admin › Food › Menu › edit the dish › **Sponsor**.
+- The list of sponsors is the club's partners (Admin › Partners). Sell it as part of a partner's package, for example "Suya sponsored by …".
+
+**Collection board (TV).** Open **lobistarsfc.com/kitchen/board/** on the computer or smart TV near the pickup point, then tap the screen once (this turns on the chime and full screen).
+- Two columns: **Preparing** and **Ready to collect**, with the fans' collection numbers (#0004). No names or phone numbers.
+- It checks every 8 seconds and chimes when an order is ready.
+- One pickup point only: add `?point=` and the pickup point's name, for example `lobistarsfc.com/kitchen/board/?point=Kiosk`.
+- It only shows pickup orders from the last 3 hours.
+
+**Labels: Halal, Vegetarian, Kids' portion.** Tick the labels that apply on each dish (**Menu and prices** › **Labels**, or in Admin › Food › Menu). Fans see them as small badges on the dish. Only label a dish if it's true: for Halal, the kitchen must be sure of the meat and how it was prepared.
 
 ### The MatchDay Kitchen staff app (install on phones, tablets and laptops)
 The kitchen staff area is also its own app, **MD Kitchen**. It is separate from the

@@ -1,6 +1,6 @@
 import { requireAdminUser } from '../_lib/adminEvents.js';
 import { logAdminAction } from '../_lib/adminSession.js';
-import { ensureMenuSchema, parseItem, history, wasOrdered, photoUrl, naira, orderingState } from '../_lib/foodMenuDb.js';
+import { ensureMenuSchema, parseItem, history, wasOrdered, photoUrl, naira, orderingState, parseTags } from '../_lib/foodMenuDb.js';
 import { foodSettings, saveFoodSetting, WA_TEMPLATES } from '../_lib/foodOrders.js';
 import { randomId } from '../_lib/crypto.js';
 
@@ -18,7 +18,7 @@ async function state(env) {
     items: items.map(i => ({
       id: i.id, name: i.name, description: i.description || '', price: i.price_kobo / 100, category: i.category_id,
       photoId: i.photo_id, photo: photoUrl(i.photo_id), emoji: i.emoji || '', available: !!i.available, soldOut: !!i.sold_out,
-      archived: !!i.archived, maxPerOrder: i.max_per_order, stock: i.stock, adult: !!i.adult, spice: i.spice || 0, badge: i.badge || '', updatedAt: i.updated_at,
+      archived: !!i.archived, maxPerOrder: i.max_per_order, stock: i.stock, adult: !!i.adult, spice: i.spice || 0, badge: i.badge || '', tags: parseTags(i.tags), sponsor: i.sponsor || '', updatedAt: i.updated_at,
       history: hist.filter(h => h.item_id === i.id).slice(0, 8),
     })),
     settings: { ...settings, minOrder: settings.minOrderKobo / 100 },
@@ -55,8 +55,8 @@ export async function onRequestPost({ request, env }) {
       if (!v.photo_id && !v.emoji) return bad('Please add a photo (or at least an emoji) so fans can see the item.');
       if (item) {
         await db.prepare(`UPDATE food_items SET name = ?, description = ?, price_kobo = ?, category_id = ?, photo_id = ?, emoji = ?, available = ?, sold_out = ?,
-          adult = ?, max_per_order = ?, stock = ?, spice = ?, badge = ?, updated_at = ? WHERE id = ?`)
-          .bind(v.name, v.description, v.price_kobo, v.category_id, v.photo_id, v.emoji, v.available, v.sold_out, v.adult, v.max_per_order, v.stock, v.spice, v.badge, now, item.id).run();
+          adult = ?, max_per_order = ?, stock = ?, spice = ?, badge = ?, tags = ?, sponsor = ?, updated_at = ? WHERE id = ?`)
+          .bind(v.name, v.description, v.price_kobo, v.category_id, v.photo_id, v.emoji, v.available, v.sold_out, v.adult, v.max_per_order, v.stock, v.spice, v.badge, v.tags, v.sponsor, now, item.id).run();
         if (v.price_kobo !== item.price_kobo) await history(db, item.id, admin.name, `Price changed from ${naira(item.price_kobo)} to ${naira(v.price_kobo)}`);
         if (v.name !== item.name) await history(db, item.id, admin.name, `Renamed from "${item.name}"`);
         if (v.photo_id !== item.photo_id) await history(db, item.id, admin.name, v.photo_id ? 'New photo' : 'Photo removed');
@@ -65,9 +65,9 @@ export async function onRequestPost({ request, env }) {
       }
       const id = randomId('fi', 8);
       const sort = ((await db.prepare(`SELECT MAX(sort) AS m FROM food_items`).first()).m ?? -1) + 1;
-      await db.prepare(`INSERT INTO food_items (id, name, description, price_kobo, category_id, photo_id, emoji, available, sold_out, adult, max_per_order, stock, spice, badge, sort, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-        .bind(id, v.name, v.description, v.price_kobo, v.category_id, v.photo_id, v.emoji, v.available, v.sold_out, v.adult, v.max_per_order, v.stock, v.spice, v.badge, sort, now, now).run();
+      await db.prepare(`INSERT INTO food_items (id, name, description, price_kobo, category_id, photo_id, emoji, available, sold_out, adult, max_per_order, stock, spice, badge, tags, sponsor, sort, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .bind(id, v.name, v.description, v.price_kobo, v.category_id, v.photo_id, v.emoji, v.available, v.sold_out, v.adult, v.max_per_order, v.stock, v.spice, v.badge, v.tags, v.sponsor, sort, now, now).run();
       await history(db, id, admin.name, `Added at ${naira(v.price_kobo)}`);
       await log('add', v.name);
       return Response.json({ ok: true, id }, { headers: noStore });

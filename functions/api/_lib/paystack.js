@@ -3,7 +3,7 @@
 
 const PAYSTACK_BASE = 'https://api.paystack.co';
 
-export async function initializeTransaction(secretKey, { email, amountKobo, reference, callbackUrl, metadata }) {
+export async function initializeTransaction(secretKey, { email, amountKobo, reference, callbackUrl, metadata, channels }) {
   const res = await fetch(`${PAYSTACK_BASE}/transaction/initialize`, {
     method: 'POST',
     headers: {
@@ -16,6 +16,7 @@ export async function initializeTransaction(secretKey, { email, amountKobo, refe
       reference,
       callback_url: callbackUrl,
       metadata,
+      ...(channels ? { channels } : {}), // e.g. ['bank_transfer']: Paystack shows only that way to pay
     }),
   });
   const data = await res.json();

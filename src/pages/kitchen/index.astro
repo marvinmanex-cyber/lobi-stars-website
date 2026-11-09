@@ -129,6 +129,7 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
             <label class="kx-radio" id="kxWhenKo" hidden><input type="radio" name="when" value="kickoff" /> At kick-off</label>
             <label class="kx-radio"><input type="radio" name="when" value="half-time" /> At half-time</label>
           </div>
+            <label class="kx-f kx-slot" id="kxSlotWrap" hidden><span>Half-time slot</span><select id="kxSlot"></select></label>
           <p class="kx-small" id="kxWhenHint">Ordering ahead? Choose kick-off or half-time: the kitchen cooks it for then, so you skip the rush.</p>
           <label class="kx-f"><span>Note for the kitchen (optional)</span><textarea id="kxNote" maxlength="150" placeholder="e.g. no pepper, extra sauce"></textarea></label>
         </fieldset>
@@ -151,6 +152,8 @@ import CheckoutRewards from '../../components/rewards/CheckoutRewards.astro';
         <p class="kx-err" id="kxErr" role="alert" hidden></p>
         <div class="kx-pay">
           <button type="submit" class="kx-btn kx-btn--pay" id="kxPayBtn">Pay online</button>
+          <button type="button" class="kx-btn kx-btn--ghost" id="kxTrBtn" hidden style="width:100%">Pay by bank transfer</button>
+          <p class="kx-trhint" id="kxTrHint" hidden>You get a one-time account number. Your order is confirmed by itself as soon as the money arrives.</p>
           <div id="kxWaBox" hidden>
             <button type="button" class="kx-btn kx-btn--wa" id="kxWaBtn" style="width:100%">Order via WhatsApp</button>
           </div>

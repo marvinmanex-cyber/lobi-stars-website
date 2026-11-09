@@ -39,6 +39,9 @@ export async function ensureMenuSchema(db) {
   const { results: cols } = await db.prepare(`PRAGMA table_info(food_items)`).all();
   if (!cols.some(c => c.name === 'spice')) await db.prepare(`ALTER TABLE food_items ADD COLUMN spice INTEGER NOT NULL DEFAULT 0`).run();
   if (!cols.some(c => c.name === 'badge')) await db.prepare(`ALTER TABLE food_items ADD COLUMN badge TEXT`).run();
+  // Labels (halal, vegetarian, kids' portion) and a sponsoring partner (slug from the partners list).
+  if (!cols.some(c => c.name === 'tags')) await db.prepare(`ALTER TABLE food_items ADD COLUMN tags TEXT`).run();
+  if (!cols.some(c => c.name === 'sponsor')) await db.prepare(`ALTER TABLE food_items ADD COLUMN sponsor TEXT`).run();
   const n = (await db.prepare(`SELECT COUNT(*) AS n FROM food_items`).first()).n;
   if (!n) {
     const now = new Date().toISOString();
@@ -70,6 +73,11 @@ export { naira };
 
 /** Menu badges (MatchDay Kitchen). */
 export const BADGES = ['best-seller', 'spicy', 'new'];
+/** Menu labels fans can see on each dish. */
+export const TAGS = { halal: 'Halal', veg: 'Vegetarian', kids: "Kids' portion" };
+export const cleanTags = list => [...new Set((Array.isArray(list) ? list : []).map(String).filter(t => TAGS[t]))];
+export const parseTags = s => { try { return cleanTags(JSON.parse(s || '[]')); } catch { return []; } };
+export const cleanSponsor = s => (/^[a-z0-9-]{2,60}$/.test(String(s || '')) ? String(s) : null);
 
 /** Validates the add/edit form. Returns { value } or { error }. */
 export function parseItem(b, categories) {
@@ -92,6 +100,7 @@ export function parseItem(b, categories) {
     max_per_order, stock,
     spice: [0, 1, 2, 3].includes(Number(b.spice)) ? Number(b.spice) : 0,
     badge: BADGES.includes(b.badge) ? b.badge : null,
+    tags: JSON.stringify(cleanTags(b.tags)), sponsor: cleanSponsor(b.sponsor),
   } };
 }
 
@@ -154,7 +163,7 @@ export async function publicMenu(db, venueId = 'venue-main') {
     items: items.filter(i => i.category_id === c.id).map(i => ({
       id: i.id, name: i.name, description: i.description || '', priceKobo: i.price_kobo, photo: photoUrl(i.photo_id),
       emoji: i.emoji || '', soldOut: !!i.sold_out || i.stock === 0, notReady: !!i.sold_out && i.stock !== 0, maxPerOrder: i.max_per_order || 20, adult: !!i.adult,
-      spice: i.spice || 0, badge: i.badge || null,
+      spice: i.spice || 0, badge: i.badge || null, tags: parseTags(i.tags), sponsor: i.sponsor || null,
     })),
   })).filter(c => c.items.length);
 }

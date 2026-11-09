@@ -1,4 +1,6 @@
 import { randomId } from '../_lib/crypto.js';
+import { goalDiscount } from '../_lib/goalDeal.js';
+import { pickSlot, setSlot } from '../_lib/halftimeSlots.js';
 import { ensureMenuSchema, orderingState } from '../_lib/foodMenuDb.js';
 import { ensureFoodSchema, nextRef, foodSettings, priceCart, whatsappOrderMessage, whatsappUrl, formatNaira, trackUrl, setDelivery, paymentMessage, newDeliveryCode } from '../_lib/foodOrders.js';
 import { activeVenueId } from '../_lib/kitchenOps.js';
@@ -54,7 +56,10 @@ export async function onRequestPost({ request, env, waitUntil }) {
 
     const priced = await priceCart(env.DB, items, venueId);
     if (priced.error) return json({ error: priced.error, code: priced.status === 409 ? 'stock' : undefined }, priced.status);
-    const { orderItems, totalKobo, adult } = priced;
+    const { orderItems, adult } = priced;
+    // Goal deal (a Lobi Stars goal a few minutes ago): money off, saved on the order.
+    const { dealKobo } = await goalDiscount(env.DB, priced.totalKobo);
+    const totalKobo = priced.totalKobo - dealKobo;
     if (adult && b.adultConfirmed !== true) return json({ error: 'Please confirm you are 18 or older to order alcoholic drinks.', code: 'adult' }, 400);
     if (settings.minOrderKobo && totalKobo < settings.minOrderKobo) return json({ error: `The minimum order is ${formatNaira(settings.minOrderKobo)}.` }, 400);
 
@@ -65,6 +70,9 @@ export async function onRequestPost({ request, env, waitUntil }) {
       eventId = m?.id || null;
     } catch { /* no match today */ }
 
+    // Half-time: a slot with room (start, middle or end of half-time).
+    const slot = b.when === 'half-time' && eventId ? await pickSlot(env.DB, eventId, b.slot) : { slot: null };
+    if (slot.error) return json({ error: slot.error, code: slot.code }, 409);
     const id = randomId('LS-FOOD');
     const ref = await nextRef(env.DB);
     const token = randomId('t', 20);
@@ -81,8 +89,9 @@ export async function onRequestPost({ request, env, waitUntil }) {
     ).bind(id, ref, order.seat, order.stand, phone, email, name, order.notes, eventId, order.items_json, totalKobo, ref,
       token, created.toISOString(), expires.toISOString(), order.fulfilment, order.pickup_point).run();
     const deliveryCode = newDeliveryCode();
-    await env.DB.prepare(`UPDATE food_orders SET venue_id = ?, delivery_code = ? WHERE id = ?`).bind(venueId, deliveryCode, id).run();
+    await env.DB.prepare(`UPDATE food_orders SET venue_id = ?, delivery_code = ?, deal_kobo = ? WHERE id = ?`).bind(venueId, deliveryCode, dealKobo, id).run();
     await setDelivery(env.DB, id, b.when, eventId);
+    await setSlot(env.DB, id, slot.slot, slot.at);
 
     const origin = new URL(request.url).origin;
     const payment = paymentMessage(settings, { ...order, channel: 'whatsapp', payment_status: 'pending', order_status: 'AWAITING_WHATSAPP' });
