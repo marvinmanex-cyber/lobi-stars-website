@@ -6,8 +6,9 @@
 // template (/matches/…, news stories) fix the trail from the real address.
 // With share (the default on public pages) a Share button sits at the right.
 import ShareButton from './ShareButton.astro';
-interface Props { title: string; share?: boolean }
-const { title, share = false } = Astro.props;
+// home: the homepage's own slim bar (no Back or trail): a welcome line and the Share button.
+interface Props { title: string; share?: boolean; home?: boolean }
+const { title, share = false, home = false } = Astro.props;
 const SECTIONS: Record<string, [string, string] | null> = {
   news: ['News', '/news/'], club: ['The Club', '/club/'], fixtures: ['Fixtures & Results', '/fixtures/'], matches: ['Fixtures & Results', '/fixtures/'],
   squad: ['Squad', '/squad/'], gallery: ['Gallery', '/gallery/'], tickets: ['Tickets', '/tickets/'], programme: ['Matchday Programme', '/programme/'],
@@ -23,6 +24,14 @@ const crumbs: [string, string][] = [['Home', '/']];
 segs.slice(0, -1).forEach(s => { const x = SECTIONS[s]; if (x && x[1] !== crumbs[crumbs.length - 1][1]) crumbs.push(x); });
 const parent = crumbs[crumbs.length - 1][1];
 ---
+{home ? (
+<div class="pback pback--home">
+  <div class="pback-in">
+    <p class="pback-welcome">The official website of <b>Lobi Stars FC</b> · Pride of Benue</p>
+    <ShareButton class="pback-share" title="Lobi Stars FC – the official website of the Pride of Benue" text="News, fixtures, tickets, live matchday and more from Lobi Stars FC." />
+  </div>
+</div>
+) : (
 <nav class="pback" aria-label="Breadcrumb" data-pback data-path={path} data-sections={JSON.stringify(SECTIONS)}>
   <div class="pback-in">
     <a class="pback-btn" href={parent} data-pback-btn><span aria-hidden="true">←</span> Back</a>
@@ -33,6 +42,7 @@ const parent = crumbs[crumbs.length - 1][1];
     {share && <ShareButton class="pback-share" />}
   </div>
 </nav>
+)}
 
 <style>
   /* The trail can be rebuilt by the script below (pages served from a shared template), so its items are styled globally. */
@@ -42,6 +52,8 @@ const parent = crumbs[crumbs.length - 1][1];
   .pback-btn:hover, .pback-btn:focus-visible { border-color: var(--red, #E31E24); color: var(--red, #E31E24); }
   .pback-btn span { font-size: 16px; }
   .pback-in :global(.pback-share) { margin-left: auto; }
+  .pback-welcome { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--lt); }
+  .pback-welcome b { color: var(--white); font-weight: 600; }
   .pback-trail { list-style: none; margin: 0; padding: 0; display: flex; align-items: center; min-width: 0; flex: 1 1 auto; overflow: hidden; white-space: nowrap; font-size: 14px; color: var(--lt); }
   .pback-trail :global(li) { display: flex; align-items: center; min-width: 0; }
   .pback-trail :global(li + li)::before { content: '›'; margin: 0 8px; color: var(--d4); font-weight: 700; }
@@ -53,6 +65,7 @@ const parent = crumbs[crumbs.length - 1][1];
     .pback-trail :global(li:not(:last-child):not(:nth-last-child(2))) { display: none; }
     .pback-trail :global(li:nth-last-child(2))::before { display: none; }
     .pback-trail { font-size: 13px; }
+    .pback-welcome { font-size: 13px; }
     /* With the Share button there is room for the page name only. */
     .pback-in:has(.pback-share) .pback-trail :global(li:not(:last-child)) { display: none; }
   }
