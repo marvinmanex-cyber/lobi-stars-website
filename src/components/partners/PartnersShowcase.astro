@@ -7,7 +7,8 @@
 import PartnerLogo from './PartnerLogo.astro';
 import { getPartners } from '../../lib/partners';
 
-const all = await getPartners();
+// No Principal Partner here (owner's request, 8-9 Nov 2026: the Zeva logo is off the homepage, footer and Partners page).
+const all = (await getPartners()).filter(p => p.data.tier !== 'Principal Partner');
 // Principal and Kit Partner show their tier; others their official title (e.g. "Official Banking Partner").
 const SHORT: Record<string, string> = { 'Media & Broadcast Partners': 'Media Partner', 'Institutional & Community Partners': 'Community Partner' };
 const label = (p: (typeof all)[number]) => ['Principal Partner', 'Official Kit Partner'].includes(p.data.tier)

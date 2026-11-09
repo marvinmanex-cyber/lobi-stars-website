@@ -8,6 +8,11 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-09: Homepage partners: no Zeva logo
+
+**Who it affects:** everyone. **Staff need to:** nothing.
+- The Zeva (Principal Partner) logo is no longer in "Our Official Partners" on the homepage. It was already off the footer and the Partners page. Zeva's partner record is kept.
+
 ## 2026-11-08: Exo Sports is the Official Kit Partner
 
 **Who it affects:** everyone. **Staff need to:** nothing (the real Exo Sports logo was added the same day).
