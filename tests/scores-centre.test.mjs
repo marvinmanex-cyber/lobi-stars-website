@@ -82,6 +82,20 @@ test('someone else changed it: not overwritten without asking', async () => {
   assert.equal(forced.status, 200, 'replaced after saying yes');
 });
 
+test('a verified Live score gives way to a later full-time report with the same score', async () => {
+  assert.equal((await call('update', { fixtureId: fixture.id, homeGoals: 2, awayGoals: 0, status: 'LIVE', force: true })).status, 200);
+  assert.equal(rows(`SELECT status FROM league_fixtures WHERE id = ${fixture.id}`)[0].status, 'live');
+  // Staff report full time in Other Games (a report, not a verified result).
+  const H = { 'Content-Type': 'application/json', 'x-admin-code': process.env.ADMIN_CODE || 'test-code-123' };
+  const r = await fetch(`${BASE}/api/admin/scores/matchday`, { method: 'POST', headers: H, body: JSON.stringify({ action: 'entry', fixtureId: fixture.id, homeGoals: 2, awayGoals: 0, status: 'FULL_TIME' }) });
+  assert.equal(r.status, 200, await r.text());
+  const f = rows(`SELECT status, home_goals, away_goals FROM league_fixtures WHERE id = ${fixture.id}`)[0];
+  assert.deepEqual([f.status, f.home_goals, f.away_goals], ['full_time', 2, 0], 'full time counts');
+  // Put it back as the next test expects (4-1 full time, then 3-2 forced).
+  assert.equal((await call('update', { fixtureId: fixture.id, homeGoals: 4, awayGoals: 1, status: 'FULL_TIME', force: true })).status, 200);
+  assert.equal((await call('update', { fixtureId: fixture.id, homeGoals: 3, awayGoals: 2, status: 'FULL_TIME', force: true })).status, 200);
+});
+
 test('history and undo last change: back to the score before', async () => {
   const h = await call(`history?fixtureId=${fixture.id}`);
   assert.equal(h.status, 200);

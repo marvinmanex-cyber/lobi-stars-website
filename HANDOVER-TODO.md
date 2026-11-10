@@ -140,7 +140,7 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 
 | # | What | What to send or do |
 |---|---|---|
-| L1 | **Crests** | **Done (13 Oct 2026):** the club confirmed it may use the seven opponents' crests already on the site. New crests can be set in League › Clubs & Venues. |
+| L1 | ~~Set the Matchday 1 results to Full time~~ | Done 10 Nov 2026: the full-time reports saved in Other Games now count (fix deployed). |
 | L2 | **Rules to confirm** | **Done (13 Oct 2026):** the club confirmed the NNL rules (3 points for a win, 1 for a draw; goal difference, goals scored, wins, then head-to-head). Zones can be added later in League › Table & Rules. |
 | L3 | **Who may change rules** | Optional: the staff emails allowed to change rules, adjustments, tie decisions, the import and undo (setting `league_admin_emails`); otherwise every League user can. |
 | L4 | **First real results** | From Matchday 1 (Sat 7 / Sun 8 Nov 2026), enter all four results after each matchday. |

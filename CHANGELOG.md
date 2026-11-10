@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-10: Fix: a verified "Live" score no longer blocks full time
+
+**Who it affects:** whoever updates scores. **Staff need to:** nothing (Matchday 1 corrects itself).
+- A score set as **Live** in the Scores Update Centre is a staff-verified score. A later **Full time** saved in Other Games with the same score didn't count, because Full time needed two sources and the verified score still said Live. Now a verified in-play score with the same score takes that later full-time status.
+- The scores timer now also re-checks any match still showing Live or Half-time, so old matches stuck on Live (Matchday 1) correct themselves.
+- Test added to tests/scores-centre.test.mjs.
+
 ## 2026-11-09: Whole-site check on phone, tablet and laptop; less empty space
 
 **Who it affects:** everyone. **Staff need to:** nothing.

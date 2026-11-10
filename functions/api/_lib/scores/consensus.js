@@ -146,7 +146,12 @@ export async function settleFixture(env, fixtureId, { now = Date.now(), settings
   // A verified score during play (not a final result) holds only until newer reports arrive;
   // then it counts as one more source ("Verified by staff") instead of overriding.
   if (dec && dec.kind === 'VERIFIED' && !TERMINAL.has(dec.status) && latest.some(r => t(r) > Date.parse(dec.created_at))) {
-    latest = [...latest, { id: `d${dec.id}`, source_type: 'VERIFIED', source_identity: 'decision', source_label: `Verified by ${dec.created_by}`, home_goals: dec.home_goals, away_goals: dec.away_goals, status: dec.status, received_at: dec.created_at }];
+    // A later full-time (or awarded/abandoned) report with the same score the staff verified: the staff
+    // score carries to that final status (the score was checked; only the clock has ended), so a
+    // verified "Live" never holds a match at Live after staff report full time.
+    const after = latest.filter(r => t(r) > Date.parse(dec.created_at) && TERMINAL.has(r.status) && r.home_goals === dec.home_goals && r.away_goals === dec.away_goals)
+      .sort((a, b) => t(b) - t(a))[0];
+    latest = [...latest, { id: `d${dec.id}`, source_type: 'VERIFIED', source_identity: 'decision', source_label: `Verified by ${dec.created_by}`, home_goals: dec.home_goals, away_goals: dec.away_goals, status: after ? after.status : dec.status, received_at: dec.created_at }];
     dec = null;
   }
   let state, result = null, explanation, conflictSince = null, conflictKey = null, sources = latest.map(r => ({ id: r.id, who: who(r), type: r.source_type, score: goals(r), status: r.status, minute: r.minute, at: r.received_at }));
@@ -332,7 +337,7 @@ export async function scoresTick(env, { now = Date.now() } = {}) {
   // Automatic licensed sources first (Phase 6), so their reports are settled below.
   const polled = await pollSources(env, s, { now }).catch(err => { console.error('[scores] poll', err); return []; });
   const ids = (await env.DB.prepare(`SELECT f.id FROM league_fixtures f LEFT JOIN score_state st ON st.fixture_id = f.id
-    WHERE f.kickoff_at BETWEEN ? AND ? OR st.state IN ('PENDING', 'CONFLICT')`).bind(new Date(now - 8 * 3600e3).toISOString(), new Date(now + 3600e3).toISOString()).all()).results.map(r => r.id);
+    WHERE f.kickoff_at BETWEEN ? AND ? OR st.state IN ('PENDING', 'CONFLICT') OR f.status IN ('live', 'half_time')`).bind(new Date(now - 8 * 3600e3).toISOString(), new Date(now + 3600e3).toISOString()).all()).results.map(r => r.id);
   const settled = [];
   for (const id of ids) settled.push(await settleFixture(env, id, { now, settings: s }));
   const missing = await missingResults(env, { now, settings: s });
