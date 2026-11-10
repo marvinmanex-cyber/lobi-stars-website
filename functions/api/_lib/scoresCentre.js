@@ -224,6 +224,8 @@ export async function weekView(env, round, session = null, now = Date.now()) {
       events: events.filter(e => e.fixture_id === c.id).map(e => ({ id: e.id, kind: e.kind, side: e.side, player: e.player || '', minute: e.minute || '', by: e.created_by })),
     };
   });
+  // "Live now" with nothing today: the next round's fixtures, to show what's coming.
+  const upcoming = live ? matches.filter(m => m.status === 'SCHEDULED' && m.kickoff && Date.parse(m.kickoff) > now).slice(0, 6).map(m => ({ round: m.round, kickoff: m.kickoff, venue: m.venue, home: m.home, away: m.away })) : [];
   if (live) {
     const rank = s => (s === 'LIVE' || s === 'HALF_TIME' ? 0 : s === 'SCHEDULED' ? 1 : 2);
     matches = matches.filter(m => isToday(m) || ['LIVE', 'HALF_TIME'].includes(m.status)).sort((a, b) => rank(a.status) - rank(b.status) || String(a.kickoff).localeCompare(String(b.kickoff)));
@@ -237,7 +239,7 @@ export async function weekView(env, round, session = null, now = Date.now()) {
   }
   const { results: recent } = await db.prepare(`SELECT after_json, created_at FROM league_audit_log WHERE staff_email LIKE 'scores-centre:%' AND action IN ('score.verified', 'score.withdrawn', 'score.undo', 'scores-centre.event') ORDER BY id DESC LIMIT 15`).all().catch(() => ({ results: [] }));
   return {
-    competition: v.competition.name, weeks: v.rounds, week: live ? 'live' : v.round, liveRound: v.round, matches, table, serverTime: new Date(now).toISOString(),
+    competition: v.competition.name, weeks: v.rounds, week: live ? 'live' : v.round, liveRound: v.round, matches, upcoming, table, serverTime: new Date(now).toISOString(),
     online: [...new Set(online.map(o => o.name))],
     recent: recent.map(r => { let a = {}; try { a = JSON.parse(r.after_json || '{}'); } catch { /* skip */ } return { text: tidy(a.result), at: r.created_at }; }),
   };

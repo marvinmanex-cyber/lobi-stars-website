@@ -8,6 +8,15 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-10: Scores Update Centre: new design
+
+**Who it affects:** whoever updates scores. **Staff need to:** nothing (everything works the same way).
+- **Header:** a stadium-style header with live figures for the week: matches live, finished, goals, and Lobi Stars' position and points.
+- **Match cards:** each is a scoreboard. Team crests in white circles, large gold score digits, green **+** and **−** buttons, and the clock and badges on top. Lobi Stars matches have a gold "Lobi Stars" tab. The status buttons are a single segmented control (four per row on phones).
+- **League table:** dark header, position badges (gold for first), Lobi Stars highlighted, points in large figures. **Recent updates** is now a timeline.
+- **No matches today:** a friendly card with the next fixtures (crests, date, venue) and a button to open that week.
+- **Sign-in:** floodlights and a pitch.
+
 ## 2026-11-10: Fix: a verified "Live" score no longer blocks full time
 
 **Who it affects:** whoever updates scores. **Staff need to:** nothing (Matchday 1 corrects itself).
