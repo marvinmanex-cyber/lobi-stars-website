@@ -8,6 +8,14 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-10: Scores Update Centre: Lobi Stars scorers from the squad, into player statistics
+
+**Who it affects:** whoever updates scores; fans viewing player profiles. **Staff need to:** choose the scorer from the list for Lobi Stars goals.
+- In **Goals, cards, more**, the team list starts on Lobi Stars, and for Lobi Stars the player is a dropdown of the squad (number, name, position). For the other team, it is a name box.
+- A Lobi Stars goal, penalty or red card chosen from the squad is saved in that player's match statistics (the same records as Live Match Control › Stats), so it shows in the player's profile (2026/27: Goals, Red cards; also counted as played), on /stats and in his career milestones. Removing it takes it off. Own goals don't count to a player.
+- The page warns if a Lobi Stars match isn't linked to the club's match record (all current fixtures are linked).
+- Tests: tests/scores-centre.test.mjs (12).
+
 ## 2026-11-10: Scores Update Centre: new design
 
 **Who it affects:** whoever updates scores. **Staff need to:** nothing (everything works the same way).

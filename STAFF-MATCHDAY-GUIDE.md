@@ -285,7 +285,7 @@ Update as the game goes: each goal, half-time, then **Full time** at the end. Ev
 - **Second half started** when the second half begins (it also sets the match to Live). Changing Half-time to Live does the same.
 
 **Goals, cards, more** (on each match):
-- **Goals and red cards:** choose Goal, Penalty goal, Own goal or Red card, the team, the player (optional) and the minute, then **Add**. For an own goal, choose the team that gained the goal. They show on the match and, once the score counts, under that match on the public table's scoreboard. ✕ removes one (it stays in the history).
+- **Goals and red cards:** choose Goal, Penalty goal, Own goal or Red card, the team, the player and the minute, then **Add**. For **Lobi Stars**, the player is chosen from the squad list (number, name, position), and the goal or red card goes straight into that player's statistics on his profile (Goals, Red cards; he also counts as having played). Removing it with ✕ takes it off again. For the other team, type the name (optional). Live Match Control › Stats shows the same figures. For an own goal, choose the team that gained the goal. They show on the match and, once the score counts, under that match on the public table's scoreboard. ✕ removes one (it stays in the history).
 - **Match note:** e.g. "Kick-off delayed 30 min" or "Abandoned at 70', floodlights". Shown on the match.
 - **I'm covering this match:** others see "Covered by …" and are asked before updating it.
 - **History:** every change (who, score, time), with **Undo last change** (back to the score before) and **Remove all scores set here**.

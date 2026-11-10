@@ -143,6 +143,37 @@ test('live now: today\'s matches only, live first', async () => {
   assert.ok(Array.isArray(w.d.matches));
 });
 
+test("Lobi Stars scorer from the squad list: saved in the player's match statistics", async () => {
+  const s = await call('session');
+  assert.ok(s.d.roster.length > 0, 'the squad list comes with the session');
+  const lobi = rows(`SELECT f.id, f.matchday, f.event_id, h.is_lobi AS hl FROM league_fixtures f JOIN league_teams h ON h.id = f.home_team_id JOIN league_teams a ON a.id = f.away_team_id WHERE h.is_lobi = 1 OR a.is_lobi = 1 LIMIT 1`)[0];
+  if (!lobi) return;
+  const side = lobi.hl ? 'home' : 'away', other = lobi.hl ? 'away' : 'home';
+  const ev = lobi.event_id || `SCEV${T}`;
+  if (!lobi.event_id) sql(`UPDATE league_fixtures SET event_id = '${ev}' WHERE id = ${lobi.id};`);
+  const p = s.d.roster[0];
+  try {
+    assert.equal((await call('event', { fixtureId: lobi.id, kind: 'goal', side: other, playerSlug: p.slug })).status, 400, 'squad players only for Lobi Stars');
+    assert.equal((await call('event', { fixtureId: lobi.id, kind: 'goal', side, playerSlug: 'nobody-here' })).status, 400);
+    const g1 = await call('event', { fixtureId: lobi.id, kind: 'goal', side, playerSlug: p.slug, minute: '10' });
+    assert.equal(g1.status, 200, JSON.stringify(g1.d));
+    assert.equal(g1.d.stats.goals, 1);
+    const g2 = await call('event', { fixtureId: lobi.id, kind: 'pen', side, playerSlug: p.slug, minute: '80' });
+    assert.equal(g2.d.stats.goals, 2, 'a penalty counts as a goal');
+    let st = rows(`SELECT goals, played FROM player_match_stats WHERE event_id = '${ev}' AND player_slug = '${p.slug}'`)[0];
+    assert.deepEqual([st.goals, st.played], [2, 1]);
+    const w = await call('week?week=' + lobi.matchday);
+    const m = w.d.matches.find(x => x.id === lobi.id);
+    assert.equal(m.statsLinked, true);
+    assert.ok(m.events.some(e => e.playerSlug === p.slug && e.player === p.name), "shown with the player's name");
+    assert.equal((await call('event-remove', { id: g2.d.id })).status, 200);
+    st = rows(`SELECT goals FROM player_match_stats WHERE event_id = '${ev}' AND player_slug = '${p.slug}'`)[0];
+    assert.equal(st.goals, 1, 'removing a goal takes it off the statistics');
+  } finally {
+    sql(`DELETE FROM sc_events WHERE fixture_id = ${lobi.id} AND created_by = 'SC Tester ${T}'; DELETE FROM player_match_stats WHERE event_id = '${ev}' AND player_slug = '${p.slug}';${lobi.event_id ? '' : ` UPDATE league_fixtures SET event_id = NULL WHERE id = ${lobi.id};`}`);
+  }
+});
+
 test('Super Admins: who is signed in, change the code, sign everyone out', async () => {
   const H = { 'Content-Type': 'application/json', 'x-admin-code': process.env.ADMIN_CODE || 'test-code-123' };
   const o = await fetch(`${BASE}/api/admin/scores-centre`, { headers: H }).then(async r => ({ status: r.status, d: await r.json() }));

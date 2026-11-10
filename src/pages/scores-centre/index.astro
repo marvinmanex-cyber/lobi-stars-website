@@ -284,7 +284,7 @@
   <script is:inline>
   (function () {
     var $ = function (id) { return document.getElementById(id); };
-    var csrf = '', week = null, data = null, dirty = {}, openPanel = {}, hist = {}, busy = false, skew = 0, kinds = {};
+    var csrf = '', week = null, data = null, dirty = {}, openPanel = {}, hist = {}, busy = false, skew = 0, kinds = {}, roster = [];
     var LABEL = { SCHEDULED: 'Not started', LIVE: 'Live', HALF_TIME: 'Half-time', FULL_TIME: 'Full time', POSTPONED: 'Postponed', ABANDONED: 'Abandoned', CANCELLED: 'Cancelled' };
     var ORDER = ['SCHEDULED', 'LIVE', 'HALF_TIME', 'FULL_TIME', 'POSTPONED', 'ABANDONED', 'CANCELLED'];
     var ICON = { goal: '⚽', pen: '⚽ (pen)', og: '⚽ (og)', red: '🟥' };
@@ -356,7 +356,7 @@
       var s;
       try { s = await fetch('/api/scores-centre/session', { cache: 'no-store' }); } catch (e) { $('si').hidden = false; $('siMsg').hidden = false; $('siMsg').textContent = 'No network. The page will work again when you have signal.'; return; }
       if (!s.ok) return showSignIn('');
-      var d = await s.json(); csrf = d.csrf; kinds = d.eventKinds || {}; $('me').textContent = d.name; $('ini').textContent = String(d.name || '?').trim().charAt(0).toUpperCase();
+      var d = await s.json(); csrf = d.csrf; kinds = d.eventKinds || {}; roster = d.roster || []; $('me').textContent = d.name; $('ini').textContent = String(d.name || '?').trim().charAt(0).toUpperCase();
       $('si').hidden = true; $('app').hidden = false;
       wake();
       await load();
@@ -403,6 +403,15 @@
       if (!(n >= 1)) n = 1;
       return (n > 45 ? '45+' + Math.min(n - 45, 30) : n) + "'";
     }
+    var lobiSide = function (m) { return m.home && m.home.isLobi ? 'home' : m.away && m.away.isLobi ? 'away' : null; };
+    // In the goal form: the squad list when the goal or card is for Lobi Stars, a name box otherwise.
+    function syncEvf(f) {
+      var m = matchOf(f), sel = f.querySelector('[name="playerSlug"]'), txt = f.querySelector('[name="player"]');
+      if (!m || !sel) return;
+      var squad = f.side.value === lobiSide(m) && f.kind.value !== 'og';
+      sel.hidden = !squad; txt.hidden = squad;
+    }
+    document.addEventListener('change', function (e) { var f = e.target.closest && e.target.closest('[data-evf]'); if (f) syncEvf(f); });
     function minuteNow(m) { var c = clock(m, cur(m).status); return c && /\d/.test(c) ? c.replace("'", '') : ''; }
     var teamName = function (m, side) { return (side === 'home' ? m.home : m.away) || { name: '?' }; };
     function drawMatches() {
@@ -441,6 +450,7 @@
           + (openPanel[m.id] ? panel(m) : '')
           + '</div></article>';
       }).join('');
+      document.querySelectorAll('[data-evf]').forEach(syncEvf);
     }
     function panel(m) {
       var st = cur(m).status, h = hist[m.id];
@@ -449,11 +459,12 @@
         + '<h3>Goals and red cards</h3>'
         + (m.events.length ? '<ul class="evs edit">' + m.events.map(function (e) { return '<li>' + ICON[e.kind] + ' ' + (e.minute ? esc(e.minute) + "' " : '') + esc(e.player || 'Not named') + ' (' + esc(teamName(m, e.side).name) + ') <button type="button" class="x" data-rmev="' + e.id + '" aria-label="Remove">✕</button></li>'; }).join('') + '</ul>' : '<p class="small">None yet. Scorers are optional: the score above is what counts.</p>')
         + '<form class="evf" data-evf><select name="kind" aria-label="What happened">' + opts(kinds.goal ? kinds : { goal: 'Goal', pen: 'Penalty goal', og: 'Own goal', red: 'Red card' }, 'goal') + '</select>'
-        + '<select name="side" aria-label="Team"><option value="home">' + esc(teamName(m, 'home').name) + '</option><option value="away">' + esc(teamName(m, 'away').name) + '</option></select>'
+        + '<select name="side" aria-label="Team">' + (m.home && m.home.isLobi ? '<option value="home" selected>' + esc(teamName(m, 'home').name) + '</option><option value="away">' + esc(teamName(m, 'away').name) + '</option>' : (m.away && m.away.isLobi ? '<option value="away" selected>' + esc(teamName(m, 'away').name) + '</option><option value="home">' + esc(teamName(m, 'home').name) + '</option>' : '<option value="home">' + esc(teamName(m, 'home').name) + '</option><option value="away">' + esc(teamName(m, 'away').name) + '</option>')) + '</select>'
+        + (lobiSide(m) && roster.length ? '<select name="playerSlug" aria-label="Lobi Stars player"><option value="">Choose the player…</option>' + roster.map(function (p) { return '<option value="' + esc(p.slug) + '">' + (p.number != null ? p.number + '. ' : '') + esc(p.name) + (p.position ? ' (' + esc(p.position) + ')' : '') + '</option>'; }).join('') + '</select>' : '')
         + '<input name="player" maxlength="60" placeholder="Player (optional)" aria-label="Player" />'
         + '<input name="minute" maxlength="6" inputmode="numeric" placeholder="Min" aria-label="Minute" value="' + esc(minuteNow(m)) + '" />'
         + '<button type="submit" class="btn btn-ghost">Add</button></form>'
-        + '<p class="small">For an own goal, choose the team that <b>scored</b> it (the team that gained the goal).</p>'
+        + '<p class="small">' + (lobiSide(m) ? (m.statsLinked ? '⚽ Lobi Stars goals and red cards go straight into the player\'s profile statistics. ' : '⚠ This match isn\'t linked to the club\'s match record yet, so player statistics can\'t be saved (link it in Live Match Control). ') : '') + 'For an own goal, choose the team that <b>gained</b> the goal and type the player\'s name.</p>'
         + '<h3>Match note</h3><form class="evf" data-notef><input name="note" maxlength="200" placeholder="e.g. Kick-off delayed 30 min" value="' + esc(m.note) + '" aria-label="Match note" /><button type="submit" class="btn btn-ghost">Save note</button></form>'
         + '<h3>Clock</h3><div class="row-btns">'
         + '<button type="button" class="btn btn-ghost" data-clockact="kickoff">Kicked off now</button>'
@@ -585,7 +596,12 @@
       e.preventDefault();
       var b = f.querySelector('button'); b.disabled = true;
       try {
-        if (f.hasAttribute('data-evf')) { await api('event', { fixtureId: m.id, kind: f.kind.value, side: f.side.value, player: f.player.value, minute: f.minute.value }); toast('Added.'); }
+        if (f.hasAttribute('data-evf')) {
+          var ps = f.querySelector('[name="playerSlug"]'), useSquad = ps && !ps.hidden;
+          if (useSquad && !ps.value && f.kind.value !== 'red' && !confirm('Save the goal without choosing the player? It then won\'t count in anyone\'s statistics.')) { b.disabled = false; return; }
+          var r = await api('event', { fixtureId: m.id, kind: f.kind.value, side: f.side.value, player: useSquad ? '' : f.player.value, playerSlug: useSquad && ps.value ? ps.value : undefined, minute: f.minute.value });
+          toast(r.stats && r.stats.saved ? 'Added, and saved in ' + (ps.options[ps.selectedIndex].text.replace(/^\d+\. /, '').replace(/ \(.*\)$/, '')) + '\'s statistics (' + r.stats.goals + ' goal' + (r.stats.goals === 1 ? '' : 's') + ' this match).' : r.stats && r.stats.linked === false ? 'Added. Not saved in the player\'s statistics: link this match in Live Match Control first.' : 'Added.');
+        }
         else if (f.hasAttribute('data-notef')) { await api('note', { fixtureId: m.id, note: f.note.value }); toast(f.note.value.trim() ? 'Note saved.' : 'Note removed.'); }
         delete hist[m.id]; await load(); openPanel[m.id] = true; drawMatches();
       } catch (err) { toast(err.message, true); b.disabled = false; }

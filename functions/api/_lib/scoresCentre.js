@@ -18,6 +18,7 @@ import { verifiedResult, matchdayView, ensureDecisions } from './scores/matchday
 import { settleFixture } from './scores/consensus.js';
 import { loadLeague, logLeague } from './leagueDb.js';
 import { tablePayload } from './leagueApi.js';
+import { ensureStatsSchema } from './stats.js';
 
 export const SC_COOKIE = 'ls_sc';
 export const IDLE_MS = 2 * 3600e3;
@@ -55,6 +56,9 @@ export async function ensureCentreSchema(db) {
     db.prepare(`CREATE INDEX IF NOT EXISTS idx_sc_events_fixture ON sc_events (fixture_id)`),
     db.prepare(`CREATE TABLE IF NOT EXISTS sc_settings (key TEXT PRIMARY KEY, value TEXT, updated_at TEXT, updated_by TEXT)`),
   ]);
+  // The squad player for Lobi Stars goals and red cards (feeds their profile statistics).
+  const cols = (await db.prepare(`PRAGMA table_info(sc_events)`).all()).results.map(c => c.name);
+  if (!cols.includes('player_slug')) await db.prepare(`ALTER TABLE sc_events ADD COLUMN player_slug TEXT`).run().catch(() => {});
   ready = true;
 }
 const setting = async (db, key) => (await db.prepare(`SELECT value, updated_at, updated_by FROM sc_settings WHERE key = ?`).bind(key).first().catch(() => null)) || null;
@@ -202,8 +206,9 @@ export async function weekView(env, round, session = null, now = Date.now()) {
     db.prepare(`SELECT id, fixture_id, created_by, created_at FROM score_decisions WHERE active = 1 AND kind = 'VERIFIED' AND created_by LIKE ? AND fixture_id IN (${q})`).bind(`%${TAG}`, ...ids).all().then(r => r.results),
     db.prepare(`SELECT fixture_id, MAX(id) AS id FROM score_decisions WHERE fixture_id IN (${q}) GROUP BY fixture_id`).bind(...ids).all().then(r => r.results),
     db.prepare(`SELECT * FROM sc_match WHERE fixture_id IN (${q})`).bind(...ids).all().then(r => r.results),
-    db.prepare(`SELECT id, fixture_id, kind, side, player, minute, created_by FROM sc_events WHERE removed_at IS NULL AND fixture_id IN (${q}) ORDER BY CAST(minute AS INTEGER), id`).bind(...ids).all().then(r => r.results),
+    db.prepare(`SELECT id, fixture_id, kind, side, player, player_slug, minute, created_by FROM sc_events WHERE removed_at IS NULL AND fixture_id IN (${q}) ORDER BY CAST(minute AS INTEGER), id`).bind(...ids).all().then(r => r.results),
   ]) : [[], [], [], []];
+  const linkedIds = new Set(ids.length ? (await db.prepare(`SELECT id FROM league_fixtures WHERE event_id IS NOT NULL AND id IN (${q})`).bind(...ids).all()).results.map(r => r.id) : []);
   const online = (await db.prepare(`SELECT id, name, last_seen FROM sc_sessions WHERE ended_at IS NULL AND last_seen >= ? ORDER BY last_seen DESC`).bind(new Date(now - ONLINE_MS).toISOString()).all()).results;
   const onlineIds = new Set(online.map(o => o.id));
   let matches = v.cards.map(c => {
@@ -221,7 +226,8 @@ export async function weekView(env, round, session = null, now = Date.now()) {
       kickedOffAt: x.kicked_off_at || null, secondHalfAt: x.second_half_at || null,
       covering, coveringMe: !!(covering && session && x.cover_session === session.id),
       note: x.note || '', noteBy: x.note_by || null,
-      events: events.filter(e => e.fixture_id === c.id).map(e => ({ id: e.id, kind: e.kind, side: e.side, player: e.player || '', minute: e.minute || '', by: e.created_by })),
+      events: events.filter(e => e.fixture_id === c.id).map(e => ({ id: e.id, kind: e.kind, side: e.side, player: e.player || '', playerSlug: e.player_slug || null, minute: e.minute || '', by: e.created_by })),
+      statsLinked: linkedIds.has(c.id),
     };
   });
   // "Live now" with nothing today: the next round's fixtures, to show what's coming.
@@ -255,7 +261,7 @@ function tidy(s) {
 }
 
 async function fixtureLabel(db, id) {
-  return db.prepare(`SELECT f.id, f.kickoff_at, h.name AS home, a.name AS away FROM league_fixtures f JOIN league_teams h ON h.id = f.home_team_id JOIN league_teams a ON a.id = f.away_team_id WHERE f.id = ?`).bind(Number(id)).first();
+  return db.prepare(`SELECT f.id, f.kickoff_at, f.event_id, h.name AS home, a.name AS away, h.is_lobi AS home_lobi, a.is_lobi AS away_lobi FROM league_fixtures f JOIN league_teams h ON h.id = f.home_team_id JOIN league_teams a ON a.id = f.away_team_id WHERE f.id = ?`).bind(Number(id)).first();
 }
 
 /**
@@ -330,6 +336,34 @@ export async function clearScore(env, s, fixtureId) {
   return { ok: true, state: settled?.state };
 }
 
+// ── Player statistics: Lobi Stars goals and red cards chosen from the squad ──
+/** The squad list (slug, name, shirt number), as the website publishes it. */
+export async function loadRoster(env, requestUrl) {
+  try {
+    const res = await env.ASSETS.fetch(new URL('/data/players.json', requestUrl));
+    const list = res.ok ? await res.json() : [];
+    const real = list.filter(p => p && p.slug && !p.isSample);
+    return (real.length ? real : list.filter(p => p && p.slug)).map(p => ({ slug: p.slug, name: p.name, number: Number.isInteger(p.number) ? p.number : null, position: p.position || '' }))
+      .sort((a, b) => (a.number ?? 999) - (b.number ?? 999) || a.name.localeCompare(b.name));
+  } catch { return []; }
+}
+/**
+ * Writes this player's goals and red cards for the match into the player statistics (the same records
+ * Live Match Control › Stats uses, which the profile pages and /stats read). Goals = goals and penalties
+ * entered here for him; a scorer has played. Returns { saved } or { linked: false } when the league match
+ * isn't linked to the club's match record yet.
+ */
+export async function syncPlayerStats(db, fixtureId, slug) {
+  const f = await db.prepare(`SELECT event_id FROM league_fixtures WHERE id = ?`).bind(Number(fixtureId)).first();
+  if (!f?.event_id) return { linked: false };
+  await ensureStatsSchema(db);
+  const c = await db.prepare(`SELECT SUM(CASE WHEN kind IN ('goal', 'pen') THEN 1 ELSE 0 END) AS goals, SUM(CASE WHEN kind = 'red' THEN 1 ELSE 0 END) AS reds FROM sc_events WHERE fixture_id = ? AND player_slug = ? AND removed_at IS NULL`).bind(Number(fixtureId), slug).first();
+  const goals = Math.min(30, c?.goals || 0), red = Math.min(1, c?.reds || 0);
+  await db.prepare(`INSERT INTO player_match_stats (event_id, player_slug, played, goals, red, updated_at) VALUES (?, ?, 1, ?, ?, ?)
+    ON CONFLICT (event_id, player_slug) DO UPDATE SET goals = excluded.goals, red = excluded.red, played = 1, updated_at = excluded.updated_at`).bind(f.event_id, slug, goals, red, nowIso()).run();
+  return { linked: true, saved: true, goals, red };
+}
+
 // ── Goals, red cards, notes, the clock, covering ──
 async function upsertMatch(db, fixtureId, cols) {
   await db.prepare(`INSERT INTO sc_match (fixture_id) VALUES (?) ON CONFLICT (fixture_id) DO NOTHING`).bind(Number(fixtureId)).run();
@@ -345,11 +379,19 @@ export async function addEvent(env, s, b) {
   if (!['home', 'away'].includes(b.side)) return { error: 'Choose the team.' };
   const minute = cleanText(b.minute, 8);
   if (minute && !/^\d{1,3}(\+\d{1,2})?$/.test(minute)) return { error: 'The minute is a number, e.g. 67 or 90+2.' };
-  const player = cleanText(b.player, 60);
-  const r = await db.prepare(`INSERT INTO sc_events (fixture_id, kind, side, player, minute, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`).bind(f.id, b.kind, b.side, player || null, minute || null, s.name, nowIso()).run();
+  let player = cleanText(b.player, 60), slug = null;
+  if (b.playerSlug) {
+    if (!(b.side === 'home' ? f.home_lobi : f.away_lobi)) return { error: 'Squad players can only be chosen for Lobi Stars.' };
+    if (b.kind === 'og') return { error: 'For an own goal by the other team, type the player\'s name.' };
+    const p = (b.roster || []).find(x => x.slug === String(b.playerSlug));
+    if (!p) return { error: 'That player is not in the squad list. Reload the page and try again.' };
+    slug = p.slug; player = p.name;
+  }
+  const r = await db.prepare(`INSERT INTO sc_events (fixture_id, kind, side, player, player_slug, minute, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).bind(f.id, b.kind, b.side, player || null, slug, minute || null, s.name, nowIso()).run();
+  const stats = slug ? await syncPlayerStats(db, f.id, slug) : null;
   const team = b.side === 'home' ? f.home : f.away;
   await logLeague(db, actorOf(s), 'scores-centre.event', 'fixture', f.id, null, { result: `${EVENT_KINDS[b.kind]}${minute ? ` ${minute}'` : ''}: ${player || 'player not named'} (${team}), ${f.home} v ${f.away} · ${s.name}` });
-  return { ok: true, id: r.meta?.last_row_id };
+  return { ok: true, id: r.meta?.last_row_id, stats };
 }
 export async function removeEvent(env, s, id) {
   const db = env.DB;
@@ -359,7 +401,8 @@ export async function removeEvent(env, s, id) {
   await db.prepare(`UPDATE sc_events SET removed_by = ?, removed_at = ? WHERE id = ?`).bind(s.name, nowIso(), e.id).run();
   const f = await fixtureLabel(db, e.fixture_id);
   await logLeague(db, actorOf(s), 'scores-centre.event', 'fixture', e.fixture_id, e, { result: `Removed: ${EVENT_KINDS[e.kind]}${e.minute ? ` ${e.minute}'` : ''} ${e.player || ''} (${f?.home} v ${f?.away}) · ${s.name}` });
-  return { ok: true };
+  const stats = e.player_slug ? await syncPlayerStats(db, e.fixture_id, e.player_slug) : null;
+  return { ok: true, stats };
 }
 export async function saveNote(env, s, b) {
   const db = env.DB;
