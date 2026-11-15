@@ -10,7 +10,7 @@ const a = article.data;
 const href = `/news/${article.id}`;
 ---
 <article class="nc" data-cat={a.category}>
-  <div class="nc-media">
+  <div class="nc-media fitpic" style={`--fit-bg:url("${a.coverImage}")`}>
     <img src={a.coverImage} alt={a.imageAlt} loading={priority ? 'eager' : 'lazy'} fetchpriority={priority ? 'high' : undefined} decoding="async" sizes="(max-width: 480px) 84vw, (max-width: 768px) 72vw, (max-width: 1100px) 33vw, 320px" />
     {a.isVideo && (
       <span class="nc-badge">

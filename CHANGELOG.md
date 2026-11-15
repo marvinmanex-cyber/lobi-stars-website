@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-15: News pictures: never cropped (heads and logos stay in)
+
+**Who it affects:** everyone. **Staff need to:** nothing (any picture shape works, now and in future).
+- News pictures used to be cut to a wide box, so tall posters lost players' heads, badges and text. Now the whole picture always shows: in news cards (homepage "Latest News", News, Video, Community), the news slider and its thumbnails, the featured story banner and at the top of each story. Any space the picture doesn't fill is a soft blurred copy of the same picture, not empty bars.
+- On a story page, the picture keeps its own shape (a tall poster shows tall), up to 80% of the screen height.
+- It's one shared style (`fitpic` in the main layout), so new news pictures follow it automatically. The Media Centre's story preview uses it too.
+
 ## 2026-11-15: Homepage: Share moved into the header (no extra white strip)
 
 **Who it affects:** everyone. **Staff need to:** nothing.

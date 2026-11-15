@@ -15,7 +15,7 @@ const { articles } = Astro.props;
       {articles.map((article, i) => {
         const a = article.data;
         return (
-          <article class="nh-slide" data-slide={i} hidden={i !== 0}>
+          <article class="nh-slide fitpic" data-slide={i} hidden={i !== 0} style={`--fit-bg:url("${a.coverImage}")`}>
             <img src={a.coverImage} alt={a.imageAlt} loading={i === 0 ? 'eager' : 'lazy'} fetchpriority={i === 0 ? 'high' : undefined} decoding={i === 0 ? 'sync' : 'async'} sizes="100vw" />
             <div class="nh-grad" aria-hidden="true"></div>
             <div class="nh-body">
@@ -41,7 +41,7 @@ const { articles } = Astro.props;
           {articles.map((article, i) => (
             <li class="nh-thumb-item" data-thumb-item={i} hidden={i === 0}>
               <button type="button" class="nh-thumb" data-thumb={i}>
-                <span class="nh-thumb-img">
+                <span class="nh-thumb-img fitpic" style={`--fit-bg:url("${article.data.coverImage}")`}>
                   <img src={article.data.coverImage} alt="" loading="lazy" decoding="async" sizes="200px" />
                   {article.data.isVideo && (
                     <span class="nh-thumb-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" /></svg></span>
@@ -63,7 +63,7 @@ const { articles } = Astro.props;
 <style>
   .nh { background: #0F1115; }
   .nh-stage { position: relative; height: clamp(420px, 52vw, 640px); overflow: hidden; }
-  .nh-slide { position: absolute; inset: 0; }
+  .nh-slide.fitpic { position: absolute; inset: 0; }
   .nh-slide[hidden] { display: none; }
   .nh-slide > img { display: block; width: 100%; height: 100%; object-fit: cover; animation: nh-in .45s ease; }
   @keyframes nh-in { from { opacity: .3; transform: scale(1.02); } to { opacity: 1; transform: none; } }

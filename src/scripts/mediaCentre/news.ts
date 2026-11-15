@@ -120,7 +120,7 @@ async function editor(main: HTMLElement, id: string) {
     set('.art-cat', el => { el.textContent = v.category; });
     set('.art-title', el => { el.textContent = v.headline || 'Your headline'; });
     set('.art-lead', el => { el.textContent = v.summary || 'Your summary.'; });
-    set('.art-cover img', el => { if (v.cover) el.src = v.cover.url; el.alt = v.caption; });
+    set('.art-cover img', el => { if (v.cover) { el.src = v.cover.url; (el.parentElement as HTMLElement | null)?.style.setProperty('--fit-bg', `url("${v.cover.url}")`); } el.alt = v.caption; });
     let cap = doc.querySelector('.art-caption') as HTMLElement | null;
     if (!cap) { cap = doc.createElement('p'); cap.className = 'art-caption'; cap.style.cssText = 'margin:6px 0 0;padding:0 4px;font-size:13px;color:#5B6472'; doc.querySelector('.art-media')?.append(cap); }
     cap.textContent = [v.caption, v.credit ? `Photo: ${v.credit}` : ''].filter(Boolean).join(' ');
