@@ -13,6 +13,7 @@ in HANDOVER-TODO.md.
 **Who it affects:** anyone who installs a Lobi Stars app on a phone or computer. **Staff need to:** nothing. Already-installed apps pick up the new icon when the phone next refreshes it; reinstall to see it at once.
 - The website app, the MatchDay Kitchen fans' app, the "Install the app" prompt, the iPhone home-screen icon and the Scores Update Centre app now show the see-through club badge on the club's blue, with no white square behind it.
 - The icon links have a new version number so phones fetch the new icons.
+- The website build (scripts/optimize-images.mjs) now makes these icons on the club blue from the official see-through badge (lobi-stars-fc-transparent.png), so the white box can't come back. The small header and footer badge and the social-share picture use it too, with cleaner edges.
 - Rule from now on: the badge is never shown on a white box in app icons, headers or new pages. The white copy (lobi-stars-badge-print.jpg) is only used in printed PDFs.
 
 ## 2026-11-10: Scores Update Centre: Lobi Stars scorers from the squad, into player statistics

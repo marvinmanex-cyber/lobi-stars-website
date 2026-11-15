@@ -7,7 +7,7 @@
 // (needs sharp; on Windows first run:
 //  npm install --no-save @img/sharp-win32-x64@<sharp version>)
 import sharp from 'sharp';
-import { readdir, stat, writeFile, rename, rm } from 'node:fs/promises';
+import { readdir, stat, writeFile, rename, rm, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -104,8 +104,11 @@ async function optimisePhotos() {
 // The badge photo sits on a flat light-grey square. Flood-fill that
 // background from the edges to transparent, then trim to the shield.
 let cutout;
+// The official see-through badge, when present: clean edges, no light fringe (15 Nov 2026).
+const TRANSPARENT_BADGE = path.join(IMAGES, 'lobi-stars-fc-transparent.png');
 async function badgeCutout() {
   if (cutout) return cutout;
+  try { cutout = await sharp(await readFile(TRANSPARENT_BADGE)).trim().png().toBuffer(); return cutout; } catch { /* fall back to cutting out the photo */ }
   const { data, info } = await sharp(BADGE).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width: w, height: h } = info;
   const isBg = i => {
@@ -136,21 +139,29 @@ async function badge(size) {
   return sharp(await badgeCutout()).resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
 }
 
+// App icons: the see-through badge on the club's blue (lighter at the top, a soft floodlight glow).
+// Never a white box behind the badge (owner's rule, 15 Nov 2026).
+const CLUB_BLUE = 'club-blue';
+const blueSvg = size => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><defs>
+  <linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A62A0"/><stop offset="1" stop-color="#162F5C"/></linearGradient>
+  <radialGradient id="l" cx=".5" cy="0" r=".6"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+  <rect width="${size}" height="${size}" fill="url(#g)"/><rect width="${size}" height="${size}" fill="url(#l)"/></svg>`);
 async function iconOnBackground(size, inner, background) {
-  return sharp({ create: { width: size, height: size, channels: 4, background } })
+  const base = background === CLUB_BLUE ? sharp(blueSvg(size)) : sharp({ create: { width: size, height: size, channels: 4, background } });
+  return base
     .composite([{ input: await badge(Math.round(size * inner)), gravity: 'center' }])
     // A 256-colour palette looks the same for the badge at about a third of the size.
     .png({ palette: true, quality: 90, effort: 10, compressionLevel: 9 });
 }
 
 async function makeIcons() {
-  const white = '#FFFFFF';
-  await (await iconOnBackground(192, 0.86, white)).toFile(path.join(IMAGES, 'icon-192.png'));
-  await (await iconOnBackground(512, 0.86, white)).toFile(path.join(IMAGES, 'icon-512.png'));
+  const blue = CLUB_BLUE;
+  await (await iconOnBackground(192, 0.78, blue)).toFile(path.join(IMAGES, 'icon-192.png'));
+  await (await iconOnBackground(512, 0.78, blue)).toFile(path.join(IMAGES, 'icon-512.png'));
   // Maskable icons get cropped to a circle/squircle, so keep the badge
   // inside the central safe zone.
-  await (await iconOnBackground(512, 0.62, white)).toFile(path.join(IMAGES, 'icon-maskable-512.png'));
-  await (await iconOnBackground(180, 0.84, white)).toFile(path.join(IMAGES, 'apple-touch-icon.png'));
+  await (await iconOnBackground(512, 0.62, blue)).toFile(path.join(IMAGES, 'icon-maskable-512.png'));
+  await (await iconOnBackground(180, 0.72, blue)).toFile(path.join(IMAGES, 'apple-touch-icon.png'));
   await (await iconOnBackground(32, 0.96, { r: 0, g: 0, b: 0, alpha: 0 })).toFile(path.join(PUBLIC, 'favicon-32x32.png'));
   await (await iconOnBackground(16, 1, { r: 0, g: 0, b: 0, alpha: 0 })).toFile(path.join(PUBLIC, 'favicon-16x16.png'));
 
