@@ -19,7 +19,7 @@ const VERSION = Date.now().toString(36);
 const worker = `// Lobi Stars FC service worker (build ${VERSION}). See src/pages/sw.js.ts.
 const STATIC = 'ls-static-${VERSION}';
 const OFFLINE = '/offline/';
-const PRECACHE = [OFFLINE, '/images/icon-192.png', '/images/lobi-stars-fc.jpg', '/images/lobi-stars-badge.png', '/kitchen/', '/images/matchday-kitchen-logo.png', '/manifest.json'];
+const PRECACHE = [OFFLINE, '/images/icon-192.png?v=2', '/images/lobi-stars-fc.jpg', '/images/lobi-stars-badge.png', '/kitchen/', '/images/matchday-kitchen-logo.png', '/manifest.json'];
 const MAX_ITEMS = 160;
 const PROGRAMME = 'programme-pages-v1';
 const PROGRAMME_PAGE = /^\\/api\\/programme\\/[a-z0-9-]+\\/page\\/[1-4]\\.jpg$/;
@@ -51,7 +51,7 @@ self.addEventListener('push', event => {
   const food = d.kind === 'food';
   event.waitUntil(self.registration.showNotification(d.title || 'Lobi Stars FC', {
     body: d.body || '', tag: d.tag || 'match', renotify: true, requireInteraction: food,
-    icon: food ? '/images/matchday-kitchen/icon-192.png' : '/images/icon-192.png', badge: '/images/icon-192.png', vibrate: food ? [300, 120, 300, 120, 300] : [200, 100, 200],
+    icon: food ? '/images/matchday-kitchen/icon-192.png' : '/images/icon-192.png?v=2', badge: '/images/icon-192.png?v=2', vibrate: food ? [300, 120, 300, 120, 300] : [200, 100, 200],
     data: { url: d.url || '/' },
   }));
 });
