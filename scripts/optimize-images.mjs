@@ -139,8 +139,8 @@ async function badge(size) {
   return sharp(await badgeCutout()).resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
 }
 
-// App icons: the see-through badge on the club's blue (lighter at the top, a soft floodlight glow).
-// Never a white box behind the badge (owner's rule, 15 Nov 2026).
+// App icons: the badge large on a plain white app background (owner's choice, 15 Nov 2026).
+// Never a small white square on a coloured background. CLUB_BLUE is kept for other uses.
 const CLUB_BLUE = 'club-blue';
 const blueSvg = size => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"><defs>
   <linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A62A0"/><stop offset="1" stop-color="#162F5C"/></linearGradient>
@@ -155,13 +155,13 @@ async function iconOnBackground(size, inner, background) {
 }
 
 async function makeIcons() {
-  const blue = CLUB_BLUE;
-  await (await iconOnBackground(192, 0.78, blue)).toFile(path.join(IMAGES, 'icon-192.png'));
-  await (await iconOnBackground(512, 0.78, blue)).toFile(path.join(IMAGES, 'icon-512.png'));
+  const white = '#FFFFFF';
+  await (await iconOnBackground(192, 0.86, white)).toFile(path.join(IMAGES, 'icon-192.png'));
+  await (await iconOnBackground(512, 0.86, white)).toFile(path.join(IMAGES, 'icon-512.png'));
   // Maskable icons get cropped to a circle/squircle, so keep the badge
   // inside the central safe zone.
-  await (await iconOnBackground(512, 0.62, blue)).toFile(path.join(IMAGES, 'icon-maskable-512.png'));
-  await (await iconOnBackground(180, 0.72, blue)).toFile(path.join(IMAGES, 'apple-touch-icon.png'));
+  await (await iconOnBackground(512, 0.62, white)).toFile(path.join(IMAGES, 'icon-maskable-512.png'));
+  await (await iconOnBackground(180, 0.84, white)).toFile(path.join(IMAGES, 'apple-touch-icon.png'));
   await (await iconOnBackground(32, 0.96, { r: 0, g: 0, b: 0, alpha: 0 })).toFile(path.join(PUBLIC, 'favicon-32x32.png'));
   await (await iconOnBackground(16, 1, { r: 0, g: 0, b: 0, alpha: 0 })).toFile(path.join(PUBLIC, 'favicon-16x16.png'));
 

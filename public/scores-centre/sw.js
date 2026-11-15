@@ -1,8 +1,8 @@
 // Scores Update Centre app (scope /scores-centre/): keeps the page and its fonts on the phone so it
 // still opens when the stadium's mobile data drops. Scores are never cached: /api/ always goes to the
 // network (updates made with no signal wait on the phone and are sent when it returns; see the page).
-const CACHE = 'scores-centre-v2';
-const FILES = ['/scores-centre/', '/scores-centre/manifest.webmanifest', '/images/scores-centre/icon-192.png?v=2', '/images/lobi-stars-badge.webp',
+const CACHE = 'scores-centre-v3';
+const FILES = ['/scores-centre/', '/scores-centre/manifest.webmanifest', '/images/scores-centre/icon-192.png?v=3', '/images/lobi-stars-badge.webp',
   '/fonts/bebas-neue-400.woff2', '/fonts/barlow-400.woff2', '/fonts/barlow-600.woff2', '/fonts/barlow-700.woff2'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(FILES.map(u => c.add(new Request(u, { cache: 'reload' })).catch(() => {})))).then(() => self.skipWaiting()));

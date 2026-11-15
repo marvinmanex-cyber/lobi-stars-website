@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-15: App icons: badge large on a white background (owner's choice)
+
+**Who it affects:** anyone who installs a Lobi Stars app. **Staff need to:** nothing (reinstall an app to see the new icon at once).
+- Following the owner's example, every app icon (website app, MatchDay Kitchen fans' app, install prompt, iPhone icon, Scores Update Centre) is now the club badge large on a plain white background. The blue icons from earlier today are replaced, and the Scores Update Centre no longer has a small white square on blue.
+- The badge comes from the official see-through file, so its edges are clean. Icon links are now version 3, so phones refresh them.
+
 ## 2026-11-15: App icons: no white box behind the badge
 
 **Who it affects:** anyone who installs a Lobi Stars app on a phone or computer. **Staff need to:** nothing. Already-installed apps pick up the new icon when the phone next refreshes it; reinstall to see it at once.
