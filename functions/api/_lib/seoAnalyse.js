@@ -33,7 +33,19 @@ function make(type, path, problem, extra = {}) {
 export function computeIssues(input) {
   const out = [];
   const pages = input.pages || [];
-  const ok = pages.filter(p => p.status === 200 && p.data && !p.data.error);
+  // Pages that open (200). An address that redirects (e.g. the /matchday/ shortcut to the next match) is checked as
+  // the page it lands on, under that page's address: once only (skipped when that page is checked anyway), so a
+  // redirect never shows up as "canonical points to another page". Redirect chains and loops are reported below.
+  const norm = x => String(x || '').replace(/\/?$/, '/');
+  const landed = p => { const h = p.data?.hops || []; const to = h.length ? h[h.length - 1].to : null; return to && to.startsWith('/') ? to : null; };
+  const seenPaths = new Set(pages.filter(p => !(p.data?.hops || []).length).map(p => norm(p.path)));
+  const ok = pages.filter(p => p.status === 200 && p.data && !p.data.error).flatMap(p => {
+    const to = landed(p);
+    if (!to || norm(to) === norm(p.path)) return [p];
+    if (seenPaths.has(norm(to))) return [];
+    seenPaths.add(norm(to));
+    return [{ ...p, path: to, in_sitemap: false }];
+  });
   const byPath = new Map(pages.map(p => [p.path, p]));
 
   if (input.ran?.crawl) {

@@ -113,3 +113,17 @@ test('AI guard rails, robots.txt correction, redirect target and the VS Code ins
   assert.ok(v.includes('https://lobistarsfc.com/matchday/') && v.includes('<h1>') && v.includes('npm run build'));
   assert.ok(similarity([1, 2, 3, 4], [1, 2, 3, 4]) === 1 && similarity([1, 2], [3, 4]) === 0);
 });
+
+test('redirects: an address that redirects is checked as the page it lands on, not as a wrong canonical', () => {
+  const pages = [
+    basePage('/'),
+    basePage('/matches/2026-11-22-x/live/'),
+    // The /matchday/ shortcut redirects (302) to the next match; the crawler records the page it lands on.
+    { ...basePage('/matchday/', { canonical: '/matches/2026-11-22-x/live/', hops: [{ from: '/matchday/', to: '/matches/2026-11-22-x/live/', status: 302 }] }), in_sitemap: 0 },
+    // A redirect to a page not crawled on its own: checked once, under the address it lands on.
+    { ...basePage('/old/', { canonical: '/new/', hops: [{ from: '/old/', to: '/new/', status: 301 }] }), in_sitemap: 0 },
+  ];
+  const out = computeIssues({ pages, ran: { crawl: true }, robots: parseRobots('User-agent: *'), robotsOk: true, sitemap: [{ path: '/' }, { path: '/matches/2026-11-22-x/live/' }] });
+  const wrong = out.filter(i => i.type === 'canonical_wrong' || i.issue === 'canonical_wrong' || i.key === 'canonical_wrong' || JSON.stringify(i).includes('canonical_wrong'));
+  assert.deepEqual(wrong, [], JSON.stringify(wrong));
+});

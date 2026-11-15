@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-16: SEO Scanner: redirects are no longer reported as "Canonical points to another page"
+
+**Who it affects:** whoever reads the SEO Scanner. **Staff need to:** press **Check again** on the issue.
+- /matchday/ is a shortcut that redirects (302) to the next home match's Matchday Live page, so it has no page or canonical tag of its own. The scanner followed the redirect and compared the match page's canonical with "/matchday/", raising a false "Canonical points to another page (High)".
+- An address that redirects is now checked as the page it lands on, under that page's address, and only once (skipped when that page is checked anyway). Redirect loops and chains are still reported. /matchday/ stays out of the sitemap, as before.
+- The website's pages and design are unchanged. Unit test added (tests/seo-scanner.unit.test.mjs).
+
 ## 2026-11-15: No bars floating over the page (News and match tabs)
 
 **Who it affects:** everyone, mostly on phones. **Staff need to:** nothing.
