@@ -79,6 +79,10 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
 ---
 <Layout title={`${a.title} | Lobi Stars FC News`} description={a.summary} image={a.coverImage} imageAlt={a.imageAlt} type="article" jsonLd={[articleJsonLd]} share={false} noindex={article.id === 'mc-preview-template'}>
   <Fragment slot="head">
+    {/* The story's bold text weights, fetched at once so the text doesn't move when they arrive (layout shift). */}
+    <link rel="preload" href="/fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/barlow-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/barlow-condensed-600.woff2" as="font" type="font/woff2" crossorigin />
     <meta property="article:published_time" content={a.publishedAt.toISOString()} />
     <meta property="article:section" content={a.category} />
     {edited && <meta property="article:modified_time" content={edited.toISOString()} />}

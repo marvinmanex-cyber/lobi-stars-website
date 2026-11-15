@@ -20,6 +20,7 @@ in HANDOVER-TODO.md.
   - Pictures uploaded through the Media Centre now get 240/480/960px copies at build time, and phones get the right size (srcset). For example, the Ropajo story's top picture is 22 KB on a phone instead of 117 KB.
   - The story's top picture loads first, and the blurred fill behind pictures uses the tiny 240px copy.
   - New uploads get the same treatment automatically.
+  - The story's bold text weights are fetched straight away, so the text doesn't jump when they arrive (layout shift).
 - **Match pages (No main heading):** the page now sends its main heading ("Kada Warriors FC vs Lobi Stars FC") in the HTML itself, so Google sees it without running scripts. It's the same screen-reader heading as before (the team names are already shown big on the scoreboard), and there is still exactly one.
 - **SEO Scanner page:** after Check again, Ignore, Undo and the other actions, the page stays exactly where you were. Messages now appear as a notice at the bottom of the screen instead of scrolling the page up to them. The Critical/High/Medium/Low buttons still take you to the issue list.
 - The look of all these pages is unchanged.
