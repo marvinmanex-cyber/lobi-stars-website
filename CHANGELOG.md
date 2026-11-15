@@ -8,6 +8,12 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-15: No bars floating over the page (News and match tabs)
+
+**Who it affects:** everyone, mostly on phones. **Staff need to:** nothing.
+- On phones the site header hides when you scroll down. The News category bar (All, Team News, Features, Tickets…) and the match page tabs (Preview, Line-ups, Live…) stayed stuck at a fixed distance from the top, so they floated over the stories with the picture showing above them. Both now scroll with the page like the rest of the content. Only the main site header behaves as a header.
+- **So it doesn't happen again:** a check (tests/no-floating-bars.test.mjs) runs in every website build. If any bar on a public page is made to stick to the screen without being approved, the build stops and names it. Approved exceptions (each with its reason in the test): bars that follow the header (MatchDay Kitchen ordering, programme reader), side panels on wide screens, a table's name column, and the staff apps.
+
 ## 2026-11-15: News pictures: never cropped (heads and logos stay in)
 
 **Who it affects:** everyone. **Staff need to:** nothing (any picture shape works, now and in future).
