@@ -8,6 +8,22 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-16: Faster /tickets/ and news stories on phones; match pages get a main heading; SEO Scanner stays where you are
+
+**Who it affects:** everyone; staff using the SEO Scanner. **Staff need to:** press **Check again** on the four issues (Core Web Vitals /tickets/, Slow on mobile for the Ropajo story, No main heading on the two match pages).
+- **/tickets/ (Core Web Vitals, LCP):**
+  - The big picture at the top loads straight away (it was set to "load later"). The build now always loads a page's main picture (`fetchpriority="high"`) at once, on every page.
+  - The human check (Cloudflare Turnstile, about 220 KB of script) loads when the fan starts using the page, not with it, so the page opens and answers taps sooner. It's ready long before "Continue".
+  - A page-wide style rule that made the browser re-check the whole page on every change is replaced by a simple class.
+  - Club crests use their small WebP copies; the MatchDay Kitchen logo there is a 12 KB copy instead of 50 KB.
+- **News stories (Slow on mobile):**
+  - Pictures uploaded through the Media Centre now get 240/480/960px copies at build time, and phones get the right size (srcset). For example, the Ropajo story's top picture is 22 KB on a phone instead of 117 KB.
+  - The story's top picture loads first, and the blurred fill behind pictures uses the tiny 240px copy.
+  - New uploads get the same treatment automatically.
+- **Match pages (No main heading):** the page now sends its main heading ("Kada Warriors FC vs Lobi Stars FC") in the HTML itself, so Google sees it without running scripts. It's the same screen-reader heading as before (the team names are already shown big on the scoreboard), and there is still exactly one.
+- **SEO Scanner page:** after Check again, Ignore, Undo and the other actions, the page stays exactly where you were. Messages now appear as a notice at the bottom of the screen instead of scrolling the page up to them. The Critical/High/Medium/Low buttons still take you to the issue list.
+- The look of all these pages is unchanged.
+
 ## 2026-11-16: SEO Scanner: redirects are no longer reported as "Canonical points to another page"
 
 **Who it affects:** whoever reads the SEO Scanner. **Staff need to:** press **Check again** on the issue.

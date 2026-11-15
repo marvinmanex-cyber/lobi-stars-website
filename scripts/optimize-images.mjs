@@ -206,6 +206,37 @@ async function makeShareImage() {
   console.log('Share image: public/images/og-default.jpg (1200x630)');
 }
 
+// WebP pictures uploaded into sub-folders (e.g. Media Centre news photos in public/images/news/mc/) get
+// smaller -240w / -480w / -960w copies too, so phones don't download desktop-sized photos (Nov 2026).
+// Only new pictures are processed; sizes go into image-sizes.json for the build's srcset.
+async function webpVariants() {
+  const sizesFile = path.join(ROOT, 'src', 'data', 'image-sizes.json');
+  const sizes = JSON.parse(await readFile(sizesFile, 'utf8').catch(() => '{}'));
+  let made = 0;
+  async function walk(dir) {
+    for (const name of await readdir(dir)) {
+      const full = path.join(dir, name);
+      if ((await stat(full)).isDirectory()) { await walk(full); continue; }
+      if (dir === IMAGES || !/\.webp$/i.test(name) || /-\d+w\.webp$/i.test(name)) continue;
+      const key = '/images/' + path.relative(IMAGES, full).split(path.sep).join('/');
+      const meta = await sharp(full).metadata().catch(() => null);
+      if (!meta?.width) continue;
+      sizes[key] = [meta.width, meta.height];
+      for (const w of VARIANT_WIDTHS) {
+        if (meta.width <= w * 1.25) continue;
+        const out = full.replace(/\.webp$/i, `-${w}w.webp`);
+        if (await stat(out).then(() => true, () => false)) continue;
+        await writeFile(out, await sharp(full).resize({ width: w }).webp({ quality: 72, effort: 6 }).toBuffer());
+        made++;
+      }
+    }
+  }
+  for (const name of await readdir(IMAGES)) { const full = path.join(IMAGES, name); if ((await stat(full)).isDirectory()) await walk(full); }
+  await writeFile(sizesFile, JSON.stringify(sizes, null, 0).replace(/],/g, '],\n'));
+  console.log(`WebP pictures in folders: ${made} smaller copies made`);
+}
+
 await makeIcons();
 await makeShareImage();
 await optimisePhotos();
+await webpVariants();

@@ -119,7 +119,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
       <!-- G. Cross-sell -->
       <section class="tk-xsell" aria-label="Also on match day">
         <a class="tk-xcard tk-xcard--kitchen" href="/kitchen/">
-          <img src="/images/matchday-kitchen-logo.png" alt="" width="72" height="72" loading="lazy" decoding="async" />
+          <img src="/images/matchday-kitchen/logo-144.webp" alt="" width="72" height="72" loading="lazy" decoding="async" />
           <span><b>Order food to your seat</b><span>MatchDay Kitchen: order from your phone at McCarthy Stadium.</span></span>
           <span class="tk-xgo" aria-hidden="true">&rarr;</span>
         </a>
@@ -161,7 +161,20 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     </div>
     <div class="tk-scrim" id="tkScrim" hidden></div>
   </div>
-  {siteKey && <script is:inline src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>}
+  {siteKey && <script is:inline>
+    // The human check (Cloudflare Turnstile) is loaded when the fan starts choosing tickets, not with the page,
+    // so the page opens fast on phones. It is ready long before the fan reaches "Continue".
+    (function () {
+      var done = false;
+      function load() {
+        if (done) return; done = true;
+        var s = document.createElement('script'); s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js'; s.async = true; document.head.appendChild(s);
+        ['pointerdown', 'keydown', 'focusin', 'touchstart'].forEach(function (e) { document.removeEventListener(e, load, true); });
+      }
+      ['pointerdown', 'keydown', 'focusin', 'touchstart'].forEach(function (e) { document.addEventListener(e, load, { capture: true, passive: true }); });
+      window.addEventListener('scroll', function onS() { if (window.scrollY > 200) { window.removeEventListener('scroll', onS); load(); } }, { passive: true });
+    })();
+  </script>}
   <CheckoutRewards />
 </Layout>
 
@@ -419,7 +432,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
     .tk-sheet-x { display: inline-flex; align-items: center; justify-content: center; }
     .tk-scrim:not([hidden]) { position: fixed; inset: 0; z-index: 1550; background: rgba(5, 8, 14, .55); }
     /* Keep the WhatsApp and MatchDay Kitchen buttons clear of the bar. */
-    :global(body:has(.tk-bar:not([hidden]))) :global(.kfab:not([hidden])) { bottom: calc(210px + env(safe-area-inset-bottom)) !important; }
+    :global(body.tk-bar-on) :global(.kfab:not([hidden])) { bottom: calc(210px + env(safe-area-inset-bottom)) !important; }
     .tk-wrap { padding-bottom: 90px; }
   }
   @media (max-width: 420px) { .tk-wrap { padding-left: 16px; padding-right: 16px; } .tk-hero-in { padding-left: 16px; padding-right: 16px; } }
@@ -680,7 +693,7 @@ const LOGOS = { ...TEAM_LOGOS, 'Lobi Stars FC': '/images/lobi-stars-badge.png', 
   }
   function showPrice(total, tickets, nSel) {
     showTotal(total);
-    $('tkBar').hidden = !nSel;
+    $('tkBar').hidden = !nSel; document.body.classList.toggle('tk-bar-on', !!nSel);
     $('barTotal').textContent = nSel ? money(total) : naira(0);
     $('barCount').textContent = nSel + ' match' + (nSel === 1 ? '' : 'es') + ', ' + tickets + ' ticket' + (tickets === 1 ? '' : 's');
     setPayWording(nSel, total);

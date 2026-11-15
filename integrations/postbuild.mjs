@@ -64,7 +64,10 @@ function rewriteImages(html, dist, sizes) {
     const dims = sizes[key];
     if (dims && !hasAttr(tag, 'width') && !hasAttr(tag, 'height')) add(`width="${dims[0]}" height="${dims[1]}"`);
     const aboveFold = (navEnd !== -1 && pos < navEnd) || inside(pos, hero);
-    if (!hasAttr(tag, 'loading')) add(`loading="${aboveFold ? 'eager' : 'lazy'}"`);
+    // A page's main picture (marked fetchpriority="high") always loads at once: lazy-loading it delays the
+    // Largest Contentful Paint (Core Web Vitals), as on /tickets/ (Nov 2026).
+    const mainPicture = /\sfetchpriority\s*=\s*["']?high/i.test(tag);
+    if (!hasAttr(tag, 'loading')) add(`loading="${aboveFold || mainPicture ? 'eager' : 'lazy'}"`);
     if (!hasAttr(tag, 'decoding')) add('decoding="async"');
 
     // Script-controlled images (id / onerror) keep a plain <img> so changing
@@ -75,6 +78,17 @@ function rewriteImages(html, dist, sizes) {
     const clash = Object.keys(sizes).filter(k => k.replace(/\.(jpe?g|png)$/i, '').toLowerCase() === base).length > 1;
     const canWrap = !clash && webpKey !== key && !hasAttr(tag, 'id') && !hasAttr(tag, 'onerror') && !inside(pos, pictures)
       && existsSync(path.join(dist, ...webpKey.split('/')));
+    // Pictures that are already WebP (e.g. Media Centre uploads): offer their smaller copies with srcset.
+    if (/\.webp$/i.test(key) && dims && !hasAttr(tag, 'srcset') && !hasAttr(tag, 'id') && !hasAttr(tag, 'onerror') && !inside(pos, pictures)) {
+      const enc = ((src.startsWith('/') ? '' : '/') + src).replace(/ /g, '%20');
+      const variants = [240, 480, 960].filter(w => w < dims[0] && existsSync(path.join(dist, ...key.replace(/\.webp$/i, `-${w}w.webp`).split('/'))));
+      if (variants.length) {
+        add(`srcset="${[...variants.map(w => `${enc.replace(/\.webp$/i, `-${w}w.webp`)} ${w}w`), `${enc} ${dims[0]}w`].join(', ')}"`);
+        if (!hasAttr(tag, 'sizes')) add('sizes="(max-width: 900px) 100vw, 900px"');
+        changed++;
+        return out;
+      }
+    }
     if (out !== tag || canWrap) changed++;
     if (!canWrap) return out;
     // srcset is space-separated, so spaces in file names must be encoded.
@@ -114,6 +128,11 @@ export default function postbuild() {
           const original = await readFile(file, 'utf8');
           let { html, changed } = rewriteImages(original, dist, sizes);
           images += changed;
+          // The blurred fill behind whole-picture frames (fitpic) only needs the tiny -240w copy, not the full photo.
+          html = html.replace(/--fit-bg:url\((&quot;|")(\/images\/[^"&)]+?)\.(webp|jpe?g|png)\1\)/gi, (m, q, base) => {
+            const small = `${base}-240w.webp`;
+            return existsSync(path.join(dist, ...small.split('/'))) ? `--fit-bg:url(${q}${small}${q})` : m;
+          });
           const rel = path.relative(dist, file).split(path.sep).join('/');
           const ms = html.match(/<i hidden data-ms-start[^>]*><\/i>([\s\S]*?)<i hidden data-ms-end[^>]*><\/i>/);
           if (ms) {

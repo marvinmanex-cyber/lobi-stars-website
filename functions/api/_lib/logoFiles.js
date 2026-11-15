@@ -8,14 +8,14 @@
 // Club crests only: partner logos stay exactly as uploaded, on their white
 // cards (PartnerLogo.astro).
 export const TRANSPARENT_LOGOS = {
-  '/images/lobi-stars-fc.jpg': '/images/lobi-stars-fc-transparent-256.png',
-  '/images/lobi-stars-badge.png': '/images/lobi-stars-fc-transparent-256.png',
-  '/images/yobe-desert-stars.jpg': '/images/yobe-desert-stars-transparent.png',
-  '/images/mighty-jets-jos.jpg': '/images/mighty-jets-jos-transparent.png',
-  '/images/kadawarriors-kaduna.jpg': '/images/kadawarriors-kaduna-transparent.png',
-  '/images/bichi-first.jpg': '/images/bichi-first-transparent.png',
-  '/images/abs-illorin.jpg': '/images/abs-illorin-transparent.png',
-  '/images/sokoto-united.jpg': '/images/sokoto-united-transparent.png',
+  '/images/lobi-stars-fc.jpg': '/images/lobi-stars-fc-transparent-256.webp',
+  '/images/lobi-stars-badge.png': '/images/lobi-stars-fc-transparent-256.webp',
+  '/images/yobe-desert-stars.jpg': '/images/yobe-desert-stars-transparent.webp',
+  '/images/mighty-jets-jos.jpg': '/images/mighty-jets-jos-transparent.webp',
+  '/images/kadawarriors-kaduna.jpg': '/images/kadawarriors-kaduna-transparent.webp',
+  '/images/bichi-first.jpg': '/images/bichi-first-transparent.webp',
+  '/images/abs-illorin.jpg': '/images/abs-illorin-transparent.webp',
+  '/images/sokoto-united.jpg': '/images/sokoto-united-transparent.webp',
 };
 
 /** The file to show for a stored logo address (the transparent copy when there is one). */

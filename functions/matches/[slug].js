@@ -8,6 +8,8 @@ import { matchImagePath, MATCH_FALLBACK_IMAGE } from '../api/_lib/shareImage.js'
 // /match-centre/) for any match, with the match's own title, description and
 // canonical URL so shared links preview properly. The page then loads the
 // match data from /api/matches/<slug>.
+const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 export async function onRequestGet({ request, env, params }) {
   const url = new URL(request.url);
   const slug = String(params.slug || '').toLowerCase();
@@ -86,7 +88,9 @@ export async function onRequestGet({ request, env, params }) {
     .on('meta[name="twitter:image"]', set(imageUrl))
     .on('meta[property="og:image:alt"]', set(imgAlt))
     .on('head', { element(el) { el.append(ldHtml + embed, { html: true }); } })
-    .on('#mcStatus', { element(el) { el.setInnerContent(line); } })
+    // The page's main heading in the HTML itself (search engines read it without running scripts). The page script
+    // redraws this area with the same heading, so there is always exactly one <h1>.
+    .on('#mcStatus', { element(el) { el.before(`<h1 class="sr-only">${escHtml(`${event.home_team} vs ${event.away_team}`)}</h1>`, { html: true }); el.setInnerContent(line); } })
     .on('[data-match-share]', { element(el) { el.removeAttribute('hidden'); } })
     .transform(new Response(shell.body, { status: 200, headers }));
   return rewritten;
