@@ -1,6 +1,7 @@
 ---
 import { MAIN_NAV } from '../lib/nav';
 import PromoBar from './PromoBar.astro';
+import ShareButton from './ShareButton.astro';
 import { getPartners, logoSrc, logoAlt } from '../lib/partners';
 
 // Principal partner shown next to the search icon; hidden if there isn't one.
@@ -66,6 +67,7 @@ const isActive = (href: string) => {
           </span>
         </a>
       )}
+      {path === '/' && <ShareButton variant="icon" class="sh-share" title="Lobi Stars FC – the official website of the Pride of Benue" text="News, fixtures, tickets, live matchday and more from Lobi Stars FC." />}
       <a class="sh-icon" href="/search" aria-label="Search the site">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" /></svg>
       </a>
@@ -173,6 +175,10 @@ const isActive = (href: string) => {
   .sh-icon:hover { border-color: var(--red); color: var(--red-text); }
   .sh-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
   .sh-burger { display: none; }
+  /* Homepage: Share sits in the icon row (no separate bar), the same size and look as the other icons. */
+  .sh-actions :global(.sh-share .share-btn) { width: 40px; height: 40px; min-width: 40px; min-height: 40px; padding: 0; border: 1px solid var(--d4); background: #fff; color: var(--white); }
+  .sh-actions :global(.sh-share .share-btn svg) { width: 17px; height: 17px; }
+  .sh-actions :global(.sh-share .share-btn:hover), .sh-actions :global(.sh-share[open] > .share-btn) { border-color: var(--red); color: var(--red-text); }
   .sh-account { position: relative; text-decoration: none; }
   .sh-account.is-in { background: var(--red); border-color: var(--red); }
   .sh-account.is-in svg { display: none; }
@@ -208,6 +214,7 @@ const isActive = (href: string) => {
   @media (max-width: 767px) {
     .sh-burger { display: none !important; }
     .sh-icon { width: 36px; height: 36px; }
+    .sh-actions :global(.sh-share .share-btn) { width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
     .sh-icon svg { width: 17px; height: 17px; }
   }
   @media (max-width: 640px) {

@@ -240,7 +240,6 @@ a{color:inherit;}
 
 <main id="main">
   {showBack && <PageBack title={pageTitle} share={showShare} />}
-  {Astro.url.pathname === '/' && !bare && <PageBack title={pageTitle} home />}
   <slot />
 </main>
 

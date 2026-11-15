@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-15: Homepage: Share moved into the header (no extra white strip)
+
+**Who it affects:** everyone. **Staff need to:** nothing.
+- The white strip under the header on the homepage ("The official website of Lobi Stars FC · Pride of B…" and Share) is gone.
+- Share is now an icon in the header, in the same row and style as search, shop and account (homepage only). It opens the same menu: WhatsApp, Facebook, X, Telegram, Email, Copy link (the phone's own share sheet on phones).
+- Other pages keep their Back / trail bar with Share, as before.
+
 ## 2026-11-15: App icons: badge large on a white background (owner's choice)
 
 **Who it affects:** anyone who installs a Lobi Stars app. **Staff need to:** nothing (reinstall an app to see the new icon at once).
