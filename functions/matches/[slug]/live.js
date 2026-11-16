@@ -7,6 +7,8 @@ import { matchSlug } from '../../api/_lib/matchSlug.js';
 // the static page built at /matchday-live/ with the match's own title,
 // description and canonical URL; the page loads match data from
 // /api/matches/<slug>.
+const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 export async function onRequestGet({ request, env, params }) {
   const url = new URL(request.url);
   const slug = String(params.slug || '').toLowerCase();
@@ -54,6 +56,8 @@ export async function onRequestGet({ request, env, params }) {
     .on('meta[name="robots"]', { element(el) { el.remove(); } })
     .on('link[rel="canonical"]', { element(el) { el.setAttribute('href', canonical); } })
     .on('head', { element(el) { if (embed) el.append(embed, { html: true }); } })
-    .on('#mlStatus', { element(el) { el.setInnerContent(`Matchday Live: ${line}`); } })
+    // The page's main heading in the HTML itself (search engines read it without running scripts). The page script
+    // redraws this area with the same heading, so there is always exactly one <h1>.
+    .on('#mlStatus', { element(el) { el.before(`<h1 class="sr-only">${escHtml(`Matchday Live: ${event.home_team} vs ${event.away_team}`)}</h1>`, { html: true }); el.setInnerContent(`Matchday Live: ${line}`); } })
     .transform(new Response(shell.body, { status: 200, headers }));
 }

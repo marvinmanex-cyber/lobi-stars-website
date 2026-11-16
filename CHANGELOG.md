@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-16: Faster homepage on phones; Matchday Live pages get a main heading
+
+**Who it affects:** everyone. **Staff need to:** press **Check again** on "Speed could be better" (/) and the "No main heading" issues for the /matches/…/live/ pages.
+- **Homepage slideshow:** only the first photo loads with the page. Each next photo loads a few seconds before it is shown (the second about 2.5 s after the page has loaded), so the first photo isn't competing with 250 KB of photos nobody has seen yet. The slideshow looks and times exactly the same.
+- **MatchDay Kitchen logo** on the homepage and the kitchen page: an 18 KB copy at the size shown, instead of 50 KB.
+- **Matchday Live pages (/matches/…/live/):** the main heading ("Matchday Live: Lobi Stars FC vs ABS FC") is now in the HTML itself, so Google sees it without running scripts. It's the same screen-reader heading as before, and there is still exactly one. A test (tests/match-pages-h1.unit.test.mjs) keeps both match pages that way.
+
 ## 2026-11-16: Faster /tickets/ and news stories on phones; match pages get a main heading; SEO Scanner stays where you are
 
 **Who it affects:** everyone; staff using the SEO Scanner. **Staff need to:** press **Check again** on the four issues (Core Web Vitals /tickets/, Slow on mobile for the Ropajo story, No main heading on the two match pages).

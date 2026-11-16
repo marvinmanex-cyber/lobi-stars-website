@@ -11,7 +11,7 @@ const photos = slides.length
 ---
 <section class="hh" aria-labelledby="hh-title" data-hero-slider>
   {photos.map((photo, i) => (
-    <div class:list={['hh-bg', { active: i === 0 }]} data-slide data-mobile-fit={photo.mobileFit}>
+    <div class:list={['hh-bg', { active: i === 0, ready: i === 0 }]} data-slide data-mobile-fit={photo.mobileFit}>
       {photo.mobileFit === 'contain' && (
         // Phones / upright tablets: a soft, blurred copy of the same photo fills the
         // space above and below the whole (uncropped) photo, so there are no bands.
@@ -47,6 +47,9 @@ const photos = slides.length
 </section>
 
 <style>
+  /* Only the first slide's photo loads with the page; each next one loads a few seconds before it is shown
+     (see prep() below), so the first photo isn't competing with photos nobody has seen yet. */
+  .hh-bg:not(.ready) img { display: none; }
   .hh { position: relative; min-height: min(86vh, 820px); display: flex; align-items: center; justify-content: center; overflow: hidden; background: #0A0A0A; color: #fff; text-align: center; }
   .hh-bg {
     position: absolute; inset: 0; overflow: hidden;
@@ -98,12 +101,18 @@ const photos = slides.length
     if (slides.length < 2) return; // nothing to cycle
 
     let cur = 0;
+    // Get a slide's photo loading (it shows in a few seconds).
+    const prep = (i: number) => slides[(i + slides.length) % slides.length]?.classList.add('ready');
+    const prepNext = () => window.setTimeout(() => prep(1), 2500);
+    if (document.readyState === 'complete') prepNext(); else window.addEventListener('load', prepNext, { once: true });
     const show = (i: number) => {
       slides[cur]?.classList.remove('active');
       dots[cur]?.classList.remove('active');
       cur = (i + slides.length) % slides.length;
+      prep(cur);
       slides[cur]?.classList.add('active');
       dots[cur]?.classList.add('active');
+      prep(cur + 1);
     };
 
     let timer = window.setInterval(() => show(cur + 1), 5500);
