@@ -6,7 +6,7 @@ import { verifiedHonours as honours, glanceCounters } from '../../lib/club';
 // Only what the club has checked ("verified" in the CMS) is published.
 const total = honours.reduce((n, h) => n + h.years.length, 0);
 ---
-<Layout title="Honours | Lobi Stars Football Club" description="The Lobi Stars FC trophy cabinet: titles and cups won by the Pride of Benue.">
+<Layout title="Honours | Lobi Stars Football Club" description="The Lobi Stars FC trophy cabinet: titles and cups won by the Pride of Benue." noindex={!honours.length && !glanceCounters().length}>
   <div class="page-hero wrap">
     <div class="stag">The Club</div>
     <h1 class="stitle">Trophy <span class="r">Cabinet</span></h1>

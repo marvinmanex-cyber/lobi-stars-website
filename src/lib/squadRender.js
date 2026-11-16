@@ -210,6 +210,6 @@ export function personJsonLd(p, site) {
     ...(p.nationality[0] ? { nationality: { '@type': 'Country', name: countryName(p.nationality[0]) } } : {}),
     ...(p.heightCm ? { height: { '@type': 'QuantitativeValue', value: p.heightCm, unitCode: 'CMT' } } : {}),
     ...(p.bioText ? { description: profileDescription(p) } : {}),
-    memberOf: { '@type': 'SportsTeam', name: 'Lobi Stars FC', sport: 'Football', url: abs('/') },
+    memberOf: { '@type': 'SportsTeam', '@id': `${abs('/')}#club`, name: 'Lobi Stars FC', sport: 'Football', url: abs('/') }, // same club record as the homepage
   };
 }

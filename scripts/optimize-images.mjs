@@ -217,8 +217,14 @@ async function webpVariants() {
     for (const name of await readdir(dir)) {
       const full = path.join(dir, name);
       if ((await stat(full)).isDirectory()) { await walk(full); continue; }
-      if (dir === IMAGES || !/\.webp$/i.test(name) || /-\d+w\.webp$/i.test(name)) continue;
+      if (dir === IMAGES || /-\d+w\.webp$/i.test(name)) continue;
       const key = '/images/' + path.relative(IMAGES, full).split(path.sep).join('/');
+      // JPG / PNG in folders: only their size is recorded, so the build gives every <img> a width and height (no layout jump).
+      if (/\.(jpe?g|png)$/i.test(name)) {
+        if (!sizes[key]) { const m = await sharp(full).metadata().catch(() => null); if (m?.width) sizes[key] = [m.width, m.height]; }
+        continue;
+      }
+      if (!/\.webp$/i.test(name)) continue;
       const meta = await sharp(full).metadata().catch(() => null);
       if (!meta?.width) continue;
       sizes[key] = [meta.width, meta.height];

@@ -47,13 +47,14 @@ const {
   themeColor,
   share = true,
 } = Astro.props;
+import { fitDescription } from '../lib/seoText';
 // Google title and description overrides per page (src/data/seo.json, written
 // by Admin › AI Fix after a Super Admin approves; empty = the page's own).
 const seoOverride = (seoOverrides as Record<string, { title?: string; description?: string; jsonLd?: Record<string, unknown>[] }>)[Astro.url.pathname.replace(/\/?$/, '/')] || {};
 // Structured data added by the SEO Scanner (after a Super Admin approves, or an automation rule).
 const allJsonLd = [...jsonLd, ...(Array.isArray(seoOverride.jsonLd) && !noindex ? seoOverride.jsonLd : [])];
 const title = seoOverride.title || pageTitle;
-const description = seoOverride.description || pageDescription;
+const description = fitDescription(seoOverride.description || pageDescription, '');
 // In-page navigation is only used while live commentary is playing (so the
 // audio keeps going between pages); otherwise every link is a normal page
 // load. Not on admin/staff pages or the pop-out player.

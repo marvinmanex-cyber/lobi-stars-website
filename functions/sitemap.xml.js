@@ -1,4 +1,4 @@
-import { ensureTable } from './api/_lib/matchCentre.js';
+import { ensureTable, isHomeGame } from './api/_lib/matchCentre.js';
 import { matchSlug } from './api/_lib/matchSlug.js';
 import { publicSquad } from './api/_lib/squadPublish.js';
 
@@ -19,7 +19,10 @@ export async function onRequestGet({ request, env, waitUntil }) {
   try {
     await ensureTable(env.DB);
     const { results } = await env.DB.prepare(`SELECT * FROM events WHERE active = 1 ORDER BY event_date`).all();
-    const entries = results.map(e => `  <url><loc>https://lobistarsfc.com/matches/${matchSlug(e)}/</loc><lastmod>${String(e.updated_at || e.event_date || '').slice(0, 10) || new Date().toISOString().slice(0, 10)}</lastmod></url>`);
+    const day = e => String(e.updated_at || e.event_date || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+    const entries = results.flatMap(e => [`  <url><loc>https://lobistarsfc.com/matches/${matchSlug(e)}/</loc><lastmod>${day(e)}</lastmod></url>`,
+      // Matchday Live is for Lobi Stars home games (the same rule as the page itself).
+      ...(isHomeGame(e) ? [`  <url><loc>https://lobistarsfc.com/matches/${matchSlug(e)}/live/</loc><lastmod>${day(e)}</lastmod></url>`] : [])]);
     if (entries.length) xml = xml.replace('</urlset>', `${entries.join('\n')}\n</urlset>`);
   } catch (err) { console.log("[sitemap] matches skipped:", err.message); }
   // The squad profiles that are live now (not those of the last build): approved players and coaches only.

@@ -166,6 +166,30 @@ export async function fixRow(db, id) {
   return r ? { ...r, proposal: parse(r.proposal, {}), before: parse(r.before, null), applied: parse(r.applied, null), metrics: parse(r.metrics, null), name: info(r.type).name } : null;
 }
 
+// ── Free fallback (no AI, no cost): used when Claude is not connected, a spending limit is reached or the call fails.
+// Built only from the page's own heading and first paragraph, so it is always true; the admin can edit it before approving.
+const plain = s => cleanText(s).normalize('NFKC').replace(/\s+/g, ' ').trim();
+const clip = (s, n) => (s.length <= n ? s : `${s.slice(0, n - 1).replace(/[\s,.;:–—|-]+\S*$/, '')}…`);
+/** { title, description } within Google's limits from the page facts (title 30–60, description 70–160). */
+export function freeMeta({ title = '', h1 = [], firstPara = '', desc = '' } = {}) {
+  let main = plain((Array.isArray(h1) ? h1[0] : h1) || String(title).split(/\s[|–—-]\s/)[0] || 'Lobi Stars FC');
+  // Headings typed in capitals read as shouting in Google: normal capitals (short words like NNL / FC stay).
+  if ((main.match(/[A-Z]/g) || []).length > main.length * 0.6) main = main.toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase()).replace(/\b(Nnl|Npfl|Fc|Caf|Nff|Lmc)\b/g, w => w.toUpperCase());
+  let t = main;
+  for (const end of [' | Lobi Stars FC', ' | Lobi Stars', '']) if ((main + end).length <= 60) { t = main + end; break; }
+  t = clip(t, 60);
+  if (t.length < 30) t = `${main} | Official Lobi Stars FC Website`.length <= 60 ? `${main} | Official Lobi Stars FC Website` : t;
+  let d = plain(firstPara) || plain(desc);
+  if (d.length < 70) d = `${d}${d && !/[.!?…]$/.test(d) ? '.' : ''} ${main} on the official website of Lobi Stars FC, the Pride of Benue.`.trim();
+  return { title: t, description: clip(d, 160) };
+}
+/** Alt text for a picture without AI: its caption-style file name is not used (often random); the page heading is. */
+export function freeAlt(heading, n, total) {
+  const h = clip(plain(heading) || 'Lobi Stars FC', 100);
+  return total > 1 ? `Photo ${n} of ${total}: ${h}` : `Photo: ${h}`;
+}
+const FREE_NOTE = 'Written without AI (free) from the page’s own heading and first paragraph, because AI is not available right now';
+
 // ── The proposals ──
 async function proposeMeta(env, admin, issue, note) {
   const db = env.DB;
@@ -181,11 +205,18 @@ async function proposeMeta(env, admin, issue, note) {
     issue.type === 'title_duplicate' && issue.data?.pages ? `Other pages with the same title: ${issue.data.pages.filter(x => x !== issue.path).join(', ')}` : null].filter(Boolean).join('\n');
   const r = await ai(env, admin, { system: `You write Google search titles and descriptions for pages of the official Lobi Stars FC website. ${SYSTEM_RULES} Title: 30–60 characters, ending with " | Lobi Stars FC" when it fits. Description: 70–160 characters, one or two plain sentences saying what a fan finds on the page.`,
     prompt: facts, schema: { title: { type: 'string', min: 15, max: 75 }, description: { type: 'string', min: 40, max: 180 } }, maxTokens: 300, relatedId: issue.id });
-  if (!r.ok) return { error: r.error };
-  const c = checkMeta(r.data, keyword);
-  if (c.problems.length) return { error: `The AI suggestion was not used (${c.problems.join('; ')}). Press AI Fix again, or edit it yourself.` };
+  let c, free = null;
+  if (r.ok) {
+    c = checkMeta(r.data, keyword);
+    if (c.problems.length) return { error: `The AI suggestion was not used (${c.problems.join('; ')}). Press AI Fix again, or edit it yourself.` };
+  } else {
+    // No AI: a free version from the page itself (Google types need real rewording, so they still need AI).
+    if (GOOGLE_TYPES.includes(issue.type)) return { error: r.error };
+    c = checkMeta(freeMeta(page.data), keyword);
+    free = `${FREE_NOTE} (${r.error}). Check it, edit it if you like, then approve.`;
+  }
   const after = { ...current, ...(descOnly ? {} : { title: c.title }), description: c.description };
-  return { kind: 'seo_meta', summary: `New Google ${descOnly ? 'description' : 'title and description'} for ${issue.path} (saved in src/data/seo.json; the page itself is not changed).`, editable: descOnly ? ['description'] : ['title', 'description'], keyword,
+  return { kind: 'seo_meta', summary: `New Google ${descOnly ? 'description' : 'title and description'} for ${issue.path} (saved in src/data/seo.json; the page itself is not changed).`, editable: descOnly ? ['description'] : ['title', 'description'], keyword, ...(free ? { note: free, free: true } : {}),
     changes: [{ file: SEO_FILE, op: 'json_set', key: issue.path, before: seo.data[issue.path] ?? null, after }],
     preview: { before: { title: page.data.title, description: page.data.desc }, after: { title: after.title || page.data.title, description: after.description } }, warnings: warnLen(after.title || '', after.description), cost: r.cost };
 }
@@ -202,13 +233,14 @@ async function proposeAlt(env, admin, issue, note) {
   const schema = Object.fromEntries(todo.map((_, n) => [`alt${n + 1}`, { type: 'string', min: 5, max: 140 }]));
   const r = await ai(env, admin, { system: `You write alt text (picture descriptions for blind fans and Google Images) for the official Lobi Stars FC website. ${SYSTEM_RULES} Describe only what is visible, under 125 characters, without "image of" or "photo of". Name a person only if the page text names them.`,
     messages: [{ role: 'user', content }], schema, maxTokens: 120 + todo.length * 60, relatedId: issue.id });
-  if (!r.ok) return { error: r.error };
+  const heading = (page?.data?.h1 || [])[0] || String(page?.data?.title || '').split(/\s[|–—-]\s/)[0];
   const after = { ...alt.data };
-  const rows = todo.map((src, n) => ({ src, alt: cleanText(r.data[`alt${n + 1}`]).slice(0, 125) }));
+  const rows = todo.map((src, n) => ({ src, alt: r.ok ? cleanText(r.data[`alt${n + 1}`]).slice(0, 125) : freeAlt(heading, n + 1, todo.length) }));
+  const freeNote = r.ok ? null : `${FREE_NOTE} (${r.error}). It names the page, not what each picture shows: edit each one if you can, then approve.`;
   for (const x of rows) after[x.src] = x.alt;
   return { kind: 'alt', summary: `Alt text for ${rows.length} picture${rows.length === 1 ? '' : 's'} on ${issue.path} (saved in src/data/image-alt.json and added to every page showing them at the next build; only where a picture has none).`,
     editable: rows.map((_, n) => `alt${n + 1}`), rows, changes: rows.map(x => ({ file: ALT_FILE, op: 'json_set', key: x.src, before: alt.data[x.src] ?? null, after: x.alt })),
-    preview: { before: rows.map(x => ({ src: x.src, alt: '(none)' })), after: rows }, note: others.length ? `${others.length} other picture(s) are stored elsewhere: see the VS Code instruction.` : null, cost: r.cost };
+    preview: { before: rows.map(x => ({ src: x.src, alt: '(none)' })), after: rows }, note: [freeNote, others.length ? `${others.length} other picture(s) are stored elsewhere: see the VS Code instruction.` : null].filter(Boolean).join(' ') || null, ...(freeNote ? { free: true } : {}), cost: r.cost };
 }
 function teamLd(site) {
   const sameAs = Object.values(site?.social || {}).filter(u => /^https:\/\//.test(u));

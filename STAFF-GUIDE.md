@@ -4073,6 +4073,17 @@ the Super Admins should be owners of the Search Console property.
 **Learn:** **SEO basics** (button at the top) explains all of this in plain
 English for anyone on the media team.
 
+**AI Fix without AI (free):** when AI is not available (not connected, or the
+daily or monthly AI limit is reached), AI Fix for titles, descriptions and alt
+text still works. It writes a version from the page's own heading and first
+paragraph and says "Written without AI" on the fix. Check it and edit it before
+approving: free alt text names the page ("Photo 2 of 6: …"), not what each
+picture shows, so a short description of the picture is better where you can.
+Issues measured from Google's figures (clicks, ranking) still need AI.
+
+**Links to social networks** (Instagram, X, Facebook, TikTok, WhatsApp) are
+never reported as broken: those sites block automatic checks.
+
 ## 41. Media Centre (/media-centre)
 
 **What it is:** a separate, private page for the club's media staff:
@@ -4519,6 +4530,14 @@ Media Centre home.
 After signing in: **Returned to me** (with the Super Admin's comment),
 **Waiting for approval**, **My drafts**, **Upcoming deadlines** and
 **Recently published**.
+
+**Match preview and match report reminders:** for every Lobi Stars match,
+**Upcoming deadlines** shows a missing **match preview** (due 2 days before
+kick-off) and a missing **match report** (due by noon the day after). The media
+team email gets one reminder per match for each. To make a story count, set its
+**Content type** (Preview or Match Report) and its **Match date** in the story
+form. Pictures in a story's gallery without a caption get alt text
+automatically ("Photo 3 of 10: story title"); a caption is better.
 
 ## 42. MatchDay Kitchen staff area (/matchday-kitchen)
 

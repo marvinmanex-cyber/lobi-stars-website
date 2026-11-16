@@ -25,8 +25,9 @@ export async function getStaticPaths() {
 }
 
 const { person, prev, next, teammates, related } = Astro.props as { person: Person; prev: Person | null; next: Person | null; teammates: Person[]; related: any[] };
+import { fitTitle, fitDescription } from '../../lib/seoText';
 ---
-<Layout title={`${person.name} | Lobi Stars FC`} description={profileDescription(person)} image={shareImage(person)} imageAlt={`${person.name}, Lobi Stars FC`} noindex={person.isSample} jsonLd={person.isSample ? [] : [personJsonLd(person, Astro.site!)]}>
+<Layout title={fitTitle(person.name, [` | ${person.position || person.role || 'Squad'} | Lobi Stars FC`, ' | Lobi Stars FC Squad', ' | Lobi Stars FC'])} description={fitDescription(profileDescription(person), `${person.name} ${person.position ? `plays as ${/^[aeiou]/i.test(person.position) ? 'an' : 'a'} ${person.position.toLowerCase()} for` : 'is part of'} Lobi Stars FC: profile, stats and career.`)} image={shareImage(person)} imageAlt={`${person.name}, Lobi Stars FC`} noindex={person.isSample} jsonLd={person.isSample ? [] : [personJsonLd(person, Astro.site!)]}>
   <SquadProfile person={person} prev={prev} next={next} teammates={teammates} />
   {related.length > 0 && <NewsCarousel title={`Latest news about ${person.name}`} articles={related} viewAllHref="/news" tone="band" />}
 </Layout>

@@ -45,6 +45,7 @@ const ogImage = existsSync(`public${ogFile}`) ? ogFile : null;
   description={pageDesc}
   image={ogImage ?? logoSrc(partner) ?? undefined}
   imageAlt={ogImage ? pageTitle : logoAlt(partner)}
+  noindex={p.tier === 'Principal Partner'}
 >
   {p.theme === 'ropajo' ? (
     <RopajoFeature partner={partner}>{hasBody && <Content />}</RopajoFeature>

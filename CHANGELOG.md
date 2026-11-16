@@ -8,6 +8,40 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-16: Free SEO fixes: match story reminders, player and story titles, free AI Fix fallback
+
+**Who it affects:** the media team, the Super Admins, fans and Google. **Nothing to do**, and no extra cost.
+
+- **Media Centre: match preview and match report reminders.** For every Lobi Stars match, the Media Centre home
+  now lists under **Upcoming deadlines** a missing **match preview** (due 2 days before kick-off) and a missing
+  **match report** (due by noon the day after). The media team email is sent one reminder per match for each.
+  A story counts when its Content type is Preview / Match Report, or its title says so, or it names the opponent
+  and is published around the match. Setting **Match date** on a story is the surest way.
+- **Titles and descriptions that fit Google** for every news story and player page, now and in future. Titles
+  typed in fancy or capital letters (e.g. pasted from Facebook) are shown to Google in normal letters, and short
+  descriptions are completed with a true sentence. Clearer titles on the stadium, fixtures, shop, squad and table
+  pages.
+- **Player pages** now point to the same club record as the homepage in their structured data.
+- **Matchday Live pages** get breadcrumbs for Google and are listed in the sitemap (home games).
+- **Pages Google should not list:** the old in-seat food page (/food/, replaced by /kitchen/), the hidden
+  Principal Partner page, the site search and empty History / Honours / Video pages are now "noindex" and left
+  out of the sitemap.
+- **News story pictures:** every gallery picture without a caption now gets alt text automatically
+  ("Photo 3 of 10: story title") and a fixed size, so the page doesn't jump while it loads.
+- **Pictures in folders** (e.g. the Ropajo partner photos) now always get their width and height at build time.
+- **Team logos** in the programme and ticket pages load the smaller WebP copies.
+- **Predict & Win:** the winners and "Predictions are open / closed" headings are now in the right order for
+  Google (no change in look).
+- **SEO Scanner:**
+  - links to social networks (Instagram, X, Facebook, TikTok, WhatsApp…) are no longer reported as broken
+    links, because those sites block automatic checks;
+  - **AI Fix works without AI.** When AI is not available (not connected, or the daily or monthly AI limit is
+    reached), AI Fix for titles, descriptions and alt text writes a free version from the page's own heading
+    and first paragraph instead of failing. It says so on the fix ("Written without AI"). Check it, edit it if
+    you like, then approve.
+
+---
+
 ## 2026-11-16: SEO Scanner: every AI Fix says where it stands; match page title fixes now reach the page
 
 **Who it affects:** whoever uses the SEO Scanner. **Staff need to:** nothing. Leave the page open after Approve to watch the card update.

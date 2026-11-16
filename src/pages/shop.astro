@@ -14,7 +14,7 @@ const persOn = P.enabled === true && Number(P.feeNaira) > 0 && !!String(P.howYou
 const canPers = (p: (typeof shop.products)[number]) => persOn && p.personalisable && p.inStock && Number(p.price) > 0;
 const persShirts = shop.products.filter(canPers).map(p => ({ id: p.id, name: withSeason(p.name), price: Number(p.price) }));
 ---
-<Layout title="Club Shop | Lobi Stars Football Club" description="Official Lobi Stars FC merchandise: jerseys, jackets, scarves, caps and gifts.">
+<Layout title="Lobi Stars Shop: Jerseys, Kits and Merchandise" description="Official Lobi Stars FC merchandise: jerseys, jackets, scarves, caps and gifts.">
   <div class="page-hero wrap">
     <div class="stag">Official Gear</div>
     <h1 class="stitle">Club <span class="r">Shop</span></h1>

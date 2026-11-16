@@ -4,6 +4,11 @@
 import { info } from './seoChecks.js';
 import { similarity } from './seoCrawl.js';
 
+// Social networks (and WhatsApp links) refuse or log-in-wall automatic visits, so the scanner can't tell whether
+// such a link works: they are never reported as broken (Nov 2026).
+const SOCIAL = /(^|\.)(x\.com|twitter\.com|instagram\.com|facebook\.com|fb\.com|fb\.me|tiktok\.com|linkedin\.com|threads\.net|wa\.me|whatsapp\.com|t\.me|snapchat\.com)$/i;
+export function isSocialLink(url) { try { return SOCIAL.test(new URL(url).hostname); } catch { return false; } }
+
 const KEY_PAGES = ['/', '/news/', '/fixtures/', '/table/', '/squad/', '/tickets/', '/shop/'];
 const isNews = p => /^\/news\/[^/]+\/$/.test(p);
 const isPlayer = p => /^\/squad\/(?!staff\/)[^/]+\/$/.test(p);
@@ -68,6 +73,7 @@ export function computeIssues(input) {
       out.push(make('broken_link', path, `${plural(from.length || 1, 'page links', 'pages link')} to ${path}, which ${st ? `answers error ${st}` : 'does not open'}${from.length ? `: ${list(from, 4)}` : ''}.`, { urls: [path, ...from.slice(0, 10)], data: { status: st, from } }));
     }
     for (const [url, st] of Object.entries(input.extStatus || {})) {
+      if (isSocialLink(url)) continue; // social networks block automatic checks: not a real dead link
       if (st === 404 || st === 410 || st === 0) out.push(make('broken_external', (input.extFrom || {})[url] || null, `A link to ${url} ${st ? `answers error ${st}` : 'does not open'}.`, { key: url.slice(0, 120), urls: [(input.extFrom || {})[url]].filter(Boolean), data: { url, status: st } }));
     }
 

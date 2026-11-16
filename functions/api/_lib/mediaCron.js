@@ -54,6 +54,7 @@ export async function newsletterReminders(env, now = Date.now()) {
 export async function mediaCentreTick(env, now = Date.now()) {
   const out = { scheduled: await publishDue(env) };
   try { Object.assign(out, await newsletterReminders(env, now)); } catch (e) { console.error('[media centre] reminders', e); out.reminderError = String(e?.message || e).slice(0, 200); }
+  try { const { matchStoryReminders } = await import('./mediaMatchStories.js'); const m = await matchStoryReminders(env, now); if (m.length) out.matchStoryReminders = m; } catch (e) { console.error('[media centre] match story reminders', e); }
   try { out.newsLinks = await newsLinkTick(env, { now }); } catch (e) { console.error('[squad] news links', e); out.newsLinkError = String(e?.message || e).slice(0, 200); }
   try { out.milestones = await detectMilestones(env, { now }); } catch (e) { console.error('[squad] milestones', e); out.milestoneError = String(e?.message || e).slice(0, 200); }
   return out;

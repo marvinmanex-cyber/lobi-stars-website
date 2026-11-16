@@ -76,8 +76,10 @@ const membersOnly = a.membersOnly;
 // "Shop the story": tagged shop products that still exist.
 const products = (a.products || []).map(id => shop.products.find(p => p.id === id)).filter(Boolean).slice(0, 4) as typeof shop.products;
 const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.test(a.videoUrl) ? a.videoUrl : null;
+import { plainText, fitTitle, fitDescription } from '../../lib/seoText';
+const cleanTitle = plainText(a.title);
 ---
-<Layout title={`${a.title} | Lobi Stars FC News`} description={a.summary} image={a.coverImage} imageAlt={a.imageAlt} type="article" jsonLd={[articleJsonLd]} share={false} noindex={article.id === 'mc-preview-template'}>
+<Layout title={fitTitle(cleanTitle, [' | Lobi Stars FC News', ' | Lobi Stars FC', ''])} description={fitDescription(a.summary, 'Read the full story on the official Lobi Stars FC website.')} image={a.coverImage} imageAlt={a.imageAlt} type="article" jsonLd={[articleJsonLd]} share={false} noindex={article.id === 'mc-preview-template'}>
   <Fragment slot="head">
     {/* The story's bold text weights, fetched at once so the text doesn't move when they arrive (layout shift). */}
     <link rel="preload" href="/fonts/barlow-600.woff2" as="font" type="font/woff2" crossorigin />
@@ -121,7 +123,7 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
         {membersOnly && <span class="art-series art-mo">Members only</span>}
         {longRead && <><span aria-hidden="true">&middot;</span><span>{readMins} min read</span></>}
       </div>
-      <h1 class="art-title">{a.title}</h1>
+      <h1 class="art-title">{cleanTitle}</h1>
       <p class="art-lead">{a.summary}</p>
 
       <div class="art-byline">
@@ -181,8 +183,8 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
         <Content />
         {(a.gallery || []).length > 0 && (
           <div class="art-gallery">
-            {(a.gallery || []).map(g => (
-              <figure><img src={g.src} alt={g.caption || ''} loading="lazy" />{g.caption && <figcaption>{g.caption}</figcaption>}</figure>
+            {(a.gallery || []).map((g, gi, all) => (
+              <figure><img src={g.src} alt={plainText(g.caption) || `Photo ${gi + 1} of ${all.length}: ${cleanTitle}`} width="800" height="600" loading="lazy" />{g.caption && <figcaption>{g.caption}</figcaption>}</figure>
             ))}
           </div>
         )}
@@ -193,8 +195,8 @@ const directVideo = a.isVideo && !embed && a.videoUrl && /\.(mp4|webm)(\?|$)/i.t
         <Content />
         {(a.gallery || []).length > 0 && (
           <div class="art-gallery">
-            {(a.gallery || []).map(g => (
-              <figure><img src={g.src} alt={g.caption || ''} loading="lazy" />{g.caption && <figcaption>{g.caption}</figcaption>}</figure>
+            {(a.gallery || []).map((g, gi, all) => (
+              <figure><img src={g.src} alt={plainText(g.caption) || `Photo ${gi + 1} of ${all.length}: ${cleanTitle}`} width="800" height="600" loading="lazy" />{g.caption && <figcaption>{g.caption}</figcaption>}</figure>
             ))}
           </div>
         )}

@@ -38,5 +38,7 @@ export async function upcomingDeadlines(env, user, settings) {
     const n = (await db.prepare(`SELECT COUNT(*) AS n FROM mc_accreditations WHERE status IN ('pending', 'info')`).first())?.n || 0;
     if (n) out.push({ kind: 'accreditation', title: `${n} accreditation request${n === 1 ? '' : 's'} to decide`, due: null, state: 'waiting' });
   } catch { /* not built yet */ }
+  // Match preview (2 days before) and match report (the day after) for each Lobi Stars match, when missing.
+  try { const { matchStoryDeadlines } = await import('./mediaMatchStories.js'); out.push(...await matchStoryDeadlines(env)); } catch (e) { console.error('[media centre] match stories', e); }
   return out.sort((a, b) => (a.due || '9') < (b.due || '9') ? -1 : 1);
 }

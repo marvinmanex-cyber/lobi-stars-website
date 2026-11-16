@@ -5,7 +5,7 @@ import history from '../../data/history.json';
 // Only entries the club has checked ("verified": true) are published.
 const events = history.events.filter(e => e.verified);
 ---
-<Layout title="Club History | Lobi Stars Football Club" description="The history of Lobi Stars FC, the Pride of Benue: key moments, titles and milestones.">
+<Layout title="Club History | Lobi Stars Football Club" description="The history of Lobi Stars FC, the Pride of Benue: key moments, titles and milestones." noindex={!events.length}>
   <div class="page-hero wrap">
     <div class="stag">The Club</div>
     <h1 class="stitle">Club <span class="r">History</span></h1>

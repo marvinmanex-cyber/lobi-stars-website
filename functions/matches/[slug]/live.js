@@ -46,6 +46,8 @@ export async function onRequestGet({ request, env, params }) {
     embed = jsonScript('ssr-match', data);
   } catch { /* the page fetches it instead */ }
   const line = `${event.home_team} vs ${event.away_team} · ${date} · ${event.venue}`;
+  const crumbs = { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: [['Home', `${url.origin}/`], ['Fixtures & Results', `${url.origin}/fixtures/`], [`${event.home_team} vs ${event.away_team}`, `${url.origin}/matches/${matchSlug(event)}/`], ['Matchday Live', canonical]].map(([name, item], i) => ({ '@type': 'ListItem', position: i + 1, name, item })) };
+  const ldHtml = `<script type="application/ld+json">${JSON.stringify(crumbs).replace(/</g, '\\u003c')}</script>`;
 
   return new HTMLRewriter()
     .on('title', { element(el) { el.setInnerContent(title); } })
@@ -57,7 +59,7 @@ export async function onRequestGet({ request, env, params }) {
     .on('meta[property="og:url"]', set(canonical))
     .on('meta[name="robots"]', { element(el) { el.remove(); } })
     .on('link[rel="canonical"]', { element(el) { el.setAttribute('href', canonical); } })
-    .on('head', { element(el) { if (embed) el.append(embed, { html: true }); } })
+    .on('head', { element(el) { el.append(ldHtml + embed, { html: true }); } })
     // The page's main heading in the HTML itself (search engines read it without running scripts). The page script
     // redraws this area with the same heading, so there is always exactly one <h1>.
     .on('#mlStatus', { element(el) { el.before(`<h1 class="sr-only">${escHtml(`Matchday Live: ${event.home_team} vs ${event.away_team}`)}</h1>`, { html: true }); el.setInnerContent(`Matchday Live: ${line}`); } })

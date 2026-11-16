@@ -12,7 +12,7 @@ const slug = (c: string) => c.toLowerCase().replace(/\s+/g, '-');
 const videos = (data.videos as Video[]).filter(v => /^[\w-]{11}$/.test(v.id) && v.title);
 const videoNews = (await getSortedNews()).filter(a => a.data.isVideo);
 ---
-<Layout title="Video | Lobi Stars Football Club" description="Lobi Stars FC videos: match highlights, goals, interviews, press conferences and behind the scenes.">
+<Layout title="Video | Lobi Stars Football Club" description="Lobi Stars FC videos: match highlights, goals, interviews, press conferences and behind the scenes." noindex={videos.length === 0 && videoNews.length === 0}>
   <div class="page-hero wrap">
     <div class="stag">Lobi Stars TV</div>
     <h1 class="stitle"><span class="r">Video</span></h1>
