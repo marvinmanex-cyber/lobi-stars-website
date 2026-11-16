@@ -18,6 +18,7 @@ import MediaCta from '../components/MediaCta.astro';
 import MatchAlerts from '../components/MatchAlerts.astro';
 import MiniTable from '../components/league/MiniTable.astro';
 import { getSortedNews } from '../lib/news';
+import siteData from '../data/site.json';
 import shop from '../data/shop.json';
 import { CURRENT_SEASON } from '../lib/site';
 
@@ -35,8 +36,10 @@ const site = Astro.site!.toString().replace(/\/$/, '');
 const teamJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SportsTeam',
+  '@id': `${site}/#club`,
   name: 'Lobi Stars Football Club',
-  alternateName: 'Lobi Stars FC',
+  alternateName: ['Lobi Stars FC', 'Lobi Stars', 'Lobi Stars F.C.'],
+  description: 'Lobi Stars FC is a professional football club from Makurdi, Benue State, Nigeria, known as the Pride of Benue. This is the club’s official website.',
   sport: 'Soccer',
   url: `${site}/`,
   logo: `${site}/images/lobi-stars-fc-transparent.png`,
@@ -46,13 +49,31 @@ const teamJsonLd = {
     name: 'McCarthy Stadium',
     address: { '@type': 'PostalAddress', addressLocality: 'Makurdi', addressRegion: 'Benue State', addressCountry: 'NG' },
   },
-  sameAs: ['https://www.facebook.com/LobiStars', 'https://x.com/LobiStars', 'https://www.instagram.com/lobistarsfc'],
+  memberOf: { '@type': 'SportsOrganization', name: 'Nigeria National League' },
+  // Every official profile (from the site settings) plus Wikipedia and Wikidata, so Google ties the club's name to this site.
+  sameAs: [...new Set([
+    ...Object.values(siteData.social || {}).filter(u => typeof u === 'string' && /^https:\/\//.test(u)),
+    'https://en.wikipedia.org/wiki/Lobi_Stars_F.C.',
+    'https://www.wikidata.org/wiki/Q1412829',
+  ])],
+};
+// The website's own name in Google results ("Lobi Stars FC" rather than the address).
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${site}/#website`,
+  name: 'Lobi Stars FC',
+  alternateName: ['Lobi Stars Football Club', 'Lobi Stars', 'lobistarsfc.com'],
+  url: `${site}/`,
+  publisher: { '@id': `${site}/#club` },
+  inLanguage: 'en',
+  potentialAction: { '@type': 'SearchAction', target: `${site}/search/?q={search_term_string}`, 'query-input': 'required name=search_term_string' },
 };
 ---
 <Layout
   title="Lobi Stars Football Club | Pride of Benue"
   description="Official website of Lobi Stars FC of Makurdi, Benue State: fixtures, results, news, tickets, membership and the club shop."
-  jsonLd={[teamJsonLd]}
+  jsonLd={[teamJsonLd, websiteJsonLd]}
 >
   <LiveBanner />
   <!-- "FULL TIME" banner for 24 hours after a match: filled in on the server (functions/index.js). -->

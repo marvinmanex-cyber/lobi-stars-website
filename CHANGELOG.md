@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-16: Free SEO improvements: club identity, match facts, faster pages, IndexNow
+
+**Who it affects:** everyone (Google results), fans on match pages. **Staff need to:** the free steps in HANDOVER-TODO S1–S7 (Wikidata, Wikipedia, social bios, Google Business Profile, Bing, partner emails). Details are in Free-SEO-Steps-for-Lobi-Stars.docx.
+- **Club identity for Google** ("Lobi Stars" had slipped to about position 12):
+  - The homepage club data (SportsTeam) now lists every official account (Facebook, X, Instagram, YouTube, TikTok, WhatsApp channel), Wikipedia and Wikidata, plus other names (Lobi Stars, Lobi Stars F.C.), a description and the league.
+  - New "website" data names the site "Lobi Stars FC" in Google results, with the site search.
+  - The founding year is left out until confirmed (Wikidata 1981 vs footer 1969).
+- **Match facts on every match page:** a short section under the match, sent in the HTML: competition and matchday, kick-off (Nigeria time), venue, both teams' league positions and points, the other meeting this season (result or date), tickets for home games, and links (Matchday Live, fixtures, table). All from the club's own records, nothing invented, so each match page has its own useful text.
+- **Faster pages (free):** news stories (not members-only) are kept at Cloudflare's edge for 3 minutes and match pages for 1 minute, so most visits skip the database. The match list is kept in memory for 20 seconds. The SEO Scanner's own checks always see the newest page.
+- **IndexNow:** when the SEO Scanner sees a new or changed page in sitemap.xml, it tells Bing and the other IndexNow search engines at once (free). Key file: /adcccba31ce26c7e0ce2200c59295eab.txt.
+
 ## 2026-11-16: "Lobi Stars news": the homepage points Google to /news/; SEO Scanner link advice fixed
 
 **Who it affects:** fans (wording), staff using the SEO Scanner. **Staff need to:** press **Check again** on "For 'Lobi Stars news' Google shows / instead of /news/".

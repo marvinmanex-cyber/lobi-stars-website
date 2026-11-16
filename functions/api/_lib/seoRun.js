@@ -412,6 +412,8 @@ export async function seoTick(env, origin) {
         const known = new Map((await db.prepare(`SELECT path, lastmod FROM seo_pages`).all()).results.map(r => [r.path, r.lastmod]));
         const changed = parseSitemap(xml).filter(x => known.size && (!known.has(x.path) || (x.lastmod && x.lastmod !== known.get(x.path)))).map(x => x.path);
         if (changed.length) {
+          // Tell Bing and the other IndexNow search engines at once (free; not on the local test server).
+          if (/^https:\/\/(www\.)?lobistarsfc\.com$/.test(origin)) { try { const { indexNow } = await import('./indexNow.js'); await indexNow(origin, changed); } catch (err) { console.error('[indexnow]', err); } }
           const r = await startScan(env, { kind: 'quick', trigger: 'published', by: 'New or changed page', paths: changed });
           if (!r.error) return { more: true, scan: r.scan };
         }

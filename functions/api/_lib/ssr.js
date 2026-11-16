@@ -33,12 +33,18 @@ export function crestHtml(name, size = 30, cls = 'crest') {
 }
 
 /** All visible matches in the public summary shape (same as /api/matches). */
+// Kept in memory for 20 seconds per server instance: busy moments don't repeat the same database reads.
+let matchesMemo = { at: 0, data: null };
 export async function publicMatches(env) {
+  const memo = env.ALLOW_TEST_CLOCK !== '1'; // off on the local test server, so tests see changes at once
+  if (memo && matchesMemo.data && Date.now() - matchesMemo.at < 20e3) return matchesMemo.data;
   try {
     const rows = await listMatches(env.DB);
     // + ticket state (Buy ticket / Sold out / not on sale yet) and the league matchday.
     const out = await decorateMatches(env, rows.map(r => toSummary(r, r)), rows);
-    return out.map(m => (m.ticket ? { ...m, on_sale: m.ticket.state === 'on_sale' } : m));
+    const data = out.map(m => (m.ticket ? { ...m, on_sale: m.ticket.state === 'on_sale' } : m));
+    if (memo) matchesMemo = { at: Date.now(), data };
+    return data;
   } catch { return []; }
 }
 

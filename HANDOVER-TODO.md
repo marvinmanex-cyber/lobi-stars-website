@@ -174,6 +174,20 @@ A11 programme file storage, A12 Telegram channel secrets, and A14.
 | K7 | **Collection board TV** (added 9 Nov 2026) | On the computer or smart TV at the pickup point, open **lobistarsfc.com/kitchen/board/** and tap the screen once. Only useful when pickup points are set. |
 | K8 | **Labels and sponsored dishes** (added 9 Nov 2026) | MatchDay Kitchen › **Menu and prices** › **Labels** on each dish: tick Halal / Vegetarian / Kids' portion where true, and choose a sponsor if a partner has paid for one. |
 
+## S. Free SEO steps (added 16 Nov 2026, no cost)
+
+Full steps and ready-to-send emails: **Free-SEO-Steps-for-Lobi-Stars.docx** in the "Lobi Official Website" folder on the Desktop.
+
+| # | Item | What is needed |
+| --- | --- | --- |
+| S1 | **Wikidata: official website** (most important) | Free account; on wikidata.org/wiki/Q1412829 add "official website" = https://lobistarsfc.com/ |
+| S2 | **Wikipedia info box** | On en.wikipedia.org/wiki/Lobi_Stars_F.C. set "website" to https://lobistarsfc.com and add it under External links |
+| S3 | **Founding year** | Wikidata says 1981; the website footer says "since 1969". Confirm which is right (the year is left out of Google data until then) |
+| S4 | **Website link in every social bio** | Facebook, X, Instagram, TikTok, YouTube, WhatsApp channel |
+| S5 | **Google Business Profile** | business.google.com: Lobi Stars FC, McCarthy Stadium, website, verify |
+| S6 | **Bing Webmaster Tools** | bing.com/webmasters › Import from Google Search Console |
+| S7 | **Partner and NNL link emails** | Send the drafts in the Word document (Ropajo, Novus, Prime, Msendo, House 43, Aeson, Exo, Zeva, NNL) |
+
 ## L. Scores Update Centre (/scores-centre, built 9 Nov 2026)
 
 | # | Item | What is needed |

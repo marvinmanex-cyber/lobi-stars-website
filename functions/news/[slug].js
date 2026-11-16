@@ -3,13 +3,19 @@ import { readSession } from '../api/_lib/session.js';
 import { membershipOf } from '../api/_lib/membership.js';
 import { seasonConfig } from '../api/_lib/seasonConfig.js';
 import membersContent from '../api/_generated/membersContent.js';
+import { edgeCached } from '../api/_lib/edgeCache.js';
 
 // /news/<slug> -- the built article, with the next Lobi Stars fixture card
 // (and Buy Tickets for home games) filled in on the server. Members-only
 // stories: the text was removed from the public page at build time and is
 // added back here for confirmed members only.
-export async function onRequestGet({ request, env, params }) {
-  const slug = String(params.slug || '').replace(/[^a-z0-9-]/gi, '');
+export async function onRequestGet(ctx) {
+  const slug = String(ctx.params.slug || '').replace(/[^a-z0-9-]/gi, '');
+  // Public stories are the same for every visitor: a 3-minute copy at Cloudflare's edge (faster, fewer reads).
+  if (!Object.prototype.hasOwnProperty.call(membersContent, slug)) return edgeCached(ctx.request, ctx.waitUntil, 180, () => story(ctx, slug));
+  return story(ctx, slug);
+}
+async function story({ request, env }, slug) {
   const card = nextFixtureHtml(await publicMatches(env));
   const handlers = [
     ['#nextFixture', { element(el) { if (card) { el.setInnerContent(card, { html: true }); el.removeAttribute('hidden'); } } }],

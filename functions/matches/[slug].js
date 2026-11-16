@@ -3,6 +3,8 @@ import { ensureTable, loadMatch, toPublic } from '../api/_lib/matchCentre.js';
 import { matchSlug } from '../api/_lib/matchSlug.js';
 import { decorateMatches } from '../api/_lib/ticketShop.js';
 import { matchImagePath, MATCH_FALLBACK_IMAGE } from '../api/_lib/shareImage.js';
+import { matchFactsHtml } from '../api/_lib/matchFacts.js';
+import { edgeCached } from '../api/_lib/edgeCache.js';
 
 // /matches/<slug> -- serves the static Match Centre page (built at
 // /match-centre/) for any match, with the match's own title, description and
@@ -10,7 +12,11 @@ import { matchImagePath, MATCH_FALLBACK_IMAGE } from '../api/_lib/shareImage.js'
 // match data from /api/matches/<slug>.
 const escHtml = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-export async function onRequestGet({ request, env, params }) {
+export async function onRequestGet(ctx) {
+  // Same for every visitor: a 1-minute copy at Cloudflare's edge (live details refresh in the browser).
+  return edgeCached(ctx.request, ctx.waitUntil, 60, () => matchPage(ctx));
+}
+async function matchPage({ request, env, params }) {
   const url = new URL(request.url);
   const slug = String(params.slug || '').toLowerCase();
   const shell = await env.ASSETS.fetch(new URL('/match-centre/', url));
@@ -39,11 +45,13 @@ export async function onRequestGet({ request, env, params }) {
   // replace the placeholder line with the match itself in case scripts don't run.
   let embed = '';
   let status = 'scheduled';
+  let ticketInfo = null;
   try {
     const m = await loadMatch(env.DB, event.id);
     // Same data as /api/matches/<slug>, with the ticket state and "from" price.
     const [match] = await decorateMatches(env, [toPublic(m.event, m.centre)], [m.event]);
     if (match.ticket) match.on_sale = match.ticket.state === 'on_sale';
+    ticketInfo = match.ticket || null;
     const data = { match, serverTime: new Date().toISOString() };
     status = data.match.status || status;
     embed = jsonScript('ssr-match', data);
@@ -72,6 +80,9 @@ export async function onRequestGet({ request, env, params }) {
   }];
   const ldHtml = ld.map(d => `<script type="application/ld+json">${JSON.stringify(d).replace(/</g, '\\u003c')}</script>`).join('');
   const imgAlt = `${event.home_team} vs ${event.away_team} | Lobi Stars FC`;
+  // Match facts below the match (server HTML; see matchFacts.js).
+  let facts = '';
+  try { facts = await matchFactsHtml(env, event, { ticket: ticketInfo, slug: matchSlug(event) }); } catch (err) { console.error('[match facts]', err); }
   const line = `${event.home_team} vs ${event.away_team}, ${date}, ${event.venue}`;
 
   const rewritten = new HTMLRewriter()
@@ -92,6 +103,7 @@ export async function onRequestGet({ request, env, params }) {
     // redraws this area with the same heading, so there is always exactly one <h1>.
     .on('#mcStatus', { element(el) { el.before(`<h1 class="sr-only">${escHtml(`${event.home_team} vs ${event.away_team}`)}</h1>`, { html: true }); el.setInnerContent(line); } })
     .on('[data-match-share]', { element(el) { el.removeAttribute('hidden'); } })
+    .on('#mc', { element(el) { if (facts) el.after(facts, { html: true }); } })
     .transform(new Response(shell.body, { status: 200, headers }));
   return rewritten;
 }
