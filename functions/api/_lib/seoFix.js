@@ -277,7 +277,21 @@ async function proposeLinkIdeas(env, issue) {
     .map(p => ({ path: p.path, score: [...words(`${p.d.title} ${(p.d.h1 || []).join(' ')}`)].filter(w => tw.has(w)).length + (p.path.split('/')[1] === issue.path.split('/')[1] ? 1 : 0) }))
     .filter(x => x.score > 0).sort((a, b) => b.score - a.score).slice(0, 3);
   const anchor = (target?.d?.h1?.[0] || target?.d?.title?.split(' | ')[0] || issue.path).slice(0, 70);
-  const text = ideas.length ? ideas.map((x, n) => `${n + 1}. On ${x.path}, add a link with the words "${anchor}" to ${issue.path}.`).join('\n') : `Add a link to ${issue.path} from its section page (/${issue.path.split('/')[1]}/) with the words "${anchor}".`;
+  const d = parse(issue.detail, {})?.data || issue.data || {};
+  const section = `/${issue.path.split('/')[1]}/`;
+  const linkedFrom = live.filter(p => p.path !== issue.path && (p.d.links || []).includes(issue.path)).length;
+  let text;
+  if (issue.type === 'cannibal' && d.keyword && d.shown && d.shown !== issue.path) {
+    // Google shows another page for the keyword: say clearly, on that page and the target page, which one is about it.
+    text = `Google shows ${d.shown} for "${d.keyword}" instead of ${issue.path}.\n1. On ${d.shown}, make the link to ${issue.path} use the words "${d.keyword}" (for example "All ${d.keyword}").\n2. Make sure the title and main heading of ${issue.path} say "${d.keyword}".`;
+  } else if (ideas.length) {
+    text = ideas.map((x, n) => `${n + 1}. On ${x.path}, add a link with the words "${anchor}" to ${issue.path}.`).join('\n');
+  } else if (section === issue.path || linkedFrom >= live.length - 1) {
+    // It is the section page itself, or already linked from every page (the main menu): no new link to add.
+    text = `${issue.path} is already linked from ${linkedFrom} page${linkedFrom === 1 ? '' : 's'} (including the main menu), so no new link is needed. Make the existing links and the page's own title and main heading clearly say what it is about ("${anchor}").`;
+  } else {
+    text = `Add a link to ${issue.path} from its section page (${section}) with the words "${anchor}".`;
+  }
   return { kind: 'ideas', summary: 'Suggestions only: nothing is changed. Add the links yourself in Admin › News (or ask the developer for pages in the design).', draft: text };
 }
 function proposeSitemap(env, issue) {

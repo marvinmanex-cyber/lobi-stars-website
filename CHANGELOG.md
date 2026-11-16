@@ -8,6 +8,13 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-16: "Lobi Stars news": the homepage points Google to /news/; SEO Scanner link advice fixed
+
+**Who it affects:** fans (wording), staff using the SEO Scanner. **Staff need to:** press **Check again** on "For 'Lobi Stars news' Google shows / instead of /news/".
+- The SEO Scanner suggested "add a link to /news/ from its section page (/news/)", which would be the page linking to itself. In fact all 109 pages already link to /news/ through the main menu.
+- The real issue is that Google shows the homepage for "Lobi Stars news". So the homepage's Latest News link now says **"All Lobi Stars news"** (was "View all news") and goes straight to /news/ without a redirect, and the /news/ page's main heading is **"Lobi Stars News"** (was "News"), matching its title. The wording is honest and short, and the design is the same.
+- **Scanner:** link suggestions never point a page at itself. For "Google shows the wrong page" it now advises on the wording of the existing link and the page's title and heading, and when a page is already linked from every page it says so instead of asking for a new link.
+
 ## 2026-11-16: Faster homepage on phones; Matchday Live pages get a main heading
 
 **Who it affects:** everyone. **Staff need to:** press **Check again** on "Speed could be better" (/) and the "No main heading" issues for the /matches/…/live/ pages.
