@@ -75,7 +75,12 @@ async function profilePage(request, env, url, person, list, season, { index = tr
   const useOwn = own && own.ok && own.status === 200;
   if (own && !useOwn) await own.body?.cancel().catch(() => {});
   const shell = useOwn ? own : await env.ASSETS.fetch(new URL('/squad-template/', url));
-  const title = `${person.name} | Lobi Stars FC`;
+  // Google titles of 30–60 characters (same rule as the built squad pages): name, position or role, club.
+  const what = person.kind === 'player' ? (person.position || person.groupLabel) : person.role;
+  const title = [what && ` | ${what} | Lobi Stars FC`, ' | Lobi Stars FC Squad', ' | Lobi Stars FC'].filter(Boolean).map(e => person.name + e).find(t => t.length <= 60) || `${person.name} | Lobi Stars FC`;
+  let description = profileDescription(person);
+  if (description.length < 70) description = `${description}${/[.!?]$/.test(description) ? '' : '.'} ${person.name}${what ? `, ${what},` : ''} at Lobi Stars FC: profile, stats and career.`.trim();
+  if (description.length > 160) description = `${description.slice(0, 159).replace(/[\s,.;:–—-]+\S*$/, '')}…`;
   const { prev, next, teammates } = neighbours(list, person);
   const page = `${url.origin}${person.href}`;
   // Stories tagged with this person (news file "players" or "staff" list), newest first.
@@ -86,7 +91,7 @@ async function profilePage(request, env, url, person, list, season, { index = tr
     if (idx.ok) news = (await idx.json()).filter(n => (n[field] || []).some(s => s === person.slug || (person.oldSlugs || []).includes(s)));
   } catch { /* no news list */ }
   const res = rewrite(shell, {
-    title, description: profileDescription(person), url: page, index,
+    title, description, url: page, index,
     image: person.photo ? new URL(person.photo.replace('w1200.webp', 'w1200.jpg'), url).toString() : null, imageAlt: `${person.name}, Lobi Stars FC`,
     ld: [personJsonLd(person, url.origin), breadcrumbs(url.origin, [['Squad', '/squad/'], [person.name, person.href]])],
     rootHtml: renderProfile(person, { prev, next, teammates, season, share: '<div class="pf-share-slot"></div>', personalisation: PERSONALISATION, news }),
