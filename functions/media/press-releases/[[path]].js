@@ -1,6 +1,7 @@
 import { publishedReleases, releaseHtml, releasePdf, prDate } from '../../api/_lib/mediaPress.js';
 import { mcSettings } from '../../api/_lib/mediaCentre.js';
 import { textOf } from '../../api/_lib/mediaSanitize.js';
+import { pageMeta, fitTitle } from '../../api/_lib/pageTitles.js';
 
 // /media/press-releases/           -- the archive of published press releases (newest first)
 // /media/press-releases/<slug>/    -- one release (the fixed layout)
@@ -22,9 +23,12 @@ export async function onRequestGet({ request, env, params }) {
   const one = parts.length === 1 ? list.find(x => x.slug === parts[0]) : null;
   if (parts.length && !one) { const nf = await env.ASSETS.fetch(new URL('/404.html', url)); return new Response(nf.body, { status: 404, headers: nf.headers }); }
   const shell = await env.ASSETS.fetch(new URL('/media/press-releases/', url));
-  const title = one ? `${one.headline} | Press release | Lobi Stars FC` : 'Press releases | Lobi Stars Football Club';
-  const description = one ? textOf(one.body).slice(0, 155) : 'Official press releases and statements from Lobi Stars FC.';
   const page = one ? `${url.origin}/media/press-releases/${one.slug}/` : `${url.origin}/media/press-releases/`;
+  // Google limits (title up to 60, description 70-160); a title approved in the SEO Scanner wins.
+  const body = one ? textOf(one.body).replace(/\s+/g, ' ').trim() : '';
+  const { title, description } = pageMeta(new URL(page).pathname, one
+    ? { title: fitTitle([`${one.headline} | Press release | Lobi Stars FC`, `${one.headline} | Lobi Stars FC`, one.headline]), description: body.length >= 70 ? body : `${body} An official press release from Lobi Stars FC, the Pride of Benue.`.trim() }
+    : { title: 'Press Releases and Statements | Lobi Stars FC', description: 'Official press releases and statements from Lobi Stars FC, the Pride of Benue: club announcements, signings, partnerships and media notices.' });
   const html = one
     ? `${releaseHtml(one, { publishedAt: one.publishedAt, contactFallback: settings.press_contact })}<p class="pr-acts"><a class="btn-o" href="/media/press-releases/${esc(one.slug)}.pdf">Download PDF</a> <a href="/media/press-releases/">All press releases</a></p>`
     : (list.length ? `<ul class="pr-list">${list.map(r => { const d = new Date(r.date || r.publishedAt); const cal = isNaN(d) ? ['', ''] : [d.toLocaleDateString('en-GB', { day: 'numeric', timeZone: 'Africa/Lagos' }), d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric', timeZone: 'Africa/Lagos' })];

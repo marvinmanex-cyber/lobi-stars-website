@@ -21,6 +21,9 @@ in HANDOVER-TODO.md.
   typed in fancy or capital letters (e.g. pasted from Facebook) are shown to Google in normal letters, and short
   descriptions are completed with a true sentence. Clearer titles on the stadium, fixtures, shop, squad and table
   pages.
+- **Press releases, partner pages and story titles:** the press releases page and each release now get
+  titles and descriptions of the right length; partner titles fit in 60 characters; stray * marks from pasted
+  WhatsApp text are removed from story titles.
 - **Player pages** now point to the same club record as the homepage in their structured data.
 - **Matchday Live pages** get breadcrumbs for Google and are listed in the sitemap (home games).
 - **Pages Google should not list:** the old in-seat food page (/food/, replaced by /kitchen/), the hidden

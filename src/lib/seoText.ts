@@ -5,7 +5,8 @@
 
 /** Normal letters and single spaces. */
 export function plainText(s: unknown): string {
-  return String(s ?? '').normalize('NFKC').replace(/[​-‍﻿]/g, '').replace(/\s+/g, ' ').trim();
+  // Stray * and _ are left-over bold / italic marks from WhatsApp or Facebook text.
+  return String(s ?? '').normalize('NFKC').replace(/[*_]+/g, '').replace(/[​-‍﻿]/g, '').replace(/\s+/g, ' ').trim();
 }
 const clipWords = (s: string, n: number) => (s.length <= n ? s : `${s.slice(0, n - 1).replace(/[\s,.;:–—|-]+\S*$/, '')}…`);
 
@@ -13,7 +14,7 @@ const clipWords = (s: string, n: number) => (s.length <= n ? s : `${s.slice(0, n
 export function fitTitle(main: string, endings: string[] = [' | Lobi Stars FC']): string {
   let m = plainText(main);
   // A title typed in capitals reads as shouting in Google results: normal capitals (NNL, FC and the like stay).
-  if ((m.match(/[A-Z]/g) || []).length > m.length * 0.6) m = m.toLowerCase().replace(/(^|[\s(“"'-])([a-z])/g, (_, a, c) => a + c.toUpperCase()).replace(/\b(Nnl|Npfl|Fc|Caf|Nff|Lmc|Motm)\b/g, w => w.toUpperCase());
+  if ((m.match(/[A-Z]/g) || []).length > m.length * 0.6) m = m.toLowerCase().replace(/(^|[\s(“"-])([a-z])/g, (_, a, c) => a + c.toUpperCase()).replace(/\b(Nnl|Npfl|Fc|Caf|Nff|Lmc|Motm)\b/g, w => w.toUpperCase());
   for (const e of endings) if ((m + e).length <= 60) return m + e;
   return clipWords(m, 60);
 }

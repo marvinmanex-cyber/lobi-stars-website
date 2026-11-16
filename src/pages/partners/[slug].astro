@@ -9,6 +9,7 @@ import { existsSync } from 'node:fs';
 import { render } from 'astro:content';
 import { getPartners, logoSrc, logoAlt, website, type Partner } from '../../lib/partners';
 import { getSortedNews } from '../../lib/news';
+import { fitTitle } from '../../lib/seoText';
 
 export async function getStaticPaths() {
   const partners = await getPartners();
@@ -30,9 +31,10 @@ const p = partner.data;
 const { Content } = await render(partner);
 const site = website(partner);
 const hasBody = (partner.body ?? '').trim().length > 0;
-// Link-card title under 70 characters, and a description of 70 to 160.
-const fullTitle = `${p.name} – ${p.officialTitle} | Lobi Stars FC`;
-const pageTitle = fullTitle.length <= 70 ? fullTitle : `${p.name} – ${p.officialTitle}`.length <= 70 ? `${p.name} – ${p.officialTitle}` : `${p.name} | Lobi Stars FC Partner`;
+// Google title of at most 60 characters (longest that fits), and a description of 70 to 160.
+const shortName = p.name.replace(/\s+(Nig\.?|Ltd\.?|Limited|Plc)$/i, '').trim();
+const pageTitle = [`${p.name} – ${p.officialTitle} | Lobi Stars FC`, `${shortName} – ${p.officialTitle} | Lobi Stars FC`, `${shortName} – ${p.officialTitle}`, `${shortName} | Lobi Stars FC Partner`, `${shortName} | Lobi Stars FC`]
+  .find(t => t.length <= 60) ?? fitTitle(shortName, ['']);
 let pageDesc = (p.shortDescription || `${p.name} is the ${p.officialTitle} of Lobi Stars Football Club.`).trim();
 if (pageDesc.length < 70) pageDesc = `${pageDesc} Find out more about ${p.name} and its partnership with the Pride of Benue.`;
 if (pageDesc.length > 160) pageDesc = pageDesc.slice(0, 157).replace(/\s+\S*$/, '') + '…';
