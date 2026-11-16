@@ -65,6 +65,12 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   .seo { --blue: #1C3F7A; --red: #C8102E; }
   .seo-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
   .seo-acts { display: flex; flex-wrap: wrap; gap: 8px; } .seo-acts a { text-decoration: none; }
+  .fxs { margin: 8px 0; padding: 10px 12px; border-radius: 10px; font-size: 14px; line-height: 1.45; background: #EEF2F7; color: #1F2A37; border-left: 4px solid #64748B; }
+  .fxs b { margin-right: 4px; }
+  .fxs-checking { background: #EFF6FF; border-left-color: #2563EB; }
+  .fxs-waiting_google { background: #FFF7E6; border-left-color: #D97706; }
+  .fxs-still_open { background: #FEF2F2; border-left-color: #DC2626; }
+  .fxs-instruction, .fxs-draft, .fxs-proposed { background: #F5F3FF; border-left-color: #7C3AED; }
   /* A notice pinned to the bottom of the screen: the page never jumps to show it (owner's request, 16 Nov 2026). */
   .seo-msg { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 4000; max-width: min(640px, calc(100vw - 32px)); padding: 12px 16px; border-radius: 12px; background: #DCFCE7; color: #166534; margin: 0; font-weight: 600; box-shadow: 0 10px 30px rgba(0, 0, 0, .18); } .seo-msg.err { background: #FEE2E2; color: #991B1B; }
   .seo-prog { margin: 0 0 14px; } .seo-bar { height: 10px; border-radius: 999px; background: var(--a-line); overflow: hidden; }
@@ -156,9 +162,12 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     return s;
   }
 
+  let checkTimer = null;
   async function load() {
     try { D = await api(); } catch (e) { msg(e.message, false); return; }
     render();
+    clearTimeout(checkTimer);
+    if ((D.issues || []).some(i => i.progress?.state === 'checking' && i.progress.lock)) checkTimer = setTimeout(() => { if (!document.hidden) load(); else checkTimer = setTimeout(load, 45000); }, 45000);
     if (D.running && !scanning) follow(D.running.id);
   }
   function render() {
@@ -208,7 +217,8 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     const a = i.actions;
     const wrap = el('div', {},
       el('div', { class: 'three' },
-        el('button', { type: 'button', class: 'a1', disabled: a.ai ? null : '', title: a.ai ? '' : 'No AI Fix for this kind of issue', onclick: () => aiFix(i, box) }, a.code ? '🤖 AI Fix (VS Code instruction)' : '🤖 AI Fix'),
+        el('button', { type: 'button', class: 'a1', disabled: a.ai && !i.progress?.lock ? null : '', title: !a.ai ? 'No AI Fix for this kind of issue' : i.progress?.lock ? i.progress.text : '', onclick: e => aiFix(i, box, e.currentTarget) },
+          i.progress?.lock ? (i.progress.state === 'waiting_google' ? '⏳ Fix applied: waiting for Google' : '⏳ Fix applied: checking…') : i.progress?.state === 'proposed' ? '🤖 AI Fix: see the prepared fix' : a.code ? '🤖 AI Fix (VS Code instruction)' : '🤖 AI Fix'),
         el('button', { type: 'button', class: 'a2', disabled: a.automate ? null : '', title: a.automate ? '' : 'This kind of issue needs a person or code', onclick: () => { location.href = `/admin/seo/settings/?rule=${encodeURIComponent(i.type)}#rules`; } }, '⚙️ Set up AI to fix this next time'),
         el('button', { type: 'button', class: 'a3', onclick: () => myself(i, box) }, '🛠️ Fix it myself')),
       el('div', { class: 'small-btns' },
@@ -222,7 +232,8 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
     const fx = i.fix;
     return el('div', { class: 'seo-item', style: `--c:${SEV[i.severity]}` },
       el('h3', {}, i.name, el('span', { class: 'badge', text: i.severityLabel }), el('span', { class: 'chip', text: (D.categories.find(c => c.key === i.category) || {}).label || i.category }),
-        fx?.status === 'applied' ? el('span', { class: 'chip', text: `Fix applied ${when(fx.applied_at)}: checking after the rebuild` }) : fx?.status === 'proposed' ? el('span', { class: 'chip', text: 'Fix waiting for approval' }) : null),
+        null),
+      i.progress ? el('p', { class: `fxs fxs-${i.progress.state}`, role: 'status' }, el('b', { text: { checking: '⏳ Checking', still_open: '⚠️ Still open after the fix', waiting_google: '⏳ Waiting for Google', instruction: '🧑‍💻 Instruction given', draft: '📝 Suggestion given', proposed: '📝 Waiting for your approval' }[i.progress.state] || 'Fix' }), ' ', i.progress.text) : null,
       el('p', {}, i.path ? el('a', { href: '#', class: 'pg', onclick: e => { e.preventDefault(); openPage(i.path); }, text: i.path }) : el('b', { text: 'Whole website' }), ' · ', i.problem),
       el('p', { class: 'muted', text: `Why it matters: ${i.why}` }),
       i.status === 'ignored' ? el('p', { class: 'muted', text: `Ignored by ${i.ignoredBy}: ${i.ignoredReason}` }) : null,
@@ -241,10 +252,12 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
   $('fText').addEventListener('input', issues);
 
   // ── AI Fix: preview, edit, approve, cancel ──
-  async function aiFix(i, box) {
-    box.replaceChildren(el('div', { class: 'panel', text: 'Preparing… (nothing changes until you approve)' }));
+  async function aiFix(i, box, btn) {
+    if (btn) { if (btn.disabled) return; btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = '⏳ Preparing…'; }
+    box.replaceChildren(el('div', { class: 'panel', text: 'Preparing… (nothing changes until you approve). Please wait: there is no need to press again.' }));
     try { const r = await api({ action: 'prepare', issueId: i.id }); showFix(box, r.fix, i); }
     catch (e) { box.replaceChildren(el('div', { class: 'panel' }, el('p', { text: e.message }))); }
+    finally { if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || '🤖 AI Fix'; } }
   }
   function showFix(box, f, issue) {
     const p = f.proposal || {};
@@ -277,7 +290,15 @@ import AdminNav from '../../../components/admin/AdminNav.astro';
       kids.push(el('div', {}, el('button', { type: 'button', class: 'go', onclick: async e => {
         e.target.disabled = true;
         const edited = {}; for (const [k, inp] of Object.entries(fields)) edited[k] = inp.value;
-        try { const r = await api({ action: 'apply', fixId: f.id, edited }); msg(r.message || 'Applied.'); box.replaceChildren(el('div', { class: 'panel', text: `✅ ${r.message}` })); setTimeout(load, 1200); }
+        e.target.textContent = '⏳ Applying…';
+        try {
+          const r = await api({ action: 'apply', fixId: f.id, edited });
+          const googleType = ['rank_drop', 'clicks_drop', 'low_ctr', 'almost_top', 'cannibal', 'not_indexed', 'deindexed'].includes(issue?.type);
+          const next = googleType ? 'This kind of issue is measured from Google\'s figures, so it clears only when Google reacts (usually 2 to 4 weeks). No need to fix it again.' : 'The website rebuilds now and the page is checked again in about 4 minutes. This card updates by itself: it turns into "Fixed" or says what is still wrong.';
+          msg(r.message || 'Applied.');
+          box.replaceChildren(el('div', { class: 'panel fxs fxs-checking' }, el('b', { text: `✅ ${r.message || 'Fix applied.'}` }), el('p', { text: next })));
+          setTimeout(load, 1200);
+        }
         catch (err) { e.target.disabled = false; msg(err.message, false); }
       } }, '✅ Approve'), el('button', { type: 'button', onclick: async () => { try { await api({ action: 'cancel', fixId: f.id }); box.replaceChildren(); msg('Cancelled: nothing was changed.'); load(); } catch (err) { msg(err.message, false); } } }, 'Cancel')));
       if (p.cost) kids.push(el('small', { class: 'muted', text: `AI cost about $${Number(p.cost).toFixed(4)}` }));

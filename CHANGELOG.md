@@ -8,6 +8,17 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-16: SEO Scanner: every AI Fix says where it stands; match page title fixes now reach the page
+
+**Who it affects:** whoever uses the SEO Scanner. **Staff need to:** nothing. Leave the page open after Approve to watch the card update.
+- **Why issues stayed open:**
+  1. Match pages are assembled by the server, which wrote its own title over the one approved in the SEO Scanner, so "Title too long" fixes never reached the page. Approved titles now win, and the default match titles fit in 60 characters ("Lobi Stars FC vs ABS FC | Match Centre").
+  2. Ranking and click issues come from Google's figures over weeks, so they can't clear on the next scan. The homepage "keyword dropped" fix had been applied 5 times.
+- **Each issue card now shows a status:** Checking (updates by itself), Still open after the fix (with the date it was checked), Waiting for Google (2 to 4 weeks), Instruction given (code), or Waiting for your approval.
+- **AI Fix is locked** while a fix is being checked (about 15 minutes) or waiting for Google (28 days), and the server refuses a second fix meanwhile. A prepared fix that is waiting is shown again instead of a new one. The button shows "Preparing…" and can't be pressed twice.
+- After Approve, the card explains what happens next, and the dashboard refreshes by itself every 45 seconds while a check is in progress.
+- Tests added (tests/seo-scanner.unit.test.mjs).
+
 ## 2026-11-16: Free SEO improvements: club identity, match facts, faster pages, IndexNow
 
 **Who it affects:** everyone (Google results), fans on match pages. **Staff need to:** the free steps in HANDOVER-TODO S1–S7 (Wikidata, Wikipedia, social bios, Google Business Profile, Bing, partner emails). Details are in Free-SEO-Steps-for-Lobi-Stars.docx.

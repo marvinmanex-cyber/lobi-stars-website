@@ -7,7 +7,7 @@ import { reportData, rankTable, issueList, scoreTrend } from '../_lib/seoReport.
 import { opportunities } from '../_lib/seoAnalyse.js';
 import { CATEGORIES, SEVERITY_LABEL, ISSUES, info, autoAllowed } from '../_lib/seoChecks.js';
 import { guideFor, vscodeInstruction } from '../_lib/seoGuides.js';
-import { prepareFix, applyFix, cancelFix, undoFix, fixRow, fixHistory, seoSpend, sendToDeveloper, listRules, saveRule, ignoreIssue, RULE_SCOPES } from '../_lib/seoFix.js';
+import { prepareFix, applyFix, cancelFix, undoFix, fixRow, fixHistory, seoSpend, sendToDeveloper, listRules, saveRule, ignoreIssue, RULE_SCOPES, fixProgress } from '../_lib/seoFix.js';
 import { rowOf } from '../_lib/seoReport.js';
 
 // SEO Scanner (only the Super Admins: checked here on every request, and by the
@@ -90,10 +90,11 @@ export async function onRequestGet({ request, env }) {
     (await db.prepare(`SELECT * FROM seo_alerts ORDER BY id DESC LIMIT 10`).all()).results,
     await db.prepare(`SELECT * FROM seo_scans WHERE finished_at IS NOT NULL AND (summary IS NULL OR summary NOT LIKE '%abandoned%') ORDER BY finished_at DESC LIMIT 1`).first(),
   ];
+  const scannedAt = new Map((await db.prepare(`SELECT path, scanned_at FROM seo_pages WHERE path IN (SELECT DISTINCT path FROM seo_fixes WHERE created_at >= ?)`).bind(new Date(Date.now() - 35 * 864e5).toISOString()).all()).results.map(r => [r.path, r.scanned_at]));
   const fixesFor = new Map();
-  for (const r of (await db.prepare(`SELECT issue_id, id, status, applied_at FROM seo_fixes WHERE status IN ('proposed', 'applied') AND created_at >= ? ORDER BY created_at DESC`).bind(new Date(Date.now() - 14 * 864e5).toISOString()).all()).results) if (!fixesFor.has(r.issue_id)) fixesFor.set(r.issue_id, r);
+  for (const r of (await db.prepare(`SELECT issue_id, id, status, applied_at, created_at FROM seo_fixes WHERE status IN ('proposed', 'applied', 'instruction', 'draft') AND created_at >= ? ORDER BY created_at DESC`).bind(new Date(Date.now() - 35 * 864e5).toISOString()).all()).results) if (!fixesFor.has(r.issue_id)) fixesFor.set(r.issue_id, r);
   return json({
-    ...rep, top: opportunities(issues, 5), issues: issues.map(i => ({ ...i, fix: fixesFor.get(i.id) || null })), ignored,
+    ...rep, top: opportunities(issues, 5), issues: issues.map(i => ({ ...i, fix: fixesFor.get(i.id) || null, progress: fixProgress(i, fixesFor.get(i.id), scannedAt.get(i.path)) })), ignored,
     categories: CATEGORIES, severities: SEVERITY_LABEL, running: running ? progressOf(running) : null, lastScan: lastScan ? progressOf(lastScan) : null,
     waiting: await Promise.all(waiting.map(w => fixRow(db, w.id))), alerts, usage: await seoSpend(db), connections: await connections(env),
   });

@@ -4010,6 +4010,21 @@ never copies Google search results.
      and, for code, the VS Code instruction.
    Also **Check again**, **Page details** and **Mark as ignored** (you must say
    why; everyone sees the reason; **Stop ignoring** brings it back).
+   **After AI Fix, the card says where the fix stands** (you never need to press it twice):
+   - **⏳ Checking:** the fix is applied and the site is rebuilding. The page is
+     checked again about 4 minutes later, and the card updates by itself (leave the
+     page open). AI Fix is locked meanwhile.
+   - **Fixed:** the issue moves to the fixed list.
+   - **⚠️ Still open after the fix:** the page was checked and still shows the
+     problem. Undo it in the Fixes history and try again, or use Fix it myself.
+   - **⏳ Waiting for Google:** for rankings and clicks (keyword dropped, close to
+     the top, wrong page ranks, low clicks, not indexed). These come from Google's
+     figures over weeks, so they can't clear on the next scan: Google usually reacts
+     within 2 to 4 weeks. AI Fix is locked for 28 days so the same fix isn't applied
+     again.
+   - **🧑‍💻 Instruction given:** code changes. The issue clears once the change is
+     live and the page is checked again (speed: in the weekly speed test, or press
+     Check again).
 6. **History:** every fix (yours or automatic), Google's figures for the page
    28 days before and, 30 days later, after, and **↩️ Undo** (puts the file back).
 7. **Download report (PDF):** print or save the dashboard as a PDF.

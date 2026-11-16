@@ -1,6 +1,7 @@
 import { jsonScript } from '../../api/_lib/ssr.js';
 import { ensureTable, isHomeGame, loadMatch, toPublic } from '../../api/_lib/matchCentre.js';
 import { matchSlug } from '../../api/_lib/matchSlug.js';
+import { pageMeta, matchTitle } from '../../api/_lib/pageTitles.js';
 
 // /matches/<slug>/live -- Matchday Live (watch, listen, vote, predict). HOME
 // games only: away games are sent to their normal Match Centre page. Serves
@@ -29,10 +30,11 @@ export async function onRequestGet({ request, env, params }) {
   headers.set('Cache-Control', 'public, max-age=60');
   if (!event) return new Response(shell.body, { status: 404, headers });
 
-  const title = `${event.home_team} vs ${event.away_team} | Matchday Live | Lobi Stars FC`;
+  const titleDefault = matchTitle(event.home_team, event.away_team, 'Matchday Live');
   const date = new Date(event.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
-  const description = `Matchday Live for ${event.home_team} vs ${event.away_team}, ${date}: watch live, listen to match commentary, vote for Man of the Match and play Predict & Win.`;
   const canonical = `${url.origin}/matches/${matchSlug(event)}/live/`;
+  // The title approved in the SEO Scanner wins; otherwise defaults that fit Google's limits.
+  const { title, description } = pageMeta(`/matches/${matchSlug(event)}/live/`, { title: titleDefault, description: `Matchday Live for ${event.home_team} vs ${event.away_team}, ${date}: watch live, listen to commentary, vote for Man of the Match and play Predict & Win.` });
   const set = v => ({ element(el) { el.setAttribute('content', v); } });
 
   // Embed the match (same shape as /api/matches/<slug>) so the page renders at once, and

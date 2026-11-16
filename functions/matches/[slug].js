@@ -5,6 +5,7 @@ import { decorateMatches } from '../api/_lib/ticketShop.js';
 import { matchImagePath, MATCH_FALLBACK_IMAGE } from '../api/_lib/shareImage.js';
 import { matchFactsHtml } from '../api/_lib/matchFacts.js';
 import { edgeCached } from '../api/_lib/edgeCache.js';
+import { pageMeta, matchTitle } from '../api/_lib/pageTitles.js';
 
 // /matches/<slug> -- serves the static Match Centre page (built at
 // /match-centre/) for any match, with the match's own title, description and
@@ -35,10 +36,11 @@ async function matchPage({ request, env, params }) {
     return new Response(shell.body, { status: 404, headers });
   }
 
-  const title = `${event.home_team} vs ${event.away_team} | Match Centre | Lobi Stars FC`;
+  const titleDefault = matchTitle(event.home_team, event.away_team, 'Match Centre');
   const date = new Date(event.event_date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Lagos' });
-  const description = `${event.competition}: ${event.home_team} vs ${event.away_team}, ${date} at ${event.venue}. Line-ups, live updates, report and stats.`;
   const canonical = `${url.origin}/matches/${matchSlug(event)}/`;
+  // The title approved in the SEO Scanner wins; otherwise defaults that fit Google's limits.
+  const { title, description } = pageMeta(`/matches/${matchSlug(event)}/`, { title: titleDefault, description: `${event.competition}: ${event.home_team} vs ${event.away_team}, ${date} at ${event.venue}. Line-ups, live updates, report and stats.` });
   const set = v => ({ element(el) { el.setAttribute('content', v); } });
 
   // Embed the match (same shape as /api/matches/<slug>) so the page renders at once, and

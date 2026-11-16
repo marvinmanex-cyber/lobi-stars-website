@@ -127,3 +127,37 @@ test('redirects: an address that redirects is checked as the page it lands on, n
   const wrong = out.filter(i => i.type === 'canonical_wrong' || i.issue === 'canonical_wrong' || i.key === 'canonical_wrong' || JSON.stringify(i).includes('canonical_wrong'));
   assert.deepEqual(wrong, [], JSON.stringify(wrong));
 });
+
+test('AI Fix status on each issue: checking, still open, waiting for Google, instruction; locked so it is not applied twice', async () => {
+  const { fixProgress } = await import('../functions/api/_lib/seoFix.js');
+  const now = Date.parse('2026-11-16T10:00:00Z');
+  const ago = m => new Date(now - m * 60e3).toISOString();
+  // A title fix applied 2 minutes ago, page not checked since: checking, locked.
+  let p = fixProgress({ type: 'title_length' }, { status: 'applied', applied_at: ago(2) }, ago(30), now);
+  assert.equal(p.state, 'checking'); assert.equal(p.lock, true);
+  // The page was checked after the fix and the issue is still open: say so, unlocked.
+  p = fixProgress({ type: 'title_length' }, { status: 'applied', applied_at: ago(20) }, ago(5), now);
+  assert.equal(p.state, 'still_open'); assert.equal(p.lock, false);
+  // Measured from Google's figures: waiting for Google for 28 days, locked.
+  p = fixProgress({ type: 'rank_drop' }, { status: 'applied', applied_at: ago(60 * 24 * 3) }, ago(1), now);
+  assert.equal(p.state, 'waiting_google'); assert.equal(p.lock, true); assert.match(p.text, /2 to 4 weeks/);
+  p = fixProgress({ type: 'rank_drop' }, { status: 'applied', applied_at: ago(60 * 24 * 30) }, ago(1), now);
+  assert.equal(p.state, 'still_open'); assert.equal(p.lock, false);
+  // VS Code instruction and drafts: not locked (they can be shown again), with what happens next.
+  assert.equal(fixProgress({ type: 'speed_fair' }, { status: 'instruction', created_at: ago(10) }, null, now).state, 'instruction');
+  assert.match(fixProgress({ type: 'speed_fair' }, { status: 'instruction', created_at: ago(10) }, null, now).text, /weekly speed test/);
+  assert.equal(fixProgress({ type: 'cannibal' }, { status: 'draft', created_at: ago(10) }, null, now).state, 'draft');
+  assert.equal(fixProgress({ type: 'title_length' }, { status: 'proposed', created_at: ago(1) }, null, now).state, 'proposed');
+  assert.equal(fixProgress({ type: 'title_length' }, null), null);
+});
+
+test('server-assembled match pages: approved title wins; defaults fit 60 characters', async () => {
+  const { pageMeta, matchTitle, fitTitle } = await import('../functions/api/_lib/pageTitles.js');
+  for (const [h, a] of [['Lobi Stars FC', 'Yobe Desert Stars FC'], ['Mighty Jets Feeder / Bida Lions', 'Lobi Stars FC'], ['Lobi Stars FC', 'ABS FC']]) {
+    for (const label of ['Match Centre', 'Matchday Live']) assert.ok(matchTitle(h, a, label).length <= 60, matchTitle(h, a, label));
+  }
+  assert.equal(matchTitle('Lobi Stars FC', 'ABS FC', 'Match Centre'), 'Lobi Stars FC vs ABS FC | Match Centre');
+  assert.ok(fitTitle(['x'.repeat(80)]).length <= 60);
+  const m = pageMeta('/matches/no-such-match/', { title: 'Default title', description: 'd'.repeat(200) });
+  assert.equal(m.title, 'Default title'); assert.ok(m.description.length <= 160);
+});
