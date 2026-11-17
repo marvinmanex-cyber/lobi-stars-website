@@ -4,7 +4,7 @@
 interface Props { current?: 'fixtures' | 'results' | 'table' | 'stats' | 'matchday' | 'watch' | 'commentary' | 'motm' | 'predict' | 'awards' | 'league' | '' }
 const { current = '' } = Astro.props;
 const tabs = [
-  { id: 'fixtures', label: 'Fixtures', href: '/fixtures' },
+  { id: 'fixtures', label: 'Fixtures', href: '/fixtures/' },
   { id: 'results', label: 'Results', href: '/results' },
   { id: 'table', label: 'Table', href: '/table' },
   { id: 'stats', label: 'Stats', href: '/stats' },

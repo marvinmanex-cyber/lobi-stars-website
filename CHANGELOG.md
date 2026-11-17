@@ -8,6 +8,19 @@ in HANDOVER-TODO.md.
 
 ---
 
+## 2026-11-18: "Lobi Stars match today" points to the fixtures page
+
+**Who it affects:** fans and Google. **Nothing to do.**
+
+Google was showing the homepage for "Lobi Stars match today" instead of /fixtures/. Now:
+
+- The homepage link under "Upcoming Matches" reads **"Lobi Stars match today and all fixtures"** (on phones:
+  "Lobi Stars match today").
+- The fixtures page heading reads **"Lobi Stars Match Today & Fixtures"** and its title "Lobi Stars Match Today and
+  Fixtures | Lobi Stars FC" (the same as the title approved in the SEO Scanner).
+- Every link to the fixtures page (menu, footer, phone tab bar, homepage hero, live banner, Matches tabs) now goes
+  straight to /fixtures/ without a redirect.
+
 ## 2026-11-18: SEO Scanner: AI Fix greyed out for 24 hours, honest speed results; WebP pictures; steadier homepage
 
 **Who it affects:** the Super Admins (SEO Scanner) and every visitor. **Nothing to do**, and no extra cost.

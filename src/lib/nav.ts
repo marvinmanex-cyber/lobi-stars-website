@@ -18,9 +18,9 @@ export const optionalClub: NavLink[] = [
 export const MAIN_NAV: NavItem[] = [
   { label: 'News', href: '/news', description: 'The latest club news' },
   {
-    label: 'Matches', href: '/fixtures',
+    label: 'Matches', href: '/fixtures/',
     children: [
-      { label: 'Fixtures', href: '/fixtures', description: 'Upcoming First Team matches' },
+      { label: 'Fixtures', href: '/fixtures/', description: 'Upcoming First Team matches' },
       { label: 'Results', href: '/results', description: 'Recent First Team results' },
       { label: 'Table', href: '/table', description: 'The league table' },
       { label: 'Stats', href: '/stats', description: 'Top scorers, assists, clean sheets and team record' },
