@@ -16,8 +16,9 @@ Google was showing the homepage for "Lobi Stars match today" instead of /fixture
 
 - The homepage link under "Upcoming Matches" reads **"Lobi Stars match today and all fixtures"** (on phones:
   "Lobi Stars match today").
-- The fixtures page heading reads **"Lobi Stars Match Today & Fixtures"** and its title "Lobi Stars Match Today and
-  Fixtures | Lobi Stars FC" (the same as the title approved in the SEO Scanner).
+- The fixtures page heading reads **"Lobi Stars Match Today & Fixtures"** and its Google title "Lobi Stars Match Today,
+  Fixtures & Results | Lobi Stars FC" (it covers all three search phrases, so AI Fix has no reason to change it
+  again; an AI Fix earlier today had replaced "match today" with "Fixtures 2026/27").
 - Every link to the fixtures page (menu, footer, phone tab bar, homepage hero, live banner, Matches tabs) now goes
   straight to /fixtures/ without a redirect.
 
